@@ -876,7 +876,7 @@ BentleyStatus GetContents(FenceParamsP fp, DgnElementIdSet& contents)
     m_collectContents = true;
 
     // NOTE: Don't pass searchList...won't include parents of activated nested attachment...
-    VisitAllViewElements(false, NULL);
+    VisitAllViewElements();
     _Detach();
 
     if (m_contents.empty())

@@ -17,6 +17,8 @@
     #define MAX_TO_DRAW_IN_DYNAMIC_UPDATE  1700
 #endif
 
+#define TRACE_QUERY_LOGIC 1
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   07/12
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -120,8 +122,11 @@ void QueryViewController::_OnDynamicUpdate(DgnViewportR vp, DynamicUpdateInfo co
         }
 #endif
 
-    QueryModel::Selector& selector = m_queryModel.GetSelector();
-    if (selector.IsActive())
+#if defined (TRACE_QUERY_LOGIC)
+    static uint32_t s_count = 0;
+#endif
+
+    if (QueryModel::State::Idle != m_queryModel.GetState())
         {
 #if defined (TRACE_QUERY_LOGIC)
         printf("(%d) _OnDynamicUpdate: IsActive is true\n", ++s_count);
@@ -129,7 +134,7 @@ void QueryViewController::_OnDynamicUpdate(DgnViewportR vp, DynamicUpdateInfo co
         return;
         }
 
-    if (selector.HasSelectResults())
+    if (m_queryModel.HasSelectResults())
         {
 #if defined (TRACE_QUERY_LOGIC)
         printf("(%d) _OnDynamicUpdate: calling SaveSelectResults\n", ++s_count);
@@ -138,7 +143,7 @@ void QueryViewController::_OnDynamicUpdate(DgnViewportR vp, DynamicUpdateInfo co
         return;
         }
 
-    // The selector is idle. Decide if this is a good time to start another query.
+    // The model is idle. Decide if this is a good time to start another query.
     if (!_WantElementLoadStart(vp, BeTimeUtilities::QuerySecondsCounter(), m_lastQueryTime, m_maxDrawnInDynamicUpdate, m_startQueryFrustum))
         return;
 
@@ -201,8 +206,6 @@ void QueryViewController::_OnFullUpdate(DgnViewportR vp, ViewContextR context)
 void QueryViewController::LoadElementsForUpdate(DgnViewportR viewport, DrawPurpose updateType, ICheckStopP checkStop, 
                                                 bool needNewQuery, bool waitForQueryToFinish, bool stopQueryOnAbort)
     {
-    QueryModel::Selector& selector = m_queryModel.GetSelector();
-
     if (waitForQueryToFinish)
         {
         if (needNewQuery)
@@ -211,16 +214,16 @@ void QueryViewController::LoadElementsForUpdate(DgnViewportR viewport, DrawPurpo
             StartSelectProcessing(viewport, updateType);
             }
 
-        selector.WaitUntilFinished(checkStop, 1, stopQueryOnAbort);
+        m_queryModel.WaitUntilFinished(checkStop);
 
         // It is safe to ignore the StartSelectProcessing return value because 
-        // SaveSelectResults does nothing unless the selector has the results of a successful search.
+        // SaveSelectResults does nothing unless the model has the results of a successful search.
         SaveSelectResults();
         return;
         }
 
     // IsActive means that it is searching or that there is an outstanding request to abort or to start processing.
-    if (selector.IsActive())
+    if (m_queryModel.IsActive())
         return;
 
     SaveSelectResults();
@@ -251,14 +254,13 @@ void QueryViewController::StartSelectProcessing(DgnViewportR viewport, DrawPurpo
         }
 #endif
 
-    QueryModel::Selector& selector = m_queryModel.GetSelector();
-    selector.StartProcessing(viewport, *this, _GetRTreeMatchSql(viewport).c_str(), hitLimit, GetMaxElementMemory(), minimumPixels, 
-                                m_alwaysDrawn.empty() ? nullptr : &m_alwaysDrawn, 
-                                m_neverDrawn.empty() ?  nullptr : &m_neverDrawn, 
-                                m_noQuery, GetClipVector().get(), m_secondaryHitLimit, m_secondaryVolume);
-
-    m_startQueryFrustum = selector.GetFrustum();
+    m_startQueryFrustum = viewport.GetFrustum(DgnCoordSystem::World, true);
     m_saveQueryFrustum.Invalidate();
+
+    m_queryModel.GetDgnDb().QueryModels().RequestProcessing(
+        QueryModel::Processor::Params(m_queryModel, viewport, _GetRTreeMatchSql(viewport), hitLimit, GetMaxElementMemory(), minimumPixels,
+            m_alwaysDrawn.empty() ? nullptr : &m_alwaysDrawn, m_neverDrawn.empty() ? nullptr : &m_neverDrawn, m_noQuery,
+            GetClipVector().get(), m_secondaryHitLimit, m_secondaryVolume));
 
     // Once we start select processing we don't want to draw any more than we have already drawn. 
     // Otherwise we may end up with the draw logic blocked on a SQLite mutex.
@@ -270,10 +272,9 @@ void QueryViewController::StartSelectProcessing(DgnViewportR viewport, DrawPurpo
 //---------------------------------------------------------------------------------------
 void QueryViewController::SaveSelectResults()
     {
-    QueryModel::Selector& selector = m_queryModel.GetSelector();
-    if (!selector.HasSelectResults())
+    if (!m_queryModel.HasSelectResults())
         {
-        if (!selector.IsActive() || selector.GetState() == QueryModel::Selector::State::AbortRequested)
+        if (!m_queryModel.IsActive() || QueryModel::State::AbortRequested == m_queryModel.GetState())
             {
             m_startQueryFrustum.Invalidate(); // Must be abort or error. Either way the startQueryFrustum is meaningless.
             m_saveQueryFrustum.Invalidate();
@@ -304,8 +305,9 @@ void QueryViewController::SaveSelectResults()
 #endif
 
     m_forceNewQuery = false;
-    m_saveQueryFrustum = selector.GetFrustum();
-    selector.Reset();
+    m_saveQueryFrustum = m_startQueryFrustum;
+
+    m_queryModel.RequestAbort(true);
 
     m_maxDrawnInDynamicUpdate = 0;
     m_maxToDrawInDynamicUpdate = MAX_TO_DRAW_IN_DYNAMIC_UPDATE;     //  No limit to number of elements drawn except during select; then we don't want
@@ -326,7 +328,7 @@ void QueryViewController::EmptyQueryModel()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void QueryViewController::SetAlwaysDrawn(DgnElementIdSet const& newSet, bool exclusive)
     {
-    m_queryModel.GetSelector().RequestAbort(true);
+    m_queryModel.RequestAbort(true);
     m_noQuery = exclusive;
     m_alwaysDrawn = newSet;
     m_forceNewQuery = true;
@@ -337,7 +339,7 @@ void QueryViewController::SetAlwaysDrawn(DgnElementIdSet const& newSet, bool exc
 +---------------+---------------+---------------+---------------+---------------+------*/
 void QueryViewController::ClearAlwaysDrawn()
     {
-    m_queryModel.GetSelector().RequestAbort(true);
+    m_queryModel.RequestAbort(true);
     m_noQuery = false;
     m_alwaysDrawn.clear();
     m_forceNewQuery = true;
@@ -348,7 +350,7 @@ void QueryViewController::ClearAlwaysDrawn()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void QueryViewController::SetNeverDrawn(DgnElementIdSet const& newSet)
     {
-    m_queryModel.GetSelector().RequestAbort(true);
+    m_queryModel.RequestAbort(true);
     m_neverDrawn = newSet;
     m_forceNewQuery = true;
     }
@@ -358,7 +360,7 @@ void QueryViewController::SetNeverDrawn(DgnElementIdSet const& newSet)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void QueryViewController::ClearNeverDrawn()
     {
-    m_queryModel.GetSelector().RequestAbort(true);
+    m_queryModel.RequestAbort(true);
     m_neverDrawn.clear();
     m_forceNewQuery = true;
     }
@@ -556,14 +558,12 @@ void QueryViewController::_DrawView(ViewContextR context)
         DgnElements& pool = m_queryModel.GetDgnDb().Elements();
         if (numDrawn > results->m_drawnBeforePurge && pool.GetTotalAllocated() > purgeTrigger)
             {
-            QueryModel::Selector& selector = m_queryModel.GetSelector();
-
-            // Testing for selector.IsActive prevents race conditions between the work thread and the 
+            // Testing for QueryModel::IsActive prevents race conditions between the work thread and the 
             // query thread. Testing for HasSelectResults prevents this logic from purging elements that
             // are in the selected-elements list. Adding elements to that list does not increment the reference 
             // count. DgnElements use reference counting that is not thread safe so all reference counting is done
             // in the work thread.
-            if (!selector.IsActive() && !selector.HasSelectResults())
+            if (!m_queryModel.IsActive() && !m_queryModel.HasSelectResults())
                 {
                 results->m_drawnBeforePurge = numDrawn;
                 pool.Purge(maxMem);  //  the pool may contain unused elements

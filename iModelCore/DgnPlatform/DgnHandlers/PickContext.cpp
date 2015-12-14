@@ -1162,15 +1162,6 @@ bool PickContext::_CheckStop()
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  10/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-void PickContext::_OnPreDrawTransient()
-    {
-    T_Super::_OnPreDrawTransient();
-    _GetGeomDetail().Init(); // Setup hit detail defaults...
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    03/02
 +---------------+---------------+---------------+---------------+---------------+------*/
 void PickContext::_OutputGeometry(GeometrySourceCR element)
@@ -1314,7 +1305,7 @@ bool PickContext::PickElements(DgnViewportR vp, DPoint3dCR pickPointWorld, doubl
         return true;
 
     InitSearch(pickPointWorld, pickApertureScreen, hitList);
-    VisitAllViewElements(true, NULL);
+    VisitAllViewElements();
     _Detach();
 
 #if defined (NOT_DUMP)

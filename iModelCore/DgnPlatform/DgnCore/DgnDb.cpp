@@ -40,7 +40,8 @@ void DgnDbTable::ReplaceInvalidCharacters(Utf8StringR str, Utf8CP invalidChars, 
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDb::DgnDb() : m_schemaVersion(0,0,0,0), m_fonts(*this, DGN_TABLE_Font), m_domains(*this), m_styles(*this),
                  m_geomParts(*this), m_units(*this), m_models(*this), m_elements(*this), 
-                 m_links(*this), m_authorities(*this), m_ecsqlCache(50, "DgnDb"), m_searchableText(*this), m_revisionManager(nullptr)
+                 m_links(*this), m_authorities(*this), m_ecsqlCache(50, "DgnDb"), m_searchableText(*this), m_revisionManager(nullptr),
+                 m_queryModels(*this)
     {
     //
     }
@@ -50,6 +51,7 @@ DgnDb::DgnDb() : m_schemaVersion(0,0,0,0), m_fonts(*this, DGN_TABLE_Font), m_dom
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnDb::Destroy()
     {
+    m_queryModels.Terminate();
     m_models.Empty();
     m_txnManager = nullptr; // RefCountedPtr, deletes TxnManager
     if (nullptr != m_revisionManager)
@@ -299,10 +301,10 @@ DgnLineStyles& DgnStyles::LineStyles() {if (NULL == m_lineStyles) m_lineStyles =
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnScriptLibrary::RegisterScript(Utf8CP tsProgramName, Utf8CP tsProgramText, DgnScriptType stype, bool updateExisting)
+DgnDbStatus DgnScriptLibrary::RegisterScript(Utf8CP tsProgramName, Utf8CP tsProgramText, DgnScriptType stype, DateTime const& lastModifiedTime, bool updateExisting)
     {
     DbEmbeddedFileTable& files = GetDgnDb().EmbeddedFiles();
-    DbResult res = files.AddEntry(tsProgramName, (DgnScriptType::JavaScript == stype)? "js": "ts");
+    DbResult res = files.AddEntry(tsProgramName, (DgnScriptType::JavaScript == stype)? "js": "ts", nullptr, &lastModifiedTime);
     if (BE_SQLITE_OK != res)
         {
         if (!BeSQLiteLib::IsConstraintDbResult(res) || !updateExisting)
@@ -311,7 +313,7 @@ DgnDbStatus DgnScriptLibrary::RegisterScript(Utf8CP tsProgramName, Utf8CP tsProg
             }
         }
 
-    if (BE_SQLITE_OK != files.Save(tsProgramText, strlen(tsProgramText)+1, tsProgramName, true))
+    if (BE_SQLITE_OK != files.Save(tsProgramText, strlen(tsProgramText)+1, tsProgramName, &lastModifiedTime, true))
         return DgnDbStatus::SQLiteError;
     
     return DgnDbStatus::Success;
@@ -320,12 +322,12 @@ DgnDbStatus DgnScriptLibrary::RegisterScript(Utf8CP tsProgramName, Utf8CP tsProg
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnScriptLibrary::QueryScript(Utf8StringR sText, DgnScriptType& stypeFound, Utf8CP sName, DgnScriptType stypePreferred)
+DgnDbStatus DgnScriptLibrary::QueryScript(Utf8StringR sText, DgnScriptType& stypeFound, DateTime& lastModifiedTime, Utf8CP sName, DgnScriptType stypePreferred)
     {
     DbEmbeddedFileTable& files = GetDgnDb().EmbeddedFiles();
     uint64_t size;
     Utf8String ftype;
-    auto id = files.QueryFile(sName, &size, nullptr, nullptr, &ftype, nullptr);
+    auto id = files.QueryFile(sName, &size, nullptr, nullptr, &ftype, &lastModifiedTime);
     if (!id.IsValid())
         return DgnDbStatus::NotFound;
 

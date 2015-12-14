@@ -555,7 +555,7 @@ TEST_F(ChangeSummaryTestFixture, StructArrayChangesFromCurrentTransaction)
     m_testDb->SaveChanges();
 
     Statement stmt;
-    DbResult result = stmt.Prepare(*m_testDb, "UPDATE sc_AnglesStruct_Array SET Alpha=1, Beta=2, Theta=3 WHERE ECArrayIndex=2");
+    DbResult result = stmt.Prepare(*m_testDb, "UPDATE sc_AnglesStruct SET Alpha=1, Beta=2, Theta=3 WHERE ECArrayIndex=2");
     ASSERT_TRUE(BE_SQLITE_OK == result);
     result = stmt.Step();
     ASSERT_TRUE(BE_SQLITE_DONE == result);
@@ -575,7 +575,7 @@ TEST_F(ChangeSummaryTestFixture, StructArrayChangesFromCurrentTransaction)
     m_testDb->SaveChanges();
 
     stmt.Finalize();
-    result = stmt.Prepare(*m_testDb, "DELETE FROM sc_AnglesStruct_Array WHERE ECArrayIndex=2");
+    result = stmt.Prepare(*m_testDb, "DELETE FROM sc_AnglesStruct WHERE ECArrayIndex=2");
     ASSERT_TRUE(BE_SQLITE_OK == result);
     result = stmt.Step();
     ASSERT_TRUE(BE_SQLITE_DONE == result);
@@ -623,28 +623,6 @@ TEST_F(ChangeSummaryTestFixture, StructArrayChangesFromCurrentTransaction)
     EXPECT_TRUE(ChangeSummaryContainsInstance(changeSummary, instanceKey.GetECInstanceId(), "StartupCompany", "Foo", DbOpcode::Delete));
 
     m_testDb->SaveChanges();
-
-    ecSqlStmt.Finalize();
-    ecSqlStatus = ecSqlStmt.Prepare(*m_testDb, "INSERT INTO StartupCompany.AnglesStruct (Alpha,Beta,Theta) VALUES(1.1,2.2,3.3)");
-    ASSERT_TRUE(ECSqlStatus::Success == ecSqlStatus);
-    ECInstanceKey structInstanceKey;
-    stepStatus = ecSqlStmt.Step (structInstanceKey);
-    ASSERT_TRUE(BE_SQLITE_DONE == stepStatus);
-
-    GetChangeSummaryFromCurrentTransaction(changeSummary);
-
-    DumpChangeSummary(changeSummary, "ChangeSummary after inserting a plain struct that gets stored in a struct array table");
-
-    /*
-    ChangeSummary after inserting a plain struct that gets stored in a struct array table:
-    InstanceId;ClassId;ClassName;DbOpcode;Indirect
-    5;223;StartupCompany:AnglesStruct;Insert;No
-            Alpha;NULL;1.1
-            Beta;NULL;2.2
-            Theta;NULL;3.3
-    */
-    EXPECT_EQ(1, changeSummary.MakeInstanceIterator().QueryCount());
-    EXPECT_TRUE(ChangeSummaryContainsInstance(changeSummary, structInstanceKey.GetECInstanceId(), "StartupCompany", "AnglesStruct", DbOpcode::Insert));
     }
 
 //---------------------------------------------------------------------------------------
@@ -692,7 +670,7 @@ TEST_F(ChangeSummaryTestFixture, StructArrayChangesFromSavedTransactions)
     EXPECT_TRUE(ChangeSummaryContainsInstance(changeSummary, instanceKey.GetECInstanceId(), "StartupCompany", "Foo", DbOpcode::Insert));
 
     Statement stmt;
-    DbResult result = stmt.Prepare(*m_testDb, "UPDATE sc_AnglesStruct_Array SET Alpha=1, Beta=2, Theta=3 WHERE ECArrayIndex=2");
+    DbResult result = stmt.Prepare(*m_testDb, "UPDATE sc_AnglesStruct SET Alpha=1, Beta=2, Theta=3 WHERE ECArrayIndex=2");
     ASSERT_TRUE(BE_SQLITE_OK == result);
     result = stmt.Step();
     ASSERT_TRUE(BE_SQLITE_DONE == result);
@@ -717,7 +695,7 @@ TEST_F(ChangeSummaryTestFixture, StructArrayChangesFromSavedTransactions)
     EXPECT_TRUE(ChangeSummaryContainsInstance(changeSummary, instanceKey.GetECInstanceId(), "StartupCompany", "Foo", DbOpcode::Insert));
 
     stmt.Finalize();
-    result = stmt.Prepare(*m_testDb, "DELETE FROM sc_AnglesStruct_Array WHERE ECArrayIndex=2");
+    result = stmt.Prepare(*m_testDb, "DELETE FROM sc_AnglesStruct WHERE ECArrayIndex=2");
     ASSERT_TRUE(BE_SQLITE_OK == result);
     result = stmt.Step();
     ASSERT_TRUE(BE_SQLITE_DONE == result);
@@ -763,30 +741,6 @@ TEST_F(ChangeSummaryTestFixture, StructArrayChangesFromSavedTransactions)
     InstanceId;ClassId;ClassName;DbOpcode;IsIndirect
     */
     EXPECT_EQ(0, changeSummary.MakeInstanceIterator().QueryCount());
-
-    ecSqlStmt.Finalize();
-    ecSqlStatus = ecSqlStmt.Prepare(*m_testDb, "INSERT INTO StartupCompany.AnglesStruct (Alpha,Beta,Theta) VALUES(1.1,2.2,3.3)");
-    ASSERT_TRUE(ECSqlStatus::Success == ecSqlStatus);
-    ECInstanceKey structInstanceKey;
-    stepStatus = ecSqlStmt.Step(structInstanceKey);
-    ASSERT_TRUE(BE_SQLITE_DONE == stepStatus);
-
-    m_testDb->SaveChanges();
-
-    GetChangeSummaryFromSavedTransactions(changeSummary);
-
-    DumpChangeSummary(changeSummary, "ChangeSummary after inserting a plain struct that gets stored in a struct array table");
-
-    /*
-    ChangeSummary after inserting a plain struct that gets stored in a struct array table:
-    InstanceId;ClassId;ClassName;DbOpcode;Indirect
-    5;223;StartupCompany:AnglesStruct;Insert;No
-            Alpha;NULL;1.1
-            Beta;NULL;2.2
-            Theta;NULL;3.3
-    */
-    EXPECT_EQ(1, changeSummary.MakeInstanceIterator().QueryCount());
-    EXPECT_TRUE(ChangeSummaryContainsInstance(changeSummary, structInstanceKey.GetECInstanceId(), "StartupCompany", "AnglesStruct", DbOpcode::Insert));
     }
 
 //---------------------------------------------------------------------------------------
@@ -1390,6 +1344,8 @@ TEST_F(ChangeSummaryTestFixture, QueryMultipleSessions)
     ChangeSummary changeSummary(*m_testDb);
     DgnDbStatus status = m_testDb->Txns().GetChangeSummary(changeSummary, startTxnId);
     ASSERT_TRUE(status == DgnDbStatus::Success);
+
+    DumpChangeSummary(changeSummary, "ChangeSummary after multiple sessions");
 
     ECSqlStatement stmt;
     Utf8CP ecsql = "SELECT COUNT(*) FROM dgn.Element el WHERE IsChangedInstance(?, el.GetECClassId(), el.ECInstanceId)";

@@ -1801,7 +1801,7 @@ BentleyStatus   RegionGraphicsContext::PopulateGraph(DgnViewportP vp, DgnElement
         }
     else
         {
-        VisitAllViewElements(false, NULL);
+        VisitAllViewElements();
         }
 
     Detach();

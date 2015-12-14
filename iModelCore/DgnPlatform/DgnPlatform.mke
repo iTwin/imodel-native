@@ -11,6 +11,16 @@
 #----------------------------------------------------------
 %include  mdl.mki
 
+# Need to ignore this because it's in Vancouver's header files.
+%if defined(MSVC_VERSION)
+%if MSVC_VERSION >= 1900
+    # C4312: 'type cast': conversion from '...' to '...' of greater size
+    CCompOpts + -wd4312
+
+    # C4091: '... ': ignored on left of '...' when no variable is declared
+    CCompOpts + -wd4091
+%endif
+%endif
 
 #-----------------------------------------------------------
 # Root DgnPlatform directory
@@ -163,6 +173,8 @@ $(CoreObjs)DgnElement$(oext) :                      $(DgnCoreDir)DgnElement.cpp 
 
 $(CoreObjs)DgnModel$(oext) :                        $(DgnCoreDir)DgnModel.cpp ${MultiCompileDepends} $(DgnFileIOPubH) $(DgnPlatformAPISrc)ScanCriteria.h
 
+$(CoreObjs)ComponentModel$(oext) :                  $(DgnCoreDir)ComponentModel.cpp ${MultiCompileDepends} $(DgnFileIOPubH) $(DgnPlatformAPISrc)ScanCriteria.h
+
 $(CoreObjs)UnitDefinition$(oext) :                  $(DgnCoreDir)UnitDefinition.cpp ${MultiCompileDepends} $(DgnFileIOPubH)
 
 $(CoreObjs)TxnManager$(oext) :                      $(DgnCoreDir)TxnManager.cpp $(DgnPlatformAPISrc)TxnManager.h ${MultiCompileDepends}
@@ -173,7 +185,7 @@ $(CoreObjs)MemoryManager$(oext) :                   $(DgnCoreDir)MemoryManager.c
 
 $(CoreObjs)ElementDependencyGraph$(oext) :          $(DgnCoreDir)ElementDependencyGraph.cpp $(DgnPlatformAPISrc)TxnManager.h ${MultiCompileDepends}
 
-$(coreObjs)LocksManager$(oext): $(DgnCoreDir)LocksManager.cpp $(DgnPlatformAPISrc)LocksManager.h ${MultiCompileDepends}
+$(coreObjs)LocksManager$(oext):                     $(DgnCoreDir)LocksManager.cpp $(DgnPlatformAPISrc)LocksManager.h ${MultiCompileDepends}
 
 $(CoreObjs)LsName$(oext) :                          $(lineStyleDir)LsName.cpp $(LsLocalDepends) ${MultiCompileDepends}
 
@@ -240,8 +252,6 @@ $(CoreObjs)DgnCore$(oext) :                         $(DgnCoreDir)DgnCore.cpp $(D
 $(CoreObjs)HandlerTypeInfo$(oext) :                 $(DgnCoreDir)HandlerTypeInfo.cpp $(contextDepends) $(HandlerDepends) ${MultiCompileDepends}
 
 $(CoreObjs)ViewContext$(oext) :                     $(DgnCoreDir)ViewContext.cpp $(contextDepends) $(HandlerDepends) $(DgnPlatformAPISrc)DgnModel.h $(DgnPlatformAPISrc)ScanCriteria.h $(DgnCoreDir)UpdateLogging.h ${MultiCompileDepends}
-
-$(CoreObjs)SymbolContext$(oext) :                   $(DgnCoreDir)SymbolContext.cpp   $(contextDepends) $(HandlerDepends) $(DgnPlatformAPISrc)DgnModel.h  $(LevelApiDepends) ${MultiCompileDepends}
 
 $(CoreObjs)RangeContext$(oext) :                    $(DgnCoreDir)RangeContext.cpp $(DgnPlatformAPISrc)NullContext.h $(DgnPlatformAPISrc)SimplifyGraphic.h $(HandlerDepends) ${MultiCompileDepends}
 
@@ -317,6 +327,8 @@ $(CoreObjs)DgnLight$(oext) :                        $(DgnCoreDir)DgnLight.cpp $(
 
 $(CoreObjs)DgnView$(oext) :                         $(DgnCoreDir)DgnView.cpp $(DgnPlatformAPISrc)DgnDb.h $(DgnPlatformAPISrc)DgnView.h ${MultiCompileDepends}
 
+$(CoreObjs)ViewAttachment$(oext) :                  $(DgnCoreDir)ViewAttachment.cpp $(DgnPlatformAPISrc)ViewAttachment.h ${MultiCompileDepends}
+
 $(CoreObjs)DgnTexture$(oext) :                      $(DgnCoreDir)DgnTexture.cpp $(DgnPlatformAPISrc)DgnDbTables.h ${MultiCompileDepends}
 
 $(CoreObjs)DgnAuthority$(oext) :                    $(DgnCoreDir)DgnAuthority.cpp $(DgnPlatformAPISrc)DgnDbTables.h ${MultiCompileDepends}
@@ -339,6 +351,8 @@ $(CoreObjs)DgnLink$(oext) :                         $(DgnCoreDir)DgnLink.cpp $(D
 
 $(CoreObjs)DgnBaseDomain$(oext) :                   $(DgnCoreDir)DgnBaseDomain.cpp ${MultiCompileDepends}
 
+$(CoreObjs)VolumeElement$(oext) :                   $(DgnCoreDir)VolumeElement.cpp $(DgnPlatformAPISrc)VolumeElement.h ${MultiCompileDepends}
+
 $(CoreObjs)DgnHandlers$(oext) :                     $(DgnHandlersDir)DgnHandlers.cpp $(DgnPlatformPublicAPISrc)DgnPlatform/DgnPlatformLib.h ${MultiCompileDepends}
 
 $(CoreObjs)HitDetail$(oext) :                       $(DgnHandlersDir)HitDetail.cpp $(HandlerDepends) ${MultiCompileDepends}
@@ -349,14 +363,13 @@ $(CoreObjs)RegionUtil$(oext) :                      $(DgnHandlersDir)RegionUtil.
 
 $(CoreObjs)ScopedDgnHost$(oext) :                   $(DgnHandlersDir)ScopedDgnHost.cpp  ${MultiCompileDepends}
 
-$(CoreObjs)NamedVolume$(oext) :                     $(DgnHandlersDir)NamedVolume.cpp $(DgnPlatformAPISrc)NamedVolume.h ${MultiCompileDepends}
-
 $(CoreObjs)DgnChangeSummary$(oext) :                $(DgnHandlersDir)DgnChangeSummary.cpp $(DgnPlatformAPISrc)DgnChangeSummary.h ${MultiCompileDepends}
 
 $(CoreObjs)DgnECSymbolProvider$(oext) :             $(DgnHandlersDir)DgnECSymbolProvider.cpp $(DgnPlatformAPISrc)DgnECSymbolProvider.h ${MultiCompileDepends}
 
 $(coreObjs)AnnotationTable$(oext) :                 $(DgnCoreDir)AnnotationTable.cpp $(DgnPlatformAPISrc)AnnotationTable.h ${MultiCompileDepends}
 
+$(coreObjs)AnnotationTableStroker$(oext) :          $(DgnCoreDir)AnnotationTableStroker.cpp $(DgnPlatformAPISrc)AnnotationTable.h ${MultiCompileDepends}
 
 $(o)ECUtils$(oext) :                                $(DgnCoreDir)ECUtils.cpp $(DgnPlatformAPISrc)ECUtils.h ${MultiCompileDepends}
 
@@ -423,6 +436,12 @@ $(o)GeomJsApiCallbacks$(oext) :                     $(dgnScriptGen)GeomJsApiCall
 %else
 
 $(o)DgnScriptStubbedOut$(oext) :                    $(dgnScriptDir)DgnScriptStubbedOut.cpp $(DgnPlatformAPISrc)DgnScript.h ${MultiCompileDepends}
+
+%endif
+
+%if $(TARGET_PLATFORM) == "Windows"
+
+$(o)w32tools$(oext) :                               $(ToolsDir)nonport/winnt/w32tools.cpp  ${MultiCompileDepends}
 
 %endif
 

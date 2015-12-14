@@ -8,6 +8,7 @@
 #include "DgnHandlersTests.h"
 #include <DgnPlatform/DgnDbTables.h>
 #include <DgnPlatform/AnnotationTable.h>
+#include <ECObjects/DesignByContract.h>
 
 USING_NAMESPACE_BENTLEY_SQLITE
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
@@ -206,6 +207,30 @@ void SetUp () override
 
     m_modelId = model->GetModelId();
     ASSERT_TRUE(m_modelId.IsValid());
+
+#define WANT_VIEW
+#if defined (WANT_VIEW)
+    // This is only here to aid in debugging so you can open the file in a viewer and see the element you just created.
+    //.........................................................................................
+    DrawingViewDefinition view(DrawingViewDefinition::CreateParams(GetDgnDb(), "AnnotationTableTest",
+                ViewDefinition::Data(m_modelId, DgnViewSource::Generated)));
+    EXPECT_TRUE(view.Insert().IsValid());
+
+    DRange3d  madeUpRange = DRange3d::From (DPoint3d::From(-10.0, -10.0, -10.0), DPoint3d::From(10.0, 10.0, 10.0));
+
+    ViewController::MarginPercent viewMargin(0.1, 0.1, 0.1, 0.1);
+
+    DrawingViewController viewController(GetDgnDb(), view.GetViewId());
+    viewController.SetStandardViewRotation(StandardView::Top);
+    viewController.LookAtVolume(madeUpRange, nullptr, &viewMargin);
+    //viewController.LookAtVolume(insertedAnnotationElement->CalculateRange3d(), nullptr, &viewMargin);
+    viewController.GetViewFlagsR().SetRenderMode(RenderMode::Wireframe);
+    viewController.ChangeCategoryDisplay(m_categoryId, true);
+    viewController.ChangeModelDisplay(m_modelId, true);
+
+    EXPECT_TRUE(BE_SQLITE_OK == viewController.Save());
+    GetDgnDb().SaveSettings();
+#endif
     }
 
 DgnDbR                  GetDgnDb()              { return *T_Super::GetDgnDb(); }
@@ -372,9 +397,8 @@ TEST_F (AnnotationTableTest, BasicPersist)
 
     DgnElementId elementId = CreateBasicTablePersisted (numRows, numCols);
 
-    // Shutdown and reopen the project so that we don't get a cached element.
-    CloseTestFile();
-    ReopenTestFile();
+    // Purge the cache so that we don't get a cached element.
+    GetDgnDb().Elements().Purge(0);
 
     AnnotationTableElementCPtr readTableElement = AnnotationTableElement::Get(GetDgnDb(), elementId);
     ASSERT_TRUE(readTableElement.IsValid());
@@ -398,9 +422,8 @@ TEST_F (AnnotationTableTest, PersistTwoTables)
     DgnElementId elementId1 = CreateBasicTablePersisted (numRows1, numCols1);
     DgnElementId elementId2 = CreateBasicTablePersisted (numRows2, numCols2);
 
-    // Shutdown and reopen the project so that we don't get a cached element.
-    CloseTestFile();
-    ReopenTestFile();
+    // Purge the cache so that we don't get a cached element.
+    GetDgnDb().Elements().Purge(0);
 
     AnnotationTableElementCPtr readTableElement = AnnotationTableElement::Get(GetDgnDb(), elementId1);
     ASSERT_TRUE(readTableElement.IsValid());
@@ -464,9 +487,8 @@ TEST_F (AnnotationTableTest, PersistRowAndColumnAspects)
     tableElement1 = nullptr;
     tableElement2 = nullptr;
 
-    // Shutdown and reopen the project so that we don't get a cached element.
-    CloseTestFile();
-    ReopenTestFile();
+    // Purge the cache so that we don't get a cached element.
+    GetDgnDb().Elements().Purge(0);
 
     AnnotationTableElementCPtr readTableElement = AnnotationTableElement::Get(GetDgnDb(), elementId1);
     ASSERT_TRUE(readTableElement.IsValid());
@@ -574,9 +596,13 @@ public:
         AddTableToDb (*seedTable);
         seedTable = nullptr;
 
-        // Shutdown and reopen the project so that we don't get a cached element.
+#if defined (FOR_DEBUGGING)
+        // Put a break point on Reopen in order to open the file in an viewing application
         CloseTestFile();
         ReopenTestFile();
+#endif
+        // Purge the cache so that we don't get a cached element.
+        GetDgnDb().Elements().Purge(0);
 
         AnnotationTableElementCPtr    foundTable;
 
@@ -596,8 +622,16 @@ public:
         AddTableToDb (*seedTable);
         seedTable = nullptr;
 
-//CloseTestFile();
-//ReopenTestFile();
+#if defined (FOR_DEBUGGING)
+// Put a break point on Reopen in order to open the file in an viewing application
+CloseTestFile();
+ReopenTestFile();
+#endif
+
+#if defined (FOR_DEBUGGING)
+// Purge the cache so that we don't get a cached element.
+GetDgnDb().Elements().Purge(0);
+#endif
 
         AnnotationTableElementPtr        applyActionTable;
 
@@ -609,9 +643,13 @@ public:
         UpdateTableInDb (*applyActionTable);
         applyActionTable = nullptr;
 
-        // Shutdown and reopen the project so that we don't get a cached element.
+#if defined (FOR_DEBUGGING)
+        // Put a break point on Reopen in order to open the file in an viewing application
         CloseTestFile();
         ReopenTestFile();
+#endif
+        // Purge the cache so that we don't get a cached element.
+        GetDgnDb().Elements().Purge(0);
 
         AnnotationTableElementCPtr    postActionTable;
 
@@ -913,13 +951,9 @@ public:
         {
         AnnotationTableCellP  foundCell = table.GetCell (m_cellIndex);
         AnnotationTextBlockCP foundTextBlock = foundCell->GetTextBlock();
-#if defined (NEEDSWORK)
         Utf8String            foundString = foundTextBlock->ToString();
-        
+
         EXPECT_STREQ (m_applyString.c_str(), foundString.c_str());
-#else
-        EXPECT_TRUE (nullptr != foundTextBlock);
-#endif
 
         AnnotationTableCellIndex  anotherCell (m_cellIndex.row - 1, m_cellIndex.col - 1);
         foundCell = table.GetCell (anotherCell);
@@ -2015,9 +2049,6 @@ public:
         AnnotationTableElement::CreateParams    createParams (db, mid, AnnotationTableElement::QueryClassId(db), cid);
         table = AnnotationTableElement::Create (numRows, numCols, tsid, 0, createParams);
 
-        for (uint32_t iRow = 0; iRow < table->GetRowCount(); ++iRow)
-            table->GetRow(iRow)->SetHeight(10.0);
-
         return true;
         }
 
@@ -2167,7 +2198,7 @@ public:
         {
         AnnotationTableTest::VerifyCellsWithMergeBlocks (table, m_expectedMerges);
 
-        ExpectedAspectCounts expectedCounts (table.GetRowCount(), 0, 0, (uint32_t) m_expectedMerges.size());
+        ExpectedAspectCounts expectedCounts (0, 0, 0, (uint32_t) m_expectedMerges.size());
         expectedCounts.VerifyCounts(table);
         }
 };
@@ -2301,15 +2332,76 @@ struct EdgeColorSetter
 /*=================================================================================**//**
 * @bsistruct
 +===============+===============+===============+===============+===============+======*/
+struct ExpectedEdgeColor
+{
+uint32_t        m_columnIndex;
+ColorDef        m_color;
+bool            m_isGap;
+
+/* ctor  */ ExpectedEdgeColor (uint32_t i, ColorDef v) : m_columnIndex(i), m_color (v), m_isGap (false) {}
+/* ctor  */ ExpectedEdgeColor (uint32_t i)             : m_columnIndex(i), m_isGap (true) {}
+};
+
+typedef bvector<ExpectedEdgeColor> ExpectedEdgeColors;
+
+/*=================================================================================**//**
+* @bsistruct
++===============+===============+===============+===============+===============+======*/
+struct EdgeColorVerifier
+{
+bool                        m_top;
+uint32_t                    m_rowIndex;
+ExpectedEdgeColors const&   m_expectedColors;
+
+/* ctor */ EdgeColorVerifier (bvector<ExpectedEdgeColor> const& e, uint32_t rowIndex, bool top) : m_rowIndex (rowIndex), m_expectedColors (e), m_top (top) {}
+
+void VerifyColors (AnnotationTableElementCR table)
+    {
+    // The test is responsible for providing an entry for every column
+    if (m_expectedColors.size() != table.GetColumnCount())
+        { FAIL(); return; }
+
+    TableCellListEdges edges = m_top ? TableCellListEdges::Top : TableCellListEdges::Bottom;
+
+    // Verify expected color for each cell in the row.
+    for (uint32_t colIndex = 0; colIndex < table.GetColumnCount(); colIndex++)
+        {
+        AnnotationTableCellIndex                cellIndex(m_rowIndex, colIndex);
+
+        if (nullptr == table.GetCell (cellIndex))
+            {
+            EXPECT_TRUE (m_expectedColors[colIndex].m_isGap) << "Expected a gap for column " << colIndex;
+            continue;
+            }
+
+        bvector<AnnotationTableCellIndex>       cells;
+        cells.push_back (cellIndex);
+
+        bvector<AnnotationTableSymbologyValues> symbologies;
+        table.GetEdgeSymbology (symbologies, edges, cells);
+
+        EXPECT_TRUE (1 == symbologies.size());
+        EXPECT_TRUE (symbologies[0].HasLineColor());
+
+        ColorDef expectedColor = m_expectedColors[colIndex].m_color;
+        EXPECT_EQ (expectedColor, symbologies[0].GetLineColor()) << "Unexpected color for column " << colIndex;
+        }
+    }
+};
+
+/*=================================================================================**//**
+* @bsistruct
++===============+===============+===============+===============+===============+======*/
 struct SetEdgeColorAction : AnnotationTableTestAction
 {
 private:
-    ColorDef        m_colorVal;
-    uint32_t        m_rowIndex;
-    uint32_t        m_colStartIndex;
-    uint32_t        m_numCols;
-    bool            m_top;
-    uint32_t        m_expectedRunCount;
+    ColorDef            m_colorVal;
+    uint32_t            m_rowIndex;
+    uint32_t            m_colStartIndex;
+    uint32_t            m_numCols;
+    bool                m_top;
+    uint32_t            m_expectedRunCount;
+    ExpectedEdgeColors  m_expectedColors;
 
 public:
     /* ctor */  SetEdgeColorAction (ColorDefCR color, uint32_t row, uint32_t colStart, uint32_t numCols, bool top) : m_colorVal (color), m_rowIndex (row), m_colStartIndex (colStart), m_numCols (numCols), m_top (top) {}
@@ -2321,9 +2413,19 @@ public:
     +---------------+---------------+---------------+---------------+---------------+------*/
     void    _DoAction (AnnotationTableElementR table) override
         {
-        EdgeColorSetter setter (table, m_rowIndex, ColorDef::Yellow());
+        EdgeColorSetter setter (table, m_rowIndex, m_colorVal);
 
         setter.SetColor (m_colStartIndex, m_numCols, m_top);
+
+        for (uint32_t iCol = 0; iCol < table.GetColumnCount(); iCol++)
+            {
+            ColorDef    expectedColor;
+
+            if (iCol >= m_colStartIndex && iCol < m_colStartIndex + m_numCols)
+                expectedColor = m_colorVal;
+
+            m_expectedColors.push_back (ExpectedEdgeColor (iCol, expectedColor));
+            }
         }
 
     /*---------------------------------------------------------------------------------**//**
@@ -2331,6 +2433,9 @@ public:
     +---------------+---------------+---------------+---------------+---------------+------*/
     void    _VerifyAction (AnnotationTableElementCR table) const override
         {
+        EdgeColorVerifier verifier (m_expectedColors, m_rowIndex, m_top);
+        verifier.VerifyColors (table);
+
         ExpectedAspectCounts expectedCounts;
         expectedCounts.AddEntry (DGN_TABLE(DGN_CLASSNAME_AnnotationTableSymbology), 2);
         expectedCounts.AddEntry (DGN_TABLE(DGN_CLASSNAME_AnnotationTableEdgeRun),   m_expectedRunCount);
@@ -2459,8 +2564,9 @@ TEST_F (AnnotationTableActionTest, Modify_SetEdgeColorAtEnd)
 struct MergeAdjacentEdgeRunsAction : AnnotationTableTestAction
 {
 private:
-    uint32_t      m_rowIndex;
-    ColorDef      m_colorVal;
+    uint32_t            m_rowIndex;
+    ColorDef            m_colorVal;
+    ExpectedEdgeColors  m_expectedColors;
 
 public:
     /* ctor */  MergeAdjacentEdgeRunsAction () : m_rowIndex(0), m_colorVal(ColorDef::Green()) {}
@@ -2487,6 +2593,10 @@ public:
         // |oooo|oooo|----|
         setter.SetColor (2, 1, true);
         // |oooo|oooo|oooo|
+
+        m_expectedColors.push_back (ExpectedEdgeColor (0, m_colorVal));
+        m_expectedColors.push_back (ExpectedEdgeColor (1, m_colorVal));
+        m_expectedColors.push_back (ExpectedEdgeColor (2, m_colorVal));
         }
 
     /*---------------------------------------------------------------------------------**//**
@@ -2494,6 +2604,9 @@ public:
     +---------------+---------------+---------------+---------------+---------------+------*/
     void    _VerifyAction (AnnotationTableElementCR table) const override
         {
+        EdgeColorVerifier verifier (m_expectedColors, m_rowIndex, true);
+        verifier.VerifyColors (table);
+
         ExpectedAspectCounts expectedCounts;
         expectedCounts.AddEntry (DGN_TABLE(DGN_CLASSNAME_AnnotationTableSymbology), 2);
         expectedCounts.AddEntry (DGN_TABLE(DGN_CLASSNAME_AnnotationTableEdgeRun),   1);
@@ -2526,8 +2639,9 @@ TEST_F (AnnotationTableActionTest, Modify_MergeAdjacentEdgeRuns)
 struct MergeNonAdjacentEdgeRunsAction : AnnotationTableTestAction
 {
 private:
-    uint32_t      m_rowIndex;
-    ColorDef      m_colorVal;
+    uint32_t            m_rowIndex;
+    ColorDef            m_colorVal;
+    ExpectedEdgeColors  m_expectedColors;
 
 public:
     /* ctor */  MergeNonAdjacentEdgeRunsAction () : m_rowIndex(0), m_colorVal(ColorDef::Green()) {}
@@ -2555,6 +2669,10 @@ public:
         // |oooo|----|oooo|
         setter.SetColor (1, 1, true);
         // |oooo|oooo|oooo|
+
+        m_expectedColors.push_back (ExpectedEdgeColor (0, m_colorVal));
+        m_expectedColors.push_back (ExpectedEdgeColor (1, m_colorVal));
+        m_expectedColors.push_back (ExpectedEdgeColor (2, m_colorVal));
         }
 
     /*---------------------------------------------------------------------------------**//**
@@ -2562,6 +2680,9 @@ public:
     +---------------+---------------+---------------+---------------+---------------+------*/
     void    _VerifyAction (AnnotationTableElementCR table) const override
         {
+        EdgeColorVerifier verifier (m_expectedColors, m_rowIndex, true);
+        verifier.VerifyColors (table);
+
         ExpectedAspectCounts expectedCounts;
         expectedCounts.AddEntry (DGN_TABLE(DGN_CLASSNAME_AnnotationTableSymbology), 2);
         expectedCounts.AddEntry (DGN_TABLE(DGN_CLASSNAME_AnnotationTableEdgeRun),   1);
@@ -2594,8 +2715,9 @@ TEST_F (AnnotationTableActionTest, Modify_MergeNonAdjacentEdgeRuns)
 struct DeleteColumnJoinsEdgeRunsAction : AnnotationTableTestAction
 {
 private:
-    uint32_t      m_rowIndex;
-    ColorDef      m_colorVal;
+    uint32_t            m_rowIndex;
+    ColorDef            m_colorVal;
+    ExpectedEdgeColors  m_expectedColors;
 
 public:
     /* ctor */  DeleteColumnJoinsEdgeRunsAction () : m_rowIndex(2), m_colorVal(ColorDef::Green()) {}
@@ -2621,6 +2743,9 @@ public:
         // |oooo|----|oooo|
         table.DeleteColumn (1);
         // |oooo|oooo|
+
+        m_expectedColors.push_back (ExpectedEdgeColor (0, m_colorVal));
+        m_expectedColors.push_back (ExpectedEdgeColor (1, m_colorVal));
         }
 
     /*---------------------------------------------------------------------------------**//**
@@ -2628,12 +2753,14 @@ public:
     +---------------+---------------+---------------+---------------+---------------+------*/
     void    _VerifyAction (AnnotationTableElementCR table) const override
         {
+        EdgeColorVerifier verifier (m_expectedColors, m_rowIndex, true);
+        verifier.VerifyColors (table);
+
         ExpectedAspectCounts expectedCounts;
         expectedCounts.AddEntry (DGN_TABLE(DGN_CLASSNAME_AnnotationTableSymbology), 2);
         expectedCounts.AddEntry (DGN_TABLE(DGN_CLASSNAME_AnnotationTableEdgeRun),   1);
         expectedCounts.VerifyCounts(table);
         }
-
 };
 
 /*---------------------------------------------------------------------------------**//**
@@ -2660,9 +2787,10 @@ TEST_F (AnnotationTableActionTest, Modify_DeleteColumnJoinsEdgeRuns)
 struct DeleteColumnRemovesSymbologyEntryAction : AnnotationTableTestAction
 {
 private:
-    uint32_t      m_rowIndex;
-    uint32_t      m_colIndex;
-    ColorDef      m_colorVal;
+    uint32_t            m_rowIndex;
+    uint32_t            m_colIndex;
+    ColorDef            m_colorVal;
+    ExpectedEdgeColors  m_expectedColors;
 
 public:
     /* ctor */  DeleteColumnRemovesSymbologyEntryAction () : m_rowIndex(2), m_colIndex(1), m_colorVal(ColorDef::Green()) {}
@@ -2687,6 +2815,9 @@ public:
         // |----|oooo|----|
         table.DeleteColumn (m_colIndex);
         // |----|----|
+
+        m_expectedColors.push_back (ExpectedEdgeColor (0, table.GetDefaultLineColor()));
+        m_expectedColors.push_back (ExpectedEdgeColor (1, table.GetDefaultLineColor()));
         }
 
     /*---------------------------------------------------------------------------------**//**
@@ -2694,9 +2825,11 @@ public:
     +---------------+---------------+---------------+---------------+---------------+------*/
     void    _VerifyAction (AnnotationTableElementCR table) const override
         {
+        EdgeColorVerifier verifier (m_expectedColors, m_rowIndex, true);
+        verifier.VerifyColors (table);
+
         ExpectedAspectCounts expectedCounts;
         // empty - we added symbology and an edge run, but then deleted the colum which used them.
-
         expectedCounts.VerifyCounts(table);
         }
 
@@ -2726,9 +2859,10 @@ TEST_F (AnnotationTableActionTest, Modify_DeleteColumnRemovesSymbologyEntry)
 struct InsertColumnExtendsSymbologyAction : AnnotationTableTestAction
 {
 private:
-    uint32_t      m_rowIndex;
-    uint32_t      m_colIndex;
-    ColorDef      m_colorVal;
+    uint32_t            m_rowIndex;
+    uint32_t            m_colIndex;
+    ColorDef            m_colorVal;
+    ExpectedEdgeColors  m_expectedColors;
 
 public:
     /* ctor */  InsertColumnExtendsSymbologyAction () : m_rowIndex(2), m_colIndex(1), m_colorVal(ColorDef::Green()) {}
@@ -2751,8 +2885,13 @@ public:
     void    _DoAction (AnnotationTableElementR table) override
         {
         // |----|oooo|----|
-        table.InsertColumn (m_colIndex - 1, TableInsertDirection::After);
+        table.InsertColumn (m_colIndex, TableInsertDirection::After);
         // |----|oooo|oooo|----|
+
+        m_expectedColors.push_back (ExpectedEdgeColor (0, table.GetDefaultLineColor()));
+        m_expectedColors.push_back (ExpectedEdgeColor (1, m_colorVal));
+        m_expectedColors.push_back (ExpectedEdgeColor (2, m_colorVal));
+        m_expectedColors.push_back (ExpectedEdgeColor (3, table.GetDefaultLineColor()));
         }
 
     /*---------------------------------------------------------------------------------**//**
@@ -2760,6 +2899,9 @@ public:
     +---------------+---------------+---------------+---------------+---------------+------*/
     void    _VerifyAction (AnnotationTableElementCR table) const override
         {
+        EdgeColorVerifier verifier (m_expectedColors, m_rowIndex, true);
+        verifier.VerifyColors (table);
+
         ExpectedAspectCounts expectedCounts;
         expectedCounts.AddEntry (DGN_TABLE(DGN_CLASSNAME_AnnotationTableSymbology), 2);
         expectedCounts.AddEntry (DGN_TABLE(DGN_CLASSNAME_AnnotationTableEdgeRun),   3);
@@ -2783,6 +2925,262 @@ TEST_F (AnnotationTableActionTest, Create_InsertColumnExtendsSymbology)
 TEST_F (AnnotationTableActionTest, Modify_InsertColumnExtendsSymbology)
     {
     InsertColumnExtendsSymbologyAction   testAction;
+    DoModifyTableTest (testAction);
+    }
+
+/*=================================================================================**//**
+* @bsistruct
++===============+===============+===============+===============+===============+======*/
+struct InsertColumnNearGapAction : AnnotationTableTestAction
+{
+public:
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    04/14
++---------------+---------------+---------------+---------------+---------------+------*/
+enum class InsertTarget
+    {
+    ColumnBefore    = 1,    // Insert a column before the merge block
+    ColumnJustBefore= 2,    // Insert a column immediately before the rootIndex of the merge block
+    ColumnInterior  = 3,    // Insert a column that intersects the merge block
+    ColumnJustAfter = 4,    // Insert a column immediately after the last column of the merge block
+    ColumnAfter     = 5,    // Insert a column after the merge block
+    };
+
+private:
+        AnnotationTableCellIndex                    m_rootIndex;
+        uint32_t                                    m_rowSpan;
+        uint32_t                                    m_colSpan;
+        InsertTarget                                m_insertTarget;
+
+        uint32_t                                    m_rowIndex;
+        ColorDef                                    m_colorA;
+        ColorDef                                    m_colorB;
+
+        uint32_t                                    m_expectedMergeCount;
+        uint32_t                                    m_expectedRunCount;
+        ExpectedEdgeColors                          m_expectedColors;
+
+public:
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod                                                    JoshSchifter    04/14
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    /* ctor */  InsertColumnNearGapAction (InsertTarget insertTarget)
+        :
+        m_rootIndex (1, 1),
+        m_rowSpan(2),
+        m_colSpan(2),
+        m_rowIndex(2),
+        m_colorA(ColorDef::Green()),
+        m_colorB(ColorDef::Yellow()),
+        m_insertTarget (insertTarget),
+        m_expectedMergeCount (0)
+        {}
+
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod                                                    JoshSchifter    04/14
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    bool    _CreateTable (AnnotationTableElementPtr& table, DgnDbR db, DgnModelId mid, DgnCategoryId cid, DgnElementId textStyleId) override
+        {
+        uint32_t          numRows  = 4;
+        uint32_t          numCols  = 4;
+
+        // We want a table big enough that the merge block isn't on the edges.  So that
+        // we can insert and delete rows/cols before and after the merge.
+        AnnotationTableElement::CreateParams    createParams (db, mid, AnnotationTableElement::QueryClassId(db), cid);
+        table = AnnotationTableElement::Create (numRows, numCols, textStyleId, 0, createParams);
+
+        return true;
+        }
+
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod                                                    JoshSchifter    04/14
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    void    _PreAction (AnnotationTableElementR table) override
+        {
+        table.MergeCells (m_rootIndex, m_rowSpan, m_colSpan);
+
+        EdgeColorSetter setterA (table, m_rowIndex, m_colorA);
+        // |----|         |----|
+        setterA.SetColor (0, 1, true);
+        // |AAAA|         |----|
+
+        EdgeColorSetter setterB (table, m_rowIndex, m_colorB);
+        // |----|         |----|
+        setterB.SetColor (3, 1, true);
+        // |AAAA|         |BBBB|
+
+        //       0     1     2     3  
+        //    |-----------------------|
+        //  0 |     |     |     |     |
+        //    |-----+-----+-----+-----|
+        //  1 |     |           |     |
+        //    |AAAAA+           +BBBBB|
+        //  2 |     |           |     |
+        //    |-----+-----+-----+-----|
+        //  3 |     |     |     |     |
+        //    |-----+-----+-----+-----|
+
+        m_expectedMergeCount = 1;
+        }
+
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod                                                    JoshSchifter    04/14
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    void    _DoAction (AnnotationTableElementR table) override
+        {
+        ExpectedAspectCounts expectedCounts;
+        expectedCounts.AddEntry (DGN_TABLE(DGN_CLASSNAME_AnnotationTableSymbology), 3);
+        expectedCounts.AddEntry (DGN_TABLE(DGN_CLASSNAME_AnnotationTableEdgeRun),   2);
+        expectedCounts.AddEntry (DGN_TABLE(DGN_CLASSNAME_AnnotationTableMerge),     1);
+        expectedCounts.VerifyCounts(table);
+
+
+        // This action is essentially the same as InsertMergedCellsAction, but the verification
+        // is concentrated on the edge runs for row 1 which crosses the gap rather than the merges.
+
+        switch (m_insertTarget)
+            {
+            case InsertTarget::ColumnBefore:
+                {
+                // Add a column before the column that's before the merge.
+                table.InsertColumn (m_rootIndex.col - 1, TableInsertDirection::Before);
+
+                // Expect the merge to move right by one column.
+                m_expectedColors.push_back (ExpectedEdgeColor (0, m_colorA));
+                m_expectedColors.push_back (ExpectedEdgeColor (1, m_colorA));
+                m_expectedColors.push_back (ExpectedEdgeColor (2)); // gap
+                m_expectedColors.push_back (ExpectedEdgeColor (3)); // gap
+                m_expectedColors.push_back (ExpectedEdgeColor (4, m_colorB));
+
+                break;
+                }
+            case InsertTarget::ColumnJustBefore:
+                {
+                // Add a column immediately before the merge.
+                table.InsertColumn (m_rootIndex.col, TableInsertDirection::Before);
+
+                // Expect a new merge since the cells were merged in the seed column.
+                m_expectedMergeCount++;
+
+                // Also expect the original merge to move right by one column.
+                m_expectedColors.push_back (ExpectedEdgeColor (0, m_colorA));
+                m_expectedColors.push_back (ExpectedEdgeColor (1)); // gap
+                m_expectedColors.push_back (ExpectedEdgeColor (2)); // gap
+                m_expectedColors.push_back (ExpectedEdgeColor (3)); // gap
+                m_expectedColors.push_back (ExpectedEdgeColor (4, m_colorB));
+
+                break;
+                }
+            case InsertTarget::ColumnInterior:
+                {
+                // Add the row within the merge.
+                table.InsertColumn (m_rootIndex.col, TableInsertDirection::After);
+
+                // Expect the merge to grow by one column.
+                m_expectedColors.push_back (ExpectedEdgeColor (0, m_colorA));
+                m_expectedColors.push_back (ExpectedEdgeColor (1)); // gap
+                m_expectedColors.push_back (ExpectedEdgeColor (2)); // gap
+                m_expectedColors.push_back (ExpectedEdgeColor (3)); // gap
+                m_expectedColors.push_back (ExpectedEdgeColor (4, m_colorB));
+
+                break;
+                }
+            case InsertTarget::ColumnJustAfter:
+                {
+                // Add a column immediately after the merge.
+                table.InsertColumn (m_rootIndex.col + m_colSpan - 1, TableInsertDirection::After);
+
+                // Expect no change to the original merge.
+                // Also expect a new merge since the cells were merged in the seed row.
+                m_expectedMergeCount++;
+
+                m_expectedColors.push_back (ExpectedEdgeColor (0, m_colorA));
+                m_expectedColors.push_back (ExpectedEdgeColor (1)); // gap
+                m_expectedColors.push_back (ExpectedEdgeColor (2)); // gap
+                m_expectedColors.push_back (ExpectedEdgeColor (3)); // gap
+                m_expectedColors.push_back (ExpectedEdgeColor (4, m_colorB));
+
+                break;
+                }
+            case InsertTarget::ColumnAfter:
+                {
+                // Add the row after the row that's past the merge.
+                table.InsertColumn (m_rootIndex.col + m_colSpan, TableInsertDirection::After);
+
+                // Expect no change to the merge.
+                m_expectedColors.push_back (ExpectedEdgeColor (0, m_colorA));
+                m_expectedColors.push_back (ExpectedEdgeColor (1)); // gap
+                m_expectedColors.push_back (ExpectedEdgeColor (2)); // gap
+                m_expectedColors.push_back (ExpectedEdgeColor (3, m_colorB));
+                m_expectedColors.push_back (ExpectedEdgeColor (4, m_colorB));
+
+                break;
+                }
+            default:
+                {
+                FAIL();
+                }
+            }
+        }
+
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod                                                    JoshSchifter    04/14
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    void    _VerifyAction (AnnotationTableElementCR table) const override
+        {
+        EdgeColorVerifier verifier (m_expectedColors, m_rowIndex, true);
+        verifier.VerifyColors (table);
+
+        ExpectedAspectCounts expectedCounts;
+        expectedCounts.AddEntry (DGN_TABLE(DGN_CLASSNAME_AnnotationTableSymbology), 3);
+        expectedCounts.AddEntry (DGN_TABLE(DGN_CLASSNAME_AnnotationTableEdgeRun),   2);
+        expectedCounts.AddEntry (DGN_TABLE(DGN_CLASSNAME_AnnotationTableMerge),     m_expectedMergeCount);
+        expectedCounts.VerifyCounts(table);
+        }
+};
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    11/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (AnnotationTableActionTest, InsertColumnNearGap_Before)
+    {
+    InsertColumnNearGapAction testAction (InsertColumnNearGapAction::InsertTarget::ColumnBefore);
+    DoModifyTableTest (testAction);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    11/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (AnnotationTableActionTest, InsertColumnNearGap_JustBefore)
+    {
+    InsertColumnNearGapAction testAction (InsertColumnNearGapAction::InsertTarget::ColumnJustBefore);
+    DoModifyTableTest (testAction);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    11/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (AnnotationTableActionTest, InsertColumnNearGap_Interior)
+    {
+    InsertColumnNearGapAction testAction (InsertColumnNearGapAction::InsertTarget::ColumnInterior);
+    DoModifyTableTest (testAction);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    11/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (AnnotationTableActionTest, InsertColumnNearGap_JustAfter)
+    {
+    InsertColumnNearGapAction testAction (InsertColumnNearGapAction::InsertTarget::ColumnJustAfter);
+    DoModifyTableTest (testAction);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    11/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (AnnotationTableActionTest, InsertColumnNearGap_After)
+    {
+    InsertColumnNearGapAction testAction (InsertColumnNearGapAction::InsertTarget::ColumnAfter);
     DoModifyTableTest (testAction);
     }
 
@@ -2907,8 +3305,9 @@ TEST_F (AnnotationTableActionTest, Modify_ClearDefaultTextSymbology)
 struct DefaultTextSymbSharesEntryWithEdgeRunAction : AnnotationTableTestAction
 {
 private:
-    uint32_t      m_rowIndex;
-    ColorDef      m_colorVal;
+    uint32_t            m_rowIndex;
+    ColorDef            m_colorVal;
+    ExpectedEdgeColors  m_expectedColors;
 
 public:
     /* ctor */  DefaultTextSymbSharesEntryWithEdgeRunAction () : m_rowIndex(2), m_colorVal(ColorDef::Green()) {}
@@ -2926,6 +3325,10 @@ public:
         setter.SetColor (0, 1, true);
         setter.SetColor (2, 1, true);
         // |oooo|----|oooo|
+
+        m_expectedColors.push_back (ExpectedEdgeColor (0, m_colorVal));
+        m_expectedColors.push_back (ExpectedEdgeColor (1, table.GetDefaultLineColor()));
+        m_expectedColors.push_back (ExpectedEdgeColor (2, m_colorVal));
         }
 
     /*---------------------------------------------------------------------------------**//**
@@ -2945,6 +3348,9 @@ public:
         {
         ColorDef  color = table.GetDefaultTextColor();
         EXPECT_EQ (color, m_colorVal);
+
+        EdgeColorVerifier verifier (m_expectedColors, m_rowIndex, true);
+        verifier.VerifyColors (table);
 
         ExpectedAspectCounts expectedCounts;
         expectedCounts.AddEntry (DGN_TABLE(DGN_CLASSNAME_AnnotationTableSymbology), 2);

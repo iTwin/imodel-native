@@ -72,7 +72,7 @@ void LsComponent::UpdateLsOkayForTextureGeneration(LsOkayForTextureGeneration&cu
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    10/2012
 //--------------+------------------------------------------------------------------------
-void LsComponent::GetNextComponentId (LsComponentId& id, DgnDbR project, BeSQLite::PropertySpec spec)
+void LsComponent::GetNextComponentNumber (uint32_t& id, DgnDbR project, BeSQLite::PropertySpec spec)
     {
     SqlPrintfString sql("SELECT  max(Id) from " BEDB_TABLE_Property " where Namespace='%s' and Name='%s'", spec.GetNamespace(), spec.GetName());
     Statement stmt;
@@ -80,34 +80,59 @@ void LsComponent::GetNextComponentId (LsComponentId& id, DgnDbR project, BeSQLit
     DbResult result = stmt.Step();
     if (BE_SQLITE_DONE != result && BE_SQLITE_ROW != result)
         {
-        id = LsComponentId(1);
+        id = 1;
         return;
         }
 
     //  NOTNOW -- unclear what will happen to the magic values.  For now, avoid any collision with them.
-    id = LsComponentId(std::max(stmt.GetValueInt(0) + 1, MAX_LINECODE+1));
+    id = std::max(stmt.GetValueInt(0) + 1, MAX_LINECODE+1);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    11/2012
 //---------------------------------------------------------------------------------------
-LineStyleStatus LsComponent::AddComponentAsProperty (LsComponentId& componentId, DgnDbR project, PropertySpec spec, V10ComponentBase const*data, uint32_t dataSize)
+LineStyleStatus LsComponent::AddComponentAsProperty (LsComponentId& componentId, DgnDbR project, LsComponentType componentType, V10ComponentBase const*data, uint32_t dataSize)
     {
-    BeAssert(V10ComponentBase::InitialDgnDb == data->m_version);
-    GetNextComponentId (componentId, project, spec);
+    BeSQLite::PropertySpec spec = LineStyleProperty::Compound();
 
-    if (project.SaveProperty (spec, data, dataSize, componentId.GetValue(), 0) != BE_SQLITE_OK)
+    BeAssert(V10ComponentBase::InitialDgnDb == data->m_version);
+    switch (componentType)
+        {
+        case LsComponentType::Compound:
+            break;
+        case LsComponentType::LineCode:
+            spec = LineStyleProperty::LineCode();
+            break;
+        case LsComponentType::LinePoint:
+            spec = LineStyleProperty::LinePoint();
+            break;
+        case LsComponentType::PointSymbol:
+            spec = LineStyleProperty::PointSym();
+            break;
+        case LsComponentType::RasterImage:
+            spec = LineStyleProperty::RasterImage();
+            break;
+        default:
+            BeAssert(false && "invalid component type");
+            componentId = LsComponentId();
+            return LINESTYLE_STATUS_ConvertingComponent;
+        }
+    uint32_t componentNumber;
+    GetNextComponentNumber (componentNumber, project, spec);
+
+    if (project.SaveProperty (spec, data, dataSize, componentNumber, 0) != BE_SQLITE_OK)
         return LINESTYLE_STATUS_SQLITE_Error;
 
+    componentId = LsComponentId(componentType, componentNumber);
     return LINESTYLE_STATUS_Success;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    10/2012
 //--------------+------------------------------------------------------------------------
-LsComponent::LsComponent (DgnDbR project, LsComponentType componentType, LsComponentId componentId) : m_isDirty (false)
+LsComponent::LsComponent (DgnDbR project, LsComponentId componentId) : m_isDirty (false)
     {
-    m_location.SetLocation (project, componentType, componentId);
+    m_location.SetLocation (project, componentId);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -215,6 +240,92 @@ V10LineCode const* lcRsc
         SetDescription (lcRsc->m_descr);
 
     CreateFromRsrc (lcRsc);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    12/2015
+//---------------------------------------------------------------------------------------
+void LsStrokePatternComponent::CreateJsonValue(Json::Value& result)
+    {
+    result.clear();
+    Utf8String descr = GetDescription();
+    if (descr.SizeInBytes() > 0)
+        result["descr"] = descr.c_str();
+
+    double phase = 0.0;
+    uint32_t options = 0;
+    uint32_t  maxIterate = 0;
+
+    // Set phase, maxIterate, and options
+    if (HasIterationLimit ())
+        {
+        maxIterate = GetIterationLimit ();
+        options |= LCOPT_ITERATION;
+        }
+
+    if (IsSingleSegment())
+        options |= LCOPT_SEGMENT;
+
+    switch (GetPhaseMode ())
+        {
+        case PHASEMODE_Fixed:
+            phase = GetDistancePhase ();
+            break;
+        case PHASEMODE_Fraction:
+            phase = GetFractionalPhase ();
+            options |= LCOPT_AUTOPHASE;
+            break;
+        case PHASEMODE_Center:
+            phase = 0;
+            options |= LCOPT_CENTERSTRETCH;
+            break;
+        }
+
+    if (phase != 0)
+        result["phase"] = phase;
+
+    if (options != 0)
+        result["options"] = options;
+
+    if (maxIterate != 0)
+        result["maxIter"] = maxIterate;
+
+    Json::Value strokes(Json::arrayValue);
+    for (uint32_t index = 0; index<m_nStrokes; ++index)
+        {
+        LsStroke& stroke = m_strokes[index];
+        Json::Value  entry(Json::objectValue);
+        entry["length"] = stroke.m_length;
+        if (stroke.m_orgWidth != 0)
+            entry["orgWidth"] = stroke.m_orgWidth;
+        if (stroke.m_endWidth != stroke.m_orgWidth)
+            entry["endWidth"] = stroke.m_endWidth;
+        if (stroke.m_strokeMode != 0)
+            entry["strokeMode"] = stroke.m_strokeMode;
+        if (stroke.m_widthMode != 0)
+            entry["widthMode"] = stroke.m_widthMode;
+        if (stroke.m_capMode != 0)
+            entry["capMode"] = stroke.m_capMode;
+
+        uint8_t strokeMode = 0;
+        if (stroke.IsDash ())
+            strokeMode  |= LCSTROKE_DASH;
+        if (stroke.IsDashFirst () != stroke.IsDash())
+            strokeMode  |= LCSTROKE_SINVERT;
+        if (stroke.IsDashLast () != stroke.IsDash())
+            strokeMode  |= LCSTROKE_EINVERT;
+        if (stroke.IsRigid ())
+            strokeMode  |= LCSTROKE_RAY;
+        if (stroke.IsStretchable ())
+            strokeMode  |= LCSTROKE_SCALE;
+
+        if (strokeMode != 0)
+            entry["strokeMode"] = strokeMode;
+
+        strokes[index] = entry;
+        }
+
+    result["strokes"] = strokes;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -562,7 +673,7 @@ LsLocation&     location
 )
     {
     LsLocation  tmpLocation;
-    tmpLocation.SetFrom (&location, LsComponentType::Internal);
+    tmpLocation.SetFrom (&location, LsComponentId(LsComponentType::Internal, 0));
 
     LsInternalComponent*  comp = new LsInternalComponent (&location);
     comp->m_isDirty = true;
@@ -577,8 +688,7 @@ LsLocation&     location
 StatusInt LsDefinition::UpdateStyleTable () const
     {
     DgnDbP project = GetLocation()->GetDgnDb();
-    project->Styles ().LineStyles().Update (DgnStyleId(m_styleId), _GetName(), GetLocation()->GetComponentId(),
-                                            GetLocation()->GetComponentType(), GetAttributes(), m_unitDef);
+    project->Styles ().LineStyles().Update (DgnStyleId(m_styleId), _GetName(), GetLocation()->GetComponentId(), GetAttributes(), m_unitDef);
 
     return BSISUCCESS;
     }
@@ -594,7 +704,7 @@ LsComponentReader*    reader
     const LsLocation* location = reader->GetSource();
 
     LsLocation  tmpLocation;
-    tmpLocation.SetFrom (location, LsComponentType::Internal);
+    tmpLocation.SetFrom (location, LsComponentId(LsComponentType::Internal, 0));
     LsInternalComponent*  comp = new LsInternalComponent (location);
     
     comp->Init (NULL);
@@ -857,9 +967,8 @@ BentleyStatus       LsComponentReader::_LoadDefinition ()
         return SUCCESS;
 
     wt_OperationForGraphics highPriority; // see comments in BeSQLite.h
-    m_componentType = m_source->GetComponentType();
 
-    switch ((LsComponentType)m_componentType)
+    switch (m_source->GetComponentType())
         {
         case LsComponentType::LineCode:
             LsStrokePatternComponent::CreateRscFromDgnDb ((V10LineCode**)&m_rsc, m_dgndb, m_source->GetComponentId());
@@ -958,12 +1067,12 @@ LsComponent* DgnLineStyles::GetLsComponent(LsLocationCR location)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    10/2015
 //---------------------------------------------------------------------------------------
-LsComponentPtr DgnLineStyles::GetLsComponent(LsComponentType componentType, LsComponentId componentId)
+LsComponentPtr DgnLineStyles::GetLsComponent(LsComponentId componentId)
     {
     if (!componentId.IsValid())
         return nullptr;
 
     LsLocation   location;
-    location.SetLocation(m_dgndb, componentType, componentId);
+    location.SetLocation(m_dgndb, componentId);
     return GetLsComponent(location);
     }

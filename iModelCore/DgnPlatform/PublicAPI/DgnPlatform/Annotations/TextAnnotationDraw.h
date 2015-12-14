@@ -43,7 +43,9 @@ public:
     TransformCR GetDocumentTransform() const { return m_documentTransform; }
     void SetDocumentTransform(TransformCR value) { m_documentTransform = value; }
 
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     DGNVIEW_EXPORT BentleyStatus Draw(DgnViewportR, Render::DgnDrawMode, DrawPurpose, DgnCategoryId) const;
+#endif
     DGNPLATFORM_EXPORT BentleyStatus Draw(ViewContextR) const;
 };
 

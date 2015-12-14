@@ -27,7 +27,6 @@
 #include "TxnManager.h"
 #include "RevisionManager.h"
 #include "Render.h"
-#include "IViewTransients.h"
 #include "LineStyle.h"
 #include "DgnElementDependency.h"
 #include "DgnDb.h"
@@ -39,12 +38,14 @@
 #include "ValueParse.h"
 #include "ViewContext.h"
 #include "ViewController.h"
+#include "ViewAttachment.h"
 #include "GeomPart.h"
 #include "Annotations/TextAnnotation.h"
 #include "DgnFont.h"
 #include "RenderMaterial.h"
 #include "DgnViewport.h"
 #include "DgnView.h"
+#include "VolumeElement.h"
 
 //__PUBLISH_SECTION_END__
 #include "SnapContext.h"
