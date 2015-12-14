@@ -9,7 +9,7 @@
 //__PUBLISH_SECTION_START__
 
 #include "DgnDbTables.h"
-#include "DgnModel.h"
+#include "QueryModel.h"
 #include "DgnDomain.h"
 #include "MemoryManager.h"
 #include "LocksManager.h"
@@ -140,6 +140,7 @@ protected:
     DgnSearchableText   m_searchableText;
     mutable RevisionManagerP m_revisionManager;
     BeSQLite::EC::ECSqlStatementCache m_ecsqlCache;
+    QueryModel::Queue m_queryModels;
 
     DGNPLATFORM_EXPORT virtual BeSQLite::DbResult _VerifySchemaVersion(BeSQLite::Db::OpenParams const& params) override;
     DGNPLATFORM_EXPORT virtual void _OnDbClose() override;
@@ -199,6 +200,7 @@ public:
     DGNPLATFORM_EXPORT RevisionManagerR Revisions() const; //!< The Revisions for this DgnDb.
     MemoryManager& Memory() const { return const_cast<MemoryManager&>(m_memoryManager);} //!< Manages memory associated with this DgnDb.
     DGNPLATFORM_EXPORT ILocksManager& Locks(); //!< Manages this DgnDb's locks.
+    QueryModel::Queue& QueryModels() const { return const_cast<QueryModel::Queue&>(m_queryModels); }
 
     //! Gets a cached and prepared ECSqlStatement.
     DGNPLATFORM_EXPORT BeSQLite::EC::CachedECSqlStatementPtr GetPreparedECSqlStatement(Utf8CP ecsql) const;

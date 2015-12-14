@@ -10,11 +10,12 @@
 
 #include "DgnModel.h"
 #include <Bentley/BeThread.h>
-#include <DgnPlatform/ViewContext.h>
+#include <deque>
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 
 struct DgnDbRTree3dViewFilter;
+struct ICheckStop;
                                                                                                                     
 //=======================================================================================
 /**
@@ -34,11 +35,12 @@ struct QueryModel : PhysicalModel
 {
     friend struct QueryViewController;
 
-    //=======================================================================================
-    // @bsiclass                                                     JohnGoding      05/12
-    //=======================================================================================
-    struct Results
+    //! Holds the results of a QueryModel's query.
+    struct Results : RefCountedBase
     {
+    private:
+        Results() : m_reachedMaxElements(false), m_eliminatedByLOD(false), m_drawnBeforePurge(0), m_lowestOcclusionScore(0.0) { }
+    public:
         bvector<DgnElementCP> m_elements;
         bvector<DgnElementCP> m_closeElements;
         bool   m_reachedMaxElements;
@@ -47,92 +49,131 @@ struct QueryModel : PhysicalModel
         double m_lowestOcclusionScore;
 
         uint32_t GetCount() const {return (uint32_t) m_elements.size();}
-        Results() {m_drawnBeforePurge=0; m_reachedMaxElements=false; m_lowestOcclusionScore=0; m_eliminatedByLOD=false;}
+
+        static RefCountedPtr<Results> Create() { return new Results(); }
     };
 
-    //=======================================================================================
-    // @bsiclass                                                    Keith.Bentley   07/12
-    //=======================================================================================
-    struct Selector : ICheckStop
-    {
-        friend struct QueryModel;
-        enum class State
-            {
-            Inactive            = 0,
-            ProcessingRequested = 1,
-            Processing          = 2,
-            HandlerError        = 3,
-            AbortRequested      = 4,
-            Aborted             = 5,
-            Completed           = 6,
-            TerminateRequested  = 7,
-            Terminated          = 8
-            };
+    typedef RefCountedPtr<Results> ResultsPtr;
 
-    private:
-        DgnDbR              m_dgndb;
-        State               m_state;
-        BeConditionVariable m_conditionVariable;
-        Utf8String          m_searchSql;
-        DgnViewportCP       m_viewport;
-        uint32_t            m_maxElements;
-        double              m_minimumPixels;
-        uint64_t            m_maxMemory;
-        Results*            m_results;
-        BeSQLite::DbResult  m_dbStatus;
+    //! Executes a query on a separate thread to load elements for a QueryModel
+    struct Processor : RefCounted<NonCopyableClass>
+    {
+        //! Parameters specifying how the processor should execute its query
+        struct Params
+        {
+            QueryModelR         m_model;
+            DgnViewportCR       m_vp;
+            Utf8String          m_searchSql;
+            uint32_t            m_maxElements;
+            uint64_t            m_maxMemory;
+            double              m_minPixels;
+            DgnElementIdSet*    m_highPriority;
+            DgnElementIdSet*    m_neverDraw;
+            bool                m_highPriorityOnly;
+            ClipVectorPtr       m_clipVector;
+            uint32_t            m_secondaryHitLimit;
+            DRange3d            m_secondaryVolume;
+
+            Params(QueryModelR model, DgnViewportCR vp, Utf8StringCR sql, uint32_t maxElements, uint64_t maxMem, double minPixels, DgnElementIdSet* highPriority,
+                    DgnElementIdSet* neverDraw, bool highPriorityOnly, ClipVectorP clipVector, uint32_t secondaryHitLimit, DRange3dCR secondaryRange)
+                : m_model(model), m_vp(vp), m_searchSql(sql), m_maxElements(maxElements), m_maxMemory(maxMem), m_minPixels(minPixels), m_highPriority(highPriority),
+                    m_neverDraw(neverDraw), m_highPriorityOnly(highPriorityOnly), m_clipVector(clipVector), m_secondaryHitLimit(secondaryHitLimit), m_secondaryVolume(secondaryRange) { }
+        };
+
+    protected:
+        Params              m_params;
+        ResultsPtr          m_results;
         bool                m_restartRangeQuery;
         bool                m_inRangeSelectionStep;
-        bool                m_noQuery;
-        Frustum             m_frustum;
-        DgnElementIdSet*    m_alwaysDraw;
-        DgnElementIdSet*    m_neverDraw;
-        ClipVectorPtr       m_clipVector;
-        uint32_t            m_secondaryHitLimit;
-        DRange3d            m_secondaryVolume;
-       
-        virtual bool _CheckStop () override;
-        void qt_ProcessRequest();
-        void qt_NotifyCompletion();
-        void qt_SearchIdSet(DgnElementIdSet& idList, DgnDbRTree3dViewFilter& filter);
-        void qt_SearchRangeTree(DgnDbRTree3dViewFilter& filter);
-        void SetState (State newState);
+        BeSQLite::DbResult  m_dbStatus;
 
-        Selector(QueryModel&);
-        DGNPLATFORM_EXPORT virtual ~Selector();
+        Processor(Params const& params);
 
+        virtual bool _Process() = 0;
+
+        void BindModelAndCategory(BeSQLite::CachedStatement& rangeStmt);
     public:
+        bool Process() { return _Process(); }
+        
+        QueryModelR GetModel() const { return m_params.m_model; }
+        Results* GetResults() { return m_results.get(); }
+    };
+
+    typedef RefCountedPtr<Processor> ProcessorPtr;
+
+    //! Each DgnDb has an associated QueryModel::Queue upon which requests for processing QueryModels can be enqueued.
+    //! The requests execute on a separate thread.
+    struct Queue : IConditionVariablePredicate
+    {
+    private:
+        enum class State { Active, TerminateRequested, Terminated };
+
+        DgnDbR                      m_db;
+        BeConditionVariable         m_cv;
+        std::deque<ProcessorPtr>    m_pending;
+        State                       m_state;
+
         void qt_WaitForWork();
-        void Reset();
-        Frustum const& GetFrustum() {return m_frustum;}
-        //  The QueryViewController passed in via qvc is not the same as viewport->GetViewControllerCP when the viewport is associated with a 
-        //  PhysicalRedlineViewController.
-        void StartProcessing(DgnViewportCR viewport, Utf8CP sql, uint32_t hitLimit, uint64_t maxMemory, double minimumScreenPixels, 
-                                DgnElementIdSet* highPriority, DgnElementIdSet* neverDraw, bool onlyHighPriority, ClipVectorP clipVector,
-                             uint32_t secondaryHitLimit, DRange3dCR secondaryRange);
-        void RequestAbort(bool waitUntilFinished);
-        State WaitUntilFinished (ICheckStop* checkStop, uint32_t interval, bool stopQueryOnAbort);
-        DGNPLATFORM_EXPORT bool IsActive() const;
-        State GetState() const {return m_state;}
-        bool HasSelectResults () const {return m_state == State::Completed;}
+
+        THREAD_MAIN_DECL qt_Main(void* arg);
+
+        virtual bool _TestCondition(BeConditionVariable&) override;
+    public:
+        Queue(DgnDbR db);
+
+        void Terminate();
+
+        //! Enqueue a request to execute the query for a QueryModel
+        DGNPLATFORM_EXPORT void RequestProcessing(Processor::Params const& params);
+
+        //! Cancel any active or pending requests to process the specified model.
+        //! @param[in]      model             The model whose processing is to be canceled
+        //! @param[in]      waitUntilFinished If true, this function does not return until the model is in the idle state
+        DGNPLATFORM_EXPORT void RequestAbort(QueryModelR model, bool waitUntilFinished);
+
+        //! Suspends the calling thread until the specified model is in the idle state
+        DGNPLATFORM_EXPORT void WaitUntilFinished(QueryModelR model, ICheckStop* checkStop);
+    };
+
+    //! The possible states of a QueryModel
+    enum class State
+    {
+        Idle,           //!< No processing
+        Pending,        //!< Has been enqueued for processing
+        Processing,     //!< Is currently processing
+        AbortRequested, //!< A request to cancel processing has been made
     };
 
 private:
-    Selector m_selector;
-    Results* m_currQueryResults;
+    State       m_state;
+    ResultsPtr  m_updatedResults;
+    ResultsPtr  m_currQueryResults;
+
     void ResetResults(){ ReleaseAllElements(); ClearRangeIndex(); m_filled=true;}
     DGNPLATFORM_EXPORT explicit QueryModel (DgnDbR);
     virtual void _FillModel() override {} // QueryModels are never filled.
 
 public:
-    Selector& GetSelector() {return m_selector;}
-    Results* GetCurrentResults() {return m_currQueryResults;}
+    State GetState() const { return m_state; } //!< @private
+    void SetState(State state); //!< @private
+    void SetUpdatedResults(Results* results); //!< @private
 
-    void SaveQueryResults();
-    void ResizeElementList(uint32_t newCount);
-    void ClearQueryResults();
+    Results* GetCurrentResults() {return m_currQueryResults.get();} //!< @private
+
+    void SaveQueryResults(); //!< @private
+    void ResizeElementList(uint32_t newCount); //!< @private
+    void ClearQueryResults(); //!< @private
 
     //! Returns a count of elements held by the QueryModel. This is the count of elements returned by the most recent query.
-    uint32_t GetElementCount() const;
+    uint32_t GetElementCount() const; //!< @private
+    bool HasSelectResults() const { return m_updatedResults.IsValid(); } //!< @private
+    bool IsIdle() const { return State::Idle == GetState(); } //!< @private
+    bool IsActive() const { return !IsIdle(); } //!< @private
+
+    //! Requests that any active or pending processing of the model be canceled, optionally not returning until the request is satisfied
+    void RequestAbort(bool waitUntilFinished);
+
+    void WaitUntilFinished(ICheckStop* checkStop); //!< @private
 };
 
 END_BENTLEY_DGN_NAMESPACE
