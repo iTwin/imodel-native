@@ -47,6 +47,7 @@ protected:
     virtual bool _ProcessAsFacets(bool isPolyface) const {return isPolyface;} // Output surfaces/solids not handled directly or are clipped through _ProcessFacetSet.
     virtual bool _ProcessAsBody(bool isCurved) const {return false;} // Output surfaces/solids not handled directly or are clipped through _ProcessBody.
     virtual bool _ProcessAsStrokes(bool isCurved) const {return _ProcessAsFacets(false);} // Output CurveVector not handled directly through _ProcessLinearSegments (or _ProcessFacetSet if region and _ProcessAsFacets).
+    virtual StatusInt _Close() override { return SUCCESS; }
 
 #if defined (NEEDS_WORK_MATERIAL)
     virtual bool _ProduceMaterialGeometryMaps(MaterialCR material, MaterialMapCR materialMap) const {return false;}
