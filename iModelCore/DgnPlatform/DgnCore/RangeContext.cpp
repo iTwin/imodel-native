@@ -916,6 +916,7 @@ bool _ScanRangeFromPolyhedron()
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt _VisitElement(GeometrySourceCR source) override
     {
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     DPoint3d corners[8];
     auto geom3d = source.ToGeometrySource3d();
 
@@ -923,7 +924,6 @@ StatusInt _VisitElement(GeometrySourceCR source) override
     if (IsRangeContainedInCurrentRange(elRange, nullptr != geom3d))
         return SUCCESS;
 
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     // NOTE: Can just draw bounding box instead of drawing element geometry...
     DPoint3d corners[8];
     range.Get8Corners(corners);

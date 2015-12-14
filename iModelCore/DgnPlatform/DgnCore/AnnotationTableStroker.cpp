@@ -1231,7 +1231,7 @@ void    AnnotationTableStroker::AppendFillBox (TableFillBox const& fillBox)
     if (UNEXPECTED_CONDITION ( ! fillSymb->HasFillColor()))
         return;
 
-    ElemDisplayParams displayParams;
+    GeometryParams displayParams;
     displayParams.SetCategoryId (m_table.GetCategoryId());
     displayParams.SetFillDisplay (FillDisplay::Blanking);
 
@@ -1258,7 +1258,7 @@ void   AnnotationTableStroker::AppendEdgeStroke (TableEdgeStroke const& stroke, 
     if ( ! symbology->GetVisible())
         return;
 
-    ElemDisplayParams displayParams;
+    GeometryParams displayParams;
     displayParams.SetCategoryId (m_table.GetCategoryId());
     displayParams.SetFillDisplay (FillDisplay::Never);
 

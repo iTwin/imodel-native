@@ -125,6 +125,7 @@ void ViewAttachment::_RemapIds(DgnImportContext& importer)
         }
     }
 
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
 /*---------------------------------------------------------------------------------**//**
 * @bsistruct                                                    Paul.Connelly   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -171,7 +172,7 @@ public:
         len *= s_lenFactor;
         m_builder->Append(*ICurvePrimitive::CreateRectangle(0, 0, len, len, 0));
 #endif
-        return IsValid() && SUCCESS == m_builder->SetGeomStreamAndPlacement(m_attachment) ? DgnDbStatus::Success : DgnDbStatus::BadElement;
+        return IsValid() && SUCCESS == m_builder->SetGeometryStreamAndPlacement(m_attachment) ? DgnDbStatus::Success : DgnDbStatus::BadElement;
         }
 };
 
@@ -302,6 +303,7 @@ BentleyStatus ViewAttachmentGeomCollector::_ProcessCurveVector(CurveVectorCR cv,
     m_builder->Append(tfCv);
     return SUCCESS;
     }
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/15
@@ -318,6 +320,7 @@ DgnDbStatus ViewAttachment::GenerateGeomStream(DgnSubCategoryId subcat)
     if (controller.IsNull())
         return DgnDbStatus::ViewNotFound;
 
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     ViewAttachmentGeomCollector proc(*controller, *this, subcat);
     if (!proc.IsValid())
         return DgnDbStatus::BadElement;
@@ -325,5 +328,7 @@ DgnDbStatus ViewAttachment::GenerateGeomStream(DgnSubCategoryId subcat)
     ElementGraphicsOutput::Process(proc, GetDgnDb());
 
     return proc.SaveGeom();
+#endif
+    return DgnDbStatus::BadElement;
     }
 

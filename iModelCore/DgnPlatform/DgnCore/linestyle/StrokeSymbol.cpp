@@ -208,6 +208,7 @@ StatusInt LsSymbolComponent::_GetRange (DRange3dR range) const
 
     return BSISUCCESS;
     }
+#endif
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    12/2015
@@ -227,7 +228,6 @@ LsSymbolComponent::LsSymbolComponent(LsSymbolComponentCR src) : LsComponent(&src
     m_lineColorByLevel = src.m_lineColorByLevel;
     m_postProcessed = false;
     }
-#endif
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Keith.Bentley   01/03
 +---------------+---------------+---------------+---------------+---------------+------*/
