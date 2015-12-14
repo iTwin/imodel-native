@@ -46,8 +46,8 @@ module DgnScriptTests {
         var solid = be.SolidPrimitive.CreateDgnSphere(spdetail);
         builder.Append(solid);
 
-        if (0 != builder.SetGeomStreamAndPlacement(ele))
-            be.Script.ReportError('SetGeomStreamAndPlacement failed');
+        if (0 != builder.SetGeometryStreamAndPlacement(ele))
+            be.Script.ReportError('SetGeometryStreamAndPlacement failed');
 
         ele.Insert();
 

@@ -27,7 +27,7 @@ module ComponentModelTest
 
         var builder = new be.ElementGeometryBuilder(element, origin, angles);
         builder.Append(solid);
-        builder.SetGeomStreamAndPlacement(element);
+        builder.SetGeometryStreamAndPlacement(element);
     }
 
     //  Utility function that creates a new (non-persistent) PhysicalElement object in memory and assigns it to the correct category 
