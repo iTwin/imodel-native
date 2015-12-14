@@ -620,7 +620,7 @@ SchemaReadStatus SchemaXmlReader::Deserialize(ECSchemaPtr& schemaOut, uint32_t c
     readingClassStubs.Stop();
     LOG.tracev("Reading class stubs for %s took %.4lf seconds\n", schemaOut->GetFullSchemaName().c_str(), readingClassStubs.GetElapsedSeconds());
 
-    StopWatch readingEnumerations(L"Reading enumerations", true);
+    StopWatch readingEnumerations("Reading enumerations", true);
     status = reader->ReadEnumerationsFromXml(schemaOut, *schemaNode);
 
     if (SchemaReadStatus::Success != status)
