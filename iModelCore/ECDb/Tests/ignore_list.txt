@@ -22,21 +22,12 @@ ECDbMappingTestFixture.MismatchDataTypesInExistingTable
 JsonUpdaterTests.UpdateRelationshipProperty
 ECDbInstances.UpdateRelationshipProperty
 
-#TFS341360 to address this (Affan)
-ECSqlStatementTestFixture.PolymorphicDeleteWithSubclassesInMultipleTables
-
-
-#WIP_EC3 - Uses Rule schema which has classes that are both structs and CAs
-ECInstanceInserterTests.InsertSingleRuleInstance
-
 #TFS344205 (Affan)
 JoinedTableECDbMapStrategyTests.RelationshipsWithKeyProp
 
 #WIP_EC3
-ECDbSchemaManagerTests.CreateOrUpdateECClassViewsInDb #Numbers aren't what are expected with the EC3 conversion.  Notified Affan
-ECSqlMetadataQueryTest.VerifyQueries # ECClassDef needs to be updated - Notified Mike Embick
-ECDbMappingTestFixture.PropertyWithSameNameAsStructMemberColumn # Notified Krischan
-ECDbSchemas.LoadECSchemas # Uses Unit_Attributes schema with invalid classes - Notified Basanta
+#Uses Rule schema which has classes that are both structs and CAs
+ECInstanceInserterTests.InsertSingleRuleInstance
 
 #Raman will take a look
 ECDbInstances.CommonGeometryJsonSerialization

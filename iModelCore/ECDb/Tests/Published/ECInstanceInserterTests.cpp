@@ -154,7 +154,7 @@ TEST_F(ECInstanceInserterTests, InsertSingleInstanceOfComplexClass)
 TEST_F (ECInstanceInserterTests, InsertSingleRuleInstance)
     {
     ECDbR ecdb = SetupECDb("insertRulesInstances.ecdb", BeFileName(L"ECRules.01.00.ecschema.xml"));
-
+    ASSERT_TRUE(ecdb.IsDbOpen()) << "Setup of test ECDb with ECRules ECSchema failed";
     ECSchemaCP rulesECSchema = ecdb.Schemas ().GetECSchema ("ECRules");
     ASSERT_TRUE (rulesECSchema != nullptr);
 
@@ -163,7 +163,6 @@ TEST_F (ECInstanceInserterTests, InsertSingleRuleInstance)
     BeFileName instanceXmlFile;
     BeTest::GetHost().GetDocumentsRoot(instanceXmlFile);
     instanceXmlFile.AppendToPath(L"ECDb");
-    instanceXmlFile.AppendToPath(L"Schemas");
     instanceXmlFile.AppendToPath(L"RuleSetInstance1.xml");
 
     IECInstancePtr testInstance = nullptr;

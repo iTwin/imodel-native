@@ -43,7 +43,7 @@
         <ECArrayProperty propertyName="CodeReplacements" typeName="CodeReplacementStatement" minOccurs="0" maxOccurs="unbounded" isStruct="True" />
         <ECProperty propertyName="Name" typeName="string" />
         <ECProperty propertyName="Description" typeName="string" />
-        <ECArrayProperty propertyName="TypeReferences" typeName="string" minOccurs="0" maxOccurs="unbounded" isStruct="True" description="An array containing the full type names of all identifiers used." />
+        <ECArrayProperty propertyName="TypeReferences" typeName="string" minOccurs="0" maxOccurs="unbounded" description="An array containing the full type names of all identifiers used." />
         <ECArrayProperty propertyName="EnumReferences" typeName="string" minOccurs="0" maxOccurs="unbounded" description="An array containing the full type names of all enumerations used." />
         <ECProperty propertyName="IsAssignment" typeName="boolean" description="If true the variable in the LeftCodeSnippet is set to the value of the RightCodeSnippet"/>
     </ECClass>

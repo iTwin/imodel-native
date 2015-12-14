@@ -52,6 +52,7 @@
     <ClCompile Include="Published\ECSqlCustomFunction_Tests.cpp" />
     <ClCompile Include="Published\ECSqlDeleteTestDataset.cpp" />
     <ClCompile Include="Published\ECSqlInsertTestDataset.cpp" />
+    <ClCompile Include="Published\ECSqlMetadataQueryTest.cpp" />
     <ClCompile Include="Published\ECSqlRangeTree_Tests.cpp" />
     <ClCompile Include="Published\ECSqlCommonTestDataset.cpp" />
     <ClCompile Include="Published\ECSqlSelectTestDataset.cpp" />

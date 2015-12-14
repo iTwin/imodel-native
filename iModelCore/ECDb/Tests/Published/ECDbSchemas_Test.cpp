@@ -512,7 +512,6 @@ TEST(ECDbSchemas, LoadECSchemas)
    
     bset<Utf8String> expectedSchemas;
     expectedSchemas.insert ("Bentley_Standard_CustomAttributes");
-    expectedSchemas.insert ("Bentley_Standard_Classes");
     expectedSchemas.insert ("EditorCustomAttributes");
     expectedSchemas.insert("ECDbMap");
     expectedSchemas.insert("ECDb_System");

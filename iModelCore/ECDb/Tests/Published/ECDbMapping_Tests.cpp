@@ -1923,7 +1923,7 @@ TEST_F(ECDbMappingTestFixture, PropertyWithSameNameAsStructMemberColumn)
         ASSERT_FALSE(asserted);
 
         ASSERT_TRUE(ecdb.ColumnExists("ts_Foo", "Code_Name"));
-        ASSERT_TRUE(ecdb.ColumnExists("ts_Foo", "c131__43_ode__4e_ame"));
+        ASSERT_TRUE(ecdb.ColumnExists("ts_Foo", "c127__43_ode__4e_ame"));
             }
 
         {
@@ -1944,7 +1944,7 @@ TEST_F(ECDbMappingTestFixture, PropertyWithSameNameAsStructMemberColumn)
         ASSERT_FALSE(asserted);
 
         ASSERT_TRUE(ecdb.ColumnExists("ts_Foo", "Code_Name"));
-        ASSERT_TRUE(ecdb.ColumnExists("ts_Foo", "c131__43_ode_5f__4e_ame"));
+        ASSERT_TRUE(ecdb.ColumnExists("ts_Foo", "c127__43_ode_5f__4e_ame"));
         }
 
     }
