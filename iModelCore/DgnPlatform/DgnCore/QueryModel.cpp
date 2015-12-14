@@ -147,7 +147,7 @@ struct ProcessorImpl : QueryModel::Processor, ICheckStop
         {
         if (WasAborted())
             return true;
-        else if (QueryModel::State::AbortRequested == GetModel().GetState())
+        else if (QueryModel::State::AbortRequested != GetModel().GetState())
             {
             if (!m_inRangeSelectionStep || !GraphicsAndQuerySequencer::qt_isOperationRequiredForGraphicsPending())
                 return false;
