@@ -14,7 +14,6 @@
 #include <sqlite3.h>
 #endif
 
-
 #ifdef __cplusplus
 BEGIN_BENTLEY_SQLITE_NAMESPACE 
 extern "C" {
@@ -144,17 +143,17 @@ int zipvfs_create_vfs(
   char const *zName,
   char const *zParent,
   void *pCtx,
-  int (*xCompressBound)(void *, int nSrc),
-  int (*xCompress)(void *, char *aDest, int *pnDest, char *aSrc, int nSrc),
-  int (*xUncompress)(void *, char *aDest, int *pnDest, char *aSrc, int nSrc)
+  int (*xCompressBound)(void*, int nSrc),
+  int (*xCompress)(void*, char *aDest, int *pnDest, const char *aSrc, int nSrc),
+  int (*xUncompress)(void*, char *aDest, int *pnDest, const char *aSrc,int nSrc)
 );
 int zipvfs_create_vfs_v2(
   char const *zName,
   char const *zParent,
   void *pCtx,
   int (*xCompressBound)(void *, int nSrc),
-  int (*xCompress)(void *, char *aDest, int *pnDest, char *aSrc, int nSrc),
-  int (*xUncompress)(void *, char *aDest, int *pnDest, char *aSrc, int nSrc),
+  int (*xCompress)(void*, char *aDest, int *pnDest, const char *aSrc, int nSrc),
+  int (*xUncompress)(void*, char *aDest, int *pnDest,const char *aSrc,int nSrc),
   int (*xCompressOpen)(void*, const char*, void**),
   int (*xCompressClose)(void*)
 );
@@ -192,14 +191,20 @@ int zipvfs_create_vfs_v3(
 ** first 13 bytes of the string that zHdr points to should identify the
 ** compression functions that the other fields are set to, so that future
 ** invocations of xAutoDetect can supply Zipvfs with compatible functions.
+**
+** The zAuxHdr field, if not NULL, is a zero-terminated string that is
+** appended after the zero-terminator on zHdr, assuming there is space.
+** The total number of bytes consumed by zHdr, the zero terminator on zHdr,
+** and zAuxHdr may not exceed 13 bytes.  Any excess is silently truncated.
 */
 struct ZipvfsMethods {
   const char *zHdr;
   void *pCtx;
   int (*xCompressBound)(void *, int nSrc);
-  int (*xCompress)(void *, char *aDest, int *pnDest, char *aSrc, int nSrc);
-  int (*xUncompress)(void *, char *aDest, int *pnDest, char *aSrc, int nSrc);
+  int (*xCompress)(void*, char *aDest, int *pnDest, const char *aSrc, int nSrc);
+  int (*xUncompress)(void*, char *aDest, int *pnDest,const char *aSrc,int nSrc);
   int (*xCompressClose)(void*);
+  const char *zAuxHdr;  /* Extra header information */
 };
 
 /*
@@ -319,6 +324,39 @@ const char *zipvfs_errmsg(int rc);
 **   is encountered while attempting to read the database file, an error
 **   code is returned and the final values of the structure fields are 
 **   undefined.
+**
+** ZIPVFS_CTRL_CACHE_USED:
+**   The argument must be a pointer to an integer of type sqlite3_int64.
+**   Before returning, this file-control sets the value of the output
+**   integer to the number of bytes of memory used by the underlying 
+**   zipvfs pager (the same value as is returned by DBSTATUS_CACHE_USED
+**   for a top level pager). 
+**
+** ZIPVFS_CTRL_CACHE_HIT:
+**   The argument must be a pointer to an integer of type sqlite3_int64.
+**   Before returning, this file-control sets the value of the output
+**   integer to the number of cache hits that have occurred since the
+**   counter was reset (the same value as is returned by DBSTATUS_CACHE_HITS
+**   for a top level pager). If the value of the output integer is initially
+**   non-zero, the counter is reset before returning.
+**
+** ZIPVFS_CTRL_CACHE_MISS:
+**   As for ZIPVFS_CTRL_CACHE_HIT, except for DBSTATUS_CACHE_MISS.
+**
+** ZIPVFS_CTRL_CACHE_WRITE:
+**   As for ZIPVFS_CTRL_CACHE_HIT, except for DBSTATUS_CACHE_WRITE.
+**
+** ZIPVFS_CTRL_DIRECT_READ:
+**   The argument must be a pointer to an integer of type sqlite3_int64.
+**   Before returning, this file-control sets the value of the output
+**   integer to the number of read operations performed by zipvfs directly
+**   on the underlying database file (bypassing the zipvfs pager). If the 
+**   value of the output integer is initially non-zero, the counter is 
+**   reset before returning.
+**
+** ZIPVFS_CTRL_DIRECT_BYTES:
+**   As for ZIPVFS_CTRL_CACHE_HIT, except the output value is the total
+**   number of bytes read directly, not the number of xRead calls.
 */
 #define ZIPVFS_CTRL_COMPACT          230437
 #define ZIPVFS_CTRL_OFFSET_AND_SIZE  230440
@@ -328,6 +366,13 @@ const char *zipvfs_errmsg(int rc);
 #define ZIPVFS_CTRL_INTEGRITY_CHECK  230444
 #define ZIPVFS_CTRL_LOCKING_MODE     230445
 #define ZIPVFS_CTRL_STAT             230446
+
+#define ZIPVFS_CTRL_CACHE_USED       231454      /* Like DBSTATUS_CACHE_USED */
+#define ZIPVFS_CTRL_CACHE_HIT        231455      /* Like DBSTATUS_CACHE_HIT */
+#define ZIPVFS_CTRL_CACHE_MISS       231456      /* Like DBSTATUS_CACHE_MISS */
+#define ZIPVFS_CTRL_CACHE_WRITE      231457      /* Like DBSTATUS_CACHE_WRITE */
+#define ZIPVFS_CTRL_DIRECT_READ      231458
+#define ZIPVFS_CTRL_DIRECT_BYTES     231459
 
 /*
 ** CAPI: File Space Usage Report - struct ZipvfsStat
@@ -482,4 +527,3 @@ struct ZipvfsWriteCb {
 END_BENTLEY_SQLITE_NAMESPACE 
 #endif
 #endif
-
