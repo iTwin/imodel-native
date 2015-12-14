@@ -52,8 +52,7 @@ enum class StandardView
 //=======================================================================================
 // @bsiclass                                                    Keith.Bentley   12/14
 //=======================================================================================
-#if !defined (mdl_resource_compiler) && !defined (mdl_type_resource_generator)
-enum class RenderMode : uint8_t
+enum class RenderMode
     {
     Wireframe           = 0,
     CrossSection        = 1,
@@ -92,7 +91,6 @@ public:
     uint32_t    grid:1;             //!< Shows or hides the grid. The grid settings are a design file setting.
     uint32_t    acs:1;              //!< Shows or hides the ACS triad.
     uint32_t    bgImage:1;          //!< Shows or hides the background image. The image is a design file setting, and may be undefined.
-
     uint32_t    textures:1;         //!< Controls whether to display texture maps for material assignments. When off only material color is used for display.
     uint32_t    materials:1;        //!< Controls whether materials are used (e.g. control whether geometry with materials draw normally, or as if it has no material).
     uint32_t    sceneLights:1;      //!< Controls whether the custom scene lights or the default lighting scheme are used. Note the inversion.
@@ -113,7 +111,6 @@ public:
     DGNPLATFORM_EXPORT void To3dJson(JsonValueR) const;
     DGNPLATFORM_EXPORT void From3dJson(JsonValueCR);
     };
-#endif
 
 enum class GradientMode
     {
@@ -327,14 +324,12 @@ enum class DgnUnitFormat
 //!     - In Bearing mode, a direction is formatted as an angle measure from either
 //!                        North or South and oriented to either East or West.
 //=======================================================================================
-#if !defined (mdl_resource_compiler) && !defined (mdl_type_resource_generator)
-enum class DirectionMode : uint16_t
+enum class DirectionMode
     {
     Invalid                         = 0,    //!< Uninitialized value. Do not use.
     Azimuth                         = 1,    //!< Ex: 30^
     Bearing                         = 2,    //!< Ex: N60^E
     };
-#endif
 
 //=======================================================================================
 //! Used by DateTimeFormatter to specify the sequence in which various elements of
