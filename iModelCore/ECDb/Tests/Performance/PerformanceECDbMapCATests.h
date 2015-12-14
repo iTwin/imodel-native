@@ -51,7 +51,7 @@ struct PerformanceECDbMapCATestFixture : public ECDbTestFixture
         void SqlReadInstances (ECDbR ecdb, ECClassR ecClass, bool iterateResultSet);
         void SqlUpdateInstances (ECDbR ecdb, ECClassR ecClass, bool bindPropertyValues);
         void SqlDeleteInstances (ECDbR ecdb, ECClassR ecClass);
-        void SetUpTestDb (ECDbR ecdb, ECN::ECSchemaPtr& ecSchema, ECClassP &baseClass);
+        void SetUpTestDb (ECDbR ecdb, ECN::ECSchemaPtr& ecSchema, ECEntityClassP &baseClass);
     };
 
 END_ECDBUNITTESTS_NAMESPACE

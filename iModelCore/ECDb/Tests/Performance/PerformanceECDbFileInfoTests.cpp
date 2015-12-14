@@ -89,7 +89,7 @@ protected:
 
                 for (ECClassCP ecclass : schema->GetClasses())
                     {
-                    if (!ecclass->GetIsDomainClass())
+                    if (ECClassModifier::Abstract == ecclass->GetClassModifier())
                         continue;
 
                     Utf8String ecsql;
@@ -336,7 +336,7 @@ TEST_F(PerformanceECDbFileInfoTests, PurgeAfterDeletionOfOneInstancePerClass)
 
         for (ECClassCP ecclass : schema->GetClasses())
             {
-            if (!ecclass->GetIsDomainClass())
+            if (ECClassModifier::Abstract == ecclass->GetClassModifier())
                 continue;
 
             int deletedCountPerClass = 0;

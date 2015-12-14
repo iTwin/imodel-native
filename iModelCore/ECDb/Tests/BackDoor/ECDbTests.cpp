@@ -149,13 +149,13 @@ void ECDbTestUtility::ReadECSchemaFromDisk
     ecSchemaContext->AddSchemaPath(ecSchemaPath.GetName());
 
     SchemaReadStatus ecSchemaStatus = ECSchema::ReadFromXmlFile(ecSchema, ecSchemaFile.GetName(), *ecSchemaContext);
-    if (ecSchemaStatus == SCHEMA_READ_STATUS_Success)
+    if (ecSchemaStatus == SchemaReadStatus::Success)
         {
         ASSERT_TRUE(ecSchema.IsValid());
         return;
         }
 
-    ASSERT_EQ(ecSchemaStatus, SCHEMA_READ_STATUS_Success);
+    ASSERT_EQ(ecSchemaStatus, SchemaReadStatus::Success);
     ASSERT_TRUE(ecSchema.IsValid());
     }
 
@@ -167,7 +167,7 @@ BentleyStatus ECDbTestUtility::ReadECSchemaFromString(ECSchemaReadContextPtr& sc
     {
     ECSchemaPtr schema = nullptr;
     const auto stat = ECSchema::ReadFromXmlString(schema, ecschemaXmlString, *schemaContext);
-    return stat == SCHEMA_READ_STATUS_Success ? SUCCESS : ERROR;
+    return stat == SchemaReadStatus::Success ? SUCCESS : ERROR;
     }
 
 //---------------------------------------------------------------------------------------
@@ -179,7 +179,6 @@ ECN::ECSchemaCachePtr ECDbTestUtility::ReadECSchemaFromString(Utf8CP ecschemaXml
     ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
     ECSchemaPtr schema = nullptr;
     ECSchema::ReadFromXmlString(schema, ecschemaXmlString, *context);
-
     ECSchemaCachePtr schemaCache = ECSchemaCache::Create();
     schemaCache->AddSchema(*schema);
 
@@ -187,8 +186,8 @@ ECN::ECSchemaCachePtr ECDbTestUtility::ReadECSchemaFromString(Utf8CP ecschemaXml
     }
 
 /*---------------------------------------------------------------------------------**//**
-                                                                                      * @bsimethod                                 Ramanujam.Raman                04/2012
-                                                                                      +---------------+---------------+---------------+---------------+---------------+------*/
+* @bsimethod                                 Ramanujam.Raman                04/2012
++---------------+---------------+---------------+---------------+---------------+------*/
 void ECDbTestUtility::WriteECSchemaToDisk(ECSchemaCR ecSchema, WCharCP filenameNoVerExt)
     {
     // Construct the pathname to be written
@@ -211,24 +210,32 @@ void ECDbTestUtility::WriteECSchemaToDisk(ECSchemaCR ecSchema, WCharCP filenameN
 
     // Write the file
     SchemaWriteStatus schemaWriteStatus = ecSchema.WriteToXmlFile(schemaPathname);
-    ASSERT_EQ(schemaWriteStatus, SCHEMA_WRITE_STATUS_Success);
+    ASSERT_EQ(schemaWriteStatus, SchemaWriteStatus::Success);
     }
 
 /*---------------------------------------------------------------------------------**//**
-                                                                                      * @bsimethod                                 Ramanujam.Raman                06/2012
-                                                                                      +---------------+---------------+---------------+---------------+---------------+------*/
+* @bsimethod                                 Ramanujam.Raman                06/2012
++---------------+---------------+---------------+---------------+---------------+------*/
 bool CompareRelationships(IECRelationshipInstanceCR a, IECRelationshipInstanceCR b)
     {
     if (a.GetSource() == nullptr || b.GetSource() == nullptr || a.GetSource()->GetInstanceId() != b.GetSource()->GetInstanceId())
+        {
+        LOG.trace("CompareECInstances> Relationship instances are not equal: differing source instance ids.");
         return false;
+        }
+
     if (a.GetTarget() == nullptr || b.GetTarget() == nullptr || a.GetTarget()->GetInstanceId() != b.GetTarget()->GetInstanceId())
-        return false;
+        {
+        LOG.trace("CompareECInstances> Relationship instances are not equal: differing target instance ids.");
+            return false;
+        }
+
     return true;
     }
 
 /*---------------------------------------------------------------------------------**//**
-                                                                                      * @bsimethod                                   Affan.Khan                        03/12
-                                                                                      +---------------+---------------+---------------+---------------+---------------+------*/
+* @bsimethod                                   Affan.Khan                        03/12
++---------------+---------------+---------------+---------------+---------------+------*/
 bool CompareProperties(IECInstanceCR actual, ECValuesCollectionCR expected)
     {
     for (ECPropertyValueCR expectedPropertyValue : expected)
@@ -239,18 +246,16 @@ bool CompareProperties(IECInstanceCR actual, ECValuesCollectionCR expected)
         if (expectedPropertyValue.HasChildValues())
             {
             if (!CompareProperties(actual, *expectedPropertyValue.GetChildValues()))
-                {
-                LOG.infov("CompareProperties - Failed for child of property %s", propertyName.c_str());
                 return false;
-                }
+
             continue;
             }
 
         ECValue actualValue;
         ECObjectsStatus status = actual.GetValueUsingAccessor(actualValue, valueAccessor);
-        if (status != ECOBJECTS_STATUS_Success)
+        if (status != ECObjectsStatus::Success)
             {
-            LOG.infov("CompareProperties - GetValue failed for %s", propertyName.c_str());
+            BeAssert(false);
             return false;
             }
 
@@ -261,20 +266,15 @@ bool CompareProperties(IECInstanceCR actual, ECValuesCollectionCR expected)
         if (expectedValueIsNull != actualValueIsNull)
             {
             if (expectedValueIsNull)
-                {
-                LOG.infov("CompareProperties - Expected NULL value for property '%s' but the actual value was not NULL.", propertyName.c_str());
-                }
+                LOG.tracev("CompareProperties - Expected NULL value for property '%s' but the actual value was not NULL.", propertyName.c_str());
             else
-                {
-                LOG.infov("CompareProperties - Expected a non-NULL value for property '%s' but the actual value was NULL.", propertyName.c_str());
-                }
+                LOG.tracev("CompareProperties - Expected a non-NULL value for property '%s' but the actual value was NULL.", propertyName.c_str());
+            
             return false;
             }
 
         if (expectedValue.Equals(actualValue))
-            {
             continue;
-            }
 
         PrimitiveType actualType = actualValue.GetPrimitiveType();
         if (actualType == PRIMITIVETYPE_DateTime)
@@ -283,15 +283,14 @@ bool CompareProperties(IECInstanceCR actual, ECValuesCollectionCR expected)
             int64_t expectedECTicks = expectedValue.GetDateTimeTicks();
             int64_t actualECTicks = actualValue.GetDateTimeTicks();
             if (ECDbTestUtility::CompareECDateTimes(expectedECTicks, actualECTicks))
-                {
                 continue;
-                }
             }
 
         ValueKind actualKind = actualValue.GetKind();
         Utf8String expectedValueWStr = expectedValue.ToString();
         Utf8String actualValueWstr = actualValue.ToString();
-        LOG.infov("CompareProperties - Values not equal for property '%s' (%d %d) - actual %s expected %s", propertyName.c_str(), actualKind, actualType, actualValueWstr.c_str(), expectedValueWStr.c_str());
+        LOG.tracev("CompareECInstances> Instances are not equal: Differing property values property '%s' (%d %d): actual: %s, expected: %s", 
+                   propertyName.c_str(), actualKind, actualType, actualValueWstr.c_str(), expectedValueWStr.c_str());
         return false;
         }
 
@@ -299,8 +298,8 @@ bool CompareProperties(IECInstanceCR actual, ECValuesCollectionCR expected)
     }
 
 /*---------------------------------------------------------------------------------**//**
-                                                                                      * @bsimethod                                   Affan.Khan                        03/12
-                                                                                      +---------------+---------------+---------------+---------------+---------------+------*/
+* @bsimethod                                   Affan.Khan                        03/12
++---------------+---------------+---------------+---------------+---------------+------*/
 bool ECDbTestUtility::CompareECInstances(IECInstanceCR expected, IECInstanceCR actual)
     {
     IECRelationshipInstanceCP relExpected = dynamic_cast<IECRelationshipInstanceCP> (&expected);
@@ -308,7 +307,11 @@ bool ECDbTestUtility::CompareECInstances(IECInstanceCR expected, IECInstanceCR a
     if (relExpected != nullptr || relActual != nullptr)
         {
         if (relExpected == nullptr || relActual == nullptr)
+            {
+            LOG.trace("CompareECInstances> Instances are not equal. One is a relationship instance, the other is not.");
             return false; // both have to be non null
+            }
+
         if (!CompareRelationships(*relExpected, *relActual))
             return false;
         }
@@ -319,12 +322,13 @@ bool ECDbTestUtility::CompareECInstances(IECInstanceCR expected, IECInstanceCR a
     ECValuesCollectionPtr propertyValuesExpected = ECValuesCollection::Create(expected);
     if (propertyValuesExpected.IsNull())
         return false;
+
     return CompareProperties(actual, *propertyValuesExpected);
     }
 
 /*---------------------------------------------------------------------------------**//**
-                                                                                      * @bsimethod                                    Ramanujam.Raman                 10/2012
-                                                                                      +---------------+---------------+---------------+---------------+---------------+------*/
+* @bsimethod                                    Ramanujam.Raman                 10/2012
++---------------+---------------+---------------+---------------+---------------+------*/
 bool ECDbTestUtility::CompareJsonWithECInstance(const Json::Value& json, IECInstanceCR referenceInstance)
     {
     IECRelationshipInstanceCP relationshipInstance = dynamic_cast<IECRelationshipInstanceCP> (&referenceInstance);
@@ -354,8 +358,8 @@ bool ECDbTestUtility::CompareJsonWithECInstance(const Json::Value& json, IECInst
     }
 
 /*---------------------------------------------------------------------------------**//**
-                                                                                      * @bsimethod                                    Ramanujam.Raman                 10/2012
-                                                                                      +---------------+---------------+---------------+---------------+---------------+------*/
+* @bsimethod                                    Ramanujam.Raman                 10/2012
++---------------+---------------+---------------+---------------+---------------+------*/
 bool ECDbTestUtility::CompareJsonWithECValue(const Json::Value& jsonValue, ECValueCR referenceValue, IECInstanceCR referenceInstance, Utf8CP referencePropertyAccessString)
     {
     Json::ValueType jsonValueType = jsonValue.type();
@@ -380,8 +384,8 @@ bool ECDbTestUtility::CompareJsonWithECValue(const Json::Value& jsonValue, ECVal
     }
 
 /*---------------------------------------------------------------------------------**//**
-                                                                                      * @bsimethod                                    Ramanujam.Raman                 10/2012
-                                                                                      +---------------+---------------+---------------+---------------+---------------+------*/
+* @bsimethod                                    Ramanujam.Raman                 10/2012
++---------------+---------------+---------------+---------------+---------------+------*/
 bool ECDbTestUtility::CompareJsonWithECPrimitiveValue(const Json::Value& jsonValue, ECValueCR referenceValue)
     {
     if (!referenceValue.IsPrimitive())
@@ -492,8 +496,8 @@ bool ECDbTestUtility::CompareJsonWithECPrimitiveValue(const Json::Value& jsonVal
     }
 
 /*---------------------------------------------------------------------------------**//**
-                                                                                      * @bsimethod                                    Ramanujam.Raman                 10/2012
-                                                                                      +---------------+---------------+---------------+---------------+---------------+------*/
+* @bsimethod                                    Ramanujam.Raman                 10/2012
++---------------+---------------+---------------+---------------+---------------+------*/
 bool ECDbTestUtility::CompareJsonWithECStructValue(const Json::Value& jsonValue, ECValueCR referenceValue)
     {
     if (!referenceValue.IsStruct())
@@ -511,8 +515,8 @@ bool ECDbTestUtility::CompareJsonWithECStructValue(const Json::Value& jsonValue,
     }
 
 /*---------------------------------------------------------------------------------**//**
-                                                                                      * @bsimethod                                    Ramanujam.Raman                 10/2012
-                                                                                      +---------------+---------------+---------------+---------------+---------------+------*/
+* @bsimethod                                    Ramanujam.Raman                 10/2012
++---------------+---------------+---------------+---------------+---------------+------*/
 bool ECDbTestUtility::CompareJsonWithECArrayValue(const Json::Value& jsonValue, ECValueCR referenceValue, IECInstanceCR referenceInstance, Utf8CP referencePropertyAccessString)
     {
     if (referenceValue.IsNull())
@@ -539,8 +543,8 @@ bool ECDbTestUtility::CompareJsonWithECArrayValue(const Json::Value& jsonValue, 
     }
 
 /*---------------------------------------------------------------------------------**//**
-                                                                                      * @bsimethod                                   Ramanujam.Raman                   04/12
-                                                                                      +---------------+---------------+---------------+---------------+---------------+------*/
+* @bsimethod                                   Ramanujam.Raman                   04/12
++---------------+---------------+---------------+---------------+---------------+------*/
 size_t ECDbTestUtility::GetIterableCount(ECCustomAttributeInstanceIterable const& iterable)
     {
     size_t count = 0;
@@ -550,8 +554,8 @@ size_t ECDbTestUtility::GetIterableCount(ECCustomAttributeInstanceIterable const
     }
 
 /*---------------------------------------------------------------------------------**//**
-                                                                                      * @bsimethod                                   Ramanujam.Raman                   04/12
-                                                                                      +---------------+---------------+---------------+---------------+---------------+------*/
+* @bsimethod                                   Ramanujam.Raman                   04/12
++---------------+---------------+---------------+---------------+---------------+------*/
 size_t ECDbTestUtility::GetIterableCount(ECPropertyIterable const& iterable)
     {
     size_t count = 0;
@@ -564,9 +568,9 @@ size_t ECDbTestUtility::GetIterableCount(ECPropertyIterable const& iterable)
     }
 
 /*---------------------------------------------------------------------------------**//**
-                                                                                      * @bsimethod                                   Krischan.Eberle                   10/12
-                                                                                      +---------------+---------------+---------------+---------------+---------------+------*/
-                                                                                      //static
+* @bsimethod                                   Krischan.Eberle                   10/12
++---------------+---------------+---------------+---------------+---------------+------*/
+//static
 bool ECDbTestUtility::IsECValueNull
 (
     ECValueCR value
@@ -576,8 +580,8 @@ bool ECDbTestUtility::IsECValueNull
     }
 
 /*---------------------------------------------------------------------------------**//**
-                                                                                      * @bsimethod                                   Ramanujam.Raman                   04/12
-                                                                                      +---------------+---------------+---------------+---------------+---------------+------*/
+* @bsimethod                                   Ramanujam.Raman                   04/12
++---------------+---------------+---------------+---------------+---------------+------*/
 bool ECDbTestUtility::IsECValueNullOrEmpty(ECValueCR value)
     {
     if (IsECValueNull(value))
@@ -597,9 +601,9 @@ bool ECDbTestUtility::IsECValueNullOrEmpty(ECValueCR value)
     }
 
 /*---------------------------------------------------------------------------------**//**
-                                                                                      * @bsimethod                                   Krischan.Eberle                   10/12
-                                                                                      +---------------+---------------+---------------+---------------+---------------+------*/
-                                                                                      //static
+* @bsimethod                                   Krischan.Eberle                   10/12
++---------------+---------------+---------------+---------------+---------------+------*/
+//static
 void ECDbTestUtility::AssertECDateTime
 (
     ECValueCR expectedECValue,
@@ -637,9 +641,9 @@ void ECDbTestUtility::AssertECDateTime
     }
 
 /*---------------------------------------------------------------------------------**//**
-                                                                                      * @bsimethod                                   Krischan.Eberle                   10/12
-                                                                                      +---------------+---------------+---------------+---------------+---------------+------*/
-                                                                                      //static
+* @bsimethod                                   Krischan.Eberle                   10/12
++---------------+---------------+---------------+---------------+---------------+------*/
+//static
 void ECDbTestUtility::AssertECDateTime
 (
     int64_t expectedCETicks,
@@ -654,14 +658,10 @@ void ECDbTestUtility::AssertECDateTime
     }
 
 /*---------------------------------------------------------------------------------**//**
-                                                                                      * @bsimethod                                   Krischan.Eberle                   10/12
-                                                                                      +---------------+---------------+---------------+---------------+---------------+------*/
-                                                                                      //static
-bool ECDbTestUtility::CompareECDateTimes
-(
-    int64_t expectedECTicks,
-    int64_t actualECTicks
-    )
+* @bsimethod                                   Krischan.Eberle                   10/12
++---------------+---------------+---------------+---------------+---------------+------*/
+//static
+bool ECDbTestUtility::CompareECDateTimes(int64_t expectedECTicks, int64_t actualECTicks)
     {
     int64_t diff = expectedECTicks - actualECTicks;
     //get absolute diff
@@ -677,14 +677,14 @@ bool ECDbTestUtility::CompareECDateTimes
 
     if (diff < DATETIME_ACCURACY_TOLERANCE_HNS)
         {
-        LOG.debugv(L"DateTime value differs by %d hecto-nanoseconds but is within tolerance of %d hecto-nanoseconds.",
+        LOG.tracev("CompareECInstances> Instances are not equal: DateTime value differs by %d hecto-nanoseconds but is within tolerance of %d hecto-nanoseconds.",
                    diff,
                    DATETIME_ACCURACY_TOLERANCE_HNS);
         return true;
         }
     else
         {
-        LOG.infov(L"DateTime value differs by %d hecto-nanoseconds which is outside the tolerance of %d hecto-nanoseconds.",
+        LOG.tracev("CompareECInstances> Instances are not equal: DateTime value differs by %d hecto-nanoseconds which is outside the tolerance of %d hecto-nanoseconds.",
                   diff,
                   DATETIME_ACCURACY_TOLERANCE_HNS);
         return false;
@@ -692,8 +692,8 @@ bool ECDbTestUtility::CompareECDateTimes
     }
 
 /*---------------------------------------------------------------------------------**//**
-                                                                                      * @bsimethod                                   Ramanujam.Raman                   04/12
-                                                                                      +---------------+---------------+---------------+---------------+---------------+------*/
+* @bsimethod                                   Ramanujam.Raman                   04/12
++---------------+---------------+---------------+---------------+---------------+------*/
 void ECDbTestUtility::GetClassUsageStatistics
 (
     size_t& instanceCount,
@@ -751,8 +751,8 @@ void ECDbTestUtility::GetClassUsageStatistics
     }
 
 /*---------------------------------------------------------------------------------**//**
-                                                                                      * @bsimethod                                   Ramanujam.Raman                   04/12
-                                                                                      +---------------+---------------+---------------+---------------+---------------+------*/
+* @bsimethod                                   Ramanujam.Raman                   04/12
++---------------+---------------+---------------+---------------+---------------+------*/
 void ECDbTestUtility::DumpECSchemaUsageStatistics(ECSchemaCR schema, ECDbR ecdb, bool dumpEmptyClasses)
     {
     LOG.infov("ECSchema: %s.%02d.%02d", schema.GetName().c_str(), schema.GetVersionMajor(), schema.GetVersionMinor());
@@ -766,7 +766,7 @@ void ECDbTestUtility::DumpECSchemaUsageStatistics(ECSchemaCR schema, ECDbR ecdb,
     for (ECClassP ecClass : schema.GetClasses())
         {
         totalClassCount++;
-        if (ecClass->GetIsCustomAttributeClass())
+        if (ecClass->IsCustomAttributeClass())
             {
             totalCustomAttributeClassCount++;
             LOG.infov("    ECClass: %-40s\t\t(Custom Attribute Class)", ecClass->GetName().c_str());
@@ -805,8 +805,8 @@ void ECDbTestUtility::DumpECSchemaUsageStatistics(ECSchemaCR schema, ECDbR ecdb,
     }
 
 /*---------------------------------------------------------------------------------**//**
-                                                                                      * @bsimethod                                   Ramanujam.Raman                   04/12
-                                                                                      +---------------+---------------+---------------+---------------+---------------+------*/
+* @bsimethod                                   Ramanujam.Raman                   04/12
++---------------+---------------+---------------+---------------+---------------+------*/
 int64_t ECDbTestUtility::ReadCellValueAsInt64(DbR db, Utf8CP tableName, Utf8CP columnName, Utf8CP whereClause)
     {
     Utf8String str;
@@ -818,8 +818,8 @@ int64_t ECDbTestUtility::ReadCellValueAsInt64(DbR db, Utf8CP tableName, Utf8CP c
     }
 
 /*---------------------------------------------------------------------------------**//**
-                                                                                      * @bsimethod                                   Ramanujam.Raman                   10/12
-                                                                                      +---------------+---------------+---------------+---------------+---------------+------*/
+* @bsimethod                                   Ramanujam.Raman                   10/12
++---------------+---------------+---------------+---------------+---------------+------*/
 void ECDbTestUtility::DebugDumpJson(const Json::Value& jsonValue)
     {
     Utf8String strValue = Json::StyledWriter().write(jsonValue);
@@ -859,7 +859,7 @@ BentleyStatus ECDbTestUtility::SetECInstanceId(ECN::IECInstanceR instance, ECIns
         }
 
     const auto ecstat = instance.SetInstanceId(instanceIdStr);
-    return ecstat == ECOBJECTS_STATUS_Success ? SUCCESS : ERROR;
+    return ecstat == ECObjectsStatus::Success ? SUCCESS : ERROR;
     }
 
 //---------------------------------------------------------------------------------------
@@ -910,10 +910,10 @@ BentleyStatus ECDbTestUtility::ReadJsonInputFromFile(Json::Value& jsonInput, BeF
 // @bsimethod                                                   Affan.Khan     03/12
 //---------------------------------------------------------------------------------------
 //static
-IECInstancePtr ECDbTestUtility::CreateArbitraryECInstance(ECClassCR ecClass, PopulatePrimitiveValueCallback populatePrimitiveValueCallback, bool skipStructs, bool skipArrays)
+IECInstancePtr ECDbTestUtility::CreateArbitraryECInstance(ECClassCR ecClass, PopulatePrimitiveValueCallback populatePrimitiveValueCallback, bool skipStructs, bool skipArrays, bool skipReadOnlyProps)
     {
     IECInstancePtr instance = ecClass.GetDefaultStandaloneEnabler()->CreateInstance(0);
-    PopulateECInstance(instance, populatePrimitiveValueCallback, skipStructs, skipArrays);
+    PopulateECInstance(instance, populatePrimitiveValueCallback, skipStructs, skipArrays, skipReadOnlyProps);
     return instance;
     }
 
@@ -923,11 +923,14 @@ IECInstancePtr ECDbTestUtility::CreateArbitraryECInstance(ECClassCR ecClass, Pop
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Affan.Khan     03/12
 //---------------------------------------------------------------------------------------
-void ECDbTestUtility::PopulateECInstance(ECN::IECInstancePtr ecInstance, PopulatePrimitiveValueCallback populatePrimitiveValueCallback, bool skipStructs, bool skipArrays)
+void ECDbTestUtility::PopulateECInstance(ECN::IECInstancePtr ecInstance, PopulatePrimitiveValueCallback populatePrimitiveValueCallback, bool skipStructs, bool skipArrays, bool skipReadOnlyProps)
     {
     ECValue value;
     for (ECPropertyCP ecProperty : ecInstance->GetClass().GetProperties(true))
         {
+        if (ecProperty->GetIsReadOnly() && skipReadOnlyProps)
+            continue;
+
         if (!skipStructs && ecProperty->GetIsStruct())
             {
             PopulateStructValue(value, ecProperty->GetAsStructProperty()->GetType(), populatePrimitiveValueCallback);
@@ -953,9 +956,10 @@ void ECDbTestUtility::PopulateECInstance(ECN::IECInstancePtr ecInstance, Populat
             ecInstance->AddArrayElements(ecProperty->GetName().c_str(), arrayCount);
             if (arrayProperty->GetKind() == ARRAYKIND_Struct)
                 {
+                StructArrayECPropertyCP structArrayProperty = ecProperty->GetAsStructArrayProperty();
                 for (uint32_t i = 0; i < arrayCount; i++)
                     {
-                    PopulateStructValue(value, *arrayProperty->GetStructElementType(), populatePrimitiveValueCallback);
+                    PopulateStructValue(value, *structArrayProperty->GetStructElementType(), populatePrimitiveValueCallback);
                     ecInstance->SetValue(ecProperty->GetName().c_str(), value, i);
                     }
                 }
@@ -1038,7 +1042,7 @@ void ECDbTestUtility::GenerateRandomValue(ECValueR value, PrimitiveType type, EC
             {
             DateTime dt;
             DateTimeInfo dti;
-            if (ecProperty != nullptr && StandardCustomAttributeHelper::GetDateTimeInfo(dti, *ecProperty) == ECOBJECTS_STATUS_Success)
+            if (ecProperty != nullptr && StandardCustomAttributeHelper::GetDateTimeInfo(dti, *ecProperty) == ECObjectsStatus::Success)
                 {
                 DateTime::Info info = dti.GetInfo(true);
                 if (info.GetKind() == DateTime::Kind::Local)
@@ -1132,7 +1136,7 @@ void ECDbTestUtility::PopulatePrimitiveValue(ECValueR value, PrimitiveType primi
             case PRIMITIVETYPE_DateTime:
             {
             DateTimeInfo dti;
-            if (ecProperty != nullptr && StandardCustomAttributeHelper::GetDateTimeInfo(dti, *ecProperty) == ECOBJECTS_STATUS_Success)
+            if (ecProperty != nullptr && StandardCustomAttributeHelper::GetDateTimeInfo(dti, *ecProperty) == ECObjectsStatus::Success)
                 {
                 DateTime::Info info = dti.GetInfo(true);
                 if (info.GetKind() == DateTime::Kind::Local)
@@ -1270,7 +1274,7 @@ void ECDbTestUtility::PopulatePrimitiveValueWithRandomValues(ECValueR ecValue, P
 //---------------------------------------------------------------------------------------
 ECObjectsStatus ECDbTestUtility::CopyStruct(IECInstanceR source, ECValuesCollectionCR collection, Utf8CP baseAccessPath)
     {
-    ECObjectsStatus status = ECOBJECTS_STATUS_Success;
+    ECObjectsStatus status = ECObjectsStatus::Success;
     for (auto& propertyValue : collection)
         {
         auto pvAccessString = propertyValue.GetValueAccessor().GetPropertyName();
@@ -1279,7 +1283,7 @@ ECObjectsStatus ECDbTestUtility::CopyStruct(IECInstanceR source, ECValuesCollect
         if (propertyValue.HasChildValues())
             {
             status = CopyStruct(source, *propertyValue.GetChildValues(), accessString.c_str());
-            if (status != ECOBJECTS_STATUS_Success)
+            if (status != ECObjectsStatus::Success)
                 {
                 return status;
                 }
@@ -1298,7 +1302,7 @@ ECObjectsStatus ECDbTestUtility::CopyStruct(IECInstanceR source, ECValuesCollect
         else
             status = source.SetValue(accessString.c_str(), propertyValue.GetValue());
 
-        if (status != ECOBJECTS_STATUS_Success)
+        if (status != ECObjectsStatus::Success)
             {
             return status;
             }

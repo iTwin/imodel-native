@@ -29,7 +29,7 @@ std::unique_ptr<ECValueBindingInfo> ECValueBindingInfoFactory::CreateBindingInfo
     //propIndex only needed for prims and arrays
     uint32_t propIndex = 0;
     auto ecStat = enabler.GetPropertyIndex (propIndex, propertyAccessString);
-    if (ecStat != ECOBJECTS_STATUS_Success)
+    if (ecStat != ECObjectsStatus::Success)
         return nullptr;
 
     if (ecProperty.GetIsPrimitive ())
@@ -209,13 +209,13 @@ std::unique_ptr<ArrayECValueBindingInfo> ArrayECValueBindingInfo::Create (ECN::E
 ArrayECValueBindingInfo::ArrayECValueBindingInfo (ECN::ECPropertyCR prop, uint32_t arrayPropIndex, int ecsqlParameterIndex) 
 : ECValueBindingInfo (Type::Array, ecsqlParameterIndex), m_arrayPropIndex (arrayPropIndex)
     {
-    auto arrayProp = prop.GetAsArrayProperty ();
+    auto structArrayProp = prop.GetAsStructArrayProperty ();
     //if this is a struct array, generate bindings for the struct element type.
     //This is not necessary for prim arrays as they don't have any extra information needed
     //to read out the values
-    if (arrayProp->GetKind () == ARRAYKIND_Struct)
+    if (nullptr != structArrayProp)
         {
-        auto structType = arrayProp->GetStructElementType ();
+        auto structType = structArrayProp->GetStructElementType ();
         m_structArrayElementBindingInfo = StructECValueBindingInfo::CreateForNestedStruct (*structType);
         }
     }
@@ -341,7 +341,7 @@ BentleyStatus ECInstanceAdapterHelper::BindPrimitiveValue (IECSqlBinder& binder,
     //string/blob owner is longer than ECInstance adapter operation takes we do not need to make copies.
     value.SetAllowsPointersIntoInstanceMemory (true);
     auto ecStat = instanceInfo.GetInstance ().GetValue (value, valueBindingInfo.GetPropertyIndex ());
-    if (ecStat != ECOBJECTS_STATUS_Success)
+    if (ecStat != ECObjectsStatus::Success)
         return ERROR;
 
     return BindPrimitiveValue (binder, value);
@@ -482,7 +482,7 @@ BentleyStatus ECInstanceAdapterHelper::BindArrayValue (IECSqlBinder& binder, ECI
     //string/blob owner is longer than ECInstance adapter operation takes we do not need to make copies.
     arrayValue.SetAllowsPointersIntoInstanceMemory (true);
     auto ecStat = instance.GetValue (arrayValue, arrayPropIndex);
-    if (ecStat != ECOBJECTS_STATUS_Success)
+    if (ecStat != ECObjectsStatus::Success)
         return ERROR;
 
     BeAssert (arrayValue.IsArray ());
@@ -497,7 +497,7 @@ BentleyStatus ECInstanceAdapterHelper::BindArrayValue (IECSqlBinder& binder, ECI
         //string/blob owner is longer than ECInstance adapter operation takes we do not need to make copies.
         elementValue.SetAllowsPointersIntoInstanceMemory (true);
         ecStat = instance.GetValue (elementValue, arrayPropIndex, i);
-        if (ecStat != ECOBJECTS_STATUS_Success)
+        if (ecStat != ECObjectsStatus::Success)
             return ERROR;
 
         auto& arrayElementBinder = arrayBinder.AddArrayElement ();
@@ -604,7 +604,10 @@ bool ECInstanceAdapterHelper::IsOrContainsCalculatedProperty (ECN::ECPropertyCR 
         if (arrayProp->GetKind () == ARRAYKIND_Primitive)
             return arrayProp->IsCalculated ();
 
-        structType = arrayProp->GetStructElementType ();
+        auto structArrayProp = prop.GetAsStructArrayProperty();
+        if (nullptr == structArrayProp)
+            return false;
+        structType = structArrayProp->GetStructElementType ();
         }
     else
         structType = &prop.GetAsStructProperty ()->GetType ();
@@ -665,7 +668,7 @@ BentleyStatus ECInstanceAdapterHelper::SetECInstanceId (ECN::IECInstanceR instan
         }
 
     const auto ecstat = instance.SetInstanceId (instanceIdStr);
-    return ecstat == ECOBJECTS_STATUS_Success ? SUCCESS : ERROR;
+    return ecstat == ECObjectsStatus::Success ? SUCCESS : ERROR;
     }
 
 

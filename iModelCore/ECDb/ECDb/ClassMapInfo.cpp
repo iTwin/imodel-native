@@ -42,7 +42,7 @@ std::unique_ptr<ClassMapInfo> ClassMapInfoFactory::Create(MapStatus& mapStatus, 
 //@bsimethod                                 Affan.Khan                            07/2012
 //+---------------+---------------+---------------+---------------+---------------+------
 ClassMapInfo::ClassMapInfo (ECClassCR ecClass, ECDbMapCR ecDbMap)
-    : m_ecdbMap(ecDbMap), m_ecClass(ecClass), m_isMapToVirtualTable(IClassMap::IsAbstractECClass(ecClass)), m_classHasCurrentTimeStampProperty(nullptr), m_isECInstanceIdAutogenerationDisabled (false), m_parentClassMap(nullptr)
+    : m_ecdbMap(ecDbMap), m_ecClass(ecClass), m_isMapToVirtualTable(ecClass.GetClassModifier() == ECClassModifier::Abstract), m_classHasCurrentTimeStampProperty(nullptr), m_isECInstanceIdAutogenerationDisabled (false), m_parentClassMap(nullptr)
     {}
 
 //---------------------------------------------------------------------------------
@@ -75,7 +75,7 @@ MapStatus ClassMapInfo::Initialize()
 +---------------+---------------+---------------+---------------+---------------+------*/
 MapStatus ClassMapInfo::_EvaluateMapStrategy()
     {
-    if (m_ecClass.GetIsCustomAttributeClass() && !m_ecClass.GetIsDomainClass() && !m_ecClass.GetIsStruct())
+    if (m_ecClass.IsCustomAttributeClass())
         {
         LogClassNotMapped(NativeLogging::LOG_DEBUG, m_ecClass, "ECClass is a custom attribute which is never mapped to a table in ECDb.");
         m_resolvedStrategy.Assign(ECDbMapStrategy::Strategy::NotMapped, false);
@@ -307,7 +307,7 @@ BentleyStatus ClassMapInfo::InitializeFromClassHasCurrentTimeStampProperty()
    
     Utf8String propertyName;
     ECValue v;
-    if (classHint->GetValue(v, "PropertyName") == ECOBJECTS_STATUS_Success && !v.IsNull())
+    if (classHint->GetValue(v, "PropertyName") == ECObjectsStatus::Success && !v.IsNull())
         {
         propertyName = v.GetUtf8CP();
         ECPropertyCP dateTimeProperty = m_ecClass.GetPropertyP(propertyName);
@@ -343,7 +343,7 @@ BentleyStatus ClassMapInfo::InitializeFromClassMapCA()
         return ERROR;
 
     ECObjectsStatus ecstat = customClassMap.TryGetTableName(m_tableName);
-    if (ECOBJECTS_STATUS_Success != ecstat)
+    if (ECObjectsStatus::Success != ecstat)
         return ERROR;
 
     if ((userStrategy->GetStrategy() == UserECDbMapStrategy::Strategy::ExistingTable ||
@@ -367,12 +367,12 @@ BentleyStatus ClassMapInfo::InitializeFromClassMapCA()
         }
 
     ecstat = customClassMap.TryGetECInstanceIdColumn(m_ecInstanceIdColumnName);
-    if (ECOBJECTS_STATUS_Success != ecstat)
+    if (ECObjectsStatus::Success != ecstat)
         return ERROR;
 
     bvector<ECDbClassMap::DbIndex> indices;
     ecstat = customClassMap.TryGetIndexes(indices);
-    if (ECOBJECTS_STATUS_Success != ecstat)
+    if (ECObjectsStatus::Success != ecstat)
         return ERROR;
 
     for (ECDbClassMap::DbIndex const& index : indices)
@@ -399,7 +399,7 @@ bool ClassHasDisableECInstanceIdAutogenerationCA(bool* appliesToSubclasses, ECCl
     if (disableECInstanceIdAutoGenerationCA != nullptr && appliesToSubclasses != nullptr)
         {
         ECValue v;
-        if (ECOBJECTS_STATUS_Success != disableECInstanceIdAutoGenerationCA->GetValue(v, "AppliesToSubclasses"))
+        if (ECObjectsStatus::Success != disableECInstanceIdAutoGenerationCA->GetValue(v, "AppliesToSubclasses"))
             {
             BeAssert(false && "CA DisableECInstanceIdAutogeneration is expected to have a property AppliesToSubclasses");
             return false;
@@ -615,7 +615,7 @@ BentleyStatus RelationshipMapInfo::_InitializeFromSchema()
         m_createForeignKeyConstraint = true;
 
         ECRelationshipEnd foreignKeyEnd = ECRelationshipEnd_Target;
-        if (ECOBJECTS_STATUS_Success != foreignKeyRelMap.TryGetEnd(foreignKeyEnd))
+        if (ECObjectsStatus::Success != foreignKeyRelMap.TryGetEnd(foreignKeyEnd))
             return ERROR;
 
         RelationshipEndColumns* foreignKeyColumnsMapping = nullptr;
@@ -639,7 +639,7 @@ BentleyStatus RelationshipMapInfo::_InitializeFromSchema()
 
         Utf8String foreignKeyColName;
         Utf8String foreignKeyClassIdColName;
-        if (ECOBJECTS_STATUS_Success != foreignKeyRelMap.TryGetForeignKeyColumn(foreignKeyColName))
+        if (ECObjectsStatus::Success != foreignKeyRelMap.TryGetForeignKeyColumn(foreignKeyColName))
             return ERROR;
 
         if (!foreignKeyColName.empty())
@@ -655,21 +655,21 @@ BentleyStatus RelationshipMapInfo::_InitializeFromSchema()
                 }
             }
 
-        if (ECOBJECTS_STATUS_Success != foreignKeyRelMap.TryGetForeignKeyClassIdColumn(foreignKeyClassIdColName))
+        if (ECObjectsStatus::Success != foreignKeyRelMap.TryGetForeignKeyClassIdColumn(foreignKeyClassIdColName))
             return ERROR;
 
         *foreignKeyColumnsMapping = RelationshipEndColumns(foreignKeyColName.c_str(), foreignKeyClassIdColName.c_str());
 
         Utf8String onDeleteActionStr;
-        if (ECOBJECTS_STATUS_Success != foreignKeyRelMap.TryGetOnDeleteAction(onDeleteActionStr))
+        if (ECObjectsStatus::Success != foreignKeyRelMap.TryGetOnDeleteAction(onDeleteActionStr))
             return ERROR;
 
         Utf8String onUpdateActionStr;
-        if (ECOBJECTS_STATUS_Success != foreignKeyRelMap.TryGetOnUpdateAction(onUpdateActionStr))
+        if (ECObjectsStatus::Success != foreignKeyRelMap.TryGetOnUpdateAction(onUpdateActionStr))
             return ERROR;
 
         const ForeignKeyActionType onDeleteAction = ECDbSqlForeignKeyConstraint::ToActionType(onDeleteActionStr.c_str());
-        if (onDeleteAction == ForeignKeyActionType::Cascade && relClass->GetStrength() != StrengthType::STRENGTHTYPE_Embedding)
+        if (onDeleteAction == ForeignKeyActionType::Cascade && relClass->GetStrength() != StrengthType::Embedding)
             {
             LOG.errorv("ForeignKeyRelationshipMap custom attribute on ECRelationshipClass '%s' can only define a CASCADE DELETE constraint if the relationship strength is 'Embedding'.",
                        GetECClass().GetFullName());
@@ -681,7 +681,7 @@ BentleyStatus RelationshipMapInfo::_InitializeFromSchema()
 
         //default ForeignKeyRelationshipMap.CreateIndex is true in case CA or the CreateIndex prop is not set
         m_createIndexOnForeignKey = true;
-        if (ECOBJECTS_STATUS_Success != foreignKeyRelMap.TryGetCreateIndex(m_createIndexOnForeignKey))
+        if (ECObjectsStatus::Success != foreignKeyRelMap.TryGetCreateIndex(m_createIndexOnForeignKey))
             return ERROR;
 
         return SUCCESS;
@@ -689,23 +689,23 @@ BentleyStatus RelationshipMapInfo::_InitializeFromSchema()
     
     if (hasLinkTableRelMap)
         {
-        if (ECOBJECTS_STATUS_Success != linkTableRelationMap.TryGetAllowDuplicateRelationships(m_allowDuplicateRelationships))
+        if (ECObjectsStatus::Success != linkTableRelationMap.TryGetAllowDuplicateRelationships(m_allowDuplicateRelationships))
             return ERROR;
 
         Utf8String sourceIdColName;
-        if (ECOBJECTS_STATUS_Success != linkTableRelationMap.TryGetSourceECInstanceIdColumn(sourceIdColName))
+        if (ECObjectsStatus::Success != linkTableRelationMap.TryGetSourceECInstanceIdColumn(sourceIdColName))
             return ERROR;
 
         Utf8String sourceClassIdColName;
-        if (ECOBJECTS_STATUS_Success != linkTableRelationMap.TryGetSourceECClassIdColumn(sourceClassIdColName))
+        if (ECObjectsStatus::Success != linkTableRelationMap.TryGetSourceECClassIdColumn(sourceClassIdColName))
             return ERROR;
 
         Utf8String targetIdColName;
-        if (ECOBJECTS_STATUS_Success != linkTableRelationMap.TryGetTargetECInstanceIdColumn(targetIdColName))
+        if (ECObjectsStatus::Success != linkTableRelationMap.TryGetTargetECInstanceIdColumn(targetIdColName))
             return ERROR;
 
         Utf8String targetClassIdColName;
-        if (ECOBJECTS_STATUS_Success != linkTableRelationMap.TryGetTargetECClassIdColumn(targetClassIdColName))
+        if (ECObjectsStatus::Success != linkTableRelationMap.TryGetTargetECClassIdColumn(targetClassIdColName))
             return ERROR;
 
         m_sourceColumnsMappingIsNull = false;

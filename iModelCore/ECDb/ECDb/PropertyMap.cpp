@@ -734,33 +734,16 @@ BentleyStatus PropertyMapStructArray::_Load(ECDbClassMapInfo const& classMapInfo
 +---------------+---------------+---------------+---------------+---------------+------*/
 PropertyMapStructArrayPtr PropertyMapStructArray::Create (ECPropertyCR ecProperty, ECDbMapCR ecDbMap, Utf8CP propertyAccessString, ECDbSqlTable const* primaryTable, PropertyMapCP parentPropertyMap)
     {
-    ECClassCP tableECType = nullptr;
-    ArrayECPropertyCP arrayProperty = ecProperty.GetAsArrayProperty();
-    if (arrayProperty)
+    StructArrayECPropertyCP structArrayProperty = ecProperty.GetAsStructArrayProperty();
+    if (structArrayProperty == nullptr)
         {
-        ArrayKind kind =  arrayProperty->GetKind();
-        if (kind == ARRAYKIND_Primitive)
-            {
-            BeAssert(false && "not supported");
-            tableECType = ECDbSystemSchemaHelper::GetClassForPrimitiveArrayPersistence (ecDbMap.GetECDbR(), arrayProperty->GetPrimitiveElementType());
-            }
-        else if (kind == ARRAYKIND_Struct)
-            tableECType = arrayProperty->GetStructElementType();
+        BeAssert(false && "Expecting a struct array property when using PropertyMapToTable");
+        return nullptr;
         }
-    else
-        BeAssert (false && "Expecting an array when using PropertyMapStructArray");
 
-    return new PropertyMapStructArray (ecProperty, *tableECType, propertyAccessString, primaryTable, parentPropertyMap);
+    ECClassCP structType = structArrayProperty->GetStructElementType();
+    return new PropertyMapStructArray (ecProperty, *structType, propertyAccessString, primaryTable, parentPropertyMap);
     }
-
-
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    affan.khan      09/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-void PropertyMapStructArray::_GetColumns(std::vector<ECDbSqlColumn const*>& columns) const
-    {
-    }
-
        
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle     11/2013

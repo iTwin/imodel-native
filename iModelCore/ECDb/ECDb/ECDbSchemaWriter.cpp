@@ -44,54 +44,6 @@ DbResult ECDbSchemaWriter::CreateECSchemaEntry(ECSchemaCR ecSchema, ECSchemaId e
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        05/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ECDbSchemaWriter::CreateECClassEntry(ECClassCR ecClass, ECClassId ecClassId)
-    {
-    DbECClassInfo info;
-
-    info.ColsInsert =
-        DbECClassInfo::COL_Id                |
-        DbECClassInfo::COL_SchemaId        |
-        DbECClassInfo::COL_Name              |
-        DbECClassInfo::COL_Description       |
-        DbECClassInfo::COL_IsCustomAttribute |
-        DbECClassInfo::COL_IsStruct          |
-        DbECClassInfo::COL_IsDomainClass     |
-        DbECClassInfo::COL_IsRelationship;
-
-    info.m_ecClassId         = ecClassId;
-    info.m_ecSchemaId        = ecClass.GetSchema().GetId();
-    info.m_isCustomAttribute = ecClass.GetIsCustomAttributeClass();
-    info.m_isStruct          = ecClass.GetIsStruct();
-    info.m_isDomainClass     = ecClass.GetIsDomainClass();
-    info.m_isRelationship    = false;
-    info.m_name = ecClass.GetName().c_str();
-    info.m_description = ecClass.GetDescription().c_str();
-
-    if (ecClass.GetIsDisplayLabelDefined())
-        {
-        info.m_displayLabel = ecClass.GetDisplayLabel().c_str();
-        info.ColsInsert |= DbECClassInfo::COL_DisplayLabel;
-        }
-
-    ECN::ECRelationshipClassCP relationship = ecClass.GetRelationshipClassCP();
-    if (relationship != nullptr)
-        {
-        info.ColsInsert |=
-            DbECClassInfo::COL_RelationStrength          |
-            DbECClassInfo::COL_RelationStrengthDirection;
-
-        info.m_relationStrength          = relationship->GetStrength();
-        info.m_relationStrengthDirection = relationship->GetStrengthDirection();
-        info.m_isRelationship            = true; //! relationship->GetIsExplicit(); LINKER ERROR
-        }
-
-    //save to db
-    return ECDbSchemaPersistence::InsertECClass (m_ecdb, info);
-    }
-
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Affan.Khan        05/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus ECDbSchemaWriter::CreateBaseClassEntry(ECClassId ecClassId, ECClassCR baseClass, int index)
     {
     DbBaseClassInfo info;
@@ -149,10 +101,11 @@ BentleyStatus ECDbSchemaWriter::CreateECPropertyEntry(ECPropertyCR ecProperty, E
     else if( ecProperty.GetIsArray())
         {
         ArrayECPropertyCP arrayProperty = ecProperty.GetAsArrayProperty();
+        StructArrayECPropertyCP structArrayProperty = ecProperty.GetAsStructArrayProperty();
         info.ColsInsert |= DbECPropertyInfo::COL_MinOccurs;
         info.ColsInsert |= DbECPropertyInfo::COL_MaxOccurs;
 
-        if (arrayProperty->GetKind() == ARRAYKIND_Primitive)
+        if (nullptr == structArrayProperty)
             {
             info.ColsInsert |= DbECPropertyInfo::COL_PrimitiveType;
             info.m_primitiveType = arrayProperty->GetPrimitiveElementType();            
@@ -160,7 +113,7 @@ BentleyStatus ECDbSchemaWriter::CreateECPropertyEntry(ECPropertyCR ecProperty, E
         else // ARRAYKIND_Struct
             {
             info.ColsInsert |= DbECPropertyInfo::COL_StructType;
-            info.m_structType = arrayProperty->GetStructElementType()->GetId();
+            info.m_structType = structArrayProperty->GetStructElementType()->GetId();
             }
 
         info.m_minOccurs = arrayProperty->GetMinOccurs ();
@@ -425,7 +378,7 @@ BentleyStatus ECDbSchemaWriter::ImportECClass(ECN::ECClassCR ecClass)
 
     EnsureECSchemaExists(ecClass);
 
-    if (SUCCESS != CreateECClassEntry(ecClass, ecClassId))
+    if (SUCCESS != ECDbSchemaPersistence::InsertECClass(m_ecdb,ecClass))
         return ERROR;
 
     //Import All baseCases
@@ -529,10 +482,10 @@ BentleyStatus ECDbSchemaWriter::ImportECProperty(ECN::ECPropertyCR ecProperty, E
         }
     else if (ecProperty.GetIsArray())
         {
-        ArrayECPropertyCP arrayProperty = ecProperty.GetAsArrayProperty();
-        if (arrayProperty->GetKind() == ARRAYKIND_Struct)
+        StructArrayECPropertyCP structArrayProperty = ecProperty.GetAsStructArrayProperty();
+        if (nullptr != structArrayProperty)
             {
-            if (SUCCESS != ImportECClass(*arrayProperty->GetStructElementType()))
+            if (SUCCESS != ImportECClass(*structArrayProperty->GetStructElementType()))
                 return ERROR;
             }
         }

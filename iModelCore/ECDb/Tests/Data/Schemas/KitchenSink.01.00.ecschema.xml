@@ -76,27 +76,18 @@
         <ECProperty propertyName="Struct1IntMember" typeName="int" />
     </ECClass>
     
-    <ECClass typeName="Struct2" isStruct="True" isDomainClass="True">
+    <ECClass typeName="Struct2" isStruct="True">
         <ECProperty propertyName="Struct2StringMember" typeName="string" />
         <ECProperty propertyName="Struct2DoubleMember" typeName="double" />
         <ECArrayProperty propertyName="NestedArray" typeName="Struct1" minOccurs="0" maxOccurs="unbounded" isStruct="True" />
     </ECClass>
-    
-    <ECRelationshipClass typeName="BaseClassAsSourceRelationship" strength="referencing">
-        <Source cardinality="(1,1)" roleLabel="" polymorphic="True">
-            <Class class="BaseClass" />
-        </Source>
-        <Target cardinality="(1,1)" roleLabel="" polymorphic="True">
-            <Class class="Struct2" />
-        </Target>
-    </ECRelationshipClass>
     
     <ECRelationshipClass typeName="BaseRelationshipClass" strength="referencing" isDomainClass="False">
         <ECProperty propertyName="MyIntegerMember" typeName="int" />
         <ECProperty propertyName="MyLongMember" typeName="long" />
     </ECRelationshipClass>
     
-    <ECClass typeName="Struct3" isStruct="True" isDomainClass="True">
+    <ECClass typeName="Struct3" isStruct="True">
         <ECProperty propertyName="Struct3DoubleMember" typeName="double" />
         <ECProperty propertyName="Struct3IntMember" typeName="int" />
         <ECProperty propertyName="Struct3BoolMember" typeName="boolean" />
@@ -315,7 +306,6 @@
             <Class class="TestClass" />
         </Source>
         <Target cardinality="(1,1)" roleLabel="target constraint2" polymorphic="True">
-            <Class class="Struct2" />
             <Class class="Test2Class" />
         </Target>
     </ECRelationshipClass>
@@ -325,7 +315,6 @@
             <Class class="TestClass" />
         </Source>
         <Target cardinality="(1,1)" roleLabel="target constraint2" polymorphic="True">
-            <Class class="Struct2" />
             <Class class="Test2Class" />
         </Target>
     </ECRelationshipClass>

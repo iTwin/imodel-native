@@ -214,7 +214,7 @@ private:
             ECValue v;
             BackDoor::ECObjects::ECValue::SetAllowsPointersIntoInstanceMemory(v, true);
             auto stat = testInstance.GetValue(v, kvPair.first);
-            if (stat != ECObjectsStatus::ECOBJECTS_STATUS_Success)
+            if (stat != ECObjectsStatus::Success)
                 return false;
 
             if (v.IsNull())
@@ -330,7 +330,7 @@ public:
 
                 uint32_t propIndex;
                 auto stat = enabler->GetPropertyIndex(propIndex, prop->GetName().c_str());
-                if (stat != ECObjectsStatus::ECOBJECTS_STATUS_Success)
+                if (stat != ECObjectsStatus::Success)
                     return false;
 
                 m_propertyIdToParameterMapping[propIndex] = parameterIndex;
@@ -388,7 +388,7 @@ void RunPerformanceComparison (bool& hasRun, double& insertTimingSecs, Utf8CP te
         for (auto ecClass : schema->GetClasses ())
             {
             //filter out relationships to keep it simple and filter out non-domainclasses as ECPersistence doesn't support them
-            if (ecClass->GetRelationshipClassCP () == nullptr && ecClass->GetIsDomainClass ())
+            if (ecClass->IsEntityClass () && ECClassModifier::Abstract != ecClass->GetClassModifier())
                 testClasses.push_back (ecClass);
             }
         }

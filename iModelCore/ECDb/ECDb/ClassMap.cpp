@@ -192,32 +192,6 @@ bool IClassMap::IsRelationshipClassMap() const
     return type == Type::RelationshipEndTable || type == Type::RelationshipLinkTable;
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Krischan.Eberle  12/2013
-//---------------------------------------------------------------------------------------
-bool IClassMap::IsAbstractECClass() const
-    {
-    return IsAbstractECClass(GetClass());
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Krischan.Eberle  01/2014
-//---------------------------------------------------------------------------------------
-//static
-bool IClassMap::IsAbstractECClass(ECClassCR ecclass)
-    {
-    if (!ecclass.GetIsDomainClass() && !ecclass.GetIsStruct() && !ecclass.GetIsCustomAttributeClass())
-        return true;
-
-    //for relationship classes there is another criterion for abstractness: if one of the constraints doesn't have
-    //any classes, then it is abstract. So check for that here now
-    ECRelationshipClassCP relClass = ecclass.GetRelationshipClassCP();
-    if (relClass == nullptr)
-        return false;
-        
-    return relClass->GetSource().GetClasses().empty() || relClass->GetTarget().GetClasses().empty();
-    }
-
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle  01/2014
@@ -242,7 +216,7 @@ bool IClassMap::MapsToStructArrayTable() const
 //static
 bool IClassMap::MapsToStructArrayTable(ECN::ECClassCR ecClass)
     {
-    return ecClass.GetIsStruct();
+    return ecClass.IsStructClass();
     }
 
 //---------------------------------------------------------------------------------------
@@ -379,7 +353,7 @@ BentleyStatus IClassMap::DetermineTablePrefix(Utf8StringR tablePrefix, ECN::ECCl
 
     if (ECDbMapCustomAttributeHelper::TryGetSchemaMap(customSchemaMap, schema))
         {
-        if (customSchemaMap.TryGetTablePrefix(tablePrefix) != ECOBJECTS_STATUS_Success)
+        if (customSchemaMap.TryGetTablePrefix(tablePrefix) != ECObjectsStatus::Success)
             return ERROR;
         }
 
@@ -1550,7 +1524,7 @@ PropertyMapSet::Ptr PropertyMapSet::Create (IClassMap const& classMap)
     ECValue defaultValue;
     AddSystemEndPoint (*propertySet, classMap, ColumnKind::ECInstanceId, defaultValue);
     AddSystemEndPoint (*propertySet, classMap, ColumnKind::ECClassId, ECValue (classMap.GetClass ().GetId ()));
-    if (classMap.GetClass ().GetIsStruct ())
+    if (classMap.GetClass ().IsStructClass())
         {
         AddSystemEndPoint (*propertySet, classMap, ColumnKind::ParentECInstanceId, defaultValue);
         AddSystemEndPoint (*propertySet, classMap, ColumnKind::ECPropertyPathId, defaultValue);

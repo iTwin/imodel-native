@@ -251,6 +251,8 @@ void ClassUpdaterImpl::Initialize(bvector<uint32_t>& propertiesToBind)
         return;
         }
 
+    Utf8String ecsql("UPDATE ONLY ");
+    ecsql.append(GetECClass().GetECSqlName()).append(" SET ");
     ECSqlUpdateBuilder builder;
     builder.Update (GetECClass (), false);
 
@@ -289,7 +291,11 @@ void ClassUpdaterImpl::Initialize(bvector<uint32_t>& propertiesToBind)
             firstEntry = false;
             }
 
-        builder.AddSet (propNameSnippet.c_str (), "?");
+        if (parameterIndex != 1)
+            ecsql.append(",");
+
+        ecsql.append(propNameSnippet).append("=?");
+
         if (SUCCESS != m_ecValueBindingInfos.AddBindingInfo (*enabler, *ecProperty, accessString, parameterIndex))
             {
             m_isValid = false;
@@ -299,12 +305,10 @@ void ClassUpdaterImpl::Initialize(bvector<uint32_t>& propertiesToBind)
         parameterIndex++;
         }
 
-    Utf8String whereClause (ECSqlBuilder::ECINSTANCEID_SYSTEMPROPERTY);
-    whereClause.append (" = ?");
-    builder.Where (whereClause.c_str ());
+    ecsql.append(" WHERE ECInstanceId=?");
     m_ecinstanceIdParameterIndex = parameterIndex;
 
-    ECSqlStatus stat = m_statement.Prepare (m_ecdb, builder.ToString ().c_str ());
+    ECSqlStatus stat = m_statement.Prepare (m_ecdb, ecsql.c_str ());
     m_isValid = (stat.IsSuccess());
     }
 

@@ -71,7 +71,7 @@ struct PerformanceSharedTableTests: ECDbTestFixture
                     "        <ECProperty propertyName='F3l' typeName='long'/>"
                     "        <ECProperty propertyName='F4s' typeName='string'/>"
                     "    </ECClass>"
-                    "   <ECClass typeName='Goo' isDomainClass='True' isStruct='False' isCustomAttributeClass='False'>"
+                    "   <ECClass typeName='Goo' isDomainClass='True' isStruct='False' >"
                     "        <BaseClass>Foo</BaseClass>"
                     "        <ECProperty propertyName='G1l' typeName='long'/>"
                     "        <ECProperty propertyName='G2s' typeName='string'/>"
@@ -79,7 +79,7 @@ struct PerformanceSharedTableTests: ECDbTestFixture
                     "        <ECProperty propertyName='G4s' typeName='string'/>"
 
                     "    </ECClass>"
-                    "   <ECClass typeName='Boo' isDomainClass='True' isStruct='False' isCustomAttributeClass='False'>"
+                    "   <ECClass typeName='Boo' isDomainClass='True' isStruct='False'>"
                     "        <BaseClass>Goo</BaseClass>"
                     "        <ECProperty propertyName='B1l' typeName='long'/>"
                     "        <ECProperty propertyName='B2s' typeName='string'/>"

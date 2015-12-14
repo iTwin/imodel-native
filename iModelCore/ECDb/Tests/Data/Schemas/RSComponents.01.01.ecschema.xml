@@ -60,7 +60,7 @@
         </Target>
     </ECRelationshipClass>
     <!-- Following is used with ONLY to see if ViewGeneration works for TablePerHierarchy-->
-    <ECClass typeName="SC" isStruct="True" isDomainClass="True">
+    <ECClass typeName="SC" isStruct="True">
         <ECProperty propertyName="I" typeName="long" />
     </ECClass>
     <ECClass typeName="SONOR" description="Sonor Sensor to detect a obhect at a distance using ultrasonic sound" displayLabel="Sonor Addin" isDomainClass="True">

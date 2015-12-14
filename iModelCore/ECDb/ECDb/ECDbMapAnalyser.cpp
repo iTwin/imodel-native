@@ -682,11 +682,11 @@ ECDbMapAnalyser::Relationship::Relationship (RelationshipClassMapCR classMap, St
     if (ECDbMapCustomAttributeHelper::TryGetForeignKeyRelationshipMap (foreignKeyRelMap, GetRelationshipClassMap ().GetRelationshipClass ()))
         {
         Utf8String onDeleteActionStr;
-        if (ECOBJECTS_STATUS_Success != foreignKeyRelMap.TryGetOnDeleteAction (onDeleteActionStr))
+        if (ECObjectsStatus::Success != foreignKeyRelMap.TryGetOnDeleteAction (onDeleteActionStr))
             return;
 
         Utf8String onUpdateActionStr;
-        if (ECOBJECTS_STATUS_Success != foreignKeyRelMap.TryGetOnUpdateAction (onUpdateActionStr))
+        if (ECObjectsStatus::Success != foreignKeyRelMap.TryGetOnUpdateAction (onUpdateActionStr))
             return;
 
         m_onDeleteAction = ECDbSqlForeignKeyConstraint::ToActionType (onDeleteActionStr.c_str ());
@@ -732,7 +732,7 @@ ECDbMapAnalyser::Relationship::PersistanceLocation ECDbMapAnalyser::Relationship
 //---------------------------------------------------------------------------------------
 bool ECDbMapAnalyser::Relationship::RequireCascade () const
     {
-    return GetRelationshipClassMap ().GetRelationshipClass ().GetStrength () != StrengthType::STRENGTHTYPE_Referencing;
+    return GetRelationshipClassMap ().GetRelationshipClass ().GetStrength () != StrengthType::Referencing;
     }
 
 //---------------------------------------------------------------------------------------
@@ -933,7 +933,7 @@ ECDbMapAnalyser::Class& ECDbMapAnalyser::GetClass (ClassMapCR classMap)
         return *(itor->second);
 
     Storage& storage = GetStorage (classMap);
-    if (classMap.GetClass ().GetIsStruct ())
+    if (classMap.GetClass ().IsStructClass())
         m_classes[classMap.GetClass ().GetId ()] = Struct::Ptr (new Struct (classMap, storage, nullptr));
     else
         m_classes[classMap.GetClass ().GetId ()] = Class::Ptr (new Class (classMap, storage, nullptr));
@@ -1134,14 +1134,15 @@ BentleyStatus ECDbMapAnalyser::AnalyseRelationshipClass (RelationshipClassMapCR 
 //---------------------------------------------------------------------------------------
 const std::vector<ECN::ECClassId> ECDbMapAnalyser::GetRootClassIds () const
     {
-    Utf8CP sql0 = "SELECT C.Id FROM ec_Class C "
-        "INNER JOIN ec_ClassMap M ON M.ClassId = C.Id "
-        "LEFT JOIN ec_BaseClass B ON B.ClassId = C.Id "
-        "WHERE B.BaseClassId IS NULL And C.IsRelationship = 0";
+    Utf8String sql;
+    sql.Sprintf("SELECT C.Id FROM ec_Class C "
+                "INNER JOIN ec_ClassMap M ON M.ClassId=C.Id "
+                "LEFT JOIN ec_BaseClass B ON B.ClassId=C.Id "
+                "WHERE B.BaseClassId IS NULL And C.Type<>%d", Enum::ToInt(ECN::ECClassType::Relationship));
 
     std::vector<ECN::ECClassId> classIds;
     Statement stmt;
-    stmt.Prepare (GetMap ().GetECDbR (), sql0);
+    stmt.Prepare (GetMap ().GetECDbR (), sql.c_str());
     while (stmt.Step () == BE_SQLITE_ROW)
         classIds.push_back (stmt.GetValueInt64 (0));
 
@@ -1153,16 +1154,15 @@ const std::vector<ECN::ECClassId> ECDbMapAnalyser::GetRootClassIds () const
 //---------------------------------------------------------------------------------------
 const std::vector<ECN::ECClassId> ECDbMapAnalyser::GetRelationshipClassIds () const
     {
-    Utf8CP sql0 =
-        "SELECT C.Id"
-        "	FROM ec_Class C "
-        "   	INNER JOIN ec_ClassMap M ON M.ClassId = C.Id "
-        "       LEFT JOIN ec_BaseClass B ON B.ClassId = C.Id "
-        "	WHERE B.BaseClassId IS NULL And C.IsRelationship = 1";
+    Utf8String sql;
+    sql.Sprintf("SELECT C.Id FROM ec_Class C "
+                "INNER JOIN ec_ClassMap M ON M.ClassId=C.Id "
+                "LEFT JOIN ec_BaseClass B ON B.ClassId=C.Id "
+                "WHERE B.BaseClassId IS NULL And C.Type=%d", Enum::ToInt(ECN::ECClassType::Relationship));
 
     std::vector<ECN::ECClassId> classIds;
     Statement stmt;
-    stmt.Prepare (GetMap ().GetECDbR (), sql0);
+    stmt.Prepare (GetMap ().GetECDbR (), sql.c_str());
     while (stmt.Step () == BE_SQLITE_ROW)
         classIds.push_back (stmt.GetValueInt64 (0));
 
@@ -1587,16 +1587,23 @@ BentleyStatus ECDbMapAnalyser::Analyse (bool applyChanges)
     m_viewInfos.clear ();
 
     SetupDerivedClassLookup ();
-    for (auto rootClassId : GetRootClassIds ())
+    for (auto rootClassId : GetRootClassIds())
         {
-        if (AnalyseClass (*GetClassMap (rootClassId)) != BentleyStatus::SUCCESS)
-            return BentleyStatus::ERROR;
+        auto classMap = GetClassMap(rootClassId);
+        BeAssert(classMap != nullptr);
+        if (classMap != nullptr && !classMap->GetMapStrategy().IsNotMapped())
+            if (AnalyseClass(*classMap) != BentleyStatus::SUCCESS)
+                return BentleyStatus::ERROR;
         }
+
 
     for (auto rootClassId : GetRelationshipClassIds ())
         {
-        if (AnalyseRelationshipClass (static_cast<RelationshipClassMapCR> (*GetClassMap (rootClassId))) != BentleyStatus::SUCCESS)
-            return BentleyStatus::ERROR;
+        auto classMap = GetClassMap(rootClassId);
+        BeAssert(classMap != nullptr);
+        if (classMap != nullptr && !classMap->GetMapStrategy().IsNotMapped())
+            if (AnalyseRelationshipClass (static_cast<RelationshipClassMapCR> (*classMap)) != BentleyStatus::SUCCESS)
+                return BentleyStatus::ERROR;
         }
 
 
@@ -2230,9 +2237,9 @@ BentleyStatus SqlGenerator::BuildSystemSelectionClause(NativeSqlBuilder::List& f
             return BentleyStatus::ERROR;
         }
 
-    if (baseClassMap.GetClass().GetIsStruct())
+    if (baseClassMap.GetClass().IsStructClass())
         {
-        if (!classMap.GetClass().GetIsStruct())
+        if (!classMap.GetClass().IsStructClass())
             {
             BeAssert(false && "BaseClass is of type struct but not the child class which must also be struct type");
             return BentleyStatus::ERROR;

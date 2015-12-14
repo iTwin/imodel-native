@@ -283,7 +283,7 @@ TEST (ECDbRelationships, MappingRelationshipsWithAdditionalECProperties)
         //Inserting relationship with link-table mapping
         auto relationshipInstance = CreateRelationship (test, "StartupCompany", "Employee", "Hardware", "RelationWithLinkTableMapping");
         ASSERT_TRUE (relationshipInstance != nullptr) << "Creating the relationship instance in memory is not expected to fail.";
-        ASSERT_EQ (ECOBJECTS_STATUS_Success, relationshipInstance->SetValue ("Created", ECValue (created)));
+        ASSERT_EQ (ECObjectsStatus::Success, relationshipInstance->SetValue ("Created", ECValue (created)));
 
         ECInstanceInserter inserter (ecdb, relationshipInstance->GetClass());
         ASSERT_TRUE (inserter.IsValid ());

@@ -6,6 +6,8 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPublishedTests.h"
+#include "../BackDoor/PublicAPI/BackDoor/ECDb/ECDbTestProject.h"
+
 #include <limits>
 #include <initializer_list>
 USING_NAMESPACE_BENTLEY_EC
@@ -125,7 +127,7 @@ TEST_F (ECDbInstances, CreateRoot_ExistingRoot_ReturnsSameKey_ECDBTEST)
     // Setup Schema
     auto context = ECSchemaReadContext::CreateContext ();
     ECSchemaPtr schema;
-    ASSERT_EQ (SchemaReadStatus::SCHEMA_READ_STATUS_Success, ECSchema::ReadFromXmlFile (schema, dsCacheSchema1_4.GetName (), *context));
+    ASSERT_EQ (SchemaReadStatus::Success, ECSchema::ReadFromXmlFile (schema, dsCacheSchema1_4.GetName (), *context));
     ASSERT_EQ (SUCCESS, db.Schemas ().ImportECSchemas (context->GetCache ()));
 
     ECClassCP rootClass = db.GetClassLocater ().LocateClass ("DSCacheSchema", "Root");
@@ -278,7 +280,7 @@ void PopulatePrimitiveValueWithCustomDataSet (ECValueR value, PrimitiveType prim
             {
             DateTime dt;
             DateTimeInfo dti;
-            if (ecProperty != nullptr && StandardCustomAttributeHelper::GetDateTimeInfo (dti, *ecProperty) == ECOBJECTS_STATUS_Success)
+            if (ecProperty != nullptr && StandardCustomAttributeHelper::GetDateTimeInfo (dti, *ecProperty) == ECObjectsStatus::Success)
                 {
                 DateTime::Info info = dti.GetInfo (true);
                 if (info.GetKind () == DateTime::Kind::Local)
@@ -508,28 +510,26 @@ TEST_F(ECDbInstances, CreateAndImportSchemaThenInsertInstance)
     schema->SetDescription("Schema for testing nested struct arrays");
     schema->SetDisplayLabel("Display Label");
 
-    ECClassP struct1;
-    schema->CreateClass(struct1, "Struct1");
+    ECStructClassP struct1;
+    schema->CreateStructClass(struct1, "Struct1");
     PrimitiveECPropertyP boolProp1;
     struct1->CreatePrimitiveProperty(boolProp1, "Struct1BoolMember", PRIMITIVETYPE_Boolean);
     PrimitiveECPropertyP intProp1;
     struct1->CreatePrimitiveProperty(intProp1, "Struct1IntMember", PRIMITIVETYPE_Integer);
-    struct1->SetIsStruct(true);
 
-    ECClassP struct2;
-    schema->CreateClass(struct2, "Struct2");
+    ECStructClassP struct2;
+    schema->CreateStructClass(struct2, "Struct2");
     PrimitiveECPropertyP stringProp2;
     struct2->CreatePrimitiveProperty(stringProp2, "Struct2StringMember", PRIMITIVETYPE_String);
     PrimitiveECPropertyP doubleProp2;
     struct2->CreatePrimitiveProperty(doubleProp2, "Struct2DoubleMember", PRIMITIVETYPE_Double);
-    ArrayECPropertyP structArrayProperty2;
-    struct2->CreateArrayProperty(structArrayProperty2, "NestedArray", struct1);
-    struct2->SetIsStruct(true);
+    StructArrayECPropertyP structArrayProperty2;
+    struct2->CreateStructArrayProperty(structArrayProperty2, "NestedArray", struct1);
 
-    ECClassP testClass;
-    schema->CreateClass(testClass, "TestClass");
-    ArrayECPropertyP nestedArrayProperty;
-    testClass->CreateArrayProperty(nestedArrayProperty, "StructArray", struct2);
+    ECEntityClassP testClass;
+    schema->CreateEntityClass(testClass, "TestClass");
+    StructArrayECPropertyP nestedArrayProperty;
+    testClass->CreateStructArrayProperty(nestedArrayProperty, "StructArray", struct2);
 
     auto schemaCache = ECSchemaCache::Create ();
     schemaCache->AddSchema(*schema);
@@ -659,7 +659,7 @@ TEST_F(ECDbInstances, UpdateArrayProperty)
     IECInstancePtr selectedInstance = dataAdapter.GetInstance();
     ASSERT_TRUE (selectedInstance.IsValid());
 
-    ASSERT_TRUE (ECOBJECTS_STATUS_Success == selectedInstance->GetValue (v, "SmallIntArray"));
+    ASSERT_TRUE (ECObjectsStatus::Success == selectedInstance->GetValue (v, "SmallIntArray"));
     ASSERT_TRUE(v.IsArray());
     ArrayInfo info = v.GetArrayInfo();
     ASSERT_EQ(3, info.GetCount());
@@ -685,150 +685,10 @@ TEST_F(ECDbInstances, UpdateArrayProperty)
     IECInstancePtr updatedInstance = dataAdapter2.GetInstance();
     ASSERT_TRUE (updatedInstance.IsValid());
 
-    ASSERT_TRUE (ECOBJECTS_STATUS_Success == updatedInstance->GetValue (v, "SmallIntArray"));
+    ASSERT_TRUE (ECObjectsStatus::Success == updatedInstance->GetValue (v, "SmallIntArray"));
     ASSERT_TRUE(v.IsArray());
     ArrayInfo info2 = v.GetArrayInfo();
     ASSERT_EQ(2, info2.GetCount()); 
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                   Affan.Khan                         04/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(ECDbInstances, UpdateECInstances)
-    {
-    // Create and populate a sample project
-    ECDbTestProject test;
-    ECDbR db = test.Create ("updateecinstances.ecdb", L"StartupCompany.02.00.ecschema.xml", true);
-
-    // Check all the instances inserted
-    ECInstanceMapCR importedInstances = test.GetImportedECInstances();
-    for (ECInstanceMap::const_iterator iter = importedInstances.begin(); iter != importedInstances.end(); iter++)
-        {
-        ECInstanceId importedInstanceId = iter->first;
-        IECInstancePtr importedInstance = iter->second;
-        ECClassCR ecClass = importedInstance->GetClass();
-
-        SqlPrintfString ecSql ("SELECT * FROM %s.%s WHERE ECInstanceId=%lld", Utf8String(ecClass.GetSchema().GetName()).c_str(), Utf8String(ecClass.GetName()).c_str(), importedInstanceId.GetValue());
-
-        ECSqlStatement ecStatement;
-        ECSqlStatus prepareStatus = ecStatement.Prepare (db, ecSql.GetUtf8CP());
-        ASSERT_TRUE (ECSqlStatus::Success == prepareStatus);
-
-        ECInstanceECSqlSelectAdapter dataAdapter (ecStatement);
-        DbResult stepStatus = ecStatement.Step();
-        ASSERT_TRUE(BE_SQLITE_ROW == stepStatus);
-
-        // First, verify that we can read what we wrote
-        IECInstancePtr selectedInstance = dataAdapter.GetInstance();
-        ASSERT_TRUE (selectedInstance.IsValid());
-        bool areEqual = ECDbTestUtility::CompareECInstances (*importedInstance, *selectedInstance);
-        if (!areEqual)
-            {
-            LOG.errorv("Updated ECInstance does not match expectations. Sending both to stdout. For %s, id=%s", 
-                importedInstance->GetClass().GetFullName(), importedInstance->GetInstanceId().c_str());
-            puts(importedInstance->ToString("IMPORT").c_str()); printf("\n");
-            puts(selectedInstance->ToString("SELECT").c_str()); printf("\n");
-            ASSERT_TRUE (false && "Selected ECInstance does not match expectations.");
-            }
-
-        // See if we can read it directly, too
-        ecStatement.Reset();
-
-        stepStatus = ecStatement.Step();
-        ASSERT_TRUE(BE_SQLITE_ROW == stepStatus);
-
-        int nColumns = ecStatement.GetColumnCount();
-        LOG.infov("Getting values for '%s' (%lld) ECInstanceId=%lld", ecClass.GetFullName(), ecClass.GetId(), importedInstanceId.GetValue());
-        for (int i = 0; i < nColumns; i++)
-            {
-            //EXPECT_TRUE (&ecClass == ecStatement.GetClass(i)); Not true when it is a property from an embedded struct.
-            ECPropertyCP ecProperty = ecStatement.GetColumnInfo (i).GetProperty();
-            ASSERT_TRUE (nullptr != ecProperty);
-
-            Utf8String propertyAccessString = ecProperty->GetName();//ecStatement.GetPropertyAccessString();
-
-            PrimitiveECPropertyCP primitiveProperty = ecProperty->GetAsPrimitiveProperty();
-            if (primitiveProperty)
-                {
-                auto primType = primitiveProperty->GetType ();
-                //DateTime and points are not implicitly convertible to strings, therefore handle them separately.
-                if (primType == PRIMITIVETYPE_DateTime)
-                    {
-                    //There are some DateTime properties in the test schema which are intentionally carrying a corrupt DateTimeInfo CA.
-                    //Retrieving values for those throws assertions
-                    BeTest::SetFailOnAssert (false);
-                    DateTime dt = ecStatement.GetValueDateTime (i);
-                    BeTest::SetFailOnAssert (true);
-                    LOG.tracev("'%s'='%s'", propertyAccessString.c_str(), dt.ToUtf8String ().c_str ());
-                    }
-                else if (primType == PRIMITIVETYPE_Point2D)
-                    {
-                    DPoint2d pt = ecStatement.GetValuePoint2D (i);
-                    LOG.tracev("'%s'=(%.4f, %.4f)", propertyAccessString.c_str(), pt.x, pt.y);
-                    }
-                else if (primType == PRIMITIVETYPE_Point3D)
-                    {
-                    DPoint3d pt = ecStatement.GetValuePoint3D (i);
-                    LOG.tracev("'%s'=(%.4f, %.4f, %.4f)", propertyAccessString.c_str(), pt.x, pt.y, pt.z);
-                    }
-                else
-                    {
-                    Utf8CP v = ecStatement.GetValueText (i);
-                    int size = 0;
-                    const Byte* b = (const Byte *) ecStatement.GetValueBinary(i, &size);
-                    Utf8String valueAsString = v ? v : "";
-                    LOG.tracev("'%s'='%s',  size=%d, b=0x%lx", propertyAccessString.c_str(), valueAsString.c_str(), size, b);
-                    }
-                continue;
-                }
-
-            ArrayECPropertyCP arrayProperty = ecProperty->GetAsArrayProperty();
-            if (arrayProperty)
-                {
-                IECSqlArrayValue const& arrayValue = ecStatement.GetValueArray (i);
-                int arrayLength = arrayValue.GetArrayLength ();
-                if (0 >= arrayLength)
-                    continue;
-                // WIP_ECSQL: Need to actually read the data here?
-                continue;
-                }
-            }
-
-        // Create a new instance with new custom data;
-        IECInstancePtr updateInst = ECDbTestUtility::CreateArbitraryECInstance (importedInstance->GetClass(), PopulatePrimitiveValueWithCustomDataSet);
-
-        // Set instance id we need this for update operation
-        updateInst->SetInstanceId (importedInstance->GetInstanceId().c_str());
-
-        ECInstanceUpdater updater (db, ecClass);
-        if (ecClass.GetPropertyCount() == 0)
-            {
-            ASSERT_FALSE(updater.IsValid());
-            return;
-            }
-        
-        // update the instance with new data.
-        auto updateStatus = updater.Update (*updateInst);
-        ASSERT_EQ (SUCCESS, updateStatus);
-
-
-        // now read back the instance from db
-        ecStatement.Reset();
-        stepStatus = ecStatement.Step();
-        ASSERT_TRUE(BE_SQLITE_ROW == stepStatus);
-
-        IECInstancePtr actual = dataAdapter.GetInstance();
-        ASSERT_TRUE (actual.IsValid());
-        areEqual = ECDbTestUtility::CompareECInstances (*updateInst, *actual);
-        if (!areEqual)
-            {
-            LOG.errorv("Updated ECInstance does not match expectations. Sending both to stdout. For %s, id=%s", 
-                updateInst->GetClass().GetFullName(), updateInst->GetInstanceId().c_str());
-            puts(updateInst->ToString("EXPECT").c_str()); printf("\n");
-            puts(    actual->ToString("ACTUAL").c_str()); printf("\n");
-            EXPECT_TRUE (false && "Updated ECInstance does not match expectations.");
-            }
-        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -863,7 +723,7 @@ TEST_F(ECDbInstances, FindECInstances)
                 {
                 resultInstance = dataAdapter.GetInstance();
                 ASSERT_TRUE (resultInstance.IsValid());
-                ASSERT_TRUE (ECOBJECTS_STATUS_Success == resultInstance->GetValue (v, "intProp"));
+                ASSERT_TRUE (ECObjectsStatus::Success == resultInstance->GetValue (v, "intProp"));
                 ASSERT_TRUE (v.GetInteger() > 0);
                 rows++;
                 }
@@ -882,7 +742,7 @@ TEST_F(ECDbInstances, FindECInstances)
                 {
                 resultInstance = dataAdapter.GetInstance();
                 ASSERT_TRUE (resultInstance.IsValid());
-                ASSERT_TRUE (ECOBJECTS_STATUS_Success == resultInstance->GetValue (v, "l"));
+                ASSERT_TRUE (ECObjectsStatus::Success == resultInstance->GetValue (v, "l"));
                 ASSERT_TRUE (v.GetLong() == 123456789L);
                 rows++;
                 }
@@ -901,7 +761,7 @@ TEST_F(ECDbInstances, FindECInstances)
                 {
                 resultInstance = dataAdapter.GetInstance();
                 ASSERT_TRUE (resultInstance.IsValid());
-                ASSERT_TRUE (ECOBJECTS_STATUS_Success == resultInstance->GetValue (v, "doubleAAFoo"));
+                ASSERT_TRUE (ECObjectsStatus::Success == resultInstance->GetValue (v, "doubleAAFoo"));
                 ASSERT_TRUE (v.GetDouble() >= 0 && v.GetDouble() <= 100);
                 rows++;
                 }
@@ -968,7 +828,7 @@ TEST_F(ECDbInstances, FindECInstancesFromSelectWithMultipleClasses)
         {
         resultInstance = dataAdapter.GetInstance(ecClass->GetId());
         ASSERT_TRUE (resultInstance.IsValid());
-        ASSERT_TRUE (ECOBJECTS_STATUS_Success == resultInstance->GetValue (v, "stringBar"));
+        ASSERT_TRUE (ECObjectsStatus::Success == resultInstance->GetValue (v, "stringBar"));
         ASSERT_FALSE (v.IsNull ());
         rows++;
         }
@@ -1044,82 +904,6 @@ TEST_F(ECDbInstances, SelectClause)
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                   Carole.MacDonald                   03/14
-//+---------------+---------------+---------------+---------------+---------------+------
-TEST_F (ECDbInstances, DeleteWithRelationshipBetweenStructs)
-    {
-    ECDbTestProject test;
-    ECDbR ecdb = test.Create("structs.ecdb");
-
-    ECSchemaPtr structSchema;
-    ECSchema::CreateSchema(structSchema, "StructSchema", 1, 0);
-    structSchema->SetNamespacePrefix("ss");
-    structSchema->SetDescription("Schema with struct classes and a relationship between them");
-    structSchema->SetDisplayLabel("Struct Schema");
-
-    ECClassP struct1;
-    structSchema->CreateClass (struct1, "Struct1");
-    ECClassP struct2;
-    structSchema->CreateClass (struct2, "Struct2");
-    ECRelationshipClassP relationshipClass;
-    structSchema->CreateRelationshipClass (relationshipClass, "StructToStruct");
-
-    struct1->SetIsStruct(true);
-    struct1->SetIsDomainClass(true);
-    struct2->SetIsStruct(true);
-    struct2->SetIsDomainClass(true);
-    
-    ASSERT_TRUE(struct1->GetIsStruct());
-    ASSERT_TRUE(struct1->GetIsDomainClass());
-
-    ASSERT_TRUE(struct2->GetIsStruct());
-    ASSERT_TRUE(struct2->GetIsDomainClass());
-
-    PrimitiveECPropertyP stringProp1;
-    struct1->CreatePrimitiveProperty (stringProp1, "StringMember1");
-    PrimitiveECPropertyP stringProp2;
-    struct2->CreatePrimitiveProperty (stringProp2, "StringMember2");
-
-    relationshipClass->GetSource().AddClass(*struct1);
-    relationshipClass->GetSource().SetCardinality(RelationshipCardinality::ZeroMany());
-    relationshipClass->GetTarget().AddClass(*struct2);
-    relationshipClass->GetTarget().SetCardinality(RelationshipCardinality::ZeroOne());
-
-    // import
-    ECSchemaCachePtr schemaCache = ECSchemaCache::Create ();
-    schemaCache->AddSchema (*structSchema);
-
-    ASSERT_EQ (SUCCESS, ecdb.Schemas ().ImportECSchemas (*schemaCache, ECDbSchemaManager::ImportOptions (false, false)));
-
-    auto struct1Inst = ECDbTestUtility::CreateArbitraryECInstance(*struct1, ECDbTestUtility::PopulatePrimitiveValueWithRandomValues);
-    ECInstanceInserter inserter1 (ecdb, *struct1);
-    ASSERT_TRUE (inserter1.IsValid ());
-    auto insertStatus = inserter1.Insert (*struct1Inst);
-
-    auto struct2Inst = ECDbTestUtility::CreateArbitraryECInstance(*struct2, ECDbTestUtility::PopulatePrimitiveValueWithRandomValues);
-    ECInstanceInserter inserter2 (ecdb, *struct2);
-    ASSERT_TRUE (inserter2.IsValid ());
-    insertStatus = inserter2.Insert (*struct2Inst);
-
-    StandaloneECRelationshipEnablerPtr relationshipEnabler = StandaloneECRelationshipEnabler::CreateStandaloneRelationshipEnabler (*relationshipClass);
-    ASSERT_TRUE (relationshipEnabler.IsValid());
-
-    StandaloneECRelationshipInstancePtr relationshipInstance = relationshipEnabler->CreateRelationshipInstance ();
-    relationshipInstance->SetSource (struct1Inst.get());
-    relationshipInstance->SetTarget (struct2Inst.get());
-    relationshipInstance->SetInstanceId ("source->target");
-    
-    ECInstanceInserter inserter3 (ecdb, *relationshipClass);
-    ASSERT_TRUE (inserter3.IsValid ());
-    insertStatus = inserter3.Insert (*relationshipInstance);
-
-    ECInstanceDeleter deleter1 (ecdb, *struct1);
-    auto deleteStatus = deleter1.Delete (*struct1Inst);
-    ASSERT_EQ (SUCCESS, deleteStatus);
-
-    }
-
-//---------------------------------------------------------------------------------------
 // Test for TFS 112251, the Adapter should check for the class before operation
 // @bsimethod                                   Majd.Uddin                   08/14
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -1180,40 +964,6 @@ TEST_F(ECDbInstances, AdapterCheckClassBeforeOperation)
 
     BeTest::SetFailOnAssert(true);
     }
-
-//---------------------------------------------------------------------------------------
-// Test for TFS 99872, inserting classes that are Domain, Custom Attribute and Struct
-// @bsimethod                                   Majd.Uddin                   08/14
-//+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbInstances, DomainCustomAttributeStructCombinations)
-{
-    ECDb& db = SetupECDb("ClassCombinations.ecdb", BeFileName(L"TryClassCombinations.01.00.ecschema.xml"));
-
-    
-    //Trying all combinations where IsDomain is True. IsDomain False are Abstract classes and are not instantiated.
-    ECClassCP allTrue = db.Schemas().GetECClass("TryClassCombinations", "S_T_CA_T_D_T");
-    ASSERT_TRUE (allTrue != nullptr);
-    IECInstancePtr instance;
-    instance = ECDbTestUtility::CreateArbitraryECInstance(*allTrue, ECDbTestUtility::PopulatePrimitiveValueWithRandomValues);
-    ECInstanceInserter inserter(db, *allTrue);
-    ECInstanceKey instanceKey;
-    auto sms = inserter.Insert(instanceKey, *instance);
-    EXPECT_EQ(SUCCESS, sms);
-
-    ECClassCP Test1 = db.Schemas().GetECClass("TryClassCombinations", "S_T_CA_F_D_T");
-    ASSERT_TRUE (Test1 != nullptr);
-    instance = ECDbTestUtility::CreateArbitraryECInstance (*Test1, ECDbTestUtility::PopulatePrimitiveValueWithRandomValues);
-    ECInstanceInserter inserter2(db, *Test1);
-    sms = inserter2.Insert(instanceKey, *instance);
-    EXPECT_EQ(SUCCESS, sms);
-
-    ECClassCP Test2 = db.Schemas().GetECClass("TryClassCombinations", "S_F_CA_T_D_T");
-    ASSERT_TRUE (Test2 != nullptr);
-    instance = ECDbTestUtility::CreateArbitraryECInstance (*Test2, ECDbTestUtility::PopulatePrimitiveValueWithRandomValues);
-    ECInstanceInserter inserter3(db, *Test2);
-    sms = inserter3.Insert(instanceKey, *instance);
-    EXPECT_EQ(SUCCESS, sms);
-}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                              Ramanujam.Raman                   10/15

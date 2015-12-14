@@ -115,9 +115,6 @@
     <ClCompile Include="Published\ECInstanceIdSequence_Tests.cpp">
       <Filter>Published</Filter>
     </ClCompile>
-    <ClCompile Include="Published\ECSqlStatementCache_Test.cpp">
-      <Filter>Published</Filter>
-    </ClCompile>
     <ClCompile Include="Published\FSRTests.cpp">
       <Filter>Published</Filter>
     </ClCompile>
@@ -186,6 +183,9 @@
     </ClCompile>
     <ClCompile Include="Performance\PerformanceECDbFileInfoTests.cpp">
       <Filter>Performance</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\ECSqlStatementCache_Test.cpp">
+      <Filter>Published\ECSql</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

@@ -6,6 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPublishedTests.h"
+#include "../BackDoor/PublicAPI/BackDoor/ECDb/ECDbTestProject.h"
 #include <rapidjson/BeRapidJson.h>
 
 USING_NAMESPACE_BENTLEY_EC

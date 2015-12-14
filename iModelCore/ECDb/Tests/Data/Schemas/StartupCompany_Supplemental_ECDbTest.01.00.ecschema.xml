@@ -107,7 +107,7 @@
             </ECCustomAttributes>
         </ECProperty>
     </ECClass>
-    <ECClass typeName="Location" isStruct="True" isDomainClass="True">
+    <ECClass typeName="Location" isStruct="True">
         <ECProperty propertyName="Zip" typeName="string" displayLabel="Zip Code">
             <ECCustomAttributes>
                 <Localizable xmlns="EditorCustomAttributes.01.00" />
@@ -125,12 +125,14 @@
         </ECProperty>
         <ECProperty propertyName="TeamSize" typeName="int" displayLabel="Team Size">
             <ECCustomAttributes>
+            <!--
                 <UnitSpecification xmlns="Unit_Attributes.01.00">
                     <KindOfQuantityName>NEUTRON_SOURCE_DENSITY</KindOfQuantityName>
                     <DimensionName>ONE_PER_L3_T</DimensionName>
                     <UnitName />
                     <AllowableUnits />
                 </UnitSpecification>
+                -->
             </ECCustomAttributes>
         </ECProperty>
     </ECClass>

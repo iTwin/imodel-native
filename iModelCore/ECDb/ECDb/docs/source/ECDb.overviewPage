@@ -168,8 +168,6 @@
     - A unique namespace prefix must be defined and the namespace prefix must be a valid ECName and must not be empty.
 
     ### Class
-    - Abstract classes cannot be instantiated. This means you cannot use an abstract class in an ECSQL INSERT statement.
-        - A class is @b abstract if isDomainClass, isStruct, and isCustomAttributeClass are all set to @b false.
     - Consistent class hierarchies:
         - An @ref BentleyApi::ECN::ECClass "ECClass" may not have an @ref BentleyApi::ECN::ECRelationshipClass "ECRelationshipClass" as a base class
           and vice versa
@@ -297,7 +295,7 @@
 
     #### MapStrategy NotMapped
 
-        <ECClass typeName="AClassThatDoesNotGetMappedToDb" isDomainClass="True">
+        <ECEntityClass typeName="AClassThatDoesNotGetMappedToDb">
             <ECCustomAttributes>
                 <ClassMap xmlns="ECDbMap.01.00">
                     <MapStrategy>
@@ -306,11 +304,11 @@
                 </ClassMap>
             </ECCustomAttributes>
             <ECProperty propertyName="stringFoo" typeName="string" />
-        </ECClass>
+        </ECEntityClass>
 
     #### MapStrategy  Polymorphic SharedTable
 
-        <ECClass typeName="Foo" isDomainClass="True">
+        <ECEntityClass typeName="Foo">
             <ECCustomAttributes>
                 <ClassMap xmlns="ECDbMap.01.00">
                     <MapStrategy>
@@ -320,11 +318,11 @@
                 </ClassMap>
             </ECCustomAttributes>
         ...
-        </ECClass>
+        </ECEntityClass>
 
     #### Creating database indexes on ECProperties
 
-        <ECClass typeName="Person" isDomainClass="True">
+        <ECEntityClass typeName="Person">
             <ECCustomAttributes>
                 <ClassMap xmlns="ECDbMap.01.00">
                     <Indexes>
@@ -351,7 +349,7 @@
             <ECProperty propertyName="LastName" typeName="string"/>
             <ECProperty propertyName="Birthday" typeName="dateTime"/>
             ...
-        </ECClass>
+        </ECEntityClass>
 
     @section CustomPropertyMapDescription Custom mapping for ECProperties
 
@@ -430,7 +428,7 @@
 
     ####Examples
 
-        <ECRelationshipClass typeName="HardwareUsedByEmployee" isDomainClass="True" strength="referencing">
+        <ECRelationshipClass typeName="HardwareUsedByEmployee">
             <ECCustomAttributes>
                 <LinkTableRelationshipMap xmlns="ECDbMap.01.00">
                     <SourceECInstanceIdColumn>EmployeeId</SourceECInstanceIdColumn>
@@ -448,7 +446,7 @@
         </ECRelationshipClass>
 
 
-        <ECRelationshipClass typeName="FolderHasFiles" isDomainClass="True" strength="embedding" >
+        <ECRelationshipClass typeName="FolderHasFiles">
             <ECCustomAttributes>
                 <ForeignKeyRelationshipMap xmlns="ECDbMap.01.00">
                     <CreateConstraint>True</CreateConstraint>

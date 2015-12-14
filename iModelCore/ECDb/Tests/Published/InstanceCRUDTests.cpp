@@ -206,13 +206,13 @@ bool InstanceCRUDTests::addClass (ECClassCP ecClass)
         return false;
         }
     //Skip Abstract Classes
-    else if (!ecClass->GetIsDomainClass ())
+    else if (ECClassModifier::Abstract == ecClass->GetClassModifier())
         {
-        LOG1.info ("This is not a Domain Class");
+        LOG1.info ("This is an abstract Class");
         return false;
         }
     //Skip CustomAttribute Classes
-    else if (ecClass->GetIsCustomAttributeClass ())
+    else if (ecClass->IsCustomAttributeClass ())
         {
         LOG1.info ("This is a CustomAttributeClass");
         return false;
@@ -239,7 +239,7 @@ ECClassCP InstanceCRUDTests::addClassInPlaceOFAnyClass (ECSchemaPtr schemaPtr)
         {
         relClass = NULL;
         relClass = classInContainer->GetRelationshipClassCP ();
-        if (relClass == NULL && classInContainer->GetIsDomainClass () && !classInContainer->GetIsCustomAttributeClass () && classInContainer->GetName () != "AnyClass")
+        if (relClass == NULL && ECClassModifier::Abstract != classInContainer->GetClassModifier() && !classInContainer->IsCustomAttributeClass () && classInContainer->GetName () != "AnyClass")
             {
             list.push_back (classInContainer);
             }
@@ -382,7 +382,7 @@ bool InstanceCRUDTests::importSchema (WString schemaNameWithoutVerionAndExtensio
     schemaReadContext->AddSchemaPath (m_dirName.c_str ());
 
     auto result = ECSchema::ReadFromXmlFile (m_schema, m_schemaFullPath.c_str (), *schemaReadContext);
-    EXPECT_EQ (result, SUCCESS);
+    EXPECT_EQ (result, SchemaReadStatus::Success);
     auto cache = ECSchemaCache::Create ();
     cache->AddSchema (*m_schema);
 
@@ -397,7 +397,7 @@ bool InstanceCRUDTests::importSchema (WString schemaNameWithoutVerionAndExtensio
             WString supplSchemaPath (entry);
             ECSchemaPtr schema1;
             auto result = ECSchema::ReadFromXmlFile (schema1, supplSchemaPath.c_str (), *schemaReadContext);
-            if (result == SUCCESS)
+            if (SchemaReadStatus::Success == result)
                 cache->AddSchema (*schema1);
             else
                 LOG1.infov ("[SRF] Schema Read Failed :%s", entry.GetNameUtf8 ().c_str());
@@ -858,7 +858,7 @@ void InstanceCRUDTests::checkECClassCRUDfeasibility (ECClassCP ecClass)
     m_insert = false;
     m_update = false;
     m_delete = false;
-    if (ecClass->GetIsDomainClass () && !ecClass->GetIsCustomAttributeClass () && ecClass->GetName () != "AnyClass")
+    if (ECClassModifier::Abstract != ecClass->GetClassModifier() && !ecClass->IsCustomAttributeClass () && ecClass->GetName () != "AnyClass")
         {
         ECRelationshipClassCP relClass = ecClass->GetRelationshipClassCP ();
         if (relClass == NULL)
@@ -894,7 +894,7 @@ void InstanceCRUDTests::checkECClassCRUDfeasibility (ECClassCP ecClass)
                 bool notAnyClass = true;
                 for (ECClassCP s_ecClass : sourceClasses)
                     {
-                    if (s_ecClass->GetIsDomainClass () && !s_ecClass->GetIsCustomAttributeClass ())
+                    if (ECClassModifier::Abstract != s_ecClass->GetClassModifier() && !s_ecClass->IsCustomAttributeClass ())
                         {
                         if (s_ecClass->GetPropertyCount (true) > 0)
                             continue;
@@ -904,7 +904,7 @@ void InstanceCRUDTests::checkECClassCRUDfeasibility (ECClassCP ecClass)
                             validSourceClasses = false;
                             }
                         }
-                    else if (!s_ecClass->GetIsDomainClass () && s_ecClass->GetName () != "AnyClass")
+                    else if (ECClassModifier::Abstract == s_ecClass->GetClassModifier() && s_ecClass->GetName () != "AnyClass")
                         {
                         if (s_ecClass->GetDerivedClasses ().size () > 0)
                             continue;
@@ -924,7 +924,7 @@ void InstanceCRUDTests::checkECClassCRUDfeasibility (ECClassCP ecClass)
                     }
                 for (ECClassCP t_ecClass : targetClasses)
                     {
-                    if (t_ecClass->GetIsDomainClass () && !t_ecClass->GetIsCustomAttributeClass ())
+                    if (ECClassModifier::Abstract != t_ecClass->GetClassModifier() && !t_ecClass->IsCustomAttributeClass ())
                         {
                         if (t_ecClass->GetPropertyCount (true) > 0)
                             continue;
@@ -934,7 +934,7 @@ void InstanceCRUDTests::checkECClassCRUDfeasibility (ECClassCP ecClass)
                             validSourceClasses = false;
                             }
                         }
-                    else if (!t_ecClass->GetIsDomainClass () && t_ecClass->GetName () != "AnyClass")
+                    else if (ECClassModifier::Abstract == t_ecClass->GetClassModifier() && t_ecClass->GetName () != "AnyClass")
                         {
                         if (t_ecClass->GetDerivedClasses ().size () > 0)
                             continue;
@@ -975,11 +975,11 @@ void InstanceCRUDTests::checkECClassCRUDfeasibility (ECClassCP ecClass)
         }
     else
         {
-        if (!ecClass->GetIsDomainClass ())
+        if (ECClassModifier::Abstract == ecClass->GetClassModifier())
             {
             LOG1.infov ("[NDC]Non-domain Class: CRUD operations can't be performed for class: %s", ecClass->GetName ().c_str ());
             }
-        else if (ecClass->GetIsCustomAttributeClass ())
+        else if (ecClass->IsCustomAttributeClass ())
             {
             LOG1.infov ("[CAC]Custom Attribute Class: CRUD operations cannot be performed for class: %s", ecClass->GetName ().c_str ());
             }

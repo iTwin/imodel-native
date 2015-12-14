@@ -30,8 +30,7 @@ public:
 
 //======================================================================================
 //!This class grabs information from ClassMap ECCustomAttribute and evaluates
-//! it along with other standard metadata on the ECClass... applying default 
-//! rules like checking if isDomainClass=False, building standard table name, etc.
+//! it along with other standard metadata on the ECClass... building standard table name, etc.
 // @bsiclass                                                     Casey.Mullen      11/2011
 //+===============+===============+===============+===============+===============+======
 struct ClassMapInfo : NonCopyableClass

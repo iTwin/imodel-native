@@ -50,19 +50,23 @@ void SchemaImportTestFixture::AssertSchemaImport(bool& asserted, ECDbCR ecdb, Sc
     ECN::ECSchemaReadContextPtr context = ECN::ECSchemaReadContext::CreateContext();
     context->AddSchemaLocater(ecdb.GetSchemaLocater());
 
-    for (Utf8StringCR schemaXml : testItem.m_schemaXmlList)
-        {
-        ASSERT_EQ(SUCCESS, ECDbTestUtility::ReadECSchemaFromString(context, schemaXml.c_str())) << testItem.m_assertMessage.c_str() << " " << schemaXml.c_str();
-        }
-
     if (!testItem.m_expectedToSucceed)
         BeTest::SetFailOnAssert(false);
 
+    bool deserializationFailed = false;
+    for (Utf8StringCR schemaXml : testItem.m_schemaXmlList)
         {
-        ASSERT_EQ(testItem.m_expectedToSucceed, SUCCESS == ecdb.Schemas().ImportECSchemas(context->GetCache ())) << testItem.m_assertMessage.c_str();
-        asserted = false;
+        if (SUCCESS != ECDbTestUtility::ReadECSchemaFromString(context, schemaXml.c_str()))
+            {
+            ASSERT_FALSE(testItem.m_expectedToSucceed) << "ECSchema deserialization failed: " << testItem.m_assertMessage.c_str() << " " << schemaXml.c_str();
+            deserializationFailed = true;
+            }
         }
 
+    if (!deserializationFailed)
+        ASSERT_EQ(testItem.m_expectedToSucceed, SUCCESS == ecdb.Schemas().ImportECSchemas(context->GetCache ())) << testItem.m_assertMessage.c_str();
+
+    asserted = false;
     BeTest::SetFailOnAssert(true);
     }
 

@@ -604,7 +604,7 @@ BentleyStatus ImportCommand::DeserializeECSchema(ECSchemaReadContextR readContex
     ECN::ECSchemaPtr ecSchema = nullptr;
     const auto stat = ECN::ECSchema::ReadFromXmlFile(ecSchema, ecschemaXmlFile.GetName(), readContext);
     //duplicate schema error is ok, as the ReadFromXmlFile reads schema references implicitly.
-    return stat == ECN::SCHEMA_READ_STATUS_Success || stat == ECN::SCHEMA_READ_STATUS_DuplicateSchema ? SUCCESS : ERROR;
+    return stat == ECN::SchemaReadStatus::Success || stat == ECN::SchemaReadStatus::DuplicateSchema ? SUCCESS : ERROR;
     }
 
 
@@ -629,7 +629,8 @@ Utf8String ExportCommand::_GetName() const
 //---------------------------------------------------------------------------------------
 Utf8String ExportCommand::_GetUsage() const
     {
-    return " .export ecschema <out folder>  Exports all ECSchemas of the ECDb file to disk\r\n"
+    return " .export ecschema [v2] <out folder>  Exports all ECSchemas of the ECDb file to disk. If 'v2' is specified,\r\n"
+           "                                ECXML v2 is used. Otherwise ECXML v3 is used.\r\n"
            "         tables <JSON file>     Exports the data in all tables of the ECDb file into a JSON file";
     }
 
@@ -638,7 +639,8 @@ Utf8String ExportCommand::_GetUsage() const
 //---------------------------------------------------------------------------------------
 void ExportCommand::_Run(ECSqlConsoleSession& session, vector<Utf8String> const& args) const
     {
-    if (args.size() < 3)
+    const size_t argCount = args.size();
+    if (!(argCount == 3 || (argCount == 4 && args[2].EqualsI("v2"))))
         {
         Console::WriteErrorLine("Usage: %s", GetUsage().c_str());
         return;
@@ -648,9 +650,20 @@ void ExportCommand::_Run(ECSqlConsoleSession& session, vector<Utf8String> const&
         {
         return;
         }
+
     if (args[1].EqualsI (ECSCHEMA_SWITCH))
         {
-        RunExportSchema(session, args[2].c_str());
+        Utf8CP outFolder = nullptr;
+        bool useECXmlV2 = false;
+        if (argCount == 3)
+            outFolder = args[2].c_str();
+        else
+            {
+            useECXmlV2 = true;
+            outFolder = args[3].c_str();
+            }
+            
+        RunExportSchema(session, outFolder, useECXmlV2);
         return;
         }
 
@@ -673,7 +686,7 @@ void ExportCommand::RunExportTables(ECSqlConsoleSession& session, Utf8CP jsonFil
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                  Krischan.Eberle     10/2013
 //---------------------------------------------------------------------------------------
-void ExportCommand::RunExportSchema(ECSqlConsoleSession& session, Utf8CP outFolderStr) const
+void ExportCommand::RunExportSchema(ECSqlConsoleSession& session, Utf8CP outFolderStr, bool useECXmlV2) const
     {
     auto const& schemaManager = session.GetECDbR ().Schemas();
     ECSchemaList schemas;
@@ -694,6 +707,7 @@ void ExportCommand::RunExportSchema(ECSqlConsoleSession& session, Utf8CP outFold
     else
         BeFileName::CreateNewDirectory(outFolder.GetName());
 
+    int ecxmlMajorVersion = useECXmlV2 ? 2 : 3;
     for (auto schema : schemas)
         {
         WString fileName;
@@ -702,7 +716,7 @@ void ExportCommand::RunExportSchema(ECSqlConsoleSession& session, Utf8CP outFold
 
         BeFileName outPath(outFolder);
         outPath.AppendToPath(fileName.c_str());
-        schema->WriteToXmlFile(outPath.GetName());
+        schema->WriteToXmlFile(outPath.GetName(), ecxmlMajorVersion);
         Console::WriteLine("Saved ECSchema '%s' to disk", outPath.GetNameUtf8().c_str());
         }
     }
@@ -847,7 +861,7 @@ void PopulateCommand::_Run(ECSqlConsoleSession& session, vector<Utf8String> cons
         auto const& classes = schema->GetClasses();
         for (auto ecClass : classes)
             {
-            if (!ecClass->GetIsCustomAttributeClass())
+            if (!ecClass->IsCustomAttributeClass())
                 classList.push_back(ecClass);
             };
         };
@@ -1323,28 +1337,28 @@ void ECSchemaDiffCommand::_Run(ECSqlConsoleSession& session, vector<Utf8String> 
     auto contextR = ECSchemaReadContext::CreateContext();
 
     auto status = ECSchema::ReadFromXmlFile(left,  leftECSchemaFilePath.GetName(), *contextL);
-    if (status != ECOBJECTS_STATUS_Success)
+    if (status != SchemaReadStatus::Success)
         {
         Console::WriteErrorLine("Failed to load ECSchema file '%s'", leftECSchemaFilePath.GetNameUtf8().c_str());
         return;
         }
 
     status = ECSchema::ReadFromXmlFile(right,  rightECSchemaFilePath.GetName(), *contextR);
-    if (status != ECOBJECTS_STATUS_Success)
+    if (status != SchemaReadStatus::Success)
         {
         Console::WriteErrorLine("Failed to load ECSchema file '%s'", rightECSchemaFilePath.GetNameUtf8().c_str());
         return;
         }
 
     auto diff = ECDiff::Diff(*left, *right);
-    if (diff->GetStatus() != DiffStatus::DIFFSTATUS_Success)
+    if (diff->GetStatus() != DiffStatus::Success)
         {
         Console::WriteErrorLine("Failed to diff schemas");
         return;
         }
 
     Utf8String diffText;
-    if (diff->WriteToString(diffText,2) != DiffStatus::DIFFSTATUS_Success)
+    if (diff->WriteToString(diffText,2) != DiffStatus::Success)
         {
         Console::WriteErrorLine("Failed to convert diff into textual representation");
         return;

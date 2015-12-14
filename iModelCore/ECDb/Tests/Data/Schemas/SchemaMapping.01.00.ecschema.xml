@@ -14,12 +14,12 @@
         <ECArrayProperty propertyName="PSA" typeName="string" minOccurs="1" maxOccurs="5" />
         <ECArrayProperty propertyName="PaSA" typeName="bsca:LocalizationData" minOccurs="1" maxOccurs="10" isStruct="True" />
     </ECClass>
-    <ECClass typeName="B" isStruct="True" isDomainClass="True">
+    <ECClass typeName="B" isDomainClass="True">
         <ECProperty propertyName="Pb3d" typeName="point3d" />
         <ECProperty propertyName="Pb2d" typeName="point2d" />
         <ECArrayProperty propertyName="PBA" typeName="boolean" minOccurs="1" maxOccurs="5" />
     </ECClass>
-    <ECClass typeName="C" isStruct="True" isDomainClass="False">
+    <ECClass typeName="C" isStruct="True">
         <ECProperty propertyName="PAC" typeName="binary" />
     </ECClass>
 </ECSchema>

@@ -167,7 +167,7 @@ void DefaultPropertyValueGenerator::Init()
         (GetProperty()->GetIsArray() && GetProperty()->GetAsArrayProperty()->GetKind() == ARRAYKIND_Primitive && GetProperty()->GetAsArrayProperty()->GetPrimitiveElementType() == PRIMITIVETYPE_DateTime)))
         {
         DateTimeInfo info;
-        if (StandardCustomAttributeHelper::GetDateTimeInfo(info, *GetProperty()) == BentleyStatus::SUCCESS)        
+        if (StandardCustomAttributeHelper::GetDateTimeInfo(info, *GetProperty()) == ECObjectsStatus::Success)        
             seed = DateTime (info.GetInfo(true).GetKind(), seed.GetYear(), seed.GetMonth(), seed.GetDay(), seed.GetHour(),  seed.GetMinute());
         }
 
@@ -546,7 +546,7 @@ BentleyStatus RandomECInstanceGenerator::GenerateInstances(ECClassCR ecClass)
     {
     BeAssert(ecClass.GetRelationshipClassCP() == nullptr);
     int noOfInstance = 0;
-    if (ecClass.GetIsStruct())
+    if (ecClass.IsStructClass())
         noOfInstance = GetNextRandom(GetParameters().GetNumberOfStructInstancesToGeneratePerClass());
     else
         noOfInstance = GetNextRandom(GetParameters().GetNumberOfRegularInstancesToGeneratePerClass());
@@ -754,7 +754,7 @@ ECObjectsStatus RandomECInstanceGenerator::CopyStruct(IECInstanceR target, IECIn
 //---------------------------------------------------------------------------------------
 ECObjectsStatus RandomECInstanceGenerator::CopyStruct(IECInstanceR source, ECValuesCollectionCR collection, Utf8CP baseAccessPath)
     { 
-    ECObjectsStatus status = ECOBJECTS_STATUS_Success;
+    ECObjectsStatus status = ECObjectsStatus::Success;
 
     for(auto& propertyValue : collection)
         {
@@ -768,11 +768,11 @@ ECObjectsStatus RandomECInstanceGenerator::CopyStruct(IECInstanceR source, ECVal
         targetVAS.append(propertyValue.GetValueAccessor().GetManagedAccessString());
         ECValueAccessor accessor;
         status = ECValueAccessor::PopulateValueAccessor(accessor, source, targetVAS.c_str());
-        if (status == ECOBJECTS_STATUS_ArrayIndexDoesNotExist)
+        if (status == ECObjectsStatus::ArrayIndexDoesNotExist)
             {
             status = source.AddArrayElements(accessor.GetAccessString(), 1);
             }
-        else if (status != ECOBJECTS_STATUS_Success)
+        else if (status != ECObjectsStatus::Success)
             {
             return status;
             }
@@ -780,7 +780,7 @@ ECObjectsStatus RandomECInstanceGenerator::CopyStruct(IECInstanceR source, ECVal
         if (propertyValue.HasChildValues())
             {
             status = CopyStruct (source, *propertyValue.GetChildValues(), baseAccessPath);
-            if (status != ECOBJECTS_STATUS_Success && status != ECOBJECTS_STATUS_PropertyValueMatchesNoChange)
+            if (status != ECObjectsStatus::Success && status != ECObjectsStatus::PropertyValueMatchesNoChange)
                 {
                 BeAssert(false && "CopyStruct(): Fail to copy child values");
                 return status;
@@ -790,7 +790,7 @@ ECObjectsStatus RandomECInstanceGenerator::CopyStruct(IECInstanceR source, ECVal
 
         //set primitive value
         status = source.SetValueUsingAccessor(accessor, propertyValue.GetValue());
-        if (status != ECOBJECTS_STATUS_Success && status != ECOBJECTS_STATUS_PropertyValueMatchesNoChange)
+        if (status != ECObjectsStatus::Success && status != ECObjectsStatus::PropertyValueMatchesNoChange)
             {
             BeAssert(false && "CopyStruct(): Fail to set primitive value");
             return status;
@@ -813,7 +813,7 @@ BentleyStatus RandomECInstanceGenerator::SetStructValue (IECInstanceR generatedE
     BeAssert(r == BentleyStatus::SUCCESS);
     
     auto status = CopyStruct(generatedECInstance, *structInstance, ecProperty->GetName().c_str());
-    if ( status != ECOBJECTS_STATUS_Success && status != ECOBJECTS_STATUS_PropertyValueMatchesNoChange)
+    if ( status != ECObjectsStatus::Success && status != ECObjectsStatus::PropertyValueMatchesNoChange)
         return BentleyStatus::ERROR;
 
     return BentleyStatus::SUCCESS;
@@ -857,10 +857,12 @@ BentleyStatus RandomECInstanceGenerator::SetInstanceData(IECInstanceR generatedE
             generatedECInstance.AddArrayElements (ecProperty->GetName().c_str (), maxArrayEntries);
             if (arrayProperty->GetKind() == ARRAYKIND_Struct)
                 {
-
+                auto structArrayProperty = ecProperty->GetAsStructArrayProperty();
+                if (nullptr == structArrayProperty)
+                return BentleyStatus::ERROR;
                 for ( uint32_t i=0 ; i < maxArrayEntries; i++ )
                     {
-                    auto structInstance = arrayProperty->GetStructElementType()->GetDefaultStandaloneEnabler()->CreateInstance();
+                    auto structInstance = structArrayProperty->GetStructElementType()->GetDefaultStandaloneEnabler()->CreateInstance();
                     BeAssert(structInstance.IsValid());
 
                     auto r = SetInstanceData (*structInstance);
@@ -868,7 +870,7 @@ BentleyStatus RandomECInstanceGenerator::SetInstanceData(IECInstanceR generatedE
                         value.SetStruct(structInstance.get());
 
                     auto status = generatedECInstance.SetValue (ecProperty->GetName().c_str (), value, i);
-                    if (status != ECOBJECTS_STATUS_Success)
+                    if (status != ECObjectsStatus::Success)
                         {
                         BeAssert(false);
                         return BentleyStatus::ERROR;
@@ -881,7 +883,7 @@ BentleyStatus RandomECInstanceGenerator::SetInstanceData(IECInstanceR generatedE
                     {
                     SetPrimitiveValue (value, arrayProperty->GetPrimitiveElementType(), gen->GetGenerator(ecProperty));
                     auto status = generatedECInstance.SetValue (ecProperty->GetName().c_str (), value, i);
-                    if (status != ECOBJECTS_STATUS_Success)
+                    if (status != ECObjectsStatus::Success)
                         {
                         BeAssert(false);
                         return BentleyStatus::ERROR;
@@ -917,18 +919,18 @@ BentleyStatus RandomECInstanceGenerator::Generate(bool includeRelationships)
 
     for (auto ecClass : GetParameters().GetClassList())
     {
-        if (ecClass->GetIsCustomAttributeClass())
+        if (ecClass->IsCustomAttributeClass())
             continue;
 
         if (GetParameters().GenerateInstancesForEmptyClasses())
         if (ecClass->GetDefaultStandaloneEnabler()->GetClassLayout().GetPropertyCount() == 0)
             continue;
 
-        if (!ecClass->GetIsDomainClass())
+        if (ECClassModifier::Abstract != ecClass->GetClassModifier())
         if (!GetParameters().GenerateInstancesForNoneDomainClasses())
             continue;
 
-        if (ecClass->GetIsStruct())
+        if (ecClass->IsStructClass())
             structs.push_back(ecClass);
         else if (auto relationshipClass = ecClass->GetRelationshipClassCP())
             relationships.push_back(relationshipClass);
@@ -970,18 +972,18 @@ BentleyStatus RandomECInstanceGenerator::GenerateRelationships()
 
     for (auto ecClass : GetParameters().GetClassList())
     {
-        if (ecClass->GetIsCustomAttributeClass())
+        if (ecClass->IsCustomAttributeClass())
             continue;
 
         if (GetParameters().GenerateInstancesForEmptyClasses())
         if (ecClass->GetDefaultStandaloneEnabler()->GetClassLayout().GetPropertyCount() == 0)
             continue;
 
-        if (!ecClass->GetIsDomainClass())
+        if (ECClassModifier::Abstract == ecClass->GetClassModifier())
         if (!GetParameters().GenerateInstancesForNoneDomainClasses())
             continue;
 
-        if (ecClass->GetIsStruct())
+        if (ecClass->IsStructClass())
             structs.push_back(ecClass);
         else if (auto relationshipClass = ecClass->GetRelationshipClassCP())
             relationships.push_back(relationshipClass);

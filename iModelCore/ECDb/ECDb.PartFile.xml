@@ -157,7 +157,8 @@
         <SubProduct ProductName="ECDb-Gtest-Performance" />
         <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
     </Part>
-    
+
+    <ProductDirectoryList ListName="Empty" />
     <Product Name="ECDbTested">
         <SubPart PartName="RunGtest" />
         <!--  *** NEEDS WORK: What's the best way to include all platforms? Redefine this container product as a 'MultiPlatform'? -->

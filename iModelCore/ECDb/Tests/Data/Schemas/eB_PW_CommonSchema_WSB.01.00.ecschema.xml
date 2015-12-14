@@ -9,7 +9,7 @@
             <SchemaFullNameAtEditingStart>eB_PW_CommonSchema_WSB.01.00</SchemaFullNameAtEditingStart>
         </SchemaChangeTrackingState>
     </ECCustomAttributes>
-    <ECClass typeName="AttributeStruct" isStruct="True" isDomainClass="False">
+    <ECClass typeName="AttributeStruct" isStruct="True">
         <ECProperty propertyName="Type" typeName="string" />
         <ECProperty propertyName="Value" typeName="string" />
         <ECProperty propertyName="Unit" typeName="string" />
@@ -70,12 +70,12 @@
         <ECProperty propertyName="Ury" typeName="double" />
         <ECStructProperty propertyName="Location" typeName="LocationStruct" />
     </ECClass>
-    <ECClass typeName="PointStruct" isStruct="True" isDomainClass="False">
+    <ECClass typeName="PointStruct" isStruct="True">
         <ECProperty propertyName="x" typeName="double" />
         <ECProperty propertyName="y" typeName="double" />
         <ECProperty propertyName="z" typeName="double" />
     </ECClass>
-    <ECClass typeName="LocationStruct" isStruct="True" isDomainClass="False">
+    <ECClass typeName="LocationStruct" isStruct="True">
         <ECProperty propertyName="Type" typeName="string" />
         <ECStructProperty propertyName="Center" typeName="PointStruct" />
         <ECArrayProperty propertyName="Coordinates" typeName="PointStruct" minOccurs="0" maxOccurs="unbounded" isStruct="True" />

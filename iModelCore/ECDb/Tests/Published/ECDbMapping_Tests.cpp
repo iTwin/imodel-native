@@ -8,6 +8,7 @@
 #include "ECDbPublishedTests.h"
 #include "SchemaImportTestFixture.h"
 #include "../BackDoor/PublicAPI/BackDoor/ECDb/BackDoor.h"
+#include "../BackDoor/PublicAPI/BackDoor/ECDb/ECDbTestProject.h"
 
 USING_NAMESPACE_BENTLEY_EC
 BEGIN_ECDBUNITTESTS_NAMESPACE
@@ -668,7 +669,7 @@ TEST_F(ECDbMappingTestFixture, ECDbMapTests)
                                    "        <BaseClass>BaseClass</BaseClass>"
                                    "        <ECProperty propertyName='p2' typeName='string' />"
                                    "    </ECClass>"
-                                   "    <ECClass typeName='isStructClass' isStruct='True' isDomainClass='True'>"
+                                   "    <ECClass typeName='isStructClass' isStruct='True'>"
                                    "        <BaseClass>BaseClass</BaseClass>"
                                    "        <ECProperty propertyName='p3' typeName='string' />"
                                    "    </ECClass>"
@@ -676,7 +677,7 @@ TEST_F(ECDbMappingTestFixture, ECDbMapTests)
                                    "        <BaseClass>BaseClass</BaseClass>"
                                    "        <ECProperty propertyName='p4' typeName='string' />"
                                    "    </ECClass>"
-                                   "</ECSchema>", false, "Struct in class hierarchy with SharedTable (polymorphic) map strategy is expected to be not supported."));
+                                   "</ECSchema>", false, "Struct in class hierarchy with SharedTable (applies to subclasses) map strategy is expected to be not supported."));
 
     testItems.push_back(SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -1201,7 +1202,7 @@ TEST_F(ECDbMappingTestFixture, ECDbMapTests)
         "    <ECClass typeName='Parent' isDomainClass='True'>"
         "        <ECProperty propertyName='Price' typeName='double' />"
         "    </ECClass>"
-        "    <ECClass typeName='Base' isDomainClass='False' isStruct='True'>"
+        "    <ECClass typeName='Base' isStruct='True'>"
         "        <BaseClass>Parent</BaseClass>"
         "        <ECProperty propertyName='Item' typeName='double' />"
         "    </ECClass>"
@@ -1907,7 +1908,7 @@ TEST_F(ECDbMappingTestFixture, PropertyWithSameNameAsStructMemberColumn)
     {
         {
         SchemaItem testItem("<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
-                            "  <ECClass typeName='ElementCode' isStruct='True' isDomainClass='False'>"
+                            "  <ECClass typeName='ElementCode' isStruct='True'>"
                             "    <ECProperty propertyName='Name' typeName='string' />"
                             "  </ECClass>"
                             "  <ECClass typeName='Foo' >"
@@ -1928,7 +1929,7 @@ TEST_F(ECDbMappingTestFixture, PropertyWithSameNameAsStructMemberColumn)
         {
         //now flip order of struct prop and prim prop
         SchemaItem testItem("<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
-                          "  <ECClass typeName='ElementCode' isStruct='True' isDomainClass='False'>"
+                          "  <ECClass typeName='ElementCode' isStruct='True'>"
                           "    <ECProperty propertyName='Name' typeName='string' />"
                           "  </ECClass>"
                           "  <ECClass typeName='Foo' >"
@@ -2938,7 +2939,7 @@ TEST_F (ECDbMappingTestFixture, UserDefinedIndexTest)
             "<?xml version='1.0' encoding='utf-8'?>"
             "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
             "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
-            "    <ECClass typeName='ElementCode' isDomainClass='False' isStruct='True' isCustomAttribute='False'>"
+            "    <ECClass typeName='ElementCode' isStruct='True'>"
             "        <ECProperty propertyName='AuthorityId' typeName='long' />"
             "        <ECProperty propertyName='Namespace' typeName='string' />"
             "        <ECProperty propertyName='Val' typeName='string' />"
@@ -2970,7 +2971,7 @@ TEST_F (ECDbMappingTestFixture, UserDefinedIndexTest)
             "<?xml version='1.0' encoding='utf-8'?>"
             "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
             "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
-            "    <ECClass typeName='ElementCode' isDomainClass='False' isStruct='True' isCustomAttribute='False'>"
+            "    <ECClass typeName='ElementCode' isStruct='True'>"
             "        <ECProperty propertyName='AuthorityId' typeName='long' />"
             "        <ECProperty propertyName='Namespace' typeName='string' />"
             "        <ECProperty propertyName='Val' typeName='string' />"
@@ -3527,7 +3528,7 @@ TEST_F (ECDbMappingTestFixture, UserDefinedIndexTest)
             "<?xml version='1.0' encoding='utf-8'?>"
             "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
             "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
-            "    <ECClass typeName='ElementCode' isDomainClass='False' isStruct='True' isCustomAttribute='False'>"
+            "    <ECClass typeName='ElementCode' isStruct='True'>"
             "        <ECProperty propertyName='AuthorityId' typeName='long' />"
             "        <ECProperty propertyName='Namespace' typeName='string' />"
             "        <ECProperty propertyName='Val' typeName='string' />"
@@ -4640,7 +4641,7 @@ TEST_F(ECDbMappingTestFixture, ForeignKeyMapWithKeyProperty)
                           "  <ECClass typeName='Authority' >"
                           "    <ECProperty propertyName='Name' typeName='string' />"
                           "  </ECClass>"
-                          "  <ECClass typeName='ElementCode' isDomainClass='False' isStruct='True'>"
+                          "  <ECClass typeName='ElementCode' isStruct='True'>"
                           "    <ECProperty propertyName='AuthorityId' typeName='int' />"
                           "    <ECProperty propertyName='Namespace' typeName='string' />"
                           "    <ECProperty propertyName='Code' typeName='string' />"
@@ -5754,7 +5755,7 @@ size_t ReferentialIntegrityTestFixture::GetRelationshipInstanceCount(ECDbCR ecdb
 void ReferentialIntegrityTestFixture::ExecuteRelationshipInsertionIntegrityTest(ECDbR ecdb, bool allowDuplicateRelationships, bool allowForeignKeyConstraint, bool schemaImportExpectedToSucceed) const
     {
     ECSchemaPtr testSchema;
-    ECClassP foo = nullptr, goo = nullptr;
+    ECEntityClassP foo = nullptr, goo = nullptr;
     ECRelationshipClassP oneFooHasOneGoo = nullptr, oneFooHasManyGoo = nullptr, manyFooHasManyGoo = nullptr;
     PrimitiveECPropertyP prim;
     auto readContext = ECSchemaReadContext::CreateContext();
@@ -5769,8 +5770,8 @@ void ReferentialIntegrityTestFixture::ExecuteRelationshipInsertionIntegrityTest(
     testSchema->SetNamespacePrefix("ts");
     testSchema->AddReferencedSchema(*ecdbmapSchema);
 
-    testSchema->CreateClass(foo, "Foo");
-    testSchema->CreateClass(goo, "Goo");
+    testSchema->CreateEntityClass(foo, "Foo");
+    testSchema->CreateEntityClass(goo, "Goo");
 
     testSchema->CreateRelationshipClass(oneFooHasOneGoo, "OneFooHasOneGoo");
     testSchema->CreateRelationshipClass(oneFooHasManyGoo, "OneFooHasManyGoo");
@@ -5814,8 +5815,8 @@ void ReferentialIntegrityTestFixture::ExecuteRelationshipInsertionIntegrityTest(
         ASSERT_TRUE(caInstClass != nullptr);
         auto caInst = caInstClass->GetDefaultStandaloneEnabler()->CreateInstance();
         ASSERT_TRUE(caInst != nullptr);
-        ASSERT_TRUE(caInst->SetValue("AllowDuplicateRelationships", ECValue(true)) == ECOBJECTS_STATUS_Success);
-        ASSERT_TRUE(manyFooHasManyGoo->SetCustomAttribute(*caInst) == ECOBJECTS_STATUS_Success);
+        ASSERT_TRUE(caInst->SetValue("AllowDuplicateRelationships", ECValue(true)) == ECObjectsStatus::Success);
+        ASSERT_TRUE(manyFooHasManyGoo->SetCustomAttribute(*caInst) == ECObjectsStatus::Success);
         }
     
     if (allowForeignKeyConstraint)
@@ -5824,8 +5825,8 @@ void ReferentialIntegrityTestFixture::ExecuteRelationshipInsertionIntegrityTest(
         ASSERT_TRUE(fkMapClass != nullptr);
         auto caInst = fkMapClass->GetDefaultStandaloneEnabler()->CreateInstance();
         ASSERT_TRUE(caInst != nullptr);
-        ASSERT_TRUE(oneFooHasOneGoo->SetCustomAttribute(*caInst) == ECOBJECTS_STATUS_Success);
-        ASSERT_TRUE(oneFooHasManyGoo->SetCustomAttribute(*caInst) == ECOBJECTS_STATUS_Success);
+        ASSERT_TRUE(oneFooHasOneGoo->SetCustomAttribute(*caInst) == ECObjectsStatus::Success);
+        ASSERT_TRUE(oneFooHasManyGoo->SetCustomAttribute(*caInst) == ECObjectsStatus::Success);
         }
     
     if (schemaImportExpectedToSucceed)

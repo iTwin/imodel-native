@@ -6,6 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPublishedTests.h"
+#include "../BackDoor/PublicAPI/BackDoor/ECDb/ECDbTestProject.h"
 
 USING_NAMESPACE_BENTLEY_EC
 
@@ -117,9 +118,14 @@ TEST_F(ECInstanceInserterTests, InsertMultipleInstancesOfPrimitiveClassWithNullV
     InsertInstances("PrimitiveClass", "KitchenSink", 100, false);
     }
 
-TEST_F(ECInstanceInserterTests, InsertMultipleInstancesOfStructClass)
+TEST_F(ECInstanceInserterTests, InsertIntoStructClass)
     {
-    InsertInstances("Struct2", "KitchenSink", 100, true);
+    ECDbR ecdb = SetupECDb("insertInstances.ecdb", BeFileName(L"KitchenSink.01.00.ecschema.xml"));
+
+    ECClassCP structClass = ecdb.Schemas().GetECClass("KitchenSink", "Struct1");
+    ASSERT_TRUE(structClass != nullptr);
+    ECInstanceInserter inserter(ecdb, *structClass);
+    ASSERT_FALSE(inserter.IsValid());
     }
 
 TEST_F(ECInstanceInserterTests, InsertSingleRelationshipInstance)
@@ -162,7 +168,7 @@ TEST_F (ECInstanceInserterTests, InsertSingleRuleInstance)
 
     IECInstancePtr testInstance = nullptr;
     InstanceReadStatus instanceStatus = IECInstance::ReadFromXmlFile (testInstance, instanceXmlFile.GetName (), *instanceContext);
-    ASSERT_EQ (INSTANCE_READ_STATUS_Success, instanceStatus);
+    ASSERT_EQ (InstanceReadStatus::Success, instanceStatus);
     WString orignalXml, afterXml;
     testInstance->WriteToXmlString (orignalXml, false, false);
     ECInstanceInserter inserter(ecdb, testInstance->GetClass());
@@ -208,7 +214,7 @@ TEST_F (ECInstanceInserterTests, InsertWithUserProvidedECInstanceId)
         IECSqlValue const& colVal = stmt.GetValue (0);
 
         ECValue v;
-        ASSERT_EQ (ECOBJECTS_STATUS_Success, testInstance.GetValue (v, colVal.GetColumnInfo ().GetPropertyPath ().ToString ().c_str ()));
+        ASSERT_EQ (ECObjectsStatus::Success, testInstance.GetValue (v, colVal.GetColumnInfo ().GetPropertyPath ().ToString ().c_str ()));
         ASSERT_EQ (v.IsNull (), colVal.IsNull ());
         if (!v.IsNull ())
             ASSERT_EQ (v.GetInteger (), colVal.GetInt ());
@@ -352,11 +358,11 @@ TEST_F (ECInstanceInserterTests, InsertWithCurrentTimeStampTrigger)
     auto testInstance = testClass->GetDefaultStandaloneEnabler ()->CreateInstance ();
 
     ECValue v (1);
-    ASSERT_EQ (ECOBJECTS_STATUS_Success, testInstance->SetValue ("I", v));
+    ASSERT_EQ (ECObjectsStatus::Success, testInstance->SetValue ("I", v));
 
     v.Clear ();
     v.SetUtf8CP ("ECInstanceInserter");
-    ASSERT_EQ (ECOBJECTS_STATUS_Success, testInstance->SetValue ("S", v));
+    ASSERT_EQ (ECObjectsStatus::Success, testInstance->SetValue ("S", v));
 
     ECInstanceInserter inserter (ecdb, *testClass);
     ASSERT_TRUE (inserter.IsValid ());
@@ -470,7 +476,7 @@ TEST_F (ECInstanceInserterTests, CloseDbAfterInstanceInsertion)
     ASSERT_EQ (stat, BE_SQLITE_OK);
 
     ECSchemaPtr testSchema;
-    ECClassP testClass = nullptr;
+    ECEntityClassP testClass = nullptr;
     PrimitiveECPropertyP premitiveProperty = nullptr;
     ECSchema::CreateSchema (testSchema, "TestSchema", 1, 0);
     ASSERT_TRUE (testSchema.IsValid ());
@@ -478,11 +484,11 @@ TEST_F (ECInstanceInserterTests, CloseDbAfterInstanceInsertion)
     testSchema->SetDescription ("Dynamic Test Schema");
     testSchema->SetDisplayLabel ("Test Schema");
 
-    ASSERT_TRUE (testSchema->CreateClass (testClass, "TestClass") == ECOBJECTS_STATUS_Success);
-    ASSERT_TRUE (testClass->CreatePrimitiveProperty (premitiveProperty, "TestProperty", PrimitiveType::PRIMITIVETYPE_String) == ECOBJECTS_STATUS_Success);
+    ASSERT_TRUE (testSchema->CreateEntityClass (testClass, "TestClass") == ECObjectsStatus::Success);
+    ASSERT_TRUE (testClass->CreatePrimitiveProperty (premitiveProperty, "TestProperty", PrimitiveType::PRIMITIVETYPE_String) == ECObjectsStatus::Success);
 
     ECSchemaCachePtr schemaCache = ECSchemaCache::Create ();
-    ASSERT_EQ (SUCCESS, schemaCache->AddSchema (*testSchema));
+    ASSERT_EQ (ECObjectsStatus::Success, schemaCache->AddSchema (*testSchema));
     ASSERT_EQ (SUCCESS, ecdb.Schemas().ImportECSchemas (*schemaCache, ECDbSchemaManager::ImportOptions ()));
     ecdb.SaveChanges ();
 

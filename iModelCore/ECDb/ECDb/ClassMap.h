@@ -187,7 +187,6 @@ public:
     bool IsParentOfJoinedTable() const;
     bool MapsToStructArrayTable () const;
     bool IsRelationshipClassMap () const;
-    bool IsAbstractECClass () const;
     Utf8String ToString () const;
     const Utf8String GetPersistedViewName() const;
     bool HasPersistedView() const;
@@ -195,7 +194,6 @@ public:
     static BentleyStatus DetermineTableName(Utf8StringR tableName, ECN::ECClassCR, Utf8CP tablePrefix = nullptr);
     static BentleyStatus DetermineTablePrefix(Utf8StringR tablePrefix, ECN::ECClassCR);
     static bool MapsToStructArrayTable (ECN::ECClassCR);
-    static bool IsAbstractECClass (ECN::ECClassCR);
     static bool IsAnyClass (ECN::ECClassCR);
     };
 

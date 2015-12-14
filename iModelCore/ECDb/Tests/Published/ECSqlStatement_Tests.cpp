@@ -680,8 +680,8 @@ bvector<IECInstancePtr> CreateECInstance_S4 (ECDbR ecdb, int n, Utf8CP className
     for (int j = 0; j < n; j++)
         {
         StandaloneECInstancePtr inst = s4->GetDefaultStandaloneEnabler ()->CreateInstance ();
-        EXPECT_TRUE (ECObjectsStatus::ECOBJECTS_STATUS_Success == inst->SetValue ("I", ECValue (j))) << "Set Int Value failed for " << className;
-        EXPECT_TRUE (ECObjectsStatus::ECOBJECTS_STATUS_Success == inst->SetValue ("T", ECValue (stringValue.c_str()))) << "Set String Value failed for "<< className;
+        EXPECT_TRUE (ECObjectsStatus::Success == inst->SetValue ("I", ECValue (j))) << "Set Int Value failed for " << className;
+        EXPECT_TRUE (ECObjectsStatus::Success == inst->SetValue ("T", ECValue (stringValue.c_str()))) << "Set String Value failed for "<< className;
         vect.push_back (inst);
         }
 
@@ -704,15 +704,15 @@ bvector<IECInstancePtr> CreateECInstance_S3 (ECDbR ecdb, int n, Utf8CP className
     for (int j = 0; j < n; j++)
         {
         StandaloneECInstancePtr inst = s3->GetDefaultStandaloneEnabler ()->CreateInstance ();
-        EXPECT_TRUE (ECObjectsStatus::ECOBJECTS_STATUS_Success == inst->SetValue ("I", ECValue (j))) << "Set Int Value failed for " << className;
-        EXPECT_TRUE (ECObjectsStatus::ECOBJECTS_STATUS_Success == inst->SetValue ("T", ECValue (stringValue.c_str ()))) << "Set String Value failed for " << className;
-        EXPECT_TRUE (ECObjectsStatus::ECOBJECTS_STATUS_Success == inst->AddArrayElements ("S4ARRAY", m));
+        EXPECT_TRUE (ECObjectsStatus::Success == inst->SetValue ("I", ECValue (j))) << "Set Int Value failed for " << className;
+        EXPECT_TRUE (ECObjectsStatus::Success == inst->SetValue ("T", ECValue (stringValue.c_str ()))) << "Set String Value failed for " << className;
+        EXPECT_TRUE (ECObjectsStatus::Success == inst->AddArrayElements ("S4ARRAY", m));
         int v = 0;
         for (auto elm : CreateECInstance_S4 (ecdb, m, className))
             {
             ECValue elmV;
             elmV.SetStruct (elm.get ());
-            EXPECT_TRUE (ECObjectsStatus::ECOBJECTS_STATUS_Success == inst->SetValue ("S4ARRAY", elmV, v++)) << "Set Struct Value failed for " << className;
+            EXPECT_TRUE (ECObjectsStatus::Success == inst->SetValue ("S4ARRAY", elmV, v++)) << "Set Struct Value failed for " << className;
             }
 
         vect.push_back (inst);
@@ -737,15 +737,15 @@ bvector<IECInstancePtr> CreateECInstance_S2 (ECDbR ecdb, int n, Utf8CP className
     for (int j = 0; j < n; j++)
         {
         StandaloneECInstancePtr inst = s2->GetDefaultStandaloneEnabler ()->CreateInstance ();
-        EXPECT_TRUE (ECObjectsStatus::ECOBJECTS_STATUS_Success == inst->SetValue ("I", ECValue (j))) << "Set Int Value failed for " << className;
-        EXPECT_TRUE (ECObjectsStatus::ECOBJECTS_STATUS_Success == inst->SetValue ("T", ECValue (stringValue.c_str ()))) << "Set String Value failed for " << className;
-        EXPECT_TRUE (ECObjectsStatus::ECOBJECTS_STATUS_Success == inst->AddArrayElements ("S3ARRAY", m));
+        EXPECT_TRUE (ECObjectsStatus::Success == inst->SetValue ("I", ECValue (j))) << "Set Int Value failed for " << className;
+        EXPECT_TRUE (ECObjectsStatus::Success == inst->SetValue ("T", ECValue (stringValue.c_str ()))) << "Set String Value failed for " << className;
+        EXPECT_TRUE (ECObjectsStatus::Success == inst->AddArrayElements ("S3ARRAY", m));
         int v = 0;
         for (auto elm : CreateECInstance_S3 (ecdb, m, className))
             {
             ECValue elmV;
             elmV.SetStruct (elm.get ());
-            EXPECT_TRUE (ECObjectsStatus::ECOBJECTS_STATUS_Success == inst->SetValue ("S3ARRAY", elmV, v++)) << "Set Struct Value failed for " << className;
+            EXPECT_TRUE (ECObjectsStatus::Success == inst->SetValue ("S3ARRAY", elmV, v++)) << "Set Struct Value failed for " << className;
             }
 
         vect.push_back (inst);
@@ -770,15 +770,15 @@ bvector<IECInstancePtr> CreateECInstance_S1 (ECDbR ecdb, int n, Utf8CP className
     for (int j = 0; j < n; j++)
         {
         StandaloneECInstancePtr inst = s1->GetDefaultStandaloneEnabler ()->CreateInstance ();
-        EXPECT_TRUE (ECObjectsStatus::ECOBJECTS_STATUS_Success == inst->SetValue ("I", ECValue (j))) << "Set Int Value failed for " << className;
-        EXPECT_TRUE (ECObjectsStatus::ECOBJECTS_STATUS_Success == inst->SetValue ("T", ECValue (stringValue.c_str ()))) << "Set String Value failed for " << className;
-        EXPECT_TRUE (ECObjectsStatus::ECOBJECTS_STATUS_Success == inst->AddArrayElements ("S2ARRAY", m));
+        EXPECT_TRUE (ECObjectsStatus::Success == inst->SetValue ("I", ECValue (j))) << "Set Int Value failed for " << className;
+        EXPECT_TRUE (ECObjectsStatus::Success == inst->SetValue ("T", ECValue (stringValue.c_str ()))) << "Set String Value failed for " << className;
+        EXPECT_TRUE (ECObjectsStatus::Success == inst->AddArrayElements ("S2ARRAY", m));
         int v = 0;
         for (auto elm : CreateECInstance_S2 (ecdb, m, className))
             {
             ECValue elmV;
             elmV.SetStruct (elm.get ());
-            EXPECT_TRUE (ECObjectsStatus::ECOBJECTS_STATUS_Success == inst->SetValue ("S2ARRAY", elmV, v++)) << "Set Struct Value failed for " << className;
+            EXPECT_TRUE (ECObjectsStatus::Success == inst->SetValue ("S2ARRAY", elmV, v++)) << "Set Struct Value failed for " << className;
             }
 
         vect.push_back (inst);
@@ -803,15 +803,15 @@ bvector<IECInstancePtr> CreateECInstance (ECDbR ecdb, int n, Utf8CP className)
     for (int j = 0; j < n; j++)
         {
         StandaloneECInstancePtr inst = ecClassCP->GetDefaultStandaloneEnabler ()->CreateInstance ();
-        EXPECT_TRUE (ECObjectsStatus::ECOBJECTS_STATUS_Success == inst->SetValue ("I", ECValue (j))) << "Set Int Value failed for " << className;
-        EXPECT_TRUE (ECObjectsStatus::ECOBJECTS_STATUS_Success == inst->SetValue ("T", ECValue (stringValue.c_str ()))) << "Set String Value failed for " << className;
-        EXPECT_TRUE (ECObjectsStatus::ECOBJECTS_STATUS_Success == inst->AddArrayElements ("S1ARRAY", m));
+        EXPECT_TRUE (ECObjectsStatus::Success == inst->SetValue ("I", ECValue (j))) << "Set Int Value failed for " << className;
+        EXPECT_TRUE (ECObjectsStatus::Success == inst->SetValue ("T", ECValue (stringValue.c_str ()))) << "Set String Value failed for " << className;
+        EXPECT_TRUE (ECObjectsStatus::Success == inst->AddArrayElements ("S1ARRAY", m));
         int v = 0;
         for (auto elm : CreateECInstance_S1 (ecdb, m, className))
             {
             ECValue elmV;
             elmV.SetStruct (elm.get ());
-            EXPECT_TRUE (ECObjectsStatus::ECOBJECTS_STATUS_Success == inst->SetValue ("S1ARRAY", elmV, v++)) << "Set Struct Value failed for " << className;
+            EXPECT_TRUE (ECObjectsStatus::Success == inst->SetValue ("S1ARRAY", elmV, v++)) << "Set Struct Value failed for " << className;
             }
 
         vect.push_back (inst);
@@ -834,8 +834,8 @@ bvector<IECInstancePtr> CreateECInstanceWithOutStructArrayProperty (ECDbR ecdb, 
     for (int j = 0; j < n; j++)
         {
         StandaloneECInstancePtr inst = ecClassCP->GetDefaultStandaloneEnabler ()->CreateInstance ();
-        EXPECT_TRUE (ECObjectsStatus::ECOBJECTS_STATUS_Success == inst->SetValue ("I", ECValue (j))) << "Set Int Value failed for " << className;
-        EXPECT_TRUE (ECObjectsStatus::ECOBJECTS_STATUS_Success == inst->SetValue ("T", ECValue (stringValue.c_str ()))) << "Set String Value failed for " << className;
+        EXPECT_TRUE (ECObjectsStatus::Success == inst->SetValue ("I", ECValue (j))) << "Set Int Value failed for " << className;
+        EXPECT_TRUE (ECObjectsStatus::Success == inst->SetValue ("T", ECValue (stringValue.c_str ()))) << "Set String Value failed for " << className;
 
         vect.push_back (inst);
         }
@@ -973,9 +973,9 @@ TEST_F (ECSqlStatementTestFixture, PolymorphicDelete_PolymorphicSharedTable)
     EXPECT_TRUE (ca != nullptr);
     StandaloneECInstancePtr customAttribute = ca->GetDefaultStandaloneEnabler ()->CreateInstance ();
     EXPECT_TRUE (customAttribute != nullptr);
-    ASSERT_TRUE (customAttribute->SetValue ("MapStrategy.Strategy", ECValue ("SharedTable")) == ECOBJECTS_STATUS_Success);
-    ASSERT_TRUE (customAttribute->SetValue ("MapStrategy.AppliesToSubclasses", ECValue (true)) == ECOBJECTS_STATUS_Success);
-    ASSERT_TRUE (ECOBJECTS_STATUS_Success == baseClass->SetCustomAttribute(*customAttribute));
+    ASSERT_TRUE (customAttribute->SetValue ("MapStrategy.Strategy", ECValue ("SharedTable")) == ECObjectsStatus::Success);
+    ASSERT_TRUE (customAttribute->SetValue ("MapStrategy.AppliesToSubclasses", ECValue (true)) == ECObjectsStatus::Success);
+    ASSERT_TRUE (ECObjectsStatus::Success == baseClass->SetCustomAttribute(*customAttribute));
     nestedStructArraySchema->AddReferencedSchema (*ecdbMapSchema);
 
     ECSchemaCachePtr schemaCache = ECSchemaCache::Create ();
@@ -1064,6 +1064,7 @@ TEST_F(ECSqlStatementTestFixture, PolymorphicDeleteWithSubclassesInMultipleTable
                           "    </ECClass>"
                           "</ECSchema>", false, "");
     ECDbR ecdb = SetupECDb("PolymorphicDeleteTest.ecdb", testSchema);
+    ASSERT_TRUE(ecdb.IsDbOpen());
 
     ECInstanceId fi1Id;
     {
@@ -1146,9 +1147,9 @@ TEST_F (ECSqlStatementTestFixture, PolymorphicUpdateWithSharedTable)
     EXPECT_TRUE (ca != nullptr);
     StandaloneECInstancePtr customAttribute = ca->GetDefaultStandaloneEnabler ()->CreateInstance ();
     EXPECT_TRUE (customAttribute != nullptr);
-    ASSERT_TRUE (customAttribute->SetValue ("MapStrategy.Strategy", ECValue ("SharedTable")) == ECOBJECTS_STATUS_Success);
-    ASSERT_TRUE (customAttribute->SetValue ("MapStrategy.AppliesToSubclasses", ECValue (true)) == ECOBJECTS_STATUS_Success);
-    ASSERT_TRUE (ECOBJECTS_STATUS_Success == baseClass->SetCustomAttribute (*customAttribute));
+    ASSERT_TRUE (customAttribute->SetValue ("MapStrategy.Strategy", ECValue ("SharedTable")) == ECObjectsStatus::Success);
+    ASSERT_TRUE (customAttribute->SetValue ("MapStrategy.AppliesToSubclasses", ECValue (true)) == ECObjectsStatus::Success);
+    ASSERT_TRUE (ECObjectsStatus::Success == baseClass->SetCustomAttribute (*customAttribute));
     nestedStructArraySchema->AddReferencedSchema (*ecdbMapSchema);
 
     ECSchemaCachePtr schemaCache = ECSchemaCache::Create ();
@@ -1284,7 +1285,7 @@ TEST_F (ECSqlStatementTestFixture, InsertStructArray)
     ECSchemaCP ecSchema = ecdb.Schemas ().GetECSchema ("NestedStructArrayTest", true);
     for (ECClassCP testClass : ecSchema->GetClasses ())
         {
-        if (testClass->GetIsStruct())
+        if (testClass->IsStructClass())
             {
             Utf8String selectSql = "SELECT COUNT(*) FROM nsat_";
             selectSql.append (testClass->GetName ());
@@ -1349,7 +1350,7 @@ TEST_F (ECSqlStatementTestFixture, DeleteStructArray)
     ECSchemaCP ecSchema = ecdb.Schemas ().GetECSchema ("NestedStructArrayTest", true);
     for (ECClassCP testClass : ecSchema->GetClasses ())
         {
-        if (testClass->GetIsStruct())
+        if (testClass->IsStructClass())
             {
             Utf8String selectSql = "SELECT * FROM nsat_";
             selectSql.append (testClass->GetName ());
@@ -2168,7 +2169,7 @@ TEST_F(ECSqlStatementTestFixture, StructsInWhereClause)
     {
     SchemaItem schema("<?xml version='1.0' encoding='utf-8' ?>"
                       "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
-                      "    <ECClass typeName='Name' isDomainClass='False' isStruct='True'>"
+                      "    <ECClass typeName='Name' isStruct='True'>"
                       "        <ECProperty propertyName='First' typeName='string' />"
                       "        <ECProperty propertyName='Last' typeName='string' />"
                       "    </ECClass>"
@@ -3198,7 +3199,7 @@ TEST_F (ECSqlStatementTestFixture, Geometry)
         }
 
         {
-        auto ecsql = "INSERT INTO ecsql.SSpatial (PASpatialProp.Geometry, PASpatialProp.Geometry_Array) VALUES(?,?)";
+        auto ecsql = "INSERT INTO ecsql.SSpatial (SpatialStructProp.Geometry, SpatialStructProp.Geometry_Array) VALUES(?,?)";
 
         ECSqlStatement statement;
         ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(ecdb, ecsql)) << "Preparation of '" << ecsql << "' failed";
@@ -3220,7 +3221,7 @@ TEST_F (ECSqlStatementTestFixture, Geometry)
         }
 
         {
-        auto ecsql = "INSERT INTO ecsql.SSpatial (PASpatialProp) VALUES(?)";
+        auto ecsql = "INSERT INTO ecsql.SSpatial (SpatialStructProp) VALUES(?)";
 
         ECSqlStatement statement;
         ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(ecdb, ecsql)) << "Preparation of '" << ecsql << "' failed";
@@ -3277,7 +3278,7 @@ TEST_F (ECSqlStatementTestFixture, Geometry)
     ASSERT_EQ (1, rowCount);
 
     statement.Finalize ();
-    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare (ecdb, "SELECT PASpatialProp.Geometry_Array, PASpatialProp.Geometry FROM ecsql.SSpatial")) << "Preparation failed";
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare (ecdb, "SELECT SpatialStructProp.Geometry_Array, SpatialStructProp.Geometry FROM ecsql.SSpatial")) << "Preparation failed";
     rowCount = 0;
     while (statement.Step () == BE_SQLITE_ROW)
         {
@@ -3290,19 +3291,19 @@ TEST_F (ECSqlStatementTestFixture, Geometry)
             IGeometryPtr actualGeom = arrayElem->GetGeometry ();
             ASSERT_TRUE (actualGeom != nullptr);
 
-            AssertGeometry (*expectedGeoms[i], *actualGeom, "SSpatial.PASpatialProp.Geometry_Array");
+            AssertGeometry (*expectedGeoms[i], *actualGeom, "SSpatial.SpatialStructProp.Geometry_Array");
             i++;
             }
         ASSERT_EQ ((int) expectedGeoms.size (), i);
 
         IGeometryPtr actualGeom = statement.GetValueGeometry (1);
         ASSERT_TRUE (actualGeom != nullptr);
-        AssertGeometry (*expectedGeomSingle, *actualGeom, "SSpatial.PASpatialProp.Geometry");
+        AssertGeometry (*expectedGeomSingle, *actualGeom, "SSpatial.SpatialStructProp.Geometry");
         }
     ASSERT_EQ (2, rowCount);
 
     statement.Finalize ();
-    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare (ecdb, "SELECT PASpatialProp FROM ecsql.SSpatial")) << "Preparation failed";
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare (ecdb, "SELECT SpatialStructProp FROM ecsql.SSpatial")) << "Preparation failed";
     rowCount = 0;
     while (statement.Step () == BE_SQLITE_ROW)
         {
@@ -3316,7 +3317,7 @@ TEST_F (ECSqlStatementTestFixture, Geometry)
             if (structMemberName.Equals ("Geometry"))
                 {
                 IGeometryPtr actualGeom = structMemberVal.GetGeometry ();
-                AssertGeometry (*expectedGeomSingle, *actualGeom, "SSpatial.PASpatialProp > Geometry");
+                AssertGeometry (*expectedGeomSingle, *actualGeom, "SSpatial.SpatialStructProp > Geometry");
                 }
             else if (structMemberName.Equals ("Geometry_Array"))
                 {
@@ -3327,7 +3328,7 @@ TEST_F (ECSqlStatementTestFixture, Geometry)
                     IGeometryPtr actualGeom = arrayElem->GetGeometry ();
                     ASSERT_TRUE (actualGeom != nullptr);
 
-                    AssertGeometry (*expectedGeoms[i], *actualGeom, "SSpatial.PASpatialProp > Geometry_Array");
+                    AssertGeometry (*expectedGeoms[i], *actualGeom, "SSpatial.SpatialStructProp > Geometry_Array");
                     i++;
                     }
                 ASSERT_EQ ((int) expectedGeoms.size (), i);
@@ -3590,7 +3591,7 @@ TEST_F(ECSqlStatementTestFixture, ClassWithStructHavingStructArrayInsertWithDotO
         value.GetDouble();
         }
 
-        // ASSERT_TRUE(ECOBJECTS_STATUS_Success == inst->GetValue(v, L"SAStructProp.PStruct_Array",0));
+        // ASSERT_TRUE(ECObjectsStatus::Success == inst->GetValue(v, L"SAStructProp.PStruct_Array",0));
         // IECInstancePtr structInstance = v.GetStruct();
         // structInstance->GetValue(v, L"PStruct_Array");
         //ASSERT_TRUE(v.IsArray());
@@ -3605,7 +3606,7 @@ TEST_F(ECSqlStatementTestFixture, StructUpdateWithDotOperator)
     {
     ECDbR ecdb = SetupECDb("ecsqlstatementtests.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"));
 
-    auto ecsql = "INSERT INTO ecsql.SAStruct (PStructProp.i) VALUES(2)";
+    auto ecsql = "INSERT INTO ecsql.SA (SAStructProp.PStructProp.i) VALUES(2)";
 
     ECSqlStatement statement;
     auto stat = statement.Prepare(ecdb, ecsql);
@@ -3614,33 +3615,33 @@ TEST_F(ECSqlStatementTestFixture, StructUpdateWithDotOperator)
     ASSERT_EQ((int)BE_SQLITE_DONE, (int)stepStatus) << "Step for '" << ecsql << "' failed";
     statement.Finalize();
         {
-        auto prepareStatus = statement.Prepare(ecdb, "SELECT * FROM ecsql.SAStruct");
+        auto prepareStatus = statement.Prepare(ecdb, "SELECT * FROM ecsql.SA");
         ASSERT_TRUE(prepareStatus == ECSqlStatus::Success);
         ECInstanceECSqlSelectAdapter classPReader(statement);
         while (statement.Step() == BE_SQLITE_ROW)
             {
             auto inst = classPReader.GetInstance();
             ECValue v;
-            inst->GetValue(v, "PStructProp.i");
+            inst->GetValue(v, "SAStructProp.PStructProp.i");
             ASSERT_EQ(2, v.GetInteger());
             }
         }
     statement.Finalize();
-    ecsql = "UPDATE  ONLY ecsql.SAStruct SET PStructProp.i = 3 ";
+    ecsql = "UPDATE ONLY ecsql.SA SET SAStructProp.PStructProp.i = 3 ";
     stat = statement.Prepare(ecdb, ecsql);
     ASSERT_EQ(ECSqlStatus::Success, stat) << "Preparation of '" << ecsql << "' failed";
     stepStatus = statement.Step();
     ASSERT_EQ((int)BE_SQLITE_DONE, (int)stepStatus) << "Step for '" << ecsql << "' failed";
     statement.Finalize();
 
-    auto prepareStatus = statement.Prepare(ecdb, "SELECT * FROM ecsql.SAStruct");
+    auto prepareStatus = statement.Prepare(ecdb, "SELECT * FROM ecsql.SA");
     ASSERT_TRUE(prepareStatus == ECSqlStatus::Success);
     ECInstanceECSqlSelectAdapter classPReader(statement);
     while (statement.Step() == BE_SQLITE_ROW)
         {
         auto inst = classPReader.GetInstance();
         ECValue v;
-        inst->GetValue(v, "PStructProp.i");
+        inst->GetValue(v, "SAStructProp.PStructProp.i");
         ASSERT_EQ(3, v.GetInteger());
         }
     }
@@ -3729,7 +3730,7 @@ TEST_F(ECSqlStatementTestFixture, AmbiguousQuery)
     SchemaItem schemaXml("<?xml version='1.0' encoding='utf-8'?>"
                       "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
                       "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
-                      "    <ECClass typeName='Struct' isDomainClass='True' isStruct='True'>"
+                      "    <ECClass typeName='Struct' isStruct='True'>"
                       "        <ECProperty propertyName='P1' typeName='string' />"
                       "        <ECProperty propertyName='P2' typeName='int' />"
                       "    </ECClass>"

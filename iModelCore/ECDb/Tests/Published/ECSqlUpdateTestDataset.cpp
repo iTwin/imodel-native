@@ -828,11 +828,11 @@ ECSqlTestDataset ECSqlUpdateTestDataset::TargetClassTests (int rowCountPerClass)
     //*******************************************************
     //structs which are domain classes
     ecsql = "UPDATE ONLY ecsql.SAStruct SET PStructProp.i=123, PStructProp.l=100000, PStructProp.dt=DATE '2013-10-10', PStructProp.b=False";
-    ECSqlTestFrameworkHelper::AddNonSelect (dataset, ecsql, true);
+    ECSqlTestFrameworkHelper::AddPrepareFailing(dataset, ecsql, ECSqlExpectedResult::Category::Invalid, "Structs are invalid in UPDATE statements.");
 
     //structs which are not domain classes. They cannot be updated, so this always returns 0 rows affected.
     ecsql = "UPDATE ONLY ecsql.PStruct SET i=123, l=10000, dt=DATE '2013-10-10', b=False";
-    ECSqlTestFrameworkHelper::AddNonSelect (dataset, ecsql, true);
+    ECSqlTestFrameworkHelper::AddPrepareFailing(dataset, ecsql, ECSqlExpectedResult::Category::Invalid, "Structs are invalid in UPDATE statements.");
 
     //*******************************************************
     // Updating CAs

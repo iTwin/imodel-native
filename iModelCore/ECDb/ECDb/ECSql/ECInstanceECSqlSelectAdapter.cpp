@@ -254,7 +254,7 @@ IECSqlValue const& value
         auto primitiveProp = prop->GetAsPrimitiveProperty ();
         SetPrimitiveValue (ecVal, primitiveProp->GetType (), value);
         ECObjectsStatus ecStatus = instance.SetValue (accessString.c_str (), ecVal);
-        if (ecStatus != ECOBJECTS_STATUS_Success && ecStatus != ECOBJECTS_STATUS_PropertyValueMatchesNoChange)
+        if (ecStatus != ECObjectsStatus::Success && ecStatus != ECObjectsStatus::PropertyValueMatchesNoChange)
             {
             BeAssert (false);
             return ERROR;
@@ -273,6 +273,7 @@ IECSqlValue const& value
     else // Array
         {
         auto arrayProperty = prop->GetAsArrayProperty ();
+        auto structArrayProperty = prop->GetAsStructArrayProperty();
         IECSqlArrayValue const& arrayValue = value.GetArray ();
         int arrayLength = arrayValue.GetArrayLength ();
         if (arrayLength <= 0)
@@ -282,19 +283,19 @@ IECSqlValue const& value
         int arrayIndex = 0;
         for (IECSqlValue const* arrayElementValue : arrayValue)
             {
-            if (arrayProperty->GetKind () == ARRAYKIND_Primitive)
+            if (nullptr != structArrayProperty)
                 {
-                if (SUCCESS != SetPrimitiveValue (ecVal, arrayProperty->GetPrimitiveElementType (), *arrayElementValue))
+                if (SUCCESS != SetStructArrayElement(ecVal, *structArrayProperty->GetStructElementType(), *arrayElementValue))
                     return ERROR;
                 }
-            else if (arrayProperty->GetKind () == ARRAYKIND_Struct)
+            else if (arrayProperty->GetKind() == ARRAYKIND_Primitive)
                 {
-                if (SUCCESS != SetStructArrayElement (ecVal, *arrayProperty->GetStructElementType (), *arrayElementValue))
+                if (SUCCESS != SetPrimitiveValue(ecVal, arrayProperty->GetPrimitiveElementType(), *arrayElementValue))
                     return ERROR;
                 }
 
             ECObjectsStatus ecStatus = instance.SetValue (accessString.c_str (), ecVal, arrayIndex);
-            if (ecStatus != ECOBJECTS_STATUS_Success && ecStatus != ECOBJECTS_STATUS_PropertyValueMatchesNoChange)
+            if (ecStatus != ECObjectsStatus::Success && ecStatus != ECObjectsStatus::PropertyValueMatchesNoChange)
                 {
                 BeAssert (false);
                 return ERROR;

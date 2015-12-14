@@ -220,7 +220,7 @@ BentleyStatus ECDbSchemaManager::BatchImportOrUpdateECSchemas (SchemaImportConte
 
             SupplementedSchemaBuilder builder;
             SupplementedSchemaStatus status = builder.UpdateSchema(*primarySchema, suppSchemas, false /*dont create ca copy while supplementing*/);
-            if (SUPPLEMENTED_SCHEMA_STATUS_Success != status)
+            if (SupplementedSchemaStatus::Success != status)
                 {
                 m_ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Failed to supplement ECSchema %s. See log file for details.", primarySchema->GetFullSchemaName().c_str());
                 return ERROR;
@@ -287,7 +287,7 @@ BentleyStatus ECDbSchemaManager::BatchImportOrUpdateECSchemas (SchemaImportConte
             if (SUCCESS != UpdateECSchema(diff, *schema))
                 return ERROR;
 
-            if (diff != nullptr && diff->GetStatus() == DIFFSTATUS_Success && !diff->IsEmpty())
+            if (diff != nullptr && diff->GetStatus() == DiffStatus::Success && !diff->IsEmpty())
                 diffs.push_back(diff);
             }
         else
@@ -350,7 +350,7 @@ BentleyStatus ECDbSchemaManager::UpdateECSchema (ECDiffPtr& diff, ECSchemaCR ecS
         }
 
     diff = ECDiff::Diff (*existingSchema, ecSchema);
-    if (diff->GetStatus () != DIFFSTATUS_Success)
+    if (diff->GetStatus () != DiffStatus::Success)
         {
         ReportUpdateError (ecSchema, *existingSchema, "Could not compute the difference between the new and the existing version.");
         return ERROR;

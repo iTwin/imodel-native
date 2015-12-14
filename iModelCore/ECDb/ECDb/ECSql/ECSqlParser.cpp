@@ -2904,13 +2904,6 @@ BentleyStatus ECSqlParseContext::TryResolveClass(shared_ptr<ClassNameExp::Info>&
     if (map == nullptr)
         return ERROR;
 
-    auto policy = ECDbPolicyManager::GetClassPolicy(*map, IsValidInECSqlPolicyAssertion::Get());
-    if (!policy.IsSupported())
-        {
-        GetIssueReporter().Report(ECDbIssueSeverity::Error, "Invalid ECClass '%s': %s", className.c_str(), policy.GetNotSupportedMessage());
-        return ERROR;
-        }
-
     IClassMap const& classMapView = map->GetView(m_classMapViewMode);
     classNameExpInfo = ClassNameExp::Info::Create(classMapView);
     m_classNameExpInfoList[key] = classNameExpInfo;

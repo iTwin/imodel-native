@@ -216,20 +216,14 @@ PropertyMapCR propertyMap
 )
     {
     auto const& ecdb = ctx.GetECSqlStatementR ().GetPreparedStatementP ()->GetECDb ();
-    auto arrayProperty = propertyMap.GetProperty().GetAsArrayProperty();
-    if (!arrayProperty)
-        {
-        BeAssert(false && "Expecting array property");
-        return ECSqlStatus::Error;
-        }
-
-    if (arrayProperty->GetKind() != ARRAYKIND_Struct)
+    auto structArrayProperty = propertyMap.GetProperty().GetAsStructArrayProperty();
+    if (!structArrayProperty)
         {
         BeAssert(false && "Expecting struct array property");
         return ECSqlStatus::Error;
         }
 
-    auto structType = arrayProperty->GetStructElementType();
+    auto structType = structArrayProperty->GetStructElementType();
     auto structTypeMap = ecdb.GetECDbImplR().GetECDbMap ().GetClassMap (*structType);
     //1. Generate ECSQL statement to read nested struct array.
     ECSqlSelectBuilder innerECSql;
@@ -263,7 +257,7 @@ PropertyMapCR propertyMap
     innerECSql.Select (innerECSqlSelectClause.c_str ()).From (*structType, false).Where (whereClause.c_str()).OrderBy (ECDB_COL_ECArrayIndex);
 
     auto structArrayField = unique_ptr<StructArrayMappedToSecondaryTableECSqlField>(
-        new StructArrayMappedToSecondaryTableECSqlField (ctx, *arrayProperty, move (ecsqlColumnInfo)));
+        new StructArrayMappedToSecondaryTableECSqlField (ctx, *structArrayProperty, move (ecsqlColumnInfo)));
 
     //2. Create and prepare the nested ECSqlStatement.
    

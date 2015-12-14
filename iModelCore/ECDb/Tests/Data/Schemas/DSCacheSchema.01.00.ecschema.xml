@@ -16,7 +16,7 @@
         <ECProperty propertyName="Name" typeName="string" />
         <ECStructProperty propertyName="DataSourceCache_ChildrenCacheInfo" typeName="CacheInfoStruct" />
     </ECClass>
-    <ECClass typeName="CacheInfoStruct" isStruct="True" isDomainClass="False">
+    <ECClass typeName="CacheInfoStruct" isStruct="True">
         <ECProperty propertyName="CacheTag" typeName="string" />
         <ECProperty propertyName="CacheDate" typeName="dateTime" >
             <ECCustomAttributes>

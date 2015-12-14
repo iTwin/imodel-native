@@ -325,17 +325,17 @@ void PerformanceECDbMapCATestFixture::CreateClassHierarchy (ECSchemaR testSchema
     if (LevelCount == 0)
         return;
 
-    ECClassP tmpClass;
+    ECEntityClassP tmpClass;
     Utf8String className;
     className.Sprintf ("P%d", m_classNamePostFix++);
-    ASSERT_EQ (testSchema.CreateClass (tmpClass, className), ECOBJECTS_STATUS_Success);
-    ASSERT_EQ (tmpClass->AddBaseClass (baseClass), ECOBJECTS_STATUS_Success);
+    ASSERT_EQ (testSchema.CreateEntityClass (tmpClass, className), ECObjectsStatus::Success);
+    ASSERT_EQ (tmpClass->AddBaseClass (baseClass), ECObjectsStatus::Success);
     CreatePrimitiveProperties (*tmpClass);
 
-    ECClassP tmpClass1;
+    ECEntityClassP tmpClass1;
     className.Sprintf ("P%d", m_classNamePostFix++);
-    ASSERT_EQ (testSchema.CreateClass (tmpClass1, className), ECOBJECTS_STATUS_Success);
-    ASSERT_EQ (tmpClass1->AddBaseClass (baseClass), ECOBJECTS_STATUS_Success);
+    ASSERT_EQ (testSchema.CreateEntityClass (tmpClass1, className), ECObjectsStatus::Success);
+    ASSERT_EQ (tmpClass1->AddBaseClass (baseClass), ECObjectsStatus::Success);
     CreatePrimitiveProperties (*tmpClass1);
 
     CreateClassHierarchy (testSchema, LevelCount - 1, *tmpClass);
@@ -366,8 +366,8 @@ TEST_F (PerformanceECDbMapCATestFixture, CRUDPerformance_SharedTable_SharedColum
     readContext->AddSchema (*testSchema);
     testSchema->AddReferencedSchema (*ecdbmapSchema);
 
-    ECClassP baseClass;
-    ASSERT_EQ (ECOBJECTS_STATUS_Success, testSchema->CreateClass (baseClass, "BaseClass"));
+    ECEntityClassP baseClass;
+    ASSERT_EQ (ECObjectsStatus::Success, testSchema->CreateEntityClass (baseClass, "BaseClass"));
     CreatePrimitiveProperties (*baseClass);
 
     //Recursively Create Derived Classes of Provided Base Class (2 Derived Classes per Base Class)
@@ -377,10 +377,10 @@ TEST_F (PerformanceECDbMapCATestFixture, CRUDPerformance_SharedTable_SharedColum
     EXPECT_TRUE (ca != nullptr);
     auto customAttribute = ca->GetDefaultStandaloneEnabler ()->CreateInstance ();
     EXPECT_TRUE (customAttribute != nullptr);
-    ASSERT_TRUE (customAttribute->SetValue ("MapStrategy.Strategy", ECValue ("SharedTable")) == ECOBJECTS_STATUS_Success);
-    ASSERT_TRUE (customAttribute->SetValue ("MapStrategy.Options", ECValue ("SharedColumnsForSubclasses")) == ECOBJECTS_STATUS_Success);
-    ASSERT_TRUE (customAttribute->SetValue ("MapStrategy.AppliesToSubclasses", ECValue (true)) == ECOBJECTS_STATUS_Success);
-    ASSERT_TRUE (baseClass->SetCustomAttribute (*customAttribute) == ECOBJECTS_STATUS_Success);
+    ASSERT_TRUE (customAttribute->SetValue ("MapStrategy.Strategy", ECValue ("SharedTable")) == ECObjectsStatus::Success);
+    ASSERT_TRUE (customAttribute->SetValue ("MapStrategy.Options", ECValue ("SharedColumnsForSubclasses")) == ECObjectsStatus::Success);
+    ASSERT_TRUE (customAttribute->SetValue ("MapStrategy.AppliesToSubclasses", ECValue (true)) == ECObjectsStatus::Success);
+    ASSERT_TRUE (baseClass->SetCustomAttribute (*customAttribute) == ECObjectsStatus::Success);
 
     ASSERT_EQ (SUCCESS, ecdb.Schemas ().ImportECSchemas (readContext->GetCache ()));
 
@@ -423,8 +423,8 @@ TEST_F (PerformanceECDbMapCATestFixture, CRUDPerformance_SharedTableForSubClasse
     readContext->AddSchema (*testSchema);
     testSchema->AddReferencedSchema (*ecdbmapSchema);
 
-    ECClassP baseClass;
-    ASSERT_EQ (ECOBJECTS_STATUS_Success, testSchema->CreateClass (baseClass, "BaseClass"));
+    ECEntityClassP baseClass;
+    ASSERT_EQ (ECObjectsStatus::Success, testSchema->CreateEntityClass (baseClass, "BaseClass"));
     CreatePrimitiveProperties (*baseClass);
 
     //Recursively Create Derived Classes of Provided Base Class (2 Derived Classes per Base Class)
@@ -434,9 +434,9 @@ TEST_F (PerformanceECDbMapCATestFixture, CRUDPerformance_SharedTableForSubClasse
     EXPECT_TRUE (ca != nullptr);
     auto customAttribute = ca->GetDefaultStandaloneEnabler ()->CreateInstance ();
     EXPECT_TRUE (customAttribute != nullptr);
-    ASSERT_TRUE (customAttribute->SetValue ("MapStrategy.Strategy", ECValue ("SharedTable")) == ECOBJECTS_STATUS_Success);
-    ASSERT_TRUE (customAttribute->SetValue ("MapStrategy.AppliesToSubclasses", ECValue (true)) == ECOBJECTS_STATUS_Success);
-    ASSERT_TRUE (baseClass->SetCustomAttribute (*customAttribute) == ECOBJECTS_STATUS_Success);
+    ASSERT_TRUE (customAttribute->SetValue ("MapStrategy.Strategy", ECValue ("SharedTable")) == ECObjectsStatus::Success);
+    ASSERT_TRUE (customAttribute->SetValue ("MapStrategy.AppliesToSubclasses", ECValue (true)) == ECObjectsStatus::Success);
+    ASSERT_TRUE (baseClass->SetCustomAttribute (*customAttribute) == ECObjectsStatus::Success);
 
     ASSERT_EQ (SUCCESS, ecdb.Schemas ().ImportECSchemas (readContext->GetCache ()));
 
@@ -470,8 +470,8 @@ TEST_F (PerformanceECDbMapCATestFixture, CRUDPerformance_DefaultClasses)
     auto readContext = ECSchemaReadContext::CreateContext ();
     readContext->AddSchema (*testSchema);
 
-    ECClassP baseClass;
-    ASSERT_EQ (ECOBJECTS_STATUS_Success, testSchema->CreateClass (baseClass, "BaseClass"));
+    ECEntityClassP baseClass;
+    ASSERT_EQ (ECObjectsStatus::Success, testSchema->CreateEntityClass (baseClass, "BaseClass"));
     CreatePrimitiveProperties (*baseClass);
 
     //Recursively Create Derived Classes of Provided Base Class (2 Derived Classes per Base Class)
@@ -705,7 +705,7 @@ void PerformanceECDbMapCATestFixture::SqlDeleteInstances (ECDbR ecdb, ECClassR e
 //---------------------------------------------------------------------------------------
 // @bsiMethod                                      Muhammad Hassan                  10/15
 //+---------------+---------------+---------------+---------------+---------------+------
-void PerformanceECDbMapCATestFixture::SetUpTestDb (ECDbR ecdb, ECN::ECSchemaPtr &ecSchema, ECClassP &baseClass)
+void PerformanceECDbMapCATestFixture::SetUpTestDb (ECDbR ecdb, ECN::ECSchemaPtr &ecSchema, ECEntityClassP &baseClass)
     {
     m_ecsqlTestItems.clear ();
 
@@ -713,7 +713,7 @@ void PerformanceECDbMapCATestFixture::SetUpTestDb (ECDbR ecdb, ECN::ECSchemaPtr 
     ASSERT_TRUE (ecSchema.IsValid ());
     ecSchema->SetNamespacePrefix ("ts");
 
-    ASSERT_EQ (ECOBJECTS_STATUS_Success, ecSchema->CreateClass (baseClass, "BaseClass"));
+    ASSERT_EQ (ECObjectsStatus::Success, ecSchema->CreateEntityClass (baseClass, "BaseClass"));
     CreatePrimitiveProperties (*baseClass);
 
     ECSchemaCachePtr schemaCache = ECSchemaCache::Create ();
@@ -739,7 +739,7 @@ TEST_F (PerformanceECDbMapCATestFixture, SqlVsECSqlInsertPerformance_BindPropert
         m_propertiesPerClass = (size_t)pow (2, i);
         ECDbR ecdb = SetupECDb("CRUDPerformanceSqlVsECSql.ecdb");
         ECSchemaPtr testSchema;
-        ECClassP baseClass = nullptr;
+        ECEntityClassP baseClass = nullptr;
         SetUpTestDb (ecdb, testSchema, baseClass);
 
         GenerateECSqlCRUDTestStatements (*testSchema, false);
@@ -780,7 +780,7 @@ TEST_F (PerformanceECDbMapCATestFixture, SqlVsECSqlInsertPerformance_DoNotBindPr
         m_propertiesPerClass = (size_t)pow (2, i);
         ECDbR ecdb = SetupECDb("CRUDPerformanceSqlVsECSql.ecdb");
         ECSchemaPtr testSchema;
-        ECClassP baseClass = nullptr;
+        ECEntityClassP baseClass = nullptr;
         SetUpTestDb (ecdb, testSchema, baseClass);
 
         //Insert Performance using ECSql statement.
@@ -822,7 +822,7 @@ TEST_F (PerformanceECDbMapCATestFixture, SqlVsECSqlReadPerformance)
         m_propertiesPerClass = (size_t)pow (2, i);
         ECDbR ecdb = SetupECDb("CRUDPerformanceSqlVsECSql.ecdb");
         ECSchemaPtr testSchema;
-        ECClassP baseClass = nullptr;
+        ECEntityClassP baseClass = nullptr;
         SetUpTestDb (ecdb, testSchema, baseClass);
 
         //READ Performance using ECSql statement.
@@ -866,7 +866,7 @@ TEST_F (PerformanceECDbMapCATestFixture, SqlVsECSqlUpdatePerformance_DoNotBindPr
         m_propertiesPerClass = (size_t)pow (2, i);
         ECDbR ecdb = SetupECDb("CRUDPerformanceSqlVsECSql.ecdb");
         ECSchemaPtr testSchema;
-        ECClassP baseClass = nullptr;
+        ECEntityClassP baseClass = nullptr;
         SetUpTestDb (ecdb, testSchema, baseClass);
 
         //UPDATE Performance using ECSql statement.
@@ -912,7 +912,7 @@ TEST_F (PerformanceECDbMapCATestFixture, SqlVsECSqlUpdatePerformance_BindPropert
         m_propertiesPerClass = (size_t)pow (2, i);
         ECDbR ecdb = SetupECDb("CRUDPerformanceSqlVsECSql.ecdb");
         ECSchemaPtr testSchema;
-        ECClassP baseClass = nullptr;
+        ECEntityClassP baseClass = nullptr;
         SetUpTestDb (ecdb, testSchema, baseClass);
 
         //UPDATE Performance using ECSql statement.
@@ -958,7 +958,7 @@ TEST_F (PerformanceECDbMapCATestFixture, SqlVsECSqlDeletePerformance)
         m_propertiesPerClass = (size_t)pow (2, i);
         ECDbR ecdb = SetupECDb("CRUDPerformanceSqlVsECSql.ecdb");
         ECSchemaPtr testSchema;
-        ECClassP baseClass = nullptr;
+        ECEntityClassP baseClass = nullptr;
         SetUpTestDb (ecdb, testSchema, baseClass);
 
         //DELETE Performance using ECSql statement.
