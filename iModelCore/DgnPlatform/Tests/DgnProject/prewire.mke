@@ -31,13 +31,24 @@ always:
 
 %ifndef BENTLEYCONFIG_NO_JAVASCRIPT
 
+%if !defined(NDEBUG)
+    DEBUG_PARMS = --sourceMap --mapRoot $(ScriptOutDir)
+%endif
+
 TypeScriptCompile = $(BuildContext)SubParts/NodeJs/node$(toolchainExeext) $(BuildContext)SubParts/TypeScript/tsc.js
 
 tsSourceFiles = $[@wildcard $(baseDir)*.ts] $[@wildcard $(BuildContext)SubParts/Script/*.d.ts]
 
 $(ScriptOutDir)DgnScriptTest.js : $(tsSourceFiles)
     $(msg)
-    $(TypeScriptCompile) $(tsSourceFiles) --target ES5 --noImplicitAny --removeComments --declaration $(DEBUG_PARMS) --out $(ScriptOutDir)DgnScriptTest.js
+    $(TypeScriptCompile) $(tsSourceFiles) --target ES5 --noImplicitAny --removeComments --declaration $(DEBUG_PARMS) --out $@
+    ~time
+
+tsSourceFiles = $[@wildcard $(baseDir)Published/ComponentModelTest.ts] $[@wildcard $(BuildContext)SubParts/Script/*.d.ts]
+
+$(ScriptOutDir)ComponentModelTest.js : $(tsSourceFiles)
+    $(msg)
+    $(TypeScriptCompile) $(tsSourceFiles) --target ES5 --noImplicitAny --removeComments --declaration $(DEBUG_PARMS) --out $@
     ~time
 
 %endif

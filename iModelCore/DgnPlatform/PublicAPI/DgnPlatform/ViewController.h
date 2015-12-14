@@ -48,9 +48,9 @@ enum class OrientationMode
 enum class UiOrientation
 {
     Portrait            = 0,    //!< Up vector is positive device y, right vector is positive device x
-    LandscapeRight      = 1,    //!< Up vector is negative device x, right vector is positive device y
+    LandscapeRight      = 1,    //!< Up vector is positive device x, right vector is negative device y
     PortraitUpsideDown  = 2,    //!< Up vector is negative device y, right vector is negative device x
-    LandscapeLeft       = 3,    //!< Up vector is positive device x, right vector is negative device y
+    LandscapeLeft       = 3,    //!< Up vector is negative device x, right vector is positive device y
 };
 
 //=======================================================================================

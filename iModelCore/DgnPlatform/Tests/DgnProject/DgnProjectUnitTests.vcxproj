@@ -60,6 +60,7 @@
     <ClCompile Include="NonPublished\TransactionManager_Test.cpp" />
     <ClCompile Include="NonPublished\ValidatePublishing_Test.cpp" />
     <ClCompile Include="Performance\DgnECPerformanceTests.cpp" />
+    <ClCompile Include="Performance\ElementDependencyGraphPerformance.cpp" />
     <ClCompile Include="Performance\ElementInsertPerformance.cpp" />
     <ClCompile Include="Performance\PerformanceECInstanceDeleteTests.cpp" />
     <ClCompile Include="Performance\PerformanceElementsCRUDTests.cpp" />

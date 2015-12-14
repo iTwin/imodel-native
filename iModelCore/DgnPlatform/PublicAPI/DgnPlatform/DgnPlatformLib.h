@@ -146,11 +146,12 @@ public:
             //! This base class implementation looks for the program by name in the specified DgnDb.
             //! @param[out] sText           The text of the script that was found in the library
             //! @param[out] stypeFound      The type of script actually found in the library
+            //! @param[out] lastModifiedTime The last-modified-time of the script that was found.
             //! @param[in] db               The current DgnDb file
             //! @param[in] sName            Identifies the script in the library
             //! @param[in] stypePreferred   The type of script that the caller prefers, if there are multiple kinds stored for the specified name.
             //! @return non-zero if the JS program is not available from the library.
-            DGNPLATFORM_EXPORT virtual DgnDbStatus _FetchScript(Utf8StringR sText, DgnScriptType& stypeFound, DgnDbR db, Utf8CP sName, DgnScriptType stypePreferred);
+            DGNPLATFORM_EXPORT virtual DgnDbStatus _FetchScript(Utf8StringR sText, DgnScriptType& stypeFound, DateTime& lastModifiedTime, DgnDbR db, Utf8CP sName, DgnScriptType stypePreferred);
 
             //! Register the script error handler
             ScriptNotificationHandler* RegisterScriptNotificationHandler(ScriptNotificationHandler& h) {auto was  = m_notificationHandler; m_notificationHandler = &h; return was;}

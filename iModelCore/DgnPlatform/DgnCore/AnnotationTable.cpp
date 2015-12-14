@@ -8429,7 +8429,7 @@ void AnnotationTableElement::UpdateGeometryRepresentation()
     if (! IsValid())
         return;
 
-    ElementGeometryBuilderPtr builder = ElementGeometryBuilder::Create(*GetModel(), m_categoryId, m_placement.GetOrigin(), m_placement.GetAngle());
+    ElementGeometryBuilderPtr builder = ElementGeometryBuilder::Create(*GetModel(), GetCategoryId(), GetPlacement().GetOrigin(), GetPlacement().GetAngle());
 
     DPoint3d points[] =
         {

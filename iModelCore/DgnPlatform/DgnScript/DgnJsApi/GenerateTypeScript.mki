@@ -31,7 +31,7 @@ dgnJsApiTsDir = $(dgnScriptDir)DgnJsApi/ts/
 # Generate our Object Model ts declarations by scanning native code source files for special BEJAVASCRIPT_ comments
 # *** When you define new wrapper clases, add the source file to this list
 # ---------------------------------------------------------------------------------------------------------------
-$(dgnScriptGen)DgnJsApiCallbacks.cpp : $(dgnJsApiTsDir)DgnJsApi.d.ts $(dgnJsApiTsDir)DgnJsApiCallbacksTemplate.cpp $(dgnJsApiTsDir)DgnJsApiProjectionTemplate.h $(DgnPlatformAPISrc)DgnJsApi.h
+$(dgnScriptGen)DgnJsApiCallbacks.cpp, $(dgnScriptGen)DgnJsApi.ts : $(dgnJsApiTsDir)DgnJsApi.d.ts $(dgnJsApiTsDir)DgnJsApiCallbacksTemplate.cpp $(dgnJsApiTsDir)DgnJsApiProjectionTemplate.h $(DgnPlatformAPISrc)DgnJsApi.h
     $(msg)
     python $(BuildContext)SubParts/BeJavaScriptTools/createJavaScriptNativeProjection.py \
         --declarationPath "$(dgnJsApiTsDir)DgnJsApi.d.ts" \

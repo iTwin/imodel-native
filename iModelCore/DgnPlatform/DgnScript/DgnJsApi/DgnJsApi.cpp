@@ -87,14 +87,14 @@ void JsElementGeometryBuilder::AppendSphere(double radius)
 //---------------------------------------------------------------------------------------
 JsElementGeometryBuilder::JsElementGeometryBuilder(JsDgnElementP e, JsDPoint3dP o, JsYawPitchRollAnglesP a)
     {
-    DgnElement3dP e3d = dynamic_cast<DgnElement3dP>(e->m_el.get());
-    if (nullptr != e3d)
-        m_builder = ElementGeometryBuilder::Create(*e3d, o->Get (), a->GetYawPitchRollAngles ());
+    GeometrySource3dCP source3d = e->m_el->ToGeometrySource3d();
+    if (nullptr != source3d)
+        m_builder = ElementGeometryBuilder::Create(*source3d, o->Get (), a->GetYawPitchRollAngles ());
     else
         {
-        DgnElement2dP e2d = dynamic_cast<DgnElement2dP>(e->m_el.get());
-        if (nullptr != e2d)
-            m_builder = ElementGeometryBuilder::Create(*e2d, DPoint2d::From(o->GetX(), o->GetY()), AngleInDegrees::FromDegrees(a->GetYawDegrees ()));
+        GeometrySource2dCP source2d = e->m_el->ToGeometrySource2d();
+        if (nullptr != source2d)
+            m_builder = ElementGeometryBuilder::Create(*source2d, DPoint2d::From(o->GetX(), o->GetY()), AngleInDegrees::FromDegrees(a->GetYawDegrees ()));
         }
     }
 
@@ -105,6 +105,75 @@ JsDgnElement* JsDgnModel::CreateElement(Utf8StringCR ecSqlClassName, Utf8StringC
     {
     DgnCategoryId catid = DgnCategory::QueryCategoryId(categoryName.c_str(), m_model->GetDgnDb());
     return new JsDgnElement(*createPhysicalElement(*m_model, ecSqlClassName.c_str(), catid));
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Sam.Wilson                      12/15
+//---------------------------------------------------------------------------------------
+JsDgnModelP JsDgnElement::GetModel() {return new JsDgnModel(*m_el->GetModel());}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Sam.Wilson                      12/15
+//---------------------------------------------------------------------------------------
+JsDgnModelsP JsDgnDb::GetModels() {return new JsDgnModels(m_db->Models());}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Sam.Wilson                      12/15
+//---------------------------------------------------------------------------------------
+JsComponentModelP JsDgnModel::ToComponentModel() 
+    {
+    ComponentModel* cm = ToDgnComponentModel();
+    return (nullptr == cm)? nullptr: new JsComponentModel(*cm);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Sam.Wilson                      12/15
+//---------------------------------------------------------------------------------------
+static BentleyStatus loadParams(ModelSolverDef::ParameterSet& params, ComponentModel& cm, Utf8StringCR paramsJSON)
+    {
+    Json::Value paramsJsonValue(Json::objectValue);
+    if (!Json::Reader::Parse(paramsJSON.c_str(), paramsJsonValue))
+        return BSIERROR;
+
+    ModelSolverDef::ParameterSet newParameterValues = cm.GetSolver().GetParameters();
+    for (auto pname : paramsJsonValue.getMemberNames())
+        {
+        ModelSolverDef::Parameter* sparam = newParameterValues.GetParameterP(pname.c_str());
+        if (nullptr == sparam)
+            {
+            // *** TBD: print warning
+            continue;
+            }
+        ECN::ECValue ecv;
+        ECUtils::ConvertJsonToECValue(ecv, paramsJsonValue[pname], sparam->GetValue().GetPrimitiveType());
+        sparam->SetValue(ecv);
+        }
+    return BSISUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Sam.Wilson                      12/15
+//---------------------------------------------------------------------------------------
+JsDgnElement* JsComponentModel::MakeInstance(JsDgnModelP targetJsModel, Utf8StringCR capturedSolutionName, Utf8StringCR paramsJSON, JsAuthorityIssuedCodeP jscode)
+    {
+    ComponentModel* cm = ToDgnComponentModel();
+    if (nullptr == cm || nullptr == targetJsModel || !targetJsModel->m_model.IsValid())
+        return nullptr;
+    DgnModelR targetModel = *targetJsModel->m_model;
+
+    ModelSolverDef::ParameterSet params;
+    if (BSISUCCESS != loadParams(params, *cm, paramsJSON))
+        return nullptr;
+
+    DgnElement::Code ecode;
+    if (nullptr != jscode)
+        ecode = jscode->m_code;
+
+    DgnElementCPtr instance = cm->MakeInstance(nullptr, targetModel, capturedSolutionName, params, ecode);
+    if (!instance.IsValid())
+        return nullptr;
+
+    return new JsDgnElement(*const_cast<DgnElementP>(instance.get()));
     }
 
 //---------------------------------------------------------------------------------------

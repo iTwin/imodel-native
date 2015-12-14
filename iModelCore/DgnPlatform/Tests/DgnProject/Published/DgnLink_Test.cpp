@@ -41,10 +41,10 @@ TEST_F(DgnLinkTest, RoundTripUrlLink)
     DgnCategoryId categoryId = DgnCategory::QueryFirstCategoryId(db);
     ASSERT_TRUE(categoryId.IsValid());
 
-    DgnClassId elementClassId = DgnClassId(db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_DrawingElement));
+    DgnClassId elementClassId = DgnClassId(db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_AnnotationElement));
     ASSERT_TRUE(elementClassId.IsValid());
 
-    DrawingElementPtr elementPtr = DrawingElement::Create(DrawingElement::CreateParams(db, modelId, elementClassId, categoryId));
+    AnnotationElementPtr elementPtr = AnnotationElement::Create(AnnotationElement::CreateParams(db, modelId, elementClassId, categoryId));
     ASSERT_TRUE(elementPtr.IsValid());
     DgnElementCPtr result = db.Elements().Insert(*elementPtr);
     ASSERT_TRUE(result.IsValid());
@@ -90,10 +90,10 @@ TEST_F(DgnLinkTest, Iterator)
     DgnCategoryId categoryId = DgnCategory::QueryFirstCategoryId(db);
     ASSERT_TRUE(categoryId.IsValid());
 
-    DgnClassId elementClassId = DgnClassId(db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_DrawingElement));
+    DgnClassId elementClassId = DgnClassId(db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_AnnotationElement));
     ASSERT_TRUE(elementClassId.IsValid());
 
-    DrawingElementPtr elementPtr = DrawingElement::Create(DrawingElement::CreateParams(db, modelId, elementClassId, categoryId));
+    AnnotationElementPtr elementPtr = AnnotationElement::Create(AnnotationElement::CreateParams(db, modelId, elementClassId, categoryId));
     ASSERT_TRUE(elementPtr.IsValid());
     DgnElementCPtr result = db.Elements().Insert(*elementPtr);
     ASSERT_TRUE(result->GetElementId().IsValid());
@@ -171,15 +171,15 @@ TEST_F(DgnLinkTest, OtherIterators)
     DgnCategoryId categoryId = DgnCategory::QueryFirstCategoryId(db);
     ASSERT_TRUE(categoryId.IsValid());
 
-    DgnClassId elementClassId = DgnClassId(db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_DrawingElement));
+    DgnClassId elementClassId = DgnClassId(db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_AnnotationElement));
     ASSERT_TRUE(elementClassId.IsValid());
 
-    DrawingElementPtr element1 = DrawingElement::Create(DrawingElement::CreateParams(db, modelId, elementClassId, categoryId));
+    AnnotationElementPtr element1 = AnnotationElement::Create(AnnotationElement::CreateParams(db, modelId, elementClassId, categoryId));
     ASSERT_TRUE(element1.IsValid());
     DgnElementCPtr result1 = db.Elements().Insert(*element1);
     ASSERT_TRUE(result1.IsValid());
 
-    DrawingElementPtr element2 = DrawingElement::Create(DrawingElement::CreateParams(db, modelId, elementClassId, categoryId));
+    AnnotationElementPtr element2 = AnnotationElement::Create(AnnotationElement::CreateParams(db, modelId, elementClassId, categoryId));
     ASSERT_TRUE(element2.IsValid());
     DgnElementCPtr result2 = db.Elements().Insert(*element2);
     ASSERT_TRUE(result2.IsValid());
