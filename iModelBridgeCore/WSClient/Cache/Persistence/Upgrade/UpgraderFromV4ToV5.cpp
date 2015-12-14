@@ -95,30 +95,17 @@ BentleyStatus UpgraderFromV4ToV5::Upgrade()
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    03/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-bvector<ECClassCP> UpgraderFromV4ToV5::GetDataSourceNodeClasses(ECSchemaCR ecSchema)
+bvector<ECEntityClassCP> UpgraderFromV4ToV5::GetDataSourceNodeClasses(ECSchemaCR ecSchema)
     {
-    bvector<ECClassCP> extractedClasses;
+    bvector<ECEntityClassCP> extractedClasses;
+    ECEntityClassCP entity;
     for (ECClassCP ecClass : ecSchema.GetClasses())
         {
-        if (!IsDataSourceObjectClass(ecClass))
-            {
+        if (nullptr == (entity = ecClass->GetEntityClassCP()))
             continue;
-            }
-        extractedClasses.push_back(ecClass);
+        extractedClasses.push_back(entity);
         }
     return extractedClasses;
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Vincas.Razma    05/2013
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool UpgraderFromV4ToV5::IsDataSourceObjectClass(ECClassCP ecClass)
-    {
-    return
-        !ecClass->GetIsCustomAttributeClass() &&
-        !ecClass->GetIsStruct() &&
-        ecClass->GetIsDomainClass() &&
-        nullptr == ecClass->GetRelationshipClassCP();
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -128,9 +115,9 @@ ECRelationshipClassP CreateRelationshipHoldingClasses
 (
 ECSchemaR schema,
 Utf8StringCR relationshipName,
-ECClassCP parentClass,
-const bvector<ECClassCP>& childClasses,
-StrengthType strength = StrengthType::STRENGTHTYPE_Holding
+ECEntityClassCP parentClass,
+const bvector<ECEntityClassCP>& childClasses,
+StrengthType strength = StrengthType::Holding
 )
     {
     ECRelationshipClassP relationshipClass = nullptr;
@@ -138,13 +125,12 @@ StrengthType strength = StrengthType::STRENGTHTYPE_Holding
 
     relationshipClass->SetStrength(strength);
     relationshipClass->SetStrengthDirection(ECRelatedInstanceDirection::Forward);
-    relationshipClass->SetIsDomainClass(true);
 
     relationshipClass->GetSource().SetCardinality(RelationshipCardinality::ZeroMany());
     relationshipClass->GetTarget().SetCardinality(RelationshipCardinality::ZeroMany());
 
     relationshipClass->GetSource().AddClass(*parentClass);
-    for (ECClassCP childClass : childClasses)
+    for (ECEntityClassCP childClass : childClasses)
         {
         relationshipClass->GetTarget().AddClass(*childClass);
         }
@@ -154,11 +140,13 @@ StrengthType strength = StrengthType::STRENGTHTYPE_Holding
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    05/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-void UpgraderFromV4ToV5::CreateWeakRootRelationship(ECSchemaR schema, ECSchemaCR cacheSchema, const bvector<ECClassCP>& childClasses)
+void UpgraderFromV4ToV5::CreateWeakRootRelationship(ECSchemaR schema, ECSchemaCR cacheSchema, const bvector<ECEntityClassCP>& childClasses)
     {
     ECClassCP parentClass = cacheSchema.GetClassCP("Root");
-    ECRelationshipClassP relClass = CreateRelationshipHoldingClasses(schema, "WeakRootRelationship", parentClass, childClasses, StrengthType::STRENGTHTYPE_Referencing);
-    relClass->GetTarget().AddClass(*cacheSchema.GetClassCP("NavigationBase"));
+    if (nullptr == parentClass->GetEntityClassCP())
+        return;
+    ECRelationshipClassP relClass = CreateRelationshipHoldingClasses(schema, "WeakRootRelationship", parentClass->GetEntityClassCP(), childClasses, StrengthType::Referencing);
+    relClass->GetTarget().AddClass(*cacheSchema.GetClassCP("NavigationBase")->GetEntityClassCP());
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -270,7 +258,7 @@ BentleyStatus UpgraderFromV4ToV5::ReadInstances(bvector<UpgradeInstance>& instan
     Utf8String ecsql = "SELECT * FROM ONLY " + ecClass->GetECSqlName();
 
     ECSqlStatement statement;
-    if (SUCCESS != m_adapter.PrepareStatement(statement, ecsql))
+    if (SUCCESS != m_adapter.PrepareStatement(statement, ecsql.c_str()))
         {
         return ERROR;
         }

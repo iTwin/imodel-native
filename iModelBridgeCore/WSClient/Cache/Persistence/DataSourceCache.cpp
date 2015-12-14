@@ -18,7 +18,7 @@
 
 #include "Core/CacheSchema.h"
 #include "Core/CacheSettings.h"
-#include "Core/DataSourceCacheOpenState.h"
+#include "Core/WSCacheState.h"
 #include "Core/SchemaContext.h"
 #include "Core/SchemaManager.h"
 #include "Core/Version.h"
@@ -31,7 +31,7 @@ USING_NAMESPACE_BENTLEY_WEBSERVICES
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    06/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-std::shared_ptr<ECDbDebugInfoHolder> CreateLoggerHolder(DataSourceCacheOpenState& state, Utf8CP context)
+std::shared_ptr<ECDbDebugInfoHolder> CreateLoggerHolder(WSCacheState& state, Utf8CP context)
     {
     if (!LOG.isSeverityEnabled(BentleyApi::NativeLogging::LOG_TRACE))
         {
@@ -255,7 +255,7 @@ BentleyStatus DataSourceCache::ExecuteWithinTransaction(std::function<BentleySta
 void DataSourceCache::SetupOpenState(CacheEnvironmentCR environment)
     {
     BeFileName cachePath(m_db.GetDbFileName());
-    m_state = std::make_shared<DataSourceCacheOpenState>(m_db, FileStorage::CreateCacheEnvironment(cachePath, environment));
+    m_state = std::make_shared<WSCacheState>(m_db, FileStorage::CreateCacheEnvironment(cachePath, environment));
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -358,8 +358,7 @@ BentleyStatus DataSourceCache::Reset()
     // Remove all cached data
     for (ECClassCP ecClass : m_state->GetCacheSchema()->GetClasses())
         {
-        if (!ecClass->GetIsDomainClass() ||
-            ecClass->GetRelationshipClassCP() != nullptr)
+        if (ecClass->IsEntityClass() || ecClass->IsRelationshipClass()) // WIP_EC3 - verify check is still correct
             {
             continue;
             }
@@ -377,7 +376,7 @@ BentleyStatus DataSourceCache::Reset()
             }
         }
 
-    m_state = std::make_shared<DataSourceCacheOpenState>(m_db, m_state->GetFileCacheEnvironment());
+    m_state = std::make_shared<WSCacheState>(m_db, m_state->GetFileCacheEnvironment());
     return SUCCESS;
     }
 
@@ -1150,20 +1149,14 @@ ISelectProviderCR selectProvider
         instancesOut = Json::arrayValue;
         }
 
-    ECInstanceKey root = m_state->GetRootManager().FindRoot(rootName);
-    if (!root.IsValid())
-        {
-        return SUCCESS;
-        }
-
-    ECInstanceKeyMultiMap instanceIds;
-    if (SUCCESS != m_state->GetHierarchyManager().ReadTargetKeys(root, m_state->GetRootManager().GetRootRelationshipClass(), instanceIds))
+    ECInstanceKeyMultiMap instanceMap;
+    if (SUCCESS != m_state->GetRootManager().GetInstancesLinkedToRoot(rootName, instanceMap))
         {
         return ERROR;
         }
 
     CacheQueryHelper helper(selectProvider);
-    if (SUCCESS != helper.ReadInstances(m_state->GetECDbAdapter(), instanceIds,
+    if (SUCCESS != helper.ReadInstances(m_state->GetECDbAdapter(), instanceMap,
         [&] (const CacheQueryHelper::ClassReadInfo& info, ECSqlStatement& statement)
         {
         return CacheQueryHelper::ReadJsonInstances(info, statement, instancesOut);
@@ -1184,18 +1177,7 @@ Utf8StringCR rootName,
 ECInstanceKeyMultiMap& instanceMap
 )
     {
-    ECInstanceKey root = m_state->GetRootManager().FindRoot(rootName);
-    if (!root.IsValid())
-        {
-        return SUCCESS;
-        }
-
-    if (SUCCESS != m_state->GetHierarchyManager().ReadTargetKeys(root, m_state->GetRootManager().GetRootRelationshipClass(), instanceMap))
-        {
-        return ERROR;
-        }
-
-    return SUCCESS;
+    return m_state->GetRootManager().GetInstancesLinkedToRoot(rootName, instanceMap);
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -1511,7 +1493,7 @@ ICancellationTokenPtr ct
 
     bool wasCompleted = m_state->GetCachedResponseManager().IsResponseCompleted(responseKey);
     bool nowCompleted = wasCompleted;
-    
+
     if (response.IsFinal())
         {
         nowCompleted = true;

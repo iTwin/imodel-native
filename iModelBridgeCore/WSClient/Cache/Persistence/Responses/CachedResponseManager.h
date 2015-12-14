@@ -27,10 +27,10 @@ BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 struct CachedResponseManager : public IDeleteHandler
     {
     private:
-        ECDbAdapter*                m_dbAdapter;
-        HierarchyManager*           m_hierarchyManager;
-        RelationshipInfoManager*    m_relationshipInfoManager;
-        ObjectInfoManager*          m_objectInfoManager;
+        ECDbAdapter&                m_dbAdapter;
+        HierarchyManager&           m_hierarchyManager;
+        RelationshipInfoManager&    m_relationshipInfoManager;
+        ObjectInfoManager&          m_objectInfoManager;
 
         ECClassCP               m_responseClass;
         ECRelationshipClassCP   m_responseToParentClass;
@@ -42,7 +42,7 @@ struct CachedResponseManager : public IDeleteHandler
         ECRelationshipClassCP   m_responsePageToResultWeakClass;
         ECRelationshipClassCP   m_responsePageToRelInfoClass;
 
-        ECSqlStatementCache* m_statementCache;
+        ECSqlStatementCache& m_statementCache;
         ECSqlAdapterLoader<JsonInserter> m_responseInserter;
         ECSqlAdapterLoader<JsonUpdater>  m_responseUpdater;
 

@@ -31,9 +31,9 @@ struct RootManager
     {
     private:
         ECDbAdapter&                m_dbAdapter;
-        ECSqlStatementCache*        m_statementCache;
+        ECSqlStatementCache&        m_statementCache;
 
-        InstanceCacheHelper&        m_instanceHelper;
+        InstanceCacheHelper&        m_instanceCacheHelper;
         HierarchyManager&           m_hierarchyManager;
         ObjectInfoManager&          m_objectInfoManager;
 
@@ -57,12 +57,10 @@ struct RootManager
             (
             ECDbAdapter& dbAdapter,
             ECSqlStatementCache& statementCache,
-            InstanceCacheHelper&  instanceHelper,
+            InstanceCacheHelper& instanceCacheHelper,
             HierarchyManager& hierarchyManager,
             ObjectInfoManager& objectInfoManager
             );
-
-        ECRelationshipClassCP GetRootRelationshipClass() const;
 
         BentleyStatus SetupRoot(Utf8StringCR rootName, CacheRootPersistence persistence);
         BentleyStatus RenameRoot(Utf8StringCR rootName, Utf8StringCR newRootName);
@@ -101,7 +99,9 @@ struct RootManager
 
         bool IsInstanceConnectedToAnyOfRoots(ECInstanceKeyCR instance, const bset<ECInstanceId>& rootIds);
         bool IsInstanceInRoot(ECInstanceKeyCR instance, ECInstanceId rootId);
+
         BentleyStatus GetInstancesConnectedToRoots(const bset<ECInstanceId> roots, ECInstanceKeyMultiMap& instancesOut, uint8_t depth = UINT8_MAX);
+        BentleyStatus GetInstancesLinkedToRoot(Utf8StringCR rootName, ECInstanceKeyMultiMap& instancesOut);
 
         BentleyStatus RemoveRoot(Utf8StringCR rootName);
         BentleyStatus RemoveRootsByPrefix(Utf8StringCR rootPrefix);

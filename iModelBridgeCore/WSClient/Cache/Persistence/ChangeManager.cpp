@@ -33,7 +33,7 @@ Utf8CP ChangeManager::LocalInstanceIdPrefix = "LocalInstance-";
 ChangeManager::ChangeManager
 (
 ECDbAdapter& dbAdapter,
-InstanceCacheHelper& instanceHelper,
+InstanceCacheHelper& instanceCacheHelper,
 HierarchyManager& hierarchyManager,
 CachedResponseManager& responseManager,
 ObjectInfoManager& objectInfoManager,
@@ -43,16 +43,16 @@ ChangeInfoManager& changeInfoManager,
 FileStorage& fileStorage,
 RootManager& rootManager
 ) :
-m_dbAdapter(&dbAdapter),
-m_instanceHelper(&instanceHelper),
-m_hierarchyManager(&hierarchyManager),
-m_responseManager(&responseManager),
-m_objectInfoManager(&objectInfoManager),
-m_relationshipInfoManager(&relationshipInfoManager),
-m_fileInfoManager(&fileInfoManager),
-m_changeInfoManager(&changeInfoManager),
-m_fileStorage(&fileStorage),
-m_rootManager(&rootManager),
+m_dbAdapter(dbAdapter),
+m_instanceCacheHelper(instanceCacheHelper),
+m_hierarchyManager(hierarchyManager),
+m_responseManager(responseManager),
+m_objectInfoManager(objectInfoManager),
+m_relationshipInfoManager(relationshipInfoManager),
+m_fileInfoManager(fileInfoManager),
+m_changeInfoManager(changeInfoManager),
+m_fileStorage(fileStorage),
+m_rootManager(rootManager),
 m_isSyncActive(false)
     {}
 
@@ -86,7 +86,7 @@ void ChangeManager::SetSyncActive(bool active)
 BentleyStatus ChangeManager::SetupNewRevision(struct ChangeInfo& info)
     {
     info.IncrementRevision();
-    return m_changeInfoManager->SetupChangeNumber(info);
+    return m_changeInfoManager.SetupChangeNumber(info);
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -113,7 +113,7 @@ ECInstanceKey ChangeManager::LegacyCreateObject(ECClassCR ecClass, JsonValueCR p
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECRelationshipClassCP ChangeManager::GetLegacyParentRelationshipClass()
     {
-    return m_dbAdapter->GetECRelationshipClass(SCHEMA_CacheLegacySupportSchema, SCHEMA_CacheLegacySupportSchema_LegacyParentRelationship);
+    return m_dbAdapter.GetECRelationshipClass(SCHEMA_CacheLegacySupportSchema, SCHEMA_CacheLegacySupportSchema_LegacyParentRelationship);
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -122,7 +122,7 @@ ECRelationshipClassCP ChangeManager::GetLegacyParentRelationshipClass()
 ECInstanceKey ChangeManager::CreateObject(ECClassCR ecClass, JsonValueCR properties, SyncStatus syncStatus)
     {
     ObjectId newObjectId(ecClass, CreateRemoteId());
-    ObjectInfo info = m_objectInfoManager->ReadInfo(newObjectId);
+    ObjectInfo info = m_objectInfoManager.ReadInfo(newObjectId);
     if (info.IsInCache())
         {
         BeAssert(false && "Object with same ObjectId already exists");
@@ -143,7 +143,7 @@ ECInstanceKey ChangeManager::CreateObject(ECClassCR ecClass, JsonValueCR propert
     rapidjson::Document propertiesRapidJson;
     JsonUtil::ToRapidJson(properties, propertiesRapidJson);
 
-    if (SUCCESS != m_instanceHelper->CacheInstance(info, propertiesRapidJson))
+    if (SUCCESS != m_instanceCacheHelper.CacheInstance(info, propertiesRapidJson))
         {
         return ECInstanceKey();
         }
@@ -156,7 +156,7 @@ ECInstanceKey ChangeManager::CreateObject(ECClassCR ecClass, JsonValueCR propert
 +--------------------------------------------------------------------------------------*/
 BentleyStatus ChangeManager::ModifyObject(ECInstanceKeyCR instanceKey, JsonValueCR properties, SyncStatus syncStatus)
     {
-    ObjectInfo info = m_objectInfoManager->ReadInfo(instanceKey);
+    ObjectInfo info = m_objectInfoManager.ReadInfo(instanceKey);
     if (!info.IsInCache())
         {
         BeAssert(false && "Object is not it cache");
@@ -172,8 +172,8 @@ BentleyStatus ChangeManager::ModifyObject(ECInstanceKeyCR instanceKey, JsonValue
     if (info.GetChangeStatus() == ChangeStatus::NoChange)
         {
         Json::Value instanceJson;
-        if (SUCCESS != m_dbAdapter->GetJsonInstance(instanceJson, instanceKey) ||
-            SUCCESS != m_changeInfoManager->SaveBackupInstance(info, instanceJson))
+        if (SUCCESS != m_dbAdapter.GetJsonInstance(instanceJson, instanceKey) ||
+            SUCCESS != m_changeInfoManager.SaveBackupInstance(info, instanceJson))
             {
             return ERROR;
             }
@@ -195,7 +195,7 @@ BentleyStatus ChangeManager::ModifyObject(ECInstanceKeyCR instanceKey, JsonValue
     rapidjson::Document propertiesRapidJson;
     JsonUtil::ToRapidJson(properties, propertiesRapidJson);
 
-    if (SUCCESS != m_instanceHelper->UpdateExistingInstanceData(info, propertiesRapidJson))
+    if (SUCCESS != m_instanceCacheHelper.UpdateExistingInstanceData(info, propertiesRapidJson))
         {
         return ERROR;
         }
@@ -208,7 +208,7 @@ BentleyStatus ChangeManager::ModifyObject(ECInstanceKeyCR instanceKey, JsonValue
 +--------------------------------------------------------------------------------------*/
 BentleyStatus ChangeManager::RevertModifiedObject(ECInstanceKeyCR instance)
     {
-    ObjectInfo info = m_objectInfoManager->ReadInfo(instance);
+    ObjectInfo info = m_objectInfoManager.ReadInfo(instance);
     if (info.GetChangeStatus() != ChangeStatus::Modified)
         {
         BeAssert(false && "Cannot revert non-modified instance");
@@ -224,8 +224,8 @@ BentleyStatus ChangeManager::RevertModifiedObject(ECInstanceKeyCR instance)
     info.ClearChangeInfo();
 
     rapidjson::Document instanceJson;
-    if (SUCCESS != m_changeInfoManager->ReadBackupInstance(info, instanceJson) ||
-        SUCCESS != m_instanceHelper->UpdateExistingInstanceData(info, instanceJson))
+    if (SUCCESS != m_changeInfoManager.ReadBackupInstance(info, instanceJson) ||
+        SUCCESS != m_instanceCacheHelper.UpdateExistingInstanceData(info, instanceJson))
         {
         return ERROR;
         }
@@ -238,7 +238,7 @@ BentleyStatus ChangeManager::RevertModifiedObject(ECInstanceKeyCR instance)
 +--------------------------------------------------------------------------------------*/
 BentleyStatus ChangeManager::DeleteObject(ECInstanceKeyCR instanceKey, SyncStatus syncStatus)
     {
-    ObjectInfo info = m_objectInfoManager->ReadInfo(instanceKey);
+    ObjectInfo info = m_objectInfoManager.ReadInfo(instanceKey);
     if (!info.IsInCache())
         {
         BeAssert(false && "Object is not it cache");
@@ -267,12 +267,12 @@ BentleyStatus ChangeManager::DeleteObject(ECInstanceKeyCR instanceKey, SyncStatu
     info.SetChangeStatus(ChangeStatus::Deleted);
     info.SetSyncStatus(syncStatus);
 
-    if (SUCCESS != m_objectInfoManager->DeleteInstanceLeavingInfo(info))
+    if (SUCCESS != m_objectInfoManager.DeleteInstanceLeavingInfo(info))
         {
         return ERROR;
         }
 
-    if (SUCCESS != m_objectInfoManager->UpdateInfo(info))
+    if (SUCCESS != m_objectInfoManager.UpdateInfo(info))
         {
         return ERROR;
         }
@@ -285,12 +285,12 @@ BentleyStatus ChangeManager::DeleteObject(ECInstanceKeyCR instanceKey, SyncStatu
 +--------------------------------------------------------------------------------------*/
 BentleyStatus ChangeManager::ModifyFile(ECInstanceKeyCR instanceKey, BeFileNameCR filePath, bool copyFile, SyncStatus syncStatus)
     {
-    if (!m_objectInfoManager->ReadInfo(instanceKey).IsInCache())
+    if (!m_objectInfoManager.ReadInfo(instanceKey).IsInCache())
         {
         return ERROR;
         }
 
-    FileInfo info = m_fileInfoManager->ReadInfo(instanceKey);
+    FileInfo info = m_fileInfoManager.ReadInfo(instanceKey);
     if (info.GetChangeStatus() != ChangeStatus::NoChange && IsSyncActive())
         {
         BeAssert(false && "Cannot change modified file while syncing");
@@ -305,8 +305,8 @@ BentleyStatus ChangeManager::ModifyFile(ECInstanceKeyCR instanceKey, BeFileNameC
     info.SetChangeStatus(ChangeStatus::Modified);
     info.SetSyncStatus(syncStatus);
 
-    if (SUCCESS != m_fileStorage->CacheFile(info, filePath, nullptr, FileCache::Persistent, DateTime::GetCurrentTimeUtc(), copyFile) ||
-        SUCCESS != m_fileInfoManager->SaveInfo(info))
+    if (SUCCESS != m_fileStorage.CacheFile(info, filePath, nullptr, FileCache::Persistent, DateTime::GetCurrentTimeUtc(), copyFile) ||
+        SUCCESS != m_fileInfoManager.SaveInfo(info))
         {
         BeAssert(false);
         return ERROR;
@@ -341,26 +341,26 @@ SyncStatus syncStatus,
 uint64_t changeNumber
 )
     {
-    if (!m_objectInfoManager->ReadInfo(source).IsInCache() ||
-        !m_objectInfoManager->ReadInfo(target).IsInCache())
+    if (!m_objectInfoManager.ReadInfo(source).IsInCache() ||
+        !m_objectInfoManager.ReadInfo(target).IsInCache())
         {
         return ECInstanceKey();
         }
 
-    if (m_dbAdapter->FindRelationship(&relationshipClass, source, target).IsValid())
+    if (m_dbAdapter.FindRelationship(&relationshipClass, source, target).IsValid())
         {
         BeAssert(false && "Such relationship already exists");
         return ECInstanceKey();
         }
 
-    RelationshipInfo info = m_relationshipInfoManager->ReadInfo(relationshipClass, source, target);
+    RelationshipInfo info = m_relationshipInfoManager.ReadInfo(relationshipClass, source, target);
     if (info.IsInCache())
         {
         BeAssert(false && "Such cached relationship already exists");
         return ECInstanceKey();
         }
 
-    ECInstanceKey relationship = m_hierarchyManager->RelateInstances(source, target, &relationshipClass);
+    ECInstanceKey relationship = m_hierarchyManager.RelateInstances(source, target, &relationshipClass);
     if (!relationship.IsValid())
         {
         return ECInstanceKey();
@@ -384,7 +384,7 @@ uint64_t changeNumber
     info.SetSyncStatus(syncStatus);
     info.SetIsLocal(true);
 
-    if (SUCCESS != m_relationshipInfoManager->SaveInfo(info))
+    if (SUCCESS != m_relationshipInfoManager.SaveInfo(info))
         {
         return ECInstanceKey();
         }
@@ -401,7 +401,7 @@ ECInstanceKeyCR relationshipKey,
 SyncStatus syncStatus
 )
     {
-    RelationshipInfo info = m_relationshipInfoManager->FindInfo(relationshipKey);
+    RelationshipInfo info = m_relationshipInfoManager.FindInfo(relationshipKey);
     if (!info.IsInCache())
         {
         BeAssert(false && "Relationship does not exist in cache");
@@ -420,7 +420,7 @@ SyncStatus syncStatus
         return ERROR;
         }
 
-    if (SUCCESS != m_relationshipInfoManager->DeleteRelationshipLeavingInfo(info))
+    if (SUCCESS != m_relationshipInfoManager.DeleteRelationshipLeavingInfo(info))
         {
         return ERROR;
         }
@@ -433,7 +433,7 @@ SyncStatus syncStatus
     info.SetChangeStatus(ChangeStatus::Deleted);
     info.SetSyncStatus(syncStatus);
 
-    if (SUCCESS != m_relationshipInfoManager->SaveInfo(info))
+    if (SUCCESS != m_relationshipInfoManager.SaveInfo(info))
         {
         return ERROR;
         }
@@ -448,13 +448,13 @@ BentleyStatus ChangeManager::SetSyncStatus(ECInstanceKeyCR instanceKey, SyncStat
     {
     bool updated = false;
 
-    ObjectInfo objectInfo = m_objectInfoManager->ReadInfo(instanceKey);
+    ObjectInfo objectInfo = m_objectInfoManager.ReadInfo(instanceKey);
     if (objectInfo.IsInCache())
         {
         if (objectInfo.GetChangeStatus() != ChangeStatus::NoChange)
             {
             objectInfo.SetSyncStatus(syncStatus);
-            if (SUCCESS != m_objectInfoManager->UpdateInfo(objectInfo))
+            if (SUCCESS != m_objectInfoManager.UpdateInfo(objectInfo))
                 {
                 return ERROR;
                 }
@@ -462,13 +462,13 @@ BentleyStatus ChangeManager::SetSyncStatus(ECInstanceKeyCR instanceKey, SyncStat
             }
         }
 
-    FileInfo fileInfo = m_fileInfoManager->ReadInfo(instanceKey);
+    FileInfo fileInfo = m_fileInfoManager.ReadInfo(instanceKey);
     if (fileInfo.IsInCache())
         {
         if (fileInfo.GetChangeStatus() != ChangeStatus::NoChange)
             {
             fileInfo.SetSyncStatus(syncStatus);
-            if (SUCCESS != m_fileInfoManager->SaveInfo(fileInfo))
+            if (SUCCESS != m_fileInfoManager.SaveInfo(fileInfo))
                 {
                 return ERROR;
                 }
@@ -476,13 +476,13 @@ BentleyStatus ChangeManager::SetSyncStatus(ECInstanceKeyCR instanceKey, SyncStat
             }
         }
 
-    RelationshipInfo relationshipInfo = m_relationshipInfoManager->FindInfo(instanceKey);
+    RelationshipInfo relationshipInfo = m_relationshipInfoManager.FindInfo(instanceKey);
     if (relationshipInfo.IsInCache())
         {
         if (relationshipInfo.GetChangeStatus() != ChangeStatus::NoChange)
             {
             relationshipInfo.SetSyncStatus(syncStatus);
-            if (SUCCESS != m_relationshipInfoManager->SaveInfo(relationshipInfo))
+            if (SUCCESS != m_relationshipInfoManager.SaveInfo(relationshipInfo))
                 {
                 return ERROR;
                 }
@@ -503,7 +503,7 @@ BentleyStatus ChangeManager::SetSyncStatus(ECInstanceKeyCR instanceKey, SyncStat
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ChangeManager::HasChanges()
     {
-    return m_changeInfoManager->HasChanges();
+    return m_changeInfoManager.HasChanges();
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -511,7 +511,7 @@ bool ChangeManager::HasChanges()
 +--------------------------------------------------------------------------------------*/
 BentleyStatus ChangeManager::GetChanges(Changes& changesOut, bool onlyReadyToSync)
     {
-    return m_changeInfoManager->GetChanges(changesOut, onlyReadyToSync);
+    return m_changeInfoManager.GetChanges(changesOut, onlyReadyToSync);
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -547,7 +547,7 @@ BentleyStatus ChangeManager::GetCreatedRelationships(ECInstanceKeyCR endInstance
     {
     ECInstanceKeyMultiMap relationships;
 
-    ECInstanceFinder& finder = m_dbAdapter->GetECInstanceFinder();
+    ECInstanceFinder& finder = m_dbAdapter.GetECInstanceFinder();
     if (SUCCESS != finder.FindRelatedInstances(nullptr, &relationships, endInstancekey, ECInstanceFinder::RelatedDirection_All))
         {
         return ERROR;
@@ -571,7 +571,7 @@ BentleyStatus ChangeManager::GetCreatedRelationships(ECInstanceKeyCR endInstance
 +--------------------------------------------------------------------------------------*/
 IChangeManager::ObjectChange ChangeManager::GetObjectChange(ECInstanceKeyCR instanceKey)
     {
-    return m_changeInfoManager->GetObjectChange(instanceKey);
+    return m_changeInfoManager.GetObjectChange(instanceKey);
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -579,7 +579,7 @@ IChangeManager::ObjectChange ChangeManager::GetObjectChange(ECInstanceKeyCR inst
 +--------------------------------------------------------------------------------------*/
 IChangeManager::RelationshipChange ChangeManager::GetRelationshipChange(ECInstanceKeyCR instanceKey)
     {
-    return m_changeInfoManager->GetRelationshipChange(instanceKey);
+    return m_changeInfoManager.GetRelationshipChange(instanceKey);
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -587,7 +587,7 @@ IChangeManager::RelationshipChange ChangeManager::GetRelationshipChange(ECInstan
 +--------------------------------------------------------------------------------------*/
 IChangeManager::FileChange ChangeManager::GetFileChange(ECInstanceKeyCR instanceKey)
     {
-    return m_changeInfoManager->GetFileChange(instanceKey);
+    return m_changeInfoManager.GetFileChange(instanceKey);
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -595,7 +595,7 @@ IChangeManager::FileChange ChangeManager::GetFileChange(ECInstanceKeyCR instance
 +--------------------------------------------------------------------------------------*/
 IChangeManager::ChangeStatus ChangeManager::GetObjectChangeStatus(ECInstanceKeyCR instance)
     {
-    return m_changeInfoManager->GetObjectChangeStatus(instance);
+    return m_changeInfoManager.GetObjectChangeStatus(instance);
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -603,7 +603,7 @@ IChangeManager::ChangeStatus ChangeManager::GetObjectChangeStatus(ECInstanceKeyC
 +--------------------------------------------------------------------------------------*/
 ChangeManager::SyncStatus ChangeManager::GetObjectSyncStatus(ECInstanceKeyCR instance)
     {
-    return m_changeInfoManager->GetObjectSyncStatus(instance);
+    return m_changeInfoManager.GetObjectSyncStatus(instance);
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -611,7 +611,7 @@ ChangeManager::SyncStatus ChangeManager::GetObjectSyncStatus(ECInstanceKeyCR ins
 +--------------------------------------------------------------------------------------*/
 ChangeManager::InstanceRevisionPtr ChangeManager::ReadInstanceRevision(ECInstanceKeyCR instanceKey)
     {
-    ECClassCP ecClass = m_dbAdapter->GetECClass(instanceKey);
+    ECClassCP ecClass = m_dbAdapter.GetECClass(instanceKey);
     if (nullptr == ecClass)
         {
         return std::make_shared<InstanceRevision>();
@@ -635,7 +635,7 @@ ChangeManager::InstanceRevisionPtr ChangeManager::ReadObjectRevision(ECInstanceK
     auto revision = std::make_shared<InstanceRevision>();
     revision->SetInstanceKey(instanceKey);
 
-    auto info = m_objectInfoManager->ReadInfo(instanceKey);
+    auto info = m_objectInfoManager.ReadInfo(instanceKey);
     revision->SetObjectId(info.GetObjectId());
 
     if (info.GetChangeStatus() != ChangeStatus::NoChange)
@@ -655,7 +655,7 @@ ChangeManager::InstanceRevisionPtr ChangeManager::ReadRelationshipRevision(ECIns
     auto revision = std::make_shared<InstanceRevision>();
     revision->SetInstanceKey(instanceKey);
 
-    auto info = m_relationshipInfoManager->FindInfo(instanceKey);
+    auto info = m_relationshipInfoManager.FindInfo(instanceKey);
     revision->SetObjectId(info.GetRelationshipId());
 
     if (info.GetChangeStatus() != ChangeStatus::NoChange)
@@ -673,9 +673,9 @@ ChangeManager::FileRevisionPtr ChangeManager::ReadFileRevision(ECInstanceKeyCR i
     {
     auto revision = std::make_shared<FileRevision>();
     revision->SetInstanceKey(instanceKey);
-    revision->SetObjectId(m_objectInfoManager->FindCachedInstance(instanceKey));
+    revision->SetObjectId(m_objectInfoManager.FindCachedInstance(instanceKey));
 
-    auto info = m_fileInfoManager->ReadInfo(instanceKey);
+    auto info = m_fileInfoManager.ReadInfo(instanceKey);
     if (info.GetChangeStatus() != ChangeStatus::NoChange)
         {
         SetupRevisionChanges(info, *revision);
@@ -701,14 +701,14 @@ void ChangeManager::SetupRevisionChanges(ChangeInfoCR info, Revision& revision)
 +--------------------------------------------------------------------------------------*/
 BentleyStatus ChangeManager::ReadModifiedProperties(ECInstanceKeyCR instance, JsonValueR propertiesOut)
     {
-    auto info = m_objectInfoManager->ReadInfo(instance);
+    auto info = m_objectInfoManager.ReadInfo(instance);
     if (info.GetChangeStatus() != ChangeStatus::Modified)
         {
         return ERROR;
         }
 
     rapidjson::Document changesJson, t1, t2;
-    if (SUCCESS != m_changeInfoManager->ReadInstanceChanges(info, changesJson, t1, t2))
+    if (SUCCESS != m_changeInfoManager.ReadInstanceChanges(info, changesJson, t1, t2))
         {
         return ERROR;
         }
@@ -722,7 +722,7 @@ BentleyStatus ChangeManager::ReadModifiedProperties(ECInstanceKeyCR instance, Js
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus ChangeManager::CommitLocalDeletions()
     {
-    return m_changeInfoManager->RemoveLocalDeletedInfos();
+    return m_changeInfoManager.RemoveLocalDeletedInfos();
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -730,7 +730,7 @@ BentleyStatus ChangeManager::CommitLocalDeletions()
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus ChangeManager::CommitInstanceRevision(InstanceRevisionCR revision)
     {
-    ECClassCP ecClass = m_dbAdapter->GetECClass(revision.GetInstanceKey());
+    ECClassCP ecClass = m_dbAdapter.GetECClass(revision.GetInstanceKey());
     if (nullptr == ecClass)
         {
         return ERROR;
@@ -751,7 +751,7 @@ BentleyStatus ChangeManager::CommitInstanceRevision(InstanceRevisionCR revision)
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus ChangeManager::CommitInstanceChange(InstanceRevisionCR revision)
     {
-    ObjectInfo info = m_objectInfoManager->ReadInfo(revision.GetInstanceKey());
+    ObjectInfo info = m_objectInfoManager.ReadInfo(revision.GetInstanceKey());
     if (info.GetChangeStatus() == ChangeStatus::NoChange)
         {
         BeAssert(false && "Nothing to commit");
@@ -767,7 +767,7 @@ BentleyStatus ChangeManager::CommitInstanceChange(InstanceRevisionCR revision)
 
     if (revision.GetChangeStatus() == ChangeStatus::Deleted && currentRevision)
         {
-        return m_hierarchyManager->DeleteInstance(info.GetInfoKey());
+        return m_hierarchyManager.DeleteInstance(info.GetInfoKey());
         }
 
     if (revision.GetChangeStatus() == ChangeStatus::Modified)
@@ -775,8 +775,8 @@ BentleyStatus ChangeManager::CommitInstanceChange(InstanceRevisionCR revision)
         if (currentRevision)
             {
             info.ClearChangeInfo();
-            if (SUCCESS != m_objectInfoManager->UpdateInfo(info) ||
-                SUCCESS != m_changeInfoManager->DeleteBackupInstance(info))
+            if (SUCCESS != m_objectInfoManager.UpdateInfo(info) ||
+                SUCCESS != m_changeInfoManager.DeleteBackupInstance(info))
                 {
                 return ERROR;
                 }
@@ -784,7 +784,7 @@ BentleyStatus ChangeManager::CommitInstanceChange(InstanceRevisionCR revision)
             }
         else if (info.GetChangeStatus() == ChangeStatus::Modified)
             {
-            return m_changeInfoManager->ApplyChangesToBackup(info, *revision.GetChangedProperties());
+            return m_changeInfoManager.ApplyChangesToBackup(info, *revision.GetChangedProperties());
             }
         else if (info.GetChangeStatus() == ChangeStatus::Deleted)
             {
@@ -806,16 +806,16 @@ BentleyStatus ChangeManager::CommitInstanceChange(InstanceRevisionCR revision)
         return ERROR;
         }
 
-    ECInstanceKey oldVersionInstance = m_objectInfoManager->FindCachedInstance(newId);
+    ECInstanceKey oldVersionInstance = m_objectInfoManager.FindCachedInstance(newId);
     if (oldVersionInstance.IsValid() && oldVersionInstance != info.GetCachedInstanceKey())
         {
         // Instance with same remoteId already exists in cache.
         // This usually happens when creating new version of object and referances to latest version need to be preserved.
         // Old instance is invalidated as it is replaced by new one.
 
-        if (SUCCESS != m_responseManager->InvalidateResponsePagesContainingInstance(oldVersionInstance) ||
-            SUCCESS != m_rootManager->CopyRootRelationships(oldVersionInstance, info.GetCachedInstanceKey()) ||
-            SUCCESS != m_hierarchyManager->DeleteInstance(oldVersionInstance))
+        if (SUCCESS != m_responseManager.InvalidateResponsePagesContainingInstance(oldVersionInstance) ||
+            SUCCESS != m_rootManager.CopyRootRelationships(oldVersionInstance, info.GetCachedInstanceKey()) ||
+            SUCCESS != m_hierarchyManager.DeleteInstance(oldVersionInstance))
             {
             return ERROR;
             }
@@ -831,7 +831,7 @@ BentleyStatus ChangeManager::CommitInstanceChange(InstanceRevisionCR revision)
     else if (info.GetChangeStatus() == ChangeStatus::Created)
         {
         // Instance was modified before commiting creation revision
-        if (SUCCESS != m_changeInfoManager->ApplyChangesToInstanceAndBackupIt(info, *revision.GetChangedProperties()))
+        if (SUCCESS != m_changeInfoManager.ApplyChangesToInstanceAndBackupIt(info, *revision.GetChangedProperties()))
             {
             return ERROR;
             }
@@ -842,7 +842,7 @@ BentleyStatus ChangeManager::CommitInstanceChange(InstanceRevisionCR revision)
         // Leave as deleted
         }
 
-    return m_objectInfoManager->UpdateInfo(info);
+    return m_objectInfoManager.UpdateInfo(info);
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -850,7 +850,7 @@ BentleyStatus ChangeManager::CommitInstanceChange(InstanceRevisionCR revision)
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus ChangeManager::CommitRelationshipChange(InstanceRevisionCR revision)
     {
-    RelationshipInfo info = m_relationshipInfoManager->FindInfo(revision.GetInstanceKey());
+    RelationshipInfo info = m_relationshipInfoManager.FindInfo(revision.GetInstanceKey());
     if (info.GetChangeStatus() == ChangeStatus::NoChange)
         {
         BeAssert(false && "Nothing to commit");
@@ -861,7 +861,7 @@ BentleyStatus ChangeManager::CommitRelationshipChange(InstanceRevisionCR revisio
 
     if (revision.GetChangeStatus() == ChangeStatus::Deleted)
         {
-        return m_hierarchyManager->DeleteInstance(info.GetInfoKey());
+        return m_hierarchyManager.DeleteInstance(info.GetInfoKey());
         }
 
     if (revision.GetChangeStatus() != ChangeStatus::Created)
@@ -877,7 +877,7 @@ BentleyStatus ChangeManager::CommitRelationshipChange(InstanceRevisionCR revisio
 
     if (currentRevision && newRemoteId.empty())
         {
-        return m_hierarchyManager->DeleteRelationship(info.GetRelationshipKey());
+        return m_hierarchyManager.DeleteRelationship(info.GetRelationshipKey());
         }
     else if (currentRevision)
         {
@@ -888,7 +888,7 @@ BentleyStatus ChangeManager::CommitRelationshipChange(InstanceRevisionCR revisio
         // Leave as deleted
         }
 
-    return m_relationshipInfoManager->SaveInfo(info);
+    return m_relationshipInfoManager.SaveInfo(info);
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -896,7 +896,7 @@ BentleyStatus ChangeManager::CommitRelationshipChange(InstanceRevisionCR revisio
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus ChangeManager::CommitFileRevision(FileRevisionCR revision)
     {
-    FileInfo info = m_fileInfoManager->ReadInfo(revision.GetInstanceKey());
+    FileInfo info = m_fileInfoManager.ReadInfo(revision.GetInstanceKey());
     if (info.GetChangeStatus() == ChangeStatus::NoChange)
         {
         BeAssert(false && "Nothing to commit");
@@ -918,8 +918,8 @@ BentleyStatus ChangeManager::CommitFileRevision(FileRevisionCR revision)
         }
 
     info.ClearChangeInfo();
-    if (SUCCESS != m_fileStorage->SetFileCacheLocation(info, FileCache::Temporary) ||
-        SUCCESS != m_fileInfoManager->SaveInfo(info))
+    if (SUCCESS != m_fileStorage.SetFileCacheLocation(info, FileCache::Temporary) ||
+        SUCCESS != m_fileInfoManager.SaveInfo(info))
         {
         return ERROR;
         }
@@ -937,7 +937,7 @@ WSObjectsResponseCR instanceResponse,
 bmap<ECInstanceKey, ECInstanceKey>& changedInstanceKeysOut
 )
     {
-    ObjectInfo oldInfo = m_objectInfoManager->ReadInfo(oldObjectId);
+    ObjectInfo oldInfo = m_objectInfoManager.ReadInfo(oldObjectId);
     if (!oldInfo.IsInCache())
         {
         return ERROR;
@@ -945,7 +945,7 @@ bmap<ECInstanceKey, ECInstanceKey>& changedInstanceKeysOut
 
     auto instances = instanceResponse.GetInstances();
     InstanceCacheHelper::CachedInstances cachedInstances;
-    if (SUCCESS != m_instanceHelper->CacheInstances(instances, cachedInstances))
+    if (SUCCESS != m_instanceCacheHelper.CacheInstances(instances, cachedInstances))
         {
         return ERROR;
         }
@@ -956,7 +956,7 @@ bmap<ECInstanceKey, ECInstanceKey>& changedInstanceKeysOut
         }
 
     ObjectId newObjectId = *cachedInstances.GetCachedInstanceObjectIds().begin();
-    ObjectInfo newInfo = m_objectInfoManager->ReadInfo(newObjectId);
+    ObjectInfo newInfo = m_objectInfoManager.ReadInfo(newObjectId);
     if (!newInfo.IsInCache())
         {
         return ERROR;
@@ -965,7 +965,7 @@ bmap<ECInstanceKey, ECInstanceKey>& changedInstanceKeysOut
     ECInstanceKey oldInstanceKey = oldInfo.GetCachedInstanceKey();
     ECInstanceKey newInstanceKey = newInfo.GetCachedInstanceKey();
 
-    if (SUCCESS != m_responseManager->InvalidateResponsePagesContainingInstance(oldInstanceKey))
+    if (SUCCESS != m_responseManager.InvalidateResponsePagesContainingInstance(oldInstanceKey))
         {
         return ERROR;
         }
@@ -988,12 +988,12 @@ bmap<ECInstanceKey, ECInstanceKey>& changedInstanceKeysOut
         return ERROR;
         }
 
-    if (SUCCESS != m_rootManager->CopyRootRelationships(oldInstanceKey, newInstanceKey))
+    if (SUCCESS != m_rootManager.CopyRootRelationships(oldInstanceKey, newInstanceKey))
         {
         return ERROR;
         }
 
-    if (SUCCESS != m_hierarchyManager->DeleteInstance(oldInstanceKey))
+    if (SUCCESS != m_hierarchyManager.DeleteInstance(oldInstanceKey))
         {
         return ERROR;
         }
@@ -1001,7 +1001,7 @@ bmap<ECInstanceKey, ECInstanceKey>& changedInstanceKeysOut
     for (auto& change : changes)
         {
         ECInstanceKey relKey;
-        auto relClass = m_dbAdapter->GetECRelationshipClass(change.GetInstanceKey());
+        auto relClass = m_dbAdapter.GetECRelationshipClass(change.GetInstanceKey());
         if (change.GetSourceKey() == oldInstanceKey)
             {
             relKey = CreateRelationship(*relClass, newInstanceKey, change.GetTargetKey(), change.GetSyncStatus(), change.GetChangeNumber());
@@ -1024,7 +1024,7 @@ bmap<ECInstanceKey, ECInstanceKey>& changedInstanceKeysOut
 +---------------+---------------+---------------+---------------+---------------+------*/
 JsonValuePtr ChangeManager::ReadChangeProperties(ChangeStatus status, ECInstanceKeyCR instance)
     {
-    ECClassCP ecClass = m_dbAdapter->GetECClass(instance);
+    ECClassCP ecClass = m_dbAdapter.GetECClass(instance);
     if (nullptr != ecClass && nullptr != ecClass->GetRelationshipClassCP())
         {
         return nullptr;
@@ -1062,7 +1062,7 @@ BentleyStatus ChangeManager::ReadObjectPropertiesForCreation(ECInstanceKeyCR ins
         return ERROR;
         }
 
-    ECClassCP ecClass = m_dbAdapter->GetECClass(instanceKey.GetECClassId());
+    ECClassCP ecClass = m_dbAdapter.GetECClass(instanceKey.GetECClassId());
     RemoveCalculatedProperties(propertiesJsonOut, *ecClass);
 
     return SUCCESS;
@@ -1078,7 +1078,7 @@ BentleyStatus ChangeManager::ReadObjectPropertiesForModification(ECInstanceKeyCR
         return ERROR;
         }
 
-    ECClassCP ecClass = m_dbAdapter->GetECClass(instanceKey);
+    ECClassCP ecClass = m_dbAdapter.GetECClass(instanceKey);
     RemoveReadOnlyProperties(propertiesJsonOut, *ecClass);
 
     return SUCCESS;
@@ -1089,7 +1089,7 @@ BentleyStatus ChangeManager::ReadObjectPropertiesForModification(ECInstanceKeyCR
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus ChangeManager::ReadObjectProperties(ECInstanceKeyCR instanceKey, JsonValueR propertiesJsonOut)
     {
-    if (SUCCESS != m_dbAdapter->GetJsonInstance(propertiesJsonOut, instanceKey))
+    if (SUCCESS != m_dbAdapter.GetJsonInstance(propertiesJsonOut, instanceKey))
         {
         return ERROR;
         }

@@ -84,7 +84,7 @@ BentleyStatus SchemaManager::ImportSchemas(const std::vector<BeFileName>& schema
         {
         ECSchemaPtr schema;
         SchemaReadStatus status = ECSchema::ReadFromXmlFile(schema, BeFileName(schemaPath).GetName(), *schemaContext);
-        if (SchemaReadStatus::SCHEMA_READ_STATUS_Success != status || schema.IsNull())
+        if (SchemaReadStatus::Success != status || schema.IsNull())
             {
             return ERROR;
             }
@@ -124,7 +124,7 @@ BentleyStatus SchemaManager::ImportSchemas(const std::vector<ECSchemaPtr>& schem
             {
             Utf8String schemaXml;
             SchemaWriteStatus swstatus = schema->WriteToXmlString(schemaXml);
-            BeAssert(SchemaWriteStatus::SCHEMA_WRITE_STATUS_Success == swstatus);
+            BeAssert(SchemaWriteStatus::Success == swstatus);
 
             LOG.trace(schemaXml.c_str());
             }

@@ -22,9 +22,9 @@ struct HierarchyManager;
 struct ObjectInfoManager
     {
     private:
-        ECDbAdapter*            m_dbAdapter;
-        ECSqlStatementCache*    m_statementCache;
-        HierarchyManager*       m_hierarchyManager;
+        ECDbAdapter&            m_dbAdapter;
+        ECSqlStatementCache&    m_statementCache;
+        HierarchyManager&       m_hierarchyManager;
 
         ECClassCP               m_infoClass;
         ECRelationshipClassCP   m_infoRelationshipClass;
@@ -41,7 +41,6 @@ struct ObjectInfoManager
             );
 
         ECClassCP GetInfoClass() const;
-        ECRelationshipClassCP GetInfoRelationshipClass() const;
 
         BentleyStatus InsertInfo(ObjectInfoR info);
         BentleyStatus UpdateInfo(ObjectInfoCR info);

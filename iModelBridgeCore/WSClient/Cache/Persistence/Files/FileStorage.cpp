@@ -19,7 +19,12 @@ USING_NAMESPACE_BENTLEY_WEBSERVICES
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    07/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-FileStorage::FileStorage(ECDbAdapter& dbAdapter, WebServices::ECSqlStatementCache& statementCache, CacheEnvironmentCR environment) :
+FileStorage::FileStorage
+(
+ECDbAdapter& dbAdapter,
+WebServices::ECSqlStatementCache& statementCache,
+CacheEnvironmentCR environment
+) :
 m_environment(environment)
     {
     ECClassCP fileCacheInfoClass = dbAdapter.GetECClass(SCHEMA_CacheSchema, CLASS_FileCacheInfo);

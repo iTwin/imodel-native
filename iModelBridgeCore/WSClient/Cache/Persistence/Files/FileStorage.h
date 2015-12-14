@@ -34,7 +34,12 @@ struct FileStorage
         static BeFileName GetFileCacheFolderPath(BeFileName rootDir, WStringCR cacheName);
 
     public:
-        FileStorage(ECDbAdapter& dbAdapter, ECSqlStatementCache& statementCache, CacheEnvironmentCR environment);
+        FileStorage
+            (
+            ECDbAdapter& dbAdapter,
+            ECSqlStatementCache& statementCache,
+            CacheEnvironmentCR environment
+            );
 
         BentleyStatus SetFileCacheLocation(FileInfo& info, FileCache cacheLocation);
         BentleyStatus CacheFile(

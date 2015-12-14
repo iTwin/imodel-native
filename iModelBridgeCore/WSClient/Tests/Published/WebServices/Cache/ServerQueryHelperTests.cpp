@@ -51,9 +51,9 @@ Utf8StringCR ecExpression
     ECClassCP caClass = beStandardsSchema->GetClassCP("CalculatedECPropertySpecification");
     IECInstancePtr caInstance = caClass->GetDefaultStandaloneEnabler()->CreateInstance();
 
-    EXPECT_EQ(ECOBJECTS_STATUS_Success, caInstance->SetValue("ECExpression", ECValue(ecExpression.c_str())));
-    EXPECT_EQ(ECOBJECTS_STATUS_Success, schema->AddReferencedSchema(*beStandardsSchema));
-    EXPECT_EQ(ECOBJECTS_STATUS_Success, ecClass->GetPropertyP(propertyName.c_str())->SetCustomAttribute(*caInstance.get()));
+    EXPECT_EQ(ECObjectsStatus::Success, caInstance->SetValue("ECExpression", ECValue(ecExpression.c_str())));
+    EXPECT_EQ(ECObjectsStatus::Success, schema->AddReferencedSchema(*beStandardsSchema));
+    EXPECT_EQ(ECObjectsStatus::Success, ecClass->GetPropertyP(propertyName.c_str())->SetCustomAttribute(*caInstance.get()));
     }
 
 TEST_F(ServerQueryHelperTests, GetAllSelectedProperties_EmptyOptions_ReturnsEmpty)

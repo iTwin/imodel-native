@@ -52,13 +52,8 @@ Utf8String ECDbDebugInfo::GetDataDebugInfo(ECSchemaCP schema)
     bool foundInstances = false;
     for (ECClassCP ecClass : schema->GetClasses())
         {
-        if (!ecClass->GetIsDomainClass() ||
-            ecClass->GetIsCustomAttributeClass() ||
-            ecClass->GetIsStruct() ||
-            ecClass->GetRelationshipClassCP() != nullptr)
-            {
+        if (!ecClass->IsEntityClass() || ECClassModifier::Abstract == ecClass->GetClassModifier())
             continue;
-            }
 
         int instanceCount = m_dbAdapter.CountClassInstances(ecClass);
         if (0 == instanceCount)
@@ -76,13 +71,8 @@ Utf8String ECDbDebugInfo::GetDataDebugInfo(ECSchemaCP schema)
 
     for (ECClassCP ecClass : schema->GetClasses())
         {
-        if (!ecClass->GetIsDomainClass() ||
-            ecClass->GetIsCustomAttributeClass() ||
-            ecClass->GetIsStruct() ||
-            ecClass->GetRelationshipClassCP() == nullptr)
-            {
+        if (!ecClass->IsRelationshipClass() || ECClassModifier::Abstract == ecClass->GetClassModifier())
             continue;
-            }
 
         int instanceCount = m_dbAdapter.CountClassInstances(ecClass);
         if (0 == instanceCount)

@@ -25,15 +25,15 @@ ECDbAdapter& dbAdapter,
 WebServices::ECSqlStatementCache& statementCache,
 HierarchyManager& hierarchyManager
 ) :
-m_dbAdapter(&dbAdapter),
-m_statementCache(&statementCache),
-m_hierarchyManager(&hierarchyManager),
+m_dbAdapter(dbAdapter),
+m_statementCache(statementCache),
+m_hierarchyManager(hierarchyManager),
 
-m_infoClass(dbAdapter.GetECClass(SCHEMA_CacheSchema, CLASS_CachedObjectInfo)),
-m_infoRelationshipClass(dbAdapter.GetECRelationshipClass(SCHEMA_CacheSchema, CLASS_CachedObjectInfoToInstance)),
+m_infoClass(m_dbAdapter.GetECClass(SCHEMA_CacheSchema, CLASS_CachedObjectInfo)),
+m_infoRelationshipClass(m_dbAdapter.GetECRelationshipClass(SCHEMA_CacheSchema, CLASS_CachedObjectInfoToInstance)),
 
-m_infoInserter(dbAdapter.GetECDb(), *m_infoClass),
-m_infoUpdater(dbAdapter.GetECDb(), *m_infoClass)
+m_infoInserter(m_dbAdapter.GetECDb(), *m_infoClass),
+m_infoUpdater(m_dbAdapter.GetECDb(), *m_infoClass)
     {}
 
 /*--------------------------------------------------------------------------------------+
@@ -42,14 +42,6 @@ m_infoUpdater(dbAdapter.GetECDb(), *m_infoClass)
 ECClassCP ObjectInfoManager::GetInfoClass() const
     {
     return m_infoClass;
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Vincas.Razma    05/2013
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECRelationshipClassCP ObjectInfoManager::GetInfoRelationshipClass() const
-    {
-    return m_infoRelationshipClass;
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -71,7 +63,7 @@ BentleyStatus ObjectInfoManager::InsertInfo(ObjectInfoR info)
         {
         return ERROR;
         }
-    if (!m_dbAdapter->RelateInstances(m_infoRelationshipClass, info.GetInfoKey(), info.GetCachedInstanceKey()).IsValid())
+    if (!m_dbAdapter.RelateInstances(m_infoRelationshipClass, info.GetInfoKey(), info.GetCachedInstanceKey()).IsValid())
         {
         return ERROR;
         }
@@ -100,7 +92,7 @@ BentleyStatus ObjectInfoManager::UpdateInfo(ObjectInfoCR info)
 +--------------------------------------------------------------------------------------*/
 ObjectInfo ObjectInfoManager::ReadInfo(ObjectIdCR objectId)
     {
-    ECClassCP ecClass = m_dbAdapter->GetECClass(objectId);
+    ECClassCP ecClass = m_dbAdapter.GetECClass(objectId);
     if (nullptr == ecClass)
         {
         LOG.errorv("Class for object id '%s' not found", objectId.ToString().c_str());
@@ -116,7 +108,7 @@ ObjectInfo ObjectInfoManager::ReadInfo(ObjectIdCR objectId)
 +--------------------------------------------------------------------------------------*/
 ObjectInfo ObjectInfoManager::ReadInfo(ECClassCR ecClass, Utf8StringCR remoteId)
     {
-    auto statement = m_statementCache->GetPreparedStatement("ObjectInfoManager::ReadInfoByObjectId", [&]
+    auto statement = m_statementCache.GetPreparedStatement("ObjectInfoManager::ReadInfoByObjectId", [&]
         {
         return
             "SELECT info.* "
@@ -152,14 +144,14 @@ ObjectInfo ObjectInfoManager::ReadInfo(ECClassCR ecClass, Utf8StringCR remoteId)
 +---------------+---------------+---------------+---------------+---------------+------*/
 ObjectInfo ObjectInfoManager::ReadInfo(ECInstanceKeyCR instanceKey)
     {
-    ECClassCP objectClass = m_dbAdapter->GetECClass(instanceKey);
+    ECClassCP objectClass = m_dbAdapter.GetECClass(instanceKey);
     if (nullptr == objectClass)
         {
         BeAssert(false);
         return ObjectInfo();
         }
 
-    auto statement = m_statementCache->GetPreparedStatement("ObjectInfoManager::ReadInfoByInstanceKey", [&]
+    auto statement = m_statementCache.GetPreparedStatement("ObjectInfoManager::ReadInfoByInstanceKey", [&]
         {
         return
             "SELECT info.* "
@@ -190,7 +182,7 @@ ObjectInfo ObjectInfoManager::ReadInfo(ECInstanceKeyCR instanceKey)
 +--------------------------------------------------------------------------------------*/
 ObjectInfo ObjectInfoManager::ReadInfo(JsonValueCR infoJson)
     {
-    ECClassCP instanceClass = m_dbAdapter->GetECClass(BeJsonUtilities::Int64FromValue(infoJson[CLASS_CachedObjectInfo_PROPERTY_ClassId]));
+    ECClassCP instanceClass = m_dbAdapter.GetECClass(BeJsonUtilities::Int64FromValue(infoJson[CLASS_CachedObjectInfo_PROPERTY_ClassId]));
     return ObjectInfo(infoJson, instanceClass, m_infoClass->GetId());
     }
 
@@ -199,7 +191,7 @@ ObjectInfo ObjectInfoManager::ReadInfo(JsonValueCR infoJson)
 +--------------------------------------------------------------------------------------*/
 ECInstanceKey ObjectInfoManager::FindCachedInstance(ObjectIdCR objectId)
     {
-    ECClassCP ecClass = m_dbAdapter->GetECClass(objectId);
+    ECClassCP ecClass = m_dbAdapter.GetECClass(objectId);
     return FindCachedInstance(ecClass, objectId.remoteId);
     }
 
@@ -213,7 +205,7 @@ ECInstanceKey ObjectInfoManager::FindCachedInstance(ECClassCP ecClass, Utf8Strin
         return ECInstanceKey();
         }
 
-    auto statement = m_statementCache->GetPreparedStatement("ObjectInfoManager::FindCachedInstanceByObjectId", [&]
+    auto statement = m_statementCache.GetPreparedStatement("ObjectInfoManager::FindCachedInstanceByObjectId", [&]
         {
         return
             "SELECT info.[" CLASS_CachedObjectInfo_PROPERTY_LocalId "] "
@@ -240,13 +232,13 @@ ECInstanceKey ObjectInfoManager::FindCachedInstance(ECClassCP ecClass, Utf8Strin
 +--------------------------------------------------------------------------------------*/
 ObjectId ObjectInfoManager::FindCachedInstance(ECInstanceKeyCR instanceKey)
     {
-    ECClassCP objectClass = m_dbAdapter->GetECClass(instanceKey);
+    ECClassCP objectClass = m_dbAdapter.GetECClass(instanceKey);
     if (nullptr == objectClass)
         {
         return ObjectId();
         }
 
-    auto statement = m_statementCache->GetPreparedStatement("ObjectInfoManager::FindCachedInstanceByInstanceKey", [&]
+    auto statement = m_statementCache.GetPreparedStatement("ObjectInfoManager::FindCachedInstanceByInstanceKey", [&]
         {
         return
             "SELECT info.[" CLASS_CachedObjectInfo_PROPERTY_RemoteId "] "
@@ -273,12 +265,12 @@ ObjectId ObjectInfoManager::FindCachedInstance(ECInstanceKeyCR instanceKey)
 +--------------------------------------------------------------------------------------*/
 BentleyStatus ObjectInfoManager::DeleteInstanceLeavingInfo(ObjectInfoR info)
     {
-    if (SUCCESS != m_hierarchyManager->DeleteRelationship(info.GetInfoKey(), info.GetCachedInstanceKey(), m_infoRelationshipClass))
+    if (SUCCESS != m_hierarchyManager.DeleteRelationship(info.GetInfoKey(), info.GetCachedInstanceKey(), m_infoRelationshipClass))
         {
         return ERROR;
         }
 
-    if (SUCCESS != m_hierarchyManager->DeleteInstance(info.GetCachedInstanceKey()))
+    if (SUCCESS != m_hierarchyManager.DeleteInstance(info.GetCachedInstanceKey()))
         {
         return ERROR;
         }
@@ -291,14 +283,14 @@ BentleyStatus ObjectInfoManager::DeleteInstanceLeavingInfo(ObjectInfoR info)
 +--------------------------------------------------------------------------------------*/
 ECInstanceKey ObjectInfoManager::ReadInfoKey(ObjectIdCR objectId)
     {
-    ECClassCP objectClass = m_dbAdapter->GetECClass(objectId);
+    ECClassCP objectClass = m_dbAdapter.GetECClass(objectId);
     if (nullptr == objectClass)
         {
         return ECInstanceKey();
         }
 
     Utf8PrintfString key("ObjectInfoManager::ReadInfoKey");
-    auto statement = m_statementCache->GetPreparedStatement(key, [&]
+    auto statement = m_statementCache.GetPreparedStatement(key, [&]
         {
         return
             "SELECT info.ECInstanceId "
@@ -325,20 +317,20 @@ ECInstanceKey ObjectInfoManager::ReadInfoKey(ObjectIdCR objectId)
 +--------------------------------------------------------------------------------------*/
 BentleyStatus ObjectInfoManager::RemoveAllCachedInstances()
     {
-    auto statement = m_statementCache->GetPreparedStatement("ObjectInfoManager::RemoveAllCachedInstances-CachedObjects", [&]
+    auto statement = m_statementCache.GetPreparedStatement("ObjectInfoManager::RemoveAllCachedInstances-CachedObjects", [&]
         {
         return "SELECT infoRel.TargetECClassId, infoRel.TargetECInstanceId FROM ONLY " ECSql_CachedObjectInfoToInstanceClass " infoRel ";
         });
 
-    if (SUCCESS != m_hierarchyManager->DeleteInstances(*statement))
+    if (SUCCESS != m_hierarchyManager.DeleteInstances(*statement))
         {
         return ERROR;
         }
 
-    statement = m_statementCache->GetPreparedStatement("ObjectInfoManager::RemoveAllCachedInstances-CachedObjectInfos", [&]
+    statement = m_statementCache.GetPreparedStatement("ObjectInfoManager::RemoveAllCachedInstances-CachedObjectInfos", [&]
         {
         return "SELECT info.GetECClassId(), info.ECInstanceId FROM ONLY " ECSql_CachedObjectInfoClass " info ";
         });
 
-    return m_hierarchyManager->DeleteInstances(*statement);
+    return m_hierarchyManager.DeleteInstances(*statement);
     }
