@@ -42,9 +42,9 @@ struct CachedRelationshipKey
 struct RelationshipInfoManager : public IDeleteHandler
     {
     private:
-        ECDbAdapter*            m_dbAdapter;
-        ECSqlStatementCache*    m_statementCache;
-        HierarchyManager*       m_hierarchyManager;
+        ECDbAdapter&            m_dbAdapter;
+        ECSqlStatementCache&    m_statementCache;
+        HierarchyManager&       m_hierarchyManager;
 
         ECClassCP               m_cachedRelationshipInfoClass;
 

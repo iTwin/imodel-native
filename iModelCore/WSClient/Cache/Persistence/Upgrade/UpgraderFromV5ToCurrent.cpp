@@ -113,14 +113,14 @@ BentleyStatus UpgraderFromV5ToCurrent::CopySchema(DataSourceCache& newCache)
         }
 
     WString xmlBuffer;
-    if (SCHEMA_WRITE_STATUS_Success != schema->WriteToXmlString(xmlBuffer))
+    if (SchemaWriteStatus::Success != schema->WriteToXmlString(xmlBuffer))
         {
         return ERROR;
         }
 
     auto readContext = SchemaContext::CreateReadContext();
     ECSchemaPtr schemaCopy;
-    if (SCHEMA_READ_STATUS_Success != ECSchema::ReadFromXmlString(schemaCopy, xmlBuffer.c_str(), *readContext))
+    if (SchemaReadStatus::Success != ECSchema::ReadFromXmlString(schemaCopy, xmlBuffer.c_str(), *readContext))
         {
         return ERROR;
         }
@@ -129,7 +129,7 @@ BentleyStatus UpgraderFromV5ToCurrent::CopySchema(DataSourceCache& newCache)
         {
         if (nullptr != ecClass->GetPropertyP(PROPERTY_RemoteId))
             {
-            if (ECObjectsStatus::ECOBJECTS_STATUS_Success != ecClass->RemoveProperty(PROPERTY_RemoteId))
+            if (ECObjectsStatus::Success != ecClass->RemoveProperty(PROPERTY_RemoteId))
                 {
                 return ERROR;
                 }

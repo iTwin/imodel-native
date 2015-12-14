@@ -20,39 +20,31 @@ RootManager::RootManager
 (
 ECDbAdapter& dbAdapter,
 WebServices::ECSqlStatementCache& statementCache,
-InstanceCacheHelper&  instanceHelper,
+InstanceCacheHelper& instanceCacheHelper,
 HierarchyManager& hierarchyManager,
 ObjectInfoManager& objectInfoManager
 ) :
 m_dbAdapter(dbAdapter),
-m_statementCache(&statementCache),
+m_statementCache(statementCache),
 
-m_instanceHelper(instanceHelper),
+m_instanceCacheHelper(instanceCacheHelper),
 m_hierarchyManager(hierarchyManager),
 m_objectInfoManager(objectInfoManager),
 
-m_rootClass(dbAdapter.GetECClass(SCHEMA_CacheSchema, CLASS_Root)),
-m_rootHoldingRelationshipClass(dbAdapter.GetECRelationshipClass(SCHEMA_CacheSchema, CLASS_RootRelationship)),
-m_rootWeakRelationshipClass(dbAdapter.GetECRelationshipClass(SCHEMA_CacheSchema, CLASS_WeakRootRelationship)),
+m_rootClass(m_dbAdapter.GetECClass(SCHEMA_CacheSchema, CLASS_Root)),
+m_rootHoldingRelationshipClass(m_dbAdapter.GetECRelationshipClass(SCHEMA_CacheSchema, CLASS_RootRelationship)),
+m_rootWeakRelationshipClass(m_dbAdapter.GetECRelationshipClass(SCHEMA_CacheSchema, CLASS_WeakRootRelationship)),
 
 m_rootInserter(dbAdapter.GetECDb(), *m_rootClass),
-m_rootUpdater(dbAdapter.GetECDb(), *m_rootClass)
+m_rootUpdater(m_dbAdapter.GetECDb(), *m_rootClass)
     {}
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Vincas.Razma    02/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECRelationshipClassCP RootManager::GetRootRelationshipClass() const
-    {
-    return m_rootHoldingRelationshipClass;
-    }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    02/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECInstanceId RootManager::FindRootECInstanceId(Utf8StringCR rootName)
     {
-    auto statement = m_statementCache->GetPreparedStatement("RootManager:FindRootECInstanceId", [&]
+    auto statement = m_statementCache.GetPreparedStatement("RootManager:FindRootECInstanceId", [&]
         {
         return
             "SELECT ECInstanceId "
@@ -93,7 +85,7 @@ ECInstanceKey RootManager::FindOrCreateRoot(Utf8StringCR rootName)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void RootManager::ReadRootInstance(Utf8StringCR rootName, JsonValueR rootInstanceJsonOut)
     {
-    auto statement = m_statementCache->GetPreparedStatement("RootManager:SetupRoot", [&]
+    auto statement = m_statementCache.GetPreparedStatement("RootManager:SetupRoot", [&]
         {
         return
             "SELECT * "
@@ -188,7 +180,7 @@ BentleyStatus RootManager::SetRootSyncDate(Utf8StringCR rootName, DateTimeCR utc
 +---------------+---------------+---------------+---------------+---------------+------*/
 DateTime RootManager::ReadRootSyncDate(Utf8StringCR rootName)
     {
-    auto statement = m_statementCache->GetPreparedStatement("RootManager:ReadRootSyncDate", [&]
+    auto statement = m_statementCache.GetPreparedStatement("RootManager:ReadRootSyncDate", [&]
         {
         return
             "SELECT [" CLASS_Root_PROPERTY_SyncDate "]"
@@ -212,7 +204,7 @@ DateTime RootManager::ReadRootSyncDate(Utf8StringCR rootName)
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus RootManager::GetInstancesByPersistence(CacheRootPersistence persistence, ECInstanceKeyMultiMap& instancesOut)
     {
-    auto statement = m_statementCache->GetPreparedStatement("RootManager:GetInstancesByPersistence", [&]
+    auto statement = m_statementCache.GetPreparedStatement("RootManager:GetInstancesByPersistence", [&]
         {
         return
             "SELECT ECInstanceId "
@@ -305,14 +297,14 @@ const rapidjson::Value* instanceJson
             }
 
         info.SetRemoteId(objectId.remoteId);
-        if (SUCCESS != m_instanceHelper.CacheInstance(info, *instanceJsonToSave))
+        if (SUCCESS != m_instanceCacheHelper.CacheInstance(info, *instanceJsonToSave))
             {
             return ERROR;
             }
         }
     else if (nullptr != instanceJson)
         {
-        if (SUCCESS != m_instanceHelper.CacheInstance(info, *instanceJson))
+        if (SUCCESS != m_instanceCacheHelper.CacheInstance(info, *instanceJson))
             {
             return ERROR;
             }
@@ -494,7 +486,22 @@ BentleyStatus RootManager::GetInstancesConnectedToRoots(const bset<ECInstanceId>
         {
         return ERROR;
         }
+
     return SUCCESS;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod    
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus RootManager::GetInstancesLinkedToRoot(Utf8StringCR rootName, ECInstanceKeyMultiMap& instancesOut)
+    {
+    ECInstanceKey root = FindRoot(rootName);
+    if (!root.IsValid())
+        {
+        return SUCCESS;
+        }
+
+    return m_hierarchyManager.ReadTargetKeys(root, m_rootHoldingRelationshipClass, instancesOut);
     }
 
 /*--------------------------------------------------------------------------------------+

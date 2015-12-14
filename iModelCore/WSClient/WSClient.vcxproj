@@ -72,7 +72,7 @@
     <ClCompile Include="Cache\Persistence\Changes\ChangeInfo.cpp" />
     <ClCompile Include="Cache\Persistence\Changes\ChangeInfoManager.cpp" />
     <ClCompile Include="Cache\Persistence\Core\CacheSettings.cpp" />
-    <ClCompile Include="Cache\Persistence\Core\DataSourceCacheOpenState.cpp" />
+    <ClCompile Include="Cache\Persistence\Core\WSCacheState.cpp" />
     <ClCompile Include="Cache\Persistence\Core\SchemaContext.cpp" />
     <ClCompile Include="Cache\Persistence\Core\SchemaManager.cpp" />
     <ClCompile Include="Cache\Persistence\DataReadOptions.cpp" />
@@ -184,7 +184,7 @@
     <ClInclude Include="Cache\Persistence\Changes\ChangeInfoManager.h" />
     <ClInclude Include="Cache\Persistence\Core\CacheSchema.h" />
     <ClInclude Include="Cache\Persistence\Core\CacheSettings.h" />
-    <ClInclude Include="Cache\Persistence\Core\DataSourceCacheOpenState.h" />
+    <ClInclude Include="Cache\Persistence\Core\WSCacheState.h" />
     <ClInclude Include="Cache\Persistence\Core\ECDbFileInfoSchema.h" />
     <ClInclude Include="Cache\Persistence\Core\SchemaContext.h" />
     <ClInclude Include="Cache\Persistence\Core\SchemaManager.h" />

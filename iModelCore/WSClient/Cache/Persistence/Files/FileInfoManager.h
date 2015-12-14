@@ -26,12 +26,12 @@ struct HierarchyManager;
 struct FileInfoManager : public IDeleteHandler, public FileInfo::IAbsolutePathProvider
     {
     protected:
-        ECDbAdapter*            m_dbAdapter;
-        ECSqlStatementCache*    m_statementCache;
-        FileStorage*            m_fileStorage;
+        ECDbAdapter&            m_dbAdapter;
+        ECSqlStatementCache&    m_statementCache;
+        FileStorage&            m_fileStorage;
 
-        HierarchyManager*       m_hierarchyManager;
-        ObjectInfoManager*      m_objectInfoManager;
+        HierarchyManager&       m_hierarchyManager;
+        ObjectInfoManager&      m_objectInfoManager;
 
         ECClassCP               m_infoClass;
         ECRelationshipClassCP   m_infoRelationshipClass;
@@ -59,7 +59,6 @@ struct FileInfoManager : public IDeleteHandler, public FileInfo::IAbsolutePathPr
             );
 
         ECClassCP GetInfoClass() const;
-        ECRelationshipClassCP GetInfoRelationshipClass() const;
 
         FileInfo ReadInfo(ECInstanceKeyCR fileKey);
         FileInfo ReadInfo(ObjectIdCR fileId);

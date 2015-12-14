@@ -132,6 +132,12 @@ std::ostream& operator << (std::ostream &o, DateTimeCR date)
     return o;
     }
 
+std::ostream& operator << (std::ostream &o, ECClassCR value)
+    {
+    o << value.GetFullName();
+    return o;
+    }
+
 std::ostream& operator << (std::ostream &o, ECValueCR value)
     {
     o << Utf8String(value.ToString());
@@ -235,15 +241,21 @@ std::ostream& operator << (std::ostream &o, DbResult value)
     return o;
     }
 
-std::ostream& operator << (std::ostream &o, ECSqlStatus::Status status)
+std::ostream& operator << (std::ostream &o, ECSqlStatus status)
     {
+    if (status.IsSQLiteError())
+        {
+        o << "ECSqlStatus::SQLiteError:";
+        o << status.GetSQLiteError();
+        return o;
+        }
+
     static std::map<ECSqlStatus::Status, Utf8String> names
         {
         TO_VALUE_STRING_PAIR(ECSqlStatus::Status::Error),
         TO_VALUE_STRING_PAIR(ECSqlStatus::Status::InvalidECSql),
-        TO_VALUE_STRING_PAIR(ECSqlStatus::Status::SQLiteError),
         TO_VALUE_STRING_PAIR(ECSqlStatus::Status::Success),
-    };
+        };
 
     Utf8String name = names[status];
     BeAssert(!name.empty() && "Add missing value");

@@ -147,9 +147,6 @@
     <ClCompile Include="Cache\Persistence\Core\CacheSettings.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Cache\Persistence\Core\DataSourceCacheOpenState.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="Cache\Persistence\Core\SchemaContext.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -363,6 +360,9 @@
     <ClCompile Include="Cache\Persistence\Upgrade\UpgraderFromV9ToV10.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Cache\Persistence\Core\WSCacheState.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Client\WebApi\WebApi.h">
@@ -525,9 +525,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Cache\Persistence\Core\CacheSettings.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Cache\Persistence\Core\DataSourceCacheOpenState.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Cache\Persistence\Core\ECDbFileInfoSchema.h">
@@ -789,6 +786,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Cache\Persistence\Upgrade\UpgraderFromV9ToV10.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Cache\Persistence\Core\WSCacheState.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

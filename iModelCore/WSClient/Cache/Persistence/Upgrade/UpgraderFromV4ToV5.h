@@ -31,9 +31,8 @@ struct UpgraderFromV4ToV5 : private UpgraderBase
         BentleyStatus ReadInstances(bvector<UpgradeInstance>& instancesOut, ECClassCP ecClass);
         BentleyStatus UpdateInstances(const bvector<UpgradeInstance>& instances);
 
-        bvector<ECClassCP> GetDataSourceNodeClasses(ECSchemaCR ecSchema);
-        bool IsDataSourceObjectClass(ECClassCP ecClass);
-        void CreateWeakRootRelationship(ECSchemaR schema, ECSchemaCR cacheSchema, const bvector<ECClassCP>& childClasses);
+        bvector<ECEntityClassCP> GetDataSourceNodeClasses(ECSchemaCR ecSchema);
+        void CreateWeakRootRelationship(ECSchemaR schema, ECSchemaCR cacheSchema, const bvector<ECEntityClassCP>& childClasses);
 
     public:
         UpgraderFromV4ToV5(ECDbAdapter& adapter);

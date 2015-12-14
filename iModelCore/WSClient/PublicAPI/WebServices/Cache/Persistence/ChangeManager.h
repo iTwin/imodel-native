@@ -33,16 +33,16 @@ struct RootManager;
 struct ChangeManager : public IChangeManager
     {
     private:
-        ECDbAdapter*                m_dbAdapter;
-        InstanceCacheHelper*        m_instanceHelper;
-        HierarchyManager*           m_hierarchyManager;
-        CachedResponseManager*      m_responseManager;
-        FileInfoManager*            m_fileInfoManager;
-        ObjectInfoManager*          m_objectInfoManager;
-        RelationshipInfoManager*    m_relationshipInfoManager;
-        ChangeInfoManager*          m_changeInfoManager;
-        FileStorage*                m_fileStorage;
-        RootManager*                m_rootManager;
+        ECDbAdapter&                m_dbAdapter;
+        InstanceCacheHelper&        m_instanceCacheHelper;
+        HierarchyManager&           m_hierarchyManager;
+        CachedResponseManager&      m_responseManager;
+        FileInfoManager&            m_fileInfoManager;
+        ObjectInfoManager&          m_objectInfoManager;
+        RelationshipInfoManager&    m_relationshipInfoManager;
+        ChangeInfoManager&          m_changeInfoManager;
+        FileStorage&                m_fileStorage;
+        RootManager&                m_rootManager;
         bool                        m_isSyncActive;
 
         static Utf8CP LocalInstanceIdPrefix;
@@ -80,7 +80,7 @@ struct ChangeManager : public IChangeManager
         WSCACHE_EXPORT ChangeManager
             (
             ECDbAdapter& dbAdapter,
-            InstanceCacheHelper& instanceHelper,
+            InstanceCacheHelper& instanceCacheHelper,
             HierarchyManager& hierarchyManager,
             CachedResponseManager& responseManager,
             ObjectInfoManager& objectInfoManager,
