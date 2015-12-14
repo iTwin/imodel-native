@@ -206,3 +206,33 @@ Render::Queue& DgnViewport::RenderQueue()
     return *s_renderQueue;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   08/15
++---------------+---------------+---------------+---------------+---------------+------*/
+Render::Graphic* GraphicSet::Find(DgnViewportCR vp, double metersPerPixel) const
+    {
+    for (auto graphic : m_graphics)
+        {
+        if (graphic->IsValidFor(vp, metersPerPixel))
+            return graphic.get();
+        }
+
+    return nullptr;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   08/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void GraphicSet::Drop(Render::Graphic& graphic)
+    {
+    for (auto it=m_graphics.begin(); it!=m_graphics.end(); ++it)
+        {
+        if (it->get() == &graphic)
+            {
+            m_graphics.erase(it);
+            return;
+            }
+        }
+    BeAssert(false);
+    }
+

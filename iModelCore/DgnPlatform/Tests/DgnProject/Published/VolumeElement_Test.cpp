@@ -67,7 +67,7 @@ PhysicalElementCPtr VolumeElementTestFixture::InsertBlock(DPoint3dCR center, dou
 
     ElementGeometryBuilderPtr builder = ElementGeometryBuilder::Create(*m_testModel, m_testCategoryId, center, YawPitchRollAngles());
     builder->Append(*geomPtr);
-    BentleyStatus status = builder->SetGeomStreamAndPlacement(*physicalElementPtr);
+    BentleyStatus status = builder->SetGeometryStreamAndPlacement(*physicalElementPtr);
     BeAssert(status == SUCCESS);
 
     PhysicalElementCPtr insertedElement = m_testDb->Elements().Insert<PhysicalElement>(*physicalElementPtr);

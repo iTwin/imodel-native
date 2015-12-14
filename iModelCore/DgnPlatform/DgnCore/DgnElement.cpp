@@ -567,24 +567,6 @@ GeometrySource3dCP DgnElement::ToGeometrySource3d() const
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   08/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-void DgnElement3d::_OnReversedUpdate(DgnElementCR changed) const 
-    {
-    T_Super::_OnReversedUpdate(changed); 
-    Graphics().Clear();    // we just did an undo of a modification, clear any graphics on this element.
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   08/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-void DgnElement2d::_OnReversedUpdate(DgnElementCR changed) const 
-    {
-    T_Super::_OnReversedUpdate(changed); 
-    Graphics().Clear();    // we just did an undo of a modification, clear any graphics on this element.
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus GeometryStream::WriteGeometryStreamAndStep(DgnDbR dgnDb, Utf8CP table, Utf8CP colname, uint64_t rowId, Statement& stmt, int stmtcolidx) const
@@ -917,7 +899,7 @@ DgnDbStatus ElementGeomData::Validate() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus ElementGeomData::LoadFromDb(DgnElementId elemId, DgnDbR db)
     {
-    DgnDbStatus stat = m_geom.ReadGeomStream(db, DGN_TABLE(DGN_CLASSNAME_ElementGeom), GEOM_Column, elemId.GetValue());
+    DgnDbStatus stat = m_geom.ReadGeometryStream(db, DGN_TABLE(DGN_CLASSNAME_ElementGeom), GEOM_Column, elemId.GetValue());
     if (DgnDbStatus::Success != stat)
         return stat;
 
@@ -1219,7 +1201,7 @@ void ElementGeom2d::CopyFrom(GeometrySource2dCP src)
         {
         m_placement = src->GetPlacement();
         m_categoryId = src->GetCategoryId();
-        m_geom = src->GetGeomStream();
+        m_geom = src->GetGeometryStream();
         }
     }
 
@@ -1232,7 +1214,7 @@ void ElementGeom3d::CopyFrom(GeometrySource3dCP src)
         {
         m_placement = src->GetPlacement();
         m_categoryId = src->GetCategoryId();
-        m_geom = src->GetGeomStream();
+        m_geom = src->GetGeometryStream();
         }
     }
 
@@ -2762,3 +2744,4 @@ DgnDbStatus DgnEditElementCollector::Write()
         }
     return DgnDbStatus::Success;
     }
+

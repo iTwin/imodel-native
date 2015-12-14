@@ -30,9 +30,9 @@ struct GraphicSet
 {
     mutable bvector<Render::GraphicPtr> m_graphics;
     DGNPLATFORM_EXPORT Render::Graphic* Find(DgnViewportCR, double metersPerPixel) const;
-    DGNPLATFORM_EXPORT void Save(Render::Graphic&);
     DGNPLATFORM_EXPORT void Drop(Render::Graphic&);
-    DGNPLATFORM_EXPORT void Clear();
+    void Save(Render::Graphic& graphic) {m_graphics.push_back(&graphic);}
+    void Clear() {m_graphics.clear();}
 };
 END_BENTLEY_RENDER_NAMESPACE
 
@@ -1392,15 +1392,15 @@ struct EXPORT_VTABLE_ATTRIBUTE ElementGeomData
 {
 protected:
     DgnCategoryId   m_categoryId;
-    GeomStream      m_geom;
+    GeometryStream  m_geom;
 
-    explicit ElementGeomData(DgnCategoryId category) : m_categoryId(category) { }
+    explicit ElementGeomData(DgnCategoryId category) : m_categoryId(category) {}
 
     virtual bool _IsPlacementValid() const = 0;
     virtual void _SetPlacement(void const* placement) = 0;
 public:
-    DgnCategoryId GetCategoryId() const { return m_categoryId; }
-    GeomStreamCR GetGeomStream() const { return m_geom; }
+    DgnCategoryId GetCategoryId() const {return m_categoryId;}
+    GeometryStreamCR GetGeometryStream() const {return m_geom;}
 
     DGNPLATFORM_EXPORT DgnDbStatus SetCategoryId(DgnCategoryId catId, DgnElementCR el);
 
@@ -1419,14 +1419,14 @@ struct EXPORT_VTABLE_ATTRIBUTE ElementGeom3d : ElementGeomData
     typedef Placement3d T_Placement;
     typedef GeometrySource3d T_GeometrySource;
 private:
-    Placement3d     m_placement;
+    Placement3d m_placement;
 
-    virtual bool _IsPlacementValid() const override { return m_placement.IsValid(); }
+    virtual bool _IsPlacementValid() const override {return m_placement.IsValid();}
     DGNPLATFORM_EXPORT virtual void _SetPlacement(void const* placement) override;
 public:
-    explicit ElementGeom3d(DgnCategoryId category=DgnCategoryId(), Placement3dCR placement=Placement3d()) : ElementGeomData(category), m_placement(placement) { }
+    explicit ElementGeom3d(DgnCategoryId category=DgnCategoryId(), Placement3dCR placement=Placement3d()) : ElementGeomData(category), m_placement(placement) {}
 
-    Placement3dCR GetPlacement() const { return m_placement; }
+    Placement3dCR GetPlacement() const {return m_placement;}
 
     DGNPLATFORM_EXPORT DgnDbStatus SetPlacement(Placement3dCR placement, DgnElementCR el);
 
@@ -1446,33 +1446,34 @@ public:
 template<typename T_Base, typename T_Geom> struct EXPORT_VTABLE_ATTRIBUTE GeometricElement : T_Base, T_Geom::T_GeometrySource
 {
 protected:
+    T_Geom m_geom;
+    mutable Render::GraphicSet m_graphics;
 
-
-    GeomStream      m_geom;
+    typedef typename T_Base::CreateParams CreateParams;
     typedef typename T_Geom::T_Placement T_Placement;
 
     explicit GeometricElement(CreateParams const& params, DgnCategoryId category=DgnCategoryId(), T_Placement const& placement=T_Placement())
-        : T_Base(params), m_geom(category, placement) { }
+        : T_Base(params), m_geom(category, placement) {}
 
     virtual Render::GraphicSet& _Graphics() const override final {return m_graphics;}
     virtual DgnDbR _GetSourceDgnDb() const override final {return this->GetDgnDb();}
     virtual DgnElementCP _ToElement() const override final {return this;}
     virtual GeometrySourceCP _ToGeometrySource() const override final {return this;}
     virtual DgnCategoryId _GetCategoryId() const override final {return m_geom.GetCategoryId();}
-    virtual DgnDbStatus _SetCategoryId(DgnCategoryId categoryId) override { return m_geom.SetCategoryId(categoryId, *this); }
-    virtual GeomStreamCR _GetGeomStream() const override final {return m_geom;}
+    virtual DgnDbStatus _SetCategoryId(DgnCategoryId categoryId) override { return m_geom.SetCategoryId(categoryId, *this);}
+    virtual GeometryStreamCR _GetGeometryStream() const override final {return m_geom.GetGeometryStream();}
     virtual T_Placement const& _GetPlacement() const override final {return m_geom.GetPlacement();}
-    virtual DgnDbStatus _SetPlacement(T_Placement const& placement) override { return m_geom.SetPlacement(placement, *this); }
-    virtual void _AdjustPlacementForImport(DgnImportContext const& importer) override { m_geom.AdjustPlacementForImport(importer); }
-    virtual DgnDbStatus _OnInsert() override { auto status = m_geom.Validate(); return DgnDbStatus::Success == status ? T_Base::_OnInsert() : status; }
-    virtual DgnDbStatus _OnUpdate(DgnElementCR original) override { auto status = m_geom.Validate(); return DgnDbStatus::Success == status ? T_Base::_OnUpdate(original) : status; }
+    virtual DgnDbStatus _SetPlacement(T_Placement const& placement) override { return m_geom.SetPlacement(placement, *this);}
+    virtual void _AdjustPlacementForImport(DgnImportContext const& importer) override { m_geom.AdjustPlacementForImport(importer);}
+    virtual DgnDbStatus _OnInsert() override {auto status = m_geom.Validate(); return DgnDbStatus::Success == status ? T_Base::_OnInsert() : status;}
+    virtual DgnDbStatus _OnUpdate(DgnElementCR original) override { auto status = m_geom.Validate(); return DgnDbStatus::Success == status ? T_Base::_OnUpdate(original) : status;}
 
-    virtual DgnDbStatus _LoadFromDb() override { auto status = T_Base::_LoadFromDb(); return DgnDbStatus::Success == status ? m_geom.LoadFromDb(this->GetElementId(), this->GetDgnDb()) : status; }
-    virtual DgnDbStatus _InsertInDb() override { auto status = T_Base::_InsertInDb(); return DgnDbStatus::Success == status ? this->InsertGeomSourceInDb() : status; }
-    DGNPLATFORM_EXPORT void _OnReversedUpdate(DgnElementCR changed) const override;
-    virtual DgnDbStatus _UpdateInDb() override { auto status = T_Base::_UpdateInDb(); return DgnDbStatus::Success == status ? this->UpdateGeomSourceInDb() : status; }
+    virtual DgnDbStatus _LoadFromDb() override {auto status = T_Base::_LoadFromDb(); return DgnDbStatus::Success == status ? m_geom.LoadFromDb(this->GetElementId(), this->GetDgnDb()) : status;}
+    virtual DgnDbStatus _InsertInDb() override {auto status = T_Base::_InsertInDb(); return DgnDbStatus::Success == status ? this->InsertGeomSourceInDb() : status;}
+    virtual DgnDbStatus _UpdateInDb() override {auto status = T_Base::_UpdateInDb(); return DgnDbStatus::Success == status ? this->UpdateGeomSourceInDb() : status;}
+    virtual void _OnReversedUpdate(DgnElementCR changed) const override {T_Base::_OnReversedUpdate(changed); m_graphics.Clear();}
 
-    virtual void _RemapIds(DgnImportContext& importer) override { T_Base::_RemapIds(importer); m_geom.RemapIds(importer); }
+    virtual void _RemapIds(DgnImportContext& importer) override {T_Base::_RemapIds(importer); m_geom.RemapIds(importer);}
     virtual uint32_t _GetMemSize() const override {return T_Base::_GetMemSize() + static_cast<uint32_t>(sizeof(m_geom));}
 };
 
@@ -1505,7 +1506,7 @@ typedef GeometricElement3d<DgnElement> DgnElement3d;
 template<typename T_Placement> struct GeometricElementCreateParams : DgnElement::CreateParams
 {
     DEFINE_T_SUPER(DgnElement::CreateParams);
-        DgnCategoryId m_categoryId;
+    DgnCategoryId m_categoryId;
     T_Placement const& m_placement;
 
     GeometricElementCreateParams(DgnDbR db, DgnModelId modelId, DgnClassId classId, DgnCategoryId category, T_Placement const& placement=T_Placement(), DgnElement::Code const& code=DgnElement::Code(), Utf8CP label=nullptr, DgnElementId parent=DgnElementId()) :
@@ -1515,22 +1516,20 @@ template<typename T_Placement> struct GeometricElementCreateParams : DgnElement:
     GeometricElementCreateParams(GeometricElementCreateParams const& params) : T_Super(params), m_categoryId(params.m_categoryId), m_placement(params.m_placement) {}
 };
 
-    mutable Render::GraphicSet m_graphics;
-    GeomStream      m_geom;
-    virtual Render::GraphicSet& _Graphics() const override final {return m_graphics;}
-    virtual GeomStreamCR _GetGeomStream() const override final {return m_geom;}
+//! CreateParams used for constructing direct subclasses of GeometricElement2d<DgnElement>
 typedef GeometricElementCreateParams<Placement2d> ElementCreateParams2d;
 
-    DGNPLATFORM_EXPORT void _OnReversedUpdate(DgnElementCR changed) const override;
+//! CreateParams used for constructing direct subclasses of GeometricElement3d<DgnElement>
 typedef GeometricElementCreateParams<Placement3d> ElementCreateParams3d;
+
 //=======================================================================================
 //! A 3d element that exists in the physical coordinate space of a DgnDb.
 //! @ingroup DgnElementGroup
 // @bsiclass                                                    Keith.Bentley   04/15
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE PhysicalElement : DgnElement3d
+struct EXPORT_VTABLE_ATTRIBUTE PhysicalElement : GeometricElement3d<DgnElement>
 {
-    DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_PhysicalElement, DgnElement3d)
+    DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_PhysicalElement, GeometricElement3d<DgnElement>)
 
 protected:
     PhysicalElementCP _ToPhysicalElement() const override {return this;}

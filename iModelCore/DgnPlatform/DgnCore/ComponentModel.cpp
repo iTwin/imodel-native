@@ -598,10 +598,14 @@ DgnDbStatus ComponentModel::HarvestSolution(bvector<bpair<DgnSubCategoryId, DgnG
             continue;
 
         ElementGeometryCollection gcollection(*componentElement);
-        for (ElementGeometryPtr const& geom : gcollection)
+        for (auto iter : gcollection)
             {
+            ElementGeometryPtr xgeom = iter.GetGeometryPtr();
+            if (!xgeom.IsValid()) // what to do about GeomParts?? - BB
+                continue;
+
             //  Look up the subcategory ... IN THE CLIENT DB
-            ElemDisplayParamsCR dparams = gcollection.GetElemDisplayParams();
+            GeometryParamsCR dparams = iter.GetGeometryParams();
             DgnSubCategoryId clientsubcatid = dparams.GetSubCategoryId();
 
             ElementGeometryBuilderPtr& builder = builders [clientsubcatid];
@@ -611,8 +615,7 @@ DgnDbStatus ComponentModel::HarvestSolution(bvector<bpair<DgnSubCategoryId, DgnG
             // Since each little piece of geometry can have its own transform, we must
             // build the transforms back into them in order to assemble them into a single geomstream.
             // It's all relative to 0,0,0 in the component model, so it's fine to do this.
-            ElementGeometryPtr xgeom = geom->Clone();
-            Transform trans = gcollection.GetGeometryToWorld(); // A component model is in its own local coordinate system, so "World" just means relative to local 0,0,0
+            Transform trans = iter.GetGeometryToWorld(); // A component model is in its own local coordinate system, so "World" just means relative to local 0,0,0
             xgeom->TransformInPlace(trans);
 
             builder->Append(*xgeom);
@@ -637,7 +640,7 @@ DgnDbStatus ComponentModel::HarvestSolution(bvector<bpair<DgnSubCategoryId, DgnG
         // Note: Don't assign a Code. If we did that, then we would have trouble with change-merging.
         DgnGeomPartPtr geomPart = DgnGeomPart::Create();
         builder->CreateGeomPart(db, true);
-        builder->SetGeomStream(*geomPart);
+        builder->SetGeometryStream(*geomPart);
         if (BSISUCCESS != db.GeomParts().InsertGeomPart(*geomPart))
             {
             BeAssert(false && "cannot create geompart for solution geometry -- what could have gone wrong?");
@@ -685,7 +688,7 @@ DgnElementPtr ComponentModel::CreateCapturedSolutionElement(DgnDbStatus& status,
         builder->Append(subcatAndGeom.second, noTransform);
         }
 
-    builder->SetGeomStreamAndPlacement(*geom);
+    builder->SetGeometryStreamAndPlacement(*geom);
 
     // *** TBD: Other Aspects??
 

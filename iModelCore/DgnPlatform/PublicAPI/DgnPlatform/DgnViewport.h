@@ -415,7 +415,7 @@ protected:
     virtual bool _IsVisible() const {return true;}
     virtual DPoint3dCP _GetViewDelta() const {return &m_viewDelta;}
     virtual DPoint3dCP _GetViewOrigin() const {return &m_viewOrg;}
-    DGNPLATFORM_EXPORT virtual void _CallDecorators(ViewContextR);
+    DGNPLATFORM_EXPORT virtual void _CallDecorators(DecorateContextR);
     virtual Render::Plan::AntiAliasPref _WantAntiAliasLines() const {return Render::Plan::AntiAliasPref::Detect;}
     virtual Render::Plan::AntiAliasPref _WantAntiAliasText() const {return Render::Plan::AntiAliasPref::Detect;}
     virtual void _AdjustFencePts(RotMatrixCR viewRot, DPoint3dCR oldOrg, DPoint3dCR newOrg) const {}

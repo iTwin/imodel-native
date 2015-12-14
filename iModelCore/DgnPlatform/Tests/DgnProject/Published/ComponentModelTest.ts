@@ -43,7 +43,7 @@ module ComponentModelTest
             var angles = new be.YawPitchRollAngles(0, 0, 45);
             var builder = new be.ElementGeometryBuilder(element, origin, angles);
             builder.AppendBox(params.Q, params.W, params.R);
-            builder.SetGeomStreamAndPlacement(element);
+            builder.SetGeometryStreamAndPlacement(element);
 
             element.Insert();
 
@@ -76,7 +76,7 @@ module ComponentModelTest
             var angles = new be.YawPitchRollAngles(0, 0, 0);
             var builder = new be.ElementGeometryBuilder(element, origin, angles);
             builder.AppendBox(params.X, params.Y, params.Z);
-            builder.SetGeomStreamAndPlacement(element);
+            builder.SetGeometryStreamAndPlacement(element);
 
             element.Insert();
 
@@ -86,7 +86,7 @@ module ComponentModelTest
             var angles2 = new be.YawPitchRollAngles(0, 0, 0);
             var builder2 = new be.ElementGeometryBuilder(element2, origin2, angles2);
             builder2.AppendBox(params.X, params.Y, params.Z);
-            builder2.SetGeomStreamAndPlacement(element2);
+            builder2.SetGeometryStreamAndPlacement(element2);
 
             element2.Insert();
 
@@ -124,7 +124,7 @@ module ComponentModelTest
             var angles = new be.YawPitchRollAngles(45, 0, 0);
             var builder = new be.ElementGeometryBuilder(element, origin, angles);
             builder.AppendBox(params.A, params.B, params.C);
-            builder.SetGeomStreamAndPlacement(element);
+            builder.SetGeometryStreamAndPlacement(element);
 
             element.Insert();
 

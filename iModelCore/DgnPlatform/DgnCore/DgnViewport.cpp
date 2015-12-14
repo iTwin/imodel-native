@@ -1351,7 +1351,7 @@ void DgnViewport::CheckForChanges()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    10/02
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnViewport::_CallDecorators(ViewContextR context)
+void DgnViewport::_CallDecorators(DecorateContextR context)
     {
     m_viewController->_DrawDecorations(context);
 #if defined (NEEDS_WORK_CONTINUOUS_RENDER)

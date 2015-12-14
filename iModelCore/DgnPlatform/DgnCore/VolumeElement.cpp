@@ -77,7 +77,7 @@ void VolumeElement::SetupGeomStream(DPoint3dCR origin, bvector<DPoint2d> const& 
 
     ElementGeometryBuilderPtr builder = ElementGeometryBuilder::Create(*model, GetCategoryId(), origin, YawPitchRollAngles());
     builder->Append(*extrusionSolid);
-    builder->SetGeomStreamAndPlacement(*this);
+    builder->SetGeometryStreamAndPlacement(*this);
     }
 
 //--------------------------------------------------------------------------------------
@@ -134,7 +134,6 @@ DgnElementIdSet VolumeElement::QueryVolumes(DgnDbCR db)
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Ramanujam.Raman                   11/15
 //+---------------+---------------+---------------+---------------+---------------+-----
-// static
 DgnElementId VolumeElement::QueryVolumeByLabel(DgnDbCR db, Utf8CP label)
     {
     CachedECSqlStatementPtr stmt = db.GetPreparedECSqlStatement("SELECT ECInstanceId FROM " DGN_SCHEMA(DGN_CLASSNAME_VolumeElement) " WHERE Label=? LIMIT 1"); // find first if label not unique
@@ -161,8 +160,8 @@ BentleyStatus VolumeElement::ExtractExtrusionDetail(DgnExtrusionDetail& extrusio
         return ERROR;
         }
 
-    (*iter)->GetAsISolidPrimitive()->TryGetDgnExtrusionDetail(extrusionDetail);
-    extrusionDetail.TransformInPlace(geomCollection.GetGeometryToWorld());
+    iter.GetGeometryPtr()->GetAsISolidPrimitive()->TryGetDgnExtrusionDetail(extrusionDetail);
+    extrusionDetail.TransformInPlace(iter.GetGeometryToWorld());
     
     BeAssert(++iter == geomCollection.end() && "Did not expect more than two entries in geometry source for VolumeElement-s");
     if (extrusionDetail.m_baseCurve->GetBoundaryType() != CurveVector::BOUNDARY_TYPE_Outer)
@@ -265,7 +264,7 @@ void VolumeElement::ClearClip() const
     {
     if (m_viewContext)
         {
-        m_viewContext->PopTransformClip();
+        m_viewContext->PopClip();
         m_viewContext = nullptr;
         }
 

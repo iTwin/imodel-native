@@ -351,7 +351,7 @@ void ComponentModelTest::Developer_TestWidgetSolver()
         cm->FillModel();
         ASSERT_EQ( 2 , countElementsInModel(*cm) );
 
-        RefCountedCPtr<DgnElement> el = cm->begin()->second;
+        DgnElementCPtr el = cm->begin()->second;
         checkGeometryStream(*el->ToGeometrySource(), ElementGeometry::GeometryType::SolidPrimitive, 1);
         checkSlabDimensions(*el->ToGeometrySource(),  params.GetParameter("X")->GetValue().GetDouble(), 
                                                         params.GetParameter("Y")->GetValue().GetDouble(),
@@ -383,7 +383,7 @@ void ComponentModelTest::Developer_TestGadgetSolver()
         cm->FillModel();
         ASSERT_EQ( 1 , countElementsInModel(*cm) );
 
-        RefCountedCPtr<DgnElement> el = cm->begin()->second;
+        DgnElementCPtr el = cm->begin()->second;
         checkGeometryStream(*el->ToGeometrySource(), ElementGeometry::GeometryType::SolidPrimitive, 1);
         checkSlabDimensions(*el->ToGeometrySource(),  params.GetParameter("Q")->GetValue().GetDouble(), 
                                                         params.GetParameter("W")->GetValue().GetDouble(),
@@ -415,8 +415,8 @@ void ComponentModelTest::Developer_TestThingSolver()
         cm->FillModel();
         ASSERT_EQ( 2 , countElementsInModel(*cm) );
 
-        RefCountedCPtr<DgnElement> el = cm->begin()->second;
-        checkGeomStream(*el->ToGeometrySource(), ElementGeometry::GeometryType::SolidPrimitive, 1);
+        DgnElementCPtr el = cm->begin()->second;
+        checkGeometryStream(*el->ToGeometrySource(), ElementGeometry::GeometryType::SolidPrimitive, 1);
         checkSlabDimensions(*el->ToGeometrySource(),  params.GetParameter("A")->GetValue().GetDouble(), 
                                                         params.GetParameter("B")->GetValue().GetDouble(),
                                                         params.GetParameter("C")->GetValue().GetDouble());
@@ -480,7 +480,7 @@ void ComponentModelTest::Client_ImportCM(Utf8CP componentName)
 void ComponentModelTest::Client_CheckComponentInstance(DgnElementId eid, size_t expectedSolidCount, double x, double y, double z)
     {
     DgnElementCPtr el = m_clientDb->Elements().Get<DgnElement>(eid);
-    checkGeomStream(*el->ToGeometrySource(), ElementGeometry::GeometryType::SolidPrimitive, expectedSolidCount);
+    checkGeometryStream(*el->ToGeometrySource(), ElementGeometry::GeometryType::SolidPrimitive, expectedSolidCount);
     checkSlabDimensions(*el->ToGeometrySource(), x, y, z);
     }
 
