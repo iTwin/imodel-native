@@ -27,7 +27,6 @@
 #include "TxnManager.h"
 #include "RevisionManager.h"
 #include "Render.h"
-#include "IViewTransients.h"
 #include "LineStyle.h"
 #include "DgnElementDependency.h"
 #include "DgnDb.h"

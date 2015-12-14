@@ -12,6 +12,8 @@
 #   define RENDER_LOGGING 1
 #endif
 
+#define RENDER_LOGGING 1
+
 #undef LOG
 #if defined (RENDER_LOGGING)
 #   define LOG (*NativeLogging::LoggingManager::GetLogger(L"Render"))
@@ -29,11 +31,8 @@
     BeThreadLocalStorage g_threadChecker;
 #endif
 
-
 BEGIN_UNNAMED_NAMESPACE
-static Render::Queue* s_renderQueue = nullptr;
-
-
+    static Render::Queue* s_renderQueue = nullptr;
 END_UNNAMED_NAMESPACE
 
 /*---------------------------------------------------------------------------------**//**
@@ -44,21 +43,6 @@ void Render::Queue::VerifyRenderThread(bool yesNo)
 #if defined (DEBUG_THREADS)
     BeAssert (yesNo == TO_BOOL((g_threadChecker.GetValueAsInteger())));
 #endif
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   11/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-void Render::GraphicList::Add(GraphicR graphic)
-    {
-    m_graphics.push_back(&graphic);
-    }
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   11/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-void Render::GraphicList::Clear()
-    {
-    m_graphics.clear();
     }
 
 //=======================================================================================
@@ -96,7 +80,7 @@ void Render::Queue::AddTask(Task& task)
     // see whether the new task should replace any existing tasks
     for (auto entry=m_tasks.begin(); entry != m_tasks.end();)
         {
-        if (task.GetTarget() == (*entry)->GetTarget() && task._CanReplace(**entry))
+        if (task._CanReplace(**entry))
             {
             (*entry)->m_outcome = Render::Task::Outcome::Abandoned;
             entry = m_tasks.erase(entry);

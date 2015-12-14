@@ -108,7 +108,6 @@ struct EXPORT_VTABLE_ATTRIBUTE ViewController : RefCountedBase
 protected:
     friend struct ViewContext;
     friend struct DgnViewport;
-    friend struct IndexedViewport;
     friend struct ViewManager;
     friend struct PhysicalRedlineViewController;
     friend struct IACSManager;
@@ -176,30 +175,9 @@ protected:
     DGNPLATFORM_EXPORT virtual void _RestoreFromSettings(JsonValueCR);
 
     //! Display locate circle and information about the current AccuSnap/auto-locate HitDetail.
-    DGNPLATFORM_EXPORT virtual void _DrawLocateCursor(DgnViewportR, DPoint3dCR, double aperture, bool isLocateCircleOn, HitDetailCP hit=nullptr);
+    DGNPLATFORM_EXPORT virtual void _DrawLocateCursor(DecorateContextR, DPoint3dCR, double aperture, bool isLocateCircleOn, HitDetailCP hit=nullptr);
 
-    //! Decorators are not stored in the backing store and must therefore be drawn every frame. Overlay decorators are drawn with the z-buffer
-    //! disabled and therefore always appear on top of elements in the view. Note that graphics drawn from this method are always drawn in a
-    //! shaded render mode with a constant level of lighting, regardless of the view flags and lighting of the viewport.
-    //! @param[in] viewport The DgnViewport into which the decorations should be drawn.
-    virtual bool _DrawOverlayDecorations(DgnViewportR viewport) {return false;}
-
-    //! Decorators are not stored in the backing store and must therefore be drawn every frame. This method is called with the z-buffer enabled,
-    //! so it can be used to draw decorators that are inter-mixed with elements in the view. Note that graphics drawn from this method use the
-    //! active view flags and lighting for the viewport.
-    //! @param[in] viewport The DgnViewport into which the decorations should be drawn.
-    virtual bool _DrawZBufferedDecorations(DgnViewportR viewport) {return false;}
-
-    //! Background graphics are drawn whenever a view is "updated". Background graphics are drawn with the z-buffer turned off, so they will always
-    //! appear "behind" any other graphics that are drawn to the view.
-    //! @param[in] context the ViewContext being used to display the view. Test DrawPurpose to tell the purpose of the call.
-    virtual void _DrawBackgroundGraphics(ViewContextR context) {}
-
-    //! ZBuffered graphics are drawn whenever a view is "updated". They are drawn with the z-buffer enabled, so they intersperse with the persistent
-    //! elements in the view.
-    //! @param[in] context the ViewContext being used to display the view. Test DrawPurpose to tell the purpose of the call.
-    //! @note ZBuffered graphics are sometimes referred to as "transient" graphics.
-    virtual void _DrawZBufferedGraphics(ViewContextR context) {}
+    virtual void _DrawDecorations(DecorateContextR) {}
 
     //! Called when the display of a category is turned on or off.
     //! @param[in] singleEnable true if just turned on one category; false if

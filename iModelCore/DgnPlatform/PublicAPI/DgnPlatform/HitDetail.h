@@ -174,7 +174,7 @@ protected:
     virtual void _SetHitPoint(DPoint3dCR pt) {m_geomDetail.SetClosestPoint(pt);}
     virtual void _SetTestPoint(DPoint3dCR pt) {m_testPoint = pt;}
     virtual bool _IsSameHit(HitDetailCP otherHit) const;
-    virtual void _DrawInVp(DgnViewportR, Render::DgnDrawMode drawMode, DrawPurpose drawPurpose, bool* stopFlag) const;
+    virtual void _DrawInVp(DecorateContextR) const;
     virtual void _SetHilited(DgnElement::Hilited) const;
 
 public:
@@ -189,12 +189,14 @@ public:
     void SetHilited(DgnElement::Hilited state) const {_SetHilited(state);}
     void SetSubSelectionMode(SubSelectionMode mode) {_SetSubSelectionMode(mode);}
 
-    void DrawInVp(DgnViewportR vp, Render::DgnDrawMode drawMode, DrawPurpose drawPurpose, bool* stopFlag) const {_DrawInVp(vp, drawMode, drawPurpose, stopFlag);}
+    void DrawInVp(DecorateContextR context) const {_DrawInVp(context);}
     DGNPLATFORM_EXPORT bool ShouldFlashCurveSegment(ViewContextR) const; //! Check for segment flash mode before calling FlashCurveSegment.
     DGNPLATFORM_EXPORT void FlashCurveSegment(ViewContextR) const; //! Setup context.GetCurrentGeometryParams() before calling!
     
-    DGNVIEW_EXPORT void DrawInView(DgnViewportR, Render::DgnDrawMode drawMode, DrawPurpose drawPurpose) const;
-    DGNVIEW_EXPORT void DrawInAllViews(ViewSetR, Render::DgnDrawMode drawMode, DrawPurpose drawPurpose) const;
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
+    DGNVIEW_EXPORT void DrawInView(DgnViewportR, DrawPurpose drawPurpose) const;
+    DGNVIEW_EXPORT void DrawInAllViews(ViewSetR, DrawPurpose drawPurpose) const;
+#endif
     DGNVIEW_EXPORT void Hilite(ViewSetR, bool onOff) const;
 
     void GetInfoString(Utf8StringR descr, Utf8CP delimiter) const {_GetInfoString(descr, delimiter);}
@@ -367,7 +369,7 @@ struct IntersectDetail : SnapDetail
 private:
     HitDetailP  m_secondHit;
 
-    virtual void _DrawInVp(DgnViewportR, Render::DgnDrawMode drawMode, DrawPurpose drawPurpose, bool* stopFlag) const override;
+    virtual void _DrawInVp(DecorateContextR) const override;
     virtual HitDetailType _GetHitType() const override{return HitDetailType::Intersection;}
     DGNPLATFORM_EXPORT virtual void _SetHilited(DgnElement::Hilited) const override;
     DGNPLATFORM_EXPORT virtual bool _IsSameHit(HitDetailCP otherHit) const override;

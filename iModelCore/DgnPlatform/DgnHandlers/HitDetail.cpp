@@ -468,7 +468,7 @@ void HitDetail::FlashCurveSegment(ViewContextR context) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-void HitDetail::_DrawInVp(DgnViewportR vp, DgnDrawMode drawMode, DrawPurpose drawPurpose, bool* stopFlag) const
+void HitDetail::_DrawInVp(DecorateContextR) const
     {
 #if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     if (vp.IsActive())
@@ -762,10 +762,11 @@ void IntersectDetail::_SetHilited(DgnElement::Hilited newState) const
 * is drawn using a dashed symbology.
 * @bsimethod                                                    KeithBentley    06/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-void IntersectDetail::_DrawInVp(DgnViewportR vp, DgnDrawMode drawMode, DrawPurpose drawPurpose, bool* stopFlag) const
+void IntersectDetail::_DrawInVp(DecorateContextR context) const
     {
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     // start by drawing the first path normally
-    T_Super::_DrawInVp(vp, drawMode, drawPurpose, stopFlag);
+    T_Super::_DrawInVp(vp, drawPurpose, stopFlag);
 
     SnapDetail tmpSnapDetail(m_secondHit); // So display handlers know this is from a snap...
 
@@ -777,10 +778,11 @@ void IntersectDetail::_DrawInVp(DgnViewportR vp, DgnDrawMode drawMode, DrawPurpo
         tmpSnapDetail.SetHilited(DgnElement::Hilited::Normal);
 
     tmpSnapDetail.SetSubSelectionMode(GetSubSelectionMode()); // Set correct flash mode...
-    tmpSnapDetail.DrawInVp(vp, drawMode, drawPurpose, stopFlag);
+    tmpSnapDetail.DrawInVp(vp, drawPurpose, stopFlag);
 
     if (DrawPurpose::Flash == drawPurpose)
         tmpSnapDetail.SetHilited(currHilite);
+#endif
     }
 
 /*=================================================================================**//**

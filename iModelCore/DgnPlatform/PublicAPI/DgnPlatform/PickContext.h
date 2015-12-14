@@ -91,8 +91,7 @@ private:
     virtual void _DrawStyledArc3d(DEllipse3dCR ellipse, bool isEllipse, DPoint3dCP range) override;
     virtual void _DrawStyledBSplineCurve3d(MSBsplineCurveCR) override;
     virtual void _DrawStyledBSplineCurve2d(MSBsplineCurveCR, double zDepth) override;
-    virtual void  _OnPreDrawTransient() override;
-    virtual Render::GraphicPtr _BeginGraphic(Render::Graphic::CreateParams const& params) override {m_graphic->SetLocalToWorldTransform(params.m_placement); return m_graphic;}
+    virtual Render::GraphicPtr _BeginGraphic(Render::Graphic::CreateParams const& params) override {_GetGeomDetail().Init(); m_graphic->SetLocalToWorldTransform(params.m_placement); return m_graphic;}
 
     bool TestPoint(DPoint3dCR localPt, HitPriority priority);
     bool TestPointArray(size_t numPts, DPoint3dCP localPts, HitPriority priority);

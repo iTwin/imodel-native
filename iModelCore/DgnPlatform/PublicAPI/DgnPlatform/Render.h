@@ -25,7 +25,6 @@ DEFINE_POINTER_SUFFIX_TYPEDEFS(GeometryParams)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(GradientSymb)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(Graphic)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(GraphicParams)
-DEFINE_POINTER_SUFFIX_TYPEDEFS(GraphicList)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(ISprite)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(ITiledRaster)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(Image)
@@ -37,6 +36,7 @@ DEFINE_POINTER_SUFFIX_TYPEDEFS(Material)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(MultiResImage)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(OvrGraphicParams)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(Plan)
+DEFINE_POINTER_SUFFIX_TYPEDEFS(Scene)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(Target)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(Task)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(Texture)
@@ -45,12 +45,12 @@ DEFINE_POINTER_SUFFIX_TYPEDEFS(Window)
 DEFINE_REF_COUNTED_PTR(Device)
 DEFINE_REF_COUNTED_PTR(GradientSymb)
 DEFINE_REF_COUNTED_PTR(Graphic)
-DEFINE_REF_COUNTED_PTR(GraphicList)
 DEFINE_REF_COUNTED_PTR(Image)
 DEFINE_REF_COUNTED_PTR(LineStyleInfo)
 DEFINE_REF_COUNTED_PTR(LineTexture)
 DEFINE_REF_COUNTED_PTR(Material)
 DEFINE_REF_COUNTED_PTR(MultiResImage)
+DEFINE_REF_COUNTED_PTR(Scene)
 DEFINE_REF_COUNTED_PTR(Target)
 DEFINE_REF_COUNTED_PTR(Texture)
 DEFINE_REF_COUNTED_PTR(Task)
@@ -140,8 +140,7 @@ public:
     //! Determine whether this Task can replace a pending entry in the Queue.
     //! @param[in] other a pending task for the same Render::Target
     //! @return true if this Task should replace the other pending task.
-    //! @note this method will only be called for Tasks for the same Render::Target.
-    virtual bool _CanReplace(Task& other) const {return m_operation == other.m_operation;}
+    virtual bool _CanReplace(Task& other) const {return GetTarget() == other.GetTarget() && m_operation == other.m_operation;}
 
     Target* GetTarget() const {return m_target.get();} //!< Get the Target of this Task
     Operation GetOperation() const {return m_operation;} //!< Get the Type of this Task.
@@ -151,24 +150,6 @@ public:
     Task(Target* target, Operation operation) : m_target(target), m_operation(operation) {}
 };
 
-//=======================================================================================
-//! A Render::Plan holds a Frustum and all of the render settings for displaying the current Render::Scene
-//! into a Render::Target.
-// @bsiclass                                                    Keith.Bentley   12/15
-//=======================================================================================
-struct Plan
-{
-    enum class AntiAliasPref {Detect=0, On=1, Off=2};
-
-    ViewFlags     m_viewFlags;
-    bool          m_is3d;
-    Frustum       m_frustum;
-    double        m_fraction;
-    ColorDef      m_bgColor;
-    AntiAliasPref m_aaLines;
-    AntiAliasPref m_aaText;
-    DGNPLATFORM_EXPORT Plan(DgnViewportCR);
-};
 
 //=======================================================================================
 // @bsiclass                                                    BentleySystems
@@ -653,6 +634,7 @@ struct GraphicParams
 private:
     bool                m_isFilled;
     bool                m_isBlankingRegion;
+    uint32_t            m_rasterPat;
     uint32_t            m_rasterWidth;
     ColorDef            m_lineColor;
     ColorDef            m_fillColor;
@@ -699,6 +681,15 @@ public:
 
     //! Determine whether TrueWidth is on for this GraphicParams
     bool HasTrueWidth() const {return m_lStyleSymb.HasTrueWidth();}
+
+    //! Get the raster pattern from this ElemMatSymb. The raster pattern is a 32 bit mask that is
+    //! repeated along geometry. For each bit that is on in the pattern, a pixel is set to the line color.
+    uint32_t GetRasterPattern() const {return m_rasterPat;}
+
+    //! Set the line raster-pattern for this GraphicParams. This is only valid for pixel-mode decorators.
+    //! @param[in] index index between 0-7
+    //! @see #GetRasterPattern
+    DGNPLATFORM_EXPORT void SetLinePatternIndex(int index);
 
     //! Determine whether the fill flag is on for this GraphicParams.
     bool IsFilled() const {return m_isFilled;}
@@ -842,12 +833,13 @@ struct Graphic : RefCounted<NonCopyableClass>
     };
 
 protected:
+    bool          m_isOpen = true;
     DgnViewportCP m_vp; //! Viewport this Graphic is valid for (Graphic is valid for any viewport if nullptr)
     double        m_pixelSize; //! Pixel size to use for stroke
     double        m_minSize; //! Minimum pixel size this Graphic is valid for (Graphic is valid for all sizes if min and max are both 0.0)
     double        m_maxSize; //! Maximum pixel size this Graphic is valid for (Graphic is valid for all sizes if min and max are both 0.0)
 
-    virtual StatusInt _Close() {return SUCCESS;}
+    virtual StatusInt _Close() {BeAssert(m_isOpen); m_isOpen=false; return SUCCESS;}
     virtual void _ActivateGraphicParams(GraphicParamsCR graphicParams, GeometryParamsCP geomParams) = 0;
     virtual void _AddLineString(int numPoints, DPoint3dCP points, DPoint3dCP range) = 0;
     virtual void _AddLineString2d(int numPoints, DPoint2dCP points, double zDepth, DPoint2dCP range) = 0;
@@ -879,6 +871,7 @@ protected:
 
 public:
     StatusInt Close() {return _Close();}
+    bool IsOpen() const {return m_isOpen;}
     explicit Graphic(CreateParams const& params=CreateParams()) : m_vp(params.m_vp), m_pixelSize(params.m_pixelSize), m_minSize(0.0), m_maxSize(0.0) {}
 
     bool IsValidFor(DgnViewportCR vp, double metersPerPixel) const
@@ -898,7 +891,7 @@ public:
     //! Set an GraphicParams to be the "active" GraphicParams for this Render::Graphic.
     //! @param[in]          graphicParams   The new active GraphicParams. All geometry drawn via calls to this Render::Graphic will
     //! @param[in]          geomParams      The source GeometryParams if graphicParams was created by cooking geomParams, nullptr otherwise.
-    void ActivateGraphicParams(GraphicParamsCR graphicParams, GeometryParamsCP geomParams) {_ActivateGraphicParams(graphicParams, geomParams);}
+    void ActivateGraphicParams(GraphicParamsCR graphicParams, GeometryParamsCP geomParams=nullptr) {_ActivateGraphicParams(graphicParams, geomParams);}
 
     //! Draw a 3D line string.
     //! @param[in]          numPoints   Number of vertices in points array.
@@ -1039,35 +1032,62 @@ public:
 };
 
 //=======================================================================================
+// An ordered list of RefCountedPtrs to Render::Graphics.
 // @bsiclass
 //=======================================================================================
-struct GraphicList : RefCounted<NonCopyableClass>
+struct GraphicList : std::deque<GraphicPtr>
 {
-    typedef std::deque<GraphicPtr> Graphics;
-
-protected:
-    Graphics m_graphics;
-
-public:
-    GraphicList() {}
-    Graphics& GetGraphics() {return m_graphics;}
-
-    DGNPLATFORM_EXPORT void Add(Graphic& graphic);
-    DGNPLATFORM_EXPORT void Clear();
+    void Add(Graphic& graphic) {push_back(&graphic);}
+    void Clear() {clear();}
 };
 
-
-/*=================================================================================**//**
-* Draw modes for displaying information in viewports.
-* @bsistruct
-+===============+===============+===============+===============+===============+======*/
-enum class DgnDrawMode
+//=======================================================================================
+// The GraphicList of the "scene" for a view.
+// @bsiclass
+//=======================================================================================
+struct Scene : RefCounted<NonCopyableClass>
 {
-    Normal    = 0,
-    Erase     = 1,
-    Hilite    = 2,
-    TempDraw  = 3,
-    Flash     = 11,
+protected:
+    GraphicList m_graphics;
+
+public:
+    Scene() {}
+    GraphicList& GetGraphics() {return m_graphics;}
+};
+
+//=======================================================================================
+//! A set of GraphicLists of various types of Graphics that are "decorated" into the Render::Target, 
+//! in addition to the Scene.
+//! @note a Render::Plan holds a *copy* of the Decorations lists for a DgnViewport.
+// @bsiclass                                                    Keith.Bentley   12/15
+//=======================================================================================
+struct Decorations
+{
+    GraphicList m_dynamics;             // drawn with zbuffer, with scene lighting
+    GraphicList m_worldDecorators;      // drawn with zbuffer, with default lighting, smooth shading
+    GraphicList m_cameraOverlay;        // drawn in overlay mode, camera units
+    GraphicList m_viewOverlay;          // drawn in overlay mode, view units
+};
+
+//=======================================================================================
+//! A Render::Plan holds a Frustum, the render settings, and the decorators for displaying 
+//! the current Render::Scene into a Render::Target.
+// @bsiclass                                                    Keith.Bentley   12/15
+//=======================================================================================
+struct Plan
+{
+    enum class AntiAliasPref {Detect=0, On=1, Off=2};
+
+    ViewFlags     m_viewFlags;
+    bool          m_is3d;
+    Frustum       m_frustum;
+    double        m_fraction;
+    ColorDef      m_bgColor;
+    AntiAliasPref m_aaLines;
+    AntiAliasPref m_aaText;
+    Decorations   m_decorations;    // Note: by value, copied from Viewport's lists
+
+    DGNPLATFORM_EXPORT Plan(DgnViewportCR);
 };
 
 //=======================================================================================
@@ -1127,7 +1147,7 @@ struct Target : RefCounted<NonCopyableClass>
 
 protected:
     DevicePtr  m_device;
-    GraphicListPtr m_currentScene;
+    ScenePtr m_currentScene;
 
     virtual GraphicPtr _CreateGraphic(Graphic::CreateParams const& params) = 0;
     virtual void _AdjustBrightness(bool useFixedAdaptation, double brightness) = 0;
@@ -1136,7 +1156,7 @@ protected:
     virtual MaterialPtr _GetMaterial(DgnMaterialId, DgnDbR) const = 0;
     virtual TexturePtr _GetTexture(DgnTextureId, DgnDbR) const = 0;
     virtual TexturePtr _CreateTileSection(Image*, bool enableAlpha) const = 0;
-    virtual void _ChangeScene(GraphicList&) = 0;
+    virtual void _ChangeScene(SceneR) = 0;
     virtual void _Refresh(PlanCR) = 0;
 
 public:
@@ -1145,18 +1165,19 @@ public:
 
     Target(Device* device) : m_device(device) {}
 
-    void ChangeScene(GraphicListR scene) {_ChangeScene(scene);}
+    void ChangeScene(SceneR scene) {_ChangeScene(scene);}
     void Refresh(PlanCR plan) {_Refresh(plan);}
     Point2d GetScreenOrigin() const {return m_device->GetWindow()->_GetScreenOrigin();}
     BSIRect GetViewRect() const {return m_device->GetWindow()->_GetViewRect();}
     DVec2d GetDpiScale() const {return m_device->_GetDpiScale();}
     GraphicPtr CreateGraphic(Graphic::CreateParams const& params) {return _CreateGraphic(params);}
-    DeviceCP GetRenderDevice() const {return m_device.get();}
+    DeviceCP GetDevice() const {return m_device.get();}
     void OnResized() {_OnResized();}
     ByteStream FillImageCaptureBuffer(CapturedImageInfo& info, DRange2dCR screenBufferRange, Point2dCR outputImageSize, bool topDown) {return _FillImageCaptureBuffer(info, screenBufferRange, outputImageSize, topDown);}
     MaterialPtr GetMaterial(DgnMaterialId id, DgnDbR dgndb) const {return _GetMaterial(id, dgndb);}
     TexturePtr GetTexture(DgnTextureId id, DgnDbR dgndb) const {return _GetTexture(id, dgndb);}
     TexturePtr CreateTileSection(Image* image, bool enableAlpha) const {return _CreateTileSection(image, enableAlpha);}
 };
+
 
 END_BENTLEY_RENDER_NAMESPACE

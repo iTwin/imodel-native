@@ -7,17 +7,26 @@
 +--------------------------------------------------------------------------------------*/
 #include    <DgnPlatformInternal.h>
 
-static DPoint3d const s_NpcCorners[NPC_CORNER_COUNT] =
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void GraphicParams::SetLinePatternIndex(int index)
     {
-    { 0.0, 0.0, 0.0 },  // NPC_000
-    { 1.0, 0.0, 0.0 },  // NPC_100
-    { 0.0, 1.0, 0.0 },  // NPC_010
-    { 1.0, 1.0, 0.0 },  // NPC_110
-    { 0.0, 0.0, 1.0 },  // NPC_001
-    { 1.0, 0.0, 1.0 },  // NPC_101
-    { 0.0, 1.0, 1.0 },  // NPC_011
-    { 1.0, 1.0, 1.0 },  // NPC_111
-    };
+    static  uint32_t s_rasterLinePatterns[8] =
+        {
+        0xffffffff,     // 0
+        0x80808080,     // 1
+        0xf8f8f8f8,     // 2
+        0xffe0ffe0,     // 3
+        0xfe10fe10,     // 4
+        0xe0e0e0e0,     // 5
+        0xf888f888,     // 6
+        0xff18ff18      // 7
+        };
+
+    LIMIT_RANGE(0, 7, index);
+    m_rasterPat = s_rasterLinePatterns[index];
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   11/15
@@ -338,14 +347,30 @@ StatusInt DgnViewport::RootToNpcFromViewDef(DMap4dR rootToNpc, double& frustFrac
     return  SUCCESS;
     }
 
+BEGIN_UNNAMED_NAMESPACE
+static DPoint3d const s_NpcCorners[NPC_CORNER_COUNT] =
+    {
+    { 0.0, 0.0, 0.0 },  // NPC_000
+    { 1.0, 0.0, 0.0 },  // NPC_100
+    { 0.0, 1.0, 0.0 },  // NPC_010
+    { 1.0, 1.0, 0.0 },  // NPC_110
+    { 0.0, 0.0, 1.0 },  // NPC_001
+    { 1.0, 0.0, 1.0 },  // NPC_101
+    { 0.0, 1.0, 1.0 },  // NPC_011
+    { 1.0, 1.0, 1.0 },  // NPC_111
+    };
+END_UNNAMED_NAMESPACE
+
 /*---------------------------------------------------------------------------------**//**
 * calculate the NPC-to-view transformation matrix.
 * @bsimethod                                                    Andrew.Edge     08/04
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnViewport::CalcNpcToView(DMap4dR npcToView)
+DMap4d DgnViewport::CalcNpcToView()
     {
     DRange3d corners = GetViewCorners();
+    DMap4d npcToView;
     npcToView.InitFromRanges(s_NpcCorners[NPC_000], s_NpcCorners[NPC_111], corners.low, corners.high);
+    return npcToView;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -551,8 +576,7 @@ ViewportStatus DgnViewport::SetupFromViewController()
     if (SUCCESS != RootToNpcFromViewDef(m_rootToNpc, m_frustFraction, IsCameraOn() ? &m_camera : nullptr, m_viewOrg, m_viewDelta, m_rotMatrix))
         return  ViewportStatus::InvalidViewport;
 
-    DMap4d      npcToView;
-    CalcNpcToView(npcToView);
+    DMap4d npcToView = CalcNpcToView();
     m_rootToView.InitProduct(npcToView, m_rootToNpc);
 
     m_needSynchWithViewController = false;
@@ -1135,23 +1159,6 @@ void DgnViewport::_SynchWithViewController(bool saveInUndo)
         }
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   John.Gooding    05/2013
-//---------------------------------------------------------------------------------------
-void DgnViewport::SetToolGraphicsHandler(ToolGraphicsHandler* handler)
-    {
-    m_toolGraphicsHandler = handler;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   John.Gooding    05/2013
-//---------------------------------------------------------------------------------------
-void DgnViewport::DrawToolGraphics(ViewContextR context, bool isPreupdate)
-    {
-    if (nullptr != m_toolGraphicsHandler)
-        m_toolGraphicsHandler->_DrawToolGraphics(context, isPreupdate);
-    }
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Keith.Bentley   07/04
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1344,27 +1351,11 @@ void DgnViewport::CheckForChanges()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    10/02
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnViewport::_CallDecorators(bool& stopFlag)
+void DgnViewport::_CallDecorators(ViewContextR context)
     {
+    m_viewController->_DrawDecorations(context);
 #if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    BSIRect rect = GetViewRect();
-    m_output->BeginDecorating(&rect);
-
-    // first let the viewController decorate with the z-buffer on
-    stopFlag = m_viewController->_DrawZBufferedDecorations(*this);
-
-    if (!stopFlag)
-        stopFlag = t_viewHost->GetViewManager().CallElementDecorators(this);
-
-    m_output->BeginOverlayMode();
-
     DrawGrid();
-
-    // first let the viewController decorate itself
-    stopFlag = m_viewController->_DrawOverlayDecorations(*this);
-
-    if (!stopFlag)
-        stopFlag = t_viewHost->GetViewManager().CallDecorators(this);
 #endif
     }
 

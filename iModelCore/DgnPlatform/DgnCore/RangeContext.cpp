@@ -954,7 +954,7 @@ StatusInt DgnViewport::ComputeViewRange(DRange3dR range, FitViewParams& params)
     if (SUCCESS != context.Attach (this, context.GetDrawPurpose()))
         return ERROR;
 
-    context.VisitAllViewElements(true, nullptr);
+    context.VisitAllViewElements();
     context.Detach();
     
     m_viewController->RestoreFromSettings(oldState);
@@ -1072,7 +1072,7 @@ StatusInt DgnViewport::DetermineVisibleDepthNpc(double& lowNpc, double& highNpc,
     if (SUCCESS != context.Attach (this, context.GetDrawPurpose()))
         return ERROR;
 
-    context.VisitAllViewElements(true, nullptr);
+    context.VisitAllViewElements();
     context.Detach();
 
     lowNpc = 0.0;
@@ -1110,7 +1110,7 @@ StatusInt DgnViewport::ComputeVisibleDepthRange(double& minDepth, double& maxDep
     if (SUCCESS != context.Attach (this, context.GetDrawPurpose()))
         return ERROR;
 
-    context.VisitAllViewElements(true, nullptr);
+    context.VisitAllViewElements();
     context.Detach();
 
     DRange3d range;

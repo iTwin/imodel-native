@@ -1721,8 +1721,9 @@ void ViewController2d::_SaveToSettings(JsonValueR settings) const
 * Show the surface normal for geometry under the cursor when snapping.
 * @bsimethod                                                    Brien.Bastings  07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void drawLocateHitDetail(DgnViewportR vp, double aperture, HitDetailCR hit)
+static void drawLocateHitDetail(DecorateContextR context, double aperture, HitDetailCR hit)
     {
+    DgnViewportR vp = *context.GetViewport();
     if (!vp.Is3dView())
         return; // Not valuable in 2d...
 
@@ -1765,7 +1766,7 @@ static void drawLocateHitDetail(DgnViewportR vp, double aperture, HitDetailCR hi
 * draw a filled and outlined circle to represent the size of the location tolerance in the current view.
 * @bsimethod                                                    Keith.Bentley   03/03
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void drawLocateCircle(DgnViewportR vp, double aperture, DPoint3dCR pt)
+static void drawLocateCircle(DecorateContextR context, double aperture, DPoint3dCR pt)
     {
 #if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     ViewDrawP  output = vp.GetIViewDraw();
@@ -1802,13 +1803,13 @@ static void drawLocateCircle(DgnViewportR vp, double aperture, DPoint3dCR pt)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley  10/06
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ViewController::_DrawLocateCursor(DgnViewportR vp, DPoint3dCR pt, double aperture, bool isLocateCircleOn, HitDetailCP hit)
+void ViewController::_DrawLocateCursor(DecorateContextR context, DPoint3dCR pt, double aperture, bool isLocateCircleOn, HitDetailCP hit)
     {
     if (nullptr != hit)
-        drawLocateHitDetail(vp, aperture, *hit);
+        drawLocateHitDetail(context, aperture, *hit);
 
     if (isLocateCircleOn)
-        drawLocateCircle(vp, aperture, pt);
+        drawLocateCircle(context, aperture, pt);
     }
 
 /*---------------------------------------------------------------------------------**//**
