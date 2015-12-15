@@ -27,5 +27,3 @@ JoinedTableECDbMapStrategyTests.RelationshipsWithKeyProp
 
 #Raman will take a look
 ECDbInstances.CommonGeometryJsonSerialization
-
-ECDbSchemaManagerTests.CreateOrUpdateECClassViewsInDb # notified Affan
