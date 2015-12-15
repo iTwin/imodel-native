@@ -51,54 +51,27 @@ void DgnViewport::DestroyViewport()
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    KeithBentley    04/02
-+---------------+---------------+---------------+---------------+---------------+------*/
-void DgnViewport::SetDisplayFlagFill(bool newValue)
-    {
-    m_rootViewFlags.fill = newValue;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    KeithBentley    04/02
-+---------------+---------------+---------------+---------------+---------------+------*/
-void DgnViewport::SetDisplayFlagPatterns(bool newValue)
-    {
-    m_rootViewFlags.patterns = newValue;
-    }
-
-enum Constant
-    {
-    MINIMUM_WINDOW_DEPTH = -32767,
-    MAXIMUM_WINDOW_DEPTH = 32767,
-    };
-
-/*---------------------------------------------------------------------------------**//**
 * Get the DgnCoordSystem::View coordinates of lower-left-back and upper-right-front corners of a viewport.
 * NOTE: the y values are "swapped" (llb.y is greater than urf.y) on the screen and and "unswapped" when we plot.
 * @bsimethod                                                    KeithBentley    04/02
 +---------------+---------------+---------------+---------------+---------------+------*/
 DRange3d DgnViewport::GetViewCorners() const
     {
-    BSIRect viewRect = GetViewRect();
+    enum Constant
+    {
+        MINIMUM_WINDOW_DEPTH = -32767,
+        MAXIMUM_WINDOW_DEPTH = 32767,
+    };
 
+    BSIRect viewRect = GetViewRect();
     DRange3d corners;
     corners.low.x  = viewRect.origin.x;
-    corners.low.z  = MINIMUM_WINDOW_DEPTH;
-
     corners.high.x = viewRect.corner.x;
+    corners.low.y  = viewRect.corner.y;    // y's are swapped on the screen!
+    corners.high.y = viewRect.origin.y;
+    corners.low.z  = MINIMUM_WINDOW_DEPTH;
     corners.high.z = MAXIMUM_WINDOW_DEPTH;
 
-    if (m_invertY)
-        {
-        // y's are swapped on the screen!
-        corners.low.y = viewRect.corner.y;
-        corners.high.y = viewRect.origin.y;
-        }
-    else
-        {
-        corners.low.y = viewRect.origin.y;
-        corners.high.y = viewRect.corner.y;
-        }
     return corners;
     }
 
@@ -496,7 +469,7 @@ ViewportStatus DgnViewport::SetupFromViewController()
     DVec3d   delta  = viewController->GetDelta();
 
     m_rotMatrix     = viewController->GetRotation();
-    m_rootViewFlags = viewController->GetViewFlags();
+    m_viewFlags = viewController->GetViewFlags();
     m_is3dView      = false;
     m_isCameraOn    = false;
     m_viewOrg       = m_viewOrgUnexpanded   = origin;
@@ -695,7 +668,7 @@ ViewportStatus DgnViewport::ChangeArea(DPoint3dCP pts)
         viewController->SetOrigin(origin);
         }
 
-    _SynchWithViewController(true);
+    SynchWithViewController(true);
     return ViewportStatus::Success;
     }
 
@@ -1148,7 +1121,7 @@ ColorDef DgnViewport::GetContrastToBackgroundColor() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   11/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnViewport::_SynchWithViewController(bool saveInUndo)
+void DgnViewport::SynchWithViewController(bool saveInUndo)
     {
     SetupFromViewController();
 
@@ -1284,7 +1257,7 @@ void DgnViewport::PointToStandardGrid(DPoint3dR point, DPoint3dR gridOrigin, Rot
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   06/05
 +---------------+---------------+---------------+---------------+---------------+------*/
-ColorDef DgnViewport::_GetBackgroundColor() const
+ColorDef DgnViewport::GetBackgroundColor() const
     {
     if (!m_viewController.IsValid())
         return ColorDef::Black();

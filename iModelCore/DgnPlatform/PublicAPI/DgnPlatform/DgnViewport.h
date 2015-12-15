@@ -379,9 +379,8 @@ protected:
     typedef std::deque<Utf8String> ViewStateStack;
 
     bool            m_zClipAdjusted = false;    // were the view z clip planes adjusted due to front/back clipping off?
-    bool            m_is3dView = false;                 // view is of a 3d model
-    bool            m_isCameraOn = false;             // view is 3d and the camera is turned on.
-    bool            m_invertY = true;
+    bool            m_is3dView = false;         // view is of a 3d model
+    bool            m_isCameraOn = false;       // view is 3d and the camera is turned on.
     bool            m_frustumValid = false;
     bool            m_needSynchWithViewController = true;
     bool            m_needsHeal = true;
@@ -389,19 +388,19 @@ protected:
     bool            m_targetCenterValid = false;
     bool            m_undoActive = false;
     int             m_maxUndoSteps = 20;
-    uint32_t        m_sceneEntries = 0;
+    uint32_t        m_sceneEntries = 0;         // number of entries in the scene from last attempt at healing
     DPoint3d        m_viewOrg;                  // view origin, potentially expanded if f/b clipping are off
     DVec3d          m_viewDelta;                // view delta, potentially expanded if f/b clipping are off
     DPoint3d        m_viewOrgUnexpanded;        // view origin (from ViewController, unexpanded for "no clip")
     DVec3d          m_viewDeltaUnexpanded;      // view delta (from ViewController, unexpanded for "no clip")
     RotMatrix       m_rotMatrix;                // rotation matrix (from ViewController)
     CameraInfo      m_camera;
-    Render::ViewFlags m_rootViewFlags;            // view flags for root model
+    Render::ViewFlags m_viewFlags;
     Render::TargetPtr m_renderTarget;
+    ColorDef        m_hiliteColor = ColorDef::Magenta();
     DMap4d          m_rootToView;
     DMap4d          m_rootToNpc;
     double          m_frustFraction;
-    double          m_minLOD;                   // default level of detail filter size
     Utf8String      m_viewTitle;
     ViewControllerPtr m_viewController;
     bvector<IProgressiveDisplayPtr> m_progressiveDisplay;    // progressive display of a query view and reality data.
@@ -412,23 +411,16 @@ protected:
 
     DGNPLATFORM_EXPORT void DestroyViewport();
     DGNPLATFORM_EXPORT virtual void _AdjustZPlanesToModel(DPoint3dR origin, DVec3dR delta, ViewControllerCR) const;
-    virtual bool _IsGridOn() const {return m_rootViewFlags.grid;}
     virtual bool _IsVisible() const {return true;}
-    virtual DPoint3dCP _GetViewDelta() const {return &m_viewDelta;}
-    virtual DPoint3dCP _GetViewOrigin() const {return &m_viewOrg;}
     DGNPLATFORM_EXPORT virtual void _CallDecorators(DecorateContextR);
     virtual Render::Plan::AntiAliasPref _WantAntiAliasLines() const {return Render::Plan::AntiAliasPref::Detect;}
     virtual Render::Plan::AntiAliasPref _WantAntiAliasText() const {return Render::Plan::AntiAliasPref::Detect;}
     virtual void _AdjustFencePts(RotMatrixCR viewRot, DPoint3dCR oldOrg, DPoint3dCR newOrg) const {}
-    virtual ColorDef _GetHiliteColor() const {return ColorDef::Magenta();}
     virtual void _SynchViewTitle() {}
     virtual void _DrawStandardGrid(DPoint3dR gridOrigin, RotMatrixR rMatrix, DPoint2d spacing, uint32_t gridsPerRef, bool isoGrid, Point2dCP fixedRepetitions) {}
     virtual void _Destroy() {DestroyViewport();}
     DGNPLATFORM_EXPORT virtual void _AdjustAspectRatio(ViewControllerR, bool expandView);
     DGNPLATFORM_EXPORT virtual int _GetIndexedLineWidth(int index) const;
-    DGNPLATFORM_EXPORT virtual void _SynchWithViewController(bool saveInUndo);
-    DGNPLATFORM_EXPORT virtual ColorDef _GetBackgroundColor() const;
-    virtual uint64_t _GetMaxHealTime() const {return 1000;}
     virtual GridOrientationType _GetGridOrientationType() const {return GridOrientationType::View;}
     DGNPLATFORM_EXPORT static void StartRenderThread();
     DMap4d CalcNpcToView();
@@ -458,9 +450,6 @@ public:
     DGNPLATFORM_EXPORT static int32_t GetDisplayPriorityFrontPlane();
     DGNPLATFORM_EXPORT static ViewportStatus ValidateWindowSize(DPoint3dR delta, bool displayMessage);
     DGNPLATFORM_EXPORT static void FixFrustumOrder(Frustum&);
-    DGNPLATFORM_EXPORT void SetDisplayFlagFill(bool fill);
-    DGNPLATFORM_EXPORT void SetDisplayFlagPatterns(bool patternsOn);
-    DGNPLATFORM_EXPORT void SetDisplayFlagLevelSymb(bool levelSymbOn);
     DGNPLATFORM_EXPORT ViewportStatus SetupFromViewController();
     DGNPLATFORM_EXPORT ViewportStatus ChangeArea(DPoint3dCP pts);
     void Destroy() {_Destroy();}
@@ -523,14 +512,11 @@ public:
     //! @private
     DGNPLATFORM_EXPORT StatusInt ComputeFittedElementRange(DRange3dR range, DgnElementIdSet const& elements, RotMatrixCP rMatrix=nullptr);
 
-    //! @private
-    void SetMinimumLOD(double minLOD) {m_minLOD = minLOD;}
-
 /** @name Color Controls */
 /** @{ */
     //! Get the RGB color of the background for this DgnViewport.
     //! @return background RGB color
-    ColorDef GetBackgroundColor() const {return _GetBackgroundColor();}
+    DGNPLATFORM_EXPORT ColorDef GetBackgroundColor() const;
 
     //! @return either white or black, whichever has more contrast to the background color of this DgnViewport.
     DGNPLATFORM_EXPORT ColorDef GetContrastToBackgroundColor() const;
@@ -561,7 +547,7 @@ public:
 
     //! Get the current TBGR color value of the user-selected hilite color for this DgnViewport.
     //! @return the current TBGR hilite color.
-    ColorDef GetHiliteColor() const {return _GetHiliteColor();}
+    ColorDef GetHiliteColor() const {return m_hiliteColor;}
 
 /** @} */
 
@@ -710,7 +696,7 @@ public:
 
     //! Determine whether the Grid display is currently enabled in this DgnViewport.
     //! @return true if the grid display is on.
-    bool IsGridOn() const {return _IsGridOn();}
+    bool IsGridOn() const {return m_viewFlags.grid;}
 
     //! Determine whether this viewport is a 3D view.
     //! @remarks Will be true only for a physical view.
@@ -747,15 +733,15 @@ public:
 
     //! Get View Origin for this DgnViewport.
     //! @return the root coordinates of the lower left back corner of the DgnViewport.
-    DPoint3dCP GetViewOrigin() const {return _GetViewOrigin();}
+    DPoint3dCP GetViewOrigin() const {return &m_viewOrg;}
 
     //! Get the View Delta (size) of this DgnViewport in root coordinate distances.
     //! @return the view delta in root coordinate distances.
-    DPoint3dCP GetViewDelta() const  {return _GetViewDelta();}
+    DPoint3dCP GetViewDelta() const {return &m_viewDelta;}
 
-    //! Get the current View Flags for this DgnViewport.
+    //! Get the View Flags for this DgnViewport.
     //! @return the View flags for this DgnViewport.
-    Render::ViewFlags GetViewFlags() const {return m_rootViewFlags;}
+    Render::ViewFlags GetViewFlags() const {return m_viewFlags;}
 
     //! Synchronized this DgnViewport with the current state of its ViewController. A DgnViewport may hold local copies of the information
     //! in its ViewController. Therefore, when changes are made to the state of a ViewController, it must be synchronized with the
@@ -763,7 +749,7 @@ public:
     //! the changes between states of a ViewController to support the "view undo" command.
     //! @param[in] saveInUndo If true, the new state of the ViewController is compared to the previous state and changes are saved in the View Undo stack.
     //! If the user issues the "view undo" command, the changes are reversed and the ViewController is reverted to the previous state.
-    void SynchWithViewController(bool saveInUndo) {_SynchWithViewController(saveInUndo);}
+    DGNPLATFORM_EXPORT void SynchWithViewController(bool saveInUndo);
 
     DGNPLATFORM_EXPORT bool QueueRefresh();
 /** @} */
@@ -806,7 +792,7 @@ public:
     DGNVIEW_EXPORT void UpdateViewDynamic(DynamicUpdateInfo const& info = DynamicUpdateInfo());
     DGNVIEW_EXPORT void UpdateView(FullUpdateInfo const& info = FullUpdateInfo());
 
-    static double GetMinViewDelta() {return DgnUnits::OneMillimeter();}
+    static double GetMinViewDelta() {return DgnUnits::OneMillimeter() / 100.;}
     static double GetMaxViewDelta() {return 20000 * DgnUnits::OneKilometer();}    // about twice the diameter of the earth
     static double GetCameraPlaneRatio() {return 300.0;}
 };
@@ -817,20 +803,7 @@ public:
 struct NonVisibleViewport : DgnViewport
 {
 protected:
-    virtual ColorDef _GetBackgroundColor() const override {return ColorDef::Black();}
     virtual void _AdjustZPlanesToModel(DPoint3dR, DVec3dR, ViewControllerCR) const override {}
-
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    virtual StatusInt _ConnectRenderTarget() override { return SUCCESS; }
-    virtual BSIRect _GetClientRect() const override
-        {
-        BSIRect rect;
-        rect.origin.x = rect.origin.y = 0;
-        rect.corner.x = rect.corner.y = 1;
-        return rect;
-        }
-#endif
-
     virtual void _AdjustAspectRatio(ViewControllerR viewController, bool expandView) override {}
 
 public:

@@ -73,7 +73,6 @@ enum class RenderMode
     RayTrace            = 8,
     RenderWireframe     = 9,
     Radiosity           = 10,
-    ParticleTrace       = 11,
     RenderLuxology      = 12,
     Invalid             = 15,
     };
