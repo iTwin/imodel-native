@@ -131,7 +131,7 @@ void DgnChangeSummaryTestFixture::InsertFloor(int iFloor)
             ISolidPrimitivePtr geomPtr = ISolidPrimitive::CreateDgnBox(blockDetail);
             BeAssert(geomPtr.IsValid());
 
-            ElementGeometryBuilderPtr builder = ElementGeometryBuilder::Create(*m_testModel, m_testCategoryId, center, YawPitchRollAngles());
+            GeometryBuilderPtr builder = GeometryBuilder::Create(*m_testModel, m_testCategoryId, center, YawPitchRollAngles());
             builder->Append(*geomPtr);
             BentleyStatus status = builder->SetGeometryStreamAndPlacement(*physicalElementPtr);
             BeAssert(status == SUCCESS);

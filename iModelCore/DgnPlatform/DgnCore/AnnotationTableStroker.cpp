@@ -1155,7 +1155,7 @@ TableEdgeStrokes::const_iterator  TableEdgeStrokes::end() const   { return new T
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    11/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-/* ctor */  AnnotationTableStroker::AnnotationTableStroker (AnnotationTableElementCR table, ElementGeometryBuilderR builder)
+/* ctor */  AnnotationTableStroker::AnnotationTableStroker (AnnotationTableElementCR table, GeometryBuilderR builder)
     :
     m_table (table),
     m_geomBuilder (builder),

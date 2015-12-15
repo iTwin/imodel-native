@@ -75,7 +75,7 @@ void VolumeElement::SetupGeomStream(DPoint3dCR origin, bvector<DPoint2d> const& 
     DgnModelPtr model = GetModel();
     BeAssert(model.IsValid());
 
-    ElementGeometryBuilderPtr builder = ElementGeometryBuilder::Create(*model, GetCategoryId(), origin, YawPitchRollAngles());
+    GeometryBuilderPtr builder = GeometryBuilder::Create(*model, GetCategoryId(), origin, YawPitchRollAngles());
     builder->Append(*extrusionSolid);
     builder->SetGeometryStreamAndPlacement(*this);
     }
@@ -151,9 +151,9 @@ DgnElementId VolumeElement::QueryVolumeByLabel(DgnDbCR db, Utf8CP label)
 //+---------------+---------------+---------------+---------------+---------------+-----
 BentleyStatus VolumeElement::ExtractExtrusionDetail(DgnExtrusionDetail& extrusionDetail) const
     {
-    ElementGeometryCollection geomCollection(*this);
+    GeometryCollection geomCollection(*this);
 
-    ElementGeometryCollection::const_iterator iter = geomCollection.begin();
+    GeometryCollection::const_iterator iter = geomCollection.begin();
     if (iter == geomCollection.end())
         {
         BeAssert(false && "Expected DgnExtrusion in the geometry source for VolumeElement-s");

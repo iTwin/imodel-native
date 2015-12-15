@@ -29,8 +29,8 @@ TEST_F(ElementGeomPartTests, CRUD)
 
     DgnGeomParts& geomPartTable = m_db->GeomParts();
     //Create a GeomPart
-    ElementGeometryPtr elGPtr = ElementGeometry::Create(*GeomHelper::computeShape());
-    ElementGeometryBuilderPtr builder = ElementGeometryBuilder::CreateGeomPart(*m_db, true);
+    GeometricPrimitivePtr elGPtr = GeometricPrimitive::Create(*GeomHelper::computeShape());
+    GeometryBuilderPtr builder = GeometryBuilder::CreateGeomPart(*m_db, true);
     builder->Append(*elGPtr);
     DgnGeomPartPtr geomPartPtr = DgnGeomPart::Create("TestGeomPart");
     EXPECT_TRUE(geomPartPtr != NULL);
@@ -73,8 +73,8 @@ TEST_F(ElementGeomPartTests, CreateElements)
     SetupProject(L"3dMetricGeneral.idgndb", L"GeomParts.idgndb", BeSQLite::Db::OpenMode::ReadWrite);
 
     //Create a GeomPart
-    ElementGeometryPtr elGPtr = ElementGeometry::Create(*GeomHelper::computeShape());
-    ElementGeometryBuilderPtr builder = ElementGeometryBuilder::CreateGeomPart(*m_db, true);
+    GeometricPrimitivePtr elGPtr = GeometricPrimitive::Create(*GeomHelper::computeShape());
+    GeometryBuilderPtr builder = GeometryBuilder::CreateGeomPart(*m_db, true);
     builder->Append(*elGPtr);
     DgnGeomPartPtr geomPartPtr = DgnGeomPart::Create("TestGeomPart");
     EXPECT_TRUE(geomPartPtr != NULL);
@@ -102,8 +102,8 @@ TEST_F(ElementGeomPartTests, GeomPartWithoutCode)
     SetupProject(L"3dMetricGeneral.idgndb", L"GeomParts.idgndb", BeSQLite::Db::OpenMode::ReadWrite);
 
     //Create a GeomPart
-    ElementGeometryPtr elGPtr = ElementGeometry::Create(*GeomHelper::computeShape());
-    ElementGeometryBuilderPtr builder = ElementGeometryBuilder::CreateGeomPart(*m_db, true);
+    GeometricPrimitivePtr elGPtr = GeometricPrimitive::Create(*GeomHelper::computeShape());
+    GeometryBuilderPtr builder = GeometryBuilder::CreateGeomPart(*m_db, true);
     builder->Append(*elGPtr);
     DgnGeomPartPtr geomPartPtr = DgnGeomPart::Create();
     EXPECT_TRUE(geomPartPtr != NULL);
@@ -133,8 +133,8 @@ TEST_F(ElementGeomPartTests, ElementGeomUsesParts)
     SetupProject(L"3dMetricGeneral.idgndb", L"GeomParts.idgndb", BeSQLite::Db::OpenMode::ReadWrite);
 
     //Create a GeomPart
-    ElementGeometryPtr elGPtr = ElementGeometry::Create(*GeomHelper::computeShape());
-    ElementGeometryBuilderPtr builder = ElementGeometryBuilder::CreateGeomPart(*m_db, true);
+    GeometricPrimitivePtr elGPtr = GeometricPrimitive::Create(*GeomHelper::computeShape());
+    GeometryBuilderPtr builder = GeometryBuilder::CreateGeomPart(*m_db, true);
     builder->Append(*elGPtr);
     DgnGeomPartPtr geomPartPtr = DgnGeomPart::Create("TestGeomPart");
     EXPECT_TRUE(geomPartPtr != NULL);
@@ -167,8 +167,8 @@ TEST_F(ElementGeomPartTests, ElementGeomUsesParts_DeleteGeomPart)
     SetupProject(L"3dMetricGeneral.idgndb", L"GeomParts.idgndb", BeSQLite::Db::OpenMode::ReadWrite);
 
     //Create a GeomPart
-    ElementGeometryPtr elGPtr = ElementGeometry::Create(*GeomHelper::computeShape());
-    ElementGeometryBuilderPtr builder = ElementGeometryBuilder::CreateGeomPart(*m_db, true);
+    GeometricPrimitivePtr elGPtr = GeometricPrimitive::Create(*GeomHelper::computeShape());
+    GeometryBuilderPtr builder = GeometryBuilder::CreateGeomPart(*m_db, true);
     builder->Append(*elGPtr);
     DgnGeomPartPtr geomPartPtr = DgnGeomPart::Create("TestGeomPart");
     EXPECT_TRUE(geomPartPtr != NULL);
@@ -200,8 +200,8 @@ TEST_F(ElementGeomPartTests, ElementGeomUsesParts_DeleteElement)
     SetupProject(L"3dMetricGeneral.idgndb", L"GeomParts.idgndb", BeSQLite::Db::OpenMode::ReadWrite);
 
     //Create a GeomPart
-    ElementGeometryPtr elGPtr = ElementGeometry::Create(*GeomHelper::computeShape());
-    ElementGeometryBuilderPtr builder = ElementGeometryBuilder::CreateGeomPart(*m_db, true);
+    GeometricPrimitivePtr elGPtr = GeometricPrimitive::Create(*GeomHelper::computeShape());
+    GeometryBuilderPtr builder = GeometryBuilder::CreateGeomPart(*m_db, true);
     builder->Append(*elGPtr);
     DgnGeomPartPtr geomPartPtr = DgnGeomPart::Create("TestGeomPart");
     EXPECT_TRUE(geomPartPtr != NULL);
@@ -235,8 +235,8 @@ TEST_F(ElementGeomPartTests, CreateElementsAndDeleteGemPart)
     SetupProject(L"3dMetricGeneral.idgndb", L"GeomParts.idgndb", BeSQLite::Db::OpenMode::ReadWrite);
 
     //Create a GeomPart
-    ElementGeometryPtr elGPtr = ElementGeometry::Create(*GeomHelper::computeShape());
-    ElementGeometryBuilderPtr builder = ElementGeometryBuilder::CreateGeomPart(*m_db, true);
+    GeometricPrimitivePtr elGPtr = GeometricPrimitive::Create(*GeomHelper::computeShape());
+    GeometryBuilderPtr builder = GeometryBuilder::CreateGeomPart(*m_db, true);
     builder->Append(*elGPtr);
     DgnGeomPartPtr geomPartPtr = DgnGeomPart::Create("TestGeomPart");
     EXPECT_TRUE(geomPartPtr != NULL);
@@ -274,8 +274,8 @@ TEST_F(ElementGeomPartTests, GeomPart2d)
     SetupProject(L"2dMetricGeneral.idgndb", L"GeomParts2d.idgndb", BeSQLite::Db::OpenMode::ReadWrite);
 
     //Create a GeomPart
-    ElementGeometryPtr elGPtr = ElementGeometry::Create(*GeomHelper::computeShape2d());
-    ElementGeometryBuilderPtr builder = ElementGeometryBuilder::CreateGeomPart(*m_db, false);
+    GeometricPrimitivePtr elGPtr = GeometricPrimitive::Create(*GeomHelper::computeShape2d());
+    GeometryBuilderPtr builder = GeometryBuilder::CreateGeomPart(*m_db, false);
     builder->Append(*elGPtr);
     DgnGeomPartPtr geomPartPtr = DgnGeomPart::Create("TestGeomPart");
     EXPECT_TRUE(geomPartPtr != NULL);

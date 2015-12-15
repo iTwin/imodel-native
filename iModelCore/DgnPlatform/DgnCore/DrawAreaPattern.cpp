@@ -310,7 +310,7 @@ bool PatternParams::IsEqual(PatternParamsCR params, PatternParamsCompareFlags co
 /*=================================================================================**//**
 * @bsiclass
 +===============+===============+===============+===============+===============+======*/
-struct PatternBoundaryCollector : IElementGraphicsProcessor
+struct PatternBoundaryCollector : IGeometryProcessor
 {
 private:
     GeometrySourceCR    m_stroker;
@@ -376,7 +376,7 @@ public:
         PatternBoundaryCollector  processor(stroker);
 
     #if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-        ElementGraphicsOutput::Process(processor, stroker._GetDgnDb());
+        GeometryProcessor::Process(processor, stroker._GetDgnDb());
     #endif
 
         return processor.GetBoundary();

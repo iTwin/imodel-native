@@ -10,11 +10,11 @@
 /*=================================================================================**//**
 * @bsiclass                                                     Brien.Bastings  06/09
 +===============+===============+===============+===============+===============+======*/
-struct ElementGraphicsProcessor : SimplifyGraphic
+struct GeometryProcessorGraphic : SimplifyGraphic
 {
     DEFINE_T_SUPER(SimplifyGraphic)
 private:
-    IElementGraphicsProcessor*  m_dropObj;
+    IGeometryProcessor*  m_dropObj;
 
 protected:
     virtual bool _DoClipping() const override {return m_dropObj->_WantClipping();}
@@ -138,7 +138,7 @@ public:
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  06/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-ElementGraphicsProcessor(ViewContextP context, IElementGraphicsProcessor& dropObj)
+GeometryProcessorGraphic(ViewContextP context, IGeometryProcessor& dropObj)
     {
     SetViewContext(context);
     m_dropObj = &dropObj;
@@ -147,28 +147,28 @@ ElementGraphicsProcessor(ViewContextP context, IElementGraphicsProcessor& dropOb
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  06/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-IElementGraphicsProcessor* GetIElementGraphicsProcessor() {return m_dropObj;}
+IGeometryProcessor* GetIGeometryProcessor() {return m_dropObj;}
 
-}; // ElementGraphicsProcessor
+}; // GeometryProcessorGraphic
 
 /*=================================================================================**//**
 * @bsiclass                                                     Brien.Bastings  06/09
 +===============+===============+===============+===============+===============+======*/
-struct ElementGraphicsContext : NullContext
+struct GeometryProcessorContext : NullContext
 {
     DEFINE_T_SUPER(NullContext)
 protected:
-    RefCountedPtr<ElementGraphicsProcessor> m_graphic;
+    RefCountedPtr<GeometryProcessorGraphic> m_graphic;
 
-    ElementGraphicsContext() {}
+    GeometryProcessorContext() {}
     virtual Render::GraphicPtr _BeginGraphic(Render::Graphic::CreateParams const& params) override {m_graphic->SetLocalToWorldTransform(params.m_placement); return m_graphic;}
 
 public:
-    ElementGraphicsContext(IElementGraphicsProcessor& dropObj)
+    GeometryProcessorContext(IGeometryProcessor& dropObj)
         {
         m_purpose = dropObj._GetDrawPurpose();
-        m_wantMaterials = true; // Setup material in GeometryParams in case IElementGraphicsProcessor needs it...
-        m_graphic = new ElementGraphicsProcessor(this, dropObj);
+        m_wantMaterials = true; // Setup material in GeometryParams in case IGeometryProcessor needs it...
+        m_graphic = new GeometryProcessorGraphic(this, dropObj);
 
         dropObj._AnnounceContext(*this);
         }
@@ -179,7 +179,7 @@ public:
 virtual void _AddTextString(TextStringCR text) override
     {
 #if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    // NOTE: When IElementGraphicsProcessor handles TextString we don't want to spew adornment geometry!
+    // NOTE: When IGeometryProcessor handles TextString we don't want to spew adornment geometry!
     text.GetGlyphSymbology(GetCurrentGeometryParams());
     CookGeometryParams();
 
@@ -193,7 +193,7 @@ virtual void _AddTextString(TextStringCR text) override
 +---------------+---------------+---------------+---------------+---------------+------*/
 virtual void _DrawAreaPattern(ClipStencil& boundary) override
     {
-    if (!m_graphic->GetIElementGraphicsProcessor()->_ExpandPatterns())
+    if (!m_graphic->GetIGeometryProcessor()->_ExpandPatterns())
         return;
 
     T_Super::_DrawAreaPattern(boundary);
@@ -207,21 +207,21 @@ virtual ILineStyleCP _GetCurrLineStyle(LineStyleSymbP* symb) override
     {
     ILineStyleCP  currStyle = T_Super::_GetCurrLineStyle(symb);
 
-    if (!m_graphic->GetIElementGraphicsProcessor()->_ExpandLineStyles(currStyle))
+    if (!m_graphic->GetIGeometryProcessor()->_ExpandLineStyles(currStyle))
         return NULL;
 
     return currStyle;
     }
 #endif
 
-}; // ElementGraphicsContext
+}; // GeometryProcessorContext
 
 /*----------------------------------------------------------------------------------*//**
 * @bsimethod                                                    Brien.Bastings  06/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ElementGraphicsOutput::Process(IElementGraphicsProcessorR dropObj, GeometrySourceCR source)
+void GeometryProcessor::Process(IGeometryProcessorR dropObj, GeometrySourceCR source)
     {
-    ElementGraphicsContext context(dropObj);
+    GeometryProcessorContext context(dropObj);
 
     context.SetDgnDb(source.GetSourceDgnDb());
     
@@ -235,13 +235,13 @@ void ElementGraphicsOutput::Process(IElementGraphicsProcessorR dropObj, Geometry
             if (context.IsUndisplayed(source))
                 return;
 
-            ElementGeometryCollection collection(source);
+            GeometryCollection collection(source);
 
-            collection.SetBRepOutput(ElementGeometryCollection::BRepOutput::Edges | ElementGeometryCollection::BRepOutput::FaceIso);
+            collection.SetBRepOutput(GeometryCollection::BRepOutput::Edges | GeometryCollection::BRepOutput::FaceIso);
 
             for (auto iter : collection)
                 {
-                ElementGeometryPtr elemGeom = iter.GetGeometryPtr();
+                GeometricPrimitivePtr elemGeom = iter.GetGeometryPtr();
 
                 if (!elemGeom.IsValid())
                     continue;
@@ -274,9 +274,9 @@ void ElementGraphicsOutput::Process(IElementGraphicsProcessorR dropObj, Geometry
 /*----------------------------------------------------------------------------------*//**
 * @bsimethod                                                    Brien.Bastings  12/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ElementGraphicsOutput::Process(IElementGraphicsProcessorR dropObj, DgnDbR dgnDb)
+void GeometryProcessor::Process(IGeometryProcessorR dropObj, DgnDbR dgnDb)
     {
-    ElementGraphicsContext  context(dropObj);
+    GeometryProcessorContext  context(dropObj);
 
     context.SetDgnDb(dgnDb);
 
@@ -1161,7 +1161,7 @@ BEGIN_UNNAMED_NAMESPACE
 /*=================================================================================**//**
 * @bsiclass
 +===============+===============+===============+===============+===============+======*/
-struct RuleCollector : IElementGraphicsProcessor
+struct RuleCollector : IGeometryProcessor
 {
 protected:
 
@@ -1258,7 +1258,7 @@ CurveVectorPtr WireframeGeomUtil::CollectCurves(ISolidPrimitiveCR primitive, Dgn
     RuleCollector   rules(includeEdges, includeFaceIso);
 
     rules.SetSolidPrimitive(primitive);
-    ElementGraphicsOutput::Process(rules, dgnDb);
+    GeometryProcessor::Process(rules, dgnDb);
 
     return rules.GetCurveVector();
     }
@@ -1271,7 +1271,7 @@ CurveVectorPtr WireframeGeomUtil::CollectCurves(MSBsplineSurfaceCR surface, DgnD
     RuleCollector   rules(includeEdges, includeFaceIso);
 
     rules.SetBsplineSurface(surface);
-    ElementGraphicsOutput::Process(rules, dgnDb);
+    GeometryProcessor::Process(rules, dgnDb);
 
     return rules.GetCurveVector();
     }
@@ -1284,7 +1284,7 @@ CurveVectorPtr WireframeGeomUtil::CollectCurves(ISolidKernelEntityCR entity, Dgn
     RuleCollector   rules(includeEdges, includeFaceIso);
 
     rules.SetSolidEntity(entity);
-    ElementGraphicsOutput::Process(rules, dgnDb);
+    GeometryProcessor::Process(rules, dgnDb);
 
     return rules.GetCurveVector();
     }
@@ -1292,7 +1292,7 @@ CurveVectorPtr WireframeGeomUtil::CollectCurves(ISolidKernelEntityCR entity, Dgn
 /*=================================================================================**//**
 * @bsiclass
 +===============+===============+===============+===============+===============+======*/
-struct FaceAttachmentRuleCollector : IElementGraphicsProcessor
+struct FaceAttachmentRuleCollector : IGeometryProcessor
 {
 protected:
 
@@ -1384,7 +1384,7 @@ void WireframeGeomUtil::CollectCurves(ISolidKernelEntityCR entity, DgnDbR dgnDb,
 
     FaceAttachmentRuleCollector rules(entity, curves, params, includeEdges, includeFaceIso);
 
-    ElementGraphicsOutput::Process(rules, dgnDb);
+    GeometryProcessor::Process(rules, dgnDb);
     }
 
 /*----------------------------------------------------------------------------------*//**

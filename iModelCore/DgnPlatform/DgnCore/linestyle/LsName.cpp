@@ -13,7 +13,7 @@ static DgnHost::Key s_systemLsFileInfoKey;
 /*=================================================================================**//**
 * @bsiclass
 +===============+===============+===============+===============+===============+======*/
-struct LineStyleRangeCollector : IElementGraphicsProcessor
+struct LineStyleRangeCollector : IGeometryProcessor
 {
 private:
     GeometrySourceCR    m_stroker;
@@ -81,7 +81,7 @@ static void Process(DRange3dR range, GeometrySourceCR stroker)
 #if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     LineStyleRangeCollector  processor(stroker);
 
-    ElementGraphicsOutput::Process(processor, stroker._GetDgnDb());
+    GeometryProcessor::Process(processor, stroker._GetDgnDb());
 
     processor.GetRange(range);
 #endif

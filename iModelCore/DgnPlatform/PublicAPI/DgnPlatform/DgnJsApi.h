@@ -281,21 +281,21 @@ struct JsDgnModels : RefCountedBaseWithCreate
 //=======================================================================================
 // @bsiclass                                                    Sam.Wilson      06/15
 //=======================================================================================
-struct JsElementGeometryBuilder : RefCountedBaseWithCreate
+struct JsGeometryBuilder : RefCountedBaseWithCreate
 {
-    ElementGeometryBuilderPtr m_builder;
+    GeometryBuilderPtr m_builder;
 
-    //JsElementGeometryBuilder(DgnElement3dR el, DPoint3dCR o, YawPitchRollAnglesCR angles) : m_builder (ElementGeometryBuilder::Create(el, o, angles)) {} // Not exposed to JS
-    //JsElementGeometryBuilder(DgnElement2dR el, DPoint2dCR o, AngleInDegrees angle) : m_builder (ElementGeometryBuilder::Create(el, o, angle)) {} // Not exposed to JS
-    JsElementGeometryBuilder(JsDgnElementP el, JsDPoint3dP o, JsYawPitchRollAnglesP angles);
-    ~JsElementGeometryBuilder() {}
+    //JsGeometryBuilder(DgnElement3dR el, DPoint3dCR o, YawPitchRollAnglesCR angles) : m_builder (GeometryBuilder::Create(el, o, angles)) {} // Not exposed to JS
+    //JsGeometryBuilder(DgnElement2dR el, DPoint2dCR o, AngleInDegrees angle) : m_builder (GeometryBuilder::Create(el, o, angle)) {} // Not exposed to JS
+    JsGeometryBuilder(JsDgnElementP el, JsDPoint3dP o, JsYawPitchRollAnglesP angles);
+    ~JsGeometryBuilder() {}
 
     void AppendBox(double x, double y, double z);
     void AppendSphere(double radius);
     void Append(JsSolidPrimitiveP solid) {if (solid && solid->GetISolidPrimitivePtr().IsValid()) m_builder->Append(*solid->GetISolidPrimitivePtr());}
     BentleyStatus SetGeometryStreamAndPlacement (JsDgnElementP el) {return m_builder->SetGeometryStreamAndPlacement(*el->m_el->ToGeometrySourceP());}
 };
-typedef JsElementGeometryBuilder* JsElementGeometryBuilderP;
+typedef JsGeometryBuilder* JsGeometryBuilderP;
 
 //=======================================================================================
 // @bsiclass                                                    Sam.Wilson      06/15

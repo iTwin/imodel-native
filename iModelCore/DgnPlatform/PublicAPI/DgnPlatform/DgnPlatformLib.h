@@ -749,7 +749,7 @@ public:
             //! @param[in] subEntity The solid kernel sub-entity to draw.
             //! @param[in] context The context to output the sub-entity to.
             //! @return SUCCESS if a valid solid kernel sub-entity was specified.
-            //! @note Can be used for selection dynamics as well as to collect sub-entity geometry as a CurveVector or SolidPrimitive using an IElementGraphicsProcessor.
+            //! @note Can be used for selection dynamics as well as to collect sub-entity geometry as a CurveVector or SolidPrimitive using an IGeometryProcessor.
             virtual BentleyStatus _Draw(ISubEntityCR subEntity, ViewContextR context) const {return ERROR;}
 
             //! Evaluate a uv parameter on a face sub-entity.

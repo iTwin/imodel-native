@@ -53,7 +53,7 @@ static ICurvePrimitivePtr createBox (DPoint3dCR low, DPoint3dCR high)
 static void setUpElement(PhysicalElementR el, DPoint3dCR origin, double yaw, ICurvePrimitiveR curve, DgnElement::Code elementCode)
     {
     el.SetCode(elementCode);
-    ElementGeometryBuilderPtr builder = ElementGeometryBuilder::Create(el, origin, YawPitchRollAngles(Angle::FromDegrees(yaw), Angle::FromDegrees(0), Angle::FromDegrees(0)));
+    GeometryBuilderPtr builder = GeometryBuilder::Create(el, origin, YawPitchRollAngles(Angle::FromDegrees(yaw), Angle::FromDegrees(0), Angle::FromDegrees(0)));
     builder->Append(curve);
     StatusInt status = builder->SetGeometryStreamAndPlacement(el);
     ASSERT_TRUE( SUCCESS == status );

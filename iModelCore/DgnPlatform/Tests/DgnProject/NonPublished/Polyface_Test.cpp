@@ -302,7 +302,6 @@ TEST_F (PolyfaceTest, MeshShape)
 
     SaveFile (L"MeshShape.dgn");
     }
-//#include <ElementGeometry/ElementGeometry.h>
 
 TEST_F (PolyfaceTest, Mesh_ComplexShape_HalfCircleOnSquare)
     {

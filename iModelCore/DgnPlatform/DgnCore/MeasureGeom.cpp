@@ -1199,7 +1199,7 @@ BentleyStatus MeasureGeomCollector::Process (IGeomProvider& provider, DgnDbR pro
     {
     AutoRestore <IGeomProvider*> saveProvider (&m_geomProvider, &provider);
 
-    ElementGraphicsOutput::Process (*this, project); // Calls _OutputGraphics...
+    GeometryProcessor::Process (*this, project); // Calls _OutputGraphics...
 
     return GetOperationStatus ();
     }
@@ -1209,7 +1209,7 @@ BentleyStatus MeasureGeomCollector::Process (IGeomProvider& provider, DgnDbR pro
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus MeasureGeomCollector::Process (GeometrySourceCR source)
     {
-    ElementGraphicsOutput::Process (*this, source);
+    GeometryProcessor::Process (*this, source);
     
     return GetOperationStatus ();
     }

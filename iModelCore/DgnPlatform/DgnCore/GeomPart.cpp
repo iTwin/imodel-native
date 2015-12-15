@@ -281,7 +281,7 @@ DgnGeomPartId DgnImportContext::RemapGeomPartId(DgnGeomPartId source)
     if (!dest.IsValid())
         {
         DgnGeomPartPtr destGeomPart = DgnGeomPart::Create();
-        ElementGeomIO::Import(destGeomPart->GetGeometryStreamR(), sourceGeomPart->GetGeometryStream(), *this);
+        GeometryStreamIO::Import(destGeomPart->GetGeometryStreamR(), sourceGeomPart->GetGeometryStream(), *this);
 
         if (BSISUCCESS != GetDestinationDb().GeomParts().InsertGeomPart(*destGeomPart))
             {

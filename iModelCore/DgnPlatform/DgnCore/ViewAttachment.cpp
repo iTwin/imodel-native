@@ -129,12 +129,12 @@ void ViewAttachment::_RemapIds(DgnImportContext& importer)
 /*---------------------------------------------------------------------------------**//**
 * @bsistruct                                                    Paul.Connelly   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct ViewAttachmentGeomCollector : IElementGraphicsProcessor
+struct ViewAttachmentGeomCollector : IGeometryProcessor
 {
 private:
     ViewAttachmentR             m_attachment;
     DgnSubCategoryId            m_subCategory;
-    ElementGeometryBuilderPtr   m_builder;
+    GeometryBuilderPtr   m_builder;
     Transform                   m_curTransform;
     ViewContextP                m_viewContext;
     NonVisibleViewport          m_viewport;
@@ -186,7 +186,7 @@ ViewAttachmentGeomCollector::ViewAttachmentGeomCollector(ViewControllerR control
         m_subCategory = DgnCategory::GetDefaultSubCategoryId(m_attachment.GetCategoryId());
 
     Placement2dCR placement = m_attachment.GetPlacement();
-    m_builder = ElementGeometryBuilder::Create(m_attachment, placement.GetOrigin(), placement.GetAngle());
+    m_builder = GeometryBuilder::Create(m_attachment, placement.GetOrigin(), placement.GetAngle());
     BeAssert(IsValid());
 
     // Fit the view to define the range of our geometry
@@ -325,7 +325,7 @@ DgnDbStatus ViewAttachment::GenerateGeomStream(DgnSubCategoryId subcat)
     if (!proc.IsValid())
         return DgnDbStatus::BadElement;
 
-    ElementGraphicsOutput::Process(proc, GetDgnDb());
+    GeometryProcessor::Process(proc, GetDgnDb());
 
     return proc.SaveGeom();
 #endif

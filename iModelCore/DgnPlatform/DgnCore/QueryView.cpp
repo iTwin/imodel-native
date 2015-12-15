@@ -17,7 +17,7 @@
     #define MAX_TO_DRAW_IN_DYNAMIC_UPDATE  1700
 #endif
 
-#define TRACE_QUERY_LOGIC 1
+//#define TRACE_QUERY_LOGIC 1
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   07/12
@@ -45,7 +45,6 @@ QueryViewController::~QueryViewController()
 // Holding back some leads to fewer flashing frames.
 static double s_dynamicLoadFrequency = 0.75;
 static uint32_t s_dynamicLoadTrigger = 800;
-static double s_threshold = .2;
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    John.Gooding                    08/12
@@ -95,15 +94,7 @@ bool QueryViewController::_WantElementLoadStart(DgnViewportR vp, double currentT
     printf("_WantElementLoadStart : passed time test = %g\n", currentTime - lastQueryTime);
 #endif
 
-    // It shouldn't matter whether we look at m_startQueryFrustum or m_saveQueryFrustum. The previous steps in this method
-    // return if a query is underway or if there are outstanding results. If the method gets to this step
-    // m_startQueryFrustum and m_saveQueryFrustum should be identical.
-    bool retval = ClipUtil::ComputeFrustumOverlap(vp, queryFrustum.GetPts()) < s_threshold;
-#if defined (TRACE_QUERY_LOGIC)
-    if (!retval)
-        printf("_WantElementLoadStart rejected on frustum overlap\n");
-#endif
-    return retval;
+    return true;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -111,41 +102,26 @@ bool QueryViewController::_WantElementLoadStart(DgnViewportR vp, double currentT
 +---------------+---------------+---------------+---------------+---------------+------*/
 void QueryViewController::_OnDynamicUpdate(DgnViewportR vp, DynamicUpdateInfo const& info)
     {
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    DrawPurpose newUpdateType = info.GetDoBackingStore() ? DrawPurpose::Update : DrawPurpose::UpdateDynamic;
-    m_lastUpdateType = newUpdateType;
-    if (m_forceNewQuery || info.GetDoBackingStore())
-        {
-        // Skip any other tests and force a search and load
-        LoadElementsForUpdate(vp, newUpdateType, &context, true, true, false);
-        return;
-        }
-#endif
-
 #if defined (TRACE_QUERY_LOGIC)
     static uint32_t s_count = 0;
 #endif
 
-    if (QueryModel::State::Idle != m_queryModel.GetState())
+    if (QueryModel::State::Idle == m_queryModel.GetState())
         {
+        if (m_queryModel.HasSelectResults())
+            {
+            SaveSelectResults();
+            vp.SetNeedsHeal();
 #if defined (TRACE_QUERY_LOGIC)
-        printf("(%d) _OnDynamicUpdate: IsActive is true\n", ++s_count);
+            printf("_OnDynamicUpdate: %d elements saved\n", m_queryModel.GetElementCount());
 #endif
-        return;
-        }
+            return;
+            }
 
-    if (m_queryModel.HasSelectResults())
-        {
-#if defined (TRACE_QUERY_LOGIC)
-        printf("(%d) _OnDynamicUpdate: calling SaveSelectResults\n", ++s_count);
-#endif
-        SaveSelectResults();
-        return;
+        // The model is idle. Decide if this is a good time to start another query.
+        if (!_WantElementLoadStart(vp, BeTimeUtilities::QuerySecondsCounter(), m_lastQueryTime, m_maxDrawnInDynamicUpdate, m_startQueryFrustum))
+            return;
         }
-
-    // The model is idle. Decide if this is a good time to start another query.
-    if (!_WantElementLoadStart(vp, BeTimeUtilities::QuerySecondsCounter(), m_lastQueryTime, m_maxDrawnInDynamicUpdate, m_startQueryFrustum))
-        return;
 
     // Restarting select processing, don't wait for result
 #if defined (TRACE_QUERY_LOGIC)
@@ -161,6 +137,10 @@ void QueryViewController::_OnDynamicUpdate(DgnViewportR vp, DynamicUpdateInfo co
 +---------------+---------------+---------------+---------------+---------------+------*/
 void QueryViewController::_OnHealUpdate(DgnViewportR vp, ViewContextR context, bool fullHeal)
     {
+#if defined (TRACE_QUERY_LOGIC)
+    printf("_OnHealUpdate: doing nothing\n");
+#endif
+
 #if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     m_lastUpdateType = DrawPurpose::UpdateHealing;
     if (!m_forceNewQuery && !fullHeal)
@@ -198,6 +178,9 @@ void QueryViewController::_OnFullUpdate(DgnViewportR vp, ViewContextR context)
 
     LoadElementsForUpdate(vp, DrawPurpose::CreateScene, &context, true, true, false);
     ComputeFps();
+#if defined (TRACE_QUERY_LOGIC)
+    printf("_OnFullUpdate: %d elements saved\n", m_queryModel.GetElementCount());
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -524,8 +507,6 @@ void QueryViewController::_DrawView(ViewContextR context)
 
     context.GetViewport()->ClearProgressiveDisplay();
 
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-#endif
     bool isDynamicUpdate = false;
     uint32_t maxToDraw = isDynamicUpdate ? m_maxToDrawInDynamicUpdate : UINT_MAX;
 

@@ -183,7 +183,7 @@ DgnElementId ChangeTestFixture::InsertElement(int x, int y, int z)
     BeAssert(testGeomPtr.IsValid());
 
     DPoint3d centerOfBlock = DPoint3d::From(x, y, z);
-    ElementGeometryBuilderPtr builder = ElementGeometryBuilder::Create(*physicalTestModel, m_testCategoryId, centerOfBlock, YawPitchRollAngles());
+    GeometryBuilderPtr builder = GeometryBuilder::Create(*physicalTestModel, m_testCategoryId, centerOfBlock, YawPitchRollAngles());
     builder->Append(*testGeomPtr);
     BentleyStatus status = builder->SetGeometryStreamAndPlacement(*testElement);
     BeAssert(status == SUCCESS);

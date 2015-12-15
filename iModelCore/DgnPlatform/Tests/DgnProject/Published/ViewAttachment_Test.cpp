@@ -158,7 +158,7 @@ void ViewAttachmentTest::AddBoxToDrawing(DgnModelId drawingId, double width, dou
 
     auto geomEl = el->ToGeometrySourceP()->ToGeometrySource2dP();
     geomEl->SetCategoryId(m_attachmentCatId);
-    ElementGeometryBuilderPtr builder = ElementGeometryBuilder::Create(*geomEl, DPoint2d::From(3,2));
+    GeometryBuilderPtr builder = GeometryBuilder::Create(*geomEl, DPoint2d::From(3,2));
 
     builder->Append(*curve);
     EXPECT_EQ(SUCCESS, builder->SetGeometryStreamAndPlacement(*geomEl));

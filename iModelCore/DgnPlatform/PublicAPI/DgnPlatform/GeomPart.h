@@ -15,9 +15,9 @@ BEGIN_BENTLEY_DGN_NAMESPACE
 
 //=======================================================================================
 //! A DgnGeomPart stores geometry that can be shared between multiple elements.
-//! Use the ElementGeometryBuilder to create the shared geometry.
+//! Use the GeometryBuilder to create the shared geometry.
 //! @see DgnGeomParts
-//! @ingroup ElementGeometryGroup
+//! @ingroup GeometricPrimitiveGroup
 // @bsiclass                                                BentleySystems
 //=======================================================================================
 struct DgnGeomPart : RefCountedBase
@@ -25,7 +25,7 @@ struct DgnGeomPart : RefCountedBase
 //__PUBLISH_SECTION_END__
     friend struct DgnGeomParts;
     friend struct DgnImportContext;
-    friend struct ElementGeometryBuilder;
+    friend struct GeometryBuilder;
 
 //__PUBLISH_SECTION_START__
 private:
@@ -40,7 +40,7 @@ private:
     
 protected:
 
-    //! Only ElementGeometryBuilder should have write access to the GeometryStream...
+    //! Only GeometryBuilder should have write access to the GeometryStream...
     GeometryStreamR GetGeometryStreamR() {return m_geometry;}
 
 public:

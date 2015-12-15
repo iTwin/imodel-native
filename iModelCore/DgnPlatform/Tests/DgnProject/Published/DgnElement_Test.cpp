@@ -527,7 +527,7 @@ TEST_F(DgnElementTests, ElementCopierTests_Group)
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct ElementGeomAndPlacementTests : DgnElementTests
 {
-    ElementGeometryBuilderPtr CreateGeom();
+    GeometryBuilderPtr CreateGeom();
     RefCountedPtr<PhysicalElement> CreateElement(bool wantPlacement, bool wantGeom);
     static bool AreEqualPlacements(Placement3dCR a, Placement3dCR b);
     void TestLoadElem(DgnElementId id, Placement3d const* placement, bool hasGeometry);
@@ -536,10 +536,10 @@ struct ElementGeomAndPlacementTests : DgnElementTests
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-ElementGeometryBuilderPtr ElementGeomAndPlacementTests::CreateGeom()
+GeometryBuilderPtr ElementGeomAndPlacementTests::CreateGeom()
     {
     DgnModelPtr model = m_db->Models().GetModel(m_defaultModelId);
-    ElementGeometryBuilderPtr builder = ElementGeometryBuilder::Create(*model, m_defaultCategoryId, DPoint3d::From(0.0, 0.0, 0.0));
+    GeometryBuilderPtr builder = GeometryBuilder::Create(*model, m_defaultCategoryId, DPoint3d::From(0.0, 0.0, 0.0));
     CurveVectorPtr curveVector = GeomHelper::computeShape();
     builder->Append(*curveVector);
     double dz = 3.0, radius = 1.5;
