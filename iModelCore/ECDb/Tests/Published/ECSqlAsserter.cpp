@@ -509,10 +509,9 @@ std::function<bool (ECN::ECTypeDescriptor const&)> ECSqlSelectAsserter::CreateIs
             };
         }
 
-    //regular case allows implicit conversions between prim types (except date time and points)
     return [&dataType] (ECTypeDescriptor const& requestedDataType) 
         {
-        bool isExpectedToSucceed = (dataType.IsPrimitive () && requestedDataType.IsPrimitive ()) ||
+        const bool isExpectedToSucceed = (dataType.IsPrimitive () && requestedDataType.IsPrimitive ()) ||
             (dataType.IsStruct () && requestedDataType.IsStruct ()) ||
             (dataType.IsArray () && requestedDataType.IsArray ());
 
@@ -521,12 +520,11 @@ std::function<bool (ECN::ECTypeDescriptor const&)> ECSqlSelectAsserter::CreateIs
 
         if (dataType.IsPrimitive ())
             {
-            auto primType = dataType.GetPrimitiveType ();
-            auto requestedPrimType = requestedDataType.GetPrimitiveType ();
-            if (primType == PRIMITIVETYPE_DateTime || requestedPrimType == PRIMITIVETYPE_DateTime ||
-                primType == PRIMITIVETYPE_Point2D || requestedPrimType == PRIMITIVETYPE_Point2D ||
+            const ECN::PrimitiveType primType = dataType.GetPrimitiveType ();
+            const ECN::PrimitiveType requestedPrimType = requestedDataType.GetPrimitiveType ();
+            if (primType == PRIMITIVETYPE_Point2D || requestedPrimType == PRIMITIVETYPE_Point2D ||
                 primType == PRIMITIVETYPE_Point3D || requestedPrimType == PRIMITIVETYPE_Point3D ||
-                primType == PRIMITIVETYPE_IGeometry || requestedPrimType == PRIMITIVETYPE_IGeometry)
+                requestedPrimType == PRIMITIVETYPE_IGeometry) //for IGeometry only GetIGeometry will fail, but calling GetXX on geometry column will succeed
                 return primType == requestedPrimType;
             }
 

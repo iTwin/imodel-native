@@ -20,12 +20,9 @@ private:
     int m_sqliteColumnIndex;
     DateTime::Info m_datetimeMetadata;
 
-    bool CanGetValue(ECN::PrimitiveType requestedType) const;
-    bool CanGetValue(ECN::PrimitiveType testType, ECN::PrimitiveType requestedType, Utf8CP typeName, Utf8CP getValueMethodName) const;
-
     virtual bool _IsNull() const override;
 
-    virtual IECSqlPrimitiveValue const& _GetPrimitive() const override;
+    virtual IECSqlPrimitiveValue const& _GetPrimitive() const override { return *this; }
     virtual IECSqlStructValue const& _GetStruct() const override;
     virtual IECSqlArrayValue const& _GetArray() const override;
 
@@ -42,7 +39,7 @@ private:
     virtual IGeometryPtr _GetGeometry() const override;
     virtual void const* _GetGeometryBlob(int* blobSize) const override;
 
-    int GetSqliteColumnIndex() const;
+    int GetSqliteColumnIndex() const { return m_sqliteColumnIndex; }
 
 public:
     PrimitiveMappedToSingleColumnECSqlField(ECSqlStatementBase& ecsqlStatement, ECSqlColumnInfo&& ecsqlColumnInfo, int ecsqlColumnIndex);

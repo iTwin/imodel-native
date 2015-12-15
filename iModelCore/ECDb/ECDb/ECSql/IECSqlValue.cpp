@@ -56,7 +56,7 @@ DateTime IECSqlValue::GetDateTime () const
     DateTime dt;
     if (SUCCESS != DateTime::FromJulianDay (dt, jdHns, metadata))
         {
-        BeAssert (false && "ECSqlStatement::GetDateTime> Could not convert JulianDays into DateTime.");
+        LOG.error("ECSqlStatement::GetDateTime> Could not convert JulianDays into DateTime.");
         return std::move (DateTime ());
         }
 

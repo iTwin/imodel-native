@@ -12,7 +12,6 @@ using namespace std;
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
-
 //********************** PrimitiveMappedToSingleColumnECSqlField ********************************
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                    06/2013
@@ -49,15 +48,9 @@ bool PrimitiveMappedToSingleColumnECSqlField::_IsNull () const
 //+---------------+---------------+---------------+---------------+---------------+------
 void const* PrimitiveMappedToSingleColumnECSqlField::_GetBinary (int* binarySize) const
     {
-    if (!CanGetValue (PRIMITIVETYPE_Binary))
-        return NoopECSqlValue::GetSingleton ().GetBinary (binarySize);
-        
-    const auto columnIndex = GetSqliteColumnIndex ();
-
+    const int columnIndex = GetSqliteColumnIndex ();
     if (binarySize != nullptr)
-        {
         *binarySize = GetSqliteStatement ().GetColumnBytes (columnIndex);
-        }
 
     return GetSqliteStatement ().GetValueBlob (columnIndex);
     }
@@ -67,9 +60,6 @@ void const* PrimitiveMappedToSingleColumnECSqlField::_GetBinary (int* binarySize
 //+---------------+---------------+---------------+---------------+---------------+------
 bool PrimitiveMappedToSingleColumnECSqlField::_GetBoolean () const
     {
-    if (!CanGetValue (PRIMITIVETYPE_Boolean))
-        return NoopECSqlValue::GetSingleton ().GetBoolean ();
-
     return GetSqliteStatement ().GetValueInt (GetSqliteColumnIndex ()) != 0;
     }
 
@@ -78,9 +68,6 @@ bool PrimitiveMappedToSingleColumnECSqlField::_GetBoolean () const
 //+---------------+---------------+---------------+---------------+---------------+------
 double PrimitiveMappedToSingleColumnECSqlField::_GetDateTimeJulianDays(DateTime::Info& metadata) const
     {
-    if (!CanGetValue(PRIMITIVETYPE_DateTime))
-        return NoopECSqlValue::GetSingleton().GetDateTimeJulianDays(metadata);
-
     const double jd = GetSqliteStatement().GetValueDouble(GetSqliteColumnIndex());
     metadata = m_datetimeMetadata;
     return jd;
@@ -100,9 +87,6 @@ uint64_t PrimitiveMappedToSingleColumnECSqlField::_GetDateTimeJulianDaysHns (Dat
 //+---------------+---------------+---------------+---------------+---------------+------
 double PrimitiveMappedToSingleColumnECSqlField::_GetDouble () const
     {
-    if (!CanGetValue (PRIMITIVETYPE_Double))
-        return NoopECSqlValue::GetSingleton ().GetDouble ();
-
     return GetSqliteStatement ().GetValueDouble (GetSqliteColumnIndex ());
     }
 
@@ -111,9 +95,6 @@ double PrimitiveMappedToSingleColumnECSqlField::_GetDouble () const
 //+---------------+---------------+---------------+---------------+---------------+------
 int PrimitiveMappedToSingleColumnECSqlField::_GetInt () const
     {
-    if (!CanGetValue (PRIMITIVETYPE_Integer))
-        return NoopECSqlValue::GetSingleton ().GetInt ();
-
     return GetSqliteStatement ().GetValueInt (GetSqliteColumnIndex ());
     }
 
@@ -122,9 +103,6 @@ int PrimitiveMappedToSingleColumnECSqlField::_GetInt () const
 //+---------------+---------------+---------------+---------------+---------------+------
 int64_t PrimitiveMappedToSingleColumnECSqlField::_GetInt64 () const
     {
-    if (!CanGetValue (PRIMITIVETYPE_Long))
-        return NoopECSqlValue::GetSingleton ().GetInt64 ();
-
     return GetSqliteStatement ().GetValueInt64 (GetSqliteColumnIndex ());
     }
 
@@ -133,9 +111,6 @@ int64_t PrimitiveMappedToSingleColumnECSqlField::_GetInt64 () const
 //+---------------+---------------+---------------+---------------+---------------+------
 Utf8CP PrimitiveMappedToSingleColumnECSqlField::_GetText () const 
     {
-    if (!CanGetValue (PRIMITIVETYPE_String))
-        return NoopECSqlValue::GetSingleton ().GetText ();
-
     return GetSqliteStatement ().GetValueText (GetSqliteColumnIndex ());
     }
 
@@ -144,11 +119,8 @@ Utf8CP PrimitiveMappedToSingleColumnECSqlField::_GetText () const
 //---------------------------------------------------------------------------------------
 IGeometryPtr PrimitiveMappedToSingleColumnECSqlField::_GetGeometry() const
     {
-    if (!CanGetValue(PRIMITIVETYPE_IGeometry))
-        return NoopECSqlValue::GetSingleton().GetGeometry();
-
     int blobSize = -1;
-    auto blob = static_cast<Byte const*> (_GetGeometryBlob(&blobSize));
+    Byte const* blob = static_cast<Byte const*> (_GetGeometryBlob(&blobSize));
     if (blob == nullptr)
         return nullptr;
 
@@ -173,9 +145,6 @@ IGeometryPtr PrimitiveMappedToSingleColumnECSqlField::_GetGeometry() const
 //+---------------+---------------+---------------+---------------+---------------+--------
 void const* PrimitiveMappedToSingleColumnECSqlField::_GetGeometryBlob (int* blobSize) const
     {
-    if (!CanGetValue (PRIMITIVETYPE_IGeometry))
-        return NoopECSqlValue::GetSingleton ().GetGeometryBlob(blobSize);
-
     const int columnIndex = GetSqliteColumnIndex ();
     if (blobSize != nullptr)
         *blobSize = GetSqliteStatement ().GetColumnBytes (columnIndex);
@@ -206,14 +175,6 @@ DPoint3d PrimitiveMappedToSingleColumnECSqlField::_GetPoint3D () const
     }
 
 //-----------------------------------------------------------------------------------------
-// @bsimethod                                   Krischan.Eberle                       03/2014
-//+---------------+---------------+---------------+---------------+---------------+------
-IECSqlPrimitiveValue const& PrimitiveMappedToSingleColumnECSqlField::_GetPrimitive () const
-    {
-    return *this;
-    }
-
-//-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       06/2013
 //+---------------+---------------+---------------+---------------+---------------+------
 IECSqlArrayValue const& PrimitiveMappedToSingleColumnECSqlField::_GetArray () const
@@ -231,52 +192,6 @@ IECSqlStructValue const& PrimitiveMappedToSingleColumnECSqlField::_GetStruct () 
     ReportError (ECSqlStatus::Error, "GetStruct cannot be called for primitive columns.");
     BeAssert (false && "GetStruct cannot be called for primitive columns.");
     return NoopECSqlValue::GetSingleton ().GetStruct ();
-    }
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle                    10/2013
-//+---------------+---------------+---------------+---------------+---------------+------
-bool PrimitiveMappedToSingleColumnECSqlField::CanGetValue (PrimitiveType requestedType) const
-    {
-    //For DateTimes and Geometry column type and GetValueXXX type must match. All other types are implicitly
-    //converted to each other by SQLite.
-    return CanGetValue (PRIMITIVETYPE_DateTime, requestedType, "DateTime", "GetValueDateTime") &&
-        CanGetValue (PRIMITIVETYPE_IGeometry, requestedType, "IGeometry", "GetValueGeometry");
-    }
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle                    10/2013
-//+---------------+---------------+---------------+---------------+---------------+------
-bool PrimitiveMappedToSingleColumnECSqlField::CanGetValue (PrimitiveType testType, PrimitiveType requestedType, Utf8CP typeName, Utf8CP getValueMethodName) const
-    {
-    //For DateTimes and Geometry column type and GetValueXXX type must match. All other types are implicitly
-    //converted to each other by SQLite.
-    const auto fieldDataType = m_ecsqlColumnInfo.GetDataType().GetPrimitiveType();
-    if (fieldDataType == testType && requestedType != testType)
-        {
-        Utf8String error;
-        error.Sprintf ("Only %s can be called for a column of the %s type.", getValueMethodName, typeName);
-        ReportError (ECSqlStatus::Error, error.c_str ());
-        return false;
-        }
-
-    if (fieldDataType != testType && requestedType == testType)
-        {
-        Utf8String error;
-        error.Sprintf ("%s cannot be called for a column which is not of the % type.", getValueMethodName, typeName);
-        ReportError (ECSqlStatus::Error, error.c_str ());
-        return false;
-        }
-
-    return true;
-    }
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Affan.Khan                       06/2013
-//+---------------+---------------+---------------+---------------+---------------+------
-int PrimitiveMappedToSingleColumnECSqlField::GetSqliteColumnIndex() const 
-    {
-    return m_sqliteColumnIndex;
     }
 
 END_BENTLEY_SQLITE_EC_NAMESPACE
