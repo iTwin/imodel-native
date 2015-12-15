@@ -104,7 +104,7 @@ public:
     ECOBJECTS_EXPORT static bool        GetUnitForECProperty (UnitR unit, ECPropertyCR ecprop, IECClassLocaterR unitsECClassLocater);
     ECOBJECTS_EXPORT static bool        GetDisplayUnitAndFormatForECProperty(UnitR unit, Utf8StringR displayFormat, UnitCR storedUnit, ECPropertyCR ecprop);
     ECOBJECTS_EXPORT static bool        GetDisplayUnitAndFormatForECProperty (UnitR displayUnit, Utf8StringR displayFormat, UnitCR storedUnit, ECPropertyCR ecprop, IECClassLocaterR unitsECClassLocater);
-    //ECOBJECTS_EXPORT static bool        GetUnitByName (UnitR unit, WCharCP unitName, bool createIfNotFound);
+    ECOBJECTS_EXPORT static bool        GetUnitByName (UnitR unit, Utf8CP unitName);
 
     // Formats the ECValue according to UnitSpecification custom attribute on the ECProperty.
     // If instance is non-null and an IECTypeAdapter can be located to perform the formatting, the IECTypeAdapter::ConvertToString() method will be used

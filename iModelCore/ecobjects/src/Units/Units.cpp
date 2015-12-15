@@ -122,7 +122,6 @@ private:
     bool                    m_createIfNonStandard;
     IECClassLocaterR        m_ecUnitsClassLocater;
 
-    static bool    GetUnitFromAttribute (UnitR unit, IECInstanceCR attr, Utf8CP unitName);
     bool    LocateUnitBySpecification (UnitR unit, Utf8CP propName, Utf8CP propValue) const;
     bool    LocateUnitByKOQ (UnitR unit, Utf8CP koqName) const;
     bool    GetUnitFromSpecifications (UnitR unit, Utf8CP propName, Utf8CP propValue, IECInstanceCR specsAttr) const;
@@ -132,6 +131,7 @@ public:
     bool    LocateUnit (UnitR unit) const;
     bool    LocateUnitByName (UnitR unit, Utf8CP unitName) const;
 
+    static bool    GetUnitFromAttribute(UnitR unit, IECInstanceCR attr, Utf8CP unitName);
     };
     
 /*---------------------------------------------------------------------------------**//**
@@ -320,14 +320,24 @@ bool UnitLocater::LocateUnitByKOQ (UnitR unit, Utf8CP koqName) const
     return false;
     }
 
-////*---------------------------------------------------------------------------------**//**
-////* @bsimethod                                                    Paul.Connelly   04/14
-////+---------------+---------------+---------------+---------------+---------------+------*/
-//bool Unit::GetUnitByName (UnitR unit, WCharCP unitName, bool createIfNotFound)
-//    {
-//    ECUnitsClassLocaterPtr classLocater = ECUnitsClassLocater::Create();
-//    return UnitLocater::LocateUnitByName (unit, unitName, *classLocater, createIfNotFound);
-//    }
+//*---------------------------------------------------------------------------------**//**
+//* @bsimethod                                                    Paul.Connelly   04/14
+//+---------------+---------------+---------------+---------------+---------------+------*/
+bool Unit::GetUnitByName (UnitR unit, Utf8CP unitName)
+    {
+    if (Utf8String::IsNullOrEmpty(unitName))
+        return false;
+
+    ECUnitsClassLocaterPtr classLocater = ECUnitsClassLocater::Create();
+
+    ECClassCP unitClass = classLocater->LocateClass(UNITS_SCHEMA, unitName);
+
+    IECInstancePtr unitAttr;
+    if (NULL != unitClass && (unitAttr = unitClass->GetCustomAttribute(UNIT_ATTRIBUTES)).IsValid())
+        return UnitLocater::GetUnitFromAttribute(unit, *unitAttr, unitName);
+
+    return false;
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/12
