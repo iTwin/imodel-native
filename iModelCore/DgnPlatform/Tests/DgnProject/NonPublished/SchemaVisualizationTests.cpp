@@ -6,6 +6,8 @@
 |
 +--------------------------------------------------------------------------------------*/
 
+#ifdef BENTLEY_WIN32
+
 #include "DgnHandlersTests.h"
 #include <DgnPlatform\DgnPlatformApi.h>
 #include <ECObjects\ECObjectsAPI.h>
@@ -2131,3 +2133,4 @@ objects which will be displayed as view decorations, rather than persisting elem
 geometry to the DgnDb. These will make it easier to provide the intended interactivity.
 */
 
+#endif
