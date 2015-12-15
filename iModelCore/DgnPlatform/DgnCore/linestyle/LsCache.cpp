@@ -688,21 +688,15 @@ StatusInt       LsInternalComponent::_DoStroke (ViewContextP context, DPoint3dCP
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    John.Gooding                    10/2009
 +---------------+---------------+---------------+---------------+---------------+------*/
-LsInternalComponentPtr LsInternalComponent::CreateInternalComponent
-(
-LsLocation&     location
-)
+LsInternalComponentPtr LsInternalComponent::CreateInternalComponent(LsLocation& location)
     {
-    LsLocation  tmpLocation;
-    tmpLocation.SetFrom (&location, LsComponentId(LsComponentType::Internal, 0));
-
-    BeAssert(false && "CreateInternalComponent");
     LsInternalComponent*  comp = new LsInternalComponent (&location);
     comp->m_isDirty = true;
-#if defined(NOTNOW)
-    comp->Init (NULL);
-#endif
-    
+
+    comp->AppendStroke (fc_hugeVal, true);
+    comp->CalcPatternLength();
+    comp->PostCreate ();
+
     return comp;
     }
 
@@ -722,16 +716,19 @@ StatusInt LsDefinition::UpdateStyleTable () const
 +---------------+---------------+---------------+---------------+---------------+------*/
 LsStrokePatternComponentP  LsInternalComponent::LoadInternalComponent(LsComponentReader*reader)
     {
-#if defined(NOTNOW)
-    Json::Value     jsonValue;
-    reader->GetJsonValue(jsonValue);
     const LsLocation* location = reader->GetSource();
-    LsStrokePatternComponentPtr compPtr;
-    LsStrokePatternComponent::CreateFromJson(compPtr, jsonValue, reader->GetSource());
-#endif
 
-    BeAssert(false && "LoadInternalComponent");
-    return nullptr;
+    LsInternalComponent*  comp = new LsInternalComponent (location);
+    
+    comp->AppendStroke (fc_hugeVal, true);
+    comp->CalcPatternLength();
+    comp->PostCreate ();
+
+    //  The original code set its type back to match the original type so it would 
+    //  be found in the search but I don't understand when they differ.
+    //  BeAssert (reader->GetRscType() == LsResourceType::Internal);
+
+    return  comp;
     }
 
 //---------------------------------------------------------------------------------------
@@ -1014,9 +1011,10 @@ BentleyStatus       LsComponentReader::_LoadDefinition ()
             spec = LineStyleProperty::RasterImage();
             break;
         case LsComponentType::Internal:
+            return ERROR;
+
         default:
             BeAssert(false && "invalid component type");
-            return ERROR;
         }
 
     GetDgnDb().QueryProperty(m_jsonSource, spec, GetSource()->GetComponentId().GetValue());

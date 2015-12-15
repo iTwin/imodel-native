@@ -278,7 +278,7 @@ LineStyleStatus LsPointComponent::CreateFromJson(LsPointComponentP*newPoint, Jso
         JsonValueCR  entry = symbols[index];
         LsSymbolReference symbolRef;
 
-        LsComponentId symbolId = LsJsonHelpers::GetComponentId(entry, "symType", "symValue", LsComponentType::PointSymbol);
+        LsComponentId symbolId = LsJsonHelpers::GetComponentId(entry, "symType", "symId", LsComponentType::PointSymbol);
         LsLocation symbolLocation;
         symbolLocation.SetLocation(*thisLocation->GetDgnDb(), symbolId);
         LsSymbolComponentP symbolComponent = dynamic_cast<LsSymbolComponentP>(DgnLineStyles::GetLsComponent(symbolLocation));
