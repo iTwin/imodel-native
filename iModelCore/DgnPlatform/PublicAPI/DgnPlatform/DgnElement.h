@@ -1536,21 +1536,34 @@ typedef GeometricElementCreateParams<Placement2d> ElementCreateParams2d;
 typedef GeometricElementCreateParams<Placement3d> ElementCreateParams3d;
 
 //=======================================================================================
-//! A 3d element that exists in the physical coordinate space of a DgnDb.
+//! An abstract base class for elements that occupy real world 3-dimensional space
+//! @ingroup DgnElementGroup
+// @bsiclass                                                    Shaun.Sewall    12/15
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE SpatialElement : GeometricElement3d<DgnElement>
+{
+    DEFINE_T_SUPER(GeometricElement3d<DgnElement>);
+
+public:
+    typedef ElementCreateParams3d CreateParams;
+
+    explicit SpatialElement(CreateParams const& params) : T_Super(params, params.m_categoryId, params.m_placement) {}
+};
+
+//=======================================================================================
+//! A PhysicalElement is a SpatialElement that has mass and can be physically "touched".
 //! @ingroup DgnElementGroup
 // @bsiclass                                                    Keith.Bentley   04/15
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE PhysicalElement : GeometricElement3d<DgnElement>
+struct EXPORT_VTABLE_ATTRIBUTE PhysicalElement : SpatialElement
 {
-    DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_PhysicalElement, GeometricElement3d<DgnElement>)
+    DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_PhysicalElement, SpatialElement)
 
 protected:
     PhysicalElementCP _ToPhysicalElement() const override {return this;}
 
 public:
-    typedef ElementCreateParams3d CreateParams;
-
-    explicit PhysicalElement(CreateParams const& params) : T_Super(params, params.m_categoryId, params.m_placement) {}
+    explicit PhysicalElement(CreateParams const& params) : T_Super(params) {}
 
     //! Create an instance of a PhysicalElement from a CreateParams.
     //! @note This is a static method that creates an instance of the PhysicalElement class. To create subclasses, use static methods on the appropriate class.
@@ -1560,6 +1573,20 @@ public:
     //! @param[in] model The PhysicalModel for the new PhysicalElement.
     //! @param[in] categoryId The category for the new PhysicalElement.
     DGNPLATFORM_EXPORT static PhysicalElementPtr Create(PhysicalModelR model, DgnCategoryId categoryId);
+};
+
+//=======================================================================================
+//! A SpatialElement that identifies a "tracked" real word 3-dimensional location but has no mass and cannot be "touched".
+//! Examples include grid lines, parcel boundaries, and work areas.
+//! @ingroup DgnElementGroup
+// @bsiclass                                                    Shaun.Sewall    12/15
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE SpatialLocationElement : SpatialElement
+{
+    DEFINE_T_SUPER(SpatialElement);
+
+public:
+    explicit SpatialLocationElement(CreateParams const& params) : T_Super(params) {}
 };
 
 //=======================================================================================
