@@ -385,6 +385,7 @@ protected:
     bool            m_frustumValid = false;
     bool            m_needSynchWithViewController = true;
     bool            m_needsHeal = true;
+    bool            m_needsRefresh = true;
     bool            m_targetCenterValid = false;
     bool            m_undoActive = false;
     int             m_maxUndoSteps = 20;
