@@ -6,6 +6,8 @@
 |
 +--------------------------------------------------------------------------------------*/
 
+#ifdef BENTLEY_WIN32
+
 #include "DgnHandlersTests.h"
 #include <DgnPlatform\DgnPlatformApi.h>
 #include <ECObjects\ECObjectsAPI.h>
@@ -1176,8 +1178,8 @@ TEST_F(SchemaVisualizationTests, TestClassDiagram)
 //=======================================================================================
 extern "C" //[SVT_EXTERN]
     {
-    __declspec(dllimport) gvplugin_library_t gvplugin_dot_layout_LTX_library;
-    __declspec(dllimport) gvplugin_library_t gvplugin_core_LTX_library;
+    IMPORT_ATTRIBUTE gvplugin_library_t gvplugin_dot_layout_LTX_library;
+    IMPORT_ATTRIBUTE gvplugin_library_t gvplugin_core_LTX_library;
     }
 
 //=======================================================================================
@@ -2131,3 +2133,4 @@ objects which will be displayed as view decorations, rather than persisting elem
 geometry to the DgnDb. These will make it easier to provide the intended interactivity.
 */
 
+#endif
