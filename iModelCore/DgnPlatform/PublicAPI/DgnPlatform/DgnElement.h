@@ -1003,6 +1003,7 @@ protected:
     DGNPLATFORM_EXPORT virtual Code _GenerateDefaultCode();
 
     virtual GeometrySourceCP _ToGeometrySource() const {return nullptr;}
+    virtual SpatialElementCP _ToSpatialElement() const {return nullptr;}
     virtual PhysicalElementCP _ToPhysicalElement() const {return nullptr;}
     virtual AnnotationElementCP _ToAnnotationElement() const {return nullptr;}
     virtual DrawingElementCP _ToDrawingElement() const {return nullptr;}
@@ -1039,26 +1040,28 @@ public:
     DGNPLATFORM_EXPORT GeometrySource2dCP ToGeometrySource2d() const;
     DGNPLATFORM_EXPORT GeometrySource3dCP ToGeometrySource3d() const;
 
-    DefinitionElementCP ToDefinitionElement() const {return _ToDefinitionElement();} //!< more efficient substitute for dynamic_cast<DefinitionElementCP>(el)
-    DictionaryElementCP ToDictionaryElement() const {return _ToDictionaryElement();} //!< more efficient substitute for dynamic_cast<DictionaryElementCP>(el)
-    PhysicalElementCP ToPhysicalElement() const {return _ToPhysicalElement();}    //!< more efficient substitute for dynamic_cast<PhysicalElementCP>(el)
-    AnnotationElementCP ToAnnotationElement() const {return _ToAnnotationElement();}       //!< more efficient substitute for dynamic_cast<AnnotationElementCP>(el)
-    DrawingElementCP ToDrawingElement() const {return _ToDrawingElement();}       //!< more efficient substitute for dynamic_cast<DrawingElementCP>(el)
-    SheetElementCP ToSheetElement() const {return _ToSheetElement();}       //!< more efficient substitute for dynamic_cast<SheetElementCP>(el)
-    IElementGroupCP ToIElementGroup() const {return _ToIElementGroup();}          //!< more efficient substitute for dynamic_cast<IElementGroup>(el)
-    SystemElementCP ToSystemElement() const {return _ToSystemElement();}          //!< more efficient substitute for dynamic_cast<SystemElementCP>(el)
+    DefinitionElementCP ToDefinitionElement() const {return _ToDefinitionElement();}    //!< more efficient substitute for dynamic_cast<DefinitionElementCP>(el)
+    DictionaryElementCP ToDictionaryElement() const {return _ToDictionaryElement();}    //!< more efficient substitute for dynamic_cast<DictionaryElementCP>(el)
+    SpatialElementCP ToSpatialElement() const {return _ToSpatialElement();}             //!< more efficient substitute for dynamic_cast<SpatialElementCP>(el)
+    PhysicalElementCP ToPhysicalElement() const {return _ToPhysicalElement();}          //!< more efficient substitute for dynamic_cast<PhysicalElementCP>(el)
+    AnnotationElementCP ToAnnotationElement() const {return _ToAnnotationElement();}    //!< more efficient substitute for dynamic_cast<AnnotationElementCP>(el)
+    DrawingElementCP ToDrawingElement() const {return _ToDrawingElement();}             //!< more efficient substitute for dynamic_cast<DrawingElementCP>(el)
+    SheetElementCP ToSheetElement() const {return _ToSheetElement();}                   //!< more efficient substitute for dynamic_cast<SheetElementCP>(el)
+    IElementGroupCP ToIElementGroup() const {return _ToIElementGroup();}                //!< more efficient substitute for dynamic_cast<IElementGroup>(el)
+    SystemElementCP ToSystemElement() const {return _ToSystemElement();}                //!< more efficient substitute for dynamic_cast<SystemElementCP>(el)
     
     GeometrySourceP ToGeometrySourceP() {return const_cast<GeometrySourceP>(_ToGeometrySource());} //!< more efficient substitute for dynamic_cast<GeometrySourceP>(el)
     GeometrySource2dP ToGeometrySource2dP() {return const_cast<GeometrySource2dP>(ToGeometrySource2d());} //!< more efficient substitute for dynamic_cast<GeometrySource2dP>(el)
     GeometrySource3dP ToGeometrySource3dP() {return const_cast<GeometrySource3dP>(ToGeometrySource3d());} //!< more efficient substitute for dynamic_cast<GeometrySource3dP>(el)
 
-    DefinitionElementP ToDefinitionElementP() {return const_cast<DefinitionElementP>(_ToDefinitionElement());} //!< more efficient substitute for dynamic_cast<DefinitionElementP>(el)
-    DictionaryElementP ToDictionaryElementP() {return const_cast<DictionaryElementP>(_ToDictionaryElement());} //!< more efficient substitute for dynamic_cast<DictionaryElementP>(el)
-    PhysicalElementP ToPhysicalElementP() {return const_cast<PhysicalElementP>(_ToPhysicalElement());}     //!< more efficient substitute for dynamic_cast<PhysicalElementP>(el)
-    AnnotationElementP ToAnnotationElementP() {return const_cast<AnnotationElementP>(_ToAnnotationElement());}         //!< more efficient substitute for dynamic_cast<AnnotationElementP>(el)
-    DrawingElementP ToDrawingElementP() {return const_cast<DrawingElementP>(_ToDrawingElement());}         //!< more efficient substitute for dynamic_cast<DrawingElementP>(el)
-    SheetElementP ToSheetElementP() {return const_cast<SheetElementP>(_ToSheetElement());}         //!< more efficient substitute for dynamic_cast<SheetElementP>(el)
-    SystemElementP ToSystemElementP() {return const_cast<SystemElementP>(_ToSystemElement());}             //!< more efficient substitute for dynamic_cast<SystemElementP>(el)
+    DefinitionElementP ToDefinitionElementP() {return const_cast<DefinitionElementP>(_ToDefinitionElement());}  //!< more efficient substitute for dynamic_cast<DefinitionElementP>(el)
+    DictionaryElementP ToDictionaryElementP() {return const_cast<DictionaryElementP>(_ToDictionaryElement());}  //!< more efficient substitute for dynamic_cast<DictionaryElementP>(el)
+    SpatialElementP ToSpatialElementP() {return const_cast<SpatialElementP>(_ToSpatialElement());}              //!< more efficient substitute for dynamic_cast<PhysicalElementP>(el)
+    PhysicalElementP ToPhysicalElementP() {return const_cast<PhysicalElementP>(_ToPhysicalElement());}          //!< more efficient substitute for dynamic_cast<PhysicalElementP>(el)
+    AnnotationElementP ToAnnotationElementP() {return const_cast<AnnotationElementP>(_ToAnnotationElement());}  //!< more efficient substitute for dynamic_cast<AnnotationElementP>(el)
+    DrawingElementP ToDrawingElementP() {return const_cast<DrawingElementP>(_ToDrawingElement());}              //!< more efficient substitute for dynamic_cast<DrawingElementP>(el)
+    SheetElementP ToSheetElementP() {return const_cast<SheetElementP>(_ToSheetElement());}                      //!< more efficient substitute for dynamic_cast<SheetElementP>(el)
+    SystemElementP ToSystemElementP() {return const_cast<SystemElementP>(_ToSystemElement());}                  //!< more efficient substitute for dynamic_cast<SystemElementP>(el)
     //! @}
 
     bool Is3d() const {return nullptr != ToGeometrySource3d();}                     //!< Determine whether this element is 3d or not
@@ -1603,6 +1606,9 @@ struct EXPORT_VTABLE_ATTRIBUTE SpatialElement : GeometricElement3d<DgnElement>
 {
     DEFINE_T_SUPER(GeometricElement3d<DgnElement>);
 
+protected:
+    SpatialElementCP _ToSpatialElement() const override final {return this;}
+
 public:
     typedef ElementCreateParams3d CreateParams;
 
@@ -1619,7 +1625,7 @@ struct EXPORT_VTABLE_ATTRIBUTE PhysicalElement : SpatialElement
     DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_PhysicalElement, SpatialElement)
 
 protected:
-    PhysicalElementCP _ToPhysicalElement() const override {return this;}
+    PhysicalElementCP _ToPhysicalElement() const override final {return this;}
 
 public:
     explicit PhysicalElement(CreateParams const& params) : T_Super(params) {}
@@ -1880,23 +1886,28 @@ public:
 };
 
 //=======================================================================================
-//! @note Instead of using this class, create own subclass (somewhere in DgnElement hierarchy)
-//! and use the IElementGroupOf interface to add grouping behavior to that subclass.
-//! @note This class is only temporarily here to support DgnV8 conversion
-//! @private
-// @bsiclass                                                    Shaun.Sewall    05/15
+//! A SpatialElement that groups other SpatialElements using the ElementGroupsMembers relationship
+// @bsiclass                                                    Shaun.Sewall    12/15
 //=======================================================================================
-// WIP: Obsolete. Replaced by IElementGroup
-struct EXPORT_VTABLE_ATTRIBUTE ElementGroup : DgnElement, IElementGroupOf<DgnElement>
+struct EXPORT_VTABLE_ATTRIBUTE SpatialGroupElement : SpatialElement, IElementGroupOf<SpatialElement>
 {
-    DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_ElementGroup, DgnElement)
+    DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_SpatialGroupElement, SpatialElement)
 
 protected:
     Dgn::IElementGroupCP _ToIElementGroup() const override final {return this;}
     virtual Dgn::DgnElementCP _ToGroupElement() const override final {return this;}
 
 public:
-    explicit ElementGroup(CreateParams const& params) : T_Super(params) {}
+    //! @private
+    explicit SpatialGroupElement(CreateParams const& params) : T_Super(params) {}
+
+    //! Create a new SpatialGroupElement from a model and DgnCategoryId, using the default values for all other parameters.
+    //! @param[in] model The PhysicalModel for the new SpatialGroupElement.
+    //! @param[in] categoryId The category for the new SpatialGroupElement.
+    DGNPLATFORM_EXPORT static SpatialGroupElementPtr Create(PhysicalModelR model, DgnCategoryId categoryId);
+
+    //! Creates a new SpatialGroupElement
+    static SpatialGroupElementPtr Create(CreateParams const& params) {return new SpatialGroupElement(params);}
 };
 
 //=======================================================================================

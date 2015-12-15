@@ -1471,6 +1471,23 @@ DgnElementIdSet ElementGroupsMembers::QueryGroups(DgnElementCR member)
     return elementIdSet;
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Shaun.Sewall                    12/2015
+//---------------------------------------------------------------------------------------
+SpatialGroupElementPtr SpatialGroupElement::Create(PhysicalModelR model, DgnCategoryId categoryId)
+    {
+    DgnDbR db = model.GetDgnDb();
+    DgnClassId classId = db.Domains().GetClassId(dgn_ElementHandler::SpatialGroup::GetHandler());
+
+    if (!classId.IsValid() || !categoryId.IsValid())
+        {
+        BeAssert(false);
+        return nullptr;
+        }
+
+    return new SpatialGroupElement(CreateParams(db, model.GetModelId(), classId, categoryId));
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      06/15
 +---------------+---------------+---------------+---------------+---------------+------*/

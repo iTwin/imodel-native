@@ -42,7 +42,7 @@ HANDLER_DEFINE_MEMBERS(System)
 namespace dgn_ElementHandler
 {
 HANDLER_DEFINE_MEMBERS(Element)
-HANDLER_DEFINE_MEMBERS(Group)
+HANDLER_DEFINE_MEMBERS(SpatialGroup)
 HANDLER_DEFINE_MEMBERS(Physical)
 HANDLER_DEFINE_MEMBERS(Annotation)
 HANDLER_DEFINE_MEMBERS(Drawing)
@@ -97,7 +97,7 @@ DgnBaseDomain::DgnBaseDomain() : DgnDomain(DGN_ECSCHEMA_NAME, "Base DgnDb Domain
     RegisterHandler(dgn_ElementHandler::Annotation::GetHandler());
     RegisterHandler(dgn_ElementHandler::Drawing::GetHandler());
     RegisterHandler(dgn_ElementHandler::Sheet::GetHandler());
-    RegisterHandler(dgn_ElementHandler::Group::GetHandler());
+    RegisterHandler(dgn_ElementHandler::SpatialGroup::GetHandler());
     RegisterHandler(dgn_ElementHandler::VolumeElementHandler::GetHandler());
     RegisterHandler(dgn_ElementHandler::TextAnnotationHandler::GetHandler());
     RegisterHandler(dgn_ElementHandler::PhysicalTextAnnotationHandler::GetHandler());
