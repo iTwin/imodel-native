@@ -2580,7 +2580,7 @@ void ElementGeomIO::Debug(IDebugOutput& output, GeometryStreamCR stream, DgnDbR 
 
     if (output._WantGeomEntryIds() && !isPart)
         {
-        ElementGeometryCollection collection(db, stream);
+        ElementGeometryCollection collection(stream, db);
 
         output._DoOutputLine(Utf8PrintfString("\n--- GeometryStream Entry Ids ---\n\n"));
 
@@ -2599,7 +2599,9 @@ void ElementGeomIO::Debug(IDebugOutput& output, GeometryStreamCR stream, DgnDbR 
             if (!partGeom.IsValid())
                 continue;
 
-            ElementGeometryCollection partCollection(*partGeom, iter);
+            ElementGeometryCollection partCollection(partGeom->GetGeometryStream(), db);
+
+            partCollection.SetNestedIteratorContext(iter); // Iterate part GeomStream in context of parent...
 
             for (auto partIter : partCollection)
                 {
@@ -3333,6 +3335,160 @@ SnapStatus GeometrySource::_OnSnap(SnapContextR context) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  12/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
+ElementGeometryCollection::Iterator::EntryType ElementGeometryCollection::Iterator::GetEntryType() const
+    {
+    switch (m_egOp.m_opCode)
+        {
+        case ElementGeomIO::OpCode::GeomPartInstance:
+            return EntryType::GeomPart;
+
+        case ElementGeomIO::OpCode::PointPrimitive:
+        case ElementGeomIO::OpCode::PointPrimitive2d:
+        case ElementGeomIO::OpCode::ArcPrimitive:
+        case ElementGeomIO::OpCode::CurvePrimitive:
+            return EntryType::CurvePrimitive;
+
+        case ElementGeomIO::OpCode::CurveVector:
+            return EntryType::CurveVector;
+
+        case ElementGeomIO::OpCode::Polyface:
+            return EntryType::Polyface;
+
+        case ElementGeomIO::OpCode::SolidPrimitive:
+            return EntryType::SolidPrimitive;
+
+        case ElementGeomIO::OpCode::BsplineSurface:
+            return EntryType::BsplineSurface;
+
+        case ElementGeomIO::OpCode::ParasolidBRep:
+            return EntryType::SolidKernelEntity;
+
+        case ElementGeomIO::OpCode::BRepPolyface:
+        case ElementGeomIO::OpCode::BRepPolyfaceExact:
+            return EntryType::BRepPolyface;
+
+        case ElementGeomIO::OpCode::BRepEdges:
+        case ElementGeomIO::OpCode::BRepFaceIso:
+            return EntryType::BRepCurveVector;
+
+        case ElementGeomIO::OpCode::TextString:
+            return EntryType::TextString;
+
+        default:
+            BeAssert(false); return EntryType::Unknown;
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  12/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ElementGeometryCollection::Iterator::IsCurve() const
+    {
+    switch (m_egOp.m_opCode)
+        {
+        case ElementGeomIO::OpCode::PointPrimitive:
+        case ElementGeomIO::OpCode::PointPrimitive2d:
+        case ElementGeomIO::OpCode::ArcPrimitive:
+        case ElementGeomIO::OpCode::CurvePrimitive:
+        case ElementGeomIO::OpCode::BRepEdges: // brep edge/face iso are always unstructured open curves (boundary type none)...
+        case ElementGeomIO::OpCode::BRepFaceIso:
+            return true;
+
+        case ElementGeomIO::OpCode::CurveVector:
+            {
+            ElementGeometryPtr geom = GetGeometryPtr();
+
+            return (geom.IsValid() && !geom->GetAsCurveVector()->IsAnyRegionType()); // Accept "none" boundary type...
+            }
+
+        default:
+            return false;
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  12/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ElementGeometryCollection::Iterator::IsSurface() const
+    {
+    switch (m_egOp.m_opCode)
+        {
+        case ElementGeomIO::OpCode::BsplineSurface:
+            return true;
+
+        case ElementGeomIO::OpCode::CurveVector:
+            {
+            ElementGeometryPtr geom = GetGeometryPtr();
+
+            return (geom.IsValid() && geom->GetAsCurveVector()->IsAnyRegionType());
+            }
+
+        case ElementGeomIO::OpCode::SolidPrimitive:
+            {
+            ElementGeometryPtr geom = GetGeometryPtr();
+
+            return (geom.IsValid() && !geom->GetAsISolidPrimitive()->GetCapped());
+            }
+
+        case ElementGeomIO::OpCode::Polyface:
+        case ElementGeomIO::OpCode::BRepPolyface: // NOTE: Won't be volumetric for a solid brep that had face attachments!
+        case ElementGeomIO::OpCode::BRepPolyfaceExact:
+            {
+            ElementGeometryPtr geom = GetGeometryPtr();
+
+            return (geom.IsValid() && !geom->GetAsPolyfaceHeader()->IsClosedByEdgePairing());
+            }
+
+        case ElementGeomIO::OpCode::ParasolidBRep:
+            {
+            auto ppfb = flatbuffers::GetRoot<FB::BRepData>(m_egOp.m_data);
+
+            return (ISolidKernelEntity::EntityType_Sheet == ((ISolidKernelEntity::KernelEntityType) ppfb->brepType()));
+            }
+
+        default:
+            return false;
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  12/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ElementGeometryCollection::Iterator::IsSolid() const
+    {
+    switch (m_egOp.m_opCode)
+        {
+        case ElementGeomIO::OpCode::SolidPrimitive:
+            {
+            ElementGeometryPtr geom = GetGeometryPtr();
+
+            return (geom.IsValid() && geom->GetAsISolidPrimitive()->GetCapped());
+            }
+
+        case ElementGeomIO::OpCode::Polyface:
+        case ElementGeomIO::OpCode::BRepPolyface:
+        case ElementGeomIO::OpCode::BRepPolyfaceExact:
+            {
+            ElementGeometryPtr geom = GetGeometryPtr();
+
+            return (geom.IsValid() && geom->GetAsPolyfaceHeader()->IsClosedByEdgePairing());
+            }
+
+        case ElementGeomIO::OpCode::ParasolidBRep:
+            {
+            auto ppfb = flatbuffers::GetRoot<FB::BRepData>(m_egOp.m_data);
+
+            return (ISolidKernelEntity::EntityType_Solid == ((ISolidKernelEntity::KernelEntityType) ppfb->brepType()));
+            }
+
+        default:
+            return false;
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  12/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 ElementGeometryPtr ElementGeometryCollection::Iterator::GetGeometryPtr() const
     {
     if (m_state->m_geometry.IsValid())
@@ -3479,21 +3635,18 @@ void ElementGeometryCollection::Iterator::ToNext()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  12/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-ElementGeometryCollection::ElementGeometryCollection(DgnGeomPartCR geomPart, Iterator& iter) : m_state(iter.m_state->m_dgnDb)
+void ElementGeometryCollection::SetNestedIteratorContext(Iterator const& iter)
     {
-    m_data = geomPart.GetGeometryStream().GetData();
-    m_dataSize = geomPart.GetGeometryStream().GetSize();
-
-    m_state.m_geomParams        = iter.m_state->m_geomParams;
+    m_state.m_geomParams = iter.m_state->m_geomParams;
     m_state.m_geomStreamEntryId = iter.m_state->m_geomStreamEntryId;
-    m_state.m_sourceToWorld     = iter.m_state->m_sourceToWorld;
-    m_state.m_geomToSource      = iter.m_state->m_geomToSource;
+    m_state.m_sourceToWorld = iter.m_state->m_sourceToWorld;
+    m_state.m_geomToSource = iter.m_state->m_geomToSource;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-ElementGeometryCollection::ElementGeometryCollection(DgnDbR dgnDb, GeometryStreamCR geom) : m_state(dgnDb)
+ElementGeometryCollection::ElementGeometryCollection(GeometryStreamCR geom, DgnDbR dgnDb) : m_state(dgnDb)
     {
     m_data = geom.GetData();
     m_dataSize = geom.GetSize();
@@ -3710,7 +3863,7 @@ bool ElementGeometryBuilder::Append(DgnGeomPartId geomPartId, TransformCR geomTo
         return false;
 
     DRange3d localRange = DRange3d::NullRange();
-    ElementGeometryCollection collection(m_dgnDb, geomPart->GetGeometryStream());
+    ElementGeometryCollection collection(geomPart->GetGeometryStream(), m_dgnDb);
 
     collection.SetBRepOutput(ElementGeometryCollection::BRepOutput::Mesh); // Can just use the mesh and avoid creating the ISolidKernelEntity...
 

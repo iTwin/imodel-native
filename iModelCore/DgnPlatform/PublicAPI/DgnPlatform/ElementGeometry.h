@@ -299,6 +299,21 @@ struct ElementGeometryCollection
     {
     private:
 
+        enum class EntryType
+        {
+            Unknown             = 0,  //!< Invalid
+            GeomPart            = 1,  //!< DgnGeomPart reference
+            CurvePrimitive      = 2,  //!< A single open curve
+            CurveVector         = 3,  //!< Open paths, planar regions, and unstructured curve collections
+            SolidPrimitive      = 4,  //!< ISolidPrimitive
+            BsplineSurface      = 5,  //!< MSBSplineSurface
+            Polyface            = 6,  //!< Polyface
+            SolidKernelEntity   = 7,  //!< SolidKernelEntity
+            TextString          = 8,  //!< TextString
+            BRepPolyface        = 9,  //!< BRep surface mesh (from BRepOutput::Auto when Parasolid not available or if requested by BRepOutput::Mesh)
+            BRepCurveVector     = 10, //!< BRep edge/face curves (when requested by BRepOutput::Edges | BRepOutput::FaceIso)
+        };
+
         struct CurrentState
         {
             DgnDbR                  m_dgnDb;
@@ -342,6 +357,11 @@ struct ElementGeometryCollection
         Render::GeometryParamsCR GetGeometryParams() const {return m_state->m_geomParams;}
         DgnGeomPartId GetGeomPartId() const {return m_state->m_geomStreamEntryId.GetGeomPartId();} //!< Returns invalid id if not a GeomPart... 
         GeometryStreamEntryId GetGeometryStreamEntryId() const {return m_state->m_geomStreamEntryId;} //!< Returns primitive id for current geometry...
+        
+        DGNPLATFORM_EXPORT EntryType GetEntryType() const;  //!< check geometry type to avoid creating ElementGeometryPtr for un-desired types.
+        DGNPLATFORM_EXPORT bool IsCurve() const;            //!< open and unstructured curves check that avoids creating ElementGeometryPtr when possible.
+        DGNPLATFORM_EXPORT bool IsSurface() const;          //!< closed curve, planar region, surface, and open mesh check that avoids creating ElementGeometryPtr when possible.
+        DGNPLATFORM_EXPORT bool IsSolid() const;            //!< solid and volumetric mesh check that avoids creating ElementGeometryPtr when possible.
 
         DgnGeomPartPtr GetGeomPartPtr() const {return m_state->m_dgnDb.GeomParts().LoadGeomPart(m_state->m_geomStreamEntryId.GetGeomPartId());}
         DGNPLATFORM_EXPORT ElementGeometryPtr GetGeometryPtr() const;
@@ -365,10 +385,20 @@ public:
     const_iterator begin() const {return const_iterator(m_data, m_dataSize, m_state);}
     const_iterator end() const {return const_iterator();}
 
+    //! Override the default BRep handling option, BRepOutput::Auto. For example, an application can set to BRepOutput::BRep to
+    //! detect when BReps are present in the GeometryStream to avoid modifications when Parasolid is not available.
     void SetBRepOutput(BRepOutput bRep) {m_state.m_bRepOutput = bRep;}
 
-    DGNPLATFORM_EXPORT ElementGeometryCollection (DgnGeomPartCR geomPart, Iterator&); // Use to iterate DgnGeomPart in context of parent...should I just pass 5 extra params instead of iterator???
-    DGNPLATFORM_EXPORT ElementGeometryCollection (DgnDbR dgnDb, GeometryStreamCR geom);
+    //! Iterate a GeometryStream for a DgnGeomPart using the current GeometryParams and geometry to world transform
+    //! for of part instance as found when iterating a GeometrySource with a part reference.
+    DGNPLATFORM_EXPORT void SetNestedIteratorContext(Iterator const& iter);
+    
+    //! Iterate a GeometryStream.
+    //! @note It is up to the caller to keep the GeometryStream in memory by holding onto a DgnGeomPartPtr, etc. until done iterating.
+    DGNPLATFORM_EXPORT ElementGeometryCollection (GeometryStreamCR geom, DgnDbR dgnDb);
+
+    //! Iterate a GeometrySource.
+    //! @note It is up to the caller to keep the GeometrySource in memory by holding onto a DgnElementPtr, etc. until done iterating.
     DGNPLATFORM_EXPORT ElementGeometryCollection (GeometrySourceCR source);
 
 }; // ElementGeometryCollection
