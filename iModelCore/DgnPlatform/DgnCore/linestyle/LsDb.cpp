@@ -210,6 +210,27 @@ LineStyleStatus LsCompoundComponent::CreateFromJson(LsCompoundComponentPtr& newC
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    12/2015
 //---------------------------------------------------------------------------------------
+void LsPointComponent::SaveLineCodeIdToJson(JsonValueR json, LsComponentId patternId)
+    {
+    if (patternId.GetType() != LsComponentType::LineCode)
+        json["lcType"] = (int)patternId.GetType();
+    json["lcId"] = patternId.GetValue();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    12/2015
+//---------------------------------------------------------------------------------------
+void LsPointComponent::SaveSymbolIdToJson(JsonValueR json, LsComponentId symbolId)
+    {
+    if (symbolId.GetType() != LsComponentType::PointSymbol)
+        json["symType"] = (int)symbolId.GetType();
+
+    json["symId"] = symbolId.GetValue();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    12/2015
+//---------------------------------------------------------------------------------------
 void LsPointComponent::SaveToJson(Json::Value& result)
     {
     LsComponent::SaveToJson(result);
@@ -220,9 +241,7 @@ void LsPointComponent::SaveToJson(Json::Value& result)
         return;
 
     LsComponentId  pattern = strokePattern->GetId();
-    if (pattern.GetType() != LsComponentType::LineCode)
-        result["lcType"] = (int)pattern.GetType();
-    result["lcId"] = pattern.GetValue();
+    SaveLineCodeIdToJson(result, pattern);
 
     Json::Value symbols(Json::arrayValue);
     uint32_t index = 0;
@@ -236,10 +255,8 @@ void LsPointComponent::SaveToJson(Json::Value& result)
             continue;       //  NEEDSWORK_LINESTYLE report error
 
         LsComponentId symbolId = symbolComponent->GetId();
-        if (symbolId.GetType() != LsComponentType::PointSymbol)
-            entry["symType"] = (int)symbolId.GetType();
+        SaveSymbolIdToJson(entry, symbolId);
 
-        entry["symValue"] = symbolId.GetValue();
         entry["strokeNnum"] = symRef.GetStrokeNumber();
         if (symRef.GetXOffset() != 0.0)
             entry["xOffset"] = symRef.GetXOffset();
@@ -434,35 +451,34 @@ LineStyleStatus LsSymbolComponent::CreateFromJson(LsSymbolComponentPtr&newComp, 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    12/2015
 //---------------------------------------------------------------------------------------
-void LsSymbolComponent::SaveToJson(Json::Value& result)
+void LsSymbolComponent::SaveSymbolDataToJson(Json::Value& result, DPoint3dCR base, DPoint3dCR size, DgnGeomPartId const& geomPartId, int32_t flags, double storedScale, 
+                                             bool colorBySubcategory, ColorDefR lineColor, ColorDefR fillColor, bool weightBySubcategory, int weight)
     {
-    LsComponent::SaveToJson(result);
+    if (base.x != 0)
+        result["baseX"] = base.x;
+    if (base.y != 0)
+        result["baseY"] = base.y;
+    if (base.z != 0)
+        result["baseZ"] = base.z;
+    if (size.x != 0)
+        result["sizeX"] = size.x;
+    if (size.y != 0)
+        result["sizeY"] = size.y;
+    if (size.z != 0)
+        result["sizeZ"] = size.z;
 
-    if (m_symBase.x != 0)
-        result["baseX"] = m_symBase.x;
-    if (m_symBase.y != 0)
-        result["baseY"] = m_symBase.y;
-    if (m_symBase.z != 0)
-        result["baseZ"] = m_symBase.z;
-    if (m_symSize.x != 0)
-        result["sizeX"] = m_symSize.x;
-    if (m_symSize.y != 0)
-        result["sizeY"] = m_symSize.y;
-    if (m_symSize.z != 0)
-        result["sizeZ"] = m_symSize.z;
+    result["geomPartId"] = geomPartId.GetValue();
+    result["symFlags"] = flags;
 
-    result["geomPartId"] = m_geomPartId.GetValue();
-    result["symFlags"] = m_symFlags;
+    if (storedScale != 0)
+        result["scale"] = storedScale;
 
-    if (m_storedScale != 0)
-        result["scale"] = m_storedScale;
-
-    if (m_lineColorByLevel)
+    if (colorBySubcategory)
         result["colorBySubCat"] = 1;
     else
-        result["color"] = m_lineColor.GetValue();
+        result["color"] = lineColor.GetValue();
 
-    result["fillColor"] = m_fillColor.GetValue();
+    result["fillColor"] = fillColor.GetValue();
 
 #if defined(NEEDSWORKLINESTYLE_FILLCOLOR)
     // If we don't have a solid color fill, set fill to match line color...
@@ -484,7 +500,42 @@ void LsSymbolComponent::SaveToJson(Json::Value& result)
         }
 #endif
 
-    result["weight"] = m_weight;
+    result["weight"] = weight;
+
+#if defined(NEEDSWORKLINESTYLE_FILLCOLOR)
+    if (params.IsWeightFromSubCategoryAppearance())
+        v10Symbol->m_weight = 0; // NEEDSWORK: v10Symbol->m_weightBySubCategory = true;
+    else
+        v10Symbol->m_weight = params.GetWeight();
+#endif
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    12/2015
+//---------------------------------------------------------------------------------------
+void LsSymbolComponent::SaveToJson(Json::Value& result)
+    {
+    LsComponent::SaveToJson(result);
+
+#if defined(NEEDSWORKLINESTYLE_FILLCOLOR)
+    // If we don't have a solid color fill, set fill to match line color...
+    if (FillDisplay::Never == params.GetFillDisplay() || nullptr != params.GetGradient())
+        {
+        if (params.IsLineColorFromSubCategoryAppearance())
+            v10Symbol->m_fillColor = 0; // NEEDSWORK: v10Symbol->m_fillBySubCategory = true;
+        else
+            v10Symbol->m_fillColor = params.GetLineColor().GetValue();
+        }
+    else
+        {
+        if (params.IsFillColorFromSubCategoryAppearance())
+            v10Symbol->m_fillColor = 0; // NEEDSWORK: v10Symbol->m_fillBySubCategory = true;
+        else if (params.IsFillColorFromViewBackground())
+            v10Symbol->m_fillColor = 0; // NEEDSWORK: Do we need to support bg color fill for symbols?
+        else
+            v10Symbol->m_fillColor = params.GetFillColor().GetValue();
+        }
+#endif
 
 #if defined(NEEDSWORKLINESTYLE_FILLCOLOR)
     if (params.IsWeightFromSubCategoryAppearance())
@@ -493,6 +544,7 @@ void LsSymbolComponent::SaveToJson(Json::Value& result)
         v10Symbol->m_weight = params.GetWeight();
 #endif
 
+    SaveSymbolDataToJson(result, m_symBase, m_symSize, m_geomPartId, m_symFlags, m_storedScale, m_lineColorByLevel, m_lineColor, m_fillColor, false, m_weight);
     }
 
 //---------------------------------------------------------------------------------------

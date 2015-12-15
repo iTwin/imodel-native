@@ -20,7 +20,7 @@
 #include <DgnPlatform/Tools/KeyTree.h>
 
 //  These are both used to try different configurations while testing.  They must both be eliminated
-#define LINESTYLES_ENABLED 1
+#define LINESTYLES_ENABLED 0
 
 #define LSID_DEFAULT        0
 #define LSID_HARDWARE       0x80000000
@@ -647,6 +647,8 @@ public:
     virtual LsComponentPtr _GetForTextureGeneration() const override { return const_cast<LsSymbolComponentP>(this); }
     virtual LsOkayForTextureGeneration _IsOkayForTextureGeneration() const override { return LsOkayForTextureGeneration::NoChangeRequired; }
     virtual void _StartTextureGeneration() const override {}
+    DGNPLATFORM_EXPORT static void SaveSymbolDataToJson(Json::Value& result, DPoint3dCR base, DPoint3dCR size, DgnGeomPartId const& geomPartId, int32_t flags, double storedScale, 
+                                             bool colorBySubcategory, ColorDefR lineColor, ColorDefR fillColor, bool weightBySubcategory, int weight);
 
 //__PUBLISH_SECTION_START__
 public:
@@ -1271,6 +1273,8 @@ public:
     void SaveToJson(Json::Value& result);
     LineStyleStatus CreateFromJson(LsPointComponentPtr&newPoint, Json::Value const & jsonDef, LsLocationCP location);
     static BentleyStatus   CreateRscFromDgnDb(V10LinePoint** rscOut, DgnDbR project, LsComponentId id);
+    DGNPLATFORM_EXPORT static void SaveLineCodeIdToJson(JsonValueR result, LsComponentId patternId);
+    DGNPLATFORM_EXPORT static void SaveSymbolIdToJson(JsonValueR result, LsComponentId symbolId);
 
 //__PUBLISH_SECTION_START__
 public:
