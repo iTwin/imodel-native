@@ -97,6 +97,8 @@ struct QueryModel : PhysicalModel
         
         QueryModelR GetModel() const { return m_params.m_model; }
         Results* GetResults() { return m_results.get(); }
+
+        void OnCompleted() const;
     };
 
     typedef RefCountedPtr<Processor> ProcessorPtr;

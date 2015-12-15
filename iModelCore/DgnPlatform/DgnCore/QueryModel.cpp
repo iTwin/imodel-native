@@ -359,6 +359,8 @@ void QueryModel::Queue::qt_WaitForWork()
                 auto updatedResults = processing->GetResults();
                 BeAssert(nullptr != updatedResults);
                 model.SetUpdatedResults(updatedResults);
+                
+                processing->OnCompleted();
                 }
 #if defined TRACE_QUERY_LOGIC
             else
@@ -490,6 +492,18 @@ void ProcessorImpl::SearchIdSet(DgnElementIdSet& idList, DgnDbRTree3dViewFilter&
 void QueryModel::Processor::BindModelAndCategory(CachedStatement& stmt)
     {
     static_cast<QueryViewControllerCP>(&m_params.m_vp.GetViewController())->BindModelAndCategory(stmt);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void QueryModel::Processor::OnCompleted() const
+    {
+    // NEEDS_WORK_CONTINUOUS_RENDER
+    // This is not thread-safe. The worst that can happen is that the work thread reads false from it, or sets it to false, while the query thread sets it to true.
+    // In that case we skip an update.
+    // Alternative is to go through contortions to queue up a "heal viewport" task on the DgnClientFx work thread.
+    const_cast<DgnViewportR>(m_params.m_vp).SetNeedsHeal();
     }
 
 /*---------------------------------------------------------------------------------**//**
