@@ -16,7 +16,7 @@
 #define DEBUG_THREADS 1
 #endif
 
-#define TRACE_QUERY_LOGIC 1
+//#define TRACE_QUERY_LOGIC 1
 
 BeThreadLocalStorage g_queryThreadChecker;
 

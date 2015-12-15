@@ -17,7 +17,7 @@
     #define MAX_TO_DRAW_IN_DYNAMIC_UPDATE  1700
 #endif
 
-#define TRACE_QUERY_LOGIC 1
+//#define TRACE_QUERY_LOGIC 1
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   07/12
@@ -102,17 +102,6 @@ bool QueryViewController::_WantElementLoadStart(DgnViewportR vp, double currentT
 +---------------+---------------+---------------+---------------+---------------+------*/
 void QueryViewController::_OnDynamicUpdate(DgnViewportR vp, DynamicUpdateInfo const& info)
     {
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    DrawPurpose newUpdateType = info.GetDoBackingStore() ? DrawPurpose::Update : DrawPurpose::UpdateDynamic;
-    m_lastUpdateType = newUpdateType;
-    if (m_forceNewQuery || info.GetDoBackingStore())
-        {
-        // Skip any other tests and force a search and load
-        LoadElementsForUpdate(vp, newUpdateType, &context, true, true, false);
-        return;
-        }
-#endif
-
 #if defined (TRACE_QUERY_LOGIC)
     static uint32_t s_count = 0;
 #endif
@@ -121,9 +110,6 @@ void QueryViewController::_OnDynamicUpdate(DgnViewportR vp, DynamicUpdateInfo co
         {
         if (m_queryModel.HasSelectResults())
             {
-#if defined (TRACE_QUERY_LOGIC)
-            printf("(%d) _OnDynamicUpdate: calling SaveSelectResults\n", ++s_count);
-#endif
             SaveSelectResults();
             vp.SetNeedsHeal();
 #if defined (TRACE_QUERY_LOGIC)
@@ -521,8 +507,6 @@ void QueryViewController::_DrawView(ViewContextR context)
 
     context.GetViewport()->ClearProgressiveDisplay();
 
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-#endif
     bool isDynamicUpdate = false;
     uint32_t maxToDraw = isDynamicUpdate ? m_maxToDrawInDynamicUpdate : UINT_MAX;
 
