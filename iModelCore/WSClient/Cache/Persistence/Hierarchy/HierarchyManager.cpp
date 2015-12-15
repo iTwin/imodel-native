@@ -144,11 +144,8 @@ ECRelationshipClassCP relationshipClass
             return ERROR;
             }
 
-        // Use variable for non-debug build to pass
-        if (nullptr != &m_objectInfoManager)
-            {}
-        BeAssert((IChangeManager::ChangeStatus::NoChange == changeStatus || 
-                  !m_objectInfoManager.FindCachedInstance(child).IsEmpty()) && "<Warning> Local change was removed");
+        if (IChangeManager::ChangeStatus::NoChange != changeStatus || m_objectInfoManager.FindCachedInstance(child).IsEmpty())
+            { BeAssert(false && "<Warning> Local change was removed"); }
 
         obsoleteInstances.push_back(child);
         }
