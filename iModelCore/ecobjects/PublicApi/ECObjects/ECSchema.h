@@ -657,7 +657,7 @@ public:
     bool                                IsForSupplementation() const { return m_forSupplementation; }
 
     //! Intended to be called by ECDb or a similar system
-    void SetId(ECPropertyId id) { BeAssert (0 == m_ecPropertyId); m_ecPropertyId = id; };
+    void SetId(ECPropertyId id) { BeAssert(0 == m_ecPropertyId); m_ecPropertyId = id; };
     bool HasId() const { return m_ecPropertyId != 0; };
 
 /*__PUBLISH_SECTION_START__*/
@@ -2134,7 +2134,7 @@ public:
     //! Constructs a SchemaNameClassNamePair from a string of the format "SCHEMANAME:CLASSNAME"
     SchemaNameClassNamePair (Utf8StringCR schemaAndClassNameSeparatedByColon)
         {
-        BeAssert (Utf8String::npos != schemaAndClassNameSeparatedByColon.find (':'));
+        BeAssert(Utf8String::npos != schemaAndClassNameSeparatedByColon.find (':'));
         Parse (schemaAndClassNameSeparatedByColon);
         }
 
@@ -2577,7 +2577,7 @@ protected:
 public:
     ECOBJECTS_EXPORT void               ReComputeCheckSum ();
     //! Intended to be called by ECDb or a similar system
-    void SetId(ECSchemaId id) { BeAssert (0 == m_ecSchemaId); m_ecSchemaId = id; };
+    void SetId(ECSchemaId id) { BeAssert(0 == m_ecSchemaId); m_ecSchemaId = id; };
     bool HasId() const { return m_ecSchemaId != 0; };
 
     ECOBJECTS_EXPORT ECObjectsStatus    DeleteClass (ECClassR ecClass);
