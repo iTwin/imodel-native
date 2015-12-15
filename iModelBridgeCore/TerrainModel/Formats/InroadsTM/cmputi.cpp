@@ -1,5 +1,5 @@
 //---------------------------------------------------------------------------+
-// $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+// $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //---------------------------------------------------------------------------+
 /*----------------------------------------------------------------------------*/
 /* cmputi.cpp                                   twl    24-Apr-2002            */
@@ -53,12 +53,12 @@ typedef struct
 /* Private static function prototypes                                         */
 /*----------------------------------------------------------------------------*/
 static int aecDTM_addToGuidMapCallback ( void *, struct CIVdtmsrf *, struct CIVdtmcmp *);
-static int aecDTM_insertComponentIntoParentIndex ( struct CIVdtmsrf*, struct CIVdtmcmp* );
-static int aecDTM_insertComponentIntoGuidIndex ( struct CIVdtmsrf*, struct CIVdtmcmp* );
-static int aecDTM_insertComponentIntoStyleIndex ( struct CIVdtmsrf*, struct CIVdtmcmp* );
+//static int aecDTM_insertComponentIntoParentIndex ( struct CIVdtmsrf*, struct CIVdtmcmp* );
+//static int aecDTM_insertComponentIntoGuidIndex ( struct CIVdtmsrf*, struct CIVdtmcmp* );
+//static int aecDTM_insertComponentIntoStyleIndex ( struct CIVdtmsrf*, struct CIVdtmcmp* );
 static int aecDTM_removeComponentfromGuidIndex ( struct CIVdtmsrf *, struct CIVdtmcmp *);
-static int aecComponent_DoesComponentPassNameList ( struct CIVdtmcmp *, ComponentListDat *dat );
-static int compareInExItems( const void *, const void * );
+//static int aecComponent_DoesComponentPassNameList ( struct CIVdtmcmp *, ComponentListDat *dat );
+//static int compareInExItems( const void *, const void * );
 
 /*%-----------------------------------------------------------------------------
  FUNC: aecDTM_findComponentByGuid
@@ -328,7 +328,7 @@ int aecDTM_destroyComponentsStyleIndex
     return SUCCESS;
 }
 
-
+#ifdef NOTUSED
 /*%-----------------------------------------------------------------------
  FUNC: aecDTM_insertComponentIntoParentIndex
  DESC: Inserts a component into the component name index.
@@ -375,7 +375,6 @@ static int aecDTM_insertComponentIntoGuidIndex
     }
     return sts;
 }
-
 
 /*%-----------------------------------------------------------------------
  FUNC: aecDTM_insertComponentIntoStyleIndex
@@ -384,7 +383,6 @@ static int aecDTM_insertComponentIntoGuidIndex
  MISC:
  KEYW: DTM INSERT INDEX COMPONENT BY STYLE
 -----------------------------------------------------------------------%*/
-
 static int aecDTM_insertComponentIntoStyleIndex
 (
     struct CIVdtmsrf *srfP,                 /*  => surface              */
@@ -393,6 +391,7 @@ static int aecDTM_insertComponentIntoStyleIndex
 {
     return SUCCESS;
 }
+#endif
 
 
 /*%-----------------------------------------------------------------------
@@ -436,6 +435,7 @@ static int aecDTM_addToGuidMapCallback
     return SUCCESS;
 }
 
+#ifdef NOTUSED
 static int aecComponent_DoesComponentPassNameList
 (
     struct CIVdtmcmp *cmpP,
@@ -457,7 +457,6 @@ static int aecComponent_DoesComponentPassNameList
 
     return ( (int)bFound );    
 }
-
 static int compareInExItems( const void *pParm1, const void *pParm2 )
 {
     InExItem *item1 = (InExItem *)pParm1;
@@ -474,4 +473,5 @@ static int compareInExItems( const void *pParm1, const void *pParm2 )
     }
     return sts;
 }
+#endif
 

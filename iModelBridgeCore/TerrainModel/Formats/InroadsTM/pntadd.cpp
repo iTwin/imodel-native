@@ -1,5 +1,5 @@
 //---------------------------------------------------------------------------+
-// $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+// $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //---------------------------------------------------------------------------+
 /*----------------------------------------------------------------------------*/
 /* pntadd.c                                                tmi    17-Oct-1990 */
@@ -178,7 +178,6 @@ static int aecDTM_pointAddCreate
   if ( pntadd->srf->tinf->nrec - pntadd->srf->tinf->ndel < 1L )
   {
     int statusState = aecParams_getStatusState( NULL );
-    int writeState = 0;
     int tmp = 0;
 
     aecParams_setStatusState ( &tmp );

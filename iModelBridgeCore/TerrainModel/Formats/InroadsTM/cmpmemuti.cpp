@@ -1,5 +1,5 @@
 //---------------------------------------------------------------------------+
-// $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+// $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //---------------------------------------------------------------------------+
 /*----------------------------------------------------------------------------*/
 /* cmpmemuti.cpp                                twl    24-Apr-2002            */
@@ -32,8 +32,8 @@ static CIVdtmcmpmem **ppLastCmpMem2 = NULL;
 /*----------------------------------------------------------------------------*/
 static int aecDTM_addToGuidIndexCallback ( void*, struct CIVdtmsrf*, struct CIVdtmcmpmem* );
 static int aecDTM_addToParentIndexCallback ( void*, struct CIVdtmsrf*, struct CIVdtmcmpmem* );
-static int aecDTM_insertComponentMemberIntoGuidIndex ( struct CIVdtmsrf*, struct CIVdtmcmpmem* );
-static int aecDTM_insertComponentMemberIntoParentIndex ( struct CIVdtmsrf*, struct CIVdtmcmpmem* );
+//static int aecDTM_insertComponentMemberIntoGuidIndex ( struct CIVdtmsrf*, struct CIVdtmcmpmem* );
+//static int aecDTM_insertComponentMemberIntoParentIndex ( struct CIVdtmsrf*, struct CIVdtmcmpmem* );
 static int aecDTM_removeComponentMemberFromGuidIndex ( struct CIVdtmsrf *, struct CIVdtmcmpmem* );
 static int aecDTM_removeComponentMemberFromParentIndex ( struct CIVdtmsrf *, struct CIVdtmcmpmem* );
 
@@ -71,6 +71,7 @@ int aecDTM_deleteComponentMember    /* <= TRUE if error                         
     return ( sts );
 }
 
+#ifdef NOTUSED
 static int _sortCmpmemsByIdx( const void* a, const void *b )
 {
     struct CIVdtmcmpmem *cmpmem1 = (CIVdtmcmpmem *)a;
@@ -84,7 +85,7 @@ static int _sortCmpmemsByIdx( const void* a, const void *b )
 
 	return 0;
 }
-
+#endif
 
 /*%-----------------------------------------------------------------------------
  FUNC: aecDTM_getComponentMembersPtrs
@@ -382,7 +383,7 @@ int aecDTM_destroyComponentMembersParentIndex
     return SUCCESS;
 }
 
-
+#ifdef NOTDEF
 /*%-----------------------------------------------------------------------
  FUNC: aecDTM_insertComponentMemberIntoGuidIndex
  DESC: Inserts a shape into the shape guid index.
@@ -431,6 +432,7 @@ static int aecDTM_insertComponentMemberIntoParentIndex
 
     return sts;
 }
+#endif
 
 
 /*%-----------------------------------------------------------------------

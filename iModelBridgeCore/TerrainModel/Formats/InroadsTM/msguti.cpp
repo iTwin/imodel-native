@@ -1,5 +1,5 @@
 //---------------------------------------------------------------------------+
-// $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+// $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //---------------------------------------------------------------------------+
 /*----------------------------------------------------------------------------*/
 /* msguti.mc                                     pr    01-Nov-1992            */
@@ -318,7 +318,7 @@ wchar_t *aecOutput_getMessage  /* <= returned message                 */
     va_start ( ap, doFmt );
 
     res[0] = '\0';
-    aecOutput_valistToString ( res, msgId, doFmt, ap );
+    aecOutput_valistToString ( res, msgId, doFmt != 0, ap );
 
     va_end ( ap );
 

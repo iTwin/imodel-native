@@ -1,5 +1,5 @@
 //---------------------------------------------------------------------------+
-// $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+// $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //---------------------------------------------------------------------------+
 /*----------------------------------------------------------------------------*/
 /* trisrf.c                                            tmi        10-Apr-1990 */
@@ -1560,6 +1560,7 @@ void aecDTM_triangulateSetErrorPoint
     tinErrPntSet = TRUE;
 }
 
+#ifdef NOTUSED
 static BOOL aecDTM_triangulateGetErrorPoint
 (
     struct CIVdtmpnt *dtmPntP
@@ -1570,6 +1571,7 @@ static BOOL aecDTM_triangulateGetErrorPoint
 
     return ( tinErrPntSet );    
 }
+#endif
 
 int aecDTM_validateTinPtr   /* <= TRUE if error                    */
 (

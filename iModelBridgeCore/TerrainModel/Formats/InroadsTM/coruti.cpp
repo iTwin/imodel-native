@@ -1,5 +1,5 @@
 //---------------------------------------------------------------------------+
-// $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+// $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //---------------------------------------------------------------------------+
 /*----------------------------------------------------------------------------*/
 /* coruti.cpp                                   twl    24-Apr-2002            */
@@ -26,11 +26,11 @@
 /*----------------------------------------------------------------------------*/
 /* Private static function prototypes                                         */
 /*----------------------------------------------------------------------------*/
-static int aecDTM_countCallback ( void*, struct CIVdtmsrf*, struct CIVdtmcor* );
+//static int aecDTM_countCallback ( void*, struct CIVdtmsrf*, struct CIVdtmcor* );
 static int aecDTM_addToGuidMapCallback ( void*, struct CIVdtmsrf*, struct CIVdtmcor* );
 static int aecDTM_addToNameMapCallback ( void*, struct CIVdtmsrf*, struct CIVdtmcor* );
-static int aecDTM_insertCorridorIntoGuidIndex ( struct CIVdtmsrf*, struct CIVdtmcor* );
-static int aecDTM_insertCorridorIntoNameIndex ( struct CIVdtmsrf*, struct CIVdtmcor* );
+//static int aecDTM_insertCorridorIntoGuidIndex ( struct CIVdtmsrf*, struct CIVdtmcor* );
+//static int aecDTM_insertCorridorIntoNameIndex ( struct CIVdtmsrf*, struct CIVdtmcor* );
 
 /*%-----------------------------------------------------------------------------
  FUNC: aecDTM_sendAllCorridors
@@ -202,7 +202,7 @@ int aecDTM_destroyCorridorsComponentsMembersIndexes
     return sts;
 }
 
-
+#ifdef NOTUSED
 /*%-----------------------------------------------------------------------
  FUNC: aecDTM_insertCorridorIntoGuidIndex
  DESC: Inserts a corridor into the corridor guid index.
@@ -260,7 +260,7 @@ static int aecDTM_insertCorridorIntoNameIndex
 
     return sts;
 }
-
+#endif
 
 /*%-----------------------------------------------------------------------
  FUNC: aecDTM_destroyCorridorsGuidIndex
@@ -310,7 +310,7 @@ int aecDTM_destroyCorridorsNameIndex
 }
 
 
-
+#ifdef NOTUSED
 static int aecDTM_countCallback
 (
     void *dat,
@@ -324,7 +324,7 @@ static int aecDTM_countCallback
 
     return SUCCESS;
 }
-
+#endif
 static int aecDTM_addToGuidMapCallback
 (
     void *dat,

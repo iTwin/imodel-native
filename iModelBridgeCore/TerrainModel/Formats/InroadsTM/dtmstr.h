@@ -1,5 +1,5 @@
 //---------------------------------------------------------------------------+
-// $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+// $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //---------------------------------------------------------------------------+
 /*----------------------------------------------------------------------------*/
 /* dtmstr.h                                        aec        10-Apr-1990     */
@@ -275,7 +275,7 @@ struct CIVdtmoff                       /* profile offset settings             */
     wchar_t sym[CIV_C_NAMSIZ];         /* offset named symbology              */
     };
 
-#pragma warning (disable:4481)
+//#pragma warning (disable:4481)
 
 typedef struct CIVdtmsrf
     {
@@ -366,4 +366,4 @@ struct CIVptrindTwo                    /* for keeping permanent index table   */
 typedef wchar_t CIVdtmstynam[CIV_C_NAMSIZ];
 typedef wchar_t CIVdtmpaynam[CIV_C_NAMSIZ];
 
-#pragma warning (default:4481)
+//#pragma warning (default:4481)

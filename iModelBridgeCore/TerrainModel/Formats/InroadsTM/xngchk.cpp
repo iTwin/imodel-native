@@ -1,5 +1,5 @@
 //---------------------------------------------------------------------------+
-// $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+// $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //---------------------------------------------------------------------------+
 /*----------------------------------------------------------------------------*/
 /* Include files                                                              */
@@ -139,7 +139,7 @@ int aecDTM_crossingCheckExterior  /* TRUE if error                 */
             retSts = aecOutput_alert( DTM_M_UNCROS, L"" );
             }
 
-        if( retSts == TRUE )
+        if( retSts == (int)TRUE )
             {
             FeatureHandle ftrHndl = NULL;
 

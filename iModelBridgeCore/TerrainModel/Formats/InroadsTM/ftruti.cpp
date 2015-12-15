@@ -1,5 +1,5 @@
 //---------------------------------------------------------------------------+
-// $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+// $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //---------------------------------------------------------------------------+
 /*----------------------------------------------------------------------------*/
 /* ftruti.c                                            twl    27-Oct-1998     */
@@ -48,8 +48,8 @@ static int  aecDTM_setFeatureStyles(struct CIVdtmftr *, struct CIVdtmsrf *, CIVd
 static int  aecDTM_transferFeaturePoints(long, struct CIVdtmfil *, struct CIVdtmpnt *, CIVdtmpnt *, long, int);
 static int  aecDTM_preProcessMatchPnts(MatchInfo **, long, struct CIVdtmsrf *, struct CIVdtmftr *, struct CIVdtmpnt *, long, int);
 static int  aecDTM_postProcessMatchPnts(MatchInfo *, long, struct CIVdtmsrf *, struct CIVdtmfil *, struct CIVdtmftr *);
-static void aecDTM_featurePointsHorizontalLength(double *, long, CIVdtmpnt *);
-static void segElevation(CIVdtmpnt *, CIVdtmpnt *, CIVdtmpnt *);
+//static void aecDTM_featurePointsHorizontalLength(double *, long, CIVdtmpnt *);
+//static void segElevation(CIVdtmpnt *, CIVdtmpnt *, CIVdtmpnt *);
 static int  aecDTM_compareMatches(const void *, const void *);
 static int  aecDTM_compareXYZmatches(const void *, const void *);
 static int  aecDTM_tinMatchProcess(void *, long, DPoint3d *, struct CIVdtmtin *, unsigned long);
@@ -1514,7 +1514,7 @@ int aecDTM_densifyFeaturePoints
 }
 
 
-
+#ifdef NOTUSED
 /*%-----------------------------------------------------------------------------
  FUNC: aecPolygon_horizontalLength
  DESC: Computes the length of the segments in an array (XY only).
@@ -1539,8 +1539,6 @@ static void aecDTM_featurePointsHorizontalLength
     *lenP += VLENXY ( tmp.cor );
   }
 }
-
-
 
 /*%-----------------------------------------------------------------------------
  FUNC: segElevation
@@ -1549,7 +1547,6 @@ static void aecDTM_featurePointsHorizontalLength
  MISC: static
  KEYW:
 -----------------------------------------------------------------------------%*/
-
 static void segElevation
 (
   CIVdtmpnt *pntP,                     /* <>                                  */
@@ -1566,6 +1563,7 @@ static void segElevation
     z = v0->cor.z;
   pntP->cor.z = z;
 }
+#endif
 
 
 
