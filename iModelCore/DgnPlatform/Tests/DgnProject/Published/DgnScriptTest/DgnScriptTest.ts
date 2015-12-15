@@ -40,7 +40,7 @@ module DgnScriptTests {
         var ele = be.PhysicalElement.Create(model, catid, '');
 
         //  Try out SolidPrimitive
-        var builder = new be.ElementGeometryBuilder(ele, new be.DPoint3d(0, 0, 0), new be.YawPitchRollAngles(0, 0, 0));
+        var builder = new be.GeometryBuilder(ele, new be.DPoint3d(0, 0, 0), new be.YawPitchRollAngles(0, 0, 0));
 
         var spdetail = be.DgnSphereDetail.CreateSphere(new be.DPoint3d(0, 0, 0), 1.0);
         var solid = be.SolidPrimitive.CreateDgnSphere(spdetail);

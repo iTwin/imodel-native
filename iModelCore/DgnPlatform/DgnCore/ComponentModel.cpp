@@ -572,7 +572,7 @@ DgnDbStatus ComponentModel::HarvestSolution(bvector<bpair<DgnSubCategoryId, DgnG
     DgnCategoryId harvestableGeometryCategoryId = m_compProps.QueryItemCategoryId(db);
 
     //  Gather geometry by SubCategory
-    bmap<DgnSubCategoryId, ElementGeometryBuilderPtr> builders;     
+    bmap<DgnSubCategoryId, GeometryBuilderPtr> builders;     
     FillModel();
     for (auto const& mapEntry : *this)
         {
@@ -597,10 +597,10 @@ DgnDbStatus ComponentModel::HarvestSolution(bvector<bpair<DgnSubCategoryId, DgnG
         if (componentElement->GetCategoryId() != harvestableGeometryCategoryId)
             continue;
 
-        ElementGeometryCollection gcollection(*componentElement);
+        GeometryCollection gcollection(*componentElement);
         for (auto iter : gcollection)
             {
-            ElementGeometryPtr xgeom = iter.GetGeometryPtr();
+            GeometricPrimitivePtr xgeom = iter.GetGeometryPtr();
             if (!xgeom.IsValid()) // what to do about GeomParts?? - BB
                 continue;
 
@@ -608,9 +608,9 @@ DgnDbStatus ComponentModel::HarvestSolution(bvector<bpair<DgnSubCategoryId, DgnG
             GeometryParamsCR dparams = iter.GetGeometryParams();
             DgnSubCategoryId clientsubcatid = dparams.GetSubCategoryId();
 
-            ElementGeometryBuilderPtr& builder = builders [clientsubcatid];
+            GeometryBuilderPtr& builder = builders [clientsubcatid];
             if (!builder.IsValid())
-                builder = ElementGeometryBuilder::CreateGeomPart(db, true);
+                builder = GeometryBuilder::CreateGeomPart(db, true);
 
             // Since each little piece of geometry can have its own transform, we must
             // build the transforms back into them in order to assemble them into a single geomstream.
@@ -634,7 +634,7 @@ DgnDbStatus ComponentModel::HarvestSolution(bvector<bpair<DgnSubCategoryId, DgnG
     for (auto const& entry : builders)
         {
         DgnSubCategoryId clientsubcatid = entry.first;
-        ElementGeometryBuilderPtr builder = entry.second;
+        GeometryBuilderPtr builder = entry.second;
 
         // *** WIP_COMPONENT_MODEL How can we look up and re-use GeomParts that are based on the same component and parameters?
         // Note: Don't assign a Code. If we did that, then we would have trouble with change-merging.
@@ -680,7 +680,7 @@ DgnElementPtr ComponentModel::CreateCapturedSolutionElement(DgnDbStatus& status,
     //    capturedSolutionElement->ToGeometrySource2dP()->SetPlacement(Placement2d(DPoint2d::FromZero(), AngleInDegrees::FromDegrees(0.0), ElementAlignedBox2d()));
 
     //  The element's geometry is just a list of references to the GeomParts
-    ElementGeometryBuilderPtr builder = ElementGeometryBuilder::Create(*geom);
+    GeometryBuilderPtr builder = GeometryBuilder::Create(*geom);
     for (bpair<DgnSubCategoryId, DgnGeomPartId> const& subcatAndGeom : geomBySubcategory)
         {
         Transform noTransform = Transform::FromIdentity();

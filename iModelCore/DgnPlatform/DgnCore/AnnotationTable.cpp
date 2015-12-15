@@ -1880,7 +1880,7 @@ void    resolveTextSymb (ColorDef& color, uint32_t& weight, SymbologyDictionary 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    09/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TextBlockHolder::_AppendGeometry (DPoint2dCR origin, DVec2dCR direction, TableCellAlignment alignment, ElementGeometryBuilderR builder) const
+void TextBlockHolder::_AppendGeometry (DPoint2dCR origin, DVec2dCR direction, TableCellAlignment alignment, GeometryBuilderR builder) const
     {
     AnnotationTextBlockCP textBlock = GetTextBlock();
 
@@ -2797,7 +2797,7 @@ DPoint3d        AnnotationTableCell::ComputeOrigin () const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    09/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-void    AnnotationTableCell::AppendContentsGeometry (DPoint2dCR origin, DVec2dCR xVec, DVec2dCR yVec, ElementGeometryBuilderR builder) const
+void    AnnotationTableCell::AppendContentsGeometry (DPoint2dCR origin, DVec2dCR xVec, DVec2dCR yVec, GeometryBuilderR builder) const
     {
     if (UNEXPECTED_CONDITION (nullptr == m_contentHolder))
         return;
@@ -8694,7 +8694,7 @@ void AnnotationTableElement::UpdateGeometryRepresentation()
     if (! IsValid())
         return;
 
-    ElementGeometryBuilderPtr builder = ElementGeometryBuilder::Create(*GetModel(), GetCategoryId(), GetPlacement().GetOrigin(), GetPlacement().GetAngle());
+    GeometryBuilderPtr builder = GeometryBuilder::Create(*GetModel(), GetCategoryId(), GetPlacement().GetOrigin(), GetPlacement().GetAngle());
     AnnotationTableStroker stroker (*this, *builder);
     stroker.AppendTableGeometry();
 

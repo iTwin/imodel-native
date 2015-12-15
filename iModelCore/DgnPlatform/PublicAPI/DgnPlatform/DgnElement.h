@@ -537,7 +537,7 @@ public:
     public:
 #ifdef WIP_ELEMENT_ITEM // *** pending redesign
 #endif
-        //! The reason why GenerateElementGeometry is being called
+        //! The reason why GenerateGeometricPrimitive is being called
         enum class GenerateReason
         {
             Insert,         //!< The Element is being inserted into the Db
@@ -586,14 +586,14 @@ public:
     //! <p>
     //! A dgn.ElementItem is normally used to capture the definition of the host element's geometry.
     //! The ElementItem is also expected to supply the algorithm for generating the host element's geometry from its definition.
-    //! The platform enables the Item to keep the element's geometry up to date by calling the DgnElement::Item::_GenerateElementGeometry method when the element is inserted and whenever it is updated.
+    //! The platform enables the Item to keep the element's geometry up to date by calling the DgnElement::Item::_GenerateGeometricPrimitive method when the element is inserted and whenever it is updated.
     //! <p>
     //! A subclass of Item must override the following methods:
     //!     * _GetECSchemaName
     //!     * _GetECClassName
     //!     * _UpdateProperties
     //!     * _LoadProperties
-    //!     * _GenerateElementGeometry
+    //!     * _GenerateGeometricPrimitive
     //! @note It will be common for a single ElementAspectHandler to be registered for a single ECClass and then used for \em multiple ECClasses, all of which are subclasses of the registered ECClass.
     //! Therefore, the Item subclass should not assume that it knows the ECClass of the item at compile time; it must query the DgnDb or the ECInstance (if it holds one) in order to
     //! determine the actual class of the item.
@@ -601,7 +601,7 @@ public:
     {
         DEFINE_T_SUPER(UniqueAspect)
 
-        //! The reason why _GenerateElementGeometry is being called
+        //! The reason why _GenerateGeometricPrimitive is being called
         enum class GenerateReason 
             {
             Insert,         //!< The Element is being inserted into the Db
@@ -625,10 +625,10 @@ public:
 
     protected:
         //! The subclass must implement this method to generate geometry and store it on \a el.
-        //! The platform invokes _GenerateElementGeometry just \em before an element is inserted and/or updated.
+        //! The platform invokes _GenerateGeometricPrimitive just \em before an element is inserted and/or updated.
         //! @param el   The element to be updated.
         //! @param reason An indication of why the caller is requesting the element's geometry to be generated.
-        virtual DgnDbStatus _GenerateElementGeometry(GeometricElementR el, GenerateReason reason) = 0;
+        virtual DgnDbStatus _GenerateGeometricPrimitive(GeometricElementR el, GenerateReason reason) = 0;
 
         //! Utility method to return the ECSchema name of an ECInstance.
         //! @param instance The instance currently assigned to this Item, or null if the Item has no in-memory instance.
@@ -682,10 +682,10 @@ public:
         //! @return the DgnClassId of the existing item or an invalid ID if the element has no item
         DGNPLATFORM_EXPORT static DgnClassId QueryExistingItemClass(DgnElementCR el);
 
-        //! Invoke the _GenerateElementGeometry method on the item
+        //! Invoke the _GenerateGeometricPrimitive method on the item
         //! @param el   The host element
         //! @param reason An indication of why the caller is requesting the element's geometry to be generated.
-        DGNPLATFORM_EXPORT static DgnDbStatus GenerateElementGeometry(GeometricElementR el, GenerateReason reason);
+        DGNPLATFORM_EXPORT static DgnDbStatus GenerateGeometricPrimitive(GeometricElementR el, GenerateReason reason);
 
         //! Execute the EGA that is specified for this Item.
         //! @param el   The element to be updated
@@ -1201,8 +1201,8 @@ public:
 };
 
 //=======================================================================================
-//! A stream of geometry, stored on a DgnElement, created by an ElementGeometryBuilder.
-//! @ingroup ElementGeometryGroup
+//! A stream of geometry, stored on a DgnElement, created by an GeometryBuilder.
+//! @ingroup GeometricPrimitiveGroup
 // @bsiclass                                                    Keith.Bentley   12/14
 //=======================================================================================
 struct GeometryStream : ByteStream
@@ -1314,7 +1314,7 @@ public:
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE GeometrySource
 {
-    friend struct ElementGeometryBuilder;
+    friend struct GeometryBuilder;
 
 protected:
     virtual Render::GraphicSet& _Graphics() const = 0;
@@ -1330,7 +1330,7 @@ protected:
     DGNPLATFORM_EXPORT virtual bool _DrawHit(HitDetailCR, ViewContextR) const;
     DGNPLATFORM_EXPORT virtual void _GetInfoString(HitDetailCR, Utf8StringR descr, Utf8CP delimiter) const;
     DGNPLATFORM_EXPORT virtual SnapStatus _OnSnap(SnapContextR) const;
-    GeometryStreamR GetGeometryStreamR() {return const_cast<GeometryStreamR>(_GetGeometryStream());} // Only ElementGeometryBuilder should have write access to the GeometryStream...
+    GeometryStreamR GetGeometryStreamR() {return const_cast<GeometryStreamR>(_GetGeometryStream());} // Only GeometryBuilder should have write access to the GeometryStream...
 
 public:
     bool HasGeometry() const {return _GetGeometryStream().HasGeometry();} //!< return false if this geometry source currently has no geometry (is empty).
@@ -2093,7 +2093,7 @@ struct InstanceBackedItem : DgnElement::Item
     Utf8CP _GetECClassName() const override {return m_instance->GetClass().GetName().c_str();}
     DGNPLATFORM_EXPORT DgnDbStatus _LoadProperties(DgnElementCR) override;
     DGNPLATFORM_EXPORT DgnDbStatus _UpdateProperties(DgnElementCR) override;
-    DGNPLATFORM_EXPORT DgnDbStatus _GenerateElementGeometry(GeometricElementR el, GenerateReason) override;
+    DGNPLATFORM_EXPORT DgnDbStatus _GenerateGeometricPrimitive(GeometricElementR el, GenerateReason) override;
 
     InstanceBackedItem() {}
 

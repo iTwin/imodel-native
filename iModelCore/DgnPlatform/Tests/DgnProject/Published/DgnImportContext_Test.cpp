@@ -248,7 +248,7 @@ static DgnElementCPtr insertElement(DgnDbR db, DgnModelId mid, bool is3d, DgnSub
     else
         gelem = AnnotationElement::Create(AnnotationElement::CreateParams(db, mid, DgnClassId(db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, "AnnotationElement")), cat, Placement2d()));
 
-    ElementGeometryBuilderPtr builder = ElementGeometryBuilder::CreateWorld(*gelem->ToGeometrySource());
+    GeometryBuilderPtr builder = GeometryBuilder::CreateWorld(*gelem->ToGeometrySource());
     builder->Append(subcat);
     if (nullptr != customParms)
         builder->Append(*customParms);
@@ -265,7 +265,7 @@ static DgnElementCPtr insertElement(DgnDbR db, DgnModelId mid, bool is3d, DgnSub
 //---------------------------------------------------------------------------------------
 static void getFirstGeometryParams(GeometryParams& ret, DgnElementCR gel)
     {
-    ElementGeometryCollection gcollection(gel);
+    GeometryCollection gcollection(gel);
     gcollection.begin(); // has the side-effect of setting up the current element display params on the collection
     ret = gcollection.GetGeometryParams();
     }

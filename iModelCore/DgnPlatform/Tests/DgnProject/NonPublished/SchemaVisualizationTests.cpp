@@ -1848,7 +1848,7 @@ public:
         textspanElement->SetCode(DgnAuthority::CreateDefaultCode());
 
         DPoint3d origin = DPoint3d::From(p.x, p.y, 0.0);
-        ElementGeometryBuilderPtr builder = ElementGeometryBuilder::Create(*textspanElement, origin, angles);
+        GeometryBuilderPtr builder = GeometryBuilder::Create(*textspanElement, origin, angles);
 
         TextStringStylePtr textspanStyle = TextStringStyle::Create();
         textspanStyle->SetFont(DgnFontManager::GetDecoratorFont());
@@ -1881,7 +1881,7 @@ public:
         polygonElement->SetCode(DgnAuthority::CreateDefaultCode());
 
         DPoint3d origin = DPoint3d::From(A[0].x, A[0].y, 0.0);
-        ElementGeometryBuilderPtr builder = ElementGeometryBuilder::Create(*polygonElement, origin, angles);
+        GeometryBuilderPtr builder = GeometryBuilder::Create(*polygonElement, origin, angles);
 
         bvector<DPoint3d> points;
         for (int i = 0; i < n; i++)
@@ -1904,7 +1904,7 @@ public:
         bezierElement->SetCode(DgnAuthority::CreateDefaultCode());
 
         DPoint3d origin = DPoint3d::From(A[0].x, A[0].y, 0.0);
-        ElementGeometryBuilderPtr builder = ElementGeometryBuilder::Create(*bezierElement, origin, angles);
+        GeometryBuilderPtr builder = GeometryBuilder::Create(*bezierElement, origin, angles);
 
         bvector<DPoint3d> poles;
         for (int i = 0; i < n; i++)
@@ -1937,7 +1937,7 @@ public:
         polylineElement->SetCode(DgnAuthority::CreateDefaultCode());
 
         DPoint3d origin = DPoint3d::From(A[0].x, A[0].y, 0.0);
-        ElementGeometryBuilderPtr builder = ElementGeometryBuilder::Create(*polylineElement, origin, angles);
+        GeometryBuilderPtr builder = GeometryBuilder::Create(*polylineElement, origin, angles);
 
         bvector<DPoint3d> points;
         for (int i = 0; i < n; i++)

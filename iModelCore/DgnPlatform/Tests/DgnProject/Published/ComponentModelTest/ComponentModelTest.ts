@@ -25,7 +25,7 @@ module ComponentModelTest
         var box = be.DgnBoxDetail.InitFromCenterAndSize(new be.DPoint3d(0,0,0), boxSize, true); // NB: the *geometry* is always defined in an LCS w/ origin 0,0,0. The placement below puts where we want it.
         var solid = be.SolidPrimitive.CreateDgnBox(box);
 
-        var builder = new be.ElementGeometryBuilder(element, origin, angles);
+        var builder = new be.GeometryBuilder(element, origin, angles);
         builder.Append(solid);
         builder.SetGeometryStreamAndPlacement(element);
     }

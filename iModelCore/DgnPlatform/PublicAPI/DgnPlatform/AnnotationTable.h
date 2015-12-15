@@ -897,7 +897,7 @@ public:
     virtual double                  _GetFullyExpandedHeight () const = 0;   // Natural height of the content
     virtual double                  _GetFullyCompressedWidth () const = 0;  // Minimum width supported by the content
     virtual double                  _GetFullyExpandedWidth () const = 0;    // Natural width of the content
-    virtual void                    _AppendGeometry (DPoint2dCR origin, DVec2dCR, TableCellAlignment, ElementGeometryBuilderR) const {}
+    virtual void                    _AppendGeometry (DPoint2dCR origin, DVec2dCR, TableCellAlignment, GeometryBuilderR) const {}
 
     virtual void                    _SetAlignment (TableCellAlignment) {};
     virtual void                    _SetOrientation (TableCellOrientation) {};
@@ -950,7 +950,7 @@ public:
     virtual double                  _GetFullyExpandedWidth () const override;
     virtual double                  _GetFullyCompressedHeight () const override;
     virtual double                  _GetFullyExpandedHeight () const override;
-    virtual void                    _AppendGeometry (DPoint2dCR origin, DVec2dCR, TableCellAlignment, ElementGeometryBuilderR) const;
+    virtual void                    _AppendGeometry (DPoint2dCR origin, DVec2dCR, TableCellAlignment, GeometryBuilderR) const;
 
     virtual void                    _SetAlignment (TableCellAlignment) override;
     virtual void                    _SetOrientation (TableCellOrientation) override;
@@ -1022,7 +1022,7 @@ public:
     DVec2d                              GetContentDirection () const;
     DPoint2d                            GetContentOrigin (DPoint2dCR cellOrigin, DVec2dCR xVec, DVec2dCR yVec) const;
     DVec2d                              GetContentSize () const;
-    void                                AppendContentsGeometry (DPoint2dCR origin, DVec2dCR xVec, DVec2dCR yVec, ElementGeometryBuilderR builder) const;
+    void                                AppendContentsGeometry (DPoint2dCR origin, DVec2dCR xVec, DVec2dCR yVec, GeometryBuilderR builder) const;
     double                              GetFullyCompressedContentHeight () const;
     double                              GetFullyExpandedContentHeight () const;
     double                              GetFullyCompressedContentWidth () const;
@@ -2062,7 +2062,7 @@ struct          AnnotationTableStroker
 {
 private:
     AnnotationTableElementCR    m_table;
-    ElementGeometryBuilderR     m_geomBuilder;
+    GeometryBuilderR     m_geomBuilder;
     bvector<FillRuns>           m_allFillRuns;
 
     bool                    m_addFills;
@@ -2087,7 +2087,7 @@ private:
 #endif
 
 public:
-    AnnotationTableStroker (AnnotationTableElementCR table, ElementGeometryBuilderR builder);
+    AnnotationTableStroker (AnnotationTableElementCR table, GeometryBuilderR builder);
 
     AnnotationTableElementCR    GetTable () const { return m_table; }
     FillRunsCR                  GetFillRuns (uint32_t rowIndex) const { return m_allFillRuns[rowIndex]; }

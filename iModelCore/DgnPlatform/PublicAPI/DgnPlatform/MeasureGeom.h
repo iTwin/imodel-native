@@ -20,7 +20,7 @@ typedef RefCountedPtr<MeasureGeomCollector> MeasureGeomCollectorPtr;
 /*=================================================================================**//**
 * @bsiclass
 +===============+===============+===============+===============+===============+======*/
-struct MeasureGeomCollector : RefCountedBase, IElementGraphicsProcessor
+struct MeasureGeomCollector : RefCountedBase, IGeometryProcessor
 {
 public:
 

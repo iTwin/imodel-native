@@ -674,7 +674,7 @@ static DgnDbStatus insertGeomSource(DgnElementCR el, DgnCategoryId categoryId, G
 
     // Insert element uses geom part relationships for geom parts referenced in geom stream...
     IdSet<DgnGeomPartId> parts;
-    ElementGeomIO::Collection(geom.GetData(), geom.GetSize()).GetGeomPartIds(parts, dgnDb);
+    GeometryStreamIO::Collection(geom.GetData(), geom.GetSize()).GetGeomPartIds(parts, dgnDb);
     for (DgnGeomPartId partId : parts)
         {
         if (BentleyStatus::SUCCESS != dgnDb.GeomParts().InsertElementGeomUsesParts(elementId, partId))
@@ -757,7 +757,7 @@ static DgnDbStatus updateGeomSource(DgnElementCR el, DgnCategoryId cat, Geometry
         partsOld.insert(stmt->GetValueId<DgnGeomPartId>(0));
 
     IdSet<DgnGeomPartId> partsNew;
-    ElementGeomIO::Collection(geom.GetData(), geom.GetSize()).GetGeomPartIds(partsNew, dgnDb);
+    GeometryStreamIO::Collection(geom.GetData(), geom.GetSize()).GetGeomPartIds(partsNew, dgnDb);
 
     if (partsOld.empty() && partsNew.empty())
         return stat;
@@ -2053,7 +2053,7 @@ DgnElement::Item* DgnElement::Item::Load(DgnElementCR el)
 DgnDbStatus DgnElement::Item::CallGenerateGeometry(DgnElementR el, GenerateReason reason)
     {
     GeometricElementP gel = el.ToGeometricElementP();
-    return nullptr == gel ? DgnDbStatus::Success : _GenerateElementGeometry(*gel, reason);
+    return nullptr == gel ? DgnDbStatus::Success : _GenerateGeometricPrimitive(*gel, reason);
     }
 #endif
 
@@ -2061,10 +2061,10 @@ DgnDbStatus DgnElement::Item::CallGenerateGeometry(DgnElementR el, GenerateReaso
 * @bsimethod                                    Sam.Wilson      06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 #ifdef WIP_ELEMENT_ITEM // *** pending redesign
-DgnDbStatus DgnElement::Item::GenerateElementGeometry(GeometricElementR el, GenerateReason reason)
+DgnDbStatus DgnElement::Item::GenerateGeometricPrimitive(GeometricElementR el, GenerateReason reason)
     {
     Item* item = GetItemP(el);
-    return nullptr == item ? DgnDbStatus::NotFound : item->_GenerateElementGeometry(el, reason);
+    return nullptr == item ? DgnDbStatus::NotFound : item->_GenerateGeometricPrimitive(el, reason);
     }
 #endif
 
@@ -2117,7 +2117,7 @@ DgnDbStatus DgnElement::Item::ExecuteEGA(DgnElementR el, DPoint3dCR origin, YawP
 * @bsimethod                                    Sam.Wilson      06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 #ifdef WIP_ELEMENT_ITEM // *** pending redesign
-DgnDbStatus InstanceBackedItem::_GenerateElementGeometry(GeometricElementR el, GenerateReason)
+DgnDbStatus InstanceBackedItem::_GenerateGeometricPrimitive(GeometricElementR el, GenerateReason)
     {
     Placement3d placement;
     DgnElement3dP e3d = el.ToElement3dP();

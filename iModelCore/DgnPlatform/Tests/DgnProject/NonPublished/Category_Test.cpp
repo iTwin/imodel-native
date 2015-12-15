@@ -565,7 +565,7 @@ TEST_F (CategoryTests, QueryByElementId)
 
     DgnElementPtr el = TestElement::Create(*m_db, m_defaultModelId, categoryId, DgnElement::Code());
     GeometrySourceP geomElem = el->ToGeometrySourceP();
-    ElementGeometryBuilderPtr builder = ElementGeometryBuilder::Create(*m_defaultModelP, categoryId, DPoint3d::From(0.0, 0.0, 0.0));
+    GeometryBuilderPtr builder = GeometryBuilder::Create(*m_defaultModelP, categoryId, DPoint3d::From(0.0, 0.0, 0.0));
     DEllipse3d ellipseData = DEllipse3d::From(1, 2, 3,
         0, 0, 2,
         0, 3, 0,
