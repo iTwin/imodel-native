@@ -45,7 +45,7 @@ struct RealityDataDownload : public RefCountedBase
 {
 public:
 
-    static int  s_MaxRetryTentative;
+    REALITYDATAPLATFORM_EXPORT static int  s_MaxRetryTentative;
 
     struct FileTransfer 
         {
