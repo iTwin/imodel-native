@@ -458,6 +458,8 @@ public:
 
     DGNPLATFORM_EXPORT static void GetNextComponentNumber (uint32_t& id, DgnDbR project, BeSQLite::PropertySpec spec);
     DGNPLATFORM_EXPORT static LineStyleStatus AddComponentAsProperty (LsComponentId& componentId, DgnDbR project, LsComponentType componentType, V10ComponentBase const*data, uint32_t dataSize);
+    DGNPLATFORM_EXPORT static LineStyleStatus LsComponent::AddComponentAsJsonProperty (LsComponentId& componentId, DgnDbR project, LsComponentType componentType, JsonValueCR jsonValue);
+    DGNPLATFORM_EXPORT static LineStyleStatus AddRasterComponentAsJson (LsComponentId& componentId, DgnDbR project, JsonValueCR jsonDef, uint8_t const*imageData, uint32_t dataSize);
 
     bool                IsWidthDiscernible (ViewContextP, LineStyleSymbCP, DPoint3dCR) const;
     bool                IsSingleRepDiscernible (ViewContextP, LineStyleSymbCP, DPoint3dCR) const;

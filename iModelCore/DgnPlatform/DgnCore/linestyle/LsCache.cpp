@@ -108,6 +108,68 @@ void LsComponent::GetNextComponentNumber (uint32_t& id, DgnDbR project, BeSQLite
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    12/2015
+//---------------------------------------------------------------------------------------
+LineStyleStatus LsComponent::AddRasterComponentAsJson (LsComponentId& componentId, DgnDbR project, JsonValueCR jsonDef, uint8_t const*imageData, uint32_t dataSize)
+    {
+#if defined(NOTNOW)
+    BeSQLite::PropertySpec spec = LineStyleProperty::RasterImage();
+
+    uint32_t componentNumber;
+    GetNextComponentNumber (componentNumber, project, spec);
+
+    if (project.SaveProperty (spec, data, dataSize, componentNumber, 0) != BE_SQLITE_OK)
+        return LINESTYLE_STATUS_SQLITE_Error;
+
+    componentId = LsComponentId(LsComponentType::RasterImage, componentNumber);
+    return LINESTYLE_STATUS_Success;
+#else
+    return LINESTYLE_STATUS_ConvertingComponent;
+#endif
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    12/2015
+//---------------------------------------------------------------------------------------
+LineStyleStatus LsComponent::AddComponentAsJsonProperty (LsComponentId& componentId, DgnDbR project, LsComponentType componentType, JsonValueCR jsonValue)
+    {
+    BeSQLite::PropertySpec spec = LineStyleProperty::Compound();
+
+    switch (componentType)
+        {
+        case LsComponentType::Compound:
+            break;
+        case LsComponentType::LineCode:
+            spec = LineStyleProperty::LineCode();
+            break;
+        case LsComponentType::LinePoint:
+            spec = LineStyleProperty::LinePoint();
+            break;
+        case LsComponentType::PointSymbol:
+            spec = LineStyleProperty::PointSym();
+            break;
+        case LsComponentType::RasterImage:
+            BeAssert(false && "use AddRasterComponentAsJson to add RasterImage");
+            componentId = LsComponentId();
+            return LINESTYLE_STATUS_ConvertingComponent;
+        default:
+            BeAssert(false && "invalid component type");
+            componentId = LsComponentId();
+            return LINESTYLE_STATUS_ConvertingComponent;
+        }
+    uint32_t componentNumber;
+    GetNextComponentNumber (componentNumber, project, spec);
+
+    Utf8String data = Json::FastWriter::ToString(jsonValue);
+
+    if (project.SavePropertyString (spec, data.c_str(), componentNumber, 0) != BE_SQLITE_OK)
+        return LINESTYLE_STATUS_SQLITE_Error;
+
+    componentId = LsComponentId(componentType, componentNumber);
+    return LINESTYLE_STATUS_Success;
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    11/2012
 //---------------------------------------------------------------------------------------
 LineStyleStatus LsComponent::AddComponentAsProperty (LsComponentId& componentId, DgnDbR project, LsComponentType componentType, V10ComponentBase const*data, uint32_t dataSize)
