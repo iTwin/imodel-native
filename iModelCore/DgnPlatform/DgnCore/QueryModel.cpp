@@ -108,7 +108,11 @@ void QueryModel::SetUpdatedResults(Results* results)
     m_updatedResults = results;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/15
++---------------+---------------+---------------+---------------+---------------+------*/
 uint32_t QueryModel::GetElementCount() const {return m_currQueryResults.IsValid() ? m_currQueryResults->GetCount() : 0;}
+double QueryModel::GetLastQueryElapsedSeconds() const {return m_currQueryResults.IsValid() ? m_currQueryResults->GetElapsedSeconds() : 0.0;}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   08/12
@@ -351,6 +355,7 @@ void QueryModel::Queue::qt_WaitForWork()
         if (processing.IsValid())
             {
             auto& model = processing->GetModel();
+            StopWatch timer(nullptr, true);
             if (processing->Process())
                 {
 #if defined TRACE_QUERY_LOGIC
@@ -358,6 +363,7 @@ void QueryModel::Queue::qt_WaitForWork()
 #endif
                 auto updatedResults = processing->GetResults();
                 BeAssert(nullptr != updatedResults);
+                updatedResults->m_elapsedSeconds = timer.GetElapsedSeconds();
                 model.SetUpdatedResults(updatedResults);
                 
                 processing->OnCompleted();
