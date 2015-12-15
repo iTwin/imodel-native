@@ -207,7 +207,7 @@ protected:
     DGNPLATFORM_EXPORT virtual StatusInt _Attach(DgnViewportP, DrawPurpose purpose);
     DGNPLATFORM_EXPORT virtual void _Detach();
     DGNPLATFORM_EXPORT virtual void _OutputGeometry(GeometrySourceCR);
-    virtual void _OutputGraphic(Render::GraphicR) {}
+    virtual void _OutputGraphic(Render::GraphicR, GeometrySourceCP) {}
     virtual Render::GraphicP _GetCachedGraphic(GeometrySourceCR, double pixelSize) {return nullptr;}
     virtual void _SaveGraphic(GeometrySourceCR, Render::GraphicR graphic) {}
     DGNPLATFORM_EXPORT virtual bool _WantAreaPatterns();
@@ -232,7 +232,7 @@ protected:
     DGNPLATFORM_EXPORT virtual void _SetupScanCriteria();
     virtual bool _WantUndisplayed() {return false;}
     DGNPLATFORM_EXPORT virtual void _AddViewOverrides(Render::OvrGraphicParamsR);
-    DGNPLATFORM_EXPORT virtual void _AddContextOverrides(Render::OvrGraphicParamsR);
+    DGNPLATFORM_EXPORT virtual void _AddContextOverrides(Render::OvrGraphicParamsR, GeometrySourceCP source);
     DGNPLATFORM_EXPORT virtual void _CookGeometryParams(Render::GeometryParamsR, Render::GraphicParamsR);
     DGNPLATFORM_EXPORT virtual void _SetScanReturn();
     DGNPLATFORM_EXPORT virtual void _PushFrustumClip();
@@ -335,13 +335,6 @@ public:
 
     /// @name Pushing and Popping Transforms and Clips
     //@{
-    //! Push a Transform, creating a new local coordinate system.
-    //! @param[in]      trans       The transform to push.
-    //! @see   PopTransformClip
-//    void PushTransform(TransformCR trans) {_PushTransform(trans);}
-
-    /// @name Pushing and Popping Transforms and Clips
-    //@{
     //! Push a ClipVector, creating a new local clip region.
     //! @param[in]      clip       A clipping descriptor to push.
     //! @see   PopTransformClip
@@ -394,10 +387,6 @@ public:
     //! Modify the supplied "natural" GeometryParams by resolving effective symbology as required by the context.
     //! Initializes a GraphicParams from the resolved GeometryParams and calls ActivateGraphicParams on the supplied Render::GraphicR.
     DGNPLATFORM_EXPORT void CookGeometryParams(Render::GeometryParamsR geomParams, Render::GraphicR graphic);
-
-    //! Clears current override flags and re-applies context overrides.
-    //! @note Calls ActivateOverrideGraphicParams on the output.
-    DGNPLATFORM_EXPORT void ResetContextOverrides();
 
     //! Get the IPickGeom interface for this ViewContext. Only contexts that are specific to picking will return a non-nullptr value.
     //! @return the IPickGeom interface for this context. May return nullptr.
@@ -507,8 +496,13 @@ public:
 struct DecorateContext : RenderContext
 {
     Render::Decorations& m_decorations;
+
     DecorateContext(DgnViewportR vp, Render::Decorations& decorations) : RenderContext(vp, DrawPurpose::Decorate), m_decorations(decorations) {}
-};
+    DGNVIEW_EXPORT void AddDynamic(Render::GraphicR graphic, Render::OvrGraphicParamsCP);
+    DGNVIEW_EXPORT void AddWorldDecoration(Render::GraphicR graphic, Render::OvrGraphicParamsCP);
+    DGNVIEW_EXPORT void AddCameraOverlay(Render::GraphicR graphic, Render::OvrGraphicParamsCP);
+    DGNVIEW_EXPORT void AddViewOverlay(Render::GraphicR graphic, Render::OvrGraphicParamsCP);
+};  
 
 /** @endGroup */
 

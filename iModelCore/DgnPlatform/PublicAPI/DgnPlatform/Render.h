@@ -708,6 +708,7 @@ private:
     GradientSymbPtr     m_gradient;
     PatternParamsPtr    m_patternParams;
 
+
 public:
     void Cook(GeometryParamsCR, ViewContextR);
 
@@ -749,6 +750,7 @@ public:
     //! Get the raster pattern from this ElemMatSymb. The raster pattern is a 32 bit mask that is
     //! repeated along geometry. For each bit that is on in the pattern, a pixel is set to the line color.
     uint32_t GetRasterPattern() const {return m_rasterPat;}
+    void SetRasterPattern(uint32_t rasterPat) {m_rasterPat = rasterPat; m_lineTexture=nullptr;}
 
     //! Set the line raster-pattern for this GraphicParams. This is only valid for pixel-mode decorators.
     //! @param[in] index index between 0-7
@@ -855,6 +857,7 @@ public:
     void SetLineTransparency(Byte trans) {m_matSymb.SetLineTransparency(trans); m_flags |= FLAGS_ColorTransparency;}
     void SetFillTransparency(Byte trans) {m_matSymb.SetFillTransparency(trans); m_flags |= FLAGS_FillColorTransparency;}
     void SetWidth(uint32_t width) {m_matSymb.SetWidth(width); m_flags |= FLAGS_RastWidth;}
+    void SetRasterPattern(uint32_t rasterPat) {m_matSymb.SetRasterPattern(rasterPat); m_flags |= FLAGS_Style; m_matSymb.GetLineStyleSymbR().SetLineStyle(nullptr);}
     void SetMaterial(Material* material) {m_matSymb.SetMaterial(material); m_flags |= FLAGS_RenderMaterial;}
     void SetPatternParams(PatternParamsP patternParams) {m_matSymb.SetPatternParams(patternParams);}
     DGNPLATFORM_EXPORT void SetLineStyle(int32_t styleNo, DgnModelR modelRef, DgnModelR styleDgnModel, LineStyleParamsCP lStyleParams, ViewContextR context, DPoint3dCP startTangent, DPoint3dCP endTangent);
@@ -1099,10 +1102,21 @@ public:
 // An ordered list of RefCountedPtrs to Render::Graphics.
 // @bsiclass
 //=======================================================================================
-struct GraphicList : std::deque<GraphicPtr>
+struct GraphicList
 {
-    void Add(Graphic& graphic) {push_back(&graphic);}
-    void Clear() {clear();}
+    struct Node
+    {
+        GraphicPtr  m_ptr;
+        void*       m_overrides;
+        uint32_t    m_ovrFlags;
+        Node(Graphic& graphic, void* ovr, uint32_t ovrFlags) : m_ptr(&graphic), m_overrides(ovr), m_ovrFlags(ovrFlags) {}
+    };
+
+    std::deque<Node> m_list;
+
+    uint32_t GetCount() const {return (uint32_t) m_list.size();}
+    void Add(Graphic& graphic, void* ovr, uint32_t ovrFlags) {m_list.push_back(Node(graphic,ovr,ovrFlags));}
+    void Clear() {m_list.clear();}
 };
 
 //=======================================================================================
@@ -1220,11 +1234,12 @@ protected:
     virtual MaterialPtr _GetMaterial(DgnMaterialId, DgnDbR) const = 0;
     virtual TexturePtr _GetTexture(DgnTextureId, DgnDbR) const = 0;
     virtual TexturePtr _CreateTileSection(Image*, bool enableAlpha) const = 0;
+    virtual void* _ResolveOverrides(OvrGraphicParamsCR) = 0;
     virtual void _ChangeScene(SceneR) = 0;
     virtual void _Refresh(PlanCR) = 0;
 
 public:
-    virtual double _GetCameraFrustumNearScaleLimit() = 0;
+    virtual double _GetCameraFrustumNearScaleLimit() const = 0;
     virtual bool _WantInvertBlackBackground() {return false;}
 
     Target(Device* device) : m_device(device) {}
@@ -1238,6 +1253,7 @@ public:
     DeviceCP GetDevice() const {return m_device.get();}
     void OnResized() {_OnResized();}
     ByteStream FillImageCaptureBuffer(CapturedImageInfo& info, DRange2dCR screenBufferRange, Point2dCR outputImageSize, bool topDown) {return _FillImageCaptureBuffer(info, screenBufferRange, outputImageSize, topDown);}
+    void* ResolveOverrides(OvrGraphicParamsCR ovr) {return _ResolveOverrides(ovr);}
     MaterialPtr GetMaterial(DgnMaterialId id, DgnDbR dgndb) const {return _GetMaterial(id, dgndb);}
     TexturePtr GetTexture(DgnTextureId id, DgnDbR dgndb) const {return _GetTexture(id, dgndb);}
     TexturePtr CreateTileSection(Image* image, bool enableAlpha) const {return _CreateTileSection(image, enableAlpha);}
