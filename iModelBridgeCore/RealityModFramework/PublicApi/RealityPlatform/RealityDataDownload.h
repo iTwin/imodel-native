@@ -29,6 +29,8 @@ typedef int(__cdecl *RealityDataDownload_ProgressCallBack)(int index, void *pCli
 //! @param[out] pMsg        Curl English message.
 typedef void(__cdecl *RealityDataDownload_StatusCallBack) (int index, void *pClient, int ErrorCode, const char* pMsg);
 
+//Special Error codes
+#define REALITYDATADOWNLOAD_RETRY_TENTATIVE   -2
 
 BEGIN_BENTLEY_REALITYPLATFORM_NAMESPACE
 
@@ -42,6 +44,9 @@ BEGIN_BENTLEY_REALITYPLATFORM_NAMESPACE
 struct RealityDataDownload : public RefCountedBase
 {
 public:
+
+    REALITYDATAPLATFORM_EXPORT static int  s_MaxRetryTentative;
+
     struct FileTransfer 
         {
         AString  url;

@@ -14,11 +14,14 @@
 
 #include <curl/curl.h>
 
-#define MAX_RETRY_ON_ERROR          25
+//#define TRACE_DEBUG 1
+
 #define MAX_NB_CONNECTIONS          10
 #define DEFAULT_STEP_PROGRESSCALL   (64*1024)      // default step if filesize is absent.
 
 USING_NAMESPACE_BENTLEY_REALITYPLATFORM
+
+int RealityDataDownload::s_MaxRetryTentative = 25;
 
 //=======================================================================================
 //                              RealityDataDownload
@@ -47,6 +50,10 @@ static size_t callback_fwrite_func(void *buffer, size_t size, size_t nmemb, void
     uint32_t byteWritten;
     if (out->fileStream.Write(&byteWritten, buffer, (uint32_t)(size*nmemb)) != BeFileStatus::Success)
         byteWritten = 0;
+
+#ifdef TRACE_DEBUG
+    fprintf(stderr, "callback_fwrite_func byteWritten %lu\n", byteWritten);
+#endif
 
     return byteWritten;
 }
@@ -83,6 +90,10 @@ static int callback_progress_func(void *pClient,
             return (pFileTrans->pProgressFunc)((int)pFileTrans->index, pClient, (size_t)dlnow, pFileTrans->filesize);
             }
         }
+
+#ifdef TRACE_DEBUG
+    fprintf(stderr, "callback_progress_func total:%llu now: %llu\n", (size_t)dltotal, (size_t)dlnow);
+#endif
 
     return 0;
 }
@@ -176,7 +187,9 @@ bool RealityDataDownload::Perform()
             {
             if (m_pStatusFunc)
                 m_pStatusFunc(-1, NULL, mc, "curl_multi_wait() failed");
-//              fprintf(stderr, "curl_multi_wait() failed, code %d.\n", mc);
+#ifdef TRACE_DEBUG
+               fprintf(stderr, "curl_multi_wait() failed, code %d.\n", mc);
+#endif
             break;
             }
 
@@ -210,12 +223,15 @@ bool RealityDataDownload::Perform()
                 // Retry on error
                 if (msg->data.result == 56)     // Recv failure, try again
                     {
-                    if (pFileTrans->nbRetry < MAX_RETRY_ON_ERROR)
+                        if (pFileTrans->nbRetry < s_MaxRetryTentative)
                         { 
                         ++pFileTrans->nbRetry;
-//                        pFileTrans->iAppend = 0;
-//                        if (m_pStatusFunc)            // Send status retry ? Application should know or not ?
-//                            m_pStatusFunc((int)pFileTrans->index, pClient, -2, "Trying again...");
+                        pFileTrans->iAppend = 0;
+                        if (m_pStatusFunc)            // Send status retry ? Application should know or not ?
+                            m_pStatusFunc((int)pFileTrans->index, pClient, REALITYDATADOWNLOAD_RETRY_TENTATIVE, "Trying again...");
+#ifdef TRACE_DEBUG
+                        fprintf(stderr, "R: %d - Retry(%d) <%ls>\n", REALITYDATADOWNLOAD_RETRY_TENTATIVE, pFileTrans->nbRetry, pFileTrans->filename.c_str());
+#endif
                         SetupCurlandFile(pFileTrans->index);
                         still_running++;
                         }
@@ -229,7 +245,9 @@ bool RealityDataDownload::Perform()
                     {
                     if (m_pStatusFunc)
                         m_pStatusFunc((int)pFileTrans->index, pClient, msg->data.result, curl_easy_strerror(msg->data.result));
-//                  fprintf(stderr, "R: %d - %s <%ls>\n", msg->data.result, curl_easy_strerror(msg->data.result), pFileTrans->filename.c_str());
+#ifdef TRACE_DEBUG
+                    fprintf(stderr, "R: %d - %s <%ls>\n", msg->data.result, curl_easy_strerror(msg->data.result), pFileTrans->filename.c_str());
+#endif
                     }
 
                 curl_multi_remove_handle(m_pCurlHandle, msg->easy_handle);
@@ -239,7 +257,9 @@ bool RealityDataDownload::Perform()
                 {
                 if (m_pStatusFunc)
                     m_pStatusFunc(-1, NULL, msg->msg, "CurlMsg failed");
-//                  fprintf(stderr, "E: CURLMsg (%d)\n", msg->msg);
+#ifdef TRACE_DEBUG
+                    fprintf(stderr, "E: CURLMsg (%d)\n", msg->msg);
+#endif
                 }
 
             // Other URL to download ?
