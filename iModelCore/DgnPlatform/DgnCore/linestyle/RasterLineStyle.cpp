@@ -99,7 +99,7 @@ void LsRasterImageComponent::SaveToJson(Json::Value& result, bvector<uint8_t>& i
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    12/2015
 //---------------------------------------------------------------------------------------
-LineStyleStatus LsRasterImageComponent::CreateFromJson(LsRasterImageComponentPtr& result, Json::Value const & jsonDef, bvector<uint8_t> const& imageData, LsLocationCP location)
+LineStyleStatus LsRasterImageComponent::CreateFromJson(LsRasterImageComponentP* result, Json::Value const & jsonDef, bvector<uint8_t> const& imageData, LsLocationCP location)
     {
     LsRasterImageComponentP comp = new LsRasterImageComponent(location);
     comp->ExtractDescription(jsonDef);
@@ -110,6 +110,6 @@ LineStyleStatus LsRasterImageComponent::CreateFromJson(LsRasterImageComponentPtr
     comp->m_image.resize(imageData.size());
     memcpy(&comp->m_image[0], &imageData[0], imageData.size());
 
-    result = comp;
+    *result = comp;
     return LINESTYLE_STATUS_Success;
     }

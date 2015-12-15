@@ -20,7 +20,7 @@
 #include <DgnPlatform/Tools/KeyTree.h>
 
 //  These are both used to try different configurations while testing.  They must both be eliminated
-#define LINESTYLES_ENABLED 0
+#define LINESTYLES_ENABLED 1
 
 #define LSID_DEFAULT        0
 #define LSID_HARDWARE       0x80000000
@@ -182,37 +182,6 @@ struct V10ComponentBase
     DGNPLATFORM_EXPORT void SetVersion ();
 };
 
-//=======================================================================================
-//! Included in a V10LinePoint to describe how symbols are used.
-// @bsiclass                                                    John.Gooding    11/2012
-//=======================================================================================
-struct V10PointSymbolInfo
-{
-    uint32_t      m_symType;              //  must specify a symbol component in the same file
-    uint32_t      m_symID;                //                  ""
-    uint16_t      m_strokeNo;             //  If (!(mod1 & LCPOINT_ANYVERTEX)) && (mod1 & LCPOINT_ONSTROKE)) selects stroke number from stroke pattern
-    uint16_t      m_mod1;
-
-    double        m_xOffset;
-    double        m_yOffset;
-    double        m_zAngle;               //  angle in degrees
-};
-
-//=======================================================================================
-//! Describes the binary representation of LineCode component in a DgnDb
-// @bsiclass                                                    John.Gooding    11/2012
-//=======================================================================================
-struct          V10LinePoint : V10ComponentBase
-{
-    uint32_t      m_lcType;
-    uint32_t      m_lcID;
-    uint32_t      m_nSymbols;
-    V10PointSymbolInfo m_symbol[1];
-
-    // Note: we used to use offsetof(V10LinePoint,m_symbol). It's not legal to use offsetof macro on a non-POD struct, however. 
-    // The cast on nullptr accomplishes the same thing as offsetof. It is safe because we know that V10LinePoint uses standard layout.
-    static uint32_t GetBufferSize(uint32_t numberSymbols) { return ((uint32_t)(intptr_t)&(((V10LinePoint*)nullptr)->m_symbol)) + sizeof (V10PointSymbolInfo) * numberSymbols; }
-};
 
 //=======================================================================================
 //! Describes the binary representation of LsRasterImageComponent component in a DgnDb
@@ -231,65 +200,6 @@ struct V10RasterImage : V10ComponentBase
     static uint32_t GetBufferSize(uint32_t m_nImageBytes) { return ((uint32_t)(intptr_t)&(((V10RasterImage*)nullptr)->m_imageData)) + m_nImageBytes; }
 };
 
-//=======================================================================================
-// @bsiclass                                                    John.Gooding    11/2012
-//=======================================================================================
-struct V10StrokeData
-    {
-    double      m_length;         /* Stroke length                       */
-    double      m_width;          /* Stroke width (or start width)       */
-    double      m_endWidth;       /* End width of tapered stroke         */
-
-    uint8_t     m_strokeMode;     /* bit 0: dash          | gap    dash  */
-                                /* bit 1: trace mode    | linear ray   */
-                                /* bit 2: scale mode    | off    on    */
-                                /* bit 3: start invert                 */
-                                /* bit 4: end invert                   */
-
-    uint8_t     m_widthMode;      /* bit 0: left half     | off    on    */
-                                /* bit 1: right half    | off    on    */
-                                /* bit 2: in taper      | no     yes   */
-                                /* bit 3: end taper     | no     yes   */
-    uint8_t     m_capMode;
-    uint8_t     m_bReserved;
-    };
-
-//=======================================================================================
-//! Describes the binary representation of LsStrokePatternComponent component in a DgnDb
-// @bsiclass                                                    John.Gooding    11/2012
-//=======================================================================================
-struct V10LineCode : V10ComponentBase
-{
-    double        m_phase;
-    uint32_t      m_options;
-    uint32_t      m_maxIterate;
-    uint32_t      m_nStrokes;
-    V10StrokeData m_stroke[1];
-    static uint32_t GetBufferSize(uint32_t numberStrokes) { return ((uint32_t)(intptr_t)&(((V10LineCode*)nullptr)->m_stroke)) + sizeof (V10StrokeData) * numberStrokes; }
-};
-
-//=======================================================================================
-//! Describe how a V10Compound component refers to the components
-// @bsiclass                                                    John.Gooding    11/2012
-//=======================================================================================
-struct V10ComponentInfo
-    {
-    uint32_t    m_type;
-    uint32_t    m_id;
-    double      m_offset;
-    };
-
-//=======================================================================================
-//! Describes the binary representation of LsCompoundComponent component in a DgnDb
-// @bsiclass                                                    John.Gooding    11/2012
-//=======================================================================================
-struct V10Compound : V10ComponentBase
-{
-    uint32_t        m_nComponents;
-    V10ComponentInfo   m_component[1];
-    static uint32_t GetBufferSize(uint32_t numberComponents) { return ((uint32_t)(intptr_t)&(((V10Compound*)nullptr)->m_component)) + sizeof (V10ComponentInfo) * numberComponents; }
-};
-
 typedef struct
     {
     DPoint3d        low;
@@ -299,24 +209,6 @@ typedef struct
 #define LSSYM_3D                0x01    /* 3d symbol                   */
 #define LSSYM_NOSCALE           0x02    /* Acad compat - don't scale symbol at all. */
 
-//=======================================================================================
-//! Describes the binary representation of an LsSymbolComponent component in a DgnDb
-// @bsiclass                                                    John.Gooding    11/2012
-//=======================================================================================
-struct V10Symbol : V10ComponentBase
-{
-    SymbolRange m_range;
-    double      m_scale;
-    uint64_t    m_geomPartId;
-
-    uint32_t    m_lineColor;
-    uint32_t    m_fillColor;
-    uint32_t    m_weight;
-    uint32_t    m_symFlags;
-    bool        m_colorByLevel;
-
-    static uint32_t GetBufferSize() { return sizeof (V10Symbol); }
-};
 #pragma pack(pop)
 
 enum class LsCapMode
@@ -384,10 +276,6 @@ public:
     bool IsValid () const;
 
     bool IsInternalDefault () const {return (LsComponentType::Internal == m_componentId.GetType() && LSID_DEFAULT == GetComponentId().GetValue()) ? true : false;}
-
-    BentleyStatus GetLineCodeLocation (struct LsComponentReader*);
-    BentleyStatus GetPointSymbolLocation (struct LsComponentReader*, int symbolNumber);
-    BentleyStatus GetCompoundComponentLocation (struct LsComponentReader*, int componentNumber);
 };
 
 //=======================================================================================
@@ -399,13 +287,12 @@ protected:
     LsLocationCP        m_source;
     DgnDbR              m_dgndb;
     LsComponentId       m_componentId;
-    V10ComponentBase*   m_rsc;
+    Utf8String          m_jsonSource;
 
 public:
     LsComponentReader (LsLocationCP source, DgnDbR project) : m_dgndb(project)
     {
         m_source            = source;
-        m_rsc               = NULL;
         m_componentId       = m_source->GetComponentId();
     }
 
@@ -414,7 +301,7 @@ public:
 
     LsLocationCP    GetSource()     {return m_source;}
     DgnDbR          GetDgnDb ()     {return m_dgndb; }
-    V10ComponentBase*GetRsc()        {return m_rsc;}
+    void            GetJsonValue(JsonValueR componentDef);
     LsComponentType GetComponentType()  {return m_componentId.GetType();}
 
     static LsComponentReader* GetRscReader (LsLocationCP source, DgnDbR dgnProject);
@@ -457,7 +344,6 @@ public:
         }
 
     DGNPLATFORM_EXPORT static void GetNextComponentNumber (uint32_t& id, DgnDbR project, BeSQLite::PropertySpec spec);
-    DGNPLATFORM_EXPORT static LineStyleStatus AddComponentAsProperty (LsComponentId& componentId, DgnDbR project, LsComponentType componentType, V10ComponentBase const*data, uint32_t dataSize);
     DGNPLATFORM_EXPORT static LineStyleStatus LsComponent::AddComponentAsJsonProperty (LsComponentId& componentId, DgnDbR project, LsComponentType componentType, JsonValueCR jsonValue);
     DGNPLATFORM_EXPORT static LineStyleStatus AddRasterComponentAsJson (LsComponentId& componentId, DgnDbR project, JsonValueCR jsonDef, uint8_t const*imageData, uint32_t dataSize);
 
@@ -560,7 +446,7 @@ protected:
 
 public:
     void SaveToJson(Json::Value& result, bvector<uint8_t>& imageData);
-    static LineStyleStatus CreateFromJson(LsRasterImageComponentPtr&, Json::Value const & jsonDef, bvector<uint8_t> const& imageData, LsLocationCP location);
+    static LineStyleStatus CreateFromJson(LsRasterImageComponentP*, Json::Value const & jsonDef, bvector<uint8_t> const& imageData, LsLocationCP location);
     static LsRasterImageComponent* LoadRasterImage  (LsComponentReader* reader);
     static BentleyStatus CreateRscFromDgnDb(V10RasterImage** rscOut, DgnDbR project, LsComponentId id);
 
@@ -613,7 +499,7 @@ public:
     static LsSymbolComponent* LoadPointSym  (LsComponentReader* reader);
     static LsSymbolComponentPtr Create (LsLocation& location) { LsSymbolComponentP retval = new LsSymbolComponent (&location); retval->m_isDirty = true; return retval; }
     void SaveToJson(Json::Value& result);
-    static LineStyleStatus CreateFromJson(LsSymbolComponentPtr&, Json::Value const & jsonDef, LsLocationCP location);
+    static LineStyleStatus CreateFromJson(LsSymbolComponentP*, Json::Value const & jsonDef, LsLocationCP location);
 
     void                SetColors           (bool colorByLevel, ColorDef lineColor, ColorDef fillColor);
     void                SetWeight           (uint32_t weight);
@@ -643,7 +529,6 @@ public:
     //  resource must not directly refer to a symbol component.
     StatusInt           _DoStroke           (ViewContextP, DPoint3dCP, int, LineStyleSymbCP) const override;
 
-    static BentleyStatus CreateRscFromDgnDb(V10Symbol** rscOut, DgnDbR project, LsComponentId id);
     virtual LsComponentPtr _GetForTextureGeneration() const override { return const_cast<LsSymbolComponentP>(this); }
     virtual LsOkayForTextureGeneration _IsOkayForTextureGeneration() const override { return LsOkayForTextureGeneration::NoChangeRequired; }
     virtual void _StartTextureGeneration() const override {}
@@ -832,9 +717,8 @@ public:
     static LsCompoundComponentPtr Create (LsLocation& location) { LsCompoundComponentP retval = new LsCompoundComponent (&location); retval->m_isDirty = true; return retval; }
     void            CalculateSize                       (DgnModelP modelRef);
 
-    static BentleyStatus CreateRscFromDgnDb(V10Compound** rscOut, DgnDbR project, LsComponentId id);
     void SaveToJson(Json::Value& result);
-    static LineStyleStatus CreateFromJson(LsCompoundComponentPtr&, Json::Value const & jsonDef, LsLocationCP location);
+    static LineStyleStatus CreateFromJson(LsCompoundComponentP*, Json::Value const & jsonDef, LsLocationCP location);
 
     virtual void    _PostProcessLoad            (DgnModelP modelRef) override;
     virtual void    _ClearPostProcess           () override;
@@ -1048,17 +932,14 @@ protected:
     void            StrokeLocal             (ViewContextP, ISymbolProcess const*, DPoint3dCP, int, double, LineStyleSymbCP, DPoint3dCP, DPoint3dCP, int segFlag) const;
     explicit LsStrokePatternComponent       (LsLocationCP pLocation);
     void            FixDashWidths           (double& orgWidth, double& endWidth, bool taper, ViewContextCP context, DPoint3dCP pt);
-    void            Init                    (V10LineCode const* lcRsc);
     virtual LsComponentPtr _Import(DgnImportContext& importer) const;
 
 public:
 
     void SaveToJson(Json::Value& result);
-    static LineStyleStatus CreateFromJson(LsStrokePatternComponentPtr&, Json::Value const & jsonDef, LsLocationCP location);
+    static LineStyleStatus CreateFromJson(LsStrokePatternComponentP*, Json::Value const & jsonDef, LsLocationCP location);
     static LsStrokePatternComponentP  LoadStrokePatternComponent    (LsComponentReader*reader);
     static LsStrokePatternComponentPtr Create                       (LsLocation& location) { LsStrokePatternComponentP retval = new LsStrokePatternComponent (&location); retval->m_isDirty = true; return retval; };
-    BentleyStatus   CreateFromRsrc          (V10LineCode const* pRsc);
-    static BentleyStatus   CreateRscFromDgnDb      (V10LineCode** rsc, DgnDbR project, LsComponentId id);
 
     BentleyStatus   PostCreate              ();
 
@@ -1271,8 +1152,7 @@ public:
     LsOkayForTextureGeneration VerifySymbol(double& adjustment, double startingOffset, double patternLength, uint32_t strokeIndex) const;
 
     void SaveToJson(Json::Value& result);
-    LineStyleStatus CreateFromJson(LsPointComponentPtr&newPoint, Json::Value const & jsonDef, LsLocationCP location);
-    static BentleyStatus   CreateRscFromDgnDb(V10LinePoint** rscOut, DgnDbR project, LsComponentId id);
+    static LineStyleStatus CreateFromJson(LsPointComponentP*, Json::Value const & jsonDef, LsLocationCP location);
     DGNPLATFORM_EXPORT static void SaveLineCodeIdToJson(JsonValueR result, LsComponentId patternId);
     DGNPLATFORM_EXPORT static void SaveSymbolIdToJson(JsonValueR result, LsComponentId symbolId);
 

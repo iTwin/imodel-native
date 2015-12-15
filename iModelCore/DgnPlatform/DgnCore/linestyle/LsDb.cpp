@@ -110,26 +110,6 @@ LsComponentPtr LsStrokePatternComponent::_Import(DgnImportContext& importer) con
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                                   John.Gooding    10/2012
-//--------------+------------------------------------------------------------------------
-BentleyStatus LsStrokePatternComponent::CreateRscFromDgnDb(V10LineCode** rscOut, DgnDbR project, LsComponentId componentId)
-    {
-    *rscOut = NULL;
-    uint32_t propertySize;
-
-    if (BE_SQLITE_ROW != project.QueryPropertySize(propertySize, LineStyleProperty::LineCode(), componentId.GetValue(), 0))
-        return BSIERROR;
-
-    V10LineCode* lineCodeData = (V10LineCode*)bentleyAllocator_malloc (propertySize);
-
-    project.QueryProperty(lineCodeData, propertySize, LineStyleProperty::LineCode(), componentId.GetValue(), 0);
-    BeAssert (propertySize == V10LineCode::GetBufferSize(lineCodeData->m_nStrokes));
-
-    *rscOut = lineCodeData;
-    return BSISUCCESS;
-    }
-
-//---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    12/2015
 //---------------------------------------------------------------------------------------
 LsComponentPtr LsPointComponent::_Import(DgnImportContext& importer) const
@@ -183,7 +163,7 @@ void LsCompoundComponent::SaveToJson(Json::Value& result)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    12/2015
 //---------------------------------------------------------------------------------------
-LineStyleStatus LsCompoundComponent::CreateFromJson(LsCompoundComponentPtr& newCompound, Json::Value const & jsonDef, LsLocationCP thisLocation)
+LineStyleStatus LsCompoundComponent::CreateFromJson(LsCompoundComponentP* newCompound, Json::Value const & jsonDef, LsLocationCP thisLocation)
     {
     LsCompoundComponentP comp = new LsCompoundComponent(thisLocation);
     comp->ExtractDescription(jsonDef);
@@ -203,7 +183,7 @@ LineStyleStatus LsCompoundComponent::CreateFromJson(LsCompoundComponentPtr& newC
             comp->AppendComponent(*child, offset);
         }
 
-    newCompound = comp;
+    *newCompound = comp;
     return LINESTYLE_STATUS_Success;
     }
 
@@ -277,7 +257,7 @@ void LsPointComponent::SaveToJson(Json::Value& result)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    12/2015
 //---------------------------------------------------------------------------------------
-LineStyleStatus LsPointComponent::CreateFromJson(LsPointComponentPtr&newPoint, Json::Value const & jsonDef, LsLocationCP thisLocation)
+LineStyleStatus LsPointComponent::CreateFromJson(LsPointComponentP*newPoint, Json::Value const & jsonDef, LsLocationCP thisLocation)
     {
     LsPointComponentP pPoint = new LsPointComponent(thisLocation);
     pPoint->ExtractDescription(jsonDef);
@@ -287,7 +267,7 @@ LineStyleStatus LsPointComponent::CreateFromJson(LsPointComponentPtr&newPoint, J
     LsLocation childLocation;
     childLocation.SetLocation(*thisLocation->GetDgnDb(), id);
     LsComponentPtr child = DgnLineStyles::GetLsComponent(childLocation);
-    m_strokeComponent = dynamic_cast<LsStrokePatternComponentP>(child.get());
+    pPoint->m_strokeComponent = dynamic_cast<LsStrokePatternComponentP>(child.get());
 
     JsonValueCR symbols = jsonDef["symbols"];
     uint32_t limit = symbols.size();
@@ -317,31 +297,10 @@ LineStyleStatus LsPointComponent::CreateFromJson(LsPointComponentPtr&newPoint, J
         pPoint->m_symbols.push_back(symbolRef);
         }
 
-    newPoint = pPoint;
+    *newPoint = pPoint;
     return LINESTYLE_STATUS_Success; 
     }
 
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   John.Gooding    10/2012
-//--------------+------------------------------------------------------------------------
-BentleyStatus LsPointComponent::CreateRscFromDgnDb(V10LinePoint** rscOut, DgnDbR project, LsComponentId componentId)
-    {
-    *rscOut = NULL;
-    uint32_t propertySize;
-
-    if (BE_SQLITE_ROW != project.QueryPropertySize(propertySize, LineStyleProperty::LinePoint(), componentId.GetValue(), 0))
-        return BSIERROR;
-
-    V10LinePoint* linePointData = (V10LinePoint*)bentleyAllocator_malloc (propertySize);
-
-    project.QueryProperty(linePointData, propertySize, LineStyleProperty::LinePoint(), componentId.GetValue(), 0);
-    BeAssert (propertySize == V10LinePoint::GetBufferSize(linePointData->m_nSymbols));
-
-    *rscOut = linePointData;
-
-    return BSISUCCESS;
-    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    12/2015
@@ -357,26 +316,6 @@ LsComponentPtr LsCompoundComponent::_Import(DgnImportContext& importer) const
     //  Save to destination and record ComponentId in clone
 
     return result;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   John.Gooding    10/2012
-//--------------+------------------------------------------------------------------------
-BentleyStatus LsCompoundComponent::CreateRscFromDgnDb(V10Compound** rscOut, DgnDbR project, LsComponentId componentId)
-    {
-    *rscOut = NULL;
-    uint32_t propertySize;
-
-    if (BE_SQLITE_ROW != project.QueryPropertySize(propertySize, LineStyleProperty::Compound(), componentId.GetValue(), 0))
-        return BSIERROR;
-
-    V10Compound* compoundData = (V10Compound*)bentleyAllocator_malloc (propertySize);
-
-    if (BE_SQLITE_ROW != project.QueryProperty(compoundData, propertySize, LineStyleProperty::Compound(), componentId.GetValue(), 0))
-        return BSIERROR;
-
-    *rscOut = compoundData;
-    return BSISUCCESS;
     }
 
 //---------------------------------------------------------------------------------------
@@ -396,7 +335,7 @@ LsComponentPtr LsSymbolComponent::_Import(DgnImportContext& importer) const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    12/2015
 //---------------------------------------------------------------------------------------
-LineStyleStatus LsSymbolComponent::CreateFromJson(LsSymbolComponentPtr&newComp, Json::Value const & jsonDef, LsLocationCP location)
+LineStyleStatus LsSymbolComponent::CreateFromJson(LsSymbolComponentP*newComp, Json::Value const & jsonDef, LsLocationCP location)
     {
     LsSymbolComponentP pSym = new LsSymbolComponent(location);
     pSym->ExtractDescription(jsonDef);
@@ -444,7 +383,7 @@ LineStyleStatus LsSymbolComponent::CreateFromJson(LsSymbolComponentPtr&newComp, 
     else
         v10Symbol->m_weight = params.GetWeight();
 #endif
-    newComp = pSym;
+    *newComp = pSym;
     return LINESTYLE_STATUS_Success;
     }
 
@@ -545,46 +484,6 @@ void LsSymbolComponent::SaveToJson(Json::Value& result)
 #endif
 
     SaveSymbolDataToJson(result, m_symBase, m_symSize, m_geomPartId, m_symFlags, m_storedScale, m_lineColorByLevel, m_lineColor, m_fillColor, false, m_weight);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   John.Gooding    10/2012
-//--------------+------------------------------------------------------------------------
-BentleyStatus LsSymbolComponent::CreateRscFromDgnDb(V10Symbol** rscOut, DgnDbR project, LsComponentId componentId)
-    {
-    *rscOut = NULL;
-    uint32_t propertySize;
-
-    if (BE_SQLITE_ROW != project.QueryPropertySize(propertySize, LineStyleProperty::PointSym(), componentId.GetValue(), 0))
-        return BSIERROR;
-
-    V10Symbol* symbolData = (V10Symbol*)bentleyAllocator_malloc (propertySize);
-
-    if (BE_SQLITE_ROW != project.QueryProperty(symbolData, propertySize, LineStyleProperty::PointSym(), componentId.GetValue(), 0))
-        return BSIERROR;
-
-    *rscOut = symbolData;
-    return BSISUCCESS;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   John.Gooding    07/2015
-//---------------------------------------------------------------------------------------
-BentleyStatus LsRasterImageComponent::CreateRscFromDgnDb(V10RasterImage** rscOut, DgnDbR project, LsComponentId componentId)
-    {
-    *rscOut = NULL;
-    uint32_t propertySize;
-
-    if (BE_SQLITE_ROW != project.QueryPropertySize(propertySize, LineStyleProperty::RasterImage(), componentId.GetValue(), 0))
-        return BSIERROR;
-
-    V10RasterImage* rasterData = (V10RasterImage*)bentleyAllocator_malloc (propertySize);
-
-    if (BE_SQLITE_ROW != project.QueryProperty(rasterData, propertySize, LineStyleProperty::RasterImage(), componentId.GetValue(), 0))
-        return BSIERROR;
-
-    *rscOut = rasterData;
-    return BSISUCCESS;
     }
 
 //---------------------------------------------------------------------------------------
