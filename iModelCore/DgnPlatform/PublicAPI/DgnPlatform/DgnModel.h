@@ -1399,7 +1399,7 @@ namespace dgn_ModelHandler
     //! The ModelHandler for DgnModel
     struct EXPORT_VTABLE_ATTRIBUTE Model : DgnDomain::Handler
     {
-        friend struct DgnModel;
+        friend struct Dgn::DgnModel;
         DOMAINHANDLER_DECLARE_MEMBERS (DGN_CLASSNAME_Model, Model, DgnDomain::Handler, DGNPLATFORM_EXPORT)
 
     private:
