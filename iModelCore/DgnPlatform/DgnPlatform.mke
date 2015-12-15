@@ -11,6 +11,16 @@
 #----------------------------------------------------------
 %include  mdl.mki
 
+# Need to ignore this because it's in Vancouver's header files.
+%if defined(MSVC_VERSION)
+%if MSVC_VERSION >= 1900
+    # C4312: 'type cast': conversion from '...' to '...' of greater size
+    CCompOpts + -wd4312
+
+    # C4091: '... ': ignored on left of '...' when no variable is declared
+    CCompOpts + -wd4091
+%endif
+%endif
 
 #-----------------------------------------------------------
 # Root DgnPlatform directory
@@ -433,7 +443,7 @@ $(o)DgnScriptStubbedOut$(oext) :                    $(dgnScriptDir)DgnScriptStub
 
 %endif
 
-%if defined (winNT)
+%if $(TARGET_PLATFORM) == "Windows"
 
 $(o)w32tools$(oext) :                               $(ToolsDir)nonport/winnt/w32tools.cpp  ${MultiCompileDepends}
 

@@ -134,12 +134,6 @@ Utf8CP const PerformanceElementsCRUDTestFixture::s_testSchemaXml =
         "    <ECProperty propertyName='Prop4b_3' typeName='double' />"
         "    <ECProperty propertyName='Prop4b_4' typeName='point3d' />"
         "  </ECClass>"
-        "  <ECClass typeName='SimpleElement'>"
-        "    <ECCustomAttributes>"
-        "       <ClassHasHandler xmlns=\"dgn.02.00\" />"
-        "    </ECCustomAttributes>"
-        "    <BaseClass>dgn:Element</BaseClass>"
-        "  </ECClass>"
         "</ECSchema>";
 
 //---------------------------------------------------------------------------------------
@@ -1186,39 +1180,38 @@ void PerformanceElementsCRUDTestFixture::GetSelectSql (Utf8CP className, Utf8Str
 
     if (!asTranslatedFromECSql)
         {
-
         selectSql = "SELECT ";
         bool isFirstItem = true;
         for (auto prop : ecClass->GetProperties(true))
             {
-            if (!prop->GetIsStruct ())
+            Utf8CP alias = prop->GetName().StartsWithI("Prop") ? "p." : "e.";
+
+            if (!prop->GetIsStruct())
                 {
                 if (!isFirstItem)
-                    {
-                    selectSql.append (", ");
-                    }
-                selectSql.append (prop->GetName ());
+                    selectSql.append(",");
+
+                selectSql.append(alias).append(prop->GetName());
                 isFirstItem = false;
                 }
             else
                 {
-                for (auto structProp : prop->GetAsStructProperty ()->GetType ().GetProperties ())
+                for (auto structProp : prop->GetAsStructProperty()->GetType().GetProperties())
                     {
                     if (!isFirstItem)
-                        {
-                        selectSql.append (", ");
-                        }
-                    selectSql.append (prop->GetName ()).append ("_").append (structProp->GetName ());
+                        selectSql.append(",");
+
+                    selectSql.append(alias).append(prop->GetName()).append("_").append(structProp->GetName());
                     isFirstItem = false;
                     }
                 }
             }
 
-        selectSql.append(" FROM dgn_Element WHERE Id = ?");
+        selectSql.append(" FROM dgn_Element e, dgn_PhysicalElement p WHERE e.Id=p.ECInstanceId AND e.ECClassId=p.ECClassId AND e.Id=?");
         if (!omitClassIdFilter)
             {
             Utf8String classIdFilter;
-            classIdFilter.Sprintf(" AND ECClassId=%lld", ecClass->GetId());
+            classIdFilter.Sprintf(" AND e.ECClassId=%lld", ecClass->GetId());
             selectSql.append(classIdFilter);
             }
 
