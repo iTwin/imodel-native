@@ -487,7 +487,7 @@ void HypermodelingViewController::_SetRotation (RotMatrixCR rot)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      08/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnModelP HypermodelingViewController::_GetTargetModel() const
+GeometricModelP HypermodelingViewController::_GetTargetModel() const
     {
     return m_currentViewController->GetTargetModel();    // *** NEEDS WORK: Allow app to switch focus
     }

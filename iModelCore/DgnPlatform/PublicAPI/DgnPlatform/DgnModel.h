@@ -11,6 +11,7 @@
 #include "DgnDomain.h"
 #include "DgnElement.h"
 #include "DgnAuthority.h"
+#include "ECSqlClassParams.h"
 #include "ModelSolverDef.h"
 #include <Bentley/ValueFormat.h>
 #include <DgnPlatform/DgnProperties.h>
@@ -118,101 +119,6 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnModel : RefCountedBase
     };
 
     //=======================================================================================
-    //! The properties for a DgnModel. These are stored as a JSON string in the "Props" column of the DgnModel table.
-    //! These properties are saved by calling DgnModel::Update
-    //! @ingroup DgnModelGroup
-    //=======================================================================================
-    struct Properties
-    {
-        friend struct DgnModel;
-
-    private:
-        struct FormatterFlags
-        {
-            uint32_t m_linearUnitMode:2;
-            uint32_t m_linearPrecType:4;
-            uint32_t m_linearPrecision:8;
-            uint32_t m_angularMode:3;
-            uint32_t m_angularPrecision:8;
-            uint32_t m_directionMode:2;
-            uint32_t m_directionClockwise:1;
-            void FromJson(Json::Value const& inValue);
-            void ToJson(Json::Value& outValue) const;
-        };
-
-        FormatterFlags m_formatterFlags;               //!< format flags
-        UnitDefinition m_masterUnit;                   //!< Master Unit information
-        UnitDefinition m_subUnit;                      //!< Sub Unit information
-        double         m_roundoffUnit;                 //!< unit lock roundoff val
-        double         m_roundoffRatio;                //!< Unit roundoff ratio y to x (if 0 use Grid Ratio)
-        double         m_formatterBaseDir;             //!< Base Direction used for Direction To/From String
-        double         m_azimuthAngle;                 //!< Azimuth angle.  CCW from y axis.
-
-    public:
-        Properties()
-            {
-            m_formatterFlags.m_linearUnitMode = 0;
-            m_formatterFlags.m_linearPrecType = 0;
-            m_formatterFlags.m_linearPrecision= 0;
-            m_formatterFlags.m_angularMode = 0;
-            m_formatterFlags.m_angularPrecision = 0;
-            m_formatterFlags.m_directionMode = 0;
-            m_formatterFlags.m_directionClockwise = 0;
-            m_roundoffRatio = 0;
-            m_formatterBaseDir = 0;
-            m_roundoffUnit = 0;
-            m_subUnit.Init(UnitBase::Meter, UnitSystem::Metric, 1.0, 1.0, L"m");
-            m_masterUnit = m_subUnit;
-            }
-
-        void FromJson(Json::Value const& inValue);
-        void ToJson(Json::Value& outValue) const;
-
-        //! Set master units and sub-units. Units must be valid and comparable.
-        DGNPLATFORM_EXPORT BentleyStatus SetUnits(UnitDefinitionCR newMasterUnit, UnitDefinitionCR newSubUnit);
-        void SetLinearUnitMode(DgnUnitFormat value) { m_formatterFlags.m_linearUnitMode = (uint32_t)value; }
-        void SetLinearPrecision(PrecisionFormat value) {
-                m_formatterFlags.m_linearPrecType  = static_cast<uint32_t>(DoubleFormatter::GetTypeFromPrecision(value));
-                m_formatterFlags.m_linearPrecision = DoubleFormatter::GetByteFromPrecision(value);}
-        void SetAngularMode(AngleMode value) { m_formatterFlags.m_angularMode = (uint32_t)value; }
-        void SetAngularPrecision(AnglePrecision value) { m_formatterFlags.m_angularPrecision = (uint32_t)value; }
-        void SetDirectionMode(DirectionMode value) {m_formatterFlags.m_directionMode = (uint32_t)value; }
-        void SetDirectionClockwise(bool value) { m_formatterFlags.m_directionClockwise = value; }
-        void SetDirectionBaseDir(double value) { m_formatterBaseDir = value; }
-        void SetAzimuthAngle (double azimuthAngle) { m_azimuthAngle = azimuthAngle; }
-        DgnUnitFormat GetLinearUnitMode() const {return (DgnUnitFormat) m_formatterFlags.m_linearUnitMode; }
-        PrecisionFormat GetLinearPrecision() const {return DoubleFormatter::ToPrecisionEnum((PrecisionType) m_formatterFlags.m_linearPrecType, m_formatterFlags.m_linearPrecision); }
-        AngleMode GetAngularMode() const {return (AngleMode) m_formatterFlags.m_angularMode; }
-        AnglePrecision GetAngularPrecision() const {return (AnglePrecision) m_formatterFlags.m_angularPrecision; }
-        DirectionMode GetDirectionMode() const {return (DirectionMode) m_formatterFlags.m_directionMode; }
-        bool GetDirectionClockwise() const {return m_formatterFlags.m_directionClockwise; }
-        double GetDirectionBaseDir() const {return m_formatterBaseDir; }
-        void SetRoundoffUnit(double roundoffUnit, double roundoffRatio) {m_roundoffUnit  = roundoffUnit;m_roundoffRatio = roundoffRatio;}
-        double GetRoundoffUnit() const {return m_roundoffUnit;}
-        double GetRoundoffRatio() const {return m_roundoffRatio;}
-        FormatterFlags GetFormatterFlags() const    {return m_formatterFlags;}
-        double GetAzimuthAngle() const { return m_azimuthAngle; }
-
-        //! Get the master units for this DgnModel.
-        //! Master units are the major display units for coordinates in a DgnModel (e.g. "Meters", or "Feet").
-        //! @see SetUnits, GetSubUnits
-        UnitDefinitionCR GetMasterUnits() const {return m_masterUnit;}
-
-        //! Get the sub-units for this DgnModel.
-        //! Sub units are the minor readout units for coordinates in a DgnModel (e.g. "Centimeters, or "Inches").
-        //! @see SetUnits, GetMasterUnits
-        UnitDefinitionCR GetSubUnits() const {return m_subUnit;}
-
-        //! Get the number of millimeters per master unit.
-        //! @see GetMasterUnits
-        DGNPLATFORM_EXPORT double GetMillimetersPerMaster() const;
-
-        //! Get the number of sub units per master unit.
-        //! @see GetSubUnits
-        DGNPLATFORM_EXPORT double GetSubPerMaster() const;
-    };
-
-    //=======================================================================================
     //! Parameters to create a new instances of a DgnModel.
     //! @ingroup DgnModelGroup
     //=======================================================================================
@@ -222,15 +128,24 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnModel : RefCountedBase
         DgnModelId  m_id;
         DgnClassId  m_classId;
         Code        m_code;
-        Properties  m_props;
+        Utf8String  m_label;
+        bool        m_inGuiList;
+
         //! Parameters to create a new instance of a DgnModel.
         //! @param[in] dgndb The DgnDb for the new DgnModel
         //! @param[in] classId The DgnClassId for the new DgnModel.
         //! @param[in] code The code for the DgnModel
-        //! @param[in] props The properties for the new DgnModel.
+        //! @param[in] label Label of the new DgnModel
+        //! @param[in] inGuiList Controls the visibility of the new DgnModel in model lists shown to the user
         //! @param[in] id Internal only, must be DgnModelId() to create a new DgnModel.
-        CreateParams(DgnDbR dgndb, DgnClassId classId, Code code, Properties props=Properties(), DgnModelId id=DgnModelId()) :
-            m_dgndb(dgndb), m_id(id), m_classId(classId), m_code(code), m_props(props) {}
+        CreateParams(DgnDbR dgndb, DgnClassId classId, Code code, Utf8CP label = nullptr, bool inGuiList = true, DgnModelId id = DgnModelId()) :
+            m_dgndb(dgndb), m_id(id), m_classId(classId), m_code(code), m_inGuiList(inGuiList)
+            {
+            SetLabel(label);
+            }
+
+        void SetLabel(Utf8CP label) { m_label.AssignOrClear(label); }
+        void SetInGuiList(bool inGuiList) { m_inGuiList = inGuiList; }
 
         DGNPLATFORM_EXPORT void RelocateToDestinationDb(DgnImportContext&);
     };
@@ -262,12 +177,17 @@ private:
     void RegisterElement(DgnElementCR el) {_RegisterElement(el);}
     void ReleaseAllElements();
 
+    DgnDbStatus BindInsertAndUpdateParams(BeSQLite::EC::ECSqlStatement& statement);
+    DgnDbStatus Read();
 protected:
     DgnDbR          m_dgndb;
     DgnModelId      m_modelId;
     DgnClassId      m_classId;
     Code            m_code;
-    Properties      m_properties;
+    Utf8String      m_label;
+    bool            m_inGuiList;
+    int             m_dependencyIndex;
+
     DgnElementMap   m_elements;
     mutable bmap<AppData::Key const*, RefCountedPtr<AppData>, std::less<AppData::Key const*>, 8> m_appData;
     mutable bool    m_persistent;   // true if this DgnModel is in the DgnModels "loaded models" list.
@@ -280,8 +200,42 @@ protected:
     virtual void DGNPLATFORM_EXPORT _RegisterElement(DgnElementCR element);
 
     DGNPLATFORM_EXPORT virtual void _InitFrom(DgnModelCR other);            //!< @private
-    DGNPLATFORM_EXPORT virtual void _ToPropertiesJson(Json::Value&) const;//!< @private
-    DGNPLATFORM_EXPORT virtual void _FromPropertiesJson(Json::Value const&);//!< @private
+
+    //! Invoked when loading a model from the table, to allow subclasses to extract their property values
+    //! from the SELECT statement. The parameters are those which were specified by this elements Handler.
+    //! @param[in] statement The SELECT statement which selected the class using ECSql
+    //! @param[in] params The properties selected by the SELECT statement. Use this to obtain an index into the statement.
+    //! @return DgnDbStatus::Success if the data was loaded successfully, or else an error status.
+    //! @note If you override this method, you @em must first call T_Super::_ReadSelectParams, forwarding its status.
+    //! You should then extract your subclass properties from the supplied ECSqlStatement, using
+    //! selectParams.GetParameterIndex() to look up the index of each parameter within the statement.
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement& statement, ECSqlClassParamsCR params);
+
+    //! Called to bind the model's property values to the ECSqlStatement when inserting
+    //! a new model.  The parameters to bind were the ones specified by this model's Handler.
+    //! @note If you override this method, you should bind your subclass properties
+    //! to the supplied ECSqlStatement, using statement.GetParameterIndex with your property's name.
+    //! Then you @em must call T_Super::_BindInsertParams, forwarding its status.
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _BindInsertParams(BeSQLite::EC::ECSqlStatement& statement);
+
+    //! Called to bind the model's property values to the ECSqlStatement when updating
+    //! an existing model.  The parameters to bind were the ones specified by this model's Handler
+    //! @note If you override this method, you should bind your subclass properties
+    //! to the supplied ECSqlStatement, using statement.GetParameterIndex with your property's name.
+    //! Then you @em must call T_Super::_BindUpdateParams, forwarding its status.
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _BindUpdateParams(BeSQLite::EC::ECSqlStatement& statement);
+
+    //! Invoked when writing the Properties field into the Db as part of an Insert or Update operation.
+    //! @note If you override this method, you @em must call T_Super::_WriteJsonProperties. Consider
+    //! writing your properties into a sub node of the value to avoid collisions with the 
+    //! super class properties.
+    virtual void _WriteJsonProperties(Json::Value& value) const {}
+
+    //! Invoked when reading the Properties field from the Db. 
+    //! @note If you override this method, you @em must call T_Super::_WriteJsonProperties. Consider
+    //! writing your properties into a sub node of the value to avoid collisions with the 
+    //! super class properties.
+    virtual void _ReadJsonProperties(Json::Value const& value) {}
 
     /** @name Events associated with DgnElements of a DgnModel */
     /** @{ */
@@ -356,10 +310,6 @@ protected:
     //! Load all of the DgnElements of this DgnModel into memory.
     DGNPLATFORM_EXPORT virtual void _FillModel();
 
-    //! Load this model's data from the database. If overridden, @em must first call the T_Super implementation, forwarding its status.
-    DGNPLATFORM_EXPORT virtual void _ReadProperties();
-    //! Update this model's data in the database. If overridden, @em must first call the T_Super implementation, forwarding its status.
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _Update();
 
     /** @name Events for a DgnModel */
     /** @{ */
@@ -397,8 +347,6 @@ protected:
     virtual SheetModelCP _ToSheetModel() const {return nullptr;}
     virtual SystemModelCP _ToSystemModel() const {return nullptr;}
     /** @} */
-
-    void ReadProperties();
 
     //! The sublcass should import elements from the source model into this model. 
     //! Import is done in phases. The import framework will call _ImportElementAspectsFrom and then _ImportECRelationshipsFrom after calling this method.
@@ -472,12 +420,6 @@ public:
     //! A newly created model before it is inserted, or a model after calling Delete, is not persistent.
     bool IsPersistent() const {return m_persistent;}
 
-    //! Get a writable reference to the Properties for this DgnModel.
-    Properties& GetPropertiesR() {return m_properties;}
-
-    //! Get the Properties for this DgnModel.
-    Properties const& GetProperties() const {return m_properties;}
-
     //! Get the Code of this DgnModel
     Code const& GetCode() const {return m_code;}
 
@@ -489,6 +431,19 @@ public:
 
     //! Get the DgnModelId of this DgnModel
     DgnModelId GetModelId() const {return m_modelId;}
+
+    //! Get the label of this DgnModel.
+    //! @note may be nullptr
+    Utf8CP GetLabel() const { return m_label.c_str(); }
+    
+    //! Set the label of this DgnModel.
+    void SetLabel(Utf8CP label) { m_label.AssignOrClear(label); }
+
+    //! Get the visibility in model lists shown to the user
+    bool GetInGuiList() const { return m_inGuiList; }
+
+    //! Set the visibility in model lists shown to the user
+    void SetInGuiList(bool val) { m_inGuiList = val; }
 
     //! @name Dynamic casting to DgnModel subclasses
     //@{
@@ -524,7 +479,7 @@ public:
 
     //! Insert this model into the DgnDb.
     //! @return DgnDbStatus::Success if this model was successfully inserted, error otherwise.
-    DGNPLATFORM_EXPORT DgnDbStatus Insert(Utf8CP description=nullptr, bool inGuiList=true);
+    DGNPLATFORM_EXPORT DgnDbStatus Insert();
 
     //! Delete this model from the DgnDb
     //! @note All elements from this model are deleted as well. This method will fail on the first element that cannot be successfully deleted.
@@ -651,44 +606,136 @@ struct EXPORT_VTABLE_ATTRIBUTE GeometricModel : DgnModel
 {
     DEFINE_T_SUPER(DgnModel);
 
+    //=======================================================================================
+    //! The DisplayInfo for a DgnModel. These are stored within a "DisplayInfo"
+    //! node of the JSON value that's serialized as a string in "Properties" column of the DgnModel table.
+    //! @ingroup DgnModelGroup
+    //=======================================================================================
+    struct DisplayInfo
+    {
+    friend struct GeometricModel;
+
+    private:
+        struct FormatterFlags
+            {
+            uint32_t m_linearUnitMode : 2;
+            uint32_t m_linearPrecType : 4;
+            uint32_t m_linearPrecision : 8;
+            uint32_t m_angularMode : 3;
+            uint32_t m_angularPrecision : 8;
+            uint32_t m_directionMode : 2;
+            uint32_t m_directionClockwise : 1;
+            void FromJson(Json::Value const& inValue);
+            void ToJson(Json::Value& outValue) const;
+            };
+
+        FormatterFlags m_formatterFlags;               //!< format flags
+        UnitDefinition m_masterUnit;                   //!< Master Unit information
+        UnitDefinition m_subUnit;                      //!< Sub Unit information
+        double         m_roundoffUnit;                 //!< unit lock roundoff val
+        double         m_roundoffRatio;                //!< Unit roundoff ratio y to x (if 0 use Grid Ratio)
+        double         m_formatterBaseDir;             //!< Base Direction used for Direction To/From String
+        double         m_azimuthAngle;                 //!< Azimuth angle.  CCW from y axis.
+
+    public:
+        DisplayInfo()
+            {
+            m_formatterFlags.m_linearUnitMode = 0;
+            m_formatterFlags.m_linearPrecType = 0;
+            m_formatterFlags.m_linearPrecision = 0;
+            m_formatterFlags.m_angularMode = 0;
+            m_formatterFlags.m_angularPrecision = 0;
+            m_formatterFlags.m_directionMode = 0;
+            m_formatterFlags.m_directionClockwise = 0;
+            m_roundoffRatio = 0;
+            m_formatterBaseDir = 0;
+            m_roundoffUnit = 0;
+            m_subUnit.Init(UnitBase::Meter, UnitSystem::Metric, 1.0, 1.0, L"m");
+            m_masterUnit = m_subUnit;
+            }
+
+        void FromJson(Json::Value const& inValue);
+        void ToJson(Json::Value& outValue) const;
+
+        //! Set master units and sub-units. Units must be valid and comparable.
+        DGNPLATFORM_EXPORT BentleyStatus SetUnits(UnitDefinitionCR newMasterUnit, UnitDefinitionCR newSubUnit);
+        void SetLinearUnitMode(DgnUnitFormat value) { m_formatterFlags.m_linearUnitMode = (uint32_t) value; }
+        void SetLinearPrecision(PrecisionFormat value)
+            {
+            m_formatterFlags.m_linearPrecType = static_cast<uint32_t>(DoubleFormatter::GetTypeFromPrecision(value));
+            m_formatterFlags.m_linearPrecision = DoubleFormatter::GetByteFromPrecision(value);
+            }
+        void SetAngularMode(AngleMode value) { m_formatterFlags.m_angularMode = (uint32_t) value; }
+        void SetAngularPrecision(AnglePrecision value) { m_formatterFlags.m_angularPrecision = (uint32_t) value; }
+        void SetDirectionMode(DirectionMode value) { m_formatterFlags.m_directionMode = (uint32_t) value; }
+        void SetDirectionClockwise(bool value) { m_formatterFlags.m_directionClockwise = value; }
+        void SetDirectionBaseDir(double value) { m_formatterBaseDir = value; }
+        void SetAzimuthAngle(double azimuthAngle) { m_azimuthAngle = azimuthAngle; }
+        DgnUnitFormat GetLinearUnitMode() const { return (DgnUnitFormat) m_formatterFlags.m_linearUnitMode; }
+        PrecisionFormat GetLinearPrecision() const { return DoubleFormatter::ToPrecisionEnum((PrecisionType) m_formatterFlags.m_linearPrecType, m_formatterFlags.m_linearPrecision); }
+        AngleMode GetAngularMode() const { return (AngleMode) m_formatterFlags.m_angularMode; }
+        AnglePrecision GetAngularPrecision() const { return (AnglePrecision) m_formatterFlags.m_angularPrecision; }
+        DirectionMode GetDirectionMode() const { return (DirectionMode) m_formatterFlags.m_directionMode; }
+        bool GetDirectionClockwise() const { return m_formatterFlags.m_directionClockwise; }
+        double GetDirectionBaseDir() const { return m_formatterBaseDir; }
+        void SetRoundoffUnit(double roundoffUnit, double roundoffRatio) { m_roundoffUnit = roundoffUnit; m_roundoffRatio = roundoffRatio; }
+        double GetRoundoffUnit() const { return m_roundoffUnit; }
+        double GetRoundoffRatio() const { return m_roundoffRatio; }
+        FormatterFlags GetFormatterFlags() const { return m_formatterFlags; }
+        double GetAzimuthAngle() const { return m_azimuthAngle; }
+
+        //! Get the master units for this DgnModel.
+        //! Master units are the major display units for coordinates in a DgnModel (e.g. "Meters", or "Feet").
+        //! @see SetUnits, GetSubUnits
+        UnitDefinitionCR GetMasterUnits() const { return m_masterUnit; }
+
+        //! Get the sub-units for this DgnModel.
+        //! Sub units are the minor readout units for coordinates in a DgnModel (e.g. "Centimeters, or "Inches").
+        //! @see SetUnits, GetMasterUnits
+        UnitDefinitionCR GetSubUnits() const { return m_subUnit; }
+
+        //! Get the number of millimeters per master unit.
+        //! @see GetMasterUnits
+        DGNPLATFORM_EXPORT double GetMillimetersPerMaster() const;
+
+        //! Get the number of sub units per master unit.
+        //! @see GetSubUnits
+        DGNPLATFORM_EXPORT double GetSubPerMaster() const;
+    };
+
     struct CreateParams : T_Super::CreateParams
     {
         DEFINE_T_SUPER(GeometricModel::T_Super::CreateParams);
+        DisplayInfo  m_displayInfo;
 
-        ModelSolverDef m_solver;
-
-        //! Parameters to create a new instance of a DgnModel.
+        //! Parameters to create a new instance of a GeometricModel.
         //! @param[in] dgndb The DgnDb for the new DgnModel
         //! @param[in] classId The DgnClassId for the new DgnModel.
         //! @param[in] code The Code for the DgnModel
-        //! @param[in] props The properties for the new DgnModel.
-        //! @param[in] solver The definition of the solver to be used by this model when validating changes to its content.
+        //! @param[in] label Label of the new DgnModel
+        //! @param[in] displayInfo The DisplayInfo for the new DgnModel.
+        //! @param[in] inGuiList Controls the visibility of the new DgnModel in model lists shown to the user
         //! @param[in] id Internal only, must be DgnModelId() to create a new DgnModel.
-        CreateParams(DgnDbR dgndb, DgnClassId classId, Code code, Properties props=Properties(), ModelSolverDef solver=ModelSolverDef(), DgnModelId id=DgnModelId())
-            : T_Super(dgndb, classId, code, props, id), m_solver(solver) { }
+        CreateParams(DgnDbR dgndb, DgnClassId classId, Code code, Utf8CP label = nullptr, DisplayInfo displayInfo = DisplayInfo(), bool inGuiList = true, DgnModelId id = DgnModelId())
+            : T_Super(dgndb, classId, code, label, inGuiList, id), m_displayInfo(displayInfo)
+            {}
 
         //! @private
         //! This constructor is used only by the model handler to create a new instance, prior to calling ReadProperties on the model object
         CreateParams(DgnModel::CreateParams const& params) : T_Super(params) { }
 
-        //! Get the model solver
-        ModelSolverDef const& GetSolver() const {return m_solver;}
-        //! Set the model solver
-        void SetSolver(ModelSolverDef const& s) {m_solver=s;}
     };
 
 private:
     mutable DgnRangeTreeP m_rangeIndex;
-    ModelSolverDef m_solver;
+    DisplayInfo  m_displayInfo;
 
     DGNPLATFORM_EXPORT void AllocateRangeIndex() const;
     void AddToRangeIndex(DgnElementCR);
     void RemoveFromRangeIndex(DgnElementCR);
     void UpdateRangeIndex(DgnElementCR modified, DgnElementCR original);
-
+    
 protected:
-    void SetSolver(ModelSolverDef const& solver) { m_solver = solver; }
-
     void ClearRangeIndex();
 
     virtual void _SetFilled() override {T_Super::_SetFilled(); AllocateRangeIndex();}
@@ -723,23 +770,20 @@ protected:
     DGNPLATFORM_EXPORT virtual void _OnUpdatedElement(DgnElementCR modified, DgnElementCR original) override;
     DGNPLATFORM_EXPORT virtual void _OnReversedUpdateElement(DgnElementCR modified, DgnElementCR original) override;
 
-    DGNPLATFORM_EXPORT virtual void _InitFrom(DgnModelCR other);            //!< @private
-    DGNPLATFORM_EXPORT DgnModelPtr virtual _CloneForImport(DgnDbStatus* stat, DgnImportContext& importer) const override;
-    DGNPLATFORM_EXPORT virtual void _ReadProperties();
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _Update();
-    virtual void _GetSolverOptions(Json::Value&) {;}
-    DGNPLATFORM_EXPORT virtual void _OnValidate() override;
+    DGNPLATFORM_EXPORT virtual void _WriteJsonProperties(Json::Value&) const override;
+    DGNPLATFORM_EXPORT virtual void _ReadJsonProperties(Json::Value const&) override;
 
     virtual GeometricModelCP _ToGeometricModel() const override {return this;}
     
-    explicit GeometricModel(CreateParams const& params) : T_Super(params), m_rangeIndex(nullptr), m_solver(params.m_solver) { }
+    explicit GeometricModel(CreateParams const& params) : T_Super(params), m_rangeIndex(nullptr), m_displayInfo(params.m_displayInfo) {}
+
 public:
     void AddGraphicsToScene(ViewContextR context) {_AddGraphicsToScene(context);}
 
-    //! Get the AxisAlignedBox3d of the contents of this DgnModel.
+    //! Get the AxisAlignedBox3d of the contents of this model.
     AxisAlignedBox3d QueryModelRange() const {return _QueryModelRange();}
 
-    //! Get the Global Origin for this DgnModel.
+    //! Get the Global Origin for this model.
     //! The global origin is an offset that is added to all coordinate values of this DgnModel when reporting them to the user.
     //! @note all PhysicalModels have the same coordinate system and the same global origin.
     DPoint3d GetGlobalOrigin() const {return _GetGlobalOrigin();}
@@ -747,11 +791,11 @@ public:
     //! Get the coordinate space in which the model's geometry is defined.
     CoordinateSpace GetCoordinateSpace() const {return _GetCoordinateSpace();}
 
-    //! Get the solver that is used to validate this model.
-    ModelSolverDef const& GetSolver() const {return m_solver;}
-    ModelSolverDef& GetSolver() {return m_solver;}
+    //! Get a writable reference to the DisplayInfo for this model.
+    DisplayInfo& GetDisplayInfoR() { return m_displayInfo; }
 
-    void GetSolverOptions(Json::Value& options) { _GetSolverOptions(options); }
+    //! Get the Properties for this model.
+    DisplayInfo const& GetDisplayInfo() const { return m_displayInfo; }
 };
 
 //=======================================================================================
@@ -780,11 +824,18 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnModel2d : GeometricModel
     {
     DEFINE_T_SUPER(GeometricModel)
 
+private:
+    DgnDbStatus BindInsertAndUpdateParams(BeSQLite::EC::ECSqlStatement& statement);
+
 protected:
     DPoint2d m_globalOrigin;    //!< Global Origin - all coordinates are offset by this value.
 
-    DGNPLATFORM_EXPORT void _ToPropertiesJson(Json::Value&) const override;
-    DGNPLATFORM_EXPORT void _FromPropertiesJson(Json::Value const&) override;
+    DGNPLATFORM_EXPORT virtual void _InitFrom(DgnModelCR other) override;
+
+    DGNPLATFORM_EXPORT DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement& statement, ECSqlClassParamsCR params) override;
+    DGNPLATFORM_EXPORT DgnDbStatus _BindInsertParams(BeSQLite::EC::ECSqlStatement& statement) override;
+    DGNPLATFORM_EXPORT DgnDbStatus _BindUpdateParams(BeSQLite::EC::ECSqlStatement& statement) override;
+
     DPoint3d _GetGlobalOrigin() const override {return DPoint3d::From(m_globalOrigin);}
     DgnModel2dCP _ToDgnModel2d() const override {return this;}
 
@@ -910,6 +961,7 @@ private:
         };
 
 public:
+
     //=======================================================================================
     //! Parameters to create a new instances of a ComponentModel.
     //! @ingroup DgnModelGroup
@@ -920,6 +972,8 @@ public:
         DEFINE_T_SUPER(DgnModel3d::CreateParams)
         friend struct ComponentModel;
         CompProps m_compProps;
+        ModelSolverDef m_solver;
+
     public:
         //! Parameters to create a new instance of a ComponentModel.
         //! @param[in] dgndb The DgnDb for the new ComponentModel
@@ -933,6 +987,12 @@ public:
         //! @private
         //! This constructor is used only by the model handler to create a new instance, prior to calling ReadProperties on the model object
         explicit CreateParams(DgnModel::CreateParams const& params) : T_Super(params), m_compProps("","","") {}
+
+        //! Get the model solver
+        ModelSolverDef const& GetSolver() const { return m_solver; }
+
+        //! Set the model solver
+        void SetSolver(ModelSolverDef const& s) { m_solver = s; }
     };
 
     friend struct CreateParams;
@@ -985,15 +1045,24 @@ private:
 
 private:
     CompProps m_compProps;
+    ModelSolverDef m_solver;
 
     DPoint3d _GetGlobalOrigin() const override final {return DPoint3d::FromZero();}
     CoordinateSpace _GetCoordinateSpace() const override final {return CoordinateSpace::Local;}
-    void _GetSolverOptions(Json::Value&) override;
+    void _GetSolverOptions(Json::Value&);
     DgnDbStatus _OnDelete() override;
-    //DgnDbStatus _OnUpdate() override;
 
-    void _ToPropertiesJson(Json::Value&) const override;//!< @private
-    void _FromPropertiesJson(Json::Value const&) override;//!< @private
+    void _InitFrom(DgnModelCR other) override;
+
+    DgnModelPtr _CloneForImport(DgnDbStatus* stat, DgnImportContext& importer) const override;
+    void _OnValidate() override;
+
+    DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement& statement, ECSqlClassParamsCR params) override;
+    DgnDbStatus _BindInsertParams(BeSQLite::EC::ECSqlStatement& statement) override;
+    DgnDbStatus _BindUpdateParams(BeSQLite::EC::ECSqlStatement& statement) override;
+
+    void _WriteJsonProperties(Json::Value&) const override;//!< @private
+    void _ReadJsonProperties(Json::Value const&) override;//!< @private
 
     DgnElement::Code CreateCapturedSolutionCode(Utf8StringCR slnId);
 
@@ -1001,9 +1070,20 @@ private:
     DgnElementPtr CreateCapturedSolutionElement(DgnDbStatus& status, DgnElement::Code const& icode, bvector<bpair<DgnSubCategoryId, DgnGeomPartId>> const&, HarvestedSolutionWriter& writer);
     DgnElementCPtr MakeCapturedSolutionElement(DgnDbStatus& status, DgnElement::Code const& icode, HarvestedSolutionWriter& WriterHandler);
 
+    void SetSolver(ModelSolverDef const& solver) { m_solver = solver; }
+
+    DgnDbStatus BindInsertAndUpdateParams(BeSQLite::EC::ECSqlStatement& statement);
+
 public:
     //! @private - used in testing only 
     DGNPLATFORM_EXPORT DgnDbStatus Solve(ModelSolverDef::ParameterSet const& parameters);
+
+    //! Get the solver that is used to validate this model.
+    ModelSolverDef const& GetSolver() const { return m_solver; }
+    ModelSolverDef& GetSolver() { return m_solver; }
+
+    //! Get solver options
+    DGNPLATFORM_EXPORT void GetSolverOptions(Json::Value& options);
 
     //! @private - used only by ElementCopier
     static void OnElementCopied(DgnElementCR outputElement, DgnElementCR sourceElement, DgnCloneContext&);
@@ -1265,21 +1345,31 @@ struct EXPORT_VTABLE_ATTRIBUTE SheetModel : DgnModel2d
         //! @param[in] classId the DgnClassId of thew new SheetModel (must be or derive from SheetModel)
         //! @param[in] code the code of the new SheetModel
         //! @param[in] size the size of the SheetModel, in meters.
-        //! @param[in] props the Properties of the new SheetModel
+        //! @param[in] label Label of the new DgnModel
+        //! @param[in] displayInfo the Properties of the new SheetModel
+        //! @param[in] inGuiList Controls the visibility of the new DgnModel in model lists shown to the user
         //! @param[in] id the DgnModelId of thew new SheetModel. This should be DgnModelId() when creating a new model.
-        CreateParams(DgnDbR dgndb, DgnClassId classId, Code code, DPoint2d size, Properties props=Properties(), DgnModelId id=DgnModelId()) :
-            T_Super(dgndb, classId, code, props, ModelSolverDef(), id), m_size(size) {}
+        CreateParams(DgnDbR dgndb, DgnClassId classId, Code code, DPoint2d size, Utf8CP label = nullptr, DisplayInfo displayInfo = DisplayInfo(), bool inGuiList = true, DgnModelId id = DgnModelId()) :
+            T_Super(dgndb, classId, code, label, displayInfo, inGuiList, id), m_size(size)
+            {}
 
         explicit CreateParams(DgnModel::CreateParams const& params, DPoint2d size=DPoint2d::FromZero()) : T_Super(params), m_size(size) {}
     };
+
+private:
+    DgnDbStatus BindInsertAndUpdateParams(BeSQLite::EC::ECSqlStatement& statement);
 
 protected:
     DPoint2d m_size;
 
     SheetModelCP _ToSheetModel() const override {return this;}
 
-    DGNPLATFORM_EXPORT virtual void _ToPropertiesJson(Json::Value&) const override;
-    DGNPLATFORM_EXPORT virtual void _FromPropertiesJson(Json::Value const&) override;
+    DGNPLATFORM_EXPORT virtual void _InitFrom(DgnModelCR other) override;
+
+    DGNPLATFORM_EXPORT DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement& statement, ECSqlClassParamsCR params) override;
+    DGNPLATFORM_EXPORT DgnDbStatus _BindInsertParams(BeSQLite::EC::ECSqlStatement& statement) override;
+    DGNPLATFORM_EXPORT DgnDbStatus _BindUpdateParams(BeSQLite::EC::ECSqlStatement& statement) override;
+
     DGNPLATFORM_EXPORT virtual DgnDbStatus _OnInsertElement(DgnElementR element) override;
 
 public:
@@ -1309,12 +1399,21 @@ namespace dgn_ModelHandler
     //! The ModelHandler for DgnModel
     struct EXPORT_VTABLE_ATTRIBUTE Model : DgnDomain::Handler
     {
+        friend struct DgnModel;
         DOMAINHANDLER_DECLARE_MEMBERS (DGN_CLASSNAME_Model, Model, DgnDomain::Handler, DGNPLATFORM_EXPORT)
+
+    private:
+        ECSqlClassInfo m_classInfo;
+        ECSqlClassInfo const& GetECSqlClassInfo();
 
     protected:
         ModelHandlerP _ToModelHandler() override {return this;}
         virtual DgnModelP _CreateInstance(DgnModel::CreateParams const& params) {return nullptr;}
         virtual uint64_t _ParseRestrictedAction(Utf8CP name) const override { return DgnModel::RestrictedAction::Parse(name); }
+
+        //! Add the names of any subclass properties used by ECSql INSERT, UPDATE, and/or SELECT statements to the ECSqlClassParams list.
+        //! If you override this method, you @em must invoke T_Super::_GetClassParams().
+        DGNPLATFORM_EXPORT virtual void _GetClassParams(ECSqlClassParamsR params);
 
     public:
         //! Find an ModelHandler for a subclass of dgn.Model. This is just a shortcut for FindHandler with the base class
@@ -1326,22 +1425,32 @@ namespace dgn_ModelHandler
         DgnModelPtr Create(DgnModel::CreateParams const& params) {return _CreateInstance(params);}
     };
 
+    //! The ModelHandler for Model2d
+    struct EXPORT_VTABLE_ATTRIBUTE Model2d : Model
+    {
+        MODELHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_Model2d, DgnModel2d, Model2d, Model, DGNPLATFORM_EXPORT)
+    protected:
+        DGNPLATFORM_EXPORT virtual void _GetClassParams(ECSqlClassParamsR params) override;
+    };
+
     //! The ModelHandler for PhysicalModel
     struct EXPORT_VTABLE_ATTRIBUTE Physical : Model
     {
-        MODELHANDLER_DECLARE_MEMBERS (DGN_CLASSNAME_PhysicalModel, PhysicalModel, Physical, Model, DGNPLATFORM_EXPORT)
+        MODELHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_PhysicalModel, PhysicalModel, Physical, Model, DGNPLATFORM_EXPORT)
     };
 
     //! The ModelHandler for ComponentModel
     struct EXPORT_VTABLE_ATTRIBUTE Component : Model
     {
-        MODELHANDLER_DECLARE_MEMBERS (DGN_CLASSNAME_ComponentModel, ComponentModel, Component, Model, DGNPLATFORM_EXPORT)
+        MODELHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_ComponentModel, ComponentModel, Component, Model, DGNPLATFORM_EXPORT)
+    protected:
+        DGNPLATFORM_EXPORT virtual void _GetClassParams(ECSqlClassParamsR params) override;
     };
 
     //! The ModelHandler for PlanarPhysicalModel
-    struct EXPORT_VTABLE_ATTRIBUTE PlanarPhysical : Model
+    struct EXPORT_VTABLE_ATTRIBUTE PlanarPhysical : Model2d
     {
-        MODELHANDLER_DECLARE_MEMBERS (DGN_CLASSNAME_PlanarPhysicalModel, PlanarPhysicalModel, PlanarPhysical, Model, DGNPLATFORM_EXPORT)
+        MODELHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_PlanarPhysicalModel, PlanarPhysicalModel, PlanarPhysical, Model2d, DGNPLATFORM_EXPORT)
     };
 
     //! The ModelHandler for SectionDrawingModel
@@ -1351,9 +1460,11 @@ namespace dgn_ModelHandler
     };
 
     //! The ModelHandler for SheetModel
-    struct EXPORT_VTABLE_ATTRIBUTE Sheet : Model
+    struct EXPORT_VTABLE_ATTRIBUTE Sheet : Model2d
     {
-        MODELHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_SheetModel, SheetModel, Sheet, Model, DGNPLATFORM_EXPORT)
+        MODELHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_SheetModel, SheetModel, Sheet, Model2d, DGNPLATFORM_EXPORT)
+    protected:
+        DGNPLATFORM_EXPORT virtual void _GetClassParams(ECSqlClassParamsR params) override;
     };
 
     //! The ModelHandler for DefinitionModel
@@ -1366,12 +1477,6 @@ namespace dgn_ModelHandler
     struct EXPORT_VTABLE_ATTRIBUTE Dictionary : Definition
     {
         MODELHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_DictionaryModel, DictionaryModel, Dictionary, Definition, DGNPLATFORM_EXPORT)
-    };
-
-    //! The ModelHandler for Model2d
-    struct EXPORT_VTABLE_ATTRIBUTE Model2d : Model
-    {
-        MODELHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_Model2d, DgnModel2d, Model2d, Model, DGNPLATFORM_EXPORT)
     };
 
     //! The ModelHandler for SystemModel

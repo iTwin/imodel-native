@@ -222,7 +222,7 @@ public:
         DgnModelId          m_id;
         DgnClassId          m_classId;
         AuthorityIssuedCode m_code;
-        Utf8String          m_description;
+        Utf8String          m_label;
         bool                m_inGuiList;
 
     public:
@@ -236,19 +236,18 @@ public:
             m_inGuiList = true;
             }
 
-        Utf8StringR GetDescriptionR() {return m_description;}
         void SetCode(AuthorityIssuedCode code) {m_code = code;}
-        void SetDescription(Utf8CP val) {m_description.AssignOrClear(val);}
-        void SetInGuiList(bool val)   {m_inGuiList = val;}
+        void SetLabel(Utf8CP label) { m_label.AssignOrClear(label); }
+        void SetInGuiList(bool inGuiList) { m_inGuiList = inGuiList; }
         void SetId(DgnModelId id) {m_id = id;}
         void SetClassId(DgnClassId classId) {m_classId = classId;}
         void SetModelType(DgnClassId classId) {m_classId = classId;}
 
-        DgnModelId GetId() const {return m_id;}
         AuthorityIssuedCode const& GetCode() const {return m_code;}
-        Utf8CP GetDescription() const {return m_description.c_str();}
+        Utf8CP GetLabel() const { return m_label.c_str(); }
+        bool GetInGuiList() const { return m_inGuiList; }
+        DgnModelId GetId() const { return m_id; }
         DgnClassId GetClassId() const {return m_classId;}
-        bool InGuiList() const {return m_inGuiList;}
 
     }; // Model
 
@@ -271,9 +270,9 @@ public:
             DGNPLATFORM_EXPORT Utf8CP GetCodeValue() const;
             DGNPLATFORM_EXPORT Utf8CP GetCodeNamespace() const;
             DGNPLATFORM_EXPORT DgnAuthorityId GetCodeAuthorityId() const;
-            DGNPLATFORM_EXPORT Utf8CP GetDescription() const;
+            DGNPLATFORM_EXPORT Utf8CP GetLabel() const;
             DGNPLATFORM_EXPORT DgnClassId GetClassId() const;
-            DGNPLATFORM_EXPORT bool InGuiList() const;
+            DGNPLATFORM_EXPORT bool GetInGuiList() const;
 
             Entry const& operator*() const {return *this;}
         };

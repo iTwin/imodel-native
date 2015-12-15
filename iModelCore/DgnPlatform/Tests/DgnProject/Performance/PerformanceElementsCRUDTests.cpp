@@ -180,7 +180,7 @@ DgnDbStatus PerformanceElement1::_BindInsertParams (BeSQLite::EC::ECSqlStatement
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus PerformanceElement1::_ExtractSelectParams (ECSqlStatement& stmt, ECSqlClassParams const& params)
+DgnDbStatus PerformanceElement1::_ReadSelectParams (ECSqlStatement& stmt, ECSqlClassParams const& params)
     {
     EXPECT_EQ (0, strcmp (stmt.GetValueText (params.GetSelectIndex ("Prop1_1")), "Element1 - InitValue"));
     EXPECT_EQ (10000000, stmt.GetValueInt64 (params.GetSelectIndex ("Prop1_2")));
@@ -270,9 +270,9 @@ DgnDbStatus PerformanceElement2::_BindInsertParams (BeSQLite::EC::ECSqlStatement
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus PerformanceElement2::_ExtractSelectParams (ECSqlStatement& stmt, ECSqlClassParams const& params)
+DgnDbStatus PerformanceElement2::_ReadSelectParams (ECSqlStatement& stmt, ECSqlClassParams const& params)
     {
-    EXPECT_EQ (DgnDbStatus::Success, T_Super::_ExtractSelectParams (stmt, params));
+    EXPECT_EQ (DgnDbStatus::Success, T_Super::_ReadSelectParams (stmt, params));
     EXPECT_EQ (0, strcmp (stmt.GetValueText (params.GetSelectIndex ("Prop2_1")), "Element2 - InitValue"));
     EXPECT_EQ (20000000, stmt.GetValueInt64 (params.GetSelectIndex ("Prop2_2")));
     EXPECT_EQ (2.71828, stmt.GetValueDouble (params.GetSelectIndex ("Prop2_3")));
@@ -361,9 +361,9 @@ DgnDbStatus PerformanceElement3::_BindInsertParams (BeSQLite::EC::ECSqlStatement
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus PerformanceElement3::_ExtractSelectParams (ECSqlStatement& stmt, ECSqlClassParams const& params)
+DgnDbStatus PerformanceElement3::_ReadSelectParams (ECSqlStatement& stmt, ECSqlClassParams const& params)
     {
-    EXPECT_EQ (DgnDbStatus::Success, T_Super::_ExtractSelectParams (stmt, params));
+    EXPECT_EQ (DgnDbStatus::Success, T_Super::_ReadSelectParams (stmt, params));
     EXPECT_EQ (0, strcmp (stmt.GetValueText (params.GetSelectIndex ("Prop3_1")), "Element3 - InitValue"));
     EXPECT_EQ (30000000, stmt.GetValueInt64 (params.GetSelectIndex ("Prop3_2")));
     EXPECT_EQ (1.414121, stmt.GetValueDouble (params.GetSelectIndex ("Prop3_3")));
@@ -452,9 +452,9 @@ DgnDbStatus PerformanceElement4::_BindInsertParams (BeSQLite::EC::ECSqlStatement
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus PerformanceElement4::_ExtractSelectParams (ECSqlStatement& stmt, ECSqlClassParams const& params)
+DgnDbStatus PerformanceElement4::_ReadSelectParams (ECSqlStatement& stmt, ECSqlClassParams const& params)
     {
-    EXPECT_EQ (DgnDbStatus::Success, T_Super::_ExtractSelectParams (stmt, params));
+    EXPECT_EQ (DgnDbStatus::Success, T_Super::_ReadSelectParams (stmt, params));
     EXPECT_EQ (0, strcmp (stmt.GetValueText (params.GetSelectIndex ("Prop4_1")), "Element4 - InitValue"));
     EXPECT_EQ (40000000, stmt.GetValueInt64 (params.GetSelectIndex ("Prop4_2")));
     EXPECT_EQ (1.61803398874, stmt.GetValueDouble (params.GetSelectIndex ("Prop4_3")));
