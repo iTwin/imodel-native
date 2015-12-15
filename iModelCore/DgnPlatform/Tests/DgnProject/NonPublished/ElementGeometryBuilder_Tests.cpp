@@ -14,23 +14,23 @@ USING_NAMESPACE_BENTLEY_DPTEST
 * Test fixture for testing Element Geometry Builder
 * @bsimethod                                                    Umar.Hayat      07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct ElementGeometryBuilderTests : public DgnDbTestFixture
+struct GeometryBuilderTests : public DgnDbTestFixture
 {
 };
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Umar.Hayat      07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(ElementGeometryBuilderTests, CreateElement3d)
+TEST_F(GeometryBuilderTests, CreateElement3d)
     {
-    SetupProject(L"3dMetricGeneral.idgndb", L"ElementGeometryBuilderTests_CreateElement3d.idgndb", BeSQLite::Db::OpenMode::ReadWrite);
+    SetupProject(L"3dMetricGeneral.idgndb", L"GeometryBuilderTests_CreateElement3d.idgndb", BeSQLite::Db::OpenMode::ReadWrite);
 
     DgnElementPtr el = TestElement::Create(*m_db, m_defaultModelId, m_defaultCategoryId, DgnElement::Code());
 
     DgnModelP model = m_db->Models().GetModel(m_defaultModelId).get();
     GeometrySourceP geomElem = el->ToGeometrySourceP();
 
-    ElementGeometryBuilderPtr builder = ElementGeometryBuilder::Create(*model, m_defaultCategoryId, DPoint3d::From(0.0, 0.0, 0.0));
+    GeometryBuilderPtr builder = GeometryBuilder::Create(*model, m_defaultCategoryId, DPoint3d::From(0.0, 0.0, 0.0));
 
     //  CurvePrimitive
     //
@@ -104,16 +104,16 @@ TEST_F(ElementGeometryBuilderTests, CreateElement3d)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Umar.Hayat      07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(ElementGeometryBuilderTests, CreateElement2d)
+TEST_F(GeometryBuilderTests, CreateElement2d)
     {
-    SetupProject(L"2dMetricGeneral.idgndb", L"ElementGeometryBuilderTests_CreateElement2d.idgndb", BeSQLite::Db::OpenMode::ReadWrite);
+    SetupProject(L"2dMetricGeneral.idgndb", L"GeometryBuilderTests_CreateElement2d.idgndb", BeSQLite::Db::OpenMode::ReadWrite);
 
     DgnElementPtr el = TestElement2d::Create(*m_db, m_defaultModelId, m_defaultCategoryId, DgnElement::Code(),100);
 
     DgnModelP model = m_db->Models().GetModel(m_defaultModelId).get();
     GeometrySourceP geomElem = el->ToGeometrySourceP();
 
-    ElementGeometryBuilderPtr builder = ElementGeometryBuilder::Create(*model, m_defaultCategoryId, DPoint2d::From(0.0, 0.0));
+    GeometryBuilderPtr builder = GeometryBuilder::Create(*model, m_defaultCategoryId, DPoint2d::From(0.0, 0.0));
     TextString textStringElem;
     textStringElem.SetText("If we have no text we have no range and insert fails");
     EXPECT_TRUE(builder->Append(textStringElem));

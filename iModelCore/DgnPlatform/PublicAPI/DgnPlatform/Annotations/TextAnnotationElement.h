@@ -66,7 +66,7 @@ public:
     TextAnnotationData() : m_isGeometrySuppressed(false) {}
     TextAnnotationCP GetAnnotation() const { return m_annotation.get(); }
     void SetAnnotation(TextAnnotationCP value) { m_annotation = value ? value->Clone() : nullptr; }
-    DGNPLATFORM_EXPORT void GenerateElementGeometry(GeometrySourceR, GenerateReason) const;
+    DGNPLATFORM_EXPORT void GenerateGeometricPrimitive(GeometrySourceR, GenerateReason) const;
 };
 
 namespace dgn_AspectHandler

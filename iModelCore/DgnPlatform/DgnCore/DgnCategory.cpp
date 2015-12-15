@@ -649,7 +649,7 @@ void DgnCategory::_OnImported(DgnElementCR original, DgnImportContext& importer)
 
         // When we import a Category, we currently import all of its SubCategories too.
         // If we decide to change this policy and wait until the caller asks for a SubCategory, 
-        // we must change ElementGeomIO::Import to call RemapSubCategory, rather than FindSubCategory.
+        // we must change GeometryStreamIO::Import to call RemapSubCategory, rather than FindSubCategory.
         for (auto const& srcSubCatId : DgnSubCategory::QuerySubCategories(importer.GetSourceDb(), DgnCategoryId(original.GetElementId().GetValue())))
             importer.RemapSubCategory(GetCategoryId(), srcSubCatId);
         }
@@ -769,7 +769,7 @@ DgnSubCategoryId DgnImportContext::RemapSubCategory(DgnCategoryId destCategoryId
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus DgnImportContext::RemapGeometryStreamIds(GeometryStreamR geom)
     {
-    return ElementGeomIO::Import(geom, geom, *this);
+    return GeometryStreamIO::Import(geom, geom, *this);
     }
 
 /*---------------------------------------------------------------------------------**//**

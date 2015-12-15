@@ -158,7 +158,7 @@ void ViewAttachmentTest::AddBoxToDrawing(DgnModelId drawingId, double width, dou
 
     auto geomEl = el->ToGeometrySourceP()->ToGeometrySource2dP();
     geomEl->SetCategoryId(m_attachmentCatId);
-    ElementGeometryBuilderPtr builder = ElementGeometryBuilder::Create(*geomEl, DPoint2d::From(3,2));
+    GeometryBuilderPtr builder = GeometryBuilder::Create(*geomEl, DPoint2d::From(3,2));
 
     builder->Append(*curve);
     EXPECT_EQ(SUCCESS, builder->SetGeometryStreamAndPlacement(*geomEl));
@@ -178,7 +178,7 @@ template<typename VC, typename EL> void ViewAttachmentTest::SetupAndSaveViewCont
     viewController.SetStandardViewRotation(StandardView::Top);
     viewController.SetRotation(RotMatrix::FromAxisAndRotationAngle(2, rot));
     viewController.LookAtVolume(el.CalculateRange3d(), nullptr, &viewMargin);
-    viewController.GetViewFlagsR().SetRenderMode(RenderMode::Wireframe);
+    viewController.GetViewFlagsR().SetRenderMode(Render::RenderMode::Wireframe);
     viewController.ChangeCategoryDisplay(m_attachmentCatId, true);
     viewController.ChangeModelDisplay(modelId, true);
 

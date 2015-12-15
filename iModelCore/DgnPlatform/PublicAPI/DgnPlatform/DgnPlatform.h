@@ -103,7 +103,6 @@ DGNPLATFORM_TYPEDEFS (RedlineModel)
 DGNPLATFORM_TYPEDEFS (SystemElement)
 DGNPLATFORM_TYPEDEFS (ViewContext)
 DGNPLATFORM_TYPEDEFS (ViewController)
-DGNPLATFORM_TYPEDEFS (ViewFlags)
 DGNPLATFORM_TYPEDEFS (DgnDbExpressionContext);
 DGNPLATFORM_TYPEDEFS (DgnElementExpressionContext);
 
@@ -138,8 +137,8 @@ DGNPLATFORM_TYPEDEFS (DwgHatchDef)
 DGNPLATFORM_TYPEDEFS (DwgHatchDefLine)
 DGNPLATFORM_TYPEDEFS (ElementAlignedBox2d)
 DGNPLATFORM_TYPEDEFS (ElementAlignedBox3d)
-DGNPLATFORM_TYPEDEFS (ElementGeometry)
-DGNPLATFORM_TYPEDEFS (ElementGeometryBuilder)
+DGNPLATFORM_TYPEDEFS (GeometricPrimitive)
+DGNPLATFORM_TYPEDEFS (GeometryBuilder)
 DGNPLATFORM_TYPEDEFS (ElementLocateManager)
 DGNPLATFORM_TYPEDEFS (FenceManager)
 DGNPLATFORM_TYPEDEFS (FenceParams)
@@ -155,7 +154,7 @@ DGNPLATFORM_TYPEDEFS (IEditAction)
 DGNPLATFORM_TYPEDEFS (IEditActionArray)
 DGNPLATFORM_TYPEDEFS (IEditActionSource)
 DGNPLATFORM_TYPEDEFS (IEditManipulator)
-DGNPLATFORM_TYPEDEFS (IElementGraphicsProcessor)
+DGNPLATFORM_TYPEDEFS (IGeometryProcessor)
 DGNPLATFORM_TYPEDEFS (IElementState)
 DGNPLATFORM_TYPEDEFS (IFaceMaterialAttachments)
 DGNPLATFORM_TYPEDEFS (ILineStyle)
@@ -927,6 +926,22 @@ public:
     //! @param[in] size number of bytes in data
     void Append(uint8_t const* data, uint32_t size) {ReserveMemory(size+m_size); if (data) memcpy(m_data+m_size, data, size);}
 };
+
+//=======================================================================================
+// @bsiclass                                                    Keith.Bentley   12/14
+//=======================================================================================
+enum class StandardView
+    {
+    NotStandard = -1,
+    Top         = 1,
+    Bottom      = 2,
+    Left        = 3,
+    Right       = 4,
+    Front       = 5,
+    Back        = 6,
+    Iso         = 7,
+    RightIso    = 8,
+    };
 
 //=======================================================================================
 //! RGBA values for a color

@@ -62,11 +62,11 @@ TEST_F (ElementDisplayProperties, SetGradient)
     EXPECT_TRUE(pE1.IsValid());
 
     GeometrySourceCP geomElem = pE1->ToGeometrySource();
-    ElementGeometryCollection collection(*geomElem);
+    GeometryCollection collection(*geomElem);
 
     for (auto iter : collection)
         {
-        ElementGeometryPtr geom = iter.GetGeometryPtr();
+        GeometricPrimitivePtr geom = iter.GetGeometryPtr();
 
         if (!geom.IsValid())
             continue;
@@ -114,11 +114,11 @@ TEST_F(ElementDisplayProperties, SetDisplayPattern)
     DgnElementCP pE1 = m_db->Elements ().FindElement (E1id);
 
     GeometrySourceCP geomElem = pE1->ToGeometrySource();
-    ElementGeometryCollection collection (*geomElem);
+    GeometryCollection collection (*geomElem);
 
     for (auto iter : collection)
         {
-        ElementGeometryPtr geom = iter.GetGeometryPtr();
+        GeometricPrimitivePtr geom = iter.GetGeometryPtr();
 
         if (!geom.IsValid())
             continue;
@@ -155,11 +155,11 @@ TEST_F (ElementDisplayProperties, SetTransparency)
     EXPECT_TRUE(pE1.IsValid());
 
     GeometrySourceCP geomElem = pE1->ToGeometrySource();
-    ElementGeometryCollection collection(*geomElem);
+    GeometryCollection collection(*geomElem);
 
     for (auto iter : collection)
         {
-        ElementGeometryPtr geom = iter.GetGeometryPtr();
+        GeometricPrimitivePtr geom = iter.GetGeometryPtr();
 
         if (!geom.IsValid())
             continue;
@@ -192,11 +192,11 @@ TEST_F (ElementDisplayProperties, SetCategory)
     EXPECT_TRUE(pE1.IsValid());
 
     GeometrySourceCP geomElem = pE1->ToGeometrySource();
-    ElementGeometryCollection collection(*geomElem);
+    GeometryCollection collection(*geomElem);
 
     for (auto iter : collection)
         {
-        ElementGeometryPtr geom = iter.GetGeometryPtr();
+        GeometricPrimitivePtr geom = iter.GetGeometryPtr();
 
         if (!geom.IsValid())
             continue;
@@ -234,11 +234,11 @@ TEST_F (ElementDisplayProperties, SetDisplayParams)
     EXPECT_TRUE(pE1.IsValid());
 
     GeometrySourceCP geomElem = pE1->ToGeometrySource();
-    ElementGeometryCollection collection(*geomElem);
+    GeometryCollection collection(*geomElem);
 
     for (auto iter : collection)
         {
-        ElementGeometryPtr geom = iter.GetGeometryPtr();
+        GeometricPrimitivePtr geom = iter.GetGeometryPtr();
 
         if (!geom.IsValid())
             continue;
@@ -276,11 +276,11 @@ TEST_F (ElementDisplayProperties, FillProperties)
     EXPECT_TRUE(pE1.IsValid());
 
     GeometrySourceCP geomElem = pE1->ToGeometrySource();
-    ElementGeometryCollection collection(*geomElem);
+    GeometryCollection collection(*geomElem);
 
     for (auto iter : collection)
         {
-        ElementGeometryPtr geom = iter.GetGeometryPtr();
+        GeometricPrimitivePtr geom = iter.GetGeometryPtr();
 
         if (!geom.IsValid())
             continue;

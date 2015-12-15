@@ -102,13 +102,13 @@ struct DetectJsErrors : DgnPlatformLib::Host::ScriptAdmin::ScriptNotificationHan
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void checkGeometryStream(GeometrySourceCR gel, ElementGeometry::GeometryType exptectedType, size_t expectedCount)
+static void checkGeometryStream(GeometrySourceCR gel, GeometricPrimitive::GeometryType exptectedType, size_t expectedCount)
     {
     //  Verify that item generated a line
     size_t count=0;
-    for (auto iter : ElementGeometryCollection (gel))
+    for (auto iter : GeometryCollection (gel))
         {
-        ElementGeometryPtr geom = iter.GetGeometryPtr();
+        GeometricPrimitivePtr geom = iter.GetGeometryPtr();
 
         if (!geom.IsValid())
             continue;
@@ -125,7 +125,7 @@ static void checkGeometryStream(GeometrySourceCR gel, ElementGeometry::GeometryT
 static void checkSlabDimensions(GeometrySourceCR el, double expectedX, double expectedY, double expectedZ)
     {
     DgnBoxDetail box;
-    ASSERT_TRUE( (*(ElementGeometryCollection(el).begin())).GetGeometryPtr()->GetAsISolidPrimitive()->TryGetDgnBoxDetail(box) ) << "Geometry should be a slab";
+    ASSERT_TRUE( (*(GeometryCollection(el).begin())).GetGeometryPtr()->GetAsISolidPrimitive()->TryGetDgnBoxDetail(box) ) << "Geometry should be a slab";
     EXPECT_EQ( expectedX, box.m_baseX );
     EXPECT_EQ( expectedY, box.m_baseY );
     EXPECT_DOUBLE_EQ( expectedZ, box.m_topOrigin.Distance(box.m_baseOrigin) );
@@ -352,7 +352,7 @@ void ComponentModelTest::Developer_TestWidgetSolver()
         ASSERT_EQ( 2 , countElementsInModel(*cm) );
 
         DgnElementCPtr el = cm->begin()->second;
-        checkGeometryStream(*el->ToGeometrySource(), ElementGeometry::GeometryType::SolidPrimitive, 1);
+        checkGeometryStream(*el->ToGeometrySource(), GeometricPrimitive::GeometryType::SolidPrimitive, 1);
         checkSlabDimensions(*el->ToGeometrySource(),  params.GetParameter("X")->GetValue().GetDouble(), 
                                                         params.GetParameter("Y")->GetValue().GetDouble(),
                                                         params.GetParameter("Z")->GetValue().GetDouble());
@@ -384,7 +384,7 @@ void ComponentModelTest::Developer_TestGadgetSolver()
         ASSERT_EQ( 1 , countElementsInModel(*cm) );
 
         DgnElementCPtr el = cm->begin()->second;
-        checkGeometryStream(*el->ToGeometrySource(), ElementGeometry::GeometryType::SolidPrimitive, 1);
+        checkGeometryStream(*el->ToGeometrySource(), GeometricPrimitive::GeometryType::SolidPrimitive, 1);
         checkSlabDimensions(*el->ToGeometrySource(),  params.GetParameter("Q")->GetValue().GetDouble(), 
                                                         params.GetParameter("W")->GetValue().GetDouble(),
                                                         params.GetParameter("R")->GetValue().GetDouble());
@@ -416,7 +416,7 @@ void ComponentModelTest::Developer_TestThingSolver()
         ASSERT_EQ( 2 , countElementsInModel(*cm) );
 
         DgnElementCPtr el = cm->begin()->second;
-        checkGeometryStream(*el->ToGeometrySource(), ElementGeometry::GeometryType::SolidPrimitive, 1);
+        checkGeometryStream(*el->ToGeometrySource(), GeometricPrimitive::GeometryType::SolidPrimitive, 1);
         checkSlabDimensions(*el->ToGeometrySource(),  params.GetParameter("A")->GetValue().GetDouble(), 
                                                         params.GetParameter("B")->GetValue().GetDouble(),
                                                         params.GetParameter("C")->GetValue().GetDouble());
@@ -480,7 +480,7 @@ void ComponentModelTest::Client_ImportCM(Utf8CP componentName)
 void ComponentModelTest::Client_CheckComponentInstance(DgnElementId eid, size_t expectedSolidCount, double x, double y, double z)
     {
     DgnElementCPtr el = m_clientDb->Elements().Get<DgnElement>(eid);
-    checkGeometryStream(*el->ToGeometrySource(), ElementGeometry::GeometryType::SolidPrimitive, expectedSolidCount);
+    checkGeometryStream(*el->ToGeometrySource(), GeometricPrimitive::GeometryType::SolidPrimitive, expectedSolidCount);
     checkSlabDimensions(*el->ToGeometrySource(), x, y, z);
     }
 

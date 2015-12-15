@@ -17,7 +17,7 @@ USING_NAMESPACE_BENTLEY_DPTEST
 * Test fixture for testing Element Geometry Builder
 * @bsimethod                                                    Umar.Hayat      07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct ElementGeometryBuilderTests : public DgnDbTestFixture
+struct GeometryBuilderTests : public DgnDbTestFixture
 {
 
 };
@@ -36,7 +36,7 @@ static void setUpView(DgnDbR dgnDb, DgnModelR model, ElementAlignedBox3d element
     PhysicalViewController viewController (dgnDb, view.GetViewId());
     viewController.SetStandardViewRotation(StandardView::Iso);
     viewController.LookAtVolume(elementBox, nullptr, &viewMargin);
-    viewController.GetViewFlagsR().SetRenderMode(RenderMode::SmoothShade);
+    viewController.GetViewFlagsR().SetRenderMode(Render::RenderMode::SmoothShade);
     viewController.ChangeCategoryDisplay(categoryId, true);
     viewController.ChangeModelDisplay(model.GetModelId(), true);
 
@@ -111,7 +111,7 @@ static DgnMaterialId createTexturedMaterial(DgnDbR dgnDb, Utf8CP materialName, W
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     09/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void appendGeometry(DPoint3dR origin, ElementGeometryBuilderR builder)
+static void appendGeometry(DPoint3dR origin, GeometryBuilderR builder)
     {
     double      dz = 3.0;
     double      radius = 1.5;
@@ -146,7 +146,7 @@ static void appendGeometry(DPoint3dR origin, ElementGeometryBuilderR builder)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     09/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(ElementGeometryBuilderTests, CreateElementWithMaterials)
+TEST_F(GeometryBuilderTests, CreateElementWithMaterials)
     {
     SetupProject(L"3dMetricGeneral.idgndb", L"ElemGeometryBuilderWithMaterials.idgndb", BeSQLite::Db::OpenMode::ReadWrite);
 
@@ -155,7 +155,7 @@ TEST_F(ElementGeometryBuilderTests, CreateElementWithMaterials)
     DgnModelP model = m_db->Models().GetModel(m_defaultModelId).get();
     GeometrySourceP geomElem = el->ToGeometrySourceP();
 
-    ElementGeometryBuilderPtr builder = ElementGeometryBuilder::Create(*model, m_defaultCategoryId, DPoint3d::From(0.0, 0.0, 0.0));
+    GeometryBuilderPtr builder = GeometryBuilder::Create(*model, m_defaultCategoryId, DPoint3d::From(0.0, 0.0, 0.0));
 
     BeFileName textureImage;
     ASSERT_EQ(SUCCESS, DgnDbTestDgnManager::GetTestDataOut(textureImage, L"TextureImage.png", L"TextureImage.png", __FILE__));

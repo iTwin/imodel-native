@@ -961,7 +961,7 @@ StatusInt DgnViewport::ComputeViewRange(DRange3dR range, FitViewParams& params)
     context.Detach();
     
     m_viewController->RestoreFromSettings(oldState);
-    _SynchWithViewController(false);
+    SynchWithViewController(false);
 
     DRange3d fullRange;
     if (SUCCESS == context.GetFitRange().GetRange(fullRange))

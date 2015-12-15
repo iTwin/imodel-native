@@ -336,23 +336,21 @@ void ViewContext::_OutputGeometry(GeometrySourceCR source)
 
     DPoint3d origin;
     source.GetPlacementTransform().GetTranslation(origin);
-    DgnViewportCP vp = GetViewport();
-    double pixelSize = (nullptr != vp ? vp->GetPixelSizeAtPoint(&origin) : 0.0);
+    double pixelSize = (nullptr != m_viewport ? m_viewport->GetPixelSizeAtPoint(&origin) : 0.0);
 
     Render::GraphicPtr graphic = _GetCachedGraphic(source, pixelSize);
 
     if (!graphic.IsValid())
         {
-        if (nullptr != vp)
-            graphic = vp->GetViewControllerR()._StrokeGeometry(*this, source, pixelSize);
-        else
-            graphic = source.Stroke(*this, pixelSize);
+        graphic = (nullptr != m_viewport) ?
+                   m_viewport->GetViewControllerR()._StrokeGeometry(*this, source, pixelSize) :
+                   source.Stroke(*this, pixelSize);
 
         _SaveGraphic(source, *graphic);
         }
 
     if (graphic.IsValid())
-        _OutputGraphic(*graphic);
+        _OutputGraphic(*graphic, &source);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -373,9 +371,12 @@ void ViewContext::_AddViewOverrides(OvrGraphicParamsR ovrMatSymb)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  02/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ViewContext::_AddContextOverrides(OvrGraphicParamsR ovrMatSymb)
+void ViewContext::_AddContextOverrides(OvrGraphicParamsR ovrMatSymb, GeometrySourceCP source)
     {
     _AddViewOverrides(ovrMatSymb); // Modify m_ovrGraphicParams for view flags...
+
+    if (nullptr != m_viewport)
+        m_viewport->GetViewControllerR()._OverrideGraphicParams(ovrMatSymb, source);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -396,21 +397,6 @@ void ViewContext::CookGeometryParams(Render::GeometryParamsR geomParams, Render:
 
     _CookGeometryParams(geomParams, graphicParams);
     graphic.ActivateGraphicParams(graphicParams, &geomParams);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  02/13
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ViewContext::ResetContextOverrides()
-    {
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    m_rasterDisplayParams.SetFlags(ViewContext::RasterDisplayParams::RASTER_PARAM_None); // NEEDSWORK_RASTER_DISPLAY - Not sure how this fits into new continuous update approach?!?
-
-    // NOTE: Context overrides CAN NOT look at m_currDisplayParams or m_graphicParams as they are not valid.
-    m_ovrGraphicParams.Clear();
-    _AddContextOverrides(m_ovrGraphicParams);
-    GetCurrentGraphicR().ActivateOverrideGraphicParams(&m_ovrGraphicParams);
-#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -522,22 +508,6 @@ StatusInt ViewContext::_VisitElement(GeometrySourceCR source)
 
     return SUCCESS;
     }
-
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    KeithBentley    04/01
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ViewContext::_VisitTransientGraphics(bool isPreUpdate)
-    {
-    Render::Output*    output = (IsAttached() ? GetViewport()->GetIViewOutput() : nullptr);
-    bool            restoreZWrite = (output && isPreUpdate ? output->EnableZWriting(false) : false);
-
-    T_HOST.GetGraphicsAdmin()._CallViewTransients(*this, isPreUpdate);
-
-    if (restoreZWrite)
-        output->EnableZWriting(true);
-    }
-#endif
 
 /*---------------------------------------------------------------------------------**//**
 * private callback (called from scanner)

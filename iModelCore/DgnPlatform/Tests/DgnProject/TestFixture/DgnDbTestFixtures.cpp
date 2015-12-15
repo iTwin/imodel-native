@@ -167,7 +167,7 @@ DgnElementId DgnDbTestFixture::InsertElementUsingGeomPart2d(Utf8CP gpCode, DgnMo
     DgnModelP model = m_db->Models().GetModel(mid).get();
     GeometrySourceP geomElem = el->ToGeometrySourceP();
 
-    ElementGeometryBuilderPtr builder = ElementGeometryBuilder::Create(*model, categoryId, DPoint2d::From(0.0, 0.0));
+    GeometryBuilderPtr builder = GeometryBuilder::Create(*model, categoryId, DPoint2d::From(0.0, 0.0));
 
     DgnGeomPartId existingPartId = m_db->GeomParts().QueryGeomPartId(gpCode);
     EXPECT_TRUE(existingPartId.IsValid());
@@ -197,7 +197,7 @@ DgnElementId DgnDbTestFixture::InsertElementUsingGeomPart(Utf8CP gpCode, DgnMode
     DgnModelP model = m_db->Models().GetModel(mid).get();
     GeometrySourceP geomElem = el->ToGeometrySourceP();
 
-    ElementGeometryBuilderPtr builder = ElementGeometryBuilder::Create(*model, categoryId, DPoint3d::From(0.0, 0.0,0.0));
+    GeometryBuilderPtr builder = GeometryBuilder::Create(*model, categoryId, DPoint3d::From(0.0, 0.0,0.0));
 
     DgnGeomPartId existingPartId = m_db->GeomParts().QueryGeomPartId(gpCode);
     EXPECT_TRUE(existingPartId.IsValid());
@@ -226,7 +226,7 @@ DgnElementId DgnDbTestFixture::InsertElementUsingGeomPart(DgnGeomPartId gpId, Dg
     DgnModelP model = m_db->Models().GetModel(mid).get();
     GeometrySourceP geomElem = el->ToGeometrySourceP();
 
-    ElementGeometryBuilderPtr builder = ElementGeometryBuilder::Create(*model, categoryId, DPoint3d::From(0.0, 0.0,0.0));
+    GeometryBuilderPtr builder = GeometryBuilder::Create(*model, categoryId, DPoint3d::From(0.0, 0.0,0.0));
 
     if (!(builder->Append(gpId, Transform::From(0.0, 0.0, 0.0))))
         return DgnElementId();
@@ -250,7 +250,7 @@ void DgnDbTestFixture::setUpPhysicalView(DgnDbR dgnDb, DgnModelR model, ElementA
     PhysicalViewController viewController (dgnDb, view.GetViewId());
     viewController.SetStandardViewRotation(StandardView::Iso);
     viewController.LookAtVolume(elementBox, nullptr, &viewMargin);
-    viewController.GetViewFlagsR().SetRenderMode(RenderMode::SmoothShade);
+    viewController.GetViewFlagsR().SetRenderMode(Render::RenderMode::SmoothShade);
     viewController.ChangeCategoryDisplay(categoryId, true);
     viewController.ChangeModelDisplay(model.GetModelId(), true);
 

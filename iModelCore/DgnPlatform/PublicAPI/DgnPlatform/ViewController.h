@@ -115,7 +115,7 @@ protected:
     friend struct ViewDefinition;
 
     DgnDbR         m_dgndb;
-    ViewFlags      m_viewFlags;
+    Render::ViewFlags m_viewFlags;
     DgnViewId      m_viewId;
     DgnClassId     m_classId;
     DgnModelId     m_baseModelId;
@@ -194,6 +194,8 @@ protected:
     //! @remarks It is very rare that an applications needs to call this or to override it.
     DGNPLATFORM_EXPORT virtual void _DrawView(ViewContextR);
 
+    virtual void _OverrideGraphicParams(Render::OvrGraphicParamsR, GeometrySourceCP) {}
+
     //! Invokes the _VisitElement on \a context for <em>each element</em> that is in the view.
     //! For normal views, this does the same thing as _DrawView.
     DGNPLATFORM_EXPORT virtual void _VisitElements(ViewContextR& context);
@@ -209,12 +211,7 @@ protected:
     //! @return true if the info string was set or false to use the default implementation.
     virtual bool _GetInfoString(HitDetailCR hit, Utf8StringR descr, Utf8CP delimiter) const {return false;}
 
-#if !defined (DOCUMENTATION_GENERATOR)
     DGNPLATFORM_EXPORT virtual StatusInt _VisitHit(HitDetailCR hit, ViewContextR context) const;
-
-    //! Used to notify derived classes when an update completes.
-    //! <p>See QueryViewController::_OnUpdateComplete
-    virtual void _OnUpdateComplete(DrawPurpose updateType) const {}
 
     //! Used to notify derived classes when a heal update begins.
     //! <p>See QueryViewController::_OnHealUpdate
@@ -227,7 +224,6 @@ protected:
     //! Used to notify derived classes when a full update begins.
     //! <p>See QueryViewController::_OnFullUpdate
     virtual void _OnFullUpdate(DgnViewportR vp, ViewContextR context) {}
-#endif
 
     //! Used to notify derived classes of an attempt to locate the viewport around the specified
     //! WGS84 location. Override to change how these points are interpreted.
@@ -367,11 +363,11 @@ public:
     //! determine whether this view has been loaded from the database.
     bool IsLoaded() const {return m_baseModelId.IsValid();}
 
-    //! Gets a const reference to the ViewFlags.
-    ViewFlagsCR GetViewFlags() const {return m_viewFlags;}
+    //! Get the ViewFlags.
+    Render::ViewFlags GetViewFlags() const {return m_viewFlags;}
 
     //! Gets a reference to the ViewFlags.
-    ViewFlagsR GetViewFlagsR() {return m_viewFlags;}
+    Render::ViewFlags& GetViewFlagsR() {return m_viewFlags;}
 
     //! Gets the DgnViewId of this view.
     DgnViewId GetViewId() const {return m_viewId;}

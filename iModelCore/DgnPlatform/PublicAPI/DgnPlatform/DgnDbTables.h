@@ -341,7 +341,7 @@ public:
 //=======================================================================================
 //! Each GeomPart has a row in the DgnGeomParts table
 //! @see DgnDb::GeomParts
-//! @ingroup ElementGeometryGroup
+//! @ingroup GeometricPrimitiveGroup
 //=======================================================================================
 struct DgnGeomParts : DgnDbTable
 {

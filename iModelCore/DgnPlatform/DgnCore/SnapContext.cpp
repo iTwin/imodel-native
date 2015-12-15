@@ -377,7 +377,7 @@ void            SnapContext::SetSnapPoint (DPoint3dCR snapPt, bool forceHot)
 /*=================================================================================**//**
 * @bsiclass
 +===============+===============+===============+===============+===============+======*/
-struct SnapGraphicsProcessor : IElementGraphicsProcessor
+struct SnapGraphicsProcessor : IGeometryProcessor
 {
 private:
 
@@ -539,7 +539,7 @@ static bool DoSnapUsingClosestCurve (SnapContextR snapContext)
     {
     SnapGraphicsProcessor processor(snapContext);
 
-    ElementGraphicsOutput::Process(processor, snapContext.GetDgnDb());
+    GeometryProcessor::Process(processor, snapContext.GetDgnDb());
 
     if (nullptr == snapContext.GetSnapDetail()->GetGeomDetail().GetCurvePrimitive())
         return false; // No edge found...
@@ -554,7 +554,7 @@ static bool DoSnapUsingClosestCurve (GeometrySourceCR source, SnapContextR snapC
     {
     SnapGraphicsProcessor processor(snapContext);
 
-    ElementGraphicsOutput::Process(processor, source);
+    GeometryProcessor::Process(processor, source);
 
     if (nullptr == snapContext.GetSnapDetail()->GetGeomDetail().GetCurvePrimitive())
         return false; // No edge found...

@@ -23,14 +23,14 @@ namespace dgn_ElementHandler { struct VolumeElementHandler; }
 //! contained elements.
 // @bsiclass                                                 Ramanujam.Raman      01/2015
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE VolumeElement : PhysicalElement
+struct EXPORT_VTABLE_ATTRIBUTE VolumeElement : SpatialLocationElement
 {
     friend struct dgn_ElementHandler::VolumeElementHandler;
-    DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_VolumeElement, PhysicalElement)
+    DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_VolumeElement, SpatialLocationElement)
 public:
-    struct CreateParams : PhysicalElement::CreateParams
+    struct CreateParams : SpatialLocationElement::CreateParams
     {
-        DEFINE_T_SUPER(PhysicalElement::CreateParams);
+        DEFINE_T_SUPER(SpatialLocationElement::CreateParams);
 
         DPoint3d m_origin;
         bvector<DPoint2d> m_shape;
@@ -180,13 +180,10 @@ public:
 namespace dgn_ElementHandler
 {
     //! The ElementHandler for VolumeElement
-    struct EXPORT_VTABLE_ATTRIBUTE VolumeElementHandler : Physical
+    struct EXPORT_VTABLE_ATTRIBUTE VolumeElementHandler : Element
     {
-        ELEMENTHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_VolumeElement, VolumeElement, VolumeElementHandler, Physical, DGNPLATFORM_EXPORT)
+        ELEMENTHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_VolumeElement, VolumeElement, VolumeElementHandler, Element, DGNPLATFORM_EXPORT)
     };
 }
 
 END_BENTLEY_DGN_NAMESPACE
-
-//__PUBLISH_SECTION_END__
-

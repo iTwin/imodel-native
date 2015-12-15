@@ -93,7 +93,7 @@ TEST_F(ElementItemTests, ItemCRUD)
 
         //  Verify that item generated a line
         size_t count=0;
-        for (ElementGeometryPtr geom : ElementGeometryCollection (*el))
+        for (GeometricPrimitivePtr geom : GeometryCollection (*el))
             {
             ICurvePrimitivePtr curve = geom->GetAsICurvePrimitive();
             ASSERT_TRUE( curve.IsValid() );
@@ -125,7 +125,7 @@ TEST_F(ElementItemTests, ItemCRUD)
 
         //  Verify that item generated a circle
         size_t count=0;
-        for (ElementGeometryPtr geom : ElementGeometryCollection (*el))
+        for (GeometricPrimitivePtr geom : GeometryCollection (*el))
             {
             ICurvePrimitivePtr curve = geom->GetAsICurvePrimitive();
             ASSERT_TRUE( curve.IsValid() );

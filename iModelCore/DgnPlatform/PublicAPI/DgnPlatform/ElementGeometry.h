@@ -16,14 +16,14 @@
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 
-typedef RefCountedPtr<ElementGeometry> ElementGeometryPtr;
+typedef RefCountedPtr<GeometricPrimitive> GeometricPrimitivePtr;
 
 //=======================================================================================
 //! Class for multiple RefCounted geometry types: ICurvePrimitive, CurveVector, 
 //! ISolidPrimitive, MSBsplineSurface, PolyfaceHeader, ISolidKernelEntity.
-//! @ingroup ElementGeometryGroup
+//! @ingroup GeometricPrimitiveGroup
 //=======================================================================================
-struct ElementGeometry : RefCountedBase
+struct GeometricPrimitive : RefCountedBase
 {
 public:
     enum class GeometryType
@@ -41,13 +41,13 @@ protected:
     GeometryType                m_type;
     RefCountedPtr<IRefCounted>  m_data;
 
-    ElementGeometry(ICurvePrimitivePtr const& source);
-    ElementGeometry(CurveVectorPtr const& source);
-    ElementGeometry(ISolidPrimitivePtr const& source);
-    ElementGeometry(MSBsplineSurfacePtr const& source);
-    ElementGeometry(PolyfaceHeaderPtr const& source);
-    ElementGeometry(ISolidKernelEntityPtr const& source);
-    ElementGeometry(TextStringPtr const& source);
+    GeometricPrimitive(ICurvePrimitivePtr const& source);
+    GeometricPrimitive(CurveVectorPtr const& source);
+    GeometricPrimitive(ISolidPrimitivePtr const& source);
+    GeometricPrimitive(MSBsplineSurfacePtr const& source);
+    GeometricPrimitive(PolyfaceHeaderPtr const& source);
+    GeometricPrimitive(ISolidKernelEntityPtr const& source);
+    GeometricPrimitive(TextStringPtr const& source);
 
 public:
     DGNPLATFORM_EXPORT GeometryType GetGeometryType() const;
@@ -66,31 +66,31 @@ public:
     DGNPLATFORM_EXPORT bool GetRange(DRange3dR range, TransformCP transform = nullptr) const;
     DGNPLATFORM_EXPORT bool TransformInPlace(TransformCR transform);
 
-    DGNPLATFORM_EXPORT ElementGeometryPtr Clone() const; // Deep copy
+    DGNPLATFORM_EXPORT GeometricPrimitivePtr Clone() const; // Deep copy
 
-    DGNPLATFORM_EXPORT static ElementGeometryPtr Create(ICurvePrimitiveCR source);
-    DGNPLATFORM_EXPORT static ElementGeometryPtr Create(CurveVectorCR source);
-    DGNPLATFORM_EXPORT static ElementGeometryPtr Create(ISolidPrimitiveCR source);
-    DGNPLATFORM_EXPORT static ElementGeometryPtr Create(MSBsplineSurfaceCR source);
-    DGNPLATFORM_EXPORT static ElementGeometryPtr Create(PolyfaceQueryCR source);
-    DGNPLATFORM_EXPORT static ElementGeometryPtr Create(ISolidKernelEntityCR source);
-    DGNPLATFORM_EXPORT static ElementGeometryPtr Create(TextStringCR source);
+    DGNPLATFORM_EXPORT static GeometricPrimitivePtr Create(ICurvePrimitiveCR source);
+    DGNPLATFORM_EXPORT static GeometricPrimitivePtr Create(CurveVectorCR source);
+    DGNPLATFORM_EXPORT static GeometricPrimitivePtr Create(ISolidPrimitiveCR source);
+    DGNPLATFORM_EXPORT static GeometricPrimitivePtr Create(MSBsplineSurfaceCR source);
+    DGNPLATFORM_EXPORT static GeometricPrimitivePtr Create(PolyfaceQueryCR source);
+    DGNPLATFORM_EXPORT static GeometricPrimitivePtr Create(ISolidKernelEntityCR source);
+    DGNPLATFORM_EXPORT static GeometricPrimitivePtr Create(TextStringCR source);
 
-    DGNPLATFORM_EXPORT static ElementGeometryPtr Create(ICurvePrimitivePtr const& source);
-    DGNPLATFORM_EXPORT static ElementGeometryPtr Create(CurveVectorPtr const& source);
-    DGNPLATFORM_EXPORT static ElementGeometryPtr Create(ISolidPrimitivePtr const& source);
-    DGNPLATFORM_EXPORT static ElementGeometryPtr Create(MSBsplineSurfacePtr const& source);
-    DGNPLATFORM_EXPORT static ElementGeometryPtr Create(PolyfaceHeaderPtr const& source);
-    DGNPLATFORM_EXPORT static ElementGeometryPtr Create(ISolidKernelEntityPtr const& source);
-    DGNPLATFORM_EXPORT static ElementGeometryPtr Create(TextStringPtr const& source);
+    DGNPLATFORM_EXPORT static GeometricPrimitivePtr Create(ICurvePrimitivePtr const& source);
+    DGNPLATFORM_EXPORT static GeometricPrimitivePtr Create(CurveVectorPtr const& source);
+    DGNPLATFORM_EXPORT static GeometricPrimitivePtr Create(ISolidPrimitivePtr const& source);
+    DGNPLATFORM_EXPORT static GeometricPrimitivePtr Create(MSBsplineSurfacePtr const& source);
+    DGNPLATFORM_EXPORT static GeometricPrimitivePtr Create(PolyfaceHeaderPtr const& source);
+    DGNPLATFORM_EXPORT static GeometricPrimitivePtr Create(ISolidKernelEntityPtr const& source);
+    DGNPLATFORM_EXPORT static GeometricPrimitivePtr Create(TextStringPtr const& source);
 
-}; // ElementGeometry
+}; // GeometricPrimitive
 
 //=======================================================================================
 //! @private
 //! @note If adding a new "geometry" OpCode, update Operation::IsGeometryOp!
 //=======================================================================================
-struct ElementGeomIO
+struct GeometryStreamIO
 {
     enum class OpCode : uint32_t
     {
@@ -161,7 +161,7 @@ struct ElementGeomIO
         void Reset(uint32_t flags = 0) {m_buffer.clear(); AppendHeader(flags);};
         bool AppendSimplified(ICurvePrimitiveCR, bool isClosed, bool is3d);
         bool AppendSimplified(CurveVectorCR, bool is3d);
-        bool AppendSimplified(ElementGeometryCR, bool is3d);
+        bool AppendSimplified(GeometricPrimitiveCR, bool is3d);
         void Append(Operation const& egOp);
         void Append(DPoint2dCP, size_t nPts, int8_t boundary);
         void Append(DPoint3dCP, size_t nPts, int8_t boundary);
@@ -172,7 +172,7 @@ struct ElementGeomIO
         void Append(ISolidPrimitiveCR);
         void Append(MSBsplineSurfaceCR);
         void Append(ISolidKernelEntityCR); // Adds multiple op-codes for when PSolid is un-available...
-        void Append(ElementGeometryCR);
+        void Append(GeometricPrimitiveCR);
         void Append(DgnGeomPartId, TransformCP geomToElem);
         void Append(Render::GeometryParamsCR, bool ignoreSubCategory); // Adds multiple op-codes...
         void Append(TextStringCR);
@@ -199,7 +199,7 @@ struct ElementGeomIO
         bool Get(Operation const&, ISolidPrimitivePtr&) const;
         bool Get(Operation const&, MSBsplineSurfacePtr&) const;
         bool Get(Operation const&, ISolidKernelEntityPtr&) const;
-        bool Get(Operation const&, ElementGeometryPtr&) const;
+        bool Get(Operation const&, GeometricPrimitivePtr&) const;
         bool Get(Operation const&, DgnGeomPartId&, TransformR) const;
         bool Get(Operation const&, Render::GeometryParamsR) const; // Updated by multiple op-codes, true if changed
         bool Get(Operation const&, TextStringR) const;
@@ -221,7 +221,7 @@ struct ElementGeomIO
         Iterator(uint8_t const* data, size_t dataSize) : m_data(data), m_dataSize(dataSize), m_dataOffset(0) {ToNext();}
         Iterator() : m_data(nullptr), m_dataSize(0), m_dataOffset(0) {}
 
-        friend struct ElementGeomIO;
+        friend struct GeometryStreamIO;
 
     public:
         Iterator&        operator++() {ToNext(); return *this;}
@@ -273,13 +273,13 @@ struct ElementGeomIO
     //! @param remapper  The ID remapper
     static DgnDbStatus Import(GeometryStreamR dest, GeometryStreamCR source, DgnImportContext& remapper);
 
-}; // ElementGeomIO
+}; // GeometryStreamIO
 
 //=======================================================================================
-//! ElementGeometryCollection provides iterator for a Geometric Element's GeometryStream.
-//! @ingroup ElementGeometryGroup
+//! GeometryCollection provides iterator for a Geometric Element's GeometryStream.
+//! @ingroup GeometricPrimitiveGroup
 //=======================================================================================
-struct ElementGeometryCollection
+struct GeometryCollection
 {
     enum class BRepOutput
     {
@@ -293,11 +293,26 @@ struct ElementGeometryCollection
 
     //=======================================================================================
     //! Iterator
-    //! @ingroup ElementGeometryGroup
+    //! @ingroup GeometricPrimitiveGroup
     //=======================================================================================
     struct Iterator : std::iterator<std::forward_iterator_tag, uint8_t const*>
     {
     private:
+
+        enum class EntryType
+        {
+            Unknown             = 0,  //!< Invalid
+            GeomPart            = 1,  //!< DgnGeomPart reference
+            CurvePrimitive      = 2,  //!< A single open curve
+            CurveVector         = 3,  //!< Open paths, planar regions, and unstructured curve collections
+            SolidPrimitive      = 4,  //!< ISolidPrimitive
+            BsplineSurface      = 5,  //!< MSBSplineSurface
+            Polyface            = 6,  //!< Polyface
+            SolidKernelEntity   = 7,  //!< SolidKernelEntity
+            TextString          = 8,  //!< TextString
+            BRepPolyface        = 9,  //!< BRep surface mesh (from BRepOutput::Auto when Parasolid not available or if requested by BRepOutput::Mesh)
+            BRepCurveVector     = 10, //!< BRep edge/face curves (when requested by BRepOutput::Edges | BRepOutput::FaceIso)
+        };
 
         struct CurrentState
         {
@@ -306,7 +321,7 @@ struct ElementGeometryCollection
             Transform               m_sourceToWorld;
             Transform               m_geomToSource;
             Transform               m_geomToWorld;
-            ElementGeometryPtr      m_geometry;
+            GeometricPrimitivePtr   m_geometry;
             GeometryStreamEntryId   m_geomStreamEntryId;
             BRepOutput              m_bRepOutput;
 
@@ -322,7 +337,7 @@ struct ElementGeometryCollection
         uint8_t const*              m_data;
         size_t                      m_dataSize;
         size_t                      m_dataOffset;
-        ElementGeomIO::Operation    m_egOp;
+        GeometryStreamIO::Operation m_egOp;
         mutable CurrentState*       m_state;
 
         DGNPLATFORM_EXPORT void ToNext();
@@ -330,7 +345,7 @@ struct ElementGeometryCollection
         Iterator(uint8_t const* data, size_t dataSize, CurrentState& state) : m_data(data), m_dataSize(dataSize), m_dataOffset(0), m_state(&state) {ToNext();}
         Iterator() : m_data(nullptr), m_dataSize(0), m_dataOffset(0), m_state(nullptr) {}
 
-        friend struct ElementGeometryCollection;
+        friend struct GeometryCollection;
 
     public:
 
@@ -342,9 +357,14 @@ struct ElementGeometryCollection
         Render::GeometryParamsCR GetGeometryParams() const {return m_state->m_geomParams;}
         DgnGeomPartId GetGeomPartId() const {return m_state->m_geomStreamEntryId.GetGeomPartId();} //!< Returns invalid id if not a GeomPart... 
         GeometryStreamEntryId GetGeometryStreamEntryId() const {return m_state->m_geomStreamEntryId;} //!< Returns primitive id for current geometry...
+        
+        DGNPLATFORM_EXPORT EntryType GetEntryType() const;  //!< check geometry type to avoid creating GeometricPrimitivePtr for un-desired types.
+        DGNPLATFORM_EXPORT bool IsCurve() const;            //!< open and unstructured curves check that avoids creating GeometricPrimitivePtr when possible.
+        DGNPLATFORM_EXPORT bool IsSurface() const;          //!< closed curve, planar region, surface, and open mesh check that avoids creating GeometricPrimitivePtr when possible.
+        DGNPLATFORM_EXPORT bool IsSolid() const;            //!< solid and volumetric mesh check that avoids creating GeometricPrimitivePtr when possible.
 
         DgnGeomPartPtr GetGeomPartPtr() const {return m_state->m_dgnDb.GeomParts().LoadGeomPart(m_state->m_geomStreamEntryId.GetGeomPartId());}
-        DGNPLATFORM_EXPORT ElementGeometryPtr GetGeometryPtr() const;
+        DGNPLATFORM_EXPORT GeometricPrimitivePtr GetGeometryPtr() const;
 
         TransformCR GetSourceToWorld() const {return m_state->m_sourceToWorld;}
         TransformCR GetGeometryToSource() const {return m_state->m_geomToSource;}
@@ -365,20 +385,30 @@ public:
     const_iterator begin() const {return const_iterator(m_data, m_dataSize, m_state);}
     const_iterator end() const {return const_iterator();}
 
+    //! Override the default BRep handling option, BRepOutput::Auto. For example, an application can set to BRepOutput::BRep to
+    //! detect when BReps are present in the GeometryStream to avoid modifications when Parasolid is not available.
     void SetBRepOutput(BRepOutput bRep) {m_state.m_bRepOutput = bRep;}
 
-    DGNPLATFORM_EXPORT ElementGeometryCollection (DgnGeomPartCR geomPart, Iterator&); // Use to iterate DgnGeomPart in context of parent...should I just pass 5 extra params instead of iterator???
-    DGNPLATFORM_EXPORT ElementGeometryCollection (DgnDbR dgnDb, GeometryStreamCR geom);
-    DGNPLATFORM_EXPORT ElementGeometryCollection (GeometrySourceCR source);
+    //! Iterate a GeometryStream for a DgnGeomPart using the current GeometryParams and geometry to world transform
+    //! for of part instance as found when iterating a GeometrySource with a part reference.
+    DGNPLATFORM_EXPORT void SetNestedIteratorContext(Iterator const& iter);
+    
+    //! Iterate a GeometryStream.
+    //! @note It is up to the caller to keep the GeometryStream in memory by holding onto a DgnGeomPartPtr, etc. until done iterating.
+    DGNPLATFORM_EXPORT GeometryCollection (GeometryStreamCR geom, DgnDbR dgnDb);
 
-}; // ElementGeometryCollection
+    //! Iterate a GeometrySource.
+    //! @note It is up to the caller to keep the GeometrySource in memory by holding onto a DgnElementPtr, etc. until done iterating.
+    DGNPLATFORM_EXPORT GeometryCollection (GeometrySourceCR source);
 
-typedef RefCountedPtr<ElementGeometryBuilder> ElementGeometryBuilderPtr;
+}; // GeometryCollection
 
-ENUM_IS_FLAGS(ElementGeometryCollection::BRepOutput)
+typedef RefCountedPtr<GeometryBuilder> GeometryBuilderPtr;
+
+ENUM_IS_FLAGS(GeometryCollection::BRepOutput)
 
 //=======================================================================================
-//! ElementGeometryBuilder provides methods for setting up an element's GeometryStream and Placement(2d/3d).
+//! GeometryBuilder provides methods for setting up an element's GeometryStream and Placement(2d/3d).
 //! An element's geometry should always be stored relative to its placement. A placement defines the
 //! element to world transform.
 //!
@@ -398,30 +428,30 @@ ENUM_IS_FLAGS(ElementGeometryCollection::BRepOutput)
 //! For repeated geometry that can be shared in a single GeometryStream or by multiple GeometryStreams, a DgnGeomPart should be
 //! created. When appending a DgnGeomPartId you specify the part geometry to element transform in order to position the 
 //! part's geometry relative to the other geometry/parts display by the element.
-//! @ingroup ElementGeometryGroup
+//! @ingroup GeometricPrimitiveGroup
 //=======================================================================================
-struct ElementGeometryBuilder : RefCountedBase
+struct GeometryBuilder : RefCountedBase
 {
 private:
 
-    bool                    m_appearanceChanged;
-    bool                    m_haveLocalGeom;
-    bool                    m_havePlacement;
-    bool                    m_isPartCreate;
-    bool                    m_is3d;
-    Placement3d             m_placement3d;
-    Placement2d             m_placement2d;
-    DgnDbR                  m_dgnDb;
-    Render::GeometryParams  m_elParams;
-    ElementGeomIO::Writer   m_writer;
+    bool                     m_appearanceChanged;
+    bool                     m_haveLocalGeom;
+    bool                     m_havePlacement;
+    bool                     m_isPartCreate;
+    bool                     m_is3d;
+    Placement3d              m_placement3d;
+    Placement2d              m_placement2d;
+    DgnDbR                   m_dgnDb;
+    Render::GeometryParams   m_elParams;
+    GeometryStreamIO::Writer m_writer;
 
-    ElementGeometryBuilder (DgnDbR dgnDb, DgnCategoryId categoryId, Placement3dCR placement);
-    ElementGeometryBuilder (DgnDbR dgnDb, DgnCategoryId categoryId, Placement2dCR placement);
-    ElementGeometryBuilder (DgnDbR dgnDb, DgnCategoryId categoryId, bool is3d);
+    GeometryBuilder (DgnDbR dgnDb, DgnCategoryId categoryId, Placement3dCR placement);
+    GeometryBuilder (DgnDbR dgnDb, DgnCategoryId categoryId, Placement2dCR placement);
+    GeometryBuilder (DgnDbR dgnDb, DgnCategoryId categoryId, bool is3d);
 
-    bool ConvertToLocal (ElementGeometryR);
-    bool AppendWorld (ElementGeometryR);
-    bool AppendLocal (ElementGeometryCR);
+    bool ConvertToLocal (GeometricPrimitiveR);
+    bool AppendWorld (GeometricPrimitiveR);
+    bool AppendLocal (GeometricPrimitiveCR);
     void OnNewGeom (DRange3dCR localRange);
 
 public:
@@ -439,7 +469,7 @@ public:
     DGNPLATFORM_EXPORT bool Append (DgnSubCategoryId);
     DGNPLATFORM_EXPORT bool Append (Render::GeometryParamsCR);
     DGNPLATFORM_EXPORT bool Append (DgnGeomPartId, TransformCR geomToElement); //! Placement must already be specified, not valid for CreateWorld.
-    DGNPLATFORM_EXPORT bool Append (ElementGeometryCR);
+    DGNPLATFORM_EXPORT bool Append (GeometricPrimitiveCR);
     DGNPLATFORM_EXPORT bool Append (ICurvePrimitiveCR);
     DGNPLATFORM_EXPORT bool Append (CurveVectorCR);
     DGNPLATFORM_EXPORT bool Append (ISolidPrimitiveCR); //! 3d only
@@ -449,18 +479,18 @@ public:
     DGNPLATFORM_EXPORT bool Append (TextStringCR);
     DGNPLATFORM_EXPORT bool Append (TextAnnotationCR, TransformCR transform);
 
-    DGNPLATFORM_EXPORT static ElementGeometryBuilderPtr CreateGeomPart (DgnDbR db, bool is3d);
-    DGNPLATFORM_EXPORT static ElementGeometryBuilderPtr CreateGeomPart (GeometryStreamCR, DgnDbR db, bool ignoreSymbology = false); //!< @private
+    DGNPLATFORM_EXPORT static GeometryBuilderPtr CreateGeomPart (DgnDbR db, bool is3d);
+    DGNPLATFORM_EXPORT static GeometryBuilderPtr CreateGeomPart (GeometryStreamCR, DgnDbR db, bool ignoreSymbology = false); //!< @private
 
-    DGNPLATFORM_EXPORT static ElementGeometryBuilderPtr Create (DgnModelR model, DgnCategoryId categoryId, DPoint3dCR origin, YawPitchRollAngles const& angles = YawPitchRollAngles());
-    DGNPLATFORM_EXPORT static ElementGeometryBuilderPtr Create (DgnModelR model, DgnCategoryId categoryId, DPoint2dCR origin, AngleInDegrees const& angle = AngleInDegrees());
-    DGNPLATFORM_EXPORT static ElementGeometryBuilderPtr CreateWorld (DgnModelR model, DgnCategoryId categoryId);
+    DGNPLATFORM_EXPORT static GeometryBuilderPtr Create (DgnModelR model, DgnCategoryId categoryId, DPoint3dCR origin, YawPitchRollAngles const& angles = YawPitchRollAngles());
+    DGNPLATFORM_EXPORT static GeometryBuilderPtr Create (DgnModelR model, DgnCategoryId categoryId, DPoint2dCR origin, AngleInDegrees const& angle = AngleInDegrees());
+    DGNPLATFORM_EXPORT static GeometryBuilderPtr CreateWorld (DgnModelR model, DgnCategoryId categoryId);
 
-    DGNPLATFORM_EXPORT static ElementGeometryBuilderPtr Create (GeometrySource3dCR, DPoint3dCR origin, YawPitchRollAngles const& angles = YawPitchRollAngles());
-    DGNPLATFORM_EXPORT static ElementGeometryBuilderPtr Create (GeometrySource2dCR, DPoint2dCR origin, AngleInDegrees const& angle = AngleInDegrees());
-    DGNPLATFORM_EXPORT static ElementGeometryBuilderPtr Create (GeometrySourceCR); //! Create builder from GeometrySource using current placement.
-    DGNPLATFORM_EXPORT static ElementGeometryBuilderPtr CreateWorld (GeometrySourceCR);
+    DGNPLATFORM_EXPORT static GeometryBuilderPtr Create (GeometrySource3dCR, DPoint3dCR origin, YawPitchRollAngles const& angles = YawPitchRollAngles());
+    DGNPLATFORM_EXPORT static GeometryBuilderPtr Create (GeometrySource2dCR, DPoint2dCR origin, AngleInDegrees const& angle = AngleInDegrees());
+    DGNPLATFORM_EXPORT static GeometryBuilderPtr Create (GeometrySourceCR); //! Create builder from GeometrySource using current placement.
+    DGNPLATFORM_EXPORT static GeometryBuilderPtr CreateWorld (GeometrySourceCR);
 
-}; // ElementGeometryBuilder
+}; // GeometryBuilder
 
 END_BENTLEY_DGN_NAMESPACE

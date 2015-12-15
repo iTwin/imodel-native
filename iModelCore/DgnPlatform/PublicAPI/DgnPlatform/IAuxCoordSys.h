@@ -11,12 +11,7 @@
 
 #include "Render.h"
 #include "ValueFormat.h"
-
-//__PUBLISH_SECTION_END__
-
 #include "DgnCoreEvent.h"
-
-//__PUBLISH_SECTION_START__
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 

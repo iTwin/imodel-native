@@ -6,6 +6,8 @@
 |
 +--------------------------------------------------------------------------------------*/
 
+#ifdef BENTLEY_WIN32
+
 #include "DgnHandlersTests.h"
 #include <DgnPlatform\DgnPlatformApi.h>
 #include <ECObjects\ECObjectsAPI.h>
@@ -392,8 +394,8 @@ void MetaSchemaInstanceGenerator::GenerateInstances(bvector<IECInstancePtr> & in
                         propInstance->SetValue(METASCHEMA_PROPERTY_PropertyDef_IsArray, v);
                         if (ecProp->GetIsArray())
                             {
-                            Utf8CP min = (std::to_string(ecProp->GetAsArrayProperty()->GetMinOccurs())).c_str();
-                            v.SetUtf8CP(min);
+                            Utf8PrintfString min ("%" PRIu32, ecProp->GetAsArrayProperty()->GetMinOccurs());
+                            v.SetUtf8CP(min.c_str());
                             propInstance->SetValue(METASCHEMA_PROPERTY_PropertyDef_MinOccurs, v);
                             if (INT_MAX == ecProp->GetAsArrayProperty()->GetStoredMaxOccurs())
                                 {
@@ -401,8 +403,8 @@ void MetaSchemaInstanceGenerator::GenerateInstances(bvector<IECInstancePtr> & in
                                 }
                             else
                                 {
-                                Utf8CP max = (std::to_string(ecProp->GetAsArrayProperty()->GetStoredMaxOccurs())).c_str();
-                                v.SetUtf8CP(max);
+                                Utf8PrintfString max ("%" PRIu32, ecProp->GetAsArrayProperty()->GetStoredMaxOccurs());
+                                v.SetUtf8CP(max.c_str());
                                 }
                             propInstance->SetValue(METASCHEMA_PROPERTY_PropertyDef_MaxOccurs, v);
                             }
@@ -609,8 +611,8 @@ void MetaSchemaInstanceGenerator::GenerateRelatedInstances(bvector<IECInstancePt
                     propInstance->SetValue(METASCHEMA_PROPERTY_PropertyDef_IsArray, v);
                     if (ecProp->GetIsArray())
                         {
-                        Utf8CP min = (std::to_string(ecProp->GetAsArrayProperty()->GetMinOccurs())).c_str();
-                        v.SetUtf8CP(min);
+                        Utf8PrintfString min ("%" PRIu32, ecProp->GetAsArrayProperty()->GetMinOccurs());
+                        v.SetUtf8CP(min.c_str());
                         propInstance->SetValue(METASCHEMA_PROPERTY_PropertyDef_MinOccurs, v);
                         if (INT_MAX == ecProp->GetAsArrayProperty()->GetStoredMaxOccurs())
                             {
@@ -618,8 +620,8 @@ void MetaSchemaInstanceGenerator::GenerateRelatedInstances(bvector<IECInstancePt
                             }
                         else
                             {
-                            Utf8CP max = (std::to_string(ecProp->GetAsArrayProperty()->GetStoredMaxOccurs())).c_str();
-                            v.SetUtf8CP(max);
+                            Utf8PrintfString max ("%" PRIu32, ecProp->GetAsArrayProperty()->GetStoredMaxOccurs());
+                            v.SetUtf8CP(max.c_str());
                             }
                         propInstance->SetValue(METASCHEMA_PROPERTY_PropertyDef_MaxOccurs, v);
                         }
@@ -663,8 +665,8 @@ void MetaSchemaInstanceGenerator::GenerateRelatedInstances(bvector<IECInstancePt
                     propInstance->SetValue(METASCHEMA_PROPERTY_PropertyDef_IsArray, v);
                     if (ecProp->GetIsArray())
                         {
-                        Utf8CP min = (std::to_string(ecProp->GetAsArrayProperty()->GetMinOccurs())).c_str();
-                        v.SetUtf8CP(min);
+                        Utf8PrintfString min ("%" PRIu32, ecProp->GetAsArrayProperty()->GetMinOccurs());
+                        v.SetUtf8CP(min.c_str());
                         propInstance->SetValue(METASCHEMA_PROPERTY_PropertyDef_MinOccurs, v);
                         if (INT_MAX == ecProp->GetAsArrayProperty()->GetStoredMaxOccurs())
                             {
@@ -672,8 +674,8 @@ void MetaSchemaInstanceGenerator::GenerateRelatedInstances(bvector<IECInstancePt
                             }
                         else
                             {
-                            Utf8CP max = (std::to_string(ecProp->GetAsArrayProperty()->GetStoredMaxOccurs())).c_str();
-                            v.SetUtf8CP(max);
+                            Utf8PrintfString max ("%" PRIu32, ecProp->GetAsArrayProperty()->GetStoredMaxOccurs());
+                            v.SetUtf8CP(max.c_str());
                             }
                         propInstance->SetValue(METASCHEMA_PROPERTY_PropertyDef_MaxOccurs, v);
                         }
@@ -1176,8 +1178,8 @@ TEST_F(SchemaVisualizationTests, TestClassDiagram)
 //=======================================================================================
 extern "C" //[SVT_EXTERN]
     {
-    __declspec(dllimport) gvplugin_library_t gvplugin_dot_layout_LTX_library;
-    __declspec(dllimport) gvplugin_library_t gvplugin_core_LTX_library;
+    IMPORT_ATTRIBUTE gvplugin_library_t gvplugin_dot_layout_LTX_library;
+    IMPORT_ATTRIBUTE gvplugin_library_t gvplugin_core_LTX_library;
     }
 
 //=======================================================================================
@@ -1846,7 +1848,7 @@ public:
         textspanElement->SetCode(DgnAuthority::CreateDefaultCode());
 
         DPoint3d origin = DPoint3d::From(p.x, p.y, 0.0);
-        ElementGeometryBuilderPtr builder = ElementGeometryBuilder::Create(*textspanElement, origin, angles);
+        GeometryBuilderPtr builder = GeometryBuilder::Create(*textspanElement, origin, angles);
 
         TextStringStylePtr textspanStyle = TextStringStyle::Create();
         textspanStyle->SetFont(DgnFontManager::GetDecoratorFont());
@@ -1879,7 +1881,7 @@ public:
         polygonElement->SetCode(DgnAuthority::CreateDefaultCode());
 
         DPoint3d origin = DPoint3d::From(A[0].x, A[0].y, 0.0);
-        ElementGeometryBuilderPtr builder = ElementGeometryBuilder::Create(*polygonElement, origin, angles);
+        GeometryBuilderPtr builder = GeometryBuilder::Create(*polygonElement, origin, angles);
 
         bvector<DPoint3d> points;
         for (int i = 0; i < n; i++)
@@ -1902,7 +1904,7 @@ public:
         bezierElement->SetCode(DgnAuthority::CreateDefaultCode());
 
         DPoint3d origin = DPoint3d::From(A[0].x, A[0].y, 0.0);
-        ElementGeometryBuilderPtr builder = ElementGeometryBuilder::Create(*bezierElement, origin, angles);
+        GeometryBuilderPtr builder = GeometryBuilder::Create(*bezierElement, origin, angles);
 
         bvector<DPoint3d> poles;
         for (int i = 0; i < n; i++)
@@ -1935,7 +1937,7 @@ public:
         polylineElement->SetCode(DgnAuthority::CreateDefaultCode());
 
         DPoint3d origin = DPoint3d::From(A[0].x, A[0].y, 0.0);
-        ElementGeometryBuilderPtr builder = ElementGeometryBuilder::Create(*polylineElement, origin, angles);
+        GeometryBuilderPtr builder = GeometryBuilder::Create(*polylineElement, origin, angles);
 
         bvector<DPoint3d> points;
         for (int i = 0; i < n; i++)
@@ -2042,7 +2044,7 @@ TEST_F(SchemaVisualizationTests, GraphvizDiagramTest)
 
     DrawingViewController viewController(*db, view.GetViewId());
     viewController.SetStandardViewRotation(StandardView::Top);
-    viewController.GetViewFlagsR().SetRenderMode(RenderMode::Wireframe);
+    viewController.GetViewFlagsR().SetRenderMode(Render::RenderMode::Wireframe);
     viewController.ChangeCategoryDisplay(categoryId, true);
     viewController.ChangeModelDisplay(modelId, true);
 
@@ -2131,3 +2133,4 @@ objects which will be displayed as view decorations, rather than persisting elem
 geometry to the DgnDb. These will make it easier to provide the intended interactivity.
 */
 
+#endif

@@ -217,7 +217,7 @@ void ComponentModelPerfTest::Developer_CreateCMs()
             var solid = be.SolidPrimitive.CreateDgnBox(box); \
             var element = model.CreateElement('dgn.PhysicalElement', options.Category);\
             var origin = new Bentley.Dgn.DPoint3d(i,i,i);\
-            var builder = new Bentley.Dgn.ElementGeometryBuilder(element, origin, angles); \
+            var builder = new Bentley.Dgn.GeometryBuilder(element, origin, angles); \
             builder.Append(solid); \
             builder.SetGeometryStreamAndPlacement(element); \
             element.Insert(); \
@@ -303,7 +303,7 @@ static void insertBoxesElement(DgnElementId& eid, PhysicalModelR physicalTestMod
     {
     PhysicalElementPtr testElement = PhysicalElement::Create(physicalTestModel, testCategoryId);
 
-    ElementGeometryBuilderPtr builder = ElementGeometryBuilder::Create(physicalTestModel, testCategoryId, placementOrigin, YawPitchRollAngles());
+    GeometryBuilderPtr builder = GeometryBuilder::Create(physicalTestModel, testCategoryId, placementOrigin, YawPitchRollAngles());
     for (auto const& originOfBlock : originsOfBlocks)
         {
         DgnBoxDetail blockDetail = DgnBoxDetail::InitFromCenterAndSize(originOfBlock, sizeOfBlock, true);
