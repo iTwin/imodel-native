@@ -92,7 +92,7 @@ ECEnumerationCR  ecEnumeration
     Utf8StringCR enumName = ecEnumeration.GetName();
     if (!EXPECTED_CONDITION (ECObjectsStatus::Success == primarySchema.ResolveNamespacePrefix (ecEnumeration.GetSchema(), namespacePrefix)))
         {
-        LOG.warningv ("warning: Can not qualify an ECEnumeration name with a namespace prefix unless the schema containing the ECEnumeration is referenced by the primary schema."
+        LOG.warningv ("warning: Cannot qualify an ECEnumeration name with a namespace prefix unless the schema containing the ECEnumeration is referenced by the primary schema."
             "The name will remain unqualified.\n  Primary ECSchema: %s\n  ECEnumeration: %s\n ECSchema containing ECEnumeration: %s", primarySchema.GetName().c_str(), enumName.c_str(), ecEnumeration.GetSchema().GetName().c_str());
         return enumName;
         }
@@ -106,7 +106,7 @@ ECObjectsStatus ECEnumeration::ParseEnumerationName(Utf8StringR prefix, Utf8Stri
     {
     if (0 == qualifiedEnumName.length())
         {
-        LOG.warningv("Failed to parse a prefix and name from a qualified name because the string is empty.");
+        LOG.error("Failed to parse a prefix and name from a qualified name because the string is empty.");
         return ECObjectsStatus::ParseError;
         }
 
@@ -120,7 +120,7 @@ ECObjectsStatus ECEnumeration::ParseEnumerationName(Utf8StringR prefix, Utf8Stri
 
     if (qualifiedEnumName.length() == colonIndex + 1)
         {
-        LOG.warningv("Failed to parse a prefix and name from the qualified name '%s' because the string ends with a colon.  There must be characters after the colon.",
+        LOG.errorv("Failed to parse a prefix and name from the qualified name '%s' because the string ends with a colon. There must be characters after the colon.",
                      qualifiedEnumName.c_str());
         return ECObjectsStatus::ParseError;
         }

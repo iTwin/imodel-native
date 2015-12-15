@@ -703,7 +703,7 @@ ECObjectsStatus ECSchema::AddClass(ECClassP pClass)
     enumerationIterator = m_enumerationMap.find(pClass->GetName().c_str());
     if (enumerationIterator != m_enumerationMap.end())
         {
-        LOG.warningv("Cannot create class '%s' because an enumeration with that name already exists in the schema", pClass->GetName().c_str());
+        LOG.errorv("Cannot create class '%s' because an enumeration with that name already exists in the schema", pClass->GetName().c_str());
         return ECObjectsStatus::NamedItemAlreadyExists;
         }
 
@@ -711,7 +711,7 @@ ECObjectsStatus ECSchema::AddClass(ECClassP pClass)
     resultPair = m_classMap.insert (bpair<Utf8CP, ECClassP> (pClass->GetName().c_str(), pClass));
     if (resultPair.second == false)
         {
-        LOG.warningv ("Cannot create class '%s' because it already exists in the schema", pClass->GetName().c_str());
+        LOG.errorv("Cannot create class '%s' because it already exists in the schema", pClass->GetName().c_str());
         return ECObjectsStatus::NamedItemAlreadyExists;
         }
     //DebugDump(); wprintf(L"\n");
@@ -908,7 +908,7 @@ ECObjectsStatus ECSchema::CreateRelationshipClass (ECRelationshipClassP& pClass,
     enumerationIterator = m_enumerationMap.find(name.c_str());
     if (enumerationIterator != m_enumerationMap.end())
         {
-        LOG.warningv("Cannot create class '%s' because an enumeration with that name already exists in the schema", name.c_str());
+        LOG.errorv("Cannot create class '%s' because an enumeration with that name already exists in the schema", name.c_str());
         return ECObjectsStatus::NamedItemAlreadyExists;
         }
 
@@ -927,7 +927,7 @@ ECObjectsStatus ECSchema::CreateRelationshipClass (ECRelationshipClassP& pClass,
         {
         delete pClass;
         pClass = NULL;
-        LOG.warningv (L"Cannot create relationship class '%ls' because it already exists in the schema", name.c_str());
+        LOG.errorv("Cannot create relationship class '%s' because it already exists in the schema", name.c_str());
         return ECObjectsStatus::NamedItemAlreadyExists;
         }
 
@@ -981,14 +981,14 @@ ECObjectsStatus ECSchema::AddEnumeration(ECEnumerationP pEnumeration)
     classIterator = m_classMap.find(pEnumeration->GetName().c_str());
     if (classIterator != m_classMap.end())
         {
-        LOG.warningv("Cannot create enumeration '%s' because a class with that name already exists in the schema", pEnumeration->GetName().c_str());
+        LOG.errorv("Cannot create enumeration '%s' because a class with that name already exists in the schema", pEnumeration->GetName().c_str());
         return ECObjectsStatus::NamedItemAlreadyExists;
         }
 
     bpair <EnumerationMap::iterator, bool> resultPair = m_enumerationMap.insert(bpair<Utf8CP, ECEnumerationP>(pEnumeration->GetName().c_str(), pEnumeration));
     if (resultPair.second == false)
         {
-        LOG.warningv("Cannot create enumeration '%s' because it already exists in the schema", pEnumeration->GetName().c_str());
+        LOG.errorv("Cannot create enumeration '%s' because it already exists in the schema", pEnumeration->GetName().c_str());
         return ECObjectsStatus::NamedItemAlreadyExists;
         }
 
