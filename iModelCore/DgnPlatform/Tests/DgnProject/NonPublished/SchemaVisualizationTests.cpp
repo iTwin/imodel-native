@@ -1176,8 +1176,8 @@ TEST_F(SchemaVisualizationTests, TestClassDiagram)
 //=======================================================================================
 extern "C" //[SVT_EXTERN]
     {
-    __declspec(dllimport) gvplugin_library_t gvplugin_dot_layout_LTX_library;
-    __declspec(dllimport) gvplugin_library_t gvplugin_core_LTX_library;
+    IMPORT_ATTRIBUTE gvplugin_library_t gvplugin_dot_layout_LTX_library;
+    IMPORT_ATTRIBUTE gvplugin_library_t gvplugin_core_LTX_library;
     }
 
 //=======================================================================================
