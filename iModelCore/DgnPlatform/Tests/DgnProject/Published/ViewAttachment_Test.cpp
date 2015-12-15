@@ -178,7 +178,7 @@ template<typename VC, typename EL> void ViewAttachmentTest::SetupAndSaveViewCont
     viewController.SetStandardViewRotation(StandardView::Top);
     viewController.SetRotation(RotMatrix::FromAxisAndRotationAngle(2, rot));
     viewController.LookAtVolume(el.CalculateRange3d(), nullptr, &viewMargin);
-    viewController.GetViewFlagsR().SetRenderMode(RenderMode::Wireframe);
+    viewController.GetViewFlagsR().SetRenderMode(Render::RenderMode::Wireframe);
     viewController.ChangeCategoryDisplay(m_attachmentCatId, true);
     viewController.ChangeModelDisplay(modelId, true);
 

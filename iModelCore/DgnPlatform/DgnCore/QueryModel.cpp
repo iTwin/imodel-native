@@ -504,7 +504,7 @@ void ProcessorImpl::SearchRangeTree(DgnDbRTree3dViewFilter& filter)
         if (GraphicsAndQuerySequencer::qt_isOperationRequiredForGraphicsPending())
             {
             for (unsigned i = 0; i < 10 && !_CheckStop(); ++i)
-                BeThreadUtilities::BeSleep(2); // Let it run for awhile. If there was one call to XAttributeHandle::DoSelect, there will probably be more.
+                BeThreadUtilities::BeSleep(2); // Let it run for awhile. If there was one call to SQLite, there will probably be more.
 
             continue;
             }
@@ -524,5 +524,3 @@ void ProcessorImpl::SearchRangeTree(DgnDbRTree3dViewFilter& filter)
         m_inRangeSelectionStep = false;
         } while (m_restartRangeQuery);
     }
-
-

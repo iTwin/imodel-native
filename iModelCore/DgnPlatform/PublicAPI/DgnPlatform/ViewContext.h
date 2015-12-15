@@ -192,7 +192,7 @@ protected:
     bool                    m_useNpcSubRange = false;
     bool                    m_ignoreViewRange = false;
     bool                    m_scanRangeValid = false;
-    ViewFlags               m_viewflags;
+    Render::ViewFlags       m_viewflags;
     DrawPurpose             m_purpose;
     DRange3d                m_npcSubRange;
     DMap4d                  m_worldToNpc;
@@ -362,10 +362,10 @@ public:
     //! When a ViewContext is first attached to a DgnViewport, the ViewFlags are initialized
     //! from the DgnViewport's viewflags. However, during the course of an operation,
     //! the viewflags may be different than those on the DgnViewport.
-    ViewFlags GetViewFlags() const {return m_viewflags;}
+    Render::ViewFlags GetViewFlags() const {return m_viewflags;}
 
     //! Sets the current state of the ViewFlags for this context
-    void SetViewFlags(ViewFlags flags) {m_viewflags = flags;}
+    void SetViewFlags(Render::ViewFlags flags) {m_viewflags = flags;}
 
     //! Get the DgnDb for this ViewContext.
     DgnDbR GetDgnDb() const {BeAssert(nullptr != m_dgnDb); return *m_dgnDb;}

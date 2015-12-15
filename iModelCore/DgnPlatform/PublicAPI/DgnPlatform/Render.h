@@ -16,6 +16,7 @@
 
 BEGIN_BENTLEY_DGN_NAMESPACE
     struct ViewManager;
+
 END_BENTLEY_DGN_NAMESPACE
 
 BEGIN_BENTLEY_RENDER_NAMESPACE
@@ -55,6 +56,69 @@ DEFINE_REF_COUNTED_PTR(Target)
 DEFINE_REF_COUNTED_PTR(Texture)
 DEFINE_REF_COUNTED_PTR(Task)
 DEFINE_REF_COUNTED_PTR(Window)
+
+//=======================================================================================
+// @bsiclass                                                    Keith.Bentley   12/14
+//=======================================================================================
+enum class RenderMode
+    {
+    Wireframe           = 0,
+    CrossSection        = 1,
+    Wiremesh            = 2,
+    HiddenLine          = 3,
+    SolidFill           = 4,
+    ConstantShade       = 5,
+    SmoothShade         = 6,
+    Phong               = 7,
+    RayTrace            = 8,
+    RenderWireframe     = 9,
+    Radiosity           = 10,
+    ParticleTrace       = 11,
+    RenderLuxology      = 12,
+    Invalid             = 15,
+    };
+
+/*=================================================================================**//**
+*  The flags that control view information.
+* @bsiclass
++===============+===============+===============+===============+===============+======*/
+struct ViewFlags
+    {
+private:
+    RenderMode m_renderMode;
+
+public:
+    uint32_t    constructions:1;    //!< Shows or hides construction class geometry.
+    uint32_t    text:1;             //!< Shows or hides text.
+    uint32_t    dimensions:1;       //!< Shows or hides dimensions.
+    uint32_t    patterns:1;         //!< Shows or hides pattern geometry.
+    uint32_t    weights:1;          //!< Controls whether non-zero line weights are used or display using weight 0.
+    uint32_t    styles:1;           //!< Controls whether custom line styles are used (e.g. control whether elements with custom line styles draw normally, or as solid lines).
+    uint32_t    transparency:1;     //!< Controls whether element transparency is used (e.g. control whether elements with transparency draw normally, or as opaque).
+    uint32_t    fill:1;             //!< Controls whether the fills on filled elements are displayed.
+    uint32_t    grid:1;             //!< Shows or hides the grid. The grid settings are a design file setting.
+    uint32_t    acs:1;              //!< Shows or hides the ACS triad.
+    uint32_t    bgImage:1;          //!< Shows or hides the background image. The image is a design file setting, and may be undefined.
+    uint32_t    textures:1;         //!< Controls whether to display texture maps for material assignments. When off only material color is used for display.
+    uint32_t    materials:1;        //!< Controls whether materials are used (e.g. control whether geometry with materials draw normally, or as if it has no material).
+    uint32_t    sceneLights:1;      //!< Controls whether the custom scene lights or the default lighting scheme are used. Note the inversion.
+    uint32_t    visibleEdges:1;     //!< Shows or hides visible edges in the shaded render mode. This is typically controlled through a display style.
+    uint32_t    hiddenEdges:1;      //!< Shows or hides hidden edges in the shaded render mode. This is typically controlled through a display style.
+    uint32_t    shadows:1;          //!< Shows or hides shadows. This is typically controlled through a display style.
+    uint32_t    noFrontClip:1;      //!< Controls whether the front clipping plane is used. Note the inversion. Elements beyond will not be displayed.
+    uint32_t    noBackClip:1;       //!< Controls whether the back clipping plane is used. Note the inversion. Elements beyond will not be displayed.
+    uint32_t    noClipVolume:1;     //!< Controls whether the clip volume is applied. Note the inversion. Elements beyond will not be displayed.
+    uint32_t    ignoreLighting:1;   //!< Controls whether lights are used.
+
+    void SetRenderMode (RenderMode value) {m_renderMode = value;}
+    RenderMode GetRenderMode() const {return m_renderMode;}
+
+    DGNPLATFORM_EXPORT void InitDefaults();
+    DGNPLATFORM_EXPORT void ToBaseJson(JsonValueR) const;
+    DGNPLATFORM_EXPORT void FromBaseJson(JsonValueCR);
+    DGNPLATFORM_EXPORT void To3dJson(JsonValueR) const;
+    DGNPLATFORM_EXPORT void From3dJson(JsonValueCR);
+    };
 
 //=======================================================================================
 //! The Render::Queue is accessed through DgnViewport::GetRenderQueue. It holds an array of Render::Tasks waiting

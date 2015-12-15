@@ -2042,7 +2042,7 @@ TEST_F(SchemaVisualizationTests, GraphvizDiagramTest)
 
     DrawingViewController viewController(*db, view.GetViewId());
     viewController.SetStandardViewRotation(StandardView::Top);
-    viewController.GetViewFlagsR().SetRenderMode(RenderMode::Wireframe);
+    viewController.GetViewFlagsR().SetRenderMode(Render::RenderMode::Wireframe);
     viewController.ChangeCategoryDisplay(categoryId, true);
     viewController.ChangeModelDisplay(modelId, true);
 

@@ -395,7 +395,7 @@ protected:
     DVec3d          m_viewDeltaUnexpanded;      // view delta (from ViewController, unexpanded for "no clip")
     RotMatrix       m_rotMatrix;                // rotation matrix (from ViewController)
     CameraInfo      m_camera;
-    ViewFlags       m_rootViewFlags;            // view flags for root model
+    Render::ViewFlags m_rootViewFlags;            // view flags for root model
     Render::TargetPtr m_renderTarget;
     DMap4d          m_rootToView;
     DMap4d          m_rootToNpc;
@@ -441,7 +441,6 @@ public:
     bool IsVisible() {return _IsVisible();}
     Render::Plan::AntiAliasPref WantAntiAliasLines() const {return _WantAntiAliasLines();}
     Render::Plan::AntiAliasPref WantAntiAliasText() const {return _WantAntiAliasText();}
-    ViewFlagsP GetViewFlagsP() {return &m_rootViewFlags;}
     bool GetGridRange(DRange3d* range);
     DGNPLATFORM_EXPORT double GetGridScaleFactor();
     DGNPLATFORM_EXPORT void PointToStandardGrid(DPoint3dR point, DPoint3dR gridOrigin, RotMatrixR rMatrix);
@@ -755,7 +754,7 @@ public:
 
     //! Get the current View Flags for this DgnViewport.
     //! @return the View flags for this DgnViewport.
-    ViewFlags GetViewFlags() const {return m_rootViewFlags;}
+    Render::ViewFlags GetViewFlags() const {return m_rootViewFlags;}
 
     //! Synchronized this DgnViewport with the current state of its ViewController. A DgnViewport may hold local copies of the information
     //! in its ViewController. Therefore, when changes are made to the state of a ViewController, it must be synchronized with the

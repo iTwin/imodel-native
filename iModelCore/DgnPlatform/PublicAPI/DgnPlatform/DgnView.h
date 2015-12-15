@@ -180,7 +180,7 @@ public:
     //! Delete this view's settings
     BeSQLite::DbResult DeleteSettings() const { return DeleteSettings(GetViewId(), GetDgnDb()); }
 
-    DGNVIEW_EXPORT BeSQLite::DbResult RenderAndSaveThumbnail(int resolution, RenderMode renderModeOverride) const;
+    DGNVIEW_EXPORT BeSQLite::DbResult RenderAndSaveThumbnail(int resolution, Render::RenderMode renderModeOverride) const;
 
     //! An entry in an iterator over the views in a DgnDb
     struct Entry : ECSqlStatementEntry

@@ -103,7 +103,6 @@ DGNPLATFORM_TYPEDEFS (RedlineModel)
 DGNPLATFORM_TYPEDEFS (SystemElement)
 DGNPLATFORM_TYPEDEFS (ViewContext)
 DGNPLATFORM_TYPEDEFS (ViewController)
-DGNPLATFORM_TYPEDEFS (ViewFlags)
 DGNPLATFORM_TYPEDEFS (DgnDbExpressionContext);
 DGNPLATFORM_TYPEDEFS (DgnElementExpressionContext);
 
@@ -927,6 +926,22 @@ public:
     //! @param[in] size number of bytes in data
     void Append(uint8_t const* data, uint32_t size) {ReserveMemory(size+m_size); if (data) memcpy(m_data+m_size, data, size);}
 };
+
+//=======================================================================================
+// @bsiclass                                                    Keith.Bentley   12/14
+//=======================================================================================
+enum class StandardView
+    {
+    NotStandard = -1,
+    Top         = 1,
+    Bottom      = 2,
+    Left        = 3,
+    Right       = 4,
+    Front       = 5,
+    Back        = 6,
+    Iso         = 7,
+    RightIso    = 8,
+    };
 
 //=======================================================================================
 //! RGBA values for a color

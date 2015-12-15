@@ -115,7 +115,7 @@ protected:
     friend struct ViewDefinition;
 
     DgnDbR         m_dgndb;
-    ViewFlags      m_viewFlags;
+    Render::ViewFlags m_viewFlags;
     DgnViewId      m_viewId;
     DgnClassId     m_classId;
     DgnModelId     m_baseModelId;
@@ -367,11 +367,11 @@ public:
     //! determine whether this view has been loaded from the database.
     bool IsLoaded() const {return m_baseModelId.IsValid();}
 
-    //! Gets a const reference to the ViewFlags.
-    ViewFlagsCR GetViewFlags() const {return m_viewFlags;}
+    //! Get the ViewFlags.
+    Render::ViewFlags GetViewFlags() const {return m_viewFlags;}
 
     //! Gets a reference to the ViewFlags.
-    ViewFlagsR GetViewFlagsR() {return m_viewFlags;}
+    Render::ViewFlags& GetViewFlagsR() {return m_viewFlags;}
 
     //! Gets the DgnViewId of this view.
     DgnViewId GetViewId() const {return m_viewId;}
