@@ -123,10 +123,10 @@ namespace dgn_ElementHandler
         ELEMENTHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_SheetElement, SheetElement, Sheet, Element, DGNPLATFORM_EXPORT)
     };
 
-    //! The ElementHandler for ElementGroup
-    struct EXPORT_VTABLE_ATTRIBUTE Group : Element
+    //! The ElementHandler for SpatialGroupElement
+    struct EXPORT_VTABLE_ATTRIBUTE SpatialGroup : Element
     {
-        ELEMENTHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_ElementGroup, ElementGroup, Group, Element, DGNPLATFORM_EXPORT)
+        ELEMENTHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_SpatialGroupElement, SpatialGroupElement, SpatialGroup, Element, DGNPLATFORM_EXPORT)
     };
 };
 

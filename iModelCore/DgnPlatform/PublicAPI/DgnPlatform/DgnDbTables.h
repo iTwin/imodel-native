@@ -36,7 +36,6 @@
 #define DGN_CLASSNAME_ElementDescription    "ElementDescription"
 #define DGN_CLASSNAME_ElementExternalKey    "ElementExternalKey"
 #define DGN_CLASSNAME_ElementGeom           "ElementGeom"
-#define DGN_CLASSNAME_ElementGroup          "ElementGroup" // WIP: obsolete, use IElementGroupOf instead
 #define DGN_CLASSNAME_ElementMultiAspect    "ElementMultiAspect"
 #define DGN_CLASSNAME_GeomPart              "GeomPart"
 #define DGN_CLASSNAME_LineStyle             "LineStyle"
@@ -53,6 +52,8 @@
 #define DGN_CLASSNAME_SectionDrawingModel   "SectionDrawingModel"
 #define DGN_CLASSNAME_SheetElement          "SheetElement"
 #define DGN_CLASSNAME_SheetModel            "SheetModel"
+#define DGN_CLASSNAME_SpatialElement        "SpatialElement"
+#define DGN_CLASSNAME_SpatialGroupElement   "SpatialGroupElement"
 #define DGN_CLASSNAME_SystemElement         "SystemElement"
 #define DGN_CLASSNAME_SystemModel           "SystemModel"
 #define DGN_CLASSNAME_TextAnnotationSeed    "TextAnnotationSeed"
