@@ -60,6 +60,7 @@
     <ClCompile Include="Published\ECSqlExpectedResultImpls.cpp" />
     <ClCompile Include="Published\ECSqlBuilder_Tests.cpp" />
     <ClCompile Include="Published\ECSqlStatementTestFixture.cpp" />
+    <ClCompile Include="Published\ECSqlStatementTestsSchemaHelper.cpp" />
     <ClCompile Include="Published\ECSqlStatement_FunctionTests.cpp" />
     <ClCompile Include="Published\ECSqlStatement_Tests.cpp" />
     <ClCompile Include="Published\ECSqlTestDataset.cpp" />
@@ -93,6 +94,7 @@
     <ClInclude Include="Published\ECSqlInsertTestDataset.h" />
     <ClInclude Include="Published\ECSqlSelectTestDataset.h" />
     <ClInclude Include="Published\ECSqlStatementTestFixture.h" />
+    <ClInclude Include="Published\ECSqlStatementTestsSchemaHelper.h" />
     <ClInclude Include="Published\ECSqlTestDataset.h" />
     <ClInclude Include="Published\ECSqlTestFrameworkFixture.h" />
     <ClInclude Include="Published\ECSqlTestFrameworkHelper.h" />

@@ -258,6 +258,9 @@
     <ClInclude Include="Published\ECSqlUpdateTestDataset.h">
       <Filter>Published\ECSql\ECSqlTestFramework\Datasets</Filter>
     </ClInclude>
+    <ClInclude Include="Published\ECSqlStatementTestsSchemaHelper.h">
+      <Filter>Published</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Intermediate Files">
