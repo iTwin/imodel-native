@@ -7,7 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPublishedTests.h"
 #include "SchemaImportTestFixture.h"
-
+#include "ECSqlStatementTestsSchemaHelper.h"
 #include <initializer_list>
 USING_NAMESPACE_BENTLEY_EC
 
@@ -2274,6 +2274,67 @@ TEST_F (JoinedTableECDbMapStrategyTests, RelationshipWithStandAloneClass1)
     ecsql.Sprintf (ToSelectECSql (db, "ManyRooHasManyFoo"), manyRooHasManyFooInstanceId4.GetValue ());
     VerifyInsertedInstance (db, ecsql.c_str (), rooInstanceId2, fooInstanceId2, rooClassId, fooClassId);
     }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsiMethod                                      Muhammad Hassan                  12/15
+//+---------------+---------------+---------------+---------------+---------------+------
+void ApplyCustomAttributeAndImportSchema (ECDbR ecdb, ECSchemaPtr ecSchema)
+    {
+    ECSchemaReadContextPtr readContext = ECSchemaReadContext::CreateContext ();
+    readContext->AddSchemaLocater (ecdb.GetSchemaLocater ());
+    SchemaKey ecdbmapKey = SchemaKey ("ECDbMap", 1, 0);
+    ECSchemaPtr ecdbmapSchema = readContext->LocateSchema (ecdbmapKey, SchemaMatchType::SCHEMAMATCHTYPE_LatestCompatible);
+    ASSERT_TRUE (ecdbmapSchema.IsValid ());
+    readContext->AddSchema (*ecSchema);
+    ecSchema->AddReferencedSchema (*ecdbmapSchema);
+
+    ECClassP personClass = ecSchema->GetClassP ("Person");
+    ASSERT_TRUE (personClass != nullptr);
+
+    ECClassCP ca = ecdbmapSchema->GetClassCP ("ClassMap");
+    EXPECT_TRUE (ca != nullptr);
+    auto customAttribute = ca->GetDefaultStandaloneEnabler ()->CreateInstance ();
+    EXPECT_TRUE (customAttribute != nullptr);
+    ASSERT_TRUE (customAttribute->SetValue ("MapStrategy.Strategy", ECValue ("SharedTable")) == ECObjectsStatus::Success);
+    ASSERT_TRUE (customAttribute->SetValue ("MapStrategy.Options", ECValue ("JoinedTablePerDirectSubclass")) == ECObjectsStatus::Success);
+    ASSERT_TRUE (customAttribute->SetValue ("MapStrategy.AppliesToSubclasses", ECValue (true)) == ECObjectsStatus::Success);
+    ASSERT_TRUE (personClass->SetCustomAttribute (*customAttribute) == ECObjectsStatus::Success);
+
+    ASSERT_EQ (SUCCESS, ecdb.Schemas ().ImportECSchemas (readContext->GetCache ()));
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsiMethod                                      Muhammad Hassan                  12/15
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F (JoinedTableECDbMapStrategyTests, PopulateECSql_TestDbWithTestData)
+    {
+    ECDbR ecdb = SetupECDb ("JoinedTableECSqlStatementTests.ecdb");
+
+    ECSchemaPtr schemaPtr = ECDbTestUtility::ReadECSchemaFromDisk (L"ECSqlStatementTests.01.00.ecschema.xml", nullptr);
+    ASSERT_TRUE (schemaPtr != NULL);
+    
+    ApplyCustomAttributeAndImportSchema (ecdb, schemaPtr);
+
+    ECSqlStatementTestsSchemaHelper::Populate (ecdb);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsiMethod                                      Muhammad Hassan                  12/15
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F (JoinedTableECDbMapStrategyTests, VerifyECSqlOnAbstractBaseClass)
+    {
+    ECDbR ecdb = SetupECDb ("JoinedTableECSqlStatementTests.ecdb");
+
+    ECSchemaPtr schemaPtr = ECDbTestUtility::ReadECSchemaFromDisk (L"ECSqlStatementTests.01.00.ecschema.xml", nullptr);
+    ASSERT_TRUE (schemaPtr != NULL);
+
+    ApplyCustomAttributeAndImportSchema (ecdb, schemaPtr);
+    Utf8CP expectedGeneratedECSql = "SELECT [Person].[ECInstanceId] FROM (SELECT [ECST_Person].ECClassId, [ECST_Person].[ECInstanceId] FROM [ECST_Person]) [Person]";
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare (ecdb, "SELECT ECInstanceId FROM ECST.Person"));
+    ASSERT_EQ (DbResult::BE_SQLITE_DONE, stmt.Step ());
+    ASSERT_STREQ (expectedGeneratedECSql, stmt.GetNativeSql ());
     }
 
 END_ECDBUNITTESTS_NAMESPACE
