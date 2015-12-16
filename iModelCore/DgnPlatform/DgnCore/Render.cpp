@@ -47,28 +47,6 @@ void Render::Queue::VerifyRenderThread(bool yesNo)
 #endif
     }
 
-//=======================================================================================
-// @bsiclass                                                    Keith.Bentley   12/15
-//=======================================================================================
-struct RefreshTask : Task
-{
-    Plan m_plan;
-    virtual Utf8CP _GetName() const override {return "Refresh";}
-    virtual Outcome _Process() override {m_target->Refresh(m_plan); return Outcome::Finished;}
-    RefreshTask(DgnViewportR vp) : Task(vp.GetRenderTarget(), Operation::Refresh), m_plan(vp) {}
-};
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   12/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool DgnViewport::QueueRefresh()
-    {
-    if (s_renderQueue == nullptr || !m_renderTarget.IsValid())
-        return false;
-
-    RenderQueue().AddTask(*new RefreshTask(*this));
-    return true;
-    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   07/15

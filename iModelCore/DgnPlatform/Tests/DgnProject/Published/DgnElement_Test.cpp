@@ -30,27 +30,28 @@ TEST_F (DgnElementTests, ResetStatistics)
     EXPECT_TRUE (seedModel != nullptr);
 
     //Inserts a model
-    DgnModelPtr M1 = seedModel->Clone(DgnModel::CreateModelCode("Model1"));
-    M1->Insert("Test Model 1");
-    EXPECT_TRUE (M1 != nullptr);
+    DgnModelPtr m1 = seedModel->Clone(DgnModel::CreateModelCode("Model1"));
+    m1->SetLabel("Test Model 1");
+    m1->Insert();
+    EXPECT_TRUE (m1 != nullptr);
     m_db->SaveChanges("changeSet1");
 
-    DgnModelId M1id = m_db->Models().QueryModelId(DgnModel::CreateModelCode("model1"));
-    EXPECT_TRUE (M1id.IsValid());
+    DgnModelId m1id = m_db->Models().QueryModelId(DgnModel::CreateModelCode("model1"));
+    EXPECT_TRUE (m1id.IsValid());
 
     //Inserts 2 elements.
-    auto keyE1 = InsertElement(M1id);
+    auto keyE1 = InsertElement(m1id);
     DgnElementId E1id = keyE1->GetElementId();
     DgnElementCPtr E1 = m_db->Elements().GetElement(E1id);
     EXPECT_TRUE (E1 != nullptr);
 
-    auto keyE2 = InsertElement(M1id);
+    auto keyE2 = InsertElement(m1id);
     DgnElementId E2id = keyE2->GetElementId();
     DgnElementCPtr E2 = m_db->Elements().GetElement(E2id);
     EXPECT_TRUE (E2 != nullptr);
 
     DgnModelId model_id = m_db->Elements().QueryModelId(E1id);
-    EXPECT_EQ (M1id, model_id);
+    EXPECT_EQ (m1id, model_id);
 
     //Deletes the first element.
     DgnDbStatus status=E2->Delete();
@@ -107,7 +108,8 @@ TEST_F (DgnElementTests, UpdateElement)
 
     //Inserts a model
     DgnModelPtr m1 = seedModel->Clone(DgnModel::CreateModelCode("Model1"));
-    m1->Insert("Test Model 1");
+    m1->SetLabel("Test Model 1");
+    m1->Insert();
     EXPECT_TRUE(m1 != nullptr);
     m_db->SaveChanges("changeSet1");
 

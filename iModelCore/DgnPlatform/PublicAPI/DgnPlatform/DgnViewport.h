@@ -374,6 +374,7 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnViewport : RefCounted<NonCopyableClass>
 {
 public:
     friend struct ViewManager;
+    friend struct ViewSet;
 
 protected:
     typedef std::deque<Utf8String> ViewStateStack;
@@ -424,6 +425,8 @@ protected:
     virtual GridOrientationType _GetGridOrientationType() const {return GridOrientationType::View;}
     DGNPLATFORM_EXPORT static void StartRenderThread();
     DMap4d CalcNpcToView();
+    void QueueDrawFrame();
+    void Refresh();
 
 public:
     DgnViewport(Render::TargetP target) : m_renderTarget(target) {}
@@ -455,7 +458,8 @@ public:
     void Destroy() {_Destroy();}
     DGNPLATFORM_EXPORT StatusInt ComputeVisibleDepthRange (double& minDepth, double& maxDepth, bool ignoreViewExtent = false);
     DGNPLATFORM_EXPORT StatusInt ComputeViewRange(DRange3dR, FitViewParams& params) ;
-    void SetNeedsHeal() {m_needsHeal = true;}
+    void SetNeedsRefresh() {m_needsRefresh=true;}
+    void SetNeedsHeal() {m_needsHeal = true; SetNeedsRefresh();}
     DGNPLATFORM_EXPORT bool UseClipVolume(DgnModelCP) const;
     DGNPLATFORM_EXPORT static int GetDefaultIndexedLineWidth(int index);
     DGNPLATFORM_EXPORT static void OutputFrustumErrorMessage(ViewportStatus errorStatus);
@@ -750,8 +754,6 @@ public:
     //! @param[in] saveInUndo If true, the new state of the ViewController is compared to the previous state and changes are saved in the View Undo stack.
     //! If the user issues the "view undo" command, the changes are reversed and the ViewController is reverted to the previous state.
     DGNPLATFORM_EXPORT void SynchWithViewController(bool saveInUndo);
-
-    DGNPLATFORM_EXPORT bool QueueRefresh();
 /** @} */
 
 /** @name Changing DgnViewport Frustum */

@@ -40,9 +40,9 @@ DgnTrueColor::CreateParams::CreateParams(DgnDbR db, ColorDef colorDef, Utf8Strin
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnTrueColor::_ExtractSelectParams(BeSQLite::EC::ECSqlStatement& stmt, ECSqlClassParams const& params)
+DgnDbStatus DgnTrueColor::_ReadSelectParams(BeSQLite::EC::ECSqlStatement& stmt, ECSqlClassParams const& params)
     {
-    auto status = T_Super::_ExtractSelectParams(stmt, params);
+    auto status = T_Super::_ReadSelectParams(stmt, params);
     if (DgnDbStatus::Success == status)
         m_colorDef = ColorDef(static_cast<uint32_t>(stmt.GetValueInt(params.GetSelectIndex(PROP_Value))));
 
