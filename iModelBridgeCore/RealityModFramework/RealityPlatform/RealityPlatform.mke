@@ -59,7 +59,7 @@ $(o)WMSDataHandler$(oext) : $(baseDir)WMSDataHandler.cpp ${MultiCompileDepends}
 
 $(o)PointCloudVortex$(oext) : $(baseDir)PointCloudVortex.cpp $(baseDir)PointCloudVortex.h ${MultiCompileDepends}
 
-$(o)RealityPlatformUtil$(oext) : $(baseDir)RealityPlatformUtil.cpp $(baseDir)RealityPlatformUtil.h ${MultiCompileDepends}
+$(o)RealityPlatformUtil$(oext) : $(baseDir)RealityPlatformUtil.cpp $(PublicApiDir)RealityPlatformUtil.h ${MultiCompileDepends}
 
 $(o)WMSCapabilities$(oext) : $(baseDir)WMSCapabilities.cpp $(PublicApiDir)WMSCapabilities.h $(baseDir)WMSTag.h ${MultiCompileDepends}
 

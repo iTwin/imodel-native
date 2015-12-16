@@ -42,5 +42,5 @@ USING_NAMESPACE_IMAGEPP
 // #endif
 
 #include <RealityPlatform/RealityPlatformApi.h>
+#include <RealityPlatform/RealityPlatformUtil.h>
 #include "RealityPlatformAdmins.h"
-#include "RealityPlatformUtil.h"
