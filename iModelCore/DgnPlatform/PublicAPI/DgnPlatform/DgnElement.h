@@ -231,56 +231,6 @@ public:
 
 typedef QvElemSet<QvKey32> T_QvElemSet;
 
-//=======================================================================================
-//! A list of parameters used in ECSql SELECT, INSERT, and UPDATE statements for a
-//! specific ECClass. Maps names to indices in the results of a SELECT statement or in
-//! the bindings of an INSERT or UPDATE statement.
-//! @ingroup DgnElementGroup
-// @bsiclass                                                     Paul.Connelly   09/15
-//=======================================================================================
-struct ECSqlClassParams
-{
-public:
-    enum class StatementType
-    {
-        Select          = 1 << 0, //!< Property should be included in SELECT statements from DgnElement::_LoadFromDb()
-        Insert          = 1 << 1, //!< Property should be included in INSERT statements from DgnElement::_InsertInDb()
-        Update          = 1 << 2, //!< Property should be included in UPDATE statements from DgnElement::_UpdateInDb()
-        ReadOnly        = Select | Insert, //!< Property cannot be modified via UPDATE statement
-        All             = Select | Insert | Update, //!< Property should be included in all ECSql statements
-        InsertUpdate    = Insert | Update, //!< Property should not be included in SELECT statements
-    };
-
-    struct Entry
-    {
-        Utf8CP          m_name;
-        StatementType   m_type;
-
-        Entry() : m_name(nullptr), m_type(StatementType::All) { }
-        Entry(Utf8CP name, StatementType type) : m_name(name), m_type(type) { }
-    };
-
-    typedef bvector<Entry> Entries;
-private:
-    Entries m_entries;
-public:
-    //! Adds a parameter to the list
-    //! @param[in]      parameterName The name of the parameter. @em Must be a pointer to a string with static storage duration.
-    //! @param[in]      type          The type(s) of statements in which this parameter is used.
-    DGNPLATFORM_EXPORT void Add(Utf8CP parameterName, StatementType type=StatementType::All);
-
-    //! Returns an index usable for accessing the columns with the specified name in the results of an ECSql SELECT query.
-    //! @param[in]      parameterName The name of the parameter
-    //! @return The index of the corresponding column in the query results, or -1 if no such column exists
-    DGNPLATFORM_EXPORT int GetSelectIndex(Utf8CP parameterName) const;
-//__PUBLISH_SECTION_END__
-    Entries const& GetEntries() const { return m_entries; }
-    void RemoveAllButSelect();
-//__PUBLISH_SECTION_START__
-};
-
-ENUM_IS_FLAGS(ECSqlClassParams::StatementType);
-
 #define DGNELEMENT_DECLARE_MEMBERS(__ECClassName__,__superclass__) \
     private: typedef __superclass__ T_Super;\
     public: static Utf8CP MyECClassName() {return __ECClassName__;}\
@@ -802,10 +752,10 @@ protected:
     //! @param[in]      statement    The SELECT statement which selected the data from the table
     //! @param[in]      selectParams The properties selected by the SELECT statement. Use this to obtain an index into the statement.
     //! @return DgnDbStatus::Success if the data was loaded successfully, or else an error status.
-    //! @note If you override this method, you @em must first call T_Super::_ExtractSelectParams, forwarding its status.
+    //! @note If you override this method, you @em must first call T_Super::_ReadSelectParams, forwarding its status.
     //! You should then extract your subclass properties from the supplied ECSqlStatement, using
     //! selectParams.GetParameterIndex() to look up the index of each parameter within the statement.
-    virtual DgnDbStatus _ExtractSelectParams(BeSQLite::EC::ECSqlStatement& statement, ECSqlClassParams const& selectParams) { return DgnDbStatus::Success; }
+    virtual DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement& statement, ECSqlClassParamsCR selectParams) { return DgnDbStatus::Success; }
 
     //! Override this method if your element needs to load additional data from the database when it is loaded (for example,
     //! look up related data in another table).
@@ -2005,9 +1955,9 @@ private:
     struct ElementSelectStatement
     {
         BeSQLite::EC::CachedECSqlStatementPtr m_statement;
-        ECSqlClassParams const& m_params;
+        ECSqlClassParamsCR m_params;
 
-        ElementSelectStatement(BeSQLite::EC::CachedECSqlStatement* stmt, ECSqlClassParams const& params) : m_statement(stmt), m_params(params) { }
+        ElementSelectStatement(BeSQLite::EC::CachedECSqlStatement* stmt, ECSqlClassParamsCR params) : m_statement(stmt), m_params(params) { }
     };
 
     struct HandlerStatementCache

@@ -63,9 +63,9 @@ DgnDbStatus ViewAttachment::_BindUpdateParams(ECSqlStatement& stmt)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus ViewAttachment::_ExtractSelectParams(ECSqlStatement& stmt, ECSqlClassParams const& params)
+DgnDbStatus ViewAttachment::_ReadSelectParams(ECSqlStatement& stmt, ECSqlClassParams const& params)
     {
-    auto status = T_Super::_ExtractSelectParams(stmt, params);
+    auto status = T_Super::_ReadSelectParams(stmt, params);
     if (DgnDbStatus::Success == status)
         {
         m_data.m_viewId = stmt.GetValueId<DgnViewId>(params.GetSelectIndex(PROP_ViewId));

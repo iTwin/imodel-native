@@ -80,8 +80,8 @@ DgnBaseDomain::DgnBaseDomain() : DgnDomain(DGN_ECSCHEMA_NAME, "Base DgnDb Domain
     RegisterHandler(dgn_ModelHandler::Model::GetHandler());
     RegisterHandler(dgn_ModelHandler::Physical::GetHandler());
     RegisterHandler(dgn_ModelHandler::Component::GetHandler());
-    RegisterHandler(dgn_ModelHandler::Sheet::GetHandler());
     RegisterHandler(dgn_ModelHandler::Model2d::GetHandler());
+    RegisterHandler(dgn_ModelHandler::Sheet::GetHandler());
     RegisterHandler(dgn_ModelHandler::PlanarPhysical::GetHandler());
     RegisterHandler(dgn_ModelHandler::SectionDrawing::GetHandler());
     RegisterHandler(dgn_ModelHandler::Redline::GetHandler());

@@ -388,9 +388,9 @@ LsComponentPtr LsComponent::GetImportedComponent(LsComponentId sourceId, DgnImpo
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    12/2015
 //---------------------------------------------------------------------------------------
-DgnDbStatus LineStyleElement::_ExtractSelectParams(ECSqlStatement& stmt, ECSqlClassParams const& params)
+DgnDbStatus LineStyleElement::_ReadSelectParams(ECSqlStatement& stmt, ECSqlClassParams const& params)
     {
-    auto status = T_Super::_ExtractSelectParams(stmt, params);
+    auto status = T_Super::_ReadSelectParams(stmt, params);
     if (DgnDbStatus::Success == status)
         {
         Utf8String descr = stmt.GetValueText(params.GetSelectIndex(PROPNAME_Descr));
