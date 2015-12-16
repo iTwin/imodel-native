@@ -16,7 +16,7 @@
 #define DEBUG_THREADS 1
 #endif
 
-//#define TRACE_QUERY_LOGIC 1
+#define TRACE_QUERY_LOGIC 1
 
 BeThreadLocalStorage g_queryThreadChecker;
 
@@ -280,7 +280,16 @@ void QueryModel::Queue::RequestAbort(QueryModelR model, bool waitUntilFinished)
         }
 
     if (waitUntilFinished)
+        {
+#if defined TRACE_QUERY_LOGIC
+        StopWatch timer(nullptr, true);
+#endif
         model.WaitUntilFinished(nullptr);
+#if defined TRACE_QUERY_LOGIC
+        timer.Stop();
+        printf("QMQ: RequestAbort: %.8f elapsed\n", timer.GetElapsedSeconds());
+#endif
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -363,6 +372,11 @@ void QueryModel::Queue::qt_WaitForWork()
 #endif
                 auto updatedResults = processing->GetResults();
                 BeAssert(nullptr != updatedResults);
+
+                timer.Stop();
+#if defined TRACE_QUERY_LOGIC
+                printf("QMQ: Elapsed query time %.8f\n", timer.GetElapsedSeconds());
+#endif
                 updatedResults->m_elapsedSeconds = timer.GetElapsedSeconds();
                 model.SetUpdatedResults(updatedResults);
                 

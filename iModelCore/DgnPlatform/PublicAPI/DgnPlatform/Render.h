@@ -950,6 +950,7 @@ public:
 
         return (metersPerPixel >= m_minSize && metersPerPixel <= m_maxSize);
         }
+    bool IsSpecificToViewport(DgnViewportCR vp) const { return nullptr != m_vp && m_vp == &vp; }
 
     double GetPixelSize() {return m_pixelSize;}
     void SetPixelSizeRange(double min, double max) {m_minSize = min, m_maxSize = max;}

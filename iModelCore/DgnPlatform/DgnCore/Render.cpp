@@ -221,6 +221,16 @@ Render::Graphic* GraphicSet::Find(DgnViewportCR vp, double metersPerPixel) const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void GraphicSet::DropFor(DgnViewportCR vp)
+    {
+    auto found = std::find_if(m_graphics.begin(), m_graphics.end(), [&](GraphicPtr const& arg) { return arg->IsSpecificToViewport(vp); });
+    if (m_graphics.end() != found)
+        m_graphics.erase(found);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   08/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 void GraphicSet::Drop(Render::Graphic& graphic)

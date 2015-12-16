@@ -31,6 +31,7 @@ struct GraphicSet
     mutable bvector<Render::GraphicPtr> m_graphics;
     DGNPLATFORM_EXPORT Render::Graphic* Find(DgnViewportCR, double metersPerPixel) const;
     DGNPLATFORM_EXPORT void Drop(Render::Graphic&);
+    DGNPLATFORM_EXPORT void DropFor(DgnViewportCR viewport);
     void Save(Render::Graphic& graphic) {m_graphics.push_back(&graphic);}
     void Clear() {m_graphics.clear();}
 };
@@ -2076,6 +2077,12 @@ public:
 
     DgnElementIdSet const& GetSelectionSet() const {return m_selectionSet;}
     DgnElementIdSet& GetSelectionSetR() {return m_selectionSet;}
+
+    //! For all loaded elements, drops any cached graphics associated with the specified viewport.
+    //! This is typically invoked by applications when a viewport is closed or its attributes modified such that the cached graphics
+    //! no longer reflect its state.
+    //! @param[in]      viewport The viewport for which to drop graphics
+    DGNPLATFORM_EXPORT void DropGraphicsForViewport(DgnViewportCR viewport);
 };
 
 //=======================================================================================

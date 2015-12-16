@@ -1572,4 +1572,11 @@ ECSqlClassInfo const& dgn_ElementHandler::Element::GetECSqlClassInfo()
     return m_classInfo;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnElements::DropGraphicsForViewport(DgnViewportCR viewport)
+    {
+    // ###TODO: Stuff...
+    }
 
