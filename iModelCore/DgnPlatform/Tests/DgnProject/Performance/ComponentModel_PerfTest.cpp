@@ -214,7 +214,7 @@ void ComponentModelPerfTest::Developer_CreateCMs()
         for (var i = 0; i < params.box_count; i++)\
             {\
             var boxSize = new be.DPoint3d(params.H, params.W, params.D); \
-            var solid = be.DgnBox.CreateBoxCentered(new be.DPoint3d(0,0,0), boxSize, true); \
+            var solid = be.DgnBox.CreateCenteredBox(new be.DPoint3d(0,0,0), boxSize, true); \
             var element = model.CreateElement('dgn.PhysicalElement', options.Category);\
             var origin = new Bentley.Dgn.DPoint3d(i,i,i);\
             var builder = new Bentley.Dgn.ElementGeometryBuilder(element, origin, angles); \

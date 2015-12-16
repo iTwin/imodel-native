@@ -771,7 +771,7 @@ type DgnSphereP = cxx_pointer<DgnSphere>;
          * @param [in] diagonalSize total diagonal lengths (i.e. x,y,z side lengths)
          * @param [in] capped true if closed top and bottom.
          */
-        static CreateBoxCentered(center: DPoint3dP, diagonalSize: DVector3dP, capped: cxx_bool): DgnBoxP;
+        static CreateCenteredBox(center: DPoint3dP, diagonalSize: DVector3dP, capped: cxx_bool): DgnBoxP;
 
         static CreateBox(
             baseOrigin: DPoint3dP,

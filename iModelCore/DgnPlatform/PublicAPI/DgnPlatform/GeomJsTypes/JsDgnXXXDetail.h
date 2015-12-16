@@ -151,7 +151,7 @@ public:
         return new JsDgnBox (ISolidPrimitive::CreateDgnBox (data));
         }
 
-    static JsDgnBoxP CreateBoxCentered (JsDPoint3dP center, JsDVector3dP diagonalSize, bool capped)
+    static JsDgnBoxP CreateCenteredBox (JsDPoint3dP center, JsDVector3dP diagonalSize, bool capped)
         {
         auto data =  DgnBoxDetail::InitFromCenterAndSize(center->Get(), diagonalSize->Get(), capped);
         return new JsDgnBox (ISolidPrimitive::CreateDgnBox (data));
