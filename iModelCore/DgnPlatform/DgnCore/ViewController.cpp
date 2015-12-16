@@ -170,7 +170,7 @@ void ViewController::_ChangeCategoryDisplay(DgnCategoryId categoryId, bool onOff
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      08/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnModelP ViewController::_GetTargetModel() const {return m_dgndb.Models().GetModel(m_targetModelId).get();}
+GeometricModelP ViewController::_GetTargetModel() const { return m_dgndb.Models().Get<GeometricModel>(m_targetModelId).get(); }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/12
@@ -852,7 +852,7 @@ void PhysicalViewController::TransformBy(TransformCR trans)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus PhysicalViewController::SetTargetModel(DgnModelP target)
+BentleyStatus PhysicalViewController::SetTargetModel(GeometricModelP target)
     {
     if (!m_viewedModels.Contains(target->GetModelId()))
         return  ERROR;

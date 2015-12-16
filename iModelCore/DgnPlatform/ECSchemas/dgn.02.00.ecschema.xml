@@ -161,16 +161,15 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
             </ClassMap>
         </ECCustomAttributes>
         <ECStructProperty propertyName="Code" typeName="AuthorityIssuedCode" />
-        <ECProperty propertyName="Descr" displayLabel="Description" typeName="string" />
-        <ECProperty propertyName="Props" typeName="string" />
+        <ECProperty propertyName="Label" displayLabel="Label" typeName="string" />
+        <ECProperty propertyName="Properties" typeName="string" />
         <ECProperty propertyName="Visibility" typeName="int" />
-    </ECClass>
-    <ECClass typeName="GeometricModel" isDomainClass="True">
-        <BaseClass>Model</BaseClass>
-        <ECProperty propertyName="Solver" typeName="string" />
         <ECProperty propertyName="DependencyIndex" typeName="int" />
     </ECClass>
-    <ECClass typeName="Model3d" isDomainClass="True">
+    <ECClass typeName="GeometricModel" isDomainClass="False">
+        <BaseClass>Model</BaseClass>
+    </ECClass>
+    <ECClass typeName="Model3d" isDomainClass="False">
         <BaseClass>GeometricModel</BaseClass>
     </ECClass>
     <ECClass typeName="Model2d" isDomainClass="True">
@@ -178,6 +177,7 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
             <ClassHasHandler xmlns="dgn.02.00" />
         </ECCustomAttributes>
         <BaseClass>GeometricModel</BaseClass>
+        <ECProperty propertyName="GlobalOrigin" displayLabel="Global Origin" typeName="point2d" />
     </ECClass>
     <ECClass typeName="PhysicalModel" isDomainClass="True">
         <ECCustomAttributes>
@@ -202,6 +202,7 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
             <ClassHasHandler xmlns="dgn.02.00" />
         </ECCustomAttributes>
         <BaseClass>Model2d</BaseClass>
+        <ECProperty propertyName="SheetSize" displayLabel="Sheet Size" typeName="point2d" />
     </ECClass>
     <ECClass typeName="RedlineModel" isDomainClass="True">
         <ECCustomAttributes>
@@ -220,6 +221,7 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
             <ClassHasHandler xmlns="dgn.02.00" />
         </ECCustomAttributes>
         <BaseClass>Model3d</BaseClass>
+        <ECProperty propertyName="Solver" typeName="string" />
         <!--  These are in the model's Props JSON
         <ECProperty propertyName="ItemECClass" typeName="string" description="Full name of ECClass of Item that is customized by this model"/>
         <ECProperty propertyName="ItemCategory" typeName="string" description="Name of Category used by harvestable Items in this model"/>
@@ -264,7 +266,7 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
                 <OnDeleteAction>NoAction</OnDeleteAction>
             </ForeignKeyRelationshipMap>
         </ECCustomAttributes>
-        <Source cardinality="(1,1)" roleLabel="is on 1 model" polymorphic="False">
+        <Source cardinality="(1,1)" roleLabel="is on 1 model" polymorphic="True">
             <Class class="Model" />
         </Source>
         <Target cardinality="(0,N)" roleLabel="has N elements" polymorphic="True">
@@ -394,6 +396,13 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
     </ECClass>
     <ECClass typeName="SpatialLocationElement" isDomainClass="False" isCustomAttributeClass="False" isStruct="False">
         <!-- A SpatialElement that identifies a "tracked" real word location but has no mass and cannot be "touched" -->
+        <BaseClass>SpatialElement</BaseClass>
+    </ECClass>
+    <ECClass typeName="SpatialGroupElement" isDomainClass="True">
+        <!-- A SpatialElement that groups other SpatialElements using the ElementGroupsMembers relationship -->
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="dgn.02.00" />
+        </ECCustomAttributes>
         <BaseClass>SpatialElement</BaseClass>
     </ECClass>
     <ECClass typeName="VolumeElement" isDomainClass="True" >
@@ -701,14 +710,6 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
             <Class class="Element" />
         </Target>
     </ECRelationshipClass>
-
-    <ECClass typeName="ElementGroup" isDomainClass="True">
-        <!-- WIP: Obsolete.  Replaced by IElementGroupOf C++ template class + ElementGroupsMembers relationship -->
-        <BaseClass>Element</BaseClass>
-        <ECCustomAttributes>
-            <ClassHasHandler xmlns="dgn.02.00" />
-        </ECCustomAttributes>
-    </ECClass>
 
     <ECClass typeName="ElementAspect" isDomainClass="False" isStruct="False" isCustomAttributeClass="False">
         <!-- Abstract -->

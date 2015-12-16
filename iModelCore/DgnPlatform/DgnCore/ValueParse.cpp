@@ -485,11 +485,11 @@ void            AngleParser::Init ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    04/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            AngleParser::InitModelSettings (DgnModelCR model)
+void            AngleParser::InitModelSettings(GeometricModelCR model)
     {
-    DgnModel::Properties const& modelInfo = model.GetProperties();
+    GeometricModel::DisplayInfo const& displayInfo = model.GetDisplayInfo();
 
-    SetAngleMode (modelInfo.GetAngularMode ());
+    SetAngleMode(displayInfo.GetAngularMode());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -510,7 +510,7 @@ AngleParserPtr  AngleParser::Clone() const      { return new AngleParser (*this)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    04/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-AngleParserPtr  AngleParser::Create (DgnModelCR model)
+AngleParserPtr  AngleParser::Create(GeometricModelCR model)
     {
     AngleParserPtr   formatter = Create();
 
@@ -652,15 +652,15 @@ void            DirectionParser::Init ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    02/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            DirectionParser::InitModelSettings (DgnModelCR model)
+void            DirectionParser::InitModelSettings(GeometricModelCR model)
     {
     m_angleParser->InitModelSettings (model);
 
-    DgnModel::Properties const& modelInfo = model.GetProperties();
+    GeometricModel::DisplayInfo const& displayInfo = model.GetDisplayInfo();
 
-    SetDirectionMode (modelInfo.GetDirectionMode ());
-    SetClockwise (modelInfo.GetDirectionClockwise ());
-    SetBaseDirection (modelInfo.GetDirectionBaseDir ());
+    SetDirectionMode(displayInfo.GetDirectionMode());
+    SetClockwise(displayInfo.GetDirectionClockwise());
+    SetBaseDirection(displayInfo.GetDirectionBaseDir());
     SetTrueNorthValue (model.GetDgnDb().Units().GetAzimuth ());
     }
 
@@ -686,7 +686,7 @@ DirectionParserPtr      DirectionParser::Clone() const      { return new Directi
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    02/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-DirectionParserPtr      DirectionParser::Create (DgnModelCR model)
+DirectionParserPtr      DirectionParser::Create(GeometricModelCR model)
     {
     DirectionParserPtr   parser = Create();
 
@@ -854,12 +854,12 @@ void            DistanceParser::Init ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    03/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            DistanceParser::InitModelSettings (DgnModelCR model)
+void            DistanceParser::InitModelSettings(GeometricModelCR model)
     {
-    DgnModel::Properties const& modelInfo = model.GetProperties();
+    GeometricModel::DisplayInfo const& displayInfo = model.GetDisplayInfo();
 
-    UnitDefinitionCR  subUnit       = modelInfo.GetSubUnits();
-    UnitDefinitionCR  masterUnit    = modelInfo.GetMasterUnits();
+    UnitDefinitionCR  subUnit = displayInfo.GetSubUnits();
+    UnitDefinitionCR  masterUnit = displayInfo.GetMasterUnits();
     
     double  uorPerMast = masterUnit.ToMillimeters();
     double  uorPerSub  = subUnit.ToMillimeters();
@@ -892,7 +892,7 @@ DistanceParserPtr       DistanceParser::Clone() const       { return new Distanc
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    04/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-DistanceParserPtr       DistanceParser::Create (DgnModelCR model)
+DistanceParserPtr       DistanceParser::Create(GeometricModelCR model)
     {
     DistanceParserPtr   parser = Create();
 
@@ -906,7 +906,7 @@ DistanceParserPtr       DistanceParser::Create (DgnModelCR model)
 +---------------+---------------+---------------+---------------+---------------+------*/
 DistanceParserPtr       DistanceParser::Create (DgnViewportR viewport)
     {
-    DgnModelP           targetModel = viewport.GetViewController ().GetTargetModel();
+    GeometricModelP targetModel = viewport.GetViewController().GetTargetModel();
     DistanceParserPtr   parser = DistanceParser::Create (*targetModel);
 
 #ifdef WIP_V10_MODEL_ACS
@@ -926,7 +926,7 @@ DistanceParserPtr       DistanceParser::Create (DgnViewportR viewport)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   04/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-DistanceParserPtr       DistanceParser::Create (DgnModelCR model, IAuxCoordSysCR acs)
+DistanceParserPtr       DistanceParser::Create(GeometricModelCR model, IAuxCoordSysCR acs)
     {
     DistanceParserPtr      parser = DistanceParser::Create (model);
 
@@ -985,7 +985,7 @@ void            PointParser::Init ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    04/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            PointParser::InitModelSettings (DgnModelCR model)
+void            PointParser::InitModelSettings(GeometricModelCR model)
     {
     m_is3d              = model.Is3d();
 
@@ -1011,7 +1011,7 @@ PointParserPtr          PointParser::Clone() const       { return new PointParse
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    04/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-PointParserPtr         PointParser::Create (DgnModelCR model)
+PointParserPtr         PointParser::Create(GeometricModelCR model)
     {
     PointParserPtr   parser = Create();
 
@@ -1025,8 +1025,8 @@ PointParserPtr         PointParser::Create (DgnModelCR model)
 +---------------+---------------+---------------+---------------+---------------+------*/
 PointParserPtr          PointParser::Create (DgnViewportR viewport)
     {
-    DgnModelP           targetModel = viewport.GetViewController ().GetTargetModel();
-    PointParserPtr      parser = PointParser::Create (*targetModel);
+    GeometricModelP targetModel = viewport.GetViewController().GetTargetModel();
+    PointParserPtr parser = PointParser::Create (*targetModel);
 
 #ifdef WIP_V10_MODEL_ACS
     IAuxCoordSysP   acs = NULL;
@@ -1047,7 +1047,7 @@ PointParserPtr          PointParser::Create (DgnViewportR viewport)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   04/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-PointParserPtr          PointParser::Create (DgnModelCR model, IAuxCoordSysCR acs)
+PointParserPtr          PointParser::Create(GeometricModelCR model, IAuxCoordSysCR acs)
     {
     PointParserPtr      parser = PointParser::Create (model);
 
@@ -1176,11 +1176,11 @@ void            AreaOrVolumeParser::Init ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    03/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            AreaOrVolumeParser::InitModelSettings (DgnModelCR model)
+void            AreaOrVolumeParser::InitModelSettings(GeometricModelCR model)
     {
-    DgnModel::Properties const& modelInfo = model.GetProperties();
+    GeometricModel::DisplayInfo const& displayInfo = model.GetDisplayInfo();
 
-    UnitDefinition  masterUnit = modelInfo.GetMasterUnits();
+    UnitDefinition  masterUnit = displayInfo.GetMasterUnits();
     double          uorPerMast = masterUnit.ToMillimeters();
     
     SetMasterUnitScale (uorPerMast);
@@ -1257,7 +1257,7 @@ AreaParserPtr       AreaParser::Clone() const       { return new AreaParser (*th
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    04/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-AreaParserPtr       AreaParser::Create (DgnModelCR model)
+AreaParserPtr       AreaParser::Create(GeometricModelCR model)
     {
     AreaParserPtr   parser = Create();
 
@@ -1271,7 +1271,7 @@ AreaParserPtr       AreaParser::Create (DgnModelCR model)
 +---------------+---------------+---------------+---------------+---------------+------*/
 AreaParserPtr       AreaParser::Create (DgnViewportR viewport)
     {
-    DgnModelP       targetModel = viewport.GetViewController ().GetTargetModel();
+    GeometricModelP targetModel = viewport.GetViewController().GetTargetModel();
     AreaParserPtr   parser = AreaParser::Create (*targetModel);
 
 #ifdef WIP_V10_MODEL_ACS
@@ -1307,7 +1307,7 @@ VolumeParserPtr       VolumeParser::Clone() const       { return new VolumeParse
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    04/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-VolumeParserPtr       VolumeParser::Create (DgnModelCR model)
+VolumeParserPtr       VolumeParser::Create(GeometricModelCR model)
     {
     VolumeParserPtr   parser = Create();
 
@@ -1321,7 +1321,7 @@ VolumeParserPtr       VolumeParser::Create (DgnModelCR model)
 +---------------+---------------+---------------+---------------+---------------+------*/
 VolumeParserPtr       VolumeParser::Create (DgnViewportR viewport)
     {
-    DgnModelP       targetModel = viewport.GetViewController ().GetTargetModel();
+    GeometricModelP targetModel = viewport.GetViewController().GetTargetModel();
     VolumeParserPtr   parser = VolumeParser::Create (*targetModel);
 
 #ifdef WIP_V10_MODEL_ACS

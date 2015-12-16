@@ -10,6 +10,8 @@
 
 static DgnDbStatus deleteAllSolutionsOfComponentRelationships(DgnDbR db, DgnModelId cmid);
 
+#define COMPONENT_MODEL_PROP_Solver "Solver"
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -24,17 +26,15 @@ static std::pair<Utf8String,Utf8String> parseFullECClassName(Utf8CP fullname)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-ComponentModel::CreateParams::CreateParams(DgnDbR dgndb, Utf8StringCR name, Utf8StringCR iclass, Utf8StringCR icat, Utf8String iauthority, ModelSolverDef const& solver)
-    :
-    T_Super(dgndb, DgnClassId(dgndb.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_ComponentModel)), CreateModelCode(name), Properties(), solver),
-    m_compProps(iclass, icat, iauthority)
+ComponentModel::CreateParams::CreateParams(DgnDbR dgndb, Utf8StringCR name, Utf8StringCR iclass, Utf8StringCR icat, Utf8String iauthority, ModelSolverDef const& solver) :
+    T_Super(dgndb, DgnClassId(dgndb.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_ComponentModel)), CreateModelCode(name)), m_compProps(iclass, icat, iauthority), m_solver(solver)
     {
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-ComponentModel::ComponentModel(CreateParams const& params) : T_Super(params), m_compProps(params.m_compProps)
+ComponentModel::ComponentModel(CreateParams const& params) : T_Super(params), m_compProps(params.m_compProps), m_solver(params.m_solver)
     {
     }
 
@@ -155,8 +155,21 @@ Utf8String ComponentModel::GetItemCodeAuthority() const {return m_compProps.m_it
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ComponentModel::_ToPropertiesJson(Json::Value& val) const {m_compProps.ToJson(val);}
-void ComponentModel::_FromPropertiesJson(Json::Value const& val) {m_compProps.FromJson(val);}
+void ComponentModel::_WriteJsonProperties(Json::Value& val) const 
+    { 
+    m_compProps.ToJson(val["ComponentModel"]);
+    T_Super::_WriteJsonProperties(val);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      10/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void ComponentModel::_ReadJsonProperties(Json::Value const& val) 
+    {
+    BeAssert(val.isMember("ComponentModel"));
+    m_compProps.FromJson(val["ComponentModel"]);
+    T_Super::_ReadJsonProperties(val);
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      10/15
@@ -1017,4 +1030,100 @@ DgnDbStatus ComponentModel::QuerySolutionByParameters(DgnElementCPtr& ele, Model
             return DgnDbStatus::Success;
         }
     return DgnDbStatus::NotFound;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                 Ramanujam.Raman   12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus ComponentModel::BindInsertAndUpdateParams(ECSqlStatement& statement)
+    {
+    if (m_solver.IsValid())
+        statement.BindText(statement.GetParameterIndex(COMPONENT_MODEL_PROP_Solver), m_solver.ToJson().c_str(), IECSqlBinder::MakeCopy::Yes);
+    else
+        statement.BindNull(statement.GetParameterIndex(COMPONENT_MODEL_PROP_Solver));
+
+    return DgnDbStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                 Ramanujam.Raman   12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus ComponentModel::_BindInsertParams(ECSqlStatement& statement)
+    {
+    T_Super::_BindInsertParams(statement);
+    return BindInsertAndUpdateParams(statement);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                 Ramanujam.Raman   12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus ComponentModel::_BindUpdateParams(ECSqlStatement& statement)
+    {
+    T_Super::_BindUpdateParams(statement);
+    return BindInsertAndUpdateParams(statement);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                 Ramanujam.Raman   12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus ComponentModel::_ReadSelectParams(ECSqlStatement& statement, ECSqlClassParamsCR params)
+    {
+    DgnDbStatus status = T_Super::_ReadSelectParams(statement, params);
+    if (DgnDbStatus::Success != status)
+        return status;
+
+    int solverIndex = params.GetSelectIndex(COMPONENT_MODEL_PROP_Solver);
+    if (!statement.IsValueNull(solverIndex))
+        m_solver.FromJson(statement.GetValueText(solverIndex));
+
+    return DgnDbStatus::Success;
+    }
+	
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                 Ramanujam.Raman   12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void ComponentModel::_InitFrom(DgnModelCR other)
+    {
+    T_Super::_InitFrom(other);
+    ComponentModelCP otherCM = dynamic_cast<ComponentModelCP> (&other);
+    if (nullptr != otherCM)
+        m_solver = otherCM->m_solver;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnModelPtr ComponentModel::_CloneForImport(DgnDbStatus* stat, DgnImportContext& importer) const
+    {
+    DgnModelPtr clone = T_Super::_CloneForImport(stat, importer);
+    ComponentModelP cloneCM = clone.IsValid() ? dynamic_cast<ComponentModelP>(clone.get()) : nullptr;
+    if (nullptr != cloneCM)
+        cloneCM->m_solver.RelocateToDestinationDb(importer);
+
+    return clone;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      07/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void ComponentModel::_OnValidate()
+    {
+    m_solver.Solve(*this);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                 Ramanujam.Raman   12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void ComponentModel::GetSolverOptions(Json::Value& options)
+	{ 
+	_GetSolverOptions(options); 
+	}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                 Ramanujam.Raman   12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void dgn_ModelHandler::Component::_GetClassParams(ECSqlClassParamsR params)
+    {
+    T_Super::_GetClassParams(params);
+    params.Add(COMPONENT_MODEL_PROP_Solver, ECSqlClassParams::StatementType::All);
     }

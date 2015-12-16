@@ -1414,8 +1414,7 @@ DgnElements::ElementSelectStatement DgnElements::GetPreparedSelectStatement(DgnE
 CachedECSqlStatementPtr DgnElements::GetPreparedInsertStatement(DgnElementR el) const
     {
     // Not bothering to cache per handler...use our general-purpose ECSql statement cache
-    ECSqlClassInfo const& info = el.GetElementHandler().GetECSqlClassInfo();
-    return info.m_insert.empty() ? nullptr : GetDgnDb().GetPreparedECSqlStatement(info.m_insert.c_str());
+    return el.GetElementHandler().GetECSqlClassInfo().GetInsertStmt(GetDgnDb());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1424,12 +1423,7 @@ CachedECSqlStatementPtr DgnElements::GetPreparedInsertStatement(DgnElementR el) 
 CachedECSqlStatementPtr DgnElements::GetPreparedUpdateStatement(DgnElementR el) const
     {
     // Not bothering to cache per handler...use our general-purpose ECSql statement cache
-    ECSqlClassInfo const& info = el.GetElementHandler().GetECSqlClassInfo();
-    CachedECSqlStatementPtr stmt = info.m_update.empty() ? nullptr : GetDgnDb().GetPreparedECSqlStatement(info.m_update.c_str());
-    if (stmt.IsValid())
-        stmt->BindId(info.m_numUpdateParams+1, el.GetElementId());
-
-    return stmt;
+    return el.GetElementHandler().GetECSqlClassInfo().GetUpdateStmt(GetDgnDb(), el.GetElementId());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1438,7 +1432,8 @@ CachedECSqlStatementPtr DgnElements::GetPreparedUpdateStatement(DgnElementR el) 
 DgnElements::ElementSelectStatement DgnElements::HandlerStatementCache::GetPreparedSelectStatement(DgnElementR el, ElementHandlerR handler, ECSqlClassInfo const& classInfo) const
     {
     CachedECSqlStatementPtr stmt;
-    if (!classInfo.m_select.empty())
+    Utf8StringCR selectECSql = classInfo.GetSelectECSql();
+    if (!selectECSql.empty())
         {
         Entry* entry = FindEntry(handler);
         if (nullptr != entry)
@@ -1451,7 +1446,7 @@ DgnElements::ElementSelectStatement DgnElements::HandlerStatementCache::GetPrepa
                 {
                 // The cached statement is already in use...create a new one for this caller
                 stmt = new CachedECSqlStatement();
-                if (ECSqlStatus::Success != stmt->Prepare(el.GetDgnDb(), classInfo.m_select.c_str()))
+                if (ECSqlStatus::Success != stmt->Prepare(el.GetDgnDb(), selectECSql.c_str()))
                     {
                     BeAssert(false);
                     stmt = nullptr;
@@ -1464,7 +1459,7 @@ DgnElements::ElementSelectStatement DgnElements::HandlerStatementCache::GetPrepa
             m_entries.push_back(Entry(&handler));
             entry = &m_entries.back();
             entry->m_select = new CachedECSqlStatement();
-            if (ECSqlStatus::Success != entry->m_select->Prepare(el.GetDgnDb(), classInfo.m_select.c_str()))
+            if (ECSqlStatus::Success != entry->m_select->Prepare(el.GetDgnDb(), selectECSql.c_str()))
                 {
                 BeAssert(false);
                 entry->m_select = nullptr;
@@ -1480,28 +1475,7 @@ DgnElements::ElementSelectStatement DgnElements::HandlerStatementCache::GetPrepa
         stmt->BindId(1, el.GetElementId());
         }
 
-    return ElementSelectStatement(stmt.get(), classInfo.m_params);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   09/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-template<typename T> static uint16_t buildParamString(Utf8StringR str, ECSqlClassParams::Entries const& entries, ECSqlClassParams::StatementType type, T func)
-    {
-    uint16_t count = 0;
-    for (auto const& entry : entries)
-        {
-        if (type != (entry.m_type & type))
-            continue;
-
-        if (0 < count)
-            str.append(1, ',');
-
-        func(entry.m_name, count);
-        ++count;
-        }
-
-    return count;
+    return ElementSelectStatement(stmt.get(), classInfo.GetParams());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1509,64 +1483,15 @@ template<typename T> static uint16_t buildParamString(Utf8StringR str, ECSqlClas
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECSqlClassInfo const& dgn_ElementHandler::Element::GetECSqlClassInfo()
     {
-    if (!m_classInfo.m_initialized)
+    if (!m_classInfo.IsInitialized())
         {
-        _GetClassParams(m_classInfo.m_params);
-
-        auto const& entries = m_classInfo.m_params.GetEntries();
-
         Utf8String fullClassName("[");
         fullClassName.append(GetDomain().GetDomainName()).append("].[").append(GetClassName()).append(1, ']');
 
-        // Build SELECT statement
-        m_classInfo.m_select = "SELECT ";
-        uint16_t numSelectParams = buildParamString(m_classInfo.m_select, entries, ECSqlClassParams::StatementType::Select,
-            [&](Utf8CP name, uint16_t count) { m_classInfo.m_select.append(1, '[').append(name).append(1, ']'); });
+        ECSqlClassParams classParams;
+        _GetClassParams(classParams);
 
-        if (0 < numSelectParams)
-            {
-            m_classInfo.m_select.append(" FROM ONLY ").append(fullClassName);
-            m_classInfo.m_select.append(" WHERE ECInstanceId=?");
-            }
-        else
-            {
-            m_classInfo.m_select.clear();
-            }
-
-        // Build INSERT statement
-        m_classInfo.m_insert.append("INSERT INTO ").append(fullClassName).append(1, '(');
-        Utf8String insertValues;
-        uint16_t numInsertParams = buildParamString(m_classInfo.m_insert, entries, ECSqlClassParams::StatementType::Insert,
-            [&](Utf8CP name, uint16_t count)
-                {
-                m_classInfo.m_insert.append(1, '[').append(name).append(1, ']');
-                if (0 < count)
-                    insertValues.append(1, ',');
-
-                insertValues.append(":[").append(name).append(1, ']');
-                });
-
-        if (0 < numInsertParams)
-            m_classInfo.m_insert.append(")VALUES(").append(insertValues).append(1, ')');
-        else
-            m_classInfo.m_insert.clear();
-
-        // Build UPDATE statement
-        m_classInfo.m_update.append("UPDATE ONLY ").append(fullClassName).append(" SET ");
-        m_classInfo.m_numUpdateParams = buildParamString(m_classInfo.m_update, entries, ECSqlClassParams::StatementType::Update,
-            [&](Utf8CP name, uint16_t count)
-                {
-                m_classInfo.m_update.append(1, '[').append(name).append("]=:[").append(name).append(1, ']');
-                });
-        if (0 < m_classInfo.m_numUpdateParams)
-            m_classInfo.m_update.append( "WHERE ECInstanceId=?");
-        else
-            m_classInfo.m_update.clear();
-
-        // We no longer need any param names except those used in INSERT.
-        m_classInfo.m_params.RemoveAllButSelect();
-
-        m_classInfo.m_initialized = true;
+        m_classInfo.Initialize(fullClassName, classParams);
         }
 
     return m_classInfo;

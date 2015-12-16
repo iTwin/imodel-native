@@ -7,6 +7,18 @@
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
 
+#define MODEL_PROP_ECInstanceId "ECInstanceId"
+#define MODEL_PROP_Code "Code"
+#define MODEL_PROP_Code_AuthorityId "AuthorityId"
+#define MODEL_PROP_Code_Namespace "Namespace"
+#define MODEL_PROP_Code_Value "Value"
+#define MODEL_PROP_Label "Label"
+#define MODEL_PROP_Visibility "Visibility"
+#define MODEL_PROP_Properties "Properties"
+#define MODEL_PROP_DependencyIndex "DependencyIndex"
+#define SHEET_MODEL_PROP_SheetSize "SheetSize"
+#define MODEL2D_MODEL_PROP_GlobalOrigin "GlobalOrigin"
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/10
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -25,7 +37,7 @@ DgnModelId DgnModels::QueryModelId(DgnModel::Code code) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus DgnModels::QueryModelById(Model* out, DgnModelId id) const
     {
-    Statement stmt(m_dgndb, "SELECT Code_Value,Descr,ECClassId,Visibility,Code_Namespace,Code_AuthorityId FROM " DGN_TABLE(DGN_CLASSNAME_Model) " WHERE Id=?");
+    Statement stmt(m_dgndb, "SELECT Code_Value,Label,ECClassId,Visibility,Code_Namespace,Code_AuthorityId FROM " DGN_TABLE(DGN_CLASSNAME_Model) " WHERE Id=?");
     stmt.BindId(1, id);
 
     if (BE_SQLITE_ROW != stmt.Step())
@@ -34,7 +46,7 @@ BentleyStatus DgnModels::QueryModelById(Model* out, DgnModelId id) const
     if (out) // this can be null to just test for the existence of a model by id
         {
         out->m_id = id;
-        out->m_description.AssignOrClear(stmt.GetValueText(1));
+        out->m_label.AssignOrClear(stmt.GetValueText(1));
         out->m_classId = DgnClassId(stmt.GetValueInt64(2));
         out->m_inGuiList = TO_BOOL(stmt.GetValueInt(3));
         out->m_code.From(stmt.GetValueId<DgnAuthorityId>(5), stmt.GetValueText(0), stmt.GetValueText(4));
@@ -151,7 +163,7 @@ DgnModels::Iterator::const_iterator DgnModels::Iterator::begin() const
     {
     if (!m_stmt.IsValid())
         {
-        Utf8String sqlString = "SELECT Id,Code_Value,Descr,Visibility,ECClassId,Code_AuthorityId,Code_Namespace FROM " DGN_TABLE(DGN_CLASSNAME_Model);
+        Utf8String sqlString = "SELECT Id,Code_Value,Label,Visibility,ECClassId,Code_AuthorityId,Code_Namespace FROM " DGN_TABLE(DGN_CLASSNAME_Model);
         bool hasWhere = false;
         if (ModelIterate::Gui == m_itType)
             {
@@ -174,8 +186,8 @@ DgnModels::Iterator::const_iterator DgnModels::Iterator::begin() const
 
 DgnModelId      DgnModels::Iterator::Entry::GetModelId() const {Verify(); return m_sql->GetValueId<DgnModelId>(0);}
 Utf8CP          DgnModels::Iterator::Entry::GetCodeValue() const {Verify(); return m_sql->GetValueText(1);}
-Utf8CP          DgnModels::Iterator::Entry::GetDescription() const {Verify(); return m_sql->GetValueText(2);}
-bool            DgnModels::Iterator::Entry::InGuiList() const {Verify(); return (0 != m_sql->GetValueInt(3));}
+Utf8CP          DgnModels::Iterator::Entry::GetLabel() const {Verify(); return m_sql->GetValueText(2);}
+bool            DgnModels::Iterator::Entry::GetInGuiList() const { Verify(); return (0 != m_sql->GetValueInt(3)); }
 DgnClassId      DgnModels::Iterator::Entry::GetClassId() const {Verify(); return DgnClassId(m_sql->GetValueInt64(4));}
 Utf8CP          DgnModels::Iterator::Entry::GetCodeNamespace() const {Verify(); return m_sql->GetValueText(5);}
 DgnAuthorityId  DgnModels::Iterator::Entry::GetCodeAuthorityId() const {Verify(); return m_sql->GetValueId<DgnAuthorityId>(6);}
@@ -192,10 +204,9 @@ void DgnModel::ReleaseAllElements()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    10/00
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnModel::DgnModel(CreateParams const& params) : m_dgndb(params.m_dgndb), m_modelId(params.m_id), m_classId(params.m_classId), m_code(params.m_code), m_properties(params.m_props)
+DgnModel::DgnModel(CreateParams const& params) : m_dgndb(params.m_dgndb), m_modelId(params.m_id), m_classId(params.m_classId), m_code(params.m_code), m_inGuiList(params.m_inGuiList), m_label(params.m_label),
+    m_dependencyIndex(-1), m_persistent(false), m_filled(false)
     {
-    m_persistent = false;
-    m_filled     = false;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -279,35 +290,55 @@ DgnModel::~DgnModel()
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      07/15
+* @bsimethod                                                 Ramanujam.Raman   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void GeometricModel::_OnValidate()
+DgnDbStatus DgnModel2d::BindInsertAndUpdateParams(ECSqlStatement& statement)
     {
-    m_solver.Solve(*this);
+    statement.BindPoint2D(statement.GetParameterIndex(MODEL2D_MODEL_PROP_GlobalOrigin), m_globalOrigin);
+    return DgnDbStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   12/12
+* @bsimethod                                                 Ramanujam.Raman   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnModel::_ToPropertiesJson(Json::Value& val) const {m_properties.ToJson(val);}
-void DgnModel::_FromPropertiesJson(Json::Value const& val) {m_properties.FromJson(val);}
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   07/14
-+---------------+---------------+---------------+---------------+---------------+------*/
-void DgnModel2d::_ToPropertiesJson(Json::Value& val) const 
+DgnDbStatus DgnModel2d::_BindInsertParams(ECSqlStatement& statement)
     {
-    T_Super::_ToPropertiesJson(val);
-    JsonUtils::DPoint2dToJson(val["globalOrigin"], m_globalOrigin);
+    T_Super::_BindInsertParams(statement);
+    return BindInsertAndUpdateParams(statement);
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   07/14
+* @bsimethod                                                 Ramanujam.Raman   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnModel2d::_FromPropertiesJson(Json::Value const& val) 
+DgnDbStatus DgnModel2d::_BindUpdateParams(ECSqlStatement& statement)
     {
-    T_Super::_FromPropertiesJson(val);
-    JsonUtils::DPoint2dFromJson(m_globalOrigin, val["globalOrigin"]);
+    T_Super::_BindUpdateParams(statement);
+    return BindInsertAndUpdateParams(statement);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                 Ramanujam.Raman   12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus DgnModel2d::_ReadSelectParams(ECSqlStatement& statement, ECSqlClassParamsCR params)
+    {
+    DgnDbStatus status = T_Super::_ReadSelectParams(statement, params);
+    if (DgnDbStatus::Success != status)
+        return status;
+
+    m_globalOrigin = statement.GetValuePoint2D(params.GetSelectIndex(MODEL2D_MODEL_PROP_GlobalOrigin));
+
+    return DgnDbStatus::Success;
+    }
+	
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                 Ramanujam.Raman   12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnModel2d::_InitFrom(DgnModelCR other)
+    {
+    T_Super::_InitFrom(other);
+    DgnModel2dCP otherModel = other.ToDgnModel2d();
+    if (nullptr != otherModel)
+        m_globalOrigin = otherModel->m_globalOrigin;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -382,65 +413,131 @@ DgnDbStatus DictionaryModel::_OnInsertElement(DgnElementR el)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   12/12
+* @bsimethod                                                 Ramanujam.Raman   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnModel::ReadProperties()
+DgnDbStatus DgnModel::Read()
     {
-    _ReadProperties();
+    ECSqlClassInfo const& info = GetModelHandler().GetECSqlClassInfo();
+
+    CachedECSqlStatementPtr stmt = info.GetSelectStmt(GetDgnDb(), GetModelId());
+    if (stmt.IsNull())
+        {
+        BeAssert(false);
+        return DgnDbStatus::ReadError;
+        }
+        
+    if (BE_SQLITE_ROW != stmt->Step())
+        return DgnDbStatus::ReadError;
+
+    return _ReadSelectParams(*stmt, info.GetParams());
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   12/12
+* @bsimethod                                                 Ramanujam.Raman   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void GeometricModel::_ReadProperties()
+DgnDbStatus DgnModel::_ReadSelectParams(ECSqlStatement& statement, ECSqlClassParamsCR params)
     {
-    // NB: Intentionally not invoking superclass implementation to avoid redundant sql
-    Statement stmt(m_dgndb, "SELECT Props,Solver FROM " DGN_TABLE(DGN_CLASSNAME_Model) " WHERE Id=?");
-    stmt.BindId(1, m_modelId);
-
-    DbResult  result = stmt.Step();
-    if (BE_SQLITE_ROW != result)
+    m_dependencyIndex = statement.GetValueInt(params.GetSelectIndex(MODEL_PROP_DependencyIndex));
+    
+    int propsIndex = params.GetSelectIndex(MODEL_PROP_Properties);
+    if (!statement.IsValueNull(propsIndex))
         {
-        BeAssert(false);
-        return;
+        Json::Value  propsJson(Json::objectValue);
+        if (!Json::Reader::Parse(statement.GetValueText(propsIndex), propsJson))
+            {
+            BeAssert(false);
+            return DgnDbStatus::ReadError;
+            }
+
+        _ReadJsonProperties(propsJson);
         }
 
-    Json::Value  propsJson(Json::objectValue);
-    if (!Json::Reader::Parse(stmt.GetValueText(0), propsJson))
+    return DgnDbStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                 Ramanujam.Raman   12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus DgnModel::BindInsertAndUpdateParams(ECSqlStatement& statement)
+    {
+    if (!m_code.IsValid())
         {
         BeAssert(false);
-        return;
+        return DgnDbStatus::InvalidName;
         }
+    IECSqlStructBinder& codeBinder = statement.BindStruct(statement.GetParameterIndex(MODEL_PROP_Code));
+    if (m_code.IsEmpty() && (ECSqlStatus::Success != codeBinder.GetMember(MODEL_PROP_Code_Value).BindNull()))
+        return DgnDbStatus::BadArg;
+    if (!m_code.IsEmpty() && (ECSqlStatus::Success != codeBinder.GetMember(MODEL_PROP_Code_Value).BindText(m_code.GetValue().c_str(), IECSqlBinder::MakeCopy::No)))
+        return DgnDbStatus::BadArg;
+    if ((ECSqlStatus::Success != codeBinder.GetMember(MODEL_PROP_Code_AuthorityId).BindId(m_code.GetAuthority())) ||
+        (ECSqlStatus::Success != codeBinder.GetMember(MODEL_PROP_Code_Namespace).BindText(m_code.GetNamespace().c_str(), IECSqlBinder::MakeCopy::No)))
+        return DgnDbStatus::BadArg;
 
-    _FromPropertiesJson(propsJson);
+    if (!m_label.empty())
+        statement.BindText(statement.GetParameterIndex(MODEL_PROP_Label), m_label.c_str(), IECSqlBinder::MakeCopy::No);
+    else
+        statement.BindNull(statement.GetParameterIndex(MODEL_PROP_Label));
 
-    if (!stmt.IsColumnNull(1))
-        m_solver.FromJson(stmt.GetValueText(1));
+    statement.BindBoolean(statement.GetParameterIndex(MODEL_PROP_Visibility), m_inGuiList);
+
+    statement.BindInt(statement.GetParameterIndex(MODEL_PROP_DependencyIndex), m_dependencyIndex);
+
+    Json::Value propJson(Json::objectValue);
+    _WriteJsonProperties(propJson);
+    if (!propJson.isNull())
+        {
+        Utf8String val = Json::FastWriter::ToString(propJson);
+        statement.BindText(statement.GetParameterIndex(MODEL_PROP_Properties), val.c_str(), IECSqlBinder::MakeCopy::Yes);
+        }
+    else
+        statement.BindNull(statement.GetParameterIndex(MODEL_PROP_Properties));
+
+    return DgnDbStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                 Ramanujam.Raman   12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus DgnModel::_BindInsertParams(ECSqlStatement& statement)
+    {
+    statement.BindId(statement.GetParameterIndex(MODEL_PROP_ECInstanceId), m_modelId);
+    return BindInsertAndUpdateParams(statement);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                 Ramanujam.Raman   12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus DgnModel::_BindUpdateParams(ECSqlStatement& statement)
+    {
+    return BindInsertAndUpdateParams(statement);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnModel::_ReadProperties()
+DgnDbStatus DgnModel::Update()
     {
-    Statement stmt(m_dgndb, "SELECT Props FROM " DGN_TABLE(DGN_CLASSNAME_Model) " WHERE Id=?");
-    stmt.BindId(1, m_modelId);
+    DgnDbStatus status = _OnUpdate();
+    if (status != DgnDbStatus::Success)
+        return status;
 
-    DbResult  result = stmt.Step();
-    if (BE_SQLITE_ROW != result)
-        {
-        BeAssert(false);
-        return;
-        }
+    CachedECSqlStatementPtr stmt = GetModelHandler().GetECSqlClassInfo().GetUpdateStmt(GetDgnDb(), GetModelId());
+    if (stmt.IsNull())
+        return DgnDbStatus::WriteError;
 
-    Json::Value  propsJson(Json::objectValue);
-    if (!Json::Reader::Parse(stmt.GetValueText(0), propsJson))
-        {
-        BeAssert(false);
-        return;
-        }
+    status = _BindUpdateParams(*stmt);
+    if (DgnDbStatus::Success != status)
+        return status;
 
-    _FromPropertiesJson(propsJson);
+    DbResult result = stmt->Step();
+    if (BE_SQLITE_DONE != result)
+        return DgnDbStatus::WriteError;
+
+    if (DgnDbStatus::Success == status)
+        _OnUpdated();
+
+    return DgnDbStatus::Success;
     }
 
 struct UpdatedCaller {DgnModel::AppData::DropMe operator()(DgnModel::AppData& handler, DgnModelCR model) const {return handler._OnUpdated(model);}};
@@ -471,60 +568,6 @@ DgnDbStatus DgnModel::_OnUpdate()
         return DgnDbStatus::LockNotHeld;
 
     return DgnDbStatus::Success;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   09/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnModel::Update()
-    {
-    DgnDbStatus stat = _OnUpdate();
-    if (stat != DgnDbStatus::Success)
-        return stat;
-
-    stat = _Update();
-
-    if (DgnDbStatus::Success == stat)
-        _OnUpdated();
-
-    return stat;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   09/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus GeometricModel::_Update()
-    {
-    // NB: Intentionally not invoking superclass implementation to avoid redundant sql
-    Json::Value propJson(Json::objectValue);
-    _ToPropertiesJson(propJson);
-    Utf8String val = Json::FastWriter::ToString(propJson);
-
-    Statement stmt(m_dgndb, "UPDATE " DGN_TABLE(DGN_CLASSNAME_Model) " SET Props=?,Solver=? WHERE Id=?");
-    stmt.BindText(1, val, Statement::MakeCopy::No);
-    if (m_solver.IsValid())
-        stmt.BindText(2, m_solver.ToJson(), Statement::MakeCopy::Yes);
-    else
-        stmt.BindNull(2);
-    stmt.BindId(3, m_modelId);
-
-    return stmt.Step() == BE_SQLITE_DONE ? DgnDbStatus::Success : DgnDbStatus::WriteError;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   09/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnModel::_Update()
-    {
-    Json::Value propJson(Json::objectValue);
-    _ToPropertiesJson(propJson);
-    Utf8String val = Json::FastWriter::ToString(propJson);
-
-    Statement stmt(m_dgndb, "UPDATE " DGN_TABLE(DGN_CLASSNAME_Model) " SET Props=? WHERE Id=?");
-    stmt.BindText(1, val, Statement::MakeCopy::No);
-    stmt.BindId(2, m_modelId);
-
-    return stmt.Step() == BE_SQLITE_DONE ? DgnDbStatus::Success : DgnDbStatus::WriteError;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -890,41 +933,43 @@ DgnDbStatus DgnModel::Delete()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   07/08
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnModel::Insert(Utf8CP description, bool inGuiList)
+DgnDbStatus DgnModel::Insert()
     {
-    DgnDbStatus stat = _OnInsert();
-    if (DgnDbStatus::Success != stat)
-        return stat;
+    DgnDbStatus status = _OnInsert();
+    if (DgnDbStatus::Success != status)
+        return status;
 
-    DgnModels& models = GetDgnDb().Models();
-
-    if (models.QueryModelId(m_code).IsValid()) // can't allow two models with the same code
+    if (GetDgnDb().Models().QueryModelId(m_code).IsValid()) // can't allow two models with the same code
         return DgnDbStatus::DuplicateName;
 
     m_modelId = DgnModelId(m_dgndb, DGN_TABLE(DGN_CLASSNAME_Model), "Id");
 
-    Statement stmt(m_dgndb, "INSERT INTO " DGN_TABLE(DGN_CLASSNAME_Model) "(Id,Code_Value,Descr,ECClassId,Visibility,Code_AuthorityId,Code_Namespace) VALUES(?,?,?,?,?,?,?)");
-    stmt.BindId(1, m_modelId);
-    stmt.BindText(2, m_code.GetValue().c_str(), Statement::MakeCopy::No);
-    stmt.BindText(3, description, Statement::MakeCopy::No);
-    stmt.BindId(4, GetClassId());
-    stmt.BindInt(5, inGuiList ? 1 : 0);
-    stmt.BindId(6, m_code.GetAuthority());
-    stmt.BindText(7, m_code.GetNamespace().c_str(), Statement::MakeCopy::No);
-
-    auto rc = stmt.Step();
-    if (BE_SQLITE_DONE != rc)
+    CachedECSqlStatementPtr stmt = GetModelHandler().GetECSqlClassInfo().GetInsertStmt(GetDgnDb());
+    if (stmt.IsNull())
         {
-        BeAssert(false);
         m_modelId = DgnModelId();
         return DgnDbStatus::WriteError;
         }
-
+    
+    status = _BindInsertParams(*stmt);
+    if (DgnDbStatus::Success != status)
+        {
+        m_modelId = DgnModelId();
+        return status;
+        }
+        
+    DbResult stmtResult = stmt->Step();
+    if (BE_SQLITE_DONE != stmtResult)
+        {
+        m_modelId = DgnModelId();
+        return DgnDbStatus::WriteError;
+        }
+        
     // NB: We do this here rather than in _OnInserted() because Update() is going to request a lock too, and the server doesn't need to be
     // involved in locks for models created locally.
     GetDgnDb().Locks().OnModelInserted(GetModelId());
-    stat = Update();
-    BeAssert(stat==DgnDbStatus::Success);
+    status = Update();
+    BeAssert(status == DgnDbStatus::Success);
 
     _OnInserted();
     return DgnDbStatus::Success;
@@ -935,20 +980,35 @@ DgnDbStatus DgnModel::Insert(Utf8CP description, bool inGuiList)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnModel::_InitFrom(DgnModelCR other)
     {
-    Json::Value props;
-    other._ToPropertiesJson(props);
-    _FromPropertiesJson(props);
+    m_label = other.m_label;
+    m_inGuiList = other.m_inGuiList;
+    m_dependencyIndex = other.m_dependencyIndex;
+
+    Json::Value otherProperties;
+    other._WriteJsonProperties(otherProperties);
+    _ReadJsonProperties(otherProperties);
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   09/15
+* @bsimethod                                                 Ramanujam.Raman   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void GeometricModel::_InitFrom(DgnModelCR other)
+void GeometricModel::_WriteJsonProperties(Json::Value& val) const 
     {
-    T_Super::_InitFrom(other);
-    auto geom = other.ToGeometricModel();
-    if (nullptr != geom)
-        m_solver = geom->m_solver;
+    T_Super::_WriteJsonProperties(val);
+    if (val.isNull())
+        val = Json::objectValue;
+    m_displayInfo.ToJson(val["DisplayInfo"]); 
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                 Ramanujam.Raman   12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void GeometricModel::_ReadJsonProperties(Json::Value const& val) 
+    {
+    T_Super::_ReadJsonProperties(val);
+
+    BeAssert(val.isMember("DisplayInfo"));
+    m_displayInfo.FromJson(val["DisplayInfo"]);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -973,12 +1033,12 @@ DgnModelPtr DgnModels::LoadDgnModel(DgnModelId modelId)
     if (nullptr == handler)
         return nullptr;
 
-    DgnModel::CreateParams params(m_dgndb, model.GetClassId(), model.GetCode(), DgnModel::Properties(), modelId);
+    DgnModel::CreateParams params(m_dgndb, model.GetClassId(), model.GetCode(), model.GetLabel(), model.GetInGuiList(), modelId);
     DgnModelPtr dgnModel = handler->Create(params);
     if (!dgnModel.IsValid())
         return nullptr;
 
-    dgnModel->ReadProperties();
+    dgnModel->Read();
     dgnModel->_OnLoaded();   // this adds the model to the loaded models list and increments the ref count, so returning by value is safe.
 
     return dgnModel;
@@ -1060,7 +1120,7 @@ DPoint3d GeometricModel::_GetGlobalOrigin() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    ChuckKirschman  04/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-double DgnModel::Properties::GetMillimetersPerMaster() const
+double GeometricModel::DisplayInfo::GetMillimetersPerMaster() const
     {
     return GetMasterUnits().IsLinear() ? GetMasterUnits().ToMillimeters() : 1000.;
     }
@@ -1068,7 +1128,7 @@ double DgnModel::Properties::GetMillimetersPerMaster() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    03/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-double DgnModel::Properties::GetSubPerMaster() const
+double GeometricModel::DisplayInfo::GetSubPerMaster() const
     {
     return GetSubUnits().ConvertDistanceFrom(1.0, GetMasterUnits());
     }
@@ -1120,7 +1180,7 @@ void DgnModel::_FillModel()
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KevinNyman      01/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus DgnModel::Properties::SetUnits(UnitDefinitionCR newMasterUnit, UnitDefinitionCR newSubUnit)
+BentleyStatus GeometricModel::DisplayInfo::SetUnits(UnitDefinitionCR newMasterUnit, UnitDefinitionCR newSubUnit)
     {
     if (!newMasterUnit.IsValid() || !newSubUnit.IsValid() || !newMasterUnit.AreComparable(newSubUnit))
         return ERROR;
@@ -1152,6 +1212,56 @@ ModelHandlerP dgn_ModelHandler::Model::FindHandler(DgnDb const& db, DgnClassId h
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                  Ramanujam.Raman   11/15
++---------------+---------------+---------------+---------------+---------------+------*/
+ECSqlClassInfo const& dgn_ModelHandler::Model::GetECSqlClassInfo()
+    {
+    if (!m_classInfo.IsInitialized())
+        {
+        Utf8String fullClassName("[");
+        fullClassName.append(GetDomain().GetDomainName()).append("].[").append(GetClassName()).append(1, ']');
+
+        ECSqlClassParams classParams;
+        _GetClassParams(classParams);
+
+        m_classInfo.Initialize(fullClassName, classParams);
+        }
+
+    return m_classInfo;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                 Ramanujam.Raman   12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void dgn_ModelHandler::Model::_GetClassParams(ECSqlClassParamsR params)
+    {    
+    params.Add(MODEL_PROP_ECInstanceId, ECSqlClassParams::StatementType::Insert);
+    params.Add(MODEL_PROP_Code, ECSqlClassParams::StatementType::InsertUpdate);
+    params.Add(MODEL_PROP_Label, ECSqlClassParams::StatementType::InsertUpdate);
+    params.Add(MODEL_PROP_Visibility, ECSqlClassParams::StatementType::InsertUpdate);
+    params.Add(MODEL_PROP_Properties, ECSqlClassParams::StatementType::All);
+    params.Add(MODEL_PROP_DependencyIndex, ECSqlClassParams::StatementType::All);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                 Ramanujam.Raman   12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void dgn_ModelHandler::Sheet::_GetClassParams(ECSqlClassParamsR params)
+    {
+    T_Super::_GetClassParams(params);
+    params.Add(SHEET_MODEL_PROP_SheetSize, ECSqlClassParams::StatementType::All);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                 Ramanujam.Raman   12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void dgn_ModelHandler::Model2d::_GetClassParams(ECSqlClassParamsR params)
+    {
+    T_Super::_GetClassParams(params);
+    params.Add(MODEL2D_MODEL_PROP_GlobalOrigin, ECSqlClassParams::StatementType::All);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   11/11
 +---------------+---------------+---------------+---------------+---------------+------*/
 AxisAlignedBox3d GeometricModel::_QueryModelRange() const
@@ -1178,22 +1288,57 @@ AxisAlignedBox3d GeometricModel::_QueryModelRange() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 SheetModel::SheetModel(CreateParams const& params) : T_Super(params), m_size(params.m_size) {}
 
+
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      05/15
+* @bsimethod                                                 Ramanujam.Raman   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SheetModel::_ToPropertiesJson(Json::Value& val) const 
+DgnDbStatus SheetModel::BindInsertAndUpdateParams(ECSqlStatement& statement)
     {
-    T_Super::_ToPropertiesJson(val);
-    JsonUtils::DPoint2dToJson(val["sheet_size"], m_size);
+    statement.BindPoint2D(statement.GetParameterIndex(SHEET_MODEL_PROP_SheetSize), m_size);
+    return DgnDbStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      05/15
+* @bsimethod                                                 Ramanujam.Raman   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SheetModel::_FromPropertiesJson(Json::Value const& val) 
+DgnDbStatus SheetModel::_BindInsertParams(ECSqlStatement& statement)
     {
-    T_Super::_FromPropertiesJson(val);
-    JsonUtils::DPoint2dFromJson(m_size, val["sheet_size"]);
+    T_Super::_BindInsertParams(statement);
+    return BindInsertAndUpdateParams(statement);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                 Ramanujam.Raman   12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus SheetModel::_BindUpdateParams(ECSqlStatement& statement)
+    {
+    T_Super::_BindUpdateParams(statement);
+    return BindInsertAndUpdateParams(statement);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                 Ramanujam.Raman   12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus SheetModel::_ReadSelectParams(ECSqlStatement& statement, ECSqlClassParamsCR params)
+    {
+    DgnDbStatus status = T_Super::_ReadSelectParams(statement, params);
+    if (DgnDbStatus::Success != status)
+        return status;
+
+    m_size = statement.GetValuePoint2D(params.GetSelectIndex(SHEET_MODEL_PROP_SheetSize));
+
+    return DgnDbStatus::Success;
+    }
+	
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                 Ramanujam.Raman   12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void SheetModel::_InitFrom(DgnModelCR other)
+    {
+    T_Super::_InitFrom(other);
+    SheetModelCP otherModel = other.ToSheetModel();
+    if (nullptr != otherModel)
+        m_size = otherModel->m_size;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1209,7 +1354,7 @@ void DgnModel::CreateParams::RelocateToDestinationDb(DgnImportContext& importer)
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnModel::CreateParams DgnModel::GetCreateParamsForImport(DgnImportContext& importer) const
     {
-    CreateParams parms(importer.GetDestinationDb(), GetClassId(), GetCode(), GetProperties());
+    CreateParams parms(importer.GetDestinationDb(), GetClassId(), GetCode());
     if (importer.IsBetweenDbs())
         {
         // Caller probably wants to preserve these when copying between Dbs. We *never* preserve them when copying within a Db.
@@ -1260,19 +1405,6 @@ DgnModelPtr DgnModel::_CloneForImport(DgnDbStatus* stat, DgnImportContext& impor
     model->_InitFrom(*this);
 
     return model;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   09/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnModelPtr GeometricModel::_CloneForImport(DgnDbStatus* stat, DgnImportContext& importer) const
-    {
-    auto clone = T_Super::_CloneForImport(stat, importer);
-    auto geom = clone.IsValid() ? clone->ToGeometricModelP() : nullptr;
-    if (nullptr != geom)
-        geom->m_solver.RelocateToDestinationDb(importer);
-
-    return clone;
     }
 
 /*---------------------------------------------------------------------------------**//**
