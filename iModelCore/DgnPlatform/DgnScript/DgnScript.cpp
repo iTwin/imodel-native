@@ -45,7 +45,7 @@ struct DgnScriptContext : BeJsContext
 
     DgnDbStatus LoadProgram(Dgn::DgnDbR db, Utf8CP tsFunctionSpec);
     DgnDbStatus ExecuteEga(int& functionReturnStatus, Dgn::DgnElementR el, Utf8CP jsEgaFunctionName, DPoint3dCR origin, YawPitchRollAnglesCR angles, Json::Value const& parms);
-    DgnDbStatus ExecuteModelSolver(int& functionReturnStatus, Dgn::DgnModelR model, Utf8CP jsFunctionName, Json::Value const& parms, Json::Value const& options);
+    DgnDbStatus ExecuteModelSolver(int& functionReturnStatus, Dgn::DgnModelR model, Utf8CP jsFunctionName, ECN::IECInstanceCR variationSpec);
     DgnDbStatus ExecuteDgnDbScript(int& functionReturnStatus, Dgn::DgnDbR db, Utf8StringCR jsFunctionName, Json::Value const& parms);
 };
 END_BENTLEY_DGNPLATFORM_NAMESPACE
@@ -203,16 +203,16 @@ DgnDbStatus DgnScriptContext::ExecuteDgnDbScript(int& functionReturnStatus, Dgn:
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   BentleySystems
 //---------------------------------------------------------------------------------------
-DgnDbStatus DgnScript::ExecuteModelSolver(int& functionReturnStatus, Dgn::DgnModelR model, Utf8CP jsFunctionName, Json::Value const& parms, Json::Value const& options)
+DgnDbStatus DgnScript::ExecuteModelSolver(int& functionReturnStatus, Dgn::DgnModelR model, Utf8CP jsFunctionName, ECN::IECInstanceCR variationSpec)
     {
     DgnScriptContext& ctx = static_cast<DgnScriptContext&>(T_HOST.GetScriptAdmin().GetDgnScriptContext());
-    return ctx.ExecuteModelSolver(functionReturnStatus, model, jsFunctionName, parms, options);
+    return ctx.ExecuteModelSolver(functionReturnStatus, model, jsFunctionName, variationSpec);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   BentleySystems
 //---------------------------------------------------------------------------------------
-DgnDbStatus DgnScriptContext::ExecuteModelSolver(int& functionReturnStatus, Dgn::DgnModelR model, Utf8CP jsFunctionName, Json::Value const& parms, Json::Value const& options)
+DgnDbStatus DgnScriptContext::ExecuteModelSolver(int& functionReturnStatus, Dgn::DgnModelR model, Utf8CP jsFunctionName, ECN::IECInstanceCR variationSpec)
     {
     functionReturnStatus = -1;
 
@@ -229,10 +229,9 @@ DgnDbStatus DgnScriptContext::ExecuteModelSolver(int& functionReturnStatus, Dgn:
         }
 
     BeginCallContext();
-    BeJsObject parmsObj = EvaluateJson(parms);
-    BeJsObject optionsObj = EvaluateJson(options);
+    BeJsObject variationSpecObj = ObtainProjectedClassInstancePointer(new JsECInstance(const_cast<ECN::IECInstanceR>(variationSpec)), true);
     BeJsNativePointer jsModel = ObtainProjectedClassInstancePointer(new JsDgnModel(model), true);
-    BeJsValue retval = jsfunc(jsModel, parmsObj, optionsObj);
+    BeJsValue retval = jsfunc(variationSpecObj, jsModel);
     EndCallContext();
 
     if (!retval.IsNumber())

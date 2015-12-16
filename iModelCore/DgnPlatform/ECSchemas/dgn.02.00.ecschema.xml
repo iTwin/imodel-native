@@ -220,11 +220,7 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
             <ClassHasHandler xmlns="dgn.02.00" />
         </ECCustomAttributes>
         <BaseClass>Model3d</BaseClass>
-        <!--  These are in the model's Props JSON
-        <ECProperty propertyName="ItemECClass" typeName="string" description="Full name of ECClass of Item that is customized by this model"/>
-        <ECProperty propertyName="ItemCategory" typeName="string" description="Name of Category used by harvestable Items in this model"/>
-        <ECProperty propertyName="ItemCodeAuthority" typeName="string" description="Name of CodeAuthority to be used when creating component instances"/>
-        -->
+        <ECProperty propertyName="ComponentECClass" typeName="string" description="Full ECSql name of ECClass that defines the component"/>
     </ECClass>
     <ECClass typeName="DefinitionModel" isDomainClass="True">
         <ECCustomAttributes>
@@ -1262,6 +1258,20 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
         </Target>
     </ECRelationshipClass>
     
+    <!-- ////////////////////////////////////////////////////////////////////////////// -->
+    <!-- // Experimental classes -->
+    <!-- ////////////////////////////////////////////////////////////////////////////// -->
+
+    <ECClass typeName="ComponentSpecification" description="Defines a DgnComponent." displayLabel="Component Specification" isDomainClass="False" isCustomAttributeClass="True">
+        <ECProperty propertyName="Script" typeName="string" description="The name of the script to execute in order to create a variation of the component. " />
+        <ECProperty propertyName="Category" typeName="string" description="The name of the Category to assign to instances of this component." />
+        <ECProperty propertyName="CodeAuthority" typeName="string" description="The name of the CodeAuthority to use then assigning Codes to instances of this component." />
+    </ECClass>
+
+    <ECClass typeName="ComponentParameterSpecification" description="Provides information about a property that plays the role of a parameter to a component's solver." displayLabel="Component Parameter Specification" isDomainClass="False" isCustomAttributeClass="True">
+        <ECProperty propertyName="VariesPer" typeName="string" description="Indicates if the parameter may be varied for individual instances or if it is fixed for all instances of a particular type. Possible values: Type or Instance." />
+    </ECClass>
+
     <!-- ////////////////////////////////////////////////////////////////////////////// -->
     <!-- // Deprecated classes -->
     <!-- ////////////////////////////////////////////////////////////////////////////// -->

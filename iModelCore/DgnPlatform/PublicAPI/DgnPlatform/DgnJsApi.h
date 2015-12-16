@@ -302,7 +302,8 @@ typedef JsPlacement3d* JsPlacement3dP;
 //=======================================================================================
 // @bsiclass                                                    Sam.Wilson      06/15
 //=======================================================================================
-struct JsComponentModel : JsDgnModel
+#ifdef WIP_COMPONENT
+struct JsComponentDef : RefCountedBaseWithCreate
 {
     JsComponentModel(ComponentModel& m) : JsDgnModel(m) {;}
 
@@ -313,6 +314,7 @@ struct JsComponentModel : JsDgnModel
 
     STUB_OUT_SET_METHOD(Name,Utf8String)
 };
+#endif
 
 //=======================================================================================
 // @bsiclass                                                    Sam.Wilson      06/15

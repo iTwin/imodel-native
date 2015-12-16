@@ -192,32 +192,6 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
 
     type DgnModelP = cxx_pointer<DgnModel>;
 
-    class ComponentModel extends DgnModel implements IDisposable, BeJsProjection_RefCounted, BeJsProjection_SuppressConstructor
-    {
-        /*** NATIVE_TYPE_NAME = JsComponentModel ***/
-        Name: Bentley_Utf8String;
-
-        /** Find a component model by name 
-         * @param db The DgnDB that contains the component model
-         * @param name The name of the component model to search for.
-         * @return A pointer to the component model with that name or null if not found.
-         */
-        static FindModelByName(db: DgnDbP, name: Bentley_Utf8String): ComponentModelP;
-
-        /** Place an instance of a component 
-         * @param targetModel The model where the new instance will be placed.
-         * @param capturedSolutionName Optional. The name of the captured solution to copy. If not specified, then \a params must be specified.
-         * @param params Optional. The parameters to use to look up or to generate the instance. If \a capturedSolutionName is specified, then params may be null.
-         * @param code Optional. The code for the new instance. If not specified, then the newly created element will have no Code.
-         * @return A new, persistent element that is an instance of the specified solution of the specified component, or null if the component could not supply that solution.
-         */
-        MakeInstance(targetModel: DgnModelP, capturedSolutionName: Bentley_Utf8String, params: Bentley_Utf8String, code: AuthorityIssuedCode): DgnElementP;
-        OnDispose(): void;
-        Dispose(): void;
-    }
-
-    type ComponentModelP = cxx_pointer<ComponentModel>;
-
     class ElementGeometryBuilder implements IDisposable, BeJsProjection_RefCounted, BeJsProjection_SuppressConstructor
     {
         /*** NATIVE_TYPE_NAME = JsElementGeometryBuilder ***/ 

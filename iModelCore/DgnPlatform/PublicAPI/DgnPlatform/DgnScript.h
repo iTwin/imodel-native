@@ -95,11 +95,10 @@ struct DgnScript
     @param[out] functionReturnStatus    The function's integer return value. 0 means success.
     @param[in] model           The model to validate
     @param[in] jsFunctionName   Identifies the Script function to be executed. Must be of the form namespace.functionname
-    @param[in] parms        The parameters to pass to the solver. 
-    @param[in] options      Additional parameters to pass to the solver. 
+    @param[in] variationSpec    An ECInstance that contains parameters to pass to the solver and that can be used to get information about the component.
     @return non-zero if the specified namespace is not found in the JavaScript library or if the specified function could not be found or failed to execute.
     **/
-    DGNPLATFORM_EXPORT static DgnDbStatus ExecuteModelSolver(int& functionReturnStatus, Dgn::DgnModelR model, Utf8CP jsFunctionName, Json::Value const& parms, Json::Value const& options);
+    DGNPLATFORM_EXPORT static DgnDbStatus ExecuteModelSolver(int& functionReturnStatus, Dgn::DgnModelR model, Utf8CP jsFunctionName, ECN::IECInstanceCR variationSpec);
 
     DGNPLATFORM_EXPORT static DgnDbStatus ExecuteDgnDbScript(int& functionReturnStatus, Dgn::DgnDbR db, Utf8StringCR functionName, Json::Value const& parms);
 

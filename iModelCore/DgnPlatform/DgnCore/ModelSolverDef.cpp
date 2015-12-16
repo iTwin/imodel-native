@@ -54,6 +54,7 @@ ModelSolverDef::ParameterSet& ModelSolverDef::GetParametersR() {return m_paramet
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ModelSolverDef::Solve(GeometricModelR model)
     {
+#ifdef WIP_COMPONENT
     if (Type::Script == m_type)
         {
         int retval;
@@ -74,6 +75,7 @@ void ModelSolverDef::Solve(GeometricModelR model)
 
         BeAssert((m_type == Type::None) && "Only Script model solvers supported");
         }
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -89,15 +89,18 @@ JsDgnModelsP JsDgnDb::GetModels() {return new JsDgnModels(m_db->Models());}
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson                      12/15
 //---------------------------------------------------------------------------------------
+#ifdef WIP_COMPONENT
 JsComponentModelP JsDgnModel::ToComponentModel() 
     {
     ComponentModel* cm = ToDgnComponentModel();
     return (nullptr == cm)? nullptr: new JsComponentModel(*cm);
     }
+#endif
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson                      12/15
 //---------------------------------------------------------------------------------------
+#ifdef WIP_COMPONENT
 static BentleyStatus loadParams(ModelSolverDef::ParameterSet& params, ComponentModel& cm, Utf8StringCR paramsJSON)
     {
     Json::Value paramsJsonValue(Json::objectValue);
@@ -144,6 +147,7 @@ JsDgnElement* JsComponentModel::MakeInstance(JsDgnModelP targetJsModel, Utf8Stri
 
     return new JsDgnElement(*const_cast<DgnElementP>(instance.get()));
     }
+#endif
 
 JsECClassP JsECClassCollection::GetECClass(JsECClassCollectionIteratorP iter) {return (IsValid(iter) && (nullptr != *iter->m_iter))? new JsECClass(**iter->m_iter): nullptr;}
 JsECPropertyP JsECPropertyCollection::GetECProperty(JsECPropertyCollectionIteratorP iter) {return (IsValid(iter) && (nullptr != *iter->m_iter))? new JsECProperty(**iter->m_iter): nullptr;}
