@@ -77,8 +77,6 @@
         <ProductDirectory Name="SmartSolidAssemblies"               Deliver="false" LibType="static"/>
         <ProductDirectory Name="BePortableUiAssemblies"             Path="Assemblies"/>
         <ProductDirectory Name="BePortableUiAssemblies"             Deliver="false" LibType="static"/>
-        <ProductDirectory Name="CordovaLibs"                        Path="Assemblies"/>
-        <ProductDirectory Name="CordovaLibs"                        Deliver="false" LibType="static"/>
         <ProductDirectory Name="DgnClientFxNativeAssemblies"          Path="Assemblies"/>
         <ProductDirectory Name="DgnClientFxNativeAssemblies"          Deliver="false" LibType="static"/>
         <ProductDirectory Name="WSClientAssemblies"                 Path="Assemblies"/>
@@ -153,8 +151,6 @@
         <ProductDirectory Name="ECObjectsTestSeedDataIT"            Path="Assets/SeedData/it"/>
         <ProductDirectory Name="ECObjectsTestSeedDataIT"            Path="Assets/SeedData/it" LibType="static"/>
 
-        <ProductDirectory Name="CordovaJavaScript" Deliver="false"/>
-        <ProductDirectory Name="CordovaJavaScript" Deliver="false" LibType="static"/>
         <ProductDirectory Name="DgnClientSdkIncludeDirectory" Deliver="false"/>
         <ProductDirectory Name="DgnClientSdkIncludeDirectory" Deliver="false" LibType="static"/>
         <ProductDirectory Name="DgnViewDecorators" Deliver="false"/>
