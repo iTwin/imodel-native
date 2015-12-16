@@ -45,7 +45,12 @@ void DgnViewport::Initialize(ViewControllerR viewController)
 void DgnViewport::DestroyViewport()
     {
     m_progressiveDisplay.clear();
-    m_viewController = nullptr;
+    if (m_viewController.IsValid())
+        {
+        m_viewController->GetDgnDb().Elements().DropGraphicsForViewport(*this);
+        m_viewController = nullptr;
+        }
+
     m_frustumValid = false;
     m_renderTarget = nullptr;
     }
@@ -1354,6 +1359,10 @@ void DgnViewport::ChangeViewController(ViewControllerR viewController)
     bool undoActive = IsUndoActive();
     _Destroy();
     _Initialize(viewController);
+#else
+    // At least discard the graphics until above NEEDS_WORK is addressed
+    if (m_viewController.IsValid())
+        m_viewController->GetDgnDb().Elements().DropGraphicsForViewport(*this);
 #endif
 
     ClearUndo();

@@ -48,6 +48,7 @@ typedef ElemIdRangeNode const * ElemIdRangeNodeCP;
 typedef ElemIdRangeNodeP*       ElemIdRangeNodeH;
 typedef ElemIdRangeNodeP const* ElemIdRangeNodeCH;
 typedef bool(*T_NodeSortFunc)(ElemIdRangeNodeP, ElemIdRangeNodeP);
+typedef std::function<void(DgnElementCR)> T_VisitElemFunc;
 
 /*=================================================================================**//**
 * a node in the tree that has children
@@ -85,6 +86,7 @@ public:
     virtual ElemPurge _Purge(int64_t memTarget) = 0;
     virtual ElemPurge _Drop(uint64_t key) = 0;
     virtual void _Empty() = 0;
+    virtual void _Visit(T_VisitElemFunc) const = 0;
 
     bool ContainsKey(uint64_t key) const {CheckSloppy(); return m_range.Contains(key);}
     void SetParent(ElemIdParent* newParent) {m_parent = newParent;}
@@ -121,6 +123,7 @@ private:
     virtual ElemPurge _Purge(int64_t) override;
     virtual ElemPurge _Drop(uint64_t key) override;
     virtual void _Empty() override;
+    virtual void _Visit(T_VisitElemFunc) const override;
 
 public:
     DgnElementCP GetEntry(int index) const {return m_elems[index];}
@@ -149,6 +152,7 @@ protected:
     virtual ElemPurge _Purge(int64_t) override;
     virtual ElemPurge _Drop(uint64_t key) override;
     virtual void _Empty() override;
+    virtual void _Visit(T_VisitElemFunc) const override;
     void SortInto(ElemIdRangeNodeP* into, ElemIdRangeNodeP* from, T_NodeSortFunc sortFunc);
 
 public:
@@ -230,6 +234,7 @@ public:
     void RemoveElement(DgnElementCR element);
     void Purge(int64_t memTarget);
     void Destroy();
+    void VisitElements(T_VisitElemFunc func) const { if (nullptr != m_root) m_root->_Visit(func); }
 };
 END_BENTLEY_DGN_NAMESPACE
 
@@ -831,6 +836,16 @@ void ElemIdLeafNode::_Empty()
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void ElemIdLeafNode::_Visit(T_VisitElemFunc func) const
+    {
+    DgnElementCP const* end = m_elems + m_nEntries;
+    for (DgnElementCP const* curr = m_elems; curr < end; ++curr)
+        func(**curr);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   09/12
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ElemIdInternalNode::_Empty()
@@ -841,6 +856,16 @@ void ElemIdInternalNode::_Empty()
         (*curr)->_Empty();
 
     m_nEntries = 0;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void ElemIdInternalNode::_Visit(T_VisitElemFunc func) const
+    {
+    ElemIdRangeNodeP const* end = m_children + m_nEntries;
+    for (ElemIdRangeNodeP const* curr = m_children; curr < end; ++curr)
+        (*curr)->_Visit(func);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1502,6 +1527,11 @@ ECSqlClassInfo const& dgn_ElementHandler::Element::GetECSqlClassInfo()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnElements::DropGraphicsForViewport(DgnViewportCR viewport)
     {
-    // ###TODO: Stuff...
+    m_tree->VisitElements([&viewport](DgnElementCR el)
+        {
+        auto geom = el.ToGeometrySource();
+        if (nullptr != geom)
+            geom->Graphics().DropFor(viewport);
+        });
     }
 
