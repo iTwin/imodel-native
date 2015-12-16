@@ -66,53 +66,6 @@ LsComponentType      LsLocation::GetComponentType () const
     return m_componentId.GetType();
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Chuck.Kirschman     02/03
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus       LsLocation::GetLineCodeLocation (LsComponentReader* reader)
-    {
-    SetFrom (reader->GetSource());
-
-    V10LinePoint*   lpData = (V10LinePoint*)reader->GetRsc();
-    m_componentId = LsComponentId((LsComponentType)lpData->m_lcType, lpData->m_lcID);
-
-    return SUCCESS;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Chuck.Kirschman     02/03
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus       LsLocation::GetPointSymbolLocation
-(
-LsComponentReader*    reader,
-int             symbolNumber
-)
-    {
-    SetFrom (reader->GetSource());
-
-    V10LinePoint*   lpData = (V10LinePoint*)reader->GetRsc();
-
-    m_componentId = LsComponentId((LsComponentType)lpData->m_symbol[symbolNumber].m_symType, lpData->m_symbol[symbolNumber].m_symID);
-
-    return SUCCESS;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Chuck.Kirschman     02/03
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus       LsLocation::GetCompoundComponentLocation
-(
-LsComponentReader*    reader,
-int             componentNumber
-)
-    {
-    SetFrom (reader->GetSource());
-    V10Compound* v10Data = (V10Compound*)reader->GetRsc();
-    m_componentId   = LsComponentId((LsComponentType)v10Data->m_component[componentNumber].m_type, v10Data->m_component[componentNumber].m_id);
-
-    return SUCCESS;
-    }
-
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    06/2015
 //---------------------------------------------------------------------------------------
@@ -137,5 +90,5 @@ bool LsComponent::IsValidComponentType(LsComponentType value)
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool            LsLocation::IsValid () const
     {
-    return m_componentId.IsValid();
+    return m_componentId.IsValid() && LsComponent::IsValidComponentType(m_componentId.GetType());;
     }

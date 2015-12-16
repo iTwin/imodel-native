@@ -557,69 +557,15 @@ int             strokeNo
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JimBartlett     08/92
 +---------------+---------------+---------------+---------------+---------------+------*/
-LsPointComponent* LsPointComponent::LoadLinePoint
-(
-LsComponentReader*    reader
-)
+LsPointComponent* LsPointComponent::LoadLinePoint(LsComponentReader*reader)
     {
-    V10LinePoint*   lpData = (V10LinePoint*)reader->GetRsc();
+    Json::Value     jsonValue;
+    reader->GetJsonValue(jsonValue);
 
-    if (NULL == lpData)
-        return  NULL;
+    LsPointComponentP compPtr;
+    LsPointComponent::CreateFromJson(&compPtr, jsonValue, reader->GetSource());
 
-    LsPointComponent* pointComp = new LsPointComponent (reader->GetSource());
-    pointComp->SetDescription (lpData->m_descr);
-
-    LsLocation      tmpLocation;
-    tmpLocation.GetLineCodeLocation (reader);
-
-    LsComponent*       subComp = DgnLineStyles::GetLsComponent (tmpLocation);
-    if (NULL != subComp)
-        {
-        pointComp->m_strokeComponent = dynamic_cast <LsStrokePatternComponentP> (subComp);
-        BeAssert (pointComp->m_strokeComponent.get ());
-        }
-
-    if (lpData->m_nSymbols > 0)
-        {
-        V10PointSymbolInfo*            pRscInfo = lpData->m_symbol;
-        V10PointSymbolInfo*            pRscEnd  = pRscInfo + lpData->m_nSymbols;
-
-        int symNum = 0;
-
-        while (pRscInfo < pRscEnd)
-            {
-            tmpLocation.GetPointSymbolLocation (reader, symNum++);
-            LsSymbolComponentP  symbol = dynamic_cast<LsSymbolComponentP>(DgnLineStyles::GetLsComponent (tmpLocation));
-
-            // Apparently we have symbols that don't participate in the line style.  See TR #308324.
-            // These should be removed when there is an opportunity like a file format change.
-            bool skip = false;
-            if (0 == (pRscInfo->m_mod1 & LsSymbolReference::VERTEX_Any))
-                {
-                if ((NULL == pointComp->GetStrokeComponentCP()) ||
-                    (pRscInfo->m_strokeNo < 0 || pRscInfo->m_strokeNo >= pointComp->GetStrokeComponentCP()->GetStrokeCount()) )
-                    {
-                    skip = true;
-                    }
-                else if (0 == (pRscInfo->m_mod1 & LCPOINT_ONSTROKE))
-                    {
-                    skip = true;
-                    }
-                }
-
-            //  If the stroke applies to a vertex, then the strokeNo should be ignored. 
-            //  We accomplish that by setting it negative.
-            if (!skip)
-                pointComp->m_symbols.push_back (LsSymbolReference (symbol, pointComp, pRscInfo->m_mod1, pRscInfo->m_xOffset, pRscInfo->m_yOffset,
-                                            pRscInfo->m_zAngle / msGeomConst_degreesPerRadian,
-                                            (pRscInfo->m_mod1 & LsSymbolReference::VERTEX_Any) ? -1 : pRscInfo->m_strokeNo));
-
-            pRscInfo++;
-            }
-        }
-
-    return pointComp;
+    return compPtr;
     }
 
 //---------------------------------------------------------------------------------------
