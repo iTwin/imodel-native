@@ -33,7 +33,7 @@ public:
     JsCurvePrimitive () {}
     JsCurvePrimitive (ICurvePrimitivePtr curvePrimitive) : m_curvePrimitive (curvePrimitive) {}
     virtual JsCurvePrimitiveP Clone () override {return new JsCurvePrimitive (m_curvePrimitive->Clone ());} 
-    ICurvePrimitivePtr Get () {return m_curvePrimitive;}
+    virtual ICurvePrimitivePtr GetICurvePrimitivePtr () override {return m_curvePrimitive;}
 
     // Return the native ICurvePrimitive wrapped as the strongest Js type possible.
     // optionally let child CurveVector return as (true,false)==>(nullptr, JsCurvePrimitive)

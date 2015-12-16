@@ -17,9 +17,12 @@ BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 //=======================================================================================
 // @bsiclass                                                    Eariln.Lutz     08/15
 //=======================================================================================
-struct JsPolyfaceMesh: JsGeomWrapperBase<PolyfaceHeaderPtr>
+struct JsPolyfaceMesh: JsGeometry
 {
+PolyfaceHeaderPtr m_data;
+
 public:
+    virtual PolyfaceHeaderPtr GetPolyfaceHeaderPtr () override {return m_data;}
     JsPolyfaceMesh (PolyfaceHeaderPtr const &header) { m_data = header;}
     JsPolyfaceMeshP Clone ()
         {

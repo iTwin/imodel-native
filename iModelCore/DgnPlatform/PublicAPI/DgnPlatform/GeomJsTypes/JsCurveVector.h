@@ -42,7 +42,7 @@ public:
     static JsCurveVectorP StronglyTypedJsCurveVector (CurveVectorPtr &data);
 
 
-    CurveVectorPtr GetCurveVectorPtr (){return m_curveVector;}
+    virtual CurveVectorPtr GetCurveVectorPtr () override {return m_curveVector;}
     double BoundaryType (){return (double)(int)m_curveVector->GetBoundaryType ();}
 
     JsCurveVectorP MemberAsCurveVector (double doubleIndex) const;
@@ -66,7 +66,7 @@ public:
         {
         Set (CurveVector::Create(CurveVector::BOUNDARY_TYPE_None));
         }
-    void Add (JsCurvePrimitiveP primitive){m_curveVector->Add (primitive->Get ());}
+    void Add (JsCurvePrimitiveP primitive){m_curveVector->Add (primitive->GetICurvePrimitivePtr ());}
     void Add (JsCurveVectorP child){m_curveVector->Add (child->GetCurveVectorPtr ());}
     JsUnstructuredCurveVectorP Clone () {return new JsUnstructuredCurveVector(m_curveVector->Clone ());} 
 };
@@ -85,7 +85,7 @@ public:
         {
         Set (CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open));
         }
-    void Add (JsCurvePrimitiveP primitive){m_curveVector->Add (primitive->Get ());}
+    void Add (JsCurvePrimitiveP primitive){m_curveVector->Add (primitive->GetICurvePrimitivePtr ());}
     JsPathP Clone () {return new JsPath (m_curveVector->Clone ());} 
 };
 
@@ -106,7 +106,7 @@ public:
         }
 
     JsLoopP Clone () {return new JsLoop (m_curveVector->Clone ());} 
-    void Add (JsCurvePrimitiveP primitive){m_curveVector->Add (primitive->Get ());}
+    void Add (JsCurvePrimitiveP primitive){m_curveVector->Add (primitive->GetICurvePrimitivePtr ());}
 };
 
 

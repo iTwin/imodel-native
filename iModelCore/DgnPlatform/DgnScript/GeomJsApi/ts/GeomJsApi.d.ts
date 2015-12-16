@@ -629,7 +629,7 @@ class CurvePrimitive extends Geometry implements BeJsProjection_SuppressConstruc
 
 
 //! A wrapper for a polyface mesh !!!
-class PolyfaceMesh implements IDisposable
+class PolyfaceMesh extends Geometry implements BeJsProjection_SuppressConstructor 
     {
     /*** NATIVE_TYPE_NAME = JsPolyfaceMesh ***/ 
     Clone(): PolyfaceMeshP;
@@ -815,13 +815,13 @@ type DgnExtrusionP=cxx_pointer<DgnExtrusion>;
 
 type DgnRotationalSweepP=cxx_pointer<DgnRotationalSweep>;
 
-    //! A wrapper for BentleyApi::JsDgnRotationalSweep
+    //! A wrapper for BentleyApi::DgnRuledSweep
     class DgnRuledSweep extends SolidPrimitive implements BeJsProjection_SuppressConstructor
     {
-        /*** NATIVE_TYPE_NAME = JsDgnRotationalSweep ***/
+        /*** NATIVE_TYPE_NAME = JsDgnRuledSweep ***/
 
         static Create(
-            profiles: UnstructuredCurveVectorP
+            profiles: UnstructuredCurvesP,
             capped: cxx_bool
             ): DgnRuledSweepP;
 

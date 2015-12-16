@@ -32,7 +32,7 @@ virtual JsSolidPrimitiveP Clone ();
     JsSolidPrimitive (ISolidPrimitivePtr const &solidPrimitive) : m_solidPrimitive (solidPrimitive){}
 
     double SolidPrimitiveType (){return (double)m_solidPrimitive->GetSolidPrimitiveType ();}
-    ISolidPrimitivePtr GetISolidPrimitivePtr() {return m_solidPrimitive;}
+    virtual ISolidPrimitivePtr GetISolidPrimitivePtr() override {return m_solidPrimitive;}
 };
 
 //=======================================================================================
