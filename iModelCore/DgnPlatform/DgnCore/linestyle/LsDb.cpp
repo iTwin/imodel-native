@@ -702,7 +702,10 @@ DgnStyleId DgnImportContext::RemapLineStyleId(DgnStyleId sourceId)
         return dest;
 
     //  NEEDSWORK_LINESTYLES importers are not finished so don't pass along bad data.
-    return DgnStyleId(); // DgnLineStyles::ImportLineStyle(source, *this);
+    dest = LineStyleElement::ImportLineStyle(sourceId, *this);
+    AddLineStyleId(sourceId, dest);
+
+    return dest;
     }
 
 //---------------------------------------------------------------------------------------
@@ -727,7 +730,6 @@ void DgnImportContext::AddLineStyleComponentId(LsComponentId sourceId, LsCompone
     m_importedComponents[sourceId] = targetId.GetValue();
     }
 
-#if defined(NOTNOW)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    12/2015
 //---------------------------------------------------------------------------------------
@@ -743,7 +745,7 @@ DgnStyleId LineStyleElement::ImportLineStyle(DgnStyleId srcStyleId, DgnImportCon
         return DgnStyleId();
         }
 
-    DgnStyleId dstStyleId = QueryId(importer.GetDestinationDb(), srcStyle->GetName());
+    DgnStyleId dstStyleId = QueryId(importer.GetDestinationDb(), srcStyle->GetName().c_str());
     if (dstStyleId.IsValid())
         {
         //  *** TBD: Check if the line style definitions match. If not, rename and remap
@@ -751,11 +753,25 @@ DgnStyleId LineStyleElement::ImportLineStyle(DgnStyleId srcStyleId, DgnImportCon
         return dstStyleId;
         }
 
-    //  No such line style in the destination Db. Ask the source LineStyleElement to import itself.
-    auto importedElem = srcStyle->Import(importer.GetDestinationDb(), importer);
-    return importedElem.IsValid()? importedElem->GetElementId() : DgnStyleId();
+    Utf8String name(srcStyle->GetName());
+    Utf8String  data (srcStyle->GetData());
+
+    Json::Value  jsonObj (Json::objectValue);
+    if (!Json::Reader::Parse(data, jsonObj))
+        return DgnStyleId();
+
+    LsComponentId compId = LsDefinition::GetComponentId (jsonObj);
+    compId = LsComponent::Import(compId, importer);
+    if (!compId.IsValid())
+        {
+        //  *** TBD: Check if the line style definitions match. If not, rename and remap
+        BeAssert(false && "unable to import component for line style");
+        return DgnStyleId();
+        }
+
+    BentleyStatus result = importer.GetDestinationDb().Styles().LineStyles().Insert(dstStyleId, name.c_str(), compId, LsDefinition::GetAttributes(jsonObj), LsDefinition::GetAttributes(jsonObj));
+    return (result == BSISUCCESS) ? dstStyleId : DgnStyleId();
     }
-#endif
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE
 

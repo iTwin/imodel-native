@@ -1620,8 +1620,6 @@ public:
     Utf8StringCR GetData() const { return m_data; }
     void SetData(Utf8CP value) { m_data.AssignOrClear(value); }
     
-    //  DgnFontCR ResolveFont() const { return DgnFontManager::ResolveFont(m_dgndb.Fonts().FindFontById(GetFontId())); }
-
     static DgnStyleId QueryId(DgnDbR db, Utf8CP name) { return DgnStyleId(db.Elements().QueryElementIdByCode(CreateCodeFromName(name)).GetValueUnchecked()); }
     static LineStyleElementCPtr Get(DgnDbR db, Utf8CP name) { return Get(db, QueryId(db, name)); }
     static LineStyleElementCPtr Get(DgnDbR db, DgnStyleId id) { return db.Elements().Get<LineStyleElement>(id); }
@@ -1652,6 +1650,7 @@ public:
 
     typedef ECSqlStatementIterator<Entry> Iterator;
 
+    static DgnStyleId ImportLineStyle(DgnStyleId srcStyleId, DgnImportContext& importer);
     DGNPLATFORM_EXPORT static Iterator MakeIterator(DgnDbR);
     DGNPLATFORM_EXPORT static size_t QueryCount(DgnDbR);
 };
