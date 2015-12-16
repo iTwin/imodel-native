@@ -55,6 +55,8 @@ protected:
     //! Populate the QueryModel with the results of the query.
     void LoadElementsForUpdate(DgnViewportR viewport, DrawPurpose updateType, ICheckStopP checkStop, bool needNewQuery, bool waitForQueryToFinish, bool stopQueryOnAbort);
     void SaveSelectResults();
+    void PickUpResults();
+    bool FrustumChanged(DgnViewportCR vp) const;
     void StartSelectProcessing(DgnViewportR, DrawPurpose updateType);
     DGNPLATFORM_EXPORT virtual bool _IsInSet(int nVal, BeSQLite::DbValue const*) const override;
     virtual void _FillModels() override {} // query models do not load elements in advance

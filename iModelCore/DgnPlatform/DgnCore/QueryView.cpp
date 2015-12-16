@@ -17,7 +17,7 @@
     #define MAX_TO_DRAW_IN_DYNAMIC_UPDATE  1700
 #endif
 
-//#define TRACE_QUERY_LOGIC 1
+#define TRACE_QUERY_LOGIC 1
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   07/12
@@ -102,34 +102,8 @@ bool QueryViewController::_WantElementLoadStart(DgnViewportR vp, double currentT
 +---------------+---------------+---------------+---------------+---------------+------*/
 void QueryViewController::_OnDynamicUpdate(DgnViewportR vp, DynamicUpdateInfo const& info)
     {
-#if defined (TRACE_QUERY_LOGIC)
-    static uint32_t s_count = 0;
-#endif
-
-    if (QueryModel::State::Idle == m_queryModel.GetState())
-        {
-        if (m_queryModel.HasSelectResults())
-            {
-            SaveSelectResults();
-            vp.SetNeedsHeal();
-#if defined (TRACE_QUERY_LOGIC)
-            printf("_OnDynamicUpdate: %d elements saved\n", m_queryModel.GetElementCount());
-#endif
-            return;
-            }
-
-        // The model is idle. Decide if this is a good time to start another query.
-        if (!_WantElementLoadStart(vp, BeTimeUtilities::QuerySecondsCounter(), m_lastQueryTime, m_maxDrawnInDynamicUpdate, m_startQueryFrustum))
-            return;
-        }
-
-    // Restarting select processing, don't wait for result
-#if defined (TRACE_QUERY_LOGIC)
-    printf("_OnDynamicUpdate: calling StartSelectProcessing\n");
-#endif
-
+    PickUpResults();
     StartSelectProcessing(vp, DrawPurpose::UpdateDynamic);
-    ComputeFps();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -165,22 +139,19 @@ void QueryViewController::_OnHealUpdate(DgnViewportR vp, ViewContextR context, b
 +---------------+---------------+---------------+---------------+---------------+------*/
 void QueryViewController::_OnFullUpdate(DgnViewportR vp, ViewContextR context)
     {
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    m_lastUpdateType = DrawPurpose::Update;
-#endif
+    if (m_forceNewQuery || FrustumChanged(vp))
+        StartSelectProcessing(vp, DrawPurpose::CreateScene);
 
-    if (!m_forceNewQuery)
-        {
-        Frustum newFrustumPoints = vp.GetFrustum(DgnCoordSystem::World, true);
-        if (newFrustumPoints == m_saveQueryFrustum)
-            return;
-        }
+    PickUpResults();
+    }
 
-    LoadElementsForUpdate(vp, DrawPurpose::CreateScene, &context, true, true, false);
-    ComputeFps();
-#if defined (TRACE_QUERY_LOGIC)
-    printf("_OnFullUpdate: %d elements saved\n", m_queryModel.GetElementCount());
-#endif
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+bool QueryViewController::FrustumChanged(DgnViewportCR vp) const
+    {
+    Frustum newFrustumPoints = vp.GetFrustum(DgnCoordSystem::World, true);
+    return newFrustumPoints != m_saveQueryFrustum;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -207,7 +178,12 @@ void QueryViewController::LoadElementsForUpdate(DgnViewportR viewport, DrawPurpo
 
     // IsActive means that it is searching or that there is an outstanding request to abort or to start processing.
     if (m_queryModel.IsActive())
+        {
+#if defined (TRACE_QUERY_LOGIC)
+        printf("QVC: LoadElementsForUpdate: skipping, model is active\n");
+#endif
         return;
+        }
 
     SaveSelectResults();
     StartSelectProcessing(viewport, updateType);
@@ -250,6 +226,29 @@ void QueryViewController::StartSelectProcessing(DgnViewportR viewport, DrawPurpo
     m_maxToDrawInDynamicUpdate = m_maxDrawnInDynamicUpdate > 400 ? m_maxDrawnInDynamicUpdate : MAX_TO_DRAW_IN_DYNAMIC_UPDATE;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void QueryViewController::PickUpResults()
+    {
+    if (!m_queryModel.HasSelectResults())
+        return;
+
+    m_queryModel.SaveQueryResults();
+    m_lastQueryTime = BeTimeUtilities::QuerySecondsCounter();
+
+    DgnElements& pool = m_queryModel.GetDgnDb().Elements();
+    pool.ResetStatistics();
+    pool.Purge(GetMaxElementMemory());
+
+    m_forceNewQuery = false;
+    m_saveQueryFrustum = m_startQueryFrustum;
+
+    m_maxDrawnInDynamicUpdate = 0;
+    m_maxToDrawInDynamicUpdate = MAX_TO_DRAW_IN_DYNAMIC_UPDATE;     //  No limit to number of elements drawn except during select; then we don't want
+                                                                    //  to draw something unless it was previously drawn
+    }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    06/2013
 //---------------------------------------------------------------------------------------
@@ -263,8 +262,15 @@ void QueryViewController::SaveSelectResults()
             m_saveQueryFrustum.Invalidate();
             }
 
+#if defined (TRACE_QUERY_LOGIC)
+        printf("QVC: SaveSelectResults: results not ready\n");
+#endif
         return;
         }
+
+#if defined (TRACE_QUERY_LOGIC)
+    printf("QVC: SaveSelectResults: saving results\n");
+#endif
 
     m_queryModel.SaveQueryResults();
     m_lastQueryTime = BeTimeUtilities::QuerySecondsCounter();
@@ -290,7 +296,9 @@ void QueryViewController::SaveSelectResults()
     m_forceNewQuery = false;
     m_saveQueryFrustum = m_startQueryFrustum;
 
+#ifdef ABORT_REQUEST_IN_PROCESS
     m_queryModel.RequestAbort(true);
+#endif
 
     m_maxDrawnInDynamicUpdate = 0;
     m_maxToDrawInDynamicUpdate = MAX_TO_DRAW_IN_DYNAMIC_UPDATE;     //  No limit to number of elements drawn except during select; then we don't want

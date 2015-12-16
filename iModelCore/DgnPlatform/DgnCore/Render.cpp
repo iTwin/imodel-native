@@ -14,6 +14,8 @@
 
 #define RENDER_LOGGING 1
 
+// #undef RENDER_LOGGING
+
 #undef LOG
 #if defined (RENDER_LOGGING)
 #   define LOG (*NativeLogging::LoggingManager::GetLogger(L"Render"))

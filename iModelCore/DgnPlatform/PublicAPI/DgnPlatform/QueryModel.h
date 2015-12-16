@@ -98,6 +98,7 @@ struct QueryModel : PhysicalModel
         bool Process() { return _Process(); }
         
         QueryModelR GetModel() const { return m_params.m_model; }
+        bool IsForModel(QueryModelCR model) const { return &GetModel() == &model; }
         Results* GetResults() { return m_results.get(); }
 
         void OnCompleted() const;

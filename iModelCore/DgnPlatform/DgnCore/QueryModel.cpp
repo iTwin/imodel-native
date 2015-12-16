@@ -16,7 +16,7 @@
 #define DEBUG_THREADS 1
 #endif
 
-#define TRACE_QUERY_LOGIC 1
+//#define TRACE_QUERY_LOGIC 1
 
 BeThreadLocalStorage g_queryThreadChecker;
 
@@ -217,11 +217,24 @@ void QueryModel::Queue::RequestProcessing(Processor::Params const& params)
     QueryModelR model = params.m_model;
     BeAssert(&model.GetDgnDb() == &m_db);
 
-    RequestAbort(model, true);
-
+    // We may currently be processing a query for this model. If so, let it complete and queue up another one.
+    // But remove any other previously-queued processing requests for this model.
     BeMutexHolder lock(m_cv.GetMutex());
 
-    BeAssert(QueryModel::State::Idle == model.GetState());
+#if defined TRACE_QUERY_LOGIC
+    auto initialPending = static_cast<int32_t>(m_pending.size());
+#endif
+
+    for (auto iter = m_pending.begin(); iter != m_pending.end(); /*...*/)
+        {
+        if ((*iter)->IsForModel(model))
+            iter = m_pending.erase(iter);
+        else
+            ++iter;
+        }
+#if defined TRACE_QUERY_LOGIC
+    printf("QMQ: RequestProcessing: %d initially pending, %d currently pending\n", initialPending, static_cast<int32_t>(m_pending.size()));
+#endif
 
     ProcessorPtr proc = new ProcessorImpl(params);
     model.SetState(QueryModel::State::Pending);
@@ -262,7 +275,7 @@ void QueryModel::Queue::RequestAbort(QueryModelR model, bool waitUntilFinished)
             case QueryModel::State::Pending:
                 for (auto entry = m_pending.begin(); entry != m_pending.end(); /*...*/)
                     {
-                    if (&((*entry)->GetModel()) == &model)
+                    if ((*entry)->IsForModel(model))
                         entry = m_pending.erase(entry);
                     else
                         ++entry;
@@ -519,8 +532,7 @@ void QueryModel::Processor::BindModelAndCategory(CachedStatement& stmt)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void QueryModel::Processor::OnCompleted() const
     {
-    // NEEDS_WORK_CONTINUOUS_RENDER
-    // This is not thread-safe. The worst that can happen is that the work thread reads false from it, or sets it to false, while the query thread sets it to true.
+    // This is not strictly thread-safe. The worst that can happen is that the work thread reads false from it, or sets it to false, while the query thread sets it to true.
     // In that case we skip an update.
     // Alternative is to go through contortions to queue up a "heal viewport" task on the DgnClientFx work thread.
     const_cast<DgnViewportR>(m_params.m_vp).SetNeedsHeal();
