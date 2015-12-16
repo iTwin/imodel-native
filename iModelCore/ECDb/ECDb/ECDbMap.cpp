@@ -134,8 +134,7 @@ BentleyStatus ECDbMap::CreateECClassViewsInDb() const
 
     SqlGenerator sqlGenerator(*this);
     sqlGenerator.DropExistingViews();
-    sqlGenerator.BuildViews(classMaps);
-    return SUCCESS;
+    return sqlGenerator.BuildViews(classMaps);
     }
 
 //---------------------------------------------------------------------------------------
