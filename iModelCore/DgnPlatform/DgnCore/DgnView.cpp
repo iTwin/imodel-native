@@ -72,9 +72,9 @@ DgnDbStatus ViewDefinition::_BindUpdateParams(ECSqlStatement& stmt)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   11/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus ViewDefinition::_ExtractSelectParams(ECSqlStatement& stmt, ECSqlClassParams const& params)
+DgnDbStatus ViewDefinition::_ReadSelectParams(ECSqlStatement& stmt, ECSqlClassParams const& params)
     {
-    auto status = T_Super::_ExtractSelectParams(stmt, params);
+    auto status = T_Super::_ReadSelectParams(stmt, params);
     if (DgnDbStatus::Success == status)
         {
         Utf8String descr = stmt.GetValueText(params.GetSelectIndex(PROPNAME_Descr));

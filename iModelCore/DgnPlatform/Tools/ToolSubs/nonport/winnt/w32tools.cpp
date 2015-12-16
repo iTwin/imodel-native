@@ -75,11 +75,6 @@ typedef struct delayloadhookfailure
 void * _ReturnAddress(void);
 #pragma intrinsic(_ReturnAddress)
 
-static enum
-    {
-    MAX_THREAD_NAME_HISTORY    =   20
-    };
-
 typedef struct threadnamehistory
     {
     SYSTEMTIME  windowsTime;
@@ -404,7 +399,7 @@ WCharCP                        dmpFileName
     if (! hDbgHelp)
         {
         if (NULL != stream)
-            fprintf (stream, "\n\nMissing \"%s\" or from system. No dump generated.\n", modulePath);
+            fprintf (stream, "\n\nMissing \"%s\" or from system. No dump generated.\n", Utf8String(modulePath).c_str());
         FreeLibrary (hDbgHelp);
         return;
         }
@@ -421,7 +416,7 @@ WCharCP                        dmpFileName
     if (!fpMiniDumpWriteDump)
         {
         if (NULL != stream)
-            fprintf (stream, "\n\nMissing \"MiniDumpWriteDump\" API from \"%s\". No dump generated.\n", szWitchDll);
+            fprintf (stream, "\n\nMissing \"MiniDumpWriteDump\" API from \"%s\". No dump generated.\n", Utf8String(szWitchDll).c_str());
         FreeLibrary (hDbgHelp);
         return;
         }
@@ -468,7 +463,7 @@ WCharCP                        dmpFileName
         if (NULL != stream)
             {
             if (stat)
-                fprintf (stream, "\n\nWrote a mini-dump type %#x to \"%s\".\n", dumpOpts, szDumpFile);
+                fprintf (stream, "\n\nWrote a mini-dump type %#x to \"%s\".\n", dumpOpts, Utf8String(szDumpFile).c_str());
             else
                 fprintf (stream, "\n\nFailed to write a mini-dump. GLE %#x.\n", GetLastError());
             }

@@ -933,15 +933,26 @@ bool _ScanRangeFromPolyhedron()
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt _VisitElement(GeometrySourceCR source) override
     {
-    DRange3d range = source.CalculateRange3d();
-    if (IsRangeContainedInCurrentRange(range, nullptr != source.ToGeometrySource3d()))
+    DPoint3d corners[8];
+    auto geom3d = source.ToGeometrySource3d();
+
+    DRange3d elRange = source.CalculateRange3d();
+    if (IsRangeContainedInCurrentRange(elRange, nullptr != geom3d))
         return SUCCESS;
 
-    // NOTE: Can just draw bounding box instead of drawing element geometry...
-    DPoint3d corners[8];
-    range.Get8Corners(corners);
-    GetIDrawGeom().DrawPointString3d(8, corners, nullptr);
+    BoundingBox3d range = nullptr != geom3d ? BoundingBox3d(geom3d->GetPlacement().GetElementBox()) : BoundingBox3d(source.ToGeometrySource2d()->GetPlacement().GetElementBox());
+    Transform trans = source.GetPlacementTransform();
 
+    corners[0].x = corners[3].x = corners[4].x = corners[5].x = range.low.x;
+    corners[1].x = corners[2].x = corners[6].x = corners[7].x = range.high.x;
+    corners[0].y = corners[1].y = corners[4].y = corners[7].y = range.low.y;
+    corners[2].y = corners[3].y = corners[5].y = corners[6].y = range.high.y;
+    corners[0].z = corners[1].z = corners[2].z = corners[3].z = range.low.z;
+    corners[4].z = corners[5].z = corners[6].z = corners[7].z = range.high.z;
+
+    trans.Multiply(corners, corners, _countof(corners));
+
+    GetIDrawGeom().DrawPointString3d(8, corners, nullptr);
     return SUCCESS;
     }
 };

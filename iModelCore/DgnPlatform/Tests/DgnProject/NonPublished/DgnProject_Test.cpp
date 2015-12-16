@@ -128,9 +128,9 @@ TEST (DgnDb, CheckStandardProperties)
     DgnModelPtr defaultModel = project->Models().GetModel(project->Models().QueryFirstModelId());
 
     //  Use ModelInfo as an alt. way to get at some of the same property data
-    DgnModel::Properties const& minfo = defaultModel->GetProperties();
-    ASSERT_TRUE( minfo.GetMasterUnits().GetBase() == UnitBase::Meter );
-    ASSERT_TRUE( minfo.GetSubUnits().GetBase() == UnitBase::Meter );
+    GeometricModel::DisplayInfo const& displayInfo = defaultModel->ToGeometricModel()->GetDisplayInfo();
+    ASSERT_TRUE(displayInfo.GetMasterUnits().GetBase() == UnitBase::Meter);
+    ASSERT_TRUE(displayInfo.GetSubUnits().GetBase() == UnitBase::Meter);
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -52,7 +52,7 @@ ModelSolverDef::ParameterSet& ModelSolverDef::GetParametersR() {return m_paramet
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ModelSolverDef::Solve(GeometricModelR model)
+void ModelSolverDef::Solve(ComponentModelR model)
     {
     if (Type::Script == m_type)
         {
@@ -247,7 +247,7 @@ DgnDbStatus ModelSolverDef::ParameterSet::SetValuesFromECProperties(ECN::IECInst
     for (auto& parameter : *this)
         {
         ECN::ECValue ecv;
-        if (ECN::ECOBJECTS_STATUS_Success != instance.GetValue(ecv, parameter.GetName().c_str()))
+        if (ECN::ECObjectsStatus::Success != instance.GetValue(ecv, parameter.GetName().c_str()))
             {
             BeDataAssert(false);
             return DgnDbStatus::BadArg;

@@ -56,9 +56,9 @@ DgnDbStatus LightDefinition::_BindUpdateParams(ECSqlStatement& stmt)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus LightDefinition::_ExtractSelectParams(ECSqlStatement& stmt, ECSqlClassParams const& params)
+DgnDbStatus LightDefinition::_ReadSelectParams(ECSqlStatement& stmt, ECSqlClassParams const& params)
     {
-    auto status = T_Super::_ExtractSelectParams(stmt, params);
+    auto status = T_Super::_ReadSelectParams(stmt, params);
     if (DgnDbStatus::Success == status)
     BeSQLite::wt_OperationForGraphics wt_OperationForGraphics;
         {

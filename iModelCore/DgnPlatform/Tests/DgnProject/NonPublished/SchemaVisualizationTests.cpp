@@ -6,6 +6,8 @@
 |
 +--------------------------------------------------------------------------------------*/
 
+#ifdef BENTLEY_WIN32
+
 #include "DgnHandlersTests.h"
 #include <DgnPlatform\DgnPlatformApi.h>
 #include <ECObjects\ECObjectsAPI.h>
@@ -212,7 +214,7 @@ struct SchemaVisualizationTests : testing::Test
         {
         ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
         SchemaReadStatus status = ECSchema::ReadFromXmlString(m_metaSchema, METASCHEMA_XML, *schemaContext);
-        EXPECT_EQ(SUCCESS, status);
+        EXPECT_EQ(SchemaReadStatus::Success, status);
         }
     };
 
@@ -312,15 +314,15 @@ void MetaSchemaInstanceGenerator::GenerateInstances(bvector<IECInstancePtr> & in
                         classInstance->SetValue(METASCHEMA_PROPERTY_ClassDef_Schema, v);
                         v.SetUtf8CP(ecClass->GetDescription().c_str());
                         classInstance->SetValue(METASCHEMA_PROPERTY_ClassDef_Description, v);
-                        v.SetBoolean(ecClass->GetIsStruct());
+                        v.SetBoolean(ecClass->IsStructClass());
                         classInstance->SetValue(METASCHEMA_PROPERTY_ClassDef_IsStruct, v);
-                        v.SetBoolean(ecClass->GetIsCustomAttributeClass());
+                        v.SetBoolean(ecClass->IsCustomAttributeClass());
                         classInstance->SetValue(METASCHEMA_PROPERTY_ClassDef_IsCustomAttributeClass, v);
-                        v.SetBoolean(ecClass->GetIsDomainClass());
+                        v.SetBoolean(ecClass->IsEntityClass());
                         classInstance->SetValue(METASCHEMA_PROPERTY_ClassDef_IsDomainClass, v);
                         v.SetBoolean(ecClass->HasBaseClasses());
                         classInstance->SetValue(METASCHEMA_PROPERTY_ClassDef_HasBaseClasses, v);
-                        v.SetBoolean(nullptr != ecClass->GetRelationshipClassCP());
+                        v.SetBoolean(ecClass->IsRelationshipClass());
                         classInstance->SetValue(METASCHEMA_PROPERTY_ClassDef_IsRelationshipClass, v);
 
                         instances.push_back(classInstance);
@@ -335,7 +337,7 @@ void MetaSchemaInstanceGenerator::GenerateInstances(bvector<IECInstancePtr> & in
                 {
                 for (ECClassCP const& ecClass : ecSchema->GetClasses())
                     {
-                    if (nullptr != ecClass->GetRelationshipClassCP())
+                    if (ecClass->IsRelationshipClass())
                         {
                         IECInstancePtr classInstance = m_metaSchema.GetClassCP(METASCHEMA_CLASS_RelClassDef)->GetDefaultStandaloneEnabler()->CreateInstance();
 
@@ -347,15 +349,15 @@ void MetaSchemaInstanceGenerator::GenerateInstances(bvector<IECInstancePtr> & in
                         classInstance->SetValue(METASCHEMA_PROPERTY_ClassDef_Schema, v);
                         v.SetUtf8CP(ecClass->GetDescription().c_str());
                         classInstance->SetValue(METASCHEMA_PROPERTY_ClassDef_Description, v);
-                        v.SetBoolean(ecClass->GetIsStruct());
+                        v.SetBoolean(ecClass->IsStructClass());
                         classInstance->SetValue(METASCHEMA_PROPERTY_ClassDef_IsStruct, v);
-                        v.SetBoolean(ecClass->GetIsCustomAttributeClass());
+                        v.SetBoolean(ecClass->IsCustomAttributeClass());
                         classInstance->SetValue(METASCHEMA_PROPERTY_ClassDef_IsCustomAttributeClass, v);
-                        v.SetBoolean(ecClass->GetIsDomainClass());
+                        v.SetBoolean(ecClass->IsEntityClass());
                         classInstance->SetValue(METASCHEMA_PROPERTY_ClassDef_IsDomainClass, v);
                         v.SetBoolean(ecClass->HasBaseClasses());
                         classInstance->SetValue(METASCHEMA_PROPERTY_ClassDef_HasBaseClasses, v);
-                        v.SetBoolean(nullptr != ecClass->GetRelationshipClassCP());
+                        v.SetBoolean(ecClass->IsRelationshipClass());
                         classInstance->SetValue(METASCHEMA_PROPERTY_ClassDef_IsRelationshipClass, v);
 
                         //need to initialize relclass properties here
@@ -392,8 +394,8 @@ void MetaSchemaInstanceGenerator::GenerateInstances(bvector<IECInstancePtr> & in
                         propInstance->SetValue(METASCHEMA_PROPERTY_PropertyDef_IsArray, v);
                         if (ecProp->GetIsArray())
                             {
-                            Utf8CP min = (std::to_string(ecProp->GetAsArrayProperty()->GetMinOccurs())).c_str();
-                            v.SetUtf8CP(min);
+                            Utf8PrintfString min ("%" PRIu32, ecProp->GetAsArrayProperty()->GetMinOccurs());
+                            v.SetUtf8CP(min.c_str());
                             propInstance->SetValue(METASCHEMA_PROPERTY_PropertyDef_MinOccurs, v);
                             if (INT_MAX == ecProp->GetAsArrayProperty()->GetStoredMaxOccurs())
                                 {
@@ -401,8 +403,8 @@ void MetaSchemaInstanceGenerator::GenerateInstances(bvector<IECInstancePtr> & in
                                 }
                             else
                                 {
-                                Utf8CP max = (std::to_string(ecProp->GetAsArrayProperty()->GetStoredMaxOccurs())).c_str();
-                                v.SetUtf8CP(max);
+                                Utf8PrintfString max ("%" PRIu32, ecProp->GetAsArrayProperty()->GetStoredMaxOccurs());
+                                v.SetUtf8CP(max.c_str());
                                 }
                             propInstance->SetValue(METASCHEMA_PROPERTY_PropertyDef_MaxOccurs, v);
                             }
@@ -480,7 +482,7 @@ void MetaSchemaInstanceGenerator::GenerateRelatedInstances(bvector<IECInstancePt
                 for (ECClassCP const& ecClass : schemaFromInstance->GetClasses())
                     {
                     IECInstancePtr classInstance;
-                    if (nullptr != ecClass->GetRelationshipClassCP())
+                    if (ecClass->IsRelationshipClass())
                         {
                         classInstance = m_metaSchema.GetClassCP(METASCHEMA_CLASS_RelClassDef)->GetDefaultStandaloneEnabler()->CreateInstance();
                         }
@@ -497,19 +499,19 @@ void MetaSchemaInstanceGenerator::GenerateRelatedInstances(bvector<IECInstancePt
                     classInstance->SetValue(METASCHEMA_PROPERTY_ClassDef_Schema, v);
                     v.SetUtf8CP(ecClass->GetDescription().c_str());
                     classInstance->SetValue(METASCHEMA_PROPERTY_ClassDef_Description, v);
-                    v.SetBoolean(ecClass->GetIsStruct());
+                    v.SetBoolean(ecClass->IsStructClass());
                     classInstance->SetValue(METASCHEMA_PROPERTY_ClassDef_IsStruct, v);
-                    v.SetBoolean(ecClass->GetIsCustomAttributeClass());
+                    v.SetBoolean(ecClass->IsCustomAttributeClass());
                     classInstance->SetValue(METASCHEMA_PROPERTY_ClassDef_IsCustomAttributeClass, v);
-                    v.SetBoolean(ecClass->GetIsDomainClass());
+                    v.SetBoolean(ecClass->IsEntityClass());
                     classInstance->SetValue(METASCHEMA_PROPERTY_ClassDef_IsDomainClass, v);
                     v.SetBoolean(ecClass->HasBaseClasses());
                     classInstance->SetValue(METASCHEMA_PROPERTY_ClassDef_HasBaseClasses, v);
-                    v.SetBoolean(nullptr != ecClass->GetRelationshipClassCP());
+                    v.SetBoolean(ecClass->IsRelationshipClass());
                     classInstance->SetValue(METASCHEMA_PROPERTY_ClassDef_IsRelationshipClass, v);
 
                     //need to initialize relclass properties here
-                    if (nullptr != ecClass->GetRelationshipClassCP())
+                    if (ecClass->IsRelationshipClass())
                         {
 
                         }
@@ -541,7 +543,7 @@ void MetaSchemaInstanceGenerator::GenerateRelatedInstances(bvector<IECInstancePt
                         if (foundRelatedContainingSchema)
                             {
                             IECInstancePtr classInstance;
-                            if (nullptr != ecClass->GetRelationshipClassCP())
+                            if (ecClass->IsRelationshipClass())
                                 {
                                 classInstance = m_metaSchema.GetClassCP(METASCHEMA_CLASS_RelClassDef)->GetDefaultStandaloneEnabler()->CreateInstance();
                                 }
@@ -558,19 +560,19 @@ void MetaSchemaInstanceGenerator::GenerateRelatedInstances(bvector<IECInstancePt
                             classInstance->SetValue(METASCHEMA_PROPERTY_ClassDef_Schema, v);
                             v.SetUtf8CP(ecClass->GetDescription().c_str());
                             classInstance->SetValue(METASCHEMA_PROPERTY_ClassDef_Description, v);
-                            v.SetBoolean(ecClass->GetIsStruct());
+                            v.SetBoolean(ecClass->IsStructClass());
                             classInstance->SetValue(METASCHEMA_PROPERTY_ClassDef_IsStruct, v);
-                            v.SetBoolean(ecClass->GetIsCustomAttributeClass());
+                            v.SetBoolean(ecClass->IsCustomAttributeClass());
                             classInstance->SetValue(METASCHEMA_PROPERTY_ClassDef_IsCustomAttributeClass, v);
-                            v.SetBoolean(ecClass->GetIsDomainClass());
+                            v.SetBoolean(ecClass->IsEntityClass());
                             classInstance->SetValue(METASCHEMA_PROPERTY_ClassDef_IsDomainClass, v);
                             v.SetBoolean(ecClass->HasBaseClasses());
                             classInstance->SetValue(METASCHEMA_PROPERTY_ClassDef_HasBaseClasses, v);
-                            v.SetBoolean(nullptr != ecClass->GetRelationshipClassCP());
+                            v.SetBoolean(ecClass->IsRelationshipClass());
                             classInstance->SetValue(METASCHEMA_PROPERTY_ClassDef_IsRelationshipClass, v);
 
                             //need to initialize relclass properties here
-                            if (nullptr != ecClass->GetRelationshipClassCP())
+                            if (ecClass->IsRelationshipClass())
                                 {
 
                                 }
@@ -609,8 +611,8 @@ void MetaSchemaInstanceGenerator::GenerateRelatedInstances(bvector<IECInstancePt
                     propInstance->SetValue(METASCHEMA_PROPERTY_PropertyDef_IsArray, v);
                     if (ecProp->GetIsArray())
                         {
-                        Utf8CP min = (std::to_string(ecProp->GetAsArrayProperty()->GetMinOccurs())).c_str();
-                        v.SetUtf8CP(min);
+                        Utf8PrintfString min ("%" PRIu32, ecProp->GetAsArrayProperty()->GetMinOccurs());
+                        v.SetUtf8CP(min.c_str());
                         propInstance->SetValue(METASCHEMA_PROPERTY_PropertyDef_MinOccurs, v);
                         if (INT_MAX == ecProp->GetAsArrayProperty()->GetStoredMaxOccurs())
                             {
@@ -618,8 +620,8 @@ void MetaSchemaInstanceGenerator::GenerateRelatedInstances(bvector<IECInstancePt
                             }
                         else
                             {
-                            Utf8CP max = (std::to_string(ecProp->GetAsArrayProperty()->GetStoredMaxOccurs())).c_str();
-                            v.SetUtf8CP(max);
+                            Utf8PrintfString max ("%" PRIu32, ecProp->GetAsArrayProperty()->GetStoredMaxOccurs());
+                            v.SetUtf8CP(max.c_str());
                             }
                         propInstance->SetValue(METASCHEMA_PROPERTY_PropertyDef_MaxOccurs, v);
                         }
@@ -663,8 +665,8 @@ void MetaSchemaInstanceGenerator::GenerateRelatedInstances(bvector<IECInstancePt
                     propInstance->SetValue(METASCHEMA_PROPERTY_PropertyDef_IsArray, v);
                     if (ecProp->GetIsArray())
                         {
-                        Utf8CP min = (std::to_string(ecProp->GetAsArrayProperty()->GetMinOccurs())).c_str();
-                        v.SetUtf8CP(min);
+                        Utf8PrintfString min ("%" PRIu32, ecProp->GetAsArrayProperty()->GetMinOccurs());
+                        v.SetUtf8CP(min.c_str());
                         propInstance->SetValue(METASCHEMA_PROPERTY_PropertyDef_MinOccurs, v);
                         if (INT_MAX == ecProp->GetAsArrayProperty()->GetStoredMaxOccurs())
                             {
@@ -672,8 +674,8 @@ void MetaSchemaInstanceGenerator::GenerateRelatedInstances(bvector<IECInstancePt
                             }
                         else
                             {
-                            Utf8CP max = (std::to_string(ecProp->GetAsArrayProperty()->GetStoredMaxOccurs())).c_str();
-                            v.SetUtf8CP(max);
+                            Utf8PrintfString max ("%" PRIu32, ecProp->GetAsArrayProperty()->GetStoredMaxOccurs());
+                            v.SetUtf8CP(max.c_str());
                             }
                         propInstance->SetValue(METASCHEMA_PROPERTY_PropertyDef_MaxOccurs, v);
                         }
@@ -703,7 +705,7 @@ void MetaSchemaInstanceGenerator::GenerateRelatedInstances(bvector<IECInstancePt
                 for (ECClassCP const& ecClass : relClassFromInstance->GetSource().GetClasses())
                     {
                     IECInstancePtr classInstance;
-                    if (nullptr != ecClass->GetRelationshipClassCP())
+                    if (ecClass->IsRelationshipClass())
                         {
                         classInstance = m_metaSchema.GetClassCP(METASCHEMA_CLASS_RelClassDef)->GetDefaultStandaloneEnabler()->CreateInstance();
                         }
@@ -720,19 +722,19 @@ void MetaSchemaInstanceGenerator::GenerateRelatedInstances(bvector<IECInstancePt
                     classInstance->SetValue(METASCHEMA_PROPERTY_ClassDef_Schema, v);
                     v.SetUtf8CP(ecClass->GetDescription().c_str());
                     classInstance->SetValue(METASCHEMA_PROPERTY_ClassDef_Description, v);
-                    v.SetBoolean(ecClass->GetIsStruct());
+                    v.SetBoolean(ecClass->IsStructClass());
                     classInstance->SetValue(METASCHEMA_PROPERTY_ClassDef_IsStruct, v);
-                    v.SetBoolean(ecClass->GetIsCustomAttributeClass());
+                    v.SetBoolean(ecClass->IsCustomAttributeClass());
                     classInstance->SetValue(METASCHEMA_PROPERTY_ClassDef_IsCustomAttributeClass, v);
-                    v.SetBoolean(ecClass->GetIsDomainClass());
+                    v.SetBoolean(ecClass->IsEntityClass());
                     classInstance->SetValue(METASCHEMA_PROPERTY_ClassDef_IsDomainClass, v);
                     v.SetBoolean(ecClass->HasBaseClasses());
                     classInstance->SetValue(METASCHEMA_PROPERTY_ClassDef_HasBaseClasses, v);
-                    v.SetBoolean(nullptr != ecClass->GetRelationshipClassCP());
+                    v.SetBoolean(ecClass->IsRelationshipClass());
                     classInstance->SetValue(METASCHEMA_PROPERTY_ClassDef_IsRelationshipClass, v);
 
                     //need to initialize relclass properties here
-                    if (nullptr != ecClass->GetRelationshipClassCP())
+                    if (ecClass->IsRelationshipClass())
                         {
 
                         }
@@ -755,7 +757,7 @@ void MetaSchemaInstanceGenerator::GenerateRelatedInstances(bvector<IECInstancePt
                 for (ECClassCP const& ecClass : relClassFromInstance->GetTarget().GetClasses())
                     {
                     IECInstancePtr classInstance;
-                    if (nullptr != ecClass->GetRelationshipClassCP())
+                    if (ecClass->IsRelationshipClass())
                         {
                         classInstance = m_metaSchema.GetClassCP(METASCHEMA_CLASS_RelClassDef)->GetDefaultStandaloneEnabler()->CreateInstance();
                         }
@@ -772,19 +774,19 @@ void MetaSchemaInstanceGenerator::GenerateRelatedInstances(bvector<IECInstancePt
                     classInstance->SetValue(METASCHEMA_PROPERTY_ClassDef_Schema, v);
                     v.SetUtf8CP(ecClass->GetDescription().c_str());
                     classInstance->SetValue(METASCHEMA_PROPERTY_ClassDef_Description, v);
-                    v.SetBoolean(ecClass->GetIsStruct());
+                    v.SetBoolean(ecClass->IsStructClass());
                     classInstance->SetValue(METASCHEMA_PROPERTY_ClassDef_IsStruct, v);
-                    v.SetBoolean(ecClass->GetIsCustomAttributeClass());
+                    v.SetBoolean(ecClass->IsCustomAttributeClass());
                     classInstance->SetValue(METASCHEMA_PROPERTY_ClassDef_IsCustomAttributeClass, v);
-                    v.SetBoolean(ecClass->GetIsDomainClass());
+                    v.SetBoolean(ecClass->IsEntityClass());
                     classInstance->SetValue(METASCHEMA_PROPERTY_ClassDef_IsDomainClass, v);
                     v.SetBoolean(ecClass->HasBaseClasses());
                     classInstance->SetValue(METASCHEMA_PROPERTY_ClassDef_HasBaseClasses, v);
-                    v.SetBoolean(nullptr != ecClass->GetRelationshipClassCP());
+                    v.SetBoolean(ecClass->IsRelationshipClass());
                     classInstance->SetValue(METASCHEMA_PROPERTY_ClassDef_IsRelationshipClass, v);
 
                     //need to initialize relclass properties here
-                    if (nullptr != ecClass->GetRelationshipClassCP())
+                    if (ecClass->IsRelationshipClass())
                         {
 
                         }
@@ -1176,8 +1178,8 @@ TEST_F(SchemaVisualizationTests, TestClassDiagram)
 //=======================================================================================
 extern "C" //[SVT_EXTERN]
     {
-    __declspec(dllimport) gvplugin_library_t gvplugin_dot_layout_LTX_library;
-    __declspec(dllimport) gvplugin_library_t gvplugin_core_LTX_library;
+    IMPORT_ATTRIBUTE gvplugin_library_t gvplugin_dot_layout_LTX_library;
+    IMPORT_ATTRIBUTE gvplugin_library_t gvplugin_core_LTX_library;
     }
 
 //=======================================================================================
@@ -1803,9 +1805,9 @@ public:
     BentleyGraphvizContext()
         {
         lt_preloaded_symbols[0] = { "gvplugin_dot_layout_LTX_library", (void*)(&gvplugin_dot_layout_LTX_library) };
-        lt_preloaded_symbols[0] = { "gvplugin_core_LTX_library", (void*)(&gvplugin_core_LTX_library) };
-        lt_preloaded_symbols[0] = { "gvplugin_mylib_LTX_library", (void*)(&gvplugin_mylib_LTX_library) };
-        lt_preloaded_symbols[0] = { 0, 0 };
+        lt_preloaded_symbols[1] = { "gvplugin_core_LTX_library", (void*)(&gvplugin_core_LTX_library) };
+        lt_preloaded_symbols[2] = { "gvplugin_mylib_LTX_library", (void*)(&gvplugin_mylib_LTX_library) };
+        lt_preloaded_symbols[3] = { 0, 0 };
         m_gvc = gvContextPlugins(lt_preloaded_symbols, 0);
         }
     ~BentleyGraphvizContext()
@@ -2131,3 +2133,4 @@ objects which will be displayed as view decorations, rather than persisting elem
 geometry to the DgnDb. These will make it easier to provide the intended interactivity.
 */
 
+#endif

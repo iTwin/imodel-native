@@ -231,56 +231,6 @@ public:
 
 typedef QvElemSet<QvKey32> T_QvElemSet;
 
-//=======================================================================================
-//! A list of parameters used in ECSql SELECT, INSERT, and UPDATE statements for a
-//! specific ECClass. Maps names to indices in the results of a SELECT statement or in
-//! the bindings of an INSERT or UPDATE statement.
-//! @ingroup DgnElementGroup
-// @bsiclass                                                     Paul.Connelly   09/15
-//=======================================================================================
-struct ECSqlClassParams
-{
-public:
-    enum class StatementType
-    {
-        Select          = 1 << 0, //!< Property should be included in SELECT statements from DgnElement::_LoadFromDb()
-        Insert          = 1 << 1, //!< Property should be included in INSERT statements from DgnElement::_InsertInDb()
-        Update          = 1 << 2, //!< Property should be included in UPDATE statements from DgnElement::_UpdateInDb()
-        ReadOnly        = Select | Insert, //!< Property cannot be modified via UPDATE statement
-        All             = Select | Insert | Update, //!< Property should be included in all ECSql statements
-        InsertUpdate    = Insert | Update, //!< Property should not be included in SELECT statements
-    };
-
-    struct Entry
-    {
-        Utf8CP          m_name;
-        StatementType   m_type;
-
-        Entry() : m_name(nullptr), m_type(StatementType::All) { }
-        Entry(Utf8CP name, StatementType type) : m_name(name), m_type(type) { }
-    };
-
-    typedef bvector<Entry> Entries;
-private:
-    Entries m_entries;
-public:
-    //! Adds a parameter to the list
-    //! @param[in]      parameterName The name of the parameter. @em Must be a pointer to a string with static storage duration.
-    //! @param[in]      type          The type(s) of statements in which this parameter is used.
-    DGNPLATFORM_EXPORT void Add(Utf8CP parameterName, StatementType type=StatementType::All);
-
-    //! Returns an index usable for accessing the columns with the specified name in the results of an ECSql SELECT query.
-    //! @param[in]      parameterName The name of the parameter
-    //! @return The index of the corresponding column in the query results, or -1 if no such column exists
-    DGNPLATFORM_EXPORT int GetSelectIndex(Utf8CP parameterName) const;
-//__PUBLISH_SECTION_END__
-    Entries const& GetEntries() const { return m_entries; }
-    void RemoveAllButSelect();
-//__PUBLISH_SECTION_START__
-};
-
-ENUM_IS_FLAGS(ECSqlClassParams::StatementType);
-
 #define DGNELEMENT_DECLARE_MEMBERS(__ECClassName__,__superclass__) \
     private: typedef __superclass__ T_Super;\
     public: static Utf8CP MyECClassName() {return __ECClassName__;}\
@@ -400,7 +350,7 @@ public:
         //! @param[in] modified the modified DgnElement (before undo)
         //! @return true to drop this appData, false to leave it attached to the DgnElement.
         //! @note This method is called for @b all AppData on both the original and the modified DgnElements.
-        virtual DropMe _OnReversedUpdate(DgnElementCR original, DgnElementCR modified) {return DropMe::No;}
+        virtual DropMe _OnReversedUpdate(DgnElementCR original, DgnElementCR modified) {return DropMe::Yes;}
 
         //! Called after the element was Deleted.
         //! @param[in]  el the DgnElement that was deleted
@@ -802,10 +752,10 @@ protected:
     //! @param[in]      statement    The SELECT statement which selected the data from the table
     //! @param[in]      selectParams The properties selected by the SELECT statement. Use this to obtain an index into the statement.
     //! @return DgnDbStatus::Success if the data was loaded successfully, or else an error status.
-    //! @note If you override this method, you @em must first call T_Super::_ExtractSelectParams, forwarding its status.
+    //! @note If you override this method, you @em must first call T_Super::_ReadSelectParams, forwarding its status.
     //! You should then extract your subclass properties from the supplied ECSqlStatement, using
     //! selectParams.GetParameterIndex() to look up the index of each parameter within the statement.
-    virtual DgnDbStatus _ExtractSelectParams(BeSQLite::EC::ECSqlStatement& statement, ECSqlClassParams const& selectParams) { return DgnDbStatus::Success; }
+    virtual DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement& statement, ECSqlClassParamsCR selectParams) { return DgnDbStatus::Success; }
 
     //! Override this method if your element needs to load additional data from the database when it is loaded (for example,
     //! look up related data in another table).
@@ -1003,6 +953,7 @@ protected:
     DGNPLATFORM_EXPORT virtual Code _GenerateDefaultCode();
 
     virtual GeometrySourceCP _ToGeometrySource() const {return nullptr;}
+    virtual SpatialElementCP _ToSpatialElement() const {return nullptr;}
     virtual PhysicalElementCP _ToPhysicalElement() const {return nullptr;}
     virtual AnnotationElementCP _ToAnnotationElement() const {return nullptr;}
     virtual DrawingElementCP _ToDrawingElement() const {return nullptr;}
@@ -1039,26 +990,28 @@ public:
     DGNPLATFORM_EXPORT GeometrySource2dCP ToGeometrySource2d() const;
     DGNPLATFORM_EXPORT GeometrySource3dCP ToGeometrySource3d() const;
 
-    DefinitionElementCP ToDefinitionElement() const {return _ToDefinitionElement();} //!< more efficient substitute for dynamic_cast<DefinitionElementCP>(el)
-    DictionaryElementCP ToDictionaryElement() const {return _ToDictionaryElement();} //!< more efficient substitute for dynamic_cast<DictionaryElementCP>(el)
-    PhysicalElementCP ToPhysicalElement() const {return _ToPhysicalElement();}    //!< more efficient substitute for dynamic_cast<PhysicalElementCP>(el)
-    AnnotationElementCP ToAnnotationElement() const {return _ToAnnotationElement();}       //!< more efficient substitute for dynamic_cast<AnnotationElementCP>(el)
-    DrawingElementCP ToDrawingElement() const {return _ToDrawingElement();}       //!< more efficient substitute for dynamic_cast<DrawingElementCP>(el)
-    SheetElementCP ToSheetElement() const {return _ToSheetElement();}       //!< more efficient substitute for dynamic_cast<SheetElementCP>(el)
-    IElementGroupCP ToIElementGroup() const {return _ToIElementGroup();}          //!< more efficient substitute for dynamic_cast<IElementGroup>(el)
-    SystemElementCP ToSystemElement() const {return _ToSystemElement();}          //!< more efficient substitute for dynamic_cast<SystemElementCP>(el)
+    DefinitionElementCP ToDefinitionElement() const {return _ToDefinitionElement();}    //!< more efficient substitute for dynamic_cast<DefinitionElementCP>(el)
+    DictionaryElementCP ToDictionaryElement() const {return _ToDictionaryElement();}    //!< more efficient substitute for dynamic_cast<DictionaryElementCP>(el)
+    SpatialElementCP ToSpatialElement() const {return _ToSpatialElement();}             //!< more efficient substitute for dynamic_cast<SpatialElementCP>(el)
+    PhysicalElementCP ToPhysicalElement() const {return _ToPhysicalElement();}          //!< more efficient substitute for dynamic_cast<PhysicalElementCP>(el)
+    AnnotationElementCP ToAnnotationElement() const {return _ToAnnotationElement();}    //!< more efficient substitute for dynamic_cast<AnnotationElementCP>(el)
+    DrawingElementCP ToDrawingElement() const {return _ToDrawingElement();}             //!< more efficient substitute for dynamic_cast<DrawingElementCP>(el)
+    SheetElementCP ToSheetElement() const {return _ToSheetElement();}                   //!< more efficient substitute for dynamic_cast<SheetElementCP>(el)
+    IElementGroupCP ToIElementGroup() const {return _ToIElementGroup();}                //!< more efficient substitute for dynamic_cast<IElementGroup>(el)
+    SystemElementCP ToSystemElement() const {return _ToSystemElement();}                //!< more efficient substitute for dynamic_cast<SystemElementCP>(el)
     
     GeometrySourceP ToGeometrySourceP() {return const_cast<GeometrySourceP>(_ToGeometrySource());} //!< more efficient substitute for dynamic_cast<GeometrySourceP>(el)
     GeometrySource2dP ToGeometrySource2dP() {return const_cast<GeometrySource2dP>(ToGeometrySource2d());} //!< more efficient substitute for dynamic_cast<GeometrySource2dP>(el)
     GeometrySource3dP ToGeometrySource3dP() {return const_cast<GeometrySource3dP>(ToGeometrySource3d());} //!< more efficient substitute for dynamic_cast<GeometrySource3dP>(el)
 
-    DefinitionElementP ToDefinitionElementP() {return const_cast<DefinitionElementP>(_ToDefinitionElement());} //!< more efficient substitute for dynamic_cast<DefinitionElementP>(el)
-    DictionaryElementP ToDictionaryElementP() {return const_cast<DictionaryElementP>(_ToDictionaryElement());} //!< more efficient substitute for dynamic_cast<DictionaryElementP>(el)
-    PhysicalElementP ToPhysicalElementP() {return const_cast<PhysicalElementP>(_ToPhysicalElement());}     //!< more efficient substitute for dynamic_cast<PhysicalElementP>(el)
-    AnnotationElementP ToAnnotationElementP() {return const_cast<AnnotationElementP>(_ToAnnotationElement());}         //!< more efficient substitute for dynamic_cast<AnnotationElementP>(el)
-    DrawingElementP ToDrawingElementP() {return const_cast<DrawingElementP>(_ToDrawingElement());}         //!< more efficient substitute for dynamic_cast<DrawingElementP>(el)
-    SheetElementP ToSheetElementP() {return const_cast<SheetElementP>(_ToSheetElement());}         //!< more efficient substitute for dynamic_cast<SheetElementP>(el)
-    SystemElementP ToSystemElementP() {return const_cast<SystemElementP>(_ToSystemElement());}             //!< more efficient substitute for dynamic_cast<SystemElementP>(el)
+    DefinitionElementP ToDefinitionElementP() {return const_cast<DefinitionElementP>(_ToDefinitionElement());}  //!< more efficient substitute for dynamic_cast<DefinitionElementP>(el)
+    DictionaryElementP ToDictionaryElementP() {return const_cast<DictionaryElementP>(_ToDictionaryElement());}  //!< more efficient substitute for dynamic_cast<DictionaryElementP>(el)
+    SpatialElementP ToSpatialElementP() {return const_cast<SpatialElementP>(_ToSpatialElement());}              //!< more efficient substitute for dynamic_cast<PhysicalElementP>(el)
+    PhysicalElementP ToPhysicalElementP() {return const_cast<PhysicalElementP>(_ToPhysicalElement());}          //!< more efficient substitute for dynamic_cast<PhysicalElementP>(el)
+    AnnotationElementP ToAnnotationElementP() {return const_cast<AnnotationElementP>(_ToAnnotationElement());}  //!< more efficient substitute for dynamic_cast<AnnotationElementP>(el)
+    DrawingElementP ToDrawingElementP() {return const_cast<DrawingElementP>(_ToDrawingElement());}              //!< more efficient substitute for dynamic_cast<DrawingElementP>(el)
+    SheetElementP ToSheetElementP() {return const_cast<SheetElementP>(_ToSheetElement());}                      //!< more efficient substitute for dynamic_cast<SheetElementP>(el)
+    SystemElementP ToSystemElementP() {return const_cast<SystemElementP>(_ToSystemElement());}                  //!< more efficient substitute for dynamic_cast<SystemElementP>(el)
     //! @}
 
     bool Is3d() const {return nullptr != ToGeometrySource3d();}                     //!< Determine whether this element is 3d or not
@@ -1595,21 +1548,37 @@ typedef GeometricElementCreateParams<Placement2d> ElementCreateParams2d;
 typedef GeometricElementCreateParams<Placement3d> ElementCreateParams3d;
 
 //=======================================================================================
-//! A 3d element that exists in the physical coordinate space of a DgnDb.
+//! An abstract base class for elements that occupy real world 3-dimensional space
 //! @ingroup DgnElementGroup
-// @bsiclass                                                    Keith.Bentley   04/15
+// @bsiclass                                                    Shaun.Sewall    12/15
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE PhysicalElement : GeometricElement3d<DgnElement>
+struct EXPORT_VTABLE_ATTRIBUTE SpatialElement : GeometricElement3d<DgnElement>
 {
-    DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_PhysicalElement, GeometricElement3d<DgnElement>)
+    DEFINE_T_SUPER(GeometricElement3d<DgnElement>);
 
 protected:
-    PhysicalElementCP _ToPhysicalElement() const override {return this;}
+    SpatialElementCP _ToSpatialElement() const override final {return this;}
 
 public:
     typedef ElementCreateParams3d CreateParams;
 
-    explicit PhysicalElement(CreateParams const& params) : T_Super(params, params.m_categoryId, params.m_placement) {}
+    explicit SpatialElement(CreateParams const& params) : T_Super(params, params.m_categoryId, params.m_placement) {}
+};
+
+//=======================================================================================
+//! A PhysicalElement is a SpatialElement that has mass and can be physically "touched".
+//! @ingroup DgnElementGroup
+// @bsiclass                                                    Keith.Bentley   04/15
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE PhysicalElement : SpatialElement
+{
+    DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_PhysicalElement, SpatialElement)
+
+protected:
+    PhysicalElementCP _ToPhysicalElement() const override final {return this;}
+
+public:
+    explicit PhysicalElement(CreateParams const& params) : T_Super(params) {}
 
     //! Create an instance of a PhysicalElement from a CreateParams.
     //! @note This is a static method that creates an instance of the PhysicalElement class. To create subclasses, use static methods on the appropriate class.
@@ -1619,6 +1588,20 @@ public:
     //! @param[in] model The PhysicalModel for the new PhysicalElement.
     //! @param[in] categoryId The category for the new PhysicalElement.
     DGNPLATFORM_EXPORT static PhysicalElementPtr Create(PhysicalModelR model, DgnCategoryId categoryId);
+};
+
+//=======================================================================================
+//! A SpatialElement that identifies a "tracked" real word 3-dimensional location but has no mass and cannot be "touched".
+//! Examples include grid lines, parcel boundaries, and work areas.
+//! @ingroup DgnElementGroup
+// @bsiclass                                                    Shaun.Sewall    12/15
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE SpatialLocationElement : SpatialElement
+{
+    DEFINE_T_SUPER(SpatialElement);
+
+public:
+    explicit SpatialLocationElement(CreateParams const& params) : T_Super(params) {}
 };
 
 //=======================================================================================
@@ -1853,23 +1836,28 @@ public:
 };
 
 //=======================================================================================
-//! @note Instead of using this class, create own subclass (somewhere in DgnElement hierarchy)
-//! and use the IElementGroupOf interface to add grouping behavior to that subclass.
-//! @note This class is only temporarily here to support DgnV8 conversion
-//! @private
-// @bsiclass                                                    Shaun.Sewall    05/15
+//! A SpatialElement that groups other SpatialElements using the ElementGroupsMembers relationship
+// @bsiclass                                                    Shaun.Sewall    12/15
 //=======================================================================================
-// WIP: Obsolete. Replaced by IElementGroup
-struct EXPORT_VTABLE_ATTRIBUTE ElementGroup : DgnElement, IElementGroupOf<DgnElement>
+struct EXPORT_VTABLE_ATTRIBUTE SpatialGroupElement : SpatialElement, IElementGroupOf<SpatialElement>
 {
-    DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_ElementGroup, DgnElement)
+    DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_SpatialGroupElement, SpatialElement)
 
 protected:
     Dgn::IElementGroupCP _ToIElementGroup() const override final {return this;}
     virtual Dgn::DgnElementCP _ToGroupElement() const override final {return this;}
 
 public:
-    explicit ElementGroup(CreateParams const& params) : T_Super(params) {}
+    //! @private
+    explicit SpatialGroupElement(CreateParams const& params) : T_Super(params) {}
+
+    //! Create a new SpatialGroupElement from a model and DgnCategoryId, using the default values for all other parameters.
+    //! @param[in] model The PhysicalModel for the new SpatialGroupElement.
+    //! @param[in] categoryId The category for the new SpatialGroupElement.
+    DGNPLATFORM_EXPORT static SpatialGroupElementPtr Create(PhysicalModelR model, DgnCategoryId categoryId);
+
+    //! Creates a new SpatialGroupElement
+    static SpatialGroupElementPtr Create(CreateParams const& params) {return new SpatialGroupElement(params);}
 };
 
 //=======================================================================================
@@ -1967,9 +1955,9 @@ private:
     struct ElementSelectStatement
     {
         BeSQLite::EC::CachedECSqlStatementPtr m_statement;
-        ECSqlClassParams const& m_params;
+        ECSqlClassParamsCR m_params;
 
-        ElementSelectStatement(BeSQLite::EC::CachedECSqlStatement* stmt, ECSqlClassParams const& params) : m_statement(stmt), m_params(params) { }
+        ElementSelectStatement(BeSQLite::EC::CachedECSqlStatement* stmt, ECSqlClassParamsCR params) : m_statement(stmt), m_params(params) { }
     };
 
     struct HandlerStatementCache
