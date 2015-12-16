@@ -45,36 +45,37 @@ NativeType &GetR () {return m_data;}
 NativeType const &GetCR () const {return m_data;}
 };
 
-JsSTRUCT(JsDPoint3d);
-JsSTRUCT(JsDPoint2d);
-JsSTRUCT(JsDVector3d);
-JsSTRUCT(JsDVector2d);
-JsSTRUCT(JsDRay3d);
-JsSTRUCT(JsDRange3d);
-JsSTRUCT(JsDPoint3dDVector3dDVector3d);
-JsSTRUCT(JsAngle);
-JsSTRUCT(JsYawPitchRollAngles);
-JsSTRUCT(JsRotMatrix);
-JsSTRUCT(JsTransform);
+JsSTRUCT(JsDPoint3d)
+JsSTRUCT(JsDPoint2d)
+JsSTRUCT(JsDVector3d)
+JsSTRUCT(JsDVector2d)
+JsSTRUCT(JsDRay3d)
+JsSTRUCT(JsDRange3d)
+JsSTRUCT(JsDPoint3dDVector3dDVector3d)
+JsSTRUCT(JsAngle)
+JsSTRUCT(JsYawPitchRollAngles)
+JsSTRUCT(JsRotMatrix)
+JsSTRUCT(JsTransform)
 JsSTRUCT(JsDPoint3dArray)
 JsSTRUCT(JsDoubleArray)
 
-JsSTRUCT(JsGeometry);
+JsSTRUCT(JsGeometry)
 
-    JsSTRUCT(JsCurvePrimitive);
-        JsSTRUCT(JsLineSegment);
-        JsSTRUCT(JsEllipticArc);
-        JsSTRUCT(JsBsplineCurve);
+    JsSTRUCT(JsCurvePrimitive)
+        JsSTRUCT(JsLineSegment)
+        JsSTRUCT(JsEllipticArc)
+        JsSTRUCT(JsBsplineCurve)
 
-    JsSTRUCT(JsCurveVector);
-        JsSTRUCT(JsPath);
-        JsSTRUCT(JsLoop);
-        JsSTRUCT(JsParityRegion);
-        JsSTRUCT(JsUnionRegion);
+    JsSTRUCT(JsCurveVector)
+        JsSTRUCT(JsUnstructuredCurveVector)
+        JsSTRUCT(JsPath)
+        JsSTRUCT(JsLoop)
+        JsSTRUCT(JsParityRegion)
+        JsSTRUCT(JsUnionRegion)
 
-    JsSTRUCT(JsBsplineSurface);
+    JsSTRUCT(JsBsplineSurface)
 
-    JsSTRUCT(JsSolidPrimitive);
+    JsSTRUCT(JsSolidPrimitive)
         JsSTRUCT(JsDgnCone)
         JsSTRUCT(JsDgnSphere)
         JsSTRUCT(JsDgnTorusPipe)
@@ -98,10 +99,13 @@ JsDVector3dP CreateJsVector (DVec3dCR data, double length);
 // Create vector with specfied length -- return nullptr if input vector is zero length
 JsDVector2dP CreateJsVector (DVec2dCR data, double length);
 
+// truncate to size_t and check range.
+bool TryDoubleToIndex (double a, size_t upperBound, size_t &index);
 
 // Base class for the CurvePrimitive+Surface+Mesh+SolidPrimitive tree
 struct JsGeometry : RefCountedBase
 {
+virtual JsGeometry *Clone () = 0;
 };
 
 

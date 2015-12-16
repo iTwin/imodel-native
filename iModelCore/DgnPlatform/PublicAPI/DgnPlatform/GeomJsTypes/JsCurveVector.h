@@ -20,6 +20,10 @@ BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 struct JsCurveVector: RefCountedBase
 {
 friend struct JsUnionRegion;
+friend struct JsParityRegion;
+friend struct JsPath;
+friend struct JsLoop;
+friend struct JsUnstructuredCurveVector;
 protected :
     CurveVectorPtr m_curveVector;
 
@@ -30,14 +34,42 @@ protected :
 public:
     JsCurveVector () {}
 
+    JsCurveVectorP StgronglyTypedJsCurveVector (CurveVectorPtr &data);
     JsCurveVector (CurveVectorPtr curveVector) : m_curveVector (curveVector) {}
     JsCurveVectorP Clone () {return new JsCurveVector (m_curveVector->Clone ());} 
+
+    // wrap a native curve vector as the strongest Js type possible . . .
+    static JsCurveVectorP StronglyTypedJsCurveVector (CurveVectorPtr &data);
 
 
     CurveVectorPtr GetCurveVectorPtr (){return m_curveVector;}
     double BoundaryType (){return (double)(int)m_curveVector->GetBoundaryType ();}
+
+    JsCurveVectorP MemberAsCurveVector (double doubleIndex) const;
+    JsCurvePrimitiveP MemberAsCurvePrimitive (double index) const;
+
 };
 
+//=======================================================================================
+// @bsiclass                                                    Eariln.Lutz     12/15
+//=======================================================================================
+struct JsUnstructuredCurveVector : JsCurveVector
+{
+
+    JsUnstructuredCurveVector (CurveVectorPtr const &curveVector)
+        {
+        Set (curveVector);
+        }
+
+public:
+    JsUnstructuredCurveVector ()
+        {
+        Set (CurveVector::Create(CurveVector::BOUNDARY_TYPE_None));
+        }
+    void Add (JsCurvePrimitiveP primitive){m_curveVector->Add (primitive->Get ());}
+    void Add (JsCurveVectorP child){m_curveVector->Add (child->GetCurveVectorPtr ());}
+    JsUnstructuredCurveVectorP Clone () {return new JsUnstructuredCurveVector(m_curveVector->Clone ());} 
+};
 //=======================================================================================
 // @bsiclass                                                    Eariln.Lutz     12/15
 //=======================================================================================
@@ -62,12 +94,11 @@ public:
 //=======================================================================================
 struct JsLoop : JsCurveVector
 {
+
     JsLoop (CurveVectorPtr const &path)
         {
         Set (path);
         }
-friend struct JsParityRegion;
-friend struct JsUnionRegion;
 public:
     JsLoop ()
         {

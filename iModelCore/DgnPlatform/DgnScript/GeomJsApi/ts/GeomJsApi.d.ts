@@ -1,5 +1,8 @@
 declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/ 
 {
+/********************************************************************************
+* ISOLATED CLASSES:  DPoint3d, DPoint2d, DVector3d, DVector2d, RotMatrix, Transform
+***********************************************************************************/
     //! A wrapper for BentleyApi::DPoint3d
     class DPoint3d implements IDisposable {
         /*** NATIVE_TYPE_NAME = JsDPoint3d ***/ 
@@ -477,15 +480,28 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
         Dispose(): void;
     }
 
-
-
+/********************************************************************************
+* TREE CLASSES:
+*   (CurvePrimitive LineSegment EllipticArc BsplineCurve)
+*   (CurveVector    Path Loop ParityRegion UnionRegion UnstructuredCurveVector)
+*   (SolidPrimitive DgnBox DgnSphere DgnTorusPipe DgnCone DgnExtrusion DgnRotationalSweep)
+*   Polyface
+*   BsplineSurface
+***********************************************************************************/
+class Geometry implements IDisposable, BeJsProjection_SuppressConstructor
+{
+    /*** NATIVE_TYPE_NAME = JsGeometry ***/ 
+Clone (): GeometryP;
+    OnDispose(): void;
+    Dispose(): void;
+}
+type GeometryP = cxx_pointer<Geometry>;
    
 //! A wrapper for BentleyApi::JsCurvePrimitive
 class CurvePrimitive implements IDisposable
     {
     /*** NATIVE_TYPE_NAME = JsCurvePrimitive ***/ 
     Clone(): CurvePrimitiveP;
-    constructor ();
     static CreateLineString(points: DPoint3dArrayP): CurvePrimitiveP;
     CurvePrimitiveType(): cxx_double;
     PointAtFraction(f: cxx_double): DPoint3dP; 
@@ -503,7 +519,6 @@ class CurvePrimitive implements IDisposable
         /*** NATIVE_TYPE_NAME = JsLineSegment ***/
         Clone(): LineSegmentP;
         constructor (pointA : DPoint3dP, pointB : DPoint3dP);
-        constructor();
         OnDispose(): void;
         Dispose(): void;
     }
@@ -516,8 +531,7 @@ class CurvePrimitive implements IDisposable
     class EllipticArc extends CurvePrimitive implements IDisposable {
         /*** NATIVE_TYPE_NAME = JsEllipticArc ***/
         Clone(): EllipticArcP;
-        constructor();
-        constructor(pointA: DPoint3dP, pointB: DPoint3dP);
+        constructor(center: DPoint3dP, vector0: DVector3dP, vector90: DVector3dP, startAngle: AngleP, sweepAngle : AngleP);
         OnDispose(): void;
         Dispose(): void;
     }
@@ -529,7 +543,7 @@ class CurvePrimitive implements IDisposable
     //! Because curve contruction is error-prone and proper constructors cannot indicate errors, 
     //!   curve creation is through the static methods.
     //!  , BeJsProjection_SuppressConstructor
-    class BsplineCurve extends CurvePrimitive implements IDisposable
+    class BsplineCurve extends CurvePrimitive implements IDisposable, BeJsProjection_SuppressConstructor
     {
         /*** NATIVE_TYPE_NAME = JsBsplineCurve ***/
         constructor ();
@@ -549,12 +563,21 @@ class CurvePrimitive implements IDisposable
 
 
     //! A wrapper for BentleyApi::JsCurveVector
-    class CurveVector implements IDisposable {
+    //! A CurveVector is a collection of individual curves or collections of curves.
+    //! An object the base type CurveVector is never instantated -- only derived types will be instantiated.
+    //!
+    class CurveVector implements IDisposable, BeJsProjection_SuppressConstructor {
         /*** NATIVE_TYPE_NAME = JsCurveVector ***/
         Clone(): CurveVectorP;
-        constructor();
         BoundaryType(): cxx_double;
-
+        // Access the [index] member of the curve vector.
+        // The returned value is the strongest CurvePrimitive subtype possible.
+        // If the member at this index is a child curve vector, the return is null -- use MemberCurveVector to access it.
+        MemberAsCurvePrimitive (index: cxx_double) :CurvePrimitiveP;
+        // Access the [index] member of the curve vector
+        // The returned value is the strongest CurveVector subtype possible.
+        // If the member at this index is a leaf CurvePrimitive type, the return is null -- use MemberCurvePrimitive to access it.
+        MemberAsCurveVector (index: cxx_double) :CurveVectorP;
         OnDispose(): void;
         Dispose(): void;
     }
@@ -564,8 +587,8 @@ class CurvePrimitive implements IDisposable
     //! A wrapper for BentleyApi::JsPath
     class Path extends CurveVector implements IDisposable {
         /*** NATIVE_TYPE_NAME = JsPath ***/
-        Clone(): PathP;
         constructor();
+        Clone(): PathP;
         Add(primitive: CurvePrimitiveP): void;
         OnDispose(): void;
         Dispose(): void;
@@ -584,6 +607,18 @@ class CurvePrimitive implements IDisposable
     }
 
     type LoopP = cxx_pointer<Loop>;
+    //! A wrapper for BentleyApi::JsUnstructuredCurves
+    class UnstructuredCurves extends CurveVector implements IDisposable {
+        /*** NATIVE_TYPE_NAME = JsUnstructuredCurveVector ***/
+        Clone(): UnstructuredCurvesP;
+        constructor();
+        Add(primitive: CurvePrimitiveP): void;
+        Add(primitive: CurveVectorP): void;
+        OnDispose(): void;
+        Dispose(): void;
+    }
+
+    type UnstructuredCurvesP = cxx_pointer<UnstructuredCurves>;
 
     //! A wrapper for BentleyApi::JsParityRegion
     class ParityRegion extends CurveVector implements IDisposable {
@@ -685,9 +720,8 @@ type PolyfaceVisitorP = cxx_pointer<PolyfaceVisitor>;
 
 
     //! A wrapper for BentleyApi::JsCurvePrimitive
-    class SolidPrimitive implements IDisposable {
+    class SolidPrimitive implements IDisposable, BeJsProjection_SuppressConstructor {
         /*** NATIVE_TYPE_NAME = JsSolidPrimitive ***/
-        /** base class clone method -- actually returns clone of the concrete class */
         Clone(): SolidPrimitiveP;
         OnDispose(): void;
         Dispose(): void;

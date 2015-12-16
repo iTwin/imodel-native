@@ -15,6 +15,7 @@
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
 
+
 //=======================================================================================
 // @bsiclass                                                    Eariln.Lutz     08/15
 //=======================================================================================
@@ -30,10 +31,15 @@ protected :
         }
 public:
     JsCurvePrimitive () {}
-
     JsCurvePrimitive (ICurvePrimitivePtr curvePrimitive) : m_curvePrimitive (curvePrimitive) {}
-    JsCurvePrimitiveP Clone () {return new JsCurvePrimitive (m_curvePrimitive->Clone ());} 
+    virtual JsCurvePrimitiveP Clone () override {return new JsCurvePrimitive (m_curvePrimitive->Clone ());} 
     ICurvePrimitivePtr Get () {return m_curvePrimitive;}
+
+    // Return the native ICurvePrimitive wrapped as the strongest Js type possible.
+    // optionally let child CurveVector return as (true,false)==>(nullptr, JsCurvePrimitive)
+    static JsCurvePrimitiveP StronglyTypedJsCurvePrimitive (ICurvePrimitivePtr &data, bool nullifyCurveVector);
+
+
     static JsCurvePrimitiveP CreateLineString (JsDPoint3dArrayP data)
         {
         ICurvePrimitivePtr cp = ICurvePrimitive::CreateLineString (data->GetRef ());
@@ -80,7 +86,7 @@ public:
         ICurvePrimitivePtr cp = ICurvePrimitive::CreateLine (DSegment3d::From (pointA->Get (), pointB->Get ()));
         Set (cp);
         }
-    JsLineSegment * Clone (){return new JsLineSegment (m_curvePrimitive->Clone ());}
+    virtual JsLineSegment * Clone () override {return new JsLineSegment (m_curvePrimitive->Clone ());}
 
 };
 
@@ -96,7 +102,7 @@ public:
         Set(cp);
         }
 
-    JsEllipticArc * Clone (){return new JsEllipticArc (m_curvePrimitive->Clone ());}
+    virtual JsEllipticArc * Clone () override {return new JsEllipticArc (m_curvePrimitive->Clone ());}
 
 JsDPoint3d * GetCenter()
     {
@@ -137,7 +143,7 @@ private:
 public:
     JsBsplineCurve () {}
     JsBsplineCurve (ICurvePrimitivePtr const &data) {Set (data);}
-    JsBsplineCurve * Clone (){return new JsBsplineCurve (m_curvePrimitive->Clone ());}
+    virtual JsBsplineCurve * Clone () override {return new JsBsplineCurve (m_curvePrimitive->Clone ());}
 
     static JsBsplineCurve * CreateFromPoles (JsDPoint3dArrayP xyz, 
         JsDoubleArrayP weights, JsDoubleArrayP knots,

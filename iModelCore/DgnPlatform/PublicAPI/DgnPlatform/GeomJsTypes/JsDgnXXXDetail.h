@@ -16,7 +16,7 @@ BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
 #ifdef abc
 //=======================================================================================
-// @bsiclass                                                    Eariln.Lutz     11/15
+// @bsiclass                                                    Eariln.Lutz     12/15
 //=======================================================================================
 struct JsDgnExtrusionDetail: JsGeomWrapperBase <DgnExtrusionDetail>
 {
@@ -34,6 +34,9 @@ public:
 };
 #endif
 
+//=======================================================================================
+// @bsiclass                                                    Eariln.Lutz     12/15
+//=======================================================================================
 struct JsSolidPrimitive : JsGeometry
 {
 private:
@@ -51,6 +54,9 @@ virtual JsSolidPrimitiveP Clone ();
     ISolidPrimitivePtr GetISolidPrimitivePtr() {return m_solidPrimitive;}
 };
 
+//=======================================================================================
+// @bsiclass                                                    Eariln.Lutz     12/15
+//=======================================================================================
 struct JsDgnCone : JsSolidPrimitive
 {
 public:
@@ -66,7 +72,7 @@ static JsDgnConeP CreateCircularCone (JsDPoint3dP pointA, JsDPoint3dP pointB, do
 };
 
 //=======================================================================================
-// @bsiclass                                                    Eariln.Lutz     11/15
+// @bsiclass                                                    Eariln.Lutz     12/15
 //=======================================================================================
 struct JsDgnSphere: JsSolidPrimitive
 {
@@ -84,7 +90,7 @@ static JsDgnSphereP CreateSphere (JsDPoint3dP center, double radius)
 };
 
 //=======================================================================================
-// @bsiclass                                                    Eariln.Lutz     11/15
+// @bsiclass                                                    Eariln.Lutz     12/15
 //=======================================================================================
 struct JsDgnTorusPipe: JsSolidPrimitive
 {
@@ -115,7 +121,7 @@ static JsDgnTorusPipeP CreateTorusPipe (
 
 
 //=======================================================================================
-// @bsiclass                                                    Eariln.Lutz     11/15
+// @bsiclass                                                    Eariln.Lutz     12/15
 //=======================================================================================
 struct JsDgnBox: JsSolidPrimitive
 {
@@ -154,7 +160,7 @@ public:
 };
 
 //=======================================================================================
-// @bsiclass                                                    Eariln.Lutz     11/15
+// @bsiclass                                                    Eariln.Lutz     12/15
 //=======================================================================================
 struct JsDgnExtrusion: JsSolidPrimitive
 {
@@ -181,7 +187,7 @@ public:
 };
 
 //=======================================================================================
-// @bsiclass                                                    Eariln.Lutz     11/15
+// @bsiclass                                                    Eariln.Lutz     12/15
 //=======================================================================================
 struct JsDgnRotationalSweep: JsSolidPrimitive
 {

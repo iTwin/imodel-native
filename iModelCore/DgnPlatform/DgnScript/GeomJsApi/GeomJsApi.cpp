@@ -23,12 +23,32 @@ JsDVector3dP CreateJsVector (DVec3dCR data) {return new JsDVector3d (data);}
 JsDVector2dP CreateJsVector (DVec2dCR data) {return new JsDVector2d (data);}
 
 
+//=======================================================================================
+//                                                                      Eariln.Lutz     12/15
+//=======================================================================================
+bool TryDoubleToIndex (double a, size_t upperBound, size_t &index)
+    {
+    index = 0;
+    if (a < 0.0)
+        return false;
+    index = (size_t) a;
+    if (index < upperBound)
+        return true;
+    index = SIZE_MAX;
+    return false;
+    }
 
+//=======================================================================================
+//                                                                      Eariln.Lutz     12/15
+//=======================================================================================
 static double SmallDistance ()
     {
     return 1.0e-10;
     }
 
+//=======================================================================================
+//                                                                      Eariln.Lutz     12/15
+//=======================================================================================
 JsDVector3dP CreateJsVector (DVec3dCR data, double length)
         {
         double d = data.Magnitude ();
@@ -37,6 +57,9 @@ JsDVector3dP CreateJsVector (DVec3dCR data, double length)
         return new JsDVector3d (DVec3d::FromScale (data, length / d));
         }
 
+//=======================================================================================
+//                                                                      Eariln.Lutz     12/15
+//=======================================================================================
 JsDVector2dP CreateJsVector (DVec2dCR data, double length)
         {
         double d = data.Magnitude ();
@@ -45,6 +68,9 @@ JsDVector2dP CreateJsVector (DVec2dCR data, double length)
         return new JsDVector2d (DVec2d::FromScale (data, length / d));
         }
 
+//=======================================================================================
+//                                                                      Eariln.Lutz     12/15
+//=======================================================================================
 JsSolidPrimitiveP JsSolidPrimitive::Clone ()
     {
     switch (m_solidPrimitive->GetSolidPrimitiveType ())
@@ -60,6 +86,93 @@ JsSolidPrimitiveP JsSolidPrimitive::Clone ()
         }
     return nullptr;
     }
+
+//=======================================================================================
+//                                                                      Eariln.Lutz     12/15
+//=======================================================================================
+JsCurveVectorP JsCurveVector::StronglyTypedJsCurveVector (CurveVectorPtr &data)
+    {
+    if (!data.IsValid ())
+        return nullptr;
+    switch (data->GetBoundaryType ())
+        {
+        case CurveVector::BOUNDARY_TYPE_None:
+            return new JsUnstructuredCurveVector (data);
+        case CurveVector::BOUNDARY_TYPE_Outer:
+        case CurveVector::BOUNDARY_TYPE_Inner:
+            return new JsLoop (data);
+        case CurveVector::BOUNDARY_TYPE_Open:
+            return new JsPath (data);
+        case CurveVector::BOUNDARY_TYPE_ParityRegion:
+            return new JsParityRegion (data);
+        case CurveVector::BOUNDARY_TYPE_UnionRegion:
+            return new JsUnionRegion (data);
+        }
+    // Those are all the types . . . this should never happen, but treat it like BOUNDARY_TYPE_None
+    return new JsUnstructuredCurveVector (data);
+    }
+
+//=======================================================================================
+//                                                                      Eariln.Lutz     12/15
+//=======================================================================================
+JsCurvePrimitiveP JsCurveVector::MemberAsCurvePrimitive (double doubleIndex) const
+    {
+    size_t index;
+    if (TryDoubleToIndex (doubleIndex, m_curveVector->size (), index)
+        && m_curveVector->at (index).IsValid ())
+        {
+        return JsCurvePrimitive::StronglyTypedJsCurvePrimitive (m_curveVector->at (index), true);
+        }
+    return nullptr;
+    }
+
+//=======================================================================================
+//                                                                      Eariln.Lutz     12/15
+//=======================================================================================
+JsCurveVectorP JsCurveVector::MemberAsCurveVector (double doubleIndex) const
+    {
+    size_t index;
+    if (TryDoubleToIndex (doubleIndex, m_curveVector->size (), index)
+            && m_curveVector->at (index).IsValid ())
+        {
+        auto child = m_curveVector->at (index)->GetChildCurveVectorP ();
+        if (child != nullptr)
+            return StronglyTypedJsCurveVector (child);
+        }
+    return nullptr;
+    }
+
+
+//=======================================================================================
+//                                                                      Eariln.Lutz     12/15
+//=======================================================================================
+JsCurvePrimitiveP JsCurvePrimitive::StronglyTypedJsCurvePrimitive (ICurvePrimitivePtr &data, bool nullifyCurveVector)
+    {
+    if (!data.IsValid ())
+        return nullptr;
+    switch (data->GetCurvePrimitiveType ())
+        {
+        case ICurvePrimitive::CurvePrimitiveType::CURVE_PRIMITIVE_TYPE_Line:
+            return new JsLineSegment (data);
+        case ICurvePrimitive::CurvePrimitiveType::CURVE_PRIMITIVE_TYPE_Arc:
+            return new JsEllipticArc (data);
+        case ICurvePrimitive::CurvePrimitiveType::CURVE_PRIMITIVE_TYPE_BsplineCurve:
+            return new JsBsplineCurve (data);
+        case ICurvePrimitive::CurvePrimitiveType::CURVE_PRIMITIVE_TYPE_CurveVector:
+            if (nullifyCurveVector)
+                return nullptr;
+            else
+                return new JsCurvePrimitive (data);
+        }
+    // wrap all Bspline subtypes with no Js support as just BsplineCurve ...
+    auto proxy = data->GetProxyBsplineCurvePtr ();
+    if (proxy.IsValid ())
+        return new JsBsplineCurve (data);
+    // wrap everything else as curve primitive base type ....
+    return new JsCurvePrimitive (data);
+    }
+
+
 END_BENTLEY_DGNPLATFORM_NAMESPACE
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson                      06/15
