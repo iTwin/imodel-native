@@ -190,6 +190,9 @@
     <ClCompile Include="Published\ECSqlMetadataQueryTest.cpp">
       <Filter>Published</Filter>
     </ClCompile>
+    <ClCompile Include="Published\ECSqlStatementTestsSchemaHelper.cpp">
+      <Filter>Published</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Performance\PerformanceTests.h">
