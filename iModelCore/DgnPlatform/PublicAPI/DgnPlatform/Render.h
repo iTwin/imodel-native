@@ -1210,9 +1210,10 @@ struct Target : RefCounted<NonCopyableClass>
     typedef ImageUtilities::RgbImageInfo CapturedImageInfo;
 
 protected:
-    DevicePtr   m_device;
-    ScenePtr    m_currentScene;
-    Decorations m_decorations;
+    DevicePtr           m_device;
+    ScenePtr            m_currentScene;
+    Decorations         m_decorations;
+    BeAtomic<uint32_t>  m_lastFrameMillis;
 
     virtual GraphicPtr _CreateGraphic(Graphic::CreateParams const& params) = 0;
     virtual void _AdjustBrightness(bool useFixedAdaptation, double brightness) = 0;
@@ -1229,7 +1230,7 @@ public:
     virtual double _GetCameraFrustumNearScaleLimit() const = 0;
     virtual bool _WantInvertBlackBackground() {return false;}
 
-    Target(Device* device) : m_device(device) {}
+    Target(Device* device) : m_device(device) { m_lastFrameMillis.store(0); }
 
     void ChangeScene(SceneR scene) {_ChangeScene(scene);}
     void DrawFrame(PlanCR plan) {_DrawFrame(plan);}
@@ -1244,6 +1245,9 @@ public:
     MaterialPtr GetMaterial(DgnMaterialId id, DgnDbR dgndb) const {return _GetMaterial(id, dgndb);}
     TexturePtr GetTexture(DgnTextureId id, DgnDbR dgndb) const {return _GetTexture(id, dgndb);}
     TexturePtr CreateTileSection(Image* image, bool enableAlpha) const {return _CreateTileSection(image, enableAlpha);}
+
+    uint32_t GetLastFrameMillis() const { return m_lastFrameMillis.load(); }
+    void RecordLastFrameMillis(uint32_t millis) { m_lastFrameMillis.store(millis); }
 };
 
 END_BENTLEY_RENDER_NAMESPACE

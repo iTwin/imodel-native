@@ -16,7 +16,8 @@
 #define DEBUG_THREADS 1
 #endif
 
-#define TRACE_QUERY_LOGIC 1
+//#define TRACE_QUERY_LOGIC 1
+//#define DEBUG_CALLS 1
 
 BeThreadLocalStorage g_queryThreadChecker;
 
@@ -473,6 +474,9 @@ bool ProcessorImpl::_Process()
     else
         {
         SearchRangeTree(filter);
+#if defined (DEBUG_CALLS)
+        printf("QMQ: ncalls=%d, nscores=%d\n", filter.m_nCalls, filter.m_nScores);
+#endif
         m_results->m_reachedMaxElements = (filter.m_occlusionScoreMap.size() == m_params.m_maxElements);
         m_results->m_eliminatedByLOD = filter.m_eliminatedByLOD;
 

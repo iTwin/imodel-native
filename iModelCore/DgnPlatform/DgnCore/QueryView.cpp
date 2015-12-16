@@ -17,7 +17,7 @@
     #define MAX_TO_DRAW_IN_DYNAMIC_UPDATE  1700
 #endif
 
-#define TRACE_QUERY_LOGIC 1
+//#define TRACE_QUERY_LOGIC 1
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   07/12
@@ -195,7 +195,7 @@ void QueryViewController::LoadElementsForUpdate(DgnViewportR viewport, DrawPurpo
 //---------------------------------------------------------------------------------------
 void QueryViewController::StartSelectProcessing(DgnViewportR viewport, DrawPurpose updateType)
     {
-    uint32_t hitLimit = GetMaxElementsToLoad();
+    uint32_t hitLimit = GetMaxElementsToLoad(viewport);
     double minimumPixels = _GetMinimumSizePixels(updateType);
 
     size_t lastSize = 0;
@@ -700,10 +700,10 @@ uint64_t QueryViewController::GetMaxElementMemory()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    02/2013
 //---------------------------------------------------------------------------------------
-uint32_t QueryViewController::GetMaxElementsToLoad()
+uint32_t QueryViewController::GetMaxElementsToLoad(DgnViewportCR vp)
     {
     uint32_t maxElementsToLoad = _GetMaxElementsToLoad();
-    int32_t inputFactor = _GetMaxElementFactor();
+    int32_t inputFactor = _GetMaxElementFactor(vp);
 
     if (inputFactor < -100)
         inputFactor = -100;
@@ -714,5 +714,40 @@ uint32_t QueryViewController::GetMaxElementsToLoad()
     double maxElementsFactor = inputFactor/100.0;
     maxElementsToLoad += static_cast <int> (static_cast <double> (maxElementsToLoad) * maxElementsFactor * 0.90);
 
+#if defined (TRACE_QUERY_LOGIC)
+    printf("QVC: Max Elements to Load=%d\n", maxElementsToLoad);
+#endif
     return maxElementsToLoad;
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+int32_t QueryViewController::_GetMaxElementFactor(DgnViewportCR vp)
+    {
+    // NEEDSWORK: We will undoubtedly need to tweak this quite a bit to get good results
+    // Want to reduce the number of elements we load when framerate is low, and increase when framerate is high
+    static const double s_targetFrameRate = 30.0;
+    static const double s_minFrameRate = 10.0;
+    static const double s_spread = s_targetFrameRate - s_minFrameRate;
+
+    auto target = vp.GetRenderTarget();
+    double lastFrameMillis = nullptr != target ? static_cast<double>(target->GetLastFrameMillis()) : 0.0;
+    if (0.0 == lastFrameMillis)
+        return 0; // no adjustment...
+
+    double lastFrameSeconds = lastFrameMillis / 1000.0;
+    if (nullptr != m_queryModel.GetCurrentResults())
+        lastFrameSeconds += m_queryModel.GetCurrentResults()->GetElapsedSeconds();
+
+    double fps = std::max(1.0 / lastFrameSeconds, s_minFrameRate);
+
+    double diff = fps - s_targetFrameRate;
+    double factor = (100.0 / s_spread) * diff;
+
+#if defined (TRACE_QUERY_LOGIC)
+    printf("QVC: MaxElementFactor: %d (LastFrameSeconds: %f) (FPS: %f)\n", static_cast<int32_t>(factor), lastFrameSeconds, fps);
+#endif
+    return static_cast<int32_t>(factor);
+    }
+

@@ -155,7 +155,7 @@ __PUBLISH_INSERT_FILE__  QueryView_GetRTreeMatchSql.sampleCode
 
     //! Return a value in the range -100 (fewest) to 100 (most) to determine the maximum number of elements loaded by the query.
     //! 0 means the "default" number of elements.
-    virtual int32_t _GetMaxElementFactor() {return 0;}
+    DGNPLATFORM_EXPORT virtual int32_t _GetMaxElementFactor(DgnViewportCR vp);
 
     //! Return the size in pixels of the smallest element that should be displayed.
     virtual double _GetMinimumSizePixels(DrawPurpose updateType) {return 0.1;}
@@ -179,7 +179,7 @@ public:
     DGNPLATFORM_EXPORT uint64_t GetMaxElementMemory();
 
     //! Return the maximum number of elements to hold in the associated QueryModel.
-    DGNPLATFORM_EXPORT uint32_t GetMaxElementsToLoad();
+    DGNPLATFORM_EXPORT uint32_t GetMaxElementsToLoad(DgnViewportCR vp);
 
     //! Get the list of elements that are always drawn
     DgnElementIdSet const& GetAlwaysDrawn() {return m_alwaysDrawn;}
