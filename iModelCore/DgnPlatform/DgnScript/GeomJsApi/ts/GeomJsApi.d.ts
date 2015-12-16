@@ -498,7 +498,7 @@ Clone (): GeometryP;
 type GeometryP = cxx_pointer<Geometry>;
    
 //! A wrapper for BentleyApi::JsCurvePrimitive
-class CurvePrimitive implements IDisposable
+class CurvePrimitive extends Geometry implements BeJsProjection_SuppressConstructor
     {
     /*** NATIVE_TYPE_NAME = JsCurvePrimitive ***/ 
     Clone(): CurvePrimitiveP;
@@ -506,8 +506,6 @@ class CurvePrimitive implements IDisposable
     CurvePrimitiveType(): cxx_double;
     PointAtFraction(f: cxx_double): DPoint3dP; 
 
-    OnDispose(): void;
-    Dispose(): void;
     }
 
     type CurvePrimitiveP = cxx_pointer<CurvePrimitive>;
@@ -515,12 +513,10 @@ class CurvePrimitive implements IDisposable
 
 
     //! A wrapper for BentleyApi::JsLineSegment
-    class LineSegment extends CurvePrimitive implements IDisposable {
+    class LineSegment extends CurvePrimitive {
         /*** NATIVE_TYPE_NAME = JsLineSegment ***/
         Clone(): LineSegmentP;
         constructor (pointA : DPoint3dP, pointB : DPoint3dP);
-        OnDispose(): void;
-        Dispose(): void;
     }
 
     type LineSegmentP = cxx_pointer<LineSegment>;
@@ -528,12 +524,10 @@ class CurvePrimitive implements IDisposable
 
 
     //! A wrapper for BentleyApi::JsEllipticArc
-    class EllipticArc extends CurvePrimitive implements IDisposable {
+    class EllipticArc extends CurvePrimitive {
         /*** NATIVE_TYPE_NAME = JsEllipticArc ***/
         Clone(): EllipticArcP;
         constructor(center: DPoint3dP, vector0: DVector3dP, vector90: DVector3dP, startAngle: AngleP, sweepAngle : AngleP);
-        OnDispose(): void;
-        Dispose(): void;
     }
 
     type EllipticArcP = cxx_pointer<EllipticArc>;
@@ -543,13 +537,12 @@ class CurvePrimitive implements IDisposable
     //! Because curve contruction is error-prone and proper constructors cannot indicate errors, 
     //!   curve creation is through the static methods.
     //!  , BeJsProjection_SuppressConstructor
-    class BsplineCurve extends CurvePrimitive implements IDisposable, BeJsProjection_SuppressConstructor
+    class BsplineCurve extends CurvePrimitive implements BeJsProjection_SuppressConstructor
     {
         /*** NATIVE_TYPE_NAME = JsBsplineCurve ***/
         constructor ();
         Clone(): BsplineCurveP;
-        OnDispose(): void;
-        Dispose(): void;
+        
         IsPeriodic(): cxx_bool;
         static CreateFromPoles(xyz: DPoint3dArrayP,
             weights: DoubleArrayP,
@@ -566,7 +559,7 @@ class CurvePrimitive implements IDisposable
     //! A CurveVector is a collection of individual curves or collections of curves.
     //! An object the base type CurveVector is never instantated -- only derived types will be instantiated.
     //!
-    class CurveVector implements IDisposable, BeJsProjection_SuppressConstructor {
+    class CurveVector extends Geometry implements BeJsProjection_SuppressConstructor {
         /*** NATIVE_TYPE_NAME = JsCurveVector ***/
         Clone(): CurveVectorP;
         BoundaryType(): cxx_double;
@@ -578,68 +571,56 @@ class CurvePrimitive implements IDisposable
         // The returned value is the strongest CurveVector subtype possible.
         // If the member at this index is a leaf CurvePrimitive type, the return is null -- use MemberCurvePrimitive to access it.
         MemberAsCurveVector (index: cxx_double) :CurveVectorP;
-        OnDispose(): void;
-        Dispose(): void;
     }
 
     type CurveVectorP = cxx_pointer<CurveVector>;
 
     //! A wrapper for BentleyApi::JsPath
-    class Path extends CurveVector implements IDisposable {
+    class Path extends CurveVector {
         /*** NATIVE_TYPE_NAME = JsPath ***/
         constructor();
         Clone(): PathP;
         Add(primitive: CurvePrimitiveP): void;
-        OnDispose(): void;
-        Dispose(): void;
     }
 
     type PathP = cxx_pointer<Path>;
 
     //! A wrapper for BentleyApi::JsLoop
-    class Loop extends CurveVector implements IDisposable {
+    class Loop extends CurveVector {
         /*** NATIVE_TYPE_NAME = JsLoop ***/
         Clone(): LoopP;
         constructor();
         Add(primitive: CurvePrimitiveP): void;
-        OnDispose(): void;
-        Dispose(): void;
     }
 
     type LoopP = cxx_pointer<Loop>;
     //! A wrapper for BentleyApi::JsUnstructuredCurves
-    class UnstructuredCurves extends CurveVector implements IDisposable {
+    class UnstructuredCurves extends CurveVector {
         /*** NATIVE_TYPE_NAME = JsUnstructuredCurveVector ***/
         Clone(): UnstructuredCurvesP;
         constructor();
         Add(primitive: CurvePrimitiveP): void;
         Add(primitive: CurveVectorP): void;
-        OnDispose(): void;
-        Dispose(): void;
     }
 
     type UnstructuredCurvesP = cxx_pointer<UnstructuredCurves>;
 
     //! A wrapper for BentleyApi::JsParityRegion
-    class ParityRegion extends CurveVector implements IDisposable {
+    class ParityRegion extends CurveVector {
         /*** NATIVE_TYPE_NAME = JsParityRegion ***/
         Clone(): ParityRegionP;
         constructor();
         Add(loop: LoopP): void;
-        OnDispose(): void;
-        Dispose(): void;
     }
 
     type ParityRegionP = cxx_pointer<ParityRegion>;
 
     //! A wrapper for BentleyApi::JsUnionRegion
-    class UnionRegion extends CurveVector implements IDisposable {
+    class UnionRegion extends CurveVector {
         /*** NATIVE_TYPE_NAME = JsUnionRegion ***/
         Clone(): UnionRegionP;
         constructor();
         Add(child: CurveVectorP): void;
-        OnDispose(): void;
-        Dispose(): void;
     }
 
     type UnionRegionP = cxx_pointer<UnionRegion>;
@@ -719,13 +700,11 @@ class PolyfaceVisitor implements IDisposable
 type PolyfaceVisitorP = cxx_pointer<PolyfaceVisitor>;
 
 
-    //! A wrapper for BentleyApi::JsCurvePrimitive
-    class SolidPrimitive implements IDisposable, BeJsProjection_SuppressConstructor {
-        /*** NATIVE_TYPE_NAME = JsSolidPrimitive ***/
-        Clone(): SolidPrimitiveP;
-        OnDispose(): void;
-        Dispose(): void;
-    }
+//! A non-instantiable wrapper for BentleyApi::JsSolidPrimitive
+class SolidPrimitive implements BeJsProjection_SuppressConstructor {
+    /*** NATIVE_TYPE_NAME = JsSolidPrimitive ***/
+    Clone(): SolidPrimitiveP;
+}
 type SolidPrimitiveP = cxx_pointer<SolidPrimitive>;
 
     //! A wrapper for BentleyApi::JsDgnCone
@@ -740,8 +719,6 @@ type SolidPrimitiveP = cxx_pointer<SolidPrimitive>;
             capped: cxx_bool
             ): DgnConeP;
 
-        OnDispose(): void;
-        Dispose(): void;
     }
 
 type DgnConeP = cxx_pointer<DgnCone>;
@@ -755,8 +732,6 @@ type DgnConeP = cxx_pointer<DgnCone>;
             radius: cxx_double
             ): DgnSphereP;
 
-        OnDispose(): void;
-        Dispose(): void;
     }
 
 type DgnSphereP = cxx_pointer<DgnSphere>;
@@ -785,8 +760,6 @@ type DgnSphereP = cxx_pointer<DgnSphere>;
             capped: cxx_bool
             ): DgnBoxP;
 
-        OnDispose(): void;
-        Dispose(): void;
     }
 
 type DgnBoxP = cxx_pointer<DgnBox>;
@@ -805,8 +778,6 @@ type DgnBoxP = cxx_pointer<DgnBox>;
             capped: cxx_bool
             ): DgnTorusPipeP;
 
-        OnDispose(): void;
-        Dispose(): void;
     }
 
 type DgnTorusPipeP=cxx_pointer<DgnTorusPipe>;
@@ -822,8 +793,6 @@ type DgnTorusPipeP=cxx_pointer<DgnTorusPipe>;
             capped: cxx_bool
             ): DgnExtrusionP;
 
-        OnDispose(): void;
-        Dispose(): void;
     }
 
 type DgnExtrusionP=cxx_pointer<DgnExtrusion>;
@@ -842,11 +811,25 @@ type DgnExtrusionP=cxx_pointer<DgnExtrusion>;
             capped: cxx_bool
             ): DgnRotationalSweepP;
 
-        OnDispose(): void;
-        Dispose(): void;
     }
 
 type DgnRotationalSweepP=cxx_pointer<DgnRotationalSweep>;
+
+    //! A wrapper for BentleyApi::JsDgnRotationalSweep
+    class DgnRuledSweep extends SolidPrimitive implements BeJsProjection_SuppressConstructor
+    {
+        /*** NATIVE_TYPE_NAME = JsDgnRotationalSweep ***/
+
+        static Create(
+            profiles: UnstructuredCurveVectorP
+            capped: cxx_bool
+            ): DgnRuledSweepP;
+
+    }
+
+type DgnRuledSweepP=cxx_pointer<DgnRuledSweep>;
+
+
 
 
 }

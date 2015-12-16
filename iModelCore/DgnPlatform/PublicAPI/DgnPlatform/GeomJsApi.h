@@ -82,6 +82,7 @@ JsSTRUCT(JsGeometry)
         JsSTRUCT(JsDgnBox)
         JsSTRUCT(JsDgnExtrusion)
         JsSTRUCT(JsDgnRotationalSweep)
+        JsSTRUCT(JsDgnRuledSweep)
 
     JsSTRUCT(JsPolyfaceMesh)
 

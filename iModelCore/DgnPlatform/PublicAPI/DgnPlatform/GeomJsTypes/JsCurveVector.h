@@ -17,7 +17,7 @@ BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 //=======================================================================================
 // @bsiclass                                                    Eariln.Lutz     12/15
 //=======================================================================================
-struct JsCurveVector: RefCountedBase
+struct JsCurveVector: JsGeometry
 {
 friend struct JsUnionRegion;
 friend struct JsParityRegion;

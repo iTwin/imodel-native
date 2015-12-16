@@ -14,25 +14,6 @@
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
-#ifdef abc
-//=======================================================================================
-// @bsiclass                                                    Eariln.Lutz     12/15
-//=======================================================================================
-struct JsDgnExtrusionDetail: JsGeomWrapperBase <DgnExtrusionDetail>
-{
-public:
-    JsDgnExtrusionDetail () {}
-
-    JsDgnExtrusionDetail (DgnExtrusionDetailCR data)   { m_data = data;}
-
-    static JsDgnExtrusionDetailP Create (JsCurveVectorP contour, JsDVector3dP vector, bool capped)
-        {
-        DgnExtrusionDetail data (contour->Get (), vector->Get (), capped);
-        return new JsDgnExtrusionDetail (data);
-        }
-
-};
-#endif
 
 //=======================================================================================
 // @bsiclass                                                    Eariln.Lutz     12/15
@@ -215,15 +196,38 @@ public:
 
 };
 
+//=======================================================================================
+// @bsiclass                                                    Eariln.Lutz     12/15
+//=======================================================================================
+struct JsDgnRuledSweep: JsSolidPrimitive
+{
+public:
+    JsDgnRuledSweep () {}
+
+    JsDgnRuledSweep (ISolidPrimitivePtr const &solid) : JsSolidPrimitive (solid) {}
+    virtual JsSolidPrimitiveP Clone () override {return new JsDgnRuledSweep (GetISolidPrimitivePtr ()->Clone ());}
+    static JsDgnRuledSweepP Create (
+            JsUnstructuredCurveVectorP profiles,
+            bool capped
+            )
+        {
+        bvector<CurveVectorPtr> profileA;
+        auto cv = profiles->GetCurveVectorPtr ();
+        for (auto &child: *cv)
+            {
+            CurveVectorPtr childCV = child->GetChildCurveVectorP ();
+            if (!childCV.IsValid ())
+                return nullptr;
+            profileA.push_back (childCV);
+            }
+
+        DgnRuledSweepDetail data (profileA, capped);
+        return new JsDgnRuledSweep (ISolidPrimitive::CreateDgnRuledSweep (data));
+        }
+
+};
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE
 
 #endif//ndef _JsDgnXXXDetail_H_
 
-#ifdef abc
-
-
-
-
-
-#endif
