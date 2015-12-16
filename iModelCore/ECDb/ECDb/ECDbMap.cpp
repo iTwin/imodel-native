@@ -1011,7 +1011,7 @@ void ECDbMap::LightweightCache::LoadHorizontalPartitions ()  const
         "JOIN ec_Table ON ec_Table.Id = ec_Column.TableId "
         "WHERE ec_ClassMap.MapStrategy<>100 AND ec_ClassMap.MapStrategy<>101 AND ec_Table.Type<>" TABLETYPE_JOINED_SQLVAL " "
         "GROUP BY ec_Class.Id, ec_Table.Name) "
-        "SELECT DCL.RootClassId, DCL.DerivedClassId, TMI.TableName FROM DerivedClassList DCL "
+        "SELECT DISTINCT DCL.RootClassId, DCL.DerivedClassId, TMI.TableName FROM DerivedClassList DCL "
         "INNER JOIN TableMapInfo TMI ON TMI.ClassId=DCL.DerivedClassId ORDER BY DCL.RootClassId,TMI.TableName,DCL.DerivedClassId";
 
     CachedStatementPtr stmt = m_map.GetECDbR ().GetCachedStatement (sql0);
@@ -1031,7 +1031,7 @@ void ECDbMap::LightweightCache::LoadHorizontalPartitions ()  const
             ids.insert (ids.begin (), derivedClassId);
             }
         else
-            ids.push_back (derivedClassId);
+            ids.insert (ids.end(), derivedClassId);
         }
 
     m_loadedFlags.m_horizontalPartitionsIsLoaded = true;
@@ -1529,12 +1529,13 @@ void Partition::GenerateClassIdFilter(std::vector<ECN::ECClassId> const& tableCl
         return;
 
     //tableClassIds list is already sorted
-    std::sort(m_partitionClassIds.begin(), m_partitionClassIds.end());
+    auto sortedPartitionClassIds = m_partitionClassIds;
+    std::sort(sortedPartitionClassIds.begin(), sortedPartitionClassIds.end());
 
-    auto partitionClassIdsIt = m_partitionClassIds.begin();
+    auto partitionClassIdsIt = sortedPartitionClassIds.begin();
     for (ECClassId candidateClassId : tableClassIds)
         {
-        if (partitionClassIdsIt == m_partitionClassIds.end() || candidateClassId < *partitionClassIdsIt)
+        if (partitionClassIdsIt == sortedPartitionClassIds.end() || candidateClassId < *partitionClassIdsIt)
             m_inversedPartitionClassIds.push_back(candidateClassId);
         else
             ++partitionClassIdsIt;

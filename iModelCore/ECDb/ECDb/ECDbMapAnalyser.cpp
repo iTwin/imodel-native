@@ -2481,7 +2481,10 @@ BentleyStatus SqlGenerator::BuildClassView(SqlViewBuilder& viewBuilder, ClassMap
     {
     viewBuilder.GetNameBuilder().AppendEscaped(SqlGenerator::BuildViewClassName(classMap.GetClass()).c_str());
     NativeSqlBuilder::List unionList;
-
+    //if (classMap.GetClass().GetName() == "GeometrySource")
+    //    {
+    //    printf("ss");
+    //    }
     if (classMap.IsRelationshipClassMap() && classMap.GetMapStrategy().IsForeignKeyMapping())
         {
         if (BuildEndTableRelationshipView(unionList, static_cast<RelationshipClassMapCR> (classMap)) != BentleyStatus::SUCCESS)
@@ -2507,8 +2510,10 @@ BentleyStatus SqlGenerator::BuildClassView(SqlViewBuilder& viewBuilder, ClassMap
                 topLevel = true;
                 nextClassMapIsTopLevel = false;
                 }
+
             NativeSqlBuilder sqlBuilder;
             sqlBuilder.Append("SELECT ").AppendEOL();
+
             auto derivedClassId = part.GetClassIds().front();
             auto derivedClass = m_map.GetECDbR().Schemas().GetECClass(derivedClassId);
 
