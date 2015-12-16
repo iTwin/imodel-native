@@ -701,9 +701,11 @@ DgnStyleId DgnImportContext::RemapLineStyleId(DgnStyleId sourceId)
     if (dest.IsValid())
         return dest;
 
-    //  NEEDSWORK_LINESTYLES importers are not finished so don't pass along bad data.
+    
+#if defined(NEEDSWORK_LINESTYLES) //  importers are not finished so don't pass along bad data.
     dest = LineStyleElement::ImportLineStyle(sourceId, *this);
     AddLineStyleId(sourceId, dest);
+#endif
 
     return dest;
     }
