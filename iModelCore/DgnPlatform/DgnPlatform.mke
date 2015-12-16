@@ -356,6 +356,8 @@ $(CoreObjs)DgnBaseDomain$(oext) :                   $(DgnCoreDir)DgnBaseDomain.c
 
 $(CoreObjs)VolumeElement$(oext) :                   $(DgnCoreDir)VolumeElement.cpp $(DgnPlatformAPISrc)VolumeElement.h ${MultiCompileDepends}
 
+$(CoreObjs)ECSqlClassParams$(oext) :                $(DgnCoreDir)ECSqlClassParams.cpp  $(DgnPlatformAPISrc)ECSqlClassParams.h ${MultiCompileDepends}
+
 $(CoreObjs)DgnHandlers$(oext) :                     $(DgnHandlersDir)DgnHandlers.cpp $(DgnPlatformPublicAPISrc)DgnPlatform/DgnPlatformLib.h ${MultiCompileDepends}
 
 $(CoreObjs)HitDetail$(oext) :                       $(DgnHandlersDir)HitDetail.cpp $(HandlerDepends) ${MultiCompileDepends}
@@ -381,7 +383,6 @@ $(o)ModelSolverDef$(oext) :                         $(DgnCoreDir)ModelSolverDef.
 $(o)RenderMaterial$(oext) :                         $(DgnCoreDir)RenderMaterial.cpp $(DgnPlatformAPISrc)RenderMaterial.h ${MultiCompileDepends}
 
 #$(o)SolarUtility$(oext) :                          $(DgnCoreDir)SolarUtility.cpp $(DgnPlatformAPISrc)SolarUtility.h ${MultiCompileDepends}
-
 
 #----------------------------------------------------------------------
 #   DgnGeoCoord

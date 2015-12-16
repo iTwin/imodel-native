@@ -313,8 +313,8 @@ public:
     WebMercatorModel(CreateParams const& params) : T_Super(params) {}
 
     DGNPLATFORM_EXPORT void _AddGraphicsToScene(ViewContextR) override;
-    DGNPLATFORM_EXPORT void _ToPropertiesJson(Json::Value&) const override;
-    DGNPLATFORM_EXPORT void _FromPropertiesJson(Json::Value const&) override;
+    DGNPLATFORM_EXPORT void _WriteJsonProperties(Json::Value&) const override;
+    DGNPLATFORM_EXPORT void _ReadJsonProperties(Json::Value const&) override;
     AxisAlignedBox3d _QueryModelRange() const override {return m_mercator.m_range;}
 
     //! Call this after creating a new model, in order to set up subclass-specific properties.

@@ -50,19 +50,14 @@ static void importDgnSchema(DgnDbR db, bool updateExisting)
 DbResult DgnDb::CreateDictionaryModel()
     {
     Utf8String dictionaryName = DgnCoreL10N::GetString(DgnCoreL10N::MODELNAME_Dictionary());
-    DgnModel::Properties props;
-    Json::Value propsValue;
-    props.ToJson(propsValue);
-    Utf8String propsJson = Json::FastWriter::ToString(propsValue);
-
+    
     DgnModel::Code modelCode = DgnModel::CreateModelCode(dictionaryName);
-    Statement stmt(*this, "INSERT INTO " DGN_TABLE(DGN_CLASSNAME_Model) " (Id,Code_Value,Descr,ECClassId,Visibility,Props,Code_AuthorityId,Code_Namespace) VALUES(?,?,'',?,0,?,?,?)");
+    Statement stmt(*this, "INSERT INTO " DGN_TABLE(DGN_CLASSNAME_Model) " (Id,Code_Value,Label,ECClassId,Visibility,Code_AuthorityId,Code_Namespace) VALUES(?,?,'',?,0,?,?)");
     stmt.BindId(1, DgnModel::DictionaryId());
     stmt.BindText(2, modelCode.GetValueCP(), Statement::MakeCopy::No);
     stmt.BindId(3, Domains().GetClassId(dgn_ModelHandler::Dictionary::GetHandler()));
-    stmt.BindText(4, propsJson.c_str(), Statement::MakeCopy::No);
-    stmt.BindId(5, modelCode.GetAuthority());
-    stmt.BindText(6, modelCode.GetNamespace().c_str(), Statement::MakeCopy::No);
+    stmt.BindId(4, modelCode.GetAuthority());
+    stmt.BindText(5, modelCode.GetNamespace().c_str(), Statement::MakeCopy::No);
 
     auto result = stmt.Step();
     BeAssert(BE_SQLITE_DONE == result && "Failed to create dictionary model");
