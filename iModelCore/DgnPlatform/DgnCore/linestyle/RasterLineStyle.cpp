@@ -107,6 +107,7 @@ LineStyleStatus LsRasterImageComponent::CreateFromJson(LsRasterImageComponentP* 
     comp->m_size.y = LsJsonHelpers::GetUInt32(jsonDef, "y", 0);
     comp->m_flags = LsJsonHelpers::GetUInt32(jsonDef, "flags", 0);
     comp->m_imageDataId = LsJsonHelpers::GetUInt32(jsonDef, "imageId", 0);
+    comp->m_trueWidth = LsJsonHelpers::GetDouble(jsonDef, "trueWidth", 0);
 
     uint32_t propertySize;
 
