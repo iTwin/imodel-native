@@ -56,7 +56,7 @@ uint64_t LsJsonHelpers::GetUInt64(JsonValueCR json, CharCP fieldName, uint64_t d
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    12/2015
 //---------------------------------------------------------------------------------------
-Utf8String LsJsonHelpers::GetString(JsonValueCR json, CharCP fieldName, char* defaultValue)
+Utf8String LsJsonHelpers::GetString(JsonValueCR json, CharCP fieldName, CharCP defaultValue)
     {
     Json::Value def(defaultValue);
     return json.get(fieldName, def).asString();
