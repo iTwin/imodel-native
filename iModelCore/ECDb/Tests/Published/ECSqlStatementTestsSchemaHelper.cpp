@@ -135,10 +135,11 @@ void ECSqlStatementTestsSchemaHelper::Populate (BeSQLite::EC::ECDbR ecdb)
 
     std::vector<StandaloneECInstancePtr> arrayContactDetails;
     arrayContactDetails.push_back (contactInstance1);
+    arrayContactDetails.push_back (contactInstance2);
+    arrayContactDetails.push_back (contactInstance3);
     setEmployeeValues (employeeInstance1, 1253519, "CA", "USA", "5089 CALERO AVENUE", "Nancy", "Davolio", false, arrayContactDetails);
 
     arrayContactDetails.clear ();
-    arrayContactDetails.push_back (contactInstance2);
     arrayContactDetails.push_back (contactInstance3);
     arrayContactDetails.push_back (contactInstance4);
     arrayContactDetails.push_back (contactInstance5);
@@ -173,6 +174,7 @@ void ECSqlStatementTestsSchemaHelper::Populate (BeSQLite::EC::ECDbR ecdb)
     arrayContactDetails.clear ();
     arrayContactDetails.push_back (contactInstance4);
     arrayContactDetails.push_back (contactInstance5);
+    arrayContactDetails.push_back (contactInstance6);
     setCustomerValues (customerInstance2, 1500, "AUSTIN", "USA", "5063 RICHMOND MAL", "Gunther", "Spielmann", "SPIELMANN", "DEF", false, arrayContactDetails);
 
     arrayContactDetails.clear ();
