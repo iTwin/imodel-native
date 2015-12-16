@@ -62,10 +62,7 @@ MapStatus ClassMapInfo::Initialize()
         }
 
     if (m_ecInstanceIdColumnName.empty())
-        {
-        // ClassMappingRule: if hint does not supply an ECInstanceId (primary key) column name, use ECDB_COL_ECInstanceId
         m_ecInstanceIdColumnName = ECDB_COL_ECInstanceId;
-        }
 
     return _EvaluateMapStrategy();
     }
@@ -180,7 +177,7 @@ BentleyStatus ClassMapInfo::DoEvaluateMapStrategy(bool& baseClassesNotMappedYet,
         
         //use same ECInstanceId column name for derived classes.
         ECDbSqlColumn const* parentECInstanceIdCol = m_parentClassMap->GetTable().GetFilteredColumnFirst(ColumnKind::ECInstanceId);
-        if (parentECInstanceIdCol != nullptr && !parentECInstanceIdCol->GetName().EqualsI(ECDB_COL_ECInstanceId))
+        if (parentECInstanceIdCol != nullptr)
             m_ecInstanceIdColumnName.assign(parentECInstanceIdCol->GetName());
 
         ECDbMapStrategy::Options options = ECDbMapStrategy::Options::None;

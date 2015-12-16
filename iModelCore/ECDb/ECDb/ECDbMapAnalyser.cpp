@@ -2455,24 +2455,27 @@ BentleyStatus SqlGenerator::BuildViews(std::vector<ClassMap const*> const& class
     {
     BeAssert(!m_map.GetECDb().IsReadonly() && "Db is readonly the opertion will fail");
 
-    auto r = BentleyStatus::SUCCESS;
-    for (auto classMap : classMaps)
+    for (ClassMap const* classMap : classMaps)
         {
         SqlViewBuilder builder;
-        r = BuildClassView(builder, *classMap);
-        if (r != SUCCESS)
-            return r;
+        if (SUCCESS != BuildClassView(builder, *classMap))
+            return ERROR;
 
         if (builder.IsNullView())
             continue;
 
-        if (m_map.GetECDbR().ExecuteSql(builder.ToString(SqlOption::Create).c_str()) != BE_SQLITE_OK)
+        Utf8String ddl = builder.ToString(SqlOption::Create);
+        const DbResult stat = m_map.GetECDbR().ExecuteSql(ddl.c_str());
+        if (BE_SQLITE_OK != stat)
             {
+            Utf8String message;
+            message.Sprintf("Failed to create ECClass view for ECClass %s.", classMap->GetClass().GetFullName());
+            m_map.GetECDb().GetECDbImplR().GetIssueReporter().ReportSqliteIssue(ECDbIssueSeverity::Error, stat, message.c_str());
             return ERROR;
             }
         }
 
-    return r;
+    return SUCCESS;
     }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Affan.Khan                         06/2015

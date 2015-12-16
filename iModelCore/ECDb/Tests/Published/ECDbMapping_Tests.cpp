@@ -5268,6 +5268,59 @@ TEST_F(ECDbMappingTestFixture, RelationshipMapCAOnSubclasses)
     AssertForeignKey(true, ecdb, "ts_Element", "ParentId");
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Krischan.Eberle                  12/15
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECDbMappingTestFixture, RelationshipWithAbstractClassAsConstraint)
+    {
+    SchemaItem testItem("<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+                        "  <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
+                        "  <ECEntityClass typeName='Element' modifier='Abstract'>"
+                        "    <ECCustomAttributes>"
+                        "        <ClassMap xmlns='ECDbMap.01.00'>"
+                        "            <MapStrategy>"
+                        "               <Strategy>SharedTable</Strategy>"
+                        "               <AppliesToSubclasses>True</AppliesToSubclasses>"
+                        "               <Options>SharedColumnsForSubclasses</Options>"
+                        "            </MapStrategy>"
+                        "        </ClassMap>"
+                        "    </ECCustomAttributes>"
+                        "    <ECProperty propertyName='Code' typeName='string' />"
+                        "  </ECEntityClass>"
+                        "  <ECEntityClass typeName='GeometrySource' modifier='Abstract' />"
+                        "  <ECEntityClass typeName='ElementGeometry'>"
+                        "    <ECProperty propertyName='Geom' typeName='binary' />"
+                        "  </ECEntityClass>"
+                        "  <ECEntityClass typeName='Person'>"
+                        "    <BaseClass>Element</BaseClass>"
+                        "    <ECProperty propertyName='Name' typeName='string' />"
+                        "  </ECEntityClass>"
+                        "  <ECEntityClass typeName='PersonWithAvatar'>"
+                        "    <BaseClass>Person</BaseClass>"
+                        "    <BaseClass>GeometrySource</BaseClass>"
+                        "    <ECProperty propertyName='AvatarName' typeName='string' />"
+                        "  </ECEntityClass>"
+                        "  <ECRelationshipClass typeName='GeometrySourceHasGeometry' strength='embedding'>"
+                        "    <Source cardinality='(1,1)' polymorphic='True'>"
+                        "      <Class class='GeometrySource' />"
+                        "    </Source>"
+                        "    <Target cardinality='(0,N)' polymorphic='True'>"
+                        "      <Class class='ElementGeometry'>"
+                        "           <Key>"
+                        "              <Property name='ECInstanceId'/>"
+                        "           </Key>"
+                        "      </Class>"
+                        "    </Target>"
+                        "  </ECRelationshipClass>"
+                        "</ECSchema>", true, "");
+
+    ECDb ecdb;
+    bool asserted = false;
+    AssertSchemaImport(ecdb, asserted, testItem, "RelationshipWithAbstractClassAsConstraint.ecdb");
+    ASSERT_FALSE(asserted);
+    }
+
+
 //=======================================================================================    
 // @bsiclass                                   Muhammad Hassan                     05/15
 //=======================================================================================    
