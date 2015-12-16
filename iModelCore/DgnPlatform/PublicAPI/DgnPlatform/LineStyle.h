@@ -425,6 +425,7 @@ private:
     Point2d             m_size;
     uint32_t            m_flags;
     double              m_trueWidth;
+    uint32_t            m_imageDataId;
     bvector<uint8_t>    m_image;
 
     LsRasterImageComponent(LsRasterImageComponentCR);
@@ -446,7 +447,7 @@ protected:
 
 public:
     void SaveToJson(Json::Value& result, bvector<uint8_t>& imageData);
-    static LineStyleStatus CreateFromJson(LsRasterImageComponentP*, Json::Value const & jsonDef, bvector<uint8_t> const& imageData, LsLocationCP location);
+    static LineStyleStatus CreateFromJson(LsRasterImageComponentP*, Json::Value const & jsonDef, LsLocationCP location);
     static LsRasterImageComponent* LoadRasterImage  (LsComponentReader* reader);
     static BentleyStatus CreateRscFromDgnDb(V10RasterImage** rscOut, DgnDbR project, LsComponentId id);
 
