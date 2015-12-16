@@ -220,13 +220,13 @@ public:
 struct Image : RefCounted<NonCopyableClass>
 {
     enum class Format
-        {
+    {
         Rgba = 0,
         Bgra = 1,
         Rgb  = 2,
         Bgr  = 3,
         Gray = 4,
-        };
+    };
     static size_t BytesPerPixel(Format format)
         {
         switch (format)
@@ -1101,7 +1101,7 @@ public:
 // An ordered list of RefCountedPtrs to Render::Graphics.
 // @bsiclass
 //=======================================================================================
-struct GraphicList
+struct Scene : RefCounted<NonCopyableClass>
 {
     struct Node
     {
@@ -1113,41 +1113,28 @@ struct GraphicList
 
     std::deque<Node> m_list;
 
+    Scene() {}
     uint32_t GetCount() const {return (uint32_t) m_list.size();}
     void Add(Graphic& graphic, void* ovr, uint32_t ovrFlags) {m_list.push_back(Node(graphic,ovr,ovrFlags));}
     void Clear() {m_list.clear();}
 };
 
 //=======================================================================================
-// The GraphicList of the "scene" for a view.
-// @bsiclass
-//=======================================================================================
-struct Scene : RefCounted<NonCopyableClass>
-{
-protected:
-    GraphicList m_graphics;
-
-public:
-    Scene() {}
-    GraphicList& GetGraphics() {return m_graphics;}
-};
-
-//=======================================================================================
-//! A set of GraphicLists of various types of Graphics that are "decorated" into the Render::Target, 
+//! A set of Scenes of various types of Graphics that are "decorated" into the Render::Target, 
 //! in addition to the Scene.
 //! @note a Render::Plan holds a *copy* of the Decorations lists for a DgnViewport.
 // @bsiclass                                                    Keith.Bentley   12/15
 //=======================================================================================
 struct Decorations
 {
-    GraphicList m_dynamics;             // drawn with zbuffer, with scene lighting
-    GraphicList m_worldDecorators;      // drawn with zbuffer, with default lighting, smooth shading
-    GraphicList m_cameraOverlay;        // drawn in overlay mode, camera units
-    GraphicList m_viewOverlay;          // drawn in overlay mode, view units
+    ScenePtr m_dynamics;            // drawn with zbuffer, with scene lighting
+    ScenePtr m_world;               // drawn with zbuffer, with default lighting, smooth shading
+    ScenePtr m_cameraOverlay;       // drawn in overlay mode, camera units
+    ScenePtr m_viewOverlay;         // drawn in overlay mode, view units
 };
 
 //=======================================================================================
-//! A Render::Plan holds a Frustum, the render settings, and the decorators for displaying 
+//! A Render::Plan holds a Frustum and the render settings for displaying 
 //! the current Render::Scene into a Render::Target.
 // @bsiclass                                                    Keith.Bentley   12/15
 //=======================================================================================
@@ -1162,7 +1149,6 @@ struct Plan
     ColorDef      m_bgColor;
     AntiAliasPref m_aaLines;
     AntiAliasPref m_aaText;
-    Decorations   m_decorations;    // Note: by value, copied from Viewport's lists
 
     DGNPLATFORM_EXPORT Plan(DgnViewportCR);
 };
@@ -1223,8 +1209,9 @@ struct Target : RefCounted<NonCopyableClass>
     typedef ImageUtilities::RgbImageInfo CapturedImageInfo;
 
 protected:
-    DevicePtr  m_device;
-    ScenePtr m_currentScene;
+    DevicePtr   m_device;
+    ScenePtr    m_currentScene;
+    Decorations m_decorations;
 
     virtual GraphicPtr _CreateGraphic(Graphic::CreateParams const& params) = 0;
     virtual void _AdjustBrightness(bool useFixedAdaptation, double brightness) = 0;
@@ -1235,7 +1222,7 @@ protected:
     virtual TexturePtr _CreateTileSection(Image*, bool enableAlpha) const = 0;
     virtual void* _ResolveOverrides(OvrGraphicParamsCR) = 0;
     virtual void _ChangeScene(SceneR) = 0;
-    virtual void _Refresh(PlanCR) = 0;
+    virtual void _DrawFrame(PlanCR) = 0;
 
 public:
     virtual double _GetCameraFrustumNearScaleLimit() const = 0;
@@ -1244,7 +1231,7 @@ public:
     Target(Device* device) : m_device(device) {}
 
     void ChangeScene(SceneR scene) {_ChangeScene(scene);}
-    void Refresh(PlanCR plan) {_Refresh(plan);}
+    void DrawFrame(PlanCR plan) {_DrawFrame(plan);}
     Point2d GetScreenOrigin() const {return m_device->GetWindow()->_GetScreenOrigin();}
     BSIRect GetViewRect() const {return m_device->GetWindow()->_GetViewRect();}
     DVec2d GetDpiScale() const {return m_device->_GetDpiScale();}
@@ -1257,6 +1244,5 @@ public:
     TexturePtr GetTexture(DgnTextureId id, DgnDbR dgndb) const {return _GetTexture(id, dgndb);}
     TexturePtr CreateTileSection(Image* image, bool enableAlpha) const {return _CreateTileSection(image, enableAlpha);}
 };
-
 
 END_BENTLEY_RENDER_NAMESPACE

@@ -425,6 +425,7 @@ protected:
     virtual GridOrientationType _GetGridOrientationType() const {return GridOrientationType::View;}
     DGNPLATFORM_EXPORT static void StartRenderThread();
     DMap4d CalcNpcToView();
+    void QueueDrawFrame();
     void Refresh();
 
 public:
