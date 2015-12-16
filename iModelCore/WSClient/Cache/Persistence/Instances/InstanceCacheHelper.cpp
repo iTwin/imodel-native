@@ -181,6 +181,7 @@ ICancellationTokenPtr ct
             {
             if (SUCCESS != CacheRelationshipInstance(relationshipInstance, cachedInstance, relatedInstance, cachedInstancesInOut))
                 {
+                LOG.errorv("Failed to cache relationship instance %s", relationshipInstance.GetObjectId().ToString().c_str());
                 return ERROR;
                 }
             }
