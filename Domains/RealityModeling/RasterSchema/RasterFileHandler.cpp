@@ -274,17 +274,17 @@ AxisAlignedBox3d RasterFileModel::_QueryModelRange() const
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                       Eric.Paquet     4/2015
 //----------------------------------------------------------------------------------------
-void RasterFileModel::_ToPropertiesJson(Json::Value& v) const
+void RasterFileModel::_WriteJsonProperties(Json::Value& v) const
     {
-    T_Super::_ToPropertiesJson(v);
+    T_Super::_WriteJsonProperties(v);
     m_fileProperties.ToJson(v);
     }
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                       Eric.Paquet     4/2015
 //----------------------------------------------------------------------------------------
-void RasterFileModel::_FromPropertiesJson(Json::Value const& v)
+void RasterFileModel::_ReadJsonProperties(Json::Value const& v)
     {
-    T_Super::_FromPropertiesJson(v);
+    T_Super::_ReadJsonProperties(v);
     m_fileProperties.FromJson(v);
     }

@@ -176,18 +176,18 @@ void ThreeMxModel::Properties::FromJson(Json::Value const& v)
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                      Ray.Bentley     09/2015
 //----------------------------------------------------------------------------------------
-void ThreeMxModel::_ToPropertiesJson(Json::Value& v) const
+void ThreeMxModel::_WriteJsonProperties(Json::Value& v) const
     {
-    T_Super::_ToPropertiesJson(v);
+    T_Super::_WriteJsonProperties(v);
     m_properties.ToJson(v);
     }
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                      Ray.Bentley     09/2015
 //----------------------------------------------------------------------------------------
-void ThreeMxModel::_FromPropertiesJson(Json::Value const& v)
+void ThreeMxModel::_ReadJsonProperties(Json::Value const& v)
     {
-    T_Super::_FromPropertiesJson(v);
+    T_Super::_ReadJsonProperties(v);
     m_properties.FromJson(v);
     }
 

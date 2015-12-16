@@ -30,8 +30,8 @@ protected:
     ~RasterModel();
         
     virtual void _AddGraphicsToScene(Dgn::ViewContextR) override;
-    virtual void _ToPropertiesJson(Json::Value&) const override;
-    virtual void _FromPropertiesJson(Json::Value const&) override;
+    virtual void _WriteJsonProperties(Json::Value&) const override;
+    virtual void _ReadJsonProperties(Json::Value const&) override;
 
     virtual BentleyStatus _LoadQuadTree() {return BSIERROR;}
 

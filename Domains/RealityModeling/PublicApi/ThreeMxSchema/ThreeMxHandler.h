@@ -61,8 +61,8 @@ public:
     ThreeMxModel(CreateParams const& params) : T_Super (params), m_scene (NULL) { }
 
     THREEMX_SCHEMA_EXPORT virtual void _AddGraphicsToScene(ViewContextR) override;
-    THREEMX_SCHEMA_EXPORT virtual void _ToPropertiesJson(Json::Value&) const override;
-    THREEMX_SCHEMA_EXPORT virtual void _FromPropertiesJson(Json::Value const&) override;
+    THREEMX_SCHEMA_EXPORT virtual void _WriteJsonProperties(Json::Value&) const override;
+    THREEMX_SCHEMA_EXPORT virtual void _ReadJsonProperties(Json::Value const&) override;
     THREEMX_SCHEMA_EXPORT virtual AxisAlignedBox3d _QueryModelRange() const override;
     THREEMX_SCHEMA_EXPORT static DgnModelId  CreateThreeMxModel (DgnDbR dgnDb, Utf8StringCR fileId);
 
