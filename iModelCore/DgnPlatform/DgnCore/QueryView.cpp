@@ -11,6 +11,8 @@
 
 #include "UpdateLogging.h"
 
+//#define TRACE_QUERY_LOGIC 1
+
 #if defined (BENTLEY_WIN32)
     #define MAX_TO_DRAW_IN_DYNAMIC_UPDATE  6000
 #else
@@ -109,6 +111,10 @@ bool QueryViewController::_WantElementLoadStart(DgnViewportR vp, double currentT
 +---------------+---------------+---------------+---------------+---------------+------*/
 void QueryViewController::_OnDynamicUpdate(DgnViewportR vp, ViewContextR context, DynamicUpdateInfo& info)
     {
+#if defined (TRACE_QUERY_LOGIC)
+    static int32_t s_count = 0;
+#endif
+
     DrawPurpose newUpdateType = info.GetDoBackingStore() ? DrawPurpose::Update : DrawPurpose::UpdateDynamic;
     m_lastUpdateType = newUpdateType;
     if (m_forceNewQuery || info.GetDoBackingStore())
