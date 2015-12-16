@@ -177,6 +177,15 @@ BentleyStatus ClassMapInfo::DoEvaluateMapStrategy(bool& baseClassesNotMappedYet,
             BeAssert(false);
             return ERROR;
             }
+        
+        //propagte ECInstanceId column name to dervied classes if it differ from standered name.
+        if (auto parentECInstanceId = m_parentClassMap->GetTable().GetFilteredColumnFirst(ColumnKind::ECInstanceId))
+            {
+            if (!parentECInstanceId->GetName().EqualsI(ECDbSystemSchemaHelper::ECINSTANCEID_PROPNAME))
+                {
+                this->m_ecInstanceIdColumnName = parentECInstanceId->GetName();
+                }
+            }
 
         ECDbMapStrategy::Options options = ECDbMapStrategy::Options::None;
         if (!Enum::Contains(userStrategy.GetOptions(), UserECDbMapStrategy::Options::DisableSharedColumns) && 
