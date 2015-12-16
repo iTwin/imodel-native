@@ -16,7 +16,7 @@
 #define DEBUG_THREADS 1
 #endif
 
-//#define TRACE_QUERY_LOGIC 1
+#define TRACE_QUERY_LOGIC 1
 
 BeThreadLocalStorage g_queryThreadChecker;
 
@@ -449,6 +449,7 @@ bool ProcessorImpl::_Process()
 
 #if defined TRACE_QUERY_LOGIC
     printf("QMQ: Processing\n");
+    uint64_t start = BeTimeUtilities::QueryMillisecondsCounter();
 #endif
     //  Notify GraphicsAndQuerySequencer that this thread is running 
     //  a range tree operation and is therefore exempt from checks for high priority required.
@@ -481,8 +482,16 @@ bool ProcessorImpl::_Process()
     if (WasAborted() || m_dbStatus != BE_SQLITE_ROW)
         return false;
 
+#if defined TRACE_QUERY_LOGIC
+    uint32_t elapsed1 = (uint32_t)(BeTimeUtilities::QueryMillisecondsCounter() - start);
+#endif
     LoadElements(filter.m_secondaryFilter.m_occlusionScoreMap, m_results->m_closeElements);
     LoadElements(filter.m_occlusionScoreMap, m_results->m_elements);
+
+#if defined (TRACE_QUERY_LOGIC)
+    uint32_t elapsed2 = (uint32_t)(BeTimeUtilities::QueryMillisecondsCounter() - start);
+    printf("QMQ: _Process(): query time = %d, total time = %d\n", elapsed1, elapsed2);
+#endif
 
     return !WasAborted();
     }

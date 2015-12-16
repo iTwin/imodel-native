@@ -103,7 +103,8 @@ bool QueryViewController::_WantElementLoadStart(DgnViewportR vp, double currentT
 void QueryViewController::_OnDynamicUpdate(DgnViewportR vp, DynamicUpdateInfo const& info)
     {
     PickUpResults();
-    StartSelectProcessing(vp, DrawPurpose::UpdateDynamic);
+    if (_WantElementLoadStart(vp, BeTimeUtilities::QuerySecondsCounter(), m_lastQueryTime, m_maxDrawnInDynamicUpdate, m_startQueryFrustum))
+        StartSelectProcessing(vp, DrawPurpose::UpdateDynamic);
     }
 
 /*---------------------------------------------------------------------------------**//**
