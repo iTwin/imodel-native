@@ -52,7 +52,7 @@ ModelSolverDef::ParameterSet& ModelSolverDef::GetParametersR() {return m_paramet
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ModelSolverDef::Solve(GeometricModelR model)
+void ModelSolverDef::Solve(ComponentModelR model)
     {
 #ifdef WIP_COMPONENT
     if (Type::Script == m_type)

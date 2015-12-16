@@ -91,7 +91,7 @@ DG_INLINE void ViewController::SetBackgroundColor(ColorDef color) {m_backgroundC
 DG_INLINE bool ViewController::IsLoaded() const { return m_baseModelId.IsValid();}
 DG_INLINE void ViewController::ChangeModelDisplay(DgnModelId modelId, bool onOff) {_ChangeModelDisplay(modelId, onOff);}
 DG_INLINE bool ViewController::Allow3dManipulations() const {return _Allow3dManipulations();}
-DG_INLINE DgnModelP ViewController::GetTargetModel() const {return _GetTargetModel();}
+DG_INLINE GeometricModelP ViewController::GetTargetModel() const {return _GetTargetModel();}
 DG_INLINE bool ViewController::OnGeoLocationEvent(GeoLocationEventStatus& status, GeoPointCR point) {return _OnGeoLocationEvent(status, point);}
 DG_INLINE void ViewController::OnViewOpened(DgnViewportR vp) {_OnViewOpened(vp);}
 

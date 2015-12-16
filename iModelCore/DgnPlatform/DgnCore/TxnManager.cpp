@@ -1155,7 +1155,7 @@ void dgn_TxnTable::Model::_OnReversedUpdate(BeSQLite::Changes::Change const& cha
     if (!model.IsValid())
         return;
 
-    model->ReadProperties();
+    model->Read();
     model->_OnUpdated();
     }
 

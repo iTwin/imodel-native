@@ -73,7 +73,8 @@ static DgnDbStatus createPhysicalModel(PhysicalModelPtr& catalogModel, DgnDbR db
     {
     DgnClassId mclassId = DgnClassId(db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_PhysicalModel));
     catalogModel = new PhysicalModel(DgnModel3d::CreateParams(db, mclassId, code));
-    return catalogModel->Insert("", false);
+    catalogModel->SetInGuiList(false);
+    return catalogModel->Insert();
     }
 
 /*---------------------------------------------------------------------------------**//**
