@@ -128,10 +128,9 @@ TEST_F(DgnScriptTest, TestEga)
 "(function () { \
     function testEga(element, origin, angles, params) { \
         var boxSize = new Bentley.Dgn.DPoint3d(params.X, params.Y, params.Z); \
-        var box = Bentley.Dgn.DgnBoxDetail.InitFromCenterAndSize(new Bentley.Dgn.DPoint3d(0,0,0), boxSize, true); \
-        var solid = Bentley.Dgn.SolidPrimitive.CreateDgnBox(box); \
+        var box = Bentley.Dgn.DgnBox.CreateBoxCentered (new Bentley.Dgn.DPoint3d(0,0,0), boxSize, true); \
         var builder = new Bentley.Dgn.ElementGeometryBuilder(element, origin, angles); \
-        builder.Append(solid); \
+        builder.Append(box); \
         builder.SetGeomStreamAndPlacement(element); \
         return 0;\
     } \
