@@ -8,7 +8,7 @@
 
 %include mdl.mki
 
-SeedsSourcePath = $(_MakeFilePath)Tests/UnitTests/Published/WebServices/Cache/Upgrade/UpgradeSeeds/
+SeedsSourcePath = $(_MakeFilePath)Published/WebServices/Cache/Upgrade/UpgradeSeeds/
 SeedsOutputPath = $(OutputRootDir)build/UnitTests/WSClientTestAssets/Cache/UpgradeSeeds/
 
 $(SeedsOutputPath)5 : $(SeedsSourcePath)5.zip
