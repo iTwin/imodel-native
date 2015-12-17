@@ -778,7 +778,7 @@ TEST_F(ECDbSchemaManagerTests, SupplementSchemaWhoseTargetedPrimaryHasGreaterMaj
 std::map<Utf8String, std::set<Utf8String>> GetECViewNamesByPrefix(ECDbR ecdb)
     {
     Statement stmt;
-    stmt.Prepare(ecdb, "select  substr (name, 1,  instr (name,'.') - 1), '[' || name || ']'  from sqlite_master where type = 'view' and instr (name,'.') and instr(sql, '--### WARNING!!!')");
+    stmt.Prepare(ecdb, "select  substr (name, 1,  instr (name,'.') - 1), '[' || name || ']'  from sqlite_master where type = 'view' and instr (name,'.') and instr(sql, '--### ECCLASS VIEW')");
     std::map<Utf8String, std::set<Utf8String>> ecclassViews;
     while (stmt.Step() == BE_SQLITE_ROW)
         {
