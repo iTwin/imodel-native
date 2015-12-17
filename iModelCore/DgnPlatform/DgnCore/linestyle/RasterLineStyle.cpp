@@ -75,7 +75,11 @@ LsComponentPtr LsRasterImageComponent::_Import(DgnImportContext& importer) const
     {
     LsRasterImageComponentP result = new LsRasterImageComponent(*this);
 
-    //  Save to destination and record ComponentId in clone
+    bvector<uint8_t> imageData;
+    Json::Value jsonValue;
+    SaveToJson(jsonValue, imageData);
+    LsComponentId newId;
+    AddRasterComponentAsJson(newId, importer.GetDestinationDb(), jsonValue, &imageData[0], (uint32_t)imageData.size());
 
     return result;
     }
@@ -83,7 +87,7 @@ LsComponentPtr LsRasterImageComponent::_Import(DgnImportContext& importer) const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    12/2015
 //---------------------------------------------------------------------------------------
-void LsRasterImageComponent::SaveToJson(Json::Value& result, bvector<uint8_t>& imageData)
+void LsRasterImageComponent::SaveToJson(Json::Value& result, bvector<uint8_t>& imageData) const
     {
     LsComponent::SaveToJson(result);
 
