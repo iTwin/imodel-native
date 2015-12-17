@@ -328,7 +328,7 @@
         </Bindings>
     </Part>
 
-    <Part Name="WSClientUnitTests-Assets" BentleyBuildMakeFile="TestAssetsDelivery.mke" />
+    <Part Name="WSClientUnitTests-Assets" BentleyBuildMakeFile="Tests/UnitTests/TestAssetsDelivery.mke" />
 
     <Part Name="UnitTests-Published" 
         BentleyBuildMakeFile="Tests/UnitTests/BuildTests.mke" 
