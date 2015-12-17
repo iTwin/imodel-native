@@ -41,8 +41,8 @@ struct QueryModel : PhysicalModel
     private:
         Results() : m_reachedMaxElements(false), m_eliminatedByLOD(false), m_drawnBeforePurge(0), m_lowestOcclusionScore(0.0), m_elapsedSeconds(0.0) { }
     public:
-        bvector<DgnElementCP> m_elements;
-        bvector<DgnElementCP> m_closeElements;
+        bvector<DgnElementCPtr> m_elements;
+        bvector<DgnElementCPtr> m_closeElements;
         bool   m_reachedMaxElements;
         bool   m_eliminatedByLOD;
         uint32_t m_drawnBeforePurge;

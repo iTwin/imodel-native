@@ -146,7 +146,7 @@ struct ProcessorImpl : QueryModel::Processor, ICheckStop
 
     virtual bool _Process() override;
 
-    bool LoadElements(DgnDbRTree3dViewFilter::T_OcclusionScoreMap& map, bvector<DgnElementCP>& elements); // return false if we halted before finishing iteration
+    bool LoadElements(DgnDbRTree3dViewFilter::T_OcclusionScoreMap& map, bvector<DgnElementCPtr>& elements); // return false if we halted before finishing iteration
 
     virtual bool _CheckStop() override
         {
@@ -422,7 +422,7 @@ void QueryModel::Queue::qt_WaitForWork()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ProcessorImpl::LoadElements(DgnDbRTree3dViewFilter::T_OcclusionScoreMap& map, bvector<DgnElementCP>& elements)
+bool ProcessorImpl::LoadElements(DgnDbRTree3dViewFilter::T_OcclusionScoreMap& map, bvector<DgnElementCPtr>& elements)
     {
     DgnElements& pool = GetModel().GetDgnDb().Elements();
 
@@ -436,7 +436,7 @@ bool ProcessorImpl::LoadElements(DgnDbRTree3dViewFilter::T_OcclusionScoreMap& ma
         DgnElementCPtr el = !hitLimit ? pool.GetElement(elId) : pool.FindElement(elId);
 
         if (el.IsValid())
-            elements.push_back(el.get());
+            elements.push_back(el);
         }
 
     return true;    // finished
