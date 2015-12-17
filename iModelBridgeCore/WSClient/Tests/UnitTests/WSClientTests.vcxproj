@@ -266,6 +266,7 @@
     <None Include="BuildTests.mke" />
     <None Include="dependencies.mki" />
     <None Include="Prewire.mke" />
+    <None Include="TestAssetsDelivery.mke" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="ignore_list.txt" />

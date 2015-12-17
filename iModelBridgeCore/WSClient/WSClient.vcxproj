@@ -349,7 +349,6 @@
     <None Include="DgnDbServerClientPrewire.mke" />
     <None Include="l10n-WSClient.mke" />
     <None Include="Licensing\Licensing.mki" />
-    <None Include="TestAssetsDelivery.mke" />
     <None Include="UnZip.py" />
     <None Include="xliffs.mke" />
   </ItemGroup>
