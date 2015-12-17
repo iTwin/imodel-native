@@ -1452,17 +1452,6 @@ TEST_F(ChangeSummaryTestFixture, QueryMultipleSessions)
 
     DumpChangeSummary(changeSummary, "ChangeSummary after multiple sessions");
 
-    ECSqlStatement stmt;
-    Utf8CP ecsql = "SELECT COUNT(*) FROM dgn.Element el WHERE IsChangedInstance(?, el.GetECClassId(), el.ECInstanceId)";
-    ECSqlStatus ecSqlStatus = stmt.Prepare(*m_testDb, ecsql);
-    ASSERT_TRUE(ecSqlStatus.IsSuccess());
-
-    stmt.BindInt64(1, (int64_t) &changeSummary);
-
-    DbResult ecSqlStepStatus = stmt.Step();
-    ASSERT_TRUE(ecSqlStepStatus == BE_SQLITE_ROW);
-
-    int actualChangeCount = stmt.GetValueInt(0);
     int expectedChangeCount = nSessions * nTransactionsPerSession + 2 /*category and subcategory*/;
-    EXPECT_EQ(expectedChangeCount, actualChangeCount);
+    EXPECT_EQ(expectedChangeCount, GetChangeSummaryInstanceCount(changeSummary, "dgn.Element"));
     }
