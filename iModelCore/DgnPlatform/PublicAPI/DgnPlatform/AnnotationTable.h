@@ -75,8 +75,8 @@ private:
 
 //__PUBLISH_SECTION_END__
 public:
-    static AnnotationTableCellIndex     GetCellIndex (ECSqlStatement&, uint32_t colIndex);
-    static void                         BindCellIndex (ECSqlStatement&, Utf8CP paramName, AnnotationTableCellIndexCR);
+    static AnnotationTableCellIndex     GetCellIndex (BeSQLite::EC::ECSqlStatement&, uint32_t colIndex);
+    static void                         BindCellIndex (BeSQLite::EC::ECSqlStatement&, Utf8CP paramName, AnnotationTableCellIndexCR);
 
 //__PUBLISH_SECTION_START__
 public:
@@ -482,30 +482,30 @@ protected:
 
     AnnotationTableAspectR  operator= (AnnotationTableAspectCR rhs);
 
-    bool BindIfNull  (ECSqlStatement&, Utf8CP paramName, bool isNull);
+    bool BindIfNull  (BeSQLite::EC::ECSqlStatement&, Utf8CP paramName, bool isNull);
 
-    void BindInt     (ECSqlStatement&, Utf8CP paramName, TableIntValue const&);
-    void BindUInt    (ECSqlStatement&, Utf8CP paramName, TableUIntValue const&);
-    void BindInt64   (ECSqlStatement&, Utf8CP paramName, TableUInt64Value const&);
-    void BindBool    (ECSqlStatement&, Utf8CP paramName, TableBoolValue const&);
-    void BindDouble  (ECSqlStatement&, Utf8CP paramName, TableDoubleValue const&);
+    void BindInt     (BeSQLite::EC::ECSqlStatement&, Utf8CP paramName, TableIntValue const&);
+    void BindUInt    (BeSQLite::EC::ECSqlStatement&, Utf8CP paramName, TableUIntValue const&);
+    void BindInt64   (BeSQLite::EC::ECSqlStatement&, Utf8CP paramName, TableUInt64Value const&);
+    void BindBool    (BeSQLite::EC::ECSqlStatement&, Utf8CP paramName, TableBoolValue const&);
+    void BindDouble  (BeSQLite::EC::ECSqlStatement&, Utf8CP paramName, TableDoubleValue const&);
 
-    void BindProperties (ECSqlStatement&, bool isUpdate);
+    void BindProperties (BeSQLite::EC::ECSqlStatement&, bool isUpdate);
 
     void    SetHasChanges ()    { m_hasChanges = true;  }
     void    ClearHasChanges ()  { m_hasChanges = false; }
 
     // To support insert, update, delete.
-    virtual void                        _BindProperties (ECSqlStatement&) = 0;
+    virtual void                        _BindProperties (BeSQLite::EC::ECSqlStatement&) = 0;
     virtual void                        _AssignValue (int index, BeSQLite::EC::IECSqlValue const&) = 0;
 
 //__PUBLISH_SECTION_END__
 public:
-    void                AssignProperties (ECSqlStatement const& statement);
+    void                AssignProperties (BeSQLite::EC::ECSqlStatement const& statement);
     void                SetAspectId (uint64_t id) { m_aspectId = id; }
 
     static BentleyStatus   DeleteAspectFromDb (AnnotationTableAspectType, uint64_t aspectId, AnnotationTableElementR table);
-    static CachedECSqlStatementPtr  GetPreparedSelectStatement (AnnotationTableAspectType, AnnotationTableElementCR);
+    static BeSQLite::EC::CachedECSqlStatementPtr  GetPreparedSelectStatement (AnnotationTableAspectType, AnnotationTableElementCR);
     static bool  DbContainsDuplicateRows (AnnotationTableAspectType, AnnotationTableElementCR);
 
     BentleyStatus       InsertInDb();
@@ -553,7 +553,7 @@ private:
 protected:
     // AnnotationTableAspect
     AnnotationTableAspectType           _GetAspectType() const override { return AnnotationTableAspectType::Merge; }
-    virtual void                        _BindProperties(ECSqlStatement&) override;
+    virtual void                        _BindProperties(BeSQLite::EC::ECSqlStatement&) override;
     virtual void                        _AssignValue (int, BeSQLite::EC::IECSqlValue const&) override;
     virtual bool                        _ShouldBePersisted (AnnotationTableSerializer&) const override;
 
@@ -693,7 +693,7 @@ private:
 protected:
     // AnnotationTableAspect
     AnnotationTableAspectType           _GetAspectType() const override { return AnnotationTableAspectType::Symbology; }
-    virtual void                        _BindProperties(ECSqlStatement&) override;
+    virtual void                        _BindProperties(BeSQLite::EC::ECSqlStatement&) override;
     virtual void                        _AssignValue (int, BeSQLite::EC::IECSqlValue const&) override;
     virtual bool                        _ShouldBePersisted (AnnotationTableSerializer&) const override;
 
@@ -795,7 +795,7 @@ private:
 protected:
     // AnnotationTableAspect
     AnnotationTableAspectType           _GetAspectType() const override { return AnnotationTableAspectType::EdgeRun; }
-    virtual void                        _BindProperties(ECSqlStatement&) override;
+    virtual void                        _BindProperties(BeSQLite::EC::ECSqlStatement&) override;
     virtual void                        _AssignValue (int, BeSQLite::EC::IECSqlValue const&) override;
     virtual bool                        _ShouldBePersisted (AnnotationTableSerializer&) const override;
 
@@ -1007,7 +1007,7 @@ private:
 protected:
     // AnnotationTableAspect
     AnnotationTableAspectType           _GetAspectType() const override { return AnnotationTableAspectType::Cell; }
-    virtual void                        _BindProperties(ECSqlStatement&) override;
+    virtual void                        _BindProperties(BeSQLite::EC::ECSqlStatement&) override;
     virtual void                        _AssignValue (int, BeSQLite::EC::IECSqlValue const&) override;
     virtual void                        _FlushChangesToProperties() override;
     virtual bool                        _ShouldBePersisted (AnnotationTableSerializer&) const override;
@@ -1176,7 +1176,7 @@ private:
 protected:
     // AnnotationTableAspect
     AnnotationTableAspectType           _GetAspectType() const override { return AnnotationTableAspectType::Row; }
-    virtual void                        _BindProperties(ECSqlStatement&) override;
+    virtual void                        _BindProperties(BeSQLite::EC::ECSqlStatement&) override;
     virtual void                        _AssignValue (int, BeSQLite::EC::IECSqlValue const&) override;
     virtual void                        _FlushChangesToProperties() override;
     virtual bool                        _ShouldBePersisted (AnnotationTableSerializer&) const override;
@@ -1275,7 +1275,7 @@ private:
 protected:
     // AnnotationTableAspect
     AnnotationTableAspectType           _GetAspectType() const override { return AnnotationTableAspectType::Column; }
-    virtual void                        _BindProperties(ECSqlStatement&);
+    virtual void                        _BindProperties(BeSQLite::EC::ECSqlStatement&);
     virtual void                        _AssignValue (int, BeSQLite::EC::IECSqlValue const&);
     virtual void                        _FlushChangesToProperties() override;
     virtual bool                        _ShouldBePersisted (AnnotationTableSerializer&) const override;
@@ -1443,23 +1443,26 @@ private:
 
     void        Invalidate ();
 
-    int         GetInteger  (PropIndex) const;
-    int         GetUInteger (PropIndex) const;
-    bool        GetBoolean  (PropIndex, bool defVal) const;
-    double      GetDouble   (PropIndex) const;
-    DgnElementId  GetStyleId (PropIndex) const;
+    TableUIntValue const*     GetUIntValue   (PropIndex) const;
+    TableUInt64Value const*   GetUInt64Value (PropIndex) const;
+    TableBoolValue const*     GetBoolValue   (PropIndex) const;
+    TableDoubleValue const*   GetDoubleValue (PropIndex) const;
 
-    void    SetInteger  (int, PropIndex);
-    void    SetUInteger (int, PropIndex);
-    void    SetBoolean  (bool, PropIndex);
-    void    SetDouble   (double, PropIndex);
-    void    SetStyleId (DgnElementId, PropIndex);
+    int                 GetUInteger (PropIndex) const;
+    bool                GetBoolean  (PropIndex, bool defVal) const;
+    double              GetDouble   (PropIndex) const;
+    DgnElementId        GetStyleId (PropIndex) const;
+
+    void                SetUInteger (int, PropIndex);
+    void                SetBoolean  (bool, PropIndex);
+    void                SetDouble   (double, PropIndex);
+    void                SetStyleId (DgnElementId, PropIndex);
 
 //__PUBLISH_SECTION_START__
 protected:
     // AnnotationTableAspect
     AnnotationTableAspectType           _GetAspectType() const override { return AnnotationTableAspectType::Header; }
-    virtual void                        _BindProperties(ECSqlStatement&);
+    virtual void                        _BindProperties(BeSQLite::EC::ECSqlStatement&);
     virtual void                        _AssignValue (int propIndex, BeSQLite::EC::IECSqlValue const&) override;
     virtual bool                        _IsUniqueAspect () const override { return true; }
     virtual void                        _FlushChangesToProperties();
@@ -1527,7 +1530,9 @@ public:
 struct EXPORT_VTABLE_ATTRIBUTE AnnotationTableElement : AnnotationElement
 {
 //__PUBLISH_SECTION_END__
-friend AnnotationTableSerializer;
+friend struct AnnotationTableSerializer;
+friend struct ConvertV8TextTableToDgnDbExtension;
+friend struct V8TextTableToDgnDbConverter;
 //__PUBLISH_SECTION_START__
 
 private:
@@ -1561,10 +1566,6 @@ private:
     void        CopyPropsForNewRow    (uint32_t indexOfNewRow, uint32_t indexOfSeedRow);
     void        CopyPropsForNewColumn (uint32_t indexOfNewCol, uint32_t indexOfSeedCol);
 
-    void        SetTitleRowCount     (uint32_t);
-    void        SetHeaderRowCount    (uint32_t);
-    void        SetFooterRowCount    (uint32_t);
-
     bool        HasOverlappingMerges (bvector<AnnotationTableCellP>& consumedRoots, AnnotationTableCellIndexCR rootIndex, uint32_t numRows, uint32_t numCols);
     double      GetDefaultBreakGap () const;
 
@@ -1573,6 +1574,8 @@ private:
     void        ChangeDefaultTextSymbology (TextSymb, TextSymbAction, uint32_t value);
 
 protected:
+    DGNPLATFORM_EXPORT  void                                BootStrap(uint32_t rowCount, uint32_t columnCount, DgnElementId textStyleId, double backupTextHeight);
+
     DGNPLATFORM_EXPORT  virtual DgnDbStatus                 _OnInsert() override;
     DGNPLATFORM_EXPORT  virtual DgnDbStatus                 _OnUpdate(DgnElementCR original) override;
 
@@ -1592,6 +1595,12 @@ public:
     void                                    SetTextStyleIdDirect (DgnElementId val, AnnotationTableRegion region);
     void                                    DeleteAspect (AnnotationTableAspectCR);
     void                                    ConsiderRegionForAlternateMinimumSize (double& min, AnnotationTableRegion region, bool isHeight) const;
+
+    DGNPLATFORM_EXPORT void         SetTitleRowCount     (uint32_t);
+    DGNPLATFORM_EXPORT void         SetHeaderRowCount    (uint32_t);
+    DGNPLATFORM_EXPORT void         SetFooterRowCount    (uint32_t);
+    DGNPLATFORM_EXPORT void         SetHeaderColumnCount (uint32_t);
+    DGNPLATFORM_EXPORT void         SetFooterColumnCount (uint32_t);
 
     MergeDictionary&                GetMergeDictionary()            { return m_mergeDictionary; }
     MergeDictionary const&          GetMergeDictionary() const      { return m_mergeDictionary; }
@@ -1628,9 +1637,6 @@ public:
     TableHeaderFooterType           GetColumnHeaderFooterType (uint32_t columnIndex) const;
     bool                            CanChangeColumnHeaderFooterType (uint32_t colIndex, TableHeaderFooterType newType) const;
     BentleyStatus                   ChangeColumnHeaderFooterType (uint32_t colIndex, TableHeaderFooterType newType);
-
-    void                            SetHeaderColumnCount (uint32_t);
-    void                            SetFooterColumnCount (uint32_t);
 
     void                            HasInteriorEdges (bool* hasAny, bool* hasHorizontal, bool* hasVertical, bvector<AnnotationTableCellIndex> const&) const;
 

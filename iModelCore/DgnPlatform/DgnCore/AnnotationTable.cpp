@@ -5450,21 +5450,87 @@ void            TableHeaderAspect::_FlushChangesToProperties ()
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                                   Josh.Schifter   09/2015
+// @bsimethod                                                   Josh.Schifter   12/2015
 //---------------------------------------------------------------------------------------
-int         TableHeaderAspect::GetInteger (PropIndex propIndex) const
+TableUIntValue const*    TableHeaderAspect::GetUIntValue (PropIndex propIndex) const
     {
-    TableIntValue const* intValue = nullptr;
-
     switch (propIndex)
         {
-        case PropIndex::DataSourceProviderId:      { break; }
+        case PropIndex::RowCount:                   { return &m_rowCount;                }
+        case PropIndex::ColumnCount:                { return &m_columnCount;             }
+        case PropIndex::TitleRowCount:              { return &m_titleRowCount;           }
+        case PropIndex::HeaderRowCount:             { return &m_headerRowCount;          }
+        case PropIndex::FooterRowCount:             { return &m_footerRowCount;          }
+        case PropIndex::HeaderColumnCount:          { return &m_headerColumnCount;       }
+        case PropIndex::FooterColumnCount:          { return &m_footerColumnCount;       }
+        case PropIndex::BreakType:                  { return &m_breakType;               }
+        case PropIndex::BreakPosition:              { return &m_breakPosition;           }
+        case PropIndex::DefaultCellAlignment:       { return &m_defaultCellAlignment;    }
+        case PropIndex::DefaultCellOrientation:     { return &m_defaultCellOrientation;  }
+        case PropIndex::FillSymbologyKeyOddRow:     { return &m_fillSymbologyKeyOddRow;  }
+        case PropIndex::FillSymbologyKeyEvenRow:    { return &m_fillSymbologyKeyEvenRow; }
+        case PropIndex::DefaultTextSymbKey:         { return &m_defaultTextSymbKey;      }
         }
 
-    if (EXPECTED_CONDITION (nullptr != intValue))
-        return intValue->GetValue();
+    return nullptr;
+    }
 
-    return 0;
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Josh.Schifter   12/2015
+//---------------------------------------------------------------------------------------
+TableUInt64Value const*    TableHeaderAspect::GetUInt64Value (PropIndex propIndex) const
+    {
+    switch (propIndex)
+        {
+        case PropIndex::TextStyleId:                { return &m_textStyleId;           }
+        case PropIndex::TitleRowTextStyle:          { return &m_titleRowTextStyle;     }
+        case PropIndex::HeaderRowTextStyle:         { return &m_headerRowTextStyle;    }
+        case PropIndex::FooterRowTextStyle:         { return &m_footerRowTextStyle;    }
+        case PropIndex::HeaderColumnTextStyle:      { return &m_headerColumnTextStyle; }
+        case PropIndex::FooterColumnTextStyle:      { return &m_footerColumnTextStyle; }
+        }
+
+    return nullptr;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Josh.Schifter   12/2015
+//---------------------------------------------------------------------------------------
+TableBoolValue const*    TableHeaderAspect::GetBoolValue (PropIndex propIndex) const
+    {
+    switch (propIndex)
+        {
+        case PropIndex::RepeatHeaders:              { return &m_repeatHeaders; }
+        case PropIndex::RepeatFooters:              { return &m_repeatFooters; }
+        }
+
+    return nullptr;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Josh.Schifter   12/2015
+//---------------------------------------------------------------------------------------
+TableDoubleValue const*    TableHeaderAspect::GetDoubleValue (PropIndex propIndex) const
+    {
+    switch (propIndex)
+        {
+        case PropIndex::BreakLength:                { return &m_breakLength;            }
+        case PropIndex::BreakGap:                   { return &m_breakGap;               }
+        case PropIndex::DefaultColumnWidth:         { return &m_defaultColumnWidth;     }
+        case PropIndex::DefaultRowHeight:           { return &m_defaultRowHeight;       }
+        case PropIndex::DefaultMarginTop:           { return &m_defaultMarginTop;       }
+        case PropIndex::DefaultMarginBottom:        { return &m_defaultMarginBottom;    }
+        case PropIndex::DefaultMarginLeft:          { return &m_defaultMarginLeft;      }
+        case PropIndex::DefaultMarginRight:         { return &m_defaultMarginRight;     }
+        case PropIndex::BodyTextHeight:             { return &m_bodyTextHeight;         }
+        case PropIndex::TitleRowTextHeight:         { return &m_titleRowTextHeight;     }
+        case PropIndex::HeaderRowTextHeight:        { return &m_headerRowTextHeight;    }
+        case PropIndex::FooterRowTextHeight:        { return &m_footerRowTextHeight;    }
+        case PropIndex::HeaderColumnTextHeight:     { return &m_headerColumnTextHeight; }
+        case PropIndex::FooterColumnTextHeight:     { return &m_footerColumnTextHeight; }
+        }
+
+    return nullptr;
     }
 
 //---------------------------------------------------------------------------------------
@@ -5472,28 +5538,10 @@ int         TableHeaderAspect::GetInteger (PropIndex propIndex) const
 //---------------------------------------------------------------------------------------
 int         TableHeaderAspect::GetUInteger (PropIndex propIndex) const
     {
-    TableUIntValue const* intValue = nullptr;
+    TableUIntValue const* value = GetUIntValue (propIndex);
 
-    switch (propIndex)
-        {
-        case PropIndex::RowCount:                  { intValue = &m_rowCount;                break; }
-        case PropIndex::ColumnCount:               { intValue = &m_columnCount;             break; }
-        case PropIndex::TitleRowCount:             { intValue = &m_titleRowCount;           break; }
-        case PropIndex::HeaderRowCount:            { intValue = &m_headerRowCount;          break; }
-        case PropIndex::FooterRowCount:            { intValue = &m_footerRowCount;          break; }
-        case PropIndex::HeaderColumnCount:         { intValue = &m_headerColumnCount;       break; }
-        case PropIndex::FooterColumnCount:         { intValue = &m_footerColumnCount;       break; }
-        case PropIndex::BreakType:                 { intValue = &m_breakType;               break; }
-        case PropIndex::BreakPosition:             { intValue = &m_breakPosition;           break; }
-        case PropIndex::DefaultCellAlignment:      { intValue = &m_defaultCellAlignment;    break; }
-        case PropIndex::DefaultCellOrientation:    { intValue = &m_defaultCellOrientation;  break; }
-        case PropIndex::FillSymbologyKeyOddRow:    { intValue = &m_fillSymbologyKeyOddRow;  break; }
-        case PropIndex::FillSymbologyKeyEvenRow:   { intValue = &m_fillSymbologyKeyEvenRow; break; }
-        case PropIndex::DefaultTextSymbKey:        { intValue = &m_defaultTextSymbKey;      break; }
-        }
-
-    if (EXPECTED_CONDITION (nullptr != intValue))
-        return intValue->GetValue();
+    if (EXPECTED_CONDITION (nullptr != value))
+        return value->GetValue();
 
     return 0;
     }
@@ -5503,18 +5551,12 @@ int         TableHeaderAspect::GetUInteger (PropIndex propIndex) const
 //---------------------------------------------------------------------------------------
 bool        TableHeaderAspect::GetBoolean (PropIndex propIndex, bool defaultVal) const
     {
-    TableBoolValue const* boolValue = nullptr;
+    TableBoolValue const* value = GetBoolValue (propIndex);
 
-    switch (propIndex)
-        {
-        case PropIndex::RepeatHeaders:          { boolValue = &m_repeatHeaders;         break; }
-        case PropIndex::RepeatFooters:          { boolValue = &m_repeatFooters;         break; }
-        }
+    if (EXPECTED_CONDITION (nullptr != value))
+        return value->GetValue();
 
-    if (EXPECTED_CONDITION (nullptr != boolValue))
-        return boolValue->IsValid() ? boolValue->GetValue() : defaultVal;
-
-    return defaultVal;
+    return 0;
     }
 
 //---------------------------------------------------------------------------------------
@@ -5522,28 +5564,10 @@ bool        TableHeaderAspect::GetBoolean (PropIndex propIndex, bool defaultVal)
 //---------------------------------------------------------------------------------------
 double          TableHeaderAspect::GetDouble (PropIndex propIndex) const
     {
-    TableDoubleValue const* doubleValue = nullptr;
+    TableDoubleValue const* value = GetDoubleValue (propIndex);
 
-    switch (propIndex)
-        {
-        case PropIndex::BreakLength:              { doubleValue = &m_breakLength;             break; }
-        case PropIndex::BreakGap:                 { doubleValue = &m_breakGap;                break; }
-        case PropIndex::DefaultColumnWidth:       { doubleValue = &m_defaultColumnWidth;      break; }
-        case PropIndex::DefaultRowHeight:         { doubleValue = &m_defaultRowHeight;        break; }
-        case PropIndex::DefaultMarginTop:         { doubleValue = &m_defaultMarginTop;        break; }
-        case PropIndex::DefaultMarginBottom:      { doubleValue = &m_defaultMarginBottom;     break; }
-        case PropIndex::DefaultMarginLeft:        { doubleValue = &m_defaultMarginLeft;       break; }
-        case PropIndex::DefaultMarginRight:       { doubleValue = &m_defaultMarginRight;      break; }
-        case PropIndex::BodyTextHeight:           { doubleValue = &m_bodyTextHeight;          break; }
-        case PropIndex::TitleRowTextHeight:       { doubleValue = &m_titleRowTextHeight;      break; }
-        case PropIndex::HeaderRowTextHeight:      { doubleValue = &m_headerRowTextHeight;     break; }
-        case PropIndex::FooterRowTextHeight:      { doubleValue = &m_footerRowTextHeight;     break; }
-        case PropIndex::HeaderColumnTextHeight:   { doubleValue = &m_headerColumnTextHeight;  break; }
-        case PropIndex::FooterColumnTextHeight:   { doubleValue = &m_footerColumnTextHeight;  break; }
-        }
-
-    if (EXPECTED_CONDITION (nullptr != doubleValue))
-        return doubleValue->GetValue();
+    if (EXPECTED_CONDITION (nullptr != value))
+        return value->GetValue();
 
     return 0.0;
     }
@@ -5553,22 +5577,11 @@ double          TableHeaderAspect::GetDouble (PropIndex propIndex) const
 //---------------------------------------------------------------------------------------
 DgnElementId  TableHeaderAspect::GetStyleId (PropIndex propIndex) const
     {
-    TableUInt64Value const* int64Value = nullptr;
-
-    switch (propIndex)
-        {
-        case PropIndex::TextStyleId:                { int64Value = &m_textStyleId;              break; }
-        case PropIndex::TitleRowTextStyle:          { int64Value = &m_titleRowTextStyle;        break; }
-        case PropIndex::HeaderRowTextStyle:         { int64Value = &m_headerRowTextStyle;       break; }
-        case PropIndex::FooterRowTextStyle:         { int64Value = &m_footerRowTextStyle;       break; }
-        case PropIndex::HeaderColumnTextStyle:      { int64Value = &m_headerColumnTextStyle;    break; }
-        case PropIndex::FooterColumnTextStyle:      { int64Value = &m_footerColumnTextStyle;    break; }
-        }
-
+    TableUInt64Value const* value = GetUInt64Value (propIndex);
     DgnElementId  styleId;
 
-    if (EXPECTED_CONDITION (nullptr != int64Value))
-        styleId = DgnElementId(int64Value->GetValue());
+    if (EXPECTED_CONDITION (nullptr != value))
+        styleId = DgnElementId(value->GetValue());
 
     return styleId;
     }
@@ -5576,53 +5589,9 @@ DgnElementId  TableHeaderAspect::GetStyleId (PropIndex propIndex) const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Josh.Schifter   09/2015
 //---------------------------------------------------------------------------------------
-void        TableHeaderAspect::SetInteger (int v, PropIndex propIndex)
-    {
-    TableIntValue* value = nullptr;
-
-    switch (propIndex)
-        {
-        case PropIndex::TitleRowCount:             { break; }
-        case PropIndex::HeaderRowCount:            { break; }
-        case PropIndex::FooterRowCount:            { break; }
-        case PropIndex::HeaderColumnCount:         { break; }
-        case PropIndex::FooterColumnCount:         { break; }
-        case PropIndex::BreakType:                 { break; }
-        case PropIndex::BreakPosition:             { break; }
-        case PropIndex::DefaultCellAlignment:      { break; }
-        case PropIndex::DefaultCellOrientation:    { break; }
-        case PropIndex::TitleRowTextStyle:         { break; }
-        case PropIndex::HeaderRowTextStyle:        { break; }
-        case PropIndex::FooterRowTextStyle:        { break; }
-        case PropIndex::HeaderColumnTextStyle:     { break; }
-        case PropIndex::FooterColumnTextStyle:     { break; }
-        case PropIndex::DataSourceProviderId:      { break; }
-        default: { BeAssert (false); return; }
-        }
-
-    if (UNEXPECTED_CONDITION (nullptr == value))
-        return;
-
-    value->SetValue (v);
-    SetHasChanges();
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Josh.Schifter   09/2015
-//---------------------------------------------------------------------------------------
 void        TableHeaderAspect::SetUInteger (int v, PropIndex propIndex)
     {
-    TableUIntValue* value = nullptr;
-
-    switch (propIndex)
-        {
-        case PropIndex::RowCount:                  { value = &m_rowCount;                   break; }
-        case PropIndex::ColumnCount:               { value = &m_columnCount;                break; }
-        case PropIndex::FillSymbologyKeyOddRow:    { value = &m_fillSymbologyKeyOddRow;     break; }
-        case PropIndex::FillSymbologyKeyEvenRow:   { value = &m_fillSymbologyKeyEvenRow;    break; }
-        case PropIndex::DefaultTextSymbKey:        { value = &m_defaultTextSymbKey;         break; }
-        default: { BeAssert (false); return; }
-        }
+    TableUIntValue*  value = const_cast <TableUIntValue*> (GetUIntValue (propIndex));
 
     if (UNEXPECTED_CONDITION (nullptr == value))
         return;
@@ -5636,14 +5605,7 @@ void        TableHeaderAspect::SetUInteger (int v, PropIndex propIndex)
 //---------------------------------------------------------------------------------------
 void        TableHeaderAspect::SetBoolean (bool v, PropIndex propIndex)
     {
-    TableBoolValue* value = nullptr;
-
-    switch (propIndex)
-        {
-        case PropIndex::RepeatHeaders:      { value = &m_repeatHeaders;   break; }
-        case PropIndex::RepeatFooters:      { value = &m_repeatFooters;   break; }
-        default: { BeAssert (false); return; }
-        }
+    TableBoolValue*  value = const_cast <TableBoolValue*> (GetBoolValue (propIndex));
 
     if (UNEXPECTED_CONDITION (nullptr == value))
         return;
@@ -5657,25 +5619,7 @@ void        TableHeaderAspect::SetBoolean (bool v, PropIndex propIndex)
 //---------------------------------------------------------------------------------------
 void        TableHeaderAspect::SetDouble (double v, PropIndex propIndex)
     {
-    TableDoubleValue* value = nullptr;
-
-    switch (propIndex)
-        {
-        case PropIndex::BreakLength:              { value = &m_breakLength;             break; }
-        case PropIndex::BreakGap:                 { value = &m_breakGap;                break; }
-        case PropIndex::DefaultColumnWidth:       { value = &m_defaultColumnWidth;      break; }
-        case PropIndex::DefaultRowHeight:         { value = &m_defaultRowHeight;        break; }
-        case PropIndex::DefaultMarginTop:         { value = &m_defaultMarginTop;        break; }
-        case PropIndex::DefaultMarginBottom:      { value = &m_defaultMarginBottom;     break; }
-        case PropIndex::DefaultMarginLeft:        { value = &m_defaultMarginLeft;       break; }
-        case PropIndex::DefaultMarginRight:       { value = &m_defaultMarginRight;      break; }
-        case PropIndex::BodyTextHeight:           { value = &m_bodyTextHeight;          break; }
-        case PropIndex::TitleRowTextHeight:       { value = &m_titleRowTextHeight;      break; }
-        case PropIndex::HeaderRowTextHeight:      { value = &m_headerRowTextHeight;     break; }
-        case PropIndex::FooterRowTextHeight:      { value = &m_footerRowTextHeight;     break; }
-        case PropIndex::HeaderColumnTextHeight:   { value = &m_headerColumnTextHeight;  break; }
-        case PropIndex::FooterColumnTextHeight:   { value = &m_footerColumnTextHeight;  break; }
-        }
+    TableDoubleValue*  value = const_cast <TableDoubleValue*> (GetDoubleValue (propIndex));
 
     if (UNEXPECTED_CONDITION (nullptr == value))
         return;
@@ -5689,17 +5633,7 @@ void        TableHeaderAspect::SetDouble (double v, PropIndex propIndex)
 //---------------------------------------------------------------------------------------
 void        TableHeaderAspect::SetStyleId (DgnElementId v, PropIndex propIndex)
     {
-    TableUInt64Value* value = nullptr;
-
-    switch (propIndex)
-        {
-        case PropIndex::TextStyleId:                { value = &m_textStyleId;              break; }
-        case PropIndex::TitleRowTextStyle:          { value = &m_titleRowTextStyle;        break; }
-        case PropIndex::HeaderRowTextStyle:         { value = &m_headerRowTextStyle;       break; }
-        case PropIndex::FooterRowTextStyle:         { value = &m_footerRowTextStyle;       break; }
-        case PropIndex::HeaderColumnTextStyle:      { value = &m_headerColumnTextStyle;    break; }
-        case PropIndex::FooterColumnTextStyle:      { value = &m_footerColumnTextStyle;    break; }
-        }
+    TableUInt64Value*  value = const_cast <TableUInt64Value*> (GetUInt64Value (propIndex));
 
     if (UNEXPECTED_CONDITION (nullptr == value))
         return;
@@ -6655,14 +6589,22 @@ AnnotationTableElementPtr AnnotationTableElement::Create (uint32_t rowCount, uin
     if (table.IsNull())
         return nullptr;
 
-    table->SetRowCount (rowCount);
-    table->SetColumnCount (columnCount);
-    table->SetTextStyleId (textStyleId, AnnotationTableRegion::Body);
-    //table->SetBackupTextHeight (backupTextHeight);
-
-    table->Initialize (true);
+    table->BootStrap (rowCount, columnCount, textStyleId, backupTextHeight);
 
     return table;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Josh.Schifter   12/2015
+//---------------------------------------------------------------------------------------
+void AnnotationTableElement::BootStrap (uint32_t rowCount, uint32_t columnCount, DgnElementId textStyleId, double backupTextHeight)
+    {
+    SetRowCount (rowCount);
+    SetColumnCount (columnCount);
+    SetTextStyleId (textStyleId, AnnotationTableRegion::Body);
+    //table->SetBackupTextHeight (backupTextHeight);
+
+    Initialize (true);
     }
 
 //---------------------------------------------------------------------------------------
