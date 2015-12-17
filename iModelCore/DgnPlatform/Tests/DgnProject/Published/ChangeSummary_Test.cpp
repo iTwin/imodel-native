@@ -219,51 +219,72 @@ TEST_F(ChangeSummaryTestFixture, ElementChangesFromCurrentTransaction)
     /*
     ChangeSummary after inserts:
     InstanceId;ClassId;ClassName;DbOpcode;Indirect
-    2;191;dgn:PhysicalModel;Insert;No
-	    Code;NULL;"ChangeSetModel"
-	    CodeAuthorityId;NULL;6
-	    CodeNameSpace;NULL;""
-	    Props;NULL;"{"azimuth":-9.2559631349317831e+061,"fmtDir":0.0,"fmtFlags":{"angMode":0,"angPrec":0,"clockwise":0,"dirMode":0,"linMode":0,"linPrec":0,"linType":0},"mastUnit":{"base":1,"den":1.0,"label":"m","num":1.0,"sys":2},"rndRatio":0.0,"rndUnit":0.0,"subUnit":{"base":1,"den":1.0,"label":"m","num":1.0,"sys":2}}"
-	    Visibility;NULL;1
-    2;153;dgn:Category;Insert;No
-	    Code;NULL;"ChangeSetTestCategory"
-	    CodeAuthorityId;NULL;3
-	    CodeNameSpace;NULL;""
-	    Descr;NULL;""
-	    LastMod;NULL;2.45733e+006
-	    ModelId;NULL;1
-	    Rank;NULL;2
-	    Scope;NULL;1
-    3;204;dgn:SubCategory;Insert;No
-	    Code;NULL;"ChangeSetTestCategory"
-	    CodeAuthorityId;NULL;3
-	    CodeNameSpace;NULL;"ChangeSetTestCategory"
-	    LastMod;NULL;2.45733e+006
-	    ModelId;NULL;1
-	    ParentId;NULL;2
-	    Props;NULL;"{"color":16777215}"
-    4;139;dgn:PhysicalElement;Insert;No
-	    CategoryId;NULL;2
-	    CodeAuthorityId;NULL;1
-	    CodeNameSpace;NULL;""
-	    LastMod;NULL;2.45733e+006
-	    ModelId;NULL;2
-    4;163;dgn:ElementGeom;Insert;No
-	    Geom;NULL;...
-	    InPhysicalSpace;NULL;1
-	    Placement;NULL;...
-    3;172;dgn:ElementOwnsChildElements;Insert;No
-	    SourceECClassId;NULL;204
-	    SourceECInstanceId;NULL;2
-	    TargetECClassId;NULL;204
-	    TargetECInstanceId;NULL;3
-    4;175;dgn:ElementOwnsGeom;Insert;No
-	    SourceECClassId;NULL;139
-	    SourceECInstanceId;NULL;4
-	    TargetECClassId;NULL;163
-	    TargetECInstanceId;NULL;4
+    1099511627777;196;dgn:PhysicalModel;Insert;No
+            Code.AuthorityId;NULL;6
+            Code.Namespace;NULL;""
+            Code.Value;NULL;"ChangeSetModel"
+            DependencyIndex;NULL;-1
+            Properties;NULL;"{"DisplayInfo":{"azimuth":-9.2559631349317831e+061,"fmtDir":0.0,"fmtFlags":{"angMode":0,"angPrec":0,"clockwise":0,"dirMode":0,"linMode":0,"linPrec":0,"linType":0},"mastUnit":{"base":1,"den":1.0,"label":"m","num":1.0,"sys":2},"rndRatio":0.0,"rndUnit":0.0,"subUnit":{"base":1,"den":1.0,"label":"m","num":1.0,"sys":2}}}"
+            Visibility;NULL;1
+    1099511627778;160;dgn:Category;Insert;No
+            Code.AuthorityId;NULL;3
+            Code.Namespace;NULL;""
+            Code.Value;NULL;"ChangeSetTestCategory"
+            Descr;NULL;""
+            LastMod;NULL;2.45737e+006
+            ModelId;NULL;1
+            Rank;NULL;2
+            Scope;NULL;1
+    1099511627779;211;dgn:SubCategory;Insert;No
+            Code.AuthorityId;NULL;3
+            Code.Namespace;NULL;"10000000002"
+            Code.Value;NULL;"ChangeSetTestCategory"
+            LastMod;NULL;2.45737e+006
+            ModelId;NULL;1
+            ParentId;NULL;1099511627778
+            Props;NULL;"{"color":16777215}"
+    1099511627780;194;dgn:PhysicalElement;Insert;No
+            Code.AuthorityId;NULL;1
+            Code.Namespace;NULL;""
+            LastMod;NULL;2.45737e+006
+            ModelId;NULL;1099511627777
+    1099511627780;162;dgn:ElementGeom;Insert;No
+            CategoryId;NULL;1099511627778
+            Geom;NULL;...
+            InPhysicalSpace;NULL;1
+            Placement;NULL;...
+    1099511627778;191;dgn:ModelContainsElements;Insert;No
+            SourceECClassId;NULL;167
+            SourceECInstanceId;NULL;1
+            TargetECClassId;NULL;160
+            TargetECInstanceId;NULL;1099511627778
+    1099511627779;180;dgn:ElementOwnsChildElements;Insert;No
+            SourceECClassId;NULL;160
+            SourceECInstanceId;NULL;1099511627778
+            TargetECClassId;NULL;211
+            TargetECInstanceId;NULL;1099511627779
+    1099511627779;191;dgn:ModelContainsElements;Insert;No
+            SourceECClassId;NULL;167
+            SourceECInstanceId;NULL;1
+            TargetECClassId;NULL;211
+            TargetECInstanceId;NULL;1099511627779
+    1099511627780;191;dgn:ModelContainsElements;Insert;No
+            SourceECClassId;NULL;196
+            SourceECInstanceId;NULL;1099511627777
+            TargetECClassId;NULL;194
+            TargetECInstanceId;NULL;1099511627780
+    1099511627780;161;dgn:CategoryContainsElementGeom;Insert;No
+            SourceECClassId;NULL;160
+            SourceECInstanceId;NULL;1099511627778
+            TargetECClassId;NULL;162
+            TargetECInstanceId;NULL;1099511627780
+    1099511627780;183;dgn:ElementOwnsGeom;Insert;No
+            SourceECClassId;NULL;194
+            SourceECInstanceId;NULL;1099511627780
+            TargetECClassId;NULL;162
+            TargetECInstanceId;NULL;1099511627780
     */
-    EXPECT_EQ(8, changeSummary.MakeInstanceIterator().QueryCount());
+    EXPECT_EQ(11, changeSummary.MakeInstanceIterator().QueryCount());
     EXPECT_TRUE(ChangeSummaryContainsInstance(changeSummary, ECInstanceId(m_testModel->GetModelId().GetValueUnchecked()), "dgn", "PhysicalModel", DbOpcode::Insert));
     EXPECT_TRUE(ChangeSummaryContainsInstance(changeSummary, ECInstanceId(m_testCategoryId.GetValueUnchecked()), "dgn", "Category", DbOpcode::Insert));
     EXPECT_TRUE(ChangeSummaryContainsInstance(changeSummary, ECInstanceId(elementId.GetValueUnchecked()), "dgn", "PhysicalElement", DbOpcode::Insert));
@@ -292,23 +313,33 @@ TEST_F(ChangeSummaryTestFixture, ElementChangesFromCurrentTransaction)
     /*
     ChangeSummary after deletes:
     InstanceId;ClassId;ClassName;DbOpcode;Indirect
-    4;139;dgn:PhysicalElement;Delete;No
-	    CategoryId;2;NULL
-	    CodeAuthorityId;1;NULL
-	    CodeNameSpace;"";NULL
-	    LastMod;2.45733e+006;NULL
-	    ModelId;2;NULL
-    4;163;dgn:ElementGeom;Delete;Yes
-	    Geom;...;NULL
-	    InPhysicalSpace;1;NULL
-	    Placement;...;NULL
-    4;175;dgn:ElementOwnsGeom;Delete;Yes
-	    SourceECClassId;139;NULL
-	    SourceECInstanceId;4;NULL
-	    TargetECClassId;163;NULL
-	    TargetECInstanceId;4;NULL
+    1099511627780;194;dgn:PhysicalElement;Delete;No
+            Code.AuthorityId;1;NULL
+            Code.Namespace;"";NULL
+            LastMod;2.45737e+006;NULL
+            ModelId;1099511627777;NULL
+    1099511627780;162;dgn:ElementGeom;Delete;Yes
+            CategoryId;1099511627778;NULL
+            Geom;...;NULL
+            InPhysicalSpace;1;NULL
+            Placement;...;NULL
+    1099511627780;191;dgn:ModelContainsElements;Delete;No
+            SourceECClassId;196;NULL
+            SourceECInstanceId;1099511627777;NULL
+            TargetECClassId;194;NULL
+            TargetECInstanceId;1099511627780;NULL
+    1099511627780;161;dgn:CategoryContainsElementGeom;Delete;Yes
+            SourceECClassId;160;NULL
+            SourceECInstanceId;1099511627778;NULL
+            TargetECClassId;162;NULL
+            TargetECInstanceId;1099511627780;NULL
+    1099511627780;183;dgn:ElementOwnsGeom;Delete;Yes
+            SourceECClassId;194;NULL
+            SourceECInstanceId;1099511627780;NULL
+            TargetECClassId;162;NULL
+            TargetECInstanceId;1099511627780;NULL
     */
-    EXPECT_EQ(4, changeSummary.MakeInstanceIterator().QueryCount());
+    EXPECT_EQ(5, changeSummary.MakeInstanceIterator().QueryCount());
     EXPECT_TRUE(ChangeSummaryContainsInstance(changeSummary, ECInstanceId(elementId.GetValueUnchecked()), "dgn", "PhysicalElement", DbOpcode::Delete));
     }
 
@@ -334,51 +365,72 @@ TEST_F(ChangeSummaryTestFixture, ElementChangesFromSavedTransactions)
     /* 
     After inserts:
     InstanceId;ClassId;ClassName;DbOpcode;Indirect
-    2;191;dgn:PhysicalModel;Insert;No
-	    Code;NULL;"ChangeSetModel"
-	    CodeAuthorityId;NULL;6
-	    CodeNameSpace;NULL;""
-	    Props;NULL;"{"azimuth":-9.2559631349317831e+061,"fmtDir":0.0,"fmtFlags":{"angMode":0,"angPrec":0,"clockwise":0,"dirMode":0,"linMode":0,"linPrec":0,"linType":0},"mastUnit":{"base":1,"den":1.0,"label":"m","num":1.0,"sys":2},"rndRatio":0.0,"rndUnit":0.0,"subUnit":{"base":1,"den":1.0,"label":"m","num":1.0,"sys":2}}"
-	    Visibility;NULL;1
-    2;153;dgn:Category;Insert;No
-	    Code;NULL;"ChangeSetTestCategory"
-	    CodeAuthorityId;NULL;3
-	    CodeNameSpace;NULL;""
-	    Descr;NULL;""
-	    LastMod;NULL;2.45733e+006
-	    ModelId;NULL;1
-	    Rank;NULL;2
-	    Scope;NULL;1
-    3;204;dgn:SubCategory;Insert;No
-	    Code;NULL;"ChangeSetTestCategory"
-	    CodeAuthorityId;NULL;3
-	    CodeNameSpace;NULL;"ChangeSetTestCategory"
-	    LastMod;NULL;2.45733e+006
-	    ModelId;NULL;1
-	    ParentId;NULL;2
-	    Props;NULL;"{"color":16777215}"
-    4;139;dgn:PhysicalElement;Insert;No
-	    CategoryId;NULL;2
-	    CodeAuthorityId;NULL;1
-	    CodeNameSpace;NULL;""
-	    LastMod;NULL;2.45733e+006
-	    ModelId;NULL;2
-    4;163;dgn:ElementGeom;Insert;No
-	    Geom;NULL;...
-	    InPhysicalSpace;NULL;1
-	    Placement;NULL;...
-    3;172;dgn:ElementOwnsChildElements;Insert;No
-	    SourceECClassId;NULL;204
-	    SourceECInstanceId;NULL;2
-	    TargetECClassId;NULL;204
-	    TargetECInstanceId;NULL;3
-    4;175;dgn:ElementOwnsGeom;Insert;No
-	    SourceECClassId;NULL;139
-	    SourceECInstanceId;NULL;4
-	    TargetECClassId;NULL;163
-	    TargetECInstanceId;NULL;4
+    1099511627777;196;dgn:PhysicalModel;Insert;No
+            Code.AuthorityId;NULL;6
+            Code.Namespace;NULL;""
+            Code.Value;NULL;"ChangeSetModel"
+            DependencyIndex;NULL;-1
+            Properties;NULL;"{"DisplayInfo":{"azimuth":-9.2559631349317831e+061,"fmtDir":0.0,"fmtFlags":{"angMode":0,"angPrec":0,"clockwise":0,"dirMode":0,"linMode":0,"linPrec":0,"linType":0},"mastUnit":{"base":1,"den":1.0,"label":"m","num":1.0,"sys":2},"rndRatio":0.0,"rndUnit":0.0,"subUnit":{"base":1,"den":1.0,"label":"m","num":1.0,"sys":2}}}"
+            Visibility;NULL;1
+    1099511627778;160;dgn:Category;Insert;No
+            Code.AuthorityId;NULL;3
+            Code.Namespace;NULL;""
+            Code.Value;NULL;"ChangeSetTestCategory"
+            Descr;NULL;""
+            LastMod;NULL;2.45737e+006
+            ModelId;NULL;1
+            Rank;NULL;2
+            Scope;NULL;1
+    1099511627779;211;dgn:SubCategory;Insert;No
+            Code.AuthorityId;NULL;3
+            Code.Namespace;NULL;"10000000002"
+            Code.Value;NULL;"ChangeSetTestCategory"
+            LastMod;NULL;2.45737e+006
+            ModelId;NULL;1
+            ParentId;NULL;1099511627778
+            Props;NULL;"{"color":16777215}"
+    1099511627780;194;dgn:PhysicalElement;Insert;No
+            Code.AuthorityId;NULL;1
+            Code.Namespace;NULL;""
+            LastMod;NULL;2.45737e+006
+            ModelId;NULL;1099511627777
+    1099511627780;162;dgn:ElementGeom;Insert;No
+            CategoryId;NULL;1099511627778
+            Geom;NULL;...
+            InPhysicalSpace;NULL;1
+            Placement;NULL;...
+    1099511627778;191;dgn:ModelContainsElements;Insert;No
+            SourceECClassId;NULL;167
+            SourceECInstanceId;NULL;1
+            TargetECClassId;NULL;160
+            TargetECInstanceId;NULL;1099511627778
+    1099511627779;180;dgn:ElementOwnsChildElements;Insert;No
+            SourceECClassId;NULL;160
+            SourceECInstanceId;NULL;1099511627778
+            TargetECClassId;NULL;211
+            TargetECInstanceId;NULL;1099511627779
+    1099511627779;191;dgn:ModelContainsElements;Insert;No
+            SourceECClassId;NULL;167
+            SourceECInstanceId;NULL;1
+            TargetECClassId;NULL;211
+            TargetECInstanceId;NULL;1099511627779
+    1099511627780;191;dgn:ModelContainsElements;Insert;No
+            SourceECClassId;NULL;196
+            SourceECInstanceId;NULL;1099511627777
+            TargetECClassId;NULL;194
+            TargetECInstanceId;NULL;1099511627780
+    1099511627780;161;dgn:CategoryContainsElementGeom;Insert;No
+            SourceECClassId;NULL;160
+            SourceECInstanceId;NULL;1099511627778
+            TargetECClassId;NULL;162
+            TargetECInstanceId;NULL;1099511627780
+    1099511627780;183;dgn:ElementOwnsGeom;Insert;No
+            SourceECClassId;NULL;194
+            SourceECInstanceId;NULL;1099511627780
+            TargetECClassId;NULL;162
+            TargetECInstanceId;NULL;1099511627780
     */
-    EXPECT_EQ(8, changeSummary.MakeInstanceIterator().QueryCount());
+    EXPECT_EQ(11, changeSummary.MakeInstanceIterator().QueryCount());
 
     ModifyElement(elementId);
 
@@ -391,51 +443,72 @@ TEST_F(ChangeSummaryTestFixture, ElementChangesFromSavedTransactions)
     /*
     After updates:
     InstanceId;ClassId;ClassName;DbOpcode;Indirect
-    2;191;dgn:PhysicalModel;Insert;No
-	    Code;NULL;"ChangeSetModel"
-	    CodeAuthorityId;NULL;6
-	    CodeNameSpace;NULL;""
-	    Props;NULL;"{"azimuth":-9.2559631349317831e+061,"fmtDir":0.0,"fmtFlags":{"angMode":0,"angPrec":0,"clockwise":0,"dirMode":0,"linMode":0,"linPrec":0,"linType":0},"mastUnit":{"base":1,"den":1.0,"label":"m","num":1.0,"sys":2},"rndRatio":0.0,"rndUnit":0.0,"subUnit":{"base":1,"den":1.0,"label":"m","num":1.0,"sys":2}}"
-	    Visibility;NULL;1
-    2;153;dgn:Category;Insert;No
-	    Code;NULL;"ChangeSetTestCategory"
-	    CodeAuthorityId;NULL;3
-	    CodeNameSpace;NULL;""
-	    Descr;NULL;""
-	    LastMod;NULL;2.45733e+006
-	    ModelId;NULL;1
-	    Rank;NULL;2
-	    Scope;NULL;1
-    3;204;dgn:SubCategory;Insert;No
-	    Code;NULL;"ChangeSetTestCategory"
-	    CodeAuthorityId;NULL;3
-	    CodeNameSpace;NULL;"ChangeSetTestCategory"
-	    LastMod;NULL;2.45733e+006
-	    ModelId;NULL;1
-	    ParentId;NULL;2
-	    Props;NULL;"{"color":16777215}"
-    4;139;dgn:PhysicalElement;Insert;No
-	    CategoryId;NULL;2
-	    CodeAuthorityId;NULL;1
-	    CodeNameSpace;NULL;""
-	    LastMod;NULL;2.45733e+006
-	    ModelId;NULL;2
-    4;163;dgn:ElementGeom;Insert;No
-	    Geom;NULL;...
-	    InPhysicalSpace;NULL;1
-	    Placement;NULL;...
-    3;172;dgn:ElementOwnsChildElements;Insert;No
-	    SourceECClassId;NULL;204
-	    SourceECInstanceId;NULL;2
-	    TargetECClassId;NULL;204
-	    TargetECInstanceId;NULL;3
-    4;175;dgn:ElementOwnsGeom;Insert;No
-	    SourceECClassId;NULL;139
-	    SourceECInstanceId;NULL;4
-	    TargetECClassId;NULL;163
-	    TargetECInstanceId;NULL;4
+    1099511627777;196;dgn:PhysicalModel;Insert;No
+            Code.AuthorityId;NULL;6
+            Code.Namespace;NULL;""
+            Code.Value;NULL;"ChangeSetModel"
+            DependencyIndex;NULL;-1
+            Properties;NULL;"{"DisplayInfo":{"azimuth":-9.2559631349317831e+061,"fmtDir":0.0,"fmtFlags":{"angMode":0,"angPrec":0,"clockwise":0,"dirMode":0,"linMode":0,"linPrec":0,"linType":0},"mastUnit":{"base":1,"den":1.0,"label":"m","num":1.0,"sys":2},"rndRatio":0.0,"rndUnit":0.0,"subUnit":{"base":1,"den":1.0,"label":"m","num":1.0,"sys":2}}}"
+            Visibility;NULL;1
+    1099511627778;160;dgn:Category;Insert;No
+            Code.AuthorityId;NULL;3
+            Code.Namespace;NULL;""
+            Code.Value;NULL;"ChangeSetTestCategory"
+            Descr;NULL;""
+            LastMod;NULL;2.45737e+006
+            ModelId;NULL;1
+            Rank;NULL;2
+            Scope;NULL;1
+    1099511627779;211;dgn:SubCategory;Insert;No
+            Code.AuthorityId;NULL;3
+            Code.Namespace;NULL;"10000000002"
+            Code.Value;NULL;"ChangeSetTestCategory"
+            LastMod;NULL;2.45737e+006
+            ModelId;NULL;1
+            ParentId;NULL;1099511627778
+            Props;NULL;"{"color":16777215}"
+    1099511627780;194;dgn:PhysicalElement;Insert;No
+            Code.AuthorityId;NULL;1
+            Code.Namespace;NULL;""
+            LastMod;NULL;2.45737e+006
+            ModelId;NULL;1099511627777
+    1099511627780;162;dgn:ElementGeom;Insert;No
+            CategoryId;NULL;1099511627778
+            Geom;NULL;...
+            InPhysicalSpace;NULL;1
+            Placement;NULL;...
+    1099511627778;191;dgn:ModelContainsElements;Insert;No
+            SourceECClassId;NULL;167
+            SourceECInstanceId;NULL;1
+            TargetECClassId;NULL;160
+            TargetECInstanceId;NULL;1099511627778
+    1099511627779;180;dgn:ElementOwnsChildElements;Insert;No
+            SourceECClassId;NULL;160
+            SourceECInstanceId;NULL;1099511627778
+            TargetECClassId;NULL;211
+            TargetECInstanceId;NULL;1099511627779
+    1099511627779;191;dgn:ModelContainsElements;Insert;No
+            SourceECClassId;NULL;167
+            SourceECInstanceId;NULL;1
+            TargetECClassId;NULL;211
+            TargetECInstanceId;NULL;1099511627779
+    1099511627780;191;dgn:ModelContainsElements;Insert;No
+            SourceECClassId;NULL;196
+            SourceECInstanceId;NULL;1099511627777
+            TargetECClassId;NULL;194
+            TargetECInstanceId;NULL;1099511627780
+    1099511627780;161;dgn:CategoryContainsElementGeom;Insert;No
+            SourceECClassId;NULL;160
+            SourceECInstanceId;NULL;1099511627778
+            TargetECClassId;NULL;162
+            TargetECInstanceId;NULL;1099511627780
+    1099511627780;183;dgn:ElementOwnsGeom;Insert;No
+            SourceECClassId;NULL;194
+            SourceECInstanceId;NULL;1099511627780
+            TargetECClassId;NULL;162
+            TargetECInstanceId;NULL;1099511627780
     */
-    EXPECT_EQ(8, changeSummary.MakeInstanceIterator().QueryCount());
+    EXPECT_EQ(11, changeSummary.MakeInstanceIterator().QueryCount());
 
     DeleteElement(elementId);
 
@@ -448,36 +521,47 @@ TEST_F(ChangeSummaryTestFixture, ElementChangesFromSavedTransactions)
     /*
     After deletes:
     InstanceId;ClassId;ClassName;DbOpcode;Indirect
-    2;191;dgn:PhysicalModel;Insert;No
-	    Code;NULL;"ChangeSetModel"
-	    CodeAuthorityId;NULL;6
-	    CodeNameSpace;NULL;""
-	    Props;NULL;"{"azimuth":-9.2559631349317831e+061,"fmtDir":0.0,"fmtFlags":{"angMode":0,"angPrec":0,"clockwise":0,"dirMode":0,"linMode":0,"linPrec":0,"linType":0},"mastUnit":{"base":1,"den":1.0,"label":"m","num":1.0,"sys":2},"rndRatio":0.0,"rndUnit":0.0,"subUnit":{"base":1,"den":1.0,"label":"m","num":1.0,"sys":2}}"
-	    Visibility;NULL;1
-    2;153;dgn:Category;Insert;No
-	    Code;NULL;"ChangeSetTestCategory"
-	    CodeAuthorityId;NULL;3
-	    CodeNameSpace;NULL;""
-	    Descr;NULL;""
-	    LastMod;NULL;2.45733e+006
-	    ModelId;NULL;1
-	    Rank;NULL;2
-	    Scope;NULL;1
-    3;204;dgn:SubCategory;Insert;No
-	    Code;NULL;"ChangeSetTestCategory"
-	    CodeAuthorityId;NULL;3
-	    CodeNameSpace;NULL;"ChangeSetTestCategory"
-	    LastMod;NULL;2.45733e+006
-	    ModelId;NULL;1
-	    ParentId;NULL;2
-	    Props;NULL;"{"color":16777215}"
-    3;172;dgn:ElementOwnsChildElements;Insert;No
-	    SourceECClassId;NULL;204
-	    SourceECInstanceId;NULL;2
-	    TargetECClassId;NULL;204
-	    TargetECInstanceId;NULL;3
+    1099511627777;196;dgn:PhysicalModel;Insert;No
+            Code.AuthorityId;NULL;6
+            Code.Namespace;NULL;""
+            Code.Value;NULL;"ChangeSetModel"
+            DependencyIndex;NULL;-1
+            Properties;NULL;"{"DisplayInfo":{"azimuth":-9.2559631349317831e+061,"fmtDir":0.0,"fmtFlags":{"angMode":0,"angPrec":0,"clockwise":0,"dirMode":0,"linMode":0,"linPrec":0,"linType":0},"mastUnit":{"base":1,"den":1.0,"label":"m","num":1.0,"sys":2},"rndRatio":0.0,"rndUnit":0.0,"subUnit":{"base":1,"den":1.0,"label":"m","num":1.0,"sys":2}}}"
+            Visibility;NULL;1
+    1099511627778;160;dgn:Category;Insert;No
+            Code.AuthorityId;NULL;3
+            Code.Namespace;NULL;""
+            Code.Value;NULL;"ChangeSetTestCategory"
+            Descr;NULL;""
+            LastMod;NULL;2.45737e+006
+            ModelId;NULL;1
+            Rank;NULL;2
+            Scope;NULL;1
+    1099511627779;211;dgn:SubCategory;Insert;No
+            Code.AuthorityId;NULL;3
+            Code.Namespace;NULL;"10000000002"
+            Code.Value;NULL;"ChangeSetTestCategory"
+            LastMod;NULL;2.45737e+006
+            ModelId;NULL;1
+            ParentId;NULL;1099511627778
+            Props;NULL;"{"color":16777215}"
+    1099511627778;191;dgn:ModelContainsElements;Insert;No
+            SourceECClassId;NULL;167
+            SourceECInstanceId;NULL;1
+            TargetECClassId;NULL;160
+            TargetECInstanceId;NULL;1099511627778
+    1099511627779;180;dgn:ElementOwnsChildElements;Insert;No
+            SourceECClassId;NULL;160
+            SourceECInstanceId;NULL;1099511627778
+            TargetECClassId;NULL;211
+            TargetECInstanceId;NULL;1099511627779
+    1099511627779;191;dgn:ModelContainsElements;Insert;No
+            SourceECClassId;NULL;167
+            SourceECInstanceId;NULL;1
+            TargetECClassId;NULL;211
+            TargetECInstanceId;NULL;1099511627779
     */
-    EXPECT_EQ(4, changeSummary.MakeInstanceIterator().QueryCount());
+    EXPECT_EQ(6, changeSummary.MakeInstanceIterator().QueryCount());
     }
 
 //---------------------------------------------------------------------------------------
@@ -500,10 +584,10 @@ TEST_F(ChangeSummaryTestFixture, ValidateInstanceIterator)
         countIter++;
         UNUSED_VARIABLE(entry);
         }
-    EXPECT_EQ(countIter, 8);
+    EXPECT_EQ(countIter, 11);
 
     int countQuery = changeSummary.MakeInstanceIterator().QueryCount();
-    EXPECT_EQ(countQuery, 8);
+    EXPECT_EQ(countQuery, 11);
     }
 
 extern ECSchemaPtr ReadECSchemaFromDisk(WCharCP schemaPathname);
