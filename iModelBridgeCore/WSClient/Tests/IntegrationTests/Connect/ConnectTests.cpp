@@ -10,7 +10,7 @@
 
 #include <WebServices/Connect/Connect.h>
 #include <WebServices/Configuration/UrlProvider.h>
-#include <MobileDgn/Utils/Http/ProxyHttpHandler.h>
+#include <DgnClientFx/Utils/Http/ProxyHttpHandler.h>
 #include <curl/curl.h>
 
 TEST_F(ConnectTests, GetStsToken_ProdUrls_RetrievesToken)

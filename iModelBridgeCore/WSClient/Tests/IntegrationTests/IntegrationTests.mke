@@ -20,10 +20,10 @@ BEGTEST_OUTPUT = $(OutputRootDir)build/
 
 dirToSearch = $(wsClientUnitTestsDir)Utils/
 %include cincapnd.mki
-dirToSearch = $(OutRoot)Winx64/Product/MobileDgnSdk-Winx64/include
+dirToSearch = $(OutRoot)Winx64/Product/DgnClientSdk-Winx64/include
 %include cincapnd.mki
 
-%include $(SrcBsiCommon)sharedmki/BuildUnitTests.mke
+%include $(SrcRoot)bsicommon/sharedmki/BuildUnitTests.mke
 # $(o) is now $(BEGTEST_OUTPUT)$(BEGTEST_NAME)
 
 #---------------------------------------------------------------------------------------+
@@ -50,19 +50,17 @@ $(o)CachingTestsHelper$(oext)       : $(wsClientUnitTestsDir)WebServices/Cache/C
 %include MultiCppCompileGo.mki
 
 #---------------------------------------------------------------------------------------+
-#   Deliver MobileDGNSdk
+#   Deliver DgnClientSdk
 #---------------------------------------------------------------------------------------+
 
-MOBILEDGNSDK_ROOT = $(OutputRootDir)Product/MobileDgnSdk-Winx64/
-MOBILEDGNSDK_LIB_DIR = $(MOBILEDGNSDK_ROOT)lib/Winx64/
-
-MOBILEDGN_APP_ProjectRoot   = $(_MakeFilePath)
-MOBILEDGNAPP_DELIVER_OutputDir = $(o)
+DGNCLIENTSDK_ROOT = $(OutputRootDir)Product/DgnClientSdk-Winx64/
+DGNCLIENT_APP_ProjectRoot   = $(_MakeFilePath)
+DGNCLIENTAPP_DELIVER_OutputDir = $(o)
 
 _vsProject = 1
 
-%include $(MOBILEDGNSDK_ROOT)build/MobileDgnSdk.mki
-%include $(MOBILEDGNSDK_DIR_BuildPlatform)deliver.mki
+%include $(DGNCLIENTSDK_ROOT)build/DgnClientSdk.mki
+%include $(DGNCLIENTSDK_DIR_BuildPlatform)deliver.mki
 
 #---------------------------------------------------------------------------------------+
 #   Link test executable
@@ -83,17 +81,19 @@ GTEST_MAIN_IS_SUPPLIED = 1
 LOCAL_GUNITTEST_OBJS + $[@wildcard $(o)*.obj]
 LOCAL_GUNITTEST_OBJS + $[@wildcard $(BuildContext)SubParts/Libs/*.lib]
 
-GUNITTEST_LIBS + $(MOBILEDGNSDK_LIB_DIR)$(libprefix)MobileDgn$(libext)
-GUNITTEST_LIBS + $(MOBILEDGNSDK_LIB_DIR)$(libprefix)Bentley$(libext)
-GUNITTEST_LIBS + $(MOBILEDGNSDK_LIB_DIR)$(libprefix)BeSQLite$(libext)
-GUNITTEST_LIBS + $(MOBILEDGNSDK_LIB_DIR)$(libprefix)BeSQLiteEC$(libext)
-GUNITTEST_LIBS + $(MOBILEDGNSDK_LIB_DIR)$(libprefix)BeJsonCpp$(libext)
-GUNITTEST_LIBS + $(MOBILEDGNSDK_LIB_DIR)$(libprefix)ECObjects$(libext)
-GUNITTEST_LIBS + $(MOBILEDGNSDK_LIB_DIR)$(libprefix)BeCurl$(libext)
-GUNITTEST_LIBS + $(MOBILEDGNSDK_LIB_DIR)$(libprefix)BeLibxml2$(libext)
-GUNITTEST_LIBS + $(MOBILEDGNSDK_LIB_DIR)$(libprefix)BentleyAllocator$(libext)
-GUNITTEST_LIBS + $(MOBILEDGNSDK_LIB_DIR)$(libprefix)WebServicesCache$(libext)
-GUNITTEST_LIBS + $(MOBILEDGNSDK_LIB_DIR)$(libprefix)WebServicesClient$(libext)
+LIB_DIR =  $(DGNCLIENTSDK_ROOT)lib/Winx64/
+
+GUNITTEST_LIBS + $(LIB_DIR)$(libprefix)DgnClientFx$(libext)
+GUNITTEST_LIBS + $(LIB_DIR)$(libprefix)Bentley$(libext)
+GUNITTEST_LIBS + $(LIB_DIR)$(libprefix)BeSQLite$(libext)
+GUNITTEST_LIBS + $(LIB_DIR)$(libprefix)BeSQLiteEC$(libext)
+GUNITTEST_LIBS + $(LIB_DIR)$(libprefix)BeJsonCpp$(libext)
+GUNITTEST_LIBS + $(LIB_DIR)$(libprefix)ECObjects$(libext)
+GUNITTEST_LIBS + $(LIB_DIR)$(libprefix)BeCurl$(libext)
+GUNITTEST_LIBS + $(LIB_DIR)$(libprefix)BeLibxml2$(libext)
+GUNITTEST_LIBS + $(LIB_DIR)$(libprefix)BentleyAllocator$(libext)
+GUNITTEST_LIBS + $(LIB_DIR)$(libprefix)WebServicesClient$(libext)
+GUNITTEST_LIBS + $(LIB_DIR)$(libprefix)WebServicesCache$(libext)
 
 # Don't run tests after build
 GUNITTEST_NOEXEC = 1

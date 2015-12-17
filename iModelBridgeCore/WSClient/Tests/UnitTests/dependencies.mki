@@ -9,7 +9,7 @@
 # Seed files for tests
 BEGTEST_ASSETS     + $(BuildContext)WSClientTestAssets/
 
-# Assets needed by MobileDgn unit tests
+# Assets needed by DgnClient unit tests
 BEGTEST_ASSETS     + $(BuildContext)SubParts/ECSchemas/
 
 # Required xliff files

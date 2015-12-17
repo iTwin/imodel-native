@@ -15,7 +15,7 @@
 #include <WebServices/Connect/ConnectTokenProvider.h>
 #include <WebServices/Connect/Connect.h>
 #include <WebServices/Configuration/UrlProvider.h>
-#include <MobileDgn/Utils/Http/ProxyHttpHandler.h>
+#include <DgnClientFx/Utils/Http/ProxyHttpHandler.h>
 #include <WebServices/Client/WSRepositoryClient.h>
 #include <curl/curl.h>
 
@@ -26,7 +26,7 @@ void WSRepositoryClientTests::SetUpTestCase()
 
     UrlProvider::Initialize(UrlProvider::Qa, UrlProvider::DefaultTimeout, &localState);
 
-    NativeLogging::LoggingConfig::SetSeverity(LOGGER_NAMESPACE_MOBILEDGN_UTILS_HTTP, Bentley::NativeLogging::LOG_INFO);
+    NativeLogging::LoggingConfig::SetSeverity(LOGGER_NAMESPACE_DGNCLIENTFX_UTILS_HTTP, NativeLogging::LOG_INFO);
     }
 
 TEST_F(WSRepositoryClientTests, SendGetChildrenRequest_NavigateConnectGlobalWithExpiredToken_RetrievesNewTokenAndSucceeds)

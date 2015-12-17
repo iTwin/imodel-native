@@ -14,7 +14,7 @@
 #include <WebServices/Connect/ConnectAuthenticationPersistence.h>
 #include <WebServices/Connect/ConnectTokenProvider.h>
 #include <WebServices/Connect/Connect.h>
-#include <MobileDgn/Utils/Http/ProxyHttpHandler.h>
+#include <DgnClientFx/Utils/Http/ProxyHttpHandler.h>
 #include <WebServices/Configuration/UrlProvider.h>
 
 #include "../../UnitTests/Published/WebServices/Cache/CachingTestsHelper.h"
@@ -413,10 +413,10 @@ TEST_F(CachingDataSourceTests, ECDbPrepareStatement_ChangesMadeInBetweenReuses_F
     // Setup Schema
     auto context = ECSchemaReadContext::CreateContext();
     ECSchemaPtr schema;
-    ASSERT_EQ(SchemaReadStatus::SCHEMA_READ_STATUS_Success, ECSchema::ReadFromXmlFile(schema, schemaPath, *context));
-    ASSERT_EQ(SUCCESS, db.GetEC().GetSchemaManager().ImportECSchemas(context->GetCache()));
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlFile(schema, schemaPath, *context));
+    ASSERT_EQ(SUCCESS, db.Schemas().ImportECSchemas(context->GetCache()));
 
-    ECClassCP rootClass = db.GetEC().GetClassLocater().LocateClass(L"DSCacheSchema", L"Root");
+    ECClassCP rootClass = db.GetClassLocater().LocateClass("DSCacheSchema", "Root");
     ASSERT_NE(nullptr, rootClass);
 
     // Names
@@ -427,7 +427,7 @@ TEST_F(CachingDataSourceTests, ECDbPrepareStatement_ChangesMadeInBetweenReuses_F
     ECSqlStatement statement;
     ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(db, ecsql.c_str()));
     ASSERT_EQ(ECSqlStatus::Success, statement.BindText(1, rootName.c_str(), IECSqlBinder::MakeCopy::No));
-    EXPECT_EQ(ECSqlStepStatus::Done, statement.Step());
+    EXPECT_EQ(BE_SQLITE_DONE, statement.Step());
 
     // Insert one instnace
     Json::Value rootInstance;
@@ -441,7 +441,7 @@ TEST_F(CachingDataSourceTests, ECDbPrepareStatement_ChangesMadeInBetweenReuses_F
     statement.Reset();
     statement.ClearBindings();
     ASSERT_EQ(ECSqlStatus::Success, statement.BindText(1, rootName.c_str(), IECSqlBinder::MakeCopy::No));
-    EXPECT_EQ(ECSqlStepStatus::HasRow, statement.Step());
+    EXPECT_EQ(BE_SQLITE_ROW, statement.Step());
     EXPECT_EQ(ECInstanceId(1), statement.GetValueId <ECInstanceId>(0));
     }
 
@@ -487,7 +487,7 @@ TEST_F(CachingDataSourceTests, DISABLED_OpenOrCreate_WSG2eBPluginProductionRepos
     // Test can be copied to app to test performance on device.
 
     auto m_clientInfo = StubClientInfo();
-    BeFileName tempDir = MobileDgnCommon::GetApplicationPaths().GetTemporaryDirectory();
+    BeFileName tempDir = DgnClientFxCommon::GetApplicationPaths().GetTemporaryDirectory();
     BeFileName cachePath(L"C:\\temp\\temp.ecdb");
     //BeFileName cachePath(tempDir + L"/temp.ecdb");
 
@@ -529,11 +529,11 @@ TEST_F(CachingDataSourceTests, DISABLED_OpenOrCreate_WSG2eBPluginProductionRepos
 
         a = BeTimeUtilities::GetCurrentTimeAsUnixMillis();
         ECSchemaList eschemas;
-        txn.GetCache().GetECDb().GetEC().GetSchemaManager().GetECSchemas(eschemas);
+        txn.GetCache().GetECDb().Schemas().GetECSchemas(eschemas);
         b = BeTimeUtilities::GetCurrentTimeAsUnixMillis();
         BeDebugLog(Utf8PrintfString("GetECSchemas  took:%lld ms rels:%d", b - a));
 
-        txn.GetCache().GetECDb().GetEC().ClearCache();
+        //txn.GetCache().GetECDb().ClearCache();
 
         callMultipleTimes([&]
             {
@@ -543,7 +543,7 @@ TEST_F(CachingDataSourceTests, DISABLED_OpenOrCreate_WSG2eBPluginProductionRepos
             BeDebugLog(Utf8PrintfString("ECDbAdapter:FindRelationshipClasses  took:%lld ms rels:%d", b - a, rels.size()));
             });
 
-        txn.GetCache().GetECDb().GetEC().ClearCache();
+        //txn.GetCache().GetECDb().ClearCache();
 
         callMultipleTimes([&]
             {
@@ -553,7 +553,7 @@ TEST_F(CachingDataSourceTests, DISABLED_OpenOrCreate_WSG2eBPluginProductionRepos
             BeDebugLog(Utf8PrintfString("ECDbAdapter:FindRelationshipClassesInSchema  took:%lld ms rels:%d", b - a, rels.size()));
             });
 
-        txn.GetCache().GetECDb().GetEC().ClearCache();
+        //txn.GetCache().GetECDb().ClearCache();
 
         callMultipleTimes([&]
             {
@@ -570,7 +570,7 @@ TEST_F(CachingDataSourceTests, DISABLED_OpenOrCreate_WSG2eBPluginProductionRepos
                 Utf8String(rel->GetName()).c_str()));
             }
 
-        txn.GetCache().GetECDb().GetEC().ClearCache();
+        //txn.GetCache().GetECDb().ClearCache();
 
         callMultipleTimes([&]
             {
@@ -580,7 +580,7 @@ TEST_F(CachingDataSourceTests, DISABLED_OpenOrCreate_WSG2eBPluginProductionRepos
             BeDebugLog(Utf8PrintfString("ECDbAdapter:FindRelationshipClassWithSource  took:%lld ms", b - a));
             });
 
-        txn.GetCache().GetECDb().GetEC().ClearCache();
+        //txn.GetCache().GetECDb().ClearCache();
 
         callMultipleTimes([&]
             {

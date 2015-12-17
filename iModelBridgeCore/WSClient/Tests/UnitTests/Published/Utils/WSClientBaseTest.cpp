@@ -15,8 +15,6 @@ USING_NAMESPACE_BENTLEY_DGNCLIENTFX
 USING_NAMESPACE_BENTLEY_DGNCLIENTFX_UTILS
 USING_NAMESPACE_WSCLIENT_UNITTESTS
 
-BeFileName s_l10nSubPath (L"sqlang\\BeGTest_en-US.sqlang.db3");
-
 void WSClientBaseTest::SetUp()
     {
     InitLogging();
@@ -79,9 +77,4 @@ void WSClientBaseTest::InitLogging()
     NativeLogging::LoggingConfig::SetSeverity(LOGGER_NAMESPACE_DGNCLIENTFX_UTILS_THREADING, BentleyApi::NativeLogging::LOG_WARNING);
     NativeLogging::LoggingConfig::SetSeverity(LOGGER_NAMESPACE_WSCACHE, BentleyApi::NativeLogging::LOG_WARNING);
     NativeLogging::LoggingConfig::SetSeverity(LOGGER_NAMESPACE_WSCLIENT, BentleyApi::NativeLogging::LOG_WARNING);
-    }
-
-void WSClientBaseTest::SetL10NSubPath(BeFileNameCR subPath)
-    {
-    s_l10nSubPath = subPath;
     }
