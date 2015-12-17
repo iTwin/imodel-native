@@ -340,7 +340,8 @@ BentleyStatus ChangeInfoManager::ReadBackupInstance(ObjectInfoCR info, RapidJson
         return
             "SELECT backup.[" CLASS_InstanceBackup_PROPERTY_Instance "] "
             "FROM ONLY " ECSql_InstanceBackup " backup "
-            "JOIN ONLY " ECSql_ChangeInfoToInstanceBackup " rel ON rel.SourceECInstanceId = ? "
+            "JOIN ONLY " ECSql_ChangeInfoToInstanceBackup " rel ON rel.TargetECInstanceId = backup.ECInstanceId "
+            "WHERE rel.SourceECInstanceId = ? "
             "LIMIT 1 ";
         });
 
@@ -455,7 +456,8 @@ ECInstanceId ChangeInfoManager::FindBackupInstance(ObjectInfoCR info)
         return
             "SELECT backup.ECInstanceId "
             "FROM ONLY " ECSql_InstanceBackup " backup "
-            "JOIN ONLY " ECSql_ChangeInfoToInstanceBackup " rel ON rel.SourceECInstanceId = ? "
+            "JOIN ONLY " ECSql_ChangeInfoToInstanceBackup " rel ON rel.TargetECInstanceId = backup.ECInstanceId "
+            "WHERE rel.SourceECInstanceId = ? "
             "LIMIT 1 ";
         });
     statement->BindId(1, info.GetInfoKey().GetECInstanceId());

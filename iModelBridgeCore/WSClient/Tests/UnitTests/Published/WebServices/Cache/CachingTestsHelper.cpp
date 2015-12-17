@@ -91,6 +91,20 @@ int CountClassInstances(IDataSourceCache& ds, Utf8StringCR classKey)
     return ds.GetAdapter().CountClassInstances(ds.GetAdapter().GetECClass(classKey));
     }
 
+Json::Value ReadInstance(IDataSourceCache& ds, ECInstanceKeyCR key)
+    {
+    Json::Value instance;
+    EXPECT_EQ(SUCCESS, ds.GetAdapter().GetJsonInstance(instance, key));
+    return instance;
+    }
+
+Json::Value ReadModifiedProperties(IDataSourceCache& ds, ECInstanceKeyCR key)
+    {
+    Json::Value properties;
+    EXPECT_EQ(SUCCESS, ds.GetChangeManager().ReadModifiedProperties(key, properties));
+    return properties;
+    }
+
 ICachingDataSource::ObjectsResult StubObjectsResult(JsonValueCR jsonInstances, ICachingDataSource::DataOrigin origin)
     {
     auto jsonPtr = std::make_shared<Json::Value>(jsonInstances);
