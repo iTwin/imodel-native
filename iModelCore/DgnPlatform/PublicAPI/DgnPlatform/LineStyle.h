@@ -425,6 +425,7 @@ private:
     Point2d             m_size;
     uint32_t            m_flags;
     double              m_trueWidth;
+    uint32_t            m_imageDataId;
     bvector<uint8_t>    m_image;
 
     LsRasterImageComponent(LsRasterImageComponentCR);
@@ -446,7 +447,7 @@ protected:
 
 public:
     void SaveToJson(Json::Value& result, bvector<uint8_t>& imageData);
-    static LineStyleStatus CreateFromJson(LsRasterImageComponentP*, Json::Value const & jsonDef, bvector<uint8_t> const& imageData, LsLocationCP location);
+    static LineStyleStatus CreateFromJson(LsRasterImageComponentP*, Json::Value const & jsonDef, LsLocationCP location);
     static LsRasterImageComponent* LoadRasterImage  (LsComponentReader* reader);
     static BentleyStatus CreateRscFromDgnDb(V10RasterImage** rscOut, DgnDbR project, LsComponentId id);
 
@@ -1619,8 +1620,6 @@ public:
     Utf8StringCR GetData() const { return m_data; }
     void SetData(Utf8CP value) { m_data.AssignOrClear(value); }
     
-    //  DgnFontCR ResolveFont() const { return DgnFontManager::ResolveFont(m_dgndb.Fonts().FindFontById(GetFontId())); }
-
     static DgnStyleId QueryId(DgnDbR db, Utf8CP name) { return DgnStyleId(db.Elements().QueryElementIdByCode(CreateCodeFromName(name)).GetValueUnchecked()); }
     static LineStyleElementCPtr Get(DgnDbR db, Utf8CP name) { return Get(db, QueryId(db, name)); }
     static LineStyleElementCPtr Get(DgnDbR db, DgnStyleId id) { return db.Elements().Get<LineStyleElement>(id); }
@@ -1651,6 +1650,7 @@ public:
 
     typedef ECSqlStatementIterator<Entry> Iterator;
 
+    static DgnStyleId ImportLineStyle(DgnStyleId srcStyleId, DgnImportContext& importer);
     DGNPLATFORM_EXPORT static Iterator MakeIterator(DgnDbR);
     DGNPLATFORM_EXPORT static size_t QueryCount(DgnDbR);
 };
