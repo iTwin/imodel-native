@@ -29,44 +29,44 @@ m_navigationBaseClass(dbAdapter.GetECClass(SCHEMA_CacheSchema, CLASS_NavigationB
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    01/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECInstanceKey NavigationBaseManager::FindNavigationBase()
+CacheNodeKey NavigationBaseManager::FindNavigationBase()
     {
     Utf8PrintfString key("NavigationBaseManager::FindNavigationBase");
     auto statement = m_statementCache.GetPreparedStatement(key, [&]
         {
-        return "SELECT ECInstanceId FROM " ECSql_NavigationBaseClass " LIMIT 1";
+        return "SELECT ECInstanceId FROM " ECSql_NavigationBase " LIMIT 1";
         });
     DbResult status = statement->Step();
     if (BE_SQLITE_ROW != status)
         {
-        return ECInstanceKey();
+        return CacheNodeKey();
         }
-    return ECInstanceKey(m_navigationBaseClass->GetId(), statement->GetValueId<ECInstanceId>(0));
+    return CacheNodeKey(m_navigationBaseClass->GetId(), statement->GetValueId<ECInstanceId>(0));
     }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    01/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECInstanceKey NavigationBaseManager::FindOrCreateNavigationBase()
+CacheNodeKey NavigationBaseManager::FindOrCreateNavigationBase()
     {
-    ECInstanceKey instanceKey = FindNavigationBase();
-    if (instanceKey.IsValid())
+    CacheNodeKey baseKey = FindNavigationBase();
+    if (baseKey.IsValid())
         {
-        return instanceKey;
+        return baseKey;
         }
 
-    auto ecSql = "INSERT INTO " ECSql_NavigationBaseClass " (ECInstanceId) VALUES (NULL)";
+    auto ecSql = "INSERT INTO " ECSql_NavigationBase " (ECInstanceId) VALUES (NULL)";
     ECSqlStatement statement;
     if (SUCCESS != m_dbAdapter.PrepareStatement(statement, ecSql))
         {
-        return ECInstanceKey();
+        return CacheNodeKey();
         }
 
-    DbResult status = statement.Step(instanceKey);
+    DbResult status = statement.Step(baseKey);
     if (BE_SQLITE_DONE != status)
         {
-        return ECInstanceKey();
+        return CacheNodeKey();
         }
 
-    return instanceKey;
+    return baseKey;
     }

@@ -106,21 +106,21 @@ struct InstanceCacheHelper
 struct InstanceCacheHelper::CachedInstances
     {
     private:
-        bset<ECInstanceKey>           m_cachedInstances;
-        bset<CachedRelationshipKey>   m_cachedRelationships;
+        bset<CachedInstanceKey> m_cachedInstances;
+        bset<CachedInstanceKey> m_cachedRelationships;
         bmap<ObjectId, ECInstanceKey> m_cachedInstancesByObjectId;
 
     public:
-        void AddInstance(ObjectIdCR objectId, ECInstanceKeyCR cachedInstance);
-        void AddRelationshipInstance(ObjectIdCR objectId, const CachedRelationshipKey& relationshipInfo);
+        void AddInstance(ObjectIdCR objectId, CachedInstanceKeyCR key);
+        void AddRelationship(ObjectIdCR objectId, CachedInstanceKeyCR key);
 
         bool HasCachedInstance(ObjectIdCR objectId) const;
         ECInstanceKey GetCachedInstance(ObjectIdCR objectId) const;
 
-        const bset<ECInstanceKey>& GetCachedInstances() const;
+        const bset<CachedInstanceKey>& GetCachedInstances() const;
         bset<ObjectId> GetCachedInstanceObjectIds() const;
         const bmap<ObjectId, ECInstanceKey>& GetCachedInstancesByObjectId() const;
-        const bset<CachedRelationshipKey> GetCachedRelationshipInfos() const;
+        const bset<CachedInstanceKey>& GetCachedRelationships() const;
     };
 
 /*--------------------------------------------------------------------------------------+
@@ -132,7 +132,6 @@ struct InstanceCacheHelper::PartialCachingState
         const WSQuery* m_query;
         const ECInstanceKeyMultiMap& m_fullyPersistedInstances;
         bset<ObjectId>& m_rejected;
-
         bset<bvector<SelectPathElement>> m_allPropertiesSelectedPaths;
 
     private:

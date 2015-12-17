@@ -12,11 +12,25 @@
 
 #include "../Changes/ChangeInfo.h"
 #include "../Core/CacheSchema.h"
+#include "CachedInstanceKey.h"
 
 USING_NAMESPACE_BENTLEY_SQLITE_EC;
 USING_NAMESPACE_BENTLEY_EC
 
 BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
+
+/*--------------------------------------------------------------------------------------+
+* @bsiclass                                                     Vincas.Razma    12/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+struct CachedObjectInfoKey : public CacheNodeKey
+    {
+    CachedObjectInfoKey() : CacheNodeKey() {}
+    CachedObjectInfoKey(ECClassId ecClassId, ECInstanceId const& ecInstanceId) :
+        CacheNodeKey(ecClassId, ecInstanceId) {}
+    };
+
+typedef const CachedObjectInfoKey& CachedObjectInfoKeyCR;
+typedef CachedObjectInfoKey& CachedObjectInfoKeyR;
 
 /*--------------------------------------------------------------------------------------+
 *  @bsiclass                                                    Vincas.Razma    01/2014
@@ -41,15 +55,14 @@ struct ObjectInfo : public ChangeInfo
         DateTime GetObjectCacheDate() const;
         void SetObjectCacheDate(DateTimeCR utcDate);
         void ClearObjectCacheDate();
+
         void SetObjectState(CachedInstanceState state);
 
-        ECInstanceKey GetInfoKey() const;
+        CachedInstanceKey GetCachedInstanceKey() const;
+        CachedObjectInfoKey GetInfoKey() const;
 
-        ECInstanceKey GetCachedInstanceKey() const;
-        void SetCachedInstanceId(ECInstanceId instanceId);
-
-        ECClassId GetECClassId() const;
-        Utf8String GetRemoteId() const;
+        ECInstanceKey GetInstanceKey() const;
+        void SetInstanceId(ECInstanceId instanceId);
 
         ObjectIdCR GetObjectId() const;
         void SetRemoteId(Utf8StringCR remoteId);

@@ -54,7 +54,7 @@ BentleyStatus UpgraderBase::ExecuteStatement(Utf8CP ecSql)
     DbResult status;
     while (BE_SQLITE_ROW == (status = statement.Step()));
 
-    if (BE_SQLITE_OK != status)
+    if (BE_SQLITE_DONE != status)
         {
         return ERROR;
         }

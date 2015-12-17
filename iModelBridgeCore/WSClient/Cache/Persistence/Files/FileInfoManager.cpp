@@ -34,7 +34,7 @@ m_hierarchyManager(hierarchyManager),
 m_objectInfoManager(objectInfoManager),
 
 m_infoClass(dbAdapter.GetECClass(SCHEMA_CacheSchema, CLASS_CachedFileInfo)),
-m_infoRelationshipClass(dbAdapter.GetECRelationshipClass(SCHEMA_CacheSchema, CLASS_CachedFileInfoToInstance)),
+m_infoRelationshipClass(dbAdapter.GetECRelationshipClass(SCHEMA_CacheSchema, CLASS_ObjectInfoToFileInfo)),
 m_externalFileInfoClass(dbAdapter.GetECClass(SCHEMA_ECDbFileInfo, CLASS_ExternalFileInfo)),
 m_externalFileInfoRelationshipClass(dbAdapter.GetECRelationshipClass(SCHEMA_ECDbFileInfo, CLASS_InstanceHasFileInfo)),
 
@@ -55,20 +55,19 @@ ECClassCP FileInfoManager::GetInfoClass() const
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    11/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-FileInfo FileInfoManager::ReadInfo(ECInstanceKeyCR fileKey)
+FileInfo FileInfoManager::ReadInfo(ObjectIdCR objectId)
     {
-    Json::Value cachedFileInfoJson = ReadCachedInfoJson(fileKey);
-    Json::Value externalFileInfoJson = ReadExternalFileInfo(fileKey);
-    return FileInfo(cachedFileInfoJson, externalFileInfoJson, fileKey, this);
+    return ReadInfo(m_objectInfoManager.ReadCachedInstanceKey(objectId));
     }
 
 /*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Vincas.Razma    08/2013
+* @bsimethod                                                    Vincas.Razma    11/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-FileInfo FileInfoManager::ReadInfo(ObjectIdCR fileId)
+FileInfo FileInfoManager::ReadInfo(CachedInstanceKeyCR cachedKey)
     {
-    ECInstanceKey instance = m_objectInfoManager.FindCachedInstance(fileId);
-    return ReadInfo(instance);
+    Json::Value cachedFileInfoJson = ReadCachedInfoJson(cachedKey);
+    Json::Value externalFileInfoJson = ReadExternalFileInfo(cachedKey);
+    return FileInfo(cachedFileInfoJson, externalFileInfoJson, cachedKey, this);
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -76,22 +75,10 @@ FileInfo FileInfoManager::ReadInfo(ObjectIdCR fileId)
 +---------------+---------------+---------------+---------------+---------------+------*/
 FileInfo FileInfoManager::ReadInfo(JsonValueCR infoJson)
     {
-    auto statement = m_statementCache.GetPreparedStatement("FileInfoManager::ReadInfoByJson", [&]
-        {
-        return
-            "SELECT infoRel.TargetECClassId, infoRel.TargetECInstanceId "
-            "FROM ONLY " ECSql_CachedFileInfoToInstanceClass " infoRel "
-            "WHERE infoRel.SourceECInstanceId = ? "
-            "LIMIT 1 ";
-        });
-
-    statement->BindInt64(1, BeJsonUtilities::Int64FromValue(infoJson["$ECInstanceId"]));
-    statement->Step();
-
-    ECInstanceKey instanceKey(statement->GetValueInt64(0), statement->GetValueId<ECInstanceId>(1));
-    Json::Value externalFileInfoJson = ReadExternalFileInfo(instanceKey);
-
-    return FileInfo(infoJson, externalFileInfoJson, instanceKey, this);
+    CacheNodeKey fileInfoKey(m_infoClass->GetId(), ECDbHelper::ECInstanceIdFromJsonInstance(infoJson));
+    CachedInstanceKey key = m_objectInfoManager.ReadCachedInstanceKey(fileInfoKey, *m_infoRelationshipClass);
+    Json::Value externalFileInfoJson = ReadExternalFileInfo(key);
+    return FileInfo(infoJson, externalFileInfoJson, key, this);
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -99,7 +86,7 @@ FileInfo FileInfoManager::ReadInfo(JsonValueCR infoJson)
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus FileInfoManager::SaveInfo(FileInfoR info)
     {
-    if (!info.GetInstanceKey().IsValid())
+    if (!info.IsValid())
         {
         return ERROR;
         }
@@ -122,8 +109,8 @@ BentleyStatus FileInfoManager::SaveInfo(FileInfoR info)
             {
             return ERROR;
             }
-        ECInstanceKey cachedInfoKey(m_infoClass->GetId(), ECDbHelper::ECInstanceIdFromJsonInstance(info.GetJsonInfo()));
-        if (!m_dbAdapter.RelateInstances(m_infoRelationshipClass, cachedInfoKey, info.GetInstanceKey()).IsValid())
+        ECInstanceKey fileInfoKey(m_infoClass->GetId(), ECDbHelper::ECInstanceIdFromJsonInstance(info.GetJsonInfo()));
+        if (!m_dbAdapter.RelateInstances(m_infoRelationshipClass, info.GetCachedInstanceKey().GetInfoKey(), fileInfoKey).IsValid())
             {
             return ERROR;
             }
@@ -133,7 +120,7 @@ BentleyStatus FileInfoManager::SaveInfo(FileInfoR info)
             return ERROR;
             }
         ECInstanceKey externalInfoKey(m_externalFileInfoClass->GetId(), ECDbHelper::ECInstanceIdFromJsonInstance(info.GetExternalFileInfoJson()));
-        if (!m_dbAdapter.RelateInstances(m_externalFileInfoRelationshipClass, info.GetInstanceKey(), externalInfoKey).IsValid())
+        if (!m_dbAdapter.RelateInstances(m_externalFileInfoRelationshipClass, info.GetCachedInstanceKey().GetInstanceKey(), externalInfoKey).IsValid())
             {
             return ERROR;
             }
@@ -153,85 +140,67 @@ BeFileName FileInfoManager::GetAbsoluteFilePath(bool isPersistent, BeFileNameCR 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    06/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus FileInfoManager::DeleteFilesNotHeldByInstances(const ECInstanceKeyMultiMap& holdingInstances)
+BentleyStatus FileInfoManager::DeleteFilesNotHeldByNodes(const ECInstanceKeyMultiMap& holdingNodes)
     {
-    auto statement = m_statementCache.GetPreparedStatement("FileInfoManager::DeleteFilesNotHeldByInstances", [&]
-        {
-        return
-            "SELECT efiRel.SourceECClassId, efiRel.SourceECInstanceId, efi.*, cfi.* "
-            "FROM ONLY " ECSql_ExternalFileInfoClass " efi "
-            "LEFT JOIN ONLY " ECSql_InstanceHasFileInfoClass " efiRel ON efiRel.TargetECInstanceId = efi.ECInstanceId "
-            "LEFT JOIN ONLY " ECSql_CachedFileInfoToInstanceClass " cfiRel ON cfiRel.TargetECInstanceId = efiRel.SourceECInstanceId "
-            "LEFT JOIN ONLY " ECSql_CachedFileInfoClass " cfi ON cfi.ECInstanceId = cfiRel.SourceECInstanceId ";
-        });
+    // WIP06
+    //ECInstanceKeyMultiMap holdingInstances;
+    //if (SUCCESS != m_objectInfoManager.ReadCachedInstanceKeys(holdingNodes, holdingInstances))
+    //    {
+    //    return ERROR;
+    //    }
 
-    JsonECSqlSelectAdapter adapter(*statement, JsonECSqlSelectAdapter::FormatOptions(ECValueFormat::RawNativeValues));
+    //auto statement = m_statementCache.GetPreparedStatement("FileInfoManager::DeleteFilesNotHeldByNodes", [&]
+    //    {
+    //    return
+    //        "SELECT efiRel.SourceECClassId, efiRel.SourceECInstanceId, efi.*, cfi.* "
+    //        "FROM ONLY " ECSql_ExternalFileInfoClass " efi "
+    //        "LEFT JOIN ONLY " ECSql_InstanceHasFileInfoClass " efiRel ON efiRel.TargetECInstanceId = efi.ECInstanceId ";
+    //    });
 
-    while (BE_SQLITE_ROW == statement->Step())
-        {
-        Json::Value cachedFileInfoJson;
-        Json::Value externalFileInfoJson;
+    //JsonECSqlSelectAdapter adapter(*statement, JsonECSqlSelectAdapter::FormatOptions(ECValueFormat::RawNativeValues));
 
-        if (!adapter.GetRowInstance(cachedFileInfoJson, m_infoClass->GetId()))
-            {
-            return ERROR;
-            }
-        if (!adapter.GetRowInstance(externalFileInfoJson, m_externalFileInfoClass->GetId()))
-            {
-            return ERROR;
-            }
+    //while (BE_SQLITE_ROW == statement->Step())
+    //    {
+    //    Json::Value cachedFileInfoJson;
+    //    Json::Value externalFileInfoJson;
 
-        ECInstanceKey instanceKey(statement->GetValueInt64(0), statement->GetValueId<ECInstanceId>(1));
-        FileInfo fileInfo(cachedFileInfoJson, externalFileInfoJson, instanceKey, this);
+    //    if (!adapter.GetRowInstance(cachedFileInfoJson, m_infoClass->GetId()))
+    //        {
+    //        return ERROR;
+    //        }
+    //    if (!adapter.GetRowInstance(externalFileInfoJson, m_externalFileInfoClass->GetId()))
+    //        {
+    //        return ERROR;
+    //        }
 
-        if (ECDbHelper::IsInstanceInMultiMap(instanceKey, holdingInstances))
-            {
-            continue;
-            }
+    //    ECInstanceKey instanceKey(statement->GetValueInt64(0), statement->GetValueId<ECInstanceId>(1));
+    //    FileInfo fileInfo(cachedFileInfoJson, externalFileInfoJson, instanceKey, this);
 
-        if (IChangeManager::ChangeStatus::NoChange != fileInfo.GetChangeStatus())
-            {
-            continue;
-            }
+    //    if (ECDbHelper::IsInstanceInMultiMap(instanceKey, holdingInstances))
+    //        {
+    //        continue;
+    //        }
 
-        if (SUCCESS != m_fileStorage.CleanupCachedFile(fileInfo.GetFilePath()))
-            {
-            return ERROR;
-            }
-        }
-    return SUCCESS;
+    //    if (IChangeManager::ChangeStatus::NoChange != fileInfo.GetChangeStatus())
+    //        {
+    //        continue;
+    //        }
+
+    //    if (SUCCESS != m_fileStorage.CleanupCachedFile(fileInfo.GetFilePath()))
+    //        {
+    //        return ERROR;
+    //        }
+    //    }
+    //return SUCCESS;
+    return ERROR;
     }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    05/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECInstanceKey FileInfoManager::FindTargetInstanceKeyForInfo(ECInstanceId infoECId)
+BeFileName FileInfoManager::ReadFilePath(CachedInstanceKeyCR instanceKey)
     {
-    ECInstanceKey infoKey(m_infoClass->GetId(), infoECId);
-
-    ECInstanceKeyMultiMap instanceMap;
-    if (SUCCESS != m_hierarchyManager.ReadTargetKeys(infoKey, m_infoRelationshipClass, instanceMap))
-        {
-        return ECInstanceKey();
-        }
-
-    if (instanceMap.size() != 1)
-        {
-        return ECInstanceKey();
-        }
-
-    ECClassId classId = instanceMap.begin()->first;
-    ECInstanceId instanceId = instanceMap.begin()->second;
-
-    return ECInstanceKey(classId, instanceId);
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Vincas.Razma    05/2013
-+---------------+---------------+---------------+---------------+---------------+------*/
-BeFileName FileInfoManager::ReadFilePath(ECInstanceKeyCR instance)
-    {
-    FileInfo fileInfo = ReadInfo(instance);
+    FileInfo fileInfo = ReadInfo(instanceKey);
     BeFileName path = fileInfo.GetFilePath();
 
     if (path.empty())
@@ -262,7 +231,7 @@ BentleyStatus FileInfoManager::OnBeforeDelete(ECClassCR ecClass, ECInstanceId ec
     JsonReader reader(m_dbAdapter.GetECDb(), ecClass.GetId());
     reader.ReadInstance(infoJson, ecInstanceId, ECValueFormat::RawNativeValues);
 
-    FileInfo info (Json::nullValue, infoJson, ECInstanceKey(), this);
+    FileInfo info(Json::nullValue, infoJson, CachedInstanceKey(), this);
 
     m_fileStorage.CleanupCachedFile(info.GetFilePath());
     return SUCCESS;
@@ -279,12 +248,12 @@ BentleyStatus FileInfoManager::OnAfterDelete(bset<ECInstanceKey>& instancesToDel
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    11/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-Json::Value FileInfoManager::ReadExternalFileInfo(ECInstanceKeyCR instanceKey)
+Json::Value FileInfoManager::ReadExternalFileInfo(CachedInstanceKeyCR cachedKey)
     {
     Json::Value infoJson;
 
-    ECClassCP instanceClass = m_dbAdapter.GetECClass(instanceKey);
-    if (!instanceKey.IsValid() || nullptr == instanceClass)
+    ECInstanceKeyCR instanceKey = cachedKey.GetInstanceKey();
+    if (!instanceKey.IsValid())
         {
         return infoJson;
         }
@@ -317,10 +286,10 @@ Json::Value FileInfoManager::ReadExternalFileInfo(ECInstanceKeyCR instanceKey)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    01/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-Json::Value FileInfoManager::ReadCachedInfoJson(ECInstanceKeyCR instanceKey)
+Json::Value FileInfoManager::ReadCachedInfoJson(CachedInstanceKeyCR cachedKey)
     {
-    ECClassCP instanceClass = m_dbAdapter.GetECClass(instanceKey);
-    if (!instanceKey.IsValid() || nullptr == instanceClass)
+    ECInstanceKeyCR infoKey = cachedKey.GetInfoKey();
+    if (!infoKey.IsValid())
         {
         return Json::nullValue;
         }
@@ -329,14 +298,14 @@ Json::Value FileInfoManager::ReadCachedInfoJson(ECInstanceKeyCR instanceKey)
         {
         return
             "SELECT info.* "
-            "FROM " ECSql_CachedFileInfoClass " info "
-            "LEFT JOIN ONLY " ECSql_CachedFileInfoToInstanceClass " infoRel ON infoRel.SourceECInstanceId = info.ECInstanceId "
+            "FROM " ECSql_CachedFileInfo " info "
+            "LEFT JOIN ONLY " ECSql_ObjectInfoToFileInfo " infoRel ON infoRel.SourceECInstanceId = info.ECInstanceId "
             "WHERE infoRel.TargetECClassId = ? AND infoRel.TargetECInstanceId = ? "
             "LIMIT 1 ";
         });
 
-    statement->BindInt64(1, instanceKey.GetECClassId());
-    statement->BindId(2, instanceKey.GetECInstanceId());
+    statement->BindInt64(1, infoKey.GetECClassId());
+    statement->BindId(2, infoKey.GetECInstanceId());
 
     DbResult status = statement->Step();
     if (status != BE_SQLITE_ROW)

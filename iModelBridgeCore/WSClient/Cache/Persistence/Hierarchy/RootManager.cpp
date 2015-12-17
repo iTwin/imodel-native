@@ -32,12 +32,22 @@ m_hierarchyManager(hierarchyManager),
 m_objectInfoManager(objectInfoManager),
 
 m_rootClass(m_dbAdapter.GetECClass(SCHEMA_CacheSchema, CLASS_Root)),
-m_rootHoldingRelationshipClass(m_dbAdapter.GetECRelationshipClass(SCHEMA_CacheSchema, CLASS_RootRelationship)),
-m_rootWeakRelationshipClass(m_dbAdapter.GetECRelationshipClass(SCHEMA_CacheSchema, CLASS_WeakRootRelationship)),
+m_rootHoldingRelationshipClass(m_dbAdapter.GetECRelationshipClass(SCHEMA_CacheSchema, CLASS_RootToNode)),
+m_rootWeakRelationshipClass(m_dbAdapter.GetECRelationshipClass(SCHEMA_CacheSchema, CLASS_RootToNodeWeak)),
 
 m_rootInserter(dbAdapter.GetECDb(), *m_rootClass),
 m_rootUpdater(m_dbAdapter.GetECDb(), *m_rootClass)
     {}
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    12/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+ECRelationshipClassCP RootManager::GetRelClass(bool holding)
+    {
+    if (holding)
+        return m_rootHoldingRelationshipClass;
+    return m_rootWeakRelationshipClass;
+    }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    02/2013
@@ -48,7 +58,7 @@ ECInstanceId RootManager::FindRootECInstanceId(Utf8StringCR rootName)
         {
         return
             "SELECT ECInstanceId "
-            "FROM " ECSql_RootClass " "
+            "FROM " ECSql_Root " "
             "WHERE [" CLASS_Root_PROPERTY_Name "] = ? "
             "LIMIT 1 ";
         });
@@ -62,17 +72,17 @@ ECInstanceId RootManager::FindRootECInstanceId(Utf8StringCR rootName)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    05/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECInstanceKey RootManager::FindRoot(Utf8StringCR rootName)
+CacheRootKey RootManager::FindRoot(Utf8StringCR rootName)
     {
-    return ECInstanceKey(m_rootClass->GetId(), FindRootECInstanceId(rootName));
+    return CacheRootKey(m_rootClass->GetId(), FindRootECInstanceId(rootName));
     }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    06/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECInstanceKey RootManager::FindOrCreateRoot(Utf8StringCR rootName)
+CacheRootKey RootManager::FindOrCreateRoot(Utf8StringCR rootName)
     {
-    ECInstanceKey root = FindRoot(rootName);
+    CacheRootKey root = FindRoot(rootName);
     if (!root.IsValid())
         {
         root = CreateRoot(rootName);
@@ -89,7 +99,7 @@ void RootManager::ReadRootInstance(Utf8StringCR rootName, JsonValueR rootInstanc
         {
         return
             "SELECT * "
-            "FROM " ECSql_RootClass " "
+            "FROM " ECSql_Root " "
             "WHERE [" CLASS_Root_PROPERTY_Name "] = ? "
             "LIMIT 1 ";
         });
@@ -184,7 +194,7 @@ DateTime RootManager::ReadRootSyncDate(Utf8StringCR rootName)
         {
         return
             "SELECT [" CLASS_Root_PROPERTY_SyncDate "]"
-            "FROM " ECSql_RootClass " "
+            "FROM " ECSql_Root " "
             "WHERE [" CLASS_Root_PROPERTY_Name "] = ? "
             "LIMIT 1 ";
         });
@@ -202,26 +212,28 @@ DateTime RootManager::ReadRootSyncDate(Utf8StringCR rootName)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    01/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus RootManager::GetInstancesByPersistence(CacheRootPersistence persistence, ECInstanceKeyMultiMap& instancesOut)
+BentleyStatus RootManager::GetNodesByPersistence(CacheRootPersistence persistence, ECInstanceKeyMultiMap& nodesOut)
     {
-    auto statement = m_statementCache.GetPreparedStatement("RootManager:GetInstancesByPersistence", [&]
+    auto statement = m_statementCache.GetPreparedStatement("RootManager:GetNodesByPersistence", [&]
         {
         return
             "SELECT ECInstanceId "
-            "FROM " ECSql_RootClass " "
+            "FROM " ECSql_Root " "
             "WHERE [" CLASS_Root_PROPERTY_Persistence "] = ? ";
         });
 
     statement->BindInt(1, static_cast<int>(persistence));
 
-    ECInstanceKeyMultiMap ansestorInstances;
-    if (SUCCESS != m_dbAdapter.ExtractECInstanceKeyMultiMapFromStatement(*statement, 0, m_rootClass->GetId(), ansestorInstances))
-        {
-        return ERROR;
-        }
+    ECInstanceKeyMultiMap rootKeys;
+    ECInstanceFinder::FindOptions findOptions
+        (
+        ECInstanceFinder::RelatedDirection::RelatedDirection_HeldChildren |
+        ECInstanceFinder::RelatedDirection::RelatedDirection_EmbeddedChildren,
+        UINT8_MAX
+        );
 
-    ECInstanceFinder::FindOptions findOptions(ECInstanceFinder::RelatedDirection::RelatedDirection_HeldChildren, UINT8_MAX);
-    if (SUCCESS != m_dbAdapter.GetECInstanceFinder().FindInstances(instancesOut, ansestorInstances, findOptions))
+    if (SUCCESS != m_dbAdapter.ExtractECInstanceKeyMultiMapFromStatement(*statement, 0, m_rootClass->GetId(), rootKeys) ||
+        SUCCESS != m_dbAdapter.GetECInstanceFinder().FindInstances(nodesOut, rootKeys, findOptions))
         {
         return ERROR;
         }
@@ -234,7 +246,7 @@ BentleyStatus RootManager::GetInstancesByPersistence(CacheRootPersistence persis
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus RootManager::LinkInstanceToRoot
 (
-Utf8StringCR rootName,
+CacheRootKeyCR rootKey,
 ObjectIdCR objectId,
 bool holding
 )
@@ -245,7 +257,7 @@ bool holding
         return ERROR;
         }
 
-    if (SUCCESS != LinkExistingInstanceToRoot(rootName, info.GetCachedInstanceKey(), holding))
+    if (SUCCESS != LinkExistingNodeToRoot(rootKey, info.GetInfoKey(), holding))
         {
         return ERROR;
         }
@@ -257,7 +269,7 @@ bool holding
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus RootManager::LinkNewInstanceToRoot
 (
-Utf8StringCR rootName,
+CacheRootKeyCR rootKey,
 ObjectIdCR objectId,
 ObjectInfoR info,
 const rapidjson::Value* optionalInstanceJson,
@@ -269,7 +281,7 @@ bool holding
         return ERROR;
         }
 
-    if (SUCCESS != LinkExistingInstanceToRoot(rootName, info.GetCachedInstanceKey(), holding))
+    if (SUCCESS != LinkExistingNodeToRoot(rootKey, info.GetInfoKey(), holding))
         {
         return ERROR;
         }
@@ -315,63 +327,26 @@ const rapidjson::Value* instanceJson
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    07/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus RootManager::LinkExistingInstanceToRoot(Utf8StringCR rootName, ECInstanceKeyCR instance, bool holding)
+BentleyStatus RootManager::LinkExistingNodeToRoot(CacheRootKeyCR rootKey, CacheNodeKeyCR nodeKey, bool holding)
     {
-    bset<ECInstanceKey> instances;
-    instances.insert(instance);
-    return LinkExistingInstancesToRoot(rootName, instances, holding);
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Vincas.Razma    07/2013
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus RootManager::LinkExistingInstancesToRoot(Utf8StringCR rootName, const bset<ECInstanceKey>& instances, bool holding)
-    {
-    if (instances.empty())
+    if (!m_hierarchyManager.RelateInstances(rootKey, nodeKey, GetRelClass(holding)).IsValid())
         {
-        return SUCCESS;
+        return ERROR;
         }
-
-    ECInstanceKey root = FindOrCreateRoot(rootName);
-
-    for (ECInstanceKeyCR instance : instances)
-        {
-        if (holding)
-            {
-            if (!m_hierarchyManager.RelateInstances(root, instance, m_rootHoldingRelationshipClass).IsValid())
-                {
-                return ERROR;
-                }
-            }
-        else
-            {
-            if (!m_hierarchyManager.RelateInstances(root, instance, m_rootWeakRelationshipClass).IsValid())
-                {
-                return ERROR;
-                }
-            }
-        }
-
     return SUCCESS;
     }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    07/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus RootManager::UnlinkInstanceFromRoot(Utf8StringCR rootName, ECInstanceKeyCR instance)
+BentleyStatus RootManager::UnlinkNodeFromRoot(CacheRootKeyCR rootKey, CacheNodeKeyCR nodeKey)
     {
-    if (!instance.IsValid())
+    if (!rootKey.IsValid() || !nodeKey.IsValid())
         {
         return SUCCESS;
         }
 
-    ECInstanceKey root = FindRoot(rootName);
-    if (!root.IsValid())
-        {
-        return SUCCESS;
-        }
-
-    if (SUCCESS != m_hierarchyManager.RemoveChildFromParent(root, instance, m_rootHoldingRelationshipClass))
+    if (SUCCESS != m_hierarchyManager.RemoveChildFromParent(rootKey, nodeKey, m_rootHoldingRelationshipClass))
         {
         return ERROR;
         }
@@ -382,14 +357,13 @@ BentleyStatus RootManager::UnlinkInstanceFromRoot(Utf8StringCR rootName, ECInsta
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    02/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus RootManager::UnlinkAllInstancesFromRoot(Utf8StringCR rootName)
+BentleyStatus RootManager::UnlinkAllInstancesFromRoot(CacheRootKeyCR rootKey)
     {
-    ECInstanceKey root = FindRoot(rootName);
-    if (!root.IsValid())
+    if (!rootKey.IsValid())
         {
         return SUCCESS;
         }
-    if (SUCCESS != m_hierarchyManager.RemoveAllChildrenFromParent(root, m_rootHoldingRelationshipClass))
+    if (SUCCESS != m_hierarchyManager.RemoveAllChildrenFromParent(rootKey, m_rootHoldingRelationshipClass))
         {
         return ERROR;
         }
@@ -399,17 +373,17 @@ BentleyStatus RootManager::UnlinkAllInstancesFromRoot(Utf8StringCR rootName)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    11/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus RootManager::CopyRootRelationships(ECInstanceKeyCR fromInstance, ECInstanceKeyCR toInstance)
+BentleyStatus RootManager::CopyRootRelationships(CacheNodeKeyCR fromNode, CacheNodeKeyCR toNode)
     {
     bvector<ECInstanceId> roots;
-    if (SUCCESS != m_dbAdapter.GetRelatedSourceIds(m_rootHoldingRelationshipClass, m_rootClass, roots, fromInstance))
+    if (SUCCESS != m_dbAdapter.GetRelatedSourceIds(m_rootHoldingRelationshipClass, m_rootClass, roots, fromNode))
         {
         return ERROR;
         }
 
     for (ECInstanceId rootECId : roots)
         {
-        if (!m_dbAdapter.RelateInstances(m_rootHoldingRelationshipClass, ECInstanceKey(m_rootClass->GetId(), rootECId), toInstance).IsValid())
+        if (!m_dbAdapter.RelateInstances(m_rootHoldingRelationshipClass, ECInstanceKey(m_rootClass->GetId(), rootECId), toNode).IsValid())
             {
             return ERROR;
             }
@@ -421,9 +395,9 @@ BentleyStatus RootManager::CopyRootRelationships(ECInstanceKeyCR fromInstance, E
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    03/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool RootManager::IsInstanceConnectedToAnyOfRoots(ECInstanceKeyCR instance, const bset<ECInstanceId>& rootIds)
+bool RootManager::IsNodeConnectedToAnyOfRoots(const bset<CacheRootKey>& rootKeys, CacheNodeKeyCR nodeKey)
     {
-    if (!instance.IsValid())
+    if (!nodeKey.IsValid())
         {
         return false;
         }
@@ -431,7 +405,7 @@ bool RootManager::IsInstanceConnectedToAnyOfRoots(ECInstanceKeyCR instance, cons
     ECInstanceKeyMultiMap foundInstances;
 
     ECInstanceKeyMultiMap seedInstances;
-    seedInstances.insert(ECDbHelper::ToPair(instance));
+    seedInstances.insert(ECDbHelper::ToPair(nodeKey));
 
     ECInstanceFinder::FindOptions findOptions(ECInstanceFinder::RelatedDirection::RelatedDirection_HoldingParents, UINT8_MAX);
     if (SUCCESS != m_dbAdapter.GetECInstanceFinder().FindInstances(foundInstances, seedInstances, findOptions))
@@ -442,7 +416,7 @@ bool RootManager::IsInstanceConnectedToAnyOfRoots(ECInstanceKeyCR instance, cons
     auto range = foundInstances.equal_range(m_rootClass->GetId());
     for (auto it = range.first; it != range.second; it++)
         {
-        if (rootIds.find(it->second) != rootIds.end())
+        if (rootKeys.find(CacheRootKey(m_rootClass->GetId(), it->second)) != rootKeys.end())
             {
             return true;
             }
@@ -454,14 +428,14 @@ bool RootManager::IsInstanceConnectedToAnyOfRoots(ECInstanceKeyCR instance, cons
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    11/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool RootManager::IsInstanceInRoot(ECInstanceKeyCR instance, ECInstanceId rootECId)
+bool RootManager::IsNodeInRoot(CacheRootKeyCR rootKey, CacheNodeKeyCR nodeKey)
     {
-    if (!instance.IsValid())
+    if (!nodeKey.IsValid())
         {
         return false;
         }
 
-    auto relId = m_dbAdapter.FindRelationship(m_rootHoldingRelationshipClass, ECInstanceKey(m_rootClass->GetId(), rootECId), instance);
+    auto relId = m_dbAdapter.FindRelationship(m_rootHoldingRelationshipClass, rootKey, nodeKey);
     if (!relId.IsValid())
         {
         return false;
@@ -473,16 +447,16 @@ bool RootManager::IsInstanceInRoot(ECInstanceKeyCR instance, ECInstanceId rootEC
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    01/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus RootManager::GetInstancesConnectedToRoots(const bset<ECInstanceId> roots, ECInstanceKeyMultiMap& instancesOut, uint8_t depth)
+BentleyStatus RootManager::GetNodesConnectedToRoots(const bset<CacheRootKey> rootKeys, ECInstanceKeyMultiMap& nodesOut, uint8_t depth)
     {
     ECInstanceKeyMultiMap seedInstances;
-    for (ECInstanceId rootId : roots)
+    for (CacheRootKeyCR rootKey : rootKeys)
         {
-        seedInstances.insert(bpair<ECClassId, ECInstanceId>(m_rootClass->GetId(), rootId));
+        seedInstances.insert(ECDbHelper::ToPair(rootKey));
         }
 
     ECInstanceFinder::FindOptions findOptions(ECInstanceFinder::RelatedDirection::RelatedDirection_HeldChildren, depth);
-    if (SUCCESS != m_dbAdapter.GetECInstanceFinder().FindInstances(instancesOut, seedInstances, findOptions))
+    if (SUCCESS != m_dbAdapter.GetECInstanceFinder().FindInstances(nodesOut, seedInstances, findOptions))
         {
         return ERROR;
         }
@@ -493,23 +467,23 @@ BentleyStatus RootManager::GetInstancesConnectedToRoots(const bset<ECInstanceId>
 /*--------------------------------------------------------------------------------------+
 * @bsimethod    
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus RootManager::GetInstancesLinkedToRoot(Utf8StringCR rootName, ECInstanceKeyMultiMap& instancesOut)
+BentleyStatus RootManager::GetNodesLinkedToRoot(Utf8StringCR rootName, ECInstanceKeyMultiMap& nodesOut)
     {
-    ECInstanceKey root = FindRoot(rootName);
-    if (!root.IsValid())
+    CacheRootKey rootKey = FindRoot(rootName);
+    if (!rootKey.IsValid())
         {
         return SUCCESS;
         }
 
-    return m_hierarchyManager.ReadTargetKeys(root, m_rootHoldingRelationshipClass, instancesOut);
+    return m_hierarchyManager.ReadTargetKeys(rootKey, m_rootHoldingRelationshipClass, nodesOut);
     }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    01/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECInstanceKey RootManager::CreateRoot(Utf8StringCR rootName, CacheRootPersistence persistence)
+CacheRootKey RootManager::CreateRoot(Utf8StringCR rootName, CacheRootPersistence persistence)
     {
-    ECInstanceKey existingRoot = FindRoot(rootName);
+    CacheRootKey existingRoot = FindRoot(rootName);
     if (existingRoot.IsValid())
         {
         BeAssert(false);
@@ -524,10 +498,10 @@ ECInstanceKey RootManager::CreateRoot(Utf8StringCR rootName, CacheRootPersistenc
     if (SUCCESS != m_rootInserter.Get().Insert(newRoot))
         {
         BeAssert(false && "Inserting cache root");
-        return ECInstanceKey();
+        return CacheRootKey();
         }
 
-    return ECInstanceKey(m_rootClass->GetId(), ECDbHelper::ECInstanceIdFromJsonInstance(newRoot));
+    return CacheRootKey(m_rootClass->GetId(), ECDbHelper::ECInstanceIdFromJsonInstance(newRoot));
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -578,7 +552,7 @@ BentleyStatus RootManager::RemoveAllRoots()
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus RootManager::RemoveRoots(Utf8CP whereClause)
     {
-    Utf8String ecsql = "SELECT ECInstanceId FROM ONLY " ECSql_RootClass " ";
+    Utf8String ecsql = "SELECT ECInstanceId FROM ONLY " ECSql_Root " ";
     if (nullptr != whereClause)
         {
         ecsql += "WHERE " + Utf8String(whereClause);

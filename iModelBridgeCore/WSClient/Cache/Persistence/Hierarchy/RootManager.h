@@ -25,6 +25,19 @@ USING_NAMESPACE_BENTLEY_SQLITE
 BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 
 /*--------------------------------------------------------------------------------------+
+* @bsiclass                                                     Vincas.Razma    12/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+struct CacheRootKey : public ECInstanceKey
+    {
+    CacheRootKey() : ECInstanceKey() {}
+    CacheRootKey(ECClassId ecClassId, ECInstanceId const& ecInstanceId) : 
+        ECInstanceKey(ecClassId, ecInstanceId) {}
+    };
+
+typedef const CacheRootKey& CacheRootKeyCR;
+typedef CacheRootKey& CacheRootKeyR;
+
+/*--------------------------------------------------------------------------------------+
 * @bsiclass                                                     Vincas.Razma    07/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct RootManager
@@ -46,11 +59,12 @@ struct RootManager
 
     private:
         ECInstanceId FindRootECInstanceId(Utf8StringCR rootName);
-        ECInstanceKey CreateRoot(Utf8StringCR rootName, CacheRootPersistence persistence = CacheRootPersistence::Default);
+        CacheRootKey CreateRoot(Utf8StringCR rootName, CacheRootPersistence persistence = CacheRootPersistence::Default);
         BentleyStatus RemoveRoot(ECInstanceId rootId);
         BentleyStatus RemoveRoots(Utf8CP whereClause = nullptr);
         BentleyStatus CacheFloatingInstance(ObjectIdCR objectId, ObjectInfoR info, const rapidjson::Value* instanceJson);
         void ReadRootInstance(Utf8StringCR rootName, JsonValueR rootInstanceJsonOut);
+        ECRelationshipClassCP GetRelClass(bool holding);
 
     public:
         RootManager
@@ -68,40 +82,37 @@ struct RootManager
         BentleyStatus SetRootSyncDate(Utf8StringCR rootName, DateTimeCR utcDateTime);
         DateTime ReadRootSyncDate(Utf8StringCR rootName);
 
-        BentleyStatus GetInstancesByPersistence(CacheRootPersistence persistence, ECInstanceKeyMultiMap& instancesOut);
-
-        ECInstanceKey FindRoot(Utf8StringCR rootName);
-        ECInstanceKey FindOrCreateRoot(Utf8StringCR rootName);
+        CacheRootKey FindRoot(Utf8StringCR rootName);
+        CacheRootKey FindOrCreateRoot(Utf8StringCR rootName);
 
         BentleyStatus LinkInstanceToRoot
             (
-            Utf8StringCR rootName,
+            CacheRootKeyCR rootKey,
             ObjectIdCR objectId,
             bool holding = true
             );
 
         BentleyStatus LinkNewInstanceToRoot
             (
-            Utf8StringCR rootName,
+            CacheRootKeyCR rootKey,
             ObjectIdCR objectId,
             ObjectInfoR info,
-            const rapidjson::Value* optionalInstanceJson,
+            const rapidjson::Value* instanceProperties = nullptr,
             bool holding = true
             );
 
-        BentleyStatus LinkExistingInstanceToRoot(Utf8StringCR rootName, ECInstanceKeyCR instance, bool holding = true);
-        BentleyStatus LinkExistingInstancesToRoot(Utf8StringCR rootName, const bset<ECInstanceKey>& instances, bool holding = true);
+        BentleyStatus LinkExistingNodeToRoot(CacheRootKeyCR rootKey, CacheNodeKeyCR nodeKey, bool holding = true);
+        BentleyStatus UnlinkNodeFromRoot(CacheRootKeyCR rootKey, CacheNodeKeyCR nodeKey);
+        BentleyStatus UnlinkAllInstancesFromRoot(CacheRootKeyCR rootKey);
 
-        BentleyStatus UnlinkInstanceFromRoot(Utf8StringCR rootName, ECInstanceKeyCR instanceId);
-        BentleyStatus UnlinkAllInstancesFromRoot(Utf8StringCR rootName);
+        BentleyStatus CopyRootRelationships(CacheNodeKeyCR fromNode, CacheNodeKeyCR toNode);
 
-        BentleyStatus CopyRootRelationships(ECInstanceKeyCR fromInstance, ECInstanceKeyCR toInstance);
+        bool IsNodeConnectedToAnyOfRoots(const bset<CacheRootKey>& rootKeys, CacheNodeKeyCR nodeKey);
+        bool IsNodeInRoot(CacheRootKeyCR rootKey, CacheNodeKeyCR nodeKey);
 
-        bool IsInstanceConnectedToAnyOfRoots(ECInstanceKeyCR instance, const bset<ECInstanceId>& rootIds);
-        bool IsInstanceInRoot(ECInstanceKeyCR instance, ECInstanceId rootId);
-
-        BentleyStatus GetInstancesConnectedToRoots(const bset<ECInstanceId> roots, ECInstanceKeyMultiMap& instancesOut, uint8_t depth = UINT8_MAX);
-        BentleyStatus GetInstancesLinkedToRoot(Utf8StringCR rootName, ECInstanceKeyMultiMap& instancesOut);
+        BentleyStatus GetNodesConnectedToRoots(const bset<CacheRootKey> roots, ECInstanceKeyMultiMap& nodesOut, uint8_t depth = UINT8_MAX);
+        BentleyStatus GetNodesLinkedToRoot(Utf8StringCR rootName, ECInstanceKeyMultiMap& nodesOut);
+        BentleyStatus GetNodesByPersistence(CacheRootPersistence persistence, ECInstanceKeyMultiMap& nodesOut);
 
         BentleyStatus RemoveRoot(Utf8StringCR rootName);
         BentleyStatus RemoveRootsByPrefix(Utf8StringCR rootPrefix);

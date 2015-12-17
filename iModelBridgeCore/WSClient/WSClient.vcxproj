@@ -195,6 +195,8 @@
     <ClInclude Include="Cache\Persistence\Hierarchy\HierarchyManager.h" />
     <ClInclude Include="Cache\Persistence\Hierarchy\IDeleteHandler.h" />
     <ClInclude Include="Cache\Persistence\Hierarchy\RootManager.h" />
+    <ClInclude Include="Cache\Persistence\Instances\CachedInstanceKey.h" />
+    <ClInclude Include="Cache\Persistence\Hierarchy\CacheNodeKey.h" />
     <ClInclude Include="Cache\Persistence\Instances\InstanceCacheHelper.h" />
     <ClInclude Include="Cache\Persistence\Instances\NavigationBaseManager.h" />
     <ClInclude Include="Cache\Persistence\Instances\ObjectInfo.h" />
@@ -326,6 +328,7 @@
     <Xml Include="Cache\Persistence\ECSchemas\DSCacheSchema.01.06.ecschema.xml" />
     <Xml Include="Cache\Persistence\ECSchemas\DSCacheSchema.01.07.ecschema.xml" />
     <Xml Include="Cache\Persistence\ECSchemas\MetaSchema.02.00.ecschema.xml" />
+    <Xml Include="Cache\Persistence\ECSchemas\WSCache.02.00.ecschema.xml" />
     <Xml Include="WSClient.PartFile.xml">
       <SubType>Designer</SubType>
     </Xml>

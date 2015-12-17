@@ -73,7 +73,7 @@ ChangeManager::SyncStatus CachedObjectInfo::GetSyncStatus() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECInstanceKey CachedObjectInfo::GetCachedInstanceKey() const
     {
-    return m_info->GetCachedInstanceKey();
+    return m_info->GetInstanceKey();
     }
 
 /*--------------------------------------------------------------------------------------+

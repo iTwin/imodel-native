@@ -34,8 +34,8 @@ m_objectInfoManager(objectInfoManager),
 m_relationshipInfoManager(relationshipInfoManager),
 m_fileInfoManager(fileInfoManager)
     {
-    ECClassCP changeInfoNumberClass = dbAdapter.GetECClass(SCHEMA_CacheSchema, CLASS_ChangeSequenceInfo);
-    ECPropertyCP lastChangeNumberProperty = changeInfoNumberClass->GetPropertyP(CLASS_ChangeSequenceInfo_PROPERTY_LastChangeNumber);
+    ECClassCP sequenceClass = dbAdapter.GetECClass(SCHEMA_CacheSchema, CLASS_Sequence);
+    ECPropertyCP lastChangeNumberProperty = sequenceClass->GetPropertyP(CLASS_Sequence_PROPERTY_LastChangeNumber);
     m_changeNumberIncrementor = std::make_shared<ValueIncrementor>(dbAdapter.GetECDb(), statementCache, *lastChangeNumberProperty);
     }
 
@@ -48,7 +48,7 @@ bool ChangeInfoManager::HasChanges()
         {
         return Utf8PrintfString
             (
-            "SELECT NULL FROM " ECSql_ChangeInfoClass " info "
+            "SELECT NULL FROM " ECSql_ChangeInfo " info "
             "WHERE info.[" CLASS_ChangeInfo_PROPERTY_ChangeStatus "] IS NOT NULL "
             "  AND info.[" CLASS_ChangeInfo_PROPERTY_ChangeStatus "] != %d "
             "LIMIT 1 ",
@@ -190,7 +190,7 @@ IChangeManager::ObjectChange ChangeInfoManager::GetObjectChange(ECInstanceKeyCR 
 +--------------------------------------------------------------------------------------*/
 IChangeManager::ObjectChange ChangeInfoManager::GetObjectChange(ObjectInfoCR info)
     {
-    return IChangeManager::ObjectChange(info.GetCachedInstanceKey(), info.GetChangeStatus(), info.GetSyncStatus(), info.GetChangeNumber());
+    return IChangeManager::ObjectChange(info.GetInstanceKey(), info.GetChangeStatus(), info.GetSyncStatus(), info.GetChangeNumber());
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -208,8 +208,8 @@ IChangeManager::RelationshipChange ChangeInfoManager::GetRelationshipChange(ECIn
 IChangeManager::RelationshipChange ChangeInfoManager::GetRelationshipChange(RelationshipInfoCR info)
     {
     ECInstanceKey source, target;
-    m_relationshipInfoManager.ReadRelationshipEnds(info.GetRelationshipKey(), source, target);
-    return IChangeManager::RelationshipChange(info.GetRelationshipKey(), source, target,
+    m_relationshipInfoManager.ReadRelationshipEnds(info.GetInstanceKey(), source, target);
+    return IChangeManager::RelationshipChange(info.GetInstanceKey(), source, target,
                                               info.GetChangeStatus(), info.GetSyncStatus(), info.GetChangeNumber());
     }
 
@@ -218,7 +218,8 @@ IChangeManager::RelationshipChange ChangeInfoManager::GetRelationshipChange(Rela
 +--------------------------------------------------------------------------------------*/
 IChangeManager::FileChange ChangeInfoManager::GetFileChange(ECInstanceKeyCR instanceKey)
     {
-    FileInfo info = m_fileInfoManager.ReadInfo(instanceKey);
+    CachedInstanceKey cachedKey = m_objectInfoManager.ReadCachedInstanceKey(instanceKey);
+    FileInfo info = m_fileInfoManager.ReadInfo(cachedKey);
     return IChangeManager::FileChange(instanceKey, info.GetChangeStatus(), info.GetSyncStatus(), info.GetChangeNumber());
     }
 
@@ -227,7 +228,8 @@ IChangeManager::FileChange ChangeInfoManager::GetFileChange(ECInstanceKeyCR inst
 +--------------------------------------------------------------------------------------*/
 IChangeManager::FileChange ChangeInfoManager::GetFileChange(FileInfoCR info)
     {
-    return IChangeManager::FileChange(info.GetInstanceKey(), info.GetChangeStatus(), info.GetSyncStatus(), info.GetChangeNumber());
+    ECInstanceKey instanceKey = info.GetCachedInstanceKey().GetInstanceKey();
+    return IChangeManager::FileChange(instanceKey, info.GetChangeStatus(), info.GetSyncStatus(), info.GetChangeNumber());
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -262,9 +264,9 @@ int ChangeInfoManager::ReadStatusProperty(ECInstanceKeyCR instanceKey, Utf8CP st
     auto statement = m_statementCache.GetPreparedStatement(key, [&]
         {
         return Utf8PrintfString(
-            "SELECT info.[%s] FROM " ECSql_ChangeInfoClass " info "
-            "JOIN ONLY " ECSql_CachedObjectInfoToInstanceClass " infoRel ON infoRel.SourceECInstanceId = info.ECInstanceId "
-            "WHERE infoRel.TargetECClassId = ? AND infoRel.TargetECInstanceId = ? "
+            "SELECT info.[%s] FROM " ECSql_CachedObjectInfo " info "
+            "WHERE info.[" CLASS_CachedObjectInfo_PROPERTY_ClassId "] = ? "
+            "  AND info.[" CLASS_CachedObjectInfo_PROPERTY_InstanceId "] = ? "
             "LIMIT 1 ",
             statusPropertyName
             );
@@ -290,7 +292,7 @@ BentleyStatus ChangeInfoManager::RemoveLocalDeletedInfos()
     auto statement = m_statementCache.GetPreparedStatement("ChangeInfoManager::RemoveLocalDeletedInfos", [&]
         {
         return
-            "SELECT GetECClassId(), ECInstanceId FROM " ECSql_ChangeInfoClass " "
+            "SELECT GetECClassId(), ECInstanceId FROM " ECSql_ChangeInfo " "
             "WHERE [" CLASS_ChangeInfo_PROPERTY_IsLocal "] = TRUE "
             "  AND [" CLASS_ChangeInfo_PROPERTY_ChangeStatus "] = ? ";
         });
@@ -477,7 +479,7 @@ BentleyStatus ChangeInfoManager::ReadInstanceChanges(ObjectInfoCR info, RapidJso
         }
 
     Json::Value instanceJsonValue;
-    if (SUCCESS != m_dbAdapter.GetJsonInstance(instanceJsonValue, info.GetCachedInstanceKey()))
+    if (SUCCESS != m_dbAdapter.GetJsonInstance(instanceJsonValue, info.GetInstanceKey()))
         {
         return ERROR;
         }
@@ -516,7 +518,7 @@ BentleyStatus ChangeInfoManager::ApplyChangesToBackup(ObjectInfoCR info, JsonVal
 BentleyStatus ChangeInfoManager::ApplyChangesToInstanceAndBackupIt(ObjectInfoCR info, JsonValueCR changes)
     {
     Json::Value instanceJsonValue;
-    if (SUCCESS != m_dbAdapter.GetJsonInstance(instanceJsonValue, info.GetCachedInstanceKey()))
+    if (SUCCESS != m_dbAdapter.GetJsonInstance(instanceJsonValue, info.GetInstanceKey()))
         {
         return ERROR;
         }

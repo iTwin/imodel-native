@@ -11,6 +11,7 @@
 #include <ECDb/ECDb.h>
 
 #include "../Changes/ChangeInfo.h"
+#include "CachedInstanceKey.h"
 
 USING_NAMESPACE_BENTLEY_SQLITE_EC
 USING_NAMESPACE_BENTLEY_EC
@@ -23,22 +24,28 @@ BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 struct RelationshipInfo : public ChangeInfo
     {
     public:
-        ECRelationshipClassCP m_relationshipClass;
-        ECInstanceKey m_relationshipKey;
-        mutable ObjectId m_relationshipId;
+        ECRelationshipClassCP m_relClass;
+        ECInstanceKey m_instanceKey;
+        mutable ObjectId m_objectId;
         ECClassId m_infoClassId;
 
     public:
         RelationshipInfo();
-        RelationshipInfo(JsonValueCR infoJson, ECRelationshipClassCP relationshipClass, ECInstanceId relationshipId, ECClassId infoClassId);
+        RelationshipInfo
+            (
+            JsonValueCR infoJson,
+            ECRelationshipClassCP relationshipClass,
+            ECInstanceId relationshipId,
+            ECClassId infoClassId
+            );
 
-        ECInstanceKeyCR GetRelationshipKey() const;
-        void SetRelationshipInstanceId(ECInstanceId instanceId);
+        ECInstanceKeyCR GetInstanceKey() const;
+        void SetInstanceId(ECInstanceId instanceId);
 
-        ECInstanceKey GetInfoKey() const;
+        CachedInstanceKey GetCachedInstanceKey() const;
+        CacheNodeKey GetInfoKey() const;
 
-        ObjectIdCR GetRelationshipId() const;
-        Utf8String GetRemoteId() const;
+        ObjectIdCR GetObjectId() const;
         void SetRemoteId(Utf8StringCR remoteId);
     };
 

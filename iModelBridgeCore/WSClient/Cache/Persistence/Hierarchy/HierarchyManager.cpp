@@ -202,6 +202,20 @@ BentleyStatus HierarchyManager::DeleteInstance(ECInstanceKeyCR instance)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    06/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus HierarchyManager::DeleteInstance(CachedInstanceKeyCR instance)
+    {
+    // WIP06: deletions
+    if (SUCCESS != DeleteInstance(instance.GetInfoKey()) ||
+        SUCCESS != DeleteInstance(instance.GetInstanceKey()))
+        {
+        return ERROR;
+        }
+    return SUCCESS;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    06/2014
++---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus HierarchyManager::DeleteInstances(ECSqlStatement& ecInstanceKeyStatement)
     {
     DbResult status;

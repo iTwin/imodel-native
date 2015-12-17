@@ -131,6 +131,7 @@ TEST_F(DataSourceCacheTests, UpdateSchemas_SchemasPassedToDataSourceCacheWithCac
     EXPECT_TRUE(nullptr != cache.GetAdapter().GetECSchema("TestSchema2"));
     }
 
+// WIP06
 TEST_F(DataSourceCacheTests, UpdateSchemas_SchemasWithDeletedPropertyPassedToDataSourceCacheWithCachedStatements_SuccessAndSchemasAccessable)
     {
     DataSourceCache cache;
@@ -536,7 +537,7 @@ TEST_F(DataSourceCacheTests, FindInstance_PassedCachedRelationshipId_ReturnsInva
     auto responseKey = StubCachedResponseKey(*cache);
     StubInstances instances;
     instances.Add({"TestSchema.TestClass", "A"}).AddRelated({"TestSchema.TestRelationshipClass", "AB"}, {"TestSchema.TestClass", "B"});
-    cache->CacheResponse(responseKey, instances.ToWSObjectsResponse());
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(responseKey, instances.ToWSObjectsResponse()));
 
     EXPECT_FALSE(cache->FindInstance({"TestSchema.TestRelationshipClass", "AB"}).IsValid());
     }
@@ -767,7 +768,7 @@ TEST_F(DataSourceCacheTests, RemoveRootsByPrefix_RootsWithLinkedInstancesExist_D
 TEST_F(DataSourceCacheTests, IsInstanceConnectedToRoot_InstanceIsRootChild_True)
     {
     auto cache = GetTestCache();
-    cache->LinkInstanceToRoot("root", {"TestSchema.TestClass", "Foo"});
+    ASSERT_EQ(SUCCESS, cache->LinkInstanceToRoot("root", {"TestSchema.TestClass", "Foo"}));
 
     EXPECT_TRUE(cache->IsInstanceConnectedToRoot("root", cache->FindInstance({"TestSchema.TestClass", "Foo"})));
     }
@@ -787,8 +788,8 @@ TEST_F(DataSourceCacheTests, ReadInstancesLinkedToRoot_TwoDifferentClassInstance
     {
     auto cache = GetTestCache();
 
-    cache->LinkInstanceToRoot("TestRoot", {"TestSchema.TestClass", "A"});
-    cache->LinkInstanceToRoot("TestRoot", {"TestSchema.TestClass2", "B"});
+    ASSERT_EQ(SUCCESS, cache->LinkInstanceToRoot("TestRoot", {"TestSchema.TestClass", "A"}));
+    ASSERT_EQ(SUCCESS, cache->LinkInstanceToRoot("TestRoot", {"TestSchema.TestClass2", "B"}));
 
     Json::Value instances;
     BentleyStatus status = cache->ReadInstancesLinkedToRoot("TestRoot", instances);
@@ -802,9 +803,9 @@ TEST_F(DataSourceCacheTests, ReadInstancesLinkedToRoot_TwoDifferentClassInstance
 TEST_F(DataSourceCacheTests, DeleteFilesInTemporaryPersistence_RootPersistenceSetToFull_LeavesFile)
     {
     auto cache = GetTestCache();
-    cache->LinkInstanceToRoot("foo_root", {"TestSchema.TestClass", "Foo"});
-    cache->SetupRoot("foo_root", CacheRootPersistence::Full);
-    cache->CacheFile({"TestSchema.TestClass", "Foo"}, StubWSFileResponse(StubFile()), FileCache::Persistent);
+    ASSERT_EQ(SUCCESS, cache->LinkInstanceToRoot("foo_root", {"TestSchema.TestClass", "Foo"}));
+    ASSERT_EQ(SUCCESS, cache->SetupRoot("foo_root", CacheRootPersistence::Full));
+    ASSERT_EQ(SUCCESS, cache->CacheFile({"TestSchema.TestClass", "Foo"}, StubWSFileResponse(StubFile()), FileCache::Persistent));
 
     EXPECT_TRUE(cache->ReadFilePath({"TestSchema.TestClass", "Foo"}).DoesPathExist());
 
@@ -817,9 +818,9 @@ TEST_F(DataSourceCacheTests, DeleteFilesInTemporaryPersistence_RootPersistenceSe
 TEST_F(DataSourceCacheTests, DeleteFilesInTemporaryPersistence_RootPersistenceSetToTemporaryAndFileCachedToPersistent_DeletesFile)
     {
     auto cache = GetTestCache();
-    cache->LinkInstanceToRoot("foo_root", {"TestSchema.TestClass", "Foo"});
-    cache->SetupRoot("foo_root", CacheRootPersistence::Temporary);
-    cache->CacheFile({"TestSchema.TestClass", "Foo"}, StubWSFileResponse(StubFile()), FileCache::Persistent);
+    ASSERT_EQ(SUCCESS, cache->LinkInstanceToRoot("foo_root", {"TestSchema.TestClass", "Foo"}));
+    ASSERT_EQ(SUCCESS, cache->SetupRoot("foo_root", CacheRootPersistence::Temporary));
+    ASSERT_EQ(SUCCESS, cache->CacheFile({"TestSchema.TestClass", "Foo"}, StubWSFileResponse(StubFile()), FileCache::Persistent));
 
     EXPECT_TRUE(cache->ReadFilePath({"TestSchema.TestClass", "Foo"}).DoesPathExist());
 
@@ -870,13 +871,13 @@ TEST_F(DataSourceCacheTests, Reset_FileCachedBefore_CachesNewFileToSameLocation)
     {
     // Arrange
     auto cache = GetTestCache();
-    cache->LinkInstanceToRoot("foo_root", {"TestSchema.TestClass", "Foo"});
-    cache->CacheFile({"TestSchema.TestClass", "Foo"}, StubWSFileResponse(StubFile()), FileCache::Temporary);
+    ASSERT_EQ(SUCCESS, cache->LinkInstanceToRoot("foo_root", {"TestSchema.TestClass", "Foo"}));
+    ASSERT_EQ(SUCCESS, cache->CacheFile({"TestSchema.TestClass", "Foo"}, StubWSFileResponse(StubFile()), FileCache::Temporary));
     BeFileName oldCachedPath = cache->ReadFilePath({"TestSchema.TestClass", "Foo"});
     // Act
     BentleyStatus status = cache->Reset();
-    cache->LinkInstanceToRoot("foo_root", {"TestSchema.TestClass", "other_foo"});
-    cache->CacheFile({"TestSchema.TestClass", "other_foo"}, StubWSFileResponse(StubFile()), FileCache::Temporary);
+    ASSERT_EQ(SUCCESS, cache->LinkInstanceToRoot("foo_root", {"TestSchema.TestClass", "other_foo"}));
+    ASSERT_EQ(SUCCESS, cache->CacheFile({"TestSchema.TestClass", "other_foo"}, StubWSFileResponse(StubFile()), FileCache::Temporary));
     BeFileName newCachedPath = cache->ReadFilePath({"TestSchema.TestClass", "other_foo"});
     // Assert
     EXPECT_EQ(SUCCESS, status);
@@ -897,8 +898,8 @@ TEST_F(DataSourceCacheTests, IsObjectFullyPersisted_NonExistingObject_False)
 TEST_F(DataSourceCacheTests, IsObjectFullyPersisted_ObjectInFullPersistenceRoot_True)
     {
     auto cache = GetTestCache();
-    cache->SetupRoot("foo_root", CacheRootPersistence::Full);
-    cache->LinkInstanceToRoot("foo_root", {"TestSchema.TestClass", "Foo"});
+    ASSERT_EQ(SUCCESS, cache->SetupRoot("foo_root", CacheRootPersistence::Full));
+    ASSERT_EQ(SUCCESS, cache->LinkInstanceToRoot("foo_root", {"TestSchema.TestClass", "Foo"}));
 
     EXPECT_TRUE(cache->IsInstanceFullyPersisted({"TestSchema.TestClass", "Foo"}));
     }
@@ -906,8 +907,8 @@ TEST_F(DataSourceCacheTests, IsObjectFullyPersisted_ObjectInFullPersistenceRoot_
 TEST_F(DataSourceCacheTests, IsObjectFullyPersisted_ObjectInTemporaryPersistenceRoot_False)
     {
     auto cache = GetTestCache();
-    cache->SetupRoot("foo_root", CacheRootPersistence::Temporary);
-    cache->LinkInstanceToRoot("foo_root", {"TestSchema.TestClass", "Foo"});
+    ASSERT_EQ(SUCCESS, cache->SetupRoot("foo_root", CacheRootPersistence::Temporary));
+    ASSERT_EQ(SUCCESS, cache->LinkInstanceToRoot("foo_root", {"TestSchema.TestClass", "Foo"}));
 
     EXPECT_FALSE(cache->IsInstanceFullyPersisted({"TestSchema.TestClass", "Foo"}));
     }
@@ -916,14 +917,14 @@ TEST_F(DataSourceCacheTests, IsObjectFullyPersisted_ObjectQueryParentInFullPersi
     {
     auto cache = GetTestCache();
 
-    cache->SetupRoot("foo_root", CacheRootPersistence::Full);
-    cache->LinkInstanceToRoot("foo_root", {"TestSchema.TestClass", "parent"});
+    ASSERT_EQ(SUCCESS, cache->SetupRoot("foo_root", CacheRootPersistence::Full));
+    ASSERT_EQ(SUCCESS, cache->LinkInstanceToRoot("foo_root", {"TestSchema.TestClass", "parent"}));
     CachedResponseKey responseKey(cache->FindInstance({"TestSchema.TestClass", "parent"}), "TestQuery");
 
     StubInstances instances;
     instances.Add({"TestSchema.TestClass", "Foo"});
 
-    cache->CacheResponse(responseKey, instances.ToWSObjectsResponse());
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(responseKey, instances.ToWSObjectsResponse()));
 
     EXPECT_TRUE(cache->IsInstanceFullyPersisted({"TestSchema.TestClass", "Foo"}));
     }
@@ -931,10 +932,10 @@ TEST_F(DataSourceCacheTests, IsObjectFullyPersisted_ObjectQueryParentInFullPersi
 TEST_F(DataSourceCacheTests, IsObjectFullyPersisted_ObjectInTemporaryAndFullPersistenceRoots_True)
     {
     auto cache = GetTestCache();
-    cache->SetupRoot("temp_root", CacheRootPersistence::Temporary);
-    cache->SetupRoot("full_root", CacheRootPersistence::Full);
-    cache->LinkInstanceToRoot("temp_root", {"TestSchema.TestClass", "Foo"});
-    cache->LinkInstanceToRoot("full_root", {"TestSchema.TestClass", "Foo"});
+    ASSERT_EQ(SUCCESS, cache->SetupRoot("temp_root", CacheRootPersistence::Temporary));
+    ASSERT_EQ(SUCCESS, cache->SetupRoot("full_root", CacheRootPersistence::Full));
+    ASSERT_EQ(SUCCESS, cache->LinkInstanceToRoot("temp_root", {"TestSchema.TestClass", "Foo"}));
+    ASSERT_EQ(SUCCESS, cache->LinkInstanceToRoot("full_root", {"TestSchema.TestClass", "Foo"}));
 
     EXPECT_TRUE(cache->IsInstanceFullyPersisted({"TestSchema.TestClass", "Foo"}));
     }
@@ -1252,13 +1253,68 @@ TEST_F(DataSourceCacheTests, CacheResponse_NonExistingParent_ReturnsError)
     EXPECT_EQ(ERROR, cache->CacheResponse(responseKey, StubInstances().ToWSObjectsResponse()));
     }
 
-TEST_F(DataSourceCacheTests, CacheResponse_ParentInCache_ReturnsSuccess)
+TEST_F(DataSourceCacheTests, CacheResponse_ParentInCache_Succeeds)
     {
     auto cache = GetTestCache();
-    cache->LinkInstanceToRoot(nullptr, {"TestSchema.TestClass", "parent"});
+    ASSERT_EQ(SUCCESS, cache->LinkInstanceToRoot(nullptr, {"TestSchema.TestClass", "parent"}));
     CachedResponseKey responseKey(cache->FindInstance({"TestSchema.TestClass", "parent"}), nullptr);
 
     EXPECT_EQ(SUCCESS, cache->CacheResponse(responseKey, StubInstances().ToWSObjectsResponse()));
+    EXPECT_TRUE(cache->IsResponseCached(responseKey));
+    }
+
+TEST_F(DataSourceCacheTests, CacheResponse_MultipleResponsesForSameParentInstance_Succeeds)
+    {
+    auto cache = GetTestCache();
+    ECInstanceKey parentKey = StubInstanceInCache(*cache);
+    CachedResponseKey key1(parentKey, "A");
+    CachedResponseKey key2(parentKey, "B");
+
+    EXPECT_EQ(SUCCESS, cache->CacheResponse(key1, StubInstances().ToWSObjectsResponse()));
+    EXPECT_EQ(SUCCESS, cache->CacheResponse(key2, StubInstances().ToWSObjectsResponse()));
+    EXPECT_TRUE(cache->IsResponseCached(key1));
+    EXPECT_TRUE(cache->IsResponseCached(key2));
+    }
+
+TEST_F(DataSourceCacheTests, CacheResponse_MultipleResponsesForSameParentRoot_Succeeds)
+    {
+    auto cache = GetTestCache();
+    ECInstanceKey parentKey = cache->FindOrCreateRoot("Foo");
+    CachedResponseKey key1(parentKey, "A");
+    CachedResponseKey key2(parentKey, "B");
+
+    EXPECT_EQ(SUCCESS, cache->CacheResponse(key1, StubInstances().ToWSObjectsResponse()));
+    EXPECT_EQ(SUCCESS, cache->CacheResponse(key2, StubInstances().ToWSObjectsResponse()));
+    EXPECT_TRUE(cache->IsResponseCached(key1));
+    EXPECT_TRUE(cache->IsResponseCached(key2));
+    }
+
+TEST_F(DataSourceCacheTests, CacheResponse_MultipleResponsesForSameHolderInstance_Succeeds)
+    {
+    auto cache = GetTestCache();
+    ECInstanceKey parentKey = cache->FindOrCreateRoot("Foo");
+    ECInstanceKey holderKey = StubInstanceInCache(*cache);
+    CachedResponseKey key1(parentKey, "A", holderKey);
+    CachedResponseKey key2(parentKey, "B", holderKey);
+
+    EXPECT_EQ(SUCCESS, cache->CacheResponse(key1, StubInstances().ToWSObjectsResponse()));
+    EXPECT_EQ(SUCCESS, cache->CacheResponse(key2, StubInstances().ToWSObjectsResponse()));
+    EXPECT_TRUE(cache->IsResponseCached(key1));
+    EXPECT_TRUE(cache->IsResponseCached(key2));
+    }
+
+TEST_F(DataSourceCacheTests, CacheResponse_MultipleResponsesForSameHolderRoot_Succeeds)
+    {
+    auto cache = GetTestCache();
+    ECInstanceKey parentKey = cache->FindOrCreateRoot("Foo");
+    ECInstanceKey holderKey = cache->FindOrCreateRoot("Boo");
+    CachedResponseKey key1(parentKey, "A", holderKey);
+    CachedResponseKey key2(parentKey, "B", holderKey);
+
+    EXPECT_EQ(SUCCESS, cache->CacheResponse(key1, StubInstances().ToWSObjectsResponse()));
+    EXPECT_EQ(SUCCESS, cache->CacheResponse(key2, StubInstances().ToWSObjectsResponse()));
+    EXPECT_TRUE(cache->IsResponseCached(key1));
+    EXPECT_TRUE(cache->IsResponseCached(key2));
     }
 
 TEST_F(DataSourceCacheTests, CacheResponse_TwoInstancesAsServerResult_CachesFullInstances)
@@ -1283,7 +1339,8 @@ TEST_F(DataSourceCacheTests, CacheResponse_TwoInstancesAsServerResult_CachesFull
     EXPECT_EQ("TestValueB", instanceJson["TestProperty"].asString());
     }
 
-TEST_F(DataSourceCacheTests, CacheResponse_QueryWithSameNameAndParentCachedPreviusly_ReplacesOldQueryResults)
+// WIP06 - deletion support
+TEST_F(DataSourceCacheTests, CacheResponse_QueryWithSameNameAndParentCachedPreviusly_RemovesOldQueryResults)
     {
     auto cache = GetTestCache();
 
@@ -1430,7 +1487,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_InstanceAddedInNewResults_AddsInstanc
     EXPECT_TRUE(cache->GetCachedObjectInfo({"TestSchema.TestClass", "B"}).IsFullyCached());
     }
 
-TEST_F(DataSourceCacheTests, CacheResponse_RootAsParent_InstancesRelatedToRootInHoldingRelationships)
+TEST_F(DataSourceCacheTests, CacheResponse_RootAsParent_InstancesNotRelatedToRootInRelationships)
     {
     auto cache = GetTestCache();
     ECInstanceKey root = cache->FindOrCreateRoot(nullptr);
@@ -1443,10 +1500,10 @@ TEST_F(DataSourceCacheTests, CacheResponse_RootAsParent_InstancesRelatedToRootIn
     seedInstances.insert(ECDbHelper::ToPair(root));
     ECInstanceKeyMultiMap relatedInstances;
     ECInstanceFinder finder(cache->GetAdapter().GetECDb());
-    finder.FindInstances(relatedInstances, seedInstances, ECInstanceFinder::FindOptions(ECInstanceFinder::RelatedDirection_HeldChildren, UINT8_MAX));
+    finder.FindInstances(relatedInstances, seedInstances, ECInstanceFinder::FindOptions(ECInstanceFinder::RelatedDirection_All, UINT8_MAX));
 
     ECInstanceKey instance = cache->FindInstance({"TestSchema.TestClass", "Foo"});
-    EXPECT_TRUE(ECDbHelper::IsInstanceInMultiMap(instance, relatedInstances));
+    EXPECT_FALSE(ECDbHelper::IsInstanceInMultiMap(instance, relatedInstances));
     }
 
 TEST_F(DataSourceCacheTests, CacheResponse_ResultNotModified_LeavesPreviouslyCachedData)
@@ -2282,6 +2339,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_QuerySelectsNotAllPropertiesForFullyC
     EXPECT_TRUE(cache->GetCachedObjectInfo({"TestSchema.TestClass", "Foo"}).IsFullyCached());
     }
 
+// WIP06
 TEST_F(DataSourceCacheTests, CacheResponse_KeyHasNoHolder_ParentHasHoldingRelationshipToResults)
     {
     auto cache = GetTestCache();
@@ -2301,6 +2359,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_KeyHasNoHolder_ParentHasHoldingRelati
     EXPECT_THAT(ECDbHelper::IsInstanceInMultiMap(instanceKey, parentInstances), true);
     }
 
+// WIP06
 TEST_F(DataSourceCacheTests, CacheResponse_KeyHasDifferentHolder_ParentDoesNotHaveHoldingRelationshipToResultsButHolderDoes)
     {
     auto cache = GetTestCache();
@@ -2378,8 +2437,8 @@ TEST_F(DataSourceCacheTests, CacheResponse_RelationshipWithProperties_CachesRela
     StubInstances instances;
     instances
         .Add({"TestSchema.TestClass", "A"})
-        .AddRelated({"TestSchema.TestRelationshipPropertiesClass", "AB"}, {"TestSchema.TestClass", "B"}, {}, 
-            ECRelatedInstanceDirection::Forward, {{"TestProperty", "RelationshipValue"}});
+        .AddRelated({"TestSchema.TestRelationshipPropertiesClass", "AB"}, {"TestSchema.TestClass", "B"}, {},
+        ECRelatedInstanceDirection::Forward, {{"TestProperty", "RelationshipValue"}});
 
     bset<ObjectId> rejected;
     EXPECT_EQ(SUCCESS, cache->CacheResponse(StubCachedResponseKey(*cache), instances.ToWSObjectsResponse(), &rejected, nullptr));
@@ -2650,7 +2709,8 @@ TEST_F(DataSourceCacheTests, CacheResponse_FinalNotModifiedResponseAndDefaultPag
     EXPECT_TRUE(cache->FindInstance({"TestSchema.TestClass", "A"}).IsValid());
     EXPECT_FALSE(cache->FindInstance({"TestSchema.TestClass", "B"}).IsValid());
     }
-    
+
+// WIP06 - deletions
 TEST_F(DataSourceCacheTests, CacheResponse_FinalNotModifiedResponseAndOnLastPage_SetsAsCached)
     {
     // Arrange
@@ -2950,10 +3010,9 @@ TEST_F(DataSourceCacheTests, MarkTemporaryInstancesAsPartial_PartiallyCachedQuer
     EXPECT_TRUE(cache->GetCachedObjectInfo({"TestSchema.TestClass", "Foo"}).IsFullyCached());
 
     // Act
-    auto status = cache->MarkTemporaryInstancesAsPartial({responseKey});
+    EXPECT_EQ(SUCCESS, cache->MarkTemporaryInstancesAsPartial({responseKey}));
 
     // Assert
-    EXPECT_EQ(SUCCESS, status);
     EXPECT_FALSE(cache->GetCachedObjectInfo({"TestSchema.TestClass", "Foo"}).IsFullyCached());
     }
 
@@ -3223,6 +3282,7 @@ TEST_F(DataSourceCacheTests, ReadResponseInstanceKeys_ResultsContainParent_Retur
     EXPECT_TRUE(ECDbHelper::IsInstanceInMultiMap(cache->FindInstance({"TestSchema.TestClass", "A"}), instances));
     }
 
+// WIP06
 TEST_F(DataSourceCacheTests, ReadResponseInstanceKeys_CachedInstanceWithRelationshipToItself_ReturnsInstanceKeysAsDuplicate)
     {
     // Does not work due to fact that CachedResponseInfo relateds results instances and does not relate duplicates
@@ -3246,6 +3306,7 @@ TEST_F(DataSourceCacheTests, ReadResponseInstanceKeys_CachedInstanceWithRelation
     EXPECT_THAT(instances, ContainerEq(expectedInstances));
     }
 
+// WIP06
 TEST_F(DataSourceCacheTests, ReadResponseInstanceKeys_CachedParentInstanceWithRelationshipToItself_ReturnsInstanceKeysAsDuplicate)
     {
     // Does not work due to fact that CachedResponseInfo relateds results instances and does not relate duplicates
@@ -4142,13 +4203,24 @@ TEST_F(DataSourceCacheTests, ReadFileCacheTag_CachedFileButIsDeletedFromDisk_Ret
     EXPECT_THAT(cache->ReadFileCacheTag(fileId), IsEmpty());
     }
 
-TEST_F(DataSourceCacheTests, FindInstance_ObjectIdAndNotCached_InvalidKey)
+TEST_F(DataSourceCacheTests, FindInstance_NotExistingObjectIdRemoteId_InvalidKeyButCorrectClass)
     {
     auto cache = GetTestCache();
 
     ECInstanceKey instanceKey = cache->FindInstance({"TestSchema.TestClass", "NonExisting"});
 
     EXPECT_FALSE(instanceKey.IsValid());
+    EXPECT_EQ(cache->GetAdapter().GetECClass("TestSchema.TestClass")->GetId(), instanceKey.GetECClassId());
+    }
+
+TEST_F(DataSourceCacheTests, FindInstance_NotExistingObjectIdClass_EmptyKey)
+    {
+    auto cache = GetTestCache();
+
+    ECInstanceKey instanceKey = cache->FindInstance({"TestSchema.NonExistingClass", "Foo"});
+
+    EXPECT_FALSE(instanceKey.IsValid());
+    EXPECT_EQ(ECInstanceKey(), instanceKey);
     }
 
 TEST_F(DataSourceCacheTests, FindInstance_EmptyObjectId_ReturnsInvalid)
@@ -4303,6 +4375,7 @@ TEST_F(DataSourceCacheTests, FindRelationship_CachedRelationshipExists_ReturnsRe
     EXPECT_EQ(ObjectId({"TestSchema.TestRelationshipClass", "AB"}), cache->FindRelationship(relationship));
     }
 
+// WIP06 - cache structure seperation from data
 TEST_F(DataSourceCacheTests, ReadInstancesConnectedToRootMap_DifferentClassInstancesLinked_ReturnsOnlyCachedInstanceIds)
     {
     auto cache = GetTestCache();
