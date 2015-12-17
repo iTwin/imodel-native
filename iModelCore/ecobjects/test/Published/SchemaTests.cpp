@@ -357,10 +357,10 @@ TEST_F (SchemaTest, CheckEnumerationBasicProperties)
     status = enumeration->CreateEnumerator(enumerator, 5);
     EXPECT_TRUE(status == ECObjectsStatus::Success);
     EXPECT_TRUE(enumerator != nullptr);
+    EXPECT_STREQ(enumerator->GetInvariantDisplayLabel().c_str(), "5");
     enumerator->SetDisplayLabel("DLBL");
 
-    Utf8StringCR displayLabel = enumerator->GetDisplayLabel();
-    EXPECT_STREQ(displayLabel.c_str(), "DLBL");
+    EXPECT_STREQ(enumerator->GetDisplayLabel().c_str(), "DLBL");
     
     EXPECT_TRUE(enumerator->GetInteger() == 5);
     EXPECT_STREQ(enumerator->GetString().c_str(), "");
@@ -1083,7 +1083,7 @@ TEST_F (SchemaDeserializationTest, ExpectSuccessWhenRoundtripEnumerationUsingStr
     EXPECT_STREQ("Enumeration", property->GetTypeName().c_str());
 
     Utf8String ecSchemaXmlString;
-    SchemaWriteStatus status2 = schema->WriteToXmlString (ecSchemaXmlString);
+    SchemaWriteStatus status2 = schema->WriteToXmlString (ecSchemaXmlString, 3);
     EXPECT_EQ (SchemaWriteStatus::Success, status2);
 
     ECSchemaPtr deserializedSchema;
@@ -1547,6 +1547,9 @@ TEST_F (SchemaSerializationTest, ExpectSuccessWithSerializingBaseClasses)
     EXPECT_EQ(ECObjectsStatus::Success, enumeration->CreateEnumerator(enumerator, 3));
     enumerator->SetDisplayLabel("Third");
 
+    PrimitiveECPropertyP prop;
+    EXPECT_EQ(ECObjectsStatus::Success, class1->CreateEnumerationProperty(prop, "EnumeratedProperty", *enumeration));
+
     schema2->CreateEntityClass(baseClass, "BaseClass");
     schema3->CreateEntityClass(anotherBase, "AnotherBase");
 
@@ -1559,6 +1562,9 @@ TEST_F (SchemaSerializationTest, ExpectSuccessWithSerializingBaseClasses)
 
     SchemaWriteStatus status2 = schema->WriteToXmlFile (ECTestFixture::GetTempDataPath (L"base.xml").c_str ());
     EXPECT_EQ (SchemaWriteStatus::Success, status2);
+
+    status2 = schema->WriteToXmlFile(ECTestFixture::GetTempDataPath(L"base_ec3.xml").c_str(), 3);
+    EXPECT_EQ(SchemaWriteStatus::Success, status2);
 
     WString ecSchemaXmlString;
     SchemaWriteStatus status3 = schema->WriteToXmlString (ecSchemaXmlString);

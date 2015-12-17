@@ -1261,7 +1261,7 @@ SchemaReadStatus ECClass::_ReadXmlAttributes (BeXmlNodeR classNode)
     BeXmlStatus domainStatus = classNode.GetAttributeStringValue(boolStr, IS_DOMAINCLASS_ATTRIBUTE);
     if (BEXML_Success == modifierStatus && BEXML_Success == domainStatus)
         {
-        LOG.warningv("Both '%s' and '%s' are set on ECClass '%s'.  This is not allowed.", MODIFIER_ATTRIBUTE, IS_DOMAINCLASS_ATTRIBUTE, GetName().c_str());
+        LOG.errorv("Both '%s' and '%s' are set on ECClass '%s'.  This is not allowed.", MODIFIER_ATTRIBUTE, IS_DOMAINCLASS_ATTRIBUTE, GetName().c_str());
         return SchemaReadStatus::InvalidECSchemaXml;
         }
 
