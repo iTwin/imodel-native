@@ -1053,7 +1053,7 @@ public:
     void                                SetAlignmentDirect (TableCellAlignment);
     void                                SetOrientationDirect (TableCellOrientation);
     void                                SetTextBlockDirect (AnnotationTextBlockCR);
-    void                                SetMarginsDirect (TableCellMarginValuesCR);
+    DGNPLATFORM_EXPORT void             SetMarginsDirect (TableCellMarginValuesCR);
     void const*                         GetBinaryTextBlock (size_t* numBytes);
     void                                AssignBinaryTextBlock (void const* data, size_t numBytes);
     void                                ClearBinaryTextBlock ();
@@ -1200,8 +1200,8 @@ public:
     double                              GetLength () const  { return GetHeight(); }
     void                                FindMergedLength (double& mergedLength, uint32_t& mergedCount) const;
 
-    void                                SetHeightLock    (bool);
-    void                                SetHeightDirect (double);
+    DGNPLATFORM_EXPORT void             SetHeightLock (bool);
+    DGNPLATFORM_EXPORT void             SetHeightDirect (double);
     void                                SetHeight (double newHeight, SizeLockAction);
     void                                ShrinkHeightToContents ();
     void                                SetHeightFromContents (bool allowedToChangeContentLayout);
@@ -1297,8 +1297,8 @@ public:
     double                              GetLength () const  { return GetWidth(); }
     void                                FindMergedLength (double& mergedLength, uint32_t& mergedCount) const;
 
-    void                                SetWidthLock    (bool);
-    void                                SetWidthDirect (double);
+    DGNPLATFORM_EXPORT void             SetWidthLock    (bool);
+    DGNPLATFORM_EXPORT void             SetWidthDirect (double);
     void                                SetWidth (double newWidth, SizeLockAction);
     void                                ShrinkWidthToContents ();
     double                              GetMinimumWidth (bool allowedToChangeContentLayout) const;
@@ -1567,7 +1567,6 @@ private:
     void        CopyPropsForNewColumn (uint32_t indexOfNewCol, uint32_t indexOfSeedCol);
 
     bool        HasOverlappingMerges (bvector<AnnotationTableCellP>& consumedRoots, AnnotationTableCellIndexCR rootIndex, uint32_t numRows, uint32_t numCols);
-    double      GetDefaultBreakGap () const;
 
     enum class  TextSymb { Color, Weight };
     enum class  TextSymbAction { Store, Clear };
@@ -1645,6 +1644,8 @@ public:
     static  void                    ClassifyTableRegion (TableHeaderFooterType& type, bool& isRow, AnnotationTableRegion);
 
     DVec2d                          GetEmptyMinimumSizeWithoutMargins (AnnotationTableRegion) const;
+
+    double                          GetDefaultBreakGap () const;
 //__PUBLISH_SECTION_START__
 public:
                     explicit                        AnnotationTableElement(CreateParams const& params);

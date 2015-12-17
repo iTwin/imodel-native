@@ -5426,27 +5426,28 @@ void         TableHeaderAspect::_DiscloseSymbologyKeys (bset<uint32_t>& keys)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void            TableHeaderAspect::_FlushChangesToProperties ()
     {
-    if (0 == GetTable().GetFillSymbologyForOddRow())
-        m_fillSymbologyKeyOddRow.Clear();
+    if (0 == GetTable().GetFillSymbologyForOddRow())    m_fillSymbologyKeyOddRow.Clear();
+    if (0 == GetTable().GetFillSymbologyForEvenRow())   m_fillSymbologyKeyEvenRow.Clear();
+    if (0 == GetTable().GetDefaultTextSymbology())      m_defaultTextSymbKey.Clear();
+    if (0 == GetTable().GetTitleRowCount())             m_titleRowCount.Clear();
+    if (0 == GetTable().GetHeaderRowCount())            m_headerRowCount.Clear();
+    if (0 == GetTable().GetFooterRowCount())            m_footerRowCount.Clear();
+    if (0 == GetTable().GetHeaderColumnCount())         m_headerColumnCount.Clear();
+    if (0 == GetTable().GetFooterColumnCount())         m_footerColumnCount.Clear();
 
-    if (0 == GetTable().GetFillSymbologyForEvenRow())
-        m_fillSymbologyKeyEvenRow.Clear();
-
-    if (0 == GetTable().GetDefaultTextSymbology())
-        m_defaultTextSymbKey.Clear();
-
-#if defined (NEEDSWORK)
-    if (TableBreakType::None == GetBreakType())
+    if (TableBreakType::None == GetTable().GetBreakType())
         {
-        m_instanceHolder.SetToNull (TEXTTABLE_TABLE_PROP_BreakLength);
-        m_instanceHolder.SetToNull (TEXTTABLE_TABLE_PROP_BreakGap);
+        m_breakLength.Clear();
+        m_breakGap.Clear();
+        m_breakPosition.Clear();
+        m_repeatHeaders.Clear();
+        m_repeatFooters.Clear();
         }
     else
         {
-        if (DoubleOps::WithinTolerance (GetDefaultBreakGap(), GetBreakGap(), s_doubleTol))
-            m_instanceHolder.SetToNull (TEXTTABLE_TABLE_PROP_BreakGap);
+        if (DoubleOps::WithinTolerance (GetTable().GetDefaultBreakGap(), GetTable().GetBreakGap(), s_doubleTol))
+            m_breakGap.Clear();
         }
-#endif
     }
 
 //---------------------------------------------------------------------------------------
