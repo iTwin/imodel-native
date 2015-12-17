@@ -155,7 +155,7 @@ TEST_F (ECSqlStatementTestFixture, UnionTests)
     //Select Statement using UNION Clause, so we should get only distinct results
     ASSERT_EQ (ECSqlStatus::Success, stmt.Prepare (ecdb, "SELECT City FROM ECST.Supplier UNION SELECT City FROM ECST.Customer ORDER BY City"));
     rowCount = 0;
-    Utf8CP expectedCityNames = "AUSTIN-CA-MD-NC-SAN JOSE-";
+    Utf8CP expectedCityNames = "ALASKA-AUSTIN-CA-MD-NC-SAN JOSE-";
     Utf8String actualCityNames;
     while (stmt.Step () != BE_SQLITE_DONE)
         {
@@ -164,13 +164,13 @@ TEST_F (ECSqlStatementTestFixture, UnionTests)
         rowCount++;
         }
     ASSERT_STREQ(expectedCityNames, actualCityNames.c_str()) << stmt.GetECSql();
-    ASSERT_EQ (5, rowCount);
+    ASSERT_EQ (6, rowCount);
     stmt.Finalize ();
 
     //Select Statement Using UNION ALL Clause so we should get even Duplicate Results
     ASSERT_EQ (ECSqlStatus::Success, stmt.Prepare (ecdb, "SELECT City FROM ECST.Supplier UNION ALL SELECT City FROM ECST.Customer ORDER BY City"));
     rowCount = 0;
-    expectedCityNames = "AUSTIN-CA-MD-NC-SAN JOSE-SAN JOSE-";
+    expectedCityNames = "ALASKA-AUSTIN-CA-MD-NC-SAN JOSE-SAN JOSE-";
     actualCityNames.clear();
     while (stmt.Step () != BE_SQLITE_DONE)
         {
@@ -179,7 +179,7 @@ TEST_F (ECSqlStatementTestFixture, UnionTests)
         rowCount++;
         }
     ASSERT_STREQ (expectedCityNames, actualCityNames.c_str()) << stmt.GetECSql();
-    ASSERT_EQ (6, rowCount);
+    ASSERT_EQ (7, rowCount);
     stmt.Finalize ();
 
     //use Custom Scaler function in union query
@@ -193,14 +193,14 @@ TEST_F (ECSqlStatementTestFixture, UnionTests)
         ASSERT_EQ (std::pow (base, 2), stmt.GetValueInt (0));
         rowCount++;
         }
-    ASSERT_EQ (6, rowCount);
+    ASSERT_EQ (7, rowCount);
     stmt.Finalize ();
 
     //use aggregate function in Union Query
     ASSERT_EQ (ECSqlStatus::Success, stmt.Prepare (ecdb, "SELECT Count(*), AVG(Phone) FROM (SELECT Phone FROM ECST.Supplier UNION ALL SELECT Phone FROM ECST.Customer)"));
     ASSERT_EQ (stmt.Step (), BE_SQLITE_ROW);
-    ASSERT_EQ (6, stmt.GetValueInt (0));
-    ASSERT_EQ (1350, stmt.GetValueInt (1));
+    ASSERT_EQ (7, stmt.GetValueInt (0));
+    ASSERT_EQ (1400, stmt.GetValueInt (1));
     stmt.Finalize ();
 
     //Use GROUP BY clause in Union Query
@@ -213,8 +213,8 @@ TEST_F (ECSqlStatementTestFixture, UnionTests)
 
     //Get Row two
     ASSERT_TRUE (stmt.Step () == BE_SQLITE_ROW);
-    ASSERT_EQ (3, stmt.GetValueInt (0));
-    ASSERT_EQ (1600, stmt.GetValueDouble (1));
+    ASSERT_EQ (4, stmt.GetValueInt (0));
+    ASSERT_EQ (1700, stmt.GetValueDouble (1));
 
     ASSERT_TRUE (stmt.Step () == BE_SQLITE_DONE);
     }
@@ -244,7 +244,7 @@ TEST_F (ECSqlStatementTestFixture, ExceptTests)
     stmt.Finalize ();
     ASSERT_EQ (ECSqlStatus::Success, stmt.Prepare (ecdb, "SELECT ContactTitle FROM ECST.Customer EXCEPT SELECT ContactTitle FROM ECST.Supplier"));
     rowCount = 0;
-    expectedContactNames = "Adm-SPIELMANN-";
+    expectedContactNames = "AM-Adm-SPIELMANN-";
     actualContactNames.clear ();
     while (stmt.Step () != BE_SQLITE_DONE)
         {
@@ -253,7 +253,7 @@ TEST_F (ECSqlStatementTestFixture, ExceptTests)
         rowCount++;
         }
     ASSERT_STREQ (expectedContactNames, actualContactNames.c_str ()) << stmt.GetECSql ();
-    ASSERT_EQ (2, rowCount);
+    ASSERT_EQ (3, rowCount);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -318,7 +318,7 @@ TEST_F (ECSqlStatementTestFixture, NestedSelectStatementsTests)
     ASSERT_EQ (ECSqlStatus::Success, stmt.Prepare (ecdb, "SELECT ECClassId, COUNT(*) FROM (SELECT GetECClassId() ECClassId FROM ECST.Supplier UNION ALL SELECT GetECClassId() ECClassId FROM ECST.Customer) GROUP BY ECClassId ORDER BY ECClassId"));
     ASSERT_TRUE (stmt.Step () == BE_SQLITE_ROW);
     ASSERT_EQ (firstClassId, stmt.GetValueInt (0));
-    ASSERT_EQ (3, stmt.GetValueInt (1));
+    ASSERT_EQ (4, stmt.GetValueInt (1));
     ASSERT_TRUE (stmt.Step () == BE_SQLITE_ROW);
     ASSERT_EQ (secondClassId, stmt.GetValueInt (0));
     ASSERT_EQ (3, stmt.GetValueInt (1));
@@ -416,6 +416,30 @@ TEST_F (ECSqlStatementTestFixture, GroupByClauseTests)
     ASSERT_EQ (3, stmt.GetValueInt (2));
     ASSERT_FALSE (stmt.Step () != BE_SQLITE_DONE);
     stmt.Finalize ();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                             Muhammad Hassan                         12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (ECSqlStatementTestFixture, StructInGroupByClause)
+    {
+    ECDbR ecdb = SetupECDb ("ECSqlStatementTests.ecdb", BeFileName (L"ECSqlStatementTests.01.00.ecschema.xml"));
+    ECSqlStatementTestsSchemaHelper::Populate (ecdb);
+
+    ECSqlStatement statement;
+    ASSERT_EQ (ECSqlStatus::Success, statement.Prepare (ecdb, "SELECT AVG(Phone) FROM ECST.Customer GROUP BY PersonName"));
+    ASSERT_EQ (DbResult::BE_SQLITE_ROW, statement.Step ());
+    ASSERT_EQ (1650, statement.GetValueInt (0));
+    statement.Finalize ();
+
+    ASSERT_EQ (ECSqlStatus::Success, statement.Prepare (ecdb, "SELECT Country FROM ECST.Customer GROUP BY PersonName"));
+    int rowCount = 0;
+    while (statement.Step () == DbResult::BE_SQLITE_ROW)
+        {
+        ASSERT_STREQ ("USA", statement.GetValueText (0));
+        rowCount++;
+        }
+    ASSERT_EQ (3, rowCount);
     }
 
 /*---------------------------------------------------------------------------------**//**
