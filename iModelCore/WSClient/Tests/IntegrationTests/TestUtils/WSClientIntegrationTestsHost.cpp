@@ -1,0 +1,68 @@
+/*--------------------------------------------------------------------------------------+
+|
+|     $Source: Tests/IntegrationTests/TestUtils/WSClientIntegrationTestsHost.cpp $
+|
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|
++--------------------------------------------------------------------------------------*/
+
+#include "WSClientIntegrationTestsHost.h"
+
+#include <TestAppPathProvider.h>
+
+WSClientIntegrationTestsHost::WSClientIntegrationTestsHost(const char* programPath)
+    {
+    m_programDir = BeFileName(BeFileName::DevAndDir, BeFileName(programPath));
+    m_programDir.BeGetFullPathName();
+
+    SetupTestEnvironment();
+    }
+
+RefCountedPtr<WSClientIntegrationTestsHost> WSClientIntegrationTestsHost::Create(const char* programPath)
+    {
+    return new WSClientIntegrationTestsHost(programPath);
+    }
+
+void WSClientIntegrationTestsHost::SetupTestEnvironment()
+    {
+    WSClientBaseTest::SetL10NSubPath(BeFileName(L"sqlang\\platform\\MobileDgn_en.sqlang.db3"));
+
+    BeFileName tempDir;
+    GetTempDir(tempDir);
+
+    BeFileName::EmptyAndRemoveDirectory(tempDir);
+    BeFileName::CreateNewDirectory(tempDir);
+
+    BeFileName outputDir;
+    GetOutputRoot(outputDir);
+    BeFileName::CreateNewDirectory(outputDir);
+    }
+
+void* WSClientIntegrationTestsHost::_InvokeP(char const* function_and_args)
+    {
+    return nullptr;
+    }
+
+void WSClientIntegrationTestsHost::_GetDocumentsRoot(BeFileName& path)
+    {
+    path = m_programDir;
+    }
+
+void WSClientIntegrationTestsHost::_GetDgnPlatformAssetsDirectory(BeFileName& path)
+    {
+    path = m_programDir;
+    }
+
+void WSClientIntegrationTestsHost::_GetOutputRoot(BeFileName& path)
+    {
+    path = m_programDir;
+    path.AppendToPath(L"Output");
+    path.AppendSeparator();
+    }
+
+void WSClientIntegrationTestsHost::_GetTempDir(BeFileName& path)
+    {
+    path = m_programDir;
+    path.AppendToPath(L"TempTestsWorkDir");
+    path.AppendSeparator();
+    }
