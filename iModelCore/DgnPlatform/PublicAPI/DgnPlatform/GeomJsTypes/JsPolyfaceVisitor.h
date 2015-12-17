@@ -24,7 +24,7 @@ public:
     JsPolyfaceVisitor (){}  // umm.. really should not happen -- visitor without client is disaster
     static JsPolyfaceVisitorP CreateVisitor (JsPolyfaceMeshP mesh, double aNumWrap)
         {
-        PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach (*mesh->Get (), true);
+        PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach (*mesh->GetPolyfaceHeaderPtr (), true);
         visitor->SetNumWrap ((uint32_t)aNumWrap);
         return new JsPolyfaceVisitor (visitor);
         }
