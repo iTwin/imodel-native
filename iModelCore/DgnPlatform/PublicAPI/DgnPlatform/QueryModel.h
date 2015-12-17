@@ -39,7 +39,7 @@ struct QueryModel : PhysicalModel
     struct Results : RefCountedBase
     {
     private:
-        Results() : m_reachedMaxElements(false), m_eliminatedByLOD(false), m_drawnBeforePurge(0), m_lowestOcclusionScore(0.0) { }
+        Results() : m_reachedMaxElements(false), m_eliminatedByLOD(false), m_drawnBeforePurge(0), m_lowestOcclusionScore(0.0), m_elapsedSeconds(0.0) { }
     public:
         bvector<DgnElementCP> m_elements;
         bvector<DgnElementCP> m_closeElements;
@@ -47,8 +47,10 @@ struct QueryModel : PhysicalModel
         bool   m_eliminatedByLOD;
         uint32_t m_drawnBeforePurge;
         double m_lowestOcclusionScore;
+        double m_elapsedSeconds;
 
         uint32_t GetCount() const {return (uint32_t) m_elements.size();}
+        double GetElapsedSeconds() const {return m_elapsedSeconds;}
 
         static RefCountedPtr<Results> Create() { return new Results(); }
     };
@@ -96,6 +98,7 @@ struct QueryModel : PhysicalModel
         bool Process() { return _Process(); }
         
         QueryModelR GetModel() const { return m_params.m_model; }
+        bool IsForModel(QueryModelCR model) const { return &GetModel() == &model; }
         Results* GetResults() { return m_results.get(); }
 
         void OnCompleted() const;
@@ -168,6 +171,7 @@ public:
 
     //! Returns a count of elements held by the QueryModel. This is the count of elements returned by the most recent query.
     uint32_t GetElementCount() const; //!< @private
+    double GetLastQueryElapsedSeconds() const; //!< @private
     bool HasSelectResults() const { return m_updatedResults.IsValid(); } //!< @private
     bool IsIdle() const { return State::Idle == GetState(); } //!< @private
     bool IsActive() const { return !IsIdle(); } //!< @private

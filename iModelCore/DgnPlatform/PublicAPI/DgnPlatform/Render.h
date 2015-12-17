@@ -933,6 +933,7 @@ public:
 
         return (metersPerPixel >= m_minSize && metersPerPixel <= m_maxSize);
         }
+    bool IsSpecificToViewport(DgnViewportCR vp) const { return nullptr != m_vp && m_vp == &vp; }
 
     double GetPixelSize() {return m_pixelSize;}
     void SetPixelSizeRange(double min, double max) {m_minSize = min, m_maxSize = max;}
@@ -1193,10 +1194,11 @@ struct Target : RefCounted<NonCopyableClass>
     typedef ImageUtilities::RgbImageInfo CapturedImageInfo;
 
 protected:
-    DevicePtr   m_device;
-    ScenePtr    m_currentScene;
-    ScenePtr    m_dynamics;      // drawn with zbuffer, with scene lighting
-    Decorations m_decorations;
+    DevicePtr           m_device;
+    ScenePtr            m_currentScene;
+    ScenePtr            m_dynamics;      // drawn with zbuffer, with scene lighting
+    Decorations         m_decorations;
+    BeAtomic<uint32_t>  m_lastFrameMillis;
 
     virtual GraphicPtr _CreateGraphic(Graphic::CreateParams const& params) = 0;
     virtual void _AdjustBrightness(bool useFixedAdaptation, double brightness) = 0;
@@ -1214,7 +1216,7 @@ public:
     virtual double _GetCameraFrustumNearScaleLimit() const = 0;
     virtual bool _WantInvertBlackBackground() {return false;}
 
-    Target(Device* device) : m_device(device) {}
+    Target(Device* device) : m_device(device) { m_lastFrameMillis.store(0); }
 
     Point2d GetScreenOrigin() const {return m_device->GetWindow()->_GetScreenOrigin();}
     BSIRect GetViewRect() const {return m_device->GetWindow()->_GetViewRect();}
@@ -1227,6 +1229,9 @@ public:
     MaterialPtr GetMaterial(DgnMaterialId id, DgnDbR dgndb) const {return _GetMaterial(id, dgndb);}
     TexturePtr GetTexture(DgnTextureId id, DgnDbR dgndb) const {return _GetTexture(id, dgndb);}
     TexturePtr CreateTileSection(Image* image, bool enableAlpha) const {return _CreateTileSection(image, enableAlpha);}
+
+    uint32_t GetLastFrameMillis() const { return m_lastFrameMillis.load(); }
+    void RecordLastFrameMillis(uint32_t millis) { m_lastFrameMillis.store(millis); }
 };
 
 END_BENTLEY_RENDER_NAMESPACE

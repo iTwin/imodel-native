@@ -17,6 +17,7 @@
 #endif
 
 //#define TRACE_QUERY_LOGIC 1
+//#define DEBUG_CALLS 1
 
 BeThreadLocalStorage g_queryThreadChecker;
 
@@ -108,7 +109,11 @@ void QueryModel::SetUpdatedResults(Results* results)
     m_updatedResults = results;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/15
++---------------+---------------+---------------+---------------+---------------+------*/
 uint32_t QueryModel::GetElementCount() const {return m_currQueryResults.IsValid() ? m_currQueryResults->GetCount() : 0;}
+double QueryModel::GetLastQueryElapsedSeconds() const {return m_currQueryResults.IsValid() ? m_currQueryResults->GetElapsedSeconds() : 0.0;}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   08/12
@@ -214,11 +219,24 @@ void QueryModel::Queue::RequestProcessing(Processor::Params const& params)
     QueryModelR model = params.m_model;
     BeAssert(&model.GetDgnDb() == &m_db);
 
-    RequestAbort(model, true);
-
+    // We may currently be processing a query for this model. If so, let it complete and queue up another one.
+    // But remove any other previously-queued processing requests for this model.
     BeMutexHolder lock(m_cv.GetMutex());
 
-    BeAssert(QueryModel::State::Idle == model.GetState());
+#if defined TRACE_QUERY_LOGIC
+    auto initialPending = static_cast<int32_t>(m_pending.size());
+#endif
+
+    for (auto iter = m_pending.begin(); iter != m_pending.end(); /*...*/)
+        {
+        if ((*iter)->IsForModel(model))
+            iter = m_pending.erase(iter);
+        else
+            ++iter;
+        }
+#if defined TRACE_QUERY_LOGIC
+    printf("QMQ: RequestProcessing: %d initially pending, %d currently pending\n", initialPending, static_cast<int32_t>(m_pending.size()));
+#endif
 
     ProcessorPtr proc = new ProcessorImpl(params);
     model.SetState(QueryModel::State::Pending);
@@ -259,7 +277,7 @@ void QueryModel::Queue::RequestAbort(QueryModelR model, bool waitUntilFinished)
             case QueryModel::State::Pending:
                 for (auto entry = m_pending.begin(); entry != m_pending.end(); /*...*/)
                     {
-                    if (&((*entry)->GetModel()) == &model)
+                    if ((*entry)->IsForModel(model))
                         entry = m_pending.erase(entry);
                     else
                         ++entry;
@@ -277,7 +295,16 @@ void QueryModel::Queue::RequestAbort(QueryModelR model, bool waitUntilFinished)
         }
 
     if (waitUntilFinished)
+        {
+#if defined TRACE_QUERY_LOGIC
+        StopWatch timer(nullptr, true);
+#endif
         model.WaitUntilFinished(nullptr);
+#if defined TRACE_QUERY_LOGIC
+        timer.Stop();
+        printf("QMQ: RequestAbort: %.8f elapsed\n", timer.GetElapsedSeconds());
+#endif
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -352,6 +379,7 @@ void QueryModel::Queue::qt_WaitForWork()
         if (processing.IsValid())
             {
             auto& model = processing->GetModel();
+            StopWatch timer(nullptr, true);
             if (processing->Process())
                 {
 #if defined TRACE_QUERY_LOGIC
@@ -359,6 +387,12 @@ void QueryModel::Queue::qt_WaitForWork()
 #endif
                 auto updatedResults = processing->GetResults();
                 BeAssert(nullptr != updatedResults);
+
+                timer.Stop();
+#if defined TRACE_QUERY_LOGIC
+                printf("QMQ: Elapsed query time %.8f\n", timer.GetElapsedSeconds());
+#endif
+                updatedResults->m_elapsedSeconds = timer.GetElapsedSeconds();
                 model.SetUpdatedResults(updatedResults);
                 
                 processing->OnCompleted();
@@ -417,6 +451,7 @@ bool ProcessorImpl::_Process()
 
 #if defined TRACE_QUERY_LOGIC
     printf("QMQ: Processing\n");
+    uint64_t start = BeTimeUtilities::QueryMillisecondsCounter();
 #endif
     //  Notify GraphicsAndQuerySequencer that this thread is running 
     //  a range tree operation and is therefore exempt from checks for high priority required.
@@ -439,6 +474,9 @@ bool ProcessorImpl::_Process()
     else
         {
         SearchRangeTree(filter);
+#if defined (DEBUG_CALLS)
+        printf("QMQ: ncalls=%d, nscores=%d\n", filter.m_nCalls, filter.m_nScores);
+#endif
         m_results->m_reachedMaxElements = (filter.m_occlusionScoreMap.size() == m_params.m_maxElements);
         m_results->m_eliminatedByLOD = filter.m_eliminatedByLOD;
 
@@ -449,8 +487,16 @@ bool ProcessorImpl::_Process()
     if (WasAborted() || m_dbStatus != BE_SQLITE_ROW)
         return false;
 
+#if defined TRACE_QUERY_LOGIC
+    uint32_t elapsed1 = (uint32_t)(BeTimeUtilities::QueryMillisecondsCounter() - start);
+#endif
     LoadElements(filter.m_secondaryFilter.m_occlusionScoreMap, m_results->m_closeElements);
     LoadElements(filter.m_occlusionScoreMap, m_results->m_elements);
+
+#if defined (TRACE_QUERY_LOGIC)
+    uint32_t elapsed2 = (uint32_t)(BeTimeUtilities::QueryMillisecondsCounter() - start);
+    printf("QMQ: _Process(): query time = %d, total time = %d\n", elapsed1, elapsed2);
+#endif
 
     return !WasAborted();
     }
@@ -500,8 +546,7 @@ void QueryModel::Processor::BindModelAndCategory(CachedStatement& stmt)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void QueryModel::Processor::OnCompleted() const
     {
-    // NEEDS_WORK_CONTINUOUS_RENDER
-    // This is not thread-safe. The worst that can happen is that the work thread reads false from it, or sets it to false, while the query thread sets it to true.
+    // This is not strictly thread-safe. The worst that can happen is that the work thread reads false from it, or sets it to false, while the query thread sets it to true.
     // In that case we skip an update.
     // Alternative is to go through contortions to queue up a "heal viewport" task on the DgnClientFx work thread.
     const_cast<DgnViewportR>(m_params.m_vp).SetNeedsHeal();
