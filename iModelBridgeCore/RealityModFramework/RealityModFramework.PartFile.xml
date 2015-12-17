@@ -75,6 +75,7 @@
     <Part Name="Reality-Examples">
         <SubPart PartName="DownloadEngineExample"/>
         <SubPart PartName="RealityDbECPlugin"/>
+        <SubPart PartName="RealityDbECPluginC"/>
         <SubPart PartName="CrawlerLibExample"/>
         <SubPart PartName="RealityDbECPluginInstaller" />
         <!--<SubPart PartName="RealityCrawler"/>-->
@@ -88,7 +89,16 @@
         <Bindings>
             <Assemblies ProductDirectoryName="RealityAssemblies">Delivery/Bentley.RealityDbECPlugin.dll</Assemblies>
         </Bindings>
-
+    </Part>
+    
+    <Part Name="RealityDbECPluginC" BMakeFile="RealityDbECPlugin\RealityDbECPlugin.mke" BMakeOptions="-dIMSOFF=1" OnlyPlatforms="x86,x64">
+        <SubPart PartName="BentleyWMSPackageNet"/>
+        <SubPart PartName="ECServices"          PartFile="ecf"            Repository="ecf" />
+        <SubPart PartName="JsonNet45"           PartFile="${SrcRoot}bsicommon/CvsPartFiles\bin"    Repository="Bin-JsonNet" />
+        <SubPart PartName="IdentityModel"       PartFile="${SrcRoot}bsicommon/CvsPartFiles\identitymodel"    Repository="BCC-IdentityModel" />
+        <Bindings>
+            <Assemblies ProductDirectoryName="RealityAssemblies">Delivery/Bentley.RealityDbECPluginC.dll</Assemblies>
+        </Bindings>
     </Part>
     
     <Part Name="BentleyWMSPackageNet" BentleyBuildMakeFile="BentleyWMSPackageNet\BentleyWMSPackageNet.mke">

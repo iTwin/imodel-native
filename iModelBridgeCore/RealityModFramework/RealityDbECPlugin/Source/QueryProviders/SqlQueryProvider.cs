@@ -197,7 +197,7 @@ namespace IndexECPlugin.Source.QueryProviders
 
                             MemoryStream mStream = new MemoryStream(byteArray);
 
-                            StreamBackedDescriptor desc = new StreamBackedDescriptor(mStream, "Thumbnail", mStream.Length, DateTime.Now);
+                            StreamBackedDescriptor desc = new StreamBackedDescriptor(mStream, "Thumbnail", mStream.Length, DateTime.UtcNow);
                             StreamBackedDescriptorAccessor.SetIn(instance, desc);
 
                             i++;

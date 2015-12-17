@@ -75,7 +75,7 @@ namespace IndexECPlugin.Source.FileRetrievalControllers
                             //writer.Write(outByte, 0, (int)retval - 1);
                             //writer.Flush();
                             mStream.Write(outByte, 0, (int)retval - 1);
-                            StreamBackedDescriptor desc = new StreamBackedDescriptor(mStream, instance.InstanceId, mStream.Length, DateTime.Now);
+                            StreamBackedDescriptor desc = new StreamBackedDescriptor(mStream, instance.InstanceId, mStream.Length, DateTime.UtcNow);
                             StreamBackedDescriptorAccessor.SetIn(instance, desc);
 
                         //}

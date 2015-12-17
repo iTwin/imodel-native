@@ -16,6 +16,10 @@ appName     = RealityDbECPlugin
 always:
     ~mkdir $(o)
 
+%ifdef IMSOFF
+    CSCOpt = \/define:IMSOFF
+%endif
+    
 ASSEMBLY_REFERENCE = $(ContextSubPartsAssembliesDir)BentleyWMSPackageNet.dll
 %include csrefapnd.mki
 ASSEMBLY_REFERENCE = $(ContextSubPartsAssembliesDir)Bentley.EC.Presentation3.dll
@@ -73,8 +77,11 @@ ASSEMBLY_REFERENCE = $(FrameworkDir)$(FrameworkVersion)\System.Xml.dll
 # Define default assembly meta-data attributes
 #-----------------------------------------------------------------------
 %include $(SharedMki)stdversion.mki
+%ifndef IMSOFF
 ASSEMBLY_NAME = Bentley.RealityDbECPlugin
-
+%else
+ASSEMBLY_NAME = Bentley.RealityDbECPluginC
+%endif
 ASSEMBLY_PRODUCT_NAME   = $(PRODUCT_NAME)
 ASSEMBLY_FILE_VERSION   = $(REL_V).$(MAJ_V).$(MIN_V).$(SUBMIN_V)
 ASSEMBLY_COMPANY_NAME   = $(companyName)
@@ -95,8 +102,14 @@ ASSEMBLY_TESTKEYFILE       =% $(ASSEMBLY_TESTKEYFILE_DEFAULT)
 
 ASSEMBLY_DLL = 1
 ASSEMBLY_MAKE_DOCS = 1
+%ifndef IMSOFF
 ASSEMBLY_TITLE = Bentley RealityDbECPlugin
 ASSEMBLY_DESCRIPTION = Bentley RealityDbECPlugin
+%else
+ASSEMBLY_TITLE = Bentley RealityDbECPluginC
+ASSEMBLY_DESCRIPTION = Bentley RealityDbECPluginC
+%endif
+
 ASSEMBLY_VERSION = 1.0.0.0
 ASSEMBLY_STRONGNAME = 1
 

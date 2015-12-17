@@ -59,11 +59,11 @@ namespace IndexECPlugin.Source.FileRetrievalControllers
 
                         //This is a test!!!!
                         //Stream thumbnailStream = File.OpenRead(@"C:\RealityData\PackagesNewDb\test.txt");
-                        //StreamBackedDescriptor streamDescriptor = new StreamBackedDescriptor(thumbnailStream, m_instance.InstanceId, 3, DateTime.Now);
+                        //StreamBackedDescriptor streamDescriptor = new StreamBackedDescriptor(thumbnailStream, m_instance.InstanceId, 3, DateTime.UtcNow);
 
                         //TODO : Decide what to do with expectedSize (Currently 0)
                         //throw new Exception(String.Format("Length of the response : {0}", contentLength));
-                        StreamBackedDescriptor streamDescriptor = new StreamBackedDescriptor(thumbnailStream, m_instance.InstanceId, thumbnailStream.Length, DateTime.Now);
+                        StreamBackedDescriptor streamDescriptor = new StreamBackedDescriptor(thumbnailStream, m_instance.InstanceId, thumbnailStream.Length, DateTime.UtcNow);
                         StreamBackedDescriptorAccessor.SetIn(m_instance, streamDescriptor);
                         //foreach (var link in linkArray)
                         //{

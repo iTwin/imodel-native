@@ -634,7 +634,7 @@ namespace IndexECPlugin.Source.QueryProviders
             {
                 MemoryStream thumbnailStream = DownloadThumbnail(thumbnailURI);
 
-                StreamBackedDescriptor streamDescriptor = new StreamBackedDescriptor(thumbnailStream, ExtractNameFromURI(thumbnailURI), thumbnailStream.Length, DateTime.Now);
+                StreamBackedDescriptor streamDescriptor = new StreamBackedDescriptor(thumbnailStream, ExtractNameFromURI(thumbnailURI), thumbnailStream.Length, DateTime.UtcNow);
                 StreamBackedDescriptorAccessor.SetIn(instance, streamDescriptor);
             }
 

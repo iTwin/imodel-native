@@ -29,9 +29,6 @@ using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Data.SqlClient;
-using Microsoft.IdentityModel.Configuration;
-using Microsoft.IdentityModel.Tokens;
-using Microsoft.IdentityModel.Web;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
@@ -42,6 +39,12 @@ using System.Reflection;
 using Bentley.ECSystem.Configuration;
 using System.Data.Common;
 using System.Data;
+
+#if !IMSOFF
+using Microsoft.IdentityModel.Configuration;
+using Microsoft.IdentityModel.Tokens;
+using Microsoft.IdentityModel.Web;
+#endif
 
 namespace IndexECPlugin.Source
 {
@@ -118,7 +121,11 @@ namespace IndexECPlugin.Source
                         },
                     GetRepositoryIdentifier)
                 .SetSchemaSupport(PopulateSchemas)
+#if IMSOFF
+                .SetConnectionSupport(GetConnectionFormat)
+#else
                 .SetConnectionSupport(GetConnectionFormat, OpenConnection, CloseConnection)
+#endif
                 .SetQuerySupport((EnumerableBasedQueryHandler)ExecuteQuery)
                 .SetOperationSupport<RetrieveBackingFileOperation>(FileRetrievalOperation)
                 .SetOperationSupport<InsertOperation>(ExecuteInsertOperation);
@@ -709,7 +716,7 @@ namespace IndexECPlugin.Source
                         DbParameter param1 = dbCommand.CreateParameter();
                         param1.DbType = DbType.DateTime;
                         param1.ParameterName = "@param1";
-                        param1.Value = DateTime.Now;
+                        param1.Value = DateTime.UtcNow;
                         dbCommand.Parameters.Add(param1);
 
                         FileStream fstream = new FileStream(Path.GetTempPath() + instance.InstanceId, FileMode.Open);
@@ -1195,7 +1202,6 @@ namespace IndexECPlugin.Source
                                                                 bool includeValues,
                                                                 IExtendedParameters extendedParameters)
         {
-            //Console.WriteLine("Entering GetConnectionFormat");
             return new List<ConnectionFormatFieldInfo>
                 {
                 //new ConnectionFormatFieldInfo() {ID = "User", DisplayName = "username", IsRequired = true },    
@@ -1204,15 +1210,17 @@ namespace IndexECPlugin.Source
             //    new ConnectionFormatFieldInfo() {ID = eBECPluginConstants.DefaultScopeKey, DisplayName = "DefaultScope", IsRequired = false, IsAdvanced = false },
             //    new ConnectionFormatFieldInfo() {ID = eBECPluginConstants.ActiveScopesKey, DisplayName = "ActiveScopes", IsRequired = false, IsAdvanced = false },
             //    //new ConnectionFormatFieldInfo() {ID = eBECPluginConstants.ImsRelyingPartyServiceUrlKey, DisplayName = "ImsRelyingPartyServiceUrl", IsRequired = false, IsAdvanced = true } unused
+#if !IMSOFF
                 new ConnectionFormatFieldInfo() {ID = "Token", DisplayName = "Token", IsRequired = true, IsAdvanced = true, IsCredential = true }
+#endif
                 }.ToArray();
         }
 
+#if !IMSOFF
         private void OpenConnection(ConnectionModule sender,
                                     RepositoryConnection connection,
                                     IExtendedParameters extendedParameters)
         {
-            //Console.WriteLine("Entering OpenConnection");
             //Here, we could use the connectionInfo to open a connection
             //Example :
             //string username = connection.ConnectionInfo.GetField("User").Value;
@@ -1220,11 +1228,6 @@ namespace IndexECPlugin.Source
             //... Whatever you need to do with username and password ...
 
             string token = connection.ConnectionInfo.GetField("Token").Value;
-
-#if DEBUG
-            //In debug, we want to bypass this verification.
-            return;
-#else 
 
             try
             {
@@ -1243,15 +1246,15 @@ namespace IndexECPlugin.Source
                 Log.Logger.error("Invalid token. Access denied.");
                 throw new Bentley.ECSystem.Repository.AccessDeniedException("Invalid token. Access denied.");
             }
-#endif
+
         }
 
         private void CloseConnection(ConnectionModule sender,
                                      RepositoryConnection connection,
                                      IExtendedParameters extendedParameters)
         {
-            //Console.WriteLine("Entering CloseConnection");
         }
+#endif
 
     }
 
