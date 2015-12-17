@@ -1,0 +1,101 @@
+#---------------------------------------------------------------------------------------+
+#
+#     $Source: Tests/IntegrationTests/IntegrationTests.mke $
+#
+#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+#
+#---------------------------------------------------------------------------------------+
+
+%include mdl.mki
+
+wsClientUnitTestsDir = $(SrcRoot)WSClient/Tests/UnitTests/Published/
+
+#---------------------------------------------------------------------------------------+
+#   Compile unit tests
+#---------------------------------------------------------------------------------------+
+
+BEGTEST_NAME = WSClientIntegrationTests
+BEGTEST_INPUT = $(baseDir)
+BEGTEST_OUTPUT = $(OutputRootDir)build/
+
+dirToSearch = $(wsClientUnitTestsDir)Utils/
+%include cincapnd.mki
+dirToSearch = $(OutRoot)Winx64/Product/MobileDgnSdk-Winx64/include
+%include cincapnd.mki
+
+%include $(SrcBsiCommon)sharedmki/BuildUnitTests.mke
+# $(o) is now $(BEGTEST_OUTPUT)$(BEGTEST_NAME)
+
+#---------------------------------------------------------------------------------------+
+#   Compile test utilities
+#---------------------------------------------------------------------------------------+
+
+# Compile rule
+MultiCompileDepends = $(_MakeFileSpec)
+%include MultiCppCompileRule.mki
+
+# Sources to compile
+$(o)StubInstances$(oext)            : $(wsClientUnitTestsDir)Utils/StubInstances.cpp ${MultiCompileDepends}
+
+$(o)TestAppPathProvider$(oext)      : $(wsClientUnitTestsDir)Utils/TestAppPathProvider.cpp ${MultiCompileDepends}
+
+$(o)ValuePrinter$(oext)             : $(wsClientUnitTestsDir)Utils/ValuePrinter.cpp ${MultiCompileDepends}
+
+$(o)WebServicesTestsHelper$(oext)   : $(wsClientUnitTestsDir)Utils/WebServicesTestsHelper.cpp ${MultiCompileDepends}
+
+$(o)WSClientBaseTest$(oext)         : $(wsClientUnitTestsDir)Utils/WSClientBaseTest.cpp ${MultiCompileDepends}
+
+$(o)CachingTestsHelper$(oext)       : $(wsClientUnitTestsDir)WebServices/Cache/CachingTestsHelper.cpp ${MultiCompileDepends}
+
+%include MultiCppCompileGo.mki
+
+#---------------------------------------------------------------------------------------+
+#   Deliver MobileDGNSdk
+#---------------------------------------------------------------------------------------+
+
+MOBILEDGNSDK_ROOT = $(OutputRootDir)Product/MobileDgnSdk-Winx64/
+MOBILEDGNSDK_LIB_DIR = $(MOBILEDGNSDK_ROOT)lib/Winx64/
+
+MOBILEDGN_APP_ProjectRoot   = $(_MakeFilePath)
+MOBILEDGNAPP_DELIVER_OutputDir = $(o)
+
+_vsProject = 1
+
+%include $(MOBILEDGNSDK_ROOT)build/MobileDgnSdk.mki
+%include $(MOBILEDGNSDK_DIR_BuildPlatform)deliver.mki
+
+#---------------------------------------------------------------------------------------+
+#   Link test executable
+#---------------------------------------------------------------------------------------+
+
+%undef CPchOpts
+%undef CCPchOpts
+
+GUNITTEST_NAME      = $(BEGTEST_NAME)
+GUNITTEST_NTLIBS    = advapi32.lib ole32.lib
+GUNITTEST_OUT       = $(o)
+GUNITTEST_DEST      = $(o)
+GUNITTEST_PATH      = $(o) 
+GUNITTEST_SYMB      = $(o)
+
+GTEST_MAIN_IS_SUPPLIED = 1
+
+LOCAL_GUNITTEST_OBJS + $[@wildcard $(o)*.obj]
+LOCAL_GUNITTEST_OBJS + $[@wildcard $(BuildContext)SubParts/Libs/*.lib]
+
+GUNITTEST_LIBS + $(MOBILEDGNSDK_LIB_DIR)$(libprefix)MobileDgn$(libext)
+GUNITTEST_LIBS + $(MOBILEDGNSDK_LIB_DIR)$(libprefix)Bentley$(libext)
+GUNITTEST_LIBS + $(MOBILEDGNSDK_LIB_DIR)$(libprefix)BeSQLite$(libext)
+GUNITTEST_LIBS + $(MOBILEDGNSDK_LIB_DIR)$(libprefix)BeSQLiteEC$(libext)
+GUNITTEST_LIBS + $(MOBILEDGNSDK_LIB_DIR)$(libprefix)BeJsonCpp$(libext)
+GUNITTEST_LIBS + $(MOBILEDGNSDK_LIB_DIR)$(libprefix)ECObjects$(libext)
+GUNITTEST_LIBS + $(MOBILEDGNSDK_LIB_DIR)$(libprefix)BeCurl$(libext)
+GUNITTEST_LIBS + $(MOBILEDGNSDK_LIB_DIR)$(libprefix)BeLibxml2$(libext)
+GUNITTEST_LIBS + $(MOBILEDGNSDK_LIB_DIR)$(libprefix)BentleyAllocator$(libext)
+GUNITTEST_LIBS + $(MOBILEDGNSDK_LIB_DIR)$(libprefix)WebServicesCache$(libext)
+GUNITTEST_LIBS + $(MOBILEDGNSDK_LIB_DIR)$(libprefix)WebServicesClient$(libext)
+
+# Don't run tests after build
+GUNITTEST_NOEXEC = 1
+
+%include $(SrcRoot)bsicommon/sharedmki/gunittest.mki

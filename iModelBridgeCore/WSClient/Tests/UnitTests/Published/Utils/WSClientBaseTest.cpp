@@ -15,6 +15,8 @@ USING_NAMESPACE_BENTLEY_MOBILEDGN
 USING_NAMESPACE_BENTLEY_MOBILEDGN_UTILS
 USING_NAMESPACE_WSCLIENT_UNITTESTS
 
+BeFileName s_l10nSubPath (L"sqlang\\BeGTest_en-US.sqlang.db3");
+
 void WSClientBaseTest::SetUp()
     {
     InitLogging();
@@ -40,7 +42,7 @@ void WSClientBaseTest::InitLibraries()
     BeSQLiteLib::Initialize(m_pathProvider.GetTemporaryDirectory());
     BeSQLite::EC::ECDb::Initialize(m_pathProvider.GetTemporaryDirectory(), &m_pathProvider.GetAssetsRootDirectory());
 
-    L10N::SqlangFiles sqlangFiles(BeFileName(m_pathProvider.GetAssetsRootDirectory()).AppendToPath(L"sqlang\\BeGTest_en-US.sqlang.db3"));
+    L10N::SqlangFiles sqlangFiles(BeFileName(m_pathProvider.GetAssetsRootDirectory()).AppendToPath(s_l10nSubPath));
     MobileDgnL10N::ReInitialize(sqlangFiles, sqlangFiles);
     }
 
@@ -57,4 +59,9 @@ void WSClientBaseTest::InitLogging()
     NativeLogging::LoggingConfig::SetSeverity(LOGGER_NAMESPACE_MOBILEDGN_UTILS_THREADING, Bentley::NativeLogging::LOG_WARNING);
     NativeLogging::LoggingConfig::SetSeverity(LOGGER_NAMESPACE_WSCACHE, Bentley::NativeLogging::LOG_WARNING);
     NativeLogging::LoggingConfig::SetSeverity(LOGGER_NAMESPACE_WSCLIENT, Bentley::NativeLogging::LOG_WARNING);
+    }
+
+void WSClientBaseTest::SetL10NSubPath(BeFileNameCR subPath)
+    {
+    s_l10nSubPath = subPath;
     }
