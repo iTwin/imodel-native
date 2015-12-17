@@ -29,6 +29,8 @@ struct WSClientBaseTest : ::testing::Test
         virtual void TearDown() override;
         static void SetUpTestCase();
         static void TearDownTestCase();
+
+        static void SetL10NSubPath(BeFileNameCR subPath);
     };
 
 END_WSCLIENT_UNITTESTS_NAMESPACE
