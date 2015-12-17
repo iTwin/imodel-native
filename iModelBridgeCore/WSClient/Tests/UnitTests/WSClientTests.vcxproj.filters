@@ -316,6 +316,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="dependencies.mki" />
+    <None Include="TestAssetsDelivery.mke" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="ignore_list.txt" />

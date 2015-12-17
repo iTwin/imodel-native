@@ -286,6 +286,6 @@
         <SubPart PartName="WSClientUnitTests-Assets" />
     </Part>
 
-    <Part Name="WSClientUnitTests-Assets" BentleyBuildMakeFile="TestAssetsDelivery.mke" />
+    <Part Name="WSClientUnitTests-Assets" BentleyBuildMakeFile="Tests/UnitTests/TestAssetsDelivery.mke" />
 
 </BuildContext>
