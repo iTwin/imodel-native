@@ -23,12 +23,13 @@ class WSClientIntegrationTestsHost : public RefCounted<BeTest::Host>
     protected:
         WSClientIntegrationTestsHost(const char* programPath);
 
-        virtual void* _InvokeP(const char* function_and_args) override;
+        virtual void* _InvokeP(char const* function, void* args) override;
 
         virtual void _GetDocumentsRoot(BeFileName& path) override;
         virtual void _GetDgnPlatformAssetsDirectory(BeFileName& path) override;
         virtual void _GetOutputRoot(BeFileName& path) override;
         virtual void _GetTempDir(BeFileName& path) override;
+        virtual void _GetFrameworkSqlangFiles(BeFileName& path) override;
 
     public:
         static RefCountedPtr<WSClientIntegrationTestsHost> Create(const char* programPath);

@@ -8,7 +8,7 @@
 #include "BuddiClientTests.h"
 
 #include <WebServices/Configuration/BuddiClient.h>
-#include <MobileDgn/Utils/Http/ProxyHttpHandler.h>
+#include <DgnClientFx/Utils/Http/ProxyHttpHandler.h>
 
 TEST_F(BuddiClientTests, GetRegions_Default_ReturnsSomeRegions)
     {

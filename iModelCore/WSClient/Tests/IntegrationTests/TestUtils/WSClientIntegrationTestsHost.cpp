@@ -25,8 +25,6 @@ RefCountedPtr<WSClientIntegrationTestsHost> WSClientIntegrationTestsHost::Create
 
 void WSClientIntegrationTestsHost::SetupTestEnvironment()
     {
-    WSClientBaseTest::SetL10NSubPath(BeFileName(L"sqlang\\platform\\MobileDgn_en.sqlang.db3"));
-
     BeFileName tempDir;
     GetTempDir(tempDir);
 
@@ -38,7 +36,7 @@ void WSClientIntegrationTestsHost::SetupTestEnvironment()
     BeFileName::CreateNewDirectory(outputDir);
     }
 
-void* WSClientIntegrationTestsHost::_InvokeP(char const* function_and_args)
+void* WSClientIntegrationTestsHost::_InvokeP(char const* function, void* args)
     {
     return nullptr;
     }
@@ -65,4 +63,11 @@ void WSClientIntegrationTestsHost::_GetTempDir(BeFileName& path)
     path = m_programDir;
     path.AppendToPath(L"TempTestsWorkDir");
     path.AppendSeparator();
+    }
+
+void WSClientIntegrationTestsHost::_GetFrameworkSqlangFiles(BeFileName& path)
+    {
+    path = m_programDir;
+    path.AppendToPath(L"sqlang");
+    path.AppendToPath(L"DgnClientFx_en.sqlang.db3");
     }
