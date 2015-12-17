@@ -1,3 +1,5 @@
+
+
 /*--------------------------------------------------------------------------------------+
 |
 |     $Source: PublicAPI/DgnPlatform/Render.h $
@@ -71,7 +73,6 @@ enum class RenderMode
     SmoothShade         = 6,
     Phong               = 7,
     RayTrace            = 8,
-    RenderWireframe     = 9,
     Radiosity           = 10,
     RenderLuxology      = 12,
     Invalid             = 15,
@@ -166,11 +167,13 @@ public:
 struct Task : RefCounted<NonCopyableClass>
 {
     //! The rendering operation a task performs.
-    enum class Operation 
+    enum class Operation
     {
-        Initialize, 
-        ChangeScene, 
-        Refresh,
+        Initialize,
+        ChangeScene,
+        ChangeDynamics,
+        ChangeDecorations,
+        DrawFrame,
     };
 
     //! The outcome of the processing of a Task.
@@ -198,7 +201,7 @@ public:
 
     //! Perform the rendering task.
     //! @return the Outcome of the processing of the Task.
-    virtual Outcome _Process() = 0;
+    virtual Outcome _Process(StopWatch&) = 0;
 
     //! Determine whether this Task can replace a pending entry in the Queue.
     //! @param[in] other a pending task for the same Render::Target
@@ -206,13 +209,12 @@ public:
     virtual bool _CanReplace(Task& other) const {return GetTarget() == other.GetTarget() && m_operation == other.m_operation;}
 
     Target* GetTarget() const {return m_target.get();} //!< Get the Target of this Task
-    Operation GetOperation() const {return m_operation;} //!< Get the Type of this Task.
+    Operation GetOperation() const {return m_operation;} //!< Get the Operation of this Task.
     Outcome GetOutcome() const {return m_outcome;}   //!< The Outcome of the processing of this Task (or Waiting, if it has not been processed yet.)
     double GetElapsedTime() const {return m_elapsedTime;} //!< Elapsed time in seconds. Only valid if m_outcome is Finished or Aborted
 
     Task(Target* target, Operation operation) : m_target(target), m_operation(operation) {}
 };
-
 
 //=======================================================================================
 // @bsiclass                                                    BentleySystems
@@ -380,25 +382,6 @@ enum class LineCap
     Triangle = 4,
 };
 
-enum class RangeResult
-{
-    Outside = -1,
-    Overlap = 0,
-    Inside  = 1,
-};
-
-enum class RasterFormat
-{
-    RGBA  = 0,
-    BGRA  = 1,
-    RGB   = 2,
-    BGR   = 3,
-    Gray  = 4,
-    Alpha = 5,    // not valid for icons
-    RGBS  = 6,    // 4 band with alpha stencil (0 or 255 only)
-    BGRS  = 7,    // 4 band with alpha stencil (0 or 255 only)
-};
-
 //=======================================================================================
 //! Parameters defining a gradient
 //=======================================================================================
@@ -461,7 +444,7 @@ private:
     AppearanceOverrides m_appearanceOverrides;          //!< flags for parameters that override SubCategory::Appearance.
     bool                m_resolved;                     //!< whether Resolve has established SubCategory::Appearance/effective values.
     DgnCategoryId       m_categoryId;                   //!< the Category Id on which the geometry is drawn.
-    DgnSubCategoryId    m_subCategoryId;                //!< the SubCategory Id that controls the appearence of subsequent geometry.
+    DgnSubCategoryId    m_subCategoryId;                //!< the SubCategory Id that controls the appearance of subsequent geometry.
     DgnMaterialId       m_materialId;                   //!< render material ID.
     int32_t             m_elmPriority;                  //!< display priority (applies to 2d only)
     int32_t             m_netPriority;                  //!< net display priority for element/category (applies to 2d only)
@@ -537,7 +520,7 @@ public:
     //! Get fill display setting
     FillDisplay GetFillDisplay() const {return m_fillDisplay;}
 
-    //! Get gradient fill information. Valid when FillDisplay::Never != GetFillDisplay() and not nullptrptr.
+    //! Get gradient fill information. Valid when FillDisplay::Never != GetFillDisplay() and not nullptr.
     GradientSymbCP GetGradient() const {return m_gradient.get();}
 
     //! Get the area pattern params.
@@ -1120,21 +1103,20 @@ struct Scene : RefCounted<NonCopyableClass>
 };
 
 //=======================================================================================
-//! A set of Scenes of various types of Graphics that are "decorated" into the Render::Target, 
+//! A set of Scenes of various types of Graphics that are "decorated" into the Render::Target,
 //! in addition to the Scene.
 //! @note a Render::Plan holds a *copy* of the Decorations lists for a DgnViewport.
 // @bsiclass                                                    Keith.Bentley   12/15
 //=======================================================================================
 struct Decorations
 {
-    ScenePtr m_dynamics;            // drawn with zbuffer, with scene lighting
     ScenePtr m_world;               // drawn with zbuffer, with default lighting, smooth shading
     ScenePtr m_cameraOverlay;       // drawn in overlay mode, camera units
     ScenePtr m_viewOverlay;         // drawn in overlay mode, view units
 };
 
 //=======================================================================================
-//! A Render::Plan holds a Frustum and the render settings for displaying 
+//! A Render::Plan holds a Frustum and the render settings for displaying
 //! the current Render::Scene into a Render::Target.
 // @bsiclass                                                    Keith.Bentley   12/15
 //=======================================================================================
@@ -1199,7 +1181,9 @@ struct Device : RefCounted<NonCopyableClass>
 };
 
 //=======================================================================================
-//! A Render::Target is the renderer-specific factory for creating Render::Scenes and Render::Graphics.
+//! A Render::Target is the renderer-specific factory for creating Render::Graphics. A Render::Target
+//! A Render:Target holds the current "scene", the current set of dynamic Graphics, and the current decorators.
+//! When frames are composed, all of those Graphics are rendered, as appropriate.
 //! A Render:Target holds a reference to a Render::Device.
 //! Every DgnViewport holds a reference to a Render::Target.
 // @bsiclass                                                    Keith.Bentley   11/15
@@ -1211,6 +1195,7 @@ struct Target : RefCounted<NonCopyableClass>
 protected:
     DevicePtr   m_device;
     ScenePtr    m_currentScene;
+    ScenePtr    m_dynamics;      // drawn with zbuffer, with scene lighting
     Decorations m_decorations;
 
     virtual GraphicPtr _CreateGraphic(Graphic::CreateParams const& params) = 0;
@@ -1221,17 +1206,16 @@ protected:
     virtual TexturePtr _GetTexture(DgnTextureId, DgnDbR) const = 0;
     virtual TexturePtr _CreateTileSection(Image*, bool enableAlpha) const = 0;
     virtual void* _ResolveOverrides(OvrGraphicParamsCR) = 0;
-    virtual void _ChangeScene(SceneR) = 0;
-    virtual void _DrawFrame(PlanCR) = 0;
-
 public:
+    virtual void _ChangeScene(SceneR) = 0;
+    virtual void _ChangeDynamics(SceneR) = 0;
+    virtual void _ChangeDecorations(Decorations&) = 0;
+    virtual void _DrawFrame(PlanCR) = 0;
     virtual double _GetCameraFrustumNearScaleLimit() const = 0;
     virtual bool _WantInvertBlackBackground() {return false;}
 
     Target(Device* device) : m_device(device) {}
 
-    void ChangeScene(SceneR scene) {_ChangeScene(scene);}
-    void DrawFrame(PlanCR plan) {_DrawFrame(plan);}
     Point2d GetScreenOrigin() const {return m_device->GetWindow()->_GetScreenOrigin();}
     BSIRect GetViewRect() const {return m_device->GetWindow()->_GetViewRect();}
     DVec2d GetDpiScale() const {return m_device->_GetDpiScale();}

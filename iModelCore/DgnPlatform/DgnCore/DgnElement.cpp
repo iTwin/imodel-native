@@ -651,8 +651,8 @@ static DgnDbStatus insertGeomSource(DgnElementCR el, DgnCategoryId categoryId, G
     BeAssert(nullptr != geomModel);
     if (nullptr == geomModel)
         return DgnDbStatus::WriteError;
-    else
-        stmt->BindInt(4, CoordinateSpace::World == geomModel->GetCoordinateSpace() ? 1 : 0);
+
+    stmt->BindInt(4, CoordinateSpace::World == geomModel->GetCoordinateSpace() ? 1 : 0);
 
     if ((nullptr != placement3d && !placement3d->IsValid()) || (nullptr != placement2d && !placement2d->IsValid()))
         {
@@ -660,13 +660,9 @@ static DgnDbStatus insertGeomSource(DgnElementCR el, DgnCategoryId categoryId, G
         stmt->BindNull(2);
         }
     else if (nullptr != placement3d)
-        {
         stmt->BindBlob(2, placement3d, sizeof(*placement3d), Statement::MakeCopy::No);
-        }
     else
-        {
         stmt->BindBlob(2, placement2d, sizeof(*placement2d), Statement::MakeCopy::No);
-        }
 
     DgnDbStatus stat = geom.WriteGeometryStreamAndStep(dgnDb, DGN_TABLE(DGN_CLASSNAME_ElementGeom), GEOM_Column, elementId.GetValue(), *stmt, 1);
     if (DgnDbStatus::Success != stat)
