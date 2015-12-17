@@ -105,7 +105,7 @@ void Render::Task::Perform(StopWatch& timer)
     {
     m_outcome = Task::Outcome::Started;
     timer.Start();
-    m_outcome = _Process();
+    m_outcome = _Process(timer);
     m_elapsedTime = timer.GetCurrentSeconds();
     LOG_PRINTF ("task=%s, elapsed=%lf\n", _GetName(), m_elapsedTime);
     }
