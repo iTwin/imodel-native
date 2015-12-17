@@ -205,7 +205,7 @@ void DgnModel::ReleaseAllElements()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    10/00
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnModel::DgnModel(CreateParams const& params) : m_dgndb(params.m_dgndb), m_modelId(params.m_id), m_classId(params.m_classId), m_code(params.m_code), m_inGuiList(params.m_inGuiList), m_label(params.m_label),
+DgnModel::DgnModel(CreateParams const& params) : m_dgndb(params.m_dgndb), m_classId(params.m_classId), m_code(params.m_code), m_inGuiList(params.m_inGuiList), m_label(params.m_label),
     m_dependencyIndex(-1), m_persistent(false), m_filled(false)
     {
     }
@@ -416,11 +416,12 @@ DgnDbStatus DictionaryModel::_OnInsertElement(DgnElementR el)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                 Ramanujam.Raman   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnModel::Read()
+DgnDbStatus DgnModel::Read(DgnModelId modelId)
     {
+    m_modelId = modelId;
     ECSqlClassInfo const& info = GetModelHandler().GetECSqlClassInfo();
 
-    CachedECSqlStatementPtr stmt = info.GetSelectStmt(GetDgnDb(), GetModelId());
+    CachedECSqlStatementPtr stmt = info.GetSelectStmt(GetDgnDb(), modelId);
     if (stmt.IsNull())
         {
         BeAssert(false);
@@ -893,9 +894,6 @@ DgnDbStatus DgnModel::_OnInsert()
     if (m_modelId.IsValid())
         return DgnDbStatus::IdExists;
 
-    if (&m_dgndb != &m_dgndb)
-        return DgnDbStatus::WrongDgnDb;
-
     if (!DgnModels::IsValidName(m_code.GetValue()))
         {
         BeAssert(false);
@@ -1048,12 +1046,12 @@ DgnModelPtr DgnModels::LoadDgnModel(DgnModelId modelId)
     if (nullptr == handler)
         return nullptr;
 
-    DgnModel::CreateParams params(m_dgndb, model.GetClassId(), model.GetCode(), model.GetLabel(), model.GetInGuiList(), modelId);
+    DgnModel::CreateParams params(m_dgndb, model.GetClassId(), model.GetCode(), model.GetLabel(), model.GetInGuiList());
     DgnModelPtr dgnModel = handler->Create(params);
     if (!dgnModel.IsValid())
         return nullptr;
 
-    dgnModel->Read();
+    dgnModel->Read(modelId);
     dgnModel->_OnLoaded();   // this adds the model to the loaded models list and increments the ref count, so returning by value is safe.
 
     return dgnModel;

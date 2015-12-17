@@ -88,7 +88,7 @@ void LsComponent::ExtractDescription(JsonValueCR result)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    12/2015
 //---------------------------------------------------------------------------------------
-void LsComponent::SaveToJson(Json::Value& result)
+void LsComponent::SaveToJson(Json::Value& result) const
     {
     result.clear();
     Utf8String descr = GetDescription();
@@ -118,22 +118,31 @@ void LsComponent::GetNextComponentNumber (uint32_t& id, DgnDbR project, BeSQLite
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    12/2015
 //---------------------------------------------------------------------------------------
-LineStyleStatus LsComponent::AddRasterComponentAsJson (LsComponentId& componentId, DgnDbR project, JsonValueCR jsonDef, uint8_t const*imageData, uint32_t dataSize)
+LineStyleStatus LsComponent::AddRasterComponentAsJson (LsComponentId& componentId, DgnDbR project, JsonValueCR jsonDefIn, uint8_t const*imageData, uint32_t dataSize)
     {
-#if defined(NOTNOW)
+    //  First put out the raster image
     BeSQLite::PropertySpec spec = LineStyleProperty::RasterImage();
+
+    uint32_t rasterImageNumber;
+    GetNextComponentNumber (rasterImageNumber, project, spec);
+
+    if (project.SaveProperty (spec, imageData, dataSize, rasterImageNumber, 0) != BE_SQLITE_OK)
+        return LINESTYLE_STATUS_SQLITE_Error;
+
+    spec = LineStyleProperty::RasterComponent();
+    Json::Value jsonValue(jsonDefIn);
+    jsonValue["imageId"] = rasterImageNumber;
 
     uint32_t componentNumber;
     GetNextComponentNumber (componentNumber, project, spec);
+    Utf8String data = Json::FastWriter::ToString(jsonValue);
 
-    if (project.SaveProperty (spec, data, dataSize, componentNumber, 0) != BE_SQLITE_OK)
+    if (project.SavePropertyString (spec, data.c_str(), componentNumber, 0) != BE_SQLITE_OK)
         return LINESTYLE_STATUS_SQLITE_Error;
 
     componentId = LsComponentId(LsComponentType::RasterImage, componentNumber);
+
     return LINESTYLE_STATUS_Success;
-#else
-    return LINESTYLE_STATUS_ConvertingComponent;
-#endif
     }
 
 //---------------------------------------------------------------------------------------
@@ -296,7 +305,7 @@ LineStyleStatus LsStrokePatternComponent::CreateFromJson(LsStrokePatternComponen
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    12/2015
 //---------------------------------------------------------------------------------------
-void LsStrokePatternComponent::SaveToJson(Json::Value& result)
+void LsStrokePatternComponent::SaveToJson(Json::Value& result) const
     {
     LsComponent::SaveToJson(result);
     double phase = 0.0;
@@ -340,7 +349,7 @@ void LsStrokePatternComponent::SaveToJson(Json::Value& result)
     Json::Value strokes(Json::arrayValue);
     for (uint32_t index = 0; index<m_nStrokes; ++index)
         {
-        LsStroke& stroke = m_strokes[index];
+        LsStroke const& stroke = m_strokes[index];
         Json::Value  entry(Json::objectValue);
         entry["length"] = stroke.m_length;
         if (stroke.m_orgWidth != 0)
@@ -736,22 +745,13 @@ LsStrokePatternComponentP  LsInternalComponent::LoadInternalComponent(LsComponen
 //---------------------------------------------------------------------------------------
 LsRasterImageComponent* LsRasterImageComponent::LoadRasterImage  (LsComponentReader* reader)
     {
-#if defined(NOTNOW)
-    V10RasterImage*         rasterImageResource = (V10RasterImage*) reader->GetRsc();
+    Json::Value      jsonValue;
+    reader->GetJsonValue(jsonValue);
 
-    if (4 * rasterImageResource->m_size.x * rasterImageResource->m_size.y != rasterImageResource->m_nImageBytes)
-        {
-        BeAssert (false);
-        return NULL;
-        }
+    LsRasterImageComponentP newComp;
+    LsRasterImageComponent::CreateFromJson(&newComp, jsonValue, reader->GetSource());
 
-    LsRasterImageComponent* rasterImage = new LsRasterImageComponent (rasterImageResource, reader->GetSource());
-
-    return  rasterImage;
-#else
-    BeAssert(false && "LoadRasterImage");
-    return nullptr; 
-#endif
+    return newComp;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1008,7 +1008,7 @@ BentleyStatus       LsComponentReader::_LoadDefinition ()
             spec = LineStyleProperty::PointSym();
             break;
         case LsComponentType::RasterImage:
-            spec = LineStyleProperty::RasterImage();
+            spec = LineStyleProperty::RasterComponent();
             break;
         case LsComponentType::Internal:
             return ERROR;

@@ -125,7 +125,6 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnModel : RefCountedBase
     struct CreateParams
     {
         DgnDbR      m_dgndb;
-        DgnModelId  m_id;
         DgnClassId  m_classId;
         Code        m_code;
         Utf8String  m_label;
@@ -137,15 +136,15 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnModel : RefCountedBase
         //! @param[in] code The code for the DgnModel
         //! @param[in] label Label of the new DgnModel
         //! @param[in] inGuiList Controls the visibility of the new DgnModel in model lists shown to the user
-        //! @param[in] id Internal only, must be DgnModelId() to create a new DgnModel.
-        CreateParams(DgnDbR dgndb, DgnClassId classId, Code code, Utf8CP label = nullptr, bool inGuiList = true, DgnModelId id = DgnModelId()) :
-            m_dgndb(dgndb), m_id(id), m_classId(classId), m_code(code), m_inGuiList(inGuiList)
+        CreateParams(DgnDbR dgndb, DgnClassId classId, Code code, Utf8CP label = nullptr, bool inGuiList = true) :
+            m_dgndb(dgndb), m_classId(classId), m_code(code), m_inGuiList(inGuiList)
             {
             SetLabel(label);
             }
 
-        void SetLabel(Utf8CP label) { m_label.AssignOrClear(label); }
-        void SetInGuiList(bool inGuiList) { m_inGuiList = inGuiList; }
+        void SetCode(Code code) { m_code = code; }                    //!< Set the Code for models created with this CreateParams
+        void SetLabel(Utf8CP label) { m_label.AssignOrClear(label); } //!< Set the Label for models created with this CreateParams
+        void SetInGuiList(bool inGuiList) { m_inGuiList = inGuiList; } //!< Set the visibility of models created with this CreateParams in model lists shown to the user
 
         DGNPLATFORM_EXPORT void RelocateToDestinationDb(DgnImportContext&);
     };
@@ -178,7 +177,7 @@ private:
     void ReleaseAllElements();
 
     DgnDbStatus BindInsertAndUpdateParams(BeSQLite::EC::ECSqlStatement& statement);
-    DgnDbStatus Read();
+    DgnDbStatus Read(DgnModelId modelId);
 protected:
     DgnDbR          m_dgndb;
     DgnModelId      m_modelId;
@@ -715,16 +714,19 @@ struct EXPORT_VTABLE_ATTRIBUTE GeometricModel : DgnModel
         //! @param[in] label Label of the new DgnModel
         //! @param[in] displayInfo The DisplayInfo for the new DgnModel.
         //! @param[in] inGuiList Controls the visibility of the new DgnModel in model lists shown to the user
-        //! @param[in] id Internal only, must be DgnModelId() to create a new DgnModel.
-        CreateParams(DgnDbR dgndb, DgnClassId classId, Code code, Utf8CP label = nullptr, DisplayInfo displayInfo = DisplayInfo(), bool inGuiList = true, DgnModelId id = DgnModelId())
-            : T_Super(dgndb, classId, code, label, inGuiList, id), m_displayInfo(displayInfo)
+        CreateParams(DgnDbR dgndb, DgnClassId classId, Code code, Utf8CP label = nullptr, DisplayInfo displayInfo = DisplayInfo(), bool inGuiList = true)
+            : T_Super(dgndb, classId, code, label, inGuiList), m_displayInfo(displayInfo)
             {}
 
         //! @private
         //! This constructor is used only by the model handler to create a new instance, prior to calling ReadProperties on the model object
         CreateParams(DgnModel::CreateParams const& params) : T_Super(params) { }
 
+        DisplayInfo const& GetDisplayInfo() const { return m_displayInfo; } //!< Get the DisplayInfo
+        void SetDisplayInfo(DisplayInfo const& displayInfo) { m_displayInfo = displayInfo; } //!< Set the DisplayInfo
     };
+
+
 
 private:
     mutable DgnRangeTreeP m_rangeIndex;
@@ -1348,12 +1350,14 @@ struct EXPORT_VTABLE_ATTRIBUTE SheetModel : DgnModel2d
         //! @param[in] label Label of the new DgnModel
         //! @param[in] displayInfo the Properties of the new SheetModel
         //! @param[in] inGuiList Controls the visibility of the new DgnModel in model lists shown to the user
-        //! @param[in] id the DgnModelId of thew new SheetModel. This should be DgnModelId() when creating a new model.
-        CreateParams(DgnDbR dgndb, DgnClassId classId, Code code, DPoint2d size, Utf8CP label = nullptr, DisplayInfo displayInfo = DisplayInfo(), bool inGuiList = true, DgnModelId id = DgnModelId()) :
-            T_Super(dgndb, classId, code, label, displayInfo, inGuiList, id), m_size(size)
+        CreateParams(DgnDbR dgndb, DgnClassId classId, Code code, DPoint2d size, Utf8CP label = nullptr, DisplayInfo displayInfo = DisplayInfo(), bool inGuiList = true) :
+            T_Super(dgndb, classId, code, label, displayInfo, inGuiList), m_size(size)
             {}
 
         explicit CreateParams(DgnModel::CreateParams const& params, DPoint2d size=DPoint2d::FromZero()) : T_Super(params), m_size(size) {}
+
+        DPoint2dCR GetSize() const { return m_size; } //!< Get the size of the SheetModel to be created, in meters. 
+        void SetSize(DPoint2dCR size) { m_size = size; } //!< Set the size of the SheetModel to be created, in meters. 
     };
 
 private:
