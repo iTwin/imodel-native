@@ -318,17 +318,22 @@
     <!-- //////////////////////////////////////////////////////////////////////////// -->
     <!-- // Unit Tests                                                             // -->
     <!-- //////////////////////////////////////////////////////////////////////////// -->
-    <Part Name="PrewireForUnitTests" BentleyBuildMakeFile="Tests/Prewire.mke">
+    <Part Name="PrewireForUnitTests" BentleyBuildMakeFile="Tests/UnitTests/Prewire.mke">
         <SubPart PartName="WebServicesCache" />
         <SubPart PartName="WebServicesClient"/>
         <Bindings>
-            <Files ProductDirectoryName="UnitTests-IgnoreList" ProductSubDirectory="WebServices" SubPartDirectory="UnitTests/WebServices"> Delivery/UnitTests/ignore_list.txt</Files>
+            <Files ProductDirectoryName="UnitTests-IgnoreList" ProductSubDirectory="WebServices" SubPartDirectory="UnitTests/WebServices">
+                Delivery/UnitTests/ignore_list.txt
+             </Files>
         </Bindings>
     </Part>
 
     <Part Name="WSClientUnitTests-Assets" BentleyBuildMakeFile="TestAssetsDelivery.mke" />
 
-    <Part Name="UnitTests-Published" BentleyBuildMakeFile="Tests/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=Published -dUsePublishedApi">
+    <Part Name="UnitTests-Published" 
+        BentleyBuildMakeFile="Tests/UnitTests/BuildTests.mke" 
+        BentleyBuildMakeOptions="-dTestDir=Published -dUsePublishedApi"
+        >
         <SubPart PartName="PrewireForUnitTests" />
         <SubPart PartName="WebServicesClient-PublishedAPI" />
         <SubPart PartName="WebServicesCache-PublishedAPI" />
@@ -346,14 +351,19 @@
         <SubPart PartName="UnitTests-Published"/>
     </Part>
 
-    <!-- Define a gtest program to run the tests. The Gtest and RunGtest parts are included in DgnClientFx's Gtest-Aggregator and RunGtest-DgnClientFxTests parts -->
+    <!-- Define a gtest program to run the tests. 
+        The Gtest and RunGtest parts are included in DgnClientFx's Gtest-Aggregator and RunGtest-DgnClientFxTests parts -->
     <Product Name="WSClient-Tests">
         <SubPart Repository="BeGTest" PartFile="BeGTest" PartName="Base" />
         <SubPart PartName="Tests"/>
         <Directories DirectoryListName="CollectionProduct" Repository="BeGTest"  PartFile="BeGTest"/>
     </Product>
 
-    <Part Name="Gtest" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/buildGTest.mke" BentleyBuildMakeOptions="-dTEST_NAME=WSClientTest -dTEST_COLLECTION_PRODUCT=WSClient-Tests" OnlyPlatforms="x86,x64,Linux*,MacOS*">
+    <Part Name="Gtest" 
+        BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/buildGTest.mke" 
+        BentleyBuildMakeOptions="-dTEST_NAME=WSClientTest -dTEST_COLLECTION_PRODUCT=WSClient-Tests" 
+        OnlyPlatforms="x86,x64,Linux*,MacOS*"
+        >
         <SubProduct ProductName="WSClient-Tests"/>
         <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
         <Bindings>
@@ -367,7 +377,11 @@
         <Directories DirectoryListName="GtestProduct" Repository="BeGTest" PartFile="BeGTest"/>
     </Product>
 
-    <Part Name="RunGtest" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/RunGTest.mke" BentleyBuildMakeOptions="-dGTEST_EXE=$(OutputRootDir)Product/WSClient-Gtest/WSClientTest -dGTEST_OUTPUT_DIR=$(OutputRootDir)build/WSClient" OnlyPlatforms="x86,x64,MacOs*,Linux*">
+    <Part Name="RunGtest" 
+        BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/RunGTest.mke" 
+        BentleyBuildMakeOptions="-dGTEST_EXE=$(OutputRootDir)Product/WSClient-Gtest/WSClientTest -dGTEST_OUTPUT_DIR=$(OutputRootDir)build/WSClient" 
+        OnlyPlatforms="x86,x64,MacOs*,Linux*"
+        >
         <SubProduct ProductName="WSClient-Gtest" />
         <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
     </Part>

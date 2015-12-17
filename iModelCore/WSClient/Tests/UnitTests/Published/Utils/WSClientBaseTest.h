@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: Tests/Published/Utils/WSClientBaseTest.h $
+|     $Source: Tests/UnitTests/Published/Utils/WSClientBaseTest.h $
 |
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |

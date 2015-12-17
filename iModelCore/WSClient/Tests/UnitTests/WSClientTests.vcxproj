@@ -264,6 +264,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="BuildTests.mke" />
+    <None Include="dependencies.mki" />
     <None Include="Prewire.mke" />
   </ItemGroup>
   <ItemGroup>
