@@ -104,8 +104,12 @@ LsComponentPtr LsStrokePatternComponent::_Import(DgnImportContext& importer) con
     {
     LsStrokePatternComponentP result = new LsStrokePatternComponent(this);
 
-    //  Save to destination and record ComponentId in clone
+    Json::Value     jsonValue;
+    result->SaveToJson(jsonValue);
+    LsComponentId componentId;
+    LsComponent::AddComponentAsJsonProperty(componentId, importer.GetDestinationDb(), LsComponentType::LineCode, jsonValue);
 
+    //  Rely on LsComponent::Import to record the component ID mapping.
     return result;
     }
 
@@ -130,7 +134,10 @@ LsComponentPtr LsPointComponent::_Import(DgnImportContext& importer) const
             }
         }
 
-    //  Add to destination file.
+    Json::Value     jsonValue;
+    cloned->SaveToJson(jsonValue);
+    LsComponentId componentId;
+    LsComponent::AddComponentAsJsonProperty(componentId, importer.GetDestinationDb(), LsComponentType::LinePoint, jsonValue);
 
     return cloned;
     }
@@ -138,13 +145,13 @@ LsComponentPtr LsPointComponent::_Import(DgnImportContext& importer) const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    12/2015
 //---------------------------------------------------------------------------------------
-void LsCompoundComponent::SaveToJson(Json::Value& result)
+void LsCompoundComponent::SaveToJson(Json::Value& result) const
     {
     LsComponent::SaveToJson(result);
 
     Json::Value components(Json::arrayValue);
     uint32_t index = 0;
-    for (LsOffsetComponent& offset: m_components)
+    for (LsOffsetComponent const& offset: m_components)
         {
         if (!offset.m_subComponent.IsValid())
             continue;
@@ -211,7 +218,7 @@ void LsPointComponent::SaveSymbolIdToJson(JsonValueR json, LsComponentId symbolI
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    12/2015
 //---------------------------------------------------------------------------------------
-void LsPointComponent::SaveToJson(Json::Value& result)
+void LsPointComponent::SaveToJson(Json::Value& result) const
     {
     LsComponent::SaveToJson(result);
 
@@ -225,7 +232,7 @@ void LsPointComponent::SaveToJson(Json::Value& result)
 
     Json::Value symbols(Json::arrayValue);
     uint32_t index = 0;
-    for (LsSymbolReference& symRef: m_symbols)
+    for (LsSymbolReference const& symRef: m_symbols)
         {
         Json::Value  entry(Json::objectValue);
 
@@ -313,7 +320,10 @@ LsComponentPtr LsCompoundComponent::_Import(DgnImportContext& importer) const
         compOffset.m_subComponent = LsComponent::GetImportedComponent(compOffset.m_subComponent->GetId(), importer);
 
 
-    //  Save to destination and record ComponentId in clone
+    Json::Value     jsonValue;
+    result->SaveToJson(jsonValue);
+    LsComponentId componentId;
+    LsComponent::AddComponentAsJsonProperty(componentId, importer.GetDestinationDb(), LsComponentType::Compound, jsonValue);
 
     return result;
     }
@@ -327,7 +337,10 @@ LsComponentPtr LsSymbolComponent::_Import(DgnImportContext& importer) const
 
     importer.RemapGeomPartId(result->m_geomPartId);
 
-    //  Save to destination and record ComponentId in clone
+    Json::Value     jsonValue;
+    result->SaveToJson(jsonValue);
+    LsComponentId componentId;
+    LsComponent::AddComponentAsJsonProperty(componentId, importer.GetDestinationDb(), LsComponentType::PointSymbol, jsonValue);
 
     return result;
     }
@@ -391,7 +404,7 @@ LineStyleStatus LsSymbolComponent::CreateFromJson(LsSymbolComponentP*newComp, Js
 // @bsimethod                                                   John.Gooding    12/2015
 //---------------------------------------------------------------------------------------
 void LsSymbolComponent::SaveSymbolDataToJson(Json::Value& result, DPoint3dCR base, DPoint3dCR size, DgnGeomPartId const& geomPartId, int32_t flags, double storedScale, 
-                                             bool colorBySubcategory, ColorDefR lineColor, ColorDefR fillColor, bool weightBySubcategory, int weight)
+                                             bool colorBySubcategory, ColorDefCR lineColor, ColorDefCR fillColor, bool weightBySubcategory, int weight)
     {
     if (base.x != 0)
         result["baseX"] = base.x;
@@ -452,7 +465,7 @@ void LsSymbolComponent::SaveSymbolDataToJson(Json::Value& result, DPoint3dCR bas
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    12/2015
 //---------------------------------------------------------------------------------------
-void LsSymbolComponent::SaveToJson(Json::Value& result)
+void LsSymbolComponent::SaveToJson(Json::Value& result) const
     {
     LsComponent::SaveToJson(result);
 
@@ -702,7 +715,7 @@ DgnStyleId DgnImportContext::RemapLineStyleId(DgnStyleId sourceId)
         return dest;
 
     
-#if defined(NEEDSWORK_LINESTYLES) //  importers are not finished so don't pass along bad data.
+#if defined(NEEDSWORK_LINESTYLES) //  importers are not tested so don't risk passing along bad data.
     dest = LineStyleElement::ImportLineStyle(sourceId, *this);
     AddLineStyleId(sourceId, dest);
 #endif

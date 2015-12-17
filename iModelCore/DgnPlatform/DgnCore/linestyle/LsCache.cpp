@@ -88,7 +88,7 @@ void LsComponent::ExtractDescription(JsonValueCR result)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    12/2015
 //---------------------------------------------------------------------------------------
-void LsComponent::SaveToJson(Json::Value& result)
+void LsComponent::SaveToJson(Json::Value& result) const
     {
     result.clear();
     Utf8String descr = GetDescription();
@@ -305,7 +305,7 @@ LineStyleStatus LsStrokePatternComponent::CreateFromJson(LsStrokePatternComponen
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    12/2015
 //---------------------------------------------------------------------------------------
-void LsStrokePatternComponent::SaveToJson(Json::Value& result)
+void LsStrokePatternComponent::SaveToJson(Json::Value& result) const
     {
     LsComponent::SaveToJson(result);
     double phase = 0.0;
@@ -349,7 +349,7 @@ void LsStrokePatternComponent::SaveToJson(Json::Value& result)
     Json::Value strokes(Json::arrayValue);
     for (uint32_t index = 0; index<m_nStrokes; ++index)
         {
-        LsStroke& stroke = m_strokes[index];
+        LsStroke const& stroke = m_strokes[index];
         Json::Value  entry(Json::objectValue);
         entry["length"] = stroke.m_length;
         if (stroke.m_orgWidth != 0)
