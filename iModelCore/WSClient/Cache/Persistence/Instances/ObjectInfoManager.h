@@ -27,7 +27,6 @@ struct ObjectInfoManager
         HierarchyManager&       m_hierarchyManager;
 
         ECClassCP               m_infoClass;
-        ECRelationshipClassCP   m_infoRelationshipClass;
 
         ECSqlAdapterLoader<JsonInserter>    m_infoInserter;
         ECSqlAdapterLoader<JsonUpdater>     m_infoUpdater;
@@ -54,7 +53,13 @@ struct ObjectInfoManager
         ECInstanceKey FindCachedInstance(ECClassCP ecClass, Utf8StringCR remoteId);
         ObjectId FindCachedInstance(ECInstanceKeyCR instance);
 
-        ECInstanceKey ReadInfoKey(ObjectIdCR objectId);
+        CachedObjectInfoKey ReadInfoKey(ECInstanceKeyCR instanceKey);
+        CachedInstanceKey ReadCachedInstanceKey(ECInstanceKeyCR instanceKey);
+        CachedInstanceKey ReadCachedInstanceKey(ObjectIdCR objectId);
+        CachedInstanceKey ReadCachedInstanceKey(CacheNodeKeyCR relatedKey, ECRelationshipClassCR relClass);
+        BentleyStatus ReadCachedInstanceKeys(CacheNodeKeyCR relatedKey, ECRelationshipClassCR relClass, ECInstanceKeyMultiMap& instanceKeysOut);
+        BentleyStatus ReadCachedInstanceKeys(const ECInstanceKeyMultiMap& infoKeys, ECInstanceKeyMultiMap& instanceKeysOut);
+        BentleyStatus ReadCachedInstanceIds(CacheNodeKeyCR relatedKey, ECRelationshipClassCR relClass, bset<ObjectId>& idsOut);
 
         BentleyStatus DeleteInstanceLeavingInfo(ObjectInfoR info);
         BentleyStatus RemoveAllCachedInstances();

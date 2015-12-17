@@ -136,8 +136,9 @@ ICancellationTokenPtr ct
                 }
             }
 
-        cachedInstance = info.GetCachedInstanceKey();
-        cachedInstancesInOut.AddInstance(instance.GetObjectId(), cachedInstance);
+        auto key = info.GetCachedInstanceKey();
+        cachedInstance = key.GetInstanceKey();
+        cachedInstancesInOut.AddInstance(instance.GetObjectId(), key);
         }
     else
         {
@@ -245,9 +246,9 @@ CachedInstances& cachedInstancesInOut
             }
         }
 
-    CachedRelationshipKey relInfo = m_relationshipInfoManager.ReadCachedRelationshipKey(relationshipKey, relationshipObjectId.remoteId.c_str());
+    CachedInstanceKey relInfo = m_relationshipInfoManager.ReadCachedRelationshipKey(relationshipKey, relationshipObjectId.remoteId.c_str());
 
-    cachedInstancesInOut.AddRelationshipInstance(relationshipObjectId, relInfo);
+    cachedInstancesInOut.AddRelationship(relationshipObjectId, relInfo);
 
     return SUCCESS;
     }
@@ -257,7 +258,7 @@ CachedInstances& cachedInstancesInOut
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus InstanceCacheHelper::CacheInstance(ObjectInfoR infoInOut, RapidJsonValueCR properties)
     {
-    ECClassCP ecClass = m_dbAdapter.GetECClass(infoInOut.GetCachedInstanceKey());
+    ECClassCP ecClass = m_dbAdapter.GetECClass(infoInOut.GetInstanceKey());
     if (nullptr == ecClass)
         {
         BeAssert(false && "Unknown instance class");
@@ -309,7 +310,7 @@ BentleyStatus InstanceCacheHelper::SaveNewInstance(ObjectInfoR infoInOut, ECClas
         return ERROR;
         }
 
-    infoInOut.SetCachedInstanceId(ecInstanceKey.GetECInstanceId());
+    infoInOut.SetInstanceId(ecInstanceKey.GetECInstanceId());
     return SUCCESS;
     }
 
@@ -318,7 +319,7 @@ BentleyStatus InstanceCacheHelper::SaveNewInstance(ObjectInfoR infoInOut, ECClas
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus InstanceCacheHelper::SaveExistingInstance(ObjectInfoCR info, ECClassCR ecClass, RapidJsonValueCR properties)
     {
-    return m_updaters.Get(ecClass).Update(info.GetCachedInstanceKey().GetECInstanceId(), properties);
+    return m_updaters.Get(ecClass).Update(info.GetInstanceKey().GetECInstanceId(), properties);
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -336,7 +337,7 @@ BentleyStatus InstanceCacheHelper::MergeAndSaveModifiedInstance(ObjectInfoCR inf
         }
 
     // Save merged instance
-    if (SUCCESS != m_updaters.Get(ecClass).Update(info.GetCachedInstanceKey().GetECInstanceId(), mergedJson))
+    if (SUCCESS != m_updaters.Get(ecClass).Update(info.GetInstanceKey().GetECInstanceId(), mergedJson))
         {
         return ERROR;
         }
@@ -361,7 +362,7 @@ BentleyStatus InstanceCacheHelper::UpdateExistingInstanceData(ObjectInfoCR info,
         return ERROR;
         }
 
-    ECClassCP ecClass = m_dbAdapter.GetECClass(info.GetCachedInstanceKey());
+    ECClassCP ecClass = m_dbAdapter.GetECClass(info.GetInstanceKey());
     if (SUCCESS != SaveExistingInstance(info, *ecClass, properties))
         {
         LOG.errorv("Failed to update instance %s", info.GetObjectId().ToString().c_str());
@@ -379,20 +380,20 @@ BentleyStatus InstanceCacheHelper::UpdateExistingInstanceData(ObjectInfoCR info,
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    06/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-void InstanceCacheHelper::CachedInstances::AddInstance(ObjectIdCR objectId, ECInstanceKeyCR cachedInstance)
+void InstanceCacheHelper::CachedInstances::AddInstance(ObjectIdCR objectId, CachedInstanceKeyCR key)
     {
-    m_cachedInstances.insert(cachedInstance);
-    m_cachedInstancesByObjectId.insert({objectId, cachedInstance});
+    m_cachedInstances.insert(key);
+    m_cachedInstancesByObjectId.insert({objectId, key.GetInstanceKey()});
     }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    06/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-void InstanceCacheHelper::CachedInstances::AddRelationshipInstance(ObjectIdCR objectId, const CachedRelationshipKey& relationshipInfo)
+void InstanceCacheHelper::CachedInstances::AddRelationship(ObjectIdCR objectId, CachedInstanceKeyCR key)
     {
-    m_cachedInstances.insert(relationshipInfo.GetRelationshipKey());
-    m_cachedInstancesByObjectId.insert({objectId, relationshipInfo.GetRelationshipKey()});
-    m_cachedRelationships.insert(relationshipInfo);
+    m_cachedInstances.insert(key);
+    m_cachedInstancesByObjectId.insert({objectId, key.GetInstanceKey()});
+    m_cachedRelationships.insert(key);
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -419,7 +420,7 @@ ECInstanceKey InstanceCacheHelper::CachedInstances::GetCachedInstance(ObjectIdCR
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    06/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-const bset<ECInstanceKey>& InstanceCacheHelper::CachedInstances::GetCachedInstances() const
+const bset<CachedInstanceKey>& InstanceCacheHelper::CachedInstances::GetCachedInstances() const
     {
     return m_cachedInstances;
     }
@@ -448,7 +449,7 @@ const bmap<ObjectId, ECInstanceKey>& InstanceCacheHelper::CachedInstances::GetCa
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    06/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-const bset<CachedRelationshipKey> InstanceCacheHelper::CachedInstances::GetCachedRelationshipInfos() const
+const bset<CachedInstanceKey>& InstanceCacheHelper::CachedInstances::GetCachedRelationships() const
     {
     return m_cachedRelationships;
     }
@@ -710,7 +711,7 @@ bool InstanceCacheHelper::PartialCachingState::IsFullyPersisted(ObjectInfoCR inf
     {
     return
         info.IsFullyCached() &&
-        ECDbHelper::IsInstanceInMultiMap(info.GetCachedInstanceKey(), m_fullyPersistedInstances);
+        ECDbHelper::IsInstanceInMultiMap(info.GetInstanceKey(), m_fullyPersistedInstances);
     }
 
 /*--------------------------------------------------------------------------------------+

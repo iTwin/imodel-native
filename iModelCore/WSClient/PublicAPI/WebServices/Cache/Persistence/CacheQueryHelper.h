@@ -90,16 +90,6 @@ struct CacheQueryHelper
         //! Note about RemoteId - it is not considred to be instance property, but rather special property that needs different queries.
         struct ECSql
             {
-            //! Create ECSql to select properties from related target instances
-            //! ECSql columns:    {From ClassReadInfo}
-            //! ECSql parameters: SourceClassInstance.ECInstanceId
-            WSCACHE_EXPORT static Utf8String SelectPropertiesByRelatedSourceECInstanceId
-                (
-                const ClassReadInfo& info,
-                ECClassCR sourceClass,
-                ECRelationshipClassCR relationshipClass
-                );
-
             //! Create ECSql to select properties from instances by their remote ids. Use "instance" alias in optional where clause
             //! ECSql columns:    {From ClassReadInfo}
             //! ECSql parameters: none

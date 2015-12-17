@@ -30,23 +30,31 @@ m_pathProvider(nullptr)
 +---------------+---------------+---------------+---------------+---------------+------*/
 FileInfo::FileInfo
 (
-JsonValueCR infoJson,
+JsonValueCR cachedFileInfoJson,
 JsonValueCR externalFileInfoJson,
-ECInstanceKeyCR instanceKey,
+CachedInstanceKey cachedInstanceKey,
 IAbsolutePathProvider* pathProvider
 ) :
-ChangeInfo(infoJson),
+ChangeInfo(cachedFileInfoJson),
+m_cachedInstanceKey(cachedInstanceKey),
 m_externalFileInfoJson(externalFileInfoJson),
-m_instanceKey(instanceKey),
 m_pathProvider(pathProvider)
     {}
 
 /*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Vincas.Razma    11/2014
+* @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECInstanceKeyCR FileInfo::GetInstanceKey() const
+bool FileInfo::IsValid() const
     {
-    return m_instanceKey;
+    return m_cachedInstanceKey.IsValid();
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+CachedInstanceKeyCR FileInfo::GetCachedInstanceKey() const
+    {
+    return m_cachedInstanceKey;
     }
 
 /*--------------------------------------------------------------------------------------+

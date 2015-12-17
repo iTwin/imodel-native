@@ -44,15 +44,14 @@ struct FileInfoManager : public IDeleteHandler, public FileInfo::IAbsolutePathPr
         ECSqlAdapterLoader<JsonUpdater>     m_externalInfoUpdater;
 
     private:
-        ECInstanceKey FindTargetInstanceKeyForInfo(ECInstanceId infoId);
-        Json::Value ReadExternalFileInfo(ECInstanceKeyCR instanceKey);
-        Json::Value ReadCachedInfoJson(ECInstanceKeyCR instanceKey);
+        Json::Value ReadExternalFileInfo(CachedInstanceKeyCR cachedKey);
+        Json::Value ReadCachedInfoJson(CachedInstanceKeyCR cachedKey);
 
     public:
         FileInfoManager
             (
             ECDbAdapter& dbAdapter,
-            ECSqlStatementCache& statementCache,
+            WebServices::ECSqlStatementCache& statementCache,
             FileStorage& fileStorage,
             ObjectInfoManager& objectInfoManager,
             HierarchyManager& hierarchyManager
@@ -60,17 +59,16 @@ struct FileInfoManager : public IDeleteHandler, public FileInfo::IAbsolutePathPr
 
         ECClassCP GetInfoClass() const;
 
-        FileInfo ReadInfo(ECInstanceKeyCR fileKey);
-        FileInfo ReadInfo(ObjectIdCR fileId);
+        FileInfo ReadInfo(ObjectIdCR objectId);
+        FileInfo ReadInfo(CachedInstanceKeyCR cachedKey);
         FileInfo ReadInfo(JsonValueCR infoJson);
 
         BentleyStatus SaveInfo(FileInfoR info);
 
-        BentleyStatus DeleteFilesNotHeldByInstances(const ECInstanceKeyMultiMap& holdingInstances);
+        BentleyStatus DeleteFilesNotHeldByNodes(const ECInstanceKeyMultiMap& holdingNodes);
 
         BeFileName GetAbsoluteFilePath(bool isPersistent, BeFileNameCR relativePath) const override;
-
-        BeFileName ReadFilePath(ECInstanceKeyCR instance);
+        BeFileName ReadFilePath(CachedInstanceKeyCR infoKey);
 
         //! IDeleteHandler
         BentleyStatus OnBeforeDelete(ECClassCR ecClass, ECInstanceId ecInstanceId) override;

@@ -12,6 +12,7 @@
 #include <WebServices/Cache/Util/ECDbAdapter.h>
 #include <WebServices/Cache/Util/ECSqlStatementCache.h>
 #include "IDeleteHandler.h"
+#include "../Instances/CachedInstanceKey.h"
 
 USING_NAMESPACE_BENTLEY_EC
 USING_NAMESPACE_BENTLEY_SQLITE
@@ -77,6 +78,8 @@ struct HierarchyManager
 
         //! Delete ECInstance and all held hierarchy of instances if any
         BentleyStatus DeleteInstance(ECInstanceKeyCR instance);
+        //! Delete cached instance and all metadata
+        BentleyStatus DeleteInstance(CachedInstanceKeyCR instance);
         //! Delete ECInstances and all held hierarchies of instances if any
         BentleyStatus DeleteInstances(bset<ECInstanceKey> instances);
         //! Delete ECInstance and all held hierarchy of instnaes if any. Column 0 - ECClassId, Column 1 - ECInstanceId.

@@ -19,26 +19,6 @@ BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 /*--------------------------------------------------------------------------------------+
 * @bsiclass                                                     Vincas.Razma    06/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct CachedRelationshipKey
-    {
-    private:
-        ECInstanceKey m_infoKey;
-        ECInstanceKey m_relationshipKey;
-
-    public:
-        CachedRelationshipKey();
-        CachedRelationshipKey(ECInstanceKeyCR infoKey, ECInstanceKey relationshipKey);
-
-        bool operator < (const CachedRelationshipKey& other) const;
-
-        bool IsInCache() const;
-        ECInstanceKeyCR GetInfoKey() const;
-        ECInstanceKeyCR GetRelationshipKey() const;
-    };
-
-/*--------------------------------------------------------------------------------------+
-* @bsiclass                                                     Vincas.Razma    06/2014
-+---------------+---------------+---------------+---------------+---------------+------*/
 struct RelationshipInfoManager : public IDeleteHandler
     {
     private:
@@ -53,9 +33,9 @@ struct RelationshipInfoManager : public IDeleteHandler
         ECSqlAdapterLoader<JsonUpdater>         m_infoUpdater;
 
     private:
-        BentleyStatus DeleteCachedRelationship(const CachedRelationshipKey& relationship);
-        ECInstanceKey ReadRelationshipKeyByInfo(ECInstanceKeyCR infoKey);
-        ECInstanceId ReadInfoIdByRelationship(ECInstanceKeyCR relationshipDesc);
+        BentleyStatus DeleteCachedRelationship(const CachedInstanceKey& relationship);
+        ECInstanceKey ReadRelationshipKeyByInfo(CacheNodeKeyCR infoKey);
+        ECInstanceId ReadInfoIdByRelationship(ECInstanceKeyCR relationship);
 
     public:
         RelationshipInfoManager
@@ -81,7 +61,7 @@ struct RelationshipInfoManager : public IDeleteHandler
         BentleyStatus SaveInfo(RelationshipInfoR info);
 
         //! READ relationship or INSERT new cached relationship key
-        CachedRelationshipKey ReadCachedRelationshipKey(ECInstanceKeyCR relationship, Utf8StringCR remoteId);
+        CachedInstanceKey ReadCachedRelationshipKey(ECInstanceKeyCR relationship, Utf8StringCR remoteId);
 
         //! Read object id for existing cached relationship
         ObjectId ReadObjectId(ECInstanceKeyCR relationship);
@@ -92,21 +72,21 @@ struct RelationshipInfoManager : public IDeleteHandler
             (
             ECInstanceKeyCR holder,
             ECRelationshipClassCP holderToInfoRelClass,
-            const bset<CachedRelationshipKey>& cachedRelationships
+            const bset<CachedInstanceKey>& cachedRelationships
             );
 
         BentleyStatus ReadCachedRelationshipsFromHolder
             (
             ECInstanceKeyCR holder,
             ECRelationshipClassCP holderToInfoRelClass,
-            bset<CachedRelationshipKey>& cachedRelationshipsOut
+            bset<CachedInstanceKey>& cachedRelationshipsOut
             );
 
         BentleyStatus RemoveCachedRelationshipsFromHolder
             (
             ECInstanceKeyCR holder,
             ECRelationshipClassCP holderToInfoRelClass,
-            const bset<CachedRelationshipKey>& cachedRelationshipsToRemove
+            const bset<CachedInstanceKey>& cachedRelationshipsToRemove
             );
 
         BentleyStatus DeleteRelationshipLeavingInfo(RelationshipInfoR info);

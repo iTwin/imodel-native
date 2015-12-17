@@ -24,26 +24,25 @@ m_infoClassId(0)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    06/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-CachedResponseInfo::CachedResponseInfo(ECInstanceKeyCR parent, ECInstanceKeyCR holder, JsonValueCR infoJson, ECClassId infoClassId) :
-m_parent(parent),
-m_holder(holder),
+CachedResponseInfo::CachedResponseInfo(ResponseKey key, JsonValueCR infoJson, ECClassId infoClassId) :
+m_key(key),
 m_infoJson(infoJson),
 m_infoClassId(infoClassId)
     {
-    BeAssert(m_parent.IsValid());
+    BeAssert(m_key.IsValid());
+    BeAssert(m_key.GetName() == m_infoJson[CLASS_CachedResponseInfo_PROPERTY_Name].asString());
     }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    06/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-CachedResponseInfo::CachedResponseInfo(ECInstanceKeyCR parent, ECInstanceKeyCR holder, Utf8StringCR name, ECClassId infoClassId) :
-m_parent(parent),
-m_holder(holder),
+CachedResponseInfo::CachedResponseInfo(ResponseKey key, ECClassId infoClassId) :
+m_key(key),
 m_infoJson(),
 m_infoClassId(infoClassId)
     {
-    BeAssert(m_parent.IsValid());
-    m_infoJson[CLASS_CachedResponseInfo_PROPERTY_Name] = name;
+    BeAssert(m_key.IsValid());
+    m_infoJson[CLASS_CachedResponseInfo_PROPERTY_Name] = m_key.GetName();
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -65,25 +64,17 @@ JsonValueR CachedResponseInfo::GetJsonData()
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    06/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECInstanceKeyCR CachedResponseInfo::GetParent() const
+ResponseKeyCR CachedResponseInfo::GetKey() const
     {
-    return m_parent;
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Vincas.Razma    03/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECInstanceKeyCR CachedResponseInfo::GetHolder() const
-    {
-    return m_holder;
+    return m_key;
     }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    06/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECInstanceKey CachedResponseInfo::GetKey() const
+CacheNodeKey CachedResponseInfo::GetInfoKey() const
     {
-    return ECInstanceKey(m_infoClassId, ECDbHelper::ECInstanceIdFromJsonInstance(m_infoJson));
+    return CacheNodeKey(m_infoClassId, ECDbHelper::ECInstanceIdFromJsonInstance(m_infoJson));
     }
 
 /*--------------------------------------------------------------------------------------+

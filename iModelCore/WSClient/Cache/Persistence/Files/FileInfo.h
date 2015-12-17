@@ -11,6 +11,7 @@
 #include <WebServices/Cache/Util/ECDbAdapter.h>
 #include <WebServices/Cache/Util/ECSqlStatementCache.h>
 #include "../Changes/ChangeInfo.h"
+#include "../Instances/ObjectInfo.h"
 
 BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 
@@ -27,8 +28,8 @@ struct FileInfo : public ChangeInfo
         static const int TemporaryRootFolderId;
 
     private:
+        CachedInstanceKey m_cachedInstanceKey;
         Json::Value m_externalFileInfoJson;
-        ECInstanceKey m_instanceKey;
         IAbsolutePathProvider* m_pathProvider;
 
     private:
@@ -42,9 +43,11 @@ struct FileInfo : public ChangeInfo
             (
             JsonValueCR cachedFileInfoJson,
             JsonValueCR externalFileInfoJson,
-            ECInstanceKeyCR instanceKey,
+            CachedInstanceKey cachedInstanceKey,
             IAbsolutePathProvider* pathProvider
             );
+
+        bool IsValid() const;
 
         // Get absolute file path
         BeFileName GetFilePath() const;
@@ -60,7 +63,7 @@ struct FileInfo : public ChangeInfo
         DateTime GetFileCacheDate() const;
         void SetFileCacheDate(DateTimeCR utcDate);
 
-        ECInstanceKeyCR GetInstanceKey() const;
+        CachedInstanceKeyCR GetCachedInstanceKey() const;
 
         JsonValueCR GetExternalFileInfoJson() const;
         JsonValueR GetExternalFileInfoJson();

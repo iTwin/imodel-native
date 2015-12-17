@@ -27,8 +27,8 @@ CacheEnvironmentCR environment
 ) :
 m_environment(environment)
     {
-    ECClassCP fileCacheInfoClass = dbAdapter.GetECClass(SCHEMA_CacheSchema, CLASS_FileCacheInfo);
-    ECPropertyCP nameIndexProperty = fileCacheInfoClass->GetPropertyP(CLASS_FileCacheInfo_PROPERTY_LastCachedFileIndex);
+    ECClassCP sequenceClass = dbAdapter.GetECClass(SCHEMA_CacheSchema, CLASS_Sequence);
+    ECPropertyCP nameIndexProperty = sequenceClass->GetPropertyP(CLASS_Sequence_PROPERTY_LastCachedFileIndex);
     m_folderNameIncrementor = std::make_shared<ValueIncrementor>(dbAdapter.GetECDb(), statementCache, *nameIndexProperty);
     }
 

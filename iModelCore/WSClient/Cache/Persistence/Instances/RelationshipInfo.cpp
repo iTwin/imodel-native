@@ -17,65 +17,71 @@ USING_NAMESPACE_BENTLEY_WEBSERVICES
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
 RelationshipInfo::RelationshipInfo() :
-m_relationshipClass(nullptr),
+m_relClass(nullptr),
 m_infoClassId(0)
     {}
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
-RelationshipInfo::RelationshipInfo(JsonValueCR infoJson, ECRelationshipClassCP relationshipClass, ECInstanceId relationshipId, ECClassId infoClassId) :
+RelationshipInfo::RelationshipInfo
+(
+JsonValueCR infoJson,
+ECRelationshipClassCP relationshipClass,
+ECInstanceId relationshipId,
+ECClassId infoClassId
+) :
 ChangeInfo(infoJson),
-m_relationshipClass(relationshipClass),
-m_relationshipKey(relationshipClass->GetId(), relationshipId),
+m_relClass(relationshipClass),
+m_instanceKey(relationshipClass->GetId(), relationshipId),
 m_infoClassId(infoClassId)
     {}
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
-ECInstanceKeyCR RelationshipInfo::GetRelationshipKey() const
+ECInstanceKeyCR RelationshipInfo::GetInstanceKey() const
     {
-    return m_relationshipKey;
+    return m_instanceKey;
     }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
-void RelationshipInfo::SetRelationshipInstanceId(ECInstanceId instanceId)
+void RelationshipInfo::SetInstanceId(ECInstanceId instanceId)
     {
-    m_relationshipKey = ECInstanceKey(m_relationshipKey.GetECClassId(), instanceId);
-    m_infoJson[CLASS_CachedRelationshipInfo_PROPERTY_RelInstanceId] = ECDbHelper::StringFromECInstanceId(instanceId);
+    m_instanceKey = ECInstanceKey(m_instanceKey.GetECClassId(), instanceId);
+    m_infoJson[CLASS_CachedRelationshipInfo_PROPERTY_InstanceId] = ECDbHelper::StringFromECInstanceId(instanceId);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++--------------------------------------------------------------------------------------*/
+CachedInstanceKey RelationshipInfo::GetCachedInstanceKey() const
+    {
+    return CachedInstanceKey(GetInfoKey(), GetInstanceKey());
     }
 
 /*--------------------------------------------------------------------------------------+
 *  @bsimethod                                                   Vincas.Razma    08/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECInstanceKey RelationshipInfo::GetInfoKey() const
+CacheNodeKey RelationshipInfo::GetInfoKey() const
     {
-    return ECInstanceKey(m_infoClassId, ECDbHelper::ECInstanceIdFromJsonInstance(m_infoJson));
+    return CacheNodeKey(m_infoClassId, ECDbHelper::ECInstanceIdFromJsonInstance(m_infoJson));
     }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
-ObjectIdCR RelationshipInfo::GetRelationshipId() const
+ObjectIdCR RelationshipInfo::GetObjectId() const
     {
-    if (m_relationshipId.IsEmpty() && nullptr != m_relationshipClass)
+    if (m_objectId.IsEmpty() && nullptr != m_relClass)
         {
-        m_relationshipId.schemaName = Utf8String(m_relationshipClass->GetSchema().GetName());
-        m_relationshipId.className = Utf8String(m_relationshipClass->GetName());
-        m_relationshipId.remoteId = m_infoJson[CLASS_CachedRelationshipInfo_PROPERTY_RemoteId].asString();
+        m_objectId.schemaName = Utf8String(m_relClass->GetSchema().GetName());
+        m_objectId.className = Utf8String(m_relClass->GetName());
+        m_objectId.remoteId = m_infoJson[CLASS_CachedRelationshipInfo_PROPERTY_RemoteId].asString();
         }
-    return m_relationshipId;
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod
-+--------------------------------------------------------------------------------------*/
-Utf8String RelationshipInfo::GetRemoteId() const
-    {
-    return m_infoJson[CLASS_CachedRelationshipInfo_PROPERTY_RemoteId].asString();
+    return m_objectId;
     }
 
 /*--------------------------------------------------------------------------------------+

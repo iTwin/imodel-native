@@ -791,6 +791,12 @@
     <ClInclude Include="Cache\Persistence\Core\WSCacheState.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Cache\Persistence\Instances\CachedInstanceKey.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Cache\Persistence\Hierarchy\CacheNodeKey.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Xml Include="WSClient.PartFile.xml" />
@@ -804,6 +810,7 @@
     <Xml Include="Cache\Persistence\ECSchemas\MetaSchema.02.00.ecschema.xml" />
     <Xml Include="Cache\Persistence\ECSchemas\DSCacheSchema.01.06.ecschema.xml" />
     <Xml Include="Cache\Persistence\ECSchemas\DSCacheSchema.01.07.ecschema.xml" />
+    <Xml Include="Cache\Persistence\ECSchemas\WSCache.02.00.ecschema.xml" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Connect\Connect.mki" />

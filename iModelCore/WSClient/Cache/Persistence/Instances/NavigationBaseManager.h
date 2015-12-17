@@ -11,6 +11,7 @@
 #include <ECDb/ECDbApi.h>
 #include <WebServices/Cache/Util/ECDbAdapter.h>
 #include <WebServices/Cache/Util/ECSqlStatementCache.h>
+#include "../Hierarchy/CacheNodeKey.h"
 
 BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 
@@ -34,8 +35,8 @@ struct NavigationBaseManager
             ECSqlStatementCache& statementCache
             );
 
-        ECInstanceKey FindNavigationBase();
-        ECInstanceKey FindOrCreateNavigationBase();
+        CacheNodeKey FindNavigationBase();
+        CacheNodeKey FindOrCreateNavigationBase();
     };
 
 END_BENTLEY_WEBSERVICES_NAMESPACE

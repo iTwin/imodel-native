@@ -35,26 +35,34 @@ m_infoClassId(infoClassId)
 /*--------------------------------------------------------------------------------------+
 *  @bsimethod                                                   Vincas.Razma    01/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECInstanceKey ObjectInfo::GetCachedInstanceKey() const
+CachedInstanceKey ObjectInfo::GetCachedInstanceKey() const
     {
-    ECInstanceId ecInstanceId = ECDbHelper::ECInstanceIdFromJsonValue(m_infoJson[CLASS_CachedObjectInfo_PROPERTY_LocalId]);
+    return CachedInstanceKey(GetInfoKey(), GetInstanceKey());
+    }
+
+/*--------------------------------------------------------------------------------------+
+*  @bsimethod                                                   Vincas.Razma    01/2014
++---------------+---------------+---------------+---------------+---------------+------*/
+ECInstanceKey ObjectInfo::GetInstanceKey() const
+    {
+    ECInstanceId ecInstanceId = ECDbHelper::ECInstanceIdFromJsonValue(m_infoJson[CLASS_CachedObjectInfo_PROPERTY_InstanceId]);
     return ECInstanceKey(m_instanceClass ? m_instanceClass->GetId() : 0, ecInstanceId);
     }
 
 /*--------------------------------------------------------------------------------------+
 *  @bsimethod                                                   Vincas.Razma    01/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ObjectInfo::SetCachedInstanceId(ECInstanceId instanceId)
+void ObjectInfo::SetInstanceId(ECInstanceId instanceId)
     {
-    m_infoJson[CLASS_CachedObjectInfo_PROPERTY_LocalId] = ECDbHelper::StringFromECInstanceId(instanceId);
+    m_infoJson[CLASS_CachedObjectInfo_PROPERTY_InstanceId] = ECDbHelper::StringFromECInstanceId(instanceId);
     }
 
 /*--------------------------------------------------------------------------------------+
 *  @bsimethod                                                   Vincas.Razma    08/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECInstanceKey ObjectInfo::GetInfoKey() const
+CachedObjectInfoKey ObjectInfo::GetInfoKey() const
     {
-    return ECInstanceKey(m_infoClassId, ECDbHelper::ECInstanceIdFromJsonInstance(m_infoJson));
+    return CachedObjectInfoKey(m_infoClassId, ECDbHelper::ECInstanceIdFromJsonInstance(m_infoJson));
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -95,22 +103,6 @@ void ObjectInfo::ClearObjectCacheDate()
 void ObjectInfo::SetObjectState(CachedInstanceState state)
     {
     m_infoJson[CLASS_CachedObjectInfo_PROPERTY_InstanceState] = static_cast<int>(state);
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod
-+--------------------------------------------------------------------------------------*/
-ECClassId ObjectInfo::GetECClassId() const
-    {
-    return BeJsonUtilities::Int64FromValue(m_infoJson[CLASS_CachedObjectInfo_PROPERTY_ClassId]);
-    }
-
-/*--------------------------------------------------------------------------------------+
-*  @bsimethod                                                   Vincas.Razma    06/2014
-+---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String ObjectInfo::GetRemoteId() const
-    {
-    return m_infoJson[CLASS_CachedObjectInfo_PROPERTY_RemoteId].asString();
     }
 
 /*--------------------------------------------------------------------------------------+

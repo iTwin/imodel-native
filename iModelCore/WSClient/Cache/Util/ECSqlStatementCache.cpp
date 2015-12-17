@@ -7,6 +7,7 @@
  +--------------------------------------------------------------------------------------*/
 
 #include <WebServices/Cache/Util/ECSqlStatementCache.h>
+#include "../Logging.h"
 
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 
@@ -46,11 +47,13 @@ ECSqlStatementPtr WebServices::ECSqlStatementCache::GetPreparedStatement(Utf8Str
     if (it == m_cache.end())
         {
         statement = std::make_shared<ECSqlStatement>();
-        ECSqlStatus status = statement->Prepare(*m_ecDb, createECSqlCallback().c_str());
+        Utf8String ecsql = createECSqlCallback();
+        ECSqlStatus status = statement->Prepare(*m_ecDb, ecsql.c_str());
 
         if (ECSqlStatus::Success != status)
             {
-            BeAssert(false && "Failed to prepare statement");
+            LOG.errorv("Failed to prepare statement: %s", ecsql.c_str());
+            BeAssert(false);
             return statement;
             }
 

@@ -59,7 +59,7 @@ BentleyStatus ValueIncrementor::IncrementWithoutSaving(Utf8StringR valueOut)
 
         ECSqlStatement statement;
         statement.Prepare(*m_db, ecsql.c_str());
-        if (BE_SQLITE_OK != statement.Step())
+        if (BE_SQLITE_DONE != statement.Step())
             {
             return ERROR;
             }
@@ -84,7 +84,7 @@ BentleyStatus ValueIncrementor::IncrementWithoutSaving(Utf8StringR valueOut)
         });
 
     statement->BindInt64(1, value);
-    if (BE_SQLITE_OK != statement->Step())
+    if (BE_SQLITE_DONE != statement->Step())
         {
         return ERROR;
         }

@@ -30,7 +30,6 @@ m_statementCache(statementCache),
 m_hierarchyManager(hierarchyManager),
 
 m_infoClass(m_dbAdapter.GetECClass(SCHEMA_CacheSchema, CLASS_CachedObjectInfo)),
-m_infoRelationshipClass(m_dbAdapter.GetECRelationshipClass(SCHEMA_CacheSchema, CLASS_CachedObjectInfoToInstance)),
 
 m_infoInserter(m_dbAdapter.GetECDb(), *m_infoClass),
 m_infoUpdater(m_dbAdapter.GetECDb(), *m_infoClass)
@@ -49,7 +48,7 @@ ECClassCP ObjectInfoManager::GetInfoClass() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus ObjectInfoManager::InsertInfo(ObjectInfoR info)
     {
-    if (!info.GetCachedInstanceKey().IsValid())
+    if (!info.GetInstanceKey().IsValid())
         {
         BeAssert(false && "ECInstanceId or ECClassId is not set");
         return ERROR;
@@ -60,10 +59,6 @@ BentleyStatus ObjectInfoManager::InsertInfo(ObjectInfoR info)
         return ERROR;
         }
     if (SUCCESS != m_infoInserter.Get().Insert(info.GetJsonInfo()))
-        {
-        return ERROR;
-        }
-    if (!m_dbAdapter.RelateInstances(m_infoRelationshipClass, info.GetInfoKey(), info.GetCachedInstanceKey()).IsValid())
         {
         return ERROR;
         }
@@ -99,7 +94,6 @@ ObjectInfo ObjectInfoManager::ReadInfo(ObjectIdCR objectId)
         BeAssert(false);
         return ObjectInfo();
         }
-
     return ReadInfo(*ecClass, objectId.remoteId);
     }
 
@@ -112,7 +106,7 @@ ObjectInfo ObjectInfoManager::ReadInfo(ECClassCR ecClass, Utf8StringCR remoteId)
         {
         return
             "SELECT info.* "
-            "FROM ONLY " ECSql_CachedObjectInfoClass " info "
+            "FROM ONLY " ECSql_CachedObjectInfo " info "
             "WHERE info.[" CLASS_CachedObjectInfo_PROPERTY_ClassId "] = ? "
             "  AND info.[" CLASS_CachedObjectInfo_PROPERTY_RemoteId "] = ? "
             "LIMIT 1 ";
@@ -155,9 +149,9 @@ ObjectInfo ObjectInfoManager::ReadInfo(ECInstanceKeyCR instanceKey)
         {
         return
             "SELECT info.* "
-            "FROM ONLY " ECSql_CachedObjectInfoClass " info "
+            "FROM ONLY " ECSql_CachedObjectInfo " info "
             "WHERE info.[" CLASS_CachedObjectInfo_PROPERTY_ClassId "] = ? "
-            "  AND info.[" CLASS_CachedObjectInfo_PROPERTY_LocalId "] = ? "
+            "  AND info.[" CLASS_CachedObjectInfo_PROPERTY_InstanceId "] = ? "
             "LIMIT 1 ";
         });
 
@@ -208,8 +202,8 @@ ECInstanceKey ObjectInfoManager::FindCachedInstance(ECClassCP ecClass, Utf8Strin
     auto statement = m_statementCache.GetPreparedStatement("ObjectInfoManager::FindCachedInstanceByObjectId", [&]
         {
         return
-            "SELECT info.[" CLASS_CachedObjectInfo_PROPERTY_LocalId "] "
-            "FROM ONLY " ECSql_CachedObjectInfoClass " info "
+            "SELECT info.[" CLASS_CachedObjectInfo_PROPERTY_InstanceId "] "
+            "FROM ONLY " ECSql_CachedObjectInfo " info "
             "WHERE info.[" CLASS_CachedObjectInfo_PROPERTY_ClassId "] = ? "
             "  AND info.[" CLASS_CachedObjectInfo_PROPERTY_RemoteId "] = ? "
             "LIMIT 1 ";
@@ -219,12 +213,14 @@ ECInstanceKey ObjectInfoManager::FindCachedInstance(ECClassCP ecClass, Utf8Strin
     statement->BindText(2, remoteId.c_str(), IECSqlBinder::MakeCopy::No);
 
     DbResult status = statement->Step();
-    if (status != BE_SQLITE_ROW)
+
+    ECInstanceId instanceId;
+    if (status == BE_SQLITE_ROW)
         {
-        return ECInstanceKey();
+        instanceId = statement->GetValueId<ECInstanceId>(0);
         }
 
-    return ECInstanceKey(ecClass->GetId(), ECInstanceId(statement->GetValueInt64(0)));
+    return ECInstanceKey(ecClass->GetId(), instanceId);
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -242,9 +238,9 @@ ObjectId ObjectInfoManager::FindCachedInstance(ECInstanceKeyCR instanceKey)
         {
         return
             "SELECT info.[" CLASS_CachedObjectInfo_PROPERTY_RemoteId "] "
-            "FROM ONLY " ECSql_CachedObjectInfoClass " info "
+            "FROM ONLY " ECSql_CachedObjectInfo " info "
             "WHERE info.[" CLASS_CachedObjectInfo_PROPERTY_ClassId "] = ? "
-            "  AND info.[" CLASS_CachedObjectInfo_PROPERTY_LocalId "] = ? "
+            "  AND info.[" CLASS_CachedObjectInfo_PROPERTY_InstanceId "] = ? "
             "LIMIT 1 ";
         });
 
@@ -265,36 +261,65 @@ ObjectId ObjectInfoManager::FindCachedInstance(ECInstanceKeyCR instanceKey)
 +--------------------------------------------------------------------------------------*/
 BentleyStatus ObjectInfoManager::DeleteInstanceLeavingInfo(ObjectInfoR info)
     {
-    if (SUCCESS != m_hierarchyManager.DeleteRelationship(info.GetInfoKey(), info.GetCachedInstanceKey(), m_infoRelationshipClass))
-        {
-        return ERROR;
-        }
-
-    if (SUCCESS != m_hierarchyManager.DeleteInstance(info.GetCachedInstanceKey()))
-        {
-        return ERROR;
-        }
-
-    return SUCCESS;
+    return m_hierarchyManager.DeleteInstance(info.GetInstanceKey());
     }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
-ECInstanceKey ObjectInfoManager::ReadInfoKey(ObjectIdCR objectId)
+CachedObjectInfoKey ObjectInfoManager::ReadInfoKey(ECInstanceKeyCR instanceKey)
     {
-    ECClassCP objectClass = m_dbAdapter.GetECClass(objectId);
-    if (nullptr == objectClass)
-        {
-        return ECInstanceKey();
-        }
-
-    Utf8PrintfString key("ObjectInfoManager::ReadInfoKey");
+    Utf8PrintfString key("ObjectInfoManager::ReadInfoKey:ECInstanceKey");
     auto statement = m_statementCache.GetPreparedStatement(key, [&]
         {
         return
             "SELECT info.ECInstanceId "
-            "FROM ONLY " ECSql_CachedObjectInfoClass " info "
+            "FROM ONLY " ECSql_CachedObjectInfo " info "
+            "WHERE info.[" CLASS_CachedObjectInfo_PROPERTY_ClassId "] = ? "
+            "  AND info.[" CLASS_CachedObjectInfo_PROPERTY_InstanceId "] = ? "
+            "LIMIT 1 ";
+        });
+
+    statement->BindInt64(1, instanceKey.GetECClassId());
+    statement->BindId(2, instanceKey.GetECInstanceId());
+
+    DbResult status = statement->Step();
+    if (status != BE_SQLITE_ROW)
+        {
+        return CachedObjectInfoKey();
+        }
+
+    return CachedObjectInfoKey(m_infoClass->GetId(), statement->GetValueId<ECInstanceId>(0));
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++--------------------------------------------------------------------------------------*/
+CachedInstanceKey ObjectInfoManager::ReadCachedInstanceKey(ECInstanceKeyCR instanceKey)
+    {
+    return CachedInstanceKey(ReadInfoKey(instanceKey), instanceKey);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++--------------------------------------------------------------------------------------*/
+CachedInstanceKey ObjectInfoManager::ReadCachedInstanceKey(ObjectIdCR objectId)
+    {
+    ECClassCP objectClass = m_dbAdapter.GetECClass(objectId);
+    if (nullptr == objectClass)
+        {
+        return CachedInstanceKey();
+        }
+
+    Utf8PrintfString key("ObjectInfoManager::ReadCachedInstanceKey:ObjectId");
+    auto statement = m_statementCache.GetPreparedStatement(key, [&]
+        {
+        return
+            "SELECT "
+            "   info.ECInstanceId, "
+            "   info.[" CLASS_CachedObjectInfo_PROPERTY_ClassId "], "
+            "   info.[" CLASS_CachedObjectInfo_PROPERTY_InstanceId "] "
+            "FROM ONLY " ECSql_CachedObjectInfo " info "
             "WHERE info.[" CLASS_CachedObjectInfo_PROPERTY_ClassId "] = ? "
             "  AND info.[" CLASS_CachedObjectInfo_PROPERTY_RemoteId "] = ? "
             "LIMIT 1 ";
@@ -306,10 +331,163 @@ ECInstanceKey ObjectInfoManager::ReadInfoKey(ObjectIdCR objectId)
     DbResult status = statement->Step();
     if (status != BE_SQLITE_ROW)
         {
-        return ECInstanceKey();
+        return CachedInstanceKey();
         }
 
-    return ECInstanceKey(m_infoClass->GetId(), statement->GetValueId<ECInstanceId>(0));
+    CacheNodeKey infoKey(m_infoClass->GetId(), statement->GetValueId<ECInstanceId>(0));
+    ECInstanceKey instanceKey(statement->GetValueInt64(1), statement->GetValueId<ECInstanceId>(2));
+    return CachedInstanceKey(infoKey, instanceKey);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++--------------------------------------------------------------------------------------*/
+CachedInstanceKey ObjectInfoManager::ReadCachedInstanceKey(CacheNodeKeyCR relatedKey, ECRelationshipClassCR relClass)
+    {
+    ECClassCP relatedClass = m_dbAdapter.GetECClass(relatedKey);
+    if (nullptr == relatedClass)
+        {
+        return CachedInstanceKey();
+        }
+
+    Utf8PrintfString key("ObjectInfoManager::ReadCachedInstanceKey:%lld:%lld", relatedClass->GetId(), relClass.GetId());
+    auto statement = m_statementCache.GetPreparedStatement(key, [&]
+        {
+        return
+            "SELECT "
+            "   info.ECInstanceId, "
+            "   info.[" CLASS_CachedObjectInfo_PROPERTY_ClassId "], "
+            "   info.[" CLASS_CachedObjectInfo_PROPERTY_InstanceId "] "
+            "FROM ONLY " ECSql_CachedObjectInfo " info "
+            "JOIN " + relatedClass->GetECSqlName() + " related USING " + relClass.GetECSqlName() + " "
+            "WHERE related.ECInstanceId = ? "
+            "LIMIT 1 ";
+        });
+
+    statement->BindId(1, relatedKey.GetECInstanceId());
+
+    DbResult status = statement->Step();
+    if (status != BE_SQLITE_ROW)
+        {
+        return CachedInstanceKey();
+        }
+
+    CacheNodeKey infoKey(m_infoClass->GetId(), statement->GetValueId<ECInstanceId>(0));
+    ECInstanceKey instanceKey(statement->GetValueInt64(1), statement->GetValueId<ECInstanceId>(2));
+    return CachedInstanceKey(infoKey, instanceKey);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++--------------------------------------------------------------------------------------*/
+BentleyStatus ObjectInfoManager::ReadCachedInstanceKeys(const ECInstanceKeyMultiMap& infoKeys, ECInstanceKeyMultiMap& instanceKeysOut)
+    {
+    auto statement = m_statementCache.GetPreparedStatement("ObjectInfoManager::ReadCachedInstanceKeys", [&]
+        {
+        return
+            "SELECT info.[" CLASS_CachedObjectInfo_PROPERTY_ClassId "], info.[" CLASS_CachedObjectInfo_PROPERTY_InstanceId "] "
+            "FROM ONLY " ECSql_CachedObjectInfo " info "
+            "WHERE ECInstanceId = ? "
+            "LIMIT 1 ";
+        });
+
+    auto range = infoKeys.equal_range(m_infoClass->GetId());
+    for (auto it = range.first; it != range.second; ++it)
+        {
+        statement->Reset();
+        statement->BindId(1, it->second);
+
+        if (BE_SQLITE_ROW != statement->Step())
+            return ERROR;
+
+        instanceKeysOut.insert({statement->GetValueInt64(0), statement->GetValueId<ECInstanceId>(1)});
+        }
+
+    return SUCCESS;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++--------------------------------------------------------------------------------------*/
+BentleyStatus ObjectInfoManager::ReadCachedInstanceKeys
+(
+CacheNodeKeyCR relatedKey,
+ECRelationshipClassCR relClass,
+ECInstanceKeyMultiMap& instanceKeysOut
+)
+    {
+    ECClassCP relatedClass = m_dbAdapter.GetECClass(relatedKey);
+    if (nullptr == relatedClass)
+        {
+        return ERROR;
+        }
+
+    Utf8PrintfString key("ObjectInfoManager::ReadCachedInstanceKeys:%lld:%lld", relatedClass->GetId(), relClass.GetId());
+    auto statement = m_statementCache.GetPreparedStatement(key, [&]
+        {
+        return
+            "SELECT "
+            "   info.[" CLASS_CachedObjectInfo_PROPERTY_ClassId "], "
+            "   info.[" CLASS_CachedObjectInfo_PROPERTY_InstanceId "] "
+            "FROM ONLY " ECSql_CachedObjectInfo " info "
+            "JOIN " + relatedClass->GetECSqlName() + " related USING " + relClass.GetECSqlName() + " "
+            "WHERE related.ECInstanceId = ? ";
+        });
+
+    statement->BindId(1, relatedKey.GetECInstanceId());
+
+    DbResult status;
+    while (BE_SQLITE_ROW == (status = statement->Step()))
+        {
+        instanceKeysOut.Insert(statement->GetValueId<ECClassId>(0), statement->GetValueId<ECInstanceId>(1));
+        }
+    if (BE_SQLITE_DONE != status)
+        {
+        return ERROR;
+        }
+    return SUCCESS;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++--------------------------------------------------------------------------------------*/
+BentleyStatus ObjectInfoManager::ReadCachedInstanceIds(CacheNodeKeyCR relatedKey, ECRelationshipClassCR relClass, bset<ObjectId>& idsOut)
+    {
+    ECClassCP relatedClass = m_dbAdapter.GetECClass(relatedKey);
+    if (nullptr == relatedClass)
+        {
+        return ERROR;
+        }
+
+    Utf8PrintfString key("ObjectInfoManager::ReadCachedInstanceIds:%lld:%lld", relatedClass->GetId(), relClass.GetId());
+    auto statement = m_statementCache.GetPreparedStatement(key, [&]
+        {
+        return
+            "SELECT "
+            "   info.[" CLASS_CachedObjectInfo_PROPERTY_ClassId "], "
+            "   info.[" CLASS_CachedObjectInfo_PROPERTY_RemoteId "] "
+            "FROM ONLY " ECSql_CachedObjectInfo " info "
+            "JOIN " + relatedClass->GetECSqlName() + " related USING " + relClass.GetECSqlName() + " "
+            "WHERE related.ECInstanceId = ? ";
+        });
+
+    statement->BindId(1, relatedKey.GetECInstanceId());
+
+    DbResult status;
+    while (BE_SQLITE_ROW == (status = statement->Step()))
+        {
+        ECClassCP instanceClass = m_dbAdapter.GetECClass(statement->GetValueId<ECClassId>(0));
+        if (nullptr == instanceClass)
+            {
+            return ERROR;
+            }
+        idsOut.insert(ObjectId(*instanceClass, statement->GetValueText(1)));
+        }
+    if (BE_SQLITE_DONE != status)
+        {
+        return ERROR;
+        }
+    return SUCCESS;
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -317,9 +495,9 @@ ECInstanceKey ObjectInfoManager::ReadInfoKey(ObjectIdCR objectId)
 +--------------------------------------------------------------------------------------*/
 BentleyStatus ObjectInfoManager::RemoveAllCachedInstances()
     {
-    auto statement = m_statementCache.GetPreparedStatement("ObjectInfoManager::RemoveAllCachedInstances-CachedObjects", [&]
+    auto statement = m_statementCache.GetPreparedStatement("ObjectInfoManager::RemoveAllCachedInstances:CachedInstances", [&]
         {
-        return "SELECT infoRel.TargetECClassId, infoRel.TargetECInstanceId FROM ONLY " ECSql_CachedObjectInfoToInstanceClass " infoRel ";
+        return "SELECT info.ClassId, info.InstanceId FROM ONLY " ECSql_CachedObjectInfo " info ";
         });
 
     if (SUCCESS != m_hierarchyManager.DeleteInstances(*statement))
@@ -327,9 +505,9 @@ BentleyStatus ObjectInfoManager::RemoveAllCachedInstances()
         return ERROR;
         }
 
-    statement = m_statementCache.GetPreparedStatement("ObjectInfoManager::RemoveAllCachedInstances-CachedObjectInfos", [&]
+    statement = m_statementCache.GetPreparedStatement("ObjectInfoManager::RemoveAllCachedInstances:ObjectInfos", [&]
         {
-        return "SELECT info.GetECClassId(), info.ECInstanceId FROM ONLY " ECSql_CachedObjectInfoClass " info ";
+        return "SELECT info.GetECClassId(), info.ECInstanceId FROM ONLY " ECSql_CachedObjectInfo " info ";
         });
 
     return m_hierarchyManager.DeleteInstances(*statement);
