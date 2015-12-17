@@ -221,7 +221,6 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
             <ClassHasHandler xmlns="dgn.02.00" />
         </ECCustomAttributes>
         <BaseClass>Model3d</BaseClass>
-        <ECProperty propertyName="ComponentECClass" typeName="string" description="Full ECSql name of ECClass that defines the component"/>
     </ECClass>
     <ECClass typeName="DefinitionModel" isDomainClass="True">
         <ECCustomAttributes>

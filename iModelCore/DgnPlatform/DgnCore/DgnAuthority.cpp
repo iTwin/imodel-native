@@ -591,7 +591,7 @@ DgnAuthority::Code DgnModel::CreateModelCode(Utf8StringCR modelName)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElement::Code ComponentDef::CreateCapturedSolutionCode(Utf8StringCR slnId)
+DgnElement::Code ComponentDef::CreateVariationCode(Utf8StringCR slnId)
     {
     return SystemAuthority::CreateCode(SystemAuthority::Component, slnId, GetName().c_str());
     }

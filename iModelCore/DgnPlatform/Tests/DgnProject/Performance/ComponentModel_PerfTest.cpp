@@ -5,6 +5,7 @@
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
+#ifdef WIP_COMPONENT
 #ifndef BENTLEYCONFIG_NO_JAVASCRIPT
 #include "PerformanceTestFixture.h"
 #include <DgnPlatform/DgnPlatformLib.h>
@@ -444,3 +445,5 @@ TEST_F(ComponentModelPerfTest, PlaceElements_TwentyBoxes)
     };
 
 #endif //ndef BENTLEYCONFIG_NO_JAVASCRIPT
+
+#endif//def WIP_COMPONENT

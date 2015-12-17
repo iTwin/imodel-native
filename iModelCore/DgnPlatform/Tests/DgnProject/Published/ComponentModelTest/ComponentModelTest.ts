@@ -133,16 +133,16 @@ module ComponentModelTest
             makeBox(element, origin, angles, params.A, params.B, params.C);
             element.Insert();
 
-            var gadgetComponentModel = be.ComponentModel.FindModelByName(db, TEST_GADGET_COMPONENT_NAME);
-            var gparams: Gadget.Parameters = { Q: params.A + 1, W: params.B + 1, R: params.C + 1 };
-            var element2 = gadgetComponentModel.MakeInstance(model, "", JSON.stringify(gparams), null);
+            // *** WIP_COMPONENT var gadgetComponentModel = be.ComponentModel.FindModelByName(db, TEST_GADGET_COMPONENT_NAME);
+            // *** WIP_COMPONENT var gparams: Gadget.Parameters = { Q: params.A + 1, W: params.B + 1, R: params.C + 1 };
+            // *** WIP_COMPONENT var element2 = gadgetComponentModel.MakeInstance(model, "", JSON.stringify(gparams), null);
 
             // *** TBD:
             //var gorigin = origin.Plus(new be.DVector3d(1, 0, 0));
             //var gplacement = new be.Placement3d(gorigin, angles);
             //element2.SetPlacement(gplacement);
 
-            element2.Insert();
+            // *** WIP_COMPONENT element2.Insert();
 
             return 0;
         }

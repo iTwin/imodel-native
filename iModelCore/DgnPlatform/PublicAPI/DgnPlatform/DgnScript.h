@@ -78,20 +78,6 @@ struct DgnScript
     @endverbatim
     The \a myModelSolverPublicName parameter must match the name used to register a JavaScript model solver.
 
-    <h2>Specifying a JavaScript model solver in an model solver.</h2>
-    Every DgnModel can have a model solver. To specify a JavaScript model solver, an application must supply a Solver object in the model's CreateParams, and 
-    the Solver object must be set up as follows: type = ModelSolverDef::Type::Script, identifer = full name of the script function in the script library.
-    For example,
-    @verbatim
-    Json::Value parameters(Json::objectValue);
-    ... define parameters, as expected by the solver function ...
-    ModelSolverDef solver(ModelSolverDef::Type::Script, myNamespace.myModelSolverPublicName", parameters);
-    @endverbatim
-
-    Note the use of the ModelSolverDef::Type::Script type. 
-    Also note that the solver identifier "myNamespace.myModelSolverPublicName" must match the string passed to BentleyApi.Dgn.RegisterModelSolver.
-    And, the namespace part of the identifer "myNamespace" must match the identifier of a JavaScript program in the script library.
-
     @param[out] functionReturnStatus    The function's integer return value. 0 means success.
     @param[in] model           The model to validate
     @param[in] jsFunctionName   Identifies the Script function to be executed. Must be of the form namespace.functionname

@@ -12,7 +12,6 @@
 #include "DgnElement.h"
 #include "DgnAuthority.h"
 #include "ECSqlClassParams.h"
-#include "ModelSolverDef.h"
 #include <Bentley/ValueFormat.h>
 #include <DgnPlatform/DgnProperties.h>
 
@@ -934,20 +933,31 @@ struct ComponentDef;
 **//*=======================================================================================*/
 struct EXPORT_VTABLE_ATTRIBUTE ComponentModel : DgnModel3d
 {
+    DEFINE_T_SUPER(DgnModel3d)
+    
     friend struct ComponentDef;
 
 protected:
+    Utf8String m_componentECClass;
+
     DPoint3d _GetGlobalOrigin() const override final {return DPoint3d::FromZero();}
     CoordinateSpace _GetCoordinateSpace() const override final {return CoordinateSpace::Local;}
-    void _GetSolverOptions(Json::Value&) override;
     DgnDbStatus _OnDelete() override;
     //DgnDbStatus _OnUpdate() override;
+    void _InitFrom(DgnModelCR other) override;
+    DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement& statement, ECSqlClassParamsCR params) override;
+    DgnDbStatus _BindInsertParams(BeSQLite::EC::ECSqlStatement& statement) override;
+    DgnDbStatus _BindUpdateParams(BeSQLite::EC::ECSqlStatement& statement) override;
+
+    DgnDbStatus BindInsertAndUpdateParams(BeSQLite::EC::ECSqlStatement& statement);
+
+    ComponentModel(DgnDbR db, DgnModel::Code, Utf8StringCR defName);
 
 public:
-    ComponentModel(CreateParams const& cp) : DgnModel3d(cp) {;}
+    ComponentModel(CreateParams const& params) : DgnModel3d(params) {;} //!< @private
 
-static void OnElementCopied(DgnElementCR outputElement, DgnElementCR sourceElement, DgnCloneContext&);
-static void OnElementImported(DgnElementCR outputElement, DgnElementCR sourceElement, DgnImportContext&);
+static void OnElementCopied(DgnElementCR outputElement, DgnElementCR sourceElement, DgnCloneContext&); //!< @private
+static void OnElementImported(DgnElementCR outputElement, DgnElementCR sourceElement, DgnImportContext&); //!< @private
 };
 
 //=======================================================================================
@@ -967,9 +977,8 @@ struct ComponentDef
 
     DGNPLATFORM_EXPORT DgnDbStatus GenerateGeometry(ECN::IECInstanceCR variationSpec);
  
-    static DgnDbStatus ImportSchema(DgnDbR db, ECN::ECSchemaR schema);
     Utf8String GetGeneratedName() const;
-    DgnElement::Code CreateCapturedSolutionCode(Utf8StringCR slnId);
+    DgnElement::Code CreateVariationCode(Utf8StringCR slnId);
 
     //! Test if the specified code is that of a captured solution element.
     static bool IsCapturedSolutionCode(DgnElement::Code const& icode);
@@ -1016,40 +1025,95 @@ struct ComponentDef
     //! @note This function infers that that parameters to be compared are the properties of \a lhs that are not ECInstanceId and are not NULL.
     DGNPLATFORM_EXPORT static bool HaveEqualParameters(ECN::IECInstanceCR lhs, ECN::IECInstanceCR rhs);
 
-    //! Creates a variation of the component, based on the specified parameters.
+    //! Creates a variation of a component, based on the specified parameters.
     //! @param[out] stat        Optional. If not null and if the variation cannot be computed, then an error code is stored here to explain what happened, as explained below.
     //! @param[in] destModel    The output model, where the variation instance should be stored.
-    //! @param[in] parameters   The parameters that specify the solution
+    //! @param[in] variationParameters  The parameters that specify the solution. Note that the ECClass of this instance also identifies the component.
     //! @param[in] variationName The name of the variation that is to be created in the destModel. This cannot be blank, and it must be unique among all variations for this component.
-    //! @return A handle to the variation instance that was created and persisted in \a destModel. If more than one element was created, the returned element is the parent.
-    //!     * DgnDbStatus::BadRequest - The component's geometry could not be generated, possibly because the values in \a parameters are invalid.
+    //! @return A handle to the variation instance that was created and persisted in \a destModel. If more than one element was created, the returned element is the parent. If the instance
+    //! cannot be created, then this function returns nullptr and sets \a stat to a non-error status. Some of the possible error values include:
+    //!     * DgnDbStatus::WrongClass - \a variationParameters is not an instance of a component definition ECClass.
+    //!     * DgnDbStatus::BadRequest - The component's geometry could not be generated, possibly because the values in \a variationParameters are invalid.
     //!     * DgnDbStatus::DuplicateCode - An element already exists with a name equal to \a variationName
-    //! @see MakeInstance
-    DGNPLATFORM_EXPORT DgnElementCPtr MakeVariation(DgnDbStatus* stat, DgnModelR destModel, ECN::IECInstanceCR parameters, Utf8StringCR variationName);
+    //! @see MakeInstanceOfVariation, MakeSingletonInstance
+    DGNPLATFORM_EXPORT static DgnElementCPtr MakeVariation(DgnDbStatus* stat, DgnModelR destModel, ECN::IECInstanceCR variationParameters, Utf8StringCR variationName);
+
+    //! Look up a variation by name
+    //! @param[in] variationName The name of the variation to look up.
+    //! @return the variation or an invalid handle if not found
+    DGNPLATFORM_EXPORT DgnElementCPtr QueryVariationByName(Utf8StringCR variationName);
 
     //! Make a persistent copy of a specified variation, along with all of its children.
-    //! Call this function if you are sure that you just need a copy of an existing variation.
     //! @param[out] stat        Optional. If not null, then an error code is stored here in case the copy fails. Set to DgnDbStatus::WrongClass if \a variation is not an instance of a component. Otherwise, see ElementCopier for possible error codes.
     //! @param[in] targetModel  The model where the instance is to be inserted
     //! @param[in] variation    The variation instance that is to be copied
+    //! @param[in] parameters   Optional. If not null, then the instance will be made only if the specified parameters match the parameters of the variation.
     //! @param[in] code         Optional. The code to assign to the new instance. If invalid, then a code will be generated by the CodeAuthority associated with this component definition.
-    //! @return the new instance if successful
-    //! @see QuerySolutionByName
-    DGNPLATFORM_EXPORT static DgnElementCPtr MakeInstanceOfVariation(DgnDbStatus* stat, DgnModelR targetModel, DgnElementCR variation, DgnElement::Code const& code = DgnElement::Code());
+    //! @return A handle to the instance that was created and persisted in \a destModel. If more than one element was created, the returned element is the parent. If the instance
+    //! cannot be created, then this function returns nullptr and sets \a stat to a non-error status. Some of the possible error values include:
+    //!     * DgnDbStatus::WrongClass - \a variation is not an instance of a component definition ECClass.
+    //!     * DgnDbStatus::WrongDgnDb - \a variation and \a targetModel must both be in the same DgnDb.
+    //!     * DgnDbStatus::NotFound - \a parameters does not match the parameters of \a variation. Call 
+    DGNPLATFORM_EXPORT static DgnElementCPtr MakeInstanceOfVariation(DgnDbStatus* stat, DgnModelR targetModel, DgnElementCR variation, ECN::IECInstanceCP parameters, DgnElement::Code const& code = DgnElement::Code());
 
-    //! Make a persistent copy of a specified variation or create a unique/singleton instance.
-    //! Call this function if you might need a unique/singleton solution.
-    //! If \a capturedSolutionName is valid and identifies an existing solution \em and if \a parameters matches the captured solution's parameters, then this function calls MakeInstance to make a copy of the captured solution.
-    //! Otherwise, this function calls CaptureSolution to create a unique/singleton solution.
+    //! Make a unique/singleton instance.
     //! @param[out] stat        Optional. If not null, then an error code is stored here in case the creation of the instance fails.
     //! @param[in] targetModel  The model where the instance is to be inserted
-    //! @param[in] variationName    The name of the variation element that is to be copied, if any. Pass the empty string to create a unique/singleton solution.
     //! @param[in] parameters   The parameters that specify the desired variation
     //! @param[in] code         Optional. The code to assign to the new item. If invalid, then a code will be generated by the CodeAuthority associated with this component model
-    //! @return the new instance if successful
-    //! @see QuerySolutionByName
-    DGNPLATFORM_EXPORT DgnElementCPtr MakeInstance(DgnDbStatus* stat, DgnModelR targetModel, Utf8StringCR variationName,
-                                                    ECN::IECInstanceCR parameters, DgnElement::Code const& code = DgnElement::Code());
+    //! @return A handle to the instance that was created and persisted in \a destModel. If more than one element was created, the returned element is the parent. If the instance
+    //! cannot be created, then this function returns nullptr and sets \a stat to a non-error status. Some of the possible error values include:
+    //!     * DgnDbStatus::WrongClass - \a parameters is not an instance of a component definition ECClass.
+    //!     * DgnDbStatus::WrongDgnDb - \a parameters and \a targetModel must both be in the same DgnDb.
+    //!     * DgnDbStatus::BadRequest - The component's geometry could not be generated, possibly because the values in \a parameters are invalid.
+    DGNPLATFORM_EXPORT DgnElementCPtr MakeSingletonInstance(DgnDbStatus* stat, DgnModelR targetModel, ECN::IECInstanceCR parameters, DgnElement::Code const& code = DgnElement::Code());
+};
+
+//=======================================================================================
+//! A helper class that makes it easier to create a ComponentDefinition ECClass
+//=======================================================================================
+struct ComponentDefCreator
+{
+public:
+    struct PropertySpec
+        {
+        Utf8CP name;
+        ECN::PrimitiveType type;
+        bool isTypeParam;
+        PropertySpec(Utf8CP n, ECN::PrimitiveType pt, bool isType) : name(n), type(pt), isTypeParam(isType) {;} 
+        };
+
+private:
+    DgnDbR m_db;
+    ECN::ECSchemaR m_schema;
+    ECN::ECClassCR m_baseClass;
+    Utf8String m_name;
+    Utf8String m_scriptName;
+    Utf8String m_categoryName;
+    Utf8String m_codeAuthorityName;
+    Utf8String m_sandboxName;
+    bvector<PropertySpec> m_propSpecs;
+
+    ECN::IECInstancePtr CreatePropSpecCA();
+    ECN::IECInstancePtr CreateSpecCA();
+
+public:
+    DGNPLATFORM_EXPORT static ECN::ECSchemaPtr GenerateSchema(DgnDbR, Utf8StringCR schemaNameIn);
+
+    DGNPLATFORM_EXPORT static ECN::ECSchemaPtr ImportSchema(DgnDbR db, ECN::ECSchemaCR schemaIn);
+  
+    ComponentDefCreator(DgnDbR db, ECN::ECSchemaR schema, Utf8StringCR name, ECN::ECClassCR baseClass, Utf8StringCR geomgen, Utf8StringCR cat, Utf8StringCR codeauth)
+        :m_db(db), m_schema(schema), m_baseClass(baseClass), m_name(name), m_scriptName(geomgen), m_categoryName(cat), m_codeAuthorityName(codeauth)
+        {
+        m_sandboxName = name;
+        }
+
+    //! Set or clear the sandbox model name. If you clear it, then the component will use a temporary sandbox. It defaults to a permanent sandbox with the same name as the component.
+    void SetSandboxName(Utf8StringCR sbn) {m_sandboxName=sbn;}
+
+    void AddPropertySpec(PropertySpec const& s) {m_propSpecs.push_back(s);}
+
+    DGNPLATFORM_EXPORT ECN::ECClassCP GenerateECClass();
 };
 
 //=======================================================================================
