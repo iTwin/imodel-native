@@ -787,7 +787,6 @@
     <None Include="CachePrewire.mke" />
     <None Include="l10n-WSClient.mke" />
     <None Include="CacheSchemasDelivery.mke" />
-    <None Include="TestAssetsDelivery.mke" />
     <None Include="UnZip.py" />
   </ItemGroup>
 </Project>
