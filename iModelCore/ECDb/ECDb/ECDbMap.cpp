@@ -116,7 +116,7 @@ BentleyStatus ECDbMap::CreateECClassViewsInDb() const
         }
 
     Utf8String sql;
-    sql.Sprintf("SELECT c.Id FROM ec_Class c, ec_ClassMap cm WHERE c.Type IN (%d,%d) AND cm.MapStrategy<>%d", 
+    sql.Sprintf("SELECT c.Id FROM ec_Class c, ec_ClassMap cm WHERE c.Id = cm.ClassId AND c.Type IN (%d,%d) AND cm.MapStrategy<>%d", 
                 Enum::ToInt(ECClassType::Entity),
                 Enum::ToInt(ECClassType::Relationship),
                 Enum::ToInt(ECDbMapStrategy::Strategy::NotMapped));
@@ -130,7 +130,7 @@ BentleyStatus ECDbMap::CreateECClassViewsInDb() const
         {
         ECClassId classId = (ECClassId)stmt.GetValueInt64(0);
         ClassMapCP classMap = GetClassMapCP(classId);
-        BeAssert(classMap != nullptr);
+        BeAssert(classMap != nullptr && (classMap->GetClass().IsEntityClass() || classMap->GetClass().IsRelationshipClass()) && classMap->GetClassMapType() != IClassMap::Type::Unmapped);
         if (classMap != nullptr)
             classMaps.push_back(classMap);
         }
