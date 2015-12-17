@@ -433,7 +433,7 @@ bool SchemaXmlReader3::ReadClassNode(ECClassP &ecClass, BeXmlNodeR classNode, EC
     if (nullptr == ecClass)
         return false;
 
-    Utf8String modifierStr = false;
+    Utf8String modifierStr;
     ECClassModifier modifier;
     if (BEXML_Success == classNode.GetAttributeStringValue(modifierStr, MODIFIER_ATTRIBUTE))
         {
