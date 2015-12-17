@@ -128,7 +128,7 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <NMakeOutput>$(OutRoot)Winx86\product\ECDb-Gtest\ECDbTest.exe</NMakeOutput>
+    <NMakeOutput>$(OutRoot)Winx64\product\ECDb-Gtest\ECDbTest.exe</NMakeOutput>
     <NMakePreprocessorDefinitions>WIN32;_DEBUG;BENTLEY_WIN32;$(NMakePreprocessorDefinitions);BENTLEY_WIN32;BENTLEY_WIN32</NMakePreprocessorDefinitions>
     <NMakeBuildCommandLine>python.exe $(SrcRoot)bsicommon\build\BentleyBuild.py -v4  re GUnitTests_*DgnDb BeGTestExe</NMakeBuildCommandLine>
     <NMakeReBuildCommandLine>python.exe $(SrcRoot)bsicommon\build\BentleyBuild.py -v4 rebuild GUnitTests_*DgnDb BeGTestExe -c &amp; python.exe $(SrcRoot)bsicommon\build\BentleyBuild.py -v4 rebuild GUnitTests_*DgnDb BeGTestExe</NMakeReBuildCommandLine>

@@ -116,7 +116,10 @@ BentleyStatus ECDbMap::CreateECClassViewsInDb() const
         }
 
     Utf8String sql;
-    sql.Sprintf("SELECT ClassId FROM ec_ClassMap WHERE MapStrategy<>%d", Enum::ToInt(ECDbMapStrategy::Strategy::NotMapped));
+    sql.Sprintf("SELECT c.Id FROM ec_Class c, ec_ClassMap cm WHERE c.Type IN (%d,%d) AND cm.MapStrategy<>%d", 
+                Enum::ToInt(ECClassType::Entity),
+                Enum::ToInt(ECClassType::Relationship),
+                Enum::ToInt(ECDbMapStrategy::Strategy::NotMapped));
     
     Statement stmt;
     if (BE_SQLITE_OK != stmt.Prepare(GetECDb(), sql.c_str()))
