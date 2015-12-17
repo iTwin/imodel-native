@@ -52,6 +52,9 @@ ECInstanceKey FindRelationship(
 
 int CountClassInstances(IDataSourceCache& ds, Utf8StringCR classKey);
 
+Json::Value ReadInstance(IDataSourceCache& ds, ECInstanceKeyCR key);
+Json::Value ReadModifiedProperties(IDataSourceCache& ds, ECInstanceKeyCR key);
+
 ICachingDataSource::ObjectsResult StubObjectsResult(
     JsonValueCR jsonInstances = Json::arrayValue,
     ICachingDataSource::DataOrigin origin = ICachingDataSource::DataOrigin::CachedData);

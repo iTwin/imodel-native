@@ -1921,6 +1921,28 @@ TEST_F(ChangeManagerTests, CommitInstanceRevision_ModifiedObject_RemovesChangeSt
     EXPECT_EQ(IChangeManager::ChangeStatus::NoChange, cache->GetChangeManager().GetObjectChange(instance).GetChangeStatus());
     }
 
+TEST_F(ChangeManagerTests, CommitInstanceRevision_MultipleModifiedObjects_CommitsOnlySpecified)
+    {
+    // Arrange
+    auto cache = GetTestCache();
+    auto a = StubInstanceInCache(*cache, {"TestSchema.TestClass", "A"}, {{"TestProperty", "A"}});
+    auto b = StubInstanceInCache(*cache, {"TestSchema.TestClass", "B"}, {{"TestProperty", "B"}});
+    auto c = StubInstanceInCache(*cache, {"TestSchema.TestClass", "C"}, {{"TestProperty", "C"}});
+    ASSERT_EQ(SUCCESS, cache->GetChangeManager().ModifyObject(a, ToJson(R"({"TestProperty":"A"})")));
+    ASSERT_EQ(SUCCESS, cache->GetChangeManager().ModifyObject(b, ToJson(R"({"TestProperty":"B"})")));
+    ASSERT_EQ(SUCCESS, cache->GetChangeManager().ModifyObject(c, ToJson(R"({"TestProperty":"C"})")));
+
+    EXPECT_EQ(Json::Value::null, ReadModifiedProperties(*cache, a)["TestProperty"]);
+    EXPECT_EQ(Json::Value::null, ReadModifiedProperties(*cache, b)["TestProperty"]);
+    EXPECT_EQ(Json::Value::null, ReadModifiedProperties(*cache, c)["TestProperty"]);
+    // Act
+    auto revision = cache->GetChangeManager().ReadInstanceRevision(b);
+    ASSERT_EQ(SUCCESS, cache->GetChangeManager().CommitInstanceRevision(*revision));
+    // Assert
+    EXPECT_EQ(Json::Value::null, ReadModifiedProperties(*cache, a)["TestProperty"]);
+    EXPECT_EQ(Json::Value::null, ReadModifiedProperties(*cache, c)["TestProperty"]);
+    }
+
 TEST_F(ChangeManagerTests, CommitInstanceRevision_DeletedObject_RemovesChangeStatus)
     {
     // Arrange
@@ -2299,6 +2321,22 @@ TEST_F(ChangeManagerTests, ReadModifiedProperties_ModifiedPropertyInstance_Retur
     EXPECT_EQ(expected, modifiedProperties);
     }
 
+TEST_F(ChangeManagerTests, ReadModifiedProperties_MultipleModifiedInstancesWithSameValues_ReturnsNoChanges)
+    {
+    // Arrange
+    auto cache = GetTestCache();
+    auto a = StubInstanceInCache(*cache, {"TestSchema.TestClass", "A"}, {{"TestProperty", "A"}});
+    auto b = StubInstanceInCache(*cache, {"TestSchema.TestClass", "B"}, {{"TestProperty", "B"}});
+    ASSERT_EQ(SUCCESS, cache->GetChangeManager().ModifyObject(a, ToJson(R"({"TestProperty":"A"})")));
+    ASSERT_EQ(SUCCESS, cache->GetChangeManager().ModifyObject(b, ToJson(R"({"TestProperty":"B"})")));
+    // Assert
+    Json::Value ca, cb;
+    ASSERT_EQ(SUCCESS, cache->GetChangeManager().ReadModifiedProperties(a, ca));
+    ASSERT_EQ(SUCCESS, cache->GetChangeManager().ReadModifiedProperties(b, cb));
+    EXPECT_EQ(Json::Value::null, ca["TestProperty"]);
+    EXPECT_EQ(Json::Value::null, cb["TestProperty"]);
+    }
+
 TEST_F(ChangeManagerTests, ReadModifiedProperties_ModifiedProperty2Instance_ReturnsChangedPropertiesOnly)
     {
     auto cache = GetTestCache();
@@ -2505,6 +2543,24 @@ TEST_F(ChangeManagerTests, RevertModifiedObject_ModifiedInstance_RevertsToCached
     cache->GetAdapter().GetJsonInstance(properties, instance);
     EXPECT_EQ("A", properties["TestProperty"].asString());
     EXPECT_EQ("B", properties["TestProperty2"].asString());
+    }
+
+TEST_F(ChangeManagerTests, RevertModifiedObject_MultipleModifiedObjects_RemovesChangeForSpecifiedObjectOnly)
+    {
+    // Arrange
+    auto cache = GetTestCache();
+    auto a = StubInstanceInCache(*cache, {"TestSchema.TestClass", "A"}, {{"TestProperty", "OldA"}});
+    auto b = StubInstanceInCache(*cache, {"TestSchema.TestClass", "B"}, {{"TestProperty", "OldB"}});
+    auto c = StubInstanceInCache(*cache, {"TestSchema.TestClass", "C"}, {{"TestProperty", "OldC"}});
+    ASSERT_EQ(SUCCESS, cache->GetChangeManager().ModifyObject(a, ToJson(R"({"TestProperty":"NewA"})")));
+    ASSERT_EQ(SUCCESS, cache->GetChangeManager().ModifyObject(b, ToJson(R"({"TestProperty":"NewB"})")));
+    ASSERT_EQ(SUCCESS, cache->GetChangeManager().ModifyObject(c, ToJson(R"({"TestProperty":"NewC"})")));
+    // Act
+    ASSERT_EQ(SUCCESS, cache->GetChangeManager().RevertModifiedObject(b));
+    // Assert
+    EXPECT_EQ("NewA", ReadInstance(*cache, a)["TestProperty"].asString());
+    EXPECT_EQ("OldB", ReadInstance(*cache, b)["TestProperty"].asString());
+    EXPECT_EQ("NewC", ReadInstance(*cache, c)["TestProperty"].asString());
     }
 
 TEST_F(ChangeManagerTests, RevertModifiedObject_ModifiedInstanceAndSyncActive_Error)
