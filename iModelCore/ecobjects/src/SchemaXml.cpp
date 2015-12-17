@@ -352,7 +352,7 @@ bool SchemaXmlReader2::ReadClassNode(ECClassP &ecClass, BeXmlNodeR classNode, EC
             classNode.GetAttributeStringValue(className, TYPE_NAME_ATTRIBUTE);
             if (className.CompareTo("TransformationValueMap") != 0)
                 {
-                LOG.errorv("Class %s in Schema %s is marked as both Struct and CustomAttribute.  This is not allowed.", className.c_str(), schemaOut->GetFullSchemaName().c_str());
+                LOG.warningv("Class %s in Schema %s is marked as both Struct and CustomAttribute.  This is not allowed.", className.c_str(), schemaOut->GetFullSchemaName().c_str());
                 //return SchemaReadStatus::InvalidECSchemaXml;
                 }
             }

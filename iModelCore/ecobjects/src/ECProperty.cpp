@@ -336,13 +336,13 @@ SchemaReadStatus ECProperty::_ReadXml (BeXmlNodeR propertyNode, ECSchemaReadCont
 +---------------+---------------+---------------+---------------+---------------+------*/
 SchemaWriteStatus ECProperty::_WriteXml (BeXmlWriterR xmlWriter, int ecXmlVersionMajor, int ecXmlVersionMinor)
     {
-    return _WriteXml (xmlWriter, EC_PROPERTY_ELEMENT);
+    return _WriteXml (xmlWriter, EC_PROPERTY_ELEMENT, ecXmlVersionMajor);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaWriteStatus ECProperty::_WriteXml (BeXmlWriterR xmlWriter, Utf8CP elementName, bmap<Utf8CP, CharCP>* additionalAttributes, bool writeType)
+SchemaWriteStatus ECProperty::_WriteXml (BeXmlWriterR xmlWriter, Utf8CP elementName, int ecXmlVersionMajor, bmap<Utf8CP, CharCP>* additionalAttributes, bool writeType)
     {
     SchemaWriteStatus status = SchemaWriteStatus::Success;
 
@@ -359,7 +359,7 @@ SchemaWriteStatus ECProperty::_WriteXml (BeXmlWriterR xmlWriter, Utf8CP elementN
         if (m_originalTypeName.size() > 0 && !m_originalTypeName.Contains("GeometryNET"))
             xmlWriter.WriteAttribute(TYPE_NAME_ATTRIBUTE, m_originalTypeName.c_str());
         else
-            xmlWriter.WriteAttribute(TYPE_NAME_ATTRIBUTE, this->GetTypeName().c_str());
+            xmlWriter.WriteAttribute(TYPE_NAME_ATTRIBUTE, this->_GetTypeNameForXml(ecXmlVersionMajor).c_str());
         }
 
     xmlWriter.WriteAttribute(DESCRIPTION_ATTRIBUTE, this->GetInvariantDescription().c_str());
@@ -438,6 +438,14 @@ Utf8String PrimitiveECProperty::_GetTypeName () const
         return ECXml::GetPrimitiveTypeName (m_primitiveType);
 
     return ECEnumeration::GetQualifiedEnumerationName(this->GetClass().GetSchema(), *m_enumeration);
+    }
+
+Utf8String PrimitiveECProperty::_GetTypeNameForXml(int ecXmlVersionMajor) const
+    {
+    if (ecXmlVersionMajor <= 2 && m_enumeration != nullptr)
+        return m_enumeration->GetTypeName();
+
+    return GetTypeName();
     }
 
 ECObjectsStatus ResolveEnumerationType(ECEnumerationCP& enumeration, Utf8StringCR typeName, ECSchemaCR parentSchema)
@@ -669,7 +677,7 @@ SchemaReadStatus StructECProperty::_ReadXml (BeXmlNodeR propertyNode, ECSchemaRe
 +---------------+---------------+---------------+---------------+---------------+------*/
 SchemaWriteStatus StructECProperty::_WriteXml (BeXmlWriterR xmlWriter, int ecXmlVersionMajor, int ecXmlVersionMinor)
     {
-    return T_Super::_WriteXml (xmlWriter, EC_STRUCTPROPERTY_ELEMENT);
+    return T_Super::_WriteXml (xmlWriter, EC_STRUCTPROPERTY_ELEMENT, ecXmlVersionMajor);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -853,7 +861,7 @@ SchemaWriteStatus ArrayECProperty::_WriteXml (BeXmlWriterR xmlWriter, int ecXmlV
             elementName = EC_STRUCTARRAYPROPERTY_ELEMENT;
         }
 
-    SchemaWriteStatus status = T_Super::_WriteXml (xmlWriter, elementName, &additionalAttributes);
+    SchemaWriteStatus status = T_Super::_WriteXml (xmlWriter, elementName, ecXmlVersionMajor, &additionalAttributes);
     if (status != SchemaWriteStatus::Success || m_forSupplementation) // If this property was created during supplementation, don't serialize it
         return status;
         
@@ -1249,13 +1257,13 @@ SchemaReadStatus NavigationECProperty::_ReadXml(BeXmlNodeR propertyNode, ECSchem
 SchemaWriteStatus NavigationECProperty::_WriteXml(BeXmlWriterR xmlWriter, int ecXmlVersionMajor, int ecXmlVersionMinor)
     {
     if (2 == ecXmlVersionMajor)
-        return T_Super::_WriteXml(xmlWriter, EC_PROPERTY_ELEMENT);
+        return T_Super::_WriteXml(xmlWriter, EC_PROPERTY_ELEMENT, ecXmlVersionMajor);
 
     bmap<Utf8CP, CharCP> additionalAttributes;
     additionalAttributes[RELATIONSHIP_NAME_ATTRIBUTE] = GetRelationshipClassName().c_str();
     additionalAttributes[DIRECTION_ATTRIBUTE] = ECXml::DirectionToString(m_direction);
 
-    return T_Super::_WriteXml(xmlWriter, EC_NAVIGATIONPROPERTY_ELEMENT, &additionalAttributes, false);
+    return T_Super::_WriteXml(xmlWriter, EC_NAVIGATIONPROPERTY_ELEMENT, ecXmlVersionMajor, &additionalAttributes, false);
     }
 
 //---------------------------------------------------------------------------------------
