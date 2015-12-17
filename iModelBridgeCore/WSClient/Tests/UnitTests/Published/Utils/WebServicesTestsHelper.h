@@ -10,6 +10,7 @@
 #include "WebServicesUnitTests.h"
 
 #include <Bentley/BeDebugLog.h>
+#include <Bentley/BeTimeUtilities.h>
 #include <WebServices/Client/WSError.h>
 #include <WebServices/Client/WSRepositoryClient.h>
 #include <WebServices/Client/WSChangeset.h>

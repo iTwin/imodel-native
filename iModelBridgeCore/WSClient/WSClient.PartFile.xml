@@ -386,4 +386,15 @@
         <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
     </Part>
 
+    <!-- //////////////////////////////////////////////////////////////////////////// -->
+    <!-- // Integration Tests - used for debugging                                 // -->
+    <!-- //////////////////////////////////////////////////////////////////////////// -->
+
+    <Part Name="WSClientIntegrationTests" BentleyBuildMakeFile="Tests/IntegrationTests/IntegrationTests.mke">
+        <SubPart PartName="WebServicesClient" />
+        <SubPart PartName="WebServicesCache" />
+        <SubPart PartName="google_gtest_lib" PartFile="gtest" Repository="util-gtest" />
+        <SubPart PartName="google_gmock_lib" PartFile="gmock" Repository="util-gmock" />
+    </Part>
+
 </BuildContext>
