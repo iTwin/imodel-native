@@ -38,6 +38,8 @@ QueryViewController::QueryViewController(DgnDbR dgndb, DgnViewId id) : CameraVie
 +---------------+---------------+---------------+---------------+---------------+------*/
 QueryViewController::~QueryViewController()
     {
+    m_queryModel.RequestAbort(true);
+    BeAssert(m_queryModel.IsIdle());
     delete &m_queryModel;
     }
 
@@ -216,6 +218,8 @@ void QueryViewController::StartSelectProcessing(DgnViewportR viewport, DrawPurpo
 
     m_startQueryFrustum = viewport.GetFrustum(DgnCoordSystem::World, true);
     m_saveQueryFrustum.Invalidate();
+
+    m_forceNewQuery = false;
 
     m_queryModel.GetDgnDb().QueryModels().RequestProcessing(
         QueryModel::Processor::Params(m_queryModel, viewport, _GetRTreeMatchSql(viewport), hitLimit, GetMaxElementMemory(), minimumPixels,
