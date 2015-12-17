@@ -726,28 +726,36 @@ uint32_t QueryViewController::GetMaxElementsToLoad(DgnViewportCR vp)
 int32_t QueryViewController::_GetMaxElementFactor(DgnViewportCR vp)
     {
     // NEEDSWORK: We will undoubtedly need to tweak this quite a bit to get good results
-    // Want to reduce the number of elements we load when framerate is low, and increase when framerate is high
-    static const double s_targetFrameRate = 30.0;
-    static const double s_minFrameRate = 10.0;
-    static const double s_spread = s_targetFrameRate - s_minFrameRate;
+    // Want to reduce the number of elements we load when queries take a long time to complete, and increase it
+    // when queries are completing quickly
 
-    auto target = vp.GetRenderTarget();
-    double lastFrameMillis = nullptr != target ? static_cast<double>(target->GetLastFrameMillis()) : 0.0;
-    if (0.0 == lastFrameMillis)
-        return 0; // no adjustment...
+    // Note this does not currently take render time into account. The number of elements appears to affect query time far more than
+    // render ("draw frame") time.
+    // The time spent creating the scene from the set of elements returned by the query is not currently tracked.
 
-    double lastFrameSeconds = lastFrameMillis / 1000.0;
-    if (nullptr != m_queryModel.GetCurrentResults())
-        lastFrameSeconds += m_queryModel.GetCurrentResults()->GetElapsedSeconds();
+    // How many queries do we want to be able to complete per second
+    static const double s_acceptableQueriesPerSecond = 30.0;
+    // Elapsed query time required to satisfy QPS
+    static const double s_acceptableQueryTime = 1.0 / s_acceptableQueriesPerSecond;
+    // Reduce pop-in/out of elements due to small fluctuations in query time
+    static const int32_t s_granularity = 5;
 
-    double fps = std::max(1.0 / lastFrameSeconds, s_minFrameRate);
+    auto results = m_queryModel.GetCurrentResults();
+    double lastQueryTime = nullptr != results ? results->GetElapsedSeconds() : 0.0;
+    if (0.0 == lastQueryTime)
+        return 100;
 
-    double diff = fps - s_targetFrameRate;
-    double factor = (100.0 / s_spread) * diff;
+    double qps = std::max(1.0 / lastQueryTime, 0.0);
+
+    double diff = qps - s_acceptableQueriesPerSecond;
+    double factor = (100.0 / s_acceptableQueriesPerSecond) * diff;
+
+    int32_t iFactor = (static_cast<int32_t>(factor) / s_granularity) * s_granularity;
 
 #if defined (TRACE_QUERY_LOGIC)
-    printf("QVC: MaxElementFactor: %d (LastFrameSeconds: %f) (FPS: %f)\n", static_cast<int32_t>(factor), lastFrameSeconds, fps);
+    printf("QVC: MaxElementFactor: %d (LastQueryTime: %f) (QPS: %f)\n", static_cast<int32_t>(iFactor), lastQueryTime, qps);
 #endif
-    return static_cast<int32_t>(factor);
+
+    return iFactor;
     }
 
