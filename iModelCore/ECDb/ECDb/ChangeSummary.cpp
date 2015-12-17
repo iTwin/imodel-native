@@ -1145,10 +1145,17 @@ BentleyStatus ChangeExtractor::ExtractFromSqlChange(SqlChangeCR sqlChange, Extra
 
     BeAssert(tableType == TableType::Primary || tableType == TableType::Existing || tableType == TableType::Joined);
 
-    if (m_extractOption == ExtractOption::InstancesOnly)
+    if (m_extractOption == ExtractOption::InstancesOnly && !primaryClassMap->IsRelationshipClassMap())
+        {
         ExtractInstance(*primaryClassMap, primaryInstanceId);
-    else if (m_extractOption == ExtractOption::RelationshipInstancesOnly)
+        return SUCCESS;
+        }
+        
+    if (m_extractOption == ExtractOption::RelationshipInstancesOnly)
+        {
         ExtractRelInstance(*primaryClassMap, primaryInstanceId);
+        return SUCCESS;
+        }
 
     return SUCCESS;
     }
