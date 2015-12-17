@@ -1,0 +1,16 @@
+#--------------------------------------------------------------------------------------
+#
+#     $Source: Tests/UnitTests/dependencies.mki $
+#
+#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------
+
+# Seed files for tests
+BEGTEST_ASSETS     + $(BuildContext)WSClientTestAssets/
+
+# Assets needed by MobileDgn unit tests
+BEGTEST_ASSETS     + $(BuildContext)SubParts/ECSchemas/
+
+# Required xliff files
+BEGTEST_XLIFFS     + $[@wildcard $(BuildContext)SubParts/xliffs/*.xliff]
