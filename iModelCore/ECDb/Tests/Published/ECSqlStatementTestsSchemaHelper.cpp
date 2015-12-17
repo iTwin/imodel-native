@@ -164,6 +164,7 @@ void ECSqlStatementTestsSchemaHelper::Populate (BeSQLite::EC::ECDbR ecdb)
     StandaloneECInstancePtr customerInstance1 = customerClass->GetDefaultStandaloneEnabler ()->CreateInstance ();
     StandaloneECInstancePtr customerInstance2 = customerClass->GetDefaultStandaloneEnabler ()->CreateInstance ();
     StandaloneECInstancePtr customerInstance3 = customerClass->GetDefaultStandaloneEnabler ()->CreateInstance ();
+    StandaloneECInstancePtr customerInstance4 = customerClass->GetDefaultStandaloneEnabler ()->CreateInstance ();
 
     arrayContactDetails.clear ();
     arrayContactDetails.push_back (contactInstance1);
@@ -183,11 +184,18 @@ void ECSqlStatementTestsSchemaHelper::Populate (BeSQLite::EC::ECDbR ecdb)
     arrayContactDetails.push_back (contactInstance8);
     setCustomerValues (customerInstance3, 1600, "SAN JOSE", "USA", "3-2-7 ETCHUJMA, KOTO-KU", "A.D.M", "Bryceson", "Adm", "HIJ", true, arrayContactDetails);
 
+    arrayContactDetails.clear ();
+    arrayContactDetails.push_back (contactInstance1);
+    arrayContactDetails.push_back (contactInstance4);
+    arrayContactDetails.push_back (contactInstance8);
+    setCustomerValues (customerInstance4, 1700, "ALASKA", "USA", "5063 ETCHUJMA, KT-KU", "A.D.M", "Bryceson", "AM", "KLM", true, arrayContactDetails);
+
     BeSQLite::EC::ECInstanceInserter customerInserter (ecdb, *customerClass);
     ASSERT_TRUE (customerInserter.IsValid ());
     ASSERT_EQ (SUCCESS, customerInserter.Insert (*customerInstance1));
     ASSERT_EQ (SUCCESS, customerInserter.Insert (*customerInstance2));
     ASSERT_EQ (SUCCESS, customerInserter.Insert (*customerInstance3));
+    ASSERT_EQ (SUCCESS, customerInserter.Insert (*customerInstance4));
 
     //Create and Insert instance of Class Order
     ECClassCP orderClass = ecdb.Schemas ().GetECClass ("ECSqlStatementTests", "Order");
