@@ -14,45 +14,37 @@
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
+
+
 //=======================================================================================
 // @bsiclass                                                    Eariln.Lutz     08/15
 //=======================================================================================
-struct JsCurvePrimitive: RefCountedBase
+struct JsCurvePrimitive: JsGeometry
 {
-private:
+
+protected :
     ICurvePrimitivePtr m_curvePrimitive;
+
+    void Set (ICurvePrimitivePtr const &curvePrimitive)
+        {
+        m_curvePrimitive = curvePrimitive;
+        }
 public:
     JsCurvePrimitive () {}
-
     JsCurvePrimitive (ICurvePrimitivePtr curvePrimitive) : m_curvePrimitive (curvePrimitive) {}
+    virtual JsCurvePrimitiveP Clone () override {return new JsCurvePrimitive (m_curvePrimitive->Clone ());} 
+    virtual ICurvePrimitivePtr GetICurvePrimitivePtr () override {return m_curvePrimitive;}
 
-    static JsCurvePrimitiveP CreateLineSegment (JsDSegment3dP data)
-        {
-        ICurvePrimitivePtr cp = ICurvePrimitive::CreateLine (data->Get ());
-        return new JsCurvePrimitive (cp);
-        }
-    
-    static JsCurvePrimitiveP CreateEllipticArc (JsDEllipse3dP data)
-        {
-        ICurvePrimitivePtr cp = ICurvePrimitive::CreateArc (data->Get ());
-        return new JsCurvePrimitive (cp);
-        }
+    // Return the native ICurvePrimitive wrapped as the strongest Js type possible.
+    // optionally let child CurveVector return as (true,false)==>(nullptr, JsCurvePrimitive)
+    static JsCurvePrimitiveP StronglyTypedJsCurvePrimitive (ICurvePrimitivePtr &data, bool nullifyCurveVector);
+
 
     static JsCurvePrimitiveP CreateLineString (JsDPoint3dArrayP data)
         {
         ICurvePrimitivePtr cp = ICurvePrimitive::CreateLineString (data->GetRef ());
         return new JsCurvePrimitive (cp);
         }
-
-    static JsCurvePrimitiveP CreateBsplineCurve (JsBsplineCurveP data)
-        {
-        ICurvePrimitivePtr cp = ICurvePrimitive::CreateBsplineCurve (*data->Get ());
-        if (cp.IsValid ())
-            return new JsCurvePrimitive (cp);
-        return nullptr;
-        }
-
-    JsCurvePrimitiveP Clone () {return new JsCurvePrimitive (m_curvePrimitive->Clone ());} 
 
     double CurvePrimitiveType (){return (double)(int)m_curvePrimitive->GetCurvePrimitiveType ();}
     JsDPoint3dP PointAtFraction (double f)
@@ -74,6 +66,108 @@ public:
             return new JsDRay3d (xyz, derivative1);
             }
         return nullptr;
+        }
+
+    JsDRange3dP Range ()
+        {
+        DRange3d range;
+        m_curvePrimitive->GetRange (range);
+        return new JsDRange3d (range);
+        }
+};
+
+struct JsLineSegment : JsCurvePrimitive
+{
+public:
+    JsLineSegment () {}
+    JsLineSegment (ICurvePrimitivePtr const &data) {Set (data);}
+    JsLineSegment (JsDPoint3dP pointA, JsDPoint3dP pointB)
+        {
+        ICurvePrimitivePtr cp = ICurvePrimitive::CreateLine (DSegment3d::From (pointA->Get (), pointB->Get ()));
+        Set (cp);
+        }
+    virtual JsLineSegment * Clone () override {return new JsLineSegment (m_curvePrimitive->Clone ());}
+
+};
+
+struct JsEllipticArc: JsCurvePrimitive
+{
+public:
+    JsEllipticArc () {}
+    JsEllipticArc (ICurvePrimitivePtr const &data) {Set (data);}
+    JsEllipticArc (JsDPoint3dP center, JsDVector3dP vector0, JsDVector3dP vector90, JsAngleP startAngle, JsAngleP sweepAngle)
+        {
+        ICurvePrimitivePtr cp = ICurvePrimitive::CreateArc 
+            (DEllipse3d::FromVectors (center->Get (), vector0->Get (), vector90->Get (), startAngle->GetRadians (), sweepAngle->GetRadians ()));
+        Set(cp);
+        }
+
+    virtual JsEllipticArc * Clone () override {return new JsEllipticArc (m_curvePrimitive->Clone ());}
+
+JsDPoint3d * GetCenter()
+    {
+    DEllipse3d data;
+    return m_curvePrimitive->TryGetArc (data) ? new JsDPoint3d (data.center) : nullptr;
+    }
+
+JsDVector3d * GetVector0()
+    {
+    DEllipse3d data;
+    return m_curvePrimitive->TryGetArc (data) ? new JsDVector3d (data.vector0) : nullptr;
+    }
+JsDVector3d * GetVector90()
+    {
+    DEllipse3d data;
+    return m_curvePrimitive->TryGetArc (data) ? new JsDVector3d (data.vector90) : nullptr;
+    }
+JsAngle * GetStartAngle ()
+    {
+    DEllipse3d data;
+    return m_curvePrimitive->TryGetArc (data) ? new JsAngle (AngleInDegrees::FromRadians (data.start)) : nullptr;
+    }
+JsAngle * GetSweepAngle ()
+    {
+    DEllipse3d data;
+    return m_curvePrimitive->TryGetArc (data) ? new JsAngle (AngleInDegrees::FromRadians (data.sweep)) : nullptr;
+    }
+};
+
+
+
+//=======================================================================================
+// @bsiclass                                                    Eariln.Lutz     08/15
+//=======================================================================================
+struct JsBsplineCurve: JsCurvePrimitive
+{
+private:
+public:
+    JsBsplineCurve () {}
+    JsBsplineCurve (ICurvePrimitivePtr const &data) {Set (data);}
+    virtual JsBsplineCurve * Clone () override {return new JsBsplineCurve (m_curvePrimitive->Clone ());}
+
+    static JsBsplineCurve * CreateFromPoles (JsDPoint3dArrayP xyz, 
+        JsDoubleArrayP weights, JsDoubleArrayP knots,
+        double order, bool closed, bool preWeighted)
+        {
+        MSBsplineCurvePtr bcurve = MSBsplineCurve::CreateFromPolesAndOrder (
+                            xyz->GetRef (),
+                            weights == nullptr ? nullptr : &weights->GetRef (),
+                            knots   == nullptr ? nullptr : &knots->GetRef (),
+                            (int)order,
+                            closed,
+                            preWeighted
+                            );
+        if (bcurve.IsValid ())
+            {
+            auto bcurvePrimitive = ICurvePrimitive::CreateBsplineCurve (bcurve);
+            return new JsBsplineCurve (bcurvePrimitive);
+            }
+        return nullptr;
+        }
+    bool IsPeriodic ()
+        {
+        auto data = m_curvePrimitive->GetBsplineCurvePtr ();
+        return data.IsValid () ? data->IsClosed () : false;
         }
 };
 

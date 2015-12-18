@@ -42,9 +42,8 @@ module DgnScriptTests {
         //  Try out SolidPrimitive
         var builder = new be.ElementGeometryBuilder(ele, new be.DPoint3d(0, 0, 0), new be.YawPitchRollAngles(0, 0, 0));
 
-        var spdetail = be.DgnSphereDetail.CreateSphere(new be.DPoint3d(0, 0, 0), 1.0);
-        var solid = be.SolidPrimitive.CreateDgnSphere(spdetail);
-        builder.Append(solid);
+        var sphere = be.DgnSphere.CreateSphere(new be.DPoint3d(0, 0, 0), 1.0);
+        builder.Append(sphere);
 
         if (0 != builder.SetGeomStreamAndPlacement(ele))
             be.Script.ReportError('SetGeomStreamAndPlacement failed');

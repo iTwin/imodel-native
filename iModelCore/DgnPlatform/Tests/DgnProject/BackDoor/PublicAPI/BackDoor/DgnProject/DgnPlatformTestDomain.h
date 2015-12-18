@@ -69,7 +69,7 @@ protected:
     virtual Dgn::DgnDbStatus _UpdateInDb() override;
     virtual Dgn::DgnDbStatus _DeleteInDb() const override;
 
-    virtual Dgn::DgnDbStatus _ExtractSelectParams(BeSQLite::EC::ECSqlStatement& statement, Dgn::ECSqlClassParams const& selectParams) override;
+    virtual Dgn::DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement& statement, Dgn::ECSqlClassParams const& selectParams) override;
     virtual Dgn::DgnDbStatus _BindInsertParams(BeSQLite::EC::ECSqlStatement& stmt) override;
     virtual Dgn::DgnDbStatus _BindUpdateParams(BeSQLite::EC::ECSqlStatement& stmt) override;
     virtual void _CopyFrom(Dgn::DgnElementCR el) override;

@@ -156,7 +156,7 @@ private:
 
     DgnDbStatus BindParams(BeSQLite::EC::ECSqlStatement& stmt);
 protected:
-    DGNPLATFORM_EXPORT DgnDbStatus _ExtractSelectParams(BeSQLite::EC::ECSqlStatement& statement, ECSqlClassParams const& selectParams) override;
+    DGNPLATFORM_EXPORT DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement& statement, ECSqlClassParams const& selectParams) override;
     DGNPLATFORM_EXPORT DgnDbStatus _BindInsertParams(BeSQLite::EC::ECSqlStatement& stmt) override;
     DGNPLATFORM_EXPORT DgnDbStatus _BindUpdateParams(BeSQLite::EC::ECSqlStatement& stmt) override;
     DGNPLATFORM_EXPORT void _CopyFrom(DgnElementCR source) override;
@@ -296,7 +296,7 @@ private:
 
     DgnDbStatus BindParams(BeSQLite::EC::ECSqlStatement& stmt);
 protected:
-    DGNPLATFORM_EXPORT DgnDbStatus _ExtractSelectParams(BeSQLite::EC::ECSqlStatement& statement, ECSqlClassParams const& selectParams) override;
+    DGNPLATFORM_EXPORT DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement& statement, ECSqlClassParams const& selectParams) override;
     DGNPLATFORM_EXPORT DgnDbStatus _BindInsertParams(BeSQLite::EC::ECSqlStatement& stmt) override;
     DGNPLATFORM_EXPORT DgnDbStatus _BindUpdateParams(BeSQLite::EC::ECSqlStatement& stmt) override;
     DGNPLATFORM_EXPORT void _CopyFrom(DgnElementCR source) override;

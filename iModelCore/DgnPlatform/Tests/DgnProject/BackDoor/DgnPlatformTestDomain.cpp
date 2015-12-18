@@ -150,9 +150,9 @@ DgnDbStatus TestElement::_InsertInDb()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus TestElement::_ExtractSelectParams(ECSqlStatement& stmt, ECSqlClassParams const& params)
+DgnDbStatus TestElement::_ReadSelectParams(ECSqlStatement& stmt, ECSqlClassParams const& params)
     {
-    auto status = T_Super::_ExtractSelectParams(stmt, params);
+    auto status = T_Super::_ReadSelectParams(stmt, params);
     if (DgnDbStatus::Success == status)
         m_testElemProperty = stmt.GetValueText(params.GetSelectIndex(DPTEST_TEST_ELEMENT_TestElementProperty));
 
@@ -519,7 +519,7 @@ DgnDbStatus DgnPlatformTestDomain::ImportDummySchema(DgnDbR db)
 
     ECN::ECSchemaPtr schemaPtr;
     ECN::SchemaReadStatus readSchemaStatus = ECN::ECSchema::ReadFromXmlFile(schemaPtr, schemaFile.GetName(), *contextPtr);
-    if (ECN::SCHEMA_READ_STATUS_Success != readSchemaStatus)
+    if (ECN::SchemaReadStatus::Success != readSchemaStatus)
         return DgnDbStatus::ReadError;
 
     if (BentleyStatus::SUCCESS != db.Schemas().ImportECSchemas(contextPtr->GetCache()))

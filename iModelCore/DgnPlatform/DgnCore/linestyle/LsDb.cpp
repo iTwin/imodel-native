@@ -7,6 +7,8 @@
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
 
+Utf8CP LsJsonHelpers::CompId                = "compId";
+
 #define PROPNAME_Descr "Descr"
 #define PROPNAME_Data "Data"
 
@@ -15,6 +17,60 @@ static Utf8CP DGNPROPERTYBLOB_CompType              = "compType";
 static Utf8CP DGNPROPERTYBLOB_Flags                 = "flags";
 static Utf8CP DGNPROPERTYBLOB_UnitDef               = "unitDef";
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    12/2015
+//---------------------------------------------------------------------------------------
+double LsJsonHelpers::GetDouble(JsonValueCR json, CharCP fieldName, double defaultValue)
+    {
+    Json::Value def(defaultValue);
+    return json.get(fieldName, def).asDouble();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    12/2015
+//---------------------------------------------------------------------------------------
+uint32_t LsJsonHelpers::GetUInt32(JsonValueCR json, CharCP fieldName, uint32_t defaultValue)
+    {
+    Json::Value def(defaultValue);
+    return json.get(fieldName, def).asUInt();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    12/2015
+//---------------------------------------------------------------------------------------
+int32_t LsJsonHelpers::GetInt32(JsonValueCR json, CharCP fieldName, int32_t defaultValue)
+    {
+    Json::Value def(defaultValue);
+    return json.get(fieldName, def).asInt();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    12/2015
+//---------------------------------------------------------------------------------------
+uint64_t LsJsonHelpers::GetUInt64(JsonValueCR json, CharCP fieldName, uint64_t defaultValue)
+    {
+    Json::Value def(defaultValue);
+    return json.get(fieldName, def).asUInt64();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    12/2015
+//---------------------------------------------------------------------------------------
+Utf8String LsJsonHelpers::GetString(JsonValueCR json, CharCP fieldName, CharCP defaultValue)
+    {
+    Json::Value def(defaultValue);
+    return json.get(fieldName, def).asString();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    12/2015
+//---------------------------------------------------------------------------------------
+LsComponentId LsJsonHelpers::GetComponentId(JsonValueCR json, CharCP typeName, CharCP idName, LsComponentType defaultType)
+    {
+    uint32_t idValue = GetUInt32(json, idName, 0);
+    int32_t typeValue = GetInt32(json, typeName, (int32_t)defaultType);
+    return LsComponentId(LsComponentType(typeValue), idValue);
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    11/2012
@@ -48,29 +104,13 @@ LsComponentPtr LsStrokePatternComponent::_Import(DgnImportContext& importer) con
     {
     LsStrokePatternComponentP result = new LsStrokePatternComponent(this);
 
-    //  Save to destination and record ComponentId in clone
+    Json::Value     jsonValue;
+    result->SaveToJson(jsonValue);
+    LsComponentId componentId;
+    LsComponent::AddComponentAsJsonProperty(componentId, importer.GetDestinationDb(), LsComponentType::LineCode, jsonValue);
 
+    //  Rely on LsComponent::Import to record the component ID mapping.
     return result;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   John.Gooding    10/2012
-//--------------+------------------------------------------------------------------------
-BentleyStatus LsStrokePatternComponent::CreateRscFromDgnDb(V10LineCode** rscOut, DgnDbR project, LsComponentId componentId)
-    {
-    *rscOut = NULL;
-    uint32_t propertySize;
-
-    if (BE_SQLITE_ROW != project.QueryPropertySize(propertySize, LineStyleProperty::LineCode(), componentId.GetValue(), 0))
-        return BSIERROR;
-
-    V10LineCode* lineCodeData = (V10LineCode*)bentleyAllocator_malloc (propertySize);
-
-    project.QueryProperty(lineCodeData, propertySize, LineStyleProperty::LineCode(), componentId.GetValue(), 0);
-    BeAssert (propertySize == V10LineCode::GetBufferSize(lineCodeData->m_nStrokes));
-
-    *rscOut = lineCodeData;
-    return BSISUCCESS;
     }
 
 //---------------------------------------------------------------------------------------
@@ -94,7 +134,10 @@ LsComponentPtr LsPointComponent::_Import(DgnImportContext& importer) const
             }
         }
 
-    //  Add to destination file.
+    Json::Value     jsonValue;
+    cloned->SaveToJson(jsonValue);
+    LsComponentId componentId;
+    LsComponent::AddComponentAsJsonProperty(componentId, importer.GetDestinationDb(), LsComponentType::LinePoint, jsonValue);
 
     return cloned;
     }
@@ -102,16 +145,13 @@ LsComponentPtr LsPointComponent::_Import(DgnImportContext& importer) const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    12/2015
 //---------------------------------------------------------------------------------------
-void LsCompoundComponent::CreateJsonValue(Json::Value& result)
+void LsCompoundComponent::SaveToJson(Json::Value& result) const
     {
-    result.clear();
-    Utf8String descr = GetDescription();
-    if (descr.SizeInBytes() > 0)
-        result["descr"] = descr.c_str();
+    LsComponent::SaveToJson(result);
 
     Json::Value components(Json::arrayValue);
     uint32_t index = 0;
-    for (LsOffsetComponent& offset: m_components)
+    for (LsOffsetComponent const& offset: m_components)
         {
         if (!offset.m_subComponent.IsValid())
             continue;
@@ -120,6 +160,7 @@ void LsCompoundComponent::CreateJsonValue(Json::Value& result)
             entry["offset"] = offset.m_offset;
         LsComponentId id = offset.m_subComponent->GetId();
         entry["id"] = id.GetValue();
+        entry["type"] = (int)id.GetType();
         components[index++] = entry;
         }
 
@@ -129,20 +170,57 @@ void LsCompoundComponent::CreateJsonValue(Json::Value& result)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    12/2015
 //---------------------------------------------------------------------------------------
-LsCompoundComponentPtr LsCompoundComponent::CreateFromJson(Json::Value& result, DgnDbR project, LsComponentId id)
+LineStyleStatus LsCompoundComponent::CreateFromJson(LsCompoundComponentP* newCompound, Json::Value const & jsonDef, LsLocationCP thisLocation)
     {
-    return nullptr;
+    LsCompoundComponentP comp = new LsCompoundComponent(thisLocation);
+    comp->ExtractDescription(jsonDef);
+
+    JsonValueCR components = jsonDef["comps"];
+    uint32_t nComponents = components.size();
+
+    for (uint32_t i = 0; i < nComponents; i++)
+        {
+        JsonValueCR curr = components[i];
+        double offset = LsJsonHelpers::GetDouble(curr, "offset", 0.0);
+        LsComponentId id = LsJsonHelpers::GetComponentId(curr, "type", "id");
+        LsLocation childLocation;
+        childLocation.SetLocation(*thisLocation->GetDgnDb(), id);
+        LsComponentPtr child = DgnLineStyles::GetLsComponent(childLocation);
+        if (child.IsValid())
+            comp->AppendComponent(*child, offset);
+        }
+
+    *newCompound = comp;
+    return LINESTYLE_STATUS_Success;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    12/2015
 //---------------------------------------------------------------------------------------
-void LsPointComponent::CreateJsonValue(Json::Value& result)
+void LsPointComponent::SaveLineCodeIdToJson(JsonValueR json, LsComponentId patternId)
     {
-    result.clear();
-    Utf8String descr = GetDescription();
-    if (descr.SizeInBytes() > 0)
-        result["descr"] = descr.c_str();
+    if (patternId.GetType() != LsComponentType::LineCode)
+        json["lcType"] = (int)patternId.GetType();
+    json["lcId"] = patternId.GetValue();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    12/2015
+//---------------------------------------------------------------------------------------
+void LsPointComponent::SaveSymbolIdToJson(JsonValueR json, LsComponentId symbolId)
+    {
+    if (symbolId.GetType() != LsComponentType::PointSymbol)
+        json["symType"] = (int)symbolId.GetType();
+
+    json["symId"] = symbolId.GetValue();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    12/2015
+//---------------------------------------------------------------------------------------
+void LsPointComponent::SaveToJson(Json::Value& result) const
+    {
+    LsComponent::SaveToJson(result);
 
     LsStrokePatternComponent const* strokePattern = GetStrokeComponentCP();
     BeAssert(nullptr != strokePattern);
@@ -150,13 +228,11 @@ void LsPointComponent::CreateJsonValue(Json::Value& result)
         return;
 
     LsComponentId  pattern = strokePattern->GetId();
-    if (pattern.GetType() != LsComponentType::LineCode)
-        result["lcType"] = (int)pattern.GetType();
-    result["lcId"] = pattern.GetValue();
+    SaveLineCodeIdToJson(result, pattern);
 
     Json::Value symbols(Json::arrayValue);
     uint32_t index = 0;
-    for (LsSymbolReference& symRef: m_symbols)
+    for (LsSymbolReference const& symRef: m_symbols)
         {
         Json::Value  entry(Json::objectValue);
 
@@ -166,10 +242,8 @@ void LsPointComponent::CreateJsonValue(Json::Value& result)
             continue;       //  NEEDSWORK_LINESTYLE report error
 
         LsComponentId symbolId = symbolComponent->GetId();
-        if (symbolId.GetType() != LsComponentType::PointSymbol)
-            entry["symType"] = (int)symbolId.GetType();
+        SaveSymbolIdToJson(entry, symbolId);
 
-        entry["symValue"] = symbolId.GetValue();
         entry["strokeNnum"] = symRef.GetStrokeNumber();
         if (symRef.GetXOffset() != 0.0)
             entry["xOffset"] = symRef.GetXOffset();
@@ -188,25 +262,52 @@ void LsPointComponent::CreateJsonValue(Json::Value& result)
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                                   John.Gooding    10/2012
-//--------------+------------------------------------------------------------------------
-BentleyStatus LsPointComponent::CreateRscFromDgnDb(V10LinePoint** rscOut, DgnDbR project, LsComponentId componentId)
+// @bsimethod                                                   John.Gooding    12/2015
+//---------------------------------------------------------------------------------------
+LineStyleStatus LsPointComponent::CreateFromJson(LsPointComponentP*newPoint, Json::Value const & jsonDef, LsLocationCP thisLocation)
     {
-    *rscOut = NULL;
-    uint32_t propertySize;
+    LsPointComponentP pPoint = new LsPointComponent(thisLocation);
+    pPoint->ExtractDescription(jsonDef);
 
-    if (BE_SQLITE_ROW != project.QueryPropertySize(propertySize, LineStyleProperty::LinePoint(), componentId.GetValue(), 0))
-        return BSIERROR;
+    //  Get the stroke pattern
+    LsComponentId id = LsJsonHelpers::GetComponentId(jsonDef, "lcType", "lcId", LsComponentType::LineCode);
+    LsLocation childLocation;
+    childLocation.SetLocation(*thisLocation->GetDgnDb(), id);
+    LsComponentPtr child = DgnLineStyles::GetLsComponent(childLocation);
+    pPoint->m_strokeComponent = dynamic_cast<LsStrokePatternComponentP>(child.get());
 
-    V10LinePoint* linePointData = (V10LinePoint*)bentleyAllocator_malloc (propertySize);
+    JsonValueCR symbols = jsonDef["symbols"];
+    uint32_t limit = symbols.size();
+    if (limit > 32)
+        limit = 32;
+    for (unsigned index = 0; index < limit; ++index)
+        {
+        JsonValueCR  entry = symbols[index];
+        LsSymbolReference symbolRef;
 
-    project.QueryProperty(linePointData, propertySize, LineStyleProperty::LinePoint(), componentId.GetValue(), 0);
-    BeAssert (propertySize == V10LinePoint::GetBufferSize(linePointData->m_nSymbols));
+        LsComponentId symbolId = LsJsonHelpers::GetComponentId(entry, "symType", "symId", LsComponentType::PointSymbol);
+        LsLocation symbolLocation;
+        symbolLocation.SetLocation(*thisLocation->GetDgnDb(), symbolId);
+        LsSymbolComponentP symbolComponent = dynamic_cast<LsSymbolComponentP>(DgnLineStyles::GetLsComponent(symbolLocation));
 
-    *rscOut = linePointData;
+        BeAssert(symbolComponent != nullptr);
+        if (nullptr == symbolComponent)
+            continue;   //  NEEDSWORK_LINESTYLES report error
 
-    return BSISUCCESS;
+        symbolRef.SetSymbolComponent(*symbolComponent);
+        symbolRef.SetStrokeNumber(LsJsonHelpers::GetInt32(entry, "strokeNum", 0));
+        symbolRef.SetXOffset(LsJsonHelpers::GetDouble(entry, "xOffset", 0.0));
+        symbolRef.SetYOffset(LsJsonHelpers::GetDouble(entry, "yOffset", 0.0));
+        symbolRef.SetAngle(LsJsonHelpers::GetDouble(entry, "angle", 0.0));
+        symbolRef.m_mod1 = LsJsonHelpers::GetUInt32(entry, "mod1", 0);
+
+        pPoint->m_symbols.push_back(symbolRef);
+        }
+
+    *newPoint = pPoint;
+    return LINESTYLE_STATUS_Success; 
     }
+
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    12/2015
@@ -219,29 +320,12 @@ LsComponentPtr LsCompoundComponent::_Import(DgnImportContext& importer) const
         compOffset.m_subComponent = LsComponent::GetImportedComponent(compOffset.m_subComponent->GetId(), importer);
 
 
-    //  Save to destination and record ComponentId in clone
+    Json::Value     jsonValue;
+    result->SaveToJson(jsonValue);
+    LsComponentId componentId;
+    LsComponent::AddComponentAsJsonProperty(componentId, importer.GetDestinationDb(), LsComponentType::Compound, jsonValue);
 
     return result;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   John.Gooding    10/2012
-//--------------+------------------------------------------------------------------------
-BentleyStatus LsCompoundComponent::CreateRscFromDgnDb(V10Compound** rscOut, DgnDbR project, LsComponentId componentId)
-    {
-    *rscOut = NULL;
-    uint32_t propertySize;
-
-    if (BE_SQLITE_ROW != project.QueryPropertySize(propertySize, LineStyleProperty::Compound(), componentId.GetValue(), 0))
-        return BSIERROR;
-
-    V10Compound* compoundData = (V10Compound*)bentleyAllocator_malloc (propertySize);
-
-    if (BE_SQLITE_ROW != project.QueryProperty(compoundData, propertySize, LineStyleProperty::Compound(), componentId.GetValue(), 0))
-        return BSIERROR;
-
-    *rscOut = compoundData;
-    return BSISUCCESS;
     }
 
 //---------------------------------------------------------------------------------------
@@ -253,49 +337,166 @@ LsComponentPtr LsSymbolComponent::_Import(DgnImportContext& importer) const
 
     importer.RemapGeomPartId(result->m_geomPartId);
 
-    //  Save to destination and record ComponentId in clone
+    Json::Value     jsonValue;
+    result->SaveToJson(jsonValue);
+    LsComponentId componentId;
+    LsComponent::AddComponentAsJsonProperty(componentId, importer.GetDestinationDb(), LsComponentType::PointSymbol, jsonValue);
 
     return result;
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                                   John.Gooding    10/2012
-//--------------+------------------------------------------------------------------------
-BentleyStatus LsSymbolComponent::CreateRscFromDgnDb(V10Symbol** rscOut, DgnDbR project, LsComponentId componentId)
+// @bsimethod                                                   John.Gooding    12/2015
+//---------------------------------------------------------------------------------------
+LineStyleStatus LsSymbolComponent::CreateFromJson(LsSymbolComponentP*newComp, Json::Value const & jsonDef, LsLocationCP location)
     {
-    *rscOut = NULL;
-    uint32_t propertySize;
+    LsSymbolComponentP pSym = new LsSymbolComponent(location);
+    pSym->ExtractDescription(jsonDef);
 
-    if (BE_SQLITE_ROW != project.QueryPropertySize(propertySize, LineStyleProperty::PointSym(), componentId.GetValue(), 0))
-        return BSIERROR;
+    pSym->m_symBase.x = LsJsonHelpers::GetDouble(jsonDef, "baseX", 0.0);
+    pSym->m_symBase.y = LsJsonHelpers::GetDouble(jsonDef, "baseY", 0.0);
+    pSym->m_symBase.z = LsJsonHelpers::GetDouble(jsonDef, "baseZ",  0.0);
 
-    V10Symbol* symbolData = (V10Symbol*)bentleyAllocator_malloc (propertySize);
+    pSym->m_symSize.x = LsJsonHelpers::GetDouble(jsonDef, "sizeX", 0.0);
+    pSym->m_symSize.y = LsJsonHelpers::GetDouble(jsonDef, "sizeY", 0.0);
+    pSym->m_symSize.z = LsJsonHelpers::GetDouble(jsonDef, "sizeZ",  0.0);
 
-    if (BE_SQLITE_ROW != project.QueryProperty(symbolData, propertySize, LineStyleProperty::PointSym(), componentId.GetValue(), 0))
-        return BSIERROR;
+    pSym->m_geomPartId = DgnGeomPartId(LsJsonHelpers::GetUInt64(jsonDef, "geomPartId", 0));
+    pSym->m_symFlags = LsJsonHelpers::GetUInt32(jsonDef, "symFlags", 0);
+    pSym->m_storedScale = LsJsonHelpers::GetDouble(jsonDef, "scale", 0.0);
+    pSym->m_lineColorByLevel = LsJsonHelpers::GetInt32(jsonDef, "colorBySubCat", 0) != 0;
+    pSym->m_lineColor = ColorDef(LsJsonHelpers::GetUInt32(jsonDef, "color", 0));
+    pSym->m_fillColor = ColorDef(LsJsonHelpers::GetUInt32(jsonDef, "fillColor", 0));
+    pSym->m_weight = LsJsonHelpers::GetUInt32(jsonDef, "weight", 0);
 
-    *rscOut = symbolData;
-    return BSISUCCESS;
+#if defined(NEEDSWORKLINESTYLE_FILLCOLOR)
+    // If we don't have a solid color fill, set fill to match line color...
+    if (FillDisplay::Never == params.GetFillDisplay() || nullptr != params.GetGradient())
+        {
+        if (params.IsLineColorFromSubCategoryAppearance())
+            v10Symbol->m_fillColor = 0; // NEEDSWORK: v10Symbol->m_fillBySubCategory = true;
+        else
+            v10Symbol->m_fillColor = params.GetLineColor().GetValue();
+        }
+    else
+        {
+        if (params.IsFillColorFromSubCategoryAppearance())
+            v10Symbol->m_fillColor = 0; // NEEDSWORK: v10Symbol->m_fillBySubCategory = true;
+        else if (params.IsFillColorFromViewBackground())
+            v10Symbol->m_fillColor = 0; // NEEDSWORK: Do we need to support bg color fill for symbols?
+        else
+            v10Symbol->m_fillColor = params.GetFillColor().GetValue();
+        }
+#endif
+
+
+#if defined(NEEDSWORKLINESTYLE_FILLCOLOR)
+    if (params.IsWeightFromSubCategoryAppearance())
+        v10Symbol->m_weight = 0; // NEEDSWORK: v10Symbol->m_weightBySubCategory = true;
+    else
+        v10Symbol->m_weight = params.GetWeight();
+#endif
+    *newComp = pSym;
+    return LINESTYLE_STATUS_Success;
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                                   John.Gooding    07/2015
+// @bsimethod                                                   John.Gooding    12/2015
 //---------------------------------------------------------------------------------------
-BentleyStatus LsRasterImageComponent::CreateRscFromDgnDb(V10RasterImage** rscOut, DgnDbR project, LsComponentId componentId)
+void LsSymbolComponent::SaveSymbolDataToJson(Json::Value& result, DPoint3dCR base, DPoint3dCR size, DgnGeomPartId const& geomPartId, int32_t flags, double storedScale, 
+                                             bool colorBySubcategory, ColorDefCR lineColor, ColorDefCR fillColor, bool weightBySubcategory, int weight)
     {
-    *rscOut = NULL;
-    uint32_t propertySize;
+    if (base.x != 0)
+        result["baseX"] = base.x;
+    if (base.y != 0)
+        result["baseY"] = base.y;
+    if (base.z != 0)
+        result["baseZ"] = base.z;
+    if (size.x != 0)
+        result["sizeX"] = size.x;
+    if (size.y != 0)
+        result["sizeY"] = size.y;
+    if (size.z != 0)
+        result["sizeZ"] = size.z;
 
-    if (BE_SQLITE_ROW != project.QueryPropertySize(propertySize, LineStyleProperty::RasterImage(), componentId.GetValue(), 0))
-        return BSIERROR;
+    result["geomPartId"] = geomPartId.GetValue();
+    result["symFlags"] = flags;
 
-    V10RasterImage* rasterData = (V10RasterImage*)bentleyAllocator_malloc (propertySize);
+    if (storedScale != 0)
+        result["scale"] = storedScale;
 
-    if (BE_SQLITE_ROW != project.QueryProperty(rasterData, propertySize, LineStyleProperty::RasterImage(), componentId.GetValue(), 0))
-        return BSIERROR;
+    if (colorBySubcategory)
+        result["colorBySubCat"] = 1;
+    else
+        result["color"] = lineColor.GetValue();
 
-    *rscOut = rasterData;
-    return BSISUCCESS;
+    result["fillColor"] = fillColor.GetValue();
+
+#if defined(NEEDSWORKLINESTYLE_FILLCOLOR)
+    // If we don't have a solid color fill, set fill to match line color...
+    if (FillDisplay::Never == params.GetFillDisplay() || nullptr != params.GetGradient())
+        {
+        if (params.IsLineColorFromSubCategoryAppearance())
+            v10Symbol->m_fillColor = 0; // NEEDSWORK: v10Symbol->m_fillBySubCategory = true;
+        else
+            v10Symbol->m_fillColor = params.GetLineColor().GetValue();
+        }
+    else
+        {
+        if (params.IsFillColorFromSubCategoryAppearance())
+            v10Symbol->m_fillColor = 0; // NEEDSWORK: v10Symbol->m_fillBySubCategory = true;
+        else if (params.IsFillColorFromViewBackground())
+            v10Symbol->m_fillColor = 0; // NEEDSWORK: Do we need to support bg color fill for symbols?
+        else
+            v10Symbol->m_fillColor = params.GetFillColor().GetValue();
+        }
+#endif
+
+    result["weight"] = weight;
+
+#if defined(NEEDSWORKLINESTYLE_FILLCOLOR)
+    if (params.IsWeightFromSubCategoryAppearance())
+        v10Symbol->m_weight = 0; // NEEDSWORK: v10Symbol->m_weightBySubCategory = true;
+    else
+        v10Symbol->m_weight = params.GetWeight();
+#endif
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    12/2015
+//---------------------------------------------------------------------------------------
+void LsSymbolComponent::SaveToJson(Json::Value& result) const
+    {
+    LsComponent::SaveToJson(result);
+
+#if defined(NEEDSWORKLINESTYLE_FILLCOLOR)
+    // If we don't have a solid color fill, set fill to match line color...
+    if (FillDisplay::Never == params.GetFillDisplay() || nullptr != params.GetGradient())
+        {
+        if (params.IsLineColorFromSubCategoryAppearance())
+            v10Symbol->m_fillColor = 0; // NEEDSWORK: v10Symbol->m_fillBySubCategory = true;
+        else
+            v10Symbol->m_fillColor = params.GetLineColor().GetValue();
+        }
+    else
+        {
+        if (params.IsFillColorFromSubCategoryAppearance())
+            v10Symbol->m_fillColor = 0; // NEEDSWORK: v10Symbol->m_fillBySubCategory = true;
+        else if (params.IsFillColorFromViewBackground())
+            v10Symbol->m_fillColor = 0; // NEEDSWORK: Do we need to support bg color fill for symbols?
+        else
+            v10Symbol->m_fillColor = params.GetFillColor().GetValue();
+        }
+#endif
+
+#if defined(NEEDSWORKLINESTYLE_FILLCOLOR)
+    if (params.IsWeightFromSubCategoryAppearance())
+        v10Symbol->m_weight = 0; // NEEDSWORK: v10Symbol->m_weightBySubCategory = true;
+    else
+        v10Symbol->m_weight = params.GetWeight();
+#endif
+
+    SaveSymbolDataToJson(result, m_symBase, m_symSize, m_geomPartId, m_symFlags, m_storedScale, m_lineColorByLevel, m_lineColor, m_fillColor, false, m_weight);
     }
 
 //---------------------------------------------------------------------------------------
@@ -388,9 +589,9 @@ LsComponentPtr LsComponent::GetImportedComponent(LsComponentId sourceId, DgnImpo
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    12/2015
 //---------------------------------------------------------------------------------------
-DgnDbStatus LineStyleElement::_ExtractSelectParams(ECSqlStatement& stmt, ECSqlClassParams const& params)
+DgnDbStatus LineStyleElement::_ReadSelectParams(ECSqlStatement& stmt, ECSqlClassParams const& params)
     {
-    auto status = T_Super::_ExtractSelectParams(stmt, params);
+    auto status = T_Super::_ReadSelectParams(stmt, params);
     if (DgnDbStatus::Success == status)
         {
         Utf8String descr = stmt.GetValueText(params.GetSelectIndex(PROPNAME_Descr));
@@ -513,8 +714,13 @@ DgnStyleId DgnImportContext::RemapLineStyleId(DgnStyleId sourceId)
     if (dest.IsValid())
         return dest;
 
-    //  NEEDSWORK_LINESTYLES importers are not finished so don't pass along bad data.
-    return DgnStyleId(); // DgnLineStyles::ImportLineStyle(source, *this);
+    
+#if defined(NEEDSWORK_LINESTYLES) //  importers are not tested so don't risk passing along bad data.
+    dest = LineStyleElement::ImportLineStyle(sourceId, *this);
+    AddLineStyleId(sourceId, dest);
+#endif
+
+    return dest;
     }
 
 //---------------------------------------------------------------------------------------
@@ -539,7 +745,6 @@ void DgnImportContext::AddLineStyleComponentId(LsComponentId sourceId, LsCompone
     m_importedComponents[sourceId] = targetId.GetValue();
     }
 
-#if defined(NOTNOW)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    12/2015
 //---------------------------------------------------------------------------------------
@@ -555,7 +760,7 @@ DgnStyleId LineStyleElement::ImportLineStyle(DgnStyleId srcStyleId, DgnImportCon
         return DgnStyleId();
         }
 
-    DgnStyleId dstStyleId = QueryId(importer.GetDestinationDb(), srcStyle->GetName());
+    DgnStyleId dstStyleId = QueryId(importer.GetDestinationDb(), srcStyle->GetName().c_str());
     if (dstStyleId.IsValid())
         {
         //  *** TBD: Check if the line style definitions match. If not, rename and remap
@@ -563,11 +768,25 @@ DgnStyleId LineStyleElement::ImportLineStyle(DgnStyleId srcStyleId, DgnImportCon
         return dstStyleId;
         }
 
-    //  No such line style in the destination Db. Ask the source LineStyleElement to import itself.
-    auto importedElem = srcStyle->Import(importer.GetDestinationDb(), importer);
-    return importedElem.IsValid()? importedElem->GetElementId() : DgnStyleId();
+    Utf8String name(srcStyle->GetName());
+    Utf8String  data (srcStyle->GetData());
+
+    Json::Value  jsonObj (Json::objectValue);
+    if (!Json::Reader::Parse(data, jsonObj))
+        return DgnStyleId();
+
+    LsComponentId compId = LsDefinition::GetComponentId (jsonObj);
+    compId = LsComponent::Import(compId, importer);
+    if (!compId.IsValid())
+        {
+        //  *** TBD: Check if the line style definitions match. If not, rename and remap
+        BeAssert(false && "unable to import component for line style");
+        return DgnStyleId();
+        }
+
+    BentleyStatus result = importer.GetDestinationDb().Styles().LineStyles().Insert(dstStyleId, name.c_str(), compId, LsDefinition::GetAttributes(jsonObj), LsDefinition::GetAttributes(jsonObj));
+    return (result == BSISUCCESS) ? dstStyleId : DgnStyleId();
     }
-#endif
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE
 
