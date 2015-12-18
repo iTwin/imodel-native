@@ -9,13 +9,13 @@
 #include <Bentley/BeFileName.h>
 #include <Logging/bentleylogging.h>
 #include <windows.h>
-#include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <iostream>
 #include <wchar.h>
+#include <Bentley/stdcxx/bvector.h>
 
 USING_NAMESPACE_BENTLEY_EC
+using namespace std;
 
 namespace {
 	BentleyApi::NativeLogging::ILogger* s_logger = BentleyApi::NativeLogging::LoggingManager::GetLogger("SchemaConverter");
@@ -24,19 +24,20 @@ namespace {
 	//---------------------------------------------------------------------------------------
 	static void ShowUsage(char* str)
 		{
-		fprintf(stderr, "\n%s -i <inputSchemaPath> -o <outputDirectory> [-V VERSION] [-f]\n\n%s\n\n%s\n\n%s\t%s\n%s\t\t%s\n\n",
+		fprintf(stderr, "\n%s -i <inputSchemaPath> -o <outputDirectory> [-V VERSION] [-d DIRECTORIES]\n\n%s\n\n%s\n\n%s\t%s\n%s\t%s\n\n",
 			str, "Tool to convert between different versions of ECSchema(s)", "options:",
-			" -V --version 2|3", "the schema will be converted to the specified version",
-			" -f --overwrite", "overwrites the xml file after conversion");
+			" -V --ver 2|3", "the schema will be converted to the specified version",
+			" -d --ref DIR", "Look into the following directories for reference schemas");
 		}
 	//---------------------------------------------------------------------------------------
 	// @bsimethod                                                   BentleySystems
 	//---------------------------------------------------------------------------------------
-	static int ConvertSchema(BeFileNameCR ecSchemaFile, BeFileNameCR outputFile, int version)
+	static int ConvertSchema(BeFileNameCR ecSchemaFile, BeFileNameCR outputFile, bvector<BeFileName> referenceDirectories, int version)
 		{		
 		ECSchemaReadContextPtr contextPtr = ECSchemaReadContext::CreateContext();
 		contextPtr->AddSchemaPath(ecSchemaFile.GetDirectoryName().GetName());
-
+		for (auto dir: referenceDirectories)
+			contextPtr->AddSchemaPath(dir.GetName());
 		ECSchemaPtr schema;
 		SchemaReadStatus readSchemaStatus = ECSchema::ReadFromXmlFile(schema, ecSchemaFile.GetName(), *contextPtr);
 		if (SchemaReadStatus::Success != readSchemaStatus)
@@ -46,7 +47,7 @@ namespace {
 		return (int)schema->WriteToXmlFile(outputFile.GetName(), version, 0);
 		}
 }
-//BentleyApi::NativeLogging::ILogger* s_logger = BentleyApi::NativeLogging::LoggingManager::GetLogger ("SchemaConverter");
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   BentleySystems
 //---------------------------------------------------------------------------------------
@@ -54,9 +55,9 @@ int main(int argc, char** argv)
 	{
 	char* input;
 	char* output;
+	bvector<char*> directories;
 	int version = 3;
 	int flag = 0;
-	int check = 0;
 	if (argc < 5)
 		{
 		ShowUsage(argv[0]);
@@ -105,8 +106,40 @@ int main(int argc, char** argv)
 			else
 				version = atoi(argv[++i]);
 			}
-		else if (strcmp(argv[i], "-f") == 0 || strcmp(argv[i], "--overwrite") == 0)
-			check = 1;
+		else if (strcmp(argv[i], "-d") == 0 || strcmp(argv[i], "--ref") == 0)
+			{
+			while (i + 1 != argc)
+				{
+				if ((argv[i + 1])[0] != '-')
+					{
+					bool check = false;
+					for (size_t j = 0; j<strlen(argv[i+1]); j++)
+						{
+						if ((argv[i+1])[j] == '\\')
+							check = true;
+						}
+					if (check)
+						directories.push_back(argv[++i]);
+					else
+						{
+							ShowUsage(argv[0]);
+							return -1;
+						}
+					}
+				else
+					break;
+				}				
+			if (directories.size() == 0)
+				{
+				ShowUsage(argv[0]);
+				return -1;
+				}
+			}
+		else
+			{
+			ShowUsage(argv[0]);
+			return -1;
+			}
 		}
 	if (flag < 2)
 		{
@@ -125,13 +158,13 @@ int main(int argc, char** argv)
 	BeFileName outputDirectory;
 	outputDirectory.AssignUtf8(output);
 	BeFileName outputFile(nullptr, outputDirectory.GetName(), inputFileName.GetFileNameAndExtension().c_str(), nullptr);
-	if (wcscmp(inputFileName.GetDirectoryName(), outputFile.GetDirectoryName()) == 0 && check == 0)
+	if (wcscmp(inputFileName.GetDirectoryName(), outputFile.GetDirectoryName()) == 0)
 		{
 		fprintf(stderr, "Warning: Can't overwrite the file '%ls'.",
 				inputFileName.GetFileNameAndExtension().c_str());
 			return -1;
 		}
-
+	
     BeFileName exePath(exePathW);
     BeFileName workingDirectory(exePath.GetDirectoryName());
     BeFileName logFilePath(workingDirectory);
@@ -142,8 +175,17 @@ int main(int argc, char** argv)
     
     ECSchemaReadContext::Initialize(workingDirectory);
     s_logger->infov(L"Initializing ECSchemaReadContext to '%ls'", workingDirectory);
-   
-    s_logger->infov(L"Loading schema '%ls' for conversion to ECv3", inputFileName);
-    return ConvertSchema(inputFileName, outputFile, version);
+	s_logger->infov(L"Loading schema '%ls' for conversion to ECv3", inputFileName);
+
+	bvector<BeFileName> refDirectories;
+	for (size_t i = 0; i < directories.size(); i++)
+		{
+		BeFileName temp;
+		temp.AssignUtf8(directories[i]);
+		refDirectories.push_back(temp);
+		temp.Clear();
+		}
+	
+	return ConvertSchema(inputFileName, outputFile, refDirectories, version);
     }
 
