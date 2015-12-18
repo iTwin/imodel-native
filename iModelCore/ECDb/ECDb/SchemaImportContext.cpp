@@ -185,6 +185,10 @@ BentleyStatus SchemaImportECDbMapDb::CreateOrUpdateIndicesInDb(ECDbR ecdb) const
         dropIndexSql.append(index.GetName()).append("]");
         ecdb.TryExecuteSql(dropIndexSql.c_str());
 
+        //indexes on virtual tables are ignored
+        if (index.GetTable().GetPersistenceType() == PersistenceType::Virtual)
+            continue;
+
         NativeSqlBuilder ddl;
         Utf8String comparableIndexDef;
         if (SUCCESS != BuildCreateIndexDdl(ddl, comparableIndexDef, ecdb, index))

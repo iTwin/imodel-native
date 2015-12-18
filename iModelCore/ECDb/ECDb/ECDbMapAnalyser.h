@@ -91,9 +91,9 @@ struct SqlTriggerBuilder
         Utf8CP GetWhen () const;
         Utf8CP GetBody () const;
         Utf8CP GetOn () const;
-        bool IsTemprory () const;
+        bool IsTemporary () const;
         bool IsValid () const;
-        const Utf8String ToString (SqlOption option, bool escape) const;
+        Utf8String ToString (SqlOption option, bool escape) const;
         bool IsEmpty () const { return m_body.IsEmpty (); }
     };
 
@@ -108,20 +108,22 @@ struct SqlViewBuilder
         NativeSqlBuilder::List m_selectList;
         bool m_isTmp;
         bool m_isNullView;
+        Utf8String m_sqlComment;
 
     public:
         SqlViewBuilder ();
         void MarkAsNullView ();
         bool IsNullView () const;
         NativeSqlBuilder& GetNameBuilder ();
-        void SetTemprory (bool tmp);
+        void SetTemporary (bool tmp);
         NativeSqlBuilder& AddSelect ();
+        void SetComment(Utf8CP comment) { m_sqlComment.assign(comment); }
         bool IsEmpty () const;
         bool IsValid () const;
         Utf8CP GetName () const;
-        bool IsTemprory () const;
+        bool IsTemporary () const;
         bool IsCompound () const;
-        const Utf8String ToString (SqlOption option, bool escape = false, bool useUnionAll = true) const;
+        Utf8String ToString (SqlOption option, bool escape = false, bool useUnionAll = true) const;
     };
 
 //=======================================================================================
@@ -385,49 +387,45 @@ struct ECDbMapAnalyser
         ViewInfo* GetViewInfoForClass(Class const& nclass);
 
     public:
-        ECDbMapAnalyser(ECDbMapR ecdbMap);
+        explicit ECDbMapAnalyser(ECDbMapR ecdbMap);
         BentleyStatus Analyse(bool applyChanges);
     };
 
 
-    //=======================================================================================
-    //! Depricated
-    // @bsiclass                                               Affan.Khan          09/2015
-    //+===============+===============+===============+===============+===============+======
-    struct SqlGenerator
-        {
-        private:
-            ECDbMapCR m_map;
+//=======================================================================================
+// @bsiclass                                               Affan.Khan          09/2015
+//+===============+===============+===============+===============+===============+======
+struct ECClassViewGenerator
+    {
+    private:
+        ECDbMapCR m_map;
 
-        private:
-            const std::vector<ClassMapCP> GetEndClassMaps(ECN::ECRelationshipClassCR relationship, ECN::ECRelationshipEnd end);
-            BentleyStatus FindRelationshipReferences(bmap<RelationshipClassMapCP, ECDbMap::LightweightCache::RelationshipEnd>& relationships, ClassMapCR classMap);
-            void CollectDerivedEndTableRelationships(std::set<RelationshipClassEndTableMapCP>& childMaps, RelationshipClassMapCR classMap);
-            BentleyStatus BuildDerivedFilterClause(Utf8StringR filter, ECDb& db, ECN::ECClassId baseClassId);
-            Utf8CP GetECClassIdPrimaryTableAlias(ECN::ECRelationshipEnd endPoint)
-                {
-                return endPoint == ECN::ECRelationshipEnd::ECRelationshipEnd_Source ? "SourceECClassPrimaryTable" : "TargetECClassPrimaryTable";
-                }
-            BentleyStatus BuildECInstanceIdConstraintExpression(NativeSqlBuilder::List& fragments, RelationshipClassMapCR classMap, ECN::ECRelationshipEnd endPoint, Utf8CP tablePrefix, bool addECPropertyPathAlias, bool nullValue);
-            BentleyStatus BuildECClassIdConstraintExpression(NativeSqlBuilder::List& fragments, RelationshipClassMapCR classMap, ECN::ECRelationshipEnd endPoint, Utf8CP tablePrefix, bool addECPropertyPathAlias, bool nullValue);
-            BentleyStatus BuildRelationshipJoinIfAny(NativeSqlBuilder& sqlBuilder, RelationshipClassMapCR classMap, ECN::ECRelationshipEnd endPoint, bool topLevel);
-            BentleyStatus BuildEndTableRelationshipView(NativeSqlBuilder::List& viewSql, RelationshipClassMapCR classMap);
-            BentleyStatus BuildPropertyExpression(NativeSqlBuilder& viewSql, PropertyMapCR propertyMap, Utf8CP tablePrefix, bool addECPropertyPathAlias, bool nullValue);
-            BentleyStatus BuildColumnExpression(NativeSqlBuilder::List& viewSql, Utf8CP tablePrefix, Utf8CP columnName, Utf8CP accessString, bool addECPropertyPathAlias, bool nullValue, bool escapeColumName = true);
-            BentleyStatus BuildPointPropertyExpression(NativeSqlBuilder& viewSql, PropertyMapPoint const& propertyMap, Utf8CP tablePrefix, bool addECPropertyPathAlias, bool nullValue);
-            BentleyStatus BuildPrimitivePropertyExpression(NativeSqlBuilder& viewSql, PropertyMapSingleColumn const& propertyMap, Utf8CP tablePrefix, bool addECPropertyPathAlias, bool nullValue);
-            BentleyStatus BuildStructPropertyExpression(NativeSqlBuilder& viewSql, PropertyMapStruct const& propertyMap, Utf8CP tablePrefix, bool addECPropertyPathAlias, bool nullValue);
-            BentleyStatus BuildSystemSelectionClause(NativeSqlBuilder::List& fragments, ClassMapCR baseClassMap, ClassMapCR classMap, Utf8CP tablePrefix, bool addECPropertyPathAlias, bool nullValue);
-            BentleyStatus BuildSelectionClause(NativeSqlBuilder& viewSql, ClassMapCR baseClassMap, ClassMapCR classMap, Utf8CP tablePrefix, bool addECPropertyPathAlias, bool nullValue);
-            BentleyStatus DropViewIfExists(ECDbR map, Utf8CP viewName);
-            BentleyStatus BuildClassView(SqlViewBuilder& viewBuilder, ClassMap const& classMap);
+    private:
+        void CollectDerivedEndTableRelationships(std::set<RelationshipClassEndTableMapCP>& childMaps, RelationshipClassMapCR classMap);
+        Utf8CP GetECClassIdPrimaryTableAlias(ECN::ECRelationshipEnd endPoint)
+            {
+            return endPoint == ECN::ECRelationshipEnd::ECRelationshipEnd_Source ? "SourceECClassPrimaryTable" : "TargetECClassPrimaryTable";
+            }
+        BentleyStatus BuildECInstanceIdConstraintExpression(NativeSqlBuilder::List& fragments, RelationshipClassMapCR classMap, ECN::ECRelationshipEnd endPoint, Utf8CP tablePrefix, bool addECPropertyPathAlias, bool nullValue);
+        BentleyStatus BuildECClassIdConstraintExpression(NativeSqlBuilder::List& fragments, RelationshipClassMapCR classMap, ECN::ECRelationshipEnd endPoint, Utf8CP tablePrefix, bool addECPropertyPathAlias, bool nullValue);
+        BentleyStatus BuildRelationshipJoinIfAny(NativeSqlBuilder& sqlBuilder, RelationshipClassMapCR classMap, ECN::ECRelationshipEnd endPoint, bool topLevel);
+        BentleyStatus BuildEndTableRelationshipView(NativeSqlBuilder::List& viewSql, RelationshipClassMapCR classMap);
+        BentleyStatus BuildPropertyExpression(NativeSqlBuilder& viewSql, PropertyMapCR propertyMap, Utf8CP tablePrefix, bool addECPropertyPathAlias, bool nullValue);
+        BentleyStatus BuildColumnExpression(NativeSqlBuilder::List& viewSql, Utf8CP tablePrefix, Utf8CP columnName, Utf8CP accessString, bool addECPropertyPathAlias, bool nullValue, bool escapeColumName = true);
+        BentleyStatus BuildPointPropertyExpression(NativeSqlBuilder& viewSql, PropertyMapPoint const& propertyMap, Utf8CP tablePrefix, bool addECPropertyPathAlias, bool nullValue);
+        BentleyStatus BuildPrimitivePropertyExpression(NativeSqlBuilder& viewSql, PropertyMapSingleColumn const& propertyMap, Utf8CP tablePrefix, bool addECPropertyPathAlias, bool nullValue);
+        BentleyStatus BuildStructPropertyExpression(NativeSqlBuilder& viewSql, PropertyMapStruct const& propertyMap, Utf8CP tablePrefix, bool addECPropertyPathAlias, bool nullValue);
+        BentleyStatus BuildSystemSelectionClause(NativeSqlBuilder::List& fragments, ClassMapCR baseClassMap, ClassMapCR classMap, Utf8CP tablePrefix, bool addECPropertyPathAlias, bool nullValue);
+        BentleyStatus BuildSelectionClause(NativeSqlBuilder& viewSql, ClassMapCR baseClassMap, ClassMapCR classMap, Utf8CP tablePrefix, bool addECPropertyPathAlias, bool nullValue);
+        BentleyStatus BuildClassView(SqlViewBuilder& viewBuilder, ClassMap const& classMap);
 
-            static Utf8String BuildViewClassName(ECN::ECClassCR ecClass);
-            static Utf8String BuildSchemaQualifiedClassName(ECN::ECClassCR ecClass);
+        void DropExistingViews();
 
-        public:
-            explicit SqlGenerator(ECDbMapCR map):m_map(map) {}
-            void DropExistingViews();
-            BentleyStatus BuildViews(std::vector<ClassMap const*> const& classMaps);
-        };
+        static Utf8String BuildViewClassName(ECN::ECClassCR ecClass);
+        static Utf8String BuildSchemaQualifiedClassName(ECN::ECClassCR ecClass);
+
+    public:
+        explicit ECClassViewGenerator(ECDbMapCR map):m_map(map) {}
+        BentleyStatus BuildViews(std::vector<ClassMap const*> const& classMaps);
+    };
 END_BENTLEY_SQLITE_EC_NAMESPACE

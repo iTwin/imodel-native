@@ -190,6 +190,12 @@
     <ClCompile Include="Published\ECSqlMetadataQueryTest.cpp">
       <Filter>Published</Filter>
     </ClCompile>
+    <ClCompile Include="Published\ECSqlStatementTestsSchemaHelper.cpp">
+      <Filter>Published</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\ECDbTestHelper.cpp">
+      <Filter>Published</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Performance\PerformanceTests.h">
@@ -257,6 +263,12 @@
     </ClInclude>
     <ClInclude Include="Published\ECSqlUpdateTestDataset.h">
       <Filter>Published\ECSql\ECSqlTestFramework\Datasets</Filter>
+    </ClInclude>
+    <ClInclude Include="Published\ECSqlStatementTestsSchemaHelper.h">
+      <Filter>Published</Filter>
+    </ClInclude>
+    <ClInclude Include="Published\ECDbTestHelper.h">
+      <Filter>Published</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

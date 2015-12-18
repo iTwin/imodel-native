@@ -116,7 +116,10 @@ BentleyStatus ECDbMap::CreateECClassViewsInDb() const
         }
 
     Utf8String sql;
-    sql.Sprintf("SELECT ClassId FROM ec_ClassMap WHERE MapStrategy<>%lld", Enum::ToInt(ECDbMapStrategy::Strategy::NotMapped));
+    sql.Sprintf("SELECT c.Id FROM ec_Class c, ec_ClassMap cm WHERE c.Id = cm.ClassId AND c.Type IN (%d,%d) AND cm.MapStrategy<>%d", 
+                Enum::ToInt(ECClassType::Entity),
+                Enum::ToInt(ECClassType::Relationship),
+                Enum::ToInt(ECDbMapStrategy::Strategy::NotMapped));
     
     Statement stmt;
     if (BE_SQLITE_OK != stmt.Prepare(GetECDb(), sql.c_str()))
@@ -127,15 +130,13 @@ BentleyStatus ECDbMap::CreateECClassViewsInDb() const
         {
         ECClassId classId = (ECClassId)stmt.GetValueInt64(0);
         ClassMapCP classMap = GetClassMapCP(classId);
-        BeAssert(classMap != nullptr);
+        BeAssert(classMap != nullptr && (classMap->GetClass().IsEntityClass() || classMap->GetClass().IsRelationshipClass()) && classMap->GetClassMapType() != IClassMap::Type::Unmapped);
         if (classMap != nullptr)
             classMaps.push_back(classMap);
         }
 
-    SqlGenerator sqlGenerator(*this);
-    sqlGenerator.DropExistingViews();
-    sqlGenerator.BuildViews(classMaps);
-    return SUCCESS;
+    ECClassViewGenerator viewGenerator(*this);
+    return viewGenerator.BuildViews(classMaps);
     }
 
 //---------------------------------------------------------------------------------------

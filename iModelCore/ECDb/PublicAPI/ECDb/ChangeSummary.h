@@ -249,6 +249,8 @@ private:
     void Initialize();
     static void RegisterSqlFunctions(ECDbR ecdb);
     static void UnregisterSqlFunctions();
+    Utf8String FormatInstanceIdStr(int64_t id) const;
+    Utf8String FormatClassIdStr(ECN::ECClassId id) const;
 
 public:
     //! Construct a ChangeSummary from a BeSQLite ChangeSet

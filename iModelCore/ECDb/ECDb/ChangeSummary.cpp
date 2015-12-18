@@ -1145,10 +1145,17 @@ BentleyStatus ChangeExtractor::ExtractFromSqlChange(SqlChangeCR sqlChange, Extra
 
     BeAssert(tableType == TableType::Primary || tableType == TableType::Existing || tableType == TableType::Joined);
 
-    if (m_extractOption == ExtractOption::InstancesOnly)
+    if (m_extractOption == ExtractOption::InstancesOnly && !primaryClassMap->IsRelationshipClassMap())
+        {
         ExtractInstance(*primaryClassMap, primaryInstanceId);
-    else if (m_extractOption == ExtractOption::RelationshipInstancesOnly)
+        return SUCCESS;
+        }
+        
+    if (m_extractOption == ExtractOption::RelationshipInstancesOnly)
+        {
         ExtractRelInstance(*primaryClassMap, primaryInstanceId);
+        return SUCCESS;
+        }
 
     return SUCCESS;
     }
@@ -1694,6 +1701,36 @@ ChangeSummary::Instance ChangeSummary::GetInstance(ECClassId classId, ECInstance
 //---------------------------------------------------------------------------------------
 // @bsimethod                                              Ramanujam.Raman     07/2015
 //---------------------------------------------------------------------------------------
+Utf8String ChangeSummary::FormatInstanceIdStr(int64_t id) const
+    {
+    if (id == 0)
+        return "NULL";
+
+    uint32_t briefcaseId = (uint32_t) ((id << 40) & 0xffffff);
+    uint64_t localId = (uint64_t) (0xffffffffffLL & id);
+
+    Utf8PrintfString idStr("%" PRIu32 ":%" PRIu64, briefcaseId, localId);
+    return idStr;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                              Ramanujam.Raman     07/2015
+//---------------------------------------------------------------------------------------
+Utf8String ChangeSummary::FormatClassIdStr(ECClassId id) const
+    {
+    if (id == 0)
+        return "NULL";
+
+    ECN::ECClassCP ecClass = m_ecdb.Schemas().GetECClass(id);
+    BeAssert(ecClass != nullptr);
+
+    Utf8PrintfString idStr("%s:%" PRId64, ecClass->GetFullName(), (int64_t) id);
+    return idStr;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                              Ramanujam.Raman     07/2015
+//---------------------------------------------------------------------------------------
 void ChangeSummary::Dump() const
     {
     if (!IsValid())
@@ -1703,19 +1740,17 @@ void ChangeSummary::Dump() const
         return;
         }
         
-    printf("InstanceId;ClassId;ClassName;DbOpcode;Indirect\n");
+    printf("\tBriefcaseId:LocalId;SchemaName:ClassName:ClassId;DbOpcode;Indirect\n");
+    printf("\t\tAccessString;OldValue;NewValue\n");
 
     for (ChangeSummary::InstanceIterator::const_iterator const& iEntry : MakeInstanceIterator())
         {
         ChangeSummary::Instance instance = iEntry.GetInstance();
 
-        ECClassId classId = instance.GetClassId();
-        ECInstanceId instanceId = instance.GetInstanceId();
-        int indirect = instance.GetIndirect();
+        Utf8String classIdStr = FormatClassIdStr(instance.GetClassId());
+        Utf8String instanceIdStr = FormatInstanceIdStr(instance.GetInstanceId().GetValueUnchecked());
 
-        ECN::ECClassCP ecClass = m_ecdb.Schemas().GetECClass(classId);
-        BeAssert(ecClass != nullptr);
-        Utf8String className(ecClass->GetFullName());
+        int indirect = instance.GetIndirect();
 
         DbOpcode opCode = instance.GetDbOpcode();
         Utf8String opCodeStr;
@@ -1726,18 +1761,32 @@ void ChangeSummary::Dump() const
         else /* if (opCode = DbOpcode::Delete) */
             opCodeStr = "Delete";
 
-        printf("%" PRId64 ";%" PRId64 ";%s;%s;%s\n", instanceId.GetValueUnchecked(), (int64_t) classId, className.c_str(), opCodeStr.c_str(), indirect > 0 ? "Yes" : "No");
+        printf("\t%s;%s;%s;%s\n", instanceIdStr.c_str(), classIdStr.c_str(), opCodeStr.c_str(), indirect > 0 ? "Yes" : "No");
 
         for (ChangeSummary::ValueIterator::const_iterator const& vEntry : instance.MakeValueIterator(*this))
             {
-            Utf8CP accessString = vEntry.GetAccessString();
+            Utf8String accessString = vEntry.GetAccessString();
             DbDupValue oldValue = vEntry.GetOldValue();
             DbDupValue newValue = vEntry.GetNewValue();
 
-            Utf8String oldValueStr = oldValue.Format(0);
-            Utf8String newValueStr = newValue.Format(0);
-
-            printf("\t%s;%s;%s\n", accessString, oldValueStr.c_str(), newValueStr.c_str());
+            Utf8String oldValueStr, newValueStr;
+            if (accessString.Contains("ECInstanceId"))
+                {
+                oldValueStr = FormatInstanceIdStr(oldValue.GetValueInt64());
+                newValueStr = FormatInstanceIdStr(newValue.GetValueInt64());
+                }
+            else if (accessString.Contains("ECClassId"))
+                {
+                oldValueStr = FormatClassIdStr(oldValue.GetValueInt64());
+                newValueStr = FormatClassIdStr(newValue.GetValueInt64());
+                }
+            else
+                {
+                oldValueStr = oldValue.Format(0);
+                newValueStr = newValue.Format(0);
+                }
+            
+            printf("\t\t%s;%s;%s\n", accessString.c_str(), oldValueStr.c_str(), newValueStr.c_str());
             }
         }
     }

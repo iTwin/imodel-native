@@ -27,3 +27,6 @@ JoinedTableECDbMapStrategyTests.RelationshipsWithKeyProp
 
 #Raman will take a look
 ECDbInstances.CommonGeometryJsonSerialization
+
+#TFS349028 (Affan)
+JoinedTableECDbMapStrategyTests.PopulateECSql_TestDbWithTestData

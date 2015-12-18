@@ -6,12 +6,11 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECSqlStatementTestFixture.h"
-
+#include "ECSqlStatementTestsSchemaHelper.h"
 #include <cmath>
 #include <algorithm>
 
 USING_NAMESPACE_BENTLEY_EC
-
 BEGIN_ECDBUNITTESTS_NAMESPACE
 
 //---------------------------------------------------------------------------------------
@@ -90,261 +89,27 @@ TEST(ECSqlStatus, Misc)
 /*---------------------------------------------------------------------------------**//**
 * @bsiclass                             Muhammad Hassan                         06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct ECSqlStatementTestsSchemaHelper
+struct PowSqlFunction : ScalarFunction
     {
     private:
 
-        /*---------------------------------------------------------------------------------**//**
-        * @bsiclass                             Muhammad Hassan                         06/15
-        +---------------+---------------+---------------+---------------+---------------+------*/
-        static void setProductsValues(StandaloneECInstancePtr instance, int ProductId, Utf8CP ProductName, double price, bool ProductAvailable)
+        virtual void _ComputeScalar (Context& ctx, int nArgs, DbValue* args) override
             {
-            instance->SetValue("ProductId", ECValue(ProductId));
-            instance->SetValue("ProductName", ECValue(ProductName));
-            instance->SetValue("Price", ECValue(price));
-            instance->SetValue("ProductAvailable", ECValue(ProductAvailable));
-            }
-
-        static void setEmployeeValues(StandaloneECInstancePtr instance, int EmployeeId, Utf8CP FirstName, Utf8CP LastName, DateTimeCR DOB, Utf8CP Notes)
-            {
-            instance->SetValue("EmployeeId", ECValue(EmployeeId));
-            instance->SetValue("FirstName", ECValue(FirstName));
-            instance->SetValue("LastName", ECValue(LastName));
-            instance->SetValue("DOB", ECValue(DOB));
-            instance->SetValue("Notes", ECValue(Notes));
-            }
-
-        static void setSupplierValues(StandaloneECInstancePtr instance, int SupplierId, Utf8CP SupplierName, Utf8CP ContactName, Utf8CP City, Utf8CP Country, Utf8CP Address, int64_t PostalCode)
-            {
-            instance->SetValue("SupplierId", ECValue(SupplierId));
-            instance->SetValue("SupplierName", ECValue(SupplierName));
-            instance->SetValue("ContactName", ECValue(ContactName));
-            instance->SetValue("City", ECValue(City));
-            instance->SetValue("Country", ECValue(Country));
-            instance->SetValue("Address", ECValue(Address));
-            instance->SetValue("PostalCode", ECValue(PostalCode));
-            }
-
-        static void setShipperValues(StandaloneECInstancePtr instance, int shipperId, Utf8CP ShipperName, int64_t Phone)
-            {
-            instance->SetValue("ShipperId", ECValue(shipperId));
-            instance->SetValue("ShipperName", ECValue(ShipperName));
-            instance->SetValue("Phone", ECValue(Phone));
-            }
-
-        static void setOrderValues(StandaloneECInstancePtr instance, DateTimeCR datetime, int id, bool ProductDelivered)
-            {
-            instance->SetValue("OrderDate", ECValue(datetime));
-            instance->SetValue("OrderId", ECValue(id));
-            instance->SetValue("ProductDelivered", ECValue(ProductDelivered));
-            }
-
-        /*---------------------------------------------------------------------------------**//**
-        * @bsimethod                             Muhammad Hassan                         06/15
-        +---------------+---------------+---------------+---------------+---------------+------*/
-        static void setCustomerValues(StandaloneECInstancePtr instance, Utf8CP CustomerName, int64_t PostalCode, Utf8CP Address, Utf8CP ContactName, Utf8CP City, Utf8CP Country, int CustomerId, StandaloneECInstancePtr OrderInstance1, StandaloneECInstancePtr OrderInstance2, StandaloneECInstancePtr OrderInstance3)
-            {
-            instance->SetValue("CustomerId", ECValue(CustomerId));
-            instance->SetValue("CustomerName", ECValue(CustomerName));
-            instance->SetValue("ContactName", ECValue(ContactName));
-            instance->SetValue("City", ECValue(City));
-            instance->SetValue("Country", ECValue(Country));
-            instance->SetValue("PostalCode", ECValue(PostalCode));
-            instance->SetValue("Address", ECValue(Address));
-            instance->AddArrayElements("OrderArray", 3);
-
-            ECValue structVal1;
-            structVal1.SetStruct(OrderInstance1.get());
-            instance->SetValue("OrderArray", structVal1, 0);
-
-            ECValue structVal2;
-            structVal2.SetStruct(OrderInstance2.get());
-            instance->SetValue("OrderArray", structVal2, 1);
-
-            ECValue structVal3;
-            structVal3.SetStruct(OrderInstance3.get());
-            instance->SetValue("OrderArray", structVal3, 2);
-            }
-    public:
-        /*---------------------------------------------------------------------------------**//**
-        * @bsimethod                             Muhammad Hassan                         06/15
-        +---------------+---------------+---------------+---------------+---------------+------*/
-        static void Populate(ECDbR ecdb)
-            {
-            //create instances of Employee and insert into Db
-            ECClassCP EmployeeClass = ecdb.Schemas().GetECClass("ECSqlStatementTests", "Employee");
-            ASSERT_TRUE(EmployeeClass != nullptr);
-            StandaloneECInstancePtr EmployeeInstance1 = EmployeeClass->GetDefaultStandaloneEnabler()->CreateInstance();
-            StandaloneECInstancePtr EmployeeInstance2 = EmployeeClass->GetDefaultStandaloneEnabler()->CreateInstance();
-            StandaloneECInstancePtr EmployeeInstance3 = EmployeeClass->GetDefaultStandaloneEnabler()->CreateInstance();
-            setEmployeeValues(EmployeeInstance1, 1, "Nancy", "Davolio", DateTime::GetCurrentTimeUtc(), "Education includes a BA in psychology...");
-            setEmployeeValues(EmployeeInstance2, 2, "Andrew", "Fuller", DateTime::GetCurrentTimeUtc(), "Andrew received his BTS commercial and...");
-            setEmployeeValues(EmployeeInstance3, 3, "Janet", "Leverling", DateTime::GetCurrentTimeUtc(), "Janet has a BS degree in chemistry...");
-            ECInstanceInserter EmployeeInserter(ecdb, *EmployeeClass);
-            ASSERT_TRUE(EmployeeInserter.IsValid());
-            ASSERT_EQ(SUCCESS, EmployeeInserter.Insert(*EmployeeInstance1, true));
-            ASSERT_EQ(SUCCESS, EmployeeInserter.Insert(*EmployeeInstance2, true));
-            ASSERT_EQ(SUCCESS, EmployeeInserter.Insert(*EmployeeInstance3, true));
-
-            //Create and Insert Instances of Products
-            ECClassCP ProductsClass = ecdb.Schemas().GetECClass("ECSqlStatementTests", "Products");
-            ASSERT_TRUE(ProductsClass != nullptr);
-            StandaloneECInstancePtr ProductsInstance1 = ProductsClass->GetDefaultStandaloneEnabler()->CreateInstance();
-            StandaloneECInstancePtr ProductsInstance2 = ProductsClass->GetDefaultStandaloneEnabler()->CreateInstance();
-            StandaloneECInstancePtr ProductsInstance3 = ProductsClass->GetDefaultStandaloneEnabler()->CreateInstance();
-            StandaloneECInstancePtr ProductsInstance4 = ProductsClass->GetDefaultStandaloneEnabler()->CreateInstance();
-            StandaloneECInstancePtr ProductsInstance5 = ProductsClass->GetDefaultStandaloneEnabler()->CreateInstance();
-            StandaloneECInstancePtr ProductsInstance6 = ProductsClass->GetDefaultStandaloneEnabler()->CreateInstance();
-            StandaloneECInstancePtr ProductsInstance7 = ProductsClass->GetDefaultStandaloneEnabler()->CreateInstance();
-            StandaloneECInstancePtr ProductsInstance8 = ProductsClass->GetDefaultStandaloneEnabler()->CreateInstance();
-            StandaloneECInstancePtr ProductsInstance9 = ProductsClass->GetDefaultStandaloneEnabler()->CreateInstance();
-            setProductsValues(ProductsInstance1, 1, "Pencil", 189.05, true);
-            setProductsValues(ProductsInstance2, 2, "Binder", 999.50, true);
-            setProductsValues(ProductsInstance3, 3, "Pen", 539.73, false);
-            setProductsValues(ProductsInstance4, 4, "Binder", 299.40, true);
-            setProductsValues(ProductsInstance5, 5, "Desk", 150.00, true);
-            setProductsValues(ProductsInstance6, 6, "Pen Set", 255.84, false);
-            setProductsValues(ProductsInstance7, 7, "Pen Set", 479.04, false);
-            setProductsValues(ProductsInstance8, 8, "Pen", 539.73, true);
-            setProductsValues(ProductsInstance9, 9, "Pen", 539.73, true);
-            ECInstanceInserter ProductInserter(ecdb, *ProductsClass);
-            ASSERT_TRUE(ProductInserter.IsValid());
-            ASSERT_EQ(SUCCESS, ProductInserter.Insert(*ProductsInstance1, true));
-            ASSERT_EQ(SUCCESS, ProductInserter.Insert(*ProductsInstance2, true));
-            ASSERT_EQ(SUCCESS, ProductInserter.Insert(*ProductsInstance3, true));
-            ASSERT_EQ(SUCCESS, ProductInserter.Insert(*ProductsInstance4, true));
-            ASSERT_EQ(SUCCESS, ProductInserter.Insert(*ProductsInstance5, true));
-            ASSERT_EQ(SUCCESS, ProductInserter.Insert(*ProductsInstance6, true));
-            ASSERT_EQ(SUCCESS, ProductInserter.Insert(*ProductsInstance7, true));
-            ASSERT_EQ(SUCCESS, ProductInserter.Insert(*ProductsInstance8, true));
-            ASSERT_EQ(SUCCESS, ProductInserter.Insert(*ProductsInstance9, true));
-
-            //Create and Insert Instances of Shipper
-            ECClassCP ShipperClass = ecdb.Schemas().GetECClass("ECSqlStatementTests", "Shipper");
-            ASSERT_TRUE(ShipperClass != nullptr);
-            StandaloneECInstancePtr ShipperInstance1 = ShipperClass->GetDefaultStandaloneEnabler()->CreateInstance();
-            StandaloneECInstancePtr ShipperInstance2 = ShipperClass->GetDefaultStandaloneEnabler()->CreateInstance();
-            StandaloneECInstancePtr ShipperInstance3 = ShipperClass->GetDefaultStandaloneEnabler()->CreateInstance();
-            setShipperValues(ShipperInstance1, 1, "Rio Grand", 19783482);
-            setShipperValues(ShipperInstance2, 2, "Rue Perisnon", 26422096);
-            setShipperValues(ShipperInstance3, 3, "Salguero", 39045213);
-            ECInstanceInserter ShipperInserter(ecdb, *ShipperClass);
-            ASSERT_TRUE(ShipperInserter.IsValid());
-            ASSERT_EQ(SUCCESS, ShipperInserter.Insert(*ShipperInstance1, true));
-            ASSERT_EQ(SUCCESS, ShipperInserter.Insert(*ShipperInstance2, true));
-            ASSERT_EQ(SUCCESS, ShipperInserter.Insert(*ShipperInstance3, true));
-
-            //Create and Insert Instances of Supplier
-            ECClassCP SupplierClass = ecdb.Schemas().GetECClass("ECSqlStatementTests", "Supplier");
-            ASSERT_TRUE(SupplierClass != nullptr);
-            StandaloneECInstancePtr SupplierInstance1 = SupplierClass->GetDefaultStandaloneEnabler()->CreateInstance();
-            StandaloneECInstancePtr SupplierInstance2 = SupplierClass->GetDefaultStandaloneEnabler()->CreateInstance();
-            StandaloneECInstancePtr SupplierInstance3 = SupplierClass->GetDefaultStandaloneEnabler()->CreateInstance();
-            setSupplierValues(SupplierInstance1, 1, "John", "Snow", "CA", "USA", "5089 CALERO AVENUE", 95123);
-            setSupplierValues(SupplierInstance2, 2, "Trion", "Lannistor", "NC", "USA", "198 FAYETTEVILLE ROAD", 27514);
-            setSupplierValues(SupplierInstance3, 3, "Stannis", "Brathion", "MD", "USA", "1598 PICCARD DRIVE", 20850);
-            ECInstanceInserter SupplierInserter(ecdb, *SupplierClass);
-            ASSERT_TRUE(SupplierInserter.IsValid());
-            ASSERT_EQ(SUCCESS, SupplierInserter.Insert(*SupplierInstance1, true));
-            ASSERT_EQ(SUCCESS, SupplierInserter.Insert(*SupplierInstance2, true));
-            ASSERT_EQ(SUCCESS, SupplierInserter.Insert(*SupplierInstance3, true));
-
-            //Create instances of Order Class and they will be only specific to a Customer no Standalone order.
-            ECClassCP OrderClass = ecdb.Schemas().GetECClass("ECSqlStatementTests", "Order");
-            ASSERT_TRUE(OrderClass != nullptr);
-
-            StandaloneECInstancePtr OrderInstance1 = OrderClass->GetDefaultStandaloneEnabler()->CreateInstance();
-            StandaloneECInstancePtr OrderInstance2 = OrderClass->GetDefaultStandaloneEnabler()->CreateInstance();
-            StandaloneECInstancePtr OrderInstance3 = OrderClass->GetDefaultStandaloneEnabler()->CreateInstance();
-            StandaloneECInstancePtr OrderInstance4 = OrderClass->GetDefaultStandaloneEnabler()->CreateInstance();
-            StandaloneECInstancePtr OrderInstance5 = OrderClass->GetDefaultStandaloneEnabler()->CreateInstance();
-            StandaloneECInstancePtr OrderInstance6 = OrderClass->GetDefaultStandaloneEnabler()->CreateInstance();
-            StandaloneECInstancePtr OrderInstance7 = OrderClass->GetDefaultStandaloneEnabler()->CreateInstance();
-            StandaloneECInstancePtr OrderInstance8 = OrderClass->GetDefaultStandaloneEnabler()->CreateInstance();
-            StandaloneECInstancePtr OrderInstance9 = OrderClass->GetDefaultStandaloneEnabler()->CreateInstance();
-
-            setOrderValues(OrderInstance1, DateTime::GetCurrentTimeUtc(), 1, true);
-            setOrderValues(OrderInstance2, DateTime::GetCurrentTimeUtc(), 2, false);
-            setOrderValues(OrderInstance3, DateTime::GetCurrentTimeUtc(), 3, false);
-            setOrderValues(OrderInstance4, DateTime::GetCurrentTimeUtc(), 4, true);
-            setOrderValues(OrderInstance5, DateTime::GetCurrentTimeUtc(), 5, true);
-            setOrderValues(OrderInstance6, DateTime::GetCurrentTimeUtc(), 6, true);
-            setOrderValues(OrderInstance7, DateTime::GetCurrentTimeUtc(), 7, false);
-            setOrderValues(OrderInstance8, DateTime::GetCurrentTimeUtc(), 8, false);
-            setOrderValues(OrderInstance9, DateTime::GetCurrentTimeUtc(), 9, true);
-
-            ECClassCP CustomerClass = ecdb.Schemas().GetECClass("ECSqlStatementTests", "Customer");
-            ASSERT_TRUE(CustomerClass != nullptr);
-
-            StandaloneECInstancePtr CustomerInstance1 = CustomerClass->GetDefaultStandaloneEnabler()->CreateInstance();
-            StandaloneECInstancePtr CustomerInstance2 = CustomerClass->GetDefaultStandaloneEnabler()->CreateInstance();
-            StandaloneECInstancePtr CustomerInstance3 = CustomerClass->GetDefaultStandaloneEnabler()->CreateInstance();
-            setCustomerValues(CustomerInstance1, "Charles Baron", 78701, "44 PRINCESS GATE, HYDE PARK", "Brathion", "SAN JOSE", "USA", 1, OrderInstance1, OrderInstance2, OrderInstance3);
-            setCustomerValues(CustomerInstance2, "Gunther Spielmann", 22090, "5063 RICHMOND MAL", "SPIELMANN", "AUSTIN", "USA", 2, OrderInstance4, OrderInstance5, OrderInstance6);
-            setCustomerValues(CustomerInstance3, "A.D.M. Bryceson", 93274, "3-2-7 ETCHUJMA, KOTO-KU", "Adm", "SAN JOSE", "USA", 3, OrderInstance7, OrderInstance8, OrderInstance9);
-
-            ECInstanceInserter CustomerInserter(ecdb, *CustomerClass);
-            ASSERT_TRUE(CustomerInserter.IsValid());
-            ASSERT_EQ(SUCCESS, CustomerInserter.Insert(*CustomerInstance1));
-            ASSERT_EQ(SUCCESS, CustomerInserter.Insert(*CustomerInstance2));
-            ASSERT_EQ(SUCCESS, CustomerInserter.Insert(*CustomerInstance3));
-
-            ECRelationshipClassCP EmployeeCustomer = ecdb.Schemas().GetECClass("ECSqlStatementTests", "EmployeeCustomer")->GetRelationshipClassCP();
-            ASSERT_TRUE(EmployeeCustomer != nullptr);
-
-            StandaloneECRelationshipInstancePtr EmployeeCustomerInstance = StandaloneECRelationshipEnabler::CreateStandaloneRelationshipEnabler(*EmployeeCustomer)->CreateRelationshipInstance();
-            ECInstanceInserter EmployeeCustomerInserter(ecdb, *EmployeeCustomer);
-            ASSERT_TRUE(EmployeeCustomerInserter.IsValid());
-            EmployeeCustomerInstance->SetSource(EmployeeInstance1.get());
-            EmployeeCustomerInstance->SetTarget(CustomerInstance1.get());
-            EmployeeCustomerInstance->SetInstanceId("source->target");
-            ASSERT_EQ(SUCCESS, EmployeeCustomerInserter.Insert(*EmployeeCustomerInstance));
-
-            //Create and Insert Instances of Relationship ProductSupplier
-            ECRelationshipClassCP ProductSupplier = ecdb.Schemas().GetECClass("ECSqlStatementTests", "ProductSupplier")->GetRelationshipClassCP();
-            ASSERT_TRUE(ProductSupplier != nullptr);
-            StandaloneECRelationshipInstancePtr ProductSupplierInstance = StandaloneECRelationshipEnabler::CreateStandaloneRelationshipEnabler(*ProductSupplier)->CreateRelationshipInstance();
-            ECInstanceInserter ProductSupplierInserter(ecdb, *ProductSupplier);
-            ASSERT_TRUE(ProductSupplierInserter.IsValid());
-            ProductSupplierInstance->SetSource(ProductsInstance1.get());
-            ProductSupplierInstance->SetTarget(SupplierInstance1.get());
-            ProductSupplierInstance->SetInstanceId("source->target");
-            ASSERT_EQ(SUCCESS, ProductSupplierInserter.Insert(*ProductSupplierInstance));
-            ProductSupplierInstance->SetSource(ProductsInstance2.get());
-            ProductSupplierInstance->SetTarget(SupplierInstance2.get());
-            ProductSupplierInstance->SetInstanceId("source->target");
-            ASSERT_EQ(SUCCESS, ProductSupplierInserter.Insert(*ProductSupplierInstance));
-            ProductSupplierInstance->SetSource(ProductsInstance3.get());
-            ProductSupplierInstance->SetTarget(SupplierInstance3.get());
-            ProductSupplierInstance->SetInstanceId("source->target");
-            ASSERT_EQ(SUCCESS, ProductSupplierInserter.Insert(*ProductSupplierInstance));
-            }
-
-            /*---------------------------------------------------------------------------------**//**
-            * @bsiclass                             Muhammad Hassan                         06/15
-            +---------------+---------------+---------------+---------------+---------------+------*/
-            struct PowSqlFunction : ScalarFunction
+            if (args[0].IsNull () || args[1].IsNull ())
                 {
-                private:
+                ctx.SetResultError ("Arguments to POW must not be NULL", -1);
+                return;
+                }
 
-                    virtual void _ComputeScalar(Context& ctx, int nArgs, DbValue* args) override
-                        {
-                        if (args[0].IsNull() || args[1].IsNull())
-                            {
-                            ctx.SetResultError("Arguments to POW must not be NULL", -1);
-                            return;
-                            }
+            double base = args[0].GetValueDouble ();
+            double exp = args[1].GetValueDouble ();
 
-                        double base = args[0].GetValueDouble();
-                        double exp = args[1].GetValueDouble();
+            double res = std::pow (base, exp);
+            ctx.SetResultDouble (res);
+            }
 
-                        double res = std::pow(base, exp);
-                        ctx.SetResultDouble(res);
-                        }
-
-                public:
-                    PowSqlFunction() : ScalarFunction("POW", 2, DbValueType::FloatVal) {}
-                };
+    public:
+        PowSqlFunction () : ScalarFunction ("POW", 2, DbValueType::FloatVal) {}
     };
 
 /*---------------------------------------------------------------------------------**//**
@@ -366,16 +131,16 @@ TEST_F (ECSqlStatementTestFixture, UnionTests)
 
     int rowCount;
     ECSqlStatement stmt;
-    ASSERT_EQ (ECSqlStatus::Success, stmt.Prepare (ecdb, "SELECT COUNT(*) FROM (SELECT ContactName, Address, City, PostalCode, Country FROM ECST.Supplier UNION ALL SELECT ContactName, Address, City, PostalCode, Country FROM ECST.Customer)"));
+    ASSERT_EQ (ECSqlStatus::Success, stmt.Prepare (ecdb, "SELECT COUNT(*) FROM (SELECT CompanyName FROM ECST.Supplier UNION ALL SELECT CompanyName FROM ECST.Shipper)"));
     ASSERT_EQ (stmt.Step (), BE_SQLITE_ROW);
     int count = stmt.GetValueInt (0);
     EXPECT_EQ (6, count);
     stmt.Finalize ();
 
     //Select Statement containing Union All Clause and also Order By clause
-    ASSERT_EQ (ECSqlStatus::Success, stmt.Prepare (ecdb, "SELECT ContactName, Address, City, PostalCode, Country FROM ECST.Supplier UNION ALL SELECT ContactName, Address, City, PostalCode, Country FROM ECST.Customer ORDER BY PostalCode"));
+    ASSERT_EQ (ECSqlStatus::Success, stmt.Prepare (ecdb, "SELECT CompanyName, Phone FROM ECST.Supplier UNION ALL SELECT CompanyName, Phone FROM ECST.Shipper ORDER BY Phone"));
     rowCount = 0;
-    Utf8CP expectedContactNames = "Brathion-SPIELMANN-Lannistor-Brathion-Adm-Snow-";
+    Utf8CP expectedContactNames = "ABCD-Rio Grand-GHIJ-Rio Grand-Rue Perisnon-Salguero-";
     Utf8String actualContactNames;
     while (stmt.Step () != BE_SQLITE_DONE)
         {
@@ -390,7 +155,7 @@ TEST_F (ECSqlStatementTestFixture, UnionTests)
     //Select Statement using UNION Clause, so we should get only distinct results
     ASSERT_EQ (ECSqlStatus::Success, stmt.Prepare (ecdb, "SELECT City FROM ECST.Supplier UNION SELECT City FROM ECST.Customer ORDER BY City"));
     rowCount = 0;
-    Utf8CP expectedCityNames = "AUSTIN-CA-MD-NC-SAN JOSE-";
+    Utf8CP expectedCityNames = "ALASKA-AUSTIN-CA-MD-NC-SAN JOSE-";
     Utf8String actualCityNames;
     while (stmt.Step () != BE_SQLITE_DONE)
         {
@@ -399,13 +164,13 @@ TEST_F (ECSqlStatementTestFixture, UnionTests)
         rowCount++;
         }
     ASSERT_STREQ(expectedCityNames, actualCityNames.c_str()) << stmt.GetECSql();
-    ASSERT_EQ (5, rowCount);
+    ASSERT_EQ (6, rowCount);
     stmt.Finalize ();
 
     //Select Statement Using UNION ALL Clause so we should get even Duplicate Results
     ASSERT_EQ (ECSqlStatus::Success, stmt.Prepare (ecdb, "SELECT City FROM ECST.Supplier UNION ALL SELECT City FROM ECST.Customer ORDER BY City"));
     rowCount = 0;
-    expectedCityNames = "AUSTIN-CA-MD-NC-SAN JOSE-SAN JOSE-";
+    expectedCityNames = "ALASKA-AUSTIN-CA-MD-NC-SAN JOSE-SAN JOSE-";
     actualCityNames.clear();
     while (stmt.Step () != BE_SQLITE_DONE)
         {
@@ -414,11 +179,11 @@ TEST_F (ECSqlStatementTestFixture, UnionTests)
         rowCount++;
         }
     ASSERT_STREQ (expectedCityNames, actualCityNames.c_str()) << stmt.GetECSql();
-    ASSERT_EQ (6, rowCount);
+    ASSERT_EQ (7, rowCount);
     stmt.Finalize ();
 
     //use Custom Scaler function in union query
-    ECSqlStatementTestsSchemaHelper::PowSqlFunction func;
+    PowSqlFunction func;
     ASSERT_EQ (0, ecdb.AddFunction (func));
     ASSERT_EQ (ECSqlStatus::Success, stmt.Prepare (ecdb, "Select POW(ECInstanceId, 2), GetECClassId() ECClassId, ECInstanceId From ECST.Supplier UNION ALL Select POW(ECInstanceId, 2), GetECClassId() ECClassId, ECInstanceId From ECST.Customer ORDER BY ECInstanceId"));
     rowCount = 0;
@@ -428,24 +193,29 @@ TEST_F (ECSqlStatementTestFixture, UnionTests)
         ASSERT_EQ (std::pow (base, 2), stmt.GetValueInt (0));
         rowCount++;
         }
-    ASSERT_EQ (6, rowCount);
+    ASSERT_EQ (7, rowCount);
     stmt.Finalize ();
 
     //use aggregate function in Union Query
-    ASSERT_EQ (ECSqlStatus::Success, stmt.Prepare (ecdb, "SELECT Count(*), AVG(PostalCode) FROM (SELECT PostalCode FROM ECST.Supplier UNION ALL SELECT PostalCode FROM ECST.Customer)"));
+    ASSERT_EQ (ECSqlStatus::Success, stmt.Prepare (ecdb, "SELECT Count(*), AVG(Phone) FROM (SELECT Phone FROM ECST.Supplier UNION ALL SELECT Phone FROM ECST.Customer)"));
     ASSERT_EQ (stmt.Step (), BE_SQLITE_ROW);
-    ASSERT_EQ (6, stmt.GetValueInt (0));
-    ASSERT_EQ (56258, stmt.GetValueInt (1));
+    ASSERT_EQ (7, stmt.GetValueInt (0));
+    ASSERT_EQ (1400, stmt.GetValueInt (1));
     stmt.Finalize ();
 
     //Use GROUP BY clause in Union Query
-    ASSERT_EQ (ECSqlStatus::Success, stmt.Prepare (ecdb, "SELECT ECClassId, COUNT(*) FROM (SELECT GetECClassId() ECClassId, ECInstanceId FROM ECST.Supplier UNION ALL SELECT GetECClassId() ECClassId, ECInstanceId FROM ECST.Customer) GROUP BY ECClassId ORDER BY ECClassId"));
+    ASSERT_EQ (ECSqlStatus::Success, stmt.Prepare (ecdb, "SELECT COUNT(*), Phone FROM (SELECT GetECClassId() ECClassId, Phone FROM ECST.Supplier UNION ALL SELECT GetECClassId() ECClassId, Phone FROM ECST.Customer) GROUP BY ECClassId ORDER BY Phone"));
+
+    //Get Row one
     ASSERT_TRUE (stmt.Step () == BE_SQLITE_ROW);
-    //ASSERT_EQ (128, stmt.GetValueInt (0));
-    ASSERT_EQ (3, stmt.GetValueInt (1));
+    ASSERT_EQ (3, stmt.GetValueInt (0));
+    ASSERT_EQ (1300, stmt.GetValueDouble (1));
+
+    //Get Row two
     ASSERT_TRUE (stmt.Step () == BE_SQLITE_ROW);
-    //ASSERT_EQ (134, stmt.GetValueInt (0));
-    ASSERT_EQ (3, stmt.GetValueInt (1));
+    ASSERT_EQ (4, stmt.GetValueInt (0));
+    ASSERT_EQ (1700, stmt.GetValueDouble (1));
+
     ASSERT_TRUE (stmt.Step () == BE_SQLITE_DONE);
     }
 
@@ -458,9 +228,9 @@ TEST_F (ECSqlStatementTestFixture, ExceptTests)
     ECSqlStatementTestsSchemaHelper::Populate(ecdb);
 
     ECSqlStatement stmt;
-    ASSERT_EQ (ECSqlStatus::Success, stmt.Prepare (ecdb, "SELECT ContactName FROM ECST.Supplier EXCEPT SELECT ContactName FROM ECST.Customer"));
+    ASSERT_EQ (ECSqlStatus::Success, stmt.Prepare (ecdb, "SELECT CompanyName FROM ECST.Supplier EXCEPT SELECT CompanyName FROM ECST.Shipper"));
     int rowCount = 0;
-    Utf8String expectedContactNames = "Lannistor-Snow-";
+    Utf8CP expectedContactNames = "ABCD-GHIJ-";
     Utf8String actualContactNames;
     while (stmt.Step () != BE_SQLITE_DONE)
         {
@@ -468,8 +238,22 @@ TEST_F (ECSqlStatementTestFixture, ExceptTests)
         actualContactNames.append ("-");
         rowCount++;
         }
-    ASSERT_EQ (expectedContactNames, actualContactNames);
+    ASSERT_STREQ (expectedContactNames, actualContactNames.c_str()) << stmt.GetECSql ();
     ASSERT_EQ (2, rowCount);
+
+    stmt.Finalize ();
+    ASSERT_EQ (ECSqlStatus::Success, stmt.Prepare (ecdb, "SELECT ContactTitle FROM ECST.Customer EXCEPT SELECT ContactTitle FROM ECST.Supplier"));
+    rowCount = 0;
+    expectedContactNames = "AM-Adm-SPIELMANN-";
+    actualContactNames.clear ();
+    while (stmt.Step () != BE_SQLITE_DONE)
+        {
+        actualContactNames.append (stmt.GetValueText (0));
+        actualContactNames.append ("-");
+        rowCount++;
+        }
+    ASSERT_STREQ (expectedContactNames, actualContactNames.c_str ()) << stmt.GetECSql ();
+    ASSERT_EQ (3, rowCount);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -481,16 +265,29 @@ TEST_F (ECSqlStatementTestFixture, IntersectTests)
     ECSqlStatementTestsSchemaHelper::Populate(ecdb);
 
     ECSqlStatement stmt;
-    ASSERT_EQ (ECSqlStatus::Success, stmt.Prepare (ecdb, "SELECT ContactName FROM ECST.Supplier INTERSECT SELECT ContactName FROM ECST.Customer ORDER BY ContactName"));
+    ASSERT_EQ (ECSqlStatus::Success, stmt.Prepare (ecdb, "SELECT CompanyName FROM ECST.Supplier INTERSECT SELECT CompanyName FROM ECST.Shipper ORDER BY CompanyName"));
     int rowCount = 0;
-    Utf8String expectedContactNames = "Brathion";
+    Utf8CP expectedContactNames = "Rio Grand";
     Utf8String actualContactNames;
     while (stmt.Step () != BE_SQLITE_DONE)
         {
         actualContactNames.append (stmt.GetValueText (0));
         rowCount++;
         }
-    ASSERT_EQ (expectedContactNames, actualContactNames);
+    ASSERT_STREQ (expectedContactNames, actualContactNames.c_str());
+    ASSERT_EQ (1, rowCount);
+    stmt.Finalize ();
+
+    ASSERT_EQ (ECSqlStatus::Success, stmt.Prepare (ecdb, "SELECT ContactTitle FROM ECST.Supplier INTERSECT SELECT ContactTitle FROM ECST.Customer ORDER BY ContactTitle"));
+    rowCount = 0;
+    expectedContactNames = "Brathion";
+    actualContactNames.clear ();
+    while (stmt.Step () != BE_SQLITE_DONE)
+        {
+        actualContactNames.append (stmt.GetValueText (0));
+        rowCount++;
+        }
+    ASSERT_STREQ (expectedContactNames, actualContactNames.c_str ());
     ASSERT_EQ (1, rowCount);
     }
 
@@ -503,18 +300,14 @@ TEST_F (ECSqlStatementTestFixture, NestedSelectStatementsTests)
     ECSqlStatementTestsSchemaHelper::Populate(ecdb);
 
     ECSqlStatement stmt;
-    ASSERT_EQ (ECSqlStatus::Success, stmt.Prepare (ecdb, "SELECT ProductName, Price FROM ECST.Products WHERE Price > (SELECT AVG(Price) From ECST.Products) AND Price < 500"));
+    ASSERT_EQ (ECSqlStatus::Success, stmt.Prepare (ecdb, "SELECT ProductName, UnitPrice FROM ECST.Product WHERE UnitPrice > (SELECT AVG(UnitPrice) From ECST.Product) AND UnitPrice < 500"));
     ASSERT_EQ (stmt.Step (), BE_SQLITE_ROW);
 
-    Utf8CP ecSqlSelect = "SELECT ProductName From ECST.Products WHERE Price = ?";
-
-    ECSqlStatementCache cache (1);
-    CachedECSqlStatementPtr cashedStmt = cache.GetPreparedStatement (ecdb, ecSqlSelect);
-    ASSERT_TRUE (cashedStmt != nullptr);
-    ASSERT_TRUE (cashedStmt->IsPrepared ());
-    ASSERT_EQ (ECSqlStatus::Success, cashedStmt->BindDouble (1, stmt.GetValueDouble (1))) << "Binding Double value failed";
-    ASSERT_TRUE (cashedStmt->Step () == BE_SQLITE_ROW);
-    ASSERT_EQ ((Utf8String)stmt.GetValueText (0), (Utf8String)cashedStmt->GetValueText (0));
+    ECSqlStatement selectStmt;
+    ASSERT_EQ (ECSqlStatus::Success, selectStmt.Prepare (ecdb, "SELECT ProductName From ECST.Product WHERE UnitPrice = ?"));
+    ASSERT_EQ (ECSqlStatus::Success, selectStmt.BindDouble (1, stmt.GetValueDouble (1))) << "Binding Double value failed";
+    ASSERT_TRUE (selectStmt.Step () == BE_SQLITE_ROW);
+    ASSERT_STREQ (stmt.GetValueText (0), selectStmt.GetValueText (0));
     stmt.Finalize ();
 
     //Using GetECClassId in Nested Select statement
@@ -522,10 +315,10 @@ TEST_F (ECSqlStatementTestFixture, NestedSelectStatementsTests)
     ECClassId customerClassId = ecdb.Schemas().GetECClassId("ECST", "Customer", ResolveSchema::BySchemaNamespacePrefix);
     ECClassId firstClassId = std::min<ECClassId>(supplierClassId, customerClassId);
     ECClassId secondClassId = std::max<ECClassId>(supplierClassId, customerClassId);
-    ASSERT_EQ (ECSqlStatus::Success, stmt.Prepare (ecdb, "SELECT ECClassId, COUNT(*) FROM (SELECT GetECClassId() ECClassId, ECInstanceId FROM ECST.Supplier UNION ALL SELECT GetECClassId() ECClassId, ECInstanceId FROM ECST.Customer) GROUP BY ECClassId ORDER BY ECClassId"));
+    ASSERT_EQ (ECSqlStatus::Success, stmt.Prepare (ecdb, "SELECT ECClassId, COUNT(*) FROM (SELECT GetECClassId() ECClassId FROM ECST.Supplier UNION ALL SELECT GetECClassId() ECClassId FROM ECST.Customer) GROUP BY ECClassId ORDER BY ECClassId"));
     ASSERT_TRUE (stmt.Step () == BE_SQLITE_ROW);
     ASSERT_EQ (firstClassId, stmt.GetValueInt (0));
-    ASSERT_EQ (3, stmt.GetValueInt (1));
+    ASSERT_EQ (4, stmt.GetValueInt (1));
     ASSERT_TRUE (stmt.Step () == BE_SQLITE_ROW);
     ASSERT_EQ (secondClassId, stmt.GetValueInt (0));
     ASSERT_EQ (3, stmt.GetValueInt (1));
@@ -535,21 +328,21 @@ TEST_F (ECSqlStatementTestFixture, NestedSelectStatementsTests)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                             Muhammad Hassan                         06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (ECSqlStatementTestFixture, TestPredicateFunctionsInNestedSelectStatement)
+TEST_F (ECSqlStatementTestFixture, PredicateFunctionsInNestedSelectStatement)
     {
     ECDbR ecdb = SetupECDb("ECSqlStatementTests.ecdb", BeFileName(L"ECSqlStatementTests.01.00.ecschema.xml"));
     ECSqlStatementTestsSchemaHelper::Populate(ecdb);
 
     ECSqlStatement stmt;
     //Using Predicate function in nexted select statement
-    ASSERT_EQ (ECSqlStatus::Success, stmt.Prepare (ecdb, "SELECT AVG(Price) FROM ECST.Products WHERE Price IN (SELECT Price FROM ECST.Products WHERE Price < (SELECT AVG(Price) FROM ECST.Products WHERE ProductAvailable))"));
+    ASSERT_EQ (ECSqlStatus::Success, stmt.Prepare (ecdb, "SELECT AVG(UnitPrice) FROM ECST.Product WHERE UnitPrice IN (SELECT UnitPrice FROM ECST.Product WHERE UnitPrice < (SELECT AVG(UnitPrice) FROM ECST.Product WHERE ProductAvailable))"));
     ASSERT_TRUE (stmt.Step () == BE_SQLITE_ROW);
     ASSERT_EQ (223, (int)stmt.GetValueDouble (0));
     ASSERT_TRUE (stmt.Step () == BE_SQLITE_DONE);
     stmt.Finalize ();
 
     //Using NOT operator with predicate function in Nested Select statement
-    ASSERT_EQ (ECSqlStatus::Success, stmt.Prepare (ecdb, "SELECT AVG(Price) FROM ECST.Products WHERE Price IN (SELECT Price FROM ECST.Products WHERE Price > (SELECT AVG(Price) FROM ECST.Products WHERE NOT ProductAvailable))"));
+    ASSERT_EQ (ECSqlStatus::Success, stmt.Prepare (ecdb, "SELECT AVG(UnitPrice) FROM ECST.Product WHERE UnitPrice IN (SELECT UnitPrice FROM ECST.Product WHERE UnitPrice > (SELECT AVG(UnitPrice) FROM ECST.Product WHERE NOT ProductAvailable))"));
     ASSERT_TRUE (stmt.Step () == BE_SQLITE_ROW);
     ASSERT_EQ (619, (int)stmt.GetValueDouble (0));
     ASSERT_TRUE (stmt.Step () == BE_SQLITE_DONE);
@@ -563,16 +356,15 @@ TEST_F (ECSqlStatementTestFixture, GroupByClauseTests)
     ECDbR ecdb = SetupECDb("ECSqlStatementTests.ecdb", BeFileName(L"ECSqlStatementTests.01.00.ecschema.xml"));
     ECSqlStatementTestsSchemaHelper::Populate(ecdb);
 
-    Utf8String expectedProductsNames;
+    Utf8CP expectedProductsNames;
     Utf8String actualProductsNames;
-    double ExpectedSumOfAvgPrices;
+    double expectedSumOfAvgPrices;
     double actualSumOfAvgPrices;
     ECSqlStatement stmt;
     //use of simple GROUP BY clause to find AVG(Price) from the Product table
-    ASSERT_EQ (ECSqlStatus::Success, stmt.Prepare (ecdb, "SELECT ProductName, AVG(Price) FROM ECST.Products GROUP BY ProductName ORDER BY ProductName"));
+    ASSERT_EQ (ECSqlStatus::Success, stmt.Prepare (ecdb, "SELECT ProductName, AVG(UnitPrice) FROM ECST.Product GROUP BY ProductName ORDER BY ProductName"));
     expectedProductsNames = "Binder-Desk-Pen-Pen Set-Pencil-";
-    //actualProductsNames;
-    ExpectedSumOfAvgPrices = 1895.67;
+    expectedSumOfAvgPrices = 1895.67;
     actualSumOfAvgPrices = 0;
     while (stmt.Step () != BE_SQLITE_DONE)
         {
@@ -580,15 +372,15 @@ TEST_F (ECSqlStatementTestFixture, GroupByClauseTests)
         actualProductsNames.append ("-");
         actualSumOfAvgPrices += stmt.GetValueDouble (1);
         }
-    ASSERT_EQ (expectedProductsNames, actualProductsNames);
-    ASSERT_EQ (ExpectedSumOfAvgPrices, actualSumOfAvgPrices);
+    ASSERT_STREQ (expectedProductsNames, actualProductsNames.c_str());
+    ASSERT_EQ ((int)expectedSumOfAvgPrices, (int)actualSumOfAvgPrices);
     stmt.Finalize ();
 
     //using HAVING clause with GROUP BY clause
-    ASSERT_EQ (ECSqlStatus::Success, stmt.Prepare (ecdb, "SELECT ProductName, AVG(Price) FROM ECST.Products GROUP BY ProductName Having AVG(Price)>300.00 ORDER BY ProductName"));
+    ASSERT_EQ (ECSqlStatus::Success, stmt.Prepare (ecdb, "SELECT ProductName, AVG(UnitPrice) FROM ECST.Product GROUP BY ProductName Having AVG(UnitPrice)>300.00 ORDER BY ProductName"));
     expectedProductsNames = "Binder-Pen-Pen Set-";
     actualProductsNames = "";
-    ExpectedSumOfAvgPrices = 1556.62;
+    expectedSumOfAvgPrices = 1556.62;
     actualSumOfAvgPrices = 0;
     while (stmt.Step () != BE_SQLITE_DONE)
         {
@@ -596,15 +388,15 @@ TEST_F (ECSqlStatementTestFixture, GroupByClauseTests)
         actualProductsNames.append ("-");
         actualSumOfAvgPrices += stmt.GetValueDouble (1);
         }
-    ASSERT_EQ (expectedProductsNames, actualProductsNames);
-    ASSERT_EQ ((int)ExpectedSumOfAvgPrices, (int)actualSumOfAvgPrices);
+    ASSERT_STREQ (expectedProductsNames, actualProductsNames.c_str ());
+    ASSERT_EQ ((int)expectedSumOfAvgPrices, (int)actualSumOfAvgPrices);
     stmt.Finalize ();
 
     //combined Use of GROUP BY, HAVING and WHERE Clause
-    ASSERT_EQ (ECSqlStatus::Success, stmt.Prepare (ecdb, "SELECT ProductName, AVG(Price) FROM ECST.Products WHERE Price<500 GROUP BY ProductName Having AVG(Price)>200.00 ORDER BY ProductName"));
+    ASSERT_EQ (ECSqlStatus::Success, stmt.Prepare (ecdb, "SELECT ProductName, AVG(UnitPrice) FROM ECST.Product WHERE UnitPrice<500 GROUP BY ProductName Having AVG(UnitPrice)>200.00 ORDER BY ProductName"));
     expectedProductsNames = "Binder-Pen Set-";
     actualProductsNames = "";
-    ExpectedSumOfAvgPrices = 666.84;
+    expectedSumOfAvgPrices = 666.84;
     actualSumOfAvgPrices = 0;
     while (stmt.Step () != BE_SQLITE_DONE)
         {
@@ -613,11 +405,11 @@ TEST_F (ECSqlStatementTestFixture, GroupByClauseTests)
         actualSumOfAvgPrices += stmt.GetValueDouble (1);
         }
     ASSERT_EQ (expectedProductsNames, actualProductsNames);
-    ASSERT_EQ ((int)ExpectedSumOfAvgPrices, (int)actualSumOfAvgPrices);
+    ASSERT_EQ ((int)expectedSumOfAvgPrices, (int)actualSumOfAvgPrices);
     stmt.Finalize ();
 
     //GROUP BY Clause with more then one parameters
-    ASSERT_EQ (ECSqlStatus::Success, stmt.Prepare (ecdb, "SELECT ProductName, AVG(Price), COUNT(ProductName) FROM ECST.Products GROUP BY ProductName, Price HAVING COUNT(ProductName)>1"));
+    ASSERT_EQ (ECSqlStatus::Success, stmt.Prepare (ecdb, "SELECT ProductName, AVG(UnitPrice), COUNT(ProductName) FROM ECST.Product GROUP BY ProductName, UnitPrice HAVING COUNT(ProductName)>1"));
     ASSERT_EQ (stmt.Step (), BE_SQLITE_ROW);
     ASSERT_EQ ("Pen", (Utf8String)stmt.GetValueText (0));
     ASSERT_EQ (539, (int)stmt.GetValueDouble (1));
@@ -627,41 +419,73 @@ TEST_F (ECSqlStatementTestFixture, GroupByClauseTests)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                             Muhammad Hassan                         12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (ECSqlStatementTestFixture, StructInGroupByClause)
+    {
+    ECDbR ecdb = SetupECDb ("ECSqlStatementTests.ecdb", BeFileName (L"ECSqlStatementTests.01.00.ecschema.xml"));
+    ECSqlStatementTestsSchemaHelper::Populate (ecdb);
+
+    ECSqlStatement statement;
+    ASSERT_EQ (ECSqlStatus::Success, statement.Prepare (ecdb, "SELECT AVG(Phone) FROM ECST.Customer GROUP BY PersonName"));
+    ASSERT_EQ (DbResult::BE_SQLITE_ROW, statement.Step ());
+    ASSERT_EQ (1650, statement.GetValueInt (0));
+    statement.Finalize ();
+
+    ASSERT_EQ (ECSqlStatus::Success, statement.Prepare (ecdb, "SELECT Country FROM ECST.Customer GROUP BY PersonName"));
+    int rowCount = 0;
+    while (statement.Step () == DbResult::BE_SQLITE_ROW)
+        {
+        ASSERT_STREQ ("USA", statement.GetValueText (0));
+        rowCount++;
+        }
+    ASSERT_EQ (3, rowCount);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                             Muhammad Hassan                         11/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (ECSqlStatementTestFixture, VerifyLiteralExpressionAsConstants)
     {
     ECDbR ecdb = SetupECDb ("ECSqlStatementTests.ecdb", BeFileName (L"ECSqlStatementTests.01.00.ecschema.xml"));
     ECSqlStatement statement;
-    ASSERT_EQ (ECSqlStatus::Success, statement.Prepare (ecdb, "INSERT INTO ECST.Products (ECInstanceId, Price, ProductAvailable, ProductId, ProductName) VALUES(10, 100*5, true, 100+1+GetECClassId(), 'Chair')"));
-    ASSERT_EQ (DbResult::BE_SQLITE_DONE, statement.Step ());
-    statement.Finalize ();
-    ASSERT_EQ (ECSqlStatus::Success, statement.Prepare (ecdb, "INSERT INTO ECST.Products (ECInstanceId, Price, ProductAvailable, ProductId, ProductName) VALUES(11, 1000/5, false, 100+2+GetECClassId(), 'Table')"));
-    ASSERT_EQ (DbResult::BE_SQLITE_DONE, statement.Step ());
-    statement.Finalize ();
-    ASSERT_EQ (ECSqlStatus::Success, statement.Prepare (ecdb, "INSERT INTO ECST.Products (ECInstanceId, Price, ProductAvailable, ProductId, ProductName) VALUES(12, 1000+100*5, true, 100+3+GetECClassId(), 'LCD')"));
+    ASSERT_EQ (ECSqlStatus::Success, statement.Prepare (ecdb, "INSERT INTO ECST.Product (UnitPrice, ProductAvailable, ProductName) VALUES(100*5, true, 'Chair')"));
     ASSERT_EQ (DbResult::BE_SQLITE_DONE, statement.Step ());
     statement.Finalize ();
 
-    ASSERT_EQ (ECSqlStatus::Success, statement.Prepare (ecdb, "SELECT Price FROM ECST.Products WHERE ProductId=100+2+GetECClassId()"));
+    ASSERT_EQ (ECSqlStatus::Success, statement.Prepare (ecdb, "INSERT INTO ECST.Product (UnitPrice, ProductAvailable, ProductName) VALUES(100+1+GetECClassId(), true, 'Chair')"));
+    ASSERT_EQ (DbResult::BE_SQLITE_DONE, statement.Step ());
+    statement.Finalize ();
+
+    ASSERT_EQ (ECSqlStatus::Success, statement.Prepare (ecdb, "INSERT INTO ECST.Product (UnitPrice, ProductAvailable, ProductName) VALUES(1000/5, false, 'Table')"));
+    ASSERT_EQ (DbResult::BE_SQLITE_DONE, statement.Step ());
+    statement.Finalize ();
+
+    ASSERT_EQ (ECSqlStatus::Success, statement.Prepare (ecdb, "INSERT INTO ECST.Product (UnitPrice, ProductAvailable, ProductName) VALUES(100+2+GetECClassId(), false, 'Table')"));
+    ASSERT_EQ (DbResult::BE_SQLITE_DONE, statement.Step ());
+    statement.Finalize ();
+
+    ASSERT_EQ (ECSqlStatus::Success, statement.Prepare (ecdb, "INSERT INTO ECST.Product (UnitPrice, ProductAvailable, ProductName) VALUES(1000+100*5, true, 'LCD')"));
+    ASSERT_EQ (DbResult::BE_SQLITE_DONE, statement.Step ());
+    statement.Finalize ();
+
+    ASSERT_EQ (ECSqlStatus::Success, statement.Prepare (ecdb, "SELECT ProductName FROM ECST.Product WHERE UnitPrice=100+2+GetECClassId()"));
     ASSERT_EQ (DbResult::BE_SQLITE_ROW, statement.Step ());
-    ASSERT_TRUE (200 == statement.GetValueInt (0));
+    ASSERT_STREQ ("Table", statement.GetValueText (0));
     statement.Finalize ();
 
-    ASSERT_EQ (ECSqlStatus::Success, statement.Prepare (ecdb, "SELECT Price FROM ECST.Products WHERE ProductId>100+2+GetECClassId()"));
+    ASSERT_EQ (ECSqlStatus::Success, statement.Prepare (ecdb, "SELECT AVG(UnitPrice) FROM ECST.Product WHERE UnitPrice>GetECClassId() AND ProductName='Chair'"));
     ASSERT_EQ (DbResult::BE_SQLITE_ROW, statement.Step ());
-    ASSERT_TRUE (1500 == statement.GetValueInt (0));
     statement.Finalize ();
 
-    ASSERT_EQ (ECSqlStatus::Success, statement.Prepare (ecdb, "SELECT ProductAvailable FROM ECST.Products WHERE ProductId>100+2+GetECClassId() AND Price=1000+100*5"));
+    ASSERT_EQ (ECSqlStatus::Success, statement.Prepare (ecdb, "SELECT ProductAvailable FROM ECST.Product WHERE UnitPrice>100+2+GetECClassId() AND ProductName='LCD'"));
     ASSERT_EQ (DbResult::BE_SQLITE_ROW, statement.Step ());
     ASSERT_TRUE (statement.GetValueBoolean (0));
     statement.Finalize ();
 
-    ASSERT_EQ (ECSqlStatus::Success, statement.Prepare (ecdb, "SELECT Price, ProductAvailable FROM ECST.Products WHERE ProductId>100+2+GetECClassId() ORDER BY ECInstanceId"));
+    ASSERT_EQ (ECSqlStatus::Success, statement.Prepare (ecdb, "SELECT ProductAvailable FROM ECST.Product WHERE UnitPrice=100+3+GetECClassId() OR ProductName='LCD'"));
     ASSERT_EQ (DbResult::BE_SQLITE_ROW, statement.Step ());
-    ASSERT_TRUE (1500 == statement.GetValueInt (0));
-    ASSERT_TRUE (statement.GetValueBoolean (1));
+    ASSERT_TRUE (statement.GetValueBoolean (0));
     statement.Finalize ();
     }
 
@@ -1208,16 +1032,16 @@ TEST_F (ECSqlStatementTestFixture, DeleteWithNestedSelectStatements)
 
     ECSqlStatement stmt;
 
-    ASSERT_EQ (ECSqlStatus::Success, stmt.Prepare (ecdb, "SELECT COUNT(*) FROM ECST.Products"));
+    ASSERT_EQ (ECSqlStatus::Success, stmt.Prepare (ecdb, "SELECT COUNT(*) FROM ECST.Product"));
     ASSERT_TRUE (BE_SQLITE_ROW == stmt.Step ());
     ASSERT_EQ (9, stmt.GetValueInt (0));
     stmt.Finalize ();
 
-    ASSERT_EQ (ECSqlStatus::Success, stmt.Prepare (ecdb, "DELETE FROM ECST.Products WHERE ProductName IN(SELECT ProductName FROM ECST.Products GROUP BY ProductName HAVING COUNT(ProductName)>2 AND ProductName IN(SELECT ProductName FROM ECST.Products WHERE Price >500))"));
+    ASSERT_EQ (ECSqlStatus::Success, stmt.Prepare (ecdb, "DELETE FROM ECST.Product WHERE ProductName IN(SELECT ProductName FROM ECST.Product GROUP BY ProductName HAVING COUNT(ProductName)>2 AND ProductName IN(SELECT ProductName FROM ECST.Product WHERE UnitPrice >500))"));
     ASSERT_TRUE (BE_SQLITE_DONE == stmt.Step ());
     stmt.Finalize ();
 
-    ASSERT_EQ (ECSqlStatus::Success, stmt.Prepare (ecdb, "SELECT COUNT(*) FROM ECST.Products"));
+    ASSERT_EQ (ECSqlStatus::Success, stmt.Prepare (ecdb, "SELECT COUNT(*) FROM ECST.Product"));
     ASSERT_TRUE (BE_SQLITE_ROW == stmt.Step ());
     ASSERT_EQ (6, stmt.GetValueInt (0));
     stmt.Finalize ();
@@ -1233,11 +1057,11 @@ TEST_F (ECSqlStatementTestFixture, UpdateWithNestedSelectStatments)
 
     ECSqlStatement stmt;
 
-    ASSERT_EQ (ECSqlStatus::Success, stmt.Prepare (ecdb, "UPDATE ECST.Products SET ProductName='Laptop' WHERE ProductName IN(SELECT ProductName FROM ECST.Products GROUP BY ProductName HAVING COUNT(ProductName)>2 AND ProductName IN(SELECT ProductName FROM ECST.Products WHERE Price >500))"));
+    ASSERT_EQ (ECSqlStatus::Success, stmt.Prepare (ecdb, "UPDATE ECST.Product SET ProductName='Laptop' WHERE ProductName IN(SELECT ProductName FROM ECST.Product GROUP BY ProductName HAVING COUNT(ProductName)>2 AND ProductName IN(SELECT ProductName FROM ECST.Product WHERE UnitPrice >500))"));
     ASSERT_TRUE (BE_SQLITE_DONE == stmt.Step ());
     stmt.Finalize ();
 
-    ASSERT_EQ (ECSqlStatus::Success, stmt.Prepare (ecdb, "SELECT COUNT(*) FROM ECST.Products WHERE ProductName='Laptop'"));
+    ASSERT_EQ (ECSqlStatus::Success, stmt.Prepare (ecdb, "SELECT COUNT(*) FROM ECST.Product WHERE ProductName='Laptop'"));
     ASSERT_TRUE (BE_SQLITE_ROW == stmt.Step ());
     ASSERT_EQ (3, stmt.GetValueInt (0));
     stmt.Finalize ();
@@ -3903,4 +3727,5 @@ TEST_F(ECSqlStatementTestFixture, InstanceInsertionInArray)
         }
     stmt.Finalize();
     }
+
 END_ECDBUNITTESTS_NAMESPACE
