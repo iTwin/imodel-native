@@ -10,6 +10,9 @@ BeSQLiteDbTransactionHandlerTests.StartTransaction_TwoConnections_SecondConnecti
 ChangeManagerTests.IsSyncActive_SyncSetActiveToTrue_True # notified Vincas
 CachingDataSourceTests.* # notified Vincas
 ChangeManagerTests.* # notified Vincas
+CachingDataSourceTests.GetFile_ClassDoesNotHaveFileDependentPropertiesCA_ProgressIsCalledWithNoNameAndNoSizeAndFileHasDefaultName
+DataSourceCacheTests.* # notified Vincas
+DataSourceCacheUpgradeTests.*
 *DataSourceCache*
 ECDbAdapterTests.*
 
@@ -22,6 +25,9 @@ FileUtilTests.TruncateFilePath_MaxPathSoSmallThatExtensionWouldBeChanged_Error
 FileUtilTests.TruncateFilePath_MaxPathSoSmallThatFileNameWouldBeEmpty_Error
 FileUtilTests.TruncateFilePath_PathIsFolder_Error
 
+#Fails on iOS; Vincas said to ignore
+ECDbAdapterTests.*
+
 CachingDataSourceTests.OpenOrCreate_CalledSecondTimeAfterCacheWasCreated_OpensAndSucceeds # Was DISABLED. Need to investigate
 DataSourceCacheTests.ReadResponseInstanceKeys_CachedInstanceWithRelationshipToItself_ReturnsInstanceKeysAsDuplicate  # Was DISABLED. Need to investigate
 DataSourceCacheTests.ReadResponseInstanceKeys_CachedParentInstanceWithRelationshipToItself_ReturnsInstanceKeysAsDuplicate  # Was DISABLED. Need to investigate
@@ -33,3 +39,4 @@ BuddiClientTests.GetUrl_NotExistingUrlName_ReturnsUrlNotConfiguredError         
 # Fail because data source schema uses AnyClass
 ExtendedDataAdapterTests.UpdateData_InstanceExistsAndFirstTime_SavesData
 ExtendedDataAdapterTests.GetData_InstanceDeleted_DataReturnedIsEmpty
+
