@@ -1261,7 +1261,7 @@ SchemaReadStatus ECClass::_ReadXmlAttributes (BeXmlNodeR classNode)
     BeXmlStatus domainStatus = classNode.GetAttributeStringValue(boolStr, IS_DOMAINCLASS_ATTRIBUTE);
     if (BEXML_Success == modifierStatus && BEXML_Success == domainStatus)
         {
-        LOG.warningv("Both '%s' and '%s' are set on ECClass '%s'.  This is not allowed.", MODIFIER_ATTRIBUTE, IS_DOMAINCLASS_ATTRIBUTE, GetName().c_str());
+        LOG.errorv("Both '%s' and '%s' are set on ECClass '%s'.  This is not allowed.", MODIFIER_ATTRIBUTE, IS_DOMAINCLASS_ATTRIBUTE, GetName().c_str());
         return SchemaReadStatus::InvalidECSchemaXml;
         }
 
@@ -1310,18 +1310,15 @@ SchemaReadStatus ECClass::_ReadXmlContents (BeXmlNodeR classNode, ECSchemaReadCo
                 {
                 Utf8String boolStr;
                 bool isStruct = false;
-                if (BEXML_Success == childNode->GetAttributeStringValue(boolStr, IS_STRUCT_ATTRIBUTE))
-                    ECXml::ParseBooleanString(isStruct, boolStr.c_str());
-                else
+                Utf8String typeName;
+                // Ignore the isStruct attribute since it is irrelevant.  If there is a typeName and it is resolvable as a struct, then it is a struct array.  Otherwise, it isn't.  There are invalid
+                // schemas out there that claim to be a StructArray but either use an unresolvable typeName or actually use a primitive type.
+                if (BEXML_Success == childNode->GetAttributeStringValue(typeName, TYPE_NAME_ATTRIBUTE))
                     {
-                    Utf8String typeName;
-                    if (BEXML_Success == childNode->GetAttributeStringValue(typeName, TYPE_NAME_ATTRIBUTE))
-                        {
-                        ECStructClassCP structClass;
-                        ECObjectsStatus status = ResolveStructType(structClass, typeName, *this, false);
-                        if (ECObjectsStatus::Success == status && NULL != structClass)
-                            isStruct = true;
-                        }
+                    ECStructClassCP structClass;
+                    ECObjectsStatus status = ResolveStructType(structClass, typeName, *this, false);
+                    if (ECObjectsStatus::Success == status && NULL != structClass)
+                        isStruct = true;
                     }
                 if (isStruct)
                     ecProperty = new StructArrayECProperty(*this);
