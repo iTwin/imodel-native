@@ -1485,7 +1485,7 @@ ICancellationTokenPtr ct
             partialCachingState = std::make_shared<InstanceCacheHelper::PartialCachingState>
                 (
                 m_state->GetECDbAdapter(),
-                query,
+                *query,
                 fullyPersistedInstances,
                 *rejectedOut
                 );
