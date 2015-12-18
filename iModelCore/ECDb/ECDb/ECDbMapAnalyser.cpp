@@ -2213,9 +2213,20 @@ BentleyStatus SqlGenerator::BuildStructPropertyExpression(NativeSqlBuilder& view
 //---------------------------------------------------------------------------------------
 BentleyStatus SqlGenerator::BuildSystemSelectionClause(NativeSqlBuilder::List& fragments, ClassMapCR baseClassMap, ClassMapCR classMap, Utf8CP tablePrefix, bool addECPropertyPathAlias, bool nullValue)
     {
-    if (auto column = classMap.GetTable().GetFilteredColumnFirst(ColumnKind::ECInstanceId))
+    
+    auto table = &classMap.GetTable();
+
+    if (auto parent = classMap.FindParentOfJoinedTable())
         {
-        if (BuildColumnExpression(fragments, column->GetTable().GetName().c_str(), column->GetName().c_str(), ECDbSystemSchemaHelper::ECINSTANCEID_PROPNAME, addECPropertyPathAlias, nullValue) != BentleyStatus::SUCCESS)
+        table = &parent->GetTable();
+        }
+
+    if (tablePrefix == nullptr)
+        tablePrefix = table->GetName().c_str();
+
+    if (auto column = table->GetFilteredColumnFirst(ColumnKind::ECInstanceId))
+        {
+        if (BuildColumnExpression(fragments, tablePrefix, column->GetName().c_str(), ECDbSystemSchemaHelper::ECINSTANCEID_PROPNAME, addECPropertyPathAlias, nullValue) != BentleyStatus::SUCCESS)
             return BentleyStatus::ERROR;
         }
     else
@@ -2224,9 +2235,9 @@ BentleyStatus SqlGenerator::BuildSystemSelectionClause(NativeSqlBuilder::List& f
         return BentleyStatus::ERROR;
         }
 
-    if (auto column = classMap.GetTable().GetFilteredColumnFirst(ColumnKind::ECClassId))
+    if (auto column = table->GetFilteredColumnFirst(ColumnKind::ECClassId))
         {
-        if (BuildColumnExpression(fragments, column->GetTable().GetName().c_str(), column->GetName().c_str(), "ECClassId", addECPropertyPathAlias, nullValue) != BentleyStatus::SUCCESS)
+        if (BuildColumnExpression(fragments, tablePrefix, column->GetName().c_str(), "ECClassId", addECPropertyPathAlias, nullValue) != BentleyStatus::SUCCESS)
             return BentleyStatus::ERROR;
         }
     else
@@ -2245,22 +2256,22 @@ BentleyStatus SqlGenerator::BuildSystemSelectionClause(NativeSqlBuilder::List& f
             return BentleyStatus::ERROR;
             }
 
-        if (auto column = classMap.GetTable().GetFilteredColumnFirst(ColumnKind::ParentECInstanceId))
+        if (auto column = table->GetFilteredColumnFirst(ColumnKind::ParentECInstanceId))
             {
-            if (BuildColumnExpression(fragments, column->GetTable().GetName().c_str(), column->GetName().c_str(), ECDbSystemSchemaHelper::PARENTECINSTANCEID_PROPNAME, addECPropertyPathAlias, nullValue) != BentleyStatus::SUCCESS)
+            if (BuildColumnExpression(fragments, tablePrefix, column->GetName().c_str(), ECDbSystemSchemaHelper::PARENTECINSTANCEID_PROPNAME, addECPropertyPathAlias, nullValue) != BentleyStatus::SUCCESS)
                 return BentleyStatus::ERROR;
             }
 
-        if (auto column = classMap.GetTable().GetFilteredColumnFirst(ColumnKind::ECPropertyPathId))
+        if (auto column = table->GetFilteredColumnFirst(ColumnKind::ECPropertyPathId))
             {
-            if (BuildColumnExpression(fragments, column->GetTable().GetName().c_str(), column->GetName().c_str(), ECDbSystemSchemaHelper::ECPROPERTYPATHID_PROPNAME, addECPropertyPathAlias, nullValue) != BentleyStatus::SUCCESS)
+            if (BuildColumnExpression(fragments, tablePrefix, column->GetName().c_str(), ECDbSystemSchemaHelper::ECPROPERTYPATHID_PROPNAME, addECPropertyPathAlias, nullValue) != BentleyStatus::SUCCESS)
                 return BentleyStatus::ERROR;
             }
 
-        if (auto column = classMap.GetTable().GetFilteredColumnFirst(ColumnKind::ECArrayIndex))
+        if (auto column = table->GetFilteredColumnFirst(ColumnKind::ECArrayIndex))
             {
 
-            if (BuildColumnExpression(fragments, column->GetTable().GetName().c_str(), column->GetName().c_str(), ECDbSystemSchemaHelper::ECARRAYINDEX_PROPNAME, addECPropertyPathAlias, nullValue) != BentleyStatus::SUCCESS)
+            if (BuildColumnExpression(fragments, tablePrefix, column->GetName().c_str(), ECDbSystemSchemaHelper::ECARRAYINDEX_PROPNAME, addECPropertyPathAlias, nullValue) != BentleyStatus::SUCCESS)
                 return BentleyStatus::ERROR;
             }
         }
@@ -2481,10 +2492,11 @@ BentleyStatus SqlGenerator::BuildClassView(SqlViewBuilder& viewBuilder, ClassMap
     {
     viewBuilder.GetNameBuilder().AppendEscaped(SqlGenerator::BuildViewClassName(classMap.GetClass()).c_str());
     NativeSqlBuilder::List unionList;
-    //if (classMap.GetClass().GetName() == "GeometrySource")
-    //    {
-    //    printf("ss");
-    //    }
+    if (classMap.GetClass().GetName() == "IFace")
+        {
+        printf("ss");
+        }
+
     if (classMap.IsRelationshipClassMap() && classMap.GetMapStrategy().IsForeignKeyMapping())
         {
         if (BuildEndTableRelationshipView(unionList, static_cast<RelationshipClassMapCR> (classMap)) != BentleyStatus::SUCCESS)
@@ -2492,7 +2504,7 @@ BentleyStatus SqlGenerator::BuildClassView(SqlViewBuilder& viewBuilder, ClassMap
         }
     else
         {
-        auto& disp = classMap.GetStorageDescription();
+        auto& disp = classMap.GetStorageDescription();        
         bool nextClassMapIsTopLevel = false;
         for (auto& part : disp.GetHorizontalPartitions())
             {
@@ -2513,10 +2525,8 @@ BentleyStatus SqlGenerator::BuildClassView(SqlViewBuilder& viewBuilder, ClassMap
 
             NativeSqlBuilder sqlBuilder;
             sqlBuilder.Append("SELECT ").AppendEOL();
-
             auto derivedClassId = part.GetClassIds().front();
             auto derivedClass = m_map.GetECDbR().Schemas().GetECClass(derivedClassId);
-
             if (derivedClass == nullptr)
                 {
                 BeAssert(derivedClass != nullptr);
@@ -2544,12 +2554,11 @@ BentleyStatus SqlGenerator::BuildClassView(SqlViewBuilder& viewBuilder, ClassMap
                 tabelPrefix = part.GetTable().GetName();
                 }
 
-            if (BuildSelectionClause(sqlBuilder, classMap, static_cast<ClassMapCR>(*derivedClassMap), tabelPrefix.c_str(), /*addECPropertyPathAlias = */ topLevel, false)
-                != BentleyStatus::SUCCESS)
+            if (BuildSelectionClause(sqlBuilder, classMap, static_cast<ClassMapCR>(*derivedClassMap), tabelPrefix.c_str(), /*addECPropertyPathAlias = */ topLevel, false) != BentleyStatus::SUCCESS)
                 {
                 return BentleyStatus::ERROR;
                 }
-
+   
             sqlBuilder.Append(" FROM ")
                 .AppendEscaped(part.GetTable().GetName().c_str());
 
@@ -2585,8 +2594,6 @@ BentleyStatus SqlGenerator::BuildClassView(SqlViewBuilder& viewBuilder, ClassMap
                     {
                     sqlBuilder.Append(" WHERE ");
                     sqlBuilder.AppendParenLeft();
-
-                    //sqlBuilder.AppendEscaped(part.GetTable().GetName().c_str()).AppendDot();
                     Utf8String columnQualifiedName = part.GetTable().GetName() + "." + classIdcolumn->GetName();
                     part.AppendECClassIdFilterSql(columnQualifiedName.c_str(), sqlBuilder);
                     sqlBuilder.AppendParenRight();

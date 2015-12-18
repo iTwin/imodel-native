@@ -2276,4 +2276,138 @@ TEST_F (JoinedTableECDbMapStrategyTests, RelationshipWithStandAloneClass1)
     }
     }
 
+TEST_F(JoinedTableECDbMapStrategyTests, MultiInheritence1)
+    {
+    SchemaItem testSchema(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='JoinedTableTest' nameSpacePrefix='dgn' version='1.0'"
+        "   xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'"
+        "   xmlns:ecschema='http://www.bentley.com/schemas/Bentley.ECXML.2.0'"
+        "   xmlns:xsi='http://www.w3.org/2001/XMLSchema-instance'"
+        "   xsi:schemaLocation='ecschema ECSchema.xsd' >"
+        "    <ECSchemaReference name='EditorCustomAttributes' version='01.00' prefix='beca' />"
+        "    <ECSchemaReference name='Bentley_Standard_CustomAttributes' version='01.12' prefix='bsca' />"
+        "    <ECSchemaReference name='Bentley_Standard_Classes' version='01.00' prefix='bsm' />"
+        "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
+        "    <ECClass typeName='Foo' isDomainClass='True' isStruct='False' isCustomAttributeClass='False'>"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.01.00'>"
+        "                <MapStrategy>"
+        "                    <Strategy>SharedTable</Strategy>"
+        "                    <AppliesToSubclasses>True</AppliesToSubclasses>"
+        "                    <Options>JoinedTablePerDirectSubclass</Options>"
+        "                </MapStrategy>"
+        "            </ClassMap>"
+        "        </ECCustomAttributes>"
+        "        <ECProperty propertyName='Foo_L' typeName='long'/>"
+        "        <ECProperty propertyName='Foo_S' typeName='string'/>"
+        "    </ECClass>"
+        "   <ECClass typeName='Goo' isDomainClass='True' isStruct='False' isCustomAttributeClass='False'>"
+        "        <BaseClass>Foo</BaseClass>"
+        "        <BaseClass>IFace</BaseClass>"
+        "        <ECProperty propertyName='Goo_L' typeName='long'/>"
+        "        <ECProperty propertyName='Goo_S' typeName='string'/>"
+        "    </ECClass>"
+        "   <ECClass typeName='Boo' isDomainClass='True' isStruct='False' isCustomAttributeClass='False'>"
+        "        <BaseClass>Foo</BaseClass>"
+        "        <BaseClass>IFace</BaseClass>"
+        "        <ECProperty propertyName='Boo_L' typeName='long'/>"
+        "        <ECProperty propertyName='Boo_S' typeName='string'/>"
+        "    </ECClass>"
+        "   <ECClass typeName='Moo' isDomainClass='True' isStruct='False' isCustomAttributeClass='False'>"
+        "        <BaseClass>Foo</BaseClass>"
+        "        <ECProperty propertyName='Moo_L' typeName='long'/>"
+        "        <ECProperty propertyName='Moo_S' typeName='string'/>"
+        "    </ECClass>"
+        "   <ECClass typeName='Body' isDomainClass='True' isStruct='False' isCustomAttributeClass='False'>"
+        "        <ECProperty propertyName='Body_L' typeName='long'/>"
+        "        <ECProperty propertyName='Body_S' typeName='string'/>"
+        "    </ECClass>"
+        "   <ECClass typeName='IFace' isDomainClass='False' isStruct='False' isCustomAttributeClass='False' />"
+        "   <ECRelationshipClass typeName='IFaceHasBody' isDomainClass='True' strength='referencing'>"
+        "       <Source cardinality='(1,1)' polymorphic='True'>"
+        "           <Class class = 'IFace' />"
+        "       </Source>"
+        "       <Target cardinality='(0,N)' polymorphic='True'>"
+        "           <Class class = 'Body' />"
+        "       </Target>"
+        "   </ECRelationshipClass>"
+        "</ECSchema>");
+
+    ECDbR db = SetupECDb("JoinedTableTest101.ecdb", testSchema);
+    ASSERT_TRUE(db.IsDbOpen());
+
+    ECClassId gooId = db.Schemas().GetECClassId("dgn", "Goo", ResolveSchema::BySchemaNamespacePrefix);
+    ECClassId booId = db.Schemas().GetECClassId("dgn", "Boo", ResolveSchema::BySchemaNamespacePrefix);
+    //ECClassId mooId = db.Schemas().GetECClassId("dgn", "Moo", ResolveSchema::BySchemaNamespacePrefix);
+    ECClassId bodyId = db.Schemas().GetECClassId("dgn", "Body", ResolveSchema::BySchemaNamespacePrefix);
+    ECClassId ifaceHasBodyId = db.Schemas().GetECClassId("dgn", "IFaceHasBody", ResolveSchema::BySchemaNamespacePrefix);
+
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(db, "INSERT INTO dgn.Goo(ECInstanceId, Foo_L, Foo_S, Goo_L, Goo_S) VALUES(1, 101, '::101', 102, '::102')"));
+    ASSERT_EQ(stmt.Step(), BE_SQLITE_DONE);
+    stmt.Finalize();
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(db, "INSERT INTO dgn.Boo(ECInstanceId, Foo_L, Foo_S, Boo_L, Boo_S) VALUES(2, 201, '::201', 202, '::202')"));
+    ASSERT_EQ(stmt.Step(), BE_SQLITE_DONE);
+    stmt.Finalize();
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(db, "INSERT INTO dgn.Moo(ECInstanceId, Foo_L, Foo_S, Moo_L, Moo_S) VALUES(3, 301, '::301', 302, '::302')"));
+    ASSERT_EQ(stmt.Step(), BE_SQLITE_DONE);
+    stmt.Finalize();
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(db, "INSERT INTO dgn.Body(ECInstanceId, Body_L, Body_S) VALUES(4, 401, '::401')"));
+    ASSERT_EQ(stmt.Step(), BE_SQLITE_DONE);
+    stmt.Finalize();
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(db, "INSERT INTO dgn.Body(ECInstanceId, Body_L, Body_S) VALUES(5, 401, '::401')"));
+    ASSERT_EQ(stmt.Step(), BE_SQLITE_DONE);
+    stmt.Finalize();
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(db,SqlPrintfString("INSERT INTO dgn.IFaceHasBody(SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId) VALUES(%d,%d,%d,%d)", 1, gooId, 4, bodyId).GetUtf8CP()));
+    ASSERT_EQ(stmt.Step(), BE_SQLITE_DONE);
+    stmt.Finalize();
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(db, SqlPrintfString("INSERT INTO dgn.IFaceHasBody(SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId) VALUES(%d,%d,%d,%d)", 2, booId, 5, bodyId).GetUtf8CP()));
+    ASSERT_EQ(stmt.Step(), BE_SQLITE_DONE);
+    stmt.Finalize();
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(db, "SELECT ECInstanceId, GetECClassId(), SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId FROM dgn.IFaceHasBody ORDER BY ECInstanceId"));
+    int count = 0;
+    while(stmt.Step() == BE_SQLITE_ROW)
+        {
+        auto ecInstanceId = stmt.GetValueInt64(0);
+        auto ecClassId = stmt.GetValueInt64(1);
+        auto sourceECInstanceId = stmt.GetValueInt64(2);
+        auto sourceECClassId = stmt.GetValueInt64(3);
+        auto targetECInstanceId = stmt.GetValueInt64(4);
+        auto targetECClassId = stmt.GetValueInt64(5);
+        if (count == 0)
+            {
+            //    5	135	2	131	5	130
+            ASSERT_EQ(4, ecInstanceId);
+            ASSERT_EQ(ifaceHasBodyId, ecClassId);
+            ASSERT_EQ(1, sourceECInstanceId);
+            ASSERT_EQ(gooId, sourceECClassId);
+            ASSERT_EQ(4, targetECInstanceId);
+            ASSERT_EQ(bodyId, targetECClassId);
+            }
+        else if (count == 1)
+            {
+            //    5	135	2	131	5	130
+            ASSERT_EQ(5, ecInstanceId);
+            ASSERT_EQ(ifaceHasBodyId, ecClassId);
+            ASSERT_EQ(2, sourceECInstanceId);
+            ASSERT_EQ(booId, sourceECClassId);
+            ASSERT_EQ(5, targetECInstanceId);
+            ASSERT_EQ(bodyId, targetECClassId);
+            }
+
+        count++;
+        }
+    stmt.Finalize();
+
+    db.Schemas().CreateECClassViewsInDb();
+
+    }
 END_ECDBUNITTESTS_NAMESPACE
