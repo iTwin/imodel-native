@@ -24,15 +24,17 @@ namespace {
 	//---------------------------------------------------------------------------------------
 	static void ShowUsage(char* str)
 		{
-		fprintf(stderr, "\n%s -i <inputSchemaPath> -o <outputDirectory> [-V VERSION] [-d DIRECTORIES]\n\n%s\n\n%s\n\n%s\t%s\n%s\t%s\n\n",
+		fprintf(stderr, "\n%s -i <inputSchemaPath> -o <outputDirectory> [-V VERSION] [-d DIRECTORIES] [-a] [-r VERSION]\n\n%s\n\n%s\n\n%s\t%s\n%s\t%s\n%s\t%s\n%s\t%s\n\n",
 			str, "Tool to convert between different versions of ECSchema(s)", "options:",
 			" -V --ver 2|3", "the schema will be converted to the specified version",
-			" -d --ref DIR", "Look into the following directories for reference schemas");
+			" -d --dir DIR", "looks into the following directories for reference schemas",
+			" -a --all", "convert the entire schema graph",
+			" -r --ref 2|3", "convert all the reference schemas to this version");
 		}
 	//---------------------------------------------------------------------------------------
 	// @bsimethod                                                   BentleySystems
 	//---------------------------------------------------------------------------------------
-	static int ConvertSchema(BeFileNameCR ecSchemaFile, BeFileNameCR outputFile, bvector<BeFileName> referenceDirectories, int version)
+	static int ConvertSchema(BeFileNameCR ecSchemaFile, BeFileNameCR outputFile, bvector<BeFileName> referenceDirectories, int version, bool all, int refVersion)
 		{		
 		ECSchemaReadContextPtr contextPtr = ECSchemaReadContext::CreateContext();
 		contextPtr->AddSchemaPath(ecSchemaFile.GetDirectoryName().GetName());
@@ -42,6 +44,21 @@ namespace {
 		SchemaReadStatus readSchemaStatus = ECSchema::ReadFromXmlFile(schema, ecSchemaFile.GetName(), *contextPtr);
 		if (SchemaReadStatus::Success != readSchemaStatus)
 			return (int)readSchemaStatus;
+		if (all)
+			refVersion=version;
+		if (refVersion != 0)
+			{
+			for (auto ref : schema->GetReferencedSchemas())
+				{
+				ECSchemaPtr refSchema = ref.second;
+				WString s;
+				s.AssignUtf8(refSchema->GetFullSchemaName().c_str());
+				s += L".ecschema.xml";
+				BeFileName refoutfile(nullptr, outputFile.GetDirectoryName().GetName(), s.c_str(), nullptr);
+				if(0 != (int)refSchema->WriteToXmlFile(refoutfile.GetName(), refVersion, 0))
+					return -1;
+				}
+			}
 
 		s_logger->infov(L"Saving ECv3 version of the schema in directory '%ls'", outputFile.GetDirectoryName());
 		return (int)schema->WriteToXmlFile(outputFile.GetName(), version, 0);
@@ -56,8 +73,10 @@ int main(int argc, char** argv)
 	char* input;
 	char* output;
 	bvector<char*> directories;
+	bool all = false;
 	int version = 3;
 	int flag = 0;
+	int refversion = 0;
 	if (argc < 5)
 		{
 		ShowUsage(argv[0]);
@@ -91,12 +110,14 @@ int main(int argc, char** argv)
 				flag++;
 				}
 			}
+		else if (strcmp(argv[i], "-a") == 0 || strcmp(argv[i], "--all") == 0)
+			all = true;
 		else if (strcmp(argv[i], "-h") == 0 || strcmp(argv[i], "--help") == 0)
 			{
 			ShowUsage(argv[0]);
 			return -1;
 			}
-		else if (strcmp(argv[i], "-V") == 0 || strcmp(argv[i], "--version") == 0)
+		else if (strcmp(argv[i], "-V") == 0 || strcmp(argv[i], "--ver") == 0)
 			{
 			if ((argv[i + 1])[0] == '-' || !(atof(argv[i + 1]) - 2 == 0 || atof(argv[i + 1]) - 3 == 0))
 				{
@@ -105,6 +126,16 @@ int main(int argc, char** argv)
 				}
 			else
 				version = atoi(argv[++i]);
+			}
+		else if (strcmp(argv[i], "-r") == 0 || strcmp(argv[i], "--ref") == 0)
+			{
+			if ((argv[i + 1])[0] == '-' || !(atof(argv[i + 1]) - 2 == 0 || atof(argv[i + 1]) - 3 == 0))
+				{
+				fprintf(stderr, " -r should be follwed by either the version 2.0(2) or 3.0(3)");
+				return -1;
+				}
+			else
+				refversion = atoi(argv[++i]);
 			}
 		else if (strcmp(argv[i], "-d") == 0 || strcmp(argv[i], "--ref") == 0)
 			{
@@ -186,6 +217,6 @@ int main(int argc, char** argv)
 		temp.Clear();
 		}
 	
-	return ConvertSchema(inputFileName, outputFile, refDirectories, version);
+	return ConvertSchema(inputFileName, outputFile, refDirectories, version, all, refversion);
     }
 
