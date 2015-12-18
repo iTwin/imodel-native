@@ -59,32 +59,15 @@ struct DgnScript
     DGNPLATFORM_EXPORT static DgnDbStatus ExecuteEga(int& functionReturnStatus, Dgn::DgnElementR el, Utf8CP jsEgaFunctionName, DPoint3dCR origin, YawPitchRollAnglesCR angles, Json::Value const& parms);
 
     /**
-    Call a DgnModel validation solver function that is implemented in JavaScript.
+    Call a ComponentModel element generator function that is implemented in JavaScript.
 
-    <h2>Signature of a JavaScript model solver function.</h2>
-    A model solver function written in TypeScript must have the following signature:
     @verbatim
-    function myModelSolverFunction(model: BentleyApi.Dgn.JsDgnModel, params: any) : number
-    @endverbatim
-    Or, in JavaScript:
-    @verbatim
-    function myModelSolverFunction(model, params)
+        export function GenerateElements(componentModel: be.ComponentModel, destModel: be.DgnModel, instance: be.ECInstance, cdef: be.ComponentDef): number
     @endverbatim
 
-    <h2>Registering a JavaScript model solver function.</h2>
-    The JavaScript program must register a model solver function in its start-up logic like this:
-    @verbatim
-    BentleyApi.Dgn.RegisterModelSolver('myNamespace.myModelSolverPublicName', myModelSolverFunction);
-    @endverbatim
-    The \a myModelSolverPublicName parameter must match the name used to register a JavaScript model solver.
-
-    @param[out] functionReturnStatus    The function's integer return value. 0 means success.
-    @param[in] model           The model to validate
-    @param[in] jsFunctionName   Identifies the Script function to be executed. Must be of the form namespace.functionname
-    @param[in] variationSpec    An ECInstance that contains parameters to pass to the solver and that can be used to get information about the component.
     @return non-zero if the specified namespace is not found in the JavaScript library or if the specified function could not be found or failed to execute.
     **/
-    DGNPLATFORM_EXPORT static DgnDbStatus ExecuteModelSolver(int& functionReturnStatus, Dgn::DgnModelR model, Utf8CP jsFunctionName, ECN::IECInstanceCR variationSpec);
+    DGNPLATFORM_EXPORT static DgnDbStatus ExecuteComponentGenerateElements(int& functionReturnStatus, Dgn::ComponentModelR componentModel, Dgn::DgnModelR destModel, ECN::IECInstanceR instance, Dgn::ComponentDefR cdef, Utf8StringCR functionName);
 
     DGNPLATFORM_EXPORT static DgnDbStatus ExecuteDgnDbScript(int& functionReturnStatus, Dgn::DgnDbR db, Utf8StringCR functionName, Json::Value const& parms);
 

@@ -35,6 +35,9 @@ typedef JsECDbSchemaManager* JsECDbSchemaManagerP;
 struct JsComponentModel;
 typedef JsComponentModel* JsComponentModelP;
 
+struct JsComponentDef;
+typedef JsComponentDef* JsComponentDefP;
+
 struct JsECInstance;
 typedef JsECInstance* JsECInstanceP;
 
@@ -43,6 +46,9 @@ typedef JsECClass* JsECClassP;
 
 struct JsECProperty;
 typedef JsECProperty* JsECPropertyP;
+
+struct JsDgnCategory;
+typedef JsDgnCategory* JsDgnCategoryP;
 
 #define JS_ITERATOR_IMPL(JSITCLASS,CPPCOLL) typedef CPPCOLL T_CppColl;\
     T_CppColl::const_iterator m_iter;\
@@ -236,11 +242,11 @@ struct JsDgnElement : RefCountedBaseWithCreate
     JsDgnObjectIdP GetElementId() {return new JsDgnObjectId(m_el->GetElementId().GetValueUnchecked());}
     JsAuthorityIssuedCodeP GetCode() const {return new JsAuthorityIssuedCode(m_el->GetCode());}
     JsDgnModelP GetModel();
-    void SetModel(JsDgnModelP) {BeAssert(false);} // *** WIP_SCRIPT - this should be a read-only property
     int32_t Insert() {return m_el.IsValid()? m_el->Insert().IsValid()? 0: -1: -2;}
     int32_t Update() {return m_el.IsValid()? m_el->Update().IsValid()? 0: -1: -2;}
     void SetParent(JsDgnElement* parent) {if (m_el.IsValid() && (nullptr != parent)) m_el->SetParentId(parent->m_el->GetElementId());}
 
+    STUB_OUT_SET_METHOD(Model, JsDgnModelP)
     STUB_OUT_SET_METHOD(ElementId,JsDgnObjectIdP)
     STUB_OUT_SET_METHOD(Code,JsAuthorityIssuedCodeP)
 };
@@ -271,7 +277,6 @@ struct JsDgnModel : RefCountedBaseWithCreate
     JsDgnObjectIdP GetModelId() {return new JsDgnObjectId(m_model->GetModelId().GetValueUnchecked());}
     JsAuthorityIssuedCodeP GetCode() const {return new JsAuthorityIssuedCode(m_model->GetCode());}
     JsDgnDbP GetDgnDb() {return new JsDgnDb(m_model->GetDgnDb());}
-    void DeleteAllElements();
     static JsAuthorityIssuedCodeP CreateModelCode(Utf8StringCR name) {return new JsAuthorityIssuedCode(DgnModel::CreateModelCode(name));}
 
     JsComponentModelP ToComponentModel();
@@ -302,19 +307,46 @@ typedef JsPlacement3d* JsPlacement3dP;
 //=======================================================================================
 // @bsiclass                                                    Sam.Wilson      06/15
 //=======================================================================================
-#ifdef WIP_COMPONENT
-struct JsComponentDef : RefCountedBaseWithCreate
+struct JsComponentModel : JsDgnModel
 {
     JsComponentModel(ComponentModel& m) : JsDgnModel(m) {;}
+};
 
-    Utf8String GetName() {return m_model.IsValid()? m_model->GetCode().GetValue(): "";}
-    JsDgnElement* MakeInstance(JsDgnModelP targetModel, Utf8StringCR capturedSolutionName, Utf8StringCR paramsJSON, JsAuthorityIssuedCodeP code);
-    void DeleteAllElements();
-    static JsComponentModelP FindModelByName(JsDgnDbP db, Utf8StringCR name) {auto cm = ComponentModel::FindModelByName(*db->m_db, name); return cm.IsValid()? new JsComponentModel(*cm): nullptr; }
+//=======================================================================================
+// @bsiclass                                                    Sam.Wilson      06/15
+//=======================================================================================
+struct JsComponentDef : RefCountedBaseWithCreate
+{
+    ComponentDef m_cdef;
+
+    JsComponentDef(ComponentDef const& cd) : m_cdef(cd) {}
+
+    Utf8String GetName() const {return m_cdef.GetName();}
+    JsDgnCategoryP GetCategory() const;
+    Utf8String GetCodeAuthority() const {return m_cdef.GetCodeAuthorityName();}
+    JsECClassP GetComponentECClass() const;
+
+    //static               FindByName(db: DgnDbP, name: Bentley_Utf8String): ComponentDefP;
+    static JsComponentDefP FindByName(JsDgnDbP db, Utf8StringCR name);
+
+    // QueryVariationByName(variationName: Bentley_Utf8String): DgnElementP;
+    JsDgnElementP QueryVariationByName(Utf8StringCR variationName);
+
+    // static GetParameters(instance: DgnElementP): ECInstanceP;
+    static JsECInstanceP GetParameters(JsDgnElementP instance);
+
+    //            MakeInstanceOfVariation(targetModel: DgnModelP, variation: DgnElementP, instanceParameters: ECInstanceP, code: AuthorityIssuedCode): DgnElementP;
+    JsDgnElementP MakeInstanceOfVariation(JsDgnModelP targetModel, JsDgnElementP variation, JsECInstanceP instanceParameters, JsAuthorityIssuedCodeP code);
+
+
+    //            MakeUniqueInstance(targetModel: DgnElementP, instanceParameters: ECInstanceP, code: AuthorityIssuedCode): DgnElementP;
+    JsDgnElementP MakeUniqueInstance(JsDgnModelP targetModel, JsECInstanceP instanceParameters, JsAuthorityIssuedCodeP code);
 
     STUB_OUT_SET_METHOD(Name,Utf8String)
+    STUB_OUT_SET_METHOD(Category,JsDgnCategoryP)
+    STUB_OUT_SET_METHOD(CodeAuthority,Utf8StringCR)
+    STUB_OUT_SET_METHOD(ComponentECClass,JsECClassP)
 };
-#endif
 
 //=======================================================================================
 // @bsiclass                                                    Sam.Wilson      06/15
@@ -378,7 +410,6 @@ struct JsDgnCategory : RefCountedBaseWithCreate
     STUB_OUT_SET_METHOD(CategoryName,Utf8String)
 
 };
-typedef JsDgnCategory* JsDgnCategoryP;
 
 //=======================================================================================
 // @bsiclass                                                    Sam.Wilson      06/15
@@ -437,6 +468,8 @@ struct JsECClass : RefCountedBaseWithCreate
     JsECPropertyCollectionP GetProperties() const {return m_ecClass? new JsECPropertyCollection(m_ecClass->GetProperties()): nullptr;}
 
     JsECInstanceP GetCustomAttribute(Utf8StringCR className) {return getCustomAttribute(m_ecClass, className);}
+
+    JsECInstanceP MakeInstance();
 
     STUB_OUT_SET_METHOD(Name,Utf8String)
     STUB_OUT_SET_METHOD(Properties,JsECPropertyCollectionP)
@@ -518,6 +551,12 @@ struct JsECValue : RefCountedBaseWithCreate
 {
     ECN::ECValue m_value;
 
+    //static          FromDouble(v: cxx_double): ECValueP;
+    static JsECValue* FromDouble(double v) {return new JsECValue(ECN::ECValue(v));}
+
+    //static FromString(v: Bentley_Utf8String): ECValueP;
+    static JsECValue* FromString(Utf8StringCR s) {return new JsECValue(ECN::ECValue(s.c_str()));}
+
     JsECValue(ECN::ECValueCR v) : m_value(v) {;}
     bool GetIsPrimitive() const {return m_value.IsPrimitive();}
     bool GetIsNull() const {return m_value.IsNull();}
@@ -554,6 +593,13 @@ struct JsECInstance : RefCountedBaseWithCreate
         if (ECN::ECObjectsStatus::Success != m_instance->GetValue(v, propertyName.c_str()))
             return nullptr;
         return new JsECValue(v);
+        }
+
+    void SetValue(Utf8StringCR propertyName, JsECValueP value) 
+        {
+        if (!m_instance.IsValid() || nullptr == value)
+            return;
+        m_instance->SetValue(propertyName.c_str(), value->m_value);
         }
 
     STUB_OUT_SET_METHOD(Class,JsECClassP)

@@ -9,12 +9,12 @@
 #include <DgnPlatform/DgnDbTables.h>
 #include <DgnPlatform/DgnScript.h>
 
-#define CDEF_CA_SANDBOX "Sandbox"
+#define CDEF_CA_MODEL "Model"
 #define CDEF_CA_ELEMENT_GENERATOR "ElementGenerator"
 #define CDEF_CA_CATEGORY "Category"
 #define CDEF_CA_CODE_AUTHORITY "CodeAuthority"
 
-#define COMPONENT_MODEL_PROP_ComponentECClass "ComponentECClass"
+#define ECSUCCESS(STMT) if (ECN::ECObjectsStatus::Success != (ecstatus = STMT)) {BeAssert(false); return nullptr;}
 
 //=======================================================================================
 // Base for helper classes that assist in making harvested solutions persistent
@@ -77,7 +77,7 @@ struct ComponentGeometryHarvester
     private:
     ComponentDef& m_cdef;
 
-    DgnDbStatus HarvestSandbox(bvector<bpair<DgnSubCategoryId, DgnGeomPartId>>& geomBySubcategory, bvector<DgnElementCPtr>& nestedInstances);
+    DgnDbStatus HarvestModel(bvector<bpair<DgnSubCategoryId, DgnGeomPartId>>& geomBySubcategory, bvector<DgnElementCPtr>& nestedInstances);
     DgnElementPtr CreateInstance(DgnDbStatus& status, DgnElement::Code const& icode, bvector<bpair<DgnSubCategoryId, DgnGeomPartId>> const&, HarvestedSolutionWriter& writer);
 
     public:
@@ -109,7 +109,7 @@ DgnElementPtr HarvestedSolutionWriter::_CreateInstance(DgnDbStatus& status, DgnC
     DgnElementPtr capturedSolutionElement = dgnElem->ToPhysicalElementP();
     if (!capturedSolutionElement.IsValid())
         {
-        BeAssert(false && "HarvestSandbox creates only PhysicalElements");
+        BeAssert(false && "HarvestModel creates only PhysicalElements");
         status = DgnDbStatus::WrongClass;
         return nullptr;
         }
@@ -154,7 +154,7 @@ DgnElementCPtr HarvestedSingletonInserter::_WriteInstance(DgnDbStatus& status, D
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus ComponentGeometryHarvester::HarvestSandbox(bvector<bpair<DgnSubCategoryId, DgnGeomPartId>>& geomBySubcategory, bvector<DgnElementCPtr>& nestedInstances)
+DgnDbStatus ComponentGeometryHarvester::HarvestModel(bvector<bpair<DgnSubCategoryId, DgnGeomPartId>>& geomBySubcategory, bvector<DgnElementCPtr>& nestedInstances)
     {
     // ***
     // *** WIP_COMPONENT_MODEL *** the logic below is not complete. Must must add another dimension -- we must break out builders by same ElemDisplayParams, not just subcategory
@@ -166,7 +166,7 @@ DgnDbStatus ComponentGeometryHarvester::HarvestSandbox(bvector<bpair<DgnSubCateg
 
     //  Gather geometry by SubCategory
     bmap<DgnSubCategoryId, ElementGeometryBuilderPtr> builders;     
-    auto cm = m_cdef.GetSandbox();
+    auto cm = m_cdef.GetModel();
     cm.FillModel();
     for (auto const& mapEntry : cm)
         {
@@ -183,7 +183,7 @@ DgnDbStatus ComponentGeometryHarvester::HarvestSandbox(bvector<bpair<DgnSubCateg
                 nestedInstances.push_back(pnested);
             else
                 {
-                BeDataAssert(false && "HarvestSandbox supports only PhysicalElements.");
+                BeDataAssert(false && "HarvestModel supports only PhysicalElements.");
                 }
             continue;
             }
@@ -296,7 +296,7 @@ DgnElementCPtr ComponentGeometryHarvester::MakeInstance(DgnDbStatus& status, Dgn
     //  Gather up the current solution results. Note: a side-effect of harvesting is to create and insert GeomParts to hold the harvested solution geometry
     bvector<bpair<DgnSubCategoryId, DgnGeomPartId>> geomBySubcategory;
     bvector<DgnElementCPtr> nestedInstances;
-    if (DgnDbStatus::Success != (status = HarvestSandbox(geomBySubcategory, nestedInstances)))
+    if (DgnDbStatus::Success != (status = HarvestModel(geomBySubcategory, nestedInstances)))
         return nullptr;
 
     //  Create an element that holds this geometry. 
@@ -325,7 +325,7 @@ DgnElementCPtr ComponentGeometryHarvester::MakeInstance(DgnDbStatus& status, Dgn
 * @bsimethod                                    Sam.Wilson                      12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 ComponentDef::ComponentDef(DgnDbR db, ECN::ECClassCR componentDefClass)
-    : m_db(db), m_sandbox(nullptr), m_class(componentDefClass)
+    : m_db(db), m_model(nullptr), m_class(componentDefClass)
     {
     ECN::ECClassCP caClass = db.Schemas().GetECClass(DGN_ECSCHEMA_NAME, "ComponentSpecification");
     if (nullptr == caClass)
@@ -347,17 +347,19 @@ ComponentDef::ComponentDef(DgnDbR db, ECN::ECClassCR componentDefClass)
 +---------------+---------------+---------------+---------------+---------------+------*/
 ComponentDef::~ComponentDef()
     {
-    if (m_sandbox.IsValid() && UsesTemporarySandbox())
-        m_sandbox->Delete();
+    //  *** WIP_COMPONENT: Instead of deleting the model, destructor should check the sandbox model back in to the pool.
+
+    if (m_model.IsValid() && UsesTemporaryModel())
+        m_model->Delete();
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String ComponentDef::GetCaValueString(Utf8CP propName) const
+Utf8String ComponentDef::GetCaValueString(ECN::IECInstanceCR ca, Utf8CP propName)
     {
     ECN::ECValue v;
-    if (ECN::ECObjectsStatus::Success != m_ca->GetValue(v, propName))
+    if (ECN::ECObjectsStatus::Success != ca.GetValue(v, propName))
         return "";
     return v.ToString();
     }
@@ -365,12 +367,12 @@ Utf8String ComponentDef::GetCaValueString(Utf8CP propName) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String ComponentDef::GetCategoryName() const {return GetCaValueString(CDEF_CA_CATEGORY);}
+Utf8String ComponentDef::GetCategoryName() const {return GetCaValueString(*m_ca, CDEF_CA_CATEGORY);}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String ComponentDef::GetCodeAuthorityName() const {return GetCaValueString(CDEF_CA_CODE_AUTHORITY);}
+Utf8String ComponentDef::GetCodeAuthorityName() const {return GetCaValueString(*m_ca, CDEF_CA_CODE_AUTHORITY);}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/15
@@ -394,9 +396,9 @@ DgnCategoryId ComponentDef::QueryCategoryId() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ComponentDef::UsesTemporarySandbox() const
+bool ComponentDef::UsesTemporaryModel() const
     {
-    return GetCaValueString(CDEF_CA_SANDBOX).empty();
+    return GetCaValueString(*m_ca, CDEF_CA_MODEL).empty();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -420,29 +422,32 @@ Utf8String ComponentDef::GetGeneratedName() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-ComponentModelR ComponentDef::GetSandbox() 
+ComponentModelR ComponentDef::GetModel() 
     {
-    if (m_sandbox.IsValid())
-        return *m_sandbox;
+    if (m_model.IsValid())
+        return *m_model;
+
+    DgnModelId modelId;
         
-    Utf8String sandBoxName = GetCaValueString(CDEF_CA_SANDBOX);
-    if (sandBoxName.empty())
-        sandBoxName = m_db.Models().GetUniqueModelName(GetGeneratedName().c_str());
+    Utf8String modelName = GetCaValueString(*m_ca, CDEF_CA_MODEL);
+    if (!modelName.empty())
+        {
+        DgnModel::Code modelCode = DgnModel::CreateModelCode(modelName);
+        m_model = m_db.Models().Get<ComponentModel>(m_db.Models().QueryModelId(modelCode));
+        if (m_model.IsValid())
+            return *m_model;
+        }
 
-    DgnModel::Code sandBoxCode = DgnModel::CreateModelCode(sandBoxName);
+    //  model name not specified, or model does not exist. Generate one.
 
-    DgnModelId sbid;
-    m_db.Models().QueryModelId(sandBoxCode);
-    if (sbid.IsValid())
-        m_sandbox = m_db.Models().Get<ComponentModel>(sbid);
+    //  *** WIP_COMPONENT: Instead of creating a new one, check out a model from a pool of pre-allocated anonymous "sandbox" ComponentModels. Destructor would then check the sandbox model back in.
 
-    if (m_sandbox.IsValid())
-        return *m_sandbox;
+    modelName = m_db.Models().GetUniqueModelName(GetGeneratedName().c_str());
+    DgnModel::Code modelCode = DgnModel::CreateModelCode(modelName);
+    m_model = new ComponentModel(m_db, modelCode, GetECClass().GetFullName());
+    m_model->Insert();
 
-    m_sandbox = new ComponentModel(m_db, sandBoxCode, GetECClass().GetFullName());
-    m_sandbox->Insert();
-
-    return *m_sandbox;
+    return *m_model;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -450,23 +455,23 @@ ComponentModelR ComponentDef::GetSandbox()
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus ComponentDef::GenerateGeometry(ECN::IECInstanceCR variationSpecIn)
     {
-    GetSandbox();
+    GetModel();
 
     ECN::IECInstancePtr instanceTemplate = MakeVariationSpec();
     instanceTemplate->CopyValues(variationSpecIn);
 
-    Utf8String scriptName = GetCaValueString(CDEF_CA_ELEMENT_GENERATOR);
+    Utf8String scriptName = GetCaValueString(*m_ca, CDEF_CA_ELEMENT_GENERATOR);
     if (scriptName.empty())
         {
-        GeometryGenerator* gg = dynamic_cast<GeometryGenerator*>(m_sandbox.get());
+        GeometryGenerator* gg = dynamic_cast<GeometryGenerator*>(m_model.get());
         if (nullptr == gg)
-            return DgnDbStatus::Success;    // assume the sandbox contains static geometry
+            return DgnDbStatus::Success;    // assume the model contains static geometry
 
         return gg->_GenerateGeometry(*instanceTemplate);
         }
         
-    StatusInt retval;
-    if (DgnDbStatus::Success != DgnScript::ExecuteModelSolver(retval, *m_sandbox, scriptName.c_str(), *instanceTemplate) || (0 == retval))
+    StatusInt retval;                                               // *** WIP_COMPONENT: need to pass in destination model
+    if (DgnDbStatus::Success != DgnScript::ExecuteComponentGenerateElements(retval, *m_model, *m_model, *instanceTemplate, *this, scriptName.c_str()) || (0 == retval))
         return DgnDbStatus::BadRequest;
 
     return DgnDbStatus::Success;
@@ -481,7 +486,7 @@ DgnElementCPtr ComponentDef::MakeInstance0(DgnDbStatus* statusOut, DgnModelR des
     if (DgnDbStatus::Success != (status = GenerateGeometry(parameters)))
         return nullptr;
 
-    HarvestedSolutionInserter inserter(destModel, GetSandbox());
+    HarvestedSolutionInserter inserter(destModel, GetModel());
     ComponentGeometryHarvester harvester(*this);
     return harvester.MakeInstance(status, code, inserter);
     }
@@ -523,7 +528,7 @@ DgnElementCPtr ComponentDef::MakeVariation(DgnDbStatus* statusOut, DgnModelR des
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElementCPtr ComponentDef::MakeSingletonInstance(DgnDbStatus* statusOut, DgnModelR destModel, ECN::IECInstanceCR variationParms, DgnElement::Code const& code)
+DgnElementCPtr ComponentDef::MakeUniqueInstance(DgnDbStatus* statusOut, DgnModelR destModel, ECN::IECInstanceCR variationParms, DgnElement::Code const& code)
     {
     DgnDbStatus ALLOW_NULL_OUTPUT(status, statusOut);
 
@@ -533,13 +538,13 @@ DgnElementCPtr ComponentDef::MakeSingletonInstance(DgnDbStatus* statusOut, DgnMo
         status = DgnDbStatus::WrongClass;
         return nullptr;
         }
-    return MakeInstance0(statusOut, destModel, variationParms, code);
+    return componentCDef.MakeInstance0(statusOut, destModel, variationParms, code);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElementCPtr ComponentDef::MakeInstanceOfVariation(DgnDbStatus* statusOut, DgnModelR destModel, DgnElementCR variation, ECN::IECInstanceCP variationParms, DgnElement::Code const& code)
+DgnElementCPtr ComponentDef::MakeInstanceOfVariation(DgnDbStatus* statusOut, DgnModelR destModel, DgnElementCR variation, ECN::IECInstanceCP instanceParms, DgnElement::Code const& code)
     {
     DgnDbStatus ALLOW_NULL_OUTPUT(status, statusOut);
     
@@ -558,17 +563,19 @@ DgnElementCPtr ComponentDef::MakeInstanceOfVariation(DgnDbStatus* statusOut, Dgn
         return nullptr;
         }
 
-    if (nullptr != variationParms)
+    if (nullptr != instanceParms)
         {
-        if (&variationParms->GetClass() != variation.GetElementClass())
+        if (&instanceParms->GetClass() != variation.GetElementClass())
             {
             status = DgnDbStatus::WrongClass;
             return nullptr;
             }
-        if (!cdef.HaveEqualParameters(*variationParms, *GetParameters(variation)))
+        ECN::IECInstancePtr allParms = GetParameters(variation);
+        if (!cdef.HaveEqualParameters(*instanceParms, *allParms, true))
             {
-            status = DgnDbStatus::NotFound;
-            return nullptr;
+            //  If the caller has specified parameters and they don't match the variation's parameters, then we must make a unique instance.
+            cdef.CopyInstanceParameters(*allParms, *instanceParms);
+            return cdef.MakeUniqueInstance(statusOut, destModel, *allParms, code);
             }
         }
 
@@ -613,7 +620,7 @@ ECN::IECInstancePtr ComponentDef::GetParameters(DgnElementCR el)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ComponentDef::HaveEqualParameters(ECN::IECInstanceCR lhs, ECN::IECInstanceCR rhs)
+bool ComponentDef::HaveEqualParameters(ECN::IECInstanceCR lhs, ECN::IECInstanceCR rhs, bool compareOnlyInstanceParameters)
     {
     if (&lhs.GetClass() != &rhs.GetClass())
         return false;
@@ -621,6 +628,13 @@ bool ComponentDef::HaveEqualParameters(ECN::IECInstanceCR lhs, ECN::IECInstanceC
         {
         if (prop->GetName().Equals("ECInstanceId"))
             continue;
+
+        if (compareOnlyInstanceParameters)
+            {
+            auto ca = GetPropSpecCA(*prop);
+            if (ca.IsValid() && ComponentDef::GetCaValueString(*ca, "VariesPer").EqualsI("Type"))
+                continue;
+            }
 
         ECValue l, r;
         lhs.GetValue(l, prop->GetName().c_str());
@@ -632,6 +646,33 @@ bool ComponentDef::HaveEqualParameters(ECN::IECInstanceCR lhs, ECN::IECInstanceC
             return false;
         }
     return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void ComponentDef::CopyInstanceParameters(ECN::IECInstanceR target, ECN::IECInstanceCR source)
+    {
+    if (&source.GetClass() != &target.GetClass())
+        {
+        BeAssert(false);
+        return;
+        }
+    for (auto const& prop : source.GetClass().GetProperties())
+        {
+        auto ca = GetPropSpecCA(*prop);
+        if (ca.IsValid() && ComponentDef::GetCaValueString(*ca, "VariesPer").EqualsI("Type"))
+            continue;
+
+        ECValue v;
+        if (ECN::ECObjectsStatus::Success != source.GetValue(v, prop->GetName().c_str()))
+            continue;
+
+        if (ECN::ECObjectsStatus::Success != target.SetValue(prop->GetName().c_str(), v))
+            {
+            BeAssert(false);
+            }
+        }
     }
 
 //---------------------------------------------------------------------------------------
@@ -682,7 +723,7 @@ DgnDbStatus ComponentDef::UpdateSolutionsAndInstances()
 
             #ifdef WIP_WIP_WIP
         DgnDbStatus status;
-        DgnElementPtr newCatalogItem = HarvestSandbox(status, *sourceCatalogItem->GetModel()->ToPhysicalModelP(), sourceCatalogItem->GetPlacement(), sourceCatalogItem->GetCode());
+        DgnElementPtr newCatalogItem = HarvestModel(status, *sourceCatalogItem->GetModel()->ToPhysicalModelP(), sourceCatalogItem->GetPlacement(), sourceCatalogItem->GetCode());
         if (!newCatalogItem.IsValid())
             {
             deleteSolutionOfComponentRelationship(*sourceCatalogItem); // This solution cannot be renewed. It and its instances become orphans.
@@ -718,53 +759,41 @@ static DgnClassId getComponentModelClassId(DgnDbR db)
 ComponentModel::ComponentModel(DgnDbR db, DgnModel::Code code, Utf8StringCR defName) : DgnModel3d(CreateParams(db, getComponentModelClassId(db), code))
     {
     m_componentECClass = defName;
+    BeAssert(!m_componentECClass.empty());
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                 Ramanujam.Raman   12/15
+* @bsimethod                                                 Sam.Wilson   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus ComponentModel::BindInsertAndUpdateParams(ECSqlStatement& statement)
+void ComponentModel::_WriteJsonProperties(Json::Value& val) const 
     {
-    statement.BindText(statement.GetParameterIndex(COMPONENT_MODEL_PROP_ComponentECClass), m_componentECClass.c_str(), IECSqlBinder::MakeCopy::Yes);
-    return DgnDbStatus::Success;
+    T_Super::_WriteJsonProperties(val);
+    if (val.isNull())
+        val = Json::objectValue;
+
+    Json::Value componentModelJson (Json::objectValue);
+    componentModelJson["ComponentDefECClass"] = m_componentECClass;
+    // add more ComponentModel-specific properties to componentModelJson ...
+    
+    val["ComponentModel"] = componentModelJson; 
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                 Ramanujam.Raman   12/15
+* @bsimethod                                                 Sam.Wilson   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus ComponentModel::_BindInsertParams(ECSqlStatement& statement)
+void ComponentModel::_ReadJsonProperties(Json::Value const& val) 
     {
-    T_Super::_BindInsertParams(statement);
-    return BindInsertAndUpdateParams(statement);
+    T_Super::_ReadJsonProperties(val);
+
+    BeAssert(val.isMember("ComponentModel"));
+    Json::Value componentModelJson = val["ComponentModel"];
+
+    m_componentECClass = componentModelJson["ComponentDefECClass"].asCString();
+    // read more ComponentModel-specific properties from componentModelJson ...
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                 Ramanujam.Raman   12/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus ComponentModel::_BindUpdateParams(ECSqlStatement& statement)
-    {
-    T_Super::_BindUpdateParams(statement);
-    return BindInsertAndUpdateParams(statement);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                 Ramanujam.Raman   12/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus ComponentModel::_ReadSelectParams(ECSqlStatement& statement, ECSqlClassParamsCR params)
-    {
-    DgnDbStatus status = T_Super::_ReadSelectParams(statement, params);
-    if (DgnDbStatus::Success != status)
-        return status;
-
-    int solverIndex = params.GetSelectIndex(COMPONENT_MODEL_PROP_ComponentECClass);
-    if (!statement.IsValueNull(solverIndex))
-        m_componentECClass = statement.GetValueText(solverIndex);
-
-    return DgnDbStatus::Success;
-    }
-	
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                 Ramanujam.Raman   12/15
+* @bsimethod                                                 Sam.Wilson   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ComponentModel::_InitFrom(DgnModelCR other)
     {
@@ -772,15 +801,6 @@ void ComponentModel::_InitFrom(DgnModelCR other)
     ComponentModelCP otherCM = dynamic_cast<ComponentModelCP> (&other);
     if (nullptr != otherCM)
         m_componentECClass = otherCM->m_componentECClass;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                 Sam.Wilson   12/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-void dgn_ModelHandler::Component::_GetClassParams(ECSqlClassParamsR params)
-    {
-    T_Super::_GetClassParams(params);
-    params.Add(COMPONENT_MODEL_PROP_ComponentECClass, ECSqlClassParams::StatementType::All);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -904,6 +924,17 @@ ECN::IECInstancePtr ComponentDefCreator::CreatePropSpecCA()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
+ECN::IECInstancePtr ComponentDef::GetPropSpecCA(ECN::ECPropertyCR prop)
+    {
+    ECN::ECClassCP caClass = m_db.Schemas().GetECClass(DGN_ECSCHEMA_NAME, "ComponentParameterSpecification");
+    if (nullptr == caClass)
+        return nullptr;
+    return prop.GetCustomAttribute(*caClass);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 ECN::IECInstancePtr ComponentDefCreator::CreateSpecCA()
     {
     ECN::ECClassCP caClass = m_db.Schemas().GetECClass(DGN_ECSCHEMA_NAME, "ComponentSpecification");
@@ -915,21 +946,73 @@ ECN::IECInstancePtr ComponentDefCreator::CreateSpecCA()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
+ECN::IECInstancePtr ComponentDefCreator::AddSpecCA(ECN::ECClassR ecclass)
+    {
+    ECN::ECObjectsStatus ecstatus;
+
+    ECN::IECInstancePtr componentSpec = CreateSpecCA();
+
+    ECSUCCESS(componentSpec->SetValue(CDEF_CA_CATEGORY, ECN::ECValue(m_categoryName.c_str())));
+
+    if (!m_scriptName.empty())
+        {
+        ECSUCCESS(componentSpec->SetValue(CDEF_CA_ELEMENT_GENERATOR, ECN::ECValue(m_scriptName.c_str())));
+        }
+    if (!m_codeAuthorityName.empty())
+        {
+        ECSUCCESS(componentSpec->SetValue(CDEF_CA_CODE_AUTHORITY, ECN::ECValue(m_codeAuthorityName.c_str())));
+        }
+    if (!m_modelName.empty())
+        {
+        ECSUCCESS(componentSpec->SetValue(CDEF_CA_MODEL, ECN::ECValue(m_modelName.c_str())));
+        }
+
+    ECSUCCESS(ecclass.SetCustomAttribute(*componentSpec));
+
+    #ifndef NDEBUG
+        {
+        ECN::ECClassCP caClass = m_db.Schemas().GetECClass(DGN_ECSCHEMA_NAME, "ComponentSpecification");
+        auto ca = ecclass.GetCustomAttribute(*caClass);
+        ECN::ECValue v;
+        BeAssert(ECN::ECObjectsStatus::Success == ca->GetValue(v, CDEF_CA_CATEGORY) && v.ToString() == m_categoryName);
+        if (!m_scriptName.empty())
+            {
+            BeAssert(ECN::ECObjectsStatus::Success == ca->GetValue(v, CDEF_CA_ELEMENT_GENERATOR) && v.ToString() == m_scriptName);
+            }
+        if (!m_codeAuthorityName.empty())
+            {
+            BeAssert(ECN::ECObjectsStatus::Success == ca->GetValue(v, CDEF_CA_CODE_AUTHORITY) && v.ToString() == m_codeAuthorityName);
+            }
+        if (!m_modelName.empty())
+            {
+            BeAssert(ECN::ECObjectsStatus::Success == ca->GetValue(v, CDEF_CA_MODEL) && v.ToString() == m_modelName);
+            }
+        }
+    #endif
+
+    return componentSpec;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 ECN::ECClassCP ComponentDefCreator::GenerateECClass()
     {
-    ECN::ECEntityClassP ecclass;
-    auto stat = m_schema.CreateEntityClass(ecclass, m_name);
-    if (ECN::ECObjectsStatus::Success != stat)
-        return nullptr;
+    ECN::ECObjectsStatus ecstatus;
+    
+    m_schema.AddReferencedSchema(const_cast<ECN::ECSchemaR>(m_baseClass.GetSchema()));
 
-    ecclass->AddBaseClass(m_baseClass);
+    ECN::ECEntityClassP ecclass;
+    ECSUCCESS(m_schema.CreateEntityClass(ecclass, m_name));
+
+    ECSUCCESS(ecclass->AddBaseClass(m_baseClass));
+
+    AddSpecCA(*ecclass);
 
     for (auto const& propSpec: m_propSpecs)
         {
         ECN::PrimitiveECPropertyP ecprop;
-        stat = ecclass->CreatePrimitiveProperty(ecprop, propSpec.name);
-        if (ECN::ECObjectsStatus::Success != stat)
-            return nullptr;
+        ECSUCCESS(ecclass->CreatePrimitiveProperty(ecprop, propSpec.name));
         
         ecprop->SetType(propSpec.type);
 
@@ -940,13 +1023,6 @@ ECN::ECClassCP ComponentDefCreator::GenerateECClass()
             ecprop->SetCustomAttribute(*ca);
             }
         }
-
-    ECN::IECInstancePtr componentSpec = CreateSpecCA();
-    componentSpec->SetValue(CDEF_CA_ELEMENT_GENERATOR, ECN::ECValue(m_scriptName.c_str()));
-    componentSpec->SetValue(CDEF_CA_CATEGORY, ECN::ECValue(m_categoryName.c_str()));
-    componentSpec->SetValue(CDEF_CA_CODE_AUTHORITY, ECN::ECValue(m_codeAuthorityName.c_str()));
-    componentSpec->SetValue(CDEF_CA_SANDBOX, ECN::ECValue(m_sandboxName.c_str()));
-    ecclass->SetCustomAttribute(*componentSpec);
 
     return ecclass;
     }
@@ -968,7 +1044,5 @@ ECN::ECSchemaPtr ComponentDefCreator::GenerateSchema(DgnDbR db, Utf8StringCR sch
 
     schema->SetNamespacePrefix(schemaName);
     
-    schema->AddReferencedSchema(*const_cast<ECN::ECSchemaP>(db.Schemas().GetECSchema(DGN_ECSCHEMA_NAME)), DGN_ECSCHEMA_NAME);
-
     return schema;
     }

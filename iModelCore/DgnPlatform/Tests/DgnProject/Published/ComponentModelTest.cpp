@@ -145,7 +145,7 @@ struct VariationSpec
 
     ECN::IECInstancePtr MakeVariationSpec(DgnDbR db) const;
     void CheckInstance(DgnElementCR el, size_t expectedSolidCount) const;
-    void MakeSingletonInstance(DgnElementCPtr&, DgnModelR destModel, size_t expectedSolidCount);
+    void MakeUniqueInstance(DgnElementCPtr&, DgnModelR destModel, size_t expectedSolidCount);
     void MakeVariation(PhysicalModelR destModel);
 };
 
@@ -179,12 +179,10 @@ void VariationSpec::CheckInstance(DgnElementCR el, size_t expectedSolidCount) co
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      12/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void VariationSpec::MakeSingletonInstance(DgnElementCPtr& inst, DgnModelR destModel, size_t expectedSolidCount)
+void VariationSpec::MakeUniqueInstance(DgnElementCPtr& inst, DgnModelR destModel, size_t expectedSolidCount)
     {
     DgnDbR db = destModel.GetDgnDb();
-    ComponentDef cdef(db, *db.Schemas().GetECClass(TEST_JS_NAMESPACE, m_componentName.c_str()));
-    ASSERT_TRUE(cdef.IsValid()); 
-    inst = cdef.MakeSingletonInstance(nullptr, destModel, *MakeVariationSpec(db));
+    inst = ComponentDef::MakeUniqueInstance(nullptr, destModel, *MakeVariationSpec(db));
     ASSERT_TRUE(inst.IsValid()); 
     CheckInstance(*inst, expectedSolidCount);
     }
@@ -333,6 +331,14 @@ void ComponentModelTest::Developer_DefineSchema()
         }
 
     ASSERT_TRUE(ComponentDefCreator::ImportSchema(*m_componentDb, *testSchema).IsValid());
+
+    //  Verify that we can look up an existing component
+    ECN::ECClassCP widgetClass = m_componentDb->Schemas().GetECClass(TEST_JS_NAMESPACE, TEST_WIDGET_COMPONENT_NAME);
+    ASSERT_TRUE(widgetClass != nullptr);
+    ComponentDef widgetCDef(*m_componentDb, *widgetClass);
+    ASSERT_TRUE(widgetCDef.IsValid());
+    ASSERT_STREQ(TEST_WIDGET_COMPONENT_NAME, widgetCDef.GetName().c_str());
+    ASSERT_STREQ("WidgetCategory", widgetCDef.GetCategoryName().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -401,12 +407,6 @@ void ComponentModelTest::Client_ImportCM(Utf8CP componentName)
 #endif
 
     m_clientDb->SaveChanges();
-
-    //  Verify that we can look up an existing component
-    ECN::ECClassCP widgetClass = m_clientDb->Schemas().GetECClass(DGN_ECSCHEMA_NAME, TEST_WIDGET_COMPONENT_NAME);
-    ASSERT_TRUE(widgetClass != nullptr);
-    ComponentDef widgetCDef(*m_clientDb, *widgetClass);
-    ASSERT_TRUE(widgetCDef.IsValid());
     }
     
 /*---------------------------------------------------------------------------------**//**
@@ -491,12 +491,12 @@ void ComponentModelTest::SimulateDeveloper()
     createPhysicalModel(tmpModel, *m_componentDb, DgnModel::CreateModelCode("tmp"));
 
     DgnElementCPtr inst;
-    m_wsln1.MakeSingletonInstance(inst, *tmpModel, 2);
-    m_wsln3.MakeSingletonInstance(inst, *tmpModel, 2);
-    m_wsln4.MakeSingletonInstance(inst, *tmpModel, 2);
-    m_wsln44.MakeSingletonInstance(inst, *tmpModel, 2);
-    m_gsln1.MakeSingletonInstance(inst, *tmpModel, 1);
-    m_nsln1.MakeSingletonInstance(inst, *tmpModel, 1);
+    m_wsln1.MakeUniqueInstance(inst, *tmpModel, 2);
+    m_wsln3.MakeUniqueInstance(inst, *tmpModel, 2);
+    m_wsln4.MakeUniqueInstance(inst, *tmpModel, 2);
+    m_wsln44.MakeUniqueInstance(inst, *tmpModel, 2);
+    m_gsln1.MakeUniqueInstance(inst, *tmpModel, 1);
+    m_nsln1.MakeUniqueInstance(inst, *tmpModel, 1);
     inst = nullptr;
 
     tmpModel->Delete();
@@ -675,7 +675,7 @@ TEST_F(ComponentModelTest, SimulateDeveloperAndClientWithNestingSingleton)
     nparms.m_propValues[0].m_value.SetDouble(9999);
 
     DgnElementCPtr instanceElement;
-    nparms.MakeSingletonInstance(instanceElement, *targetModel, 1);
+    nparms.MakeUniqueInstance(instanceElement, *targetModel, 1);
     ASSERT_TRUE(instanceElement.IsValid());
 
     Client_CheckNestedInstance(*instanceElement, TEST_GADGET_COMPONENT_NAME, 1);
@@ -713,7 +713,7 @@ TEST_F(ComponentModelTest, SimulateDeveloperAndClientWithNesting)
     PhysicalModelPtr catalogModel = getModelByName<PhysicalModel>(*m_clientDb, "Catalog");
 
     DgnElementCPtr instanceElement;
-    m_nsln1.MakeSingletonInstance(instanceElement, *targetModel, 1);
+    m_nsln1.MakeUniqueInstance(instanceElement, *targetModel, 1);
     ASSERT_TRUE(instanceElement.IsValid());
 
     Client_CheckNestedInstance(*instanceElement, TEST_GADGET_COMPONENT_NAME, 1);
