@@ -10,7 +10,7 @@
 
 using namespace std::placeholders;
 
-const Utf8String IWSRepositoryClient::InitialSkipToken = "0";
+const Utf8String IWSRepositoryClient::InitialSkipToken = "";
 
 const uint32_t WSRepositoryClient::Timeout::Connection::Default = 30;
 
