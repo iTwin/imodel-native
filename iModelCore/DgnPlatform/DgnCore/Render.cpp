@@ -60,7 +60,7 @@ void Render::Queue::AddTask(Task& task)
     // see whether the new task should replace any existing tasks
     for (auto entry=m_tasks.begin(); entry != m_tasks.end();)
         {
-        if (task._CanReplace(**entry))
+        if (task.GetTarget() == (*entry)->GetTarget() && task._CanReplace(**entry))
             {
             (*entry)->m_outcome = Render::Task::Outcome::Abandoned;
             entry = m_tasks.erase(entry);

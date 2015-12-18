@@ -1,5 +1,3 @@
-
-
 /*--------------------------------------------------------------------------------------+
 |
 |     $Source: PublicAPI/DgnPlatform/Render.h $
@@ -27,6 +25,7 @@ DEFINE_POINTER_SUFFIX_TYPEDEFS(Device)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(GeometryParams)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(GradientSymb)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(Graphic)
+DEFINE_POINTER_SUFFIX_TYPEDEFS(GraphicList)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(GraphicParams)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(ISprite)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(ITiledRaster)
@@ -39,7 +38,6 @@ DEFINE_POINTER_SUFFIX_TYPEDEFS(Material)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(MultiResImage)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(OvrGraphicParams)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(Plan)
-DEFINE_POINTER_SUFFIX_TYPEDEFS(Scene)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(Target)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(Task)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(Texture)
@@ -48,15 +46,15 @@ DEFINE_POINTER_SUFFIX_TYPEDEFS(Window)
 DEFINE_REF_COUNTED_PTR(Device)
 DEFINE_REF_COUNTED_PTR(GradientSymb)
 DEFINE_REF_COUNTED_PTR(Graphic)
+DEFINE_REF_COUNTED_PTR(GraphicList)
 DEFINE_REF_COUNTED_PTR(Image)
 DEFINE_REF_COUNTED_PTR(LineStyleInfo)
 DEFINE_REF_COUNTED_PTR(LineTexture)
 DEFINE_REF_COUNTED_PTR(Material)
 DEFINE_REF_COUNTED_PTR(MultiResImage)
-DEFINE_REF_COUNTED_PTR(Scene)
 DEFINE_REF_COUNTED_PTR(Target)
-DEFINE_REF_COUNTED_PTR(Texture)
 DEFINE_REF_COUNTED_PTR(Task)
+DEFINE_REF_COUNTED_PTR(Texture)
 DEFINE_REF_COUNTED_PTR(Window)
 
 //=======================================================================================
@@ -206,7 +204,7 @@ public:
     //! Determine whether this Task can replace a pending entry in the Queue.
     //! @param[in] other a pending task for the same Render::Target
     //! @return true if this Task should replace the other pending task.
-    virtual bool _CanReplace(Task& other) const {return GetTarget() == other.GetTarget() && m_operation == other.m_operation;}
+    virtual bool _CanReplace(Task& other) const {return m_operation == other.m_operation;}
 
     Target* GetTarget() const {return m_target.get();} //!< Get the Target of this Task
     Operation GetOperation() const {return m_operation;} //!< Get the Operation of this Task.
@@ -680,7 +678,7 @@ struct GraphicParams
 private:
     bool                m_isFilled;
     bool                m_isBlankingRegion;
-    uint32_t            m_rasterPat;
+    uint32_t            m_linePixels;
     uint32_t            m_rasterWidth;
     ColorDef            m_lineColor;
     ColorDef            m_fillColor;
@@ -690,8 +688,21 @@ private:
     GradientSymbPtr     m_gradient;
     PatternParamsPtr    m_patternParams;
 
-
 public:
+
+    enum class LinePixels : uint32_t
+        {
+        Solid = 0,
+        Code0 = Solid,        // 0
+        Code1 = 0x80808080,   // 1
+        Code2 = 0xf8f8f8f8,   // 2
+        Code3 = 0xffe0ffe0,   // 3
+        Code4 = 0xfe10fe10,   // 4
+        Code5 = 0xe0e0e0e0,   // 5
+        Code6 = 0xf888f888,   // 6
+        Code7 = 0xff18ff18    // 7
+        };
+
     void Cook(GeometryParamsCR, ViewContextR);
 
     DGNPLATFORM_EXPORT GraphicParams();
@@ -729,15 +740,9 @@ public:
     //! Determine whether TrueWidth is on for this GraphicParams
     bool HasTrueWidth() const {return m_lStyleSymb.HasTrueWidth();}
 
-    //! Get the raster pattern from this ElemMatSymb. The raster pattern is a 32 bit mask that is
-    //! repeated along geometry. For each bit that is on in the pattern, a pixel is set to the line color.
-    uint32_t GetRasterPattern() const {return m_rasterPat;}
-    void SetRasterPattern(uint32_t rasterPat) {m_rasterPat = rasterPat; m_lineTexture=nullptr;}
-
-    //! Set the line raster-pattern for this GraphicParams. This is only valid for pixel-mode decorators.
-    //! @param[in] index index between 0-7
-    //! @see #GetRasterPattern
-    DGNPLATFORM_EXPORT void SetLinePatternIndex(int index);
+    //! Set the lineear pixel pattern for this GraphicParams. This is only valid for overlay decorators in pixel mode.
+    uint32_t GetLinePixels() const {return m_linePixels;}
+    void SetLinePixels(LinePixels code) {m_linePixels = (uint32_t) code; m_lineTexture=nullptr;}
 
     //! Determine whether the fill flag is on for this GraphicParams.
     bool IsFilled() const {return m_isFilled;}
@@ -839,7 +844,6 @@ public:
     void SetLineTransparency(Byte trans) {m_matSymb.SetLineTransparency(trans); m_flags |= FLAGS_ColorTransparency;}
     void SetFillTransparency(Byte trans) {m_matSymb.SetFillTransparency(trans); m_flags |= FLAGS_FillColorTransparency;}
     void SetWidth(uint32_t width) {m_matSymb.SetWidth(width); m_flags |= FLAGS_RastWidth;}
-    void SetRasterPattern(uint32_t rasterPat) {m_matSymb.SetRasterPattern(rasterPat); m_flags |= FLAGS_Style; m_matSymb.GetLineStyleSymbR().SetLineStyle(nullptr);}
     void SetMaterial(Material* material) {m_matSymb.SetMaterial(material); m_flags |= FLAGS_RenderMaterial;}
     void SetPatternParams(PatternParamsP patternParams) {m_matSymb.SetPatternParams(patternParams);}
     DGNPLATFORM_EXPORT void SetLineStyle(int32_t styleNo, DgnModelR modelRef, DgnModelR styleDgnModel, LineStyleParamsCP lStyleParams, ViewContextR context, DPoint3dCP startTangent, DPoint3dCP endTangent);
@@ -888,7 +892,7 @@ protected:
     double        m_minSize; //! Minimum pixel size this Graphic is valid for (Graphic is valid for all sizes if min and max are both 0.0)
     double        m_maxSize; //! Maximum pixel size this Graphic is valid for (Graphic is valid for all sizes if min and max are both 0.0)
 
-    virtual StatusInt _Close() {BeAssert(m_isOpen); m_isOpen=false; return SUCCESS;}
+    virtual StatusInt _Close() {m_isOpen=false; return SUCCESS;}
     virtual void _ActivateGraphicParams(GraphicParamsCR graphicParams, GeometryParamsCP geomParams) = 0;
     virtual void _AddLineString(int numPoints, DPoint3dCP points, DPoint3dCP range) = 0;
     virtual void _AddLineString2d(int numPoints, DPoint2dCP points, double zDepth, DPoint2dCP range) = 0;
@@ -919,7 +923,7 @@ protected:
     virtual ~Graphic() {}
 
 public:
-    StatusInt Close() {return _Close();}
+    StatusInt Close() {return m_isOpen ? _Close() : SUCCESS;}
     bool IsOpen() const {return m_isOpen;}
     explicit Graphic(CreateParams const& params=CreateParams()) : m_vp(params.m_vp), m_pixelSize(params.m_pixelSize), m_minSize(0.0), m_maxSize(0.0) {}
 
@@ -1079,13 +1083,24 @@ public:
 
     void AddSubGraphic(Graphic& graphic, TransformCR trans, GraphicParams& params) {_AddSubGraphic(graphic, trans, params);}
     bool IsQuickVision() const {return _IsQuickVision();}
+
+    void SetSymbology(ColorDef lineColor, ColorDef fillColor, int lineWidth, GraphicParams::LinePixels linePixels=GraphicParams::LinePixels::Solid)
+        {
+        GraphicParams graphicParams;
+        graphicParams.SetLineColor(lineColor);
+        graphicParams.SetFillColor(fillColor);
+        graphicParams.SetWidth(lineWidth);
+        graphicParams.SetLinePixels(linePixels);
+        ActivateGraphicParams(graphicParams);
+        }
+
 };
 
 //=======================================================================================
 // An ordered list of RefCountedPtrs to Render::Graphics.
 // @bsiclass
 //=======================================================================================
-struct Scene : RefCounted<NonCopyableClass>
+struct GraphicList : RefCounted<NonCopyableClass>
 {
     struct Node
     {
@@ -1097,23 +1112,23 @@ struct Scene : RefCounted<NonCopyableClass>
 
     std::deque<Node> m_list;
 
-    Scene() {}
+    GraphicList() {}
     uint32_t GetCount() const {return (uint32_t) m_list.size();}
-    void Add(Graphic& graphic, void* ovr, uint32_t ovrFlags) {m_list.push_back(Node(graphic,ovr,ovrFlags));}
+    bool IsEmpty() const {return 0 == GetCount();}
+    void Add(Graphic& graphic, void* ovr, uint32_t ovrFlags) {graphic.Close(); m_list.push_back(Node(graphic,ovr,ovrFlags));}
     void Clear() {m_list.clear();}
 };
 
 //=======================================================================================
 //! A set of Scenes of various types of Graphics that are "decorated" into the Render::Target,
 //! in addition to the Scene.
-//! @note a Render::Plan holds a *copy* of the Decorations lists for a DgnViewport.
 // @bsiclass                                                    Keith.Bentley   12/15
 //=======================================================================================
 struct Decorations
 {
-    ScenePtr m_world;               // drawn with zbuffer, with default lighting, smooth shading
-    ScenePtr m_cameraOverlay;       // drawn in overlay mode, camera units
-    ScenePtr m_viewOverlay;         // drawn in overlay mode, view units
+    GraphicListPtr m_world;           // drawn with zbuffer, with default lighting, smooth shading
+    GraphicListPtr m_cameraOverlay;   // drawn in overlay mode, camera units
+    GraphicListPtr m_viewOverlay;     // drawn in overlay mode, view units
 };
 
 //=======================================================================================
@@ -1194,13 +1209,14 @@ struct Target : RefCounted<NonCopyableClass>
     typedef ImageUtilities::RgbImageInfo CapturedImageInfo;
 
 protected:
-    DevicePtr           m_device;
-    ScenePtr            m_currentScene;
-    ScenePtr            m_dynamics;      // drawn with zbuffer, with scene lighting
-    Decorations         m_decorations;
-    BeAtomic<uint32_t>  m_lastFrameMillis;
+    DevicePtr          m_device;
+    GraphicListPtr     m_currentScene;
+    GraphicListPtr     m_dynamics;      // drawn with zbuffer, with scene lighting
+    Decorations        m_decorations;
+    BeAtomic<uint32_t> m_lastFrameMillis;
 
     virtual GraphicPtr _CreateGraphic(Graphic::CreateParams const& params) = 0;
+    virtual GraphicPtr _CreateSprite(ISprite& sprite, DPoint3dCR location, DPoint3dCR xVec, int transparency) = 0;
     virtual void _AdjustBrightness(bool useFixedAdaptation, double brightness) = 0;
     virtual void _OnResized() {}
     virtual ByteStream _FillImageCaptureBuffer(CapturedImageInfo& info, DRange2dCR screenBufferRange, Point2dCR outputImageSize, bool topDown) = 0;
@@ -1208,9 +1224,10 @@ protected:
     virtual TexturePtr _GetTexture(DgnTextureId, DgnDbR) const = 0;
     virtual TexturePtr _CreateTileSection(Image*, bool enableAlpha) const = 0;
     virtual void* _ResolveOverrides(OvrGraphicParamsCR) = 0;
+
 public:
-    virtual void _ChangeScene(SceneR) = 0;
-    virtual void _ChangeDynamics(SceneR) = 0;
+    virtual void _ChangeScene(GraphicListR) = 0;
+    virtual void _ChangeDynamics(GraphicListR) = 0;
     virtual void _ChangeDecorations(Decorations&) = 0;
     virtual void _DrawFrame(PlanCR) = 0;
     virtual double _GetCameraFrustumNearScaleLimit() const = 0;
@@ -1222,10 +1239,11 @@ public:
     BSIRect GetViewRect() const {return m_device->GetWindow()->_GetViewRect();}
     DVec2d GetDpiScale() const {return m_device->_GetDpiScale();}
     GraphicPtr CreateGraphic(Graphic::CreateParams const& params) {return _CreateGraphic(params);}
+    GraphicPtr CreateSprite(ISprite& sprite, DPoint3dCR location, DPoint3dCR xVec, int transparency) {return _CreateSprite(sprite, location, xVec, transparency);}
     DeviceCP GetDevice() const {return m_device.get();}
     void OnResized() {_OnResized();}
     ByteStream FillImageCaptureBuffer(CapturedImageInfo& info, DRange2dCR screenBufferRange, Point2dCR outputImageSize, bool topDown) {return _FillImageCaptureBuffer(info, screenBufferRange, outputImageSize, topDown);}
-    void* ResolveOverrides(OvrGraphicParamsCR ovr) {return _ResolveOverrides(ovr);}
+    void* ResolveOverrides(OvrGraphicParamsCP ovr) {return ovr ? _ResolveOverrides(*ovr) : nullptr;}
     MaterialPtr GetMaterial(DgnMaterialId id, DgnDbR dgndb) const {return _GetMaterial(id, dgndb);}
     TexturePtr GetTexture(DgnTextureId id, DgnDbR dgndb) const {return _GetTexture(id, dgndb);}
     TexturePtr CreateTileSection(Image* image, bool enableAlpha) const {return _CreateTileSection(image, enableAlpha);}

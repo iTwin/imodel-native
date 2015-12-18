@@ -62,13 +62,12 @@ struct ISprite : IRefCounted
 
     //! Get the RGBA definition from this Sprite Definition.
     //! @return the RGBA definition or NULL
-    virtual Byte const* GetRgbaDefinition() { return NULL; }
+    virtual Byte const* GetRgbaDefinition() {return nullptr;}
 
     //! Get the size (in pixels) of this Sprite Definition.
     //! @param        size        OUT the size in pixels of this sprite definition.
     virtual void GetSize(Point2d* size) = 0;
 };
-
 
 /*=================================================================================**//**
  A Sprite Location. Sprites generally move around on the screen and this object holds the current location
@@ -81,7 +80,7 @@ struct ISprite : IRefCounted
 struct  SpriteLocation : public RefCountedBase
 {
 private:
-    DgnViewportP       m_viewport;
+    DgnViewportP    m_viewport;
     DPoint3d        m_location;
     int             m_transparency;
     ISpriteP        m_sprite;

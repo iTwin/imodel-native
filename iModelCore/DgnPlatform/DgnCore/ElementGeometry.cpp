@@ -3215,7 +3215,6 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicR graphic, ViewContextR c
         }
 
     GeometryStreamEntryIdHelper::SetActive(context.GetGeometryStreamEntryIdR(), false);
-    graphic.Close();
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -7,26 +7,6 @@
 +--------------------------------------------------------------------------------------*/
 #include    <DgnPlatformInternal.h>
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   12/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-void GraphicParams::SetLinePatternIndex(int index)
-    {
-    static  uint32_t s_rasterLinePatterns[8] =
-        {
-        0xffffffff,     // 0
-        0x80808080,     // 1
-        0xf8f8f8f8,     // 2
-        0xffe0ffe0,     // 3
-        0xfe10fe10,     // 4
-        0xe0e0e0e0,     // 5
-        0xf888f888,     // 6
-        0xff18ff18      // 7
-        };
-
-    LIMIT_RANGE(0, 7, index);
-    m_rasterPat = s_rasterLinePatterns[index];
-    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   11/15
@@ -1372,3 +1352,4 @@ void DgnViewport::ChangeViewController(ViewControllerR viewController)
 
     SetupFromViewController();
     }
+

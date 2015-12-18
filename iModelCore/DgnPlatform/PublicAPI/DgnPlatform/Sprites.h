@@ -45,15 +45,11 @@ struct NamedSprite : public RgbaSprite
 private:
     Utf8String      m_namespace;
     Utf8String      m_spriteName;
-
     NamedSprite  (Utf8CP nameSpace, Utf8CP spriteName);
 
 public:
-
     //! The buffer is required to be in RGBA format.  The size is given by m_size.x * m_size.y
-
     DGNPLATFORM_EXPORT virtual void LoadSprite () override;
-
     DGNPLATFORM_EXPORT static RgbaSpritePtr CreateFromPng(Utf8CP nameSpace, Utf8CP spriteName);
 };
 

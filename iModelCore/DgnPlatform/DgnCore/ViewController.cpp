@@ -1808,8 +1808,6 @@ static void drawLocateHitDetail(DecorateContextR context, double aperture, HitDe
     if (!hit.GetGeomDetail().IsValidSurfaceHit())
         return; // AccuSnap will flash edge/segment geometry...
 
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    ViewDrawP  output = vp.GetIViewDraw();
     ColorDef    color = ColorDef(~vp.GetHiliteColor().GetValue());// Invert hilite color for good contrast...
     DPoint3d    pt = hit.GetHitPoint();
     double      radius = (2.0 * aperture) * vp.GetPixelSizeAtPoint(&pt);
@@ -1817,10 +1815,12 @@ static void drawLocateHitDetail(DecorateContextR context, double aperture, HitDe
     RotMatrix   rMatrix = RotMatrix::From1Vector(normal, 2, true);
     DEllipse3d  ellipse = DEllipse3d::FromScaledRotMatrix(pt, rMatrix, radius, radius, 0.0, Angle::TwoPi());
 
+    GraphicPtr graphic = context.BeginGraphic();
+
     color.SetAlpha(200);
-    output->SetSymbology(color, color, 1, 0);
-    output->AddArc(ellipse, true, true, nullptr);
-    output->AddArc(ellipse, false, false, nullptr);
+    graphic->SetSymbology(color, color, 1);
+    graphic->AddArc(ellipse, true, true, nullptr);
+    graphic->AddArc(ellipse, false, false, nullptr);
 
     double      length = (0.6 * radius);
     DSegment3d  segment;
@@ -1828,13 +1828,13 @@ static void drawLocateHitDetail(DecorateContextR context, double aperture, HitDe
     normal.Normalize(ellipse.vector0);
     segment.point[0].SumOf(pt, normal, length);
     segment.point[1].SumOf(pt, normal, -length);
-    output->AddLineString(2, segment.point, nullptr);
+    graphic->AddLineString(2, segment.point, nullptr);
 
     normal.Normalize(ellipse.vector90);
     segment.point[0].SumOf(pt, normal, length);
     segment.point[1].SumOf(pt, normal, -length);
-    output->AddLineString(2, segment.point, nullptr);
-#endif
+    graphic->AddLineString(2, segment.point, nullptr);
+    context.AddWorldOverlay(*graphic);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1843,36 +1843,30 @@ static void drawLocateHitDetail(DecorateContextR context, double aperture, HitDe
 +---------------+---------------+---------------+---------------+---------------+------*/
 static void drawLocateCircle(DecorateContextR context, double aperture, DPoint3dCR pt)
     {
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    ViewDrawP  output = vp.GetIViewDraw();
-
-    output->SetToViewCoords(true);
-
     double      radius = (aperture / 2.0) + .5;
     DPoint3d    center;
     DEllipse3d  ellipse, ellipse2;
 
-    vp.WorldToView(&center, &pt, 1);
+    context.GetViewport()->WorldToView(&center, &pt, 1);
     ellipse.InitFromDGNFields2d((DPoint2dCR) center, 0.0, radius, radius, 0.0, msGeomConst_2pi, 0.0);
     ellipse2.InitFromDGNFields2d((DPoint2dCR) center, 0.0, radius+1, radius+1, 0.0, msGeomConst_2pi, 0.0);
 
+    GraphicPtr graphic = context.BeginGraphic();
     ColorDef    white = ColorDef::White();
     ColorDef    black = ColorDef::Black();
 
     white.SetAlpha(165);
-    output->SetSymbology(white, white, 1, 0);
-    output->AddArc2d(ellipse, true, true, 0.0, NULL);
+    graphic->SetSymbology(white, white, 1);
+    graphic->AddArc2d(ellipse, true, true, 0.0, NULL);
 
     black.SetAlpha(100);
-    output->SetSymbology(black, black, 1, 0);
-    output->AddArc2d(ellipse2, false, false, 0.0, NULL);
+    graphic->SetSymbology(black, black, 1);
+    graphic->AddArc2d(ellipse2, false, false, 0.0, NULL);
 
     white.SetAlpha(20);
-    output->SetSymbology(white, white, 1, 0);
-    output->AddArc2d(ellipse, false, false, 0.0, NULL);
-
-    output->SetToViewCoords(false);
-#endif
+    graphic->SetSymbology(white, white, 1);
+    graphic->AddArc2d(ellipse, false, false, 0.0, NULL);
+    context.AddViewOverlay(*graphic);
     }
 
 /*---------------------------------------------------------------------------------**//**

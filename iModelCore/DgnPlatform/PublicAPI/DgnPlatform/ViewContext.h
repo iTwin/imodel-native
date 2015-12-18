@@ -485,7 +485,7 @@ protected:
 public:
     DGNVIEW_EXPORT RenderContext(DgnViewportR vp, DrawPurpose);
     virtual Render::GraphicP _GetCachedGraphic(GeometrySourceCR source, double pixelSize) override {return source.Graphics().Find(*m_viewport, pixelSize);}
-    virtual void _SaveGraphic(GeometrySourceCR source, Render::GraphicR graphic) override {source.Graphics().Save(graphic);}
+    virtual void _SaveGraphic(GeometrySourceCR source, Render::GraphicR graphic) override {graphic.Close(); source.Graphics().Save(graphic);}
     virtual void _PushFrustumClip() override {}
     virtual Render::GraphicPtr _BeginGraphic(Render::Graphic::CreateParams const& params) override {return m_target.CreateGraphic(params);}
 };
@@ -498,10 +498,10 @@ struct DecorateContext : RenderContext
     Render::Decorations& m_decorations;
 
     DecorateContext(DgnViewportR vp, Render::Decorations& decorations) : RenderContext(vp, DrawPurpose::Decorate), m_decorations(decorations) {}
-    DGNVIEW_EXPORT void AddDynamic(Render::GraphicR graphic, Render::OvrGraphicParamsCP);
-    DGNVIEW_EXPORT void AddWorldDecoration(Render::GraphicR graphic, Render::OvrGraphicParamsCP);
-    DGNVIEW_EXPORT void AddCameraOverlay(Render::GraphicR graphic, Render::OvrGraphicParamsCP);
-    DGNVIEW_EXPORT void AddViewOverlay(Render::GraphicR graphic, Render::OvrGraphicParamsCP);
+    DGNPLATFORM_EXPORT void AddWorldDecoration(Render::GraphicR graphic, Render::OvrGraphicParamsCP ovr=nullptr);
+    DGNPLATFORM_EXPORT void AddWorldOverlay(Render::GraphicR graphic, Render::OvrGraphicParamsCP ovr=nullptr);
+    DGNPLATFORM_EXPORT void AddViewOverlay(Render::GraphicR graphic, Render::OvrGraphicParamsCP ovr=nullptr);
+    DGNPLATFORM_EXPORT void AddSprite(Render::ISprite& sprite, DPoint3dCR location, DPoint3dCR xVec, int transparency);
 };  
 
 /** @endGroup */
