@@ -90,7 +90,7 @@ ECSqlStatus ECSqlUpdatePreparer::Prepare(ECSqlPrepareContext& ctx, UpdateStateme
 
         //Following generate optimized WHERE depending on what was accessed in WHERE class of delete. It will avoid uncessary
         auto const & currentClassMap = classMap;
-        if (auto rootOfJoinedTable = currentClassMap.FindParentOfJoinedTable())
+        if (auto rootOfJoinedTable = currentClassMap.FindPrimaryClassMapOfJoinedTable())
             {
             auto const tableBeenAccessed = whereClauseExp->GetReferencedTables();
             bool referencedRootOfJoinedTable = (tableBeenAccessed.find(&rootOfJoinedTable->GetTable()) != tableBeenAccessed.end());
@@ -133,7 +133,7 @@ ECSqlStatus ECSqlUpdatePreparer::Prepare(ECSqlPrepareContext& ctx, UpdateStateme
         NativeSqlBuilder systemWhereClause;
         ECDbSqlColumn const* classIdColumn = nullptr;
         ECDbSqlTable const* table = &classMap.GetTable();
-        if (auto rootOfJoinedTable = classMap.FindParentOfJoinedTable())
+        if (auto rootOfJoinedTable = classMap.FindPrimaryClassMapOfJoinedTable())
             {
              table = &rootOfJoinedTable->GetTable();
             }

@@ -2479,7 +2479,7 @@ BentleyStatus ECClassViewGenerator::BuildSystemSelectionClause(NativeSqlBuilder:
     
     auto table = &classMap.GetTable();
 
-    if (auto parent = classMap.FindParentOfJoinedTable())
+    if (auto parent = classMap.FindPrimaryClassMapOfJoinedTable())
         {
         table = &parent->GetTable();
         }

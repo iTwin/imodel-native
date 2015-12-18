@@ -146,13 +146,15 @@ public:
 
     IClassMap const& GetView (View classView) const;
 
-    IClassMap const* FindParentOfJoinedTable() const;
+    IClassMap const* FindPrimaryClassMapOfJoinedTable(bool absolutePrimary = true) const;
+    BentleyStatus GetPathToRootOfJoinedTable(std::vector<IClassMap const*>& path) const;
+
     const std::set<ECDbSqlTable const*> GetJoinedTables() const;
     ECDbSqlTable& GetPrimaryTable() const
         {
         if (MapsToJoinedTable())
             {
-            auto root = FindParentOfJoinedTable();
+            auto root = FindPrimaryClassMapOfJoinedTable();
             BeAssert(root != nullptr && "This should never be null");
             return root->GetTable();           
             }

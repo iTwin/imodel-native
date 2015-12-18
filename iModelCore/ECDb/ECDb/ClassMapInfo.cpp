@@ -6,7 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
-
+#include <stack>
 USING_NAMESPACE_BENTLEY_EC
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
@@ -166,7 +166,6 @@ BentleyStatus ClassMapInfo::DoEvaluateMapStrategy(bool& baseClassesNotMappedYet,
         {
         m_parentClassMap = parentClassMap;
         BeAssert(parentStrategy.GetStrategy() == ECDbMapStrategy::Strategy::SharedTable && parentStrategy.AppliesToSubclasses());
-
         m_tableName = m_parentClassMap->GetTable().GetName();
         UserECDbMapStrategy const* parentUserStrategy = m_ecdbMap.GetSchemaImportContext()->GetUserStrategy(parentClassMap->GetClass());
         if (parentUserStrategy == nullptr)
@@ -188,16 +187,43 @@ BentleyStatus ClassMapInfo::DoEvaluateMapStrategy(bool& baseClassesNotMappedYet,
             options = ECDbMapStrategy::Options::SharedColumns;
 
         if (Enum::Contains(userStrategy.GetOptions(), UserECDbMapStrategy::Options::JoinedTablePerDirectSubclass))
+            {
             options = options | ECDbMapStrategy::Options::ParentOfJoinedTable;
+            }
         else if (Enum::Intersects(parentStrategy.GetOptions(), ECDbMapStrategy::Options::JoinedTable | ECDbMapStrategy::Options::ParentOfJoinedTable))
             {
-            options = options | ECDbMapStrategy::Options::JoinedTable;
-            if (Enum::Contains(parentUserStrategy->GetOptions(), UserECDbMapStrategy::Options::JoinedTablePerDirectSubclass))
+            bool hasNoLocalProperties = GetECClass().GetPropertyCount(false) == 0;
+            if (Enum::Contains(parentStrategy.GetOptions(), ECDbMapStrategy::Options::ParentOfJoinedTable) && hasNoLocalProperties)
+                options = options | ECDbMapStrategy::Options::ParentOfJoinedTable;
+            else
                 {
-                //Joined tables are named after the class which becomes the root class of classes in the joined table
-                if (SUCCESS != IClassMap::DetermineTableName(m_tableName, m_ecClass))
-                    return ERROR;
+                options = options | ECDbMapStrategy::Options::JoinedTable;
+                if (Enum::Contains(parentStrategy.GetOptions(), ECDbMapStrategy::Options::ParentOfJoinedTable))
+                    {
+                    std::vector<IClassMap const*> path;
+                    if (m_parentClassMap->GetPathToRootOfJoinedTable(path) == ERROR)
+                        {
+                        BeAssert(false && "Path should never be empty for joinedTable");
+                        return ERROR;
+                        }
+                    
+                    if (path.empty())
+                        {
+                        BeAssert(false && "Path is invalid");
+                        return ERROR;
+                        }
+
+                    auto const& tableNameAfterClass = path.size() > 1 ? path.at(1)->GetClass() : m_ecClass;
+                    if (SUCCESS != IClassMap::DetermineTableName(m_tableName, tableNameAfterClass))
+                        return ERROR;
+                    }
                 }
+            //if (Enum::Contains(parentUserStrategy->GetOptions(), UserECDbMapStrategy::Options::JoinedTablePerDirectSubclass))
+            //    {
+            //    //Joined tables are named after the class which becomes the root class of classes in the joined table
+            //    if (SUCCESS != IClassMap::DetermineTableName(m_tableName, m_ecClass))
+            //        return ERROR;
+            //    }
             }
 
         return m_resolvedStrategy.Assign(ECDbMapStrategy::Strategy::SharedTable, options, true);
@@ -530,7 +556,7 @@ ECClassCR          ecClass
             }
         auto getTable = [](IClassMap const& classMap) 
             {
-            if (auto joinedTableRoot = classMap.FindParentOfJoinedTable())
+            if (auto joinedTableRoot = classMap.FindPrimaryClassMapOfJoinedTable())
                 return &joinedTableRoot->GetTable();
 
             return &classMap.GetTable();

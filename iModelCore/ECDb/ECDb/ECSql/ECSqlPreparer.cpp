@@ -448,7 +448,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareClassNameExp(NativeSqlBuilder::List& native
         {
         if (classMap.MapsToJoinedTable() && currentScopeECSqlType == ECSqlType::Delete)
             {
-            auto rootMap = classMap.FindParentOfJoinedTable();
+            auto rootMap = classMap.FindPrimaryClassMapOfJoinedTable();
             BeAssert(rootMap != nullptr);
             table = &rootMap->GetTable();
             }

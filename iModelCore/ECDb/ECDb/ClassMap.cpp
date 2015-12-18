@@ -238,7 +238,41 @@ bool IClassMap::IsParentOfJoinedTable() const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                         Affan.Khan  10/2015
 //---------------------------------------------------------------------------------------
-IClassMap const* IClassMap::FindParentOfJoinedTable() const
+BentleyStatus IClassMap::GetPathToRootOfJoinedTable(std::vector<IClassMap const*>& path) const
+    {
+    path.clear();
+    auto current = this;
+    if (!current->MapsToJoinedTable() && !current->IsParentOfJoinedTable())
+        return BentleyStatus::ERROR;
+
+    path.insert(path.begin(), current);
+    do
+        {
+        auto nextParentId = current->GetParentMapClassId();
+        if (nextParentId == ECClass::UNSET_ECCLASSID)
+            {
+            return SUCCESS;
+            }
+
+        current = GetECDbMap().GetClassMapCP(nextParentId);
+        BeAssert(current != nullptr && "Failed to find parent classmap. This should not happen");
+        if (current)
+            {
+            if (current->MapsToJoinedTable() || current->IsParentOfJoinedTable())
+                path.insert(path.begin(), current);
+            else
+                return SUCCESS;
+            }
+
+        } while (current != nullptr);
+
+    path.clear();
+    return BentleyStatus::ERROR;
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                         Affan.Khan  10/2015
+//---------------------------------------------------------------------------------------
+IClassMap const* IClassMap::FindPrimaryClassMapOfJoinedTable(bool absolutePrimary) const
     {
     auto current = this;
     if (!current->MapsToJoinedTable())

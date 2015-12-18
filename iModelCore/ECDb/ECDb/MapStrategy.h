@@ -103,7 +103,7 @@ public:
         None = 0,
         SharedColumns = 1,
         ParentOfJoinedTable = 2,
-        JoinedTable = 4
+        JoinedTable = 4,
         };
 
 private:
