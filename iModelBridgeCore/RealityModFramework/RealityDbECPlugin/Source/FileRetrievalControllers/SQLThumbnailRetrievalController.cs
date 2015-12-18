@@ -5,8 +5,8 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace IndexECPlugin.Source.FileRetrievalControllers
-{
+    {
     //internal class SQLThumbnailRetrievalController : FileResourceRetrievalController
     //{
     //}
-}
+    }

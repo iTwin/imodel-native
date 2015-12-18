@@ -18,9 +18,9 @@ using System.Linq;
 using System.Text;
 
 namespace IndexECPlugin.Source.QueryProviders
-{
-    internal class SqlQueryProvider : IECQueryProvider
     {
+    internal class SqlQueryProvider : IECQueryProvider
+        {
         private List<string> m_propertyLocationInSqlQuery = new List<string>();
         private Dictionary<string, object> m_paramNameToValue = new Dictionary<string, object>();
 
@@ -39,22 +39,22 @@ namespace IndexECPlugin.Source.QueryProviders
 
         private IECSchema m_schema;
 
-        public SqlQueryProvider(ECQuery query, ECQuerySettings querySettings, DbConnection dbConnection, IECSchema schema)
-        {
-            if (query == null)
+        public SqlQueryProvider (ECQuery query, ECQuerySettings querySettings, DbConnection dbConnection, IECSchema schema)
             {
+            if ( query == null )
+                {
                 throw new ArgumentNullException("query");
-            }
+                }
 
-            if (dbConnection == null)
-            {
+            if ( dbConnection == null )
+                {
                 throw new ArgumentNullException("dbConnection");
-            }
+                }
 
-            if (schema == null)
-            {
+            if ( schema == null )
+                {
                 throw new ArgumentNullException("schema");
-            }
+                }
 
             m_query = query;
             m_querySettings = querySettings;
@@ -62,13 +62,13 @@ namespace IndexECPlugin.Source.QueryProviders
             m_schema = schema;
             m_polygonDescriptor = null;
 
-            if (m_query.ExtendedData.ContainsKey("instanceCount"))
-            {
-                if (query.ExtendedData["instanceCount"].ToString().ToLower() == "true")
+            if ( m_query.ExtendedData.ContainsKey("instanceCount") )
                 {
+                if ( query.ExtendedData["instanceCount"].ToString().ToLower() == "true" )
+                    {
                     m_instanceCount = true;
+                    }
                 }
-            }
 
             //WE DEACTIVATE PAGING FOR NOW
             //if (m_query.ResultRangeOffset >= 0 && m_query.MaxResults > 0)
@@ -84,26 +84,26 @@ namespace IndexECPlugin.Source.QueryProviders
             //}
             //else
             //{
-                m_sqlQueryBuilder = new StandardSQLQueryBuilder();
+            m_sqlQueryBuilder = new StandardSQLQueryBuilder();
             //}
 
-            if (m_query.ExtendedData.ContainsKey("polygon"))
-            {
+            if ( m_query.ExtendedData.ContainsKey("polygon") )
+                {
                 string polygonString = query.ExtendedData["polygon"].ToString();
                 PolygonModel model;
                 try
-                {
+                    {
                     model = JsonConvert.DeserializeObject<PolygonModel>(polygonString);
-                }
-                catch (JsonException)
-                {
+                    }
+                catch ( JsonException )
+                    {
                     throw new UserFriendlyException("The polygon format is not valid.");
-                }
+                    }
                 int polygonSRID;
-                if (!int.TryParse(model.coordinate_system, out polygonSRID))
-                {
+                if ( !int.TryParse(model.coordinate_system, out polygonSRID) )
+                    {
                     throw new UserFriendlyException("The polygon format is not valid.");
-                }
+                    }
                 string polygonWKT = DbGeometryHelpers.CreateWktPolygonString(model.points);
 
                 m_polygonDescriptor = new PolygonDescriptor
@@ -113,18 +113,18 @@ namespace IndexECPlugin.Source.QueryProviders
                 };
 
 
+                }
             }
-        }
 
 
 
-        private string GetNewParamName()
-        {
+        private string GetNewParamName ()
+            {
             return String.Format("param{0}", m_paramNumber++);
-        }
+            }
 
-        public IEnumerable<IECInstance> CreateInstanceList()
-        {
+        public IEnumerable<IECInstance> CreateInstanceList ()
+            {
             //In the future, it might be a good idea to use a DbConnectionFactory instead of using this connection directly
 
             Log.Logger.info("Fetching Index results for query " + m_query.ID);
@@ -140,8 +140,8 @@ namespace IndexECPlugin.Source.QueryProviders
 
             m_dbConnection.Open();
 
-            using (DbCommand dbCommand = m_dbConnection.CreateCommand())
-            {
+            using ( DbCommand dbCommand = m_dbConnection.CreateCommand() )
+                {
 
                 dbCommand.CommandText = sqlCommandString;
                 dbCommand.CommandType = CommandType.Text;
@@ -150,40 +150,40 @@ namespace IndexECPlugin.Source.QueryProviders
                 //TODO : find a more elegant, less obscure way of obtaining the parameter Name-Value map. Maybe return it from CreateSqlCommandStringFromQuery...
                 Dictionary<string, Tuple<string, DbType>> paramNameValueMap = m_sqlQueryBuilder.paramNameValueMap;
 
-                foreach (KeyValuePair<string, Tuple<string, DbType>> paramNameValue in paramNameValueMap)
-                {
+                foreach ( KeyValuePair<string, Tuple<string, DbType>> paramNameValue in paramNameValueMap )
+                    {
                     DbParameter param = dbCommand.CreateParameter();
                     param.DbType = paramNameValue.Value.Item2;
                     param.ParameterName = paramNameValue.Key;
                     param.Value = paramNameValue.Value.Item1;
                     dbCommand.Parameters.Add(param);
-                }
+                    }
 
-                using (DbDataReader reader = dbCommand.ExecuteReader())
-                {
+                using ( DbDataReader reader = dbCommand.ExecuteReader() )
+                    {
                     IECClass ecClass = m_query.SearchClasses.First().Class;
 
                     IEnumerable<IECProperty> propertyList;
-                    if (m_query.SelectClause.SelectAllProperties)
-                    {
+                    if ( m_query.SelectClause.SelectAllProperties )
+                        {
                         propertyList = ecClass;
-                    }
+                        }
                     else
-                    {
+                        {
                         propertyList = m_query.SelectClause.SelectedProperties;
-                    }
-                    while (reader.Read())
-                    {
+                        }
+                    while ( reader.Read() )
+                        {
                         int i = 0;
                         IECInstance instance = ecClass.CreateInstance();
-                        if ((m_querySettings != null) && ((m_querySettings.LoadModifiers & LoadModifiers.IncludeStreamDescriptor) != LoadModifiers.None) && ecClass.Name == "Thumbnail")
-                        {
+                        if ( (m_querySettings != null) && ((m_querySettings.LoadModifiers & LoadModifiers.IncludeStreamDescriptor) != LoadModifiers.None) && ecClass.Name == "Thumbnail" )
+                            {
                             //The purpose of this "If" statement is to enable the thumbnail instance to send its data through a stream.
                             //The fact that the data is always the first row has been hard coded for this to work, and it is quite probably 
                             //the most obscure and ugly piece of this code. To be rewritten...
 
                             //Since I think getStream only works with sqlServer, we'll use the GetBytes method
-                   
+
                             //Byte[] byteArray = new byte[8040];
                             //long offset = 0;
                             //long bytesread;
@@ -193,7 +193,7 @@ namespace IndexECPlugin.Source.QueryProviders
                             //}
                             //i++;
 
-                            Byte[] byteArray = (byte[])reader[i];
+                            Byte[] byteArray = (byte[]) reader[i];
 
                             MemoryStream mStream = new MemoryStream(byteArray);
 
@@ -202,37 +202,37 @@ namespace IndexECPlugin.Source.QueryProviders
 
                             i++;
 
-                        }
-                        foreach (IECProperty prop in propertyList)
-                        {
-                            if (ecClass.Contains(prop.Name))
+                            }
+                        foreach ( IECProperty prop in propertyList )
                             {
+                            if ( ecClass.Contains(prop.Name) )
+                                {
                                 IECPropertyValue instancePropertyValue = instance[prop.Name];
                                 IECInstance dbColumn = prop.GetCustomAttributes("DBColumn");
 
-                                if(dbColumn == null)
-                                {
+                                if ( dbColumn == null )
+                                    {
                                     //This is not a column in the sql table. We skip it...
                                     continue;
-                                }
+                                    }
 
                                 var isSpatial = dbColumn["IsSpatial"];
-                                if (isSpatial.IsNull || isSpatial.StringValue == "false")
-                                {
-                                    
-                                    if (!reader.IsDBNull(i))
+                                if ( isSpatial.IsNull || isSpatial.StringValue == "false" )
                                     {
+
+                                    if ( !reader.IsDBNull(i) )
+                                        {
                                         ECToSQLMap.SQLReaderToECProperty(instancePropertyValue, reader, i);
+                                        }
                                     }
-                                }
                                 else
-                                {
-                                    if(!ECTypeHelper.IsString(instancePropertyValue.Type))
                                     {
+                                    if ( !ECTypeHelper.IsString(instancePropertyValue.Type) )
+                                        {
                                         throw new ProgrammerException(String.Format("The property {0} tagged as spatial must be declared as a string in the ECSchema.", prop.Name));
-                                    }
+                                        }
                                     else
-                                    {
+                                        {
                                         string WKTString = reader.GetString(i);
 
                                         //DbGeometry geom = DbGeometry.FromText(WKTString);
@@ -244,25 +244,25 @@ namespace IndexECPlugin.Source.QueryProviders
 
                                         //instancePropertyValue.StringValue = "{ \"points\" : " + DbGeometryHelpers.ExtractPointsLongLat(geom) + ", \"coordinate_system\" : \"" + reader.GetInt32(i) + "\" }";
                                         instancePropertyValue.StringValue = "{ \"points\" : " + DbGeometryHelpers.ExtractOuterShellPointsFromWKTPolygon(WKTString) + ", \"coordinate_system\" : \"" + reader.GetInt32(i) + "\" }";
+                                        }
                                     }
-                                }
                                 i++;
+                                }
                             }
-                        }
                         string IDProperty = ecClass.GetCustomAttributes("SQLEntity").GetPropertyValue("InstanceIDProperty").StringValue;
                         instance.InstanceId = instance.GetInstanceStringValue(IDProperty, "");
 
                         instanceList.Add(instance);
 
-                    }
+                        }
 
                     m_dbConnection.Close();
 
                     //Creation of related instances
-                    foreach (var instance in instanceList)
-                    {
-                        foreach (var crit in m_query.SelectClause.SelectedRelatedInstances)
+                    foreach ( var instance in instanceList )
                         {
+                        foreach ( var crit in m_query.SelectClause.SelectedRelatedInstances )
+                            {
 
 
                             //var reversedRelation = crit.RelatedClassSpecifier.RelationshipClass.Schema.GetClass(crit.RelatedClassSpecifier.RelationshipClass.Name);
@@ -289,129 +289,70 @@ namespace IndexECPlugin.Source.QueryProviders
                             var queryHelper = new SqlQueryProvider(relInstQuery, new ECQuerySettings(), m_dbConnection, m_schema);
 
                             var relInstList = queryHelper.CreateInstanceList();
-                            foreach (var relInst in relInstList)
-                            {
+                            foreach ( var relInst in relInstList )
+                                {
 
                                 IECRelationshipInstance relationshipInst;
-                                if (crit.RelatedClassSpecifier.RelatedDirection == RelatedInstanceDirection.Forward)
-                                {
+                                if ( crit.RelatedClassSpecifier.RelatedDirection == RelatedInstanceDirection.Forward )
+                                    {
                                     relationshipInst = relationshipClass.CreateRelationship(instance, relInst);
-                                }
+                                    }
                                 else
-                                {
+                                    {
                                     relationshipInst = relationshipClass.CreateRelationship(relInst, instance);
-                                }
+                                    }
                                 //relationshipInst.InstanceId = "test";
                                 instance.GetRelationshipInstances().Add(relationshipInst);
+                                }
                             }
                         }
+
                     }
 
                 }
-                
-            }
-            if (m_instanceCount && sqlCountString != null)
-            {
+            if ( m_instanceCount && sqlCountString != null )
+                {
                 instanceList.Add(CreateInstanceCountInstance(sqlCountString));
-            }
+                }
 
             return instanceList;
-        }
+            }
 
-        private static RelatedInstanceDirection ReverseRelatedInstanceDirection(RelatedInstanceDirection direction)
-        {
-            if (direction == RelatedInstanceDirection.Backward)
+        private static RelatedInstanceDirection ReverseRelatedInstanceDirection (RelatedInstanceDirection direction)
             {
+            if ( direction == RelatedInstanceDirection.Backward )
+                {
                 direction = RelatedInstanceDirection.Forward;
-            }
+                }
             else
-            {
+                {
                 direction = RelatedInstanceDirection.Backward;
-            }
+                }
             return direction;
-        }
+            }
 
         //This is not to be used before having called createSqlCommandStringFromQuery
-        private IECInstance CreateInstanceCountInstance(string sqlCountString)
-        {
+        private IECInstance CreateInstanceCountInstance (string sqlCountString)
+            {
             IECInstance instanceCountInstance = StandardClassesHelper.InstanceCountClass.CreateInstance();
             instanceCountInstance.InstanceId = "InstanceCount";
 
-            using (DbCommand dbCommand = m_dbConnection.CreateCommand())
-            {
+            using ( DbCommand dbCommand = m_dbConnection.CreateCommand() )
+                {
                 dbCommand.CommandText = sqlCountString;
                 dbCommand.CommandType = CommandType.Text;
                 dbCommand.Connection = m_dbConnection;
 
-                using (DbDataReader reader = dbCommand.ExecuteReader())
-                {
+                using ( DbDataReader reader = dbCommand.ExecuteReader() )
+                    {
                     reader.Read();
                     instanceCountInstance["Count"].IntValue = reader.GetInt32(0);
+                    }
                 }
-            }
 
             m_query.SearchClasses.Add(new SearchClass(StandardClassesHelper.InstanceCountClass));
 
             return instanceCountInstance;
+            }
         }
-
-
-
-
-        //private void createSqlCommandStringFromQuery(out string sqlCommandString, out string sqlCountString)
-        //{
-
-        //    //For now, we only query on one class. To be completed one day
-        //    SearchClass searchClass = m_query.SearchClasses.First();
-        //    IECClass queriedClass = searchClass.Class;
-
-        //    //We can only query SQLEntities. We verify that the custom attribute is set correctly.
-        //    if(queriedClass.GetCustomAttributes("SQLEntity") == null)
-        //    {
-        //        throw new UserFriendlyException(String.Format("It is not permitted to query instances of the {0} class", queriedClass.Name));
-        //    }
-
-        //    TableDescriptor tableToJoin = extractFromSelectAndJoin(m_query.SelectClause, queriedClass);
-
-        //    extractOrderByClause(queriedClass, tableToJoin);
-
-        //    if (m_query.WhereClause.Count > 0)
-        //    {
-        //        extractWhereClause(m_query.WhereClause, queriedClass, tableToJoin);
-        //    }
-
-        //    if(m_polygonDescriptor != null)
-        //    {
-        //        extractSpatialWhereClause(m_query.WhereClause, queriedClass, tableToJoin);
-        //    }
-
-
-        //    //All extract* methods used before construct the query builder contained in m_sqlQueryBuilder.
-        //    //This is why we call m_sqlQueryBuilder.BuildQuery after. It would be nice to refactor the code 
-        //    //to make this more readable...
-        //    sqlCommandString = m_sqlQueryBuilder.BuildQuery();
-
-        //    if (m_instanceCount)
-        //    {
-        //        sqlCountString = m_sqlQueryBuilder.BuildCountQuery();
-        //    }
-        //    else
-        //    {
-        //        sqlCountString = null;
-        //    }
-            
-        //}
-
-
-
-
-
-
-
-
-
-
-
-
     }
-}

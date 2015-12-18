@@ -19,12 +19,12 @@ using System.Xml;
 
 
 namespace IndexECPlugin.Source.QueryProviders
-{
+    {
     /// <summary>
     /// UsgsAPIQueryProvider's purpose is to transform USGS data into ECInstances for our plugin.
     /// </summary>
     public class UsgsAPIQueryProvider : IECQueryProvider
-    {
+        {
 
         ECQuery m_query;
         ECQuerySettings m_querySettings;
@@ -38,32 +38,32 @@ namespace IndexECPlugin.Source.QueryProviders
         /// <param name="query">The ECQuery received by the plugin</param>
         /// <param name="querySettings">The ECQuerySettings received by the plugin</param>
         /// <param name="usgsDataFetcher">The usgsDataFetcher that will be used to query USGS</param>
-        public UsgsAPIQueryProvider(ECQuery query, ECQuerySettings querySettings, IUSGSDataFetcher usgsDataFetcher)
-        {
+        public UsgsAPIQueryProvider (ECQuery query, ECQuerySettings querySettings, IUSGSDataFetcher usgsDataFetcher)
+            {
             m_query = query;
             m_querySettings = querySettings;
             m_usgsDataFetcher = usgsDataFetcher;
-        }
+            }
 
         /// <summary>
         /// UsgsAPIQueryProvider constructor
         /// </summary>
         /// <param name="query">The ECQuery received by the plugin</param>
         /// <param name="querySettings">The ECQuerySettings received by the plugin</param>
-        public UsgsAPIQueryProvider(ECQuery query, ECQuerySettings querySettings)
-        {
+        public UsgsAPIQueryProvider (ECQuery query, ECQuerySettings querySettings)
+            {
             m_query = query;
             m_querySettings = querySettings;
             m_usgsDataFetcher = new USGSDataFetcher(query);
-        }
+            }
 
         /// <summary>
         /// This method returns the instances according to the ECQuery received in the constructor.
         /// The instances are created from the results of a query of the USGS database
         /// </summary>
         /// <returns>An IEnumerable containing the instances requested in the ECQuery received in the constructor</returns>
-        public IEnumerable<IECInstance> CreateInstanceList()
-        {
+        public IEnumerable<IECInstance> CreateInstanceList ()
+            {
             //This method will map to other methods, depending on the search class in the query
 
             Log.Logger.info("Fetching USGS results for query " + m_query.ID);
@@ -73,44 +73,44 @@ namespace IndexECPlugin.Source.QueryProviders
             string className = m_query.SearchClasses.First().Class.Name;
 
             int i = 0;
-            while ((i < m_query.WhereClause.Count) && (instanceList == null))
-            {
-                //We'll take the first ECInstanceIdExpression criterion. Normally, there is only one, non embedded criterion of this sort when queried by WSG.
-                if (m_query.WhereClause[i] is ECInstanceIdExpression)
+            while ( (i < m_query.WhereClause.Count) && (instanceList == null) )
                 {
+                //We'll take the first ECInstanceIdExpression criterion. Normally, there is only one, non embedded criterion of this sort when queried by WSG.
+                if ( m_query.WhereClause[i] is ECInstanceIdExpression )
+                    {
                     instanceList = new List<IECInstance>();
 
-                    ECInstanceIdExpression instanceIDExpression = (ECInstanceIdExpression)m_query.WhereClause[i];
+                    ECInstanceIdExpression instanceIDExpression = (ECInstanceIdExpression) m_query.WhereClause[i];
 
-                    if (instanceIDExpression.InstanceIdSet.Count() == 0)
-                    {
-                        throw new UserFriendlyException("Please specify at least one ID in this type of where clause");
-                    }
-
-                    //We create the requested instances
-                    foreach(string sourceID in instanceIDExpression.InstanceIdSet)
-                    {
-                        IECInstance instance = CreateInstanceFromID(className, sourceID);
-
-                        if (instance != null)
+                    if ( instanceIDExpression.InstanceIdSet.Count() == 0 )
                         {
-                            instanceList.Add(instance);
+                        throw new UserFriendlyException("Please specify at least one ID in this type of where clause");
                         }
 
-                    }
+                    //We create the requested instances
+                    foreach ( string sourceID in instanceIDExpression.InstanceIdSet )
+                        {
+                        IECInstance instance = CreateInstanceFromID(className, sourceID);
+
+                        if ( instance != null )
+                            {
+                            instanceList.Add(instance);
+                            }
+
+                        }
 
                     //return instanceList;
-                }
+                    }
                 i++;
-            }
+                }
 
-            if (instanceList == null)
-            {
+            if ( instanceList == null )
+                {
                 // If we're here, that's because there was a polygon parameter in the extended data
                 //TODO : Implement this verification
 
-                switch (className)
-                {
+                switch ( className )
+                    {
                     //case "USGSEntity": //To be removed
                     //    return QueryUSGSEntitiesByPolygon();
                     //case "USGSThumbnail":
@@ -120,73 +120,73 @@ namespace IndexECPlugin.Source.QueryProviders
                         break;
                     default:
                         throw new UserFriendlyException("It is impossible to query instances of the class \"" + className + "\" in a USGS spatial request. The only class allowed is \"SpatialEntityWithDetailsView\".");
+                    }
                 }
-            }
 
             //Related instances of each instance found before
-            foreach (var instance in instanceList)
-            {
-                foreach (RelatedInstanceSelectCriteria crit in m_query.SelectClause.SelectedRelatedInstances)
+            foreach ( var instance in instanceList )
                 {
+                foreach ( RelatedInstanceSelectCriteria crit in m_query.SelectClause.SelectedRelatedInstances )
+                    {
                     IECClass relatedClass = crit.RelatedClassSpecifier.RelatedClass;
 
                     IECRelationshipClass relationshipClass = crit.RelatedClassSpecifier.RelationshipClass;
 
                     //We do not use SpatialEntityDatasetToAlternateDataset for USGS data. DetailsViewToChildren is done in QuerySpatialEntitiesWithDetailsViewByPolygon
-                    if ((relationshipClass.Name == "SpatialEntityDatasetToAlternateDataset") || (relationshipClass.Name == "DetailsViewToChildren"))
-                    {
+                    if ( (relationshipClass.Name == "SpatialEntityDatasetToAlternateDataset") || (relationshipClass.Name == "DetailsViewToChildren") )
+                        {
                         continue;
-                    }
+                        }
 
                     string relInstID;
-                    if (/*(relationshipClass.Name != "DetailsViewToChildren") && */(relationshipClass.Name != "SpatialEntityDatasetToSpatialEntityBase"))
-                    {
-                        relInstID = instance.InstanceId;
-                    }
-                    else
-                    {
-
-                        if(crit.RelatedClassSpecifier.RelatedDirection == RelatedInstanceDirection.Forward)
+                    if (/*(relationshipClass.Name != "DetailsViewToChildren") && */(relationshipClass.Name != "SpatialEntityDatasetToSpatialEntityBase") )
                         {
+                        relInstID = instance.InstanceId;
+                        }
+                    else
+                        {
+
+                        if ( crit.RelatedClassSpecifier.RelatedDirection == RelatedInstanceDirection.Forward )
+                            {
                             //TODO : See if it is possible and useful to go in the direction parent->children
                             continue;
-                        }
+                            }
                         else
-                        {
+                            {
                             //Here, we are sure to be in a SpatialEntityBase or SpatialEntityWithDetailsView, which should contain a ParentDatasetIdStr attribute 
 
                             relInstID = instance["ParentDatasetIdStr"].StringValue;
+                            }
+
                         }
-                        
-                    }
-                    
+
                     IECInstance relInst = CreateInstanceFromID(relatedClass.Name, relInstID);
-                    if (relInst != null)
-                    {
+                    if ( relInst != null )
+                        {
                         IECRelationshipInstance relationshipInst;
-                        if (crit.RelatedClassSpecifier.RelatedDirection == RelatedInstanceDirection.Forward)
-                        {
+                        if ( crit.RelatedClassSpecifier.RelatedDirection == RelatedInstanceDirection.Forward )
+                            {
                             relationshipInst = relationshipClass.CreateRelationship(instance, relInst);
-                        }
+                            }
                         else
-                        {
+                            {
                             relationshipInst = relationshipClass.CreateRelationship(relInst, instance);
-                        }
+                            }
                         //relationshipInst.InstanceId = "test";
                         instance.GetRelationshipInstances().Add(relationshipInst);
+                        }
                     }
                 }
-            }
 
             return instanceList;
 
-        }
+            }
 
-        private IECInstance CreateInstanceFromID(string className, string sourceID)
-        {
-
-            switch (className)
+        private IECInstance CreateInstanceFromID (string className, string sourceID)
             {
+
+            switch ( className )
+                {
                 case "SpatialEntityBase":
                 case "SpatialEntity":
                     return QuerySingleSpatialEntityBase(sourceID, m_query.SearchClasses.First().Class);
@@ -205,25 +205,25 @@ namespace IndexECPlugin.Source.QueryProviders
                     return QuerySingleServer(sourceID, m_query.SearchClasses.First().Class);
                 default:
                     throw new UserFriendlyException("It is impossible to query instances of the class \"" + className + "\" in a USGS request by ID.");
+                }
             }
-        }
 
-        private IECInstance QuerySingleSpatialEntityWithDetailsView(string sourceID, IECClass ecClass)
-        {
-            if (sourceID.Length != IndexConstants.USGSIdLenght)
+        private IECInstance QuerySingleSpatialEntityWithDetailsView (string sourceID, IECClass ecClass)
             {
+            if ( sourceID.Length != IndexConstants.USGSIdLenght )
+                {
                 return null;
-            }
+                }
 
             IECInstance instance = ecClass.CreateInstance();
             instance.InstanceId = sourceID;
 
             JObject json = m_usgsDataFetcher.GetSciencebaseJson(sourceID);
 
-            if (json == null)
-            {
+            if ( json == null )
+                {
                 return null;
-            }
+                }
 
             instance["Id"].StringValue = sourceID;
 
@@ -236,41 +236,41 @@ namespace IndexECPlugin.Source.QueryProviders
 
             var spatialObject = json["spatial"] as JObject;
 
-            if (spatialObject != null)
-            {
+            if ( spatialObject != null )
+                {
                 var bbox = spatialObject["boundingBox"] as JObject;
 
-                if (bbox != null)
-                {
+                if ( bbox != null )
+                    {
                     instance["Footprint"].StringValue = String.Format(@"{{ ""points"" : [[{0},{1}],[{2},{1}],[{2},{3}],[{0},{3}],[{0},{1}]], ""coordinate_system"" : ""4326"" }}", bbox.TryToGetString("minX"), bbox.TryToGetString("minY"), bbox.TryToGetString("maxX"), bbox.TryToGetString("maxY"));
+                    }
                 }
-            }
 
             instance["ThumbnailURL"].SetToNull();
 
             JObject previewImage = json["previewImage"] as JObject;
 
-            if (previewImage != null)
-            {
-                if (previewImage["thumbnail"] != null)
+            if ( previewImage != null )
                 {
+                if ( previewImage["thumbnail"] != null )
+                    {
                     instance["ThumbnailURL"].StringValue = previewImage["thumbnail"].TryToGetString("uri");
-                }
+                    }
                 else
-                {
+                    {
                     //In case the thumbnail object is not there, we take the first url we find. 
                     //I don't know if it is possible for the thumbnail object to not be there, but let's not take any risk.
-                    foreach (var imageObject in previewImage)
-                    {
-                        if (imageObject.Value["uri"] != null)
+                    foreach ( var imageObject in previewImage )
                         {
+                        if ( imageObject.Value["uri"] != null )
+                            {
                             instance["ThumbnailURL"].StringValue = imageObject.Value["uri"].Value<string>();
                             break;
+                            }
                         }
                     }
                 }
-            }
-            
+
             instance["MetadataURL"].StringValue = "https://www.sciencebase.gov/catalog/item/" + instance.InstanceId;
             instance["RawMetadataURL"].StringValue = "https://www.sciencebase.gov/catalog/item/download/" + instance.InstanceId + "?format=fgdc";
             instance["RawMetadataFormat"].StringValue = "FGDC";
@@ -282,33 +282,33 @@ namespace IndexECPlugin.Source.QueryProviders
             //instance["ParentDatasetIdStr"].StringValue = json["parentId"].Value<string>();
             return instance;
 
-        }
+            }
 
-        private IECInstance QuerySingleSpatialEntityDataset(string sourceID, IECClass ecClass)
-        {
+        private IECInstance QuerySingleSpatialEntityDataset (string sourceID, IECClass ecClass)
+            {
             IECInstance dataset = QuerySingleSpatialEntityBase(sourceID, ecClass);
 
             dataset["Processable"].SetToNull();
 
             return dataset;
-        }
-
-        private IECInstance QuerySingleServer(string sourceID, IECClass ecClass)
-        {
-            if (sourceID.Length != IndexConstants.USGSIdLenght)
-            {
-                return null;
             }
+
+        private IECInstance QuerySingleServer (string sourceID, IECClass ecClass)
+            {
+            if ( sourceID.Length != IndexConstants.USGSIdLenght )
+                {
+                return null;
+                }
 
             IECInstance instance = ecClass.CreateInstance();
             instance.InstanceId = sourceID;
 
             JObject json = m_usgsDataFetcher.GetSciencebaseJson(sourceID);
 
-            if (json == null)
-            {
+            if ( json == null )
+                {
                 return null;
-            }
+                }
 
             instance["Id"].StringValue = sourceID;
 
@@ -316,15 +316,15 @@ namespace IndexECPlugin.Source.QueryProviders
 
             JArray weblinks = json["webLinks"] as JArray;
 
-            if (weblinks != null)
-            {
-                foreach (JObject weblink in weblinks)
+            if ( weblinks != null )
                 {
+                foreach ( JObject weblink in weblinks )
+                    {
 
                     string[] acceptedFormats = { "JPEG2000", "TIFF", "IMG", "Shapefile", "LAS" };
-                    if ((weblink["title"] != null) && (acceptedFormats.Contains(weblink["title"].Value<string>())))
-                    {
-                        string[] splitURL = weblink["uri"].Value<string>().Split(new char[] {'/'}, StringSplitOptions.RemoveEmptyEntries);
+                    if ( (weblink["title"] != null) && (acceptedFormats.Contains(weblink["title"].Value<string>())) )
+                        {
+                        string[] splitURL = weblink["uri"].Value<string>().Split(new char[] { '/' }, StringSplitOptions.RemoveEmptyEntries);
 
                         //The communication protocol is the first part of the uri (http or ftp, usually).
                         string communicationProtocol = splitURL[0].TrimEnd(':');
@@ -332,9 +332,9 @@ namespace IndexECPlugin.Source.QueryProviders
 
                         instance["URL"].StringValue = communicationProtocol + "://" + splitURL[1];
                         break;
+                        }
                     }
                 }
-            }
 
             //Name
 
@@ -347,36 +347,36 @@ namespace IndexECPlugin.Source.QueryProviders
             //Fees
             bool setToNull = true;
             JArray files = json["files"] as JArray;
-            if (files != null)
-            {
-                foreach (JObject file in files)
+            if ( files != null )
                 {
-                    if ((file["contentType"].Value<string>() == "application/fgdc+xml") && file["originalMetadata"].Value<bool>() == true)
+                foreach ( JObject file in files )
                     {
+                    if ( (file["contentType"].Value<string>() == "application/fgdc+xml") && file["originalMetadata"].Value<bool>() == true )
+                        {
                         XmlDocument xmlDoc = m_usgsDataFetcher.GetXmlDocFromURL(file["url"].Value<string>());
 
                         var feesNode = xmlDoc.SelectSingleNode("metadata/distinfo/stdorder/fees");
-                        if (feesNode != null)
-                        {
+                        if ( feesNode != null )
+                            {
                             instance["Fees"].StringValue = feesNode.InnerText;
 
                             setToNull = false;
                             break;
-                        }
+                            }
 
+                        }
                     }
                 }
-            }
-            if (setToNull)
-            {
+            if ( setToNull )
+                {
                 instance["Fees"].SetToNull();
-            }
+                }
             //Legal
 
-            if (json["title"] != null)
-            {
+            if ( json["title"] != null )
+                {
                 instance["Legal"].StringValue = json["title"].Value<string>() + " courtesy of the U.S. Geological Survey";
-            }
+                }
             //AccessConstraints
 
             instance["AccessConstraints"].SetToNull();
@@ -411,24 +411,24 @@ namespace IndexECPlugin.Source.QueryProviders
 
 
             return instance;
-        }
-
-        private IECInstance QuerySingleSpatialDataSource(string sourceID, IECClass ecClass)
-        {
-            if (sourceID.Length != IndexConstants.USGSIdLenght)
-            {
-                return null;
             }
+
+        private IECInstance QuerySingleSpatialDataSource (string sourceID, IECClass ecClass)
+            {
+            if ( sourceID.Length != IndexConstants.USGSIdLenght )
+                {
+                return null;
+                }
 
             IECInstance instance = ecClass.CreateInstance();
             instance.InstanceId = sourceID;
 
             JObject json = m_usgsDataFetcher.GetSciencebaseJson(sourceID);
 
-            if (json == null)
-            {
+            if ( json == null )
+                {
                 return null;
-            }
+                }
 
             instance["Id"].StringValue = sourceID;
 
@@ -436,21 +436,21 @@ namespace IndexECPlugin.Source.QueryProviders
             // FileSize (in KB)
             JArray weblinks = json["webLinks"] as JArray;
 
-            if (weblinks != null)
-            {
-                foreach (JObject weblink in weblinks)
+            if ( weblinks != null )
                 {
+                foreach ( JObject weblink in weblinks )
+                    {
 
                     string[] acceptedFormats = { "JPEG2000", "TIFF", "IMG", "Shapefile", "LAS" };
-                    if ((weblink["title"] != null) && (acceptedFormats.Contains(weblink["title"].Value<string>())))
-                    {
+                    if ( (weblink["title"] != null) && (acceptedFormats.Contains(weblink["title"].Value<string>())) )
+                        {
                         instance["MainURL"].StringValue = weblink["uri"].Value<string>();
                         instance["FileSize"].NativeValue = weblink["length"].Value<long>() / 1024;
                         break;
+                        }
                     }
                 }
-            }
-               
+
             //CompoundType
 
             instance["CompoundType"].StringValue = "USGS";
@@ -463,14 +463,14 @@ namespace IndexECPlugin.Source.QueryProviders
 
             string type = ExtractDataSourceType(json);
 
-            if (type == null)
-            {
+            if ( type == null )
+                {
                 instance["DataSourceType"].SetToNull();
-            }
+                }
             else
-            {
+                {
                 instance["DataSourceType"].StringValue = type;
-            }
+                }
 
             //SisterFiles
 
@@ -481,38 +481,38 @@ namespace IndexECPlugin.Source.QueryProviders
             instance["Metadata"].SetToNull();
 
             JArray files = json["files"] as JArray;
-            if (files != null)
-            {
-                foreach (JObject file in files)
+            if ( files != null )
                 {
-                    if ((file["contentType"].Value<string>() == "application/fgdc+xml") && file["originalMetadata"].Value<bool>() == true)
+                foreach ( JObject file in files )
                     {
+                    if ( (file["contentType"].Value<string>() == "application/fgdc+xml") && file["originalMetadata"].Value<bool>() == true )
+                        {
                         instance["Metadata"].StringValue = file["url"].Value<string>();
 
                         break;
+                        }
                     }
                 }
-            }
 
             return instance;
-        }
-
-        private IECInstance QuerySingleMetadata(string sourceID, IECClass ecClass)
-        {
-            if (sourceID.Length != IndexConstants.USGSIdLenght)
-            {
-                return null;
             }
+
+        private IECInstance QuerySingleMetadata (string sourceID, IECClass ecClass)
+            {
+            if ( sourceID.Length != IndexConstants.USGSIdLenght )
+                {
+                return null;
+                }
 
             IECInstance instance = ecClass.CreateInstance();
             instance.InstanceId = sourceID;
 
             JObject json = m_usgsDataFetcher.GetSciencebaseJson(sourceID);
 
-            if (json == null)
-            {
+            if ( json == null )
+                {
                 return null;
-            }
+                }
 
             instance["Id"].StringValue = sourceID;
 
@@ -539,24 +539,24 @@ namespace IndexECPlugin.Source.QueryProviders
             //Keywords
 
             string keywords = "";
-            foreach (JObject tag in json["tags"])
-            {
+            foreach ( JObject tag in json["tags"] )
+                {
                 string name = tag.TryToGetString("name");
 
-                if (name != null)
-                {
+                if ( name != null )
+                    {
                     keywords += name + ", ";
+                    }
                 }
-            }
 
             instance["Keywords"].StringValue = keywords.TrimEnd(' ', ',');
 
             //Legal
 
-            if (json["title"] != null)
-            {
+            if ( json["title"] != null )
+                {
                 instance["Legal"].StringValue = json["title"].Value<string>() + " courtesy of the U.S. Geological Survey";
-            }
+                }
 
             //Lineage
 
@@ -568,34 +568,34 @@ namespace IndexECPlugin.Source.QueryProviders
 
             return instance;
 
-        }
-
-        private IECInstance QuerySingleThumbnail(string sourceID, IECClass ecClass)
-        {
-            if (sourceID.Length != IndexConstants.USGSIdLenght)
-            {
-                return null;
             }
+
+        private IECInstance QuerySingleThumbnail (string sourceID, IECClass ecClass)
+            {
+            if ( sourceID.Length != IndexConstants.USGSIdLenght )
+                {
+                return null;
+                }
 
             IECInstance instance = ecClass.CreateInstance();
             instance.InstanceId = sourceID;
 
             JObject json = m_usgsDataFetcher.GetSciencebaseJson(sourceID);
 
-            if (json == null)
-            {
+            if ( json == null )
+                {
                 return null;
-            }
+                }
 
             instance["Id"].StringValue = sourceID;
 
             //previewImage is not always there, we have to check that it is not null
             JObject previewImage = json["previewImage"] as JObject;
 
-            if(previewImage == null)
-            {
+            if ( previewImage == null )
+                {
                 return null;
-            }
+                }
 
             //ThumbnailProvenance
             instance["ThumbnailProvenance"].SetToNull();
@@ -604,39 +604,39 @@ namespace IndexECPlugin.Source.QueryProviders
 
             string thumbnailURI = null;
 
-            if (previewImage["thumbnail"] != null)
-            {
+            if ( previewImage["thumbnail"] != null )
+                {
                 thumbnailURI = previewImage["thumbnail"].TryToGetString("uri");
-            }
+                }
             else
-            {
+                {
                 //In case the thumbnail object is not there, we take the first uri we find. 
                 //I don't know if it is possible for the thumbnail object to not be there, but let's not take any risk.
-                foreach (var imageObject in previewImage)
-                {
-                    if(imageObject.Value["uri"] != null)
+                foreach ( var imageObject in previewImage )
                     {
+                    if ( imageObject.Value["uri"] != null )
+                        {
                         thumbnailURI = imageObject.Value["uri"].Value<string>();
                         break;
+                        }
                     }
                 }
-            }
 
 
-            if(thumbnailURI == null)
-            {
+            if ( thumbnailURI == null )
+                {
                 throw new OperationFailedException("We have encountered a problem processing the order for the thumbnail of ID " + sourceID);
-            }
+                }
 
             //The next part enables downloading the thumbnail
 
-            if ((m_querySettings.LoadModifiers & LoadModifiers.IncludeStreamDescriptor) != LoadModifiers.None)
-            {
+            if ( (m_querySettings.LoadModifiers & LoadModifiers.IncludeStreamDescriptor) != LoadModifiers.None )
+                {
                 MemoryStream thumbnailStream = DownloadThumbnail(thumbnailURI);
 
                 StreamBackedDescriptor streamDescriptor = new StreamBackedDescriptor(thumbnailStream, ExtractNameFromURI(thumbnailURI), thumbnailStream.Length, DateTime.UtcNow);
                 StreamBackedDescriptorAccessor.SetIn(instance, streamDescriptor);
-            }
+                }
 
 
             //ThumbnailFormat
@@ -660,21 +660,21 @@ namespace IndexECPlugin.Source.QueryProviders
             instance["ThumbnailGenerationDetails"].SetToNull();
 
             return instance;
-        }
+            }
 
-        private string ExtractFormatFromURI(string uri)
-        {
+        private string ExtractFormatFromURI (string uri)
+            {
             string[] splitURI = uri.Split('.');
 
             return splitURI[splitURI.Length - 1];
-        }
+            }
 
-        private string ExtractNameFromURI(string uri)
-        {
+        private string ExtractNameFromURI (string uri)
+            {
             string[] splitURI = uri.Split('/');
 
             return splitURI[splitURI.Length - 1];
-        }
+            }
 
         /// <summary>
         /// Returns the informations of a file of specified source ID on sciencebase.gov (USGS)
@@ -682,12 +682,12 @@ namespace IndexECPlugin.Source.QueryProviders
         /// <param name="sourceID">The source ID of the item in USGS (sciencebase)</param>
         /// <param name="ecClass">The class to instanciate</param>
         /// <returns></returns>
-        private IECInstance QuerySingleSpatialEntityBase(string sourceID, IECClass ecClass)
-        {
-            if (sourceID.Length != IndexConstants.USGSIdLenght)
+        private IECInstance QuerySingleSpatialEntityBase (string sourceID, IECClass ecClass)
             {
+            if ( sourceID.Length != IndexConstants.USGSIdLenght )
+                {
                 return null;
-            }
+                }
 
             IECInstance instance = ecClass.CreateInstance();
 
@@ -697,10 +697,10 @@ namespace IndexECPlugin.Source.QueryProviders
 
             JObject json = m_usgsDataFetcher.GetSciencebaseJson(sourceID);
 
-            if (json == null)
-            {
+            if ( json == null )
+                {
                 return null;
-            }
+                }
 
             instance["Id"].StringValue = sourceID;
 
@@ -708,10 +708,10 @@ namespace IndexECPlugin.Source.QueryProviders
             var bbox = json["spatial"]["boundingBox"] as JObject;
 
 
-            if (bbox != null)
-            {
+            if ( bbox != null )
+                {
                 instance["Footprint"].StringValue = String.Format(@"{{ ""points"" : [[{0},{1}],[{2},{1}],[{2},{3}],[{0},{3}],[{0},{1}]], ""coordinate_system"" : ""4326"" }}", bbox.TryToGetString("minX"), bbox.TryToGetString("minY"), bbox.TryToGetString("maxX"), bbox.TryToGetString("maxY"));
-            }
+                }
 
             //Name
 
@@ -720,24 +720,24 @@ namespace IndexECPlugin.Source.QueryProviders
             //Keywords
 
             string keywords = "";
-            foreach(JObject tag in json["tags"])
-            {
-                string name = tag.TryToGetString("name");
-                if (name != null)
+            foreach ( JObject tag in json["tags"] )
                 {
+                string name = tag.TryToGetString("name");
+                if ( name != null )
+                    {
                     keywords += name + ", ";
 
                     string scheme = tag.TryToGetString("scheme");
-                    if ((scheme != null) && (scheme == "The National Map Collection Thesaurus"))
-                    {
-                        var cat = m_usgsDataFetcher.CategoryTable.FirstOrDefault(c => c.SbDatasetTag == name);
-                        if (cat != null)
+                    if ( (scheme != null) && (scheme == "The National Map Collection Thesaurus") )
                         {
+                        var cat = m_usgsDataFetcher.CategoryTable.FirstOrDefault(c => c.SbDatasetTag == name);
+                        if ( cat != null )
+                            {
                             instance["Classification"].StringValue = cat.Classification;
+                            }
                         }
                     }
                 }
-            }
 
             instance["Keywords"].StringValue = keywords.TrimEnd(' ', ',');
 
@@ -756,14 +756,14 @@ namespace IndexECPlugin.Source.QueryProviders
 
             string type = ExtractDataSourceType(json);
 
-            if (type == null)
-            {
+            if ( type == null )
+                {
                 instance["DataSourceTypesAvailable"].SetToNull();
-            }
+                }
             else
-            {
+                {
                 instance["DataSourceTypesAvailable"].StringValue = type;
-            }
+                }
 
             //AccuracyResolutionDensity
 
@@ -775,10 +775,10 @@ namespace IndexECPlugin.Source.QueryProviders
             instance["ParentDatasetIdStr"].StringValue = json.TryToGetString("parentId");
 
             return instance;
-        }
+            }
 
-        private string ExtractDataSourceType(JObject json)
-        {
+        private string ExtractDataSourceType (JObject json)
+            {
 
             //The commentend code sets the DataSourceType to Raster, Vector or Point.
             //For now, what we need is the type of file (JPEG2000, TIFF, LAS, etc...)
@@ -835,14 +835,14 @@ namespace IndexECPlugin.Source.QueryProviders
 
             JArray weblinks = json["webLinks"] as JArray;
 
-            if (weblinks != null)
-            {
-                foreach (JObject weblink in weblinks)
+            if ( weblinks != null )
                 {
-                    if (weblink["title"] != null)
+                foreach ( JObject weblink in weblinks )
                     {
-                        switch (weblink["title"].Value<string>())
+                    if ( weblink["title"] != null )
                         {
+                        switch ( weblink["title"].Value<string>() )
+                            {
                             case "JPEG2000":
                                 return "JPEG2000";
                             case "TIFF":
@@ -853,39 +853,39 @@ namespace IndexECPlugin.Source.QueryProviders
                                 return "Shapefile";
                             case "LAS":
                                 return "LAS";
+                            }
                         }
                     }
                 }
-            }
 
             return null;
-        }
+            }
 
-        private List<IECInstance> QuerySpatialEntitiesWithDetailsViewByPolygon()
-        {
+        private List<IECInstance> QuerySpatialEntitiesWithDetailsViewByPolygon ()
+            {
             List<IECInstance> instanceList = new List<IECInstance>();
 
             //This part is an optimization only for queries of SpatialEntitiesWithDetailsView and their parents
-            var relCrit = m_query.SelectClause.SelectedRelatedInstances.FirstOrDefault(crit => (crit.RelatedClassSpecifier.RelationshipClass.Name == "DetailsViewToChildren") 
+            var relCrit = m_query.SelectClause.SelectedRelatedInstances.FirstOrDefault(crit => (crit.RelatedClassSpecifier.RelationshipClass.Name == "DetailsViewToChildren")
                                                                                        && (crit.RelatedClassSpecifier.RelatedDirection == RelatedInstanceDirection.Backward));
-            if(relCrit != null)
-            {
-                m_storedParents = new Dictionary<string,IECInstance>();
-            }
+            if ( relCrit != null )
+                {
+                m_storedParents = new Dictionary<string, IECInstance>();
+                }
 
             var criteriaList = ExtractPropertyWhereClauses();
 
-            foreach (var bundle in m_usgsDataFetcher.GetNonFormattedUSGSResults(criteriaList))
-            {
+            foreach ( var bundle in m_usgsDataFetcher.GetNonFormattedUSGSResults(criteriaList) )
+                {
 
-                
+
 
                 var FilteredList = SpecialFilteringAndExtracting(bundle.jtokenList, bundle.Dataset, criteriaList);
 
 
 
-                foreach (var item in FilteredList)
-                {
+                foreach ( var item in FilteredList )
+                    {
                     IECClass ecClass = m_query.SearchClasses.First().Class;
                     IECInstance instance = ecClass.CreateInstance();
 
@@ -901,10 +901,10 @@ namespace IndexECPlugin.Source.QueryProviders
 
                     var bbox = jtoken["boundingBox"];
 
-                    if (bbox != null)
-                    {
+                    if ( bbox != null )
+                        {
                         instance["Footprint"].StringValue = "{ \"points\" : " + String.Format("[[{0},{1}],[{2},{1}],[{2},{3}],[{0},{3}],[{0},{1}]]", bbox.TryToGetString("minX"), bbox.TryToGetString("minY"), bbox.TryToGetString("maxX"), bbox.TryToGetString("maxY")) + ", \"coordinate_system\" : \"4326\" }";
-                    }
+                        }
                     instance["ThumbnailURL"].StringValue = jtoken.TryToGetString("previewGraphicURL");
                     instance["MetadataURL"].StringValue = "https://www.sciencebase.gov/catalog/item/" + instance.InstanceId;
                     instance["RawMetadataURL"].StringValue = "https://www.sciencebase.gov/catalog/item/download/" + instance.InstanceId + "?format=fgdc";
@@ -914,10 +914,10 @@ namespace IndexECPlugin.Source.QueryProviders
                     instance["DataProvider"].StringValue = "USGS";
                     instance["DataProviderName"].StringValue = "United States Geological Survey";
 
-                    if (item.Date.HasValue)
-                    {
+                    if ( item.Date.HasValue )
+                        {
                         instance["Date"].NativeValue = item.Date.Value;
-                    }
+                        }
                     instance["AccuracyResolutionDensity"].StringValue = item.Resolution;
                     instance["ResolutionInMeters"].StringValue = item.ResolutionInMeters;
 
@@ -925,74 +925,74 @@ namespace IndexECPlugin.Source.QueryProviders
 
                     //instance["ParentDatasetIdStr"].StringValue = tuple.Item2;
 
-                    if (m_storedParents != null)
-                    {
+                    if ( m_storedParents != null )
+                        {
                         string relInstId = bundle.DatasetId;
-                        if (!m_storedParents.ContainsKey(relInstId))
-                        {
+                        if ( !m_storedParents.ContainsKey(relInstId) )
+                            {
                             m_storedParents.Add(relInstId, QuerySingleSpatialEntityWithDetailsView(relInstId, ecClass));
-                        }
-                        if (m_storedParents[relInstId] != null)
-                        {
+                            }
+                        if ( m_storedParents[relInstId] != null )
+                            {
                             var relationshipInst = relCrit.RelatedClassSpecifier.RelationshipClass.CreateRelationship(m_storedParents[relInstId], instance);
 
                             //relationshipInst.InstanceId = "test";
                             instance.GetRelationshipInstances().Add(relationshipInst);
-                        }
+                            }
 
-                    }
+                        }
 
 
 
                     instanceList.Add(instance);
+                    }
                 }
-            }
 
             return instanceList;
-        }
+            }
 
-        private IEnumerable<USGSExtractedResult> SpecialFilteringAndExtracting(IEnumerable<JToken> tokenList, string dataset, List<SingleWhereCriteriaHolder> criteriaList)
-        {
+        private IEnumerable<USGSExtractedResult> SpecialFilteringAndExtracting (IEnumerable<JToken> tokenList, string dataset, List<SingleWhereCriteriaHolder> criteriaList)
+            {
 
             DateTime? minDate = null;
             DateTime? maxDate = null;
 
-            foreach(var criteria in criteriaList)
-            {
-                if (criteria.Property.Name == "Date")
+            foreach ( var criteria in criteriaList )
                 {
+                if ( criteria.Property.Name == "Date" )
+                    {
                     DateTime givenDate;
                     bool success = DateTime.TryParse(criteria.Value, out givenDate);
-                    if (success)
-                    {
-                        if ((criteria.Operator == RelationalOperator.LT) || (criteria.Operator == RelationalOperator.LTEQ))
+                    if ( success )
                         {
-                            if (!maxDate.HasValue || (maxDate.Value > givenDate))
+                        if ( (criteria.Operator == RelationalOperator.LT) || (criteria.Operator == RelationalOperator.LTEQ) )
                             {
+                            if ( !maxDate.HasValue || (maxDate.Value > givenDate) )
+                                {
                                 maxDate = givenDate;
+                                }
                             }
-                        }
-                        if (criteria.Operator == RelationalOperator.GT || (criteria.Operator == RelationalOperator.GTEQ))
-                        {
-                            if (!minDate.HasValue || (minDate.Value < givenDate))
+                        if ( criteria.Operator == RelationalOperator.GT || (criteria.Operator == RelationalOperator.GTEQ) )
                             {
+                            if ( !minDate.HasValue || (minDate.Value < givenDate) )
+                                {
                                 minDate = givenDate;
+                                }
                             }
-                        }
-                        if (criteria.Operator == RelationalOperator.EQ)
-                        {
-                            if (!maxDate.HasValue || (maxDate.Value > givenDate))
+                        if ( criteria.Operator == RelationalOperator.EQ )
                             {
+                            if ( !maxDate.HasValue || (maxDate.Value > givenDate) )
+                                {
                                 maxDate = givenDate;
-                            }
-                            if (!minDate.HasValue || (minDate.Value < givenDate))
-                            {
+                                }
+                            if ( !minDate.HasValue || (minDate.Value < givenDate) )
+                                {
                                 minDate = givenDate;
+                                }
                             }
                         }
                     }
                 }
-            }
 
             //if(minDate.HasValue && maxDate.HasValue && minDate.Value > maxDate.Value)
             //{
@@ -1023,14 +1023,14 @@ namespace IndexECPlugin.Source.QueryProviders
 
             //}
 
-            switch(dataset)
-            {
-                case "High Resolution Orthoimagery" :
+            switch ( dataset )
+                {
+                case "High Resolution Orthoimagery":
                     return DatasetFilter(tokenList, minDate, maxDate, /*takeMostRecentOnly,*/ new HRODataExtractor());
                 case "USDA National Agriculture Imagery Program (NAIP)":
                     return DatasetFilter(tokenList, minDate, maxDate, /*takeMostRecentOnly,*/ new NAIPDataExtractor());
                 case "Digital Elevation Model (DEM) 1 meter":
-                    //return DatasetFilter(tokenList, minDate, maxDate, new NEDDataExtractor(dataset));
+                //return DatasetFilter(tokenList, minDate, maxDate, new NEDDataExtractor(dataset));
                 case "National Elevation Dataset (NED) 1/9 arc-second":
                 case "National Elevation Dataset (NED) 1/3 arc-second":
                 case "National Elevation Dataset (NED) 1 arc-second":
@@ -1047,11 +1047,14 @@ namespace IndexECPlugin.Source.QueryProviders
                 case "National Land Cover Database (NLCD) - 2006":
                 case "National Land Cover Database (NLCD) - 2011":
                     return DatasetFilter(tokenList, minDate, maxDate, new NLCDDataExtractor(dataset));
-                default : 
-                    return tokenList.Select(token => new USGSExtractedResult { jToken = token, Date = null, Resolution = null});
+                default:
+                    return tokenList.Select(token => new USGSExtractedResult
+                    {
+                        jToken = token, Date = null, Resolution = null
+                    });
+                }
+
             }
-            
-        }
 
         /// <summary>
         /// Dataset special filtering. We eliminate duplicate
@@ -1062,8 +1065,8 @@ namespace IndexECPlugin.Source.QueryProviders
         /// <param name="maxDate">Upper bound for the date filter</param>
         /// <param name="extractor">An implementation of IUSGSDataExtractor, which will extract the date and resolution according to the dataset</param>
         /// <returns>The list of entries, exempt from superfluous data</returns>
-        private IEnumerable<USGSExtractedResult> DatasetFilter(IEnumerable<JToken> tokenList, DateTime? minDate, DateTime? maxDate, /*bool takeMostRecentOnly,*/ IUSGSDataExtractor extractor)
-        {
+        private IEnumerable<USGSExtractedResult> DatasetFilter (IEnumerable<JToken> tokenList, DateTime? minDate, DateTime? maxDate, /*bool takeMostRecentOnly,*/ IUSGSDataExtractor extractor)
+            {
             //Filter by bounding box
             //Dictionary<string, USGSExtractedResult> bboxDictionary = new Dictionary<string, USGSExtractedResult>();
             List<USGSExtractedResult> results = new List<USGSExtractedResult>();
@@ -1072,27 +1075,27 @@ namespace IndexECPlugin.Source.QueryProviders
             //    results = new List<USGSExtractedResult>();
             //}
 
-            foreach(JToken newToken in tokenList)
-            {
+            foreach ( JToken newToken in tokenList )
+                {
                 string title;
                 DateTime? newTokenDate;
                 string newTokenResolution;
                 string newTokenResolutionInMeters;
 
                 extractor.ExtractTitleDateAndResolution(newToken, out title, out newTokenDate, out newTokenResolution, out newTokenResolutionInMeters);
-                
+
                 //Check if date is between the range
 
-                if ((minDate.HasValue) && (newTokenDate.HasValue) && (newTokenDate < minDate.Value))
-                {
+                if ( (minDate.HasValue) && (newTokenDate.HasValue) && (newTokenDate < minDate.Value) )
+                    {
                     //It is not in the requested time lapse. We skip this one.
                     continue;
-                }
-                if ((maxDate.HasValue) && (newTokenDate.HasValue) && (newTokenDate > maxDate.Value))
-                {
+                    }
+                if ( (maxDate.HasValue) && (newTokenDate.HasValue) && (newTokenDate > maxDate.Value) )
+                    {
                     //It is not in the requested time lapse. We skip this one.
                     continue;
-                }
+                    }
 
                 var bboxString = newToken["boundingBox"].ToString();
                 //if (bboxDictionary.ContainsKey(bboxString))
@@ -1123,8 +1126,8 @@ namespace IndexECPlugin.Source.QueryProviders
                 //        results.Add(new USGSExtractedResult { jToken = newToken, Title = title, Date = newTokenDate, Resolution = newTokenResolution });
                 //    //}
                 //}
-                if((title != null) && (!results.Any(r => r.Title == title)))
-                {
+                if ( (title != null) && (!results.Any(r => r.Title == title)) )
+                    {
                     //There is no result having the same title
 
 
@@ -1132,25 +1135,28 @@ namespace IndexECPlugin.Source.QueryProviders
                     //if (!takeMostRecentOnly)
                     //{
                     //    //If we do not take only the most recent, we can add it to the results directly
-                    results.Add(new USGSExtractedResult { jToken = newToken, Title = title, Date = newTokenDate, Resolution = newTokenResolution, ResolutionInMeters = newTokenResolutionInMeters });
+                    results.Add(new USGSExtractedResult
+                    {
+                        jToken = newToken, Title = title, Date = newTokenDate, Resolution = newTokenResolution, ResolutionInMeters = newTokenResolutionInMeters
+                    });
                     //}
+                    }
                 }
-            }
             //if(takeMostRecentOnly)
             //{
             //    //If we take only the most recent, all of the entries we select are already in the dictionary
             //    return bboxDictionary.Values;
             //}
             return results;
-        }
-
-        private void InitializePropertiesToNull(IECInstance instance, IECClass ecClass)
-        {
-            foreach (IECProperty prop in ecClass)
-            {
-                instance[prop.Name].SetToNull();
             }
-        }
+
+        private void InitializePropertiesToNull (IECInstance instance, IECClass ecClass)
+            {
+            foreach ( IECProperty prop in ecClass )
+                {
+                instance[prop.Name].SetToNull();
+                }
+            }
 
         //private IEnumerable<IECInstance> QueryUSGSThumbnail()
         //{
@@ -1207,10 +1213,10 @@ namespace IndexECPlugin.Source.QueryProviders
         //}
 
         //This is an helper method we could put in another file. It belonged in the now unused USGSThumbnailRetrievalController
-        private MemoryStream DownloadThumbnail(string thumbnailUri)
-        {
-            if (thumbnailUri.StartsWith("ftp"))
+        private MemoryStream DownloadThumbnail (string thumbnailUri)
             {
+            if ( thumbnailUri.StartsWith("ftp") )
+                {
                 //FtpWebRequest request = FtpWebRequest.Create(thumbnailUri) as FtpWebRequest;
                 //request.Method = WebRequestMethods.Ftp.GetFileSize;
 
@@ -1223,8 +1229,8 @@ namespace IndexECPlugin.Source.QueryProviders
                 //response = (FtpWebResponse)request.GetResponse();
 
                 //return response.GetResponseStream();
-                using (WebClient ftpClient = new WebClient())
-                {
+                using ( WebClient ftpClient = new WebClient() )
+                    {
 
                     //string tempPath = Path.GetTempPath();
                     //string tempFilePath = Path.Combine(tempPath, Guid.NewGuid().ToString());
@@ -1234,76 +1240,79 @@ namespace IndexECPlugin.Source.QueryProviders
                     //}
                     //return File.Open(tempFilePath, FileMode.Open);
 
-                    using (Stream image = ftpClient.OpenRead(thumbnailUri))
-                    {
+                    using ( Stream image = ftpClient.OpenRead(thumbnailUri) )
+                        {
                         MemoryStream imageInMemory = new MemoryStream();
 
                         image.CopyTo(imageInMemory);
 
                         return imageInMemory;
+                        }
                     }
-                }
 
-            }
-            if (thumbnailUri.StartsWith("http"))
-            {
-                using (HttpClient client = new HttpClient())
+                }
+            if ( thumbnailUri.StartsWith("http") )
                 {
-                    using (HttpResponseMessage response = client.GetAsync(thumbnailUri).Result)
+                using ( HttpClient client = new HttpClient() )
                     {
-                        using (HttpContent content = response.Content)
+                    using ( HttpResponseMessage response = client.GetAsync(thumbnailUri).Result )
                         {
+                        using ( HttpContent content = response.Content )
+                            {
 
                             //contentLength = (content.Headers.ContentLength.HasValue ? content.Headers.ContentLength.Value : 0);
 
-                            using (Stream image = content.ReadAsStreamAsync().Result)
-                            {
+                            using ( Stream image = content.ReadAsStreamAsync().Result )
+                                {
                                 MemoryStream imageInMemory = new MemoryStream();
                                 image.CopyTo(imageInMemory);
                                 return imageInMemory;
+                                }
                             }
                         }
                     }
                 }
-            }
             else
-            {
+                {
                 throw new NotImplementedException("The download of the thumbnail located at " + thumbnailUri + " is not implemented yet.");
+                }
             }
-        }
 
-        private List<SingleWhereCriteriaHolder> ExtractPropertyWhereClauses()
-        {
+        private List<SingleWhereCriteriaHolder> ExtractPropertyWhereClauses ()
+            {
             List<SingleWhereCriteriaHolder> singleWhereCriteriaList = new List<SingleWhereCriteriaHolder>();
             var whereCriteria = m_query.WhereClause;
-            for (int i = 0; i < whereCriteria.Count; i++)
-            {
-                if (i > 0)
+            for ( int i = 0; i < whereCriteria.Count; i++ )
                 {
-                    if(whereCriteria.GetLogicalOperatorBefore(i) != LogicalOperator.AND)
+                if ( i > 0 )
                     {
+                    if ( whereCriteria.GetLogicalOperatorBefore(i) != LogicalOperator.AND )
+                        {
                         throw new UserFriendlyException("Please use only AND operator to filter the USGS requests");
+                        }
+                    }
+                WhereCriterion criterion = whereCriteria[i];
+                if ( criterion is PropertyExpression )
+                    {
+                    PropertyExpression propertyExpression = (PropertyExpression) criterion;
+
+                    singleWhereCriteriaList.Add(new SingleWhereCriteriaHolder
+                    {
+                        Property = propertyExpression.LeftSideProperty, Operator = propertyExpression.Operator, Value = propertyExpression.RightSideString
+                    });
+                    }
+                if ( criterion is RelatedCriterion )
+                    {
+                    throw new UserFriendlyException("Related Criterions are not allowed on USGS requests");
+                    }
+                if ( criterion is WhereCriteria )
+                    {
+                    throw new UserFriendlyException("Complex expressions are not allowed on USGS requests");
                     }
                 }
-                WhereCriterion criterion = whereCriteria[i];
-                if (criterion is PropertyExpression)
-                {
-                    PropertyExpression propertyExpression = (PropertyExpression)criterion;
-
-                    singleWhereCriteriaList.Add(new SingleWhereCriteriaHolder { Property = propertyExpression.LeftSideProperty, Operator = propertyExpression.Operator, Value = propertyExpression.RightSideString });
-                }
-                if (criterion is RelatedCriterion)
-                {
-                    throw new UserFriendlyException("Related Criterions are not allowed on USGS requests");
-                }
-                if (criterion is WhereCriteria)
-                {
-                    throw new UserFriendlyException("Complex expressions are not allowed on USGS requests");
-                }
-            }
 
             return singleWhereCriteriaList;
-        }
+            }
 
+        }
     }
-}

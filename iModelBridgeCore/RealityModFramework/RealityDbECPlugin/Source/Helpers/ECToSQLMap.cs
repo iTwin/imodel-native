@@ -11,15 +11,15 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace IndexECPlugin.Source.Helpers
-{
-    static internal class ECToSQLMap
     {
-        static public string ECRelationalOperatorToSQL(RelationalOperator op)
+    static internal class ECToSQLMap
         {
-            switch (op)
+        static public string ECRelationalOperatorToSQL (RelationalOperator op)
             {
+            switch ( op )
+                {
                 //case RelationalOperator.CONTAINS:
-                    
+
                 //    break;
                 //case RelationalOperator.CONTAINSWHOLEWORD:
 
@@ -58,78 +58,78 @@ namespace IndexECPlugin.Source.Helpers
                 //    break;
                 default:
                     throw new NotImplementedException(String.Format("The relational operator {0} is not implemented yet!", op));
+                }
             }
-        }
 
-        static internal DbType ECTypeToSQL(IECType ecType)
-        {
-            if (ECTypeHelper.IsString(ecType))
+        static internal DbType ECTypeToSQL (IECType ecType)
             {
+            if ( ECTypeHelper.IsString(ecType) )
+                {
                 //instancePropertyValue.StringValue = reader.GetString(i);
                 return DbType.String;
-            }
-            if (ECTypeHelper.IsDouble(ecType))
-            {
+                }
+            if ( ECTypeHelper.IsDouble(ecType) )
+                {
                 //instancePropertyValue.DoubleValue = reader.GetDouble(i);
                 return DbType.Double;
-            }
-            if (ECTypeHelper.IsBoolean(ecType))
-            {
+                }
+            if ( ECTypeHelper.IsBoolean(ecType) )
+                {
                 //instancePropertyValue.NativeValue = reader.GetBoolean(i);
                 return DbType.Boolean;
-            }
-            if (ECTypeHelper.IsInteger(ecType))
-            {
+                }
+            if ( ECTypeHelper.IsInteger(ecType) )
+                {
                 //instancePropertyValue.IntValue = reader.GetInt32(i);
                 return DbType.Int32;
-            }
-            if (ECTypeHelper.IsLong(ecType))
-            {
+                }
+            if ( ECTypeHelper.IsLong(ecType) )
+                {
                 //instancePropertyValue.NativeValue = reader.GetInt64(i);
                 return DbType.Int64;
-            }
-            if (ECTypeHelper.IsDateTime(ecType))
-            {
+                }
+            if ( ECTypeHelper.IsDateTime(ecType) )
+                {
                 //instancePropertyValue.NativeValue = reader.GetDateTime(i);
                 return DbType.DateTime;
-            }
+                }
             throw new ProgrammerException(String.Format("The ECType {0} is not bound to any SQL type. Please modify the ECSchema", ecType.Name));
-        }
+            }
 
-        static internal void SQLReaderToECProperty(IECPropertyValue instancePropertyValue, DbDataReader reader, int i)
-        {
-            if (ECTypeHelper.IsString(instancePropertyValue.Type))
+        static internal void SQLReaderToECProperty (IECPropertyValue instancePropertyValue, DbDataReader reader, int i)
             {
+            if ( ECTypeHelper.IsString(instancePropertyValue.Type) )
+                {
                 instancePropertyValue.StringValue = reader.GetString(i);
                 return;
-            }
-            if (ECTypeHelper.IsDouble(instancePropertyValue.Type))
-            {
+                }
+            if ( ECTypeHelper.IsDouble(instancePropertyValue.Type) )
+                {
                 instancePropertyValue.DoubleValue = reader.GetDouble(i);
                 return;
-            }
-            if (ECTypeHelper.IsBoolean(instancePropertyValue.Type))
-            {
+                }
+            if ( ECTypeHelper.IsBoolean(instancePropertyValue.Type) )
+                {
                 instancePropertyValue.NativeValue = reader.GetBoolean(i);
                 return;
-            }
-            if (ECTypeHelper.IsInteger(instancePropertyValue.Type))
-            {
+                }
+            if ( ECTypeHelper.IsInteger(instancePropertyValue.Type) )
+                {
                 instancePropertyValue.IntValue = reader.GetInt32(i);
                 return;
-            }
-            if (ECTypeHelper.IsLong(instancePropertyValue.Type))
-            {
+                }
+            if ( ECTypeHelper.IsLong(instancePropertyValue.Type) )
+                {
                 instancePropertyValue.NativeValue = reader.GetInt64(i);
                 return;
-            }
-            if (ECTypeHelper.IsDateTime(instancePropertyValue.Type))
-            {
+                }
+            if ( ECTypeHelper.IsDateTime(instancePropertyValue.Type) )
+                {
                 instancePropertyValue.NativeValue = reader.GetDateTime(i);
                 return;
-            }
+                }
             throw new ProgrammerException(String.Format("The ECType {0} is not bound to any SQL type. Please modify the ECSchema", instancePropertyValue.Type.Name));
 
+            }
         }
     }
-}

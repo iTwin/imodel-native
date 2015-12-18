@@ -7,36 +7,36 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace IndexECPlugin.Source
-{
-    internal static class IndexPolicyHandler
     {
-        internal static void InitializeHandlers (ECPluginBuilder builder)
+    internal static class IndexPolicyHandler
         {
+        internal static void InitializeHandlers (ECPluginBuilder builder)
+            {
 
             builder//.SetPolicyAssertionSupport(ECPluginBuilder.CommonPolicyAssertion.SupportsMaxResults)
-                   //.SetPolicyAssertionSupport(ECPluginBuilder.CommonPolicyAssertion.SupportsResultRangeOffset)
-                   //.SetPolicyAssertionSupport(ECPluginBuilder.CommonPolicyAssertion.SortableQueries)
+                //.SetPolicyAssertionSupport(ECPluginBuilder.CommonPolicyAssertion.SupportsResultRangeOffset)
+                //.SetPolicyAssertionSupport(ECPluginBuilder.CommonPolicyAssertion.SortableQueries)
                    .SetPolicyAssertionSupport<PersistenceServicePolicy>(PersistenceServicePolicy.PolicyAssertionNames.StreamBackable, ApplyStreambackableAssertion);
 
-        }
+            }
 
-        private static void ApplyStreambackableAssertion(DefaultPolicyModule sender, PersistenceServicePolicy policy, ECPolicyContext context)
-        {
+        private static void ApplyStreambackableAssertion (DefaultPolicyModule sender, PersistenceServicePolicy policy, ECPolicyContext context)
+            {
             //if(context.ECClass.Name == "USGSThumbnail")
             //{
             //    policy.StreamBackable = new FileBackedPolicyAssertion(true);
             //}
 
-            if (context.ECClass.Name == "PreparedPackage")
-            {
+            if ( context.ECClass.Name == "PreparedPackage" )
+                {
                 policy.StreamBackable = new FileBackedPolicyAssertion(true);
-            }
+                }
 
-            if(context.ECClass.Name == "Thumbnail")
-            {
+            if ( context.ECClass.Name == "Thumbnail" )
+                {
                 policy.StreamBackable = new FileBackedPolicyAssertion(true);
-            }
+                }
 
+            }
         }
     }
-}

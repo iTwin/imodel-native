@@ -16,9 +16,9 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace IndexECPlugin.Source
-{
-    internal class IndexFileRetrievalController : FileResourceRetrievalController
     {
+    internal class IndexFileRetrievalController : FileResourceRetrievalController
+        {
         string m_packagesLocation;
 
         public IndexFileRetrievalController
@@ -29,12 +29,12 @@ namespace IndexECPlugin.Source
             string packagesLocation
             )
             : base(instance, manager, operation)
-        {
+            {
             m_packagesLocation = packagesLocation;
-        }
+            }
 
-        public override void DoRetrieveFile(bool transferFile)
-        {
+        public override void DoRetrieveFile (bool transferFile)
+            {
             ////***We need to retrieve the thumbnail location. We call our API to ask for the location of the bentleyFile of known ID***
             //string URL = ResourceManager.Connection.RepositoryIdentifier.Location + "GetJSonOfAllFilesInQuery";
             //Object content = new
@@ -76,13 +76,13 @@ namespace IndexECPlugin.Source
 
             IECInstance fileHolderAttribute = instanceClass.GetCustomAttributes("FileHolder");
 
-            if (fileHolderAttribute == null)
-            {
+            if ( fileHolderAttribute == null )
+                {
                 throw new UserFriendlyException(String.Format("There is no file associated to the {0} class", instanceClass.Name));
-            }
+                }
 
-            switch (fileHolderAttribute["Type"].StringValue)
-            {
+            switch ( fileHolderAttribute["Type"].StringValue )
+                {
 
                 case "PreparedPackage":
                     preparedPackageProcedure(Instance.InstanceId);
@@ -90,12 +90,12 @@ namespace IndexECPlugin.Source
                 //case "IndexThumbnail":
                 //    break;
                 case "USGSThumbnail":
-                    //USGSThumbnailProcedure(Instance.InstanceId);
-                    //break;
+                //USGSThumbnailProcedure(Instance.InstanceId);
+                //break;
                 default:
                     throw new ProgrammerException("This type of file holder attribute is not implemented");
+                }
             }
-        }
 
         //private void USGSThumbnailProcedure(string USGSInstanceId)
         //{
@@ -108,7 +108,7 @@ namespace IndexECPlugin.Source
         //            using (HttpContent content = response.Content)
         //            {
         //                string responseString = content.ReadAsStringAsync().Result;
-                        
+
 
         //                var json = JsonConvert.DeserializeObject(responseString) as JObject;
         //                var linkArray = json["webLinks"] as JArray;
@@ -126,7 +126,7 @@ namespace IndexECPlugin.Source
         //                //        thumbnailUri = link["uri"].Value<string>();
         //                //        break;
         //                //    }
-                            
+
         //                //}
 
 
@@ -136,15 +136,15 @@ namespace IndexECPlugin.Source
         //    }
         //}
 
-        private void preparedPackageProcedure(string name)
-        {
+        private void preparedPackageProcedure (string name)
+            {
             string location = Path.Combine(m_packagesLocation, name);
 
             FileInfo fileInfo = new FileInfo(location);
-            if (!fileInfo.Exists)
-            {
+            if ( !fileInfo.Exists )
+                {
                 throw new UserFriendlyException("There is no such file associated to this instance");
-            }
+                }
 
             DateTime WriteTime = fileInfo.LastWriteTimeUtc;
 
@@ -154,22 +154,22 @@ namespace IndexECPlugin.Source
 
             FileBackedDescriptorAccessor.SetIn(Instance, fileBackedDescriptor);
             ResourceManager.SetAsSynchronizedWithRepository(Instance, ResourceManager.Connection.RepositoryIdentifier.ECPluginID, fileBackedDescriptor.RelativePath, WriteTime, false);
-        }
+            }
 
         public override bool InstanceRequiresLockForLocalFileModifications
-        {
-            get
             {
+            get
+                {
                 return false;
+                }
             }
-        }
 
         public override bool ObtainingLockDuringRetrieval
-        {
-            get
             {
+            get
+                {
                 return false;
+                }
             }
         }
     }
-}

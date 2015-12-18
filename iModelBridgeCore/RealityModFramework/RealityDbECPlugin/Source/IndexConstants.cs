@@ -5,13 +5,13 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace IndexECPlugin.Source
-{
-    internal class IndexConstants
     {
-        private IndexConstants()
+    internal class IndexConstants
         {
-        }
+        private IndexConstants ()
+            {
+            }
 
         public static int USGSIdLenght = 24;
+        }
     }
-}

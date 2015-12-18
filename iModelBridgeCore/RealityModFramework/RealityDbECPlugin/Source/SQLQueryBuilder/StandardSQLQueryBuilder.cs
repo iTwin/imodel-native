@@ -5,26 +5,27 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace IndexECPlugin.Source
-{
+    {
     /// <summary>
     /// SQLQueryBuilder class used to create non paged queries.
     /// </summary>
     public class StandardSQLQueryBuilder : SQLQueryBuilder
-    {
+        {
         /// <summary>
         /// StandardSQLQueryBuilder constructor
         /// </summary>
-        public StandardSQLQueryBuilder() : base()
-        {
+        public StandardSQLQueryBuilder ()
+            : base()
+            {
 
-        }
+            }
 
         /// <summary>
         /// Builds the query according to the clauses added
         /// </summary>
         /// <returns>The SQL query string</returns>
-        override public string BuildQuery()
-        {
+        override public string BuildQuery ()
+            {
             string completeSelectStr = "SELECT ";
             completeSelectStr += String.Join(", ", m_sqlSelectClause.ToArray());
 
@@ -35,29 +36,29 @@ namespace IndexECPlugin.Source
 
             //string completeLeftJoinClause = String.Join(" ", m_sqlLeftJoinClause.ToArray());
             string completeLeftJoinClause = "";
-            foreach (var table in m_sqlLeftJoinClause)
-            {
-                completeLeftJoinClause += "LEFT JOIN " + AddBrackets(table.Name) + " " + table.Alias 
+            foreach ( var table in m_sqlLeftJoinClause )
+                {
+                completeLeftJoinClause += "LEFT JOIN " + AddBrackets(table.Name) + " " + table.Alias
                     + " ON " + AddBrackets(table.FirstTable.Alias) + "." + AddBrackets(table.FirstTableKey) + " = " + AddBrackets(table.Alias) + "." + AddBrackets(table.TableKey) + " ";
-            }
+                }
 
 
             completeLeftJoinClause += " ";
 
             string completeWhereClause = "";
-            if (!String.IsNullOrWhiteSpace(m_sqlWhereClause))
-            {
+            if ( !String.IsNullOrWhiteSpace(m_sqlWhereClause) )
+                {
                 completeWhereClause = "WHERE " + m_sqlWhereClause + " ";
-            }
+                }
 
             string completeOrderByClause = "";
-            if (! (m_sqlOrderByClause.Count == 0))
-            {
+            if ( !(m_sqlOrderByClause.Count == 0) )
+                {
                 completeOrderByClause = "ORDER BY ";
                 completeOrderByClause += String.Join(", ", m_sqlOrderByClause.ToArray());
-            }
+                }
 
             return completeSelectStr + completeFromStr + completeLeftJoinClause + completeWhereClause + completeOrderByClause + ";";
+            }
         }
     }
-}

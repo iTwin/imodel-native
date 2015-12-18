@@ -47,7 +47,7 @@ using Microsoft.IdentityModel.Web;
 #endif
 
 namespace IndexECPlugin.Source
-{
+    {
     /*====================================================================================**/
     /// <summary>
     /// Demonstrates how to create a file info ECPlugin using the ECPluginBuilder.
@@ -59,7 +59,7 @@ namespace IndexECPlugin.Source
     [ComVisible(false)]
     [ECExtension]
     public class IndexECPlugin : ECStartupShutdownHandler
-    {
+        {
         /// <summary>
         /// Instance of plugin.
         /// </summary>
@@ -78,40 +78,39 @@ namespace IndexECPlugin.Source
         public const string PLUGIN_NAME = "IndexECPlugin";
 
         private string m_connectionString = "";
-        private string m_packagesLocation = "";
 
         /// <summary>
         /// Make plugin available to contract tests.
         /// </summary>
         /// <remarks>Registered plugin.  See <see cref="Startup()"/>.</remarks>
         public ECPlugin Plugin
-        {
-            get
             {
+            get
+                {
                 Startup();
                 return m_plugin;
+                }
             }
-        }
 
         /// <summary>
         /// Override this method to register your ECPlugin
         /// </summary>
-        protected override void Startup()
-        {
-            // Only actually register plugin once.
-            if (null == m_plugin)
+        protected override void Startup ()
             {
+            // Only actually register plugin once.
+            if ( null == m_plugin )
+                {
                 //Start by calling the Register() method which takes a delegate that defines what components the plugin should be composed of
                 m_plugin = ECPlugin.Register(PLUGIN_NAME, BuildPlugin);
+                }
             }
-        }
-        
+
         /// <summary>
         /// Actual builder method that composes our ECPlugin
         /// </summary>
         /// <param name="builder">builder to use for construction</param>
-        private void BuildPlugin(ECPluginBuilder builder)
-        {
+        private void BuildPlugin (ECPluginBuilder builder)
+            {
             builder
                 .SetDisplayLabel("IndexECPlugin") //Set a display label for the plugin
                 .SetRepositorySupport(
@@ -124,32 +123,32 @@ namespace IndexECPlugin.Source
 #if IMSOFF
                 .SetConnectionSupport(GetConnectionFormat)
 #else
-                .SetConnectionSupport(GetConnectionFormat, OpenConnection, CloseConnection)
+.SetConnectionSupport(GetConnectionFormat, OpenConnection, CloseConnection)
 #endif
-                .SetQuerySupport((EnumerableBasedQueryHandler)ExecuteQuery)
+.SetQuerySupport((EnumerableBasedQueryHandler) ExecuteQuery)
                 .SetOperationSupport<RetrieveBackingFileOperation>(FileRetrievalOperation)
                 .SetOperationSupport<InsertOperation>(ExecuteInsertOperation);
-            
-                IndexPolicyHandler.InitializeHandlers(builder);
-        }
 
-        private RepositoryIdentifier GetRepositoryIdentifier(RepositoryModule module,
+            IndexPolicyHandler.InitializeHandlers(builder);
+            }
+
+        private RepositoryIdentifier GetRepositoryIdentifier (RepositoryModule module,
                                                              ECSession session,
                                                              string location,
                                                              IExtendedParameters extendedParameters)
-        {
+            {
             //Try to obtain the repository identifier for the provided location from the list of known identifiers
             ICollection<RepositoryIdentifier> knownRepositories = module.GetKnownRepositories(session, extendedParameters);
             RepositoryIdentifier knownRepository = knownRepositories.FirstOrDefault((repositoryIdentifier) =>
                 string.Equals(location, repositoryIdentifier.Location, StringComparison.Ordinal));
 
-            if (knownRepository != null)
-            {
+            if ( knownRepository != null )
+                {
                 return knownRepository;
-            }
+                }
 
 
-            
+
             //////we did not find an existing identifier, check if the directory on the location exists
             //if (!File.Exists(location))
             //{
@@ -159,102 +158,77 @@ namespace IndexECPlugin.Source
             //ParseConfigFile(location);
 
             m_connectionString = ConfigurationRoot.GetAppSetting("RECPConnectionString");
-            m_packagesLocation = ConfigurationRoot.GetAppSetting("RECPPackagesLocation");
 
             var identifier = new RepositoryIdentifier(module.ParentECPlugin.ECPluginId, location, location, location, null);
             module.RepositoryVerified(session, identifier); //tells the module to include that repository in the list of known repositories from now on
             return identifier;
             //}
-        }
+            }
 
-        //private void ParseConfigFile(string location)
-        //{
-        //    XmlDocument doc = new XmlDocument();
-        //    try
-        //    {
-        //        doc.Load(location);
-        //    }
-        //    catch(Exception ex)
-        //    {
-        //        throw new NotSupportedException(String.Format("An error happened while loading the file at the location {0}", location), ex);
-        //    }
-
-        //    XmlNodeList nodelist = doc.SelectNodes("configuration");
-        //    if(nodelist.Count != 1)
-        //    {
-        //        throw new NotSupportedException("There can be one and only one \"configuration\" section in the configuration file");
-        //    }
-
-        //    m_connectionString = nodelist[0].SelectSingleNode("ConnectionString").InnerText;
-        //    m_packagesLocation = nodelist[0].SelectSingleNode("PackagesLocation").InnerText;
-        //    //throw new Exception(String.Format("Testing : {0} {1} {2}", m_connectionString, m_schemaLocation, m_packagesLocation));
-
-        //}
-
-        private void PopulateSchemas(SchemaModule module,
+        private void PopulateSchemas (SchemaModule module,
                                      ECPluginSchemaManager schemaManager)
-        {
+            {
             ECSchemaXmlStreamReader schemaReader = new ECSchemaXmlStreamReader(Assembly.GetExecutingAssembly().GetManifestResourceStream("ECSchemaDB.xml"));
             IECSchema schemaFromXML = schemaReader.Deserialize();
             schemaManager.AddSchema(ref schemaFromXML);
-        }
+            }
 
-        private IEnumerable<IECInstance> ExecuteQuery(QueryModule sender,
+        private IEnumerable<IECInstance> ExecuteQuery (QueryModule sender,
                                                       RepositoryConnection connection,
                                                       ECQuery query,
                                                       ECQuerySettings querySettings)
-        {
+            {
             //For now, we'll only manage the case where we receive one search class.
             //foreach (SearchClass searchClass in query.SearchClasses)
             try
-            {
-                SearchClass searchClass = query.SearchClasses.First();
                 {
+                SearchClass searchClass = query.SearchClasses.First();
+                    {
                     Log.Logger.info("Executing query " + query.ID + " : " + query.ToECSqlString(0) + ", custom parameters : " + String.Join(",", query.ExtendedData.Select(x => x.ToString())));
 
                     //PATCH FOR STREAM BACKED PACKAGE REQUEST: Ask if it is possible to map stream backed instance retrievals to 
-                    if ((querySettings != null) && ((querySettings.LoadModifiers & LoadModifiers.IncludeStreamDescriptor) != LoadModifiers.None) && (searchClass.Class.Name == "PreparedPackage"))
-                    {
+                    if ( (querySettings != null) && ((querySettings.LoadModifiers & LoadModifiers.IncludeStreamDescriptor) != LoadModifiers.None) && (searchClass.Class.Name == "PreparedPackage") )
+                        {
                         IECInstance packageInstance = searchClass.Class.CreateInstance();
                         ECInstanceIdExpression exp = query.WhereClause[0] as ECInstanceIdExpression;
                         packageInstance.InstanceId = exp.RightSideString;
                         PackageStreamRetrievalController.SetStreamRetrieval(packageInstance, m_connectionString);
                         return new List<IECInstance> { packageInstance };
-                    }
+                        }
 
                     IECQueryProvider helper/* = new SqlQueryProvider(query)*/;
 
-                    if (searchClass.Class.GetCustomAttributes("QueryType") == null || searchClass.Class.GetCustomAttributes("QueryType")["QueryType"].IsNull)
-                    {
+                    if ( searchClass.Class.GetCustomAttributes("QueryType") == null || searchClass.Class.GetCustomAttributes("QueryType")["QueryType"].IsNull )
+                        {
                         //Log.Logger.error(String.Format("Query {1} aborted. The class {0} cannot be queried.", searchClass.Class.Name, query.ID));
                         throw new UserFriendlyException(String.Format("The class {0} cannot be queried.", searchClass.Class.Name));
-                    }
+                        }
 
                     //string queryType = searchClass.Class.GetCustomAttributes("QueryType")["QueryType"].StringValue;
 
                     string source;
 
-                    if (query.ExtendedData.ContainsKey("source"))
-                    {
+                    if ( query.ExtendedData.ContainsKey("source") )
+                        {
                         source = query.ExtendedData["source"].ToString();
-                    }
+                        }
                     else
-                    {
+                        {
                         //TODO : We should rename queryType, as it has taken the role of a default parameter
                         source = searchClass.Class.GetCustomAttributes("QueryType")["QueryType"].StringValue;
-                    }
+                        }
                     //IEnumerable<IECInstance> instanceList;
 
-                    switch (source.ToLower())
-                    {
+                    switch ( source.ToLower() )
+                        {
                         case "index":
-                            using (SqlConnection sqlConnection = new SqlConnection(m_connectionString))
-                            {
+                            using ( SqlConnection sqlConnection = new SqlConnection(m_connectionString) )
+                                {
                                 string fullSchemaName = sender.ParentECPlugin.SchemaModule.GetSchemaFullNames(connection).First();
                                 IECSchema schema = sender.ParentECPlugin.SchemaModule.GetSchema(connection, fullSchemaName);
                                 helper = new SqlQueryProvider(query, querySettings, sqlConnection, schema);
                                 return helper.CreateInstanceList();
-                            }
+                                }
 
                         case "usgsapi":
                             helper = new UsgsAPIQueryProvider(query, querySettings);
@@ -262,13 +236,13 @@ namespace IndexECPlugin.Source
 
                         case "all":
                             List<IECInstance> instanceList = new List<IECInstance>();
-                            using (SqlConnection sqlConnection = new SqlConnection(m_connectionString))
-                            {
+                            using ( SqlConnection sqlConnection = new SqlConnection(m_connectionString) )
+                                {
                                 string fullSchemaName = sender.ParentECPlugin.SchemaModule.GetSchemaFullNames(connection).First();
                                 IECSchema schema = sender.ParentECPlugin.SchemaModule.GetSchema(connection, fullSchemaName);
                                 helper = new SqlQueryProvider(query, querySettings, sqlConnection, schema);
                                 instanceList = helper.CreateInstanceList().ToList();
-                            }
+                                }
 
                             helper = new UsgsAPIQueryProvider(query, querySettings);
                             instanceList.AddRange(helper.CreateInstanceList());
@@ -277,7 +251,7 @@ namespace IndexECPlugin.Source
                             //throw new UserFriendlyException(String.Format("The class {0} cannot be queried.", searchClass.Class.Name));
                             //Log.Logger.error(String.Format("Query {0} aborted. The source chosen ({1}) is invalid", query.ID, source));
                             throw new UserFriendlyException("The source \"" + source + "\" does not exist. Choose between \"index\", \"usgsapi\" or \"all\"");
-                    }
+                        }
 
 
 
@@ -320,21 +294,21 @@ namespace IndexECPlugin.Source
 
                     //return ReadInstancesFromAPI(bentleyFileClass, baseURL + apiMethodURL, polygonPointsVar, whereClauseString, pageSize, page, testToErase, testToErase2);
 
+                    }
                 }
-            }
-            catch (System.Data.Common.DbException)
-            {
+            catch ( System.Data.Common.DbException )
+                {
                 //For now, we intercept all of these sql exceptions to prevent any "revealing" messages about the sql command.
                 //It would be nice to parse the exception to make it easier to pinpoint the problem for the user.
                 //Log.Logger.error(String.Format("Query {0} aborted. The database server has encountered a problem.", query.ID));
                 throw new UserFriendlyException("The server has encountered a problem while processing your request. Please verify the syntax of your request. If the problem persists, the server may be down");
-            }
-            catch (Exception e)
-            {
+                }
+            catch ( Exception e )
+                {
                 Log.Logger.error(String.Format("Query {0} aborted. Error message : {1}", query.ID, e.Message));
                 throw;
+                }
             }
-        }
 
 
 
@@ -412,25 +386,25 @@ namespace IndexECPlugin.Source
             string comments,
             WriteModifiers writeModifiers,
             IExtendedParameters extendedParameters)
-        {
-            try
             {
+            try
+                {
                 IECClass instanceClass = instance.ClassDefinition;
 
                 IECInstance fileHolderAttribute = instanceClass.GetCustomAttributes("FileHolder");
 
                 Log.Logger.trace("Retrieving instance " + instance.InstanceId + " of class " + instanceClass.Name);
 
-                if (fileHolderAttribute == null)
-                {
+                if ( fileHolderAttribute == null )
+                    {
                     //Log.Logger.error("There is no file associate to instances of the class " + instanceClass.Name + ". Aborting retrieval operation.");
                     throw new UserFriendlyException(String.Format("There is no file associated to the {0} class", instanceClass.Name));
-                }
+                    }
 
 
 
-                switch (fileHolderAttribute["Type"].StringValue)
-                {
+                switch ( fileHolderAttribute["Type"].StringValue )
+                    {
 
                     case "PreparedPackage":
                         //var resourceManager = new FileResourceManager(connection);
@@ -453,7 +427,7 @@ namespace IndexECPlugin.Source
 
                         //Log.Logger.error(String.Format("Retrieval of instance {0} aborted. The file holder attribute {1} is not supported. Correct the ECSchema or the plugin.", instance.InstanceId, fileHolderAttribute["Type"].StringValue));
                         throw new ProgrammerException(String.Format("The retrieval of files of type {0} is not supported.", fileHolderAttribute["Type"].StringValue));
-                }
+                    }
 
                 //if (instance.ClassDefinition.Name == "BentleyFile")
                 //{
@@ -463,13 +437,13 @@ namespace IndexECPlugin.Source
                 //{
                 //    throw new UserFriendlyException("Only BentleyFile instances are backed by files");
                 //}
-            }
-            catch(Exception e)
-            {
+                }
+            catch ( Exception e )
+                {
                 Log.Logger.error(String.Format("Aborting retrieval of instance {0}. Error message : {1}", instance.InstanceId, e.Message));
                 throw;
+                }
             }
-        }
 
         internal void ExecuteInsertOperation
         (
@@ -481,13 +455,13 @@ namespace IndexECPlugin.Source
         WriteModifiers writeModifiers,
         IExtendedParameters extendedParameters
         )
-        {
+            {
             string className = instance.ClassDefinition.Name;
 
             try
-            {
-                switch (className)
                 {
+                switch ( className )
+                    {
                     case "PackageRequest":
                         InsertPackageRequest(sender, connection, instance, sender.ParentECPlugin.QueryModule);
                         return;
@@ -498,15 +472,15 @@ namespace IndexECPlugin.Source
                     default:
                         Log.Logger.error(String.Format("Package request aborted. The class {0} cannot be inserted", className));
                         throw new Bentley.Exceptions.UserFriendlyException("The only insert operation permitted is a PackageRequest instance insertion.");
+                    }
                 }
-            }
-            catch(Exception e)
-            {
+            catch ( Exception e )
+                {
                 Log.Logger.error(String.Format("Package {1} creation aborted. Error message : {0}", e.Message, instance.InstanceId));
                 throw;
+                }
+
             }
-            
-        }
 
         //private string InsertAutomaticRequest(OperationModule sender, RepositoryConnection connection, IECInstance instance, QueryModule queryModule)
         //{
@@ -526,7 +500,7 @@ namespace IndexECPlugin.Source
 
 
         //    IECClass SEWDVClass = sender.ParentECPlugin.SchemaModule.FindECClass(connection, "RealityModeling", "SpatialEntityWithDetailsView");
-            
+
         //    //Since the request expects from us to find all the entries by ourselves, we query their ids here.
         //    ECQuery query = new ECQuery(SEWDVClass);
         //    query.SelectClause.SelectAllProperties = false;
@@ -574,8 +548,8 @@ namespace IndexECPlugin.Source
 
         //}
 
-        private string InsertPackageRequest(OperationModule sender, RepositoryConnection connection, IECInstance instance, QueryModule queryModule)
-        {
+        private string InsertPackageRequest (OperationModule sender, RepositoryConnection connection, IECInstance instance, QueryModule queryModule)
+            {
             string coordinateSystem = null;
 
             string name = Guid.NewGuid().ToString();
@@ -585,44 +559,44 @@ namespace IndexECPlugin.Source
 
             var csPropValue = instance.GetPropertyValue("CoordinateSystem");
 
-            if ((csPropValue != null) && (!csPropValue.IsNull))
-            {
+            if ( (csPropValue != null) && (!csPropValue.IsNull) )
+                {
                 coordinateSystem = instance.GetPropertyValue("CoordinateSystem").StringValue;
-            }
+                }
 
             var osmPropValue = instance.GetPropertyValue("OSM");
             bool osm = false;
-            if (osmPropValue != null)
-            {
-                if (osmPropValue.StringValue.ToLower() == "true")
+            if ( osmPropValue != null )
+                {
+                if ( osmPropValue.StringValue.ToLower() == "true" )
                     osm = true;
-            }
+                }
 
             IECArrayValue requestedEntitiesECArray = instance.GetPropertyValue("RequestedEntities") as IECArrayValue;
-            if (requestedEntitiesECArray == null)
-            {
+            if ( requestedEntitiesECArray == null )
+                {
                 //This error should never happen except if the schema file is corrupted.
                 //Log.Logger.error(String.Format("Aborting creation of package {0}. The PackageRequest entry is incorrect. Correct the ECSchema", instance.InstanceId));
                 throw new ProgrammerException("The ECSchema is not valid. PackageRequest must have an array property.");
-            }
+                }
 
             //List<RequestedEntity> bentleyFileInfoList = new List<RequestedEntity>();
             List<RequestedEntity> wmsRequestedEntities = new List<RequestedEntity>();
             List<RequestedEntity> usgsRequestedEntities = new List<RequestedEntity>();
-            for (int i = 0; i < requestedEntitiesECArray.Count; i++)
-            {
+            for ( int i = 0; i < requestedEntitiesECArray.Count; i++ )
+                {
 
                 var requestedEntity = ECStructToRequestedEntity(requestedEntitiesECArray[i] as IECStructValue);
 
-                if (requestedEntity.ID.Length != IndexConstants.USGSIdLenght)
-                {
+                if ( requestedEntity.ID.Length != IndexConstants.USGSIdLenght )
+                    {
                     wmsRequestedEntities.Add(requestedEntity);
-                }
+                    }
                 else
-                {
+                    {
                     usgsRequestedEntities.Add(requestedEntity);
+                    }
                 }
-            }
 
             // Create package bounding box (region of interest).
             List<double> selectedRegion = new List<double>();
@@ -637,7 +611,7 @@ namespace IndexECPlugin.Source
             List<Tuple<RealityDataSourceNet, string>> usgsSourceList = UsgsPackager(sender, connection, queryModule, usgsRequestedEntities);
 
             List<OsmSourceNet> osmSourceList = new List<OsmSourceNet>();
-            if (osm)
+            if ( osm )
                 osmSourceList.Add(OsmPackager(sender, connection, queryModule, selectedRegion));
 
             // Create data group and package.
@@ -646,19 +620,19 @@ namespace IndexECPlugin.Source
             PinnedGroupNet pinnedGroup = PinnedGroupNet.Create();
             TerrainGroupNet terrainGroup = TerrainGroupNet.Create();
 
-            foreach (WmsSourceNet wmsSource in wmsSourceList)
-            {
+            foreach ( WmsSourceNet wmsSource in wmsSourceList )
+                {
                 imgGroup.AddData(wmsSource);
-            }
+                }
 
-            foreach (Tuple<RealityDataSourceNet,string> usgsSourceTuple in usgsSourceList)
-            {
+            foreach ( Tuple<RealityDataSourceNet, string> usgsSourceTuple in usgsSourceList )
+                {
                 //This switch case is temporary. The best thing we should have done
                 //was to create a method for this, but these "sourceNet" will probably
                 //change soon, so everything here is temporary until the database is in
                 //a more complete form
-                switch (usgsSourceTuple.Item2)
-	            {
+                switch ( usgsSourceTuple.Item2 )
+                    {
 
                     //TODO: Correct the switch case. The choice of the group for each class was not verified.
                     case "Roadway":
@@ -672,17 +646,17 @@ namespace IndexECPlugin.Source
                         terrainGroup.AddData(usgsSourceTuple.Item1);
                         break;
                     case "Imagery":
-		            default:
+                    default:
                         imgGroup.AddData(usgsSourceTuple.Item1);
                         break;
-	            }
-            }
+                    }
+                }
 
-            foreach (RealityDataSourceNet osmSource in osmSourceList)
-            {
+            foreach ( RealityDataSourceNet osmSource in osmSourceList )
+                {
                 modelGroup.AddData(osmSource);
-            }
-                
+                }
+
             // Create package.
             string description = "";
             string copyright = "";
@@ -690,49 +664,49 @@ namespace IndexECPlugin.Source
 
             //Until RealityPackageNet is changed, it creates the file in the temp folder, then we copy it in the database. 
             RealityDataPackageNet.Create(Path.GetTempPath(), name, description, copyright, packageId, selectedRegion, imgGroup, modelGroup, pinnedGroup, terrainGroup);
-            
+
             UploadPackageInDatabase(instance);
 
             Log.Logger.trace("Created the package file " + instance.InstanceId);
             return instance.InstanceId;
-        }
+            }
 
-        private void UploadPackageInDatabase(IECInstance instance)
-        {
-                using (DbConnection sqlConnection = new SqlConnection(m_connectionString))
+        private void UploadPackageInDatabase (IECInstance instance)
+            {
+            using ( DbConnection sqlConnection = new SqlConnection(m_connectionString) )
                 {
-                    sqlConnection.Open();
-                    using (DbCommand dbCommand = sqlConnection.CreateCommand())
+                sqlConnection.Open();
+                using ( DbCommand dbCommand = sqlConnection.CreateCommand() )
                     {
-                        dbCommand.CommandText = "INSERT INTO dbo.Packages (Name, CreationTime, FileContent) VALUES (@param0, @param1, @param2)";
-                        dbCommand.CommandType = CommandType.Text;
+                    dbCommand.CommandText = "INSERT INTO dbo.Packages (Name, CreationTime, FileContent) VALUES (@param0, @param1, @param2)";
+                    dbCommand.CommandType = CommandType.Text;
 
-                        DbParameter param0 = dbCommand.CreateParameter();
-                        param0.DbType = DbType.String;
-                        param0.ParameterName = "@param0";
-                        param0.Value = instance.InstanceId;
-                        dbCommand.Parameters.Add(param0);
+                    DbParameter param0 = dbCommand.CreateParameter();
+                    param0.DbType = DbType.String;
+                    param0.ParameterName = "@param0";
+                    param0.Value = instance.InstanceId;
+                    dbCommand.Parameters.Add(param0);
 
-                        DbParameter param1 = dbCommand.CreateParameter();
-                        param1.DbType = DbType.DateTime;
-                        param1.ParameterName = "@param1";
-                        param1.Value = DateTime.UtcNow;
-                        dbCommand.Parameters.Add(param1);
+                    DbParameter param1 = dbCommand.CreateParameter();
+                    param1.DbType = DbType.DateTime;
+                    param1.ParameterName = "@param1";
+                    param1.Value = DateTime.UtcNow;
+                    dbCommand.Parameters.Add(param1);
 
-                        FileStream fstream = new FileStream(Path.GetTempPath() + instance.InstanceId, FileMode.Open);
-                        BinaryReader reader = new BinaryReader(fstream);
+                    FileStream fstream = new FileStream(Path.GetTempPath() + instance.InstanceId, FileMode.Open);
+                    BinaryReader reader = new BinaryReader(fstream);
 
-                        long longLength = fstream.Length;
-                        int intLength;
-                        if(longLength > int.MaxValue)
+                    long longLength = fstream.Length;
+                    int intLength;
+                    if ( longLength > int.MaxValue )
                         {
-                            //Log.Logger.error("Package requested is too large.");
+                        //Log.Logger.error("Package requested is too large.");
                         throw new Bentley.Exceptions.UserFriendlyException("Package requested is too large. Please reduce the size of the order");
-                    }
-                        intLength = Convert.ToInt32(longLength);
-                        byte[] fileBytes = new byte[fstream.Length];
-                        fstream.Seek(0,SeekOrigin.Begin);
-                        fstream.Read(fileBytes, 0, intLength);
+                        }
+                    intLength = Convert.ToInt32(longLength);
+                    byte[] fileBytes = new byte[fstream.Length];
+                    fstream.Seek(0, SeekOrigin.Begin);
+                    fstream.Read(fileBytes, 0, intLength);
 
 
 
@@ -743,19 +717,19 @@ namespace IndexECPlugin.Source
                     dbCommand.Parameters.Add(param2);
 
                     dbCommand.ExecuteNonQuery();
-                }
+                    }
                 sqlConnection.Close();
+                }
             }
-        }
 
-        private List<RealityDataSourceNet> RealityDataPackager(OperationModule sender, RepositoryConnection connection, QueryModule queryModule, List<RequestedEntity> basicRequestedEntities)
-        {
+        private List<RealityDataSourceNet> RealityDataPackager (OperationModule sender, RepositoryConnection connection, QueryModule queryModule, List<RequestedEntity> basicRequestedEntities)
+            {
             List<RealityDataSourceNet> RDSNList = new List<RealityDataSourceNet>();
 
-            if (basicRequestedEntities.Count == 0)
-            {
+            if ( basicRequestedEntities.Count == 0 )
+                {
                 return RDSNList;
-            }
+                }
 
             IECRelationshipClass metadataRelClass = sender.ParentECPlugin.SchemaModule.FindECClass(connection, "RealityModeling", "SpatialEntityBaseToMetadata") as IECRelationshipClass;
             IECClass metadataClass = sender.ParentECPlugin.SchemaModule.FindECClass(connection, "RealityModeling", "Metadata");
@@ -766,7 +740,7 @@ namespace IndexECPlugin.Source
             RelatedInstanceSelectCriteria dataSourceRelCrit = new RelatedInstanceSelectCriteria(new QueryRelatedClassSpecifier(dataSourceRelClass, RelatedInstanceDirection.Forward, dataSourceClass), false);
 
             IECClass spatialEntityClass = sender.ParentECPlugin.SchemaModule.FindECClass(connection, "RealityModeling", "SpatialEntity");
-            
+
             ECQuery query = new ECQuery(spatialEntityClass);
             query.SelectClause.SelectAllProperties = false;
             query.SelectClause.SelectedProperties = new List<IECProperty>();
@@ -788,8 +762,8 @@ namespace IndexECPlugin.Source
 
             var queriedSpatialEntities = ExecuteQuery(queryModule, connection, query, null);
 
-            foreach (IECInstance spatialEntity in queriedSpatialEntities)
-            {
+            foreach ( IECInstance spatialEntity in queriedSpatialEntities )
+                {
 
                 IECRelationshipInstance firstMetadataRel = spatialEntity.GetRelationshipInstances().First(relInst => relInst.ClassDefinition.Name == "SpatialEntityBaseToMetadata");
                 IECInstance firstMetadata = firstMetadataRel.Target;
@@ -808,26 +782,26 @@ namespace IndexECPlugin.Source
                 List<string> sisterFiles = new List<string>();
 
                 RDSNList.Add(RealityDataSourceNet.Create(uri, type, copyright, provider, filesize, fileInCompound, metadata, sisterFiles));
-            }
+                }
 
             return RDSNList;
-            
-        }
 
-        private List<WmsSourceNet> WmsPackager(OperationModule sender, RepositoryConnection connection, QueryModule queryModule, string coordinateSystem, List<RequestedEntity> dbRequestedEntities)
-        {
+            }
+
+        private List<WmsSourceNet> WmsPackager (OperationModule sender, RepositoryConnection connection, QueryModule queryModule, string coordinateSystem, List<RequestedEntity> dbRequestedEntities)
+            {
             List<WmsSourceNet> wmsMapInfoList = new List<WmsSourceNet>();
 
-            if (dbRequestedEntities.Count == 0)
-            {
+            if ( dbRequestedEntities.Count == 0 )
+                {
                 return wmsMapInfoList;
-            }
+                }
 
-            if(coordinateSystem == null)
-            {
+            if ( coordinateSystem == null )
+                {
                 //Log.Logger.error("Package creation aborted. Coordinate system was not included");
                 throw new Bentley.Exceptions.UserFriendlyException("Please enter a coordinate system when requesting this type of data.");
-            }
+                }
 
             IECClass spatialEntityClass = sender.ParentECPlugin.SchemaModule.FindECClass(connection, "RealityModeling", "SpatialEntity");
 
@@ -854,8 +828,8 @@ namespace IndexECPlugin.Source
 
             List<MapInfo> mapInfoList = new List<MapInfo>();
 
-            foreach (IECInstance spatialEntity in queriedSpatialEntities)
-            {
+            foreach ( IECInstance spatialEntity in queriedSpatialEntities )
+                {
                 string polygonString = spatialEntity.GetPropertyValue("Footprint").StringValue;
 
                 //query = new ECQuery(metadataClass);
@@ -921,14 +895,14 @@ namespace IndexECPlugin.Source
 
                 PolygonModel model;
                 try
-                {
+                    {
                     model = JsonConvert.DeserializeObject<PolygonModel>(polygonString);
-                }
-                catch (JsonSerializationException)
-                {
+                    }
+                catch ( JsonSerializationException )
+                    {
                     //Log.Logger.error("Package creation aborted. The polygon format is not valid");
                     throw new Bentley.Exceptions.UserFriendlyException(String.Format("The polygon format of the database entry {0} is not valid.", entityId));
-                }
+                    }
 
                 MapInfo info = new MapInfo
                 {
@@ -944,44 +918,46 @@ namespace IndexECPlugin.Source
                 };
 
                 mapInfoList.Add(info);
-            }
+                }
 
             // Create WmsSource.
 
-            foreach (var mapInfo in mapInfoList)
-            {
+            foreach ( var mapInfo in mapInfoList )
+                {
                 // Extract min/max values for bbox.
                 IEnumerator<double[]> pointsIt = mapInfo.Footprint.GetEnumerator();
-                double minX = 90.0; double maxX = -90.0;
-                double minY = 180.0; double maxY = -180.0;
+                double minX = 90.0;
+                double maxX = -90.0;
+                double minY = 180.0;
+                double maxY = -180.0;
                 double temp = 0.0;
-                while (pointsIt.MoveNext())
-                {
+                while ( pointsIt.MoveNext() )
+                    {
                     //x
                     temp = pointsIt.Current[0];
-                    if (minX > temp)
+                    if ( minX > temp )
                         minX = temp;
-                    if (maxX < temp)
+                    if ( maxX < temp )
                         maxX = temp;
 
                     //y
                     temp = pointsIt.Current[1];
-                    if (minY > temp)
+                    if ( minY > temp )
                         minY = temp;
-                    if (maxY < temp)
+                    if ( maxY < temp )
                         maxY = temp;
-                }
+                    }
 
                 //&&JFC Workaround for the moment (until we add a csType column in the database). 
                 // We suppose CRS for version 1.3, SRS for 1.1.1 and below.
                 string csType = "CRS";
-                if (!mapInfo.Version.Equals("1.3.0"))
+                if ( !mapInfo.Version.Equals("1.3.0") )
                     csType = "SRS";
 
                 // We need to remove extra characters at the end of the vendor specific since 
                 // this part is at the end of the GetMap query that will be created later.
                 string vendorSpecific = mapInfo.GetMapURLQuery;
-                if (vendorSpecific.EndsWith("&"))
+                if ( vendorSpecific.EndsWith("&") )
                     vendorSpecific = vendorSpecific.TrimEnd('&');
 
                 List<string> sisterFiles = new List<string>();
@@ -1002,12 +978,12 @@ namespace IndexECPlugin.Source
                                                        mapInfo.SelectedFormat,              // Format
                                                        vendorSpecific,                      // Vendor Specific
                                                        true));                              // Transparency
-            }
+                }
             return wmsMapInfoList;
-        }
+            }
 
-        private OsmSourceNet OsmPackager(OperationModule sender, RepositoryConnection connection, QueryModule queryModule, List<double> regionOfInterest)
-        {
+        private OsmSourceNet OsmPackager (OperationModule sender, RepositoryConnection connection, QueryModule queryModule, List<double> regionOfInterest)
+            {
             IECClass spatialEntityClass = sender.ParentECPlugin.SchemaModule.FindECClass(connection, "RealityModeling", "SpatialEntity");
 
             IECRelationshipClass dataSourceRelClass = sender.ParentECPlugin.SchemaModule.FindECClass(connection, "RealityModeling", "SpatialEntityToSpatialDataSource") as IECRelationshipClass;
@@ -1065,16 +1041,16 @@ namespace IndexECPlugin.Source
                                        new List<string>(),      // Sister Files 
                                        regionOfInterest,  // bbox
                                        alternateUrls);      // Alternate urls        
-        }
+            }
 
-        private List<Tuple<RealityDataSourceNet,string>> UsgsPackager(OperationModule sender, RepositoryConnection connection, QueryModule queryModule, List<RequestedEntity> usgsRequestedEntities)
-        {
+        private List<Tuple<RealityDataSourceNet, string>> UsgsPackager (OperationModule sender, RepositoryConnection connection, QueryModule queryModule, List<RequestedEntity> usgsRequestedEntities)
+            {
             List<Tuple<RealityDataSourceNet, string>> usgsSourceNetList = new List<Tuple<RealityDataSourceNet, string>>();
 
-            if(usgsRequestedEntities.Count == 0)
-            {
+            if ( usgsRequestedEntities.Count == 0 )
+                {
                 return usgsSourceNetList;
-            }
+                }
 
             IECClass dataSourceClass = sender.ParentECPlugin.SchemaModule.FindECClass(connection, "RealityModeling", "SpatialDataSource");
             IECClass metadataClass = sender.ParentECPlugin.SchemaModule.FindECClass(connection, "RealityModeling", "Metadata");
@@ -1098,7 +1074,7 @@ namespace IndexECPlugin.Source
             query.SelectClause.SelectAllProperties = false;
             query.SelectClause.SelectedProperties = new List<IECProperty>();
             query.SelectClause.SelectedProperties.Add(spatialentityBaseClass.First(prop => prop.Name == "Classification"));
-            
+
             query.WhereClause = new WhereCriteria(new ECInstanceIdExpression(usgsRequestedEntities.Select(e => e.ID.ToString()).ToArray()));
 
             query.ExtendedDataValueSetter.Add(new KeyValuePair<string, object>("source", "usgsapi"));
@@ -1116,21 +1092,21 @@ namespace IndexECPlugin.Source
 
             var queriedMetadatas = ExecuteQuery(queryModule, connection, query, null);
 
-            foreach(var entity in queriedSpatialDataSources)
-            {
+            foreach ( var entity in queriedSpatialDataSources )
+                {
                 string metadata = entity.GetPropertyValue("Metadata").StringValue;
                 string url = entity.GetPropertyValue("MainURL").StringValue;
                 string type = entity.GetPropertyValue("DataSourceType").StringValue;
                 string copyright = queriedMetadatas.First(m => m.InstanceId == entity.InstanceId).GetPropertyValue("Legal").StringValue;
                 long fileSize = (long) entity.GetPropertyValue("FileSize").NativeValue;
-                ulong uFileSize = (fileSize > 0) ? (ulong)fileSize : 0;
+                ulong uFileSize = (fileSize > 0) ? (ulong) fileSize : 0;
                 string location = entity.GetPropertyValue("LocationInCompound").StringValue;
                 var classificationPropValue = queriedSpatialEntities.First(m => m.InstanceId == entity.InstanceId).GetPropertyValue("Classification");
                 string classification = null;
-                if ((classificationPropValue != null) && (!classificationPropValue.IsNull))
-                {
+                if ( (classificationPropValue != null) && (!classificationPropValue.IsNull) )
+                    {
                     classification = classificationPropValue.StringValue;
-                }
+                    }
 
                 usgsSourceNetList.Add(new Tuple<RealityDataSourceNet, string>(RealityDataSourceNet.Create(url,                     // Url
                                                                                             type,                    // Main file type
@@ -1142,18 +1118,18 @@ namespace IndexECPlugin.Source
                                                                                             new List<string>()),      // Sister Files ,                                                                                                      
                                                                                             classification));              // Metadata location 
 
-            }
+                }
 
             return usgsSourceNetList;
-        }
+            }
 
-        private RequestedEntity ECStructToRequestedEntity(IECStructValue structValue)
-        {
-            if (structValue.ClassDefinition.Name != "RequestedEntity")
+        private RequestedEntity ECStructToRequestedEntity (IECStructValue structValue)
             {
+            if ( structValue.ClassDefinition.Name != "RequestedEntity" )
+                {
                 //Log.Logger.error("Package request aborted. The PackageRequest entry is incorrect. Correct the ECSchema");
                 throw new ProgrammerException("Error in the ECSchema. A PackageRequest must be composed of an array of RequestedEntity.");
-            }
+                }
 
             return new RequestedEntity
             {
@@ -1162,46 +1138,13 @@ namespace IndexECPlugin.Source
                 SelectedStyle = structValue.GetPropertyValue("SelectedStyle").StringValue,
             };
 
-        }
+            }
 
-        //private void CreateArchive(IECInstance instance, List<string> LocationOfFilesList, out string guid)
-        //{
-        //    string archivePath;
-
-        //    do
-        //    {
-        //        guid = Guid.NewGuid().ToString();
-        //        archivePath = Path.Combine(m_packagesLocation, guid + ".zip");
-        //    }
-        //    while (File.Exists(archivePath));
-
-        //    FileInfo fileInfo = new FileInfo(archivePath);
-        //    fileInfo.Directory.Create();
-
-        //    try
-        //    {
-        //        using (ZipArchive archive = ZipFile.Open(archivePath, ZipArchiveMode.Create))
-        //        {
-        //            foreach (var location in LocationOfFilesList)
-        //            {
-        //                archive.CreateEntryFromFile(location, Path.GetFileName(location));
-        //            }
-        //        }
-        //    }
-        //    catch (Exception)
-        //    {
-        //        File.Delete(archivePath);
-        //        Log.Logger.error("Unable to create archive");
-        //        throw;
-        //    }
-
-        //}
-
-        private ConnectionFormatFieldInfo[] GetConnectionFormat(ConnectionModule sender,
+        private ConnectionFormatFieldInfo[] GetConnectionFormat (ConnectionModule sender,
                                                                 ECSession session,
                                                                 bool includeValues,
                                                                 IExtendedParameters extendedParameters)
-        {
+            {
             return new List<ConnectionFormatFieldInfo>
                 {
                 //new ConnectionFormatFieldInfo() {ID = "User", DisplayName = "username", IsRequired = true },    
@@ -1214,13 +1157,13 @@ namespace IndexECPlugin.Source
                 new ConnectionFormatFieldInfo() {ID = "Token", DisplayName = "Token", IsRequired = true, IsAdvanced = true, IsCredential = true }
 #endif
                 }.ToArray();
-        }
+            }
 
 #if !IMSOFF
-        private void OpenConnection(ConnectionModule sender,
+        private void OpenConnection (ConnectionModule sender,
                                     RepositoryConnection connection,
                                     IExtendedParameters extendedParameters)
-        {
+            {
             //Here, we could use the connectionInfo to open a connection
             //Example :
             //string username = connection.ConnectionInfo.GetField("User").Value;
@@ -1230,33 +1173,33 @@ namespace IndexECPlugin.Source
             string token = connection.ConnectionInfo.GetField("Token").Value;
 
             try
-            {
+                {
                 string serializedToken = Encoding.UTF8.GetString(Convert.FromBase64String(token.Trim()));
 
-                using (var reader = XmlReader.Create(new StringReader(serializedToken)))
-                {
+                using ( var reader = XmlReader.Create(new StringReader(serializedToken)) )
+                    {
                     var bootstrapToken = FederatedAuthentication.ServiceConfiguration.SecurityTokenHandlers.ReadToken(reader);
                     SecurityTokenHandler handler = FederatedAuthentication.ServiceConfiguration.SecurityTokenHandlers[bootstrapToken];
 
                     var cic = handler.ValidateToken(bootstrapToken);
+                    }
                 }
-            }
-            catch (Exception)
-            {
+            catch ( Exception )
+                {
                 Log.Logger.error("Invalid token. Access denied.");
                 throw new Bentley.ECSystem.Repository.AccessDeniedException("Invalid token. Access denied.");
+                }
+
             }
 
-        }
-
-        private void CloseConnection(ConnectionModule sender,
+        private void CloseConnection (ConnectionModule sender,
                                      RepositoryConnection connection,
                                      IExtendedParameters extendedParameters)
-        {
-        }
+            {
+            }
 #endif
 
+        }
+
+
     }
-
-
- }

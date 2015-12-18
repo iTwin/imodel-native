@@ -10,11 +10,11 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace IndexECPlugin.Source
-{
+    {
     //class IndexNavigationModule : NavigationModule
-    //{
+    //    {
 
-    //    public override PageableContainer<NavNode> GetChildren(RepositoryConnection connection, NavNode ecNavNode, int pageSize, IExtendedParameters extendedParameters)
+    //    public override PageableContainer<NavNode> GetChildren (RepositoryConnection connection, NavNode ecNavNode, int pageSize, IExtendedParameters extendedParameters)
     //    {
 
 
@@ -22,16 +22,16 @@ namespace IndexECPlugin.Source
     //        return new PageableContainer<NavNode>(connection, new ForwardCursorDataSupplier<NavNode>);
     //    }
 
-    //    public override string GetMonikerByNode(RepositoryConnection connection, NavNode navNode, IExtendedParameters extendedParameters)
-    //    {
+    //    public override string GetMonikerByNode (RepositoryConnection connection, NavNode navNode, IExtendedParameters extendedParameters)
+    //        {
     //        throw new OperationNotSupportedException();
-    //    }
+    //        }
 
-    //    public override NavNode GetNodeByMoniker(RepositoryConnection connection, string moniker, IExtendedParameters extendedParameters)
-    //    {
+    //    public override NavNode GetNodeByMoniker (RepositoryConnection connection, string moniker, IExtendedParameters extendedParameters)
+    //        {
     //        throw new OperationNotSupportedException();
+    //        }
+
+
     //    }
-
-
-    //}
-}
+    }

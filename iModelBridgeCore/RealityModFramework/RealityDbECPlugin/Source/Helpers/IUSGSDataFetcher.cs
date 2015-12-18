@@ -11,30 +11,33 @@ using System.Threading.Tasks;
 using System.Xml;
 
 namespace IndexECPlugin.Source.Helpers
-{
+    {
     /// <summary>
     /// Interface for retrieving USGS information. Should not be used except for mocking USGSDataFetcher.
     /// </summary>
     public interface IUSGSDataFetcher
-    {
+        {
         /// <summary>
         /// A list of USGS API Categories that we want to fetch
         /// </summary>
-        List<UsgsAPICategory> CategoryTable { get; }
+        List<UsgsAPICategory> CategoryTable
+            {
+            get;
+            }
 
         /// <summary>
         /// Retrieves the data from the sciencebase entry of given ID
         /// </summary>
         /// <param name="sourceID">The ID of the wanted entry in sciencebase</param>
         /// <returns>The JObject containing the information</returns>
-        JObject GetSciencebaseJson(string sourceID);
+        JObject GetSciencebaseJson (string sourceID);
 
         /// <summary>
         /// Gets the xml document located at given URL.
         /// </summary>
         /// <param name="URL">The URL pointing at the xml document</param>
         /// <returns>The xml document located at given URL</returns>
-        XmlDocument GetXmlDocFromURL(string URL);
+        XmlDocument GetXmlDocFromURL (string URL);
 
         /// <summary>
         /// Queries USGS for data located in the selected bbox and in the predetermined datasets (see CategoryTable)
@@ -42,13 +45,13 @@ namespace IndexECPlugin.Source.Helpers
         /// <param name="whereCriteriaList">The where criteria list.</param>
         /// <returns>Non formatted data (still in JSON form), along with the ID of the parent dataset. This ID was added there to prevent
         /// having to query USGS for every single data</returns>
-        
+
         //TODO : CHANGE THE LIST OF RAW WHERE CRITERIA TO A LIST OF CLASSIFICATIONS AND BBOX
-        IEnumerable<USGSRequestBundle> GetNonFormattedUSGSResults(List<SingleWhereCriteriaHolder> whereCriteriaList);
-    }
+        IEnumerable<USGSRequestBundle> GetNonFormattedUSGSResults (List<SingleWhereCriteriaHolder> whereCriteriaList);
+        }
 
     internal class USGSDataFetcher : IUSGSDataFetcher
-    {
+        {
         //TODO : Add outputFormat=JSON in WebReq???
         const string WebReqCategories = "http://viewer.nationalmap.gov/tnmaccess/api/searchCategories?";
         const string WebReq = "http://viewer.nationalmap.gov/tnmaccess/api/searchProducts?bbox=_bbox&q=&start=&end=&dateType=&datasets=_datasets&prodFormats=_prodFormats&prodExtents=&polyCode=&polyType=&max=200&offset=0";
@@ -85,57 +88,57 @@ namespace IndexECPlugin.Source.Helpers
 
         ECQuery m_query;
 
-        public USGSDataFetcher(ECQuery query)
-        {
+        public USGSDataFetcher (ECQuery query)
+            {
             m_query = query;
-        }
+            }
 
         public List<UsgsAPICategory> CategoryTable
-        {
+            {
             get
-            {
-                return m_categoryTable;
-            }
-        }
-
-        private string GetHttpResponse(string url)
-        {
-            using (HttpClient client = new HttpClient())
-            {
-                using (HttpResponseMessage response = client.GetAsync(url).Result)
                 {
-                    if (response.IsSuccessStatusCode)
+                return m_categoryTable;
+                }
+            }
+
+        private string GetHttpResponse (string url)
+            {
+            using ( HttpClient client = new HttpClient() )
+                {
+                using ( HttpResponseMessage response = client.GetAsync(url).Result )
                     {
-                        using (HttpContent content = response.Content)
+                    if ( response.IsSuccessStatusCode )
                         {
+                        using ( HttpContent content = response.Content )
+                            {
                             return content.ReadAsStringAsync().Result;
+                            }
                         }
                     }
                 }
-            }
             return null;
-        }
+            }
 
         /// <summary>
         /// Returns the json of the item of specified source ID in the sciencebase catalog
         /// </summary>
         /// <param name="sourceID">The source ID of the item</param>
         /// <returns>The JObject read if the request was successful, null otherwise</returns>
-        public JObject GetSciencebaseJson(string sourceID)
-        {
+        public JObject GetSciencebaseJson (string sourceID)
+            {
             string url = "https://www.sciencebase.gov/catalog/item/" + sourceID + "?format=json";
 
             string jsonString = GetHttpResponse(url);
-            if (jsonString != null)
-            {
+            if ( jsonString != null )
+                {
                 return JObject.Parse(jsonString) as JObject;
-            }
+                }
 
             return null;
-        }
+            }
 
-        public XmlDocument GetXmlDocFromURL(string URL)
-        {
+        public XmlDocument GetXmlDocFromURL (string URL)
+            {
             string xmlString = GetHttpResponse(URL);
             //using (XmlReader xmlReader = XmlReader.Create(xmlString))
             //{
@@ -144,15 +147,15 @@ namespace IndexECPlugin.Source.Helpers
             XmlDocument xmlDoc = new XmlDocument();
             xmlDoc.LoadXml(xmlString);
             return xmlDoc;
-        }
+            }
 
         /// <summary>
         /// Queries USGS for data located in the selected bbox and in the predetermined datasets (see CategoryTable)
         /// </summary>
         /// <returns>Non formatted data (still in JSON form), along with the ID of the parent dataset. This ID was added there to prevent
         /// having to query USGS for every single data</returns>
-        public IEnumerable<USGSRequestBundle> GetNonFormattedUSGSResults(List<SingleWhereCriteriaHolder> whereCriteriaList)
-        {
+        public IEnumerable<USGSRequestBundle> GetNonFormattedUSGSResults (List<SingleWhereCriteriaHolder> whereCriteriaList)
+            {
 
             List<USGSRequestBundle> instanceList = new List<USGSRequestBundle>();
 
@@ -166,54 +169,54 @@ namespace IndexECPlugin.Source.Helpers
             List<String> requestedClassificationList = new List<String>();
             bool selectAllClasses = true;
 
-            foreach (var criteriaHolder in whereCriteriaList)
-            {
-                if ((criteriaHolder.Operator == RelationalOperator.IN) && criteriaHolder.Property.Name == "Classification")
+            foreach ( var criteriaHolder in whereCriteriaList )
                 {
-                    foreach (var classification in criteriaHolder.Value.Split(','))
+                if ( (criteriaHolder.Operator == RelationalOperator.IN) && criteriaHolder.Property.Name == "Classification" )
                     {
+                    foreach ( var classification in criteriaHolder.Value.Split(',') )
+                        {
                         requestedClassificationList.Add(classification);
                         selectAllClasses = false;
+                        }
                     }
                 }
-            }
 
 
             try
-            {
-                using (HttpClient client = new HttpClient())
                 {
+                using ( HttpClient client = new HttpClient() )
+                    {
 
                     client.Timeout = new TimeSpan(0, 0, 15);
                     //client.Timeout = new TimeSpan(15000);
-                    using (HttpResponseMessage response = client.GetAsync(WebReqCategories).Result)
-                    {
-                        if (!response.IsSuccessStatusCode)
+                    using ( HttpResponseMessage response = client.GetAsync(WebReqCategories).Result )
                         {
+                        if ( !response.IsSuccessStatusCode )
+                            {
                             throw new Exception("USGS did not send a successful response.");
-                        }
-                        using (HttpContent content = response.Content)
-                        {
+                            }
+                        using ( HttpContent content = response.Content )
+                            {
                             string responseString = content.ReadAsStringAsync().Result;
 
                             JArray json = JArray.Parse(responseString);
 
-                            foreach (var entry in json)
-                            {
-                                if (entry["tags"].HasValues)
+                            foreach ( var entry in json )
                                 {
-
-                                    foreach (JProperty subEntry in entry["tags"])
+                                if ( entry["tags"].HasValues )
                                     {
-                                        System.Console.Out.Write(subEntry.Value["title"]);
-                                        foreach (var category in CategoryTable)
+
+                                    foreach ( JProperty subEntry in entry["tags"] )
                                         {
-                                            if (entry["title"].Value<string>() == category.Title &&
+                                        System.Console.Out.Write(subEntry.Value["title"]);
+                                        foreach ( var category in CategoryTable )
+                                            {
+                                            if ( entry["title"].Value<string>() == category.Title &&
                                                subEntry.Value["title"].Value<string>() == category.SubTitle &&
                                                category.Priority != 0 &&
                                                (selectAllFormats || formatList.Any(f => f.ToLower() == category.Format.ToLower())) &&
-                                               (selectAllClasses || requestedClassificationList.Any(c => c == category.Classification)))
-                                            {
+                                               (selectAllClasses || requestedClassificationList.Any(c => c == category.Classification)) )
+                                                {
                                                 UsgsRequest req = new UsgsRequest()
                                                 {
                                                     //Dataset = subEntry.Value["sbDatasetTag"].Value<string>(),
@@ -227,20 +230,20 @@ namespace IndexECPlugin.Source.Helpers
 
                                                 reqList.Add(req);
                                                 break;
+                                                }
                                             }
                                         }
                                     }
-                                }
                                 else
-                                {
-                                    foreach (var category in CategoryTable)
                                     {
-                                        if (entry["title"].Value<string>() == category.Title &&
+                                    foreach ( var category in CategoryTable )
+                                        {
+                                        if ( entry["title"].Value<string>() == category.Title &&
                                            entry["title"].Value<string>() == category.SubTitle &&
                                            category.Priority != 0 &&
                                            (selectAllFormats || formatList.Any(f => f.ToLower() == category.Format.ToLower())) &&
-                                           (selectAllClasses || requestedClassificationList.Any(c => c == category.Classification)))
-                                        {
+                                           (selectAllClasses || requestedClassificationList.Any(c => c == category.Classification)) )
+                                            {
                                             UsgsRequest req = new UsgsRequest()
                                             {
                                                 //Dataset = entry["sbDatasetTag"].Value<string>(),
@@ -253,6 +256,7 @@ namespace IndexECPlugin.Source.Helpers
                                             };
                                             reqList.Add(req);
                                             break;
+                                            }
                                         }
                                     }
                                 }
@@ -260,24 +264,23 @@ namespace IndexECPlugin.Source.Helpers
                         }
                     }
                 }
-            }
-            catch (TaskCanceledException)
-            {
+            catch ( TaskCanceledException )
+                {
                 //Request timed out. We return our empty list
                 //return instanceList;
                 throw new Bentley.Exceptions.EnvironmentalException("USGS request timed out");
-            }
-            catch (System.AggregateException ex)
-            {
-                if ((ex.InnerExceptions.Count == 1) && (ex.InnerException.GetType() == typeof(TaskCanceledException)))
+                }
+            catch ( System.AggregateException ex )
                 {
+                if ( (ex.InnerExceptions.Count == 1) && (ex.InnerException.GetType() == typeof(TaskCanceledException)) )
+                    {
                     throw new Bentley.Exceptions.EnvironmentalException("USGS request timed out");
-                }
+                    }
                 else
-                {
+                    {
                     throw ex;
+                    }
                 }
-            }
             reqList.Sort();
 
             //string curCat = "";
@@ -298,80 +301,83 @@ namespace IndexECPlugin.Source.Helpers
                 string readyToSend = WebReq.Replace("_bbox", bbox).Replace("_datasets", req.Dataset).Replace("_prodFormats", req.Format).Replace(' ', '+');
 
                 try
-                {
-                    using (HttpClient client = new HttpClient())
                     {
-                        client.Timeout = new TimeSpan(0, 0, 15);
-                        using (HttpResponseMessage response = client.GetAsync(readyToSend).Result)
+                    using ( HttpClient client = new HttpClient() )
                         {
-                            if (response.IsSuccessStatusCode)
+                        client.Timeout = new TimeSpan(0, 0, 15);
+                        using ( HttpResponseMessage response = client.GetAsync(readyToSend).Result )
                             {
-                                using (HttpContent content = response.Content)
+                            if ( response.IsSuccessStatusCode )
                                 {
+                                using ( HttpContent content = response.Content )
+                                    {
                                     string responseString = content.ReadAsStringAsync().Result;
 
                                     JObject jsonResp = JObject.Parse(responseString);
 
-                                    lock (locker)
-                                    {
-                                        instanceList.Add(new USGSRequestBundle { jtokenList = jsonResp["items"], DatasetId = req.DatasetID, Dataset = req.Dataset, Classification = req.Classification });
+                                    lock ( locker )
+                                        {
+                                        instanceList.Add(new USGSRequestBundle
+                                        {
+                                            jtokenList = jsonResp["items"], DatasetId = req.DatasetID, Dataset = req.Dataset, Classification = req.Classification
+                                        });
                                         //foreach (var item in jsonResp["items"] as JArray)
                                         //{
                                         //    instanceList.Add(item);
 
                                         //}
-                                    }
+                                        }
 
+                                    }
                                 }
                             }
                         }
                     }
-                }
-                catch (TaskCanceledException)
-                {
+                catch ( TaskCanceledException )
+                    {
                     //Request timed out. We return our empty list
                     //return instanceList;
                     throw new Bentley.Exceptions.EnvironmentalException("USGS request timed out");
-                }
-                catch (System.AggregateException ex)
-                {
-                    if ((ex.InnerExceptions.Count == 1) && (ex.InnerException.GetType() == typeof(TaskCanceledException)))
+                    }
+                catch ( System.AggregateException ex )
                     {
+                    if ( (ex.InnerExceptions.Count == 1) && (ex.InnerException.GetType() == typeof(TaskCanceledException)) )
+                        {
                         throw new Bentley.Exceptions.EnvironmentalException("USGS request timed out");
-                    }
+                        }
                     else
-                    {
+                        {
                         throw ex;
+                        }
                     }
-                }
             });
 
             return instanceList;
-        }
-
-        private string ExtractBboxFromQuery()
-        {
-            if (!m_query.ExtendedData.ContainsKey("polygon"))
-            {
-                throw new UserFriendlyException("This request must contain a \"polygon\" parameter in the form of a WKT polygon string.");
             }
+
+        private string ExtractBboxFromQuery ()
+            {
+            if ( !m_query.ExtendedData.ContainsKey("polygon") )
+                {
+                throw new UserFriendlyException("This request must contain a \"polygon\" parameter in the form of a WKT polygon string.");
+                }
 
             string polygonString = m_query.ExtendedData["polygon"].ToString();
             PolygonModel model;
             try
-            {
+                {
                 model = JsonConvert.DeserializeObject<PolygonModel>(polygonString);
-            }
-            catch (JsonSerializationException)
-            {
+                }
+            catch ( JsonSerializationException )
+                {
                 throw new UserFriendlyException("The polygon format is not valid.");
-            }
+                }
 
             int polygonSRID;
-            if (!int.TryParse(model.coordinate_system, out polygonSRID))
-            {
+            if ( !int.TryParse(model.coordinate_system, out polygonSRID) )
+                {
                 throw new UserFriendlyException("The polygon format is not valid.");
-            }
+                }
 
             string polygonWKT = DbGeometryHelpers.CreateWktPolygonString(model.points);
 
@@ -385,29 +391,29 @@ namespace IndexECPlugin.Source.Helpers
 
             return DbGeometryHelpers.ExtractBboxFromWKTPolygon(polyDesc.WKT);
 
-        }
+            }
 
         /// <summary>
         /// Extracts all formats from the extended data key "format". 
         /// </summary>
         /// <returns>Null if there is no format key, otherwise list of all formats requested</returns>
-        private List<string> ExtractFormatList()
-        {
-            if (!m_query.ExtendedData.ContainsKey("format"))
+        private List<string> ExtractFormatList ()
             {
+            if ( !m_query.ExtendedData.ContainsKey("format") )
+                {
                 return null;
-            }
+                }
             string formatString = m_query.ExtendedData["format"].ToString();
 
             string[] formatArray = formatString.Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
             List<string> formatList = new List<string>();
 
-            foreach (var format in formatArray)
-            {
+            foreach ( var format in formatArray )
+                {
                 formatList.Add(format.Trim());
-            }
+                }
 
             return formatList;
+            }
         }
     }
-}
