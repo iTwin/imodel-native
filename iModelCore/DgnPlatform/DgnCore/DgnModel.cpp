@@ -18,7 +18,6 @@
 #define MODEL_PROP_Properties "Properties"
 #define MODEL_PROP_DependencyIndex "DependencyIndex"
 #define SHEET_MODEL_PROP_SheetSize "SheetSize"
-#define MODEL2D_MODEL_PROP_GlobalOrigin "GlobalOrigin"
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/10
@@ -288,58 +287,6 @@ DgnModel::~DgnModel()
     {
     m_appData.clear();
     EmptyModel();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                 Ramanujam.Raman   12/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnModel2d::BindInsertAndUpdateParams(ECSqlStatement& statement)
-    {
-    statement.BindPoint2D(statement.GetParameterIndex(MODEL2D_MODEL_PROP_GlobalOrigin), m_globalOrigin);
-    return DgnDbStatus::Success;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                 Ramanujam.Raman   12/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnModel2d::_BindInsertParams(ECSqlStatement& statement)
-    {
-    T_Super::_BindInsertParams(statement);
-    return BindInsertAndUpdateParams(statement);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                 Ramanujam.Raman   12/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnModel2d::_BindUpdateParams(ECSqlStatement& statement)
-    {
-    T_Super::_BindUpdateParams(statement);
-    return BindInsertAndUpdateParams(statement);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                 Ramanujam.Raman   12/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnModel2d::_ReadSelectParams(ECSqlStatement& statement, ECSqlClassParamsCR params)
-    {
-    DgnDbStatus status = T_Super::_ReadSelectParams(statement, params);
-    if (DgnDbStatus::Success != status)
-        return status;
-
-    m_globalOrigin = statement.GetValuePoint2D(params.GetSelectIndex(MODEL2D_MODEL_PROP_GlobalOrigin));
-
-    return DgnDbStatus::Success;
-    }
-	
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                 Ramanujam.Raman   12/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-void DgnModel2d::_InitFrom(DgnModelCR other)
-    {
-    T_Super::_InitFrom(other);
-    DgnModel2dCP otherModel = other.ToDgnModel2d();
-    if (nullptr != otherModel)
-        m_globalOrigin = otherModel->m_globalOrigin;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1134,14 +1081,6 @@ QvCache* DgnModels::GetQvCache(bool createIfNecessary)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   07/14
-+---------------+---------------+---------------+---------------+---------------+------*/
-DPoint3d GeometricModel::_GetGlobalOrigin() const
-    {
-    return GetDgnDb().Units().GetGlobalOrigin();
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    ChuckKirschman  04/01
 +---------------+---------------+---------------+---------------+---------------+------*/
 double GeometricModel::DisplayInfo::GetMillimetersPerMaster() const
@@ -1274,15 +1213,6 @@ void dgn_ModelHandler::Sheet::_GetClassParams(ECSqlClassParamsR params)
     {
     T_Super::_GetClassParams(params);
     params.Add(SHEET_MODEL_PROP_SheetSize, ECSqlClassParams::StatementType::All);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                 Ramanujam.Raman   12/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-void dgn_ModelHandler::Model2d::_GetClassParams(ECSqlClassParamsR params)
-    {
-    T_Super::_GetClassParams(params);
-    params.Add(MODEL2D_MODEL_PROP_GlobalOrigin, ECSqlClassParams::StatementType::All);
     }
 
 /*---------------------------------------------------------------------------------**//**

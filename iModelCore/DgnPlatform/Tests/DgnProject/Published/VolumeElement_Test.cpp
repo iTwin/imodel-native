@@ -7,6 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include "ChangeTestFixture.h"
 #include <DgnPlatform/DgnHandlersAPI.h>
+#include <DgnPlatform/VolumeElement.h>
 
 #define LOG (*BentleyApi::NativeLogging::LoggingManager::GetLogger (L"Dgn"))
 
