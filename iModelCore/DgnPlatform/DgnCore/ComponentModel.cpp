@@ -356,7 +356,44 @@ ComponentDef::ComponentDef(DgnDbR db, ECN::ECClassCR componentDefClass)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-ComponentDefPtr ComponentDef::From(DgnDbStatus* statusOut, DgnDbR db, ECN::ECClassCR componentDefClass)
+void ComponentDef::QueryComponentDefs(bvector<DgnClassId>& componentDefs, DgnDbR db, ECN::ECClassCR baseClassIn)
+    {
+    auto componentSpecificationCA = db.Schemas().GetECClass(DGN_ECSCHEMA_NAME, "ComponentSpecification");
+    if (nullptr == componentSpecificationCA)
+        return;
+
+    bvector<ECN::ECClassCP> baseClasses;
+    baseClasses.push_back(&baseClassIn);
+
+    while (!baseClasses.empty())
+        {
+        ECN::ECClassCP baseClass = baseClasses.back();
+        baseClasses.pop_back();
+        for (auto cls : baseClass->GetDerivedClasses())
+            {
+            if (cls->GetCustomAttribute(*componentSpecificationCA).IsValid())
+                componentDefs.push_back(DgnClassId(cls->GetId()));
+            else
+                baseClasses.push_back(cls);
+            }
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+ComponentDefPtr ComponentDef::FromECClassId(DgnDbStatus* statusOut, DgnDbR db, DgnClassId componentDefClassId)
+    {
+    ECN::ECClassCP cls = db.Schemas().GetECClass(componentDefClassId.GetValue());
+    if (nullptr == cls)
+        return nullptr;
+    return FromECClass(statusOut, db, *cls);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+ComponentDefPtr ComponentDef::FromECClass(DgnDbStatus* statusOut, DgnDbR db, ECN::ECClassCR componentDefClass)
     {
     DgnDbStatus ALLOW_NULL_OUTPUT(status, statusOut);
 
@@ -403,7 +440,7 @@ ComponentDefPtr ComponentDef::FromECSqlName(DgnDbStatus* statusOut, DgnDbR db, U
     auto cdefclass = getECClassByFullName(db, ecsqlClassName);
     if (nullptr == cdefclass)
         return nullptr;
-    return From(nullptr, db, *cdefclass);
+    return FromECClass(nullptr, db, *cdefclass);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -575,7 +612,7 @@ DgnElementCPtr ComponentDef::MakeVariation(DgnDbStatus* statusOut, DgnModelR des
     {
     DgnDbStatus ALLOW_NULL_OUTPUT(status, statusOut);
     
-    ComponentDefPtr componentCDef = From(nullptr, destModel.GetDgnDb(), variationParms.GetClass());
+    ComponentDefPtr componentCDef = FromECClass(nullptr, destModel.GetDgnDb(), variationParms.GetClass());
     if (!componentCDef.IsValid())
         {
         status = DgnDbStatus::WrongClass;
@@ -601,7 +638,7 @@ DgnElementCPtr ComponentDef::MakeUniqueInstance(DgnDbStatus* statusOut, DgnModel
     {
     DgnDbStatus ALLOW_NULL_OUTPUT(status, statusOut);
 
-    ComponentDefPtr componentCDef = From(nullptr, destModel.GetDgnDb(), variationParms.GetClass());
+    ComponentDefPtr componentCDef = FromECClass(nullptr, destModel.GetDgnDb(), variationParms.GetClass());
     if (!componentCDef.IsValid())
         {
         status = DgnDbStatus::WrongClass;
@@ -625,7 +662,7 @@ DgnElementCPtr ComponentDef::MakeInstanceOfVariation(DgnDbStatus* statusOut, Dgn
         return nullptr;
         }
 
-    ComponentDefPtr cdef = From(nullptr, db, *variation.GetElementClass());
+    ComponentDefPtr cdef = FromECClass(nullptr, db, *variation.GetElementClass());
     if (!cdef.IsValid())
         {
         status = DgnDbStatus::WrongClass;
@@ -676,7 +713,7 @@ DgnElementCPtr ComponentDef::MakeInstanceOfVariation(DgnDbStatus* statusOut, Dgn
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECN::IECInstancePtr ComponentDef::GetParameters(DgnElementCR el)
     {
-    ComponentDefPtr cdef = From(nullptr, el.GetDgnDb(), *el.GetElementClass());
+    ComponentDefPtr cdef = FromECClass(nullptr, el.GetDgnDb(), *el.GetElementClass());
     if (!cdef.IsValid())
         return nullptr;
     Utf8PrintfString sql("SELECT * FROM %s.%s WHERE ECInstanceId=?", el.GetElementClass()->GetSchema().GetNamespacePrefix().c_str(), el.GetElementClass()->GetName().c_str());
@@ -787,9 +824,12 @@ ECN::ECSchemaPtr ComponentDefCreator::ImportSchema(DgnDbR db, ECN::ECSchemaCR sc
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-DgnDbStatus ComponentDef::ImportComponentDef(DgnImportContext& context, bool importSchema, bool importCategory)
+DgnDbStatus ComponentDef::Export(DgnImportContext& context, bool exportSchema, bool exportCategory)
     {
-    if (importSchema)
+    if (&GetDgnDb() != &context.GetSourceDb())
+        return DgnDbStatus::WrongDgnDb;
+
+    if (exportSchema)
         {
         ECN::ECObjectsStatus ecstatus = ECN::ECObjectsStatus::Success;
         importECSchema(ecstatus, context.GetDestinationDb(), GetECClass().GetSchema());
@@ -797,7 +837,7 @@ DgnDbStatus ComponentDef::ImportComponentDef(DgnImportContext& context, bool imp
             return DgnDbStatus::BadSchema;
         }
 
-    if (importCategory)
+    if (exportCategory)
         {
         if (!DgnCategory::QueryCategoryId(GetCategoryName(), context.GetDestinationDb()).IsValid())
             {
@@ -823,7 +863,7 @@ DgnDbStatus ComponentDef::ImportComponentDef(DgnImportContext& context, bool imp
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-DgnDbStatus ComponentDef::ImportVariations(DgnModelR destVariationsModel, DgnModelId sourceVariationsModelId, DgnImportContext& context, bvector<DgnElementId> const& variationFilter)
+DgnDbStatus ComponentDef::ExportVariations(DgnModelR destVariationsModel, DgnModelId sourceVariationsModelId, DgnImportContext& context, bvector<DgnElementId> const& variationFilter)
     {
     //  Check that destination model is compatible with the import context
     if (&destVariationsModel.GetDgnDb() != &context.GetDestinationDb())
@@ -834,16 +874,15 @@ DgnDbStatus ComponentDef::ImportVariations(DgnModelR destVariationsModel, DgnMod
         auto destClass = destVariationsModel.GetDgnDb().Schemas().GetECClass(GetECClass().GetSchema().GetName().c_str(), GetECClass().GetName().c_str());
         if (nullptr == destClass)
             return DgnDbStatus::BadSchema;
-        if (!From(nullptr, destVariationsModel.GetDgnDb(), *destClass).IsValid())
+        if (!FromECClass(nullptr, destVariationsModel.GetDgnDb(), *destClass).IsValid())
             return DgnDbStatus::WrongDgnDb;
         }
 
     ElementImporter importer(context);
 
     EC::ECSqlStatement selectInstancesOfComponent;
-    selectInstancesOfComponent.Prepare(context.GetSourceDb(), "SELECT ECInstanceId FROM " DGN_SCHEMA(DGN_CLASSNAME_Element) " WHERE(ECClassId=? and ModelId=?)");
-    selectInstancesOfComponent.BindInt64(1, GetECClass().GetId());
-    selectInstancesOfComponent.BindId(2, sourceVariationsModelId);
+    selectInstancesOfComponent.Prepare(GetDgnDb(), Utf8PrintfString("SELECT ECInstanceId FROM %s.%s WHERE(ModelId=?)", m_class.GetSchema().GetNamespacePrefix().c_str(), m_class.GetName().c_str()));
+    selectInstancesOfComponent.BindId(1, sourceVariationsModelId);
     while (BE_SQLITE_ROW == selectInstancesOfComponent.Step())
         {
         DgnElementId sourceElementId = selectInstancesOfComponent.GetValueId<DgnElementId>(0);
@@ -873,9 +912,8 @@ DgnDbStatus ComponentDef::ImportVariations(DgnModelR destVariationsModel, DgnMod
 void ComponentDef::QueryVariations(bvector<DgnElementId>& variations, DgnModelId variationsModelId)
     {
     EC::ECSqlStatement selectInstancesOfComponent;
-    selectInstancesOfComponent.Prepare(GetDgnDb(), "SELECT ECInstanceId FROM " DGN_SCHEMA(DGN_CLASSNAME_Element) " WHERE(ECClassId=? and ModelId=?)");
-    selectInstancesOfComponent.BindInt64(1, m_class.GetId());
-    selectInstancesOfComponent.BindId(2, variationsModelId);
+    selectInstancesOfComponent.Prepare(GetDgnDb(), Utf8PrintfString("SELECT ECInstanceId FROM %s.%s WHERE(ModelId=?)", m_class.GetSchema().GetNamespacePrefix().c_str(), m_class.GetName().c_str()));
+    selectInstancesOfComponent.BindId(1, variationsModelId);
     while (BE_SQLITE_ROW == selectInstancesOfComponent.Step())
         {
         DgnElementId instanceId = selectInstancesOfComponent.GetValueId<DgnElementId>(0);

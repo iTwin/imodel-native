@@ -970,6 +970,11 @@ struct ComponentDef : RefCountedBase
     ~ComponentDef();
 
  public:
+    //! Get a list of all of the component definitions derived from the specified base class in the specified DgnDb
+    //! @param componentDefs    Where to return the results
+    //! @param db               The Db to search
+    //! @param baseClass        The base class to start from
+    DGNPLATFORM_EXPORT static void QueryComponentDefs(bvector<DgnClassId>& componentDefs, DgnDbR db, ECN::ECClassCR baseClass);
 
     //! Make a ComponentDef object
     //! @param db           The DgnDb that contains the component def
@@ -979,7 +984,17 @@ struct ComponentDef : RefCountedBase
     //! DgnDbStatus::BadModel - the component definition specifies a model, but the model does not exist in \a db
     //! DgnDbStatus::InvalidCategory - the component definition's category cannot be found in \a db
     //! DgnDbStatus::WrongClass - \a componentDefClass is not a component definition ECClass
-    DGNPLATFORM_EXPORT static ComponentDefPtr From(DgnDbStatus* status, DgnDbR db, ECN::ECClassCR componentDefClass);
+    DGNPLATFORM_EXPORT static ComponentDefPtr FromECClass(DgnDbStatus* status, DgnDbR db, ECN::ECClassCR componentDefClass);
+
+    //! Make a ComponentDef object
+    //! @param db           The DgnDb that contains the component def
+    //! @param componentDefClassId Identfies the ECClass that defines the component
+    //! @param status       If not null, an error code in case Create failed
+    //! @note possible status values include:
+    //! DgnDbStatus::BadModel - the component definition specifies a model, but the model does not exist in \a db
+    //! DgnDbStatus::InvalidCategory - the component definition's category cannot be found in \a db
+    //! DgnDbStatus::WrongClass - \a componentDefClass is not a component definition ECClass
+    DGNPLATFORM_EXPORT static ComponentDefPtr FromECClassId(DgnDbStatus* status, DgnDbR db, DgnClassId componentDefClassId);
 
     //! Make a ComponentDef object
     //! @param db           The DgnDb that contains the component def
@@ -1025,20 +1040,20 @@ struct ComponentDef : RefCountedBase
     //! @returns nullptr if \a instance is an instance of a component
     DGNPLATFORM_EXPORT static ECN::IECInstancePtr GetParameters(DgnElementCR instance);
 
-    //! Import this component definition into the the specified DgnDb. 
-    //! @param context The import context to use
-    //! @param importSchema Import the ECSchema that includes this component definition's ECClass? The import will fail if \a destDb does not contain this component definition's ECClass.
-    //! @param importCategory Import the Category used by this component definition? The import will fail if \a destDb does not contain this component definition's Category.
+    //! Export this component definition to the specified DgnDb. 
+    //! @param context The id remapping context to use
+    //! @param exportSchema Export the ECSchema that includes this component definition's ECClass? The export will fail if \a destDb does not contain this component definition's ECClass.
+    //! @param exportCategory Export the Category used by this component definition? The export will fail if \a destDb does not contain this component definition's Category.
     //! @return non-zero error if the import failed.
-    DGNPLATFORM_EXPORT DgnDbStatus ImportComponentDef(DgnImportContext& context, bool importSchema = true, bool importCategory = false);
+    DGNPLATFORM_EXPORT DgnDbStatus Export(DgnImportContext& context, bool exportSchema = true, bool exportCategory = false);
 
-    //! Import variations of this component definition into the the specified model. 
+    //! Export variations of this component definition to the the specified model. 
     //! @param destVariationsModel Write copies of variations to this model.
     //! @param sourceVariationsModel Query variations in this model.
-    //! @param context The import context to use
-    //! @param variationFilter If specified, the variations to import. If not specified and if \a destVariationsModel is specified, then all variations are imported.
+    //! @param context The id remapping context to use
+    //! @param variationFilter If specified, the variations to export. If not specified and if \a destVariationsModel is specified, then all variations are exported.
     //! @return non-zero error if the import failed.
-    DGNPLATFORM_EXPORT DgnDbStatus ImportVariations(DgnModelR destVariationsModel, DgnModelId sourceVariationsModel, DgnImportContext& context, bvector<DgnElementId> const& variationFilter = bvector<DgnElementId>());
+    DGNPLATFORM_EXPORT DgnDbStatus ExportVariations(DgnModelR destVariationsModel, DgnModelId sourceVariationsModel, DgnImportContext& context, bvector<DgnElementId> const& variationFilter = bvector<DgnElementId>());
 
     //! Creates a variation of a component, based on the specified parameters.
     //! @param[out] stat        Optional. If not null and if the variation cannot be computed, then an error code is stored here to explain what happened, as explained below.
@@ -1064,6 +1079,7 @@ struct ComponentDef : RefCountedBase
     //! @see MakeVariation, QueryVariationByName
     DGNPLATFORM_EXPORT void QueryVariations(bvector<DgnElementId>& variations, DgnModelId variationModelId);
 
+    //! Get the scope of the specified property
     DGNPLATFORM_EXPORT ParameterVariesPer GetVariationScope(ECN::ECPropertyCR prop);
 
     //! Make either a persistent copy of a specified variation or a unique instance of the component definition.
