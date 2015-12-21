@@ -111,6 +111,31 @@ void TextAnnotationItem::GenerateElementGeometry(GeometrySourceR source, Generat
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                                   Jeff.Marker     12/2015
+//---------------------------------------------------------------------------------------
+void TextAnnotationItem::RemapIds(DgnImportContext& context)
+    {
+    if (!m_annotation.IsValid())
+        return;
+    
+    AnnotationTextBlockP text = m_annotation->GetTextP();
+    if (nullptr == text)
+        return;
+
+    for (AnnotationParagraphPtr paragraph : text->GetParagraphs())
+    for (AnnotationRunBasePtr run : paragraph->GetRuns())
+        {
+        if (!run->GetStyleOverrides().HasProperty(AnnotationTextStyleProperty::FontId))
+            continue;
+        
+        DgnFontId srcFontId = DgnFontId((uint64_t)run->GetStyleOverrides().GetIntegerProperty(AnnotationTextStyleProperty::FontId));
+        DgnFontId dstFontId = context.RemapFont(srcFontId);
+        
+        run->GetStyleOverridesR().SetIntegerProperty(AnnotationTextStyleProperty::FontId, (int64_t)dstFontId.GetValue());
+        }
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     09/2015
 //---------------------------------------------------------------------------------------
 static TextAnnotationItemR getItemR(DgnElementR el)

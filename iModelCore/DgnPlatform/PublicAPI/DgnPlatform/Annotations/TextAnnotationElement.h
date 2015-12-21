@@ -67,6 +67,7 @@ public:
     TextAnnotationCP GetAnnotation() const { return m_annotation.get(); }
     void SetAnnotation(TextAnnotationCP value) { m_annotation = value ? value->Clone() : nullptr; }
     DGNPLATFORM_EXPORT void GenerateElementGeometry(GeometrySourceR, GenerateReason) const;
+    DGNPLATFORM_EXPORT void RemapIds(DgnImportContext&);
 };
 
 namespace dgn_AspectHandler
@@ -93,6 +94,7 @@ protected:
     virtual SnapStatus _OnSnap(SnapContextR context) const override { return context.DoTextSnap(); } // Default snap using text box...
     DGNPLATFORM_EXPORT virtual DgnDbStatus _OnInsert() override;
     DGNPLATFORM_EXPORT virtual DgnDbStatus _OnUpdate(DgnElementCR originalElment) override;
+    DGNPLATFORM_EXPORT virtual void _RemapIds(DgnImportContext& context) override { GetItemR().RemapIds(context); }
     TextAnnotationItemCP GetItemCP() const { return TextAnnotationItem::GetCP(*this); }
     DGNPLATFORM_EXPORT TextAnnotationItemR GetItemR();
 
@@ -137,6 +139,7 @@ protected:
     virtual SnapStatus _OnSnap(SnapContextR context) const override { return context.DoTextSnap(); } // Default snap using text box...
     DGNPLATFORM_EXPORT virtual DgnDbStatus _OnInsert() override;
     DGNPLATFORM_EXPORT virtual DgnDbStatus _OnUpdate(DgnElementCR originalElment) override;
+    DGNPLATFORM_EXPORT virtual void _RemapIds(DgnImportContext& context) override { GetItemR().RemapIds(context); }
     TextAnnotationItemCP GetItemCP() const { return TextAnnotationItem::GetCP(*this); }
     DGNPLATFORM_EXPORT TextAnnotationItemR GetItemR();
 
