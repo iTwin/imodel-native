@@ -7,8 +7,6 @@
 +--------------------------------------------------------------------------------------*/
 #include    <DgnPlatformInternal.h>
 
-    virtual Render::GraphicPtr _BeginGraphic(Render::Graphic::CreateParams const& params) override {m_graphic->SetLocalToWorldTransform(params.m_placement); return m_graphic;}
-                Render::GraphicPtr graphic = context.BeginGraphic(Graphic::CreateParams(context.GetViewport(), iter.GetGeometryToWorld()));
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/12
 +---------------+---------------+---------------+---------------+---------------+------*/

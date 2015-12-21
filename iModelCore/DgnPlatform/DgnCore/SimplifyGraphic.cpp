@@ -2440,7 +2440,7 @@ IGeometryProcessorR    m_processor;
 /*----------------------------------------------------------------------------------*//**
 * @bsimethod                                                    Brien.Bastings  06/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual Render::GraphicPtr _BeginGraphic(Render::Graphic::CreateParams const& params) override
+virtual Render::GraphicPtr _CreateGraphic(Render::Graphic::CreateParams const& params) override
     {
     return new SimplifyGraphic(params, m_processor, *this);
     }
