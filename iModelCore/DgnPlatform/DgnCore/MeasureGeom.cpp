@@ -451,7 +451,7 @@ MSBsplineSurfaceCP  m_surface;
 +---------------+---------------+---------------+---------------+---------------+------*/
 virtual void _OutputGraphics (ViewContextR context) override
     {
-    Render::GraphicPtr graphic = context.BeginGraphic(Graphic::CreateParams(context.GetViewport()));
+    Render::GraphicPtr graphic = context.CreateGraphic(Graphic::CreateParams(context.GetViewport()));
 
     if (m_surface)
         WireframeGeomUtil::Draw (*graphic, *m_surface, context, true, false);
@@ -760,7 +760,7 @@ BentleyStatus MeasureGeomCollector::DoAccumulateLengths (ISolidKernelEntityCR en
 
     if (GetPreFlattenTransform (flattenTransform))
         {
-        Render::GraphicPtr graphic = m_context->BeginGraphic(Graphic::CreateParams(m_context->GetViewport(), entity.GetEntityTransform()));
+        Render::GraphicPtr graphic = m_context->CreateGraphic(Graphic::CreateParams(m_context->GetViewport(), entity.GetEntityTransform()));
 
         // Output edge geometry as CurveVector...
         T_HOST.GetSolidsKernelAdmin ()._OutputBodyAsWireframe (*graphic, entity, *m_context, true, false);
@@ -804,7 +804,7 @@ BentleyStatus MeasureGeomCollector::DoAccumulateAreas (ISolidKernelEntityCR enti
 
     if (GetPreFlattenTransform (flattenTransform))
         {
-        Render::GraphicPtr graphic = m_context->BeginGraphic(Graphic::CreateParams(m_context->GetViewport(), entity.GetEntityTransform()));
+        Render::GraphicPtr graphic = m_context->CreateGraphic(Graphic::CreateParams(m_context->GetViewport(), entity.GetEntityTransform()));
 
         // Output face geometry as ISolidPrimitive/MSBSplineSurface/CurveVector...
         T_HOST.GetSolidsKernelAdmin ()._OutputBodyAsSurfaces (*graphic, entity, *m_context, true);
@@ -889,7 +889,7 @@ BentleyStatus MeasureGeomCollector::_ProcessBody (ISolidKernelEntityCR entity)
                 if (!T_HOST.GetSolidsKernelAdmin()._QueryEntityData (entity, DgnPlatformLib::Host::SolidsKernelAdmin::EntityQuery_HasOnlyPlanarFaces))
                     return SUCCESS; // Not valid type for operation...
 
-                Render::GraphicPtr graphic = m_context->BeginGraphic(Graphic::CreateParams(m_context->GetViewport(), entity.GetEntityTransform()));
+                Render::GraphicPtr graphic = m_context->CreateGraphic(Graphic::CreateParams(m_context->GetViewport(), entity.GetEntityTransform()));
 
                 // Output curve vector for each face of sheet...(further limit this to a set of coplanar faces?!?)
                 T_HOST.GetSolidsKernelAdmin ()._OutputBodyAsSurfaces (*graphic, entity, *m_context, true);
@@ -916,7 +916,7 @@ BentleyStatus MeasureGeomCollector::_ProcessBody (ISolidKernelEntityCR entity)
                 }
             else if (ISolidKernelEntity::EntityType_Solid == entity.GetEntityType ())
                 {
-                Render::GraphicPtr graphic = m_context->BeginGraphic(Graphic::CreateParams(m_context->GetViewport(), entity.GetEntityTransform()));
+                Render::GraphicPtr graphic = m_context->CreateGraphic(Graphic::CreateParams(m_context->GetViewport(), entity.GetEntityTransform()));
 
                 // Output sheet body for each face of solid...
                 T_HOST.GetSolidsKernelAdmin ()._OutputBodyAsSurfaces (*graphic, entity, *m_context, false);

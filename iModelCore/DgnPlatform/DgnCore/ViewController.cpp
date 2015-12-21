@@ -905,52 +905,6 @@ bool SectionDrawingViewController::GetSectionHasDogLeg() const
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      02/14
-+---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt SectionDrawingViewController::_VisitHit(HitDetailCR hit, ViewContextR context) const
-    {
-#if defined(NEEDS_WORK_ELEMENTS_API)
-    context.PushTransform(GetFlatteningMatrixIf2D(context));
-#endif
-    StatusInt status = T_Super::_VisitHit(hit, context);
-#if defined(NEEDS_WORK_ELEMENTS_API)
-    context.PopTransformClip();
-#endif
-    return status;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Sam.Wilson  03/14
-//--------------+------------------------------------------------------------------------
-void SectionDrawingViewController::_DrawView(ViewContextR context)
-    {
-#if defined(NEEDS_WORK_ELEMENTS_API)
-    context.PushTransform(GetFlatteningMatrixIf2D(context));
-#endif
-    T_Super::_DrawView(context);
-#if defined(NEEDS_WORK_ELEMENTS_API)
-    context.PopTransformClip();
-#endif
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Sam.Wilson      03/2014
-+---------------+---------------+---------------+---------------+---------------+------*/
-Render::GraphicPtr SectionDrawingViewController::_StrokeGeometry(ViewContextR context, GeometrySourceCR source, double pixelSize)
-    {
-#if defined(NEEDS_WORK_VIEW_CONTROLLER)
-    if (context.GetViewport() != nullptr)
-        {
-        auto hyper = context.GetViewport()->GetViewControllerP()->ToHypermodelingViewController();
-        if (hyper != nullptr && !hyper->ShouldDrawAnnotations() && !ProxyDisplayHandlerUtils::IsProxyDisplayHandler(elIter.GetHandler()))
-            return;
-        }
-#endif
-
-    return T_Super::_StrokeGeometry(context, source, pixelSize);
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Shaun.Sewall                    08/14
 +---------------+---------------+---------------+---------------+---------------+------*/
 CameraViewController::CameraViewController(DgnDbR project, DgnViewId viewId) : PhysicalViewController(project, viewId)
@@ -1815,7 +1769,7 @@ static void drawLocateHitDetail(DecorateContextR context, double aperture, HitDe
     RotMatrix   rMatrix = RotMatrix::From1Vector(normal, 2, true);
     DEllipse3d  ellipse = DEllipse3d::FromScaledRotMatrix(pt, rMatrix, radius, radius, 0.0, Angle::TwoPi());
 
-    GraphicPtr graphic = context.BeginGraphic();
+    GraphicPtr graphic = context.CreateGraphic();
 
     color.SetAlpha(200);
     graphic->SetSymbology(color, color, 1);
@@ -1851,7 +1805,7 @@ static void drawLocateCircle(DecorateContextR context, double aperture, DPoint3d
     ellipse.InitFromDGNFields2d((DPoint2dCR) center, 0.0, radius, radius, 0.0, msGeomConst_2pi, 0.0);
     ellipse2.InitFromDGNFields2d((DPoint2dCR) center, 0.0, radius+1, radius+1, 0.0, msGeomConst_2pi, 0.0);
 
-    GraphicPtr graphic = context.BeginGraphic();
+    GraphicPtr graphic = context.CreateGraphic();
     ColorDef    white = ColorDef::White();
     ColorDef    black = ColorDef::Black();
 

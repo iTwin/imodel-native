@@ -67,7 +67,7 @@ struct NullContext : ViewContext
 protected:
     RefCountedPtr<NullGraphic> m_nullGraphic;
 
-    virtual Render::GraphicPtr _BeginGraphic(Render::Graphic::CreateParams const& params) override {return m_nullGraphic;}
+    virtual Render::GraphicPtr _CreateGraphic(Render::Graphic::CreateParams const& params) override {return m_nullGraphic;}
 
 public:
     NullContext() {m_ignoreViewRange = true; m_nullGraphic=new NullGraphic();}

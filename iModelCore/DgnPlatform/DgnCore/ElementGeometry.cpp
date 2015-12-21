@@ -2867,7 +2867,7 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicR graphic, ViewContextR c
 #if defined (NEEDS_WORK_CONTINUOUS_RENDER)
                 // NEEDSWORK: AddSubGraphic...how to let output force a stroke? Make it so that SimplifyGraphic can handle GeometryParams goop below too!
 #endif
-                Render::GraphicPtr     partGraphic = context.BeginGraphic(Graphic::CreateParams(context.GetViewport(), Transform::FromIdentity(), graphic.GetPixelSize()));
+                Render::GraphicPtr     partGraphic = context.CreateGraphic(Graphic::CreateParams(context.GetViewport(), Transform::FromIdentity(), graphic.GetPixelSize()));
                 Render::GeometryParams partGeometryParams(geomParams);
                 Render::GraphicParams  partGraphicParams;
 
@@ -3222,7 +3222,7 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicR graphic, ViewContextR c
 +---------------+---------------+---------------+---------------+---------------+------*/
 Render::GraphicPtr GeometrySource::_Stroke(ViewContextR context, double pixelSize) const
     {
-    Render::GraphicPtr graphic = context.BeginGraphic(Graphic::CreateParams(context.GetViewport(), GetPlacementTransform(), pixelSize));
+    Render::GraphicPtr graphic = context.CreateGraphic(Graphic::CreateParams(context.GetViewport(), GetPlacementTransform(), pixelSize));
     Render::GeometryParams params;
 
     params.SetCategoryId(GetCategoryId());

@@ -273,6 +273,6 @@ RgbaSprite::RgbaSprite()
     m_size.x = m_size.y = 0;
     }
 
-Byte const* RgbaSprite::GetRgbaDefinition() { LoadSprite(); return m_rgbaBuffer.GetSize() > 0 ? m_rgbaBuffer.GetData() : nullptr; }
-void RgbaSprite::GetSize(Point2d* size) {  LoadSprite(); *size = m_size;}
+Byte const* RgbaSprite::_GetRgbaDefinition() { LoadSprite(); return m_rgbaBuffer.GetSize() > 0 ? m_rgbaBuffer.GetData() : nullptr; }
+void RgbaSprite::_GetSize(Point2d* size) {  LoadSprite(); *size = m_size;}
 

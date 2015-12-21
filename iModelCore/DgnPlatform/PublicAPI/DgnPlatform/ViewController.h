@@ -901,10 +901,6 @@ struct EXPORT_VTABLE_ATTRIBUTE SectionDrawingViewController : DrawingViewControl
     DEFINE_T_SUPER(DrawingViewController);
 
 protected:
-    DGNPLATFORM_EXPORT virtual void _DrawView(ViewContextR) override;
-    DGNPLATFORM_EXPORT virtual Render::GraphicPtr _StrokeGeometry(ViewContextR, GeometrySourceCR, double) override;
-    DGNPLATFORM_EXPORT virtual StatusInt _VisitHit(HitDetailCR hit, ViewContextR context) const override;
-
     mutable SectioningViewControllerPtr m_sectionView;  // transient
 
 public:

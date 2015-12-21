@@ -161,7 +161,7 @@ protected:
     RefCountedPtr<GeometryProcessorGraphic> m_graphic;
 
     GeometryProcessorContext() {}
-    virtual Render::GraphicPtr _BeginGraphic(Render::Graphic::CreateParams const& params) override {m_graphic->SetLocalToWorldTransform(params.m_placement); return m_graphic;}
+    virtual Render::GraphicPtr _CreateGraphic(Render::Graphic::CreateParams const& params) override {m_graphic->SetLocalToWorldTransform(params.m_placement); return m_graphic;}
 
 public:
     GeometryProcessorContext(IGeometryProcessor& dropObj)
@@ -256,7 +256,7 @@ void GeometryProcessor::Process(IGeometryProcessorR dropObj, GeometrySourceCR so
                 elemGeom->Draw(context);
                 context.PopTransformClip();
 #else
-                Render::GraphicPtr graphic = context.BeginGraphic(Graphic::CreateParams(context.GetViewport(), iter.GetGeometryToWorld()));
+                Render::GraphicPtr graphic = context.CreateGraphic(Graphic::CreateParams(context.GetViewport(), iter.GetGeometryToWorld()));
                 GeometryParams geomParams(iter.GetGeometryParams());
 
                 context.CookGeometryParams(geomParams, *graphic);
@@ -1224,7 +1224,7 @@ virtual BentleyStatus _ProcessCurveVector(CurveVectorCR curves, bool isFilled) o
 +---------------+---------------+---------------+---------------+---------------+------*/
 virtual void _OutputGraphics(ViewContextR context) override
     {
-    Render::GraphicPtr graphic = context.BeginGraphic(Graphic::CreateParams(context.GetViewport(), m_entity ? m_entity->GetEntityTransform() : Transform::FromIdentity()));
+    Render::GraphicPtr graphic = context.CreateGraphic(Graphic::CreateParams(context.GetViewport(), m_entity ? m_entity->GetEntityTransform() : Transform::FromIdentity()));
 
     if (m_surface)
         WireframeGeomUtil::Draw(*graphic, *m_surface, context, m_includeEdges, m_includeFaceIso);
@@ -1367,7 +1367,7 @@ virtual void _OutputGraphics(ViewContextR context) override
         m_uniqueAttachments[attachment] = curve.get();
         }
 
-    Render::GraphicPtr graphic = context.BeginGraphic(Graphic::CreateParams(context.GetViewport(), m_entity.GetEntityTransform()));
+    Render::GraphicPtr graphic = context.CreateGraphic(Graphic::CreateParams(context.GetViewport(), m_entity.GetEntityTransform()));
 
     WireframeGeomUtil::Draw(*graphic, m_entity, context, m_includeEdges, m_includeFaceIso);
     }
