@@ -786,7 +786,7 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
         </ECCustomAttributes>
         <ECProperty propertyName="Placement" typeName="binary"/>
         <ECProperty propertyName="Geom" typeName="binary"/>
-        <ECProperty propertyName="InPhysicalSpace" typeName="int" /><!-- Used strictly for the trigger which updates the range index -->
+        <ECProperty propertyName="InPhysicalSpace" typeName="int" /><!-- Used strictly for the trigger that updates the range index -->
         <ECProperty propertyName="CategoryId" typeName="long">
             <!-- Foreign key relationship: CategoryContainsElementGeom.CategoryId -->
             <ECCustomAttributes>
