@@ -31,6 +31,16 @@ virtual JsSolidPrimitiveP Clone ();
     JsSolidPrimitive (){}
     JsSolidPrimitive (ISolidPrimitivePtr const &solidPrimitive) : m_solidPrimitive (solidPrimitive){}
 
+    virtual JsSolidPrimitiveP AsSolidPrimitive () override {return this;}
+
+    virtual JsDgnConeP AsDgnCone () {return nullptr;}
+    virtual JsDgnSphereP AsDgnSphere () {return nullptr;}
+    virtual JsDgnBoxP AsDgnBox () {return nullptr;}
+    virtual JsDgnTorusPipeP AsDgnTorusPipe () {return nullptr;}
+    virtual JsDgnExtrusionP AsDgnExtrusion () {return nullptr;}
+    virtual JsDgnRotationalSweepP AsDgnRotationalSweep () {return nullptr;}
+    virtual JsDgnRuledSweepP AsRuledSweepDgn () {return nullptr;}
+
     double SolidPrimitiveType (){return (double)m_solidPrimitive->GetSolidPrimitiveType ();}
     virtual ISolidPrimitivePtr GetISolidPrimitivePtr() override {return m_solidPrimitive;}
 };
@@ -43,6 +53,8 @@ struct JsDgnCone : JsSolidPrimitive
 public:
 JsDgnCone (ISolidPrimitivePtr const &solid) : JsSolidPrimitive (solid) {}
 virtual JsSolidPrimitiveP Clone () override {return new JsDgnCone (GetISolidPrimitivePtr ()->Clone ());}
+
+virtual JsDgnConeP AsDgnCone () override {return this;}
 static JsDgnConeP CreateCircularCone (JsDPoint3dP pointA, JsDPoint3dP pointB, double radiusA, double radiusB, bool capped)
     {
     DgnConeDetail coneData (pointA->Get (), pointB->Get (), radiusA, radiusB, capped);
@@ -61,6 +73,7 @@ struct JsDgnSphere: JsSolidPrimitive
 public:
 JsDgnSphere (ISolidPrimitivePtr const &solid) : JsSolidPrimitive (solid) {}
 virtual JsSolidPrimitiveP Clone () override {return new JsDgnSphere (GetISolidPrimitivePtr ()->Clone ());}
+virtual JsDgnSphereP AsDgnSphere () {return this;}
 
 static JsDgnSphereP CreateSphere (JsDPoint3dP center, double radius)
     {
@@ -78,6 +91,7 @@ struct JsDgnTorusPipe: JsSolidPrimitive
 public:
 JsDgnTorusPipe (ISolidPrimitivePtr const &solid) : JsSolidPrimitive (solid) {}
 virtual JsSolidPrimitiveP Clone () override {return new JsDgnTorusPipe (GetISolidPrimitivePtr ()->Clone ());}
+virtual JsDgnTorusPipeP AsDgnTorusPipe () {return this;}
 
 static JsDgnTorusPipeP CreateTorusPipe (
         JsDPoint3dP center,
@@ -111,6 +125,10 @@ public:
 
     JsDgnBox (ISolidPrimitivePtr const &solid) : JsSolidPrimitive (solid) {}
     virtual JsSolidPrimitiveP Clone () override {return new JsDgnBox (GetISolidPrimitivePtr ()->Clone ());}
+    virtual JsDgnBoxP AsDgnBox () {return this;}
+
+
+
     static JsDgnBoxP CreateBox (
             JsDPoint3dP baseOrigin,
             JsDPoint3dP topOrigin,
@@ -150,6 +168,8 @@ public:
 
     JsDgnExtrusion (ISolidPrimitivePtr const &solid) : JsSolidPrimitive (solid) {}
     virtual JsSolidPrimitiveP Clone () override {return new JsDgnExtrusion (GetISolidPrimitivePtr ()->Clone ());}
+    virtual JsDgnExtrusionP AsDgnExtrusion () {return this;}
+
     static JsDgnExtrusionP Create (
             JsCurveVectorP profile,
             JsDVector3dP   vector,
@@ -177,6 +197,9 @@ public:
 
     JsDgnRotationalSweep (ISolidPrimitivePtr const &solid) : JsSolidPrimitive (solid) {}
     virtual JsSolidPrimitiveP Clone () override {return new JsDgnRotationalSweep (GetISolidPrimitivePtr ()->Clone ());}
+    virtual JsDgnRotationalSweepP AsDgnRotationalSweep () {return this;}
+
+
     static JsDgnRotationalSweepP Create (
             JsCurveVectorP profile,
             JsDPoint3dP    center,
@@ -206,6 +229,8 @@ public:
 
     JsDgnRuledSweep (ISolidPrimitivePtr const &solid) : JsSolidPrimitive (solid) {}
     virtual JsSolidPrimitiveP Clone () override {return new JsDgnRuledSweep (GetISolidPrimitivePtr ()->Clone ());}
+    virtual JsDgnRuledSweepP AsRuledSweepDgn () {return this;}
+
     static JsDgnRuledSweepP Create (
             JsUnstructuredCurveVectorP profiles,
             bool capped

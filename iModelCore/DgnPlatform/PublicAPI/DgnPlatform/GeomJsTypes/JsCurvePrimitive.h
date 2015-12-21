@@ -13,8 +13,22 @@
 #define _JSCURVEPRIMITIVE_H_
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
-
-
+// CloneBetewwenFractions -- can implement in base class, but needs upcast to specialized type.
+//   REMARK -- upcast needs to be implemented recursively !!!
+// Type signature methods . ..
+//      GetCurvePrimitiveType
+//      GetLine,
+//      GetLineString
+//      GetLineStringP
+//      GetArc
+//      GetBsplineCurve
+//      GetBsplineCurvePtr
+//      getProxyBSplineCurve
+//      GetProxyBsplineCurvePtr
+//      GetInterpolationCurveCP
+//      GetAkimaCurve
+//
+//
 
 //=======================================================================================
 // @bsiclass                                                    Eariln.Lutz     08/15
@@ -32,8 +46,11 @@ protected :
 public:
     JsCurvePrimitive () {}
     JsCurvePrimitive (ICurvePrimitivePtr curvePrimitive) : m_curvePrimitive (curvePrimitive) {}
+    // This should never get called -- derived classes will get the virtual dispatch . . 
     virtual JsCurvePrimitiveP Clone () override {return new JsCurvePrimitive (m_curvePrimitive->Clone ());} 
+
     virtual ICurvePrimitivePtr GetICurvePrimitivePtr () override {return m_curvePrimitive;}
+    virtual JsCurvePrimitiveP AsCurvePrimitive () override {return this;}
 
     // Return the native ICurvePrimitive wrapped as the strongest Js type possible.
     // optionally let child CurveVector return as (true,false)==>(nullptr, JsCurvePrimitive)

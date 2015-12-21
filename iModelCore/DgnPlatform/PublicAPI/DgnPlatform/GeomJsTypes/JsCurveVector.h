@@ -34,6 +34,9 @@ protected :
 public:
     JsCurveVector () {}
 
+    virtual JsCurveVectorP AsCurveVector () {return this;}
+
+
     JsCurveVectorP StgronglyTypedJsCurveVector (CurveVectorPtr &data);
     JsCurveVector (CurveVectorPtr curveVector) : m_curveVector (curveVector) {}
     JsCurveVectorP Clone () {return new JsCurveVector (m_curveVector->Clone ());} 

@@ -107,11 +107,17 @@ bool TryDoubleToIndex (double a, size_t upperBound, size_t &index);
 struct JsGeometry : RefCountedBase
 {
 virtual JsGeometry *Clone () = 0;
-// base class returns null for all native Ptr queries. Derived classes override as appropriate
+// Native-side type signatures . . .base class returns null for all native Ptr queries. Derived classes override as appropriate
 virtual ICurvePrimitivePtr GetICurvePrimitivePtr (){return nullptr;}
 virtual ISolidPrimitivePtr GetISolidPrimitivePtr (){return nullptr;}
 virtual CurveVectorPtr GetCurveVectorPtr () {return nullptr;}
 virtual PolyfaceHeaderPtr GetPolyfaceHeaderPtr () {return nullptr;}
+
+// Wrapable type signatures . . . Derived classes override . .
+virtual JsCurvePrimitiveP AsCurvePrimitive (){return nullptr;}
+virtual JsCurveVectorP AsCurveVector (){return nullptr;}
+virtual JsSolidPrimitiveP AsSolidPrimitive () {return nullptr;}
+virtual JsPolyfaceMeshP AsPolyfaceMesh () {return nullptr;}
 };
 
 
