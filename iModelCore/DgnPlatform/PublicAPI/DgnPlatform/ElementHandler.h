@@ -10,6 +10,7 @@
 
 #include "DgnDomain.h"
 #include "DgnElement.h"
+#include "ECSqlClassParams.h"
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 
@@ -42,27 +43,6 @@ public:
 
     //! If this is a mirroring transform, set the plane across which the element is to be mirrored.
     void SetMirrorPlane(RotMatrixCR mirrorPlane) {m_mirrorPlane = mirrorPlane, m_haveMirrorPlane = true;}
-};
-
-//=======================================================================================
-//! Stores information about an ECClass used in ECSql SELECT, INSERT, and UPDATE statements.
-//! An ECSqlClassInfo is constructed once and cached for each ElementHandler, based on
-//! the results of ElementHandler::_GetClassParams(). The cached information is
-//! subsequently used to efficiently construct and execute ECSql statements when loading,
-//! inserting, and updating elements in the DgnDb.
-//! @ingroup DgnElementGroup
-// @bsiclass                                                     Paul.Connelly   09/15
-//=======================================================================================
-struct ECSqlClassInfo
-{
-    Utf8String m_select;
-    Utf8String m_insert;
-    Utf8String m_update;
-    ECSqlClassParams m_params;
-    uint16_t m_numUpdateParams;
-    bool m_initialized;
-
-    ECSqlClassInfo() : m_numUpdateParams(0), m_initialized(false) { }
 };
 
 // This macro declares the required members for an ElementHandler. It is often the entire contents of an ElementHandler's class declaration.
@@ -109,7 +89,7 @@ namespace dgn_ElementHandler
 
         //! Add the names of any subclass properties used by ECSql INSERT, UPDATE, and/or SELECT statements to the ECSqlClassParams list.
         //! If you override this method, you @em must invoke T_Super::_GetClassParams().
-        DGNPLATFORM_EXPORT virtual void _GetClassParams(ECSqlClassParams& params);
+        DGNPLATFORM_EXPORT virtual void _GetClassParams(ECSqlClassParamsR params);
     public:
         //! Create a new instance of a DgnElement from a CreateParams. 
         //! @note The actual type of the returned DgnElement will depend on the DgnClassId in @a params.
@@ -143,10 +123,10 @@ namespace dgn_ElementHandler
         ELEMENTHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_SheetElement, SheetElement, Sheet, Element, DGNPLATFORM_EXPORT)
     };
 
-    //! The ElementHandler for ElementGroup
-    struct EXPORT_VTABLE_ATTRIBUTE Group : Element
+    //! The ElementHandler for SpatialGroupElement
+    struct EXPORT_VTABLE_ATTRIBUTE SpatialGroup : Element
     {
-        ELEMENTHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_ElementGroup, ElementGroup, Group, Element, DGNPLATFORM_EXPORT)
+        ELEMENTHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_SpatialGroupElement, SpatialGroupElement, SpatialGroup, Element, DGNPLATFORM_EXPORT)
     };
 };
 

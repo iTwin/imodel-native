@@ -134,12 +134,6 @@ Utf8CP const PerformanceElementsCRUDTestFixture::s_testSchemaXml =
         "    <ECProperty propertyName='Prop4b_3' typeName='double' />"
         "    <ECProperty propertyName='Prop4b_4' typeName='point3d' />"
         "  </ECClass>"
-        "  <ECClass typeName='SimpleElement'>"
-        "    <ECCustomAttributes>"
-        "       <ClassHasHandler xmlns=\"dgn.02.00\" />"
-        "    </ECCustomAttributes>"
-        "    <BaseClass>dgn:Element</BaseClass>"
-        "  </ECClass>"
         "</ECSchema>";
 
 //---------------------------------------------------------------------------------------
@@ -180,7 +174,7 @@ DgnDbStatus PerformanceElement1::_BindInsertParams (BeSQLite::EC::ECSqlStatement
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus PerformanceElement1::_ExtractSelectParams (ECSqlStatement& stmt, ECSqlClassParams const& params)
+DgnDbStatus PerformanceElement1::_ReadSelectParams (ECSqlStatement& stmt, ECSqlClassParams const& params)
     {
     EXPECT_EQ (0, strcmp (stmt.GetValueText (params.GetSelectIndex ("Prop1_1")), "Element1 - InitValue"));
     EXPECT_EQ (10000000, stmt.GetValueInt64 (params.GetSelectIndex ("Prop1_2")));
@@ -270,9 +264,9 @@ DgnDbStatus PerformanceElement2::_BindInsertParams (BeSQLite::EC::ECSqlStatement
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus PerformanceElement2::_ExtractSelectParams (ECSqlStatement& stmt, ECSqlClassParams const& params)
+DgnDbStatus PerformanceElement2::_ReadSelectParams (ECSqlStatement& stmt, ECSqlClassParams const& params)
     {
-    EXPECT_EQ (DgnDbStatus::Success, T_Super::_ExtractSelectParams (stmt, params));
+    EXPECT_EQ (DgnDbStatus::Success, T_Super::_ReadSelectParams (stmt, params));
     EXPECT_EQ (0, strcmp (stmt.GetValueText (params.GetSelectIndex ("Prop2_1")), "Element2 - InitValue"));
     EXPECT_EQ (20000000, stmt.GetValueInt64 (params.GetSelectIndex ("Prop2_2")));
     EXPECT_EQ (2.71828, stmt.GetValueDouble (params.GetSelectIndex ("Prop2_3")));
@@ -361,9 +355,9 @@ DgnDbStatus PerformanceElement3::_BindInsertParams (BeSQLite::EC::ECSqlStatement
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus PerformanceElement3::_ExtractSelectParams (ECSqlStatement& stmt, ECSqlClassParams const& params)
+DgnDbStatus PerformanceElement3::_ReadSelectParams (ECSqlStatement& stmt, ECSqlClassParams const& params)
     {
-    EXPECT_EQ (DgnDbStatus::Success, T_Super::_ExtractSelectParams (stmt, params));
+    EXPECT_EQ (DgnDbStatus::Success, T_Super::_ReadSelectParams (stmt, params));
     EXPECT_EQ (0, strcmp (stmt.GetValueText (params.GetSelectIndex ("Prop3_1")), "Element3 - InitValue"));
     EXPECT_EQ (30000000, stmt.GetValueInt64 (params.GetSelectIndex ("Prop3_2")));
     EXPECT_EQ (1.414121, stmt.GetValueDouble (params.GetSelectIndex ("Prop3_3")));
@@ -452,9 +446,9 @@ DgnDbStatus PerformanceElement4::_BindInsertParams (BeSQLite::EC::ECSqlStatement
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus PerformanceElement4::_ExtractSelectParams (ECSqlStatement& stmt, ECSqlClassParams const& params)
+DgnDbStatus PerformanceElement4::_ReadSelectParams (ECSqlStatement& stmt, ECSqlClassParams const& params)
     {
-    EXPECT_EQ (DgnDbStatus::Success, T_Super::_ExtractSelectParams (stmt, params));
+    EXPECT_EQ (DgnDbStatus::Success, T_Super::_ReadSelectParams (stmt, params));
     EXPECT_EQ (0, strcmp (stmt.GetValueText (params.GetSelectIndex ("Prop4_1")), "Element4 - InitValue"));
     EXPECT_EQ (40000000, stmt.GetValueInt64 (params.GetSelectIndex ("Prop4_2")));
     EXPECT_EQ (1.61803398874, stmt.GetValueDouble (params.GetSelectIndex ("Prop4_3")));
@@ -1186,39 +1180,38 @@ void PerformanceElementsCRUDTestFixture::GetSelectSql (Utf8CP className, Utf8Str
 
     if (!asTranslatedFromECSql)
         {
-
         selectSql = "SELECT ";
         bool isFirstItem = true;
         for (auto prop : ecClass->GetProperties(true))
             {
-            if (!prop->GetIsStruct ())
+            Utf8CP alias = prop->GetName().StartsWithI("Prop") ? "p." : "e.";
+
+            if (!prop->GetIsStruct())
                 {
                 if (!isFirstItem)
-                    {
-                    selectSql.append (", ");
-                    }
-                selectSql.append (prop->GetName ());
+                    selectSql.append(",");
+
+                selectSql.append(alias).append(prop->GetName());
                 isFirstItem = false;
                 }
             else
                 {
-                for (auto structProp : prop->GetAsStructProperty ()->GetType ().GetProperties ())
+                for (auto structProp : prop->GetAsStructProperty()->GetType().GetProperties())
                     {
                     if (!isFirstItem)
-                        {
-                        selectSql.append (", ");
-                        }
-                    selectSql.append (prop->GetName ()).append ("_").append (structProp->GetName ());
+                        selectSql.append(",");
+
+                    selectSql.append(alias).append(prop->GetName()).append("_").append(structProp->GetName());
                     isFirstItem = false;
                     }
                 }
             }
 
-        selectSql.append(" FROM dgn_Element WHERE Id = ?");
+        selectSql.append(" FROM dgn_Element e, dgn_PhysicalElement p WHERE e.Id=p.ECInstanceId AND e.ECClassId=p.ECClassId AND e.Id=?");
         if (!omitClassIdFilter)
             {
             Utf8String classIdFilter;
-            classIdFilter.Sprintf(" AND ECClassId=%lld", ecClass->GetId());
+            classIdFilter.Sprintf(" AND e.ECClassId=%lld", ecClass->GetId());
             selectSql.append(classIdFilter);
             }
 

@@ -55,6 +55,8 @@ protected:
     //! Populate the QueryModel with the results of the query.
     void LoadElementsForUpdate(DgnViewportR viewport, DrawPurpose updateType, ICheckStopP checkStop, bool needNewQuery, bool waitForQueryToFinish, bool stopQueryOnAbort);
     void SaveSelectResults();
+    void PickUpResults();
+    bool FrustumChanged(DgnViewportCR vp) const;
     void StartSelectProcessing(DgnViewportR, DrawPurpose updateType);
     DGNPLATFORM_EXPORT virtual bool _IsInSet(int nVal, BeSQLite::DbValue const*) const override;
     virtual void _FillModels() override {} // query models do not load elements in advance
@@ -153,7 +155,7 @@ __PUBLISH_INSERT_FILE__  QueryView_GetRTreeMatchSql.sampleCode
 
     //! Return a value in the range -100 (fewest) to 100 (most) to determine the maximum number of elements loaded by the query.
     //! 0 means the "default" number of elements.
-    virtual int32_t _GetMaxElementFactor() {return 0;}
+    DGNPLATFORM_EXPORT virtual int32_t _GetMaxElementFactor(DgnViewportCR vp);
 
     //! Return the size in pixels of the smallest element that should be displayed.
     virtual double _GetMinimumSizePixels(DrawPurpose updateType) {return 0.1;}
@@ -177,7 +179,7 @@ public:
     DGNPLATFORM_EXPORT uint64_t GetMaxElementMemory();
 
     //! Return the maximum number of elements to hold in the associated QueryModel.
-    DGNPLATFORM_EXPORT uint32_t GetMaxElementsToLoad();
+    DGNPLATFORM_EXPORT uint32_t GetMaxElementsToLoad(DgnViewportCR vp);
 
     //! Get the list of elements that are always drawn
     DgnElementIdSet const& GetAlwaysDrawn() {return m_alwaysDrawn;}

@@ -228,7 +228,7 @@ protected:
     DGNPLATFORM_EXPORT virtual void _PopClip();    
     DGNPLATFORM_EXPORT virtual bool _FilterRangeIntersection(GeometrySourceCR);
     virtual IPickGeomP _GetIPickGeom() {return nullptr;}
-    virtual Render::GraphicPtr _BeginGraphic(Render::Graphic::CreateParams const& params) = 0;
+    virtual Render::GraphicPtr _CreateGraphic(Render::Graphic::CreateParams const& params) = 0;
     DGNPLATFORM_EXPORT virtual void _SetupScanCriteria();
     virtual bool _WantUndisplayed() {return false;}
     DGNPLATFORM_EXPORT virtual void _AddViewOverrides(Render::OvrGraphicParamsR);
@@ -270,7 +270,7 @@ public:
     void SetScanReturn() {_SetScanReturn();}
 
 public:
-    Render::GraphicPtr BeginGraphic(Render::Graphic::CreateParams const& params=Render::Graphic::CreateParams()) {return _BeginGraphic(params);}
+    Render::GraphicPtr CreateGraphic(Render::Graphic::CreateParams const& params=Render::Graphic::CreateParams()) {return _CreateGraphic(params);}
     StatusInt VisitElement(GeometrySourceCR elem) {return _VisitElement(elem);}
 
     /// @name Coordinate Query and Conversion
@@ -485,9 +485,17 @@ protected:
 public:
     DGNVIEW_EXPORT RenderContext(DgnViewportR vp, DrawPurpose);
     virtual Render::GraphicP _GetCachedGraphic(GeometrySourceCR source, double pixelSize) override {return source.Graphics().Find(*m_viewport, pixelSize);}
-    virtual void _SaveGraphic(GeometrySourceCR source, Render::GraphicR graphic) override {source.Graphics().Save(graphic);}
+    virtual void _SaveGraphic(GeometrySourceCR source, Render::GraphicR graphic) override {graphic.Close(); source.Graphics().Save(graphic);}
     virtual void _PushFrustumClip() override {}
-    virtual Render::GraphicPtr _BeginGraphic(Render::Graphic::CreateParams const& params) override {return m_target.CreateGraphic(params);}
+    virtual Render::GraphicPtr _CreateGraphic(Render::Graphic::CreateParams const& params) override {return m_target.CreateGraphic(params);}
+};
+
+//=======================================================================================
+// @bsiclass                                                    Keith.Bentley   12/15
+//=======================================================================================
+struct DynamicsContext : RenderContext
+{
+    
 };
 
 //=======================================================================================
@@ -495,13 +503,16 @@ public:
 //=======================================================================================
 struct DecorateContext : RenderContext
 {
+    friend struct DgnViewport;
+private:
     Render::Decorations& m_decorations;
-
     DecorateContext(DgnViewportR vp, Render::Decorations& decorations) : RenderContext(vp, DrawPurpose::Decorate), m_decorations(decorations) {}
-    DGNVIEW_EXPORT void AddDynamic(Render::GraphicR graphic, Render::OvrGraphicParamsCP);
-    DGNVIEW_EXPORT void AddWorldDecoration(Render::GraphicR graphic, Render::OvrGraphicParamsCP);
-    DGNVIEW_EXPORT void AddCameraOverlay(Render::GraphicR graphic, Render::OvrGraphicParamsCP);
-    DGNVIEW_EXPORT void AddViewOverlay(Render::GraphicR graphic, Render::OvrGraphicParamsCP);
+
+public:
+    DGNPLATFORM_EXPORT void AddWorldDecoration(Render::GraphicR graphic, Render::OvrGraphicParamsCP ovr=nullptr);
+    DGNPLATFORM_EXPORT void AddWorldOverlay(Render::GraphicR graphic, Render::OvrGraphicParamsCP ovr=nullptr);
+    DGNPLATFORM_EXPORT void AddViewOverlay(Render::GraphicR graphic, Render::OvrGraphicParamsCP ovr=nullptr);
+    DGNPLATFORM_EXPORT void AddSprite(Render::ISprite& sprite, DPoint3dCR location, DPoint3dCR xVec, int transparency);
 };  
 
 /** @endGroup */

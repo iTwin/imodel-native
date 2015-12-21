@@ -432,7 +432,7 @@ MSBsplineSurfaceCP  m_surface;
 +---------------+---------------+---------------+---------------+---------------+------*/
 virtual void _OutputGraphics (ViewContextR context) override
     {
-    Render::GraphicPtr graphic = context.BeginGraphic(Graphic::CreateParams(context.GetViewport()));
+    Render::GraphicPtr graphic = context.CreateGraphic(Graphic::CreateParams(context.GetViewport()));
 
     if (m_surface)
         WireframeGeomUtil::Draw (*graphic, *m_surface, context, true, false);

@@ -7,6 +7,8 @@
 +--------------------------------------------------------------------------------------*/
 #include    <DgnPlatformInternal.h>
 
+    virtual Render::GraphicPtr _BeginGraphic(Render::Graphic::CreateParams const& params) override {m_graphic->SetLocalToWorldTransform(params.m_placement); return m_graphic;}
+                Render::GraphicPtr graphic = context.BeginGraphic(Graphic::CreateParams(context.GetViewport(), iter.GetGeometryToWorld()));
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/12
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -949,7 +951,7 @@ virtual BentleyStatus _ProcessCurveVector(CurveVectorCR curves, bool isFilled) o
 +---------------+---------------+---------------+---------------+---------------+------*/
 virtual void _OutputGraphics(ViewContextR context) override
     {
-    Render::GraphicPtr graphic = context.BeginGraphic(Graphic::CreateParams(context.GetViewport(), m_entity ? m_entity->GetEntityTransform() : Transform::FromIdentity()));
+    Render::GraphicPtr graphic = context.CreateGraphic(Graphic::CreateParams(context.GetViewport(), m_entity ? m_entity->GetEntityTransform() : Transform::FromIdentity()));
 
     if (m_surface)
         WireframeGeomUtil::Draw(*graphic, *m_surface, context, m_includeEdges, m_includeFaceIso);
@@ -1108,7 +1110,7 @@ virtual void _OutputGraphics(ViewContextR context) override
         m_uniqueAttachments[attachment] = curve.get();
         }
 
-    Render::GraphicPtr graphic = context.BeginGraphic(Graphic::CreateParams(context.GetViewport(), m_entity.GetEntityTransform()));
+    Render::GraphicPtr graphic = context.CreateGraphic(Graphic::CreateParams(context.GetViewport(), m_entity.GetEntityTransform()));
 
     WireframeGeomUtil::Draw(*graphic, m_entity, context, m_includeEdges, m_includeFaceIso);
     graphic->Close();

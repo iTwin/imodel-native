@@ -182,8 +182,8 @@ private:
     friend struct RedlineModelHandler;
 
 protected:
-    void _ToPropertiesJson(Json::Value&) const override;
-    void _FromPropertiesJson(Json::Value const&) override;
+    void _WriteJsonProperties(Json::Value&) const override;
+    void _ReadJsonProperties(Json::Value const&) override;
 
     void DefineImageTexturesForRow(ImageDef const& imageDef, uint8_t const* rowStart, DPoint3dCR rowOrigin, Point2dCR tileDims, uint32_t nTilesAcross);
 
@@ -340,7 +340,7 @@ protected:
     virtual void _SetOrigin(DPoint3dCR org) override;
     virtual void _SetDelta(DVec3dCR delta) override;
     virtual void _SetRotation(RotMatrixCR rot) override;
-    virtual DgnModelP _GetTargetModel() const override;
+    virtual GeometricModelP _GetTargetModel() const override;
     virtual DgnDbR _GetDgnDb() const override;
     virtual void _AdjustAspectRatio(double , bool expandView) override;
     virtual DPoint3d _GetTargetPoint() const override;
