@@ -916,7 +916,6 @@ struct EXPORT_VTABLE_ATTRIBUTE ComponentModel : DgnModel3d
 protected:
     Utf8String m_componentECClass;
 
-    DPoint3d _GetGlobalOrigin() const override final {return DPoint3d::FromZero();}
     CoordinateSpace _GetCoordinateSpace() const override final {return CoordinateSpace::Local;}
     DGNPLATFORM_EXPORT DgnDbStatus _OnDelete() override;
     //DgnDbStatus _OnUpdate() override;
@@ -973,7 +972,7 @@ struct ComponentDef : RefCountedBase
  public:
 
     //! Make a ComponentDef object
-    //! @praam db           The DgnDb that contains the component def
+    //! @param db           The DgnDb that contains the component def
     //! @param componentDefClass   The ECClass that defines the component
     //! @param status       If not null, an error code in case Create failed
     //! @note possible status values include:
@@ -982,15 +981,30 @@ struct ComponentDef : RefCountedBase
     //! DgnDbStatus::WrongClass - \a componentDefClass is not a component definition ECClass
     DGNPLATFORM_EXPORT static ComponentDefPtr From(DgnDbStatus* status, DgnDbR db, ECN::ECClassCR componentDefClass);
 
+    //! Make a ComponentDef object
+    //! @param db           The DgnDb that contains the component def
+    //! @param ecsqlClassName   The full ECSQL name of the ECClass that defines the component
+    //! @param status       If not null, an error code in case Create failed
+    //! @see From
+    DGNPLATFORM_EXPORT static ComponentDefPtr FromECSqlName(DgnDbStatus* status, DgnDbR db, Utf8StringCR ecsqlClassName);
+
     struct GeometryGenerator
         {
         virtual DgnDbStatus _GenerateGeometry(ECN::IECInstanceCR variationSpec) = 0;
         };
 
+    //! Component parameter variation scope
+    enum class ParameterVariesPer
+    {
+        Instance = 0,   //!< Varies per instance
+        Variation = 1   //!< Varies per Variation
+    };
+
     DgnDbR GetDgnDb() const {return m_db;}
 
     ECN::ECClassCR GetECClass() const {return m_class;}
 
+    DGNPLATFORM_EXPORT Utf8String GetModelName() const;
     DGNPLATFORM_EXPORT ComponentModelR GetModel();
 
     DGNPLATFORM_EXPORT bool UsesTemporaryModel() const;
@@ -1012,12 +1026,11 @@ struct ComponentDef : RefCountedBase
     DGNPLATFORM_EXPORT static ECN::IECInstancePtr GetParameters(DgnElementCR instance);
 
     //! Import this component definition into the the specified DgnDb. 
-    //! @param destDb the DgnDb to which this component definition should be written
     //! @param context The import context to use
     //! @param importSchema Import the ECSchema that includes this component definition's ECClass? The import will fail if \a destDb does not contain this component definition's ECClass.
     //! @param importCategory Import the Category used by this component definition? The import will fail if \a destDb does not contain this component definition's Category.
     //! @return non-zero error if the import failed.
-    DGNPLATFORM_EXPORT DgnDbStatus ImportComponentDef(DgnDbR destDb, DgnImportContext& context, bool importSchema = true, bool importCategory = false);
+    DGNPLATFORM_EXPORT DgnDbStatus ImportComponentDef(DgnImportContext& context, bool importSchema = true, bool importCategory = false);
 
     //! Import variations of this component definition into the the specified model. 
     //! @param destVariationsModel Write copies of variations to this model.
@@ -1050,6 +1063,8 @@ struct ComponentDef : RefCountedBase
     //! @param variationModelId The model that contains the variations
     //! @see MakeVariation, QueryVariationByName
     DGNPLATFORM_EXPORT void QueryVariations(bvector<DgnElementId>& variations, DgnModelId variationModelId);
+
+    DGNPLATFORM_EXPORT ParameterVariesPer GetVariationScope(ECN::ECPropertyCR prop);
 
     //! Make either a persistent copy of a specified variation or a unique instance of the component definition.
     //! If \a variation has instance parameters, then the \a instanceParameters argument may be passed into specific the instance parameter values to use.
@@ -1093,10 +1108,10 @@ struct ComponentDefCreator
 public:
     struct PropertySpec
         {
-        Utf8CP name;
-        ECN::PrimitiveType type;
-        bool isTypeParam;
-        PropertySpec(Utf8CP n, ECN::PrimitiveType pt, bool isType) : name(n), type(pt), isTypeParam(isType) {;} 
+        Utf8CP m_name;
+        ECN::PrimitiveType m_type;
+        ComponentDef::ParameterVariesPer m_variesPer;
+        PropertySpec(Utf8CP n, ECN::PrimitiveType pt, ComponentDef::ParameterVariesPer vp) : m_name(n), m_type(pt), m_variesPer(vp) {;} 
         };
 
 private:

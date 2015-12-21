@@ -146,7 +146,7 @@ struct VariationSpec
     ECN::IECInstancePtr MakeVariationSpec(DgnDbR db) const;
     void CheckInstance(DgnElementCR el, size_t expectedSolidCount) const;
     void MakeUniqueInstance(DgnElementCPtr&, DgnModelR destModel, size_t expectedSolidCount);
-    void MakeVariation(PhysicalModelR destModel);
+    void MakeVariation(DgnElementCPtr&, PhysicalModelR destModel);
 
     void SetValue(Utf8CP name, ECN::ECValueCR v)
         {
@@ -202,12 +202,12 @@ void VariationSpec::MakeUniqueInstance(DgnElementCPtr& inst, DgnModelR destModel
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      12/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void VariationSpec::MakeVariation(PhysicalModelR destModel)
+void VariationSpec::MakeVariation(DgnElementCPtr& variation, PhysicalModelR destModel)
     {
     DgnDbStatus status;
     auto vspec = MakeVariationSpec(destModel.GetDgnDb());
     ASSERT_TRUE(vspec.IsValid());
-    DgnElementCPtr variation = ComponentDef::MakeVariation(&status, destModel, *vspec, m_name);
+    variation = ComponentDef::MakeVariation(&status, destModel, *vspec, m_name);
     ASSERT_TRUE(variation.IsValid()) << Utf8PrintfString("MakeVariation failed with error %x", status);
     }
 
@@ -351,9 +351,7 @@ void ComponentModelTest::Developer_DefineSchema()
     ASSERT_TRUE(ComponentDefCreator::ImportSchema(*m_componentDb, *testSchema).IsValid());
 
     //  Verify that we can look up an existing component
-    ECN::ECClassCP widgetClass = m_componentDb->Schemas().GetECClass(TEST_JS_NAMESPACE, TEST_WIDGET_COMPONENT_NAME);
-    ASSERT_TRUE(widgetClass != nullptr);
-    ComponentDefPtr widgetCDef = ComponentDef::From(nullptr, *m_componentDb, *widgetClass);
+    ComponentDefPtr widgetCDef = ComponentDef::FromECSqlName(nullptr, *m_componentDb, TEST_JS_NAMESPACE "." TEST_WIDGET_COMPONENT_NAME);
     ASSERT_TRUE(widgetCDef.IsValid());
     ASSERT_STREQ(TEST_WIDGET_COMPONENT_NAME, widgetCDef->GetName().c_str());
     ASSERT_STREQ("WidgetCategory", widgetCDef->GetCategoryName().c_str());
@@ -410,9 +408,9 @@ void ComponentModelTest::Client_ImportCM(Utf8CP componentName)
     ComponentDefPtr  thingCdef = ComponentDef::From(nullptr, *m_componentDb, *m_componentDb->Schemas().GetECClass(TEST_JS_NAMESPACE, TEST_THING_COMPONENT_NAME));
 
     DgnImportContext ctx(*m_componentDb, *m_clientDb);
-    ASSERT_EQ( DgnDbStatus::Success , widgetCdef->ImportComponentDef(*m_clientDb, ctx, true, true));
-    ASSERT_EQ( DgnDbStatus::Success , gadgetCdef->ImportComponentDef(*m_clientDb, ctx, true, true));
-    ASSERT_EQ( DgnDbStatus::Success ,  thingCdef->ImportComponentDef(*m_clientDb, ctx, true, true));
+    ASSERT_EQ( DgnDbStatus::Success , widgetCdef->ImportComponentDef(ctx, true, true));
+    ASSERT_EQ( DgnDbStatus::Success , gadgetCdef->ImportComponentDef(ctx, true, true));
+    ASSERT_EQ( DgnDbStatus::Success ,  thingCdef->ImportComponentDef(ctx, true, true));
 
     ComponentDefPtr importedWidgetCdef = ComponentDef::From(nullptr, *m_clientDb, *m_clientDb->Schemas().GetECClass(TEST_JS_NAMESPACE, TEST_WIDGET_COMPONENT_NAME));
     ASSERT_TRUE(importedWidgetCdef.IsValid());
@@ -507,35 +505,55 @@ void ComponentModelTest::SimulateDeveloper()
     Developer_DefineSchema();   // first, the customizer defines his schema
 
     // Create catalogs of components
-    OpenComponentDb(Db::OpenMode::ReadWrite);
-    AutoCloseComponentDb closeComponentDb(*this);
+    DgnElementId wsln1UniqueInstanceId, wsln1VariationId;
+        {
+        OpenComponentDb(Db::OpenMode::ReadWrite);
+        AutoCloseComponentDb closeComponentDb(*this);
 
-    //  Test the components
-    PhysicalModelPtr tmpModel;
-    createPhysicalModel(tmpModel, *m_componentDb, DgnModel::CreateModelCode("tmp"));
+        //  Test the components
+        PhysicalModelPtr tmpModel;
+        createPhysicalModel(tmpModel, *m_componentDb, DgnModel::CreateModelCode("tmp"));
 
-    DgnElementCPtr inst;
-    m_wsln1.MakeUniqueInstance(inst, *tmpModel, 2);
-    m_wsln3.MakeUniqueInstance(inst, *tmpModel, 2);
-    m_wsln4.MakeUniqueInstance(inst, *tmpModel, 2);
-    m_wsln44.MakeUniqueInstance(inst, *tmpModel, 2);
-    m_gsln1.MakeUniqueInstance(inst, *tmpModel, 1);
-    m_nsln1.MakeUniqueInstance(inst, *tmpModel, 1);
-    inst = nullptr;
+        DgnElementCPtr inst;
+        m_wsln1.MakeUniqueInstance(inst, *tmpModel, 2);
+        wsln1UniqueInstanceId = inst->GetElementId();
+        m_wsln3.MakeUniqueInstance(inst, *tmpModel, 2);
+        m_wsln4.MakeUniqueInstance(inst, *tmpModel, 2);
+        m_wsln44.MakeUniqueInstance(inst, *tmpModel, 2);
+        m_gsln1.MakeUniqueInstance(inst, *tmpModel, 1);
+        m_nsln1.MakeUniqueInstance(inst, *tmpModel, 1);
+        inst = nullptr;
 
-    tmpModel->Delete();
+        tmpModel->Delete();
 
-    //  Create catalogs
+        //  Create catalogs
 
-    PhysicalModelPtr catalogModel;
-    ASSERT_EQ( DgnDbStatus::Success , createPhysicalModel(catalogModel, *m_componentDb, DgnModel::CreateModelCode("Catalog")) );
+        PhysicalModelPtr catalogModel;
+        ASSERT_EQ( DgnDbStatus::Success , createPhysicalModel(catalogModel, *m_componentDb, DgnModel::CreateModelCode("Catalog")) );
 
-    m_wsln1.MakeVariation(*catalogModel); 
-    m_wsln3.MakeVariation(*catalogModel); 
-    m_wsln4.MakeVariation(*catalogModel); 
-    m_wsln44.MakeVariation(*catalogModel); 
-    m_gsln1.MakeVariation(*catalogModel); 
-    m_nsln1.MakeVariation(*catalogModel); 
+        DgnElementCPtr var;
+        m_wsln1.MakeVariation(var, *catalogModel); 
+        wsln1VariationId = var->GetElementId();
+        m_wsln3.MakeVariation(var, *catalogModel); 
+        m_wsln4.MakeVariation(var, *catalogModel); 
+        m_wsln44.MakeVariation(var, *catalogModel); 
+        m_gsln1.MakeVariation(var, *catalogModel); 
+        m_nsln1.MakeVariation(var, *catalogModel);
+
+        m_componentDb->SaveChanges();
+        }
+
+    //  Double-check the class of the instances created by the component def 
+        {
+        OpenComponentDb(Db::OpenMode::Readonly);
+        AutoCloseComponentDb closeComponentDb(*this);
+
+        ComponentDefPtr widgetCDef = ComponentDef::FromECSqlName(nullptr, *m_componentDb, TEST_JS_NAMESPACE "." TEST_WIDGET_COMPONENT_NAME);
+        ASSERT_TRUE(widgetCDef.IsValid());
+
+        DgnElementCPtr var = m_componentDb->Elements().GetElement(wsln1VariationId);
+        ASSERT_EQ(&widgetCDef->GetECClass(), var->GetElementClass());
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**

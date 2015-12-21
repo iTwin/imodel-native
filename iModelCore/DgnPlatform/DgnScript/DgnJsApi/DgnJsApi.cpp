@@ -73,36 +73,12 @@ JsDgnModelP JsDgnElement::GetModel() {return new JsDgnModel(*m_el->GetModel());}
 //---------------------------------------------------------------------------------------
 JsDgnModelsP JsDgnDb::GetModels() {return new JsDgnModels(m_db->Models());}
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      07/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-static std::pair<Utf8String,Utf8String> parseFullECClassName(Utf8CP fullname)
-    {
-    Utf8CP dot = strchr(fullname, '.');
-    if (nullptr == dot)
-        return std::make_pair("","");
-    return std::make_pair(Utf8String(fullname,dot), Utf8String(dot+1));
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      10/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-static ECN::ECClassCP getECClassByFullName(DgnDbR db, Utf8StringCR fullname)
-    {
-    Utf8String ns, cls;
-    std::tie(ns, cls) = parseFullECClassName(fullname.c_str());
-    return db.Schemas().GetECClass(ns.c_str(), cls.c_str());
-    }
-
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson                      12/15
 //---------------------------------------------------------------------------------------
 JsComponentDefP JsComponentDef::FindByName(JsDgnDbP db, Utf8StringCR name) 
     {
-    auto cdefclass = getECClassByFullName(*db->m_db, name);
-    if (nullptr == cdefclass)
-        return nullptr;
-    ComponentDefPtr cdef = ComponentDef::From(nullptr, *db->m_db, *cdefclass);
+    ComponentDefPtr cdef = ComponentDef::FromECSqlName(nullptr, *db->m_db, name);
     if (!cdef.IsValid())
         return nullptr;
     return new JsComponentDef(*cdef);

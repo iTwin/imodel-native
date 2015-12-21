@@ -16,6 +16,27 @@
 
 #define ECSUCCESS(STMT) if (ECN::ECObjectsStatus::Success != (ecstatus = STMT)) {BeAssert(false); return nullptr;}
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      07/15
++---------------+---------------+---------------+---------------+---------------+------*/
+static std::pair<Utf8String,Utf8String> parseFullECClassName(Utf8CP fullname)
+    {
+    Utf8CP dot = strchr(fullname, '.');
+    if (nullptr == dot)
+        return std::make_pair("","");
+    return std::make_pair(Utf8String(fullname,dot), Utf8String(dot+1));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      10/15
++---------------+---------------+---------------+---------------+---------------+------*/
+static ECN::ECClassCP getECClassByFullName(DgnDbR db, Utf8StringCR fullname)
+    {
+    Utf8String ns, cls;
+    std::tie(ns, cls) = parseFullECClassName(fullname.c_str());
+    return db.Schemas().GetECClass(ns.c_str(), cls.c_str());
+    }
+
 //=======================================================================================
 // Base for helper classes that assist in making harvested solutions persistent
 //=======================================================================================
@@ -363,7 +384,7 @@ ComponentDefPtr ComponentDef::From(DgnDbStatus* statusOut, DgnDbR db, ECN::ECCla
         return nullptr;
         }
 
-    Utf8String modelName = cdef->GetCaValueString(*ca, CDEF_CA_MODEL);
+    Utf8String modelName = cdef->GetModelName();
     if (!modelName.empty() && !db.Models().QueryModelId(DgnModel::CreateModelCode(modelName)).IsValid())
         {
         delete cdef;
@@ -372,6 +393,17 @@ ComponentDefPtr ComponentDef::From(DgnDbStatus* statusOut, DgnDbR db, ECN::ECCla
         }
 
     return cdef;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+ComponentDefPtr ComponentDef::FromECSqlName(DgnDbStatus* statusOut, DgnDbR db, Utf8StringCR ecsqlClassName)
+    {
+    auto cdefclass = getECClassByFullName(db, ecsqlClassName);
+    if (nullptr == cdefclass)
+        return nullptr;
+    return From(nullptr, db, *cdefclass);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -391,7 +423,7 @@ ComponentDef::~ComponentDef()
 Utf8String ComponentDef::GetCaValueString(ECN::IECInstanceCR ca, Utf8CP propName)
     {
     ECN::ECValue v;
-    if (ECN::ECObjectsStatus::Success != ca.GetValue(v, propName))
+    if (ECN::ECObjectsStatus::Success != ca.GetValue(v, propName) || v.IsNull())
         return "";
     return v.ToString();
     }
@@ -430,7 +462,7 @@ DgnCategoryId ComponentDef::QueryCategoryId() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ComponentDef::UsesTemporaryModel() const
     {
-    return GetCaValueString(*m_ca, CDEF_CA_MODEL).empty();
+    return GetModelName().empty();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -454,6 +486,11 @@ Utf8String ComponentDef::GetGeneratedName() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String ComponentDef::GetModelName() const {return GetCaValueString(*m_ca, CDEF_CA_MODEL);}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      12/15
++---------------+---------------+---------------+---------------+---------------+------*/
 ComponentModelR ComponentDef::GetModel() 
     {
     if (m_model.IsValid())
@@ -461,7 +498,7 @@ ComponentModelR ComponentDef::GetModel()
 
     DgnModelId modelId;
         
-    Utf8String modelName = GetCaValueString(*m_ca, CDEF_CA_MODEL);
+    Utf8String modelName = GetModelName();
     if (!modelName.empty())
         {
         DgnModel::Code modelCode = DgnModel::CreateModelCode(modelName);
@@ -649,6 +686,19 @@ ECN::IECInstancePtr ComponentDef::GetParameters(DgnElementCR el)
     return selector.GetInstance();
     }
 
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+ComponentDef::ParameterVariesPer ComponentDef::GetVariationScope(ECN::ECPropertyCR prop)
+    {
+    auto ca = GetPropSpecCA(prop);
+    if (!ca.IsValid())
+        return ParameterVariesPer::Instance;
+
+    return ComponentDef::GetCaValueString(*ca, "ParameterVariesPer").EqualsI("Variation")? ParameterVariesPer::Variation: ParameterVariesPer::Instance;
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -661,12 +711,8 @@ bool ComponentDef::HaveEqualParameters(ECN::IECInstanceCR lhs, ECN::IECInstanceC
         if (prop->GetName().Equals("ECInstanceId"))
             continue;
 
-        if (compareOnlyInstanceParameters)
-            {
-            auto ca = GetPropSpecCA(*prop);
-            if (ca.IsValid() && ComponentDef::GetCaValueString(*ca, "VariesPer").EqualsI("Type"))
-                continue;
-            }
+        if (compareOnlyInstanceParameters && (ParameterVariesPer::Instance != GetVariationScope(*prop)))
+            continue;
 
         ECValue l, r;
         lhs.GetValue(l, prop->GetName().c_str());
@@ -692,8 +738,7 @@ void ComponentDef::CopyInstanceParameters(ECN::IECInstanceR target, ECN::IECInst
         }
     for (auto const& prop : source.GetClass().GetProperties())
         {
-        auto ca = GetPropSpecCA(*prop);
-        if (ca.IsValid() && ComponentDef::GetCaValueString(*ca, "VariesPer").EqualsI("Type"))
+        if (ParameterVariesPer::Instance != GetVariationScope(*prop))
             continue;
 
         ECValue v;
@@ -742,25 +787,25 @@ ECN::ECSchemaPtr ComponentDefCreator::ImportSchema(DgnDbR db, ECN::ECSchemaCR sc
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-DgnDbStatus ComponentDef::ImportComponentDef(DgnDbR destDb, DgnImportContext& context, bool importSchema, bool importCategory)
+DgnDbStatus ComponentDef::ImportComponentDef(DgnImportContext& context, bool importSchema, bool importCategory)
     {
     if (importSchema)
         {
         ECN::ECObjectsStatus ecstatus = ECN::ECObjectsStatus::Success;
-        importECSchema(ecstatus, destDb, GetECClass().GetSchema());
+        importECSchema(ecstatus, context.GetDestinationDb(), GetECClass().GetSchema());
         if (ECN::ECObjectsStatus::Success != ecstatus && ECN::ECObjectsStatus::DuplicateSchema != ecstatus)
             return DgnDbStatus::BadSchema;
         }
 
     if (importCategory)
         {
-        if (!DgnCategory::QueryCategoryId(GetCategoryName(), destDb).IsValid())
+        if (!DgnCategory::QueryCategoryId(GetCategoryName(), context.GetDestinationDb()).IsValid())
             {
             auto sourceCat = DgnCategory::QueryCategory(GetCategoryName(), GetDgnDb());
             if (sourceCat.IsValid())
                 {
                 ElementImporter importer(context);
-                importer.ImportElement(nullptr, destDb.GetDictionaryModel(), *sourceCat);
+                importer.ImportElement(nullptr, context.GetDestinationDb().GetDictionaryModel(), *sourceCat);
                 }
             }
         }
@@ -1162,14 +1207,14 @@ ECN::ECClassCP ComponentDefCreator::GenerateECClass()
     for (auto const& propSpec: m_propSpecs)
         {
         ECN::PrimitiveECPropertyP ecprop;
-        ECSUCCESS(ecclass->CreatePrimitiveProperty(ecprop, propSpec.name));
+        ECSUCCESS(ecclass->CreatePrimitiveProperty(ecprop, propSpec.m_name));
         
-        ecprop->SetType(propSpec.type);
+        ecprop->SetType(propSpec.m_type);
 
-        if (propSpec.isTypeParam)
+        if (propSpec.m_variesPer != ComponentDef::ParameterVariesPer::Instance)
             {
             auto ca = CreatePropSpecCA();
-            ca->SetValue("VariesPer", ECN::ECValue("Type"));
+            ca->SetValue("ParameterVariesPer", ECN::ECValue("Variation"));
             ecprop->SetCustomAttribute(*ca);
             }
         }
