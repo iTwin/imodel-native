@@ -2425,11 +2425,11 @@ TEST_F(JoinedTableECDbMapStrategyTests, MultiInheritence1)
     ASSERT_EQ(stmt.Step(), BE_SQLITE_DONE);
     stmt.Finalize();
 
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(db,SqlPrintfString("INSERT INTO dgn.IFaceHasBody(SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId) VALUES(%d,%d,%d,%d)", 1, gooId, 4, bodyId).GetUtf8CP()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(db,SqlPrintfString("INSERT INTO dgn.IFaceHasBody(SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId) VALUES(%d,%lld,%d,%lld)", 1, gooId, 4, bodyId).GetUtf8CP()));
     ASSERT_EQ(stmt.Step(), BE_SQLITE_DONE);
     stmt.Finalize();
 
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(db, SqlPrintfString("INSERT INTO dgn.IFaceHasBody(SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId) VALUES(%d,%d,%d,%d)", 2, booId, 5, bodyId).GetUtf8CP()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(db, SqlPrintfString("INSERT INTO dgn.IFaceHasBody(SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId) VALUES(%d,%lld,%d,%lld)", 2, booId, 5, bodyId).GetUtf8CP()));
     ASSERT_EQ(stmt.Step(), BE_SQLITE_DONE);
     stmt.Finalize();
 
