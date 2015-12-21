@@ -270,6 +270,9 @@ DgnDbStatus DgnDomain::ImportSchema(DgnDbR db, BeFileNameCR schemaFile) const
     if (BentleyStatus::SUCCESS != db.Schemas().ImportECSchemas(contextPtr->GetCache()))
         return DgnDbStatus::BadSchema;
 
+    if (BentleyStatus::SUCCESS != db.Schemas().CreateECClassViewsInDb())
+        return DgnDbStatus::WriteError;
+
     db.Domains().SyncWithSchemas();
     _OnSchemaImported(db); // notify subclasses so domain objects (like categories) can be created
     return DgnDbStatus::Success;
