@@ -18,7 +18,7 @@ struct GeometricModel;
 //=======================================================================================
 struct ModelSolverDef
     {
-    friend struct GeometricModel;
+    friend struct ComponentModel;
     friend struct CreateParams;
 
     //========================================================================================
@@ -110,6 +110,8 @@ struct ModelSolverDef
 
         bvector<Parameter>::iterator begin() {return m_parameters.begin();}
         bvector<Parameter>::iterator end() {return m_parameters.end();}
+
+        size_t size() const {return m_parameters.size();}
         };
 
     private:
@@ -135,7 +137,7 @@ struct ModelSolverDef
     //! @param parameters   The parameters to be passed to the solver
     DGNPLATFORM_EXPORT ModelSolverDef(Type type, Utf8CP identifier, bvector<Parameter> const& parameters);
 
-    DGNPLATFORM_EXPORT void Solve(GeometricModel&);
+    DGNPLATFORM_EXPORT void Solve(ComponentModel&);
 
     //! Test if this object specifies a solver
     bool IsValid() const {return Type::None != GetType();}

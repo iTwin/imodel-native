@@ -83,7 +83,7 @@ private:
 
     DgnDbStatus BindParams(BeSQLite::EC::ECSqlStatement& stmt);
 protected:
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _ExtractSelectParams(BeSQLite::EC::ECSqlStatement& statement, ECSqlClassParams const& selectParams) override;
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement& statement, ECSqlClassParams const& selectParams) override;
     DGNPLATFORM_EXPORT virtual DgnDbStatus _BindInsertParams(BeSQLite::EC::ECSqlStatement& stmt) override;
     DGNPLATFORM_EXPORT virtual DgnDbStatus _BindUpdateParams(BeSQLite::EC::ECSqlStatement& stmt) override;
     DGNPLATFORM_EXPORT virtual void _CopyFrom(DgnElementCR source) override;
@@ -101,7 +101,7 @@ public:
     //! Construct a new DgnMaterial with the specified parameters
     explicit DgnMaterial(CreateParams const& params) : T_Super(params), m_data(params.m_data) { }
 
-    DgnMaterialId GetMaterialId() const { return DgnMaterialId(GetElementId().GetValue()); } //!< Returns the ID of this material.
+    DgnMaterialId GetMaterialId() const { return DgnMaterialId(GetElementId().GetValue()); } //!< Returns the Id of this material.
     Utf8String GetPaletteName() const { return GetCode().GetNamespace(); } //!< Returns the palette name
     Utf8String GetMaterialName() const { return GetCode().GetValue(); } //!< Returns the material name
 

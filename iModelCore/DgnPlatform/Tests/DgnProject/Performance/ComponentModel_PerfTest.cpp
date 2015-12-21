@@ -59,7 +59,8 @@ static DgnDbStatus createPhysicalModel(PhysicalModelPtr& catalogModel, DgnDbR db
     {
     DgnClassId mclassId = DgnClassId(db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_PhysicalModel));
     catalogModel = new PhysicalModel(DgnModel3d::CreateParams(db, mclassId, code));
-    return catalogModel->Insert("", false);
+    catalogModel->SetInGuiList(false);
+    return catalogModel->Insert();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -212,10 +213,12 @@ void ComponentModelPerfTest::Developer_CreateCMs()
         var angles = new Bentley.Dgn.YawPitchRollAngles(0,0,0);\
         for (var i = 0; i < params.box_count; i++)\
             {\
+            var boxSize = new be.DPoint3d(params.H, params.W, params.D); \
+            var solid = be.DgnBox.CreateCenteredBox(new be.DPoint3d(0,0,0), boxSize, true); \
             var element = model.CreateElement('dgn.PhysicalElement', options.Category);\
             var origin = new Bentley.Dgn.DPoint3d(i,i,i);\
             var builder = new Bentley.Dgn.ElementGeometryBuilder(element, origin, angles); \
-            builder.AppendBox(params.H, params.W, params.D); \
+            builder.Append(solid); \
             builder.SetGeomStreamAndPlacement(element); \
             element.Insert(); \
             }\
@@ -356,7 +359,7 @@ void ComponentModelPerfTest::PlaceInstances(int ninstances, int boxCount, DPoint
     //  Place instances of this solution
     for (int i=0; i<ninstances; ++i)
         {
-        DgnElementCPtr instance = ComponentModel::MakeInstanceOfSolution(&status, *targetModel, *catalogItem);
+        DgnElementCPtr instance = ComponentModel::MakeInstance(&status, *targetModel, *catalogItem);
 
         PhysicalElementPtr pinst = instance->MakeCopy<PhysicalElement>();
         Placement3d placement;

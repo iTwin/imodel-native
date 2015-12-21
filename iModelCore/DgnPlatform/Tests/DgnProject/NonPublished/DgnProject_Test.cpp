@@ -9,6 +9,7 @@
 #include <Bentley/BeTimeUtilities.h>
 #include <DgnPlatform/DgnIModel.h>
 #include <DgnPlatform/ColorUtil.h>
+#include <DgnPlatform/DgnGeoCoord.h>
 
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
 USING_NAMESPACE_BENTLEY_EC
@@ -128,9 +129,9 @@ TEST (DgnDb, CheckStandardProperties)
     DgnModelPtr defaultModel = project->Models().GetModel(project->Models().QueryFirstModelId());
 
     //  Use ModelInfo as an alt. way to get at some of the same property data
-    DgnModel::Properties const& minfo = defaultModel->GetProperties();
-    ASSERT_TRUE( minfo.GetMasterUnits().GetBase() == UnitBase::Meter );
-    ASSERT_TRUE( minfo.GetSubUnits().GetBase() == UnitBase::Meter );
+    GeometricModel::DisplayInfo const& displayInfo = defaultModel->ToGeometricModel()->GetDisplayInfo();
+    ASSERT_TRUE(displayInfo.GetMasterUnits().GetBase() == UnitBase::Meter);
+    ASSERT_TRUE(displayInfo.GetSubUnits().GetBase() == UnitBase::Meter);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -336,10 +337,11 @@ TEST(DgnDb, GetCoordinateSystemProperties)
     //Open project
     DgnDbPtr dgnProj;
     openProject(dgnProj, fullFileName, BeSQLite::Db::OpenMode::Readonly);
-    double azmth = dgnProj->Units().GetAzimuth();
-    double azmthExpected = 178.2912;
+    DgnGCS* dgnGCS = dgnProj->Units().GetDgnGCS();
+    double azimuth = (dgnGCS != nullptr) ? dgnGCS->GetAzimuth() : 0.0;
+    double azimuthExpected = 178.2912;
     double eps = 0.0001;
-    EXPECT_TRUE(fabs(azmthExpected - azmth) < eps )<<"Expected diffrent azimuth ";
+    EXPECT_TRUE(fabs(azimuthExpected - azimuth) < eps) << "Expected different azimuth ";
     GeoPoint gorigin;
     dgnProj->Units().LatLongFromXyz(gorigin, DPoint3d::FromZero());
     double const latitudeExpected = 42.3413;

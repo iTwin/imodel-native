@@ -69,7 +69,7 @@ protected:
     virtual Dgn::DgnDbStatus _UpdateInDb() override;
     virtual Dgn::DgnDbStatus _DeleteInDb() const override;
 
-    virtual Dgn::DgnDbStatus _ExtractSelectParams(BeSQLite::EC::ECSqlStatement& statement, Dgn::ECSqlClassParams const& selectParams) override;
+    virtual Dgn::DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement& statement, Dgn::ECSqlClassParams const& selectParams) override;
     virtual Dgn::DgnDbStatus _BindInsertParams(BeSQLite::EC::ECSqlStatement& stmt) override;
     virtual Dgn::DgnDbStatus _BindUpdateParams(BeSQLite::EC::ECSqlStatement& stmt) override;
     virtual void _CopyFrom(Dgn::DgnElementCR el) override;
@@ -197,6 +197,30 @@ typedef TestRequirement const& TestRequirementCR;
 struct TestRequirementHandler : Dgn::dgn_ElementHandler::Element
 {
     ELEMENTHANDLER_DECLARE_MEMBERS(DPTEST_TEST_REQUIREMENT_CLASS_NAME, TestRequirement, TestRequirementHandler, Dgn::dgn_ElementHandler::Element, )
+};
+
+//=======================================================================================
+//! Make sure GeometricElement2d can be introduced at an arbitrary point in the class hierarchy
+// @bsiclass                                                     Shaun.Sewall    12/15
+//=======================================================================================
+struct TestDefinition2d : Dgn::GeometricElement2d<Dgn::DefinitionElement>
+{
+    DEFINE_T_SUPER(Dgn::GeometricElement2d<Dgn::DefinitionElement>)
+  
+protected:
+    explicit TestDefinition2d(CreateParams const& params) : T_Super(params) {}
+};
+
+//=======================================================================================
+//! Make sure GeometricElement3d can be introduced at an arbitrary point in the class hierarchy
+// @bsiclass                                                     Shaun.Sewall    12/15
+//=======================================================================================
+struct TestDefinition3d : Dgn::GeometricElement3d<Dgn::DefinitionElement>
+{
+    DEFINE_T_SUPER(Dgn::GeometricElement3d<Dgn::DefinitionElement>)
+  
+protected:
+    explicit TestDefinition3d(CreateParams const& params) : T_Super(params) {}
 };
 
 //=======================================================================================

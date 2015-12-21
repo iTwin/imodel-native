@@ -25,6 +25,7 @@
 #ifdef WIP_COMPONENT_MODEL // *** Pending redesign
 #define DGN_CLASSNAME_ComponentSolution     "ComponentSolution"
 #endif
+#define DGN_CLASSNAME_DefinitionModel       "DefinitionModel"
 #define DGN_CLASSNAME_DictionaryElement     "DictionaryElement"
 #define DGN_CLASSNAME_DictionaryModel       "DictionaryModel"
 #define DGN_CLASSNAME_AnnotationElement     "AnnotationElement"
@@ -35,9 +36,9 @@
 #define DGN_CLASSNAME_ElementDescription    "ElementDescription"
 #define DGN_CLASSNAME_ElementExternalKey    "ElementExternalKey"
 #define DGN_CLASSNAME_ElementGeom           "ElementGeom"
-#define DGN_CLASSNAME_ElementGroup          "ElementGroup" // WIP: obsolete, use IElementGroupOf instead
 #define DGN_CLASSNAME_ElementMultiAspect    "ElementMultiAspect"
 #define DGN_CLASSNAME_GeomPart              "GeomPart"
+#define DGN_CLASSNAME_LineStyle             "LineStyle"
 #define DGN_CLASSNAME_Link                  "Link"
 #define DGN_CLASSNAME_LocalAuthority        "LocalAuthority"
 #define DGN_CLASSNAME_Model                 "Model"
@@ -48,11 +49,11 @@
 #define DGN_CLASSNAME_PhysicalModel         "PhysicalModel"
 #define DGN_CLASSNAME_PhysicalView          "PhysicalView"
 #define DGN_CLASSNAME_PlanarPhysicalModel   "PlanarPhysicalModel"
-#define DGN_CLASSNAME_ResourceModel         "ResourceModel"
 #define DGN_CLASSNAME_SectionDrawingModel   "SectionDrawingModel"
 #define DGN_CLASSNAME_SheetElement          "SheetElement"
 #define DGN_CLASSNAME_SheetModel            "SheetModel"
-#define DGN_CLASSNAME_Style                 "Style"
+#define DGN_CLASSNAME_SpatialElement        "SpatialElement"
+#define DGN_CLASSNAME_SpatialGroupElement   "SpatialGroupElement"
 #define DGN_CLASSNAME_SystemElement         "SystemElement"
 #define DGN_CLASSNAME_SystemModel           "SystemModel"
 #define DGN_CLASSNAME_TextAnnotationSeed    "TextAnnotationSeed"
@@ -76,7 +77,6 @@
 #define DGN_RELNAME_SolutionOfComponent         "SolutionOfComponent"
 #define DGN_RELNAME_InstantiationOfTemplate     "InstantiationOfTemplate"
 #define DGN_RELNAME_ElementHasLinks             "ElementHasLinks"
-#define DGN_RELNAME_ElementUsesStyles           "ElementUsesStyles"
 #define DGN_RELNAME_ModelDrivesModel            "ModelDrivesModel"
 
 #include <DgnPlatform/DgnProperties.h>
@@ -223,7 +223,7 @@ public:
         DgnModelId          m_id;
         DgnClassId          m_classId;
         AuthorityIssuedCode m_code;
-        Utf8String          m_description;
+        Utf8String          m_label;
         bool                m_inGuiList;
 
     public:
@@ -237,19 +237,18 @@ public:
             m_inGuiList = true;
             }
 
-        Utf8StringR GetDescriptionR() {return m_description;}
         void SetCode(AuthorityIssuedCode code) {m_code = code;}
-        void SetDescription(Utf8CP val) {m_description.AssignOrClear(val);}
-        void SetInGuiList(bool val)   {m_inGuiList = val;}
+        void SetLabel(Utf8CP label) { m_label.AssignOrClear(label); }
+        void SetInGuiList(bool inGuiList) { m_inGuiList = inGuiList; }
         void SetId(DgnModelId id) {m_id = id;}
         void SetClassId(DgnClassId classId) {m_classId = classId;}
         void SetModelType(DgnClassId classId) {m_classId = classId;}
 
-        DgnModelId GetId() const {return m_id;}
         AuthorityIssuedCode const& GetCode() const {return m_code;}
-        Utf8CP GetDescription() const {return m_description.c_str();}
+        Utf8CP GetLabel() const { return m_label.c_str(); }
+        bool GetInGuiList() const { return m_inGuiList; }
+        DgnModelId GetId() const { return m_id; }
         DgnClassId GetClassId() const {return m_classId;}
-        bool InGuiList() const {return m_inGuiList;}
 
     }; // Model
 
@@ -272,9 +271,9 @@ public:
             DGNPLATFORM_EXPORT Utf8CP GetCodeValue() const;
             DGNPLATFORM_EXPORT Utf8CP GetCodeNamespace() const;
             DGNPLATFORM_EXPORT DgnAuthorityId GetCodeAuthorityId() const;
-            DGNPLATFORM_EXPORT Utf8CP GetDescription() const;
+            DGNPLATFORM_EXPORT Utf8CP GetLabel() const;
             DGNPLATFORM_EXPORT DgnClassId GetClassId() const;
-            DGNPLATFORM_EXPORT bool InGuiList() const;
+            DGNPLATFORM_EXPORT bool GetInGuiList() const;
 
             Entry const& operator*() const {return *this;}
         };
@@ -629,7 +628,6 @@ struct DgnUnits : NonCopyableClass
 private:
     friend struct DgnDb;
     DgnDbR          m_dgndb;
-    double          m_azimuth;
     AxisAlignedBox3d m_extent;
     DPoint3d        m_globalOrigin;      //!< in meters
     mutable bool    m_hasCheckedForGCS;
@@ -672,12 +670,6 @@ public:
     //! @return this DgnDb's GCS or nullptr if this DgnDb is not geo-located
     DGNPLATFORM_EXPORT DgnGCS* GetDgnGCS() const;
 
-    //! Gets the azimuth angle (true north offset) of the global coordinate system of this DgnDb <em>if it has one</em>.
-    double GetAzimuth() const {return m_azimuth;}
-
-    //! Set the azimuth of the global coordinate system of this DgnDb.
-    void SetAzimuth(double azimuth) {m_azimuth = azimuth;}
-
     static double const OneMeter() {return 1.;}
     static double const OneKilometer() {return 1000. * OneMeter();}
     static double const OneMillimeter() {return OneMeter() / 1000.;}
@@ -703,7 +695,7 @@ public:
 };
 
 //=======================================================================================
-// Links are shared resources, referenced by elements. 
+// Links are shared definitions, referenced by elements. 
 //! @see DgnDb::Links
 // @bsiclass
 //=======================================================================================

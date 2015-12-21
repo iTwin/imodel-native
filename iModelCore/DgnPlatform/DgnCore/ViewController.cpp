@@ -8,6 +8,7 @@
 #include <DgnPlatformInternal.h>
 #include <Geom/eigensys3d.fdf>
 #include <DgnPlatform/DgnMarkupProject.h>
+#include <DgnPlatform/DgnGeoCoord.h>
 
 static Utf8CP VIEW_SETTING_Area2d                = "area2d";
 static Utf8CP VIEW_SETTING_BackgroundColor       = "bgColor";
@@ -170,7 +171,7 @@ void ViewController::_ChangeCategoryDisplay(DgnCategoryId categoryId, bool onOff
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      08/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnModelP ViewController::_GetTargetModel() const {return m_dgndb.Models().GetModel(m_targetModelId).get();}
+GeometricModelP ViewController::_GetTargetModel() const { return m_dgndb.Models().Get<GeometricModel>(m_targetModelId).get(); }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/12
@@ -866,7 +867,7 @@ void PhysicalViewController::TransformBy(TransformCR trans)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus PhysicalViewController::SetTargetModel(DgnModelP target)
+BentleyStatus PhysicalViewController::SetTargetModel(GeometricModelP target)
     {
     if (!m_viewedModels.Contains(target->GetModelId()))
         return  ERROR;
@@ -1104,13 +1105,14 @@ void ViewController::ResetDeviceOrientation()
     }
 
 static DVec3d s_defaultForward, s_defaultUp;
+static UiOrientation s_lastUi;
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   MattGooding     11/13
 //---------------------------------------------------------------------------------------
 bool ViewController::OnOrientationEvent (RotMatrixCR matrix, OrientationMode mode, UiOrientation ui, uint32_t nEventsSinceEnabled)
     {
-    if (!m_defaultDeviceOrientationValid)
+    if (!m_defaultDeviceOrientationValid || s_lastUi != ui)
         {
         if (nEventsSinceEnabled < 2)
             {
@@ -1124,9 +1126,80 @@ bool ViewController::OnOrientationEvent (RotMatrixCR matrix, OrientationMode mod
         m_defaultDeviceOrientationValid = true;
         s_defaultUp = GetYVector();
         s_defaultForward = GetZVector();
+        s_lastUi = ui;
         }
 
     return _OnOrientationEvent(matrix, mode, ui);
+    }
+
+// Gyro vector convention:
+// gyrospace X,Y,Z are (respectively) DOWN, RIGHT, and TOWARDS THE EYE.
+// (gyrospace vectors are in the absolute system of the device.  But it is not important what that is -- just so they are to the same space and their row versus column usage is clarified by the gyroByRow parameter.
+//
+// @bsimethod                                                   Earlin.Lutz     12/2015
+//
+void ApplyGyroChangeToViewingVectors 
+(
+UiOrientation ui,
+RotMatrixCR gyro0,      //!< [in] first gyro -- corresponds to forward0, up0.   Maps screen to gyrospace
+RotMatrixCR gyro1,      //!< [in] second gyro.  Maps screen to gyrospace
+DVec3dCR forward0,      //!< [in] model coordinates forward vector when gyro0 was recorded
+DVec3dCR up0,           //!< [in] model coordinates up vector when gyro0 was recorded
+DVec3dR forward1,       //!< [out] model coordinates up vector for gyro2
+DVec3dR up1             //!< [out] model coordinates up vector for gyro1
+)
+    {
+    RotMatrix gyroToBSIColumnShuffler;
+    
+    if (ui == UiOrientation::LandscapeLeft) 
+        gyroToBSIColumnShuffler = RotMatrix::FromRowValues
+            (
+            0,-1,0,         //  negative X becomes Y
+            1,0,0,          //  Y becomes X
+            0,0,1           //  Z remains Z
+            );
+    else if (ui == UiOrientation::LandscapeRight) 
+        gyroToBSIColumnShuffler = RotMatrix::FromRowValues
+            (
+            0,1,0,          //  X becomes Y
+            -1,0,0,         //  negative Y becomes X
+            0,0,1           //  Z remains Z
+            );
+    else if (ui == UiOrientation::Portrait) 
+        gyroToBSIColumnShuffler = RotMatrix::FromRowValues
+            (
+            1,0,0,
+            0,1,0,
+            0,0,1
+            );
+    else
+        {
+        BeAssert (ui == UiOrientation::PortraitUpsideDown);
+        gyroToBSIColumnShuffler = RotMatrix::FromRowValues
+            (
+            -1,0,0,
+            0,-1,0,
+            0,0,1
+            );
+        }
+
+    RotMatrix H0, H1;
+    H0.InitProduct (gyro0, gyroToBSIColumnShuffler);
+    H1.InitProduct (gyro1, gyroToBSIColumnShuffler);
+    RotMatrix H1T;
+    H1T.TransposeOf (H1);
+    RotMatrix screenToScreenMotion;
+    screenToScreenMotion.InitProduct (H1T, H0);
+    DVec3d right0 = DVec3d::FromCrossProduct (up0, forward0);
+    RotMatrix screenToModel = RotMatrix::FromColumnVectors (right0, up0, forward0);
+    RotMatrix modelToScreen;
+    modelToScreen.TransposeOf (screenToModel);
+    RotMatrix modelToModel;
+
+    screenToScreenMotion.Transpose ();
+    modelToModel.InitProduct (screenToModel, screenToScreenMotion, modelToScreen);
+    modelToModel.Multiply (forward1, forward0);
+    modelToModel.Multiply (up1, up0);
     }
 
 //---------------------------------------------------------------------------------------
@@ -1141,17 +1214,24 @@ bool PhysicalViewController::ViewVectorsFromOrientation(DVec3dR forward, DVec3dR
     switch(mode)
         {
         case OrientationMode::CompassHeading:
-            azimuthCorrection = msGeomConst_radiansPerDegree *(90.0 + m_dgndb.Units().GetAzimuth());
+            {
+            DgnGCS* dgnGcs = m_dgndb.Units().GetDgnGCS();
+            double azimuth = (dgnGcs != nullptr) ? dgnGcs->GetAzimuth() : 0.0;
+            azimuthCorrection = msGeomConst_radiansPerDegree *(90.0 + azimuth);
             forward.RotateXY(azimuthCorrection);
             break;
+            }
         case OrientationMode::IgnoreHeading:
             forward.x = currForward.x;
             forward.y = currForward.y;
             break;
         case OrientationMode::RelativeHeading:
-            forward.x = s_defaultForward.x +(orientation.form3d[0][2] - m_defaultDeviceOrientation.form3d[0][2]);
-            forward.y = s_defaultForward.y +(orientation.form3d[1][2] - m_defaultDeviceOrientation.form3d[1][2]);
+            {
+            //  orientation is arranged in columns.  The axis from the home button to other end of tablet is Y.  Z is out of the screen.  X is Y cross Z.
+            //  Therefore, when the UiOrientation is Portrait, orientation Y is up and orientation X points to the right.
+            ApplyGyroChangeToViewingVectors (ui, m_defaultDeviceOrientation, orientation, s_defaultForward, s_defaultUp, forward, up);
             break;
+            }
         }
     forward.Normalize();
 

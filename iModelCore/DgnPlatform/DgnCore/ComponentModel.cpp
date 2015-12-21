@@ -10,6 +10,8 @@
 
 static DgnDbStatus deleteAllSolutionsOfComponentRelationships(DgnDbR db, DgnModelId cmid);
 
+#define COMPONENT_MODEL_PROP_Solver "Solver"
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -24,17 +26,15 @@ static std::pair<Utf8String,Utf8String> parseFullECClassName(Utf8CP fullname)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-ComponentModel::CreateParams::CreateParams(DgnDbR dgndb, Utf8StringCR name, Utf8StringCR iclass, Utf8StringCR icat, Utf8String iauthority, ModelSolverDef const& solver)
-    :
-    T_Super(dgndb, DgnClassId(dgndb.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_ComponentModel)), CreateModelCode(name), Properties(), solver),
-    m_compProps(iclass, icat, iauthority)
+ComponentModel::CreateParams::CreateParams(DgnDbR dgndb, Utf8StringCR name, Utf8StringCR iclass, Utf8StringCR icat, Utf8String iauthority, ModelSolverDef const& solver) :
+    T_Super(dgndb, DgnClassId(dgndb.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_ComponentModel)), CreateModelCode(name)), m_compProps(iclass, icat, iauthority), m_solver(solver)
     {
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-ComponentModel::ComponentModel(CreateParams const& params) : T_Super(params), m_compProps(params.m_compProps)
+ComponentModel::ComponentModel(CreateParams const& params) : T_Super(params), m_compProps(params.m_compProps), m_solver(params.m_solver)
     {
     }
 
@@ -155,8 +155,21 @@ Utf8String ComponentModel::GetItemCodeAuthority() const {return m_compProps.m_it
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ComponentModel::_ToPropertiesJson(Json::Value& val) const {m_compProps.ToJson(val);}
-void ComponentModel::_FromPropertiesJson(Json::Value const& val) {m_compProps.FromJson(val);}
+void ComponentModel::_WriteJsonProperties(Json::Value& val) const 
+    { 
+    m_compProps.ToJson(val["ComponentModel"]);
+    T_Super::_WriteJsonProperties(val);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      10/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void ComponentModel::_ReadJsonProperties(Json::Value const& val) 
+    {
+    BeAssert(val.isMember("ComponentModel"));
+    m_compProps.FromJson(val["ComponentModel"]);
+    T_Super::_ReadJsonProperties(val);
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      10/15
@@ -229,7 +242,7 @@ static DgnDbStatus deleteAllSolutionsOfComponentRelationships(DgnDbR db, DgnMode
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Shaun.Sewall                    10/2015
 //---------------------------------------------------------------------------------------
-static BeSQLite::DbResult queryComponentModelFromSolution(DgnModelId& mid, ModelSolverDef::ParameterSet& params, DgnDbR db, DgnElementId itemId)
+static BeSQLite::DbResult querySolutionOfComponentTargetAndParameters(DgnModelId& mid, ModelSolverDef::ParameterSet& params, DgnDbR db, DgnElementId itemId)
     {
     CachedECSqlStatementPtr statement = db.GetPreparedECSqlStatement(
         "SELECT TargetECInstanceId, Parameters FROM " DGN_SCHEMA(DGN_RELNAME_SolutionOfComponent) " WHERE SourceECInstanceId=? LIMIT 1");
@@ -271,7 +284,7 @@ static DgnDbStatus createInstanceOfTemplateRelationship(DgnElementCR inst, DgnEl
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Shaun.Sewall                    10/2015
 //---------------------------------------------------------------------------------------
-static DgnElementId queryTemplateItemFromInstance(DgnDbR db, DgnElementId instanceId)
+static DgnElementId queryInstantiationOfTemplateTarget(DgnDbR db, DgnElementId instanceId)
     {
     CachedECSqlStatementPtr statement = db.GetPreparedECSqlStatement(
         "SELECT TargetECInstanceId FROM " DGN_SCHEMA(DGN_RELNAME_InstantiationOfTemplate) " WHERE SourceECInstanceId=? LIMIT 1");
@@ -355,7 +368,7 @@ DgnDbStatus ComponentModel::Importer::ImportSolutions(DgnModelR destCatalogModel
         #ifndef NDEBUG
         DgnModelId qmid;
         ModelSolverDef::ParameterSet qparams;
-        BeAssert(BE_SQLITE_OK == queryComponentModelFromSolution(qmid, qparams, GetDestinationDb(), destCatalogItem->GetElementId()) 
+        BeAssert(BE_SQLITE_OK == querySolutionOfComponentTargetAndParameters(qmid, qparams, GetDestinationDb(), destCatalogItem->GetElementId()) 
                     && qmid == m_destComponent->GetModelId() 
                     && qparams == params);
         #endif
@@ -516,7 +529,7 @@ DgnDbStatus ComponentModel::Solve(ModelSolverDef::ParameterSet const& parameters
 +---------------+---------------+---------------+---------------+---------------+------*/
 static bool isInstanceOfComponent(DgnElementCR el)
     {
-    return queryTemplateItemFromInstance(el.GetDgnDb(), el.GetElementId()).IsValid();
+    return queryInstantiationOfTemplateTarget(el.GetDgnDb(), el.GetElementId()).IsValid();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -524,7 +537,7 @@ static bool isInstanceOfComponent(DgnElementCR el)
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnElementCPtr ComponentModel::QuerySolutionFromInstance(DgnElementCR instance)
     {
-    DgnElementId capturedSolutionElementId = queryTemplateItemFromInstance(instance.GetDgnDb(), instance.GetElementId());
+    DgnElementId capturedSolutionElementId = queryInstantiationOfTemplateTarget(instance.GetDgnDb(), instance.GetElementId());
     return instance.GetDgnDb().Elements().Get<DgnElement>(capturedSolutionElementId);
     }
 
@@ -664,11 +677,17 @@ DgnElementPtr ComponentModel::CreateCapturedSolutionElement(DgnDbStatus& status,
     GeometrySource* geom = capturedSolutionElement->ToGeometrySourceP();
     if (nullptr == geom)
         {
-        BeAssert(false && "*** TBD: support for non-geometric components");
-        return nullptr;
+        BeAssert(false && "*** TBD: support for non-geometric components. Harvest aspects?");
+        return capturedSolutionElement;
         }
 
     geom->SetCategoryId(m_compProps.QueryItemCategoryId(db));
+
+    //GeometrySource3d* geom3d = capturedSolutionElement->ToGeometrySource3dP();
+    //if (nullptr != geom3d)
+    //    geom3d->SetPlacement(Placement3d(DPoint3d::FromZero(), YawPitchRollAngles(), ElementAlignedBox3d())); // element must have a placement
+    //else
+    //    capturedSolutionElement->ToGeometrySource2dP()->SetPlacement(Placement2d(DPoint2d::FromZero(), AngleInDegrees::FromDegrees(0.0), ElementAlignedBox2d()));
 
     //  The element's geometry is just a list of references to the GeomParts
     ElementGeometryBuilderPtr builder = ElementGeometryBuilder::Create(*geom);
@@ -680,6 +699,8 @@ DgnElementPtr ComponentModel::CreateCapturedSolutionElement(DgnDbStatus& status,
         }
 
     builder->SetGeomStreamAndPlacement(*geom);
+
+    // *** TBD: Other Aspects??
 
     return capturedSolutionElement;
     }
@@ -750,7 +771,7 @@ void ComponentModel::OnElementCopied(DgnElementCR outputElement, DgnElementCR so
 
     DgnModelId cmid;
     ModelSolverDef::ParameterSet prms;
-    if (BE_SQLITE_OK == queryComponentModelFromSolution(cmid, prms, db, sourceElement.GetElementId()))
+    if (BE_SQLITE_OK == querySolutionOfComponentTargetAndParameters(cmid, prms, db, sourceElement.GetElementId()))
         {
         ComponentModelPtr cm = db.Models().Get<ComponentModel>(cmid);
         if (!cm.IsValid())
@@ -767,7 +788,7 @@ void ComponentModel::OnElementCopied(DgnElementCR outputElement, DgnElementCR so
         return;
         }
 
-    DgnElementCPtr solutionElement = sourceElement.GetDgnDb().Elements().GetElement(queryTemplateItemFromInstance(db, sourceElement.GetElementId()));
+    DgnElementCPtr solutionElement = sourceElement.GetDgnDb().Elements().GetElement(queryInstantiationOfTemplateTarget(db, sourceElement.GetElementId()));
     if (solutionElement.IsValid())
         {
         //  When we copy an instance, we must connect to the solution from which the original was created. The copy is just another instance.
@@ -786,7 +807,7 @@ void ComponentModel::OnElementImported(DgnElementCR outputElement, DgnElementCR 
     //  Solutions must remap to their component models
     DgnModelId sourceComponentModelId;
     ModelSolverDef::ParameterSet sourceParameters;
-    queryComponentModelFromSolution(sourceComponentModelId, sourceParameters, sourceDb, sourceElement.GetElementId());
+    querySolutionOfComponentTargetAndParameters(sourceComponentModelId, sourceParameters, sourceDb, sourceElement.GetElementId());
     ComponentModelPtr sourceComponentModel = sourceDb.Models().Get<ComponentModel>(sourceComponentModelId);
     bool isSolution = false;
     if (sourceComponentModel.IsValid())
@@ -800,7 +821,7 @@ void ComponentModel::OnElementImported(DgnElementCR outputElement, DgnElementCR 
         }
 
     //  Instances must remap to their solutions
-    DgnElementCPtr sourceSolutionElement = sourceDb.Elements().GetElement(queryTemplateItemFromInstance(sourceDb, sourceElement.GetElementId()));
+    DgnElementCPtr sourceSolutionElement = sourceDb.Elements().GetElement(queryInstantiationOfTemplateTarget(sourceDb, sourceElement.GetElementId()));
     if (sourceSolutionElement.IsValid())
         {
         //  Look up the solution in the destination by its code
@@ -840,7 +861,7 @@ DgnElementCPtr ComponentModel::HarvestedSolutionInserter::_WriteSolution(DgnDbSt
     #ifndef NDEBUG
     DgnModelId qmid;
     ModelSolverDef::ParameterSet qparams;
-    BeAssert(BE_SQLITE_OK == queryComponentModelFromSolution(qmid, qparams, m_destModel.GetDgnDb(), storedPhysicalElem->GetElementId()) 
+    BeAssert(BE_SQLITE_OK == querySolutionOfComponentTargetAndParameters(qmid, qparams, m_destModel.GetDgnDb(), storedPhysicalElem->GetElementId()) 
                 && qmid == m_cm.GetModelId() 
                 && qparams == m_cm.GetSolver().GetParameters());
     #endif
@@ -864,7 +885,7 @@ DgnElementCPtr ComponentModel::HarvestedSingletonInserter::_WriteSolution(DgnDbS
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElementCPtr ComponentModel::MakeInstanceOfSolution(DgnDbStatus* statusOut, DgnModelR targetModel, DgnElementCR catalogItem, DgnElement::Code const& code)
+DgnElementCPtr ComponentModel::MakeInstance(DgnDbStatus* statusOut, DgnModelR targetModel, DgnElementCR catalogItem, DgnElement::Code const& code)
     {
     DgnDbStatus ALLOW_NULL_OUTPUT(status, statusOut);
     
@@ -879,7 +900,7 @@ DgnElementCPtr ComponentModel::MakeInstanceOfSolution(DgnDbStatus* statusOut, Dg
     // Look up the component model that generated the catalog item
     DgnModelId mid;
     ModelSolverDef::ParameterSet qparams;
-    if (BE_SQLITE_OK != queryComponentModelFromSolution(mid, qparams, db, catalogItem.GetElementId()))
+    if (BE_SQLITE_OK != querySolutionOfComponentTargetAndParameters(mid, qparams, db, catalogItem.GetElementId()))
         {
         status = DgnDbStatus::BadArg;
         BeAssert(false && "input catalog item must be the solution of a componentmodel");
@@ -913,7 +934,7 @@ DgnElementCPtr ComponentModel::MakeInstanceOfSolution(DgnDbStatus* statusOut, Dg
     if (!inst.IsValid())
         return nullptr;
 
-    BeAssert(queryTemplateItemFromInstance(db, inst->GetElementId()) == catalogItem.GetElementId());
+    BeAssert(queryInstantiationOfTemplateTarget(db, inst->GetElementId()) == catalogItem.GetElementId());
 
     return inst;
     }
@@ -921,13 +942,13 @@ DgnElementCPtr ComponentModel::MakeInstanceOfSolution(DgnDbStatus* statusOut, Dg
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElementCPtr ComponentModel::MakeInstanceOfSolution(DgnDbStatus* statusOut, DgnModelR targetModel, Utf8StringCR capturedSolutionName, ModelSolverDef::ParameterSet const& params, DgnElement::Code const& code)
+DgnElementCPtr ComponentModel::MakeInstance(DgnDbStatus* statusOut, DgnModelR targetModel, Utf8StringCR capturedSolutionName, ModelSolverDef::ParameterSet const& params, DgnElement::Code const& code)
     {
     //  If this is an instance of an existing type, just make a copy of the type
     DgnElementCPtr typeElem;
     ModelSolverDef::ParameterSet typeParams;
     if ((DgnDbStatus::Success == QuerySolutionByName(typeElem, typeParams, capturedSolutionName)) && (params == typeParams))
-        return MakeInstanceOfSolution(statusOut, targetModel, *typeElem, code);
+        return MakeInstance(statusOut, targetModel, *typeElem, code);
     
     // Otherwise, capture a unique/singleton solution
     DgnDbStatus ALLOW_NULL_OUTPUT(status, statusOut);
@@ -943,7 +964,7 @@ DgnElementCPtr ComponentModel::MakeInstanceOfSolution(DgnDbStatus* statusOut, Dg
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus ComponentModel::QuerySolutionInfo(DgnModelId& cmid, ModelSolverDef::ParameterSet& params, DgnElementCR catalogItem)
     {
-    return (BE_SQLITE_OK == queryComponentModelFromSolution(cmid, params, catalogItem.GetDgnDb(), catalogItem.GetElementId()))? DgnDbStatus::Success: DgnDbStatus::NotFound;
+    return (BE_SQLITE_OK == querySolutionOfComponentTargetAndParameters(cmid, params, catalogItem.GetDgnDb(), catalogItem.GetElementId()))? DgnDbStatus::Success: DgnDbStatus::NotFound;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1006,4 +1027,100 @@ DgnDbStatus ComponentModel::QuerySolutionByParameters(DgnElementCPtr& ele, Model
             return DgnDbStatus::Success;
         }
     return DgnDbStatus::NotFound;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                 Ramanujam.Raman   12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus ComponentModel::BindInsertAndUpdateParams(ECSqlStatement& statement)
+    {
+    if (m_solver.IsValid())
+        statement.BindText(statement.GetParameterIndex(COMPONENT_MODEL_PROP_Solver), m_solver.ToJson().c_str(), IECSqlBinder::MakeCopy::Yes);
+    else
+        statement.BindNull(statement.GetParameterIndex(COMPONENT_MODEL_PROP_Solver));
+
+    return DgnDbStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                 Ramanujam.Raman   12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus ComponentModel::_BindInsertParams(ECSqlStatement& statement)
+    {
+    T_Super::_BindInsertParams(statement);
+    return BindInsertAndUpdateParams(statement);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                 Ramanujam.Raman   12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus ComponentModel::_BindUpdateParams(ECSqlStatement& statement)
+    {
+    T_Super::_BindUpdateParams(statement);
+    return BindInsertAndUpdateParams(statement);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                 Ramanujam.Raman   12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus ComponentModel::_ReadSelectParams(ECSqlStatement& statement, ECSqlClassParamsCR params)
+    {
+    DgnDbStatus status = T_Super::_ReadSelectParams(statement, params);
+    if (DgnDbStatus::Success != status)
+        return status;
+
+    int solverIndex = params.GetSelectIndex(COMPONENT_MODEL_PROP_Solver);
+    if (!statement.IsValueNull(solverIndex))
+        m_solver.FromJson(statement.GetValueText(solverIndex));
+
+    return DgnDbStatus::Success;
+    }
+	
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                 Ramanujam.Raman   12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void ComponentModel::_InitFrom(DgnModelCR other)
+    {
+    T_Super::_InitFrom(other);
+    ComponentModelCP otherCM = dynamic_cast<ComponentModelCP> (&other);
+    if (nullptr != otherCM)
+        m_solver = otherCM->m_solver;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnModelPtr ComponentModel::_CloneForImport(DgnDbStatus* stat, DgnImportContext& importer) const
+    {
+    DgnModelPtr clone = T_Super::_CloneForImport(stat, importer);
+    ComponentModelP cloneCM = clone.IsValid() ? dynamic_cast<ComponentModelP>(clone.get()) : nullptr;
+    if (nullptr != cloneCM)
+        cloneCM->m_solver.RelocateToDestinationDb(importer);
+
+    return clone;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      07/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void ComponentModel::_OnValidate()
+    {
+    m_solver.Solve(*this);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                 Ramanujam.Raman   12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void ComponentModel::GetSolverOptions(Json::Value& options)
+	{ 
+	_GetSolverOptions(options); 
+	}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                 Ramanujam.Raman   12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void dgn_ModelHandler::Component::_GetClassParams(ECSqlClassParamsR params)
+    {
+    T_Super::_GetClassParams(params);
+    params.Add(COMPONENT_MODEL_PROP_Solver, ECSqlClassParams::StatementType::All);
     }

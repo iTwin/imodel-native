@@ -67,7 +67,7 @@ private:  /* ctor */            AngleParser ();
 private:  /* ctor */            AngleParser (AngleParserCR other);
 private:  void                  Init ();
 
-public:   void                  InitModelSettings (DgnModelCR);
+public:   void                  InitModelSettings (GeometricModelCR);
 public: DGNPLATFORM_EXPORT  BentleyStatus   SetAngleModeFromLegacy (AngleFormatVals value);
 public: DGNPLATFORM_EXPORT  uint16_t        GetLegacyFormat () const;
 
@@ -76,7 +76,7 @@ public: static DGNPLATFORM_EXPORT  AngleParserPtr   Create ();
 
 //! Construct a parser with the settings as stored in the model.
 //! @param[in] model Initialize the parser from the settings in this model.
-public: static DGNPLATFORM_EXPORT AngleParserPtr    Create (DgnModelCR model);
+public: static DGNPLATFORM_EXPORT AngleParserPtr    Create(GeometricModelCR model);
 
 //! Construct a parser which is a duplicate of an existing parser.
 public: DGNPLATFORM_EXPORT  AngleParserPtr    Clone () const;
@@ -116,7 +116,7 @@ private: AngleParserPtr         m_angleParser;
 private: /* ctor */            DirectionParser ();
 private: /* ctor */            DirectionParser (DirectionParserCR other);
 private: void                  Init ();
-private: void                  InitModelSettings (DgnModelCR);
+private: void                  InitModelSettings(GeometricModelCR);
 
 private: int StringToDirection (double& dir, WCharCP inputString) const;
 
@@ -125,7 +125,7 @@ public: static DGNPLATFORM_EXPORT  DirectionParserPtr   Create ();
 
 //! Construct a parser with settings from a model.
 //! @param[in] model Initialize the parser from the settings in this model.
-public: static DGNPLATFORM_EXPORT  DirectionParserPtr   Create (DgnModelCR model);
+public: static DGNPLATFORM_EXPORT  DirectionParserPtr   Create(GeometricModelCR model);
 
 //! Construct a parser which is a duplicate of an existing parser.
 public: DGNPLATFORM_EXPORT  DirectionParserPtr    Clone () const;
@@ -189,7 +189,7 @@ private: /* ctor */             DistanceParser ();
 private: /* ctor */             DistanceParser (DistanceParserCR other);
 private: void                   Init ();
 
-public:  void                   InitModelSettings (DgnModelCR);
+public:  void                   InitModelSettings(GeometricModelCR);
 
 //! Parse a string into a distance value in uors.
 //! @param[out] out resulting distance in uors if successfully parsed.
@@ -203,7 +203,7 @@ public: static DGNPLATFORM_EXPORT  DistanceParserPtr Create ();
 
 //! Construct a parser with settings from a model.
 //! @param[in] model Initialize the parser from the settings in this model.
-public: static DGNPLATFORM_EXPORT  DistanceParserPtr Create (DgnModelCR model);
+public: static DGNPLATFORM_EXPORT  DistanceParserPtr Create(GeometricModelCR model);
 
 //! Construct a parser with settings from a viewport.  Gets the settings from the viewport's 
 //! target model and the scale from the viewport's ACS.
@@ -214,7 +214,7 @@ public: static DGNPLATFORM_EXPORT  DistanceParserPtr Create (DgnViewportR vp);
 //! The ACS provides the scale for the parser.
 //! @param[in] model Initialize the parser from the settings in this model.
 //! @param[in] acs   Initialize the scale from the settings in this Auxiliary Coordinate System.
-public: static DGNPLATFORM_EXPORT  DistanceParserPtr    Create (DgnModelCR model, IAuxCoordSysCR acs);
+public: static DGNPLATFORM_EXPORT  DistanceParserPtr    Create(GeometricModelCR model, IAuxCoordSysCR acs);
 
 //! Construct a parser which is a duplicate of an existing parser.
 public: DGNPLATFORM_EXPORT  DistanceParserPtr    Clone () const;
@@ -254,7 +254,7 @@ private: DistanceParserPtr m_distanceParser;
 private: /* ctor */             PointParser ();
 private: /* ctor */             PointParser (PointParserCR other);
 private: void                   Init ();
-private: void                   InitModelSettings (DgnModelCR);
+private: void                   InitModelSettings(GeometricModelCR);
 
 private:  BentleyStatus         StringToPoint (DPoint3dR out, Point3dP relativeFlags, WCharCP in);
 
@@ -270,7 +270,7 @@ public: static DGNPLATFORM_EXPORT  PointParserPtr     Create ();
 
 //! Construct a parser with settings from a model.
 //! @param[in] model Initialize the parser from the settings in this model.
-public: static DGNPLATFORM_EXPORT  PointParserPtr     Create (DgnModelCR model);
+public: static DGNPLATFORM_EXPORT  PointParserPtr     Create(GeometricModelCR model);
 
 //! Construct a parser with settings from a viewport.  Gets the settings from the viewport's 
 //! target model and the ACS from the viewport.
@@ -281,7 +281,7 @@ public: static DGNPLATFORM_EXPORT  PointParserPtr     Create (DgnViewportR vp);
 //! The ACS provides the scale for the parser.
 //! @param[in] model Initialize the parser from the settings in this model.
 //! @param[in] acs   Initialize the scale from the settings in this Auxiliary Coordinate System.
-public: static DGNPLATFORM_EXPORT  PointParserPtr     Create (DgnModelCR model, IAuxCoordSysCR acs);
+public: static DGNPLATFORM_EXPORT  PointParserPtr     Create(GeometricModelCR model, IAuxCoordSysCR acs);
 
 //! Construct a parser which is a duplicate of an existing parser.
 public: DGNPLATFORM_EXPORT  PointParserPtr    Clone () const;
@@ -322,7 +322,7 @@ protected: /* ctor */           AreaOrVolumeParser (AreaOrVolumeParserCR other);
 
 private: void                   Init ();
 
-public:  DGNPLATFORM_EXPORT void    InitModelSettings (DgnModelCR);
+public:  DGNPLATFORM_EXPORT void    InitModelSettings(GeometricModelCR);
 
 //! Parse a string into a distance value in uors.
 //! @param[out] out resulting distance in uors if successfully parsed.
@@ -362,7 +362,7 @@ public: static DGNPLATFORM_EXPORT  AreaParserPtr    Create ();
 
 //! Construct a parser with settings from a model.
 //! @param[in] model Initialize the parser from the settings in this model.
-public: static DGNPLATFORM_EXPORT  AreaParserPtr    Create (DgnModelCR model);
+public: static DGNPLATFORM_EXPORT  AreaParserPtr    Create(GeometricModelCR model);
 
 //! Construct a parser with settings from a viewport.  Gets the settings from the viewport's 
 //! target model and the scale from the viewport's ACS.
@@ -387,7 +387,7 @@ public: static DGNPLATFORM_EXPORT  VolumeParserPtr    Create ();
 
 //! Construct a parser with settings from a model.
 //! @param[in] model Initialize the parser from the settings in this model.
-public: static DGNPLATFORM_EXPORT  VolumeParserPtr    Create (DgnModelCR model);
+public: static DGNPLATFORM_EXPORT  VolumeParserPtr    Create(GeometricModelCR model);
 
 //! Construct a parser with settings from a viewport.  Gets the settings from the viewport's 
 //! target model and the scale from the viewport's ACS.

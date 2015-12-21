@@ -14,85 +14,104 @@
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
+
 //=======================================================================================
-// @bsiclass                                                    Eariln.Lutz     11/15
+// @bsiclass                                                    Eariln.Lutz     12/15
 //=======================================================================================
-struct JsDgnConeDetail: JsGeomWrapperBase <DgnConeDetail>
+struct JsSolidPrimitive : JsGeometry
+{
+private:
+ISolidPrimitivePtr m_solidPrimitive;
+// initialize with nullptr.   This should never be called -- maybe needed for compile/link?
+public:
+// hmm ...this class is not instantiable but typescript wrapperw want it to be so ...
+virtual JsSolidPrimitiveP Clone ();
+
+
+    JsSolidPrimitive (){}
+    JsSolidPrimitive (ISolidPrimitivePtr const &solidPrimitive) : m_solidPrimitive (solidPrimitive){}
+
+    double SolidPrimitiveType (){return (double)m_solidPrimitive->GetSolidPrimitiveType ();}
+    virtual ISolidPrimitivePtr GetISolidPrimitivePtr() override {return m_solidPrimitive;}
+};
+
+//=======================================================================================
+// @bsiclass                                                    Eariln.Lutz     12/15
+//=======================================================================================
+struct JsDgnCone : JsSolidPrimitive
 {
 public:
-    JsDgnConeDetail () {}
+JsDgnCone (ISolidPrimitivePtr const &solid) : JsSolidPrimitive (solid) {}
+virtual JsSolidPrimitiveP Clone () override {return new JsDgnCone (GetISolidPrimitivePtr ()->Clone ());}
+static JsDgnConeP CreateCircularCone (JsDPoint3dP pointA, JsDPoint3dP pointB, double radiusA, double radiusB, bool capped)
+    {
+    DgnConeDetail coneData (pointA->Get (), pointB->Get (), radiusA, radiusB, capped);
+    auto solid = ISolidPrimitive::CreateDgnCone (coneData);
+    return new JsDgnCone (solid);
+    }
 
-    JsDgnConeDetail (DgnConeDetailCR data)   { m_data = data;}
+};
 
-    static JsDgnConeDetailP CreateCircularCone (JsDPoint3dP pointA, JsDPoint3dP pointB, double radiusA, double radiusB, bool capped)
-        {
-        DgnConeDetail data (pointA->Get (), pointB->Get (), radiusA, radiusB, capped);
-        return new JsDgnConeDetail (data);
-        }
+//=======================================================================================
+// @bsiclass                                                    Eariln.Lutz     12/15
+//=======================================================================================
+struct JsDgnSphere: JsSolidPrimitive
+{
+
+public:
+JsDgnSphere (ISolidPrimitivePtr const &solid) : JsSolidPrimitive (solid) {}
+virtual JsSolidPrimitiveP Clone () override {return new JsDgnSphere (GetISolidPrimitivePtr ()->Clone ());}
+
+static JsDgnSphereP CreateSphere (JsDPoint3dP center, double radius)
+    {
+    DgnSphereDetail data (center->Get (), radius);
+    return new JsDgnSphere (ISolidPrimitive::CreateDgnSphere (data));
+    }
+
+};
+
+//=======================================================================================
+// @bsiclass                                                    Eariln.Lutz     12/15
+//=======================================================================================
+struct JsDgnTorusPipe: JsSolidPrimitive
+{
+public:
+JsDgnTorusPipe (ISolidPrimitivePtr const &solid) : JsSolidPrimitive (solid) {}
+virtual JsSolidPrimitiveP Clone () override {return new JsDgnTorusPipe (GetISolidPrimitivePtr ()->Clone ());}
+
+static JsDgnTorusPipeP CreateTorusPipe (
+        JsDPoint3dP center,
+        JsDVector3dP unitX,
+        JsDVector3dP unitY,
+        double majorRadius,
+        double minorRadius,
+        JsAngleP sweep,
+        bool capped
+        )
+    {
+    DgnTorusPipeDetail data (center->Get (),
+            unitX->Get (), unitY->Get (),
+            majorRadius, minorRadius,
+            sweep->GetRadians (),
+            capped
+            );
+    return new JsDgnTorusPipe (ISolidPrimitive::CreateDgnTorusPipe (data));
+    }
 
 };
 
 
 //=======================================================================================
-// @bsiclass                                                    Eariln.Lutz     11/15
+// @bsiclass                                                    Eariln.Lutz     12/15
 //=======================================================================================
-struct JsDgnSphereDetail: JsGeomWrapperBase <DgnSphereDetail>
+struct JsDgnBox: JsSolidPrimitive
 {
 public:
-    JsDgnSphereDetail () {}
+    JsDgnBox () {}
 
-    JsDgnSphereDetail (DgnSphereDetailCR data)   { m_data = data;}
-
-    static JsDgnSphereDetailP CreateSphere (JsDPoint3dP center, double radius)
-        {
-        DgnSphereDetail data (center->Get (), radius);
-        return new JsDgnSphereDetail (data);
-        }
-
-};
-
-//=======================================================================================
-// @bsiclass                                                    Eariln.Lutz     11/15
-//=======================================================================================
-struct JsDgnTorusPipeDetail: JsGeomWrapperBase <DgnTorusPipeDetail>
-{
-public:
-    JsDgnTorusPipeDetail () {}
-
-    JsDgnTorusPipeDetail (DgnTorusPipeDetailCR data)   { m_data = data;}
-
-    static JsDgnTorusPipeDetailP CreateTorusPipe (
-            JsDPoint3dP center,
-            JsDVector3dP unitX,
-            JsDVector3dP unitY,
-            double majorRadius,
-            double minorRadius,
-            JsAngleP sweep,
-            bool capped
-            )
-        {
-        DgnTorusPipeDetail data (center->Get (),
-                unitX->Get (), unitY->Get (),
-                majorRadius, minorRadius,
-                sweep->GetRadians (),
-                capped
-                );
-        return new JsDgnTorusPipeDetail (data);
-        }
-
-};
-
-//=======================================================================================
-// @bsiclass                                                    Eariln.Lutz     11/15
-//=======================================================================================
-struct JsDgnBoxDetail: JsGeomWrapperBase <DgnBoxDetail>
-{
-public:
-    JsDgnBoxDetail () {}
-
-    JsDgnBoxDetail (DgnBoxDetailCR data)   { m_data = data;}
-
-    static JsDgnBoxDetailP CreateBox (
+    JsDgnBox (ISolidPrimitivePtr const &solid) : JsSolidPrimitive (solid) {}
+    virtual JsSolidPrimitiveP Clone () override {return new JsDgnBox (GetISolidPrimitivePtr ()->Clone ());}
+    static JsDgnBoxP CreateBox (
             JsDPoint3dP baseOrigin,
             JsDPoint3dP topOrigin,
             JsDVector3dP unitX,
@@ -110,51 +129,105 @@ public:
                 topX, topY,
                 capped
                 );
-        return new JsDgnBoxDetail (data);
+        return new JsDgnBox (ISolidPrimitive::CreateDgnBox (data));
         }
-};
 
-struct JsSolidPrimitive : RefCountedBase
-{
-private:
-ISolidPrimitivePtr m_solidPrimitive;
-// initialize with nullptr.   This should never be called -- maybe needed for compile/link?
-
-public:
-    JsSolidPrimitive (){}
-    JsSolidPrimitive (ISolidPrimitivePtr const &solidPrimitive) : m_solidPrimitive (solidPrimitive){}
-
-    static JsSolidPrimitiveP CreateDgnCone (JsDgnConeDetailP detail)
-        {return new JsSolidPrimitive (ISolidPrimitive::CreateDgnCone (detail->GetCR ()));}
-
-    static JsSolidPrimitiveP CreateDgnSphere (JsDgnSphereDetailP detail)
-        {return new JsSolidPrimitive (ISolidPrimitive::CreateDgnSphere (detail->GetCR ()));}
-
-    static JsSolidPrimitiveP CreateDgnBox (JsDgnBoxDetailP detail)
-        {return new JsSolidPrimitive (ISolidPrimitive::CreateDgnBox (detail->GetCR ()));}
-
-    static JsSolidPrimitiveP CreateDgnTorusPipe (JsDgnTorusPipeDetailP detail)
-        {return new JsSolidPrimitive (ISolidPrimitive::CreateDgnTorusPipe (detail->GetCR ()));}
-
-    JsSolidPrimitiveP Clone ()
+    static JsDgnBoxP CreateCenteredBox (JsDPoint3dP center, JsDVector3dP diagonalSize, bool capped)
         {
-        auto clone = m_solidPrimitive->Clone ();
-        return new JsSolidPrimitive (clone);
+        auto data =  DgnBoxDetail::InitFromCenterAndSize(center->Get(), diagonalSize->Get(), capped);
+        return new JsDgnBox (ISolidPrimitive::CreateDgnBox (data));
         }
 
-    double SolidPrimitiveType (){return (double)m_solidPrimitive->GetSolidPrimitiveType ();}
 };
 
+//=======================================================================================
+// @bsiclass                                                    Eariln.Lutz     12/15
+//=======================================================================================
+struct JsDgnExtrusion: JsSolidPrimitive
+{
+public:
+    JsDgnExtrusion () {}
 
+    JsDgnExtrusion (ISolidPrimitivePtr const &solid) : JsSolidPrimitive (solid) {}
+    virtual JsSolidPrimitiveP Clone () override {return new JsDgnExtrusion (GetISolidPrimitivePtr ()->Clone ());}
+    static JsDgnExtrusionP Create (
+            JsCurveVectorP profile,
+            JsDVector3dP   vector,
+            bool capped
+            )
+        {
+        auto cv = profile->GetCurveVectorPtr ();
+        DgnExtrusionDetail data (
+                profile->GetCurveVectorPtr (),
+                vector->Get (),
+                capped
+                );
+        return new JsDgnExtrusion (ISolidPrimitive::CreateDgnExtrusion (data));
+        }
+
+};
+
+//=======================================================================================
+// @bsiclass                                                    Eariln.Lutz     12/15
+//=======================================================================================
+struct JsDgnRotationalSweep: JsSolidPrimitive
+{
+public:
+    JsDgnRotationalSweep () {}
+
+    JsDgnRotationalSweep (ISolidPrimitivePtr const &solid) : JsSolidPrimitive (solid) {}
+    virtual JsSolidPrimitiveP Clone () override {return new JsDgnRotationalSweep (GetISolidPrimitivePtr ()->Clone ());}
+    static JsDgnRotationalSweepP Create (
+            JsCurveVectorP profile,
+            JsDPoint3dP    center,
+            JsDVector3dP   axis,
+            JsAngleP       sweep,
+            bool capped
+            )
+        {
+        auto cv = profile->GetCurveVectorPtr ();
+        DgnRotationalSweepDetail data (
+                profile->GetCurveVectorPtr (),
+                center->Get (), axis->Get (), sweep->GetRadians (),
+                capped
+                );
+        return new JsDgnRotationalSweep (ISolidPrimitive::CreateDgnRotationalSweep (data));
+        }
+
+};
+
+//=======================================================================================
+// @bsiclass                                                    Eariln.Lutz     12/15
+//=======================================================================================
+struct JsDgnRuledSweep: JsSolidPrimitive
+{
+public:
+    JsDgnRuledSweep () {}
+
+    JsDgnRuledSweep (ISolidPrimitivePtr const &solid) : JsSolidPrimitive (solid) {}
+    virtual JsSolidPrimitiveP Clone () override {return new JsDgnRuledSweep (GetISolidPrimitivePtr ()->Clone ());}
+    static JsDgnRuledSweepP Create (
+            JsUnstructuredCurveVectorP profiles,
+            bool capped
+            )
+        {
+        bvector<CurveVectorPtr> profileA;
+        auto cv = profiles->GetCurveVectorPtr ();
+        for (auto &child: *cv)
+            {
+            CurveVectorPtr childCV = child->GetChildCurveVectorP ();
+            if (!childCV.IsValid ())
+                return nullptr;
+            profileA.push_back (childCV);
+            }
+
+        DgnRuledSweepDetail data (profileA, capped);
+        return new JsDgnRuledSweep (ISolidPrimitive::CreateDgnRuledSweep (data));
+        }
+
+};
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE
 
 #endif//ndef _JsDgnXXXDetail_H_
 
-#ifdef abc
-
-
-
-
-
-#endif

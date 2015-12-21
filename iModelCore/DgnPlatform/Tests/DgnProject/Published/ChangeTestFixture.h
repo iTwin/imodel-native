@@ -31,6 +31,8 @@ protected:
     
     void CreateDefaultView();
     void UpdateDgnDbExtents();
+
+    int GetChangeSummaryInstanceCount(BeSQLite::EC::ChangeSummaryCR changeSummary, Utf8CP qualifiedClassName) const;
 public:
     ChangeTestFixture() {}
     virtual ~ChangeTestFixture() {}

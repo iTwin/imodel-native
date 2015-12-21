@@ -17,21 +17,20 @@ LsLocation::~LsLocation ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Chuck.Kirschman   01/03
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            LsLocation::SetLocation (DgnDbR project, LsComponentType componentType, LsComponentId componentId)
+void            LsLocation::SetLocation (DgnDbR project, LsComponentId componentId)
     {
     Init ();
     m_dgndb = &project;
-    m_componentType = componentType;
     m_componentId = componentId;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Chuck.Kirschman   01/03
 +---------------+---------------+---------------+---------------+---------------+------*/
-void LsLocation::SetFrom (LsLocation const* base, LsComponentType componentType)
+void LsLocation::SetFrom (LsLocation const* base, LsComponentId componentId)
     {
     SetFrom (base);
-    m_componentType   = componentType;
+    m_componentId = componentId;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -39,7 +38,6 @@ void LsLocation::SetFrom (LsLocation const* base, LsComponentType componentType)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void            LsLocation::SetFrom (LsLocation const* base)
     {
-    m_componentType   = base->m_componentType;
     m_componentId     = base->m_componentId;
     m_dgndb   = base->m_dgndb;
     }
@@ -65,57 +63,7 @@ LsComponentId LsLocation::GetComponentId () const
 +---------------+---------------+---------------+---------------+---------------+------*/
 LsComponentType      LsLocation::GetComponentType () const
     {
-    return m_componentType;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Chuck.Kirschman     02/03
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus       LsLocation::GetLineCodeLocation (LsComponentReader* reader)
-    {
-    SetFrom (reader->GetSource());
-
-    V10LinePoint*   lpData = (V10LinePoint*)reader->GetRsc();
-    m_componentType = (LsComponentType)lpData->m_lcType;
-    m_componentId = (LsComponentId)lpData->m_lcID;
-
-    return SUCCESS;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Chuck.Kirschman     02/03
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus       LsLocation::GetPointSymbolLocation
-(
-LsComponentReader*    reader,
-int             symbolNumber
-)
-    {
-    SetFrom (reader->GetSource());
-
-    V10LinePoint*   lpData = (V10LinePoint*)reader->GetRsc();
-
-    m_componentType = (LsComponentType)lpData->m_symbol[symbolNumber].m_symType;
-    m_componentId = LsComponentId(lpData->m_symbol[symbolNumber].m_symID);
-
-    return SUCCESS;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Chuck.Kirschman     02/03
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus       LsLocation::GetCompoundComponentLocation
-(
-LsComponentReader*    reader,
-int             componentNumber
-)
-    {
-    SetFrom (reader->GetSource());
-    V10Compound* v10Data = (V10Compound*)reader->GetRsc();
-    m_componentType = (LsComponentType)v10Data->m_component[componentNumber].m_type;
-    m_componentId   = LsComponentId(v10Data->m_component[componentNumber].m_id);
-
-    return SUCCESS;
+    return m_componentId.GetType();
     }
 
 //---------------------------------------------------------------------------------------
@@ -142,5 +90,5 @@ bool LsComponent::IsValidComponentType(LsComponentType value)
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool            LsLocation::IsValid () const
     {
-    return LsComponent::IsValidComponentType(m_componentType);
+    return m_componentId.IsValid() && LsComponent::IsValidComponentType(m_componentId.GetType());;
     }

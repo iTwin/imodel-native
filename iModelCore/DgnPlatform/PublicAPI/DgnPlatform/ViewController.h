@@ -48,9 +48,9 @@ enum class OrientationMode
 enum class UiOrientation
 {
     Portrait            = 0,    //!< Up vector is positive device y, right vector is positive device x
-    LandscapeRight      = 1,    //!< Up vector is negative device x, right vector is positive device y
+    LandscapeRight      = 1,    //!< Up vector is positive device x, right vector is negative device y
     PortraitUpsideDown  = 2,    //!< Up vector is negative device y, right vector is negative device x
-    LandscapeLeft       = 3,    //!< Up vector is positive device x, right vector is negative device y
+    LandscapeLeft       = 3,    //!< Up vector is negative device x, right vector is positive device y
 };
 
 //=======================================================================================
@@ -316,7 +316,7 @@ protected:
     //! Returns the target model. Normally, this is the model at the m_targetIndex index of m_viewedModels.
     //! Used as the writable model in which new elements can be placed.
     //! A subclass can override this function to get the target model some other way.
-    DGNPLATFORM_EXPORT virtual DgnModelP _GetTargetModel() const;
+    DGNPLATFORM_EXPORT virtual GeometricModelP _GetTargetModel() const;
 
     //! Returns the project that is being viewed
     virtual DgnDbR _GetDgnDb() const {return m_dgndb;}
@@ -521,7 +521,7 @@ public:
     DGNPLATFORM_EXPORT void Init();
 
     //! Gets the DgnModel that will be the target of tools that add new elements.
-    DGNPLATFORM_EXPORT DgnModelP GetTargetModel() const;
+    DGNPLATFORM_EXPORT GeometricModelP GetTargetModel() const;
 
     //! Tests whether a rotation matrix corresponds to one of the StandardView orientations.
     //! @param[in] rotation  The matrix to test.
@@ -647,7 +647,7 @@ public:
 
     //! Sets the Target DgnModel for this PhysicalViewController.
     //! @param[in] target The model to which new elements are added by modification tools.
-    DGNPLATFORM_EXPORT BentleyStatus SetTargetModel(DgnModelP target);
+    DGNPLATFORM_EXPORT BentleyStatus SetTargetModel(GeometricModelP target);
 };
 
 /** @addtogroup DgnViewGroup
@@ -1059,7 +1059,7 @@ private:
     virtual void _SetOrigin(DPoint3dCR org) override;
     virtual void _SetDelta(DVec3dCR delta) override;
     virtual void _SetRotation(RotMatrixCR rot) override;
-    virtual DgnModelP _GetTargetModel() const override;
+    virtual GeometricModelP _GetTargetModel() const override;
     virtual void _AdjustAspectRatio(double , bool expandView) override;
     virtual DPoint3d _GetTargetPoint() const override;
     virtual bool _Allow3dManipulations() const override;

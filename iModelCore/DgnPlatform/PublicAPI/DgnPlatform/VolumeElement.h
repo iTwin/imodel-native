@@ -23,15 +23,14 @@ namespace dgn_ElementHandler { struct VolumeElementHandler; }
 //! contained elements.
 // @bsiclass                                                 Ramanujam.Raman      01/2015
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE VolumeElement : PhysicalElement
+struct EXPORT_VTABLE_ATTRIBUTE VolumeElement : SpatialLocationElement
 {
     friend struct dgn_ElementHandler::VolumeElementHandler;
-    DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_VolumeElement, PhysicalElement)
+    DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_VolumeElement, SpatialLocationElement)
 public:
-    struct CreateParams : PhysicalElement::CreateParams
+    struct CreateParams : SpatialLocationElement::CreateParams
     {
-        friend struct dgn_ElementHandler::VolumeElementHandler;
-        DEFINE_T_SUPER(PhysicalElement::CreateParams);
+        DEFINE_T_SUPER(SpatialLocationElement::CreateParams);
 
         DPoint3d m_origin;
         bvector<DPoint2d> m_shape;
@@ -41,9 +40,9 @@ public:
         CreateParams(DgnDbR db, DgnModelId modelId, DPoint3dCR origin, bvector<DPoint2d> const& shape, double height, DgnClassId classId, DgnCategoryId category = DgnCategoryId(), Code const& code = Code(), Utf8CP label = nullptr, DgnElementId parent = DgnElementId()) :
             T_Super(db, modelId, classId, category.IsValid() ? category : VolumeElement::GetDefaultCategoryId(db), Placement3d(), code, label, parent), m_origin(origin), m_shape(shape), m_height(height) {}
 
+    public:
         explicit CreateParams(Dgn::DgnElement::CreateParams const& params) : T_Super(params, DgnCategoryId(), Placement3d()) {}
 
-    public:
         //! Parameters to create a VolumeElement
         //! @param db DgnDb
         //! @param modelId Model Id
@@ -53,9 +52,8 @@ public:
         //! @param height Height of the extruded volume in storage units
         //! @param label Label of the volume.
         //! @param code Code
-        //! @param id ElementId
         //! @param parent Parent ElementId
-        CreateParams(DgnDbR db, DgnModelId modelId, DPoint3dCR origin, bvector<DPoint2d> const& shape, double height, Utf8CP label = nullptr, DgnCategoryId category = DgnCategoryId(), Code const& code = Code(), DgnElementId id = DgnElementId(), DgnElementId parent = DgnElementId()) :
+        CreateParams(DgnDbR db, DgnModelId modelId, DPoint3dCR origin, bvector<DPoint2d> const& shape, double height, Utf8CP label = nullptr, DgnCategoryId category = DgnCategoryId(), Code const& code = Code(), DgnElementId parent = DgnElementId()) :
             T_Super(db, modelId, VolumeElement::QueryClassId(db), category.IsValid() ? category : VolumeElement::GetDefaultCategoryId(db), Placement3d(), code, label, parent), m_origin(origin), m_shape(shape), m_height(height)
             {}
 
@@ -182,13 +180,10 @@ public:
 namespace dgn_ElementHandler
 {
     //! The ElementHandler for VolumeElement
-    struct EXPORT_VTABLE_ATTRIBUTE VolumeElementHandler : Physical
+    struct EXPORT_VTABLE_ATTRIBUTE VolumeElementHandler : Element
     {
-        ELEMENTHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_VolumeElement, VolumeElement, VolumeElementHandler, Physical, DGNPLATFORM_EXPORT)
+        ELEMENTHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_VolumeElement, VolumeElement, VolumeElementHandler, Element, DGNPLATFORM_EXPORT)
     };
 }
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE
-
-//__PUBLISH_SECTION_END__
-

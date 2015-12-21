@@ -5,9 +5,12 @@
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include    <DgnPlatformInternal.h>
+#include <DgnPlatformInternal.h>
+#include <DgnPlatform/DgnGeoCoord.h>
 
 #define  ROUNDOFF           (0.5 - DBL_EPSILON)
+
+BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    12/07
@@ -40,12 +43,12 @@ void AngleFormatter::Init()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    02/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-void AngleFormatter::InitModelSettings(DgnModelCR model)
+void AngleFormatter::InitModelSettings(GeometricModelCR model)
     {
-    DgnModel::Properties const& props= model.GetProperties();
+    GeometricModel::DisplayInfo const& displayInfo = model.GetDisplayInfo();
 
-    SetAngleMode(props.GetAngularMode());
-    SetAnglePrecision(props.GetAngularPrecision());
+    SetAngleMode(displayInfo.GetAngularMode());
+    SetAnglePrecision(displayInfo.GetAngularPrecision());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -58,7 +61,7 @@ AngleFormatterPtr    AngleFormatter::Clone() const      { return new AngleFormat
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    02/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-AngleFormatterPtr AngleFormatter::Create(DgnModelCR model)
+AngleFormatterPtr AngleFormatter::Create(GeometricModelCR model)
     {
     AngleFormatterPtr   formatter = Create();
 
@@ -433,16 +436,19 @@ void DirectionFormatter::Init()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    02/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DirectionFormatter::InitModelSettings(DgnModelCR model)
+void DirectionFormatter::InitModelSettings(GeometricModelCR model)
     {
     m_angleFormatter->InitModelSettings(model);
 
-    DgnModel::Properties const& modelInfo = model.GetProperties();
+    GeometricModel::DisplayInfo const& displayInfo = model.GetDisplayInfo();
 
-    SetDirectionMode(modelInfo.GetDirectionMode());
-    SetClockwise(modelInfo.GetDirectionClockwise());
-    SetBaseDirection(modelInfo.GetDirectionBaseDir());
-    SetTrueNorthValue(model.GetDgnDb().Units().GetAzimuth());
+    SetDirectionMode(displayInfo.GetDirectionMode());
+    SetClockwise(displayInfo.GetDirectionClockwise());
+    SetBaseDirection(displayInfo.GetDirectionBaseDir());
+
+    DgnGCS* dgnGCS = model.GetDgnDb().Units().GetDgnGCS();
+    double azimuth = (dgnGCS != nullptr) ? dgnGCS->GetAzimuth() : 0.0;
+    SetTrueNorthValue(azimuth);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -456,7 +462,7 @@ DirectionFormatterPtr   DirectionFormatter::Clone() const           { return new
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    02/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-DirectionFormatterPtr DirectionFormatter::Create(DgnModelCR model)
+DirectionFormatterPtr DirectionFormatter::Create(GeometricModelCR model)
     {
     DirectionFormatterPtr   formatter = Create();
 
@@ -748,17 +754,17 @@ void DistanceFormatter::Init()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    03/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DistanceFormatter::InitModelSettings(DgnModelCR model)
+void DistanceFormatter::InitModelSettings(GeometricModelCR model)
     {
-    DgnModel::Properties const& modelInfo = model.GetProperties();
+    GeometricModel::DisplayInfo const& displayInfo = model.GetDisplayInfo();
 
-    SetUnitFormat(modelInfo.GetLinearUnitMode());
-    SetPrecision(modelInfo.GetLinearPrecision());
+    SetUnitFormat(displayInfo.GetLinearUnitMode());
+    SetPrecision(displayInfo.GetLinearPrecision());
 
     SetIsDgnCoordReadOutCapable(T_HOST.GetFormatterAdmin()._AllowDgnCoordinateReadout());
 
-    m_masterUnit    = modelInfo.GetMasterUnits();
-    m_subUnit       = modelInfo.GetSubUnits();
+    m_masterUnit = displayInfo.GetMasterUnits();
+    m_subUnit = displayInfo.GetSubUnits();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -814,12 +820,10 @@ DistanceFormatterPtr    DistanceFormatter::Clone() const        { return new Dis
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                  JoeZbuchalski    02/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-DistanceFormatterPtr    DistanceFormatter::Create(DgnModelCR model)
+DistanceFormatterPtr DistanceFormatter::Create(GeometricModelCR model)
     {
-    DistanceFormatterPtr   formatter = Create();
-
+    DistanceFormatterPtr formatter = Create();
     formatter->InitModelSettings(model);
-
     return formatter;
     }
 
@@ -828,14 +832,13 @@ DistanceFormatterPtr    DistanceFormatter::Create(DgnModelCR model)
 +---------------+---------------+---------------+---------------+---------------+------*/
 DistanceFormatterPtr    DistanceFormatter::Create(DgnViewportR viewport)
     {
-    DgnModelP    targetModel = viewport.GetViewController().GetTargetModel();
-
+    GeometricModelP targetModel = viewport.GetViewController().GetTargetModel();
     DistanceFormatterPtr formatter = DistanceFormatter::Create(*targetModel);
 
 #ifdef WIP_V10_MODEL_ACS
     IAuxCoordSysP   acs = NULL;
 
-    if (targetModel->GetProperties().GetIsAcsLocked())
+    if (targetModel->GetDisplayInfo().GetIsAcsLocked())
         acs = IACSManager::GetManager().GetActive(viewport);
 
     if (NULL == acs)
@@ -1132,7 +1135,7 @@ IAuxCoordSysR   PointFormatter::GetAuxCoordSys()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    03/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            PointFormatter::InitModelSettings(DgnModelCR model, bool addGlobalOrigin)
+void            PointFormatter::InitModelSettings(GeometricModelCR model, bool addGlobalOrigin)
     {
     m_distanceFormatter = DistanceFormatter::Create(model);
 
@@ -1141,7 +1144,7 @@ void            PointFormatter::InitModelSettings(DgnModelCR model, bool addGlob
         {
         // Create a un-rotated, un-scaled, rectangular ACS at the model's global origin.
         m_acs = IACSManager::GetManager().CreateACS ();
-        m_acs->SetOrigin(geomModel->GetGlobalOrigin());
+        m_acs->SetOrigin(geomModel->GetDgnDb().Units().GetGlobalOrigin());
         }
 
     m_is3d = nullptr != geomModel && geomModel->Is3d();
@@ -1150,7 +1153,7 @@ void            PointFormatter::InitModelSettings(DgnModelCR model, bool addGlob
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    03/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-PointFormatterPtr   PointFormatter::Create(DgnModelCR model, bool addGlobalOrigin)
+PointFormatterPtr   PointFormatter::Create(GeometricModelCR model, bool addGlobalOrigin)
     {
     PointFormatterPtr   formatter = Create();
 
@@ -1164,9 +1167,10 @@ PointFormatterPtr   PointFormatter::Create(DgnModelCR model, bool addGlobalOrigi
 +---------------+---------------+---------------+---------------+---------------+------*/
 PointFormatterPtr   PointFormatter::Create(DgnViewportR viewport)
     {
-    DgnModelP       targetModel = viewport.GetViewController().GetTargetModel();
+    GeometricModelP targetModel = viewport.GetViewController().GetTargetModel();
+
 #ifdef WIP_V10_MODEL_ACS
-    bool            useViewACS  = targetModel->GetProperties().GetIsAcsLocked();
+    bool            useViewACS  = targetModel->GetDisplayInfo().GetIsAcsLocked();
 #else
     bool            useViewACS  = false;
 #endif
@@ -1265,13 +1269,13 @@ void AreaOrVolumeFormatterBase::Init()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    03/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-void AreaOrVolumeFormatterBase::InitModelSettings(DgnModelCR model)
+void AreaOrVolumeFormatterBase::InitModelSettings(GeometricModelCR model)
     {
-    DgnModel::Properties const& modelInfo = model.GetProperties();
+    GeometricModel::DisplayInfo const& displayInfo = model.GetDisplayInfo();
 
-    SetPrecision(modelInfo.GetLinearPrecision());
+    SetPrecision(displayInfo.GetLinearPrecision());
 
-    m_masterUnit    = modelInfo.GetMasterUnits();
+    m_masterUnit = displayInfo.GetMasterUnits();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1318,7 +1322,7 @@ AreaFormatterPtr    AreaFormatter::Clone() const        { return new AreaFormatt
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    03/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-AreaFormatterPtr    AreaFormatter::Create(DgnModelCR model)
+AreaFormatterPtr    AreaFormatter::Create(GeometricModelCR model)
     {
     AreaFormatterPtr   formatter = Create();
 
@@ -1332,13 +1336,12 @@ AreaFormatterPtr    AreaFormatter::Create(DgnModelCR model)
 +---------------+---------------+---------------+---------------+---------------+------*/
 AreaFormatterPtr    AreaFormatter::Create(DgnViewportR viewport)
     {
-    DgnModelP    targetModel = viewport.GetViewController().GetTargetModel();
-
+    GeometricModelP targetModel = viewport.GetViewController().GetTargetModel();
     AreaFormatterPtr formatter = AreaFormatter::Create(*targetModel);
 
 #ifdef WIP_V10_MODEL_ACS
     IAuxCoordSysP   acs = NULL;
-    if (targetModel->GetProperties().GetIsAcsLocked())
+    if (targetModel->GetDisplayInfo().GetIsAcsLocked())
         acs = IACSManager::GetManager().GetActive(viewport);
 
     if (NULL == acs)
@@ -1405,7 +1408,7 @@ VolumeFormatterPtr  VolumeFormatter::Clone() const        { return new VolumeFor
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    03/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-VolumeFormatterPtr VolumeFormatter::Create(DgnModelCR model)
+VolumeFormatterPtr VolumeFormatter::Create(GeometricModelCR model)
     {
     VolumeFormatterPtr   formatter = Create();
 
@@ -1419,13 +1422,12 @@ VolumeFormatterPtr VolumeFormatter::Create(DgnModelCR model)
 +---------------+---------------+---------------+---------------+---------------+------*/
 VolumeFormatterPtr VolumeFormatter::Create(DgnViewportR viewport)
     {
-    DgnModelP    targetModel = viewport.GetViewController().GetTargetModel();
-
+    GeometricModelP targetModel = viewport.GetViewController().GetTargetModel();
     VolumeFormatterPtr formatter = VolumeFormatter::Create(*targetModel);
 
 #ifdef WIP_V10_MODEL_ACS
     IAuxCoordSysP   acs = NULL;
-    if (targetModel->GetProperties().GetIsAcsLocked())
+    if (targetModel->GetDisplayInfo().GetIsAcsLocked())
         acs = IACSManager::GetManager().GetActive(viewport);
 
     if (NULL == acs)
@@ -1801,3 +1803,5 @@ WString DateTimeFormatter::ToString(DateTimeCR dtIn) const
 
     return result;
     }
+
+END_BENTLEY_DGNPLATFORM_NAMESPACE

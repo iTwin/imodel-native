@@ -14,6 +14,7 @@ USING_NAMESPACE_BENTLEY_DPTEST
 //----------------------------------------------------------------------------------------
 struct DgnElementTests : public DgnDbTestFixture
     {
+    TestElementCPtr AddChild(DgnElementCR parent);
     };
 
 /*---------------------------------------------------------------------------------**//**
@@ -29,27 +30,28 @@ TEST_F (DgnElementTests, ResetStatistics)
     EXPECT_TRUE (seedModel != nullptr);
 
     //Inserts a model
-    DgnModelPtr M1 = seedModel->Clone(DgnModel::CreateModelCode("Model1"));
-    M1->Insert("Test Model 1");
-    EXPECT_TRUE (M1 != nullptr);
+    DgnModelPtr m1 = seedModel->Clone(DgnModel::CreateModelCode("Model1"));
+    m1->SetLabel("Test Model 1");
+    m1->Insert();
+    EXPECT_TRUE (m1 != nullptr);
     m_db->SaveChanges("changeSet1");
 
-    DgnModelId M1id = m_db->Models().QueryModelId(DgnModel::CreateModelCode("model1"));
-    EXPECT_TRUE (M1id.IsValid());
+    DgnModelId m1id = m_db->Models().QueryModelId(DgnModel::CreateModelCode("model1"));
+    EXPECT_TRUE (m1id.IsValid());
 
     //Inserts 2 elements.
-    auto keyE1 = InsertElement(M1id);
+    auto keyE1 = InsertElement(m1id);
     DgnElementId E1id = keyE1->GetElementId();
     DgnElementCPtr E1 = m_db->Elements().GetElement(E1id);
     EXPECT_TRUE (E1 != nullptr);
 
-    auto keyE2 = InsertElement(M1id);
+    auto keyE2 = InsertElement(m1id);
     DgnElementId E2id = keyE2->GetElementId();
     DgnElementCPtr E2 = m_db->Elements().GetElement(E2id);
     EXPECT_TRUE (E2 != nullptr);
 
     DgnModelId model_id = m_db->Elements().QueryModelId(E1id);
-    EXPECT_EQ (M1id, model_id);
+    EXPECT_EQ (m1id, model_id);
 
     //Deletes the first element.
     DgnDbStatus status=E2->Delete();
@@ -106,7 +108,8 @@ TEST_F (DgnElementTests, UpdateElement)
 
     //Inserts a model
     DgnModelPtr m1 = seedModel->Clone(DgnModel::CreateModelCode("Model1"));
-    m1->Insert("Test Model 1");
+    m1->SetLabel("Test Model 1");
+    m1->Insert();
     EXPECT_TRUE(m1 != nullptr);
     m_db->SaveChanges("changeSet1");
 
@@ -127,6 +130,398 @@ TEST_F (DgnElementTests, UpdateElement)
 
     EXPECT_STREQ("Updated Test Element", dynamic_cast<TestElement const*>(updatedElement.get())->GetTestElementProperty().c_str());
 #endif
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TestElementCPtr DgnElementTests::AddChild(DgnElementCR parent)
+    {
+    TestElementPtr child = TestElement::Create(*m_db, m_defaultModelId,m_defaultCategoryId);
+    child->SetParentId(parent.GetElementId());
+    auto el = child->Insert();
+    if (!el.IsValid())
+        return nullptr;
+    return dynamic_cast<TestElement const*>(el.get());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DgnElementTests, DgnElementTransformer)
+    {
+    SetupProject(L"3dMetricGeneral.idgndb", L"TransactionManagerTests_DgnEditElementCollector.idgndb", Db::OpenMode::ReadWrite);
+
+    if (true)
+        {
+        DgnElementCPtr parent1 = TestElement::Create(*m_db, m_defaultModelId,m_defaultCategoryId)->Insert();
+        TestElementCPtr c11 = AddChild(*parent1);
+        TestElementCPtr c12 = AddChild(*parent1);
+
+        DgnEditElementCollector all;
+        all.EditAssembly(*parent1);
+
+        for (auto el : all)
+            {
+            ASSERT_TRUE(el->ToGeometrySource3d()->GetPlacement().GetOrigin().IsEqual(DPoint3d::FromZero()));
+            ASSERT_EQ(0, el->ToGeometrySource3d()->GetPlacement().GetAngles().GetYaw().Degrees());
+            }
+
+        Transform offsetby1 = Transform::FromIdentity();
+        offsetby1.SetTranslation(DPoint3d::From(1,0,0));
+
+        DgnElementTransformer::ApplyTransformToAll(all, offsetby1);
+
+        for (auto el : all)
+            {
+            ASSERT_TRUE(el->ToGeometrySource3d()->GetPlacement().GetOrigin().IsEqual(DPoint3d::From(1,0,0)));
+            ASSERT_EQ(0, el->ToGeometrySource3d()->GetPlacement().GetAngles().GetYaw().Degrees()) << "yaw should be unaffected";
+            ASSERT_EQ(0, el->ToGeometrySource3d()->GetPlacement().GetAngles().GetPitch().Degrees()) << "pitch should be unaffected";
+            ASSERT_EQ(0, el->ToGeometrySource3d()->GetPlacement().GetAngles().GetRoll().Degrees()) << "roll should be unaffected";
+            }
+        }
+
+    if (true)
+        {
+        DgnElementCPtr parent1 = TestElement::Create(*m_db, m_defaultModelId,m_defaultCategoryId)->Insert();
+        TestElementCPtr c11 = AddChild(*parent1);
+        TestElementCPtr c12 = AddChild(*parent1);
+
+        DgnEditElementCollector all;
+        all.EditAssembly(*parent1);
+
+        for (auto el : all)
+            {
+            ASSERT_TRUE(el->ToGeometrySource3d()->GetPlacement().GetOrigin().IsEqual(DPoint3d::From(0,0,0)));
+            ASSERT_EQ(0, el->ToGeometrySource3d()->GetPlacement().GetAngles().GetYaw().Degrees());
+            }
+
+        DgnElementTransformer::ApplyTransformToAll(all, Transform::FromPrincipleAxisRotations(Transform::FromIdentity(), 0, 0, msGeomConst_piOver4));
+
+        for (auto el : all)
+            {
+            ASSERT_TRUE(el->ToGeometrySource3d()->GetPlacement().GetOrigin().IsEqual(DPoint3d::From(0,0,0)));
+            ASSERT_EQ(45, el->ToGeometrySource3d()->GetPlacement().GetAngles().GetYaw().Degrees());
+            ASSERT_EQ(0, el->ToGeometrySource3d()->GetPlacement().GetAngles().GetPitch().Degrees()) << "pitch should be unaffected";
+            ASSERT_EQ(0, el->ToGeometrySource3d()->GetPlacement().GetAngles().GetRoll().Degrees()) << "roll should be unaffected";
+            }
+        }
+
+
+    //  Now try a more interesting assembly
+    if (true)
+        {
+        DgnElementCPtr parent1 = TestElement::Create(*m_db, m_defaultModelId,m_defaultCategoryId)->Insert();
+        TestElementCPtr c11 = AddChild(*parent1);
+            {
+            DgnElementPtr ec11 = c11->CopyForEdit();
+            Transform offsetUpAndOver = Transform::FromIdentity();
+            offsetUpAndOver.SetTranslation(DPoint3d::From(1,1,0));
+            DgnElementTransformer::ApplyTransformTo(*ec11, offsetUpAndOver);
+            ec11->Update();
+            }
+        //     [c]
+        //  [p]
+        ASSERT_TRUE(c11->GetPlacement().GetOrigin().IsEqual(DPoint3d::From(1,1,0)));
+        ASSERT_EQ(0, c11->GetPlacement().GetAngles().GetYaw().Degrees());
+        ASSERT_EQ(0, c11->GetPlacement().GetAngles().GetPitch().Degrees());
+        ASSERT_EQ(0, c11->GetPlacement().GetAngles().GetRoll().Degrees());
+
+        DgnEditElementCollector all;
+        all.EditAssembly(*parent1);
+
+        //  Rotate them around the zaxis, so that child swings up and around to the left.
+        //    \c
+        //  \p
+        DRay3d flagPole = DRay3d::FromOriginAndVector(DPoint3d::FromZero(), DVec3d::From(0,0,1));
+        Transform rotateAroundFlagPole = Transform::FromAxisAndRotationAngle(flagPole, msGeomConst_piOver4);
+        DgnElementTransformer::ApplyTransformToAll(all, rotateAroundFlagPole);
+
+        DgnElementPtr eparent1 = all.FindElementById(parent1->GetElementId());
+        DgnElementPtr ec11 = all.FindElementById(c11->GetElementId());
+        Placement3d eparentplacement = eparent1->ToGeometrySource3dP()->GetPlacement();
+        Placement3d ec11placement = ec11->ToGeometrySource3dP()->GetPlacement();
+        ASSERT_EQ(45, eparentplacement.GetAngles().GetYaw().Degrees());
+        ASSERT_EQ(45, ec11placement.GetAngles().GetYaw().Degrees());
+        ASSERT_EQ( 0, ec11placement.GetAngles().GetPitch().Degrees()) << "pitch should have been unaffected";
+        ASSERT_EQ( 0, ec11placement.GetAngles().GetRoll().Degrees()) << "roll should have been unaffected";
+        ASSERT_TRUE(eparentplacement.GetOrigin().AlmostEqual(DPoint3d::FromZero()));
+        ASSERT_TRUE(ec11placement.GetOrigin().AlmostEqual(DPoint3d::From(0,sqrt(2),0)));
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DgnElementTests, DgnEditElementCollector)
+    {
+    SetupProject(L"3dMetricGeneral.idgndb", L"TransactionManagerTests_DgnEditElementCollector.idgndb", Db::OpenMode::ReadWrite);
+
+    DgnElementCPtr parent1 = TestElement::Create(*m_db, m_defaultModelId, m_defaultCategoryId)->Insert();
+    ASSERT_TRUE(parent1.IsValid());
+
+    // single element
+        {
+        DgnEditElementCollector coll;
+        auto eparent1 = coll.EditElement(*parent1);
+        ASSERT_TRUE(eparent1.IsValid());
+        ASSERT_TRUE(eparent1->GetElementId() == parent1->GetElementId());
+
+        auto eparent1cc1 = coll.EditElement(*eparent1);
+        ASSERT_TRUE(eparent1cc1.get() == eparent1.get()) << "no dups allowed in the collection";
+        ASSERT_TRUE(eparent1cc1 == eparent1) << "no dups allowed in the collection";
+
+        auto eparent1cc2 = coll.EditElement(*parent1);
+        ASSERT_TRUE(eparent1cc2.get() == eparent1.get()) << "no dups allowed in the collection";
+        ASSERT_TRUE(eparent1cc2 == eparent1) << "no dups allowed in the collection";
+
+        ASSERT_EQ(1, coll.size());
+
+        // FindByElementId
+        auto found = coll.FindElementById(parent1->GetElementId());
+        ASSERT_TRUE(found.get() == eparent1.get());
+        ASSERT_TRUE(found->GetElementId() == parent1->GetElementId());
+
+        // Remove
+        coll.RemoveElement(*found);
+        ASSERT_EQ(0, coll.size());
+        coll.RemoveElement(*found);
+        ASSERT_EQ(0, coll.size());
+        }
+
+    // single element (childless)
+        {
+        DgnEditElementCollector coll;
+        coll.EditAssembly(*parent1);
+        ASSERT_EQ(1, coll.size());
+        }
+
+    // Add some children
+    TestElementCPtr c11 = AddChild(*parent1);
+    ASSERT_EQ(c11->GetParentId(), parent1->GetElementId());
+    TestElementCPtr c12 = AddChild(*parent1);
+    ASSERT_EQ(c12->GetParentId(), parent1->GetElementId());
+    ASSERT_EQ(2, parent1->QueryChildren().size());
+
+    //  element with children
+        {
+        DgnEditElementCollector all;
+        all.EditAssembly(*parent1);
+        ASSERT_EQ(3, all.size());
+
+        DgnEditElementCollector noChildren;
+        noChildren.EditAssembly(*parent1, 0);
+        ASSERT_EQ(1, noChildren.size());
+
+        DgnEditElementCollector onlyElement;
+        onlyElement.EditElement(*parent1);
+        ASSERT_EQ(1, onlyElement.size());
+
+        DgnEditElementCollector onlyChildren;
+        onlyChildren.AddChildren(*parent1);
+        ASSERT_EQ(2, onlyChildren.size());
+        onlyChildren.AddChildren(*parent1);
+        ASSERT_EQ(2, onlyChildren.size()) << "no dup children allowed in the collection";
+        }
+
+    // Add nested children
+    TestElementCPtr c111 = AddChild(*c11);
+    ASSERT_EQ(c111->GetParentId(), c11->GetElementId());
+    TestElementCPtr c112 = AddChild(*c11);
+    ASSERT_EQ(c112->GetParentId(), c11->GetElementId());
+    ASSERT_EQ(2, c11->QueryChildren().size());
+
+    //  element with children
+        {
+        DgnEditElementCollector all;
+        all.EditAssembly(*parent1);
+        ASSERT_EQ(5, all.size());
+
+        DgnEditElementCollector noChildren;
+        noChildren.EditAssembly(*parent1, 0);
+        ASSERT_EQ(1, noChildren.size());
+
+        DgnEditElementCollector onlyElement;
+        onlyElement.EditElement(*parent1);
+        ASSERT_EQ(1, onlyElement.size());
+
+        DgnEditElementCollector onlyChildren1;
+        onlyChildren1.AddChildren(*parent1, 1);
+        ASSERT_EQ(2, onlyChildren1.size());
+        onlyChildren1.AddChildren(*parent1, 1);
+        ASSERT_EQ(2, onlyChildren1.size()) << "no dup children allowed in the collection";
+
+        DgnEditElementCollector onlyChildrenAll;
+        onlyChildrenAll.AddChildren(*parent1);
+        ASSERT_EQ(4, onlyChildrenAll.size());
+        onlyChildrenAll.AddChildren(*parent1);
+        ASSERT_EQ(4, onlyChildrenAll.size()) << "no dup children allowed in the collection";
+
+        // Test iterator
+        size_t count = 0;
+        for (auto el : all)
+            {
+            ASSERT_TRUE(el != nullptr);
+            ++count;
+            }
+        ASSERT_EQ(all.size(), count);
+
+        // apply various std algorithms to the collection
+        auto eparent1 = all.FindElementById(parent1->GetElementId());
+        auto ifind = std::find(all.begin(), all.end(), eparent1.get());
+        ASSERT_TRUE(ifind != all.end());
+        ASSERT_EQ(*ifind, eparent1.get());
+
+        // Test removal of children
+        all.RemoveChildren(*c11);
+        ASSERT_EQ(3, all.size());
+        all.RemoveChildren(*c11);
+        ASSERT_EQ(3, all.size());
+
+        all.RemoveChildren(*parent1);
+        ASSERT_EQ(1, all.size());
+        all.RemoveChildren(*parent1);
+        ASSERT_EQ(1, all.size());
+
+        all.RemoveElement(*all.FindElementById(parent1->GetElementId()));
+        ASSERT_EQ(0, all.size());
+        all.RemoveElement(*all.FindElementById(parent1->GetElementId()));
+        ASSERT_EQ(0, all.size());
+        all.RemoveChildren(*c11);
+        ASSERT_EQ(0, all.size());
+        }
+
+    // mixture of persistent and non-persistent elements
+        {
+        DgnElementPtr nonPersistent = TestElement::Create(*m_db, m_defaultModelId,m_defaultCategoryId);
+
+        DgnEditElementCollector coll;
+        DgnElementPtr eparent1 = coll.EditElement(*parent1);
+        DgnElementPtr enonPersistent = coll.AddElement(*nonPersistent);
+        ASSERT_EQ(enonPersistent.get(), nonPersistent.get());
+        ASSERT_EQ(2, coll.size());
+        DgnElementPtr enonPersistentcc = coll.EditElement(*nonPersistent);
+        ASSERT_NE(enonPersistentcc.get(), nonPersistent.get()) << "you can add a second copy of a non-persistent element -- we can't tell it's a copy.";
+        ASSERT_EQ(3, coll.size());
+
+        ASSERT_TRUE(coll.FindElementById(parent1->GetElementId()).IsValid());
+        ASSERT_FALSE(coll.FindElementById(nonPersistent->GetElementId()).IsValid());
+        }
+
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DgnElementTests, ElementCopierTests)
+    {
+    SetupProject(L"3dMetricGeneral.idgndb", L"ElementCopierTests.dgndb", Db::OpenMode::ReadWrite);
+
+    DgnElementCPtr parent = TestElement::Create(*m_db, m_defaultModelId,m_defaultCategoryId)->Insert();
+    TestElementCPtr c1 = AddChild(*parent);
+    TestElementCPtr c2 = AddChild(*parent);
+
+    DgnModelPtr destModel = parent->GetModel();
+
+    // Verify that children are copied
+        {
+        DgnCloneContext ccontext;
+        ElementCopier copier(ccontext);
+        copier.SetCopyChildren(true);
+        DgnElementCPtr parent_cc = copier.MakeCopy(nullptr, *destModel, *parent, DgnElement::Code());
+        ASSERT_TRUE(parent_cc.IsValid());
+        auto c1ccId = copier.GetCloneContext().FindElementId(c1->GetElementId());
+        ASSERT_TRUE(c1ccId.IsValid());
+        ASSERT_TRUE(destModel->GetDgnDb().Elements().GetElement(c1ccId).IsValid());
+        ASSERT_TRUE(destModel->GetDgnDb().Elements().GetElement(c1ccId)->GetModel() == destModel);
+        auto c2ccId = copier.GetCloneContext().FindElementId(c2->GetElementId());
+        ASSERT_TRUE(c2ccId.IsValid());
+        ASSERT_TRUE(destModel->GetDgnDb().Elements().GetElement(c2ccId).IsValid());
+        ASSERT_TRUE(destModel->GetDgnDb().Elements().GetElement(c2ccId)->GetModel() == destModel);
+        size_t cccount = 0;
+        for (auto childid : parent_cc->QueryChildren())
+            {
+            ASSERT_TRUE(childid == c1ccId || childid == c2ccId);
+            ++cccount;
+            }
+        ASSERT_EQ(2, cccount);
+
+        // Verify that a second attempt to copy an already copied element does nothing
+        ASSERT_TRUE(parent_cc.get() == copier.MakeCopy(nullptr, *destModel, *parent, DgnElement::Code()).get());
+        ASSERT_TRUE(c1ccId == copier.MakeCopy(nullptr, *destModel, *c1, DgnElement::Code())->GetElementId());
+        ASSERT_TRUE(c2ccId == copier.MakeCopy(nullptr, *destModel, *c2, DgnElement::Code())->GetElementId());
+        }
+
+    // Verify that children are NOT copied
+        {
+        DgnCloneContext ccontext;
+        ElementCopier copier(ccontext);
+        copier.SetCopyChildren(false);
+        DgnElementCPtr parent_cc = copier.MakeCopy(nullptr, *destModel, *parent, DgnElement::Code());
+        ASSERT_TRUE(parent_cc.IsValid());
+        auto c1ccId = copier.GetCloneContext().FindElementId(c1->GetElementId());
+        ASSERT_FALSE(c1ccId.IsValid());
+        auto c2ccId = copier.GetCloneContext().FindElementId(c2->GetElementId());
+        ASSERT_FALSE(c2ccId.IsValid());
+        ASSERT_EQ(0, parent_cc->QueryChildren().size());
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DgnElementTests, ElementCopierTests_Group)
+    {
+    SetupProject(L"3dMetricGeneral.idgndb", L"ElementCopierTests_Group.dgndb", Db::OpenMode::ReadWrite);
+
+    DgnElementCPtr group = TestGroup::Create(*m_db, m_defaultModelId, m_defaultCategoryId)->Insert();
+    DgnElementCPtr m1 = TestElement::Create(*m_db, m_defaultModelId,m_defaultCategoryId)->Insert();
+    DgnElementCPtr m2 = TestElement::Create(*m_db, m_defaultModelId,m_defaultCategoryId)->Insert();
+    ElementGroupsMembers::Insert(*group, *m1);
+    ElementGroupsMembers::Insert(*group, *m2);
+    ASSERT_TRUE(group->ToIElementGroup()->QueryMembers().size() == 2);
+
+    DgnModelPtr destModel = group->GetModel();
+
+    // Verify that members are copied
+        {
+        DgnCloneContext ccontext;
+        ElementCopier copier(ccontext);
+        copier.SetCopyGroups(true);
+        DgnElementCPtr group_cc = copier.MakeCopy(nullptr, *destModel, *group, DgnElement::Code());
+        ASSERT_TRUE(group_cc.IsValid());
+        auto m1ccId = copier.GetCloneContext().FindElementId(m1->GetElementId());
+        ASSERT_TRUE(m1ccId.IsValid());
+        ASSERT_TRUE(destModel->GetDgnDb().Elements().GetElement(m1ccId).IsValid());
+        ASSERT_TRUE(destModel->GetDgnDb().Elements().GetElement(m1ccId)->GetModel() == destModel);
+        auto m2ccId = copier.GetCloneContext().FindElementId(m2->GetElementId());
+        ASSERT_TRUE(m2ccId.IsValid());
+        ASSERT_TRUE(destModel->GetDgnDb().Elements().GetElement(m2ccId).IsValid());
+        ASSERT_TRUE(destModel->GetDgnDb().Elements().GetElement(m2ccId)->GetModel() == destModel);
+        size_t cccount = 0;
+        for (auto memberid : group_cc->ToIElementGroup()->QueryMembers())
+            {
+            ASSERT_TRUE(memberid == m1ccId || memberid == m2ccId);
+            ++cccount;
+            }
+        ASSERT_EQ(2, cccount);
+
+        // Verify that a second attempt to copy an already copied element does nothing
+        ASSERT_TRUE(group_cc.get() == copier.MakeCopy(nullptr, *destModel, *group, DgnElement::Code()).get());
+        ASSERT_TRUE(m1ccId == copier.MakeCopy(nullptr, *destModel, *m1, DgnElement::Code())->GetElementId());
+        ASSERT_TRUE(m2ccId == copier.MakeCopy(nullptr, *destModel, *m2, DgnElement::Code())->GetElementId());
+        }
+
+    // Verify that members are NOT copied
+        {
+        DgnCloneContext ccontext;
+        ElementCopier copier(ccontext);
+        copier.SetCopyGroups(false);
+        DgnElementCPtr group_cc = copier.MakeCopy(nullptr, *destModel, *group, DgnElement::Code());
+        ASSERT_TRUE(group_cc.IsValid());
+        ASSERT_EQ(0, group_cc->ToIElementGroup()->QueryMembers().size());
+        }
+
     }
 
 /*---------------------------------------------------------------------------------**//**
