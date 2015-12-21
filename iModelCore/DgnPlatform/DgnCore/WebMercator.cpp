@@ -1622,19 +1622,20 @@ void WebMercatorModel::Mercator::FromJson(Json::Value const& v)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      10/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-void WebMercatorModel::_ToPropertiesJson(Json::Value& v) const
+void WebMercatorModel::_WriteJsonProperties(Json::Value& val) const
     {
-    T_Super::_ToPropertiesJson(v);
-    m_mercator.ToJson(v);
+    m_mercator.ToJson(val["WebMercatorModel"]);
+    T_Super::_WriteJsonProperties(val);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      10/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-void WebMercatorModel::_FromPropertiesJson(Json::Value const& v)
+void WebMercatorModel::_ReadJsonProperties(Json::Value const& val)
     {
-    T_Super::_FromPropertiesJson(v);
-    m_mercator.FromJson(v);
+    BeAssert(val.isMember("WebMercatorModel"));
+    m_mercator.FromJson(val["WebMercatorModel"]);
+    T_Super::_ReadJsonProperties(val);
     }
 
 #ifdef TBD_LATLNG_GRID

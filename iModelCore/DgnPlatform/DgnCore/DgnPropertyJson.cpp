@@ -60,7 +60,7 @@ void UnitDefinition::ToJson(JsonValueR outValue) const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   MattGooding     09/12
 //---------------------------------------------------------------------------------------
-void DgnModel::Properties::FormatterFlags::FromJson(JsonValueCR inValue)
+void GeometricModel::DisplayInfo::FormatterFlags::FromJson(JsonValueCR inValue)
     {
     m_linearUnitMode     = inValue[DGNPROPERTYJSON_LinearUnitMode].asUInt();
     m_linearPrecType     = inValue[DGNPROPERTYJSON_LinearPrecType].asUInt();
@@ -74,7 +74,7 @@ void DgnModel::Properties::FormatterFlags::FromJson(JsonValueCR inValue)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   MattGooding     09/12
 //---------------------------------------------------------------------------------------
-void DgnModel::Properties::FormatterFlags::ToJson(JsonValueR outValue) const
+void GeometricModel::DisplayInfo::FormatterFlags::ToJson(JsonValueR outValue) const
     {
     outValue[DGNPROPERTYJSON_LinearUnitMode]     = (uint32_t) m_linearUnitMode;
     outValue[DGNPROPERTYJSON_LinearPrecType]     = (uint32_t) m_linearPrecType;
@@ -88,7 +88,7 @@ void DgnModel::Properties::FormatterFlags::ToJson(JsonValueR outValue) const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   MattGooding     09/12
 //---------------------------------------------------------------------------------------
-void DgnModel::Properties::FromJson(JsonValueCR inValue)
+void GeometricModel::DisplayInfo::FromJson(JsonValueCR inValue)
     {
     m_formatterFlags.FromJson(inValue[DGNPROPERTYJSON_FormatterFlags]);
 
@@ -104,7 +104,7 @@ void DgnModel::Properties::FromJson(JsonValueCR inValue)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   MattGooding     09/12
 //---------------------------------------------------------------------------------------
-void DgnModel::Properties::ToJson(JsonValueR outValue) const
+void GeometricModel::DisplayInfo::ToJson(JsonValueR outValue) const
     {
     m_formatterFlags.ToJson(outValue[DGNPROPERTYJSON_FormatterFlags]);
 

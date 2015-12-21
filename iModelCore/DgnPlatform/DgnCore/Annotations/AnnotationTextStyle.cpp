@@ -81,9 +81,9 @@ END_BENTLEY_DGNPLATFORM_NAMESPACE
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     11/2015
 //---------------------------------------------------------------------------------------
-DgnDbStatus AnnotationTextStyle::_ExtractSelectParams(BeSQLite::EC::ECSqlStatement& select, ECSqlClassParams const& params)
+DgnDbStatus AnnotationTextStyle::_ReadSelectParams(BeSQLite::EC::ECSqlStatement& select, ECSqlClassParams const& params)
     {
-    DgnDbStatus status = T_Super::_ExtractSelectParams(select, params);
+    DgnDbStatus status = T_Super::_ReadSelectParams(select, params);
     if (DgnDbStatus::Success != status)
         return status;
 

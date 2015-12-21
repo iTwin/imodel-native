@@ -281,7 +281,7 @@ Render::GraphicPtr PhysicalRedlineViewController::_StrokeGeometry(ViewContextR c
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      08/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnModelP PhysicalRedlineViewController::_GetTargetModel() const
+GeometricModelP PhysicalRedlineViewController::_GetTargetModel() const
     {
     return m_targetModelIsInSubjectView? m_subjectView.GetTargetModel(): T_Super::_GetTargetModel();
     }
@@ -573,9 +573,9 @@ DbResult DgnMarkupProject::ConvertToMarkupProject(BeFileNameCR fileNameIn, Creat
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   07/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-void RedlineModel::_ToPropertiesJson(Json::Value& val) const 
+void RedlineModel::_WriteJsonProperties(Json::Value& val) const
     {
-    T_Super::_ToPropertiesJson(val);
+    T_Super::_WriteJsonProperties(val);
 
     Json::Value json(Json::objectValue);
     m_assoc.ToPropertiesJson(json);
@@ -585,9 +585,9 @@ void RedlineModel::_ToPropertiesJson(Json::Value& val) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   07/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-void RedlineModel::_FromPropertiesJson(Json::Value const& val) 
+void RedlineModel::_ReadJsonProperties(Json::Value const& val)
     {
-    T_Super::_FromPropertiesJson(val);
+    T_Super::_ReadJsonProperties(val);
     m_assoc.FromPropertiesJson(val["RedlineModel_Assoc"]);
     }
 
@@ -1075,7 +1075,7 @@ RedlineModelPtr RedlineModel::Create(DgnMarkupProjectR markupProject, Utf8CP nam
     if (templateModel.IsValid())
         {
         //  Copy model properties and settings
-        rdlModel->GetPropertiesR() = templateModel->GetProperties();
+        rdlModel->GetDisplayInfoR() = templateModel->GetDisplayInfo();
         rdlModel->m_size = templateModel->GetSize();
 
         //  Copy elements -- *** TBD ***
@@ -1098,9 +1098,9 @@ PhysicalRedlineModelPtr PhysicalRedlineModel::Create(DgnMarkupProjectR markupPro
         return nullptr;
         }
 
-    UnitDefinition mu = subjectViewTargetModel.GetProperties().GetMasterUnits();
-    UnitDefinition su = subjectViewTargetModel.GetProperties().GetSubUnits();
-    rdlModel->GetPropertiesR().SetUnits(mu, su);
+    UnitDefinition mu = subjectViewTargetModel.GetDisplayInfo().GetMasterUnits();
+    UnitDefinition su = subjectViewTargetModel.GetDisplayInfo().GetSubUnits();
+    rdlModel->GetDisplayInfoR().SetUnits(mu, su);
 
     return rdlModel;
     }

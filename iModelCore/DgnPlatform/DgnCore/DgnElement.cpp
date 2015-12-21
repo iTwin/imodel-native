@@ -391,7 +391,7 @@ void DgnElement::_OnReversedAdd() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void dgn_ElementHandler::Element::_GetClassParams(ECSqlClassParams& params)
+void dgn_ElementHandler::Element::_GetClassParams(ECSqlClassParamsR params)
     {
     params.Add(DGN_ELEMENT_PROPNAME_ECInstanceId, ECSqlClassParams::StatementType::Insert);
     params.Add(DGN_ELEMENT_PROPNAME_ModelId, ECSqlClassParams::StatementType::Insert);
@@ -517,7 +517,7 @@ DgnDbStatus DgnElement::_LoadFromDb()
     else if (BE_SQLITE_ROW != select.m_statement->Step())
         return DgnDbStatus::ReadError;
     else
-        return _ExtractSelectParams(*select.m_statement, select.m_params);
+        return _ReadSelectParams(*select.m_statement, select.m_params);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -651,8 +651,8 @@ static DgnDbStatus insertGeomSource(DgnElementCR el, DgnCategoryId categoryId, G
     BeAssert(nullptr != geomModel);
     if (nullptr == geomModel)
         return DgnDbStatus::WriteError;
-    else
-        stmt->BindInt(4, CoordinateSpace::World == geomModel->GetCoordinateSpace() ? 1 : 0);
+
+    stmt->BindInt(4, CoordinateSpace::World == geomModel->GetCoordinateSpace() ? 1 : 0);
 
     if ((nullptr != placement3d && !placement3d->IsValid()) || (nullptr != placement2d && !placement2d->IsValid()))
         {
@@ -660,13 +660,9 @@ static DgnDbStatus insertGeomSource(DgnElementCR el, DgnCategoryId categoryId, G
         stmt->BindNull(2);
         }
     else if (nullptr != placement3d)
-        {
         stmt->BindBlob(2, placement3d, sizeof(*placement3d), Statement::MakeCopy::No);
-        }
     else
-        {
         stmt->BindBlob(2, placement2d, sizeof(*placement2d), Statement::MakeCopy::No);
-        }
 
     DgnDbStatus stat = geom.WriteGeometryStreamAndStep(dgnDb, DGN_TABLE(DGN_CLASSNAME_ElementGeom), GEOM_Column, elementId.GetValue(), *stmt, 1);
     if (DgnDbStatus::Success != stat)
@@ -1409,6 +1405,23 @@ DgnElementIdSet ElementGroupsMembers::QueryGroups(DgnElementCR member)
         elementIdSet.insert(statement->GetValueId<DgnElementId>(0));
 
     return elementIdSet;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Shaun.Sewall                    12/2015
+//---------------------------------------------------------------------------------------
+SpatialGroupElementPtr SpatialGroupElement::Create(PhysicalModelR model, DgnCategoryId categoryId)
+    {
+    DgnDbR db = model.GetDgnDb();
+    DgnClassId classId = db.Domains().GetClassId(dgn_ElementHandler::SpatialGroup::GetHandler());
+
+    if (!classId.IsValid() || !categoryId.IsValid())
+        {
+        BeAssert(false);
+        return nullptr;
+        }
+
+    return new SpatialGroupElement(CreateParams(db, model.GetModelId(), classId, categoryId));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2240,67 +2253,6 @@ DgnDbStatus InstanceBackedItem::_UpdateProperties(DgnElementCR el)
     return (BSISUCCESS != updater.Update(*m_instance)) ? DgnDbStatus::WriteError : DgnDbStatus::Success;
     }
 #endif
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   09/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ECSqlClassParams::Add(Utf8CP name, StatementType type)
-    {
-    BeAssert(!Utf8String::IsNullOrEmpty(name));
-    if (!Utf8String::IsNullOrEmpty(name))
-        {
-        BeAssert(m_entries.end() == std::find_if(m_entries.begin(), m_entries.end(), [&](Entry const& arg) { return 0 == ::strcmp(name, arg.m_name); }));
-        Entry entry(name, type);
-        if (StatementType::Select == (type & StatementType::Select) && 0 < m_entries.size())
-            {
-            // We want to be able to quickly look up the index for a name for SELECT query results...so group them together at the front of the list.
-            m_entries.insert(m_entries.begin(), entry);
-            }
-        else
-            {
-            m_entries.push_back(entry);
-            }
-        }
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   09/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-int ECSqlClassParams::GetSelectIndex(Utf8CP name) const
-    {
-    // NB: All parameters valid for SELECT statements are grouped at the beginning of the list.
-    BeAssert(!Utf8String::IsNullOrEmpty(name));
-    if (!Utf8String::IsNullOrEmpty(name))
-        {
-        auto found = std::find_if(m_entries.begin(), m_entries.end(), [&](Entry const& arg) { return arg.m_name == name; });
-        if (m_entries.end() == found)
-            {
-            // Ideally callers always pass the same static string we originally stored...fallback to string comparison...
-            found = std::find_if(m_entries.begin(), m_entries.end(), [&](Entry const& arg) { return 0 == ::strcmp(arg.m_name, name); });
-            BeAssert(m_entries.end() == found && "Prefer to pass the same string with static storage duration to GetSelectIndex() as was previously passed to Add()");
-            }
-
-        BeAssert(m_entries.end() != found);
-        if (m_entries.end() != found)
-            {
-            BeAssert(StatementType::Select == (found->m_type & StatementType::Select));
-            if (StatementType::Select == (found->m_type & StatementType::Select))
-                return static_cast<int>(found - m_entries.begin());
-            }
-        }
-
-    return -1;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   09/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ECSqlClassParams::RemoveAllButSelect()
-    {
-    // Once we've constructed the handler info, we need only retain those property names which are used in SELECT statements.
-    auto removeAt = std::remove_if(m_entries.begin(), m_entries.end(), [&](Entry const& arg) { return StatementType::Select != (arg.m_type & StatementType::Select); });
-    m_entries.erase(removeAt, m_entries.end());
-    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Shaun.Sewall                    10/15

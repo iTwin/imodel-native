@@ -1468,3 +1468,44 @@ void GeometryParams::Resolve(ViewContextR context)
     {
     Resolve(context.GetDgnDb(), context.GetViewport());
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void DecorateContext::AddWorldDecoration(Render::GraphicR graphic, Render::OvrGraphicParamsCP ovrParams)
+    {
+    if (!m_decorations.m_world.IsValid())
+        m_decorations.m_world = new GraphicList;
+
+    m_decorations.m_world->Add(graphic, m_target.ResolveOverrides(ovrParams), ovrParams ? ovrParams->GetFlags() : 0);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void DecorateContext::AddWorldOverlay(Render::GraphicR graphic, Render::OvrGraphicParamsCP ovrParams)
+    {
+    if (!m_decorations.m_cameraOverlay.IsValid())
+        m_decorations.m_cameraOverlay = new GraphicList;
+
+    m_decorations.m_cameraOverlay->Add(graphic, m_target.ResolveOverrides(ovrParams), ovrParams ? ovrParams->GetFlags() : 0);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void DecorateContext::AddViewOverlay(Render::GraphicR graphic, Render::OvrGraphicParamsCP ovrParams)
+    {
+    if (!m_decorations.m_viewOverlay.IsValid())
+        m_decorations.m_viewOverlay = new GraphicList;
+
+    m_decorations.m_viewOverlay->Add(graphic, m_target.ResolveOverrides(ovrParams), ovrParams ? ovrParams->GetFlags() : 0);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void DecorateContext::AddSprite(ISprite& sprite, DPoint3dCR location, DPoint3dCR xVec, int transparency)
+    {
+    AddViewOverlay(*m_target.CreateSprite(sprite, location, xVec, transparency), nullptr);
+    }

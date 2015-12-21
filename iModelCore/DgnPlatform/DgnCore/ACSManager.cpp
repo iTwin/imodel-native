@@ -407,7 +407,7 @@ WStringR        errorMsg,
 WCharCP         inString,
 bool            relative,
 DPoint3dCP      inLastPoint,
-DgnModelR    modelRef
+DgnModelR       modelRef
 ) override
     {
     DPoint3d    lastPoint;
@@ -433,7 +433,12 @@ DgnModelR    modelRef
         relative    = false;
         }
 
-    DgnModelP   model = &modelRef;
+    GeometricModelP   model = modelRef.ToGeometricModelP();
+    if (!model)
+        {
+        BeAssert(false);
+        return ERROR;
+        }
 
     // make a local copy of the input string that we can modify.
     WString         tmpString(inString);

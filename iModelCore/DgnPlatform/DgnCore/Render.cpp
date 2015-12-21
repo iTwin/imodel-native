@@ -14,6 +14,8 @@
 
 #define RENDER_LOGGING 1
 
+// #undef RENDER_LOGGING
+
 #undef LOG
 #if defined (RENDER_LOGGING)
 #   define LOG (*NativeLogging::LoggingManager::GetLogger(L"Render"))
@@ -45,28 +47,6 @@ void Render::Queue::VerifyRenderThread(bool yesNo)
 #endif
     }
 
-//=======================================================================================
-// @bsiclass                                                    Keith.Bentley   12/15
-//=======================================================================================
-struct RefreshTask : Task
-{
-    Plan m_plan;
-    virtual Utf8CP _GetName() const override {return "Refresh";}
-    virtual Outcome _Process() override {m_target->Refresh(m_plan); return Outcome::Finished;}
-    RefreshTask(DgnViewportR vp) : Task(vp.GetRenderTarget(), Operation::Refresh), m_plan(vp) {}
-};
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   12/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool DgnViewport::QueueRefresh()
-    {
-    if (s_renderQueue == nullptr || !m_renderTarget.IsValid())
-        return false;
-
-    RenderQueue().AddTask(*new RefreshTask(*this));
-    return true;
-    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   07/15
@@ -80,7 +60,7 @@ void Render::Queue::AddTask(Task& task)
     // see whether the new task should replace any existing tasks
     for (auto entry=m_tasks.begin(); entry != m_tasks.end();)
         {
-        if (task._CanReplace(**entry))
+        if (task.GetTarget() == (*entry)->GetTarget() && task._CanReplace(**entry))
             {
             (*entry)->m_outcome = Render::Task::Outcome::Abandoned;
             entry = m_tasks.erase(entry);
@@ -125,7 +105,7 @@ void Render::Task::Perform(StopWatch& timer)
     {
     m_outcome = Task::Outcome::Started;
     timer.Start();
-    m_outcome = _Process();
+    m_outcome = _Process(timer);
     m_elapsedTime = timer.GetCurrentSeconds();
     LOG_PRINTF ("task=%s, elapsed=%lf\n", _GetName(), m_elapsedTime);
     }
@@ -218,6 +198,16 @@ Render::Graphic* GraphicSet::Find(DgnViewportCR vp, double metersPerPixel) const
         }
 
     return nullptr;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void GraphicSet::DropFor(DgnViewportCR vp)
+    {
+    auto found = std::find_if(m_graphics.begin(), m_graphics.end(), [&](GraphicPtr const& arg) { return arg->IsSpecificToViewport(vp); });
+    if (m_graphics.end() != found)
+        m_graphics.erase(found);
     }
 
 /*---------------------------------------------------------------------------------**//**
