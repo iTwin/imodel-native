@@ -73,7 +73,7 @@ void ChangeSummaryTestFixture::DeleteElement(DgnElementId elementId)
 void ChangeSummaryTestFixture::DumpChangeSummary(ChangeSummary const& changeSummary, Utf8CP label)
     {
 #ifdef DUMP_CHANGE_SUMMARY
-    printf("%s:\n", label);
+    printf("\t%s:\n", label);
     changeSummary.Dump();
 #endif
     }
@@ -217,72 +217,73 @@ TEST_F(ChangeSummaryTestFixture, ElementChangesFromCurrentTransaction)
     DumpChangeSummary(changeSummary, "ChangeSummary after inserts");
 
     /*
-    ChangeSummary after inserts:
-    InstanceId;ClassId;ClassName;DbOpcode;Indirect
-    1099511627777;196;dgn:PhysicalModel;Insert;No
-            Code.AuthorityId;NULL;6
-            Code.Namespace;NULL;""
-            Code.Value;NULL;"ChangeSetModel"
-            DependencyIndex;NULL;-1
-            Properties;NULL;"{"DisplayInfo":{"azimuth":-9.2559631349317831e+061,"fmtDir":0.0,"fmtFlags":{"angMode":0,"angPrec":0,"clockwise":0,"dirMode":0,"linMode":0,"linPrec":0,"linType":0},"mastUnit":{"base":1,"den":1.0,"label":"m","num":1.0,"sys":2},"rndRatio":0.0,"rndUnit":0.0,"subUnit":{"base":1,"den":1.0,"label":"m","num":1.0,"sys":2}}}"
-            Visibility;NULL;1
-    1099511627778;160;dgn:Category;Insert;No
-            Code.AuthorityId;NULL;3
-            Code.Namespace;NULL;""
-            Code.Value;NULL;"ChangeSetTestCategory"
-            Descr;NULL;""
-            LastMod;NULL;2.45737e+006
-            ModelId;NULL;1
-            Rank;NULL;2
-            Scope;NULL;1
-    1099511627779;211;dgn:SubCategory;Insert;No
-            Code.AuthorityId;NULL;3
-            Code.Namespace;NULL;"10000000002"
-            Code.Value;NULL;"ChangeSetTestCategory"
-            LastMod;NULL;2.45737e+006
-            ModelId;NULL;1
-            ParentId;NULL;1099511627778
-            Props;NULL;"{"color":16777215}"
-    1099511627780;194;dgn:PhysicalElement;Insert;No
-            Code.AuthorityId;NULL;1
-            Code.Namespace;NULL;""
-            LastMod;NULL;2.45737e+006
-            ModelId;NULL;1099511627777
-    1099511627780;162;dgn:ElementGeom;Insert;No
-            CategoryId;NULL;1099511627778
-            Geom;NULL;...
-            InPhysicalSpace;NULL;1
-            Placement;NULL;...
-    1099511627778;191;dgn:ModelContainsElements;Insert;No
-            SourceECClassId;NULL;167
-            SourceECInstanceId;NULL;1
-            TargetECClassId;NULL;160
-            TargetECInstanceId;NULL;1099511627778
-    1099511627779;180;dgn:ElementOwnsChildElements;Insert;No
-            SourceECClassId;NULL;160
-            SourceECInstanceId;NULL;1099511627778
-            TargetECClassId;NULL;211
-            TargetECInstanceId;NULL;1099511627779
-    1099511627779;191;dgn:ModelContainsElements;Insert;No
-            SourceECClassId;NULL;167
-            SourceECInstanceId;NULL;1
-            TargetECClassId;NULL;211
-            TargetECInstanceId;NULL;1099511627779
-    1099511627780;191;dgn:ModelContainsElements;Insert;No
-            SourceECClassId;NULL;196
-            SourceECInstanceId;NULL;1099511627777
-            TargetECClassId;NULL;194
-            TargetECInstanceId;NULL;1099511627780
-    1099511627780;161;dgn:CategoryContainsElementGeom;Insert;No
-            SourceECClassId;NULL;160
-            SourceECInstanceId;NULL;1099511627778
-            TargetECClassId;NULL;162
-            TargetECInstanceId;NULL;1099511627780
-    1099511627780;183;dgn:ElementOwnsGeom;Insert;No
-            SourceECClassId;NULL;194
-            SourceECInstanceId;NULL;1099511627780
-            TargetECClassId;NULL;162
-            TargetECInstanceId;NULL;1099511627780
+	ChangeSummary after inserts:
+	BriefcaseId:LocalId;SchemaName:ClassName:ClassId;DbOpcode;Indirect
+		AccessString;OldValue;NewValue
+	0:1;dgn:PhysicalModel:196;Insert;No
+		Code.AuthorityId;NULL;6
+		Code.Namespace;NULL;""
+		Code.Value;NULL;"ChangeSetModel"
+		DependencyIndex;NULL;-1
+		Properties;NULL;"{"DisplayInfo":{"azimuth":-9.2559631349317831e+061,"fmtDir":0.0,"fmtFlags":{"angMode":0,"angPrec":0,"clockwise":0,"dirMode":0,"linMode":0,"linPrec":0,"linType":0},"mastUnit":{"base":1,"den":1.0,"label":"m","num":1.0,"sys":2},"rndRatio":0.0,"rndUnit":0.0,"subUnit":{"base":1,"den":1.0,"label":"m","num":1.0,"sys":2}}}"
+		Visibility;NULL;1
+	0:2;dgn:Category:160;Insert;No
+		Code.AuthorityId;NULL;3
+		Code.Namespace;NULL;""
+		Code.Value;NULL;"ChangeSetTestCategory"
+		Descr;NULL;""
+		LastMod;NULL;2.45737e+006
+		ModelId;NULL;1
+		Rank;NULL;2
+		Scope;NULL;1
+	0:3;dgn:SubCategory:211;Insert;No
+		Code.AuthorityId;NULL;3
+		Code.Namespace;NULL;"10000000002"
+		Code.Value;NULL;"ChangeSetTestCategory"
+		LastMod;NULL;2.45737e+006
+		ModelId;NULL;1
+		ParentId;NULL;1099511627778
+		Props;NULL;"{"color":16777215}"
+	0:4;dgn:PhysicalElement:194;Insert;No
+		Code.AuthorityId;NULL;1
+		Code.Namespace;NULL;""
+		LastMod;NULL;2.45737e+006
+		ModelId;NULL;1099511627777
+	0:4;dgn:ElementGeom:162;Insert;No
+		CategoryId;NULL;1099511627778
+		Geom;NULL;...
+		InPhysicalSpace;NULL;1
+		Placement;NULL;...
+	0:2;dgn:ModelContainsElements:191;Insert;No
+		SourceECClassId;NULL;dgn:DictionaryModel:167
+		SourceECInstanceId;NULL;0:1
+		TargetECClassId;NULL;dgn:Category:160
+		TargetECInstanceId;NULL;0:2
+	0:3;dgn:ElementOwnsChildElements:180;Insert;No
+		SourceECClassId;NULL;dgn:Category:160
+		SourceECInstanceId;NULL;0:2
+		TargetECClassId;NULL;dgn:SubCategory:211
+		TargetECInstanceId;NULL;0:3
+	0:3;dgn:ModelContainsElements:191;Insert;No
+		SourceECClassId;NULL;dgn:DictionaryModel:167
+		SourceECInstanceId;NULL;0:1
+		TargetECClassId;NULL;dgn:SubCategory:211
+		TargetECInstanceId;NULL;0:3
+	0:4;dgn:ModelContainsElements:191;Insert;No
+		SourceECClassId;NULL;dgn:PhysicalModel:196
+		SourceECInstanceId;NULL;0:1
+		TargetECClassId;NULL;dgn:PhysicalElement:194
+		TargetECInstanceId;NULL;0:4
+	0:4;dgn:CategoryContainsElementGeom:161;Insert;No
+		SourceECClassId;NULL;dgn:Category:160
+		SourceECInstanceId;NULL;0:2
+		TargetECClassId;NULL;dgn:ElementGeom:162
+		TargetECInstanceId;NULL;0:4
+	0:4;dgn:ElementOwnsGeom:183;Insert;No
+		SourceECClassId;NULL;dgn:PhysicalElement:194
+		SourceECInstanceId;NULL;0:4
+		TargetECClassId;NULL;dgn:ElementGeom:162
+		TargetECInstanceId;NULL;0:4
     */
     EXPECT_EQ(11, changeSummary.MakeInstanceIterator().QueryCount());
     EXPECT_TRUE(ChangeSummaryContainsInstance(changeSummary, ECInstanceId(m_testModel->GetModelId().GetValueUnchecked()), "dgn", "PhysicalModel", DbOpcode::Insert));
@@ -296,10 +297,11 @@ TEST_F(ChangeSummaryTestFixture, ElementChangesFromCurrentTransaction)
     DumpChangeSummary(changeSummary, "ChangeSummary after updates");
 
     /*
-    ChangeSummary after updates:
-    InstanceId;ClassId;ClassName;DbOpcode;Indirect
-    4;139;dgn:PhysicalElement;Update;No
-	    LastMod;2.45733e+006;2.45733e+006
+	ChangeSummary after updates:
+	BriefcaseId:LocalId;SchemaName:ClassName:ClassId;DbOpcode;Indirect
+		AccessString;OldValue;NewValue
+	0:4;dgn:PhysicalElement:194;Update;No
+		LastMod;2.45737e+006;2.45737e+006
     */
     EXPECT_EQ(1, changeSummary.MakeInstanceIterator().QueryCount());
     EXPECT_TRUE(ChangeSummaryContainsInstance(changeSummary, ECInstanceId(elementId.GetValueUnchecked()), "dgn", "PhysicalElement", DbOpcode::Update));
@@ -311,33 +313,34 @@ TEST_F(ChangeSummaryTestFixture, ElementChangesFromCurrentTransaction)
     DumpChangeSummary(changeSummary, "ChangeSummary after deletes");
 
     /*
-    ChangeSummary after deletes:
-    InstanceId;ClassId;ClassName;DbOpcode;Indirect
-    1099511627780;194;dgn:PhysicalElement;Delete;No
-            Code.AuthorityId;1;NULL
-            Code.Namespace;"";NULL
-            LastMod;2.45737e+006;NULL
-            ModelId;1099511627777;NULL
-    1099511627780;162;dgn:ElementGeom;Delete;Yes
-            CategoryId;1099511627778;NULL
-            Geom;...;NULL
-            InPhysicalSpace;1;NULL
-            Placement;...;NULL
-    1099511627780;191;dgn:ModelContainsElements;Delete;No
-            SourceECClassId;196;NULL
-            SourceECInstanceId;1099511627777;NULL
-            TargetECClassId;194;NULL
-            TargetECInstanceId;1099511627780;NULL
-    1099511627780;161;dgn:CategoryContainsElementGeom;Delete;Yes
-            SourceECClassId;160;NULL
-            SourceECInstanceId;1099511627778;NULL
-            TargetECClassId;162;NULL
-            TargetECInstanceId;1099511627780;NULL
-    1099511627780;183;dgn:ElementOwnsGeom;Delete;Yes
-            SourceECClassId;194;NULL
-            SourceECInstanceId;1099511627780;NULL
-            TargetECClassId;162;NULL
-            TargetECInstanceId;1099511627780;NULL
+	ChangeSummary after deletes:
+	BriefcaseId:LocalId;SchemaName:ClassName:ClassId;DbOpcode;Indirect
+		AccessString;OldValue;NewValue
+	0:4;dgn:PhysicalElement:194;Delete;No
+		Code.AuthorityId;1;NULL
+		Code.Namespace;"";NULL
+		LastMod;2.45737e+006;NULL
+		ModelId;1099511627777;NULL
+	0:4;dgn:ElementGeom:162;Delete;Yes
+		CategoryId;1099511627778;NULL
+		Geom;...;NULL
+		InPhysicalSpace;1;NULL
+		Placement;...;NULL
+	0:4;dgn:ModelContainsElements:191;Delete;No
+		SourceECClassId;dgn:PhysicalModel:196;NULL
+		SourceECInstanceId;0:1;NULL
+		TargetECClassId;dgn:PhysicalElement:194;NULL
+		TargetECInstanceId;0:4;NULL
+	0:4;dgn:CategoryContainsElementGeom:161;Delete;Yes
+		SourceECClassId;dgn:Category:160;NULL
+		SourceECInstanceId;0:2;NULL
+		TargetECClassId;dgn:ElementGeom:162;NULL
+		TargetECInstanceId;0:4;NULL
+	0:4;dgn:ElementOwnsGeom:183;Delete;Yes
+		SourceECClassId;dgn:PhysicalElement:194;NULL
+		SourceECInstanceId;0:4;NULL
+		TargetECClassId;dgn:ElementGeom:162;NULL
+		TargetECInstanceId;0:4;NULL
     */
     EXPECT_EQ(5, changeSummary.MakeInstanceIterator().QueryCount());
     EXPECT_TRUE(ChangeSummaryContainsInstance(changeSummary, ECInstanceId(elementId.GetValueUnchecked()), "dgn", "PhysicalElement", DbOpcode::Delete));
@@ -363,72 +366,73 @@ TEST_F(ChangeSummaryTestFixture, ElementChangesFromSavedTransactions)
     DumpChangeSummary(changeSummary, "After inserts");
 
     /* 
-    After inserts:
-    InstanceId;ClassId;ClassName;DbOpcode;Indirect
-    1099511627777;196;dgn:PhysicalModel;Insert;No
-            Code.AuthorityId;NULL;6
-            Code.Namespace;NULL;""
-            Code.Value;NULL;"ChangeSetModel"
-            DependencyIndex;NULL;-1
-            Properties;NULL;"{"DisplayInfo":{"azimuth":-9.2559631349317831e+061,"fmtDir":0.0,"fmtFlags":{"angMode":0,"angPrec":0,"clockwise":0,"dirMode":0,"linMode":0,"linPrec":0,"linType":0},"mastUnit":{"base":1,"den":1.0,"label":"m","num":1.0,"sys":2},"rndRatio":0.0,"rndUnit":0.0,"subUnit":{"base":1,"den":1.0,"label":"m","num":1.0,"sys":2}}}"
-            Visibility;NULL;1
-    1099511627778;160;dgn:Category;Insert;No
-            Code.AuthorityId;NULL;3
-            Code.Namespace;NULL;""
-            Code.Value;NULL;"ChangeSetTestCategory"
-            Descr;NULL;""
-            LastMod;NULL;2.45737e+006
-            ModelId;NULL;1
-            Rank;NULL;2
-            Scope;NULL;1
-    1099511627779;211;dgn:SubCategory;Insert;No
-            Code.AuthorityId;NULL;3
-            Code.Namespace;NULL;"10000000002"
-            Code.Value;NULL;"ChangeSetTestCategory"
-            LastMod;NULL;2.45737e+006
-            ModelId;NULL;1
-            ParentId;NULL;1099511627778
-            Props;NULL;"{"color":16777215}"
-    1099511627780;194;dgn:PhysicalElement;Insert;No
-            Code.AuthorityId;NULL;1
-            Code.Namespace;NULL;""
-            LastMod;NULL;2.45737e+006
-            ModelId;NULL;1099511627777
-    1099511627780;162;dgn:ElementGeom;Insert;No
-            CategoryId;NULL;1099511627778
-            Geom;NULL;...
-            InPhysicalSpace;NULL;1
-            Placement;NULL;...
-    1099511627778;191;dgn:ModelContainsElements;Insert;No
-            SourceECClassId;NULL;167
-            SourceECInstanceId;NULL;1
-            TargetECClassId;NULL;160
-            TargetECInstanceId;NULL;1099511627778
-    1099511627779;180;dgn:ElementOwnsChildElements;Insert;No
-            SourceECClassId;NULL;160
-            SourceECInstanceId;NULL;1099511627778
-            TargetECClassId;NULL;211
-            TargetECInstanceId;NULL;1099511627779
-    1099511627779;191;dgn:ModelContainsElements;Insert;No
-            SourceECClassId;NULL;167
-            SourceECInstanceId;NULL;1
-            TargetECClassId;NULL;211
-            TargetECInstanceId;NULL;1099511627779
-    1099511627780;191;dgn:ModelContainsElements;Insert;No
-            SourceECClassId;NULL;196
-            SourceECInstanceId;NULL;1099511627777
-            TargetECClassId;NULL;194
-            TargetECInstanceId;NULL;1099511627780
-    1099511627780;161;dgn:CategoryContainsElementGeom;Insert;No
-            SourceECClassId;NULL;160
-            SourceECInstanceId;NULL;1099511627778
-            TargetECClassId;NULL;162
-            TargetECInstanceId;NULL;1099511627780
-    1099511627780;183;dgn:ElementOwnsGeom;Insert;No
-            SourceECClassId;NULL;194
-            SourceECInstanceId;NULL;1099511627780
-            TargetECClassId;NULL;162
-            TargetECInstanceId;NULL;1099511627780
+	After inserts:
+	BriefcaseId:LocalId;SchemaName:ClassName:ClassId;DbOpcode;Indirect
+		AccessString;OldValue;NewValue
+	0:1;dgn:PhysicalModel:196;Insert;No
+		Code.AuthorityId;NULL;6
+		Code.Namespace;NULL;""
+		Code.Value;NULL;"ChangeSetModel"
+		DependencyIndex;NULL;-1
+		Properties;NULL;"{"DisplayInfo":{"azimuth":-9.2559631349317831e+061,"fmtDir":0.0,"fmtFlags":{"angMode":0,"angPrec":0,"clockwise":0,"dirMode":0,"linMode":0,"linPrec":0,"linType":0},"mastUnit":{"base":1,"den":1.0,"label":"m","num":1.0,"sys":2},"rndRatio":0.0,"rndUnit":0.0,"subUnit":{"base":1,"den":1.0,"label":"m","num":1.0,"sys":2}}}"
+		Visibility;NULL;1
+	0:2;dgn:Category:160;Insert;No
+		Code.AuthorityId;NULL;3
+		Code.Namespace;NULL;""
+		Code.Value;NULL;"ChangeSetTestCategory"
+		Descr;NULL;""
+		LastMod;NULL;2.45737e+006
+		ModelId;NULL;1
+		Rank;NULL;2
+		Scope;NULL;1
+	0:3;dgn:SubCategory:211;Insert;No
+		Code.AuthorityId;NULL;3
+		Code.Namespace;NULL;"10000000002"
+		Code.Value;NULL;"ChangeSetTestCategory"
+		LastMod;NULL;2.45737e+006
+		ModelId;NULL;1
+		ParentId;NULL;1099511627778
+		Props;NULL;"{"color":16777215}"
+	0:4;dgn:PhysicalElement:194;Insert;No
+		Code.AuthorityId;NULL;1
+		Code.Namespace;NULL;""
+		LastMod;NULL;2.45737e+006
+		ModelId;NULL;1099511627777
+	0:4;dgn:ElementGeom:162;Insert;No
+		CategoryId;NULL;1099511627778
+		Geom;NULL;...
+		InPhysicalSpace;NULL;1
+		Placement;NULL;...
+	0:2;dgn:ModelContainsElements:191;Insert;No
+		SourceECClassId;NULL;dgn:DictionaryModel:167
+		SourceECInstanceId;NULL;0:1
+		TargetECClassId;NULL;dgn:Category:160
+		TargetECInstanceId;NULL;0:2
+	0:3;dgn:ElementOwnsChildElements:180;Insert;No
+		SourceECClassId;NULL;dgn:Category:160
+		SourceECInstanceId;NULL;0:2
+		TargetECClassId;NULL;dgn:SubCategory:211
+		TargetECInstanceId;NULL;0:3
+	0:3;dgn:ModelContainsElements:191;Insert;No
+		SourceECClassId;NULL;dgn:DictionaryModel:167
+		SourceECInstanceId;NULL;0:1
+		TargetECClassId;NULL;dgn:SubCategory:211
+		TargetECInstanceId;NULL;0:3
+	0:4;dgn:ModelContainsElements:191;Insert;No
+		SourceECClassId;NULL;dgn:PhysicalModel:196
+		SourceECInstanceId;NULL;0:1
+		TargetECClassId;NULL;dgn:PhysicalElement:194
+		TargetECInstanceId;NULL;0:4
+	0:4;dgn:CategoryContainsElementGeom:161;Insert;No
+		SourceECClassId;NULL;dgn:Category:160
+		SourceECInstanceId;NULL;0:2
+		TargetECClassId;NULL;dgn:ElementGeom:162
+		TargetECInstanceId;NULL;0:4
+	0:4;dgn:ElementOwnsGeom:183;Insert;No
+		SourceECClassId;NULL;dgn:PhysicalElement:194
+		SourceECInstanceId;NULL;0:4
+		TargetECClassId;NULL;dgn:ElementGeom:162
+		TargetECInstanceId;NULL;0:4
     */
     EXPECT_EQ(11, changeSummary.MakeInstanceIterator().QueryCount());
 
@@ -441,72 +445,73 @@ TEST_F(ChangeSummaryTestFixture, ElementChangesFromSavedTransactions)
     DumpChangeSummary(changeSummary, "After updates");
 
     /*
-    After updates:
-    InstanceId;ClassId;ClassName;DbOpcode;Indirect
-    1099511627777;196;dgn:PhysicalModel;Insert;No
-            Code.AuthorityId;NULL;6
-            Code.Namespace;NULL;""
-            Code.Value;NULL;"ChangeSetModel"
-            DependencyIndex;NULL;-1
-            Properties;NULL;"{"DisplayInfo":{"azimuth":-9.2559631349317831e+061,"fmtDir":0.0,"fmtFlags":{"angMode":0,"angPrec":0,"clockwise":0,"dirMode":0,"linMode":0,"linPrec":0,"linType":0},"mastUnit":{"base":1,"den":1.0,"label":"m","num":1.0,"sys":2},"rndRatio":0.0,"rndUnit":0.0,"subUnit":{"base":1,"den":1.0,"label":"m","num":1.0,"sys":2}}}"
-            Visibility;NULL;1
-    1099511627778;160;dgn:Category;Insert;No
-            Code.AuthorityId;NULL;3
-            Code.Namespace;NULL;""
-            Code.Value;NULL;"ChangeSetTestCategory"
-            Descr;NULL;""
-            LastMod;NULL;2.45737e+006
-            ModelId;NULL;1
-            Rank;NULL;2
-            Scope;NULL;1
-    1099511627779;211;dgn:SubCategory;Insert;No
-            Code.AuthorityId;NULL;3
-            Code.Namespace;NULL;"10000000002"
-            Code.Value;NULL;"ChangeSetTestCategory"
-            LastMod;NULL;2.45737e+006
-            ModelId;NULL;1
-            ParentId;NULL;1099511627778
-            Props;NULL;"{"color":16777215}"
-    1099511627780;194;dgn:PhysicalElement;Insert;No
-            Code.AuthorityId;NULL;1
-            Code.Namespace;NULL;""
-            LastMod;NULL;2.45737e+006
-            ModelId;NULL;1099511627777
-    1099511627780;162;dgn:ElementGeom;Insert;No
-            CategoryId;NULL;1099511627778
-            Geom;NULL;...
-            InPhysicalSpace;NULL;1
-            Placement;NULL;...
-    1099511627778;191;dgn:ModelContainsElements;Insert;No
-            SourceECClassId;NULL;167
-            SourceECInstanceId;NULL;1
-            TargetECClassId;NULL;160
-            TargetECInstanceId;NULL;1099511627778
-    1099511627779;180;dgn:ElementOwnsChildElements;Insert;No
-            SourceECClassId;NULL;160
-            SourceECInstanceId;NULL;1099511627778
-            TargetECClassId;NULL;211
-            TargetECInstanceId;NULL;1099511627779
-    1099511627779;191;dgn:ModelContainsElements;Insert;No
-            SourceECClassId;NULL;167
-            SourceECInstanceId;NULL;1
-            TargetECClassId;NULL;211
-            TargetECInstanceId;NULL;1099511627779
-    1099511627780;191;dgn:ModelContainsElements;Insert;No
-            SourceECClassId;NULL;196
-            SourceECInstanceId;NULL;1099511627777
-            TargetECClassId;NULL;194
-            TargetECInstanceId;NULL;1099511627780
-    1099511627780;161;dgn:CategoryContainsElementGeom;Insert;No
-            SourceECClassId;NULL;160
-            SourceECInstanceId;NULL;1099511627778
-            TargetECClassId;NULL;162
-            TargetECInstanceId;NULL;1099511627780
-    1099511627780;183;dgn:ElementOwnsGeom;Insert;No
-            SourceECClassId;NULL;194
-            SourceECInstanceId;NULL;1099511627780
-            TargetECClassId;NULL;162
-            TargetECInstanceId;NULL;1099511627780
+	After updates:
+	BriefcaseId:LocalId;SchemaName:ClassName:ClassId;DbOpcode;Indirect
+		AccessString;OldValue;NewValue
+	0:1;dgn:PhysicalModel:196;Insert;No
+		Code.AuthorityId;NULL;6
+		Code.Namespace;NULL;""
+		Code.Value;NULL;"ChangeSetModel"
+		DependencyIndex;NULL;-1
+		Properties;NULL;"{"DisplayInfo":{"azimuth":-9.2559631349317831e+061,"fmtDir":0.0,"fmtFlags":{"angMode":0,"angPrec":0,"clockwise":0,"dirMode":0,"linMode":0,"linPrec":0,"linType":0},"mastUnit":{"base":1,"den":1.0,"label":"m","num":1.0,"sys":2},"rndRatio":0.0,"rndUnit":0.0,"subUnit":{"base":1,"den":1.0,"label":"m","num":1.0,"sys":2}}}"
+		Visibility;NULL;1
+	0:2;dgn:Category:160;Insert;No
+		Code.AuthorityId;NULL;3
+		Code.Namespace;NULL;""
+		Code.Value;NULL;"ChangeSetTestCategory"
+		Descr;NULL;""
+		LastMod;NULL;2.45737e+006
+		ModelId;NULL;1
+		Rank;NULL;2
+		Scope;NULL;1
+	0:3;dgn:SubCategory:211;Insert;No
+		Code.AuthorityId;NULL;3
+		Code.Namespace;NULL;"10000000002"
+		Code.Value;NULL;"ChangeSetTestCategory"
+		LastMod;NULL;2.45737e+006
+		ModelId;NULL;1
+		ParentId;NULL;1099511627778
+		Props;NULL;"{"color":16777215}"
+	0:4;dgn:PhysicalElement:194;Insert;No
+		Code.AuthorityId;NULL;1
+		Code.Namespace;NULL;""
+		LastMod;NULL;2.45737e+006
+		ModelId;NULL;1099511627777
+	0:4;dgn:ElementGeom:162;Insert;No
+		CategoryId;NULL;1099511627778
+		Geom;NULL;...
+		InPhysicalSpace;NULL;1
+		Placement;NULL;...
+	0:2;dgn:ModelContainsElements:191;Insert;No
+		SourceECClassId;NULL;dgn:DictionaryModel:167
+		SourceECInstanceId;NULL;0:1
+		TargetECClassId;NULL;dgn:Category:160
+		TargetECInstanceId;NULL;0:2
+	0:3;dgn:ElementOwnsChildElements:180;Insert;No
+		SourceECClassId;NULL;dgn:Category:160
+		SourceECInstanceId;NULL;0:2
+		TargetECClassId;NULL;dgn:SubCategory:211
+		TargetECInstanceId;NULL;0:3
+	0:3;dgn:ModelContainsElements:191;Insert;No
+		SourceECClassId;NULL;dgn:DictionaryModel:167
+		SourceECInstanceId;NULL;0:1
+		TargetECClassId;NULL;dgn:SubCategory:211
+		TargetECInstanceId;NULL;0:3
+	0:4;dgn:ModelContainsElements:191;Insert;No
+		SourceECClassId;NULL;dgn:PhysicalModel:196
+		SourceECInstanceId;NULL;0:1
+		TargetECClassId;NULL;dgn:PhysicalElement:194
+		TargetECInstanceId;NULL;0:4
+	0:4;dgn:CategoryContainsElementGeom:161;Insert;No
+		SourceECClassId;NULL;dgn:Category:160
+		SourceECInstanceId;NULL;0:2
+		TargetECClassId;NULL;dgn:ElementGeom:162
+		TargetECInstanceId;NULL;0:4
+	0:4;dgn:ElementOwnsGeom:183;Insert;No
+		SourceECClassId;NULL;dgn:PhysicalElement:194
+		SourceECInstanceId;NULL;0:4
+		TargetECClassId;NULL;dgn:ElementGeom:162
+		TargetECInstanceId;NULL;0:4
     */
     EXPECT_EQ(11, changeSummary.MakeInstanceIterator().QueryCount());
 
@@ -519,47 +524,48 @@ TEST_F(ChangeSummaryTestFixture, ElementChangesFromSavedTransactions)
     DumpChangeSummary(changeSummary, "After deletes");
 
     /*
-    After deletes:
-    InstanceId;ClassId;ClassName;DbOpcode;Indirect
-    1099511627777;196;dgn:PhysicalModel;Insert;No
-            Code.AuthorityId;NULL;6
-            Code.Namespace;NULL;""
-            Code.Value;NULL;"ChangeSetModel"
-            DependencyIndex;NULL;-1
-            Properties;NULL;"{"DisplayInfo":{"azimuth":-9.2559631349317831e+061,"fmtDir":0.0,"fmtFlags":{"angMode":0,"angPrec":0,"clockwise":0,"dirMode":0,"linMode":0,"linPrec":0,"linType":0},"mastUnit":{"base":1,"den":1.0,"label":"m","num":1.0,"sys":2},"rndRatio":0.0,"rndUnit":0.0,"subUnit":{"base":1,"den":1.0,"label":"m","num":1.0,"sys":2}}}"
-            Visibility;NULL;1
-    1099511627778;160;dgn:Category;Insert;No
-            Code.AuthorityId;NULL;3
-            Code.Namespace;NULL;""
-            Code.Value;NULL;"ChangeSetTestCategory"
-            Descr;NULL;""
-            LastMod;NULL;2.45737e+006
-            ModelId;NULL;1
-            Rank;NULL;2
-            Scope;NULL;1
-    1099511627779;211;dgn:SubCategory;Insert;No
-            Code.AuthorityId;NULL;3
-            Code.Namespace;NULL;"10000000002"
-            Code.Value;NULL;"ChangeSetTestCategory"
-            LastMod;NULL;2.45737e+006
-            ModelId;NULL;1
-            ParentId;NULL;1099511627778
-            Props;NULL;"{"color":16777215}"
-    1099511627778;191;dgn:ModelContainsElements;Insert;No
-            SourceECClassId;NULL;167
-            SourceECInstanceId;NULL;1
-            TargetECClassId;NULL;160
-            TargetECInstanceId;NULL;1099511627778
-    1099511627779;180;dgn:ElementOwnsChildElements;Insert;No
-            SourceECClassId;NULL;160
-            SourceECInstanceId;NULL;1099511627778
-            TargetECClassId;NULL;211
-            TargetECInstanceId;NULL;1099511627779
-    1099511627779;191;dgn:ModelContainsElements;Insert;No
-            SourceECClassId;NULL;167
-            SourceECInstanceId;NULL;1
-            TargetECClassId;NULL;211
-            TargetECInstanceId;NULL;1099511627779
+	After deletes:
+	BriefcaseId:LocalId;SchemaName:ClassName:ClassId;DbOpcode;Indirect
+		AccessString;OldValue;NewValue
+	0:1;dgn:PhysicalModel:196;Insert;No
+		Code.AuthorityId;NULL;6
+		Code.Namespace;NULL;""
+		Code.Value;NULL;"ChangeSetModel"
+		DependencyIndex;NULL;-1
+		Properties;NULL;"{"DisplayInfo":{"azimuth":-9.2559631349317831e+061,"fmtDir":0.0,"fmtFlags":{"angMode":0,"angPrec":0,"clockwise":0,"dirMode":0,"linMode":0,"linPrec":0,"linType":0},"mastUnit":{"base":1,"den":1.0,"label":"m","num":1.0,"sys":2},"rndRatio":0.0,"rndUnit":0.0,"subUnit":{"base":1,"den":1.0,"label":"m","num":1.0,"sys":2}}}"
+		Visibility;NULL;1
+	0:2;dgn:Category:160;Insert;No
+		Code.AuthorityId;NULL;3
+		Code.Namespace;NULL;""
+		Code.Value;NULL;"ChangeSetTestCategory"
+		Descr;NULL;""
+		LastMod;NULL;2.45737e+006
+		ModelId;NULL;1
+		Rank;NULL;2
+		Scope;NULL;1
+	0:3;dgn:SubCategory:211;Insert;No
+		Code.AuthorityId;NULL;3
+		Code.Namespace;NULL;"10000000002"
+		Code.Value;NULL;"ChangeSetTestCategory"
+		LastMod;NULL;2.45737e+006
+		ModelId;NULL;1
+		ParentId;NULL;1099511627778
+		Props;NULL;"{"color":16777215}"
+	0:2;dgn:ModelContainsElements:191;Insert;No
+		SourceECClassId;NULL;dgn:DictionaryModel:167
+		SourceECInstanceId;NULL;0:1
+		TargetECClassId;NULL;dgn:Category:160
+		TargetECInstanceId;NULL;0:2
+	0:3;dgn:ElementOwnsChildElements:180;Insert;No
+		SourceECClassId;NULL;dgn:Category:160
+		SourceECInstanceId;NULL;0:2
+		TargetECClassId;NULL;dgn:SubCategory:211
+		TargetECInstanceId;NULL;0:3
+	0:3;dgn:ModelContainsElements:191;Insert;No
+		SourceECClassId;NULL;dgn:DictionaryModel:167
+		SourceECInstanceId;NULL;0:1
+		TargetECClassId;NULL;dgn:SubCategory:211
+		TargetECInstanceId;NULL;0:3
     */
     EXPECT_EQ(6, changeSummary.MakeInstanceIterator().QueryCount());
     }
@@ -624,14 +630,15 @@ TEST_F(ChangeSummaryTestFixture, StructArrayChangesFromCurrentTransaction)
     DumpChangeSummary(changeSummary, "ChangeSummary after inserting instance with struct array");
 
     /*
-    ChangeSummary after inserting instance with struct array:
-    InstanceId;ClassId;ClassName;DbOpcode;Indirect
-    1;261;StartupCompany:Foo;Insert;No
-        anglesFoo.Alpha;NULL;12.345
-        anglesFoo.Beta;NULL;12.345
-        arrayOfIntsFoo;NULL;...
-        doubleFoo;NULL;12.345
-        intFoo;NULL;67
+	ChangeSummary after inserting instance with struct array:
+	BriefcaseId:LocalId;SchemaName:ClassName:ClassId;DbOpcode;Indirect
+		AccessString;OldValue;NewValue
+	0:1;StartupCompany:Foo:1099511627830;Insert;No
+		anglesFoo.Alpha;NULL;12.345
+		anglesFoo.Beta;NULL;12.345
+		arrayOfIntsFoo;NULL;...
+		doubleFoo;NULL;12.345
+		intFoo;NULL;67
     */
     EXPECT_EQ(1, changeSummary.MakeInstanceIterator().QueryCount());
     EXPECT_TRUE(ChangeSummaryContainsInstance(changeSummary, instanceKey.GetECInstanceId(), "StartupCompany", "Foo", DbOpcode::Insert));
@@ -649,9 +656,10 @@ TEST_F(ChangeSummaryTestFixture, StructArrayChangesFromCurrentTransaction)
     DumpChangeSummary(changeSummary, "ChangeSummary after updating one row in the struct array table");
 
     /*
-    ChangeSummary after updating one row in the struct array table:
-    InstanceId;ClassId;ClassName;DbOpcode;Indirect
-    1;261;StartupCompany:Foo;Update;No
+	ChangeSummary after updating one row in the struct array table:
+	BriefcaseId:LocalId;SchemaName:ClassName:ClassId;DbOpcode;Indirect
+		AccessString;OldValue;NewValue
+	0:1;StartupCompany:Foo:1099511627830;Update;No
     */
     EXPECT_EQ(1, changeSummary.MakeInstanceIterator().QueryCount());
     EXPECT_TRUE(ChangeSummaryContainsInstance(changeSummary, instanceKey.GetECInstanceId(), "StartupCompany", "Foo", DbOpcode::Update));
@@ -669,9 +677,10 @@ TEST_F(ChangeSummaryTestFixture, StructArrayChangesFromCurrentTransaction)
     DumpChangeSummary(changeSummary, "ChangeSummary after deleting one row in the struct array table");
 
     /*
-    ChangeSummary after deleting one row in the struct array table:
-    InstanceId;ClassId;ClassName;DbOpcode;Indirect
-    1;261;StartupCompany:Foo;Update;No
+	ChangeSummary after deleting one row in the struct array table:
+	BriefcaseId:LocalId;SchemaName:ClassName:ClassId;DbOpcode;Indirect
+		AccessString;OldValue;NewValue
+	0:1;StartupCompany:Foo:1099511627830;Update;No
     */
     EXPECT_EQ(1, changeSummary.MakeInstanceIterator().QueryCount());
     EXPECT_TRUE(ChangeSummaryContainsInstance(changeSummary, instanceKey.GetECInstanceId(), "StartupCompany", "Foo", DbOpcode::Update));
@@ -694,14 +703,15 @@ TEST_F(ChangeSummaryTestFixture, StructArrayChangesFromCurrentTransaction)
     DumpChangeSummary(changeSummary, "ChangeSummary after deleting instance that contains a struct array");
 
     /*
-    ChangeSummary after deleting instance that contains a struct array:
-    InstanceId;ClassId;ClassName;DbOpcode;Indirect
-    1;261;StartupCompany:Foo;Delete;No
-            anglesFoo.Alpha;12.345;NULL
-            anglesFoo.Beta;12.345;NULL
-            arrayOfIntsFoo;...;NULL
-            doubleFoo;12.345;NULL
-            intFoo;67;NULL
+	ChangeSummary after deleting instance that contains a struct array:
+	BriefcaseId:LocalId;SchemaName:ClassName:ClassId;DbOpcode;Indirect
+		AccessString;OldValue;NewValue
+	0:1;StartupCompany:Foo:1099511627830;Delete;No
+		anglesFoo.Alpha;12.345;NULL
+		anglesFoo.Beta;12.345;NULL
+		arrayOfIntsFoo;...;NULL
+		doubleFoo;12.345;NULL
+		intFoo;67;NULL
     */
     EXPECT_EQ(1, changeSummary.MakeInstanceIterator().QueryCount());
     EXPECT_TRUE(ChangeSummaryContainsInstance(changeSummary, instanceKey.GetECInstanceId(), "StartupCompany", "Foo", DbOpcode::Delete));
@@ -741,14 +751,15 @@ TEST_F(ChangeSummaryTestFixture, StructArrayChangesFromSavedTransactions)
     DumpChangeSummary(changeSummary, "ChangeSummary after inserting instance with struct array");
 
     /*
-    ChangeSummary after inserting instance with struct array:
-    InstanceId;ClassId;ClassName;DbOpcode;Indirect
-    1;261;StartupCompany:Foo;Insert;No
-            anglesFoo.Alpha;NULL;12.345
-            anglesFoo.Beta;NULL;12.345
-            arrayOfIntsFoo;NULL;...
-            doubleFoo;NULL;12.345
-            intFoo;NULL;67
+	ChangeSummary after inserting instance with struct array:
+	BriefcaseId:LocalId;SchemaName:ClassName:ClassId;DbOpcode;Indirect
+		AccessString;OldValue;NewValue
+	0:1;StartupCompany:Foo:1099511627830;Insert;No
+		anglesFoo.Alpha;NULL;12.345
+		anglesFoo.Beta;NULL;12.345
+		arrayOfIntsFoo;NULL;...
+		doubleFoo;NULL;12.345
+		intFoo;NULL;67
     */
     EXPECT_EQ(1, changeSummary.MakeInstanceIterator().QueryCount());
     EXPECT_TRUE(ChangeSummaryContainsInstance(changeSummary, instanceKey.GetECInstanceId(), "StartupCompany", "Foo", DbOpcode::Insert));
@@ -766,14 +777,15 @@ TEST_F(ChangeSummaryTestFixture, StructArrayChangesFromSavedTransactions)
     DumpChangeSummary(changeSummary, "ChangeSummary after updating one row in the struct array table");
 
     /*
-    ChangeSummary after updating one row in the struct array table:
-    InstanceId;ClassId;ClassName;DbOpcode;Indirect
-    1;261;StartupCompany:Foo;Insert;No
-            anglesFoo.Alpha;NULL;12.345
-            anglesFoo.Beta;NULL;12.345
-            arrayOfIntsFoo;NULL;...
-            doubleFoo;NULL;12.345
-            intFoo;NULL;67
+	ChangeSummary after updating one row in the struct array table:
+	BriefcaseId:LocalId;SchemaName:ClassName:ClassId;DbOpcode;Indirect
+		AccessString;OldValue;NewValue
+	0:1;StartupCompany:Foo:1099511627830;Insert;No
+		anglesFoo.Alpha;NULL;12.345
+		anglesFoo.Beta;NULL;12.345
+		arrayOfIntsFoo;NULL;...
+		doubleFoo;NULL;12.345
+		intFoo;NULL;67
     */
     EXPECT_EQ(1, changeSummary.MakeInstanceIterator().QueryCount());
     EXPECT_TRUE(ChangeSummaryContainsInstance(changeSummary, instanceKey.GetECInstanceId(), "StartupCompany", "Foo", DbOpcode::Insert));
@@ -791,14 +803,15 @@ TEST_F(ChangeSummaryTestFixture, StructArrayChangesFromSavedTransactions)
     DumpChangeSummary(changeSummary, "ChangeSummary after deleting one row in the struct array table");
 
     /*
-    ChangeSummary after deleting one row in the struct array table:
-    InstanceId;ClassId;ClassName;DbOpcode;Indirect
-    1;261;StartupCompany:Foo;Insert;No
-            anglesFoo.Alpha;NULL;12.345
-            anglesFoo.Beta;NULL;12.345
-            arrayOfIntsFoo;NULL;...
-            doubleFoo;NULL;12.345
-            intFoo;NULL;67
+	ChangeSummary after deleting one row in the struct array table:
+	BriefcaseId:LocalId;SchemaName:ClassName:ClassId;DbOpcode;Indirect
+		AccessString;OldValue;NewValue
+	0:1;StartupCompany:Foo:1099511627830;Insert;No
+		anglesFoo.Alpha;NULL;12.345
+		anglesFoo.Beta;NULL;12.345
+		arrayOfIntsFoo;NULL;...
+		doubleFoo;NULL;12.345
+		intFoo;NULL;67
     */
     EXPECT_EQ(1, changeSummary.MakeInstanceIterator().QueryCount());
     EXPECT_TRUE(ChangeSummaryContainsInstance(changeSummary, instanceKey.GetECInstanceId(), "StartupCompany", "Foo", DbOpcode::Insert));
@@ -821,8 +834,9 @@ TEST_F(ChangeSummaryTestFixture, StructArrayChangesFromSavedTransactions)
     DumpChangeSummary(changeSummary, "ChangeSummary after deleting instance that contains a struct array");
 
     /*
-    ChangeSummary after deleting instance that contains a struct array:
-    InstanceId;ClassId;ClassName;DbOpcode;IsIndirect
+	ChangeSummary after deleting instance that contains a struct array:
+	BriefcaseId:LocalId;SchemaName:ClassName:ClassId;DbOpcode;Indirect
+		AccessString;OldValue;NewValue
     */
     EXPECT_EQ(0, changeSummary.MakeInstanceIterator().QueryCount());
     }
@@ -885,21 +899,22 @@ TEST_F(ChangeSummaryTestFixture, RelationshipChangesFromCurrentTransaction)
     DumpChangeSummary(changeSummary, "ChangeSummary after inserting instances");
 
     /*
-    ChangeSummary after inserting instances:
-    InstanceId;ClassId;ClassName;DbOpcode;Indirect
-    1;250;StartupCompany:Employee;Insert;No
-            FirstName;NULL;"John"
-            LastName;NULL;"Doe"
-    2;241;StartupCompany:Company;Insert;No
-            Name;NULL;"AcmeWorks"
-    3;241;StartupCompany:Company;Insert;No
-            Name;NULL;"CmeaWorks"
-    4;245;StartupCompany:Hardware;Insert;No
-            Make;NULL;"Tesla"
-            Model;NULL;"Model-S"
-    5;245;StartupCompany:Hardware;Insert;No
-            Make;NULL;"Toyota"
-            Model;NULL;"Prius"
+	ChangeSummary after inserting instances:
+	BriefcaseId:LocalId;SchemaName:ClassName:ClassId;DbOpcode;Indirect
+		AccessString;OldValue;NewValue
+	0:1;StartupCompany:Employee:1099511627819;Insert;No
+		FirstName;NULL;"John"
+		LastName;NULL;"Doe"
+	0:2;StartupCompany:Company:1099511627810;Insert;No
+		Name;NULL;"AcmeWorks"
+	0:3;StartupCompany:Company:1099511627810;Insert;No
+		Name;NULL;"CmeaWorks"
+	0:4;StartupCompany:Hardware:1099511627814;Insert;No
+		Make;NULL;"Tesla"
+		Model;NULL;"Model-S"
+	0:5;StartupCompany:Hardware:1099511627814;Insert;No
+		Make;NULL;"Toyota"
+		Model;NULL;"Prius"
     */
     EXPECT_EQ(5, changeSummary.MakeInstanceIterator().QueryCount());
     EXPECT_TRUE(ChangeSummaryContainsInstance(changeSummary, ECInstanceId(employeeKey.GetECInstanceId().GetValueUnchecked()), "StartupCompany", "Employee", DbOpcode::Insert));
@@ -938,18 +953,19 @@ TEST_F(ChangeSummaryTestFixture, RelationshipChangesFromCurrentTransaction)
     DumpChangeSummary(changeSummary, "ChangeSummary after inserting relationships");
 
     /*
-    ChangeSummary after inserting relationships:
-    InstanceId;ClassId;ClassName;DbOpcode;Indirect
-    1;252;StartupCompany:EmployeeCompany;Insert;No
-            SourceECClassId;250;250
-            SourceECInstanceId;1;1
-            TargetECClassId;NULL;241
-            TargetECInstanceId;NULL;2
-    6;255;StartupCompany:EmployeeHardware;Insert;No
-            SourceECClassId;NULL;250
-            SourceECInstanceId;NULL;1
-            TargetECClassId;NULL;245
-            TargetECInstanceId;NULL;4
+	ChangeSummary after inserting relationships:
+	BriefcaseId:LocalId;SchemaName:ClassName:ClassId;DbOpcode;Indirect
+		AccessString;OldValue;NewValue
+	0:6;StartupCompany:EmployeeHardware:1099511627824;Insert;No
+		SourceECClassId;NULL;StartupCompany:Employee:1099511627819
+		SourceECInstanceId;NULL;0:1
+		TargetECClassId;NULL;StartupCompany:Hardware:1099511627814
+		TargetECInstanceId;NULL;0:4
+	0:1;StartupCompany:EmployeeCompany:1099511627821;Insert;No
+		SourceECClassId;NULL;StartupCompany:Employee:1099511627819
+		SourceECInstanceId;NULL;0:1
+		TargetECClassId;NULL;StartupCompany:Company:1099511627810
+		TargetECInstanceId;NULL;0:2
     */
     EXPECT_EQ(2, changeSummary.MakeInstanceIterator().QueryCount());
     EXPECT_TRUE(ChangeSummaryContainsInstance(changeSummary, ECInstanceId(employeeCompanyKey.GetECInstanceId().GetValueUnchecked()), "StartupCompany", "EmployeeCompany", DbOpcode::Insert));
@@ -1000,23 +1016,24 @@ TEST_F(ChangeSummaryTestFixture, RelationshipChangesFromCurrentTransaction)
     DumpChangeSummary(changeSummary, "ChangeSummary after updating (deleting and inserting different) relationships");
 
     /*
-    ChangeSummary after updating (deleting and inserting different) relationships:
-    InstanceId;ClassId;ClassName;DbOpcode;Indirect
-    6;255;StartupCompany:EmployeeHardware;Delete;No
-	    SourceECClassId;250;NULL
-	    SourceECInstanceId;1;NULL
-	    TargetECClassId;245;NULL
-	    TargetECInstanceId;4;NULL
-    7;255;StartupCompany:EmployeeHardware;Insert;No
-	    SourceECClassId;NULL;250
-	    SourceECInstanceId;NULL;1
-	    TargetECClassId;NULL;245
-	    TargetECInstanceId;NULL;5
-    1;252;StartupCompany:EmployeeCompany;Update;No
-	    SourceECClassId;250;250
-	    SourceECInstanceId;1;1
-	    TargetECClassId;241;241
-	    TargetECInstanceId;2;3
+	ChangeSummary after updating (deleting and inserting different) relationships:
+	BriefcaseId:LocalId;SchemaName:ClassName:ClassId;DbOpcode;Indirect
+		AccessString;OldValue;NewValue
+	0:6;StartupCompany:EmployeeHardware:1099511627824;Delete;No
+		SourceECClassId;StartupCompany:Employee:1099511627819;NULL
+		SourceECInstanceId;0:1;NULL
+		TargetECClassId;StartupCompany:Hardware:1099511627814;NULL
+		TargetECInstanceId;0:4;NULL
+	0:7;StartupCompany:EmployeeHardware:1099511627824;Insert;No
+		SourceECClassId;NULL;StartupCompany:Employee:1099511627819
+		SourceECInstanceId;NULL;0:1
+		TargetECClassId;NULL;StartupCompany:Hardware:1099511627814
+		TargetECInstanceId;NULL;0:5
+	0:1;StartupCompany:EmployeeCompany:1099511627821;Update;No
+		SourceECClassId;StartupCompany:Employee:1099511627819;StartupCompany:Employee:1099511627819
+		SourceECInstanceId;0:1;0:1
+		TargetECClassId;StartupCompany:Company:1099511627810;StartupCompany:Company:1099511627810
+		TargetECInstanceId;0:2;0:3
     */
     EXPECT_EQ(3, changeSummary.MakeInstanceIterator().QueryCount());
     EXPECT_TRUE(employeeCompanyKey.GetECInstanceId() == employeeCompanyKey2.GetECInstanceId());
@@ -1085,21 +1102,22 @@ TEST_F(ChangeSummaryTestFixture, RelationshipChangesFromSavedTransaction)
     DumpChangeSummary(changeSummary, "ChangeSummary after inserting instances");
 
     /*
-    ChangeSummary after inserting instances:
-    InstanceId;ClassId;ClassName;DbOpcode;Indirect
-    1;250;StartupCompany:Employee;Insert;No
-	    FirstName;NULL;"John"
-	    LastName;NULL;"Doe"
-    2;241;StartupCompany:Company;Insert;No
-	    Name;NULL;"AcmeWorks"
-    3;241;StartupCompany:Company;Insert;No
-	    Name;NULL;"CmeaWorks"
-    4;245;StartupCompany:Hardware;Insert;No
-	    Make;NULL;"Tesla"
-	    Model;NULL;"Model-S"
-    5;245;StartupCompany:Hardware;Insert;No
-	    Make;NULL;"Toyota"
-	    Model;NULL;"Prius"
+	ChangeSummary after inserting instances:
+	BriefcaseId:LocalId;SchemaName:ClassName:ClassId;DbOpcode;Indirect
+		AccessString;OldValue;NewValue
+	0:1;StartupCompany:Employee:1099511627819;Insert;No
+		FirstName;NULL;"John"
+		LastName;NULL;"Doe"
+	0:2;StartupCompany:Company:1099511627810;Insert;No
+		Name;NULL;"AcmeWorks"
+	0:3;StartupCompany:Company:1099511627810;Insert;No
+		Name;NULL;"CmeaWorks"
+	0:4;StartupCompany:Hardware:1099511627814;Insert;No
+		Make;NULL;"Tesla"
+		Model;NULL;"Model-S"
+	0:5;StartupCompany:Hardware:1099511627814;Insert;No
+		Make;NULL;"Toyota"
+		Model;NULL;"Prius"
     */
     EXPECT_EQ(5, changeSummary.MakeInstanceIterator().QueryCount());
     EXPECT_TRUE(ChangeSummaryContainsInstance(changeSummary, ECInstanceId(employeeKey.GetECInstanceId().GetValueUnchecked()), "StartupCompany", "Employee", DbOpcode::Insert));
@@ -1138,31 +1156,32 @@ TEST_F(ChangeSummaryTestFixture, RelationshipChangesFromSavedTransaction)
     DumpChangeSummary(changeSummary, "ChangeSummary after inserting relationships");
 
     /*
-    ChangeSummary after inserting relationships:
-    InstanceId;ClassId;ClassName;DbOpcode;Indirect
-    1;250;StartupCompany:Employee;Insert;No
-	    FirstName;NULL;"John"
-	    LastName;NULL;"Doe"
-    2;241;StartupCompany:Company;Insert;No
-	    Name;NULL;"AcmeWorks"
-    3;241;StartupCompany:Company;Insert;No
-	    Name;NULL;"CmeaWorks"
-    4;245;StartupCompany:Hardware;Insert;No
-	    Make;NULL;"Tesla"
-	    Model;NULL;"Model-S"
-    5;245;StartupCompany:Hardware;Insert;No
-	    Make;NULL;"Toyota"
-	    Model;NULL;"Prius"
-    1;252;StartupCompany:EmployeeCompany;Insert;No
-	    SourceECClassId;NULL;250
-	    SourceECInstanceId;NULL;1
-	    TargetECClassId;NULL;241
-	    TargetECInstanceId;NULL;2
-    6;255;StartupCompany:EmployeeHardware;Insert;No
-	    SourceECClassId;NULL;250
-	    SourceECInstanceId;NULL;1
-	    TargetECClassId;NULL;245
-	    TargetECInstanceId;NULL;4
+	ChangeSummary after inserting relationships:
+	BriefcaseId:LocalId;SchemaName:ClassName:ClassId;DbOpcode;Indirect
+		AccessString;OldValue;NewValue
+	0:1;StartupCompany:Employee:1099511627819;Insert;No
+		FirstName;NULL;"John"
+		LastName;NULL;"Doe"
+	0:2;StartupCompany:Company:1099511627810;Insert;No
+		Name;NULL;"AcmeWorks"
+	0:3;StartupCompany:Company:1099511627810;Insert;No
+		Name;NULL;"CmeaWorks"
+	0:4;StartupCompany:Hardware:1099511627814;Insert;No
+		Make;NULL;"Tesla"
+		Model;NULL;"Model-S"
+	0:5;StartupCompany:Hardware:1099511627814;Insert;No
+		Make;NULL;"Toyota"
+		Model;NULL;"Prius"
+	0:6;StartupCompany:EmployeeHardware:1099511627824;Insert;No
+		SourceECClassId;NULL;StartupCompany:Employee:1099511627819
+		SourceECInstanceId;NULL;0:1
+		TargetECClassId;NULL;StartupCompany:Hardware:1099511627814
+		TargetECInstanceId;NULL;0:4
+	0:1;StartupCompany:EmployeeCompany:1099511627821;Insert;No
+		SourceECClassId;NULL;StartupCompany:Employee:1099511627819
+		SourceECInstanceId;NULL;0:1
+		TargetECClassId;NULL;StartupCompany:Company:1099511627810
+		TargetECInstanceId;NULL;0:2
     */
     EXPECT_EQ(7, changeSummary.MakeInstanceIterator().QueryCount());
     EXPECT_TRUE(ChangeSummaryContainsInstance(changeSummary, ECInstanceId(employeeCompanyKey.GetECInstanceId().GetValueUnchecked()), "StartupCompany", "EmployeeCompany", DbOpcode::Insert));
@@ -1213,31 +1232,32 @@ TEST_F(ChangeSummaryTestFixture, RelationshipChangesFromSavedTransaction)
     DumpChangeSummary(changeSummary, "ChangeSummary after updating (deleting and inserting different) relationships");
 
     /*
-    ChangeSummary after updating (deleting and inserting different) relationships:
-    InstanceId;ClassId;ClassName;DbOpcode;Indirect
-    1;250;StartupCompany:Employee;Insert;No
-	    FirstName;NULL;"John"
-	    LastName;NULL;"Doe"
-    2;241;StartupCompany:Company;Insert;No
-	    Name;NULL;"AcmeWorks"
-    3;241;StartupCompany:Company;Insert;No
-	    Name;NULL;"CmeaWorks"
-    4;245;StartupCompany:Hardware;Insert;No
-	    Make;NULL;"Tesla"
-	    Model;NULL;"Model-S"
-    5;245;StartupCompany:Hardware;Insert;No
-	    Make;NULL;"Toyota"
-	    Model;NULL;"Prius"
-    1;252;StartupCompany:EmployeeCompany;Insert;No
-	    SourceECClassId;NULL;250
-	    SourceECInstanceId;NULL;1
-	    TargetECClassId;NULL;241
-	    TargetECInstanceId;NULL;3
-    7;255;StartupCompany:EmployeeHardware;Insert;No
-	    SourceECClassId;NULL;250
-	    SourceECInstanceId;NULL;1
-	    TargetECClassId;NULL;245
-	    TargetECInstanceId;NULL;5
+	ChangeSummary after updating (deleting and inserting different) relationships:
+	BriefcaseId:LocalId;SchemaName:ClassName:ClassId;DbOpcode;Indirect
+		AccessString;OldValue;NewValue
+	0:1;StartupCompany:Employee:1099511627819;Insert;No
+		FirstName;NULL;"John"
+		LastName;NULL;"Doe"
+	0:2;StartupCompany:Company:1099511627810;Insert;No
+		Name;NULL;"AcmeWorks"
+	0:3;StartupCompany:Company:1099511627810;Insert;No
+		Name;NULL;"CmeaWorks"
+	0:4;StartupCompany:Hardware:1099511627814;Insert;No
+		Make;NULL;"Tesla"
+		Model;NULL;"Model-S"
+	0:5;StartupCompany:Hardware:1099511627814;Insert;No
+		Make;NULL;"Toyota"
+		Model;NULL;"Prius"
+	0:7;StartupCompany:EmployeeHardware:1099511627824;Insert;No
+		SourceECClassId;NULL;StartupCompany:Employee:1099511627819
+		SourceECInstanceId;NULL;0:1
+		TargetECClassId;NULL;StartupCompany:Hardware:1099511627814
+		TargetECInstanceId;NULL;0:5
+	0:1;StartupCompany:EmployeeCompany:1099511627821;Insert;No
+		SourceECClassId;NULL;StartupCompany:Employee:1099511627819
+		SourceECInstanceId;NULL;0:1
+		TargetECClassId;NULL;StartupCompany:Company:1099511627810
+		TargetECInstanceId;NULL;0:3
     */
     EXPECT_EQ(7, changeSummary.MakeInstanceIterator().QueryCount());
     EXPECT_TRUE(employeeCompanyKey.GetECInstanceId() == employeeCompanyKey2.GetECInstanceId());
@@ -1273,16 +1293,17 @@ TEST_F(ChangeSummaryTestFixture, ElementChildRelationshipChanges)
     DumpChangeSummary(changeSummary, "ChangeSummary after setting ParentId");
 
     /*
-    ChangeSummary after setting ParentId:
-    InstanceId;ClassId;ClassName;DbOpcode;Indirect
-    5;139;dgn:PhysicalElement;Update;No
-            LastMod;2.45733e+006;2.45733e+006
-            ParentId;NULL;4
-    5;172;dgn:ElementOwnsChildElements;Insert;No
-            SourceECClassId;NULL;139
-            SourceECInstanceId;NULL;4
-            TargetECClassId;NULL;139
-            TargetECInstanceId;NULL;5
+	ChangeSummary after setting ParentId:
+	BriefcaseId:LocalId;SchemaName:ClassName:ClassId;DbOpcode;Indirect
+		AccessString;OldValue;NewValue
+	0:5;dgn:PhysicalElement:194;Update;No
+		LastMod;2.45737e+006;2.45737e+006
+		ParentId;NULL;1099511627780
+	0:5;dgn:ElementOwnsChildElements:180;Insert;No
+		SourceECClassId;NULL;dgn:PhysicalElement:194
+		SourceECInstanceId;NULL;0:4
+		TargetECClassId;NULL;dgn:PhysicalElement:194
+		TargetECInstanceId;NULL;0:5
     */
     EXPECT_EQ(2, changeSummary.MakeInstanceIterator().QueryCount());
     EXPECT_TRUE(ChangeSummaryContainsInstance(changeSummary, ECInstanceId(childElementId.GetValueUnchecked()), "dgn", "ElementOwnsChildElements", DbOpcode::Insert)); // Captured due to change of FK relationship (ParentId column)
@@ -1431,17 +1452,6 @@ TEST_F(ChangeSummaryTestFixture, QueryMultipleSessions)
 
     DumpChangeSummary(changeSummary, "ChangeSummary after multiple sessions");
 
-    ECSqlStatement stmt;
-    Utf8CP ecsql = "SELECT COUNT(*) FROM dgn.Element el WHERE IsChangedInstance(?, el.GetECClassId(), el.ECInstanceId)";
-    ECSqlStatus ecSqlStatus = stmt.Prepare(*m_testDb, ecsql);
-    ASSERT_TRUE(ecSqlStatus.IsSuccess());
-
-    stmt.BindInt64(1, (int64_t) &changeSummary);
-
-    DbResult ecSqlStepStatus = stmt.Step();
-    ASSERT_TRUE(ecSqlStepStatus == BE_SQLITE_ROW);
-
-    int actualChangeCount = stmt.GetValueInt(0);
     int expectedChangeCount = nSessions * nTransactionsPerSession + 2 /*category and subcategory*/;
-    EXPECT_EQ(expectedChangeCount, actualChangeCount);
+    EXPECT_EQ(expectedChangeCount, GetChangeSummaryInstanceCount(changeSummary, "dgn.Element"));
     }

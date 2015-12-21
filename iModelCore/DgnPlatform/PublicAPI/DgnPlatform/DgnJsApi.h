@@ -292,7 +292,23 @@ struct JsElementGeometryBuilder : RefCountedBaseWithCreate
 
     void AppendBox(double x, double y, double z);
     void AppendSphere(double radius);
+
     void Append(JsSolidPrimitiveP solid) {if (solid && solid->GetISolidPrimitivePtr().IsValid()) m_builder->Append(*solid->GetISolidPrimitivePtr());}
+    void Append(JsCurvePrimitiveP curve) {if (curve && curve->GetICurvePrimitivePtr().IsValid()) m_builder->Append(*curve->GetICurvePrimitivePtr());}
+    void Append(JsCurveVectorP curve) {if (curve && curve->GetCurveVectorPtr().IsValid()) m_builder->Append(*curve->GetCurveVectorPtr());}
+
+    void Append(JsGeometryP geometry)
+        {
+        if (!geometry)
+            {}
+        else if (geometry->GetCurveVectorPtr().IsValid())
+            m_builder->Append(*geometry->GetCurveVectorPtr());
+        else if (geometry->GetICurvePrimitivePtr().IsValid())
+            m_builder->Append(*geometry->GetICurvePrimitivePtr());
+        else if (geometry->GetISolidPrimitivePtr().IsValid())
+            m_builder->Append(*geometry->GetISolidPrimitivePtr());
+        }
+
     BentleyStatus SetGeomStreamAndPlacement (JsDgnElementP el) {return m_builder->SetGeomStreamAndPlacement(*el->m_el->ToGeometrySourceP());}
 };
 typedef JsElementGeometryBuilder* JsElementGeometryBuilderP;

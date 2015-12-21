@@ -628,7 +628,6 @@ struct DgnUnits : NonCopyableClass
 private:
     friend struct DgnDb;
     DgnDbR          m_dgndb;
-    double          m_azimuth;
     AxisAlignedBox3d m_extent;
     DPoint3d        m_globalOrigin;      //!< in meters
     mutable bool    m_hasCheckedForGCS;
@@ -670,12 +669,6 @@ public:
     //! Query the GCS of this DgnDb, if any.
     //! @return this DgnDb's GCS or nullptr if this DgnDb is not geo-located
     DGNPLATFORM_EXPORT DgnGCS* GetDgnGCS() const;
-
-    //! Gets the azimuth angle (true north offset) of the global coordinate system of this DgnDb <em>if it has one</em>.
-    double GetAzimuth() const {return m_azimuth;}
-
-    //! Set the azimuth of the global coordinate system of this DgnDb.
-    void SetAzimuth(double azimuth) {m_azimuth = azimuth;}
 
     static double const OneMeter() {return 1.;}
     static double const OneKilometer() {return 1000. * OneMeter();}
