@@ -19,7 +19,7 @@
 //! @param[out] ByteTotal   When available, number of total bytes to download.
 //! @return If RealityDataDownload_ProgressCallBack returns 0   The download continue.
 //! @return If RealityDataDownload_ProgressCallBack returns # 0 The download is canceled for this file.
-typedef int(__cdecl *RealityDataDownload_ProgressCallBack)(int index, void *pClient, size_t ByteCurrent, size_t ByteTotal);
+typedef std::function<int(int index, void *pClient, size_t ByteCurrent, size_t ByteTotal)> RealityDataDownload_ProgressCallBack;
 
 // ErrorCode --> Curl error code.
 //! Callback function to follow the download progression.
@@ -27,7 +27,7 @@ typedef int(__cdecl *RealityDataDownload_ProgressCallBack)(int index, void *pCli
 //! @param[out] pClient     Pointer on the structure RealityDataDownload::FileTransfer.
 //! @param[out] ErrorCode   Curl error code:(0)Success (xx)Curl (-1)General error, (-2)Retry the current download. 
 //! @param[out] pMsg        Curl English message.
-typedef void(__cdecl *RealityDataDownload_StatusCallBack) (int index, void *pClient, int ErrorCode, const char* pMsg);
+typedef std::function<void(int index, void *pClient, int ErrorCode, const char* pMsg)> RealityDataDownload_StatusCallBack;
 
 //Special Error codes
 #define REALITYDATADOWNLOAD_RETRY_TENTATIVE   -2

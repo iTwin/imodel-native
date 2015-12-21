@@ -10,6 +10,7 @@
 #include "PointCloudVortex.h"
 
 #include <RealityPlatform/RealityDataHandler.h>
+#include <RealityPlatform/RealityPlatformUtil.h>
 
 #define THUMBNAIL_WIDTH     256
 #define THUMBNAIL_HEIGHT    256
