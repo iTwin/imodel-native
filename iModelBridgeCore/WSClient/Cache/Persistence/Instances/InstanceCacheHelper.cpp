@@ -94,11 +94,17 @@ ICancellationTokenPtr ct
         }
 
     ECInstanceKey cachedInstance;
-    if (cachedInstancesInOut.HasCachedInstance(instance.GetObjectId()))
+    if (!cachedInstancesInOut.HasCachedInstance(instance.GetObjectId()))
         {
         ObjectInfo info = m_objectInfoManager.ReadInfo(instance.GetObjectId());
-
         auto changeStatus = info.GetChangeStatus();
+
+        auto action = PartialCachingState::Action::CacheFull;
+        if (nullptr != partialCachingState)
+            {
+            action = partialCachingState->GetAction(info, path);
+            }
+
         if (IChangeManager::ChangeStatus::Created == changeStatus)
             {
             return ERROR; // Instance cannot be cached - its not pushed to server yet
@@ -107,24 +113,33 @@ ICancellationTokenPtr ct
             {
             // Nothing to do here
             }
-        else if (nullptr != partialCachingState && partialCachingState->ShouldReject(info, path))
-            {
-            partialCachingState->AddRejected(instance.GetObjectId());
-            }
         else if (nullptr != updateCachingState && !info.IsInCache())
             {
             updateCachingState->AddNotFound(instance.GetObjectId());
             return SUCCESS;
             }
+        else if (PartialCachingState::Action::SkipCached == action)
+            {
+            // Nothing to do here
+            }
+        else if (PartialCachingState::Action::Reject == action)
+            {
+            partialCachingState->AddRejected(instance.GetObjectId());
+            }
         else
             {
-            if (nullptr != partialCachingState && !partialCachingState->AreAllPropertiesSelected(path))
+            if (PartialCachingState::Action::CachePartial == action)
                 {
                 info.SetObjectState(CachedInstanceState::Partial);
                 }
-            else
+            else if (PartialCachingState::Action::CacheFull == action)
                 {
                 info.SetObjectState(CachedInstanceState::Full);
+                }
+            else
+                {
+                BeAssert(false);
+                return ERROR;
                 }
 
             info.SetObjectCacheDate(DateTime::GetCurrentTimeUtc());
@@ -402,7 +417,7 @@ void InstanceCacheHelper::CachedInstances::AddRelationship(ObjectIdCR objectId, 
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool InstanceCacheHelper::CachedInstances::HasCachedInstance(ObjectIdCR objectId) const
     {
-    return m_cachedInstancesByObjectId.find(objectId) == m_cachedInstancesByObjectId.end();
+    return m_cachedInstancesByObjectId.find(objectId) != m_cachedInstancesByObjectId.end();
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -461,28 +476,26 @@ const bset<CachedInstanceKey>& InstanceCacheHelper::CachedInstances::GetCachedRe
 InstanceCacheHelper::PartialCachingState::PartialCachingState
 (
 ECDbAdapterR dbAdapter,
-const WSQuery* query,
+WSQueryCR query,
 const ECInstanceKeyMultiMap& fullyPersistedInstances,
 bset<ObjectId>& rejected
 ) :
-m_query(query),
+m_query(&query),
 m_fullyPersistedInstances(fullyPersistedInstances),
 m_rejected(rejected)
     {
-    if (nullptr != query)
-        {
-        BuildAllPropertiesSelectedPaths(dbAdapter, *m_query, m_allPropertiesSelectedPaths);
-        }
+    BuildSelectedPaths(dbAdapter, *m_query, m_allPropertiesSelectedPaths, m_idOnlySelectedPaths);
     }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    12/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus InstanceCacheHelper::PartialCachingState::BuildAllPropertiesSelectedPaths
+BentleyStatus InstanceCacheHelper::PartialCachingState::BuildSelectedPaths
 (
 ECDbAdapterR dbAdapter,
 WSQueryCR query,
-bset<bvector<SelectPathElement>>& allPropertiesSelectedPathsOut
+bset<bvector<SelectPathElement>>& allPropertiesSelectedPathsOut,
+bset<bvector<SelectPathElement>>& idOnlySelectedPathsOut
 )
     {
     Utf8StringCR mainSchemaName = query.GetSchemaName();
@@ -501,81 +514,132 @@ bset<bvector<SelectPathElement>>& allPropertiesSelectedPathsOut
 
     bvector<Utf8String> selects;
     BeStringUtilities::Split(selectOption.c_str(), ",", selects);
+    bmap<bvector<SelectPathElement>, SelectType> paths;
 
     for (Utf8StringCR select : selects)
         {
-        if (select.empty())
+        bvector<SelectPathElement> path;
+        SelectType selectType = SelectType::Property;
+
+        if (SUCCESS != GetSelectPathAndType(dbAdapter, mainSchemaName, select, path, selectType))
             {
             BeAssert(false);
             return ERROR;
             }
 
-        if ("*" == select)
+        auto it = paths.find(path);
+        if (it == paths.end() || 
+            SelectType::All == selectType ||
+            SelectType::Id == it->second)
             {
-            allPropertiesSelectedPathsOut.insert(bvector<SelectPathElement>());
-            continue;
+            paths[path] = selectType;
+            }
+        }
+
+    for (auto& pair : paths)
+        {
+        if (SelectType::All == pair.second)
+            {
+            allPropertiesSelectedPathsOut.insert(pair.first);
+            }
+        else if (SelectType::Id == pair.second)
+            {
+            idOnlySelectedPathsOut.insert(pair.first);
+            }
+        }
+
+    return SUCCESS;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    12/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus InstanceCacheHelper::PartialCachingState::GetSelectPathAndType
+(
+ECDbAdapterR dbAdapter,
+Utf8StringCR mainSchemaName,
+Utf8StringCR selectStr,
+bvector<SelectPathElement>& pathOut,
+SelectType& selectTypeOut
+)
+    {
+    pathOut.clear();
+
+    if (selectStr.empty())
+        {
+        return ERROR;
+        }
+
+    if ("*" == selectStr)
+        {
+        selectTypeOut = SelectType::All;
+        return SUCCESS;
+        }
+
+    if ("$id" == selectStr)
+        {
+        selectTypeOut = SelectType::Id;
+        return SUCCESS;
+        }
+
+    if (Utf8String::npos == selectStr.find("-"))
+        {
+        selectTypeOut = SelectType::Property;
+        return SUCCESS;
+        }
+
+    // Related select   
+    bvector<Utf8String> nestedRelationships;
+    BeStringUtilities::Split(selectStr.c_str(), "/", nestedRelationships);
+
+    for (Utf8StringCR nestedRelationship : nestedRelationships)
+        {
+        bvector<Utf8String> relationshipSelectTokens;
+        BeStringUtilities::Split(nestedRelationship.c_str(), "-", relationshipSelectTokens);
+
+        if (relationshipSelectTokens.size() != 3)
+            {
+            return ERROR;
             }
 
-        if (select.find("-") == Utf8String::npos)
+        Utf8StringCR relationshipClassToken = relationshipSelectTokens[0];
+        Utf8StringCR directionToken = relationshipSelectTokens[1];
+        Utf8StringR relatedClassToken = relationshipSelectTokens[2];
+
+        bool lastRelationshipInPath = (nestedRelationships.size() - 1) == pathOut.size();
+        if (lastRelationshipInPath)
             {
-            // Property select
-            continue;
-            }
-
-        bvector<Utf8String> nestedRelationships;
-        BeStringUtilities::Split(select.c_str(), "/", nestedRelationships);
-
-        bvector<SelectPathElement> path;
-        for (Utf8StringCR nestedRelationship : nestedRelationships)
-            {
-            bool lastRelationshipInPath = (nestedRelationships.size() - 1) == path.size();
-
-            bvector<Utf8String> relationshipSelectTokens;
-            BeStringUtilities::Split(nestedRelationship.c_str(), "-", relationshipSelectTokens);
-
-            if (relationshipSelectTokens.size() != 3)
+            auto selectPos = relatedClassToken.find_last_of(".");
+            if (Utf8String::npos == selectPos)
                 {
-                BeAssert(false);
                 return ERROR;
                 }
 
-            Utf8StringCR relationshipClassToken = relationshipSelectTokens[0];
-            Utf8StringCR directionToken = relationshipSelectTokens[1];
-            Utf8StringR relatedClassToken = relationshipSelectTokens[2];
-
-            if (lastRelationshipInPath)
+            if (0 == strcmp(relatedClassToken.c_str() + selectPos, ".*"))
                 {
-                Utf8String selectAllPropertiesMarker = ".*";
-                if (relatedClassToken.EndsWith(selectAllPropertiesMarker))
-                    {
-                    relatedClassToken.resize(relatedClassToken.size() - selectAllPropertiesMarker.size());
-                    }
-                else
-                    {
-                    continue;
-                    }
+                selectTypeOut = SelectType::All;
+                }
+            else if (0 == strcmp(relatedClassToken.c_str() + selectPos, ".$id"))
+                {
+                selectTypeOut = SelectType::Id;
                 }
 
-            SelectPathElement element;
-            element.relationshipClass = GetECClassFromClassToken(dbAdapter, mainSchemaName, relationshipClassToken);
-            element.relationshipClassPolymorphic = IsClassTokenPolymorphic(relationshipClassToken);
-            element.selectedClass = GetECClassFromClassToken(dbAdapter, mainSchemaName, relatedClassToken);
-            element.selectedClassPolymorphically = IsClassTokenPolymorphic(relatedClassToken);
-            element.direction = GetDirection(directionToken);
-
-            if (!element.IsValid())
-                {
-                BeAssert(false);
-                return ERROR;
-                }
-
-            path.push_back(element);
-
-            if (lastRelationshipInPath)
-                {
-                allPropertiesSelectedPathsOut.insert(path);
-                }
+            relatedClassToken.resize(selectPos);
             }
+
+        SelectPathElement element;
+        element.relationshipClass = GetECClassFromClassToken(dbAdapter, mainSchemaName, relationshipClassToken);
+        element.relationshipClassPolymorphic = IsClassTokenPolymorphic(relationshipClassToken);
+        element.selectedClass = GetECClassFromClassToken(dbAdapter, mainSchemaName, relatedClassToken);
+        element.selectedClassPolymorphically = IsClassTokenPolymorphic(relatedClassToken);
+        element.direction = GetDirection(directionToken);
+
+        if (!element.IsValid())
+            {
+            return ERROR;
+            }
+
+        pathOut.push_back(element);
         }
 
     return SUCCESS;
@@ -657,23 +721,48 @@ void InstanceCacheHelper::PartialCachingState::AddRejected(ObjectIdCR objectId)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    06/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool InstanceCacheHelper::PartialCachingState::ShouldReject(ObjectInfoCR info, const bvector<SelectPathElement>& path)
+InstanceCacheHelper::PartialCachingState::Action InstanceCacheHelper::PartialCachingState::GetAction
+(
+ObjectInfoCR info,
+const bvector<SelectPathElement>& path
+)
     {
-    return DoesRequireAllProperties(info) && !AreAllPropertiesSelected(path);
+    bool allRequired = DoesRequireAllProperties(info);
+    bool allSelected = DoesPathMatches(path, m_allPropertiesSelectedPaths);
+
+    if (allRequired)
+        {
+        if (allSelected)
+            {
+            return Action::CacheFull;
+            }
+        bool idOnlySelected = DoesPathMatches(path, m_idOnlySelectedPaths);
+        if (idOnlySelected)
+            {
+            return Action::SkipCached;
+            }
+        return Action::Reject;
+        }
+
+    if (allSelected)
+        {
+        return Action::CacheFull;
+        }
+
+    return Action::CachePartial;
     }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    06/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool InstanceCacheHelper::PartialCachingState::AreAllPropertiesSelected(const bvector<SelectPathElement>& instancePath)
+bool InstanceCacheHelper::PartialCachingState::DoesPathMatches
+(
+const bvector<SelectPathElement>& instancePath,
+const bset<bvector<SelectPathElement>>& matchPaths
+)
     {
-    if (nullptr == m_query)
-        {
-        return false;
-        }
-
-    auto it = std::find_if(m_allPropertiesSelectedPaths.begin(), m_allPropertiesSelectedPaths.end(),
-        [&] (const bvector<SelectPathElement>& candidatePath)
+    auto it = std::find_if(matchPaths.begin(), matchPaths.end(),
+                           [&] (const bvector<SelectPathElement>& candidatePath)
         {
         if (candidatePath.size() != instancePath.size())
             {
@@ -681,7 +770,7 @@ bool InstanceCacheHelper::PartialCachingState::AreAllPropertiesSelected(const bv
             }
 
         return std::equal(candidatePath.begin(), candidatePath.end(), instancePath.begin(),
-            [&] (const SelectPathElement& candidateElement, const SelectPathElement& element)
+                          [&] (const SelectPathElement& candidateElement, const SelectPathElement& element)
             {
             return
                 candidateElement.direction == element.direction &&
@@ -692,7 +781,7 @@ bool InstanceCacheHelper::PartialCachingState::AreAllPropertiesSelected(const bv
             });
         });
 
-    return it != m_allPropertiesSelectedPaths.end();
+    return it != matchPaths.end();
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -700,9 +789,22 @@ bool InstanceCacheHelper::PartialCachingState::AreAllPropertiesSelected(const bv
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool InstanceCacheHelper::PartialCachingState::DoesRequireAllProperties(ObjectInfoCR info)
     {
-    return
-        IChangeManager::ChangeStatus::Modified == info.GetChangeStatus() ||
-        IsFullyPersisted(info);
+    if (!info.IsInCache())
+        {
+        return false;
+        }
+
+    if (IChangeManager::ChangeStatus::Modified == info.GetChangeStatus())
+        {
+        return true;
+        }
+
+    if (IsFullyPersisted(info))
+        {
+        return true;
+        }
+
+    return false;
     }
 
 /*--------------------------------------------------------------------------------------+

@@ -1375,7 +1375,7 @@ TEST_F(CachingDataSourceTests, GetObjects_QueryIncludesPartialInstancesThatAreIn
 
     CachedResponseKey key = CreateTestResponseKey(ds);
     WSQuery query("TestSchema", "TestClass");
-    query.SetSelect("$id");
+    query.SetSelect("TestProperty");
 
     auto result = ds->GetObjects(key, query, CachingDataSource::DataOrigin::RemoteData, nullptr, nullptr)->GetResult();
 

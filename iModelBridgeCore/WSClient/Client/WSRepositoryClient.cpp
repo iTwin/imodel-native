@@ -10,7 +10,10 @@
 
 using namespace std::placeholders;
 
-const Utf8String IWSRepositoryClient::InitialSkipToken = "0";
+// WIP: SkipTokens disabled due to issues. To enable, set to "0".
+// Problem: WebApi 2.3 304 NotModified responses do not contain SkipToken header field,
+// this corrupts data refresh.
+const Utf8String IWSRepositoryClient::InitialSkipToken = "";
 
 const uint32_t WSRepositoryClient::Timeout::Connection::Default = 30;
 
