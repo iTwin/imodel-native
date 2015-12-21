@@ -16,16 +16,32 @@ BEGIN_ECDBUNITTESTS_NAMESPACE
     obj.SetUpTest (TestName, schema, ecdbFileName);
 
 //Prepares the statement with the specified ECSQL.The default expected status is set to Success. 
-#define STATEMENT_PREPARE_SUCCESS(query)                 (obj.PrepareStatement (query))
+#define STATEMENT_PREPARE_SUCCESS(query)                                                \
+    {ECSqlStatus prepareStatus = obj.PrepareStatement (query);                          \
+    ASSERT_EQ (ECSqlStatus::Success, prepareStatus) << "\nStatement prepare failed for:" << query << "\n"; }
 
 //Prepares the statement with the specified ECSQL and compares the status returned by Prepare method and the status specified by the user. 
-#define STATEMENT_PREPARE(query, expectedStatus)       (obj.PrepareStatement (query, expectedStatus))
+#define ASSERT_STATEMENT_PREPARE(query, expectedStatus)                                \
+    {ECSqlStatus prepareStatus = obj.PrepareStatement (query, expectedStatus);         \
+    ASSERT_EQ (expectedStatus, prepareStatus) << "\nStatement prepare failed for:" << query << "\n"; }
+
+#define EXPECT_STATEMENT_PREPARE(query, expectedStatus)                                \
+    {ECSqlStatus prepareStatus = obj.PrepareStatement (query, expectedStatus);         \
+    EXPECT_EQ (expectedStatus, prepareStatus) << "\nStatement prepare failed for:" << query << "\n"; }
 
 //Perform a single step on the ECSQL statement.The default expected result is set to BE_SQLITE_DONE.
-#define STATEMENT_EXECUTE_SUCCESS()                      (obj.ExecuteStatement ())
+#define STATEMENT_EXECUTE_SUCCESS()                                                    \
+    {DbResult stepResult = obj.ExecuteStatement ();                                 \
+    ASSERT_EQ (DbResult::BE_SQLITE_DONE, stepResult) << "\nStep failed.\n"; }
 
-//Perform a single step on the ECSQL statement.Checks whether the status returned by Step() equals the status specified by user. 
-#define STATEMENT_EXECUTE(expectedResult)                (obj.ExecuteStatement (expectedResult))
+//Perform a single step on the ECSQL statement.Checks whether the status returned by Step() equals the status specified by user.
+#define ASSERT_STATEMENT_EXECUTE(expectedResult)                                       \
+    {DbResult stepResult = obj.ExecuteStatement (expectedResult);                      \
+    EXPECT_EQ (expectedResult, stepResult) << "\nStep failed.\n"; }
+
+#define EXPECT_STATEMENT_EXECUTE(expectedResult)                                      \
+    {DbResult stepResult = obj.ExecuteStatement (expectedResult);                     \
+    EXPECT_EQ (expectedResult, stepResult) << "\nStep failed.\n"; }
 
 #define CLOSE_DB()       (obj.CloseDataBase())
 
@@ -209,33 +225,27 @@ struct ECSqlStatementHelper
         EXPECT_EQ (SUCCESS, ecdb.Schemas ().ImportECSchemas (context->GetCache ()));
         }
 
-//! Prepares the statement with the specified ECSQL and compares the status returned by Prepare method and the status specified by the user.
-    void PrepareStatement (Utf8String query, ECSqlStatus expectedStatus = ECSqlStatus::Success)
+    //! Prepares the statement with the specified ECSQL and compares the status returned by Prepare method and the status specified by the user.
+    ECSqlStatus PrepareStatement (Utf8String query, ECSqlStatus expectedStatus = ECSqlStatus::Success)
         {
-        ECSqlStatus prepareStatus;
         if (stmt.IsPrepared ())
             {
             stmt.Reset ();
             stmt.ClearBindings ();
             stmt.Finalize ();
             }
-
         if (!query.empty ())
             {
             m_item.query = query;
-            prepareStatus = stmt.Prepare (ecdb, m_item.query.c_str ());
-            if (prepareStatus != expectedStatus)
-                ASSERT_EQ (prepareStatus, expectedStatus) << "\nPrepare failed for statement:" << m_item.query.c_str ()<<"\n";
             }
+        return stmt.Prepare (ecdb, m_item.query.c_str ());
         }
 
     //! Perform a single step on the ECSQL statement.Checks whether the status returned by Step() equals the status specified by user.
-    void ExecuteStatement (DbResult expectedResult = DbResult::BE_SQLITE_DONE)
+    DbResult ExecuteStatement (DbResult expectedResult = DbResult::BE_SQLITE_DONE)
         {
-        DbResult actualResult;
-        actualResult = stmt.Step ();
-        if (actualResult, expectedResult)
-            ASSERT_EQ (actualResult, expectedResult) << "\nStep failed for statement :" << m_item.query.c_str ()<<"\n";
+        EXPECT_TRUE (stmt.IsPrepared ()) << "\nStatement: " << m_item.query.c_str () << "is unprepared.Can't call Step on an unprepared statement.\n";
+        return stmt.Step ();
         }
 
     //! Finalize the last statement and closes the database.
