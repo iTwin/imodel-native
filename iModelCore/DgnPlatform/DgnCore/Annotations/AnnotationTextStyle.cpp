@@ -155,6 +155,16 @@ void AnnotationTextStyle::_CopyFrom(DgnElementCR src)
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                                   Jeff.Marker     12/2015
+//---------------------------------------------------------------------------------------
+void AnnotationTextStyle::_RemapIds(DgnImportContext& context)
+    {
+    DgnFontId srcFontId = GetFontId();
+    DgnFontId dstFontId = context.RemapFont(srcFontId);
+    SetFontId(dstFontId);
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     05/2014
 //---------------------------------------------------------------------------------------
 static AnnotationTextStylePropertyBag::T_Integer getIntegerValue(AnnotationTextStylePropertyBagCR data, AnnotationTextStyleProperty key, AnnotationTextStylePropertyBag::T_Integer defaultValue)
