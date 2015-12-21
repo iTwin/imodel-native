@@ -251,7 +251,7 @@ struct ECDbSqlColumn : NonCopyableClass
     {
     enum class Type
         {
-        Integer, Long, Double, DateTime, Binary, Boolean, String, Any
+        Integer, Long, Double, DateTime, Binary, Boolean, String, Json, Any
         };
     struct Constraint : NonCopyableClass
         {
