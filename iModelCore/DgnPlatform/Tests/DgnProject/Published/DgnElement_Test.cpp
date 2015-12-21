@@ -644,3 +644,32 @@ TEST_F(ElementGeomAndPlacementTests, ValidateOnInsert)
     TestLoadElem(placementAndNoGeomId, &placement, false);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+static int32_t countElementsOfClass(DgnClassId classId, DgnDbR db)
+    {
+    CachedStatementPtr stmt = db.Elements().GetStatement("SELECT count(*) FROM " DGN_TABLE(DGN_CLASSNAME_Element) " WHERE ECClassId=?");
+    stmt->BindUInt64(1, classId.GetValue());
+    stmt->Step();
+    return stmt->GetValueInt(0);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* INSERT statements on element table were using the ClassId of the base class if
+* the derived class did not define its own Handler subclass.
+* @bsimethod                                                    Paul.Connelly   12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DgnElementTests, HandlerlessClass)
+    {
+    SetupProject(L"3dMetricGeneral.idgndb", L"HandlerlessClass.idgndb", BeSQLite::Db::OpenMode::ReadWrite);
+
+    DgnClassId classId(m_db->Schemas().GetECClassId(DPTEST_SCHEMA_NAME, DPTEST_TEST_ELEMENT_WITHOUT_HANDLER_CLASS_NAME));
+    TestElement::CreateParams params(*m_db, m_defaultModelId, classId, m_defaultCategoryId, Placement3d(), DgnElement::Code());
+    TestElement el(params);
+    EXPECT_TRUE(el.Insert().IsValid());
+
+    EXPECT_EQ(0, countElementsOfClass(TestElement::QueryClassId(*m_db), *m_db));
+    EXPECT_EQ(1, countElementsOfClass(classId, *m_db));
+    }
+

@@ -904,7 +904,7 @@ DgnDbStatus DgnModel::Insert()
 
     m_modelId = DgnModelId(m_dgndb, DGN_TABLE(DGN_CLASSNAME_Model), "Id");
 
-    CachedECSqlStatementPtr stmt = GetModelHandler().GetECSqlClassInfo().GetInsertStmt(GetDgnDb());
+    CachedECSqlStatementPtr stmt = GetModelHandler().GetECSqlClassInfo().GetInsertStmt(GetDgnDb(), GetClassId());
     if (stmt.IsNull())
         {
         m_modelId = DgnModelId();

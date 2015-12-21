@@ -10,6 +10,8 @@
 #include <DgnPlatform/QueryView.h>
 #include "UpdateLogging.h"
 
+//#define TRACE_QUERY_LOGIC 1
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    09/2012
 //--------------+------------------------------------------------------------------------
@@ -288,7 +290,6 @@ void QueryModel::Selector::qt_SearchIdSet(DgnElementIdSet& idSet, DgnDbRTree3dVi
 void QueryModel::Selector::qt_SearchRangeTree(DgnDbRTree3dViewFilter& filter)
     {
 #if defined (TRACE_QUERY_LOGIC)
-    uint64_t start = BeTimeUtilities::QueryMillisecondsCounter();
     int restarts = 0;
 #endif
 
@@ -340,6 +341,10 @@ void QueryModel::Selector::qt_SearchRangeTree(DgnDbRTree3dViewFilter& filter)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void QueryModel::Selector::qt_ProcessRequest() 
     {
+#if defined (TRACE_QUERY_LOGIC)
+    uint64_t start = BeTimeUtilities::QueryMillisecondsCounter();
+#endif
+
     UpdateLogging::RecordStartQuery();
     //  Notify GraphicsAndQuerySequencer that this thread is running 
     //  a range tree operation and is therefore exempt from checks for high priority required.
@@ -437,7 +442,7 @@ void QueryModel::Selector::qt_ProcessRequest()
 #if defined (TRACE_QUERY_LOGIC)
     uint32_t elapsed2 = (uint32_t)(BeTimeUtilities::QueryMillisecondsCounter() - start);
 
-    printf("qt_ProcessRequest: hitLimit = %d, query time = %d, total time = %d\n", m_hitLimit, elapsed1, elapsed2);
+    printf("qt_ProcessRequest: hitLimit = %d, query time = %d, total time = %d\n", m_maxElements, elapsed1, elapsed2);
 #endif
     UpdateLogging::RecordDoneLoad();
 
