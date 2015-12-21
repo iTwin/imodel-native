@@ -241,6 +241,10 @@ void QueryViewController::StartSelectProcessing(DgnViewportR viewport, DrawPurpo
             hitLimit = std::min(computedLimit,(uint32_t)MAX_TO_DRAW_IN_DYNAMIC_UPDATE);
         }
 
+#if defined (TRACE_QUERY_LOGIC)
+    printf("QVC: StartSelectProcessing: hitLimit %d\n", hitLimit);
+#endif
+
     QueryModel::Selector& selector = m_queryModel.GetSelector();
     selector.StartProcessing(viewport, *this, _GetRTreeMatchSql(viewport).c_str(), hitLimit, GetMaxElementMemory(), minimumPixels, 
                                 m_alwaysDrawn.empty() ? nullptr : &m_alwaysDrawn, 
@@ -710,5 +714,8 @@ uint32_t QueryViewController::GetMaxElementsToLoad()
     double maxElementsFactor = inputFactor/100.0;
     maxElementsToLoad += static_cast <int> (static_cast <double> (maxElementsToLoad) * maxElementsFactor * 0.90);
 
+#if defined (TRACE_QUERY_LOGIC)
+    printf("QVC: GetMaxElementsToLoad %d\n", maxElementsToLoad);
+#endif
     return maxElementsToLoad;
     }
