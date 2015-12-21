@@ -128,28 +128,57 @@ struct InstanceCacheHelper::CachedInstances
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct InstanceCacheHelper::PartialCachingState
     {
+    public:
+        enum class Action
+            {
+            CacheFull,
+            CachePartial,
+            SkipCached,
+            Reject
+            };
+
+    private:
+        enum class SelectType
+            {
+            All,
+            Id,
+            Property
+            };
+
     private:
         const WSQuery* m_query;
         const ECInstanceKeyMultiMap& m_fullyPersistedInstances;
         bset<ObjectId>& m_rejected;
         bset<bvector<SelectPathElement>> m_allPropertiesSelectedPaths;
+        bset<bvector<SelectPathElement>> m_idOnlySelectedPaths;
 
     private:
         //! Check if instance is fully persited in cache and needs all properties to be selected
         bool IsFullyPersisted(ObjectInfoCR info);
         bool DoesRequireAllProperties(ObjectInfoCR info);
 
-        static BentleyStatus BuildAllPropertiesSelectedPaths
+        static BentleyStatus BuildSelectedPaths
             (
             ECDbAdapterR dbAdapter,
             WSQueryCR query,
-            bset<bvector<SelectPathElement>>& allPropertiesSelectedPathsOut
+            bset<bvector<SelectPathElement>>& allPropertiesSelectedPathsOut,
+            bset<bvector<SelectPathElement>>& m_idSelectedPaths
+            );
+
+        static BentleyStatus GetSelectPathAndType
+            (
+            ECDbAdapterR dbAdapter,
+            Utf8StringCR mainSchemaName,
+            Utf8StringCR selectStr,
+            bvector<SelectPathElement>& pathOut,
+            SelectType& selectTypeOut
             );
 
         static bool IsClassTokenPolymorphic(Utf8StringCR classToken);
         static void GetSchemaAndClassNamesFromClassToken(Utf8StringCR classToken, Utf8StringR schemaNameOut, Utf8StringR classNameOut);
         static ECClassCP GetECClassFromClassToken(ECDbAdapterR dbAdapter, Utf8StringCR mainSchemaName, Utf8StringCR classToken);
         static ECRelatedInstanceDirection GetDirection(Utf8StringCR directionString);
+        static bool DoesPathMatches(const bvector<SelectPathElement>& instancePath, const bset<bvector<SelectPathElement>>& matchPaths);
 
     public:
         //! param[in] query -   [optional] select options will be parsed and used to indentify if all properties were selected for given class.
@@ -157,17 +186,13 @@ struct InstanceCacheHelper::PartialCachingState
         PartialCachingState
             (
             ECDbAdapterR dbAdapter,
-            const WSQuery* query,
+            WSQueryCR query,
             const ECInstanceKeyMultiMap& fullyPersistedInstances,
             bset<ObjectId>& rejected
             );
 
-        //! Check if instance caching should be rejected.
-        bool ShouldReject(ObjectInfoCR info, const bvector<SelectPathElement>& path);
-
-        //! Checks if all properties were selected for instance using supplied WSQuery. Null WSQuery is treated as not all properties selected.
-        //! @param[in] instancePath - instance path in response
-        bool AreAllPropertiesSelected(const bvector<SelectPathElement>& instancePath);
+        //! Check what caching action should take for this instance
+        Action GetAction(ObjectInfoCR info, const bvector<SelectPathElement>& path);
 
         //! Add Object to rejected list.
         void AddRejected(ObjectIdCR objectId);
