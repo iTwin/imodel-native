@@ -2354,6 +2354,27 @@ DgnDbStatus ElementGeomIO::Import(GeomStreamR dest, GeomStreamCR source, DgnImpo
                 break;
                 }
 
+            case ElementGeomIO::OpCode::TextString:
+                {
+                TextStringPtr text = TextString::Create();
+                if (SUCCESS != TextStringPersistence::DecodeFromFlatBuf(*text, egOp.m_data, egOp.m_dataSize, importer.GetSourceDb()))
+                    break;
+
+                // What is interesting is that TextString's persistence stores ID, but at runtime it only ever cares about font objects.
+                // While you might think it'd be nifty to simply deserialize from the old DB and re-serialize into the new DB (thus getting a new ID based on font type/name), you'd miss out on potentially cloning over embedded face data.
+                // Since the TextString came from persistence, assume the ID is valid.
+                DgnFontId srcFontId = importer.GetSourceDb().Fonts().FindId(text->GetStyle().GetFont());
+                DgnFontId dstFontId = importer.RemapFont(srcFontId);
+                DgnFontCP dstFont = importer.GetDestinationDb().Fonts().FindFontById(dstFontId);
+                
+                if (nullptr == dstFont)
+                    { BeDataAssert(nullptr != dstFont); }
+                else
+                    text->GetStyleR().SetFont(*dstFont);
+                
+                writer.Append(*text);
+                }
+            
             default:
                 {
                 writer.Append(egOp);
