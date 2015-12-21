@@ -244,12 +244,12 @@ ECSqlPrepareContext::JoinTableInfo::Ptr ECSqlPrepareContext::JoinTableInfo::TryS
     {
     Ptr ptr = Ptr(new JoinTableInfo());
     auto const& classMap = exp.GetClassNameExp()->GetInfo().GetMap();
-    if (!classMap.MapsToJoinedTable())
+    if (!classMap.HasJoinedTable())
         return nullptr;
 
     NativeSqlBuilder parentOfJoinedTableECSQL;
     NativeSqlBuilder joinedTableECSQL;
-    auto rootClassMap = classMap.FindPrimaryClassMapOfJoinedTable();
+    auto rootClassMap = classMap.FindClassMapOfParentOfJoinedTable();
     BeAssert(rootClassMap != nullptr && "Root class for joined tabel must exist.");
     if (rootClassMap == nullptr)
         return nullptr;
@@ -358,12 +358,12 @@ ECSqlPrepareContext::JoinTableInfo::Ptr ECSqlPrepareContext::JoinTableInfo::TryS
     {
     Ptr ptr = Ptr(new JoinTableInfo());
     auto const& classMap = exp.GetClassNameExp()->GetInfo().GetMap();
-    if (!classMap.MapsToJoinedTable())
+    if (!classMap.HasJoinedTable())
         return nullptr;
 
     NativeSqlBuilder parentOfJoinedTableECSQL;
     NativeSqlBuilder joinedTableECSQL;
-    auto rootClassMap = classMap.FindPrimaryClassMapOfJoinedTable();
+    auto rootClassMap = classMap.FindClassMapOfParentOfJoinedTable();
     ptr->m_class = &classMap.GetClass();
     ptr->m_parentClass = &rootClassMap->GetClass();
 

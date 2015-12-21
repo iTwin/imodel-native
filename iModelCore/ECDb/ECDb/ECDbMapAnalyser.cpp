@@ -946,7 +946,7 @@ ECDbMapAnalyser::Class& ECDbMapAnalyser::GetClass (ClassMapCR classMap)
         }
 
     storage.GetClassesR ().insert (ptr);
-    if (classMap.MapsToJoinedTable())
+    if (classMap.HasJoinedTable())
         {
         auto& storage = GetStorage(classMap.GetTable().GetName().c_str());
         for (auto id : classMap.GetStorageDescription().GetVerticalPartition(classMap.GetTable())->GetClassIds())
@@ -1029,7 +1029,7 @@ ECDbMapAnalyser::Relationship&  ECDbMapAnalyser::GetRelationship (RelationshipCl
         auto& constraitClass = GetClass (*constraintMap);
         if (Enum::Contains(key.second, ECDbMap::LightweightCache::RelationshipEnd::Source))
             {
-            if (!(constraintMap->MapsToJoinedTable() && hasRootOfJoinedTableSource))
+            if (!(constraintMap->HasJoinedTable() && hasRootOfJoinedTableSource))
                 {
                 if (isForward)
                     ptr->From().GetClassesR().insert(&constraitClass);
@@ -1039,7 +1039,7 @@ ECDbMapAnalyser::Relationship&  ECDbMapAnalyser::GetRelationship (RelationshipCl
             }
         if (Enum::Contains(key.second, ECDbMap::LightweightCache::RelationshipEnd::Target))
             {
-            if (!(constraintMap->MapsToJoinedTable() && hasRootOfJoinedTableTarget))
+            if (!(constraintMap->HasJoinedTable() && hasRootOfJoinedTableTarget))
                 {
                 if (!isForward)
                     ptr->From().GetClassesR().insert(&constraitClass);
@@ -2076,7 +2076,7 @@ BentleyStatus ECClassViewGenerator::BuildClassView(SqlViewBuilder& viewBuilder, 
             sqlBuilder.Append(" FROM ")
                 .AppendEscaped(part.GetTable().GetName().c_str());
 
-            if (classMap.MapsToJoinedTable())
+            if (classMap.HasJoinedTable())
                 {
                 auto primaryKey = part.GetTable().GetFilteredColumnFirst(ColumnKind::ECInstanceId);
                 for (auto const& vpart : classMap.GetStorageDescription().GetVerticalPartitions())
@@ -2479,7 +2479,7 @@ BentleyStatus ECClassViewGenerator::BuildSystemSelectionClause(NativeSqlBuilder:
     
     auto table = &classMap.GetTable();
 
-    if (auto parent = classMap.FindPrimaryClassMapOfJoinedTable())
+    if (auto parent = classMap.FindClassMapOfParentOfJoinedTable())
         {
         table = &parent->GetTable();
         }

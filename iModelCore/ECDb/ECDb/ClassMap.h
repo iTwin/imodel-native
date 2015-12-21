@@ -146,15 +146,15 @@ public:
 
     IClassMap const& GetView (View classView) const;
 
-    IClassMap const* FindPrimaryClassMapOfJoinedTable(bool absolutePrimary = true) const;
-    BentleyStatus GetPathToRootOfJoinedTable(std::vector<IClassMap const*>& path) const;
+    IClassMap const* FindClassMapOfParentOfJoinedTable(bool absolutePrimary = true) const;
+    BentleyStatus GetPathToParentOfJoinedTable(std::vector<IClassMap const*>& path) const;
 
     const std::set<ECDbSqlTable const*> GetJoinedTables() const;
     ECDbSqlTable& GetPrimaryTable() const
         {
-        if (MapsToJoinedTable())
+        if (HasJoinedTable())
             {
-            auto root = FindPrimaryClassMapOfJoinedTable();
+            auto root = FindClassMapOfParentOfJoinedTable();
             BeAssert(root != nullptr && "This should never be null");
             return root->GetTable();           
             }
@@ -185,17 +185,17 @@ public:
     bool IsECInstanceIdAutogenerationDisabled() const { return m_isECInstanceIdAutogenerationDisabled; }
 
     StorageDescription const& GetStorageDescription() const;
-    bool MapsToJoinedTable() const;
+    bool IsRelationshipClassMap() const;
+    bool HasJoinedTable() const;
     bool IsParentOfJoinedTable() const;
     bool MapsToStructArrayTable () const;
-    bool IsRelationshipClassMap () const;
+    static bool MapsToStructArrayTable(ECN::ECClassCR);
     Utf8String ToString () const;
     const Utf8String GetPersistedViewName() const;
     bool HasPersistedView() const;
 
     static BentleyStatus DetermineTableName(Utf8StringR tableName, ECN::ECClassCR, Utf8CP tablePrefix = nullptr);
     static BentleyStatus DetermineTablePrefix(Utf8StringR tablePrefix, ECN::ECClassCR);
-    static bool MapsToStructArrayTable (ECN::ECClassCR);
     static bool IsAnyClass (ECN::ECClassCR);
     };
 

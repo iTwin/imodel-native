@@ -222,7 +222,7 @@ bool IClassMap::MapsToStructArrayTable(ECN::ECClassCR ecClass)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                         Affan.Khan  10/2015
 //---------------------------------------------------------------------------------------
-bool IClassMap::MapsToJoinedTable() const
+bool IClassMap::HasJoinedTable() const
     {
     return Enum::Contains(GetMapStrategy().GetOptions(), ECDbMapStrategy::Options::JoinedTable);
     }
@@ -238,11 +238,11 @@ bool IClassMap::IsParentOfJoinedTable() const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                         Affan.Khan  10/2015
 //---------------------------------------------------------------------------------------
-BentleyStatus IClassMap::GetPathToRootOfJoinedTable(std::vector<IClassMap const*>& path) const
+BentleyStatus IClassMap::GetPathToParentOfJoinedTable(std::vector<IClassMap const*>& path) const
     {
     path.clear();
     auto current = this;
-    if (!current->MapsToJoinedTable() && !current->IsParentOfJoinedTable())
+    if (!current->HasJoinedTable() && !current->IsParentOfJoinedTable())
         return BentleyStatus::ERROR;
 
     path.insert(path.begin(), current);
@@ -258,7 +258,7 @@ BentleyStatus IClassMap::GetPathToRootOfJoinedTable(std::vector<IClassMap const*
         BeAssert(current != nullptr && "Failed to find parent classmap. This should not happen");
         if (current)
             {
-            if (current->MapsToJoinedTable() || current->IsParentOfJoinedTable())
+            if (current->HasJoinedTable() || current->IsParentOfJoinedTable())
                 path.insert(path.begin(), current);
             else
                 return SUCCESS;
@@ -272,10 +272,10 @@ BentleyStatus IClassMap::GetPathToRootOfJoinedTable(std::vector<IClassMap const*
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                         Affan.Khan  10/2015
 //---------------------------------------------------------------------------------------
-IClassMap const* IClassMap::FindPrimaryClassMapOfJoinedTable(bool absolutePrimary) const
+IClassMap const* IClassMap::FindClassMapOfParentOfJoinedTable(bool absolutePrimary) const
     {
     auto current = this;
-    if (!current->MapsToJoinedTable())
+    if (!current->HasJoinedTable())
         return nullptr;
 
     do

@@ -106,7 +106,7 @@ ECSqlStatus ECSqlDeletePreparer::GenerateNativeSqlSnippets
         NativeSqlBuilder whereClause;
         //Following generate optimized WHERE depending on what was accessed in WHERE class of delete. It will avoid uncessary
         auto const & currentClassMap = classNameExp.GetInfo().GetMap();
-        if (auto rootOfJoinedTable = currentClassMap.FindPrimaryClassMapOfJoinedTable())
+        if (auto rootOfJoinedTable = currentClassMap.FindClassMapOfParentOfJoinedTable())
             {
             auto propertyAccessed =  whereClauseExp->Find(Exp::Type::PropertyName, true);
 
@@ -181,7 +181,7 @@ ECSqlStatus ECSqlDeletePreparer::GenerateNativeSqlSnippets
 
     IClassMap const& classMap = classNameExp.GetInfo().GetMap();
     ECDbSqlTable const* table = &classMap.GetTable();
-    if (auto rootOfJoinedTable = classMap.FindPrimaryClassMapOfJoinedTable())
+    if (auto rootOfJoinedTable = classMap.FindClassMapOfParentOfJoinedTable())
         {
         table = &rootOfJoinedTable->GetTable();
         }
