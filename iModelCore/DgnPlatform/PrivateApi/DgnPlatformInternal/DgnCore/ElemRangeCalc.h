@@ -137,18 +137,22 @@ private:
     ElemRangeCalc m_elRange;
 
 public:
-    RangeGraphic() {}
+    RangeGraphic(Render::Graphic::CreateParams const& params, IGeometryProcessorR processor, ViewContextR context) : T_Super(params, processor, context) {}
 
     ElemRangeCalc* GetElemRange() {return &m_elRange;}
 
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     void Init(ViewContextP context);
+#endif
     void      UpdateRange(int numPoints, DPoint3dCP points);
     void      UpdateRange(int numPoints, DPoint2dCP points);
     void      UpdateRange(DEllipse3dCP ellipse);
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     StatusInt _ProcessCurvePrimitive(ICurvePrimitiveCR primitive, bool closed, bool filled) override;
     StatusInt _ProcessSolidPrimitive(ISolidPrimitiveCR primitive) override;
+#endif
     void      _AddPointString2d(int numPoints, DPoint2dCP points, double zDepth, DPoint2dCP range) override;
-    StatusInt _AddBody(ISolidKernelEntityCR entity, double) override;
+    void      _AddBody(ISolidKernelEntityCR entity, double) override;
     void      _AddLineString2d(int numPoints, DPoint2dCP points, double zDepth, DPoint2dCP range) override;
     void      _AddShape2d(int numPoints, DPoint2dCP points, bool filled, double zDepth, DPoint2dCP range) override;
     void      _AddArc2d(DEllipse3dCR ellipse, bool isEllipse, bool fill, double zDepth, DPoint2dCP range) override;

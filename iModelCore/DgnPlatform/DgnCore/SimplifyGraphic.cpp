@@ -8,274 +8,28 @@
 #include <DgnPlatformInternal.h>
 #include <DgnPlatform/DgnRscFontStructures.h>
 
+/* NEEDSWORK_SIMPLIFY_GRAPHIC_REFACTOR */
 /*=================================================================================**//**
-* @bsiclass                                                     Brien.Bastings  12/07
+* @bsiclass                                                     Brien.Bastings  12/15
 +===============+===============+===============+===============+===============+======*/
-struct Dgn::SimplifyDrawUnClippedProcessor
+struct SimplifyCurveClipper
 {
-    virtual StatusInt _ProcessUnClipped() {return ERROR;}
-};
-
-/*=================================================================================**//**
-* @bsiclass
-+===============+===============+===============+===============+===============+======*/
-struct FacetClipper : PolyfaceQuery::IClipToPlaneSetOutput
-{
-private:
-    SimplifyGraphic&   m_output;
-    ClipVectorCP       m_clip;
-    bool               m_triangulate;
-    bool               m_filled;
-    
-public:
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    RayBentley   10/04
-+---------------+---------------+---------------+---------------+---------------+------*/
-FacetClipper(SimplifyGraphic& output, bool filled) : m_output(output), m_filled(filled)
-    {
-    m_clip = output.PerformClip() ? output.GetCurrClip() : NULL;
-    m_triangulate = output.GetFacetOptions()->GetMaxPerFace() <= 3;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     03/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt ProcessPolyface(PolyfaceQueryCR polyfaceQuery) 
-    {
-    if (NULL != m_clip)
-        return m_clip->ClipPolyface(polyfaceQuery, *this, m_triangulate);
-        
-    return OutputPolyface(polyfaceQuery);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     03/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt ProcessDisposablePolyface(PolyfaceHeaderR polyfaceHeader) 
-    {
-    return (NULL != m_clip) ? m_clip->ClipPolyface(polyfaceHeader, *this, m_triangulate) : OutputPolyface(polyfaceHeader);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     03/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-virtual StatusInt _ProcessUnclippedPolyface(PolyfaceQueryCR polyfaceQuery) override 
-    {
-    return OutputPolyface(polyfaceQuery);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     03/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-virtual StatusInt _ProcessClippedPolyface(PolyfaceHeaderR polyfaceHeader) override 
-    {
-    return OutputPolyface(polyfaceHeader);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     03/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt OutputPolyface(PolyfaceQueryCR polyfaceQuery)
-    {
-    return m_output.ProcessGeometryMapOrFacetSet(polyfaceQuery, m_filled);
-    }
-
-}; // FacetClipper
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  10/2010
-+---------------+---------------+---------------+---------------+---------------+------*/
-static void setDefaultFacetOptions(IFacetOptionsP options, double chordTolerance, bool addNormals, bool addParams)
-    {
-    options->SetMaxPerFace(5000/*MAX_VERTICES*/);
-    options->SetChordTolerance(chordTolerance);
-    options->SetAngleTolerance(0.25 * Angle::Pi());
-    options->SetNormalsRequired(addNormals);
-    options->SetParamsRequired(addParams);
-    options->SetEdgeChainsRequired(false);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     11/07
-+---------------+---------------+---------------+---------------+---------------+------*/
-SimplifyGraphic::SimplifyGraphic(bool addFacetNormals, bool addFacetParams)
-    {
-    m_context = nullptr;
-    m_localToWorldTransform.InitIdentity();
-    m_defaultFacetOptions = IFacetOptions::New();
-    setDefaultFacetOptions(m_defaultFacetOptions.get(), 0.0, addFacetNormals, addFacetParams);
-
-    m_inPatternDraw   = false;
-    m_inSymbolDraw    = false;
-    m_inTextDraw      = false;
-    m_inThicknessDraw = false;
-
-    m_processingMaterialGeometryMap = false;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     11/07
-+---------------+---------------+---------------+---------------+---------------+------*/
-ClipVectorCP SimplifyGraphic::GetCurrClip() 
-    {
-    if (NULL == m_context)
-        {
-        BeAssert(false);
-        return NULL;
-
-        }
-    return m_context->GetTransformClipStack().GetDrawGeomClip();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     03/2013
-+---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt   SimplifyGraphic::ProcessGeometryMapOrFacetSet(PolyfaceQueryCR polyfaceQuery, bool filled)
-    {
-#ifdef NEEDS_WORK_GEOMETRY_MAPS
-    if (SUCCESS != ProcessGeometryMap(polyfaceQuery) &&
-        SUCCESS == ProcessTextureOutlines(polyfaceQuery))
-        return SUCCESS;
-#endif
-
-    return ProcessFacetSet(polyfaceQuery, filled);
-    }
-    
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  07/10
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool SimplifyGraphic::PerformClip()
-    {
-    return _DoClipping() && NULL != GetCurrClip();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     03/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-IPolyfaceConstructionPtr SimplifyGraphic::GetPolyfaceBuilder()
-    {
-    _GetFacetOptions()->SetToleranceDistanceScale(1.0 / m_context->GetTransformClipStack().GetTransformScale());
-    return IPolyfaceConstruction::New(*GetFacetOptions());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  08/13
-+---------------+---------------+---------------+---------------+---------------+------*/
-static void processCurvePrimitives(SimplifyGraphic& drawGeom, CurveVectorCR curves, bool filled)
-    {
-    if (curves.IsUnionRegion() || curves.IsParityRegion())
-        {
-        for (ICurvePrimitivePtr curve: curves)
-            {
-            if (curve.IsNull())
-                continue;
-
-            if (ICurvePrimitive::CURVE_PRIMITIVE_TYPE_CurveVector != curve->GetCurvePrimitiveType())
-                {
-                BeAssert(true && "Unexpected entry in region.");
-
-                return; // Each loop must be a child curve bvector (a closed loop or parity region)...
-                }
-
-            processCurvePrimitives(drawGeom, *curve->GetChildCurveVectorCP (), filled && curves.IsUnionRegion()); // Don't pass filled when spewing parity region loops...
-            }
-        }
-    else
-        {
-        bool    isSingleEntry = (ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Invalid != curves.HasSingleCurvePrimitive());
-        bool    isClosed = curves.IsClosedPath();
-        bool    isOpen = curves.IsOpenPath();
-        bool    isComplex = ((isClosed || isOpen) && !isSingleEntry);
-
-        for (ICurvePrimitivePtr curve: curves)
-            {
-            if (!curve.IsValid())
-                continue;
-
-            if (SUCCESS == drawGeom.ProcessCurvePrimitive(*curve, !isComplex && isClosed, !isComplex && filled)) // Don't pass filled when spewing primitives...
-                continue;
-
-            if (ICurvePrimitive::CURVE_PRIMITIVE_TYPE_CurveVector == curve->GetCurvePrimitiveType())
-                processCurvePrimitives(drawGeom, *curve->GetChildCurveVectorCP (), filled);
-            }
-        }
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   12/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-void SimplifyGraphic::_AddSubGraphic(Graphic&, TransformCR, Render::GraphicParams&) 
-    {
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-#endif
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Sam.Wilson      08/13
-+---------------+---------------+---------------+---------------+---------------+------*/
-void SimplifyGraphic::_AddMosaic(int numX, int numY, uintptr_t const* tileIds, DPoint3d const* points)
-    {
-    BeAssert(numX==1 && numY==1 && "TBD: march over tiles");
-
-    DPoint3d    shapePoints[5];
-
-    shapePoints[0] = shapePoints[4] = points[0];
-    shapePoints[1] = points[1];
-    shapePoints[2] = points[2];
-    shapePoints[3] = points[3];
-
-    _AddShape(5, shapePoints, true, NULL);
-    }
- 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  04/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus SimplifyGraphic::CurveVectorOutputProcessor(CurveVectorCR curves, bool filled)
-    {
-    if (1 > curves.size() || SUCCESS == _ProcessCurveVector(curves, filled))
-        return SUCCESS;
-
-    if (_ProcessAsStrokes(curves.ContainsNonLinearPrimitive()))
-        {
-        if (curves.IsAnyRegionType() && _ProcessAsFacets(false))
-            {
-            IPolyfaceConstructionPtr  builder = GetPolyfaceBuilder();
-
-            builder->AddRegion(curves);
-
-            return (BentleyStatus) ProcessGeometryMapOrFacetSet(builder->GetClientMeshR (), filled);
-            }
-
-        bvector<DPoint3d>  points;
-
-        curves.AddStrokePoints(points, *_GetFacetOptions());
-
-        return (BentleyStatus) _ProcessLinearSegments(&points.front(), points.size(), curves.IsAnyRegionType(), filled);
-        }
-
-    processCurvePrimitives(*this, curves, filled);
-
-    return SUCCESS;
-    }
-
-BEGIN_UNNAMED_NAMESPACE
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
 struct IntersectLocationDetail
     {
-    size_t      m_index;
-    double      m_fraction;
+    size_t m_index;
+    double m_fraction;
 
     IntersectLocationDetail(size_t index, double fraction) {m_index = index; m_fraction = fraction;}
     };
-END_UNNAMED_NAMESPACE
+
+bvector<CurveVectorPtr> m_output;
+        
+SimplifyCurveClipper() {}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-static int compareCurveIntersections(IntersectLocationDetail const* detail0, IntersectLocationDetail const* detail1)
+static int CompareCurveIntersections(IntersectLocationDetail const* detail0, IntersectLocationDetail const* detail1)
     {
     if (detail0->m_index < detail1->m_index)
         {
@@ -299,7 +53,7 @@ static int compareCurveIntersections(IntersectLocationDetail const* detail0, Int
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-static bool computeInteriorPoint(DPoint3dR midPoint, CurveVectorCR curves, IntersectLocationDetail& startDetail, IntersectLocationDetail& endDetail)
+static bool ComputeInteriorPoint(DPoint3dR midPoint, CurveVectorCR curves, IntersectLocationDetail& startDetail, IntersectLocationDetail& endDetail)
     {
     size_t      midIndex;
     double      midFraction;
@@ -326,7 +80,7 @@ static bool computeInteriorPoint(DPoint3dR midPoint, CurveVectorCR curves, Inter
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-static bool clipAsOpenCurveVector(CurveVectorCR curves, ClipVectorCR clip, SimplifyGraphic* drawGeom)
+bool ClipAsOpenCurveVector(CurveVectorCR curves, ClipVectorCR clip)
     {
     if (1 > curves.size())
         return false;
@@ -338,7 +92,7 @@ static bool clipAsOpenCurveVector(CurveVectorCR curves, ClipVectorCR clip, Simpl
         for (ICurvePrimitivePtr curve: curves)
             {
             if (!curve.IsNull() && ICurvePrimitive::CURVE_PRIMITIVE_TYPE_CurveVector == curve->GetCurvePrimitiveType())
-                clipped |= clipAsOpenCurveVector(*curve->GetChildCurveVectorCP (), clip, drawGeom);
+                clipped |= ClipAsOpenCurveVector(*curve->GetChildCurveVectorCP (), clip);
             }
 
         return clipped;
@@ -395,7 +149,7 @@ static bool clipAsOpenCurveVector(CurveVectorCR curves, ClipVectorCR clip, Simpl
         return !clip.PointInside(testPoint, 1.0e-5);
         }
 
-    qsort(&intersectDetails.front(), intersectDetails.size(), sizeof (IntersectLocationDetail), (int (*) (void const*, void const*)) compareCurveIntersections);
+    qsort(&intersectDetails.front(), intersectDetails.size(), sizeof (IntersectLocationDetail), (int (*) (void const*, void const*)) CompareCurveIntersections);
 
     // Add final point for last curve...
     intersectDetails.push_back(IntersectLocationDetail(curves.size()-1, 1.0));
@@ -412,7 +166,7 @@ static bool clipAsOpenCurveVector(CurveVectorCR curves, ClipVectorCR clip, Simpl
         bool        thisInside = false;
         DPoint3d    midPoint;
 
-        if (computeInteriorPoint(midPoint, curves, lastDetail, thisDetail))
+        if (ComputeInteriorPoint(midPoint, curves, lastDetail, thisDetail))
             thisInside = clip.PointInside(midPoint, 1.0e-5);
 
         if (thisInside)
@@ -426,7 +180,7 @@ static bool clipAsOpenCurveVector(CurveVectorCR curves, ClipVectorCR clip, Simpl
                 {
                 CurveVectorPtr  partialCurve = curves.CloneBetweenDirectedFractions((int) insideStartDetail.m_index, insideStartDetail.m_fraction, (int) lastDetail.m_index, lastDetail.m_fraction, false);
 
-                drawGeom->CurveVectorOutputProcessor(*partialCurve, false);
+                m_output.push_back(partialCurve);
                 }
             }
 
@@ -437,8 +191,8 @@ static bool clipAsOpenCurveVector(CurveVectorCR curves, ClipVectorCR clip, Simpl
     if (lastInside)
         {
         CurveVectorPtr  partialCurve = curves.CloneBetweenDirectedFractions((int) insideStartDetail.m_index, insideStartDetail.m_fraction, (int) lastDetail.m_index, lastDetail.m_fraction, false);
-        
-        drawGeom->CurveVectorOutputProcessor(*partialCurve, false);
+
+        m_output.push_back(partialCurve);
         }
 
     return true;
@@ -447,9 +201,9 @@ static bool clipAsOpenCurveVector(CurveVectorCR curves, ClipVectorCR clip, Simpl
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-static bool clipPointStringCurvePrimitive(ICurvePrimitiveCR primtive, ClipVectorCR clip, SimplifyGraphic* drawGeom)
+bool ClipPointStringCurvePrimitive(ICurvePrimitiveCR primtive, ClipVectorCR clip)
     {
-    bvector<DPoint3d> const* points = primtive.GetPointStringCP ();
+    bvector<DPoint3d> const* points = primtive.GetPointStringCP();
     bvector<DPoint3d>        insidePts;
 
     for (size_t iPt = 0; iPt < points->size(); ++iPt)
@@ -466,7 +220,7 @@ static bool clipPointStringCurvePrimitive(ICurvePrimitiveCR primtive, ClipVector
     CurveVectorPtr  tmpCurve = CurveVector::Create(CurveVector::BOUNDARY_TYPE_None);
     
     tmpCurve->push_back(ICurvePrimitive::CreatePointString(&insidePts.front(), insidePts.size()));
-    drawGeom->CurveVectorOutputProcessor(*tmpCurve, false);
+    m_output.push_back(tmpCurve);
 
     return true;
     }
@@ -474,14 +228,14 @@ static bool clipPointStringCurvePrimitive(ICurvePrimitiveCR primtive, ClipVector
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-static bool clipUnclassifiedCurveVector(CurveVectorCR curves, ClipVectorCR clip, SimplifyGraphic* drawGeom)
+bool ClipUnclassifiedCurveVector(CurveVectorCR curves, ClipVectorCR clip)
     {
     if (1 > curves.size())
         return false;
 
     bool    clipped = false;
 
-    for (ICurvePrimitivePtr curve: curves)
+    for (ICurvePrimitivePtr curve : curves)
         {
         if (curve.IsNull())
             continue;
@@ -490,19 +244,19 @@ static bool clipUnclassifiedCurveVector(CurveVectorCR curves, ClipVectorCR clip,
             {
             case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_PointString:
                 {
-                clipped |= clipPointStringCurvePrimitive(*curve, clip, drawGeom);
+                clipped |= ClipPointStringCurvePrimitive(*curve, clip);
                 break;
                 }
 
             case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_CurveVector:
                 {
-                clipped |= clipAsOpenCurveVector(*curve->GetChildCurveVectorCP (), clip, drawGeom);
+                clipped |= ClipAsOpenCurveVector(*curve->GetChildCurveVectorCP(), clip);
                 break;
                 }
 
             default:
                 {
-                clipped |= clipAsOpenCurveVector(*CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open, curve), clip, drawGeom);
+                clipped |= ClipAsOpenCurveVector(*CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open, curve), clip);
                 break;
                 }
             }
@@ -512,81 +266,933 @@ static bool clipUnclassifiedCurveVector(CurveVectorCR curves, ClipVectorCR clip,
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  03/12
+* @bsimethod                                                    Brien.Bastings  05/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SimplifyGraphic::ClipAndProcessCurveVector(CurveVectorCR curves, bool filled)
+bvector<CurveVectorPtr>& ClipCurveVector(CurveVectorCR curve, ClipVectorCR clip)
     {
-    CurveTopologyId::AddCurveVectorIds(curves, CurvePrimitiveId::Type_CurveVector, CurveTopologyId::FromCurveVector(), nullptr);
+    if (CurveVector::BOUNDARY_TYPE_None == curve.GetBoundaryType())
+        ClipUnclassifiedCurveVector(curve, clip);
+    else
+        ClipAsOpenCurveVector(curve, clip);
 
-    if (!PerformClip())
+    return m_output;
+    }
+
+}; // SimplifyCurveClipper
+
+/*=================================================================================**//**
+* @bsiclass                                                     Brien.Bastings  12/15
++===============+===============+===============+===============+===============+======*/
+struct SimplifyPolyfaceClipper : PolyfaceQuery::IClipToPlaneSetOutput
+{
+bvector<PolyfaceHeaderPtr> m_output;
+        
+SimplifyPolyfaceClipper() {}
+virtual StatusInt _ProcessUnclippedPolyface(PolyfaceQueryCR) override {return SUCCESS;}
+virtual StatusInt _ProcessClippedPolyface(PolyfaceHeaderR mesh) override {PolyfaceHeaderPtr meshPtr = &mesh; m_output.push_back(meshPtr); return SUCCESS;}
+bvector<PolyfaceHeaderPtr>& ClipPolyface(PolyfaceQueryCR mesh, ClipVectorCR clip, bool triangulate) {clip.ClipPolyface(mesh, *this, triangulate); return m_output;}
+
+}; // SimplifyPolyfaceClipper
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+SimplifyGraphic::SimplifyGraphic(Render::Graphic::CreateParams const& params, IGeometryProcessorR processor, ViewContextR context) : T_Super(params), m_processor(processor), m_context(context)
+    {
+    m_localToWorldTransform = params.m_placement;
+
+    m_facetOptions = m_processor._GetFacetOptionsP();
+
+    if (!m_facetOptions.IsValid())
         {
-        CurveVectorOutputProcessor(curves, filled);
-        return;
+        m_facetOptions = IFacetOptions::Create();
+    
+        m_facetOptions->SetMaxPerFace(5000/*MAX_VERTICES*/);
+        m_facetOptions->SetAngleTolerance(0.25 * Angle::Pi());
         }
 
-    if (curves.IsAnyRegionType())
-        {
-        bool        containsCurves = curves.ContainsNonLinearPrimitive();
+    m_textAxes[0] = m_textAxes[1] = DVec3d::From(0.0, 0.0, 0.0);
 
-        if (_ProcessAsFacets(containsCurves) && _ProcessAsStrokes(containsCurves))
-            {
-            IPolyfaceConstructionPtr  builder = GetPolyfaceBuilder();
+    m_inPatternDraw = false;
+    m_inSymbolDraw  = false;
+    m_inTextDraw    = false;
+    }
 
-            builder->AddRegion(curves);
-            FacetClipper(*this, filled).ProcessDisposablePolyface(builder->GetClientMeshR ());
-            return;
-            }
-        else if (_ClipPreservesRegions())
-            {
-            bvector<CurveVectorPtr> insideCurves;
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+Render::GraphicPtr SimplifyGraphic::_CreateSubGraphic(Render::Graphic::CreateParams const& params) const
+    {
+    SimplifyGraphic* subGraphic = new SimplifyGraphic(params, m_processor, m_context);
 
+    subGraphic->m_textAxes[0]        = m_textAxes[0];
+    subGraphic->m_textAxes[1]        = m_textAxes[1];
+    subGraphic->m_inPatternDraw      = m_inPatternDraw;
+    subGraphic->m_inSymbolDraw       = m_inSymbolDraw;
+    subGraphic->m_inTextDraw         = m_inTextDraw;
+    subGraphic->m_currGraphicParams  = m_currGraphicParams;
+    subGraphic->m_currGeometryParams = m_currGeometryParams;
+
+    return subGraphic;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    RayBentley      03/2007
++---------------+---------------+---------------+---------------+---------------+------*/
+void SimplifyGraphic::GetEffectiveGraphicParams(GraphicParamsR graphicParams) const
+    {
+    graphicParams = m_currGraphicParams;
 #if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-            if (SUCCESS == T_HOST.GetSolidsKernelAdmin()._ClipCurveVector(insideCurves, curves, *GetCurrClip(), m_context->GetCurrLocalToWorldTransformCP()))
-#else
-            if (SUCCESS == T_HOST.GetSolidsKernelAdmin()._ClipCurveVector(insideCurves, curves, *GetCurrClip(), &m_localToWorldTransform))
+    Render::OvrGraphicParams ovr = *m_context->GetOverrideGraphicParams();
+
+    if (0 != (ovr.GetFlags() & OvrGraphicParams::FLAGS_Color))
+        graphicParams.SetLineColor(ColorDef((ovr.GetLineColor().GetValue() & 0xffffff) | (graphicParams.GetLineColor().GetValue() & 0xff000000)));
+
+    if (0 != (ovr.GetFlags() & OvrGraphicParams::FLAGS_ColorTransparency))
+        graphicParams.SetLineColor(ColorDef((graphicParams.GetLineColor().GetValue() & 0xffffff) | (ovr.GetLineColor().GetValue() & 0xff000000)));
+
+    if (0 != (ovr.GetFlags() & OvrGraphicParams::FLAGS_FillColor))
+        graphicParams.SetFillColor(ColorDef((ovr.GetFillColor().GetValue() & 0xffffff) | (graphicParams.GetFillColor().GetValue() & 0xff000000)));
+
+    if (0 != (ovr.GetFlags() & OvrGraphicParams::FLAGS_FillColorTransparency))
+        graphicParams.SetFillColor(ColorDef((graphicParams.GetFillColor().GetValue() & 0xffffff) | (ovr.GetFillColor().GetValue() & 0xff000000)));
+
+    if (0 != (ovr.GetFlags() & OvrGraphicParams::FLAGS_RastWidth))
+        graphicParams.SetWidth(ovr.GetWidth());
+
+    if (0 != (ovr.GetFlags() & OvrGraphicParams::FLAGS_RenderMaterial))
+        graphicParams.SetMaterial(ovr.GetMaterial().get());
 #endif
-                {
-                for (CurveVectorPtr tmpCurves: insideCurves)
-                    CurveVectorOutputProcessor(*tmpCurves, filled);
+    }
 
-                return;
-                }
-            }
-         }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DMatrix4d SimplifyGraphic::GetLocalToView() const
+    {
+    DMatrix4d   localToWorld = DMatrix4d::From(m_localToWorldTransform);
+    DMatrix4d   worldToView = m_context.GetWorldToView().M0;
+    DMatrix4d   localToView;
 
-    if (CurveVector::BOUNDARY_TYPE_None == curves.GetBoundaryType())
+    localToView.InitProduct(worldToView, localToWorld);
+
+    return localToView;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DMatrix4d SimplifyGraphic::GetViewToLocal() const
+    {
+    Transform   worldToLocalTrans;
+
+    worldToLocalTrans.InverseOf(m_localToWorldTransform);
+
+    DMatrix4d   worldToLocal = DMatrix4d::From(worldToLocalTrans);
+    DMatrix4d   viewToWorld = m_context.GetWorldToView().M1;
+    DMatrix4d   viewToLocal;
+
+    viewToLocal.InitProduct(worldToLocal, viewToWorld);
+
+    return viewToLocal;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void SimplifyGraphic::LocalToView(DPoint4dP viewPts, DPoint3dCP localPts, int nPts) const
+    {
+    GetLocalToView().Multiply(viewPts, localPts, nullptr, nPts);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void SimplifyGraphic::LocalToView(DPoint3dP viewPts, DPoint3dCP localPts, int nPts) const
+    {
+    DMatrix4dCR  localToView = GetLocalToView();
+
+    if (nullptr != m_context.GetViewport() && m_context.GetViewport()->IsCameraOn())
+        localToView.MultiplyAndRenormalize(viewPts, localPts, nPts);
+    else
+        localToView.MultiplyAffine(viewPts, localPts, nPts);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void SimplifyGraphic::ViewToLocal(DPoint3dP localPts, DPoint4dCP viewPts, int nPts) const
+    {
+    Transform   worldToLocal;
+
+    worldToLocal.InverseOf(m_localToWorldTransform);
+    m_context.ViewToWorld(localPts, viewPts, nPts);
+    worldToLocal.Multiply(localPts, localPts, nPts);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void SimplifyGraphic::ViewToLocal(DPoint3dP localPts, DPoint3dCP viewPts, int nPts) const
+    {
+    Transform   worldToLocal;
+
+    worldToLocal.InverseOf(m_localToWorldTransform);
+    m_context.ViewToWorld(localPts, viewPts, nPts);
+    worldToLocal.Multiply(localPts, localPts, nPts);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     11/07
++---------------+---------------+---------------+---------------+---------------+------*/
+ClipVectorCP SimplifyGraphic::GetCurrentClip() const
+    {
+    return m_context.GetTransformClipStack().GetDrawGeomClip();
+    }
+
+/*---------------------------------------------------------------------------------**//**  
+* @bsimethod                                                    RayBentley      12/08
++---------------+---------------+---------------+---------------+---------------+------*/
+bool SimplifyGraphic::IsRangeTotallyInside(DRange3dCR range) const
+    {
+    return ClipPlaneContainment_StronglyInside == m_context.GetTransformClipStack().ClassifyRange(range);
+    }
+
+/*---------------------------------------------------------------------------------**//**  
+* @bsimethod                                                    RayBentley      12/08
++---------------+---------------+---------------+---------------+---------------+------*/
+bool SimplifyGraphic::IsRangeTotallyInsideClip(DRange3dCR range) const
+    { 
+    DPoint3d    corners[8];
+    
+    range.Get8Corners(corners);
+
+    return ArePointsTotallyInsideClip(corners, 8);
+    }
+
+/*---------------------------------------------------------------------------------**//**  
+* @bsimethod                                                    RayBentley      12/08
++---------------+---------------+---------------+---------------+---------------+------*/
+bool SimplifyGraphic::ArePointsTotallyInsideClip(DPoint3dCP points, int nPoints) const
+    { 
+    if (nullptr == GetCurrentClip())
+        return true;
+
+    for (ClipPrimitivePtr const& primitive : *GetCurrentClip())
+        if (ClipPlaneContainment_StronglyInside != primitive->ClassifyPointContainment(points, nPoints))
+            return false;
+
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**  
+* @bsimethod                                                    RayBentley      12/08
++---------------+---------------+---------------+---------------+---------------+------*/
+bool SimplifyGraphic::ArePointsTotallyOutsideClip(DPoint3dCP points, int nPoints) const
+    { 
+    if (nullptr == GetCurrentClip())
+        return false;
+
+    for (ClipPrimitivePtr const& primitive : *GetCurrentClip())
+        if (ClipPlaneContainment_StronglyOutside == primitive->ClassifyPointContainment(points, nPoints))
+            return true;
+
+    return false;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void SimplifyGraphic::ProcessAsLinearSegments(CurveVectorCR geom, bool filled) const
+    {
+    bvector<DPoint3d> points;
+
+    geom.AddStrokePoints(points, *m_facetOptions);
+    m_processor._ProcessLinearSegments(&points.front(), points.size(), geom.IsAnyRegionType(), filled, *this);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  08/13
++---------------+---------------+---------------+---------------+---------------+------*/
+static void processCurvePrimitives(IGeometryProcessorR processor, CurveVectorCR curves, bool filled, SimplifyGraphic const& graphic)
+    {
+    if (curves.IsUnionRegion() || curves.IsParityRegion())
         {
-        if (clipUnclassifiedCurveVector(curves, *GetCurrClip(), this))
+        for (ICurvePrimitivePtr curve : curves)
+            {
+            if (curve.IsNull())
+                continue;
+
+            if (ICurvePrimitive::CURVE_PRIMITIVE_TYPE_CurveVector != curve->GetCurvePrimitiveType())
+                {
+                BeAssert(true && "Unexpected entry in region.");
+
+                return; // Each loop must be a child curve bvector (a closed loop or parity region)...
+                }
+
+            processCurvePrimitives(processor, *curve->GetChildCurveVectorCP (), filled && curves.IsUnionRegion(), graphic); // Don't pass filled when spewing parity region loops...
+            }
+        }
+    else
+        {
+        bool isSingleEntry = (ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Invalid != curves.HasSingleCurvePrimitive());
+        bool isClosed = curves.IsClosedPath();
+        bool isOpen = curves.IsOpenPath();
+        bool isComplex = ((isClosed || isOpen) && !isSingleEntry);
+
+        for (ICurvePrimitivePtr curve : curves)
+            {
+            if (!curve.IsValid())
+                continue;
+
+            if (processor._ProcessCurvePrimitive(*curve, !isComplex && isClosed, !isComplex && filled, graphic)) // Don't pass filled when spewing primitives...
+                continue;
+
+            if (ICurvePrimitive::CURVE_PRIMITIVE_TYPE_CurveVector == curve->GetCurvePrimitiveType())
+                processCurvePrimitives(processor, *curve->GetChildCurveVectorCP (), filled, graphic);
+            }
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void SimplifyGraphic::ProcessAsCurvePrimitives(CurveVectorCR geom, bool filled) const
+    {
+    processCurvePrimitives(m_processor, geom, filled, *this);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  03/12
++---------------+---------------+---------------+---------------+---------------+------*/
+void SimplifyGraphic::ClipAndProcessCurveVector(CurveVectorCR geom, bool filled) const
+    {
+    bool doClipping = (nullptr != GetCurrentClip() && m_processor._DoClipping());
+
+    CurveTopologyId::AddCurveVectorIds(geom, CurvePrimitiveId::Type_CurveVector, CurveTopologyId::FromCurveVector(), nullptr);
+
+    // Give output a chance to handle geometry directly...
+    if (doClipping)
+        {
+        if (m_processor._ProcessCurveVectorClipped(geom, filled, *this, *GetCurrentClip()))
             return;
         }
     else
         {
-        if (clipAsOpenCurveVector(curves, *GetCurrClip(), this))
+        if (m_processor._ProcessCurveVector(geom, filled, *this))
             return;
         }
 
-    CurveVectorOutputProcessor(curves, filled);
+    IGeometryProcessor::UnhandledPreference unhandled = m_processor._GetUnhandledPreference(geom);
+    bool isAutoClipPref = false;
+
+    if (IGeometryProcessor::UnhandledPreference::Ignore != (IGeometryProcessor::UnhandledPreference::Auto & unhandled))
+        {
+        if (geom.IsAnyRegionType())
+            {
+            if (!geom.ContainsNonLinearPrimitive())
+                unhandled = IGeometryProcessor::UnhandledPreference::Facet; // Parasolid is expensive - facets will represent this geometry exactly.
+            else
+                unhandled = IGeometryProcessor::UnhandledPreference::BRep | IGeometryProcessor::UnhandledPreference::Facet; // Try Parasolid first...
+
+            isAutoClipPref = doClipping;
+            }
+        else
+            {
+            unhandled = IGeometryProcessor::UnhandledPreference::Curve; // Clip as open curves...
+            }
+        }
+
+    if (IGeometryProcessor::UnhandledPreference::Ignore != (IGeometryProcessor::UnhandledPreference::BRep & unhandled))
+        {
+        if (isAutoClipPref)
+            {
+            bvector<CurveVectorPtr> insideCurves;
+
+            if (SUCCESS == T_HOST.GetSolidsKernelAdmin()._ClipCurveVector(insideCurves, geom, *GetCurrentClip(), &m_localToWorldTransform))
+                {
+                for (CurveVectorPtr tmpCurves : insideCurves)
+                    m_processor._ProcessCurveVector(*tmpCurves, filled, *this);
+
+                return;
+                }
+            }
+        else if (!doClipping || geom.IsAnyRegionType()) // _ClipBody doesn't support wire bodies...
+            {
+            ISolidKernelEntityPtr entityPtr;
+
+            if (SUCCESS == T_HOST.GetSolidsKernelAdmin()._CreateBodyFromCurveVector(entityPtr, geom))
+                {
+                if (!doClipping)
+                    {
+                    m_processor._ProcessBody(*entityPtr, *this);
+                    return;
+                    }
+
+                bool clipped;
+                bvector<ISolidKernelEntityPtr> clippedBodies;
+
+                if (SUCCESS == T_HOST.GetSolidsKernelAdmin()._ClipBody(clippedBodies, clipped, *entityPtr, *GetCurrentClip()) && clipped)
+                    {
+                    for (ISolidKernelEntityPtr entityOut : clippedBodies)
+                        m_processor._ProcessBody(*entityOut, *this);
+                    }
+                else if (!m_processor._ProcessCurveVector(geom, filled, *this))
+                    {
+                    m_processor._ProcessBody(*entityPtr, *this);
+                    }
+                return;
+                }
+            }
+
+        // If conversion to BRep wasn't possible, check if conversion to another type is requested...
+        }
+
+    if (IGeometryProcessor::UnhandledPreference::Ignore != (IGeometryProcessor::UnhandledPreference::Facet & unhandled) && geom.IsAnyRegionType()) // Can only facet regions...
+        {
+        IPolyfaceConstructionPtr builder = IPolyfaceConstruction::New(*m_facetOptions);
+
+        builder->AddRegion(geom);
+
+        if (!doClipping)
+            {
+            m_processor._ProcessPolyface(builder->GetClientMeshR(), filled, *this);
+            return;
+            }
+
+        SimplifyPolyfaceClipper     polyfaceClipper;
+        bvector<PolyfaceHeaderPtr>& clippedPolyface = polyfaceClipper.ClipPolyface(builder->GetClientMeshR(), *GetCurrentClip(), m_facetOptions->GetMaxPerFace() <= 3);
+
+        if (0 != clippedPolyface.size())
+            {
+            for (PolyfaceHeaderPtr meshOut : clippedPolyface)
+                m_processor._ProcessPolyface(*meshOut, filled, *this);
+            }
+        else if (!m_processor._ProcessCurveVector(geom, filled, *this))
+            {
+            m_processor._ProcessPolyface(builder->GetClientMeshR(), false, *this);
+            }
+        return;
+        }
+
+    if (IGeometryProcessor::UnhandledPreference::Ignore != (IGeometryProcessor::UnhandledPreference::Curve & unhandled) && doClipping) // Already had a chance at un-clipped CurveVector...
+        {
+        SimplifyCurveClipper     curveClipper;
+        bvector<CurveVectorPtr>& clippedCurves = curveClipper.ClipCurveVector(geom, *GetCurrentClip());
+
+        if (0 != clippedCurves.size())
+            {
+            for (CurveVectorPtr curveOut : clippedCurves)
+                m_processor._ProcessCurveVector(*curveOut, false, *this);
+            }
+        else
+            {
+            m_processor._ProcessCurveVector(geom, filled, *this); // Give chance to process un-clipped CurveVector...
+            }
+        return;
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  04/12
++---------------+---------------+---------------+---------------+---------------+------*/
+void SimplifyGraphic::ClipAndProcessSolidPrimitive(ISolidPrimitiveCR geom) const
+    {
+    bool doClipping = (nullptr != GetCurrentClip() && m_processor._DoClipping());
+
+    // Give output a chance to handle geometry directly...
+    if (doClipping)
+        {
+        if (m_processor._ProcessSolidPrimitiveClipped(geom, *this, *GetCurrentClip()))
+            return;
+        }
+    else
+        {
+        if (m_processor._ProcessSolidPrimitive(geom, *this))
+            return;
+        }
+
+    IGeometryProcessor::UnhandledPreference unhandled = m_processor._GetUnhandledPreference(geom);
+
+    if (IGeometryProcessor::UnhandledPreference::Ignore != (IGeometryProcessor::UnhandledPreference::Auto & unhandled))
+        {
+        if (!geom.HasCurvedFaceOrEdge())
+            unhandled = IGeometryProcessor::UnhandledPreference::Facet; // Parasolid is expensive - facets will represent this geometry exactly.
+        else
+            unhandled = IGeometryProcessor::UnhandledPreference::BRep | IGeometryProcessor::UnhandledPreference::Facet; // Try Parasolid first...
+        }
+
+    if (IGeometryProcessor::UnhandledPreference::Ignore != (IGeometryProcessor::UnhandledPreference::BRep & unhandled))
+        {
+        ISolidKernelEntityPtr entityPtr;
+
+        if (SUCCESS == T_HOST.GetSolidsKernelAdmin()._CreateBodyFromSolidPrimitive(entityPtr, geom))
+            {
+            if (!doClipping)
+                {
+                m_processor._ProcessBody(*entityPtr, *this);
+                return;
+                }
+
+            bool clipped;
+            bvector<ISolidKernelEntityPtr> clippedBodies;
+
+            if (SUCCESS == T_HOST.GetSolidsKernelAdmin()._ClipBody(clippedBodies, clipped, *entityPtr, *GetCurrentClip()) && clipped)
+                {
+                for (ISolidKernelEntityPtr entityOut : clippedBodies)
+                    m_processor._ProcessBody(*entityOut, *this);
+                }
+            else if (!m_processor._ProcessSolidPrimitive(geom, *this))
+                {
+                m_processor._ProcessBody(*entityPtr, *this);
+                }
+            return;
+            }
+
+        // If conversion to BRep wasn't possible, check if conversion to another type is requested...
+        }
+
+    if (IGeometryProcessor::UnhandledPreference::Ignore != (IGeometryProcessor::UnhandledPreference::Facet & unhandled))
+        {
+        IPolyfaceConstructionPtr builder = IPolyfaceConstruction::New(*m_facetOptions);
+
+        builder->AddSolidPrimitive(geom);
+
+        if (!doClipping)
+            {
+            m_processor._ProcessPolyface(builder->GetClientMeshR(), false, *this);
+            return;
+            }
+
+        SimplifyPolyfaceClipper     polyfaceClipper;
+        bvector<PolyfaceHeaderPtr>& clippedPolyface = polyfaceClipper.ClipPolyface(builder->GetClientMeshR(), *GetCurrentClip(), m_facetOptions->GetMaxPerFace() <= 3);
+
+        if (0 != clippedPolyface.size())
+            {
+            for (PolyfaceHeaderPtr meshOut : clippedPolyface)
+                m_processor._ProcessPolyface(*meshOut, false, *this);
+            }
+        else if (!m_processor._ProcessSolidPrimitive(geom, *this))
+            {
+            m_processor._ProcessPolyface(builder->GetClientMeshR(), false, *this);
+            }
+        return;
+        }
+
+    if (IGeometryProcessor::UnhandledPreference::Ignore != (IGeometryProcessor::UnhandledPreference::Curve & unhandled))
+        {
+        CurveVectorPtr curves = WireframeGeomUtil::CollectCurves(geom, m_context.GetDgnDb(), m_processor._IncludeWireframeEdges(), m_processor._IncludeWireframeFaceIso());
+
+        if (!curves.IsValid())
+            return;
+
+        if (!doClipping)
+            {
+            m_processor._ProcessCurveVector(*curves, false, *this);
+            return;
+            }
+
+        SimplifyCurveClipper     curveClipper;
+        bvector<CurveVectorPtr>& clippedCurves = curveClipper.ClipCurveVector(*curves, *GetCurrentClip());
+
+        if (0 != clippedCurves.size())
+            {
+            for (CurveVectorPtr curveOut : clippedCurves)
+                m_processor._ProcessCurveVector(*curveOut, false, *this);
+            }
+        else if (!m_processor._ProcessSolidPrimitive(geom, *this))
+            {
+            m_processor._ProcessCurveVector(*curves, false, *this);
+            }
+        return;
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  06/05
++---------------+---------------+---------------+---------------+---------------+------*/
+void SimplifyGraphic::ClipAndProcessSurface(MSBsplineSurfaceCR geom) const
+    {
+    bool doClipping = (nullptr != GetCurrentClip() && m_processor._DoClipping());
+
+    // Give output a chance to handle geometry directly...
+    if (doClipping)
+        {
+        if (m_processor._ProcessSurfaceClipped(geom, *this, *GetCurrentClip()))
+            return;
+        }
+    else
+        {
+        if (m_processor._ProcessSurface(geom, *this))
+            return;
+        }
+
+    IGeometryProcessor::UnhandledPreference unhandled = m_processor._GetUnhandledPreference(geom);
+
+    if (IGeometryProcessor::UnhandledPreference::Ignore != (IGeometryProcessor::UnhandledPreference::Auto & unhandled))
+        {
+        if (geom.IsPlanarBilinear())
+            unhandled = IGeometryProcessor::UnhandledPreference::Facet; // Parasolid is expensive - facets will represent this geometry exactly.
+        else
+            unhandled = IGeometryProcessor::UnhandledPreference::BRep | IGeometryProcessor::UnhandledPreference::Facet; // Try Parasolid first...
+        }
+
+    if (IGeometryProcessor::UnhandledPreference::Ignore != (IGeometryProcessor::UnhandledPreference::BRep & unhandled))
+        {
+        ISolidKernelEntityPtr entityPtr;
+
+        if (SUCCESS == T_HOST.GetSolidsKernelAdmin()._CreateBodyFromBSurface(entityPtr, geom))
+            {
+            if (!doClipping)
+                {
+                m_processor._ProcessBody(*entityPtr, *this);
+                return;
+                }
+
+            bool clipped;
+            bvector<ISolidKernelEntityPtr> clippedBodies;
+
+            if (SUCCESS == T_HOST.GetSolidsKernelAdmin()._ClipBody(clippedBodies, clipped, *entityPtr, *GetCurrentClip()) && clipped)
+                {
+                for (ISolidKernelEntityPtr entityOut : clippedBodies)
+                    m_processor._ProcessBody(*entityOut, *this);
+                }
+            else if (!m_processor._ProcessSurface(geom, *this))
+                {
+                m_processor._ProcessBody(*entityPtr, *this);
+                }
+            return;
+            }
+
+        // If conversion to BRep wasn't possible, check if conversion to another type is requested...
+        }
+
+    if (IGeometryProcessor::UnhandledPreference::Ignore != (IGeometryProcessor::UnhandledPreference::Facet & unhandled))
+        {
+        IPolyfaceConstructionPtr builder = IPolyfaceConstruction::New(*m_facetOptions);
+
+        builder->Add(geom);
+
+        if (!doClipping)
+            {
+            m_processor._ProcessPolyface(builder->GetClientMeshR(), false, *this);
+            return;
+            }
+
+        SimplifyPolyfaceClipper     polyfaceClipper;
+        bvector<PolyfaceHeaderPtr>& clippedPolyface = polyfaceClipper.ClipPolyface(builder->GetClientMeshR(), *GetCurrentClip(), m_facetOptions->GetMaxPerFace() <= 3);
+
+        if (0 != clippedPolyface.size())
+            {
+            for (PolyfaceHeaderPtr meshOut : clippedPolyface)
+                m_processor._ProcessPolyface(*meshOut, false, *this);
+            }
+        else if (!m_processor._ProcessSurface(geom, *this))
+            {
+            m_processor._ProcessPolyface(builder->GetClientMeshR(), false, *this);
+            }
+        return;
+        }
+
+    if (IGeometryProcessor::UnhandledPreference::Ignore != (IGeometryProcessor::UnhandledPreference::Curve & unhandled))
+        {
+        CurveVectorPtr curves = WireframeGeomUtil::CollectCurves(geom, m_context.GetDgnDb(), m_processor._IncludeWireframeEdges(), m_processor._IncludeWireframeFaceIso());
+
+        if (!curves.IsValid())
+            return;
+
+        if (!doClipping)
+            {
+            m_processor._ProcessCurveVector(*curves, false, *this);
+            return;
+            }
+
+        SimplifyCurveClipper     curveClipper;
+        bvector<CurveVectorPtr>& clippedCurves = curveClipper.ClipCurveVector(*curves, *GetCurrentClip());
+
+        if (0 != clippedCurves.size())
+            {
+            for (CurveVectorPtr curveOut : clippedCurves)
+                m_processor._ProcessCurveVector(*curveOut, false, *this);
+            }
+        else if (!m_processor._ProcessSurface(geom, *this))
+            {
+            m_processor._ProcessCurveVector(*curves, false, *this);
+            }
+        return;
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  12/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SimplifyGraphic::ClipAndProcessFacetSet(PolyfaceQueryCR facets, bool filled)
+void SimplifyGraphic::ClipAndProcessPolyface(PolyfaceQueryCR geom, bool filled) const
     {
-    FacetClipper(*this, filled).ProcessPolyface(facets);
+    bool doClipping = (nullptr != GetCurrentClip() && m_processor._DoClipping());
+
+    // Give output a chance to handle geometry directly...
+    if (doClipping)
+        {
+        if (m_processor._ProcessPolyfaceClipped(geom, filled, *this, *GetCurrentClip()))
+            return;
+        }
+    else
+        {
+        if (m_processor._ProcessPolyface(geom, filled, *this))
+            return;
+        }
+
+    IGeometryProcessor::UnhandledPreference unhandled = m_processor._GetUnhandledPreference(geom);
+
+    if (IGeometryProcessor::UnhandledPreference::Ignore != (IGeometryProcessor::UnhandledPreference::Auto & unhandled))
+        unhandled = IGeometryProcessor::UnhandledPreference::Facet;
+
+    if (IGeometryProcessor::UnhandledPreference::Ignore != (IGeometryProcessor::UnhandledPreference::BRep & unhandled))
+        {
+        ISolidKernelEntityPtr entityPtr;
+
+        if (SUCCESS == T_HOST.GetSolidsKernelAdmin()._CreateBodyFromPolyface(entityPtr, geom))
+            {
+            if (!doClipping)
+                {
+                m_processor._ProcessBody(*entityPtr, *this);
+                return;
+                }
+
+            bool clipped;
+            bvector<ISolidKernelEntityPtr> clippedBodies;
+
+            if (SUCCESS == T_HOST.GetSolidsKernelAdmin()._ClipBody(clippedBodies, clipped, *entityPtr, *GetCurrentClip()) && clipped)
+                {
+                for (ISolidKernelEntityPtr entityOut : clippedBodies)
+                    m_processor._ProcessBody(*entityOut, *this);
+                }
+            else if (!m_processor._ProcessPolyface(geom, filled, *this))
+                {
+                m_processor._ProcessBody(*entityPtr, *this);
+                }
+            return;
+            }
+
+        // If conversion to BRep wasn't possible, check if conversion to another type is requested...
+        }
+
+    if (IGeometryProcessor::UnhandledPreference::Ignore != (IGeometryProcessor::UnhandledPreference::Facet & unhandled) && doClipping) // Already had a chance at un-clipped Polyface...
+        {
+        SimplifyPolyfaceClipper     polyfaceClipper;
+        bvector<PolyfaceHeaderPtr>& clippedPolyface = polyfaceClipper.ClipPolyface(geom, *GetCurrentClip(), m_facetOptions->GetMaxPerFace() <= 3);
+
+        if (0 != clippedPolyface.size())
+            {
+            for (PolyfaceHeaderPtr meshOut : clippedPolyface)
+                m_processor._ProcessPolyface(*meshOut, filled, *this);
+            }
+        else
+            {
+            m_processor._ProcessPolyface(geom, filled, *this); // Give chance to process un-clipped Polyface...
+            }
+        return;
+        }
+
+    if (IGeometryProcessor::UnhandledPreference::Ignore != (IGeometryProcessor::UnhandledPreference::Curve & unhandled))
+        {
+        ClipAndProcessPolyfaceAsCurves(geom);
+        return;
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  03/2013
++---------------+---------------+---------------+---------------+---------------+------*/
+void SimplifyGraphic::ClipAndProcessPolyfaceAsCurves(PolyfaceQueryCR geom) const
+    {
+    int const*  vertIndex = geom.GetPointIndexCP();
+    size_t      numIndices = geom.GetPointIndexCount();
+    DPoint3dCP  verts = geom.GetPointCP();
+    int         polySize = geom.GetNumPerFace();
+    int         thisIndex, prevIndex=0, firstIndex=0;
+    size_t      thisFaceSize = 0;
+
+    if (!vertIndex)
+        return;
+
+    bool doClipping = (nullptr != GetCurrentClip() && m_processor._DoClipping());
+
+    for (size_t readIndex = 0; readIndex < numIndices; readIndex++)
+        {    
+        // found face loop entry
+        if (thisIndex = vertIndex[readIndex])
+            {
+            // remember first index in this face loop
+            if (!thisFaceSize)
+                firstIndex = thisIndex;
+
+            // draw visible edge (prevIndex, thisIndex)
+            else if (prevIndex > 0)
+                {
+                int closeVertexId = (abs(prevIndex) - 1);
+                int segmentVertexId = (abs(thisIndex) - 1);
+                ICurvePrimitivePtr  curve = ICurvePrimitive::CreateLine(DSegment3d::From(verts[closeVertexId], verts[segmentVertexId]));
+                CurvePrimitiveIdPtr newId = CurvePrimitiveId::Create(CurvePrimitiveId::Type_PolyfaceEdge, CurveTopologyId(CurveTopologyId::Type_PolyfaceEdge, closeVertexId, segmentVertexId), nullptr);
+
+                curve->SetId(newId.get());
+
+                CurveVectorPtr curvePtr = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open, curve);
+
+                if (!doClipping)
+                    {
+                    m_processor._ProcessCurveVector(*curvePtr, false, *this);
+                    }
+                else
+                    {
+                    SimplifyCurveClipper     curveClipper;
+                    bvector<CurveVectorPtr>& clippedCurves = curveClipper.ClipCurveVector(*curvePtr, *GetCurrentClip());
+
+                    if (0 != clippedCurves.size())
+                        {
+                        for (CurveVectorPtr curveOut : clippedCurves)
+                            m_processor._ProcessCurveVector(*curveOut, false, *this);
+                        }
+                    else
+                        {
+                        m_processor._ProcessCurveVector(*curvePtr, false, *this);
+                        }
+                    }
+                }
+
+            prevIndex = thisIndex;
+            thisFaceSize++;
+            }
+
+        // found end of face loop (found first pad/terminator or last index in fixed block)
+        if (thisFaceSize && (!thisIndex || (polySize > 1 && polySize == thisFaceSize)))
+            {
+            // draw last visible edge (prevIndex, firstIndex)
+            if (prevIndex > 0)
+                {
+                int closeVertexId = (abs(prevIndex) - 1);
+                int segmentVertexId = (abs(firstIndex) - 1);
+                ICurvePrimitivePtr  curve = ICurvePrimitive::CreateLine(DSegment3d::From(verts[closeVertexId], verts[segmentVertexId]));
+                CurvePrimitiveIdPtr newId = CurvePrimitiveId::Create(CurvePrimitiveId::Type_PolyfaceEdge, CurveTopologyId(CurveTopologyId::Type_PolyfaceEdge, closeVertexId, segmentVertexId), nullptr);
+
+                curve->SetId(newId.get());
+
+                CurveVectorPtr curvePtr = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open, curve);
+
+                if (!doClipping)
+                    {
+                    m_processor._ProcessCurveVector(*curvePtr, false, *this);
+                    }
+                else
+                    {
+                    SimplifyCurveClipper     curveClipper;
+                    bvector<CurveVectorPtr>& clippedCurves = curveClipper.ClipCurveVector(*curvePtr, *GetCurrentClip());
+
+                    if (0 != clippedCurves.size())
+                        {
+                        for (CurveVectorPtr curveOut : clippedCurves)
+                            m_processor._ProcessCurveVector(*curveOut, false, *this);
+                        }
+                    else
+                        {
+                        m_processor._ProcessCurveVector(*curvePtr, false, *this);
+                        }
+                    }
+                }
+
+            thisFaceSize = 0;
+            }
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    RayBentley   10/04
++---------------+---------------+---------------+---------------+---------------+------*/
+void SimplifyGraphic::ClipAndProcessBody(ISolidKernelEntityCR geom) const
+    {
+    bool doClipping = (nullptr != GetCurrentClip() && m_processor._DoClipping());
+
+    // Give output a chance to handle geometry directly...
+    if (doClipping)
+        {
+        if (m_processor._ProcessBodyClipped(geom, *this, *GetCurrentClip()))
+            return;
+        }
+    else
+        {
+        if (m_processor._ProcessBody(geom, *this))
+            return;
+        }
+
+    IGeometryProcessor::UnhandledPreference unhandled = m_processor._GetUnhandledPreference(geom);
+
+    if (IGeometryProcessor::UnhandledPreference::Ignore != (IGeometryProcessor::UnhandledPreference::Auto & unhandled))
+        unhandled = IGeometryProcessor::UnhandledPreference::BRep;
+
+    if (IGeometryProcessor::UnhandledPreference::Ignore != (IGeometryProcessor::UnhandledPreference::BRep & unhandled) && doClipping) // Already had a chance at un-clipped solid...
+        {
+        bool clipped;
+        bvector<ISolidKernelEntityPtr> clippedBodies;
+
+        if (SUCCESS == T_HOST.GetSolidsKernelAdmin()._ClipBody(clippedBodies, clipped, geom, *GetCurrentClip()) && clipped)
+            {
+            for (ISolidKernelEntityPtr entityOut : clippedBodies)
+                m_processor._ProcessBody(*entityOut, *this);
+            }
+        else
+            {
+            m_processor._ProcessBody(geom, *this);
+            }
+
+        return;
+        }
+
+    if (IGeometryProcessor::UnhandledPreference::Ignore != (IGeometryProcessor::UnhandledPreference::Facet & unhandled))
+        {
+        ClipAndProcessBodyAsPolyface(geom);
+        return;
+        }
+
+    if (IGeometryProcessor::UnhandledPreference::Ignore != (IGeometryProcessor::UnhandledPreference::Curve & unhandled))
+        {
+        CurveVectorPtr curves = WireframeGeomUtil::CollectCurves(geom, m_context.GetDgnDb(), m_processor._IncludeWireframeEdges(), m_processor._IncludeWireframeFaceIso());
+
+        if (!curves.IsValid())
+            return;
+
+        if (!doClipping)
+            {
+            m_processor._ProcessCurveVector(*curves, false, *this);
+            return;
+            }
+
+        SimplifyCurveClipper     curveClipper;
+        bvector<CurveVectorPtr>& clippedCurves = curveClipper.ClipCurveVector(*curves, *GetCurrentClip());
+
+        if (0 != clippedCurves.size())
+            {
+            for (CurveVectorPtr curveOut : clippedCurves)
+                m_processor._ProcessCurveVector(*curveOut, false, *this);
+            }
+        else if (!m_processor._ProcessBody(geom, *this))
+            {
+            m_processor._ProcessCurveVector(*curves, false, *this);
+            }
+        return;
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  01/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SimplifyGraphic::ClipAndProcessBodyAsFacets(ISolidKernelEntityCR entity)
+void SimplifyGraphic::ClipAndProcessBodyAsPolyface(ISolidKernelEntityCR geom) const
     {
     IFacetTopologyTablePtr  facetsPtr;
 
-    if (SUCCESS != T_HOST.GetSolidsKernelAdmin()._FacetBody(facetsPtr, entity, *_GetFacetOptions()))
+    if (SUCCESS != T_HOST.GetSolidsKernelAdmin()._FacetBody(facetsPtr, geom, *m_facetOptions))
         return;
 
-    T_FaceAttachmentsVec const* faceAttachmentsVec = (_GetFacetOptions()->GetIgnoreFaceMaterialAttachments() ? nullptr : facetsPtr->_GetFaceAttachmentsVec());
+    T_FaceAttachmentsVec const* faceAttachmentsVec = (m_facetOptions->GetIgnoreFaceMaterialAttachments() ? nullptr : facetsPtr->_GetFaceAttachmentsVec());
 
     if (faceAttachmentsVec)
         {
@@ -613,176 +1219,123 @@ void SimplifyGraphic::ClipAndProcessBodyAsFacets(ISolidKernelEntityCR entity)
                 }
             }
 
-        if (SUCCESS == IFacetTopologyTable::ConvertToPolyfaces(polyfaces, faceToPolyfaces, *facetsPtr, *_GetFacetOptions()))
+        if (SUCCESS == IFacetTopologyTable::ConvertToPolyfaces(polyfaces, faceToPolyfaces, *facetsPtr, *m_facetOptions))
             {
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-            m_context->PushTransform(entity.GetEntityTransform());
-#else
-            AutoRestore<Transform> saveLocalToWorld(&m_localToWorldTransform);
-
-            m_localToWorldTransform = Transform::FromProduct(m_localToWorldTransform, entity.GetEntityTransform());
-#endif
+            Render::GraphicPtr graphic = _CreateSubGraphic(Render::Graphic::CreateParams(m_vp, Transform::FromProduct(m_localToWorldTransform, geom.GetEntityTransform()), m_pixelSize));
 
             for (size_t i=0; i<polyfaces.size(); i++)
                 {
-                polyfaces[i]->SetTwoSided(ISolidKernelEntity::EntityType_Solid != entity.GetEntityType());
-                faceAttachmentsVec->at(i).ToGeometryParams(m_currGeometryParams);
-                m_context->CookGeometryParams(m_currGeometryParams, *this);
+                polyfaces[i]->SetTwoSided(ISolidKernelEntity::EntityType_Solid != geom.GetEntityType());
 
-                FacetClipper(*this, false).ProcessDisposablePolyface(*polyfaces[i]);
+                Render::GeometryParams geomParams(m_currGeometryParams);
+                faceAttachmentsVec->at(i).ToGeometryParams(geomParams);
+                m_context.CookGeometryParams(geomParams, *graphic);
+
+                SimplifyPolyfaceClipper     polyfaceClipper;
+                bvector<PolyfaceHeaderPtr>& clippedPolyface = polyfaceClipper.ClipPolyface(*polyfaces[i], *GetCurrentClip(), m_facetOptions->GetMaxPerFace() <= 3);
+
+                if (0 != clippedPolyface.size())
+                    {
+                    for (PolyfaceHeaderPtr meshOut : clippedPolyface)
+                        m_processor._ProcessPolyface(*meshOut, false, static_cast<SimplifyGraphic const&> (*graphic));
+                    }
+                else
+                    {
+                    m_processor._ProcessPolyface(*polyfaces[i], false, static_cast<SimplifyGraphic const&> (*graphic));
+                    }
                 }
-
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-            m_context->PopTransformClip();
-#endif
             }
-
         return;
         }
 
     PolyfaceHeaderPtr polyface = PolyfaceHeader::New();
 
-    if (SUCCESS != IFacetTopologyTable::ConvertToPolyface(*polyface, *facetsPtr, *_GetFacetOptions()))
+    if (SUCCESS != IFacetTopologyTable::ConvertToPolyface(*polyface, *facetsPtr, *m_facetOptions))
         return;
 
-    polyface->SetTwoSided(ISolidKernelEntity::EntityType_Solid != entity.GetEntityType());
+    polyface->SetTwoSided(ISolidKernelEntity::EntityType_Solid != geom.GetEntityType());
 
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    m_context->PushTransform(entity.GetEntityTransform());
-#else
-    AutoRestore<Transform> saveLocalToWorld(&m_localToWorldTransform);
+    SimplifyPolyfaceClipper     polyfaceClipper;
+    bvector<PolyfaceHeaderPtr>& clippedPolyface = polyfaceClipper.ClipPolyface(*polyface, *GetCurrentClip(), m_facetOptions->GetMaxPerFace() <= 3);
 
-    m_localToWorldTransform = Transform::FromProduct(m_localToWorldTransform, entity.GetEntityTransform());
-#endif
-    FacetClipper(*this, false).ProcessDisposablePolyface(*polyface);
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    m_context->PopTransformClip();
-#endif
-    }
+    Render::GraphicPtr graphic = _CreateSubGraphic(Render::Graphic::CreateParams(m_vp, Transform::FromProduct(m_localToWorldTransform, geom.GetEntityTransform()), m_pixelSize));
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    RayBentley   10/04
-+---------------+---------------+---------------+---------------+---------------+------*/
-void SimplifyGraphic::ClipAndProcessBody(ISolidKernelEntityCR entity, SimplifyDrawUnClippedProcessor* unclippedOutputProcessor)
-    {
-    if (_ProcessAsBody(T_HOST.GetSolidsKernelAdmin()._QueryEntityData(entity, DgnPlatformLib::Host::SolidsKernelAdmin::EntityQuery_HasCurvedFaceOrEdge)))
+    if (0 != clippedPolyface.size())
         {
-        if (!PerformClip())
-            {
-            _ProcessBody(entity);
-            }
-        else
-            {
-            bool                           clipped;
-            bvector<ISolidKernelEntityPtr> clippedBodies;
-
-            T_HOST.GetSolidsKernelAdmin()._ClipBody(clippedBodies, clipped, entity, *GetCurrClip());
-
-            if (clipped || NULL == unclippedOutputProcessor || SUCCESS != unclippedOutputProcessor->_ProcessUnClipped())
-                {
-                for (ISolidKernelEntityPtr entityOut: clippedBodies)
-                    _ProcessBody(*entityOut);
-                }
-            }
+        for (PolyfaceHeaderPtr meshOut : clippedPolyface)
+            m_processor._ProcessPolyface(*meshOut, false, static_cast<SimplifyGraphic const&> (*graphic));
         }
-    else if (_ProcessAsFacets(false))
+    else
         {
-        ClipAndProcessBodyAsFacets(entity);
+        m_processor._ProcessPolyface(*polyface, false, static_cast<SimplifyGraphic const&> (*graphic));
         }
-    else if (_ProcessAsWireframe())
-        {
-        WireframeGeomUtil::Draw(*this, entity, *m_context);
-        }    
     }
-
-/*=================================================================================**//**
-* @bsiclass                                                     Brien.Bastings  12/07
-+===============+===============+===============+===============+===============+======*/
-struct UnClippedSurfaceProcessor : SimplifyDrawUnClippedProcessor
-{
-SimplifyGraphic*   m_drawGeom;
-MSBsplineSurfaceCR      m_surface;
-
-UnClippedSurfaceProcessor(SimplifyGraphic* drawGeom, MSBsplineSurfaceCR surface) : m_drawGeom(drawGeom), m_surface(surface) {}
-                                                                                                        
-virtual StatusInt _ProcessUnClipped() override {return m_drawGeom->ProcessSurface(m_surface);}
-
-}; // UnClippedSurfaceProcessor
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  06/05
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SimplifyGraphic::ClipAndProcessSurface(MSBsplineSurfaceCR surface)
+void SimplifyGraphic::ClipAndProcessText(TextStringCR text, double* zDepth) const
     {
-    // Give output a chance to handle un-clipped geometry directly...
-    if (!PerformClip() && SUCCESS == _ProcessSurface(surface))
+    bool doClipping = (nullptr != GetCurrentClip() && m_processor._DoClipping());
+
+    // Give output a chance to handle geometry directly...
+    if (doClipping)
+        {
+        if (m_processor._ProcessTextStringClipped(text, *this, *GetCurrentClip()))
+            return;
+        }
+    else
+        {
+        if (m_processor._ProcessTextString(text, *this))
+            return;
+        }
+
+    IGeometryProcessor::UnhandledPreference unhandled = m_processor._GetUnhandledPreference(text);
+
+    if (IGeometryProcessor::UnhandledPreference::Ignore != (IGeometryProcessor::UnhandledPreference::Box & unhandled))
+        {
+        if (text.GetText().empty())
+            return;
+        
+        DPoint3d points[5];
+
+        text.ComputeBoundingShape(points);
+        text.ComputeTransform().Multiply(points, _countof(points));
+
+        Render::GraphicPtr graphic = _CreateSubGraphic(Render::Graphic::CreateParams(m_vp, m_localToWorldTransform, m_pixelSize));
+        SimplifyGraphic* sGraphic = static_cast<SimplifyGraphic*> (graphic.get());
+
+        if (nullptr == sGraphic)
+            return;
+
+        sGraphic->m_inTextDraw = true;
+
+        CurveVectorPtr curve = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Outer, ICurvePrimitive::CreateLineString(points, 5));
+        sGraphic->ClipAndProcessCurveVector(*curve, false);
         return;
-
-    ISolidKernelEntityPtr   entityPtr;
-    bool                    processAsFacets = _ProcessAsFacets(false);
-
-    // Parasolid is expensive - if it is planar bilinear, send it through as facets which will represent exactly.
-    if ((!surface.IsPlanarBilinear() || !processAsFacets) && _ProcessAsBody(true) && 
-        SUCCESS == T_HOST.GetSolidsKernelAdmin()._CreateBodyFromBSurface(entityPtr, surface))
-        {
-        UnClippedSurfaceProcessor proc(this, surface);
-
-        ClipAndProcessBody(*entityPtr.get(), &proc);
         }
-    else if (processAsFacets)
+
+    if (IGeometryProcessor::UnhandledPreference::Ignore != (IGeometryProcessor::UnhandledPreference::Curve & unhandled))
         {
-        IPolyfaceConstructionPtr  builder = GetPolyfaceBuilder();
+        Render::GraphicPtr graphic = _CreateSubGraphic(Render::Graphic::CreateParams(m_vp, Transform::FromProduct(m_localToWorldTransform, text.ComputeTransform()), m_pixelSize));
+        SimplifyGraphic* sGraphic = static_cast<SimplifyGraphic*> (graphic.get());
 
-        builder->Add(surface);
-        FacetClipper(*this, false).ProcessDisposablePolyface(builder->GetClientMeshR ());
-        }
-    else if (_ProcessAsWireframe())
-        {
-        WireframeGeomUtil::Draw(*this, surface, *m_context);
-        }
-    }
+        if (nullptr == sGraphic)
+            return;
 
-/*=================================================================================**//**
-* @bsiclass                                                     Brien.Bastings  12/07
-+===============+===============+===============+===============+===============+======*/
-struct UnClippedSolidPrimitiveProcessor : SimplifyDrawUnClippedProcessor
-{
-SimplifyGraphic&   m_drawGeom;
-ISolidPrimitiveCR  m_primitive;
+        sGraphic->m_inTextDraw = true;
 
-UnClippedSolidPrimitiveProcessor(SimplifyGraphic& drawGeom, ISolidPrimitiveCR primitive) : m_drawGeom(drawGeom), m_primitive(primitive) {}
+        // NOTE: Need text axes to compute gpa transform in _OnGlyphAnnounced...
+        text.ComputeGlyphAxes(sGraphic->m_textAxes[0], sGraphic->m_textAxes[1]);
+    
+        DgnFontCR font = text.GetStyle().GetFont();
+        auto numGlyphs = text.GetNumGlyphs();
+        DgnGlyphCP const* glyphs = text.GetGlyphs();
+        DPoint3dCP glyphOrigins = text.GetGlyphOrigins();
 
-virtual StatusInt _ProcessUnClipped() override {return m_drawGeom.ProcessSolidPrimitive(m_primitive);}
-
-}; // UnClippedSolidPrimitiveProcessor
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  04/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-void SimplifyGraphic::ClipAndProcessSolidPrimitive(ISolidPrimitiveCR primitive)
-    {
-    // Give output a chance to handle un-clipped geometry directly...
-    if (!PerformClip() && SUCCESS == ProcessSolidPrimitive(primitive))
+        for (size_t iGlyph = 0; iGlyph < numGlyphs; ++iGlyph)
+            sGraphic->ClipAndProcessGlyph(font, *glyphs[iGlyph], glyphOrigins[iGlyph]);
         return;
-
-    ISolidKernelEntityPtr  entityPtr;
-
-    if (_ProcessAsBody(primitive.HasCurvedFaceOrEdge()) && SUCCESS == T_HOST.GetSolidsKernelAdmin()._CreateBodyFromSolidPrimitive(entityPtr, primitive))
-        {
-        UnClippedSolidPrimitiveProcessor  proc(*this, primitive);
-
-        ClipAndProcessBody(*entityPtr.get(), &proc);
-        }
-    else if (_ProcessAsFacets(false))
-        {
-        IPolyfaceConstructionPtr  builder = GetPolyfaceBuilder();
-
-        builder->AddSolidPrimitive(primitive);
-        FacetClipper(*this, false).ProcessDisposablePolyface(builder->GetClientMeshR ());
-        }
-    else if (_ProcessAsWireframe())
-        {
-        WireframeGeomUtil::Draw(*this, primitive, *m_context);
         }
     }
 
@@ -834,7 +1387,7 @@ static bool isPhysicallyClosed(ICurvePrimitiveCR primitive)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  09/05
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SimplifyGraphic::ClipAndProcessGlyph(DgnFontCR font, DgnGlyphCR glyph, DPoint3dCR glyphOffset)
+void SimplifyGraphic::ClipAndProcessGlyph(DgnFontCR font, DgnGlyphCR glyph, DPoint3dCR glyphOffset) const
     {
     GPArraySmartP  gpaText;
 
@@ -978,88 +1531,6 @@ void SimplifyGraphic::ClipAndProcessGlyph(DgnFontCR font, DgnGlyphCR glyph, DPoi
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  06/05
-+---------------+---------------+---------------+---------------+---------------+------*/
-void SimplifyGraphic::ClipAndProcessText(TextStringCR text, double* zDepth)
-    {
-    Transform drawTrans = text.ComputeTransform();
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    m_context->PushTransform(drawTrans);
-#else
-    AutoRestore<Transform> saveLocalToWorld(&m_localToWorldTransform);
-
-    m_localToWorldTransform = Transform::FromProduct(m_localToWorldTransform, drawTrans);
-#endif
-
-    // NOTE: Need text axes to compute gpa transform in _OnGlyphAnnounced...
-    text.ComputeGlyphAxes(m_textAxes[0], m_textAxes[1]);
-    
-    DgnFontCR font = text.GetStyle().GetFont();
-    auto numGlyphs = text.GetNumGlyphs();
-    DgnGlyphCP const* glyphs = text.GetGlyphs();
-    DPoint3dCP glyphOrigins = text.GetGlyphOrigins();
-
-    for (size_t iGlyph = 0; iGlyph < numGlyphs; ++iGlyph)
-        ClipAndProcessGlyph(font, *glyphs[iGlyph], glyphOrigins[iGlyph]);
-
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    m_context->PopTransformClip();
-#endif
-    }
-
-
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  06/05
-+---------------+---------------+---------------+---------------+---------------+------*/
-void SimplifyGraphic::ClipAndProcessSymbol(IDisplaySymbol* symbolDefP, TransformCP transP, ClipPlaneSetP clipPlaneSetP)
-    {
-    if (!_DoSymbolGeometry())
-        return;
-
-#ifdef POTENTIAL_OPTIMIZATION_FROM_SS3
-    DRange3d    range;
-
-    DataConvert::ScanRangeToDRange3d(range, edP->el.hdr.dhdr.range);
-
-    // An optimization for patterns. - Any mask that is not in range of the current tile can not
-    // effect the clip  - so cull these from the current mask.   We don't need to copy or restore
-    // as the clip is popped below.   (TR# 300934).
-    m_clipStack->CullDisjointMasks(range);
-#endif
-
-    BeAssert(!m_inSymbolDraw); // Can't have nested symbols...
-
-    AutoRestore <bool> saveInSymbolDraw(&m_inSymbolDraw, true);
-    AutoRestore <GraphicParams> saveContextGraphicParams(m_context->GetGraphicParams());
-    AutoRestore <OvrGraphicParams> saveContextOvrGraphicParams(m_context->GetOverrideGraphicParams());
-    AutoRestore <GeometryParams> saveContextDisplayParams(&m_context->GetCurrentGeometryParams());
-
-#if defined (NEEDS_WORK_DGNITEM)
-    m_context->GetDisplayParamsIgnores().Set(*m_context->GetCurrentGeometryParams(), true, ignoreColor, ignoreWeight); // NOTE: Symbol level is always inherited from base element...
-#endif
-
-    if (NULL != clipPlaneSetP)
-        m_context->PushClipPlanes(*clipPlaneSetP);
-
-    if (NULL != transP)
-        m_context->PushTransform(*transP);
-
-    symbolDefP->_Draw(*m_context);
-
-    if (NULL != transP)
-        m_context->PopTransformClip();
-
-    if (NULL != clipPlaneSetP)
-        m_context->PopTransformClip();
-
-#if defined (NEEDS_WORK_DGNITEM)
-    m_context->GetDisplayParamsIgnores().Clear();
-#endif
-    }
-#endif
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Keith.Bentley   09/03
 +---------------+---------------+---------------+---------------+---------------+------*/
 static void copy2dTo3d(int numPoints, DPoint3dP pts3d, DPoint2dCP pts2d, double zDepth)
@@ -1073,9 +1544,8 @@ static void copy2dTo3d(int numPoints, DPoint3dP pts3d, DPoint2dCP pts2d, double 
 +---------------+---------------+---------------+---------------+---------------+------*/
 void SimplifyGraphic::_AddLineString(int numPoints, DPoint3dCP points, DPoint3dCP range)
     {
-    CurveVectorPtr  curve = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open);
+    CurveVectorPtr curve = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open, ICurvePrimitive::CreateLineString(points, numPoints));
     
-    curve->push_back(ICurvePrimitive::CreateLineString(points, numPoints));
     ClipAndProcessCurveVector(*curve, false);
     }
 
@@ -1095,9 +1565,8 @@ void SimplifyGraphic::_AddLineString2d(int numPoints, DPoint2dCP points, double 
 +---------------+---------------+---------------+---------------+---------------+------*/
 void SimplifyGraphic::_AddPointString(int numPoints, DPoint3dCP points, DPoint3dCP range)
     {
-    CurveVectorPtr  curve = CurveVector::Create(CurveVector::BOUNDARY_TYPE_None);
+    CurveVectorPtr curve = CurveVector::Create(CurveVector::BOUNDARY_TYPE_None, ICurvePrimitive::CreatePointString(points, numPoints));
 
-    curve->push_back(ICurvePrimitive::CreatePointString(points, numPoints));
     ClipAndProcessCurveVector(*curve, false);
     }
 
@@ -1117,9 +1586,8 @@ void SimplifyGraphic::_AddPointString2d(int numPoints, DPoint2dCP points, double
 +---------------+---------------+---------------+---------------+---------------+------*/
 void SimplifyGraphic::_AddShape(int numPoints, DPoint3dCP points, bool filled, DPoint3dCP range)
     {
-    CurveVectorPtr  curve = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Outer);
+    CurveVectorPtr curve = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Outer, ICurvePrimitive::CreateLineString(points, numPoints));
 
-    curve->push_back(ICurvePrimitive::CreateLineString(points, numPoints));
     ClipAndProcessCurveVector(*curve, filled);
     }
 
@@ -1166,7 +1634,7 @@ void SimplifyGraphic::_AddTriStrip(int numPoints, DPoint3dCP points, int32_t usa
 +---------------+---------------+---------------+---------------+---------------+------*/
 void SimplifyGraphic::_AddTriStrip2d(int numPoints, DPoint2dCP points, int32_t usageFlags, double zDepth, DPoint2dCP range)
     {
-    std::valarray<DPoint3d>  localPointsBuf3d(numPoints);
+    std::valarray<DPoint3d> localPointsBuf3d(numPoints);
 
     copy2dTo3d(numPoints, &localPointsBuf3d[0], points, 0.0);
     _AddTriStrip(numPoints, &localPointsBuf3d[0], usageFlags, NULL);
@@ -1178,19 +1646,16 @@ void SimplifyGraphic::_AddTriStrip2d(int numPoints, DPoint2dCP points, int32_t u
 void SimplifyGraphic::_AddArc(DEllipse3dCR ellipse, bool isEllipse, bool filled, DPoint3dCP range)
     {
     // NOTE: QVis closes arc ends and displays them filled (see outputCapArc for linestyle strokes)...
-    CurveVectorPtr  curve = CurveVector::Create((isEllipse || filled) ? CurveVector::BOUNDARY_TYPE_Outer : CurveVector::BOUNDARY_TYPE_Open);
+    CurveVectorPtr curve = CurveVector::Create((isEllipse || filled) ? CurveVector::BOUNDARY_TYPE_Outer : CurveVector::BOUNDARY_TYPE_Open, ICurvePrimitive::CreateArc(ellipse));
     
-    curve->push_back(ICurvePrimitive::CreateArc(ellipse));
-
     if (filled && !isEllipse && !ellipse.IsFullEllipse())
         {
-        DSegment3d          segment;
-        ICurvePrimitivePtr  gapSegment;
+        DSegment3d         segment;
+        ICurvePrimitivePtr gapSegment;
 
         ellipse.EvaluateEndPoints(segment.point[1], segment.point[0]);
         gapSegment = ICurvePrimitive::CreateLine(segment);
         gapSegment->SetMarkerBit(ICurvePrimitive::CURVE_PRIMITIVE_BIT_GapCurve, true);
-
         curve->push_back(gapSegment);
         }
 
@@ -1210,9 +1675,8 @@ void SimplifyGraphic::_AddArc2d(DEllipse3dCR ellipse, bool isEllipse, bool fille
 +---------------+---------------+---------------+---------------+---------------+------*/
 void SimplifyGraphic::_AddBSplineCurve(MSBsplineCurveCR bcurve, bool filled)
     {
-    CurveVectorPtr  curve = CurveVector::Create(bcurve.params.closed ? CurveVector::BOUNDARY_TYPE_Outer : CurveVector::BOUNDARY_TYPE_Open);
+    CurveVectorPtr curve = CurveVector::Create(bcurve.params.closed ? CurveVector::BOUNDARY_TYPE_Outer : CurveVector::BOUNDARY_TYPE_Open, ICurvePrimitive::CreateBsplineCurve(bcurve));
 
-    curve->push_back(ICurvePrimitive::CreateBsplineCurve(bcurve));
     ClipAndProcessCurveVector(*curve, filled);
     }
 
@@ -1237,126 +1701,58 @@ void SimplifyGraphic::_AddCurveVector(CurveVectorCR curves, bool isFilled)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void SimplifyGraphic::_AddCurveVector2d(CurveVectorCR curves, bool isFilled, double zDepth)
     {
-    _AddCurveVector(curves, isFilled); // Ignore zDepth...
+    _AddCurveVector(curves, isFilled);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  03/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SimplifyGraphic::_AddSolidPrimitive(ISolidPrimitiveCR primitive)
+void SimplifyGraphic::_AddSolidPrimitive(ISolidPrimitiveCR geom)
     {
-    ClipAndProcessSolidPrimitive(primitive);
+    ClipAndProcessSolidPrimitive(geom);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  06/05
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SimplifyGraphic::_AddBSplineSurface(MSBsplineSurfaceCR surface)
+void SimplifyGraphic::_AddBSplineSurface(MSBsplineSurfaceCR geom)
     {
-    ClipAndProcessSurface(surface);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  03/2013
-+---------------+---------------+---------------+---------------+---------------+------*/
-void SimplifyGraphic::ClipAndProcessFacetSetAsCurves(PolyfaceQueryCR meshData)
-    {
-    int const*  vertIndex   = meshData.GetPointIndexCP();
-    size_t      numIndices  = meshData.GetPointIndexCount();
-    DPoint3dCP  verts       = meshData.GetPointCP();
-    int         polySize    = meshData.GetNumPerFace();
-    int         thisIndex, prevIndex=0, firstIndex=0;
-    size_t      thisFaceSize = 0;
-
-    if (!vertIndex)
-        return;
-
-    for (size_t readIndex = 0; readIndex < numIndices; readIndex++)
-        {    
-        // found face loop entry
-        if (thisIndex = vertIndex[readIndex])
-            {
-            // remember first index in this face loop
-            if (!thisFaceSize)
-                firstIndex = thisIndex;
-
-            // draw visible edge (prevIndex, thisIndex)
-            else if (prevIndex > 0)
-                {
-                int                 closeVertexId = (abs(prevIndex) - 1);
-                int                 segmentVertexId = (abs(thisIndex) - 1);
-                ICurvePrimitivePtr  curve = ICurvePrimitive::CreateLine(DSegment3d::From(verts[closeVertexId], verts[segmentVertexId]));
-                CurvePrimitiveIdPtr newId = CurvePrimitiveId::Create(CurvePrimitiveId::Type_PolyfaceEdge, CurveTopologyId(CurveTopologyId::Type_PolyfaceEdge, closeVertexId, segmentVertexId), nullptr);
-
-                curve->SetId(newId.get());
-                ClipAndProcessCurveVector(*CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open, curve), false);
-                }
-
-            prevIndex = thisIndex;
-            thisFaceSize++;
-            }
-
-        // found end of face loop (found first pad/terminator or last index in fixed block)
-        if (thisFaceSize && (!thisIndex || (polySize > 1 && polySize == thisFaceSize)))
-            {
-            // draw last visible edge (prevIndex, firstIndex)
-            if (prevIndex > 0)
-                {
-                int                 closeVertexId = (abs(prevIndex) - 1);
-                int                 segmentVertexId = (abs(firstIndex) - 1);
-                ICurvePrimitivePtr  curve = ICurvePrimitive::CreateLine(DSegment3d::From(verts[closeVertexId], verts[segmentVertexId]));
-                CurvePrimitiveIdPtr newId = CurvePrimitiveId::Create(CurvePrimitiveId::Type_PolyfaceEdge, CurveTopologyId(CurveTopologyId::Type_PolyfaceEdge, closeVertexId, segmentVertexId), nullptr);
-
-                curve->SetId(newId.get());
-                ClipAndProcessCurveVector(*CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open, curve), false);
-                }
-
-            thisFaceSize = 0;
-            }
-        }
+    ClipAndProcessSurface(geom);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  06/05
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SimplifyGraphic::_AddPolyface(PolyfaceQueryCR meshData, bool filled)
+void SimplifyGraphic::_AddPolyface(PolyfaceQueryCR geom, bool filled)
     {
-    if (_ProcessAsFacets(true))
+    // Modify this polyface to conform to the processor's facet options...
+    if (IGeometryProcessor::UnhandledPreference::Ignore != ((IGeometryProcessor::UnhandledPreference::Auto | IGeometryProcessor::UnhandledPreference::Facet) & m_processor._GetUnhandledPreference(geom)))
         {
-        size_t  maxPerFace;
+        size_t maxPerFace;
 
-        if ((GetFacetOptions()->GetNormalsRequired() && 0 == meshData.GetNormalCount()) ||
-            (GetFacetOptions()->GetParamsRequired() && (0 == meshData.GetParamCount() || 0 == meshData.GetFaceCount())) ||
-            (GetFacetOptions()->GetEdgeChainsRequired() && 0 == meshData.GetEdgeChainCount()) ||
-            (GetFacetOptions()->GetConvexFacetsRequired() && !meshData.HasConvexFacets()) ||
-            (meshData.GetNumFacet(maxPerFace)  > 0 && (int) maxPerFace > GetFacetOptions()->GetMaxPerFace()))
+        if ((m_facetOptions->GetNormalsRequired() && 0 == geom.GetNormalCount()) ||
+            (m_facetOptions->GetParamsRequired() && (0 == geom.GetParamCount() || 0 == geom.GetFaceCount())) ||
+            (m_facetOptions->GetEdgeChainsRequired() && 0 == geom.GetEdgeChainCount()) ||
+            (m_facetOptions->GetConvexFacetsRequired() && !geom.HasConvexFacets()) ||
+            (geom.GetNumFacet(maxPerFace) > 0 && (int) maxPerFace > m_facetOptions->GetMaxPerFace()))
             {
-            IPolyfaceConstructionPtr  builder = PolyfaceConstruction::New(*GetFacetOptions());
+            IPolyfaceConstructionPtr builder = PolyfaceConstruction::New(*m_facetOptions);
 
-            builder->AddPolyface(meshData);
-            FacetClipper(*this, filled).ProcessDisposablePolyface(builder->GetClientMeshR ());
+            builder->AddPolyface(geom);
+            ClipAndProcessPolyface(builder->GetClientMeshR(), filled);
+            return;
             }
-        else
-            {
-            ClipAndProcessFacetSet(meshData, filled);
-            }
-
-        return;
         }
 
-    if (!_ProcessAsWireframe())
-        return;
-
-    ClipAndProcessFacetSetAsCurves(meshData);
+    ClipAndProcessPolyface(geom, filled);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      01/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt SimplifyGraphic::_AddBody(ISolidKernelEntityCR entity, double pixelSize)
+void SimplifyGraphic::_AddBody(ISolidKernelEntityCR geom, double pixelSize)
     {
-    ClipAndProcessBody(entity, NULL);
-    return SUCCESS;
+    ClipAndProcessBody(geom);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1364,29 +1760,15 @@ StatusInt SimplifyGraphic::_AddBody(ISolidKernelEntityCR entity, double pixelSiz
 +---------------+---------------+---------------+---------------+---------------+------*/
 void SimplifyGraphic::_AddTextString(TextStringCR text, double* zDepth)
     {
-    AutoRestore <bool>  saveInTextDraw(&m_inTextDraw, true);
-
-    if (!_DoTextGeometry())
-        {
-        if (text.GetText().empty())
-            return;
-        
-        DPoint3d points[5];
-        text.ComputeBoundingShape(points);
-        text.ComputeTransform().Multiply(points, _countof(points));
-
-        _AddShape(5, points, false, NULL);
-        return;
-        }
-
     ClipAndProcessText(text, zDepth);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  06/05
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SimplifyGraphic::_AddRaster3d (DPoint3d const points[4], int pitch, int numTexelsX, int numTexelsY, int enableAlpha, int format, Byte const* texels, DPoint3dCP range)
+void SimplifyGraphic::_AddRaster (DPoint3d const points[4], int pitch, int numTexelsX, int numTexelsY, int enableAlpha, int format, Byte const* texels, DPoint3dCP range)
     {
+    // NEEDSWORK...Provide option to handle/ignore...
     DPoint3d    shapePoints[5];
 
     shapePoints[0] = shapePoints[4] = points[0];
@@ -1394,7 +1776,7 @@ void SimplifyGraphic::_AddRaster3d (DPoint3d const points[4], int pitch, int num
     shapePoints[2] = points[2];
     shapePoints[3] = points[3];
 
-    _AddShape(5, shapePoints, true, NULL);
+    _AddShape(5, shapePoints, true, nullptr);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1405,7 +1787,7 @@ void SimplifyGraphic::_AddRaster2d (DPoint2d const points[4], int pitch, int num
     std::valarray<DPoint3d> localPointsBuf3d(4);
 
     copy2dTo3d(4, &localPointsBuf3d[0], points, 0.0);
-    _AddRaster3d(&localPointsBuf3d[0], pitch, numTexelsX, numTexelsY, enableAlpha, format, texels, NULL);
+    _AddRaster(&localPointsBuf3d[0], pitch, numTexelsX, numTexelsY, enableAlpha, format, texels, NULL);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1413,8 +1795,7 @@ void SimplifyGraphic::_AddRaster2d (DPoint2d const points[4], int pitch, int num
 +---------------+---------------+---------------+---------------+---------------+------*/
 void SimplifyGraphic::_AddDgnOle(DgnOleDraw* ole)
     {
-
-    // NEEDSWORK...Draw Shape...
+    // NEEDSWORK...Draw box...
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1422,6 +1803,7 @@ void SimplifyGraphic::_AddDgnOle(DgnOleDraw* ole)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void SimplifyGraphic::_AddPointCloud(PointCloudDraw* drawParams)
     {
+    // NEEDSWORK...Provide option to handle/ignore...
     enum {MAX_POINTS_PER_BATCH = 300};
 
     uint32_t        numPoints = drawParams->_GetNumPoints();
@@ -1444,7 +1826,7 @@ void SimplifyGraphic::_AddPointCloud(PointCloudDraw* drawParams)
 
         while (numPoints > 0)
             {
-            if (m_context->CheckStop())
+            if (m_context.CheckStop())
                 return;
             
             uint32_t pointsThisIter = numPoints > MAX_POINTS_PER_BATCH ? MAX_POINTS_PER_BATCH: numPoints;
@@ -1471,7 +1853,7 @@ void SimplifyGraphic::_AddPointCloud(PointCloudDraw* drawParams)
 
     while (numPoints > 0)
         {
-        if (m_context->CheckStop())
+        if (m_context.CheckStop())
             return;
 
         uint32_t pointsThisIter = numPoints > maxPointsPerIter ? maxPointsPerIter : numPoints;
@@ -1489,32 +1871,29 @@ void SimplifyGraphic::_AddPointCloud(PointCloudDraw* drawParams)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    RayBentley      03/2007
+* @bsimethod                                                    Sam.Wilson      08/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SimplifyGraphic::GetEffectiveGraphicParams(GraphicParamsR graphicParams)
+void SimplifyGraphic::_AddMosaic(int numX, int numY, uintptr_t const* tileIds, DPoint3d const* points)
     {
-    graphicParams = m_currGraphicParams;
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    Render::OvrGraphicParams ovr = *m_context->GetOverrideGraphicParams();
+    // NEEDSWORK...Provide option to handle/ignore...
+    BeAssert(numX==1 && numY==1 && "TBD: march over tiles");
 
-    if (0 != (ovr.GetFlags() & OvrGraphicParams::FLAGS_Color))
-        graphicParams.SetLineColor(ColorDef((ovr.GetLineColor().GetValue() & 0xffffff) | (graphicParams.GetLineColor().GetValue() & 0xff000000)));
+    DPoint3d    shapePoints[5];
 
-    if (0 != (ovr.GetFlags() & OvrGraphicParams::FLAGS_ColorTransparency))
-        graphicParams.SetLineColor(ColorDef((graphicParams.GetLineColor().GetValue() & 0xffffff) | (ovr.GetLineColor().GetValue() & 0xff000000)));
+    shapePoints[0] = shapePoints[4] = points[0];
+    shapePoints[1] = points[1];
+    shapePoints[2] = points[2];
+    shapePoints[3] = points[3];
 
-    if (0 != (ovr.GetFlags() & OvrGraphicParams::FLAGS_FillColor))
-        graphicParams.SetFillColor(ColorDef((ovr.GetFillColor().GetValue() & 0xffffff) | (graphicParams.GetFillColor().GetValue() & 0xff000000)));
-
-    if (0 != (ovr.GetFlags() & OvrGraphicParams::FLAGS_FillColorTransparency))
-        graphicParams.SetFillColor(ColorDef((graphicParams.GetFillColor().GetValue() & 0xffffff) | (ovr.GetFillColor().GetValue() & 0xff000000)));
-
-    if (0 != (ovr.GetFlags() & OvrGraphicParams::FLAGS_RastWidth))
-        graphicParams.SetWidth(ovr.GetWidth());
-
-    if (0 != (ovr.GetFlags() & OvrGraphicParams::FLAGS_RenderMaterial))
-        graphicParams.SetMaterial(ovr.GetMaterial().get());
-#endif
+    _AddShape(5, shapePoints, true, NULL);
+    }
+ 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void SimplifyGraphic::_AddSubGraphic(Graphic&, TransformCR, Render::GraphicParams&) 
+    {
+    // NEEDS_WORK_CONTINUOUS_RENDER
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1528,56 +1907,6 @@ void SimplifyGraphic::_ActivateGraphicParams(GraphicParamsCR graphicParams, Geom
         m_currGeometryParams = *geomParams;
     else
         m_currGeometryParams = GeometryParams();
-    }
-
-/*---------------------------------------------------------------------------------**//**  
-* @bsimethod                                                    RayBentley      12/08
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool SimplifyGraphic::IsRangeTotallyInside(DRange3dCR range)
-    {
-    return ClipPlaneContainment_StronglyInside == m_context->GetTransformClipStack().ClassifyRange(range);
-    }
-
-/*---------------------------------------------------------------------------------**//**  
-* @bsimethod                                                    RayBentley      12/08
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool SimplifyGraphic::IsRangeTotallyInsideClip(DRange3dCR range)
-    { 
-    DPoint3d    corners[8];
-    
-    range.Get8Corners(corners);
-
-    return ArePointsTotallyInsideClip(corners, 8);
-    }
-
-/*---------------------------------------------------------------------------------**//**  
-* @bsimethod                                                    RayBentley      12/08
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool SimplifyGraphic::ArePointsTotallyInsideClip(DPoint3dCP points, int nPoints)
-    { 
-    if (NULL == GetCurrClip())
-        return true;
-
-    for (ClipPrimitivePtr const& primitive: *GetCurrClip())
-        if (ClipPlaneContainment_StronglyInside != primitive->ClassifyPointContainment(points, nPoints))
-            return false;
-
-    return true;
-    }
-
-/*---------------------------------------------------------------------------------**//**  
-* @bsimethod                                                    RayBentley      12/08
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool SimplifyGraphic::ArePointsTotallyOutsideClip(DPoint3dCP points, int nPoints)
-    { 
-    if (NULL == GetCurrClip())
-        return false;
-
-    for (ClipPrimitivePtr const& primitive: *GetCurrClip())
-        if (ClipPlaneContainment_StronglyOutside == primitive->ClassifyPointContainment(points, nPoints))
-            return true;
-
-    return false;
     }
 
 #ifdef NEEDS_WORK_GEOMETRY_MAPS
@@ -2024,7 +2353,6 @@ StatusInt SimplifyGraphic::ProcessFacetTextureOutlines(IPolyfaceConstructionR bu
     return SUCCESS;
     }
 
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     04/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -2056,7 +2384,7 @@ StatusInt SimplifyGraphic::ProcessTextureOutlines(PolyfaceQueryCR facets)
         return ERROR;
     
     PolyfaceHeaderPtr   triangulatedFacets = PolyfaceHeader::New();
-    bvector<int32_t>      triangulatedOutlineIndices;
+    bvector<int32_t>    triangulatedOutlineIndices;
     StatusInt           status;
 
     triangulatedFacets->CopyFrom(const_cast <PolyfaceQueryR> (facets));
@@ -2097,13 +2425,60 @@ void    SimplifyGraphic::StrokeGeometryMap(CurveVectorCR curves)
     ProcessGeometryMap(builder->GetClientMeshR());
     }
 
-#endif //NEEDS_WORK_GEOMETRY_MAPS
+#endif // NEEDS_WORK_GEOMETRY_MAPS
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     04/2010
+/*=================================================================================**//**
+* @bsiclass                                                     Brien.Bastings  06/09
++===============+===============+===============+===============+===============+======*/
+struct GeometryProcessorContext : NullContext
+{
+    DEFINE_T_SUPER(NullContext)
+protected:
+
+IGeometryProcessorR    m_processor;
+
+/*----------------------------------------------------------------------------------*//**
+* @bsimethod                                                    Brien.Bastings  06/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus SimplifyGraphic::GetLocalToElementTransform(TransformR transform) { return m_context->GetTransformClipStack().GetTransformFromTopToIndex(transform, 0); }
+virtual Render::GraphicPtr _BeginGraphic(Render::Graphic::CreateParams const& params) override
+    {
+    return new SimplifyGraphic(params, m_processor, *this);
+    }
 
+public:
+
+/*----------------------------------------------------------------------------------*//**
+* @bsimethod                                                    Brien.Bastings  06/09
++---------------+---------------+---------------+---------------+---------------+------*/
+GeometryProcessorContext(IGeometryProcessorR processor) : m_processor(processor)
+    {
+    m_purpose = m_processor._GetProcessPurpose();
+    m_wantMaterials = true; // Setup material in GeometryParams in case processor needs it...do we still need to do this on DgnDbCR???
+    }
+
+}; // GeometryProcessorContext
+
+/*----------------------------------------------------------------------------------*//**
+* @bsimethod                                                    Brien.Bastings  12/11
++---------------+---------------+---------------+---------------+---------------+------*/
+void GeometryProcessor::Process(IGeometryProcessorR processor, DgnDbR dgnDb)
+    {
+    GeometryProcessorContext context(processor);
+
+    context.SetDgnDb(dgnDb);
+    processor._OutputGraphics(context);
+    }
+
+/*----------------------------------------------------------------------------------*//**
+* @bsimethod                                                    Brien.Bastings  06/09
++---------------+---------------+---------------+---------------+---------------+------*/
+void GeometryProcessor::Process(IGeometryProcessorR processor, GeometrySourceCR source)
+    {
+    GeometryProcessorContext context(processor);
+
+    context.SetDgnDb(source.GetSourceDgnDb());
+    context.VisitElement(source);
+    }    
 
 
 

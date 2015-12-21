@@ -51,6 +51,7 @@
 #include <DgnPlatform/RealityDataCache.h>
 #include <DgnPlatform/WebMercator.h>
 #include <DgnPlatform/ElementGeometry.h>
+#include <DgnPlatform/ElementGraphics.h>
 #include <DgnPlatform/MSSmartPtr.h>
 #include <Logging/bentleylogging.h>
 #include <Bentley/BeStringUtilities.h>
