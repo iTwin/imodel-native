@@ -962,14 +962,13 @@ DGNPLATFORM_EXPORT static void OnElementImported(DgnElementCR outputElement, Dgn
 //! A component definition.
 // @bsiclass                                                    Sam.Wilson      12/15
 //=======================================================================================
-struct ComponentDef
+struct ComponentDef : RefCountedBase
 {
  private:
     DgnDbR m_db;
     ECN::ECClassCR m_class;
     ECN::IECInstancePtr m_ca;
     ComponentModelPtr m_model;
-    bool m_isValid;
 
     DGNPLATFORM_EXPORT static Utf8String GetCaValueString(ECN::IECInstanceCR, Utf8CP propName);
     DGNPLATFORM_EXPORT ECN::IECInstancePtr GetPropSpecCA(ECN::ECPropertyCR prop);
@@ -979,8 +978,8 @@ struct ComponentDef
     Utf8String GetGeneratedName() const;
     DgnElement::Code CreateVariationCode(Utf8StringCR slnId);
 
-    //! Test if the specified code is that of a captured solution element.
-    static bool IsCapturedSolutionCode(DgnElement::Code const& icode);
+    //! Test if the specified code is that of a component variation instance element.
+    static bool IsComponentVariationCode(DgnElement::Code const& icode);
 
     //! This is the basic logic to create an instance of this component. It is used to create variations and singletons.
     DgnElementCPtr MakeInstance0(DgnDbStatus* stat, DgnModelR targetModel, ECN::IECInstanceCR parameters, DgnElement::Code const& code);
@@ -992,19 +991,27 @@ struct ComponentDef
     //! Copy instance parameters from source to target
     DGNPLATFORM_EXPORT void CopyInstanceParameters(ECN::IECInstanceR target, ECN::IECInstanceCR source);
 
+    ComponentDef(DgnDbR db, ECN::ECClassCR componentDefClass);
+    ~ComponentDef();
+
  public:
+
+    //! Make a ComponentDef object
+    //! @praam db           The DgnDb that contains the component def
+    //! @param componentDefClass   The ECClass that defines the component
+    //! @param status       If not null, an error code in case Create failed
+    //! @note possible status values include:
+    //! DgnDbStatus::BadModel - the component definition specifies a model, but the model does not exist in \a db
+    //! DgnDbStatus::InvalidCategory - the component definition's category cannot be found in \a db
+    //! DgnDbStatus::WrongClass - \a componentDefClass is not a component definition ECClass
+    DGNPLATFORM_EXPORT static ComponentDefPtr From(DgnDbStatus* status, DgnDbR db, ECN::ECClassCR componentDefClass);
 
     struct GeometryGenerator
         {
         virtual DgnDbStatus _GenerateGeometry(ECN::IECInstanceCR variationSpec) = 0;
         };
 
-    DGNPLATFORM_EXPORT ComponentDef(DgnDbR db, ECN::ECClassCR componentDefClass);
-    DGNPLATFORM_EXPORT ~ComponentDef();
-
     DgnDbR GetDgnDb() const {return m_db;}
-
-    bool IsValid() const {return m_isValid;}
 
     ECN::ECClassCR GetECClass() const {return m_class;}
 
@@ -1028,6 +1035,22 @@ struct ComponentDef
     //! @returns nullptr if \a instance is an instance of a component
     DGNPLATFORM_EXPORT static ECN::IECInstancePtr GetParameters(DgnElementCR instance);
 
+    //! Import this component definition into the the specified DgnDb. 
+    //! @param destDb the DgnDb to which this component definition should be written
+    //! @param context The import context to use
+    //! @param importSchema Import the ECSchema that includes this component definition's ECClass? The import will fail if \a destDb does not contain this component definition's ECClass.
+    //! @param importCategory Import the Category used by this component definition? The import will fail if \a destDb does not contain this component definition's Category.
+    //! @return non-zero error if the import failed.
+    DGNPLATFORM_EXPORT DgnDbStatus ImportComponentDef(DgnDbR destDb, DgnImportContext& context, bool importSchema = true, bool importCategory = false);
+
+    //! Import variations of this component definition into the the specified model. 
+    //! @param destVariationsModel Write copies of variations to this model.
+    //! @param sourceVariationsModel Query variations in this model.
+    //! @param context The import context to use
+    //! @param variationFilter If specified, the variations to import. If not specified and if \a destVariationsModel is specified, then all variations are imported.
+    //! @return non-zero error if the import failed.
+    DGNPLATFORM_EXPORT DgnDbStatus ImportVariations(DgnModelR destVariationsModel, DgnModelId sourceVariationsModel, DgnImportContext& context, bvector<DgnElementId> const& variationFilter = bvector<DgnElementId>());
+
     //! Creates a variation of a component, based on the specified parameters.
     //! @param[out] stat        Optional. If not null and if the variation cannot be computed, then an error code is stored here to explain what happened, as explained below.
     //! @param[in] destModel    The output model, where the variation instance should be stored.
@@ -1045,6 +1068,12 @@ struct ComponentDef
     //! @param[in] variationName The name of the variation to look up.
     //! @return the variation or an invalid handle if not found
     DGNPLATFORM_EXPORT DgnElementCPtr QueryVariationByName(Utf8StringCR variationName);
+
+    //! Search for all variations of this component definition
+    //! @param variations    Where to return the IDs of the captured solutions
+    //! @param variationModelId The model that contains the variations
+    //! @see MakeVariation, QueryVariationByName
+    DGNPLATFORM_EXPORT void QueryVariations(bvector<DgnElementId>& variations, DgnModelId variationModelId);
 
     //! Make either a persistent copy of a specified variation or a unique instance of the component definition.
     //! If \a variation has instance parameters, then the \a instanceParameters argument may be passed into specific the instance parameter values to use.

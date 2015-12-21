@@ -317,13 +317,13 @@ struct JsComponentModel : JsDgnModel
 //=======================================================================================
 struct JsComponentDef : RefCountedBaseWithCreate
 {
-    ComponentDef m_cdef;
+    ComponentDefPtr m_cdef;
 
-    JsComponentDef(ComponentDef const& cd) : m_cdef(cd) {}
+    JsComponentDef(ComponentDef& cd) : m_cdef(&cd) {}
 
-    Utf8String GetName() const {return m_cdef.GetName();}
+    Utf8String GetName() const {return m_cdef->GetName();}
     JsDgnCategoryP GetCategory() const;
-    Utf8String GetCodeAuthority() const {return m_cdef.GetCodeAuthorityName();}
+    Utf8String GetCodeAuthority() const {return m_cdef->GetCodeAuthorityName();}
     JsECClassP GetComponentECClass() const;
 
     //static               FindByName(db: DgnDbP, name: Bentley_Utf8String): ComponentDefP;

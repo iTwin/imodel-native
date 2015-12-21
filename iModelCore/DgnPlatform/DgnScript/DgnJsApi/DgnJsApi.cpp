@@ -102,10 +102,10 @@ JsComponentDefP JsComponentDef::FindByName(JsDgnDbP db, Utf8StringCR name)
     auto cdefclass = getECClassByFullName(*db->m_db, name);
     if (nullptr == cdefclass)
         return nullptr;
-    ComponentDef cdef(*db->m_db, *cdefclass);
+    ComponentDefPtr cdef = ComponentDef::From(nullptr, *db->m_db, *cdefclass);
     if (!cdef.IsValid())
         return nullptr;
-    return new JsComponentDef(cdef);
+    return new JsComponentDef(*cdef);
     }
 
 //---------------------------------------------------------------------------------------
@@ -113,7 +113,9 @@ JsComponentDefP JsComponentDef::FindByName(JsDgnDbP db, Utf8StringCR name)
 //---------------------------------------------------------------------------------------
 JsDgnCategoryP JsComponentDef::GetCategory() const 
     {
-    DgnCategoryCPtr cat = DgnCategory::QueryCategory(m_cdef.GetCategoryName(), m_cdef.GetDgnDb());
+    if (!m_cdef.IsValid())
+        return nullptr;
+    DgnCategoryCPtr cat = DgnCategory::QueryCategory(m_cdef->GetCategoryName(), m_cdef->GetDgnDb());
     return cat.IsValid()? new JsDgnCategory(*cat): nullptr;
     }
 
@@ -122,7 +124,9 @@ JsDgnCategoryP JsComponentDef::GetCategory() const
 //---------------------------------------------------------------------------------------
 JsECClassP JsComponentDef::GetComponentECClass() const
     {
-    return new JsECClass(m_cdef.GetECClass());
+    if (!m_cdef.IsValid())
+        return nullptr;
+    return new JsECClass(m_cdef->GetECClass());
     }
 
 //---------------------------------------------------------------------------------------
@@ -130,7 +134,9 @@ JsECClassP JsComponentDef::GetComponentECClass() const
 //---------------------------------------------------------------------------------------
 JsDgnElementP JsComponentDef::QueryVariationByName(Utf8StringCR variationName)
     {
-    auto velem = m_cdef.QueryVariationByName(variationName);
+    if (!m_cdef.IsValid())
+        return nullptr;
+    auto velem = m_cdef->QueryVariationByName(variationName);
     return velem.IsValid()? new JsDgnElement(*velem->CopyForEdit()): nullptr;
     }
 
@@ -152,9 +158,9 @@ JsECInstanceP JsComponentDef::GetParameters(JsDgnElementP instance)
 //---------------------------------------------------------------------------------------
 JsDgnElementP JsComponentDef::MakeInstanceOfVariation(JsDgnModelP targetModel, JsDgnElementP variation, JsECInstanceP instanceParameters, JsAuthorityIssuedCodeP code)
     {
-    if (nullptr == targetModel || !targetModel->m_model.IsValid() || nullptr == variation || !variation->m_el.IsValid())
+    if (!m_cdef.IsValid() || nullptr == targetModel || !targetModel->m_model.IsValid() || nullptr == variation || !variation->m_el.IsValid())
         return nullptr;
-    auto inst = m_cdef.MakeInstanceOfVariation(nullptr, *targetModel->m_model, *variation->m_el, 
+    auto inst = m_cdef->MakeInstanceOfVariation(nullptr, *targetModel->m_model, *variation->m_el, 
                                                 instanceParameters? instanceParameters->m_instance.get(): nullptr, 
                                                 code? code->m_code: DgnElement::Code()); 
     if (!inst.IsValid())
@@ -167,9 +173,9 @@ JsDgnElementP JsComponentDef::MakeInstanceOfVariation(JsDgnModelP targetModel, J
 //---------------------------------------------------------------------------------------
 JsDgnElementP JsComponentDef::MakeUniqueInstance(JsDgnModelP targetModel, JsECInstanceP instanceParameters, JsAuthorityIssuedCodeP code)
     {
-    if (nullptr == targetModel || !targetModel->m_model.IsValid() || nullptr == instanceParameters || !instanceParameters->m_instance.IsValid())
+    if (!m_cdef.IsValid() || nullptr == targetModel || !targetModel->m_model.IsValid() || nullptr == instanceParameters || !instanceParameters->m_instance.IsValid())
         return nullptr;
-    auto inst = m_cdef.MakeUniqueInstance(nullptr, *targetModel->m_model, *instanceParameters->m_instance, code? code->m_code: DgnElement::Code()); 
+    auto inst = m_cdef->MakeUniqueInstance(nullptr, *targetModel->m_model, *instanceParameters->m_instance, code? code->m_code: DgnElement::Code()); 
     if (!inst.IsValid())
         return nullptr;
     return new JsDgnElement(*inst->CopyForEdit());

@@ -599,7 +599,7 @@ DgnElement::Code ComponentDef::CreateVariationCode(Utf8StringCR slnId)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ComponentDef::IsCapturedSolutionCode(DgnElement::Code const& icode)
+bool ComponentDef::IsComponentVariationCode(DgnElement::Code const& icode)
     {
     return icode.GetAuthority() == SystemAuthority::GetId(SystemAuthority::Component);
     }

@@ -147,6 +147,18 @@ struct VariationSpec
     void CheckInstance(DgnElementCR el, size_t expectedSolidCount) const;
     void MakeUniqueInstance(DgnElementCPtr&, DgnModelR destModel, size_t expectedSolidCount);
     void MakeVariation(PhysicalModelR destModel);
+
+    void SetValue(Utf8CP name, ECN::ECValueCR v)
+        {
+        for (auto& pv : m_propValues)
+            {
+            if (pv.m_name == name)
+                {
+                pv.m_value = v;
+                return;
+                }
+            }
+        }
 };
 
 /*---------------------------------------------------------------------------------**//**
@@ -154,10 +166,10 @@ struct VariationSpec
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECN::IECInstancePtr VariationSpec::MakeVariationSpec(DgnDbR db) const
     {
-    ComponentDef cdef(db, *db.Schemas().GetECClass(TEST_JS_NAMESPACE, m_componentName.c_str()));
+    ComponentDefPtr cdef = ComponentDef::From(nullptr, db, *db.Schemas().GetECClass(TEST_JS_NAMESPACE, m_componentName.c_str()));
     if (!cdef.IsValid())
         return nullptr;
-    ECN::IECInstancePtr instance = cdef.MakeVariationSpec();
+    ECN::IECInstancePtr instance = cdef->MakeVariationSpec();
     for (auto const& pv : m_propValues)
         instance->SetValue(pv.m_name.c_str(), pv.m_value);
 
@@ -169,9 +181,9 @@ ECN::IECInstancePtr VariationSpec::MakeVariationSpec(DgnDbR db) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void VariationSpec::CheckInstance(DgnElementCR el, size_t expectedSolidCount) const
     {
-    ComponentDef cdef(el.GetDgnDb(), *el.GetElementClass());
+    ComponentDefPtr cdef = ComponentDef::From(nullptr, el.GetDgnDb(), *el.GetElementClass());
     ASSERT_TRUE(cdef.IsValid());
-    ASSERT_STREQ(cdef.GetName().c_str(), m_componentName.c_str());
+    ASSERT_STREQ(cdef->GetName().c_str(), m_componentName.c_str());
     checkGeomStream(*el.ToGeometrySource(), ElementGeometry::GeometryType::SolidPrimitive, expectedSolidCount);
     checkSlabDimensions(*el.ToGeometrySource(), m_propValues[0].m_value.GetDouble(), m_propValues[1].m_value.GetDouble(), m_propValues[2].m_value.GetDouble());
     }
@@ -273,6 +285,8 @@ void ComponentModelTest::Developer_DefineSchema()
 
     // Widget
         {
+        Developer_CreateCategory("WidgetCategory", ColorDef(0xff0000FF));
+
         ComponentDefCreator creator(*m_componentDb, *testSchema, TEST_WIDGET_COMPONENT_NAME, *baseClass, TEST_JS_NAMESPACE "." TEST_WIDGET_COMPONENT_NAME, "WidgetCategory", "");
         creator.AddPropertySpec(ComponentDefCreator::PropertySpec("X", ECN::PrimitiveType::PRIMITIVETYPE_Double, true));
         creator.AddPropertySpec(ComponentDefCreator::PropertySpec("Y", ECN::PrimitiveType::PRIMITIVETYPE_Double, true));
@@ -286,20 +300,22 @@ void ComponentModelTest::Developer_DefineSchema()
         m_wsln1.m_propValues.push_back(NamedECValue("Z", ECN::ECValue(12.0)));
 
         m_wsln3 = VariationSpec(TEST_WIDGET_COMPONENT_NAME, "wsln3");
-        m_wsln3 = m_wsln1;
-        m_wsln3.m_propValues.push_back(NamedECValue("X", ECN::ECValue(100.0)));
+        m_wsln3.m_propValues = m_wsln1.m_propValues;
+        m_wsln3.SetValue("X", ECN::ECValue(100.0));
 
         m_wsln4 = VariationSpec(TEST_WIDGET_COMPONENT_NAME, "wsln4");
-        m_wsln4 = m_wsln3;
-        m_wsln4.m_propValues.push_back(NamedECValue("X", ECN::ECValue(2.0)));
+        m_wsln4.m_propValues = m_wsln3.m_propValues;
+        m_wsln4.SetValue("X", ECN::ECValue(2.0));
 
         m_wsln44 = VariationSpec(TEST_WIDGET_COMPONENT_NAME, "wsln44");
-        m_wsln44 = m_wsln4;
-        m_wsln44.m_propValues.push_back(NamedECValue("X", ECN::ECValue(44.0)));
+        m_wsln44.m_propValues = m_wsln4.m_propValues;
+        m_wsln44.SetValue("X", ECN::ECValue(44.0));
         }
 
     // Gadget
         {
+        Developer_CreateCategory("GadgetCategory", ColorDef(0x00ff00FF));
+
         ComponentDefCreator creator(*m_componentDb, *testSchema, TEST_GADGET_COMPONENT_NAME, *baseClass, TEST_JS_NAMESPACE "." TEST_GADGET_COMPONENT_NAME, "GadgetCategory", "");
         creator.AddPropertySpec(ComponentDefCreator::PropertySpec("Q", ECN::PrimitiveType::PRIMITIVETYPE_Double, true));
         creator.AddPropertySpec(ComponentDefCreator::PropertySpec("W", ECN::PrimitiveType::PRIMITIVETYPE_Double, true));
@@ -317,6 +333,8 @@ void ComponentModelTest::Developer_DefineSchema()
 
     // Thing
         {
+        Developer_CreateCategory("ThingCategory", ColorDef(0x0000ffFF));
+
         ComponentDefCreator creator(*m_componentDb, *testSchema, TEST_THING_COMPONENT_NAME, *baseClass, TEST_JS_NAMESPACE "." TEST_THING_COMPONENT_NAME, "ThingCategory", "");
         creator.AddPropertySpec(ComponentDefCreator::PropertySpec("A", ECN::PrimitiveType::PRIMITIVETYPE_Double, true));
         creator.AddPropertySpec(ComponentDefCreator::PropertySpec("B", ECN::PrimitiveType::PRIMITIVETYPE_Double, true));
@@ -335,10 +353,10 @@ void ComponentModelTest::Developer_DefineSchema()
     //  Verify that we can look up an existing component
     ECN::ECClassCP widgetClass = m_componentDb->Schemas().GetECClass(TEST_JS_NAMESPACE, TEST_WIDGET_COMPONENT_NAME);
     ASSERT_TRUE(widgetClass != nullptr);
-    ComponentDef widgetCDef(*m_componentDb, *widgetClass);
+    ComponentDefPtr widgetCDef = ComponentDef::From(nullptr, *m_componentDb, *widgetClass);
     ASSERT_TRUE(widgetCDef.IsValid());
-    ASSERT_STREQ(TEST_WIDGET_COMPONENT_NAME, widgetCDef.GetName().c_str());
-    ASSERT_STREQ("WidgetCategory", widgetCDef.GetCategoryName().c_str());
+    ASSERT_STREQ(TEST_WIDGET_COMPONENT_NAME, widgetCDef->GetName().c_str());
+    ASSERT_STREQ("WidgetCategory", widgetCDef->GetCategoryName().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -377,34 +395,40 @@ void ComponentModelTest::Client_ImportCM(Utf8CP componentName)
     {
     OpenComponentDb(Db::OpenMode::Readonly);
     AutoCloseComponentDb closeComponentDb(*this);
-    
-    ECN::ECSchemaCP schema = m_componentDb->Schemas().GetECSchema(TEST_JS_NAMESPACE);
-    ASSERT_TRUE(nullptr != schema);
 
-    ASSERT_TRUE( ComponentDefCreator::ImportSchema(*m_clientDb, *schema).IsValid() );
+    PhysicalModelPtr sourceCatalogModel = getModelByName<PhysicalModel>(*m_componentDb, "Catalog");
+    ASSERT_TRUE(sourceCatalogModel.IsValid());
 
-#ifdef WIP_COMPONENT
-    ComponentDef::Importer importer(*m_clientDb, *cmOriginal);
-    
-    //  Import the component model itself
-    ComponentModelPtr cmCopy = importer.ImportComponentModel();
-
-    ASSERT_TRUE( cmCopy.IsValid() );
-
-    // Import the item catalog
     PhysicalModelPtr catalogModel = getModelByName<PhysicalModel>(*m_clientDb, "Catalog");
     if (!catalogModel.IsValid())
         createPhysicalModel(catalogModel, *m_clientDb, DgnModel::CreateModelCode("Catalog"));
 
     ASSERT_TRUE(catalogModel.IsValid());
+    
+    ComponentDefPtr widgetCdef = ComponentDef::From(nullptr, *m_componentDb, *m_componentDb->Schemas().GetECClass(TEST_JS_NAMESPACE, TEST_WIDGET_COMPONENT_NAME));
+    ComponentDefPtr gadgetCdef = ComponentDef::From(nullptr, *m_componentDb, *m_componentDb->Schemas().GetECClass(TEST_JS_NAMESPACE, TEST_GADGET_COMPONENT_NAME));
+    ComponentDefPtr  thingCdef = ComponentDef::From(nullptr, *m_componentDb, *m_componentDb->Schemas().GetECClass(TEST_JS_NAMESPACE, TEST_THING_COMPONENT_NAME));
 
-    importer.ImportSolutions(*catalogModel);
+    DgnImportContext ctx(*m_componentDb, *m_clientDb);
+    ASSERT_EQ( DgnDbStatus::Success , widgetCdef->ImportComponentDef(*m_clientDb, ctx, true, true));
+    ASSERT_EQ( DgnDbStatus::Success , gadgetCdef->ImportComponentDef(*m_clientDb, ctx, true, true));
+    ASSERT_EQ( DgnDbStatus::Success ,  thingCdef->ImportComponentDef(*m_clientDb, ctx, true, true));
 
-    bvector<DgnElementId> originalSolutions, importedSolutions;
-    cmOriginal->QuerySolutions(originalSolutions);
-    cmCopy->QuerySolutions(importedSolutions);
-    ASSERT_EQ( originalSolutions.size() , importedSolutions.size() );
-#endif
+    ComponentDefPtr importedWidgetCdef = ComponentDef::From(nullptr, *m_clientDb, *m_clientDb->Schemas().GetECClass(TEST_JS_NAMESPACE, TEST_WIDGET_COMPONENT_NAME));
+    ASSERT_TRUE(importedWidgetCdef.IsValid());
+    
+    bvector<DgnElementId> originalVariations, importedVariations;
+    widgetCdef->QueryVariations(originalVariations, sourceCatalogModel->GetModelId());
+    importedWidgetCdef->QueryVariations(importedVariations, catalogModel->GetModelId());
+    ASSERT_EQ( 0 , importedVariations.size() );
+
+    ASSERT_EQ( DgnDbStatus::Success , widgetCdef->ImportVariations(*catalogModel, sourceCatalogModel->GetModelId(), ctx) );
+    ASSERT_EQ( DgnDbStatus::Success , gadgetCdef->ImportVariations(*catalogModel, sourceCatalogModel->GetModelId(), ctx) );
+    ASSERT_EQ( DgnDbStatus::Success ,  thingCdef->ImportVariations(*catalogModel, sourceCatalogModel->GetModelId(), ctx) );
+    
+    importedWidgetCdef->QueryVariations(importedVariations, catalogModel->GetModelId());
+    ASSERT_NE( 0 , importedVariations.size() );
+    ASSERT_EQ( originalVariations.size() , importedVariations.size() );
 
     m_clientDb->SaveChanges();
     }
@@ -445,10 +469,10 @@ void ComponentModelTest::Client_PlaceInstance(DgnElementId& ieid, Utf8CP targetM
     ASSERT_TRUE(m_clientDb.IsValid() && "Caller must have already opened the Client DB");
 
 
-    ComponentDef cdef(catalogModel.GetDgnDb(), *catalogModel.GetDgnDb().Schemas().GetECClass(TEST_JS_NAMESPACE, componentName));
+    ComponentDefPtr cdef = ComponentDef::From(nullptr, catalogModel.GetDgnDb(), *catalogModel.GetDgnDb().Schemas().GetECClass(TEST_JS_NAMESPACE, componentName));
     ASSERT_TRUE(cdef.IsValid());
 
-    DgnElementCPtr variation = cdef.QueryVariationByName(variationName);
+    DgnElementCPtr variation = cdef->QueryVariationByName(variationName);
 
     if (!expectToFindVariation)
         {
@@ -527,14 +551,14 @@ void ComponentModelTest::Client_CheckNestedInstance(DgnElementCR instanceElement
     DgnElementCPtr nestedInstance = m_clientDb->Elements().GetElement(*instanceChildren.begin());
     ASSERT_TRUE(nestedInstance.IsValid());
 
-    ComponentDef cdef(nestedInstance->GetDgnDb(), *nestedInstance->GetElementClass());
+    ComponentDefPtr cdef = ComponentDef::From(nullptr, nestedInstance->GetDgnDb(), *nestedInstance->GetElementClass());
     ASSERT_TRUE(cdef.IsValid());
 
-    ASSERT_STREQ(expectedChildComponentName, cdef.GetName().c_str());
+    ASSERT_STREQ(expectedChildComponentName, cdef->GetName().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
-* Simulate a client who receives a ComponentModel and then places instances of solutions to it.
+* Simulate a client who imports a ComponentDef and then places instances of solutions to it.
 * @bsimethod                                    Sam.Wilson                      04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ComponentModelTest::SimulateClient()

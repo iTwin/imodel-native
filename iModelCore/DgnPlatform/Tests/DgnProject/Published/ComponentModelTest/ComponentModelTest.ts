@@ -33,7 +33,7 @@ module ComponentModelTest
     //  Utility function that creates a new (non-persistent) PhysicalElement object in memory and assigns it to the correct category 
     function makeElement(model: be.DgnModel, cdef: be.ComponentDef): be.PhysicalElement
     {
-        return be.PhysicalElement.Create(model, cdef.Category.CategoryId, null);
+        return be.PhysicalElement.Create(model, cdef.Category.CategoryId, '');
     }
 
     /**
@@ -112,7 +112,7 @@ module ComponentModelTest
             makeBox(element, origin, angles, A, B, C);
             element.Insert();
 
-            var gadgetComponentDef = be.ComponentDef.FindByName(db, TEST_GADGET_COMPONENT_NAME);
+            var gadgetComponentDef = be.ComponentDef.FindByName(db, TEST_JS_NAMESPACE + '.' + TEST_GADGET_COMPONENT_NAME);
             var gparams = gadgetComponentDef.ComponentECClass.MakeInstance();
             gparams.SetValue('Q', be.ECValue.FromDouble(A + 1));
             gparams.SetValue('W', be.ECValue.FromDouble(B + 1));

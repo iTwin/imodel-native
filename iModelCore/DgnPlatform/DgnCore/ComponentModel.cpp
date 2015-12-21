@@ -81,7 +81,7 @@ struct ComponentGeometryHarvester
     DgnElementPtr CreateInstance(DgnDbStatus& status, DgnElement::Code const& icode, bvector<bpair<DgnSubCategoryId, DgnGeomPartId>> const&, HarvestedSolutionWriter& writer);
 
     public:
-    ComponentGeometryHarvester(ComponentDef c) : m_cdef(c) {;}
+    ComponentGeometryHarvester(ComponentDef& c) : m_cdef(c) {;}
 
     DgnElementCPtr MakeInstance(DgnDbStatus& status, DgnElement::Code const& icode, HarvestedSolutionWriter& WriterHandler);
     };
@@ -318,6 +318,9 @@ DgnElementCPtr ComponentGeometryHarvester::MakeInstance(DgnDbStatus& status, Dgn
         // *** TBD: 
         }
 
+    BeAssert(!storedSolutionElement->ToGeometrySource3d() || storedSolutionElement->ToGeometrySource3d()->GetCategoryId() == m_cdef.QueryCategoryId());
+    BeAssert(!storedSolutionElement->ToGeometrySource2d() || storedSolutionElement->ToGeometrySource2d()->GetCategoryId() == m_cdef.QueryCategoryId());
+    BeAssert(storedSolutionElement->GetElementClass() == &m_cdef.GetECClass());
     return storedSolutionElement;
     }
 
@@ -327,19 +330,48 @@ DgnElementCPtr ComponentGeometryHarvester::MakeInstance(DgnDbStatus& status, Dgn
 ComponentDef::ComponentDef(DgnDbR db, ECN::ECClassCR componentDefClass)
     : m_db(db), m_model(nullptr), m_class(componentDefClass)
     {
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+ComponentDefPtr ComponentDef::From(DgnDbStatus* statusOut, DgnDbR db, ECN::ECClassCR componentDefClass)
+    {
+    DgnDbStatus ALLOW_NULL_OUTPUT(status, statusOut);
+
     ECN::ECClassCP caClass = db.Schemas().GetECClass(DGN_ECSCHEMA_NAME, "ComponentSpecification");
     if (nullptr == caClass)
         {
-        m_isValid = false;
-        return;
+        status = DgnDbStatus::WrongClass;
+        return nullptr;
         }
-    m_ca = m_class.GetCustomAttribute(*caClass);
-    if (!m_ca.IsValid())
+
+    auto ca = componentDefClass.GetCustomAttribute(*caClass);
+    if (!ca.IsValid())
         {
-        m_isValid = false;
-        return;
+        status = DgnDbStatus::WrongClass;
+        return nullptr;
         }
-    m_isValid = true;
+
+    ComponentDef* cdef = new ComponentDef(db, componentDefClass);
+    cdef->m_ca = ca;
+
+    if (!cdef->QueryCategoryId().IsValid())
+        {
+        delete cdef;
+        status = DgnDbStatus::InvalidCategory;
+        return nullptr;
+        }
+
+    Utf8String modelName = cdef->GetCaValueString(*ca, CDEF_CA_MODEL);
+    if (!modelName.empty() && !db.Models().QueryModelId(DgnModel::CreateModelCode(modelName)).IsValid())
+        {
+        delete cdef;
+        status = DgnDbStatus::BadModel;
+        return nullptr;
+        }
+
+    return cdef;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -471,7 +503,7 @@ DgnDbStatus ComponentDef::GenerateGeometry(ECN::IECInstanceCR variationSpecIn)
         }
         
     StatusInt retval;                                               // *** WIP_COMPONENT: need to pass in destination model
-    if (DgnDbStatus::Success != DgnScript::ExecuteComponentGenerateElements(retval, *m_model, *m_model, *instanceTemplate, *this, scriptName.c_str()) || (0 == retval))
+    if (DgnDbStatus::Success != DgnScript::ExecuteComponentGenerateElements(retval, *m_model, *m_model, *instanceTemplate, *this, scriptName.c_str()) || (0 != retval))
         return DgnDbStatus::BadRequest;
 
     return DgnDbStatus::Success;
@@ -506,7 +538,7 @@ DgnElementCPtr ComponentDef::MakeVariation(DgnDbStatus* statusOut, DgnModelR des
     {
     DgnDbStatus ALLOW_NULL_OUTPUT(status, statusOut);
     
-    ComponentDef componentCDef(destModel.GetDgnDb(), variationParms.GetClass());
+    ComponentDefPtr componentCDef = From(nullptr, destModel.GetDgnDb(), variationParms.GetClass());
     if (!componentCDef.IsValid())
         {
         status = DgnDbStatus::WrongClass;
@@ -520,9 +552,9 @@ DgnElementCPtr ComponentDef::MakeVariation(DgnDbStatus* statusOut, DgnModelR des
         return nullptr;
         }
 
-    DgnElement::Code vcode = componentCDef.CreateVariationCode(variationName);
+    DgnElement::Code vcode = componentCDef->CreateVariationCode(variationName);
 
-    return componentCDef.MakeInstance0(statusOut, destModel, variationParms, vcode);
+    return componentCDef->MakeInstance0(statusOut, destModel, variationParms, vcode);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -532,13 +564,13 @@ DgnElementCPtr ComponentDef::MakeUniqueInstance(DgnDbStatus* statusOut, DgnModel
     {
     DgnDbStatus ALLOW_NULL_OUTPUT(status, statusOut);
 
-    ComponentDef componentCDef(destModel.GetDgnDb(), variationParms.GetClass());
+    ComponentDefPtr componentCDef = From(nullptr, destModel.GetDgnDb(), variationParms.GetClass());
     if (!componentCDef.IsValid())
         {
         status = DgnDbStatus::WrongClass;
         return nullptr;
         }
-    return componentCDef.MakeInstance0(statusOut, destModel, variationParms, code);
+    return componentCDef->MakeInstance0(statusOut, destModel, variationParms, code);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -556,7 +588,7 @@ DgnElementCPtr ComponentDef::MakeInstanceOfVariation(DgnDbStatus* statusOut, Dgn
         return nullptr;
         }
 
-    ComponentDef cdef(db, *variation.GetElementClass());
+    ComponentDefPtr cdef = From(nullptr, db, *variation.GetElementClass());
     if (!cdef.IsValid())
         {
         status = DgnDbStatus::WrongClass;
@@ -571,11 +603,11 @@ DgnElementCPtr ComponentDef::MakeInstanceOfVariation(DgnDbStatus* statusOut, Dgn
             return nullptr;
             }
         ECN::IECInstancePtr allParms = GetParameters(variation);
-        if (!cdef.HaveEqualParameters(*instanceParms, *allParms, true))
+        if (!cdef->HaveEqualParameters(*instanceParms, *allParms, true))
             {
             //  If the caller has specified parameters and they don't match the variation's parameters, then we must make a unique instance.
-            cdef.CopyInstanceParameters(*allParms, *instanceParms);
-            return cdef.MakeUniqueInstance(statusOut, destModel, *allParms, code);
+            cdef->CopyInstanceParameters(*allParms, *instanceParms);
+            return cdef->MakeUniqueInstance(statusOut, destModel, *allParms, code);
             }
         }
 
@@ -583,7 +615,7 @@ DgnElementCPtr ComponentDef::MakeInstanceOfVariation(DgnDbStatus* statusOut, Dgn
     if (!code.IsValid())
         {
         //  Generate the item code. This will be a null code, unless there's a specified authority for the componentmodel.
-        DgnAuthorityCPtr authority = cdef.GetCodeAuthority();
+        DgnAuthorityCPtr authority = cdef->GetCodeAuthority();
         if (authority.IsValid())
             icode = authority->CreateDefaultCode();  // *** WIP_COMPONENT_MODEL -- how do I ask an Authority to issue a code?
         }
@@ -607,7 +639,7 @@ DgnElementCPtr ComponentDef::MakeInstanceOfVariation(DgnDbStatus* statusOut, Dgn
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECN::IECInstancePtr ComponentDef::GetParameters(DgnElementCR el)
     {
-    ComponentDef cdef(el.GetDgnDb(), *el.GetElementClass());
+    ComponentDefPtr cdef = From(nullptr, el.GetDgnDb(), *el.GetElementClass());
     if (!cdef.IsValid())
         return nullptr;
     Utf8PrintfString sql("SELECT * FROM %s.%s WHERE ECInstanceId=?", el.GetElementClass()->GetSchema().GetNamespacePrefix().c_str(), el.GetElementClass()->GetName().c_str());
@@ -678,23 +710,141 @@ void ComponentDef::CopyInstanceParameters(ECN::IECInstanceR target, ECN::IECInst
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-ECN::ECSchemaPtr ComponentDefCreator::ImportSchema(DgnDbR db, ECN::ECSchemaCR schemaIn)
+static ECN::ECSchemaPtr importECSchema(ECN::ECObjectsStatus& ecstatus, DgnDbR db, ECN::ECSchemaCR schemaIn)
     {
     ECN::ECSchemaPtr imported;
-    schemaIn.CopySchema(imported);
-    imported->SetName(schemaIn.GetName());
-    imported->SetNamespacePrefix(schemaIn.GetNamespacePrefix());
+    ECSUCCESS(schemaIn.CopySchema(imported));
+    ECSUCCESS(imported->SetName(schemaIn.GetName()));
+    ECSUCCESS(imported->SetNamespacePrefix(schemaIn.GetNamespacePrefix()));
 
     ECN::ECSchemaReadContextPtr contextPtr = ECN::ECSchemaReadContext::CreateContext();
-    contextPtr->AddSchema(*imported);
+    ECSUCCESS(contextPtr->AddSchema(*imported));
     if (BentleyStatus::SUCCESS != db.Schemas().ImportECSchemas(contextPtr->GetCache()))
+        {
+        ecstatus = ECObjectsStatus::Error;
         return nullptr;
+        }
 
     //db.Domains().SyncWithSchemas(); no need to do this. A component's class will not have a handler.
 
     return imported;
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+ECN::ECSchemaPtr ComponentDefCreator::ImportSchema(DgnDbR db, ECN::ECSchemaCR schemaIn)
+    {
+    ECN::ECObjectsStatus ecstatus;
+    return importECSchema(ecstatus, db, schemaIn);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+DgnDbStatus ComponentDef::ImportComponentDef(DgnDbR destDb, DgnImportContext& context, bool importSchema, bool importCategory)
+    {
+    if (importSchema)
+        {
+        ECN::ECObjectsStatus ecstatus = ECN::ECObjectsStatus::Success;
+        importECSchema(ecstatus, destDb, GetECClass().GetSchema());
+        if (ECN::ECObjectsStatus::Success != ecstatus && ECN::ECObjectsStatus::DuplicateSchema != ecstatus)
+            return DgnDbStatus::BadSchema;
+        }
+
+    if (importCategory)
+        {
+        if (!DgnCategory::QueryCategoryId(GetCategoryName(), destDb).IsValid())
+            {
+            auto sourceCat = DgnCategory::QueryCategory(GetCategoryName(), GetDgnDb());
+            if (sourceCat.IsValid())
+                {
+                ElementImporter importer(context);
+                importer.ImportElement(nullptr, destDb.GetDictionaryModel(), *sourceCat);
+                }
+            }
+        }
+
+    if (!UsesTemporaryModel())
+        {
+        DgnDbStatus status;
+        if (!DgnModel::Import(&status, GetModel(), context).IsValid())
+            return status;
+        }
+
+    return DgnDbStatus::Success;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+DgnDbStatus ComponentDef::ImportVariations(DgnModelR destVariationsModel, DgnModelId sourceVariationsModelId, DgnImportContext& context, bvector<DgnElementId> const& variationFilter)
+    {
+    //  Check that destination model is compatible with the import context
+    if (&destVariationsModel.GetDgnDb() != &context.GetDestinationDb())
+        return DgnDbStatus::WrongDgnDb;
+
+    // Check that this component definition has already been imported into the destination Db
+        {
+        auto destClass = destVariationsModel.GetDgnDb().Schemas().GetECClass(GetECClass().GetSchema().GetName().c_str(), GetECClass().GetName().c_str());
+        if (nullptr == destClass)
+            return DgnDbStatus::BadSchema;
+        if (!From(nullptr, destVariationsModel.GetDgnDb(), *destClass).IsValid())
+            return DgnDbStatus::WrongDgnDb;
+        }
+
+    ElementImporter importer(context);
+
+    EC::ECSqlStatement selectInstancesOfComponent;
+    selectInstancesOfComponent.Prepare(context.GetSourceDb(), "SELECT ECInstanceId FROM " DGN_SCHEMA(DGN_CLASSNAME_Element) " WHERE(ECClassId=? and ModelId=?)");
+    selectInstancesOfComponent.BindInt64(1, GetECClass().GetId());
+    selectInstancesOfComponent.BindId(2, sourceVariationsModelId);
+    while (BE_SQLITE_ROW == selectInstancesOfComponent.Step())
+        {
+        DgnElementId sourceElementId = selectInstancesOfComponent.GetValueId<DgnElementId>(0);
+
+        if (!variationFilter.empty() && variationFilter.end() != std::find(variationFilter.begin(), variationFilter.end(), sourceElementId))
+            continue;
+
+        DgnElementCPtr sourceVariation = context.GetSourceDb().Elements().GetElement(sourceElementId);
+        if (!sourceVariation.IsValid())
+            continue;
+
+        if (!IsComponentVariationCode(sourceVariation->GetCode()))
+            continue;
+
+        DgnDbStatus status;
+        DgnElementCPtr destCatalogItem = importer.ImportElement(&status, destVariationsModel, *sourceVariation);
+        if (!destCatalogItem.IsValid())
+            return status;
+        }
+
+    return DgnDbStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      10/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void ComponentDef::QueryVariations(bvector<DgnElementId>& variations, DgnModelId variationsModelId)
+    {
+    EC::ECSqlStatement selectInstancesOfComponent;
+    selectInstancesOfComponent.Prepare(GetDgnDb(), "SELECT ECInstanceId FROM " DGN_SCHEMA(DGN_CLASSNAME_Element) " WHERE(ECClassId=? and ModelId=?)");
+    selectInstancesOfComponent.BindInt64(1, m_class.GetId());
+    selectInstancesOfComponent.BindId(2, variationsModelId);
+    while (BE_SQLITE_ROW == selectInstancesOfComponent.Step())
+        {
+        DgnElementId instanceId = selectInstancesOfComponent.GetValueId<DgnElementId>(0);
+
+        DgnElementCPtr variation = GetDgnDb().Elements().GetElement(instanceId);
+        if (!variation.IsValid())
+            continue;
+
+        if (!IsComponentVariationCode(variation->GetCode()))
+            continue;
+
+        variations.push_back(instanceId);
+        }
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      10/15
