@@ -7,15 +7,17 @@
 +--------------------------------------------------------------------------------------*/
 #include <ECObjects/ECObjectsAPI.h>
 #include <Bentley/BeFileName.h>
+#include <Bentley/stdcxx/bvector.h>
+#include <Bentley/stdcxx/rw/bpair.h>
+#include <BeXml/BeXml.h>
+#include <Bentley/BeStringUtilities.h>
 #include <Logging/bentleylogging.h>
 #include <windows.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <wchar.h>
-#include <Bentley/stdcxx/bvector.h>
 
 USING_NAMESPACE_BENTLEY_EC
-using namespace std;
 
 namespace {
 	BentleyApi::NativeLogging::ILogger* s_logger = BentleyApi::NativeLogging::LoggingManager::GetLogger("SchemaConverter");
@@ -34,7 +36,31 @@ namespace {
 	//---------------------------------------------------------------------------------------
 	// @bsimethod                                                   BentleySystems
 	//---------------------------------------------------------------------------------------
-	static int ConvertSchema(BeFileNameCR ecSchemaFile, BeFileNameCR outputFile, bvector<BeFileName> referenceDirectories, int version, bool all, int refVersion)
+	static bpair<uint32_t, uint32_t> GetVersionChanges(BeFileNameCR schemaFile, int version)
+		{
+		Utf8CP ECXML_URI = "http://www.bentley.com/schemas/Bentley.ECXML";
+		BeXmlStatus status;
+		BeXmlDomPtr xmlDom = BeXmlDom::CreateAndReadFromFile(status, schemaFile.GetName());
+		BeXmlNodeP rootNode = static_cast<BeXmlNodeP>(xmlDocGetRootElement(&(xmlDom->GetDocument())));
+		Utf8String schemaNamespace(rootNode->GetNamespace());
+		Utf8String schemaVersion = schemaNamespace.substr(strlen(ECXML_URI) + 1);
+		int ecXmlMajorVersion, ecXmlMinorVersion, major=0, minor=0;
+		sscanf(schemaVersion.c_str(), "%d.%d", &ecXmlMajorVersion, &ecXmlMinorVersion);
+		
+		if (version > ecXmlMajorVersion)
+			{
+			major++;
+			minor=0;
+			}
+		if (version == ecXmlMajorVersion)
+			minor++;
+
+		return bpair<uint32_t, uint32_t>(major, minor);
+		}
+	//---------------------------------------------------------------------------------------
+	// @bsimethod                                                   BentleySystems
+	//---------------------------------------------------------------------------------------
+	static int ConvertSchema(BeFileNameCR ecSchemaFile, BeFileNameCR outputDirectory, bvector<BeFileName> referenceDirectories, int version, bool all, int refVersion)
 		{		
 		ECSchemaReadContextPtr contextPtr = ECSchemaReadContext::CreateContext();
 		contextPtr->AddSchemaPath(ecSchemaFile.GetDirectoryName().GetName());
@@ -44,6 +70,21 @@ namespace {
 		SchemaReadStatus readSchemaStatus = ECSchema::ReadFromXmlFile(schema, ecSchemaFile.GetName(), *contextPtr);
 		if (SchemaReadStatus::Success != readSchemaStatus)
 			return (int)readSchemaStatus;
+		
+		bpair<uint32_t, uint32_t> versions = GetVersionChanges(ecSchemaFile, version);
+		schema->SetVersionMajor(schema->GetVersionMajor() + versions.first);
+		schema->SetVersionMinor(schema->GetVersionMinor() + versions.second);
+		WString schemaName;
+		schemaName.AssignUtf8(schema->GetFullSchemaName().c_str());
+		schemaName += L".ecschema.xml";
+		BeFileName outputSchemaFile(nullptr, outputDirectory.GetName(), schemaName.c_str(), nullptr);
+		if (BeStringUtilities::Wcsicmp(ecSchemaFile.GetName(), outputSchemaFile.GetName()) == 0)
+			{
+			s_logger->infov(L"Warning: Can't overwrite the file '%ls'.", ecSchemaFile.GetName());
+			s_logger->infov(L"Process terminated!!!");
+			return -1;
+			}
+		
 		if (all)
 			refVersion=version;
 		if (refVersion != 0)
@@ -51,17 +92,19 @@ namespace {
 			for (auto ref : schema->GetReferencedSchemas())
 				{
 				ECSchemaPtr refSchema = ref.second;
+				refSchema->SetVersionMajor(refSchema->GetVersionMajor() + versions.first);
+				refSchema->SetVersionMinor(refSchema->GetVersionMinor() + versions.second);
 				WString s;
 				s.AssignUtf8(refSchema->GetFullSchemaName().c_str());
 				s += L".ecschema.xml";
-				BeFileName refoutfile(nullptr, outputFile.GetDirectoryName().GetName(), s.c_str(), nullptr);
-				if(0 != (int)refSchema->WriteToXmlFile(refoutfile.GetName(), refVersion, 0))
+				BeFileName referenceSchemaOutputFile(nullptr, outputSchemaFile.GetDirectoryName().GetName(), s.c_str(), nullptr);
+				if(0 != (int)refSchema->WriteToXmlFile(referenceSchemaOutputFile.GetName(), refVersion, 0))
 					return -1;
 				}
 			}
 
-		s_logger->infov(L"Saving ECv3 version of the schema in directory '%ls'", outputFile.GetDirectoryName());
-		return (int)schema->WriteToXmlFile(outputFile.GetName(), version, 0);
+		s_logger->infov(L"Saving ECv3 version of the schema in directory '%ls'", outputDirectory.GetName());
+		return (int)schema->WriteToXmlFile(outputSchemaFile.GetName(), version, 0);
 		}
 }
 
@@ -183,18 +226,6 @@ int main(int argc, char** argv)
         fprintf(stderr, "Could not load logging config file");
         return -1;
         }
-
-	BeFileName inputFileName;
-	inputFileName.AssignUtf8(input);
-	BeFileName outputDirectory;
-	outputDirectory.AssignUtf8(output);
-	BeFileName outputFile(nullptr, outputDirectory.GetName(), inputFileName.GetFileNameAndExtension().c_str(), nullptr);
-	if (wcscmp(inputFileName.GetDirectoryName(), outputFile.GetDirectoryName()) == 0)
-		{
-		fprintf(stderr, "Warning: Can't overwrite the file '%ls'.",
-				inputFileName.GetFileNameAndExtension().c_str());
-			return -1;
-		}
 	
     BeFileName exePath(exePathW);
     BeFileName workingDirectory(exePath.GetDirectoryName());
@@ -206,8 +237,11 @@ int main(int argc, char** argv)
     
     ECSchemaReadContext::Initialize(workingDirectory);
     s_logger->infov(L"Initializing ECSchemaReadContext to '%ls'", workingDirectory);
-	s_logger->infov(L"Loading schema '%ls' for conversion to ECv3", inputFileName);
 
+	BeFileName inputFileName;
+	inputFileName.AssignUtf8(input);
+	BeFileName outputDirectory;
+	outputDirectory.AssignUtf8(output);
 	bvector<BeFileName> refDirectories;
 	for (size_t i = 0; i < directories.size(); i++)
 		{
@@ -216,7 +250,7 @@ int main(int argc, char** argv)
 		refDirectories.push_back(temp);
 		temp.Clear();
 		}
-	
-	return ConvertSchema(inputFileName, outputFile, refDirectories, version, all, refversion);
+	s_logger->infov(L"Loading schema '%ls' for conversion to ECv3", inputFileName.GetName());
+	return ConvertSchema(inputFileName, outputDirectory, refDirectories, version, all, refversion);
     }
 
