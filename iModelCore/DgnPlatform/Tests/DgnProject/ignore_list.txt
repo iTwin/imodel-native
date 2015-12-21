@@ -30,3 +30,4 @@ ElementGeometryBuilderTests.CreateElement2d     # UmarH -- WIP Domain imlementat
 ElementGeomPartTests.GeomPart2d                 # UmarH -- WIP Domain imlementation merge and test clean up
 
 ChangeSummaryTestFixture.ElementChildRelationshipChanges # Notified Raman
+DgnScriptTest.CRUD # notified Sam
