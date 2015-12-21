@@ -321,8 +321,8 @@ ECSqlStatus PrimitiveArrayToColumnECSqlBinder::ArrayElementBinder::VerifyType(Pr
     {
     if (m_arrayTypeInfo.GetPrimitiveType() != type)
         {
-        auto expectedTypeName = ExpHelper::ToString(m_arrayTypeInfo.GetPrimitiveType());
-        auto providedTypeName = ExpHelper::ToString(type);
+        Utf8CP expectedTypeName = ExpHelper::ToString(m_arrayTypeInfo.GetPrimitiveType());
+        Utf8CP providedTypeName = ExpHelper::ToString(type);
 
         m_ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Primitive array element value type is incorrect. Expecting '%s' and user provided '%s' which does not match.", expectedTypeName, providedTypeName);
         return ECSqlStatus::Error;
@@ -337,9 +337,7 @@ ECSqlStatus PrimitiveArrayToColumnECSqlBinder::ArrayElementBinder::VerifyType(Pr
 ECSqlStatus PrimitiveArrayToColumnECSqlBinder::ArrayElementBinder::SetValue(ECValueCR value)
     {
     if (m_instance->SetValue(m_arrayPropertyIndex, value, m_arrayElementIndex) == ECObjectsStatus::Success)
-        {
         return ECSqlStatus::Success;
-        }
 
     BeAssert(false && "Failed to set value of array element");
     return ECSqlStatus::Error;

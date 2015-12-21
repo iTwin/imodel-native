@@ -1179,6 +1179,15 @@ ECSqlTestDataset ECSqlSelectTestDataset::FunctionTests( int rowCountPerClass )
     ecsql = "SELECT count(I) FROM ecsql.PSA";
     ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 1, 1);
 
+    ecsql = "SELECT count(distinct I) FROM ecsql.PSA";
+    ECSqlTestFrameworkHelper::AddSelect(dataset, ecsql, 1, 1);
+
+    ecsql = "SELECT count(distinct I, L) FROM ecsql.PSA p";
+    ECSqlTestFrameworkHelper::AddPrepareFailing(dataset, ecsql, ECSqlExpectedResult::Category::Invalid);
+
+    ecsql = "SELECT count(distinct (I, L)) FROM ecsql.PSA p";
+    ECSqlTestFrameworkHelper::AddPrepareFailing(dataset, ecsql, ECSqlExpectedResult::Category::Invalid);
+
     ecsql = "SELECT AVG (I) FROM ecsql.PSA";
     ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 1, 1);
 
@@ -2871,9 +2880,6 @@ ECSqlTestDataset ECSqlSelectTestDataset::SubqueryTests( int rowCountPerClass )
     
     ecsql = "SELECT * FROM (SELECT I FROM ecsql.P WHERE COUNT(S)>1)";
     ECSqlTestFrameworkHelper::AddPrepareFailing (dataset, ecsql, ECSqlExpectedResult::Category::Invalid, "WHERE clause can't be used with aggregate functions.");
-
-    ecsql = "SELECT COUNT(?) FROM ecsql.PSA WHERE (SELECT I FROM ecsql.PSA WHERE I=?)";
-    ECSqlTestFrameworkHelper::AddPrepareFailing (dataset, ecsql, ECSqlExpectedResult::Category::Invalid, "Parameter binding required.");
 
     return dataset;
     }

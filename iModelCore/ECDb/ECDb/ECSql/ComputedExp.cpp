@@ -268,7 +268,7 @@ bool BinaryBooleanExp::ContainsStructArrayProperty(ECClassCR ecclass)
 //+---------------+---------------+---------------+---------------+---------------+--------
 void BinaryBooleanExp::_DoToECSql(Utf8StringR ecsql) const
     {
-    ecsql.append(GetLeftOperand()->ToECSql()).append(" ").append(ExpHelper::ToString(m_op)).append(" ");
+    ecsql.append(GetLeftOperand()->ToECSql()).append(" ").append(ExpHelper::ToSql(m_op)).append(" ");
 
     ComputedExp const* rhs = GetRightOperand();
     const bool rhsNeedsParens = m_op == BooleanSqlOperator::NotIn || m_op == BooleanSqlOperator::In;
@@ -288,7 +288,7 @@ void BinaryBooleanExp::_DoToECSql(Utf8StringR ecsql) const
 Utf8String BinaryBooleanExp::_ToString() const 
     {
     Utf8String str ("BinaryBoolean [Operator: ");
-    str.append (ExpHelper::ToString (m_op)).append ("]");
+    str.append (ExpHelper::ToSql (m_op)).append ("]");
     return str;
     }
 

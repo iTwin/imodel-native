@@ -25,17 +25,17 @@ private:
     ~ExpHelper ();
 
 public:
-    static BentleyStatus ToPrimitiveType (ECN::PrimitiveType& primitiveType, Utf8StringCR type);
-    static Utf8CP ToString(ECN::PrimitiveType type);
-    static Utf8CP ToString(SqlCompareListType type);
-    static Utf8CP ToString(JoinDirection direction);
-    static Utf8CP ToString(ECSqlJoinType joinType);
-    static Utf8CP ToString(SqlSetQuantifier setQuantifier);
-    static Utf8CP ToString(SubqueryTestOperator op);
-    static Utf8CP ToString(BinarySqlOperator op);
-    static Utf8CP ToString(BooleanSqlOperator op);
-    static Utf8CP ToString(UnarySqlOperator op);
-    static Utf8CP ToString(ECSqlType);
+    static BentleyStatus ToPrimitiveType (ECN::PrimitiveType&, Utf8StringCR type);
+    static Utf8CP ToString(ECN::PrimitiveType);
+    static Utf8CP ToSql(SqlCompareListType);
+    static Utf8CP ToECSql(JoinDirection);
+    static Utf8CP ToSql(ECSqlJoinType);
+    static Utf8CP ToSql(SqlSetQuantifier);
+    static Utf8CP ToSql(SubqueryTestOperator);
+    static Utf8CP ToSql(BinarySqlOperator);
+    static Utf8CP ToSql(BooleanSqlOperator);
+    static Utf8CP ToSql(UnarySqlOperator);
+    static Utf8CP ToSql(ECSqlType);
     };
 
 

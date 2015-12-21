@@ -56,7 +56,7 @@ AllOrAnyExp::AllOrAnyExp(unique_ptr<ValueExp> operand, BooleanSqlOperator op, Sq
 void AllOrAnyExp::_DoToECSql(Utf8StringR ecsql) const
     {
     ecsql.append(GetOperand()->ToECSql()).append(" ");
-    ecsql.append(ExpHelper::ToString(m_operator)).append(" ").append(ExpHelper::ToString(m_type)).append(" ");
+    ecsql.append(ExpHelper::ToSql(m_operator)).append(" ").append(ExpHelper::ToSql(m_type)).append(" ");
     ecsql.append(GetSubquery()->ToECSql());
     }
 
@@ -66,7 +66,7 @@ void AllOrAnyExp::_DoToECSql(Utf8StringR ecsql) const
 Utf8String AllOrAnyExp::_ToString() const 
     {
     Utf8String str ("AllOrAny [Type: ");
-    str.append (ExpHelper::ToString (m_type)).append (", Operator: ").append (ExpHelper::ToString (m_operator)).append ("]");
+    str.append (ExpHelper::ToSql (m_type)).append (", Operator: ").append (ExpHelper::ToSql (m_operator)).append ("]");
     return str;
     }
 
@@ -765,7 +765,7 @@ Exp::FinalizeParseStatus SingleSelectStatementExp::_FinalizeParsing(ECSqlParseCo
 Utf8String SingleSelectStatementExp::_ToString() const 
     {
     Utf8String str ("Select [Modifier: ");
-    str.append (ExpHelper::ToString (m_selectionType)).append ("]");
+    str.append (ExpHelper::ToSql (m_selectionType)).append ("]");
     return str;
     }
 
@@ -776,7 +776,7 @@ Utf8String SingleSelectStatementExp::_ToECSql() const
     {
     Utf8String tmp ("SELECT ");
 
-    Utf8String selectionType = ExpHelper::ToString(GetSelectionType());
+    Utf8String selectionType = ExpHelper::ToSql(GetSelectionType());
     if (!selectionType.empty())
         tmp.append (selectionType).append (" ");
 
@@ -876,7 +876,7 @@ SubqueryTestExp::SubqueryTestExp (SubqueryTestOperator op, std::unique_ptr<Subqu
 //+---------------+---------------+---------------+---------------+---------------+------
 void SubqueryTestExp::_DoToECSql(Utf8StringR ecsql) const
     {
-    ecsql.append(ExpHelper::ToString(m_op)).append(" ").append(GetQuery ()->ToECSql());
+    ecsql.append(ExpHelper::ToSql(m_op)).append(" ").append(GetQuery ()->ToECSql());
     }
 
 //-----------------------------------------------------------------------------------------
@@ -885,7 +885,7 @@ void SubqueryTestExp::_DoToECSql(Utf8StringR ecsql) const
 Utf8String SubqueryTestExp::_ToString() const 
     {
     Utf8String str ("SubqueryTest [Operator: ");
-    str.append (ExpHelper::ToString (m_op)).append ("]");
+    str.append (ExpHelper::ToSql (m_op)).append ("]");
     return str;
     }
 

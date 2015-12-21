@@ -1469,15 +1469,6 @@ ECSqlStatus ECSqlExpPreparer::PrepareSetFunctionCallExp(NativeSqlBuilder::List& 
         nativeSql.AppendParenLeft();
 
     const SetFunctionCallExp::Function function = exp.GetFunction();
-
-    if (function == SetFunctionCallExp::Function::Count)
-        {
-        //We simply use * as this is the same semantically and it is faster anyways in SQLite
-        nativeSql.Append(exp.GetFunctionName()).AppendParenLeft().Append(Exp::ASTERISK_TOKEN).AppendParenRight();
-        nativeSqlSnippets.push_back(move(nativeSql));
-        return ECSqlStatus::Success;
-        }
-
     const bool isAnyEveryOrSome = function == SetFunctionCallExp::Function::Any ||
         function == SetFunctionCallExp::Function::Every ||
         function == SetFunctionCallExp::Function::Some;

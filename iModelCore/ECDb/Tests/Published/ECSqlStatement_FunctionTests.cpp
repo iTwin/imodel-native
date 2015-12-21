@@ -95,4 +95,65 @@ TEST_F(ECSqlStatementTestFixture, BuiltinFunctions)
         ASSERT_EQ(expectedResult.m_returnType, actualColumnType.GetPrimitiveType()) << ecsql;
         }
     }
+
+//---------------------------------------------------------------------------------------
+// @bsiclass                                     Krischan.Eberle                 12/15
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlStatementTestFixture, SelectCountDistinct)
+    {
+    ECDbR ecdb = SetupECDb("ecsqlbuiltinfunctiontest.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"), 0, ECDb::OpenParams(Db::OpenMode::ReadWrite));
+
+    auto getCount = [] (ECDbCR ecdb, Utf8CP ecsql)
+        {
+        ECSqlStatement stmt;
+        if (ECSqlStatus::Success != stmt.Prepare(ecdb, ecsql))
+            return -1;
+
+        if (BE_SQLITE_ROW != stmt.Step())
+            return -1;
+
+        return stmt.GetValueInt(0);
+        };
+
+    {
+    //create the following data
+    //I|S
+    //---
+    //1|'1'
+    //2|'1'
+    //1|'2'
+    //2|'3'
+    //2|'3'
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ecsql.P(I,S) VALUES(?,?)"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt(1, 1));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(2, "1", IECSqlBinder::MakeCopy::Yes));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    stmt.Reset();
+    stmt.ClearBindings();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt(1, 2));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(2, "1", IECSqlBinder::MakeCopy::Yes));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    stmt.Reset();
+    stmt.ClearBindings();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt(1, 1));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(2, "2", IECSqlBinder::MakeCopy::Yes));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    stmt.Reset();
+    stmt.ClearBindings();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt(1, 2));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(2, "3", IECSqlBinder::MakeCopy::Yes));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    stmt.Reset();
+    stmt.ClearBindings();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt(1, 2));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(2, "3", IECSqlBinder::MakeCopy::Yes));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    }
+
+    ASSERT_EQ(5, getCount(ecdb, "SELECT count(*) from ecsql.P"));
+    ASSERT_EQ(5, getCount(ecdb, "SELECT count(distinct ECInstanceId) from ecsql.P"));
+    ASSERT_EQ(2, getCount(ecdb, "SELECT count(distinct I) from ecsql.P"));
+    ASSERT_EQ(3, getCount(ecdb, "SELECT count(distinct S) from ecsql.P"));
+    }
 END_ECDBUNITTESTS_NAMESPACE
