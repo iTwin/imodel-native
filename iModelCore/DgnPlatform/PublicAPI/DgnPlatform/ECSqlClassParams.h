@@ -86,11 +86,11 @@ public:
     void Initialize(Utf8StringCR fullClassName, ECSqlClassParamsCR ecSqlParams);
     bool IsInitialized() const { return m_initialized; }
 
-    Utf8StringCR GetInsertECSql() const { return m_insert; }
+    Utf8String GetInsertECSql(DgnDbCR dgndb, DgnClassId classId) const;
     Utf8StringCR GetSelectECSql() const { return m_select; }
     Utf8StringCR GetUpdateECSql() const { return m_update; }
 
-    BeSQLite::EC::CachedECSqlStatementPtr GetInsertStmt(DgnDbCR dgndb) const;
+    BeSQLite::EC::CachedECSqlStatementPtr GetInsertStmt(DgnDbCR dgndb, DgnClassId classId) const;
     BeSQLite::EC::CachedECSqlStatementPtr GetSelectStmt(DgnDbCR dgndb, BeSQLite::EC::ECInstanceId id) const;
     BeSQLite::EC::CachedECSqlStatementPtr GetUpdateStmt(DgnDbCR dgndb, BeSQLite::EC::ECInstanceId id) const;
 

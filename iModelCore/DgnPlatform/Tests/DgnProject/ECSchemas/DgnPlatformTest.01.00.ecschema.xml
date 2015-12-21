@@ -143,5 +143,9 @@
         </ECCustomAttributes>
         <BaseClass>dgn:PhysicalElement</BaseClass>
     </ECClass>
+
+    <ECClass typeName="TestElementWithNoHandler" isDomainClass="True">
+        <BaseClass>TestElement</BaseClass>
+    </ECClass>
 </ECSchema>
 
