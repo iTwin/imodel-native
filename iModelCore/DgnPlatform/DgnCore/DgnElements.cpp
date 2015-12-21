@@ -1414,7 +1414,7 @@ DgnElements::ElementSelectStatement DgnElements::GetPreparedSelectStatement(DgnE
 CachedECSqlStatementPtr DgnElements::GetPreparedInsertStatement(DgnElementR el) const
     {
     // Not bothering to cache per handler...use our general-purpose ECSql statement cache
-    return el.GetElementHandler().GetECSqlClassInfo().GetInsertStmt(GetDgnDb());
+    return el.GetElementHandler().GetECSqlClassInfo().GetInsertStmt(GetDgnDb(), el.GetElementClassId());
     }
 
 /*---------------------------------------------------------------------------------**//**
