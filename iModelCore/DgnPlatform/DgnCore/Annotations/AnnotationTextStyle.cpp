@@ -9,6 +9,8 @@
 #include <DgnPlatform/Annotations/Annotations.h>
 #include <DgnPlatformInternal/DgnCore/Annotations/AnnotationTextStylePersistence.h>
 
+template<typename T> static bool isEnumFlagSet(T testBit, T options) { return 0 != ((int)options & (int)testBit); }
+
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
 using namespace flatbuffers;
 
@@ -103,7 +105,7 @@ DgnDbStatus AnnotationTextStyle::_ReadSelectParams(BeSQLite::EC::ECSqlStatement&
 static DgnDbStatus bindParams(BeSQLite::EC::ECSqlStatement& stmt, AnnotationTextStyleCR style)
     {
     bvector<Byte> data;
-    if (SUCCESS != AnnotationTextStylePersistence::EncodeAsFlatBuf(data, style))
+    if (SUCCESS != AnnotationTextStylePersistence::EncodeAsFlatBuf(data, style, AnnotationTextStylePersistence::FlatBufEncodeOptions::Default))
         return DgnDbStatus::BadArg;
 
     if (ECSqlStatus::Success != stmt.BindText(stmt.GetParameterIndex(PROP_Description), style.GetDescription().c_str(), IECSqlBinder::MakeCopy::No))
@@ -375,7 +377,7 @@ BentleyStatus AnnotationTextStylePersistence::EncodeAsFlatBuf(FB::AnnotationText
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     06/2014
 //---------------------------------------------------------------------------------------
-BentleyStatus AnnotationTextStylePersistence::EncodeAsFlatBuf(bvector<Byte>& buffer, AnnotationTextStyleCR style)
+BentleyStatus AnnotationTextStylePersistence::EncodeAsFlatBuf(bvector<Byte>& buffer, AnnotationTextStyleCR style, FlatBufEncodeOptions options)
     {
     FlatBufferBuilder encoder;
     
@@ -384,7 +386,7 @@ BentleyStatus AnnotationTextStylePersistence::EncodeAsFlatBuf(bvector<Byte>& buf
 
     //.............................................................................................
     FB::AnnotationTextStyleSetters setters;
-    POSTCONDITION(SUCCESS == EncodeAsFlatBuf(setters, style.m_data), ERROR);
+    POSTCONDITION(SUCCESS == EncodeAsFlatBuf(setters, style.m_data, options), ERROR);
     
     FB::AnnotationTextStyleSetterVectorOffset settersOffset;
     if (!setters.empty())

@@ -7,6 +7,8 @@
 #include <DgnPlatform/Annotations/Annotations.h>
 #include <DgnPlatformInternal/DgnCore/Annotations/AnnotationLeaderStylePersistence.h>
 
+template<typename T> static bool isEnumFlagSet(T testBit, T options) { return 0 != ((int)options & (int)testBit); }
+
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
 using namespace flatbuffers;
 
@@ -95,7 +97,7 @@ DgnDbStatus AnnotationLeaderStyle::_ReadSelectParams(BeSQLite::EC::ECSqlStatemen
 static DgnDbStatus bindParams(BeSQLite::EC::ECSqlStatement& stmt, AnnotationLeaderStyleCR style)
     {
     bvector<Byte> data;
-    if (SUCCESS != AnnotationLeaderStylePersistence::EncodeAsFlatBuf(data, style))
+    if (SUCCESS != AnnotationLeaderStylePersistence::EncodeAsFlatBuf(data, style, AnnotationLeaderStylePersistence::FlatBufEncodeOptions::Default))
         return DgnDbStatus::BadArg;
 
     if (ECSqlStatus::Success != stmt.BindText(stmt.GetParameterIndex(PROP_Description), style.GetDescription().c_str(), IECSqlBinder::MakeCopy::No))
@@ -337,7 +339,7 @@ BentleyStatus AnnotationLeaderStylePersistence::EncodeAsFlatBuf(FB::AnnotationLe
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     06/2014
 //---------------------------------------------------------------------------------------
-BentleyStatus AnnotationLeaderStylePersistence::EncodeAsFlatBuf(bvector<Byte>& buffer, AnnotationLeaderStyleCR style)
+BentleyStatus AnnotationLeaderStylePersistence::EncodeAsFlatBuf(bvector<Byte>& buffer, AnnotationLeaderStyleCR style, FlatBufEncodeOptions options)
     {
     FlatBufferBuilder encoder;
     
@@ -346,7 +348,7 @@ BentleyStatus AnnotationLeaderStylePersistence::EncodeAsFlatBuf(bvector<Byte>& b
 
     //.............................................................................................
     FB::AnnotationLeaderStyleSetters setters;
-    POSTCONDITION(SUCCESS == EncodeAsFlatBuf(setters, style.m_data), ERROR);
+    POSTCONDITION(SUCCESS == EncodeAsFlatBuf(setters, style.m_data, options), ERROR);
 
     FB::AnnotationLeaderStyleSetterVectorOffset settersOffset;
     if (!setters.empty())

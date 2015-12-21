@@ -7,6 +7,8 @@
 #include <DgnPlatform/Annotations/Annotations.h>
 #include <DgnPlatformInternal/DgnCore/Annotations/TextAnnotationSeedPersistence.h>
 
+template<typename T> static bool isEnumFlagSet(T testBit, T options) { return 0 != ((int)options & (int)testBit); }
+
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
 using namespace flatbuffers;
 
@@ -86,7 +88,7 @@ DgnDbStatus TextAnnotationSeed::_ReadSelectParams(BeSQLite::EC::ECSqlStatement& 
 static DgnDbStatus bindParams(BeSQLite::EC::ECSqlStatement& stmt, TextAnnotationSeedCR style)
     {
     bvector<Byte> data;
-    if (SUCCESS != TextAnnotationSeedPersistence::EncodeAsFlatBuf(data, style))
+    if (SUCCESS != TextAnnotationSeedPersistence::EncodeAsFlatBuf(data, style, TextAnnotationSeedPersistence::FlatBufEncodeOptions::Default))
         return DgnDbStatus::BadArg;
 
     if (ECSqlStatus::Success != stmt.BindText(stmt.GetParameterIndex(PROP_Description), style.GetDescription().c_str(), IECSqlBinder::MakeCopy::No))
@@ -298,7 +300,7 @@ BentleyStatus TextAnnotationSeedPersistence::EncodeAsFlatBuf(FB::TextAnnotationS
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     07/2014
 //---------------------------------------------------------------------------------------
-BentleyStatus TextAnnotationSeedPersistence::EncodeAsFlatBuf(bvector<Byte>& buffer, TextAnnotationSeedCR style)
+BentleyStatus TextAnnotationSeedPersistence::EncodeAsFlatBuf(bvector<Byte>& buffer, TextAnnotationSeedCR style, FlatBufEncodeOptions options)
     {
     FlatBufferBuilder encoder;
     
@@ -307,7 +309,7 @@ BentleyStatus TextAnnotationSeedPersistence::EncodeAsFlatBuf(bvector<Byte>& buff
 
     //.............................................................................................
     FB::TextAnnotationSeedSetters setters;
-    POSTCONDITION(SUCCESS == EncodeAsFlatBuf(setters, style.m_data), ERROR);
+    POSTCONDITION(SUCCESS == EncodeAsFlatBuf(setters, style.m_data, options), ERROR);
 
     FB::TextAnnotationSeedSetterVectorOffset settersOffset;
     if (!setters.empty())
