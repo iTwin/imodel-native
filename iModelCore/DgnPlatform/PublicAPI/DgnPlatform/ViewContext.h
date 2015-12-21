@@ -503,9 +503,12 @@ struct DynamicsContext : RenderContext
 //=======================================================================================
 struct DecorateContext : RenderContext
 {
+    friend struct DgnViewport;
+private:
     Render::Decorations& m_decorations;
-
     DecorateContext(DgnViewportR vp, Render::Decorations& decorations) : RenderContext(vp, DrawPurpose::Decorate), m_decorations(decorations) {}
+
+public:
     DGNPLATFORM_EXPORT void AddWorldDecoration(Render::GraphicR graphic, Render::OvrGraphicParamsCP ovr=nullptr);
     DGNPLATFORM_EXPORT void AddWorldOverlay(Render::GraphicR graphic, Render::OvrGraphicParamsCP ovr=nullptr);
     DGNPLATFORM_EXPORT void AddViewOverlay(Render::GraphicR graphic, Render::OvrGraphicParamsCP ovr=nullptr);

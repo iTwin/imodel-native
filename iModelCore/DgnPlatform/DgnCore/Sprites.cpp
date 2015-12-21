@@ -135,7 +135,7 @@ ISpriteP        SnapContext::GetSnapSprite(SnapMode snapMode)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    12/2014
 //---------------------------------------------------------------------------------------
-void RgbaSprite::LoadSprite()
+void RgbaSprite::_LoadSprite()
     {
     //  Base RgbaSprite does not support loading on demand, so it better already be loaded
     //  when this method is called.
@@ -199,7 +199,7 @@ RgbaSpritePtr NamedSprite::CreateFromPng(Utf8CP nameSpace, Utf8CP spriteName)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    09/2013
 //---------------------------------------------------------------------------------------
-void NamedSprite::LoadSprite()
+void NamedSprite::_LoadSprite()
     {
     if (m_isLoaded)
         return;
@@ -273,6 +273,5 @@ RgbaSprite::RgbaSprite()
     m_size.x = m_size.y = 0;
     }
 
-Byte const* RgbaSprite::_GetRgbaDefinition() { LoadSprite(); return m_rgbaBuffer.GetSize() > 0 ? m_rgbaBuffer.GetData() : nullptr; }
-void RgbaSprite::_GetSize(Point2d* size) {  LoadSprite(); *size = m_size;}
+Byte const* RgbaSprite::_GetRgbaDefinition() { _LoadSprite(); return m_rgbaBuffer.GetSize() > 0 ? m_rgbaBuffer.GetData() : nullptr; }
 
