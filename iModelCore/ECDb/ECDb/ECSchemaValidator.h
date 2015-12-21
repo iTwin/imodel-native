@@ -43,7 +43,6 @@ public:
         {
         CaseInsensitiveClassNames, //!< Names of ECClasses within one ECSchema must be case insensitive, i.e. must not only differ by case
         CaseInsensitivePropertyNames, //!< Names of ECProperties within one ECClass must be case insensitive, i.e. must not only differ by case
-        ConsistentClassHierarchy,
         NoPropertiesOfSameTypeAsClass, //!< Struct or array properties within an ECClass must not be of same type or derived type than the ECClass.
         SchemaNamespacePrefix,
         ValidRelationshipConstraints
@@ -299,42 +298,6 @@ struct ValidRelationshipConstraintsRule : ECSchemaValidationRule
     public:
         ValidRelationshipConstraintsRule();
         ~ValidRelationshipConstraintsRule() {}
-    };
-
-//=======================================================================================
-// @bsiclass                                                Krischan.Eberle      07/2015
-//+===============+===============+===============+===============+===============+======
-struct ConsistentClassHierarchyRule : ECSchemaValidationRule
-    {
-private:
-    //=======================================================================================
-    // @bsiclass                                                Krischan.Eberle      07/2015
-    //+===============+===============+===============+===============+===============+======
-    struct Error : ECSchemaValidationRule::Error
-        {
-    private:
-        std::vector<std::pair<ECN::ECClassCP, ECN::ECClassCP>> m_inconsistencies;
-        virtual Utf8String _ToString() const override;
-
-        static Utf8CP ClassTypeToString(ECN::ECClassType);
-
-    public:
-        explicit Error(Type ruleType) : ECSchemaValidationRule::Error(ruleType) {}
-        ~Error() {}
-
-        void AddInconsistency(ECN::ECClassCR baseClass, ECN::ECClassCR subclass);
-
-        bool HasInconsistencies() const { return !m_inconsistencies.empty(); }
-        };
-
-    mutable std::unique_ptr<Error> m_error;
-
-    virtual bool _ValidateSchema(ECN::ECSchemaCR schema, ECN::ECClassCR ecClass) override;
-    virtual std::unique_ptr<ECSchemaValidationRule::Error> _GetError() const override;
-    
-public:
-    ConsistentClassHierarchyRule();
-    ~ConsistentClassHierarchyRule() {}
     };
 
 //=======================================================================================
