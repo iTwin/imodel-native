@@ -9,6 +9,7 @@
 #include <DgnPlatform/DgnMarkupProject.h>
 #include <DgnPlatform/Annotations/TextAnnotationElement.h>
 #include <DgnPlatform/AnnotationTable.h>
+#include <DgnPlatform/VolumeElement.h>
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 

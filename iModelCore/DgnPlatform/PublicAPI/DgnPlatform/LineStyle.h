@@ -138,7 +138,7 @@ struct LsJsonHelpers
     static uint32_t GetUInt32(JsonValueCR json, CharCP fieldName, uint32_t defaultValue);
     static int32_t GetInt32(JsonValueCR json, CharCP fieldName, int32_t defaultValue);
     static uint64_t GetUInt64(JsonValueCR json, CharCP fieldName, uint64_t defaultValue);
-    static Utf8String GetString(JsonValueCR json, CharCP fieldName, char* defaultValue);
+    static Utf8String GetString(JsonValueCR json, CharCP fieldName, CharCP defaultValue);
     static LsComponentId GetComponentId(JsonValueCR json, CharCP typeName, CharCP idName, LsComponentType defaultType = LsComponentType::Internal);
 };
 
@@ -331,7 +331,7 @@ protected:
     void      CopyDescription (Utf8CP buffer);
     static void UpdateLsOkayForTextureGeneration(LsOkayForTextureGeneration&current, LsOkayForTextureGeneration const&newValue);
     virtual LsComponentPtr _Import(DgnImportContext& importer) const = 0;
-    void SaveToJson(Json::Value& result);
+    void SaveToJson(Json::Value& result) const;
 
 public:
     void ExtractDescription(JsonValueCR result);
@@ -425,6 +425,7 @@ private:
     Point2d             m_size;
     uint32_t            m_flags;
     double              m_trueWidth;
+    uint32_t            m_imageDataId;
     bvector<uint8_t>    m_image;
 
     LsRasterImageComponent(LsRasterImageComponentCR);
@@ -445,8 +446,8 @@ protected:
     virtual LsComponentPtr _Import(DgnImportContext& importer) const;
 
 public:
-    void SaveToJson(Json::Value& result, bvector<uint8_t>& imageData);
-    static LineStyleStatus CreateFromJson(LsRasterImageComponentP*, Json::Value const & jsonDef, bvector<uint8_t> const& imageData, LsLocationCP location);
+    void SaveToJson(Json::Value& result, bvector<uint8_t>& imageData) const;
+    static LineStyleStatus CreateFromJson(LsRasterImageComponentP*, Json::Value const & jsonDef, LsLocationCP location);
     static LsRasterImageComponent* LoadRasterImage  (LsComponentReader* reader);
     static BentleyStatus CreateRscFromDgnDb(V10RasterImage** rscOut, DgnDbR project, LsComponentId id);
 
@@ -498,7 +499,7 @@ protected:
 public:
     static LsSymbolComponent* LoadPointSym  (LsComponentReader* reader);
     static LsSymbolComponentPtr Create (LsLocation& location) { LsSymbolComponentP retval = new LsSymbolComponent (&location); retval->m_isDirty = true; return retval; }
-    void SaveToJson(Json::Value& result);
+    void SaveToJson(Json::Value& result) const;
     static LineStyleStatus CreateFromJson(LsSymbolComponentP*, Json::Value const & jsonDef, LsLocationCP location);
 
     void                SetColors           (bool colorByLevel, ColorDef lineColor, ColorDef fillColor);
@@ -533,7 +534,7 @@ public:
     virtual LsOkayForTextureGeneration _IsOkayForTextureGeneration() const override { return LsOkayForTextureGeneration::NoChangeRequired; }
     virtual void _StartTextureGeneration() const override {}
     DGNPLATFORM_EXPORT static void SaveSymbolDataToJson(Json::Value& result, DPoint3dCR base, DPoint3dCR size, DgnGeomPartId const& geomPartId, int32_t flags, double storedScale, 
-                                             bool colorBySubcategory, ColorDefR lineColor, ColorDefR fillColor, bool weightBySubcategory, int weight);
+                                             bool colorBySubcategory, ColorDefCR lineColor, ColorDefCR fillColor, bool weightBySubcategory, int weight);
 
 //__PUBLISH_SECTION_START__
 public:
@@ -717,7 +718,7 @@ public:
     static LsCompoundComponentPtr Create (LsLocation& location) { LsCompoundComponentP retval = new LsCompoundComponent (&location); retval->m_isDirty = true; return retval; }
     void            CalculateSize                       (DgnModelP modelRef);
 
-    void SaveToJson(Json::Value& result);
+    void SaveToJson(Json::Value& result) const;
     static LineStyleStatus CreateFromJson(LsCompoundComponentP*, Json::Value const & jsonDef, LsLocationCP location);
 
     virtual void    _PostProcessLoad            (DgnModelP modelRef) override;
@@ -936,7 +937,7 @@ protected:
 
 public:
 
-    void SaveToJson(Json::Value& result);
+    void SaveToJson(Json::Value& result) const;
     static LineStyleStatus CreateFromJson(LsStrokePatternComponentP*, Json::Value const & jsonDef, LsLocationCP location);
     static LsStrokePatternComponentP  LoadStrokePatternComponent    (LsComponentReader*reader);
     static LsStrokePatternComponentPtr Create                       (LsLocation& location) { LsStrokePatternComponentP retval = new LsStrokePatternComponent (&location); retval->m_isDirty = true; return retval; };
@@ -1151,7 +1152,7 @@ public:
     LsOkayForTextureGeneration VerifySymbols() const;
     LsOkayForTextureGeneration VerifySymbol(double& adjustment, double startingOffset, double patternLength, uint32_t strokeIndex) const;
 
-    void SaveToJson(Json::Value& result);
+    void SaveToJson(Json::Value& result) const;
     static LineStyleStatus CreateFromJson(LsPointComponentP*, Json::Value const & jsonDef, LsLocationCP location);
     DGNPLATFORM_EXPORT static void SaveLineCodeIdToJson(JsonValueR result, LsComponentId patternId);
     DGNPLATFORM_EXPORT static void SaveSymbolIdToJson(JsonValueR result, LsComponentId symbolId);
@@ -1619,8 +1620,6 @@ public:
     Utf8StringCR GetData() const { return m_data; }
     void SetData(Utf8CP value) { m_data.AssignOrClear(value); }
     
-    //  DgnFontCR ResolveFont() const { return DgnFontManager::ResolveFont(m_dgndb.Fonts().FindFontById(GetFontId())); }
-
     static DgnStyleId QueryId(DgnDbR db, Utf8CP name) { return DgnStyleId(db.Elements().QueryElementIdByCode(CreateCodeFromName(name)).GetValueUnchecked()); }
     static LineStyleElementCPtr Get(DgnDbR db, Utf8CP name) { return Get(db, QueryId(db, name)); }
     static LineStyleElementCPtr Get(DgnDbR db, DgnStyleId id) { return db.Elements().Get<LineStyleElement>(id); }
@@ -1651,6 +1650,7 @@ public:
 
     typedef ECSqlStatementIterator<Entry> Iterator;
 
+    static DgnStyleId ImportLineStyle(DgnStyleId srcStyleId, DgnImportContext& importer);
     DGNPLATFORM_EXPORT static Iterator MakeIterator(DgnDbR);
     DGNPLATFORM_EXPORT static size_t QueryCount(DgnDbR);
 };

@@ -124,7 +124,6 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnModel : RefCountedBase
     struct CreateParams
     {
         DgnDbR      m_dgndb;
-        DgnModelId  m_id;
         DgnClassId  m_classId;
         Code        m_code;
         Utf8String  m_label;
@@ -136,15 +135,15 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnModel : RefCountedBase
         //! @param[in] code The code for the DgnModel
         //! @param[in] label Label of the new DgnModel
         //! @param[in] inGuiList Controls the visibility of the new DgnModel in model lists shown to the user
-        //! @param[in] id Internal only, must be DgnModelId() to create a new DgnModel.
-        CreateParams(DgnDbR dgndb, DgnClassId classId, Code code, Utf8CP label = nullptr, bool inGuiList = true, DgnModelId id = DgnModelId()) :
-            m_dgndb(dgndb), m_id(id), m_classId(classId), m_code(code), m_inGuiList(inGuiList)
+        CreateParams(DgnDbR dgndb, DgnClassId classId, Code code, Utf8CP label = nullptr, bool inGuiList = true) :
+            m_dgndb(dgndb), m_classId(classId), m_code(code), m_inGuiList(inGuiList)
             {
             SetLabel(label);
             }
 
-        void SetLabel(Utf8CP label) { m_label.AssignOrClear(label); }
-        void SetInGuiList(bool inGuiList) { m_inGuiList = inGuiList; }
+        void SetCode(Code code) { m_code = code; }                    //!< Set the Code for models created with this CreateParams
+        void SetLabel(Utf8CP label) { m_label.AssignOrClear(label); } //!< Set the Label for models created with this CreateParams
+        void SetInGuiList(bool inGuiList) { m_inGuiList = inGuiList; } //!< Set the visibility of models created with this CreateParams in model lists shown to the user
 
         DGNPLATFORM_EXPORT void RelocateToDestinationDb(DgnImportContext&);
     };
@@ -177,7 +176,7 @@ private:
     void ReleaseAllElements();
 
     DgnDbStatus BindInsertAndUpdateParams(BeSQLite::EC::ECSqlStatement& statement);
-    DgnDbStatus Read();
+    DgnDbStatus Read(DgnModelId modelId);
 protected:
     DgnDbR          m_dgndb;
     DgnModelId      m_modelId;
@@ -634,7 +633,6 @@ struct EXPORT_VTABLE_ATTRIBUTE GeometricModel : DgnModel
         double         m_roundoffUnit;                 //!< unit lock roundoff val
         double         m_roundoffRatio;                //!< Unit roundoff ratio y to x (if 0 use Grid Ratio)
         double         m_formatterBaseDir;             //!< Base Direction used for Direction To/From String
-        double         m_azimuthAngle;                 //!< Azimuth angle.  CCW from y axis.
 
     public:
         DisplayInfo()
@@ -669,7 +667,6 @@ struct EXPORT_VTABLE_ATTRIBUTE GeometricModel : DgnModel
         void SetDirectionMode(DirectionMode value) { m_formatterFlags.m_directionMode = (uint32_t) value; }
         void SetDirectionClockwise(bool value) { m_formatterFlags.m_directionClockwise = value; }
         void SetDirectionBaseDir(double value) { m_formatterBaseDir = value; }
-        void SetAzimuthAngle(double azimuthAngle) { m_azimuthAngle = azimuthAngle; }
         DgnUnitFormat GetLinearUnitMode() const { return (DgnUnitFormat) m_formatterFlags.m_linearUnitMode; }
         PrecisionFormat GetLinearPrecision() const { return DoubleFormatter::ToPrecisionEnum((PrecisionType) m_formatterFlags.m_linearPrecType, m_formatterFlags.m_linearPrecision); }
         AngleMode GetAngularMode() const { return (AngleMode) m_formatterFlags.m_angularMode; }
@@ -681,7 +678,6 @@ struct EXPORT_VTABLE_ATTRIBUTE GeometricModel : DgnModel
         double GetRoundoffUnit() const { return m_roundoffUnit; }
         double GetRoundoffRatio() const { return m_roundoffRatio; }
         FormatterFlags GetFormatterFlags() const { return m_formatterFlags; }
-        double GetAzimuthAngle() const { return m_azimuthAngle; }
 
         //! Get the master units for this DgnModel.
         //! Master units are the major display units for coordinates in a DgnModel (e.g. "Meters", or "Feet").
@@ -714,16 +710,19 @@ struct EXPORT_VTABLE_ATTRIBUTE GeometricModel : DgnModel
         //! @param[in] label Label of the new DgnModel
         //! @param[in] displayInfo The DisplayInfo for the new DgnModel.
         //! @param[in] inGuiList Controls the visibility of the new DgnModel in model lists shown to the user
-        //! @param[in] id Internal only, must be DgnModelId() to create a new DgnModel.
-        CreateParams(DgnDbR dgndb, DgnClassId classId, Code code, Utf8CP label = nullptr, DisplayInfo displayInfo = DisplayInfo(), bool inGuiList = true, DgnModelId id = DgnModelId())
-            : T_Super(dgndb, classId, code, label, inGuiList, id), m_displayInfo(displayInfo)
+        CreateParams(DgnDbR dgndb, DgnClassId classId, Code code, Utf8CP label = nullptr, DisplayInfo displayInfo = DisplayInfo(), bool inGuiList = true)
+            : T_Super(dgndb, classId, code, label, inGuiList), m_displayInfo(displayInfo)
             {}
 
         //! @private
         //! This constructor is used only by the model handler to create a new instance, prior to calling ReadProperties on the model object
         CreateParams(DgnModel::CreateParams const& params) : T_Super(params) { }
 
+        DisplayInfo const& GetDisplayInfo() const { return m_displayInfo; } //!< Get the DisplayInfo
+        void SetDisplayInfo(DisplayInfo const& displayInfo) { m_displayInfo = displayInfo; } //!< Set the DisplayInfo
     };
+
+
 
 private:
     mutable DgnRangeTreeP m_rangeIndex;
@@ -738,10 +737,6 @@ protected:
     void ClearRangeIndex();
 
     virtual void _SetFilled() override {T_Super::_SetFilled(); AllocateRangeIndex();}
-
-    //! Get the Global Origin for this DgnMode.
-    //! The global origin is on offset that is added to all coordinate values stored in this model.
-    DGNPLATFORM_EXPORT virtual DPoint3d _GetGlobalOrigin() const;//!< @private
 
     //! Get the coordinate space in which the model's geometry is defined.
     virtual CoordinateSpace _GetCoordinateSpace() const = 0;
@@ -782,11 +777,6 @@ public:
     //! Get the AxisAlignedBox3d of the contents of this model.
     AxisAlignedBox3d QueryModelRange() const {return _QueryModelRange();}
 
-    //! Get the Global Origin for this model.
-    //! The global origin is an offset that is added to all coordinate values of this DgnModel when reporting them to the user.
-    //! @note all PhysicalModels have the same coordinate system and the same global origin.
-    DPoint3d GetGlobalOrigin() const {return _GetGlobalOrigin();}
-
     //! Get the coordinate space in which the model's geometry is defined.
     CoordinateSpace GetCoordinateSpace() const {return _GetCoordinateSpace();}
 
@@ -823,28 +813,14 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnModel2d : GeometricModel
     {
     DEFINE_T_SUPER(GeometricModel)
 
-private:
-    DgnDbStatus BindInsertAndUpdateParams(BeSQLite::EC::ECSqlStatement& statement);
-
 protected:
-    DPoint2d m_globalOrigin;    //!< Global Origin - all coordinates are offset by this value.
-
-    DGNPLATFORM_EXPORT virtual void _InitFrom(DgnModelCR other) override;
-
-    DGNPLATFORM_EXPORT DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement& statement, ECSqlClassParamsCR params) override;
-    DGNPLATFORM_EXPORT DgnDbStatus _BindInsertParams(BeSQLite::EC::ECSqlStatement& statement) override;
-    DGNPLATFORM_EXPORT DgnDbStatus _BindUpdateParams(BeSQLite::EC::ECSqlStatement& statement) override;
-
-    DPoint3d _GetGlobalOrigin() const override {return DPoint3d::From(m_globalOrigin);}
     DgnModel2dCP _ToDgnModel2d() const override {return this;}
 
     CoordinateSpace _GetCoordinateSpace() const override {return CoordinateSpace::Local;}
     DGNPLATFORM_EXPORT virtual DgnDbStatus _OnInsertElement(DgnElementR element);
 
 public:
-    void SetGlobalOrigin(DPoint2dCR org) {m_globalOrigin = org;}
-
-    explicit DgnModel2d(CreateParams const& params, DPoint2dCR origin=DPoint2d::FromZero()) : T_Super(params), m_globalOrigin(origin) {}
+    explicit DgnModel2d(CreateParams const& params, DPoint2dCR origin=DPoint2d::FromZero()) : T_Super(params) {}
     };
 
 //=======================================================================================
@@ -1226,12 +1202,14 @@ struct EXPORT_VTABLE_ATTRIBUTE SheetModel : DgnModel2d
         //! @param[in] label Label of the new DgnModel
         //! @param[in] displayInfo the Properties of the new SheetModel
         //! @param[in] inGuiList Controls the visibility of the new DgnModel in model lists shown to the user
-        //! @param[in] id the DgnModelId of thew new SheetModel. This should be DgnModelId() when creating a new model.
-        CreateParams(DgnDbR dgndb, DgnClassId classId, Code code, DPoint2d size, Utf8CP label = nullptr, DisplayInfo displayInfo = DisplayInfo(), bool inGuiList = true, DgnModelId id = DgnModelId()) :
-            T_Super(dgndb, classId, code, label, displayInfo, inGuiList, id), m_size(size)
+        CreateParams(DgnDbR dgndb, DgnClassId classId, Code code, DPoint2d size, Utf8CP label = nullptr, DisplayInfo displayInfo = DisplayInfo(), bool inGuiList = true) :
+            T_Super(dgndb, classId, code, label, displayInfo, inGuiList), m_size(size)
             {}
 
         explicit CreateParams(DgnModel::CreateParams const& params, DPoint2d size=DPoint2d::FromZero()) : T_Super(params), m_size(size) {}
+
+        DPoint2dCR GetSize() const { return m_size; } //!< Get the size of the SheetModel to be created, in meters. 
+        void SetSize(DPoint2dCR size) { m_size = size; } //!< Set the size of the SheetModel to be created, in meters. 
     };
 
 private:
@@ -1307,8 +1285,6 @@ namespace dgn_ModelHandler
     struct EXPORT_VTABLE_ATTRIBUTE Model2d : Model
     {
         MODELHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_Model2d, DgnModel2d, Model2d, Model, DGNPLATFORM_EXPORT)
-    protected:
-        DGNPLATFORM_EXPORT virtual void _GetClassParams(ECSqlClassParamsR params) override;
     };
 
     //! The ModelHandler for PhysicalModel
