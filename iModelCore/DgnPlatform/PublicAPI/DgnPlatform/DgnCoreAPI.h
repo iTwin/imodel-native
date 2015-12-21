@@ -48,8 +48,8 @@
 #include "DgnFont.h"
 #include "RenderMaterial.h"
 #include "DgnView.h"
-#include "VolumeElement.h"
 #include "ECSqlClassParams.h"
+
 
 //__PUBLISH_SECTION_END__
 #include "SnapContext.h"

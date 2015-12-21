@@ -249,7 +249,7 @@ BentleyStatus AnnotationTextBlockPersistence::EncodeAsFlatBuf(FB::AnnotationText
     {
     //.............................................................................................
     FB::AnnotationTextStyleSetters runOverrides;
-    POSTCONDITION(SUCCESS == AnnotationTextStylePersistence::EncodeAsFlatBuf(runOverrides, run.m_styleOverrides), ERROR);
+    POSTCONDITION(SUCCESS == AnnotationTextStylePersistence::EncodeAsFlatBuf(runOverrides, run.m_styleOverrides, AnnotationTextStylePersistence::FlatBufEncodeOptions::SettersAreOverrides), ERROR);
 
     FB::AnnotationTextStyleSetterVectorOffset runOverridesOffset;
     if (!runOverrides.empty())

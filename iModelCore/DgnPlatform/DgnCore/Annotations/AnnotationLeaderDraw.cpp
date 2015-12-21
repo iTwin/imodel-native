@@ -38,7 +38,8 @@ static void setStrokeSymbology(ViewContextR context, AnnotationColorType colorTy
     
     displayParams.SetWeight(weight);
     displayParams.SetFillDisplay(FillDisplay::Never);
-
+    displayParams.SetTransparency(0.0);
+    
     switch (colorType)
         {
         case AnnotationColorType::ByCategory: /* don't override */break;
