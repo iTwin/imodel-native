@@ -243,14 +243,15 @@ FB::TextAnnotationSeedSetters& setters,
 TextAnnotationSeedPropertyBagCR data,
 TextAnnotationSeedProperty tsProp,
 decltype(declval<FB::TextAnnotationSeedSetter>().key()) fbProp,
-decltype(declval<FB::TextAnnotationSeedSetter>().integerValue()) defaultValue
+decltype(declval<FB::TextAnnotationSeedSetter>().integerValue()) defaultValue,
+bool writeIfDefault
 )
     {
     if (!data.HasProperty(tsProp))
         return;
 
     auto value = data.GetIntegerProperty(tsProp);
-    if (value == defaultValue)
+    if (!writeIfDefault && (value == defaultValue))
         return;
 
     setters.push_back(FB::TextAnnotationSeedSetter(fbProp, value, 0.0));
@@ -265,14 +266,15 @@ decltype(declval<FB::TextAnnotationSeedSetter>().integerValue()) defaultValue
 // TextAnnotationSeedPropertyBagCR data,
 // TextAnnotationSeedProperty tsProp,
 // decltype(declval<FB::TextAnnotationSeedSetter>().key()) fbProp,
-// decltype(declval<FB::TextAnnotationSeedSetter>().realValue()) defaultValue
+// decltype(declval<FB::TextAnnotationSeedSetter>().realValue()) defaultValue,
+// bool writeIfDefault
 // )
 //     {
 //     if (!data.HasProperty(tsProp))
 //         return;
 
 //     auto value = data.GetRealProperty(tsProp);
-//     if (value == defaultValue)
+//     if (!writeIfDefault && (value == defaultValue))
 //         return;
 
 //     setters.push_back(FB::TextAnnotationSeedSetter(fbProp, 0, value));
@@ -281,11 +283,14 @@ decltype(declval<FB::TextAnnotationSeedSetter>().integerValue()) defaultValue
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     07/2014
 //---------------------------------------------------------------------------------------
-BentleyStatus TextAnnotationSeedPersistence::EncodeAsFlatBuf(FB::TextAnnotationSeedSetters& setters, TextAnnotationSeedPropertyBagCR data)
+BentleyStatus TextAnnotationSeedPersistence::EncodeAsFlatBuf(FB::TextAnnotationSeedSetters& setters, TextAnnotationSeedPropertyBagCR data) { return EncodeAsFlatBuf(setters, data, FlatBufEncodeOptions::Default); }
+BentleyStatus TextAnnotationSeedPersistence::EncodeAsFlatBuf(FB::TextAnnotationSeedSetters& setters, TextAnnotationSeedPropertyBagCR data, FlatBufEncodeOptions options)
     {
-    appendIntegerSetter(setters, data, TextAnnotationSeedProperty::FrameStyleId, FB::TextAnnotationSeedProperty_FrameStyleId, DEFAULT_FRAMESTYLEID_VALUE);
-    appendIntegerSetter(setters, data, TextAnnotationSeedProperty::LeaderStyleId, FB::TextAnnotationSeedProperty_LeaderStyleId, DEFAULT_LEADERSTYLEID_VALUE);
-    appendIntegerSetter(setters, data, TextAnnotationSeedProperty::TextStyleId, FB::TextAnnotationSeedProperty_TextStyleId, DEFAULT_TEXTSTYLEID_VALUE);
+    bool writeIfDefault = isEnumFlagSet(FlatBufEncodeOptions::SettersAreOverrides, options);
+
+    appendIntegerSetter(setters, data, TextAnnotationSeedProperty::FrameStyleId, FB::TextAnnotationSeedProperty_FrameStyleId, DEFAULT_FRAMESTYLEID_VALUE, writeIfDefault);
+    appendIntegerSetter(setters, data, TextAnnotationSeedProperty::LeaderStyleId, FB::TextAnnotationSeedProperty_LeaderStyleId, DEFAULT_LEADERSTYLEID_VALUE, writeIfDefault);
+    appendIntegerSetter(setters, data, TextAnnotationSeedProperty::TextStyleId, FB::TextAnnotationSeedProperty_TextStyleId, DEFAULT_TEXTSTYLEID_VALUE, writeIfDefault);
 
     return SUCCESS;
     }

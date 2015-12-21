@@ -308,14 +308,15 @@ FB::AnnotationTextStyleSetters& setters,
 AnnotationTextStylePropertyBagCR data,
 AnnotationTextStyleProperty tsProp,
 decltype(declval<FB::AnnotationTextStyleSetter>().key()) fbProp,
-decltype(declval<FB::AnnotationTextStyleSetter>().integerValue()) defaultValue
+decltype(declval<FB::AnnotationTextStyleSetter>().integerValue()) defaultValue,
+bool writeIfDefault
 )
     {
     if (!data.HasProperty(tsProp))
         return;
 
     auto value = data.GetIntegerProperty(tsProp);
-    if (value == defaultValue)
+    if (!writeIfDefault && (value == defaultValue))
         return;
 
     setters.push_back(FB::AnnotationTextStyleSetter(fbProp, value, 0.0));
@@ -330,14 +331,15 @@ FB::AnnotationTextStyleSetters& setters,
 AnnotationTextStylePropertyBagCR data,
 AnnotationTextStyleProperty tsProp,
 decltype(declval<FB::AnnotationTextStyleSetter>().key()) fbProp,
-decltype(declval<FB::AnnotationTextStyleSetter>().realValue()) defaultValue
+decltype(declval<FB::AnnotationTextStyleSetter>().realValue()) defaultValue,
+bool writeIfDefault
 )
     {
     if (!data.HasProperty(tsProp))
         return;
 
     auto value = data.GetRealProperty(tsProp);
-    if (value == defaultValue)
+    if (!writeIfDefault && (value == defaultValue))
         return;
 
     setters.push_back(FB::AnnotationTextStyleSetter(fbProp, 0, value));
@@ -346,23 +348,26 @@ decltype(declval<FB::AnnotationTextStyleSetter>().realValue()) defaultValue
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     06/2014
 //---------------------------------------------------------------------------------------
-BentleyStatus AnnotationTextStylePersistence::EncodeAsFlatBuf(FB::AnnotationTextStyleSetters& setters, AnnotationTextStylePropertyBagCR data)
+BentleyStatus AnnotationTextStylePersistence::EncodeAsFlatBuf(FB::AnnotationTextStyleSetters& setters, AnnotationTextStylePropertyBagCR data) { return EncodeAsFlatBuf(setters, data, FlatBufEncodeOptions::Default); }
+BentleyStatus AnnotationTextStylePersistence::EncodeAsFlatBuf(FB::AnnotationTextStyleSetters& setters, AnnotationTextStylePropertyBagCR data, FlatBufEncodeOptions options)
     {
-    appendIntegerSetter(setters, data, AnnotationTextStyleProperty::ColorType, FB::AnnotationTextStyleProperty_ColorType, DEFAULT_COLOR_VALUE_VALUE);
-    appendIntegerSetter(setters, data, AnnotationTextStyleProperty::ColorValue, FB::AnnotationTextStyleProperty_ColorValue, DEFAULT_COLOR_TYPE_VALUE);
-    appendIntegerSetter(setters, data, AnnotationTextStyleProperty::FontId, FB::AnnotationTextStyleProperty_FontId, DEFAULT_FONTID_VALUE);
-    appendRealSetter(setters, data, AnnotationTextStyleProperty::Height, FB::AnnotationTextStyleProperty_Height, DEFAULT_HEIGHT_VALUE);
-    appendRealSetter(setters, data, AnnotationTextStyleProperty::LineSpacingFactor, FB::AnnotationTextStyleProperty_LineSpacingFactor, DEFAULT_LINESPACINGFACTOR_VALUE);
-    appendIntegerSetter(setters, data, AnnotationTextStyleProperty::IsBold, FB::AnnotationTextStyleProperty_IsBold, DEFAULT_ISBOLD_VALUE);
-    appendIntegerSetter(setters, data, AnnotationTextStyleProperty::IsItalic, FB::AnnotationTextStyleProperty_IsItalic, DEFAULT_ISITALIC_VALUE);
-    appendIntegerSetter(setters, data, AnnotationTextStyleProperty::IsUnderlined, FB::AnnotationTextStyleProperty_IsUnderlined, DEFAULT_ISUNDERLINED_VALUE);
-    appendRealSetter(setters, data, AnnotationTextStyleProperty::StackedFractionScale, FB::AnnotationTextStyleProperty_StackedFractionScale, DEFAULT_STACKEDFRACTIONSCALE_VALUE);
-    appendIntegerSetter(setters, data, AnnotationTextStyleProperty::StackedFractionType, FB::AnnotationTextStyleProperty_StackedFractionType, DEFAULT_STACKEDFRACTIONTYPE_VALUE);
-    appendRealSetter(setters, data, AnnotationTextStyleProperty::SubScriptOffsetFactor, FB::AnnotationTextStyleProperty_SubScriptOffsetFactor, DEFAULT_SUBSCRIPTOFFSETFACTOR_VALUE);
-    appendRealSetter(setters, data, AnnotationTextStyleProperty::SubScriptScale, FB::AnnotationTextStyleProperty_SubScriptScale, DEFAULT_SUBSCRIPTSCALE_VALUE);
-    appendRealSetter(setters, data, AnnotationTextStyleProperty::SuperScriptOffsetFactor, FB::AnnotationTextStyleProperty_SuperScriptOffsetFactor, DEFAULT_SUPERSCRIPTOFFSETFACTOR_VALUE);
-    appendRealSetter(setters, data, AnnotationTextStyleProperty::SuperScriptScale, FB::AnnotationTextStyleProperty_SuperScriptScale, DEFAULT_SUPERSCRIPTSCALE_VALUE);
-    appendRealSetter(setters, data, AnnotationTextStyleProperty::WidthFactor, FB::AnnotationTextStyleProperty_WidthFactor, DEFAULT_WIDTHFACTOR_VALUE);
+    bool writeIfDefault = isEnumFlagSet(FlatBufEncodeOptions::SettersAreOverrides, options);
+
+    appendIntegerSetter(setters, data, AnnotationTextStyleProperty::ColorType, FB::AnnotationTextStyleProperty_ColorType, DEFAULT_COLOR_VALUE_VALUE, writeIfDefault);
+    appendIntegerSetter(setters, data, AnnotationTextStyleProperty::ColorValue, FB::AnnotationTextStyleProperty_ColorValue, DEFAULT_COLOR_TYPE_VALUE, writeIfDefault);
+    appendIntegerSetter(setters, data, AnnotationTextStyleProperty::FontId, FB::AnnotationTextStyleProperty_FontId, DEFAULT_FONTID_VALUE, writeIfDefault);
+    appendRealSetter(setters, data, AnnotationTextStyleProperty::Height, FB::AnnotationTextStyleProperty_Height, DEFAULT_HEIGHT_VALUE, writeIfDefault);
+    appendRealSetter(setters, data, AnnotationTextStyleProperty::LineSpacingFactor, FB::AnnotationTextStyleProperty_LineSpacingFactor, DEFAULT_LINESPACINGFACTOR_VALUE, writeIfDefault);
+    appendIntegerSetter(setters, data, AnnotationTextStyleProperty::IsBold, FB::AnnotationTextStyleProperty_IsBold, DEFAULT_ISBOLD_VALUE, writeIfDefault);
+    appendIntegerSetter(setters, data, AnnotationTextStyleProperty::IsItalic, FB::AnnotationTextStyleProperty_IsItalic, DEFAULT_ISITALIC_VALUE, writeIfDefault);
+    appendIntegerSetter(setters, data, AnnotationTextStyleProperty::IsUnderlined, FB::AnnotationTextStyleProperty_IsUnderlined, DEFAULT_ISUNDERLINED_VALUE, writeIfDefault);
+    appendRealSetter(setters, data, AnnotationTextStyleProperty::StackedFractionScale, FB::AnnotationTextStyleProperty_StackedFractionScale, DEFAULT_STACKEDFRACTIONSCALE_VALUE, writeIfDefault);
+    appendIntegerSetter(setters, data, AnnotationTextStyleProperty::StackedFractionType, FB::AnnotationTextStyleProperty_StackedFractionType, DEFAULT_STACKEDFRACTIONTYPE_VALUE, writeIfDefault);
+    appendRealSetter(setters, data, AnnotationTextStyleProperty::SubScriptOffsetFactor, FB::AnnotationTextStyleProperty_SubScriptOffsetFactor, DEFAULT_SUBSCRIPTOFFSETFACTOR_VALUE, writeIfDefault);
+    appendRealSetter(setters, data, AnnotationTextStyleProperty::SubScriptScale, FB::AnnotationTextStyleProperty_SubScriptScale, DEFAULT_SUBSCRIPTSCALE_VALUE, writeIfDefault);
+    appendRealSetter(setters, data, AnnotationTextStyleProperty::SuperScriptOffsetFactor, FB::AnnotationTextStyleProperty_SuperScriptOffsetFactor, DEFAULT_SUPERSCRIPTOFFSETFACTOR_VALUE, writeIfDefault);
+    appendRealSetter(setters, data, AnnotationTextStyleProperty::SuperScriptScale, FB::AnnotationTextStyleProperty_SuperScriptScale, DEFAULT_SUPERSCRIPTSCALE_VALUE, writeIfDefault);
+    appendRealSetter(setters, data, AnnotationTextStyleProperty::WidthFactor, FB::AnnotationTextStyleProperty_WidthFactor, DEFAULT_WIDTHFACTOR_VALUE, writeIfDefault);
     
     return SUCCESS;
     }

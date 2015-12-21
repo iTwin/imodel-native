@@ -276,14 +276,15 @@ FB::AnnotationLeaderStyleSetters& setters,
 AnnotationLeaderStylePropertyBagCR data,
 AnnotationLeaderStyleProperty tsProp,
 decltype(declval<FB::AnnotationLeaderStyleSetter>().key()) fbProp,
-decltype(declval<FB::AnnotationLeaderStyleSetter>().integerValue()) defaultValue
+decltype(declval<FB::AnnotationLeaderStyleSetter>().integerValue()) defaultValue,
+bool writeIfDefault
 )
     {
     if (!data.HasProperty(tsProp))
         return;
 
     auto value = data.GetIntegerProperty(tsProp);
-    if (value == defaultValue)
+    if (!writeIfDefault && (value == defaultValue))
         return;
 
     setters.push_back(FB::AnnotationLeaderStyleSetter(fbProp, value, 0.0));
@@ -298,14 +299,15 @@ FB::AnnotationLeaderStyleSetters& setters,
 AnnotationLeaderStylePropertyBagCR data,
 AnnotationLeaderStyleProperty tsProp,
 decltype(declval<FB::AnnotationLeaderStyleSetter>().key()) fbProp,
-decltype(declval<FB::AnnotationLeaderStyleSetter>().realValue()) defaultValue
+decltype(declval<FB::AnnotationLeaderStyleSetter>().realValue()) defaultValue,
+bool writeIfDefault
 )
     {
     if (!data.HasProperty(tsProp))
         return;
 
     auto value = data.GetRealProperty(tsProp);
-    if (value == defaultValue)
+    if (!writeIfDefault && (value == defaultValue))
         return;
 
     setters.push_back(FB::AnnotationLeaderStyleSetter(fbProp, 0, value));
@@ -314,17 +316,20 @@ decltype(declval<FB::AnnotationLeaderStyleSetter>().realValue()) defaultValue
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     06/2014
 //---------------------------------------------------------------------------------------
-BentleyStatus AnnotationLeaderStylePersistence::EncodeAsFlatBuf(FB::AnnotationLeaderStyleSetters& setters, AnnotationLeaderStylePropertyBagCR data)
+BentleyStatus AnnotationLeaderStylePersistence::EncodeAsFlatBuf(FB::AnnotationLeaderStyleSetters& setters, AnnotationLeaderStylePropertyBagCR data) { return EncodeAsFlatBuf(setters, data, FlatBufEncodeOptions::Default); }
+BentleyStatus AnnotationLeaderStylePersistence::EncodeAsFlatBuf(FB::AnnotationLeaderStyleSetters& setters, AnnotationLeaderStylePropertyBagCR data, FlatBufEncodeOptions options)
     {
-    appendIntegerSetter(setters, data, AnnotationLeaderStyleProperty::LineColorType, FB::AnnotationLeaderStyleProperty_LineColorType, DEFAULT_LINECOLOR_TYPE_VALUE);
-    appendIntegerSetter(setters, data, AnnotationLeaderStyleProperty::LineColorValue, FB::AnnotationLeaderStyleProperty_LineColorValue, DEFAULT_LINECOLOR_VALUE_VALUE);
-    appendIntegerSetter(setters, data, AnnotationLeaderStyleProperty::LineType, FB::AnnotationLeaderStyleProperty_LineType, DEFAULT_LINETYPE_VALUE);
-    appendIntegerSetter(setters, data, AnnotationLeaderStyleProperty::LineWeight, FB::AnnotationLeaderStyleProperty_LineWeight, DEFAULT_LINEWEIGHT_VALUE);
-    appendIntegerSetter(setters, data, AnnotationLeaderStyleProperty::TerminatorColorType, FB::AnnotationLeaderStyleProperty_TerminatorColorType, DEFAULT_TERMINATORCOLOR_TYPE_VALUE);
-    appendIntegerSetter(setters, data, AnnotationLeaderStyleProperty::TerminatorColorValue, FB::AnnotationLeaderStyleProperty_TerminatorColorValue, DEFAULT_TERMINATORCOLOR_VALUE_VALUE);
-    appendRealSetter(setters, data, AnnotationLeaderStyleProperty::TerminatorScaleFactor, FB::AnnotationLeaderStyleProperty_TerminatorScaleFactor, DEFAULT_TERMINATORSCALEFACTOR_VALUE);
-    appendIntegerSetter(setters, data, AnnotationLeaderStyleProperty::TerminatorType, FB::AnnotationLeaderStyleProperty_TerminatorType, DEFAULT_TERMINATORTYPE_VALUE);
-    appendIntegerSetter(setters, data, AnnotationLeaderStyleProperty::TerminatorWeight, FB::AnnotationLeaderStyleProperty_TerminatorWeight, DEFAULT_TERMINATORWEIGHT_VALUE);
+    bool writeIfDefault = isEnumFlagSet(FlatBufEncodeOptions::SettersAreOverrides, options);
+
+    appendIntegerSetter(setters, data, AnnotationLeaderStyleProperty::LineColorType, FB::AnnotationLeaderStyleProperty_LineColorType, DEFAULT_LINECOLOR_TYPE_VALUE, writeIfDefault);
+    appendIntegerSetter(setters, data, AnnotationLeaderStyleProperty::LineColorValue, FB::AnnotationLeaderStyleProperty_LineColorValue, DEFAULT_LINECOLOR_VALUE_VALUE, writeIfDefault);
+    appendIntegerSetter(setters, data, AnnotationLeaderStyleProperty::LineType, FB::AnnotationLeaderStyleProperty_LineType, DEFAULT_LINETYPE_VALUE, writeIfDefault);
+    appendIntegerSetter(setters, data, AnnotationLeaderStyleProperty::LineWeight, FB::AnnotationLeaderStyleProperty_LineWeight, DEFAULT_LINEWEIGHT_VALUE, writeIfDefault);
+    appendIntegerSetter(setters, data, AnnotationLeaderStyleProperty::TerminatorColorType, FB::AnnotationLeaderStyleProperty_TerminatorColorType, DEFAULT_TERMINATORCOLOR_TYPE_VALUE, writeIfDefault);
+    appendIntegerSetter(setters, data, AnnotationLeaderStyleProperty::TerminatorColorValue, FB::AnnotationLeaderStyleProperty_TerminatorColorValue, DEFAULT_TERMINATORCOLOR_VALUE_VALUE, writeIfDefault);
+    appendRealSetter(setters, data, AnnotationLeaderStyleProperty::TerminatorScaleFactor, FB::AnnotationLeaderStyleProperty_TerminatorScaleFactor, DEFAULT_TERMINATORSCALEFACTOR_VALUE, writeIfDefault);
+    appendIntegerSetter(setters, data, AnnotationLeaderStyleProperty::TerminatorType, FB::AnnotationLeaderStyleProperty_TerminatorType, DEFAULT_TERMINATORTYPE_VALUE, writeIfDefault);
+    appendIntegerSetter(setters, data, AnnotationLeaderStyleProperty::TerminatorWeight, FB::AnnotationLeaderStyleProperty_TerminatorWeight, DEFAULT_TERMINATORWEIGHT_VALUE, writeIfDefault);
 
     return SUCCESS;
     }
