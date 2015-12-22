@@ -1282,7 +1282,7 @@ bool ViewContext::_VisitAllModelElements(bool includeTransients)
     if (includeTransients)
         _VisitTransientGraphics(true);
 
-    PhysicalViewControllerCP physController = m_viewport->GetPhysicalViewControllerCP();
+    SpatialViewControllerCP physController = m_viewport->GetSpatialViewControllerCP();
     ClipVectorPtr clipVector = physController ? physController->GetClipVector() : nullptr;
     if (clipVector.IsValid())
         PushClip(*clipVector);

@@ -58,10 +58,10 @@ static void openDb (DgnDbPtr& db, BeFileNameCR name, DgnDb::OpenMode mode)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-static DgnDbStatus createPhysicalModel(PhysicalModelPtr& catalogModel, DgnDbR db, DgnModel::Code const& code)
+static DgnDbStatus createSpatialModel(SpatialModelPtr& catalogModel, DgnDbR db, DgnModel::Code const& code)
     {
-    DgnClassId mclassId = DgnClassId(db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_PhysicalModel));
-    catalogModel = new PhysicalModel(DgnModel3d::CreateParams(db, mclassId, code));
+    DgnClassId mclassId = DgnClassId(db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_SpatialModel));
+    catalogModel = new SpatialModel(DgnModel3d::CreateParams(db, mclassId, code));
     catalogModel->SetInGuiList(false);
     return catalogModel->Insert();
     }
@@ -166,11 +166,11 @@ void CloseClientDb() {if (m_clientDb.IsValid()) m_clientDb->CloseDb(); m_clientD
 void Developer_TestWidgetSolver();
 void Developer_TestGadgetSolver();
 void Developer_TestThingSolver();
-void Developer_CreateCapturedSolution(DgnElementCPtr&, PhysicalModelR catalogModel, Utf8CP componentName, Json::Value const& parms, Utf8CP catalogItemName);
+void Developer_CreateCapturedSolution(DgnElementCPtr&, SpatialModelR catalogModel, Utf8CP componentName, Json::Value const& parms, Utf8CP catalogItemName);
 void Client_ImportCM(Utf8CP componentName);
 void Client_InsertNonInstanceElement(Utf8CP modelName, Utf8CP code = nullptr);
 void Client_PlaceInstanceOfSolution(DgnElementId&, Utf8CP targetModelName, DgnElementCR catalogItem);
-void Client_PlaceInstance(DgnElementId&, Utf8CP targetModelName, PhysicalModelR catalogModel, Utf8CP componentName, Utf8CP ciname, bool expectToFindSolution);
+void Client_PlaceInstance(DgnElementId&, Utf8CP targetModelName, SpatialModelR catalogModel, Utf8CP componentName, Utf8CP ciname, bool expectToFindSolution);
 void Client_CheckComponentInstance(DgnElementId, size_t expectedSolidCount, double x, double y, double z);
 void Client_CheckNestedInstance(DgnElementCR instanceElement, Utf8CP expectedChildComponentName, int nChildrenExpected);
 
@@ -450,9 +450,9 @@ void ComponentModelTest::Client_ImportCM(Utf8CP componentName)
     checkElementClassesInModel(*cmCopy, cmCopyModelElementClasses);
 
     // Import the item catalog
-    PhysicalModelPtr catalogModel = getModelByName<PhysicalModel>(*m_clientDb, "Catalog");
+    SpatialModelPtr catalogModel = getModelByName<SpatialModel>(*m_clientDb, "Catalog");
     if (!catalogModel.IsValid())
-        createPhysicalModel(catalogModel, *m_clientDb, DgnModel::CreateModelCode("Catalog"));
+        createSpatialModel(catalogModel, *m_clientDb, DgnModel::CreateModelCode("Catalog"));
 
     ASSERT_TRUE(catalogModel.IsValid());
 
@@ -483,7 +483,7 @@ void ComponentModelTest::Client_CheckComponentInstance(DgnElementId eid, size_t 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ComponentModelTest::Developer_CreateCapturedSolution(DgnElementCPtr& catalogItem, PhysicalModelR catalogModel, Utf8CP componentName, Json::Value const& parmsToChange, Utf8CP catalogItemName)
+void ComponentModelTest::Developer_CreateCapturedSolution(DgnElementCPtr& catalogItem, SpatialModelR catalogModel, Utf8CP componentName, Json::Value const& parmsToChange, Utf8CP catalogItemName)
     {
     ComponentModelPtr componentModel = getModelByName<ComponentModel>(*m_componentDb, componentName);  // Open the client's imported copy
     ASSERT_TRUE( componentModel.IsValid() );
@@ -510,7 +510,7 @@ void ComponentModelTest::Client_PlaceInstanceOfSolution(DgnElementId& ieid, Utf8
     {
     ASSERT_TRUE(m_clientDb.IsValid() && "Caller must have already opened the Client DB");
 
-    PhysicalModelPtr targetModel = getModelByName<PhysicalModel>(*m_clientDb, targetModelName);
+    SpatialModelPtr targetModel = getModelByName<SpatialModel>(*m_clientDb, targetModelName);
     ASSERT_TRUE( targetModel.IsValid() );
 
     DgnDbStatus status;
@@ -525,7 +525,7 @@ void ComponentModelTest::Client_PlaceInstanceOfSolution(DgnElementId& ieid, Utf8
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ComponentModelTest::Client_PlaceInstance(DgnElementId& ieid, Utf8CP targetModelName, PhysicalModelR catalogModel, Utf8CP componentName, Utf8CP ciname, bool expectToFindSolution)
+void ComponentModelTest::Client_PlaceInstance(DgnElementId& ieid, Utf8CP targetModelName, SpatialModelR catalogModel, Utf8CP componentName, Utf8CP ciname, bool expectToFindSolution)
     {
     ASSERT_TRUE(m_clientDb.IsValid() && "Caller must have already opened the Client DB");
 
@@ -548,7 +548,7 @@ void ComponentModelTest::Client_PlaceInstance(DgnElementId& ieid, Utf8CP targetM
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ComponentModelTest::Client_InsertNonInstanceElement(Utf8CP modelName, Utf8CP code)
     {
-    PhysicalModelPtr targetModel = getModelByName<PhysicalModel>(*m_clientDb, modelName);
+    SpatialModelPtr targetModel = getModelByName<SpatialModel>(*m_clientDb, modelName);
     ASSERT_TRUE( targetModel.IsValid() );
     DgnClassId classid = DgnClassId(m_clientDb->Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_PhysicalElement));
     DgnCategoryId catid = DgnCategory::QueryHighestCategoryId(*m_clientDb);
@@ -572,8 +572,8 @@ void ComponentModelTest::SimulateDeveloper()
     OpenComponentDb(Db::OpenMode::ReadWrite);
     AutoCloseComponentDb closeComponentDb(*this);
 
-    PhysicalModelPtr catalogModel;
-    ASSERT_EQ( DgnDbStatus::Success , createPhysicalModel(catalogModel, *m_componentDb, DgnModel::CreateModelCode("Catalog")) );
+    SpatialModelPtr catalogModel;
+    ASSERT_EQ( DgnDbStatus::Success , createSpatialModel(catalogModel, *m_componentDb, DgnModel::CreateModelCode("Catalog")) );
 
     DgnElementCPtr ci;
     Developer_CreateCapturedSolution(ci, *catalogModel, TEST_WIDGET_COMPONENT_NAME, m_wsln1, "wsln1");
@@ -623,8 +623,8 @@ void ComponentModelTest::SimulateClient()
         {
         AutoCloseClientDb closeClientDbAtEnd(*this);
         //  Create the target model in the client. (Do this first, so that the first imported CM's will get a model id other than 1. Hopefully, that will help us catch more bugs.)
-        PhysicalModelPtr targetModel;
-        ASSERT_EQ( DgnDbStatus::Success , createPhysicalModel(targetModel, *m_clientDb, DgnModel::CreateModelCode("Instances")) );
+        SpatialModelPtr targetModel;
+        ASSERT_EQ( DgnDbStatus::Success , createSpatialModel(targetModel, *m_clientDb, DgnModel::CreateModelCode("Instances")) );
 
         //  Add a few unrelated elements to the target model. That way, the first placed CM instance will get an element id other than 1. Hopefully, that will help us catch more bugs.
         for (int i=0; i<10; ++i)
@@ -633,7 +633,7 @@ void ComponentModelTest::SimulateClient()
         //  Once per component, import the component model
         Client_ImportCM(TEST_WIDGET_COMPONENT_NAME);
 
-        PhysicalModelPtr catalogModel = getModelByName<PhysicalModel>(*m_clientDb, "Catalog");
+        SpatialModelPtr catalogModel = getModelByName<SpatialModel>(*m_clientDb, "Catalog");
         ASSERT_TRUE( catalogModel.IsValid() ) << "importing component should also import its catalog";
 
         // Now start placing instances of Widgets
@@ -678,7 +678,7 @@ void ComponentModelTest::SimulateClient()
     OpenClientDb(Db::OpenMode::ReadWrite);
         {
         AutoCloseClientDb closeClientDbAtEnd(*this);
-        PhysicalModelPtr catalogModel = getModelByName<PhysicalModel>(*m_clientDb, "Catalog");
+        SpatialModelPtr catalogModel = getModelByName<SpatialModel>(*m_clientDb, "Catalog");
 
         DgnElementId w4;
         Client_PlaceInstance(w4, "Instances", *catalogModel, TEST_WIDGET_COMPONENT_NAME, "wsln4", true);
@@ -743,8 +743,8 @@ TEST_F(ComponentModelTest, SimulateDeveloperAndClientWithNestingSingleton)
     AutoCloseClientDb closeClientDbAtEnd(*this);
 
     //  Create the target model in the client. (Do this first, so that the first imported CM's will get a model id other than 1. Hopefully, that will help us catch more bugs.)
-    PhysicalModelPtr targetModel;
-    ASSERT_EQ( DgnDbStatus::Success , createPhysicalModel(targetModel, *m_clientDb, DgnModel::CreateModelCode("Instances")) );
+    SpatialModelPtr targetModel;
+    ASSERT_EQ( DgnDbStatus::Success , createSpatialModel(targetModel, *m_clientDb, DgnModel::CreateModelCode("Instances")) );
 
     Client_ImportCM(TEST_GADGET_COMPONENT_NAME);
     Client_ImportCM(TEST_THING_COMPONENT_NAME);
@@ -785,8 +785,8 @@ TEST_F(ComponentModelTest, SimulateDeveloperAndClientWithNesting)
     AutoCloseClientDb closeClientDbAtEnd(*this);
 
     //  Create the target model in the client. (Do this first, so that the first imported CM's will get a model id other than 1. Hopefully, that will help us catch more bugs.)
-    PhysicalModelPtr targetModel;
-    ASSERT_EQ( DgnDbStatus::Success , createPhysicalModel(targetModel, *m_clientDb, DgnModel::CreateModelCode("Instances")) );
+    SpatialModelPtr targetModel;
+    ASSERT_EQ( DgnDbStatus::Success , createSpatialModel(targetModel, *m_clientDb, DgnModel::CreateModelCode("Instances")) );
 
     Client_ImportCM(TEST_GADGET_COMPONENT_NAME);
     Client_ImportCM(TEST_THING_COMPONENT_NAME);
@@ -794,7 +794,7 @@ TEST_F(ComponentModelTest, SimulateDeveloperAndClientWithNesting)
     ComponentModelPtr nestingComponentModel = getModelByName<ComponentModel>(*m_clientDb, TEST_THING_COMPONENT_NAME);  // Open the client's imported copy
     ASSERT_TRUE( nestingComponentModel.IsValid() );
 
-    PhysicalModelPtr catalogModel = getModelByName<PhysicalModel>(*m_clientDb, "Catalog");
+    SpatialModelPtr catalogModel = getModelByName<SpatialModel>(*m_clientDb, "Catalog");
 
     DgnElementId n1;
     Client_PlaceInstance(n1, "Instances", *catalogModel, TEST_THING_COMPONENT_NAME, "nsln1", true);

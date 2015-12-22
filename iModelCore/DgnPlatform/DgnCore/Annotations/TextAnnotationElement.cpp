@@ -15,7 +15,7 @@ BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 namespace dgn_ElementHandler
 {
     HANDLER_DEFINE_MEMBERS(TextAnnotationHandler);
-    HANDLER_DEFINE_MEMBERS(PhysicalTextAnnotationHandler);
+    HANDLER_DEFINE_MEMBERS(SpatialTextAnnotationHandler);
 }
 
 namespace dgn_AspectHandler
@@ -125,7 +125,7 @@ static TextAnnotationDataR getItemR(DgnElementR el)
     return *item;
     }
 TextAnnotationDataR TextAnnotationElement::GetItemR() { return getItemR(*this); }
-TextAnnotationDataR PhysicalTextAnnotationElement::GetItemR() { return getItemR(*this); }
+TextAnnotationDataR SpatialTextAnnotationElement::GetItemR() { return getItemR(*this); }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     10/2015
@@ -141,6 +141,6 @@ static DgnDbStatus updateGeometryOnChange(DgnDbStatus superStatus, DgnElementR e
     return DgnDbStatus::Success;
     }
 DgnDbStatus TextAnnotationElement::_OnInsert() { return updateGeometryOnChange(T_Super::_OnInsert(), *this, GetItemCP(), DgnElement::UniqueAspect::GenerateReason::Insert); }
-DgnDbStatus PhysicalTextAnnotationElement::_OnInsert() { return updateGeometryOnChange(T_Super::_OnInsert(), *this, GetItemCP(), DgnElement::UniqueAspect::GenerateReason::Insert); }
+DgnDbStatus SpatialTextAnnotationElement::_OnInsert() { return updateGeometryOnChange(T_Super::_OnInsert(), *this, GetItemCP(), DgnElement::UniqueAspect::GenerateReason::Insert); }
 DgnDbStatus TextAnnotationElement::_OnUpdate(DgnElementCR el) { return updateGeometryOnChange(T_Super::_OnUpdate(el), *this, GetItemCP(), DgnElement::UniqueAspect::GenerateReason::Update); }
-DgnDbStatus PhysicalTextAnnotationElement::_OnUpdate(DgnElementCR el) { return updateGeometryOnChange(T_Super::_OnUpdate(el), *this, GetItemCP(), DgnElement::UniqueAspect::GenerateReason::Update); }
+DgnDbStatus SpatialTextAnnotationElement::_OnUpdate(DgnElementCR el) { return updateGeometryOnChange(T_Super::_OnUpdate(el), *this, GetItemCP(), DgnElement::UniqueAspect::GenerateReason::Update); }

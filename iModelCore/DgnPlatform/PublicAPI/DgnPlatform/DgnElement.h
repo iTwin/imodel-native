@@ -1585,9 +1585,9 @@ public:
     static PhysicalElementPtr Create(CreateParams const& params) {return new PhysicalElement(params);}
 
     //! Create an instance of a PhysicalElement from a model and DgnCategoryId, using the default values for all other parameters.
-    //! @param[in] model The PhysicalModel for the new PhysicalElement.
+    //! @param[in] model The SpatialModel for the new PhysicalElement.
     //! @param[in] categoryId The category for the new PhysicalElement.
-    DGNPLATFORM_EXPORT static PhysicalElementPtr Create(PhysicalModelR model, DgnCategoryId categoryId);
+    DGNPLATFORM_EXPORT static PhysicalElementPtr Create(SpatialModelR model, DgnCategoryId categoryId);
 };
 
 //=======================================================================================
@@ -1852,9 +1852,9 @@ public:
     explicit SpatialGroupElement(CreateParams const& params) : T_Super(params) {}
 
     //! Create a new SpatialGroupElement from a model and DgnCategoryId, using the default values for all other parameters.
-    //! @param[in] model The PhysicalModel for the new SpatialGroupElement.
+    //! @param[in] model The SpatialModel for the new SpatialGroupElement.
     //! @param[in] categoryId The category for the new SpatialGroupElement.
-    DGNPLATFORM_EXPORT static SpatialGroupElementPtr Create(PhysicalModelR model, DgnCategoryId categoryId);
+    DGNPLATFORM_EXPORT static SpatialGroupElementPtr Create(SpatialModelR model, DgnCategoryId categoryId);
 
     //! Creates a new SpatialGroupElement
     static SpatialGroupElementPtr Create(CreateParams const& params) {return new SpatialGroupElement(params);}

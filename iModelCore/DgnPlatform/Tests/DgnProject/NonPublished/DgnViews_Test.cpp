@@ -56,9 +56,9 @@ struct DgnViewElemTest : DgnViewsTest
 
     DgnModelPtr AddModel(Utf8StringCR name)
         {
-        DgnClassId classId(project->Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_PhysicalModel));
+        DgnClassId classId(project->Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_SpatialModel));
         DgnModel::CreateParams params(*project, classId, DgnModel::CreateModelCode(name));
-        DgnModelPtr model = new PhysicalModel(params);
+        DgnModelPtr model = new SpatialModel(params);
         EXPECT_EQ(DgnDbStatus::Success, model->Insert());
 
         return model;

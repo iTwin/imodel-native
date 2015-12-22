@@ -81,7 +81,7 @@ void ChangeTestFixture::CloseDgnDb()
 //---------------------------------------------------------------------------------------
 void ChangeTestFixture::InsertModel()
     {
-    ModelHandlerR handler = dgn_ModelHandler::Physical::GetHandler();
+    ModelHandlerR handler = dgn_ModelHandler::Spatial::GetHandler();
     DgnClassId classId = m_testDb->Domains().GetClassId(handler);
     m_testModel = handler.Create(DgnModel::CreateParams(*m_testDb, classId, DgnModel::CreateModelCode("ChangeSetModel")));
 
@@ -99,7 +99,7 @@ void ChangeTestFixture::CreateDefaultView()
     CameraViewDefinition viewRow(CameraViewDefinition::CreateParams(*m_testDb, "Default", ViewDefinition::Data(m_testModel->GetModelId(), DgnViewSource::Generated)));
     ASSERT_TRUE(viewRow.Insert().IsValid());
 
-    PhysicalViewController viewController(*m_testDb, viewRow.GetViewId());
+    SpatialViewController viewController(*m_testDb, viewRow.GetViewId());
     viewController.SetStandardViewRotation(StandardView::Iso);
     viewController.GetViewFlagsR().SetRenderMode(DgnRenderMode::SmoothShade);
 
@@ -172,7 +172,7 @@ void ChangeTestFixture::InsertAuthority()
 //---------------------------------------------------------------------------------------
 DgnElementId ChangeTestFixture::InsertElement(int x, int y, int z)
     {
-    PhysicalModelP physicalTestModel = dynamic_cast<PhysicalModelP> (m_testModel.get());
+    SpatialModelP physicalTestModel = dynamic_cast<SpatialModelP> (m_testModel.get());
     BeAssert(physicalTestModel != nullptr);
     BeAssert(m_testCategoryId.IsValid());
 

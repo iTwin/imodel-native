@@ -323,9 +323,9 @@ void HypermodelingViewController::_DrawElement(ViewContextR context, GeometrySou
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      03/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-HypermodelingViewController::HypermodelingViewController (DgnViewId vid, PhysicalViewControllerR p, bvector<SectionDrawingViewControllerPtr> const& d)
+HypermodelingViewController::HypermodelingViewController (DgnViewId vid, SpatialViewControllerR p, bvector<SectionDrawingViewControllerPtr> const& d)
     :
-    PhysicalViewController (p.GetDgnDb(), vid),
+    SpatialViewController (p.GetDgnDb(), vid),
     m_drawings (d),
     m_physical (&p),
     m_currentViewController (&p),
@@ -384,7 +384,7 @@ BentleyStatus HypermodelingViewController::RemoveDrawing (DgnViewId id)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      03/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-PhysicalViewControllerR HypermodelingViewController::GetPhysicalView() const {return *m_physical;}
+SpatialViewControllerR HypermodelingViewController::GetPhysicalView() const {return *m_physical;}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      08/13

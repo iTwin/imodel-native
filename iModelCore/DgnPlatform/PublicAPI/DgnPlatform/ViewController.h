@@ -10,7 +10,7 @@
 
 #include "DgnPlatform.h"
 
-DGNPLATFORM_TYPEDEFS(PhysicalViewController)
+DGNPLATFORM_TYPEDEFS(SpatialViewController)
 DGNPLATFORM_TYPEDEFS(CameraViewController)
 DGNPLATFORM_TYPEDEFS(HypermodelingViewController)
 DGNPLATFORM_TYPEDEFS(DrawingViewController)
@@ -23,7 +23,7 @@ DGNPLATFORM_TYPEDEFS(SectioningViewController)
 DGNPLATFORM_REF_COUNTED_PTR(DrawingViewController)
 DGNPLATFORM_REF_COUNTED_PTR(SectionDrawingViewController)
 DGNPLATFORM_REF_COUNTED_PTR(SheetViewController)
-DGNPLATFORM_REF_COUNTED_PTR(PhysicalViewController)
+DGNPLATFORM_REF_COUNTED_PTR(SpatialViewController)
 DGNPLATFORM_REF_COUNTED_PTR(CameraViewController)
 DGNPLATFORM_REF_COUNTED_PTR(SectioningViewController)
 DGNPLATFORM_REF_COUNTED_PTR(HypermodelingViewController)
@@ -100,13 +100,13 @@ public:
 <h3>View Controller types and sub-types</h3>
 A ViewController belongs to one of only a few different "categories" of views, indicating in broad terms what kind of view it is.
 There are many specific types of ViewController within each view type category. ViewController defines a number of convenience methods
-to dynamic_cast a controller to a subclass. See ViewController::ToPhysicalViewController, ViewController::ToCameraViewController,
+to dynamic_cast a controller to a subclass. See ViewController::ToSpatialViewController, ViewController::ToCameraViewController,
 ViewController::ToDrawingViewController.
 
 @verbatim
     ViewControllerR viewController = ...
 
-    PhysicalViewControllerP physicalView = viewController.ToPhysicalViewControllerP();
+    SpatialViewControllerP physicalView = viewController.ToSpatialViewControllerP();
     if (physicalView != NULL)
         {
         physicalView->somefunction ();
@@ -129,7 +129,7 @@ the ViewDefinition::LoadViewController method, like this:
     if (!viewController.IsValid())
         return BSIERROR;
 
-    PhysicalViewControllerP physicalView = viewController->ToPhysicalViewControllerP();
+    SpatialViewControllerP physicalView = viewController->ToSpatialViewControllerP();
     if (physicalView != NULL)
         {
         physicalView->somefunction ();
@@ -153,7 +153,7 @@ protected:
     friend struct  DgnViewport;
     friend struct  ViewManager;
     friend struct  IndexedViewport;
-    friend struct  PhysicalRedlineViewController;
+    friend struct  SpatialRedlineViewController;
     friend struct  IACSManager;
     friend struct  ToolAdmin;
     friend struct  ViewDefinition;
@@ -402,10 +402,10 @@ public:
     //! @return BE_SQLITE_OK if the view was successfully saved, error code otherwise.
     DGNPLATFORM_EXPORT BeSQLite::DbResult SaveTo(Utf8CP newName, DgnViewId& newId);
 
-    //! perform the equivalent of a dynamic_cast to a PhysicalViewController.
-    //! @return a valid PhysicalViewControllerCP, or nullptr if this is not a physical view
-    virtual PhysicalViewControllerCP _ToPhysicalView() const {return nullptr;}
-    PhysicalViewControllerP ToPhysicalViewP() {return const_cast<PhysicalViewControllerP>(_ToPhysicalView());}
+    //! perform the equivalent of a dynamic_cast to a SpatialViewController.
+    //! @return a valid SpatialViewControllerCP, or nullptr if this is not a physical view
+    virtual SpatialViewControllerCP _ToPhysicalView() const {return nullptr;}
+    SpatialViewControllerP ToPhysicalViewP() {return const_cast<SpatialViewControllerP>(_ToPhysicalView());}
 
     //! perform the equivalent of a dynamic_cast to a CameraViewController.
     //! @return a valid CameraViewControllerCP, or nullptr if this is not a physical view with a camera
@@ -456,7 +456,7 @@ public:
     void AdjustAspectRatio(double aspect, bool expandView) {_AdjustAspectRatio(aspect, expandView);}
 
     //! Get the origin (lower, left, front) point of of the view in coordinates of the target
-    //! model (physical coordinates for PhysicalViewController and drawing coordinates for DrawingViewController).
+    //! model (physical coordinates for SpatialViewController and drawing coordinates for DrawingViewController).
     DPoint3d GetOrigin() const {return _GetOrigin();}
 
     //! Get the size of the X and Y axes of this view. The axes are in world coordinates units, aligned with the view.
@@ -580,15 +580,15 @@ public:
 };
 
 //=======================================================================================
-//! A PhysicalViewControllerBase controls views of PhysicalModels.
+//! A SpatialViewControllerBase controls views of SpatialModels.
 //! @ingroup DgnViewGroup
 // @bsiclass                                                    Keith.Bentley   03/12
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE PhysicalViewController : ViewController
+struct EXPORT_VTABLE_ATTRIBUTE SpatialViewController : ViewController
 {
     DEFINE_T_SUPER(ViewController);
 
-    friend struct  PhysicalRedlineViewController;
+    friend struct  SpatialRedlineViewController;
 
 protected:
     DPoint3d        m_origin;           //!< The lower left back corner of the view frustum.
@@ -599,7 +599,7 @@ protected:
     //  Non-persistent data
     IAuxCoordSysPtr     m_auxCoordSys;      //!< The auxiliary coordinate system in use.
 
-    virtual PhysicalViewControllerCP _ToPhysicalView() const override {return this;}
+    virtual SpatialViewControllerCP _ToPhysicalView() const override {return this;}
     virtual ClipVectorPtr _GetClipVector() const {return nullptr;}
 
     DGNPLATFORM_EXPORT virtual void _AdjustAspectRatio(double, bool expandView) override;
@@ -620,10 +620,10 @@ protected:
 public:
     DGNPLATFORM_EXPORT bool ViewVectorsFromOrientation(DVec3dR forward, DVec3dR up, RotMatrixCR orientation, OrientationMode mode, UiOrientation ui);
 
-    //! Construct a new PhysicalViewController from a View in the project.
-    //! @param[in] project the project for which this PhysicalViewController applies.
+    //! Construct a new SpatialViewController from a View in the project.
+    //! @param[in] project the project for which this SpatialViewController applies.
     //! @param[in] viewId the id of the view in the project.
-    DGNPLATFORM_EXPORT PhysicalViewController(DgnDbR project, DgnViewId viewId);
+    DGNPLATFORM_EXPORT SpatialViewController(DgnDbR project, DgnViewId viewId);
 
     DGNPLATFORM_EXPORT ClipVectorPtr GetClipVector() const;
     DGNPLATFORM_EXPORT void TransformBy(TransformCR);
@@ -645,13 +645,13 @@ public:
     //! @param[in] acs The new Auxiliary Coordinate System.
     DGNPLATFORM_EXPORT void SetAuxCoordinateSystem(IAuxCoordSysP acs);
 
-    //! Sets the Target DgnModel for this PhysicalViewController.
+    //! Sets the Target DgnModel for this SpatialViewController.
     //! @param[in] target The model to which new elements are added by modification tools.
     DGNPLATFORM_EXPORT BentleyStatus SetTargetModel(GeometricModelP target);
 };
 
 /** @addtogroup DgnViewGroup
-<h4>%PhysicalViewController Camera</h4>
+<h4>%SpatialViewController Camera</h4>
 
  This is what the parameters to the camera methods, and the values stored by CameraViewController mean.
 @verbatim
@@ -709,14 +709,14 @@ public:
 */
 
 //=======================================================================================
-//! A CameraViewController is used to control views of PhysicalModels. A CameraViewController
+//! A CameraViewController is used to control views of SpatialModels. A CameraViewController
 //! may have a camera enabled that displays world-coordinate geometry onto the image plane through a perspective projection.
 //! @ingroup DgnViewGroup
 // @bsiclass                                                    Keith.Bentley   03/12
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE CameraViewController : PhysicalViewController
+struct EXPORT_VTABLE_ATTRIBUTE CameraViewController : SpatialViewController
 {
-    DEFINE_T_SUPER(PhysicalViewController);
+    DEFINE_T_SUPER(SpatialViewController);
 
     bool            m_isCameraOn;       //!< if true, m_camera is valid.
     CameraInfo      m_camera;           //!< Information about the camera lens used for the view.
@@ -884,9 +884,9 @@ public:
 //! @ingroup DgnViewGroup
 // @bsiclass                                                    Keith.Bentley   03/12
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE SectioningViewController : PhysicalViewController
+struct EXPORT_VTABLE_ATTRIBUTE SectioningViewController : SpatialViewController
 {
-    DEFINE_T_SUPER(PhysicalViewController);
+    DEFINE_T_SUPER(SpatialViewController);
 
 protected:
     IViewClipObjectPtr m_clip; // a SectionClipObject
@@ -915,7 +915,7 @@ public:
     //! Construct a new SectioningViewController.
     //! @remarks This constructor is normally used only as part of creating a new view in the project.
     //! @remarks Use this constructor only to create a new camera view controller. To load an existing view controller,
-    //! call PhysicalViewController::Create.
+    //! call SpatialViewController::Create.
     //! @param[in] project the project for which this SectioningViewController applies.
     //! @param[in] viewId the id of the view in the project.
     DGNPLATFORM_EXPORT SectioningViewController(DgnDbR project, DgnViewId viewId);
@@ -1015,9 +1015,9 @@ public:
 //! @ingroup DgnViewGroup
 // @bsiclass                                                    Keith.Bentley   03/12
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE HypermodelingViewController : PhysicalViewController
+struct EXPORT_VTABLE_ATTRIBUTE HypermodelingViewController : SpatialViewController
 {
-    DEFINE_T_SUPER(PhysicalViewController);
+    DEFINE_T_SUPER(SpatialViewController);
 
     //! Specifies symbology for some aspects of the drawings when they are drawn in context.
     struct DrawingSymbology
@@ -1041,7 +1041,7 @@ struct EXPORT_VTABLE_ATTRIBUTE HypermodelingViewController : PhysicalViewControl
         };
 
 private:
-    PhysicalViewControllerPtr m_physical;
+    SpatialViewControllerPtr m_physical;
     bvector<SectionDrawingViewControllerPtr> m_drawings;
     ViewControllerP m_currentViewController;
     bvector<DRange3d> m_unused_unused_unused_unused_unused_unused_unused;
@@ -1079,7 +1079,7 @@ private:
     bool ShouldDraw(Pass p) const {return (m_passesToDraw & p) == p;}
 
 public:
-    DGNPLATFORM_EXPORT HypermodelingViewController(DgnViewId, PhysicalViewControllerR, bvector<SectionDrawingViewControllerPtr> const&);
+    DGNPLATFORM_EXPORT HypermodelingViewController(DgnViewId, SpatialViewControllerR, bvector<SectionDrawingViewControllerPtr> const&);
     bool ShouldDrawProxyGraphics(ClipVolumePass proxyGraphicsType, int planeIndex) const;
     bool ShouldDrawAnnotations() const;
     DGNPLATFORM_EXPORT void SetOverrideMatSymb(ViewContextR) const;
@@ -1088,7 +1088,7 @@ public:
     DGNPLATFORM_EXPORT SectionDrawingViewControllerPtr FindSectionDrawingViewById(DgnViewId) const;
     DGNPLATFORM_EXPORT BentleyStatus AddDrawing(SectionDrawingViewControllerR);
     DGNPLATFORM_EXPORT BentleyStatus RemoveDrawing(DgnViewId);
-    DGNPLATFORM_EXPORT PhysicalViewControllerR GetPhysicalView() const;
+    DGNPLATFORM_EXPORT SpatialViewControllerR GetPhysicalView() const;
     DrawingSymbology GetDrawingSymbology() const {return m_symbology;} //!< Get the symbology for some aspects of the drawings when they are drawn in context.
     void SetDrawingSymbology(DrawingSymbology const& s) {m_symbology=s;} //!< Set the symbology for some aspects of the drawings when they are drawn in context.
     Pass GetPassesToDraw() const {return m_passesToDraw;} //!< Get the drawing elements to draw.

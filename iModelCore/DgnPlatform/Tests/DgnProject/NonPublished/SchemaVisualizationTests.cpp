@@ -1097,7 +1097,7 @@ TEST_F(SchemaVisualizationTests, TestSchemaDiagram)
 
     ECDbSchemaManager const& manager = db->Schemas();
     bvector<ECSchemaCP> scope;
-    scope.push_back(manager.GetECSchema("dgn"));
+    scope.push_back(manager.GetECSchema(DGN_ECSCHEMA_NAME));
     scope.push_back(manager.GetECSchema("ECDbMap"));
     scope.push_back(manager.GetECSchema("ECDb_FileInfo"));
     scope.push_back(manager.GetECSchema("ECDb_System"));
@@ -1146,7 +1146,7 @@ TEST_F(SchemaVisualizationTests, TestClassDiagram)
 
     ECDbSchemaManager const& manager = db->Schemas();
     bvector<ECSchemaCP> scope;
-    scope.push_back(manager.GetECSchema("dgn"));
+    scope.push_back(manager.GetECSchema(DGN_ECSCHEMA_NAME));
     scope.push_back(manager.GetECSchema("ECDbMap"));
     scope.push_back(manager.GetECSchema("ECDb_FileInfo"));
     scope.push_back(manager.GetECSchema("ECDb_System"));
@@ -1997,7 +1997,7 @@ TEST_F(SchemaVisualizationTests, GraphvizDiagramTest)
     ASSERT_TRUE(db.IsValid());
 
     ECDbSchemaManager const& manager = db->Schemas();
-    ECSchemaCP targetSchema = manager.GetECSchema("dgn");
+    ECSchemaCP targetSchema = manager.GetECSchema(DGN_ECSCHEMA_NAME);
     bvector<ECSchemaCP> scope;
     scope.push_back(targetSchema);
 
@@ -2008,10 +2008,10 @@ TEST_F(SchemaVisualizationTests, GraphvizDiagramTest)
     DgnCategoryId categoryId = category.GetCategoryId();
     ASSERT_TRUE(categoryId.IsValid());
 
-    DgnModelPtr model = new PhysicalModel(PhysicalModel::CreateParams
+    DgnModelPtr model = new SpatialModel(SpatialModel::CreateParams
         (
         *db,
-        DgnClassId(db->Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_PhysicalModel)),
+        DgnClassId(db->Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_SpatialModel)),
         DgnModel::CreateModelCode("Physical Model")
         ));
     ASSERT_TRUE(DgnDbStatus::Success == model->Insert());

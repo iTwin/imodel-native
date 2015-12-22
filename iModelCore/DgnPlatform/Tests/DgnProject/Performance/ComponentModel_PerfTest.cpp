@@ -55,10 +55,10 @@ static void openDb (DgnDbPtr& db, BeFileNameCR name, DgnDb::OpenMode mode)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-static DgnDbStatus createPhysicalModel(PhysicalModelPtr& catalogModel, DgnDbR db, DgnModel::Code const& code)
+static DgnDbStatus createSpatialModel(SpatialModelPtr& catalogModel, DgnDbR db, DgnModel::Code const& code)
     {
-    DgnClassId mclassId = DgnClassId(db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_PhysicalModel));
-    catalogModel = new PhysicalModel(DgnModel3d::CreateParams(db, mclassId, code));
+    DgnClassId mclassId = DgnClassId(db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_SpatialModel));
+    catalogModel = new SpatialModel(DgnModel3d::CreateParams(db, mclassId, code));
     catalogModel->SetInGuiList(false);
     return catalogModel->Insert();
     }
@@ -137,7 +137,7 @@ void CloseComponentDb() {m_componentDb->CloseDb(); m_componentDb=nullptr;}
 void OpenClientDb(DgnDb::OpenMode mode) {openDb(m_clientDb, m_clientDbName, mode);}
 void CloseClientDb() {m_clientDb->CloseDb(); m_clientDb=nullptr;}
 void Client_ImportCM(Utf8CP componentName);
-void Client_SolveAndCapture(DgnElementCPtr&, PhysicalModelR catalogModel, Utf8CP componentName, Json::Value const& parms, Utf8StringCR);
+void Client_SolveAndCapture(DgnElementCPtr&, SpatialModelR catalogModel, Utf8CP componentName, Json::Value const& parms, Utf8StringCR);
 
 void PlaceInstances(int ninstances, int boxCount, DPoint3d boxSize);
 void PlaceElements(int ninstances, int boxCount, DPoint3d boxSize);
@@ -276,7 +276,7 @@ void ComponentModelPerfTest::Client_ImportCM(Utf8CP componentName)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ComponentModelPerfTest::Client_SolveAndCapture(DgnElementCPtr& catalogItem, PhysicalModelR catalogModel, Utf8CP componentName, Json::Value const& parmsToChange, Utf8StringCR ciname)
+void ComponentModelPerfTest::Client_SolveAndCapture(DgnElementCPtr& catalogItem, SpatialModelR catalogModel, Utf8CP componentName, Json::Value const& parmsToChange, Utf8StringCR ciname)
     {
     ComponentModelPtr componentModel = getModelByName<ComponentModel>(*m_clientDb, componentName);  // Open the client's imported copy
     ASSERT_TRUE( componentModel.IsValid() );
@@ -299,7 +299,7 @@ void ComponentModelPerfTest::Client_SolveAndCapture(DgnElementCPtr& catalogItem,
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    06/2015
 //---------------------------------------------------------------------------------------
-static void insertBoxesElement(DgnElementId& eid, PhysicalModelR physicalTestModel, DgnCategoryId testCategoryId, DPoint3dCR placementOrigin, DPoint3dCR sizeOfBlock, bvector<DPoint3d> const& originsOfBlocks)
+static void insertBoxesElement(DgnElementId& eid, SpatialModelR physicalTestModel, DgnCategoryId testCategoryId, DPoint3dCR placementOrigin, DPoint3dCR sizeOfBlock, bvector<DPoint3d> const& originsOfBlocks)
     {
     PhysicalElementPtr testElement = PhysicalElement::Create(physicalTestModel, testCategoryId);
 
@@ -330,12 +330,12 @@ void ComponentModelPerfTest::PlaceInstances(int ninstances, int boxCount, DPoint
     OpenClientDb(Db::OpenMode::ReadWrite);
 
     //  Create the catalog model in the client.
-    PhysicalModelPtr catalogModel;
-    ASSERT_EQ( DgnDbStatus::Success , createPhysicalModel(catalogModel, *m_clientDb, DgnModel::CreateModelCode("Catalog")) );
+    SpatialModelPtr catalogModel;
+    ASSERT_EQ( DgnDbStatus::Success , createSpatialModel(catalogModel, *m_clientDb, DgnModel::CreateModelCode("Catalog")) );
 
     //  Create the target model in the client.
-    PhysicalModelPtr targetModel;
-    ASSERT_EQ( DgnDbStatus::Success , createPhysicalModel(targetModel, *m_clientDb, DgnModel::CreateModelCode("Instances")) );
+    SpatialModelPtr targetModel;
+    ASSERT_EQ( DgnDbStatus::Success , createSpatialModel(targetModel, *m_clientDb, DgnModel::CreateModelCode("Instances")) );
 
     StopWatch timer("place components");
     timer.Start();
@@ -382,8 +382,8 @@ void ComponentModelPerfTest::PlaceElements(int ninstances, int boxCount, DPoint3
 
     OpenClientDb(Db::OpenMode::ReadWrite);
     
-    PhysicalModelPtr targetModel;
-    createPhysicalModel(targetModel, *m_clientDb, DgnModel::CreateModelCode("Instances"));
+    SpatialModelPtr targetModel;
+    createSpatialModel(targetModel, *m_clientDb, DgnModel::CreateModelCode("Instances"));
     DgnCategoryId someCat = DgnCategory::QueryFirstCategoryId(*m_clientDb);
 
     bvector<DPoint3d> originsOfBoxes;

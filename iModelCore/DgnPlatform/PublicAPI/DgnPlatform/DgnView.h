@@ -279,7 +279,7 @@ public:
 };
 
 //=======================================================================================
-//! Defines a view of one or more PhysicalModels.
+//! Defines a view of one or more SpatialModels.
 //! The list of viewed models is stored in the view's settings in the DgnDb's settings
 //! table.
 // @bsiclass                                                      Paul.Connelly   10/15
@@ -312,7 +312,7 @@ public:
 };
 
 //=======================================================================================
-//! Defines a view of one or more PhysicalModels, which supports a camera that displays
+//! Defines a view of one or more SpatialModels, which supports a camera that displays
 //! world-coordinate geometry onto the image plane through a perspective projection.
 // @bsiclass                                                      Paul.Connelly   10/15
 //=======================================================================================

@@ -431,7 +431,7 @@ DgnDbStatus ComponentModel::UpdateSolutionsAndInstances()
 
             #ifdef WIP_WIP_WIP
         DgnDbStatus status;
-        DgnElementPtr newCatalogItem = HarvestSolution(status, *sourceCatalogItem->GetModel()->ToPhysicalModelP(), sourceCatalogItem->GetPlacement(), sourceCatalogItem->GetCode());
+        DgnElementPtr newCatalogItem = HarvestSolution(status, *sourceCatalogItem->GetModel()->ToSpatialModelP(), sourceCatalogItem->GetPlacement(), sourceCatalogItem->GetCode());
         if (!newCatalogItem.IsValid())
             {
             deleteSolutionOfComponentRelationship(*sourceCatalogItem); // This solution cannot be renewed. It and its instances become orphans.
@@ -455,7 +455,7 @@ DgnDbStatus ComponentModel::UpdateSolutionsAndInstances()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElementCPtr ComponentModel::CaptureSolution(DgnDbStatus* statusOut, PhysicalModelR catalogModel, ModelSolverDef::ParameterSet const& parameters, Utf8StringCR catalogItemName)
+DgnElementCPtr ComponentModel::CaptureSolution(DgnDbStatus* statusOut, SpatialModelR catalogModel, ModelSolverDef::ParameterSet const& parameters, Utf8StringCR catalogItemName)
     {
     DgnDbStatus ALLOW_NULL_OUTPUT(status, statusOut);
     if (catalogItemName.empty())
