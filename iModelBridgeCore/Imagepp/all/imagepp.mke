@@ -168,8 +168,6 @@ $(o)HFCMemoryLineStream$(oext) : $(ippUtlDir)hfc/src/HFCMemoryLineStream.cpp $(i
 
 $(o)HFCEmbedBinStream$(oext) : $(ippUtlDir)hfc/src/HFCEmbedBinStream.cpp $(ippAllInc)HFCEmbedBinStream.h ${MultiCompileDepends}
 
-$(o)HFCMutex$(oext) : $(ippUtlDir)hfc/src/HFCMutex.cpp $(ippAllInc)HFCMutex.h ${MultiCompileDepends}
-
 $(o)HFCNode$(oext) : $(ippUtlDir)hfc/src/HFCNode.cpp $(ippAllInc)HFCNode.h ${MultiCompileDepends}
 
 $(o)HFCNodeIterator$(oext) : $(ippUtlDir)hfc/src/HFCNodeIterator.cpp $(ippAllInc)HFCNodeIterator.h ${MultiCompileDepends}
@@ -179,8 +177,6 @@ $(o)HFCProgressEvaluator$(oext) : $(ippUtlDir)hfc/src/HFCProgressEvaluator.cpp $
 $(o)HFCProgressIndicator$(oext) : $(ippUtlDir)hfc/src/HFCProgressIndicator.cpp $(ippAllInc)HFCProgressIndicator.h ${MultiCompileDepends}
 
 $(o)HFCSemaphore$(oext) : $(ippUtlDir)hfc/src/HFCSemaphore.cpp $(ippAllInc)HFCSemaphore.h ${MultiCompileDepends}
-
-$(o)HFCSocketConnection$(oext) : $(ippUtlDir)hfc/src/HFCSocketConnection.cpp $(ippAllInc)HFCSocketConnection.h ${MultiCompileDepends}
 
 $(o)HFCStat$(oext) : $(ippUtlDir)hfc/src/HFCStat.cpp $(ippAllInc)HFCStat.h ${MultiCompileDepends}
 

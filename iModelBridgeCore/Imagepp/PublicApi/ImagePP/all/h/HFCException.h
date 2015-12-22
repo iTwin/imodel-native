@@ -259,10 +259,10 @@ public :
         EVENT
         };
     
-    HFCCannotCreateSynchroObjException(HFCCannotCreateSynchroObjException::SynchroObject pi_SynchroObj);
-    virtual ~HFCCannotCreateSynchroObjException();
-    const SynchroObject GetSynchroObject() const;
-    HFCCannotCreateSynchroObjException(const HFCCannotCreateSynchroObjException&     pi_rObj); 
+    IMAGEPP_EXPORT HFCCannotCreateSynchroObjException(HFCCannotCreateSynchroObjException::SynchroObject pi_SynchroObj);
+    IMAGEPP_EXPORT virtual ~HFCCannotCreateSynchroObjException();
+    IMAGEPP_EXPORT const SynchroObject GetSynchroObject() const;
+    IMAGEPP_EXPORT HFCCannotCreateSynchroObjException(const HFCCannotCreateSynchroObjException&     pi_rObj); 
     virtual WString GetExceptionMessage() const override;
     virtual HFCException* Clone() const override;
     virtual void ThrowMyself() const override {throw *this;} 
