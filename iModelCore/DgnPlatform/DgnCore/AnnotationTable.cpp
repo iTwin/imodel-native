@@ -1737,14 +1737,14 @@ void            TextBlockHolder::_FitContentToWidth (double width)
 +---------------+---------------+---------------+---------------+---------------+------*/
 double          TextBlockHolder::ComputeDescenderAdjustment (AnnotationTextStyleCR textStyle)
     {
+#if defined (NEEDSWORK)
     bool    isTextStyleVertical = false;
 
-#if defined (NEEDSWORK)
     textStyle.GetProperty (TextStyle_Vertical, isTextStyleVertical);
-#endif
 
     if (isTextStyleVertical)
         return 0.0;
+#endif
 
     double      height = textStyle.GetHeight();
     DgnFontId   fontId = textStyle.GetFontId();
@@ -1754,7 +1754,8 @@ double          TextBlockHolder::ComputeDescenderAdjustment (AnnotationTextStyle
         return 0.0;
 
 #if defined (NEEDSWORK)
-    return font->GetDescenderRatio() * height;
+    DgnFontStyle    fontStyle   = DgnFont::FontStyleFromBoldItalic(textStyle.IsBold(), textStyle.IsItalic());
+    return font->GetDescenderRatio(fontStyle) * height;
 #else
     return 0.3 * height;
 #endif
@@ -1882,7 +1883,7 @@ void    resolveTextSymb (ColorDef& color, uint32_t& weight, SymbologyDictionary 
 +---------------+---------------+---------------+---------------+---------------+------*/
 void TextBlockHolder::_AppendGeometry (DPoint2dCR origin, DVec2dCR direction, TableCellAlignment alignment, ElementGeometryBuilderR builder) const
     {
-    AnnotationTextBlockCP textBlock = GetTextBlock();
+    AnnotationTextBlockLayoutCP textBlock = GetTextBlockLayout();
 
     if (UNEXPECTED_CONDITION (NULL == textBlock))
         return;
@@ -1910,27 +1911,25 @@ void TextBlockHolder::_AppendGeometry (DPoint2dCR origin, DVec2dCR direction, Ta
 
     DPoint2d                                textOrigin = origin;
 
-#if defined (NEEDSWORK)
     AnnotationTableCell::VerticalAlignment  vAlign = AnnotationTableCell::ToVerticalAlignment (alignment);
 
     if (AnnotationTableCell::VerticalAlignment::Top == vAlign || AnnotationTableCell::VerticalAlignment::Bottom == vAlign)
         {
-        double  adjustDistance = ComputeDescenderAdjustment (*textBlock);
+        double  adjustDistance  = ComputeDescenderAdjustment (*textBlock);
         DVec2d  adjustDirection;
 
-        rotation.GetColumn (adjustDirection, 1);    // +yVec (up)
+        adjustDirection.Rotate90 (direction);       // +yVec (up)
 
         if (AnnotationTableCell::VerticalAlignment::Top == vAlign)
             adjustDirection.Negate ();              // -yVec (down)
 
         textOrigin.SumOf (origin, adjustDirection, adjustDistance);
         }
-#endif
 
     Transform   transform = Transform::FromOriginAndXVector (textOrigin, direction);
 
-    TextAnnotation textAnnotation (textBlock->GetDbR());
-    textAnnotation.SetText (textBlock);
+    TextAnnotation textAnnotation (textBlock->GetDocument().GetDbR());
+    textAnnotation.SetText (&textBlock->GetDocument());
 
     builder.Append (textAnnotation, transform);
     }
