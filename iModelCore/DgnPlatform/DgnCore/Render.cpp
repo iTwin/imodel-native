@@ -20,15 +20,10 @@
 #if defined (RENDER_LOGGING)
 #   define LOG (*NativeLogging::LoggingManager::GetLogger(L"Render"))
 //#   define LOG_STRING(msg) LOG.debug(msg.c_str())
+//#   define LOG_PRINTF(fmt, ...) LOG_STRING(Utf8PrintfString(fmt,__VA_ARGS__))
 #   define LOG_STRING(msg) printf(msg.c_str())
-
-#if defined(BENTLEYCONFIG_OS_APPLE)
-    #   define LOG_PRINTF printf
-#else
-    //  When compiling for iOS this is flagged as potentially insecure because a format string has to be a literal
-    #   define LOG_PRINTF(fmt, ...) LOG_STRING(Utf8PrintfString(fmt,__VA_ARGS__))
-#endif
-
+//  Using the variadic macro here produces a compilation error when compiling for iOS.
+#   define LOG_PRINTF printf
 #else
 #   define LOG
 #   define LOG_STRING(msg)
