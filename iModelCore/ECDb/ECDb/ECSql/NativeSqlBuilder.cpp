@@ -161,7 +161,7 @@ NativeSqlBuilder& NativeSqlBuilder::Append(Utf8CP classIdentifier, Utf8CP identi
 NativeSqlBuilder& NativeSqlBuilder::Append (BinarySqlOperator op, bool appendTrailingSpace)
     {
     //No difference of operator in ECSQL and SQLite SQL
-    return Append (ExpHelper::ToString (op), appendTrailingSpace);
+    return Append (ExpHelper::ToSql (op), appendTrailingSpace);
     }
 
 //-----------------------------------------------------------------------------------------
@@ -170,7 +170,7 @@ NativeSqlBuilder& NativeSqlBuilder::Append (BinarySqlOperator op, bool appendTra
 NativeSqlBuilder& NativeSqlBuilder::Append (BooleanSqlOperator op, bool appendTrailingSpace)
     {
     //No difference of operator in ECSQL and SQLite SQL
-    return Append (ExpHelper::ToString (op), appendTrailingSpace);
+    return Append (ExpHelper::ToSql (op), appendTrailingSpace);
     }
 
 //-----------------------------------------------------------------------------------------
@@ -179,7 +179,7 @@ NativeSqlBuilder& NativeSqlBuilder::Append (BooleanSqlOperator op, bool appendTr
 NativeSqlBuilder& NativeSqlBuilder::Append (SqlSetQuantifier setQuantifier, bool appendTrailingSpace)
     {
     //No difference of operator in ECSQL and SQLite SQL
-    auto selectionTypeStr = ExpHelper::ToString (setQuantifier);
+    auto selectionTypeStr = ExpHelper::ToSql (setQuantifier);
     if (!Utf8String::IsNullOrEmpty (selectionTypeStr))
         Append (selectionTypeStr, appendTrailingSpace);
 
@@ -192,7 +192,7 @@ NativeSqlBuilder& NativeSqlBuilder::Append (SqlSetQuantifier setQuantifier, bool
 NativeSqlBuilder& NativeSqlBuilder::Append (UnarySqlOperator op, bool appendTrailingSpace)
     {
     //No difference of operator in ECSQL and SQLite SQL
-    return Append (ExpHelper::ToString (op), appendTrailingSpace);
+    return Append (ExpHelper::ToSql (op), appendTrailingSpace);
     }
 
 //-----------------------------------------------------------------------------------------

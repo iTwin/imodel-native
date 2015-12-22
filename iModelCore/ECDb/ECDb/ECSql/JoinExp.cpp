@@ -51,7 +51,7 @@ FromExp const* JoinExp::FindFromExpression() const
 //+---------------+---------------+---------------+---------------+---------------+--------
 Utf8String NaturalJoinExp::_ToECSql() const 
     {
-    return GetFromClassRef().ToECSql() + " NATURAL " + ExpHelper::ToString(m_appliedJoinType)+ " " + GetToClassRef().ToECSql();
+    return GetFromClassRef().ToECSql() + " NATURAL " + ExpHelper::ToSql(m_appliedJoinType)+ " " + GetToClassRef().ToECSql();
     }
 
 //-----------------------------------------------------------------------------------------
@@ -60,7 +60,7 @@ Utf8String NaturalJoinExp::_ToECSql() const
 Utf8String NaturalJoinExp::_ToString() const 
     {
     Utf8String str ("NaturalJoin [Type: ");
-    str.append (ExpHelper::ToString (m_appliedJoinType)).append ("]");
+    str.append (ExpHelper::ToSql (m_appliedJoinType)).append ("]");
     return str;
     }
 
@@ -79,7 +79,7 @@ QualifiedJoinExp::QualifiedJoinExp (std::unique_ptr<ClassRefExp> from, std::uniq
 //+---------------+---------------+---------------+---------------+---------------+--------
 Utf8String QualifiedJoinExp::_ToECSql() const 
     {
-    return GetFromClassRef().ToECSql() + " " + ExpHelper::ToString(GetJoinType()) + " " + GetToClassRef().ToECSql() + " "+ GetJoinSpec ()->ToECSql();
+    return GetFromClassRef().ToECSql() + " " + ExpHelper::ToSql(GetJoinType()) + " " + GetToClassRef().ToECSql() + " "+ GetJoinSpec ()->ToECSql();
     }
 
 //*************************** RelationshipJoinExp ******************************************
@@ -284,7 +284,7 @@ Utf8String RelationshipJoinExp::_ToECSql() const
     {
     auto tmp = GetFromClassRef().ToECSql() + " JOIN " + GetToClassRef().ToECSql() + " USING " + GetRelationshipClass ().ToECSql();
     if (m_direction != JoinDirection::Implied)
-        tmp += Utf8String(" ") + ExpHelper::ToString(m_direction);
+        tmp += Utf8String(" ") + ExpHelper::ToECSql(m_direction);
 
     return tmp;
     }
@@ -295,7 +295,7 @@ Utf8String RelationshipJoinExp::_ToECSql() const
 Utf8String RelationshipJoinExp::_ToString() const 
     {
     Utf8String str ("RelationshipJoin [Direction: ");
-    str.append (ExpHelper::ToString (m_direction)).append ("]");
+    str.append (ExpHelper::ToECSql (m_direction)).append ("]");
     return str;
     }
 

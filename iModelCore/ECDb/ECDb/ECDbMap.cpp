@@ -730,7 +730,7 @@ size_t ECDbMap::GetTableCountOnRelationshipEnd(ECRelationshipConstraintCR relati
         if (classMap->GetMapStrategy().IsNotMapped())
             continue;
         
-        tables.insert(&classMap->GetSecondaryTable());
+        tables.insert(&classMap->GetPrimaryTable());
         }
 
     return tables.size();

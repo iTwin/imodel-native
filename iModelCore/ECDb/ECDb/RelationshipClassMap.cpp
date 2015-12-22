@@ -332,7 +332,7 @@ MapStatus RelationshipClassEndTableMap::_InitializePart1 (SchemaImportContext* s
 
 
     //SetTable for EndTable case.
-    if (thisEndClassMap->MapsToJoinedTable())
+    if (thisEndClassMap->HasJoinedTable())
         {
         ECDbSqlColumn const* thisKeyPropCol = nullptr;
         if (SUCCESS != TryGetKeyPropertyColumn(thisKeyPropCol, thisEndConstraint, *relationshipClassMapInfo.GetECClass().GetRelationshipClassCP(), thisEnd))

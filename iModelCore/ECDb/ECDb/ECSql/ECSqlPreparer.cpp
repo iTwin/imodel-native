@@ -446,13 +446,13 @@ ECSqlStatus ECSqlExpPreparer::PrepareClassNameExp(NativeSqlBuilder::List& native
         }
     else
         {
-        if (classMap.MapsToJoinedTable() && currentScopeECSqlType == ECSqlType::Delete)
+        if (classMap.HasJoinedTable() && currentScopeECSqlType == ECSqlType::Delete)
             {
-            auto rootMap = classMap.FindPrimaryClassMapOfJoinedTable();
+            auto rootMap = classMap.FindClassMapOfParentOfJoinedTable();
             BeAssert(rootMap != nullptr);
             table = &rootMap->GetSecondaryTable();
             }
-        else if (classMap.MapsToJoinedTable() && currentScopeECSqlType == ECSqlType::Update)
+        else if (classMap.HasJoinedTable() && currentScopeECSqlType == ECSqlType::Update)
             {
             table = &classMap.GetSecondaryTable();
             }
@@ -1469,15 +1469,6 @@ ECSqlStatus ECSqlExpPreparer::PrepareSetFunctionCallExp(NativeSqlBuilder::List& 
         nativeSql.AppendParenLeft();
 
     const SetFunctionCallExp::Function function = exp.GetFunction();
-
-    if (function == SetFunctionCallExp::Function::Count)
-        {
-        //We simply use * as this is the same semantically and it is faster anyways in SQLite
-        nativeSql.Append(exp.GetFunctionName()).AppendParenLeft().Append(Exp::ASTERISK_TOKEN).AppendParenRight();
-        nativeSqlSnippets.push_back(move(nativeSql));
-        return ECSqlStatus::Success;
-        }
-
     const bool isAnyEveryOrSome = function == SetFunctionCallExp::Function::Any ||
         function == SetFunctionCallExp::Function::Every ||
         function == SetFunctionCallExp::Function::Some;

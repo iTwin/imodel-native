@@ -5666,8 +5666,8 @@ TEST_F(ECDbMappingTestFixture, RelationshipWithAbstractClassAsConstraintOnChildE
         return selectStmt.GetValueInt(0);
         };
 
-    {
- /*   SchemaItem testItem("<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+ /*   {
+    SchemaItem testItem("<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
                         "  <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
                         "  <ECEntityClass typeName='Solid'>"
                         "    <ECProperty propertyName='Name' typeName='string' />"
@@ -5691,8 +5691,8 @@ TEST_F(ECDbMappingTestFixture, RelationshipWithAbstractClassAsConstraintOnChildE
     ASSERT_FALSE(asserted);
 
     ecdb.Schemas().CreateECClassViewsInDb();
-    ASSERT_EQ(0, getSolidHasFacesRowCount(ecdb));*/
-    }
+    ASSERT_EQ(0, getSolidHasFacesRowCount(ecdb));
+    }*/
     }
 
 //=======================================================================================    

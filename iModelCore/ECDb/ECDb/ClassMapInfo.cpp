@@ -201,7 +201,7 @@ BentleyStatus ClassMapInfo::DoEvaluateMapStrategy(bool& baseClassesNotMappedYet,
                 if (Enum::Contains(parentStrategy.GetOptions(), ECDbMapStrategy::Options::ParentOfJoinedTable))
                     {
                     std::vector<IClassMap const*> path;
-                    if (m_parentClassMap->GetPathToRootOfJoinedTable(path) == ERROR)
+                    if (m_parentClassMap->GetPathToParentOfJoinedTable(path) == ERROR)
                         {
                         BeAssert(false && "Path should never be empty for joinedTable");
                         return ERROR;
