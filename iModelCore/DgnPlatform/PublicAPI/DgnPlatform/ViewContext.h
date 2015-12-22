@@ -243,7 +243,7 @@ protected:
     DGNPLATFORM_EXPORT ViewContext();
 
 public:
-    int ViewContext::GetTransClipDepth() {return (int) m_transformClipStack.GetSize();}
+    int GetTransClipDepth() {return (int) m_transformClipStack.GetSize();}
     DMap4dCR GetWorldToView() const {return m_worldToView;}
     DMap4dCR GetWorldToNpc() const {return m_worldToNpc;}
     bool GetWantMaterials() {return m_wantMaterials;};

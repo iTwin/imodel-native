@@ -4249,15 +4249,26 @@ BEGIN_UNNAMED_NAMESPACE
 struct TextAnnotationDrawToGeometricPrimitive : IGeometryProcessor
 {
 private:
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     TextAnnotationDrawCR m_annotationDraw;
+#endif
     GeometryBuilderR m_builder;
     DgnCategoryId m_categoryId;
     Transform m_transform;
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     Transform m_geomToElem;
+#endif
 
 public:
     TextAnnotationDrawToGeometricPrimitive(TextAnnotationDrawCR annotationDraw, TransformCR geomToElem, GeometryBuilderR builder, DgnCategoryId categoryId) :
-        m_annotationDraw(annotationDraw), m_builder(builder), m_categoryId(categoryId), m_geomToElem (geomToElem), m_transform(Transform::FromIdentity()) {}
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
+        m_annotationDraw(annotationDraw), 
+#endif
+        m_builder(builder), m_categoryId(categoryId), 
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
+        m_geomToElem (geomToElem), 
+#endif
+        m_transform(Transform::FromIdentity()) {}
 
     virtual void _AnnounceTransform(TransformCP transform) override { if (nullptr != transform) { m_transform = *transform; } else { m_transform.InitIdentity(); } }
     virtual void _AnnounceGeometryParams(GeometryParamsCR params) override { m_builder.Append(params); }

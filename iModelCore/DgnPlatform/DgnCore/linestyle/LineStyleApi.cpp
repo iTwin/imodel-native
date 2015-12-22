@@ -221,6 +221,7 @@ StatusInt       LsComponent::_StrokeLineString2d (ViewContextP context, LineStyl
     return _StrokeLineString (context, lsSymb, pts3d, nPts, isClosed);
     }
 
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   11/07
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -228,6 +229,7 @@ static inline bool biggerThanPixel (double val, double pixelSize)
     {
     return  fabs (val) > pixelSize;
     }
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   11/07

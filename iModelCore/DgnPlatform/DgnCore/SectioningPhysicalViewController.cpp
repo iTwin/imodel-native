@@ -240,9 +240,9 @@ void SectioningViewController::SetOverrideGraphicParams(ViewContextR context) co
 
     //  Everything outside of the inside-forward clip volume is grayed out and transparent.
 
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     ColorDef color = (m_pass == ClipVolumePass::InsideBackward)? ColorDef(0xcf00ffff) : ColorDef(0xcfffff00);
 
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     OvrGraphicParamsP overrideMatSymb = context.GetOverrideGraphicParams();
     overrideMatSymb->Clear();
     overrideMatSymb->SetLineColor(color);

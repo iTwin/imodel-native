@@ -60,7 +60,9 @@ void TextStringStyle::Reset()
 
 static const double DEFAULT_ITALIC_ANGLE = Angle::DegreesToRadians(30.0);
 static const uint32_t DEFAULT_BOLD_WEIGHT = 2;
-static const double DEFAULT_UNDERLINE_OFFSET_FACTOR = 0.15;
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
+    static const double DEFAULT_UNDERLINE_OFFSET_FACTOR = 0.15;
+#endif
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     01/2015

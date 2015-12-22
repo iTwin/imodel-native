@@ -126,8 +126,7 @@ public:
 //=======================================================================================
 struct Queue
 {
-    friend struct DgnViewport;
-
+    friend Dgn::DgnViewport;
 private:
     BeConditionVariable m_cv;
     std::deque<TaskPtr> m_tasks;

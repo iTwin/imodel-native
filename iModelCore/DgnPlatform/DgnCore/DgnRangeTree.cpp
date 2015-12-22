@@ -56,6 +56,9 @@ DRTPrefs()
 
 static DRTPrefs  s_prefs;
 
+//#define DRT_DEBUGGING
+#if defined (DRT_DEBUGGING)
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      12/2005
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -72,9 +75,7 @@ static inline double   timeGetSeconds()
     return timeGetTime() / s_timerResolution;
     }
 
-//#define DRT_DEBUGGING
 
-#if defined (DRT_DEBUGGING)
 #define INCLUDE_TIMER(t)            IncludeTimer  includer(t)
 #define EXCLUDE_TIMER(t)            ExcludeTimer  excluder(t)
 #define TIMER_OVERHEAD s_statistics.m_timerOverhead.m_value

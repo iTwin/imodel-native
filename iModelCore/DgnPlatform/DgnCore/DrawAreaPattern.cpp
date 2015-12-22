@@ -313,7 +313,9 @@ bool PatternParams::IsEqual(PatternParamsCR params, PatternParamsCompareFlags co
 struct PatternBoundaryCollector : IGeometryProcessor
 {
 private:
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     GeometrySourceCR    m_stroker;
+#endif
     CurveVectorPtr      m_boundary;
     ViewContextP        m_context;
     Transform           m_currentTransform;
@@ -322,7 +324,11 @@ protected:
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                                    Brien.Bastings  11/13
     +---------------+---------------+---------------+---------------+---------------+------*/
-    explicit PatternBoundaryCollector(GeometrySourceCR stroker) : m_stroker(stroker) {}
+    explicit PatternBoundaryCollector(GeometrySourceCR stroker) 
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
+    : m_stroker(stroker) 
+#endif
+    {}
 
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                                    Brien.Bastings  11/13

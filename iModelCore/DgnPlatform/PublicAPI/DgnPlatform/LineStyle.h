@@ -138,7 +138,7 @@ struct LsJsonHelpers
     static uint32_t GetUInt32(JsonValueCR json, CharCP fieldName, uint32_t defaultValue);
     static int32_t GetInt32(JsonValueCR json, CharCP fieldName, int32_t defaultValue);
     static uint64_t GetUInt64(JsonValueCR json, CharCP fieldName, uint64_t defaultValue);
-    static Utf8String GetString(JsonValueCR json, CharCP fieldName, char* defaultValue);
+    static Utf8String GetString(JsonValueCR json, CharCP fieldName, CharCP defaultValue);
     static LsComponentId GetComponentId(JsonValueCR json, CharCP typeName, CharCP idName, LsComponentType defaultType = LsComponentType::Internal);
 };
 
@@ -344,7 +344,7 @@ public:
         }
 
     DGNPLATFORM_EXPORT static void GetNextComponentNumber (uint32_t& id, DgnDbR project, BeSQLite::PropertySpec spec);
-    DGNPLATFORM_EXPORT static LineStyleStatus LsComponent::AddComponentAsJsonProperty (LsComponentId& componentId, DgnDbR project, LsComponentType componentType, JsonValueCR jsonValue);
+    DGNPLATFORM_EXPORT static LineStyleStatus AddComponentAsJsonProperty (LsComponentId& componentId, DgnDbR project, LsComponentType componentType, JsonValueCR jsonValue);
     DGNPLATFORM_EXPORT static LineStyleStatus AddRasterComponentAsJson (LsComponentId& componentId, DgnDbR project, JsonValueCR jsonDef, uint8_t const*imageData, uint32_t dataSize);
 
     bool                IsWidthDiscernible (ViewContextP, Render::LineStyleSymbCP, DPoint3dCR) const;
