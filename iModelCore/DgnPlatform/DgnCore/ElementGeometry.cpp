@@ -3202,6 +3202,13 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicR graphic, ViewContextR c
                     break;
 
                 DrawHelper::CookGeometryParams(context, geomParams, graphicParams, &graphic, &geomParamsChanged);
+
+                if (!context.Is3dView())
+                    {
+                    graphic.AddTextString2d(text, geomParams.GetNetDisplayPriority());
+                    break;
+                    }
+
                 context.AddTextString(text);
                 break;
                 }

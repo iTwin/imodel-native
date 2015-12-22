@@ -1274,7 +1274,7 @@ void SimplifyGraphic::ClipAndProcessBodyAsPolyface(ISolidKernelEntityCR geom) co
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  06/05
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SimplifyGraphic::ClipAndProcessText(TextStringCR text, double* zDepth) const
+void SimplifyGraphic::ClipAndProcessText(TextStringCR text) const
     {
     bool doClipping = (nullptr != GetCurrentClip() && m_processor._DoClipping());
 
@@ -1758,9 +1758,17 @@ void SimplifyGraphic::_AddBody(ISolidKernelEntityCR geom, double pixelSize)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  06/05
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SimplifyGraphic::_AddTextString(TextStringCR text, double* zDepth)
+void SimplifyGraphic::_AddTextString(TextStringCR text)
     {
-    ClipAndProcessText(text, zDepth);
+    ClipAndProcessText(text);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  06/05
++---------------+---------------+---------------+---------------+---------------+------*/
+void SimplifyGraphic::_AddTextString2d(TextStringCR text, double zDepth)
+    {
+    _AddTextString(text);
     }
 
 /*---------------------------------------------------------------------------------**//**

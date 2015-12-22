@@ -43,7 +43,8 @@ struct NullContext : ViewContext
         virtual void _AddBSplineSurface(MSBsplineSurfaceCR surface) override {}
         virtual void _AddPolyface(PolyfaceQueryCR meshData, bool filled = false) override {}
         virtual void _AddBody(ISolidKernelEntityCR, double pixelSize = 0.0) override {}
-        virtual void _AddTextString(TextStringCR text, double* zDepth = NULL) override {}
+        virtual void _AddTextString(TextStringCR text) override {}
+        virtual void _AddTextString2d(TextStringCR text, double zDepth) override {}
         virtual void _AddMosaic(int numX, int numY, uintptr_t const* tileIds, DPoint3d const* verts) override {}
         virtual void _AddRaster(DPoint3d const points[4], int pitch, int numTexelsX, int numTexelsY, int enableAlpha, int format, Byte const* texels, DPoint3dCP range) override {}
         virtual void _AddRaster2d(DPoint2d const points[4], int pitch, int numTexelsX, int numTexelsY, int enableAlpha, int format, Byte const* texels, double zDepth, DPoint2d const *range) override {}
