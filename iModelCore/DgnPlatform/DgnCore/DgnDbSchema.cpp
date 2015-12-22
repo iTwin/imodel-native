@@ -46,7 +46,8 @@ static void importDgnSchema(DgnDbR db, bool updateExisting)
 #define ORIGIN_FROM_PLACEMENT "DGN_point_create(NEW.Placement_Origin_X,NEW.Placement_Origin_Y,NEW.Placement_Origin_Z)"
 #define ANGLES_FROM_PLACEMENT "DGN_angles_create(NEW.Placement_Rotation_Yaw,NEW.Placement_Rotation_Pitch,NEW.Placement_Rotation_Roll)"
 #define BBOX_FROM_PLACEMENT "DGN_bbox_create(DGN_point_create(NEW.Placement_Box_Low_X,NEW.Placement_Box_Low_Y,NEW.Placement_Box_Low_Z),DGN_point_create(NEW.Placement_Box_High_X,NEW.Placement_Box_High_Y,NEW.Placement_Box_High_Z))"
-#define AABB_FROM_PLACEMENT "DGN_placement_aabb(" BBOX_FROM_PLACEMENT ")"
+#define PLACEMENT_FROM_GEOM "DGN_placement_create(" ORIGIN_FROM_PLACEMENT "," ANGLES_FROM_PLACEMENT "," BBOX_FROM_PLACEMENT ")"
+#define AABB_FROM_PLACEMENT "DGN_placement_aabb(" PLACEMENT_FROM_GEOM ")"
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
