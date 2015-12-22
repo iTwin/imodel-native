@@ -955,8 +955,6 @@ struct ComponentDef : RefCountedBase
     DGNPLATFORM_EXPORT static Utf8String GetCaValueString(ECN::IECInstanceCR, Utf8CP propName);
     DGNPLATFORM_EXPORT ECN::IECInstancePtr GetPropSpecCA(ECN::ECPropertyCR prop);
 
-    DGNPLATFORM_EXPORT DgnDbStatus GenerateGeometry(ECN::IECInstanceCR variationSpec);
- 
     static Utf8String GetClassECSqlName(ECN::ECClassCR cls) {Utf8String ns(cls.GetSchema().GetNamespacePrefix()); return ns.append(".").append(cls.GetName());}
     Utf8String GetClassECSqlName() const {return GetClassECSqlName(m_class);}
 
@@ -980,6 +978,9 @@ struct ComponentDef : RefCountedBase
     ~ComponentDef();
 
  public:
+    //! @private - called only by componenteditor
+    DGNPLATFORM_EXPORT DgnDbStatus GenerateGeometry(ECN::IECInstanceCR variationSpec);
+
     //! Get a list of all of the component definitions derived from the specified base class in the specified DgnDb
     //! @param[out] componentDefs    Where to return the results
     //! @param[in] db               The Db to search
@@ -1045,6 +1046,8 @@ struct ComponentDef : RefCountedBase
 
     //! Get the name of this component
     Utf8String GetName() const {return m_class.GetName();}
+
+    DGNPLATFORM_EXPORT Utf8String GetElementGeneratorName() const;
 
     DGNPLATFORM_EXPORT Utf8String GetCategoryName() const;
     DGNPLATFORM_EXPORT DgnCategoryId QueryCategoryId() const;

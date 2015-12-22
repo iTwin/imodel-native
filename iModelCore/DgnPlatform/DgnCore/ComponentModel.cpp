@@ -533,6 +533,11 @@ Utf8String ComponentDef::GetCaValueString(ECN::IECInstanceCR ca, Utf8CP propName
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String ComponentDef::GetElementGeneratorName() const {return GetCaValueString(*m_ca, CDEF_CA_ELEMENT_GENERATOR);}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      12/15
++---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String ComponentDef::GetCategoryName() const {return GetCaValueString(*m_ca, CDEF_CA_CATEGORY);}
 
 /*---------------------------------------------------------------------------------**//**
@@ -641,7 +646,7 @@ DgnDbStatus ComponentDef::GenerateGeometry(ECN::IECInstanceCR variationSpecIn)
     ECN::IECInstancePtr instanceTemplate = MakeVariationSpec();
     instanceTemplate->CopyValues(variationSpecIn);
 
-    Utf8String scriptName = GetCaValueString(*m_ca, CDEF_CA_ELEMENT_GENERATOR);
+    Utf8String scriptName = GetElementGeneratorName();
     if (scriptName.empty())
         {
         GeometryGenerator* gg = dynamic_cast<GeometryGenerator*>(m_model.get());
