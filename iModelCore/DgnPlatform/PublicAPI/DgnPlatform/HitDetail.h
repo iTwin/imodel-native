@@ -174,11 +174,10 @@ protected:
     virtual void _SetHitPoint(DPoint3dCR pt) {m_geomDetail.SetClosestPoint(pt);}
     virtual void _SetTestPoint(DPoint3dCR pt) {m_testPoint = pt;}
     virtual bool _IsSameHit(HitDetailCP otherHit) const;
-    virtual void _DrawInVp(DecorateContextR) const;
+    virtual void _Draw(ViewContextR context) const;
     virtual void _SetHilited(DgnElement::Hilited) const;
 
 public:
-#if !defined (DOCUMENTATION_GENERATOR)
     DGNPLATFORM_EXPORT HitDetail(DgnViewportR, GeometrySourceCP, DPoint3dCR testPoint, HitSource, GeomDetailCR);
     DGNPLATFORM_EXPORT explicit HitDetail(HitDetailCR from);
     DGNPLATFORM_EXPORT virtual ~HitDetail();
@@ -189,21 +188,14 @@ public:
     void SetHilited(DgnElement::Hilited state) const {_SetHilited(state);}
     void SetSubSelectionMode(SubSelectionMode mode) {_SetSubSelectionMode(mode);}
 
-    void DrawInVp(DecorateContextR context) const {_DrawInVp(context);}
+    void Draw(ViewContextR context) const {_Draw(context);}
     DGNPLATFORM_EXPORT bool ShouldFlashCurveSegment(ViewContextR) const; //! Check for segment flash mode before calling FlashCurveSegment.
     DGNPLATFORM_EXPORT void FlashCurveSegment(ViewContextR) const; //! Setup context.GetCurrentGeometryParams() before calling!
-    
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    DGNVIEW_EXPORT void DrawInView(DgnViewportR, DrawPurpose drawPurpose) const;
-    DGNVIEW_EXPORT void DrawInAllViews(ViewSetR, DrawPurpose drawPurpose) const;
-#endif
     DGNVIEW_EXPORT void Hilite(ViewSetR, bool onOff) const;
 
     void GetInfoString(Utf8StringR descr, Utf8CP delimiter) const {_GetInfoString(descr, delimiter);}
     DGNPLATFORM_EXPORT DgnElement::Hilited IsHilited() const;
     DGNPLATFORM_EXPORT bool IsInSelectionSet() const;
-#endif
-
     DGNPLATFORM_EXPORT DgnElementCPtr GetElement() const;
     DgnElementId GetElementId() const {return m_elementId;}
     DGNPLATFORM_EXPORT DgnModelR GetDgnModel() const;
@@ -222,7 +214,6 @@ public:
 
     DGNPLATFORM_EXPORT IElemTopologyCP GetElemTopology() const;
     DGNPLATFORM_EXPORT void SetElemTopology(IElemTopologyP topo);
-
 }; // HitDetail
 
 typedef RefCountedPtr<HitDetail> HitDetailPtr;
@@ -369,7 +360,7 @@ struct IntersectDetail : SnapDetail
 private:
     HitDetailP  m_secondHit;
 
-    virtual void _DrawInVp(DecorateContextR) const override;
+    virtual void _Draw(ViewContextR) const override;
     virtual HitDetailType _GetHitType() const override{return HitDetailType::Intersection;}
     DGNPLATFORM_EXPORT virtual void _SetHilited(DgnElement::Hilited) const override;
     DGNPLATFORM_EXPORT virtual bool _IsSameHit(HitDetailCP otherHit) const override;

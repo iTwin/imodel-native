@@ -479,23 +479,19 @@ public:
 //=======================================================================================
 struct RenderContext : ViewContext
 {
+    DEFINE_T_SUPER(ViewContext);
+
 protected:
+    Render::OvrGraphicParams m_ovrParams;
     Render::TargetR m_target;
 
 public:
     DGNVIEW_EXPORT RenderContext(DgnViewportR vp, DrawPurpose);
-    virtual Render::GraphicP _GetCachedGraphic(GeometrySourceCR source, double pixelSize) override {return source.Graphics().Find(*m_viewport, pixelSize);}
-    virtual void _SaveGraphic(GeometrySourceCR source, Render::GraphicR graphic) override {graphic.Close(); source.Graphics().Save(graphic);}
-    virtual void _PushFrustumClip() override {}
-    virtual Render::GraphicPtr _CreateGraphic(Render::Graphic::CreateParams const& params) override {return m_target.CreateGraphic(params);}
-};
-
-//=======================================================================================
-// @bsiclass                                                    Keith.Bentley   12/15
-//=======================================================================================
-struct DynamicsContext : RenderContext
-{
-    
+    void _AddContextOverrides(Render::OvrGraphicParamsR ovrMatSymb, GeometrySourceCP source) override;
+    Render::GraphicP _GetCachedGraphic(GeometrySourceCR source, double pixelSize) override {return source.Graphics().Find(*m_viewport, pixelSize);}
+    void _SaveGraphic(GeometrySourceCR source, Render::GraphicR graphic) override {graphic.Close(); source.Graphics().Save(graphic);}
+    void _PushFrustumClip() override {}
+    Render::GraphicPtr _CreateGraphic(Render::Graphic::CreateParams const& params) override {return m_target.CreateGraphic(params);}
 };
 
 //=======================================================================================
@@ -507,6 +503,7 @@ struct DecorateContext : RenderContext
 private:
     Render::Decorations& m_decorations;
     DecorateContext(DgnViewportR vp, Render::Decorations& decorations) : RenderContext(vp, DrawPurpose::Decorate), m_decorations(decorations) {}
+    void _OutputGraphic(Render::GraphicR graphic, GeometrySourceCP) override;
 
 public:
     DGNPLATFORM_EXPORT void AddWorldDecoration(Render::GraphicR graphic, Render::OvrGraphicParamsCP ovr=nullptr);

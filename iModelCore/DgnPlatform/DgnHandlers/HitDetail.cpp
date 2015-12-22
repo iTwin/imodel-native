@@ -466,14 +466,11 @@ void HitDetail::FlashCurveSegment(ViewContextR context) const
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   02/09
+* @bsimethod                                    Keith.Bentley                   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void HitDetail::_DrawInVp(DecorateContextR) const
+void HitDetail::_Draw(ViewContextR context) const
     {
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    if (vp.IsActive())
-        T_HOST.GetGraphicsAdmin()._DrawInVp(this, vp, drawMode, drawPurpose, stopFlag);
-#endif
+    context.VisitHit(*this);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -752,7 +749,6 @@ bool IntersectDetail::_IsSameHit(HitDetailCP otherPath) const
 void IntersectDetail::_SetHilited(DgnElement::Hilited newState) const
     {
     T_Super::_SetHilited(newState);
-
     m_secondHit->SetHilited(newState);
     }
 
@@ -762,7 +758,7 @@ void IntersectDetail::_SetHilited(DgnElement::Hilited newState) const
 * is drawn using a dashed symbology.
 * @bsimethod                                                    KeithBentley    06/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-void IntersectDetail::_DrawInVp(DecorateContextR context) const
+void IntersectDetail::_Draw(ViewContextR context) const
     {
 #if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     // start by drawing the first path normally

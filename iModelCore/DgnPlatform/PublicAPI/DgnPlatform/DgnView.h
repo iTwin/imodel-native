@@ -409,7 +409,7 @@ protected:
     virtual SheetViewDefinitionCP _ToSheetView() const { return this; }
 public:
     //! Construct a SheetViewDefinition from the supplied params
-    explicit SheetViewDefinition(CreateParams const& params) : T_Super(params) { }
+    explicit SheetViewDefinition(CreateParams const& params) : T_Super(params) {}
 
     //! Look up the ECClass ID used for SheetViewDefinitions in the specified DgnDb
     static DgnClassId QueryClassId(DgnDbR db) { return DgnClassId(db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_SheetViewDefinition)); }

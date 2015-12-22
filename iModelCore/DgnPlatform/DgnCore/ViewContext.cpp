@@ -346,6 +346,9 @@ void ViewContext::_OutputGeometry(GeometrySourceCR source)
                    m_viewport->GetViewControllerR()._StrokeGeometry(*this, source, pixelSize) :
                    source.Stroke(*this, pixelSize);
 
+        if (WasAborted()) // if we aborted, the graphic may not be complete, don't save it
+            return;
+
         _SaveGraphic(source, *graphic);
         }
 
@@ -1107,6 +1110,7 @@ void GraphicParams::Init()
     m_patternParams     = nullptr;
     m_gradient          = nullptr;
     m_material          = nullptr;
+    m_linePixels        = (uint32_t) LinePixels::Solid;
     m_lStyleSymb.Clear();
     }
 
