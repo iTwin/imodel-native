@@ -930,8 +930,9 @@ public:
     ComponentModel(CreateParams const& params) : DgnModel3d(params) {;} //!< @private
 
     //! Create a ComponentModel that can be used by a component definition
-    //! @param componentDefClassFullName    The full ECSQL name of the component definition ECClass
-    //! @return a new component model
+    //! @param db The DgnDb that is intended to hold the new model
+    //! @param componentDefClassFullName The full ECSQL name of the component definition ECClass
+    //! @return a new, non-persistent component model
     DGNPLATFORM_EXPORT static ComponentModelPtr Create(DgnDbR db, Utf8StringCR componentDefClassFullName);
 
     Utf8StringCR GetComponentECClassFullName() const {return m_componentECClass;}

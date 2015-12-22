@@ -74,20 +74,20 @@ module DgnScriptTests {
 
 
         var baseclasses: be.ECClassCollection = pe.BaseClasses;
-        var foundElement: boolean = false;
+        var foundSpatialElement: boolean = false;
         var baseCount: number = 0;
         for (var clsiter = baseclasses.Begin(); baseclasses.IsValid(clsiter); baseclasses.ToNext(clsiter))
         {
             var cls: be.ECClass = baseclasses.GetECClass(clsiter);
             be.Logging.Message('DgnScriptTest', be.LoggingSeverity.Info, cls.Name);
-            if (cls.Name == 'Element')
-                foundElement = true;
+            if (cls.Name == 'SpatialElement')
+                foundSpatialElement = true;
             ++baseCount;
         }
-        if (!foundElement)
-            be.Script.ReportError('BaseClasses ECClassCollection must have failed -- the Element base class was not found');
-        if (baseCount != 2)
-            be.Script.ReportError('BaseClasses ECClassCollection must have failed -- there should be 2');
+        if (!foundSpatialElement)
+            be.Script.ReportError('BaseClasses ECClassCollection must have failed -- I assume that PhysicalElement is derived from SpatialElement, but that base class was not found');
+        if (baseCount != 1)
+            be.Script.ReportError('BaseClasses ECClassCollection must have failed -- there should be 1 but I got ' + JSON.stringify(baseCount));
 
         var derivedclasses: be.ECClassCollection = pe.DerivedClasses;
         var derivedCount: number = 0;
