@@ -426,7 +426,6 @@ protected:
     DGNPLATFORM_EXPORT static void StartRenderThread();
     DMap4d CalcNpcToView();
     void QueueDrawFrame();
-    void Refresh();
 
 public:
     DgnViewport(Render::TargetP target) : m_renderTarget(target) {}
@@ -483,7 +482,9 @@ public:
     void SetUndoActive(bool val, int numsteps=20) {m_undoActive=val; m_maxUndoSteps=numsteps; CheckForChanges();}
     bool IsUndoActive() {return m_undoActive;}
     void ClearUndo();
+    void ChangeDynamics(Render::GraphicListP list);
     void ApplyViewState(Utf8StringCR val, int animationTime);
+    void Refresh();
     DGNVIEW_EXPORT void ApplyNext(int animationTime);
     DGNVIEW_EXPORT void ApplyPrevious(int animationTime);
     DGNPLATFORM_EXPORT void CheckForChanges();
