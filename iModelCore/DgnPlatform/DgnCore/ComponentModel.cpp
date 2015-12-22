@@ -366,6 +366,7 @@ ComponentDef::ComponentDef(DgnDbR db, ECN::ECClassCR componentDefClass)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
+#ifdef WIP_ECOBJECTS_PROBLEM // *** DerivedClassses collection is not updated when we insert a new ECClass
 void ComponentDef::QueryComponentDefs(bvector<DgnClassId>& componentDefs, DgnDbR db, ECN::ECClassCR baseClassIn)
     {
     auto componentSpecificationCA = db.Schemas().GetECClass(DGN_ECSCHEMA_NAME, "ComponentSpecification");
@@ -388,6 +389,41 @@ void ComponentDef::QueryComponentDefs(bvector<DgnClassId>& componentDefs, DgnDbR
             }
         }
     }
+#else
+void ComponentDef::QueryComponentDefs(bvector<DgnClassId>& componentDefs, DgnDbR db, ECN::ECClassCR baseClassIn)
+    {
+    auto componentSpecificationCA = db.Schemas().GetECClass(DGN_ECSCHEMA_NAME, "ComponentSpecification");
+    if (nullptr == componentSpecificationCA)
+        return;
+
+    Statement stmt(db, "SELECT ClassId FROM ec_BaseClass WHERE BaseClassId=?");
+
+    bvector<DgnClassId> baseClassIds;
+    baseClassIds.push_back(DgnClassId(baseClassIn.GetId()));
+
+    while (!baseClassIds.empty())
+        {
+        DgnClassId baseClassId = baseClassIds.back();
+        baseClassIds.pop_back();
+
+        stmt.Reset();
+        stmt.ClearBindings();
+        stmt.BindId(1, baseClassId);
+
+        while (BE_SQLITE_ROW == stmt.Step())
+            {
+            DgnClassId derivedClassId = stmt.GetValueId<DgnClassId>(0);
+            ECN::ECClassCP derivedClass = db.Schemas().GetECClass(derivedClassId.GetValue());
+            if (nullptr == derivedClass)
+                continue;
+            if (derivedClass->GetCustomAttribute(*componentSpecificationCA).IsValid())
+                componentDefs.push_back(derivedClassId);
+            else
+                baseClassIds.push_back(derivedClassId);
+            }
+        }
+    }
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      12/15

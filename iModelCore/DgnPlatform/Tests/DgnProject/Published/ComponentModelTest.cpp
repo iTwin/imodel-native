@@ -70,7 +70,7 @@ static DgnDbStatus createPhysicalModel(PhysicalModelPtr& catalogModel, DgnDbR db
 * @bsimethod                                    Sam.Wilson                      04/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
 template<typename T>
-RefCountedPtr<T> getModelByName(DgnDbR db, Utf8CP cmname)
+RefCountedPtr<T> getModelByName(DgnDbR db, Utf8StringCR cmname)
     {
     return db.Models().Get<T>(db.Models().QueryModelId(DgnModel::CreateModelCode(cmname)));
     }
@@ -236,8 +236,8 @@ DgnCategoryId Developer_CreateCategory(Utf8CP code, ColorDef const&);
 void Developer_DefineSchema();
 void Client_ImportComponentDef(Utf8CP componentName);
 void Client_InsertNonInstanceElement(Utf8CP modelName, Utf8CP code = nullptr);
-void Client_PlaceInstanceOfVariation(DgnElementId&, Utf8CP targetModelName, DgnElementCR variation);
-void Client_PlaceInstance(DgnElementId&, Utf8CP targetModelName, PhysicalModelR catalogModel, Utf8CP componentName, Utf8CP variationName, bool expectToFindVariation);
+void Client_PlaceInstanceOfVariation(DgnElementId&, Utf8StringCR targetModelName, DgnElementCR variation);
+void Client_PlaceInstance(DgnElementId&, Utf8CP targetModelName, PhysicalModelR catalogModel, Utf8StringCR componentName, Utf8StringCR variationName, bool expectToFindVariation);
 void Client_CheckComponentInstance(DgnElementId eid, size_t expectedSolidCount, VariationSpec const& vc);
 void Client_CheckNestedInstance(DgnElementCR instanceElement, Utf8CP expectedChildComponentName, int nChildrenExpected);
 
@@ -438,7 +438,7 @@ void ComponentModelTest::Client_CheckComponentInstance(DgnElementId eid, size_t 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ComponentModelTest::Client_PlaceInstanceOfVariation(DgnElementId& ieid, Utf8CP targetModelName, DgnElementCR variation)
+void ComponentModelTest::Client_PlaceInstanceOfVariation(DgnElementId& ieid, Utf8StringCR targetModelName, DgnElementCR variation)
     {
     ASSERT_TRUE(m_clientDb.IsValid() && "Caller must have already opened the Client DB");
 
@@ -457,12 +457,12 @@ void ComponentModelTest::Client_PlaceInstanceOfVariation(DgnElementId& ieid, Utf
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ComponentModelTest::Client_PlaceInstance(DgnElementId& ieid, Utf8CP targetModelName, PhysicalModelR catalogModel, Utf8CP componentName, Utf8CP variationName, bool expectToFindVariation)
+void ComponentModelTest::Client_PlaceInstance(DgnElementId& ieid, Utf8CP targetModelName, PhysicalModelR catalogModel, Utf8StringCR componentName, Utf8StringCR variationName, bool expectToFindVariation)
     {
     ASSERT_TRUE(m_clientDb.IsValid() && "Caller must have already opened the Client DB");
 
 
-    ComponentDefPtr cdef = ComponentDef::FromECClass(nullptr, catalogModel.GetDgnDb(), *catalogModel.GetDgnDb().Schemas().GetECClass(TEST_JS_NAMESPACE, componentName));
+    ComponentDefPtr cdef = ComponentDef::FromECClass(nullptr, catalogModel.GetDgnDb(), *catalogModel.GetDgnDb().Schemas().GetECClass(TEST_JS_NAMESPACE, componentName.c_str()));
     ASSERT_TRUE(cdef.IsValid());
 
     DgnElementCPtr variation = cdef->QueryVariationByName(variationName);
@@ -569,7 +569,6 @@ void ComponentModelTest::SimulateDeveloper()
         }
 
     //  Exercise QueryComponentDefs
-    /*
         {
         OpenComponentDb(Db::OpenMode::Readonly);
         AutoCloseComponentDb closeComponentDb(*this);
@@ -585,7 +584,6 @@ void ComponentModelTest::SimulateDeveloper()
         ASSERT_TRUE(std::find(componentClassIds.begin(), componentClassIds.end(), gadgetClassId) != componentClassIds.end());
         ASSERT_TRUE(std::find(componentClassIds.begin(), componentClassIds.end(), thingClassId) != componentClassIds.end());
         }
-    */
 
     }
 
@@ -630,12 +628,31 @@ void ComponentModelTest::SimulateClient()
         //  Once per component, import the component def
         Client_ImportComponentDef(TEST_WIDGET_COMPONENT_NAME);
 
+        //  Exercise QueryComponentDefs
+            {
+            // Note that when we import the schema, all 3 ecclasses are imported. Therefore, we find 3 components, not just one.
+            // We have not yet imported the variations or the models of the other components, however.
+            OpenComponentDb(Db::OpenMode::Readonly);
+            AutoCloseComponentDb closeComponentDb(*this);
+
+            DgnClassId widgetClassId = DgnClassId(m_componentDb->Schemas().GetECClassId(TEST_JS_NAMESPACE, TEST_WIDGET_COMPONENT_NAME));
+            DgnClassId gadgetClassId = DgnClassId(m_componentDb->Schemas().GetECClassId(TEST_JS_NAMESPACE, TEST_GADGET_COMPONENT_NAME));
+            DgnClassId  thingClassId = DgnClassId(m_componentDb->Schemas().GetECClassId(TEST_JS_NAMESPACE,  TEST_THING_COMPONENT_NAME));
+
+            bvector<DgnClassId> componentClassIds;
+            ComponentDef::QueryComponentDefs(componentClassIds, *m_componentDb, *m_componentDb->Schemas().GetECClass(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_PhysicalElement));
+            ASSERT_EQ(3, componentClassIds.size());
+            ASSERT_TRUE(std::find(componentClassIds.begin(), componentClassIds.end(), widgetClassId) != componentClassIds.end());
+            ASSERT_TRUE(std::find(componentClassIds.begin(), componentClassIds.end(), gadgetClassId) != componentClassIds.end());
+            ASSERT_TRUE(std::find(componentClassIds.begin(), componentClassIds.end(), thingClassId)  != componentClassIds.end());
+            }
+
         PhysicalModelPtr catalogModel = getModelByName<PhysicalModel>(*m_clientDb, "Catalog");
         ASSERT_TRUE( catalogModel.IsValid() ) << "importing component should also import its catalog";
 
         // Now start placing instances of Widgets
-        Client_PlaceInstance(w1, "Instances", *catalogModel, TEST_WIDGET_COMPONENT_NAME, "wsln1", true);
-        Client_PlaceInstance(w2, "Instances", *catalogModel, TEST_WIDGET_COMPONENT_NAME, "wsln1", true);
+        Client_PlaceInstance(w1, "Instances", *catalogModel, TEST_WIDGET_COMPONENT_NAME, m_wsln1.m_name, true);
+        Client_PlaceInstance(w2, "Instances", *catalogModel, TEST_WIDGET_COMPONENT_NAME, m_wsln1.m_name, true);
         ASSERT_TRUE( w1.IsValid() );
         ASSERT_TRUE( w2.IsValid() );
         ASSERT_NE( w1.GetValue() , w2.GetValue() );
@@ -650,7 +667,7 @@ void ComponentModelTest::SimulateClient()
         for (int i=0; i<5; ++i)
             Client_InsertNonInstanceElement("Instances");
 
-        Client_PlaceInstance(w3, "Instances", *catalogModel, TEST_WIDGET_COMPONENT_NAME, "wsln3", true);
+        Client_PlaceInstance(w3, "Instances", *catalogModel, TEST_WIDGET_COMPONENT_NAME, m_wsln3.m_name, true);
     
         Client_CheckComponentInstance(w3, 2, m_wsln3);
         Client_CheckComponentInstance(w1, 2, m_wsln1);  // new instance of new solution should not affect existing instances of other solutions
@@ -659,7 +676,7 @@ void ComponentModelTest::SimulateClient()
         if (true)
             {
             DgnElementId w1_second_time;
-            Client_PlaceInstance(w1_second_time, "Instances", *catalogModel, TEST_WIDGET_COMPONENT_NAME, "wsln1", true);
+            Client_PlaceInstance(w1_second_time, "Instances", *catalogModel, TEST_WIDGET_COMPONENT_NAME, m_wsln1.m_name, true);
             ASSERT_TRUE(w1_second_time.IsValid());
             Client_CheckComponentInstance(w1_second_time, 2, m_wsln1);  // new instance of new solution should not affect existing instances of other solutions
             }
@@ -678,7 +695,7 @@ void ComponentModelTest::SimulateClient()
         PhysicalModelPtr catalogModel = getModelByName<PhysicalModel>(*m_clientDb, "Catalog");
 
         DgnElementId w4;
-        Client_PlaceInstance(w4, "Instances", *catalogModel, TEST_WIDGET_COMPONENT_NAME, "wsln4", true);
+        Client_PlaceInstance(w4, "Instances", *catalogModel, TEST_WIDGET_COMPONENT_NAME, m_wsln4.m_name, true);
         ASSERT_TRUE(w4.IsValid());
 
         Client_CheckComponentInstance(w4, 2, m_wsln4);
@@ -686,9 +703,10 @@ void ComponentModelTest::SimulateClient()
 
         // Now start placing instances of Gadgets
         Client_ImportComponentDef(TEST_GADGET_COMPONENT_NAME);
+
         DgnElementId g1, g2;
-        Client_PlaceInstance(g1, "Instances", *catalogModel, TEST_GADGET_COMPONENT_NAME, "gsln1", true);
-        Client_PlaceInstance(g2, "Instances", *catalogModel, TEST_GADGET_COMPONENT_NAME, "gsln1", true);
+        Client_PlaceInstance(g1, "Instances", *catalogModel, TEST_GADGET_COMPONENT_NAME, m_gsln1.m_name, true);
+        Client_PlaceInstance(g2, "Instances", *catalogModel, TEST_GADGET_COMPONENT_NAME, m_gsln1.m_name, true);
         ASSERT_TRUE(g1.IsValid());
         ASSERT_TRUE(g2.IsValid());
 
@@ -697,7 +715,7 @@ void ComponentModelTest::SimulateClient()
 
         //  And place another Widget
         DgnElementId w44;
-        Client_PlaceInstance(w44, "Instances", *catalogModel, TEST_WIDGET_COMPONENT_NAME, "wsln44", true);
+        Client_PlaceInstance(w44, "Instances", *catalogModel, TEST_WIDGET_COMPONENT_NAME, m_wsln44.m_name, true);
         ASSERT_TRUE(w44.IsValid());
 
         Client_CheckComponentInstance(w3, 2, m_wsln3);
