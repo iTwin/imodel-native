@@ -1140,10 +1140,9 @@ struct GraphicList : RefCounted<NonCopyableClass>
 //=======================================================================================
 struct Decorations
 {
-    GraphicListPtr m_dynamics;        // drawn with zbuffer, with scene lighting
-    GraphicListPtr m_world;           // drawn with zbuffer, with default lighting, smooth shading
-    GraphicListPtr m_cameraOverlay;   // drawn in overlay mode, camera units
-    GraphicListPtr m_viewOverlay;     // drawn in overlay mode, view units
+    GraphicListPtr m_world;          // drawn with zbuffer, with default lighting, smooth shading
+    GraphicListPtr m_worldOverlay;   // drawn in overlay mode, world units
+    GraphicListPtr m_viewOverlay;    // drawn in overlay mode, view units
 };
 
 //=======================================================================================
@@ -1226,6 +1225,7 @@ struct Target : RefCounted<NonCopyableClass>
 protected:
     DevicePtr          m_device;
     GraphicListPtr     m_currentScene;
+    GraphicListPtr     m_dynamics;        // drawn with zbuffer, with scene lighting
     Decorations        m_decorations;
     BeAtomic<uint32_t> m_lastFrameMillis;
 
@@ -1241,7 +1241,8 @@ protected:
 
 public:
     virtual void _ChangeScene(GraphicListR) = 0;
-    virtual void _ChangeDecorations(Decorations&) = 0;
+    virtual void _ChangeDynamics(GraphicListR dynamics) {Queue::VerifyRenderThread(true); m_dynamics = &dynamics;}
+    virtual void _ChangeDecorations(Decorations& decorations) {Queue::VerifyRenderThread(true); m_decorations = decorations;}
     virtual void _DrawFrame(PlanCR) = 0;
     virtual double _GetCameraFrustumNearScaleLimit() const = 0;
     virtual bool _WantInvertBlackBackground() {return false;}

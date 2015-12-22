@@ -502,13 +502,31 @@ public:
 //=======================================================================================
 // @bsiclass                                                    Keith.Bentley   12/15
 //=======================================================================================
+struct DynamicsContext : RenderContext
+{
+    friend struct DgnPrimitiveTool;
+private:
+    Render::GraphicListR m_dynamics;
+    void _OutputGraphic(Render::GraphicR graphic, GeometrySourceCP) override;
+    DynamicsContext(DgnViewportR);
+    ~DynamicsContext();
+    void VisitWriteableElement(DgnElementCR element, IRedrawOperationP redrawOp);
+
+public:
+    DGNVIEW_EXPORT void DrawElements(DgnElementCPtrVec const& elements, IRedrawOperationP redrawOp=nullptr);
+    DGNVIEW_EXPORT void DrawElements(DgnElementIdSet const& elemIds, IRedrawOperationP redrawOp=nullptr);
+    DGNVIEW_EXPORT void DrawElement(DgnElementCR element, IRedrawOperationP redrawOp=nullptr);
+};
+
+//=======================================================================================
+// @bsiclass                                                    Keith.Bentley   12/15
+//=======================================================================================
 struct DecorateContext : RenderContext
 {
     friend struct DgnViewport;
 private:
     Render::Decorations& m_decorations;
     DecorateContext(DgnViewportR vp, Render::Decorations& decorations) : RenderContext(vp, DrawPurpose::Decorate), m_decorations(decorations) {}
-    void _OutputGraphic(Render::GraphicR graphic, GeometrySourceCP) override;
 
 public:
     DGNPLATFORM_EXPORT void AddWorldDecoration(Render::GraphicR graphic, Render::OvrGraphicParamsCP ovr=nullptr);
