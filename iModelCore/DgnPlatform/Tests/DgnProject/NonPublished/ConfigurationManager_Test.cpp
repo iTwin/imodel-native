@@ -175,7 +175,7 @@ void            CheckVersusMsDebugFile (MacroConfigurationAdmin& macroCfgAdmin)
 
         if (foundLevel != expectedVarLevel)
             {
-            wprintf (L"Config Variable Level for macro %ls differs. Expected %d, got %d\n", configVarName.c_str(), expectedLevel, foundLevel);
+            wprintf (L"Config Variable Level for macro %ls differs. Expected %ls, got %d\n", configVarName.c_str(), expectedLevel.c_str(), (int)foundLevel);
             levelMismatches++;
             }
         }
