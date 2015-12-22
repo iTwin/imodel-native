@@ -1747,14 +1747,10 @@ double          TextBlockHolder::ComputeDescenderAdjustment (AnnotationTextStyle
 #endif
 
     double      height = textStyle.GetHeight();
-#if defined (NEEDSWORK)
     DgnFontCR   font   = textStyle.ResolveFont();
 
     DgnFontStyle fontStyle = DgnFont::FontStyleFromBoldItalic(textStyle.IsBold(), textStyle.IsItalic());
     return font.GetDescenderRatio(fontStyle) * height;
-#else
-    return 0.3 * height;
-#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
