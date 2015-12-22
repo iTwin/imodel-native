@@ -285,7 +285,7 @@ TEST_F(ChangeSummaryTestFixture, ElementChangesFromCurrentTransaction)
 		TargetECClassId;NULL;dgn:ElementGeom:162
 		TargetECInstanceId;NULL;0:4
     */
-    EXPECT_EQ(11, changeSummary.MakeInstanceIterator().QueryCount());
+    EXPECT_EQ(8, changeSummary.MakeInstanceIterator().QueryCount());
     EXPECT_TRUE(ChangeSummaryContainsInstance(changeSummary, ECInstanceId(m_testModel->GetModelId().GetValueUnchecked()), "dgn", "PhysicalModel", DbOpcode::Insert));
     EXPECT_TRUE(ChangeSummaryContainsInstance(changeSummary, ECInstanceId(m_testCategoryId.GetValueUnchecked()), "dgn", "Category", DbOpcode::Insert));
     EXPECT_TRUE(ChangeSummaryContainsInstance(changeSummary, ECInstanceId(elementId.GetValueUnchecked()), "dgn", "PhysicalElement", DbOpcode::Insert));
@@ -342,7 +342,7 @@ TEST_F(ChangeSummaryTestFixture, ElementChangesFromCurrentTransaction)
 		TargetECClassId;dgn:ElementGeom:162;NULL
 		TargetECInstanceId;0:4;NULL
     */
-    EXPECT_EQ(5, changeSummary.MakeInstanceIterator().QueryCount());
+    EXPECT_EQ(2, changeSummary.MakeInstanceIterator().QueryCount());
     EXPECT_TRUE(ChangeSummaryContainsInstance(changeSummary, ECInstanceId(elementId.GetValueUnchecked()), "dgn", "PhysicalElement", DbOpcode::Delete));
     }
 
@@ -434,7 +434,7 @@ TEST_F(ChangeSummaryTestFixture, ElementChangesFromSavedTransactions)
 		TargetECClassId;NULL;dgn:ElementGeom:162
 		TargetECInstanceId;NULL;0:4
     */
-    EXPECT_EQ(11, changeSummary.MakeInstanceIterator().QueryCount());
+    EXPECT_EQ(8, changeSummary.MakeInstanceIterator().QueryCount());
 
     ModifyElement(elementId);
 
@@ -513,7 +513,7 @@ TEST_F(ChangeSummaryTestFixture, ElementChangesFromSavedTransactions)
 		TargetECClassId;NULL;dgn:ElementGeom:162
 		TargetECInstanceId;NULL;0:4
     */
-    EXPECT_EQ(11, changeSummary.MakeInstanceIterator().QueryCount());
+    EXPECT_EQ(8, changeSummary.MakeInstanceIterator().QueryCount());
 
     DeleteElement(elementId);
 
@@ -590,10 +590,10 @@ TEST_F(ChangeSummaryTestFixture, ValidateInstanceIterator)
         countIter++;
         UNUSED_VARIABLE(entry);
         }
-    EXPECT_EQ(countIter, 11);
+    EXPECT_EQ(countIter, 8);
 
     int countQuery = changeSummary.MakeInstanceIterator().QueryCount();
-    EXPECT_EQ(countQuery, 11);
+    EXPECT_EQ(countQuery, 8);
     }
 
 extern ECSchemaPtr ReadECSchemaFromDisk(WCharCP schemaPathname);
@@ -1389,21 +1389,7 @@ TEST_F(ChangeSummaryTestFixture, QueryChangedElements)
     ASSERT_TRUE(stepStatus == BE_SQLITE_DONE);
     EXPECT_EQ(insertedElements, changedElements);
 
-    // Query elements changed due to changes to related geometry using ECSQL
     stmt.Finalize();
-    ecsql = "SELECT el.ECInstanceId FROM dgn.Element el JOIN dgn.ElementGeom elg USING dgn.ElementOwnsGeom WHERE IsChangedInstance(?, elg.GetECClassId(), elg.ECInstanceId)";
-    status = stmt.Prepare(*m_testDb, ecsql);
-    ASSERT_TRUE(status.IsSuccess());
-
-    stmt.BindInt64(1, (int64_t) &changeSummary);
-
-    changedElements.empty();
-    while ((stepStatus = stmt.Step()) == BE_SQLITE_ROW)
-        {
-        changedElements.insert(stmt.GetValueId<DgnElementId>(0));
-        }
-    ASSERT_TRUE(stepStatus == BE_SQLITE_DONE);
-    EXPECT_EQ(insertedElements, changedElements);
     
     // Query changed elements directly using the API
     bmap<ECInstanceId, ChangeSummary::Instance> changes;

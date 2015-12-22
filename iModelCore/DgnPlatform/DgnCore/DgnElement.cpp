@@ -1,4 +1,4 @@
-/_STRUCTS*--------------------------------------------------------------------------------------+
+/*--------------------------------------------------------------------------------------+
 |
 |     $Source: DgnCore/DgnElement.cpp $
 |
@@ -43,7 +43,6 @@
  *              High : point3d
  */
 
-// ECSql API for extracting struct members from SELECT statements leaves much to be desired...access them individually instead.
 #define GEOM_Geometry "Geometry"
 #define GEOM_Category "CategoryId"
 #define GEOM_Origin "Placement.Origin"
@@ -2635,10 +2634,11 @@ DgnDbStatus ElementGeomData::ReadFrom(ECSqlStatement& stmt, ECSqlClassParams con
 DgnDbStatus ElementGeomData::BindTo(ECSqlStatement& stmt)
     {
     stmt.BindId(stmt.GetParameterIndex(GEOM_Category), m_categoryId);
-    stmt.BindNull(stmt.GetParameterIndex(GEOM_Geometry));
 
-    // Binding the GeomStream now would require making a potentially large allocation and then copying it...wait until _OnInserted/Updated()
-    // ###TODO except that means our trigger will delete from spatial index here, then insert into spatial index later
+    // Binding the GeomStream now would require making a potentially large allocation and then copying it, and then
+    // possibly copying it again...wait until _OnInserted/Updated()
+    // Note this means our spatial index triggers may execute redundantly a second time.
+
     return DgnDbStatus::Success;
     }
 
@@ -2780,19 +2780,100 @@ DgnDbStatus ElementGeom3d::Bind(ECSqlStatement& stmt, DgnElementCR el)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ElementGeomData::OnInserted(DgnElementCR el) const
+DgnDbStatus ElementGeomData::WriteGeomStream(DgnElementCR el, Utf8CP tableName) const
     {
-    // ###TODO: Write GeomStream
-    // ###TODO: Insert ElementUsesGeomParts relationships
+    Utf8String sql("UPDATE ");
+    sql.append(tableName);
+    sql.append(" SET " GEOM_Geometry "=? WHERE Id=?");
+
+    DgnElementId eid = el.GetElementId();
+    DgnDbR db = el.GetDgnDb();
+    CachedStatementPtr stmt = db.Elements().GetStatement(sql.c_str());
+    stmt->BindId(2, eid);
+    return m_geom.WriteGeomStreamAndStep(db, tableName, GEOM_Geometry, eid.GetValue(), *stmt, 1);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ElementGeomData::OnUpdated(DgnElementCR el) const
+DgnDbStatus ElementGeomData::InsertGeomStream(DgnElementCR el, Utf8CP tableName) const
     {
-    // ###TODO: Update GeomStream
-    // ###TODO: Update ElementUsesGeomParts relationships
+    DgnDbStatus status = WriteGeomStream(el, tableName);
+    if (DgnDbStatus::Success != status)
+        return status;
+
+    // Insert ElementUsesGeomParts relationships for any GeomPartIds in the GeomStream
+    DgnDbR db = el.GetDgnDb();
+    IdSet<DgnGeomPartId> parts;
+    ElementGeomIO::Collection(m_geom.GetData(), m_geom.GetSize()).GetGeomPartIds(parts, db);
+    for (DgnGeomPartId const& partId : parts)
+        {
+        if (BentleyStatus::SUCCESS != db.GeomParts().InsertElementGeomUsesParts(el.GetElementId(), partId))
+            status = DgnDbStatus::WriteError;
+        }
+
+    return status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus ElementGeomData::UpdateGeomStream(DgnElementCR el, Utf8CP tableName) const
+    {
+    DgnDbStatus status = WriteGeomStream(el, tableName);
+    if (DgnDbStatus::Success != status)
+        return status;
+
+    // Update ElementUsesGeomParts relationships for any GeomPartIds in the GeomStream
+    DgnDbR db = el.GetDgnDb();
+    DgnElementId eid = el.GetElementId();
+    CachedStatementPtr stmt = db.Elements().GetStatement("SELECT GeomPartId FROM " DGN_TABLE(DGN_RELNAME_ElementUsesGeomParts) " WHERE ElementId=?");
+    stmt->BindId(1, eid);
+
+    IdSet<DgnGeomPartId> partsOld;
+    while (BE_SQLITE_ROW == stmt->Step())
+        partsOld.insert(stmt->GetValueId<DgnGeomPartId>(0));
+
+    IdSet<DgnGeomPartId> partsNew;
+    ElementGeomIO::Collection(m_geom.GetData(), m_geom.GetSize()).GetGeomPartIds(partsNew, db);
+
+    if (partsOld.empty() && partsNew.empty())
+        return status;
+
+    bset<DgnGeomPartId> partsToRemove;
+    std::set_difference(partsOld.begin(), partsOld.end(), partsNew.begin(), partsNew.end(), std::inserter(partsToRemove, partsToRemove.end()));
+
+    if (!partsToRemove.empty())
+        {
+        stmt = db.Elements().GetStatement("DELETE FROM " DGN_TABLE(DGN_RELNAME_ElementUsesGeomParts) " WHERE ElementId=? AND GeomPartId=?");
+        stmt->BindId(1, eid);
+
+        for (DgnGeomPartId const& partId : partsToRemove)
+            {
+            stmt->BindId(2, partId);
+            if (BE_SQLITE_DONE != stmt->Step())
+                status = DgnDbStatus::BadRequest;
+            }
+        }
+
+    bset<DgnGeomPartId> partsToAdd;
+    std::set_difference(partsNew.begin(), partsNew.end(), partsOld.begin(), partsOld.end(), std::inserter(partsToAdd, partsToAdd.end()));
+
+    for (DgnGeomPartId const& partId : partsToAdd)
+        {
+        if (BentleyStatus::SUCCESS != db.GeomParts().InsertElementGeomUsesParts(eid, partId))
+            status = DgnDbStatus::WriteError;
+        }
+
+    return status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus ElementGeomData::LoadGeomStream(DgnElementCR el, Utf8CP tableName)
+    {
+    return m_geom.ReadGeomStream(el.GetDgnDb(), tableName, GEOM_Geometry, el.GetElementId().GetValue());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2800,9 +2881,17 @@ void ElementGeomData::OnUpdated(DgnElementCR el) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ElementGeomData::AddBaseClassParams(ECSqlClassParams& params)
     {
-    params.Add(GEOM_Geometry);
     params.Add(GEOM_Category);
-    params.Add(GEOM_Placement);
+
+    // It's necessary to bind to structs for INSERT/UPDATE.
+    params.Add(GEOM_Placement, ECSqlClassParams::StatementType::InsertUpdate);
+
+    // In SELECT statements, it's much easier to select individual struct members.
+    params.Add(GEOM_Origin, ECSqlClassParams::StatementType::Select);
+    params.Add(GEOM_Box_Low, ECSqlClassParams::StatementType::Select);
+    params.Add(GEOM_Box_High, ECSqlClassParams::StatementType::Select);
+
+    // NB: We read and write the GeomStream separately from the other properties.
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2811,6 +2900,7 @@ void ElementGeomData::AddBaseClassParams(ECSqlClassParams& params)
 void ElementGeom2d::AddClassParams(ECSqlClassParams& params)
     {
     AddBaseClassParams(params);
+    params.Add(GEOM2_Rotation, ECSqlClassParams::StatementType::Select);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2820,6 +2910,9 @@ void ElementGeom3d::AddClassParams(ECSqlClassParams& params)
     {
     AddBaseClassParams(params);
     params.Add(GEOM3_InPhysicalSpace);
+    params.Add(GEOM3_Yaw, ECSqlClassParams::StatementType::Select);
+    params.Add(GEOM3_Pitch, ECSqlClassParams::StatementType::Select);
+    params.Add(GEOM3_Roll, ECSqlClassParams::StatementType::Select);
     }
 
 

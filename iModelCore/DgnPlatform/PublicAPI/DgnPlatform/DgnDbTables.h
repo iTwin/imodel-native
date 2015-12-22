@@ -37,6 +37,7 @@
 #define DGN_CLASSNAME_ElementExternalKey    "ElementExternalKey"
 #define DGN_CLASSNAME_ElementMultiAspect    "ElementMultiAspect"
 #define DGN_CLASSNAME_GeomPart              "GeomPart"
+#define DGN_CLASSNAME_GeometrySource        "GeometrySource"
 #define DGN_CLASSNAME_LineStyle             "LineStyle"
 #define DGN_CLASSNAME_Link                  "Link"
 #define DGN_CLASSNAME_LocalAuthority        "LocalAuthority"

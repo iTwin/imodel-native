@@ -1421,6 +1421,7 @@ protected:
 
     DgnDbStatus ReadFrom(BeSQLite::EC::ECSqlStatement& stmt, ECSqlClassParams const& params);
     DgnDbStatus BindTo(BeSQLite::EC::ECSqlStatement& stmt);
+    DgnDbStatus WriteGeomStream(DgnElementCR el, Utf8CP tableName) const;
     static void AddBaseClassParams(ECSqlClassParams& params);
 public:
     DgnCategoryId GetCategoryId() const { return m_categoryId; }
@@ -1430,8 +1431,9 @@ public:
 
     DGNPLATFORM_EXPORT DgnDbStatus Validate() const;
     DGNPLATFORM_EXPORT void RemapIds(DgnImportContext& importer);
-    DGNPLATFORM_EXPORT void OnInserted(DgnElementCR el) const;
-    DGNPLATFORM_EXPORT void OnUpdated(DgnElementCR el) const;
+    DGNPLATFORM_EXPORT DgnDbStatus InsertGeomStream(DgnElementCR el, Utf8CP tableName) const;
+    DGNPLATFORM_EXPORT DgnDbStatus UpdateGeomStream(DgnElementCR el, Utf8CP tableName) const;
+    DGNPLATFORM_EXPORT DgnDbStatus LoadGeomStream(DgnElementCR el, Utf8CP tableName);
 };
 
 //=======================================================================================
@@ -1482,6 +1484,9 @@ protected:
     explicit GeometricElement(CreateParams const& params, DgnCategoryId category=DgnCategoryId(), T_Placement const& placement=T_Placement())
         : T_Base(params), m_geom(category, placement) { }
 
+    // Sub-class must implement this to return the name of the SQL table which contains the Geometry property which holds the binary GeomStream data
+    virtual Utf8CP _GetGeometryColumnTableName() const = 0;
+
     virtual DgnDbR _GetSourceDgnDb() const override final {return this->GetDgnDb();}
     virtual DgnElementCP _ToElement() const override final {return this;}
     virtual GeometrySourceCP _ToGeometrySource() const override final {return this;}
@@ -1501,10 +1506,15 @@ protected:
     virtual DgnDbStatus _BindUpdateParams(BeSQLite::EC::ECSqlStatement& stmt) override
         { auto status = T_Base::_BindUpdateParams(stmt); return DgnDbStatus::Success == status ? m_geom.Bind(stmt, *this) : status; }
 
+    virtual DgnDbStatus _LoadFromDb() override
+        { auto status = T_Base::_LoadFromDb(); return DgnDbStatus::Success == status ? m_geom.LoadGeomStream(*this, _GetGeometryColumnTableName()) : status; }
+    virtual DgnDbStatus _InsertInDb() override
+        { auto status = T_Base::_InsertInDb(); return DgnDbStatus::Success == status ? m_geom.InsertGeomStream(*this, _GetGeometryColumnTableName()) : status; }
+    virtual DgnDbStatus _UpdateInDb() override
+        { auto status = T_Base::_UpdateInDb(); return DgnDbStatus::Success == status ? m_geom.UpdateGeomStream(*this, _GetGeometryColumnTableName()) : status; }
+
     virtual DgnDbStatus _OnInsert() override { auto status = m_geom.Validate(); return DgnDbStatus::Success == status ? T_Base::_OnInsert() : status; }
     virtual DgnDbStatus _OnUpdate(DgnElementCR original) override { auto status = m_geom.Validate(); return DgnDbStatus::Success == status ? T_Base::_OnUpdate(original) : status; }
-    virtual void _OnInserted(DgnElementP el) const override { T_Base::_OnInserted(el); m_geom.OnInserted(*this); }
-    virtual void _OnUpdated(DgnElementCR el) const override { T_Base::_OnUpdated(el); m_geom.OnUpdated(*this); }
 
     virtual void _RemapIds(DgnImportContext& importer) override { T_Base::_RemapIds(importer); m_geom.RemapIds(importer); }
     virtual uint32_t _GetMemSize() const override {return T_Base::_GetMemSize() + static_cast<uint32_t>(sizeof(m_geom));}
@@ -1564,6 +1574,7 @@ struct EXPORT_VTABLE_ATTRIBUTE SpatialElement : GeometricElement3d<DgnElement>
 
 protected:
     SpatialElementCP _ToSpatialElement() const override final {return this;}
+    virtual Utf8CP _GetGeometryColumnTableName() const override final { return DGN_TABLE(DGN_CLASSNAME_SpatialElement); }
 public:
     typedef ElementCreateParams3d CreateParams;
 
@@ -1671,6 +1682,7 @@ public:
     static AnnotationElementPtr Create(CreateParams const& params) {return new AnnotationElement(params);}
 protected:
     virtual AnnotationElementCP _ToAnnotationElement() const override final {return this;}
+    virtual Utf8CP _GetGeometryColumnTableName() const override final { return DGN_TABLE(DGN_CLASSNAME_AnnotationElement); }
 
     explicit AnnotationElement(CreateParams const& params) : T_Super(params, params.m_categoryId, params.m_placement) { }
 }; // AnnotationElement
@@ -1691,6 +1703,7 @@ public:
     static DrawingElementPtr Create(CreateParams const& params) {return new DrawingElement(params);}
 protected:
     virtual DrawingElementCP _ToDrawingElement() const override final {return this;}
+    virtual Utf8CP _GetGeometryColumnTableName() const override final { return DGN_TABLE(DGN_CLASSNAME_DrawingElement); }
 
     explicit DrawingElement(CreateParams const& params) : T_Super(params, params.m_categoryId, params.m_placement) { }
 }; // DrawingElement
@@ -1711,6 +1724,7 @@ public:
     static SheetElementPtr Create(CreateParams const& params) {return new SheetElement(params);}
 protected:
     virtual SheetElementCP _ToSheetElement() const override final {return this;}
+    virtual Utf8CP _GetGeometryColumnTableName() const override final { return DGN_TABLE(DGN_CLASSNAME_SheetElement); }
 
     explicit SheetElement(CreateParams const& params) : T_Super(params, params.m_categoryId, params.m_placement) { }
 }; // SheetElement

@@ -24,7 +24,7 @@ DgnDb defines types and built-in functions that you can use in SQL statements.
 //  They are here to represent the SQL extension functions, so that Doyxgen will generate doc for them.
 
 //! A point in the DgnDb's Cartesian coordinate system. All coordinates are in meters. If the point represents a location in a 2D model, then the z-coordinate will be zero.
-//! @see DGN_point_value, DGN_point_distance, DGN_point_min_distance_to_bbox, DGN_point_create
+//! @see DGN_point_value, DGN_point_distance, DGN_point_min_distance_to_bbox
 struct DGN_point
 {
 protected:
@@ -34,7 +34,7 @@ protected:
 };
 
 //! An object that contains Yaw, Pitch, and Roll angles in degrees. If this object represents a rotation in a 2D model, then the pitch and roll members will be zero.
-//! @see DGN_angles_value, DGN_angles_maxdiff, DGN_angles_create
+//! @see DGN_angles_value, DGN_angles_maxdiff
 struct DGN_angles
 {
 protected:
@@ -47,7 +47,7 @@ protected:
 //! If the box represents a range in a 3-D model, then the box will have 8 corners and will have width(X), depth(Y), and height(Z). 
 //! If the box represents a range in a 2-D model, then the box will still have 8 corners but the z-coordinates will be all be zero, and the height will be zero.
 //! All coordinates are in meters.
-//! @see DGN_bbox_value, DGN_bbox_width, DGN_bbox_height, DGN_bbox_depth, DGN_bbox_volume, DGN_bbox_areaxy, DGN_bbox_overlaps, DGN_bbox_contains, DGN_bbox_union, DGN_point_min_distance_to_bbox, DGN_bbox_create
+//! @see DGN_bbox_value, DGN_bbox_width, DGN_bbox_height, DGN_bbox_depth, DGN_bbox_volume, DGN_bbox_areaxy, DGN_bbox_overlaps, DGN_bbox_contains, DGN_bbox_union, DGN_point_min_distance_to_bbox
 struct DGN_bbox
 {
 protected:
@@ -61,7 +61,7 @@ protected:
 
 //! An object that contains an origin and rotation angles, plus a bounding box.
 //! You can obtain an element's placement by selecting the placement column of the dgn_ElementGeom table.
-//! @see DGN_placement_origin, DGN_placement_angles, DGN_placement_eabb, DGN_placement_aabb, DGN_placement_create
+//! @see DGN_placement_origin, DGN_placement_angles, DGN_placement_eabb, DGN_placement_aabb
 struct DGN_placement
 {
 protected:
@@ -88,9 +88,9 @@ protected:
 /*---------------------------------------------------------------------------------**//**
 * @bsistruct                                                    Paul.Connelly   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct DGN_point_create : BlobFunction
+struct DGN_point : BlobFunction
 {
-    DGN_point_create() : BlobFunction("DGN_point_create", 3) { }
+    DGN_point() : BlobFunction("DGN_point", 3) { }
 
     virtual void _ComputeScalar(Context& ctx, int nArgs, DbValue* args) override
         {
@@ -100,41 +100,11 @@ struct DGN_point_create : BlobFunction
 };
 
 /*---------------------------------------------------------------------------------**//**
-* @bsistruct                                                    Paul.Connelly   12/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-struct DGN_angles_create : BlobFunction
-{
-    DGN_angles_create() : BlobFunction("DGN_angles_create", 3) { }
-
-    virtual void _ComputeScalar(Context& ctx, int nArgs, DbValue* args) override
-        {
-        YawPitchRollAngles ypr(Angle::FromDegrees(args[0].GetValueDouble()), Angle::FromDegrees(args[1].GetValueDouble()), Angle::FromDegrees(args[2].GetValueDouble()));
-        ctx.SetResultBlob(&ypr, sizeof(ypr));
-        }
-};
-
-/*---------------------------------------------------------------------------------**//**
-* @bsistruct                                                    Paul.Connelly   12/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-struct DGN_bbox_create : BlobFunction
-{
-    DGN_bbox_create() : BlobFunction("DGN_bbox_create", 2) { }
-
-    virtual void _ComputeScalar(Context& ctx, int nArgs, DbValue* args) override
-        {
-        DPoint3d const& low = ToPoint(args[0]);
-        DPoint3d const& hi  = ToPoint(args[1]);
-        ElementAlignedBox3d eabb(low.x, low.y, low.z, hi.x, hi.y, hi.z);
-        ctx.SetResultBlob(&eabb, sizeof(eabb));
-        }
-};
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct DGN_placement_create : BlobFunction
+struct DGN_placement : BlobFunction
 {
-    DGN_placement_create() : BlobFunction("DGN_placement_create", 3) { }
+    DGN_placement() : BlobFunction("DGN_placement", 3) { }
 
     virtual void _ComputeScalar(Context& ctx, int nArgs, DbValue* args) override
         {
@@ -917,10 +887,8 @@ void DgnBaseDomain::_OnDgnDbOpened(DgnDbR db) const
                           new DGN_point_distance,
                           new DGN_point_min_distance_to_bbox,
                           new DGN_point_value,
-                          new DGN_point_create,
-                          new DGN_angles_create,
-                          new DGN_bbox_create,
-                          new DGN_placement_create
+                          new DGN_point,
+                          new DGN_placement
                           };
 
     static RTreeMatchFunction* s_matchFuncs[] = 
