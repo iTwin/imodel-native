@@ -52,6 +52,8 @@ ConfigurationVariableLevel GetLevelFromString (WCharCP levelString)
     return (ConfigurationVariableLevel)-5;
     }
 
+#if defined (BENTLEY_WIN32) && defined (UNUSED)
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   02/12
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -175,7 +177,7 @@ void            CheckVersusMsDebugFile (MacroConfigurationAdmin& macroCfgAdmin)
 
         if (foundLevel != expectedVarLevel)
             {
-            wprintf (L"Config Variable Level for macro %ls differs. Expected %d, got %d\n", configVarName.c_str(), expectedLevel, foundLevel);
+            wprintf (L"Config Variable Level for macro %ls differs. Expected %ls, got %d\n", configVarName.c_str(), expectedLevel.c_str(), (int)foundLevel);
             levelMismatches++;
             }
         }
@@ -232,6 +234,10 @@ void    GetPredefinedMacrosFromMsDebug (MacroConfigurationAdmin& macroCfgAdmin)
         }
     }
 
+#endif
+
+#if defined (UNUSED)
+
 /*---------------------------------------------------------------------------------**//**
 * @bsiclass                                    Barry.Bentley                   06/12
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -259,6 +265,8 @@ virtual void        ShowDebugMessage (int indent,WCharCP format, ...) override
         m_debugFile->PrintfTo (false, message.c_str());
     }
 };
+
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   02/12
