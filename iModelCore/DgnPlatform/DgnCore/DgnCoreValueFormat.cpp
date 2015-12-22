@@ -5,9 +5,12 @@
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include    <DgnPlatformInternal.h>
+#include <DgnPlatformInternal.h>
+#include <DgnPlatform/DgnGeoCoord.h>
 
 #define  ROUNDOFF           (0.5 - DBL_EPSILON)
+
+BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    12/07
@@ -442,7 +445,10 @@ void DirectionFormatter::InitModelSettings(GeometricModelCR model)
     SetDirectionMode(displayInfo.GetDirectionMode());
     SetClockwise(displayInfo.GetDirectionClockwise());
     SetBaseDirection(displayInfo.GetDirectionBaseDir());
-    SetTrueNorthValue(model.GetDgnDb().Units().GetAzimuth());
+
+    DgnGCS* dgnGCS = model.GetDgnDb().Units().GetDgnGCS();
+    double azimuth = (dgnGCS != nullptr) ? dgnGCS->GetAzimuth() : 0.0;
+    SetTrueNorthValue(azimuth);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1138,7 +1144,7 @@ void            PointFormatter::InitModelSettings(GeometricModelCR model, bool a
         {
         // Create a un-rotated, un-scaled, rectangular ACS at the model's global origin.
         m_acs = IACSManager::GetManager().CreateACS ();
-        m_acs->SetOrigin(geomModel->GetGlobalOrigin());
+        m_acs->SetOrigin(geomModel->GetDgnDb().Units().GetGlobalOrigin());
         }
 
     m_is3d = nullptr != geomModel && geomModel->Is3d();
@@ -1797,3 +1803,5 @@ WString DateTimeFormatter::ToString(DateTimeCR dtIn) const
 
     return result;
     }
+
+END_BENTLEY_DGNPLATFORM_NAMESPACE

@@ -61,12 +61,70 @@ BentleyStatus   LsRasterImageComponent::_GetTextureWidth (double& width) const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    12/2015
 //---------------------------------------------------------------------------------------
+LsRasterImageComponent::LsRasterImageComponent(LsLocationCP pLocation) : LsComponent(pLocation)
+    {
+    m_size.x = m_size.y = 0;
+    m_flags = 0;
+    m_trueWidth = 0;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    12/2015
+//---------------------------------------------------------------------------------------
 LsComponentPtr LsRasterImageComponent::_Import(DgnImportContext& importer) const
     {
     LsRasterImageComponentP result = new LsRasterImageComponent(*this);
 
-    //  Save to destination and record ComponentId in clone
+    bvector<uint8_t> imageData;
+    Json::Value jsonValue;
+    SaveToJson(jsonValue, imageData);
+    LsComponentId newId;
+    AddRasterComponentAsJson(newId, importer.GetDestinationDb(), jsonValue, &imageData[0], (uint32_t)imageData.size());
 
     return result;
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    12/2015
+//---------------------------------------------------------------------------------------
+void LsRasterImageComponent::SaveToJson(Json::Value& result, bvector<uint8_t>& imageData) const
+    {
+    LsComponent::SaveToJson(result);
+
+    result["x"] = m_size.x;
+    result["y"] = m_size.y;
+    result["flags"] = m_flags;
+    if (m_trueWidth != 0)
+        result["trueWidth"] = m_trueWidth;
+    imageData.resize(m_image.size());
+    memcpy(&imageData[0], &m_image[0], m_image.size());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    12/2015
+//---------------------------------------------------------------------------------------
+LineStyleStatus LsRasterImageComponent::CreateFromJson(LsRasterImageComponentP* result, Json::Value const & jsonDef, LsLocationCP location)
+    {
+    LsRasterImageComponentP comp = new LsRasterImageComponent(location);
+    comp->ExtractDescription(jsonDef);
+    comp->m_size.x = LsJsonHelpers::GetUInt32(jsonDef, "x", 0);
+    comp->m_size.y = LsJsonHelpers::GetUInt32(jsonDef, "y", 0);
+    comp->m_flags = LsJsonHelpers::GetUInt32(jsonDef, "flags", 0);
+    comp->m_imageDataId = LsJsonHelpers::GetUInt32(jsonDef, "imageId", 0);
+    comp->m_trueWidth = LsJsonHelpers::GetDouble(jsonDef, "trueWidth", 0);
+
+    uint32_t propertySize;
+
+    if (BE_SQLITE_ROW != location->GetDgnDb()->QueryPropertySize(propertySize, LineStyleProperty::RasterImage(), comp->m_imageDataId, 0))
+        {
+        *result = nullptr;
+        delete comp;
+        return LINESTYLE_STATUS_ComponentNotFound;
+        }
+
+    comp->m_image.resize(propertySize);
+    location->GetDgnDb()->QueryProperty(&comp->m_image[0], propertySize, LineStyleProperty::RasterImage(), comp->m_imageDataId, 0);
+
+    *result = comp;
+    return LINESTYLE_STATUS_Success;
+    }

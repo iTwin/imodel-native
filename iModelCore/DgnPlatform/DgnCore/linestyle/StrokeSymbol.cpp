@@ -306,40 +306,11 @@ void LsSymbolComponent::SetWeight(uint32_t weight) { m_weight = weight; }
 +---------------+---------------+---------------+---------------+---------------+------*/
 LsSymbolComponent* LsSymbolComponent::LoadPointSym (LsComponentReader* reader)
     {
-    V10Symbol*    v10symData = (V10Symbol*) reader->GetRsc();
-
-    if (NULL == v10symData)
-        return  NULL;
-
-    LsSymbolComponent* symbComp = new LsSymbolComponent (reader->GetSource());
-    symbComp->SetDescription (v10symData->m_descr);
-
-    symbComp->SetGeomPartId(DgnGeomPartId(v10symData->m_geomPartId));
-    //  symbComp->SetXGraphics (v10symData->symBuf, v10symData->nBytes);
-
-    symbComp->SetFlags (v10symData->m_symFlags);
-
-    symbComp->SetColors(v10symData->m_colorByLevel, ColorDef(v10symData->m_lineColor), ColorDef(v10symData->m_fillColor));
-    symbComp->SetWeight(v10symData->m_weight);
-
-    DPoint3d symSize, symBase = v10symData->m_range.low;
-    symSize.x = v10symData->m_range.high.x - v10symData->m_range.low.x;
-    symSize.y = v10symData->m_range.high.y - v10symData->m_range.low.y;
-
-    if (v10symData->m_symFlags & LSSYM_3D)
-        {
-        symSize.z = v10symData->m_range.high.z - v10symData->m_range.low.z;
-        }
-    else
-        {
-        symSize.z = 0.0;
-        symBase.z = 0.0;
-        }
-
-    symbComp->SetSymSize (&symSize);
-    symbComp->SetSymBase (&symBase);
-    symbComp->SetStoredUnitScale (v10symData->m_scale);
-    return symbComp;
+    Json::Value     jsonValue;
+    reader->GetJsonValue(jsonValue);
+    LsSymbolComponentP symbolComponent;
+    LsSymbolComponent::CreateFromJson(&symbolComponent, jsonValue, reader->GetSource());
+    return symbolComponent;
     }
 
 double              LsSymbolComponent::GetStoredUnitScale () const { return m_storedScale; }

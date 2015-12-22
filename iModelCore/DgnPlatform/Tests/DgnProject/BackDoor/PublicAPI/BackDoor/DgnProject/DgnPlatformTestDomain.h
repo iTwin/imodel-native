@@ -24,6 +24,7 @@
 #define DPTEST_TEST_REQUIREMENT_CLASS_NAME               "TestRequirement"
 #define DPTEST_TEST_ELEMENT_DRIVES_ELEMENT_CLASS_NAME    "TestElementDrivesElement"
 #define DPTEST_TEST_ELEMENT_TestElementProperty          "TestElementProperty"
+#define DPTEST_TEST_ELEMENT_WITHOUT_HANDLER_CLASS_NAME   "TestElementWithNoHandler"
 
 #ifdef WIP_ELEMENT_ITEM // *** pending redesign
 #define DPTEST_TEST_ITEM_CLASS_NAME                      "TestItem"
@@ -58,7 +59,7 @@ struct TestElement : Dgn::PhysicalElement
     friend struct TestElementHandler;
 
     DGNELEMENT_DECLARE_MEMBERS(DPTEST_TEST_ELEMENT_CLASS_NAME, Dgn::PhysicalElement) 
-
+public:
     TestElement(CreateParams const& params) : T_Super(params) {} 
 
 protected:

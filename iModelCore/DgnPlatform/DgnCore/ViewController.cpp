@@ -8,6 +8,7 @@
 #include <DgnPlatformInternal.h>
 #include <Geom/eigensys3d.fdf>
 #include <DgnPlatform/DgnMarkupProject.h>
+#include <DgnPlatform/DgnGeoCoord.h>
 
 static Utf8CP VIEW_SETTING_Area2d                = "area2d";
 static Utf8CP VIEW_SETTING_BackgroundColor       = "bgColor";
@@ -1213,9 +1214,13 @@ bool PhysicalViewController::ViewVectorsFromOrientation(DVec3dR forward, DVec3dR
     switch(mode)
         {
         case OrientationMode::CompassHeading:
-            azimuthCorrection = msGeomConst_radiansPerDegree *(90.0 + m_dgndb.Units().GetAzimuth());
+            {
+            DgnGCS* dgnGcs = m_dgndb.Units().GetDgnGCS();
+            double azimuth = (dgnGcs != nullptr) ? dgnGcs->GetAzimuth() : 0.0;
+            azimuthCorrection = msGeomConst_radiansPerDegree *(90.0 + azimuth);
             forward.RotateXY(azimuthCorrection);
             break;
+            }
         case OrientationMode::IgnoreHeading:
             forward.x = currForward.x;
             forward.y = currForward.y;

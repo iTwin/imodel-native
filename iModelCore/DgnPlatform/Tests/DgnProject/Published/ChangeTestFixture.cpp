@@ -7,6 +7,7 @@
 
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
 USING_NAMESPACE_BENTLEY_SQLITE
+USING_NAMESPACE_BENTLEY_SQLITE_EC
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    06/2015
@@ -190,4 +191,23 @@ DgnElementId ChangeTestFixture::InsertElement(int x, int y, int z)
 
     DgnElementId elementId = m_testDb->Elements().Insert(*testElement)->GetElementId();
     return elementId;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Ramanujam.Raman                    12/2015
+//---------------------------------------------------------------------------------------
+int ChangeTestFixture::GetChangeSummaryInstanceCount(ChangeSummaryCR changeSummary, Utf8CP qualifiedClassName) const
+    {
+    Utf8PrintfString ecSql("SELECT COUNT(*) FROM %s WHERE IsChangedInstance(?, GetECClassId(), ECInstanceId)", qualifiedClassName);
+
+    ECSqlStatement stmt;
+    ECSqlStatus ecSqlStatus = stmt.Prepare(*m_testDb, ecSql.c_str());
+    BeAssert(ecSqlStatus.IsSuccess());
+
+    stmt.BindInt64(1, (int64_t) &changeSummary);
+
+    DbResult ecSqlStepStatus = stmt.Step();
+    BeAssert(ecSqlStepStatus == BE_SQLITE_ROW);
+
+    return stmt.GetValueInt(0);
     }

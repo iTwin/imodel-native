@@ -90,6 +90,27 @@ template<typename T> static uint16_t buildParamString(Utf8StringR str, ECSqlClas
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String ECSqlClassInfo::GetInsertECSql(DgnDbCR dgndb, DgnClassId classId) const
+    {
+    ECClassCP ecClass = dgndb.Schemas().GetECClass(classId.GetValue());
+    BeAssert(nullptr != ecClass);
+    if (nullptr == ecClass)
+        return "";
+
+    Utf8String ecsql("INSERT INTO [");
+    ecsql.append(ecClass->GetSchema().GetName());
+    ecsql.append("].[");
+    ecsql.append(ecClass->GetName());
+    ecsql.append(1, ']');
+
+    ecsql.append(m_insert);
+
+    return ecsql;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                  Ramanujam.Raman   11/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ECSqlClassInfo::Initialize(Utf8StringCR fullClassName, ECSqlClassParamsCR params)
@@ -115,8 +136,9 @@ void ECSqlClassInfo::Initialize(Utf8StringCR fullClassName, ECSqlClassParamsCR p
         m_select.clear();
         }
 
-    // Build INSERT statement
-    m_insert.append("INSERT INTO ").append(fullClassName).append(1, '(');
+    // Build bulk INSERT statement sans INSERT INTO [schema].[class] - schema+class may vary for subclasses without their own handlers.
+    // (That variance only matters for INSERT statements)
+    m_insert.append(1, '(');
     Utf8String insertValues;
     uint16_t numInsertParams = buildParamString(m_insert, entries, ECSqlClassParams::StatementType::Insert,
                                                 [&] (Utf8CP name, uint16_t count)
@@ -156,9 +178,9 @@ void ECSqlClassInfo::Initialize(Utf8StringCR fullClassName, ECSqlClassParamsCR p
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                  Ramanujam.Raman   11/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-CachedECSqlStatementPtr ECSqlClassInfo::GetInsertStmt(DgnDbCR dgndb) const
+CachedECSqlStatementPtr ECSqlClassInfo::GetInsertStmt(DgnDbCR dgndb, DgnClassId classId) const
     {
-    return m_insert.empty() ? nullptr : dgndb.GetPreparedECSqlStatement(m_insert.c_str());
+    return m_insert.empty() ? nullptr : dgndb.GetPreparedECSqlStatement(GetInsertECSql(dgndb, classId).c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**

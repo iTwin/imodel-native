@@ -6,6 +6,7 @@
 |
 +----------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
+#include <DgnPlatform/DgnGeoCoord.h>
 
 enum
     {
@@ -281,7 +282,8 @@ DPoint3dR   SolarUtility::AzimuthAnglesToDirection (DPoint3dR direction, double 
     /* Compensate for true North */
     RotMatrix   azimuthRotMatrix;
 
-    double      azimuthAngle = model.GetProperties().GetAzimuthAngle ();
+    DgnGCS* dgnGcs = model.GetDgnDb().Units().GetDgnGCS();
+    double azimuthAngle = (dgnGcs != nullptr) ? dgnGcs->GetAzimuth() : 0.0;
     azimuthRotMatrix.InitFromPrincipleAxisRotations(RotMatrix::FromIdentity (),  0.0,  0.0,  azimuthAngle * msGeomConst_radiansPerDegree);
     azimuthRotMatrix.Multiply (direction);
     direction.Normalize ();
@@ -296,7 +298,8 @@ void    SolarUtility::DirectionToAzimuthAngles (double& azimuth, double& altitud
     {
     /* Compensate for true North */
     RotMatrix   azimuthRotMatrix;
-    double      azimuthAngle = model.GetProperties().GetAzimuthAngle ();
+    DgnGCS* dgnGcs = model.GetDgnDb().Units().GetDgnGCS();
+    double azimuthAngle = (dgnGcs != nullptr) ? dgnGcs->GetAzimuth() : 0.0;
     azimuthRotMatrix.InitFromPrincipleAxisRotations(RotMatrix::FromIdentity (),  0.0,  0.0,  azimuthAngle * msGeomConst_radiansPerDegree);
 
     DPoint3d localDirection = direction;
