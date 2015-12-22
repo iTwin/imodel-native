@@ -348,7 +348,7 @@ void ComponentModelTest::Developer_DefineSchema()
         m_nsln1.m_propValues.push_back(NamedECValue("C", ECN::ECValue(1.0)));
         }
 
-    ASSERT_TRUE(ComponentDefCreator::ImportSchema(*m_componentDb, *testSchema).IsValid());
+    ASSERT_TRUE(ComponentDefCreator::ImportSchema(*m_componentDb, *testSchema, false) != nullptr);
 
     //  Verify that we can look up an existing component
     //ComponentDefPtr widgetCDef = ComponentDef::FromECSqlName(nullptr, *m_componentDb, TEST_JS_NAMESPACE "." TEST_WIDGET_COMPONENT_NAME);

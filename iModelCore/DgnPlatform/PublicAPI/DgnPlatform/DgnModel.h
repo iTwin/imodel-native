@@ -929,6 +929,13 @@ protected:
 public:
     ComponentModel(CreateParams const& params) : DgnModel3d(params) {;} //!< @private
 
+    //! Create a ComponentModel that can be used by a component definition
+    //! @param componentDefClassFullName    The full ECSQL name of the component definition ECClass
+    //! @return a new component model
+    DGNPLATFORM_EXPORT static ComponentModelPtr Create(DgnDbR db, Utf8StringCR componentDefClassFullName);
+
+    Utf8StringCR GetComponentECClassFullName() const {return m_componentECClass;}
+
 DGNPLATFORM_EXPORT static void OnElementCopied(DgnElementCR outputElement, DgnElementCR sourceElement, DgnCloneContext&); //!< @private
 DGNPLATFORM_EXPORT static void OnElementImported(DgnElementCR outputElement, DgnElementCR sourceElement, DgnImportContext&); //!< @private
 };
@@ -1003,12 +1010,19 @@ struct ComponentDef : RefCountedBase
     //! @see FromECClass
     DGNPLATFORM_EXPORT static ComponentDefPtr FromECSqlName(DgnDbStatus* status, DgnDbR db, Utf8StringCR ecsqlClassName);
 
-    //! Make a ComponentDef object
+    //! Get the ComponentDef corresponding to the specified component instance
     //! @param db           The DgnDb that contains the component def
     //! @param instance     An element that might be an instance of a component
     //! @param status       If not null, an error code in case the component definition could not be returned
     //! @see FromECClass
     DGNPLATFORM_EXPORT static ComponentDefPtr FromInstance(DgnDbStatus* status, DgnElementCR instance);
+
+    //! Get the ComponentDef corresponding to the specified ComponentModel
+    //! @param db           The DgnDb that contains the component def
+    //! @param model        A ComponentModel
+    //! @param status       If not null, an error code in case the component definition could not be returned
+    //! @see FromECClass
+    DGNPLATFORM_EXPORT static ComponentDefPtr FromComponentModel(DgnDbStatus* statusOut, ComponentModelCR model);
 
     struct GeometryGenerator
         {
@@ -1075,6 +1089,10 @@ struct ComponentDef : RefCountedBase
     //! @see MakeInstanceOfVariation
     DGNPLATFORM_EXPORT static DgnElementCPtr MakeVariation(DgnDbStatus* stat, DgnModelR destModel, ECN::IECInstanceCR variationParameters, Utf8StringCR variationName);
 
+    //! Delete a variation.
+    //! @return non-zero error status if \a variation is not a variation of any componentdef, or if it is a variation but is currently used by existing instances.
+    DGNPLATFORM_EXPORT static DgnDbStatus DeleteVariation(DgnElementCR variation);
+
     //! Look up a variation by name
     //! @param[in] variationName The name of the variation to look up.
     //! @return the variation or an invalid handle if not found
@@ -1131,10 +1149,10 @@ struct ComponentDefCreator
 public:
     struct PropertySpec
         {
-        Utf8CP m_name;
+        Utf8String m_name;
         ECN::PrimitiveType m_type;
         ComponentDef::ParameterVariesPer m_variesPer;
-        PropertySpec(Utf8CP n, ECN::PrimitiveType pt, ComponentDef::ParameterVariesPer vp) : m_name(n), m_type(pt), m_variesPer(vp) {;} 
+        PropertySpec(Utf8StringCR n, ECN::PrimitiveType pt, ComponentDef::ParameterVariesPer vp) : m_name(n), m_type(pt), m_variesPer(vp) {;} 
         };
 
 private:
@@ -1155,7 +1173,7 @@ private:
 public:
     DGNPLATFORM_EXPORT static ECN::ECSchemaPtr GenerateSchema(DgnDbR, Utf8StringCR schemaNameIn);
 
-    DGNPLATFORM_EXPORT static ECN::ECSchemaPtr ImportSchema(DgnDbR db, ECN::ECSchemaCR schemaIn);
+    DGNPLATFORM_EXPORT static ECN::ECSchemaCP ImportSchema(DgnDbR db, ECN::ECSchemaCR schemaIn, bool updateExistingSchemas);
   
     ComponentDefCreator(DgnDbR db, ECN::ECSchemaR schema, Utf8StringCR name, ECN::ECClassCR baseClass, Utf8StringCR geomgen, Utf8StringCR cat, Utf8StringCR codeauth)
         :m_db(db), m_schema(schema), m_baseClass(baseClass), m_name(name), m_scriptName(geomgen), m_categoryName(cat), m_codeAuthorityName(codeauth)

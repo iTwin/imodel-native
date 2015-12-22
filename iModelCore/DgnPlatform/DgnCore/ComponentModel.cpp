@@ -453,6 +453,18 @@ ComponentDefPtr ComponentDef::FromInstance(DgnDbStatus* statusOut, DgnElementCR 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
+ComponentDefPtr ComponentDef::FromComponentModel(DgnDbStatus* statusOut, ComponentModelCR cm)
+    {
+    ECN::ECClassCP ecclass = getECClassByFullName(cm.GetDgnDb(), cm.GetComponentECClassFullName());
+    if (nullptr == ecclass)
+        return nullptr;
+
+    return FromECClass(nullptr, cm.GetDgnDb(), *ecclass);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      12/15
++---------------+---------------+---------------+---------------+---------------+------*/
 ComponentDefPtr ComponentDef::FromECClass(DgnDbStatus* statusOut, DgnDbR db, ECN::ECClassCR componentDefClass)
     {
     DgnDbStatus ALLOW_NULL_OUTPUT(status, statusOut);
@@ -601,12 +613,22 @@ ComponentModelR ComponentDef::GetModel()
 
     //  *** WIP_COMPONENT: Instead of creating a new one, check out a model from a pool of pre-allocated anonymous "sandbox" ComponentModels. Destructor would then check the sandbox model back in.
 
-    modelName = m_db.Models().GetUniqueModelName(GetGeneratedName().c_str());
-    DgnModel::Code modelCode = DgnModel::CreateModelCode(modelName);
-    m_model = new ComponentModel(m_db, modelCode, GetECClass().GetFullName());
+    m_model = ComponentModel::Create(m_db, GetECClass().GetFullName());
     m_model->Insert();
 
     return *m_model;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+ComponentModelPtr ComponentModel::Create(DgnDbR db, Utf8StringCR componentDefClassFullName)
+    {
+    Utf8String modelName(componentDefClassFullName);
+    DgnDbTable::ReplaceInvalidCharacters(modelName, DgnModels::GetIllegalCharacters(), '_');
+    modelName = db.Models().GetUniqueModelName(modelName.c_str());
+    DgnModel::Code modelCode = DgnModel::CreateModelCode(modelName);
+    return new ComponentModel(db, modelCode, componentDefClassFullName);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -656,6 +678,15 @@ DgnElementCPtr ComponentDef::MakeInstance0(DgnDbStatus* statusOut, DgnModelR des
 DgnElementCPtr ComponentDef::QueryVariationByName(Utf8StringCR variationName)
     {
     return m_db.Elements().GetElement(m_db.Elements().QueryElementIdByCode(CreateVariationCode(variationName)));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus ComponentDef::DeleteVariation(DgnElementCR variation)
+    {
+    // *** WIP_COMPONENT: detect if variation is in use
+    return variation.Delete();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -845,14 +876,22 @@ void ComponentDef::CopyInstanceParameters(ECN::IECInstanceR target, ECN::IECInst
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-static ECN::ECSchemaPtr importECSchema(ECN::ECObjectsStatus& ecstatus, DgnDbR db, ECN::ECSchemaCR schemaIn)
+static ECN::ECSchemaCP importECSchema(ECN::ECObjectsStatus& ecstatus, DgnDbR db, ECN::ECSchemaCR schemaIn, bool updateExistingSchemas)
     {
+    ECN::ECSchemaCP existing = db.Schemas().GetECSchema(schemaIn.GetName().c_str());
+    if (nullptr != existing)
+        {
+        if (!updateExistingSchemas)
+            return existing;
+        }
+    else
+        {
+        updateExistingSchemas = false;
+        }
+
+    ECDbSchemaManager::ImportOptions options(false, updateExistingSchemas);
+
     ECN::ECSchemaPtr imported;
-
-    imported = const_cast<ECN::ECSchemaP>(db.Schemas().GetECSchema(schemaIn.GetName().c_str()));
-    if (imported.IsValid())
-        return imported;
-
     ECSUCCESS(schemaIn.CopySchema(imported));
     ECSUCCESS(imported->SetName(schemaIn.GetName()));
     ECSUCCESS(imported->SetNamespacePrefix(schemaIn.GetNamespacePrefix()));
@@ -867,16 +906,16 @@ static ECN::ECSchemaPtr importECSchema(ECN::ECObjectsStatus& ecstatus, DgnDbR db
 
     db.Schemas().CreateECClassViewsInDb();
 
-    return imported;
+    return imported.get();  // DgnDb holds a reference to the schema now.
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-ECN::ECSchemaPtr ComponentDefCreator::ImportSchema(DgnDbR db, ECN::ECSchemaCR schemaIn)
+ECN::ECSchemaCP ComponentDefCreator::ImportSchema(DgnDbR db, ECN::ECSchemaCR schemaIn, bool doUpdate)
     {
     ECN::ECObjectsStatus ecstatus;
-    return importECSchema(ecstatus, db, schemaIn);
+    return importECSchema(ecstatus, db, schemaIn, doUpdate);
     }
 
 //---------------------------------------------------------------------------------------
@@ -901,7 +940,7 @@ DgnDbStatus ComponentDef::Export(DgnImportContext& context, bool exportSchema, b
     if (exportSchema && (nullptr == getSameClassIn(context.GetDestinationDb(), m_class)))
         {
         ECN::ECObjectsStatus ecstatus = ECN::ECObjectsStatus::Success;
-        importECSchema(ecstatus, context.GetDestinationDb(), GetECClass().GetSchema());
+        importECSchema(ecstatus, context.GetDestinationDb(), GetECClass().GetSchema(), false);
         if (ECN::ECObjectsStatus::Success != ecstatus && ECN::ECObjectsStatus::DuplicateSchema != ecstatus)
             return DgnDbStatus::BadSchema;
         }
