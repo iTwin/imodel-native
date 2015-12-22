@@ -401,6 +401,10 @@ typedef const PTstr (__stdcall *PTRAMPINFO)( PTint ramp, PTenum *type );
 typedef PTres	(__stdcall *PTADDCUSTOMRAMP)( const PTstr name, PTint numKeys, const PTfloat *positions, 
 											 const PTubyte* colour3vals, PTbool interpolateInHSL );
 
+typedef PTres	(__stdcall *PTSETOVERRIDECOLOR)( PThandle cloud_or_scene, const PTfloat *rgb3 );
+typedef PTres	(__stdcall *PTGETOVERRIDECOLOR)( PThandle cloud_or_scene, PTfloat *rgb3 );
+typedef PTres	(__stdcall *PTREMOVEOVERRIDECOLOR)( PThandle cloud_or_scene );
+
 /* lighting options */ 
 typedef PTres	(__stdcall *PTLIGHTOPTIONF)(PTenum light_option, PTfloat value);
 typedef PTres	(__stdcall *PTLIGHTOPTIONFV)(PTenum light_option, PTfloat *value);
@@ -796,6 +800,10 @@ extern PTRESETSHADEROPTIONS ptResetShaderOptions;
 
 extern PTCOPYSHADERSETTINGS ptCopyShaderSettings;
 extern PTCOPYSHADERSETTINGSTOALL ptCopyShaderSettingsToAll;
+
+extern PTSETOVERRIDECOLOR ptSetOverrideColor;
+extern PTGETOVERRIDECOLOR ptGetOverrideColor;
+extern PTREMOVEOVERRIDECOLOR ptRemoveOverrideColor;
 
 /* shading ramps */ 
 extern PTNUMRAMPS ptNumRamps;

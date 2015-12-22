@@ -22,6 +22,10 @@ namespace pointsengine
 		/* GLSL based implementation */ 
 		void				startShaderFrame( const RenderContext *context, ShaderObj *shader );
 		void				endShaderFrame( const RenderContext *context, ShaderObj *shader );
+
+		bool				affectsGeometry() const							{ return true; }
+		bool				affectsColor() const							{ return false; }
+
 	};
 
 }

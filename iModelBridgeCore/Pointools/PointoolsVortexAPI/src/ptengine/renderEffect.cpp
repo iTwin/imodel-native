@@ -13,6 +13,7 @@ using namespace pointsengine;
 /*****************************************************************************/
 int		RenderEffectsManager::addEffect(pointsengine::RenderEffectI *effect)
 {
+	m_disableColor = false;
 	m_effects.push_back( effect );
 	return m_effects.size()-1;
 }
@@ -177,7 +178,7 @@ uint RenderEffectsManager::requiredBuffers( const RenderContext *context ) const
 	uint buffersNeeded = 0;
 	while (i != m_effects.end())
 	{
-		if ((*i)->isEnabled( context->settings() )
+		if ((*i)->isEnabled( context->settings() ) 
 			&& (*i)->compatibleEnvironment( context->environment() ))
 		{
 			buffersNeeded |= (*i)->requiredBuffers();

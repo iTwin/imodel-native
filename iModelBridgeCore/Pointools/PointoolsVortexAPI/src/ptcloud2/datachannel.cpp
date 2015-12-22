@@ -9,12 +9,9 @@
 
 #include <memory.h>
 
-#ifdef __INTEL_COMPILER
-#include <mathimf.h>
-#else
-#include <math.h>
-#endif
+//#define DEBUG_OUTPUT
 
+#include <math.h>
 #include <ptcloud2\datachannel.h>
 #include <pt\geomtypes.h>
 
@@ -26,7 +23,10 @@
 #include <boost/thread/mutex.hpp>
 #endif
 
+#include <pt/ptstring.h>
 #include <pt\boundingbox.h>
+
+#include <pt/trace.h>
 
 using namespace pcloud;
 using namespace pt;
@@ -264,11 +264,16 @@ void DataChannel::copy(ubyte *d)
 //-----------------------------------------------------------------------------
 bool DataChannel::resize(int sz)
 {
+	// sanity check
+	if (sz > 10e6) return false;
+
+	// no change
 	if (sz == _count) return true;
 
-	int newsize = _typesize * _multiple * sz;
+	// byte size
+	size_t newsize = _typesize * _multiple * sz;
 
-	if (!sz)
+	if ( sz <= 0 )
 	{
 		delete [] _data;
 		_data = 0;
@@ -276,11 +281,18 @@ bool DataChannel::resize(int sz)
 		return true;
 	}
 	ubyte *d=0;
+	
+#ifdef DEBUG_OUTPUT
+	pt::String debug_out;
+	if (_count > sz) debug_out.format( "Channel downsize %i\n", (int)newsize );
+	else  debug_out.format( "Channel upsize %i\n", (int)newsize );
+	OutputDebugStringA( debug_out.c_str() );
+#endif
 	try
 	{
 		d = new ubyte[newsize];
 	}
-	catch (...)
+	catch (std::bad_alloc b)
 	{
 		return false;
 	}
@@ -292,7 +304,7 @@ bool DataChannel::resize(int sz)
 	if (_data)
 	{
 		int transfer = _typesize * _multiple * (_count > sz ? sz : _count);
-		memset(&d[transfer], 0, newsize - transfer);
+		memset(&d[transfer], 0, newsize - transfer - 1);
 		memcpy(d, _data, transfer);
 		delete [] _data;
 	}

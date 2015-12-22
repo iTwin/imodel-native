@@ -57,6 +57,12 @@ void RenderMethod_GLVertexArray::renderPoints( PointsBufferI *buffer, const Rend
 	else
 	{
 		ptgl::ClientState::disable( GL_COLOR_ARRAY );
+		
+		const unsigned char *col = buffer->baseColor();
+		if (col && buffer->baseColorAlpha() > 0)
+		{
+			glColor3ub( col[0], col[1], col[2] );
+		}
 	}
 
 	//------------------- tex0 ----------------------

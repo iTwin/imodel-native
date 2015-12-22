@@ -323,11 +323,12 @@ void	VoxelInPlaceBuffer::unlock()
 const ubyte *VoxelInPlaceBuffer::baseColor() const
 {
 	static ubyte col[] = { 255, 255, 255, 255 };	// use the voxels layer colour
-	return col;
+	
+	return  m_voxel->pointCloud()->isOverriderColorEnabled() ?  m_voxel->pointCloud()->overrideColor() : col;
 }
 float VoxelInPlaceBuffer::baseColorAlpha() const
 {
-	return 1.0f;								// use the layers alpha blend value
+	return m_voxel->pointCloud() ? (float)m_voxel->pointCloud()->overrideColor()[3]/255 : 1.0f;
 }
 SelectedVoxelPointsBuffer::SelectedVoxelPointsBuffer( const ubyte *selCol ) : m_selectionCol( selCol )
 {

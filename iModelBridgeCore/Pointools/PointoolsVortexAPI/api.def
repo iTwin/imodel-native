@@ -59,7 +59,6 @@ EXPORTS
 	ptLayerBounds
 	ptLayerBoundsd
 
-
 	ptReadPODMeta
 	ptGetMetaDataHandle
 	ptGetMetaData
@@ -135,6 +134,10 @@ EXPORTS
 	ptDisable
 	ptIsEnabled
 
+	ptSetOverrideColor
+	ptRemoveOverrideColor
+	ptGetOverrideColor
+	
 	ptPointSize
 
 	ptShaderOptionf

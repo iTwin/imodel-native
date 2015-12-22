@@ -150,6 +150,10 @@ PTSHADEROPTIONF ptShaderOptionf = 0;
 PTSHADEROPTIONFV ptShaderOptionfv = 0;
 PTSHADEROPTIONI ptShaderOptioni = 0;
 
+PTSETOVERRIDECOLOR ptSetOverrideColor=0;
+PTGETOVERRIDECOLOR ptGetOverrideColor=0;
+PTREMOVEOVERRIDECOLOR ptRemoveOverrideColor=0;
+
 PTGETSHADEROPTIONF ptGetShaderOptionf = 0;
 PTGETSHADEROPTIONF ptGetShaderOptionfv = 0;
 PTGETSHADEROPTIONI ptGetShaderOptioni = 0;
@@ -372,8 +376,6 @@ PTENABLECLIPPINGPLANE ptEnableClippingPlane = 0;
 PTDISABLECLIPPINGPLANE ptDisableClippingPlane = 0;
 PTSETCLIPPINGPLANEPARAMETERS ptSetClippingPlaneParameters = 0;
 
-_PTDIAGNOSTIC _ptDiagnostic = 0;
-
 #endif
 
 HMODULE hPTAPI = 0;
@@ -485,6 +487,11 @@ bool LoadPointoolsDLL(const TCHAR*filepath)
 
 		ptShowScene = (PTSHOWSCENE)GetAPIFunc("ptShowScene");
 		ptShowCloud = (PTSHOWCLOUD)GetAPIFunc("ptShowCloud");
+
+		ptSetOverrideColor = (PTSETOVERRIDECOLOR) GetAPIFunc("ptSetOverrideColor");
+		ptGetOverrideColor = (PTGETOVERRIDECOLOR) GetAPIFunc("ptGetOverrideColor");
+		ptRemoveOverrideColor = (PTREMOVEOVERRIDECOLOR) GetAPIFunc("ptRemoveOverrideColor");
+
 		ptIsSceneVisible = (PTISSCENEVISIBLE) GetAPIFunc("ptIsSceneVisible");
 		ptIsCloudVisible = (PTISCLOUDVISIBLE) GetAPIFunc("ptIsCloudVisible");
 		ptUnloadScene = (PTUNLOADSCENE)GetAPIFunc("ptUnloadScene");
@@ -747,8 +754,6 @@ bool LoadPointoolsDLL(const TCHAR*filepath)
 		ptSetClippingPlaneParameters = (PTSETCLIPPINGPLANEPARAMETERS) GetAPIFunc( "ptSetClippingPlaneParameters" );
 
 		ptRelease = (PTRELEASE) GetAPIFunc("ptRelease");
-
-		_ptDiagnostic = (_PTDIAGNOSTIC) GetAPIFunc("_ptDiagnostic");
 		return !_failed;
 	}
 	else

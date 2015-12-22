@@ -30,6 +30,9 @@ public:
 
 	uint			requiredStandardUniforms() const;
 
+	bool			affectsGeometry() const							{ return true; }
+	bool			affectsColor() const							{ return false; }
+
 private:
 	GLuint			generateLayerTexture( const RenderContext *context, bool forceUpdate = false );
 

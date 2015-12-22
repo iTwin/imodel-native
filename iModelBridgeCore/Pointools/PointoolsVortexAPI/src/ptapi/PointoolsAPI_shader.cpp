@@ -21,6 +21,8 @@ extern int				setLastErrorCode( int );
 extern TimeStamp		g_startTime;
 extern RenderContext	*g_currentRenderContext;
 
+extern pcloud::Scene*		sceneFromHandle(PThandle handle);
+extern pcloud::PointCloud*	cloudFromHandle(PThandle cloud);
 
 //-------------------------------------------------------------------------------
 // Shader settings for each viewport
@@ -79,10 +81,10 @@ struct ShaderSetup
 		adaptivePntSize = true;
 		frontBias = false;
 		clipping = false;
-		materialDiffuse = 0.5f;
-		materialAmbient = 0.3f;
-		materialSpecular = 0.1f;
-		materialGlossiness = 0.1f;
+		materialDiffuse = 0.8f;
+		materialAmbient = 0.2f;
+		materialSpecular = 1.0f;
+		materialGlossiness = 0.5f;
 		globalDensity = 1.0f;
 		planeEdge = PT_EDGE_REPEAT;
 	}
@@ -263,7 +265,7 @@ struct LightSetup
 
 		ambient.set(0.15f, 0.15f, 0.15f);
 		diffuse.set(0.7f, 0.7f, 0.7f);
-		specular.set(0.9f, 0.9f, 0.9f);
+		specular.set(1.0f, 1.0f, 1.0f);
 
 		asEulers = true;
 		direction.set(1.0f, 1.0f, 1.0f);
@@ -877,6 +879,77 @@ PTres PTAPI ptAddCustomRamp( const PTstr name, PTint numKeys, const PTfloat *pos
 	}
 	
 	RenderResourceManager::instance()->gradientManager()->addGradient( gradient );
+
+	return PTV_SUCCESS;
+}
+PTres	PTAPI ptSetOverrideColor( PThandle cloud_or_scene, const PTfloat *rgb3 )
+{
+	pcloud::PointCloud *cloud = 0;
+	pcloud::Scene *scene = 0;
+
+	if (cloud = cloudFromHandle(cloud_or_scene))
+	{
+		unsigned char rgb[] = { rgb3[0]*255, rgb3[1]*255, rgb3[2]*255 };
+		cloud->overrideColor( rgb );
+		cloud->enableOverrideColor(true);
+	}
+	// if its a scene we set the col for every cloud
+	else if (scene = sceneFromHandle(cloud_or_scene))
+	{
+		for (int i=0; i<scene->size(); i++)
+		{
+			cloud = scene->cloud(i);
+			unsigned char rgb[] = { rgb3[0]*255, rgb3[1]*255, rgb3[2]*255 };
+			cloud->overrideColor( rgb );
+			cloud->enableOverrideColor(true);
+		}
+	}
+	else return setLastErrorCode( PTV_INVALID_HANDLE );
+
+	return PTV_SUCCESS;
+}
+
+PTres	PTAPI ptGetOverrideColor( PThandle cloud_or_scene, PTfloat *rgb3 )
+{
+	pcloud::PointCloud *cloud = 0;
+	pcloud::Scene *scene = 0;
+
+	cloud = cloudFromHandle(cloud_or_scene);
+
+	if (!cloud)
+	{
+		scene = sceneFromHandle(cloud_or_scene);
+		if (scene) cloud = scene->cloud(0);
+	}
+	if (cloud)
+	{
+		rgb3[0] = (float)cloud->overrideColor()[0]/255;
+		rgb3[1] = (float)cloud->overrideColor()[0]/255;
+		rgb3[2] = (float)cloud->overrideColor()[0]/255;
+	}
+	// if its a scene we set the col for every cloud
+	else return setLastErrorCode( PTV_INVALID_HANDLE );
+
+	return PTV_SUCCESS;
+}
+PTres	PTAPI ptRemoveOverrideColor( PThandle cloud_or_scene )
+{
+	pcloud::PointCloud *cloud = 0;
+	pcloud::Scene *scene = 0;
+
+	if (cloud = cloudFromHandle(cloud_or_scene))
+	{
+		cloud->enableOverrideColor(false);
+	}
+	// if its a scene we set the col for every cloud
+	else if (scene = sceneFromHandle(cloud_or_scene))
+	{
+		for (int i=0; i<scene->size(); i++)
+		{
+			scene->cloud(i)->enableOverrideColor(false);
+		}
+	}
+	else return setLastErrorCode( PTV_INVALID_HANDLE );
 
 	return PTV_SUCCESS;
 }

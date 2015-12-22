@@ -117,15 +117,19 @@ namespace pcloud
 		void pushUserTransformation() const;
 
 		const mmatrix4d &userTransformationMatrix() const { return _userTransform.matrix(); }
-		const UserTransform &transform() const { return _userTransform; }
-		UserTransform &transform()	{ return _userTransform; }
+		const UserTransform &transform() const			{ return _userTransform; }
+		UserTransform &transform()						{ return _userTransform; }
 
-		float compressionTolerance() const	{ return _compressionTolerance; }
+		float compressionTolerance() const				{ return _compressionTolerance; }
 
 		/* additional display information */ 
-		bool displayUseGlobalPointSize() const { return _pointSize < 0.1f; }
-		float displayPointSize() const	{ return _pointSize; }
-		const unsigned char* displayBaseColor() const { return _baseColour; }
+		bool displayUseGlobalPointSize() const			{ return _pointSize < 0.1f; }
+		float displayPointSize() const					{ return _pointSize; }
+
+		const unsigned char* overrideColor() const		{ return _baseColour; }
+		void	overrideColor(unsigned char*rgb) 		{ _baseColour[0] = rgb[0]; _baseColour[1] = rgb[1]; _baseColour[2] = rgb[2]; }
+		void	enableOverrideColor(bool enable)		{ _baseColour[3] = enable ? 255 : 0; }
+		bool	isOverriderColorEnabled() const			{ return _baseColour[3] ? true : false; }
 
 	protected:
 		virtual void _computeBounds();
@@ -153,7 +157,7 @@ namespace pcloud
 
 		/* additional display info */ 
 		float			_pointSize;
-		unsigned char	_baseColour[3];
+		unsigned char	_baseColour[4];
 	};
 }
 #endif

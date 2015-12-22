@@ -360,6 +360,10 @@ PTbool	PTAPI ptIsEnabled( PTenum option );
 
 PTres	PTAPI ptPointSize( PTfloat size );
 
+PTres	PTAPI ptSetOverrideColor( PThandle cloud_or_scene, const PTfloat *rgb3 );
+PTres	PTAPI ptGetOverrideColor( PThandle cloud_or_scene, PTfloat *rgb3 );
+PTres	PTAPI ptRemoveOverrideColor( PThandle cloud_or_scene );
+
 PTres	PTAPI ptShaderOptionf( PTenum shader_option, PTfloat value );
 PTres	PTAPI ptShaderOptionfv( PTenum shader_option, PTfloat *value );
 PTres	PTAPI ptShaderOptioni( PTenum shader_option, PTint value );
