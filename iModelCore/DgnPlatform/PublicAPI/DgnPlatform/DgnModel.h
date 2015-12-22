@@ -1011,18 +1011,16 @@ struct ComponentDef : RefCountedBase
     DGNPLATFORM_EXPORT static ComponentDefPtr FromECSqlName(DgnDbStatus* status, DgnDbR db, Utf8StringCR ecsqlClassName);
 
     //! Get the ComponentDef corresponding to the specified component instance
-    //! @param db           The DgnDb that contains the component def
     //! @param instance     An element that might be an instance of a component
     //! @param status       If not null, an error code in case the component definition could not be returned
     //! @see FromECClass
     DGNPLATFORM_EXPORT static ComponentDefPtr FromInstance(DgnDbStatus* status, DgnElementCR instance);
 
     //! Get the ComponentDef corresponding to the specified ComponentModel
-    //! @param db           The DgnDb that contains the component def
     //! @param model        A ComponentModel
     //! @param status       If not null, an error code in case the component definition could not be returned
     //! @see FromECClass
-    DGNPLATFORM_EXPORT static ComponentDefPtr FromComponentModel(DgnDbStatus* statusOut, ComponentModelCR model);
+    DGNPLATFORM_EXPORT static ComponentDefPtr FromComponentModel(DgnDbStatus* status, ComponentModelCR model);
 
     struct GeometryGenerator
         {
