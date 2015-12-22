@@ -1098,6 +1098,10 @@ ElementImporter::ElementImporter(DgnImportContext& c) : m_context(c), m_copyChil
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnElementCPtr ElementImporter::ImportElement(DgnDbStatus* statusOut, DgnModelR destModel, DgnElementCR sourceElement)
     {
+    auto destElementId = m_context.FindElementId(sourceElement.GetElementId());
+    if (destElementId.IsValid()) // If source element was already copied, just return the existing copy. This happens, for example, when a parent deep-copies its children immediately.
+        return m_context.GetDestinationDb().Elements().GetElement(destElementId);
+
     DgnElementCPtr destElement = sourceElement.Import(statusOut, destModel, m_context);
     if (!destElement.IsValid())
         return nullptr;
@@ -1109,8 +1113,6 @@ DgnElementCPtr ElementImporter::ImportElement(DgnDbStatus* statusOut, DgnModelR 
             DgnElementCPtr sourceChildElement = sourceElement.GetDgnDb().Elements().GetElement(sourceChildid);
             if (!sourceChildElement.IsValid())
                 continue;
-
-            Placement3d childPlacement; // *** WIP COPY - compute offset and rotation of source child relative to source parent 
 
             ImportElement(statusOut, destModel, *sourceChildElement);
             }

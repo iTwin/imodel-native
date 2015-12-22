@@ -351,10 +351,10 @@ void ComponentModelTest::Developer_DefineSchema()
     ASSERT_TRUE(ComponentDefCreator::ImportSchema(*m_componentDb, *testSchema).IsValid());
 
     //  Verify that we can look up an existing component
-    ComponentDefPtr widgetCDef = ComponentDef::FromECSqlName(nullptr, *m_componentDb, TEST_JS_NAMESPACE "." TEST_WIDGET_COMPONENT_NAME);
-    ASSERT_TRUE(widgetCDef.IsValid());
-    ASSERT_STREQ(TEST_WIDGET_COMPONENT_NAME, widgetCDef->GetName().c_str());
-    ASSERT_STREQ("WidgetCategory", widgetCDef->GetCategoryName().c_str());
+    //ComponentDefPtr widgetCDef = ComponentDef::FromECSqlName(nullptr, *m_componentDb, TEST_JS_NAMESPACE "." TEST_WIDGET_COMPONENT_NAME);
+    //ASSERT_TRUE(widgetCDef.IsValid());
+    //ASSERT_STREQ(TEST_WIDGET_COMPONENT_NAME, widgetCDef->GetName().c_str());
+    //ASSERT_STREQ("WidgetCategory", widgetCDef->GetCategoryName().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -526,6 +526,15 @@ void ComponentModelTest::SimulateDeveloper()
         PhysicalModelPtr catalogModel;
         ASSERT_EQ( DgnDbStatus::Success , createPhysicalModel(catalogModel, *m_componentDb, DgnModel::CreateModelCode("Catalog")) );
 
+        if (true)
+            {
+            ComponentDefPtr thingCdef = ComponentDef::FromECSqlName(nullptr, *m_componentDb, TEST_JS_NAMESPACE "." TEST_THING_COMPONENT_NAME);
+            ASSERT_TRUE(thingCdef.IsValid());
+            bvector<DgnElementId> thingVariations;
+            thingCdef->QueryVariations(thingVariations, catalogModel->GetModelId());
+            ASSERT_EQ(0, thingVariations.size()) << "no variations should exist yet";
+            }
+
         DgnElementCPtr var;
         m_wsln1.MakeVariation(var, *catalogModel); 
         wsln1VariationId = var->GetElementId();
@@ -534,6 +543,15 @@ void ComponentModelTest::SimulateDeveloper()
         m_wsln44.MakeVariation(var, *catalogModel); 
         m_gsln1.MakeVariation(var, *catalogModel); 
         m_nsln1.MakeVariation(var, *catalogModel);
+
+        if (true)
+            {
+            ComponentDefPtr thingCdef = ComponentDef::FromECSqlName(nullptr, *m_componentDb, TEST_JS_NAMESPACE "." TEST_THING_COMPONENT_NAME);
+            ASSERT_TRUE(thingCdef.IsValid());
+            bvector<DgnElementId> thingVariations;
+            thingCdef->QueryVariations(thingVariations, catalogModel->GetModelId());
+            ASSERT_EQ(1, thingVariations.size()) << "1 variation of thing should have been created";
+            }
 
         m_componentDb->SaveChanges();
         }
@@ -718,15 +736,22 @@ TEST_F(ComponentModelTest, SimulateDeveloperAndClientWithNestingSingleton)
 
     SimulateDeveloper();
 
+    //  Create the target model in the client. (Do this first, so that the first imported CM's will get a model id other than 1. Hopefully, that will help us catch more bugs.)
+    if(true)
+        {
+        OpenClientDb(Db::OpenMode::ReadWrite);
+        AutoCloseClientDb closeClientDbAtEnd(*this);
+        
+        Client_ImportComponentDef(TEST_GADGET_COMPONENT_NAME);
+        }
+
     OpenClientDb(Db::OpenMode::ReadWrite);
     AutoCloseClientDb closeClientDbAtEnd(*this);
 
-    //  Create the target model in the client. (Do this first, so that the first imported CM's will get a model id other than 1. Hopefully, that will help us catch more bugs.)
+    Client_ImportComponentDef(TEST_THING_COMPONENT_NAME);
+
     PhysicalModelPtr targetModel;
     ASSERT_EQ( DgnDbStatus::Success , createPhysicalModel(targetModel, *m_clientDb, DgnModel::CreateModelCode("Instances")) );
-
-    Client_ImportComponentDef(TEST_GADGET_COMPONENT_NAME);
-    Client_ImportComponentDef(TEST_THING_COMPONENT_NAME);
 
     VariationSpec nparms = m_nsln1;
     nparms.m_propValues[0].m_value.SetDouble(9999);
@@ -753,21 +778,25 @@ TEST_F(ComponentModelTest, SimulateDeveloperAndClientWithNesting)
     m_componentSchemaFileName.AppendToPath(TEST_JS_NAMESPACE_W L"0.0.ECSchema.xml");
 
     SimulateDeveloper();
+    
+    if (true)
+        {
+        OpenClientDb(Db::OpenMode::ReadWrite);
+        AutoCloseClientDb closeClientDbAtEnd(*this);
+
+        Client_ImportComponentDef(TEST_THING_COMPONENT_NAME);
+
+        ComponentDefPtr thingCdef = ComponentDef::FromECSqlName(nullptr, *m_clientDb, TEST_JS_NAMESPACE "." TEST_THING_COMPONENT_NAME);
+        ASSERT_TRUE(thingCdef.IsValid());
+        }
 
     OpenClientDb(Db::OpenMode::ReadWrite);
     AutoCloseClientDb closeClientDbAtEnd(*this);
 
-    //  Create the target model in the client. (Do this first, so that the first imported CM's will get a model id other than 1. Hopefully, that will help us catch more bugs.)
+    Client_ImportComponentDef(TEST_GADGET_COMPONENT_NAME);
+
     PhysicalModelPtr targetModel;
     ASSERT_EQ( DgnDbStatus::Success , createPhysicalModel(targetModel, *m_clientDb, DgnModel::CreateModelCode("Instances")) );
-
-    Client_ImportComponentDef(TEST_GADGET_COMPONENT_NAME);
-    Client_ImportComponentDef(TEST_THING_COMPONENT_NAME);
-
-    ComponentModelPtr nestingComponentModel = getModelByName<ComponentModel>(*m_clientDb, TEST_THING_COMPONENT_NAME);  // Open the client's imported copy
-    ASSERT_TRUE( nestingComponentModel.IsValid() );
-
-    PhysicalModelPtr catalogModel = getModelByName<PhysicalModel>(*m_clientDb, "Catalog");
 
     DgnElementCPtr instanceElement;
     m_nsln1.MakeUniqueInstance(instanceElement, *targetModel, 1);

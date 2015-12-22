@@ -950,6 +950,9 @@ struct ComponentDef : RefCountedBase
 
     DGNPLATFORM_EXPORT DgnDbStatus GenerateGeometry(ECN::IECInstanceCR variationSpec);
  
+    static Utf8String GetClassECSqlName(ECN::ECClassCR cls) {Utf8String ns(cls.GetSchema().GetNamespacePrefix()); return ns.append(".").append(cls.GetName());}
+    Utf8String GetClassECSqlName() const {return GetClassECSqlName(m_class);}
+
     Utf8String GetGeneratedName() const;
     DgnElement::Code CreateVariationCode(Utf8StringCR slnId);
 
@@ -971,15 +974,15 @@ struct ComponentDef : RefCountedBase
 
  public:
     //! Get a list of all of the component definitions derived from the specified base class in the specified DgnDb
-    //! @param componentDefs    Where to return the results
-    //! @param db               The Db to search
-    //! @param baseClass        The base class to start from
+    //! @param[out] componentDefs    Where to return the results
+    //! @param[in] db               The Db to search
+    //! @param[in] baseClass        The base class to start from
     DGNPLATFORM_EXPORT static void QueryComponentDefs(bvector<DgnClassId>& componentDefs, DgnDbR db, ECN::ECClassCR baseClass);
 
     //! Make a ComponentDef object
     //! @param db           The DgnDb that contains the component def
     //! @param componentDefClass   The ECClass that defines the component
-    //! @param status       If not null, an error code in case Create failed
+    //! @param status       If not null, an error code in case the component definition could not be returned
     //! @note possible status values include:
     //! DgnDbStatus::BadModel - the component definition specifies a model, but the model does not exist in \a db
     //! DgnDbStatus::InvalidCategory - the component definition's category cannot be found in \a db
@@ -989,19 +992,23 @@ struct ComponentDef : RefCountedBase
     //! Make a ComponentDef object
     //! @param db           The DgnDb that contains the component def
     //! @param componentDefClassId Identfies the ECClass that defines the component
-    //! @param status       If not null, an error code in case Create failed
-    //! @note possible status values include:
-    //! DgnDbStatus::BadModel - the component definition specifies a model, but the model does not exist in \a db
-    //! DgnDbStatus::InvalidCategory - the component definition's category cannot be found in \a db
-    //! DgnDbStatus::WrongClass - \a componentDefClass is not a component definition ECClass
+    //! @param status       If not null, an error code in case the component definition could not be returned
+    //! @see FromECClass
     DGNPLATFORM_EXPORT static ComponentDefPtr FromECClassId(DgnDbStatus* status, DgnDbR db, DgnClassId componentDefClassId);
 
     //! Make a ComponentDef object
     //! @param db           The DgnDb that contains the component def
     //! @param ecsqlClassName   The full ECSQL name of the ECClass that defines the component
     //! @param status       If not null, an error code in case Create failed
-    //! @see From
+    //! @see FromECClass
     DGNPLATFORM_EXPORT static ComponentDefPtr FromECSqlName(DgnDbStatus* status, DgnDbR db, Utf8StringCR ecsqlClassName);
+
+    //! Make a ComponentDef object
+    //! @param db           The DgnDb that contains the component def
+    //! @param instance     An element that might be an instance of a component
+    //! @param status       If not null, an error code in case the component definition could not be returned
+    //! @see FromECClass
+    DGNPLATFORM_EXPORT static ComponentDefPtr FromInstance(DgnDbStatus* status, DgnElementCR instance);
 
     struct GeometryGenerator
         {

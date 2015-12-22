@@ -37,6 +37,26 @@ static ECN::ECClassCP getECClassByFullName(DgnDbR db, Utf8StringCR fullname)
     return db.Schemas().GetECClass(ns.c_str(), cls.c_str());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+static ECN::IECInstancePtr getComponentSpecCA(DgnDbR db, ECN::ECClassCR cls)
+    {
+     ECN::ECClassCP caClass = db.Schemas().GetECClass(DGN_ECSCHEMA_NAME, "ComponentSpecification");
+    if (nullptr == caClass)
+        return nullptr;
+
+    return cls.GetCustomAttribute(*caClass);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+static bool isInstanceOfComponent(DgnElementCR el)
+    {
+    return (nullptr != el.GetElementClass()) && getComponentSpecCA(el.GetDgnDb(), *el.GetElementClass()).IsValid();
+    }
+
 //=======================================================================================
 // Base for helper classes that assist in making harvested solutions persistent
 //=======================================================================================
@@ -167,8 +187,6 @@ DgnElementCPtr HarvestedSingletonInserter::_WriteInstance(DgnDbStatus& status, D
     if (!elOut.IsValid())
         return nullptr;
 
-    // *** WIP_COMPONENT
-    // createInstanceOfTemplateRelationship(*elOut, *elOut); // set up a singleton as an instance of itself.  That makes it much simpler to implement the code that cleans up after a component model is deleted.
     return elOut;
     }
 
@@ -196,19 +214,11 @@ DgnDbStatus ComponentGeometryHarvester::HarvestModel(bvector<bpair<DgnSubCategor
             continue;
 
         //  Nested instances will become child elements or will be folded into the solution. That will be handled below.
-#ifdef WIP_COMPONENT
         if (isInstanceOfComponent(*mapEntry.second))
             {
-            PhysicalElementCP pnested = mapEntry.second->ToPhysicalElement();
-            if (nullptr != pnested)
-                nestedInstances.push_back(pnested);
-            else
-                {
-                BeDataAssert(false && "HarvestModel supports only PhysicalElements.");
-                }
+            nestedInstances.push_back(mapEntry.second);
             continue;
             }
-#endif
 
         //  Only solution elements in the component's Category are collected. The rest are construction/annotation geometry.
         if (componentElement->GetCategoryId() != harvestableGeometryCategoryId)
@@ -393,18 +403,25 @@ ComponentDefPtr ComponentDef::FromECClassId(DgnDbStatus* statusOut, DgnDbR db, D
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
+ComponentDefPtr ComponentDef::FromInstance(DgnDbStatus* statusOut, DgnElementCR instance)
+    {
+    if (nullptr == instance.GetElementClass())
+        {
+        if (nullptr != statusOut)
+            *statusOut = DgnDbStatus::BadArg;
+        return nullptr;
+        }
+    return FromECClass(statusOut, instance.GetDgnDb(), *instance.GetElementClass());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      12/15
++---------------+---------------+---------------+---------------+---------------+------*/
 ComponentDefPtr ComponentDef::FromECClass(DgnDbStatus* statusOut, DgnDbR db, ECN::ECClassCR componentDefClass)
     {
     DgnDbStatus ALLOW_NULL_OUTPUT(status, statusOut);
 
-    ECN::ECClassCP caClass = db.Schemas().GetECClass(DGN_ECSCHEMA_NAME, "ComponentSpecification");
-    if (nullptr == caClass)
-        {
-        status = DgnDbStatus::WrongClass;
-        return nullptr;
-        }
-
-    auto ca = componentDefClass.GetCustomAttribute(*caClass);
+    auto ca = getComponentSpecCA(db, componentDefClass);
     if (!ca.IsValid())
         {
         status = DgnDbStatus::WrongClass;
@@ -716,7 +733,7 @@ ECN::IECInstancePtr ComponentDef::GetParameters(DgnElementCR el)
     ComponentDefPtr cdef = FromECClass(nullptr, el.GetDgnDb(), *el.GetElementClass());
     if (!cdef.IsValid())
         return nullptr;
-    Utf8PrintfString sql("SELECT * FROM %s.%s WHERE ECInstanceId=?", el.GetElementClass()->GetSchema().GetNamespacePrefix().c_str(), el.GetElementClass()->GetName().c_str());
+    Utf8PrintfString sql("SELECT * FROM %s WHERE ECInstanceId=?", GetClassECSqlName(*el.GetElementClass()).c_str());
     auto ecsql = el.GetDgnDb().GetPreparedECSqlStatement(sql);
     ecsql->BindId(1, el.GetElementId());
     ECInstanceECSqlSelectAdapter selector(*ecsql);
@@ -795,6 +812,11 @@ void ComponentDef::CopyInstanceParameters(ECN::IECInstanceR target, ECN::IECInst
 static ECN::ECSchemaPtr importECSchema(ECN::ECObjectsStatus& ecstatus, DgnDbR db, ECN::ECSchemaCR schemaIn)
     {
     ECN::ECSchemaPtr imported;
+
+    imported = const_cast<ECN::ECSchemaP>(db.Schemas().GetECSchema(schemaIn.GetName().c_str()));
+    if (imported.IsValid())
+        return imported;
+
     ECSUCCESS(schemaIn.CopySchema(imported));
     ECSUCCESS(imported->SetName(schemaIn.GetName()));
     ECSUCCESS(imported->SetNamespacePrefix(schemaIn.GetNamespacePrefix()));
@@ -807,7 +829,7 @@ static ECN::ECSchemaPtr importECSchema(ECN::ECObjectsStatus& ecstatus, DgnDbR db
         return nullptr;
         }
 
-    //db.Domains().SyncWithSchemas(); no need to do this. A component's class will not have a handler.
+    db.Schemas().CreateECClassViewsInDb();
 
     return imported;
     }
@@ -824,12 +846,23 @@ ECN::ECSchemaPtr ComponentDefCreator::ImportSchema(DgnDbR db, ECN::ECSchemaCR sc
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
+static ECN::ECClassCP getSameClassIn(DgnDbR db, ECN::ECClassCR cls)
+    {
+    return db.Schemas().GetECClass(cls.GetSchema().GetName().c_str(), cls.GetName().c_str());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
 DgnDbStatus ComponentDef::Export(DgnImportContext& context, bool exportSchema, bool exportCategory)
     {
-    if (&GetDgnDb() != &context.GetSourceDb())
+    if (&GetDgnDb() != &context.GetSourceDb()) 
+        {
+        BeAssert(false && "You must call this method on the ComponentDef that is in the *source* db.");
         return DgnDbStatus::WrongDgnDb;
+        }
 
-    if (exportSchema)
+    if (exportSchema && (nullptr == getSameClassIn(context.GetDestinationDb(), m_class)))
         {
         ECN::ECObjectsStatus ecstatus = ECN::ECObjectsStatus::Success;
         importECSchema(ecstatus, context.GetDestinationDb(), GetECClass().GetSchema());
@@ -837,20 +870,17 @@ DgnDbStatus ComponentDef::Export(DgnImportContext& context, bool exportSchema, b
             return DgnDbStatus::BadSchema;
         }
 
-    if (exportCategory)
+    if (exportCategory && !DgnCategory::QueryCategoryId(GetCategoryName(), context.GetDestinationDb()).IsValid())
         {
-        if (!DgnCategory::QueryCategoryId(GetCategoryName(), context.GetDestinationDb()).IsValid())
+        auto sourceCat = DgnCategory::QueryCategory(GetCategoryName(), GetDgnDb());
+        if (sourceCat.IsValid())
             {
-            auto sourceCat = DgnCategory::QueryCategory(GetCategoryName(), GetDgnDb());
-            if (sourceCat.IsValid())
-                {
-                ElementImporter importer(context);
-                importer.ImportElement(nullptr, context.GetDestinationDb().GetDictionaryModel(), *sourceCat);
-                }
+            ElementImporter importer(context);
+            importer.ImportElement(nullptr, context.GetDestinationDb().GetDictionaryModel(), *sourceCat);
             }
         }
 
-    if (!UsesTemporaryModel())
+    if (!UsesTemporaryModel() && !context.GetDestinationDb().Models().QueryModelId(DgnModel::CreateModelCode(GetModelName())).IsValid())
         {
         DgnDbStatus status;
         if (!DgnModel::Import(&status, GetModel(), context).IsValid())
@@ -871,7 +901,7 @@ DgnDbStatus ComponentDef::ExportVariations(DgnModelR destVariationsModel, DgnMod
 
     // Check that this component definition has already been imported into the destination Db
         {
-        auto destClass = destVariationsModel.GetDgnDb().Schemas().GetECClass(GetECClass().GetSchema().GetName().c_str(), GetECClass().GetName().c_str());
+        auto destClass = getSameClassIn(destVariationsModel.GetDgnDb(), m_class);
         if (nullptr == destClass)
             return DgnDbStatus::BadSchema;
         if (!FromECClass(nullptr, destVariationsModel.GetDgnDb(), *destClass).IsValid())
@@ -881,7 +911,7 @@ DgnDbStatus ComponentDef::ExportVariations(DgnModelR destVariationsModel, DgnMod
     ElementImporter importer(context);
 
     EC::ECSqlStatement selectInstancesOfComponent;
-    selectInstancesOfComponent.Prepare(GetDgnDb(), Utf8PrintfString("SELECT ECInstanceId FROM %s.%s WHERE(ModelId=?)", m_class.GetSchema().GetNamespacePrefix().c_str(), m_class.GetName().c_str()));
+    selectInstancesOfComponent.Prepare(GetDgnDb(), Utf8PrintfString("SELECT ECInstanceId FROM %s WHERE(ModelId=?)", GetClassECSqlName().c_str()));
     selectInstancesOfComponent.BindId(1, sourceVariationsModelId);
     while (BE_SQLITE_ROW == selectInstancesOfComponent.Step())
         {
@@ -912,7 +942,7 @@ DgnDbStatus ComponentDef::ExportVariations(DgnModelR destVariationsModel, DgnMod
 void ComponentDef::QueryVariations(bvector<DgnElementId>& variations, DgnModelId variationsModelId)
     {
     EC::ECSqlStatement selectInstancesOfComponent;
-    selectInstancesOfComponent.Prepare(GetDgnDb(), Utf8PrintfString("SELECT ECInstanceId FROM %s.%s WHERE(ModelId=?)", m_class.GetSchema().GetNamespacePrefix().c_str(), m_class.GetName().c_str()));
+    selectInstancesOfComponent.Prepare(GetDgnDb(), Utf8PrintfString("SELECT ECInstanceId FROM %s WHERE(ModelId=?)", GetClassECSqlName().c_str()));
     selectInstancesOfComponent.BindId(1, variationsModelId);
     while (BE_SQLITE_ROW == selectInstancesOfComponent.Step())
         {
