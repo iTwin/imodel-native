@@ -52,6 +52,8 @@ ConfigurationVariableLevel GetLevelFromString (WCharCP levelString)
     return (ConfigurationVariableLevel)-5;
     }
 
+#if defined (BENTLEY_WIN32) && defined (UNUSED)
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   02/12
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -232,6 +234,10 @@ void    GetPredefinedMacrosFromMsDebug (MacroConfigurationAdmin& macroCfgAdmin)
         }
     }
 
+#endif
+
+#if defined (UNUSED)
+
 /*---------------------------------------------------------------------------------**//**
 * @bsiclass                                    Barry.Bentley                   06/12
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -259,6 +265,8 @@ virtual void        ShowDebugMessage (int indent,WCharCP format, ...) override
         m_debugFile->PrintfTo (false, message.c_str());
     }
 };
+
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   02/12
