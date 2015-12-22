@@ -720,7 +720,7 @@ void ViewController::LookAtViewAlignedVolume(DRange3dCR volume, double const* as
         newDelta.z = minimumDepth;
         }
 
-    SpatialViewControllerP physView =(SpatialViewControllerP) _ToPhysicalView();
+    SpatialViewControllerP physView =(SpatialViewControllerP) _ToSpatialView();
     CameraViewControllerP cameraView =(CameraViewControllerP) _ToCameraView();
     DPoint3d origNewDelta = newDelta;
 

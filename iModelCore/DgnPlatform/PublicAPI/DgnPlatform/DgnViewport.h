@@ -803,7 +803,7 @@ public:
     DGNPLATFORM_EXPORT ViewControllerR GetViewControllerR() const;
 
     //! If this view is a physical view, get the physical view controller.
-    SpatialViewControllerCP GetSpatialViewControllerCP() const {return GetViewController()._ToPhysicalView();}
+    SpatialViewControllerCP GetSpatialViewControllerCP() const {return GetViewController()._ToSpatialView();}
     //! If this view is a physical view, get a writeable pointer to the physical view controller.
     SpatialViewControllerP GetSpatialViewControllerP() {return (SpatialViewControllerP) GetSpatialViewControllerCP();}
     //! If this view is a camera view, get the camera physical view controller.

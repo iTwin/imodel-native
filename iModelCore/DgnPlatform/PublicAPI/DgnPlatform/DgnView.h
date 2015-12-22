@@ -14,7 +14,7 @@
 #include "ECSqlStatementIterator.h"
 
 #define DGN_CLASSNAME_ViewDefinition "ViewDefinition"
-#define DGN_CLASSNAME_PhysicalViewDefinition "PhysicalViewDefinition"
+#define DGN_CLASSNAME_SpatialViewDefinition "SpatialViewDefinition"
 #define DGN_CLASSNAME_CameraViewDefinition "CameraViewDefinition"
 #define DGN_CLASSNAME_DrawingViewDefinition "DrawingViewDefinition"
 #define DGN_CLASSNAME_SheetViewDefinition "SheetViewDefinition"
@@ -115,7 +115,7 @@ protected:
     virtual ViewControllerPtr _SupplyController() const = 0;
     virtual bool _IsValidBaseModel(DgnModelCR model) const { return true; }
 
-    virtual PhysicalViewDefinitionCP _ToPhysicalView() const { return nullptr; }
+    virtual SpatialViewDefinitionCP _ToSpatialView() const { return nullptr; }
     virtual DrawingViewDefinitionCP _ToDrawingView() const { return nullptr; }
     virtual SheetViewDefinitionCP _ToSheetView() const { return nullptr; }
 
@@ -197,7 +197,7 @@ public:
         Utf8CP GetDescr() const { return m_statement->GetValueText(4); } //!< The view's description
         DgnClassId GetClassId() const { return m_statement->GetValueId<DgnClassId>(5); } //!< The view's ECClass ID
 
-        DGNPLATFORM_EXPORT bool IsPhysicalView() const;
+        DGNPLATFORM_EXPORT bool IsSpatialView() const;
         DGNPLATFORM_EXPORT bool IsDrawingView() const;
         DGNPLATFORM_EXPORT bool IsSheetView() const;
     };
@@ -265,13 +265,13 @@ public:
     //! Return the number of view definitions in the specific DgnDb
     DGNPLATFORM_EXPORT static size_t QueryCount(DgnDbR db, Iterator::Options const& options=Iterator::Options());
 
-    bool IsPhysicalView() const { return nullptr != _ToPhysicalView(); }
+    bool IsSpatialView() const { return nullptr != _ToSpatialView(); }
     bool IsDrawingView() const { return nullptr != _ToDrawingView(); }
     bool IsSheetView() const { return nullptr != _ToSheetView(); }
-    PhysicalViewDefinitionCP ToPhysicalView() const { return _ToPhysicalView(); }
+    SpatialViewDefinitionCP ToSpatialView() const { return _ToSpatialView(); }
     DrawingViewDefinitionCP ToDrawingView() const { return _ToDrawingView(); }
     SheetViewDefinitionCP ToSheetView() const { return _ToSheetView(); }
-    PhysicalViewDefinitionP ToPhysicalViewP() { return const_cast<PhysicalViewDefinitionP>(ToPhysicalView()); }
+    SpatialViewDefinitionP ToSpatialViewP() { return const_cast<SpatialViewDefinitionP>(ToSpatialView()); }
     DrawingViewDefinitionP ToDrawingViewP() { return const_cast<DrawingViewDefinitionP>(ToDrawingView()); }
     SheetViewDefinitionP ToSheetViewP() { return const_cast<SheetViewDefinitionP>(ToSheetView()); }
 
@@ -284,31 +284,31 @@ public:
 //! table.
 // @bsiclass                                                      Paul.Connelly   10/15
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE PhysicalViewDefinition : ViewDefinition
+struct EXPORT_VTABLE_ATTRIBUTE SpatialViewDefinition : ViewDefinition
 {
-    DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_PhysicalViewDefinition, ViewDefinition);
+    DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_SpatialViewDefinition, ViewDefinition);
 public:
-    //! Parameters for initializing a PhysicalViewDefinition
+    //! Parameters for initializing a SpatialViewDefinition
     struct CreateParams : T_Super::CreateParams
     {
-        DEFINE_T_SUPER(PhysicalViewDefinition::T_Super::CreateParams);
+        DEFINE_T_SUPER(SpatialViewDefinition::T_Super::CreateParams);
     protected:
         CreateParams(DgnDbR db, Code const& code, DgnClassId classId, Data const& data) : T_Super(db, code, classId, data) { }
     public:
         //! Constructor from base CreateParams. Chiefly for internal use.
         explicit CreateParams(DgnElement::CreateParams const& params, Data const& data=Data()) : T_Super(params, data) { }
         //! Constructor
-        CreateParams(DgnDbR db, Utf8StringCR name, Data const& data) : CreateParams(db, ViewDefinition::CreateCode(name), PhysicalViewDefinition::QueryClassId(db), data) { }
+        CreateParams(DgnDbR db, Utf8StringCR name, Data const& data) : CreateParams(db, ViewDefinition::CreateCode(name), SpatialViewDefinition::QueryClassId(db), data) { }
     };
 protected:
-    virtual PhysicalViewDefinitionCP _ToPhysicalView() const override { return this; }
+    virtual SpatialViewDefinitionCP _ToSpatialView() const override { return this; }
     DGNPLATFORM_EXPORT ViewControllerPtr _SupplyController() const override;
 public:
-    //! Construct a PhysicalViewDefinition from the supplied params
-    explicit PhysicalViewDefinition(CreateParams const& params) : T_Super(params) { }
+    //! Construct a SpatialViewDefinition from the supplied params
+    explicit SpatialViewDefinition(CreateParams const& params) : T_Super(params) { }
 
-    //! Look up the ECClass ID used for PhysicalViewDefinitions within the specified DgnDb
-    static DgnClassId QueryClassId(DgnDbR db) { return DgnClassId(db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_PhysicalViewDefinition)); }
+    //! Look up the ECClass ID used for SpatialViewDefinitions within the specified DgnDb
+    static DgnClassId QueryClassId(DgnDbR db) { return DgnClassId(db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_SpatialViewDefinition)); }
 };
 
 //=======================================================================================
@@ -316,9 +316,9 @@ public:
 //! world-coordinate geometry onto the image plane through a perspective projection.
 // @bsiclass                                                      Paul.Connelly   10/15
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE CameraViewDefinition : PhysicalViewDefinition
+struct EXPORT_VTABLE_ATTRIBUTE CameraViewDefinition : SpatialViewDefinition
 {
-    DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_CameraViewDefinition, PhysicalViewDefinition);
+    DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_CameraViewDefinition, SpatialViewDefinition);
 public:
     //! Parameters for initializing a CameraViewDefinition
     struct CreateParams : T_Super::CreateParams
@@ -446,12 +446,12 @@ public:
 namespace dgn_ElementHandler
 {
     //=======================================================================================
-    //! The handler for PhysicalViewDefinition elements
+    //! The handler for SpatialViewDefinition elements
     // @bsiclass                                                      Paul.Connelly   10/15
     //=======================================================================================
-    struct PhysicalViewDef : Element
+    struct SpatialViewDef : Element
     {
-        ELEMENTHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_PhysicalViewDefinition, PhysicalViewDefinition, PhysicalViewDef, Element, DGNPLATFORM_EXPORT);
+        ELEMENTHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_SpatialViewDefinition, SpatialViewDefinition, SpatialViewDef, Element, DGNPLATFORM_EXPORT);
     protected:
         DGNPLATFORM_EXPORT virtual void _GetClassParams(ECSqlClassParams& params) override;
     };
@@ -460,9 +460,9 @@ namespace dgn_ElementHandler
     //! The handler for CameraViewDefinition elements
     // @bsiclass                                                      Paul.Connelly   10/15
     //=======================================================================================
-    struct CameraViewDef : PhysicalViewDef
+    struct CameraViewDef : SpatialViewDef
     {
-        ELEMENTHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_CameraViewDefinition, CameraViewDefinition, CameraViewDef, PhysicalViewDef, DGNPLATFORM_EXPORT);
+        ELEMENTHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_CameraViewDefinition, CameraViewDefinition, CameraViewDef, SpatialViewDef, DGNPLATFORM_EXPORT);
     };
 
     //=======================================================================================
@@ -497,7 +497,7 @@ namespace dgn_ElementHandler
     };
 };
 
-typedef dgn_ElementHandler::PhysicalViewDef PhysicalViewHandler;
+typedef dgn_ElementHandler::SpatialViewDef SpatialViewHandler;
 typedef dgn_ElementHandler::DrawingViewDef DrawingViewHandler;
 typedef dgn_ElementHandler::SheetViewDef SheetViewHandler;
 

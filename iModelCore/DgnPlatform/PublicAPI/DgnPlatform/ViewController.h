@@ -404,8 +404,8 @@ public:
 
     //! perform the equivalent of a dynamic_cast to a SpatialViewController.
     //! @return a valid SpatialViewControllerCP, or nullptr if this is not a physical view
-    virtual SpatialViewControllerCP _ToPhysicalView() const {return nullptr;}
-    SpatialViewControllerP ToPhysicalViewP() {return const_cast<SpatialViewControllerP>(_ToPhysicalView());}
+    virtual SpatialViewControllerCP _ToSpatialView() const {return nullptr;}
+    SpatialViewControllerP ToSpatialViewP() {return const_cast<SpatialViewControllerP>(_ToSpatialView());}
 
     //! perform the equivalent of a dynamic_cast to a CameraViewController.
     //! @return a valid CameraViewControllerCP, or nullptr if this is not a physical view with a camera
@@ -423,7 +423,7 @@ public:
     SheetViewControllerP  ToSheetViewP() {return const_cast<SheetViewControllerP>(_ToSheetView());}
 
     //! determine whether this is a physical view
-    bool IsPhysicalView() const {return nullptr != _ToPhysicalView();}
+    bool IsSpatialView() const {return nullptr != _ToSpatialView();}
 
     //! determine whether this is a camera view
     bool IsCameraView() const {return nullptr != _ToCameraView();}
@@ -599,7 +599,7 @@ protected:
     //  Non-persistent data
     IAuxCoordSysPtr     m_auxCoordSys;      //!< The auxiliary coordinate system in use.
 
-    virtual SpatialViewControllerCP _ToPhysicalView() const override {return this;}
+    virtual SpatialViewControllerCP _ToSpatialView() const override {return this;}
     virtual ClipVectorPtr _GetClipVector() const {return nullptr;}
 
     DGNPLATFORM_EXPORT virtual void _AdjustAspectRatio(double, bool expandView) override;
@@ -1068,8 +1068,8 @@ private:
     virtual ColorDef _GetBackgroundColor() const override;
     virtual ClipVectorPtr _GetClipVector() const override;
 
-    void PushClipsForPhysicalView(ViewContextR) const;
-    void PopClipsForPhysicalView(ViewContextR) const;
+    void PushClipsForSpatialView(ViewContextR) const;
+    void PopClipsForSpatialView(ViewContextR) const;
     void PushClipsForInContextViewPass(ViewContextR context, SectionDrawingViewControllerCR drawing) const;
     void PopClipsForInContextViewPass(ViewContextR context, SectionDrawingViewControllerCR drawing) const;
 
@@ -1088,7 +1088,7 @@ public:
     DGNPLATFORM_EXPORT SectionDrawingViewControllerPtr FindSectionDrawingViewById(DgnViewId) const;
     DGNPLATFORM_EXPORT BentleyStatus AddDrawing(SectionDrawingViewControllerR);
     DGNPLATFORM_EXPORT BentleyStatus RemoveDrawing(DgnViewId);
-    DGNPLATFORM_EXPORT SpatialViewControllerR GetPhysicalView() const;
+    DGNPLATFORM_EXPORT SpatialViewControllerR GetSpatialView() const;
     DrawingSymbology GetDrawingSymbology() const {return m_symbology;} //!< Get the symbology for some aspects of the drawings when they are drawn in context.
     void SetDrawingSymbology(DrawingSymbology const& s) {m_symbology=s;} //!< Set the symbology for some aspects of the drawings when they are drawn in context.
     Pass GetPassesToDraw() const {return m_passesToDraw;} //!< Get the drawing elements to draw.

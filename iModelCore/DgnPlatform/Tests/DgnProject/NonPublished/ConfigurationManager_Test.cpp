@@ -6,6 +6,8 @@
 |
 +--------------------------------------------------------------------------------------*/
 
+#ifdef BENTLEY_WIN32
+
 #include "../TestFixture/DgnDbTestFixtures.h"
 
 #include <DgnPlatform/Tools/stringop.h>
@@ -722,3 +724,5 @@ TEST (ConfigurationManager_Test, StringExpand)
     ASSERT_STREQ(L"One:Two", strHavingMacro.c_str());
 
     }
+
+#endif

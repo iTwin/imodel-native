@@ -114,7 +114,7 @@ DgnBaseDomain::DgnBaseDomain() : DgnDomain(DGN_ECSCHEMA_NAME, "Base DgnDb Domain
     RegisterHandler(dgn_ElementHandler::AnnotationLeaderStyleHandler::GetHandler());
     RegisterHandler(dgn_ElementHandler::TextAnnotationSeedHandler::GetHandler());
 
-    RegisterHandler(dgn_ElementHandler::PhysicalViewDef::GetHandler());
+    RegisterHandler(dgn_ElementHandler::SpatialViewDef::GetHandler());
     RegisterHandler(dgn_ElementHandler::CameraViewDef::GetHandler());
     RegisterHandler(dgn_ElementHandler::DrawingViewDef::GetHandler());
     RegisterHandler(dgn_ElementHandler::SheetViewDef::GetHandler());

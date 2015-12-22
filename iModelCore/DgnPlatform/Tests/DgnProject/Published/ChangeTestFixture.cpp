@@ -131,7 +131,7 @@ void ChangeTestFixture::UpdateDgnDbExtents()
     physicalExtents = m_testDb->Units().ComputeProjectExtents();
     m_testDb->Units().SaveProjectExtents(physicalExtents);
 
-    PhysicalViewDefinitionCPtr view = dynamic_cast<PhysicalViewDefinitionCP>(ViewDefinition::QueryView("Default", *m_testDb).get());
+    SpatialViewDefinitionCPtr view = dynamic_cast<SpatialViewDefinitionCP>(ViewDefinition::QueryView("Default", *m_testDb).get());
     ASSERT_TRUE(view.IsValid());
 
     ViewControllerPtr viewController = view->LoadViewController(ViewDefinition::FillModels::No);
