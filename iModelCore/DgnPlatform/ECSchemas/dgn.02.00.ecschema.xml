@@ -19,6 +19,51 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
     </ECClass>
 
     <!-- ////////////////////////////////////////////////////////////////////////////// -->
+    <!-- // Geometry-related core classes -->
+    <!-- ////////////////////////////////////////////////////////////////////////////// -->
+
+    <ECClass typeName="ElementAlignedBox2d" isStruct="True">
+        <ECProperty propertyName="Low" typeName="point2d" />
+        <ECProperty propertyName="High" typeName="point2d" />
+    </ECClass>
+    <ECClass typeName="Placement2d" isStruct="True">
+        <ECProperty propertyName="Origin" typeName="point2d" />
+        <ECProperty propertyName="Rotation" typeName="double" />
+        <ECStructProperty propertyName="Box" typeName="ElementAlignedBox2d" />
+    </ECClass>
+
+    <ECClass typeName="YawPitchRollAngles" isStruct="True">
+        <ECProperty propertyName="Yaw" typeName="double" />
+        <ECProperty propertyName="Pitch" typeName="double" />
+        <ECProperty propertyName="Roll" typeName="double" />
+    </ECClass>
+    <ECClass typeName="ElementAlignedBox3d" isStruct="True">
+        <ECProperty propertyName="Low" typeName="point3d" />
+        <ECProperty propertyName="High" typeName="point3d" />
+    </ECClass>
+    <ECClass typeName="Placement3d" isStruct="True">
+        <ECProperty propertyName="Origin" typeName="point3d" />
+        <ECStructProperty propertyName="Rotation" typeName="YawPitchRollAngles" />
+        <ECStructProperty propertyName="Box" typeName="ElementAlignedBox3d" />
+    </ECClass>
+
+    <ECClass typeName="GeometrySource" isDomainClass="False" isCustomAttributeClass="False" isStruct="False">
+        <!-- abstract - interface adopted by Elements which have geometry. 
+             NOTE: Derive from GeometrySource2d or GeometrySource3d. -->
+        <ECProperty propertyName="CategoryId" typeName="long" /><!-- should be non-nullable but shared table... -->
+        <ECProperty propertyName="Geometry" typeName="binary" />
+    </ECClass>
+    <ECClass typeName="GeometrySource2d" isDomainClass="False" isCustomAttributeClass="False" isStruct="False">
+        <BaseClass>GeometrySource</BaseClass>
+        <ECStructProperty propertyName="Placement" typeName="Placement2d" />
+    </ECClass>
+    <ECClass typeName="GeometrySource3d" isDomainClass="False" isCustomAttributeClass="False" isStruct="False">
+        <BaseClass>GeometrySource</BaseClass>
+        <ECStructProperty propertyName="Placement" typeName="Placement3d" />
+        <ECProperty propertyName="InPhysicalSpace" typeName="boolean" />
+    </ECClass>
+
+    <!-- ////////////////////////////////////////////////////////////////////////////// -->
     <!-- // BIS-related core classes -->
     <!-- ////////////////////////////////////////////////////////////////////////////// -->
 
@@ -361,11 +406,6 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
         </ECProperty>
     </ECClass>
 
-    <ECClass typeName="GeometrySource" isDomainClass="False" isCustomAttributeClass="False" isStruct="False">
-        <!-- abstract - interface adopted by Elements which have geometry
-             Note this is intended to serve as a relationship endpoint, but ECDb doesn't support an abstract relationship endpoint (needs primary key)... -->
-    </ECClass>
-
     <ECClass typeName="DefinitionElement" isDomainClass="False" isCustomAttributeClass="False" isStruct="False">
         <BaseClass>Element</BaseClass>
     </ECClass>
@@ -379,7 +419,8 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
     <ECClass typeName="SpatialElement" isDomainClass="False" isCustomAttributeClass="False" isStruct="False">
         <!-- An element that occupies real world space -->
         <BaseClass>Element</BaseClass>
-        <BaseClass>GeometrySource</BaseClass>
+        <BaseClass>GeometrySource3d</BaseClass>
+        <ECProperty propertyName="REMOVE_THIS_PLEASE" typeName="string" /><!-- NEEDSWORK: ECDb will not create a table for SpatialElement even though it inherits additional properties from GeometrySource3d. Adding a direct property forces it to create the table -->
     </ECClass>
     <ECClass typeName="PhysicalElement" isDomainClass="True">
         <!-- A SpatialElement that has mass and can be "touched" -->
@@ -389,7 +430,7 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
         <BaseClass>SpatialElement</BaseClass>
     </ECClass>
     <ECClass typeName="SpatialLocationElement" isDomainClass="False" isCustomAttributeClass="False" isStruct="False">
-        <!-- A SpatialElement that identifies a "tracked" real word location but has no mass and cannot be "touched" -->
+        <!-- A SpatialElement that identifies a "tracked" real world location but has no mass and cannot be "touched" -->
         <BaseClass>SpatialElement</BaseClass>
     </ECClass>
     <ECClass typeName="SpatialGroupElement" isDomainClass="True">
@@ -412,7 +453,7 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
             <ClassHasHandler xmlns="dgn.02.00" />
         </ECCustomAttributes>
         <BaseClass>Element</BaseClass>
-        <BaseClass>GeometrySource</BaseClass>
+        <BaseClass>GeometrySource2d</BaseClass>
     </ECClass>
     <ECClass typeName="DrawingElement" isDomainClass="True">
         <!-- 2D element used in drawings -->
@@ -420,7 +461,7 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
             <ClassHasHandler xmlns="dgn.02.00" />
         </ECCustomAttributes>
         <BaseClass>Element</BaseClass>
-        <BaseClass>GeometrySource</BaseClass>
+        <BaseClass>GeometrySource2d</BaseClass>
     </ECClass>
     <ECClass typeName="SheetElement" isDomainClass="True">
         <!-- 2D element used in sheets -->
@@ -428,7 +469,7 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
             <ClassHasHandler xmlns="dgn.02.00" />
         </ECCustomAttributes>
         <BaseClass>Element</BaseClass>
-        <BaseClass>GeometrySource</BaseClass>
+        <BaseClass>GeometrySource2d</BaseClass>
     </ECClass>
 
     <ECClass typeName="TextAnnotationData" isDomainClass="True">
@@ -603,7 +644,6 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
             <ClassHasHandler xmlns="dgn.02.00" />
         </ECCustomAttributes>
         <BaseClass>SheetElement</BaseClass>
-        <BaseClass>GeometrySource</BaseClass>
         <ECProperty propertyName="ViewId" typeName="long">
             <!-- Foreign key relationship: ViewIsAttached.ViewId -->
             <!-- Should have IsNullable=False but shared table... -->
@@ -757,56 +797,6 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
             </ECCustomAttributes>
         </ECProperty>
     </ECClass>
-
-    <ECClass typeName="ElementGeom" isDomainClass="True" >
-        <!-- The aspect that holds the cached/resovled geometry for an Element -->
-        <!-- This aspect is not subclassed -->
-        <BaseClass>ElementUniqueAspect</BaseClass>
-        <ECCustomAttributes>
-            <ClassMap xmlns="ECDbMap.01.00">
-                <!-- The ECInstanceId for ElementGeom is the same as the Id of the owning Element -->
-                <ECInstanceIdColumn>ElementId</ECInstanceIdColumn>
-                <Indexes>
-                    <DbIndex>
-                        <!-- Index on CategoryId -->
-                        <Name>idx_dgn_ElementGeom_CategoryId</Name>
-                        <IsUnique>False</IsUnique>
-                        <Properties>
-                            <string>CategoryId</string>
-                        </Properties>
-                    </DbIndex>
-                </Indexes>
-            </ClassMap>
-        </ECCustomAttributes>
-        <ECProperty propertyName="Placement" typeName="binary"/>
-        <ECProperty propertyName="Geom" typeName="binary"/>
-        <ECProperty propertyName="InPhysicalSpace" typeName="int" /><!-- Used strictly for the trigger which updates the range index -->
-        <ECProperty propertyName="CategoryId" typeName="long">
-            <!-- Foreign key relationship: CategoryContainsElementGeom.CategoryId -->
-            <ECCustomAttributes>
-                <PropertyMap xmlns="ECDbMap.01.00">
-                    <IsNullable>False</IsNullable>
-                </PropertyMap>
-            </ECCustomAttributes>
-        </ECProperty>
-    </ECClass>
-    <ECRelationshipClass typeName="ElementOwnsGeom" isDomainClass="True" strength="embedding" strengthDirection="forward">
-        <ECCustomAttributes>
-            <ForeignKeyRelationshipMap xmlns="ECDbMap.01.00">
-                <OnDeleteAction>Cascade</OnDeleteAction>
-            </ForeignKeyRelationshipMap>
-        </ECCustomAttributes>
-        <Source cardinality="(1,1)" polymorphic="True">
-            <Class class="Element" />
-        </Source>
-        <Target cardinality="(0,1)" polymorphic="False">
-            <Class class="ElementGeom">
-                <Key>
-                    <Property name="ECInstanceId"/>
-                </Key>
-            </Class>
-        </Target>
-    </ECRelationshipClass>
 
     <ECClass typeName="ElementExternalKey" isDomainClass="True" >
         <!-- The aspect that holds an identifier from an external system -->
@@ -1230,8 +1220,8 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
             </ECCustomAttributes>
         </ECProperty>
     </ECClass>
-    <ECRelationshipClass typeName="ElementGeomUsesParts" isDomainClass="True" strength="referencing" strengthDirection="forward">
-        <!-- Used to indicate that an ElementGeom uses a GeomPart.  This is useful for "garbage collecting" or finding Elements that would be affected by a change to a GeomPart. -->
+    <ECRelationshipClass typeName="ElementUsesGeomParts" isDomainClass="True" strength="referencing" strengthDirection="forward">
+        <!-- Used to indicate that an Element uses a GeomPart.  This is useful for "garbage collecting" or finding Elements that would be affected by a change to a GeomPart. -->
         <ECCustomAttributes>
             <ClassMap xmlns="ECDbMap.01.00">
                 <ECInstanceIdColumn>Id</ECInstanceIdColumn>
@@ -1242,30 +1232,32 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
             </LinkTableRelationshipMap>
         </ECCustomAttributes>
         <Source cardinality="(0,N)" polymorphic="False">
-            <Class class="ElementGeom" />
+            <Class class="Element" />
         </Source>
         <Target cardinality="(0,N)" polymorphic="False">
             <Class class="GeomPart" />
         </Target>
     </ECRelationshipClass>
-    <ECRelationshipClass typeName="CategoryContainsElementGeom" isDomainClass="True" strengthDirection="forward" strength="referencing">
+    <!-- NEEDSWORK ECRelationships don't support abstract endpoints
+    <ECRelationshipClass typeName="CategoryContainsGeometry" isDomainClass="True" strengthDirection="forward" strength="referencing">
         <ECCustomAttributes>
             <ForeignKeyRelationshipMap xmlns="ECDbMap.01.00">
-                <OnDeleteAction>NoAction</OnDeleteAction><!-- because you can't actually delete categories currently -->
-                <CreateIndex>True</CreateIndex><!-- because we expect to query for geometry in a particular category -->
+                <OnDeleteAction>NoAction</OnDeleteAction>
+                <CreateIndex>True</CreateIndex>
             </ForeignKeyRelationshipMap>
         </ECCustomAttributes>
         <Source cardinality="(1,1)" roleLabel="contains geometry" polymorphic="False">
             <Class class="Category" />
         </Source>
         <Target cardinality="(0,N)" roleLabel="is in category" polymorphic="False">
-            <Class class="ElementGeom">
+            <Class class="GeometrySource">
                 <Key>
                     <Property name="CategoryId" />
                 </Key>
             </Class>
         </Target>
     </ECRelationshipClass>
+    -->
     
     <!-- ////////////////////////////////////////////////////////////////////////////// -->
     <!-- // Deprecated classes -->

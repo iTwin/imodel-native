@@ -177,7 +177,7 @@ BentleyStatus DgnGeomParts::InsertElementGeomUsesParts(DgnElementId elementId, D
         return BentleyStatus::ERROR;
 
     CachedECSqlStatementPtr statementPtr = GetDgnDb().GetPreparedECSqlStatement(
-        "INSERT INTO " DGN_SCHEMA(DGN_RELNAME_ElementGeomUsesParts) " (SourceECInstanceId,TargetECInstanceId) VALUES (?,?)");
+        "INSERT INTO " DGN_SCHEMA(DGN_RELNAME_ElementUsesGeomParts) " (SourceECInstanceId,TargetECInstanceId) VALUES (?,?)");
 
     if (!statementPtr.IsValid())
         return BentleyStatus::ERROR;

@@ -1220,10 +1220,16 @@ void dgn_ModelHandler::Sheet::_GetClassParams(ECSqlClassParamsR params)
 +---------------+---------------+---------------+---------------+---------------+------*/
 AxisAlignedBox3d GeometricModel::_QueryModelRange() const
     {
-    Statement stmt(m_dgndb, "SELECT DGN_bbox_union(DGN_placement_aabb(g.Placement)) FROM " 
-                           DGN_TABLE(DGN_CLASSNAME_Element)     " AS e," 
-                           DGN_TABLE(DGN_CLASSNAME_ElementGeom) " AS g"
-                          " WHERE e.ModelId=? AND e.Id=g.ElementId");
+    Statement stmt(m_dgndb,
+        "SELECT DGN_bbox_union("
+            "DGN_placement_aabb("
+                "DGN_point_create(g.Placement_Origin_X,g.Placement_Origin_Y,g.Placement_Origin_Z),"
+                "DGN_angles_create(g.Placement_Rotation_Yaw,g.Placement_Rotation_Pitch,g.Placement_Rotation_Roll),"
+                "DGN_bbox_create("
+                    "DGN_point_create(g.Placement_Box_Low_X,g.Placement_Box_Low_Y,g.Placement_Box_Low_Z),"
+                    "DGN_point_create(g.Placement_Box_High_X,g.Placement_Box_High_Y,g.Placement_Box_High_Z))))"
+        " FROM " DGN_TABLE(DGN_CLASSNAME_Element) " AS e," DGN_TABLE(DGN_CLASSNAME_SpatialElement) " As g"
+        " WHERE e.ModelId=? AND e.Id=g.ElementId");
 
     stmt.BindId(1, GetModelId());
     auto rc = stmt.Step();

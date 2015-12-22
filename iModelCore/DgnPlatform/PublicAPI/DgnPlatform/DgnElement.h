@@ -1378,9 +1378,6 @@ virtual AxisAlignedBox3d _CalculateRange3d() const override final {return _GetPl
 virtual Placement3dCR _GetPlacement() const = 0;
 virtual DgnDbStatus _SetPlacement(Placement3dCR placement) = 0;
 
-DGNPLATFORM_EXPORT DgnDbStatus InsertGeomSourceInDb();
-DGNPLATFORM_EXPORT DgnDbStatus UpdateGeomSourceInDb();
-
 public:
 
 Placement3dCR GetPlacement() const {return _GetPlacement();} //!< Get the Placement3d of this element
@@ -1399,9 +1396,6 @@ virtual GeometrySource3dCP _ToGeometrySource3d() const override final {return nu
 virtual AxisAlignedBox3d _CalculateRange3d() const override final {return _GetPlacement().CalculateRange();}
 virtual Placement2dCR _GetPlacement() const = 0;
 virtual DgnDbStatus _SetPlacement(Placement2dCR placement) = 0;
-
-DGNPLATFORM_EXPORT DgnDbStatus InsertGeomSourceInDb();
-DGNPLATFORM_EXPORT DgnDbStatus UpdateGeomSourceInDb();
 
 public:
 
@@ -1424,7 +1418,10 @@ protected:
     explicit ElementGeomData(DgnCategoryId category) : m_categoryId(category) { }
 
     virtual bool _IsPlacementValid() const = 0;
-    virtual void _SetPlacement(void const* placement) = 0;
+
+    DgnDbStatus ReadFrom(BeSQLite::EC::ECSqlStatement& stmt, ECSqlClassParams const& params);
+    DgnDbStatus BindTo(BeSQLite::EC::ECSqlStatement& stmt);
+    static void AddBaseClassParams(ECSqlClassParams& params);
 public:
     DgnCategoryId GetCategoryId() const { return m_categoryId; }
     GeomStreamCR GetGeomStream() const { return m_geom; }
@@ -1432,8 +1429,9 @@ public:
     DGNPLATFORM_EXPORT DgnDbStatus SetCategoryId(DgnCategoryId catId, DgnElementCR el);
 
     DGNPLATFORM_EXPORT DgnDbStatus Validate() const;
-    DGNPLATFORM_EXPORT DgnDbStatus LoadFromDb(DgnElementId elemId, DgnDbR db);
     DGNPLATFORM_EXPORT void RemapIds(DgnImportContext& importer);
+    DGNPLATFORM_EXPORT void OnInserted(DgnElementCR el) const;
+    DGNPLATFORM_EXPORT void OnUpdated(DgnElementCR el) const;
 };
 
 //=======================================================================================
@@ -1449,7 +1447,6 @@ private:
     Placement3d     m_placement;
 
     virtual bool _IsPlacementValid() const override { return m_placement.IsValid(); }
-    DGNPLATFORM_EXPORT virtual void _SetPlacement(void const* placement) override;
 public:
     explicit ElementGeom3d(DgnCategoryId category=DgnCategoryId(), Placement3dCR placement=Placement3d()) : ElementGeomData(category), m_placement(placement) { }
 
@@ -1459,6 +1456,10 @@ public:
 
     DGNPLATFORM_EXPORT void AdjustPlacementForImport(DgnImportContext const& importer);
     DGNPLATFORM_EXPORT void CopyFrom(GeometrySource3dCP geomSource);
+
+    DGNPLATFORM_EXPORT DgnDbStatus Read(BeSQLite::EC::ECSqlStatement&, ECSqlClassParams const&);
+    DGNPLATFORM_EXPORT DgnDbStatus Bind(BeSQLite::EC::ECSqlStatement&, DgnElementCR el);
+    DGNPLATFORM_EXPORT static void AddClassParams(ECSqlClassParams& params);
 };
 
 //=======================================================================================
@@ -1493,12 +1494,17 @@ protected:
     virtual DgnDbStatus _SetPlacement(T_Placement const& placement) override { return m_geom.SetPlacement(placement, *this); }
     virtual void _AdjustPlacementForImport(DgnImportContext const& importer) override { m_geom.AdjustPlacementForImport(importer); }
 
+    virtual DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement& stmt, ECSqlClassParamsCR params) override
+        { auto status = T_Base::_ReadSelectParams(stmt, params); return DgnDbStatus::Success == status ? m_geom.Read(stmt, params) : status; }
+    virtual DgnDbStatus _BindInsertParams(BeSQLite::EC::ECSqlStatement& stmt) override
+        { auto status = T_Base::_BindInsertParams(stmt); return DgnDbStatus::Success == status ? m_geom.Bind(stmt, *this) : status; }
+    virtual DgnDbStatus _BindUpdateParams(BeSQLite::EC::ECSqlStatement& stmt) override
+        { auto status = T_Base::_BindUpdateParams(stmt); return DgnDbStatus::Success == status ? m_geom.Bind(stmt, *this) : status; }
+
     virtual DgnDbStatus _OnInsert() override { auto status = m_geom.Validate(); return DgnDbStatus::Success == status ? T_Base::_OnInsert() : status; }
     virtual DgnDbStatus _OnUpdate(DgnElementCR original) override { auto status = m_geom.Validate(); return DgnDbStatus::Success == status ? T_Base::_OnUpdate(original) : status; }
-
-    virtual DgnDbStatus _LoadFromDb() override { auto status = T_Base::_LoadFromDb(); return DgnDbStatus::Success == status ? m_geom.LoadFromDb(this->GetElementId(), this->GetDgnDb()) : status; }
-    virtual DgnDbStatus _InsertInDb() override { auto status = T_Base::_InsertInDb(); return DgnDbStatus::Success == status ? this->InsertGeomSourceInDb() : status; }
-    virtual DgnDbStatus _UpdateInDb() override { auto status = T_Base::_UpdateInDb(); return DgnDbStatus::Success == status ? this->UpdateGeomSourceInDb() : status; }
+    virtual void _OnInserted(DgnElementP el) const override { T_Base::_OnInserted(el); m_geom.OnInserted(*this); }
+    virtual void _OnUpdated(DgnElementCR el) const override { T_Base::_OnUpdated(el); m_geom.OnUpdated(*this); }
 
     virtual void _RemapIds(DgnImportContext& importer) override { T_Base::_RemapIds(importer); m_geom.RemapIds(importer); }
     virtual uint32_t _GetMemSize() const override {return T_Base::_GetMemSize() + static_cast<uint32_t>(sizeof(m_geom));}
@@ -1558,7 +1564,6 @@ struct EXPORT_VTABLE_ATTRIBUTE SpatialElement : GeometricElement3d<DgnElement>
 
 protected:
     SpatialElementCP _ToSpatialElement() const override final {return this;}
-
 public:
     typedef ElementCreateParams3d CreateParams;
 
@@ -1617,7 +1622,6 @@ private:
     Placement2d     m_placement;
 
     virtual bool _IsPlacementValid() const override { return m_placement.IsValid(); }
-    DGNPLATFORM_EXPORT virtual void _SetPlacement(void const* placement) override;
 public:
     explicit ElementGeom2d(DgnCategoryId category=DgnCategoryId(), Placement2dCR placement=Placement2d()) : ElementGeomData(category), m_placement(placement) { }
 
@@ -1627,6 +1631,10 @@ public:
 
     DGNPLATFORM_EXPORT void AdjustPlacementForImport(DgnImportContext const& importer);
     DGNPLATFORM_EXPORT void CopyFrom(GeometrySource2dCP geomSource);
+
+    DGNPLATFORM_EXPORT DgnDbStatus Read(BeSQLite::EC::ECSqlStatement&, ECSqlClassParams const&);
+    DGNPLATFORM_EXPORT DgnDbStatus Bind(BeSQLite::EC::ECSqlStatement&, DgnElementCR);
+    DGNPLATFORM_EXPORT static void AddClassParams(ECSqlClassParams& params);
 };
 
 //=======================================================================================

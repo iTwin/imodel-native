@@ -103,30 +103,35 @@ namespace dgn_ElementHandler
     struct EXPORT_VTABLE_ATTRIBUTE Physical : Element
     {
         ELEMENTHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_PhysicalElement, PhysicalElement, Physical, Element, DGNPLATFORM_EXPORT)
+        virtual void _GetClassParams(ECSqlClassParamsR params) override { T_Super::_GetClassParams(params); ElementGeom3d::AddClassParams(params); }
     };
 
     //! The ElementHandler for AnnotationElement
     struct EXPORT_VTABLE_ATTRIBUTE Annotation : Element
     {
         ELEMENTHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_AnnotationElement, AnnotationElement, Annotation, Element, DGNPLATFORM_EXPORT)
+        virtual void _GetClassParams(ECSqlClassParamsR params) override { T_Super::_GetClassParams(params); ElementGeom2d::AddClassParams(params); }
     };
 
     //! The ElementHandler for DrawingElement
     struct EXPORT_VTABLE_ATTRIBUTE Drawing : Element
     {
         ELEMENTHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_DrawingElement, DrawingElement, Drawing, Element, DGNPLATFORM_EXPORT)
+        virtual void _GetClassParams(ECSqlClassParamsR params) override { T_Super::_GetClassParams(params); ElementGeom2d::AddClassParams(params); }
     };
 
     //! The ElementHandler for SheetElement
     struct EXPORT_VTABLE_ATTRIBUTE Sheet : Element
     {
         ELEMENTHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_SheetElement, SheetElement, Sheet, Element, DGNPLATFORM_EXPORT)
+        virtual void _GetClassParams(ECSqlClassParamsR params) override { T_Super::_GetClassParams(params); ElementGeom2d::AddClassParams(params); }
     };
 
     //! The ElementHandler for SpatialGroupElement
     struct EXPORT_VTABLE_ATTRIBUTE SpatialGroup : Element
     {
         ELEMENTHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_SpatialGroupElement, SpatialGroupElement, SpatialGroup, Element, DGNPLATFORM_EXPORT)
+        virtual void _GetClassParams(ECSqlClassParamsR params) override { T_Super::_GetClassParams(params); ElementGeom3d::AddClassParams(params); }
     };
 };
 

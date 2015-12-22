@@ -183,6 +183,7 @@ namespace dgn_ElementHandler
     struct EXPORT_VTABLE_ATTRIBUTE VolumeElementHandler : Element
     {
         ELEMENTHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_VolumeElement, VolumeElement, VolumeElementHandler, Element, DGNPLATFORM_EXPORT)
+        virtual void _GetClassParams(ECSqlClassParamsR params) override { T_Super::_GetClassParams(params); ElementGeom3d::AddClassParams(params); }
     };
 }
 

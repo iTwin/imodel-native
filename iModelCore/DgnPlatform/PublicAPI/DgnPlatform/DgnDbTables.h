@@ -35,7 +35,6 @@
 #define DGN_CLASSNAME_ElementAspect         "ElementAspect"
 #define DGN_CLASSNAME_ElementDescription    "ElementDescription"
 #define DGN_CLASSNAME_ElementExternalKey    "ElementExternalKey"
-#define DGN_CLASSNAME_ElementGeom           "ElementGeom"
 #define DGN_CLASSNAME_ElementMultiAspect    "ElementMultiAspect"
 #define DGN_CLASSNAME_GeomPart              "GeomPart"
 #define DGN_CLASSNAME_LineStyle             "LineStyle"
@@ -72,7 +71,7 @@
 // ECRelationshipClass names (combine with DGN_SCHEMA macro for use in ECSql)
 //-----------------------------------------------------------------------------------------
 #define DGN_RELNAME_ElementDrivesElement        "ElementDrivesElement"
-#define DGN_RELNAME_ElementGeomUsesParts        "ElementGeomUsesParts"
+#define DGN_RELNAME_ElementUsesGeomParts        "ElementUsesGeomParts"
 #define DGN_RELNAME_ElementGroupsMembers        "ElementGroupsMembers"
 #define DGN_RELNAME_SolutionOfComponent         "SolutionOfComponent"
 #define DGN_RELNAME_InstantiationOfTemplate     "InstantiationOfTemplate"
