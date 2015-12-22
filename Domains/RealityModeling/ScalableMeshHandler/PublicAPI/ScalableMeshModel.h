@@ -33,9 +33,9 @@ USING_NAMESPACE_BENTLEY
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
 
 BEGIN_BENTLEY_SCALABLE_MESH_MODEL_NAMESPACE
-struct ScalableMeshModel : PhysicalModel
+struct ScalableMeshModel : SpatialModel
     {
-    DEFINE_T_SUPER(PhysicalModel)
+    DEFINE_T_SUPER(SpatialModel)
 
         friend class ScalableMeshProgressiveDisplay;
     private:
@@ -58,12 +58,11 @@ struct ScalableMeshModel : PhysicalModel
 
 typedef RefCountedPtr<ScalableMeshModel> ScalableMeshModelPtr;
 
-struct ScalableMeshHandler : dgn_ModelHandler::Model
+struct ScalableMeshHandler : dgn_ModelHandler::Spatial
     {
-    MODELHANDLER_DECLARE_MEMBERS("ScalableMesh", ScalableMeshModel, ScalableMeshHandler, dgn_ModelHandler::Model, SCALABLEMESH_HANDLERS_EXPORT)
+    MODELHANDLER_DECLARE_MEMBERS("ScalableMesh", ScalableMeshModel, ScalableMeshHandler, dgn_ModelHandler::Spatial, SCALABLEMESH_HANDLERS_EXPORT)
 
     //public:
     //    SCALABLEMESH_HANDLERS_EXPORT virtual DgnModelP _CreateInstance(DgnPlatform::DgnModel::CreateParams const& params) override;
     };
 END_BENTLEY_SCALABLE_MESH_MODEL_NAMESPACE
-//__PUBLISH_SECTION_END__

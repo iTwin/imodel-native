@@ -122,7 +122,7 @@ struct MeshStrokeForCache : public IStrokeForCache
 
 static QvCache* s_qvCache = 0;
 void CreateQvElemForMesh(IMrDTMMeshPtr& mrdtmMeshPtr,
-                         PhysicalModel& modelRef,
+                         SpatialModelR modelRef,
                          ViewContextR context,
                          __int64 nodeId)
     {

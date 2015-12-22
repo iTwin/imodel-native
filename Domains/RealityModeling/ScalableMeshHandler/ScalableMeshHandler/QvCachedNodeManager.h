@@ -20,7 +20,7 @@ class QvCachedNodeManager
 
         struct QvCachedNode
             {
-            QvCachedNode(__int64 nodeId, QvElem* qvElem, PhysicalModel* modelRef, size_t nbPoints)
+            QvCachedNode(__int64 nodeId, QvElem* qvElem, SpatialModel* modelRef, size_t nbPoints)
                 {
                 m_nodeId = nodeId;
                 m_modelRef = modelRef;
@@ -29,7 +29,7 @@ class QvCachedNodeManager
                 }
 
             __int64     m_nodeId;
-            PhysicalModel* m_modelRef;
+            SpatialModel* m_modelRef;
             QvElem*     m_qvElem;
             size_t      m_nbPoints;
             };
@@ -41,11 +41,11 @@ class QvCachedNodeManager
 
     public:
 
-        void AddCachedNode(__int64 nodeId, QvElem* qvElem, PhysicalModel* modelRef, size_t nbPoints);
+        void AddCachedNode(__int64 nodeId, QvElem* qvElem, SpatialModel* modelRef, size_t nbPoints);
 
-        void ClearCachedNodes(PhysicalModel* modelRef);
+        void ClearCachedNodes(SpatialModel* modelRef);
 
-        QvElem* FindQvElem(__int64 nodeId, PhysicalModel* modelRef);
+        QvElem* FindQvElem(__int64 nodeId, SpatialModel* modelRef);
 
         static QvCachedNodeManager& GetManager();
     };

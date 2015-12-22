@@ -17,9 +17,9 @@ struct RasterModelHandler;
 //=======================================================================================
 // @bsiclass                                                    Eric.Paquet     04/2015
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE RasterModel : Dgn::PhysicalModel
+struct EXPORT_VTABLE_ATTRIBUTE RasterModel : Dgn::SpatialModel
 {
-    DEFINE_T_SUPER(PhysicalModel)
+    DEFINE_T_SUPER(Dgn::SpatialModel)
     
 protected:
     friend struct RasterModelHandler;
@@ -47,9 +47,9 @@ public:
 // Instances of RasterModel must be able to assume that their handler is a RasterModelHandler.
 // @bsiclass                                                    Eric.Paquet     04/2015
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE RasterModelHandler : Dgn::dgn_ModelHandler::Model
+struct EXPORT_VTABLE_ATTRIBUTE RasterModelHandler : Dgn::dgn_ModelHandler::Spatial
 {
-    RASTERMODELHANDLER_DECLARE_MEMBERS (RASTER_CLASSNAME_RasterModel, RasterModel, RasterModelHandler, Dgn::dgn_ModelHandler::Model, RASTERSCHEMA_EXPORT)
+    RASTERMODELHANDLER_DECLARE_MEMBERS (RASTER_CLASSNAME_RasterModel, RasterModel, RasterModelHandler, Dgn::dgn_ModelHandler::Spatial, RASTERSCHEMA_EXPORT)
 };
 
 END_BENTLEY_RASTERSCHEMA_NAMESPACE

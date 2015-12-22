@@ -22,9 +22,9 @@ struct PointCloudModelHandler;
 // Obtain and display point cloud data from POD files. 
 // @bsiclass                                                    Eric.Paquet     04/2015
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE PointCloudModel : Dgn::PhysicalModel
+struct EXPORT_VTABLE_ATTRIBUTE PointCloudModel : Dgn::SpatialModel
 {
-    DEFINE_T_SUPER(PhysicalModel)
+    DEFINE_T_SUPER(Dgn::SpatialModel)
 
 private:
     BePointCloud::PointCloudScenePtr    m_pointCloudScenePtr;
@@ -75,9 +75,9 @@ public:
 // Instances of PointCloudModel must be able to assume that their handler is a PointCloudModelHandler.
 // @bsiclass                                                    Eric.Paquet     04/2015
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE PointCloudModelHandler : Dgn::dgn_ModelHandler::Model
+struct EXPORT_VTABLE_ATTRIBUTE PointCloudModelHandler : Dgn::dgn_ModelHandler::Spatial
 {
-    MODELHANDLER_DECLARE_MEMBERS ("PointCloudModel", PointCloudModel, PointCloudModelHandler, Dgn::dgn_ModelHandler::Model, POINTCLOUDSCHEMA_EXPORT)
+    MODELHANDLER_DECLARE_MEMBERS ("PointCloudModel", PointCloudModel, PointCloudModelHandler, Dgn::dgn_ModelHandler::Spatial, POINTCLOUDSCHEMA_EXPORT)
 
 public:
     POINTCLOUDSCHEMA_EXPORT static Dgn::DgnModelId CreatePointCloudModel(DgnDbR db, Utf8StringCR fileId);

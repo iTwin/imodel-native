@@ -46,9 +46,9 @@ typedef RefCountedPtr <struct ThreeMxScene>      ThreeMxScenePtr;
 //=======================================================================================
 // @bsiclass                                                    Ray.Bentley     09/2015
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE ThreeMxModel : PhysicalModel
+struct EXPORT_VTABLE_ATTRIBUTE ThreeMxModel : SpatialModel
 {
-    DEFINE_T_SUPER(PhysicalModel)
+    DEFINE_T_SUPER(SpatialModel)
 
 private:
     ThreeMxScenePtr         m_scene;
@@ -87,13 +87,12 @@ protected:
 
 };  // ThreeMxScene;
 
-
 //=======================================================================================
 // @bsiclass                                                    Ray.Bentley     09/2015
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE ThreeMxModelHandler :  Dgn::dgn_ModelHandler::Model
+struct EXPORT_VTABLE_ATTRIBUTE ThreeMxModelHandler :  Dgn::dgn_ModelHandler::Spatial
 {
-    MODELHANDLER_DECLARE_MEMBERS ("ThreeMxModel", ThreeMxModel, ThreeMxModelHandler, Dgn::dgn_ModelHandler::Model, THREEMX_SCHEMA_EXPORT)
+    MODELHANDLER_DECLARE_MEMBERS ("ThreeMxModel", ThreeMxModel, ThreeMxModelHandler, Dgn::dgn_ModelHandler::Spatial, THREEMX_SCHEMA_EXPORT)
 
 };
 
