@@ -244,6 +244,9 @@
     <ClCompile Include="Performance\ElementDependencyGraphPerformance.cpp">
       <Filter>Performance</Filter>
     </ClCompile>
+    <ClCompile Include="NonPublished\ConfigurationManager_Test.cpp">
+      <Filter>NonPublished</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Published\DgnHandlersTests.h">
