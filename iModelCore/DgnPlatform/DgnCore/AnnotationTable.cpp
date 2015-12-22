@@ -1962,6 +1962,9 @@ void    AnnotationTableCell::ClearBinaryTextBlock ()
     {
     if (nullptr != m_rawTextBlock)
         free ((void*)m_rawTextBlock);
+
+    m_rawTextBlock = nullptr;
+    m_rawTextBlockBytes = 0;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1999,7 +2002,7 @@ void    AnnotationTableCell::CopyDataFrom (AnnotationTableCellCR rhs)
     {
     m_index             = rhs.m_index;
 
-    AssignBinaryTextBlock (m_rawTextBlock, m_rawTextBlockBytes);
+    AssignBinaryTextBlock (rhs.m_rawTextBlock, rhs.m_rawTextBlockBytes);
 
     m_fillKey           = rhs.m_fillKey;
     m_alignment         = rhs.m_alignment;
