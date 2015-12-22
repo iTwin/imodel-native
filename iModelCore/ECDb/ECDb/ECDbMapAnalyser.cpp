@@ -950,8 +950,8 @@ ECDbMapAnalyser::Class& ECDbMapAnalyser::GetClass (ClassMapCR classMap)
     storage.GetClassesR ().insert (ptr);
     if (classMap.HasJoinedTable())
         {
-        auto& storage = GetStorage(classMap.GetPrimaryTable().GetName().c_str());
-        for (auto id : classMap.GetStorageDescription().GetVerticalPartition(classMap.GetPrimaryTable())->GetClassIds())
+        auto& storage = GetStorage(classMap.GetSecondaryTable().GetName().c_str());
+        for (auto id : classMap.GetStorageDescription().GetVerticalPartition(classMap.GetSecondaryTable())->GetClassIds())
             {
             auto refClassMap = GetClassMap(id);
             BeAssert(refClassMap != nullptr);
