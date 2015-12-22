@@ -891,6 +891,7 @@ protected:
     double        m_pixelSize; //! Pixel size to use for stroke
     double        m_minSize; //! Minimum pixel size this Graphic is valid for (Graphic is valid for all sizes if min and max are both 0.0)
     double        m_maxSize; //! Maximum pixel size this Graphic is valid for (Graphic is valid for all sizes if min and max are both 0.0)
+    Transform     m_localToWorldTransform;
 
     virtual StatusInt _Close() {m_isOpen=false; return SUCCESS;}
     virtual bool _IsForDisplay() const {return false;}
@@ -920,13 +921,16 @@ protected:
     virtual void _AddRaster2d(DPoint2d const points[4], int pitch, int numTexelsX, int numTexelsY, int enableAlpha, int format, Byte const* texels, double zDepth, DPoint2d const *range) = 0;
     virtual void _AddDgnOle(DgnOleDraw*) = 0;
     virtual void _AddPointCloud(PointCloudDraw* drawParams) = 0;
-    virtual void _AddSubGraphic(Graphic&, TransformCR, GraphicParams&) = 0;
+    virtual void _AddSubGraphic(GraphicR, TransformCR, GraphicParamsR) = 0;
+    virtual Render::GraphicPtr _CreateSubGraphic(TransformCR) const = 0;
     virtual ~Graphic() {}
 
 public:
+    explicit Graphic(CreateParams const& params=CreateParams()) : m_vp(params.m_vp), m_pixelSize(params.m_pixelSize), m_minSize(0.0), m_maxSize(0.0) {m_localToWorldTransform = params.m_placement;}
+    Render::GraphicPtr CreateSubGraphic(TransformCR subToGraphic) const {return _CreateSubGraphic(subToGraphic);} // NOTE: subToGraphic is provided to allow stroking in world coords...
+
     StatusInt Close() {return m_isOpen ? _Close() : SUCCESS;}
     bool IsOpen() const {return m_isOpen;}
-    explicit Graphic(CreateParams const& params=CreateParams()) : m_vp(params.m_vp), m_pixelSize(params.m_pixelSize), m_minSize(0.0), m_maxSize(0.0) {}
 
     bool IsValidFor(DgnViewportCR vp, double metersPerPixel) const
         {
@@ -938,9 +942,13 @@ public:
 
         return (metersPerPixel >= m_minSize && metersPerPixel <= m_maxSize);
         }
-    bool IsSpecificToViewport(DgnViewportCR vp) const { return nullptr != m_vp && m_vp == &vp; }
 
+    bool IsSpecificToViewport(DgnViewportCR vp) const {return nullptr != m_vp && m_vp == &vp;}
     DgnViewportCP GetViewport() const {return m_vp;}
+
+    //! Get current local to world transform (ex. GeometrySource placement transform).
+    TransformCR GetLocalToWorldTransform() const {return m_localToWorldTransform;}
+
     double GetPixelSize() const {return m_pixelSize;}
     void SetPixelSizeRange(double min, double max) {m_minSize = min, m_maxSize = max;}
 
@@ -1086,7 +1094,8 @@ public:
     //! Draw OLE object.
     void AddDgnOle(DgnOleDraw* ole) {_AddDgnOle(ole);}
 
-    void AddSubGraphic(Graphic& graphic, TransformCR trans, GraphicParams& params) {_AddSubGraphic(graphic, trans, params);}
+    void AddSubGraphic(GraphicR graphic, TransformCR subToGraphic, GraphicParams& params) {_AddSubGraphic(graphic, subToGraphic, params);}
+
     bool IsForDisplay() const {return _IsForDisplay();}
 
     void SetSymbology(ColorDef lineColor, ColorDef fillColor, int lineWidth, GraphicParams::LinePixels linePixels=GraphicParams::LinePixels::Solid)

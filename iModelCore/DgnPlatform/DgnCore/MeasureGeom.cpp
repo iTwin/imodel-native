@@ -742,7 +742,7 @@ bool MeasureGeomCollector::DoAccumulateLengths (ISolidKernelEntityCR entity, Sim
 
     if (GetPreFlattenTransform (flattenTransform, graphic))
         {
-        Render::GraphicPtr tmpGraphic = graphic._CreateSubGraphic(Render::Graphic::CreateParams(graphic.GetViewport(), Transform::FromProduct(graphic.GetLocalToWorldTransform(), entity.GetEntityTransform()), graphic.GetPixelSize()));
+        Render::GraphicPtr tmpGraphic = graphic.CreateSubGraphic(entity.GetEntityTransform());
 
         // Output edge geometry as CurveVector...
         T_HOST.GetSolidsKernelAdmin ()._OutputBodyAsWireframe (*tmpGraphic, entity, graphic.GetViewContext(), true, false);
@@ -786,7 +786,7 @@ bool MeasureGeomCollector::DoAccumulateAreas (ISolidKernelEntityCR entity, Simpl
 
     if (GetPreFlattenTransform (flattenTransform, graphic))
         {
-        Render::GraphicPtr tmpGraphic = graphic._CreateSubGraphic(Render::Graphic::CreateParams(graphic.GetViewport(), Transform::FromProduct(graphic.GetLocalToWorldTransform(), entity.GetEntityTransform()), graphic.GetPixelSize()));
+        Render::GraphicPtr tmpGraphic = graphic.CreateSubGraphic(entity.GetEntityTransform());
 
         // Output face geometry as ISolidPrimitive/MSBSplineSurface/CurveVector...
         T_HOST.GetSolidsKernelAdmin ()._OutputBodyAsSurfaces (*tmpGraphic, entity, graphic.GetViewContext(), true);
@@ -871,7 +871,7 @@ bool MeasureGeomCollector::_ProcessBody (ISolidKernelEntityCR entity, SimplifyGr
                 if (!T_HOST.GetSolidsKernelAdmin()._QueryEntityData (entity, DgnPlatformLib::Host::SolidsKernelAdmin::EntityQuery_HasOnlyPlanarFaces))
                     return true; // Not valid type for operation...
 
-                Render::GraphicPtr tmpGraphic = graphic._CreateSubGraphic(Render::Graphic::CreateParams(graphic.GetViewport(), Transform::FromProduct(graphic.GetLocalToWorldTransform(), entity.GetEntityTransform()), graphic.GetPixelSize()));
+                Render::GraphicPtr tmpGraphic = graphic.CreateSubGraphic(entity.GetEntityTransform());
 
                 // Output curve vector for each face of sheet...(further limit this to a set of coplanar faces?!?)
                 T_HOST.GetSolidsKernelAdmin ()._OutputBodyAsSurfaces (*tmpGraphic, entity, graphic.GetViewContext(), true);
@@ -898,7 +898,7 @@ bool MeasureGeomCollector::_ProcessBody (ISolidKernelEntityCR entity, SimplifyGr
                 }
             else if (ISolidKernelEntity::EntityType_Solid == entity.GetEntityType ())
                 {
-                Render::GraphicPtr tmpGraphic = graphic._CreateSubGraphic(Render::Graphic::CreateParams(graphic.GetViewport(), Transform::FromProduct(graphic.GetLocalToWorldTransform(), entity.GetEntityTransform()), graphic.GetPixelSize()));
+                Render::GraphicPtr tmpGraphic = graphic.CreateSubGraphic(entity.GetEntityTransform());
 
                 // Output sheet body for each face of solid...
                 T_HOST.GetSolidsKernelAdmin ()._OutputBodyAsSurfaces (*tmpGraphic, entity, graphic.GetViewContext(), false);

@@ -299,8 +299,6 @@ bvector<PolyfaceHeaderPtr>& ClipPolyface(PolyfaceQueryCR mesh, ClipVectorCR clip
 +---------------+---------------+---------------+---------------+---------------+------*/
 SimplifyGraphic::SimplifyGraphic(Render::Graphic::CreateParams const& params, IGeometryProcessorR processor, ViewContextR context) : T_Super(params), m_processor(processor), m_context(context)
     {
-    m_localToWorldTransform = params.m_placement;
-
     m_facetOptions = m_processor._GetFacetOptionsP();
 
     if (!m_facetOptions.IsValid())
@@ -321,9 +319,9 @@ SimplifyGraphic::SimplifyGraphic(Render::Graphic::CreateParams const& params, IG
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-Render::GraphicPtr SimplifyGraphic::_CreateSubGraphic(Render::Graphic::CreateParams const& params) const
+Render::GraphicPtr SimplifyGraphic::_CreateSubGraphic(TransformCR subToGraphic) const
     {
-    SimplifyGraphic* subGraphic = new SimplifyGraphic(params, m_processor, m_context);
+    SimplifyGraphic* subGraphic = new SimplifyGraphic(Render::Graphic::CreateParams(m_vp, Transform::FromProduct(m_localToWorldTransform, subToGraphic), m_pixelSize), m_processor, m_context);
 
     subGraphic->m_textAxes[0]        = m_textAxes[0];
     subGraphic->m_textAxes[1]        = m_textAxes[1];
@@ -1221,7 +1219,7 @@ void SimplifyGraphic::ClipAndProcessBodyAsPolyface(ISolidKernelEntityCR geom) co
 
         if (SUCCESS == IFacetTopologyTable::ConvertToPolyfaces(polyfaces, faceToPolyfaces, *facetsPtr, *m_facetOptions))
             {
-            Render::GraphicPtr graphic = _CreateSubGraphic(Render::Graphic::CreateParams(m_vp, Transform::FromProduct(m_localToWorldTransform, geom.GetEntityTransform()), m_pixelSize));
+            Render::GraphicPtr graphic = _CreateSubGraphic(geom.GetEntityTransform());
 
             for (size_t i=0; i<polyfaces.size(); i++)
                 {
@@ -1258,7 +1256,7 @@ void SimplifyGraphic::ClipAndProcessBodyAsPolyface(ISolidKernelEntityCR geom) co
     SimplifyPolyfaceClipper     polyfaceClipper;
     bvector<PolyfaceHeaderPtr>& clippedPolyface = polyfaceClipper.ClipPolyface(*polyface, *GetCurrentClip(), m_facetOptions->GetMaxPerFace() <= 3);
 
-    Render::GraphicPtr graphic = _CreateSubGraphic(Render::Graphic::CreateParams(m_vp, Transform::FromProduct(m_localToWorldTransform, geom.GetEntityTransform()), m_pixelSize));
+    Render::GraphicPtr graphic = _CreateSubGraphic(geom.GetEntityTransform());
 
     if (0 != clippedPolyface.size())
         {
@@ -1302,7 +1300,7 @@ void SimplifyGraphic::ClipAndProcessText(TextStringCR text) const
         text.ComputeBoundingShape(points);
         text.ComputeTransform().Multiply(points, _countof(points));
 
-        Render::GraphicPtr graphic = _CreateSubGraphic(Render::Graphic::CreateParams(m_vp, m_localToWorldTransform, m_pixelSize));
+        Render::GraphicPtr graphic = _CreateSubGraphic(Transform::FromIdentity());
         SimplifyGraphic* sGraphic = static_cast<SimplifyGraphic*> (graphic.get());
 
         if (nullptr == sGraphic)
@@ -1317,7 +1315,7 @@ void SimplifyGraphic::ClipAndProcessText(TextStringCR text) const
 
     if (IGeometryProcessor::UnhandledPreference::Ignore != (IGeometryProcessor::UnhandledPreference::Curve & unhandled))
         {
-        Render::GraphicPtr graphic = _CreateSubGraphic(Render::Graphic::CreateParams(m_vp, Transform::FromProduct(m_localToWorldTransform, text.ComputeTransform()), m_pixelSize));
+        Render::GraphicPtr graphic = _CreateSubGraphic(text.ComputeTransform());
         SimplifyGraphic* sGraphic = static_cast<SimplifyGraphic*> (graphic.get());
 
         if (nullptr == sGraphic)
@@ -1899,7 +1897,7 @@ void SimplifyGraphic::_AddMosaic(int numX, int numY, uintptr_t const* tileIds, D
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SimplifyGraphic::_AddSubGraphic(Graphic&, TransformCR, Render::GraphicParams&) 
+void SimplifyGraphic::_AddSubGraphic(GraphicR, TransformCR, GraphicParamsR) 
     {
     // NEEDS_WORK_CONTINUOUS_RENDER
     }
