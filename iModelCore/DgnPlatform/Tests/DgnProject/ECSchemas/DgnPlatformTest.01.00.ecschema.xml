@@ -128,5 +128,58 @@
         </ECCustomAttributes>
         <BaseClass>dgn:PhysicalElement</BaseClass>
     </ECClass>
+    
+    <ECClass typeName="TestAuthority" isDomainClass="True">
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="dgn.02.00" />
+        </ECCustomAttributes>
+        <BaseClass>dgn:Authority</BaseClass>
+    </ECClass>
+    
+    <ECClass typeName="TestElementSub1" isDomainClass="True">
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="dgn.02.00" />
+        </ECCustomAttributes>
+        <BaseClass>TestElement</BaseClass>
+        <ECProperty propertyName='Prop1_1' typeName='string' />
+        <ECProperty propertyName='Prop1_2' typeName='long' />
+        <ECProperty propertyName='Prop1_3' typeName='double' />
+    </ECClass>
+    
+    <ECClass typeName="TestElementSub2" isDomainClass="True">
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="dgn.02.00" />
+        </ECCustomAttributes>
+        <BaseClass>TestElementSub1</BaseClass>
+        <ECProperty propertyName='Prop2_1' typeName='string' />
+        <ECProperty propertyName='Prop2_2' typeName='long' />
+        <ECProperty propertyName='Prop2_3' typeName='double' />
+    </ECClass>
+    
+    <ECClass typeName="TestElementSub3" isDomainClass="True">
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="dgn.02.00" />
+        </ECCustomAttributes>
+        <BaseClass>TestElementSub2</BaseClass>
+        <ECProperty propertyName='Prop3_1' typeName='string' />
+        <ECProperty propertyName='Prop3_2' typeName='long' />
+        <ECProperty propertyName='Prop3_3' typeName='double' />
+    </ECClass>
+    
+    <ECClass typeName="TestStruct" isStruct="True" >
+        <ECProperty propertyName="TestStructDoubleMember" typeName="double" />"
+        <ECProperty propertyName="TestStructIntMember" typeName="int" />"
+        <ECProperty propertyName="TestStructBoolMember" typeName="boolean" />"
+    </ECClass>
+    
+    <ECClass typeName="TestElementComplex" isDomainClass="True">
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="dgn.02.00" />
+        </ECCustomAttributes>
+        <BaseClass>TestElement</BaseClass>
+        <ECProperty propertyName='Prop_point3d' typeName='point3d' />
+        <ECStructProperty propertyName="Prop_struct" typeName="TestStruct"/>
+    </ECClass>
+    
 </ECSchema>
 

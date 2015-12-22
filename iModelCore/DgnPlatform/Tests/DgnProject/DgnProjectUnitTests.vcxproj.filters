@@ -241,6 +241,9 @@
     <ClCompile Include="NonPublished\MissingHandler_Test.cpp">
       <Filter>NonPublished</Filter>
     </ClCompile>
+    <ClCompile Include="BackDoor\TestDomainElements.cpp">
+      <Filter>BackDoor</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Published\DgnHandlersTests.h">
@@ -296,6 +299,9 @@
     </ClInclude>
     <ClInclude Include="Published\ChangeTestFixture.h">
       <Filter>Published</Filter>
+    </ClInclude>
+    <ClInclude Include="BackDoor\TestDomainElements.h">
+      <Filter>BackDoor</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
