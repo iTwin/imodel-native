@@ -54,6 +54,15 @@
 #define GEOM3_Yaw "Placement.Rotation.Yaw"
 #define GEOM3_Pitch "Placement.Rotation.Pitch"
 #define GEOM3_Roll "Placement.Rotation.Roll"
+#define GEOM_Placement "Placement"
+#define PLACEMENT_Origin "Origin"
+#define PLACEMENT_Rotation "Rotation"
+#define PLACEMENT_Box "Box"
+#define BOX_Low "Low"
+#define BOX_High "High"
+#define ROTATION_Yaw "Yaw"
+#define ROTATION_Pitch "Pitch"
+#define ROTATION_Roll "Roll"
 
 #ifdef WIP_ELEMENT_ITEM // *** pending redesign
 DgnElement::Item::Key&  DgnElement::Item::GetKey() {static Key s_key; return s_key;}
@@ -506,8 +515,13 @@ DgnDbStatus DgnElement::_InsertInDb()
         auto stmtResult = statement->Step();
         if (BE_SQLITE_DONE != stmtResult)
             {
-            // SQLite doesn't tell us which constraint failed - check if it's the Code.
-            auto existingElemWithCode = GetDgnDb().Elements().QueryElementIdByCode(m_code);
+            DgnElementId existingElemWithCode;
+            if (BE_SQLITE_CONSTRAINT_UNIQUE == stmtResult)
+                {
+                // SQLite doesn't tell us which constraint failed - check if it's the Code.
+                existingElemWithCode = GetDgnDb().Elements().QueryElementIdByCode(m_code);
+                }
+
             status = existingElemWithCode.IsValid() ? DgnDbStatus::DuplicateCode : DgnDbStatus::WriteError;
             }
         }
@@ -2685,9 +2699,9 @@ DgnDbStatus ElementGeom3d::Read(ECSqlStatement& stmt, ECSqlClassParams const& pa
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void bindNull(ECSqlStatement& stmt, Utf8CP prop)
+static void bindNull(IECSqlStructBinder& binder, Utf8CP prop)
     {
-    stmt.BindNull(stmt.GetParameterIndex(prop));
+    binder.GetMember(prop).BindNull();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2699,19 +2713,22 @@ DgnDbStatus ElementGeom2d::Bind(ECSqlStatement& stmt, DgnElementCR)
     if (DgnDbStatus::Success != status)
         return status;
 
+    IECSqlStructBinder& placementBinder = stmt.BindStruct(stmt.GetParameterIndex(GEOM_Placement));
+    IECSqlStructBinder& boxBinder = placementBinder.GetMember(PLACEMENT_Box).BindStruct();
+
     if (!m_placement.IsValid())
         {
-        bindNull(stmt, GEOM_Origin);
-        bindNull(stmt, GEOM2_Rotation);
-        bindNull(stmt, GEOM_Box_Low);
-        bindNull(stmt, GEOM_Box_High);
+        bindNull(placementBinder, PLACEMENT_Origin);
+        bindNull(placementBinder, PLACEMENT_Rotation);
+        bindNull(boxBinder, BOX_Low);
+        bindNull(boxBinder, BOX_High);
         }
     else
         {
-        stmt.BindPoint2D(stmt.GetParameterIndex(GEOM_Origin), m_placement.GetOrigin());
-        stmt.BindDouble(stmt.GetParameterIndex(GEOM2_Rotation), m_placement.GetAngle().Degrees());
-        stmt.BindPoint2D(stmt.GetParameterIndex(GEOM_Box_Low), m_placement.GetElementBox().low);
-        stmt.BindPoint2D(stmt.GetParameterIndex(GEOM_Box_High), m_placement.GetElementBox().high);
+        placementBinder.GetMember(PLACEMENT_Origin).BindPoint2D(m_placement.GetOrigin());
+        placementBinder.GetMember(PLACEMENT_Rotation).BindDouble(m_placement.GetAngle().Degrees());
+        boxBinder.GetMember(BOX_Low).BindPoint2D(m_placement.GetElementBox().low);
+        boxBinder.GetMember(BOX_High).BindPoint2D(m_placement.GetElementBox().high);
         }
 
     return DgnDbStatus::Success;
@@ -2734,23 +2751,27 @@ DgnDbStatus ElementGeom3d::Bind(ECSqlStatement& stmt, DgnElementCR el)
 
     stmt.BindInt(stmt.GetParameterIndex(GEOM3_InPhysicalSpace), CoordinateSpace::World == geomModel->GetCoordinateSpace() ? 1 : 0);
 
+    IECSqlStructBinder& placementBinder = stmt.BindStruct(stmt.GetParameterIndex(GEOM_Placement));
+    IECSqlStructBinder& rotBinder = placementBinder.GetMember(PLACEMENT_Rotation).BindStruct();
+    IECSqlStructBinder& boxBinder = placementBinder.GetMember(PLACEMENT_Box).BindStruct();
+
     if (!m_placement.IsValid())
         {
-        bindNull(stmt, GEOM_Box_Low);
-        bindNull(stmt, GEOM_Box_High);
-        bindNull(stmt, GEOM_Origin);
-        bindNull(stmt, GEOM3_Yaw);
-        bindNull(stmt, GEOM3_Pitch);
-        bindNull(stmt, GEOM3_Roll);
+        bindNull(placementBinder, PLACEMENT_Origin);
+        bindNull(rotBinder, ROTATION_Yaw);
+        bindNull(rotBinder, ROTATION_Pitch);
+        bindNull(rotBinder, ROTATION_Roll);
+        bindNull(boxBinder, BOX_Low);
+        bindNull(boxBinder, BOX_High);
         }
     else
         {
-        stmt.BindPoint3D(stmt.GetParameterIndex(GEOM_Origin), m_placement.GetOrigin());
-        stmt.BindPoint3D(stmt.GetParameterIndex(GEOM_Box_Low), m_placement.GetElementBox().low);
-        stmt.BindPoint3D(stmt.GetParameterIndex(GEOM_Box_High), m_placement.GetElementBox().high);
-        stmt.BindDouble(stmt.GetParameterIndex(GEOM3_Yaw), m_placement.GetAngles().GetYaw().Degrees());
-        stmt.BindDouble(stmt.GetParameterIndex(GEOM3_Pitch), m_placement.GetAngles().GetPitch().Degrees());
-        stmt.BindDouble(stmt.GetParameterIndex(GEOM3_Roll), m_placement.GetAngles().GetRoll().Degrees());
+        placementBinder.GetMember(PLACEMENT_Origin).BindPoint3D(m_placement.GetOrigin());
+        rotBinder.GetMember(ROTATION_Yaw).BindDouble(m_placement.GetAngles().GetYaw().Degrees());
+        rotBinder.GetMember(ROTATION_Pitch).BindDouble(m_placement.GetAngles().GetPitch().Degrees());
+        rotBinder.GetMember(ROTATION_Roll).BindDouble(m_placement.GetAngles().GetRoll().Degrees());
+        boxBinder.GetMember(BOX_Low).BindPoint3D(m_placement.GetElementBox().low);
+        boxBinder.GetMember(BOX_High).BindPoint3D(m_placement.GetElementBox().high);
         }
 
     return DgnDbStatus::Success;
@@ -2781,9 +2802,7 @@ void ElementGeomData::AddBaseClassParams(ECSqlClassParams& params)
     {
     params.Add(GEOM_Geometry);
     params.Add(GEOM_Category);
-    params.Add(GEOM_Origin);
-    params.Add(GEOM_Box_Low);
-    params.Add(GEOM_Box_High);
+    params.Add(GEOM_Placement);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2792,7 +2811,6 @@ void ElementGeomData::AddBaseClassParams(ECSqlClassParams& params)
 void ElementGeom2d::AddClassParams(ECSqlClassParams& params)
     {
     AddBaseClassParams(params);
-    params.Add(GEOM2_Rotation);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2802,9 +2820,6 @@ void ElementGeom3d::AddClassParams(ECSqlClassParams& params)
     {
     AddBaseClassParams(params);
     params.Add(GEOM3_InPhysicalSpace);
-    params.Add(GEOM3_Yaw);
-    params.Add(GEOM3_Pitch);
-    params.Add(GEOM3_Roll);
     }
 
 

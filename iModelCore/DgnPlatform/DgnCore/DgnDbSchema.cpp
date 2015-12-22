@@ -102,7 +102,6 @@ DbResult DgnDb::CreateDgnDbTables()
     // Every DgnDb has a dictionary model
     CreateDictionaryModel();
 
-#ifdef WIP_SPATIAL_TRIGGERS
     ExecuteSql("CREATE TRIGGER dgn_prjrange_del AFTER DELETE ON " DGN_TABLE(DGN_CLASSNAME_SpatialElement)
                " BEGIN DELETE FROM " DGN_VTABLE_RTree3d " WHERE ElementId=old.Id;END");
 
@@ -121,7 +120,6 @@ DbResult DgnDb::CreateDgnDbTables()
                "BEGIN INSERT INTO " DGN_VTABLE_RTree3d "(ElementId,minx,maxx,miny,maxy,minz,maxz) SELECT new.Id,"
                "DGN_bbox_value(bb,0),DGN_bbox_value(bb,3),DGN_bbox_value(bb,1),DGN_bbox_value(bb,4),DGN_bbox_value(bb,2),DGN_bbox_value(bb,5)"
                " FROM (SELECT " AABB_FROM_PLACEMENT " as bb);END");
-#endif
 
 #ifdef NEEDSWORK_VIEW_SETTINGS_TRIGGER
     ExecuteSql("CREATE TRIGGER delete_viewProps AFTER DELETE ON " DGN_TABLE(DGN_CLASSNAME_View) " BEGIN DELETE FROM " BEDB_TABLE_Property
