@@ -233,11 +233,11 @@ void    GetPredefinedMacrosFromMsDebug (MacroConfigurationAdmin& macroCfgAdmin)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Barry.Bentley                   06/12
+* @bsiclass                                    Barry.Bentley                   06/12
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct MacroDebugOutput : IMacroDebugOutput
 {
-BeTextFile*     m_debugFile;
+    BeTextFile*     m_debugFile;
 
 MacroDebugOutput (BeTextFile* debugFile)
     {
@@ -263,14 +263,20 @@ virtual void        ShowDebugMessage (int indent,WCharCP format, ...) override
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   02/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST (ConfigurationManager_Test, Test1)
+TEST (ConfigurationManager_Test, VariableLevel)
     {
     ConfigurationManager::DefineVariable (L"ConfigurationManager_Test", L"abc", ConfigurationVariableLevel::User);
     WString value;
     ASSERT_TRUE( SUCCESS == ConfigurationManager::GetVariable (value, L"ConfigurationManager_Test", ConfigurationVariableLevel::User) );
     EXPECT_TRUE( value == WString(L"abc") );
     EXPECT_TRUE(SUCCESS != ConfigurationManager::GetVariable(value, L"ConfigurationManager_Test", ConfigurationVariableLevel::System));
+    }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Barry.Bentley                   02/12
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST (ConfigurationManager_Test, Test1)
+    {
     ASSERT_TRUE( SUCCESS == ConfigurationManager::DefineVariable (L"One",                   L"TestValue1") );
     ASSERT_TRUE( SUCCESS == ConfigurationManager::DefineVariable (L"Two",                   L"TestValue2") );
     ASSERT_TRUE( SUCCESS == ConfigurationManager::DefineVariable (L"SameAsOne",             L"$(One)") );
@@ -287,32 +293,39 @@ TEST (ConfigurationManager_Test, Test1)
 
     WString returnVal;
     ASSERT_TRUE( SUCCESS == ConfigurationManager::GetVariable (returnVal, L"One") );
-    ASSERT_TRUE( 0 == returnVal.compare (L"TestValue1") );
+    EXPECT_STREQ(L"TestValue1" , returnVal.c_str() );
 
     ASSERT_TRUE( SUCCESS == ConfigurationManager::GetVariable (returnVal, L"Two") );
-    ASSERT_TRUE( 0 == returnVal.compare (L"TestValue2") );
+    EXPECT_STREQ(L"TestValue2", returnVal.c_str());
 
     ASSERT_TRUE( SUCCESS == ConfigurationManager::GetVariable (returnVal, L"SameAsOne") );
-    ASSERT_TRUE( 0 == returnVal.compare (L"TestValue1") );
+    EXPECT_STREQ(L"TestValue1", returnVal.c_str());
 
     ASSERT_TRUE( SUCCESS == ConfigurationManager::GetVariable (returnVal, L"Three") );
-    ASSERT_TRUE( 0 == returnVal.compare (L"TestValue2;TestValue1") );
+    EXPECT_STREQ(L"TestValue2;TestValue1", returnVal.c_str());
 
     ASSERT_TRUE( SUCCESS == ConfigurationManager::GetVariable (returnVal, L"Four") );
-    ASSERT_TRUE( 0 == returnVal.compare (L"TestValue2;TestValue1") );
+    EXPECT_STREQ(L"TestValue2;TestValue1", returnVal.c_str());
 
     ASSERT_TRUE( SUCCESS == ConfigurationManager::GetVariable (returnVal, L"SameAsTwo") );
-    ASSERT_TRUE( 0 == returnVal.compare (L"TestValue2") );
+    EXPECT_STREQ(L"TestValue2", returnVal.c_str());
 
     ASSERT_TRUE( SUCCESS == ConfigurationManager::GetVariable (returnVal, L"HasQuotes") );
-    ASSERT_TRUE( 0 == returnVal.compare (L"Test\"TestValue1\"Value") );
+    EXPECT_STREQ(L"Test\"TestValue1\"Value", returnVal.c_str());
 
-    ASSERT_TRUE( SUCCESS != ConfigurationManager::GetVariable (returnVal, L"HasCycle") );
-    ASSERT_TRUE( SUCCESS != ConfigurationManager::GetVariable (returnVal, L"MissingCloseParen") );
-    ASSERT_TRUE( SUCCESS != ConfigurationManager::GetVariable (returnVal, L"MissingOpenParen") );
+    EXPECT_TRUE(SUCCESS != ConfigurationManager::GetVariable(returnVal, L"HasCycle"));
+    EXPECT_TRUE(SUCCESS != ConfigurationManager::GetVariable(returnVal, L"MissingCloseParen"));
+    EXPECT_TRUE(SUCCESS != ConfigurationManager::GetVariable(returnVal, L"MissingOpenParen"));
 
+    }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Barry.Bentley                   02/12
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST(ConfigurationManager_Test, DeferredExpansion)
+    {
 #if defined (THIS_IS_HANDLED_AT_CONFIGFILE_READ)
+    WString returnVal;
     // test immediate vs. deferred expansion
     ASSERT_TRUE( SUCCESS == ConfigurationManager::DefineVariable (L"Base",                  L"BaseValueAtBeginning") );
     ASSERT_TRUE( SUCCESS == ConfigurationManager::DefineVariable (L"BaseImmediate",         L"${Base}") );
@@ -320,16 +333,15 @@ TEST (ConfigurationManager_Test, Test1)
     ASSERT_TRUE( SUCCESS == ConfigurationManager::DefineVariable (L"Base",                  L"BaseValueAfterChange") );
 
     ASSERT_TRUE( SUCCESS == ConfigurationManager::GetVariable (returnVal, L"Base") );
-    ASSERT_TRUE( 0 == returnVal.compare (L"BaseValueAfterChange") );
+    EXPECT_STREQ(L"BaseValueAfterChange", returnVal.c_str());
 
     ASSERT_TRUE( SUCCESS == ConfigurationManager::GetVariable (returnVal, L"BaseImmediate") );
-    ASSERT_TRUE( 0 == returnVal.compare (L"BaseValueAtBeginning") );
+    EXPECT_STREQ(L"BaseValueAtBeginning", returnVal.c_str());
 
     ASSERT_TRUE( SUCCESS == ConfigurationManager::GetVariable (returnVal, L"BaseDeferred") );
-    ASSERT_TRUE( 0 == returnVal.compare (L"BaseValueAfterChange") );
+    EXPECT_STREQ(L"BaseValueAfterChange", returnVal.c_str());
 #endif
     }
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   02/12
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -351,43 +363,43 @@ TEST (ConfigurationManager_Test, CheckOperators)
 
     WString returnVal;
     ASSERT_TRUE( SUCCESS == ConfigurationManager::GetVariable (returnVal, L"FullFileSpec"         ) );
-    ASSERT_TRUE( 0 == returnVal.compare (L"c:\\RootDirectory\\SubDirectory\\NestedDirectory\\TestFile.ext") );
+    EXPECT_STREQ(L"c:\\RootDirectory\\SubDirectory\\NestedDirectory\\TestFile.ext", returnVal.c_str());
 
     ASSERT_TRUE( SUCCESS == ConfigurationManager::GetVariable (returnVal, L"BaseName"             ) );
-    ASSERT_TRUE( 0 == returnVal.compare (L"TestFile") );
+    EXPECT_STREQ(L"TestFile", returnVal.c_str());
 
     ASSERT_TRUE( SUCCESS == ConfigurationManager::GetVariable (returnVal, L"Device"               ) );
-    ASSERT_TRUE( 0 == returnVal.compare (L"c:") );
+    EXPECT_STREQ(L"c:", returnVal.c_str());
 
     ASSERT_TRUE( SUCCESS == ConfigurationManager::GetVariable (returnVal, L"DeviceDirectory"      ) );
-    ASSERT_TRUE( 0 == returnVal.compare (L"c:\\RootDirectory\\SubDirectory\\NestedDirectory\\") );
+    EXPECT_STREQ(L"c:\\RootDirectory\\SubDirectory\\NestedDirectory\\", returnVal.c_str());
 
     ASSERT_TRUE( SUCCESS == ConfigurationManager::GetVariable (returnVal, L"Directory"            ) );
-    ASSERT_TRUE( 0 == returnVal.compare (L"\\RootDirectory\\SubDirectory\\NestedDirectory\\") );
+    EXPECT_STREQ(L"\\RootDirectory\\SubDirectory\\NestedDirectory\\", returnVal.c_str());
 
     ASSERT_TRUE( SUCCESS == ConfigurationManager::GetVariable (returnVal, L"Extension"            ) );
-    ASSERT_TRUE( 0 == returnVal.compare (L".ext") );
+    EXPECT_STREQ(L".ext", returnVal.c_str());
 
     ASSERT_TRUE( SUCCESS == ConfigurationManager::GetVariable (returnVal, L"FileName"             ) );
-    ASSERT_TRUE( 0 == returnVal.compare (L"TestFile.ext") );
+    EXPECT_STREQ(L"TestFile.ext", returnVal.c_str());
 
     ASSERT_TRUE( SUCCESS == ConfigurationManager::GetVariable (returnVal, L"FirstDirectory"       ) );
-    ASSERT_TRUE( 0 == returnVal.compare (L"RootDirectory") );
+    EXPECT_STREQ(L"RootDirectory", returnVal.c_str());
 
     ASSERT_TRUE( SUCCESS == ConfigurationManager::GetVariable (returnVal, L"LastDirectory"        ) );
-    ASSERT_TRUE( 0 == returnVal.compare (L"NestedDirectory") );
+    EXPECT_STREQ(L"NestedDirectory", returnVal.c_str());
 
     ASSERT_TRUE( SUCCESS == ConfigurationManager::GetVariable (returnVal, L"NoExtension"          ) );
-    ASSERT_TRUE( 0 == returnVal.compare (L"c:\\RootDirectory\\SubDirectory\\NestedDirectory\\TestFile") );
+    EXPECT_STREQ(L"c:\\RootDirectory\\SubDirectory\\NestedDirectory\\TestFile", returnVal.c_str());
 
     ASSERT_TRUE( SUCCESS == ConfigurationManager::GetVariable (returnVal, L"ParentDirectory"      ) );
-    ASSERT_TRUE( 0 == returnVal.compare (L"\\RootDirectory\\SubDirectory\\") );
+    EXPECT_STREQ(L"\\RootDirectory\\SubDirectory\\", returnVal.c_str());
 
     ASSERT_TRUE( SUCCESS == ConfigurationManager::GetVariable (returnVal, L"ParentDeviceDirectory" ) );
-    ASSERT_TRUE( 0 == returnVal.compare (L"c:\\RootDirectory\\SubDirectory\\") );
+    EXPECT_STREQ(L"c:\\RootDirectory\\SubDirectory\\", returnVal.c_str());
 
     ASSERT_TRUE( SUCCESS == ConfigurationManager::GetVariable (returnVal, L"BuildFileName" ) );
-    ASSERT_TRUE( 0 == returnVal.compare (L"c:\\RootDirectory\\SubDirectory\\NestedDirectory\\TestFile.ext") );
+    EXPECT_STREQ(L"c:\\RootDirectory\\SubDirectory\\NestedDirectory\\TestFile.ext", returnVal.c_str());
     
     }
 
@@ -437,23 +449,23 @@ TEST (ConfigurationManager_Test, TestMonitoredVariables)
     ASSERT_TRUE (nullptr != s_tsndMonitor);
 
     ASSERT_TRUE (SUCCESS == ConfigurationManager::DefineVariable (L"TestPreDefinedBoolean", L"0") );
-    ASSERT_TRUE (false == s_testBooleanPreDefined);
+    EXPECT_TRUE (false == s_testBooleanPreDefined);
 
     ASSERT_TRUE (SUCCESS == ConfigurationManager::DefineVariable (L"TestPreDefinedInteger", L"256") );
-    ASSERT_TRUE (256 == s_testIntegerPreDefined);
+    EXPECT_TRUE (256 == s_testIntegerPreDefined);
 
     ASSERT_TRUE (SUCCESS == ConfigurationManager::DefineVariable (L"TestPreDefinedString",  L"Different String") );
-    ASSERT_TRUE (0 == s_testStringPreDefined.CompareTo (L"Different String"));
+    EXPECT_TRUE (0 == s_testStringPreDefined.CompareTo (L"Different String"));
 
 
     ASSERT_TRUE (SUCCESS == ConfigurationManager::DefineVariable (L"TestNotDefinedBoolean", L"true") );
-    ASSERT_TRUE (true == s_testBooleanNotDefined);
+    EXPECT_TRUE (true == s_testBooleanNotDefined);
 
     ASSERT_TRUE (SUCCESS == ConfigurationManager::DefineVariable (L"TestNotDefinedInteger", L"813") );
-    ASSERT_TRUE (813 == s_testIntegerNotDefined);
+    EXPECT_TRUE (813 == s_testIntegerNotDefined);
 
     ASSERT_TRUE (SUCCESS == ConfigurationManager::DefineVariable (L"TestNotDefinedString",  L"Now Defined") );
-    ASSERT_TRUE (0 == s_testStringNotDefined.CompareTo (L"Now Defined"));
+    EXPECT_TRUE (0 == s_testStringNotDefined.CompareTo (L"Now Defined"));
 
     // stop monitoring the predefined ones and verify that the statics don't change.
     ConfigurationManager::RemoveMonitor (L"TestPreDefinedBoolean", *s_tbpdMonitor);
@@ -478,6 +490,9 @@ TEST (ConfigurationManager_Test, TestMonitoredVariables)
     ASSERT_TRUE (0 == value.CompareTo (L"Another String"));
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsiclass                                    Barry.Bentley                   06/12
++---------------+---------------+---------------+---------------+---------------+------*/
 struct TestMonitor : IVariableMonitor
     {
     int     m_directChange;
@@ -578,4 +593,132 @@ TEST (ConfigurationManager_Test, TestHandlingOfNulls)
     ASSERT_TRUE( SUCCESS == macroCfgAdmin.DefineBuiltinMacro (L"_ROOTDIR",  L"1"));
     ASSERT_TRUE( SUCCESS != macroCfgAdmin.DefineBuiltinMacro (nullVar,      L"1"));
     ASSERT_TRUE( SUCCESS != macroCfgAdmin.DefineBuiltinMacro (emptyVar,     L"1"));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Umar.Hayat                   12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST (ConfigurationManager_Test, Undefine)
+    {
+    WCharCP cfgVarName  = L"One";
+    ASSERT_TRUE(SUCCESS == ConfigurationManager::DefineVariable(cfgVarName, L"TestValue1"));
+    ASSERT_TRUE(ConfigurationManager::IsVariableDefined(cfgVarName));
+
+    // Undefine
+    ASSERT_TRUE(SUCCESS == ConfigurationManager::UndefineVariable(cfgVarName));
+    ASSERT_FALSE(ConfigurationManager::IsVariableDefined(cfgVarName));
+
+    // Redefine
+    ASSERT_TRUE(SUCCESS == ConfigurationManager::DefineVariable(cfgVarName, L"TestValue_NewValue"));
+    ASSERT_TRUE(ConfigurationManager::IsVariableDefined(cfgVarName));
+    WString value;
+    ASSERT_TRUE(SUCCESS == ConfigurationManager::GetVariable(value, cfgVarName));
+    ASSERT_STREQ(L"TestValue_NewValue" ,value.c_str());
+    }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Umar.Hayat                   12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST (ConfigurationManager_Test, CheckBooleanStatus)
+    {
+    WCharCP cfgVarName  = L"TestBoolean";
+    ASSERT_TRUE(SUCCESS == ConfigurationManager::DefineVariable(cfgVarName, L"1"));
+    EXPECT_TRUE(ConfigurationManager::IsVariableDefinedAndTrue(cfgVarName));
+
+    ASSERT_TRUE(SUCCESS == ConfigurationManager::DefineVariable(cfgVarName, L"on"));
+    EXPECT_TRUE(ConfigurationManager::IsVariableDefinedAndTrue(cfgVarName));
+
+    ASSERT_TRUE(SUCCESS == ConfigurationManager::DefineVariable(cfgVarName, L"TRUE"));
+    EXPECT_TRUE(ConfigurationManager::IsVariableDefinedAndTrue(cfgVarName));
+
+    ASSERT_TRUE(SUCCESS == ConfigurationManager::DefineVariable(cfgVarName, L"0"));
+    EXPECT_TRUE(ConfigurationManager::IsVariableDefinedAndFalse(cfgVarName));
+
+    ASSERT_TRUE(SUCCESS == ConfigurationManager::DefineVariable(cfgVarName, L"OFF"));
+    EXPECT_TRUE(ConfigurationManager::IsVariableDefinedAndFalse(cfgVarName));
+
+    ASSERT_TRUE(SUCCESS == ConfigurationManager::DefineVariable(cfgVarName, L"False"));
+    EXPECT_TRUE(ConfigurationManager::IsVariableDefinedAndFalse(cfgVarName));
+
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsiclass                                    Umar.Hayat                   12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+struct TestConfigVarIterator: public IConfigVariableIteratorDelegate
+{
+    //! Called for each configuration variable.
+    virtual void EachConfigVariable(WCharCP name, WCharCP value, ConfigurationVariableLevel level, bool locked) override
+    {
+        wprintf(L"Name = [%ls] value = [%ls]\n", name, value);
+    }
+};
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Umar.Hayat                   12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST (ConfigurationManager_Test, IterVariable)
+    {
+    WCharCP cfgVarName  = L"TestBoolean";
+    ASSERT_TRUE(SUCCESS == ConfigurationManager::DefineVariable(cfgVarName, L"1"));
+    EXPECT_TRUE(ConfigurationManager::IsVariableDefinedAndTrue(cfgVarName));
+
+    TestConfigVarIterator iter;
+    ASSERT_FALSE(SUCCESS == ConfigurationManager::IterateThroughVariables(&iter));
+    
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsiclass                                    Umar.Hayat                   12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+struct SimpleTestMonitor : public SimpleConfigurationVariableMonitor
+    {
+    int     m_directChange;
+
+    SimpleTestMonitor()
+        {
+        m_directChange = 0;
+        }
+    //! Called for each configuration variable.
+    virtual void _UpdateState(WCharCP variableName) override
+        {
+        wprintf(L"Variable changed Name = [%ls]\n", variableName);
+        ++m_directChange;
+        }
+    };
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Umar.Hayat                   12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST (ConfigurationManager_Test, SimpleMonitorTest)
+    {
+    ASSERT_TRUE (SUCCESS == ConfigurationManager::DefineVariable (L"Test1", L"TestOneValue") );
+
+    SimpleTestMonitor    *testMon1;
+    ConfigurationManager::MonitorVariable (L"Test1", *(testMon1 = new SimpleTestMonitor()));
+
+    ASSERT_EQ (1 , testMon1->m_directChange);
+
+    ASSERT_TRUE (SUCCESS == ConfigurationManager::DefineVariable (L"Test1", L"NewValue"));
+    ASSERT_EQ (2 , testMon1->m_directChange);
+    
+    ASSERT_TRUE(SUCCESS == ConfigurationManager::RemoveMonitor(L"Test1", *testMon1));
+
+    ASSERT_TRUE(SUCCESS == ConfigurationManager::DefineVariable(L"Test1", L"NewValue"));
+    ASSERT_EQ(2, testMon1->m_directChange);
+
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Umar.Hayat                   12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST (ConfigurationManager_Test, StringExpand)
+    {
+    ASSERT_TRUE (SUCCESS == ConfigurationManager::DefineVariable (L"Test1", L"One") );
+    // Method only check string inplace macros starting with $[
+    ASSERT_FALSE(ConfigurationManager::StringContainsMacros(L"Test1"));
+
+    WString strHavingMacro(L"$[Test1]:Two");
+    ASSERT_TRUE(ConfigurationManager::StringContainsMacros(strHavingMacro.c_str()));
+
+    ConfigurationManager::StringExpandMacros(strHavingMacro);
+    ASSERT_STREQ(L"One:Two", strHavingMacro.c_str());
+
     }
