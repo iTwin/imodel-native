@@ -17,6 +17,7 @@
     <ClCompile Include="Published\BeFileName_test.cpp" />
     <ClCompile Include="Published\BeNumerical_Test.cpp" />
     <ClCompile Include="Published\BeStringUtilities_tests.cpp" />
+    <ClCompile Include="Published\BeTextFile_Test.cpp" />
     <ClCompile Include="Published\BeTimeUtilities_test.cpp" />
     <ClCompile Include="Published\bmap_test.cpp" />
     <ClCompile Include="Published\bset_test.cpp" />
