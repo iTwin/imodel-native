@@ -12,7 +12,6 @@
 #include "DgnElement.h"
 #include "DgnAuthority.h"
 #include "ECSqlClassParams.h"
-#include "ModelSolverDef.h"
 #include <Bentley/ValueFormat.h>
 #include <DgnPlatform/DgnProperties.h>
 
@@ -902,355 +901,293 @@ public:
     DGNPLATFORM_EXPORT static SystemModelPtr Create(DgnDbR, Code const&);
 };
 
+struct ComponentDef;
+
 /*=======================================================================================*//**
-* A ComponentModel represents a set of possible configurations of a single type of thing. 
-*
-* <p>The type of the component is defined by the ECClass that is specified by the component's ItemECClassName property.
-* Note that a ComponentModel does not define a type; it generates possible configurations of an existing type.
-*
-* <p>A ComponentModel uses an algorithm called a "solver" that generates a configuration, based on the values of a pre-defined set of parameters.
-* The component's solver and its input parameters are specified by the model's ModelSolverDef.
-*
-* <p>The Items in a ComponentModel that are to be harvested are in the Category that is identified by the model's ItemCategoryName property.
-* See #GetItemCategoryName for the name of this category. Items in the ComponentModel that are not assigned to the Element Category are considered to be 
-* construction elements and are not harvested.
+* A ComponentModel is used by a ComponentDef 
 * @bsiclass                                                    Keith.Bentley   10/11
 **//*=======================================================================================*/
 struct EXPORT_VTABLE_ATTRIBUTE ComponentModel : DgnModel3d
 {
-private:
     DEFINE_T_SUPER(DgnModel3d)
+    
+    friend struct ComponentDef;
 
-    struct CompProps
-        {
-        Utf8String m_itemECClassName;
-        Utf8String m_itemCategoryName;
-        Utf8String m_itemCodeAuthority;
-
-        CompProps(Utf8StringCR iclass, Utf8StringCR icat, Utf8String iauthority) : m_itemECClassName(iclass), m_itemCategoryName(icat), m_itemCodeAuthority(iauthority) {;}
-        bool IsValid(DgnDbR) const;
-        void FromJson(Json::Value const& inValue);
-        void ToJson(Json::Value& outValue) const;
-
-        DgnClassId GetItemECClassId(DgnDbR) const;
-        DgnCategoryId QueryItemCategoryId(DgnDbR) const;
-        };
-
-public:
-
-    //=======================================================================================
-    //! Parameters to create a new instances of a ComponentModel.
-    //! @ingroup DgnModelGroup
-    //=======================================================================================
-    struct CreateParams : DgnModel3d::CreateParams
-    {
-    private:
-        DEFINE_T_SUPER(DgnModel3d::CreateParams)
-        friend struct ComponentModel;
-        CompProps m_compProps;
-        ModelSolverDef m_solver;
-
-    public:
-        //! Parameters to create a new instance of a ComponentModel.
-        //! @param[in] dgndb The DgnDb for the new ComponentModel
-        //! @param[in] name The name for the ComponentModel
-        //! @param[in] iclass The full (namespace.class) name of the ECClass that should be used when creating an Item from this component.
-        //! @param[in] icat The name of the category that will be used by Items that should be harvested and that should be used when creating an instance Item from this component.
-        //! @param[in] iauthority The name of the CodeAuthority that should be used when creating an instance Item from this component.
-        //! @param[in] solver The definition of the solver to be used by this model when validating changes to its content.
-        DGNPLATFORM_EXPORT CreateParams(DgnDbR dgndb, Utf8StringCR name, Utf8StringCR iclass, Utf8StringCR icat, Utf8String iauthority, ModelSolverDef const& solver);
-
-        //! @private
-        //! This constructor is used only by the model handler to create a new instance, prior to calling ReadProperties on the model object
-        explicit CreateParams(DgnModel::CreateParams const& params) : T_Super(params), m_compProps("","","") {}
-
-        //! Get the model solver
-        ModelSolverDef const& GetSolver() const { return m_solver; }
-
-        //! Set the model solver
-        void SetSolver(ModelSolverDef const& s) { m_solver = s; }
-    };
-
-    friend struct CreateParams;
-
-private:
-    // Base for helper classes that assist in making harvested solutions persistent
-    struct HarvestedSolutionWriter
-        {
-      protected:
-        ComponentModel& m_cm;
-        DgnModelR m_destModel;
-      public:
-        virtual DgnDbR _GetOutputDgnDb() {return m_destModel.GetDgnDb();}
-        virtual DgnModelR _GetOutputModel() {return m_destModel;}
-        virtual DgnElementPtr _CreateCapturedSolutionElement(DgnDbStatus& status, DgnClassId iclass, DgnElement::Code const& icode); // (rarely need to override this)
-        virtual DgnElementCPtr _WriteSolution(DgnDbStatus&, DgnElementR) = 0;
-        HarvestedSolutionWriter(DgnModelR m, ComponentModel& c) : m_destModel(m), m_cm(c) {;}
-        };
-
-    // Makes a "catalog item" persistent
-    struct HarvestedSolutionInserter : HarvestedSolutionWriter
-        {
-        DEFINE_T_SUPER(HarvestedSolutionWriter)
-      protected:
-        DgnElementCPtr _WriteSolution(DgnDbStatus&, DgnElementR) override;
-      public:
-        HarvestedSolutionInserter(DgnModelR m, ComponentModel& c) : HarvestedSolutionWriter(m,c) {;}
-        };
-
-    // Makes a unique/single solution persistent
-    struct HarvestedSingletonInserter : HarvestedSolutionInserter
-        {
-        DEFINE_T_SUPER(HarvestedSolutionInserter)
-      protected:
-        DgnElementCPtr _WriteSolution(DgnDbStatus&, DgnElementR) override;
-      public:
-        HarvestedSingletonInserter(DgnModelR m, ComponentModel& c) : HarvestedSolutionInserter(m,c) {;}
-        };
-
-    // Updates any kind of persistent solution element
-    struct HarvestedSolutionUpdater : HarvestedSolutionWriter
-        {
-        DEFINE_T_SUPER(HarvestedSolutionWriter)
-      protected:
-        DgnElementCPtr m_existing;
-        DgnElementCPtr _WriteSolution(DgnDbStatus&, DgnElementR) override;
-      public:
-        HarvestedSolutionUpdater(DgnModelR m, ComponentModel& c, DgnElementCR e) : HarvestedSolutionWriter(m, c), m_existing(&e) {;}
-        };
-
-private:
-    CompProps m_compProps;
-    ModelSolverDef m_solver;
+protected:
+    Utf8String m_componentECClass;
 
     CoordinateSpace _GetCoordinateSpace() const override final {return CoordinateSpace::Local;}
-    void _GetSolverOptions(Json::Value&);
-    DgnDbStatus _OnDelete() override;
+    DGNPLATFORM_EXPORT DgnDbStatus _OnDelete() override;
+    //DgnDbStatus _OnUpdate() override;
+    DGNPLATFORM_EXPORT void _InitFrom(DgnModelCR other) override;
 
-    void _InitFrom(DgnModelCR other) override;
+    DGNPLATFORM_EXPORT virtual void _WriteJsonProperties(Json::Value&) const override;
+    DGNPLATFORM_EXPORT virtual void _ReadJsonProperties(Json::Value const&) override;
 
-    DgnModelPtr _CloneForImport(DgnDbStatus* stat, DgnImportContext& importer) const override;
-    void _OnValidate() override;
-
-    DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement& statement, ECSqlClassParamsCR params) override;
-    DgnDbStatus _BindInsertParams(BeSQLite::EC::ECSqlStatement& statement) override;
-    DgnDbStatus _BindUpdateParams(BeSQLite::EC::ECSqlStatement& statement) override;
-
-    void _WriteJsonProperties(Json::Value&) const override;//!< @private
-    void _ReadJsonProperties(Json::Value const&) override;//!< @private
-
-    DgnElement::Code CreateCapturedSolutionCode(Utf8StringCR slnId);
-
-    DgnDbStatus HarvestSolution(bvector<bpair<DgnSubCategoryId, DgnGeomPartId>>& geomBySubcategory, bvector<DgnElementCPtr>& nestedInstances);
-    DgnElementPtr CreateCapturedSolutionElement(DgnDbStatus& status, DgnElement::Code const& icode, bvector<bpair<DgnSubCategoryId, DgnGeomPartId>> const&, HarvestedSolutionWriter& writer);
-    DgnElementCPtr MakeCapturedSolutionElement(DgnDbStatus& status, DgnElement::Code const& icode, HarvestedSolutionWriter& WriterHandler);
-
-    void SetSolver(ModelSolverDef const& solver) { m_solver = solver; }
-
-    DgnDbStatus BindInsertAndUpdateParams(BeSQLite::EC::ECSqlStatement& statement);
+    DGNPLATFORM_EXPORT ComponentModel(DgnDbR db, DgnModel::Code, Utf8StringCR defName);
 
 public:
-    //! @private - used in testing only 
-    DGNPLATFORM_EXPORT DgnDbStatus Solve(ModelSolverDef::ParameterSet const& parameters);
+    ComponentModel(CreateParams const& params) : DgnModel3d(params) {;} //!< @private
 
-    //! Get the solver that is used to validate this model.
-    ModelSolverDef const& GetSolver() const { return m_solver; }
-    ModelSolverDef& GetSolver() { return m_solver; }
+    //! Create a ComponentModel that can be used by a component definition
+    //! @param db The DgnDb that is intended to hold the new model
+    //! @param componentDefClassFullName The full ECSQL name of the component definition ECClass
+    //! @return a new, non-persistent component model
+    DGNPLATFORM_EXPORT static ComponentModelPtr Create(DgnDbR db, Utf8StringCR componentDefClassFullName);
 
-    //! Get solver options
-    DGNPLATFORM_EXPORT void GetSolverOptions(Json::Value& options);
+    Utf8StringCR GetComponentECClassFullName() const {return m_componentECClass;}
 
-    //! @private - used only by ElementCopier
-    static void OnElementCopied(DgnElementCR outputElement, DgnElementCR sourceElement, DgnCloneContext&);
-    //! @private - used only by importer
-    static void OnElementImported(DgnElementCR outputElement, DgnElementCR sourceElement, DgnImportContext&);
+DGNPLATFORM_EXPORT static void OnElementCopied(DgnElementCR outputElement, DgnElementCR sourceElement, DgnCloneContext&); //!< @private
+DGNPLATFORM_EXPORT static void OnElementImported(DgnElementCR outputElement, DgnElementCR sourceElement, DgnImportContext&); //!< @private
+};
 
-    DGNPLATFORM_EXPORT explicit ComponentModel(CreateParams const& params);
+//=======================================================================================
+//! A component definition.
+// @bsiclass                                                    Sam.Wilson      12/15
+//=======================================================================================
+struct ComponentDef : RefCountedBase
+{
+ private:
+    DgnDbR m_db;
+    ECN::ECClassCR m_class;
+    ECN::IECInstancePtr m_ca;
+    ComponentModelPtr m_model;
 
-    /** @name Component Model Properties */
-    /** @{ */
+    DGNPLATFORM_EXPORT static Utf8String GetCaValueString(ECN::IECInstanceCR, Utf8CP propName);
+    DGNPLATFORM_EXPORT ECN::IECInstancePtr GetPropSpecCA(ECN::ECPropertyCR prop);
 
-    //! Query if the ComponentModel is correctly defined.
-    DGNPLATFORM_EXPORT bool IsValid() const;
+    static Utf8String GetClassECSqlName(ECN::ECClassCR cls) {Utf8String ns(cls.GetSchema().GetNamespacePrefix()); return ns.append(".").append(cls.GetName());}
+    Utf8String GetClassECSqlName() const {return GetClassECSqlName(m_class);}
 
-    //! Get the full (namespace.class) name of the ECClass that should be used when creating an Item from this component.
-    DGNPLATFORM_EXPORT Utf8String GetItemECClassName() const;
+    Utf8String GetGeneratedName() const;
+    DgnElement::Code CreateVariationCode(Utf8StringCR slnId);
 
-    //! Get the name of the category that will be used by Items that should be harvested and that should be used when creating an instance Item from this component.
-    //! Items in this model that are in other categories should be treated as construction geometry.
-    DGNPLATFORM_EXPORT Utf8String GetItemCategoryName() const;
+    //! Test if the specified code is that of a component variation instance element.
+    static bool IsComponentVariationCode(DgnElement::Code const& icode);
 
-    //! Get the name of the CodeAuthority that should be used when creating an instance Item from this component.
-    DGNPLATFORM_EXPORT Utf8String GetItemCodeAuthority() const;
-
-    //! Get the name of the component.
-    Utf8CP GetModelName() const { return GetCode().GetValueCP(); }
-
-    /** @} */
-
-    /** @name Querying Component Models */
-    /** @{ */
-
-    //! Look up a component model by name
-    //! @param db The DgnDb that contains the component model
-    //! @param name The name of the component model
-    //! @return A pointer to the component model or an invalid pointer if not found
-    DGNPLATFORM_EXPORT static ComponentModelPtr FindModelByName(DgnDbR db, Utf8StringCR name);
-
-    /** @} */
-
-    /** @name Capturing Solutions */
-    /** @{ */
-
-    //! Captures the result of solving for the specified parameters. This may be called to create an Item in a solution, or it may be called to capture a unique, singleton solution.
-    //! @param[out] stat        Optional. If not null and if the solution cannot be captured, then an error code is stored here to explain what happened, as explained below.
-    //! @param[in] destModel    The output model, where the captured solution item(s) is(are) stored.
-    //! @param[in] parameters   The parameters that specify the solution
-    //! @param[in] solutionItemName The name of the Item to be created in the destModel. This cannot be blank, and it must be unique among all captured solutions for this component.
-    //! @return A handle to the Item that was created and persisted in \a destModel. If more than one element was created, the returned element is the parent.
-    //! @note This function is used only for solutions that result in DgnElements. That is, the ECClass identified by #GetItemECClassName must be a subclass of DgnElement.
-    //! @note When a solution cannot be captured, the error code will be:
-    //!     * DgnDbStatus::ValidationFailed - The model could not be solved, possibly because the values in \a parameters are invalid.
-    //!     * DgnDbStatus::DuplicateCode - An Item already exists with the same name for this component.
-    //!     * DgnDbStatus::NotFound - no element in the solution is in the category identified by #GetItemCategoryName.
-    //!     * DgnDbStatus::SQLiteError or DgnDbStatus::WriteError - The solution could not be written to the Db. 
-    //!     * DgnDbStatus::LockNotHeld - Failure to lock this component model or the output model.
-    //!     * DgnDbStatus::InvalidCategory - The category identified by #GetItemCategoryName does not exist in this Db.
-    //!     * DgnDbStatus::MissingDomain - The ECClass identified by #GetItemECClassName does not exist in this Db.
-    //!     * DgnDbStatus::MissingHandler - The handler for the ECClass identified by #GetItemECClassName has not been registered.
-    //!     * DgnDbStatus::WrongClass - The ECClass identified by #GetItemECClassName is not a subclass of DgnElement.
-    //! @see MakeInstance, QuerySolutionByName
-    DGNPLATFORM_EXPORT DgnElementCPtr CaptureSolution(DgnDbStatus* stat, SpatialModelR destModel, ModelSolverDef::ParameterSet const& parameters, Utf8StringCR solutionItemName);
-
-    //! Test if the specified code is that of a captured solution element.
-    DGNPLATFORM_EXPORT static bool IsCapturedSolutionCode(DgnElement::Code const& icode);
-
-    //! Delete the specified solution Item. This function also deletes the ECRelationship that relates the Item to this component model.
-    //! @return DgnDbStatus::BadRequest if \a solutionItem is not an element that capatures a solution to this component model.
-    //! @note This function does not delete all existing instances of the specified solution Item
-    //! @see MakeInstance
-    DGNPLATFORM_EXPORT DgnDbStatus DeleteSolution(DgnElementCR solutionItem);
-
-    //! Search for all captured solutions for this component model
-    //! @param solutions    Where to return the IDs of the captured solutions
-    //! @see CaptureSolution, QuerySolutionById, QuerySolutionByName, MakeInstance
-    DGNPLATFORM_EXPORT void QuerySolutions(bvector<DgnElementId>& solutions);
-
-    //! Get the specified captured solution element. 
-    //! This function looks up an element by ElementId and then calls QuerySolutionInfo.
-    //! This method is better than DgnElements::Get, in that it \em also checks that the specified DgnElementId identifies an element that captures a solution to this component model
-    //! and returns information about the solution.
-    //! @param[out] capturedSolutionElement The element that captures the solution
-    //! @param[out] params      The parameters that were used to generate the specified captured solution element
-    //! @param[in] capturedSolutionElementId The ID of the captured solution element
-    //! @return non-zero error status if \a capturedSolutionElementId does not identify an element that captures a solution of this component model
-    //! @see CaptureSolution, QuerySolutionByName, QuerySolutionInfo
-    DGNPLATFORM_EXPORT DgnDbStatus QuerySolutionById(DgnElementCPtr& capturedSolutionElement, ModelSolverDef::ParameterSet& params, DgnElementId capturedSolutionElementId);
+    //! This is the basic logic to create an instance of this component. It is used to create variations and singletons.
+    DgnElementCPtr MakeInstance0(DgnDbStatus* stat, DgnModelR targetModel, ECN::IECInstanceCR parameters, DgnElement::Code const& code);
     
-    //! Get the element that captures the result of solving for the captured solution element Name.
-    //! This function looks up an element by code and then calls QuerySolutionInfo.
-    //! This method is better than DgnElements::Get, in that it \em also checks that the specified DgnElementId identifies an element that captures a solution to this component model
-    //! and returns information about the solution.
-    //! @param[out] capturedSolutionElement The element that captures the solution
-    //! @param[out] params      The parameters that were used to generate the specified captured solution element
-    //! @param[in] capturedSolutionName The name of the captured solution element
-    //! @return non-zero error status if \a capturedSolutionName does not identify an element that captures a solution of this component model
-    //! @see CaptureSolution, QuerySolutionById, QuerySolutionInfo
-    DGNPLATFORM_EXPORT DgnDbStatus QuerySolutionByName(DgnElementCPtr& capturedSolutionElement, ModelSolverDef::ParameterSet& params, Utf8StringCR capturedSolutionName);
+    //! Compare two instances and return true if their parameter values are the same.
+    //! @note This function infers that that parameters to be compared are the properties of \a lhs that are not ECInstanceId and are not NULL.
+    DGNPLATFORM_EXPORT bool HaveEqualParameters(ECN::IECInstanceCR lhs, ECN::IECInstanceCR rhs, bool compareOnlyInstanceParameters = true);
 
-    //! Try to find a captured solution for this component model with the specified parameters.
-    //! @param[out] capturedSolutionElement The element that captures the solution
-    //! @param[in] params      A set of parameters 
-    //! @return non-zero error status if no solution based on the specified parameters has been captured.
-    DGNPLATFORM_EXPORT DgnDbStatus QuerySolutionByParameters(DgnElementCPtr& capturedSolutionElement, ModelSolverDef::ParameterSet const& params);
+    //! Copy instance parameters from source to target
+    DGNPLATFORM_EXPORT void CopyInstanceParameters(ECN::IECInstanceR target, ECN::IECInstanceCR source);
 
-    //! Get the ComponentModel and parameters that were used to generate the specified captured solution element
-    //! @param[out] params      The parameters that were used to generate the specified captured solution element
-    //! @param[in] capturedSolutionElement  The captured solution element that is to be queried
-    //! @return non-zero error status if \a capturedSolution is not an element that captures a solution of this component model
-    //! @see MakeInstance
-    DGNPLATFORM_EXPORT DgnDbStatus QuerySolutionInfo(ModelSolverDef::ParameterSet& params, DgnElementCR capturedSolutionElement);
+    ComponentDef(DgnDbR db, ECN::ECClassCR componentDefClass);
+    ~ComponentDef();
 
-    //! Get the ComponentModel and parameters that were used to generate the specified captured solution element
-    //! @param[out] cmid        The ID of the ComponentModel that was used to generate the specified captured solution element
-    //! @param[out] params      The parameters that were used to generate the specified captured solution element
-    //! @param[in] capturedSolutionElement The captured solution element
-    //! @return non-zero error status if \a capturedSolution is not the solution of any component model
-    //! @see MakeInstance
-    DGNPLATFORM_EXPORT static DgnDbStatus QuerySolutionInfo(DgnModelId& cmid, ModelSolverDef::ParameterSet& params, DgnElementCR capturedSolutionElement);
+ public:
+    //! @private - called only by componenteditor
+    DGNPLATFORM_EXPORT DgnDbStatus GenerateGeometry(ECN::IECInstanceCR variationSpec);
 
-    //! Helper class for importing component models and their captured solutions
-    struct Importer : DgnImportContext
+    //! Get a list of all of the component definitions derived from the specified base class in the specified DgnDb
+    //! @param[out] componentDefs    Where to return the results
+    //! @param[in] db               The Db to search
+    //! @param[in] baseClass        The base class to start from
+    DGNPLATFORM_EXPORT static void QueryComponentDefs(bvector<DgnClassId>& componentDefs, DgnDbR db, ECN::ECClassCR baseClass);
+
+    //! Make a ComponentDef object
+    //! @param db           The DgnDb that contains the component def
+    //! @param componentDefClass   The ECClass that defines the component
+    //! @param status       If not null, an error code in case the component definition could not be returned
+    //! @note possible status values include:
+    //! DgnDbStatus::BadModel - the component definition specifies a model, but the model does not exist in \a db
+    //! DgnDbStatus::InvalidCategory - the component definition's category cannot be found in \a db
+    //! DgnDbStatus::WrongClass - \a componentDefClass is not a component definition ECClass
+    DGNPLATFORM_EXPORT static ComponentDefPtr FromECClass(DgnDbStatus* status, DgnDbR db, ECN::ECClassCR componentDefClass);
+
+    //! Make a ComponentDef object
+    //! @param db           The DgnDb that contains the component def
+    //! @param componentDefClassId Identfies the ECClass that defines the component
+    //! @param status       If not null, an error code in case the component definition could not be returned
+    //! @see FromECClass
+    DGNPLATFORM_EXPORT static ComponentDefPtr FromECClassId(DgnDbStatus* status, DgnDbR db, DgnClassId componentDefClassId);
+
+    //! Make a ComponentDef object
+    //! @param db           The DgnDb that contains the component def
+    //! @param ecsqlClassName   The full ECSQL name of the ECClass that defines the component
+    //! @param status       If not null, an error code in case Create failed
+    //! @see FromECClass
+    DGNPLATFORM_EXPORT static ComponentDefPtr FromECSqlName(DgnDbStatus* status, DgnDbR db, Utf8StringCR ecsqlClassName);
+
+    //! Get the ComponentDef corresponding to the specified component instance
+    //! @param instance     An element that might be an instance of a component
+    //! @param status       If not null, an error code in case the component definition could not be returned
+    //! @see FromECClass
+    DGNPLATFORM_EXPORT static ComponentDefPtr FromInstance(DgnDbStatus* status, DgnElementCR instance);
+
+    //! Get the ComponentDef corresponding to the specified ComponentModel
+    //! @param model        A ComponentModel
+    //! @param status       If not null, an error code in case the component definition could not be returned
+    //! @see FromECClass
+    DGNPLATFORM_EXPORT static ComponentDefPtr FromComponentModel(DgnDbStatus* status, ComponentModelCR model);
+
+    struct GeometryGenerator
         {
-        ComponentModelR m_sourceComponent;
-        ComponentModelPtr m_destComponent;
-
-        //! Construct a new importer
-        DGNPLATFORM_EXPORT Importer(DgnDbR destDb, ComponentModel& sourceComponent);
-
-        //! If necessary, set the destination component model. 
-        //! @note This is rarely needed. ImportComponentModel will set the destination model automatically.
-        void SetDestComponent(ComponentModelR m) {m_destComponent=&m;}
-
-        //! Import the component model.
-        //! @param[out] status  Optional. If not null, then an error code is stored here in case the clone fails.
-        //! @return the newly created component model in the destinataion Db
-        DGNPLATFORM_EXPORT ComponentModelPtr ImportComponentModel(DgnDbStatus* status = nullptr);
-
-        //! Import all or selected solutions of this component model.
-        //! @param destModel    The model to which solutions are to be copied. 
-        //! @param solutionFilter Optional. If not empty, this is the list of solutions to import. If empty, then all solutions are imported.
-        //! @return non-zero error status if the import failed, including \a DgnDbStatus::WrongDgnDb if \a destModel is not in the
-        //!         same DgnDb as the destination component model, \a DgnDbStatus::WrongModel if \a destModel is the same as the destination component model,
-        //!         or \a DgnDbStatus::BadModel if the destination component model is not set, or some other
-        //!         error code if the import of any individual solution Item fails.
-        //! @note \a destModel must be different from but in the same DgnDb as the destination component model.
-        DGNPLATFORM_EXPORT DgnDbStatus ImportSolutions(DgnModelR destModel, bvector<AuthorityIssuedCode> const& solutionFilter = bvector<AuthorityIssuedCode>());
+        virtual DgnDbStatus _GenerateGeometry(ECN::IECInstanceCR variationSpec) = 0;
         };
 
-    //! Call this function if you update the solver definition itself.
-    DGNPLATFORM_EXPORT DgnDbStatus UpdateSolutionsAndInstances();
+    //! Component parameter variation scope
+    enum class ParameterVariesPer
+    {
+        Instance = 0,   //!< Varies per instance
+        Variation = 1   //!< Varies per Variation
+    };
 
-    /** @} */
+    DgnDbR GetDgnDb() const {return m_db;}
 
-    /** @name Placing Instances of Captured Slutions */
-    /** @{ */
+    ECN::ECClassCR GetECClass() const {return m_class;}
 
-    //! Make a persistent copy of a specified solution Item, along with all of its children.
-    //! Call this function if you are sure that you just need a copy of an already captured solution.
-    //! @param[out] stat        Optional. If not null, then an error code is stored here in case the copy fails.
+    DGNPLATFORM_EXPORT Utf8String GetModelName() const;
+    DGNPLATFORM_EXPORT ComponentModelR GetModel();
+
+    DGNPLATFORM_EXPORT bool UsesTemporaryModel() const;
+
+    //! Get the name of this component
+    Utf8String GetName() const {return m_class.GetName();}
+
+    DGNPLATFORM_EXPORT Utf8String GetElementGeneratorName() const;
+
+    DGNPLATFORM_EXPORT Utf8String GetCategoryName() const;
+    DGNPLATFORM_EXPORT DgnCategoryId QueryCategoryId() const;
+
+    DGNPLATFORM_EXPORT Utf8String GetCodeAuthorityName() const;
+    DGNPLATFORM_EXPORT DgnAuthorityCPtr GetCodeAuthority() const;
+
+    DGNPLATFORM_EXPORT ECN::IECInstancePtr MakeVariationSpec();
+
+    //! Return the properties of the specified instance of this component in the form of an IECInstance.
+    //! @param instance The component instance element.
+    //! @returns nullptr if \a instance is an instance of a component
+    DGNPLATFORM_EXPORT static ECN::IECInstancePtr GetParameters(DgnElementCR instance);
+
+    //! Export this component definition to the specified DgnDb. 
+    //! @param context The id remapping context to use
+    //! @param exportSchema Export the ECSchema that includes this component definition's ECClass? The export will fail if \a destDb does not contain this component definition's ECClass.
+    //! @param exportCategory Export the Category used by this component definition? The export will fail if \a destDb does not contain this component definition's Category.
+    //! @return non-zero error if the import failed.
+    DGNPLATFORM_EXPORT DgnDbStatus Export(DgnImportContext& context, bool exportSchema = true, bool exportCategory = false);
+
+    //! Export variations of this component definition to the the specified model. 
+    //! @param destVariationsModel Write copies of variations to this model.
+    //! @param sourceVariationsModel Query variations in this model.
+    //! @param context The id remapping context to use
+    //! @param variationFilter If specified, the variations to export. If not specified and if \a destVariationsModel is specified, then all variations are exported.
+    //! @return non-zero error if the import failed.
+    DGNPLATFORM_EXPORT DgnDbStatus ExportVariations(DgnModelR destVariationsModel, DgnModelId sourceVariationsModel, DgnImportContext& context, bvector<DgnElementId> const& variationFilter = bvector<DgnElementId>());
+
+    //! Creates a variation of a component, based on the specified parameters.
+    //! @param[out] stat        Optional. If not null and if the variation cannot be computed, then an error code is stored here to explain what happened, as explained below.
+    //! @param[in] destModel    The output model, where the variation instance should be stored.
+    //! @param[in] variationParameters  The parameters that specify the solution. Note that the ECClass of this instance also identifies the component.
+    //! @param[in] variationName The name of the variation that is to be created in the destModel. This cannot be blank, and it must be unique among all variations for this component.
+    //! @return A handle to the variation instance that was created and persisted in \a destModel. If more than one element was created, the returned element is the parent. If the instance
+    //! cannot be created, then this function returns nullptr and sets \a stat to a non-error status. Some of the possible error values include:
+    //!     * DgnDbStatus::WrongClass - \a variationParameters is not an instance of a component definition ECClass.
+    //!     * DgnDbStatus::BadRequest - The component's geometry could not be generated, possibly because the values in \a variationParameters are invalid.
+    //!     * DgnDbStatus::DuplicateCode - An element already exists with a name equal to \a variationName
+    //! @see MakeInstanceOfVariation
+    DGNPLATFORM_EXPORT static DgnElementCPtr MakeVariation(DgnDbStatus* stat, DgnModelR destModel, ECN::IECInstanceCR variationParameters, Utf8StringCR variationName);
+
+    //! Delete a variation.
+    //! @return non-zero error status if \a variation is not a variation of any componentdef, or if it is a variation but is currently used by existing instances.
+    DGNPLATFORM_EXPORT static DgnDbStatus DeleteVariation(DgnElementCR variation);
+
+    //! Look up a variation by name
+    //! @param[in] variationName The name of the variation to look up.
+    //! @return the variation or an invalid handle if not found
+    DGNPLATFORM_EXPORT DgnElementCPtr QueryVariationByName(Utf8StringCR variationName);
+
+    //! Search for all variations of this component definition
+    //! @param variations    Where to return the IDs of the captured solutions
+    //! @param variationModelId The model that contains the variations
+    //! @see MakeVariation, QueryVariationByName
+    DGNPLATFORM_EXPORT void QueryVariations(bvector<DgnElementId>& variations, DgnModelId variationModelId);
+
+    //! Get the scope of the specified property
+    DGNPLATFORM_EXPORT ParameterVariesPer GetVariationScope(ECN::ECPropertyCR prop);
+
+    //! Make either a persistent copy of a specified variation or a unique instance of the component definition.
+    //! If \a variation has instance parameters, then the \a instanceParameters argument may be passed into specific the instance parameter values to use.
+    //! If the values in \a instanceParameters differs from the instance parameters of \a variation, then a unique instance is created.
+    //! If \a instanceParameters is not specified or if it matches the instance parameters of \a variation, then a copy of \a variation is made.
+    //! @note Per-type parameters are ignored when comparing \a parameters to \a variation. It is illegal for the caller to specify new values for per-type parameters.
+    //! @param[out] stat        Optional. If not null, then an error code is stored here in case the copy fails. Set to DgnDbStatus::WrongClass if \a variation is not an instance of a component. Otherwise, see ElementCopier for possible error codes.
     //! @param[in] targetModel  The model where the instance is to be inserted
-    //! @param[in] capturedSolution  The captured solution element that is to be copied
-    //! @param[in] code         Optional. The code to assign to the new item. If invalid, then a code will be generated by the CodeAuthority associated with this component model
-    //! @return the instance item if successful
-    //! @see QuerySolutionByName
-    DGNPLATFORM_EXPORT static DgnElementCPtr MakeInstance(DgnDbStatus* stat, DgnModelR targetModel, DgnElementCR capturedSolution, DgnElement::Code const& code = DgnElement::Code());
+    //! @param[in] variation    The variation that is to be turned into an instance.
+    //! @param[in] instanceParameters   The instance parameters to use. If null, then default instance parameter values are used. Pass null if the variation has no instance parameters.
+    //! @param[in] code         Optional. The code to assign to the new instance. If invalid, then a code will be generated by the CodeAuthority associated with this component definition.
+    //! @return A handle to the instance that was created and persisted in \a destModel. If more than one element was created, the returned element is the parent. If the instance
+    //! cannot be created, then this function returns nullptr and sets \a stat to a non-error status. Some of the possible error values include:
+    //!     * DgnDbStatus::WrongClass - \a variation is not an instance of a component definition ECClass or \a the ECClass of instanceParms and of \a variation do not match.
+    //!     * DgnDbStatus::WrongDgnDb - \a variation and \a targetModel must both be in the same DgnDb.
+    //!     * DgnDbStatus::NotFound - \a parameters does not match the parameters of \a variation. Call 
+    //! @see MakeVariation
+    DGNPLATFORM_EXPORT static DgnElementCPtr MakeInstanceOfVariation(DgnDbStatus* stat, DgnModelR targetModel, DgnElementCR variation, ECN::IECInstanceCP instanceParameters, DgnElement::Code const& code = DgnElement::Code());
 
-    //! Make a persistent copy of a specified solution Item or create a unique/singleton Item.
-    //! Call this function if you might need a unique/singleton solution.
-    //! If \a capturedSolutionName is valid and identifies an existing solution \em and if \a parameters matches the captured solution's parameters, then this function calls MakeInstance to make a copy of the captured solution.
-    //! Otherwise, this function calls CaptureSolution to create a unique/singleton solution.
+    //! Make a unique instance that is not based on a pre-defined variation. This method must be used if \a parameters include per-instance parameters that do not match the default values
+    //! of any pre-defined variation. This method may also be used for components that do not have pre-defined variations.
+    //! @note This function should not be used when the compponent definition does define a set of variations. In that case, call MakeInstanceOfVariation instead.
     //! @param[out] stat        Optional. If not null, then an error code is stored here in case the creation of the instance fails.
     //! @param[in] targetModel  The model where the instance is to be inserted
-    //! @param[in] capturedSolutionName  The name of the captured solution element that is to be copied, if any. Pass the empty string to create a unique/singleton solution.
-    //! @param[in] parameters   The parameters that specify the solution
+    //! @param[in] parameters   The parameters that specify the desired variation
     //! @param[in] code         Optional. The code to assign to the new item. If invalid, then a code will be generated by the CodeAuthority associated with this component model
-    //! @return the instance item if successful
-    //! @see QuerySolutionByName
-    DGNPLATFORM_EXPORT DgnElementCPtr MakeInstance(DgnDbStatus* stat, DgnModelR targetModel, Utf8StringCR capturedSolutionName,
-                                                    ModelSolverDef::ParameterSet const& parameters, DgnElement::Code const& code = DgnElement::Code());
+    //! @return A handle to the instance that was created and persisted in \a destModel. If more than one element was created, the returned element is the parent. If the instance
+    //! cannot be created, then this function returns nullptr and sets \a stat to a non-error status. Some of the possible error values include:
+    //!     * DgnDbStatus::WrongClass - \a parameters is not an instance of a component definition ECClass.
+    //!     * DgnDbStatus::WrongDgnDb - \a parameters and \a targetModel must both be in the same DgnDb.
+    //!     * DgnDbStatus::BadRequest - The component's geometry could not be generated, possibly because the values in \a parameters are invalid.
+    //! @see MakeInstanceOfVariation
+    DGNPLATFORM_EXPORT static DgnElementCPtr MakeUniqueInstance(DgnDbStatus* stat, DgnModelR targetModel, ECN::IECInstanceCR parameters, DgnElement::Code const& code = DgnElement::Code());
+};
 
-    //! Look up the captured solution element that was used to generate the specified instance
-    //! @param instance An element that is an instance of a solution to some component model
-    //! @return the captured solution element that was used to generate the specified instance or nullptr if \a instance is not in fact an instance of any known component model
-    DGNPLATFORM_EXPORT static DgnElementCPtr QuerySolutionFromInstance(DgnElementCR instance);
+//=======================================================================================
+//! A helper class that makes it easier to create a ComponentDefinition ECClass
+//=======================================================================================
+struct ComponentDefCreator
+{
+public:
+    struct PropertySpec
+        {
+        Utf8String m_name;
+        ECN::PrimitiveType m_type;
+        ComponentDef::ParameterVariesPer m_variesPer;
+        PropertySpec(Utf8StringCR n, ECN::PrimitiveType pt, ComponentDef::ParameterVariesPer vp) : m_name(n), m_type(pt), m_variesPer(vp) {;} 
+        };
 
-    //! Search for all instances of the specified captured solution for this component model
-    //! @param instances    Where to return the IDs of the instances
-    //! @param solutionId   The captured solution element
-    DGNPLATFORM_EXPORT void QueryInstances(bvector<DgnElementId>& instances, DgnElementId solutionId);
+private:
+    DgnDbR m_db;
+    ECN::ECSchemaR m_schema;
+    ECN::ECClassCR m_baseClass;
+    Utf8String m_name;
+    Utf8String m_scriptName;
+    Utf8String m_categoryName;
+    Utf8String m_codeAuthorityName;
+    Utf8String m_modelName;
+    bvector<PropertySpec> m_propSpecs;
 
-    /** @} */
+    ECN::IECInstancePtr CreatePropSpecCA();
+    ECN::IECInstancePtr CreateSpecCA();
+    ECN::IECInstancePtr AddSpecCA(ECN::ECClassR);
+
+public:
+    DGNPLATFORM_EXPORT static ECN::ECSchemaPtr GenerateSchema(DgnDbR, Utf8StringCR schemaNameIn);
+
+    DGNPLATFORM_EXPORT static ECN::ECSchemaCP ImportSchema(DgnDbR db, ECN::ECSchemaCR schemaIn, bool updateExistingSchemas);
+  
+    ComponentDefCreator(DgnDbR db, ECN::ECSchemaR schema, Utf8StringCR name, ECN::ECClassCR baseClass, Utf8StringCR geomgen, Utf8StringCR cat, Utf8StringCR codeauth)
+        :m_db(db), m_schema(schema), m_baseClass(baseClass), m_name(name), m_scriptName(geomgen), m_categoryName(cat), m_codeAuthorityName(codeauth)
+        {
+        }
+
+    //! Set the model name. The default is no model name, indicating that the component should use a temporary "sandbox" model.
+    void SetModelName(Utf8StringCR n) {m_modelName=n;}
+
+    void AddPropertySpec(PropertySpec const& s) {m_propSpecs.push_back(s);}
+
+    DGNPLATFORM_EXPORT ECN::ECClassCP GenerateECClass();
 };
 
 //=======================================================================================
@@ -1402,8 +1339,6 @@ namespace dgn_ModelHandler
     struct EXPORT_VTABLE_ATTRIBUTE Component : Model
     {
         MODELHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_ComponentModel, ComponentModel, Component, Model, DGNPLATFORM_EXPORT)
-    protected:
-        DGNPLATFORM_EXPORT virtual void _GetClassParams(ECSqlClassParamsR params) override;
     };
 
     //! The ModelHandler for SectionDrawingModel

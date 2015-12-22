@@ -378,8 +378,6 @@ $(coreObjs)AnnotationTableStroker$(oext) :          $(DgnCoreDir)AnnotationTable
 
 $(o)ECUtils$(oext) :                                $(DgnCoreDir)ECUtils.cpp $(DgnPlatformAPISrc)ECUtils.h ${MultiCompileDepends}
 
-$(o)ModelSolverDef$(oext) :                         $(DgnCoreDir)ModelSolverDef.cpp $(DgnPlatformAPISrc)ModelSolverDef.h ${MultiCompileDepends}
-
 $(o)RenderMaterial$(oext) :                         $(DgnCoreDir)RenderMaterial.cpp $(DgnPlatformAPISrc)RenderMaterial.h ${MultiCompileDepends}
 
 #$(o)SolarUtility$(oext) :                          $(DgnCoreDir)SolarUtility.cpp $(DgnPlatformAPISrc)SolarUtility.h ${MultiCompileDepends}

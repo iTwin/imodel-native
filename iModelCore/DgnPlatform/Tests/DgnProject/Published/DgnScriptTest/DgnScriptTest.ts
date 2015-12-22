@@ -23,11 +23,11 @@ module DgnScriptTests {
         var catid: be.DgnObjectId = null;
         var categories: be.DgnObjectIdSet = be.DgnCategory.QueryCategories(db);
         for (var catiter = categories.Begin(); categories.IsValid(catiter); categories.ToNext(catiter))
-            {
+        {
             var cat = be.DgnCategory.QueryCategory(categories.GetId(catiter), db);
             if (cat.CategoryName == params.categoryName)
                 catid = cat.CategoryId;
-            }
+        }
         if (!catid)
             be.Script.ReportError('failed to find category ' + params.categoryName + ' using category iterator');
 
@@ -49,6 +49,56 @@ module DgnScriptTests {
             be.Script.ReportError('SetGeomStreamAndPlacement failed');
 
         ele.Insert();
+
+        //  EC API
+        var schemas: be.SchemaManager = db.Schemas;
+        var pe: be.ECClass = schemas.GetECClass(be.DGN_ECSCHEMA_NAME, be.DGN_CLASSNAME_PhysicalElement);
+        if (!pe)
+            be.Script.ReportError('SchemaManager.GetECClass could not find ' + be.DGN_ECSCHEMA_NAME + '.' + be.DGN_CLASSNAME_PhysicalElement);
+
+        var peprops: be.ECPropertyCollection = pe.Properties;
+        var foundCode: boolean = false;
+        var propertyCount: number = 0;
+        for (var propiter = peprops.Begin(); peprops.IsValid(propiter); peprops.ToNext(propiter))
+        {
+            var peprop: be.ECProperty = peprops.GetECProperty(propiter);
+            be.Logging.Message('DgnScriptTest', be.LoggingSeverity.Info, peprop.Name);
+            if (peprop.Name == 'Code')
+                foundCode = true;
+            ++propertyCount;
+        }
+        if (!foundCode)
+            be.Script.ReportError('ECPropertyCollection must have failed -- the Code property was not found');
+        if (propertyCount <= 2)
+            be.Script.ReportError('ECPropertyCollection must have failed -- there are more than 2 properties on PhysicalElement');
+
+
+        var baseclasses: be.ECClassCollection = pe.BaseClasses;
+        var foundSpatialElement: boolean = false;
+        var baseCount: number = 0;
+        for (var clsiter = baseclasses.Begin(); baseclasses.IsValid(clsiter); baseclasses.ToNext(clsiter))
+        {
+            var cls: be.ECClass = baseclasses.GetECClass(clsiter);
+            be.Logging.Message('DgnScriptTest', be.LoggingSeverity.Info, cls.Name);
+            if (cls.Name == 'SpatialElement')
+                foundSpatialElement = true;
+            ++baseCount;
+        }
+        if (!foundSpatialElement)
+            be.Script.ReportError('BaseClasses ECClassCollection must have failed -- I assume that PhysicalElement is derived from SpatialElement, but that base class was not found');
+        if (baseCount != 1)
+            be.Script.ReportError('BaseClasses ECClassCollection must have failed -- there should be 1 but I got ' + JSON.stringify(baseCount));
+
+        var derivedclasses: be.ECClassCollection = pe.DerivedClasses;
+        var derivedCount: number = 0;
+        for (var clsiter = derivedclasses.Begin(); derivedclasses.IsValid(clsiter); derivedclasses.ToNext(clsiter))
+        {
+            var cls: be.ECClass = derivedclasses.GetECClass(clsiter);
+            be.Logging.Message('DgnScriptTest', be.LoggingSeverity.Info, cls.Name);
+            ++derivedCount;
+        }
+        if (derivedCount == 0)
+            be.Script.ReportError('DerivedClasses ECClassCollection must have failed -- there should be at least 1');
 
         return 0;
     }

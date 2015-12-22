@@ -36,19 +36,6 @@ static RefCountedPtr<PhysicalElement> createPhysicalElement(DgnModelR model, Utf
     return el;
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      06/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-void JsDgnModel::DeleteAllElements() 
-    {
-    m_model->FillModel();
-    bvector<DgnElementCPtr> elementsInModel;
-    for (auto const& emapEntry : *m_model)
-        elementsInModel.push_back(emapEntry.second);
-    for (auto const& el : elementsInModel)
-        el->Delete();
-    }
-
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson                      06/15
 //---------------------------------------------------------------------------------------
@@ -89,60 +76,95 @@ JsDgnModelsP JsDgnDb::GetModels() {return new JsDgnModels(m_db->Models());}
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson                      12/15
 //---------------------------------------------------------------------------------------
-JsComponentModelP JsDgnModel::ToComponentModel() 
+JsComponentDefP JsComponentDef::FindByName(JsDgnDbP db, Utf8StringCR name) 
     {
-    ComponentModel* cm = ToDgnComponentModel();
-    return (nullptr == cm)? nullptr: new JsComponentModel(*cm);
+    ComponentDefPtr cdef = ComponentDef::FromECSqlName(nullptr, *db->m_db, name);
+    if (!cdef.IsValid())
+        return nullptr;
+    return new JsComponentDef(*cdef);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson                      12/15
 //---------------------------------------------------------------------------------------
-static BentleyStatus loadParams(ModelSolverDef::ParameterSet& params, ComponentModel& cm, Utf8StringCR paramsJSON)
+JsDgnCategoryP JsComponentDef::GetCategory() const 
     {
-    Json::Value paramsJsonValue(Json::objectValue);
-    if (!Json::Reader::Parse(paramsJSON.c_str(), paramsJsonValue))
-        return BSIERROR;
-
-    ModelSolverDef::ParameterSet newParameterValues = cm.GetSolver().GetParameters();
-    for (auto pname : paramsJsonValue.getMemberNames())
-        {
-        ModelSolverDef::Parameter* sparam = newParameterValues.GetParameterP(pname.c_str());
-        if (nullptr == sparam)
-            {
-            // *** TBD: print warning
-            continue;
-            }
-        ECN::ECValue ecv;
-        ECUtils::ConvertJsonToECValue(ecv, paramsJsonValue[pname], sparam->GetValue().GetPrimitiveType());
-        sparam->SetValue(ecv);
-        }
-    return BSISUCCESS;
+    if (!m_cdef.IsValid())
+        return nullptr;
+    DgnCategoryCPtr cat = DgnCategory::QueryCategory(m_cdef->GetCategoryName(), m_cdef->GetDgnDb());
+    return cat.IsValid()? new JsDgnCategory(*cat): nullptr;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson                      12/15
 //---------------------------------------------------------------------------------------
-JsDgnElement* JsComponentModel::MakeInstance(JsDgnModelP targetJsModel, Utf8StringCR capturedSolutionName, Utf8StringCR paramsJSON, JsAuthorityIssuedCodeP jscode)
+JsECClassP JsComponentDef::GetComponentECClass() const
     {
-    ComponentModel* cm = ToDgnComponentModel();
-    if (nullptr == cm || nullptr == targetJsModel || !targetJsModel->m_model.IsValid())
+    if (!m_cdef.IsValid())
         return nullptr;
-    DgnModelR targetModel = *targetJsModel->m_model;
+    return new JsECClass(m_cdef->GetECClass());
+    }
 
-    ModelSolverDef::ParameterSet params;
-    if (BSISUCCESS != loadParams(params, *cm, paramsJSON))
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Sam.Wilson                      12/15
+//---------------------------------------------------------------------------------------
+JsDgnElementP JsComponentDef::QueryVariationByName(Utf8StringCR variationName)
+    {
+    if (!m_cdef.IsValid())
         return nullptr;
+    auto velem = m_cdef->QueryVariationByName(variationName);
+    return velem.IsValid()? new JsDgnElement(*velem->CopyForEdit()): nullptr;
+    }
 
-    DgnElement::Code ecode;
-    if (nullptr != jscode)
-        ecode = jscode->m_code;
-
-    DgnElementCPtr instance = cm->MakeInstance(nullptr, targetModel, capturedSolutionName, params, ecode);
-    if (!instance.IsValid())
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Sam.Wilson                      12/15
+//---------------------------------------------------------------------------------------
+JsECInstanceP JsComponentDef::GetParameters(JsDgnElementP instance)
+    {
+    if (nullptr == instance || !instance->m_el.IsValid())
         return nullptr;
+    auto params = ComponentDef::GetParameters(*instance->m_el);
+    if (!params.IsValid())
+        return nullptr;
+    return new JsECInstance(*params);
+    }
 
-    return new JsDgnElement(*const_cast<DgnElementP>(instance.get()));
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Sam.Wilson                      12/15
+//---------------------------------------------------------------------------------------
+JsDgnElementP JsComponentDef::MakeInstanceOfVariation(JsDgnModelP targetModel, JsDgnElementP variation, JsECInstanceP instanceParameters, JsAuthorityIssuedCodeP code)
+    {
+    if (!m_cdef.IsValid() || nullptr == targetModel || !targetModel->m_model.IsValid() || nullptr == variation || !variation->m_el.IsValid())
+        return nullptr;
+    auto inst = m_cdef->MakeInstanceOfVariation(nullptr, *targetModel->m_model, *variation->m_el, 
+                                                instanceParameters? instanceParameters->m_instance.get(): nullptr, 
+                                                code? code->m_code: DgnElement::Code()); 
+    if (!inst.IsValid())
+        return nullptr;
+    return new JsDgnElement(*inst->CopyForEdit());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Sam.Wilson                      12/15
+//---------------------------------------------------------------------------------------
+JsDgnElementP JsComponentDef::MakeUniqueInstance(JsDgnModelP targetModel, JsECInstanceP instanceParameters, JsAuthorityIssuedCodeP code)
+    {
+    if (!m_cdef.IsValid() || nullptr == targetModel || !targetModel->m_model.IsValid() || nullptr == instanceParameters || !instanceParameters->m_instance.IsValid())
+        return nullptr;
+    auto inst = m_cdef->MakeUniqueInstance(nullptr, *targetModel->m_model, *instanceParameters->m_instance, code? code->m_code: DgnElement::Code()); 
+    if (!inst.IsValid())
+        return nullptr;
+    return new JsDgnElement(*inst->CopyForEdit());
+    }
+
+JsECClassP JsECClassCollection::GetECClass(JsECClassCollectionIteratorP iter) {return (IsValid(iter) && (nullptr != *iter->m_iter))? new JsECClass(**iter->m_iter): nullptr;}
+JsECPropertyP JsECPropertyCollection::GetECProperty(JsECPropertyCollectionIteratorP iter) {return (IsValid(iter) && (nullptr != *iter->m_iter))? new JsECProperty(**iter->m_iter): nullptr;}
+JsECDbSchemaManagerP JsDgnDb::GetSchemas() {return m_db.IsValid()? new JsECDbSchemaManager(m_db->Schemas()): nullptr;}
+
+JsECInstanceP JsECClass::MakeInstance() 
+    {
+    ECN::IECInstancePtr inst = m_ecClass? m_ecClass->GetDefaultStandaloneEnabler()->CreateInstance(): nullptr; 
+    return inst.IsValid()? new JsECInstance(*inst): nullptr;
     }
 
 //---------------------------------------------------------------------------------------

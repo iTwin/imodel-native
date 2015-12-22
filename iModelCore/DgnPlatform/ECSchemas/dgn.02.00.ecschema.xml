@@ -209,12 +209,6 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
             <ClassHasHandler xmlns="dgn.02.00" />
         </ECCustomAttributes>
         <BaseClass>Model3d</BaseClass>
-        <ECProperty propertyName="Solver" typeName="string" />
-        <!--  These are in the model's Props JSON
-        <ECProperty propertyName="ItemECClass" typeName="string" description="Full name of ECClass of Item that is customized by this model"/>
-        <ECProperty propertyName="ItemCategory" typeName="string" description="Name of Category used by harvestable Items in this model"/>
-        <ECProperty propertyName="ItemCodeAuthority" typeName="string" description="Name of CodeAuthority to be used when creating component instances"/>
-        -->
     </ECClass>
     <ECClass typeName="DefinitionModel" isDomainClass="True">
         <ECCustomAttributes>
@@ -622,43 +616,6 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
                     <Property name="ViewId" />
                 </Key>
             </Class>
-        </Target>
-    </ECRelationshipClass>
-
-    <!-- An Item in (a catalog/template model) can hold a soultion of a ComponentModel. 
-        There can be many Items, each holding a different solution (based on a unique set of parameters), of a single ComponentModel. 
-        There can be many different ComponentModels.
-    -->
-    <ECRelationshipClass typeName="SolutionOfComponent" isDomainClass="True" strength="referencing" strengthDirection="forward">
-        <Source cardinality="(0,N)" roleLabel="many unique solutions" polymorphic="True">
-            <Class class="Element" />
-        </Source>
-        <Target cardinality="(0,N)" roleLabel="of a ComponentModel" polymorphic="True">
-            <Class class="ComponentModel" />
-        </Target>
-        <!-- JSON representation of parameters that were used to solve the target model in order to produce the source element -->
-        <ECProperty propertyName="Parameters" typeName="string"/>
-    </ECRelationshipClass>
-
-    <!-- An Item can be a copy of a (template) Item. 
-        There can be many copies of a single template Item. 
-        There can be many different template Items. 
-    -->
-    <ECRelationshipClass typeName="InstantiationOfTemplate" isDomainClass="True" strength="referencing" strengthDirection="forward">
-        <ECCustomAttributes>
-            <ClassMap xmlns="ECDbMap.01.00">
-                <ECInstanceIdColumn>Id</ECInstanceIdColumn>
-            </ClassMap>
-            <LinkTableRelationshipMap xmlns="ECDbMap.01.00">
-                <SourceECInstanceIdColumn>InstanceId</SourceECInstanceIdColumn>
-                <TargetECInstanceIdColumn>TemplateId</TargetECInstanceIdColumn>
-            </LinkTableRelationshipMap>
-        </ECCustomAttributes>
-        <Source cardinality="(0,N)" roleLabel="many instances" polymorphic="True">
-            <Class class="Element" />
-        </Source>
-        <Target cardinality="(0,N)" roleLabel="of one template" polymorphic="True">
-            <Class class="Element"/>
         </Target>
     </ECRelationshipClass>
 
@@ -1261,6 +1218,21 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
         </Target>
     </ECRelationshipClass>
     
+    <!-- ////////////////////////////////////////////////////////////////////////////// -->
+    <!-- // Experimental classes -->
+    <!-- ////////////////////////////////////////////////////////////////////////////// -->
+
+    <ECClass typeName="ComponentSpecification" description="Defines a DgnComponent." displayLabel="Component Specification" isDomainClass="False" isCustomAttributeClass="True">
+        <ECProperty propertyName="Category" typeName="string" description="The name of the Category to assign to instances of this component. Must not be null." />
+        <ECProperty propertyName="CodeAuthority" typeName="string" description="The name of the CodeAuthority to use then assigning Codes to instances of this component. May be null." />
+        <ECProperty propertyName="ElementGenerator" typeName="string" description="The name of the script to execute in order to create a variation of the component. May be null if the component is based on persistent geometry. In that case, Model must not be null." />
+        <ECProperty propertyName="Model" typeName="string" description="The name of the model that the component definition uses to hold the persistent geometry and other data such as constraints. May be null for components that generate their geometry from scratch." />
+    </ECClass>
+
+    <ECClass typeName="ComponentParameterSpecification" description="Provides information about a property that plays the role of a parameter to a component's solver." displayLabel="Component Parameter Specification" isDomainClass="False" isCustomAttributeClass="True">
+        <ECProperty propertyName="VariesPer" typeName="string" description="Indicates if the parameter may be varied for individual instances or if it is fixed for all instances of a particular variation. Possible values: Variation or Instance." />
+    </ECClass>
+
     <!-- ////////////////////////////////////////////////////////////////////////////// -->
     <!-- // Deprecated classes -->
     <!-- ////////////////////////////////////////////////////////////////////////////// -->
