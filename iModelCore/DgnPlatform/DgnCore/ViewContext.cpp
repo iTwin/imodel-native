@@ -1489,10 +1489,10 @@ void DecorateContext::AddWorldDecoration(Render::GraphicR graphic, Render::OvrGr
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DecorateContext::AddWorldOverlay(Render::GraphicR graphic, Render::OvrGraphicParamsCP ovrParams)
     {
-    if (!m_decorations.m_cameraOverlay.IsValid())
-        m_decorations.m_cameraOverlay = new GraphicList;
+    if (!m_decorations.m_worldOverlay.IsValid())
+        m_decorations.m_worldOverlay = new GraphicList;
 
-    m_decorations.m_cameraOverlay->Add(graphic, m_target.ResolveOverrides(ovrParams), ovrParams ? ovrParams->GetFlags() : 0);
+    m_decorations.m_worldOverlay->Add(graphic, m_target.ResolveOverrides(ovrParams), ovrParams ? ovrParams->GetFlags() : 0);
     }
 
 /*---------------------------------------------------------------------------------**//**

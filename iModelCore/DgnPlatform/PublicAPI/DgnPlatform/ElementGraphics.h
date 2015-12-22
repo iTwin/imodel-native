@@ -14,24 +14,23 @@
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 
-struct EXPORT_VTABLE_ATTRIBUTE WireframeGeomUtil
+struct WireframeGeomUtil
 {
-DGNPLATFORM_EXPORT static CurveVectorPtr CollectCurves(ISolidPrimitiveCR, DgnDbR, bool includeEdges = true, bool includeFaceIso = false);
-DGNPLATFORM_EXPORT static CurveVectorPtr CollectCurves(MSBsplineSurfaceCR, DgnDbR, bool includeEdges = true, bool includeFaceIso = false);
-DGNPLATFORM_EXPORT static CurveVectorPtr CollectCurves(ISolidKernelEntityCR, DgnDbR, bool includeEdges = true, bool includeFaceIso = false);
+    DGNPLATFORM_EXPORT static CurveVectorPtr CollectCurves(ISolidPrimitiveCR, DgnDbR, bool includeEdges = true, bool includeFaceIso = false);
+    DGNPLATFORM_EXPORT static CurveVectorPtr CollectCurves(MSBsplineSurfaceCR, DgnDbR, bool includeEdges = true, bool includeFaceIso = false);
+    DGNPLATFORM_EXPORT static CurveVectorPtr CollectCurves(ISolidKernelEntityCR, DgnDbR, bool includeEdges = true, bool includeFaceIso = false);
 
-DGNPLATFORM_EXPORT static PolyfaceHeaderPtr CollectPolyface(ISolidKernelEntityCR, DgnDbR, IFacetOptionsR);
+    DGNPLATFORM_EXPORT static PolyfaceHeaderPtr CollectPolyface(ISolidKernelEntityCR, DgnDbR, IFacetOptionsR);
 
-DGNPLATFORM_EXPORT static void CollectCurves(ISolidKernelEntityCR, DgnDbR, bvector<CurveVectorPtr>& curves, bvector<Render::GeometryParams>& params, bool includeEdges = true, bool includeFaceIso = false);
-DGNPLATFORM_EXPORT static void CollectPolyfaces(ISolidKernelEntityCR, DgnDbR, bvector<PolyfaceHeaderPtr>& polyfaces, bvector<Render::GeometryParams>& params, IFacetOptionsR);
+    DGNPLATFORM_EXPORT static void CollectCurves(ISolidKernelEntityCR, DgnDbR, bvector<CurveVectorPtr>& curves, bvector<Render::GeometryParams>& params, bool includeEdges = true, bool includeFaceIso = false);
+    DGNPLATFORM_EXPORT static void CollectPolyfaces(ISolidKernelEntityCR, DgnDbR, bvector<PolyfaceHeaderPtr>& polyfaces, bvector<Render::GeometryParams>& params, IFacetOptionsR);
 
-DGNPLATFORM_EXPORT static void Draw(Render::GraphicR, ISolidPrimitiveCR, ViewContextR, bool includeEdges = true, bool includeFaceIso = true);
-DGNPLATFORM_EXPORT static void Draw(Render::GraphicR, MSBsplineSurfaceCR, ViewContextR, bool includeEdges = true, bool includeFaceIso = true);
-DGNPLATFORM_EXPORT static void Draw(Render::GraphicR, ISolidKernelEntityCR, ViewContextR, bool includeEdges = true, bool includeFaceIso = true);
+    DGNPLATFORM_EXPORT static void Draw(Render::GraphicR, ISolidPrimitiveCR, ViewContextR, bool includeEdges = true, bool includeFaceIso = true);
+    DGNPLATFORM_EXPORT static void Draw(Render::GraphicR, MSBsplineSurfaceCR, ViewContextR, bool includeEdges = true, bool includeFaceIso = true);
+    DGNPLATFORM_EXPORT static void Draw(Render::GraphicR, ISolidKernelEntityCR, ViewContextR, bool includeEdges = true, bool includeFaceIso = true);
 
-DGNPLATFORM_EXPORT static void DrawOutline(CurveVectorCR, Render::GraphicR);
-DGNPLATFORM_EXPORT static void DrawOutline2d(CurveVectorCR, Render::GraphicR, double zDepth);
-
-}; // WireframeGeomUtil
+    DGNPLATFORM_EXPORT static void DrawOutline(CurveVectorCR, Render::GraphicR);
+    DGNPLATFORM_EXPORT static void DrawOutline2d(CurveVectorCR, Render::GraphicR, double zDepth);
+};
 
 END_BENTLEY_DGN_NAMESPACE

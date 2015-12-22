@@ -52,7 +52,7 @@
 #include <DgnPlatform/WebMercator.h>
 #include <DgnPlatform/ElementGeometry.h>
 #include <DgnPlatform/ElementGraphics.h>
-#include <DgnPlatform/MSSmartPtr.h>
+#include <DgnPlatform/AutoRestore.h>
 #include <Logging/bentleylogging.h>
 #include <Bentley/BeStringUtilities.h>
 #include <BeXml/BeXml.h>
@@ -78,7 +78,6 @@
 #include <DgnPlatform/DgnCategory.h>
 #include <DgnPlatform/DgnTexture.h>
 #include <DgnPlatform/DgnTrueColor.h>
-// #include <DgnPlatform/SolarUtility.h>
 
 #include "DgnCore/DgnCoreLog.h"
 
