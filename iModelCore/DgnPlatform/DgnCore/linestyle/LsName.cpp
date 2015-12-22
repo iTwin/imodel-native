@@ -10,6 +10,7 @@
 static DgnHost::Key s_allMapsKey;
 static DgnHost::Key s_systemLsFileInfoKey;
 
+#if defined (NEEDSWORK_RENDER_GRAPHIC)
 /*=================================================================================**//**
 * @bsiclass
 +===============+===============+===============+===============+===============+======*/
@@ -88,6 +89,7 @@ static void Process(DRange3dR range, GeometrySourceCR stroker)
     }
 
 }; // LineStyleRangeCollector
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Keith.Bentley   01/03

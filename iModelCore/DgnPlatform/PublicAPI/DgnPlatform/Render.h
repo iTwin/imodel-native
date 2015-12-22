@@ -893,6 +893,7 @@ protected:
     double        m_maxSize; //! Maximum pixel size this Graphic is valid for (Graphic is valid for all sizes if min and max are both 0.0)
 
     virtual StatusInt _Close() {m_isOpen=false; return SUCCESS;}
+    virtual bool _IsForDisplay() const {return false;}
     virtual void _ActivateGraphicParams(GraphicParamsCR graphicParams, GeometryParamsCP geomParams) = 0;
     virtual void _AddLineString(int numPoints, DPoint3dCP points, DPoint3dCP range) = 0;
     virtual void _AddLineString2d(int numPoints, DPoint2dCP points, double zDepth, DPoint2dCP range) = 0;
@@ -911,12 +912,11 @@ protected:
     virtual void _AddSolidPrimitive(ISolidPrimitiveCR primitive) = 0;
     virtual void _AddBSplineSurface(MSBsplineSurfaceCR surface) = 0;
     virtual void _AddPolyface(PolyfaceQueryCR meshData, bool filled = false) = 0;
-    virtual StatusInt _AddBody(ISolidKernelEntityCR, double pixelSize = 0.0) = 0;
+    virtual void _AddBody(ISolidKernelEntityCR, double pixelSize = 0.0) = 0;
     virtual void _AddTextString(TextStringCR text, double* zDepth = nullptr) = 0;
     virtual void _AddMosaic(int numX, int numY, uintptr_t const* tileIds, DPoint3d const* verts) = 0;
-    virtual bool _IsQuickVision() const {return false;}
+    virtual void _AddRaster(DPoint3d const points[4], int pitch, int numTexelsX, int numTexelsY, int enableAlpha, int format, Byte const* texels, DPoint3dCP range) = 0;
     virtual void _AddRaster2d(DPoint2d const points[4], int pitch, int numTexelsX, int numTexelsY, int enableAlpha, int format, Byte const* texels, double zDepth, DPoint2d const *range) = 0;
-    virtual void _AddRaster3d(DPoint3d const points[4], int pitch, int numTexelsX, int numTexelsY, int enableAlpha, int format, Byte const* texels, DPoint3dCP range) = 0;
     virtual void _AddDgnOle(DgnOleDraw*) = 0;
     virtual void _AddPointCloud(PointCloudDraw* drawParams) = 0;
     virtual void _AddSubGraphic(Graphic&, TransformCR, GraphicParams&) = 0;
@@ -939,7 +939,8 @@ public:
         }
     bool IsSpecificToViewport(DgnViewportCR vp) const { return nullptr != m_vp && m_vp == &vp; }
 
-    double GetPixelSize() {return m_pixelSize;}
+    DgnViewportCP GetViewport() const {return m_vp;}
+    double GetPixelSize() const {return m_pixelSize;}
     void SetPixelSizeRange(double min, double max) {m_minSize = min, m_maxSize = max;}
 
     //! Set an GraphicParams to be the "active" GraphicParams for this Render::Graphic.
@@ -1039,8 +1040,7 @@ public:
     void AddPolyface(PolyfaceQueryCR meshData, bool filled = false) {_AddPolyface(meshData, filled);}
 
     //! Draw a BRep surface/solid entity from the solids kernel.
-    //! @note Only implemented for ICachedDraw due to potentially expensive/time consuming solids kernel calls.
-    StatusInt AddBody(ISolidKernelEntityCR entity, double pixelSize = 0.0) {return _AddBody(entity, pixelSize);}
+    void AddBody(ISolidKernelEntityCR entity, double pixelSize = 0.0) {_AddBody(entity, pixelSize);}
 
     //! Draw a series of Glyphs
     //! @param[in]          text        Text drawing parameters
@@ -1071,8 +1071,8 @@ public:
     void DrawTorus(DPoint3dCR center, DVec3dCR vectorX, DVec3dCR vectorY, double majorRadius, double minorRadius, double sweepAngle, bool capped) { AddSolidPrimitive(*ISolidPrimitive::CreateDgnTorusPipe(DgnTorusPipeDetail(center, vectorX, vectorY, majorRadius, minorRadius, sweepAngle, capped)));}
     void DrawBox(DVec3dCR primary, DVec3dCR secondary, DPoint3dCR basePoint, DPoint3dCR topPoint, double baseWidth, double baseLength, double topWidth, double topLength, bool capped) {AddSolidPrimitive(*ISolidPrimitive::CreateDgnBox(DgnBoxDetail::InitFromCenters(basePoint, topPoint, primary, secondary, baseWidth, baseLength, topWidth, topLength, capped))); }
 
+    void AddRaster(DPoint3d const points[4], int pitch, int numTexelsX, int numTexelsY, int enableAlpha, int format, Byte const* texels, DPoint3dCP range) {_AddRaster(points, pitch, numTexelsX, numTexelsY, enableAlpha, format, texels, range);}
     void AddRaster2d(DPoint2d const points[4], int pitch, int numTexelsX, int numTexelsY, int enableAlpha, int format, Byte const* texels, double zDepth, DPoint2dCP range) {_AddRaster2d(points, pitch, numTexelsX, numTexelsY, enableAlpha, format, texels, zDepth, range);}
-    void AddRaster3d(DPoint3d const points[4], int pitch, int numTexelsX, int numTexelsY, int enableAlpha, int format, Byte const* texels, DPoint3dCP range) {_AddRaster3d(points, pitch, numTexelsX, numTexelsY, enableAlpha, format, texels, range);}
 
     //! Draw a 3D point cloud.
     //! @param[in] drawParams Object containing draw parameters.
@@ -1082,7 +1082,7 @@ public:
     void AddDgnOle(DgnOleDraw* ole) {_AddDgnOle(ole);}
 
     void AddSubGraphic(Graphic& graphic, TransformCR trans, GraphicParams& params) {_AddSubGraphic(graphic, trans, params);}
-    bool IsQuickVision() const {return _IsQuickVision();}
+    bool IsForDisplay() const {return _IsForDisplay();}
 
     void SetSymbology(ColorDef lineColor, ColorDef fillColor, int lineWidth, GraphicParams::LinePixels linePixels=GraphicParams::LinePixels::Solid)
         {

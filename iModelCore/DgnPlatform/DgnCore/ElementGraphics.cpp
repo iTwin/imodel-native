@@ -7,282 +7,6 @@
 +--------------------------------------------------------------------------------------*/
 #include    <DgnPlatformInternal.h>
 
-/*=================================================================================**//**
-* @bsiclass                                                     Brien.Bastings  06/09
-+===============+===============+===============+===============+===============+======*/
-struct GeometryProcessorGraphic : SimplifyGraphic
-{
-    DEFINE_T_SUPER(SimplifyGraphic)
-private:
-    IGeometryProcessor*  m_dropObj;
-
-protected:
-    virtual bool _DoClipping() const override {return m_dropObj->_WantClipping();}
-    virtual bool _DoTextGeometry() const override {return true;}
-    virtual bool _DoSymbolGeometry() const override {return true;}
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Earlin.Lutz     06/09
-+---------------+---------------+---------------+---------------+---------------+------*/
-virtual IFacetOptionsP _GetFacetOptions() override
-    {
-    IFacetOptionsP dropOptions = m_dropObj->_GetFacetOptionsP();
-
-    if (NULL == dropOptions)
-        dropOptions = T_Super::_GetFacetOptions();
-
-    return dropOptions;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  06/09
-+---------------+---------------+---------------+---------------+---------------+------*/
-virtual bool _ProcessAsFacets(bool isPolyface) const override {return m_dropObj->_ProcessAsFacets(isPolyface);}
-virtual bool _ProcessAsBody(bool isCurved) const override {return m_dropObj->_ProcessAsBody(isCurved);}
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  06/09
-+---------------+---------------+---------------+---------------+---------------+------*/
-void AnnounceCurrentState()
-    {
-    GraphicParams currGraphicParams;
-
-    GetEffectiveGraphicParams(currGraphicParams);
-
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    m_dropObj->_AnnounceTransform(m_context->GetCurrLocalToWorldTransformCP());
-#else
-    m_dropObj->_AnnounceTransform(&m_localToWorldTransform);
-#endif
-    m_dropObj->_AnnounceGraphicParams(currGraphicParams);
-    m_dropObj->_AnnounceGeometryParams(m_currGeometryParams);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  04/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-virtual StatusInt _ProcessCurvePrimitive(ICurvePrimitiveCR curve, bool isClosed, bool isFilled) override
-    {
-    AnnounceCurrentState();
-
-    return m_dropObj->_ProcessCurvePrimitive(curve, isClosed, isFilled);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  04/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-virtual StatusInt _ProcessCurveVector(CurveVectorCR curves, bool isFilled) override
-    {
-    AnnounceCurrentState();
-
-    return m_dropObj->_ProcessCurveVector(curves, isFilled);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  04/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-virtual StatusInt _ProcessSolidPrimitive(ISolidPrimitiveCR primitive) override
-    {
-    AnnounceCurrentState();
-
-    return m_dropObj->_ProcessSolidPrimitive(primitive);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  06/09
-+---------------+---------------+---------------+---------------+---------------+------*/
-virtual StatusInt _ProcessSurface(MSBsplineSurfaceCR surface) override
-    {
-    AnnounceCurrentState();
-
-    return m_dropObj->_ProcessSurface(surface);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  06/09
-+---------------+---------------+---------------+---------------+---------------+------*/
-virtual StatusInt _ProcessFacetSet(PolyfaceQueryCR facets, bool filled) override
-    {
-    AnnounceCurrentState();
-
-    return m_dropObj->_ProcessFacets(facets, filled);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  06/09
-+---------------+---------------+---------------+---------------+---------------+------*/
-virtual StatusInt _ProcessBody(ISolidKernelEntityCR entity) override
-    {
-    AnnounceCurrentState();
-
-    return m_dropObj->_ProcessBody(entity);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  06/09
-+---------------+---------------+---------------+---------------+---------------+------*/
-virtual void _AddTextString(TextStringCR text, double* zDepth) override
-    {
-    AnnounceCurrentState();
-
-    if (SUCCESS == m_dropObj->_ProcessTextString(text))
-        return;
-
-    // NOTE: Now that we know we are dropping the text, we also want the adornments...
-    T_Super::_AddTextString(text, zDepth);
-    text.DrawTextAdornments(*m_context);
-    }
-
-public:
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  06/09
-+---------------+---------------+---------------+---------------+---------------+------*/
-GeometryProcessorGraphic(ViewContextP context, IGeometryProcessor& dropObj)
-    {
-    SetViewContext(context);
-    m_dropObj = &dropObj;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  06/09
-+---------------+---------------+---------------+---------------+---------------+------*/
-IGeometryProcessor* GetIGeometryProcessor() {return m_dropObj;}
-
-}; // GeometryProcessorGraphic
-
-/*=================================================================================**//**
-* @bsiclass                                                     Brien.Bastings  06/09
-+===============+===============+===============+===============+===============+======*/
-struct GeometryProcessorContext : NullContext
-{
-    DEFINE_T_SUPER(NullContext)
-protected:
-    RefCountedPtr<GeometryProcessorGraphic> m_graphic;
-
-    GeometryProcessorContext() {}
-    virtual Render::GraphicPtr _CreateGraphic(Render::Graphic::CreateParams const& params) override {m_graphic->SetLocalToWorldTransform(params.m_placement); return m_graphic;}
-
-public:
-    GeometryProcessorContext(IGeometryProcessor& dropObj)
-        {
-        m_purpose = dropObj._GetDrawPurpose();
-        m_wantMaterials = true; // Setup material in GeometryParams in case IGeometryProcessor needs it...
-        m_graphic = new GeometryProcessorGraphic(this, dropObj);
-
-        dropObj._AnnounceContext(*this);
-        }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  06/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-virtual void _AddTextString(TextStringCR text) override
-    {
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    // NOTE: When IGeometryProcessor handles TextString we don't want to spew adornment geometry!
-    text.GetGlyphSymbology(GetCurrentGeometryParams());
-    CookGeometryParams();
-
-    double zDepth = GetCurrentGeometryParams().GetNetDisplayPriority();
-    GetCurrentGraphicR().AddTextString(text, Is3dView() ? nullptr : &zDepth);                
-#endif
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  06/09
-+---------------+---------------+---------------+---------------+---------------+------*/
-virtual void _DrawAreaPattern(ClipStencil& boundary) override
-    {
-    if (!m_graphic->GetIGeometryProcessor()->_ExpandPatterns())
-        return;
-
-    T_Super::_DrawAreaPattern(boundary);
-    }
-
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  06/09
-+---------------+---------------+---------------+---------------+---------------+------*/
-virtual ILineStyleCP _GetCurrLineStyle(LineStyleSymbP* symb) override
-    {
-    ILineStyleCP  currStyle = T_Super::_GetCurrLineStyle(symb);
-
-    if (!m_graphic->GetIGeometryProcessor()->_ExpandLineStyles(currStyle))
-        return NULL;
-
-    return currStyle;
-    }
-#endif
-
-}; // GeometryProcessorContext
-
-/*----------------------------------------------------------------------------------*//**
-* @bsimethod                                                    Brien.Bastings  06/09
-+---------------+---------------+---------------+---------------+---------------+------*/
-void GeometryProcessor::Process(IGeometryProcessorR dropObj, GeometrySourceCR source)
-    {
-    GeometryProcessorContext context(dropObj);
-
-    context.SetDgnDb(source.GetSourceDgnDb());
-    
-    if (nullptr != source.ToGeometrySource3d())
-        {
-        // NOTE: The processor only wants curves/edges. Don't output brep polyface when Parasolid isn't
-        //       available, output the exact pre-computed wireframe geometry instead. Also better to avoid
-        //       creating a ISolidKernelEntity un-neccesarily even when Parasolid is available.
-        if (!dropObj._ProcessAsBody(true) && !dropObj._ProcessAsFacets(false))
-            {
-            if (context.IsUndisplayed(source))
-                return;
-
-            GeometryCollection collection(source);
-
-            collection.SetBRepOutput(GeometryCollection::BRepOutput::Edges | GeometryCollection::BRepOutput::FaceIso);
-
-            for (auto iter : collection)
-                {
-                GeometricPrimitivePtr elemGeom = iter.GetGeometryPtr();
-
-                if (!elemGeom.IsValid())
-                    continue;
-
-                context.GetGeometryStreamEntryIdR() = iter.GetGeometryStreamEntryId();
-
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-                context.GetCurrentGeometryParams() = collection.GetGeometryParams();
-                context.CookGeometryParams();
-
-                context.PushTransform(collection.GetGeometryToWorld());
-                elemGeom->Draw(context);
-                context.PopTransformClip();
-#else
-                Render::GraphicPtr graphic = context.CreateGraphic(Graphic::CreateParams(context.GetViewport(), iter.GetGeometryToWorld()));
-                GeometryParams geomParams(iter.GetGeometryParams());
-
-                context.CookGeometryParams(geomParams, *graphic);
-                elemGeom->Draw(*graphic, context);
-#endif
-                }
-
-            return;
-            }
-        }
-    
-    context.VisitElement(source);
-    }
-
-/*----------------------------------------------------------------------------------*//**
-* @bsimethod                                                    Brien.Bastings  12/11
-+---------------+---------------+---------------+---------------+---------------+------*/
-void GeometryProcessor::Process(IGeometryProcessorR dropObj, DgnDbR dgnDb)
-    {
-    GeometryProcessorContext  context(dropObj);
-
-    context.SetDgnDb(dgnDb);
-
-    dropObj._OutputGraphics(context);
-    }
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/12
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1156,6 +880,7 @@ void WireframeGeomUtil::Draw(Render::GraphicR graphic, ISolidKernelEntityCR enti
     T_HOST.GetSolidsKernelAdmin()._OutputBodyAsWireframe(graphic, entity, context, includeEdges, includeFaceIso);
     }
 
+#if defined (NEEDSWORK_RENDER_GRAPHIC)
 BEGIN_UNNAMED_NAMESPACE
 
 /*=================================================================================**//**
@@ -1232,6 +957,8 @@ virtual void _OutputGraphics(ViewContextR context) override
         WireframeGeomUtil::Draw(*graphic, *m_primitive, context, m_includeEdges, m_includeFaceIso);
     else if (m_entity)
         WireframeGeomUtil::Draw(*graphic, *m_entity, context, m_includeEdges, m_includeFaceIso);
+
+    graphic->Close();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1249,18 +976,23 @@ CurveVectorPtr GetCurveVector() {return m_curves;}
 }; // RuleCollector
 
 END_UNNAMED_NAMESPACE
+#endif
 
 /*----------------------------------------------------------------------------------*//**
 * @bsimethod                                                    Brien.Bastings  03/14
 +---------------+---------------+---------------+---------------+---------------+------*/
 CurveVectorPtr WireframeGeomUtil::CollectCurves(ISolidPrimitiveCR primitive, DgnDbR dgnDb, bool includeEdges, bool includeFaceIso)
     {
+#if defined (NEEDSWORK_RENDER_GRAPHIC)
     RuleCollector   rules(includeEdges, includeFaceIso);
 
     rules.SetSolidPrimitive(primitive);
     GeometryProcessor::Process(rules, dgnDb);
 
     return rules.GetCurveVector();
+#else
+    return nullptr;
+#endif
     }
 
 /*----------------------------------------------------------------------------------*//**
@@ -1268,12 +1000,16 @@ CurveVectorPtr WireframeGeomUtil::CollectCurves(ISolidPrimitiveCR primitive, Dgn
 +---------------+---------------+---------------+---------------+---------------+------*/
 CurveVectorPtr WireframeGeomUtil::CollectCurves(MSBsplineSurfaceCR surface, DgnDbR dgnDb, bool includeEdges, bool includeFaceIso)
     {
+#if defined (NEEDSWORK_RENDER_GRAPHIC)
     RuleCollector   rules(includeEdges, includeFaceIso);
 
     rules.SetBsplineSurface(surface);
     GeometryProcessor::Process(rules, dgnDb);
 
     return rules.GetCurveVector();
+#else
+    return nullptr;
+#endif
     }
 
 /*----------------------------------------------------------------------------------*//**
@@ -1281,14 +1017,19 @@ CurveVectorPtr WireframeGeomUtil::CollectCurves(MSBsplineSurfaceCR surface, DgnD
 +---------------+---------------+---------------+---------------+---------------+------*/
 CurveVectorPtr WireframeGeomUtil::CollectCurves(ISolidKernelEntityCR entity, DgnDbR dgnDb, bool includeEdges, bool includeFaceIso)
     {
+#if defined (NEEDSWORK_RENDER_GRAPHIC)
     RuleCollector   rules(includeEdges, includeFaceIso);
 
     rules.SetSolidEntity(entity);
     GeometryProcessor::Process(rules, dgnDb);
 
     return rules.GetCurveVector();
+#else
+    return nullptr;
+#endif
     }
 
+#if defined (NEEDSWORK_RENDER_GRAPHIC)
 /*=================================================================================**//**
 * @bsiclass
 +===============+===============+===============+===============+===============+======*/
@@ -1370,21 +1111,25 @@ virtual void _OutputGraphics(ViewContextR context) override
     Render::GraphicPtr graphic = context.CreateGraphic(Graphic::CreateParams(context.GetViewport(), m_entity.GetEntityTransform()));
 
     WireframeGeomUtil::Draw(*graphic, m_entity, context, m_includeEdges, m_includeFaceIso);
+    graphic->Close();
     }
 
 }; // FaceAttachmentRuleCollector
+#endif
 
 /*----------------------------------------------------------------------------------*//**
 * @bsimethod                                                    Brien.Bastings  06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 void WireframeGeomUtil::CollectCurves(ISolidKernelEntityCR entity, DgnDbR dgnDb, bvector<CurveVectorPtr>& curves, bvector<GeometryParams>& params, bool includeEdges, bool includeFaceIso)
     {
+#if defined (NEEDSWORK_RENDER_GRAPHIC)
     if (nullptr == entity.GetFaceMaterialAttachments())
         return; // No reason to call this method when there aren't attachments...
 
     FaceAttachmentRuleCollector rules(entity, curves, params, includeEdges, includeFaceIso);
 
     GeometryProcessor::Process(rules, dgnDb);
+#endif
     }
 
 /*----------------------------------------------------------------------------------*//**
@@ -1945,4 +1690,3 @@ void ViewContext::DrawStyledCurveVector2d(CurveVectorCR curve, double zDepth)
 //    GetCurrentGraphicR().AddCurveVector2d(curve, false, zDepth);
 #endif
     }
-

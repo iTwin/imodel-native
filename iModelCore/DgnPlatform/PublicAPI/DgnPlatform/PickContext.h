@@ -20,6 +20,7 @@ enum TestLStylePhase
     TEST_LSTYLE_BaseGeom    = 2,
     };
 
+#if defined (NOT_NOW)
 /*=================================================================================**//**
 * Output to determine if element should be accepted for fence processing..
 * @bsiclass                                                     Brien.Bastings  09/04
@@ -53,17 +54,20 @@ protected:
 public:
     PickOutput(struct PickContext& pick);
 };
+#endif
 
 /*=================================================================================**//**
 * @bsiclass                                                     KeithBentley    04/01
 +===============+===============+===============+===============+===============+======*/
-struct PickContext : ViewContext, IPickGeom
+struct PickContext : ViewContext, IPickGeom, IGeometryProcessor
 {
     DEFINE_T_SUPER(ViewContext)
 private:
+#if defined (NOT_NOW)
     friend struct PickOutput;
 
     RefCountedPtr<PickOutput> m_graphic;
+#endif
 
     bool              m_doneSearching;
     bool              m_unusableLStyleHit;
@@ -91,25 +95,41 @@ private:
     virtual void _DrawStyledArc3d(DEllipse3dCR ellipse, bool isEllipse, DPoint3dCP range) override;
     virtual void _DrawStyledBSplineCurve3d(MSBsplineCurveCR) override;
     virtual void _DrawStyledBSplineCurve2d(MSBsplineCurveCR, double zDepth) override;
-    virtual Render::GraphicPtr _CreateGraphic(Render::Graphic::CreateParams const& params) override {_GetGeomDetail().Init(); m_graphic->SetLocalToWorldTransform(params.m_placement); return m_graphic;}
+    virtual Render::GraphicPtr _CreateGraphic(Render::Graphic::CreateParams const& params) override {_GetGeomDetail().Init(); SimplifyGraphic* graphic = new SimplifyGraphic(params, *this, *this); return graphic;}
 
-    bool TestPoint(DPoint3dCR localPt, HitPriority priority);
-    bool TestPointArray(size_t numPts, DPoint3dCP localPts, HitPriority priority);
-    bool TestCurveVector(CurveVectorCR, HitPriority);
-    bool TestCurveVectorInterior(CurveVectorCR, HitPriority priority);
-    bool TestIndexedPolyEdge(DPoint3dCP verts, DPoint4dCP hVertsP, int closeVertexId, int segmentVertexId, DPoint3dR pickPt, HitPriority);
-    bool TestGraphics(Render::Graphic* qvElem, HitPriority);
+    bool TestPoint(DPoint3dCR localPt, HitPriority priority, SimplifyGraphic const&);
+    bool TestPointArray(size_t numPts, DPoint3dCP localPts, HitPriority priority, SimplifyGraphic const&);
+    bool TestCurveVector(CurveVectorCR, HitPriority, SimplifyGraphic const&);
+    bool TestCurveVectorInterior(CurveVectorCR, HitPriority priority, SimplifyGraphic const&);
+    bool TestIndexedPolyEdge(DPoint3dCP verts, DPoint4dCP hVertsP, int closeVertexId, int segmentVertexId, DPoint3dR pickPt, HitPriority, SimplifyGraphic const&);
+
     void InitNpcSubRect(DPoint3dCR pickPointWorld, double pickAperture, DgnViewportR viewport);
     void InitSearch(DPoint3dCR pickPointWorld, double pickApertureScreen, HitListP);
     bool PointWithinTolerance(DPoint4dCR testPt);
-    void AddSurfaceHit(DPoint3dCR hitPtLocal, DVec3dCR hitNormalLocal, HitPriority);
 
+    void AddHit(DPoint4dCR hitPtScreen, DPoint3dCP hitPtLocal, HitPriority, SimplifyGraphic const&);
+    void AddSurfaceHit(DPoint3dCR hitPtLocal, DVec3dCR hitNormalLocal, HitPriority, SimplifyGraphic const&);
+
+    virtual UnhandledPreference _GetUnhandledPreference(CurveVectorCR) const override {return UnhandledPreference::Curve;}
+    virtual UnhandledPreference _GetUnhandledPreference(ISolidPrimitiveCR) const override {return UnhandledPreference::Curve;}
+    virtual UnhandledPreference _GetUnhandledPreference(MSBsplineSurfaceCR) const override {return UnhandledPreference::Curve;}
+
+    virtual bool _ProcessCurvePrimitive(ICurvePrimitiveCR, bool closed, bool filled, SimplifyGraphic const&) override;
+    virtual bool _ProcessCurveVector(CurveVectorCR, bool filled, SimplifyGraphic const&) override;
+    virtual bool _ProcessSolidPrimitive(ISolidPrimitiveCR, SimplifyGraphic const&) override;
+    virtual bool _ProcessSurface(MSBsplineSurfaceCR, SimplifyGraphic const&) override;
+    virtual bool _ProcessPolyface(PolyfaceQueryCR, bool filled, SimplifyGraphic const&) override;
+    virtual bool _ProcessBody(ISolidKernelEntityCR, SimplifyGraphic const&) override;
+    virtual bool _ProcessTextString(TextStringCR, SimplifyGraphic const&) override;
+
+#if defined (NOT_NOW)
     StatusInt ProcessCurvePrimitive(ICurvePrimitiveCR, bool closed, bool filled);
     StatusInt ProcessCurveVector(CurveVectorCR, bool isFilled);
     StatusInt ProcessSolidPrimitive(ISolidPrimitiveCR);
     StatusInt ProcessSurface(MSBsplineSurfaceCR);
     StatusInt ProcessFacetSet(PolyfaceQueryCR, bool filled);
     StatusInt ProcessBody(ISolidKernelEntityCR);
+#endif
 
 public:
     double GetPickAperture() {return m_pickAperture;}
@@ -125,9 +145,9 @@ public:
     virtual DPoint3dCR _GetPickPointWorld() const override {return m_pickPointWorld;}
     virtual GeomDetailR _GetGeomDetail() override {return m_currGeomDetail;}
     virtual void _SetHitPriorityOverride(HitPriority priority) override {m_hitPriorityOverride = priority;}
-    virtual void _AddHit(DPoint4dCR hitPtScreen, DPoint3dCP hitPtLocal, HitPriority) override;
-    virtual bool _IsSnap() const;
-    virtual DRay3d _GetBoresite() const;
+    virtual bool _IsSnap() const override;
+
+    virtual DRay3d _GetBoresite(SimplifyGraphic const&) const; // NEEDSWORK_RENDER_GRAPHIC: IPickGeom...
 
     DGNPLATFORM_EXPORT PickContext(LocateOptions const& options, StopLocateTest* stopTester=NULL);
     DGNPLATFORM_EXPORT bool PickElements(DgnViewportR, DPoint3dCR pickPointWorld, double pickApertureDevice, HitListP hitList);

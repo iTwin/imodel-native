@@ -10,13 +10,13 @@
 
 #include <DgnPlatform/DgnPlatform.h>
 
-//__PUBLISH_SECTION_END__
 #include <DgnPlatform/NullContext.h>
 #include <DgnPlatform/SimplifyGraphic.h>
 
+#if defined (NEEDSWORK_RENDER_GRAPHIC)
 #include <Regions/regionsAPI.h>
 #include <Regions/rimsbsAPI.h>
-//__PUBLISH_SECTION_START__
+#endif
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 
@@ -36,7 +36,6 @@ enum class RegionType
     ExclusiveOr     = 4, //! Region created by using parity rules for hole loops
     };
 
-//__PUBLISH_SECTION_END__
 enum RegionErrors
     {
     REGION_ERROR_None           = SUCCESS,
@@ -56,7 +55,6 @@ enum RegionConstants
     MAX_FloodSeedPoints         = 100, //! Limit on the number of seed point in a flood type region
     };
 
-//__PUBLISH_SECTION_START__
 /*=================================================================================**//**
 * @bsiclass                                                     Brien.Bastings  09/09
 +===============+===============+===============+===============+===============+======*/
@@ -101,7 +99,7 @@ struct RegionParams
     DGNPLATFORM_EXPORT bool             GetDirty () const;
     }; // RegionParams
 
-//__PUBLISH_SECTION_END__
+#if defined (NEEDSWORK_RENDER_GRAPHIC)
 /*=================================================================================**//**
 * @bsiclass                                                     Brien.Bastings  09/09
 +===============+===============+===============+===============+===============+======*/
@@ -187,18 +185,13 @@ struct FloodSeed
     bvector<MTGNodeId>  m_faceNodeIds;
     };
 
-//__PUBLISH_SECTION_START__
 typedef RefCountedPtr<RegionGraphicsContext> RegionGraphicsContextPtr;
 
 /*=================================================================================**//**
 * @bsiclass                                                     Brien.Bastings  09/09
 +===============+===============+===============+===============+===============+======*/
-struct RegionGraphicsContext : RefCountedBase
-                               //__PUBLISH_SECTION_END__
-                               ,NullContext
-                               //__PUBLISH_SECTION_START__
+struct RegionGraphicsContext : RefCountedBase, NullContext
 {
-//__PUBLISH_SECTION_END__
     DEFINE_T_SUPER(NullContext)
 protected:
 
@@ -261,8 +254,6 @@ DGNPLATFORM_EXPORT bool          GetAdjustedSeedPoints (bvector<DPoint3d>* seedP
 DGNPLATFORM_EXPORT BentleyStatus UpdateAssociativeRegion (DgnElementPtr& elm);
 DGNPLATFORM_EXPORT BentleyStatus BooleanWithHoles (DgnModelR targetModel, DgnElementCPtrVec const& in, DgnElementCPtrVec const& holes, TransformCP inTrans, TransformCP holeTrans, RegionType operation);
 
-//__PUBLISH_SECTION_START__
-//__PUBLISH_CLASS_VIRTUAL__
 public:
 
 //! Set flood parameters for boundary gap tolerance and finding interior holes.
@@ -314,6 +305,7 @@ DGNPLATFORM_EXPORT BentleyStatus GetAssociativeRegion (DgnElementPtr& elm, Regio
 DGNPLATFORM_EXPORT static RegionGraphicsContextPtr Create ();
 
 }; // RegionGraphicsContext
+#endif
 
 END_BENTLEY_DGN_NAMESPACE
 

@@ -8,44 +8,25 @@
 #include <DgnPlatformInternal.h>
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    BrienBastings   12/10
+* @bsimethod                                                    BrienBastings   01/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-void MeasureGeomCollector::_AnnounceContext (ViewContextR context)
+void MeasureGeomCollector::GetOutputTransform (TransformR transform, SimplifyGraphic const& graphic)
     {
-    m_context = &context;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    BrienBastings   06/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-void MeasureGeomCollector::_AnnounceTransform (TransformCP trans)
-    {
-    if (trans)
-        m_currentTransform = *trans;
-    else
-        m_currentTransform.InitIdentity ();
+    transform.InitProduct (m_invCurrTransform, graphic.GetLocalToWorldTransform()); // Account for supplied mdlCurrTrans...
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   01/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-void MeasureGeomCollector::GetOutputTransform (TransformR transform)
-    {
-    transform.InitProduct (m_invCurrTransform, m_currentTransform); // Account for supplied mdlCurrTrans...
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    BrienBastings   01/14
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool MeasureGeomCollector::GetPreFlattenTransform (TransformR transform)
+bool MeasureGeomCollector::GetPreFlattenTransform (TransformR transform, SimplifyGraphic const& graphic)
     {
     if (m_inFlatten || m_preFlattenTransform.IsIdentity ())
         return false; // No flatten transform or recursive call where flatten already applied to geometry...
 
     Transform   worldToLocal;
 
-    worldToLocal.InverseOf (m_currentTransform); // Account for m_currentTransform...
-    transform = Transform::FromProduct (worldToLocal, m_preFlattenTransform, m_currentTransform);
+    worldToLocal.InverseOf (graphic.GetLocalToWorldTransform()); // Account for current transform...
+    transform = Transform::FromProduct (worldToLocal, m_preFlattenTransform, graphic.GetLocalToWorldTransform());
     
     return true;
     }
@@ -216,23 +197,23 @@ void MeasureGeomCollector::AccumulateLengthSums (DMatrix4dCR products)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   01/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus MeasureGeomCollector::DoAccumulateLengths (CurveVectorCR curves)
+bool MeasureGeomCollector::DoAccumulateLengths (CurveVectorCR curves, SimplifyGraphic const& graphic)
     {
     Transform   flattenTransform;
 
-    if (GetPreFlattenTransform (flattenTransform))
+    if (GetPreFlattenTransform (flattenTransform, graphic))
         {
         AutoRestore<bool>   saveInFlatten (&m_inFlatten, true);
         CurveVectorPtr      tmpCurves = curves.Clone ();
 
         tmpCurves->TransformInPlace (flattenTransform);
 
-        return DoAccumulateLengths (*tmpCurves);
+        return DoAccumulateLengths (*tmpCurves, graphic);
         }
 
     Transform   outputTransform;
 
-    GetOutputTransform (outputTransform);
+    GetOutputTransform (outputTransform, graphic);
 
     CurveVectorPtr  tmpCurves = curves.Clone ();
 
@@ -244,24 +225,24 @@ BentleyStatus MeasureGeomCollector::DoAccumulateLengths (CurveVectorCR curves)
     if (tmpCurves->ComputeSecondMomentWireProducts (products))
         AccumulateLengthSums (products);
 
-    return SUCCESS;
+    return true;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   01/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus MeasureGeomCollector::DoAccumulateAreas (CurveVectorCR curves)
+bool MeasureGeomCollector::DoAccumulateAreas (CurveVectorCR curves, SimplifyGraphic const& graphic)
     {
     Transform   flattenTransform;
 
-    if (GetPreFlattenTransform (flattenTransform))
+    if (GetPreFlattenTransform (flattenTransform, graphic))
         {
         AutoRestore<bool>   saveInFlatten (&m_inFlatten, true);
         CurveVectorPtr      tmpCurves = curves.Clone ();
 
         tmpCurves->TransformInPlace (flattenTransform);
 
-        return DoAccumulateAreas (*tmpCurves);
+        return DoAccumulateAreas (*tmpCurves, graphic);
         }
 
     double      area, scale;
@@ -270,7 +251,7 @@ BentleyStatus MeasureGeomCollector::DoAccumulateAreas (CurveVectorCR curves)
     DMatrix4d   products;
     Transform   outputTransform;
 
-    GetOutputTransform (outputTransform);
+    GetOutputTransform (outputTransform, graphic);
 
     if (curves.ComputeSecondMomentAreaProducts (products) &&
         products.ConvertInertiaProductsToPrincipalAreaMoments (outputTransform, area, centroid, axes, momentA) &&
@@ -284,35 +265,35 @@ BentleyStatus MeasureGeomCollector::DoAccumulateAreas (CurveVectorCR curves)
 
 		AccumulateAreaSums (area, length, centroid, momentB, iXY, iXZ, iYZ);
 
-        return SUCCESS;
+        return true;
         }
 
-    return ERROR; // Try facets...
+    return false; // Try facets...
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   12/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus MeasureGeomCollector::_ProcessCurveVector (CurveVectorCR curves, bool isFilled)
+bool MeasureGeomCollector::_ProcessCurveVector (CurveVectorCR curves, bool isFilled, SimplifyGraphic const& graphic)
     {
     switch (m_opType)
         {
         case AccumulateLengths:
             {
-            return DoAccumulateLengths (curves);
+            return DoAccumulateLengths (curves, graphic);
             }
 
         case AccumulateVolumes:
             {
-            return SUCCESS; // Not valid type for operation...
+            return true; // Not valid type for operation...
             }
 
         default:
             {
             if (!curves.IsAnyRegionType ())
-                return SUCCESS; // Not valid type for operation...
+                return true; // Not valid type for operation...
 
-            return DoAccumulateAreas (curves);
+            return DoAccumulateAreas (curves, graphic);
             }
         }
     }
@@ -320,19 +301,19 @@ BentleyStatus MeasureGeomCollector::_ProcessCurveVector (CurveVectorCR curves, b
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   01/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus MeasureGeomCollector::DoAccumulateAreas (ISolidPrimitiveCR primitive)
+bool MeasureGeomCollector::DoAccumulateAreas (ISolidPrimitiveCR primitive, SimplifyGraphic const& graphic)
     {
 #if defined (DGNPLATFORM_WIP_MEASURE)
     Transform   flattenTransform;
 
-    if (GetPreFlattenTransform (flattenTransform))
+    if (GetPreFlattenTransform (flattenTransform, graphic))
         {
         AutoRestore<bool>   saveInFlatten (&m_inFlatten, true);
         ISolidPrimitivePtr  tmpPrimitive = primitive.Clone ();
 
         tmpPrimitive->TransformInPlace (flattenTransform);
 
-        return DoAccumulateAreas (*tmpPrimitive);
+        return DoAccumulateAreas (*tmpPrimitive, graphic);
         }
 
     // Compute area moments directly from ISolidPrimitive instead of always converting to BRep or facets...
@@ -340,8 +321,8 @@ BentleyStatus MeasureGeomCollector::DoAccumulateAreas (ISolidPrimitiveCR primiti
     // What does it mean to flatten a solid primitive?
     // Call it an error -- maybe it will get meshed and the mesh will be flattened?
     Transform flattenTransform;
-    if (GetPreFlattenTransform (flattenTransform))
-        return ERROR;
+    if (GetPreFlattenTransform (flattenTransform, graphic))
+        return false;
 #endif
 
     double area;
@@ -350,18 +331,18 @@ BentleyStatus MeasureGeomCollector::DoAccumulateAreas (ISolidPrimitiveCR primiti
     DVec3d areaMoments;
 
     Transform   outputTransform;
-    GetOutputTransform (outputTransform);
+    GetOutputTransform (outputTransform, graphic);
     if (outputTransform.IsIdentity ())
         {
         if (!primitive.ComputePrincipalAreaMoments (area, areaCentroid, areaAxes, areaMoments))
-            return ERROR;
+            return false;
         }
     else
         {
         ISolidPrimitivePtr localPrimitive = primitive.Clone ();
         localPrimitive->TransformInPlace (outputTransform);
         if (!localPrimitive->ComputePrincipalAreaMoments (area, areaCentroid, areaAxes, areaMoments))
-            return ERROR;
+            return false;
         }
 
     double      iXY, iXZ, iYZ;
@@ -369,13 +350,13 @@ BentleyStatus MeasureGeomCollector::DoAccumulateAreas (ISolidPrimitiveCR primiti
     reorientPrincipalMoments (areaMoments, areaAxes, areaMoments.x, areaMoments.y, areaMoments.z, iXY, iXZ, iYZ);
 
     AccumulateAreaSums (area, 0.0, areaCentroid, areaMoments, iXY, iXZ, iYZ);
-    return SUCCESS;
+    return true;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   01/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus MeasureGeomCollector::DoAccumulateVolumes (ISolidPrimitiveCR primitive)
+bool MeasureGeomCollector::DoAccumulateVolumes (ISolidPrimitiveCR primitive, SimplifyGraphic const& graphic)
     {
     bool        myStat = false;
     double      amount = 0.0, area = 0.0;
@@ -383,7 +364,7 @@ BentleyStatus MeasureGeomCollector::DoAccumulateVolumes (ISolidPrimitiveCR primi
     RotMatrix   axes, areaAxes;
     Transform   outputTransform;
 
-    GetOutputTransform (outputTransform);
+    GetOutputTransform (outputTransform, graphic);
 
     ISolidPrimitivePtr  localPrimitive = primitive.Clone ();
 
@@ -399,7 +380,7 @@ BentleyStatus MeasureGeomCollector::DoAccumulateVolumes (ISolidPrimitiveCR primi
         BeAssert (false);
 
     if (!myStat)
-        return ERROR;
+        return false;
                 
     double  iXY, iXZ, iYZ;
 
@@ -407,32 +388,32 @@ BentleyStatus MeasureGeomCollector::DoAccumulateVolumes (ISolidPrimitiveCR primi
 
     AccumulateVolumeSums (amount, area, 0.0, centroid, momentB, iXY, iXZ, iYZ);
 
-    return SUCCESS;
+    return true;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   12/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus MeasureGeomCollector::_ProcessSolidPrimitive (ISolidPrimitiveCR primitive)
+bool MeasureGeomCollector::_ProcessSolidPrimitive (ISolidPrimitiveCR primitive, SimplifyGraphic const& graphic)
     {
     switch (m_opType)
         {
         case AccumulateLengths:
             {
-            return SUCCESS; // Not valid type for operation...
+            return true; // Not valid type for operation...
             }
 
         case AccumulateVolumes:
             {
             if (!primitive.GetCapped ())
-                return SUCCESS; // Not valid type for operation...
+                return true; // Not valid type for operation...
 
-            return DoAccumulateVolumes (primitive);
+            return DoAccumulateVolumes (primitive, graphic);
             }
 
         default:
             {
-            return DoAccumulateAreas (primitive);
+            return DoAccumulateAreas (primitive, graphic);
             }
         }
     }
@@ -455,6 +436,8 @@ virtual void _OutputGraphics (ViewContextR context) override
 
     if (m_surface)
         WireframeGeomUtil::Draw (*graphic, *m_surface, context, true, false);
+
+    graphic->Close();
     }
 
 public:
@@ -466,16 +449,16 @@ MeasureEdgeGeomProvider (MSBsplineSurfaceCR surface) {m_surface = &surface;}
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   01/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus MeasureGeomCollector::DoAccumulateAreas (MSBsplineSurfaceCR surface)
+bool MeasureGeomCollector::DoAccumulateAreas (MSBsplineSurfaceCR surface, SimplifyGraphic const& graphic)
     {
     Transform   flattenTransform;
 
-    if (GetPreFlattenTransform (flattenTransform))
+    if (GetPreFlattenTransform (flattenTransform, graphic))
         {
         AutoRestore<bool>   saveInFlatten (&m_inFlatten, true);
         MSBsplineSurfacePtr tmpSurface = surface.CreateCopyTransformed (flattenTransform);
 
-        return DoAccumulateAreas (*tmpSurface);
+        return DoAccumulateAreas (*tmpSurface, graphic);
         }
 
 #ifdef CheckConvergence
@@ -512,7 +495,7 @@ BentleyStatus MeasureGeomCollector::DoAccumulateAreas (MSBsplineSurfaceCR surfac
     DMatrix4d   products;
     Transform   outputTransform;
 
-    GetOutputTransform (outputTransform);
+    GetOutputTransform (outputTransform, graphic);
 
     if (0 == s_method &&
         surface.ComputeSecondMomentAreaProducts (products) &&
@@ -526,32 +509,32 @@ BentleyStatus MeasureGeomCollector::DoAccumulateAreas (MSBsplineSurfaceCR surfac
         MeasureEdgeGeomProvider provider (surface);
 
         collector.SetResultOptions (NULL, &outputTransform);
-        collector.Process (provider, m_context->GetDgnDb ());
+        collector.Process (provider, graphic.GetViewContext().GetDgnDb ());
 
 		AccumulateAreaSums (area, collector.GetLength (), centroid, momentB, iXY, iXZ, iYZ);
 
-        return SUCCESS;
+        return true;
         }
 
-    return ERROR; // Try brep/facets...
+    return false; // Try brep/facets...
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   12/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus MeasureGeomCollector::_ProcessSurface (MSBsplineSurfaceCR surface)
+bool MeasureGeomCollector::_ProcessSurface (MSBsplineSurfaceCR surface, SimplifyGraphic const& graphic)
     {
     switch (m_opType)
         {
         case AccumulateLengths:
         case AccumulateVolumes:
             {
-            return SUCCESS; // Not valid type for operation...
+            return true; // Not valid type for operation...
             }
 
         default:
             {
-            return DoAccumulateAreas (surface);
+            return DoAccumulateAreas (surface, graphic);
             }
         }
     }
@@ -559,11 +542,11 @@ BentleyStatus MeasureGeomCollector::_ProcessSurface (MSBsplineSurfaceCR surface)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   01/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus MeasureGeomCollector::DoAccumulateAreas (PolyfaceQueryCR meshQuery)
+bool MeasureGeomCollector::DoAccumulateAreas (PolyfaceQueryCR meshQuery, SimplifyGraphic const& graphic)
     {
     Transform   flattenTransform;
 
-    if (GetPreFlattenTransform (flattenTransform))
+    if (GetPreFlattenTransform (flattenTransform, graphic))
         {
         AutoRestore<bool>   saveInFlatten (&m_inFlatten, true);
         PolyfaceHeaderPtr   tmpMeshQuery = PolyfaceHeader::New ();
@@ -571,12 +554,12 @@ BentleyStatus MeasureGeomCollector::DoAccumulateAreas (PolyfaceQueryCR meshQuery
         tmpMeshQuery->CopyFrom (meshQuery);
         tmpMeshQuery->Transform (flattenTransform);
 
-        return DoAccumulateAreas (*tmpMeshQuery);
+        return DoAccumulateAreas (*tmpMeshQuery, graphic);
         }
 
     Transform   outputTransform;
 
-    GetOutputTransform (outputTransform);
+    GetOutputTransform (outputTransform, graphic);
 
     PolyfaceHeaderPtr  meshData = PolyfaceHeader::New ();
 
@@ -590,7 +573,7 @@ BentleyStatus MeasureGeomCollector::DoAccumulateAreas (PolyfaceQueryCR meshQuery
     RotMatrix   axes;
 
     if (!meshData->ComputePrincipalAreaMoments (area, centroid, axes, moments))
-        return SUCCESS; // Don't output edges
+        return true; // Don't output edges
 
     double      iXY, iXZ, iYZ;
 
@@ -599,22 +582,21 @@ BentleyStatus MeasureGeomCollector::DoAccumulateAreas (PolyfaceQueryCR meshQuery
     // DGNPLATFORM_WIP_MEASURE -- boundary length (if visible edge length == length of visible edge with single adjacent face...i.e. looks like CurveVector?!?).
     AccumulateAreaSums (area, 0.0, centroid, moments, iXY, iXZ, iYZ);
 
-    return SUCCESS;
+    return false;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   01/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus MeasureGeomCollector::DoAccumulateVolumes (PolyfaceQueryCR meshQuery)
+bool MeasureGeomCollector::DoAccumulateVolumes (PolyfaceQueryCR meshQuery, SimplifyGraphic const& graphic)
     {
     Transform   outputTransform;
     bool useRaggedMeshLogic = false;
-    GetOutputTransform (outputTransform);
+    GetOutputTransform (outputTransform, graphic);
 
     PolyfaceHeaderPtr  meshData = PolyfaceHeader::New ();
 
     meshData->CopyFrom (meshQuery);
-
 
     double      amount;
     DVec3d      centroid, moments, momentB;
@@ -630,7 +612,7 @@ BentleyStatus MeasureGeomCollector::DoAccumulateVolumes (PolyfaceQueryCR meshQue
             {
             meshData->Compress ();
             if (!meshData->IsClosedByEdgePairing ())
-                return SUCCESS; // Not valid type for operation...
+                return true; // Not valid type for operation...
             }
         }
 
@@ -641,7 +623,7 @@ BentleyStatus MeasureGeomCollector::DoAccumulateVolumes (PolyfaceQueryCR meshQue
         {
         // It was already calculated, but maybe transformed since ...
         if (!meshData->ComputePrincipalMomentsAllowMissingSideFacets (amount, centroid, axes, moments, true))
-            return SUCCESS;
+            return true;
         }
     else
         if (!meshData->ComputePrincipalMoments (amount, centroid, axes, moments, true))
@@ -655,29 +637,29 @@ BentleyStatus MeasureGeomCollector::DoAccumulateVolumes (PolyfaceQueryCR meshQue
 
     AccumulateVolumeSums (amount, periphery, 0.0, centroid, momentB, iXY, iXZ, iYZ);
 
-    return SUCCESS;
+    return true;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   12/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus MeasureGeomCollector::_ProcessFacets (PolyfaceQueryCR meshQuery, bool isFilled)
+bool MeasureGeomCollector::_ProcessPolyface (PolyfaceQueryCR meshQuery, bool isFilled, SimplifyGraphic const& graphic)
     {
     switch (m_opType)
         {
         case AccumulateLengths:
             {
-            return SUCCESS; // Not valid type for operation...
+            return true; // Not valid type for operation...
             }
 
         case AccumulateVolumes:
             {
-            return DoAccumulateVolumes (meshQuery);
+            return DoAccumulateVolumes (meshQuery, graphic);
             }
 
         default:
             {
-            return DoAccumulateAreas (meshQuery);
+            return DoAccumulateAreas (meshQuery, graphic);
             }
         }
     }
@@ -754,28 +736,28 @@ static void getBRepMoments (DPoint3dR moments, double& iXY, double& iXZ, double&
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   01/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus MeasureGeomCollector::DoAccumulateLengths (ISolidKernelEntityCR entity)
+bool MeasureGeomCollector::DoAccumulateLengths (ISolidKernelEntityCR entity, SimplifyGraphic const& graphic)
     {
     Transform   flattenTransform;
 
-    if (GetPreFlattenTransform (flattenTransform))
+    if (GetPreFlattenTransform (flattenTransform, graphic))
         {
-        Render::GraphicPtr graphic = m_context->CreateGraphic(Graphic::CreateParams(m_context->GetViewport(), entity.GetEntityTransform()));
+        Render::GraphicPtr tmpGraphic = graphic._CreateSubGraphic(Render::Graphic::CreateParams(graphic.GetViewport(), Transform::FromProduct(graphic.GetLocalToWorldTransform(), entity.GetEntityTransform()), graphic.GetPixelSize()));
 
         // Output edge geometry as CurveVector...
-        T_HOST.GetSolidsKernelAdmin ()._OutputBodyAsWireframe (*graphic, entity, *m_context, true, false);
+        T_HOST.GetSolidsKernelAdmin ()._OutputBodyAsWireframe (*tmpGraphic, entity, graphic.GetViewContext(), true, false);
 
-        return SUCCESS;
+        return true;
         }
 
     ISolidKernelEntityPtr entityPtr;
 
     if (SUCCESS != T_HOST.GetSolidsKernelAdmin()._InstanceEntity (entityPtr, entity))
-        return SUCCESS;
+        return true;
 
     Transform   outputTransform;
     
-    GetOutputTransform (outputTransform);
+    GetOutputTransform (outputTransform, graphic);
     entityPtr->PreMultiplyEntityTransformInPlace (outputTransform);
 
     double      tolerance = getBRepTolerance (*entityPtr, m_facetOptions);
@@ -792,34 +774,34 @@ BentleyStatus MeasureGeomCollector::DoAccumulateLengths (ISolidKernelEntityCR en
         AccumulateLengthSums (amount, centroid, moments, iXY, iXZ, iYZ);
         }
 
-    return SUCCESS;
+    return true;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   01/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus MeasureGeomCollector::DoAccumulateAreas (ISolidKernelEntityCR entity)
+bool MeasureGeomCollector::DoAccumulateAreas (ISolidKernelEntityCR entity, SimplifyGraphic const& graphic)
     {
     Transform   flattenTransform;
 
-    if (GetPreFlattenTransform (flattenTransform))
+    if (GetPreFlattenTransform (flattenTransform, graphic))
         {
-        Render::GraphicPtr graphic = m_context->CreateGraphic(Graphic::CreateParams(m_context->GetViewport(), entity.GetEntityTransform()));
+        Render::GraphicPtr tmpGraphic = graphic._CreateSubGraphic(Render::Graphic::CreateParams(graphic.GetViewport(), Transform::FromProduct(graphic.GetLocalToWorldTransform(), entity.GetEntityTransform()), graphic.GetPixelSize()));
 
         // Output face geometry as ISolidPrimitive/MSBSplineSurface/CurveVector...
-        T_HOST.GetSolidsKernelAdmin ()._OutputBodyAsSurfaces (*graphic, entity, *m_context, true);
+        T_HOST.GetSolidsKernelAdmin ()._OutputBodyAsSurfaces (*tmpGraphic, entity, graphic.GetViewContext(), true);
 
-        return SUCCESS;
+        return true;
         }
 
     ISolidKernelEntityPtr entityPtr;
 
     if (SUCCESS != T_HOST.GetSolidsKernelAdmin()._InstanceEntity (entityPtr, entity))
-        return SUCCESS;
+        return true;
 
     Transform   outputTransform;
     
-    GetOutputTransform (outputTransform);
+    GetOutputTransform (outputTransform, graphic);
     entityPtr->PreMultiplyEntityTransformInPlace (outputTransform);
 
     double      tolerance = getBRepTolerance (*entityPtr, m_facetOptions);
@@ -836,22 +818,22 @@ BentleyStatus MeasureGeomCollector::DoAccumulateAreas (ISolidKernelEntityCR enti
         AccumulateAreaSums (amount, periphery, centroid, moments, iXY, iXZ, iYZ);
         }
 
-    return SUCCESS;
+    return true;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   01/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus MeasureGeomCollector::DoAccumulateVolumes (ISolidKernelEntityCR entity)
+bool MeasureGeomCollector::DoAccumulateVolumes (ISolidKernelEntityCR entity, SimplifyGraphic const& graphic)
     {
     ISolidKernelEntityPtr entityPtr;
 
     if (SUCCESS != T_HOST.GetSolidsKernelAdmin()._InstanceEntity (entityPtr, entity))
-        return SUCCESS;
+        return true;
 
     Transform   outputTransform;
     
-    GetOutputTransform (outputTransform);
+    GetOutputTransform (outputTransform, graphic);
     entityPtr->PreMultiplyEntityTransformInPlace (outputTransform);
 
     double      tolerance = getBRepTolerance (*entityPtr, m_facetOptions);
@@ -868,13 +850,13 @@ BentleyStatus MeasureGeomCollector::DoAccumulateVolumes (ISolidKernelEntityCR en
         AccumulateVolumeSums (amount, periphery, 0.0, centroid, moments, iXY, iXZ, iYZ);
         }
 
-    return SUCCESS;
+    return true;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   06/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus MeasureGeomCollector::_ProcessBody (ISolidKernelEntityCR entity)
+bool MeasureGeomCollector::_ProcessBody (ISolidKernelEntityCR entity, SimplifyGraphic const& graphic)
     {
     switch (m_opType)
         {
@@ -882,49 +864,49 @@ BentleyStatus MeasureGeomCollector::_ProcessBody (ISolidKernelEntityCR entity)
             {
             if (ISolidKernelEntity::EntityType_Solid == entity.GetEntityType ())
                 {
-                return SUCCESS; // Not valid type for operation...
+                return true; // Not valid type for operation...
                 }
             else if (ISolidKernelEntity::EntityType_Sheet == entity.GetEntityType ())
                 {
                 if (!T_HOST.GetSolidsKernelAdmin()._QueryEntityData (entity, DgnPlatformLib::Host::SolidsKernelAdmin::EntityQuery_HasOnlyPlanarFaces))
-                    return SUCCESS; // Not valid type for operation...
+                    return true; // Not valid type for operation...
 
-                Render::GraphicPtr graphic = m_context->CreateGraphic(Graphic::CreateParams(m_context->GetViewport(), entity.GetEntityTransform()));
+                Render::GraphicPtr tmpGraphic = graphic._CreateSubGraphic(Render::Graphic::CreateParams(graphic.GetViewport(), Transform::FromProduct(graphic.GetLocalToWorldTransform(), entity.GetEntityTransform()), graphic.GetPixelSize()));
 
                 // Output curve vector for each face of sheet...(further limit this to a set of coplanar faces?!?)
-                T_HOST.GetSolidsKernelAdmin ()._OutputBodyAsSurfaces (*graphic, entity, *m_context, true);
+                T_HOST.GetSolidsKernelAdmin ()._OutputBodyAsSurfaces (*tmpGraphic, entity, graphic.GetViewContext(), true);
 
-                return SUCCESS;
+                return true;
                 }
 
-            return DoAccumulateLengths (entity);
+            return DoAccumulateLengths (entity, graphic);
             }
 
         case AccumulateVolumes:
             {
             if (ISolidKernelEntity::EntityType_Solid != entity.GetEntityType ())
-                return SUCCESS; // Not valid type for operation...
+                return true; // Not valid type for operation...
 
-            return DoAccumulateVolumes (entity);
+            return DoAccumulateVolumes (entity, graphic);
             }
 
         default:
             {
             if (ISolidKernelEntity::EntityType_Wire == entity.GetEntityType ())
                 {
-                return SUCCESS; // Not valid type for operation...
+                return true; // Not valid type for operation...
                 }
             else if (ISolidKernelEntity::EntityType_Solid == entity.GetEntityType ())
                 {
-                Render::GraphicPtr graphic = m_context->CreateGraphic(Graphic::CreateParams(m_context->GetViewport(), entity.GetEntityTransform()));
+                Render::GraphicPtr tmpGraphic = graphic._CreateSubGraphic(Render::Graphic::CreateParams(graphic.GetViewport(), Transform::FromProduct(graphic.GetLocalToWorldTransform(), entity.GetEntityTransform()), graphic.GetPixelSize()));
 
                 // Output sheet body for each face of solid...
-                T_HOST.GetSolidsKernelAdmin ()._OutputBodyAsSurfaces (*graphic, entity, *m_context, false);
+                T_HOST.GetSolidsKernelAdmin ()._OutputBodyAsSurfaces (*tmpGraphic, entity, graphic.GetViewContext(), false);
 
-                return SUCCESS;
+                return true;
                 }
 
-            return DoAccumulateAreas (entity);
+            return DoAccumulateAreas (entity, graphic);
             }
         }
     }

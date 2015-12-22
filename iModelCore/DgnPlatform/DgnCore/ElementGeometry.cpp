@@ -2813,7 +2813,7 @@ static bool IsGeometryVisible(ViewContextR context, Render::GeometryParamsCR geo
 +---------------+---------------+---------------+---------------+---------------+------*/
 void GeometryStreamIO::Collection::Draw(Render::GraphicR graphic, ViewContextR context, Render::GeometryParamsR geomParams, TransformCR sourceToWorld) const
     {
-    bool        isQVis = graphic.IsQuickVision();
+    bool        isQVis = graphic.IsForDisplay();
     bool        isQVWireframe = (isQVis && RenderMode::Wireframe == context.GetViewFlags().GetRenderMode());
     bool        isPick = (nullptr != context.GetIPickGeom());
     bool        useBRep = !(isQVis || isPick);
@@ -4240,6 +4240,7 @@ bool GeometryBuilder::Append(TextStringCR text)
     return AppendWorld(*GeometricPrimitive::Create(text));
     }
 
+#if defined (NEEDSWORK_RENDER_GRAPHIC)
 BEGIN_UNNAMED_NAMESPACE
 
 //=======================================================================================
@@ -4318,17 +4319,22 @@ void TextAnnotationDrawToGeometricPrimitive::_OutputGraphics(ViewContextR contex
     }
 
 END_UNNAMED_NAMESPACE
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool GeometryBuilder::Append(TextAnnotationCR text, TransformCR transform)
     {
+#if defined (NEEDSWORK_RENDER_GRAPHIC)
     TextAnnotationDraw annotationDraw(text);
     TextAnnotationDrawToGeometricPrimitive annotationDrawToGeom(annotationDraw, transform, *this, m_elParams.GetCategoryId());
     GeometryProcessor::Process(annotationDrawToGeom, m_dgnDb);
 
     return true;
+#else
+    return false;
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -18,7 +18,6 @@
 #include "ColorUtil.h"
 #include "ElementHandler.h"
 #include "ElementGeometry.h"
-#include "ElementGraphics.h"
 #include "FenceParams.h"
 #include "GPArray.h"
 #include "HitDetail.h"

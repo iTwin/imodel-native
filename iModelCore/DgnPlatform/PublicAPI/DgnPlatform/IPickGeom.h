@@ -23,9 +23,11 @@ struct IPickGeom
     virtual DPoint3dCR _GetPickPointWorld() const = 0;
     virtual GeomDetailR _GetGeomDetail() = 0;
     virtual void _SetHitPriorityOverride(HitPriority priority) = 0;
-    virtual void _AddHit(DPoint4dCR hitPtView, DPoint3dCP hitPtLocal, HitPriority) = 0;
     virtual bool _IsSnap() const = 0;
+#if defined (NEEDSWORK_RENDER_GRAPHIC)
+    virtual void _AddHit(DPoint4dCR hitPtView, DPoint3dCP hitPtLocal, HitPriority) = 0;
     virtual DRay3d _GetBoresite() const = 0;
+#endif
 };
 
 END_BENTLEY_DGN_NAMESPACE
