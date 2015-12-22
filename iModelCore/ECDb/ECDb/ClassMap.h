@@ -104,6 +104,7 @@ struct PropertyMapSet : NonCopyableClass
 //+===============+===============+===============+===============+===============+======
 struct IClassMap : NonCopyableClass
     {
+    typedef std::vector<ECDbSqlTable*> & TableListR;
 public:
     //! Class map type. Used to avoid dynamic_cast when casting to sub classes of ClassMap.
     enum class Type
@@ -131,7 +132,7 @@ private:
     virtual ECN::ECClassCR _GetClass () const = 0;
     virtual ECN::ECClassId _GetParentMapClassId () const = 0;
     virtual PropertyMapCollection const& _GetPropertyMaps () const = 0;
-    virtual ECDbSqlTable& _GetTable () const = 0;
+    virtual TableListR _MapToTables () const = 0;
     virtual ECDbMapStrategy const& _GetMapStrategy () const = 0;
     virtual ECDbMapCR _GetECDbMap () const = 0;
     virtual ClassDbView const& _GetDbView () const = 0;
@@ -152,13 +153,24 @@ public:
     const std::set<ECDbSqlTable const*> GetJoinedTables() const;
     ECDbSqlTable& GetPrimaryTable() const
         {
-        if (MapsToJoinedTable())
-            {
-            auto root = FindPrimaryClassMapOfJoinedTable();
-            BeAssert(root != nullptr && "This should never be null");
-            return root->GetTable();           
-            }
-        return GetTable();
+        TableListR tables = MapToTables();
+        BeAssert(!tables.empty());
+        return *tables.front();
+        }
+    ECDbSqlTable& GetSecondaryTable() const
+        {
+        TableListR tables = MapToTables();
+        BeAssert(!tables.empty());
+        return *tables.back();
+        }
+    bool IsMappedTo(ECDbSqlTable const& table) const
+        {
+        TableListR tables = MapToTables();
+        return std::find(tables.begin(), tables.end(), &table) != tables.end();
+        }
+    bool IsMappedToSingleTable() const
+        {
+        return MapToTables().size() == 1;
         }
     PropertyMapCP GetPropertyMap (Utf8CP propertyName) const;
 
@@ -169,7 +181,7 @@ public:
     //! Returns the class maps of the classes derived from this class map's class.
     //! @eturn Derived classes class maps
     std::vector<IClassMap const*> GetDerivedClassMaps () const;
-    ECDbSqlTable& GetTable () const;
+    TableListR MapToTables() const;
 
     //! Checks whether this class map contains a property map of type PropertyMapToTable.
     //! @return true, if the class map contains a PropertyMapToTable map. false otherwise.
@@ -295,7 +307,7 @@ struct ClassMap : public IClassMap, RefCountedBase
     private:
         ECDbMapCR                   m_ecDbMap;
         PropertyMapCollection       m_propertyMaps;
-        ECDbSqlTable*               m_table;
+        mutable std::vector<ECDbSqlTable*>  m_tables;
         ECDbMapStrategy             m_mapStrategy;
         bool                        m_isDirty;
         ECDbClassMapId              m_id;
@@ -323,9 +335,15 @@ struct ClassMap : public IClassMap, RefCountedBase
         virtual BentleyStatus _Save (std::set<ClassMap const*>& savedGraph); virtual BentleyStatus _Load (std::set<ClassMap const*>& loadGraph, ECDbClassMapInfo const& mapInfo, IClassMap const* parentClassMap);
 
         MapStatus AddPropertyMaps (SchemaImportContext*, IClassMap const* parentClassMap, ECDbClassMapInfo const* loadInfo, ClassMapInfo const* classMapInfo);
-        void SetTable (ECDbSqlTable* newTable) { m_table = newTable; }
+        void SetTable(ECDbSqlTable& newTable, bool append = false)
+            {
+            if (!append)
+                m_tables.clear();
+
+            m_tables.push_back(&newTable);
+            }
         virtual PropertyMapCollection const& _GetPropertyMaps () const;
-        virtual ECDbSqlTable& _GetTable () const override { return *m_table; }
+        virtual TableListR _MapToTables() const override { return m_tables; }
         virtual ECN::ECClassCR _GetClass () const override { return m_ecClass; }
         virtual ECDbMapStrategy const& _GetMapStrategy () const override { return m_mapStrategy; }
         virtual ECDbMapCR _GetECDbMap () const override { return m_ecDbMap; }
@@ -356,36 +374,5 @@ struct ClassMap : public IClassMap, RefCountedBase
     ColumnFactory const& GetColumnFactory () const { return m_columnFactory; }
     ColumnFactory& GetColumnFactoryR () { return m_columnFactory; }
     };
-
-
-/*=================================================================================**//**
-* @bsiclass                                                     Casey.Mullen      11/2011
-+===============+===============+===============+===============+===============+======*/
-struct MappedTable : public RefCountedBase
-{
-private:
-    ECDbSqlTable& m_table;
-    bool m_generatedClassIdColumn;
-    bvector<ClassMapCP> m_classMaps;
-    ECDbMapR m_ecDbMap;
-
-    MappedTable(MappedTableCR); // hide copy constructor
-    MappedTable (ECDbMapR ecDbMap, ClassMapCR classMap);
-
-public:
-    static MappedTablePtr Create (ECDbMapR ecDbMap, ClassMapCR classMap);
-
-    ECDbSqlTable&    GetTable() const {return m_table;}
-    bool        HasSingleClass() const {return m_classMaps.size() == 1;}
-    const bvector<ClassMapCP>&      GetClassMaps() const { return m_classMaps;}
-    //! FinishTableDefinition should be called once all ECClasses have been added to this cluster.
-    //! FinishTableDefinition will ensure there is a primary key for the table, and will add a
-    //! ClassId column, if necessary
-    //! It must be called prior to calling ECDbMap::CreateTableInDb()
-    BentleyStatus FinishTableDefinition(ECDbCR, SchemaImportContext&);
-    BentleyStatus AddClassMap(ClassMapCR classMap);
-    bool IsFinished() const { return m_generatedClassIdColumn;}
-    };
-
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

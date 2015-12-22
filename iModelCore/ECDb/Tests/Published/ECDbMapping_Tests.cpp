@@ -4571,7 +4571,8 @@ TEST_F(ECDbMappingTestFixture, ForeignKeyMapWithKeyProperty)
         ASSERT_TRUE(ecdb.ColumnExists(childTableName, "ParentId"));
         bvector<Utf8String> columns;
         ASSERT_TRUE(ecdb.GetColumns(columns, childTableName));
-        ASSERT_EQ(3, columns.size()) << childTableName << " table should not contain an extra foreign key column as the relationship specifies a Key property";
+        std::vector<Utf8String> columnsP(columns.begin(), columns.end());
+        ASSERT_EQ(3, columnsP.size()) << childTableName << " table should not contain an extra foreign key column as the relationship specifies a Key property";
 
         auto containsDefaultNamedRelationalKeyColumn = [] (Utf8StringCR str) { return BeStringUtilities::Strnicmp(str.c_str(), "ForeignEC", 9) == 0; };
         auto it = std::find_if(columns.begin(), columns.end(), containsDefaultNamedRelationalKeyColumn);

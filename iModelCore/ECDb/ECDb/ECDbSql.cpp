@@ -2818,6 +2818,12 @@ void ECDbClassMapInfo::GetPropertyMaps (std::vector<ECDbPropertyMapInfo const*>&
         GetBaseClassMap ()->GetPropertyMaps (propertyMaps, onlyLocal);
         }
 
+    propertyMaps.erase(
+        std::remove_if(
+            propertyMaps.begin(), 
+            propertyMaps.end(), [] (ECDbPropertyMapInfo const* minfo) { return minfo->GetColumn().GetKind() != ColumnKind::DataColumn; }), 
+        propertyMaps.end());
+
     for (auto& localPropertyMap : m_localPropertyMaps)
         propertyMaps.push_back (localPropertyMap.get ());
     }

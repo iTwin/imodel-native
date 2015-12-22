@@ -111,8 +111,8 @@ ECSqlStatus ECSqlDeletePreparer::GenerateNativeSqlSnippets
             auto propertyAccessed =  whereClauseExp->Find(Exp::Type::PropertyName, true);
 
             auto const tableBeenAccessed = whereClauseExp->GetReferencedTables();
-            bool referencedRootOfJoinedTable = (tableBeenAccessed.find(&rootOfJoinedTable->GetTable()) != tableBeenAccessed.end());
-            bool referencedJoinedTable = (tableBeenAccessed.find(&currentClassMap.GetTable()) != tableBeenAccessed.end());
+            bool referencedRootOfJoinedTable = (tableBeenAccessed.find(&rootOfJoinedTable->GetSecondaryTable()) != tableBeenAccessed.end());
+            bool referencedJoinedTable = (tableBeenAccessed.find(&currentClassMap.GetSecondaryTable()) != tableBeenAccessed.end());
             bool hasOnlyECInstanceId = false;
             if (propertyAccessed.size() == 1)
                 hasOnlyECInstanceId = strcmp(static_cast<PropertyNameExp const*>(propertyAccessed.front())->GetPropertyName(), ECDbSystemSchemaHelper::ECINSTANCEID_PROPNAME) == 0;
@@ -141,19 +141,19 @@ ECSqlStatus ECSqlDeletePreparer::GenerateNativeSqlSnippets
                 if (!status.IsSuccess())
                     return status;
 
-                auto joinedTableId = currentClassMap.GetTable().GetFilteredColumnFirst(ColumnKind::ECInstanceId);
-                auto parentOfjoinedTableId = rootOfJoinedTable->GetTable().GetFilteredColumnFirst(ColumnKind::ECInstanceId);
+                auto joinedTableId = currentClassMap.GetSecondaryTable().GetFilteredColumnFirst(ColumnKind::ECInstanceId);
+                auto parentOfjoinedTableId = rootOfJoinedTable->GetSecondaryTable().GetFilteredColumnFirst(ColumnKind::ECInstanceId);
                 NativeSqlBuilder snippet;
                 snippet.AppendFormatted(
                     " WHERE [%s] IN (SELECT [%s].[%s] FROM [%s] INNER JOIN [%s] ON [%s].[%s] = [%s].[%s] %s) ",
                     parentOfjoinedTableId->GetName().c_str(),
-                    rootOfJoinedTable->GetTable().GetName().c_str(),
+                    rootOfJoinedTable->GetSecondaryTable().GetName().c_str(),
                     parentOfjoinedTableId->GetName().c_str(),
-                    rootOfJoinedTable->GetTable().GetName().c_str(),
-                    currentClassMap.GetTable().GetName().c_str(),
-                    currentClassMap.GetTable().GetName().c_str(),
+                    rootOfJoinedTable->GetSecondaryTable().GetName().c_str(),
+                    currentClassMap.GetSecondaryTable().GetName().c_str(),
+                    currentClassMap.GetSecondaryTable().GetName().c_str(),
                     joinedTableId->GetName().c_str(),
-                    rootOfJoinedTable->GetTable().GetName().c_str(),
+                    rootOfJoinedTable->GetSecondaryTable().GetName().c_str(),
                     parentOfjoinedTableId->GetName().c_str(),
                     whereClause.ToString()
                     );
@@ -180,11 +180,7 @@ ECSqlStatus ECSqlDeletePreparer::GenerateNativeSqlSnippets
 
 
     IClassMap const& classMap = classNameExp.GetInfo().GetMap();
-    ECDbSqlTable const* table = &classMap.GetTable();
-    if (auto rootOfJoinedTable = classMap.FindPrimaryClassMapOfJoinedTable())
-        {
-        table = &rootOfJoinedTable->GetTable();
-        }
+    ECDbSqlTable const* table = &classMap.GetPrimaryTable();
     ECDbSqlColumn const* classIdColumn = nullptr;
     if (!table->TryGetECClassIdColumn(classIdColumn) || classIdColumn->GetPersistenceType() != PersistenceType::Persisted)
         return ECSqlStatus::Success; //no class id column exists -> no system where clause

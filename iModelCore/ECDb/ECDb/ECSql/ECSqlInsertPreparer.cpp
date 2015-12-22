@@ -529,7 +529,7 @@ void ECSqlInsertPreparer::PreparePrimaryKey(ECSqlPrepareContext& ctx, NativeSqlS
         }
 
     //if table has a class id column, handle this here
-    auto classIdColumn = classMap.GetTable().FindColumnCP(ECDB_COL_ECClassId);
+    auto classIdColumn = classMap.GetSecondaryTable().FindColumnCP(ECDB_COL_ECClassId);
     if (classIdColumn != nullptr)
         {
         NativeSqlBuilder::List classIdNameSqliteSnippets {NativeSqlBuilder(classIdColumn->GetName().c_str())};

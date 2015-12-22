@@ -166,7 +166,7 @@ BentleyStatus ClassMapInfo::DoEvaluateMapStrategy(bool& baseClassesNotMappedYet,
         {
         m_parentClassMap = parentClassMap;
         BeAssert(parentStrategy.GetStrategy() == ECDbMapStrategy::Strategy::SharedTable && parentStrategy.AppliesToSubclasses());
-        m_tableName = m_parentClassMap->GetTable().GetName();
+        m_tableName = m_parentClassMap->GetSecondaryTable().GetName();
         UserECDbMapStrategy const* parentUserStrategy = m_ecdbMap.GetSchemaImportContext()->GetUserStrategy(parentClassMap->GetClass());
         if (parentUserStrategy == nullptr)
             {
@@ -175,7 +175,7 @@ BentleyStatus ClassMapInfo::DoEvaluateMapStrategy(bool& baseClassesNotMappedYet,
             }
         
         //use same ECInstanceId column name for derived classes.
-        ECDbSqlColumn const* parentECInstanceIdCol = m_parentClassMap->GetTable().GetFilteredColumnFirst(ColumnKind::ECInstanceId);
+        ECDbSqlColumn const* parentECInstanceIdCol = m_parentClassMap->GetSecondaryTable().GetFilteredColumnFirst(ColumnKind::ECInstanceId);
         if (parentECInstanceIdCol != nullptr)
             m_ecInstanceIdColumnName.assign(parentECInstanceIdCol->GetName());
 
@@ -554,14 +554,8 @@ ECClassCR          ecClass
             // ClassMappingRule: non-polymorphic MapStrategies used in base classes have no effect on child classes
             return true;
             }
-        auto getTable = [](IClassMap const& classMap) 
-            {
-            if (auto joinedTableRoot = classMap.FindPrimaryClassMapOfJoinedTable())
-                return &joinedTableRoot->GetTable();
 
-            return &classMap.GetTable();
-            };
-        auto baseTable = getTable(*baseClassMap);
+        auto baseTable = &baseClassMap->GetPrimaryTable();
         switch (baseMapStrategy.GetStrategy())
             {
                 case ECDbMapStrategy::Strategy::SharedTable:
@@ -569,7 +563,7 @@ ECClassCR          ecClass
                     bool add = true;
                     for (auto classMap : tphMaps)
                         {
-                        if (getTable(*classMap) == baseTable)
+                        if (&classMap->GetPrimaryTable() == baseTable)
                             {
                             add = false;
                             break;

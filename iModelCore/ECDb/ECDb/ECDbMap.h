@@ -20,8 +20,8 @@ struct StorageDescription;
 struct ECDbMap :NonCopyableClass
     {
     typedef bmap<ECN::ECClassId, ClassMapPtr> ClassMapDictionary;
-    typedef bmap<ECDbSqlTable*, MappedTablePtr> ClustersByTable;
-
+    typedef bset<ClassMap*> ClassMapSet;
+    typedef bmap<ECDbSqlTable*, ClassMapSet> ClassMapByTable;
     public:
         struct LightweightCache : NonCopyableClass
             {
@@ -108,7 +108,6 @@ private:
     ECDbR                       m_ecdb;
     ECDbSQLManager              m_ecdbSqlManager;
     ClassMapDictionary          m_classMapDictionary;
-    ClustersByTable             m_clustersByTable;
     mutable bvector<ECN::ECClassCP> m_classMapLoadTable;
     mutable int                 m_classMapLoadAccessCounter;
     SchemaImportContext*        m_schemaImportContext;
@@ -119,11 +118,11 @@ private:
     MapStatus                   MapClass(ECN::ECClassCR ecClass, bool forceRevaluationOfMapStrategy);
     MapStatus                   AddClassMap(ClassMapPtr& classMap);
     void                        RemoveClassMap(IClassMap const& classMap);
-    bool                        FinishTableDefinition() const;
+    BentleyStatus                        FinishTableDefinition() const;
     BentleyStatus               Save();
     //! Create a table to persist ECInstances of the given ECClass in the Db
     BentleyStatus               CreateOrUpdateRequiredTables();
-
+    ClassMapByTable             GetClassMapByTable() const;
 public:
     explicit ECDbMap(ECDbR ecdb);
     ~ECDbMap() {}
@@ -162,7 +161,6 @@ public:
     ClassMapCP                  GetClassMapCP(ECN::ECClassCR ecClass, bool loadIfNotFound = true) const;
     BentleyStatus               CreateECClassViewsInDb() const;
     ECDbSqlTable*               FindOrCreateTable(SchemaImportContext*, Utf8CP tableName, TableType, bool isVirtual, Utf8CP primaryKeyColumnName);
-    MappedTableP                GetMappedTable(ClassMapCR classMap, bool createMappedTableEntryIfNotFound = true);
 
     //!Loads the class maps if they were not loaded yet
     void                        GetClassMapsFromRelationshipEnd(bset<IClassMap const*>& endClassMaps, ECN::ECRelationshipConstraintCR relationshipEnd, bool loadIfNotFound) const;

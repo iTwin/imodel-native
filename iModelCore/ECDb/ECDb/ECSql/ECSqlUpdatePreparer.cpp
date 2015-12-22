@@ -93,8 +93,8 @@ ECSqlStatus ECSqlUpdatePreparer::Prepare(ECSqlPrepareContext& ctx, UpdateStateme
         if (auto rootOfJoinedTable = currentClassMap.FindPrimaryClassMapOfJoinedTable())
             {
             auto const tableBeenAccessed = whereClauseExp->GetReferencedTables();
-            bool referencedRootOfJoinedTable = (tableBeenAccessed.find(&rootOfJoinedTable->GetTable()) != tableBeenAccessed.end());
-            bool referencedJoinedTable = (tableBeenAccessed.find(&currentClassMap.GetTable()) != tableBeenAccessed.end());
+            bool referencedRootOfJoinedTable = (tableBeenAccessed.find(&rootOfJoinedTable->GetSecondaryTable()) != tableBeenAccessed.end());
+            bool referencedJoinedTable = (tableBeenAccessed.find(&currentClassMap.GetSecondaryTable()) != tableBeenAccessed.end());
             if (!referencedRootOfJoinedTable && referencedJoinedTable)
                 {
                 //do not modifiy where
@@ -102,19 +102,19 @@ ECSqlStatus ECSqlUpdatePreparer::Prepare(ECSqlPrepareContext& ctx, UpdateStateme
                 }
             else
                 {
-                auto joinedTableId = currentClassMap.GetTable().GetFilteredColumnFirst(ColumnKind::ECInstanceId);
-                auto parentOfjoinedTableId = rootOfJoinedTable->GetTable().GetFilteredColumnFirst(ColumnKind::ECInstanceId);
+                auto joinedTableId = currentClassMap.GetSecondaryTable().GetFilteredColumnFirst(ColumnKind::ECInstanceId);
+                auto parentOfjoinedTableId = rootOfJoinedTable->GetSecondaryTable().GetFilteredColumnFirst(ColumnKind::ECInstanceId);
                 NativeSqlBuilder snippet;
                 snippet.AppendFormatted(
                     " WHERE [%s] IN (SELECT [%s].[%s] FROM [%s] INNER JOIN [%s] ON [%s].[%s] = [%s].[%s] %s) ",
                     parentOfjoinedTableId->GetName().c_str(),
-                    rootOfJoinedTable->GetTable().GetName().c_str(),
+                    rootOfJoinedTable->GetSecondaryTable().GetName().c_str(),
                     parentOfjoinedTableId->GetName().c_str(),
-                    rootOfJoinedTable->GetTable().GetName().c_str(),
-                    currentClassMap.GetTable().GetName().c_str(),
-                    currentClassMap.GetTable().GetName().c_str(),
+                    rootOfJoinedTable->GetSecondaryTable().GetName().c_str(),
+                    currentClassMap.GetSecondaryTable().GetName().c_str(),
+                    currentClassMap.GetSecondaryTable().GetName().c_str(),
                     joinedTableId->GetName().c_str(),
-                    rootOfJoinedTable->GetTable().GetName().c_str(),
+                    rootOfJoinedTable->GetSecondaryTable().GetName().c_str(),
                     parentOfjoinedTableId->GetName().c_str(),
                     whereClause.ToString()
                     );
@@ -132,11 +132,7 @@ ECSqlStatus ECSqlUpdatePreparer::Prepare(ECSqlPrepareContext& ctx, UpdateStateme
         // WHERE clause
         NativeSqlBuilder systemWhereClause;
         ECDbSqlColumn const* classIdColumn = nullptr;
-        ECDbSqlTable const* table = &classMap.GetTable();
-        if (auto rootOfJoinedTable = classMap.FindPrimaryClassMapOfJoinedTable())
-            {
-             table = &rootOfJoinedTable->GetTable();
-            }
+        ECDbSqlTable const* table = &classMap.GetPrimaryTable();
 
         if (table->TryGetECClassIdColumn(classIdColumn) &&
             classIdColumn->GetPersistenceType() == PersistenceType::Persisted)

@@ -916,7 +916,7 @@ ECDbMapAnalyser::Storage& ECDbMapAnalyser::GetStorage (Utf8CP tableName)
 //---------------------------------------------------------------------------------------
 ECDbMapAnalyser::Storage& ECDbMapAnalyser::GetStorage (ClassMapCR classMap)
     {
-    return GetStorage (classMap.GetTable ().GetName ().c_str ());
+    return GetStorage (classMap.GetSecondaryTable ().GetName ().c_str ());
     }
 
 //---------------------------------------------------------------------------------------
@@ -948,8 +948,8 @@ ECDbMapAnalyser::Class& ECDbMapAnalyser::GetClass (ClassMapCR classMap)
     storage.GetClassesR ().insert (ptr);
     if (classMap.MapsToJoinedTable())
         {
-        auto& storage = GetStorage(classMap.GetTable().GetName().c_str());
-        for (auto id : classMap.GetStorageDescription().GetVerticalPartition(classMap.GetTable())->GetClassIds())
+        auto& storage = GetStorage(classMap.GetPrimaryTable().GetName().c_str());
+        for (auto id : classMap.GetStorageDescription().GetVerticalPartition(classMap.GetPrimaryTable())->GetClassIds())
             {
             auto refClassMap = GetClassMap(id);
             BeAssert(refClassMap != nullptr);
@@ -1100,7 +1100,7 @@ void ECDbMapAnalyser::AnalyseStruct (Class& classInfo)
             {
             if (auto associatedClasMap = m_map.GetClassMap (mapToTable->GetElementType ()))
                 {
-                if (associatedClasMap->GetTable ().GetPersistenceType () == PersistenceType::Persisted)
+                if (associatedClasMap->GetSecondaryTable().GetPersistenceType () == PersistenceType::Persisted)
                     {
                     structPropertyMaps[associatedClasMap].push_back (mapToTable);
                     }
@@ -1441,7 +1441,7 @@ SqlViewBuilder ECDbMapAnalyser::BuildView (Class& nclass)
                 select.Append (", ");
             }
 
-        select.Append (" FROM ").AppendEscaped (firstChildMap->GetTable ().GetName ().c_str ());
+        select.Append (" FROM ").AppendEscaped (firstChildMap->GetSecondaryTable().GetName ().c_str ());
         ECDbSqlColumn const* classIdColumn = nullptr;
         if (hp.GetTable ().TryGetECClassIdColumn(classIdColumn))
             {
@@ -1654,7 +1654,7 @@ DbResult ECDbMapAnalyser::UpdateHoldingView ()
             }
 
         auto holdingRelationshipClassMap = static_cast<RelationshipClassMapCP>(m_map.GetClassMap (*holdingRelationshipClass));
-        if (holdingRelationshipClassMap == nullptr || holdingRelationshipClassMap->GetTable ().GetPersistenceType () == PersistenceType::Virtual)
+        if (holdingRelationshipClassMap == nullptr || holdingRelationshipClassMap->GetSecondaryTable().GetPersistenceType () == PersistenceType::Virtual)
             continue;
 
 
@@ -1671,7 +1671,7 @@ DbResult ECDbMapAnalyser::UpdateHoldingView ()
             filter = ECDbMap::LightweightCache::RelationshipEnd::Target;
             }
 
-        auto table = &holdingRelationshipClassMap->GetTable ();
+        auto table = &holdingRelationshipClassMap->GetSecondaryTable();
         auto itor = doneSet.find (table);
         if (itor == doneSet.end () || (((int)(itor->second) & (int)filter) == 0))
             {
@@ -2204,9 +2204,9 @@ BentleyStatus ECClassViewGenerator::BuildEndTableRelationshipView(NativeSqlBuild
             return BentleyStatus::ERROR;
             }
         sqlBuilder.AppendEOL();
-        sqlBuilder.Append(" FROM ").AppendEscaped(endClassMap->GetTable().GetName().c_str());
+        sqlBuilder.Append(" FROM ").AppendEscaped(endClassMap->GetSecondaryTable().GetName().c_str());
 
-        Utf8String tableAlias = endClassMap->GetTable().GetName();
+        Utf8String tableAlias = endClassMap->GetSecondaryTable().GetName();
 
         if (BuildRelationshipJoinIfAny(sqlBuilder, *endClassMap, ECRelationshipEnd::ECRelationshipEnd_Source, topLevel) != BentleyStatus::SUCCESS)
             return BentleyStatus::ERROR;
@@ -2477,11 +2477,11 @@ BentleyStatus ECClassViewGenerator::BuildStructPropertyExpression(NativeSqlBuild
 BentleyStatus ECClassViewGenerator::BuildSystemSelectionClause(NativeSqlBuilder::List& fragments, ClassMapCR baseClassMap, ClassMapCR classMap, Utf8CP tablePrefix, bool addECPropertyPathAlias, bool nullValue)
     {
     
-    auto table = &classMap.GetTable();
+    auto table = &classMap.GetPrimaryTable();
 
     if (auto parent = classMap.FindPrimaryClassMapOfJoinedTable())
         {
-        table = &parent->GetTable();
+        table = &parent->GetPrimaryTable();
         }
 
     if (tablePrefix == nullptr)
