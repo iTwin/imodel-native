@@ -28,11 +28,12 @@ DEFINE_REF_COUNTED_PTR(Graphic)
 //=======================================================================================
 struct GraphicSet
 {
-    mutable bvector<Render::GraphicPtr> m_graphics;
+    struct PtrCompare{bool operator()(Render::GraphicPtr first, Render::GraphicPtr second) const {return first.get()<second.get();}};
+    mutable bset<Render::GraphicPtr, PtrCompare, 8> m_graphics;
     DGNPLATFORM_EXPORT Render::Graphic* Find(DgnViewportCR, double metersPerPixel) const;
     DGNPLATFORM_EXPORT void Drop(Render::Graphic&);
     DGNPLATFORM_EXPORT void DropFor(DgnViewportCR viewport);
-    void Save(Render::Graphic& graphic) {m_graphics.push_back(&graphic);}
+    void Save(Render::Graphic& graphic) {m_graphics.insert(&graphic);}
     void Clear() {m_graphics.clear();}
 };
 END_BENTLEY_RENDER_NAMESPACE
@@ -802,9 +803,15 @@ protected:
     //! a relationship.
     DGNPLATFORM_EXPORT virtual DgnDbStatus _UpdateInDb();
 
-    //! Called after a DgnElement was successfully updated. The element will be in its post-updated state.
+    //! Called on the replacement element, after a DgnElement was successfully updated, but before the data is 
+    //! copied into the original element and before its parent is notified.
+    //! The replacement element will be in its post-updated state and the original element is supplied.
     //! @note If you override this method, you @em must call T_Super::_OnUpdated.
     DGNPLATFORM_EXPORT virtual void _OnUpdated(DgnElementCR original) const;
+
+    //! Called after a DgnElement was successfully updated from a replacment element and it now holds the data from the replacement.
+    //! @note If you override this method, you @em must call T_Super::_OnUpdateFinished.
+    virtual void _OnUpdateFinished() const {}
 
     //! Called after an update to this DgnElement was reversed by undo. The element will be in its original (pre-change, post-undo) state.
     //! @note If you override this method, you @em must call T_Super::_OnReversedUpdate.
@@ -1442,7 +1449,7 @@ protected:
     virtual DgnDbStatus _LoadFromDb() override {auto status = T_Base::_LoadFromDb(); return DgnDbStatus::Success == status ? m_geom.LoadFromDb(this->GetElementId(), this->GetDgnDb()) : status;}
     virtual DgnDbStatus _InsertInDb() override {auto status = T_Base::_InsertInDb(); return DgnDbStatus::Success == status ? this->InsertGeomSourceInDb() : status;}
     virtual DgnDbStatus _UpdateInDb() override {auto status = T_Base::_UpdateInDb(); return DgnDbStatus::Success == status ? this->UpdateGeomSourceInDb() : status;}
-    virtual void _OnReversedUpdate(DgnElementCR changed) const override {T_Base::_OnReversedUpdate(changed); m_graphics.Clear();}
+    virtual void _OnUpdateFinished() const override {T_Base::_OnUpdateFinished(); m_graphics.Clear();}
 
     virtual void _RemapIds(DgnImportContext& importer) override {T_Base::_RemapIds(importer); m_geom.RemapIds(importer);}
     virtual uint32_t _GetMemSize() const override {return T_Base::_GetMemSize() + static_cast<uint32_t>(sizeof(m_geom));}

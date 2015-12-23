@@ -1255,6 +1255,8 @@ void DgnElements::FinishUpdate(DgnElementCR replacement, DgnElementCR original)
     uint32_t oldSize = original._GetMemSize(); // save current size
     (*const_cast<DgnElementP>(&original))._CopyFrom(replacement);    // copy new data into original element
     ChangeMemoryUsed(original._GetMemSize() - oldSize); // report size change
+
+    original._OnUpdateFinished(); // this gives geometric elements a chance to clear their graphics
     }
 
 /*---------------------------------------------------------------------------------**//**
