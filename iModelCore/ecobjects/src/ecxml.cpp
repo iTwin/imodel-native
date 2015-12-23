@@ -204,7 +204,7 @@ ECObjectsStatus ECXml::ParseCardinalityString (uint32_t &lowerLimit, uint32_t &u
         
     if (openParenIndex != 0 && cardinalityWithoutSpaces.find(')') != cardinalityWithoutSpaces.length() - 1)
         {
-        LOG.warningv("Cardinality string '%s' is invalid.", cardinalityString.c_str());
+        LOG.errorv("Cardinality string '%s' is invalid.", cardinalityString.c_str());
         return ECObjectsStatus::ParseError;
         }
      
@@ -214,7 +214,7 @@ ECObjectsStatus ECXml::ParseCardinalityString (uint32_t &lowerLimit, uint32_t &u
         
     if (0 == scanned)
         {
-        LOG.warningv("Cardinality string '%s' is invalid.", cardinalityString.c_str());
+        LOG.errorv("Cardinality string '%s' is invalid.", cardinalityString.c_str());
         return ECObjectsStatus::ParseError;
         }
     
@@ -247,7 +247,7 @@ void ECXml::ParseModifierString(ECClassModifier& modifier, Utf8StringCR modifier
     else
         {
         if (0 != modifierString.CompareToI(ECXML_MODIFIER_NONE))
-            LOG.warningv("Invalid value for Modifier attribute: %s.  Defaulting to NONE", modifierString.c_str());
+            LOG.warningv("Invalid value for Modifier attribute: %s. Defaulting to None", modifierString.c_str());
         modifier = ECClassModifier::None;
         }
     }

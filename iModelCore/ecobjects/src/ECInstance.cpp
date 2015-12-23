@@ -2566,7 +2566,7 @@ StandaloneECInstancePtr CreateConstraintInstance( Utf8String className, Utf8Stri
     Utf8String constraintClassName;
     if (ECObjectsStatus::Success != ECClass::ParseClassName (constraintSchemaName, constraintClassName, className))
         {
-        LOG.warningv ("Invalid ECSchemaXML: The ECRelationshipConstraint contains a classname attribute with the value '%s' that can not be parsed.", 
+        LOG.errorv("Invalid ECSchemaXML: The ECRelationshipConstraint contains a classname attribute with the value '%s' that can not be parsed.",
             className.c_str());
         return nullptr;
         }
@@ -2574,7 +2574,7 @@ StandaloneECInstancePtr CreateConstraintInstance( Utf8String className, Utf8Stri
     ECSchemaCP constraintSchema = Utf8String::IsNullOrEmpty(constraintSchemaName.c_str()) ? defaultSchema : GetSchema(constraintSchemaName);
     if (nullptr == constraintSchema)
         {
-        LOG.warningv  ("Invalid ECSchemaXML: ECRelationshipConstraint contains a classname attribute with the namespace prefix '%s' that can not be resolved to a referenced schema.", 
+        LOG.errorv("Invalid ECSchemaXML: ECRelationshipConstraint contains a classname attribute with the namespace prefix '%s' that can not be resolved to a referenced schema.",
             constraintSchemaName.c_str());
         return nullptr;
         }
@@ -2582,7 +2582,7 @@ StandaloneECInstancePtr CreateConstraintInstance( Utf8String className, Utf8Stri
     ECClassCP constraintClass = constraintSchema->GetClassCP (constraintClassName.c_str());
     if (nullptr == constraintClass)
         {
-        LOG.warningv  ("Invalid ECSchemaXML: The ECRelationshipConstraint contains a classname attribute with the value '%s' that can not be resolved to an ECClass named '%s' in the ECSchema '%s'", 
+        LOG.errorv("Invalid ECSchemaXML: The ECRelationshipConstraint contains a classname attribute with the value '%s' that can not be resolved to an ECClass named '%s' in the ECSchema '%s'",
             className.c_str(), constraintClassName.c_str(), constraintSchema->GetName().c_str());
         return nullptr;
         }
@@ -2677,19 +2677,19 @@ InstanceReadStatus      GetInstance (ECClassCP& ecClass, IECInstancePtr& ecInsta
         // see if we can find the attributes corresponding to the relationship instance ids.
         Utf8String sourceInstanceId;
         if (BEXML_Success != m_xmlNode.GetAttributeStringValue (sourceInstanceId, SOURCEINSTANCEID_ATTRIBUTE))
-            LOG.warningv ("Source InstanceId not set on serialized relationship instance");
+            LOG.warning ("Source InstanceId not set on serialized relationship instance");
 
         Utf8String sourceClassName;
         if (BEXML_Success != m_xmlNode.GetAttributeStringValue (sourceClassName, SOURCECLASS_ATTRIBUTE))
-            LOG.warningv ("Source className not set on serialized relationship instance");
+            LOG.warning ("Source className not set on serialized relationship instance");
 
         Utf8String targetInstanceId;
         if (BEXML_Success != m_xmlNode.GetAttributeStringValue (targetInstanceId, TARGETINSTANCEID_ATTRIBUTE))
-            LOG.warningv ("Target InstanceId not set on serialized relationship instance");
+            LOG.warning ("Target InstanceId not set on serialized relationship instance");
 
         Utf8String targetClassName;
         if (BEXML_Success != m_xmlNode.GetAttributeStringValue (targetClassName, TARGETCLASS_ATTRIBUTE))
-            LOG.warningv ("Target className not set on serialized relationship instance");
+            LOG.warning ("Target className not set on serialized relationship instance");
 
         if (!Utf8String::IsNullOrEmpty(sourceInstanceId.c_str()) && !Utf8String::IsNullOrEmpty(sourceClassName.c_str()))
             {
@@ -2743,7 +2743,7 @@ InstanceReadStatus   ReadPropertyValue (ECClassCR ecClass, IECInstanceP ecInstan
     ECPropertyP ecProperty;
     if (NULL == (ecProperty = ecClass.GetPropertyP (propertyName)))
         {
-        LOG.warningv ("No ECProperty '%s' found in ECClass '%s'. Value will be ignored.", propertyName.c_str(), ecClass.GetName().c_str());
+        LOG.errorv("No ECProperty '%s' found in ECClass '%s'. Value will be ignored.", propertyName.c_str(), ecClass.GetName().c_str());
         return InstanceReadStatus::PropertyNotFound;
         }
 
@@ -3027,7 +3027,7 @@ InstanceReadStatus   ReadPrimitiveValue (ECValueR ecValue, PrimitiveType propert
 
             if (!convertStringToByteArray (byteArray, propertyValueString.c_str ()))
                 {
-                LOG.warningv("Type mismatch in deserialization: \"%s\" is not Binary", propertyValueString.c_str ());
+                LOG.errorv("Type mismatch in deserialization: \"%s\" is not Binary", propertyValueString.c_str ());
                 return InstanceReadStatus::TypeMismatch;
                 }
             if (!byteArray.empty())
@@ -3070,7 +3070,7 @@ InstanceReadStatus   ReadPrimitiveValue (ECValueR ecValue, PrimitiveType propert
                         break;
                         }
                     }
-                LOG.warningv("Type mismatch in deserialization: \"%s\" is not Binary", propertyValueString.c_str ());
+                LOG.errorv("Type mismatch in deserialization: \"%s\" is not Binary", propertyValueString.c_str ());
                 return InstanceReadStatus::TypeMismatch;
                 }
             ecValue.SetIGeometry(&byteArray.front(), byteArray.size(), true);
