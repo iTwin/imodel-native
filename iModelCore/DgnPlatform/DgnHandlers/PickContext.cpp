@@ -71,6 +71,28 @@ static double getAdjustedViewZ(ViewContextR context, DPoint4dCR viewPt)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Brien.Bastings                  12/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+void PickContext::_AddHit(HitDetailP hit)
+    {
+    m_hitList->AddHit(hit, true, true);
+
+    // if we've got too many, throw away the last one
+    if (m_hitList->GetCount() <= (int) m_options.GetMaxHits())
+        return;
+
+    // if the distance to the object we're about to throw away was less than a few pixels
+    // then there's really no point in continuing (can't do much better than that).
+    // The exception to this is in a shaded view when hidden edges aren't displayed, then
+    // we want to find the best hits by comparing Z not XY so we have to keep looking...
+    HitDetailP lastHit = (HitDetailP) m_hitList->GetHit(-1);
+    if ((NULL != lastHit) && edgesVisible(lastHit) && (1.4 >= lastHit->GetGeomDetail().GetScreenDist()))
+        m_doneSearching = true;
+
+    m_hitList->RemoveHit(-1);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * After a hit has been found, by first checking the PreLocate filter and then
 * doing a proximity check, it is added to the list of Hits by calling this method.
 * This method calls the PostLocate filter, and then (presuming the hit passes) adds
@@ -154,21 +176,7 @@ void PickContext::AddHit(DPoint4dCR hitPtView, DPoint3dCP hitPtLocal, HitPriorit
     if (nullptr != GetElemTopology())
         thisHit->SetElemTopology(GetElemTopology()->_Clone());
 
-    m_hitList->AddHit(thisHit.get(), true, true);
-
-    // if we've got too many, throw away the last one
-    if (m_hitList->GetCount() <= (int) m_options.GetMaxHits())
-        return;
-
-    // if the distance to the object we're about to throw away was less than a few pixels
-    // then there's really no point in continuing (can't do much better than that).
-    // The exception to this is in a shaded view when hidden edges aren't displayed, then
-    // we want to find the best hits by comparing Z not XY so we have to keep looking...
-    HitDetailP lastHit = (HitDetailP) m_hitList->GetHit(-1);
-    if ((NULL != lastHit) && edgesVisible(lastHit) && (1.4 >= lastHit->GetGeomDetail().GetScreenDist()))
-        m_doneSearching = true;
-
-    m_hitList->RemoveHit(-1);
+    _AddHit(thisHit.get());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -191,13 +199,38 @@ DPoint3d* PickContext::GetProjectedPickPointView(DPoint3dR point)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  05/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-DRay3d PickContext::_GetBoresite(SimplifyGraphic const& graphic) const
+DRay3d PickContext::GetBoresite(SimplifyGraphic const& graphic) const
     {
     DRay3d      boresite;
     DPoint3d    localPt;
     DMatrix4d   viewToLocal = graphic.GetViewToLocal();
 
     graphic.ViewToLocal(&localPt, &_GetPickPointView(), 1);
+    InitBoresite(boresite, localPt, viewToLocal);
+
+    return boresite;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DRay3d PickContext::_GetBoresite(TransformCR localToWorldTrans) const
+    {
+    Transform   worldToLocalTrans;
+
+    worldToLocalTrans.InverseOf(localToWorldTrans);
+
+    DMatrix4d   worldToLocal = DMatrix4d::From(worldToLocalTrans);
+    DMatrix4d   viewToWorld = GetWorldToView().M1;
+    DMatrix4d   viewToLocal;
+
+    viewToLocal.InitProduct(worldToLocal, viewToWorld);
+
+    DRay3d      boresite;
+    DPoint3d    localPt;
+
+    ViewToWorld(&localPt, &_GetPickPointView(), 1);
+    worldToLocalTrans.Multiply(&localPt, &localPt, 1);
     InitBoresite(boresite, localPt, viewToLocal);
 
     return boresite;
@@ -250,45 +283,6 @@ void PickContext::AddSurfaceHit(DPoint3dCR hitPtLocal, DVec3dCR hitNormalLocal, 
 
     m_currGeomDetail.SetSurfaceNormal(saveNormal);
     }
-
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  12/07
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool PickContext::TestGraphics(Graphic* qvElem, HitPriority priority)
-    {
-    DPoint3d    hitPt, pickPtView;
-    DVec3d      hitNormal;
-
-    GetProjectedPickPointView(pickPtView);
-
-    // NOTE: Use smaller than normal pick radius to avoid hitting surface before edge (QV locate is square not a circle!)... 
-    bool    haveQvLocate = m_viewOutput->LocateQvElem(qvElem, *((DPoint2dCP) &pickPtView), m_pickAperture * 0.4, hitPt, &hitNormal, LocateQvElemCheckStop, m_context);
-
-    if (!haveQvLocate)
-        return false;
-
-    DPoint3d    localPt = hitPt;
-    DVec3d      localNormal = hitNormal;
-    Transform   worldToLocal;
-
-    if (SUCCESS == m_context->GetCurrWorldToLocalTrans(worldToLocal))
-        {
-        worldToLocal.Multiply(localPt);
-
-        // NOTE: Wireframe/silhouette hit normal will have 0 magnitude...
-        if (0.0 != localNormal.Magnitude())
-            {
-            worldToLocal.MultiplyMatrixOnly(localNormal);
-            localNormal.Normalize();
-            }
-        }
-
-    AddSurfaceHit(localPt, localNormal, priority);
-
-    return true;
-    }
-#endif
 
 /*---------------------------------------------------------------------------------**//**
 * test a point in Local coordinates against the Pick point. Save hit if close enough.
@@ -441,7 +435,7 @@ bool PickContext::TestCurveVectorInterior(CurveVectorCR curves, HitPriority prio
     DPoint3d    intersectPt;
     DVec3d      normal;
 
-    if (!boresiteToCurveVector(curves, _GetBoresite(graphic), intersectPt, normal))
+    if (!boresiteToCurveVector(curves, GetBoresite(graphic), intersectPt, normal))
         return false;
 
     AddSurfaceHit(intersectPt, normal, priority, graphic);
@@ -515,29 +509,6 @@ bool PickContext::_ProcessCurvePrimitive(ICurvePrimitiveCR primitive, bool close
     return true;
     }
 
-#define NoisySolidPrimitivePick_not
-#ifdef NoisySolidPrimitivePick
-static void PrintVector(char *name, DVec3d vector)
-    {
-    DVec3d unit;
-    double d = unit.Normalize(vector);
-    if (DoubleOps::AlmostEqual(unit.x, 1.0))
-        BeConsole::Printf("     (%hs positive X %g)\n", name, d);
-    else if (DoubleOps::AlmostEqual(unit.x, -1.0))
-        BeConsole::Printf("     (%hs negative X %g)\n", name, d);
-    else if (DoubleOps::AlmostEqual(unit.y,  1.0))
-        BeConsole::Printf("     (%hs negative Y %g)\n", name, d);
-    else if (DoubleOps::AlmostEqual(unit.y, -1.0))
-        BeConsole::Printf("     (%hs negative Y %g)\n", name, d);
-    else if (DoubleOps::AlmostEqual(unit.z,  1.0))
-        BeConsole::Printf("     (%hs negative Z %g)\n", name, d);
-    else if (DoubleOps::AlmostEqual(unit.z, -1.0))
-        BeConsole::Printf("     (%hs negative Z %g)\n", name, d);
-    else
-        BeConsole::Printf("     (%hs (%g,%g,%g) %g)\n", name, unit.x, unit.y, unit.z, d);
-    }
-#endif
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -576,7 +547,7 @@ bool PickContext::_ProcessSolidPrimitive(ISolidPrimitiveCR primitive, SimplifyGr
         return false; // Output rules and edges...
         }
 
-    DRay3d      boresite = _GetBoresite(graphic);
+    DRay3d      boresite = GetBoresite(graphic);
 
     bvector<SolidLocationDetail> intersectLocationDetail;
 
@@ -587,19 +558,6 @@ bool PickContext::_ProcessSolidPrimitive(ISolidPrimitiveCR primitive, SimplifyGr
         DVec3d  normal;
 
         normal.NormalizedCrossProduct(thisDetail.GetUDirection(), thisDetail.GetVDirection());
-
-#ifdef NoisySolidPrimitivePick
-        DVec3d uDirection = thisDetail.GetUDirection();
-        DVec3d vDirection = thisDetail.GetVDirection();
-        BeConsole::Printf("Pick (%d of %d) (rayFraction %g) (face %d %d) (uv %g %g)\n",
-              i, intersectLocationDetail.size(),
-              thisDetail.GetPickParameter(),
-              thisDetail.GetPrimarySelector(), thisDetail.GetSecondarySelector(),
-              thisDetail.GetU(), thisDetail.GetV()
-              );
-        PrintVector("Uvec", thisDetail.GetUDirection());
-        PrintVector("Vvec", thisDetail.GetVDirection());
-#endif
         AddSurfaceHit(thisDetail.GetXYZ(), normal, HitPriority::Interior, graphic);
         i++;
         }
@@ -619,20 +577,13 @@ bool PickContext::_ProcessSurface(MSBsplineSurfaceCR surface, SimplifyGraphic co
         return false; // Output uv rules and boundaries...
         }
 
-    DRay3d      boresite = _GetBoresite(graphic);
+    DRay3d      boresite = GetBoresite(graphic);
 
     bvector<DPoint3d> intersectionPoints;
     bvector<double>   rayParameters;
     bvector<DPoint2d> surfaceParameters;
 
     surface.IntersectRay(intersectionPoints, rayParameters, surfaceParameters, boresite);
-
-#define PrintSurfaceIntersectRay_not
-#ifdef PrintSurfaceIntersectRay
-    printf(" Hits %d\n", (int)rayParameters.size());
-    for (size_t kk = 0; kk < rayParameters.size(); kk++)
-        printf("        (lambda %.17g) (uv %.8g %.8g)\n", rayParameters[kk], surfaceParameters[kk].x, surfaceParameters[kk].y);
-#endif
 
     for (size_t iHit = 0; iHit < surfaceParameters.size(); iHit++)
         {
@@ -657,7 +608,7 @@ bool PickContext::_ProcessPolyface(PolyfaceQueryCR meshData, bool filled, Simpli
     {
     if (!isWireframeDisplay(*this))
         {
-        DRay3d              boresite = _GetBoresite(graphic);
+        DRay3d              boresite = GetBoresite(graphic);
         PolyfaceVisitorPtr  visitor = PolyfaceVisitor::Attach(meshData);
 
         for (; visitor->AdvanceToNextFace(); )
@@ -848,7 +799,7 @@ void PickOutput::_AddTextString(TextStringCR text, double* zDepth)
     DVec3d      normal;
 
     // Always test for interior hit if we didn't hit origin/edge...
-    if (!boresiteToCurveVector(*tmpCurve, m_pick._GetBoresite(), intersectPt, normal))
+    if (!boresiteToCurveVector(*tmpCurve, m_pick.GetBoresite(), intersectPt, normal))
         return;
 
     DPoint4d    hitPtView;
@@ -899,14 +850,6 @@ void PickOutput::_AddPointCloud(IPointCloudDrawParams* drawParams)
 
     m_currGeomDetail.SetDetailSource(HitDetailSource::PointCloud & ~m_currGeomDetail.GetDetailSource());
     }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   10/04
-+---------------+---------------+---------------+---------------+---------------+------*/
-void PickOutput::_DrawGraphic(Graphic* qvElem)
-    {
-    TestGraphics(qvElem, HitPriority::Interior);
-    }
 #endif
 
 /*---------------------------------------------------------------------------------**//**
@@ -914,10 +857,6 @@ void PickOutput::_DrawGraphic(Graphic* qvElem)
 +---------------+---------------+---------------+---------------+---------------+------*/
 PickContext::PickContext(LocateOptions const& options, StopLocateTest* stopTester) : m_options(options), m_stopTester(stopTester)
     {
-#if defined (NOT_NOW)
-    m_graphic = new PickOutput(*this);
-#endif
-
     m_hitList               = nullptr;
     m_hitPriorityOverride   = HitPriority::Highest;
     m_unusableLStyleHit     = false;
@@ -925,17 +864,6 @@ PickContext::PickContext(LocateOptions const& options, StopLocateTest* stopTeste
     m_doLocateSilhouettes   = false;
     m_doLocateInteriors     = true;
     }
-
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  09/2009
-+---------------+---------------+---------------+---------------+---------------+------*/
-void PickContext::_SetupOutputs()
-    {
-    SetIViewDraw(m_output);
-    m_output.SetupViewOutput(m_viewport->GetIViewOutput());
-    }
-#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  06/05
@@ -1243,20 +1171,6 @@ void PickContext::InitBoresite(DRay3dR boresite, DPoint3dCR spacePoint, DMatrix4
     boresite.direction.Negate();
     }
 
-#if defined (NOT_NOW)
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   10/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-PickOutput::PickOutput(PickContext& pick) : m_pick(pick) 
-    {
-    SetViewContext(&pick);
-
-    // Avoid doing expensive operation on large facet sets...
-    m_defaultFacetOptions->SetNormalsRequired(false);
-    m_defaultFacetOptions->SetParamsRequired(false); 
-    }
-#endif
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Keith.Bentley   06/03
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1270,10 +1184,6 @@ void PickContext::InitSearch(DPoint3dCR pickPointWorld, double pickApertureScree
 
     m_hitList->Empty();
     WorldToView(&m_pickPointView, &m_pickPointWorld, 1);
-
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    m_output.Init(this, pickPointWorld, pickApertureScreen, hitList, m_options);
-#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1297,19 +1207,6 @@ bool PickContext::PickElements(DgnViewportR vp, DPoint3dCR pickPointWorld, doubl
     InitSearch(pickPointWorld, pickApertureScreen, hitList);
     VisitAllViewElements();
     _Detach();
-
-#if defined (NOT_DUMP)
-    printf("HIT LIST COUNT: %d\n", hitList->GetCount());
-
-    for (int iHit = 0; iHit < hitList->GetCount(); ++iHit)
-        {
-        HitDetailP    thisPath = (HitDetailP) hitList->Get(iHit);
-        
-        printf("(%d) Elem: %I64d, GeomType: %d Z: %lf\n", iHit, thisPath->GetHeadElem()->GetElementId(), thisPath->GetGeomDetail().GetGeomType(), thisPath->GetGeomDetail().GetZValue());
-        }
-
-    printf("\n\n");
-#endif
 
     // User doesn't want surfaces/interiors. Truncate list at first surface encountered (hits have been sorted by z)...
     if (LocateSurfacesPref::Never == m_options.GetLocateSurfaces() && 0 != hitList->GetCount())
@@ -1374,15 +1271,3 @@ TestHitStatus PickContext::TestHit(HitDetailCR hit, DgnViewportR vp, DPoint3dCR 
 #endif
     return TestHitStatus::NotOn;
     }
-
-#if defined (NOT_NOW)
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   10/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt PickOutput::_ProcessCurvePrimitive(ICurvePrimitiveCR prim, bool closed, bool filled) {return m_pick.ProcessCurvePrimitive(prim, closed, filled);}
-StatusInt PickOutput::_ProcessCurveVector(CurveVectorCR vector, bool isFilled) {return m_pick.ProcessCurveVector(vector, isFilled);}
-StatusInt PickOutput::_ProcessSolidPrimitive(ISolidPrimitiveCR prim) {return m_pick.ProcessSolidPrimitive(prim);}
-StatusInt PickOutput::_ProcessSurface(MSBsplineSurfaceCR surface) {return m_pick.ProcessSurface(surface);}
-StatusInt PickOutput::_ProcessFacetSet(PolyfaceQueryCR query, bool filled) {return m_pick.ProcessFacetSet(query, filled);}
-StatusInt PickOutput::_ProcessBody(ISolidKernelEntityCR entity) {return m_pick.ProcessBody(entity);}
-#endif
