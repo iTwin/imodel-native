@@ -202,6 +202,9 @@
     <ClCompile Include="Performance\PerformanceCRUDTestsHelper.cpp">
       <Filter>Performance</Filter>
     </ClCompile>
+        <ClCompile Include="Published\SqliteJSonSupport.cpp">
+      <Filter>Published</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Performance\PerformanceTests.h">
@@ -233,6 +236,9 @@
     </ClInclude>
     <ClInclude Include="Published\SchemaImportTestFixture.h">
       <Filter>Published</Filter>
+    </ClInclude>
+    <ClInclude Include="Performance\PerformanceECDbMapCATests.h">
+      <Filter>Performance</Filter>
     </ClInclude>
     <ClInclude Include="BackDoor\PublicAPI\BackDoor\ECDb\BackDoor.h">
       <Filter>BackDoor</Filter>

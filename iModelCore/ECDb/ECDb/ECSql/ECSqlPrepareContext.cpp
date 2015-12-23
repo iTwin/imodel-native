@@ -244,12 +244,12 @@ ECSqlPrepareContext::JoinTableInfo::Ptr ECSqlPrepareContext::JoinTableInfo::TryS
     {
     Ptr ptr = Ptr(new JoinTableInfo());
     auto const& classMap = exp.GetClassNameExp()->GetInfo().GetMap();
-    if (!classMap.MapsToJoinedTable())
+    if (!classMap.HasJoinedTable())
         return nullptr;
 
     NativeSqlBuilder parentOfJoinedTableECSQL;
     NativeSqlBuilder joinedTableECSQL;
-    auto rootClassMap = classMap.FindPrimaryClassMapOfJoinedTable();
+    auto rootClassMap = classMap.FindClassMapOfParentOfJoinedTable();
     BeAssert(rootClassMap != nullptr && "Root class for joined tabel must exist.");
     if (rootClassMap == nullptr)
         return nullptr;
@@ -260,7 +260,7 @@ ECSqlPrepareContext::JoinTableInfo::Ptr ECSqlPrepareContext::JoinTableInfo::TryS
     auto tables = exp.GetReferencedTables();
     if (tables.size() < 2)
         {
-        auto isTableSame = (&classMap.GetTable() == &rootClassMap->GetTable());
+        auto isTableSame = (&classMap.GetSecondaryTable() == &rootClassMap->GetSecondaryTable());
         if (isTableSame)
             return nullptr;
         }
@@ -358,19 +358,19 @@ ECSqlPrepareContext::JoinTableInfo::Ptr ECSqlPrepareContext::JoinTableInfo::TryS
     {
     Ptr ptr = Ptr(new JoinTableInfo());
     auto const& classMap = exp.GetClassNameExp()->GetInfo().GetMap();
-    if (!classMap.MapsToJoinedTable())
+    if (!classMap.HasJoinedTable())
         return nullptr;
 
     NativeSqlBuilder parentOfJoinedTableECSQL;
     NativeSqlBuilder joinedTableECSQL;
-    auto rootClassMap = classMap.FindPrimaryClassMapOfJoinedTable();
+    auto rootClassMap = classMap.FindClassMapOfParentOfJoinedTable();
     ptr->m_class = &classMap.GetClass();
     ptr->m_parentClass = &rootClassMap->GetClass();
 
     auto tables = exp.GetReferencedTables();
     if (tables.size() <= 2)
         {
-        auto isTableSame = (&classMap.GetTable() == &rootClassMap->GetTable());
+        auto isTableSame = (&classMap.GetSecondaryTable() == &rootClassMap->GetSecondaryTable());
         if (isTableSame)
             return nullptr;
         }

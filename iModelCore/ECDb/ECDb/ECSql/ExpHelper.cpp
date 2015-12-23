@@ -79,7 +79,7 @@ Utf8CP ExpHelper::ToString (ECN::PrimitiveType type)
 //=======================================================================================
 //! @bsiclass                                                Affan.Khan      05/2013
 //+===============+===============+===============+===============+===============+======
-Utf8CP ExpHelper::ToString (JoinDirection direction)
+Utf8CP ExpHelper::ToECSql (JoinDirection direction)
     {
     switch (direction)
         {
@@ -94,7 +94,7 @@ Utf8CP ExpHelper::ToString (JoinDirection direction)
 //=======================================================================================
 //! @bsiclass                                                Affan.Khan      05/2013
 //+===============+===============+===============+===============+===============+======
-Utf8CP ExpHelper::ToString (ECSqlJoinType joinType)
+Utf8CP ExpHelper::ToSql (ECSqlJoinType joinType)
     {
     switch (joinType)
         {
@@ -113,7 +113,7 @@ Utf8CP ExpHelper::ToString (ECSqlJoinType joinType)
 //=======================================================================================
 //! @bsiclass                                                Affan.Khan      05/2013
 //+===============+===============+===============+===============+===============+======
-Utf8CP ExpHelper::ToString(SqlSetQuantifier setQuantifier)
+Utf8CP ExpHelper::ToSql(SqlSetQuantifier setQuantifier)
     {
     switch (setQuantifier)
         {
@@ -128,7 +128,7 @@ Utf8CP ExpHelper::ToString(SqlSetQuantifier setQuantifier)
 //=======================================================================================
 //! @bsiclass                                                Affan.Khan      05/2013
 //+===============+===============+===============+===============+===============+======
-Utf8CP ExpHelper::ToString(SubqueryTestOperator op)
+Utf8CP ExpHelper::ToSql(SubqueryTestOperator op)
     {
     switch (op)
         {
@@ -142,7 +142,7 @@ Utf8CP ExpHelper::ToString(SubqueryTestOperator op)
 //=======================================================================================
 //! @bsiclass                                                Affan.Khan      05/2013
 //+===============+===============+===============+===============+===============+======
-Utf8CP ExpHelper::ToString(BinarySqlOperator op)
+Utf8CP ExpHelper::ToSql(BinarySqlOperator op)
     {
     switch(op)
         {
@@ -168,7 +168,7 @@ Utf8CP ExpHelper::ToString(BinarySqlOperator op)
 //=======================================================================================
 //! @bsiclass                                                Affan.Khan      05/2013
 //+===============+===============+===============+===============+===============+======
-Utf8CP ExpHelper::ToString(BooleanSqlOperator op)
+Utf8CP ExpHelper::ToSql(BooleanSqlOperator op)
     {
     switch(op)
         {
@@ -203,7 +203,7 @@ Utf8CP ExpHelper::ToString(BooleanSqlOperator op)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle   08/2013
 //---------------------------------------------------------------------------------------
-Utf8CP ExpHelper::ToString (SqlCompareListType type)
+Utf8CP ExpHelper::ToSql (SqlCompareListType type)
     {
     switch (type)
         {
@@ -222,7 +222,7 @@ Utf8CP ExpHelper::ToString (SqlCompareListType type)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle   08/2013
 //---------------------------------------------------------------------------------------
-Utf8CP ExpHelper::ToString(UnarySqlOperator op)
+Utf8CP ExpHelper::ToSql(UnarySqlOperator op)
     {
     switch(op)
         {
@@ -239,7 +239,7 @@ Utf8CP ExpHelper::ToString(UnarySqlOperator op)
 // @bsimethod                                                Krischan.Eberle   05/2015
 //---------------------------------------------------------------------------------------
 //static
-Utf8CP ExpHelper::ToString(ECSqlType type)
+Utf8CP ExpHelper::ToSql(ECSqlType type)
     {
     switch (type)
         {
@@ -253,7 +253,7 @@ Utf8CP ExpHelper::ToString(ECSqlType type)
                 return "UPDATE";
 
             default:
-                BeAssert(false && "ExpHelper::ToString(ECSqlType) needs to be updated to a new value of the ECSqlType enum.");
+                BeAssert(false && "ExpHelper::ToSql(ECSqlType) needs to be updated to a new value of the ECSqlType enum.");
                 return "";
         }
     }

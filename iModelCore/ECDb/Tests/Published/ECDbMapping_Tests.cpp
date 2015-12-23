@@ -4571,7 +4571,8 @@ TEST_F(ECDbMappingTestFixture, ForeignKeyMapWithKeyProperty)
         ASSERT_TRUE(ecdb.ColumnExists(childTableName, "ParentId"));
         bvector<Utf8String> columns;
         ASSERT_TRUE(ecdb.GetColumns(columns, childTableName));
-        ASSERT_EQ(3, columns.size()) << childTableName << " table should not contain an extra foreign key column as the relationship specifies a Key property";
+        std::vector<Utf8String> columnsP(columns.begin(), columns.end());
+        ASSERT_EQ(3, columnsP.size()) << childTableName << " table should not contain an extra foreign key column as the relationship specifies a Key property";
 
         auto containsDefaultNamedRelationalKeyColumn = [] (Utf8StringCR str) { return BeStringUtilities::Strnicmp(str.c_str(), "ForeignEC", 9) == 0; };
         auto it = std::find_if(columns.begin(), columns.end(), containsDefaultNamedRelationalKeyColumn);
@@ -5665,8 +5666,8 @@ TEST_F(ECDbMappingTestFixture, RelationshipWithAbstractClassAsConstraintOnChildE
         return selectStmt.GetValueInt(0);
         };
 
-    {
- /*   SchemaItem testItem("<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+ /*   {
+    SchemaItem testItem("<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
                         "  <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
                         "  <ECEntityClass typeName='Solid'>"
                         "    <ECProperty propertyName='Name' typeName='string' />"
@@ -5690,8 +5691,8 @@ TEST_F(ECDbMappingTestFixture, RelationshipWithAbstractClassAsConstraintOnChildE
     ASSERT_FALSE(asserted);
 
     ecdb.Schemas().CreateECClassViewsInDb();
-    ASSERT_EQ(0, getSolidHasFacesRowCount(ecdb));*/
-    }
+    ASSERT_EQ(0, getSolidHasFacesRowCount(ecdb));
+    }*/
     }
 
 //=======================================================================================    

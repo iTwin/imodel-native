@@ -442,19 +442,17 @@ ECSqlStatus ECSqlExpPreparer::PrepareClassNameExp(NativeSqlBuilder::List& native
         {
         //don't compute storage description for INSERT as it is slow, and not needed for INSERT (which is always non-polymorphic)
         BeAssert(!exp.IsPolymorphic());
-        table = &classMap.GetTable();
+        table = &classMap.GetSecondaryTable();
         }
     else
         {
-        if (classMap.MapsToJoinedTable() && currentScopeECSqlType == ECSqlType::Delete)
+        if (classMap.HasJoinedTable() && currentScopeECSqlType == ECSqlType::Delete)
             {
-            auto rootMap = classMap.FindPrimaryClassMapOfJoinedTable();
-            BeAssert(rootMap != nullptr);
-            table = &rootMap->GetTable();
+            table = &classMap.GetPrimaryTable();
             }
-        else if (classMap.MapsToJoinedTable() && currentScopeECSqlType == ECSqlType::Update)
+        else if (classMap.HasJoinedTable() && currentScopeECSqlType == ECSqlType::Update)
             {
-            table = &classMap.GetTable();
+            table = &classMap.GetSecondaryTable();
             }
         else
             {
@@ -779,7 +777,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareECClassIdFunctionExp (NativeSqlBuilder::Lis
 
     auto const& classMap = classNameExp->GetInfo ().GetMap ();
     ECDbSqlColumn const* classIdColumn = nullptr;
-    if (classMap.GetTable().TryGetECClassIdColumn(classIdColumn))
+    if (classMap.GetSecondaryTable().TryGetECClassIdColumn(classIdColumn))
         {
         auto classRefId = classRefExp->GetId ().c_str ();
         auto classIdColumnName = classIdColumn->GetName ().c_str();
@@ -1469,15 +1467,6 @@ ECSqlStatus ECSqlExpPreparer::PrepareSetFunctionCallExp(NativeSqlBuilder::List& 
         nativeSql.AppendParenLeft();
 
     const SetFunctionCallExp::Function function = exp.GetFunction();
-
-    if (function == SetFunctionCallExp::Function::Count)
-        {
-        //We simply use * as this is the same semantically and it is faster anyways in SQLite
-        nativeSql.Append(exp.GetFunctionName()).AppendParenLeft().Append(Exp::ASTERISK_TOKEN).AppendParenRight();
-        nativeSqlSnippets.push_back(move(nativeSql));
-        return ECSqlStatus::Success;
-        }
-
     const bool isAnyEveryOrSome = function == SetFunctionCallExp::Function::Any ||
         function == SetFunctionCallExp::Function::Every ||
         function == SetFunctionCallExp::Function::Some;

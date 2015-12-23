@@ -39,7 +39,7 @@ RelationshipClassMap::RelationshipClassMap (ECRelationshipClassCR ecRelClass, EC
 //---------------------------------------------------------------------------------------
 ECDbSqlColumn* RelationshipClassMap::CreateConstraintColumn(SchemaImportContext* schemaImportContext, Utf8CP columnName, ColumnKind columnId, bool addToTable)
     {
-    ECDbSqlColumn* column = GetTable().FindColumnP(columnName);
+    ECDbSqlColumn* column = GetPrimaryTable().FindColumnP(columnName);
     if (column != nullptr)
         {
         if (!Enum::Intersects(column->GetKind(), columnId))
@@ -48,16 +48,16 @@ ECDbSqlColumn* RelationshipClassMap::CreateConstraintColumn(SchemaImportContext*
         return column;
         }
 
-    if (GetTable().IsOwnedByECDb())
+    if (GetPrimaryTable().IsOwnedByECDb())
         {
-        column = GetTable().CreateColumn(columnName, ECDbSqlColumn::Type::Long, columnId,
+        column = GetPrimaryTable().CreateColumn(columnName, ECDbSqlColumn::Type::Long, columnId,
                                          addToTable ? PersistenceType::Persisted : PersistenceType::Virtual);
         }
     else
         {
-        GetTable().GetEditHandleR().BeginEdit();
-        column = GetTable().CreateColumn(columnName, ECDbSqlColumn::Type::Long, columnId, PersistenceType::Virtual);
-        GetTable().GetEditHandleR().EndEdit();
+        GetPrimaryTable().GetEditHandleR().BeginEdit();
+        column = GetPrimaryTable().CreateColumn(columnName, ECDbSqlColumn::Type::Long, columnId, PersistenceType::Virtual);
+        GetPrimaryTable().GetEditHandleR().EndEdit();
         }
 
     return column;
@@ -272,7 +272,7 @@ ECDbSqlColumn* RelationshipClassEndTableMap::ConfigureForeignECClassIdKey(Schema
     RelationshipEndColumns const& constraintColumnsMapping = GetEndColumnsMapping(mapInfo);
     Utf8String classIdColName(constraintColumnsMapping.GetECClassIdColumnName());
     if (classIdColName.empty() &&
-        !GetOtherEndECClassIdColumnName(classIdColName, GetTable(), true))
+        !GetOtherEndECClassIdColumnName(classIdColName, GetSecondaryTable(), true))
         return nullptr;
 
     ColumnKind columnId = GetThisEnd () == ECRelationshipEnd::ECRelationshipEnd_Source ? ColumnKind::TargetECClassId : ColumnKind::SourceECClassId;
@@ -287,7 +287,7 @@ ECDbSqlColumn* RelationshipClassEndTableMap::ConfigureForeignECClassIdKey(Schema
     else
         {
         //! We will use JOIN to otherTable to get the ECClassId (if any)
-        otherEndECClassIdColumn = const_cast<ECDbSqlColumn*>(otheEndClassMap.GetTable().GetFilteredColumnFirst (ColumnKind::ECClassId));
+        otherEndECClassIdColumn = const_cast<ECDbSqlColumn*>(otheEndClassMap.GetSecondaryTable().GetFilteredColumnFirst (ColumnKind::ECClassId));
         if (otherEndECClassIdColumn == nullptr)
             otherEndECClassIdColumn = CreateConstraintColumn (schemaImportContext, classIdColName.c_str (), columnId, false);
         }
@@ -332,7 +332,7 @@ MapStatus RelationshipClassEndTableMap::_InitializePart1 (SchemaImportContext* s
 
 
     //SetTable for EndTable case.
-    if (thisEndClassMap->MapsToJoinedTable())
+    if (thisEndClassMap->HasJoinedTable())
         {
         ECDbSqlColumn const* thisKeyPropCol = nullptr;
         if (SUCCESS != TryGetKeyPropertyColumn(thisKeyPropCol, thisEndConstraint, *relationshipClassMapInfo.GetECClass().GetRelationshipClassCP(), thisEnd))
@@ -365,20 +365,19 @@ MapStatus RelationshipClassEndTableMap::_InitializePart1 (SchemaImportContext* s
         */
         if (thisKeyPropCol == nullptr)
             {
-            SetTable(&thisEndClassMap->GetTable());
+            SetTable(thisEndClassMap->GetSecondaryTable());
             }
         else
             {
             //KeypropCol is either base or child table of joined table case.
             //Check to make sure its once of the table.
-            BeAssert(&thisKeyPropCol->GetTable() == &thisEndClassMap->GetTable() || &thisKeyPropCol->GetTable() == &thisEndClassMap->GetPrimaryTable());
-            SetTable(&const_cast<ECDbSqlColumn*>(thisKeyPropCol)->GetTableR());
+            BeAssert(thisEndClassMap->IsMappedTo(thisKeyPropCol->GetTable()));
+            SetTable(const_cast<ECDbSqlColumn*>(thisKeyPropCol)->GetTableR());
             }
         }
     else  //Normal case.
         {
-        SetTable(&thisEndClassMap->GetTable());
-
+        SetTable(thisEndClassMap->GetSecondaryTable());
         }
 
     //Create ECinstanceId for this classMap. This must map to current table for this class evaluate above and set through SetTable();
@@ -426,7 +425,7 @@ MapStatus RelationshipClassEndTableMap::_InitializePart1 (SchemaImportContext* s
             }
 
         auto foreignKeyColumn = otherEndConstraintMap.GetECInstanceIdPropMap()->GetFirstColumn();
-        auto& foreignTable = GetTable ();
+        auto& foreignTable = GetPrimaryTable();
         auto primaryClassMap = GetECDbMap().GetClassMap(*otherEndConstraintMap.GetRelationshipConstraint().GetClasses()[0]);
 
         BeAssert(primaryClassMap!=nullptr && "Primary Class map is null");
@@ -573,7 +572,7 @@ MapStatus RelationshipClassEndTableMap::CreateConstraintColumns(ECDbSqlColumn*& 
         //if id column name was specified in the CA, try to see if there is a column already
         Utf8CP idColName = constraintColumnMapping.GetECInstanceIdColumnName();
         if (!Utf8String::IsNullOrEmpty(idColName))
-            fkIdColumn = GetTable().FindColumnP(idColName);
+            fkIdColumn = GetPrimaryTable().FindColumnP(idColName);
 
         if (fkIdColumn == nullptr)
             {
@@ -582,7 +581,7 @@ MapStatus RelationshipClassEndTableMap::CreateConstraintColumns(ECDbSqlColumn*& 
                 colName.assign(idColName);
             else
                 {
-                if (!GetOtherEndKeyColumnName(colName, GetTable(), true))
+                if (!GetOtherEndKeyColumnName(colName, GetPrimaryTable(), true))
                     return MapStatus::Error;
                 }
 
@@ -624,7 +623,7 @@ ECClassId defaultOtherEndClassId
     {
     //Now add prop maps for source/target ecinstance id and ecclass id prop maps
     //Existing this end instance id and class id columns will be reused
-    auto& persistenceEndTable = GetTable();
+    auto& persistenceEndTable = GetPrimaryTable();
     std::vector<ECDbSqlColumn const*> systemColumns;
     if (persistenceEndTable.GetFilteredColumnList (systemColumns, ColumnKind::ECInstanceId) == BentleyStatus::ERROR)
         {
@@ -633,7 +632,7 @@ ECClassId defaultOtherEndClassId
         }
 
     auto thisEndECInstanceIdColumn = const_cast<ECDbSqlColumn*>(systemColumns.front ());
-    auto thisEndECClassIdColumn = GetTable().FindColumnP ("ECClassId");
+    auto thisEndECClassIdColumn = const_cast<ECDbSqlColumn*>(GetPrimaryTable().GetFilteredColumnFirst(ColumnKind::ECClassId));
 
     ECDbSqlColumn* sourceECInstanceIdColumn = nullptr;
     Utf8CP sourceECInstanceIdViewColumnAlias = DEFAULT_SOURCEECINSTANCEID_COLUMNNAME;
@@ -725,7 +724,7 @@ void RelationshipClassEndTableMap::AddIndexToRelationshipEnd(SchemaImportContext
     BeAssert(dynamic_cast<RelationshipMapInfo const*> (&mapInfo) != nullptr);
     RelationshipMapInfo const& relMapInfo = static_cast<RelationshipMapInfo const&> (mapInfo);
     const bool isUniqueIndex = relMapInfo.GetCardinality() == RelationshipMapInfo::Cardinality::OneToOne;
-    ECDbSqlTable& persistenceEndTable = GetTable();
+    ECDbSqlTable& persistenceEndTable = GetPrimaryTable();
 
     if (!relMapInfo.CreateIndexOnForeignKey() || persistenceEndTable.GetTableType() == TableType::Existing || 
         (!isUniqueIndex && !m_autogenerateForeignKeyColumns))

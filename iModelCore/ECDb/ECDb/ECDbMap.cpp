@@ -190,7 +190,7 @@ MapStatus ECDbMap::DoMapSchemas(bvector<ECSchemaCP> const& mapSchemas, bool forc
             return status;
         }
 
-    if (!FinishTableDefinition())
+    if (FinishTableDefinition() == ERROR)
         return MapStatus::Error;
 
     BeAssert(status != MapStatus::BaseClassesNotMapped && "Expected to resolve all class maps by now.");
@@ -207,10 +207,7 @@ MapStatus ECDbMap::DoMapSchemas(bvector<ECSchemaCP> const& mapSchemas, bool forc
         if (SUCCESS != kvpair.first->CreateUserProvidedIndices(*GetSchemaImportContext(), *kvpair.second))
             return MapStatus::Error;
         }
-
-    if (!FinishTableDefinition())
-        return MapStatus::Error;
-
+   
     timer.Stop();
     if (LOG.isSeverityEnabled(NativeLogging::LOG_DEBUG))
 
@@ -326,9 +323,7 @@ MapStatus ECDbMap::AddClassMap (ClassMapPtr& classMap)
         }
 
     m_classMapDictionary[ecClass.GetId()]= classMap;
-    MappedTableP mappedTable = GetMappedTable (*classMap);
-    BeAssert (nullptr != mappedTable);
-    return mappedTable ? MapStatus::Success : MapStatus::Error;
+    return MapStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -338,9 +333,6 @@ void ECDbMap::RemoveClassMap (IClassMap const& classMap)
     {
     BeMutexHolder lock (m_criticalSection);
     ECClassCR ecClass = classMap.GetClass();
-    if (!classMap.GetMapStrategy().IsNotMapped())
-        m_clustersByTable.erase (&classMap.GetTable());
-
     m_classMapDictionary.erase(ecClass.GetId());
     }
 
@@ -558,29 +550,7 @@ ECDbSqlTable* ECDbMap::FindOrCreateTable (SchemaImportContext* schemaImportConte
     }
 
 
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    casey.mullen      11/2011
-+---------------+---------------+---------------+---------------+---------------+------*/
-MappedTableP ECDbMap::GetMappedTable (ClassMapCR classMap, bool createMappedTableEntryIfNotFound)//ECDB_TODO this function name should be GetOrAddMappedTable()
-    {
-    BeMutexHolder lock (m_criticalSection);
 
-    ClustersByTable::const_iterator it = m_clustersByTable.find (&classMap.GetTable());
-    if (m_clustersByTable.end() != it)
-        {
-        MappedTableP mappedTable = it->second.get();
-        if (createMappedTableEntryIfNotFound)
-            mappedTable->AddClassMap (classMap);
-        return mappedTable;
-        }
-    if (createMappedTableEntryIfNotFound)
-        {
-        MappedTablePtr mappedTable = MappedTable::Create (*this, classMap);
-        m_clustersByTable[&classMap.GetTable()] = mappedTable;
-        return mappedTable.get();
-        }
-    return nullptr;
-    }
 
 #if defined (_MSC_VER)
     #pragma warning (push)
@@ -592,6 +562,24 @@ MappedTableP ECDbMap::GetMappedTable (ClassMapCR classMap, bool createMappedTabl
     #pragma warning (pop)
 #endif // defined (_MSC_VER)
 
+ECDbMap::ClassMapByTable ECDbMap::GetClassMapByTable() const
+    {
+    ClassMapByTable map;
+    for (auto const& entry : m_classMapDictionary)
+        {
+        if (entry.second->GetClassMapType() == IClassMap::Type::RelationshipEndTable ||
+            entry.second->GetClassMapType() == IClassMap::Type::Unmapped)
+            continue;
+
+        auto primaryTable = &entry.second->GetPrimaryTable();
+        auto secondaryTable = &entry.second->GetSecondaryTable();
+        map[primaryTable].insert(entry.second.get());
+        if (primaryTable != secondaryTable)
+            map[secondaryTable].insert(entry.second.get());
+        }
+
+    return map;
+    }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Affan.Khan      12/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -607,17 +595,15 @@ BentleyStatus ECDbMap::CreateOrUpdateRequiredTables ()
     int nCreated = 0;
     int nUpdated = 0;
     int nSkipped = 0;
-    ClustersByTable::iterator it = m_clustersByTable.begin();    
-    for (; it != m_clustersByTable.end(); ++it)
+
+    const ClassMapByTable clustersByTable = GetClassMapByTable();
+    if (FinishTableDefinition() != SUCCESS)
+        return ERROR;
+
+    ClassMapByTable::const_iterator it = clustersByTable.begin();
+    for (; it != clustersByTable.end(); ++it)
         {
-        MappedTablePtr & mappedTable = it->second;
         ECDbSqlTable* table = it->first;
-                
-        if (!mappedTable->IsFinished())
-            {
-            if (mappedTable->FinishTableDefinition(m_ecdb, *GetSchemaImportContext()) != SUCCESS)
-                return ERROR;
-            }
 
         if (table->GetPersistenceType () == PersistenceType::Virtual || table->GetTableType() == TableType::Existing)           
             continue; 
@@ -652,21 +638,44 @@ BentleyStatus ECDbMap::CreateOrUpdateRequiredTables ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Affan.Khan      12/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ECDbMap::FinishTableDefinition () const
+BentleyStatus ECDbMap::FinishTableDefinition () const
     {
-    if (AssertIfIsNotImportingSchema ())
-        return false;
+    AssertIfIsNotImportingSchema();
+    const ClassMapByTable clustersByTable = GetClassMapByTable();
 
-    BeMutexHolder lock (m_criticalSection);
-    auto it = m_clustersByTable.begin();
-    for (; it != m_clustersByTable.end(); ++it)
+    ClassMapByTable::const_iterator it = clustersByTable.begin();
+    for (; it != clustersByTable.end(); ++it)
         {
-        MappedTablePtr const& mappedTable = it->second;
-        if (!mappedTable->IsFinished() && mappedTable->FinishTableDefinition(m_ecdb, *GetSchemaImportContext()) != SUCCESS)
-            return false;
+        ClassMapSet classMapSet = it->second;
+        ECDbSqlTable* table = it->first;
 
+        //Create ECClassId column if required
+        if (table->GetFilteredColumnFirst(ColumnKind::ECClassId) == nullptr &&
+            table->GetPersistenceType() == PersistenceType::Persisted &&
+            table->GetTableType() != TableType::Existing)
+            {
+            bool addClassId = false;
+            if (classMapSet.size() == 1)
+                addClassId = (*classMapSet.begin())->GetMapStrategy().GetStrategy() == ECDbMapStrategy::Strategy::SharedTable;
+            else
+                addClassId = classMapSet.size() > 1;
+
+            if (addClassId)
+                {
+                const size_t insertPosition = 1;
+                ECDbSqlColumn const* ecClassIdColumn = table->CreateColumn(ECDB_COL_ECClassId, ECDbSqlColumn::Type::Long, insertPosition, ColumnKind::ECClassId, PersistenceType::Persisted);
+                if (ecClassIdColumn == nullptr)
+                    return ERROR;
+
+                //whenever we create a class id column, we index it to speed up the frequent class id look ups
+                Utf8String indexName("ix_");
+                indexName.append(table->GetName()).append("_ecclassid");
+                m_schemaImportContext->GetECDbMapDb().CreateIndex(GetECDb(), *table, indexName.c_str(), false, {ecClassIdColumn}, nullptr, true, ECClass::UNSET_ECCLASSID);
+                }
+            }
         }
-    return true;
+
+    return BentleyStatus::SUCCESS;
     }
 
 
@@ -720,11 +729,8 @@ size_t ECDbMap::GetTableCountOnRelationshipEnd(ECRelationshipConstraintCR relati
         IClassMap const* classMap = GetClassMap(*ecClass, false);
         if (classMap->GetMapStrategy().IsNotMapped())
             continue;
-
-        if (auto rootMap = classMap->FindPrimaryClassMapOfJoinedTable())
-            tables.insert(&rootMap->GetTable());
-        else
-            tables.insert(&classMap->GetTable());
+        
+        tables.insert(&classMap->GetPrimaryTable());
         }
 
     return tables.size();
@@ -756,7 +762,6 @@ void ECDbMap::ClearCache()
     {
     BeMutexHolder lock(m_criticalSection);
     m_classMapDictionary.clear();
-    m_clustersByTable.clear();
     GetSQLManagerR().Reset();
     m_lightweightCache.Reset();
     }
@@ -1331,7 +1336,7 @@ std::unique_ptr<StorageDescription> StorageDescription::Create(IClassMap const& 
     if (classMap.GetClassMapType() == IClassMap::Type::RelationshipEndTable)
         {
         RelationshipClassEndTableMap const& relClassMap = static_cast<RelationshipClassEndTableMap const&> (classMap);
-        ECDbSqlTable const& endTable = relClassMap.GetTable();
+        ECDbSqlTable const& endTable = relClassMap.GetPrimaryTable();
         const ECDbMap::LightweightCache::RelationshipEnd thisEnd = relClassMap.GetThisEnd() == ECRelationshipEnd::ECRelationshipEnd_Source ? ECDbMap::LightweightCache::RelationshipEnd::Source : ECDbMap::LightweightCache::RelationshipEnd::Target;
 
         Partition* hp = storageDescription->AddHorizontalPartition(endTable, true);

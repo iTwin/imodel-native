@@ -51,7 +51,6 @@ bool ECSchemaValidator::ValidateSchema (ECSchemaValidationResult& result, ECN::E
     std::vector<std::unique_ptr<ECSchemaValidationRule>> validationTasks;
     validationTasks.push_back(std::move(std::unique_ptr<ECSchemaValidationRule> (new CaseInsensitiveClassNamesRule (supportLegacySchemas))));
     validationTasks.push_back(std::move(std::unique_ptr<ECSchemaValidationRule>(new ValidRelationshipConstraintsRule())));
-    validationTasks.push_back(std::move(std::unique_ptr<ECSchemaValidationRule>(new ConsistentClassHierarchyRule())));
 
     bool valid = true;
     for (ECClassCP ecClass : schema.GetClasses ())
@@ -616,119 +615,6 @@ Utf8String ValidRelationshipConstraintsRule::Error::_ToString() const
     return std::move(str);
     }
 
-//**********************************************************************
-// ConsistentClassHierarchyRule
-//**********************************************************************
-//---------------------------------------------------------------------------------------
-// @bsimethod                                 Krischan.Eberle                    07/2015
-//---------------------------------------------------------------------------------------
-ConsistentClassHierarchyRule::ConsistentClassHierarchyRule()
-    : ECSchemaValidationRule(Type::ConsistentClassHierarchy), m_error(nullptr)
-    {
-    m_error = std::unique_ptr<Error>(new Error(GetType()));
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                 Krischan.Eberle                    07/2015
-//---------------------------------------------------------------------------------------
-bool ConsistentClassHierarchyRule::_ValidateSchema(ECN::ECSchemaCR schema, ECN::ECClassCR baseClass)
-    {
-    const ECClassType baseClassType = baseClass.GetClassType();
-
-    bool valid = true;
-    for (ECN::ECClassCP subClass : baseClass.GetDerivedClasses())
-        {
-        BeAssert(baseClass.GetClassModifier() != ECClassModifier::Sealed);
-
-        if (baseClassType != subClass->GetClassType())
-            {
-            m_error->AddInconsistency(baseClass, *subClass);
-            valid = false;
-            }
-        }
-
-    return valid;
-    }
-
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                 Krischan.Eberle                    07/2015
-//---------------------------------------------------------------------------------------
-std::unique_ptr<ECSchemaValidationRule::Error> ConsistentClassHierarchyRule::_GetError() const
-    {
-    if (!m_error->HasInconsistencies())
-        return nullptr;
-
-    return std::move(m_error);
-    }
-
-
-//**********************************************************************
-// ConsistentClassHierarchyRule::Error
-//**********************************************************************
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                 Krischan.Eberle                    07/2015
-//---------------------------------------------------------------------------------------
-void ConsistentClassHierarchyRule::Error::AddInconsistency(ECN::ECClassCR baseClass, ECN::ECClassCR subclass)
-    {
-    m_inconsistencies.push_back({&baseClass, &subclass});
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                 Krischan.Eberle                    07/2015
-//---------------------------------------------------------------------------------------
-Utf8String ConsistentClassHierarchyRule::Error::_ToString() const
-    {
-    if (!HasInconsistencies())
-        return "";
-
-    Utf8String str("Found ECClasses with a class hierarchy of inconsistent class types. Conflicting ECClasses: ");
-    bool isFirstItem = true;
-    for (std::pair<ECClassCP, ECClassCP> const& inconsistency : m_inconsistencies)
-        {
-        if (!isFirstItem)
-            str.append("; ");
-
-        ECClassCP baseClass = inconsistency.first;
-        ECClassCP subClass = inconsistency.second;
-        Utf8String inconsistencyStr;
-        inconsistencyStr.Sprintf("(Base: %s (%s), Derived: %s (%s))",
-                    baseClass->GetFullName(), ClassTypeToString(baseClass->GetClassType()),
-            subClass->GetFullName(), ClassTypeToString(subClass->GetClassType()));
-
-        str.append(inconsistencyStr);
-        isFirstItem = false;
-        }
-
-    return std::move(str);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                 Krischan.Eberle                    12/2015
-//---------------------------------------------------------------------------------------
-//static
-Utf8CP ConsistentClassHierarchyRule::Error::ClassTypeToString(ECN::ECClassType type)
-    {
-    switch (type)
-        {
-            case ECClassType::CustomAttribute:
-                return "CustomAttribute";
-
-            case ECClassType::Entity:
-                return "Entity class";
-
-            case ECClassType::Relationship:
-                return "Relationship";
-
-            case ECClassType::Struct:
-                return "Struct";
-
-            default:
-                BeAssert(false);
-                return "";
-        }
-    }
 
 //**********************************************************************
 // SchemaNamespacePrefixRule

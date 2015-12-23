@@ -28,7 +28,7 @@ TEST (ECSqlStatementTests, Insert)
         STATEMENT_PREPARE_SUCCESS("INSERT INTO ECST.Supplier(ContactName,Country) VALUES('John Snow','England')");
         STATEMENT_EXECUTE_SUCCESS ();
 
-        STATEMENT_PREPARE ("INSERT INTO ECST.Orders(ShipCity) VALUES('NewYork')", ECSqlStatus::InvalidECSql);
+        EXPECT_STATEMENT_PREPARE ("INSERT INTO ECST.Orders(ShipCity) VALUES('NewYork')", ECSqlStatus::InvalidECSql);
         }
 
         {
@@ -49,12 +49,12 @@ TEST (ECSqlStatementTests, Update)
     STATEMENT_PREPARE_SUCCESS ("INSERT INTO ECST.Supplier(ContactName,Country) VALUES('John Snow','England')");
     STATEMENT_EXECUTE_SUCCESS ();
 
-    STATEMENT_PREPARE ("UPDATE ECST.Supplier SET ContactName = 'Micheal' WHERE ContactName = 'John Snow'", ECSqlStatus::Success);
-    STATEMENT_EXECUTE (DbResult::BE_SQLITE_DONE);
+    STATEMENT_PREPARE_SUCCESS ("UPDATE ECST.Supplier SET ContactName = 'Micheal' WHERE ContactName = 'John Snow'");
+    STATEMENT_EXECUTE_SUCCESS ();
 
-    STATEMENT_PREPARE ("UPDATE ECST.Supplier SET ContactName = 'Snape' WHERE ContactName = ?", ECSqlStatus::Success);
-    BIND_TEXT(1, "Micheal", IECSqlBinder::MakeCopy::No);
-    STATEMENT_EXECUTE (DbResult::BE_SQLITE_DONE);
+    STATEMENT_PREPARE_SUCCESS ("UPDATE ECST.Supplier SET ContactName = 'Snape' WHERE ContactName = ?");
+    BIND_TEXT (1, "Micheal", IECSqlBinder::MakeCopy::No);
+    STATEMENT_EXECUTE_SUCCESS ();
     }
 
 //---------------------------------------------------------------------------------------
@@ -64,12 +64,12 @@ TEST (ECSqlStatementTests, Delete)
     {
     ECTEST_SETUP ("Test4", "NestedStructArrayTest.01.00.ecschema.xml", L"Delete.ecdb");
 
-    STATEMENT_PREPARE ("INSERT INTO nsat.ClassA(I,T) VALUES(8,'testVal')", ECSqlStatus::Success);
-    STATEMENT_EXECUTE (DbResult::BE_SQLITE_DONE);
+    STATEMENT_PREPARE_SUCCESS ("INSERT INTO nsat.ClassA(I,T) VALUES(8,'testVal')");
+    STATEMENT_EXECUTE_SUCCESS ();
 
-    STATEMENT_PREPARE ("DELETE FROM nsat.ClassA WHERE I=?", ECSqlStatus::Success);
-    BIND_INT(1,8);
-    STATEMENT_EXECUTE (DbResult::BE_SQLITE_DONE);
+    STATEMENT_PREPARE_SUCCESS ("DELETE FROM nsat.ClassA WHERE I=?");
+    BIND_INT (1, 8);
+    STATEMENT_EXECUTE_SUCCESS ();
     }
 
 END_ECDBUNITTESTS_NAMESPACE

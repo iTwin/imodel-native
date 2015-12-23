@@ -28,7 +28,7 @@ private:
         PropertyMapCollection m_embeddedClassViewPropMaps;
         virtual IClassMap const& _GetView (View classView) const override { return *this; };
         virtual PropertyMapCollection const& _GetPropertyMaps () const override { return m_embeddedClassViewPropMaps; }
-        virtual ECDbSqlTable& _GetTable () const override { return m_secondaryTableClassMap.GetTable (); }
+        virtual TableListR _MapToTables() const override { return m_secondaryTableClassMap.MapToTables (); }
         virtual ECN::ECClassCR _GetClass () const override { return m_secondaryTableClassMap.GetClass (); }
         virtual ECDbMapStrategy const& _GetMapStrategy () const override { return m_secondaryTableClassMap.GetMapStrategy (); }
         virtual ECDbMapCR _GetECDbMap () const override { return m_secondaryTableClassMap.GetECDbMap (); }
@@ -77,7 +77,7 @@ private:
     virtual BentleyStatus _Load (std::set<ClassMap const*>& loadGraph, ECDbClassMapInfo const& mapInfo, IClassMap const* parentClassMap) override
         {
         auto nullTable = GetECDbMap ().GetSQLManager ().GetNullTable ();
-        SetTable (const_cast<ECDbSqlTable*> (nullTable));
+        SetTable (*const_cast<ECDbSqlTable*> (nullTable));
         return BentleyStatus::SUCCESS;
         }
 

@@ -152,7 +152,7 @@ bool BinaryValueExp::_TryDetermineParameterExpType(ECSqlParseContext& ctx, Param
 //+---------------+---------------+---------------+---------------+---------------+------
 void BinaryValueExp::_DoToECSql(Utf8StringR ecsql) const
     {
-    ecsql.append(GetLeftOperand()->ToECSql()).append(" ").append(ExpHelper::ToString(m_op)).append(" ").append(GetRightOperand()->ToECSql());
+    ecsql.append(GetLeftOperand()->ToECSql()).append(" ").append(ExpHelper::ToSql(m_op)).append(" ").append(GetRightOperand()->ToECSql());
     }
 
 //-----------------------------------------------------------------------------------------
@@ -161,7 +161,7 @@ void BinaryValueExp::_DoToECSql(Utf8StringR ecsql) const
 Utf8String BinaryValueExp::_ToString() const 
     {
     Utf8String str ("Binary [Operator: ");
-    str.append (ExpHelper::ToString (m_op)).append ("]");
+    str.append (ExpHelper::ToSql (m_op)).append ("]");
     return str;
     }
 
@@ -999,7 +999,7 @@ Exp::FinalizeParseStatus SetFunctionCallExp::_FinalizeParsing(ECSqlParseContext&
 void SetFunctionCallExp::_DoToECSql(Utf8StringR ecsql) const
     {
     ecsql.append(GetFunctionName()).append ("(");
-    Utf8String selectionType = ExpHelper::ToString(GetSetQuantifier());
+    Utf8String selectionType = ExpHelper::ToSql(GetSetQuantifier());
     if (!selectionType.empty())
         ecsql.append (selectionType).append (" ");
 
@@ -1022,7 +1022,7 @@ void SetFunctionCallExp::_DoToECSql(Utf8StringR ecsql) const
 Utf8String SetFunctionCallExp::_ToString() const 
     {
     Utf8String str ("SetFunctionCall [Function: ");
-    str.append (GetFunctionName ()).append (", Type: ").append (ExpHelper::ToString (m_setQuantifier)).append ("]");
+    str.append (GetFunctionName ()).append (", Type: ").append (ExpHelper::ToSql (m_setQuantifier)).append ("]");
     return str;
     }
 
@@ -1187,7 +1187,7 @@ bool UnaryValueExp::_TryDetermineParameterExpType(ECSqlParseContext& ctx, Parame
 //+---------------+---------------+---------------+---------------+---------------+------
 void UnaryValueExp::_DoToECSql(Utf8StringR ecsql) const
     {
-    ecsql.append(ExpHelper::ToString(m_op)).append(GetOperand()->ToECSql());
+    ecsql.append(ExpHelper::ToSql(m_op)).append(GetOperand()->ToECSql());
     }
 
 //-----------------------------------------------------------------------------------------
@@ -1196,7 +1196,7 @@ void UnaryValueExp::_DoToECSql(Utf8StringR ecsql) const
 Utf8String UnaryValueExp::_ToString() const 
     {
     Utf8String str ("UnaryValue [Operator: ");
-    str.append (ExpHelper::ToString (m_op)).append ("]");
+    str.append (ExpHelper::ToSql (m_op)).append ("]");
     return str;
     }
 
