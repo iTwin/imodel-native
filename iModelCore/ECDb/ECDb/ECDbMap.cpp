@@ -719,7 +719,7 @@ std::vector<ECClassCP> ECDbMap::GetClassesFromRelationshipEnd (ECRelationshipCon
 +---------------+---------------+---------------+---------------+---------------+------*/
 size_t ECDbMap::GetTableCountOnRelationshipEnd(ECRelationshipConstraintCR relationshipEnd) const
     {
-    bset<ECDbSqlTable const*> tables;
+    std::set<ECDbSqlTable const*> tables;
     std::vector<ECClassCP> classes = GetClassesFromRelationshipEnd(relationshipEnd);
     for (ECClassCP ecClass : classes)
         {
@@ -730,6 +730,9 @@ size_t ECDbMap::GetTableCountOnRelationshipEnd(ECRelationshipConstraintCR relati
         if (classMap->GetMapStrategy().IsNotMapped())
             continue;
         
+        if (classMap->GetPrimaryTable().GetPersistenceType() == PersistenceType::Virtual)
+            continue;
+
         tables.insert(&classMap->GetPrimaryTable());
         }
 
