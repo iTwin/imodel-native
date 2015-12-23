@@ -159,7 +159,7 @@ public:
 #if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     void      _AddRaster2d(DPoint2d const points[4], int pitch, int numTexelsX, int numTexelsY, int enableAlpha, int format, Byte const* texels, double zDepth, DPoint2dCP range) override;
 #endif
-    void      _AddTextString(TextStringCR text, double* zDepth) override;
+    void      _AddTextString(TextStringCR text) override;
     void      _AddPolyface(PolyfaceQueryCR meshData, bool filled = false) override;
 };
 

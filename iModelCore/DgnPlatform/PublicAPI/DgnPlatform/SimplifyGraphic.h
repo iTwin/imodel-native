@@ -33,7 +33,6 @@ protected:
     bool                    m_inPatternDraw;
     bool                    m_inSymbolDraw;
     bool                    m_inTextDraw;
-    Transform               m_localToWorldTransform;
 
     Render::GraphicParams   m_currGraphicParams;
     Render::GeometryParams  m_currGeometryParams;
@@ -57,26 +56,22 @@ protected:
     DGNPLATFORM_EXPORT virtual void _AddBSplineSurface(MSBsplineSurfaceCR) override;
     DGNPLATFORM_EXPORT virtual void _AddPolyface(PolyfaceQueryCR meshData, bool filled = false) override;
     DGNPLATFORM_EXPORT virtual void _AddBody(ISolidKernelEntityCR entity, double pixelSize = 0.0) override;
-    DGNPLATFORM_EXPORT virtual void _AddTextString(TextStringCR text, double* zDepth) override;
+    DGNPLATFORM_EXPORT virtual void _AddTextString(TextStringCR text) override;
+    DGNPLATFORM_EXPORT virtual void _AddTextString2d(TextStringCR text, double zDepth) override;
     DGNPLATFORM_EXPORT virtual void _AddMosaic(int numX, int numY, uintptr_t const* tileIds, DPoint3d const* verts) override;
     DGNPLATFORM_EXPORT virtual void _AddRaster(DPoint3d const points[4], int pitch, int numTexelsX, int numTexelsY, int enableAlpha, int format, Byte const* texels, DPoint3dCP range) override;
     DGNPLATFORM_EXPORT virtual void _AddRaster2d(DPoint2d const points[4], int pitch, int numTexelsX, int numTexelsY, int enableAlpha, int format, Byte const* texels, double zDepth, DPoint2d const *range) override;
     DGNPLATFORM_EXPORT virtual void _AddDgnOle(Render::DgnOleDraw*) override;
     DGNPLATFORM_EXPORT virtual void _AddPointCloud(Render::PointCloudDraw* drawParams) override;
-    DGNPLATFORM_EXPORT virtual void _AddSubGraphic(Graphic&, TransformCR, Render::GraphicParams&) override;
+    DGNPLATFORM_EXPORT virtual void _AddSubGraphic(Render::GraphicR, TransformCR, Render::GraphicParamsR) override;
+    DGNPLATFORM_EXPORT virtual Render::GraphicPtr _CreateSubGraphic(TransformCR) const override;
 
 public:
     DGNPLATFORM_EXPORT explicit SimplifyGraphic(Render::Graphic::CreateParams const& params, IGeometryProcessorR, ViewContextR);
 
     virtual ~SimplifyGraphic() {}
 
-    // NEEDS_WORK_CONTINUOUS_RENDER - Move to Render::Graphic...
-    virtual Render::GraphicPtr _CreateSubGraphic(Render::Graphic::CreateParams const& params) const;
-
     ViewContextR GetViewContext() const {return m_context;};
-
-    //! Get current local to world transform (ex. element's placement).
-    TransformCR GetLocalToWorldTransform() const {return m_localToWorldTransform;}
 
     //! Get current local to view DMatrix4d.
     DGNPLATFORM_EXPORT DMatrix4d GetLocalToView() const;
@@ -123,7 +118,7 @@ public:
     DGNPLATFORM_EXPORT void ClipAndProcessPolyfaceAsCurves(PolyfaceQueryCR) const;
     DGNPLATFORM_EXPORT void ClipAndProcessBody(ISolidKernelEntityCR) const;
     DGNPLATFORM_EXPORT void ClipAndProcessBodyAsPolyface(ISolidKernelEntityCR) const;
-    DGNPLATFORM_EXPORT void ClipAndProcessText(TextStringCR, double* zDepth) const;
+    DGNPLATFORM_EXPORT void ClipAndProcessText(TextStringCR) const;
     DGNPLATFORM_EXPORT void ClipAndProcessGlyph(DgnFontCR, DgnGlyphCR, DPoint3dCR glyphOffset) const;
 
     DGNPLATFORM_EXPORT void GetEffectiveGraphicParams(Render::GraphicParamsR graphicParams) const; // Get GraphicParams adjusted for overrides...

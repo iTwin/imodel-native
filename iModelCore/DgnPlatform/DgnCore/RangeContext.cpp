@@ -766,7 +766,7 @@ void RangeGraphic::_AddRaster2d(DPoint2d const points[4], int pitch, int numTexe
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Keith.Bentley   09/03
 +---------------+---------------+---------------+---------------+---------------+------*/
-void RangeGraphic::_AddTextString(TextStringCR text, double* zDepth)
+void RangeGraphic::_AddTextString(TextStringCR text)
     {
     if (text.GetText().empty())
         return;

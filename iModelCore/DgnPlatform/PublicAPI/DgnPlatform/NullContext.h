@@ -43,22 +43,22 @@ struct NullContext : ViewContext
         virtual void _AddBSplineSurface(MSBsplineSurfaceCR surface) override {}
         virtual void _AddPolyface(PolyfaceQueryCR meshData, bool filled = false) override {}
         virtual void _AddBody(ISolidKernelEntityCR, double pixelSize = 0.0) override {}
-        virtual void _AddTextString(TextStringCR text, double* zDepth = NULL) override {}
+        virtual void _AddTextString(TextStringCR text) override {}
+        virtual void _AddTextString2d(TextStringCR text, double zDepth) override {}
         virtual void _AddMosaic(int numX, int numY, uintptr_t const* tileIds, DPoint3d const* verts) override {}
         virtual void _AddRaster(DPoint3d const points[4], int pitch, int numTexelsX, int numTexelsY, int enableAlpha, int format, Byte const* texels, DPoint3dCP range) override {}
         virtual void _AddRaster2d(DPoint2d const points[4], int pitch, int numTexelsX, int numTexelsY, int enableAlpha, int format, Byte const* texels, double zDepth, DPoint2d const *range) override {}
         virtual void _AddDgnOle(Render::DgnOleDraw*) override {}
         virtual void _AddPointCloud(Render::PointCloudDraw* drawParams) override {}
-        virtual void _AddSubGraphic(Graphic&, TransformCR, Render::GraphicParams&) override {}
+        virtual void _AddSubGraphic(Render::GraphicR, TransformCR, Render::GraphicParamsR) override {}
+        virtual Render::GraphicPtr _CreateSubGraphic(TransformCR) const override {return new NullGraphic();}
     };
 
 protected:
-    RefCountedPtr<NullGraphic> m_nullGraphic;
-
-    virtual Render::GraphicPtr _CreateGraphic(Render::Graphic::CreateParams const& params) override {return m_nullGraphic;}
+    virtual Render::GraphicPtr _CreateGraphic(Render::Graphic::CreateParams const& params) override {return new NullGraphic();}
 
 public:
-    NullContext() {m_ignoreViewRange = true; m_nullGraphic=new NullGraphic();}
+    NullContext() {m_ignoreViewRange = true;}
 };
 
 END_BENTLEY_DGN_NAMESPACE

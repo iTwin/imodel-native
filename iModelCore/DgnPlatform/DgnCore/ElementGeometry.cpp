@@ -2736,24 +2736,13 @@ struct DrawHelper
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  02/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void CookGeometryParams(ViewContextR context, Render::GeometryParamsR geomParams, Render::GraphicParamsR graphicParams, Render::GraphicP graphic=nullptr, bool* geomParamsChanged=nullptr)
+static void CookGeometryParams(ViewContextR context, Render::GeometryParamsR geomParams, Render::GraphicR graphic, bool& geomParamsChanged)
     {
-    if (nullptr != geomParamsChanged && !(*geomParamsChanged))
+    if (!geomParamsChanged)
         return;
 
-    // NOTE: Assumes QVElems will be cached per-view unlike Vancouver and cleared if view settings change...
-    ViewFlags   viewFlags = context.GetViewFlags();
-
-    if (FillDisplay::ByView == geomParams.GetFillDisplay() && RenderMode::Wireframe == viewFlags.GetRenderMode() && !viewFlags.fill)
-        geomParams.SetFillDisplay(FillDisplay::Never);
-
-    context.CookGeometryParams(geomParams, graphicParams);
-
-    if (nullptr != graphic)
-        graphic->ActivateGraphicParams(graphicParams, &geomParams);
-
-    if (nullptr != geomParamsChanged)
-        *geomParamsChanged = false;
+    context.CookGeometryParams(geomParams, graphic);
+    geomParamsChanged = false;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2811,15 +2800,14 @@ static bool IsGeometryVisible(ViewContextR context, Render::GeometryParamsCR geo
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  11/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-void GeometryStreamIO::Collection::Draw(Render::GraphicR graphic, ViewContextR context, Render::GeometryParamsR geomParams, TransformCR sourceToWorld) const
+void GeometryStreamIO::Collection::Draw(Render::GraphicR graphic, ViewContextR context, Render::GeometryParamsR geomParams, bool activateParams) const
     {
     bool        isQVis = graphic.IsForDisplay();
     bool        isQVWireframe = (isQVis && RenderMode::Wireframe == context.GetViewFlags().GetRenderMode());
     bool        isPick = (nullptr != context.GetIPickGeom());
     bool        useBRep = !(isQVis || isPick);
-    bool        geomParamsChanged = true;
+    bool        geomParamsChanged = activateParams; // NOTE: Don't always bake initial symbology into SubGraphics, it's activated before drawing QvElem...
 
-    Render::GraphicParams graphicParams;
     GeometryStreamIO::Reader reader(context.GetDgnDb());
 
     for (auto const& egOp : *this)
@@ -2855,26 +2843,9 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicR graphic, ViewContextR c
                 if (!reader.Get(egOp, geomPartId, geomToSource))
                     break;
 
-                DgnGeomPartPtr partGeometry = context.GetDgnDb().GeomParts().LoadGeomPart(geomPartId);
-
-                if (!partGeometry.IsValid())
-                    break;
-
-                GeometryStreamIO::Collection collection(partGeometry->GetGeometryStream().GetData(), partGeometry->GetGeometryStream().GetSize());
-
                 GeometryStreamEntryIdHelper::SetActiveGeomPart(context.GetGeometryStreamEntryIdR(), geomPartId);
-
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-                // NEEDSWORK: AddSubGraphic...how to let output force a stroke? Make it so that SimplifyGraphic can handle GeometryParams goop below too!
-#endif
-                Render::GraphicPtr     partGraphic = context.CreateGraphic(Graphic::CreateParams(context.GetViewport(), Transform::FromIdentity(), graphic.GetPixelSize()));
-                Render::GeometryParams partGeometryParams(geomParams);
-                Render::GraphicParams  partGraphicParams;
-
-                // NOTE: Need to cook partGeometryParams to get partGraphicParams, but we don't want to activate and bake into our QvElem...
-                DrawHelper::CookGeometryParams(context, partGeometryParams, partGraphicParams);
-                collection.Draw(*partGraphic, context, partGeometryParams, Transform::FromIdentity());
-                graphic.AddSubGraphic(*partGraphic, Transform::FromProduct(sourceToWorld, geomToSource), partGraphicParams);
+                context.AddSubGraphic(graphic, geomPartId, geomToSource, geomParams);
+                GeometryStreamEntryIdHelper::SetActive(context.GetGeometryStreamEntryIdR(), false);
                 break;
                 }
 
@@ -2892,7 +2863,7 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicR graphic, ViewContextR c
                 if (!reader.Get(egOp, pts, nPts, boundary))
                     break;
 
-                DrawHelper::CookGeometryParams(context, geomParams, graphicParams, &graphic, &geomParamsChanged);
+                DrawHelper::CookGeometryParams(context, geomParams, graphic, geomParamsChanged);
 
                 switch (boundary)
                     {
@@ -2925,7 +2896,7 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicR graphic, ViewContextR c
                 if (!reader.Get(egOp, pts, nPts, boundary))
                     break;
 
-                DrawHelper::CookGeometryParams(context, geomParams, graphicParams, &graphic, &geomParamsChanged);
+                DrawHelper::CookGeometryParams(context, geomParams, graphic, geomParamsChanged);
 
                 switch (boundary)
                     {
@@ -2957,7 +2928,7 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicR graphic, ViewContextR c
                 if (!reader.Get(egOp, arc, boundary))
                     break;
 
-                DrawHelper::CookGeometryParams(context, geomParams, graphicParams, &graphic, &geomParamsChanged);
+                DrawHelper::CookGeometryParams(context, geomParams, graphic, geomParamsChanged);
 
                 if (!context.Is3dView())
                     {
@@ -2987,7 +2958,7 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicR graphic, ViewContextR c
                 if (!reader.Get(egOp, curvePrimitivePtr))
                     break;
 
-                DrawHelper::CookGeometryParams(context, geomParams, graphicParams, &graphic, &geomParamsChanged);
+                DrawHelper::CookGeometryParams(context, geomParams, graphic, geomParamsChanged);
 
                 // A single curve primitive is always open (or none for a point string)...
                 CurveVectorPtr  curvePtr = CurveVector::Create(ICurvePrimitive::CURVE_PRIMITIVE_TYPE_PointString == curvePrimitivePtr->GetCurvePrimitiveType() ? CurveVector::BOUNDARY_TYPE_None : CurveVector::BOUNDARY_TYPE_Open, curvePrimitivePtr);
@@ -3014,7 +2985,7 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicR graphic, ViewContextR c
                 if (!reader.Get(egOp, curvePtr))
                     break;
 
-                DrawHelper::CookGeometryParams(context, geomParams, graphicParams, &graphic, &geomParamsChanged);
+                DrawHelper::CookGeometryParams(context, geomParams, graphic, geomParamsChanged);
 
                 if (!context.Is3dView())
                     {
@@ -3038,7 +3009,7 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicR graphic, ViewContextR c
                 if (!reader.Get(egOp, meshData))
                     break;
 
-                DrawHelper::CookGeometryParams(context, geomParams, graphicParams, &graphic, &geomParamsChanged);
+                DrawHelper::CookGeometryParams(context, geomParams, graphic, geomParamsChanged);
                 graphic.AddPolyface(meshData, FillDisplay::Never != geomParams.GetFillDisplay());
                 break;
                 };
@@ -3055,7 +3026,7 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicR graphic, ViewContextR c
                 if (!reader.Get(egOp, solidPtr))
                     break;
 
-                DrawHelper::CookGeometryParams(context, geomParams, graphicParams, &graphic, &geomParamsChanged);
+                DrawHelper::CookGeometryParams(context, geomParams, graphic, geomParamsChanged);
                 graphic.AddSolidPrimitive(*solidPtr);
                 break;
                 }
@@ -3072,7 +3043,7 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicR graphic, ViewContextR c
                 if (!reader.Get(egOp, surfacePtr))
                     break;
 
-                DrawHelper::CookGeometryParams(context, geomParams, graphicParams, &graphic, &geomParamsChanged);
+                DrawHelper::CookGeometryParams(context, geomParams, graphic, geomParamsChanged);
                 graphic.AddBSplineSurface(*surfacePtr);
                 break;
                 }
@@ -3095,7 +3066,7 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicR graphic, ViewContextR c
                     break;
                     }
 
-                DrawHelper::CookGeometryParams(context, geomParams, graphicParams, &graphic, &geomParamsChanged);
+                DrawHelper::CookGeometryParams(context, geomParams, graphic, geomParamsChanged);
                 graphic.AddBody(*entityPtr);
                 break;
                 }
@@ -3115,7 +3086,7 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicR graphic, ViewContextR c
                 if (!BentleyGeometryFlatBuffer::BytesToPolyfaceQueryCarrier(egOp.m_data, meshData))
                     break;
 
-                DrawHelper::CookGeometryParams(context, geomParams, graphicParams, &graphic, &geomParamsChanged);
+                DrawHelper::CookGeometryParams(context, geomParams, graphic, geomParamsChanged);
 
                 // NOTE: For this case the exact edge geometry will be supplied by BRepEdges/BRepFaceIso, inhibit facetted edge draw...
                 if ((isPick || isQVWireframe) && GeometryStreamIO::OpCode::BRepPolyface == egOp.m_opCode)
@@ -3165,7 +3136,7 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicR graphic, ViewContextR c
                 if (!curvePtr.IsValid())
                     break;
 
-                DrawHelper::CookGeometryParams(context, geomParams, graphicParams, &graphic, &geomParamsChanged);
+                DrawHelper::CookGeometryParams(context, geomParams, graphic, geomParamsChanged);
                 graphic.AddCurveVector(*curvePtr, false);
                 break;
                 }
@@ -3184,7 +3155,7 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicR graphic, ViewContextR c
                 if (!curvePtr.IsValid())
                     break;
 
-                DrawHelper::CookGeometryParams(context, geomParams, graphicParams, &graphic, &geomParamsChanged);
+                DrawHelper::CookGeometryParams(context, geomParams, graphic, geomParamsChanged);
                 graphic.AddCurveVector(*curvePtr, false);
                 break;
                 }
@@ -3201,7 +3172,14 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicR graphic, ViewContextR c
                 if (SUCCESS != TextStringPersistence::DecodeFromFlatBuf(text, egOp.m_data, egOp.m_dataSize, context.GetDgnDb()))
                     break;
 
-                DrawHelper::CookGeometryParams(context, geomParams, graphicParams, &graphic, &geomParamsChanged);
+                DrawHelper::CookGeometryParams(context, geomParams, graphic, geomParamsChanged);
+
+                if (!context.Is3dView())
+                    {
+                    graphic.AddTextString2d(text, geomParams.GetNetDisplayPriority());
+                    break;
+                    }
+
                 context.AddTextString(text);
                 break;
                 }
@@ -3226,7 +3204,7 @@ Render::GraphicPtr GeometrySource::_Stroke(ViewContextR context, double pixelSiz
     Render::GeometryParams params;
 
     params.SetCategoryId(GetCategoryId());
-    GeometryStreamIO::Collection(GetGeometryStream().GetData(), GetGeometryStream().GetSize()).Draw(*graphic, context, params, GetPlacementTransform());
+    GeometryStreamIO::Collection(GetGeometryStream().GetData(), GetGeometryStream().GetSize()).Draw(*graphic, context, params);
 
     return graphic;
     }

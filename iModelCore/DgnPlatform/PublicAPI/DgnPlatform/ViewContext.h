@@ -207,6 +207,9 @@ protected:
     DGNPLATFORM_EXPORT virtual StatusInt _Attach(DgnViewportP, DrawPurpose purpose);
     DGNPLATFORM_EXPORT virtual void _Detach();
     DGNPLATFORM_EXPORT virtual void _OutputGeometry(GeometrySourceCR);
+    DGNPLATFORM_EXPORT virtual void _AddSubGraphic(Render::GraphicR, DgnGeomPartId, TransformCR, Render::GeometryParamsR);
+    virtual Render::GraphicP _GetCachedPartGraphic(DgnGeomPartId, double pixelSize, ElementAlignedBox3dR) {return nullptr;}
+    virtual void _SavePartGraphic(DgnGeomPartId, Render::GraphicR, ElementAlignedBox3dCR) {}
     virtual void _OutputGraphic(Render::GraphicR, GeometrySourceCP) {}
     virtual Render::GraphicP _GetCachedGraphic(GeometrySourceCR, double pixelSize) {return nullptr;}
     virtual void _SaveGraphic(GeometrySourceCR, Render::GraphicR graphic) {}
@@ -270,6 +273,7 @@ public:
 
 public:
     Render::GraphicPtr CreateGraphic(Render::Graphic::CreateParams const& params=Render::Graphic::CreateParams()) {return _CreateGraphic(params);}
+    void AddSubGraphic(Render::GraphicR graphic, DgnGeomPartId partId, TransformCR subToGraphic, Render::GeometryParamsR geomParams) {_AddSubGraphic(graphic, partId, subToGraphic, geomParams);}
     StatusInt VisitElement(GeometrySourceCR elem) {return _VisitElement(elem);}
 
     /// @name Coordinate Query and Conversion
@@ -491,6 +495,7 @@ public:
     void _AddContextOverrides(Render::OvrGraphicParamsR ovrMatSymb, GeometrySourceCP source) override;
     Render::GraphicP _GetCachedGraphic(GeometrySourceCR source, double pixelSize) override {return source.Graphics().Find(*m_viewport, pixelSize);}
     void _SaveGraphic(GeometrySourceCR source, Render::GraphicR graphic) override {graphic.Close(); source.Graphics().Save(graphic);}
+    void _SavePartGraphic(DgnGeomPartId partId, Render::GraphicR graphic, ElementAlignedBox3dCR localRange) override {graphic.Close();} // NEEDSWORK...
     void _PushFrustumClip() override {}
     Render::GraphicPtr _CreateGraphic(Render::Graphic::CreateParams const& params) override {return m_target.CreateGraphic(params);}
 };
