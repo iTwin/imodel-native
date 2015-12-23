@@ -146,7 +146,7 @@ struct VariationSpec
     ECN::IECInstancePtr MakeVariationSpec(DgnDbR db) const;
     void CheckInstance(DgnElementCR el, size_t expectedSolidCount) const;
     void MakeUniqueInstance(DgnElementCPtr&, DgnModelR destModel, size_t expectedSolidCount);
-    void MakeVariation(DgnElementCPtr&, PhysicalModelR destModel);
+    void MakeVariation(DgnElementCPtr&, SpatialModelR destModel);
 
     void SetValue(Utf8CP name, ECN::ECValueCR v)
         {
@@ -202,7 +202,7 @@ void VariationSpec::MakeUniqueInstance(DgnElementCPtr& inst, DgnModelR destModel
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      12/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void VariationSpec::MakeVariation(DgnElementCPtr& variation, PhysicalModelR destModel)
+void VariationSpec::MakeVariation(DgnElementCPtr& variation, SpatialModelR destModel)
     {
     DgnDbStatus status;
     auto vspec = MakeVariationSpec(destModel.GetDgnDb());
@@ -395,12 +395,12 @@ void ComponentModelTest::Client_ImportComponentDef(Utf8CP componentName)
 
     m_componentDb->Schemas().GetECSchema(TEST_JS_NAMESPACE, true);
 
-    PhysicalModelPtr sourceCatalogModel = getModelByName<PhysicalModel>(*m_componentDb, "Catalog");
+    SpatialModelPtr sourceCatalogModel = getModelByName<SpatialModel>(*m_componentDb, "Catalog");
     ASSERT_TRUE(sourceCatalogModel.IsValid());
 
-    PhysicalModelPtr catalogModel = getModelByName<PhysicalModel>(*m_clientDb, "Catalog");
+    SpatialModelPtr catalogModel = getModelByName<SpatialModel>(*m_clientDb, "Catalog");
     if (!catalogModel.IsValid())
-        createPhysicalModel(catalogModel, *m_clientDb, DgnModel::CreateModelCode("Catalog"));
+        createSpatialModel(catalogModel, *m_clientDb, DgnModel::CreateModelCode("Catalog"));
 
     ASSERT_TRUE(catalogModel.IsValid());
     
@@ -769,7 +769,7 @@ TEST_F(ComponentModelTest, SimulateDeveloperAndClientWithNestingSingleton)
     Client_ImportComponentDef(TEST_THING_COMPONENT_NAME);
 
     SpatialModelPtr targetModel;
-    ASSERT_EQ( DgnDbStatus::Success , createPhysicalModel(targetModel, *m_clientDb, DgnModel::CreateModelCode("Instances")) );
+    ASSERT_EQ( DgnDbStatus::Success , createSpatialModel(targetModel, *m_clientDb, DgnModel::CreateModelCode("Instances")) );
 
     VariationSpec nparms = m_nsln1;
     nparms.m_propValues[0].m_value.SetDouble(9999);
@@ -814,7 +814,7 @@ TEST_F(ComponentModelTest, SimulateDeveloperAndClientWithNesting)
     Client_ImportComponentDef(TEST_GADGET_COMPONENT_NAME);
 
     SpatialModelPtr targetModel;
-    ASSERT_EQ( DgnDbStatus::Success , createPhysicalModel(targetModel, *m_clientDb, DgnModel::CreateModelCode("Instances")) );
+    ASSERT_EQ( DgnDbStatus::Success , createSpatialModel(targetModel, *m_clientDb, DgnModel::CreateModelCode("Instances")) );
 
     DgnElementCPtr instanceElement;
     m_nsln1.MakeUniqueInstance(instanceElement, *targetModel, 1);
@@ -822,6 +822,5 @@ TEST_F(ComponentModelTest, SimulateDeveloperAndClientWithNesting)
 
     Client_CheckNestedInstance(*instanceElement, TEST_GADGET_COMPONENT_NAME, 1);
     }
-
 
 #endif //ndef BENTLEYCONFIG_NO_JAVASCRIPT
