@@ -150,7 +150,9 @@
         <ProductDirectory Name="ECObjectsTestSeedDataGB"            Path="Assets/SeedData/en-GB" LibType="static"/>
         <ProductDirectory Name="ECObjectsTestSeedDataIT"            Path="Assets/SeedData/it"/>
         <ProductDirectory Name="ECObjectsTestSeedDataIT"            Path="Assets/SeedData/it" LibType="static"/>
-
+        <ProductDirectory Name="ECObjectsTestSeedDataV3Conversion"  Path="Assets/SeedData/V3Conversion" />
+        <ProductDirectory Name="ECObjectsTestSeedDataV3Conversion"  Path="Assets/SeedData/V3Conversion" LibType="static"/>
+        
         <ProductDirectory Name="DgnClientSdkIncludeDirectory" Deliver="false"/>
         <ProductDirectory Name="DgnClientSdkIncludeDirectory" Deliver="false" LibType="static"/>
         <ProductDirectory Name="DgnViewDecorators" Deliver="false"/>
