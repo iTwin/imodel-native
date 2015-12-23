@@ -167,8 +167,9 @@ BentleyStatus ViewGenerator::ComputeViewMembers(ViewMemberByTable& viewMembers, 
                 //This is a db query so optimization comes at a cost
                 storageType = DbMetaDataHelper::GetObjectType(map.GetECDbR(), classMap->GetSecondaryTable().GetName().c_str());
                 }
-            viewMembers.insert(
-                ViewMemberByTable::value_type(&classMap->GetSecondaryTable(), ViewMember(storageType, *classMap)));
+
+            if (storageType == DbMetaDataHelper::ObjectType::Table)
+                viewMembers.insert(ViewMemberByTable::value_type(&classMap->GetTable(), ViewMember(storageType, *classMap)));
             }
         else
             {
@@ -365,8 +366,9 @@ BentleyStatus ViewGenerator::GetViewQueryForChild(NativeSqlBuilder& viewSql, ECD
 //+---------------+---------------+---------------+---------------+---------------+-------
 BentleyStatus ViewGenerator::CreateNullViewForRelationshipClassEndTableMap (NativeSqlBuilder& viewSql, ECSqlPrepareContext const& prepareContext, RelationshipClassMapCR relationMap, IClassMap const& baseClassMap)
     {
+    viewSql.AppendParenLeft();
     AppendSystemPropMapsToNullView (viewSql, prepareContext, relationMap, false /*endWithComma*/);
-    viewSql.Append (" LIMIT 0");
+    viewSql.Append (" LIMIT 0").AppendParenRight();
     return SUCCESS;
     }
 
@@ -375,6 +377,7 @@ BentleyStatus ViewGenerator::CreateNullViewForRelationshipClassEndTableMap (Nati
 //+---------------+---------------+---------------+---------------+---------------+-------
 BentleyStatus ViewGenerator::CreateNullViewForRelationshipClassLinkTableMap (NativeSqlBuilder& viewSql, ECSqlPrepareContext const& prepareContext, RelationshipClassMapCR relationMap, IClassMap const& baseClassMap)
     {
+    viewSql.AppendParenLeft();
     AppendSystemPropMapsToNullView (viewSql, prepareContext, relationMap, false /*endWithComma*/);
 
     //! Only link table mapped relationship properties are persisted
@@ -384,6 +387,7 @@ BentleyStatus ViewGenerator::CreateNullViewForRelationshipClassLinkTableMap (Nat
 
     //Append columns to query [col1],[col2], ...
     AppendViewPropMapsToQuery (viewSql, relationMap.GetECDbMap ().GetECDbR (), prepareContext, relationMap.GetSecondaryTable(), viewPropMaps, true);
+    viewSql.AppendParenRight();
     return SUCCESS;
     }
 

@@ -5654,19 +5654,6 @@ TEST_F(ECDbMappingTestFixture, RelationshipWithAbstractClassAsConstraintOnParent
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECDbMappingTestFixture, RelationshipWithAbstractClassAsConstraintOnChildEnd)
     {
-    auto getSolidHasFacesRowCount = [] (ECDbCR ecdb)
-        {
-        ECSqlStatement selectStmt;
-        if (ECSqlStatus::Success != selectStmt.Prepare(ecdb, "SELECT count(*) FROM ts.SolidHasFaces"))
-            return -1;
-
-        if (BE_SQLITE_ROW != selectStmt.Step())
-            return -1;
-
-        return selectStmt.GetValueInt(0);
-        };
-
- /*   {
     SchemaItem testItem("<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
                         "  <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
                         "  <ECEntityClass typeName='Solid'>"
@@ -5690,9 +5677,33 @@ TEST_F(ECDbMappingTestFixture, RelationshipWithAbstractClassAsConstraintOnChildE
     AssertSchemaImport(ecdb, asserted, testItem, "RelationshipWithAbstractClassAsConstraintOnChildEnd.ecdb");
     ASSERT_FALSE(asserted);
 
-    ecdb.Schemas().CreateECClassViewsInDb();
-    ASSERT_EQ(0, getSolidHasFacesRowCount(ecdb));
-    }*/
+    ECClassId faceClassId = ecdb.Schemas().GetECClassId("TestSchema", "Face");
+    ASSERT_NE(ECClass::UNSET_ECCLASSID, faceClassId);
+
+    ECInstanceKey solidKey;
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ts.Solid(Name) VALUES('MySolid')"));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(solidKey));
+    }
+
+    ecdb.SaveChanges();
+
+    {
+    ECSqlStatement selectStmt;
+    ASSERT_EQ(ECSqlStatus::Success, selectStmt.Prepare(ecdb, "SELECT count(*) FROM ts.SolidHasFaces"));
+    ASSERT_EQ(BE_SQLITE_ROW, selectStmt.Step());
+    ASSERT_EQ(0, selectStmt.GetValueInt(0)) << "SELECT count(*) FROM ts.SolidHasFaces";
+    }
+
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ts.SolidHasFaces(SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId) VALUES(?,?,4444,?)"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, solidKey.GetECInstanceId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt64(2, solidKey.GetECClassId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt64(3, faceClassId));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(solidKey));
+    }
     }
 
 //=======================================================================================    
