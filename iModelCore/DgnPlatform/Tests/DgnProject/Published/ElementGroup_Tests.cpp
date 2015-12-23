@@ -62,11 +62,15 @@ TEST_F(ElementGroupTests, CRUD)
     ASSERT_TRUE(group->Insert().IsValid());
 
     // Insert Elements
-    ASSERT_TRUE(DgnDbStatus::Success == group->AddMember(*member1));
-    ASSERT_TRUE(DgnDbStatus::Success == group->AddMember(*member2));
+    ASSERT_TRUE(DgnDbStatus::Success == group->AddMember(*member1, 1));
+    ASSERT_TRUE(DgnDbStatus::Success == group->AddMember(*member2, 2));
     ASSERT_TRUE(DgnDbStatus::Success == group->AddMember(*member3));
     // Insert Duplicate
     ASSERT_FALSE(DgnDbStatus::Success == group->AddMember(*member3));
+    // Verify MemberPriority
+    ASSERT_EQ(1, group->QueryMemberPriority(*member1));
+    ASSERT_EQ(2, group->QueryMemberPriority(*member2));
+    ASSERT_EQ(0, group->QueryMemberPriority(*member3)) << "Expect 0 for default priority";
 
     //  Query
     EXPECT_TRUE (3 == group->QueryMembers().size());
