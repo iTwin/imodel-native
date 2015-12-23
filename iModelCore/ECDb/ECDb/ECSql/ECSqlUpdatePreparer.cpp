@@ -90,11 +90,14 @@ ECSqlStatus ECSqlUpdatePreparer::Prepare(ECSqlPrepareContext& ctx, UpdateStateme
 
         //Following generate optimized WHERE depending on what was accessed in WHERE class of delete. It will avoid uncessary
         auto const & currentClassMap = classMap;
-        if (auto rootOfJoinedTable = currentClassMap.FindClassMapOfParentOfJoinedTable())
+        if (!currentClassMap.IsMappedToSingleTable())
             {
+            auto& primaryTable = currentClassMap.GetPrimaryTable();
+            auto& secondaryTable = currentClassMap.GetSecondaryTable();
+
             auto const tableBeenAccessed = whereClauseExp->GetReferencedTables();
-            bool referencedRootOfJoinedTable = (tableBeenAccessed.find(&rootOfJoinedTable->GetSecondaryTable()) != tableBeenAccessed.end());
-            bool referencedJoinedTable = (tableBeenAccessed.find(&currentClassMap.GetSecondaryTable()) != tableBeenAccessed.end());
+            bool referencedRootOfJoinedTable = (tableBeenAccessed.find(&primaryTable) != tableBeenAccessed.end());
+            bool referencedJoinedTable = (tableBeenAccessed.find(&secondaryTable) != tableBeenAccessed.end());
             if (!referencedRootOfJoinedTable && referencedJoinedTable)
                 {
                 //do not modifiy where
@@ -102,19 +105,19 @@ ECSqlStatus ECSqlUpdatePreparer::Prepare(ECSqlPrepareContext& ctx, UpdateStateme
                 }
             else
                 {
-                auto joinedTableId = currentClassMap.GetSecondaryTable().GetFilteredColumnFirst(ColumnKind::ECInstanceId);
-                auto parentOfjoinedTableId = rootOfJoinedTable->GetSecondaryTable().GetFilteredColumnFirst(ColumnKind::ECInstanceId);
+                auto joinedTableId = secondaryTable.GetFilteredColumnFirst(ColumnKind::ECInstanceId);
+                auto parentOfjoinedTableId = primaryTable.GetFilteredColumnFirst(ColumnKind::ECInstanceId);
                 NativeSqlBuilder snippet;
                 snippet.AppendFormatted(
                     " WHERE [%s] IN (SELECT [%s].[%s] FROM [%s] INNER JOIN [%s] ON [%s].[%s] = [%s].[%s] %s) ",
                     parentOfjoinedTableId->GetName().c_str(),
-                    rootOfJoinedTable->GetSecondaryTable().GetName().c_str(),
+                    primaryTable.GetName().c_str(),
                     parentOfjoinedTableId->GetName().c_str(),
-                    rootOfJoinedTable->GetSecondaryTable().GetName().c_str(),
-                    currentClassMap.GetSecondaryTable().GetName().c_str(),
-                    currentClassMap.GetSecondaryTable().GetName().c_str(),
+                    primaryTable.GetName().c_str(),
+                    secondaryTable.GetName().c_str(),
+                    secondaryTable.GetName().c_str(),
                     joinedTableId->GetName().c_str(),
-                    rootOfJoinedTable->GetSecondaryTable().GetName().c_str(),
+                    primaryTable.GetName().c_str(),
                     parentOfjoinedTableId->GetName().c_str(),
                     whereClause.ToString()
                     );
