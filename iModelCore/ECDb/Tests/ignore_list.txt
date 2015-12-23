@@ -35,3 +35,4 @@ JoinedTableECDbMapStrategyTests.PopulateECSql_TestDbWithTestData
 JoinedTableECDbMapStrategyTests.MultiInheritence1
 ECDbMappingTestFixture.RelationshipWithAbstractClassAsConstraintOnParentEnd
 ECDbSchemas.DiegoRelationshipTest
+
