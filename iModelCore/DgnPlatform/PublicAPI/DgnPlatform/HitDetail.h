@@ -100,7 +100,7 @@ private:
     bool                    m_nonSnappable;             // non-snappable detail, ex. pattern or line style.
     double                  m_viewDist;                 // xy distance to hit (view coordinates).
     double                  m_viewZ;                    // z distance to hit (view coordinates).
-    GeometryStreamEntryId       m_geomId;                   // id of geometric primitive that generated this hit.
+    GeometryStreamEntryId   m_geomId;                   // id of geometric primitive that generated this hit.
 
 public:
     DGNPLATFORM_EXPORT void Init();
