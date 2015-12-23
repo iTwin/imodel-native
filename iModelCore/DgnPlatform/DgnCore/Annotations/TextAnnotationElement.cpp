@@ -113,7 +113,7 @@ void TextAnnotationData::GenerateElementGeometry(GeometrySourceR source, Generat
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     12/2015
 //---------------------------------------------------------------------------------------
-void TextAnnotationItem::RemapIds(DgnImportContext& context)
+void TextAnnotationData::RemapIds(DgnImportContext& context)
     {
     if (!m_annotation.IsValid())
         return;
