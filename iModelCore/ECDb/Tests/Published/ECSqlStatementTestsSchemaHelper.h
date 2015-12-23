@@ -1,3 +1,10 @@
+/*--------------------------------------------------------------------------------------+
+|
+|  $Source: Tests/Published/ECSqlStatementTestsSchemaHelper.h $
+|
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|
++--------------------------------------------------------------------------------------*/
 #include "ECDbPublishedTests.h"
 USING_NAMESPACE_BENTLEY_EC
 
