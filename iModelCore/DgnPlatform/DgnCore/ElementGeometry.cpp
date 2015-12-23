@@ -3234,11 +3234,8 @@ Render::GraphicPtr GeometrySource::_Stroke(ViewContextR context, double pixelSiz
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool GeometrySource::_DrawHit(HitDetailCR hit, ViewContextR context) const
+bool GeometrySource::_DrawHit(HitDetailCR hit, DecorateContextR context) const
     {
-    if (DrawPurpose::Flash != context.GetDrawPurpose())
-        return false;
-
     if (GeometryStreamEntryId::Type::Invalid == hit.GetGeomDetail().GetGeometryStreamEntryId().GetType())
         return false;
 

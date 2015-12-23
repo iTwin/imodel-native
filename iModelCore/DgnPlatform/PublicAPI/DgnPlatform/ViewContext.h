@@ -257,7 +257,6 @@ public:
     void Detach() {_Detach();}
     bool VisitAllModelElements() {return _VisitAllModelElements();}
     DGNPLATFORM_EXPORT bool VisitAllViewElements(BSIRectCP updateRect=nullptr);
-    DGNPLATFORM_EXPORT StatusInt VisitHit(HitDetailCR hit);
     StatusInt InitContextForView() {return _InitContextForView();}
     DGNPLATFORM_EXPORT bool IsWorldPointVisible(DPoint3dCR worldPoint, bool boresite);
     DGNPLATFORM_EXPORT bool PointInsideClip(DPoint3dCR point);
@@ -486,6 +485,8 @@ protected:
     Render::TargetR m_target;
 
 public:
+    Render::OvrGraphicParams& GetOvrGraphicParams() {return m_ovrParams;}
+
     DGNVIEW_EXPORT RenderContext(DgnViewportR vp, DrawPurpose);
     void _AddContextOverrides(Render::OvrGraphicParamsR ovrMatSymb, GeometrySourceCP source) override;
     Render::GraphicP _GetCachedGraphic(GeometrySourceCR source, double pixelSize) override {return source.Graphics().Find(*m_viewport, pixelSize);}
@@ -518,12 +519,18 @@ public:
 //=======================================================================================
 struct DecorateContext : RenderContext
 {
+    DEFINE_T_SUPER(RenderContext);
     friend struct DgnViewport;
 private:
+    bool    m_isFlash = false;
     Render::Decorations& m_decorations;
+    void _AddContextOverrides(Render::OvrGraphicParamsR ovrMatSymb, GeometrySourceCP source) override;
+    void _OutputGraphic(Render::GraphicR graphic, GeometrySourceCP) override;
     DecorateContext(DgnViewportR vp, Render::Decorations& decorations) : RenderContext(vp, DrawPurpose::Decorate), m_decorations(decorations) {}
 
 public:
+    StatusInt VisitHit(HitDetailCR hit);
+    DGNPLATFORM_EXPORT void AddFlashed(Render::GraphicR graphic, Render::OvrGraphicParamsCP ovr=nullptr);
     DGNPLATFORM_EXPORT void AddWorldDecoration(Render::GraphicR graphic, Render::OvrGraphicParamsCP ovr=nullptr);
     DGNPLATFORM_EXPORT void AddWorldOverlay(Render::GraphicR graphic, Render::OvrGraphicParamsCP ovr=nullptr);
     DGNPLATFORM_EXPORT void AddViewOverlay(Render::GraphicR graphic, Render::OvrGraphicParamsCP ovr=nullptr);

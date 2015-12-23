@@ -211,7 +211,7 @@ protected:
     //! @return true if the info string was set or false to use the default implementation.
     virtual bool _GetInfoString(HitDetailCR hit, Utf8StringR descr, Utf8CP delimiter) const {return false;}
 
-    DGNPLATFORM_EXPORT virtual StatusInt _VisitHit(HitDetailCR hit, ViewContextR context) const;
+    DGNPLATFORM_EXPORT virtual StatusInt _VisitHit(HitDetailCR hit, DecorateContextR context) const;
 
     //! Used to notify derived classes when a heal update begins.
     //! <p>See QueryViewController::_OnHealUpdate
@@ -283,7 +283,7 @@ public:
         double Bottom() const {return m_bottom;}
     };
 
-    StatusInt VisitHit(HitDetailCR hit, ViewContextR context) const{return _VisitHit(hit, context);}
+    StatusInt VisitHit(HitDetailCR hit, DecorateContextR context) const{return _VisitHit(hit, context);}
     void DrawView(ViewContextR context) {return _DrawView(context);}
     void VisitElements(ViewContextR context) {return _VisitElements(context);}
     void ChangeModelDisplay(DgnModelId modelId, bool onOff) {_ChangeModelDisplay(modelId, onOff);}
@@ -963,7 +963,7 @@ private:
 
     virtual void _DrawView(ViewContextR) override;
     virtual Render::GraphicPtr _StrokeGeometry(ViewContextR, GeometrySourceCR, double) override;
-    virtual StatusInt _VisitHit(HitDetailCR hit, ViewContextR context) const override;
+    virtual StatusInt _VisitHit(HitDetailCR hit, DecorateContextR context) const override;
     virtual DPoint3d _GetOrigin() const override;
     virtual DVec3d _GetDelta() const override;
     virtual RotMatrix _GetRotation() const override;

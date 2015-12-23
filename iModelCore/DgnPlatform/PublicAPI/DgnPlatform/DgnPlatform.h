@@ -830,8 +830,6 @@ enum class DrawPurpose
     Dynamics,
     Plot,
     Pick,
-    Flash,
-    TransientChanged,
     CaptureGeometry,
     GenerateThumbnail,
     Decorate,

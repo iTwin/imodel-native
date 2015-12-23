@@ -405,17 +405,15 @@ HitDetail::~HitDetail() {}
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  07/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool HitDetail::ShouldFlashCurveSegment(ViewContextR context) const
+bool HitDetail::ShouldFlashCurveSegment(DecorateContextR context) const
     {
-    return (DrawPurpose::Flash == context.GetDrawPurpose() && 
-            SubSelectionMode::Segment == GetSubSelectionMode() && 
-            nullptr != GetGeomDetail().GetCurvePrimitive());
+    return (SubSelectionMode::Segment == GetSubSelectionMode() &&  nullptr != GetGeomDetail().GetCurvePrimitive());
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  07/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void HitDetail::FlashCurveSegment(ViewContextR context) const
+void HitDetail::FlashCurveSegment(DecorateContextR context) const
     {
 #if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     if (nullptr == GetGeomDetail().GetCurvePrimitive())
@@ -468,8 +466,9 @@ void HitDetail::FlashCurveSegment(ViewContextR context) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void HitDetail::_Draw(ViewContextR context) const
+void HitDetail::_Draw(DecorateContextR context) const
     {
+
     context.VisitHit(*this);
     }
 
@@ -758,11 +757,10 @@ void IntersectDetail::_SetHilited(DgnElement::Hilited newState) const
 * is drawn using a dashed symbology.
 * @bsimethod                                                    KeithBentley    06/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-void IntersectDetail::_Draw(ViewContextR context) const
+void IntersectDetail::_Draw(DecorateContextR context) const
     {
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     // start by drawing the first path normally
-    T_Super::_DrawInVp(vp, drawPurpose, stopFlag);
+    T_Super::_Draw(context);
 
     SnapDetail tmpSnapDetail(m_secondHit); // So display handlers know this is from a snap...
 
@@ -770,15 +768,12 @@ void IntersectDetail::_Draw(ViewContextR context) const
     //       drawn hilited, we need to turn on its hilited flag temporarily, and then restore it.
     DgnElement::Hilited currHilite = tmpSnapDetail.IsHilited();
 
-    if (DrawPurpose::Flash == drawPurpose)
-        tmpSnapDetail.SetHilited(DgnElement::Hilited::Normal);
+    tmpSnapDetail.SetHilited(DgnElement::Hilited::Normal);
 
     tmpSnapDetail.SetSubSelectionMode(GetSubSelectionMode()); // Set correct flash mode...
-    tmpSnapDetail.DrawInVp(vp, drawPurpose, stopFlag);
+    tmpSnapDetail.Draw(context);
 
-    if (DrawPurpose::Flash == drawPurpose)
-        tmpSnapDetail.SetHilited(currHilite);
-#endif
+    tmpSnapDetail.SetHilited(currHilite);
     }
 
 /*=================================================================================**//**
