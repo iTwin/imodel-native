@@ -196,6 +196,15 @@
     <ClCompile Include="Published\ECDbTestHelper.cpp">
       <Filter>Published</Filter>
     </ClCompile>
+    <ClCompile Include="Performance\PerformanceECSqlVsSqliteTests.cpp">
+      <Filter>Performance</Filter>
+    </ClCompile>
+    <ClCompile Include="Performance\PerformanceCRUDTestsHelper.cpp">
+      <Filter>Performance</Filter>
+    </ClCompile>
+        <ClCompile Include="Published\SqliteJSonSupport.cpp">
+      <Filter>Published</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Performance\PerformanceTests.h">
@@ -269,6 +278,9 @@
     </ClInclude>
     <ClInclude Include="Published\ECDbTestHelper.h">
       <Filter>Published</Filter>
+    </ClInclude>
+    <ClInclude Include="Performance\PerformanceCRUDTestsHelper.h">
+      <Filter>Performance</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

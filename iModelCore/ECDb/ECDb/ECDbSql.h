@@ -251,7 +251,7 @@ struct ECDbSqlColumn : NonCopyableClass
     {
     enum class Type
         {
-        Integer, Long, Double, DateTime, Binary, Boolean, String, Any
+        Integer, Long, Double, DateTime, Binary, Boolean, String, Json, Any
         };
     struct Constraint : NonCopyableClass
         {
@@ -619,7 +619,15 @@ struct ECDbPropertyPath : NonCopyableClass
         ~ECDbPropertyPath (){}
         ECDbPropertyPathId GetId () const { return m_pathId; }
         ECN::ECPropertyId GetRootPropertyId () const { return m_rootPropertyId; }
-        Utf8String GetAccessString () const { return m_accessString; }
+        Utf8String const& GetAccessString () const { return m_accessString; }
+        const Utf8String  GetName() const
+            {
+            auto i = m_accessString.find('.');
+            if (i == Utf8String::npos)
+                return m_accessString;
+
+            return m_accessString.substr(0, i);
+            }
         bool operator == (ECDbPropertyPath const& rhs) const
             {
             return Compare (rhs) == 0;

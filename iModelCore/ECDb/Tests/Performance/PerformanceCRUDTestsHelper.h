@@ -1,19 +1,18 @@
 /*--------------------------------------------------------------------------------------+
 |
-|  $Source: Tests/Performance/PerformanceECDbMapCATests.h $
+|  $Source: Tests/Performance/PerformanceCRUDTestsHelper.h $
 |
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "PerformanceTests.h"
-
 USING_NAMESPACE_BENTLEY_EC
 BEGIN_ECDBUNITTESTS_NAMESPACE
 
 //---------------------------------------------------------------------------------------
 // @bsiClass                                       Muhammad Hassan                  07/15
 //+---------------+---------------+---------------+---------------+---------------+------
-struct PerformanceECDbMapCATestFixture : public ECDbTestFixture
+struct PerformanceCRUDTestsHelper : public ECDbTestFixture
     {
     public:
         size_t m_classNamePostFix = 1;
@@ -41,17 +40,16 @@ struct PerformanceECDbMapCATestFixture : public ECDbTestFixture
         void CreatePrimitiveProperties (ECN::ECClassR ecClass);
 
         void GenerateECSqlCRUDTestStatements (ECN::ECSchemaR ecSchema, bool hardCodePropertyValues);
-        void ECSqlInsertInstances (ECDbR ecdb, bool bindPropertyValues);
+        void ECSqlInsertInstances (ECDbR ecdb, bool bindPropertyValues, int64_t initInstanceId);
         void ECSqlReadInstances (ECDbR ecdb, bool iterateResultSet);
         void ECSqlUpdateInstances (ECDbR ecdb, bool bindPropertyValues);
         void ECSqlDeleteInstances (ECDbR ecdb);
 
-        void GenerateSqlCRUDTestStatements (ECN::ECSchemaR ecSchema, ECN::ECClassR ecClass, bool hardCodePropertyValues);
-        void SqlInsertInstances (ECDbR ecdb, ECClassR ecClass, bool bindPropertyValues);
+        void GenerateSqlCRUDTestStatements (ECN::ECClassCP &ecClass, bool hardCodePropertyValues);
+        void SqlInsertInstances (ECDbR ecdb, ECClassR ecClass, bool bindPropertyValues, int64_t initInstanceId);
         void SqlReadInstances (ECDbR ecdb, ECClassR ecClass, bool iterateResultSet);
         void SqlUpdateInstances (ECDbR ecdb, ECClassR ecClass, bool bindPropertyValues);
         void SqlDeleteInstances (ECDbR ecdb, ECClassR ecClass);
-        void SetUpTestDb (ECDbR ecdb, ECN::ECSchemaPtr& ecSchema, ECEntityClassP &baseClass);
+        void SetUpTestECDb (ECDbR ecdb, Utf8String destFileName);
     };
-
 END_ECDBUNITTESTS_NAMESPACE

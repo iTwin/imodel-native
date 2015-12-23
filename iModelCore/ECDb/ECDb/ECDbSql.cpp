@@ -682,6 +682,8 @@ ECDbSqlTable* ECDbMapDb::CreateTableForExistingTableMapStrategy (ECDbCR ecdb, Ut
             ecType = ECDbSqlColumn::Type::DateTime;
         else if (type.rfind ("bool") != Utf8String::npos)
             ecType = ECDbSqlColumn::Type::Boolean;
+        else if (type.rfind("json") != Utf8String::npos)
+            ecType = ECDbSqlColumn::Type::Json;
 
         ECDbSqlColumn* column = newTableDef->CreateColumn (name, ecType);
         if (column == nullptr)
@@ -1336,6 +1338,8 @@ Utf8String DDLGenerator::GetColumnDDL (ECDbSqlColumn const& o)
             sql.append ("INTEGER"); break;
         case ECDbSqlColumn::Type::String:
             sql.append ("TEXT"); break;
+        case ECDbSqlColumn::Type::Json:
+            sql.append("JSON"); break;
         }
 
     if (o.GetConstraint ().IsNotNull())
@@ -1786,6 +1790,14 @@ bool ECDbSqlHelper::IsCompatible (ECDbSqlColumn::Type target, ECDbSqlColumn::Typ
                 case ECDbSqlColumn::Type::Any:
                 case ECDbSqlColumn::Type::Long:
                 case ECDbSqlColumn::Type::Integer:
+                    return true;
+                }
+            break;
+        case ECDbSqlColumn::Type::Json:
+            switch (target)
+                {
+                case ECDbSqlColumn::Type::Any:
+                case ECDbSqlColumn::Type::String:
                     return true;
                 }
             break;
@@ -2805,6 +2817,12 @@ void ECDbClassMapInfo::GetPropertyMaps (std::vector<ECDbPropertyMapInfo const*>&
         {
         GetBaseClassMap ()->GetPropertyMaps (propertyMaps, onlyLocal);
         }
+
+    propertyMaps.erase(
+        std::remove_if(
+            propertyMaps.begin(), 
+            propertyMaps.end(), [] (ECDbPropertyMapInfo const* minfo) { return minfo->GetColumn().GetKind() != ColumnKind::DataColumn; }), 
+        propertyMaps.end());
 
     for (auto& localPropertyMap : m_localPropertyMaps)
         propertyMaps.push_back (localPropertyMap.get ());

@@ -4571,7 +4571,8 @@ TEST_F(ECDbMappingTestFixture, ForeignKeyMapWithKeyProperty)
         ASSERT_TRUE(ecdb.ColumnExists(childTableName, "ParentId"));
         bvector<Utf8String> columns;
         ASSERT_TRUE(ecdb.GetColumns(columns, childTableName));
-        ASSERT_EQ(3, columns.size()) << childTableName << " table should not contain an extra foreign key column as the relationship specifies a Key property";
+        std::vector<Utf8String> columnsP(columns.begin(), columns.end());
+        ASSERT_EQ(3, columnsP.size()) << childTableName << " table should not contain an extra foreign key column as the relationship specifies a Key property";
 
         auto containsDefaultNamedRelationalKeyColumn = [] (Utf8StringCR str) { return BeStringUtilities::Strnicmp(str.c_str(), "ForeignEC", 9) == 0; };
         auto it = std::find_if(columns.begin(), columns.end(), containsDefaultNamedRelationalKeyColumn);
@@ -5622,7 +5623,7 @@ TEST_F(ECDbMappingTestFixture, RelationshipWithAbstractClassAsConstraintOnParent
         ecdb.SaveChanges();
 
         //now do actual tests with relationship
-        ASSERT_EQ(0, getGeometrySourceHasGeometryRowCount(ecdb));
+        ASSERT_EQ(0, getGeometrySourceHasGeometryRowCount(ecdb)) << "Before inserting one relationship [Scenario: " << testSchema.m_name << "]";
 
         ECSqlStatement insertStmt;
         ASSERT_EQ(ECSqlStatus::Success, insertStmt.Prepare(ecdb, "INSERT INTO ts.GeometrySourceHasGeometry(SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId) VALUES(?,?,?,?)"));
@@ -5653,19 +5654,6 @@ TEST_F(ECDbMappingTestFixture, RelationshipWithAbstractClassAsConstraintOnParent
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECDbMappingTestFixture, RelationshipWithAbstractClassAsConstraintOnChildEnd)
     {
-    auto getSolidHasFacesRowCount = [] (ECDbCR ecdb)
-        {
-        ECSqlStatement selectStmt;
-        if (ECSqlStatus::Success != selectStmt.Prepare(ecdb, "SELECT count(*) FROM ts.SolidHasFaces"))
-            return -1;
-
-        if (BE_SQLITE_ROW != selectStmt.Step())
-            return -1;
-
-        return selectStmt.GetValueInt(0);
-        };
-
- /*   {
     SchemaItem testItem("<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
                         "  <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
                         "  <ECEntityClass typeName='Solid'>"
@@ -5689,9 +5677,33 @@ TEST_F(ECDbMappingTestFixture, RelationshipWithAbstractClassAsConstraintOnChildE
     AssertSchemaImport(ecdb, asserted, testItem, "RelationshipWithAbstractClassAsConstraintOnChildEnd.ecdb");
     ASSERT_FALSE(asserted);
 
-    ecdb.Schemas().CreateECClassViewsInDb();
-    ASSERT_EQ(0, getSolidHasFacesRowCount(ecdb));
-    }*/
+    ECClassId faceClassId = ecdb.Schemas().GetECClassId("TestSchema", "Face");
+    ASSERT_NE(ECClass::UNSET_ECCLASSID, faceClassId);
+
+    ECInstanceKey solidKey;
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ts.Solid(Name) VALUES('MySolid')"));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(solidKey));
+    }
+
+    ecdb.SaveChanges();
+
+    {
+    ECSqlStatement selectStmt;
+    ASSERT_EQ(ECSqlStatus::Success, selectStmt.Prepare(ecdb, "SELECT count(*) FROM ts.SolidHasFaces"));
+    ASSERT_EQ(BE_SQLITE_ROW, selectStmt.Step());
+    ASSERT_EQ(0, selectStmt.GetValueInt(0)) << "SELECT count(*) FROM ts.SolidHasFaces";
+    }
+
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ts.SolidHasFaces(SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId) VALUES(?,?,4444,?)"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, solidKey.GetECInstanceId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt64(2, solidKey.GetECClassId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt64(3, faceClassId));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(solidKey));
+    }
     }
 
 //=======================================================================================    

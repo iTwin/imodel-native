@@ -100,7 +100,7 @@ MapStatus UnmappedClassMap::_InitializePart1 (SchemaImportContext*, ClassMapInfo
         m_parentMapClassId = parentClassMap->GetParentMapClassId ();
 
     auto nullTable = GetECDbMap ().GetSQLManager ().GetNullTable ();
-    SetTable (const_cast<ECDbSqlTable*> (nullTable));
+    SetTable (*const_cast<ECDbSqlTable*> (nullTable));
 
     return MapStatus::Success;
     }

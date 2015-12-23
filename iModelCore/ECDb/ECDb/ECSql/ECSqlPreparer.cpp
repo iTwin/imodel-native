@@ -442,19 +442,17 @@ ECSqlStatus ECSqlExpPreparer::PrepareClassNameExp(NativeSqlBuilder::List& native
         {
         //don't compute storage description for INSERT as it is slow, and not needed for INSERT (which is always non-polymorphic)
         BeAssert(!exp.IsPolymorphic());
-        table = &classMap.GetTable();
+        table = &classMap.GetSecondaryTable();
         }
     else
         {
         if (classMap.HasJoinedTable() && currentScopeECSqlType == ECSqlType::Delete)
             {
-            auto rootMap = classMap.FindClassMapOfParentOfJoinedTable();
-            BeAssert(rootMap != nullptr);
-            table = &rootMap->GetTable();
+            table = &classMap.GetPrimaryTable();
             }
         else if (classMap.HasJoinedTable() && currentScopeECSqlType == ECSqlType::Update)
             {
-            table = &classMap.GetTable();
+            table = &classMap.GetSecondaryTable();
             }
         else
             {
@@ -779,7 +777,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareECClassIdFunctionExp (NativeSqlBuilder::Lis
 
     auto const& classMap = classNameExp->GetInfo ().GetMap ();
     ECDbSqlColumn const* classIdColumn = nullptr;
-    if (classMap.GetTable().TryGetECClassIdColumn(classIdColumn))
+    if (classMap.GetSecondaryTable().TryGetECClassIdColumn(classIdColumn))
         {
         auto classRefId = classRefExp->GetId ().c_str ();
         auto classIdColumnName = classIdColumn->GetName ().c_str();

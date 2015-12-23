@@ -166,7 +166,7 @@ BentleyStatus ClassMapInfo::DoEvaluateMapStrategy(bool& baseClassesNotMappedYet,
         {
         m_parentClassMap = parentClassMap;
         BeAssert(parentStrategy.GetStrategy() == ECDbMapStrategy::Strategy::SharedTable && parentStrategy.AppliesToSubclasses());
-        m_tableName = m_parentClassMap->GetTable().GetName();
+        m_tableName = m_parentClassMap->GetSecondaryTable().GetName();
         UserECDbMapStrategy const* parentUserStrategy = m_ecdbMap.GetSchemaImportContext()->GetUserStrategy(parentClassMap->GetClass());
         if (parentUserStrategy == nullptr)
             {
@@ -175,7 +175,7 @@ BentleyStatus ClassMapInfo::DoEvaluateMapStrategy(bool& baseClassesNotMappedYet,
             }
         
         //use same ECInstanceId column name for derived classes.
-        ECDbSqlColumn const* parentECInstanceIdCol = m_parentClassMap->GetTable().GetFilteredColumnFirst(ColumnKind::ECInstanceId);
+        ECDbSqlColumn const* parentECInstanceIdCol = m_parentClassMap->GetSecondaryTable().GetFilteredColumnFirst(ColumnKind::ECInstanceId);
         if (parentECInstanceIdCol != nullptr)
             m_ecInstanceIdColumnName.assign(parentECInstanceIdCol->GetName());
 
@@ -192,8 +192,22 @@ BentleyStatus ClassMapInfo::DoEvaluateMapStrategy(bool& baseClassesNotMappedYet,
             }
         else if (Enum::Intersects(parentStrategy.GetOptions(), ECDbMapStrategy::Options::JoinedTable | ECDbMapStrategy::Options::ParentOfJoinedTable))
             {
-            bool hasNoLocalProperties = GetECClass().GetPropertyCount(false) == 0;
-            if (Enum::Contains(parentStrategy.GetOptions(), ECDbMapStrategy::Options::ParentOfJoinedTable) && hasNoLocalProperties)
+            //parentClassMap->GetPropertyMaps()
+            //! Find out if there is any primitive property that need mapping. Simply loocking at local property count does not work with multi inheritence
+            bool requireTable = false;
+            for (auto property : GetECClass().GetProperties(true))
+                {
+                if (property->GetIsStructArray()) //skip struct array as they mapped to seperate table.
+                    continue;
+
+                if (parentClassMap->GetPropertyMap(property->GetName().c_str()) == nullptr)
+                    {
+                    requireTable = true; //There is atleast one property local or inherited that requrie mapping.
+                    break;
+                    }
+                }
+
+            if (Enum::Contains(parentStrategy.GetOptions(), ECDbMapStrategy::Options::ParentOfJoinedTable) && !requireTable)
                 options = options | ECDbMapStrategy::Options::ParentOfJoinedTable;
             else
                 {
@@ -554,14 +568,8 @@ ECClassCR          ecClass
             // ClassMappingRule: non-polymorphic MapStrategies used in base classes have no effect on child classes
             return true;
             }
-        auto getTable = [](IClassMap const& classMap) 
-            {
-            if (auto joinedTableRoot = classMap.FindClassMapOfParentOfJoinedTable())
-                return &joinedTableRoot->GetTable();
 
-            return &classMap.GetTable();
-            };
-        auto baseTable = getTable(*baseClassMap);
+        auto baseTable = &baseClassMap->GetPrimaryTable();
         switch (baseMapStrategy.GetStrategy())
             {
                 case ECDbMapStrategy::Strategy::SharedTable:
@@ -569,7 +577,7 @@ ECClassCR          ecClass
                     bool add = true;
                     for (auto classMap : tphMaps)
                         {
-                        if (getTable(*classMap) == baseTable)
+                        if (&classMap->GetPrimaryTable() == baseTable)
                             {
                             add = false;
                             break;
