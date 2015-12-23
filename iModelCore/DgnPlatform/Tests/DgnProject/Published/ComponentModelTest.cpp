@@ -829,6 +829,7 @@ TEST_F(ComponentModelTest, SimulateDeveloperAndClientWithNesting)
     Client_CheckNestedInstance(*instanceElement, TEST_GADGET_COMPONENT_NAME, 1);
     }
 
+#ifdef COMMENT_OUT // *** SchemaImportTest, SelectAfterImport will fail with an assertion failure in ECDbMap::TryGetClassMap
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -855,7 +856,6 @@ static ECN::ECClassCP generateECClass(DgnDbR db, ECN::ECSchemaR schema, Utf8CP c
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      12/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-#ifdef COMMENT_OUT // *** will fail with an assertion failure in ECDbMap::TryGetClassMap
 TEST(SchemaImportTest, SelectAfterImport)
     {
     Dgn::ScopedDgnHost host;
