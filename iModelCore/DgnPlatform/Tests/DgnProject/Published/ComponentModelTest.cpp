@@ -58,10 +58,10 @@ static void openDb (DgnDbPtr& db, BeFileNameCR name, DgnDb::OpenMode mode)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-static DgnDbStatus createPhysicalModel(PhysicalModelPtr& catalogModel, DgnDbR db, DgnModel::Code const& code)
+static DgnDbStatus createSpatialModel(SpatialModelPtr& catalogModel, DgnDbR db, DgnModel::Code const& code)
     {
-    DgnClassId mclassId = DgnClassId(db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_PhysicalModel));
-    catalogModel = new PhysicalModel(DgnModel3d::CreateParams(db, mclassId, code));
+    DgnClassId mclassId = DgnClassId(db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_SpatialModel));
+    catalogModel = new SpatialModel(DgnModel3d::CreateParams(db, mclassId, code));
     catalogModel->SetInGuiList(false);
     return catalogModel->Insert();
     }
@@ -146,7 +146,7 @@ struct VariationSpec
     ECN::IECInstancePtr MakeVariationSpec(DgnDbR db) const;
     void CheckInstance(DgnElementCR el, size_t expectedSolidCount) const;
     void MakeUniqueInstance(DgnElementCPtr&, DgnModelR destModel, size_t expectedSolidCount);
-    void MakeVariation(DgnElementCPtr&, PhysicalModelR destModel);
+    void MakeVariation(DgnElementCPtr&, SpatialModelR destModel);
 
     void SetValue(Utf8CP name, ECN::ECValueCR v)
         {
@@ -202,7 +202,7 @@ void VariationSpec::MakeUniqueInstance(DgnElementCPtr& inst, DgnModelR destModel
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      12/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void VariationSpec::MakeVariation(DgnElementCPtr& variation, PhysicalModelR destModel)
+void VariationSpec::MakeVariation(DgnElementCPtr& variation, SpatialModelR destModel)
     {
     DgnDbStatus status;
     auto vspec = MakeVariationSpec(destModel.GetDgnDb());
@@ -237,7 +237,7 @@ void Developer_DefineSchema();
 void Client_ImportComponentDef(Utf8CP componentName);
 void Client_InsertNonInstanceElement(Utf8CP modelName, Utf8CP code = nullptr);
 void Client_PlaceInstanceOfVariation(DgnElementId&, Utf8StringCR targetModelName, DgnElementCR variation);
-void Client_PlaceInstance(DgnElementId&, Utf8CP targetModelName, PhysicalModelR catalogModel, Utf8StringCR componentName, Utf8StringCR variationName, bool expectToFindVariation);
+void Client_PlaceInstance(DgnElementId&, Utf8CP targetModelName, SpatialModelR catalogModel, Utf8StringCR componentName, Utf8StringCR variationName, bool expectToFindVariation);
 void Client_CheckComponentInstance(DgnElementId eid, size_t expectedSolidCount, VariationSpec const& vc);
 void Client_CheckNestedInstance(DgnElementCR instanceElement, Utf8CP expectedChildComponentName, int nChildrenExpected);
 
@@ -395,12 +395,12 @@ void ComponentModelTest::Client_ImportComponentDef(Utf8CP componentName)
 
     m_componentDb->Schemas().GetECSchema(TEST_JS_NAMESPACE, true);
 
-    PhysicalModelPtr sourceCatalogModel = getModelByName<PhysicalModel>(*m_componentDb, "Catalog");
+    SpatialModelPtr sourceCatalogModel = getModelByName<SpatialModel>(*m_componentDb, "Catalog");
     ASSERT_TRUE(sourceCatalogModel.IsValid());
 
-    PhysicalModelPtr catalogModel = getModelByName<PhysicalModel>(*m_clientDb, "Catalog");
+    SpatialModelPtr catalogModel = getModelByName<SpatialModel>(*m_clientDb, "Catalog");
     if (!catalogModel.IsValid())
-        createPhysicalModel(catalogModel, *m_clientDb, DgnModel::CreateModelCode("Catalog"));
+        createSpatialModel(catalogModel, *m_clientDb, DgnModel::CreateModelCode("Catalog"));
 
     ASSERT_TRUE(catalogModel.IsValid());
     
@@ -442,7 +442,7 @@ void ComponentModelTest::Client_PlaceInstanceOfVariation(DgnElementId& ieid, Utf
     {
     ASSERT_TRUE(m_clientDb.IsValid() && "Caller must have already opened the Client DB");
 
-    PhysicalModelPtr targetModel = getModelByName<PhysicalModel>(*m_clientDb, targetModelName);
+    SpatialModelPtr targetModel = getModelByName<SpatialModel>(*m_clientDb, targetModelName);
     ASSERT_TRUE( targetModel.IsValid() );
 
     DgnDbStatus status;
@@ -457,7 +457,7 @@ void ComponentModelTest::Client_PlaceInstanceOfVariation(DgnElementId& ieid, Utf
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ComponentModelTest::Client_PlaceInstance(DgnElementId& ieid, Utf8CP targetModelName, PhysicalModelR catalogModel, Utf8StringCR componentName, Utf8StringCR variationName, bool expectToFindVariation)
+void ComponentModelTest::Client_PlaceInstance(DgnElementId& ieid, Utf8CP targetModelName, SpatialModelR catalogModel, Utf8StringCR componentName, Utf8StringCR variationName, bool expectToFindVariation)
     {
     ASSERT_TRUE(m_clientDb.IsValid() && "Caller must have already opened the Client DB");
 
@@ -482,7 +482,7 @@ void ComponentModelTest::Client_PlaceInstance(DgnElementId& ieid, Utf8CP targetM
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ComponentModelTest::Client_InsertNonInstanceElement(Utf8CP modelName, Utf8CP code)
     {
-    PhysicalModelPtr targetModel = getModelByName<PhysicalModel>(*m_clientDb, modelName);
+    SpatialModelPtr targetModel = getModelByName<SpatialModel>(*m_clientDb, modelName);
     ASSERT_TRUE( targetModel.IsValid() );
     DgnClassId classid = DgnClassId(m_clientDb->Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_PhysicalElement));
     DgnCategoryId catid = DgnCategory::QueryHighestCategoryId(*m_clientDb);
@@ -506,8 +506,8 @@ void ComponentModelTest::SimulateDeveloper()
         AutoCloseComponentDb closeComponentDb(*this);
 
         //  Test the components
-        PhysicalModelPtr tmpModel;
-        createPhysicalModel(tmpModel, *m_componentDb, DgnModel::CreateModelCode("tmp"));
+        SpatialModelPtr tmpModel;
+        createSpatialModel(tmpModel, *m_componentDb, DgnModel::CreateModelCode("tmp"));
 
         DgnElementCPtr inst;
         m_wsln1.MakeUniqueInstance(inst, *tmpModel, 2);
@@ -523,8 +523,8 @@ void ComponentModelTest::SimulateDeveloper()
 
         //  Create catalogs
 
-        PhysicalModelPtr catalogModel;
-        ASSERT_EQ( DgnDbStatus::Success , createPhysicalModel(catalogModel, *m_componentDb, DgnModel::CreateModelCode("Catalog")) );
+        SpatialModelPtr catalogModel;
+        ASSERT_EQ( DgnDbStatus::Success , createSpatialModel(catalogModel, *m_componentDb, DgnModel::CreateModelCode("Catalog")) );
 
         if (true)
             {
@@ -618,8 +618,8 @@ void ComponentModelTest::SimulateClient()
         {
         AutoCloseClientDb closeClientDbAtEnd(*this);
         //  Create the target model in the client. (Do this first, so that the first imported CM's will get a model id other than 1. Hopefully, that will help us catch more bugs.)
-        PhysicalModelPtr targetModel;
-        ASSERT_EQ( DgnDbStatus::Success , createPhysicalModel(targetModel, *m_clientDb, DgnModel::CreateModelCode("Instances")) );
+        SpatialModelPtr targetModel;
+        ASSERT_EQ( DgnDbStatus::Success , createSpatialModel(targetModel, *m_clientDb, DgnModel::CreateModelCode("Instances")) );
 
         //  Add a few unrelated elements to the target model. That way, the first placed CM instance will get an element id other than 1. Hopefully, that will help us catch more bugs.
         for (int i=0; i<10; ++i)
@@ -647,7 +647,7 @@ void ComponentModelTest::SimulateClient()
             ASSERT_TRUE(std::find(componentClassIds.begin(), componentClassIds.end(), thingClassId)  != componentClassIds.end());
             }
 
-        PhysicalModelPtr catalogModel = getModelByName<PhysicalModel>(*m_clientDb, "Catalog");
+        SpatialModelPtr catalogModel = getModelByName<SpatialModel>(*m_clientDb, "Catalog");
         ASSERT_TRUE( catalogModel.IsValid() ) << "importing component should also import its catalog";
 
         // Now start placing instances of Widgets
@@ -692,7 +692,7 @@ void ComponentModelTest::SimulateClient()
     OpenClientDb(Db::OpenMode::ReadWrite);
         {
         AutoCloseClientDb closeClientDbAtEnd(*this);
-        PhysicalModelPtr catalogModel = getModelByName<PhysicalModel>(*m_clientDb, "Catalog");
+        SpatialModelPtr catalogModel = getModelByName<SpatialModel>(*m_clientDb, "Catalog");
 
         DgnElementId w4;
         Client_PlaceInstance(w4, "Instances", *catalogModel, TEST_WIDGET_COMPONENT_NAME, m_wsln4.m_name, true);
@@ -768,8 +768,8 @@ TEST_F(ComponentModelTest, SimulateDeveloperAndClientWithNestingSingleton)
 
     Client_ImportComponentDef(TEST_THING_COMPONENT_NAME);
 
-    PhysicalModelPtr targetModel;
-    ASSERT_EQ( DgnDbStatus::Success , createPhysicalModel(targetModel, *m_clientDb, DgnModel::CreateModelCode("Instances")) );
+    SpatialModelPtr targetModel;
+    ASSERT_EQ( DgnDbStatus::Success , createSpatialModel(targetModel, *m_clientDb, DgnModel::CreateModelCode("Instances")) );
 
     VariationSpec nparms = m_nsln1;
     nparms.m_propValues[0].m_value.SetDouble(9999);
@@ -813,8 +813,8 @@ TEST_F(ComponentModelTest, SimulateDeveloperAndClientWithNesting)
 
     Client_ImportComponentDef(TEST_GADGET_COMPONENT_NAME);
 
-    PhysicalModelPtr targetModel;
-    ASSERT_EQ( DgnDbStatus::Success , createPhysicalModel(targetModel, *m_clientDb, DgnModel::CreateModelCode("Instances")) );
+    SpatialModelPtr targetModel;
+    ASSERT_EQ( DgnDbStatus::Success , createSpatialModel(targetModel, *m_clientDb, DgnModel::CreateModelCode("Instances")) );
 
     DgnElementCPtr instanceElement;
     m_nsln1.MakeUniqueInstance(instanceElement, *targetModel, 1);
@@ -822,6 +822,5 @@ TEST_F(ComponentModelTest, SimulateDeveloperAndClientWithNesting)
 
     Client_CheckNestedInstance(*instanceElement, TEST_GADGET_COMPONENT_NAME, 1);
     }
-
 
 #endif //ndef BENTLEYCONFIG_NO_JAVASCRIPT

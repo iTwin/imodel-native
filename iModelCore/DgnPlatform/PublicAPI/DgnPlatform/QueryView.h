@@ -68,7 +68,7 @@ protected:
     //! @remarks Applications that override this method normally perform any additional work that is required and then 
     //! call QueryViewController::_OnHealUpdate to let it decide if is necessary to repopulate the QueryModel.
     //! @remarks An application may use this and _OnFullUpdate to decide when to display some indication such as a spinner to 
-    //! let the user know that the update is in progress.  The application can override PhysicalViewController::_OnUpdateComplete to stop the spinner.
+    //! let the user know that the update is in progress.  The application can override SpatialViewController::_OnUpdateComplete to stop the spinner.
     DGNPLATFORM_EXPORT virtual void _OnHealUpdate(DgnViewportR viewport, ViewContextR context, bool fullHeal) override;
 
     //! Called at the beginning of a full update to populate the QueryModel.
@@ -78,7 +78,7 @@ protected:
     //! @remarks Applications that override this method normally perform any additional work that is required and then call QueryViewController::_OnFullUpdate to 
     //!  let it decide if is necessary to repopulate the QueryModel.
     //! @remarks An application may use this and _OnFullUpdate to decide when to display some indication such as a spinner to 
-    //! let the user know that the update is in progress.  The application can override PhysicalViewController::_OnUpdateComplete
+    //! let the user know that the update is in progress.  The application can override SpatialViewController::_OnUpdateComplete
     //! to know when to stop the spinner.
     DGNPLATFORM_EXPORT virtual void _OnFullUpdate(DgnViewportR viewport, ViewContextR context, FullUpdateInfo& info) override;
 

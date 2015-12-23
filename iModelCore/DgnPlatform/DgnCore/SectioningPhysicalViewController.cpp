@@ -10,7 +10,7 @@
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      03/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-SectioningViewController::SectioningViewController(DgnDbR project, DgnViewId viewId) : PhysicalViewController(project, viewId)
+SectioningViewController::SectioningViewController(DgnDbR project, DgnViewId viewId) : SpatialViewController(project, viewId)
     {
     m_hasAnalyzedCutPlanes = false;
     m_foremostCutPlaneIndex = 0;

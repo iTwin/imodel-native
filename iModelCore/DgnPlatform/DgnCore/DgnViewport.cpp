@@ -499,7 +499,7 @@ ViewportStatus DgnViewport::_SetupFromViewController()
     m_viewDelta     = m_viewDeltaUnexpanded = delta;
     m_zClipAdjusted = false;
 
-    PhysicalViewControllerP physicalView = GetPhysicalViewControllerP();
+    SpatialViewControllerP physicalView = GetSpatialViewControllerP();
     if (nullptr != physicalView)
         {
         CameraViewControllerP cameraView = GetCameraViewControllerP();
