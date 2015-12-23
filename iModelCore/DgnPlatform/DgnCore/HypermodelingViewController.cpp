@@ -152,7 +152,7 @@ void HypermodelingViewController::PopClipsForInContextViewPass (ViewContextR con
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      03/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt HypermodelingViewController::_VisitHit(HitDetailCR hit, ViewContextR context) const
+StatusInt HypermodelingViewController::_VisitHit(HitDetailCR hit, DecorateContextR context) const
     {
     //  If the hit is in the drawing view, draw that view
     for (auto drawing : m_drawings)

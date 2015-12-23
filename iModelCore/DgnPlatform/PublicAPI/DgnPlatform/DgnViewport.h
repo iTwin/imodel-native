@@ -388,6 +388,8 @@ protected:
     bool            m_needsRefresh = true;
     bool            m_targetCenterValid = false;
     bool            m_undoActive = false;
+    Byte            m_dynamicsTransparency = 64;
+    Byte            m_flashingTransparency = 100;
     int             m_maxUndoSteps = 20;
     uint32_t        m_sceneEntries = 0;         // number of entries in the scene from last attempt at healing
     DPoint3d        m_viewOrg;                  // view origin, potentially expanded if f/b clipping are off
@@ -430,6 +432,11 @@ protected:
 public:
     DgnViewport(Render::TargetP target) : m_renderTarget(target) {}
     virtual ~DgnViewport() {DestroyViewport();}
+
+    Byte GetFlashingTransparency() const {return m_flashingTransparency;}
+    void SetFlashingTransparency(Byte val) {m_flashingTransparency = val;}
+    Byte GetDynamicsTransparency() const {return m_dynamicsTransparency;}
+    void SetDynamicsTransparency(Byte val) {m_dynamicsTransparency = val;}
 
     void SetRenderTarget(Render::Target* target) {m_renderTarget=target;}
     double GetFrustumFraction() const {return m_frustFraction;}

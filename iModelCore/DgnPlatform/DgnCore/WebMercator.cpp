@@ -904,7 +904,7 @@ static bool shouldDraw (ViewContextR context)
         case DrawPurpose::Hilite:
         case DrawPurpose::Unhilite:
         case DrawPurpose::Pick:
-        case DrawPurpose::Flash:
+        case DrawPurpose::Decorate:
         case DrawPurpose::CaptureGeometry:
         case DrawPurpose::FenceAccept:
         case DrawPurpose::RegionFlood:

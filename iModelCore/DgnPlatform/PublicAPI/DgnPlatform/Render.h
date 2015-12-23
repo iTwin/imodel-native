@@ -700,7 +700,8 @@ public:
         Code4 = 0xfe10fe10,   // 4
         Code5 = 0xe0e0e0e0,   // 5
         Code6 = 0xf888f888,   // 6
-        Code7 = 0xff18ff18    // 7
+        Code7 = 0xff18ff18,    // 7
+        Invisible = 0x00000001, // nearly invisible
         };
 
     void Cook(GeometryParamsCR, ViewContextR);
@@ -844,6 +845,7 @@ public:
     void SetLineTransparency(Byte trans) {m_matSymb.SetLineTransparency(trans); m_flags |= FLAGS_ColorTransparency;}
     void SetFillTransparency(Byte trans) {m_matSymb.SetFillTransparency(trans); m_flags |= FLAGS_FillColorTransparency;}
     void SetWidth(uint32_t width) {m_matSymb.SetWidth(width); m_flags |= FLAGS_RastWidth;}
+    void SetLinePixels(GraphicParams::LinePixels pixels) {m_matSymb.SetLinePixels(pixels); m_flags |= FLAGS_Style; m_matSymb.GetLineStyleSymbR().SetLineStyle(nullptr);}
     void SetMaterial(Material* material) {m_matSymb.SetMaterial(material); m_flags |= FLAGS_RenderMaterial;}
     void SetPatternParams(PatternParamsP patternParams) {m_matSymb.SetPatternParams(patternParams);}
     DGNPLATFORM_EXPORT void SetLineStyle(int32_t styleNo, DgnModelR modelRef, DgnModelR styleDgnModel, LineStyleParamsCP lStyleParams, ViewContextR context, DPoint3dCP startTangent, DPoint3dCP endTangent);
@@ -1140,6 +1142,7 @@ struct GraphicList : RefCounted<NonCopyableClass>
 //=======================================================================================
 struct Decorations
 {
+    GraphicListPtr m_flashed;        // drawn with zbuffer, with scene lighting
     GraphicListPtr m_world;          // drawn with zbuffer, with default lighting, smooth shading
     GraphicListPtr m_worldOverlay;   // drawn in overlay mode, world units
     GraphicListPtr m_viewOverlay;    // drawn in overlay mode, view units

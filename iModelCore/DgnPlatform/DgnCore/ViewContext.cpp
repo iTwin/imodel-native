@@ -777,11 +777,9 @@ bool ViewContext::_VisitAllModelElements()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    05/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt ViewContext::VisitHit(HitDetailCR hit)
+StatusInt DecorateContext::VisitHit(HitDetailCR hit)
     {
-    ClearAborted();
-    _InitScanRangeAndPolyhedron();
-
+    AutoRestore<bool> flash(&m_isFlash, true);
     return m_viewport->GetViewController().VisitHit(hit, *this);
     }
 
@@ -1544,7 +1542,19 @@ void DecorateContext::AddViewOverlay(Render::GraphicR graphic, Render::OvrGraphi
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
+void DecorateContext::AddFlashed(Render::GraphicR graphic, Render::OvrGraphicParamsCP ovrParams)
+    {
+    if (!m_decorations.m_flashed.IsValid())
+        m_decorations.m_flashed = new GraphicList;
+
+    m_decorations.m_flashed->Add(graphic, m_target.ResolveOverrides(&m_ovrParams), m_ovrParams.GetFlags());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   12/15
++---------------+---------------+---------------+---------------+---------------+------*/
 void DecorateContext::AddSprite(ISprite& sprite, DPoint3dCR location, DPoint3dCR xVec, int transparency)
     {
     AddViewOverlay(*m_target.CreateSprite(sprite, location, xVec, transparency), nullptr);
     }
+

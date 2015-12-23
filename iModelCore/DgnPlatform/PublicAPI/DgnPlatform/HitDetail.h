@@ -157,7 +157,6 @@ public:
 struct HitDetail : RefCountedBase
 {
 protected:
-
     DgnViewportR        m_viewport;
     DgnElementId        m_elementId;
     HitSource           m_locateSource;         // Operation that generated the hit.
@@ -174,7 +173,7 @@ protected:
     virtual void _SetHitPoint(DPoint3dCR pt) {m_geomDetail.SetClosestPoint(pt);}
     virtual void _SetTestPoint(DPoint3dCR pt) {m_testPoint = pt;}
     virtual bool _IsSameHit(HitDetailCP otherHit) const;
-    virtual void _Draw(ViewContextR context) const;
+    virtual void _Draw(DecorateContextR context) const;
     virtual void _SetHilited(DgnElement::Hilited) const;
 
 public:
@@ -188,10 +187,9 @@ public:
     void SetHilited(DgnElement::Hilited state) const {_SetHilited(state);}
     void SetSubSelectionMode(SubSelectionMode mode) {_SetSubSelectionMode(mode);}
 
-    void Draw(ViewContextR context) const {_Draw(context);}
-    DGNPLATFORM_EXPORT bool ShouldFlashCurveSegment(ViewContextR) const; //! Check for segment flash mode before calling FlashCurveSegment.
-    DGNPLATFORM_EXPORT void FlashCurveSegment(ViewContextR) const; //! Setup context.GetCurrentGeometryParams() before calling!
-    DGNVIEW_EXPORT void Hilite(bool onOff) const;
+    void Draw(DecorateContextR context) const {_Draw(context);}
+    DGNPLATFORM_EXPORT bool ShouldFlashCurveSegment(DecorateContextR) const; //! Check for segment flash mode before calling FlashCurveSegment.
+    DGNPLATFORM_EXPORT void FlashCurveSegment(DecorateContextR) const; //! Setup context.GetCurrentGeometryParams() before calling!
 
     void GetInfoString(Utf8StringR descr, Utf8CP delimiter) const {_GetInfoString(descr, delimiter);}
     DGNPLATFORM_EXPORT DgnElement::Hilited IsHilited() const;
@@ -360,7 +358,7 @@ struct IntersectDetail : SnapDetail
 private:
     HitDetailP  m_secondHit;
 
-    virtual void _Draw(ViewContextR) const override;
+    virtual void _Draw(DecorateContextR) const override;
     virtual HitDetailType _GetHitType() const override{return HitDetailType::Intersection;}
     DGNPLATFORM_EXPORT virtual void _SetHilited(DgnElement::Hilited) const override;
     DGNPLATFORM_EXPORT virtual bool _IsSameHit(HitDetailCP otherHit) const override;
