@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using IndexECPlugin.Source.Helpers;
 
 namespace IndexECPlugin.Source
     {
@@ -24,7 +25,7 @@ namespace IndexECPlugin.Source
         /// Builds the query according to the clauses added
         /// </summary>
         /// <returns>The SQL query string</returns>
-        override public string BuildQuery ()
+        override public string BuildQuery (out DataReadingHelper dataReadingHelper)
             {
             string completeSelectStr = "SELECT ";
             completeSelectStr += String.Join(", ", m_sqlSelectClause.ToArray());
@@ -57,6 +58,8 @@ namespace IndexECPlugin.Source
                 completeOrderByClause = "ORDER BY ";
                 completeOrderByClause += String.Join(", ", m_sqlOrderByClause.ToArray());
                 }
+
+            dataReadingHelper = m_dataReadingHelper;
 
             return completeSelectStr + completeFromStr + completeLeftJoinClause + completeWhereClause + completeOrderByClause + ";";
             }

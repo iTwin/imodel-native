@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using IndexECPlugin.Source.Helpers;
 
 namespace IndexECPlugin.Source
     {
@@ -42,7 +43,7 @@ namespace IndexECPlugin.Source
         /// Builds the query according to the clauses added
         /// </summary>
         /// <returns>The SQL query string</returns>
-        override public string BuildQuery ()
+        override public string BuildQuery (out DataReadingHelper dataReadingHelper)
             {
             string innerRequestAlias = "Results";
 
@@ -101,6 +102,8 @@ namespace IndexECPlugin.Source
             string outerFrom = "FROM ( " + completeInnerString + " ) AS " + innerRequestAlias + " ";
 
             string outerWhere = "WHERE RowNum >= " + m_lowerBound + " AND RowNum <= " + m_upperBound + " ORDER BY RowNum";
+
+            dataReadingHelper = m_dataReadingHelper;
 
             return outerSelect + outerFrom + outerWhere;
 

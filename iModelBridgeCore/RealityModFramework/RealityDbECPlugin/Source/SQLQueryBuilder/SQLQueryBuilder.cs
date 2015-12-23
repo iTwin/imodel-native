@@ -45,6 +45,11 @@ namespace IndexECPlugin.Source
         /// </summary>
         protected List<string> m_sqlOrderByClause;
 
+        /// <summary>
+        /// The dataReadingHelper describing what information can be found in each queried column
+        /// </summary>
+        protected DataReadingHelper m_dataReadingHelper = new DataReadingHelper();
+
         private Dictionary<string, Tuple<string, DbType>> m_paramNameValueMap;
 
         private int m_paramNumber;
@@ -68,18 +73,22 @@ namespace IndexECPlugin.Source
         /// </summary>
         /// <param name="table">The table descriptor containing the information about the table in which is held the selected column</param>
         /// <param name="columnName">The name of the column to add</param>
-        /// <param name="isSpatial">If the column is a sys.geometry in the database, set to true, or else, set to false</param>
-        public void AddSelectClause (TableDescriptor table, string columnName, bool isSpatial = false/*, IECClass ecClass*/)
+        /// <param name="columnCategory">The category of the requested data</param>
+        /// <param name="property">The property associated to the data. Can be null if the category is not instanceData or spatialInstanceData</param>
+        public void AddSelectClause (TableDescriptor table, string columnName, ColumnCategory columnCategory, IECProperty property/*, IECClass ecClass*/)
             {
-            if ( isSpatial )
+            int numberOfColumns = 1;
+            if ( columnCategory == ColumnCategory.spatialInstanceData )
                 {
                 m_sqlSelectClause.Add(AddBrackets(table.Alias) + "." + AddBrackets(columnName) + ".STAsText()");
                 m_sqlSelectClause.Add(AddBrackets(table.Alias) + "." + AddBrackets(columnName) + ".STSrid");
+                numberOfColumns = 2;
                 }
             else
                 {
                 m_sqlSelectClause.Add(AddBrackets(table.Alias) + "." + AddBrackets(columnName));
                 }
+            m_dataReadingHelper.AddColumn(columnCategory, property, numberOfColumns);
             }
 
         /// <summary>
@@ -260,7 +269,7 @@ namespace IndexECPlugin.Source
         /// Builds the query according to the clauses added
         /// </summary>
         /// <returns>The SQL query string</returns>
-        abstract public string BuildQuery ();
+        abstract public string BuildQuery (out DataReadingHelper dataReadingHelper);
 
         /// <summary>
         /// Similar to AddWhereClause, but specialised for obtaining the entries intersecting a polygon.
@@ -323,4 +332,30 @@ namespace IndexECPlugin.Source
             return "SELECT COUNT(*) " + completeFromStr + completeLeftJoinClause + completeWhereClause;
             }
         }
+
+    /// <summary>
+    /// Enum for the different categories of data that can be requested to the database.
+    /// </summary>
+    public enum ColumnCategory 
+        {
+        /// <summary>
+        /// Used for data that is transfered in a stream.
+        /// </summary>
+        streamData = 0,
+        /// <summary>
+        /// Used for conventional data that will be returned in an IECInstance
+        /// </summary>
+        instanceData = 1,
+        /// <summary>
+        /// Used for spatial data that will be returned in an IECInstance 
+        /// </summary>
+        spatialInstanceData = 2,
+        /// <summary>
+        /// Used for requesting the related instance Id.
+        /// </summary>
+        relatedInstanceId = 3
+        }
     }
+
+
+

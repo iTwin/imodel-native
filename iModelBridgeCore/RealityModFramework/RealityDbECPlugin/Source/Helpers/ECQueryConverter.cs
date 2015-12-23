@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Data;
 
 namespace IndexECPlugin.Source.Helpers
     {
@@ -49,7 +50,10 @@ namespace IndexECPlugin.Source.Helpers
         /// </summary>
         /// <param name="sqlCommandString">The requested SQL query command string</param>
         /// <param name="sqlCountString">The SQL count query command string if requested</param>
-        public void CreateSqlCommandStringFromQuery (out string sqlCommandString, out string sqlCountString)
+        /// <param name="dataReadingHelper">The helper for reading the data from the DataReader</param>
+        /// <param name="paramNameValueMap">The mapping of the parameters names and values for the parameterized query</param>
+        public void CreateSqlCommandStringFromQuery (out string sqlCommandString, out string sqlCountString, out DataReadingHelper dataReadingHelper, 
+                                                     out Dictionary<string, Tuple<string, DbType>> paramNameValueMap)
             {
             //For now, we only query on one class. To be completed one day
             SearchClass searchClass = m_query.SearchClasses.First();
@@ -79,7 +83,7 @@ namespace IndexECPlugin.Source.Helpers
             //All extract* methods used before construct the query builder contained in m_sqlQueryBuilder.
             //This is why we call m_sqlQueryBuilder.BuildQuery after. It would be nice to refactor the code 
             //to make this more readable...
-            sqlCommandString = m_sqlQueryBuilder.BuildQuery();
+            sqlCommandString = m_sqlQueryBuilder.BuildQuery(out dataReadingHelper);
 
             if ( m_instanceCount )
                 {
@@ -89,6 +93,7 @@ namespace IndexECPlugin.Source.Helpers
                 {
                 sqlCountString = null;
                 }
+            paramNameValueMap = m_sqlQueryBuilder.paramNameValueMap;
             }
 
         private TableDescriptor extractFromSelectAndJoin (SelectCriteria selectCriteria, IECClass queriedClass)
@@ -128,7 +133,7 @@ namespace IndexECPlugin.Source.Helpers
                 if ( (fileHolderAttribute != null) && (fileHolderAttribute["Type"].StringValue == "SQLThumbnail") )
                     {
                     string streamableColumnName = fileHolderAttribute["LocationHoldingColumn"].StringValue;
-                    m_sqlQueryBuilder.AddSelectClause(table, streamableColumnName, false);
+                    m_sqlQueryBuilder.AddSelectClause(table, streamableColumnName, ColumnCategory.streamData, null);
                     }
                 }
 
@@ -157,13 +162,14 @@ namespace IndexECPlugin.Source.Helpers
                 string columnName = dbColumn["ColumnName"].StringValue;
                 var isSpatialProperty = dbColumn["IsSpatial"];
 
-                bool isSpatial = true;
+                ColumnCategory columnCategory = ColumnCategory.spatialInstanceData;
+
                 if ( isSpatialProperty.IsNull || isSpatialProperty.StringValue == "false" )
                     {
-                    isSpatial = false;
+                    columnCategory = ColumnCategory.instanceData;
                     }
 
-                m_sqlQueryBuilder.AddSelectClause(tempTable2, columnName, isSpatial);
+                m_sqlQueryBuilder.AddSelectClause(tempTable2, columnName, columnCategory, property);
 
 
                 }
@@ -513,7 +519,6 @@ namespace IndexECPlugin.Source.Helpers
                         }
                     m_sqlQueryBuilder.EndOfInnerWhereClause();
 
-
                     if ( m_sqlQueryBuilder.OrderByListIsEmpty() )
                         {
                         //This is because we need an order by clause to make the query work. WSG makes a paged request
@@ -521,6 +526,10 @@ namespace IndexECPlugin.Source.Helpers
                         m_sqlQueryBuilder.AddOrderByClause(table, dbColumnName, true);
                         }
 
+                    if ( criterion.ExtendedData.ContainsKey("RequestRelatedId") && ( (bool) criterion.ExtendedData["RequestRelatedId"] ) )
+                        {
+                        m_sqlQueryBuilder.AddSelectClause(table, dbColumnName, ColumnCategory.relatedInstanceId, null);
+                        }
                     }
                 else if ( criterion is RelatedCriterion )
                     {
@@ -548,8 +557,6 @@ namespace IndexECPlugin.Source.Helpers
 
                         IECClass baseQueriedClass;
                         IECClass baseRelatedClass;
-
-
 
                         if ( classSpecifier.RelatedDirection == RelatedInstanceDirection.Forward )
                             {

@@ -36,7 +36,7 @@
   <ItemGroup>
     <Reference Include="Bentley.EC.AbstractUI3">
       <HintPath>..\..\..\out\Winx64\BuildContexts\RealityModFramework\SubParts\Assemblies\Bentley.EC.AbstractUI3.dll</HintPath>
-      <HintPath>..\..\..\out\Winx64\build\ECFramework\Bentley.EC.AbstractUI3\Bentley.EC.AbstractUI3.dll</HintPath>
+      <HintPath>..\..\..\..\Dgndb06Dev3\out\Winx64\BuildContexts\RealityModFramework\SubParts\Assemblies\Bentley.EC.AbstractUI3.dll</HintPath>
     </Reference>
     <Reference Include="Bentley.EC.Persistence3">
       <HintPath>..\..\..\out\Winx64\BuildContexts\RealityModFramework\SubParts\Assemblies\Bentley.EC.Persistence3.dll</HintPath>
@@ -60,7 +60,7 @@
     </Reference>
     <Reference Include="Bentley.Exceptions">
       <HintPath>..\..\..\out\Winx64\BuildContexts\RealityModFramework\SubParts\Assemblies\Bentley.Exceptions.dll</HintPath>
-      <HintPath>..\..\..\out\Winx64\build\PlatformTech\Bentley.Exceptions\Bentley.Exceptions.dll</HintPath>
+      <HintPath>..\..\..\..\Dgndb06Dev3\out\Winx64\BuildContexts\RealityModFramework\SubParts\Assemblies\Bentley.Exceptions.dll</HintPath>
     </Reference>
     <Reference Include="Bentley.General.1.0">
       <HintPath>..\..\..\out\Winx64\BuildContexts\RealityModFramework\SubParts\Assemblies\Bentley.General.1.0.dll</HintPath>
@@ -74,7 +74,7 @@
     </Reference>
     <Reference Include="Bentley.Platform">
       <HintPath>..\..\..\out\Winx64\BuildContexts\RealityModFramework\SubParts\Assemblies\Bentley.Platform.dll</HintPath>
-      <HintPath>..\..\..\out\Winx64\build\PlatformTech\Bentley.Platform\Bentley.Platform.dll</HintPath>
+      <HintPath>..\..\..\..\Dgndb06Dev3\out\Winx64\BuildContexts\RealityModFramework\SubParts\Assemblies\Bentley.Platform.dll</HintPath>
     </Reference>
     <Reference Include="BentleyWMSPackageNet">
       <HintPath>..\..\..\out\Winx64\BuildContexts\RealityModFramework\SubParts\Assemblies\BentleyWMSPackageNet.dll</HintPath>
@@ -102,6 +102,7 @@
     <Compile Include="Source\FileRetrievalControllers\PackageStreamRetrievalController.cs" />
     <Compile Include="Source\FileRetrievalControllers\SQLThumbnailRetrievalController.cs" />
     <Compile Include="Source\FileRetrievalControllers\USGSThumbnailRetrievalController.cs" />
+    <Compile Include="Source\Helpers\DataReadingHelper.cs" />
     <Compile Include="Source\Helpers\DBGeometryHelpers.cs" />
     <Compile Include="Source\Helpers\ECQueryConverter.cs" />
     <Compile Include="Source\Helpers\ECToSQLMap.cs" />

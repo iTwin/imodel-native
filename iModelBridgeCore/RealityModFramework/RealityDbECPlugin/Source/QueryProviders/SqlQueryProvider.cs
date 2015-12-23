@@ -29,17 +29,15 @@ namespace IndexECPlugin.Source.QueryProviders
         private ECQuery m_query;
         private ECQuerySettings m_querySettings;
 
-        private int m_paramNumber = 0;
-
         private bool m_instanceCount = false;
 
-        private DbConnection m_dbConnection;
+        private IDbConnection m_dbConnection;
 
         private PolygonDescriptor m_polygonDescriptor;
 
         private IECSchema m_schema;
 
-        public SqlQueryProvider (ECQuery query, ECQuerySettings querySettings, DbConnection dbConnection, IECSchema schema)
+        public SqlQueryProvider (ECQuery query, ECQuerySettings querySettings, IDbConnection dbConnection, IECSchema schema)
             {
             if ( query == null )
                 {
@@ -116,13 +114,6 @@ namespace IndexECPlugin.Source.QueryProviders
                 }
             }
 
-
-
-        private string GetNewParamName ()
-            {
-            return String.Format("param{0}", m_paramNumber++);
-            }
-
         public IEnumerable<IECInstance> CreateInstanceList ()
             {
             //In the future, it might be a good idea to use a DbConnectionFactory instead of using this connection directly
@@ -136,32 +127,35 @@ namespace IndexECPlugin.Source.QueryProviders
 
             ECQueryConverter ecQueryConverter = new ECQueryConverter(m_query, m_querySettings, m_sqlQueryBuilder, m_polygonDescriptor, m_schema, m_instanceCount);
 
-            ecQueryConverter.CreateSqlCommandStringFromQuery(out sqlCommandString, out sqlCountString);
+            DataReadingHelper dataReadingHelper;
+
+            Dictionary<string, Tuple<string, DbType>> paramNameValueMap;
+
+            IECClass ecClass = m_query.SearchClasses.First().Class;
+
+            ecQueryConverter.CreateSqlCommandStringFromQuery(out sqlCommandString, out sqlCountString, out dataReadingHelper, out paramNameValueMap);
 
             m_dbConnection.Open();
 
-            using ( DbCommand dbCommand = m_dbConnection.CreateCommand() )
+            using ( IDbCommand dbCommand = m_dbConnection.CreateCommand() )
                 {
 
                 dbCommand.CommandText = sqlCommandString;
                 dbCommand.CommandType = CommandType.Text;
                 dbCommand.Connection = m_dbConnection;
 
-                //TODO : find a more elegant, less obscure way of obtaining the parameter Name-Value map. Maybe return it from CreateSqlCommandStringFromQuery...
-                Dictionary<string, Tuple<string, DbType>> paramNameValueMap = m_sqlQueryBuilder.paramNameValueMap;
-
                 foreach ( KeyValuePair<string, Tuple<string, DbType>> paramNameValue in paramNameValueMap )
                     {
-                    DbParameter param = dbCommand.CreateParameter();
+                    IDbDataParameter param = dbCommand.CreateParameter();
                     param.DbType = paramNameValue.Value.Item2;
                     param.ParameterName = paramNameValue.Key;
                     param.Value = paramNameValue.Value.Item1;
                     dbCommand.Parameters.Add(param);
                     }
 
-                using ( DbDataReader reader = dbCommand.ExecuteReader() )
+                using ( IDataReader reader = dbCommand.ExecuteReader() )
                     {
-                    IECClass ecClass = m_query.SearchClasses.First().Class;
+
 
                     IEnumerable<IECProperty> propertyList;
                     if ( m_query.SelectClause.SelectAllProperties )
@@ -172,37 +166,29 @@ namespace IndexECPlugin.Source.QueryProviders
                         {
                         propertyList = m_query.SelectClause.SelectedProperties;
                         }
+
                     while ( reader.Read() )
                         {
-                        int i = 0;
                         IECInstance instance = ecClass.CreateInstance();
-                        if ( (m_querySettings != null) && ((m_querySettings.LoadModifiers & LoadModifiers.IncludeStreamDescriptor) != LoadModifiers.None) && ecClass.Name == "Thumbnail" )
+                        int? streamDataColumn = dataReadingHelper.getStreamDataColumn();
+                        if ( streamDataColumn.HasValue )
                             {
-                            //The purpose of this "If" statement is to enable the thumbnail instance to send its data through a stream.
-                            //The fact that the data is always the first row has been hard coded for this to work, and it is quite probably 
-                            //the most obscure and ugly piece of this code. To be rewritten...
-
-                            //Since I think getStream only works with sqlServer, we'll use the GetBytes method
-
-                            //Byte[] byteArray = new byte[8040];
-                            //long offset = 0;
-                            //long bytesread;
-                            //while((bytesread = reader.GetBytes(i, offset, byteArray, 0, byteArray.Length)) > 0)
-                            //{
-                            //     offset += reader.GetBytes(i, offset, byteArray, 0, byteArray.Length);
-                            //}
-                            //i++;
-
-                            Byte[] byteArray = (byte[]) reader[i];
+                            Byte[] byteArray = (byte[]) reader[streamDataColumn.Value];
 
                             MemoryStream mStream = new MemoryStream(byteArray);
 
                             StreamBackedDescriptor desc = new StreamBackedDescriptor(mStream, "Thumbnail", mStream.Length, DateTime.UtcNow);
                             StreamBackedDescriptorAccessor.SetIn(instance, desc);
-
-                            i++;
-
                             }
+
+                        int? relatedInstanceIdColumn = dataReadingHelper.getRelatedInstanceIdColumn();
+
+                        if ( relatedInstanceIdColumn.HasValue )
+                            {
+                            string relatedInstanceId = reader[relatedInstanceIdColumn.Value] as string;
+                            instance.ExtendedDataValueSetter.Add(new KeyValuePair<string, object>("relInstID", relatedInstanceId));
+                            }
+
                         foreach ( IECProperty prop in propertyList )
                             {
                             if ( ecClass.Contains(prop.Name) )
@@ -216,13 +202,20 @@ namespace IndexECPlugin.Source.QueryProviders
                                     continue;
                                     }
 
+                                int? columnNumber = dataReadingHelper.getInstanceDataColumn(prop);
+
+                                if ( !columnNumber.HasValue )
+                                    {
+                                    throw new ProgrammerException("There should have been a column number.");
+                                    }
+
                                 var isSpatial = dbColumn["IsSpatial"];
                                 if ( isSpatial.IsNull || isSpatial.StringValue == "false" )
                                     {
 
-                                    if ( !reader.IsDBNull(i) )
+                                    if ( !reader.IsDBNull(columnNumber.Value) )
                                         {
-                                        ECToSQLMap.SQLReaderToECProperty(instancePropertyValue, reader, i);
+                                        ECToSQLMap.SQLReaderToECProperty(instancePropertyValue, reader, columnNumber.Value);
                                         }
                                     }
                                 else
@@ -233,83 +226,93 @@ namespace IndexECPlugin.Source.QueryProviders
                                         }
                                     else
                                         {
-                                        string WKTString = reader.GetString(i);
+                                        string WKTString = reader.GetString(columnNumber.Value);
 
                                         //DbGeometry geom = DbGeometry.FromText(WKTString);
 
 
-                                        i++;
+                                        columnNumber++;
 
                                         //int SRID = reader.GetInt32(i);
 
                                         //instancePropertyValue.StringValue = "{ \"points\" : " + DbGeometryHelpers.ExtractPointsLongLat(geom) + ", \"coordinate_system\" : \"" + reader.GetInt32(i) + "\" }";
-                                        instancePropertyValue.StringValue = "{ \"points\" : " + DbGeometryHelpers.ExtractOuterShellPointsFromWKTPolygon(WKTString) + ", \"coordinate_system\" : \"" + reader.GetInt32(i) + "\" }";
+                                        instancePropertyValue.StringValue = "{ \"points\" : " + DbGeometryHelpers.ExtractOuterShellPointsFromWKTPolygon(WKTString) + ", \"coordinate_system\" : \"" + reader.GetInt32(columnNumber.Value) + "\" }";
                                         }
                                     }
-                                i++;
                                 }
                             }
+
+
                         string IDProperty = ecClass.GetCustomAttributes("SQLEntity").GetPropertyValue("InstanceIDProperty").StringValue;
                         instance.InstanceId = instance.GetInstanceStringValue(IDProperty, "");
 
                         instanceList.Add(instance);
 
                         }
-
-                    m_dbConnection.Close();
-
-                    //Creation of related instances
-                    foreach ( var instance in instanceList )
-                        {
-                        foreach ( var crit in m_query.SelectClause.SelectedRelatedInstances )
-                            {
-
-
-                            //var reversedRelation = crit.RelatedClassSpecifier.RelationshipClass.Schema.GetClass(crit.RelatedClassSpecifier.RelationshipClass.Name);
-
-                            IECRelationshipClass relationshipClass = crit.RelatedClassSpecifier.RelationshipClass;
-                            RelatedInstanceDirection direction = ReverseRelatedInstanceDirection(crit.RelatedClassSpecifier.RelatedDirection);
-
-                            ECQuery relInstQuery = new ECQuery(crit.RelatedClassSpecifier.RelatedClass);
-
-                            relInstQuery.SelectClause.SelectedProperties = crit.SelectedProperties;
-                            relInstQuery.SelectClause.SelectAllProperties = crit.SelectAllProperties;
-
-
-                            //We probably should not take relatedInstances of relatedInstances, since this could be highly inefficient. To test eventually.
-                            //relInstQuery.SelectClause.SelectedRelatedInstances = crit.SelectedRelatedInstances;
-                            //************************************************************************************
-
-                            //We create the " reverse criterion", which we will use to search for every entity related to the instance by the same relationship used in the select.
-                            //var reverseCrit = new RelatedCriterion(new QueryRelatedClassSpecifier(relationshipClass, direction, relatedCriterionClass), new WhereCriteria(new ECInstanceIdExpression(instance.InstanceId)));
-                            var reverseCrit = new RelatedCriterion(new QueryRelatedClassSpecifier(relationshipClass, direction, ecClass), new WhereCriteria(new ECInstanceIdExpression(instance.InstanceId)));
-
-                            relInstQuery.WhereClause = new WhereCriteria(reverseCrit);
-
-                            var queryHelper = new SqlQueryProvider(relInstQuery, new ECQuerySettings(), m_dbConnection, m_schema);
-
-                            var relInstList = queryHelper.CreateInstanceList();
-                            foreach ( var relInst in relInstList )
-                                {
-
-                                IECRelationshipInstance relationshipInst;
-                                if ( crit.RelatedClassSpecifier.RelatedDirection == RelatedInstanceDirection.Forward )
-                                    {
-                                    relationshipInst = relationshipClass.CreateRelationship(instance, relInst);
-                                    }
-                                else
-                                    {
-                                    relationshipInst = relationshipClass.CreateRelationship(relInst, instance);
-                                    }
-                                //relationshipInst.InstanceId = "test";
-                                instance.GetRelationshipInstances().Add(relationshipInst);
-                                }
-                            }
-                        }
-
                     }
-
                 }
+            m_dbConnection.Close();
+
+            //Creation of related instances
+            //foreach ( var instance in instanceList )
+            //    {
+            foreach ( var crit in m_query.SelectClause.SelectedRelatedInstances )
+                {
+
+
+                //var reversedRelation = crit.RelatedClassSpecifier.RelationshipClass.Schema.GetClass(crit.RelatedClassSpecifier.RelationshipClass.Name);
+
+                IECRelationshipClass relationshipClass = crit.RelatedClassSpecifier.RelationshipClass;
+                RelatedInstanceDirection direction = (crit.RelatedClassSpecifier.RelatedDirection == RelatedInstanceDirection.Backward ?
+                    RelatedInstanceDirection.Forward : RelatedInstanceDirection.Backward);
+
+                ECQuery relInstQuery = new ECQuery(crit.RelatedClassSpecifier.RelatedClass);
+
+                relInstQuery.SelectClause.SelectedProperties = crit.SelectedProperties;
+                relInstQuery.SelectClause.SelectAllProperties = crit.SelectAllProperties;
+
+
+                //We probably should not take relatedInstances of relatedInstances, since this could be highly inefficient. To test eventually.
+                //relInstQuery.SelectClause.SelectedRelatedInstances = crit.SelectedRelatedInstances;
+                //************************************************************************************
+
+                //We create the " reverse criterion", which we will use to search for every entity related to the instance by the same relationship used in the select.
+                //var reverseCrit = new RelatedCriterion(new QueryRelatedClassSpecifier(relationshipClass, direction, relatedCriterionClass), new WhereCriteria(new ECInstanceIdExpression(instance.InstanceId)));
+                ECInstanceIdExpression ex = new ECInstanceIdExpression(instanceList.Select(inst => inst.InstanceId).ToArray());
+                ex.ExtendedDataValueSetter.Add(new KeyValuePair<string, object>("RequestRelatedId", true));
+
+                var reverseCrit = new RelatedCriterion(new QueryRelatedClassSpecifier(relationshipClass, direction, ecClass), new WhereCriteria(ex));
+
+                relInstQuery.WhereClause = new WhereCriteria(reverseCrit);
+
+                var queryHelper = new SqlQueryProvider(relInstQuery, new ECQuerySettings(), m_dbConnection, m_schema);
+
+                var relInstList = queryHelper.CreateInstanceList();
+                foreach ( var relInst in relInstList )
+                    {
+                    string instanceId = relInst.ExtendedData["relInstID"] as string;
+
+                    IECInstance instance = instanceList.First(inst => inst.InstanceId == instanceId);
+
+                    IECRelationshipInstance relationshipInst;
+                    if ( crit.RelatedClassSpecifier.RelatedDirection == RelatedInstanceDirection.Forward )
+                        {
+                        relationshipInst = relationshipClass.CreateRelationship(instance, relInst);
+                        }
+                    else
+                        {
+                        relationshipInst = relationshipClass.CreateRelationship(relInst, instance);
+                        }
+                    //relationshipInst.InstanceId = "test";
+                    instance.GetRelationshipInstances().Add(relationshipInst);
+                    }
+                }
+
+            //}
+
+
+
+
             if ( m_instanceCount && sqlCountString != null )
                 {
                 instanceList.Add(CreateInstanceCountInstance(sqlCountString));
@@ -318,17 +321,58 @@ namespace IndexECPlugin.Source.QueryProviders
             return instanceList;
             }
 
-        private static RelatedInstanceDirection ReverseRelatedInstanceDirection (RelatedInstanceDirection direction)
+        //This was the old way of searching for related instances. It was slow, but reliable. Left here just in case the other one is buggy.
+        private void QueryAndInsertRelatedInstancesOneByOne(IEnumerable<IECInstance> instanceList)
             {
-            if ( direction == RelatedInstanceDirection.Backward )
+            foreach ( var instance in instanceList )
                 {
-                direction = RelatedInstanceDirection.Forward;
+                foreach ( var crit in m_query.SelectClause.SelectedRelatedInstances )
+                    {
+
+
+                    //var reversedRelation = crit.RelatedClassSpecifier.RelationshipClass.Schema.GetClass(crit.RelatedClassSpecifier.RelationshipClass.Name);
+
+                    IECRelationshipClass relationshipClass = crit.RelatedClassSpecifier.RelationshipClass;
+                    RelatedInstanceDirection direction = (crit.RelatedClassSpecifier.RelatedDirection == RelatedInstanceDirection.Backward ?
+                        RelatedInstanceDirection.Forward : RelatedInstanceDirection.Backward);
+
+                    ECQuery relInstQuery = new ECQuery(crit.RelatedClassSpecifier.RelatedClass);
+
+                    relInstQuery.SelectClause.SelectedProperties = crit.SelectedProperties;
+                    relInstQuery.SelectClause.SelectAllProperties = crit.SelectAllProperties;
+
+
+                    //We probably should not take relatedInstances of relatedInstances, since this could be highly inefficient. To test eventually.
+                    //relInstQuery.SelectClause.SelectedRelatedInstances = crit.SelectedRelatedInstances;
+                    //************************************************************************************
+
+                    //We create the " reverse criterion", which we will use to search for every entity related to the instance by the same relationship used in the select.
+                    var reverseCrit = new RelatedCriterion(new QueryRelatedClassSpecifier(relationshipClass, direction, instance.ClassDefinition), new WhereCriteria(new ECInstanceIdExpression(instance.InstanceId)));
+
+                    relInstQuery.WhereClause = new WhereCriteria(reverseCrit);
+
+                    var queryHelper = new SqlQueryProvider(relInstQuery, new ECQuerySettings(), m_dbConnection, m_schema);
+
+
+
+                    var relInstList = queryHelper.CreateInstanceList();
+                    foreach ( var relInst in relInstList )
+                        {
+
+                        IECRelationshipInstance relationshipInst;
+                        if ( crit.RelatedClassSpecifier.RelatedDirection == RelatedInstanceDirection.Forward )
+                            {
+                            relationshipInst = relationshipClass.CreateRelationship(instance, relInst);
+                            }
+                        else
+                            {
+                            relationshipInst = relationshipClass.CreateRelationship(relInst, instance);
+                            }
+                        //relationshipInst.InstanceId = "test";
+                        instance.GetRelationshipInstances().Add(relationshipInst);
+                        }
+                    }
                 }
-            else
-                {
-                direction = RelatedInstanceDirection.Backward;
-                }
-            return direction;
             }
 
         //This is not to be used before having called createSqlCommandStringFromQuery
@@ -337,13 +381,13 @@ namespace IndexECPlugin.Source.QueryProviders
             IECInstance instanceCountInstance = StandardClassesHelper.InstanceCountClass.CreateInstance();
             instanceCountInstance.InstanceId = "InstanceCount";
 
-            using ( DbCommand dbCommand = m_dbConnection.CreateCommand() )
+            using ( IDbCommand dbCommand = m_dbConnection.CreateCommand() )
                 {
                 dbCommand.CommandText = sqlCountString;
                 dbCommand.CommandType = CommandType.Text;
                 dbCommand.Connection = m_dbConnection;
 
-                using ( DbDataReader reader = dbCommand.ExecuteReader() )
+                using ( IDataReader reader = dbCommand.ExecuteReader() )
                     {
                     reader.Read();
                     instanceCountInstance["Count"].IntValue = reader.GetInt32(0);

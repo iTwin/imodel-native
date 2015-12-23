@@ -1,10 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
-using IndexECPlugin;
 using NUnit.Framework;
 using Rhino.Mocks;
 using IndexECPlugin.Source.Helpers;
@@ -22,25 +19,25 @@ using System.Reflection;
 using Bentley.ECObjects.XML;
 
 namespace IndexECPlugin.Tests
-{
+    {
     [TestFixture]
     class IndexECPluginUSGSTests
-    {
+        {
         IUSGSDataFetcher m_usgsDataFetcherMock;
         IECSchema m_schema;
         //ECQuery m_query;
 
         [SetUp]
-        public void SetUp()
-        {
+        public void SetUp ()
+            {
             CreateFetcherMock();
 
             PrepareSchema();
 
-        }
+            }
 
-        private void PrepareSchema()
-        {
+        private void PrepareSchema ()
+            {
             //m_query = new ECQuery()
 
             //ECSession session = SessionManager.CreateSession();
@@ -56,30 +53,30 @@ namespace IndexECPlugin.Tests
 
             //connectionService.Close(connection, null);
 
-        }
+            }
 
-        private RepositoryConnection CreateRepositoryConnection(ECSession session, RepositoryConnectionService connectionService)
-        {
+        private RepositoryConnection CreateRepositoryConnection (ECSession session, RepositoryConnectionService connectionService)
+            {
             RepositoryIdentifier repositoryIdentifier = new RepositoryIdentifier("IndexECPlugin", "Test", "", "", null);
 
             return connectionService.Open(session, repositoryIdentifier, null, null);
-        }
+            }
 
-        private IECSchema GetFirstSchema(RepositoryConnection repositoryConnection, PersistenceService persistenceService)
-        {
+        private IECSchema GetFirstSchema (RepositoryConnection repositoryConnection, PersistenceService persistenceService)
+            {
             IList<IECSchema> listOfSchema = persistenceService.GetConnectionSchemas(repositoryConnection);
 
             IECSchema schema = listOfSchema[0];
             return schema;
-        }
+            }
 
-        private void CreateFetcherMock()
-        {
+        private void CreateFetcherMock ()
+            {
             MockRepository mock = new MockRepository();
 
             //var usgsDataFetcherMock = MockRepository.GenerateStub<IUSGSDataFetcher>();
 
-            m_usgsDataFetcherMock = (IUSGSDataFetcher)mock.StrictMock(typeof(IUSGSDataFetcher));
+            m_usgsDataFetcherMock = (IUSGSDataFetcher) mock.StrictMock(typeof(IUSGSDataFetcher));
 
             List<UsgsAPICategory> categoryTable = new List<UsgsAPICategory> 
             { 
@@ -90,7 +87,10 @@ namespace IndexECPlugin.Tests
 
             var jObject = JObject.Parse(@"{""items"":[{""title"":""USGS NED one meter x24y459 IL 12-County-HenryCO 2009 IMG 2015"",""sourceId"":""553690bfe4b0b22a15807df2"",""sourceName"":""ScienceBase"",""sourceOriginId"":""7085222"",""sourceOriginName"":""gda"",""metaUrl"":""https://www.sciencebase.gov/catalog/item/553690bfe4b0b22a15807df2"",""publicationDate"":""2015-03-19"",""lastUpdated"":""2015-04-21"",""dateCreated"":""2015-04-21"",""sizeInBytes"":262239745,""extent"":""10000 x 10000 meter"",""format"":""IMG"",""downloadURL"":""ftp://rockyftp.cr.usgs.gov/vdelivery/Datasets/Staged/NED/1m/IMG/USGS_NED_one_meter_x24y459_IL_12_County_HenryCO_2009_IMG_2015.zip"",""previewGraphicURL"":""ftp://rockyftp.cr.usgs.gov/vdelivery/Datasets/Staged/NED/1m/IMG/USGS_NED_one_meter_x24y459_IL_12_County_HenryCO_2009_IMG_2015_thumb.jpg"",""datasets"":[""Digital Elevation Model (DEM) 1 meter""],""boundingBox"":{""minX"":-90.1111928012935,""maxX"":-89.9874229095346,""minY"":41.32950370684,""maxY"":41.4227313251356},""bestFitIndex"":0.0,""prettyFileSize"":""250.09 MB""}]}");
 
-            USGSRequestBundle testBundle = new USGSRequestBundle() { jtokenList = jObject["items"], Classification = "Terrain", Dataset = "Digital Elevation Model (DEM) 1 meter", DatasetId = "543e6b86e4b0fd76af69cf4c" };
+            USGSRequestBundle testBundle = new USGSRequestBundle()
+            {
+                jtokenList = jObject["items"], Classification = "Terrain", Dataset = "Digital Elevation Model (DEM) 1 meter", DatasetId = "543e6b86e4b0fd76af69cf4c"
+            };
 
             //usgsDataFetcherMock.Stub(x => x.GetNonFormattedUSGSResults(Arg<List<SingleWhereCriteriaHolder>>.Is.Anything))
             //    //.IgnoreArguments()
@@ -113,28 +113,28 @@ namespace IndexECPlugin.Tests
             //                   .Return(scienceBaseJson);
 
             XmlDocument doc = new XmlDocument();
-            using (StreamReader metadataFileStreamReader = new StreamReader(Assembly.GetExecutingAssembly().GetManifestResourceStream("USGS_NED_one_meter_x24y459_IL_12_County_HenryCO_2009_IMG_2015_meta.xml")))
-            {
+            using ( StreamReader metadataFileStreamReader = new StreamReader(Assembly.GetExecutingAssembly().GetManifestResourceStream("USGS_NED_one_meter_x24y459_IL_12_County_HenryCO_2009_IMG_2015_meta.xml")) )
+                {
                 doc.LoadXml(metadataFileStreamReader.ReadToEnd());
-            }
+                }
 
             //usgsDataFetcherMock.Stub(x => x.GetXmlDocFromURL(Arg<String>.Is.Equal(@"http://thor-f5.er.usgs.gov/ngtoc/metadata/waf/elevation/1_meter/img/USGS_NED_one_meter_x24y459_IL_12_County_HenryCO_2009_IMG_2015_meta.xml")))
             //usgsDataFetcherMock.Stub(x => x.GetXmlDocFromURL(Arg<String>.Is.Anything))
             //                   .Return(doc);
 
-            using (mock.Record())
-            {
+            using ( mock.Record() )
+                {
                 Expect.Call(m_usgsDataFetcherMock.GetNonFormattedUSGSResults(Arg<List<SingleWhereCriteriaHolder>>.Is.Anything)).Return(new List<USGSRequestBundle> { testBundle });
                 Expect.Call(m_usgsDataFetcherMock.GetSciencebaseJson(Arg<String>.Is.Anything)).Return(scienceBaseJson);
                 Expect.Call(m_usgsDataFetcherMock.GetXmlDocFromURL(Arg<String>.Is.Anything)).Return(doc);
+                }
+
+
             }
 
-
-        }
-
         [Test]
-        public void SpatialEntityWithDetailsViewTest()
-        {
+        public void SpatialEntityWithDetailsViewTest ()
+            {
 
             ECQuery query = new ECQuery(m_schema.GetClass("SpatialEntityWithDetailsView"));
             query.SelectClause.SelectAllProperties = true;
@@ -164,11 +164,11 @@ namespace IndexECPlugin.Tests
             Assert.AreEqual("1.0x1.0", instanceList.First().GetPropertyValue("ResolutionInMeters").StringValue);
             Assert.AreEqual("Terrain", instanceList.First().GetPropertyValue("Classification").StringValue);
 
-        }
+            }
 
         [Test]
-        public void SpatialEntityBaseTest()
-        {
+        public void SpatialEntityBaseTest ()
+            {
 
             ECQuery query = new ECQuery(m_schema.GetClass("SpatialEntityBase"));
             query.SelectClause.SelectAllProperties = true;
@@ -198,11 +198,11 @@ namespace IndexECPlugin.Tests
             Assert.AreEqual("Terrain", instanceList.First().GetPropertyValue("Classification").StringValue);
 
 
-        }
+            }
 
         [Test]
-        public void ThumbnailTest()
-        {
+        public void ThumbnailTest ()
+            {
 
             ECQuery query = new ECQuery(m_schema.GetClass("Thumbnail"));
             query.SelectClause.SelectAllProperties = true;
@@ -222,11 +222,11 @@ namespace IndexECPlugin.Tests
             Assert.AreEqual(true, instanceList.First().GetPropertyValue("ThumbnailHeight").IsNull);
             Assert.AreEqual(true, instanceList.First().GetPropertyValue("ThumbnailStamp").IsNull);
             Assert.AreEqual(true, instanceList.First().GetPropertyValue("ThumbnailGenerationDetails").IsNull);
-        }
+            }
 
         [Test]
-        public void MetadataTest()
-        {
+        public void MetadataTest ()
+            {
 
             ECQuery query = new ECQuery(m_schema.GetClass("Metadata"));
             query.SelectClause.SelectAllProperties = true;
@@ -249,11 +249,11 @@ namespace IndexECPlugin.Tests
             Assert.AreEqual("USGS NED one meter x24y459 IL 12-County-HenryCO 2009 IMG 2015 courtesy of the U.S. Geological Survey", instanceList.First().GetPropertyValue("Legal").StringValue);
             Assert.AreEqual(true, instanceList.First().GetPropertyValue("Lineage").IsNull);
             Assert.AreEqual(true, instanceList.First().GetPropertyValue("Provenance").IsNull);
-        }
+            }
 
         [Test]
-        public void SpatialDataSourceTest()
-        {
+        public void SpatialDataSourceTest ()
+            {
 
             ECQuery query = new ECQuery(m_schema.GetClass("SpatialDataSource"));
             query.SelectClause.SelectAllProperties = true;
@@ -274,11 +274,11 @@ namespace IndexECPlugin.Tests
             Assert.AreEqual(true, instanceList.First().GetPropertyValue("SisterFiles").IsNull);
             Assert.AreEqual("256093", instanceList.First().GetPropertyValue("FileSize").StringValue);
             Assert.AreEqual("https://www.sciencebase.gov/catalog/file/get/553690bfe4b0b22a15807df2?f=__disk__74%2Fbb%2F91%2F74bb9105fd15f0129423afefeae7144279edf5ec", instanceList.First().GetPropertyValue("Metadata").StringValue);
-        }
+            }
 
         [Test]
-        public void ServerTest()
-        {
+        public void ServerTest ()
+            {
 
             ECQuery query = new ECQuery(m_schema.GetClass("Server"));
             query.SelectClause.SelectAllProperties = true;
@@ -306,6 +306,6 @@ namespace IndexECPlugin.Tests
             Assert.AreEqual(true, instanceList.First().GetPropertyValue("MeanReachabilityStats").IsNull);
             Assert.AreEqual(true, instanceList.First().GetPropertyValue("State").IsNull);
             Assert.AreEqual(true, instanceList.First().GetPropertyValue("Type").IsNull);
+            }
         }
     }
-}

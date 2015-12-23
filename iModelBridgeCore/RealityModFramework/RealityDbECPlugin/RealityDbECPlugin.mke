@@ -114,6 +114,7 @@ ASSEMBLY_VERSION = 1.0.0.0
 ASSEMBLY_STRONGNAME = 1
 
 ASSEMBLY_SOURCE_LIST = \
+            $(baseDir)Source/Helpers/DataReadingHelper.cs \
             $(baseDir)Source/Helpers/ECToSQLMap.cs \
             $(baseDir)Source/Helpers/ECQueryConverter.cs \
             $(baseDir)Source/Helpers/DBGeometryhelpers.cs \

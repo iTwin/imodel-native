@@ -9,35 +9,30 @@ using IndexECPlugin.Source.Helpers;
 using NUnit.Framework;
 using System;
 using System.Collections.Generic;
-using System.Data;
-using System.Data.Common;
-using System.Data.SqlClient;
-using System.IO;
 using System.Linq;
 using System.Reflection;
-using System.Text;
 using System.Text.RegularExpressions;
-using System.Threading.Tasks;
+using System.Data;
 
 
 namespace IndexECPlugin.Tests
-{
+    {
     [TestFixture]
     class ECQueryConverterTests
-    {
+        {
         IECSchema m_schema;
 
 
         [SetUp]
-        public void SetUp()
-        {
+        public void SetUp ()
+            {
             ECSchemaXmlStreamReader schemaReader = new ECSchemaXmlStreamReader(Assembly.GetAssembly(typeof(IndexECPlugin.Source.IndexECPlugin)).GetManifestResourceStream("ECSchemaDB.xml"));
             m_schema = schemaReader.Deserialize();
-        }
+            }
 
         [Test]
-        public void SimpleQueryTest()
-        {
+        public void SimpleQueryTest ()
+            {
             IECClass spatialEntityBaseClass = m_schema.GetClass("SpatialEntityBase");
             ECQuery query = new ECQuery(spatialEntityBaseClass);
             query.ExtendedDataValueSetter.Add(new KeyValuePair<string, object>("source", "index"));
@@ -46,7 +41,7 @@ namespace IndexECPlugin.Tests
             query.SelectClause.SelectedProperties.Add(spatialEntityBaseClass["Id"]);
 
             ECQuerySettings querySettings = new ECQuerySettings();
-            
+
             SQLQueryBuilder sqlQueryBuilder = new StandardSQLQueryBuilder();
 
             ECQueryConverter ecQueryConverter = new ECQueryConverter(query, querySettings, sqlQueryBuilder, null, m_schema, false);
@@ -54,7 +49,10 @@ namespace IndexECPlugin.Tests
             string sqlCommand;
             string sqlCount;
 
-            ecQueryConverter.CreateSqlCommandStringFromQuery(out sqlCommand, out sqlCount);
+            DataReadingHelper helper;
+            Dictionary<string, Tuple<string, DbType>> paramNameValueMap;
+
+            ecQueryConverter.CreateSqlCommandStringFromQuery(out sqlCommand, out sqlCount, out helper, out paramNameValueMap);
 
             //TSql100Parser parser = new TSql100Parser(false);
             //IList<ParseError> errors;
@@ -75,11 +73,11 @@ namespace IndexECPlugin.Tests
             Assert.IsTrue(reg.IsMatch(sqlCommand));
 
 
-        }
+            }
 
         [Test]
-        public void PropertyExpressionCriteriaQueryTest()
-        {
+        public void PropertyExpressionCriteriaQueryTest ()
+            {
             IECClass spatialEntityBaseClass = m_schema.GetClass("SpatialEntityBase");
             ECQuery query = new ECQuery(spatialEntityBaseClass);
             query.ExtendedDataValueSetter.Add(new KeyValuePair<string, object>("source", "index"));
@@ -98,7 +96,10 @@ namespace IndexECPlugin.Tests
             string sqlCommand;
             string sqlCount;
 
-            ecQueryConverter.CreateSqlCommandStringFromQuery(out sqlCommand, out sqlCount);
+            DataReadingHelper helper;
+            Dictionary<string, Tuple<string, DbType>> paramNameValueMap;
+
+            ecQueryConverter.CreateSqlCommandStringFromQuery(out sqlCommand, out sqlCount, out helper, out paramNameValueMap);
 
             //TSql100Parser parser = new TSql100Parser(false);
             //IList<ParseError> errors;
@@ -113,18 +114,16 @@ namespace IndexECPlugin.Tests
             string nameColumnString = spatialEntityBaseClass["Name"].GetCustomAttributes("DBColumn").GetString("ColumnName");
             string tableString = spatialEntityBaseClass.GetCustomAttributes("SQLEntity").GetString("FromTableName");
 
-            var paramNameValueMap = sqlQueryBuilder.paramNameValueMap;
-
             Assert.AreEqual(1, paramNameValueMap.Count);
             Assert.AreEqual("Test", paramNameValueMap.First().Value.Item1);
 
             Regex reg = new Regex(@".*SELECT .*" + Regex.Escape(idColumnString) + @".* FROM .*" + Regex.Escape(tableString) + @".* WHERE .*" + Regex.Escape(nameColumnString) + @".*");
             Assert.IsTrue(reg.IsMatch(sqlCommand));
-        }
+            }
 
         [Test]
-        public void ECInstanceIdExpressionCriteriaQueryTest()
-        {
+        public void ECInstanceIdExpressionCriteriaQueryTest ()
+            {
             IECClass spatialEntityBaseClass = m_schema.GetClass("SpatialEntityBase");
             ECQuery query = new ECQuery(spatialEntityBaseClass);
             query.ExtendedDataValueSetter.Add(new KeyValuePair<string, object>("source", "index"));
@@ -143,7 +142,10 @@ namespace IndexECPlugin.Tests
             string sqlCommand;
             string sqlCount;
 
-            ecQueryConverter.CreateSqlCommandStringFromQuery(out sqlCommand, out sqlCount);
+            DataReadingHelper helper;
+            Dictionary<string, Tuple<string, DbType>> paramNameValueMap;
+
+            ecQueryConverter.CreateSqlCommandStringFromQuery(out sqlCommand, out sqlCount, out helper, out paramNameValueMap);
 
             //TSql100Parser parser = new TSql100Parser(false);
             //IList<ParseError> errors;
@@ -157,25 +159,23 @@ namespace IndexECPlugin.Tests
             string idColumnString = spatialEntityBaseClass["Id"].GetCustomAttributes("DBColumn").GetString("ColumnName");
             string tableString = spatialEntityBaseClass.GetCustomAttributes("SQLEntity").GetString("FromTableName");
 
-            var paramNameValueMap = sqlQueryBuilder.paramNameValueMap;
-
             Assert.AreEqual(1, paramNameValueMap.Count);
             Assert.AreEqual("1", paramNameValueMap.First().Value.Item1);
 
             Regex reg = new Regex(@".*SELECT .*" + Regex.Escape(idColumnString) + @".* FROM .*" + Regex.Escape(tableString) + @".* WHERE .*" + Regex.Escape(idColumnString) + @".*");
             Assert.IsTrue(reg.IsMatch(sqlCommand));
-        }
+            }
 
         [Test]
-        public void ComplexCriteriaQueryTest()
-        {
+        public void ComplexCriteriaQueryTest ()
+            {
             IECClass spatialEntityBaseClass = m_schema.GetClass("SpatialEntityBase");
             ECQuery query = new ECQuery(spatialEntityBaseClass);
             query.ExtendedDataValueSetter.Add(new KeyValuePair<string, object>("source", "index"));
 
             query.SelectClause.SelectAllProperties = false;
             query.SelectClause.SelectedProperties.Add(spatialEntityBaseClass["Id"]);
-            
+
             // The where criteria will be equivalent to (Id == 1 || Id == 2) && (Id == 1) 
             WhereCriteria internalCriteria = new WhereCriteria(new ECInstanceIdExpression("1"));
             internalCriteria.Add(new ECInstanceIdExpression("2"));
@@ -194,7 +194,10 @@ namespace IndexECPlugin.Tests
             string sqlCommand;
             string sqlCount;
 
-            ecQueryConverter.CreateSqlCommandStringFromQuery(out sqlCommand, out sqlCount);
+            DataReadingHelper helper;
+            Dictionary<string, Tuple<string, DbType>> paramNameValueMap;
+
+            ecQueryConverter.CreateSqlCommandStringFromQuery(out sqlCommand, out sqlCount, out helper, out paramNameValueMap);
 
             //TSql100Parser parser = new TSql100Parser(false);
             //IList<ParseError> errors;
@@ -208,21 +211,19 @@ namespace IndexECPlugin.Tests
             string idColumnString = spatialEntityBaseClass["Id"].GetCustomAttributes("DBColumn").GetString("ColumnName");
             string tableString = spatialEntityBaseClass.GetCustomAttributes("SQLEntity").GetString("FromTableName");
 
-            var paramNameValueMap = sqlQueryBuilder.paramNameValueMap;
-
             Assert.IsTrue(sqlCommand.Contains(idColumnString));
             Assert.IsTrue(sqlCommand.Contains(tableString));
             Assert.AreEqual(3, paramNameValueMap.Count);
 
-            Regex reg = new Regex(@".*SELECT.*" + Regex.Escape(idColumnString) + @".*FROM.*" + Regex.Escape(tableString) + @".*WHERE.*\(.*" + Regex.Escape(idColumnString) + @".*OR.*" + Regex.Escape(idColumnString)+@".*\).*AND.*" + Regex.Escape(idColumnString) + ".*");
+            Regex reg = new Regex(@".*SELECT.*" + Regex.Escape(idColumnString) + @".*FROM.*" + Regex.Escape(tableString) + @".*WHERE.*\(.*" + Regex.Escape(idColumnString) + @".*OR.*" + Regex.Escape(idColumnString) + @".*\).*AND.*" + Regex.Escape(idColumnString) + ".*");
 
             Assert.IsTrue(reg.IsMatch(sqlCommand));
 
-        }
+            }
 
         [Test]
-        public void RelatedQueryTest()
-        {
+        public void RelatedQueryTest ()
+            {
             IECClass spatialEntityBaseClass = m_schema.GetClass("SpatialEntityBase");
             IECClass metadataClass = m_schema.GetClass("Metadata");
             IECRelationshipClass SEBToMetadataClass = m_schema.GetClass("SpatialEntityBaseToMetadata") as IECRelationshipClass;
@@ -247,12 +248,15 @@ namespace IndexECPlugin.Tests
             string metadataIdColumnString = metadataClass["Id"].GetCustomAttributes("DBColumn").GetString("ColumnName");
             string fromTableString = spatialEntityBaseClass.GetCustomAttributes("SQLEntity").GetString("FromTableName");
             string joinedTableString = metadataClass.GetCustomAttributes("SQLEntity").GetString("FromTableName");
-            
+
             string firstKey = SEBToMetadataClass.GetCustomAttributes("RelationshipKeys").GetString("ContainerKey");
             string secondKey = SEBToMetadataClass.GetCustomAttributes("RelationshipKeys").GetString("ContainedKey");
             string firstOrSecond = "(" + firstKey + @".*=.*" + secondKey + "|" + secondKey + @".*=.*" + firstKey + ")";
 
-            ecQueryConverter.CreateSqlCommandStringFromQuery(out sqlCommand, out sqlCount);
+            DataReadingHelper helper;
+            Dictionary<string, Tuple<string, DbType>> paramNameValueMap;
+
+            ecQueryConverter.CreateSqlCommandStringFromQuery(out sqlCommand, out sqlCount, out helper, out paramNameValueMap);
 
             //TSql100Parser parser = new TSql100Parser(false);
             //IList<ParseError> errors;
@@ -262,16 +266,16 @@ namespace IndexECPlugin.Tests
             //Assert.IsTrue(errors.Count == 0);
 
             // SELECT tab0.IdStr FROM dbo.SpatialEntityBases tab0 LEFT JOIN dbo.Metadatas tab1 ON tab0.Metadata_Id = tab1.Id  WHERE  (  (  ( tab1.IdStr =@param0  )  )  )  ORDER BY tab1.IdStr ASC ;
-            
+
 
             Regex reg = new Regex(@".*SELECT .*" + Regex.Escape(idColumnString) + @".* FROM .*" + Regex.Escape(fromTableString) + ".*LEFT JOIN.*" + Regex.Escape(joinedTableString) + ".*ON.*" + firstOrSecond + @".* WHERE .*" + Regex.Escape(metadataIdColumnString) + @".*");
             Assert.IsTrue(reg.IsMatch(sqlCommand));
 
-        }
+            }
 
         [Test]
-        public void SpatialQueryTest()
-        {
+        public void SpatialQueryTest ()
+            {
             IECClass spatialEntityBaseClass = m_schema.GetClass("SpatialEntityBase");
             ECQuery query = new ECQuery(spatialEntityBaseClass);
             query.ExtendedDataValueSetter.Add(new KeyValuePair<string, object>("source", "index"));
@@ -292,7 +296,10 @@ namespace IndexECPlugin.Tests
             string sqlCommand;
             string sqlCount;
 
-            ecQueryConverter.CreateSqlCommandStringFromQuery(out sqlCommand, out sqlCount);
+            DataReadingHelper helper;
+            Dictionary<string, Tuple<string, DbType>> paramNameValueMap;
+
+            ecQueryConverter.CreateSqlCommandStringFromQuery(out sqlCommand, out sqlCount, out helper, out paramNameValueMap);
 
             //TSql100Parser parser = new TSql100Parser(false);
             //IList<ParseError> errors;
@@ -308,11 +315,11 @@ namespace IndexECPlugin.Tests
 
             Regex reg = new Regex(@".*SELECT.*" + Regex.Escape(idColumnString) + @".*FROM.*" + Regex.Escape(fromTableString) + @".*WHERE.*STIntersects.*\('POLYGON \(\(30 10, 40 40, 20 40, 10 20, 30 10\)\)',4326\).*");
             Assert.IsTrue(reg.IsMatch(sqlCommand));
-        }
+            }
 
         [Test]
-        public void PolymorphicClassQueryTest()
-        {
+        public void PolymorphicClassQueryTest ()
+            {
             IECClass spatialEntityDataset = m_schema.GetClass("SpatialEntityDataset");
             ECQuery query = new ECQuery(spatialEntityDataset);
             query.ExtendedDataValueSetter.Add(new KeyValuePair<string, object>("source", "index"));
@@ -333,7 +340,10 @@ namespace IndexECPlugin.Tests
             string sqlCommand;
             string sqlCount;
 
-            ecQueryConverter.CreateSqlCommandStringFromQuery(out sqlCommand, out sqlCount);
+            DataReadingHelper helper;
+            Dictionary<string, Tuple<string, DbType>> paramNameValueMap;
+
+            ecQueryConverter.CreateSqlCommandStringFromQuery(out sqlCommand, out sqlCount, out helper, out paramNameValueMap);
 
             //TSql100Parser parser = new TSql100Parser(false);
             //IList<ParseError> errors;
@@ -356,7 +366,7 @@ namespace IndexECPlugin.Tests
             Regex reg = new Regex(@".*SELECT.*" + idOrName + @".* FROM .*" + Regex.Escape(fromTableString) + @".*LEFT JOIN.*" + leftJoinTableString + ".*ON.*" + idOrBaseId + ".*");
             Assert.IsTrue(reg.IsMatch(sqlCommand));
             //SELECT tab0.IdStr, tab1.Name, tab0.Processable FROM dbo.SpatialEntityDatasets tab0 LEFT JOIN dbo.SpatialEntityBases tab1 ON tab0.IdStr = tab1.IdStr  ;        
-        }
+            }
 
         //[Test]
         //public void RelatedInstanceSelectTest()
@@ -384,7 +394,10 @@ namespace IndexECPlugin.Tests
         //    string sqlCommand;
         //    string sqlCount;
 
-        //    ecQueryConverter.CreateSqlCommandStringFromQuery(out sqlCommand, out sqlCount);
+            //DataReadingHelper helper;
+            //Dictionary<string, Tuple<string, DbType>> paramNameValueMap;
+
+            //ecQueryConverter.CreateSqlCommandStringFromQuery(out sqlCommand, out sqlCount, out helper, out paramNameValueMap);
 
         //    TSql100Parser parser = new TSql100Parser(false);
         //    IList<ParseError> errors;
@@ -424,7 +437,10 @@ namespace IndexECPlugin.Tests
         //    string sqlCommand;
         //    string sqlCount;
 
-        //    ecQueryConverter.CreateSqlCommandStringFromQuery(out sqlCommand, out sqlCount);
+            //DataReadingHelper helper;
+            //Dictionary<string, Tuple<string, DbType>> paramNameValueMap;
+
+            //ecQueryConverter.CreateSqlCommandStringFromQuery(out sqlCommand, out sqlCount, out helper, out paramNameValueMap);
 
         //    TSql100Parser parser = new TSql100Parser(false);
         //    IList<ParseError> errors;
@@ -436,5 +452,5 @@ namespace IndexECPlugin.Tests
         //    //SELECT tab0.IdStr FROM dbo.WMSServers tab0  ;
         //}
 
+        }
     }
-}

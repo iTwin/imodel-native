@@ -2,21 +2,17 @@
 using Newtonsoft.Json.Linq;
 using NUnit.Framework;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 
 namespace IndexECPlugin.Tests
-{
+    {
     [TestFixture]
     class USGSDataExtractorsTests
-    {
+        {
 
         [Test]
-        public void HRODataExtractorTest()
-        {
+        public void HRODataExtractorTest ()
+            {
             JToken jToken = JToken.Parse(@"{""title"":""USGS High Resolution Orthoimagery for Monterey County, CA: 10SEF910560 200606 0x5000m CL 1"",""sourceId"":""556478f6e4b0afeb7072636d"",""sourceName"":""ScienceBase"",""metaUrl"":""https://www.sciencebase.gov/catalog/item/556478f6e4b0afeb7072636d"",""lastUpdated"":""2015-05-26"",""dateCreated"":""2015-05-26"",""sizeInBytes"":22725252,""extent"":""1500 x 1500 meter"",""format"":""JPEG2000"",""downloadURL"":""http://gisdata.usgs.gov/tdds/downloadfile.php?TYPE\u003dortho\u0026ORIG\u003dSBDDG\u0026FNAME\u003d10SEF910560_200606_0x5000m_CL_1.zip"",""previewGraphicURL"":""http://tdds.cr.usgs.gov/browse/ortho/10S/EF/10SEF910560_200606_0x5000m_CL_1.jpg"",""datasets"":[""High Resolution Orthoimagery""],""boundingBox"":{""minX"":-121.981801,""maxX"":-121.965201,""minY"":36.645083,""maxY"":36.658748},""bestFitIndex"":0.0,""prettyFileSize"":""21.67 MB""}");
 
             HRODataExtractor extractor = new HRODataExtractor();
@@ -32,11 +28,11 @@ namespace IndexECPlugin.Tests
             Assert.AreEqual("2006 06", String.Format("{0:yyyy MM}", date.Value));
             Assert.AreEqual("0.5000m", resolution);
             Assert.AreEqual("0.5000x0.5000", resolutionInMeters);
-        }
+            }
 
         [Test]
-        public void NAIPDataExtractorTest()
-        {
+        public void NAIPDataExtractorTest ()
+            {
             JToken jToken = JToken.Parse(@"{""title"":""FSA 10:1 NAIP Imagery m_3309603_ne_14_1_20130612_20130729 3.75 x 3.75 minute JPEG2000 from The National Map"",""sourceId"":""5500ad31e4b02419550fcb62"",""sourceName"":""ScienceBase"",""sourceOriginId"":""6916430"",""sourceOriginName"":""gda"",""metaUrl"":""https://www.sciencebase.gov/catalog/item/5500ad31e4b02419550fcb62"",""publicationDate"":""2013-07-30"",""lastUpdated"":""2015-03-26"",""dateCreated"":""2015-03-11"",""sizeInBytes"":23578651,""extent"":""3.75 x 3.75 minute"",""format"":""JPEG2000"",""downloadURL"":""ftp://rockyftp.cr.usgs.gov/vdelivery/Datasets/Staged/NAIP/ok_2013/m_3309603_ne_14_1_20130612_20130729.jp2"",""datasets"":[""USDA National Agriculture Imagery Program (NAIP)""],""boundingBox"":{""minX"":-96.6875,""maxX"":-96.625,""minY"":33.9375,""maxY"":34.0},""bestFitIndex"":0.0,""prettyFileSize"":""22.49 MB""}");
             NAIPDataExtractor extractor = new NAIPDataExtractor();
 
@@ -51,11 +47,11 @@ namespace IndexECPlugin.Tests
             Assert.AreEqual("2013 07 30", String.Format("{0:yyyy MM dd}", date.Value));
             Assert.AreEqual("1.0m", resolution);
             Assert.AreEqual("1.0x1.0", resolutionInMeters);
-        }
+            }
 
         [Test]
-        public void NEDDataExtractorTest()
-        {
+        public void NEDDataExtractorTest ()
+            {
             JToken jToken = JToken.Parse(@"{""title"":""USGS NED n72w157 1 arc-second 2013 1 x 1 degree IMG"",""sourceId"":""5317689be4b093796c7b5336"",""sourceName"":""ScienceBase"",""sourceOriginId"":""6024790"",""sourceOriginName"":""gda"",""metaUrl"":""https://www.sciencebase.gov/catalog/item/5317689be4b093796c7b5336"",""publicationDate"":""2013-01-01"",""lastUpdated"":""2014-07-22"",""dateCreated"":""2014-03-05"",""sizeInBytes"":6156171,""extent"":""1 x 1 degree"",""format"":""IMG"",""downloadURL"":""ftp://rockyftp.cr.usgs.gov/vdelivery/Datasets/Staged/NED/1/IMG/n72w157.zip"",""previewGraphicURL"":""ftp://rockyftp.cr.usgs.gov/vdelivery/Datasets/Staged/NED/1/IMG/imgn72w157_1_thumb.jpg"",""datasets"":[""National Elevation Dataset (NED) 1 arc-second"",""National Elevation Dataset (NED)""],""boundingBox"":{""minX"":-157.0016666667,""maxX"":-155.9983333334,""minY"":70.99833333333,""maxY"":72.00166666666},""bestFitIndex"":0.0,""prettyFileSize"":""5.87 MB""}");
 
             NEDDataExtractor extractor = new NEDDataExtractor("National Elevation Dataset (NED) 1 arc-second");
@@ -104,11 +100,11 @@ namespace IndexECPlugin.Tests
             Assert.AreEqual("2010 01 01", String.Format("{0:yyyy MM dd}", date.Value));
             Assert.AreEqual("1/9\"", resolution);
             Assert.AreEqual("1.3608x3.43", resolutionInMeters);
-        }
+            }
 
         [Test]
-        public void DefaultDataExtractorTest()
-        {
+        public void DefaultDataExtractorTest ()
+            {
             JToken jToken = JToken.Parse(@"{""title"":""USGS Lidar Point Cloud NY FEMA-R2-Seneca 2012 18tum405880 LAS 2015"",""sourceId"":""559fa64de4b0b94a64019781"",""sourceName"":""ScienceBase"",""sourceOriginId"":""7115026"",""sourceOriginName"":""gda"",""metaUrl"":""https://www.sciencebase.gov/catalog/item/559fa64de4b0b94a64019781"",""publicationDate"":""2015-06-04"",""lastUpdated"":""2015-07-10"",""dateCreated"":""2015-07-10"",""sizeInBytes"":33591065,""extent"":""Varies"",""format"":""LAS"",""downloadURL"":""ftp://rockyftp.cr.usgs.gov/vdelivery/Datasets/Staged/Elevation/LPC/Projects/USGS_LPC_NY_FEMA_R2_Seneca_2012_LAS_2015/las/tiled/USGS_LPC_NY_FEMA_R2_Seneca_2012_18tum405880_LAS_2015.zip"",""previewGraphicURL"":""ftp://rockyftp.cr.usgs.gov/vdelivery/Datasets/Staged/Elevation/LPC/browse/USGS_LPC_NY_FEMA_R2_Seneca_2012_18tum405880_LAS_2015_thumb.jpg"",""datasets"":[""Lidar Point Cloud (LPC)""],""boundingBox"":{""minX"":-76.9362687275514,""maxX"":-76.9176588703292,""minY"":42.3279143427108,""maxY"":42.3417218212283},""bestFitIndex"":0.0,""prettyFileSize"":""32.03 MB""}");
 
             DefaultDataExtractor extractor = new DefaultDataExtractor();
@@ -124,11 +120,11 @@ namespace IndexECPlugin.Tests
             Assert.AreEqual("2015 06 04", String.Format("{0:yyyy MM dd}", date.Value));
             Assert.AreEqual("Unknown", resolution);
             Assert.AreEqual("Unknown", resolutionInMeters);
-        }
+            }
 
         [Test]
-        public void NLCDDataExtractorTest()
-        {
+        public void NLCDDataExtractorTest ()
+            {
             JToken jToken = JToken.Parse(@"{""title"":""NLCD 2011 Land Cover Alaska, 3 x 3 Degree: NLCD2011_LC_N63W159"",""sourceId"":""553e9538e4b0a658d7938ae0"",""sourceName"":""ScienceBase"",""sourceOriginId"":""7087237"",""sourceOriginName"":""gda"",""metaUrl"":""https://www.sciencebase.gov/catalog/item/553e9538e4b0a658d7938ae0"",""publicationDate"":""2015-01-15"",""lastUpdated"":""2015-04-27"",""dateCreated"":""2015-04-27"",""sizeInBytes"":10930664,""extent"":""3 x 3 degree"",""format"":""GeoTIFF"",""downloadURL"":""http://gisdata.usgs.gov/tdds/downloadfile.php?TYPE\u003dnlcd2011_lc_3x3\u0026ORIG\u003dSBDDG\u0026FNAME\u003dNLCD2011_LC_N63W159.zip"",""previewGraphicURL"":""http://tdds.cr.usgs.gov/browse/nlcd/2011/landcover/3x3/NLCD2011_LC_N63W159.jpg"",""datasets"":[""National Land Cover Database (NLCD) - 2011""],""boundingBox"":{""minX"":-162.0,""maxX"":-159.0,""minY"":63.0,""maxY"":66.0},""bestFitIndex"":0.0,""prettyFileSize"":""10.42 MB""}");
 
             NLCDDataExtractor extractor = new NLCDDataExtractor("National Land Cover Database (NLCD) - 2011");
@@ -166,7 +162,7 @@ namespace IndexECPlugin.Tests
             Assert.AreEqual("2001 01 01", String.Format("{0:yyyy MM dd}", date.Value));
             Assert.AreEqual("30.0m", resolution);
             Assert.AreEqual("30.0x30.0", resolutionInMeters);
+            }
+
         }
-        
     }
-}

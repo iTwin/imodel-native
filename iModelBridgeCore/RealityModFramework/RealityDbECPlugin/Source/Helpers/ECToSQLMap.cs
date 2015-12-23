@@ -96,7 +96,7 @@ namespace IndexECPlugin.Source.Helpers
             throw new ProgrammerException(String.Format("The ECType {0} is not bound to any SQL type. Please modify the ECSchema", ecType.Name));
             }
 
-        static internal void SQLReaderToECProperty (IECPropertyValue instancePropertyValue, DbDataReader reader, int i)
+        static internal void SQLReaderToECProperty (IECPropertyValue instancePropertyValue, IDataReader reader, int i)
             {
             if ( ECTypeHelper.IsString(instancePropertyValue.Type) )
                 {
