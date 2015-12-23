@@ -1255,27 +1255,9 @@ SchemaReadStatus ECClass::_ReadXmlAttributes (BeXmlNodeR classNode)
     READ_OPTIONAL_XML_ATTRIBUTE (classNode, DISPLAY_LABEL_ATTRIBUTE,       this, DisplayLabel)
 
     Utf8String     modifierString;
-    Utf8String boolStr;
-
     BeXmlStatus modifierStatus = classNode.GetAttributeStringValue(modifierString, MODIFIER_ATTRIBUTE);
-    BeXmlStatus domainStatus = classNode.GetAttributeStringValue(boolStr, IS_DOMAINCLASS_ATTRIBUTE);
-    if (BEXML_Success == modifierStatus && BEXML_Success == domainStatus)
-        {
-        LOG.errorv("Both '%s' and '%s' are set on ECClass '%s'.  This is not allowed.", MODIFIER_ATTRIBUTE, IS_DOMAINCLASS_ATTRIBUTE, GetName().c_str());
-        return SchemaReadStatus::InvalidECSchemaXml;
-        }
-
-    bool boolVal;
     if (BEXML_Success == modifierStatus)
         ECXml::ParseModifierString(m_modifier, modifierString);
-    else if (BEXML_Success == domainStatus)
-        {
-        if (ECObjectsStatus::Success == ECXml::ParseBooleanString(boolVal, boolStr.c_str()))
-            {
-            if (!boolVal)
-                m_modifier = ECClassModifier::Abstract;
-            }
-        }
 
     return SchemaReadStatus::Success;
     }
@@ -1393,8 +1375,13 @@ SchemaReadStatus ECClass::_ReadBaseClassFromXml (BeXmlNodeP childNode, ECSchemaR
         return SchemaReadStatus::InvalidECSchemaXml;
         }
 
-    if (ECObjectsStatus::Success != AddBaseClass (*baseClass))
+    if (ECObjectsStatus::Success != AddBaseClass(*baseClass))
+        {
+        LOG.errorv("Invalid ECSchemaXML: The ECClass '%s:%s' (%d) has a base class '%s:%s' (%d) but their types differ.",
+                     GetSchema().GetFullSchemaName().c_str(), GetName().c_str(), GetClassType(),
+                     baseClass->GetSchema().GetFullSchemaName().c_str(), baseClass->GetName().c_str(), baseClass->GetClassType());
         return SchemaReadStatus::InvalidECSchemaXml;
+        }
     
     return SchemaReadStatus::Success;
     }
@@ -2576,7 +2563,6 @@ SchemaReadStatus ECRelationshipClass::_ReadXmlAttributes (BeXmlNodeR classNode)
     if (SchemaReadStatus::Success != (status = T_Super::_ReadXmlAttributes (classNode)))
         return status;
         
-    
     Utf8String value;
     READ_OPTIONAL_XML_ATTRIBUTE (classNode, STRENGTH_ATTRIBUTE, this, Strength)
     READ_OPTIONAL_XML_ATTRIBUTE (classNode, STRENGTHDIRECTION_ATTRIBUTE, this, StrengthDirection)

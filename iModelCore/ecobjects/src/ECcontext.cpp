@@ -43,25 +43,12 @@ bool            ECSchemaReadContext::GetStandardPaths (bvector<WString>& searchP
     rootDir.AppendSeparator();
     searchPaths.push_back (rootDir.GetName());
 
-    rootDir.AppendToPath (L"ECSchemas");
+    rootDir.AppendToPath (EC_SCHEMAS_DIRECTORY);
 
     BeFileName standardPath = rootDir;
-    standardPath.AppendToPath (L"Standard");
+    standardPath.AppendToPath (EC_STANDARD_DIRECTORY);
     standardPath.AppendSeparator();
     searchPaths.push_back (standardPath.GetName());
-
-#if defined (LEGACY_ECSCHEMAS_FOLDER_STRUCTURE)
-    // For Graphite, there are no subfolders under "Standard"
-    BeFileName generalPath = standardPath;
-    generalPath.AppendToPath (L"General");
-    generalPath.AppendSeparator();
-    searchPaths.push_back (generalPath.GetName());
-
-    BeFileName libraryPath = standardPath;
-    libraryPath.AppendToPath (L"LibraryUnits");
-    libraryPath.AppendSeparator();
-    searchPaths.push_back (libraryPath.GetName());
-#endif
 
     return true;
     }
@@ -69,7 +56,7 @@ bool            ECSchemaReadContext::GetStandardPaths (bvector<WString>& searchP
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    06/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECSchemaReadContext::ECSchemaReadContext(IStandaloneEnablerLocaterP enablerLocater, bool acceptLegacyImperfectLatestCompatibleMatch)
+ECSchemaReadContext::ECSchemaReadContext(IStandaloneEnablerLocaterP enablerLocater, bool acceptLegacyImperfectLatestCompatibleMatch, bool createConversionContext)
     :
     m_standaloneEnablerLocater(enablerLocater),
     m_acceptLegacyImperfectLatestCompatibleMatch(acceptLegacyImperfectLatestCompatibleMatch),
@@ -92,6 +79,15 @@ ECSchemaReadContext::ECSchemaReadContext(IStandaloneEnablerLocaterP enablerLocat
         m_searchPathLocatersCount++;
         m_ownedLocators.push_back(locator);
         }
+
+    if (createConversionContext)
+        {
+        BeFileName conversionSchemasDirectory(s_rootDirectory);
+        conversionSchemasDirectory.AppendToPath(EC_SCHEMAS_DIRECTORY);
+        conversionSchemasDirectory.AppendToPath(EC_V3CONVERSION_DIRECTORY);
+        m_conversionSchemas = CreateContext(enablerLocater, acceptLegacyImperfectLatestCompatibleMatch, false);
+        m_conversionSchemas->AddSchemaPath(conversionSchemasDirectory.c_str());
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -106,9 +102,17 @@ void ECSchemaReadContext::ResolveClassName (Utf8StringR className, ECSchemaCR sc
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    06/10
 +---------------+---------------+---------------+---------------+---------------+------*/
+ECSchemaReadContextPtr  ECSchemaReadContext::CreateContext (IStandaloneEnablerLocaterP enablerLocater, bool acceptLegacyImperfectLatestCompatibleMatch, bool createConversionContext)
+    {
+    return new ECSchemaReadContext(enablerLocater, acceptLegacyImperfectLatestCompatibleMatch, createConversionContext);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    06/10
++---------------+---------------+---------------+---------------+---------------+------*/
 ECSchemaReadContextPtr  ECSchemaReadContext::CreateContext (IStandaloneEnablerLocaterP enablerLocater, bool acceptLegacyImperfectLatestCompatibleMatch)
     {
-    return new ECSchemaReadContext(enablerLocater, acceptLegacyImperfectLatestCompatibleMatch);
+    return CreateContext(enablerLocater, acceptLegacyImperfectLatestCompatibleMatch, true);
     }
 ECSchemaReadContextPtr  ECSchemaReadContext::CreateContext (bool acceptLegacyImperfectLatestCompatibleMatch)
     {
@@ -414,3 +418,49 @@ void            ECSchemaReadContext::RemoveSchema(ECSchemaR schema)
     {
     m_knownSchemas->DropAllReferencesOfSchema(schema);
     }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Colin.Kerr                      12/2015
+//--------------------------------------------------------------------------------------
+void                ECSchemaReadContext::AddConversionSchemaPath(WCharCP schemaPath)
+    {
+    if (m_conversionSchemas.IsValid())
+        m_conversionSchemas->AddSchemaPath(schemaPath);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Colin.Kerr                      12/2015
+//--------------------------------------------------------------------------------------
+ECObjectsStatus     ECSchemaReadContext::AddConversionSchema(ECSchemaR schema)
+    {
+    if (m_conversionSchemas.IsValid())
+        return m_conversionSchemas->AddSchema(schema);
+    return ECObjectsStatus::Success;
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Colin.Kerr                      12/2015
+//--------------------------------------------------------------------------------------
+void                ECSchemaReadContext::RemoveConversionSchema(ECSchemaR schema)
+    {
+    if (m_conversionSchemas.IsValid())
+        m_conversionSchemas->RemoveSchema(schema);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Colin.Kerr                      12/2015
+//--------------------------------------------------------------------------------------
+ECSchemaPtr         ECSchemaReadContext::LocateConversionSchemaFor(Utf8CP schemaName, int versionMajor, int versionMinor)
+    {
+    ECSchemaPtr conversionSchema;
+    if (m_conversionSchemas.IsValid())
+        {
+        Utf8String conversionSchemaName(schemaName);
+        conversionSchemaName += "_V3Conversion";
+        SchemaKey key(conversionSchemaName.c_str(), versionMajor, versionMinor);
+        conversionSchema = m_conversionSchemas->LocateSchema(key, SchemaMatchType::SCHEMAMATCHTYPE_Exact);
+        }
+    
+    return conversionSchema;
+    }
+

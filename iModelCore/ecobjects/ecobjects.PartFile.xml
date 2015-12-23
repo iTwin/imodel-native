@@ -64,6 +64,7 @@
     </Part>
 
     <!-- The following parts build the stand-alone ECObjects unit tests (from the same unit test source). -->
+    <!-- ProductDirectoryNames below are listed in the BeGTest part file, in directory list: CollectionProduct -->
 
     <Part Name="ECObjectsTestsSeedData" BentleyBuildMakeFile="test/SeedData.prewire.mke">
         <Bindings>
@@ -71,6 +72,7 @@
             <Files SubPartDirectory="SeedData/ur-PK" ProductDirectoryName="ECObjectsTestSeedDataPK">Delivery/SeedData/ur-PK/*xml</Files>
             <Files SubPartDirectory="SeedData/en-GB" ProductDirectoryName="ECObjectsTestSeedDataGB">Delivery/SeedData/en-GB/*xml</Files>
             <Files SubPartDirectory="SeedData/it" ProductDirectoryName="ECObjectsTestSeedDataIT">Delivery/SeedData/it/*xml</Files>
+            <Files SubPartDirectory="SeedData/V3Conversion" ProductDirectoryName="ECObjectsTestSeedDataV3Conversion">Delivery/SeedData/V3Conversion/*xml</Files>
         </Bindings>
     </Part>
 
@@ -252,6 +254,7 @@
         <ProductDirectory Name="PublishedApi_Doc"                   Path="Docs"/>
         <ProductDirectory Name="ecschemas"                          Path="Runtime"/>
         <ProductDirectory Name="VendorNotices"                      Path="Notices"/>
+        
     </ProductDirectoryList>
 
     <Product Name="ECObjects">

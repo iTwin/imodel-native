@@ -1562,8 +1562,6 @@ friend struct ECSchema;
 friend struct SchemaXmlReaderImpl;
 friend struct SchemaXmlWriter;
 
-private:
-
 protected:
     //  Lifecycle management:  For now, to keep it simple, the class constructor is protected.  The schema implementation will
     //  serve as a factory for classes and will manage their lifecycle.  We'll reconsider if we identify a real-world story for constructing a class outside

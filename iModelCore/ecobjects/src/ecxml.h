@@ -14,6 +14,10 @@ static Utf8CP      ECXML_URI                           = "http://www.bentley.com
 #define     EC_NAMESPACE_PREFIX                 "ec"
 #define     EC_NAMESPACE_PREFIX3                "ec3"
 
+#define     EC_SCHEMAS_DIRECTORY                L"ECSchemas"
+#define     EC_STANDARD_DIRECTORY               L"Standard"
+#define     EC_V3CONVERSION_DIRECTORY           L"V3Conversion"
+
 #define     EC_SCHEMA_ELEMENT                   "ECSchema"
 #define     EC_CUSTOM_ATTRIBUTES_ELEMENT        "ECCustomAttributes"
 #define     EC_BASE_CLASS_ELEMENT               "BaseClass"
@@ -43,6 +47,7 @@ static Utf8CP      ECXML_URI                           = "http://www.bentley.com
 #define     IS_DOMAINCLASS_ATTRIBUTE            "isDomainClass"
 #define     IS_STRUCT_ATTRIBUTE                 "isStruct"
 #define     IS_CUSTOMATTRIBUTE_ATTRIBUTE        "isCustomAttributeClass"
+#define     IS_FINAL_ATTRIBUTE                  "isFinal"
 #define     MODIFIER_ATTRIBUTE                  "modifier"
 #define     CUSTOM_ATTRIBUTE_APPLIES_TO         "appliesTo"
 #define     MIN_OCCURS_ATTRIBUTE                "minOccurs"

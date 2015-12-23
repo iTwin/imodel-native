@@ -1304,7 +1304,7 @@ ECObjectsStatus ECSchema::AddReferencedSchema (ECSchemaR refSchema)
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ECSchema::AddReferencedSchema (ECSchemaR refSchema, Utf8StringCR namespacePrefix)
     {
-    ECSchemaReadContext context (NULL, false);
+    ECSchemaReadContext context (NULL, false, false);
     return AddReferencedSchema(refSchema, namespacePrefix, context);
     }
 
