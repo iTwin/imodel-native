@@ -283,4 +283,96 @@ TEST(ECDbTests, checkPrimaryKeyForTablesIsBasedOnECInstanceId)
     ASSERT_TRUE(strcmp(sc_Employee, sqlValue) > 0);
 }
     
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+static ECN::ECClassCP generateECClass(ECN::ECSchemaR schema, Utf8CP className)
+    {
+    ECN::ECEntityClassP ecclass;      
+    if (ECN::ECObjectsStatus::Success != schema.CreateEntityClass(ecclass, className))
+        return nullptr;
+
+    ECN::PrimitiveECPropertyP ecprop;
+    if (ECN::ECObjectsStatus::Success != ecclass->CreatePrimitiveProperty(ecprop, "X"))
+        return nullptr;
+
+    ecprop->SetType(ECN::PRIMITIVETYPE_Double);
+
+    return ecclass;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+static ECN::ECSchemaPtr copyECSchema(ECN::ECSchemaCR schemaIn)
+    {
+    ECN::ECSchemaPtr cc;
+    if (ECN::ECObjectsStatus::Success != schemaIn.CopySchema(cc))
+        return nullptr;
+    if (ECN::ECObjectsStatus::Success != cc->SetName(schemaIn.GetName()))
+        return nullptr;
+    if (ECN::ECObjectsStatus::Success != cc->SetNamespacePrefix(schemaIn.GetNamespacePrefix()))
+        return nullptr;
+    return cc;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+static ECN::ECSchemaCP importECSchema(ECN::ECObjectsStatus& ecstatus, ECDbR db, ECN::ECSchemaCR schemaIn, bool updateExistingSchemas)
+    {
+    ECN::ECSchemaCP existing = db.Schemas().GetECSchema(schemaIn.GetName().c_str());
+    if (nullptr != existing)
+        {
+        if (!updateExistingSchemas)
+            return existing;
+        }
+    else
+        {
+        updateExistingSchemas = false;
+        }
+
+    ECDbSchemaManager::ImportOptions options(false, updateExistingSchemas);
+
+    ECN::ECSchemaPtr imported = copyECSchema(schemaIn);
+
+    ECN::ECSchemaReadContextPtr contextPtr = ECN::ECSchemaReadContext::CreateContext();
+    if (ECN::ECObjectsStatus::Success != contextPtr->AddSchema(*imported))
+        return nullptr;
+    if (BentleyStatus::SUCCESS != db.Schemas().ImportECSchemas(contextPtr->GetCache()))
+        {
+        ecstatus = ECObjectsStatus::Error;
+        return nullptr;
+        }
+
+    if (nullptr == existing)    // Don't call CreateECClassViewsInDb twice!
+        db.Schemas().CreateECClassViewsInDb();
+
+    return imported.get();  // DgnDb holds a reference to the schema now.
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      12/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST(ECDbTests, SelectAfterImport)
+    {
+    ECDbTestProject testproject;
+    ECDbR ecdbr = testproject.Create("ImportTwoInARow.ecdb");
+
+    if (true)
+        {
+        ECN::ECSchemaPtr schema;
+        ASSERT_EQ( ECN::ECObjectsStatus::Success , ECN::ECSchema::CreateSchema(schema, "ImportTwoInARow", 0, 0) );
+        schema->SetNamespacePrefix("tir");
+
+        ASSERT_TRUE( nullptr != generateECClass(*schema, "C1") );
+
+        ECN::ECObjectsStatus ecstatus;
+        importECSchema(ecstatus, ecdbr, *schema, false);
+        }
+
+    EC::ECSqlStatement selectC1;
+    selectC1.Prepare(ecdbr, "SELECT ECInstanceId FROM tir.C1");
+    }
+
 END_ECDBUNITTESTS_NAMESPACE
