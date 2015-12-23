@@ -5,9 +5,9 @@
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#if !defined(BENTLEYCONFIG_OS_ANDROID) && !defined(BENTLEYCONFIG_OS_APPLE_IOS) && !defined(BENTLEYCONFIG_OS_WINRT)
-
 #include "../TestFixture/DgnDbTestFixtures.h"
+
+#if !defined(BENTLEYCONFIG_OS_ANDROID) && !defined(BENTLEYCONFIG_OS_APPLE_IOS) && !defined(BENTLEYCONFIG_OS_WINRT)
 
 #include <DgnPlatform/Tools/stringop.h>
 #include <DgnPlatform/DesktopTools/MacroConfigurationAdmin.h>
