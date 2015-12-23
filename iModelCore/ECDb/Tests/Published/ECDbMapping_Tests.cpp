@@ -5623,7 +5623,7 @@ TEST_F(ECDbMappingTestFixture, RelationshipWithAbstractClassAsConstraintOnParent
         ecdb.SaveChanges();
 
         //now do actual tests with relationship
-        ASSERT_EQ(0, getGeometrySourceHasGeometryRowCount(ecdb));
+        ASSERT_EQ(0, getGeometrySourceHasGeometryRowCount(ecdb)) << "Before inserting one relationship [Scenario: " << testSchema.m_name << "]";
 
         ECSqlStatement insertStmt;
         ASSERT_EQ(ECSqlStatus::Success, insertStmt.Prepare(ecdb, "INSERT INTO ts.GeometrySourceHasGeometry(SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId) VALUES(?,?,?,?)"));
