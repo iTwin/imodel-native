@@ -953,11 +953,8 @@ struct ComponentDef : RefCountedBase
     ECN::IECInstancePtr m_ca;
     ComponentModelPtr m_model;
 
-    DGNPLATFORM_EXPORT static Utf8String GetCaValueString(ECN::IECInstanceCR, Utf8CP propName);
-    DGNPLATFORM_EXPORT ECN::IECInstancePtr GetPropSpecCA(ECN::ECPropertyCR prop);
-
-    static Utf8String GetClassECSqlName(ECN::ECClassCR cls) {Utf8String ns(cls.GetSchema().GetNamespacePrefix()); return ns.append(".").append(cls.GetName());}
-    Utf8String GetClassECSqlName() const {return GetClassECSqlName(m_class);}
+    static Utf8String GetCaValueString(ECN::IECInstanceCR, Utf8CP propName);
+    ECN::IECInstancePtr GetPropSpecCA(ECN::ECPropertyCR prop);
 
     Utf8String GetGeneratedName() const;
     DgnElement::Code CreateVariationCode(Utf8StringCR slnId);
@@ -970,17 +967,26 @@ struct ComponentDef : RefCountedBase
     
     //! Compare two instances and return true if their parameter values are the same.
     //! @note This function infers that that parameters to be compared are the properties of \a lhs that are not ECInstanceId and are not NULL.
-    DGNPLATFORM_EXPORT bool HaveEqualParameters(ECN::IECInstanceCR lhs, ECN::IECInstanceCR rhs, bool compareOnlyInstanceParameters = true);
+    bool HaveEqualParameters(ECN::IECInstanceCR lhs, ECN::IECInstanceCR rhs, bool compareOnlyInstanceParameters = true);
 
     //! Copy instance parameters from source to target
-    DGNPLATFORM_EXPORT void CopyInstanceParameters(ECN::IECInstanceR target, ECN::IECInstanceCR source);
+    void CopyInstanceParameters(ECN::IECInstanceR target, ECN::IECInstanceCR source);
 
     ComponentDef(DgnDbR db, ECN::ECClassCR componentDefClass);
     ~ComponentDef();
 
  public:
+    static Utf8String GetClassECSqlName(ECN::ECClassCR cls) {Utf8String ns(cls.GetSchema().GetNamespacePrefix()); return ns.append(".").append(cls.GetName());}
+    Utf8String GetClassECSqlName() const {return GetClassECSqlName(m_class);}
+
     //! @private - called only by componenteditor
-    DGNPLATFORM_EXPORT DgnDbStatus GenerateGeometry(ECN::IECInstanceCR variationSpec);
+    DGNPLATFORM_EXPORT DgnDbStatus GenerateElements(DgnModelR destModel, ECN::IECInstanceCR variationSpec);
+
+    //! Get the list of properties that are the main inputs to the component's element generator
+    DGNPLATFORM_EXPORT bvector<Utf8String> GetInputs() const;
+
+    //! Get the list of input properties in a form that can be put into a SQL SELECT statement
+    DGNPLATFORM_EXPORT Utf8String GetInputsForSelect() const;
 
     //! Get a list of all of the component definitions derived from the specified base class in the specified DgnDb
     //! @param[out] componentDefs    Where to return the results
@@ -991,7 +997,7 @@ struct ComponentDef : RefCountedBase
     //! Make a ComponentDef object
     //! @param db           The DgnDb that contains the component def
     //! @param componentDefClass   The ECClass that defines the component
-    //! @param status       If not null, an error code in case the component definition could not be returned
+    //! @param status       If not null, an error code in case of failure
     //! @note possible status values include:
     //! DgnDbStatus::BadModel - the component definition specifies a model, but the model does not exist in \a db
     //! DgnDbStatus::InvalidCategory - the component definition's category cannot be found in \a db
@@ -1008,25 +1014,38 @@ struct ComponentDef : RefCountedBase
     //! Make a ComponentDef object
     //! @param db           The DgnDb that contains the component def
     //! @param ecsqlClassName   The full ECSQL name of the ECClass that defines the component
-    //! @param status       If not null, an error code in case Create failed
+    //! @param status       If not null, an error code in case of failure
     //! @see FromECClass
     DGNPLATFORM_EXPORT static ComponentDefPtr FromECSqlName(DgnDbStatus* status, DgnDbR db, Utf8StringCR ecsqlClassName);
 
     //! Get the ComponentDef corresponding to the specified component instance
     //! @param instance     An element that might be an instance of a component
-    //! @param status       If not null, an error code in case the component definition could not be returned
+    //! @param status       If not null, an error code in case of failure
     //! @see FromECClass
     DGNPLATFORM_EXPORT static ComponentDefPtr FromInstance(DgnDbStatus* status, DgnElementCR instance);
 
     //! Get the ComponentDef corresponding to the specified ComponentModel
     //! @param model        A ComponentModel
-    //! @param status       If not null, an error code in case the component definition could not be returned
+    //! @param status       If not null, an error code in case of failure
     //! @see FromECClass
     DGNPLATFORM_EXPORT static ComponentDefPtr FromComponentModel(DgnDbStatus* status, ComponentModelCR model);
 
-    struct GeometryGenerator
+    //! Delete a component definition.
+    //! @param db           The DgnDb that contains the component def
+    //! @param ecsqlClassName   The full ECSQL name of the ECClass that defines the component
+    //! @return non-zero error status if \a componentDefClass is not a component definition class
+    //! @note All existing variations and instances are also deleted. The component def's work model is also deleted.
+    DGNPLATFORM_EXPORT static DgnDbStatus DeleteComponentDef(DgnDbR db, Utf8StringCR ecsqlClassName);
+
+    struct ElementGenerator
         {
-        virtual DgnDbStatus _GenerateGeometry(ECN::IECInstanceCR variationSpec) = 0;
+        //! Generate geometry
+        //! @param destModel The model where instances of this component will be placed
+        //! @param componentWorkModel The model where intermediate results may be written. Everything written to the work model will be harvested when instances are placed.
+        //! @param variationSpec The input parameters and their values
+        //! @param cdef The definition of the component that is to be instanced
+        //! @return non-zero error status if elements could not be generated
+        virtual DgnDbStatus _GenerateElements(DgnModelR destModel, DgnModelR componentWorkModel, ECN::IECInstanceCR variationSpec, ComponentDef& cdef) = 0;
         };
 
     //! Component parameter variation scope
@@ -1166,8 +1185,9 @@ private:
     Utf8String m_categoryName;
     Utf8String m_codeAuthorityName;
     Utf8String m_modelName;
+    Utf8String m_inputs;
     bvector<PropertySpec> m_propSpecs;
-
+    
     ECN::IECInstancePtr CreatePropSpecCA();
     ECN::IECInstancePtr CreateSpecCA();
     ECN::IECInstancePtr AddSpecCA(ECN::ECClassR);
@@ -1185,7 +1205,9 @@ public:
     //! Set the model name. The default is no model name, indicating that the component should use a temporary "sandbox" model.
     void SetModelName(Utf8StringCR n) {m_modelName=n;}
 
-    void AddPropertySpec(PropertySpec const& s) {m_propSpecs.push_back(s);}
+    void AddPropertySpec(PropertySpec const& s) {m_propSpecs.push_back(s); AddInput(s.m_name);}
+
+    DGNPLATFORM_EXPORT void AddInput(Utf8StringCR inp); //!< You can call this directly to mark existing (subclass) properties as inputs
 
     DGNPLATFORM_EXPORT ECN::ECClassCP GenerateECClass();
 };
