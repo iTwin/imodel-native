@@ -1736,11 +1736,12 @@ protected:
 struct ElementGroupsMembers : NonCopyableClass
 {
 public:
-    DGNPLATFORM_EXPORT static DgnDbStatus Insert(DgnElementCR group, DgnElementCR member);
+    DGNPLATFORM_EXPORT static DgnDbStatus Insert(DgnElementCR group, DgnElementCR member, int priority);
     DGNPLATFORM_EXPORT static DgnDbStatus Delete(DgnElementCR group, DgnElementCR member);
     DGNPLATFORM_EXPORT static bool HasMember(DgnElementCR group, DgnElementCR member);
     DGNPLATFORM_EXPORT static DgnElementIdSet QueryMembers(DgnElementCR group);
     DGNPLATFORM_EXPORT static DgnElementIdSet QueryGroups(DgnElementCR member);
+    DGNPLATFORM_EXPORT static int QueryMemberPriority(DgnElementCR group, DgnElementCR member);
 };
 
 //=======================================================================================
@@ -1760,6 +1761,9 @@ public:
     DgnElementIdSet QueryMembers() const {return ElementGroupsMembers::QueryMembers(*_ToGroupElement());}
     //! Returns true if this group has the specified member
     bool HasMemberElement(DgnElementCR member) const {return ElementGroupsMembers::HasMember(*_ToGroupElement(), member);}
+    //! Query for the priority of the specified member within this group
+    //! @return the priority or -1 in case of an error
+    int QueryMemberPriority(DgnElementCR member) const {return ElementGroupsMembers::QueryMemberPriority(*_ToGroupElement(), member);}
 };
 
 //=======================================================================================
@@ -1790,7 +1794,7 @@ protected:
 
 public:
     //! Add a member to this group
-    DgnDbStatus AddMember(T const& member) const
+    DgnDbStatus AddMember(T const& member, int priority=0) const
         {
         DgnElementCR groupElement = *_ToGroupElement();
         DgnElementCR memberElement = static_cast<DgnElementCR>(member); // see static_assert in constructor
@@ -1799,7 +1803,7 @@ public:
         if (DgnDbStatus::Success != status)
             return status;
 
-        status = ElementGroupsMembers::Insert(groupElement, memberElement);
+        status = ElementGroupsMembers::Insert(groupElement, memberElement, priority);
         if (DgnDbStatus::Success != status)
             return status;
 
