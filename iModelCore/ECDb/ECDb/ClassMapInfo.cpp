@@ -192,8 +192,22 @@ BentleyStatus ClassMapInfo::DoEvaluateMapStrategy(bool& baseClassesNotMappedYet,
             }
         else if (Enum::Intersects(parentStrategy.GetOptions(), ECDbMapStrategy::Options::JoinedTable | ECDbMapStrategy::Options::ParentOfJoinedTable))
             {
-            bool hasNoLocalProperties = GetECClass().GetPropertyCount(false) == 0;
-            if (Enum::Contains(parentStrategy.GetOptions(), ECDbMapStrategy::Options::ParentOfJoinedTable) && hasNoLocalProperties)
+            //parentClassMap->GetPropertyMaps()
+            //! Find out if there is any primitive property that need mapping. Simply loocking at local property count does not work with multi inheritence
+            bool requireTable = false;
+            for (auto property : GetECClass().GetProperties(true))
+                {
+                if (property->GetIsStructArray()) //skip struct array as they mapped to seperate table.
+                    continue;
+
+                if (parentClassMap->GetPropertyMap(property->GetName().c_str()) == nullptr)
+                    {
+                    requireTable = true; //There is atleast one property local or inherited that requrie mapping.
+                    break;
+                    }
+                }
+
+            if (Enum::Contains(parentStrategy.GetOptions(), ECDbMapStrategy::Options::ParentOfJoinedTable) && !requireTable)
                 options = options | ECDbMapStrategy::Options::ParentOfJoinedTable;
             else
                 {
