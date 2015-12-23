@@ -877,7 +877,7 @@ void GeometrySource::SetInSelectionSet(bool yesNo) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Shaun.Sewall                    04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-PhysicalElementPtr PhysicalElement::Create(PhysicalModelR model, DgnCategoryId categoryId)
+PhysicalElementPtr PhysicalElement::Create(SpatialModelR model, DgnCategoryId categoryId)
     {
     DgnClassId classId = model.GetDgnDb().Domains().GetClassId(dgn_ElementHandler::Physical::GetHandler());
 
@@ -1476,7 +1476,7 @@ DgnElementIdSet ElementGroupsMembers::QueryGroups(DgnElementCR member)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Shaun.Sewall                    12/2015
 //---------------------------------------------------------------------------------------
-SpatialGroupElementPtr SpatialGroupElement::Create(PhysicalModelR model, DgnCategoryId categoryId)
+SpatialGroupElementPtr SpatialGroupElement::Create(SpatialModelR model, DgnCategoryId categoryId)
     {
     DgnDbR db = model.GetDgnDb();
     DgnClassId classId = db.Domains().GetClassId(dgn_ElementHandler::SpatialGroup::GetHandler());

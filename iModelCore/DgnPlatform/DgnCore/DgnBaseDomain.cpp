@@ -25,12 +25,11 @@ TABLEHANDLER_DEFINE_MEMBERS(BeProperties)
 namespace dgn_ModelHandler
 {
 HANDLER_DEFINE_MEMBERS(Model)
-HANDLER_DEFINE_MEMBERS(Physical)
+HANDLER_DEFINE_MEMBERS(Spatial)
 HANDLER_DEFINE_MEMBERS(Component)
-HANDLER_DEFINE_MEMBERS(PhysicalRedline)
+HANDLER_DEFINE_MEMBERS(SpatialRedline)
 HANDLER_DEFINE_MEMBERS(Sheet)
 HANDLER_DEFINE_MEMBERS(Redline)
-HANDLER_DEFINE_MEMBERS(PlanarPhysical)
 HANDLER_DEFINE_MEMBERS(SectionDrawing)
 HANDLER_DEFINE_MEMBERS(StreetMap)
 HANDLER_DEFINE_MEMBERS(WebMercator)
@@ -79,14 +78,13 @@ DgnBaseDomain::DgnBaseDomain() : DgnDomain(DGN_ECSCHEMA_NAME, "Base DgnDb Domain
     RegisterHandler(dgn_AspectHandler::TextAnnotationDataHandler::GetHandler());
 
     RegisterHandler(dgn_ModelHandler::Model::GetHandler());
-    RegisterHandler(dgn_ModelHandler::Physical::GetHandler());
+    RegisterHandler(dgn_ModelHandler::Spatial::GetHandler());
     RegisterHandler(dgn_ModelHandler::Component::GetHandler());
     RegisterHandler(dgn_ModelHandler::Model2d::GetHandler());
     RegisterHandler(dgn_ModelHandler::Sheet::GetHandler());
-    RegisterHandler(dgn_ModelHandler::PlanarPhysical::GetHandler());
     RegisterHandler(dgn_ModelHandler::SectionDrawing::GetHandler());
     RegisterHandler(dgn_ModelHandler::Redline::GetHandler());
-    RegisterHandler(dgn_ModelHandler::PhysicalRedline::GetHandler());
+    RegisterHandler(dgn_ModelHandler::SpatialRedline::GetHandler());
     RegisterHandler(dgn_ModelHandler::WebMercator::GetHandler());
     RegisterHandler(dgn_ModelHandler::StreetMap::GetHandler());
     RegisterHandler(dgn_ModelHandler::Definition::GetHandler());
@@ -101,7 +99,7 @@ DgnBaseDomain::DgnBaseDomain() : DgnDomain(DGN_ECSCHEMA_NAME, "Base DgnDb Domain
     RegisterHandler(dgn_ElementHandler::SpatialGroup::GetHandler());
     RegisterHandler(dgn_ElementHandler::VolumeElementHandler::GetHandler());
     RegisterHandler(dgn_ElementHandler::TextAnnotationHandler::GetHandler());
-    RegisterHandler(dgn_ElementHandler::PhysicalTextAnnotationHandler::GetHandler());
+    RegisterHandler(dgn_ElementHandler::SpatialTextAnnotationHandler::GetHandler());
     RegisterHandler(dgn_ElementHandler::AnnotationTableHandler::GetHandler());
     RegisterHandler(dgn_ElementHandler::Material::GetHandler());
     RegisterHandler(dgn_ElementHandler::Texture::GetHandler());
@@ -116,7 +114,7 @@ DgnBaseDomain::DgnBaseDomain() : DgnDomain(DGN_ECSCHEMA_NAME, "Base DgnDb Domain
     RegisterHandler(dgn_ElementHandler::AnnotationLeaderStyleHandler::GetHandler());
     RegisterHandler(dgn_ElementHandler::TextAnnotationSeedHandler::GetHandler());
 
-    RegisterHandler(dgn_ElementHandler::PhysicalViewDef::GetHandler());
+    RegisterHandler(dgn_ElementHandler::SpatialViewDef::GetHandler());
     RegisterHandler(dgn_ElementHandler::CameraViewDef::GetHandler());
     RegisterHandler(dgn_ElementHandler::DrawingViewDef::GetHandler());
     RegisterHandler(dgn_ElementHandler::SheetViewDef::GetHandler());

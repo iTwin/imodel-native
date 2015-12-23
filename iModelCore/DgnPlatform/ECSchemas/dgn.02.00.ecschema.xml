@@ -173,23 +173,17 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
         <BaseClass>GeometricModel</BaseClass>
         <ECProperty propertyName="GlobalOrigin" displayLabel="Global Origin" typeName="point2d" />
     </ECClass>
-    <ECClass typeName="PhysicalModel" isDomainClass="True">
+    <ECClass typeName="SpatialModel" isDomainClass="True">
         <ECCustomAttributes>
             <ClassHasHandler xmlns="dgn.02.00" />
         </ECCustomAttributes>
         <BaseClass>Model3d</BaseClass>
     </ECClass>
-    <ECClass typeName="PlanarPhysicalModel" isDomainClass="True">
-        <ECCustomAttributes>
-            <ClassHasHandler xmlns="dgn.02.00" />
-        </ECCustomAttributes>
-        <BaseClass>Model2d</BaseClass>
-    </ECClass>
     <ECClass typeName="SectionDrawingModel" isDomainClass="True">
         <ECCustomAttributes>
             <ClassHasHandler xmlns="dgn.02.00" />
         </ECCustomAttributes>
-        <BaseClass>PlanarPhysicalModel</BaseClass>
+        <BaseClass>Model2d</BaseClass>
     </ECClass>
     <ECClass typeName="SheetModel" isDomainClass="True">
         <ECCustomAttributes>
@@ -204,11 +198,11 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
         </ECCustomAttributes>
         <BaseClass>SheetModel</BaseClass>
     </ECClass>
-    <ECClass typeName="PhysicalRedlineModel" isDomainClass="True">
+    <ECClass typeName="SpatialRedlineModel" isDomainClass="True">
         <ECCustomAttributes>
             <ClassHasHandler xmlns="dgn.02.00" />
         </ECCustomAttributes>
-        <BaseClass>PhysicalModel</BaseClass>
+        <BaseClass>SpatialModel</BaseClass>
     </ECClass>
     <ECClass typeName="ComponentModel" isDomainClass="True">
         <ECCustomAttributes>
@@ -232,7 +226,7 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
         <ECCustomAttributes>
             <ClassHasHandler xmlns="dgn.02.00" />
         </ECCustomAttributes>
-        <BaseClass>PhysicalModel</BaseClass>
+        <BaseClass>SpatialModel</BaseClass>
     </ECClass>
     <ECClass typeName="StreetMapModel" isDomainClass="True" >
         <ECCustomAttributes>
@@ -438,11 +432,11 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
         </ECCustomAttributes>
         <BaseClass>AnnotationElement</BaseClass>
     </ECClass>
-    <ECClass typeName="PhysicalTextAnnotationElement" isDomainClass="True">
+    <ECClass typeName="SpatialTextAnnotationElement" isDomainClass="True">
         <ECCustomAttributes>
             <ClassHasHandler xmlns="dgn.02.00" />
         </ECCustomAttributes>
-        <BaseClass>PhysicalElement</BaseClass>
+        <BaseClass>SpatialElement</BaseClass>
     </ECClass>
 
     <ECClass typeName="AnnotationTableElement" isDomainClass="True">
@@ -1059,14 +1053,14 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
         </Target>
     </ECRelationshipClass>
 
-    <ECClass typeName="PhysicalViewDefinition" isDomainClass="True">
+    <ECClass typeName="SpatialViewDefinition" isDomainClass="True">
         <BaseClass>ViewDefinition</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="dgn.02.00" />
         </ECCustomAttributes>
     </ECClass>
     <ECClass typeName="CameraViewDefinition" isDomainClass="True">
-        <BaseClass>PhysicalViewDefinition</BaseClass>
+        <BaseClass>SpatialViewDefinition</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="dgn.02.00" />
         </ECCustomAttributes>
