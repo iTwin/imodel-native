@@ -423,6 +423,7 @@ struct DTMStrokeForCacheShadedTriangles : IDTMStrokeForCache
                         }
                     else
                         {
+                        fenceType = DTMFenceType::None;
                         DTMFenceParams fence (fenceType, DTMFenceOption::Overlap, (DPoint3d*)fencePts, nbPts);
                         DTMMeshEnumeratorPtr en = DTMMeshEnumerator::Create (*bcDTM);
                         en->SetFence (fence);
