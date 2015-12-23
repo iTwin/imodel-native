@@ -53,6 +53,10 @@
 #endif
 
 
+#include <thread>
+#include <mutex>
+#include <condition_variable>
+
 #include <Geom/GeomApi.h>
 #include <BeXml/BeXml.h>
 #include <GeoCoord/BaseGeoCoord.h>
