@@ -263,7 +263,6 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnDomain : NonCopyableClass
         virtual Handler* _CreateMissingHandler(uint64_t restrictions, Utf8StringCR domainName, Utf8StringCR className) { return new MissingHandler<Handler>(restrictions, domainName, className, *this); }
         virtual uint64_t _ParseRestrictedAction(Utf8CP restriction) const { return RestrictedAction::Parse(restriction); }
 
-        Handler* GetRootClass();
     public:
         //! To enable version-checking for your handler, override this method to report the
         //! API version that was used to compiler your handler.
@@ -274,6 +273,7 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnDomain : NonCopyableClass
         virtual uint32_t _GetApiVersion() {return API_VERSION;}
 
         Handler* GetSuperClass() const {return m_superClass;}
+        Handler* GetRootClass();
 
         //! Get the name of the ECClass handled by this Handler
         Utf8StringCR GetClassName() const {return m_ecClassName;}

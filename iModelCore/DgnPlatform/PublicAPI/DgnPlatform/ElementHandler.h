@@ -151,7 +151,9 @@ namespace dgn_AspectHandler
     {
         friend struct DgnElement;
         DOMAINHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_ElementAspect, Aspect, DgnDomain::Handler, DGNPLATFORM_EXPORT)
-
+    protected:
+        DGNPLATFORM_EXPORT virtual DgnDbStatus _VerifySchema(DgnDomains&) override;
+    public:
         //! The subclass must override this method in order to create an instance using its default constructor.
         //! (The caller will populate and/or persist the returned instance by invoking virtual methods on it.)
         virtual RefCountedPtr<DgnElement::Aspect> _CreateInstance() {return nullptr;}

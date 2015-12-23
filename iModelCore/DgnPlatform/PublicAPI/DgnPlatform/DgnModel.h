@@ -55,6 +55,12 @@ struct DgnElementMap : bmap<DgnElementId, DgnElementCPtr>
 @ref PAGE_ModelOverview
 */
 
+#define DGNMODEL_DECLARE_MEMBERS(__ECClassName__,__superclass__)\
+    private: typedef __superclass__ T_Super;\
+    public: static Utf8CP MyECClassName() {return __ECClassName__;}\
+    protected:  virtual Utf8CP _GetECClassName() const override {return MyECClassName();}\
+                virtual Utf8CP _GetSuperECClassName() const override {return T_Super::_GetECClassName();}
+
 //=======================================================================================
 //! A DgnModel represents a model in memory and may hold references to elements that belong to it.
 //! @ingroup DgnModelGroup
@@ -392,6 +398,9 @@ protected:
 
     DGNPLATFORM_EXPORT virtual DgnDbStatus _SetCode(Code const& code);
 public:
+    virtual Utf8CP _GetECClassName() const { return DGN_CLASSNAME_Model; }
+    virtual Utf8CP _GetSuperECClassName() const { return nullptr; }
+
     DGNPLATFORM_EXPORT ModelHandlerR GetModelHandler() const;
     DgnRangeTree* GetRangeIndexP(bool create) const {return _GetRangeIndexP(create);}
 
@@ -604,7 +613,7 @@ public:
 struct EXPORT_VTABLE_ATTRIBUTE GeometricModel : DgnModel
 {
     DEFINE_T_SUPER(DgnModel);
-
+public:
     //=======================================================================================
     //! The DisplayInfo for a DgnModel. These are stored within a "DisplayInfo"
     //! node of the JSON value that's serialized as a string in "Properties" column of the DgnModel table.
@@ -795,7 +804,7 @@ public:
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE DgnModel3d : GeometricModel
 {
-    DEFINE_T_SUPER(GeometricModel)
+    DEFINE_T_SUPER(GeometricModel);
 
 protected:
     virtual DgnModel3dCP _ToDgnModel3d() const override {return this;}
@@ -812,7 +821,7 @@ public:
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE DgnModel2d : GeometricModel
     {
-    DEFINE_T_SUPER(GeometricModel)
+    DGNMODEL_DECLARE_MEMBERS(DGN_CLASSNAME_Model2d, GeometricModel);
 
 protected:
     DgnModel2dCP _ToDgnModel2d() const override {return this;}
@@ -833,7 +842,7 @@ public:
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE PhysicalModel : DgnModel3d
 {
-    DEFINE_T_SUPER(DgnModel3d)
+    DGNMODEL_DECLARE_MEMBERS(DGN_CLASSNAME_PhysicalModel, DgnModel3d);
 protected:
     PhysicalModelCP _ToPhysicalModel() const override {return this;}
     CoordinateSpace _GetCoordinateSpace() const override {return CoordinateSpace::World;}
@@ -849,7 +858,7 @@ public:
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE DefinitionModel : DgnModel
 {
-    DEFINE_T_SUPER(DgnModel);
+    DGNMODEL_DECLARE_MEMBERS(DGN_CLASSNAME_DefinitionModel, DgnModel);
 protected:
     DefinitionModelCP _ToDefinitionModel() const override {return this;}
     DGNPLATFORM_EXPORT virtual DgnDbStatus _OnInsertElement(DgnElementR element) override;
@@ -872,7 +881,7 @@ public:
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE DictionaryModel : DefinitionModel
 {
-    DEFINE_T_SUPER(DefinitionModel);
+    DGNMODEL_DECLARE_MEMBERS(DGN_CLASSNAME_DictionaryModel, DefinitionModel);
 protected:
     virtual DgnDbStatus _OnDelete() override { return DgnDbStatus::WrongModel; }
     virtual void _OnDeleted() override { BeAssert(false && "The dictionary model cannot be deleted"); }
@@ -890,7 +899,7 @@ public:
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE SystemModel : DgnModel
 {
-    DEFINE_T_SUPER(DgnModel);
+    DGNMODEL_DECLARE_MEMBERS(DGN_CLASSNAME_SystemModel, DgnModel);
 
 protected:
     SystemModelCP _ToSystemModel() const override {return this;}
@@ -919,7 +928,7 @@ public:
 struct EXPORT_VTABLE_ATTRIBUTE ComponentModel : DgnModel3d
 {
 private:
-    DEFINE_T_SUPER(DgnModel3d)
+    DGNMODEL_DECLARE_MEMBERS(DGN_CLASSNAME_ComponentModel, DgnModel3d);
 
     struct CompProps
         {
@@ -1264,7 +1273,7 @@ public:
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE PlanarPhysicalModel : DgnModel2d
 {
-    DEFINE_T_SUPER(DgnModel2d)
+    DGNMODEL_DECLARE_MEMBERS(DGN_CLASSNAME_PlanarPhysicalModel, DgnModel2d);
 
 protected:
     PlanarPhysicalModelCP _ToPlanarPhysicalModel() const override {return this;}
@@ -1292,7 +1301,7 @@ public:
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE SectionDrawingModel : PlanarPhysicalModel
 {
-    DEFINE_T_SUPER(PlanarPhysicalModel)
+    DGNMODEL_DECLARE_MEMBERS(DGN_CLASSNAME_SectionDrawingModel, PlanarPhysicalModel);
 protected:
     DGNPLATFORM_EXPORT virtual DgnDbStatus _OnInsertElement(DgnElementR element) override;
 public:
@@ -1308,8 +1317,8 @@ public:
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE SheetModel : DgnModel2d
 {
-    DEFINE_T_SUPER(DgnModel2d)
-
+    DGNMODEL_DECLARE_MEMBERS(DGN_CLASSNAME_SheetModel, DgnModel2d);
+public:
     struct CreateParams : DgnModel2d::CreateParams
     {
         DEFINE_T_SUPER(DgnModel2d::CreateParams);
@@ -1387,6 +1396,7 @@ namespace dgn_ModelHandler
         ModelHandlerP _ToModelHandler() override {return this;}
         virtual DgnModelP _CreateInstance(DgnModel::CreateParams const& params) {return nullptr;}
         virtual uint64_t _ParseRestrictedAction(Utf8CP name) const override { return DgnModel::RestrictedAction::Parse(name); }
+        DGNPLATFORM_EXPORT virtual DgnDbStatus _VerifySchema(DgnDomains&) override;
 
         //! Add the names of any subclass properties used by ECSql INSERT, UPDATE, and/or SELECT statements to the ECSqlClassParams list.
         //! If you override this method, you @em must invoke T_Super::_GetClassParams().

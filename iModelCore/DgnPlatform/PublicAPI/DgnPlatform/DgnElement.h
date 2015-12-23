@@ -242,7 +242,8 @@ typedef QvElemSet<QvKey32> T_QvElemSet;
     public:     static Utf8CP MyECSchemaName() {return __ECSchemaName__;}\
                 static Utf8CP MyECClassName() {return __ECClassName__;}\
     protected:  virtual Utf8CP _GetECSchemaName() const override {return MyECSchemaName();}\
-                virtual Utf8CP _GetECClassName() const override {return MyECClassName();}
+                virtual Utf8CP _GetECClassName() const override {return MyECClassName();}\
+                virtual Utf8CP _GetSuperECClassName() const override {return T_Super::_GetECClassName();}
 
 //=======================================================================================
 //! An instance of a DgnElement in memory. DgnElements are the building blocks for a DgnDb.
@@ -388,7 +389,10 @@ public:
         virtual Utf8CP _GetECSchemaName() const = 0;
 
         //! The subclass must implement this method to return the name of the class that defines the aspect.
-        virtual Utf8CP _GetECClassName() const = 0;
+        virtual Utf8CP _GetECClassName() const { return DGN_CLASSNAME_ElementAspect; }
+
+        //! The subclass must implement this method to return the name of the superclass
+        virtual Utf8CP _GetSuperECClassName() const { return nullptr; }
 
         //! The subclass must implement this method to report an existing instance on the host element that this instance will replace.
         virtual BeSQLite::EC::ECInstanceKey _QueryExistingInstanceKey(DgnElementCR) = 0;
@@ -410,6 +414,9 @@ public:
         virtual DgnDbStatus _LoadProperties(DgnElementCR el) = 0;
 
     public:
+        Utf8CP GetECClassName() const { return _GetECClassName(); }
+        Utf8CP GetSuperECClassName() const { return _GetSuperECClassName(); }
+
         //! Prepare to delete this aspect.
         //! @note The aspect will not actually be deleted in the Db until you call DgnElements::Update on the aspect's host element.
         void Delete() {m_changeType = ChangeType::Delete;}
@@ -979,6 +986,9 @@ protected:
 
 public:
     static Utf8CP MyECClassName() {return DGN_CLASSNAME_Element;}
+    Utf8CP GetECClassName() const {return _GetECClassName();}
+    Utf8CP GetSuperECClassName() const {return _GetSuperECClassName();}
+
 
     DGNPLATFORM_EXPORT void AddRef() const;  //!< @private
     DGNPLATFORM_EXPORT void Release() const; //!< @private
