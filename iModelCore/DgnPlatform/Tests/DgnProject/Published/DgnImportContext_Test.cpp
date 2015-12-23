@@ -10,6 +10,8 @@
 #include "../TestFixture/DgnDbTestFixtures.h"
 #include <DgnPlatform/DgnMaterial.h>
 #include <DgnPlatform/DgnTexture.h>
+#include <DgnPlatform/DgnFontData.h>
+#include <DgnPlatform/Annotations/TextAnnotationElement.h>
 
 USING_NAMESPACE_BENTLEY_SQLITE
 USING_NAMESPACE_BENTLEY_DPTEST
@@ -695,3 +697,106 @@ TEST_F(ImportTest, ImportElementsWithDependencies)
     }
 }
 
+#if defined (BENTLEY_WIN32) // Relies on getting fonts from the OS; this is Windows Desktop-only.
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Jeff.Marker     12/2015
+//---------------------------------------------------------------------------------------
+TEST_F(ImportTest, ElementGeomIOCausesFontRemap)
+    {
+    //.............................................................................................
+    DgnDbPtr db1;
+    DgnDbTestFixture::OpenDb(db1, DgnDbTestFixture::CopyDb(L"DgnDb/3dMetricGeneral.idgndb", L"ImportTest.ElementGeomIOCausesFontRemap-1.dgndb"), DgnDb::OpenMode::ReadWrite, true);
+    ASSERT_TRUE(db1.IsValid());
+
+    DgnFontPtr db1_font = DgnFontPersistence::OS::FromGlobalTrueTypeRegistry("Arial");
+    ASSERT_TRUE(db1_font.IsValid());
+    DgnFontId db1_fontId = db1->Fonts().AcquireId(*db1_font);
+    ASSERT_TRUE(db1_fontId.IsValid());
+    
+    BentleyStatus db1_fontEmbedStatus = DgnFontPersistence::Db::Embed(db1->Fonts().DbFaceData(), *db1_font);
+    ASSERT_TRUE(SUCCESS == db1_fontEmbedStatus);
+
+    BentleyApi::ECN::ECClassCP db1_physicalClass = db1->Schemas().GetECClass(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_PhysicalElement);
+    BeAssert(nullptr != db1_physicalClass);
+    DgnClassId db1_physicalDgnClass = DgnClassId(db1_physicalClass->GetId());
+    BeAssert(db1_physicalDgnClass.IsValid());
+
+    TextStringPtr db1_text = TextString::Create();
+    db1_text->SetText("ImportTest.ElementGeomIOCausesFontRemap-1");
+    db1_text->GetStyleR().SetFont(*db1_font);
+    db1_text->GetStyleR().SetHeight(1.0);
+
+    PhysicalElementPtr db1_element = PhysicalElement::Create(PhysicalElement::CreateParams(*db1, db1->Models().QueryFirstModelId(), db1_physicalDgnClass, DgnCategory::QueryFirstCategoryId(*db1)));
+    ElementGeometryBuilderPtr db1_builder = ElementGeometryBuilder::CreateWorld(*db1->Models().GetModel(db1->Models().QueryFirstModelId()), DgnCategory::QueryFirstCategoryId(*db1));
+    db1_builder->Append(*db1_text);
+    db1_builder->SetGeomStreamAndPlacement(*db1_element->ToGeometrySourceP());
+
+    DgnElementCPtr db1_insertedElement = db1_element->Insert();
+    ASSERT_TRUE(db1_insertedElement.IsValid());
+    DgnElementId db1_elementId = db1_insertedElement->GetElementId();
+    ASSERT_TRUE(db1_insertedElement.IsValid());
+
+    db1->SaveChanges();
+
+    //.............................................................................................
+    DgnDbPtr db2;
+    DgnDbTestFixture::OpenDb(db2, DgnDbTestFixture::CopyDb(L"DgnDb/3dMetricGeneral.idgndb", L"ImportTest.ElementGeomIOCausesFontRemap-2.dgndb"), DgnDb::OpenMode::ReadWrite, true);
+    ASSERT_TRUE(db2.IsValid());
+
+    ASSERT_TRUE(nullptr == db2->Fonts().FindFontByTypeAndName(db1_font->GetType(), db1_font->GetName().c_str()));
+
+    DgnModelPtr db2_destModel = db2->Models().GetModel(db2->Models().QueryFirstModelId());
+    ASSERT_TRUE(db2_destModel.IsValid());
+
+    DgnImportContext import1to2(*db1, *db2);
+    DgnDbStatus import1to2Status = DgnDbStatus::BadArg;
+    DgnElementCPtr db2_insertedElement = db1_insertedElement->Import(&import1to2Status, *db2_destModel, import1to2);
+    ASSERT_TRUE(DgnDbStatus::Success == import1to2Status);
+    ASSERT_TRUE(db2_insertedElement.IsValid());
+
+    ASSERT_TRUE(nullptr != db2->Fonts().FindFontByTypeAndName(db1_font->GetType(), db1_font->GetName().c_str()));
+
+    db2->SaveChanges();
+
+    //.............................................................................................
+    DgnDbPtr db3;
+    DgnDbTestFixture::OpenDb(db3, DgnDbTestFixture::CopyDb(L"DgnDb/3dMetricGeneral.idgndb", L"ImportTest.ElementGeomIOCausesFontRemap-3.dgndb"), DgnDb::OpenMode::ReadWrite, true);
+    ASSERT_TRUE(db3.IsValid());
+
+    ASSERT_TRUE(nullptr == db3->Fonts().FindFontByTypeAndName(db1_font->GetType(), db1_font->GetName().c_str()));
+
+    DgnFontPtr db3_font = DgnFontPersistence::OS::FromGlobalTrueTypeRegistry("Courier New");
+    ASSERT_TRUE(db3_font.IsValid());
+    DgnFontId db3_fontId = db3->Fonts().AcquireId(*db3_font);
+    ASSERT_TRUE(db3_fontId.IsValid());
+
+    auto db3_fontIter1 = db3->Fonts().DbFontMap().MakeIterator();
+    size_t db3_numFonts = 0;
+    for (auto iter = db3_fontIter1.begin(); iter != db3_fontIter1.end(); ++iter)
+        ++db3_numFonts;
+
+    EXPECT_TRUE(db3_numFonts > 0);
+
+    DgnModelPtr db3_destModel = db3->Models().GetModel(db3->Models().QueryFirstModelId());
+    ASSERT_TRUE(db3_destModel.IsValid());
+
+    DgnImportContext import1to3(*db1, *db3);
+    DgnDbStatus import1to3Status = DgnDbStatus::BadArg;
+    DgnElementCPtr db3_insertedElement = db1_insertedElement->Import(&import1to3Status, *db3_destModel, import1to3);
+    ASSERT_TRUE(DgnDbStatus::Success == import1to3Status);
+    ASSERT_TRUE(db3_insertedElement.IsValid());
+
+    ASSERT_TRUE(nullptr != db3->Fonts().FindFontByTypeAndName(db1_font->GetType(), db1_font->GetName().c_str()));
+
+    auto db3_fontIter2 = db3->Fonts().DbFontMap().MakeIterator();
+    size_t db3_numFonts2 = 0;
+    for (auto iter = db3_fontIter2.begin(); iter != db3_fontIter2.end(); ++iter)
+        ++db3_numFonts2;
+
+    ASSERT_TRUE((db3_numFonts + 1) == db3_numFonts2);
+
+    db3->SaveChanges();
+    }
+
+#endif

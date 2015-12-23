@@ -5,8 +5,7 @@
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-
-#ifdef BENTLEY_WIN32
+#if !defined(BENTLEYCONFIG_OS_ANDROID) && !defined(BENTLEYCONFIG_OS_APPLE_IOS) && !defined(BENTLEYCONFIG_OS_WINRT)
 
 #include "../TestFixture/DgnDbTestFixtures.h"
 

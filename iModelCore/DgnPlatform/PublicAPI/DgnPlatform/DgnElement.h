@@ -39,6 +39,7 @@ protected:
     bmap<DgnElementId, DgnElementId> m_elementId;
     bmap<DgnClassId, DgnClassId> m_classId;
     bmap<DgnAuthorityId, DgnAuthorityId> m_authorityId;
+    bmap<DgnFontId, DgnFontId> m_fontId;
 
     template<typename T> T Find(bmap<T,T> const& table, T sourceId) const {auto i = table.find(sourceId); return (i == table.end())? T(): i->second;}
     template<typename T> T FindElement(T sourceId) const {return T(Find<DgnElementId>(m_elementId, sourceId).GetValueUnchecked());}
@@ -60,6 +61,8 @@ public:
     DgnTextureId Add(DgnTextureId sourceId, DgnTextureId targetId) {return DgnTextureId((m_elementId [sourceId] = targetId).GetValueUnchecked()); }
     DgnStyleId Find(DgnStyleId sourceId) const {return FindElement<DgnStyleId>(sourceId);}
     DgnStyleId Add(DgnStyleId sourceId, DgnStyleId targetId) {return DgnStyleId((m_elementId [sourceId] = targetId).GetValueUnchecked()); }
+    DgnFontId Find(DgnFontId sourceId) const { return Find<DgnFontId>(m_fontId, sourceId); }
+    DgnFontId Add(DgnFontId sourceId, DgnFontId targetId) { return m_fontId[sourceId] = targetId; }
 
     DgnSubCategoryId Find(DgnSubCategoryId sourceId) const {return FindElement<DgnSubCategoryId>(sourceId);}
     DgnSubCategoryId Add(DgnSubCategoryId sourceId, DgnSubCategoryId targetId) {return DgnSubCategoryId((m_elementId[sourceId] = targetId).GetValueUnchecked());}
@@ -163,6 +166,8 @@ public:
     //! Look up a copy of a Material
     //! Make sure that any ids referenced by the supplied GeomStream have been imported
     DGNPLATFORM_EXPORT DgnDbStatus RemapGeomStreamIds(GeomStreamR geom);
+    //! Remap a font between databases. If it exists by-type and -name, the ID is simply remapped; if not, a deep copy is made. If a deep copy is made and the source database contained the font data, the font data is also deep copied.
+    DGNPLATFORM_EXPORT DgnFontId RemapFont(DgnFontId);
     //! @}
 
     //! @name GCS coordinate system shift
