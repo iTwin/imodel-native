@@ -1182,7 +1182,7 @@ ECSqlClassInfo const& dgn_ModelHandler::Model::GetECSqlClassInfo()
     if (!m_classInfo.IsInitialized())
         {
         Utf8String fullClassName("[");
-        fullClassName.append(GetDomain().GetDomainName()).append("].[").append(GetClassName()).append(1, ']');
+        fullClassName.append(_GetDomainName()).append("].[").append(GetClassName()).append(1, ']');
 
         ECSqlClassParams classParams;
         _GetClassParams(classParams);

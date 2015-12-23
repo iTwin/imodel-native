@@ -364,7 +364,9 @@ DgnDomain::Handler* DgnDomains::FindHandler(DgnClassId handlerId, DgnClassId bas
             if (BE_SQLITE_ROW == stmt.Step())
                 restrictions = stmt.GetValueUInt64(0);
 
-            handler = handler->_CreateMissingHandler(restrictions);
+            ECN::ECClassCP ecClass = m_dgndb.Schemas().GetECClass(handlerId.GetValue());
+            BeAssert(nullptr != ecClass && "It is impossible to end up here with a null ECClass unless the preceding code was later modified");
+            handler = handler->_CreateMissingHandler(restrictions, ecClass->GetSchema().GetName(), ecClass->GetName());
             BeAssert(nullptr != handler);
             }
 
