@@ -395,15 +395,9 @@ void ComponentModelTest::Client_ImportComponentDef(Utf8CP componentName)
 
     m_componentDb->Schemas().GetECSchema(TEST_JS_NAMESPACE, true);
 
-    SpatialModelPtr sourceCatalogModel = getModelByName<SpatialModel>(*m_componentDb, "Catalog");
-    ASSERT_TRUE(sourceCatalogModel.IsValid());
-
-    SpatialModelPtr catalogModel = getModelByName<SpatialModel>(*m_clientDb, "Catalog");
-    if (!catalogModel.IsValid())
-        createSpatialModel(catalogModel, *m_clientDb, DgnModel::CreateModelCode("Catalog"));
-
-    ASSERT_TRUE(catalogModel.IsValid());
-    
+    //  ------------------------
+    //  Copy in the ComponentDef's ECClass
+    //  ------------------------
     ComponentDefPtr sourceCdef = ComponentDef::FromECSqlName(nullptr, *m_componentDb, Utf8PrintfString("%s.%s", TEST_JS_NAMESPACE, componentName));
 
     DgnImportContext ctx(*m_componentDb, *m_clientDb);
@@ -412,6 +406,18 @@ void ComponentModelTest::Client_ImportComponentDef(Utf8CP componentName)
     ComponentDefPtr importedCdef = ComponentDef::FromECSqlName(nullptr, *m_clientDb, Utf8PrintfString("%s.%s", TEST_JS_NAMESPACE, componentName));
     ASSERT_TRUE(importedCdef.IsValid());
     
+    //  ------------------------
+    //  Copy in the variations
+    //  ------------------------
+    SpatialModelPtr sourceCatalogModel = getModelByName<SpatialModel>(*m_componentDb, "Catalog");
+    ASSERT_TRUE(sourceCatalogModel.IsValid());
+
+    SpatialModelPtr catalogModel = getModelByName<SpatialModel>(*m_clientDb, "Catalog");
+    if (!catalogModel.IsValid())
+        createSpatialModel(catalogModel, *m_clientDb, DgnModel::CreateModelCode("Catalog"));
+
+    ASSERT_TRUE(catalogModel.IsValid());
+
     bvector<DgnElementId> originalVariations, importedVariations;
     sourceCdef->QueryVariations(originalVariations, sourceCatalogModel->GetModelId());
     importedCdef->QueryVariations(importedVariations, catalogModel->GetModelId());
@@ -822,5 +828,61 @@ TEST_F(ComponentModelTest, SimulateDeveloperAndClientWithNesting)
 
     Client_CheckNestedInstance(*instanceElement, TEST_GADGET_COMPONENT_NAME, 1);
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+static ECN::ECClassCP generateECClass(DgnDbR db, ECN::ECSchemaR schema, Utf8CP className, ECN::ECClassCR baseClass)
+    {
+    schema.AddReferencedSchema(const_cast<ECN::ECSchemaR>(baseClass.GetSchema()));
+
+    ECN::ECEntityClassP ecclass;      
+    if (ECN::ECObjectsStatus::Success != schema.CreateEntityClass(ecclass, className))
+        return nullptr;
+
+    if (ECN::ECObjectsStatus::Success != ecclass->AddBaseClass(baseClass))
+        return nullptr;
+
+    ECN::PrimitiveECPropertyP ecprop;
+    if (ECN::ECObjectsStatus::Success != ecclass->CreatePrimitiveProperty(ecprop, "X"))
+        return nullptr;
+
+    ecprop->SetType(ECN::PRIMITIVETYPE_Double);
+
+    return ecclass;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      12/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+#ifdef COMMENT_OUT // *** will fail with an assertion failure in ECDbMap::TryGetClassMap
+TEST(SchemaImportTest, SelectAfterImport)
+    {
+    Dgn::ScopedDgnHost host;
+
+    BeFileName componentDbName = copyDb(L"DgnDb/3dMetricGeneral.idgndb", L"ComponentModelTest_ImportTwoInARow.dgndb");
+    DgnDbPtr db;
+    openDb(db, componentDbName, DgnDb::OpenMode::ReadWrite);
+
+    if (true)
+        {
+        ECN::ECSchemaPtr schema;
+        ASSERT_EQ( ECN::ECObjectsStatus::Success , ECN::ECSchema::CreateSchema(schema, "ImportTwoInARow", 0, 0) );
+        schema->SetNamespacePrefix("tir");
+
+        ECN::ECClassCP baseClass = db->Schemas().GetECClass(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_PhysicalElement);
+
+        ASSERT_TRUE( nullptr != generateECClass(*db, *schema, "C1", *baseClass) );
+
+        ComponentDefCreator::ImportSchema(*db, *schema, false);
+        }
+
+    EC::ECSqlStatement selectC1after;
+    selectC1after.Prepare(*db, "SELECT ECInstanceId FROM tir.C1");
+    selectC1after.Step();
+
+    db->SaveChanges();
+    }
+#endif
 
 #endif //ndef BENTLEYCONFIG_NO_JAVASCRIPT

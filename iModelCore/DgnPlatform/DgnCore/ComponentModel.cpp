@@ -967,6 +967,21 @@ void ComponentDef::CopyInstanceParameters(ECN::IECInstanceR target, ECN::IECInst
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
+static ECN::ECSchemaPtr copyECSchema(ECN::ECSchemaCR schemaIn)
+    {
+    ECN::ECSchemaPtr cc;
+    if (ECN::ECObjectsStatus::Success != schemaIn.CopySchema(cc))
+        return nullptr;
+    if (ECN::ECObjectsStatus::Success != cc->SetName(schemaIn.GetName()))
+        return nullptr;
+    if (ECN::ECObjectsStatus::Success != cc->SetNamespacePrefix(schemaIn.GetNamespacePrefix()))
+        return nullptr;
+    return cc;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
 static ECN::ECSchemaCP importECSchema(ECN::ECObjectsStatus& ecstatus, DgnDbR db, ECN::ECSchemaCR schemaIn, bool updateExistingSchemas)
     {
     ECN::ECSchemaCP existing = db.Schemas().GetECSchema(schemaIn.GetName().c_str());
@@ -982,10 +997,7 @@ static ECN::ECSchemaCP importECSchema(ECN::ECObjectsStatus& ecstatus, DgnDbR db,
 
     ECDbSchemaManager::ImportOptions options(false, updateExistingSchemas);
 
-    ECN::ECSchemaPtr imported;
-    ECSUCCESS(schemaIn.CopySchema(imported));
-    ECSUCCESS(imported->SetName(schemaIn.GetName()));
-    ECSUCCESS(imported->SetNamespacePrefix(schemaIn.GetNamespacePrefix()));
+    ECN::ECSchemaPtr imported = copyECSchema(schemaIn);
 
     ECN::ECSchemaReadContextPtr contextPtr = ECN::ECSchemaReadContext::CreateContext();
     ECSUCCESS(contextPtr->AddSchema(*imported));
@@ -995,7 +1007,8 @@ static ECN::ECSchemaCP importECSchema(ECN::ECObjectsStatus& ecstatus, DgnDbR db,
         return nullptr;
         }
 
-    db.Schemas().CreateECClassViewsInDb();
+    if (nullptr == existing)    // Don't call CreateECClassViewsInDb twice!
+        db.Schemas().CreateECClassViewsInDb();
 
     return imported.get();  // DgnDb holds a reference to the schema now.
     }
@@ -1028,15 +1041,15 @@ DgnDbStatus ComponentDef::Export(DgnImportContext& context, bool exportSchema, b
         return DgnDbStatus::WrongDgnDb;
         }
 
-    if (exportSchema && (nullptr == getSameClassIn(context.GetDestinationDb(), m_class)))
+    if (exportSchema)
         {
         ECN::ECObjectsStatus ecstatus = ECN::ECObjectsStatus::Success;
-        importECSchema(ecstatus, context.GetDestinationDb(), GetECClass().GetSchema(), false);
+        importECSchema(ecstatus, context.GetDestinationDb(), GetECClass().GetSchema(), true);
         if (ECN::ECObjectsStatus::Success != ecstatus && ECN::ECObjectsStatus::DuplicateSchema != ecstatus)
             return DgnDbStatus::BadSchema;
         }
 
-    if (exportCategory && !DgnCategory::QueryCategoryId(GetCategoryName(), context.GetDestinationDb()).IsValid())
+    if (exportCategory && !DgnCategory::QueryCategoryId(GetCategoryName(), context.GetDestinationDb()).IsValid()) // *** WIP_COMPONENT - update existing category definition??
         {
         auto sourceCat = DgnCategory::QueryCategory(GetCategoryName(), GetDgnDb());
         if (sourceCat.IsValid())
@@ -1046,7 +1059,7 @@ DgnDbStatus ComponentDef::Export(DgnImportContext& context, bool exportSchema, b
             }
         }
 
-    if (!UsesTemporaryModel() && !context.GetDestinationDb().Models().QueryModelId(DgnModel::CreateModelCode(GetModelName())).IsValid())
+    if (!UsesTemporaryModel() && !context.GetDestinationDb().Models().QueryModelId(DgnModel::CreateModelCode(GetModelName())).IsValid()) 
         {
         DgnDbStatus status;
         if (!DgnModel::Import(&status, GetModel(), context).IsValid())
