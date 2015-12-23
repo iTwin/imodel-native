@@ -169,7 +169,7 @@ BentleyStatus ViewGenerator::ComputeViewMembers(ViewMemberByTable& viewMembers, 
                 }
 
             if (storageType == DbMetaDataHelper::ObjectType::Table)
-                viewMembers.insert(ViewMemberByTable::value_type(&classMap->GetTable(), ViewMember(storageType, *classMap)));
+                viewMembers.insert(ViewMemberByTable::value_type(&classMap->GetSecondaryTable(), ViewMember(storageType, *classMap)));
             }
         else
             {
