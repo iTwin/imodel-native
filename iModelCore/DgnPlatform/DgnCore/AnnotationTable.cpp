@@ -1737,27 +1737,20 @@ void            TextBlockHolder::_FitContentToWidth (double width)
 +---------------+---------------+---------------+---------------+---------------+------*/
 double          TextBlockHolder::ComputeDescenderAdjustment (AnnotationTextStyleCR textStyle)
     {
+#if defined (NEEDSWORK)
     bool    isTextStyleVertical = false;
 
-#if defined (NEEDSWORK)
     textStyle.GetProperty (TextStyle_Vertical, isTextStyleVertical);
-#endif
 
     if (isTextStyleVertical)
         return 0.0;
+#endif
 
     double      height = textStyle.GetHeight();
-    DgnFontId   fontId = textStyle.GetFontId();
-    DgnFontCP   font   = textStyle.GetDgnDb().Fonts().FindFontById(fontId);
+    DgnFontCR   font   = textStyle.ResolveFont();
 
-    if (UNEXPECTED_CONDITION (nullptr == font))
-        return 0.0;
-
-#if defined (NEEDSWORK)
-    return font->GetDescenderRatio() * height;
-#else
-    return 0.3 * height;
-#endif
+    DgnFontStyle fontStyle = DgnFont::FontStyleFromBoldItalic(textStyle.IsBold(), textStyle.IsItalic());
+    return font.GetDescenderRatio(fontStyle) * height;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1882,7 +1875,7 @@ void    resolveTextSymb (ColorDef& color, uint32_t& weight, SymbologyDictionary 
 +---------------+---------------+---------------+---------------+---------------+------*/
 void TextBlockHolder::_AppendGeometry (DPoint2dCR origin, DVec2dCR direction, TableCellAlignment alignment, ElementGeometryBuilderR builder) const
     {
-    AnnotationTextBlockCP textBlock = GetTextBlock();
+    AnnotationTextBlockLayoutCP textBlock = GetTextBlockLayout();
 
     if (UNEXPECTED_CONDITION (NULL == textBlock))
         return;
@@ -1910,27 +1903,25 @@ void TextBlockHolder::_AppendGeometry (DPoint2dCR origin, DVec2dCR direction, Ta
 
     DPoint2d                                textOrigin = origin;
 
-#if defined (NEEDSWORK)
     AnnotationTableCell::VerticalAlignment  vAlign = AnnotationTableCell::ToVerticalAlignment (alignment);
 
     if (AnnotationTableCell::VerticalAlignment::Top == vAlign || AnnotationTableCell::VerticalAlignment::Bottom == vAlign)
         {
-        double  adjustDistance = ComputeDescenderAdjustment (*textBlock);
+        double  adjustDistance  = ComputeDescenderAdjustment (*textBlock);
         DVec2d  adjustDirection;
 
-        rotation.GetColumn (adjustDirection, 1);    // +yVec (up)
+        adjustDirection.Rotate90 (direction);       // +yVec (up)
 
         if (AnnotationTableCell::VerticalAlignment::Top == vAlign)
             adjustDirection.Negate ();              // -yVec (down)
 
         textOrigin.SumOf (origin, adjustDirection, adjustDistance);
         }
-#endif
 
     Transform   transform = Transform::FromOriginAndXVector (textOrigin, direction);
 
-    TextAnnotation textAnnotation (textBlock->GetDbR());
-    textAnnotation.SetText (textBlock);
+    TextAnnotation textAnnotation (textBlock->GetDocument().GetDbR());
+    textAnnotation.SetText (&textBlock->GetDocument());
 
     builder.Append (textAnnotation, transform);
     }
@@ -1971,6 +1962,9 @@ void    AnnotationTableCell::ClearBinaryTextBlock ()
     {
     if (nullptr != m_rawTextBlock)
         free ((void*)m_rawTextBlock);
+
+    m_rawTextBlock = nullptr;
+    m_rawTextBlockBytes = 0;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2008,7 +2002,7 @@ void    AnnotationTableCell::CopyDataFrom (AnnotationTableCellCR rhs)
     {
     m_index             = rhs.m_index;
 
-    AssignBinaryTextBlock (m_rawTextBlock, m_rawTextBlockBytes);
+    AssignBinaryTextBlock (rhs.m_rawTextBlock, rhs.m_rawTextBlockBytes);
 
     m_fillKey           = rhs.m_fillKey;
     m_alignment         = rhs.m_alignment;

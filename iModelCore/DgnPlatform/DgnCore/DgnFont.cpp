@@ -922,6 +922,18 @@ BentleyStatus DgnFontPersistence::Db::Embed(DgnFonts::DbFaceDataDirect& faceData
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                                   Jeff.Marker     12/2015
+//---------------------------------------------------------------------------------------
+bool DgnFontPersistence::Db::IsAnyFaceEmbedded(DgnFontCR font, DgnFonts::DbFaceDataDirect& fontData)
+    {
+    // As opposed to adding a method to IDgnFontData or doing dynamic casting, I'm choosing this runaround until proven inadequate.
+    return (fontData.Exists(DgnFonts::DbFaceDataDirect::FaceKey(font.GetType(), font.GetName().c_str(), DgnFonts::DbFaceDataDirect::FaceKey::FACE_NAME_Regular))
+        || fontData.Exists(DgnFonts::DbFaceDataDirect::FaceKey(font.GetType(), font.GetName().c_str(), DgnFonts::DbFaceDataDirect::FaceKey::FACE_NAME_Bold))
+        || fontData.Exists(DgnFonts::DbFaceDataDirect::FaceKey(font.GetType(), font.GetName().c_str(), DgnFonts::DbFaceDataDirect::FaceKey::FACE_NAME_Italic))
+        || fontData.Exists(DgnFonts::DbFaceDataDirect::FaceKey(font.GetType(), font.GetName().c_str(), DgnFonts::DbFaceDataDirect::FaceKey::FACE_NAME_BoldItalic)));
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     03/2015
 //---------------------------------------------------------------------------------------
 DgnFontPtr DgnFontPersistence::Missing::CreateMissingFont(DgnFontType type, Utf8CP name)
@@ -935,4 +947,49 @@ DgnFontPtr DgnFontPersistence::Missing::CreateMissingFont(DgnFontType type, Utf8
 
     BeAssert(false);
     return nullptr;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Jeff.Marker     12/2015
+//---------------------------------------------------------------------------------------
+DgnFontId DgnImportContext::RemapFont(DgnFontId srcId)
+    {
+    // Alreay remapped once? Use cached result.
+    DgnFontId dstId = m_remap.Find(srcId);
+    if (dstId.IsValid())
+        return dstId;
+    
+    // N.B. This logic assumes that font type and name is unique enough for remapping purposes.
+    // While it is technically possible for a font with the same type and name to have differing metadata or glyph data, this should be rare enough in practice that we don't want to code around that scenario.
+
+    DgnFontCP srcFont = m_sourceDb.Fonts().FindFontById(srcId);
+    if (nullptr == srcFont)
+        {
+        // Invalid source ID? Options might include:
+        //      (a) simply retain the ID -- bad because who knows if this ID is or will become valid in the destination and thus result in different behavior
+        //      (b) remap to 0 (the invalid ID) -- would effectively keep behavior, but also not great because we'd be propagating junk into the destination
+        //      (c) remap to a last resort font -- change in display and behavior, but would ensure usable data is written to the destination
+        //  I'll side with (c) right now... as a "least bad" option.
+        BeDataAssert(false);
+        srcFont = &T_HOST.GetFontAdmin().GetAnyLastResortFont();
+        }
+
+    // Does it already exist in the destination? Use the destination ID. Don't bother bringing over glyph data in this case; ensure the destination continues to act the same.
+    DgnFontCP dstFont = m_destDb.Fonts().FindFontByTypeAndName(srcFont->GetType(), srcFont->GetName().c_str());
+    if (nullptr != dstFont)
+        {
+        dstId = m_destDb.Fonts().FindId(*dstFont);
+        BeDataAssert(dstId.IsValid()); // If FindFontByTypeAndName returned a font, it'd better have an ID. No good way to recover anyway.
+        return m_remap.Add(srcId, dstId);
+        }
+    
+    // Doesn't exist in the destination? Create a copy.
+    dstId = m_destDb.Fonts().AcquireId(*srcFont);
+    BeDataAssert(dstId.IsValid()); // No good way to recover.
+    
+    // If the source had embedded glyph data, copy it as well. Don't force embedding in case the app interjects and manages separately.
+    if (DgnFontPersistence::Db::IsAnyFaceEmbedded(*srcFont, m_sourceDb.Fonts().DbFaceData()))
+        DgnFontPersistence::Db::Embed(m_destDb.Fonts().DbFaceData(), *srcFont);
+    
+    return m_remap.Add(srcId, dstId);
     }

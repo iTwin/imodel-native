@@ -2,7 +2,7 @@
 |
 |     $Source: Tools/ToolSubs/nonport/winnt/pagalloc.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 /*-----------------------------------------------------------------------
@@ -211,7 +211,7 @@ typedef struct functionexclusionlist
     uint32_t hitCount;                // Number of times that this function was found in the last leak detect sweep
     } FunctionExclusionList;
 
-typedef void    MdlDesc, *MdlFunctionP;
+typedef void     *MdlFunctionP;
 typedef void *  (*MdlSystem_getUstnMdlDesc)  (void);
 typedef void *  (*MdlSystem_getCurrMdlDesc)  (void);
 typedef int32_t (*DlmSystem_callAnyFunction) (char *pArgs,  MdlDesc *descP, MdlFunctionP offset, ...);

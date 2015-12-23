@@ -591,15 +591,15 @@ DgnAuthority::Code DgnModel::CreateModelCode(Utf8StringCR modelName)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElement::Code ComponentModel::CreateCapturedSolutionCode(Utf8StringCR slnId)
+DgnElement::Code ComponentDef::CreateVariationCode(Utf8StringCR slnId)
     {
-    return SystemAuthority::CreateCode(SystemAuthority::Component, slnId, GetModelName());
+    return SystemAuthority::CreateCode(SystemAuthority::Component, slnId, GetName().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ComponentModel::IsCapturedSolutionCode(DgnElement::Code const& icode)
+bool ComponentDef::IsComponentVariationCode(DgnElement::Code const& icode)
     {
     return icode.GetAuthority() == SystemAuthority::GetId(SystemAuthority::Component);
     }

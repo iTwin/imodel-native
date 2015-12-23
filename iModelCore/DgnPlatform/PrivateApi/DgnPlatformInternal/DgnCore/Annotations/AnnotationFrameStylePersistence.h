@@ -21,12 +21,23 @@ BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 //=======================================================================================
 struct AnnotationFrameStylePersistence : public NonCopyableClass
 {
+    //=======================================================================================
+    // @bsiclass                                                    Jeff.Marker     06/2014
+    //=======================================================================================
+    enum struct FlatBufEncodeOptions
+    {
+        SettersAreOverrides = 1 << 0,
+        Default = 0
+    
+    }; // FlatBufEncodeOptions
+
 private:
     AnnotationFrameStylePersistence(){}
 
 public:
     static BentleyStatus EncodeAsFlatBuf(FB::AnnotationFrameStyleSetters&, AnnotationFrameStylePropertyBagCR);
-    static BentleyStatus EncodeAsFlatBuf(bvector<Byte>&, AnnotationFrameStyleCR);
+    static BentleyStatus EncodeAsFlatBuf(FB::AnnotationFrameStyleSetters&, AnnotationFrameStylePropertyBagCR, FlatBufEncodeOptions);
+    static BentleyStatus EncodeAsFlatBuf(bvector<Byte>&, AnnotationFrameStyleCR, FlatBufEncodeOptions);
     
     static BentleyStatus DecodeFromFlatBuf(AnnotationFrameStylePropertyBagR, FB::AnnotationFrameStyleSetterVector const&);
     static BentleyStatus DecodeFromFlatBuf(AnnotationFrameStyleR, ByteCP, size_t numBytes);
