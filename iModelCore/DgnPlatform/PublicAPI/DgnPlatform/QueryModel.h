@@ -30,7 +30,7 @@ QueryModels are associated with a QueryViewController by passing a QueryModel to
 */
 // @bsiclass                                                    Keith.Bentley   10/11
 //=======================================================================================
-struct QueryModel : PhysicalModel
+struct QueryModel : SpatialModel
 {
     friend struct QueryViewController;
 
@@ -107,7 +107,7 @@ struct QueryModel : PhysicalModel
         void Reset();
         Frustum const& GetFrustum() {return m_frustum;}
         //  The QueryViewController passed in via qvc is not the same as viewport->GetViewControllerCP when the viewport is associated with a 
-        //  PhysicalRedlineViewController.
+        //  SpatialRedlineViewController.
         void StartProcessing(DgnViewportCR viewport, QueryViewControllerCR qvc, Utf8CP sql, uint32_t hitLimit, uint64_t maxMemory, double minimumScreenPixels, 
                                 DgnElementIdSet* highPriority, DgnElementIdSet* neverDraw, bool onlyHighPriority, ClipVectorP clipVector,
                              uint32_t secondaryHitLimit, DRange3dCR secondaryRange);

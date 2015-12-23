@@ -174,7 +174,7 @@ void MissingHandlerTest::InitDb(DgnDbR db)
     m_defaultModelId = db.Models().QueryFirstModelId();
     DgnModelPtr defaultModel = db.Models().GetModel(m_defaultModelId);
     ASSERT_TRUE(defaultModel.IsValid());
-    ASSERT_TRUE(nullptr != defaultModel->ToPhysicalModel());
+    ASSERT_TRUE(nullptr != defaultModel->ToSpatialModel());
 
     m_defaultCategoryId = DgnCategory::QueryFirstCategoryId(db);
     DgnCategory altCat(DgnCategory::CreateParams(db, "AltCategory", DgnCategory::Scope::Any));
@@ -298,7 +298,7 @@ void MissingHandlerTest::TestRestrictions(ElemInfo const& info, DgnDbR db, uint6
         }
 
     // Change geometry
-    auto model = db.Models().Get<PhysicalModel>(m_defaultModelId);
+    auto model = db.Models().Get<SpatialModel>(m_defaultModelId);
     ASSERT_TRUE(model.IsValid());
     ElementGeometryBuilderPtr builder = ElementGeometryBuilder::Create(*model, pElem->GetCategoryId(), placement.GetOrigin());
     ASSERT_TRUE(builder.IsValid());
