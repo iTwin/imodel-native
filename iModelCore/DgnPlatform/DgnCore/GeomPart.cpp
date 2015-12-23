@@ -191,6 +191,8 @@ BentleyStatus DgnGeomParts::InsertElementGeomUsesParts(DgnElementId elementId, D
     return BentleyStatus::SUCCESS;
     }
 
+#define GEOMPART_BBOX "BBox_Low_X,BBox_Low_Y,BBox_Low_Z,BBox_High_X,BBox_High_Y,BBox_High_Z"
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Shaun.Sewall                    01/2015
 //---------------------------------------------------------------------------------------
