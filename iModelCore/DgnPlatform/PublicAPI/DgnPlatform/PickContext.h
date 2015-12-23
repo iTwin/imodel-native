@@ -43,6 +43,7 @@ private:
     StopLocateTest*   m_stopTester;
     GeometrySourceCP  m_currentGeomSource;
 
+    virtual IPickGeomP _GetIPickGeom () override {return this;}
     virtual void _OutputGeometry(GeometrySourceCR) override;
     virtual bool _CheckStop() override;
     virtual StatusInt _VisitDgnModel(DgnModelP inDgnModel) override;

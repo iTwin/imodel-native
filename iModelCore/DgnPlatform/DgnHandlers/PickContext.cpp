@@ -1226,10 +1226,7 @@ bool PickContext::PickElements(DgnViewportR vp, DPoint3dCR pickPointWorld, doubl
             hitList->DropNulls();
         }
 
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    return (WasAborted() && !m_output.GetDoneSearching());
-#endif
-    return false;
+    return (WasAborted() && !GetDoneSearching());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1266,8 +1263,5 @@ TestHitStatus PickContext::TestHit(HitDetailCR hit, DgnViewportR vp, DPoint3dCR 
 
     _Detach();
 
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    return WasAborted() ? TestHitStatus::Aborted : ((m_output.GetHitList()->GetCount() > 0) ? TestHitStatus::IsOn : TestHitStatus::NotOn);
-#endif
-    return TestHitStatus::NotOn;
+    return WasAborted() ? TestHitStatus::Aborted : ((m_hitList->GetCount() > 0) ? TestHitStatus::IsOn : TestHitStatus::NotOn);
     }
