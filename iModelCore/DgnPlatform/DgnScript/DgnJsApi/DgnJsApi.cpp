@@ -157,10 +157,46 @@ JsDgnElementP JsComponentDef::MakeUniqueInstance(JsDgnModelP targetModel, JsECIn
     return new JsDgnElement(*inst->CopyForEdit());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+template<typename T>
+JsECInstanceP getCustomAttribute(T* ccontainer, Utf8StringCR className)
+    {
+    if (nullptr == ccontainer)
+        return nullptr;
+    ECN::IECInstancePtr ca = ccontainer->GetCustomAttribute(className);
+    return ca.IsValid()? new JsECInstance(*ca): nullptr;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+JsECInstanceP JsECClass::GetCustomAttribute(Utf8StringCR className) {return getCustomAttribute(m_ecClass, className);}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+JsECInstanceP JsECProperty::GetCustomAttribute(Utf8StringCR className) {return getCustomAttribute(m_property, className);}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      12/15
++---------------+---------------+---------------+---------------+---------------+------*/
 JsECClassP JsECClassCollection::GetECClass(JsECClassCollectionIteratorP iter) {return (IsValid(iter) && (nullptr != *iter->m_iter))? new JsECClass(**iter->m_iter): nullptr;}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      12/15
++---------------+---------------+---------------+---------------+---------------+------*/
 JsECPropertyP JsECPropertyCollection::GetECProperty(JsECPropertyCollectionIteratorP iter) {return (IsValid(iter) && (nullptr != *iter->m_iter))? new JsECProperty(**iter->m_iter): nullptr;}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      12/15
++---------------+---------------+---------------+---------------+---------------+------*/
 JsECDbSchemaManagerP JsDgnDb::GetSchemas() {return m_db.IsValid()? new JsECDbSchemaManager(m_db->Schemas()): nullptr;}
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      12/15
++---------------+---------------+---------------+---------------+---------------+------*/
 JsECInstanceP JsECClass::MakeInstance() 
     {
     ECN::IECInstancePtr inst = m_ecClass? m_ecClass->GetDefaultStandaloneEnabler()->CreateInstance(): nullptr; 

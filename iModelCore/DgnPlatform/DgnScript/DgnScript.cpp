@@ -223,7 +223,7 @@ DgnDbStatus DgnScriptContext::ExecuteComponentGenerateElements(int& functionRetu
     BeJsFunction jsfunc = m_modelSolverRegistry.GetFunctionProperty(jsFunctionName.c_str());
     if (jsfunc.IsUndefined() || !jsfunc.IsFunction())
         {
-        NativeLogging::LoggingManager::GetLogger("DgnScript")->errorv ("[%s] is not registered as a model solver", jsFunctionName);
+        NativeLogging::LoggingManager::GetLogger("DgnScript")->errorv ("[%s] is not registered as a model solver", jsFunctionName.c_str());
         BeAssert(false && "model solver not registered");
         return DgnDbStatus::NotEnabled;
         }
@@ -239,7 +239,7 @@ DgnDbStatus DgnScriptContext::ExecuteComponentGenerateElements(int& functionRetu
 
     if (!retval.IsNumber())
         {
-        NativeLogging::LoggingManager::GetLogger("DgnScript")->errorv ("[%s] does not have the correct signature for a model solver - must return an int", jsFunctionName);
+        NativeLogging::LoggingManager::GetLogger("DgnScript")->errorv ("[%s] does not have the correct signature for a model solver - must return an int", jsFunctionName.c_str());
         BeAssert(false && "model solver has incorrect return type");
         return DgnDbStatus::NotEnabled;
         }
