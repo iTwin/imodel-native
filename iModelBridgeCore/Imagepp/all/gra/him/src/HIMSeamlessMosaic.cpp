@@ -1158,7 +1158,7 @@ HFCPtr<HRARaster> HIMSeamlessMosaic::AddInternalLayers(const HFCPtr<HRARaster>& 
         {
         pClippedImage = new HRAReferenceToRaster(pCBImage);
 
-        HDEBUGTEXT(L"No clip shape found!\n");
+        HDEBUGTEXT("No clip shape found!\n");
         }
 
     HASSERT(pClippedImage != 0);
@@ -1283,7 +1283,7 @@ void HIMSeamlessMosaic::ManageBlends(const HFCPtr<HVEShape>& pi_rpUpdateShape)
                                                                               m_pPool,
                                                                               m_BlendWidth)));
                         }
-                    HWARNING(pBoundary == 0, L"Can't obtain boundary to create blend corridor.\n");
+                    HWARNING(pBoundary == 0, "Can't obtain boundary to create blend corridor.\n");
                     }
                 }
 
@@ -1520,8 +1520,8 @@ void HIMSeamlessMosaic::UpdateClippingOf(const HFCPtr<HRARaster>& pi_rpImage)
             // HRAReferenceToRaster layer.
             }
 
-        HWARNING(pClipShape == 0, L"UpdateClippingOf: Can't obtain clipping for image.\n");
+        HWARNING(pClipShape == 0, "UpdateClippingOf: Can't obtain clipping for image.\n");
         }
 
-    HWARNING(Itr == m_ImageMap.end(), L"UpdateClippingOf: Image is not in the mosaic.\n");
+    HWARNING(Itr == m_ImageMap.end(), "UpdateClippingOf: Image is not in the mosaic.\n");
     }

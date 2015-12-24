@@ -430,8 +430,8 @@ bool HGFScanLines::GotoNextRun()
             // If we get an odd number of points, display a message
             HDEBUGCODE(if (m_PositionInScanline + 2 < (HSINTX)m_pScanLines[Scanline].size()))
                 HDEBUGCODE( {)
-                            HDEBUGCODE(    WChar Message[80];)
-                            HDEBUGCODE(    BeStringUtilities::Snwprintf(Message, L"Error: Odd number of crossings in scanline %ld\n", m_FirstScanline + m_CurrentScanLine)); // Error: Odd number of crossings in scanline %ld\n
+                            HDEBUGCODE(    Utf8Char Message[80];)
+                            HDEBUGCODE(    BeStringUtilities::Snprintf(Message, "Error: Odd number of crossings in scanline %ld\n", m_FirstScanline + m_CurrentScanLine)); // Error: Odd number of crossings in scanline %ld\n
                             HDEBUGCODE(    HDEBUGTEXT(Message);)
                             HDEBUGCODE(
                             })

@@ -1499,7 +1499,7 @@ bool HRFIntergraphTileEditor::VerrifyBlockOverlap()
                 if (pTileEntryInformation->S + pTileEntryInformation->A > pOverlappedTileEntryInformation->S)
                     {
                     BlockAreNotOverlapped = false;
-                    HDEBUGTEXT(L" ************ HRFIntergraphTileEditor::VerrifyBlockOverlap : Tile overlapped case 1 ************ \r\n");
+                    HDEBUGTEXT(" ************ HRFIntergraphTileEditor::VerrifyBlockOverlap : Tile overlapped case 1 ************ \r\n");
                     }
                 }
             else
@@ -1507,7 +1507,7 @@ bool HRFIntergraphTileEditor::VerrifyBlockOverlap()
                 if (pOverlappedTileEntryInformation->S + pOverlappedTileEntryInformation->A > pTileEntryInformation->S)
                     {
                     BlockAreNotOverlapped = false;
-                    HDEBUGTEXT(L" ************ HRFIntergraphTileEditor::VerrifyBlockOverlap : Tile overlapped case 2 ************ \r\n");
+                    HDEBUGTEXT(" ************ HRFIntergraphTileEditor::VerrifyBlockOverlap : Tile overlapped case 2 ************ \r\n");
                     }
                 }
             }

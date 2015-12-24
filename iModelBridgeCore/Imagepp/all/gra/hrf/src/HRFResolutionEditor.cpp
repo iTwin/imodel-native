@@ -127,7 +127,7 @@ HSTATUS HRFResolutionEditor::ReadBlock(uint64_t             pi_PosBlockX,
 
     // Display a message that we pass through the default ReadBlock with
     // a packet, which decompressed the data into an Identify packet
-    HDEBUGTEXT(L"Warning! Using the default ReadBlock(Byte*)\r\n");
+    HDEBUGTEXT("Warning! Using the default ReadBlock(Byte*)\r\n");
 
     // we take for granted that there is compression
     // we decompress the data in the output buffer
@@ -160,7 +160,7 @@ HSTATUS HRFResolutionEditor::ReadBlock(uint64_t             pi_PosBlockX,
 
     // Display a message that we pass through the default ReadBlock with
     // a packet, which decompressed the data into an Identify packet
-    HDEBUGTEXT(L"Warning! Using the default ReadBlock(Packet) which uncompresses the data\r\n");
+    HDEBUGTEXT("Warning! Using the default ReadBlock(Packet) which uncompresses the data\r\n");
 
     // we take for granted that there is no compression
     // we get the data uncompressed and associate to it an identity codec
@@ -200,7 +200,7 @@ HSTATUS HRFResolutionEditor::ReadBlockRLE(uint64_t                pi_PosBlockX,
 
     // Display a message that we pass through the default ReadBlock with
     // a packet, which decompressed the data into an Identify packet
-    //HDEBUGTEXT(L"Warning! Using the default ReadBlockRLE() which uncompresses and compress(RLE) the data\r\n");
+    //HDEBUGTEXT("Warning! Using the default ReadBlockRLE() which uncompresses and compress(RLE) the data\r\n");
 
     HSTATUS Status = H_ERROR;
 

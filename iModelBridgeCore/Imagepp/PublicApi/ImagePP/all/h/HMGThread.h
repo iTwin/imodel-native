@@ -15,7 +15,7 @@
 
 BEGIN_IMAGEPP_NAMESPACE
 
-typedef int HMGThreadID;
+typedef intptr_t HMGThreadID;
 
 class HMGSink;
 class HMGMessage;

@@ -819,13 +819,11 @@ size_t HTIFFStream::Write(const void* pi_pBuffer, size_t pi_Size, size_t pi_Coun
     // Stream write error
     if ((pi_Count != result) || (m_pStream->GetLastException() != 0))
         {
-#ifdef _WIN32
         // Some error must have occured
-        int32_t lastError = GetLastError();
-
-        HASSERT ((lastError == ERROR_DISK_FULL) ||
-            (m_pStream->GetLastException() != 0));
-#endif
+// Do not rely on windows and assert all the times.  Moreover, the stream may not be related to a Windows api and thus won't set GetLastError().
+//         int32_t lastError = GetLastError();
+//         HASSERT ((lastError == ERROR_DISK_FULL) || (m_pStream->GetLastException() != 0));
+        HASSERT(!"HTIFFStream::Write ERROR");
 
         // Notes on possible error
         // Since we are using huge files, it may happen that the stream WriteFile call will result in error 665

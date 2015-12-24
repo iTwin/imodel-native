@@ -66,7 +66,7 @@ uint32_t HFCNode::GetLevel() const
 bool HFCNode::AddChild(const HFCPtr<HFCNode>& pi_rpNode)
     {
     HPRECONDITION(pi_rpNode != 0);
-    HWARNING(CountIterator() == 0, L"HFCNode::AddChild() : At least one iterator was active");
+    HWARNING(CountIterator() == 0, "HFCNode::AddChild() : At least one iterator was active");
 
     // search the node into the child list
     bool NodeFound = false;
@@ -99,7 +99,7 @@ bool HFCNode::RemoveChild(const HFCPtr<HFCNode>&   pi_rpNode)
     {
     HPRECONDITION(pi_rpNode != 0);
 
-    HWARNING(CountIterator() == 0, L"HFCNode::RemoveChild() : At least one iterator was active");
+    HWARNING(CountIterator() == 0, "HFCNode::RemoveChild() : At least one iterator was active");
 
     ChildList::iterator Itr(m_ChildList.begin());
     bool NodeFound = false;
@@ -126,7 +126,7 @@ bool HFCNode::RemoveChild(const HFCPtr<HFCNode>&   pi_rpNode)
 -----------------------------------------------------------------------------*/
 void HFCNode::RemoveAllChild()
     {
-    HWARNING(CountIterator() == 0, L"HFCNode::RemoveAllChild() : At least one iterator was active");
+    HWARNING(CountIterator() == 0, "HFCNode::RemoveAllChild() : At least one iterator was active");
 
     ChildList::iterator Itr(m_ChildList.begin());
     while (Itr != m_ChildList.end())

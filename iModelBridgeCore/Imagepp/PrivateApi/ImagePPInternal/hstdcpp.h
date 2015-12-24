@@ -52,7 +52,7 @@
 #   error Unknown compiler - No STL inclusion Standard defined
 #endif
 
-
+// C++ 11 std headers
 #include <thread>
 #include <mutex>
 #include <condition_variable>
@@ -60,6 +60,7 @@
 #include <Geom/GeomApi.h>
 #include <BeXml/BeXml.h>
 #include <GeoCoord/BaseGeoCoord.h>
+#include <Bentley/BeThread.h>
 
 #include <ImagePP/all/h/HFCMemoryLineStream.h>
 
@@ -81,7 +82,6 @@
 #include <ImagePP/all/h/HPMAttribute.h>
 #include <ImagePP/all/h/HRFRasterFile.h>
 #include <ImagePP/all/h/HRFcTiffFile.h>
-#include <ImagePP/all/h/HRFWMSFile.h>
 
 #include <ImagePP/all/h/HRAStoredRaster.h>
 #include <ImagePP/all/h/HRABitmap.h>

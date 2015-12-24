@@ -843,7 +843,7 @@ void HIMFilteredImage::_Draw(HGFMappedSurface& pio_destSurface, HRADrawOptions c
     // Standard draw code, one image at a time, bottom up
     if (!DrawDone)
         {
-        HWARNING(0, L"HIMFilteredImage::Draw out of memory. Filter will not be applied.");
+        HWARNING(0, "HIMFilteredImage::Draw out of memory. Filter will not be applied.");
 
         GetSource()->Draw(pio_destSurface, pi_Options);
         }

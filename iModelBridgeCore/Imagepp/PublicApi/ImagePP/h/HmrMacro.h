@@ -10,6 +10,7 @@
 
 #include <Bentley/Bentley.h>
 #include <Bentley/RefCounted.h>
+#include <Bentley/BeDebugLog.h>
 
 
 #if !defined(MAX)
@@ -570,14 +571,10 @@ inline void RedirectedAssert(bool pi_Success, WCharCP pi_pExpr, WCharCP pi_pFile
 */
 
 #if defined(__HMR_DEBUG) && defined(_WIN32)
-#define HDEBUGTEXTW(text)  OutputDebugStringW(text);
-#define HDEBUGTEXTA(text)  OutputDebugStringA(text);
+#define HDEBUGTEXT(text)  BeDebugLogFunctions::PerformBeDebugLog(text, __FILE__, __LINE__);
 #else
-#define HDEBUGTEXTW(text)
-#define HDEBUGTEXTA(text)
+#define HDEBUGTEXT(text)
 #endif
-
-#define HDEBUGTEXT(text) HDEBUGTEXTW(text)
 
 /*
 ** --------------------------------------------------------------------------

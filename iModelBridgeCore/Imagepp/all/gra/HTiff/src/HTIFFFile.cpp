@@ -1969,7 +1969,7 @@ void HTIFFFile::SimulateStripList(uint32_t pi_CompressMode)
         uint64_t StartOffset  = GetOffset(0);      // Keep previous offset
 
 
-        HDEBUGTEXT(L"SimulateStripList: Image with one strip, simulate Offset/Count fields\n");
+        HDEBUGTEXT("SimulateStripList: Image with one strip, simulate Offset/Count fields\n");
 
         // Set members
         // Set row by strip to respect the strip capabilities, MIN 32 with increment of 16
@@ -2011,7 +2011,7 @@ void HTIFFFile::SimulateStripList(uint32_t pi_CompressMode)
              (m_NbData32 == 1) && (!m_pCurDir->TagIsPresent(STRIPBYTECOUNTS) ||
                                    (GetCount(0) != m_StripTileSize)))
         {
-        HDEBUGTEXT(L"SimulateStripList: Image not too big with a missing Strip-Count\n");
+        HDEBUGTEXT("SimulateStripList: Image not too big with a missing Strip-Count\n");
         uint32_t* pDataCount32 = new uint32_t[1];
         HASSERT(pDataCount32 != 0);
 
@@ -2031,7 +2031,7 @@ void HTIFFFile::SimulateStripList(uint32_t pi_CompressMode)
              (m_NbData32 == m_ImageLength) &&
              (GetCount(0) != m_StripTileSize))
         {
-        HDEBUGTEXT(L"SimulateStripList: Line image, with bad strip count\n");
+        HDEBUGTEXT("SimulateStripList: Line image, with bad strip count\n");
         for(uint32_t i=0; i<m_NbData32; i++)
             SetCount(i, m_StripTileSize);
         }
@@ -2045,7 +2045,7 @@ void HTIFFFile::SimulateStripList(uint32_t pi_CompressMode)
              (m_NbData32 == 1) && (!m_pCurDir->TagIsPresent(STRIPBYTECOUNTS) ||
                                    (GetCount(0) >= m_pFile->GetSize())) )
         {
-        HDEBUGTEXT(L"SimulateStripList: Image with a missing Strip-Count and Compressed or Invalid Count\n");
+        HDEBUGTEXT("SimulateStripList: Image with a missing Strip-Count and Compressed or Invalid Count\n");
         uint32_t* pDataCount32 = new uint32_t[1];
         HASSERT(pDataCount32 != 0);
 
@@ -2062,7 +2062,7 @@ void HTIFFFile::SimulateStripList(uint32_t pi_CompressMode)
              (!m_pCurDir->TagIsPresent(STRIPBYTECOUNTS)) &&
              (m_NbData32 > 1) )
         {
-        HDEBUGTEXT(L"SimulateStripList: Image with a missing Strip-Count and UnCompressed\n");
+        HDEBUGTEXT("SimulateStripList: Image with a missing Strip-Count and UnCompressed\n");
         uint32_t* pDataCount32 = new uint32_t[m_NbData32];
         HASSERT(pDataCount32 != 0);
 
@@ -2081,7 +2081,7 @@ void HTIFFFile::SimulateStripList(uint32_t pi_CompressMode)
              (m_NbData32 == 1) &&
              (m_CurDir == 0) )
         {
-        HDEBUGTEXT(L"SimulateLine-StripList: Image with one strip compress, simulate Offset/Count fields with empty value\n");
+        HDEBUGTEXT("SimulateLine-StripList: Image with one strip compress, simulate Offset/Count fields with empty value\n");
 
         // Set members
         m_RowsByStrip   = 1;

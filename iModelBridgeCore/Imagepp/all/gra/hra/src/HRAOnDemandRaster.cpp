@@ -20,7 +20,6 @@
 #include <Imagepp/all/h/HRFRasterFileFactory.h>
 
 #include <Imagepp/all/h/HRFUtility.h>
-#include <Imagepp/all/h/HRFWMSFile.h>
 
 #include "../../hps/src/HPSParserScope.h"
 
