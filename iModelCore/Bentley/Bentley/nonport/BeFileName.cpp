@@ -1649,7 +1649,7 @@ BeFileNameStatus BeFileName::BeMoveFile (WCharCP source, WCharCP target, int num
         WString fixedTarget;
         FixPathName (fixedTarget, target, true);
 
-        if (0 != ::MoveFileExW (fixedSource.c_str(), fixedTarget.c_str(), 0))
+        if (0 != ::MoveFileExW (fixedSource.c_str(), fixedTarget.c_str(), MOVEFILE_COPY_ALLOWED/*Needed when changing drive*/))
             return  BeFileNameStatus::Success;
 
 #elif defined (__unix__)
