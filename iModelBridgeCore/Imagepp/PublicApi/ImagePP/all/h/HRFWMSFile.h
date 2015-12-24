@@ -66,9 +66,9 @@ private:
     string                      m_Styles;
     string                      m_CRS;
 
-    void ReadWMS_1_0(BentleyApi::BeXmlNodeP pi_pNode);
-    void ReadWMS_1_1(BentleyApi::BeXmlNodeP pi_pNode);
-    void ReadWMS_1_2(BentleyApi::BeXmlNodeP pi_pNode, WString const& version);
+    void ReadWMS_1_0(BeXmlNodeP pi_pNode);
+    void ReadWMS_1_1(BeXmlNodeP pi_pNode);
+    void ReadWMS_1_2(BeXmlNodeP pi_pNode, WString const& version);
 
     // Methods Disabled
     HRFWMSFile(const HRFWMSFile& pi_rObj);

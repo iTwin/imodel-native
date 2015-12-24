@@ -51,7 +51,7 @@ private:
     bool                       m_NeedAuthentification;
     string                      m_CSR;
 
-    void                        ReadWCS_1_0(BentleyApi::BeXmlNodeP pi_pNode);
+    void                        ReadWCS_1_0(BeXmlNodeP pi_pNode);
 
 
 

@@ -118,10 +118,10 @@ public:
     struct ImageryProvider
         {
         WString attribution;
-        BentleyApi::bvector<CoverageArea> coverage;
+        bvector<CoverageArea> coverage;
         };        
 
-    typedef BentleyApi::bvector<ImageryProvider> ImageryProviders;
+    typedef bvector<ImageryProvider> ImageryProviders;
 
     HRFVirtualEarthFile(const HFCPtr<HFCURL>& pi_rpURL,
                         HFCAccessMode         pi_AccessMode = HFC_READ_ONLY,
@@ -231,7 +231,7 @@ private:
     WString             GetTileURI(unsigned int pixelX, unsigned int pixelY, int levelOfDetail) const;
 
     WString             m_ImageURI;               // ex: "http://{subdomain}.tiles.virtualearth.net/tiles/r{quadkey}.jpeg?g=266&mkt={culture}"
-    BentleyApi::bvector<WString>    m_ImageURISubdomains;     // ex: "t0","t1","t2","t3"
+    bvector<WString>    m_ImageURISubdomains;     // ex: "t0","t1","t2","t3"
 
     ImageryProviders    m_Providers;
     WString             m_LogoURI;                // ex: "http://dev.virtualearth.net/Branding/logo_powered_by.png"

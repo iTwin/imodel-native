@@ -20,44 +20,44 @@ public:
     virtual bool                   IsBigTiffTag                       (uint32_t FileTagNumber) const override;
 
     virtual HTagID                  GetFreeOffsetsTagID                () const override {
-        return BentleyApi::ImagePP::FREEOFFSETS;
+        return FREEOFFSETS;
     }
     virtual HTagID                  GetFreeByteCountsTagID             () const override {
-        return BentleyApi::ImagePP::FREEBYTECOUNTS;
+        return FREEBYTECOUNTS;
     }
 
     virtual HTagID                  GetSubFileTypeTagID                () const override {
-        return BentleyApi::ImagePP::SUBFILETYPE;
+        return SUBFILETYPE;
     }
     virtual HTagID                  GetHMRSyncronizationTagID          () const override {
-        return BentleyApi::ImagePP::HMR_SYNCHRONIZE_FIELD;
+        return HMR_SYNCHRONIZE_FIELD;
     }
     virtual HTagID                  GetHMRDirectoryV1TagID             () const override {
-        return BentleyApi::ImagePP::HMR_IMAGEINFORMATION;
+        return HMR_IMAGEINFORMATION;
     }
     virtual HTagID                  GetHMRDirectoryV2TagID             () const override {
-        return BentleyApi::ImagePP::HMR2_IMAGEINFORMATION;
+        return HMR2_IMAGEINFORMATION;
     }
 
     virtual HTagID                  GetHMRDecimationMethodTagID        () const override {
-        return BentleyApi::ImagePP::HMR_DECIMATION_METHOD;
+        return HMR_DECIMATION_METHOD;
     }
 
     virtual HTagID                  GetGeoKeyDirectoryTagID            () const override {
-        return BentleyApi::ImagePP::GEOKEYDIRECTORY;
+        return GEOKEYDIRECTORY;
     }
     virtual HTagID                  GetGeoDoubleParamsTagID            () const override {
-        return BentleyApi::ImagePP::GEODOUBLEPARAMS;
+        return GEODOUBLEPARAMS;
     }
     virtual HTagID                  GetGeoAsciiParamsTagID             () const override {
-        return BentleyApi::ImagePP::GEOASCIIPARAMS;
+        return GEOASCIIPARAMS;
     }
 
     virtual HTagID                  GetNotSavedTagIDBegin              () const override {
-        return BentleyApi::ImagePP::TAG_NOT_SAVED_FILE;
+        return TAG_NOT_SAVED_FILE;
     }
     virtual uint32_t                GetTagQty                          () const override {
-        return BentleyApi::ImagePP::EndOfTag;
+        return EndOfTag;
     }
 
     virtual size_t                  GetTagDefinitionQty                () const override {
