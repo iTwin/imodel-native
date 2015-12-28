@@ -24,7 +24,7 @@ BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
 namespace dgn_ElementHandler
 {
-    VIEWDEF_HANDLER_DEFINE_MEMBERS(PhysicalViewDef);
+    VIEWDEF_HANDLER_DEFINE_MEMBERS(SpatialViewDef);
     VIEWDEF_HANDLER_DEFINE_MEMBERS(DrawingViewDef);
     VIEWDEF_HANDLER_DEFINE_MEMBERS(SheetViewDef);
     HANDLER_DEFINE_MEMBERS(CameraViewDef);
@@ -170,7 +170,7 @@ ViewControllerPtr ViewDefinition::LoadViewController(bool allowOverrides, FillMo
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   11/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-ViewControllerPtr PhysicalViewDefinition::_SupplyController() const
+ViewControllerPtr SpatialViewDefinition::_SupplyController() const
     {
     return new QueryViewController(GetDgnDb(), GetViewId());
     }
@@ -468,7 +468,7 @@ template<typename T_Desired> static bool isEntryOfClass(ViewDefinition::Entry co
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   11/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ViewDefinition::Entry::IsPhysicalView() const { return isEntryOfClass<PhysicalViewDefinition>(*this); }
+bool ViewDefinition::Entry::IsSpatialView() const { return isEntryOfClass<SpatialViewDefinition>(*this); }
 bool ViewDefinition::Entry::IsDrawingView() const { return isEntryOfClass<DrawingViewDefinition>(*this); }
 bool ViewDefinition::Entry::IsSheetView() const { return isEntryOfClass<SheetViewDefinition>(*this); }
 

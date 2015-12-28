@@ -123,8 +123,8 @@ void DgnChangeSummaryTestFixture::InsertFloor(int iFloor)
             int iQuadrant = (centerX > 0) ? ((centerY > 0) ? 1 : 2) : ((centerY > 0) ? 4 : 3);
             DPoint3d center = DPoint3d::From(centerX, centerY, centerZ);
 
-            PhysicalModelR physicalModel = *(dynamic_cast<PhysicalModelP> (m_testModel.get()));
-            PhysicalElementPtr physicalElementPtr = PhysicalElement::Create(physicalModel, m_testCategoryId);
+            SpatialModelR spatialModel = *(dynamic_cast<SpatialModelP> (m_testModel.get()));
+            PhysicalElementPtr physicalElementPtr = PhysicalElement::Create(spatialModel, m_testCategoryId);
             physicalElementPtr->SetCode(CreateCode(iFloor, iQuadrant));
             
             DgnBoxDetail blockDetail = DgnBoxDetail::InitFromCenterAndSize(DPoint3d::FromZero(), blockSizeRange, true);

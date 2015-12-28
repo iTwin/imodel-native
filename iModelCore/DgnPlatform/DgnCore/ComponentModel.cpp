@@ -13,6 +13,7 @@
 #define CDEF_CA_ELEMENT_GENERATOR "ElementGenerator"
 #define CDEF_CA_CATEGORY "Category"
 #define CDEF_CA_CODE_AUTHORITY "CodeAuthority"
+#define CDEF_CA_INPUTS "Inputs"
 
 #define ECSUCCESS(STMT) if (ECN::ECObjectsStatus::Success != (ecstatus = STMT)) {BeAssert(false); return nullptr;}
 
@@ -465,6 +466,38 @@ ComponentDefPtr ComponentDef::FromComponentModel(DgnDbStatus* statusOut, Compone
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus ComponentDef::DeleteComponentDef(DgnDbR db, Utf8StringCR fullEcSqlClassName)
+    {
+    DgnDbStatus status;
+
+    ECN::ECClassP ecclass;
+    if (true)
+        {
+        ComponentDefPtr cdef = FromECSqlName(&status, db, fullEcSqlClassName);
+        if (!cdef.IsValid())
+            return status;
+
+        if (!cdef->UsesTemporaryModel() && db.Models().Get<ComponentModel>(db.Models().QueryModelId(DgnModel::CreateModelCode(cdef->GetModelName()))).IsValid())
+            cdef->GetModel().Delete();
+
+        ECSqlStatement stmt;
+        stmt.Prepare(db, Utf8PrintfString("DELETE FROM %s", cdef->GetClassECSqlName().c_str()));
+        stmt.Step();
+
+        ecclass = const_cast<ECN::ECClassP>(&cdef->m_class);
+        }
+
+    // TRICKY: Must destruct cdef before we delete its ECClass, as ~ComponentDef uses its ECClass.
+
+    ECN::ECSchemaR ecschema = const_cast<ECN::ECSchemaR>(ecclass->GetSchema());
+    ecschema.DeleteClass(*ecclass);
+
+    return DgnDbStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      12/15
++---------------+---------------+---------------+---------------+---------------+------*/
 ComponentDefPtr ComponentDef::FromECClass(DgnDbStatus* statusOut, DgnDbR db, ECN::ECClassCR componentDefClass)
     {
     DgnDbStatus ALLOW_NULL_OUTPUT(status, statusOut);
@@ -598,6 +631,59 @@ Utf8String ComponentDef::GetModelName() const {return GetCaValueString(*m_ca, CD
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String ComponentDef::GetInputsForSelect() const
+    {
+    Utf8String inputs;
+
+    for (auto const& input : GetInputs())
+        {
+        if (!inputs.empty())
+            inputs.append(",");
+
+        inputs.append("[");
+        inputs.append(input);
+        inputs.append("]");
+        }
+
+    return inputs;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+bvector<Utf8String> ComponentDef::GetInputs() const
+    {
+    Utf8String inputList = GetCaValueString(*m_ca, CDEF_CA_INPUTS);
+
+    bvector<Utf8String> inputs;
+
+    size_t offset = 0;
+    Utf8String m;
+    while ((offset = inputList.GetNextToken (m, ",", offset)) != Utf8String::npos)
+        inputs.push_back(m);
+
+    if (inputs.empty())
+        {
+        // There are no declared inputs. Assume that all properties are inputs ...
+        //  ... excluding the properties of dgn.Element, SpatialElement, and PhysicalElement, as they are very unlikely to be
+        //      parametric model inputs.
+        ECN::ECClassCP physEle = GetDgnDb().Schemas().GetECClass(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_PhysicalElement);
+        bset<Utf8String> physEleProps;
+        for (auto prop : physEle->GetProperties())
+            physEleProps.insert(prop->GetName());
+
+        for (auto ecprop : m_class.GetProperties())
+            {
+            if (physEleProps.find(ecprop->GetName()) == physEleProps.end())
+                inputs.push_back(ecprop->GetName());
+            }
+        }
+
+    return inputs;
+    }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      12/15
++---------------+---------------+---------------+---------------+---------------+------*/
 ComponentModelR ComponentDef::GetModel() 
     {
     if (m_model.IsValid())
@@ -639,7 +725,7 @@ ComponentModelPtr ComponentModel::Create(DgnDbR db, Utf8StringCR componentDefCla
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus ComponentDef::GenerateGeometry(ECN::IECInstanceCR variationSpecIn)
+DgnDbStatus ComponentDef::GenerateElements(DgnModelR destModel, ECN::IECInstanceCR variationSpecIn)
     {
     GetModel();
 
@@ -649,15 +735,15 @@ DgnDbStatus ComponentDef::GenerateGeometry(ECN::IECInstanceCR variationSpecIn)
     Utf8String scriptName = GetElementGeneratorName();
     if (scriptName.empty())
         {
-        GeometryGenerator* gg = dynamic_cast<GeometryGenerator*>(m_model.get());
+        auto* gg = dynamic_cast<ElementGenerator*>(m_model.get());
         if (nullptr == gg)
             return DgnDbStatus::Success;    // assume the model contains static geometry
 
-        return gg->_GenerateGeometry(*instanceTemplate);
+        return gg->_GenerateElements(destModel, *m_model, *instanceTemplate, *this);
         }
         
-    StatusInt retval;                                               // *** WIP_COMPONENT: need to pass in destination model
-    if (DgnDbStatus::Success != DgnScript::ExecuteComponentGenerateElements(retval, *m_model, *m_model, *instanceTemplate, *this, scriptName.c_str()) || (0 != retval))
+    StatusInt retval;
+    if (DgnDbStatus::Success != DgnScript::ExecuteComponentGenerateElements(retval, *m_model, destModel, *instanceTemplate, *this, scriptName.c_str()) || (0 != retval))
         return DgnDbStatus::BadRequest;
 
     return DgnDbStatus::Success;
@@ -669,7 +755,7 @@ DgnDbStatus ComponentDef::GenerateGeometry(ECN::IECInstanceCR variationSpecIn)
 DgnElementCPtr ComponentDef::MakeInstance0(DgnDbStatus* statusOut, DgnModelR destModel, ECN::IECInstanceCR parameters, DgnElement::Code const& code)
     {
     DgnDbStatus ALLOW_NULL_OUTPUT(status, statusOut);
-    if (DgnDbStatus::Success != (status = GenerateGeometry(parameters)))
+    if (DgnDbStatus::Success != (status = GenerateElements(destModel, parameters)))
         return nullptr;
 
     HarvestedSolutionInserter inserter(destModel, GetModel());
@@ -805,7 +891,8 @@ ECN::IECInstancePtr ComponentDef::GetParameters(DgnElementCR el)
     ComponentDefPtr cdef = FromECClass(nullptr, el.GetDgnDb(), *el.GetElementClass());
     if (!cdef.IsValid())
         return nullptr;
-    Utf8PrintfString sql("SELECT * FROM %s WHERE ECInstanceId=?", GetClassECSqlName(*el.GetElementClass()).c_str());
+
+    Utf8PrintfString sql("SELECT %s FROM %s WHERE ECInstanceId=?", cdef->GetInputsForSelect().c_str(), GetClassECSqlName(*el.GetElementClass()).c_str());
     auto ecsql = el.GetDgnDb().GetPreparedECSqlStatement(sql);
     ecsql->BindId(1, el.GetElementId());
     ECInstanceECSqlSelectAdapter selector(*ecsql);
@@ -832,20 +919,19 @@ bool ComponentDef::HaveEqualParameters(ECN::IECInstanceCR lhs, ECN::IECInstanceC
     {
     if (&lhs.GetClass() != &rhs.GetClass())
         return false;
-    for (auto const& prop : lhs.GetClass().GetProperties())
+    for (auto const& paramName : GetInputs())
         {
-        if (prop->GetName().Equals("ECInstanceId"))
+        if (compareOnlyInstanceParameters && (ParameterVariesPer::Instance != GetVariationScope(*lhs.GetClass().GetPropertyP(paramName.c_str()))))
             continue;
 
-        if (compareOnlyInstanceParameters && (ParameterVariesPer::Instance != GetVariationScope(*prop)))
-            continue;
-
-        ECValue l, r;
-        lhs.GetValue(l, prop->GetName().c_str());
-        rhs.GetValue(r, prop->GetName().c_str());
+        ECValue l;
+        lhs.GetValue(l, paramName.c_str());
         if (l.IsNull())
             continue;
             
+        ECValue r;
+        rhs.GetValue(r, paramName.c_str());
+
         if (!l.Equals(r))
             return false;
         }
@@ -862,20 +948,35 @@ void ComponentDef::CopyInstanceParameters(ECN::IECInstanceR target, ECN::IECInst
         BeAssert(false);
         return;
         }
-    for (auto const& prop : source.GetClass().GetProperties())
+    for (auto const& paramName : GetInputs())
         {
-        if (ParameterVariesPer::Instance != GetVariationScope(*prop))
+        if (ParameterVariesPer::Instance != GetVariationScope(*source.GetClass().GetPropertyP(paramName.c_str())))
             continue;
 
         ECValue v;
-        if (ECN::ECObjectsStatus::Success != source.GetValue(v, prop->GetName().c_str()))
+        if (ECN::ECObjectsStatus::Success != source.GetValue(v, paramName.c_str()) || v.IsNull())
             continue;
 
-        if (ECN::ECObjectsStatus::Success != target.SetValue(prop->GetName().c_str(), v))
+        if (ECN::ECObjectsStatus::Success != target.SetValue(paramName.c_str(), v))
             {
             BeAssert(false);
             }
         }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+static ECN::ECSchemaPtr copyECSchema(ECN::ECSchemaCR schemaIn)
+    {
+    ECN::ECSchemaPtr cc;
+    if (ECN::ECObjectsStatus::Success != schemaIn.CopySchema(cc))
+        return nullptr;
+    if (ECN::ECObjectsStatus::Success != cc->SetName(schemaIn.GetName()))
+        return nullptr;
+    if (ECN::ECObjectsStatus::Success != cc->SetNamespacePrefix(schemaIn.GetNamespacePrefix()))
+        return nullptr;
+    return cc;
     }
 
 //---------------------------------------------------------------------------------------
@@ -896,10 +997,7 @@ static ECN::ECSchemaCP importECSchema(ECN::ECObjectsStatus& ecstatus, DgnDbR db,
 
     ECDbSchemaManager::ImportOptions options(false, updateExistingSchemas);
 
-    ECN::ECSchemaPtr imported;
-    ECSUCCESS(schemaIn.CopySchema(imported));
-    ECSUCCESS(imported->SetName(schemaIn.GetName()));
-    ECSUCCESS(imported->SetNamespacePrefix(schemaIn.GetNamespacePrefix()));
+    ECN::ECSchemaPtr imported = copyECSchema(schemaIn);
 
     ECN::ECSchemaReadContextPtr contextPtr = ECN::ECSchemaReadContext::CreateContext();
     ECSUCCESS(contextPtr->AddSchema(*imported));
@@ -909,7 +1007,8 @@ static ECN::ECSchemaCP importECSchema(ECN::ECObjectsStatus& ecstatus, DgnDbR db,
         return nullptr;
         }
 
-    db.Schemas().CreateECClassViewsInDb();
+    if (nullptr == existing)    // Don't call CreateECClassViewsInDb twice!
+        db.Schemas().CreateECClassViewsInDb();
 
     return imported.get();  // DgnDb holds a reference to the schema now.
     }
@@ -942,15 +1041,15 @@ DgnDbStatus ComponentDef::Export(DgnImportContext& context, bool exportSchema, b
         return DgnDbStatus::WrongDgnDb;
         }
 
-    if (exportSchema && (nullptr == getSameClassIn(context.GetDestinationDb(), m_class)))
+    if (exportSchema)
         {
         ECN::ECObjectsStatus ecstatus = ECN::ECObjectsStatus::Success;
-        importECSchema(ecstatus, context.GetDestinationDb(), GetECClass().GetSchema(), false);
+        importECSchema(ecstatus, context.GetDestinationDb(), GetECClass().GetSchema(), true);
         if (ECN::ECObjectsStatus::Success != ecstatus && ECN::ECObjectsStatus::DuplicateSchema != ecstatus)
             return DgnDbStatus::BadSchema;
         }
 
-    if (exportCategory && !DgnCategory::QueryCategoryId(GetCategoryName(), context.GetDestinationDb()).IsValid())
+    if (exportCategory && !DgnCategory::QueryCategoryId(GetCategoryName(), context.GetDestinationDb()).IsValid()) // *** WIP_COMPONENT - update existing category definition??
         {
         auto sourceCat = DgnCategory::QueryCategory(GetCategoryName(), GetDgnDb());
         if (sourceCat.IsValid())
@@ -960,7 +1059,7 @@ DgnDbStatus ComponentDef::Export(DgnImportContext& context, bool exportSchema, b
             }
         }
 
-    if (!UsesTemporaryModel() && !context.GetDestinationDb().Models().QueryModelId(DgnModel::CreateModelCode(GetModelName())).IsValid())
+    if (!UsesTemporaryModel() && !context.GetDestinationDb().Models().QueryModelId(DgnModel::CreateModelCode(GetModelName())).IsValid()) 
         {
         DgnDbStatus status;
         if (!DgnModel::Import(&status, GetModel(), context).IsValid())
@@ -1309,6 +1408,10 @@ ECN::IECInstancePtr ComponentDefCreator::AddSpecCA(ECN::ECClassR ecclass)
         {
         ECSUCCESS(componentSpec->SetValue(CDEF_CA_MODEL, ECN::ECValue(m_modelName.c_str())));
         }
+    if (!m_inputs.empty())
+        {
+        ECSUCCESS(componentSpec->SetValue(CDEF_CA_INPUTS, ECN::ECValue(m_inputs.c_str())));
+        }
 
     ECSUCCESS(ecclass.SetCustomAttribute(*componentSpec));
 
@@ -1339,13 +1442,34 @@ ECN::IECInstancePtr ComponentDefCreator::AddSpecCA(ECN::ECClassR ecclass)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
+void ComponentDefCreator::AddInput(Utf8StringCR inp)
+    {
+    if (!m_inputs.empty())
+        m_inputs.append(",");
+    m_inputs.append(inp);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 ECN::ECClassCP ComponentDefCreator::GenerateECClass()
     {
     ECN::ECObjectsStatus ecstatus;
     
     m_schema.AddReferencedSchema(const_cast<ECN::ECSchemaR>(m_baseClass.GetSchema()));
 
-    ECN::ECEntityClassP ecclass;
+    if (true)
+        {
+        ECN::ECClassCP existing_ecclass = m_schema.GetClassCP(m_name.c_str());
+        if (nullptr != existing_ecclass)
+#ifdef WIP_COMPONENT // *** Problems with deleting ECClass
+            ComponentDef::DeleteComponentDef(m_db, ComponentDef::GetClassECSqlName(*existing_ecclass));
+#else
+            return existing_ecclass;
+#endif
+        }
+          
+    ECN::ECEntityClassP ecclass;      
     ECSUCCESS(m_schema.CreateEntityClass(ecclass, m_name));
 
     ECSUCCESS(ecclass->AddBaseClass(m_baseClass));

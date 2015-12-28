@@ -21,7 +21,7 @@ DGNPLATFORM_TYPEDEFS(DgnModel2d)
 DGNPLATFORM_TYPEDEFS(DgnModel3d)
 DGNPLATFORM_TYPEDEFS(DgnRangeTree)
 DGNPLATFORM_TYPEDEFS(ICheckStop)
-DGNPLATFORM_TYPEDEFS(PlanarPhysicalModel)
+DGNPLATFORM_TYPEDEFS(SectionDrawingModel)
 DGNPLATFORM_TYPEDEFS(SheetModel)
 DGNPLATFORM_TYPEDEFS(DictionaryModel)
 DGNPLATFORM_TYPEDEFS(SystemModel)
@@ -346,8 +346,8 @@ protected:
     virtual DefinitionModelCP _ToDefinitionModel() const {return nullptr;}
     virtual DgnModel2dCP _ToDgnModel2d() const {return nullptr;}
     virtual DgnModel3dCP _ToDgnModel3d() const {return nullptr;}
-    virtual PhysicalModelCP _ToPhysicalModel() const {return nullptr;}
-    virtual PlanarPhysicalModelCP _ToPlanarPhysicalModel() const {return nullptr;}
+    virtual SpatialModelCP _ToSpatialModel() const {return nullptr;}
+    virtual SectionDrawingModelCP _ToSectionDrawingModel() const {return nullptr;}
     virtual SheetModelCP _ToSheetModel() const {return nullptr;}
     virtual SystemModelCP _ToSystemModel() const {return nullptr;}
     /** @} */
@@ -458,21 +458,21 @@ public:
     DefinitionModelCP ToDefinitionModel() const {return _ToDefinitionModel();} //!< more efficient substitute for dynamic_cast<DefinitionModelCP>(model)
     DgnModel2dCP ToDgnModel2d() const {return _ToDgnModel2d();} //!< more efficient substitute for dynamic_cast<DgnModel2dCP>(model)
     DgnModel3dCP ToDgnModel3d() const {return _ToDgnModel3d();} //!< more efficient substitute for dynamic_cast<DgnModel3dCP>(model)
-    PhysicalModelCP ToPhysicalModel() const {return _ToPhysicalModel();} //!< more efficient substitute for dynamic_cast<PhysicalModelCP>(model)
-    PlanarPhysicalModelCP ToPlanarPhysicalModel() const {return _ToPlanarPhysicalModel();} //!< more efficient substitute for dynamic_cast<PlanarPhysicalModelCP>(model)
+    SpatialModelCP ToSpatialModel() const {return _ToSpatialModel();} //!< more efficient substitute for dynamic_cast<SpatialModelCP>(model)
+    SectionDrawingModelCP ToSectionDrawingModel() const {return _ToSectionDrawingModel();} //!< more efficient substitute for dynamic_cast<SectionDrawingModelCP>(model)
     SheetModelCP ToSheetModel() const {return _ToSheetModel();} //!< more efficient substitute for dynamic_cast<SheetModelCP>(model)
     SystemModelCP ToSystemModel() const {return _ToSystemModel();} //!< more efficient substitute for dynamic_cast<SystemModelCP>(model)
     GeometricModelP ToGeometricModelP() {return const_cast<GeometricModelP>(_ToGeometricModel());} //!< more efficient substitute for dynamic_cast<GeometricModelP>(model)
     DefinitionModelP ToDefinitionModelP() {return const_cast<DefinitionModelP>(_ToDefinitionModel());} //!< more efficient substitute for dynamic_cast<DefinitionModelP>(model)
     DgnModel2dP ToDgnModel2dP() {return const_cast<DgnModel2dP>(_ToDgnModel2d());} //!< more efficient substitute for dynamic_cast<DgnModel2dP>(model)
     DgnModel3dP ToDgnModel3dP() {return const_cast<DgnModel3dP>(_ToDgnModel3d());} //!< more efficient substitute for dynamic_cast<DgnModel3dP>(model)
-    PhysicalModelP ToPhysicalModelP() {return const_cast<PhysicalModelP>(_ToPhysicalModel());} //!< more efficient substitute for dynamic_cast<PhysicalModelP>(model)
-    PlanarPhysicalModelP ToPlanarPhysicalModelP() {return const_cast<PlanarPhysicalModelP>(_ToPlanarPhysicalModel());} //!< more efficient substitute for dynamic_cast<PlanarPhysicalModelP>(model)
+    SpatialModelP ToSpatialModelP() {return const_cast<SpatialModelP>(_ToSpatialModel());} //!< more efficient substitute for dynamic_cast<SpatialModelP>(model)
+    SectionDrawingModelP ToSectionDrawingModelP() {return const_cast<SectionDrawingModelP>(_ToSectionDrawingModel());} //!< more efficient substitute for dynamic_cast<SectionDrawingModelP>(model)
     SheetModelP ToSheetModelP() {return const_cast<SheetModelP>(_ToSheetModel());}//!< more efficient substitute for dynamic_cast<SheetModelP>(model)
     SystemModelP ToSystemModelP() {return const_cast<SystemModelP>(_ToSystemModel());}//!< more efficient substitute for dynamic_cast<SystemModelP>(model)
 
     bool IsGeometricModel() const { return nullptr != ToGeometricModel(); }
-    bool IsPhysicalModel() const { return nullptr != ToPhysicalModel(); }
+    bool IsSpatialModel() const { return nullptr != ToSpatialModel(); }
     bool Is2dModel() const { return nullptr != ToDgnModel2d(); }
     bool Is3dModel() const { return nullptr != ToDgnModel3d(); }
     bool IsDefinitionModel() const { return nullptr != ToDefinitionModel(); }
@@ -819,7 +819,7 @@ public:
 // @bsiclass                                                    Keith.Bentley   10/11
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE DgnModel2d : GeometricModel
-    {
+{
     DGNMODEL_DECLARE_MEMBERS(DGN_CLASSNAME_Model2d, GeometricModel);
 
 protected:
@@ -830,24 +830,24 @@ protected:
 
 public:
     explicit DgnModel2d(CreateParams const& params, DPoint2dCR origin=DPoint2d::FromZero()) : T_Super(params) {}
-    };
+};
 
 //=======================================================================================
-//! A DgnModel3d that occupies physical space in the DgnDb. All PhysicalModels in a DgnDb have the same coordinate
+//! A DgnModel3d that occupies physical space in the DgnDb. All SpatialModels in a DgnDb have the same coordinate
 //! space (CoordinateSpace::World), aka "Physical Space".
-//! DgnElements from PhysicalModels are indexed in the persistent range tree of the DgnDb (the DGN_VTABLE_RTree3d).
+//! DgnElements from SpatialModels are indexed in the persistent range tree of the DgnDb (the DGN_VTABLE_RTree3d).
 //! @ingroup DgnModelGroup
 // @bsiclass                                                    Keith.Bentley   10/11
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE PhysicalModel : DgnModel3d
+struct EXPORT_VTABLE_ATTRIBUTE SpatialModel : DgnModel3d
 {
     DGNMODEL_DECLARE_MEMBERS(DGN_CLASSNAME_PhysicalModel, DgnModel3d);
 protected:
-    PhysicalModelCP _ToPhysicalModel() const override {return this;}
+    SpatialModelCP _ToSpatialModel() const override {return this;}
     CoordinateSpace _GetCoordinateSpace() const override {return CoordinateSpace::World;}
 
 public:
-    explicit PhysicalModel(CreateParams const& params) : T_Super(params) {}
+    explicit SpatialModel(CreateParams const& params) : T_Super(params) {}
 };
 
 //=======================================================================================
@@ -962,11 +962,8 @@ struct ComponentDef : RefCountedBase
     ECN::IECInstancePtr m_ca;
     ComponentModelPtr m_model;
 
-    DGNPLATFORM_EXPORT static Utf8String GetCaValueString(ECN::IECInstanceCR, Utf8CP propName);
-    DGNPLATFORM_EXPORT ECN::IECInstancePtr GetPropSpecCA(ECN::ECPropertyCR prop);
-
-    static Utf8String GetClassECSqlName(ECN::ECClassCR cls) {Utf8String ns(cls.GetSchema().GetNamespacePrefix()); return ns.append(".").append(cls.GetName());}
-    Utf8String GetClassECSqlName() const {return GetClassECSqlName(m_class);}
+    static Utf8String GetCaValueString(ECN::IECInstanceCR, Utf8CP propName);
+    ECN::IECInstancePtr GetPropSpecCA(ECN::ECPropertyCR prop);
 
     Utf8String GetGeneratedName() const;
     DgnElement::Code CreateVariationCode(Utf8StringCR slnId);
@@ -979,17 +976,26 @@ struct ComponentDef : RefCountedBase
     
     //! Compare two instances and return true if their parameter values are the same.
     //! @note This function infers that that parameters to be compared are the properties of \a lhs that are not ECInstanceId and are not NULL.
-    DGNPLATFORM_EXPORT bool HaveEqualParameters(ECN::IECInstanceCR lhs, ECN::IECInstanceCR rhs, bool compareOnlyInstanceParameters = true);
+    bool HaveEqualParameters(ECN::IECInstanceCR lhs, ECN::IECInstanceCR rhs, bool compareOnlyInstanceParameters = true);
 
     //! Copy instance parameters from source to target
-    DGNPLATFORM_EXPORT void CopyInstanceParameters(ECN::IECInstanceR target, ECN::IECInstanceCR source);
+    void CopyInstanceParameters(ECN::IECInstanceR target, ECN::IECInstanceCR source);
 
     ComponentDef(DgnDbR db, ECN::ECClassCR componentDefClass);
     ~ComponentDef();
 
  public:
+    static Utf8String GetClassECSqlName(ECN::ECClassCR cls) {Utf8String ns(cls.GetSchema().GetNamespacePrefix()); return ns.append(".").append(cls.GetName());}
+    Utf8String GetClassECSqlName() const {return GetClassECSqlName(m_class);}
+
     //! @private - called only by componenteditor
-    DGNPLATFORM_EXPORT DgnDbStatus GenerateGeometry(ECN::IECInstanceCR variationSpec);
+    DGNPLATFORM_EXPORT DgnDbStatus GenerateElements(DgnModelR destModel, ECN::IECInstanceCR variationSpec);
+
+    //! Get the list of properties that are the main inputs to the component's element generator
+    DGNPLATFORM_EXPORT bvector<Utf8String> GetInputs() const;
+
+    //! Get the list of input properties in a form that can be put into a SQL SELECT statement
+    DGNPLATFORM_EXPORT Utf8String GetInputsForSelect() const;
 
     //! Get a list of all of the component definitions derived from the specified base class in the specified DgnDb
     //! @param[out] componentDefs    Where to return the results
@@ -1000,7 +1006,7 @@ struct ComponentDef : RefCountedBase
     //! Make a ComponentDef object
     //! @param db           The DgnDb that contains the component def
     //! @param componentDefClass   The ECClass that defines the component
-    //! @param status       If not null, an error code in case the component definition could not be returned
+    //! @param status       If not null, an error code in case of failure
     //! @note possible status values include:
     //! DgnDbStatus::BadModel - the component definition specifies a model, but the model does not exist in \a db
     //! DgnDbStatus::InvalidCategory - the component definition's category cannot be found in \a db
@@ -1017,25 +1023,38 @@ struct ComponentDef : RefCountedBase
     //! Make a ComponentDef object
     //! @param db           The DgnDb that contains the component def
     //! @param ecsqlClassName   The full ECSQL name of the ECClass that defines the component
-    //! @param status       If not null, an error code in case Create failed
+    //! @param status       If not null, an error code in case of failure
     //! @see FromECClass
     DGNPLATFORM_EXPORT static ComponentDefPtr FromECSqlName(DgnDbStatus* status, DgnDbR db, Utf8StringCR ecsqlClassName);
 
     //! Get the ComponentDef corresponding to the specified component instance
     //! @param instance     An element that might be an instance of a component
-    //! @param status       If not null, an error code in case the component definition could not be returned
+    //! @param status       If not null, an error code in case of failure
     //! @see FromECClass
     DGNPLATFORM_EXPORT static ComponentDefPtr FromInstance(DgnDbStatus* status, DgnElementCR instance);
 
     //! Get the ComponentDef corresponding to the specified ComponentModel
     //! @param model        A ComponentModel
-    //! @param status       If not null, an error code in case the component definition could not be returned
+    //! @param status       If not null, an error code in case of failure
     //! @see FromECClass
     DGNPLATFORM_EXPORT static ComponentDefPtr FromComponentModel(DgnDbStatus* status, ComponentModelCR model);
 
-    struct GeometryGenerator
+    //! Delete a component definition.
+    //! @param db           The DgnDb that contains the component def
+    //! @param ecsqlClassName   The full ECSQL name of the ECClass that defines the component
+    //! @return non-zero error status if \a componentDefClass is not a component definition class
+    //! @note All existing variations and instances are also deleted. The component def's work model is also deleted.
+    DGNPLATFORM_EXPORT static DgnDbStatus DeleteComponentDef(DgnDbR db, Utf8StringCR ecsqlClassName);
+
+    struct ElementGenerator
         {
-        virtual DgnDbStatus _GenerateGeometry(ECN::IECInstanceCR variationSpec) = 0;
+        //! Generate geometry
+        //! @param destModel The model where instances of this component will be placed
+        //! @param componentWorkModel The model where intermediate results may be written. Everything written to the work model will be harvested when instances are placed.
+        //! @param variationSpec The input parameters and their values
+        //! @param cdef The definition of the component that is to be instanced
+        //! @return non-zero error status if elements could not be generated
+        virtual DgnDbStatus _GenerateElements(DgnModelR destModel, DgnModelR componentWorkModel, ECN::IECInstanceCR variationSpec, ComponentDef& cdef) = 0;
         };
 
     //! Component parameter variation scope
@@ -1175,8 +1194,9 @@ private:
     Utf8String m_categoryName;
     Utf8String m_codeAuthorityName;
     Utf8String m_modelName;
+    Utf8String m_inputs;
     bvector<PropertySpec> m_propSpecs;
-
+    
     ECN::IECInstancePtr CreatePropSpecCA();
     ECN::IECInstancePtr CreateSpecCA();
     ECN::IECInstancePtr AddSpecCA(ECN::ECClassR);
@@ -1194,32 +1214,16 @@ public:
     //! Set the model name. The default is no model name, indicating that the component should use a temporary "sandbox" model.
     void SetModelName(Utf8StringCR n) {m_modelName=n;}
 
-    void AddPropertySpec(PropertySpec const& s) {m_propSpecs.push_back(s);}
+    void AddPropertySpec(PropertySpec const& s) {m_propSpecs.push_back(s); AddInput(s.m_name);}
+
+    DGNPLATFORM_EXPORT void AddInput(Utf8StringCR inp); //!< You can call this directly to mark existing (subclass) properties as inputs
 
     DGNPLATFORM_EXPORT ECN::ECClassCP GenerateECClass();
 };
 
 //=======================================================================================
-//! A PlanarPhysicalModel is an infinite planar model that subdivides physical space into two halves. The plane of a
-//! PhysicalPlanar model may be mapped into physical space in non-linear way, but every finite point in physical space is
-//! either "in front" or "in back" of the plane.
-//! @note a PlanarPhysicalModel @b is @b a DgnModel2d, and all of its elements are 2-dimensional.
-//! Also note that any (2d) point on a PlanarPhysicalModel corresponds to a single point in physical space.
-//! @ingroup DgnModelGroup
-// @bsiclass                                                    Keith.Bentley   10/11
-//=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE PlanarPhysicalModel : DgnModel2d
-{
-    DGNMODEL_DECLARE_MEMBERS(DGN_CLASSNAME_PlanarPhysicalModel, DgnModel2d);
-
-protected:
-    PlanarPhysicalModelCP _ToPlanarPhysicalModel() const override {return this;}
-public:
-    explicit PlanarPhysicalModel(CreateParams const& params) : T_Super(params) {}
-};
-
-//=======================================================================================
-//! A SectionDrawingModel is a PlanarPhysicalModel that is mapped into physical space such that the vertical direction (Y
+//! A SectionDrawingModel is an infinite planar model that subdivides physical space into two halves.
+//! The plane of a SectionDrawingModel is mapped into physical space such that the vertical direction (Y
 //! vector) of the SectionDrawingModel is constant in physical space. That is, physical space is divided in half (cut) by a
 //! series of line segments, continuous and monotonically increasing along the X axis, in the XZ plane of the drawing. This
 //! is called the "section plane", and the line segments are called the "section lines". In AEC section drawings, a further
@@ -1233,13 +1237,15 @@ public:
 //! Other elements in the SectionDrawingModel are computed by projecting element behind the section plane onto the section
 //! plane according to some rules. These elements are called "reverse graphics". Lastly, the SectionDrawingModel may contain
 //! elements that are pure annotation placed by the user or created by other rules.
+//! @note Any (2d) point on a SectionDrawingModel corresponds to a single point in physical space.
 //! @ingroup DgnModelGroup
 // @bsiclass                                                    Keith.Bentley   10/11
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE SectionDrawingModel : PlanarPhysicalModel
+struct EXPORT_VTABLE_ATTRIBUTE SectionDrawingModel : DgnModel2d
 {
-    DGNMODEL_DECLARE_MEMBERS(DGN_CLASSNAME_SectionDrawingModel, PlanarPhysicalModel);
+    DGNMODEL_DECLARE_MEMBERS(DGN_CLASSNAME_SectionDrawingModel, DgnModel2d);
 protected:
+    SectionDrawingModelCP _ToSectionDrawingModel() const override final {return this;}
     DGNPLATFORM_EXPORT virtual DgnDbStatus _OnInsertElement(DgnElementR element) override;
 public:
     SectionDrawingModel(CreateParams const& params) : T_Super(params) {}
@@ -1308,7 +1314,7 @@ public:
 };
 
 #define MODELHANDLER_DECLARE_MEMBERS(__ECClassName__,__classname__,_handlerclass__,_handlersuperclass__,__exporter__) \
-        private: virtual DgnModel* _CreateInstance(DgnModel::CreateParams const& params) override {return new __classname__(__classname__::CreateParams(params));}\
+        private: virtual Dgn::DgnModel* _CreateInstance(Dgn::DgnModel::CreateParams const& params) override {return new __classname__(__classname__::CreateParams(params));}\
         protected: virtual uint64_t _ParseRestrictedAction(Utf8CP name) const override { return __classname__::RestrictedAction::Parse(name); }\
         DOMAINHANDLER_DECLARE_MEMBERS(__ECClassName__,_handlerclass__,_handlersuperclass__,__exporter__)
 
@@ -1355,10 +1361,10 @@ namespace dgn_ModelHandler
         MODELHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_Model2d, DgnModel2d, Model2d, Model, DGNPLATFORM_EXPORT)
     };
 
-    //! The ModelHandler for PhysicalModel
-    struct EXPORT_VTABLE_ATTRIBUTE Physical : Model
+    //! The ModelHandler for SpatialModel
+    struct EXPORT_VTABLE_ATTRIBUTE Spatial : Model
     {
-        MODELHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_PhysicalModel, PhysicalModel, Physical, Model, DGNPLATFORM_EXPORT)
+        MODELHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_SpatialModel, SpatialModel, Spatial, Model, DGNPLATFORM_EXPORT)
     };
 
     //! The ModelHandler for ComponentModel
@@ -1367,16 +1373,10 @@ namespace dgn_ModelHandler
         MODELHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_ComponentModel, ComponentModel, Component, Model, DGNPLATFORM_EXPORT)
     };
 
-    //! The ModelHandler for PlanarPhysicalModel
-    struct EXPORT_VTABLE_ATTRIBUTE PlanarPhysical : Model2d
-    {
-        MODELHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_PlanarPhysicalModel, PlanarPhysicalModel, PlanarPhysical, Model2d, DGNPLATFORM_EXPORT)
-    };
-
     //! The ModelHandler for SectionDrawingModel
-    struct EXPORT_VTABLE_ATTRIBUTE SectionDrawing : PlanarPhysical
+    struct EXPORT_VTABLE_ATTRIBUTE SectionDrawing : Model2d
     {
-        MODELHANDLER_DECLARE_MEMBERS (DGN_CLASSNAME_SectionDrawingModel, SectionDrawingModel, SectionDrawing, PlanarPhysical, DGNPLATFORM_EXPORT)
+        MODELHANDLER_DECLARE_MEMBERS (DGN_CLASSNAME_SectionDrawingModel, SectionDrawingModel, SectionDrawing, Model2d, DGNPLATFORM_EXPORT)
     };
 
     //! The ModelHandler for SheetModel

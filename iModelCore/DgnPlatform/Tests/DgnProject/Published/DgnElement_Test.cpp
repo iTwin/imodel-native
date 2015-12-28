@@ -477,8 +477,8 @@ TEST_F(DgnElementTests, ElementCopierTests_Group)
     DgnElementCPtr group = TestGroup::Create(*m_db, m_defaultModelId, m_defaultCategoryId)->Insert();
     DgnElementCPtr m1 = TestElement::Create(*m_db, m_defaultModelId,m_defaultCategoryId)->Insert();
     DgnElementCPtr m2 = TestElement::Create(*m_db, m_defaultModelId,m_defaultCategoryId)->Insert();
-    ElementGroupsMembers::Insert(*group, *m1);
-    ElementGroupsMembers::Insert(*group, *m2);
+    ElementGroupsMembers::Insert(*group, *m1, 0);
+    ElementGroupsMembers::Insert(*group, *m2, 0);
     ASSERT_TRUE(group->ToIElementGroup()->QueryMembers().size() == 2);
 
     DgnModelPtr destModel = group->GetModel();

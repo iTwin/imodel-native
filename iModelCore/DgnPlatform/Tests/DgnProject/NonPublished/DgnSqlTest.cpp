@@ -31,7 +31,7 @@ public:
     void SetupProject(WCharCP dgnDbFileName, WCharCP inFileName, BeSQLite::Db::OpenMode);
     void InsertElement(PhysicalElementR pelem);
     DgnModelR GetDefaultModel() {return *m_db->Models().GetModel(m_defaultModelId);}
-    PhysicalModelP GetDefaultPhysicalModel() {return dynamic_cast<PhysicalModelP>(&GetDefaultModel());}
+    SpatialModelP GetDefaultSpatialModel() {return dynamic_cast<SpatialModelP>(&GetDefaultModel());}
     DgnElement::Code CreateCode(Utf8StringCR value) const { return NamespaceAuthority::CreateCode("SqlFunctionsTest", value, *m_db); }
     };
 
@@ -100,11 +100,11 @@ TEST_F(SqlFunctionsTest, placement_areaxy)
     DPoint3d o1origin = DPoint3d::From(0,o1y,0);
     DPoint3d o2origin = DPoint3d::From(o2x,0,0);
 
-    ObstacleElementPtr obstacleAt0 = ObstacleElement::Create(*GetDefaultPhysicalModel(), m_defaultCategoryId, o1origin, 0.0, CreateCode("obstacleAt0"));
+    ObstacleElementPtr obstacleAt0 = ObstacleElement::Create(*GetDefaultSpatialModel(), m_defaultCategoryId, o1origin, 0.0, CreateCode("obstacleAt0"));
     InsertElement(*obstacleAt0);
     obstacleAt0->SetSomeProperty(*m_db, "B");
 
-    ObstacleElementPtr obstacle2At90 = ObstacleElement::Create(*GetDefaultPhysicalModel(), m_defaultCategoryId, o2origin, 90.0, CreateCode("obstacle2At90"));
+    ObstacleElementPtr obstacle2At90 = ObstacleElement::Create(*GetDefaultSpatialModel(), m_defaultCategoryId, o2origin, 90.0, CreateCode("obstacle2At90"));
     InsertElement(*obstacle2At90);
     obstacle2At90->SetSomeProperty(*m_db, "A");
 
@@ -188,12 +188,12 @@ TEST_F(SqlFunctionsTest, placement_angles)
     DPoint3d o2origin = DPoint3d::From(o2x,0,0);
 
     //  Create an element @ 0 degrees
-    ObstacleElementPtr elemAt0 = ObstacleElement::Create(*GetDefaultPhysicalModel(), m_defaultCategoryId, o1origin, 0.0, CreateCode("elemAt0"));
+    ObstacleElementPtr elemAt0 = ObstacleElement::Create(*GetDefaultSpatialModel(), m_defaultCategoryId, o1origin, 0.0, CreateCode("elemAt0"));
     InsertElement(*elemAt0);
     elemAt0->SetSomeProperty(*m_db, "B");
 
     //  Create an element @ 90 degrees
-    ObstacleElementPtr elem1At90 = ObstacleElement::Create(*GetDefaultPhysicalModel(), m_defaultCategoryId, o2origin, 90.0, CreateCode("elem1At90"));
+    ObstacleElementPtr elem1At90 = ObstacleElement::Create(*GetDefaultSpatialModel(), m_defaultCategoryId, o2origin, 90.0, CreateCode("elem1At90"));
     InsertElement(*elem1At90);
     elem1At90->SetSomeProperty(*m_db, "A");
 
@@ -220,7 +220,7 @@ TEST_F(SqlFunctionsTest, placement_angles)
         }
     
     //  Create anoter element @ 90 degrees
-    ObstacleElementPtr elem2At90 = ObstacleElement::Create(*GetDefaultPhysicalModel(), m_defaultCategoryId, o2origin, 90.0, CreateCode("elem2At90"));
+    ObstacleElementPtr elem2At90 = ObstacleElement::Create(*GetDefaultSpatialModel(), m_defaultCategoryId, o2origin, 90.0, CreateCode("elem2At90"));
     InsertElement(*elem2At90);
     elem2At90->SetSomeProperty(*m_db, "B");
 
@@ -282,22 +282,22 @@ TEST_F(SqlFunctionsTest, DGN_point_min_distance_to_bbox)
 
     DgnElementId r1, o1, o1a, o2, o2a;
         {
-        RobotElementPtr robot1 = RobotElement::Create(*GetDefaultPhysicalModel(), m_defaultCategoryId, DPoint3d::From(0,0,0), 0.0, CreateCode("Robot1"));
+        RobotElementPtr robot1 = RobotElement::Create(*GetDefaultSpatialModel(), m_defaultCategoryId, DPoint3d::From(0,0,0), 0.0, CreateCode("Robot1"));
         InsertElement(*robot1);
 
-        ObstacleElementPtr obstacle1 = ObstacleElement::Create(*GetDefaultPhysicalModel(), m_defaultCategoryId, o1origin, 0.0, CreateCode("Obstacle1"));
+        ObstacleElementPtr obstacle1 = ObstacleElement::Create(*GetDefaultSpatialModel(), m_defaultCategoryId, o1origin, 0.0, CreateCode("Obstacle1"));
         InsertElement(*obstacle1);
         obstacle1->SetTestUniqueAspect(*m_db, "SomeKindOfObstacle");
 
-        ObstacleElementPtr obstacle1a = ObstacleElement::Create(*GetDefaultPhysicalModel(), m_defaultCategoryId, o1origin, 0.0, CreateCode("Obstacle1a"));
+        ObstacleElementPtr obstacle1a = ObstacleElement::Create(*GetDefaultSpatialModel(), m_defaultCategoryId, o1origin, 0.0, CreateCode("Obstacle1a"));
         InsertElement(*obstacle1a);
         obstacle1a->SetTestUniqueAspect(*m_db, "SomeOtherKindOfObstacle");
 
-        ObstacleElementPtr obstacle2 = ObstacleElement::Create(*GetDefaultPhysicalModel(), m_defaultCategoryId, o2origin, 90.0, CreateCode("Obstacle2"));
+        ObstacleElementPtr obstacle2 = ObstacleElement::Create(*GetDefaultSpatialModel(), m_defaultCategoryId, o2origin, 90.0, CreateCode("Obstacle2"));
         InsertElement(*obstacle2);
         obstacle2->SetTestUniqueAspect(*m_db, "SomeKindOfObstacle");
 
-        ObstacleElementPtr obstacle2a = ObstacleElement::Create(*GetDefaultPhysicalModel(), m_defaultCategoryId, o2origin, 90.0, CreateCode("Obstacle2a"));
+        ObstacleElementPtr obstacle2a = ObstacleElement::Create(*GetDefaultSpatialModel(), m_defaultCategoryId, o2origin, 90.0, CreateCode("Obstacle2a"));
         InsertElement(*obstacle2a);
         obstacle2a->SetTestUniqueAspect(*m_db, "SomeOtherKindOfObstacle");
 
@@ -414,22 +414,22 @@ TEST_F(SqlFunctionsTest, spatialQueryECSql)
 
     DgnElementId r1, o1, o1a, o2, o2a;
         {
-        RobotElementPtr robot1 = RobotElement::Create(*GetDefaultPhysicalModel(), m_defaultCategoryId, DPoint3d::From(0,0,0), 0.0, CreateCode("Robot1"));
+        RobotElementPtr robot1 = RobotElement::Create(*GetDefaultSpatialModel(), m_defaultCategoryId, DPoint3d::From(0,0,0), 0.0, CreateCode("Robot1"));
         InsertElement(*robot1);
 
-        ObstacleElementPtr obstacle1 = ObstacleElement::Create(*GetDefaultPhysicalModel(), m_defaultCategoryId, o1origin, 0.0, CreateCode("Obstacle1"));
+        ObstacleElementPtr obstacle1 = ObstacleElement::Create(*GetDefaultSpatialModel(), m_defaultCategoryId, o1origin, 0.0, CreateCode("Obstacle1"));
         InsertElement(*obstacle1);
         obstacle1->SetTestUniqueAspect(*m_db, "SomeKindOfObstacle");
 
-        ObstacleElementPtr obstacle1a = ObstacleElement::Create(*GetDefaultPhysicalModel(), m_defaultCategoryId, o1origin, 0.0, CreateCode("Obstacle1a"));
+        ObstacleElementPtr obstacle1a = ObstacleElement::Create(*GetDefaultSpatialModel(), m_defaultCategoryId, o1origin, 0.0, CreateCode("Obstacle1a"));
         InsertElement(*obstacle1a);
         obstacle1a->SetTestUniqueAspect(*m_db, "SomeOtherKindOfObstacle");
 
-        ObstacleElementPtr obstacle2 = ObstacleElement::Create(*GetDefaultPhysicalModel(), m_defaultCategoryId, o2origin, 90.0, CreateCode("Obstacle2"));
+        ObstacleElementPtr obstacle2 = ObstacleElement::Create(*GetDefaultSpatialModel(), m_defaultCategoryId, o2origin, 90.0, CreateCode("Obstacle2"));
         InsertElement(*obstacle2);
         obstacle2->SetTestUniqueAspect(*m_db, "SomeKindOfObstacle");
 
-        ObstacleElementPtr obstacle2a = ObstacleElement::Create(*GetDefaultPhysicalModel(), m_defaultCategoryId, o2origin, 90.0, CreateCode("Obstacle2a"));
+        ObstacleElementPtr obstacle2a = ObstacleElement::Create(*GetDefaultSpatialModel(), m_defaultCategoryId, o2origin, 90.0, CreateCode("Obstacle2a"));
         InsertElement(*obstacle2a);
         obstacle2a->SetTestUniqueAspect(*m_db, "SomeOtherKindOfObstacle");
 
@@ -628,22 +628,22 @@ TEST_F(SqlFunctionsTest, spatialQuery)
 
     DgnElementId r1, o1, o1a, o2, o2a;
         {
-        RobotElementPtr robot1 = RobotElement::Create(*GetDefaultPhysicalModel(), m_defaultCategoryId, DPoint3d::From(0,0,0), 0.0, CreateCode("Robot1"));
+        RobotElementPtr robot1 = RobotElement::Create(*GetDefaultSpatialModel(), m_defaultCategoryId, DPoint3d::From(0,0,0), 0.0, CreateCode("Robot1"));
         InsertElement(*robot1);
 
-        ObstacleElementPtr obstacle1 = ObstacleElement::Create(*GetDefaultPhysicalModel(), m_defaultCategoryId, o1origin, 0.0, CreateCode("Obstacle1"));
+        ObstacleElementPtr obstacle1 = ObstacleElement::Create(*GetDefaultSpatialModel(), m_defaultCategoryId, o1origin, 0.0, CreateCode("Obstacle1"));
         InsertElement(*obstacle1);
         obstacle1->SetTestUniqueAspect(*m_db, "SomeKindOfObstacle");
 
-        ObstacleElementPtr obstacle1a = ObstacleElement::Create(*GetDefaultPhysicalModel(), m_defaultCategoryId, o1origin, 0.0, CreateCode("Obstacle1a"));
+        ObstacleElementPtr obstacle1a = ObstacleElement::Create(*GetDefaultSpatialModel(), m_defaultCategoryId, o1origin, 0.0, CreateCode("Obstacle1a"));
         InsertElement(*obstacle1a);
         obstacle1a->SetTestUniqueAspect(*m_db, "SomeOtherKindOfObstacle");
 
-        ObstacleElementPtr obstacle2 = ObstacleElement::Create(*GetDefaultPhysicalModel(), m_defaultCategoryId, o2origin, 90.0, CreateCode("Obstacle2"));
+        ObstacleElementPtr obstacle2 = ObstacleElement::Create(*GetDefaultSpatialModel(), m_defaultCategoryId, o2origin, 90.0, CreateCode("Obstacle2"));
         InsertElement(*obstacle2);
         obstacle2->SetTestUniqueAspect(*m_db, "SomeKindOfObstacle");
 
-        ObstacleElementPtr obstacle2a = ObstacleElement::Create(*GetDefaultPhysicalModel(), m_defaultCategoryId, o2origin, 90.0, CreateCode("Obstacle2a"));
+        ObstacleElementPtr obstacle2a = ObstacleElement::Create(*GetDefaultSpatialModel(), m_defaultCategoryId, o2origin, 90.0, CreateCode("Obstacle2a"));
         InsertElement(*obstacle2a);
         obstacle2a->SetTestUniqueAspect(*m_db, "SomeOtherKindOfObstacle");
 
