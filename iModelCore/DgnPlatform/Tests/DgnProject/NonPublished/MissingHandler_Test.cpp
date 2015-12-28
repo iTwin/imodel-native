@@ -101,7 +101,7 @@ public:
         {
         BeFileName schemaFile = schemasDir;
         schemaFile.AppendToPath(L"ECSchemas/" MHTEST_SCHEMAW L".01.00.ecschema.xml");
-        ASSERT_TRUE(DgnDbStatus::Success == DgnBaseDomain::GetDomain().ImportSchema(db, schemaFile));
+        ASSERT_TRUE(DgnDbStatus::Success == DgnDomain::ImportSchema(db, schemaFile));
         }
 };
 

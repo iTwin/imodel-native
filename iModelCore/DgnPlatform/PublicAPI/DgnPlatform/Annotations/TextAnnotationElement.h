@@ -169,6 +169,7 @@ namespace dgn_ElementHandler
     struct SpatialTextAnnotationHandler : Element
     {
         ELEMENTHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_SpatialTextAnnotationElement, SpatialTextAnnotationElement, SpatialTextAnnotationHandler, Element, DGNPLATFORM_EXPORT);
+        virtual void _GetClassParams(ECSqlClassParamsR params) override { T_Super::_GetClassParams(params); ElementGeom3d::AddClassParams(params); }
     };
 }
 
