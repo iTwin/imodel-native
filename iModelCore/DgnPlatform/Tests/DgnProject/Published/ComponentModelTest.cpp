@@ -829,7 +829,7 @@ TEST_F(ComponentModelTest, SimulateDeveloperAndClientWithNesting)
     Client_CheckNestedInstance(*instanceElement, TEST_GADGET_COMPONENT_NAME, 1);
     }
 
-#ifdef COMMENT_OUT // *** SchemaImportTest, SelectAfterImport will fail with an assertion failure in ECDbMap::TryGetClassMap
+//#ifdef COMMENT_OUT // *** SchemaImportTest, SelectAfterImport will fail with an assertion failure in ECDbMap::TryGetClassMap
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -876,13 +876,13 @@ TEST(SchemaImportTest, SelectAfterImport)
 
         ComponentDefCreator::ImportSchema(*db, *schema, false);
         }
-
+    db->ClearECDbCache();
     EC::ECSqlStatement selectC1after;
     selectC1after.Prepare(*db, "SELECT ECInstanceId FROM tir.C1");
     selectC1after.Step();
 
     db->SaveChanges();
     }
-#endif
+//#endif
 
 #endif //ndef BENTLEYCONFIG_NO_JAVASCRIPT
