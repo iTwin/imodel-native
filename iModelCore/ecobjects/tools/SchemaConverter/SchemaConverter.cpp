@@ -29,10 +29,11 @@ namespace {
 	//---------------------------------------------------------------------------------------
 	static void ShowUsage(char* str)
 		{
-		fprintf(stderr, "\n%s -i <inputSchemaPath> -o <outputDirectory> [-v VERSION] [-d DIRECTORIES] [-a] [-r VERSION] [-s]\n\n%s\n\n%s\n\n%s\t%s\n%s\t%s\n%s\t%s\n%s\t%s\n%s\t%s\n\n",
+		fprintf(stderr, "\n%s -i <inputSchemaPath> -o <outputDirectory> [-v VERSION] [-d DIRECTORIES] [-l DIRECTORY] [-a] [-r VERSION] [-s]\n\n%s\n\n%s\n\n%s\t%s\n%s\t%s\n%s\t%s\n%s\t%s\n%s\t%s\n%s\t%s\n\n",
 			str, "Tool to convert between different versions of ECSchema(s)", "options:",
 			" -v --ver 2|3", "the schema will be converted to the specified exmlversion",
 			" -d --dir DIR", "looks into the following directories for reference schemas",
+			" -l --look DIR", "looks for the conversionschema file in this directory",
 			" -a --all", "convert the entire schema graph",
 			" -r --ref 2|3", "convert all the reference schemas to this version",
 			" -s --sup", "convert all the supplemental schemas");
@@ -128,17 +129,19 @@ namespace {
 	//---------------------------------------------------------------------------------------
 	// @bsimethod                                                   BentleySystems
 	//---------------------------------------------------------------------------------------
-	static int ConvertSchema(BeFileNameCR ecSchemaFile, BeFileNameCR outputDirectory, bvector<BeFileName> referenceDirectories, int exmlversion, bool all, int refVersion, bool supplemental)
+	static int ConvertSchema(BeFileNameCR ecSchemaFile, BeFileNameCR outputDirectory, bvector<BeFileName> referenceDirectories, BeFileNameCR otherDirectory, int exmlversion, bool all, int refVersion, bool supplemental, bool other)
 		{		
 		ECSchemaReadContextPtr contextPtr = ECSchemaReadContext::CreateContext();
 		contextPtr->AddSchemaPath(ecSchemaFile.GetDirectoryName().GetName());
-		for (auto dir: referenceDirectories)
+		for (auto dir: referenceDirectories)		
 			contextPtr->AddSchemaPath(dir.GetName());
+		if (other)
+			contextPtr->AddConversionSchemaPath(otherDirectory.GetName());
 		ECSchemaPtr schema;
 		SchemaReadStatus readSchemaStatus = ECSchema::ReadFromXmlFile(schema, ecSchemaFile.GetName(), *contextPtr);
 		if (SchemaReadStatus::Success != readSchemaStatus)
 			return (int)readSchemaStatus;
-		
+			
 		//Get the output major and minor versions
 		bpair<uint32_t, uint32_t> versions = GetVersionChanges(ecSchemaFile, exmlversion);
 		schema->SetVersionMajor(schema->GetVersionMajor() + versions.first);
@@ -190,12 +193,14 @@ int main(int argc, char** argv)
 	{
 	char* input;
 	char* output;
+	char* other;
 	bvector<char*> directories;
 	bool all = false;
 	int version = 3;
 	int flag = 0;
 	int refversion = 0;
 	bool supplementalSchemas = false;
+	bool otherDir = false;
 	// automatic switching for command-line parsing
 	if (argc < 5)
 		{
@@ -206,7 +211,7 @@ int main(int argc, char** argv)
 		{
 		if (strcmp(argv[i], "-i") == 0)
 			{
-			if ((argv[i + 1])[0] == '-')
+			if ((argv[i + 1])[0] == '-' || i+1 == argc)
 				{
 				ShowUsage(argv[0]);
 				return -1;
@@ -219,7 +224,7 @@ int main(int argc, char** argv)
 			}
 		else if (strcmp(argv[i], "-o") == 0)
 			{
-			if ((argv[i + 1])[0] == '-')
+			if ((argv[i + 1])[0] == '-' || i+1 == argc)
 				{
 				ShowUsage(argv[0]);
 				return -1;
@@ -239,12 +244,40 @@ int main(int argc, char** argv)
 			ShowUsage(argv[0]);
 			return -1;
 			}
+		else if (strcmp(argv[i], "--look") == 0 || strcmp(argv[i], "-l") == 0)
+		    {
+			bool check = false;
+			otherDir = true;
+			//check whether the argument follows a path format
+			if (i + 1 == argc)
+			    {
+				ShowUsage(argv[0]);
+				return -1;
+			    }
+			for (size_t j = 0; j<strlen(argv[i + 1]); j++)
+			    {
+				if ((argv[i + 1])[j] == '\\')
+					check = true;
+			    }
+			if (check)
+				other = argv[++i];
+			else
+			    {
+				fprintf(stderr, "--look/-l should be followed by a directory path\n");
+				return -1;
+			    }
+		    }
 		else if (strcmp(argv[i], "-v") == 0 || strcmp(argv[i], "--ver") == 0)
 			{
-			//Aloows the user to enter both real nos. and integers
-			if ((argv[i + 1])[0] == '-' || !(atof(argv[i + 1]) - 2 == 0 || atof(argv[i + 1]) - 3 == 0))
+			//Allows the user to enter both real nos. and integers
+			if (i + 1 == argc)
 				{
-				fprintf(stderr, " -v/--ver should be follwed by either the version 2.0(2) or 3.0(3)");
+				ShowUsage(argv[0]);
+				return -1;
+				}
+			else if ((argv[i + 1])[0] == '-' || !(atof(argv[i + 1]) - 2 == 0 || atof(argv[i + 1]) - 3 == 0))
+				{
+				fprintf(stderr, " -v/--ver should be follwed by either the version 2.0(2) or 3.0(3)\n");
 				return -1;
 				}
 			else
@@ -252,9 +285,14 @@ int main(int argc, char** argv)
 			}
 		else if (strcmp(argv[i], "-r") == 0 || strcmp(argv[i], "--ref") == 0)
 			{
-			if ((argv[i + 1])[0] == '-' || !(atof(argv[i + 1]) - 2 == 0 || atof(argv[i + 1]) - 3 == 0))
+			if (i + 1 == argc)
 				{
-				fprintf(stderr, " -r/--ref should be follwed by either the version 2.0(2) or 3.0(3)");
+				ShowUsage(argv[0]);
+				return -1;
+				}
+			else if ((argv[i + 1])[0] == '-' || !(atof(argv[i + 1]) - 2 == 0 || atof(argv[i + 1]) - 3 == 0))
+				{
+				fprintf(stderr, " -r/--ref should be follwed by either the version 2.0(2) or 3.0(3)\n");
 				return -1;
 				}
 			else
@@ -262,6 +300,11 @@ int main(int argc, char** argv)
 			}
 		else if (strcmp(argv[i], "-d") == 0 || strcmp(argv[i], "--dir") == 0)
 			{
+			if (i + 1 == argc)
+				{
+				fprintf(stderr, "--dir/-d should be followed by directory path(s)");
+				return -1;
+				}
 			while (i + 1 != argc)
 				{
 				if ((argv[i + 1])[0] != '-')
@@ -277,18 +320,13 @@ int main(int argc, char** argv)
 						directories.push_back(argv[++i]);
 					else
 						{
-							ShowUsage(argv[0]);
-							return -1;
+						fprintf(stderr, "--dir/-d should be followed by directory paths\n");
+						return -1;
 						}
 					}
 				else
 					break;
 				}				
-			if (directories.size() == 0)
-				{
-				ShowUsage(argv[0]);
-				return -1;
-				}
 			}
 		else
 			{
@@ -332,7 +370,10 @@ int main(int argc, char** argv)
 		refDirectories.push_back(temp);
 		temp.Clear();
 		}
-	s_logger->infov(L"Loading schema '%ls' for conversion to ECv3", inputFileName.GetName());
-	return ConvertSchema(inputFileName, outputDirectory, refDirectories, version, all, refversion, supplementalSchemas);
+	BeFileName otherDirectory;
+	if (otherDir)
+		otherDirectory.AppendUtf8(other);
+	s_logger->infov(L"Loading schema '%ls' for conversion to teh specified version", inputFileName.GetName());
+	return ConvertSchema(inputFileName, outputDirectory, refDirectories, otherDirectory, version, all, refversion, supplementalSchemas, otherDir);
     }
 
