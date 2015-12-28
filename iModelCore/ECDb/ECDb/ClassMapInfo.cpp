@@ -766,6 +766,11 @@ MapStatus RelationshipMapInfo::_EvaluateMapStrategy()
     if (m_resolvedStrategy.IsNotMapped())
         return MapStatus::Success;
 
+    //if (this->GetECClass().GetName() == "CategoryContainsGeometry")
+    //    {
+    //    printf("s");
+    //    }
+
     ECRelationshipClassCP relationshipClass = GetECClass().GetRelationshipClassCP();
     ECRelationshipConstraintR source = relationshipClass->GetSource();
     ECRelationshipConstraintR target = relationshipClass->GetTarget();

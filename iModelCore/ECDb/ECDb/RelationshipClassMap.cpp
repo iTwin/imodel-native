@@ -267,7 +267,7 @@ RelationshipClassEndTableMap::RelationshipClassEndTableMap (ECRelationshipClassC
 //---------------------------------------------------------------------------------------
 // @bsimethod                                               Affan.Khan       02/2015
 //+---------------+---------------+---------------+---------------+---------------+------
-ECDbSqlColumn* RelationshipClassEndTableMap::ConfigureForeignECClassIdKey(SchemaImportContext* schemaImportContext, RelationshipMapInfo const& mapInfo, ECRelationshipConstraintCR otherEndConstraint, IClassMap const& otheEndClassMap, size_t otherEndTableCount)
+ECDbSqlColumn* RelationshipClassEndTableMap::ConfigureForeignECClassIdKey(SchemaImportContext* schemaImportContext, RelationshipMapInfo const& mapInfo, ECRelationshipConstraintCR otherEndConstraint, ECDbSqlTable const& otheEndTable, size_t otherEndTableCount)
     {
     RelationshipEndColumns const& constraintColumnsMapping = GetEndColumnsMapping(mapInfo);
     Utf8String classIdColName(constraintColumnsMapping.GetECClassIdColumnName());
@@ -287,7 +287,7 @@ ECDbSqlColumn* RelationshipClassEndTableMap::ConfigureForeignECClassIdKey(Schema
     else
         {
         //! We will use JOIN to otherTable to get the ECClassId (if any)
-        otherEndECClassIdColumn = const_cast<ECDbSqlColumn*>(otheEndClassMap.GetSecondaryTable().GetFilteredColumnFirst (ColumnKind::ECClassId));
+        otherEndECClassIdColumn = const_cast<ECDbSqlColumn*>(otheEndTable.GetFilteredColumnFirst (ColumnKind::ECClassId));
         if (otherEndECClassIdColumn == nullptr)
             otherEndECClassIdColumn = CreateConstraintColumn (schemaImportContext, classIdColName.c_str (), columnId, false);
         }
@@ -319,7 +319,7 @@ MapStatus RelationshipClassEndTableMap::_InitializePart1 (SchemaImportContext* s
     auto thisEndClass = thisEndConstraint.GetClasses()[0];
     auto thisEndClassMap = GetECDbMap ().GetClassMapCP (*thisEndClass, true);
     size_t thisEndTableCount = GetECDbMap ().GetTableCountOnRelationshipEnd (thisEndConstraint);
-
+    auto thisEndTable = const_cast<ECDbSqlTable*>(GetECDbMap().GetFirstTableFromRelationshipEnd(thisEndConstraint));
     if (thisEndTableCount != 1)
         {
         BeAssert(thisEndTableCount == 1 && "ForeignKey end of relationship has more than one tables or has no table at all");
@@ -327,9 +327,10 @@ MapStatus RelationshipClassEndTableMap::_InitializePart1 (SchemaImportContext* s
         }
 
     auto otherEndClass = otherEndConstraint.GetClasses ()[0];
-    auto otheEndClassMap = GetECDbMap ().GetClassMapCP (*otherEndClass, true);
+   // auto otheEndClassMap = GetECDbMap ().GetClassMapCP (*otherEndClass, true);
     size_t otherEndTableCount = GetECDbMap().GetTableCountOnRelationshipEnd(otherEndConstraint);
-
+    auto otherEndTable = GetECDbMap().GetFirstTableFromRelationshipEnd(otherEndConstraint);
+    BeAssert(otherEndTable != nullptr);
 
     //SetTable for EndTable case.
     if (thisEndClassMap->HasJoinedTable())
@@ -365,7 +366,7 @@ MapStatus RelationshipClassEndTableMap::_InitializePart1 (SchemaImportContext* s
         */
         if (thisKeyPropCol == nullptr)
             {
-            SetTable(thisEndClassMap->GetSecondaryTable());
+            SetTable(*thisEndTable);
             }
         else
             {
@@ -377,7 +378,7 @@ MapStatus RelationshipClassEndTableMap::_InitializePart1 (SchemaImportContext* s
         }
     else  //Normal case.
         {
-        SetTable(thisEndClassMap->GetSecondaryTable());
+        SetTable(*thisEndTable);
         }
 
     //Create ECinstanceId for this classMap. This must map to current table for this class evaluate above and set through SetTable();
@@ -394,7 +395,7 @@ MapStatus RelationshipClassEndTableMap::_InitializePart1 (SchemaImportContext* s
     const ECClassId defaultThisEndECClassId = thisEndClass->GetId ();
 
     //**** Other End
-    ECDbSqlColumn* foreignKeyClassIdColumn = ConfigureForeignECClassIdKey (schemaImportContext, relationshipClassMapInfo, otherEndConstraint, *otheEndClassMap, otherEndTableCount);
+    ECDbSqlColumn* foreignKeyClassIdColumn = ConfigureForeignECClassIdKey (schemaImportContext, relationshipClassMapInfo, otherEndConstraint, *otherEndTable, otherEndTableCount);
     if (foreignKeyClassIdColumn == nullptr)
         {
         BeAssert (false && "Failed to create foreign ECClassId column for relationship");
