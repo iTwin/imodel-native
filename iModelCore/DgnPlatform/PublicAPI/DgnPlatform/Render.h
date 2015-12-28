@@ -122,7 +122,7 @@ public:
 //=======================================================================================
 struct Queue
 {
-    friend Dgn::DgnViewport;
+    friend DgnViewport;
 private:
     BeConditionVariable m_cv;
     std::deque<TaskPtr> m_tasks;
@@ -1198,6 +1198,8 @@ protected:
     virtual Point2d _GetScreenOrigin() const = 0;
     virtual BSIRect _GetViewRect() const = 0;
     virtual DVec2d _GetDpiScale() const = 0;
+
+    ~Target();
 
 public:
     virtual void _ChangeScene(GraphicListR scene) {Queue::VerifyRenderThread(true); m_currentScene = &scene;}
