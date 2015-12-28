@@ -841,7 +841,7 @@ public:
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE SpatialModel : DgnModel3d
 {
-    DGNMODEL_DECLARE_MEMBERS(DGN_CLASSNAME_PhysicalModel, DgnModel3d);
+    DGNMODEL_DECLARE_MEMBERS(DGN_CLASSNAME_SpatialModel, DgnModel3d);
 protected:
     SpatialModelCP _ToSpatialModel() const override {return this;}
     CoordinateSpace _GetCoordinateSpace() const override {return CoordinateSpace::World;}

@@ -329,9 +329,9 @@ namespace dgn_ModelHandler
     //! Specifically, then will need to call the _CreateUrl method.
     // @bsiclass                                                    Sam.Wilson      10/2014
     //=======================================================================================
-    struct EXPORT_VTABLE_ATTRIBUTE WebMercator : Physical
+    struct EXPORT_VTABLE_ATTRIBUTE WebMercator : Spatial
     {
-        MODELHANDLER_DECLARE_MEMBERS ("WebMercatorModel", WebMercatorModel, WebMercator, Physical, DGNPLATFORM_EXPORT)
+        MODELHANDLER_DECLARE_MEMBERS ("WebMercatorModel", WebMercatorModel, WebMercator, Spatial, DGNPLATFORM_EXPORT)
 
     public:
         //! Create the URL to request the specified tile from a map service.

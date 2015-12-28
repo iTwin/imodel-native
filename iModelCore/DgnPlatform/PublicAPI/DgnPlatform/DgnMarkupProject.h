@@ -416,7 +416,7 @@ public:
 //=======================================================================================
 struct SpatialRedlineModel : SpatialModel
     {
-    DGNMODEL_DECLARE_MEMBERS("PhysicalRedlineModel", SpatialModel);
+    DGNMODEL_DECLARE_MEMBERS("SpatialRedlineModel", SpatialModel);
 private:
 
     friend struct DgnMarkupProject;

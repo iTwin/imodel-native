@@ -408,7 +408,6 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
         <!-- An element that occupies real world space -->
         <BaseClass>Element</BaseClass>
         <BaseClass>GeometrySource3d</BaseClass>
-        <ECProperty propertyName="REMOVE_THIS_PLEASE" typeName="string" /><!-- NEEDSWORK: ECDb will not create a table for SpatialElement even though it inherits additional properties from GeometrySource3d. Adding a direct property forces it to create the table -->
     </ECClass>
     <ECClass typeName="PhysicalElement" isDomainClass="True">
         <!-- A SpatialElement that has mass and can be "touched" -->
@@ -447,7 +446,6 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
         </ECCustomAttributes>
         <BaseClass>Element</BaseClass>
         <BaseClass>GeometrySource2d</BaseClass>
-        <ECProperty propertyName="REMOVE_THIS_PLEASE" typeName="string" /><!-- NEEDSWORK: ECDb will not create a table for AnnotationElement even though it inherits additional properties from GeometrySource2d. Adding a direct property forces it to create the table -->
     </ECClass>
     <ECClass typeName="DrawingElement" isDomainClass="True">
         <!-- 2D element used in drawings -->
@@ -456,7 +454,6 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
         </ECCustomAttributes>
         <BaseClass>Element</BaseClass>
         <BaseClass>GeometrySource2d</BaseClass>
-        <ECProperty propertyName="REMOVE_THIS_PLEASE" typeName="string" /><!-- NEEDSWORK: ECDb will not create a table for DrawinElement even though it inherits additional properties from GeometrySource2d. Adding a direct property forces it to create the table -->
     </ECClass>
     <ECClass typeName="SheetElement" isDomainClass="True">
         <!-- 2D element used in sheets -->
@@ -465,7 +462,6 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
         </ECCustomAttributes>
         <BaseClass>Element</BaseClass>
         <BaseClass>GeometrySource2d</BaseClass>
-        <ECProperty propertyName="REMOVE_THIS_PLEASE" typeName="string" /><!-- NEEDSWORK: ECDb will not create a table for SheetElement even though it inherits additional properties from GeometrySource2d. Adding a direct property forces it to create the table -->
     </ECClass>
 
     <ECClass typeName="TextAnnotationData" isDomainClass="True">

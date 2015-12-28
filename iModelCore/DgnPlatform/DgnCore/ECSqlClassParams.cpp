@@ -178,9 +178,9 @@ void ECSqlClassInfo::Initialize(Utf8StringCR fullClassName, ECSqlClassParamsCR p
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                  Ramanujam.Raman   11/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-CachedECSqlStatementPtr ECSqlClassInfo::GetInsertStmt(DgnDbCR dgndb, DgnClassId classId) const
+CachedECSqlStatementPtr ECSqlClassInfo::GetInsertStmt(DgnDbCR dgndb) const
     {
-    return m_insert.empty() ? nullptr : dgndb.GetPreparedECSqlStatement(GetInsertECSql(dgndb, classId).c_str());
+    return m_insert.empty() ? nullptr : dgndb.GetPreparedECSqlStatement(m_insert.c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
