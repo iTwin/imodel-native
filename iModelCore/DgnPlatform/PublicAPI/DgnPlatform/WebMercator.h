@@ -282,9 +282,9 @@ protected:
 // in order to send requests to a tile server.
 // @bsiclass                                                    Sam.Wilson      10/2014
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE WebMercatorModel : PhysicalModel
+struct EXPORT_VTABLE_ATTRIBUTE WebMercatorModel : SpatialModel
 {
-    DEFINE_T_SUPER(PhysicalModel)
+    DEFINE_T_SUPER(SpatialModel)
 
 public:
     struct Mercator
@@ -413,7 +413,7 @@ namespace dgn_ModelHandler
 // @bsiclass                                                    Sam.Wilson      10/2014
 //=======================================================================================
 #ifdef TBD_LATLNG_GRID
-struct LatLongGridRealityDataHandler : PhysicalModel
+struct LatLongGridRealityDataHandler : SpatialModel
 {
 protected:
     DGNPLATFORM_EXPORT virtual void _DrawView (ViewContextR) override;

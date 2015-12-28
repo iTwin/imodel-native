@@ -39,6 +39,7 @@ protected:
     bmap<DgnElementId, DgnElementId> m_elementId;
     bmap<DgnClassId, DgnClassId> m_classId;
     bmap<DgnAuthorityId, DgnAuthorityId> m_authorityId;
+    bmap<DgnFontId, DgnFontId> m_fontId;
 
     template<typename T> T Find(bmap<T,T> const& table, T sourceId) const {auto i = table.find(sourceId); return (i == table.end())? T(): i->second;}
     template<typename T> T FindElement(T sourceId) const {return T(Find<DgnElementId>(m_elementId, sourceId).GetValueUnchecked());}
@@ -60,6 +61,8 @@ public:
     DgnTextureId Add(DgnTextureId sourceId, DgnTextureId targetId) {return DgnTextureId((m_elementId [sourceId] = targetId).GetValueUnchecked()); }
     DgnStyleId Find(DgnStyleId sourceId) const {return FindElement<DgnStyleId>(sourceId);}
     DgnStyleId Add(DgnStyleId sourceId, DgnStyleId targetId) {return DgnStyleId((m_elementId [sourceId] = targetId).GetValueUnchecked()); }
+    DgnFontId Find(DgnFontId sourceId) const { return Find<DgnFontId>(m_fontId, sourceId); }
+    DgnFontId Add(DgnFontId sourceId, DgnFontId targetId) { return m_fontId[sourceId] = targetId; }
 
     DgnSubCategoryId Find(DgnSubCategoryId sourceId) const {return FindElement<DgnSubCategoryId>(sourceId);}
     DgnSubCategoryId Add(DgnSubCategoryId sourceId, DgnSubCategoryId targetId) {return DgnSubCategoryId((m_elementId[sourceId] = targetId).GetValueUnchecked());}
@@ -163,6 +166,8 @@ public:
     //! Look up a copy of a Material
     //! Make sure that any ids referenced by the supplied GeomStream have been imported
     DGNPLATFORM_EXPORT DgnDbStatus RemapGeomStreamIds(GeomStreamR geom);
+    //! Remap a font between databases. If it exists by-type and -name, the ID is simply remapped; if not, a deep copy is made. If a deep copy is made and the source database contained the font data, the font data is also deep copied.
+    DGNPLATFORM_EXPORT DgnFontId RemapFont(DgnFontId);
     //! @}
 
     //! @name GCS coordinate system shift
@@ -1585,9 +1590,9 @@ public:
     static PhysicalElementPtr Create(CreateParams const& params) {return new PhysicalElement(params);}
 
     //! Create an instance of a PhysicalElement from a model and DgnCategoryId, using the default values for all other parameters.
-    //! @param[in] model The PhysicalModel for the new PhysicalElement.
+    //! @param[in] model The SpatialModel for the new PhysicalElement.
     //! @param[in] categoryId The category for the new PhysicalElement.
-    DGNPLATFORM_EXPORT static PhysicalElementPtr Create(PhysicalModelR model, DgnCategoryId categoryId);
+    DGNPLATFORM_EXPORT static PhysicalElementPtr Create(SpatialModelR model, DgnCategoryId categoryId);
 };
 
 //=======================================================================================
@@ -1731,11 +1736,12 @@ protected:
 struct ElementGroupsMembers : NonCopyableClass
 {
 public:
-    DGNPLATFORM_EXPORT static DgnDbStatus Insert(DgnElementCR group, DgnElementCR member);
+    DGNPLATFORM_EXPORT static DgnDbStatus Insert(DgnElementCR group, DgnElementCR member, int priority);
     DGNPLATFORM_EXPORT static DgnDbStatus Delete(DgnElementCR group, DgnElementCR member);
     DGNPLATFORM_EXPORT static bool HasMember(DgnElementCR group, DgnElementCR member);
     DGNPLATFORM_EXPORT static DgnElementIdSet QueryMembers(DgnElementCR group);
     DGNPLATFORM_EXPORT static DgnElementIdSet QueryGroups(DgnElementCR member);
+    DGNPLATFORM_EXPORT static int QueryMemberPriority(DgnElementCR group, DgnElementCR member);
 };
 
 //=======================================================================================
@@ -1755,6 +1761,9 @@ public:
     DgnElementIdSet QueryMembers() const {return ElementGroupsMembers::QueryMembers(*_ToGroupElement());}
     //! Returns true if this group has the specified member
     bool HasMemberElement(DgnElementCR member) const {return ElementGroupsMembers::HasMember(*_ToGroupElement(), member);}
+    //! Query for the priority of the specified member within this group
+    //! @return the priority or -1 in case of an error
+    int QueryMemberPriority(DgnElementCR member) const {return ElementGroupsMembers::QueryMemberPriority(*_ToGroupElement(), member);}
 };
 
 //=======================================================================================
@@ -1785,7 +1794,7 @@ protected:
 
 public:
     //! Add a member to this group
-    DgnDbStatus AddMember(T const& member) const
+    DgnDbStatus AddMember(T const& member, int priority=0) const
         {
         DgnElementCR groupElement = *_ToGroupElement();
         DgnElementCR memberElement = static_cast<DgnElementCR>(member); // see static_assert in constructor
@@ -1794,7 +1803,7 @@ public:
         if (DgnDbStatus::Success != status)
             return status;
 
-        status = ElementGroupsMembers::Insert(groupElement, memberElement);
+        status = ElementGroupsMembers::Insert(groupElement, memberElement, priority);
         if (DgnDbStatus::Success != status)
             return status;
 
@@ -1852,9 +1861,9 @@ public:
     explicit SpatialGroupElement(CreateParams const& params) : T_Super(params) {}
 
     //! Create a new SpatialGroupElement from a model and DgnCategoryId, using the default values for all other parameters.
-    //! @param[in] model The PhysicalModel for the new SpatialGroupElement.
+    //! @param[in] model The SpatialModel for the new SpatialGroupElement.
     //! @param[in] categoryId The category for the new SpatialGroupElement.
-    DGNPLATFORM_EXPORT static SpatialGroupElementPtr Create(PhysicalModelR model, DgnCategoryId categoryId);
+    DGNPLATFORM_EXPORT static SpatialGroupElementPtr Create(SpatialModelR model, DgnCategoryId categoryId);
 
     //! Creates a new SpatialGroupElement
     static SpatialGroupElementPtr Create(CreateParams const& params) {return new SpatialGroupElement(params);}

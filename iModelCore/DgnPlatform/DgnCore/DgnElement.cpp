@@ -877,7 +877,7 @@ void GeometrySource::SetInSelectionSet(bool yesNo) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Shaun.Sewall                    04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-PhysicalElementPtr PhysicalElement::Create(PhysicalModelR model, DgnCategoryId categoryId)
+PhysicalElementPtr PhysicalElement::Create(SpatialModelR model, DgnCategoryId categoryId)
     {
     DgnClassId classId = model.GetDgnDb().Domains().GetClassId(dgn_ElementHandler::Physical::GetHandler());
 
@@ -1121,18 +1121,18 @@ DgnElementCPtr ElementImporter::ImportElement(DgnDbStatus* statusOut, DgnModelR 
     IElementGroupCP sourceGroup;
     if (m_copyGroups && nullptr != (sourceGroup = sourceElement.ToIElementGroup()))
         {
-        for (auto sourceMemberId : sourceGroup->QueryMembers())
+        for (DgnElementId sourceMemberId : sourceGroup->QueryMembers())
             {
             DgnElementCPtr sourceMemberElement = sourceElement.GetDgnDb().Elements().GetElement(sourceMemberId);
             if (!sourceMemberElement.IsValid())
                 continue;
-            auto destMemberModelId = m_context.FindModelId(sourceMemberElement->GetModel()->GetModelId());
+            DgnModelId destMemberModelId = m_context.FindModelId(sourceMemberElement->GetModel()->GetModelId());
             DgnModelPtr destMemberModel = m_context.GetDestinationDb().Models().GetModel(destMemberModelId);
             if (!destMemberModel.IsValid())
                 destMemberModel = &destModel; 
             DgnElementCPtr destMemberElement = ImportElement(nullptr, *destMemberModel, *sourceMemberElement);
             if (destMemberElement.IsValid())
-                ElementGroupsMembers::Insert(*destElement, *destMemberElement); // *** WIP_GROUPS - is this the right way to re-create the member-of relationship? What about the _OnMemberAdded callbacks?
+                ElementGroupsMembers::Insert(*destElement, *destMemberElement, 0); // *** WIP_GROUPS - is this the right way to re-create the member-of relationship? What about the _OnMemberAdded callbacks?  Preserve MemberPriority?
             }
         }
 
@@ -1383,11 +1383,11 @@ DgnDbStatus DgnElement::Delete() const {return GetDgnDb().Elements().Delete(*thi
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Shaun.Sewall                    10/2015
 //---------------------------------------------------------------------------------------
-DgnDbStatus ElementGroupsMembers::Insert(DgnElementCR group, DgnElementCR member)
+DgnDbStatus ElementGroupsMembers::Insert(DgnElementCR group, DgnElementCR member, int priority)
     {
     CachedECSqlStatementPtr statement = group.GetDgnDb().GetPreparedECSqlStatement(
         "INSERT INTO " DGN_SCHEMA(DGN_RELNAME_ElementGroupsMembers) 
-        " (SourceECClassId,SourceECInstanceId,TargetECClassId,TargetECInstanceId) VALUES(?,?,?,?)");
+        " (SourceECClassId,SourceECInstanceId,TargetECClassId,TargetECInstanceId,MemberPriority) VALUES(?,?,?,?,?)");
 
     if (!statement.IsValid())
         return DgnDbStatus::BadRequest;
@@ -1396,6 +1396,7 @@ DgnDbStatus ElementGroupsMembers::Insert(DgnElementCR group, DgnElementCR member
     statement->BindId(2, group.GetElementId());
     statement->BindId(3, member.GetElementClassId());
     statement->BindId(4, member.GetElementId());
+    statement->BindInt(5, priority);
     return (BE_SQLITE_DONE == statement->Step()) ? DgnDbStatus::Success : DgnDbStatus::BadRequest;
     }
 
@@ -1454,6 +1455,22 @@ DgnElementIdSet ElementGroupsMembers::QueryMembers(DgnElementCR group)
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                   Shaun.Sewall                    12/2015
+//---------------------------------------------------------------------------------------
+int ElementGroupsMembers::QueryMemberPriority(DgnElementCR group, DgnElementCR member)
+    {
+    CachedECSqlStatementPtr statement = group.GetDgnDb().GetPreparedECSqlStatement(
+        "SELECT MemberPriority FROM " DGN_SCHEMA(DGN_RELNAME_ElementGroupsMembers) " WHERE SourceECInstanceId=? AND TargetECInstanceId=? LIMIT 1");
+
+    if (!statement.IsValid())
+        return -1;
+
+    statement->BindId(1, group.GetElementId());
+    statement->BindId(2, member.GetElementId());
+    return (BE_SQLITE_ROW == statement->Step()) ? statement->GetValueInt(0) : -1;
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                   Shaun.Sewall                    10/2015
 //---------------------------------------------------------------------------------------
 DgnElementIdSet ElementGroupsMembers::QueryGroups(DgnElementCR member)
@@ -1476,7 +1493,7 @@ DgnElementIdSet ElementGroupsMembers::QueryGroups(DgnElementCR member)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Shaun.Sewall                    12/2015
 //---------------------------------------------------------------------------------------
-SpatialGroupElementPtr SpatialGroupElement::Create(PhysicalModelR model, DgnCategoryId categoryId)
+SpatialGroupElementPtr SpatialGroupElement::Create(SpatialModelR model, DgnCategoryId categoryId)
     {
     DgnDbR db = model.GetDgnDb();
     DgnClassId classId = db.Domains().GetClassId(dgn_ElementHandler::SpatialGroup::GetHandler());
@@ -2634,7 +2651,7 @@ DgnElementCPtr ElementCopier::MakeCopy(DgnDbStatus* statusOut, DgnModelR targetM
                 continue;
             DgnElementCPtr destMemberElement = MakeCopy(nullptr, *sourceMemberElement->GetModel(), *sourceMemberElement, DgnElement::Code());
             if (destMemberElement.IsValid())
-                ElementGroupsMembers::Insert(*outputElement, *destMemberElement); // *** WIP_GROUPS - is this the right way to re-create the member-of relationship? What about the _OnMemberAdded callbacks?
+                ElementGroupsMembers::Insert(*outputElement, *destMemberElement, 0); // *** WIP_GROUPS - is this the right way to re-create the member-of relationship? What about the _OnMemberAdded callbacks? Preserve MemberPriority?
             }
         }
 

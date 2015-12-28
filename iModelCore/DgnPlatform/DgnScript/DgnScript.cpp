@@ -106,7 +106,20 @@ DgnDbStatus DgnScriptContext::LoadProgram(Dgn::DgnDbR db, Utf8CP jsFunctionSpec)
 
     NativeLogging::LoggingManager::GetLogger("DgnScript")->tracev ("Evaluating %s", jsProgramName.c_str());
 
-    EvaluateScript(jsprog.c_str(), fileUrl.c_str());   // evaluate the whole script, allowing it to define objects and their properties. 
+    EvaluateStatus jsStatus = EvaluateStatus::Success;
+    EvaluateException jsException;
+    EvaluateScript(jsprog.c_str(), fileUrl.c_str(), &jsStatus, &jsException);   // evaluate the whole script, allowing it to define objects and their properties. 
+
+    if (EvaluateStatus::Success != jsStatus)
+        {
+        if (EvaluateStatus::RuntimeError == jsStatus)
+            T_HOST.GetScriptAdmin().HandleScriptError(DgnPlatformLib::Host::ScriptAdmin::ScriptNotificationHandler::Category::Exception, jsException.message.c_str(), jsException.trace.c_str());
+        else if (EvaluateStatus::ParseError   == jsStatus)
+            T_HOST.GetScriptAdmin().HandleScriptError(DgnPlatformLib::Host::ScriptAdmin::ScriptNotificationHandler::Category::ParseError, jsProgramName.c_str(), jsException.message.c_str());
+        else
+            T_HOST.GetScriptAdmin().HandleScriptError(DgnPlatformLib::Host::ScriptAdmin::ScriptNotificationHandler::Category::Other, jsProgramName.c_str(), "");
+        }
+
     return DgnDbStatus::Success;
     }
 
@@ -223,7 +236,7 @@ DgnDbStatus DgnScriptContext::ExecuteComponentGenerateElements(int& functionRetu
     BeJsFunction jsfunc = m_modelSolverRegistry.GetFunctionProperty(jsFunctionName.c_str());
     if (jsfunc.IsUndefined() || !jsfunc.IsFunction())
         {
-        NativeLogging::LoggingManager::GetLogger("DgnScript")->errorv ("[%s] is not registered as a model solver", jsFunctionName);
+        NativeLogging::LoggingManager::GetLogger("DgnScript")->errorv ("[%s] is not registered as a model solver", jsFunctionName.c_str());
         BeAssert(false && "model solver not registered");
         return DgnDbStatus::NotEnabled;
         }
@@ -239,7 +252,7 @@ DgnDbStatus DgnScriptContext::ExecuteComponentGenerateElements(int& functionRetu
 
     if (!retval.IsNumber())
         {
-        NativeLogging::LoggingManager::GetLogger("DgnScript")->errorv ("[%s] does not have the correct signature for a model solver - must return an int", jsFunctionName);
+        NativeLogging::LoggingManager::GetLogger("DgnScript")->errorv ("[%s] does not have the correct signature for a model solver - must return an int", jsFunctionName.c_str());
         BeAssert(false && "model solver has incorrect return type");
         return DgnDbStatus::NotEnabled;
         }

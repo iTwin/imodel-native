@@ -173,23 +173,17 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
         <BaseClass>GeometricModel</BaseClass>
         <ECProperty propertyName="GlobalOrigin" displayLabel="Global Origin" typeName="point2d" />
     </ECClass>
-    <ECClass typeName="PhysicalModel" isDomainClass="True">
+    <ECClass typeName="SpatialModel" isDomainClass="True">
         <ECCustomAttributes>
             <ClassHasHandler xmlns="dgn.02.00" />
         </ECCustomAttributes>
         <BaseClass>Model3d</BaseClass>
     </ECClass>
-    <ECClass typeName="PlanarPhysicalModel" isDomainClass="True">
-        <ECCustomAttributes>
-            <ClassHasHandler xmlns="dgn.02.00" />
-        </ECCustomAttributes>
-        <BaseClass>Model2d</BaseClass>
-    </ECClass>
     <ECClass typeName="SectionDrawingModel" isDomainClass="True">
         <ECCustomAttributes>
             <ClassHasHandler xmlns="dgn.02.00" />
         </ECCustomAttributes>
-        <BaseClass>PlanarPhysicalModel</BaseClass>
+        <BaseClass>Model2d</BaseClass>
     </ECClass>
     <ECClass typeName="SheetModel" isDomainClass="True">
         <ECCustomAttributes>
@@ -204,11 +198,11 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
         </ECCustomAttributes>
         <BaseClass>SheetModel</BaseClass>
     </ECClass>
-    <ECClass typeName="PhysicalRedlineModel" isDomainClass="True">
+    <ECClass typeName="SpatialRedlineModel" isDomainClass="True">
         <ECCustomAttributes>
             <ClassHasHandler xmlns="dgn.02.00" />
         </ECCustomAttributes>
-        <BaseClass>PhysicalModel</BaseClass>
+        <BaseClass>SpatialModel</BaseClass>
     </ECClass>
     <ECClass typeName="ComponentModel" isDomainClass="True">
         <ECCustomAttributes>
@@ -232,7 +226,7 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
         <ECCustomAttributes>
             <ClassHasHandler xmlns="dgn.02.00" />
         </ECCustomAttributes>
-        <BaseClass>PhysicalModel</BaseClass>
+        <BaseClass>SpatialModel</BaseClass>
     </ECClass>
     <ECClass typeName="StreetMapModel" isDomainClass="True" >
         <ECCustomAttributes>
@@ -443,11 +437,11 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
         </ECCustomAttributes>
         <BaseClass>AnnotationElement</BaseClass>
     </ECClass>
-    <ECClass typeName="PhysicalTextAnnotationElement" isDomainClass="True">
+    <ECClass typeName="SpatialTextAnnotationElement" isDomainClass="True">
         <ECCustomAttributes>
             <ClassHasHandler xmlns="dgn.02.00" />
         </ECCustomAttributes>
-        <BaseClass>PhysicalElement</BaseClass>
+        <BaseClass>SpatialElement</BaseClass>
     </ECClass>
 
     <ECClass typeName="AnnotationTableElement" isDomainClass="True">
@@ -665,6 +659,9 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
         <Target cardinality="(0,N)" polymorphic="True">
             <Class class="Element" />
         </Target>
+        <ECProperty propertyName="MemberPriority" typeName="int">
+            <!-- Can be used to prioritize or order members within an ElementGroup. Values do not have to be unique within a particular group. -->
+        </ECProperty>
     </ECRelationshipClass>
 
     <ECClass typeName="ElementAspect" isDomainClass="False" isStruct="False" isCustomAttributeClass="False">
@@ -1064,14 +1061,14 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
         </Target>
     </ECRelationshipClass>
 
-    <ECClass typeName="PhysicalViewDefinition" isDomainClass="True">
+    <ECClass typeName="SpatialViewDefinition" isDomainClass="True">
         <BaseClass>ViewDefinition</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="dgn.02.00" />
         </ECCustomAttributes>
     </ECClass>
     <ECClass typeName="CameraViewDefinition" isDomainClass="True">
-        <BaseClass>PhysicalViewDefinition</BaseClass>
+        <BaseClass>SpatialViewDefinition</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="dgn.02.00" />
         </ECCustomAttributes>
@@ -1238,6 +1235,7 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
         <ECProperty propertyName="CodeAuthority" typeName="string" description="The name of the CodeAuthority to use then assigning Codes to instances of this component. May be null." />
         <ECProperty propertyName="ElementGenerator" typeName="string" description="The name of the script to execute in order to create a variation of the component. May be null if the component is based on persistent geometry. In that case, Model must not be null." />
         <ECProperty propertyName="Model" typeName="string" description="The name of the model that the component definition uses to hold the persistent geometry and other data such as constraints. May be null for components that generate their geometry from scratch." />
+        <ECProperty propertyName="Inputs" typeName="string" description="The names of the properties that are the main inputs to the component's element generator script." />
     </ECClass>
 
     <ECClass typeName="ComponentParameterSpecification" description="Provides information about a property that plays the role of a parameter to a component's solver." displayLabel="Component Parameter Specification" isDomainClass="False" isCustomAttributeClass="True">

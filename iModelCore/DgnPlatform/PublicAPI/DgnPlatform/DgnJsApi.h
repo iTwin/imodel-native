@@ -60,16 +60,6 @@ typedef JsDgnCategory* JsDgnCategoryP;
     bool IsValid(JSITCLASS* iter) {return iter && iter->m_iter != m_collection.end();}\
     bool ToNext(JSITCLASS* iter) {if (nullptr == iter) return false; ++(iter->m_iter); return IsValid(iter);}
 
-template<typename T>
-JsECInstanceP getCustomAttribute(T* ccontainer, Utf8StringCR className)
-    {
-    if (nullptr == ccontainer)
-        return nullptr;
-    ECN::IECInstancePtr ca = ccontainer->GetCustomAttribute(className);
-    return ca.IsValid()? new JsECInstance(*ca): nullptr;
-    }
-
-
 //=======================================================================================
 // Needed by generated callbacks to construct instances of wrapper classes.
 // @bsiclass                                                    Sam/Steve.Wilson    7/15
@@ -483,7 +473,7 @@ struct JsECClass : RefCountedBaseWithCreate
     JsECClassCollectionP GetDerivedClasses() const {return m_ecClass? new JsECClassCollection(m_ecClass->GetDerivedClasses()): nullptr;}
     JsECPropertyCollectionP GetProperties() const {return m_ecClass? new JsECPropertyCollection(m_ecClass->GetProperties()): nullptr;}
 
-    JsECInstanceP GetCustomAttribute(Utf8StringCR className) {return getCustomAttribute(m_ecClass, className);}
+    JsECInstanceP GetCustomAttribute(Utf8StringCR className);
 
     JsECInstanceP MakeInstance();
 
@@ -540,7 +530,7 @@ struct JsECProperty : RefCountedBaseWithCreate
 
     Utf8String GetName() {return m_property? m_property->GetName(): "";}
     bool GetIsPrimitive() const {return m_property && m_property->GetIsPrimitive();}
-    JsECInstanceP GetCustomAttribute(Utf8StringCR className) {return getCustomAttribute(m_property, className);}
+    JsECInstanceP GetCustomAttribute(Utf8StringCR className);
     
     STUB_OUT_SET_METHOD(Name,Utf8String)
     STUB_OUT_SET_METHOD(IsPrimitive,bool)
