@@ -1098,8 +1098,11 @@ public:
 
     void AddSubGraphic(GraphicR graphic, TransformCR subToGraphic, GraphicParams& params) {_AddSubGraphic(graphic, subToGraphic, params);}
 
+    //! Return whether this decoration will be drawn to a viewport as opposed to being collected for some other purpose (ex. geometry export).
     bool IsForDisplay() const {return _IsForDisplay();}
 
+    //! Set symbology for decorations that are only used for display purposes. Pickable decorations require a category, must initialize
+    //! a GeometryParams and cook it into a GraphicParams to have a locatable decoration.
     void SetSymbology(ColorDef lineColor, ColorDef fillColor, int lineWidth, GraphicParams::LinePixels linePixels=GraphicParams::LinePixels::Solid)
         {
         GraphicParams graphicParams;

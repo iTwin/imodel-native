@@ -177,7 +177,11 @@ protected:
     //! Display locate circle and information about the current AccuSnap/auto-locate HitDetail.
     DGNPLATFORM_EXPORT virtual void _DrawLocateCursor(DecorateContextR, DPoint3dCR, double aperture, bool isLocateCircleOn, HitDetailCP hit=nullptr);
 
+    //! Display view controller specific view decorations.
     virtual void _DrawDecorations(DecorateContextR) {}
+
+    //! Locate/snap to view controller decorations.
+    virtual void _PickDecorations(ViewContextR) {}
 
     //! Called when the display of a category is turned on or off.
     //! @param[in] singleEnable true if just turned on one category; false if

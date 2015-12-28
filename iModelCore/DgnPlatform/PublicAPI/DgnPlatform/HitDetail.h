@@ -188,8 +188,8 @@ public:
     void SetSubSelectionMode(SubSelectionMode mode) {_SetSubSelectionMode(mode);}
 
     void Draw(DecorateContextR context) const {_Draw(context);}
-    DGNPLATFORM_EXPORT bool ShouldFlashCurveSegment(DecorateContextR) const; //! Check for segment flash mode before calling FlashCurveSegment.
-    DGNPLATFORM_EXPORT void FlashCurveSegment(DecorateContextR) const; //! Setup context.GetCurrentGeometryParams() before calling!
+    DGNPLATFORM_EXPORT bool ShouldFlashCurveSegment() const; //! Check for segment flash mode before calling FlashCurveSegment.
+    DGNPLATFORM_EXPORT void FlashCurveSegment(DecorateContextR, Render::GeometryParamsCR geomParams) const; //! Setup context.GetCurrentGeometryParams() before calling!
 
     void GetInfoString(Utf8StringR descr, Utf8CP delimiter) const {_GetInfoString(descr, delimiter);}
     DGNPLATFORM_EXPORT DgnElement::Hilited IsHilited() const;
@@ -370,5 +370,19 @@ public:
     DGNPLATFORM_EXPORT ~IntersectDetail();
     HitDetailP GetSecondHit() const {return m_secondHit;}
 }; 
+
+//=======================================================================================
+//! Geometry data associated with a pick.
+//=======================================================================================
+struct IPickGeom
+{
+    virtual bool _IsSnap() const = 0;
+    virtual DPoint4dCR _GetPickPointView() const = 0;
+    virtual DPoint3dCR _GetPickPointWorld() const = 0;
+    virtual DRay3d _GetBoresite(TransformCR localToWorld) const = 0;
+    virtual void _SetHitPriorityOverride(HitPriority) = 0;
+    virtual GeomDetailR _GetGeomDetail() = 0;
+    virtual void _AddHit(HitDetailR) = 0;
+};
 
 END_BENTLEY_DGN_NAMESPACE

@@ -405,30 +405,28 @@ HitDetail::~HitDetail() {}
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  07/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool HitDetail::ShouldFlashCurveSegment(DecorateContextR context) const
+bool HitDetail::ShouldFlashCurveSegment() const
     {
-    return (SubSelectionMode::Segment == GetSubSelectionMode() &&  nullptr != GetGeomDetail().GetCurvePrimitive());
+    return (SubSelectionMode::Segment == GetSubSelectionMode() && nullptr != GetGeomDetail().GetCurvePrimitive());
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  07/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void HitDetail::FlashCurveSegment(DecorateContextR context) const
+void HitDetail::FlashCurveSegment(DecorateContextR context, Render::GeometryParamsCR params) const
     {
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     if (nullptr == GetGeomDetail().GetCurvePrimitive())
         return;
 
-    GeometryParamsR elParams = context.GetCurrentGeometryParams();
-    GraphicParamsR elMatSymb = *context.GetGraphicParams();
+    Render::GraphicPtr  graphic = context.CreateGraphic();
+    GeometryParams      geomParams(params);
+    GraphicParams       graphicParams;
 
-    context.CookGeometryParams(elParams, elMatSymb); // Don't activate elMatSymb yet...
+    context.CookGeometryParams(geomParams, graphicParams); // Don't activate yet...need to tweak...
 
     // NOTE: Would be nice if flashing made element "glow" for now just bump up weight...
-    elMatSymb.SetWidth(elMatSymb.GetWidth()+2);
-
-    context.GetCurrentGraphicR().ActivateGraphicParams(&elMatSymb);
-    context.ResetContextOverrides();
+    graphicParams.SetWidth(graphicParams.GetWidth()+2);
+    graphic->ActivateGraphicParams(graphicParams);
 
     bool doSegmentFlash = (GetHitType() < HitDetailType::Snap);
 
@@ -457,10 +455,11 @@ void HitDetail::FlashCurveSegment(DecorateContextR context) const
         curve = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open, GetGeomDetail().GetCurvePrimitive()->Clone());
 
     if (GetViewport().Is3dView())
-        context.GetCurrentGraphicR().AddCurveVector(*curve, false);
+        graphic->AddCurveVector(*curve, false);
     else
-        context.GetCurrentGraphicR().AddCurveVector2d(*curve, false, elParams.GetNetDisplayPriority());
-#endif
+        graphic->AddCurveVector2d(*curve, false, geomParams.GetNetDisplayPriority());
+
+    context.AddFlashed(*graphic);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -468,7 +467,6 @@ void HitDetail::FlashCurveSegment(DecorateContextR context) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void HitDetail::_Draw(DecorateContextR context) const
     {
-
     context.VisitHit(*this);
     }
 

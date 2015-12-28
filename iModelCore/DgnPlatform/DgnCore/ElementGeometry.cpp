@@ -474,7 +474,7 @@ GeometricPrimitivePtr GeometricPrimitive::Clone() const
 /*----------------------------------------------------------------------------------*//**
 * @bsimethod                                                    Brien.Bastings  06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void GeometricPrimitive::Draw(Render::GraphicR graphic, ViewContextR context) const
+void GeometricPrimitive::AddToGraphic(Render::GraphicR graphic, ViewContextR context) const
     {
     // Do we need to worry about 2d draw (display priority) and fill, etc.?
     switch (GetGeometryType())
@@ -3275,23 +3275,19 @@ bool GeometrySource::_DrawHit(HitDetailCR hit, DecorateContextR context) const
                 }
             }
 
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-        context.GetCurrentGeometryParams() = collection.GetGeometryParams();
-
         if (SubSelectionMode::Segment != hit.GetSubSelectionMode())
             {
-            context.CookGeometryParams();
-            context.ResetContextOverrides();
+            Render::GraphicPtr  graphic = context.CreateGraphic(Graphic::CreateParams(context.GetViewport(), iter.GetGeometryToWorld()));
+            GeometryParams      geomParams(iter.GetGeometryParams());
 
-            context.PushTransform(collection.GetGeometryToWorld());
-            geom->Draw(context);
-            context.PopTransformClip();
+            context.CookGeometryParams(geomParams, *graphic);
+            geom->AddToGraphic(*graphic, context);
+            context.AddFlashed(*graphic);
 
             continue; // Keep going, want to draw all matching geometry...
             }
-#endif
 
-        hit.FlashCurveSegment(context);
+        hit.FlashCurveSegment(context, iter.GetGeometryParams());
         break;
         }
 

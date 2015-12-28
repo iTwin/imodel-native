@@ -11,6 +11,7 @@
 //__PUBLISH_SECTION_START__
 
 #include <DgnPlatform/DgnPlatform.h>
+#include <DgnPlatform/SimplifyGraphic.h>
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 

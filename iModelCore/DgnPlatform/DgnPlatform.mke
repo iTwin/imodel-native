@@ -359,8 +359,6 @@ $(CoreObjs)DgnHandlers$(oext) :                     $(DgnHandlersDir)DgnHandlers
 
 $(CoreObjs)HitDetail$(oext) :                       $(DgnHandlersDir)HitDetail.cpp $(HandlerDepends) ${MultiCompileDepends}
 
-$(CoreObjs)PickContext$(oext) :                     $(DgnHandlersDir)PickContext.cpp $(DgnPlatformAPISrc)HitDetail.h $(contextDepends) $(DgnPlatformAPISrc)SimplifyGraphic.h ${MultiCompileDepends}
-
 $(CoreObjs)RegionUtil$(oext) :                      $(DgnHandlersDir)RegionUtil.cpp $(contextDepends) ${MultiCompileDepends}
 
 $(CoreObjs)ScopedDgnHost$(oext) :                   $(DgnHandlersDir)ScopedDgnHost.cpp  ${MultiCompileDepends}

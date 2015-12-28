@@ -13,7 +13,7 @@
 #include "TransformClipStack.h"
 #include "Render.h"
 #include "ScanCriteria.h"
-#include "IPickGeom.h"
+#include "IManipulator.h"
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 
@@ -111,11 +111,6 @@ public:
     virtual bool _CheckStop() {return m_aborted;}
 };
 
-struct IElemTopology;
-struct IEditManipulator;
-DEFINE_REF_COUNTED_PTR(IElemTopology)
-DEFINE_REF_COUNTED_PTR(IEditManipulator)
-
 //=======================================================================================
 //! Interface to supply additional topology information that describes the subsequent geometry.
 //! The ViewContext's current IElemTopology will be cloned and saved as part of the HitDetail
@@ -138,6 +133,8 @@ struct IElemTopology : IRefCounted
     //! @note Implementor is expected to check hit.GetDgnDb().IsReadonly().
     virtual IEditManipulatorPtr _GetTransientManipulator (HitDetailCR) const {return nullptr;}
 };
+
+DEFINE_REF_COUNTED_PTR(IElemTopology)
 
 //=======================================================================================
 // @bsiclass                                                     KeithBentley    04/01

@@ -8,6 +8,8 @@
 #pragma once
 //__PUBLISH_SECTION_START__
 
+#include "HitDetail.h"
+
 BEGIN_BENTLEY_DGN_NAMESPACE
 
 /*=================================================================================**//**
@@ -163,7 +165,7 @@ public:
     virtual ~IEditManipulator() {}
 }; // IEditManipulator
 
-typedef RefCountedPtr<IEditManipulator> IEditManipulatorPtr;
+DEFINE_REF_COUNTED_PTR(IEditManipulator)
 
 /*================================================================================**//**
 * Extension to provide IEditManipulator for an element.

@@ -22,7 +22,6 @@
 #include "GPArray.h"
 #include "HitDetail.h"
 #include "IAuxCoordSys.h"
-#include "IPickGeom.h"
 #include "TxnManager.h"
 #include "RevisionManager.h"
 #include "Render.h"
