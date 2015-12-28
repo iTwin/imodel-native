@@ -5698,11 +5698,7 @@ TEST_F(ECDbMappingTestFixture, RelationshipWithAbstractClassAsConstraintOnChildE
 
     {
     ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ts.SolidHasFaces(SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId) VALUES(?,?,4444,?)"));
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, solidKey.GetECInstanceId()));
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt64(2, solidKey.GetECClassId()));
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt64(3, faceClassId));
-    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(solidKey));
+    ASSERT_EQ(ECSqlStatus::Error, stmt.Prepare(ecdb, "INSERT INTO ts.SolidHasFaces(SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId) VALUES(?,?,4444,?)"));
     }
     }
 
