@@ -5547,7 +5547,6 @@ TEST_F(ECDbMappingTestFixture, RelationshipWithAbstractClassAsConstraintOnParent
                                      "  </ECRelationshipClass>"
                                      "</ECSchema>"));
 
-    /*doesn't work for diamond pattern yet. TFS#349825
     testSchemas.push_back(SchemaItem("GeometrySource is abstract and subclass of Element and Element (with joined tables)",
                                      "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
                                      "  <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
@@ -5585,7 +5584,7 @@ TEST_F(ECDbMappingTestFixture, RelationshipWithAbstractClassAsConstraintOnParent
                                      "      <Class class='ElementGeometry' />"
                                      "    </Target>"
                                      "  </ECRelationshipClass>"
-                                     "</ECSchema>"));*/
+                                     "</ECSchema>"));
 
     for (SchemaItem const& testSchema : testSchemas)
         {
