@@ -54,16 +54,16 @@ void RasterModel::_AddGraphicsToScene (ViewContextR context)
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                       Eric.Paquet     4/2015
 //----------------------------------------------------------------------------------------
-void RasterModel::_ToPropertiesJson(Json::Value& v) const
+void RasterModel::_WriteJsonProperties(Json::Value& v) const
     {
-    T_Super::_ToPropertiesJson(v);
+    T_Super::_WriteJsonProperties(v);
     }
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                       Eric.Paquet     4/2015
 //----------------------------------------------------------------------------------------
-void RasterModel::_FromPropertiesJson(Json::Value const& v)
+void RasterModel::_ReadJsonProperties(Json::Value const& v)
     {
-    T_Super::_FromPropertiesJson(v);
+    T_Super::_ReadJsonProperties(v);
     }
 

@@ -10,10 +10,10 @@
 #include <Bentley/Bentley.h>
 #include <DgnPlatform/DgnPlatform.h>
 #include <DgnPlatform/DgnPlatformApi.h>
-#include <DgnPlatform/DgnCore/DgnDb.h>
+#include <DgnPlatform/DgnDb.h>
 #include <ScalableMesh/IMrDTM.h>
 #include <ScalableMesh/IMrDTMQuery.h>
-#include <DgnPlatform/DgnCore/DgnViewport.h>
+#include <DgnPlatform/DgnViewport.h>
 
 #define BEGIN_BENTLEY_SCALABLE_MESH_MODEL_NAMESPACE        BEGIN_BENTLEY_NAMESPACE namespace ScalableMesh { namespace Model {
 #define END_BENTLEY_SCALABLE_MESH_MODEL_NAMESPACE          }} END_BENTLEY_NAMESPACE

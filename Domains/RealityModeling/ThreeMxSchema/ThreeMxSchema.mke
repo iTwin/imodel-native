@@ -6,105 +6,98 @@
 #
 #--------------------------------------------------------------------------------------
 
-PolicyFile=$(SrcRoot)DgnDomains/RealityModeling/ThreeMxSchema/ThreeMxSchemaPolicy.mki
-SolutionPolicyMki=$(PolicyFile)
-
 %include mdl.mki
-%include $(BuildContext)SubParts/PublicMki/BentleyApi.mki
 
-baseDir                         = $(_MakeFilePath)
-threeMxSchemaPublicApiSrc       = $(repositoryRoot)PublicAPI/ThreeMxSchema/
-threeMxSchemaSrc                = $(baseDir)
-mrMeshSrc                       = $(baseDir)MrMesh/
-threeMxReaderSrc                = $(baseDir)Reader/
-openCtmSrc                      = $(threeMxReaderSrc)openCtm/
-libLzmaSrc                       = $(openCtmSrc)LibLzma/
+#-----------------------------------------------------------
+# Root directory
+#-----------------------------------------------------------
+SrcThreeMxSchema                 = $(_MakeFilePath)
+
+#------------------------------------------------------
+# Header file locations in source tree
+#------------------------------------------------------
+ThreeMxSchemaPublicApiSrc        = $(SrcThreeMxSchema)../PublicAPI/ThreeMxSchema/
+
+#-----------------------------------------------------------
+# Source directories
+#-----------------------------------------------------------
+SrcMrMesh                       = $(SrcThreeMxSchema)MrMesh/
+SrcThreeMxReader                = $(SrcThreeMxSchema)Reader/
+SrcOpenCtm                      = $(SrcThreeMxReader)openCtm/
+SrcLibLzma                      = $(SrcOpenCtm)LibLzma/
+
+
+#----------------------------------------------------------
+# Set and then include the CompileOptionsMki file.
+# It is needed and also %included by PreCompileHeader.mki
+#----------------------------------------------------------
+CompileOptionsMki               = $(SrcThreeMxSchema)ThreeMxSchema.mki
+%include $(CompileOptionsMki)
 
 always:
     !~@mkdir $(o)
 
 #--------------------------------------------------------------------------------------
-#   BENTLEY_LIBRARIES
-#--------------------------------------------------------------------------------------
-ContextLibPrefix = $(BuildContext)SubParts/Libs/$(libprefix)
-
-BENTLEY_LIBRARIES = $(ContextLibPrefix)DgnPlatform$(stlibext)
-BENTLEY_LIBRARIES + $(ContextLibPrefix)BentleyGeom$(stlibext)
-BENTLEY_LIBRARIES + $(ContextLibPrefix)BaseGeoCoord$(stlibext)
-BENTLEY_LIBRARIES + $(ContextLibPrefix)ECObjects$(stlibext)
-BENTLEY_LIBRARIES + $(ContextLibPrefix)BeSQLite$(stlibext)
-BENTLEY_LIBRARIES + $(ContextLibPrefix)BeSQLiteEC$(stlibext)
-BENTLEY_LIBRARIES + $(ContextLibPrefix)BeJsonCpp$(stlibext)
-
-#--------------------------------------------------------------------------------------
 #   Set up build dependencies
 #--------------------------------------------------------------------------------------
 threeMxSchemaDepends         = $(_MakeFileSpec)   \
-                               $(threeMxReaderSrc)ThreeMxReader.h \
-                               $(threeMxSchemaPublicApiSrc)ThreeMxSchemaApi.h \
-                               $(threeMxSchemaPublicApiSrc)ThreeMxHandler.h             
+                               $(SrcThreeMxReader)ThreeMxReader.h \
+                               $(ThreeMxSchemaPublicApiSrc)ThreeMxSchemaApi.h \
+                               $(ThreeMxSchemaPublicApiSrc)ThreeMxHandler.h             
                                   
+MultiCompileDepends=$(_MakeFileSpec)
 %include MultiCppCompileRule.mki
 
-
-nameToDefine = OPENCTM_STATIC
-%include cdefapnd.mki
-
-
-# Keep this even if GCC_NO_PRE_COMPILED_HEADER is defined. When GCC_NO_PRE_COMPILED_HEADER
-# is defined this step alters the command line to make the line including <ThreeMxSchemaInternal.h>
-# work properly.
-   
 #----------------------------------------------------------------------
 #   ThreeMX Reader
 #----------------------------------------------------------------------
-$(o)openCtm$(oext)              : $(openCtmSrc)openCtm.c  $(openCtmSrc)openCtm.h ${threeMxSchemaDepends}  
+$(o)openCtm$(oext)                  : $(SrcOpenCtm)openCtm.c $(SrcOpenCtm)openCtm.h ${threeMxSchemaDepends} ${MultiCompileDepends} 
 
-$(o)stream$(oext)               : $(openCtmSrc)stream.c   $(openCtmSrc)openCtm.h ${threeMxSchemaDepends}  
+$(o)stream$(oext)                   : $(SrcOpenCtm)stream.c $(SrcOpenCtm)openCtm.h ${threeMxSchemaDepends} ${MultiCompileDepends}
 
-$(o)compressMG1.obj             : $(openCtmSrc)compressMG1.c ${threeMxSchemaDepends}
+$(o)compressMG1$(oext)              : $(SrcOpenCtm)compressMG1.c ${threeMxSchemaDepends} ${MultiCompileDepends}
 
-$(o)compressMG2.obj             : $(openCtmSrc)compressMG2.c ${threeMxSchemaDepends}
+$(o)compressMG2$(oext)              : $(SrcOpenCtm)compressMG2.c ${threeMxSchemaDepends} ${MultiCompileDepends}
 
-$(o)compressRAW.obj             : $(openCtmSrc)compressRAW.c ${threeMxSchemaDepends}
+$(o)compressRAW$(oext)              : $(SrcOpenCtm)compressRAW.c ${threeMxSchemaDepends} ${MultiCompileDepends}
 
-$(o)Alloc.obj                   : $(libLzmaSrc)Alloc.c ${threeMxSchemaDepends}
+$(o)Alloc$(oext)                    : $(SrcLibLzma)Alloc.c ${threeMxSchemaDepends} ${MultiCompileDepends}
 
-$(o)LzmaDec.obj                 : $(libLzmaSrc)LzmaDec.c ${threeMxSchemaDepends}
+$(o)LzmaDec$(oext)                  : $(SrcLibLzma)LzmaDec.c ${threeMxSchemaDepends} ${MultiCompileDepends}
 
-$(o)LzmaEnc.obj                 : $(libLzmaSrc)LzmaEnc.c ${threeMxSchemaDepends}
+$(o)LzmaEnc$(oext)                  : $(SrcLibLzma)LzmaEnc.c ${threeMxSchemaDepends} ${MultiCompileDepends}
 
-$(o)LzFind.obj                  : $(libLzmaSrc)LzFind.c ${threeMxSchemaDepends}
+$(o)LzFind$(oext)                   : $(SrcLibLzma)LzFind.c ${threeMxSchemaDepends} ${MultiCompileDepends}
 
-$(o)LzmaLib.obj                 : $(libLzmaSrc)LzmaLib.c ${threeMxSchemaDepends}
+$(o)LzmaLib$(oext)                  : $(SrcLibLzma)LzmaLib.c ${threeMxSchemaDepends} ${MultiCompileDepends}
 
-$(o)ThreeMxReader$(oext)        : $(threeMxReaderSrc)ThreeMxReader.cpp ${threeMxSchemaDepends} 
+$(o)ThreeMxReader$(oext)            : $(SrcThreeMxReader)ThreeMxReader.cpp ${threeMxSchemaDepends} ${MultiCompileDepends} 
 
 
 #----------------------------------------------------------------------
 #   MRMesh
 #----------------------------------------------------------------------
-$(o)MRMeshCache.obj             : $(mrMeshSrc)MrMeshCache.cpp ${threeMxSchemaDepends} 
+$(o)MrMeshCache$(oext)              : $(SrcMrMesh)MrMeshCache.cpp ${threeMxSchemaDepends}  ${MultiCompileDepends}
 
-$(o)MRMeshNode.obj              : $(mrMeshSrc)MrMeshNode.cpp ${threeMxSchemaDepends} 
+$(o)MrMeshNode$(oext)               : $(SrcMrMesh)MrMeshNode.cpp ${threeMxSchemaDepends} ${MultiCompileDepends} 
 
-$(o)MRMeshGeometry.obj          : $(mrMeshSrc)MRMeshGeometry.cpp ${threeMxSchemaDepends} 
+$(o)MRMeshGeometry$(oext)           : $(SrcMrMesh)MRMeshGeometry.cpp ${threeMxSchemaDepends} ${MultiCompileDepends} 
 
-$(o)MRMeshTexture.obj           : $(mrMeshSrc)MRMeshTexture.cpp ${threeMxSchemaDepends} 
+$(o)MRMeshTexture$(oext)            : $(SrcMrMesh)MRMeshTexture.cpp ${threeMxSchemaDepends} ${MultiCompileDepends} 
 
-$(o)MRMeshScene.obj             : $(mrMeshSrc)MRMeshScene.cpp ${threeMxSchemaDepends} 
+$(o)MRMeshScene$(oext)              : $(SrcMrMesh)MRMeshScene.cpp ${threeMxSchemaDepends} ${MultiCompileDepends} 
 
-$(o)MRMeshUtil.obj              : $(mrMeshSrc)MRMeshUtil.cpp ${threeMxSchemaDepends} 
+$(o)MRMeshUtil$(oext)               : $(SrcMrMesh)MRMeshUtil.cpp ${threeMxSchemaDepends} ${MultiCompileDepends} 
 
 
 #----------------------------------------------------------------------
 #   Schema
 #----------------------------------------------------------------------
-$(o)ThreeMxHandler$(oext)       : $(threeMxSchemaSrc)ThreeMxHandler.cpp           ${threeMxSchemaDepends} 
+$(o)ThreeMxHandler$(oext)           : $(SrcThreeMxSchema)ThreeMxHandler.cpp ${threeMxSchemaDepends} ${MultiCompileDepends} 
 
-$(o)ThreeMxGCS$(oext)          : $(threeMxSchemaSrc)ThreeMxGCS.cpp                ${threeMxSchemaDepends} 
+$(o)ThreeMxGCS$(oext)               : $(SrcThreeMxSchema)ThreeMxGCS.cpp ${threeMxSchemaDepends} ${MultiCompileDepends} 
 
-$(o)ThreeMxDomain$(oext)       : $(threeMxSchemaSrc)ThreeMxDomain.cpp             ${threeMxSchemaDepends} 
+$(o)ThreeMxDomain$(oext)            : $(SrcThreeMxSchema)ThreeMxDomain.cpp ${threeMxSchemaDepends} ${MultiCompileDepends} 
 
 
 %include MultiCppCompileGo.mki
@@ -127,11 +120,14 @@ DLM_NOENTRY                 = 1
 DLM_NO_DLS                  = 1
 DLM_NO_DEF                  = 1
 
-DLM_CONTEXT_LOCATION        = $(BuildContext)Delivery/
-DLM_LIB_CONTEXT_LOCATION    = $(BuildContext)Delivery/
-DLM_CREATE_LIB_CONTEXT_LINK = 1
+LINKER_LIBRARIES            =   $(ContextSubpartsLibs)$(libprefix)DgnPlatform$(libext) \
+                                $(ContextSubpartsLibs)$(libprefix)BentleyGeom$(libext)  \
+                                $(ContextSubpartsLibs)$(libprefix)BaseGeoCoord$(libext) \
+                                $(ContextSubpartsLibs)$(libprefix)ECObjects$(libext) \
+                                $(ContextSubpartsLibs)$(libprefix)BeSQLite$(libext) \
+                                $(ContextSubpartsLibs)$(libprefix)BeSQLiteEC$(libext) \
+                                $(ContextSubpartsLibs)$(stlibprefix)BeJsonCpp$(stlibext)
 
-LINKER_LIBRARIES            = $(BENTLEY_LIBRARIES) $(SYSTEM_LIBRARIES)
 
 %include $(sharedMki)LinkLibrary.mki
 

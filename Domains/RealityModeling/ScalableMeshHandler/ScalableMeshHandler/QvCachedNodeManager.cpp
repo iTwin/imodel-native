@@ -8,7 +8,7 @@ QvCachedNodeManager::QvCachedNodeManager()
     m_totalNbPoints = 0;
     }
 
-void QvCachedNodeManager::AddCachedNode(__int64 nodeId, QvElem* qvElem, PhysicalModel* modelRef, size_t nbPoints)
+void QvCachedNodeManager::AddCachedNode(__int64 nodeId, QvElem* qvElem, SpatialModel* modelRef, size_t nbPoints)
     {
     assert(qvElem != 0);
 
@@ -25,7 +25,7 @@ void QvCachedNodeManager::AddCachedNode(__int64 nodeId, QvElem* qvElem, Physical
     m_totalNbPoints += nbPoints;
     }
 
-void QvCachedNodeManager::ClearCachedNodes(PhysicalModel* modelRef)
+void QvCachedNodeManager::ClearCachedNodes(SpatialModel* modelRef)
     {
     auto cachedNodeIter(m_cachedNodes.begin());
     auto cachedNodeIterEnd(m_cachedNodes.end());
@@ -45,7 +45,7 @@ void QvCachedNodeManager::ClearCachedNodes(PhysicalModel* modelRef)
     m_totalNbPoints = 0;
     }
 
-QvElem* QvCachedNodeManager::FindQvElem(__int64 nodeId, PhysicalModel* modelRef)
+QvElem* QvCachedNodeManager::FindQvElem(__int64 nodeId, SpatialModel* modelRef)
     {
     auto cachedNodeIter(m_cachedNodes.begin());
     auto cachedNodeIterEnd(m_cachedNodes.end());

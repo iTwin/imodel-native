@@ -10,7 +10,7 @@
 #include <Bentley/Bentley.h>
 #include <Bentley/BeTimeUtilities.h>
 #include <DgnPlatform/DgnGeoCoord.h>
-#include <DgnPlatform/DgnCore/DgnDomain.h>
+#include <DgnPlatform/DgnDomain.h>
 
 #include <ThreeMxSchema/ThreeMxSchemaCommon.h>
 #include <ThreeMxSchema/ThreeMxSchemaAPI.h>

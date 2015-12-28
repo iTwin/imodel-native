@@ -87,13 +87,13 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <OutDir>$(OutRoot)VS\$(Configuration)\</OutDir>
     <IntDir>$(OutRoot)VS\$(Configuration)\</IntDir>
-    <NMakeBuildCommandLine>python.exe $(SrcBsiCommon)build\BentleyBuild.py -p ScalableMeshHandler -f RealityModFramework -r RealityModFramework -ax64 re ScalableMeshHandler</NMakeBuildCommandLine>
+    <NMakeBuildCommandLine>python.exe $(SrcRoot)bsicommon\build\BentleyBuild.py -p ScalableMeshHandler -f RealityModFramework -r RealityModFramework -ax64 re ScalableMeshHandler</NMakeBuildCommandLine>
     <NMakeOutput>$(OutRoot)Winx64\build\ScalableMeshHandler\ScalableMeshHandler\ScalableMeshHandler.dll</NMakeOutput>
     <BaseIntermediateOutputPath>$(OutRoot)VS\$(Configuration)\</BaseIntermediateOutputPath>
     <NMakePreprocessorDefinitions>Intellisense;WIN32;winNT;_VISCXX;_CONVERSION_DONT_USE_THREAD_LOCALE;_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES=1;_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES_COUNT=1;_SECURE_SCL_THROWS=1;_SECURE_SCL=0;WIN32_LEAN_AND_MEAN;WINVER=0x0501; _WIN32_WINNT=0x0501;_WIN32_IE=0x0501;DEBUG;WIN32;_DEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
-    <NMakeReBuildCommandLine>python.exe $(SrcBsiCommon)build\BentleyBuild.py -p ScalableMeshHandler -f TerrainModel -r TerrainModel re ScalableMeshHandler -x64 -c
-python.exe $(SrcBsiCommon)build\BentleyBuild.py -p ScalableMeshHandler -f TerrainModel -r TerrainModel re ScalableMeshHandler -x64</NMakeReBuildCommandLine>
-    <NMakeCleanCommandLine>python.exe $(SrcBsiCommon)build\BentleyBuild.py -p ScalableMeshHandler -f TerrainModel -r TerrainModel re ScalableMeshHandler -x64 -c
+    <NMakeReBuildCommandLine>python.exe $(SrcRoot)bsicommon\build\BentleyBuild.py -p ScalableMeshHandler -f TerrainModel -r TerrainModel re ScalableMeshHandler -x64 -c
+python.exe $(SrcRoot)bsicommon\build\BentleyBuild.py -p ScalableMeshHandler -f TerrainModel -r TerrainModel re ScalableMeshHandler -x64</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>python.exe $(SrcRoot)bsicommon\build\BentleyBuild.py -p ScalableMeshHandler -f TerrainModel -r TerrainModel re ScalableMeshHandler -x64 -c
 </NMakeCleanCommandLine>
     <NMakeIncludeSearchPath>$(ProjectDir);$(OutRoot)Winx64\BuildContexts\TerrainModel\ScalableMeshHandler\PublicAPI\ScalableMeshHandler</NMakeIncludeSearchPath>
     <NMakeForcedIncludes>$(ProjectDir)stdafx.h</NMakeForcedIncludes>
@@ -104,13 +104,13 @@ python.exe $(SrcBsiCommon)build\BentleyBuild.py -p ScalableMeshHandler -f Terrai
     <SourcePath>$(SourcePath)</SourcePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <NMakeBuildCommandLine>python.exe $(SrcBsiCommon)build\BentleyBuild.py -p ScalableMeshHandler -f RealityModFramework -r RealityModFramework -ax64 re ScalableMeshHandler</NMakeBuildCommandLine>
+    <NMakeBuildCommandLine>python.exe $(SrcRoot)bsicommon\build\BentleyBuild.py -p ScalableMeshHandler -f RealityModFramework -r RealityModFramework -ax64 re ScalableMeshHandler</NMakeBuildCommandLine>
     <NMakeOutput>$(OutRoot)Winx64\build\ScalableMeshHandler\ScalableMeshHandler\ScalableMeshHandler.dll</NMakeOutput>
     <BaseIntermediateOutputPath>$(OutRoot)VS\$(Configuration)\</BaseIntermediateOutputPath>
     <NMakePreprocessorDefinitions>Intellisense;WIN32;winNT;_VISCXX;_CONVERSION_DONT_USE_THREAD_LOCALE;_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES=1;_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES_COUNT=1;_SECURE_SCL_THROWS=1;_SECURE_SCL=0;WIN32_LEAN_AND_MEAN;WINVER=0x0501; _WIN32_WINNT=0x0501;_WIN32_IE=0x0501;DEBUG;WIN32;_DEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
-    <NMakeReBuildCommandLine>python.exe $(SrcBsiCommon)build\BentleyBuild.py -p ScalableMeshHandler -f RealityModFramework -r RealityModFramework -ax64 re ScalableMeshHandler -c
-python.exe $(SrcBsiCommon)build\BentleyBuild.py -p ScalableMeshHandler -f RealityModFramework -r RealityModFramework -ax64 re ScalableMeshHandler</NMakeReBuildCommandLine>
-    <NMakeCleanCommandLine>python.exe $(SrcBsiCommon)build\BentleyBuild.py -p ScalableMeshHandler -f RealityModFramework -r RealityModFramework -ax64 re ScalableMeshHandler</NMakeCleanCommandLine>
+    <NMakeReBuildCommandLine>python.exe $(SrcRoot)bsicommon\build\BentleyBuild.py -p ScalableMeshHandler -f RealityModFramework -r RealityModFramework -ax64 re ScalableMeshHandler -c
+python.exe $(SrcRoot)bsicommon\build\BentleyBuild.py -p ScalableMeshHandler -f RealityModFramework -r RealityModFramework -ax64 re ScalableMeshHandler</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>python.exe $(SrcRoot)bsicommon\build\BentleyBuild.py -p ScalableMeshHandler -f RealityModFramework -r RealityModFramework -ax64 re ScalableMeshHandler</NMakeCleanCommandLine>
     <NMakeIncludeSearchPath>$(ProjectDir);$(OutRoot)Winx64\BuildContexts\TerrainModel\ScalableMeshHandler\PublicAPI\ScalableMeshHandler</NMakeIncludeSearchPath>
     <NMakeForcedIncludes>$(ProjectDir)stdafx.h</NMakeForcedIncludes>
     <NMakeForcedUsingAssemblies />
@@ -121,7 +121,7 @@ python.exe $(SrcBsiCommon)build\BentleyBuild.py -p ScalableMeshHandler -f Realit
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug Local LKG|Win32'">
     <OutDir>$(OutRoot)VS\$(Configuration)\</OutDir>
     <IntDir>$(OutRoot)VS\$(Configuration)\</IntDir>
-    <NMakeBuildCommandLine>python.exe $(SrcBsiCommon)build\BentleyBuild.py -p ScalableMeshHandler -f TerrainModel -r TerrainModel re ScalableMeshHandler -x64
+    <NMakeBuildCommandLine>python.exe $(SrcRoot)bsicommon\build\BentleyBuild.py -p ScalableMeshHandler -f TerrainModel -r TerrainModel re ScalableMeshHandler -x64
 xcopy /S /Y /r $(SrcRoot)TerrainModel\ScalableMeshHandler\PublicAPI\*.*  $(Root)\out\LKG\Winx64\TerrainModel\PublicAPI\
 xcopy /Y /r $(OutRoot)Winx64\Build\ScalableMeshHandler\ScalableMeshHandler\ScalableMeshHandler.lib $(Root)\out\LKG\Winx64\TerrainModel\Delivery\
 xcopy /Y /r $(OutRoot)Winx64\Build\ScalableMeshHandler\ScalableMeshHandler\ScalableMeshHandler.dll $(Root)\out\LKG\Winx64\TerrainModel\Delivery\
@@ -129,9 +129,9 @@ xcopy /Y /r $(OutRoot)Winx64\Build\ScalableMeshHandler\ScalableMeshHandler\Scala
     <NMakeOutput>$(OutRoot)Winx64\build\ScalableMeshHandler\ScalableMeshHandler\ScalableMeshHandler.dll</NMakeOutput>
     <BaseIntermediateOutputPath>$(OutRoot)VS\$(Configuration)\</BaseIntermediateOutputPath>
     <NMakePreprocessorDefinitions>Intellisense;WIN32;winNT;_VISCXX;_CONVERSION_DONT_USE_THREAD_LOCALE;_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES=1;_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES_COUNT=1;_SECURE_SCL_THROWS=1;_SECURE_SCL=0;WIN32_LEAN_AND_MEAN;WINVER=0x0501; _WIN32_WINNT=0x0501;_WIN32_IE=0x0501;DEBUG;WIN32;_DEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
-    <NMakeReBuildCommandLine>python.exe $(SrcBsiCommon)build\BentleyBuild.py -p ScalableMeshHandler -f TerrainModel -r TerrainModel re ScalableMeshHandler -x64 -c
-python.exe $(SrcBsiCommon)build\BentleyBuild.py -p ScalableMeshHandler -f TerrainModel -r TerrainModel re ScalableMeshHandler -x64</NMakeReBuildCommandLine>
-    <NMakeCleanCommandLine>python.exe $(SrcBsiCommon)build\BentleyBuild.py -p ScalableMeshHandler -f TerrainModel -r TerrainModel re ScalableMeshHandler -x64 -c
+    <NMakeReBuildCommandLine>python.exe $(SrcRoot)bsicommon\build\BentleyBuild.py -p ScalableMeshHandler -f TerrainModel -r TerrainModel re ScalableMeshHandler -x64 -c
+python.exe $(SrcRoot)bsicommon\build\BentleyBuild.py -p ScalableMeshHandler -f TerrainModel -r TerrainModel re ScalableMeshHandler -x64</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>python.exe $(SrcRoot)bsicommon\build\BentleyBuild.py -p ScalableMeshHandler -f TerrainModel -r TerrainModel re ScalableMeshHandler -x64 -c
 </NMakeCleanCommandLine>
     <NMakeIncludeSearchPath>$(ProjectDir);$(OutRoot)Winx64\BuildContexts\TerrainModel\ScalableMeshHandler\PublicAPI\ScalableMeshHandler</NMakeIncludeSearchPath>
     <NMakeForcedIncludes>$(ProjectDir)stdafx.h</NMakeForcedIncludes>
@@ -141,13 +141,13 @@ python.exe $(SrcBsiCommon)build\BentleyBuild.py -p ScalableMeshHandler -f Terrai
     <SourcePath>$(SourcePath)</SourcePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug Local LKG|x64'">
-    <NMakeBuildCommandLine>python.exe $(SrcBsiCommon)build\BentleyBuild.py -p ScalableMeshHandler -f RealityModFramework -r RealityModFramework -ax64 re ScalableMeshHandler</NMakeBuildCommandLine>
+    <NMakeBuildCommandLine>python.exe $(SrcRoot)bsicommon\build\BentleyBuild.py -p ScalableMeshHandler -f RealityModFramework -r RealityModFramework -ax64 re ScalableMeshHandler</NMakeBuildCommandLine>
     <NMakeOutput>$(OutRoot)Winx64\build\ScalableMeshHandler\ScalableMeshHandler\ScalableMeshHandler.dll</NMakeOutput>
     <BaseIntermediateOutputPath>$(OutRoot)VS\$(Configuration)\</BaseIntermediateOutputPath>
     <NMakePreprocessorDefinitions>Intellisense;WIN32;winNT;_VISCXX;_CONVERSION_DONT_USE_THREAD_LOCALE;_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES=1;_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES_COUNT=1;_SECURE_SCL_THROWS=1;_SECURE_SCL=0;WIN32_LEAN_AND_MEAN;WINVER=0x0501; _WIN32_WINNT=0x0501;_WIN32_IE=0x0501;DEBUG;WIN32;_DEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
-    <NMakeReBuildCommandLine>python.exe $(SrcBsiCommon)build\BentleyBuild.py -p ScalableMeshHandler -f RealityModFramework -r RealityModFramework -ax64 re ScalableMeshHandler -c
-python.exe $(SrcBsiCommon)build\BentleyBuild.py -p ScalableMeshHandler -f RealityModFramework -r RealityModFramework -ax64 re ScalableMeshHandler</NMakeReBuildCommandLine>
-    <NMakeCleanCommandLine>python.exe $(SrcBsiCommon)build\BentleyBuild.py -p ScalableMeshHandler -f RealityModFramework -r RealityModFramework -ax64 re ScalableMeshHandler</NMakeCleanCommandLine>
+    <NMakeReBuildCommandLine>python.exe $(SrcRoot)bsicommon\build\BentleyBuild.py -p ScalableMeshHandler -f RealityModFramework -r RealityModFramework -ax64 re ScalableMeshHandler -c
+python.exe $(SrcRoot)bsicommon\build\BentleyBuild.py -p ScalableMeshHandler -f RealityModFramework -r RealityModFramework -ax64 re ScalableMeshHandler</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>python.exe $(SrcRoot)bsicommon\build\BentleyBuild.py -p ScalableMeshHandler -f RealityModFramework -r RealityModFramework -ax64 re ScalableMeshHandler</NMakeCleanCommandLine>
     <NMakeIncludeSearchPath>$(ProjectDir);$(OutRoot)Winx64\BuildContexts\TerrainModel\ScalableMeshHandler\PublicAPI\ScalableMeshHandler</NMakeIncludeSearchPath>
     <NMakeForcedIncludes>$(ProjectDir)stdafx.h</NMakeForcedIncludes>
     <NMakeForcedUsingAssemblies />
@@ -156,25 +156,25 @@ python.exe $(SrcBsiCommon)build\BentleyBuild.py -p ScalableMeshHandler -f Realit
     <SourcePath>$(SourcePath)</SourcePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <NMakeBuildCommandLine>python.exe $(SrcBsiCommon)build\BentleyBuild.py -p ScalableMeshHandler -f TerrainModel -r TerrainModel re ScalableMeshHandler</NMakeBuildCommandLine>
+    <NMakeBuildCommandLine>python.exe $(SrcRoot)bsicommon\build\BentleyBuild.py -p ScalableMeshHandler -f TerrainModel -r TerrainModel re ScalableMeshHandler</NMakeBuildCommandLine>
     <NMakeOutput>
     </NMakeOutput>
     <BaseIntermediateOutputPath>$(OutRoot)VS\$(Configuration)\</BaseIntermediateOutputPath>
     <NMakePreprocessorDefinitions>WIN32;winNT;_VISCXX;_CONVERSION_DONT_USE_THREAD_LOCALE;_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES=1;_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES_COUNT=1;_SECURE_SCL_THROWS=1;_SECURE_SCL=0;WIN32_LEAN_AND_MEAN;WINVER=0x0501; _WIN32_WINNT=0x0501;_WIN32_IE=0x0501;DEBUG;WIN32;_DEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
-    <NMakeReBuildCommandLine>python.exe $(SrcBsiCommon)build\BentleyBuild.py -p ScalableMeshHandler -f TerrainModel -r TerrainModel re ScalableMeshHandler </NMakeReBuildCommandLine>
-    <NMakeCleanCommandLine>python.exe $(SrcBsiCommon)build\BentleyBuild.py-p ScalableMeshHandler -f TerrainModel -r TerrainModel re ScalableMeshHandler -c</NMakeCleanCommandLine>
+    <NMakeReBuildCommandLine>python.exe $(SrcRoot)bsicommon\build\BentleyBuild.py -p ScalableMeshHandler -f TerrainModel -r TerrainModel re ScalableMeshHandler </NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>python.exe $(SrcRoot)bsicommon\build\BentleyBuild.py-p ScalableMeshHandler -f TerrainModel -r TerrainModel re ScalableMeshHandler -c</NMakeCleanCommandLine>
     <NMakeIncludeSearchPath>$(OutRoot)Winx64\BuildContexts\TerrainModel\ScalableMeshHandler\PublicAPI\ScalableMeshHandler</NMakeIncludeSearchPath>
     <OutDir>$(OutRoot)VS\$(Configuration)\</OutDir>
     <IntDir>$(OutRoot)VS\$(Configuration)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <NMakeBuildCommandLine>python.exe $(SrcBsiCommon)build\BentleyBuild.py -p ScalableMeshHandler -f RealityModFramework -r RealityModFramework -ax64 re ScalableMeshHandler</NMakeBuildCommandLine>
+    <NMakeBuildCommandLine>python.exe $(SrcRoot)bsicommon\build\BentleyBuild.py -p ScalableMeshHandler -f RealityModFramework -r RealityModFramework -ax64 re ScalableMeshHandler</NMakeBuildCommandLine>
     <NMakeOutput />
     <BaseIntermediateOutputPath>$(OutRoot)VS\$(Configuration)\</BaseIntermediateOutputPath>
     <NMakePreprocessorDefinitions>WIN32;winNT;_VISCXX;_CONVERSION_DONT_USE_THREAD_LOCALE;_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES=1;_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES_COUNT=1;_SECURE_SCL_THROWS=1;_SECURE_SCL=0;WIN32_LEAN_AND_MEAN;WINVER=0x0501; _WIN32_WINNT=0x0501;_WIN32_IE=0x0501;DEBUG;WIN32;_DEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
-    <NMakeReBuildCommandLine>python.exe $(SrcBsiCommon)build\BentleyBuild.py -p ScalableMeshHandler -f RealityModFramework -r RealityModFramework -ax64 re ScalableMeshHandler -c
-python.exe $(SrcBsiCommon)build\BentleyBuild.py -p ScalableMeshHandler -f RealityModFramework -r RealityModFramework -ax64 re ScalableMeshHandler</NMakeReBuildCommandLine>
-    <NMakeCleanCommandLine>python.exe $(SrcBsiCommon)build\BentleyBuild.py -p ScalableMeshHandler -f RealityModFramework -r RealityModFramework -ax64 re ScalableMeshHandler</NMakeCleanCommandLine>
+    <NMakeReBuildCommandLine>python.exe $(SrcRoot)bsicommon\build\BentleyBuild.py -p ScalableMeshHandler -f RealityModFramework -r RealityModFramework -ax64 re ScalableMeshHandler -c
+python.exe $(SrcRoot)bsicommon\build\BentleyBuild.py -p ScalableMeshHandler -f RealityModFramework -r RealityModFramework -ax64 re ScalableMeshHandler</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>python.exe $(SrcRoot)bsicommon\build\BentleyBuild.py -p ScalableMeshHandler -f RealityModFramework -r RealityModFramework -ax64 re ScalableMeshHandler</NMakeCleanCommandLine>
     <NMakeIncludeSearchPath>$(OutRoot)Winx64\BuildContexts\TerrainModel\ScalableMeshHandler\PublicAPI\ScalableMeshHandler</NMakeIncludeSearchPath>
   </PropertyGroup>
   <ItemDefinitionGroup>

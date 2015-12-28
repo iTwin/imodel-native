@@ -250,18 +250,18 @@ BentleyStatus WmsModel::_LoadQuadTree()
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                       Eric.Paquet     4/2015
 //----------------------------------------------------------------------------------------
-void WmsModel::_ToPropertiesJson(Json::Value& v) const
+void WmsModel::_WriteJsonProperties(Json::Value& v) const
     {
-    T_Super::_ToPropertiesJson(v);
+    T_Super::_WriteJsonProperties(v);
     m_map.ToJson(v);
     }
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                       Eric.Paquet     4/2015
 //----------------------------------------------------------------------------------------
-void WmsModel::_FromPropertiesJson(Json::Value const& v)
+void WmsModel::_ReadJsonProperties(Json::Value const& v)
     {
-    T_Super::_FromPropertiesJson(v);
+    T_Super::_ReadJsonProperties(v);
     m_map.FromJson(v);
     }
 

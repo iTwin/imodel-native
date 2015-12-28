@@ -6,7 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "RasterSchemaInternal.h"
-#include <DgnPlatform/DgnCore/ImageUtilities.h>
+#include <DgnPlatform/ImageUtilities.h>
 #include "RasterQuadTree.h"
 
 //----------------------------------------------------------------------------------------
@@ -286,7 +286,7 @@ bool RasterTile::Draw(ViewContextR context)
         }
     else
         {
-        BeSQLite::HighPriorityOperationBlock highPriority;
+        BeSQLite::wt_OperationForGraphics highPriority;
         auto extents = context.GetViewport()->GetViewController().GetViewedExtents();
         for (auto& pt : uvPts)
             pt.z = extents.low.z - 1;

@@ -12,11 +12,10 @@
 #include <unordered_map>
 
 #include <Bentley/Bentley.h>
-#include <DgnPlatform/DgnCore/DgnDomain.h>
-#include <DgnPlatform/DgnCore/RasterBaseModel.h>
-#include <DgnPlatform/DgnCore/ImageUtilities.h>
+#include <DgnPlatform/DgnDomain.h>
+#include <DgnPlatform/ImageUtilities.h>
 #include <DgnPlatform/DgnGeoCoord.h>
-#include <DgnPlatform/DgnHandlers/image.h>
+#include <DgnPlatform/image.h>
 #include <windows.h>
 #include <Imagepp/h/ImageppAPI.h>
 
@@ -52,6 +51,9 @@
 #include <Imagepp/all/h/HRFRasterFileResBooster.h>
 #include <Imagepp/all/h/HRFRasterFileCache.h>
 #include <Imagepp/all/h/HRFUtility.h>
+#include <Imagepp/all/h/HRPDEMFilter.h>
+#include <Imagepp/all/h/HPMAttribute.h>
+#include <Imagepp/all/h/HRADEMRaster.h>
 
 #include <RasterSchema/RasterSchemaTypes.h>
 #include <RasterSchema/RasterSchemaCommon.h>

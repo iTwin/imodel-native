@@ -1,32 +1,24 @@
 #--------------------------------------------------------------------------------------
 #
-#     $Source: PointCloudSchema/PointCloudSchemaPolicy.mki $
+#     $Source: RasterSchema/RasterSchema.mki $
 #
 #  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
 
-%include $(SrcBsiCommon)sharedmki/InternalSystemPolicy.mki
-%include $(SharedMki)DefinePublicApiIncludes.mki
-%include $(SharedMki)CommonCompileLinkPolicy.mki
-%include $(BuildContext)SubParts/PublicMki/BentleyApi.mki
 
-%include DefaultToolSet.mki
-
-appName         = PointCloudSchema
-o               = $(OutputRootDir)build/PointCloudSchema/
-repositoryRoot  = $(SrcRoot)DgnDomains/RealityModeling/
+appName         = RasterSchema
+o               = $(OutBuildDir)RasterSchema/
 
 DLM_NAME    = $(appName)
 CCompPDBName = $(appName)
-MuiBaseName = $(appName)
 
 MultiCompileIntermediatePdbFile=$(o)$(CCompPDBName).pdb
 IntermediatePdbFile = $(MultiCompileIntermediatePdbFile)
 
 #----------------------------------------------------------------------
-# We're building the PointCloudSchema lib
+# We're building the RasterSchema lib
 #----------------------------------------------------------------------
-nameToDefine = __POINTCLOUDSCHEMA_BUILD__
+nameToDefine = __RASTERSCHEMA_BUILD__
 %include cdefapnd.mki
 

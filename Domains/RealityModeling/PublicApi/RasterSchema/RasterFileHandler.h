@@ -8,7 +8,6 @@
 #pragma once
 //__PUBLISH_SECTION_START__
 
-#include <DgnPlatform/DgnCore/RasterBaseModel.h>
 #include <RasterSchema/RasterHandler.h>
 #include <RasterSchema/RasterSchemaTypes.h>
 
@@ -51,8 +50,8 @@ protected:
     //! Destruct a RasterFileModel object.
     ~RasterFileModel();
 
-    virtual void            _ToPropertiesJson(Json::Value&) const override;
-    virtual void            _FromPropertiesJson(Json::Value const&) override;
+    virtual void            _WriteJsonProperties(Json::Value&) const override;
+    virtual void            _ReadJsonProperties(Json::Value const&) override;
     virtual BentleyStatus   _LoadQuadTree() override;
     virtual Dgn::AxisAlignedBox3d _QueryModelRange() const override;
 

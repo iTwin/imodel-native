@@ -22,9 +22,9 @@ struct PointCloudModelHandler;
 // Obtain and display point cloud data from POD files. 
 // @bsiclass                                                    Eric.Paquet     04/2015
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE PointCloudModel : Dgn::PointCloudBaseModel
+struct EXPORT_VTABLE_ATTRIBUTE PointCloudModel : Dgn::SpatialModel
 {
-    DEFINE_T_SUPER(PointCloudBaseModel)
+    DEFINE_T_SUPER(Dgn::SpatialModel)
 
 private:
     BePointCloud::PointCloudScenePtr    m_pointCloudScenePtr;
@@ -63,8 +63,8 @@ public:
     PointCloudModel(CreateParams const& params, PointCloudModel::Properties const& properties) ;
 
     POINTCLOUDSCHEMA_EXPORT virtual void _AddGraphicsToScene(ViewContextR) override;
-    POINTCLOUDSCHEMA_EXPORT virtual void _ToPropertiesJson(Json::Value&) const override;
-    POINTCLOUDSCHEMA_EXPORT virtual void _FromPropertiesJson(Json::Value const&) override;
+    POINTCLOUDSCHEMA_EXPORT virtual void _WriteJsonProperties(Json::Value&) const override;
+    POINTCLOUDSCHEMA_EXPORT virtual void _ReadJsonProperties(Json::Value const&) override;
     POINTCLOUDSCHEMA_EXPORT virtual AxisAlignedBox3d _QueryModelRange() const override;
     POINTCLOUDSCHEMA_EXPORT BePointCloud::PointCloudScenePtr GetPointCloudScenePtr ();
     POINTCLOUDSCHEMA_EXPORT DRange3dR GetRangeR() {return m_properties.m_range;}
@@ -75,9 +75,9 @@ public:
 // Instances of PointCloudModel must be able to assume that their handler is a PointCloudModelHandler.
 // @bsiclass                                                    Eric.Paquet     04/2015
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE PointCloudModelHandler : Dgn::dgn_ModelHandler::PointCloud
+struct EXPORT_VTABLE_ATTRIBUTE PointCloudModelHandler : Dgn::dgn_ModelHandler::Spatial
 {
-    MODELHANDLER_DECLARE_MEMBERS ("PointCloudModel", PointCloudModel, PointCloudModelHandler, Dgn::dgn_ModelHandler::PointCloud, POINTCLOUDSCHEMA_EXPORT)
+    MODELHANDLER_DECLARE_MEMBERS ("PointCloudModel", PointCloudModel, PointCloudModelHandler, Dgn::dgn_ModelHandler::Spatial, POINTCLOUDSCHEMA_EXPORT)
 
 public:
     POINTCLOUDSCHEMA_EXPORT static Dgn::DgnModelId CreatePointCloudModel(DgnDbR db, Utf8StringCR fileId);

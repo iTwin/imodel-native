@@ -82,8 +82,8 @@ protected:
     //! Destruct a WmsModel object.
     ~WmsModel();
 
-    virtual void _ToPropertiesJson(Json::Value&) const override;
-    virtual void _FromPropertiesJson(Json::Value const&) override;
+    virtual void _WriteJsonProperties(Json::Value&) const override;
+    virtual void _ReadJsonProperties(Json::Value const&) override;
     virtual Dgn::AxisAlignedBox3d _QueryModelRange() const override;
 
     virtual BentleyStatus _LoadQuadTree() override;

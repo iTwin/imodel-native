@@ -6,57 +6,52 @@
 #
 #--------------------------------------------------------------------------------------
 
-PolicyFile=$(SrcRoot)DgnDomains/RealityModeling/PointCloudSchema/PointCloudSchemaPolicy.mki
-SolutionPolicyMki=$(PolicyFile)
-
 %include mdl.mki
-%include $(BuildContext)SubParts/PublicMki/BentleyApi.mki
 
-baseDir                         = $(_MakeFilePath)
-pointCloudSchemaPublicApiSrc    = $(repositoryRoot)PublicAPI/PointCloudSchema/
-pointCloudSchemaSrc             = $(baseDir)
+#-----------------------------------------------------------
+# Root directory
+#-----------------------------------------------------------
+SrcPointCloudSchema                 = $(_MakeFilePath)
 
-always:
-    !~@mkdir $(o)
+#------------------------------------------------------
+# Header file locations in source tree
+#------------------------------------------------------
+PointCloudSchemaPublicApiSrc        = $(SrcPointCloudSchema)../PublicAPI/PointCloudSchema/
 
-#--------------------------------------------------------------------------------------
-#   BENTLEY_LIBRARIES
-#--------------------------------------------------------------------------------------
-ContextLibPrefix = $(BuildContext)SubParts/Libs/$(libprefix)
-
-BENTLEY_LIBRARIES = $(ContextLibPrefix)DgnPlatform$(stlibext)
-BENTLEY_LIBRARIES + $(ContextLibPrefix)BentleyGeom$(stlibext)
-BENTLEY_LIBRARIES + $(ContextLibPrefix)BePointCloud$(stlibext)
-BENTLEY_LIBRARIES + $(ContextLibPrefix)BaseGeoCoord$(stlibext)
-BENTLEY_LIBRARIES + $(ContextLibPrefix)ECObjects$(stlibext)
-BENTLEY_LIBRARIES + $(ContextLibPrefix)BeSQLiteEC$(stlibext)
-BENTLEY_LIBRARIES + $(ContextLibPrefix)BeJsonCpp$(stlibext)
+#----------------------------------------------------------
+# Set and then include the CompileOptionsMki file.
+# It is needed and also %included by PreCompileHeader.mki
+#----------------------------------------------------------
+CompileOptionsMki               = $(SrcPointCloudSchema)PointCloudSchema.mki
+%include $(CompileOptionsMki)
 
 #--------------------------------------------------------------------------------------
 #   Set up build dependencies
 #--------------------------------------------------------------------------------------
 pointCloudSchemaDepends         = $(_MakeFileSpec)                                                  \
-                                  $(pointCloudSchemaSrc)VisualizationManager.h                     \
-                                  $(pointCloudSchemaSrc)PointCloudGcsFacility.h                    \
-                                  $(pointCloudSchemaSrc)PointCloudViewport.h                       \
-                                  $(pointCloudSchemaPublicApiSrc)PointCloudViewSettings.h          \
-                                  $(pointCloudSchemaSrc)PointCloudRamps.h                          \
-                                  $(pointCloudSchemaSrc)PointCloudRenderer.h                       \
-                                  $(pointCloudSchemaPublicApiSrc)PointCloudSchemaCommon.h          \
-                                  $(pointCloudSchemaPublicApiSrc)IPointCloudViewSettings.h         \
-                                  $(pointCloudSchemaPublicApiSrc)PointCloudSchemaTypes.h           \
-                                  $(pointCloudSchemaPublicApiSrc)PointCloudDrawBuffer.h            \
-                                  $(pointCloudSchemaPublicApiSrc)PointCloudHandler.h               \
-                                  $(pointCloudSchemaPublicApiSrc)PointCloudProgressiveDisplay.h    \
-                                  $(pointCloudSchemaPublicApiSrc)PointCloudDomain.h                \
-                                  $(pointCloudSchemaPublicApiSrc)PointCloudSchemaApi.h             \
+                                  $(SrcPointCloudSchema)VisualizationManager.h                     \
+                                  $(SrcPointCloudSchema)PointCloudGcsFacility.h                    \
+                                  $(SrcPointCloudSchema)PointCloudViewport.h                       \
+                                  $(PointCloudSchemaPublicApiSrc)PointCloudViewSettings.h          \
+                                  $(SrcPointCloudSchema)PointCloudRamps.h                          \
+                                  $(SrcPointCloudSchema)PointCloudRenderer.h                       \
+                                  $(PointCloudSchemaPublicApiSrc)PointCloudSchemaCommon.h          \
+                                  $(PointCloudSchemaPublicApiSrc)IPointCloudViewSettings.h         \
+                                  $(PointCloudSchemaPublicApiSrc)PointCloudSchemaTypes.h           \
+                                  $(PointCloudSchemaPublicApiSrc)PointCloudDrawBuffer.h            \
+                                  $(PointCloudSchemaPublicApiSrc)PointCloudHandler.h               \
+                                  $(PointCloudSchemaPublicApiSrc)PointCloudProgressiveDisplay.h    \
+                                  $(PointCloudSchemaPublicApiSrc)PointCloudDomain.h                \
+                                  $(PointCloudSchemaPublicApiSrc)PointCloudSchemaApi.h             \
                                   
-%include MultiCppCompileRule.mki
+
+always:
+    !~@mkdir $(o)
 
 #----------------------------------------------------------------------
 #   Make sure that PointCloudSchemaInternal.pch is up-to-date.
 #----------------------------------------------------------------------
-PchCompiland        = $(pointCloudSchemaSrc)PointCloudSchemaInternal.cpp
+PchCompiland        = $(SrcPointCloudSchema)PointCloudSchemaInternal.cpp
 PchOutputDir        = $(o)
 PchExtraOptions     = -Zm160
 PchExplicitDepends  = $(pointCloudSchemaDepends)
@@ -75,25 +70,25 @@ MultiCompileDepends=$(_MakeFileSpec)
 #--------------------------------------------------------------------------------------
 #   Compile portable source
 #--------------------------------------------------------------------------------------
-$(o)VisualizationManager$(oext)         : $(pointCloudSchemaSrc)VisualizationManager.cpp           $(pointCloudSchemaDepends)  ${MultiCompileDepends} 
+$(o)VisualizationManager$(oext)         : $(SrcPointCloudSchema)VisualizationManager.cpp           $(pointCloudSchemaDepends)  ${MultiCompileDepends} 
 
-$(o)PointCloudViewport$(oext)           : $(pointCloudSchemaSrc)PointCloudViewport.cpp             $(pointCloudSchemaDepends)  ${MultiCompileDepends} 
+$(o)PointCloudViewport$(oext)           : $(SrcPointCloudSchema)PointCloudViewport.cpp             $(pointCloudSchemaDepends)  ${MultiCompileDepends} 
 
-$(o)PointCloudViewSettings$(oext)       : $(pointCloudSchemaSrc)PointCloudViewSettings.cpp         $(pointCloudSchemaDepends)  ${MultiCompileDepends} 
+$(o)PointCloudViewSettings$(oext)       : $(SrcPointCloudSchema)PointCloudViewSettings.cpp         $(pointCloudSchemaDepends)  ${MultiCompileDepends} 
 
-$(o)PointCloudRamps$(oext)              : $(pointCloudSchemaSrc)PointCloudRamps.cpp                $(pointCloudSchemaDepends)  ${MultiCompileDepends} 
+$(o)PointCloudRamps$(oext)              : $(SrcPointCloudSchema)PointCloudRamps.cpp                $(pointCloudSchemaDepends)  ${MultiCompileDepends} 
 
-$(o)PointCloudRenderer$(oext)           : $(pointCloudSchemaSrc)PointCloudRenderer.cpp             $(pointCloudSchemaDepends)  ${MultiCompileDepends} 
+$(o)PointCloudRenderer$(oext)           : $(SrcPointCloudSchema)PointCloudRenderer.cpp             $(pointCloudSchemaDepends)  ${MultiCompileDepends} 
 
-$(o)PointCloudDrawBuffer$(oext)         : $(pointCloudSchemaSrc)PointCloudDrawBuffer.cpp           $(pointCloudSchemaDepends)  ${MultiCompileDepends} 
+$(o)PointCloudDrawBuffer$(oext)         : $(SrcPointCloudSchema)PointCloudDrawBuffer.cpp           $(pointCloudSchemaDepends)  ${MultiCompileDepends} 
 
-$(o)PointCloudGcsFacility$(oext)        : $(pointCloudSchemaSrc)PointCloudGcsFacility.cpp          $(pointCloudSchemaDepends)  ${MultiCompileDepends} 
+$(o)PointCloudGcsFacility$(oext)        : $(SrcPointCloudSchema)PointCloudGcsFacility.cpp          $(pointCloudSchemaDepends)  ${MultiCompileDepends} 
 
-$(o)PointCloudHandler$(oext)            : $(pointCloudSchemaSrc)PointCloudHandler.cpp              $(pointCloudSchemaDepends)  ${MultiCompileDepends} 
+$(o)PointCloudHandler$(oext)            : $(SrcPointCloudSchema)PointCloudHandler.cpp              $(pointCloudSchemaDepends)  ${MultiCompileDepends} 
 
-$(o)PointCloudProgressiveDisplay$(oext) : $(pointCloudSchemaSrc)PointCloudProgressiveDisplay.cpp   $(pointCloudSchemaDepends)  ${MultiCompileDepends} 
+$(o)PointCloudProgressiveDisplay$(oext) : $(SrcPointCloudSchema)PointCloudProgressiveDisplay.cpp   $(pointCloudSchemaDepends)  ${MultiCompileDepends} 
 
-$(o)PointCloudDomain$(oext)             : $(pointCloudSchemaSrc)PointCloudDomain.cpp               $(pointCloudSchemaDepends)  ${MultiCompileDepends} 
+$(o)PointCloudDomain$(oext)             : $(SrcPointCloudSchema)PointCloudDomain.cpp               $(pointCloudSchemaDepends)  ${MultiCompileDepends} 
 
 #
 # Compile the above uniform set of dependency blocks in a single invocation of the Visual C compiler.
@@ -120,11 +115,14 @@ DLM_NOENTRY                 = 1
 DLM_NO_DLS                  = 1
 DLM_NO_DEF                  = 1
 
-DLM_CONTEXT_LOCATION        = $(BuildContext)Delivery/
-DLM_LIB_CONTEXT_LOCATION    = $(BuildContext)Delivery/
-DLM_CREATE_LIB_CONTEXT_LINK = 1
+LINKER_LIBRARIES            =   $(ContextSubpartsLibs)$(libprefix)DgnPlatform$(libext) \
+                                $(ContextSubpartsLibs)$(libprefix)BentleyGeom$(libext) \
+                                $(ContextSubpartsLibs)$(libprefix)BePointCloud$(libext) \
+                                $(ContextSubpartsLibs)$(libprefix)BaseGeoCoord$(libext) \
+                                $(ContextSubpartsLibs)$(libprefix)ECObjects$(libext) \
+                                $(ContextSubpartsLibs)$(libprefix)BeSQLiteEC$(libext) \
+                                $(ContextSubpartsLibs)$(stlibprefix)BeJsonCpp$(stlibext)
 
-LINKER_LIBRARIES            = $(BENTLEY_LIBRARIES) $(SYSTEM_LIBRARIES)
 
 %include $(sharedMki)LinkLibrary.mki
 

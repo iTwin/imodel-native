@@ -184,7 +184,7 @@ DisplayTilePtr DisplayTile::Create(uint32_t width, uint32_t height, DisplayTile:
 
     DisplayTilePtr pTile = new DisplayTile();
 
-    Point2d size = {width, height};
+    Point2d size = { (int32_t)width, (int32_t)height };
 
     pTile->m_haveTexture = true;
     T_HOST.GetGraphicsAdmin()._DefineTile(pTile->GetTextureId(), NULL, size, alphaBlend, static_cast<uint32_t>(pixelType), (uint32_t)pitch, pData);

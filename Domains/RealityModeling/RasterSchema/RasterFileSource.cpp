@@ -87,10 +87,10 @@ DisplayTilePtr RasterFileSource::_QueryTile(TileId const& id, bool request)
     // The packet is kept as a member, which avoids to allocate a buffer each time we pass here.
     pDisplayBitmap->SetPacket(m_packetPtr);
 
-	pDisplayBitmap->CopyFrom(*m_rasterFilePtr->GetStoredRasterP(), opts);
+	pDisplayBitmap->CopyFrom(*m_rasterFilePtr->GetRasterP(), opts); //&&MM &&ep validate status and init we something red?  We have a Kodak somewhere in HRFWMS or virtual earth.
     Byte* pbSrcRow = pDisplayBitmap->GetPacket()->GetBufferAddress();
 
-    bool alphaBlend = m_rasterFilePtr->GetStoredRasterP()->GetPixelType()->GetChannelOrg().GetChannelIndex(HRPChannelType::ALPHA, 0) != HRPChannelType::FREE;
+    bool alphaBlend = m_rasterFilePtr->GetRasterP()->GetPixelType()->GetChannelOrg().GetChannelIndex(HRPChannelType::ALPHA, 0) != HRPChannelType::FREE;
 
     DisplayTile::PixelType pixelType = DisplayTile::PixelType::Rgba;
     DisplayTilePtr pDisplayTile = DisplayTile::Create(effectiveTileSizeX, effectiveTileSizeY, pixelType, alphaBlend, pbSrcRow, 0/*notPadded*/);

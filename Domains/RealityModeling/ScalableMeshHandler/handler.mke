@@ -5,16 +5,12 @@
 #  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 #
 #----------------------------------------------------------------------------------------
-
-baseDir         = $(_MakeFilePath)
-PolicyFile      = $(SrcRoot)DgnDomains/RealityModeling/ScalableMeshHandler/ScalableMeshHandler.mki
-
-
-appName     = ScalableMeshHandler
-DLM_NAME    = $(appName)
-CCompPDBName = $(appName)
-
 %include  mdl.mki
+
+baseDir             = $(_MakeFilePath)
+appName             = ScalableMeshHandler
+o                   = $(OutputRootDir)build/$(appName)/
+
 
 #----------------------------------------------------------------------
 #       Create output directories
@@ -22,13 +18,11 @@ CCompPDBName = $(appName)
 always:
     !~@mkdir $(o)
 
-
 #----------------------------------------------------------------------
 #   Symlink APIs
 #----------------------------------------------------------------------
 always:
    @CreateSymLinks.py -d"$(BuildContext)PublicAPI/ScalableMeshHandler=$(_MakeFilePath)/PublicAPI"
-
 
 #----------------------------------------------------------------------
 #       Inform user of compile options
@@ -43,7 +37,6 @@ always:
 CCompOpts + -DNOMINMAX -D__SCM_HANDLERS_BUILD__
 
 MultiCompileDepends=$(_MakeFileSpec) 
-#DisableMultiCompile=1
 %include MultiCppCompileRule.mki
 
 
@@ -55,19 +48,31 @@ $(o)QvCachedNodeManager$(oext) : $(baseDir)ScalableMeshHandler/QvCachedNodeManag
 
 %include MultiCppCompileGo.mki
 
-DLM_OBJECT_FILES    = $(MultiCompileObjectList)
+# dlmlink.mki common options.
+DLM_OBJECT_FILES            = $(MultiCompileObjectList)
+DLM_DEST                    = $(o)
+DLM_SYMB_DEST               = $(o)
+DLM_EXPORT_DEST             = $(o)
+DLM_OBJECT_DEST             = $(o)
+DLM_NO_DEF                  = 1
+DLM_NOMSBUILTINS            = 1
+DLM_NO_DLS                  = 1
+DLM_NOENTRY                 = 1
+DLM_NAME                    = $(appName)
+CCompPDBName                = $(appName)
+
 
 
 LINKER_LIBRARIES_DELAYLOADED  = \
     $(ContextSubpartsLibs)DgnPlatform.lib \
-	$(ContextSubpartsLibs)ScalableMesh.lib \
-	$(ContextSubpartsLibs)BaseGeoCoord.lib 
+    $(ContextSubpartsLibs)ScalableMesh.lib \
+    $(ContextSubpartsLibs)BaseGeoCoord.lib 
 
 LINKER_LIBRARIES            = \
     $(ContextSubpartsLibs)$(libprefix)ImagePP$(libext) \
     $(ContextSubpartsLibs)$(libprefix)BentleyGeom$(libext) \
     $(ContextSubpartsLibs)$(libprefix)TerrainModelCore$(libext) \
     $(ContextSubpartsLibs)$(libprefix)TerrainModelFormats$(libext)
-	
+
 %include $(sharedMki)LinkLibrary.mki
 

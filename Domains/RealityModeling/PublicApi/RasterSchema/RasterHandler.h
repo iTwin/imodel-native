@@ -8,7 +8,6 @@
 #pragma once
 //__PUBLISH_SECTION_START__
 
-#include <DgnPlatform/DgnCore/RasterBaseModel.h>
 #include <RasterSchema/RasterSchemaTypes.h>
 
 BEGIN_BENTLEY_RASTERSCHEMA_NAMESPACE
@@ -18,9 +17,9 @@ struct RasterModelHandler;
 //=======================================================================================
 // @bsiclass                                                    Eric.Paquet     04/2015
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE RasterModel : Dgn::RasterBaseModel
+struct EXPORT_VTABLE_ATTRIBUTE RasterModel : Dgn::SpatialModel
 {
-    DEFINE_T_SUPER(RasterBaseModel)
+    DEFINE_T_SUPER(Dgn::SpatialModel)
     
 protected:
     friend struct RasterModelHandler;
@@ -31,8 +30,8 @@ protected:
     ~RasterModel();
         
     virtual void _AddGraphicsToScene(Dgn::ViewContextR) override;
-    virtual void _ToPropertiesJson(Json::Value&) const override;
-    virtual void _FromPropertiesJson(Json::Value const&) override;
+    virtual void _WriteJsonProperties(Json::Value&) const override;
+    virtual void _ReadJsonProperties(Json::Value const&) override;
 
     virtual BentleyStatus _LoadQuadTree() {return BSIERROR;}
 
@@ -48,9 +47,9 @@ public:
 // Instances of RasterModel must be able to assume that their handler is a RasterModelHandler.
 // @bsiclass                                                    Eric.Paquet     04/2015
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE RasterModelHandler : Dgn::dgn_ModelHandler::Raster
+struct EXPORT_VTABLE_ATTRIBUTE RasterModelHandler : Dgn::dgn_ModelHandler::Spatial
 {
-    RASTERMODELHANDLER_DECLARE_MEMBERS (RASTER_CLASSNAME_RasterModel, RasterModel, RasterModelHandler, Dgn::dgn_ModelHandler::Raster, RASTERSCHEMA_EXPORT)
+    RASTERMODELHANDLER_DECLARE_MEMBERS (RASTER_CLASSNAME_RasterModel, RasterModel, RasterModelHandler, Dgn::dgn_ModelHandler::Spatial, RASTERSCHEMA_EXPORT)
 };
 
 END_BENTLEY_RASTERSCHEMA_NAMESPACE

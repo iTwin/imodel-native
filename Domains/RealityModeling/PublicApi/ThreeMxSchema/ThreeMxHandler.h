@@ -46,9 +46,9 @@ typedef RefCountedPtr <struct ThreeMxScene>      ThreeMxScenePtr;
 //=======================================================================================
 // @bsiclass                                                    Ray.Bentley     09/2015
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE ThreeMxModel : PhysicalModel
+struct EXPORT_VTABLE_ATTRIBUTE ThreeMxModel : SpatialModel
 {
-    DGNMODEL_DECLARE_MEMBERS("ThreeMxModel", PhysicalModel);
+    DGNMODEL_DECLARE_MEMBERS("ThreeMxModel", SpatialModel);
 
 private:
     ThreeMxScenePtr         m_scene;
@@ -61,8 +61,8 @@ public:
     ThreeMxModel(CreateParams const& params) : T_Super (params), m_scene (NULL) { }
 
     THREEMX_SCHEMA_EXPORT virtual void _AddGraphicsToScene(ViewContextR) override;
-    THREEMX_SCHEMA_EXPORT virtual void _ToPropertiesJson(Json::Value&) const override;
-    THREEMX_SCHEMA_EXPORT virtual void _FromPropertiesJson(Json::Value const&) override;
+    THREEMX_SCHEMA_EXPORT virtual void _WriteJsonProperties(Json::Value&) const override;
+    THREEMX_SCHEMA_EXPORT virtual void _ReadJsonProperties(Json::Value const&) override;
     THREEMX_SCHEMA_EXPORT virtual AxisAlignedBox3d _QueryModelRange() const override;
     THREEMX_SCHEMA_EXPORT static DgnModelId  CreateThreeMxModel (DgnDbR dgnDb, Utf8StringCR fileId);
 
@@ -87,13 +87,12 @@ protected:
 
 };  // ThreeMxScene;
 
-
 //=======================================================================================
 // @bsiclass                                                    Ray.Bentley     09/2015
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE ThreeMxModelHandler :  Dgn::dgn_ModelHandler::Physical
+struct EXPORT_VTABLE_ATTRIBUTE ThreeMxModelHandler :  Dgn::dgn_ModelHandler::Spatial
 {
-    MODELHANDLER_DECLARE_MEMBERS ("ThreeMxModel", ThreeMxModel, ThreeMxModelHandler, Dgn::dgn_ModelHandler::Physical, THREEMX_SCHEMA_EXPORT)
+    MODELHANDLER_DECLARE_MEMBERS ("ThreeMxModel", ThreeMxModel, ThreeMxModelHandler, Dgn::dgn_ModelHandler::Spatial, THREEMX_SCHEMA_EXPORT)
 
 };
 
