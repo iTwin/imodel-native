@@ -879,7 +879,7 @@ void DgnElements::Destroy()
     m_tree->Destroy();
     m_heapZone.EmptyAll();
     m_stmts.Empty();
-    m_handlerStmts.Empty();
+    m_classInfos.clear();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1381,21 +1381,34 @@ DgnElementId DgnElements::QueryElementIdByCode(DgnAuthorityId authority, Utf8Str
     statement->BindText(3, nameSpace, Statement::MakeCopy::No);
     return (BE_SQLITE_ROW != statement->Step()) ? DgnElementId() : statement->GetValueId<DgnElementId>(0);
     }
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   09/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnElements::HandlerStatementCache::Entry* DgnElements::HandlerStatementCache::FindEntry(ElementHandlerR handler) const
-    {
-    auto found = std::find_if(m_entries.begin(), m_entries.end(), [&handler](Entry& arg) { return &handler == arg.m_handler; });
-    return m_entries.end() != found ? found : nullptr;
-    }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   09/15
+* @bsimethod                                                    Paul.Connelly   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnElements::HandlerStatementCache::Empty()
+DgnElements::ClassInfo& DgnElements::FindClassInfo(DgnElementCR el) const
     {
-    m_entries.clear();
+    DgnClassId classId = el.GetElementClassId();
+    auto found = m_classInfos.find(classId);
+    if (m_classInfos.end() != found)
+        return found->second;
+
+    ClassInfo& classInfo = m_classInfos[classId];
+    bool populated = el.GetElementHandler().GetECSqlClassParams().BuildClassInfo(classInfo, GetDgnDb(), classId);
+    BeAssert(populated);
+    UNUSED_VARIABLE(populated);
+
+    Utf8StringCR selectECSql = classInfo.GetSelectECSql();
+    if (!selectECSql.empty())
+        {
+        classInfo.m_selectStmt = new CachedECSqlStatement();
+        if (ECSqlStatus::Success != classInfo.m_selectStmt->Prepare(GetDgnDb(), selectECSql.c_str()))
+            {
+            BeAssert(false);
+            classInfo.m_selectStmt = nullptr;
+            }
+        }
+
+    return classInfo;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1403,9 +1416,26 @@ void DgnElements::HandlerStatementCache::Empty()
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnElements::ElementSelectStatement DgnElements::GetPreparedSelectStatement(DgnElementR el) const
     {
+    // Cached per ECClass to make speed up loading of elements.
     BeDbMutexHolder _v(m_mutex);
-    auto& handler = el.GetElementHandler();
-    return m_handlerStmts.GetPreparedSelectStatement(el, handler, handler.GetECSqlClassInfo());
+
+    auto& classInfo = FindClassInfo(el);
+    CachedECSqlStatementPtr stmt = classInfo.m_selectStmt;
+    if (stmt.IsValid() && stmt->GetRefCount() > 2)  // +1 from above line, +1 from bmap...
+        {
+        // The cached statement is already in use...create a new one for this caller
+        stmt = new CachedECSqlStatement();
+        if (ECSqlStatus::Success != stmt->Prepare(GetDgnDb(), classInfo.GetSelectECSql().c_str()))
+            {
+            BeAssert(false);
+            stmt = nullptr;
+            }
+        }
+
+    if (stmt.IsValid())
+        stmt->BindId(1, el.GetElementId());
+
+    return ElementSelectStatement(stmt.get(), el.GetElementHandler().GetECSqlClassParams());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1414,7 +1444,7 @@ DgnElements::ElementSelectStatement DgnElements::GetPreparedSelectStatement(DgnE
 CachedECSqlStatementPtr DgnElements::GetPreparedInsertStatement(DgnElementR el) const
     {
     // Not bothering to cache per handler...use our general-purpose ECSql statement cache
-    return el.GetElementHandler().GetECSqlClassInfo().GetInsertStmt(GetDgnDb(), el.GetElementClassId());
+    return FindClassInfo(el).GetInsertStmt(GetDgnDb());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1423,78 +1453,18 @@ CachedECSqlStatementPtr DgnElements::GetPreparedInsertStatement(DgnElementR el) 
 CachedECSqlStatementPtr DgnElements::GetPreparedUpdateStatement(DgnElementR el) const
     {
     // Not bothering to cache per handler...use our general-purpose ECSql statement cache
-    return el.GetElementHandler().GetECSqlClassInfo().GetUpdateStmt(GetDgnDb(), el.GetElementId());
+    return FindClassInfo(el).GetUpdateStmt(GetDgnDb(), el.GetElementId());
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElements::ElementSelectStatement DgnElements::HandlerStatementCache::GetPreparedSelectStatement(DgnElementR el, ElementHandlerR handler, ECSqlClassInfo const& classInfo) const
+ECSqlClassParams const& dgn_ElementHandler::Element::GetECSqlClassParams()
     {
-    CachedECSqlStatementPtr stmt;
-    Utf8StringCR selectECSql = classInfo.GetSelectECSql();
-    if (!selectECSql.empty())
-        {
-        Entry* entry = FindEntry(handler);
-        if (nullptr != entry)
-            {
-            if (entry->m_select.IsNull() || entry->m_select->GetRefCount() <= 1)
-                {
-                stmt = entry->m_select;
-                }
-            else
-                {
-                // The cached statement is already in use...create a new one for this caller
-                stmt = new CachedECSqlStatement();
-                if (ECSqlStatus::Success != stmt->Prepare(el.GetDgnDb(), selectECSql.c_str()))
-                    {
-                    BeAssert(false);
-                    stmt = nullptr;
-                    }
-                }
-            }
-        else
-            {
-            // First request for this handler...create an entry
-            m_entries.push_back(Entry(&handler));
-            entry = &m_entries.back();
-            entry->m_select = new CachedECSqlStatement();
-            if (ECSqlStatus::Success != entry->m_select->Prepare(el.GetDgnDb(), selectECSql.c_str()))
-                {
-                BeAssert(false);
-                entry->m_select = nullptr;
-                }
+    if (!m_classParams.IsInitialized())
+        m_classParams.Initialize(*this);
 
-            stmt = entry->m_select;
-            }
-        }
-
-    if (stmt.IsValid())
-        {
-        BeAssert(el.GetElementId().IsValid());
-        stmt->BindId(1, el.GetElementId());
-        }
-
-    return ElementSelectStatement(stmt.get(), classInfo.GetParams());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   09/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECSqlClassInfo const& dgn_ElementHandler::Element::GetECSqlClassInfo()
-    {
-    if (!m_classInfo.IsInitialized())
-        {
-        Utf8String fullClassName("[");
-        fullClassName.append(_GetDomainName()).append("].[").append(GetClassName()).append(1, ']');
-
-        ECSqlClassParams classParams;
-        _GetClassParams(classParams);
-
-        m_classInfo.Initialize(fullClassName, classParams);
-        }
-
-    return m_classInfo;
+    return m_classParams;
     }
 
 

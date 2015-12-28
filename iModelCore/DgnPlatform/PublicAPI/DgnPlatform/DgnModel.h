@@ -1326,15 +1326,16 @@ public:
 namespace dgn_ModelHandler
 {
     //! The ModelHandler for DgnModel
-    struct EXPORT_VTABLE_ATTRIBUTE Model : DgnDomain::Handler
+    struct EXPORT_VTABLE_ATTRIBUTE Model : DgnDomain::Handler, IECSqlClassParamsProvider
     {
         friend struct Dgn::DgnModel;
+        friend struct Dgn::DgnModels;
         DOMAINHANDLER_DECLARE_MEMBERS (DGN_CLASSNAME_Model, Model, DgnDomain::Handler, DGNPLATFORM_EXPORT)
 
     private:
-        ECSqlClassInfo m_classInfo;
-        ECSqlClassInfo const& GetECSqlClassInfo();
+        ECSqlClassParams m_classParams;
 
+        ECSqlClassParams const& GetECSqlClassParams();
     protected:
         ModelHandlerP _ToModelHandler() override {return this;}
         virtual DgnModelP _CreateInstance(DgnModel::CreateParams const& params) {return nullptr;}
@@ -1343,7 +1344,7 @@ namespace dgn_ModelHandler
 
         //! Add the names of any subclass properties used by ECSql INSERT, UPDATE, and/or SELECT statements to the ECSqlClassParams list.
         //! If you override this method, you @em must invoke T_Super::_GetClassParams().
-        DGNPLATFORM_EXPORT virtual void _GetClassParams(ECSqlClassParamsR params);
+        DGNPLATFORM_EXPORT virtual void _GetClassParams(ECSqlClassParamsR params) override;
 
     public:
         //! Find an ModelHandler for a subclass of dgn.Model. This is just a shortcut for FindHandler with the base class

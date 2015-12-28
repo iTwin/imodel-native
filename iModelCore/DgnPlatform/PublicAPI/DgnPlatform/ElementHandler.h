@@ -70,16 +70,16 @@ namespace dgn_ElementHandler
     //! @see DgnElement
     //! @ingroup DgnElementGroup
     //=======================================================================================
-    struct EXPORT_VTABLE_ATTRIBUTE Element : DgnDomain::Handler
+    struct EXPORT_VTABLE_ATTRIBUTE Element : DgnDomain::Handler, IECSqlClassParamsProvider
     {
         friend struct Dgn::DgnElement;
         friend struct Dgn::DgnElements;
         DOMAINHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_Element, Element, DgnDomain::Handler, DGNPLATFORM_EXPORT)
 
     private:
-        ECSqlClassInfo m_classInfo;
+        ECSqlClassParams m_classParams;
 
-        ECSqlClassInfo const& GetECSqlClassInfo();
+        ECSqlClassParams const& GetECSqlClassParams();
     protected:
         virtual DgnElement* _CreateInstance(DgnElement::CreateParams const& params) {return new DgnElement(params);}
         virtual ElementHandlerP _ToElementHandler() {return this;}
@@ -89,7 +89,7 @@ namespace dgn_ElementHandler
 
         //! Add the names of any subclass properties used by ECSql INSERT, UPDATE, and/or SELECT statements to the ECSqlClassParams list.
         //! If you override this method, you @em must invoke T_Super::_GetClassParams().
-        DGNPLATFORM_EXPORT virtual void _GetClassParams(ECSqlClassParamsR params);
+        DGNPLATFORM_EXPORT virtual void _GetClassParams(ECSqlClassParamsR params) override;
     public:
         //! Create a new instance of a DgnElement from a CreateParams. 
         //! @note The actual type of the returned DgnElement will depend on the DgnClassId in @a params.

@@ -1951,8 +1951,6 @@ protected:
     explicit DictionaryElement(CreateParams const& params) : T_Super(params) { }
 };
 
-struct ECSqlClassInfo;
-
 //=======================================================================================
 //! The DgnElements for a DgnDb.
 //! This class holds a cache of reference-counted DgnElements. All in-memory DgnElements for a DgnDb are held in its DgnElements member.
@@ -2001,26 +1999,12 @@ private:
         ElementSelectStatement(BeSQLite::EC::CachedECSqlStatement* stmt, ECSqlClassParamsCR params) : m_statement(stmt), m_params(params) { }
     };
 
-    struct HandlerStatementCache
+    struct ClassInfo : ECSqlClassInfo
     {
-    private:
-        struct Entry
-        {
-            ElementHandlerP m_handler;
-            BeSQLite::EC::CachedECSqlStatementPtr m_select;
-
-            explicit Entry(ElementHandlerP handler=nullptr) : m_handler(handler) { }
-        };
-
-        typedef bvector<Entry> Entries;
-
-        mutable Entries m_entries;
-
-        Entry* FindEntry(ElementHandlerR handler) const;
-    public:
-        ElementSelectStatement GetPreparedSelectStatement(DgnElementR el, ElementHandlerR handler, ECSqlClassInfo const& classInfo) const;
-        void Empty();
+        BeSQLite::EC::CachedECSqlStatementPtr m_selectStmt;
     };
+
+    typedef bmap<DgnClassId, ClassInfo> ClassInfoMap;
 
     DgnElementId  m_nextAvailableId;
     struct ElemIdTree* m_tree;
@@ -2030,7 +2014,7 @@ private:
     BeSQLite::SnappyToBlob m_snappyTo;
     DgnElementIdSet m_selectionSet;
     mutable BeSQLite::BeDbMutex m_mutex;
-    HandlerStatementCache m_handlerStmts;
+    mutable ClassInfoMap m_classInfos;
 
     void OnReclaimed(DgnElementCR);
     void OnUnreferenced(DgnElementCR);
@@ -2050,6 +2034,7 @@ private:
     DGNPLATFORM_EXPORT DgnElementCPtr InsertElement(DgnElementR element, DgnDbStatus* stat);
     DGNPLATFORM_EXPORT DgnElementCPtr UpdateElement(DgnElementR element, DgnDbStatus* stat);
 
+    ClassInfo& FindClassInfo(DgnElementCR el) const;
     ElementSelectStatement GetPreparedSelectStatement(DgnElementR el) const;
     BeSQLite::EC::CachedECSqlStatementPtr GetPreparedInsertStatement(DgnElementR el) const;
     BeSQLite::EC::CachedECSqlStatementPtr GetPreparedUpdateStatement(DgnElementR el) const;

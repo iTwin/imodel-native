@@ -86,6 +86,7 @@
 #include "DgnLink.h"
 #include "DgnFont.h"
 #include "DgnCoreEvent.h"
+#include "ECSqlClassParams.h"
 #include <Bentley/HeapZone.h>
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
@@ -200,10 +201,12 @@ private:
     friend struct DgnModel;
     friend struct dgn_TxnTable::Model;
     typedef bmap<DgnModelId,DgnModelPtr> T_DgnModelMap;
+    typedef bmap<DgnClassId, ECSqlClassInfo> T_ClassInfoMap;
 
     T_DgnModelMap   m_models;
     QvCache*        m_qvCache;
     bmap<DgnModelId,uint64_t> m_modelDependencyIndices;
+    T_ClassInfoMap  m_classInfos;
 
     void ClearLoaded();
     DgnModelPtr LoadDgnModel(DgnModelId modelId);
@@ -211,6 +214,11 @@ private:
     void Empty() {ClearLoaded(); FreeQvCache();}
     void AddLoadedModel(DgnModelR);
     void DropLoadedModel(DgnModelR);
+
+    ECSqlClassInfo const& FindClassInfo(DgnModelR model);
+    BeSQLite::EC::CachedECSqlStatementPtr GetSelectStmt(DgnModelR model);
+    BeSQLite::EC::CachedECSqlStatementPtr GetInsertStmt(DgnModelR model);
+    BeSQLite::EC::CachedECSqlStatementPtr GetUpdateStmt(DgnModelR model);
 
     DgnModels(DgnDbR db) : DgnDbTable(db) {m_qvCache= nullptr;}
     ~DgnModels() {} // don't call empty on destructor, Elements() has already been deleted.
