@@ -13,7 +13,7 @@
 #include "TransformClipStack.h"
 #include "Render.h"
 #include "ScanCriteria.h"
-#include "IPickGeom.h"
+#include "IManipulator.h"
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 
@@ -111,11 +111,6 @@ public:
     virtual bool _CheckStop() {return m_aborted;}
 };
 
-struct IElemTopology;
-struct IEditManipulator;
-DEFINE_REF_COUNTED_PTR(IElemTopology)
-DEFINE_REF_COUNTED_PTR(IEditManipulator)
-
 //=======================================================================================
 //! Interface to supply additional topology information that describes the subsequent geometry.
 //! The ViewContext's current IElemTopology will be cloned and saved as part of the HitDetail
@@ -138,6 +133,8 @@ struct IElemTopology : IRefCounted
     //! @note Implementor is expected to check hit.GetDgnDb().IsReadonly().
     virtual IEditManipulatorPtr _GetTransientManipulator (HitDetailCR) const {return nullptr;}
 };
+
+DEFINE_REF_COUNTED_PTR(IElemTopology)
 
 //=======================================================================================
 // @bsiclass                                                     KeithBentley    04/01
@@ -207,6 +204,9 @@ protected:
     DGNPLATFORM_EXPORT virtual StatusInt _Attach(DgnViewportP, DrawPurpose purpose);
     DGNPLATFORM_EXPORT virtual void _Detach();
     DGNPLATFORM_EXPORT virtual void _OutputGeometry(GeometrySourceCR);
+    DGNPLATFORM_EXPORT virtual void _AddSubGraphic(Render::GraphicR, DgnGeomPartId, TransformCR, Render::GeometryParamsR);
+    virtual Render::GraphicP _GetCachedPartGraphic(DgnGeomPartId, double pixelSize, ElementAlignedBox3dR) {return nullptr;}
+    virtual void _SavePartGraphic(DgnGeomPartId, Render::GraphicR, ElementAlignedBox3dCR) {}
     virtual void _OutputGraphic(Render::GraphicR, GeometrySourceCP) {}
     virtual Render::GraphicP _GetCachedGraphic(GeometrySourceCR, double pixelSize) {return nullptr;}
     virtual void _SaveGraphic(GeometrySourceCR, Render::GraphicR graphic) {}
@@ -257,7 +257,6 @@ public:
     void Detach() {_Detach();}
     bool VisitAllModelElements() {return _VisitAllModelElements();}
     DGNPLATFORM_EXPORT bool VisitAllViewElements(BSIRectCP updateRect=nullptr);
-    DGNPLATFORM_EXPORT StatusInt VisitHit(HitDetailCR hit);
     StatusInt InitContextForView() {return _InitContextForView();}
     DGNPLATFORM_EXPORT bool IsWorldPointVisible(DPoint3dCR worldPoint, bool boresite);
     DGNPLATFORM_EXPORT bool PointInsideClip(DPoint3dCR point);
@@ -271,6 +270,7 @@ public:
 
 public:
     Render::GraphicPtr CreateGraphic(Render::Graphic::CreateParams const& params=Render::Graphic::CreateParams()) {return _CreateGraphic(params);}
+    void AddSubGraphic(Render::GraphicR graphic, DgnGeomPartId partId, TransformCR subToGraphic, Render::GeometryParamsR geomParams) {_AddSubGraphic(graphic, partId, subToGraphic, geomParams);}
     StatusInt VisitElement(GeometrySourceCR elem) {return _VisitElement(elem);}
 
     /// @name Coordinate Query and Conversion
@@ -479,15 +479,21 @@ public:
 //=======================================================================================
 struct RenderContext : ViewContext
 {
+    DEFINE_T_SUPER(ViewContext);
+
 protected:
+    Render::OvrGraphicParams m_ovrParams;
     Render::TargetR m_target;
 
 public:
+    Render::OvrGraphicParams& GetOvrGraphicParams() {return m_ovrParams;}
+
     DGNVIEW_EXPORT RenderContext(DgnViewportR vp, DrawPurpose);
-    virtual Render::GraphicP _GetCachedGraphic(GeometrySourceCR source, double pixelSize) override {return source.Graphics().Find(*m_viewport, pixelSize);}
-    virtual void _SaveGraphic(GeometrySourceCR source, Render::GraphicR graphic) override {graphic.Close(); source.Graphics().Save(graphic);}
-    virtual void _PushFrustumClip() override {}
-    virtual Render::GraphicPtr _CreateGraphic(Render::Graphic::CreateParams const& params) override {return m_target.CreateGraphic(params);}
+    void _AddContextOverrides(Render::OvrGraphicParamsR ovrMatSymb, GeometrySourceCP source) override;
+    Render::GraphicP _GetCachedGraphic(GeometrySourceCR source, double pixelSize) override {return source.Graphics().Find(*m_viewport, pixelSize);}
+    void _SavePartGraphic(DgnGeomPartId partId, Render::GraphicR graphic, ElementAlignedBox3dCR localRange) override {graphic.Close();} // NEEDSWORK...
+    void _PushFrustumClip() override {}
+    Render::GraphicPtr _CreateGraphic(Render::Graphic::CreateParams const& params) override {return m_target.CreateGraphic(params);}
 };
 
 //=======================================================================================
@@ -495,7 +501,18 @@ public:
 //=======================================================================================
 struct DynamicsContext : RenderContext
 {
-    
+    friend struct DgnPrimitiveTool;
+private:
+    Render::GraphicListR m_dynamics;
+    void _OutputGraphic(Render::GraphicR graphic, GeometrySourceCP) override;
+    DynamicsContext(DgnViewportR);
+    ~DynamicsContext();
+    void VisitWriteableElement(DgnElementCR element, IRedrawOperationP redrawOp);
+
+public:
+    DGNVIEW_EXPORT void DrawElements(DgnElementCPtrVec const& elements, IRedrawOperationP redrawOp=nullptr);
+    DGNVIEW_EXPORT void DrawElements(DgnElementIdSet const& elemIds, IRedrawOperationP redrawOp=nullptr);
+    DGNVIEW_EXPORT void DrawElement(DgnElementCR element, IRedrawOperationP redrawOp=nullptr);
 };
 
 //=======================================================================================
@@ -503,12 +520,18 @@ struct DynamicsContext : RenderContext
 //=======================================================================================
 struct DecorateContext : RenderContext
 {
+    DEFINE_T_SUPER(RenderContext);
     friend struct DgnViewport;
 private:
+    bool    m_isFlash = false;
     Render::Decorations& m_decorations;
+    void _AddContextOverrides(Render::OvrGraphicParamsR ovrMatSymb, GeometrySourceCP source) override;
+    void _OutputGraphic(Render::GraphicR graphic, GeometrySourceCP) override;
     DecorateContext(DgnViewportR vp, Render::Decorations& decorations) : RenderContext(vp, DrawPurpose::Decorate), m_decorations(decorations) {}
 
 public:
+    StatusInt VisitHit(HitDetailCR hit);
+    DGNPLATFORM_EXPORT void AddFlashed(Render::GraphicR graphic, Render::OvrGraphicParamsCP ovr=nullptr);
     DGNPLATFORM_EXPORT void AddWorldDecoration(Render::GraphicR graphic, Render::OvrGraphicParamsCP ovr=nullptr);
     DGNPLATFORM_EXPORT void AddWorldOverlay(Render::GraphicR graphic, Render::OvrGraphicParamsCP ovr=nullptr);
     DGNPLATFORM_EXPORT void AddViewOverlay(Render::GraphicR graphic, Render::OvrGraphicParamsCP ovr=nullptr);

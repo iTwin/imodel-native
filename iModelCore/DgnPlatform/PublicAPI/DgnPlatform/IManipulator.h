@@ -8,6 +8,8 @@
 #pragma once
 //__PUBLISH_SECTION_START__
 
+#include "HitDetail.h"
+
 BEGIN_BENTLEY_DGN_NAMESPACE
 
 /*=================================================================================**//**
@@ -90,7 +92,7 @@ public:
     //! Called to show modify dynamics. Expected to call _DoModify with isDynamics set
     //! to true, and to display the result if _DoModify returned SUCCESS.
     //! @return SUCCESS if modify operation could be applied.
-    virtual StatusInt _OnModify(DgnButtonEventCR ev) = 0;
+    virtual StatusInt _OnModify(DgnButtonEventCR ev, DynamicsContextR context) = 0;
 
     //! Called to accept modify operation. Expected to call _DoModify with isDynamics set
     //! to false, and to update the element in the DgnDb if _DoModify returned SUCCESS.
@@ -163,7 +165,7 @@ public:
     virtual ~IEditManipulator() {}
 }; // IEditManipulator
 
-typedef RefCountedPtr<IEditManipulator> IEditManipulatorPtr;
+DEFINE_REF_COUNTED_PTR(IEditManipulator)
 
 /*================================================================================**//**
 * Extension to provide IEditManipulator for an element.

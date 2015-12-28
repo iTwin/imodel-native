@@ -557,6 +557,7 @@ void RangeClipPlanes::ClipPoints(ElemRangeCalc* rangeCalculator, ClipStackCP cli
         }
     }
 
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  09/04
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -565,7 +566,6 @@ void RangeGraphic::Init(ViewContextP context)
     SetViewContext(context);
     }
 
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     09/06
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -607,6 +607,7 @@ void RangeGraphic::UpdateRange(DEllipse3dCP ellipse)
 #endif
     }
 
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/12
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -699,6 +700,7 @@ StatusInt RangeGraphic::_ProcessSolidPrimitive(ISolidPrimitiveCR primitive)
 
     return SUCCESS;
     }
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Keith.Bentley   09/03
@@ -711,21 +713,19 @@ void RangeGraphic::_AddPointString2d(int numPoints, DPoint2dCP points, double zD
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      01/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt RangeGraphic::_AddBody(ISolidKernelEntityCR entity, double)
+void RangeGraphic::_AddBody(ISolidKernelEntityCR entity, double)
     {
     DRange3d    range;
 
     // Entity box better than edges, edge range may not be large enough for curved surfaces and it's a lot more work!
     if (SUCCESS != T_HOST.GetSolidsKernelAdmin()._GetEntityRange(range, entity))
-        return ERROR;
+        return;
 
 #if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     _PushTransClip(&entity.GetEntityTransform(), nullptr);
     m_elRange.Union(&range, GetCurrRangeClip());
     _PopTransClip();
 #endif
-
-    return SUCCESS;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -766,7 +766,7 @@ void RangeGraphic::_AddRaster2d(DPoint2d const points[4], int pitch, int numTexe
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Keith.Bentley   09/03
 +---------------+---------------+---------------+---------------+---------------+------*/
-void RangeGraphic::_AddTextString(TextStringCR text, double* zDepth)
+void RangeGraphic::_AddTextString(TextStringCR text)
     {
     if (text.GetText().empty())
         return;

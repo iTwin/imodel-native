@@ -6,14 +6,15 @@
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
-/*__BENTLEY_INTERNAL_ONLY__*/
+//__PUBLISH_SECTION_START__
 
-#include    "ViewContext.h"
-#include    <Bentley/bvector.h>
+#include "ViewContext.h"
+#include <Bentley/bvector.h>
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 
-struct  SimplifyDrawUnClippedProcessor;
+/// @addtogroup GeometryCollectors
+/// @beginGroup
 
 //=======================================================================================
 //! Re-interpret complex geometry types as simple types
@@ -21,50 +22,20 @@ struct  SimplifyDrawUnClippedProcessor;
 //=======================================================================================
 struct SimplifyGraphic : Render::Graphic
 {
+    DEFINE_T_SUPER(Render::Graphic);
+
 protected:
-    ViewContextP        m_context;
-    IFacetOptionsPtr    m_defaultFacetOptions;
-    DVec3d              m_textAxes[2];
-    bool                m_inPatternDraw;
-    bool                m_inSymbolDraw;
-    bool                m_inTextDraw;
-    bool                m_inThicknessDraw;
-    bool                m_processingMaterialGeometryMap;
-    Transform           m_localToWorldTransform;
+    IGeometryProcessorR     m_processor;
+    ViewContextR            m_context;
+    IFacetOptionsPtr        m_facetOptions;
+
+    DVec3d                  m_textAxes[2];
+    bool                    m_inPatternDraw;
+    bool                    m_inSymbolDraw;
+    bool                    m_inTextDraw;
 
     Render::GraphicParams   m_currGraphicParams;
     Render::GeometryParams  m_currGeometryParams;
-
-private:
-    void ClipAndProcessGlyph(DgnFontCR, DgnGlyphCR, DPoint3dCR glyphOffset);
-    
-protected:
-    // Functions implemented by sub-classes to allow them to control output.
-    virtual bool _DoClipping() const {return false;}
-    virtual bool _DoTextGeometry() const {return false;} // When false text is treated as a bounding shape.
-    virtual bool _DoSymbolGeometry() const {return false;}
-    virtual bool _ProcessAsWireframe() const {return true;} // Output wireframe representation of surfaces/solids/meshes not handled as higher level geometry through _ProcessCurveVector.
-    virtual bool _ProcessAsFacets(bool isPolyface) const {return isPolyface;} // Output surfaces/solids not handled directly or are clipped through _ProcessFacetSet.
-    virtual bool _ProcessAsBody(bool isCurved) const {return false;} // Output surfaces/solids not handled directly or are clipped through _ProcessBody.
-    virtual bool _ProcessAsStrokes(bool isCurved) const {return _ProcessAsFacets(false);} // Output CurveVector not handled directly through _ProcessLinearSegments (or _ProcessFacetSet if region and _ProcessAsFacets).
-    virtual StatusInt _Close() override { return SUCCESS; }
-
-#if defined (NEEDS_WORK_MATERIAL)
-    virtual bool _ProduceMaterialGeometryMaps(MaterialCR material, MaterialMapCR materialMap) const {return false;}
-#endif
-    virtual bool _ProduceTextureOutlines() const {return false;}
-
-    virtual bool _ClipPreservesRegions() const {return !m_inSymbolDraw;} // Want "fast" clip for patterns/lstyle symbols...
-    virtual IFacetOptionsP _GetFacetOptions() {return m_defaultFacetOptions.get();}
-
-    // Process functions implemented by sub-classes.
-    virtual StatusInt _ProcessCurvePrimitive(ICurvePrimitiveCR, bool closed, bool filled) {return ERROR;}
-    virtual StatusInt _ProcessCurveVector(CurveVectorCR, bool filled) {return ERROR;}
-    virtual StatusInt _ProcessSolidPrimitive(ISolidPrimitiveCR) {return ERROR;}
-    virtual StatusInt _ProcessSurface(MSBsplineSurfaceCR) {return ERROR;}
-    virtual StatusInt _ProcessBody(ISolidKernelEntityCR) {return ERROR;}
-    virtual StatusInt _ProcessFacetSet(PolyfaceQueryCR, bool filled) {return ERROR;}
-    virtual StatusInt _ProcessLinearSegments(DPoint3dCP points, size_t numPoints, bool closed, bool filled) {return ERROR;}
 
     DGNPLATFORM_EXPORT virtual void _ActivateGraphicParams(Render::GraphicParamsCR graphicParams, Render::GeometryParamsCP geomParams) override;
     DGNPLATFORM_EXPORT virtual void _AddLineString(int numPoints, DPoint3dCP points, DPoint3dCP range) override;
@@ -84,162 +55,190 @@ protected:
     DGNPLATFORM_EXPORT virtual void _AddSolidPrimitive(ISolidPrimitiveCR primitive) override;
     DGNPLATFORM_EXPORT virtual void _AddBSplineSurface(MSBsplineSurfaceCR) override;
     DGNPLATFORM_EXPORT virtual void _AddPolyface(PolyfaceQueryCR meshData, bool filled = false) override;
-    DGNPLATFORM_EXPORT virtual StatusInt _AddBody(ISolidKernelEntityCR entity, double pixelSize = 0.0) override;
-    DGNPLATFORM_EXPORT virtual void _AddTextString(TextStringCR text, double* zDepth) override;
-    DGNPLATFORM_EXPORT virtual void _AddRaster3d(DPoint3d const points[4], int pitch, int numTexelsX, int numTexelsY, int enableAlpha, int format, Byte const* texels, DPoint3dCP range) override;
+    DGNPLATFORM_EXPORT virtual void _AddBody(ISolidKernelEntityCR entity, double pixelSize = 0.0) override;
+    DGNPLATFORM_EXPORT virtual void _AddTextString(TextStringCR text) override;
+    DGNPLATFORM_EXPORT virtual void _AddTextString2d(TextStringCR text, double zDepth) override;
+    DGNPLATFORM_EXPORT virtual void _AddMosaic(int numX, int numY, uintptr_t const* tileIds, DPoint3d const* verts) override;
+    DGNPLATFORM_EXPORT virtual void _AddRaster(DPoint3d const points[4], int pitch, int numTexelsX, int numTexelsY, int enableAlpha, int format, Byte const* texels, DPoint3dCP range) override;
     DGNPLATFORM_EXPORT virtual void _AddRaster2d(DPoint2d const points[4], int pitch, int numTexelsX, int numTexelsY, int enableAlpha, int format, Byte const* texels, double zDepth, DPoint2d const *range) override;
     DGNPLATFORM_EXPORT virtual void _AddDgnOle(Render::DgnOleDraw*) override;
     DGNPLATFORM_EXPORT virtual void _AddPointCloud(Render::PointCloudDraw* drawParams) override;
-    DGNPLATFORM_EXPORT virtual void _AddMosaic(int numX, int numY, uintptr_t const* tileIds, DPoint3d const* verts) override;
-    DGNPLATFORM_EXPORT virtual void _AddSubGraphic(Graphic&, TransformCR, Render::GraphicParams&) override;
+    DGNPLATFORM_EXPORT virtual void _AddSubGraphic(Render::GraphicR, TransformCR, Render::GraphicParamsR) override;
+    DGNPLATFORM_EXPORT virtual Render::GraphicPtr _CreateSubGraphic(TransformCR) const override;
 
 public:
-    DGNPLATFORM_EXPORT SimplifyGraphic(bool addNormals = false, bool addParameters = false);
+    DGNPLATFORM_EXPORT explicit SimplifyGraphic(Render::Graphic::CreateParams const& params, IGeometryProcessorR, ViewContextR);
+
     virtual ~SimplifyGraphic() {}
 
-    ViewContextP GetViewContext() const {return m_context;};
-    void SetViewContext(ViewContextP context) {m_context = context;} // NOTE: Required!!!
+    ViewContextR GetViewContext() const {return m_context;};
 
-    TransformCR GetLocalToWorldTransform() const {return m_localToWorldTransform;}
-    void SetLocalToWorldTransform(TransformCR transform) {m_localToWorldTransform = transform;}
+    //! Get current local to view DMatrix4d.
+    DGNPLATFORM_EXPORT DMatrix4d GetLocalToView() const;
 
-    DMatrix4d GetLocalToView() const
-        {
-        DMatrix4d   localToWorld = DMatrix4d::From(m_localToWorldTransform);
-        DMatrix4d   worldToView = m_context->GetWorldToView().M0;
-        DMatrix4d   localToView;
-
-        localToView.InitProduct(worldToView, localToWorld);
-
-        return localToView;
-        }
-
-    DMatrix4d GetViewToLocal() const
-        {
-        Transform   worldToLocalTrans;
-
-        worldToLocalTrans.InverseOf(m_localToWorldTransform);
-
-        DMatrix4d   worldToLocal = DMatrix4d::From(worldToLocalTrans);
-        DMatrix4d   viewToWorld = m_context->GetWorldToView().M1;
-        DMatrix4d   viewToLocal;
-
-        viewToLocal.InitProduct(worldToLocal, viewToWorld);
-
-        return viewToLocal;
-        }
+    //! Get current view to local DMatrix4d.
+    DGNPLATFORM_EXPORT DMatrix4d GetViewToLocal() const;
 
     //! Transform an array of points in the current local coordinate system into DgnCoordSystem::View coordinates.
     //! @param[out]     viewPts     An array to receive the points in DgnCoordSystem::View. Must be dimensioned to hold \c nPts points.
     //! @param[in]      localPts    Input array in current local coordinates,
     //! @param[in]      nPts        Number of points in both arrays.
-    void LocalToView(DPoint4dP viewPts, DPoint3dCP localPts, int nPts) const
-        {
-        GetLocalToView().Multiply(viewPts, localPts, nullptr, nPts);
-        }
+    DGNPLATFORM_EXPORT void LocalToView(DPoint4dP viewPts, DPoint3dCP localPts, int nPts) const;
 
     //! Transform an array of points in the current local coordinate system into DgnCoordSystem::View coordinates.
     //! @param[out]     viewPts     An array to receive the points in DgnCoordSystem::View. Must be dimensioned to hold \c nPts points.
     //! @param[in]      localPts    Input array in current local coordinates,
     //! @param[in]      nPts        Number of points in both arrays.
-    void LocalToView(DPoint3dP viewPts, DPoint3dCP localPts, int nPts) const
-        {
-        DMatrix4dCR  localToView = GetLocalToView();
-
-        if (nullptr != m_context->GetViewport() && m_context->GetViewport()->IsCameraOn())
-            localToView.MultiplyAndRenormalize(viewPts, localPts, nPts);
-        else
-            localToView.MultiplyAffine(viewPts, localPts, nPts);
-        }
+    DGNPLATFORM_EXPORT void LocalToView(DPoint3dP viewPts, DPoint3dCP localPts, int nPts) const;
 
     //! Transform an array of points in DgnCoordSystem::View into the current local coordinate system.
     //! @param[out]     localPts    An array to receive the transformed points. Must be dimensioned to hold \c nPts points.
     //! @param[in]      viewPts     Input array in DgnCoordSystem::View.
     //! @param[in]      nPts        Number of points in both arrays.
-    void ViewToLocal(DPoint3dP localPts, DPoint4dCP viewPts, int nPts) const
-        {
-        Transform   worldToLocal;
-
-        worldToLocal.InverseOf(m_localToWorldTransform);
-        m_context->ViewToWorld(localPts, viewPts, nPts);
-        worldToLocal.Multiply(localPts, localPts, nPts);
-        }
+    DGNPLATFORM_EXPORT void ViewToLocal(DPoint3dP localPts, DPoint4dCP viewPts, int nPts) const;
 
     //! Transform an array of points in DgnCoordSystem::View into the current local coordinate system.
     //! @param[out]     localPts    An array to receive the transformed points. Must be dimensioned to hold \c nPts points.
     //! @param[in]      viewPts     Input array in DgnCoordSystem::View.
     //! @param[in]      nPts        Number of points in both arrays.
-    void ViewToLocal(DPoint3dP localPts, DPoint3dCP viewPts, int nPts) const
-        {
-        Transform   worldToLocal;
+    DGNPLATFORM_EXPORT void ViewToLocal(DPoint3dP localPts, DPoint3dCP viewPts, int nPts) const;
 
-        worldToLocal.InverseOf(m_localToWorldTransform);
-        m_context->ViewToWorld(localPts, viewPts, nPts);
-        worldToLocal.Multiply(localPts, localPts, nPts);
-        }
+    //! Call to stroke a CurveVector and process using IGeometryProcessor::_ProcessAsLinearSegment.
+    DGNPLATFORM_EXPORT void ProcessAsLinearSegments(CurveVectorCR, bool filled) const;
 
-    bool PerformClip();
-    DGNPLATFORM_EXPORT ClipVectorCP GetCurrClip();
+    //! Call to output a CurveVector as individual ICurvePrimitives using IGeometryProcessor::_ProcessCurvePrimitive.
+    DGNPLATFORM_EXPORT void ProcessAsCurvePrimitives(CurveVectorCR, bool filled) const;
 
-    DGNPLATFORM_EXPORT void ClipAndProcessCurveVector(CurveVectorCR, bool filled);
-    DGNPLATFORM_EXPORT void ClipAndProcessSolidPrimitive(ISolidPrimitiveCR);
-    DGNPLATFORM_EXPORT void ClipAndProcessSurface(MSBsplineSurfaceCR);
-    DGNPLATFORM_EXPORT void ClipAndProcessBody(ISolidKernelEntityCR entity, SimplifyDrawUnClippedProcessor*);
-    DGNPLATFORM_EXPORT void ClipAndProcessBodyAsFacets(ISolidKernelEntityCR entity);
-    DGNPLATFORM_EXPORT void ClipAndProcessFacetSet(PolyfaceQueryCR, bool filled);
-    DGNPLATFORM_EXPORT void ClipAndProcessFacetSetAsCurves(PolyfaceQueryCR);
-    DGNPLATFORM_EXPORT void ClipAndProcessText(TextStringCR, double* zDepth);
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    DGNPLATFORM_EXPORT void ClipAndProcessSymbol(IDisplaySymbolP, TransformCP, ClipPlaneSetP);
-#endif
-    DGNPLATFORM_EXPORT BentleyStatus CurveVectorOutputProcessor(CurveVectorCR curves, bool filled);
+    DGNPLATFORM_EXPORT ClipVectorCP GetCurrentClip() const;
 
-    StatusInt ProcessCurvePrimitive(ICurvePrimitiveCR curve, bool closed, bool filled) {return _ProcessCurvePrimitive(curve, closed, filled);}
-    StatusInt ProcessCurveVector(CurveVectorCR profile, bool filled) {return _ProcessCurveVector(profile, filled);}
-    StatusInt ProcessSolidPrimitive(ISolidPrimitiveCR primitive) {return _ProcessSolidPrimitive(primitive);}
-    StatusInt ProcessSurface(MSBsplineSurfaceCR surface) {return _ProcessSurface(surface);}
-    StatusInt ProcessBody(ISolidKernelEntityCR entity) {return _ProcessBody(entity);}
-    StatusInt ProcessFacetSet(PolyfaceQueryCR facets, bool filled) {return _ProcessFacetSet(facets, filled);}
-    StatusInt ProcessGeometryMapOrFacetSet(PolyfaceQueryCR facets, bool filled);
+    DGNPLATFORM_EXPORT void ClipAndProcessCurveVector(CurveVectorCR, bool filled) const;
+    DGNPLATFORM_EXPORT void ClipAndProcessSolidPrimitive(ISolidPrimitiveCR) const;
+    DGNPLATFORM_EXPORT void ClipAndProcessSurface(MSBsplineSurfaceCR) const;
+    DGNPLATFORM_EXPORT void ClipAndProcessPolyface(PolyfaceQueryCR, bool filled) const;
+    DGNPLATFORM_EXPORT void ClipAndProcessPolyfaceAsCurves(PolyfaceQueryCR) const;
+    DGNPLATFORM_EXPORT void ClipAndProcessBody(ISolidKernelEntityCR) const;
+    DGNPLATFORM_EXPORT void ClipAndProcessBodyAsPolyface(ISolidKernelEntityCR) const;
+    DGNPLATFORM_EXPORT void ClipAndProcessText(TextStringCR) const;
+    DGNPLATFORM_EXPORT void ClipAndProcessGlyph(DgnFontCR, DgnGlyphCR, DPoint3dCR glyphOffset) const;
 
-    DGNPLATFORM_EXPORT void GetEffectiveGraphicParams(Render::GraphicParamsR graphicParams); // Get GraphicParams adjusted for overrides...
-    Render::GraphicParamsCR GetCurrentGraphicParams() {return m_currGraphicParams;}
-    Render::GeometryParamsCR GetCurrentGeometryParams() {return m_currGeometryParams;}
+    DGNPLATFORM_EXPORT void GetEffectiveGraphicParams(Render::GraphicParamsR graphicParams) const; // Get GraphicParams adjusted for overrides...
+    Render::GraphicParamsCR GetCurrentGraphicParams() const {return m_currGraphicParams;}
+    Render::GeometryParamsCR GetCurrentGeometryParams() const {return m_currGeometryParams;}
 
-    IFacetOptionsP GetFacetOptions() {return _GetFacetOptions();}
+    DGNPLATFORM_EXPORT bool IsRangeTotallyInside(DRange3dCR range) const;
+    DGNPLATFORM_EXPORT bool IsRangeTotallyInsideClip(DRange3dCR range) const;
+    DGNPLATFORM_EXPORT bool ArePointsTotallyInsideClip(DPoint3dCP points, int nPoints) const;
+    DGNPLATFORM_EXPORT bool ArePointsTotallyOutsideClip(DPoint3dCP points, int nPoints) const;
 
-    DGNPLATFORM_EXPORT bool IsRangeTotallyInside(DRange3dCR range);
-    DGNPLATFORM_EXPORT bool IsRangeTotallyInsideClip(DRange3dCR range);
-    DGNPLATFORM_EXPORT bool ArePointsTotallyInsideClip(DPoint3dCP points, int nPoints);
-    DGNPLATFORM_EXPORT bool ArePointsTotallyOutsideClip(DPoint3dCP points, int nPoints);
+    bool GetIsPatternGraphics() const {return m_inPatternDraw;}
+    bool GetIsSymbolGraphics() const {return m_inSymbolDraw;}
+    bool GetIsTextGraphics() const {return m_inTextDraw;}
 
-    void SetInPatternDraw(bool isPattern) {m_inPatternDraw = isPattern;}
-    bool GetInPatternDraw() {return m_inPatternDraw;}
-
-    void SetInSymbolDraw(bool isSymbol) {m_inSymbolDraw = isSymbol;}
-    bool GetInSymbolDraw() {return m_inSymbolDraw;}
-
-    void SetInTextDraw(bool isText) {m_inTextDraw = isText;}
-    bool GetInTextDraw() {return m_inTextDraw;}
-
-    void SetInThicknessDraw(bool isThickness) {m_inThicknessDraw = isThickness;}
-    bool GetInThicknessDraw() {return m_inThicknessDraw;}
-
-    DGNPLATFORM_EXPORT IPolyfaceConstructionPtr GetPolyfaceBuilder();
-
-    DGNPLATFORM_EXPORT BentleyStatus    GetElementToWorldTransform(TransformR transform);
-    DGNPLATFORM_EXPORT BentleyStatus    GetLocalToElementTransform(TransformR transform);
-
-    bool                                GetInMaterialGeometryMap() const {return m_processingMaterialGeometryMap;}
-#ifdef NEEDS_WORK_GEOMETRY_MAPS
-    DGNPLATFORM_EXPORT MaterialCP       GetCurrentMaterial() const;
-    DGNPLATFORM_EXPORT MaterialMapCP    GetCurrentGeometryMap() const;
-
-    StatusInt                       ProcessGeometryMap(PolyfaceQueryCR facets);
-    StatusInt                       ProcessTextureOutlines(PolyfaceQueryCR facets);
-    StatusInt                       ProcessFacetTextureOutlines(IPolyfaceConstructionR, DPoint3dCP points, DPoint2dCP params, bool const* edgeHidden, size_t nPoints, bvector<DPoint3d>&, bvector<int32_t>&);
-    DGNPLATFORM_EXPORT void         StrokeGeometryMap(CurveVectorCR curves);
-#endif
 }; // SimplifyGraphic
+
+/*=================================================================================**//**
+* @bsiclass                                                     Brien.Bastings  12/15
++===============+===============+===============+===============+===============+======*/
+struct IGeometryProcessor
+{
+public:
+    //! Specify how to process a geometric primitive that is not handled by it's specific _Process/_ProcessClipped call.
+    //! When returning multiple values, priority is given to the lowest value. For example, if ISolidKernelEntity is the
+    //! preferred geometry, but a Polyface is acceptable when conversion to ISolidKernelEntity isn't possible or available, 
+    //! the IGeometryProcessor can return UnhandledPreference::BRep | UnhandledPreference::Facets.
+    enum class UnhandledPreference
+    {
+        Ignore  = 0,      //!< Don't convert an unhandled geometric primitive to any other type.
+        Auto    = 1,      //!< Process as "best" available type for clipping. Use facets if no curved surfaces/edges or BRep unavailable, etc.
+        BRep    = 1 << 1, //!< Process region CurveVector, open CurveVector, ISolidPrimitive, MSBsplineSurface, and PolyfaceQuery as ISolidKernelEntity.
+        Facet   = 1 << 2, //!< Process region CurveVector, ISolidPrimitive, MSBsplineSurface, and ISolidKernelEntity as PolyfaceHeader.
+        Curve   = 1 << 3, //!< Process ISolidPrimitive, MSBsplineSurface, PolyfaceQuery, and ISolidKernelEntity as edge/face iso CurveVector. Process clipped CurveVector as open curves, drop TextString.
+        Box     = 1 << 4, //!< Process TextString, Raster, and Mosasic as a simple rectangle.
+    };
+
+//! Reason geometry is being processed which may allow the ElementHandler to optimize it's output.
+virtual DrawPurpose _GetProcessPurpose() const {return DrawPurpose::CaptureGeometry;}
+
+//! Whether to output clipped geometry when viewport has clipping.
+virtual bool _DoClipping() const {return false;}
+
+//! Whether to drop pattern and process as geometric primitives.
+virtual bool _DoExpandPatterns() const {return false;}
+
+//! Whether to drop linestyle and process as geometric primitives.
+virtual bool _DoExpandLineStyles(ILineStyleCP lsStyle) const {return false;}
+
+//! Allow processor to override the default facet options.
+//! @return A pointer to facet option structure to use or nullptr to use default options.
+virtual IFacetOptionsP _GetFacetOptionsP() {return nullptr;}
+
+//! Whether to include edge curves when UnhandledPreference::Curve is requested for a surface/solid geometric primitive.
+virtual bool _IncludeWireframeEdges() {return true;}
+
+//! Whether to include face iso curves when UnhandledPreference::Curve is requested for a surface/solid geometric primitive.
+virtual bool _IncludeWireframeFaceIso() {return true;}
+
+//! Determine how geometry not specifically handled the geometry _Process method should be treated.
+virtual UnhandledPreference _GetUnhandledPreference(CurveVectorCR) const {return UnhandledPreference::Ignore;}
+virtual UnhandledPreference _GetUnhandledPreference(ISolidPrimitiveCR) const {return UnhandledPreference::Ignore;}
+virtual UnhandledPreference _GetUnhandledPreference(MSBsplineSurfaceCR) const {return UnhandledPreference::Ignore;}
+virtual UnhandledPreference _GetUnhandledPreference(PolyfaceQueryCR) const {return UnhandledPreference::Ignore;}
+virtual UnhandledPreference _GetUnhandledPreference(ISolidKernelEntityCR) const {return UnhandledPreference::Ignore;}
+virtual UnhandledPreference _GetUnhandledPreference(TextStringCR) const {return UnhandledPreference::Ignore;}
+
+//! Call SimplifyGraphic::ProcessAsLinearSegments to output a CurveVector as strokes calling this method.
+virtual bool _ProcessLinearSegments(DPoint3dCP points, size_t numPoints, bool closed, bool filled, SimplifyGraphic const&) {return false;}
+
+//! Call SimplifyGraphic::ProcessAsCurvePrimitives to output a CurveVector's ICurvePrimitives calling this method.
+virtual bool _ProcessCurvePrimitive(ICurvePrimitiveCR, bool closed, bool filled, SimplifyGraphic const&) {return false;}
+
+//! Called by SimplifyGraphic when not clipping (or no clips present).
+//! @return true if handled or false to process according to _GetUnhandledPreference.
+virtual bool _ProcessCurveVector(CurveVectorCR, bool filled, SimplifyGraphic const&) {return false;}
+virtual bool _ProcessSolidPrimitive(ISolidPrimitiveCR, SimplifyGraphic const&) {return false;}
+virtual bool _ProcessSurface(MSBsplineSurfaceCR, SimplifyGraphic const&) {return false;}
+virtual bool _ProcessPolyface(PolyfaceQueryCR, bool filled, SimplifyGraphic const&) {return false;}
+virtual bool _ProcessBody(ISolidKernelEntityCR, SimplifyGraphic const&) {return false;}
+virtual bool _ProcessTextString(TextStringCR, SimplifyGraphic const&) {return false;}
+
+//! Called by SimplifyGraphic when clipping (and clips are present).
+//! @return true if handled or false to process according to _GetUnhandledPreference.
+virtual bool _ProcessCurveVectorClipped(CurveVectorCR, bool filled, SimplifyGraphic const&, ClipVectorCR) {return false;}
+virtual bool _ProcessSolidPrimitiveClipped(ISolidPrimitiveCR, SimplifyGraphic const&, ClipVectorCR) {return false;}
+virtual bool _ProcessSurfaceClipped(MSBsplineSurfaceCR, SimplifyGraphic const&, ClipVectorCR) {return false;}
+virtual bool _ProcessPolyfaceClipped(PolyfaceQueryCR, bool filled, SimplifyGraphic const&, ClipVectorCR) {return false;}
+virtual bool _ProcessBodyClipped(ISolidKernelEntityCR, SimplifyGraphic const&, ClipVectorCR) {return false;}
+virtual bool _ProcessTextStringClipped(TextStringCR, SimplifyGraphic const&, ClipVectorCR) {return false;}
+
+//! Allow processor to output graphics to it's own process methods.
+//! @param[in] context The current view context.
+//! @remarks The implementor is responsible for setting up the ViewContext. Might want to attach/detach a viewport, etc.
+virtual void _OutputGraphics(ViewContextR context) {}
+
+}; // IGeometryProcessor
+
+ENUM_IS_FLAGS(IGeometryProcessor::UnhandledPreference)
+
+/*=================================================================================**//**
+* Provides an implementation of a ViewContext and Render::Graphic suitable for 
+* collecting a "picture" of an element's graphics. The element handler's Draw method is 
+* called and the output is sent to the supplied IGeometryProcessor.
+* @bsiclass                                                     Brien.Bastings  06/2009
++===============+===============+===============+===============+===============+======*/
+struct GeometryProcessor
+{
+//! Visit the supplied element and send it's Draw output to the supplied processor.
+//! @param[in] processor The object to send the Draw output to.
+//! @param[in] source The GeometrySource to output the graphics of.
+DGNPLATFORM_EXPORT static void Process(IGeometryProcessorR processor, GeometrySourceCR source);
+
+//! Call _OutputGraphics on the supplied processor and send whatever it draws to it's process methods.
+//! @param[in] processor The object to send the Draw output to.
+//! @param[in] dgnDb The DgnDb to set for the ViewContext.
+DGNPLATFORM_EXPORT static void Process(IGeometryProcessorR processor, DgnDbR dgnDb);
+
+}; // GeometryProcessor
+
+/** @endGroup */
 
 END_BENTLEY_DGN_NAMESPACE

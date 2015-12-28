@@ -7,6 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include    <DgnPlatformInternal.h>
 
+#if defined (NEEDSWORK_RENDER_GRAPHIC)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  08/09
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -2037,4 +2038,4 @@ RegionGraphicsContextPtr RegionGraphicsContext::Create()
     {
     return new RegionGraphicsContext();
     }
-
+#endif

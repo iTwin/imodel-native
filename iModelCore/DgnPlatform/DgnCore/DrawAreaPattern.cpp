@@ -307,6 +307,7 @@ bool PatternParams::IsEqual(PatternParamsCR params, PatternParamsCompareFlags co
     return true;
     }
 
+#if defined (NEEDSWORK_RENDER_GRAPHIC)
 /*=================================================================================**//**
 * @bsiclass
 +===============+===============+===============+===============+===============+======*/
@@ -388,6 +389,7 @@ public:
         return processor.GetBoundary();
         }
 }; // PatternBoundaryCollector
+#endif
 
 /*=================================================================================**//**
 * @bsiclass
@@ -419,8 +421,10 @@ GraphicPtr ViewContext::ClipStencil::GetQvElem(ViewContextR context)
 +---------------+---------------+---------------+---------------+---------------+------*/
 CurveVectorPtr ViewContext::ClipStencil::GetCurveVector()
     {
+#if defined (NEEDSWORK_RENDER_GRAPHIC)
     if (m_curveVector.IsNull())
         m_curveVector = PatternBoundaryCollector::Process(m_geomSource);
+#endif
 
     return m_curveVector;
     }

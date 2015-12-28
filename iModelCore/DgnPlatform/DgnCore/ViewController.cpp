@@ -448,13 +448,13 @@ StandardView ViewController::IsStandardViewRotation(RotMatrixCR rMatrix, bool ch
             RotMatrix  isoMatrix;
             bsiRotMatrix_getStandardRotation(&isoMatrix, static_cast<int>(StandardView::Iso));
 
-            if (equalOne(((DVec3d*)isoMatrix.form3d[0])->DotProduct (*((DVec3d*)rMatrix.form3d[0]))) &&
-                equalOne(((DVec3d*)isoMatrix.form3d[1])->DotProduct (*((DVec3d*)rMatrix.form3d[1]))))
+            if (equalOne(((DVec3d*)isoMatrix.form3d[0])->DotProduct(*((DVec3d*)rMatrix.form3d[0]))) &&
+                equalOne(((DVec3d*)isoMatrix.form3d[1])->DotProduct(*((DVec3d*)rMatrix.form3d[1]))))
                 return StandardView::Iso;
 
             bsiRotMatrix_getStandardRotation(&isoMatrix, static_cast<int>(StandardView::RightIso));
-            if (equalOne(((DVec3d*)isoMatrix.form3d[0])->DotProduct (*((DVec3d*)rMatrix.form3d[0]))) &&
-                equalOne(((DVec3d*)isoMatrix.form3d[1])->DotProduct (*((DVec3d*)rMatrix.form3d[1]))))
+            if (equalOne(((DVec3d*)isoMatrix.form3d[0])->DotProduct(*((DVec3d*)rMatrix.form3d[0]))) &&
+                equalOne(((DVec3d*)isoMatrix.form3d[1])->DotProduct(*((DVec3d*)rMatrix.form3d[1]))))
                 return StandardView::RightIso;
             }
         }
@@ -866,7 +866,7 @@ BentleyStatus PhysicalViewController::SetTargetModel(GeometricModelP target)
 +---------------+---------------+---------------+---------------+---------------+------*/
 SectioningViewControllerPtr SectionDrawingViewController::GetSectioningViewController() const
     {
-#if defined(NEEDS_WORK_DRAWINGS)
+#if defined (NEEDS_WORK_DRAWINGS)
     if (m_sectionView.IsValid())
         return m_sectionView;
 
@@ -1053,7 +1053,7 @@ static UiOrientation s_lastUi;
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   MattGooding     11/13
 //---------------------------------------------------------------------------------------
-bool ViewController::OnOrientationEvent (RotMatrixCR matrix, OrientationMode mode, UiOrientation ui, uint32_t nEventsSinceEnabled)
+bool ViewController::OnOrientationEvent(RotMatrixCR matrix, OrientationMode mode, UiOrientation ui, uint32_t nEventsSinceEnabled)
     {
     if (!m_defaultDeviceOrientationValid || s_lastUi != ui)
         {
@@ -1117,7 +1117,7 @@ DVec3dR up1             //!< [out] model coordinates up vector for gyro1
             );
     else
         {
-        BeAssert (ui == UiOrientation::PortraitUpsideDown);
+        BeAssert(ui == UiOrientation::PortraitUpsideDown);
         gyroToBSIColumnShuffler = RotMatrix::FromRowValues
             (
             -1,0,0,
@@ -1127,22 +1127,22 @@ DVec3dR up1             //!< [out] model coordinates up vector for gyro1
         }
 
     RotMatrix H0, H1;
-    H0.InitProduct (gyro0, gyroToBSIColumnShuffler);
-    H1.InitProduct (gyro1, gyroToBSIColumnShuffler);
+    H0.InitProduct(gyro0, gyroToBSIColumnShuffler);
+    H1.InitProduct(gyro1, gyroToBSIColumnShuffler);
     RotMatrix H1T;
-    H1T.TransposeOf (H1);
+    H1T.TransposeOf(H1);
     RotMatrix screenToScreenMotion;
-    screenToScreenMotion.InitProduct (H1T, H0);
-    DVec3d right0 = DVec3d::FromCrossProduct (up0, forward0);
-    RotMatrix screenToModel = RotMatrix::FromColumnVectors (right0, up0, forward0);
+    screenToScreenMotion.InitProduct(H1T, H0);
+    DVec3d right0 = DVec3d::FromCrossProduct(up0, forward0);
+    RotMatrix screenToModel = RotMatrix::FromColumnVectors(right0, up0, forward0);
     RotMatrix modelToScreen;
-    modelToScreen.TransposeOf (screenToModel);
+    modelToScreen.TransposeOf(screenToModel);
     RotMatrix modelToModel;
 
-    screenToScreenMotion.Transpose ();
-    modelToModel.InitProduct (screenToModel, screenToScreenMotion, modelToScreen);
-    modelToModel.Multiply (forward1, forward0);
-    modelToModel.Multiply (up1, up0);
+    screenToScreenMotion.Transpose();
+    modelToModel.InitProduct(screenToModel, screenToScreenMotion, modelToScreen);
+    modelToModel.Multiply(forward1, forward0);
+    modelToModel.Multiply(up1, up0);
     }
 
 //---------------------------------------------------------------------------------------
@@ -1154,7 +1154,7 @@ bool PhysicalViewController::ViewVectorsFromOrientation(DVec3dR forward, DVec3dR
     DVec3d currForward = GetZVector();
 
     orientation.GetColumn(forward, 2);
-    switch(mode)
+    switch (mode)
         {
         case OrientationMode::CompassHeading:
             azimuthCorrection = msGeomConst_radiansPerDegree *(90.0 + m_dgndb.Units().GetAzimuth());
@@ -1168,7 +1168,7 @@ bool PhysicalViewController::ViewVectorsFromOrientation(DVec3dR forward, DVec3dR
             {
             //  orientation is arranged in columns.  The axis from the home button to other end of tablet is Y.  Z is out of the screen.  X is Y cross Z.
             //  Therefore, when the UiOrientation is Portrait, orientation Y is up and orientation X points to the right.
-            ApplyGyroChangeToViewingVectors (ui, m_defaultDeviceOrientation, orientation, s_defaultForward, s_defaultUp, forward, up);
+            ApplyGyroChangeToViewingVectors(ui, m_defaultDeviceOrientation, orientation, s_defaultForward, s_defaultUp, forward, up);
             break;
             }
         }
@@ -1838,7 +1838,7 @@ void ViewController::_DrawLocateCursor(DecorateContextR context, DPoint3dCR pt, 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley  10/06
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt ViewController::_VisitHit (HitDetailCR hit, ViewContextR context) const
+StatusInt ViewController::_VisitHit(HitDetailCR hit, DecorateContextR context) const
     {
     DgnElementCPtr   element = hit.GetElement();
     GeometrySourceCP geom = (element.IsValid() ? element->ToGeometrySource() : nullptr);

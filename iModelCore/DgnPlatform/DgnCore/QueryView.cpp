@@ -541,6 +541,7 @@ void QueryViewController::_DrawView(ViewContextR context)
             UpdateLogging::RecordAllowShowProgress();
             }
 
+        BeAssert(results->m_elements[numDrawn]->IsPersistent());
         GeometrySourceCP geom = results->m_elements[numDrawn]->ToGeometrySource();
 
         if (nullptr != geom)

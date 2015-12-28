@@ -14,14 +14,13 @@
 #include "AreaPattern.h"
 #include <Bentley/BeTimeUtilities.h>
 
-BEGIN_BENTLEY_DGN_NAMESPACE
-    struct ViewManager;
-
-END_BENTLEY_DGN_NAMESPACE
+BEGIN_BENTLEY_DISPLAY_NAMESPACE
+    DEFINE_POINTER_SUFFIX_TYPEDEFS(Device)
+    DEFINE_REF_COUNTED_PTR(Device)
+END_BENTLEY_DISPLAY_NAMESPACE
 
 BEGIN_BENTLEY_RENDER_NAMESPACE
 
-DEFINE_POINTER_SUFFIX_TYPEDEFS(Device)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(GeometryParams)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(GradientSymb)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(Graphic)
@@ -41,9 +40,7 @@ DEFINE_POINTER_SUFFIX_TYPEDEFS(Plan)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(Target)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(Task)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(Texture)
-DEFINE_POINTER_SUFFIX_TYPEDEFS(Window)
 
-DEFINE_REF_COUNTED_PTR(Device)
 DEFINE_REF_COUNTED_PTR(GradientSymb)
 DEFINE_REF_COUNTED_PTR(Graphic)
 DEFINE_REF_COUNTED_PTR(GraphicList)
@@ -55,7 +52,6 @@ DEFINE_REF_COUNTED_PTR(MultiResImage)
 DEFINE_REF_COUNTED_PTR(Target)
 DEFINE_REF_COUNTED_PTR(Task)
 DEFINE_REF_COUNTED_PTR(Texture)
-DEFINE_REF_COUNTED_PTR(Window)
 
 //=======================================================================================
 // @bsiclass                                                    Keith.Bentley   12/14
@@ -699,7 +695,8 @@ public:
         Code4 = 0xfe10fe10,   // 4
         Code5 = 0xe0e0e0e0,   // 5
         Code6 = 0xf888f888,   // 6
-        Code7 = 0xff18ff18    // 7
+        Code7 = 0xff18ff18,    // 7
+        Invisible = 0x00000001, // nearly invisible
         };
 
     void Cook(GeometryParamsCR, ViewContextR);
@@ -843,6 +840,7 @@ public:
     void SetLineTransparency(Byte trans) {m_matSymb.SetLineTransparency(trans); m_flags |= FLAGS_ColorTransparency;}
     void SetFillTransparency(Byte trans) {m_matSymb.SetFillTransparency(trans); m_flags |= FLAGS_FillColorTransparency;}
     void SetWidth(uint32_t width) {m_matSymb.SetWidth(width); m_flags |= FLAGS_RastWidth;}
+    void SetLinePixels(GraphicParams::LinePixels pixels) {m_matSymb.SetLinePixels(pixels); m_flags |= FLAGS_Style; m_matSymb.GetLineStyleSymbR().SetLineStyle(nullptr);}
     void SetMaterial(Material* material) {m_matSymb.SetMaterial(material); m_flags |= FLAGS_RenderMaterial;}
     void SetPatternParams(PatternParamsP patternParams) {m_matSymb.SetPatternParams(patternParams);}
     DGNPLATFORM_EXPORT void SetLineStyle(int32_t styleNo, DgnModelR modelRef, DgnModelR styleDgnModel, LineStyleParamsCP lStyleParams, ViewContextR context, DPoint3dCP startTangent, DPoint3dCP endTangent);
@@ -890,8 +888,10 @@ protected:
     double        m_pixelSize; //! Pixel size to use for stroke
     double        m_minSize; //! Minimum pixel size this Graphic is valid for (Graphic is valid for all sizes if min and max are both 0.0)
     double        m_maxSize; //! Maximum pixel size this Graphic is valid for (Graphic is valid for all sizes if min and max are both 0.0)
+    Transform     m_localToWorldTransform;
 
     virtual StatusInt _Close() {m_isOpen=false; return SUCCESS;}
+    virtual bool _IsForDisplay() const {return false;}
     virtual void _ActivateGraphicParams(GraphicParamsCR graphicParams, GeometryParamsCP geomParams) = 0;
     virtual void _AddLineString(int numPoints, DPoint3dCP points, DPoint3dCP range) = 0;
     virtual void _AddLineString2d(int numPoints, DPoint2dCP points, double zDepth, DPoint2dCP range) = 0;
@@ -910,21 +910,24 @@ protected:
     virtual void _AddSolidPrimitive(ISolidPrimitiveCR primitive) = 0;
     virtual void _AddBSplineSurface(MSBsplineSurfaceCR surface) = 0;
     virtual void _AddPolyface(PolyfaceQueryCR meshData, bool filled = false) = 0;
-    virtual StatusInt _AddBody(ISolidKernelEntityCR, double pixelSize = 0.0) = 0;
-    virtual void _AddTextString(TextStringCR text, double* zDepth = nullptr) = 0;
+    virtual void _AddBody(ISolidKernelEntityCR, double pixelSize = 0.0) = 0;
+    virtual void _AddTextString(TextStringCR text) = 0;
+    virtual void _AddTextString2d(TextStringCR text, double zDepth) = 0;
     virtual void _AddMosaic(int numX, int numY, uintptr_t const* tileIds, DPoint3d const* verts) = 0;
-    virtual bool _IsQuickVision() const {return false;}
+    virtual void _AddRaster(DPoint3d const points[4], int pitch, int numTexelsX, int numTexelsY, int enableAlpha, int format, Byte const* texels, DPoint3dCP range) = 0;
     virtual void _AddRaster2d(DPoint2d const points[4], int pitch, int numTexelsX, int numTexelsY, int enableAlpha, int format, Byte const* texels, double zDepth, DPoint2d const *range) = 0;
-    virtual void _AddRaster3d(DPoint3d const points[4], int pitch, int numTexelsX, int numTexelsY, int enableAlpha, int format, Byte const* texels, DPoint3dCP range) = 0;
     virtual void _AddDgnOle(DgnOleDraw*) = 0;
     virtual void _AddPointCloud(PointCloudDraw* drawParams) = 0;
-    virtual void _AddSubGraphic(Graphic&, TransformCR, GraphicParams&) = 0;
+    virtual void _AddSubGraphic(GraphicR, TransformCR, GraphicParamsR) = 0;
+    virtual Render::GraphicPtr _CreateSubGraphic(TransformCR) const = 0;
     virtual ~Graphic() {}
 
 public:
+    explicit Graphic(CreateParams const& params=CreateParams()) : m_vp(params.m_vp), m_pixelSize(params.m_pixelSize), m_minSize(0.0), m_maxSize(0.0) {m_localToWorldTransform = params.m_placement;}
+    Render::GraphicPtr CreateSubGraphic(TransformCR subToGraphic) const {return _CreateSubGraphic(subToGraphic);} // NOTE: subToGraphic is provided to allow stroking in world coords...
+
     StatusInt Close() {return m_isOpen ? _Close() : SUCCESS;}
     bool IsOpen() const {return m_isOpen;}
-    explicit Graphic(CreateParams const& params=CreateParams()) : m_vp(params.m_vp), m_pixelSize(params.m_pixelSize), m_minSize(0.0), m_maxSize(0.0) {}
 
     bool IsValidFor(DgnViewportCR vp, double metersPerPixel) const
         {
@@ -936,9 +939,14 @@ public:
 
         return (metersPerPixel >= m_minSize && metersPerPixel <= m_maxSize);
         }
-    bool IsSpecificToViewport(DgnViewportCR vp) const { return nullptr != m_vp && m_vp == &vp; }
 
-    double GetPixelSize() {return m_pixelSize;}
+    bool IsSpecificToViewport(DgnViewportCR vp) const {return nullptr != m_vp && m_vp == &vp;}
+    DgnViewportCP GetViewport() const {return m_vp;}
+
+    //! Get current local to world transform (ex. GeometrySource placement transform).
+    TransformCR GetLocalToWorldTransform() const {return m_localToWorldTransform;}
+
+    double GetPixelSize() const {return m_pixelSize;}
     void SetPixelSizeRange(double min, double max) {m_minSize = min, m_maxSize = max;}
 
     //! Set an GraphicParams to be the "active" GraphicParams for this Render::Graphic.
@@ -1038,13 +1046,16 @@ public:
     void AddPolyface(PolyfaceQueryCR meshData, bool filled = false) {_AddPolyface(meshData, filled);}
 
     //! Draw a BRep surface/solid entity from the solids kernel.
-    //! @note Only implemented for ICachedDraw due to potentially expensive/time consuming solids kernel calls.
-    StatusInt AddBody(ISolidKernelEntityCR entity, double pixelSize = 0.0) {return _AddBody(entity, pixelSize);}
+    void AddBody(ISolidKernelEntityCR entity, double pixelSize = 0.0) {_AddBody(entity, pixelSize);}
 
-    //! Draw a series of Glyphs
+    //! Draw a series of Glyphs.
     //! @param[in]          text        Text drawing parameters
-    //! @param[in]          zDepth      Priority value in 2d or nullptr
-    void AddTextString(TextStringCR text, double* zDepth = nullptr) {_AddTextString(text, zDepth);}
+    void AddTextString(TextStringCR text) {_AddTextString(text);}
+
+    //! Draw a series of Glyphs with display priority.
+    //! @param[in]          text        Text drawing parameters
+    //! @param[in]          zDepth      Priority value in 2d
+    void AddTextString2d(TextStringCR text, double zDepth) {_AddTextString2d(text, zDepth);}
 
     //! Draw a filled triangle strip from 3D points.
     //! @param[in]          numPoints   Number of vertices in \c points array.
@@ -1070,8 +1081,8 @@ public:
     void DrawTorus(DPoint3dCR center, DVec3dCR vectorX, DVec3dCR vectorY, double majorRadius, double minorRadius, double sweepAngle, bool capped) { AddSolidPrimitive(*ISolidPrimitive::CreateDgnTorusPipe(DgnTorusPipeDetail(center, vectorX, vectorY, majorRadius, minorRadius, sweepAngle, capped)));}
     void DrawBox(DVec3dCR primary, DVec3dCR secondary, DPoint3dCR basePoint, DPoint3dCR topPoint, double baseWidth, double baseLength, double topWidth, double topLength, bool capped) {AddSolidPrimitive(*ISolidPrimitive::CreateDgnBox(DgnBoxDetail::InitFromCenters(basePoint, topPoint, primary, secondary, baseWidth, baseLength, topWidth, topLength, capped))); }
 
+    void AddRaster(DPoint3d const points[4], int pitch, int numTexelsX, int numTexelsY, int enableAlpha, int format, Byte const* texels, DPoint3dCP range) {_AddRaster(points, pitch, numTexelsX, numTexelsY, enableAlpha, format, texels, range);}
     void AddRaster2d(DPoint2d const points[4], int pitch, int numTexelsX, int numTexelsY, int enableAlpha, int format, Byte const* texels, double zDepth, DPoint2dCP range) {_AddRaster2d(points, pitch, numTexelsX, numTexelsY, enableAlpha, format, texels, zDepth, range);}
-    void AddRaster3d(DPoint3d const points[4], int pitch, int numTexelsX, int numTexelsY, int enableAlpha, int format, Byte const* texels, DPoint3dCP range) {_AddRaster3d(points, pitch, numTexelsX, numTexelsY, enableAlpha, format, texels, range);}
 
     //! Draw a 3D point cloud.
     //! @param[in] drawParams Object containing draw parameters.
@@ -1080,9 +1091,13 @@ public:
     //! Draw OLE object.
     void AddDgnOle(DgnOleDraw* ole) {_AddDgnOle(ole);}
 
-    void AddSubGraphic(Graphic& graphic, TransformCR trans, GraphicParams& params) {_AddSubGraphic(graphic, trans, params);}
-    bool IsQuickVision() const {return _IsQuickVision();}
+    void AddSubGraphic(GraphicR graphic, TransformCR subToGraphic, GraphicParams& params) {_AddSubGraphic(graphic, subToGraphic, params);}
 
+    //! Return whether this decoration will be drawn to a viewport as opposed to being collected for some other purpose (ex. geometry export).
+    bool IsForDisplay() const {return _IsForDisplay();}
+
+    //! Set symbology for decorations that are only used for display purposes. Pickable decorations require a category, must initialize
+    //! a GeometryParams and cook it into a GraphicParams to have a locatable decoration.
     void SetSymbology(ColorDef lineColor, ColorDef fillColor, int lineWidth, GraphicParams::LinePixels linePixels=GraphicParams::LinePixels::Solid)
         {
         GraphicParams graphicParams;
@@ -1096,7 +1111,7 @@ public:
 };
 
 //=======================================================================================
-// An ordered list of RefCountedPtrs to Render::Graphics.
+// An ordered list of RefCountedPtrs to a Render::Graphics, plus an override.
 // @bsiclass
 //=======================================================================================
 struct GraphicList : RefCounted<NonCopyableClass>
@@ -1112,22 +1127,24 @@ struct GraphicList : RefCounted<NonCopyableClass>
     std::deque<Node> m_list;
 
     GraphicList() {}
+    DGNPLATFORM_EXPORT virtual ~GraphicList();
     uint32_t GetCount() const {return (uint32_t) m_list.size();}
-    bool IsEmpty() const {return 0 == GetCount();}
-    void Add(Graphic& graphic, void* ovr, uint32_t ovrFlags) {graphic.Close(); m_list.push_back(Node(graphic,ovr,ovrFlags));}
-    void Clear() {m_list.clear();}
+    bool IsEmpty() const {return m_list.empty();}
+    DGNPLATFORM_EXPORT void Add(Graphic& graphic, void* ovr, uint32_t ovrFlags);
+    DGNPLATFORM_EXPORT void Clear();
 };
 
 //=======================================================================================
-//! A set of Scenes of various types of Graphics that are "decorated" into the Render::Target,
+//! A set of GraphicLists of various types of Graphics that are "decorated" into the Render::Target,
 //! in addition to the Scene.
 // @bsiclass                                                    Keith.Bentley   12/15
 //=======================================================================================
 struct Decorations
 {
-    GraphicListPtr m_world;           // drawn with zbuffer, with default lighting, smooth shading
-    GraphicListPtr m_cameraOverlay;   // drawn in overlay mode, camera units
-    GraphicListPtr m_viewOverlay;     // drawn in overlay mode, view units
+    GraphicListPtr m_flashed;        // drawn with zbuffer, with scene lighting
+    GraphicListPtr m_world;          // drawn with zbuffer, with default lighting, smooth shading
+    GraphicListPtr m_worldOverlay;   // drawn in overlay mode, world units
+    GraphicListPtr m_viewOverlay;    // drawn in overlay mode, view units
 };
 
 //=======================================================================================
@@ -1151,55 +1168,10 @@ struct Plan
 };
 
 //=======================================================================================
-//! The "system context" is the main window for the rendering system.
-// @bsiclass                                                    Keith.Bentley   09/15
-//=======================================================================================
-struct SystemContext
-{
-};
-
-//=======================================================================================
-//! A Render::Window is a platform specific object that identifies a rectangular window on a screen.
-//! On Windows, for example, the Render::Window holds an "HWND"
-// @bsiclass                                                    Keith.Bentley   11/15
-//=======================================================================================
-struct Window : RefCounted<NonCopyableClass>
-{
-    struct Rectangle {int left, top, right, bottom;};
-    void* m_nativeWindow;
-    void* GetNativeWindow() const {return m_nativeWindow;}
-    Window(void* nativeWindow) {m_nativeWindow=nativeWindow;}
-
-    virtual Point2d _GetScreenOrigin() const = 0;
-    virtual BSIRect _GetViewRect() const = 0;
-    virtual void _OnPaint(Rectangle&) const = 0;
-};
-
-//=======================================================================================
-//! A Render::Device is the platform specific object that connects a render target to a the platform's rendering system.
-//! Render::Device holds a reference to a Render::Window.
-//! On Windows, for example, the Render::Device maps to a "DC"
-// @bsiclass                                                    Keith.Bentley   11/15
-//=======================================================================================
-struct Device : RefCounted<NonCopyableClass>
-{
-    struct PixelsPerInch {int width, height;};
-    WindowPtr m_window;
-    void* m_nativeDevice;
-
-    void* GetNativeDevice() const {return m_nativeDevice;}
-    Window const* GetWindow() const {return m_window.get();}
-    virtual PixelsPerInch _GetPixelsPerInch() const = 0;
-    virtual DVec2d _GetDpiScale() const = 0;
-    Device(Window* window, void* device) : m_window(window), m_nativeDevice(device) {}
-    double PixelsFromInches(double inches) const {PixelsPerInch ppi=_GetPixelsPerInch(); return inches * (ppi.height + ppi.width)/2;}
-};
-
-//=======================================================================================
-//! A Render::Target is the renderer-specific factory for creating Render::Graphics. A Render::Target
+//! A Render::Target is the renderer-specific factory for creating Render::Graphics.
 //! A Render:Target holds the current "scene", the current set of dynamic Graphics, and the current decorators.
 //! When frames are composed, all of those Graphics are rendered, as appropriate.
-//! A Render:Target holds a reference to a Render::Device.
+//! A Render:Target holds a reference to a Display::Device.
 //! Every DgnViewport holds a reference to a Render::Target.
 // @bsiclass                                                    Keith.Bentley   11/15
 //=======================================================================================
@@ -1208,9 +1180,9 @@ struct Target : RefCounted<NonCopyableClass>
     typedef ImageUtilities::RgbImageInfo CapturedImageInfo;
 
 protected:
-    DevicePtr          m_device;
+    Display::DevicePtr m_device;
     GraphicListPtr     m_currentScene;
-    GraphicListPtr     m_dynamics;      // drawn with zbuffer, with scene lighting
+    GraphicListPtr     m_dynamics;        // drawn with zbuffer, with scene lighting
     Decorations        m_decorations;
     BeAtomic<uint32_t> m_lastFrameMillis;
 
@@ -1223,23 +1195,24 @@ protected:
     virtual TexturePtr _GetTexture(DgnTextureId, DgnDbR) const = 0;
     virtual TexturePtr _CreateTileSection(Image*, bool enableAlpha) const = 0;
     virtual void* _ResolveOverrides(OvrGraphicParamsCR) = 0;
+    virtual Point2d _GetScreenOrigin() const = 0;
+    virtual BSIRect _GetViewRect() const = 0;
+    virtual DVec2d _GetDpiScale() const = 0;
 
 public:
-    virtual void _ChangeScene(GraphicListR) = 0;
-    virtual void _ChangeDynamics(GraphicListR) = 0;
-    virtual void _ChangeDecorations(Decorations&) = 0;
+    virtual void _ChangeScene(GraphicListR scene) {Queue::VerifyRenderThread(true); m_currentScene = &scene;}
+    virtual void _ChangeDynamics(GraphicListR dynamics) {Queue::VerifyRenderThread(true); m_dynamics = &dynamics;}
+    virtual void _ChangeDecorations(Decorations& decorations) {Queue::VerifyRenderThread(true); m_decorations = decorations;}
     virtual void _DrawFrame(PlanCR) = 0;
     virtual double _GetCameraFrustumNearScaleLimit() const = 0;
     virtual bool _WantInvertBlackBackground() {return false;}
 
-    Target(Device* device) : m_device(device) { m_lastFrameMillis.store(0); }
-
-    Point2d GetScreenOrigin() const {return m_device->GetWindow()->_GetScreenOrigin();}
-    BSIRect GetViewRect() const {return m_device->GetWindow()->_GetViewRect();}
-    DVec2d GetDpiScale() const {return m_device->_GetDpiScale();}
+    Point2d GetScreenOrigin() const {return _GetScreenOrigin();}
+    BSIRect GetViewRect() const {return _GetViewRect();}
+    DVec2d GetDpiScale() const {return _GetDpiScale();}
     GraphicPtr CreateGraphic(Graphic::CreateParams const& params) {return _CreateGraphic(params);}
     GraphicPtr CreateSprite(ISprite& sprite, DPoint3dCR location, DPoint3dCR xVec, int transparency) {return _CreateSprite(sprite, location, xVec, transparency);}
-    DeviceCP GetDevice() const {return m_device.get();}
+    Display::DeviceCP GetDevice() const {return m_device.get();}
     void OnResized() {_OnResized();}
     ByteStream FillImageCaptureBuffer(CapturedImageInfo& info, DRange2dCR screenBufferRange, Point2dCR outputImageSize, bool topDown) {return _FillImageCaptureBuffer(info, screenBufferRange, outputImageSize, topDown);}
     void* ResolveOverrides(OvrGraphicParamsCP ovr) {return ovr ? _ResolveOverrides(*ovr) : nullptr;}
@@ -1247,8 +1220,8 @@ public:
     TexturePtr GetTexture(DgnTextureId id, DgnDbR dgndb) const {return _GetTexture(id, dgndb);}
     TexturePtr CreateTileSection(Image* image, bool enableAlpha) const {return _CreateTileSection(image, enableAlpha);}
 
-    uint32_t GetLastFrameMillis() const { return m_lastFrameMillis.load(); }
-    void RecordLastFrameMillis(uint32_t millis) { m_lastFrameMillis.store(millis); }
+    uint32_t GetLastFrameMillis() const {return m_lastFrameMillis.load();}
+    void RecordLastFrameMillis(uint32_t millis) {m_lastFrameMillis.store(millis);}
 };
 
 END_BENTLEY_RENDER_NAMESPACE

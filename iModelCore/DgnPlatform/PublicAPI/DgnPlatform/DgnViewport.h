@@ -388,6 +388,8 @@ protected:
     bool            m_needsRefresh = true;
     bool            m_targetCenterValid = false;
     bool            m_undoActive = false;
+    Byte            m_dynamicsTransparency = 64;
+    Byte            m_flashingTransparency = 100;
     int             m_maxUndoSteps = 20;
     uint32_t        m_sceneEntries = 0;         // number of entries in the scene from last attempt at healing
     DPoint3d        m_viewOrg;                  // view origin, potentially expanded if f/b clipping are off
@@ -426,11 +428,15 @@ protected:
     DGNPLATFORM_EXPORT static void StartRenderThread();
     DMap4d CalcNpcToView();
     void QueueDrawFrame();
-    void Refresh();
 
 public:
     DgnViewport(Render::TargetP target) : m_renderTarget(target) {}
     virtual ~DgnViewport() {DestroyViewport();}
+
+    Byte GetFlashingTransparency() const {return m_flashingTransparency;}
+    void SetFlashingTransparency(Byte val) {m_flashingTransparency = val;}
+    Byte GetDynamicsTransparency() const {return m_dynamicsTransparency;}
+    void SetDynamicsTransparency(Byte val) {m_dynamicsTransparency = val;}
 
     void SetRenderTarget(Render::Target* target) {m_renderTarget=target;}
     double GetFrustumFraction() const {return m_frustFraction;}
@@ -483,7 +489,9 @@ public:
     void SetUndoActive(bool val, int numsteps=20) {m_undoActive=val; m_maxUndoSteps=numsteps; CheckForChanges();}
     bool IsUndoActive() {return m_undoActive;}
     void ClearUndo();
+    void ChangeDynamics(Render::GraphicListP list);
     void ApplyViewState(Utf8StringCR val, int animationTime);
+    void Refresh();
     DGNVIEW_EXPORT void ApplyNext(int animationTime);
     DGNVIEW_EXPORT void ApplyPrevious(int animationTime);
     DGNPLATFORM_EXPORT void CheckForChanges();

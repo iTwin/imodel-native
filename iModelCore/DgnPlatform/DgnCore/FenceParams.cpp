@@ -6,12 +6,12 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include    <DgnPlatformInternal.h>
-#include    <DgnPlatform/PickContext.h>
 
 #define     CIRCLE_ClipPoints           60
 #define     fc_cameraPlaneRatio         300.0
 #define     MINIMUM_CLIPSIZE            1.0E-3
 
+#if defined (NEEDSWORK_RENDER_GRAPHIC)
 /*=================================================================================**//**
 * Output to determine if element should be accepted for fence processing..
 * @bsiclass                                                     Brien.Bastings  09/04
@@ -888,6 +888,7 @@ BentleyStatus GetContents(FenceParamsP fp, DgnElementIdSet& contents)
     }
 
 }; // FenceAcceptContext
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  01/07
@@ -2649,10 +2650,12 @@ void FenceParams::ParseAcceptedGeometry(bvector<CurveVectorPtr>* inside, bvector
 
         tmpFp.SetLocateInteriors(LocateSurfacesPref::Never);
 
+#if defined (NEEDSWORK_RENDER_GRAPHIC)
         FenceAcceptContext context;
 
         if (!context.AcceptCurveVector(*curveVector, &tmpFp))
             return;
+#endif
 
         inside->push_back(curveVector);
         return;
@@ -2761,9 +2764,13 @@ void FenceParams::ParseAcceptedGeometry(bvector<CurveVectorPtr>* inside, bvector
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool FenceParams::AcceptElement(GeometrySourceCR source)
     {
+#if defined (NEEDSWORK_RENDER_GRAPHIC)
     FenceAcceptContext context;
 
     return context.AcceptElement(source, *this);
+#else
+    return false;
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2771,7 +2778,11 @@ bool FenceParams::AcceptElement(GeometrySourceCR source)
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus FenceParams::GetContents(DgnElementIdSet& contents)
     {
+#if defined (NEEDSWORK_RENDER_GRAPHIC)
     FenceAcceptContext context;
 
     return context.GetContents(this, contents);
+#else
+    return ERROR;
+#endif
     }

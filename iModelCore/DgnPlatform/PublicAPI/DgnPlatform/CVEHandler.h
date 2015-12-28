@@ -419,7 +419,6 @@ static bool IsProxyDisplayHandler (HandlerR);
 END_BENTLEY_DGN_NAMESPACE
 
 //__PUBLISH_SECTION_START__
-#include "DgnPlatform/IPickGeom.h"
 
 BEGIN_BENTLEY_DGN_NAMESPACE // added in graphite
 

@@ -100,7 +100,7 @@ private:
     bool                    m_nonSnappable;             // non-snappable detail, ex. pattern or line style.
     double                  m_viewDist;                 // xy distance to hit (view coordinates).
     double                  m_viewZ;                    // z distance to hit (view coordinates).
-    GeometryStreamEntryId       m_geomId;                   // id of geometric primitive that generated this hit.
+    GeometryStreamEntryId   m_geomId;                   // id of geometric primitive that generated this hit.
 
 public:
     DGNPLATFORM_EXPORT void Init();
@@ -157,7 +157,6 @@ public:
 struct HitDetail : RefCountedBase
 {
 protected:
-
     DgnViewportR        m_viewport;
     DgnElementId        m_elementId;
     HitSource           m_locateSource;         // Operation that generated the hit.
@@ -174,11 +173,10 @@ protected:
     virtual void _SetHitPoint(DPoint3dCR pt) {m_geomDetail.SetClosestPoint(pt);}
     virtual void _SetTestPoint(DPoint3dCR pt) {m_testPoint = pt;}
     virtual bool _IsSameHit(HitDetailCP otherHit) const;
-    virtual void _DrawInVp(DecorateContextR) const;
+    virtual void _Draw(DecorateContextR context) const;
     virtual void _SetHilited(DgnElement::Hilited) const;
 
 public:
-#if !defined (DOCUMENTATION_GENERATOR)
     DGNPLATFORM_EXPORT HitDetail(DgnViewportR, GeometrySourceCP, DPoint3dCR testPoint, HitSource, GeomDetailCR);
     DGNPLATFORM_EXPORT explicit HitDetail(HitDetailCR from);
     DGNPLATFORM_EXPORT virtual ~HitDetail();
@@ -189,21 +187,13 @@ public:
     void SetHilited(DgnElement::Hilited state) const {_SetHilited(state);}
     void SetSubSelectionMode(SubSelectionMode mode) {_SetSubSelectionMode(mode);}
 
-    void DrawInVp(DecorateContextR context) const {_DrawInVp(context);}
-    DGNPLATFORM_EXPORT bool ShouldFlashCurveSegment(ViewContextR) const; //! Check for segment flash mode before calling FlashCurveSegment.
-    DGNPLATFORM_EXPORT void FlashCurveSegment(ViewContextR) const; //! Setup context.GetCurrentGeometryParams() before calling!
-    
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    DGNVIEW_EXPORT void DrawInView(DgnViewportR, DrawPurpose drawPurpose) const;
-    DGNVIEW_EXPORT void DrawInAllViews(ViewSetR, DrawPurpose drawPurpose) const;
-#endif
-    DGNVIEW_EXPORT void Hilite(ViewSetR, bool onOff) const;
+    void Draw(DecorateContextR context) const {_Draw(context);}
+    DGNPLATFORM_EXPORT bool ShouldFlashCurveSegment() const; //! Check for segment flash mode before calling FlashCurveSegment.
+    DGNPLATFORM_EXPORT void FlashCurveSegment(DecorateContextR, Render::GeometryParamsCR geomParams) const; //! Setup context.GetCurrentGeometryParams() before calling!
 
     void GetInfoString(Utf8StringR descr, Utf8CP delimiter) const {_GetInfoString(descr, delimiter);}
     DGNPLATFORM_EXPORT DgnElement::Hilited IsHilited() const;
     DGNPLATFORM_EXPORT bool IsInSelectionSet() const;
-#endif
-
     DGNPLATFORM_EXPORT DgnElementCPtr GetElement() const;
     DgnElementId GetElementId() const {return m_elementId;}
     DGNPLATFORM_EXPORT DgnModelR GetDgnModel() const;
@@ -222,7 +212,6 @@ public:
 
     DGNPLATFORM_EXPORT IElemTopologyCP GetElemTopology() const;
     DGNPLATFORM_EXPORT void SetElemTopology(IElemTopologyP topo);
-
 }; // HitDetail
 
 typedef RefCountedPtr<HitDetail> HitDetailPtr;
@@ -369,7 +358,7 @@ struct IntersectDetail : SnapDetail
 private:
     HitDetailP  m_secondHit;
 
-    virtual void _DrawInVp(DecorateContextR) const override;
+    virtual void _Draw(DecorateContextR) const override;
     virtual HitDetailType _GetHitType() const override{return HitDetailType::Intersection;}
     DGNPLATFORM_EXPORT virtual void _SetHilited(DgnElement::Hilited) const override;
     DGNPLATFORM_EXPORT virtual bool _IsSameHit(HitDetailCP otherHit) const override;
@@ -381,5 +370,19 @@ public:
     DGNPLATFORM_EXPORT ~IntersectDetail();
     HitDetailP GetSecondHit() const {return m_secondHit;}
 }; 
+
+//=======================================================================================
+//! Geometry data associated with a pick.
+//=======================================================================================
+struct IPickGeom
+{
+    virtual bool _IsSnap() const = 0;
+    virtual DPoint4dCR _GetPickPointView() const = 0;
+    virtual DPoint3dCR _GetPickPointWorld() const = 0;
+    virtual DRay3d _GetBoresite(TransformCR localToWorld) const = 0;
+    virtual void _SetHitPriorityOverride(HitPriority) = 0;
+    virtual GeomDetailR _GetGeomDetail() = 0;
+    virtual void _AddHit(HitDetailR) = 0;
+};
 
 END_BENTLEY_DGN_NAMESPACE

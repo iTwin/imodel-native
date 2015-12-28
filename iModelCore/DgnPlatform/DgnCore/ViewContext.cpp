@@ -346,11 +346,114 @@ void ViewContext::_OutputGeometry(GeometrySourceCR source)
                    m_viewport->GetViewControllerR()._StrokeGeometry(*this, source, pixelSize) :
                    source.Stroke(*this, pixelSize);
 
+        if (WasAborted()) // if we aborted, the graphic may not be complete, don't save it
+            return;
+
         _SaveGraphic(source, *graphic);
         }
 
-    if (graphic.IsValid())
-        _OutputGraphic(*graphic, &source);
+    if (!graphic.IsValid())
+        return;
+
+    _OutputGraphic(*graphic, &source);
+
+    static int s_drawRange; // 0 - Host Setting (Bounding Box Debug), 1 - Bounding Box, 2 - Element Range
+    if (!s_drawRange)
+        return;
+
+    // Output element local range for debug display and locate...
+    if (!graphic->IsForDisplay() && nullptr == GetIPickGeom())
+        return;
+
+    Render::GraphicPtr rangeGraphic = CreateGraphic(Graphic::CreateParams(nullptr, (2 == s_drawRange ? Transform::FromIdentity() : source.GetPlacementTransform())));
+    Render::GeometryParams rangeParams;
+
+    rangeParams.SetCategoryId(source.GetCategoryId()); // Need category for pick...
+    rangeParams.SetLineColor(DgnViewport::MakeColorTransparency(m_viewport->AdjustColorForContrast(ColorDef::LightGrey(), m_viewport->GetBackgroundColor()), 0x96));
+    CookGeometryParams(rangeParams, *rangeGraphic);
+
+    DPoint3d      p[8], tmpPts[9];
+    BoundingBox3d range = (2 == s_drawRange ? BoundingBox3d(source.CalculateRange3d()) : (nullptr != source.ToGeometrySource3d() ? 
+                           BoundingBox3d(source.ToGeometrySource3d()->GetPlacement().GetElementBox()) : 
+                           BoundingBox3d(source.ToGeometrySource2d()->GetPlacement().GetElementBox())));
+
+    p[0].x = p[3].x = p[4].x = p[5].x = range.low.x;
+    p[1].x = p[2].x = p[6].x = p[7].x = range.high.x;
+    p[0].y = p[1].y = p[4].y = p[7].y = range.low.y;
+    p[2].y = p[3].y = p[5].y = p[6].y = range.high.y;
+    p[0].z = p[1].z = p[2].z = p[3].z = range.low.z;
+    p[4].z = p[5].z = p[6].z = p[7].z = range.high.z;
+
+    if (nullptr != source.ToGeometrySource3d())
+        {
+        tmpPts[0] = p[0];
+        tmpPts[1] = p[1];
+        tmpPts[2] = p[2];
+        tmpPts[3] = p[3];
+
+        tmpPts[4] = p[5];
+        tmpPts[5] = p[6];
+        tmpPts[6] = p[7];
+        tmpPts[7] = p[4];
+
+        tmpPts[8] = p[0];
+
+        // Draw a "saddle" shape to accumulate correct dirty region, simple lines can be clipped out when zoomed in...
+        rangeGraphic->AddLineString(9, tmpPts, nullptr);
+
+        // Draw missing connecting lines to complete box...
+        rangeGraphic->AddLineString(2, DSegment3d::From(p[0], p[3]).point, nullptr);
+        rangeGraphic->AddLineString(2, DSegment3d::From(p[4], p[5]).point, nullptr);
+        rangeGraphic->AddLineString(2, DSegment3d::From(p[1], p[7]).point, nullptr);
+        rangeGraphic->AddLineString(2, DSegment3d::From(p[2], p[6]).point, nullptr);
+        }
+    else
+        {
+        tmpPts[0] = p[0];
+        tmpPts[1] = p[1];
+        tmpPts[2] = p[2];
+        tmpPts[3] = p[3];
+        tmpPts[4] = p[0];
+
+        rangeGraphic->AddLineString(5, tmpPts, nullptr);
+        }
+
+    _OutputGraphic(*rangeGraphic, &source);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    BrienBastings   12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void ViewContext::_AddSubGraphic(Render::GraphicR graphic, DgnGeomPartId partId, TransformCR subToGraphic, Render::GeometryParamsR geomParams)
+    {
+    ElementAlignedBox3d localRange;
+    Render::GraphicPtr  partGraphic = _GetCachedPartGraphic(partId, graphic.GetPixelSize(), localRange);
+
+    if (!partGraphic.IsValid())
+        {
+        DgnGeomPartPtr partGeometry = GetDgnDb().GeomParts().LoadGeomPart(partId);
+
+        if (partGeometry.IsValid())
+            {
+            GeometryStreamIO::Collection collection(partGeometry->GetGeometryStream().GetData(), partGeometry->GetGeometryStream().GetSize());
+
+            partGraphic = graphic.CreateSubGraphic(subToGraphic);
+            collection.Draw(*partGraphic, *this, geomParams, false);
+            
+            if (WasAborted()) // if we aborted, the graphic may not be complete, don't save it
+                return;
+
+            _SavePartGraphic(partId, *partGraphic, localRange);
+            }
+        }
+
+    if (!partGraphic.IsValid())
+        return;
+
+    // NOTE: Need to cook GeometryParams to get GraphicParams, but we don't want to activate and bake into our QvElem...
+    GraphicParams graphicParams;
+    _CookGeometryParams(geomParams, graphicParams);
+    graphic.AddSubGraphic(*partGraphic, subToGraphic, graphicParams);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -407,50 +510,6 @@ bool ViewContext::IsUndisplayed(GeometrySourceCR source)
     return (!_WantUndisplayed() && source.IsUndisplayed());
     }
 
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   03/05
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ViewContext::DrawBox(DPoint3dP box, bool is3d)
-    {
-    GraphicR drawGeom = GetCurrentGraphicR();
-    DPoint3d    tmpPts[9];
-
-    if (is3d)
-        {
-        tmpPts[0] = box[0];
-        tmpPts[1] = box[1];
-        tmpPts[2] = box[2];
-        tmpPts[3] = box[3];
-
-        tmpPts[4] = box[5];
-        tmpPts[5] = box[6];
-        tmpPts[6] = box[7];
-        tmpPts[7] = box[4];
-
-        tmpPts[8] = box[0];
-
-        // Draw a "saddle" shape to accumulate correct dirty region, simple lines can be clipped out when zoomed in...
-        drawGeom.AddLineString(9, tmpPts, nullptr);
-
-        // Draw missing connecting lines to complete box...
-        drawGeom.AddLineString(2, DSegment3d::From(box[0], box[3]).point, nullptr);
-        drawGeom.AddLineString(2, DSegment3d::From(box[4], box[5]).point, nullptr);
-        drawGeom.AddLineString(2, DSegment3d::From(box[1], box[7]).point, nullptr);
-        drawGeom.AddLineString(2, DSegment3d::From(box[2], box[6]).point, nullptr);
-        return;
-        }
-
-    tmpPts[0] = box[0];
-    tmpPts[1] = box[1];
-    tmpPts[2] = box[2];
-    tmpPts[3] = box[3];
-    tmpPts[4] = box[0];
-
-    drawGeom.AddLineString(5, tmpPts, nullptr);
-    }
-#endif
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    05/01
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -463,48 +522,6 @@ StatusInt ViewContext::_VisitElement(GeometrySourceCR source)
         return SUCCESS;
 
     _OutputGeometry(source);
-
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    // Output element or local range for debugging if requested...
-    switch (GetDrawPurpose())
-        {
-        case DrawPurpose::FitView:
-        case DrawPurpose::CaptureGeometry:
-            break; // Don't do this when trying to compute range or drop!
-
-        default:
-            {
-            static int s_drawRange; // 0 - Host Setting (Bounding Box Debug), 1 - Bounding Box, 2 - Element Range
-            if (nullptr == m_viewport || !s_drawRange)
-                break;
-
-            DPoint3d  p[8];
-            BoundingBox3d  range = (2 == s_drawRange ? BoundingBox3d(source.CalculateRange3d()) : (nullptr != source.ToGeometrySource3d() ? 
-                                    BoundingBox3d(source.ToGeometrySource3d()->GetPlacement().GetElementBox()) : 
-                                    BoundingBox3d(source.ToGeometrySource2d()->GetPlacement().GetElementBox())));
-            Transform placementTrans = (2 == s_drawRange ? Transform::FromIdentity() : source.GetPlacementTransform());
-
-            p[0].x = p[3].x = p[4].x = p[5].x = range.low.x;
-            p[1].x = p[2].x = p[6].x = p[7].x = range.high.x;
-            p[0].y = p[1].y = p[4].y = p[7].y = range.low.y;
-            p[2].y = p[3].y = p[5].y = p[6].y = range.high.y;
-            p[0].z = p[1].z = p[2].z = p[3].z = range.low.z;
-            p[4].z = p[5].z = p[6].z = p[7].z = range.high.z;
-
-            m_ovrGraphicParams.SetLineColor(m_viewport->MakeTransparentIfOpaque(m_viewport->AdjustColorForContrast(m_graphicParams.GetLineColor(), m_viewport->GetBackgroundColor()), 150));
-            m_ovrGraphicParams.SetWidth(1);
-            _AddContextOverrides(m_ovrGraphicParams);
-            GetCurrentGraphicR().ActivateOverrideGraphicParams(&m_ovrGraphicParams);
-
-            PushTransform(placementTrans);
-            DrawBox(p, nullptr != source.ToGeometrySource3d());
-            PopTransformClip();
-
-            ResetContextOverrides();
-            break;
-            }
-        }
-#endif
 
     return SUCCESS;
     }
@@ -739,11 +756,9 @@ bool ViewContext::_VisitAllModelElements()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    05/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt ViewContext::VisitHit(HitDetailCR hit)
+StatusInt DecorateContext::VisitHit(HitDetailCR hit)
     {
-    ClearAborted();
-    _InitScanRangeAndPolyhedron();
-
+    AutoRestore<bool> flash(&m_isFlash, true);
     return m_viewport->GetViewController().VisitHit(hit, *this);
     }
 
@@ -1107,6 +1122,7 @@ void GraphicParams::Init()
     m_patternParams     = nullptr;
     m_gradient          = nullptr;
     m_material          = nullptr;
+    m_linePixels        = (uint32_t) LinePixels::Solid;
     m_lStyleSymb.Clear();
     }
 
@@ -1485,10 +1501,10 @@ void DecorateContext::AddWorldDecoration(Render::GraphicR graphic, Render::OvrGr
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DecorateContext::AddWorldOverlay(Render::GraphicR graphic, Render::OvrGraphicParamsCP ovrParams)
     {
-    if (!m_decorations.m_cameraOverlay.IsValid())
-        m_decorations.m_cameraOverlay = new GraphicList;
+    if (!m_decorations.m_worldOverlay.IsValid())
+        m_decorations.m_worldOverlay = new GraphicList;
 
-    m_decorations.m_cameraOverlay->Add(graphic, m_target.ResolveOverrides(ovrParams), ovrParams ? ovrParams->GetFlags() : 0);
+    m_decorations.m_worldOverlay->Add(graphic, m_target.ResolveOverrides(ovrParams), ovrParams ? ovrParams->GetFlags() : 0);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1505,7 +1521,19 @@ void DecorateContext::AddViewOverlay(Render::GraphicR graphic, Render::OvrGraphi
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
+void DecorateContext::AddFlashed(Render::GraphicR graphic, Render::OvrGraphicParamsCP ovrParams)
+    {
+    if (!m_decorations.m_flashed.IsValid())
+        m_decorations.m_flashed = new GraphicList;
+
+    m_decorations.m_flashed->Add(graphic, m_target.ResolveOverrides(&m_ovrParams), m_ovrParams.GetFlags());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   12/15
++---------------+---------------+---------------+---------------+---------------+------*/
 void DecorateContext::AddSprite(ISprite& sprite, DPoint3dCR location, DPoint3dCR xVec, int transparency)
     {
     AddViewOverlay(*m_target.CreateSprite(sprite, location, xVec, transparency), nullptr);
     }
+

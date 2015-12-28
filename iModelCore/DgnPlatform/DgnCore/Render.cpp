@@ -228,3 +228,10 @@ void GraphicSet::Drop(Render::Graphic& graphic)
     BeAssert(false);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* these methods are here because we use std::dequeu which doesn't use the bentley allocator
+* @bsimethod                                    Keith.Bentley                   12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+GraphicList::~GraphicList() {}
+void GraphicList::Add(Graphic& graphic, void* ovr, uint32_t ovrFlags) {graphic.Close(); m_list.push_back(Node(graphic,ovr,ovrFlags));}
+void GraphicList::Clear() {m_list.clear();}

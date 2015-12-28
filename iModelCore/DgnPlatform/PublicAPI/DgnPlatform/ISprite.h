@@ -65,6 +65,7 @@ struct ISprite : IRefCounted
     virtual Byte const* _GetRgbaDefinition() {return nullptr;}
 
     //! Get the size (in pixels) of this Sprite Definition.
+    //! @return the size in pixels of this sprite definition.
     virtual Point2d _GetSize() = 0;
 };
 
