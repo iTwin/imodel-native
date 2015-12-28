@@ -123,6 +123,7 @@ private:
     //! Create a table to persist ECInstances of the given ECClass in the Db
     BentleyStatus               CreateOrUpdateRequiredTables();
     ClassMapByTable             GetClassMapByTable() const;
+    void                        GetClassMapsFromRelationshipEnd(std::set<IClassMap const*>& classMaps, ECN::ECClassCR ecClass) const;
 public:
     explicit ECDbMap(ECDbR ecdb);
     ~ECDbMap() {}
@@ -166,6 +167,8 @@ public:
     void                        GetClassMapsFromRelationshipEnd(bset<IClassMap const*>& endClassMaps, ECN::ECRelationshipConstraintCR relationshipEnd, bool loadIfNotFound) const;
     std::vector<ECN::ECClassCP> GetClassesFromRelationshipEnd(ECN::ECRelationshipConstraintCR) const;
     size_t                      GetTableCountOnRelationshipEnd(ECN::ECRelationshipConstraintCR) const;
+    std::set<IClassMap const*>  GetClassMapsFromRelationshipEnd(ECN::ECRelationshipConstraintCR relationshipEnd, bool* hasAnyClass= nullptr) const;
+    ECDbSqlTable const*         GetFirstTableFromRelationshipEnd(ECN::ECRelationshipConstraintCR relationshipEnd) const;
     void                        ClearCache();
     RelationshipClassMapCP GetRelationshipClassMap (ECN::ECClassId ecRelationshipClassId) const;
     ClassMapCP             GetClassMapCP (ECN::ECClassId classId) const;

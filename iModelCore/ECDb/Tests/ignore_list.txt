@@ -31,9 +31,3 @@ ECDbInstances.CommonGeometryJsonSerialization
 #TFS349028 (Affan)
 JoinedTableECDbMapStrategyTests.PopulateECSql_TestDbWithTestData
 
-#Abstract class with no concerete implementation is not supported
-JoinedTableECDbMapStrategyTests.MultiInheritence1
-ECDbMappingTestFixture.RelationshipWithAbstractClassAsConstraintOnParentEnd
-ECDbMappingTestFixture.RelationshipWithAbstractClassAsConstraintOnChildEnd
-ECDbSchemas.DiegoRelationshipTest
-

@@ -116,7 +116,7 @@ private:
 
     MapStatus CreateConstraintColumns(ECDbSqlColumn*& foreignKeyIdColumn, SchemaImportContext*, RelationshipMapInfo const&, ECN::ECRelationshipEnd constraintEnd, ECN::ECRelationshipConstraintCR);
     MapStatus CreateConstraintPropMaps (SchemaImportContext*, ECN::ECRelationshipEnd thisEnd, ECN::ECClassId defaultThisEndClassId, ECDbSqlColumn* const& otherEndECInstanceIdColumn, ECDbSqlColumn* const& otherEndECClassIdColumn, ECN::ECClassId defaultOtherEndClassId);
-    ECDbSqlColumn* ConfigureForeignECClassIdKey(SchemaImportContext*, RelationshipMapInfo const&, ECN::ECRelationshipConstraintCR otherEndConstraint, IClassMap const& otheEndClassMap, size_t otherEndTableCount);
+    ECDbSqlColumn* ConfigureForeignECClassIdKey(SchemaImportContext*, RelationshipMapInfo const&, ECN::ECRelationshipConstraintCR otherEndConstraint, ECDbSqlTable const& otheEndTable, size_t otherEndTableCount);
     ECN::ECRelationshipEnd GetOtherEnd () const;
 
     virtual BentleyStatus _Load (std::set<ClassMap const*>& loadGraph, ECDbClassMapInfo const& mapInfo, IClassMap const* parentClassMap) override;

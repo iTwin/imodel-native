@@ -719,26 +719,108 @@ std::vector<ECClassCP> ECDbMap::GetClassesFromRelationshipEnd (ECRelationshipCon
 +---------------+---------------+---------------+---------------+---------------+------*/
 size_t ECDbMap::GetTableCountOnRelationshipEnd(ECRelationshipConstraintCR relationshipEnd) const
     {
-    std::set<ECDbSqlTable const*> tables;
+    bool hasAnyClass;
+    std::set<IClassMap const*> classMaps = GetClassMapsFromRelationshipEnd(relationshipEnd, &hasAnyClass);
+
+    if (hasAnyClass)
+        return SIZE_MAX;
+
+    std::map<PersistenceType,std::set<ECDbSqlTable const*>> tables;
+
     std::vector<ECClassCP> classes = GetClassesFromRelationshipEnd(relationshipEnd);
-    for (ECClassCP ecClass : classes)
+    for (IClassMap const* classMap : classMaps)
+        {
+        tables[classMap->GetPrimaryTable().GetPersistenceType()].insert(&classMap->GetPrimaryTable());
+        }
+
+    if (tables[PersistenceType::Persisted].size() > 0)
+        return tables[PersistenceType::Persisted].size();
+
+    if (tables[PersistenceType::Virtual].size() > 0)
+        return 1;
+
+    return 0;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Affan.Khan                      12/2015
+//+---------------+---------------+---------------+---------------+---------------+------
+std::set<IClassMap const*>  ECDbMap::GetClassMapsFromRelationshipEnd( ECRelationshipConstraintCR relationshipEnd, bool* hasAnyClass) const
+    {
+    if (hasAnyClass)
+        *hasAnyClass = false;
+
+    std::set<IClassMap const*> classMaps;
+    for (auto ecClass : relationshipEnd.GetClasses())
         {
         if (ClassMap::IsAnyClass(*ecClass))
-            return SIZE_MAX;
+            {
+            if (hasAnyClass)
+                *hasAnyClass = true;
+
+            classMaps.clear();
+            return classMaps;
+            }
 
         IClassMap const* classMap = GetClassMap(*ecClass, false);
         if (classMap->GetMapStrategy().IsNotMapped())
             continue;
-        
-        if (classMap->GetPrimaryTable().GetPersistenceType() == PersistenceType::Virtual)
-            continue;
 
-        tables.insert(&classMap->GetPrimaryTable());
+        classMaps.insert(classMap);
+        if (classMap->GetMapStrategy().GetStrategy() != ECDbMapStrategy::Strategy::SharedTable && relationshipEnd.GetIsPolymorphic())
+            {
+            GetClassMapsFromRelationshipEnd(classMaps, *ecClass);
+            }
         }
 
-    return tables.size();
+    return classMaps;
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Affan.Khan                      12/2015
+//+---------------+---------------+---------------+---------------+---------------+------
+void ECDbMap::GetClassMapsFromRelationshipEnd(std::set<IClassMap const*>& classMaps, ECClassCR ecClass) const
+    {
+    for (auto ecClass : ecClass.GetDerivedClasses())
+        {
+        IClassMap const* classMap = GetClassMap(*ecClass, false);
+        if (classMap->GetMapStrategy().IsNotMapped())
+            continue;
+
+        classMaps.insert(classMap);
+        GetClassMapsFromRelationshipEnd(classMaps, *ecClass);
+        }
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Affan.Khan                      12/2015
+//+---------------+---------------+---------------+---------------+---------------+------
+ECDbSqlTable const* ECDbMap::GetFirstTableFromRelationshipEnd(ECRelationshipConstraintCR relationshipEnd) const
+    {
+    std::map<PersistenceType, std::set<ECDbSqlTable const*>> tables;
+    bool hasAnyClass;
+    std::set<IClassMap const*> classMaps = GetClassMapsFromRelationshipEnd(relationshipEnd, &hasAnyClass);
+
+    if (hasAnyClass)
+        return nullptr;
+        
+    for (IClassMap const* classMap : classMaps)
+        {
+        tables[classMap->GetSecondaryTable().GetPersistenceType()].insert(&classMap->GetSecondaryTable());
+        }
+
+    std::set<ECDbSqlTable const*>& persistedTables = tables[PersistenceType::Persisted];
+    std::set<ECDbSqlTable const*>& virtualTables = tables[PersistenceType::Virtual];
+
+    if (persistedTables.size() > 0)
+        {
+        return *persistedTables.begin();
+        }
+
+    if (tables[PersistenceType::Virtual].size() > 0)
+        return *virtualTables.begin();
+
+    return nullptr;
+    }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Krischan.Eberle                      06/2013
 //+---------------+---------------+---------------+---------------+---------------+------
