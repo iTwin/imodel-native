@@ -363,13 +363,13 @@ TEST_F(MissingHandlerTest, HandlerRestrictions)
     // Reopen the dgndb once more, with handlers loaded again
         {
         ScopedDgnHost host;
-        DgnDbPtr db = DgnDb::OpenDgnDb(nullptr, fullDgnDbFileName, DgnDb::OpenParams(BeSQLite::Db::OpenMode::ReadWrite));
-        ASSERT_TRUE(db.IsValid());
 
         // register domain and handlers
         MissingHandlerDomain domain;
         DgnDomains::RegisterDomain(domain);
-        domain.ImportSchema(*db, T_HOST.GetIKnownLocationsAdmin().GetDgnPlatformAssetsDirectory());
+
+        DgnDbPtr db = DgnDb::OpenDgnDb(nullptr, fullDgnDbFileName, DgnDb::OpenParams(BeSQLite::Db::OpenMode::ReadWrite));
+        ASSERT_TRUE(db.IsValid());
 
         // Confirm operations are all supported again now that handler is available
         TestRestrictions(m_elem1Info, *db, 0);
