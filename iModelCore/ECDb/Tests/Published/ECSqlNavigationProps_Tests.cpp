@@ -19,7 +19,7 @@ struct ECSqlNavigationPropertyTestFixture : ECDbTestFixture
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlNavigationPropertyTestFixture, InsertOnOneEnd_ForeignKeyMapping)
     {
- /*   ECDbR ecdb = SetupECDb("ecsqlnavprops.ecdb", BeFileName(L"ECSql_NavigationProperties.01.00.ecschema.xml"), 3, ECDb::OpenParams(Db::OpenMode::ReadWrite));
+    ECDbR ecdb = SetupECDb("ecsqlnavprops.ecdb", BeFileName(L"ECSql_NavigationProperties.01.00.ecschema.xml"), 3, ECDb::OpenParams(Db::OpenMode::ReadWrite));
 
     ECInstanceKey modelKey;
     {
@@ -32,13 +32,13 @@ TEST_F(ECSqlNavigationPropertyTestFixture, InsertOnOneEnd_ForeignKeyMapping)
     }
 
     {
-    ECSqlStatement stmt;
+    /*ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO np.DgnElement(Model,Code) VALUES(?,?)"));
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, modelKey.GetECInstanceId()));
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(2, "TestCode-1", IECSqlBinder::MakeCopy::No));
-    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());*/
     }
-    */
+    
     }
 
 END_ECDBUNITTESTS_NAMESPACE

@@ -1205,7 +1205,7 @@ bool ChangeExtractor::GetStructArrayParentFromChange(ECClassId& parentClassId, E
     int64_t propertyPathId = GetValueInt64FromChangeOrTable("ECPropertyPathId", instanceId);
     BeAssert(propertyPathId > 0);
 
-    Utf8CP sql = "SELECT ec_Property.ClassId, ec_Property.IsArray "
+    Utf8CP sql = "SELECT ec_Property.ClassId, ec_Property.Kind "
         "FROM ec_Property "
         "JOIN ec_PropertyPath ON ec_Property.Id = ec_PropertyPath.RootPropertyId "
         "WHERE ec_PropertyPath.Id = ?";
@@ -1217,7 +1217,7 @@ bool ChangeExtractor::GetStructArrayParentFromChange(ECClassId& parentClassId, E
 
     DbResult result = statement->Step();
     BeAssert(result == BE_SQLITE_ROW);
-    BeAssert(statement->GetValueInt(1) > 0 && "Expected a struct array property");
+    BeAssert(Enum::FromInt<ECPropertyKind> (statement->GetValueInt(1)) == ECPropertyKind::StructArray && "Expected a struct array property");
 
     parentClassId = (ECClassId) statement->GetValueInt64(0);
     BeAssert(parentClassId > 0);

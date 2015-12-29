@@ -64,70 +64,6 @@ BentleyStatus ECDbSchemaWriter::CreateBaseClassEntry(ECClassId ecClassId, ECClas
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        05/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ECDbSchemaWriter::CreateECPropertyEntry(ECPropertyCR ecProperty, ECPropertyId ecPropertyId, ECClassId ecClassId, int32_t index)
-    {
-    DbECPropertyInfo info;
-    info.ColsInsert =
-        DbECPropertyInfo::COL_Id           |
-        DbECPropertyInfo::COL_ClassId    |
-        DbECPropertyInfo::COL_IsArray      |
-        DbECPropertyInfo::COL_Description  |
-        DbECPropertyInfo::COL_Ordinal      |
-        DbECPropertyInfo::COL_IsReadonly   |
-        DbECPropertyInfo::COL_Name;
-
-    info.m_ecClassId    = ecClassId;
-    info.m_ecPropertyId = ecPropertyId;
-    info.m_isArray      = ecProperty.GetIsArray();
-    info.m_ordinal      = index;
-    info.m_isReadOnly   = ecProperty.GetIsReadOnly();
-    info.m_name = ecProperty.GetName().c_str();
-    info.m_description = ecProperty.GetDescription().c_str();
-    if (ecProperty.GetIsDisplayLabelDefined())
-        {
-        info.ColsInsert |= DbECPropertyInfo::COL_DisplayLabel;
-        info.m_displayLabel = ecProperty.GetDisplayLabel().c_str();
-        }
-    if (ecProperty.GetIsPrimitive())
-        {
-        info.ColsInsert |= DbECPropertyInfo::COL_PrimitiveType;
-        info.m_primitiveType = ecProperty.GetAsPrimitiveProperty()->GetType();            
-        }
-    else if( ecProperty.GetIsStruct())
-        {
-        info.ColsInsert |= DbECPropertyInfo::COL_StructType;
-        info.m_structType = ecProperty.GetAsStructProperty()->GetType().GetId();
-        }
-    else if( ecProperty.GetIsArray())
-        {
-        ArrayECPropertyCP arrayProperty = ecProperty.GetAsArrayProperty();
-        StructArrayECPropertyCP structArrayProperty = ecProperty.GetAsStructArrayProperty();
-        info.ColsInsert |= DbECPropertyInfo::COL_MinOccurs;
-        info.ColsInsert |= DbECPropertyInfo::COL_MaxOccurs;
-
-        if (nullptr == structArrayProperty)
-            {
-            info.ColsInsert |= DbECPropertyInfo::COL_PrimitiveType;
-            info.m_primitiveType = arrayProperty->GetPrimitiveElementType();            
-            }
-        else // ARRAYKIND_Struct
-            {
-            info.ColsInsert |= DbECPropertyInfo::COL_StructType;
-            info.m_structType = structArrayProperty->GetStructElementType()->GetId();
-            }
-
-        info.m_minOccurs = arrayProperty->GetMinOccurs ();
-        //until the max occurs bug in ECObjects (where GetMaxOccurs always returns "unbounded")
-        //has been fixed, we need to call GetStoredMaxOccurs to retrieve the proper max occurs
-        info.m_maxOccurs = arrayProperty->GetStoredMaxOccurs ();
-        }
-
-    return ECDbSchemaPersistence::InsertECProperty (m_ecdb, info);
-    }
-
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Affan.Khan        05/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus ECDbSchemaWriter::CreateECRelationshipConstraintEntry(ECClassId relationshipClassId, ECN::ECRelationshipConstraintR relationshipConstraint, ECRelationshipEnd endpoint)
     {
     DbECRelationshipConstraintInfo info;
@@ -395,7 +331,7 @@ BentleyStatus ECDbSchemaWriter::ImportECClass(ECN::ECClassCR ecClass)
     int propertyIndex = 0;
     for (ECPropertyCP ecProperty: ecClass.GetProperties(false))
         {
-        if (SUCCESS != ImportECProperty(*ecProperty, ecClassId, propertyIndex++))
+        if (SUCCESS != ImportECProperty(*ecProperty, propertyIndex++))
             {
             LOG.errorv("Failed to import ECProperty '%s' of ECClass '%s'.", ecProperty->GetName().c_str(), ecClass.GetFullName());
             return ERROR;
@@ -465,7 +401,7 @@ BentleyStatus ECDbSchemaWriter::ImportECRelationshipConstraint(ECClassId relClas
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        05/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ECDbSchemaWriter::ImportECProperty(ECN::ECPropertyCR ecProperty, ECClassId ecClassId, int32_t index)
+BentleyStatus ECDbSchemaWriter::ImportECProperty(ECN::ECPropertyCR ecProperty, int32_t index)
     {
     // GenerateId
     BeBriefcaseBasedId nextId;
@@ -489,8 +425,13 @@ BentleyStatus ECDbSchemaWriter::ImportECProperty(ECN::ECPropertyCR ecProperty, E
                 return ERROR;
             }
         }
+    else if (ecProperty.GetIsNavigation())
+        {
+        if (SUCCESS != ImportECClass(*ecProperty.GetAsNavigationPropertyCP()->GetRelationshipClass()))
+            return ERROR;
+        }
 
-    if (SUCCESS != CreateECPropertyEntry(ecProperty, ecPropertyId, ecClassId, index))
+    if (SUCCESS != ECDbSchemaPersistence::InsertECProperty(m_ecdb, ecProperty, index))
         return ERROR;
 
     return ImportCustomAttributes(ecProperty, ecPropertyId, ECContainerType::Property);

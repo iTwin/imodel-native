@@ -559,14 +559,14 @@ Db& db
         "Name TEXT NOT NULL, "
         "DisplayLabel TEXT, "
         "Description TEXT, "
-        "Ordinal INTEGER, "
-        "IsArray BOOL NOT NULL CHECK (IsArray IN (0, 1)), "
-        "PrimitiveType INTEGER, "
-        "StructType INTEGER REFERENCES ec_Class(Id) ON DELETE CASCADE, "
         "IsReadonly BOOL NOT NULL CHECK (IsReadonly IN (0, 1)), "
-        "MinOccurs INTEGER,"
-        "MaxOccurs INTEGER"
-        ");");
+        "Kind INTEGER NOT NULL,"
+        "Ordinal INTEGER, "
+        "PrimitiveType INTEGER, "
+        "NonPrimitiveType INTEGER REFERENCES ec_Class(Id) ON DELETE CASCADE, "
+        "ArrayMinOccurs INTEGER,"
+        "ArrayMaxOccurs INTEGER,"
+        "NavigationPropertyDirection INTEGER);");
 
     if (stat != BE_SQLITE_OK)
         return stat;
