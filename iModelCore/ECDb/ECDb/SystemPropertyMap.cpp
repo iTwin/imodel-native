@@ -98,7 +98,7 @@ PropertyMapPtr PropertyMapECInstanceId::Create (ECDbSchemaManagerCR schemaManage
         return nullptr;
 
     std::vector<ECDbSqlColumn const*> systemColumns;
-    if (classMap.GetSecondaryTable ().GetFilteredColumnList (systemColumns, ColumnKind::ECInstanceId) == BentleyStatus::ERROR)
+    if (classMap.GetJoinedTable ().GetFilteredColumnList (systemColumns, ColumnKind::ECInstanceId) == BentleyStatus::ERROR)
         {
         BeAssert (false && "PropertyMapECInstanceId::Create> Table is expected to have primary key columns.");
         return nullptr;
@@ -160,7 +160,7 @@ PropertyMapPtr PropertyMapStructArrayTableKey::Create (ECDbSchemaManagerCR schem
         return nullptr;
 
     std::vector<ECDbSqlColumn const*> systemColumns;  
-    if (classMap.GetSecondaryTable().GetFilteredColumnList (systemColumns, ColumnKind::NonRelSystemColumn) == BentleyStatus::ERROR)
+    if (classMap.GetJoinedTable().GetFilteredColumnList (systemColumns, ColumnKind::NonRelSystemColumn) == BentleyStatus::ERROR)
         {
         BeAssert (false && "PropertyMapECInstanceId::Create> Table is expected to have primary key columns.");
         return nullptr;
@@ -367,7 +367,7 @@ ECDbSqlTable* table
     auto kind = constraintEnd == ECN::ECRelationshipEnd_Source ? ECSqlSystemProperty::SourceECClassId : ECSqlSystemProperty::TargetECClassId;
     auto prop = ECDbSystemSchemaHelper::GetSystemProperty (schemaManager, kind);
     PRECONDITION (prop != nullptr, nullptr);
-    return new PropertyMapRelationshipConstraintClassId (*prop, column, kind, defaultSourceECClassId, &classMap.GetSecondaryTable(), viewColumnAlias, table);
+    return new PropertyMapRelationshipConstraintClassId (*prop, column, kind, defaultSourceECClassId, &classMap.GetJoinedTable(), viewColumnAlias, table);
     }
 
 //---------------------------------------------------------------------------------------

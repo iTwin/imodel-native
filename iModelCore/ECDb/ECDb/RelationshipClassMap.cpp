@@ -272,7 +272,7 @@ ECDbSqlColumn* RelationshipClassEndTableMap::ConfigureForeignECClassIdKey(Schema
     RelationshipEndColumns const& constraintColumnsMapping = GetEndColumnsMapping(mapInfo);
     Utf8String classIdColName(constraintColumnsMapping.GetECClassIdColumnName());
     if (classIdColName.empty() &&
-        !GetOtherEndECClassIdColumnName(classIdColName, GetSecondaryTable(), true))
+        !GetOtherEndECClassIdColumnName(classIdColName, GetJoinedTable(), true))
         return nullptr;
 
     ColumnKind columnId = GetThisEnd () == ECRelationshipEnd::ECRelationshipEnd_Source ? ColumnKind::TargetECClassId : ColumnKind::SourceECClassId;

@@ -916,9 +916,9 @@ ECDbMapAnalyser::Storage& ECDbMapAnalyser::GetStorage (Utf8CP tableName)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Affan.Khan                         09/2015
 //---------------------------------------------------------------------------------------
-ECDbMapAnalyser::Storage& ECDbMapAnalyser::GetStorage (ClassMapCR classMap)
+ECDbMapAnalyser::Storage& ECDbMapAnalyser::GetStorage(ClassMapCR classMap)
     {
-    return GetStorage (classMap.GetSecondaryTable ().GetName ().c_str ());
+    return GetStorage(classMap.GetJoinedTable().GetName().c_str());
     }
 
 //---------------------------------------------------------------------------------------
@@ -927,9 +927,7 @@ ECDbMapAnalyser::Storage& ECDbMapAnalyser::GetStorage (ClassMapCR classMap)
 ECDbMapAnalyser::Class& ECDbMapAnalyser::GetClass (ClassMapCR classMap)
     {
     if (classMap.GetClass ().GetRelationshipClassCP () != nullptr)
-        {
         return GetRelationship (static_cast<RelationshipClassMapCR>(classMap));
-        }
 
     auto itor = m_classes.find (classMap.GetClass ().GetId ());
     if (itor != m_classes.end ())
@@ -950,8 +948,8 @@ ECDbMapAnalyser::Class& ECDbMapAnalyser::GetClass (ClassMapCR classMap)
     storage.GetClassesR ().insert (ptr);
     if (classMap.HasJoinedTable())
         {
-        auto& storage = GetStorage(classMap.GetSecondaryTable().GetName().c_str());
-        for (auto id : classMap.GetStorageDescription().GetVerticalPartition(classMap.GetSecondaryTable())->GetClassIds())
+        auto& storage = GetStorage(classMap.GetJoinedTable().GetName().c_str());
+        for (auto id : classMap.GetStorageDescription().GetVerticalPartition(classMap.GetJoinedTable())->GetClassIds())
             {
             auto refClassMap = GetClassMap(id);
             BeAssert(refClassMap != nullptr);
@@ -981,31 +979,31 @@ ECDbMapAnalyser::Class& ECDbMapAnalyser::GetClass (ClassMapCR classMap)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Affan.Khan                         09/2015
 //---------------------------------------------------------------------------------------
-ECDbMapAnalyser::Relationship&  ECDbMapAnalyser::GetRelationship (RelationshipClassMapCR classMap)
+ECDbMapAnalyser::Relationship&  ECDbMapAnalyser::GetRelationship(RelationshipClassMapCR classMap)
     {
-    auto itor = m_relationships.find (classMap.GetClass ().GetId ());
-    if (itor != m_relationships.end ())
-        return *(itor->second.get ());
+    auto itor = m_relationships.find(classMap.GetClass().GetId());
+    if (itor != m_relationships.end())
+        return *(itor->second.get());
 
-    Storage& storage = GetStorage (classMap);
-    m_relationships[classMap.GetClass ().GetId ()] = Relationship::Ptr (new Relationship (classMap, GetStorage (classMap), nullptr));
-    auto ptr = m_relationships[classMap.GetClass ().GetId ()].get ();
-    if (classMap.GetParentMapClassId () != 0LL)
+    Storage& storage = GetStorage(classMap);
+    m_relationships[classMap.GetClass().GetId()] = Relationship::Ptr(new Relationship(classMap, GetStorage(classMap), nullptr));
+    auto ptr = m_relationships[classMap.GetClass().GetId()].get();
+    if (classMap.GetParentMapClassId() != 0LL)
         {
-        ptr->SetParent (GetClass (*GetClassMap (classMap.GetParentMapClassId ())));
+        ptr->SetParent(GetClass(*GetClassMap(classMap.GetParentMapClassId())));
         }
 
 
-    for (auto& part : classMap.GetStorageDescription ().GetHorizontalPartitions ())
+    for (auto& part : classMap.GetStorageDescription().GetHorizontalPartitions())
         {
-        auto& storage = GetStorage (part.GetTable ().GetName ().c_str ());
-        for (auto id : part.GetClassIds ())
+        auto& storage = GetStorage(part.GetTable().GetName().c_str());
+        for (auto id : part.GetClassIds())
             {
-            ptr->GetPartitionsR ()[&storage].insert (&GetClass (*GetClassMap (id)));
+            ptr->GetPartitionsR()[&storage].insert(&GetClass(*GetClassMap(id)));
             }
         }
-    storage.GetRelationshipsR ().insert (ptr);
-    auto isForward = classMap.GetRelationshipClass ().GetStrengthDirection () == ECRelatedInstanceDirection::Forward;
+    storage.GetRelationshipsR().insert(ptr);
+    auto isForward = classMap.GetRelationshipClass().GetStrengthDirection() == ECRelatedInstanceDirection::Forward;
     bool hasRootOfJoinedTableSource = false;
     bool hasRootOfJoinedTableTarget = false;
 
@@ -1024,11 +1022,11 @@ ECDbMapAnalyser::Relationship&  ECDbMapAnalyser::GetRelationship (RelationshipCl
                 }
             }
         }
-    for (auto& key : m_map.GetLightweightCache ().GetRelationships (classMap.GetClass ().GetId ()))
+    for (auto& key : m_map.GetLightweightCache().GetRelationships(classMap.GetClass().GetId()))
         {
         auto constraintMap = GetClassMap(key.first);
 
-        auto& constraitClass = GetClass (*constraintMap);
+        auto& constraitClass = GetClass(*constraintMap);
         if (Enum::Contains(key.second, ECDbMap::LightweightCache::RelationshipEnd::Source))
             {
             if (!(constraintMap->HasJoinedTable() && hasRootOfJoinedTableSource))
@@ -1051,18 +1049,18 @@ ECDbMapAnalyser::Relationship&  ECDbMapAnalyser::GetRelationship (RelationshipCl
             }
         }
 
-    for (auto from : ptr->From ().GetStorages ())
+    for (auto from : ptr->From().GetStorages())
         {
-        for (auto to : ptr->To ().GetStorages ())
+        for (auto to : ptr->To().GetStorages())
             {
-            switch (ptr->GetPersistanceLocation ())
+            switch (ptr->GetPersistanceLocation())
                 {
-                case Relationship::PersistanceLocation::From:
-                    const_cast<Storage *>(to)->CascadesTo ()[const_cast<Storage*>(from)].insert (ptr); break;
-                case Relationship::PersistanceLocation::To:
-                    const_cast<Storage *>(from)->CascadesTo ()[const_cast<Storage*>(to)].insert (ptr); break;
-                case Relationship::PersistanceLocation::Self:
-                    const_cast<Storage *>(from)->CascadesTo ()[const_cast<Storage*>(to)].insert (ptr); break;
+                    case Relationship::PersistanceLocation::From:
+                        const_cast<Storage *>(to)->CascadesTo()[const_cast<Storage*>(from)].insert(ptr); break;
+                    case Relationship::PersistanceLocation::To:
+                        const_cast<Storage *>(from)->CascadesTo()[const_cast<Storage*>(to)].insert(ptr); break;
+                    case Relationship::PersistanceLocation::Self:
+                        const_cast<Storage *>(from)->CascadesTo()[const_cast<Storage*>(to)].insert(ptr); break;
                 }
             }
         }
@@ -1093,18 +1091,18 @@ BentleyStatus ECDbMapAnalyser::AnalyseClass (ClassMapCR ecClassMap)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Affan.Khan                         09/2015
 //---------------------------------------------------------------------------------------
-void ECDbMapAnalyser::AnalyseStruct (Class& classInfo)
+void ECDbMapAnalyser::AnalyseStruct(Class& classInfo)
     {
     std::map<IClassMap const*, std::vector<PropertyMapStructArrayCP>> structPropertyMaps;
-    classInfo.GetClassMap ().GetPropertyMaps ().Traverse ([&] (TraversalFeedback& feedback, PropertyMapCP propertyMap)
+    classInfo.GetClassMap().GetPropertyMaps().Traverse([&] (TraversalFeedback& feedback, PropertyMapCP propertyMap)
         {
         if (auto mapToTable = propertyMap->GetAsPropertyMapStructArray())
             {
-            if (auto associatedClasMap = m_map.GetClassMap (mapToTable->GetElementType ()))
+            if (auto associatedClasMap = m_map.GetClassMap(mapToTable->GetElementType()))
                 {
-                if (associatedClasMap->GetSecondaryTable().GetPersistenceType () == PersistenceType::Persisted)
+                if (associatedClasMap->GetJoinedTable().GetPersistenceType() == PersistenceType::Persisted)
                     {
-                    structPropertyMaps[associatedClasMap].push_back (mapToTable);
+                    structPropertyMaps[associatedClasMap].push_back(mapToTable);
                     }
                 }
             }
@@ -1113,23 +1111,23 @@ void ECDbMapAnalyser::AnalyseStruct (Class& classInfo)
 
     for (auto& key : structPropertyMaps)
         {
-        auto& elementType = static_cast<Struct&>(GetClass (static_cast<ClassMap const&>(*key.first)));
-        classInfo.GetStorageR ().StructCascadeTo ().insert (&elementType);
+        auto& elementType = static_cast<Struct&>(GetClass(static_cast<ClassMap const&>(*key.first)));
+        classInfo.GetStorageR().StructCascadeTo().insert(&elementType);
         }
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Affan.Khan                         09/2015
 //---------------------------------------------------------------------------------------
-BentleyStatus ECDbMapAnalyser::AnalyseRelationshipClass (RelationshipClassMapCR ecRelationshipClassMap)
+BentleyStatus ECDbMapAnalyser::AnalyseRelationshipClass(RelationshipClassMapCR ecRelationshipClassMap)
     {
-    auto& ptr = GetRelationship (ecRelationshipClassMap);
-    if (!ptr.InQueue ())
-        return BentleyStatus::SUCCESS;
+    auto& ptr = GetRelationship(ecRelationshipClassMap);
+    if (!ptr.InQueue())
+        return SUCCESS;
 
 
-    ptr.Done ();
-    return BentleyStatus::SUCCESS;
+    ptr.Done();
+    return SUCCESS;
     }
 
 //---------------------------------------------------------------------------------------
@@ -1203,14 +1201,6 @@ void ECDbMapAnalyser::SetupDerivedClassLookup ()
     stmt.Prepare (GetMap ().GetECDbR (), sql0);
     while (stmt.Step () == BE_SQLITE_ROW)
         m_derivedClassLookup[stmt.GetValueInt64 (0)].insert (stmt.GetValueInt64 (1));
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                 Affan.Khan                         09/2015
-//---------------------------------------------------------------------------------------
-ECDbMapAnalyser::ECDbMapAnalyser (ECDbMapR ecdbMap)
-    :m_map (ecdbMap)
-    {
     }
 
 //---------------------------------------------------------------------------------------
@@ -1443,7 +1433,7 @@ SqlViewBuilder ECDbMapAnalyser::BuildView (Class& nclass)
                 select.Append (", ");
             }
 
-        select.Append (" FROM ").AppendEscaped (firstChildMap->GetSecondaryTable().GetName ().c_str ());
+        select.Append (" FROM ").AppendEscaped (firstChildMap->GetJoinedTable().GetName ().c_str ());
         ECDbSqlColumn const* classIdColumn = nullptr;
         if (hp.GetTable ().TryGetECClassIdColumn(classIdColumn))
             {
@@ -1658,7 +1648,7 @@ DbResult ECDbMapAnalyser::UpdateHoldingView ()
             }
 
         auto holdingRelationshipClassMap = static_cast<RelationshipClassMapCP>(m_map.GetClassMap (*holdingRelationshipClass));
-        if (holdingRelationshipClassMap == nullptr || holdingRelationshipClassMap->GetSecondaryTable().GetPersistenceType () == PersistenceType::Virtual)
+        if (holdingRelationshipClassMap == nullptr || holdingRelationshipClassMap->GetJoinedTable().GetPersistenceType () == PersistenceType::Virtual)
             continue;
 
 
@@ -1675,7 +1665,7 @@ DbResult ECDbMapAnalyser::UpdateHoldingView ()
             filter = ECDbMap::LightweightCache::RelationshipEnd::Target;
             }
 
-        auto table = &holdingRelationshipClassMap->GetSecondaryTable();
+        ECDbSqlTable const* table = &holdingRelationshipClassMap->GetJoinedTable();
         auto itor = doneSet.find (table);
         if (itor == doneSet.end () || (((int)(itor->second) & (int)filter) == 0))
             {
@@ -2200,9 +2190,9 @@ BentleyStatus ECClassViewGenerator::BuildEndTableRelationshipView(NativeSqlBuild
             return BentleyStatus::ERROR;
             }
         sqlBuilder.AppendEOL();
-        sqlBuilder.Append(" FROM ").AppendEscaped(endClassMap->GetSecondaryTable().GetName().c_str());
+        sqlBuilder.Append(" FROM ").AppendEscaped(endClassMap->GetJoinedTable().GetName().c_str());
 
-        Utf8String tableAlias = endClassMap->GetSecondaryTable().GetName();
+        Utf8String tableAlias = endClassMap->GetJoinedTable().GetName();
 
         if (BuildRelationshipJoinIfAny(sqlBuilder, *endClassMap, ECRelationshipEnd::ECRelationshipEnd_Source, topLevel) != BentleyStatus::SUCCESS)
             return BentleyStatus::ERROR;

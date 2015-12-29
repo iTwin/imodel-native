@@ -571,11 +571,11 @@ ECDbMap::ClassMapByTable ECDbMap::GetClassMapByTable() const
             entry.second->GetClassMapType() == IClassMap::Type::Unmapped)
             continue;
 
-        auto primaryTable = &entry.second->GetPrimaryTable();
-        auto secondaryTable = &entry.second->GetSecondaryTable();
+        ECDbSqlTable* primaryTable = &entry.second->GetPrimaryTable();
+        ECDbSqlTable* joinedTable = &entry.second->GetJoinedTable();
         map[primaryTable].insert(entry.second.get());
-        if (primaryTable != secondaryTable)
-            map[secondaryTable].insert(entry.second.get());
+        if (primaryTable != joinedTable)
+            map[joinedTable].insert(entry.second.get());
         }
 
     return map;
@@ -805,7 +805,7 @@ ECDbSqlTable const* ECDbMap::GetFirstTableFromRelationshipEnd(ECRelationshipCons
         
     for (IClassMap const* classMap : classMaps)
         {
-        tables[classMap->GetSecondaryTable().GetPersistenceType()].insert(&classMap->GetSecondaryTable());
+        tables[classMap->GetJoinedTable().GetPersistenceType()].insert(&classMap->GetJoinedTable());
         }
 
     std::set<ECDbSqlTable const*>& persistedTables = tables[PersistenceType::Persisted];

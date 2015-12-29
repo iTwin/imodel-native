@@ -387,7 +387,7 @@ struct ECDbMapAnalyser
         ViewInfo* GetViewInfoForClass(Class const& nclass);
 
     public:
-        explicit ECDbMapAnalyser(ECDbMapR ecdbMap);
+        explicit ECDbMapAnalyser(ECDbMapR ecdbMap) : m_map(ecdbMap) {}
         BentleyStatus Analyse(bool applyChanges);
     };
 
