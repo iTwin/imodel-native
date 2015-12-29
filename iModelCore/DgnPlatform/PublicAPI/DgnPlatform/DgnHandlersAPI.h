@@ -12,5 +12,6 @@
 #include "DgnCoreAPI.h"
 #include <Geom/GeomApi.h>
 #include "IManipulator.h"
+#include "SimplifyGraphic.h"
 
 /** @endcond */
