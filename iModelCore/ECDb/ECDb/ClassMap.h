@@ -147,10 +147,7 @@ public:
 
     IClassMap const& GetView (View classView) const;
 
-    IClassMap const* FindClassMapOfParentOfJoinedTable() const;
-    BentleyStatus GetPathToParentOfJoinedTable(std::vector<IClassMap const*>& path) const;
-
-    const std::set<ECDbSqlTable const*> GetJoinedTables() const;
+    TableListR GetTables() const { return _GetTables(); }
     ECDbSqlTable& GetPrimaryTable() const { BeAssert(!GetTables().empty()); return *GetTables().front(); }
     ECDbSqlTable& GetJoinedTable() const { BeAssert(!GetTables().empty()); return *GetTables().back(); }
     bool IsMappedTo(ECDbSqlTable const& table) const
@@ -159,6 +156,9 @@ public:
         return std::find(tables.begin(), tables.end(), &table) != tables.end();
         }
     bool IsMappedToSingleTable() const { return GetTables().size() == 1; }
+    IClassMap const* FindClassMapOfParentOfJoinedTable() const;
+    BentleyStatus GetPathToParentOfJoinedTable(std::vector<IClassMap const*>& path) const;
+
     PropertyMapCP GetPropertyMap (Utf8CP propertyName) const;
 
     //! Returns a collection of this class map's property maps.
@@ -168,7 +168,6 @@ public:
     //! Returns the class maps of the classes derived from this class map's class.
     //! @eturn Derived classes class maps
     std::vector<IClassMap const*> GetDerivedClassMaps () const;
-    TableListR GetTables() const { return _GetTables(); }
 
     //! Checks whether this class map contains a property map of type PropertyMapToTable.
     //! @return true, if the class map contains a PropertyMapToTable map. false otherwise.

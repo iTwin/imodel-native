@@ -286,30 +286,6 @@ IClassMap const* IClassMap::FindClassMapOfParentOfJoinedTable() const
     return nullptr;
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                         Affan.Khan  10/2015
-//---------------------------------------------------------------------------------------
-const std::set<ECDbSqlTable const*> IClassMap::GetJoinedTables() const
-    {
-    std::set<ECDbSqlTable const*> secondaryTables;
-    GetPropertyMaps().Traverse([&secondaryTables, this] (TraversalFeedback& feedback, PropertyMapCP propMap)
-        {
-        if (!propMap->IsVirtual())
-            {
-            if (auto column = propMap->GetFirstColumn())
-                {
-                if (&column->GetTable() != &GetJoinedTable())
-                    {
-                    if (secondaryTables.find(&column->GetTable()) == secondaryTables.end())
-                        secondaryTables.insert(&column->GetTable());
-                    }
-                }
-            }
-        feedback = TraversalFeedback::Next;
-        }, true);
-
-    return secondaryTables;
-    }
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    casey.mullen      11/2012
 +---------------+---------------+---------------+---------------+---------------+------*/

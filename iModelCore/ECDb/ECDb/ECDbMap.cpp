@@ -719,7 +719,7 @@ std::vector<ECClassCP> ECDbMap::GetClassesFromRelationshipEnd (ECRelationshipCon
 +---------------+---------------+---------------+---------------+---------------+------*/
 size_t ECDbMap::GetTableCountOnRelationshipEnd(ECRelationshipConstraintCR relationshipEnd) const
     {
-    bool hasAnyClass;
+    bool hasAnyClass = false;
     std::set<IClassMap const*> classMaps = GetClassMapsFromRelationshipEnd(relationshipEnd, &hasAnyClass);
 
     if (hasAnyClass)

@@ -1133,7 +1133,7 @@ BentleyStatus ECDbMapAnalyser::AnalyseRelationshipClass(RelationshipClassMapCR e
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Affan.Khan                         09/2015
 //---------------------------------------------------------------------------------------
-const std::vector<ECN::ECClassId> ECDbMapAnalyser::GetRootClassIds () const
+std::vector<ECN::ECClassId> ECDbMapAnalyser::GetRootClassIds () const
     {
     Utf8String sql;
     sql.Sprintf("SELECT C.Id FROM ec_Class C "
@@ -1153,7 +1153,7 @@ const std::vector<ECN::ECClassId> ECDbMapAnalyser::GetRootClassIds () const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Affan.Khan                         09/2015
 //---------------------------------------------------------------------------------------
-const std::vector<ECN::ECClassId> ECDbMapAnalyser::GetRelationshipClassIds () const
+std::vector<ECN::ECClassId> ECDbMapAnalyser::GetRelationshipClassIds () const
     {
     Utf8String sql;
     sql.Sprintf("SELECT C.Id FROM ec_Class C "
@@ -1218,54 +1218,54 @@ ECDbMapAnalyser::ViewInfo* ECDbMapAnalyser::GetViewInfoForClass (Class const& nc
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Affan.Khan                         09/2015
 //---------------------------------------------------------------------------------------
-const NativeSqlBuilder ECDbMapAnalyser::GetClassFilter (std::pair<ECDbMapAnalyser::Storage const*, std::set<ECDbMapAnalyser::Class const*>> const& partition)
+NativeSqlBuilder ECDbMapAnalyser::GetClassFilter(std::pair<ECDbMapAnalyser::Storage const*, std::set<ECDbMapAnalyser::Class const*>> const& partition)
     {
     auto storage = partition.first;
     auto& classes = partition.second;
-    std::set<ECN::ECClassId> classSet;
-    std::set<ECN::ECClassId> classSubset;
-    std::set<ECN::ECClassId> classSubsetNotIn;
+    std::set<ECN::ECClassId> classIdSet;
+    std::set<ECN::ECClassId> classIdSubset;
+    std::set<ECN::ECClassId> classIdSubsetNotIn;
     NativeSqlBuilder sql;
-    for (auto c : storage->GetClasses ())
-        classSet.insert (c->GetClassMap ().GetClass ().GetId ());
+    for (Class const* c : storage->GetClasses())
+        classIdSet.insert(c->GetClassMap().GetClass().GetId());
 
-    for (auto c : classes)
+    for (Class const* c : classes)
         {
-        BeAssert (classSet.find (c->GetClassMap ().GetClass ().GetId ()) != classSet.end ());
-        classSubset.insert (c->GetClassMap ().GetClass ().GetId ());
+        BeAssert(classIdSet.find(c->GetClassMap().GetClass().GetId()) != classIdSet.end());
+        classIdSubset.insert(c->GetClassMap().GetClass().GetId());
         }
 
-    for (auto c : classSet)
+    for (ECClassId classId : classIdSet)
         {
-        if (classSubset.find (c) == classSubset.end ())
-            classSubsetNotIn.insert (c);
+        if (classIdSubset.find(classId) == classIdSubset.end())
+            classIdSubsetNotIn.insert(classId);
         }
 
 
-    if (classSubset.size () <= classSubsetNotIn.size () || classSubsetNotIn.empty ())
+    if (classIdSubset.size() <= classIdSubsetNotIn.size() || classIdSubsetNotIn.empty())
         {
-        sql.Append ("IN (");
-        for (auto id : classSubset)
+        sql.Append("IN (");
+        for (ECClassId id : classIdSubset)
             {
-            sql.Append (id);
-            if (id != *(classSubset.rbegin ()))
-                sql.Append (",");
+            sql.Append(id);
+            if (id != *(classIdSubset.rbegin()))
+                sql.Append(",");
             }
-        sql.Append (")");
+        sql.Append(")");
         }
     else
         {
-        sql.Append (" NOT IN (");
-        for (auto id : classSubsetNotIn)
+        sql.Append(" NOT IN (");
+        for (ECClassId id : classIdSubsetNotIn)
             {
-            sql.Append (id);
-            if (id != *(classSubsetNotIn.rbegin ()))
-                sql.Append (",");
+            sql.Append(id);
+            if (id != *(classIdSubsetNotIn.rbegin()))
+                sql.Append(",");
             }
-        sql.Append (")");
+        sql.Append(")");
         }
 
-    return std::move (sql);
+    return std::move(sql);
     }
 
 //---------------------------------------------------------------------------------------
