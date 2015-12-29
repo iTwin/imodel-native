@@ -29,6 +29,7 @@ QueryViewController::QueryViewController(DgnDbR dgndb, DgnViewId id) : CameraVie
     m_maxToDrawInDynamicUpdate = MAX_TO_DRAW_IN_DYNAMIC_UPDATE;
     m_intermediatePaintsThreshold = 0;
     m_maxDrawnInDynamicUpdate = 0;
+    m_maxElementMemory = 0;
     m_noQuery = false;
     m_secondaryHitLimit = 0;
     }
@@ -222,7 +223,7 @@ void QueryViewController::StartSelectProcessing(DgnViewportR viewport, DrawPurpo
     m_forceNewQuery = false;
 
     m_queryModel.GetDgnDb().QueryModels().RequestProcessing(
-        QueryModel::Processor::Params(m_queryModel, viewport, _GetRTreeMatchSql(viewport), hitLimit, GetMaxElementMemory(), minimumPixels,
+        QueryModel::Processor::Params(m_queryModel, viewport, _GetRTreeMatchSql(viewport), hitLimit, ComputeMaxElementMemory(viewport), minimumPixels,
             m_alwaysDrawn.empty() ? nullptr : &m_alwaysDrawn, m_neverDrawn.empty() ? nullptr : &m_neverDrawn, m_noQuery,
             GetClipVector().get(), m_secondaryHitLimit, m_secondaryVolume));
 
@@ -652,19 +653,29 @@ void QueryViewController::_VisitElements(ViewContextR context)
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    12/2015
+//---------------------------------------------------------------------------------------
+uint64_t QueryViewController::GetMaxElementMemory()
+    {
+    BeAssert(m_maxElementMemory != 0);
+    return m_maxElementMemory != 0 ? m_maxElementMemory : 20 * 1024 * 1024;
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    02/2013
 //---------------------------------------------------------------------------------------
 #if defined (_X64_)
-uint64_t QueryViewController::GetMaxElementMemory()
+uint64_t QueryViewController::ComputeMaxElementMemory(DgnViewportCR vp)
     {
     uint64_t oneGig = 1024 * 1024 * 1024;
-    return 8 * oneGig;
+    m_maxElementMemory = 8 * oneGig;
+    return m_maxElementMemory;
     }
 #else
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    02/2013
 //---------------------------------------------------------------------------------------
-uint64_t QueryViewController::GetMaxElementMemory()
+uint64_t QueryViewController::ComputeMaxElementMemory(DgnViewportCR vp)
     {
     uint64_t oneMeg = 1024 * 1024;
 #if defined (BENTLEY_WIN32) || defined (BENTLEY_WINRT)
@@ -674,7 +685,7 @@ uint64_t QueryViewController::GetMaxElementMemory()
 #endif
     baseValue *= oneMeg;
 
-    int32_t inputFactor = _GetMaxElementFactor();
+    int32_t inputFactor = _GetMaxElementFactor(vp);
     bool decrease = false;
     if (inputFactor < 0)
         {
@@ -698,6 +709,7 @@ uint64_t QueryViewController::GetMaxElementMemory()
         baseValue += static_cast <uint64_t> (static_cast <double> (incrementRange) * maxMemoryFactor);
         }
 
+    m_maxElementMemory = baseValue;
     return baseValue;
     }
 #endif
@@ -741,7 +753,7 @@ int32_t QueryViewController::_GetMaxElementFactor(DgnViewportCR vp)
     // How many queries do we want to be able to complete per second
     static const double s_acceptableQueriesPerSecond = 30.0;
     // Elapsed query time required to satisfy QPS
-    static const double s_acceptableQueryTime = 1.0 / s_acceptableQueriesPerSecond;
+    //  static const double s_acceptableQueryTime = 1.0 / s_acceptableQueriesPerSecond;
     // Reduce pop-in/out of elements due to small fluctuations in query time
     static const int32_t s_granularity = 5;
 

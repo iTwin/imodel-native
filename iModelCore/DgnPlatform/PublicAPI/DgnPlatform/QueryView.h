@@ -42,6 +42,7 @@ protected:
     uint32_t    m_intermediatePaintsThreshold;
     uint32_t    m_maxToDrawInDynamicUpdate;
     uint32_t    m_maxDrawnInDynamicUpdate;
+    uint64_t    m_maxElementMemory;
     Frustum     m_startQueryFrustum;
     Frustum     m_saveQueryFrustum;
     QueryModelR m_queryModel;
@@ -162,7 +163,7 @@ __PUBLISH_INSERT_FILE__  QueryView_GetRTreeMatchSql.sampleCode
 
     //! Return the maximum number of bytes of memory that should be used to hold loaded element data. Element data may exceed this limit at times and is trimmed back at intervals.
     //! It is recommended that applications use this default implementation and instead control memory usage by overriding _GetMaxElementFactor
-    virtual uint64_t _GetMaxElementMemory() {return GetMaxElementMemory();}
+    virtual uint64_t _GetMaxElementMemory(DgnViewportCR vp) {return ComputeMaxElementMemory(vp);}
 
 public:
     //! Construct the view controller.                          
@@ -175,7 +176,10 @@ public:
     void SetForceNewQuery(bool newValue) { m_forceNewQuery = newValue; }
 //__PUBLISH_SECTION_START__
 
-    //! Return the maximum number of bytes of memory that should be used to hold loaded element data. Element data may exceed this limit at times and is trimmed back at intervals.
+    //! Computes and returns the maximum number of bytes of memory that should be used to hold loaded element data. Element data may exceed this limit at times and is trimmed back at intervals.
+    DGNPLATFORM_EXPORT uint64_t ComputeMaxElementMemory(DgnViewportCR vp);
+
+    //! Returns the value computed on the last call to ComputeMaxElementMemory;
     DGNPLATFORM_EXPORT uint64_t GetMaxElementMemory();
 
     //! Return the maximum number of elements to hold in the associated QueryModel.

@@ -468,6 +468,7 @@ static bool wireframe_collectRules(DgnRuledSweepDetailR detail, bvector<DSegment
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  03/13
 +---------------+---------------+---------------+---------------+---------------+------*/
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
 static void clearCurveVectorIds(CurveVectorCR curveVector)
     {
     for (ICurvePrimitivePtr curve: curveVector)
@@ -478,6 +479,7 @@ static void clearCurveVectorIds(CurveVectorCR curveVector)
             clearCurveVectorIds(*curve->GetChildCurveVectorP ());
         }
     }
+#endif
 
 /*----------------------------------------------------------------------------------*//**
 * @bsimethod                                                    Ray.Bentley     10/2012

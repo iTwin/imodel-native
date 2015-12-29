@@ -8,7 +8,9 @@
 #include <DgnPlatformInternal.h>
 #include <Geom/eigensys3d.fdf>
 
-static int s_flatten = 2; // 0 = don't flatten, 1 = flatten and draw on natural plane, 2 = flatten and draw on foremost section plane
+#if defined(NEEDS_WORK_CONTINUOUS_RENDER)
+    static int s_flatten = 2; // 0 = don't flatten, 1 = flatten and draw on natural plane, 2 = flatten and draw on foremost section plane
+#endif
 
 #if defined (NEEDS_WORK_ELEMENTS_API)
 //---------------------------------------------------------------------------------------

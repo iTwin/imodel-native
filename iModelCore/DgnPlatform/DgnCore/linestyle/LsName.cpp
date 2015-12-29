@@ -17,7 +17,9 @@ static DgnHost::Key s_systemLsFileInfoKey;
 struct LineStyleRangeCollector : IGeometryProcessor
 {
 private:
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     GeometrySourceCR    m_stroker;
+#endif
     DRange3d            m_range;
     ViewContextP        m_context;
     Transform           m_currentTransform;
@@ -27,7 +29,10 @@ protected:
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    08/2015
 //---------------------------------------------------------------------------------------
-explicit LineStyleRangeCollector(GeometrySourceCR stroker) : m_stroker(stroker) 
+explicit LineStyleRangeCollector(GeometrySourceCR stroker) 
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
+: m_stroker(stroker) 
+#endif
     {
     m_range.Init();
     m_currentTransform.InitIdentity();
