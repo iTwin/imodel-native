@@ -751,9 +751,9 @@ std::set<IClassMap const*>  ECDbMap::GetClassMapsFromRelationshipEnd( ECRelation
         *hasAnyClass = false;
 
     std::set<IClassMap const*> classMaps;
-    for (auto ecClass : relationshipEnd.GetClasses())
+    for (ECClassCP ecClass : relationshipEnd.GetClasses())
         {
-        if (ClassMap::IsAnyClass(*ecClass))
+        if (IClassMap::IsAnyClass(*ecClass))
             {
             if (hasAnyClass)
                 *hasAnyClass = true;
@@ -781,14 +781,14 @@ std::set<IClassMap const*>  ECDbMap::GetClassMapsFromRelationshipEnd( ECRelation
 //+---------------+---------------+---------------+---------------+---------------+------
 void ECDbMap::GetClassMapsFromRelationshipEnd(std::set<IClassMap const*>& classMaps, ECClassCR ecClass) const
     {
-    for (auto ecClass : ecClass.GetDerivedClasses())
+    for (ECClassCP subclass : ecClass.GetDerivedClasses())
         {
-        IClassMap const* classMap = GetClassMap(*ecClass, false);
-        if (classMap->GetMapStrategy().IsNotMapped())
+        IClassMap const* subclassMap = GetClassMap(*subclass, false);
+        if (subclassMap->GetMapStrategy().IsNotMapped())
             continue;
 
-        classMaps.insert(classMap);
-        GetClassMapsFromRelationshipEnd(classMaps, *ecClass);
+        classMaps.insert(subclassMap);
+        GetClassMapsFromRelationshipEnd(classMaps, *subclass);
         }
     }
 //---------------------------------------------------------------------------------------

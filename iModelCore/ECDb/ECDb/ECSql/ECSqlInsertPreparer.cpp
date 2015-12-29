@@ -35,24 +35,7 @@ ECSqlStatus ECSqlInsertPreparer::Prepare(ECSqlPrepareContext& ctx, InsertStateme
         if (info->GetPrimaryECinstanceIdParameterIndex() > 0)
             baseStatement->SetECInstanceIdBinder(static_cast<int>(info->GetPrimaryECinstanceIdParameterIndex()));
         }
-                                   //1,2 
-    //INSERT INTO Goo (A, B) VALUES(?, ?) JoinTable 
-                                             //1
-    //INSERT INTO Foo(A, ECInstanceId) VALUES (?,?) //ParentOfJoin
-                                //2
-    //INSERT INTO Goo (B) VALUES (?) // Step()  
-    // Goo  Foo
-    // 2     1
-    // 
-    // goo_stmt -> ecsql of foo_stmt
-    // goo_stmt.Step()
-        // generate id
-        // foo_stmt.Bind(2, newInstanceId)
-        // foo_stem.Step()
-    // Step()
-
-    //foo_stmt.Bind(2, instanceId)
-
+  
     NativeSqlSnippets insertNativeSqlSnippets;
     ECSqlStatus stat = GenerateNativeSqlSnippets(insertNativeSqlSnippets, ctx, exp, classMap);
     if (!stat.IsSuccess())
