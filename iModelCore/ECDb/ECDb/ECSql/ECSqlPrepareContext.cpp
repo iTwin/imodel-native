@@ -260,7 +260,7 @@ ECSqlPrepareContext::JoinTableInfo::Ptr ECSqlPrepareContext::JoinTableInfo::TryS
     auto tables = exp.GetReferencedTables();
     if (tables.size() < 2)
         {
-        auto isTableSame = (&classMap.GetSecondaryTable() == &rootClassMap->GetSecondaryTable());
+        auto isTableSame = (&classMap.GetJoinedTable() == &rootClassMap->GetJoinedTable());
         if (isTableSame)
             return nullptr;
         }
@@ -370,7 +370,7 @@ ECSqlPrepareContext::JoinTableInfo::Ptr ECSqlPrepareContext::JoinTableInfo::TryS
     auto tables = exp.GetReferencedTables();
     if (tables.size() <= 2)
         {
-        auto isTableSame = (&classMap.GetSecondaryTable() == &rootClassMap->GetSecondaryTable());
+        auto isTableSame = (&classMap.GetJoinedTable() == &rootClassMap->GetJoinedTable());
         if (isTableSame)
             return nullptr;
         }

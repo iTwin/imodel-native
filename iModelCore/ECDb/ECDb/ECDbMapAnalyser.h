@@ -369,8 +369,8 @@ struct ECDbMapAnalyser
         BentleyStatus AnalyseClass(ClassMapCR ecClassMap);
         void AnalyseStruct(Class& classInfo);
         BentleyStatus AnalyseRelationshipClass(RelationshipClassMapCR ecRelationshipClassMap);
-        const std::vector<ECN::ECClassId> GetRootClassIds() const;
-        const std::vector<ECN::ECClassId> GetRelationshipClassIds() const;
+        std::vector<ECN::ECClassId> GetRootClassIds() const;
+        std::vector<ECN::ECClassId> GetRelationshipClassIds() const;
         std::set<ECN::ECClassId> const& GetDerivedClassIds(ECN::ECClassId baseClassId) const;
         ClassMapCP GetClassMap(ECN::ECClassId classId) const;
         void SetupDerivedClassLookup();
@@ -380,14 +380,14 @@ struct ECDbMapAnalyser
         BentleyStatus BuildPolymorphicDeleteTrigger(Class& nclass);
         BentleyStatus BuildPolymorphicUpdateTrigger(Class& nclass);
         void HandleLinkTable(Storage* fromStorage, std::map<Storage*, std::set<ECDbMapAnalyser::Relationship*>> const& relationshipsByStorage, bool isFrom);
-        static const NativeSqlBuilder GetClassFilter(std::pair<ECDbMapAnalyser::Storage const*, std::set<ECDbMapAnalyser::Class const*>> const& partition);
+        static NativeSqlBuilder GetClassFilter(std::pair<ECDbMapAnalyser::Storage const*, std::set<ECDbMapAnalyser::Class const*>> const& partition);
         DbResult ApplyChanges();
         DbResult ExecuteDDL(Utf8CP sql);
         DbResult UpdateHoldingView();
         ViewInfo* GetViewInfoForClass(Class const& nclass);
 
     public:
-        explicit ECDbMapAnalyser(ECDbMapR ecdbMap);
+        explicit ECDbMapAnalyser(ECDbMapR ecdbMap) : m_map(ecdbMap) {}
         BentleyStatus Analyse(bool applyChanges);
     };
 

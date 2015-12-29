@@ -571,11 +571,11 @@ ECDbMap::ClassMapByTable ECDbMap::GetClassMapByTable() const
             entry.second->GetClassMapType() == IClassMap::Type::Unmapped)
             continue;
 
-        auto primaryTable = &entry.second->GetPrimaryTable();
-        auto secondaryTable = &entry.second->GetSecondaryTable();
+        ECDbSqlTable* primaryTable = &entry.second->GetPrimaryTable();
+        ECDbSqlTable* joinedTable = &entry.second->GetJoinedTable();
         map[primaryTable].insert(entry.second.get());
-        if (primaryTable != secondaryTable)
-            map[secondaryTable].insert(entry.second.get());
+        if (primaryTable != joinedTable)
+            map[joinedTable].insert(entry.second.get());
         }
 
     return map;
@@ -719,7 +719,7 @@ std::vector<ECClassCP> ECDbMap::GetClassesFromRelationshipEnd (ECRelationshipCon
 +---------------+---------------+---------------+---------------+---------------+------*/
 size_t ECDbMap::GetTableCountOnRelationshipEnd(ECRelationshipConstraintCR relationshipEnd) const
     {
-    bool hasAnyClass;
+    bool hasAnyClass = false;
     std::set<IClassMap const*> classMaps = GetClassMapsFromRelationshipEnd(relationshipEnd, &hasAnyClass);
 
     if (hasAnyClass)
@@ -751,9 +751,9 @@ std::set<IClassMap const*>  ECDbMap::GetClassMapsFromRelationshipEnd( ECRelation
         *hasAnyClass = false;
 
     std::set<IClassMap const*> classMaps;
-    for (auto ecClass : relationshipEnd.GetClasses())
+    for (ECClassCP ecClass : relationshipEnd.GetClasses())
         {
-        if (ClassMap::IsAnyClass(*ecClass))
+        if (IClassMap::IsAnyClass(*ecClass))
             {
             if (hasAnyClass)
                 *hasAnyClass = true;
@@ -781,14 +781,14 @@ std::set<IClassMap const*>  ECDbMap::GetClassMapsFromRelationshipEnd( ECRelation
 //+---------------+---------------+---------------+---------------+---------------+------
 void ECDbMap::GetClassMapsFromRelationshipEnd(std::set<IClassMap const*>& classMaps, ECClassCR ecClass) const
     {
-    for (auto ecClass : ecClass.GetDerivedClasses())
+    for (ECClassCP subclass : ecClass.GetDerivedClasses())
         {
-        IClassMap const* classMap = GetClassMap(*ecClass, false);
-        if (classMap->GetMapStrategy().IsNotMapped())
+        IClassMap const* subclassMap = GetClassMap(*subclass, false);
+        if (subclassMap->GetMapStrategy().IsNotMapped())
             continue;
 
-        classMaps.insert(classMap);
-        GetClassMapsFromRelationshipEnd(classMaps, *ecClass);
+        classMaps.insert(subclassMap);
+        GetClassMapsFromRelationshipEnd(classMaps, *subclass);
         }
     }
 //---------------------------------------------------------------------------------------
@@ -805,7 +805,7 @@ ECDbSqlTable const* ECDbMap::GetFirstTableFromRelationshipEnd(ECRelationshipCons
         
     for (IClassMap const* classMap : classMaps)
         {
-        tables[classMap->GetSecondaryTable().GetPersistenceType()].insert(&classMap->GetSecondaryTable());
+        tables[classMap->GetJoinedTable().GetPersistenceType()].insert(&classMap->GetJoinedTable());
         }
 
     std::set<ECDbSqlTable const*>& persistedTables = tables[PersistenceType::Persisted];

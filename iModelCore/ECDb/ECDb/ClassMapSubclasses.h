@@ -28,7 +28,7 @@ private:
         PropertyMapCollection m_embeddedClassViewPropMaps;
         virtual IClassMap const& _GetView (View classView) const override { return *this; };
         virtual PropertyMapCollection const& _GetPropertyMaps () const override { return m_embeddedClassViewPropMaps; }
-        virtual TableListR _MapToTables() const override { return m_secondaryTableClassMap.MapToTables (); }
+        virtual TableListR _GetTables() const override { return m_secondaryTableClassMap.GetTables (); }
         virtual ECN::ECClassCR _GetClass () const override { return m_secondaryTableClassMap.GetClass (); }
         virtual ECDbMapStrategy const& _GetMapStrategy () const override { return m_secondaryTableClassMap.GetMapStrategy (); }
         virtual ECDbMapCR _GetECDbMap () const override { return m_secondaryTableClassMap.GetECDbMap (); }

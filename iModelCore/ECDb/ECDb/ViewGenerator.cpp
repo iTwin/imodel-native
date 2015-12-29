@@ -102,7 +102,7 @@ BentleyStatus ViewGenerator::CreateNullView (NativeSqlBuilder& viewSql, ECSqlPre
     if (SUCCESS != GetPropertyMapsOfDerivedClassCastAsBaseClass(viewPropMaps, prepareContext, classMap, classMap, false, false))
         return ERROR;
  
-    AppendViewPropMapsToQuery (viewSql, classMap.GetECDbMap ().GetECDbR (), prepareContext, classMap.GetSecondaryTable (), viewPropMaps, true /*forNullView*/);
+    AppendViewPropMapsToQuery (viewSql, classMap.GetECDbMap ().GetECDbR (), prepareContext, classMap.GetJoinedTable (), viewPropMaps, true /*forNullView*/);
     viewSql.Append (" LIMIT 0");
     return SUCCESS;
     }
@@ -155,21 +155,21 @@ BentleyStatus ViewGenerator::ComputeViewMembers(ViewMemberByTable& viewMembers, 
 
     if (!classMap->GetMapStrategy().IsNotMapped())
         {
-        if (classMap->GetSecondaryTable().GetColumns().empty())
+        if (classMap->GetJoinedTable().GetColumns().empty())
             return SUCCESS;
 
-        auto itor = viewMembers.find(&classMap->GetSecondaryTable());
+        auto itor = viewMembers.find(&classMap->GetJoinedTable());
         if (itor == viewMembers.end())
             {
             DbMetaDataHelper::ObjectType storageType = DbMetaDataHelper::ObjectType::Table;
             if (optimizeByIncludingOnlyRealTables)
                 {
                 //This is a db query so optimization comes at a cost
-                storageType = DbMetaDataHelper::GetObjectType(map.GetECDbR(), classMap->GetSecondaryTable().GetName().c_str());
+                storageType = DbMetaDataHelper::GetObjectType(map.GetECDbR(), classMap->GetJoinedTable().GetName().c_str());
                 }
 
             if (storageType == DbMetaDataHelper::ObjectType::Table)
-                viewMembers.insert(ViewMemberByTable::value_type(&classMap->GetSecondaryTable(), ViewMember(storageType, *classMap)));
+                viewMembers.insert(ViewMemberByTable::value_type(&classMap->GetJoinedTable(), ViewMember(storageType, *classMap)));
             }
         else
             {
@@ -386,7 +386,7 @@ BentleyStatus ViewGenerator::CreateNullViewForRelationshipClassLinkTableMap (Nat
         return ERROR;
 
     //Append columns to query [col1],[col2], ...
-    AppendViewPropMapsToQuery (viewSql, relationMap.GetECDbMap ().GetECDbR (), prepareContext, relationMap.GetSecondaryTable(), viewPropMaps, true);
+    AppendViewPropMapsToQuery (viewSql, relationMap.GetECDbMap ().GetECDbR (), prepareContext, relationMap.GetJoinedTable(), viewPropMaps, true);
     viewSql.AppendParenRight();
     return SUCCESS;
     }
@@ -431,15 +431,11 @@ BentleyStatus ViewGenerator::CreateViewForRelationshipClassLinkTableMap (NativeS
         return ERROR;
 
     //Append prop maps' columns to query [col1],[col2], ...
-    AppendViewPropMapsToQuery (viewSql, ecdbMap.GetECDbR (), prepareContext, relationMap.GetSecondaryTable(), viewPropMaps);
+    AppendViewPropMapsToQuery (viewSql, ecdbMap.GetECDbR (), prepareContext, relationMap.GetJoinedTable(), viewPropMaps);
 
-    viewSql.Append (" FROM ").AppendEscaped (relationMap.GetSecondaryTable().GetName ().c_str ());
+    viewSql.Append (" FROM ").AppendEscaped (relationMap.GetJoinedTable().GetName ().c_str ());
    
     //Append secondary table JOIN
-    const std::set<ECDbSqlTable const*> secondaryTables = relationMap.GetJoinedTables ();
-    ECDbSqlTable const* primaryTable = &relationMap.GetSecondaryTable();
-    ECDbSqlColumn const* primaryECInstanceIdColumn = primaryTable->GetFilteredColumnFirst (ColumnKind::ECInstanceId);
-    BeAssert (primaryECInstanceIdColumn != nullptr);
     if (SUCCESS != BuildRelationshipJoinIfAny (viewSql, relationMap, ECN::ECRelationshipEnd::ECRelationshipEnd_Source))
         return ERROR;
 
@@ -457,11 +453,6 @@ BentleyStatus ViewGenerator::CreateViewForRelationshipClassEndTableMap (NativeSq
     viewSql.Append (" FROM ").AppendEscaped (relationMap.GetPrimaryTable ().GetName ().c_str ());
 
     //Append secondary table JOIN
-    const std::set<ECDbSqlTable const*> secondaryTables = relationMap.GetJoinedTables ();
-    ECDbSqlTable const* primaryTable = &relationMap.GetPrimaryTable();
-    ECDbSqlColumn const* primaryECInstanceIdColumn = primaryTable->GetFilteredColumnFirst(ColumnKind::ECInstanceId);
-    BeAssert(primaryECInstanceIdColumn != nullptr);
-
     if (SUCCESS != BuildRelationshipJoinIfAny(viewSql, relationMap, ECN::ECRelationshipEnd::ECRelationshipEnd_Source))
         return ERROR;
 
@@ -558,7 +549,7 @@ BentleyStatus ViewGenerator::CreateViewForRelationship (NativeSqlBuilder& viewSq
 
      NativeSqlBuilder unionQuery;
 
-     ViewMember const& viewMemberOfPrimaryTable = vmt[&relationMap.GetSecondaryTable()];
+     ViewMember const& viewMemberOfPrimaryTable = vmt[&relationMap.GetJoinedTable()];
      for (IClassMap const* cm : viewMemberOfPrimaryTable.GetClassMaps())
          {
          switch (cm->GetClassMapType())
@@ -580,7 +571,7 @@ BentleyStatus ViewGenerator::CreateViewForRelationship (NativeSqlBuilder& viewSq
                  if (SUCCESS != CreateViewForRelationshipClassLinkTableMap(unionQuery, map, prepareContext, *static_cast<RelationshipClassLinkTableMapCP>(cm), relationMap))
                      return ERROR;
 
-                 ECDbSqlTable const& table = relationMap.GetSecondaryTable();
+                 ECDbSqlTable const& table = relationMap.GetJoinedTable();
                  ECDbSqlColumn const* classIdColumn = nullptr;
                  if (table.TryGetECClassIdColumn(classIdColumn))
                      {
@@ -600,7 +591,7 @@ BentleyStatus ViewGenerator::CreateViewForRelationship (NativeSqlBuilder& viewSq
              }
          }
 
-     vmt.erase(&relationMap.GetSecondaryTable());
+     vmt.erase(&relationMap.GetJoinedTable());
 
      //now process view members of other tables
      for (bpair<ECDbSqlTable const*, ViewMember> const& vm : vmt)

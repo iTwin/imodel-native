@@ -8,7 +8,6 @@
 #pragma once
 #include "ClassMap.h"
 #include "PropertyMap.h"
-#include "ClassMap.h"
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
@@ -26,7 +25,6 @@ private:
     virtual bool _IsECInstanceIdPropertyMap () const override;
     virtual bool _IsSystemPropertyMap () const override;
     virtual void _GetColumns (std::vector<ECDbSqlColumn const*>& columns) const override;
-    virtual Utf8CP _GetColumnBaseName () const override;
 
 protected:
     PropertyMapSystem (ECN::ECPropertyCR property, std::weak_ptr<ECDbSqlColumn> column, ECSqlSystemProperty kind, ECDbSqlTable const* primaryTable);

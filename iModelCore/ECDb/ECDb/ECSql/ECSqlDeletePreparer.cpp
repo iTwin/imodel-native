@@ -110,7 +110,7 @@ ECSqlStatus ECSqlDeletePreparer::GenerateNativeSqlSnippets
             {
             auto propertyAccessed =  whereClauseExp->Find(Exp::Type::PropertyName, true);
             auto& primaryTable = currentClassMap.GetPrimaryTable();
-            auto& secondaryTable = currentClassMap.GetSecondaryTable();
+            auto& secondaryTable = currentClassMap.GetJoinedTable();
 
             auto const tableBeenAccessed = whereClauseExp->GetReferencedTables();
             bool referencedRootOfJoinedTable = (tableBeenAccessed.find(&primaryTable) != tableBeenAccessed.end());

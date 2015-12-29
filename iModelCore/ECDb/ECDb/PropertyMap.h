@@ -94,9 +94,6 @@ protected:
     //! @see PropertyMap::GetColumns
     virtual void _GetColumns(std::vector<ECDbSqlColumn const*>& columns) const;
 
-    //! @see PropertyMap::GetColumnBaseName
-    virtual Utf8CP _GetColumnBaseName() const;
-
     //! Make sure our table has the necessary columns, if any
     virtual BentleyStatus _FindOrCreateColumnsInTable(SchemaImportContext*, ClassMap& classMap, ClassMapInfo const* classMapInfo) { return SUCCESS; }
 
@@ -163,11 +160,6 @@ public:
 
     //! Gets the first column if any
     ECDbSqlColumn const* GetFirstColumn() const;
-
-    //! For properties that map to columns, the name of the column... or 'base' name in case of a multi-column DPoint2d, 
-    //! e.g. "origin", when the actual columns are origin_X and origin_Y
-    //! @return nullptr if there is no relevant column, or column names does not differ from the default
-    Utf8CP GetColumnBaseName() const;
 
     //! Generates the native SQL snippets from the columns related to this property map.
     //! SQL generation depends on various properties of the property map (e.g whether the property map is virtual)
@@ -258,9 +250,6 @@ protected:
 
     //! @see PropertyMap::GetColumns
     virtual void _GetColumns(std::vector<ECDbSqlColumn const*>& columns) const;
-
-    //! @see PropertyMap::GetColumnBaseName
-    virtual Utf8CP _GetColumnBaseName() const override;
    
     //! For debugging and logging
     virtual Utf8String _ToString() const override;
@@ -386,9 +375,6 @@ private:
     //! @see PropertyMap::GetColumns
     void _GetColumns (std::vector<ECDbSqlColumn const*>& columns) const;
 
-    //! @see PropertyMap::GetColumnBaseName
-    Utf8CP _GetColumnBaseName() const override;
-
     virtual BentleyStatus _Save(ECDbClassMapInfo & classMapInfo) const override;
     virtual BentleyStatus _Load(ECDbClassMapInfo const& classMapInfo) override;
     //! For debugging and logging
@@ -396,4 +382,29 @@ private:
 public:
     bool Is3d () const { return m_is3d; }
 };
+
+//=======================================================================================
+// @bsiclass                                                    Krischan.Eberle      12/2015
+//+===============+===============+===============+===============+===============+======
+struct NavigationPropertyMap : PropertyMap
+    {
+    private:
+        friend PropertyMapPtr PropertyMap::CreateAndEvaluateMapping(ECN::ECPropertyCR ecProperty, ECDbMapCR ecDbMap, ECN::ECClassCR rootClass, Utf8CP propertyAccessString, ECDbSqlTable const* primaryTable, PropertyMapCP parentPropertyMap);
+        friend PropertyMapPtr PropertyMap::Clone(PropertyMapCR proto, ECDbSqlTable const* newContext, PropertyMap const* parentPropertyMap);
+
+        ECN::NavigationECPropertyCP m_navigationProperty;
+
+        virtual Utf8String _ToString() const override { return Utf8PrintfString("NavigationPropertyMap: ecProperty=%s.%s", m_ecProperty.GetClass().GetFullName(), m_ecProperty.GetName().c_str()); }
+
+        //BentleyStatus _FindOrCreateColumnsInTable(SchemaImportContext*, ClassMap&, ClassMapInfo const*) override;
+        //void _GetColumns(std::vector<ECDbSqlColumn const*>& columns) const;
+
+        NavigationPropertyMap(ECN::ECPropertyCR, Utf8CP propertyAccessString, ECDbSqlTable const* primaryTable, PropertyMapCP parentPropertyMap);
+        NavigationPropertyMap(NavigationPropertyMap const& proto, ECDbSqlTable const* primaryTable, PropertyMap const* parentPropertyMap)
+            :PropertyMap(proto.GetProperty(), proto.GetPropertyAccessString(), primaryTable, parentPropertyMap), m_navigationProperty(proto.m_navigationProperty)
+            {}
+    public:
+        ~NavigationPropertyMap() {}
+    };
+
 END_BENTLEY_SQLITE_EC_NAMESPACE
