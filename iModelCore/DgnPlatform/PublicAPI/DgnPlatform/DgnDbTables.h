@@ -378,6 +378,12 @@ public:
     //! Query for a DgnGeomPartId by code.
     DGNPLATFORM_EXPORT DgnGeomPartId QueryGeomPartId(Utf8CP code);
 
+    //! Query the range of a DgnGeomPart by ID.
+    //! @param[out]     range      On successful return, holds the DgnGeomPart's range
+    //! @param[in]      geomPartId The ID of the DgnGeomPart to query
+    //! @return SUCCESS if the range was retrieved, or else ERROR if e.g. no DgnGeomPart exists with the specified ID
+    DGNPLATFORM_EXPORT BentleyStatus QueryGeomPartRange(DRange3dR range, DgnGeomPartId geomPartId);
+
     //! Insert a geometry part into the DgnDb.
     //! @param[in] geomPart geometry part to insert
     //! @return The DgnGeomPartId for the newly inserted part. Will be invalid if part could not be added.

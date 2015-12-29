@@ -18,7 +18,15 @@ USING_NAMESPACE_BENTLEY_SQLITE_EC
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct ElementGeomPartTests : public DgnDbTestFixture
 {
-
+    static void ExpectEqualRange(DRange3dCR a, DRange3dCR b)
+        {
+        EXPECT_EQ(a.low.x, b.low.x);
+        EXPECT_EQ(a.low.y, b.low.y);
+        EXPECT_EQ(a.low.z, b.low.z);
+        EXPECT_EQ(a.high.x, b.high.x);
+        EXPECT_EQ(a.high.y, b.high.y);
+        EXPECT_EQ(a.high.z, b.high.z);
+        }
 };
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Umar.Hayat      07/15
@@ -36,6 +44,11 @@ TEST_F(ElementGeomPartTests, CRUD)
     EXPECT_TRUE(geomPartPtr != NULL);
     EXPECT_EQ(SUCCESS, builder->SetGeomStream(*geomPartPtr));
     
+    // Test the range
+    ElementAlignedBox3d partBox = geomPartPtr->GetBoundingBox();
+    EXPECT_TRUE(partBox.IsValid());
+    ExpectEqualRange(partBox, builder->GetPlacement3d().GetElementBox());
+
     // Insert
     //
     ASSERT_EQ(SUCCESS, geomPartTable.InsertGeomPart(*geomPartPtr));
@@ -49,6 +62,12 @@ TEST_F(ElementGeomPartTests, CRUD)
     EXPECT_TRUE(stream.HasGeometry());
     uint32_t size  = stream.GetSize();
     EXPECT_TRUE(geomPartPtr->GetGeomStream().GetSize() == size);
+    ExpectEqualRange(geomPartPtr->GetBoundingBox(), partBox);
+    
+    // Query range
+    DRange3d partRange;
+    EXPECT_EQ(SUCCESS, geomPartTable.QueryGeomPartRange(partRange, partId));
+    ExpectEqualRange(partRange, partBox);
 
     // Update
     builder->Append(*elGPtr);

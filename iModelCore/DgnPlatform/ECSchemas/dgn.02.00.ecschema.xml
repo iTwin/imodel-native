@@ -50,6 +50,21 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
     <ECClass typeName="GeometrySource" isDomainClass="False" isCustomAttributeClass="False" isStruct="False">
         <!-- abstract - interface adopted by Elements which have geometry. 
              NOTE: Derive from GeometrySource2d or GeometrySource3d. -->
+        <!-- No, ECDb will not accept this.
+        <ECCustomAttributes>
+            <ClassMap xmlns="ECDbMap.01.00">
+                <Indexes>
+                    <DbIndex>
+                        <Name>idx_dgn_GeometrySource_CategoryId</Name>
+                        <IsUnique>False</IsUnique>
+                        <Properties>
+                            <string>CategoryId</string>
+                        </Properties>
+                    </DbIndex>
+                </Indexes>
+            </ClassMap>
+        </ECCustomAttributes>
+        -->
         <ECProperty propertyName="CategoryId" typeName="long" /><!-- should be non-nullable but shared table... -->
         <ECProperty propertyName="Geometry" typeName="binary" />
     </ECClass>
@@ -1177,15 +1192,13 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
                 </PropertyMap>
             </ECCustomAttributes>
         </ECProperty>
-        <!-- WIP_GEOMPART_RANGE
         <ECStructProperty propertyName="BBox" typeName="BoundingBox3d">
             <ECCustomAttributes>
                 <PropertyMap xmlns="ECDbMap.01.00">
                     <IsNullable>False</IsNullable>
                 </PropertyMap>
             </ECCustomAttributes>
-        </ECProperty>
-        -->
+        </ECStructProperty>
     </ECClass>
     <ECRelationshipClass typeName="ElementUsesGeomParts" isDomainClass="True" strength="referencing" strengthDirection="forward">
         <!-- Used to indicate that an Element uses a GeomPart.  This is useful for "garbage collecting" or finding Elements that would be affected by a change to a GeomPart. -->
