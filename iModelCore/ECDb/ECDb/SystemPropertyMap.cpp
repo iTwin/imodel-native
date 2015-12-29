@@ -59,19 +59,6 @@ void PropertyMapSystem::_GetColumns (std::vector<ECDbSqlColumn const*>& columns)
         columns.push_back (m_column.lock().get());
     }
 
-//----------------------------------------------------------------------------------
-// @bsimethod                                 Krischan.Eberle                02/2014
-//+---------------+---------------+---------------+---------------+---------------+-
-Utf8CP PropertyMapSystem::_GetColumnBaseName () const
-    {
-    BeAssert (!m_column.expired ());
-    Utf8String propertyName (m_ecProperty.GetName ());
-    if (propertyName.EqualsI (m_column.lock()->GetName ()))
-        return nullptr;
-    else
-        return m_column.lock()->GetName ().c_str();
-    }
-
 
 //******************************** PropertyMapECInstanceId ****************************************
 //----------------------------------------------------------------------------------
