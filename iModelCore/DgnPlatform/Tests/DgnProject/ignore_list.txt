@@ -32,3 +32,5 @@ ElementGeomPartTests.GeomPart2d                 # UmarH -- WIP Domain imlementat
 ChangeSummaryTestFixture.ElementChildRelationshipChanges # Notified Raman
 
 ConfigurationManager_Test.*                             # UmarH -- Tests are ported from Vancouver for MacroConfiguration ,seems macros are not expanding on get variable method. 
+
+ComponentModelTest.SimulateDeveloperAndClient           # PaulConnelly -- BE_SQLITE_SCHEMA in TxnManager
