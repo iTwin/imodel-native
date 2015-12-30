@@ -2351,7 +2351,7 @@ TEST_F(JoinedTableECDbMapStrategyTests, MultiInheritence1)
         "        <ECProperty propertyName='Foo_L' typeName='long'/>"
         "        <ECProperty propertyName='Foo_S' typeName='string'/>"
         "    </ECEntityClass>"
-        "   <ECEntityClass typeName='IFace' modified='Abstract' />"
+        "   <ECEntityClass typeName='IFace' modifier='Abstract' />"
         "   <ECEntityClass typeName='Goo'>"
         "        <BaseClass>Foo</BaseClass>"
         "        <BaseClass>IFace</BaseClass>"
