@@ -1,0 +1,60 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<ECSchema schemaName="BadSchema" nameSpacePrefix="BS" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+    <ECClass typeName="CaAbstract" isDomainClass="False" />
+    <ECClass typeName="CaSealed" isStruct="True" isDomainClass="True" isCustomAttributeClass="True" isFinal="True">
+        <BaseClass>CaAbstract</BaseClass>
+    </ECClass>
+    <ECClass typeName="CaWithJustCa" isCustomAttributeClass="True" isDomainClass="False">
+        <BaseClass>CaAbstract</BaseClass>
+    </ECClass>
+    <ECClass typeName="CaWithAllFlags" isStruct="True" isDomainClass="True" isCustomAttributeClass="True">
+        <BaseClass>CaAbstract</BaseClass>
+    </ECClass>
+    <ECClass typeName="CaWithCaAndDomain" isDomainClass="True" isCustomAttributeClass="True">
+        <BaseClass>CaAbstract</BaseClass>
+    </ECClass>
+    <ECClass typeName="CaWithCaAndStruct" isStruct="True" isDomainClass="True">
+        <BaseClass>CaAbstract</BaseClass>
+    </ECClass>
+    <ECClass typeName="EntityAbstract" isDomainClass="False" />
+    <ECClass typeName="EntityWithJustDomain" isDomainClass="True">
+        <BaseClass>EntityAbstract</BaseClass>
+    </ECClass>
+    <ECClass typeName="EntitySealed" isStruct="True" isDomainClass="True" isCustomAttributeClass="True" isFinal="True">
+        <BaseClass>EntityAbstract</BaseClass>
+    </ECClass>
+    <ECClass typeName="EntityWithAllFlags" isStruct="True" isDomainClass="True" isCustomAttributeClass="True">
+        <BaseClass>EntityAbstract</BaseClass>
+    </ECClass>
+    <ECClass typeName="EntityWithDomainAndCa" isDomainClass="True" isCustomAttributeClass="True">
+        <BaseClass>EntityAbstract</BaseClass>
+    </ECClass>
+    <ECClass typeName="EntityWithDomainAndStruct" isStruct="True" isDomainClass="True">
+        <BaseClass>EntityAbstract</BaseClass>
+    </ECClass>
+    <ECRelationshipClass typeName="RelationshipAbstract" isDomainClass="False" strength="referencing" strengthDirection="forward" />
+    <ECRelationshipClass typeName="RelationshipConcrete" isDomainClass="True" strength="referencing" strengthDirection="forward">
+        <Source cardinality="(0,1)" polymorphic="True">
+            <Class class="EntityAbstract" />
+        </Source>
+        <Target cardinality="(0,1)" polymorphic="True">
+            <Class class="EntityWithAllFlags" />
+        </Target>
+    </ECRelationshipClass>
+    <ECClass typeName="StructAbstract" isDomainClass="False" />
+    <ECClass typeName="StructWithJustStruct" isDomainClass="False" isStruct="True">
+        <BaseClass>StructAbstract</BaseClass>
+    </ECClass>
+    <ECClass typeName="StructSealed" isStruct="True" isDomainClass="True" isCustomAttributeClass="True" isFinal="True">
+        <BaseClass>StructAbstract</BaseClass>
+    </ECClass>
+    <ECClass typeName="StructWithAllFlags" isStruct="True" isDomainClass="True" isCustomAttributeClass="True">
+        <BaseClass>StructAbstract</BaseClass>
+    </ECClass>
+    <ECClass typeName="StructWithStructAndCa" isStruct="True" isDomainClass="False" isCustomAttributeClass="True">
+        <BaseClass>StructAbstract</BaseClass>
+    </ECClass>
+    <ECClass typeName="StructWithStructAndDomain" isStruct="True" isDomainClass="True">
+        <BaseClass>StructAbstract</BaseClass>
+    </ECClass>
+</ECSchema>

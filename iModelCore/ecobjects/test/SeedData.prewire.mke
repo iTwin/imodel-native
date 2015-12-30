@@ -19,6 +19,7 @@ always:
     @CreateSymLinks.py -m"$(ContextDeliveryDir)SeedData/ur-PK/=$(ecobjectsSrc)test/SeedData/ur-PK/*.xml"
     @CreateSymLinks.py -m"$(ContextDeliveryDir)SeedData/en-GB/=$(ecobjectsSrc)test/SeedData/en-GB/*.xml"
     @CreateSymLinks.py -m"$(ContextDeliveryDir)SeedData/it/=$(ecobjectsSrc)test/SeedData/it/*.xml"
+    @CreateSymLinks.py -m"$(ContextDeliveryDir)SeedData/V3Conversion/=$(ecobjectsSrc)test/SeedData/V3Conversion/*.xml"
 
 %ifdef winNT
 always:    

@@ -57,6 +57,12 @@
     <ClCompile Include="Published\NavigationECPropertyTests.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Published\SchemaVersionConverstionTests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="TestFixture\TestFixture.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ECObjectsTestPCH.h">
@@ -68,7 +74,12 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="logging.config.xml" />
-    <None Include="publishedCompileRules.mki" />
-    <None Include="PublishedTests.mke" />
+    <None Include="BuildTests.mke" />
+    <None Include="LoggingConfig.prewire.mke" />
+    <None Include="prewire.mke" />
+    <None Include="SeedData.prewire.mke" />
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="ignore_list.txt" />
   </ItemGroup>
 </Project>

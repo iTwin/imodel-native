@@ -47,11 +47,16 @@ struct SchemaXmlReaderImpl
 //---------------+---------------+---------------+---------------+---------------+-------
 struct SchemaXmlReader2 : SchemaXmlReaderImpl
     {
+    private:
+        ECSchemaPtr m_conversionSchema;
+        void DetermineClassTypeAndModifier(Utf8StringCR className, ECSchemaPtr schemaOut, ECClassType& classType, ECClassModifier& classModifier, bool isCA, bool isStruct, bool isDomain, bool isSealed);
+        ECClassModifier DetermineRelationshipClassModifier(Utf8StringCR className, bool isDomain);
+
     protected:
         bool ReadClassNode(ECClassP &ecClass, BeXmlNodeR classNode, ECSchemaPtr& schemaOut) override;
 
     public:
-        SchemaXmlReader2(ECSchemaReadContextR context, BeXmlDomR xmlDom);
+        SchemaXmlReader2(ECSchemaReadContextR context, ECSchemaPtr schemaOut, BeXmlDomR xmlDom);
         SchemaReadStatus ReadClassContentsFromXml(ECSchemaPtr& schemaOut, ClassDeserializationVector&  classes) override;
     };
 
@@ -320,64 +325,152 @@ ECRelationshipClassP SchemaXmlReaderImpl::CreateRelationshipClass(ECSchemaPtr& s
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            11/2015
 //---------------+---------------+---------------+---------------+---------------+-------
-SchemaXmlReader2::SchemaXmlReader2(ECSchemaReadContextR context, BeXmlDomR xmlDom) : SchemaXmlReaderImpl(context, xmlDom)
-{ }
+SchemaXmlReader2::SchemaXmlReader2(ECSchemaReadContextR context, ECSchemaPtr schemaOut, BeXmlDomR xmlDom) : SchemaXmlReaderImpl(context, xmlDom)
+    {
+    m_conversionSchema = context.LocateConversionSchemaFor(schemaOut->GetName().c_str(), schemaOut->GetVersionMajor(), schemaOut->GetVersionMinor());
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            10/2015
 //---------------+---------------+---------------+---------------+---------------+-------
 bool SchemaXmlReader2::ReadClassNode(ECClassP &ecClass, BeXmlNodeR classNode, ECSchemaPtr& schemaOut)
     {
-    // Create ECClass Stubs (no properties)
-    ECStructClassP structClass = nullptr;
-    ECRelationshipClassP relationshipClass = nullptr;
-    ECCustomAttributeClassP caClass = nullptr;
-
     Utf8CP nodeName = classNode.GetName();
+
+    Utf8String     className;
+    classNode.GetAttributeStringValue(className, TYPE_NAME_ATTRIBUTE);
+
+    Utf8String boolStr;
+    bool isDomain = true; // defaults to true
+    if (BEXML_Success == classNode.GetAttributeStringValue(boolStr, IS_DOMAINCLASS_ATTRIBUTE))
+        ECXml::ParseBooleanString(isDomain, boolStr.c_str());
 
     if (0 == strcmp(nodeName, EC_CLASS_ELEMENT))
         {
         // Need to determine what type of class this actually is in EC 3.0
-        Utf8String boolStr;
         bool isCA = false;
         bool isStruct = false;
+        bool isSealed = false;
         if (BEXML_Success == classNode.GetAttributeStringValue(boolStr, IS_CUSTOMATTRIBUTE_ATTRIBUTE))
             ECXml::ParseBooleanString(isCA, boolStr.c_str());
         if (BEXML_Success == classNode.GetAttributeStringValue(boolStr, IS_STRUCT_ATTRIBUTE))
             ECXml::ParseBooleanString(isStruct, boolStr.c_str());
+        if (BEXML_Success == classNode.GetAttributeStringValue(boolStr, IS_FINAL_ATTRIBUTE))
+            ECXml::ParseBooleanString(isSealed, boolStr.c_str());
 
-        if (isCA && isStruct)
-            {
-            Utf8String     className;
-            classNode.GetAttributeStringValue(className, TYPE_NAME_ATTRIBUTE);
-            if (className.CompareTo("TransformationValueMap") != 0)
-                {
-                LOG.errorv("Class %s in Schema %s is marked as both Struct and CustomAttribute.  This is not allowed.", className.c_str(), schemaOut->GetFullSchemaName().c_str());
-                //return SchemaReadStatus::InvalidECSchemaXml;
-                }
-            }
-        if (isStruct)
-            {
-            structClass = CreateStructClass(schemaOut);
-            ecClass = structClass;
-            }
-        else if (isCA)
-            {
-            caClass = CreateCustomAttributeClass(schemaOut);
-            ecClass = caClass;
-            }
-        else
+        ECClassType classType;
+        ECClassModifier modifier;
+        DetermineClassTypeAndModifier(className, schemaOut, classType, modifier, isCA, isStruct, isDomain, isSealed);
+
+        if (ECClassType::Entity == classType)
             ecClass = CreateEntityClass(schemaOut);
+        else if (ECClassType::CustomAttribute == classType)
+            ecClass = CreateCustomAttributeClass(schemaOut);
+        else
+            ecClass = CreateStructClass(schemaOut);
+
+        ecClass->SetClassModifier(modifier);
         }
     else if (0 == strcmp(nodeName, EC_RELATIONSHIP_CLASS_ELEMENT))
         {
-        relationshipClass = CreateRelationshipClass(schemaOut);
-        ecClass = relationshipClass;
+        ecClass = CreateRelationshipClass(schemaOut);
+        ecClass->SetClassModifier(DetermineRelationshipClassModifier(className, isDomain));
         }
     else
         return false;
 
     return true;
+    }
+
+void WriteLogMessage(ECClassCP ecClass, Utf8CP classDescription, Utf8CP forcedType)
+    {
+    LOG.debugv("Forcing %s '%s:%s' to be %s because the 'ECv3ConversionAttributes:Force%s' custom attribute is applied to the %s",
+               classDescription, ecClass->GetSchema().GetFullSchemaName().c_str(), ecClass->GetName().c_str(), forcedType, forcedType, classDescription);
+    }
+
+ECClassModifier SchemaXmlReader2::DetermineRelationshipClassModifier(Utf8StringCR className, bool isDomain)
+    {
+    ECClassModifier modifier = ECClassModifier::Abstract;
+    if (isDomain)
+        modifier = ECClassModifier::None;
+
+    if (!m_conversionSchema.IsValid())
+        return modifier;
+
+    ECClassCP ecClass = m_conversionSchema->GetClassCP(className.c_str());
+    if (nullptr == ecClass)
+        return modifier;
+
+    if (ecClass->IsDefined("ForceAbstract"))
+        {
+        WriteLogMessage(ecClass, "relationship class", "Abstract");
+        modifier = ECClassModifier::Abstract;
+        }
+    else if (ecClass->IsDefined("ForceSealed"))
+        {
+        WriteLogMessage(ecClass, "relationship class", "Sealed");
+        modifier = ECClassModifier::Sealed;
+        }
+
+    return modifier;
+    }
+
+void SchemaXmlReader2::DetermineClassTypeAndModifier(Utf8StringCR className, ECSchemaPtr schemaOut, ECClassType& classType, ECClassModifier& classModifier, bool isCA, bool isStruct, bool isDomain, bool isSealed)
+    {
+    if (isStruct)
+        classType = ECClassType::Struct;
+    else if (isCA)
+        classType = ECClassType::CustomAttribute;
+    else
+        classType = ECClassType::Entity;
+
+    int sum = (int)isCA + (int)isStruct + (int)isDomain;
+    if (0 == sum)
+        classModifier = ECClassModifier::Abstract;
+    else if (isSealed)
+        classModifier = ECClassModifier::Sealed;
+    else
+        classModifier = ECClassModifier::None;
+
+    if (1 < sum)
+        LOG.warningv("Class '%s' in schema '%s' has more than one type flag set to true: isStruct(%d) isDomainClass(%d) isCustomAttributeClass(%d).  Only one is allowed, defaulting to %s.  "
+                     "Modify the schema or use the ECv3ConversionAttributes in a conversion schema named '%s' to force a different class type.",
+                     className.c_str(), schemaOut->GetFullSchemaName().c_str(), isStruct, isDomain, isCA, isStruct ? "Struct" : "CustomAttribute",
+                     schemaOut->GetFullSchemaName().insert(schemaOut->GetName().length(), "_V3Conversion").c_str());
+
+    if (!m_conversionSchema.IsValid())
+        return;
+
+    ECClassCP ecClass = m_conversionSchema->GetClassCP(className.c_str());
+    if (nullptr == ecClass)
+        return;
+
+    if (ecClass->IsDefined("ForceEntityClass"))
+        {
+        WriteLogMessage(ecClass, "ECClass", "EntityClass");
+        classType = ECClassType::Entity;
+        }
+    else if (ecClass->IsDefined("ForceCustomAttributeClass"))
+        {
+        WriteLogMessage(ecClass, "ECClass", "CustomAttributeClass");
+        classType = ECClassType::CustomAttribute;
+        }
+    else if (ecClass->IsDefined("ForceStructClass"))
+        {
+        WriteLogMessage(ecClass, "ECClass", "StructClass");
+        classType = ECClassType::Struct;
+        }
+
+    if (ecClass->IsDefined("ForceAbstract"))
+        {
+        WriteLogMessage(ecClass, "ECClass", "Abstract");
+        classModifier = ECClassModifier::Abstract;
+        }
+    else if (ecClass->IsDefined("ForceSealed"))
+        {
+        WriteLogMessage(ecClass, "ECClass", "Sealed");
+        classModifier = ECClassModifier::Sealed;
+        }
     }
 
 //---------------------------------------------------------------------------------------
@@ -593,7 +686,7 @@ SchemaReadStatus SchemaXmlReader::Deserialize(ECSchemaPtr& schemaOut, uint32_t c
     StopWatch readingSchemaReferences("Reading Schema References", true);
     SchemaXmlReaderImpl* reader = nullptr;
     if (2 == ecXmlMajorVersion)
-        reader = new SchemaXmlReader2(m_schemaContext, m_xmlDom);
+        reader = new SchemaXmlReader2(m_schemaContext, schemaOut, m_xmlDom);
     else
         reader = new SchemaXmlReader3(m_schemaContext, m_xmlDom);
 

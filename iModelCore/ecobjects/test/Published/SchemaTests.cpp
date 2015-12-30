@@ -357,10 +357,10 @@ TEST_F (SchemaTest, CheckEnumerationBasicProperties)
     status = enumeration->CreateEnumerator(enumerator, 5);
     EXPECT_TRUE(status == ECObjectsStatus::Success);
     EXPECT_TRUE(enumerator != nullptr);
+    EXPECT_STREQ(enumerator->GetInvariantDisplayLabel().c_str(), "5");
     enumerator->SetDisplayLabel("DLBL");
 
-    Utf8StringCR displayLabel = enumerator->GetDisplayLabel();
-    EXPECT_STREQ(displayLabel.c_str(), "DLBL");
+    EXPECT_STREQ(enumerator->GetDisplayLabel().c_str(), "DLBL");
     
     EXPECT_TRUE(enumerator->GetInteger() == 5);
     EXPECT_STREQ(enumerator->GetString().c_str(), "");
@@ -1083,7 +1083,7 @@ TEST_F (SchemaDeserializationTest, ExpectSuccessWhenRoundtripEnumerationUsingStr
     EXPECT_STREQ("Enumeration", property->GetTypeName().c_str());
 
     Utf8String ecSchemaXmlString;
-    SchemaWriteStatus status2 = schema->WriteToXmlString (ecSchemaXmlString);
+    SchemaWriteStatus status2 = schema->WriteToXmlString (ecSchemaXmlString, 3);
     EXPECT_EQ (SchemaWriteStatus::Success, status2);
 
     ECSchemaPtr deserializedSchema;
@@ -1547,6 +1547,9 @@ TEST_F (SchemaSerializationTest, ExpectSuccessWithSerializingBaseClasses)
     EXPECT_EQ(ECObjectsStatus::Success, enumeration->CreateEnumerator(enumerator, 3));
     enumerator->SetDisplayLabel("Third");
 
+    PrimitiveECPropertyP prop;
+    EXPECT_EQ(ECObjectsStatus::Success, class1->CreateEnumerationProperty(prop, "EnumeratedProperty", *enumeration));
+
     schema2->CreateEntityClass(baseClass, "BaseClass");
     schema3->CreateEntityClass(anotherBase, "AnotherBase");
 
@@ -1559,6 +1562,9 @@ TEST_F (SchemaSerializationTest, ExpectSuccessWithSerializingBaseClasses)
 
     SchemaWriteStatus status2 = schema->WriteToXmlFile (ECTestFixture::GetTempDataPath (L"base.xml").c_str ());
     EXPECT_EQ (SchemaWriteStatus::Success, status2);
+
+    status2 = schema->WriteToXmlFile(ECTestFixture::GetTempDataPath(L"base_ec3.xml").c_str(), 3);
+    EXPECT_EQ(SchemaWriteStatus::Success, status2);
 
     WString ecSchemaXmlString;
     SchemaWriteStatus status3 = schema->WriteToXmlString (ecSchemaXmlString);
@@ -1590,6 +1596,143 @@ TEST_F (SchemaReferenceTest, AddAndRemoveReferencedSchemas)
 
     EXPECT_TRUE (schemaIterator == refList.end ());
     EXPECT_EQ (ECObjectsStatus::SchemaNotFound, schema->RemoveReferencedSchema (*refSchema));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (SchemaSerializationTest, SerializeComprehensiveSchema)
+    {
+    //Load Bentley_Standard_CustomAttributes
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
+    SearchPathSchemaFileLocaterPtr schemaLocater;
+    bvector<WString> searchPaths;
+    searchPaths.push_back(ECTestFixture::GetTestDataPath(L""));
+    schemaLocater = SearchPathSchemaFileLocater::CreateSearchPathSchemaFileLocater(searchPaths);
+    schemaContext->AddSchemaLocater(*schemaLocater);
+
+    SchemaKey schemaKey("Bentley_Standard_CustomAttributes", 1, 12);
+    ECSchemaPtr standardCASchema = schemaContext->LocateSchema(schemaKey, SCHEMAMATCHTYPE_Latest);
+    EXPECT_TRUE(standardCASchema.IsValid());
+
+    //Compose our new schema
+    ECSchemaPtr schema;
+    ECSchema::CreateSchema (schema, "ComprehensiveSchema", 1, 0);
+    schema->SetNamespacePrefix ("cmpr");
+    schema->SetDescription("Comprehensive Schema to demonstrate use of all ECSchema concepts.");
+    schema->SetDisplayLabel("Comprehensive Schema");
+    schema->AddReferencedSchema(*standardCASchema);
+
+    ECEntityClassP baseEntityClass;
+    ECEntityClassP entityClass;
+    ECStructClassP structClass;
+    ECCustomAttributeClassP classCustomAttributeClass;
+    ECCustomAttributeClassP generalCustomAttributeClass;
+    ECEnumerationP enumeration;
+    
+    schema->CreateEntityClass (baseEntityClass, "BaseEntity");
+    PrimitiveECPropertyP inheritedPrimitiveProperty;
+    baseEntityClass->CreatePrimitiveProperty(inheritedPrimitiveProperty, "InheritedProperty", PrimitiveType::PRIMITIVETYPE_String);
+    baseEntityClass->SetClassModifier(ECClassModifier::Abstract);
+    baseEntityClass->SetDisplayLabel("Base Entity");
+    baseEntityClass->SetDescription("Base Entity Description");
+
+    schema->CreateEntityClass(entityClass, "Entity");
+    entityClass->SetClassModifier(ECClassModifier::Sealed);
+    entityClass->AddBaseClass(*baseEntityClass);
+    PrimitiveECPropertyP primitiveProperty1;
+    entityClass->CreatePrimitiveProperty(primitiveProperty1, "Primitive1", PrimitiveType::PRIMITIVETYPE_Binary);
+    primitiveProperty1->SetDisplayLabel("Property Display Label");
+    PrimitiveECPropertyP primitiveProperty2;
+    entityClass->CreatePrimitiveProperty(primitiveProperty2, "Primitive2", PrimitiveType::PRIMITIVETYPE_Boolean);
+    primitiveProperty2->SetDescription("Property Description");
+    PrimitiveECPropertyP primitiveProperty3;
+    entityClass->CreatePrimitiveProperty(primitiveProperty3, "Primitive3", PrimitiveType::PRIMITIVETYPE_DateTime);
+    primitiveProperty3->SetIsReadOnly(true);
+    PrimitiveECPropertyP primitiveProperty4;
+    entityClass->CreatePrimitiveProperty(primitiveProperty4, "Primitive4", PrimitiveType::PRIMITIVETYPE_Double);
+    PrimitiveECPropertyP primitiveProperty5;
+    entityClass->CreatePrimitiveProperty(primitiveProperty5, "Primitive5", PrimitiveType::PRIMITIVETYPE_IGeometry);
+    PrimitiveECPropertyP primitiveProperty6;
+    entityClass->CreatePrimitiveProperty(primitiveProperty6, "Primitive6", PrimitiveType::PRIMITIVETYPE_Integer);
+    PrimitiveECPropertyP primitiveProperty7;
+    entityClass->CreatePrimitiveProperty(primitiveProperty7, "Primitive7", PrimitiveType::PRIMITIVETYPE_Long);
+    PrimitiveECPropertyP primitiveProperty8;
+    entityClass->CreatePrimitiveProperty(primitiveProperty8, "Primitive8", PrimitiveType::PRIMITIVETYPE_Point2D);
+    PrimitiveECPropertyP primitiveProperty9;
+    entityClass->CreatePrimitiveProperty(primitiveProperty9, "Primitive9", PrimitiveType::PRIMITIVETYPE_Point3D);
+    PrimitiveECPropertyP primitiveProperty10;
+    entityClass->CreatePrimitiveProperty(primitiveProperty10, "Primitive10", PrimitiveType::PRIMITIVETYPE_String);
+    PrimitiveECPropertyP calculatedProperty;
+    entityClass->CreatePrimitiveProperty(calculatedProperty, "Calculated", PrimitiveType::PRIMITIVETYPE_String);
+    ArrayECPropertyP arrayProperty;
+    entityClass->CreateArrayProperty(arrayProperty, "Array", PrimitiveType::PRIMITIVETYPE_Long);
+
+    ECClassCP calcSpecClass = standardCASchema->GetClassCP("CalculatedECPropertySpecification");
+    IECInstancePtr calcSpecAttr = calcSpecClass->GetDefaultStandaloneEnabler()->CreateInstance();
+    ECValue v;
+    v.SetUtf8CP("\"Primitve 10=\" & this.Primitive10");
+    calcSpecAttr->SetValue("ECExpression", v);
+    calculatedProperty->SetCalculatedPropertySpecification(calcSpecAttr.get());
+
+    schema->CreateStructClass(structClass, "Struct");
+    structClass->SetDisplayLabel("Struct Class");
+    PrimitiveECPropertyP structPrimitive1;
+    structClass->CreatePrimitiveProperty(structPrimitive1, "Primitive1", PrimitiveType::PRIMITIVETYPE_Integer);
+    StructECPropertyP structProperty;
+    entityClass->CreateStructProperty(structProperty, "Struct1", *structClass);
+
+    StructArrayECPropertyP structArrayProperty;
+    entityClass->CreateStructArrayProperty(structArrayProperty, "StructArray", structClass);
+
+    schema->CreateCustomAttributeClass(classCustomAttributeClass, "ClassCustomAttribute");
+    classCustomAttributeClass->SetDescription("Custom Attribute that can only be applied to classes.");
+    classCustomAttributeClass->SetContainerType(CustomAttributeContainerType::AnyClass);
+    PrimitiveECPropertyP classCustomAttributeProperty;
+    classCustomAttributeClass->CreatePrimitiveProperty(classCustomAttributeProperty, "Primitive", PrimitiveType::PRIMITIVETYPE_String);
+    IECInstancePtr classCA = classCustomAttributeClass->GetDefaultStandaloneEnabler()->CreateInstance();
+    ECValue cV;
+    cV.SetUtf8CP("General Value on Class");
+    classCA->SetValue("Primitive", cV);
+    entityClass->SetCustomAttribute(*classCA);
+
+    schema->CreateCustomAttributeClass(generalCustomAttributeClass, "GeneralCustomAttribute");
+    generalCustomAttributeClass->SetDescription("Custom Attribute that can be applied to anything.");
+    PrimitiveECPropertyP generalCustomAttributeProperty;
+    generalCustomAttributeClass->CreatePrimitiveProperty(generalCustomAttributeProperty, "Primitive", PrimitiveType::PRIMITIVETYPE_String);
+    IECInstancePtr generalCA = generalCustomAttributeClass->GetDefaultStandaloneEnabler()->CreateInstance();
+    ECValue gV;
+    gV.SetUtf8CP("General Value");
+    generalCA->SetValue("Primitive", gV);
+    schema->SetCustomAttribute(*generalCA);
+
+    schema->CreateEnumeration(enumeration, "Enumeration", PrimitiveType::PRIMITIVETYPE_Integer);
+    enumeration->SetDisplayLabel("This is a display label.");
+    enumeration->SetDescription("This is a description.");
+    ECEnumeratorP enumerator;
+    EXPECT_EQ(ECObjectsStatus::Success, enumeration->CreateEnumerator(enumerator, 1));
+    enumerator->SetDisplayLabel("First");
+    EXPECT_EQ(ECObjectsStatus::Success, enumeration->CreateEnumerator(enumerator, 2));
+    enumerator->SetDisplayLabel("Second");
+    EXPECT_EQ(ECObjectsStatus::Success, enumeration->CreateEnumerator(enumerator, 3));
+    enumerator->SetDisplayLabel("Third");
+
+    PrimitiveECPropertyP prop;
+    EXPECT_EQ(ECObjectsStatus::Success, entityClass->CreateEnumerationProperty(prop, "Enumerated", *enumeration));
+
+    ECRelationshipClassP relationshipClass;
+    schema->CreateRelationshipClass(relationshipClass, "RelationshipClass");
+    PrimitiveECPropertyP relationshipProperty;
+    relationshipClass->CreatePrimitiveProperty(relationshipProperty, "RelationshipProperty");
+    relationshipClass->SetStrength(StrengthType::Referencing);
+    relationshipClass->SetStrengthDirection(ECRelatedInstanceDirection::Forward);
+    relationshipClass->GetSource().AddClass(*entityClass);
+    relationshipClass->GetSource().SetCardinality(RelationshipCardinality::ZeroOne());
+    relationshipClass->GetTarget().AddClass(*entityClass);
+    relationshipClass->GetTarget().SetCardinality(RelationshipCardinality::ZeroOne());
+
+    SchemaWriteStatus status2 = schema->WriteToXmlFile (ECTestFixture::GetTempDataPath (L"ComprehensiveSchema.01.00.ecschema.xml").c_str (), 3);
+    EXPECT_EQ (SchemaWriteStatus::Success, status2);
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -608,7 +608,8 @@ protected:
 
     virtual SchemaReadStatus            _ReadXml (BeXmlNodeR propertyNode, ECSchemaReadContextR schemaContext);
     virtual SchemaWriteStatus           _WriteXml (BeXmlWriterR xmlWriter, int ecXmlVersionMajor, int ecXmlVersionMinor);
-    SchemaWriteStatus                   _WriteXml (BeXmlWriterR xmlWriter, Utf8CP elementName, bmap<Utf8CP, CharCP>* additionalAttributes=nullptr, bool writeType=true);
+    SchemaWriteStatus                   _WriteXml (BeXmlWriterR xmlWriter, Utf8CP elementName, int ecXmlVersionMajor, bmap<Utf8CP, CharCP>* additionalAttributes=nullptr, bool writeType=true);
+    virtual Utf8String                  _GetTypeNameForXml(int ecXmlVersionMajor) const { return GetTypeName(); }
 
     virtual bool                        _IsPrimitive () const { return false; }
     virtual PrimitiveECPropertyCP       _GetAsPrimitivePropertyCP() const { return nullptr; } // used to avoid dynamic_cast
@@ -634,6 +635,7 @@ protected:
     // prefix relative to the containing schema.
     virtual Utf8String                  _GetTypeName () const = 0;
     virtual ECObjectsStatus             _SetTypeName (Utf8StringCR typeName) = 0;
+    
 
     virtual bool                        _CanOverride(ECPropertyCR baseProperty) const = 0;
 
@@ -772,6 +774,7 @@ protected:
     virtual PrimitiveECPropertyCP       _GetAsPrimitivePropertyCP() const override { return this; }
     virtual PrimitiveECPropertyP        _GetAsPrimitivePropertyP() override { return this; }
     virtual Utf8String                  _GetTypeName () const override;
+    virtual Utf8String                  _GetTypeNameForXml(int ecXmlVersionMajor) const override;
     virtual ECObjectsStatus             _SetTypeName (Utf8StringCR typeName) override;
     virtual bool                        _CanOverride(ECPropertyCR baseProperty) const override;
     virtual CalculatedPropertySpecificationCP   _GetCalculatedPropertySpecification() const override;
@@ -1508,18 +1511,18 @@ struct ECEnumerator : NonCopyableClass
         int32_t m_intValue;
         Utf8String m_stringValue;
 
-        Utf8String m_displayLabel;
+        mutable Utf8String m_displayLabel;
         bool m_hasExplicitDisplayLabel;
 
         //  Lifecycle management:  The enumeration implementation will
         //  serve as a factory for enumerators and will manage their lifecycle.
         explicit ECEnumerator(ECEnumerationCR parent, int32_t value) : m_enum(parent), m_intValue(value), m_hasExplicitDisplayLabel(false) {}
-        explicit ECEnumerator(ECEnumerationCR parent, Utf8StringCR value) : m_enum(parent), m_stringValue(value), m_hasExplicitDisplayLabel(false) {}
+        explicit ECEnumerator(ECEnumerationCR parent, Utf8CP value) : m_enum(parent), m_stringValue(value), m_hasExplicitDisplayLabel(false) {}
         ~ECEnumerator() {}
 
     public:
         //! The ECEnumeration that this enumerator is defined in
-        ECEnumerationCR    GetEnumeration() const { return m_enum; }
+        ECEnumerationCR GetEnumeration() const { return m_enum; }
         //! Whether the display label is explicitly defined or not
         bool GetIsDisplayLabelDefined() const { return m_hasExplicitDisplayLabel; }
         //! Sets the display label of this enumerator
@@ -1530,21 +1533,21 @@ struct ECEnumerator : NonCopyableClass
         ECOBJECTS_EXPORT Utf8StringCR GetInvariantDisplayLabel() const;
 
         //!Returns true if this enumerator holds an integer value
-        ECOBJECTS_EXPORT bool IsInteger() const;
+        bool IsInteger() const { return m_enum.GetType() == PrimitiveType::PRIMITIVETYPE_Integer; }
         //! Returns the integer value, if this ECEnumerator holds an Integer 
         int32_t GetInteger() const { return m_intValue; }
         //! Sets the value of this ECEnumerator to the given integer
         //! @param[in] integer  The value to set
         ECOBJECTS_EXPORT ECObjectsStatus SetInteger(int32_t integer);
         //!Returns true if this enumerator holds an integer value
-        ECOBJECTS_EXPORT bool IsString() const;
+        bool IsString() const { return m_enum.GetType() == PrimitiveType::PRIMITIVETYPE_String; }
         //! Gets the string content of this ECEnumerator in UTF-8 encoding.
         //! @return string content in UTF-8 encoding
         Utf8StringCR GetString() const { return m_stringValue; }
         //! Sets the value of this ECEnumerator to the given string
         //! @remarks This call will always succeed.  Previous data is cleared, and the type of the ECValue is set to a string Primitive
-        //! @param[in] value           The value to set
-        ECOBJECTS_EXPORT ECObjectsStatus    SetString(Utf8CP value);
+        //! @param[in] value The value to set
+        ECOBJECTS_EXPORT ECObjectsStatus SetString(Utf8CP value);
     };
 
 //---------------------------------------------------------------------------------------
@@ -1558,8 +1561,6 @@ DEFINE_T_SUPER(ECClass)
 friend struct ECSchema;
 friend struct SchemaXmlReaderImpl;
 friend struct SchemaXmlWriter;
-
-private:
 
 protected:
     //  Lifecycle management:  For now, to keep it simple, the class constructor is protected.  The schema implementation will
@@ -1611,7 +1612,11 @@ protected:
     ECCustomAttributeClassP _GetCustomAttributeClassP() override { return this; }
 
 public:
-    ECOBJECTS_EXPORT CustomAttributeContainerType GetContainerType() const;
+    CustomAttributeContainerType GetContainerType() const { return m_containerType; }
+
+    //! Sets the container type which this custom attribute can be applied to. Use this carefully as it might render existing instances invalid!
+    // @param[in]   containerType   The new container type to apply
+    void SetContainerType(CustomAttributeContainerType containerType) { m_containerType = containerType; }
 };
 
 //---------------------------------------------------------------------------------------

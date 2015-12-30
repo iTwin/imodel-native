@@ -40,6 +40,7 @@ private:
     IStandaloneEnablerLocaterP              m_standaloneEnablerLocater;
     ECSchemaCachePtr                        m_knownSchemas;
     bvector<bool>                           m_knownSchemaDirtyStack;
+    ECSchemaReadContextPtr                  m_conversionSchemas;
     bvector<IECSchemaLocaterP>                              m_locaters;
     int                                                     m_userAddedLocatersCount;
     int                                                     m_searchPathLocatersCount;
@@ -56,7 +57,14 @@ protected:
     //! Constructs a context for deserializing ECSchemas
     //! @param[in] standaloneEnablerLocater  Used to find enablers for instantiating instances of ECCustomAttributes used in the read ECSchema
     //! @param[in] acceptLegacyImperfectLatestCompatibleMatch  If true, LatestCompatible only checks that the major version matches. A warning will be logged if minor version is too low, but the ECSchema will be accepted
-    ECOBJECTS_EXPORT ECSchemaReadContext(IStandaloneEnablerLocaterP standaloneEnablerLocater, bool acceptLegacyImperfectLatestCompatibleMatch);
+    //! @param[in] createConversionContext  If true a private schema read context is created to locate and store conversion schemas
+    ECOBJECTS_EXPORT ECSchemaReadContext(IStandaloneEnablerLocaterP standaloneEnablerLocater, bool acceptLegacyImperfectLatestCompatibleMatch, bool createConversionContext);
+
+    //! Creates a context for deserializing ECSchemas
+    //! @param[in] standaloneEnablerLocater  Used to find enablers for instantiating instances of ECCustomAttributes used in the read ECSchema
+    //! @param[in] acceptLegacyImperfectLatestCompatibleMatch  If true, LatestCompatible only checks that the major version matches. A warning will be logged if minor version is too low, but the ECSchema will be accepted
+    //! @param[in] createConversionContext  If true a private schema read context is created to locate and store conversion schemas
+    ECOBJECTS_EXPORT static ECSchemaReadContextPtr CreateContext(IStandaloneEnablerLocaterP standaloneEnablerLocater, bool acceptLegacyImperfectLatestCompatibleMatch, bool createConversionContext);
 
     ECOBJECTS_EXPORT virtual void       _AddSchema (ECSchemaR schema);
 public:
@@ -64,6 +72,11 @@ public:
     ECOBJECTS_EXPORT ECObjectsStatus    AddSchema(ECSchemaR schema);
     void                                RemoveSchema(ECSchemaR schema);
     ECSchemaPtr         GetFoundSchema (SchemaKeyCR key, SchemaMatchType matchType);
+
+    ECOBJECTS_EXPORT void               AddConversionSchemaPath(WCharCP schemaPath);
+    ECOBJECTS_EXPORT ECObjectsStatus    AddConversionSchema(ECSchemaR schema);
+    void                                RemoveConversionSchema(ECSchemaR schema);
+    ECSchemaPtr                         LocateConversionSchemaFor(Utf8CP schemaName, int versionMajor, int versionMinor);
 
     ECSchemaPtr         LocateSchema (SchemaKeyR key, bset<SchemaMatchType> const& matches);
     ECOBJECTS_EXPORT void AddSchemaLocaters (bvector<ECN::IECSchemaLocaterP> const& schemaLocators);
