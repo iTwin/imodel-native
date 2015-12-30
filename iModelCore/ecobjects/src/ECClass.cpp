@@ -1693,14 +1693,6 @@ SchemaReadStatus ECCustomAttributeClass::_ReadXmlAttributes(BeXmlNodeR classNode
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                   Carole.MacDonald            11/2015
-//---------------+---------------+---------------+---------------+---------------+-------
-CustomAttributeContainerType ECCustomAttributeClass::GetContainerType() const
-    {
-    return m_containerType;
-    }
-
-//---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            10/2015
 //---------------+---------------+---------------+---------------+---------------+-------
 ECStructClass::ECStructClass(ECSchemaCR schema) : ECClass(schema)
