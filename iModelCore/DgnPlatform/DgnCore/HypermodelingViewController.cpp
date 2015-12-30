@@ -18,8 +18,8 @@
 //--------------+------------------------------------------------------------------------
 double static getSizeofPixelInDrawing (ViewContextR context, DrawingViewControllerCR drawing)
     {
-    double onePixelInPhysicalView = context.GetPixelSizeAtPoint (NULL);  
-    DPoint3d vec = DPoint3d::From (onePixelInPhysicalView, 0, 0);      
+    double onePixelInSpatialView = context.GetPixelSizeAtPoint (NULL);  
+    DPoint3d vec = DPoint3d::From (onePixelInSpatialView, 0, 0);      
 
 #ifdef NOT_RIGHT
     // TRICKY: The view is currently set up based on the physical view controller and so the view<->world transform is based on that. 
@@ -77,7 +77,7 @@ Transform static getTransformToForemostCutPlane (SectioningViewControllerCR sect
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      03/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-void HypermodelingViewController::PushClipsForPhysicalView (ViewContextR context) const
+void HypermodelingViewController::PushClipsForSpatialView (ViewContextR context) const
     {
     for (auto drawing : m_drawings)
         context.PushClip (*drawing->GetProjectClipVector());
@@ -86,7 +86,7 @@ void HypermodelingViewController::PushClipsForPhysicalView (ViewContextR context
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      03/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-void HypermodelingViewController::PopClipsForPhysicalView (ViewContextR context) const
+void HypermodelingViewController::PopClipsForSpatialView (ViewContextR context) const
     {
 #if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     for (auto drawing : m_drawings)
@@ -171,9 +171,9 @@ StatusInt HypermodelingViewController::_VisitHit(HitDetailCR hit, DecorateContex
         }
 
     //  The hit must be in the physical view
-    PushClipsForPhysicalView (context);
+    PushClipsForSpatialView (context);
     StatusInt status = m_currentViewController->VisitHit (hit, context);
-    PopClipsForPhysicalView (context);
+    PopClipsForSpatialView (context);
     return status;
     }
 
@@ -317,9 +317,9 @@ void HypermodelingViewController::_DrawView (ViewContextR context)
 
     //  Draw the clipped physical view
     m_currentViewController = m_physical.get();
-    PushClipsForPhysicalView (context);
+    PushClipsForSpatialView (context);
     m_currentViewController->DrawView (context);
-    PopClipsForPhysicalView (context);
+    PopClipsForSpatialView (context);
 #endif
     }
 
@@ -339,9 +339,9 @@ Render::GraphicPtr HypermodelingViewController::_StrokeGeometry(ViewContextR con
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      03/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-HypermodelingViewController::HypermodelingViewController (DgnViewId vid, PhysicalViewControllerR p, bvector<SectionDrawingViewControllerPtr> const& d)
+HypermodelingViewController::HypermodelingViewController (DgnViewId vid, SpatialViewControllerR p, bvector<SectionDrawingViewControllerPtr> const& d)
     :
-    PhysicalViewController (p.GetDgnDb(), vid),
+    SpatialViewController (p.GetDgnDb(), vid),
     m_drawings (d),
     m_physical (&p),
     m_currentViewController (&p),
@@ -400,7 +400,7 @@ BentleyStatus HypermodelingViewController::RemoveDrawing (DgnViewId id)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      03/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-PhysicalViewControllerR HypermodelingViewController::GetPhysicalView() const {return *m_physical;}
+SpatialViewControllerR HypermodelingViewController::GetSpatialView() const {return *m_physical;}
 
 #if defined (NEEDS_WORK_CONTINUOUS_RENDER)
 /*---------------------------------------------------------------------------------**//**

@@ -676,8 +676,8 @@ struct LocksManagerTest : public ::testing::Test, DgnPlatformLib::Host::LocksAdm
 
     DgnModelPtr CreateModel(Utf8CP name, DgnDbR db)
         {
-        DgnClassId classId(db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_PhysicalModel));
-        PhysicalModelPtr model = new PhysicalModel(PhysicalModel::CreateParams(db, classId, DgnModel::CreateModelCode(name)));
+        DgnClassId classId(db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_SpatialModel));
+        SpatialModelPtr model = new SpatialModel(SpatialModel::CreateParams(db, classId, DgnModel::CreateModelCode(name)));
         auto status = model->Insert();
         EXPECT_EQ(DgnDbStatus::Success, status);
         return DgnDbStatus::Success == status ? model : nullptr;

@@ -121,8 +121,8 @@ DGNPLATFORM_EXPORT void AddExtender (IAuxCoordSystemExtender* extender);
 DGNPLATFORM_EXPORT void RemoveExtender (IAuxCoordSystemExtender* extender);
 DGNPLATFORM_EXPORT IAuxCoordSystemExtender* FindExtender (uint32_t extenderID);
 
-DGNPLATFORM_EXPORT void SaveSettings (PhysicalViewControllerCP viewController);
-DGNPLATFORM_EXPORT void ReadSettings (PhysicalViewControllerP viewController);
+DGNPLATFORM_EXPORT void SaveSettings (SpatialViewControllerCP viewController);
+DGNPLATFORM_EXPORT void ReadSettings (SpatialViewControllerP viewController);
 
 DGNPLATFORM_EXPORT IAuxCoordSysPtr CreateACS (ACSType type, DPoint3dCR origin, RotMatrixCR rot, double scale, WCharCP name, WCharCP descr);
 
@@ -221,7 +221,7 @@ virtual StatusInt                   _SetFlags                   (ACSFlags flags)
 virtual uint32_t   _GetExtenderId () const = 0;
 virtual uint32_t   _GetSerializedSize () const = 0;
 virtual StatusInt  _Serialize (void *data, uint32_t maxSize) const = 0;
-virtual StatusInt                   _CompleteSetupFromViewController(PhysicalViewControllerCP info) = 0;
+virtual StatusInt                   _CompleteSetupFromViewController(SpatialViewControllerCP info) = 0;
 virtual void                        _DrawGrid                   (DgnViewportP vp) const = 0;
 virtual void                        _PointToGrid                (DgnViewportP vp, DPoint3dR point) const = 0;
 
@@ -317,7 +317,7 @@ DGNPLATFORM_EXPORT StatusInt StringFromPoint (WStringR outString, WStringR error
 //__PUBLISH_SECTION_END__
 
 //! Get the ACS extender id.
-DGNPLATFORM_EXPORT StatusInt CompleteSetupFromViewController (PhysicalViewControllerCP info);
+DGNPLATFORM_EXPORT StatusInt CompleteSetupFromViewController (SpatialViewControllerCP info);
 
 //! Display a representation of the ACS in the given view.
 DGNPLATFORM_EXPORT void DisplayInView (DgnViewportP vp, ACSDisplayOptions options, bool drawName) const;

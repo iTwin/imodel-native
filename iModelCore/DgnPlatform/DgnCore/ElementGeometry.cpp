@@ -2115,6 +2115,27 @@ DgnDbStatus GeometryStreamIO::Import(GeometryStreamR dest, GeometryStreamCR sour
                 break;
                 }
 
+            case ElementGeomIO::OpCode::TextString:
+                {
+                TextStringPtr text = TextString::Create();
+                if (SUCCESS != TextStringPersistence::DecodeFromFlatBuf(*text, egOp.m_data, egOp.m_dataSize, importer.GetSourceDb()))
+                    break;
+
+                // What is interesting is that TextString's persistence stores ID, but at runtime it only ever cares about font objects.
+                // While you might think it'd be nifty to simply deserialize from the old DB and re-serialize into the new DB (thus getting a new ID based on font type/name), you'd miss out on potentially cloning over embedded face data.
+                // Since the TextString came from persistence, assume the ID is valid.
+                DgnFontId srcFontId = importer.GetSourceDb().Fonts().FindId(text->GetStyle().GetFont());
+                DgnFontId dstFontId = importer.RemapFont(srcFontId);
+                DgnFontCP dstFont = importer.GetDestinationDb().Fonts().FindFontById(dstFontId);
+                
+                if (nullptr == dstFont)
+                    { BeDataAssert(nullptr != dstFont); }
+                else
+                    text->GetStyleR().SetFont(*dstFont);
+                
+                writer.Append(*text);
+                }
+            
             default:
                 {
                 writer.Append(egOp);
@@ -3721,6 +3742,7 @@ BentleyStatus GeometryBuilder::SetGeometryStream(DgnGeomPartR part)
         return ERROR;
 
     part.GetGeometryStreamR().SaveData(&m_writer.m_buffer.front(), (uint32_t) m_writer.m_buffer.size());
+    part.SetBoundingBox(m_is3d ? m_placement3d.GetElementBox() : ElementAlignedBox3d(m_placement2d.GetElementBox()));
 
     return SUCCESS;
     }
@@ -3827,41 +3849,14 @@ bool GeometryBuilder::Append(DgnGeomPartId geomPartId, TransformCR geomToElement
     if (!m_havePlacement)
         return false; // geomToElement must be relative to an already defined placement (i.e. not computed placement from CreateWorld)...
 
-    DgnGeomPartPtr geomPart = m_dgnDb.GeomParts().LoadGeomPart(geomPartId);
-
-    if (!geomPart.IsValid())
-        return false;
-
-    DRange3d localRange = DRange3d::NullRange();
-    GeometryCollection collection(geomPart->GetGeometryStream(), m_dgnDb);
-
-    collection.SetBRepOutput(GeometryCollection::BRepOutput::Mesh); // Can just use the mesh and avoid creating the ISolidKernelEntity...
-
-    for (auto iter : collection)
-        {
-        GeometricPrimitivePtr geom = iter.GetGeometryPtr();
-
-        if (!geom.IsValid())
-            continue;
-
-        if (!m_is3d && is3dGeometryType(geom->GetGeometryType()))
-            {
-            BeAssert(false); // 3d only geometry...
-            return false;
-            }
-
-        DRange3d range;
-
-        if (!geom->GetRange(range))
-            continue;
-
-        localRange.Extend(range);
-        }
+    DRange3d partRange;
+    if (SUCCESS != m_dgnDb.GeomParts().QueryGeomPartRange(partRange, geomPartId))
+        return false; // part probably doesn't exist...
 
     if (!geomToElement.IsIdentity())
-        geomToElement.Multiply(localRange, localRange);
+        geomToElement.Multiply(partRange, partRange);
 
-    OnNewGeom(localRange);
+    OnNewGeom(partRange);
     m_writer.Append(geomPartId, &geomToElement);
 
     return true;
@@ -3872,19 +3867,6 @@ bool GeometryBuilder::Append(DgnGeomPartId geomPartId, TransformCR geomToElement
 +---------------+---------------+---------------+---------------+---------------+------*/
 void GeometryBuilder::OnNewGeom(DRange3dCR localRange)
     {
-    if (m_isPartCreate)
-        {
-        // NOTE: Don't need placement or want sub-category to be added, but we do want to
-        //       store symbology/material attachments that aren't from the sub-category appearance.
-        if (m_appearanceChanged)
-            {
-            m_writer.Append(m_elParams, m_isPartCreate);
-            m_appearanceChanged = false;
-            }
-
-        return;
-        }
-
     if (m_is3d)
         m_placement3d.GetElementBoxR().Extend(localRange);
     else

@@ -82,7 +82,7 @@ BentleyStatus AnnotationFramePersistence::EncodeAsFlatBuf(Offset<FB::AnnotationF
 
     //.............................................................................................
     FB::AnnotationFrameStyleSetters styleOverrides;
-    POSTCONDITION(SUCCESS == AnnotationFrameStylePersistence::EncodeAsFlatBuf(styleOverrides, frame.m_styleOverrides), ERROR);
+    POSTCONDITION(SUCCESS == AnnotationFrameStylePersistence::EncodeAsFlatBuf(styleOverrides, frame.m_styleOverrides, AnnotationFrameStylePersistence::FlatBufEncodeOptions::SettersAreOverrides), ERROR);
 
     FB::AnnotationFrameStyleSetterVectorOffset styleOverridesOffset;
     if (!styleOverrides.empty())

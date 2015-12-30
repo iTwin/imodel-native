@@ -265,9 +265,9 @@ TEST_F(TransactionManagerTests, ElementAssembly)
 +---------------+---------------+---------------+---------------+---------------+------*/
 static void testModelUndoRedo(DgnDbR db)
     {
-    Utf8String name = db.Models().GetUniqueModelName("testphysical");
+    Utf8String name = db.Models().GetUniqueModelName("TestSpatial");
 
-    ModelHandlerR handler = dgn_ModelHandler::Physical::GetHandler();
+    ModelHandlerR handler = dgn_ModelHandler::Spatial::GetHandler();
     DgnModelPtr model = handler.Create(DgnModel::CreateParams(db, db.Domains().GetClassId(handler), DgnModel::CreateModelCode(name)));
     auto modelStatus = model->Insert();
     ASSERT_TRUE(DgnDbStatus::Success == modelStatus);

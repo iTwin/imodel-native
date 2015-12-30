@@ -28,7 +28,7 @@ DgnViewId createAndInsertView(DgnDbR db, Utf8CP name, DgnModelId baseModelId, Dg
     DgnViewId viewId = view.GetViewId();
     if (viewId.IsValid())
         {
-        PhysicalViewController viewController(db, viewId);
+        SpatialViewController viewController(db, viewId);
         viewController.SetStandardViewRotation(StandardView::Iso);
         viewController.LookAtVolume(viewExtents);
         viewController.GetViewFlagsR().SetRenderMode(Render::RenderMode::SmoothShade);

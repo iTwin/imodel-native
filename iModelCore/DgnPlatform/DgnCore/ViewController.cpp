@@ -8,6 +8,7 @@
 #include <DgnPlatformInternal.h>
 #include <Geom/eigensys3d.fdf>
 #include <DgnPlatform/DgnMarkupProject.h>
+#include <DgnPlatform/DgnGeoCoord.h>
 
 static Utf8CP VIEW_SETTING_Area2d                = "area2d";
 static Utf8CP VIEW_SETTING_BackgroundColor       = "bgColor";
@@ -705,7 +706,7 @@ void ViewController::LookAtViewAlignedVolume(DRange3dCR volume, double const* as
         newDelta.z = minimumDepth;
         }
 
-    PhysicalViewControllerP physView =(PhysicalViewControllerP) _ToPhysicalView();
+    SpatialViewControllerP physView =(SpatialViewControllerP) _ToSpatialView();
     CameraViewControllerP cameraView =(CameraViewControllerP) _ToCameraView();
     DPoint3d origNewDelta = newDelta;
 
@@ -807,7 +808,7 @@ void ViewController::_FillModels()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Shaun.Sewall                    08/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-PhysicalViewController::PhysicalViewController(DgnDbR dgndb, DgnViewId viewId) : ViewController(dgndb, viewId)
+SpatialViewController::SpatialViewController(DgnDbR dgndb, DgnViewId viewId) : ViewController(dgndb, viewId)
     {
     // not valid, but better than random
     m_origin.Zero();
@@ -818,7 +819,7 @@ PhysicalViewController::PhysicalViewController(DgnDbR dgndb, DgnViewId viewId) :
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      03/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-void PhysicalViewController::_OnTransform(TransformCR trans)
+void SpatialViewController::_OnTransform(TransformCR trans)
     {
     RotMatrix rMatrix;
     trans.GetMatrix(rMatrix);
@@ -844,7 +845,7 @@ void CameraViewController::_OnTransform(TransformCR trans)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-void PhysicalViewController::TransformBy(TransformCR trans)
+void SpatialViewController::TransformBy(TransformCR trans)
     {
     _OnTransform(trans);
     }
@@ -852,7 +853,7 @@ void PhysicalViewController::TransformBy(TransformCR trans)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus PhysicalViewController::SetTargetModel(GeometricModelP target)
+BentleyStatus SpatialViewController::SetTargetModel(GeometricModelP target)
     {
     if (!m_viewedModels.Contains(target->GetModelId()))
         return  ERROR;
@@ -907,7 +908,7 @@ bool SectionDrawingViewController::GetSectionHasDogLeg() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Shaun.Sewall                    08/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-CameraViewController::CameraViewController(DgnDbR project, DgnViewId viewId) : PhysicalViewController(project, viewId)
+CameraViewController::CameraViewController(DgnDbR project, DgnViewId viewId) : SpatialViewController(project, viewId)
     {
     // not valid, but better than random
     m_isCameraOn = false;
@@ -958,7 +959,7 @@ void CameraViewController::CenterFocusDistance()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   08/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-double PhysicalViewController::CalculateMaxDepth(DVec3dCR delta, DVec3dCR zVec)
+double SpatialViewController::CalculateMaxDepth(DVec3dCR delta, DVec3dCR zVec)
     {
     // We are going to limit maximum depth to a value that will avoid subtractive cancellation
     // errors on the inverse frustum matrix. - These values will occur when the Z'th row values
@@ -1018,7 +1019,7 @@ bool CameraViewController::_OnGeoLocationEvent(GeoLocationEventStatus& status, G
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   MattGooding     11/13
 //---------------------------------------------------------------------------------------
-bool PhysicalViewController::_OnGeoLocationEvent(GeoLocationEventStatus& status, GeoPointCR location)
+bool SpatialViewController::_OnGeoLocationEvent(GeoLocationEventStatus& status, GeoPointCR location)
     {
     DPoint3d worldPoint;
     if (!convertToWorldPointWithStatus(worldPoint, status, m_dgndb.Units(), location))
@@ -1148,7 +1149,7 @@ DVec3dR up1             //!< [out] model coordinates up vector for gyro1
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   MattGooding     11/13
 //---------------------------------------------------------------------------------------
-bool PhysicalViewController::ViewVectorsFromOrientation(DVec3dR forward, DVec3dR up, RotMatrixCR orientation, OrientationMode mode, UiOrientation ui)
+bool SpatialViewController::ViewVectorsFromOrientation(DVec3dR forward, DVec3dR up, RotMatrixCR orientation, OrientationMode mode, UiOrientation ui)
     {
     double azimuthCorrection = 0.0;
     DVec3d currForward = GetZVector();
@@ -1157,9 +1158,13 @@ bool PhysicalViewController::ViewVectorsFromOrientation(DVec3dR forward, DVec3dR
     switch (mode)
         {
         case OrientationMode::CompassHeading:
-            azimuthCorrection = msGeomConst_radiansPerDegree *(90.0 + m_dgndb.Units().GetAzimuth());
+            {
+            DgnGCS* dgnGcs = m_dgndb.Units().GetDgnGCS();
+            double azimuth = (dgnGcs != nullptr) ? dgnGcs->GetAzimuth() : 0.0;
+            azimuthCorrection = msGeomConst_radiansPerDegree *(90.0 + azimuth);
             forward.RotateXY(azimuthCorrection);
             break;
+            }
         case OrientationMode::IgnoreHeading:
             forward.x = currForward.x;
             forward.y = currForward.y;
@@ -1194,7 +1199,7 @@ bool PhysicalViewController::ViewVectorsFromOrientation(DVec3dR forward, DVec3dR
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   MattGooding     11/13
 //---------------------------------------------------------------------------------------
-bool PhysicalViewController::_OnOrientationEvent(RotMatrixCR orientation, OrientationMode mode, UiOrientation ui)
+bool SpatialViewController::_OnOrientationEvent(RotMatrixCR orientation, OrientationMode mode, UiOrientation ui)
     {
     DVec3d forward, up;
     if (!ViewVectorsFromOrientation(forward, up, orientation, mode, ui))
@@ -1517,7 +1522,7 @@ void CameraViewController::_RestoreFromSettings(JsonValueCR jsonObj)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   MattGooding     09/12
 //---------------------------------------------------------------------------------------
-void PhysicalViewController::_RestoreFromSettings(JsonValueCR jsonObj)
+void SpatialViewController::_RestoreFromSettings(JsonValueCR jsonObj)
     {
     T_Super::_RestoreFromSettings(jsonObj);
 
@@ -1552,7 +1557,7 @@ void CameraViewController::_SaveToSettings(JsonValueR jsonObj) const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   MattGooding     09/12
 //---------------------------------------------------------------------------------------
-void PhysicalViewController::_SaveToSettings(JsonValueR jsonObj) const
+void SpatialViewController::_SaveToSettings(JsonValueR jsonObj) const
     {
     T_Super::_SaveToSettings(jsonObj);
 
@@ -1586,7 +1591,7 @@ void ViewFlags::InitDefaults()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-void PhysicalViewController::_AdjustAspectRatio(double windowAspect, bool expandView)
+void SpatialViewController::_AdjustAspectRatio(double windowAspect, bool expandView)
     {
     windowAspect *= GetAspectRatioSkew();
 

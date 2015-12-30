@@ -22,7 +22,7 @@ BEGIN_BENTLEY_DGN_NAMESPACE
  <p>A ViewController provides persistence and behavior to a type of view.
  <p>A DgnViewport has a reference-counted-pointer to a ViewController that controls it.
  <p>A ViewContext holds the state of an operation performed on one or more elements in a DgnViewport.
- <p>A QueryModel is used to query and display graphics from PhysicalModels. 
+ <p>A QueryModel is used to query and display graphics from SpatialModels. 
 
   <h2>%DgnViewport Coordinates</h2>
   Coordinate information can be exchanged with Viewports using the various coordinate systems defined in DgnCoordSystem.
@@ -723,9 +723,9 @@ public:
     ViewControllerR GetViewControllerR() const {return *m_viewController;}
 
     //! If this view is a physical view, get the physical view controller.
-    PhysicalViewControllerCP GetPhysicalViewControllerCP() const {return GetViewController()._ToPhysicalView();}
+    SpatialViewControllerCP GetSpatialViewControllerCP() const {return GetViewController()._ToSpatialView();}
     //! If this view is a physical view, get a writeable pointer to the physical view controller.
-    PhysicalViewControllerP GetPhysicalViewControllerP() {return (PhysicalViewControllerP) GetPhysicalViewControllerCP();}
+    SpatialViewControllerP GetSpatialViewControllerP() {return (SpatialViewControllerP) GetSpatialViewControllerCP();}
     //! If this view is a camera view, get the camera physical view controller.
     CameraViewControllerCP GetCameraViewControllerCP() const {return GetViewController()._ToCameraView();}
     //! If this view is a camera view, get a writeable pointer to the camera physical view controller.

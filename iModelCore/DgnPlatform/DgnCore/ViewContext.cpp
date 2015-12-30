@@ -735,7 +735,7 @@ bool ViewContext::VisitAllViewElements(BSIRectCP updateRect)
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ViewContext::_VisitAllModelElements()
     {
-    PhysicalViewControllerCP physController = m_viewport->GetPhysicalViewControllerCP();
+    SpatialViewControllerCP physController = m_viewport->GetSpatialViewControllerCP();
     ClipVectorPtr clipVector = physController ? physController->GetClipVector() : nullptr;
     if (clipVector.IsValid())
         PushClip(*clipVector);

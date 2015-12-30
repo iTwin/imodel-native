@@ -24,7 +24,7 @@ struct ElementGroupTests : public DgnDbTestFixture
 PhysicalElementPtr ElementGroupTests::CreateAndInsertElement(DgnModelP model)
     {
     GeometryBuilderPtr builder = GeometryBuilder::Create(*model, m_defaultCategoryId, DPoint3d::From(0.0, 0.0, 0.0));
-    PhysicalElementPtr testElement = PhysicalElement::Create(*(model->ToPhysicalModelP()), m_defaultCategoryId);
+    PhysicalElementPtr testElement = PhysicalElement::Create(*(model->ToSpatialModelP()), m_defaultCategoryId);
 
     DEllipse3d ellipseData = DEllipse3d::From(1, 2, 3,/**/  0, 0, 2, /**/ 0, 3, 0, /**/ 0.0, Angle::TwoPi());
     ICurvePrimitivePtr curvePrimitive = ICurvePrimitive::CreateArc(ellipseData);
@@ -62,11 +62,15 @@ TEST_F(ElementGroupTests, CRUD)
     ASSERT_TRUE(group->Insert().IsValid());
 
     // Insert Elements
-    ASSERT_TRUE(DgnDbStatus::Success == group->AddMember(*member1));
-    ASSERT_TRUE(DgnDbStatus::Success == group->AddMember(*member2));
+    ASSERT_TRUE(DgnDbStatus::Success == group->AddMember(*member1, 1));
+    ASSERT_TRUE(DgnDbStatus::Success == group->AddMember(*member2, 2));
     ASSERT_TRUE(DgnDbStatus::Success == group->AddMember(*member3));
     // Insert Duplicate
     ASSERT_FALSE(DgnDbStatus::Success == group->AddMember(*member3));
+    // Verify MemberPriority
+    ASSERT_EQ(1, group->QueryMemberPriority(*member1));
+    ASSERT_EQ(2, group->QueryMemberPriority(*member2));
+    ASSERT_EQ(0, group->QueryMemberPriority(*member3)) << "Expect 0 for default priority";
 
     //  Query
     EXPECT_TRUE (3 == group->QueryMembers().size());

@@ -17,7 +17,6 @@
 #define MODEL_PROP_Properties "Properties"
 #define MODEL_PROP_DependencyIndex "DependencyIndex"
 #define SHEET_MODEL_PROP_SheetSize "SheetSize"
-#define MODEL2D_MODEL_PROP_GlobalOrigin "GlobalOrigin"
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/10
@@ -193,6 +192,31 @@ Utf8CP          DgnModels::Iterator::Entry::GetCodeNamespace() const {Verify(); 
 DgnAuthorityId  DgnModels::Iterator::Entry::GetCodeAuthorityId() const {Verify(); return m_sql->GetValueId<DgnAuthorityId>(6);}
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+ECSqlClassInfo const& DgnModels::FindClassInfo(DgnModelR model)
+    {
+    DgnClassId classId = model.GetClassId();
+    auto found = m_classInfos.find(classId);
+    if (found != m_classInfos.end())
+        return found->second;
+
+    ECSqlClassInfo& classInfo = m_classInfos[classId];
+    bool populated = model.GetModelHandler().GetECSqlClassParams().BuildClassInfo(classInfo, m_dgndb, classId);
+    BeAssert(populated);
+    UNUSED_VARIABLE(populated);
+
+    return classInfo;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+CachedECSqlStatementPtr DgnModels::GetSelectStmt(DgnModelR model) { return FindClassInfo(model).GetSelectStmt(m_dgndb, model.GetModelId()); }
+CachedECSqlStatementPtr DgnModels::GetInsertStmt(DgnModelR model) { return FindClassInfo(model).GetInsertStmt(m_dgndb); }
+CachedECSqlStatementPtr DgnModels::GetUpdateStmt(DgnModelR model) { return FindClassInfo(model).GetUpdateStmt(m_dgndb, model.GetModelId()); }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    11/00
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnModel::ReleaseAllElements()
@@ -204,7 +228,7 @@ void DgnModel::ReleaseAllElements()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    10/00
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnModel::DgnModel(CreateParams const& params) : m_dgndb(params.m_dgndb), m_modelId(params.m_id), m_classId(params.m_classId), m_code(params.m_code), m_inGuiList(params.m_inGuiList), m_label(params.m_label),
+DgnModel::DgnModel(CreateParams const& params) : m_dgndb(params.m_dgndb), m_classId(params.m_classId), m_code(params.m_code), m_inGuiList(params.m_inGuiList), m_label(params.m_label),
     m_dependencyIndex(-1), m_persistent(false), m_filled(false)
     {
     }
@@ -290,58 +314,6 @@ DgnModel::~DgnModel()
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                 Ramanujam.Raman   12/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnModel2d::BindInsertAndUpdateParams(ECSqlStatement& statement)
-    {
-    statement.BindPoint2D(statement.GetParameterIndex(MODEL2D_MODEL_PROP_GlobalOrigin), m_globalOrigin);
-    return DgnDbStatus::Success;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                 Ramanujam.Raman   12/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnModel2d::_BindInsertParams(ECSqlStatement& statement)
-    {
-    T_Super::_BindInsertParams(statement);
-    return BindInsertAndUpdateParams(statement);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                 Ramanujam.Raman   12/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnModel2d::_BindUpdateParams(ECSqlStatement& statement)
-    {
-    T_Super::_BindUpdateParams(statement);
-    return BindInsertAndUpdateParams(statement);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                 Ramanujam.Raman   12/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnModel2d::_ReadSelectParams(ECSqlStatement& statement, ECSqlClassParamsCR params)
-    {
-    DgnDbStatus status = T_Super::_ReadSelectParams(statement, params);
-    if (DgnDbStatus::Success != status)
-        return status;
-
-    m_globalOrigin = statement.GetValuePoint2D(params.GetSelectIndex(MODEL2D_MODEL_PROP_GlobalOrigin));
-
-    return DgnDbStatus::Success;
-    }
-	
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                 Ramanujam.Raman   12/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-void DgnModel2d::_InitFrom(DgnModelCR other)
-    {
-    T_Super::_InitFrom(other);
-    DgnModel2dCP otherModel = other.ToDgnModel2d();
-    if (nullptr != otherModel)
-        m_globalOrigin = otherModel->m_globalOrigin;
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      05/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus DgnModel2d::_OnInsertElement(DgnElementR element)
@@ -415,11 +387,12 @@ DgnDbStatus DictionaryModel::_OnInsertElement(DgnElementR el)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                 Ramanujam.Raman   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnModel::Read()
+DgnDbStatus DgnModel::Read(DgnModelId modelId)
     {
-    ECSqlClassInfo const& info = GetModelHandler().GetECSqlClassInfo();
+    m_modelId = modelId;
+    auto const& params = GetModelHandler().GetECSqlClassParams();
 
-    CachedECSqlStatementPtr stmt = info.GetSelectStmt(GetDgnDb(), GetModelId());
+    CachedECSqlStatementPtr stmt = GetDgnDb().Models().GetSelectStmt(*this);
     if (stmt.IsNull())
         {
         BeAssert(false);
@@ -429,7 +402,7 @@ DgnDbStatus DgnModel::Read()
     if (BE_SQLITE_ROW != stmt->Step())
         return DgnDbStatus::ReadError;
 
-    return _ReadSelectParams(*stmt, info.GetParams());
+    return _ReadSelectParams(*stmt, params);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -522,7 +495,7 @@ DgnDbStatus DgnModel::Update()
     if (status != DgnDbStatus::Success)
         return status;
 
-    CachedECSqlStatementPtr stmt = GetModelHandler().GetECSqlClassInfo().GetUpdateStmt(GetDgnDb(), GetModelId());
+    CachedECSqlStatementPtr stmt = GetDgnDb().Models().GetUpdateStmt(*this);
     if (stmt.IsNull())
         return DgnDbStatus::WriteError;
 
@@ -878,9 +851,6 @@ DgnDbStatus DgnModel::_OnInsert()
     if (m_modelId.IsValid())
         return DgnDbStatus::IdExists;
 
-    if (&m_dgndb != &m_dgndb)
-        return DgnDbStatus::WrongDgnDb;
-
     if (!DgnModels::IsValidName(m_code.GetValue()))
         {
         BeAssert(false);
@@ -944,7 +914,7 @@ DgnDbStatus DgnModel::Insert()
 
     m_modelId = DgnModelId(m_dgndb, DGN_TABLE(DGN_CLASSNAME_Model), "Id");
 
-    CachedECSqlStatementPtr stmt = GetModelHandler().GetECSqlClassInfo().GetInsertStmt(GetDgnDb());
+    CachedECSqlStatementPtr stmt = GetDgnDb().Models().GetInsertStmt(*this);
     if (stmt.IsNull())
         {
         m_modelId = DgnModelId();
@@ -1033,12 +1003,12 @@ DgnModelPtr DgnModels::LoadDgnModel(DgnModelId modelId)
     if (nullptr == handler)
         return nullptr;
 
-    DgnModel::CreateParams params(m_dgndb, model.GetClassId(), model.GetCode(), model.GetLabel(), model.GetInGuiList(), modelId);
+    DgnModel::CreateParams params(m_dgndb, model.GetClassId(), model.GetCode(), model.GetLabel(), model.GetInGuiList());
     DgnModelPtr dgnModel = handler->Create(params);
     if (!dgnModel.IsValid())
         return nullptr;
 
-    dgnModel->Read();
+    dgnModel->Read(modelId);
     dgnModel->_OnLoaded();   // this adds the model to the loaded models list and increments the ref count, so returning by value is safe.
 
     return dgnModel;
@@ -1110,11 +1080,6 @@ DgnModelId DgnModels::QueryFirstModelId() const
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   07/14
-+---------------+---------------+---------------+---------------+---------------+------*/
-DPoint3d GeometricModel::_GetGlobalOrigin() const
-    {
-    return GetDgnDb().Units().GetGlobalOrigin();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1214,20 +1179,12 @@ ModelHandlerP dgn_ModelHandler::Model::FindHandler(DgnDb const& db, DgnClassId h
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                  Ramanujam.Raman   11/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECSqlClassInfo const& dgn_ModelHandler::Model::GetECSqlClassInfo()
+ECSqlClassParams const& dgn_ModelHandler::Model::GetECSqlClassParams()
     {
-    if (!m_classInfo.IsInitialized())
-        {
-        Utf8String fullClassName("[");
-        fullClassName.append(GetDomain().GetDomainName()).append("].[").append(GetClassName()).append(1, ']');
+    if (!m_classParams.IsInitialized())
+        m_classParams.Initialize(*this);
 
-        ECSqlClassParams classParams;
-        _GetClassParams(classParams);
-
-        m_classInfo.Initialize(fullClassName, classParams);
-        }
-
-    return m_classInfo;
+    return m_classParams;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1253,23 +1210,21 @@ void dgn_ModelHandler::Sheet::_GetClassParams(ECSqlClassParamsR params)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                 Ramanujam.Raman   12/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-void dgn_ModelHandler::Model2d::_GetClassParams(ECSqlClassParamsR params)
-    {
-    T_Super::_GetClassParams(params);
-    params.Add(MODEL2D_MODEL_PROP_GlobalOrigin, ECSqlClassParams::StatementType::All);
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   11/11
 +---------------+---------------+---------------+---------------+---------------+------*/
 AxisAlignedBox3d GeometricModel::_QueryModelRange() const
     {
-    Statement stmt(m_dgndb, "SELECT DGN_bbox_union(DGN_placement_aabb(g.Placement)) FROM " 
-                           DGN_TABLE(DGN_CLASSNAME_Element)     " AS e," 
-                           DGN_TABLE(DGN_CLASSNAME_ElementGeom) " AS g"
-                          " WHERE e.ModelId=? AND e.Id=g.ElementId");
+    Statement stmt(m_dgndb,
+        "SELECT DGN_bbox_union("
+            "DGN_placement_aabb("
+                "DGN_placement("
+                    "DGN_point(g.Placement_Origin_X,g.Placement_Origin_Y,g.Placement_Origin_Z),"
+                    "DGN_angles(g.Placement_Rotation_Yaw,g.Placement_Rotation_Pitch,g.Placement_Rotation_Roll),"
+                    "DGN_bbox("
+                        "g.Placement_Box_Low_X,g.Placement_Box_Low_Y,g.Placement_Box_Low_Z,"
+                        "g.Placement_Box_High_X,g.Placement_Box_High_Y,g.Placement_Box_High_Z))))"
+        " FROM " DGN_TABLE(DGN_CLASSNAME_Element) " AS e," DGN_TABLE(DGN_CLASSNAME_SpatialElement) " As g"
+        " WHERE e.ModelId=? AND e.Id=g.Id");
 
     stmt.BindId(1, GetModelId());
     auto rc = stmt.Step();

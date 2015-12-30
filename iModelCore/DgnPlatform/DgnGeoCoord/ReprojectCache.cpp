@@ -10,7 +10,6 @@
 #include    <Geom\msgeomstructs.hpp>
 #include    <Bentley\BeTimeUtilities.h>
 #include    <DgnPlatform/DgnCoreAPI.h>
-#include    <DgnGeoCoord\DgnGeoCoord.h>
 #include    <DgnGeoCoord\DgnGeoCoordApi.h>
 #include    <DgnPlatform/IGeoCoordReproject.h>
 #include    <DgnPlatform/Undo.h>

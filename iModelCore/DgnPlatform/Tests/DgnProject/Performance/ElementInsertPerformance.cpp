@@ -78,7 +78,7 @@ struct PerformanceElementTestFixture : public DgnDbTestFixture
                  "</ECSchema>";
 
         BentleyStatus ImportTestSchema () const;
-        PhysicalModelPtr CreatePhysicalModel () const;
+        SpatialModelPtr CreateSpatialModel () const;
     };
 
 //static
@@ -113,10 +113,10 @@ BentleyStatus PerformanceElementTestFixture::ImportTestSchema () const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            08/2015
 //---------------+---------------+---------------+---------------+---------------+-------
-PhysicalModelPtr PerformanceElementTestFixture::CreatePhysicalModel () const
+SpatialModelPtr PerformanceElementTestFixture::CreateSpatialModel () const
     {
-    DgnClassId mclassId = DgnClassId (m_db->Schemas ().GetECClassId (DGN_ECSCHEMA_NAME, DGN_CLASSNAME_PhysicalModel));
-    PhysicalModelPtr targetModel = new PhysicalModel (PhysicalModel::CreateParams (*m_db, mclassId, DgnModel::CreateModelCode ("Instances")));
+    DgnClassId mclassId = DgnClassId (m_db->Schemas ().GetECClassId (DGN_ECSCHEMA_NAME, DGN_CLASSNAME_SpatialModel));
+    SpatialModelPtr targetModel = new SpatialModel (SpatialModel::CreateParams (*m_db, mclassId, DgnModel::CreateModelCode ("Instances")));
     EXPECT_EQ (DgnDbStatus::Success, targetModel->Insert ());       /* Insert the new model into the DgnDb */
     return targetModel;
     }
@@ -129,7 +129,7 @@ TEST_F (PerformanceElementTestFixture, ElementInsertInDbWithSingleInsertApproach
     SetupProject (L"3dMetricGeneral.idgndb", L"ElementInsertPerformanceSingleInsertNumberedParams.idgndb", BeSQLite::Db::OpenMode::ReadWrite);
     ASSERT_EQ (SUCCESS, ImportTestSchema ());
 
-    PhysicalModelPtr model = CreatePhysicalModel ();
+    SpatialModelPtr model = CreateSpatialModel ();
     ASSERT_TRUE (model != nullptr);
     DgnModelId modelId = model->GetModelId ();
     ASSERT_TRUE (modelId.IsValid ());
@@ -191,7 +191,7 @@ TEST_F (PerformanceElementTestFixture, ElementInsertInDbWithInsertUpdateApproach
     SetupProject (L"3dMetricGeneral.idgndb", L"ElementInsertPerformanceInsertUpdateApproach.idgndb", BeSQLite::Db::OpenMode::ReadWrite);
     ASSERT_EQ (SUCCESS, ImportTestSchema ());
 
-    PhysicalModelPtr model = CreatePhysicalModel ();
+    SpatialModelPtr model = CreateSpatialModel ();
     ASSERT_TRUE (model != nullptr);
     DgnModelId modelId = model->GetModelId ();
     ASSERT_TRUE (modelId.IsValid ());
@@ -259,7 +259,7 @@ TEST_F (PerformanceElementTestFixture, ElementInsertInDbWithSingleInsertApproach
     SetupProject (L"3dMetricGeneral.idgndb", L"ElementInsertPerformanceSingleInsertNamedParams.idgndb", BeSQLite::Db::OpenMode::ReadWrite);
     ASSERT_EQ (SUCCESS, ImportTestSchema ());
 
-    PhysicalModelPtr model = CreatePhysicalModel ();
+    SpatialModelPtr model = CreateSpatialModel ();
     ASSERT_TRUE (model != nullptr);
     DgnModelId modelId = model->GetModelId ();
     ASSERT_TRUE (modelId.IsValid ());
