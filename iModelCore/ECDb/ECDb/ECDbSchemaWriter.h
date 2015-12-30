@@ -26,7 +26,6 @@ private:
     BentleyStatus CreateBaseClassEntry(ECClassId ecClassId, ECClassCR baseClass, int index);
     BentleyStatus CreateECPropertyEntry(ECPropertyCR ecProperty, int32_t index);
     BentleyStatus CreateECRelationshipConstraintEntry(ECClassId relationshipClassId, ECN::ECRelationshipConstraintR relationshipConstraint, ECRelationshipEnd endpoint);
-    BentleyStatus CreateECRelationshipConstraintClassEntry(ECClassId relationshipClassId, ECClassId constraintClassId, ECRelationshipEnd endpoint);
     BentleyStatus InsertCAEntry(IECInstanceP customAttribute, ECClassId ecClassId, ECContainerId containerId, ECContainerType containerType, ECContainerId overridenContainerId, int index);
     BentleyStatus CreateECSchemaReferenceEntry(ECSchemaId ecSchemaId, ECSchemaId ecReferencedSchemaId);
 

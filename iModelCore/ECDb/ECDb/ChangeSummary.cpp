@@ -333,17 +333,20 @@ ECInstanceId SqlChange::GetValueId(int columnIndex) const
 //---------------------------------------------------------------------------------------
 ECClassId TableMap::QueryClassId(ECDbR ecdb, Utf8StringCR tableName) const
     {
-    CachedStatementPtr stmt = ecdb.GetCachedStatement(
-        "SELECT DISTINCT ec_Class.Id"
-        " FROM ec_Class"
-        " JOIN ec_ClassMap ON ec_Class.Id = ec_ClassMap.ClassId"
-        " JOIN ec_PropertyMap ON ec_ClassMap.Id = ec_PropertyMap.ClassMapId"
-        " JOIN ec_Column ON ec_PropertyMap.ColumnId = ec_Column.Id"
-        " JOIN ec_Table ON ec_Table.Id = ec_Column.TableId"
-        " WHERE ec_Table.Name = :tableName"
-        " AND (ec_ClassMap.MapStrategy != :sourceTableStrategy AND ec_ClassMap.MapStrategy != :targetTableStrategy)"
-        " AND ec_Column.IsVirtual = 0"
-        " AND (ec_Column.ColumnKind & " COLUMNKIND_ECINSTANCEID_SQLVAL " = " COLUMNKIND_ECINSTANCEID_SQLVAL")");
+    Utf8String sql;
+    sql.Sprintf("SELECT DISTINCT ec_Class.Id"
+                " FROM ec_Class"
+                " JOIN ec_ClassMap ON ec_Class.Id = ec_ClassMap.ClassId"
+                " JOIN ec_PropertyMap ON ec_ClassMap.Id = ec_PropertyMap.ClassMapId"
+                " JOIN ec_Column ON ec_PropertyMap.ColumnId = ec_Column.Id"
+                " JOIN ec_Table ON ec_Table.Id = ec_Column.TableId"
+                " WHERE ec_Table.Name = :tableName"
+                " AND (ec_ClassMap.MapStrategy != :sourceTableStrategy AND ec_ClassMap.MapStrategy != :targetTableStrategy)"
+                " AND ec_Column.IsVirtual = 0"
+                " AND (ec_Column.ColumnKind & %d = %d)",
+                Enum::ToInt(ColumnKind::ECInstanceId), Enum::ToInt(ColumnKind::ECInstanceId));
+
+    CachedStatementPtr stmt = ecdb.GetCachedStatement(sql.c_str());
     BeAssert(stmt.IsValid());
 
     stmt->BindText(stmt->GetParameterIndex(":tableName"), tableName.c_str(), Statement::MakeCopy::No);
@@ -420,8 +423,9 @@ void TableMap::QueryForeignKeyRelClassIds(bvector<ECClassId>& fkeyRelClassIds, E
                 "       ec_Class.Type=%d AND"
                 "       (ec_ClassMap.MapStrategy = :targetTableStrategy OR ec_ClassMap.MapStrategy = :sourceTableStrategy) AND"
                 "       ec_Column.IsVirtual = 0 AND"
-                "       (ec_Column.ColumnKind & " COLUMNKIND_ECINSTANCEID_SQLVAL " = " COLUMNKIND_ECINSTANCEID_SQLVAL")", 
-                Enum::ToInt(ECClassType::Relationship));
+                "       (ec_Column.ColumnKind & %d = %d )",
+                Enum::ToInt(ECClassType::Relationship),
+                Enum::ToInt(ColumnKind::ECInstanceId), Enum::ToInt(ColumnKind::ECInstanceId));
 
     CachedStatementPtr stmt = ecdb.GetCachedStatement(sql.c_str());
     BeAssert(stmt.IsValid());

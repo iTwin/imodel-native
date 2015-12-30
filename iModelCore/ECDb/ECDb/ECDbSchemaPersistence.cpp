@@ -308,7 +308,7 @@ BentleyStatus ECDbSchemaPersistence::InsertECProperty(ECDbCR db, ECPropertyCR ec
         if (BE_SQLITE_OK != stmt->BindInt(kindIndex, Enum::ToInt(ECPropertyKind::Struct)))
             return ERROR;
 
-        if (BE_SQLITE_OK != stmt->BindInt64(nonPrimitiveTypeIndex, ecProperty.GetAsStructProperty()->GetClass().GetId()))
+        if (BE_SQLITE_OK != stmt->BindInt64(nonPrimitiveTypeIndex, ecProperty.GetAsStructProperty()->GetType().GetId()))
             return ERROR;
         }
     else if (ecProperty.GetIsArray())
@@ -331,12 +331,12 @@ BentleyStatus ECDbSchemaPersistence::InsertECProperty(ECDbCR db, ECPropertyCR ec
                 return ERROR;
             }
 
-        if (BE_SQLITE_OK != stmt->BindInt(11, (int32_t) arrayProp->GetMinOccurs()))
+        if (BE_SQLITE_OK != stmt->BindInt(11, (int) arrayProp->GetMinOccurs()))
             return ERROR;
 
         //until the max occurs bug in ECObjects (where GetMaxOccurs always returns "unbounded")
         //has been fixed, we need to call GetStoredMaxOccurs to retrieve the proper max occurs
-        if (BE_SQLITE_OK != stmt->BindInt(12, (int32_t) arrayProp->GetStoredMaxOccurs()))
+        if (BE_SQLITE_OK != stmt->BindInt(12, (int) arrayProp->GetStoredMaxOccurs()))
             return ERROR;
         }
     else if (ecProperty.GetIsNavigation())
@@ -361,13 +361,13 @@ BentleyStatus ECDbSchemaPersistence::InsertECProperty(ECDbCR db, ECPropertyCR ec
 BentleyStatus ECDbSchemaPersistence::InsertECRelationshipConstraint(ECDbCR db, DbECRelationshipConstraintInfo const& info)
     {
     CachedStatementPtr stmt = nullptr;
-    if (BE_SQLITE_OK != db.GetCachedStatement(stmt, "INSERT INTO ec_RelationshipConstraint (RelationshipClassId, RelationshipEnd, CardinalityLowerLimit, CardinalityUpperLimit, RoleLabel, IsPolymorphic) VALUES (?, ?, ?, ?, ?, ?)"))
+    if (BE_SQLITE_OK != db.GetCachedStatement(stmt, "INSERT INTO ec_RelationshipConstraint (RelationshipClassId, RelationshipEnd, MultiplicityLowerLimit, MultiplicityUpperLimit, RoleLabel, IsPolymorphic) VALUES (?, ?, ?, ?, ?, ?)"))
         return ERROR;
 
     if (info.ColsInsert & DbECRelationshipConstraintInfo::COL_RelationshipClassId) stmt->BindInt64(1, info.m_relationshipClassId);
     if (info.ColsInsert & DbECRelationshipConstraintInfo::COL_RelationshipEnd) stmt->BindInt(2, info.m_ecRelationshipEnd);
-    if (info.ColsInsert & DbECRelationshipConstraintInfo::COL_CardinalityLowerLimit) stmt->BindInt(3, info.m_cardinalityLowerLimit);
-    if (info.ColsInsert & DbECRelationshipConstraintInfo::COL_CardinalityUpperLimit) stmt->BindInt(4, info.m_cardinalityUpperLimit);
+    if (info.ColsInsert & DbECRelationshipConstraintInfo::COL_MultiplicityLowerLimit) stmt->BindInt(3, info.m_multiplicityLowerLimit);
+    if (info.ColsInsert & DbECRelationshipConstraintInfo::COL_MultiplicityUpperLimit) stmt->BindInt(4, info.m_multiplicityUpperLimit);
     if (info.ColsInsert & DbECRelationshipConstraintInfo::COL_RoleLabel) stmt->BindText(5, info.m_roleLabel, Statement::MakeCopy::No);
     if (info.ColsInsert & DbECRelationshipConstraintInfo::COL_IsPolymorphic) stmt->BindInt(6, info.m_isPolymorphic ? 1 : 0);
 
@@ -386,8 +386,8 @@ BentleyStatus ECDbSchemaPersistence::FindECRelationshipConstraint(BeSQLite::Cach
     SqlClauseBuilder selectClause(",");
     if (info.ColsSelect & DbECRelationshipConstraintInfo::COL_RelationshipClassId) selectClause.AddItem("RelationshipClassId");
     if (info.ColsSelect & DbECRelationshipConstraintInfo::COL_RelationshipEnd) selectClause.AddItem("RelationshipEnd");
-    if (info.ColsSelect & DbECRelationshipConstraintInfo::COL_CardinalityLowerLimit) selectClause.AddItem("CardinalityLowerLimit");
-    if (info.ColsSelect & DbECRelationshipConstraintInfo::COL_CardinalityUpperLimit) selectClause.AddItem("CardinalityUpperLimit");
+    if (info.ColsSelect & DbECRelationshipConstraintInfo::COL_MultiplicityLowerLimit) selectClause.AddItem("MultiplicityLowerLimit");
+    if (info.ColsSelect & DbECRelationshipConstraintInfo::COL_MultiplicityUpperLimit) selectClause.AddItem("MultiplicityUpperLimit");
     if (info.ColsSelect & DbECRelationshipConstraintInfo::COL_RoleLabel) selectClause.AddItem("RoleLabel");
     if (info.ColsSelect & DbECRelationshipConstraintInfo::COL_IsPolymorphic) selectClause.AddItem("IsPolymorphic");
 
@@ -424,8 +424,8 @@ DbResult ECDbSchemaPersistence::Step(DbECRelationshipConstraintInfo& info, BeSQL
         info.ColsNull = 0;
         if (info.ColsSelect & DbECRelationshipConstraintInfo::COL_RelationshipClassId) info.m_relationshipClassId = stmt.GetValueInt64(nCol++);
         if (info.ColsSelect & DbECRelationshipConstraintInfo::COL_RelationshipEnd) info.m_ecRelationshipEnd = (ECN::ECRelationshipEnd)stmt.GetValueInt(nCol++);
-        if (info.ColsSelect & DbECRelationshipConstraintInfo::COL_CardinalityLowerLimit) info.m_cardinalityLowerLimit = stmt.GetValueInt(nCol++);
-        if (info.ColsSelect & DbECRelationshipConstraintInfo::COL_CardinalityUpperLimit) info.m_cardinalityUpperLimit = stmt.GetValueInt(nCol++);
+        if (info.ColsSelect & DbECRelationshipConstraintInfo::COL_MultiplicityLowerLimit) info.m_multiplicityLowerLimit = stmt.GetValueInt(nCol++);
+        if (info.ColsSelect & DbECRelationshipConstraintInfo::COL_MultiplicityUpperLimit) info.m_multiplicityUpperLimit = stmt.GetValueInt(nCol++);
         if (info.ColsSelect & DbECRelationshipConstraintInfo::COL_RoleLabel)
             if (stmt.IsColumnNull(nCol)) { info.ColsNull |= DbECRelationshipConstraintInfo::COL_RoleLabel; nCol++; }
             else info.m_roleLabel = stmt.GetValueText(nCol++);
@@ -437,70 +437,44 @@ DbResult ECDbSchemaPersistence::Step(DbECRelationshipConstraintInfo& info, BeSQL
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        05/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ECDbSchemaPersistence::InsertECRelationshipConstraintClass(ECDbCR db, DbECRelationshipConstraintClassInfo const& info)
+BentleyStatus ECDbSchemaPersistence::InsertECRelationshipConstraintClass(ECDbCR ecdb, ECN::ECClassId relClassId, ECN::ECRelationshipConstraintClassCR constraintClass, ECN::ECRelationshipEnd end)
     {
     CachedStatementPtr stmt = nullptr;
-    if (BE_SQLITE_OK != db.GetCachedStatement(stmt, "INSERT INTO ec_RelationshipConstraintClass (RelationshipClassId, RelationshipEnd, ClassId) VALUES (?,?,?)"))
+    if (BE_SQLITE_OK != ecdb.GetCachedStatement(stmt, "INSERT INTO ec_RelationshipConstraintClass (RelationshipClassId, RelationshipEnd, ClassId, KeyProperties) VALUES (?,?,?,?)"))
         return ERROR;
 
-    if (info.ColsInsert & DbECRelationshipConstraintClassInfo::COL_RelationshipClassId) stmt->BindInt64(1, info.m_relationshipClassId);
-    if (info.ColsInsert & DbECRelationshipConstraintClassInfo::COL_RelationshipEnd) stmt->BindInt(2, info.m_ecRelationshipEnd);
-    if (info.ColsInsert & DbECRelationshipConstraintClassInfo::COL_ConstraintClassId) stmt->BindInt64(3, info.m_constraintClassId);
-
-    return BE_SQLITE_DONE == stmt->Step() ? SUCCESS : ERROR;
-    }
-
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Affan.Khan        05/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ECDbSchemaPersistence::FindECRelationshipConstraintClass(BeSQLite::CachedStatementPtr& stmt, ECDbCR db, DbECRelationshipConstraintClassInfo const& info)
-    {
-    Utf8String sql("SELECT ");
-
-    //prepare select list
-    SqlClauseBuilder selectClause(",");
-    if (info.ColsSelect & DbECRelationshipConstraintClassInfo::COL_RelationshipClassId) selectClause.AddItem("RelationshipClassId");
-    if (info.ColsSelect & DbECRelationshipConstraintClassInfo::COL_RelationshipEnd) selectClause.AddItem("RelationshipEnd");
-    if (info.ColsSelect & DbECRelationshipConstraintClassInfo::COL_ConstraintClassId) selectClause.AddItem("ClassId");
-
-    BeAssert(!selectClause.IsEmpty());
-    sql.append(selectClause.ToString()).append(" FROM ec_RelationshipConstraintClass");
-
-    //prepare where
-    SqlClauseBuilder whereClause("AND");
-    if (info.ColsWhere & DbECRelationshipConstraintClassInfo::COL_RelationshipClassId) whereClause.AddItem("RelationshipClassId=?");
-    if (info.ColsWhere & DbECRelationshipConstraintClassInfo::COL_RelationshipEnd) whereClause.AddItem("RelationshipEnd=?");
-    if (info.ColsWhere & DbECRelationshipConstraintClassInfo::COL_ConstraintClassId) whereClause.AddItem("ClassId=?");
-
-    if (!whereClause.IsEmpty())
-        sql.append(" WHERE ").append(whereClause.ToString());
-
-    if (BE_SQLITE_OK != db.GetCachedStatement(stmt, sql.c_str()))
+    BeAssert(relClassId != ECClass::UNSET_ECCLASSID);
+    if (BE_SQLITE_OK != stmt->BindInt64(1, relClassId))
         return ERROR;
 
-    int nCol = 1;
-    if (info.ColsWhere & DbECRelationshipConstraintClassInfo::COL_RelationshipClassId) stmt->BindInt64(nCol++, info.m_relationshipClassId);
-    if (info.ColsWhere & DbECRelationshipConstraintClassInfo::COL_RelationshipEnd) stmt->BindInt(nCol++, info.m_ecRelationshipEnd);
-    if (info.ColsWhere & DbECRelationshipConstraintClassInfo::COL_ConstraintClassId) stmt->BindInt64(nCol++, info.m_constraintClassId);
-    return SUCCESS;
-    }
+    if (BE_SQLITE_OK != stmt->BindInt(2, (int) end))
+        return ERROR;
 
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Affan.Khan        05/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-DbResult ECDbSchemaPersistence::Step(DbECRelationshipConstraintClassInfo& info, BeSQLite::Statement& stmt)
-    {
-    DbResult r;
-    if ((r = stmt.Step()) == BE_SQLITE_ROW)
+    BeAssert(constraintClass.GetClass().GetId() != ECClass::UNSET_ECCLASSID);
+    if (BE_SQLITE_OK != stmt->BindInt64(3, constraintClass.GetClass().GetId()))
+        return ERROR;
+    
+    bvector<Utf8String> const& keyPropNames = constraintClass.GetKeys();
+    if (!keyPropNames.empty())
         {
-        int nCol = 0;
-        info.ColsNull = 0;
-        if (info.ColsSelect & DbECRelationshipConstraintClassInfo::COL_RelationshipClassId) info.m_relationshipClassId = stmt.GetValueInt64(nCol++);
-        if (info.ColsSelect & DbECRelationshipConstraintClassInfo::COL_RelationshipEnd) info.m_ecRelationshipEnd = (ECRelationshipEnd) stmt.GetValueInt(nCol++);
-        if (info.ColsSelect & DbECRelationshipConstraintClassInfo::COL_ConstraintClassId) info.m_constraintClassId = stmt.GetValueInt64(nCol++);
+        rapidjson::Document keyPropJson;
+        auto& allocator = keyPropJson.GetAllocator();
+        keyPropJson.SetArray();
+        keyPropJson.Reserve((rapidjson::SizeType) keyPropNames.size(), allocator);
+
+        for (Utf8StringCR keyPropertyName : keyPropNames)
+            {
+            keyPropJson.PushBack(keyPropertyName.c_str(), allocator);
+            }
+
+        rapidjson::StringBuffer buf;
+        rapidjson::Writer<rapidjson::StringBuffer> writer(buf);
+        keyPropJson.Accept(writer);
+        if (BE_SQLITE_OK != stmt->BindText(4, buf.GetString(), Statement::MakeCopy::Yes))
+            return ERROR;
         }
 
-    return r;
+    return BE_SQLITE_DONE == stmt->Step() ? SUCCESS : ERROR;
     }
 
 /*---------------------------------------------------------------------------------------
@@ -605,23 +579,6 @@ DbResult ECDbSchemaPersistence::Step (DbCustomAttributeInfo& info, BeSQLite::Sta
                 }
         }
     return r;
-    }
-
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Affan.Khan        05/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ECDbSchemaPersistence::InsertECRelationshipConstraintClassKeyProperty(ECDbCR db, DbECRelationshipConstraintClassKeyPropertyInfo const& info)
-    {
-    CachedStatementPtr stmt = nullptr;
-    if (BE_SQLITE_OK != db.GetCachedStatement(stmt, "INSERT INTO ec_RelationshipConstraintClassKeyProperty (RelationshipClassId, RelationshipEnd, ConstraintClassId, KeyPropertyName) VALUES (?,?,?,?)"))
-        return ERROR;
-
-    stmt->BindInt64(1, info.m_relationECClassId);
-    stmt->BindInt(2, info.m_ecRelationshipEnd);
-    stmt->BindInt64(3, info.m_constraintClassId);
-    stmt->BindText(4, info.m_keyPropertyName.c_str(), Statement::MakeCopy::No);
-    
-    return BE_SQLITE_DONE == stmt->Step() ? SUCCESS : ERROR;
     }
 
 /*---------------------------------------------------------------------------------------

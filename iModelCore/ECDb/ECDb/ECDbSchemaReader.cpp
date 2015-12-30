@@ -491,7 +491,7 @@ BentleyStatus ECDbSchemaReader::LoadECPropertiesFromDb(ECClassP& ecClass, ECClas
                 return ERROR;
 
             const ECClassId nonPrimTypeId = (ECClassId) stmt.GetValueInt64(nonPrimTypeIx);
-
+            BeAssert(nonPrimTypeId != ECClass::UNSET_ECCLASSID);
             return schemaReader.ReadECClass(nonPrimType, nonPrimTypeId);
             }
 
@@ -750,8 +750,8 @@ BentleyStatus ECDbSchemaReader::LoadECRelationshipConstraintFromDb(ECRelationshi
         DbECRelationshipConstraintInfo::COL_RelationshipEnd;
 
     info.ColsSelect =
-        DbECRelationshipConstraintInfo::COL_CardinalityLowerLimit |
-        DbECRelationshipConstraintInfo::COL_CardinalityUpperLimit |
+        DbECRelationshipConstraintInfo::COL_MultiplicityLowerLimit |
+        DbECRelationshipConstraintInfo::COL_MultiplicityUpperLimit |
         DbECRelationshipConstraintInfo::COL_IsPolymorphic         |
         DbECRelationshipConstraintInfo::COL_RoleLabel ;
 
@@ -768,7 +768,7 @@ BentleyStatus ECDbSchemaReader::LoadECRelationshipConstraintFromDb(ECRelationshi
         return ERROR;
 
     ECRelationshipConstraintR constraint = (relationshipEnd == ECRelationshipEnd_Target) ? ecRelationship->GetTarget() : ecRelationship->GetSource();
-    constraint.SetCardinality(RelationshipCardinality(info.m_cardinalityLowerLimit, info.m_cardinalityUpperLimit));
+    constraint.SetCardinality(RelationshipCardinality(info.m_multiplicityLowerLimit, info.m_multiplicityUpperLimit));
     constraint.SetIsPolymorphic(info.m_isPolymorphic);
 
     if (!(info.ColsNull & DbECRelationshipConstraintInfo::COL_RoleLabel))
@@ -788,45 +788,51 @@ BentleyStatus ECDbSchemaReader::LoadECRelationshipConstraintFromDb(ECRelationshi
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus ECDbSchemaReader::LoadECRelationshipConstraintClassesFromDb(ECRelationshipConstraintR constraint, ECClassId relationshipClassId, ECRelationshipEnd relationshipEnd)
     {
-    DbECRelationshipConstraintClassInfo info;
-    info.ColsWhere =
-        DbECRelationshipConstraintClassInfo::COL_RelationshipClassId |
-        DbECRelationshipConstraintClassInfo::COL_RelationshipEnd;
-
-    info.ColsSelect = DbECRelationshipConstraintClassInfo::COL_ConstraintClassId;
-
-    info.ColsNull = 0;
-
-    info.m_relationshipClassId = relationshipClassId;
-    info.m_ecRelationshipEnd = relationshipEnd;
-
-    CachedStatementPtr stmt = nullptr;
-    if (SUCCESS != ECDbSchemaPersistence::FindECRelationshipConstraintClass(stmt, m_db, info))
+    CachedStatementPtr statement = nullptr;
+    if (BE_SQLITE_OK != m_db.GetCachedStatement(statement, "SELECT ClassId, KeyProperties FROM ec_RelationshipConstraintClass WHERE RelationshipClassId=? AND RelationshipEnd=?"))
         return ERROR;
 
-    while (ECDbSchemaPersistence::Step(info, *stmt) == BE_SQLITE_ROW)
+    if (BE_SQLITE_OK != statement->BindInt64(1, relationshipClassId))
+        return ERROR;
+
+    if (BE_SQLITE_OK != statement->BindInt(2, (int) relationshipEnd))
+        return ERROR;
+
+    while (statement->Step() == BE_SQLITE_ROW)
         {
-        const ECClassId constraintClassId = info.m_constraintClassId;
+        const ECClassId constraintClassId = statement->GetValueInt64(0);
+        Utf8CP keyProperties = statement->IsColumnNull(1) ? nullptr : statement->GetValueText(1);
+
         ECClassP constraintClass = nullptr;
         if (SUCCESS != ReadECClass(constraintClass, constraintClassId))
             return ERROR;
 
         ECEntityClassP constraintAsEntity = constraintClass->GetEntityClassP();
         if (nullptr == constraintAsEntity)
-            return ERROR;
-        ECRelationshipConstraintClassP constraintClassObj = nullptr;
-        constraint.AddConstraintClass(constraintClassObj, *constraintAsEntity);
-        if (constraintClassObj != nullptr)
             {
-            CachedStatementPtr statement;
-            Utf8CP sql = "SELECT KeyPropertyName FROM ec_RelationshipConstraintClassKeyProperty WHERE RelationshipClassId = ? AND ConstraintClassId = ? AND RelationshipEnd = ?";
-            m_db.GetCachedStatement(statement, sql);
-            statement->BindInt64(1, relationshipClassId);
-            statement->BindInt64(2, constraintClassId);
-            statement->BindInt(3, relationshipEnd);
-            while (statement->Step() == BE_SQLITE_ROW)
+            BeAssert(false && "Relationship constraint classes are expected to be entity classes.");
+            return ERROR;
+            }
+
+        ECRelationshipConstraintClassP constraintClassObj = nullptr;
+        if (ECObjectsStatus::Success != constraint.AddConstraintClass(constraintClassObj, *constraintAsEntity))
+            return ERROR;
+
+        if (keyProperties != nullptr)
+            {
+            rapidjson::Document d;
+            if (d.Parse<0>(keyProperties).HasParseError())
                 {
-                constraintClassObj->AddKey(statement->GetValueText(0));
+                BeAssert(false && "Could not parse KeyProperty JSON string.");
+                return ERROR;
+                }
+
+            BeAssert(d.IsArray());
+            const rapidjson::SizeType count = d.Size();
+            for (rapidjson::SizeType i = 0; i < count; i++)
+                {
+                BeAssert(d[i].IsString());
+                constraintClassObj->AddKey(d[i].GetString());
                 }
             }
         }

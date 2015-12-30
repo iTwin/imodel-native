@@ -1993,10 +1993,6 @@ BentleyStatus ECClassViewGenerator::BuildClassView(SqlViewBuilder& viewBuilder, 
     viewBuilder.SetComment("### ECCLASS VIEW - only for debugging purposes!");
     viewBuilder.GetNameBuilder().AppendEscaped(BuildViewClassName(classMap.GetClass()).c_str());
     NativeSqlBuilder::List unionList;
-    if (classMap.GetClass().GetName() == "IFace")
-        {
-        printf("ss");
-        }
 
     if (classMap.IsRelationshipClassMap() && classMap.GetMapStrategy().IsForeignKeyMapping())
         {

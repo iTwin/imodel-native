@@ -71,14 +71,14 @@ BentleyStatus ECDbSchemaWriter::CreateECRelationshipConstraintEntry(ECClassId re
     info.ColsInsert =
         DbECRelationshipConstraintInfo::COL_RelationshipClassId   |
         DbECRelationshipConstraintInfo::COL_RelationshipEnd |
-        DbECRelationshipConstraintInfo::COL_CardinalityLowerLimit |
-        DbECRelationshipConstraintInfo::COL_CardinalityUpperLimit |
+        DbECRelationshipConstraintInfo::COL_MultiplicityLowerLimit |
+        DbECRelationshipConstraintInfo::COL_MultiplicityUpperLimit |
         DbECRelationshipConstraintInfo::COL_IsPolymorphic;
 
     info.m_relationshipClassId = relationshipClassId;
     info.m_ecRelationshipEnd = endpoint;
-    info.m_cardinalityLowerLimit = relationshipConstraint.GetCardinality().GetLowerLimit();
-    info.m_cardinalityUpperLimit = relationshipConstraint.GetCardinality().GetUpperLimit();
+    info.m_multiplicityLowerLimit = relationshipConstraint.GetCardinality().GetLowerLimit();
+    info.m_multiplicityUpperLimit = relationshipConstraint.GetCardinality().GetUpperLimit();
     info.m_isPolymorphic         = relationshipConstraint.GetIsPolymorphic();
 
     if (relationshipConstraint.IsRoleLabelDefined())
@@ -120,21 +120,6 @@ BentleyStatus ECDbSchemaWriter::InsertCAEntry(IECInstanceP customAttribute, ECCl
     return ECDbSchemaPersistence::InsertCustomAttribute (m_ecdb, insertInfo);
     }
 
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Affan.Khan        05/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ECDbSchemaWriter::CreateECRelationshipConstraintClassEntry(ECClassId relationshipClassId, ECClassId constraintClassId, ECRelationshipEnd endpoint)
-    {
-    DbECRelationshipConstraintClassInfo info;
-    info.ColsInsert =
-        DbECRelationshipConstraintClassInfo::COL_RelationshipClassId |
-        DbECRelationshipConstraintClassInfo::COL_RelationshipEnd |
-        DbECRelationshipConstraintClassInfo::COL_ConstraintClassId;
-    info.m_relationshipClassId = relationshipClassId;
-    info.m_ecRelationshipEnd = endpoint;
-    info.m_constraintClassId = constraintClassId;
-    return ECDbSchemaPersistence::InsertECRelationshipConstraintClass(m_ecdb, info);
-    }
 
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        05/2012
@@ -373,27 +358,10 @@ BentleyStatus ECDbSchemaWriter::ImportECRelationshipConstraint(ECClassId relClas
         if (SUCCESS != ImportECClass(constraintClass))
             return ERROR;
 
-        ECClassId constraintClassId = constraintClass.GetId();
-        if (SUCCESS != CreateECRelationshipConstraintClassEntry(relClassId, constraintClassId, endpoint))
+        if (SUCCESS != ECDbSchemaPersistence::InsertECRelationshipConstraintClass(m_ecdb, relClassId, *constraintClassObj, endpoint))
             return ERROR;
-
-        for (Utf8StringCR key : constraintClassObj->GetKeys())
-            {
-            //key validation done later at mapping time
-            DbECRelationshipConstraintClassKeyPropertyInfo keyPropertyInfo;
-            keyPropertyInfo.ColsInsert =
-                DbECRelationshipConstraintClassKeyPropertyInfo::COL_RelationshipClassId |
-                DbECRelationshipConstraintClassKeyPropertyInfo::COL_RelationshipEnd |
-                DbECRelationshipConstraintClassKeyPropertyInfo::COL_ConstraintClassId;
-            keyPropertyInfo.m_relationECClassId = relClassId;
-            keyPropertyInfo.m_ecRelationshipEnd = endpoint;
-            keyPropertyInfo.m_constraintClassId = constraintClassId;
-            keyPropertyInfo.m_keyPropertyName.assign(key);
-
-            if (SUCCESS != ECDbSchemaPersistence::InsertECRelationshipConstraintClassKeyProperty(m_ecdb, keyPropertyInfo))
-                return ERROR;
-            }
         }
+
     ECContainerType containerType = endpoint == ECRelationshipEnd_Source ? ECContainerType::RelationshipConstraintSource : ECContainerType::RelationshipConstraintTarget;
     return ImportCustomAttributes(relationshipConstraint, relClassId, containerType);
     }

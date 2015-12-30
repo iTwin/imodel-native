@@ -907,17 +907,17 @@ void ECDbMap::LightweightCache::LoadClassIdsPerTable () const
     if (m_loadedFlags.m_classIdsPerTableIsLoaded)
         return;
 
-    Utf8CP sql0 =
-        "SELECT ec_Table.Id, ec_Class.Id ClassId, ec_Table.Name TableName FROM ec_PropertyMap "
-        "JOIN ec_Column ON ec_Column.Id = ec_PropertyMap.ColumnId AND (ec_Column.ColumnKind & " COLUMNKIND_ECCLASSID_SQLVAL " = 0) "
+    Utf8String sql;
+    sql.Sprintf("SELECT ec_Table.Id, ec_Class.Id ClassId, ec_Table.Name TableName FROM ec_PropertyMap "
+        "JOIN ec_Column ON ec_Column.Id = ec_PropertyMap.ColumnId AND (ec_Column.ColumnKind & %d = 0) "
         "JOIN ec_PropertyPath ON ec_PropertyPath.Id = ec_PropertyMap.PropertyPathId "
         "JOIN ec_ClassMap ON ec_ClassMap.Id = ec_PropertyMap.ClassMapId "
         "JOIN ec_Class ON ec_Class.Id = ec_ClassMap.ClassId  "
         "JOIN ec_Table ON ec_Table.Id = ec_Column.TableId "
         "WHERE ec_ClassMap.MapStrategy NOT IN (100, 101) "
-        "GROUP BY  ec_Table.Id, ec_Class.Id";
+        "GROUP BY  ec_Table.Id, ec_Class.Id", Enum::ToInt(ColumnKind::ECClassId));
 
-    auto stmt = m_map.GetECDbR ().GetCachedStatement (sql0);
+    auto stmt = m_map.GetECDbR ().GetCachedStatement (sql.c_str());
     ECDbTableId currentTableId = -1;
     ECDbSqlTable const* currentTable;
     while (stmt->Step () == BE_SQLITE_ROW)
@@ -1087,7 +1087,8 @@ void ECDbMap::LightweightCache::LoadHorizontalPartitions ()  const
         return;
 
     auto anyClassId = GetAnyClassId ();
-    Utf8CP sql0 =
+    Utf8String sql;
+    sql.Sprintf(
         "WITH RECURSIVE DerivedClassList(RootClassId,CurrentClassId,DerivedClassId) "
         "AS (SELECT Id, Id, Id FROM ec_Class "
         "UNION "
@@ -1095,17 +1096,18 @@ void ECDbMap::LightweightCache::LoadHorizontalPartitions ()  const
         "INNER JOIN ec_BaseClass BC ON BC.BaseClassId = DCL.DerivedClassId), "
         "TableMapInfo AS ("
         "SELECT  ec_Class.Id ClassId, ec_Table.Name TableName FROM ec_PropertyMap "
-        "JOIN ec_Column ON ec_Column.Id = ec_PropertyMap.ColumnId AND (ec_Column.ColumnKind & " COLUMNKIND_ECCLASSID_SQLVAL " = 0) "
+        "JOIN ec_Column ON ec_Column.Id = ec_PropertyMap.ColumnId AND (ec_Column.ColumnKind & %d = 0) "
         "JOIN ec_PropertyPath ON ec_PropertyPath.Id = ec_PropertyMap.PropertyPathId "
         "JOIN ec_ClassMap ON ec_ClassMap.Id = ec_PropertyMap.ClassMapId "
         "JOIN ec_Class ON ec_Class.Id = ec_ClassMap.ClassId "
         "JOIN ec_Table ON ec_Table.Id = ec_Column.TableId "
-        "WHERE ec_ClassMap.MapStrategy<>100 AND ec_ClassMap.MapStrategy<>101 AND ec_Table.Type<>" TABLETYPE_JOINED_SQLVAL " "
+        "WHERE ec_ClassMap.MapStrategy<>100 AND ec_ClassMap.MapStrategy<>101 AND ec_Table.Type<>%d "
         "GROUP BY ec_Class.Id, ec_Table.Name) "
         "SELECT DISTINCT DCL.RootClassId, DCL.DerivedClassId, TMI.TableName FROM DerivedClassList DCL "
-        "INNER JOIN TableMapInfo TMI ON TMI.ClassId=DCL.DerivedClassId ORDER BY DCL.RootClassId,TMI.TableName,DCL.DerivedClassId";
+        "INNER JOIN TableMapInfo TMI ON TMI.ClassId=DCL.DerivedClassId ORDER BY DCL.RootClassId,TMI.TableName,DCL.DerivedClassId",
+        Enum::ToInt(ColumnKind::ECClassId), Enum::ToInt(TableType::Joined));
 
-    CachedStatementPtr stmt = m_map.GetECDbR ().GetCachedStatement (sql0);
+    CachedStatementPtr stmt = m_map.GetECDbR ().GetCachedStatement (sql.c_str());
     while (stmt->Step () == BE_SQLITE_ROW)
         {
         auto rootClassId = stmt->GetValueInt64 (0);
@@ -1145,8 +1147,11 @@ void ECDbMap::LightweightCache::LoadRelationshipByTable ()  const
         "INNER JOIN ec_ClassMap ON ec_PropertyMap.ClassMapId = ec_ClassMap.Id "
         "INNER JOIN ec_Class ON ec_Class.Id = ec_ClassMap.ClassId "
         "WHERE ec_ClassMap.MapStrategy  <> 0 AND " 
-        "(ec_Column.ColumnKind & " COLUMNKIND_ECINSTANCEID_SQLVAL " = 0) AND (ec_Column.ColumnKind & " COLUMNKIND_ECCLASSID_SQLVAL " = 0) AND "
-        "ec_Class.Type=%d AND ec_Table.IsVirtual = 0", Enum::ToInt(ECClassType::Relationship));
+        "(ec_Column.ColumnKind & %d = 0) AND (ec_Column.ColumnKind & %d = 0) AND "
+        "ec_Class.Type=%d AND ec_Table.IsVirtual = 0",
+                Enum::ToInt(ColumnKind::ECInstanceId),
+                Enum::ToInt(ColumnKind::ECClassId),
+                Enum::ToInt(ECClassType::Relationship));
 
     auto stmt = m_map.GetECDbR ().GetCachedStatement (sql.c_str());
     while (stmt->Step () == BE_SQLITE_ROW)
