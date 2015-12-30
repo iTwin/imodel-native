@@ -220,6 +220,9 @@ struct BeGuid
     //! Compare two BeGuids for inequality
     bool operator!=(BeGuid const& rhs) const {return !(*this==rhs);}
 
+    //! Compare two BeGuids
+    bool operator<(BeGuid const& rhs) const {return m_guid.u[0] < rhs.m_guid.u[0] || m_guid.u[0] == rhs.m_guid.u[0] && m_guid.u[1] < rhs.m_guid.u[1];}
+
     //! Set this BeGuid to the invalid id value (all zeros).
     void Invalidate() {m_guid.u[0] = m_guid.u[1] = 0;}
 
