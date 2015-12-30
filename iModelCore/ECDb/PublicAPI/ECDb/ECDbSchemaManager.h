@@ -184,8 +184,8 @@ private:
     RefCountedPtr<ECDbSchemaWriter> m_ecImporter;
     mutable BeMutex m_criticalSection;
 
-    BentleyStatus BatchImportOrUpdateECSchemas (SchemaImportContext const&, bvector<ECN::ECSchemaCP>& importedSchemas, bvector<ECN::ECDiffPtr>&  diffs, ECN::ECSchemaCacheR, ImportOptions const&, bool addToReaderCache = false) const;
-    BentleyStatus ImportECSchema (ECN::ECSchemaCR, bool addToReaderCache = false) const;
+    BentleyStatus BatchImportOrUpdateECSchemas (SchemaImportContext const&, bvector<ECN::ECSchemaCP>& importedSchemas, bvector<ECN::ECDiffPtr>&  diffs, ECN::ECSchemaCacheR, ImportOptions const&) const;
+    BentleyStatus ImportECSchema (ECN::ECSchemaCR) const;
     BentleyStatus UpdateECSchema (ECN::ECDiffPtr&, ECN::ECSchemaCR) const;
     void ReportUpdateError (ECN::ECSchemaCR newSchema, ECN::ECSchemaCR existingSchema, Utf8CP reason) const;
     
@@ -284,6 +284,12 @@ public:
     //! @return Derived classes list
     //! @see ECN::ECClass::GetDerivedECClasses
     ECDB_EXPORT ECN::ECDerivedClassesList const& GetDerivedECClasses (ECN::ECClassCR baseECClass) const;
+
+    //! Gets the ECEnumeration for the specified name.
+    //! @param[in] schemaName Name (not full name) of the schema containing the ECEnumeration
+    //! @param[in] enumName Name of the ECEnumeration to be retrieved
+    //! @return The retrieved ECEnumeration or nullptr if not found
+    ECDB_EXPORT ECN::ECEnumerationCP GetECEnumeration(Utf8CP schemaName, Utf8CP enumName) const;
 
     //! Creates or updates views in the ECDb file to visualize the EC content as ECClasses and ECProperties rather than tables and columns.
     //! This can help debugging the EC data, especially when ECClasses and ECProperties share tables and columns or are spread across multiple tables.

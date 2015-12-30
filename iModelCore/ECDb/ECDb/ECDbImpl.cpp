@@ -11,46 +11,23 @@
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
-//----------------------------------------------------------------------------------
-// @bsimethod                                 Krischan.Eberle                02/2013
-//+---------------+---------------+---------------+---------------+---------------+-
-//static
-Utf8CP const ECDb::Impl::ECINSTANCEIDSEQUENCE_BELOCALKEY = "ec_ecinstanceidsequence";
-//static
-Utf8CP const ECDb::Impl::ECSCHEMAIDSEQUENCE_BELOCALKEY = "ec_ecschemaidsequence";
-//static
-Utf8CP const ECDb::Impl::ECCLASSIDSEQUENCE_BELOCALKEY = "ec_ecclassidsequence";
-//static
-Utf8CP const ECDb::Impl::ECPROPERTYIDSEQUENCE_BELOCALKEY = "ec_ecpropertyidsequence";
-//static
-Utf8CP const ECDb::Impl::TABLEIDSEQUENCE_BELOCALKEY = "ec_tableidsequence";
-//static
-Utf8CP const ECDb::Impl::COLUMNIDSEQUENCE_BELOCALKEY = "ec_columnidsequence";
-//static
-Utf8CP const ECDb::Impl::INDEXIDSEQUENCE_BELOCALKEY = "ec_indexidsequence";
-//static
-Utf8CP const ECDb::Impl::CONSTRAINTIDSEQUENCE_BELOCALKEY = "ec_constraintidsequence";
-//static
-Utf8CP const ECDb::Impl::CLASSMAPIDSEQUENCE_BELOCALKEY = "ec_classmapidsequence";
-//static
-Utf8CP const ECDb::Impl::PROPERTYPATHIDSEQUENCE_BELOCALKEY = "ec_propertypathidsequence";
-
 //--------------------------------------------------------------------------------------
 // @bsimethod                                Krischan.Eberle                09/2012
 //---------------+---------------+---------------+---------------+---------------+------
 ECDb::Impl::Impl(ECDbR ecdb)
     : m_ecdb(ecdb), m_schemaManager(nullptr),
     m_ecdbMap(std::unique_ptr<ECDbMap>(new ECDbMap(ecdb))),
-    m_ecInstanceIdSequence(ecdb, ECINSTANCEIDSEQUENCE_BELOCALKEY),
-    m_ecSchemaIdSequence(ecdb, ECSCHEMAIDSEQUENCE_BELOCALKEY),
-    m_ecClassIdSequence(ecdb, ECCLASSIDSEQUENCE_BELOCALKEY),
-    m_ecPropertyIdSequence(ecdb, ECPROPERTYIDSEQUENCE_BELOCALKEY),
-    m_tableIdSequence(ecdb, TABLEIDSEQUENCE_BELOCALKEY),
-    m_columnIdSequence(ecdb, COLUMNIDSEQUENCE_BELOCALKEY),
-    m_indexIdSequence(ecdb, INDEXIDSEQUENCE_BELOCALKEY),
-    m_constraintIdSequence(ecdb, CONSTRAINTIDSEQUENCE_BELOCALKEY),
-    m_classmapIdSequence(ecdb, CLASSMAPIDSEQUENCE_BELOCALKEY),
-    m_propertypathIdSequence(ecdb, PROPERTYPATHIDSEQUENCE_BELOCALKEY),
+    m_ecInstanceIdSequence(ecdb, "ec_ecinstanceidsequence"),
+    m_ecSchemaIdSequence(ecdb, "ec_ecschemaidsequence"),
+    m_ecClassIdSequence(ecdb, "ec_ecclassidsequence"),
+    m_ecPropertyIdSequence(ecdb, "ec_ecpropertyidsequence"),
+    m_ecEnumIdSequence(ecdb,"ec_ecenumidsequence"),
+    m_tableIdSequence(ecdb, "ec_tableidsequence"),
+    m_columnIdSequence(ecdb, "ec_columnidsequence"),
+    m_indexIdSequence(ecdb, "ec_indexidsequence"),
+    m_constraintIdSequence(ecdb, "ec_constraintidsequence"),
+    m_classmapIdSequence(ecdb, "ec_classmapidsequence"),
+    m_propertypathIdSequence(ecdb, "ec_propertypathidsequence"),
     m_issueReporter(ecdb)
     {
     m_schemaManager = std::unique_ptr<ECDbSchemaManager>(new ECDbSchemaManager(ecdb, *m_ecdbMap));
@@ -169,7 +146,8 @@ std::vector<BeBriefcaseBasedIdSequence const*> ECDb::Impl::GetSequences () const
         &m_ecInstanceIdSequence, 
         &m_ecSchemaIdSequence, 
         &m_ecClassIdSequence, 
-        &m_ecPropertyIdSequence, 
+        &m_ecPropertyIdSequence,
+        &m_ecEnumIdSequence,
         &m_classmapIdSequence, 
         &m_columnIdSequence, 
         &m_constraintIdSequence, 

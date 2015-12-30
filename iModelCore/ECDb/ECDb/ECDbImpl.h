@@ -67,18 +67,6 @@ private:
             };
         };
 
-    static Utf8CP const ECINSTANCEIDSEQUENCE_BELOCALKEY;
-    static Utf8CP const ECSCHEMAIDSEQUENCE_BELOCALKEY;
-    static Utf8CP const ECCLASSIDSEQUENCE_BELOCALKEY;
-    static Utf8CP const ECPROPERTYIDSEQUENCE_BELOCALKEY;
-
-    static Utf8CP const TABLEIDSEQUENCE_BELOCALKEY;
-    static Utf8CP const COLUMNIDSEQUENCE_BELOCALKEY;
-    static Utf8CP const INDEXIDSEQUENCE_BELOCALKEY;
-    static Utf8CP const CONSTRAINTIDSEQUENCE_BELOCALKEY;
-    static Utf8CP const CLASSMAPIDSEQUENCE_BELOCALKEY;
-    static Utf8CP const PROPERTYPATHIDSEQUENCE_BELOCALKEY;
-
     ECDbR m_ecdb;
     std::unique_ptr<ECDbSchemaManager> m_schemaManager;
     std::unique_ptr<ECDbMap> m_ecdbMap;
@@ -87,6 +75,7 @@ private:
     BeBriefcaseBasedIdSequence m_ecSchemaIdSequence;
     BeBriefcaseBasedIdSequence m_ecClassIdSequence;
     BeBriefcaseBasedIdSequence m_ecPropertyIdSequence;
+    BeBriefcaseBasedIdSequence m_ecEnumIdSequence;
     BeBriefcaseBasedIdSequence m_tableIdSequence;
     BeBriefcaseBasedIdSequence m_columnIdSequence;
     BeBriefcaseBasedIdSequence m_indexIdSequence;
@@ -137,6 +126,7 @@ public:
     BeBriefcaseBasedIdSequence& GetECSchemaIdSequence () {return m_ecSchemaIdSequence; }
     BeBriefcaseBasedIdSequence& GetECClassIdSequence () { return m_ecClassIdSequence; }
     BeBriefcaseBasedIdSequence& GetECPropertyIdSequence () { return m_ecPropertyIdSequence; }
+    BeBriefcaseBasedIdSequence& GetECEnumIdSequence() { return m_ecEnumIdSequence; }
     BeBriefcaseBasedIdSequence& GetTableIdSequence () { return m_tableIdSequence; }
     BeBriefcaseBasedIdSequence& GetColumnIdSequence () { return m_columnIdSequence; }
     BeBriefcaseBasedIdSequence& GetIndexIdSequence () { return m_indexIdSequence; }

@@ -355,6 +355,82 @@ BentleyStatus ECDbSchemaPersistence::InsertECProperty(ECDbCR db, ECPropertyCR ec
     return BE_SQLITE_DONE == stmt->Step() ? SUCCESS : ERROR;
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Krischan.Eberle  12/2015
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus ECDbSchemaPersistence::InsertECEnum(ECDbCR ecdb, ECN::ECEnumerationCR ecEnum)
+    {
+    BeSQLite::CachedStatementPtr stmt = nullptr;
+    if (BE_SQLITE_OK != ecdb.GetCachedStatement(stmt, "INSERT INTO ec_Enumeration(Id, SchemaId, Name, DisplayLabel, Description, UnderlyingPrimitiveType, IsStrict, EnumValues) VALUES(?,?,?,?,?,?,?,?)"))
+        return ERROR;
+
+    BeBriefcaseBasedId enumId;
+    if (ecdb.GetECDbImplR().GetECEnumIdSequence().GetNextValue(enumId))
+        return ERROR;
+
+    if (BE_SQLITE_OK != stmt->BindId(1, enumId))
+        return ERROR;
+
+    if (BE_SQLITE_OK != stmt->BindInt64(2, ecEnum.GetSchema().GetId()))
+        return ERROR;
+
+    if (BE_SQLITE_OK != stmt->BindText(3, ecEnum.GetName().c_str(), Statement::MakeCopy::No))
+        return ERROR;
+
+    if (ecEnum.GetIsDisplayLabelDefined())
+        {
+        if (BE_SQLITE_OK != stmt->BindText(4, ecEnum.GetDisplayLabel().c_str(), Statement::MakeCopy::No))
+            return ERROR;
+        }
+
+    if (BE_SQLITE_OK != stmt->BindText(5, ecEnum.GetDescription().c_str(), Statement::MakeCopy::No))
+        return ERROR;
+
+    if (BE_SQLITE_OK != stmt->BindInt(6, (int) ecEnum.GetType()))
+        return ERROR;
+
+    if (BE_SQLITE_OK != stmt->BindInt(7, ecEnum.GetIsStrict() ? 1 : 0))
+        return ERROR;
+
+    rapidjson::Document keyPropJson;
+    auto& allocator = keyPropJson.GetAllocator();
+    keyPropJson.SetArray();
+    keyPropJson.Reserve((rapidjson::SizeType) ecEnum.GetEnumeratorCount(), allocator);
+    BeAssert(ecEnum.GetEnumeratorCount() > 0);
+    for (ECEnumerator const* enumValue : ecEnum.GetEnumerators())
+        {
+        rapidjson::Value enumValueJson(rapidjson::kArrayType);
+        enumValueJson.Reserve(2, allocator);
+        if (enumValue->IsInteger())
+            enumValueJson.PushBack(enumValue->GetInteger(), allocator);
+        else if (enumValue->IsString())
+            enumValueJson.PushBack(enumValue->GetString().c_str(), allocator);
+        else
+            {
+            BeAssert(false && "Code needs to be updated as ECEnumeration seems to support types other than int and string.");
+            return ERROR;
+            }
+        
+        if (enumValue->GetIsDisplayLabelDefined())
+            enumValueJson.PushBack(enumValue->GetDisplayLabel().c_str(), allocator);
+        else
+            {
+            rapidjson::Value nullValue;
+            enumValueJson.PushBack(nullValue, allocator);
+            }
+
+        keyPropJson.PushBack(enumValueJson, allocator);
+        }
+
+    rapidjson::StringBuffer buf;
+    rapidjson::Writer<rapidjson::StringBuffer> writer(buf);
+    keyPropJson.Accept(writer);
+    if (BE_SQLITE_OK != stmt->BindText(8, buf.GetString(), Statement::MakeCopy::Yes))
+        return ERROR;
+
+    return BE_SQLITE_DONE == stmt->Step() ? SUCCESS : ERROR;
+    }
+
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        05/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -651,10 +727,10 @@ bool ECDbSchemaPersistence::ContainsECSchemaReference(ECDbCR db, ECSchemaId ecPr
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        06/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ECDbSchemaPersistence::ResolveECClassId(DbECClassEntry& key, ECClassId ecClassId, ECDbCR db)
+/*BentleyStatus ECDbSchemaPersistence::ResolveECClassId(DbECClassEntry& key, ECClassId ecClassId, ECDbCR db)
     {
     CachedStatementPtr stmt = nullptr;
-    if (BE_SQLITE_OK != db.GetCachedStatement(stmt, "SELECT Name, SchemaId  FROM ec_Class WHERE Id=?"))
+    if (BE_SQLITE_OK != db.GetCachedStatement(stmt, "SELECT Name, SchemaId FROM ec_Class WHERE Id=?"))
         return ERROR;
 
     stmt->BindInt64(1, ecClassId);
@@ -665,10 +741,10 @@ BentleyStatus ECDbSchemaPersistence::ResolveECClassId(DbECClassEntry& key, ECCla
     key.m_className = stmt->GetValueText(0);
     key.m_ecSchemaId = stmt->GetValueInt64(1);
     key.m_ecClassId = ecClassId;
-    key.m_resolvedECClass = nullptr;
+    key.m_cachedECClass = nullptr;
 
     return SUCCESS;
-    }
+    }*/
 
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        06/2012
@@ -676,7 +752,9 @@ BentleyStatus ECDbSchemaPersistence::ResolveECClassId(DbECClassEntry& key, ECCla
 BentleyStatus ECDbSchemaPersistence::ResolveECSchemaId(DbECSchemaEntry& key, ECSchemaId ecSchemaId, ECDbCR db)
     {
     CachedStatementPtr stmt = nullptr;
-    if (BE_SQLITE_OK != db.GetCachedStatement(stmt, "SELECT S.Id, S.Name, S.VersionMajor, S.VersionMinor, (SELECT COUNT(*) FROM ec_Class C WHERE S.Id = C.SchemaID) FROM ec_Schema S WHERE S.Id = ?"))
+    if (BE_SQLITE_OK != db.GetCachedStatement(stmt, "SELECT S.Id, S.Name, S.VersionMajor, S.VersionMinor, "
+                                              "(SELECT COUNT(*) FROM ec_Class C WHERE S.Id = C.SchemaID) + (SELECT COUNT(*) FROM ec_Enumeration e WHERE S.Id = e.SchemaID) "
+                                              "FROM ec_Schema S WHERE S.Id = ?"))
         return ERROR;
 
     stmt->BindInt64 (1, ecSchemaId);
@@ -688,9 +766,9 @@ BentleyStatus ECDbSchemaPersistence::ResolveECSchemaId(DbECSchemaEntry& key, ECS
     key.m_schemaName = stmt->GetValueText (1);
     key.m_versionMajor = (uint32_t) stmt->GetValueInt (2);
     key.m_versionMinor = (uint32_t) stmt->GetValueInt (3);
-    key.m_nClassesInSchema = (uint32_t) stmt->GetValueInt (4);
-    key.m_nClassesLoaded = 0;
-    key.m_resolvedECSchema = nullptr;
+    key.m_nTypesInSchema = (uint32_t) stmt->GetValueInt (4);
+    key.m_nTypesLoaded = 0;
+    key.m_cachedECSchema = nullptr;
     return SUCCESS;
     }
     
@@ -954,6 +1032,7 @@ BentleyStatus ECDbSchemaPersistence::GetSchemaNamespacePrefixes(bvector<Utf8Stri
 
     return SUCCESS;
     }
+
 
 //******************** DbCustomAttributeInfo *******************************************
 //---------------------------------------------------------------------------------------

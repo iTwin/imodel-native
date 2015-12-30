@@ -196,6 +196,15 @@ BentleyStatus ECDbSchemaWriter::Import(ECN::ECSchemaCR ecSchema)
             }
         }
 
+    for (ECEnumerationCP ecEnum : ecSchema.GetEnumerations())
+        {
+        if (SUCCESS != ECDbSchemaPersistence::InsertECEnum(m_ecdb, *ecEnum))
+            {
+            m_ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Failed to import ECEnumeration '%s'.", ecEnum->GetFullName().c_str());
+            return ERROR;
+            }
+        }
+
     if (SUCCESS != ImportCustomAttributes(ecSchema, ecSchemaId, ECContainerType::Schema))
         {
         m_ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Failed to import custom attributes of ECSchema '%s'.", ecSchema.GetFullSchemaName().c_str());
