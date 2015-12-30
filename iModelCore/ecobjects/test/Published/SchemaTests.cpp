@@ -1639,6 +1639,7 @@ TEST_F (SchemaSerializationTest, SerializeComprehensiveSchema)
 
     schema->CreateEntityClass(entityClass, "Entity");
     entityClass->SetClassModifier(ECClassModifier::Sealed);
+    entityClass->AddBaseClass(*baseEntityClass);
     PrimitiveECPropertyP primitiveProperty1;
     entityClass->CreatePrimitiveProperty(primitiveProperty1, "Primitive1", PrimitiveType::PRIMITIVETYPE_Binary);
     primitiveProperty1->SetDisplayLabel("Property Display Label");
