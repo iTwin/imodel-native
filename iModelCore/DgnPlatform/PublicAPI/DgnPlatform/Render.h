@@ -167,6 +167,7 @@ struct Task : RefCounted<NonCopyableClass>
         ChangeDynamics,
         ChangeDecorations,
         DrawFrame,
+        AssignDC,
     };
 
     //! The outcome of the processing of a Task.
