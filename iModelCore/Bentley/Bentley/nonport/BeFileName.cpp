@@ -2310,3 +2310,16 @@ BeFileNameStatus BeFileName::GetCwd (WStringR currentDirectory)
     return BeFileNameStatus::Success;
 #endif
     }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Jeff.Marker     12/2015
+//---------------------------------------------------------------------------------------
+BeFileName BeFileName::Combine(std::initializer_list<WCharCP> paths) const
+    {
+    BeFileName fullPath = *this;
+
+    for (WCharCP path : paths)
+        fullPath.AppendToPath(path);
+
+    return fullPath;
+    }
