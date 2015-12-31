@@ -446,22 +446,22 @@ BentleyStatus ECDbSchemaReader::LoadECClassFromDb(ECClassP& ecClassOut, ECClassI
     return SUCCESS;
     }
 
+static const int kindIx = 0;
+static const int idIx = 1;
+static const int nameIx = 2;
+static const int displayLabelIx = 3;
+static const int descrIx = 4;
+static const int isReadonlyIx = 5;
+static const int primTypeIx = 6;
+static const int nonPrimTypeIx = 7;
+static const int minOccursIx = 8;
+static const int maxOccursIx = 9;
+static const int navPropDirectionIx = 10;
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        05/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus ECDbSchemaReader::LoadECPropertiesFromDb(ECClassP& ecClass, ECClassId ecClassId)
     {
-    const int kindIx = 0;
-    const int idIx = 1;
-    const int nameIx = 2;
-    const int displayLabelIx = 3;
-    const int descrIx = 4;
-    const int isReadonlyIx = 5;
-    const int primTypeIx = 6;
-    const int nonPrimTypeIx = 7;
-    const int minOccursIx = 8;
-    const int maxOccursIx = 9;
-    const int navPropDirectionIx = 10;
 
     struct PropReaderHelper
         {
