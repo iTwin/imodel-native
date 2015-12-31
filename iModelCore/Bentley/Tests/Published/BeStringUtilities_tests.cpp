@@ -161,8 +161,7 @@ TEST (BeStringUtilitiesTests, Stricmp)
     EXPECT_GT(0, status) << status;
 
     status = BeStringUtilities::Stricmp(string3, string2);
-    EXPECT_LT(0, status) << status;
-  
+    EXPECT_LT(0, status) << status;  
     }
 
 //---------------------------------------------------------------------------------------
@@ -171,15 +170,13 @@ TEST (BeStringUtilitiesTests, Stricmp)
 // 
 //---------------------------------------------------------------------------------------
 TEST (BeStringUtilitiesTests, BeStringUtilWmemcpy)
-{
-
-  wchar_t dest[]= L"123456";
-  const wchar_t src[]= L"DELETE";
+    {
+    wchar_t dest[]= L"123456";
+    const wchar_t src[]= L"DELETE";
  
-   BeStringUtilities::Wmemcpy(dest, _countof(dest), src,  _countof(src));
-   EXPECT_EQ(SUCCESS,BeStringUtilities::Wmemcpy(dest, _countof(dest), src,  _countof(src)));
-    
-}
+    BeStringUtilities::Wmemcpy(dest, _countof(dest), src,  _countof(src));
+    EXPECT_EQ(SUCCESS,BeStringUtilities::Wmemcpy(dest, _countof(dest), src,  _countof(src)));
+    }
 
 //---------------------------------------------------------------------------------------
 // @betest                                     Hassan.Arshad                  10/13
@@ -187,16 +184,13 @@ TEST (BeStringUtilitiesTests, BeStringUtilWmemcpy)
 // 
 //---------------------------------------------------------------------------------------
 TEST (BeStringUtilitiesTests, BeStringUtilUtf16Len)
-{
+    {
+    uint16_t string1[]=  {72,69,76,76,79,0};
+    Utf16CP string3= string1;
 
-   uint16_t string1[]=  {72,69,76,76,79,0};
-   Utf16CP string3= string1;
-
-   size_t status= BeStringUtilities::Utf16Len(string3);
-   EXPECT_EQ(5,status);
-  
-  
-}
+    size_t status= BeStringUtilities::Utf16Len(string3);
+    EXPECT_EQ(5,status);
+    }
 
 //---------------------------------------------------------------------------------------
 // @betest                                     Hassan.Arshad                  10/13
@@ -204,16 +198,13 @@ TEST (BeStringUtilitiesTests, BeStringUtilUtf16Len)
 // 
 //---------------------------------------------------------------------------------------
 TEST (BeStringUtilitiesTests, BeStringCurrentLocaleToWChar)
-{
-    
+    {
     char inChar[]= "Hello";
     WCharCP outWCharTest= L"Hello";
     wchar_t outWCharInitial[]= L"Hello";
     
     EXPECT_TRUE(0==wcscmp(outWCharTest,BeStringUtilities::CurrentLocaleCharToWChar(outWCharInitial,inChar,_countof(inChar) )));
-
-
-}
+    }
 
 TEST (BeStringUtilitiesTests, BeStringCurrentLocaleToWCharStatusCheck)
     {
@@ -326,6 +317,9 @@ TEST (BeStringUtilitiesTests, IsInvalidUtf8Sequence)
     ASSERT_TRUE(BeStringUtilities::IsInvalidUtf8Sequence(decodedUri.c_str()));
     }
 
+//---------------------------------------------------------------------------------------
+//                                       Jeff.Marker                 10/14
+//---------------------------------------------------------------------------------------
 static void initBeStringUtilities()
     {
     BeFileName assetsDir;
