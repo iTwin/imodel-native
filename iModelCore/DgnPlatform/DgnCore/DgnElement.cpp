@@ -2749,7 +2749,7 @@ DgnDbStatus ElementGeomData::WriteGeomStream(DgnElementCR el, Utf8CP tableName) 
     DgnDbR db = el.GetDgnDb();
     CachedStatementPtr stmt = db.Elements().GetStatement(sql.c_str());
     stmt->BindId(2, eid);
-    return m_geom.WriteGeomStreamAndStep(db, tableName, GEOM_Geometry, eid.GetValue(), *stmt, 1);
+    return m_geom.WriteGeometryStreamAndStep(db, tableName, GEOM_Geometry, eid.GetValue(), *stmt, 1);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2764,7 +2764,7 @@ DgnDbStatus ElementGeomData::InsertGeomStream(DgnElementCR el, Utf8CP tableName)
     // Insert ElementUsesGeomParts relationships for any GeomPartIds in the GeomStream
     DgnDbR db = el.GetDgnDb();
     IdSet<DgnGeomPartId> parts;
-    ElementGeomIO::Collection(m_geom.GetData(), m_geom.GetSize()).GetGeomPartIds(parts, db);
+    GeometryStreamIO::Collection(m_geom.GetData(), m_geom.GetSize()).GetGeomPartIds(parts, db);
     for (DgnGeomPartId const& partId : parts)
         {
         if (BentleyStatus::SUCCESS != db.GeomParts().InsertElementGeomUsesParts(el.GetElementId(), partId))
@@ -2794,7 +2794,7 @@ DgnDbStatus ElementGeomData::UpdateGeomStream(DgnElementCR el, Utf8CP tableName)
         partsOld.insert(stmt->GetValueId<DgnGeomPartId>(0));
 
     IdSet<DgnGeomPartId> partsNew;
-    ElementGeomIO::Collection(m_geom.GetData(), m_geom.GetSize()).GetGeomPartIds(partsNew, db);
+    GeometryStreamIO::Collection(m_geom.GetData(), m_geom.GetSize()).GetGeomPartIds(partsNew, db);
 
     if (partsOld.empty() && partsNew.empty())
         return status;
@@ -2832,7 +2832,7 @@ DgnDbStatus ElementGeomData::UpdateGeomStream(DgnElementCR el, Utf8CP tableName)
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus ElementGeomData::LoadGeomStream(DgnElementCR el, Utf8CP tableName)
     {
-    return m_geom.ReadGeomStream(el.GetDgnDb(), tableName, GEOM_Geometry, el.GetElementId().GetValue());
+    return m_geom.ReadGeometryStream(el.GetDgnDb(), tableName, GEOM_Geometry, el.GetElementId().GetValue());
     }
 
 /*---------------------------------------------------------------------------------**//**

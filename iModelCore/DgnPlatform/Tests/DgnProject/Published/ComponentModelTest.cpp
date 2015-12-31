@@ -189,7 +189,7 @@ void VariationSpec::CheckInstance(DgnElementCR el, size_t expectedSolidCount) co
     ComponentDefPtr cdef = ComponentDef::FromECClass(nullptr, el.GetDgnDb(), *el.GetElementClass());
     ASSERT_TRUE(cdef.IsValid());
     ASSERT_STREQ(cdef->GetName().c_str(), m_componentName.c_str());
-    checkGeomStream(*el.ToGeometrySource(), ElementGeometry::GeometryType::SolidPrimitive, expectedSolidCount);
+    checkGeometryStream(*el.ToGeometrySource(), GeometricPrimitive::GeometryType::SolidPrimitive, expectedSolidCount);
     checkSlabDimensions(*el.ToGeometrySource(), m_propValues[0].m_value.GetDouble(), m_propValues[1].m_value.GetDouble(), m_propValues[2].m_value.GetDouble());
     }
 

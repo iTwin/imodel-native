@@ -118,7 +118,7 @@ double QueryModel::GetLastQueryElapsedSeconds() const {return m_currQueryResults
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   08/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-QueryModel::QueryModel(DgnDbR dgndb) : PhysicalModel(PhysicalModel::CreateParams(dgndb, DgnClassId(), CreateModelCode("Query"))), m_state(State::Idle)
+QueryModel::QueryModel(DgnDbR dgndb) : SpatialModel(SpatialModel::CreateParams(dgndb, DgnClassId(), CreateModelCode("Query"))), m_state(State::Idle)
     {
     //
     } 

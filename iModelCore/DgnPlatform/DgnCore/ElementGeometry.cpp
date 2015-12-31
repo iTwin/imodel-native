@@ -2115,7 +2115,7 @@ DgnDbStatus GeometryStreamIO::Import(GeometryStreamR dest, GeometryStreamCR sour
                 break;
                 }
 
-            case ElementGeomIO::OpCode::TextString:
+            case GeometryStreamIO::OpCode::TextString:
                 {
                 TextStringPtr text = TextString::Create();
                 if (SUCCESS != TextStringPersistence::DecodeFromFlatBuf(*text, egOp.m_data, egOp.m_dataSize, importer.GetSourceDb()))

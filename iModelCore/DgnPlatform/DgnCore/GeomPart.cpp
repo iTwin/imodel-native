@@ -124,7 +124,7 @@ StatusInt DbGeomPartsWriter::SaveGeomPartToRow(GeometryStreamCR geom, Utf8CP cod
         return SUCCESS; // Is this an error?!?
         }
 
-    return (DgnDbStatus::Success == geom.WriteGeomStreamAndStep(m_dgndb, DGN_TABLE(DGN_CLASSNAME_GeomPart), "Geom", geomPartId.GetValue(), *m_stmt, Column::Geom))? BSISUCCESS: BSIERROR;
+    return (DgnDbStatus::Success == geom.WriteGeometryStreamAndStep(m_dgndb, DGN_TABLE(DGN_CLASSNAME_GeomPart), "Geom", geomPartId.GetValue(), *m_stmt, Column::Geom))? BSISUCCESS: BSIERROR;
     }
 
 /*---------------------------------------------------------------------------------**//**

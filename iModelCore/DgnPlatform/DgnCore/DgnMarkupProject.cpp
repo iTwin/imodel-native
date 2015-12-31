@@ -267,17 +267,6 @@ uint64_t SpatialRedlineViewController::_GetMaxElementMemory () {return m_subject
 ViewController::FitComplete SpatialRedlineViewController::_ComputeFitRange (DRange3dR range, DgnViewportR viewport, FitViewParamsR params) {return m_subjectView._ComputeFitRange(range,viewport,params);}
 
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   John.Gooding    09/2014
-//---------------------------------------------------------------------------------------
-void SpatialRedlineViewController::_DrawElementFiltered(ViewContextR context, GeometrySourceCR element, DPoint3dCP pts, double size)
-    {
-    if (m_targetModelIsInSubjectView)
-        return m_subjectView._StrokeGeometry(context, source, pixelSize);
-    else
-        return T_Super::_StrokeGeometry(context, source, pixelSize);
-    }
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      08/13
 +---------------+---------------+---------------+---------------+---------------+------*/

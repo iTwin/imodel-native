@@ -723,9 +723,9 @@ TEST_F(ImportTest, ElementGeomIOCausesFontRemap)
     db1_text->GetStyleR().SetHeight(1.0);
 
     PhysicalElementPtr db1_element = PhysicalElement::Create(PhysicalElement::CreateParams(*db1, db1->Models().QueryFirstModelId(), db1_physicalDgnClass, DgnCategory::QueryFirstCategoryId(*db1)));
-    ElementGeometryBuilderPtr db1_builder = ElementGeometryBuilder::CreateWorld(*db1->Models().GetModel(db1->Models().QueryFirstModelId()), DgnCategory::QueryFirstCategoryId(*db1));
+    GeometryBuilderPtr db1_builder = GeometryBuilder::CreateWorld(*db1->Models().GetModel(db1->Models().QueryFirstModelId()), DgnCategory::QueryFirstCategoryId(*db1));
     db1_builder->Append(*db1_text);
-    db1_builder->SetGeomStreamAndPlacement(*db1_element->ToGeometrySourceP());
+    db1_builder->SetGeometryStreamAndPlacement(*db1_element->ToGeometrySourceP());
 
     DgnElementCPtr db1_insertedElement = db1_element->Insert();
     ASSERT_TRUE(db1_insertedElement.IsValid());
