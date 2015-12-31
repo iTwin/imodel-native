@@ -13,6 +13,7 @@
 #include <vector>
 
 #define VERIFY(X) ASSERT_TRUE(X)
+#define TESTDATA_StringW                    L"ThisIsATest!@#$%^&*()-="
 
 #if defined (NOT_USED)
 struct AW
@@ -156,55 +157,6 @@ TEST(WStringTest,CompareTo)
     ASSERT_TRUE (c < 0);
     }
 
-TEST(BeStringUtilities_test, Itow)
-    {
-    wchar_t buf[10];
-    ASSERT_TRUE( BeStringUtilities::Itow (buf, 1, _countof(buf), 10) == SUCCESS );
-    ASSERT_TRUE( 0==wcscmp (buf, L"1") );
-
-    ASSERT_TRUE( BeStringUtilities::Itow (buf, 1, _countof(buf), 16) == SUCCESS );
-    ASSERT_TRUE( 0==wcscmp (buf, L"1") );
-
-    ASSERT_TRUE( BeStringUtilities::Itow (buf, 1, _countof(buf), 2) == SUCCESS );
-    ASSERT_TRUE( 0==wcscmp (buf, L"1") );
-
-#if defined (WIP_UNDERSIZED_BUFFER_IS_FATAL_ERROR_ON_WINDOWS)
-    ASSERT_TRUE( BeStringUtilities::Itow (buf, 1, 0, 10) != SUCCESS );
-    ASSERT_TRUE( BeStringUtilities::Itow (buf, 1, 1, 10) != SUCCESS );
-#endif
-    ASSERT_TRUE( BeStringUtilities::Itow (buf, 1, 2, 10) == SUCCESS );
-    ASSERT_TRUE( 0==wcscmp (buf, L"1") );
-
-    ASSERT_TRUE( BeStringUtilities::Itow (buf, 16, _countof(buf), 10) == SUCCESS );
-    ASSERT_TRUE( 0==wcscmp (buf, L"16") );
-
-    ASSERT_TRUE( BeStringUtilities::Itow (buf, 16, _countof(buf), 16) == SUCCESS );
-    ASSERT_TRUE( 0==wcscmp (buf, L"10") );
-
-    ASSERT_TRUE( BeStringUtilities::Itow (buf, 16, _countof(buf), 2) == SUCCESS );
-    ASSERT_TRUE( 0==wcscmp (buf, L"10000") );
-
-#if defined (WIP_UNDERSIZED_BUFFER_IS_FATAL_ERROR_ON_WINDOWS)
-    ASSERT_TRUE( BeStringUtilities::Itow (buf, 16, 0, 10) != SUCCESS );
-    ASSERT_TRUE( BeStringUtilities::Itow (buf, 16, 1, 10) != SUCCESS );
-    ASSERT_TRUE( BeStringUtilities::Itow (buf, 16, 2, 10) != SUCCESS );
-#endif
-    ASSERT_TRUE( BeStringUtilities::Itow (buf, 16, 3, 10) == SUCCESS );
-    ASSERT_TRUE( 0==wcscmp (buf, L"16") );
-
-    for (int i=0; i<1000; ++i)
-        {
-        ASSERT_TRUE( SUCCESS == BeStringUtilities::Itow (buf, i, _countof(buf), 10) );
-        ASSERT_TRUE( WPrintfString(L"%d", i) == buf );
-
-        ASSERT_TRUE( SUCCESS == BeStringUtilities::Itow (buf, i, _countof(buf), 16) );
-        ASSERT_TRUE( WPrintfString(L"%x", i) == buf );
-
-        ASSERT_TRUE( SUCCESS == BeStringUtilities::Itow (buf, i, _countof(buf), 8) );
-        ASSERT_TRUE( WPrintfString(L"%o", i) == buf );
-        }
-    }
-
 static void initBeStringUtilities()
     {
     BeFileName assetsDir;
@@ -212,142 +164,6 @@ static void initBeStringUtilities()
     BeStringUtilities::Initialize(assetsDir);
     }
 
-TEST(BeStringUtilities_test, Utf16ToWCharTest1)
-    {
-    // The first caller to convert strings in a process has to ensure BeStringUtilities::Initialize is called.
-    initBeStringUtilities();
-
-    CharCP  const_ascii  = "ascii";
-    WCharCP const_asciiW = L"ascii";
-    Utf16Buffer utf16;
-    BeStringUtilities::Utf8ToUtf16 (utf16, const_ascii);    // utf8->utf16
-    WString wstr;
-    BeStringUtilities::Utf16ToWChar (wstr, utf16.data());   // utf16->wchar
-    ASSERT_TRUE( wstr.compare (const_asciiW) == 0 );
-    Utf16Buffer utf162;
-    BeStringUtilities::WCharToUtf16 (utf162, wstr.c_str(), BeStringUtilities::AsManyAsPossible);    // utf16<-wchar
-    ASSERT_TRUE (BeStringUtilities::CompareUtf16 (utf162.data(), utf16.data()) == 0);
-    char asc[256];
-    BeStringUtilities::WCharToCurrentLocaleChar (asc, wstr.c_str(), _countof(asc)); // locale <- wchar
-    ASSERT_TRUE (0 == strcmp (asc, const_ascii) );
-    }
-
-TEST(BeStringUtilities_test, FmtLongLong)
-    {
-    wchar_t buf[64];
-
-    uint64_t i64_minus_one = -1;
-    *buf = 0;
-    BeStringUtilities::Snwprintf (buf, L"%llx", i64_minus_one);
-    ASSERT_STREQ( buf, L"ffffffffffffffff");
-    *buf = 0;
-    BeStringUtilities::Snwprintf (buf, L"%lld", i64_minus_one);
-    ASSERT_STREQ( buf, L"-1");
-    *buf = 0;
-    //BeStringUtilities::Snwprintf (buf, L"%I64x", i64_minus_one);
-    //ASSERT_STREQ( buf, L"ffffffffffffffff");
-    //*buf = 0;
-    //BeStringUtilities::Snwprintf (buf, L"%I64d", i64_minus_one);
-    //ASSERT_STREQ( buf, L"-1");
-
-    uint64_t i64_uint64_max = UINT64_MAX;
-    *buf = 0;
-    BeStringUtilities::Snwprintf (buf, L"%llx", i64_uint64_max);
-    ASSERT_STREQ( buf, L"ffffffffffffffff");
-    *buf = 0;
-    BeStringUtilities::Snwprintf (buf, L"%lld", i64_uint64_max);
-    ASSERT_STREQ( buf, L"-1");
-    *buf = 0;
-    //BeStringUtilities::Snwprintf (buf, L"%I64x", i64_uint64_max);
-    //ASSERT_STREQ( buf, L"ffffffffffffffff");
-    //*buf = 0;
-    //BeStringUtilities::Snwprintf (buf, L"%I64d", i64_uint64_max);
-    //ASSERT_STREQ( buf, L"-1");
-
-    uint64_t i64_int64_max = INT64_MAX;
-    *buf = 0;
-    BeStringUtilities::Snwprintf (buf, L"%llx", i64_int64_max);
-    ASSERT_STREQ( buf, L"7fffffffffffffff");
-    *buf = 0;
-    BeStringUtilities::Snwprintf (buf, L"%lld", i64_int64_max);
-    ASSERT_STREQ( buf, L"9223372036854775807");
-    *buf = 0;
-    //BeStringUtilities::Snwprintf (buf, L"%I64x", i64_int64_max);
-    //ASSERT_STREQ( buf, L"7fffffffffffffff");
-    //*buf = 0;
-    //BeStringUtilities::Snwprintf (buf, L"%I64d", i64_int64_max);
-    //ASSERT_STREQ( buf, L"9223372036854775807");
-
-    uint64_t i64_one = 1;
-    *buf = 0;
-    BeStringUtilities::Snwprintf (buf, L"%llx", i64_one);
-    ASSERT_STREQ( buf, L"1");
-    *buf = 0;
-    BeStringUtilities::Snwprintf (buf, L"%lld", i64_one);
-    ASSERT_STREQ( buf, L"1");
-    *buf = 0;
-    //BeStringUtilities::Snwprintf (buf, L"%I64x", i64_one);
-    //ASSERT_STREQ( buf, L"1");
-    //*buf = 0;
-    //BeStringUtilities::Snwprintf (buf, L"%I64d", i64_one);
-    //ASSERT_STREQ( buf, L"1");
-
-    uint64_t i64_zero = 0;
-    *buf = 0;
-    BeStringUtilities::Snwprintf (buf, L"%llx", i64_zero);
-    ASSERT_STREQ( buf, L"0");
-    *buf = 0;
-    BeStringUtilities::Snwprintf (buf, L"%lld", i64_zero);
-    ASSERT_STREQ( buf, L"0");
-    *buf = 0;
-    //BeStringUtilities::Snwprintf (buf, L"%I64x", i64_zero);
-    //ASSERT_STREQ( buf, L"0");
-    //*buf = 0;
-    //BeStringUtilities::Snwprintf (buf, L"%I64d", i64_zero);
-    //ASSERT_STREQ( buf, L"0");
-
-    uint64_t i64_max_int = (uint64_t)INT32_MAX;
-    *buf = 0;
-    BeStringUtilities::Snwprintf (buf, L"%llx", i64_max_int);
-    ASSERT_STREQ( buf, L"7fffffff");
-    *buf = 0;
-    BeStringUtilities::Snwprintf (buf, L"%lld", i64_max_int);
-    ASSERT_STREQ( buf, L"2147483647");
-    *buf = 0;
-    //BeStringUtilities::Snwprintf (buf, L"%I64x", i64_max_int);
-    //ASSERT_STREQ( buf, L"7fffffff");
-    //*buf = 0;
-    //BeStringUtilities::Snwprintf (buf, L"%I64d", i64_max_int);
-    //ASSERT_STREQ( buf, L"2147483647");
-
-    uint64_t i64_uint32_max = (uint64_t)UINT32_MAX;
-    *buf = 0;
-    BeStringUtilities::Snwprintf (buf, L"%llx", i64_uint32_max);
-    ASSERT_STREQ( buf, L"ffffffff");
-    *buf = 0;
-    BeStringUtilities::Snwprintf (buf, L"%lld", i64_uint32_max);
-    ASSERT_STREQ( buf, L"4294967295");
-    *buf = 0;
-    //BeStringUtilities::Snwprintf (buf, L"%I64x", i64_uint32_max);
-    //ASSERT_STREQ( buf, L"ffffffff");
-    //*buf = 0;
-    //BeStringUtilities::Snwprintf (buf, L"%I64d", i64_uint32_max);
-    //ASSERT_STREQ( buf, L"4294967295");
-
-    uint64_t i64_uint32_max_plus_one = (uint64_t)UINT32_MAX + 1;
-    *buf = 0;
-    BeStringUtilities::Snwprintf (buf, L"%llx", i64_uint32_max_plus_one);
-    ASSERT_STREQ( buf, L"100000000");
-    *buf = 0;
-    BeStringUtilities::Snwprintf (buf, L"%lld", i64_uint32_max_plus_one);
-    ASSERT_STREQ( buf, L"4294967296");
-    *buf = 0;
-    //BeStringUtilities::Snwprintf (buf, L"%I64x", i64_uint32_max_plus_one);
-    //ASSERT_STREQ( buf, L"100000000");
-    //*buf = 0;
-    //BeStringUtilities::Snwprintf (buf, L"%I64d", i64_uint32_max_plus_one);
-    //ASSERT_STREQ( buf, L"4294967296");    
-    }
 
 
 TEST(WString_test, ToLowerEmpty)
@@ -609,7 +425,7 @@ TEST(WString_test, ConstructorTest01)
   try {
     WString str03(str01, csz01 + 1);
     VERIFY( false );
-  }		 
+  }         
   catch(std::out_of_range&) {
     VERIFY( true );
   }
@@ -622,7 +438,7 @@ TEST(WString_test, ConstructorTest01)
     WString str03(str01, csz01);
     VERIFY( str03.size() == 0 );
     VERIFY( str03.size() <= str03.capacity() );
-  }		 
+  }         
   catch(...) {
     VERIFY( false );
   }
@@ -635,7 +451,7 @@ TEST(WString_test, ConstructorTest01)
   try {
     WString str03(str_lit01, csz01 + 1);
     VERIFY( true );
-  }		 
+  }         
   catch(std::length_error&) {
     VERIFY( true );
   }
@@ -649,7 +465,7 @@ TEST(WString_test, ConstructorTest01)
   try {
     WString str04(str_lit01, npos); 
     VERIFY( true );
-  }		 
+  }         
   catch(std::length_error&) {
     VERIFY( true );
   }
@@ -664,7 +480,7 @@ TEST(WString_test, ConstructorTest01)
     WString str03(csz01 - 1, 'A');
     VERIFY( str03.size() == csz01 - 1 );
     VERIFY( str03.size() <= str03.capacity() );
-  }		 
+  }         
   // NB: bad_alloc is regrettable but entirely kosher for
   // out-of-memory situations.
   catch(std::length_error&) {
@@ -686,7 +502,7 @@ TEST(WString_test, ConstructorTest01)
   try {
     WString str03(csz01 + 1, L'z');
     VERIFY( false );
-  }		 
+  }         
   catch(std::length_error&) {
     VERIFY( true );
   }
@@ -697,7 +513,7 @@ TEST(WString_test, ConstructorTest01)
   try {
     WString str04(npos, L'b'); // the "maverick's" of all string objects.
     VERIFY( false );
-  }		 
+  }         
   catch(std::length_error&) {
     VERIFY( true );
   }
@@ -709,7 +525,7 @@ TEST(WString_test, ConstructorTest01)
     WString str03(csz01 - 1, L'z');
     VERIFY( str03.size() != 0 );
     VERIFY( str03.size() <= str03.capacity() );
-  }		 
+  }         
   // NB: bad_alloc is regrettable but entirely kosher for
   // out-of-memory situations.
   catch(std::length_error&) {
@@ -756,7 +572,7 @@ TEST(WString_test, ConstructorTest03)
     {
       WString str1(bogus);
       VERIFY( false );
-    }		 
+    }         
   catch(std::exception&) 
     {
       VERIFY( true );
@@ -767,7 +583,7 @@ TEST(WString_test, ConstructorTest03)
     {
       WString str2(bogus, 5);
       VERIFY( false );
-    }		 
+    }         
   catch(std::exception&) 
     {
       VERIFY( true );
@@ -908,7 +724,7 @@ TEST(WString_test, ElementAccess02)
   str03 = str01; 
   csz01 = str01.size();
   rit1 = str01.rbegin(); // NB: Pointing at one-past the end, so ...
-  *rit1 = L'z'; 	 // ... but it's taken care of here 
+  *rit1 = L'z';      // ... but it's taken care of here 
   VERIFY( str01[csz01 - 1] == L'z' );
   VERIFY( str03[csz01 - 1] == L'y' );
 
@@ -940,7 +756,7 @@ TEST(WString_test, ElementAccess02)
   str03 = str01;
   rit1 = str01.rend();
   VERIFY( str03 == str01 );
-  --rit1; 	
+  --rit1;     
   *rit1 = L'p'; 
   VERIFY( str01[0] == L'p' );
   VERIFY( str03[0] == L'x' );
@@ -1007,7 +823,7 @@ TEST(WString_test, ElementAccess04)
       WString str_01;
 
       for (int j = 0; j < i; ++j)
-	str_01 += L'a';
+    str_01 += L'a';
 
       str_01.reserve(i + 10);
 
@@ -1187,7 +1003,7 @@ TEST(WString_test, Insert01)
   try {
     str03.insert(csz01 + 1, str02, 0, 5);
     VERIFY( false );
-  }		 
+  }         
   catch(std::out_of_range& fail) {
     VERIFY( true );
   }
@@ -1201,7 +1017,7 @@ TEST(WString_test, Insert01)
   try {
     str03.insert(0, str02, csz02 + 1, 5);
     VERIFY( false );
-  }		 
+  }         
   catch(std::out_of_range& fail) {
     VERIFY( true );
   }
@@ -1217,7 +1033,7 @@ TEST(WString_test, Insert01)
     try {
       str03.insert(0, str02, 0, 5);
       VERIFY( false );
-    }		 
+    }         
     catch(std::length_error& fail) {
       VERIFY( true );
     }
@@ -1369,8 +1185,8 @@ TEST(WString_test, Replace01)
 
   wchar_t ar[] = { L'H', L'e', L'l', L'l', L'o' };
   x.replace(std::find(x.begin(), x.end(), L'l'), 
-	    std::find(x.rbegin(), x.rend(), L'l').base(), ar, 
-	    ar + sizeof(ar) / sizeof(ar[0]));
+        std::find(x.rbegin(), x.rend(), L'l').base(), ar, 
+        ar + sizeof(ar) / sizeof(ar[0]));
   VERIFY( x == L"jeHelloo" );
 }
 
@@ -1418,43 +1234,7 @@ TEST(WString_test, Substr01)
 #endif
 }
 
-//---------------------------------------------------------------------------------------
-// @betest                                      Shaun.Sewall                    08/11
-//---------------------------------------------------------------------------------------
-TEST (BeStringUtilitiesTests, RoundtripUtf8)
-{
-#define TESTDATA_StringW                    L"ThisIsATest!@#$%^&*()-="
 
-    // The first caller to convert strings in a process has to ensure BeStringUtilities::Initialize is called.
-    initBeStringUtilities();
-    
-    Utf8String strUtf8;
-    BeStringUtilities::WCharToUtf8 (strUtf8, TESTDATA_StringW);
-
-    WString strWString;
-    BeStringUtilities::Utf8ToWChar (strWString, strUtf8.c_str ());
-    
-    ASSERT_EQ (0, wcscmp (TESTDATA_StringW, strWString.c_str ()));
-    SUCCEED ();
-}
-
-//---------------------------------------------------------------------------------------
-// @betest                                      Shaun.Sewall                    08/11
-//---------------------------------------------------------------------------------------
-TEST (BeStringUtilitiesTests, RoundtripUtf16)
-{
-    // The first caller to convert strings in a process has to ensure BeStringUtilities::Initialize is called.
-    initBeStringUtilities();
-    
-    Utf16Buffer strUtf16;
-    BeStringUtilities::WCharToUtf16 (strUtf16, TESTDATA_StringW);
-    
-    WString strWString;
-    BeStringUtilities::Utf16ToWChar (strWString, strUtf16.data ());
-    
-    ASSERT_EQ (0, wcscmp (TESTDATA_StringW, strWString.c_str ()));
-    SUCCEED ();
-}
 
 //---------------------------------------------------------------------------------------
 // @betest                                      Shaun.Sewall                    08/11
@@ -1508,148 +1288,3 @@ TEST (WStringTests, WStringLength)
     }
 
 
-//---------------------------------------------------------------------------------------
-// @betest                                      Krischan.Eberle                    09/13
-//---------------------------------------------------------------------------------------
-TEST (BeStringUtilitiesTests, FormatUInt64)
-    {
-        {
-        uint64_t number = 0ULL;
-        WString str;
-        str.reserve (2); //max length in hex format for an UInt64 (incl. trailing \0)
-        BeStringUtilities::FormatUInt64 ((WCharP) str.data(), number);
-        ASSERT_STREQ (L"0", str.c_str ());
-        }
-
-        {
-        uint64_t number = 43123ULL;
-        WString str;
-        str.reserve (6); //max length in hex format for an UInt64 (incl. trailing \0)
-        BeStringUtilities::FormatUInt64 ((WCharP) str.data(), number);
-        ASSERT_STREQ (L"43123", str.c_str ());
-        }
-
-        {
-        uint64_t number = 14235263432521323ULL;
-        WString str;
-        str.reserve (21); //max length in hex format for an UInt64 (incl. trailing \0)
-        BeStringUtilities::FormatUInt64 ((WCharP) str.data(), number);
-        ASSERT_STREQ (L"14235263432521323", str.c_str ());
-        }
-    }
-
-//---------------------------------------------------------------------------------------
-// @betest                                      Krischan.Eberle                    09/13
-//---------------------------------------------------------------------------------------
-TEST (BeStringUtilitiesTests, FormatHexUInt64)
-    {
-        {
-        uint64_t number = 0ULL;
-        WString str;
-        str.reserve (17); //max length in hex format for an UInt64 (incl. trailing \0)
-        BeStringUtilities::FormatHexUInt64 ((WCharP) str.data(), number);
-        ASSERT_STREQ (L"0", str.c_str ());
-        }
-
-        {
-        uint64_t number = 15ULL;
-        WString str;
-        str.reserve (17); //max length in hex format for an UInt64 (incl. trailing \0)
-        BeStringUtilities::FormatHexUInt64 ((WCharP) str.data(), number);
-        ASSERT_STREQ (L"f", str.c_str ());
-        }
-
-        {
-        uint64_t number = 14235263432521323ULL;
-        WString str;
-        str.reserve (17); //max length in hex format for an UInt64 (incl. trailing \0)
-        BeStringUtilities::FormatHexUInt64 ((WCharP) str.data(), number);
-        ASSERT_STREQ (L"3292e58c2df66b", str.c_str ());
-        }
-    }
-
-//---------------------------------------------------------------------------------------
-// @betest                                      Krischan.Eberle                    09/13
-//---------------------------------------------------------------------------------------
-TEST (BeStringUtilitiesTests, ParseUInt64)
-    {
-    WCharCP str = L"14235263432521323";
-    uint64_t number = 0ULL;
-    BentleyStatus stat = BeStringUtilities::ParseUInt64 (number, str);
-    ASSERT_EQ (SUCCESS, stat);
-    ASSERT_EQ (14235263432521323ULL, number);
-
-    str = L"00014235263432521323";
-    number = 0ULL;
-    stat = BeStringUtilities::ParseUInt64 (number, str);
-    ASSERT_EQ (SUCCESS, stat);
-    ASSERT_EQ (14235263432521323ULL, number);
-
-    str = L"-1423526343";
-    number = 0ULL;
-    stat = BeStringUtilities::ParseUInt64 (number, str);
-    ASSERT_EQ (ERROR, stat);
-
-    str = L"0xff";
-    number = 0ULL;
-    stat = BeStringUtilities::ParseUInt64 (number, str);
-    ASSERT_EQ (ERROR, stat) << "Number in hexadecimal format is not expected to be supported by BeStringUtilities::ParseUInt64";
-
-    str = L"ff";
-    number = 0ULL;
-    stat = BeStringUtilities::ParseUInt64 (number, str);
-    ASSERT_EQ (ERROR, stat) << "Number in hexadecimal format is not expected to be supported by BeStringUtilities::ParseUInt64";
-
-    str = L"1234aa54345";
-    number = 0ULL;
-    stat = BeStringUtilities::ParseUInt64 (number, str);
-    ASSERT_EQ (ERROR, stat) << "Number in hexadecimal format is not expected to be supported by BeStringUtilities::ParseUInt64";
-
-    str = L"blabla";
-    number = 0ULL;
-    stat = BeStringUtilities::ParseUInt64 (number, str);
-    ASSERT_EQ (ERROR, stat);
-    }
-
-//---------------------------------------------------------------------------------------
-// @betest                                      Krischan.Eberle                    12/13
-//---------------------------------------------------------------------------------------
-TEST (BeStringUtilitiesTests, ParseUInt64FromUtf8)
-    {
-    Utf8CP str = "14235263432521323";
-    uint64_t number = 0ULL;
-    BentleyStatus stat = BeStringUtilities::ParseUInt64 (number, str);
-    ASSERT_EQ (SUCCESS, stat);
-    ASSERT_EQ (14235263432521323ULL, number);
-
-    str = "00014235263432521323";
-    number = 0ULL;
-    stat = BeStringUtilities::ParseUInt64 (number, str);
-    ASSERT_EQ (SUCCESS, stat);
-    ASSERT_EQ (14235263432521323ULL, number);
-
-    str = "-1423526343";
-    number = 0ULL;
-    stat = BeStringUtilities::ParseUInt64 (number, str);
-    ASSERT_EQ (ERROR, stat);
-
-    str = "0xff";
-    number = 0ULL;
-    stat = BeStringUtilities::ParseUInt64 (number, str);
-    ASSERT_EQ (ERROR, stat) << "Number in hexadecimal format is not expected to be supported by BeStringUtilities::ParseUInt64";
-
-    str = "ff";
-    number = 0ULL;
-    stat = BeStringUtilities::ParseUInt64 (number, str);
-    ASSERT_EQ (ERROR, stat) << "Number in hexadecimal format is not expected to be supported by BeStringUtilities::ParseUInt64";
-
-    str = "1234aa54345";
-    number = 0ULL;
-    stat = BeStringUtilities::ParseUInt64 (number, str);
-    ASSERT_EQ (ERROR, stat) << "Number in hexadecimal format is not expected to be supported by BeStringUtilities::ParseUInt64";
-
-    str = "blabla";
-    number = 0ULL;
-    stat = BeStringUtilities::ParseUInt64 (number, str);
-    ASSERT_EQ (ERROR, stat);
-    }
