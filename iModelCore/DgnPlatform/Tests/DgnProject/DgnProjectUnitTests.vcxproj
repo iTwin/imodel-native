@@ -76,7 +76,6 @@
     <ClCompile Include="Published\AnnotationTestFixture.cpp" />
     <ClCompile Include="Published\AnnotationTextBlock_Test.cpp" />
     <ClCompile Include="Published\AnnotationTextStyle_Test.cpp" />
-    <ClCompile Include="Published\BackwardsCompatibility_Tests.cpp" />
     <ClCompile Include="Published\ChangeSummary_Test.cpp" />
     <ClCompile Include="Published\ChangeTestFixture.cpp" />
     <ClCompile Include="Published\ComponentModelTest.cpp" />

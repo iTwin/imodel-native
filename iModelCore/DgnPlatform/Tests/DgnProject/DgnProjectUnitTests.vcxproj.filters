@@ -73,9 +73,6 @@
     <ClCompile Include="Published\MarkupProject_Test.cpp">
       <Filter>Published</Filter>
     </ClCompile>
-    <ClCompile Include="Published\BackwardsCompatibility_Tests.cpp">
-      <Filter>Published</Filter>
-    </ClCompile>
     <ClCompile Include="Published\DgnECNavigator_Test.cpp">
       <Filter>Published</Filter>
     </ClCompile>
