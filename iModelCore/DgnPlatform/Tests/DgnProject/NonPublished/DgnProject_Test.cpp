@@ -759,7 +759,7 @@ TEST_F (DgnProjectPackageTest, VerifyViewsForDgndbFilesConvertedDuringBuild)
             Statement stmt;
             Utf8String sql;
             sql.Sprintf ("SELECT * FROM %s", statement.GetValueText (0));
-            ASSERT_EQ (DbResult::BE_SQLITE_OK, stmt.Prepare (*dgnProj, sql.c_str ())) << "Prepare failed : " << sql.c_str () << "in DgnDb : " << dgndbFileName.c_str ();
+            ASSERT_EQ (DbResult::BE_SQLITE_OK, stmt.Prepare (*dgnProj, sql.c_str ())) << "Prepare failed : " << sql.c_str () << " in DgnDb : " << dgndbFileName.c_str ();
             }
         statement.Finalize ();
 
