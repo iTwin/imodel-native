@@ -161,8 +161,8 @@ namespace {
 			return -1;
 			}
 		
-		//Convert the supplemental schema
-		if (supplemental)
+		//Convert the supplemental schemas
+		if (supplemental || all)
 		    {
 			bvector<BeFileName> paths;
 			paths.push_back(ecSchemaFile.GetDirectoryName());
