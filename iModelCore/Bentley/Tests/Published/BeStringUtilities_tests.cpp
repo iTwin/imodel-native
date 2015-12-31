@@ -12,7 +12,11 @@
 #include <map>
 
 #define VERIFY(X) ASSERT_TRUE(X)
+#define TESTDATA_String                     "ThisIsATest!@#$%^&*()-="
 #define TESTDATA_StringW                    L"ThisIsATest!@#$%^&*()-="
+
+#define TESTDATA_String_Lower                   "thisisatest!@#$%^&*()-="
+#define TESTDATA_String_Upper                   "THISTISATEST!@#$%^&*()-="
 
 #if defined (NOT_USED)
 struct AW
@@ -92,11 +96,18 @@ TEST (BeStringUtilitiesTests, BeStringUtilWCharToUtf16NotNull)
 // Desc: Testing of Strlwr method.
 // 
 //---------------------------------------------------------------------------------------
-TEST (BeStringUtilitiesTests, BeStringUtilStrlwr)
+TEST (BeStringUtilitiesTests, Strlwr)
     {
-    char string[]= "HELLO";
-    char* status= BeStringUtilities::Strlwr(string);  
-    EXPECT_STREQ("hello",status)<<status;
+        {
+        char string[] = "HELLO";
+        char* outStr = BeStringUtilities::Strlwr(string);
+        EXPECT_STREQ("hello", outStr) << outStr;
+        }
+        {
+        char string[] = "HELLO 5! There?";
+        char* outStr = BeStringUtilities::Strlwr(string);
+        EXPECT_STREQ("hello 5! there?", outStr) << outStr;
+        }
     }
 
 //---------------------------------------------------------------------------------------
@@ -106,9 +117,16 @@ TEST (BeStringUtilitiesTests, BeStringUtilStrlwr)
 //---------------------------------------------------------------------------------------
 TEST (BeStringUtilitiesTests, BeStringUtilStrupr)
     {
-    char string[]= "hello";
-    char* outStr= BeStringUtilities::Strupr(string);
-    EXPECT_STREQ("HELLO", outStr) << outStr;
+        {
+        char string[] = "hello";
+        char* outStr = BeStringUtilities::Strlwr(string);
+        EXPECT_STREQ("HELLO", outStr) << outStr;
+        }
+        {
+        char string[] = "HELLO 5! There?";
+        char* outStr = BeStringUtilities::Strupr(string);
+        EXPECT_STREQ("HELLO 5! THERE?", outStr) << outStr;
+        }
     }
 
 //---------------------------------------------------------------------------------------
@@ -163,6 +181,192 @@ TEST (BeStringUtilitiesTests, Stricmp)
     status = BeStringUtilities::Stricmp(string3, string2);
     EXPECT_LT(0, status) << status;  
     }
+//---------------------------------------------------------------------------------------
+// @betest                                     Umar.Hayat                  12/15
+//---------------------------------------------------------------------------------------
+TEST (BeStringUtilitiesTests, NICompare)
+    {
+        {
+        char string0[] = "hello";
+        char string1[] = "HeLLo";
+        char string2[] = "hello2";
+        char string3[] = "Hello3";
+
+        int status = BeStringUtilities::Strnicmp(string0, string1, 5);
+        EXPECT_EQ(0, status) << status;
+
+        status = BeStringUtilities::Strnicmp(string3, string2, 6);
+        EXPECT_LT(0, status) << status;
+
+        status = BeStringUtilities::Strnicmp(string2, string3, 6);
+        EXPECT_GT(0, status) << status;
+
+        status = BeStringUtilities::Strnicmp(string3, string2, 5);
+        EXPECT_EQ(0, status) << status;
+        }
+
+        {
+        wchar_t string0[] = L"hello";
+        wchar_t string1[] = L"HeLLo";
+        wchar_t string2[] = L"hello2";
+        wchar_t string3[] = L"Hello3";
+
+        int status = BeStringUtilities::Wcsnicmp(string0, string1, 5);
+        EXPECT_EQ(0, status) << status;
+
+        status = BeStringUtilities::Wcsnicmp(string3, string2, 6);
+        EXPECT_LT(0, status) << status;
+
+        status = BeStringUtilities::Wcsnicmp(string2, string3, 6);
+        EXPECT_GT(0, status) << status;
+
+        status = BeStringUtilities::Wcsnicmp(string3, string2, 5);
+        EXPECT_EQ(0, status) << status;
+        }
+    }
+//---------------------------------------------------------------------------------------
+// @betest                                     Umar.Hayat                  12/15
+//---------------------------------------------------------------------------------------
+TEST (BeStringUtilitiesTests, LexicographicCompare)
+    {
+    wchar_t string0[] = L"Hello";
+    wchar_t string1[] = L"Helloo";
+    wchar_t string2[] = L"Hello9";
+    wchar_t string3[] = L"Hello10";
+
+    int status = BeStringUtilities::LexicographicCompare(string0, string0);
+    EXPECT_EQ(0, status) << status;
+
+    status = BeStringUtilities::LexicographicCompare(string0, string1);
+    EXPECT_GT(0, status) << status;
+
+    status = BeStringUtilities::LexicographicCompare(string1, string0);
+    EXPECT_LT(0, status) << status;
+
+    status = BeStringUtilities::LexicographicCompare(string2, string3);
+    EXPECT_GT(0, status) << status;
+
+    status = BeStringUtilities::LexicographicCompare(string3, string2);
+    EXPECT_LT(0, status) << status;
+    }
+//---------------------------------------------------------------------------------------
+// @betest                                     Umar.Hayat                  12/15
+//---------------------------------------------------------------------------------------
+TEST (BeStringUtilitiesTests, ReverseStr)
+    {
+    char  inStr[]  = TESTDATA_String;
+    char * outStr = BeStringUtilities::Strrev(inStr);
+    EXPECT_STREQ("=-)(*&^%$#@!tseTAsIsihT", outStr) << outStr;
+
+    wchar_t  inStrW[] = TESTDATA_StringW;
+    wchar_t * outStrW = BeStringUtilities::Wcsrev(inStrW);
+    EXPECT_STREQ(L"=-)(*&^%$#@!tseTAsIsihT", outStrW) << outStrW;
+    }
+//---------------------------------------------------------------------------------------
+// @betest                                     Umar.Hayat                  12/15
+//---------------------------------------------------------------------------------------
+TEST (BeStringUtilitiesTests, Duplicate)
+    {
+        {
+        char * inStr = TESTDATA_String;
+        char * outStr = BeStringUtilities::Strdup(inStr);
+        EXPECT_TRUE(inStr != outStr);
+        EXPECT_STREQ(inStr, outStr) ;
+        delete outStr;
+        }
+
+        {
+        wchar_t * inStr = TESTDATA_StringW;
+        wchar_t * outStr = BeStringUtilities::Wcsdup(inStr);
+        EXPECT_TRUE(inStr != outStr);
+        EXPECT_STREQ(inStr, outStr);
+        delete outStr;
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+// @betest                                     Umar.Hayat                  12/15
+//---------------------------------------------------------------------------------------
+TEST (BeStringUtilitiesTests, Join)
+    {
+        {
+        bvector<Utf8String> list;
+        list.push_back("Hello");
+        list.push_back("World");
+        list.push_back("!");
+        list.push_back("");
+
+        Utf8String outStr = BeStringUtilities::Join(list, ",");
+        EXPECT_STREQ("Hello,World,!,", outStr.c_str()) << outStr;
+        }
+
+        {
+        bvector<Utf8CP> list;
+        list.push_back("Hello");
+        list.push_back("World");
+        list.push_back("!");
+        list.push_back("");
+
+        Utf8String outStr = BeStringUtilities::Join(list, ",");
+        EXPECT_STREQ("Hello,World,!,", outStr.c_str()) << outStr;
+        }
+    }
+//---------------------------------------------------------------------------------------
+// @betest                                     Umar.Hayat                  12/15
+//---------------------------------------------------------------------------------------
+TEST (BeStringUtilitiesTests, Split)
+    {
+        {
+        WCharCP str = L"One,Two 3G4";
+        bvector<WString> tokens;
+
+        BeStringUtilities::Split(str, L", G", nullptr, tokens);
+        ASSERT_EQ(4, tokens.size());
+        EXPECT_STREQ(L"One", tokens[0].c_str());
+        EXPECT_STREQ(L"Two", tokens[1].c_str());
+        EXPECT_STREQ(L"3", tokens[2].c_str());
+        EXPECT_STREQ(L"4", tokens[3].c_str());
+        }
+        
+        {
+        Utf8CP str = "One,Two 3G4";
+        bvector<Utf8String> tokens;
+
+        BeStringUtilities::Split(str, ", G", nullptr, tokens);
+        ASSERT_EQ(4, tokens.size());
+        EXPECT_STREQ("One", tokens[0].c_str());
+        EXPECT_STREQ("Two", tokens[1].c_str());
+        EXPECT_STREQ("3", tokens[2].c_str());
+        EXPECT_STREQ("4", tokens[3].c_str());
+        }
+    }
+//---------------------------------------------------------------------------------------
+// @betest                                     Umar.Hayat                  12/15
+//---------------------------------------------------------------------------------------
+TEST (BeStringUtilitiesTests, ParseArguments)
+    {
+        {
+        WCharCP str = L"One Two 3G4,\"Fourty Two\"";
+        bvector<WString> tokens;
+
+        BeStringUtilities::ParseArguments(tokens, str,L",");
+        ASSERT_EQ(4, tokens.size());
+        EXPECT_STREQ(L"One", tokens[0].c_str());
+        EXPECT_STREQ(L"Two", tokens[1].c_str());
+        EXPECT_STREQ(L"3G4", tokens[2].c_str());
+        EXPECT_STREQ(L"Fourty Two", tokens[3].c_str());
+        }
+        
+        {
+        WCharCP str = L"1 \"2 3\"";
+        WString tokens[3];
+
+        uint32_t argFound = BeStringUtilities::ParseArguments(str, 3, &tokens[0], &tokens[1], &tokens[2]);
+        ASSERT_EQ(2, argFound);
+        EXPECT_STREQ(L"1", tokens[0].c_str());
+        EXPECT_STREQ(L"2 3", tokens[1].c_str()); 
+        }
+    }
 
 //---------------------------------------------------------------------------------------
 // @betest                                     Hassan.Arshad                  10/13
@@ -206,6 +410,9 @@ TEST (BeStringUtilitiesTests, BeStringCurrentLocaleToWChar)
     EXPECT_TRUE(0==wcscmp(outWCharTest,BeStringUtilities::CurrentLocaleCharToWChar(outWCharInitial,inChar,_countof(inChar) )));
     }
 
+//---------------------------------------------------------------------------------------
+// @betest                                     Hassan.Arshad                  10/13
+//---------------------------------------------------------------------------------------
 TEST (BeStringUtilitiesTests, BeStringCurrentLocaleToWCharStatusCheck)
     {
     char inChar[]= "Hello";
@@ -220,12 +427,26 @@ TEST (BeStringUtilitiesTests, BeStringCurrentLocaleToWCharStatusCheck)
 // Desc: Testing of IsUri8Encoded method.
 // 
 //---------------------------------------------------------------------------------------
-TEST (BeStringUtilitiesTests, BeStringIsUriEncoded)
+TEST (BeStringUtilitiesTests, UriEncoding)
     {
-    char initialStr[]= "Hello\0";
-    Utf8CP str= initialStr;
+    char test[] = "\"This a Test, OK?\"";
+    Utf8CP inStr = test;
     
-    EXPECT_TRUE(BeStringUtilities::IsUriEncoded(str));
+    // Encode
+    Utf8String encodedStr = BeStringUtilities::UriEncode(inStr);
+    ASSERT_STREQ("%22This%20a%20Test%2C%20OK%3F%22", encodedStr.c_str());
+
+    //Check
+    EXPECT_TRUE(BeStringUtilities::IsUriEncoded(encodedStr.c_str()));
+    EXPECT_FALSE(BeStringUtilities::IsUriEncoded(inStr));
+
+    //Decode
+    Utf8String decodedStr = BeStringUtilities::UriDecode(encodedStr.c_str());
+    EXPECT_STREQ("\"This a Test, OK?\"", decodedStr.c_str());
+    
+    // Decode SubURI
+    Utf8String decodeSubStr = BeStringUtilities::UriDecode(decodedStr.c_str(), decodedStr.c_str() + 13);
+    EXPECT_STREQ("\"This a Test,", decodeSubStr.c_str());    
     }
 
 //---------------------------------------------------------------------------------------
@@ -364,6 +585,9 @@ TEST(BeStringUtilitiesTests, RoundtripUtf16)
     SUCCEED();
     }
 
+//---------------------------------------------------------------------------------------
+// @betest                                      
+//---------------------------------------------------------------------------------------
 TEST(BeStringUtilitiesTests, Itow)
     {
     wchar_t buf[10];
@@ -413,6 +637,9 @@ TEST(BeStringUtilitiesTests, Itow)
         }
     }
 
+//---------------------------------------------------------------------------------------
+// @betest                                      
+//---------------------------------------------------------------------------------------
 TEST(BeStringUtilitiesTests, Utf16ToWCharTest1)
     {
     // The first caller to convert strings in a process has to ensure BeStringUtilities::Initialize is called.
@@ -433,6 +660,9 @@ TEST(BeStringUtilitiesTests, Utf16ToWCharTest1)
     ASSERT_TRUE (0 == strcmp (asc, const_ascii) );
     }
 
+//---------------------------------------------------------------------------------------
+// @betest                                      
+//---------------------------------------------------------------------------------------
 TEST(BeStringUtilitiesTests, FmtLongLong)
     {
     wchar_t buf[64];
@@ -579,6 +809,127 @@ TEST (BeStringUtilitiesTests, FormatUInt64)
         ASSERT_STREQ (L"14235263432521323", str.c_str ());
         }
     }
+//---------------------------------------------------------------------------------------
+// @betest                                      Umar.hayat                          12/15
+//---------------------------------------------------------------------------------------
+TEST (BeStringUtilitiesTests, FormatUInt64FromUtf8)
+    {
+        {
+        uint64_t number = 0ULL;
+        Utf8String str;
+        str.reserve (2); //max length in hex format for an UInt64 (incl. trailing \0)
+        BeStringUtilities::FormatUInt64 ((Utf8P)str.data(), number);
+        ASSERT_STREQ ("0", str.c_str ());
+        }
+
+        {
+        uint64_t number = 43123ULL;
+        Utf8String str;
+        str.reserve (6); //max length in hex format for an UInt64 (incl. trailing \0)
+        BeStringUtilities::FormatUInt64 ((Utf8P)str.data(), number);
+        ASSERT_STREQ ("43123", str.c_str ());
+        }
+
+        {
+        uint64_t number = 14235263432521323ULL;
+        Utf8String str;
+        str.reserve (21); //max length in hex format for an UInt64 (incl. trailing \0)
+        BeStringUtilities::FormatUInt64 ((Utf8P)str.data(), number);
+        ASSERT_STREQ ("14235263432521323", str.c_str ());
+        }
+}
+//---------------------------------------------------------------------------------------
+// @betest                                      Umar.hayat                          12/15
+//---------------------------------------------------------------------------------------
+TEST (BeStringUtilitiesTests, HexFormatOptions)
+    {
+        {
+        uint64_t number = 65297ULL;
+        WString str;
+        str.reserve (10); //max length in hex format for an UInt64 (incl. trailing \0)
+        BeStringUtilities::FormatUInt64 ((WCharP) str.data(), 10,number,HexFormatOptions::None);
+        EXPECT_STREQ (L"ff11", str.c_str ());
+        }
+        
+        {
+        uint64_t number = 65297ULL;
+        WString str;
+        str.reserve (10); //max length in hex format for an UInt64 (incl. trailing \0)
+        BeStringUtilities::FormatUInt64 ((WCharP) str.data(), 10,number,HexFormatOptions::None,6);
+        EXPECT_STREQ (L"  ff11", str.c_str ());
+        }
+        
+        {
+        uint64_t number = 65297ULL;
+        WString str;
+        str.reserve (10); //max length in hex format for an UInt64 (incl. trailing \0)
+        BeStringUtilities::FormatUInt64 ((WCharP) str.data(), 10,number,HexFormatOptions::LeadingZeros,6);
+        EXPECT_STREQ (L"00ff11", str.c_str ());
+        }
+
+        {
+        uint64_t number = 65297ULL;
+        WString str;
+        str.reserve (10); //max length in hex format for an UInt64 (incl. trailing \0)
+        BeStringUtilities::FormatUInt64 ((WCharP) str.data(), 10,number,HexFormatOptions::UsePrecision,6);
+        EXPECT_STREQ (L"  ff11", str.c_str ());
+        }
+        
+        {
+        uint64_t number = 65297ULL;
+        WString str;
+        str.reserve (10); //max length in hex format for an UInt64 (incl. trailing \0)
+        int opts = (int)HexFormatOptions::LeftJustify | (int)HexFormatOptions::Uppercase | (int)HexFormatOptions::UsePrecision;
+        BeStringUtilities::FormatUInt64((WCharP)str.data(), 10, number, (HexFormatOptions)opts, 8, 6);
+        EXPECT_STREQ (L"00FF11  ", str.c_str ());
+        }
+    }
+//---------------------------------------------------------------------------------------
+// @betest                                      Umar.hayat                          12/15
+//---------------------------------------------------------------------------------------
+TEST (BeStringUtilitiesTests, HexFormatOptionsUtf8)
+    {
+        {
+        uint64_t number = 65297ULL;
+        Utf8String str;
+        str.reserve (10); //max length in hex format for an UInt64 (incl. trailing \0)
+        BeStringUtilities::FormatUInt64 ((Utf8P) str.data(), 10,number,HexFormatOptions::None);
+        EXPECT_STREQ ("ff11", str.c_str ());
+        }
+        
+        {
+        uint64_t number = 65297ULL;
+        Utf8String str;
+        str.reserve (10); //max length in hex format for an UInt64 (incl. trailing \0)
+        BeStringUtilities::FormatUInt64 ((Utf8P) str.data(), 10,number,HexFormatOptions::None,6);
+        EXPECT_STREQ ("  ff11", str.c_str ());
+        }
+        
+        {
+        uint64_t number = 65297ULL;
+        Utf8String str;
+        str.reserve (10); //max length in hex format for an UInt64 (incl. trailing \0)
+        BeStringUtilities::FormatUInt64 ((Utf8P) str.data(), 10,number,HexFormatOptions::LeadingZeros,6);
+        EXPECT_STREQ ("00ff11", str.c_str ());
+        }
+
+        {
+        uint64_t number = 65297ULL;
+        Utf8String str;
+        str.reserve (10); //max length in hex format for an UInt64 (incl. trailing \0)
+        BeStringUtilities::FormatUInt64 ((Utf8P) str.data(), 10,number,HexFormatOptions::UsePrecision,6);
+        EXPECT_STREQ ("  ff11", str.c_str ());
+        }
+        
+        {
+        uint64_t number = 65297ULL;
+        Utf8String str;
+        str.reserve (10); //max length in hex format for an UInt64 (incl. trailing \0)
+        int opts = (int)HexFormatOptions::LeftJustify | (int)HexFormatOptions::Uppercase | (int)HexFormatOptions::UsePrecision;
+        BeStringUtilities::FormatUInt64 ((Utf8P)str.data(), 10, number, (HexFormatOptions)opts, 8, 6);
+        EXPECT_STREQ ("00FF11  ", str.c_str ());
+        }
+    }
 
 //---------------------------------------------------------------------------------------
 // @betest                                      Krischan.Eberle                    09/13
@@ -693,6 +1044,58 @@ TEST (BeStringUtilitiesTests, ParseUInt64FromUtf8)
     str = "blabla";
     number = 0ULL;
     stat = BeStringUtilities::ParseUInt64 (number, str);
+    ASSERT_EQ (ERROR, stat);
+    }
+
+//---------------------------------------------------------------------------------------
+// @betest                                      Umar.Hayat                    12/15
+//---------------------------------------------------------------------------------------
+TEST (BeStringUtilitiesTests, ParseHexUInt64)
+    {
+    WCharCP str = L"3292E58C2DF66B";
+    uint64_t number = 0ULL;
+    BentleyStatus stat = BeStringUtilities::ParseHexUInt64(number, str);
+    ASSERT_EQ (SUCCESS, stat);
+    ASSERT_EQ (14235263432521323ULL, number);
+
+    str = L"003292E58C2DF66B";
+    number = 0ULL;
+    stat = BeStringUtilities::ParseHexUInt64(number, str);
+    ASSERT_EQ (SUCCESS, stat);
+    ASSERT_EQ (14235263432521323ULL, number);
+    
+    str = L"0x3292E58C2DF66B";
+    number = 0ULL;
+    stat = BeStringUtilities::ParseHexUInt64(number, str);
+    ASSERT_EQ(SUCCESS, stat);
+    ASSERT_EQ(14235263432521323ULL, number);
+    
+    str = L"0X3292E58C2DF66B";
+    number = 0ULL;
+    stat = BeStringUtilities::ParseHexUInt64(number, str);
+    ASSERT_EQ(SUCCESS, stat);
+    ASSERT_EQ(14235263432521323ULL, number);
+
+    str = L"0x003292E58C2DF66B";
+    number = 0ULL;
+    stat = BeStringUtilities::ParseHexUInt64(number, str);
+    ASSERT_EQ(SUCCESS, stat);
+    ASSERT_EQ(14235263432521323ULL, number);
+
+    str = L"0X1";
+    number = 0ULL;
+    stat = BeStringUtilities::ParseHexUInt64(number, str);
+    ASSERT_EQ(SUCCESS, stat);
+    ASSERT_EQ(1ULL, number);
+
+    str = L"-1423526343";
+    number = 0ULL;
+    stat = BeStringUtilities::ParseHexUInt64(number, str);
+    ASSERT_EQ (ERROR, stat);
+    
+    str = L"blabla";
+    number = 0ULL;
+    stat = BeStringUtilities::ParseHexUInt64(number, str);
     ASSERT_EQ (ERROR, stat);
     }
 

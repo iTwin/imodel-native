@@ -39,6 +39,7 @@
     <ClCompile Include="Published\printf_test2.cpp" />
     <ClCompile Include="Published\scanf_test.cpp" />
     <ClCompile Include="Published\DateTimeTestHelpers.cpp" />
+    <ClCompile Include="Published\Utf8String_test.cpp" />
     <ClCompile Include="Published\WString_test.cpp" />
   </ItemGroup>
   <ItemGroup>
