@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/Published/ECDbMapping_Tests.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPublishedTests.h"
@@ -2173,7 +2173,7 @@ TEST_F(ECDbMappingTestFixture, PropertiesWithoutColumnsInExistingTable)
         "  <ECProperty propertyName='P3' typeName='int'/>"
         "  <ECProperty propertyName='P4' typeName='string'/>"
         "</ECEntityClass>"
-        "</ECSchema>", true); //schema import should ideally fail for properties without columns in existing table. TFS#268976
+        "</ECSchema>", false); //schema import should ideally fail for properties without columns in existing table. TFS#268976
 
     bool asserted = false;
     AssertSchemaImport(asserted, ecdb, testItem);
