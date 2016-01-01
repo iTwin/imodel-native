@@ -27,15 +27,15 @@ BEGIN_BENTLEY_NAMESPACE
 enum class BeFileStatus
     {
     Success                      = SUCCESS,  //!< The file operation was successful.
-    FileNotFoundError,                             //!< Unable to open the file because there is no file of the specified name.
-    AccessViolationError,                          //!< The file exists, but is either already open or protected from an open of the type specified.
-    SharingViolationError,                         //!< The file exists, but is already open in a sharing mode that does not allow this open.
-    TooManyOpenFilesError,                         //!< There are too many files already open.
-    FileNotOpenError,                              //!< An operation was attempted on a file that has already been closed.
-    NotLockedError,                                //!< The file is not locked.
-    ReadError,                                //!< An error during read.
-    DiskFull,                                 //!< Not enough storage available to complete operation
-    UnknownError                  = ERROR,    //!< An unknown file I/O error occurred.
+    FileNotFoundError,                       //!< Unable to open the file because there is no file of the specified name.
+    AccessViolationError,                    //!< The file exists, but is either already open or protected from an open of the type specified.
+    SharingViolationError,                   //!< The file exists, but is already open in a sharing mode that does not allow this open.
+    TooManyOpenFilesError,                   //!< There are too many files already open.
+    FileNotOpenError,                        //!< An operation was attempted on a file that has already been closed.
+    NotLockedError,                          //!< The file is not locked.
+    ReadError,                               //!< An error during read.
+    DiskFull,                                //!< Not enough storage available to complete operation
+    UnknownError                  = ERROR,   //!< An unknown file I/O error occurred.
     };
 
 //! The possible file access values for the Open method.

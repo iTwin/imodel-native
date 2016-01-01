@@ -196,6 +196,9 @@ BENTLEYDLL_EXPORT static void Uninitialize ();
 //! Instead, the failure is logged and deferred. The failure is triggered later in the main thread, usually when the test finishes.
 BENTLEYDLL_EXPORT static void SetFailOnAssert (bool doFail, BeAssertFunctions::AssertType atype = BeAssertFunctions::AssertType::All);
 
+//! Returns a flag indicating the there was an assertion failure in the current test.
+BENTLEYDLL_EXPORT static bool GetAssertionFailed();
+
 //! Signature of an assertion failure listener. There can be many listeners. A listener does not control how assertion failure is handled by BeTest. Normally, a listener will log a message.
 typedef void T_BeAssertListener (WCharCP _Message, WCharCP _File, unsigned _Line, BeAssertFunctions::AssertType atype);
 

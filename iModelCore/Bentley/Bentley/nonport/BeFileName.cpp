@@ -2252,6 +2252,31 @@ BentleyStatus BeFileName::GetTargetOfSymbolicLink(BeFileNameR target, WCharCP pa
     }
 
 /*---------------------------------------------------------------------------------**//**
+* Generates a temporary filename
+* @bsimethod                                                    BernMcCarty     06/05
++---------------+---------------+---------------+---------------+---------------+------*/
+BeFileNameStatus BeFileName::BeGetTempFileName (BeFileName& tempFileName, BeFileName const& pathToUseIn, WCharCP prefixString)
+    {
+#if defined (BENTLEY_WIN32) || (defined(BENTLEY_WINRT) && _MSC_VER >= 1900)
+    BeFileName pathToUse (pathToUseIn);
+    if (!*pathToUse.GetName())
+        BeGetTempPath (pathToUse);
+
+    WChar      tempName[4096];
+
+    wcscpy (tempName, tempFileName);
+
+    if (0 == ::GetTempFileNameW (pathToUse, prefixString, 0, tempName))
+        return BeFileNameStatus::CantCreate;
+
+    tempFileName.SetName (tempName);
+    return BeFileNameStatus::Success;
+#else
+    return BeFileNameStatus::UnknownError;
+#endif
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      06/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
 BeFileNameStatus BeFileName::BeGetTempPath (BeFileName& tempPath)
@@ -2284,4 +2309,17 @@ BeFileNameStatus BeFileName::GetCwd (WStringR currentDirectory)
     currentDirectory.AssignA (cwdPath);
     return BeFileNameStatus::Success;
 #endif
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Jeff.Marker     12/2015
+//---------------------------------------------------------------------------------------
+BeFileName BeFileName::Combine(std::initializer_list<WCharCP> paths) const
+    {
+    BeFileName fullPath = *this;
+
+    for (WCharCP path : paths)
+        fullPath.AppendToPath(path);
+
+    return fullPath;
     }

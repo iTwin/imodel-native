@@ -78,6 +78,48 @@ _EXPORT
 template <class _TypeT, class _Allocator = ::BentleyApi::BentleyAllocator<_TypeT> >
 class bvector;
 
+// *** BENTLEY_CHANGE
+struct _ScalarType {};
+struct _NonScalarType {};
+
+// Helper class that will evaluate '_TypeT' and set _TypeTagger<_TypeT>::Type to '_ScalarType' or '_NonScalarType'
+template<class _TypeT>
+struct _TypeTagger
+    {
+    //__PUBLISH_SECTION_END__
+    // std::conditional and std::is_scalar are part of c++11 standard. If not available ::conditional is easy to replicate but
+    // ::is_scalar is less trivial. If such a case arise, we should at least return _ScalarType for 'unsigned char' since
+    // this is the most important case that we want to optimize.
+    //__PUBLISH_SECTION_START__
+    typedef typename std::conditional<std::is_scalar<_TypeT>::value, _ScalarType, _NonScalarType>::type Type;
+    };
+
+// *** BENTLEY_CHANGE
+template<class T>
+inline void bstdcxx_fill_n(T* __Dest , T const& __val, size_t __n)
+    {
+    for (size_t i=0; i < __n; ++i)
+        __Dest[i] = __val;        
+    }
+
+template<>
+inline void bstdcxx_fill_n(unsigned char* __Dest, unsigned char const& __val, size_t __n)
+    {
+    memset(__Dest, __val, __n);
+    }
+
+template<>
+inline void bstdcxx_fill_n(char* __Dest, char const& __val, size_t __n)
+    {
+    memset(__Dest, __val, __n);
+    }
+
+template<>
+inline void bstdcxx_fill_n(signed char* __Dest, signed char const& __val, size_t __n)
+    {
+    memset(__Dest, __val, __n);
+    }
+
 
 //=======================================================================================
 /**
@@ -461,6 +503,38 @@ private:
         pointer _C_end;
         pointer _C_bufend;
     } _C_alloc;
+    
+    // *** BENTLEY_CHANGE
+    void _uninitialized_fill_back(size_type __n, const_reference __val, _NonScalarType)
+        {
+        for (; __n; --__n)
+            {
+            _RWSTD_ASSERT(!(_C_alloc._C_end == _C_alloc._C_bufend));
+
+            _C_push_back(__val);
+            }
+        }
+    //__PUBLISH_SECTION_END__
+    // Improve fill performance for scalar type, see std::is_scalar for the list. Scalar
+    // types do not require a call to alloc.construct() so we skip that and also
+    // call memset for one byte types.  It improves performance a lot when bvector is used
+    // to manage simple buffer of bytes.
+    // Not all paths are optimized. The optimized one are:
+    //
+    //      bvector<scalarType> myVector(n);
+    // and
+    //      bvector<scalarType> myVector;
+    //      myVector.resize(n);
+    //
+    //__PUBLISH_SECTION_START__
+    // *** BENTLEY_CHANGE
+    void _uninitialized_fill_back(size_type __n, const_reference __val, _ScalarType)
+        {
+        _RWSTD_ASSERT(_C_alloc._C_end + __n < _C_alloc._C_bufend);
+        bstdcxx_fill_n(_C_alloc._C_end, __val, __n);
+        _C_alloc._C_end += __n;
+        }
+
 };
 
 #if !defined (DOCUMENTATION_GENERATOR)

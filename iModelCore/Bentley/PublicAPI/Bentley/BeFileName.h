@@ -161,7 +161,7 @@ public:
 
     //! Append \a additionComponent to this filepath. A directory separator character is inserted, if necessary, before \a additionComponent.
     BENTLEYDLL_EXPORT BeFileNameR AppendToPath(WCharCP additionComponent);
-
+    
     //! Append \a extension to this filepath. A period is inserted, if necessary, before \a extension.
     BENTLEYDLL_EXPORT BeFileNameR AppendExtension(WCharCP extension);
 
@@ -183,6 +183,9 @@ public:
     //! Creates a shortened version of this path by removing leading path components until maxLength is reached. The resulting string is NOT a valid path, but is suitable for UI presentations. If the path is shortened, "..." will be prepended.
     //! @note Result is undefined when maxLength is less than or equal to 3.
     BENTLEYDLL_EXPORT WString Abbreviate(size_t maxLength) const;
+
+    //! Creates a new BeFileName by combining this instance with multiple new components, separated by path separators as needed.
+    BENTLEYDLL_EXPORT BeFileName Combine(std::initializer_list<WCharCP>) const;
 /** @} */
 
 /** @name Convert to/from other encodings */
@@ -418,6 +421,8 @@ public:
     BENTLEYDLL_EXPORT static BeFileNameStatus CloneDirectory(WCharCP sourceDir, WCharCP destDir, bool includeSubDirs=true);
 
     BENTLEYDLL_EXPORT static BeFileNameStatus BeGetTempPath (BeFileNameR tempPath);
+
+    BENTLEYDLL_EXPORT static BeFileNameStatus BeGetTempFileName (BeFileName& tempFileName, BeFileName const& pathName, WCharCP prefixString);
 
 /** @} */
 
