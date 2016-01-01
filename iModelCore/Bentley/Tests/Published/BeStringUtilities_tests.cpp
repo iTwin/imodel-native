@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/Published/BeStringUtilities_tests.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <Bentley/BeTest.h>
@@ -119,7 +119,7 @@ TEST (BeStringUtilitiesTests, BeStringUtilStrupr)
     {
         {
         char string[] = "hello";
-        char* outStr = BeStringUtilities::Strlwr(string);
+        char* outStr = BeStringUtilities::Strupr(string);
         EXPECT_STREQ("HELLO", outStr) << outStr;
         }
         {
@@ -137,7 +137,7 @@ TEST (BeStringUtilitiesTests, BeStringUtilStrupr)
 TEST (BeStringUtilitiesTests, CopyUtf16)
     {
     uint16_t string1[]=  {48,49,50,51,52,53,0};
-    uint16_t string2[]= {27,28,29,30,31,0};
+    uint16_t string2[10] = { 0 };
     Utf16CP inStr= string1;
   
     Utf16P outStr= string2;
@@ -158,6 +158,7 @@ TEST (BeStringUtilitiesTests, CopyUtf16)
     Utf16P outStr3 = string4;
     BeStringUtilities::CopyUtf16(outStr3, 10, inStr);
     EXPECT_EQ(6, BeStringUtilities::Utf16Len(outStr3));
+    SUCCEED();
     }
 
 //---------------------------------------------------------------------------------------

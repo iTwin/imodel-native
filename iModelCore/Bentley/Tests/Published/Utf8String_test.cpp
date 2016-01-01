@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/Published/Utf8String_test.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <Bentley/BeTest.h>
@@ -136,9 +136,11 @@ TEST(Utf8StringTest, EndsWith_EqualStrings_True)
 //---------------------------------------------------------------------------------------
 // @betest                                      Vincas.Razma                 06/15
 //---------------------------------------------------------------------------------------
-TEST(Utf8StringTest, EndsWith_DifferentCaseStrings_False)
+TEST(Utf8StringTest, EndsWith_DifferentCaseStrings)
     {
     EXPECT_FALSE(Utf8String("ABC").EndsWith("abc"));
+
+    EXPECT_TRUE(Utf8String("ABC").EndsWithI("abc"));
     }
 
 //---------------------------------------------------------------------------------------
@@ -178,4 +180,165 @@ TEST(Utf8StringTest, TrimEnd_ContainsOnlyWhiteSpace_LeavesEmptyString)
     EXPECT_STREQ("", Utf8String("").TrimEnd().c_str());
     EXPECT_STREQ("", Utf8String(" ").TrimEnd().c_str());
     EXPECT_STREQ("", Utf8String("\r\n").TrimEnd().c_str());
+    }
+//---------------------------------------------------------------------------------------
+// @betest                                      Umar.Hayat                          01/16
+//---------------------------------------------------------------------------------------
+TEST(Utf8StringTest, Trim)
+    {
+    EXPECT_STREQ("A", Utf8String("A\n").Trim().c_str());
+    EXPECT_STREQ("B", Utf8String("B ").Trim().c_str());
+    EXPECT_STREQ("C", Utf8String("C \n  \t ").Trim().c_str());
+    EXPECT_STREQ("D", Utf8String("\n D \n  \t ").Trim().c_str());
+
+    // LeavesAsItIs
+    EXPECT_STREQ("A B", Utf8String("A B").Trim().c_str());
+    EXPECT_STREQ("A\t\n\rB", Utf8String("A\t\n\rB").Trim().c_str());
+    EXPECT_STREQ("A\nB", Utf8String("A\nB").Trim().c_str());
+
+    //LeavesEmptyString
+    EXPECT_STREQ("", Utf8String("").Trim().c_str());
+    EXPECT_STREQ("", Utf8String(" ").Trim().c_str());
+    EXPECT_STREQ("", Utf8String("\r\n").Trim().c_str());
+    }
+//---------------------------------------------------------------------------------------
+// @betest                                      Umar.Hayat                          01/16
+//---------------------------------------------------------------------------------------
+TEST(Utf8StringTest, Trim_Characters)
+    {
+    EXPECT_STREQ("A\n", Utf8String("A\n").Trim("").c_str());
+    EXPECT_STREQ("B ", Utf8String("B ").Trim("").c_str());
+    EXPECT_STREQ("C \n  \t ", Utf8String("C \n  \t ").Trim("").c_str());
+    EXPECT_STREQ("D", Utf8String("\n D \n  \t ").Trim("\t\n ").c_str());
+
+    // LeavesAsItIs
+    EXPECT_STREQ("A B", Utf8String("A B").Trim(" ").c_str());
+    EXPECT_STREQ("A\t\n\rB", Utf8String("A\t\n\rB").Trim("\t\n\r").c_str());
+    EXPECT_STREQ("A\nB", Utf8String("A\nB").Trim("\n").c_str());
+    EXPECT_STREQ("ACB", Utf8String("ACB").Trim("C").c_str());
+    EXPECT_STREQ("ACB", Utf8String("ACB").Trim("abc").c_str());
+
+    //LeavesEmptyString
+    EXPECT_STREQ("", Utf8String("").Trim("").c_str());
+    EXPECT_STREQ("", Utf8String(" ").Trim(" ").c_str());
+    EXPECT_STREQ("", Utf8String("\r\n").Trim("\r\n").c_str());
+    EXPECT_STREQ("", Utf8String("ABCBA").Trim("ABC").c_str());
+    }
+//---------------------------------------------------------------------------------------
+// @betest                                      Umar.Hayat                          01/16
+//---------------------------------------------------------------------------------------
+TEST(Utf8StringTest, StartsWith)
+    {
+    EXPECT_FALSE(Utf8String("").StartsWith(""));
+    EXPECT_FALSE(Utf8String("ABC").StartsWith(""));
+    EXPECT_TRUE(Utf8String("ABC").StartsWith("A"));
+    EXPECT_FALSE(Utf8String("ABC").StartsWith("C"));
+    EXPECT_TRUE(Utf8String("ABC").StartsWith("ABC"));
+    EXPECT_FALSE(Utf8String("AAA").StartsWith("AAAA"));
+
+    // Check Case
+    EXPECT_FALSE(Utf8String("ABC").StartsWith("abc"));
+    EXPECT_TRUE(Utf8String("ABC").StartsWithI("abc"));
+    }
+//---------------------------------------------------------------------------------------
+// @betest                                      Umar.Hayat                          01/16
+//---------------------------------------------------------------------------------------
+TEST(Utf8StringTest, ReplaceAll)
+    {
+    Utf8String str("");
+    EXPECT_EQ(0, str.ReplaceAll("", ""));
+    EXPECT_STREQ("",str.c_str());
+
+    str.assign("");
+    EXPECT_EQ(0, str.ReplaceAll("", "A"));
+    EXPECT_STREQ("", str.c_str());
+
+    str.assign("ABC");
+    EXPECT_EQ(1, str.ReplaceAll("A", ""));
+    EXPECT_STREQ("BC", str.c_str());
+
+    str.assign("ABC");
+    EXPECT_EQ(1, str.ReplaceAll("A", "C"));
+    EXPECT_STREQ("CBC", str.c_str());
+
+    str.assign("ABCABC ");
+    EXPECT_EQ(2, str.ReplaceAll("AB", ""));
+    EXPECT_STREQ("CC ", str.c_str());
+
+    str.assign("ABCABC");
+    EXPECT_EQ(2, str.ReplaceAll("AB", "11223344"));
+    EXPECT_STREQ("11223344C11223344C", str.c_str());
+
+    str.assign("AAA");
+    EXPECT_EQ(0, str.ReplaceAll("AAAA", ""));
+    EXPECT_STREQ("AAA", str.c_str());
+
+    // Check Case
+    str.assign("ABC");
+    EXPECT_EQ(0, str.ReplaceAll("abc", "def"));
+    EXPECT_STREQ("ABC", str.c_str());
+    }
+//---------------------------------------------------------------------------------------
+// @betest                                      Umar.Hayat                          01/16
+//---------------------------------------------------------------------------------------
+TEST(Utf8StringTest, Contains)
+    {
+    // Check Utf8CP
+    EXPECT_TRUE(Utf8String("").Contains(""));
+    EXPECT_FALSE(Utf8String("").Contains("ABCDEF1232"));
+    EXPECT_TRUE(Utf8String("ABC").Contains(""));
+    EXPECT_TRUE(Utf8String("ABC").Contains("A"));
+    EXPECT_FALSE(Utf8String("ABC").Contains("ABD"));
+    EXPECT_TRUE(Utf8String("ABC").Contains("ABC"));
+    EXPECT_FALSE(Utf8String("AAA").Contains("AAAA"));
+    
+    // Check Utf8String
+    EXPECT_TRUE(Utf8String("").Contains(Utf8String("")));
+    EXPECT_FALSE(Utf8String("").Contains(Utf8String("ABCDEF1232")));
+    EXPECT_TRUE(Utf8String("ABC").Contains(Utf8String("")));
+    EXPECT_TRUE(Utf8String("ABC").Contains(Utf8String("A")));
+    EXPECT_FALSE(Utf8String("ABC").Contains(Utf8String("ABD")));
+    EXPECT_TRUE(Utf8String("ABC").Contains(Utf8String("ABC")));
+    EXPECT_FALSE(Utf8String("AAA").Contains(Utf8String("AAAA")));
+    }
+//---------------------------------------------------------------------------------------
+// @betest                                      Umar.Hayat                          01/16
+//---------------------------------------------------------------------------------------
+TEST(Utf8StringTest, ContainsI)
+    {
+    // Check Utf8CP
+    EXPECT_FALSE(Utf8String("ABC").Contains("abc"));
+    EXPECT_TRUE(Utf8String("ABC").ContainsI("abc"));
+    EXPECT_TRUE(Utf8String("ABC").ContainsI("ABC"));
+        
+    // Check Utf8String
+    EXPECT_FALSE(Utf8String("ABC").Contains(Utf8String("abc")));
+    EXPECT_TRUE(Utf8String("ABC").ContainsI(Utf8String("abc")));
+    EXPECT_TRUE(Utf8String("ABC").ContainsI(Utf8String("ABC")));
+    }
+
+//---------------------------------------------------------------------------------------
+// @betest                                      Umar.Hayat                          01/16
+//---------------------------------------------------------------------------------------
+TEST(Utf8StringTest, ToUpper)
+    {
+    EXPECT_STREQ("", Utf8String("").ToUpper().c_str());
+    EXPECT_STREQ("ABC", Utf8String("abc").ToUpper().c_str());
+    EXPECT_STREQ("ABC", Utf8String("Abc").ToUpper().c_str());
+    EXPECT_STREQ("ABC", Utf8String("ABC").ToUpper().c_str());
+    EXPECT_STREQ("123$%^ ABC", Utf8String("123$%^ AbC").ToUpper().c_str());
+    }
+//---------------------------------------------------------------------------------------
+// @betest                                      Umar.Hayat                          01/16
+//---------------------------------------------------------------------------------------
+TEST(Utf8StringTest, IsAscii)
+    {
+    EXPECT_TRUE(Utf8String("ABC").IsAscii());
+    EXPECT_TRUE(Utf8String("abc").IsAscii());
+    EXPECT_TRUE(Utf8String("~!@#$%^&*()123").IsAscii());
+
+    uint8_t str[] = { 66, 101, 110, 116, 108, 121, 174, 0 };
+    Utf8CP utf8Str = (Utf8CP)str;
+    Utf8String inStr(utf8Str);
+    EXPECT_FALSE(inStr.IsAscii());
     }
