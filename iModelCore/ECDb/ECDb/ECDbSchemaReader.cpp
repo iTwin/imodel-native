@@ -504,9 +504,9 @@ BentleyStatus ECDbSchemaReader::LoadECSchemaFromDb(DbECSchemaEntry*& schemaEntry
         schema->SetNamespacePrefix(nsprefix);
 
     unique_ptr<DbECSchemaEntry> schemaEntryPtr = unique_ptr<DbECSchemaEntry>(new DbECSchemaEntry(schema, typesInSchema));
-    DbECSchemaEntry* schemaEntryP = schemaEntryPtr.get();
+    schemaEntry = schemaEntryPtr.get();
     m_ecSchemaCache[ecSchemaId] = move(schemaEntryPtr);
-    m_cache.AddSchema(*schemaEntryP->m_cachedECSchema);
+    m_cache.AddSchema(*schemaEntry->m_cachedECSchema);
 
     return SUCCESS;
     }

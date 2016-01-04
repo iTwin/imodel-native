@@ -504,10 +504,10 @@ BentleyStatus ECDbSchemaWriter::ImportECRelationshipConstraint(ECClassId relClas
     for (ECRelationshipConstraintClassCP constraintClassObj : relationshipConstraint.GetConstraintClasses())
         {
         ECClassCR constraintClass = constraintClassObj->GetClass();
-        BeAssert(constraintClass.GetId() != ECClass::UNSET_ECCLASSID);
-
         if (SUCCESS != ImportECClass(constraintClass))
             return ERROR;
+
+        BeAssert(constraintClass.GetId() != ECClass::UNSET_ECCLASSID);
 
         if (BE_SQLITE_OK != stmt->BindInt64(1, relClassId))
             return ERROR;

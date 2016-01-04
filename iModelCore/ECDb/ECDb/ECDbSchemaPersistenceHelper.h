@@ -11,40 +11,6 @@
 USING_NAMESPACE_BENTLEY_EC
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Affan.Khan        06/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-struct DbECClassEntry
-    {
-public:
-    ECSchemaId m_ecSchemaId;
-    ECClassId m_ecClassId;
-    ECN::ECClassP m_cachedECClass;
-
-    DbECClassEntry(ECN::ECSchemaId schemaId, ECN::ECClassCR ecClass) : m_ecSchemaId(schemaId), m_ecClassId(ecClass.GetId())
-        {
-        m_cachedECClass = const_cast<ECN::ECClassP> (&ecClass);
-        }
-    };
-
-typedef int64_t ECEnumerationId;
-
-//=======================================================================================
-// @bsiclass                                                Krischan.Eberle      12/2015
-//+===============+===============+===============+===============+===============+======
-struct DbECEnumEntry
-    {
-public:
-    ECSchemaId m_ecSchemaId;
-    Utf8CP m_enumName;
-    ECN::ECEnumerationP m_cachedECEnum;
-
-    DbECEnumEntry(ECN::ECSchemaId schemaId, ECN::ECEnumerationCR ecEnum) : m_ecSchemaId(schemaId), m_enumName(ecEnum.GetName().c_str()) 
-        {
-        m_cachedECEnum = const_cast<ECN::ECEnumerationP> (&ecEnum);
-        }
-    };
-
 //=======================================================================================
 // @bsienum                                                Krischan.Eberle      12/2015
 //+===============+===============+===============+===============+===============+======
