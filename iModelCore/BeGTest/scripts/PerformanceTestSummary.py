@@ -48,7 +48,7 @@ class TestResults:
         if curr:
             count = len(self.Speed_c)
             sum = 0.0
-            if count != 0:
+            if count > 1: # There has to be more than one values to find StdDev
                 for i in range(count):
                     # Sum of (x - avg)'s square
                     time1 = self.Speed_c[i] - self.getAvgSpeed(True)
@@ -61,7 +61,7 @@ class TestResults:
         else:
             count = len(self.Speed_b)
             sum = 0.0
-            if count != 0:
+            if count > 1: # There has to be more than one values to find StdDev
                 for i in range(count):
                     # Sum of (x - avg)'s square
                     time1 = self.Speed_b[i] - self.getAvgSpeed(False)
