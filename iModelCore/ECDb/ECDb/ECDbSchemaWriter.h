@@ -24,9 +24,8 @@ private:
 
     DbResult CreateECSchemaEntry(ECSchemaCR, ECSchemaId);
     BentleyStatus CreateBaseClassEntry(ECClassId ecClassId, ECClassCR baseClass, int index);
-    BentleyStatus CreateECPropertyEntry(ECPropertyCR ecProperty, ECPropertyId ecPropertyId, ECClassId ecClassId, int32_t index);
+    BentleyStatus CreateECPropertyEntry(ECPropertyCR ecProperty, int32_t index);
     BentleyStatus CreateECRelationshipConstraintEntry(ECClassId relationshipClassId, ECN::ECRelationshipConstraintR relationshipConstraint, ECRelationshipEnd endpoint);
-    BentleyStatus CreateECRelationshipConstraintClassEntry(ECClassId relationshipClassId, ECClassId constraintClassId, ECRelationshipEnd endpoint);
     BentleyStatus InsertCAEntry(IECInstanceP customAttribute, ECClassId ecClassId, ECContainerId containerId, ECContainerType containerType, ECContainerId overridenContainerId, int index);
     BentleyStatus CreateECSchemaReferenceEntry(ECSchemaId ecSchemaId, ECSchemaId ecReferencedSchemaId);
 
@@ -34,7 +33,7 @@ private:
 
     BentleyStatus ImportECClass(ECN::ECClassCR);
 
-    BentleyStatus ImportECProperty(ECN::ECPropertyCR, ECClassId ecClassId, int32_t index);
+    BentleyStatus ImportECProperty(ECN::ECPropertyCR, int32_t index);
     BentleyStatus ImportECRelationshipClass(ECN::ECRelationshipClassCP, ECClassId relationshipClassId);
     BentleyStatus ImportECRelationshipConstraint(ECClassId relationshipClassId, ECN::ECRelationshipConstraintR, ECRelationshipEnd);
     BentleyStatus ImportECCustomAttributeECClass(ECN::IECCustomAttributeContainerCR);

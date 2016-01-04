@@ -17,40 +17,6 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 struct ECDbProfileManager
     {
 private:
-    //=======================================================================================
-    // @bsiclass                                                 Krischan.Eberle      07/2013
-    //+===============+===============+===============+===============+===============+======
-    struct ProfileCreator
-        {
-    private:
-        //non-instantiable class
-        ProfileCreator ();
-        ~ProfileCreator ();
-        static DbResult CreateECProfileTables (Db& db);
-        static DbResult CreateTableECSchema (Db& db);
-        static DbResult CreateTableECClass (Db& db);
-        static DbResult CreateTableECClassMap (Db& db);
-        static DbResult CreateTableBaseClass (Db& db);
-        static DbResult CreateTableECProperty (Db& db);
-        static DbResult CreateTableECRelationshipConstraint (Db& db);
-        static DbResult CreateTableECRelationshipConstraintClass (Db& db);
-        static DbResult CreateTableECRelationshipConstraintClassKeyProperty(Db& db);
-        static DbResult CreateTableCustomAttribute (Db& db);
-        static DbResult CreateTableSchemaReferences (Db& db);
-        static DbResult CreateTableECPropertyMap (Db& db);
-        static DbResult CreateTablePropertyPath (Db& db);
-        static DbResult CreateTableTable (Db& db);
-        static DbResult CreateTableColumn (Db& db);
-        static DbResult CreateTableIndex (Db& db);
-        static DbResult CreateTableIndexColumn (Db& db);
-        static DbResult CreateTableForeignKey (Db& db);
-        static DbResult CreateTableForeignKeyColumn (Db& db);
-
-    public:
-        static DbResult Create (ECDbR ecdb);
-        };
-
-
     typedef std::vector<std::unique_ptr<ECDbProfileUpgrader>> ECDbProfileUpgraderSequence;
     static Utf8CP const PROFILENAME;
     static const PropertySpec PROFILEVERSION_PROPSPEC;
@@ -63,11 +29,12 @@ private:
     ECDbProfileManager ();
     ~ECDbProfileManager ();
 
+    static DbResult CreateECProfileTables(ECDbR);
     //! Reads the version of the ECDb profile of the given ECDb file
     //! @return BE_SQLITE_OK in case of success or error code if the SQLite database is no
     //! ECDb file, i.e. does not have the ECDb profile
-    static DbResult ReadProfileVersion (SchemaVersion& profileVersion, ECDbCR ecdb, Savepoint& defaultTransaction);
-    static DbResult AssignProfileVersion (ECDbR ecdb);
+    static DbResult ReadProfileVersion (SchemaVersion& profileVersion, ECDbCR, Savepoint& defaultTransaction);
+    static DbResult AssignProfileVersion (ECDbR);
 
     //! Version of the ECDb Profile expected by the ECDb API.
     static SchemaVersion GetExpectedProfileVersion ();

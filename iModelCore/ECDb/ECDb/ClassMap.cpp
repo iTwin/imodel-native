@@ -108,14 +108,6 @@ StorageDescription const& IClassMap::GetStorageDescription() const
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                                    Krischan.Eberle  02/2014
-//---------------------------------------------------------------------------------------
-IClassMap::TableListR IClassMap::MapToTables() const
-    {
-    return _MapToTables();
-    }
-
-//---------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle  01/2014
 //---------------------------------------------------------------------------------------
 std::vector<IClassMap const*> IClassMap::GetDerivedClassMaps() const
@@ -272,7 +264,7 @@ BentleyStatus IClassMap::GetPathToParentOfJoinedTable(std::vector<IClassMap cons
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                         Affan.Khan  10/2015
 //---------------------------------------------------------------------------------------
-IClassMap const* IClassMap::FindClassMapOfParentOfJoinedTable(bool absolutePrimary) const
+IClassMap const* IClassMap::FindClassMapOfParentOfJoinedTable() const
     {
     auto current = this;
     if (!current->HasJoinedTable())
@@ -291,33 +283,9 @@ IClassMap const* IClassMap::FindClassMapOfParentOfJoinedTable(bool absolutePrima
         BeAssert(current != nullptr && "Failed to find parent classmap. This should not happen");
         } while (current != nullptr);
 
-        return nullptr;
+    return nullptr;
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                         Affan.Khan  10/2015
-//---------------------------------------------------------------------------------------
-const std::set<ECDbSqlTable const*> IClassMap::GetJoinedTables() const
-    {
-    std::set<ECDbSqlTable const*> secondaryTables;
-    GetPropertyMaps().Traverse([&secondaryTables, this] (TraversalFeedback& feedback, PropertyMapCP propMap)
-        {
-        if (!propMap->IsVirtual())
-            {
-            if (auto column = propMap->GetFirstColumn())
-                {
-                if (&column->GetTable() != &GetSecondaryTable())
-                    {
-                    if (secondaryTables.find(&column->GetTable()) == secondaryTables.end())
-                        secondaryTables.insert(&column->GetTable());
-                    }
-                }
-            }
-        feedback = TraversalFeedback::Next;
-        }, true);
-
-    return secondaryTables;
-    }
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    casey.mullen      11/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -535,19 +503,19 @@ MapStatus ClassMap::_InitializePart2(SchemaImportContext* schemaImportContext, C
     if (isJoinedTable)
         {
         PRECONDITION(parentClassMap != nullptr, MapStatus::Error);
-        if (&parentClassMap->GetSecondaryTable() != &GetSecondaryTable())
+        if (&parentClassMap->GetJoinedTable() != &GetJoinedTable())
             {
-            auto primaryKeyColumn = parentClassMap->GetSecondaryTable().GetFilteredColumnFirst(ColumnKind::ECInstanceId);
-            auto foreignKeyColumn = GetSecondaryTable().GetFilteredColumnFirst(ColumnKind::ECInstanceId);
+            auto primaryKeyColumn = parentClassMap->GetJoinedTable().GetFilteredColumnFirst(ColumnKind::ECInstanceId);
+            auto foreignKeyColumn = GetJoinedTable().GetFilteredColumnFirst(ColumnKind::ECInstanceId);
             PRECONDITION(primaryKeyColumn != nullptr, MapStatus::Error);
             PRECONDITION(foreignKeyColumn != nullptr, MapStatus::Error);
             bool createFKConstraint = true;
-            for (auto constraint : GetSecondaryTable().GetConstraints())
+            for (auto constraint : GetJoinedTable().GetConstraints())
                 {
                 if (constraint->GetType() == ECDbSqlConstraint::Type::ForeignKey)
                     {
                     auto fk = static_cast<ECDbSqlForeignKeyConstraint const*>(constraint);
-                    if (&fk->GetTargetTable() == &parentClassMap->GetSecondaryTable())
+                    if (&fk->GetTargetTable() == &parentClassMap->GetJoinedTable())
                         {
                         if (fk->GetSourceColumns().front() == foreignKeyColumn && fk->GetTargetColumns().front() == primaryKeyColumn)
                             {
@@ -560,7 +528,7 @@ MapStatus ClassMap::_InitializePart2(SchemaImportContext* schemaImportContext, C
 
             if (createFKConstraint)
                 {
-                auto fkConstraint = GetSecondaryTable().CreateForeignKeyConstraint(parentClassMap->GetSecondaryTable());
+                auto fkConstraint = GetJoinedTable().CreateForeignKeyConstraint(parentClassMap->GetJoinedTable());
                 fkConstraint->Add(foreignKeyColumn->GetName().c_str(), primaryKeyColumn->GetName().c_str());
                 fkConstraint->SetOnDeleteAction(ForeignKeyActionType::Cascade);
                 }
@@ -608,7 +576,7 @@ MapStatus ClassMap::AddPropertyMaps(SchemaImportContext* schemaImportContext, IC
             if (!isJoinedTable)
                 GetPropertyMapsR().AddPropertyMap(propMap);
             else
-                GetPropertyMapsR().AddPropertyMap(propMap->Clone(&GetSecondaryTable()));
+                GetPropertyMapsR().AddPropertyMap(propMap->Clone(&GetJoinedTable()));
             }
         }
 
@@ -618,7 +586,7 @@ MapStatus ClassMap::AddPropertyMaps(SchemaImportContext* schemaImportContext, IC
     for (auto property : propertiesToMap)
         {
         Utf8CP propertyAccessString = property->GetName().c_str();
-        propMap = PropertyMap::CreateAndEvaluateMapping(*property, m_ecDbMap, m_ecClass, propertyAccessString, &GetSecondaryTable(), nullptr);
+        propMap = PropertyMap::CreateAndEvaluateMapping(*property, m_ecDbMap, m_ecClass, propertyAccessString, &GetJoinedTable(), nullptr);
         if (propMap == nullptr)
             return MapStatus::Error;
 
@@ -687,7 +655,7 @@ BentleyStatus ClassMap::ProcessStandardKeySpecifications(SchemaImportContext& sc
         std::vector<ECDbSqlColumn const*> columns;
         propertyMap->GetColumns(columns);
 
-        if (nullptr == schemaImportContext.GetECDbMapDb().CreateIndex(GetECDbMap().GetECDbR(), GetSecondaryTable(), indexName.c_str(), false, columns, nullptr,
+        if (nullptr == schemaImportContext.GetECDbMapDb().CreateIndex(GetECDbMap().GetECDbR(), GetJoinedTable(), indexName.c_str(), false, columns, nullptr,
                                             true, GetClass().GetId()))
             {
             BeAssert(false && "Index was not created correctly");
@@ -1425,13 +1393,13 @@ ECDbSqlColumn* ColumnFactory::Configure(SchemaImportContext* schemaImportContext
 //------------------------------------------------------------------------------------------
 ECDbSqlColumn* ColumnFactory::Configure(SchemaImportContext* schemaImportContext, Specification const& specifications)
     {
-    return Configure(schemaImportContext, specifications, m_classMap.GetSecondaryTable());
+    return Configure(schemaImportContext, specifications, m_classMap.GetJoinedTable());
     }
 
 //------------------------------------------------------------------------------------------
 //@bsimethod                                                    Affan.Khan       01 / 2015
 //------------------------------------------------------------------------------------------
-ECDbSqlTable& ColumnFactory::GetTable()  { return m_classMap.GetSecondaryTable(); }
+ECDbSqlTable& ColumnFactory::GetTable()  { return m_classMap.GetJoinedTable(); }
 
 
 //------------------------------------------------------------------------------------------
@@ -1471,7 +1439,7 @@ const PropertyMapSet::EndPoints PropertyMapSet::FindEndPoints (ColumnKind filter
 //------------------------------------------------------------------------------------------
 BentleyStatus PropertyMapSet::AddSystemEndPoint(PropertyMapSet& propertySet, IClassMap const& classMap, ColumnKind kind, ECValueCR value, ECDbSqlColumn const* column)
     {
-    auto const& table = classMap.GetSecondaryTable();
+    auto const& table = classMap.GetJoinedTable();
 
     if (column == nullptr)
         column = table.GetFilteredColumnFirst(kind);
@@ -1501,7 +1469,7 @@ BentleyStatus PropertyMapSet::AddSystemEndPoint(PropertyMapSet& propertySet, ICl
 //------------------------------------------------------------------------------------------
 PropertyMapSet::Ptr PropertyMapSet::Create (IClassMap const& classMap)
     {
-    BeAssert (classMap.GetECDbMap ().GetSQLManager ().IsNullTable (classMap.GetSecondaryTable()) == false);
+    BeAssert (classMap.GetECDbMap ().GetSQLManager ().IsNullTable (classMap.GetJoinedTable()) == false);
     Ptr propertySet = Ptr (new PropertyMapSet (classMap));
     ECValue defaultValue;
     AddSystemEndPoint (*propertySet, classMap, ColumnKind::ECInstanceId, defaultValue);
@@ -1569,6 +1537,5 @@ PropertyMapSet::Ptr PropertyMapSet::Create (IClassMap const& classMap)
         }
     return propertySet;
     }
-
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

@@ -72,6 +72,7 @@ void ECDbSchemaReader::AddECSchemaToCacheInternal (ECSchemaCR schema)
         }
     }
 
+
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        05/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -450,98 +451,211 @@ BentleyStatus ECDbSchemaReader::LoadECClassFromDb(ECClassP& ecClassOut, ECClassI
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus ECDbSchemaReader::LoadECPropertiesFromDb(ECClassP& ecClass, ECClassId ecClassId)
     {
-    DbECPropertyInfo info;
-    info.ColsWhere = DbECPropertyInfo::COL_ClassId;
-    info.ColsSelect =
-        DbECPropertyInfo::COL_Name |
-        DbECPropertyInfo::COL_Id |
-        DbECPropertyInfo::COL_DisplayLabel |
-        DbECPropertyInfo::COL_Description |
-        DbECPropertyInfo::COL_IsArray |
-        DbECPropertyInfo::COL_PrimitiveType |
-        DbECPropertyInfo::COL_StructType |
-        DbECPropertyInfo::COL_IsReadonly |
-        DbECPropertyInfo::COL_MinOccurs |
-        DbECPropertyInfo::COL_MaxOccurs;
+    const int kindIx = 0;
+    const int idIx = 1;
+    const int nameIx = 2;
+    const int displayLabelIx = 3;
+    const int descrIx = 4;
+    const int isReadonlyIx = 5;
+    const int navPropDirectionIx = 10;
 
-    BeSQLite::CachedStatementPtr stmt = nullptr;
-    info.m_ecClassId = ecClassId;
+    struct PropReaderHelper
+        {
+        static BentleyStatus PrepareStatement(CachedStatementPtr& stmt, ECDbCR ecdb, ECClassId classId)
+            {
+            if (BE_SQLITE_OK != ecdb.GetCachedStatement(stmt, "SELECT Kind,Id,Name,DisplayLabel,Description,IsReadonly,PrimitiveType,NonPrimitiveType,ArrayMinOccurs,ArrayMaxOccurs,NavigationPropertyDirection FROM ec_Property WHERE ClassId=? ORDER BY Ordinal"))
+                return ERROR;
 
-    if (SUCCESS != ECDbSchemaPersistence::FindECProperty (stmt, m_db, info))
+            if (BE_SQLITE_OK != stmt->BindInt64(1, classId))
+                return ERROR;
+
+            return SUCCESS;
+            }
+
+        static BentleyStatus TryReadPrimitiveType(PrimitiveType& primType, CachedStatement& stmt)
+            {
+            const int primTypeIx = 6;
+            if (stmt.IsColumnNull(primTypeIx))
+                return ERROR;
+
+            primType = (PrimitiveType) stmt.GetValueInt(primTypeIx);
+            return SUCCESS;
+            }
+
+        static BentleyStatus TryReadNonPrimitiveType(ECClassP& nonPrimType, ECDbSchemaReader& schemaReader, CachedStatement& stmt)
+            {
+            const int nonPrimTypeIx = 7;
+            if (stmt.IsColumnNull(nonPrimTypeIx))
+                return ERROR;
+
+            const ECClassId nonPrimTypeId = (ECClassId) stmt.GetValueInt64(nonPrimTypeIx);
+            BeAssert(nonPrimTypeId != ECClass::UNSET_ECCLASSID);
+            return schemaReader.ReadECClass(nonPrimType, nonPrimTypeId);
+            }
+
+        static BentleyStatus TryReadArrayConstraints(uint32_t& minOccurs, uint32_t& maxOccurs, CachedStatement& stmt)
+            {
+            const int minOccursIx = 8;
+            const int maxOccursIx = 9;
+            if (stmt.IsColumnNull(minOccursIx) || stmt.IsColumnNull(maxOccursIx))
+                return ERROR;
+
+            minOccurs = (uint32_t) stmt.GetValueInt(minOccursIx);
+            maxOccurs = (uint32_t) stmt.GetValueInt(maxOccursIx);
+            return SUCCESS;
+            }
+        };
+
+    CachedStatementPtr stmt = nullptr;
+    if (SUCCESS != PropReaderHelper::PrepareStatement(stmt, m_db, ecClassId))
         return ERROR;
 
-    PrimitiveECPropertyP ecPrimitiveProperty = nullptr;
-    ArrayECPropertyP ecArrayProperty = nullptr;
-    StructECPropertyP ecStructProperty = nullptr;
-    StructArrayECPropertyP ecStructArrayProperty = nullptr;
-    info.m_minOccurs = 0;
-    info.m_maxOccurs = UINT32_MAX;
-
-    while (ECDbSchemaPersistence::Step(info, *stmt) == BE_SQLITE_ROW)
+    while (BE_SQLITE_ROW == stmt->Step())
         {
-        ECPropertyP ecProperty = nullptr;
-        if (info.m_isArray)
+        const ECPropertyKind kind = Enum::FromInt<ECPropertyKind>(stmt->GetValueInt(kindIx));
+        const ECPropertyId id = (ECPropertyId) stmt->GetValueInt64(idIx);
+        Utf8CP propName = stmt->GetValueText(nameIx);
+
+        Utf8CP displayLabel = stmt->IsColumnNull(displayLabelIx) ? nullptr : stmt->GetValueText(displayLabelIx);
+        Utf8CP description = stmt->IsColumnNull(descrIx) ? nullptr : stmt->GetValueText(descrIx);
+        const bool isReadonly = stmt->IsColumnNull(isReadonlyIx) ? false : stmt->GetValueInt(isReadonlyIx) != 0;
+
+        ECPropertyP prop = nullptr;
+        switch (kind)
             {
-            if (~info.ColsNull & DbECPropertyInfo::COL_PrimitiveType)
+                case ECPropertyKind::Primitive:
                 {
-                if (ECObjectsStatus::Success != ecClass->CreateArrayProperty (ecArrayProperty, info.m_name, info.m_primitiveType))
+                PrimitiveType primType;
+                if (SUCCESS != PropReaderHelper::TryReadPrimitiveType(primType, *stmt))
+                    {
+                    BeAssert(false && "PrimitiveType column is not expected to be NULL for primitive property");
                     return ERROR;
-                }
-            else if (~info.ColsNull & DbECPropertyInfo::COL_StructType)
-                {
-                ECClassP structType;
-                if (SUCCESS != ReadECClass (structType, info.m_structType))
+                    }
+
+                PrimitiveECPropertyP primProp = nullptr;
+                if (ECObjectsStatus::Success != ecClass->CreatePrimitiveProperty(primProp, propName, primType))
                     return ERROR;
 
-                if (nullptr == structType->GetStructClassCP())
-                    return ERROR;
-
-                if (ECObjectsStatus::Success != ecClass->CreateStructArrayProperty (ecStructArrayProperty, info.m_name, structType->GetStructClassCP()))
-                    return ERROR;
-                ecArrayProperty = ecStructArrayProperty;
+                prop = primProp;
+                break;
                 }
 
-            if (~info.ColsNull & DbECPropertyInfo::COL_MinOccurs)
-                ecArrayProperty->SetMinOccurs (info.m_minOccurs);
+                case ECPropertyKind::Struct:
+                {
+                ECClassP structClassRaw = nullptr;
+                if (SUCCESS != PropReaderHelper::TryReadNonPrimitiveType(structClassRaw, *this, *stmt))
+                    {
+                    BeAssert(false && "NonPrimitiveType column is not expected to be NULL for struct property");
+                    return ERROR;
+                    }
 
-            if (~info.ColsNull & DbECPropertyInfo::COL_MaxOccurs)
-                ecArrayProperty->SetMaxOccurs (info.m_maxOccurs);
+                ECStructClassCP structClass = structClassRaw->GetStructClassCP();
+                if (nullptr == structClass)
+                    {
+                    BeAssert(false);
+                    return ERROR;
+                    }
 
-            ecProperty = ecArrayProperty;
+                StructECPropertyP structProp = nullptr;
+                if (ECObjectsStatus::Success != ecClass->CreateStructProperty(structProp, propName, *structClass))
+                    return ERROR;
+
+                prop = structProp;
+                break;
+                }
+
+                case ECPropertyKind::PrimitiveArray:
+                {
+                PrimitiveType primType;
+                if (SUCCESS != PropReaderHelper::TryReadPrimitiveType(primType, *stmt))
+                    {
+                    BeAssert(false && "PrimitiveType column is not expected to be NULL for primitive array property");
+                    return ERROR;
+                    }
+
+                ArrayECPropertyP arrayProp = nullptr;
+                if (ECObjectsStatus::Success != ecClass->CreateArrayProperty(arrayProp, propName, primType))
+                    return ERROR;
+
+                uint32_t minOccurs, maxOccurs;
+                if (SUCCESS != PropReaderHelper::TryReadArrayConstraints(minOccurs, maxOccurs, *stmt))
+                    {
+                    BeAssert(false && "MinOccurs and MaxOccurs columns are not expected to be NULL for array property");
+                    return ERROR;
+                    }
+
+                arrayProp->SetMinOccurs(minOccurs);
+                arrayProp->SetMaxOccurs(maxOccurs);
+
+                prop = arrayProp;
+                break;
+                }
+
+                case ECPropertyKind::StructArray:
+                {
+                ECClassP structClassRaw = nullptr;
+                if (SUCCESS != PropReaderHelper::TryReadNonPrimitiveType(structClassRaw, *this, *stmt))
+                    {
+                    BeAssert(false && "NonPrimitiveType column is not expected to be NULL for struct array property");
+                    return ERROR;
+                    }
+
+                ECStructClassCP structClass = structClassRaw->GetStructClassCP();
+                if (nullptr == structClass)
+                    {
+                    BeAssert(false);
+                    return ERROR;
+                    }
+
+                StructArrayECPropertyP arrayProp = nullptr;
+                if (ECObjectsStatus::Success != ecClass->CreateStructArrayProperty(arrayProp, propName, structClass))
+                    return ERROR;
+
+                uint32_t minOccurs, maxOccurs;
+                if (SUCCESS != PropReaderHelper::TryReadArrayConstraints(minOccurs, maxOccurs, *stmt))
+                    {
+                    BeAssert(false && "MinOccurs and MaxOccurs columns are not expected to be NULL for array property");
+                    return ERROR;
+                    }
+
+                arrayProp->SetMinOccurs(minOccurs);
+                arrayProp->SetMaxOccurs(maxOccurs);
+
+                prop = arrayProp;
+                break;
+                }
+                
+                case ECPropertyKind::Navigation:
+                {
+                BeAssert(ecClass->IsEntityClass());
+
+                ECClassP relClassRaw = nullptr;
+                if (SUCCESS != PropReaderHelper::TryReadNonPrimitiveType(relClassRaw, *this, *stmt))
+                    {
+                    BeAssert(false && "NonPrimitiveType column is not expected to be NULL for navigation property");
+                    return ERROR;
+                    }
+
+                BeAssert(relClassRaw->IsRelationshipClass());
+                ECRelatedInstanceDirection direction = stmt->IsColumnNull(navPropDirectionIx) ? ECRelatedInstanceDirection::Forward : (ECRelatedInstanceDirection) stmt->GetValueInt(navPropDirectionIx);
+                NavigationECPropertyP navProp = nullptr;
+                if (ECObjectsStatus::Success != ecClass->GetEntityClassP()->CreateNavigationProperty(navProp, propName, *relClassRaw->GetRelationshipClassCP(), direction))
+                    return ERROR;
+                }
+
+                default:
+                    BeAssert(false);
+                    return ERROR;
             }
-        else
-            {
-            if (~info.ColsNull & DbECPropertyInfo::COL_PrimitiveType)
-                {
-                if (ECObjectsStatus::Success != ecClass->CreatePrimitiveProperty(ecPrimitiveProperty, info.m_name, info.m_primitiveType))
-                    return ERROR;
 
-                ecProperty = ecPrimitiveProperty;
-                }
-            else if (~info.ColsNull & DbECPropertyInfo::COL_StructType)
-                {
-                ECClassP structType;
-                if (SUCCESS != ReadECClass(structType, info.m_structType))
-                    return ERROR;
+        BeAssert(prop != nullptr);
+        prop->SetId(id);
+        prop->SetIsReadOnly(isReadonly);
+        prop->SetDescription(description);
+        if (displayLabel != nullptr)
+            prop->SetDisplayLabel(displayLabel);
 
-                if (nullptr == structType->GetStructClassCP())
-                    return ERROR;
-
-                if (ECObjectsStatus::Success != ecClass->CreateStructProperty(ecStructProperty, info.m_name, *structType->GetStructClassCP()))
-                    return ERROR;
-
-                ecProperty = ecStructProperty;
-                }
-            }
-        BeAssert(ecProperty != nullptr);
-        ecProperty->SetId(info.m_ecPropertyId); // WIP_FNV
-        ecProperty->SetIsReadOnly(info.m_isReadOnly);
-        ecProperty->SetDescription (info.m_description.c_str());
-
-        if (!(info.ColsNull & DbECPropertyInfo::COL_DisplayLabel))
-            ecProperty->SetDisplayLabel (info.m_displayLabel.c_str());
-
-        if (SUCCESS != LoadCAFromDb (*ecProperty, info.m_ecPropertyId, ECContainerType::Property))
+        if (SUCCESS != LoadCAFromDb(*prop, id, ECContainerType::Property))
             return ERROR;
         }
 
@@ -636,8 +750,8 @@ BentleyStatus ECDbSchemaReader::LoadECRelationshipConstraintFromDb(ECRelationshi
         DbECRelationshipConstraintInfo::COL_RelationshipEnd;
 
     info.ColsSelect =
-        DbECRelationshipConstraintInfo::COL_CardinalityLowerLimit |
-        DbECRelationshipConstraintInfo::COL_CardinalityUpperLimit |
+        DbECRelationshipConstraintInfo::COL_MultiplicityLowerLimit |
+        DbECRelationshipConstraintInfo::COL_MultiplicityUpperLimit |
         DbECRelationshipConstraintInfo::COL_IsPolymorphic         |
         DbECRelationshipConstraintInfo::COL_RoleLabel ;
 
@@ -654,7 +768,7 @@ BentleyStatus ECDbSchemaReader::LoadECRelationshipConstraintFromDb(ECRelationshi
         return ERROR;
 
     ECRelationshipConstraintR constraint = (relationshipEnd == ECRelationshipEnd_Target) ? ecRelationship->GetTarget() : ecRelationship->GetSource();
-    constraint.SetCardinality(RelationshipCardinality(info.m_cardinalityLowerLimit, info.m_cardinalityUpperLimit));
+    constraint.SetCardinality(RelationshipCardinality(info.m_multiplicityLowerLimit, info.m_multiplicityUpperLimit));
     constraint.SetIsPolymorphic(info.m_isPolymorphic);
 
     if (!(info.ColsNull & DbECRelationshipConstraintInfo::COL_RoleLabel))
@@ -674,53 +788,57 @@ BentleyStatus ECDbSchemaReader::LoadECRelationshipConstraintFromDb(ECRelationshi
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus ECDbSchemaReader::LoadECRelationshipConstraintClassesFromDb(ECRelationshipConstraintR constraint, ECClassId relationshipClassId, ECRelationshipEnd relationshipEnd)
     {
-    DbECRelationshipConstraintClassInfo info;
-    info.ColsWhere =
-        DbECRelationshipConstraintClassInfo::COL_RelationshipClassId |
-        DbECRelationshipConstraintClassInfo::COL_RelationshipEnd;
-
-    info.ColsSelect = DbECRelationshipConstraintClassInfo::COL_ConstraintClassId;
-
-    info.ColsNull = 0;
-
-    info.m_relationshipClassId = relationshipClassId;
-    info.m_ecRelationshipEnd = relationshipEnd;
-
-    CachedStatementPtr stmt = nullptr;
-    if (SUCCESS != ECDbSchemaPersistence::FindECRelationshipConstraintClass(stmt, m_db, info))
+    CachedStatementPtr statement = nullptr;
+    if (BE_SQLITE_OK != m_db.GetCachedStatement(statement, "SELECT ClassId, KeyProperties FROM ec_RelationshipConstraintClass WHERE RelationshipClassId=? AND RelationshipEnd=?"))
         return ERROR;
 
-    while (ECDbSchemaPersistence::Step(info, *stmt) == BE_SQLITE_ROW)
+    if (BE_SQLITE_OK != statement->BindInt64(1, relationshipClassId))
+        return ERROR;
+
+    if (BE_SQLITE_OK != statement->BindInt(2, (int) relationshipEnd))
+        return ERROR;
+
+    while (statement->Step() == BE_SQLITE_ROW)
         {
-        const ECClassId constraintClassId = info.m_constraintClassId;
+        const ECClassId constraintClassId = statement->GetValueInt64(0);
+        Utf8CP keyProperties = statement->IsColumnNull(1) ? nullptr : statement->GetValueText(1);
+
         ECClassP constraintClass = nullptr;
         if (SUCCESS != ReadECClass(constraintClass, constraintClassId))
             return ERROR;
 
         ECEntityClassP constraintAsEntity = constraintClass->GetEntityClassP();
         if (nullptr == constraintAsEntity)
-            return ERROR;
-        ECRelationshipConstraintClassP constraintClassObj = nullptr;
-        constraint.AddConstraintClass(constraintClassObj, *constraintAsEntity);
-        if (constraintClassObj != nullptr)
             {
-            CachedStatementPtr statement;
-            Utf8CP sql = "SELECT KeyPropertyName FROM ec_RelationshipConstraintClassKeyProperty WHERE RelationshipClassId = ? AND ConstraintClassId = ? AND RelationshipEnd = ?";
-            m_db.GetCachedStatement(statement, sql);
-            statement->BindInt64(1, relationshipClassId);
-            statement->BindInt64(2, constraintClassId);
-            statement->BindInt(3, relationshipEnd);
-            while (statement->Step() == BE_SQLITE_ROW)
+            BeAssert(false && "Relationship constraint classes are expected to be entity classes.");
+            return ERROR;
+            }
+
+        ECRelationshipConstraintClassP constraintClassObj = nullptr;
+        if (ECObjectsStatus::Success != constraint.AddConstraintClass(constraintClassObj, *constraintAsEntity))
+            return ERROR;
+
+        if (keyProperties != nullptr)
+            {
+            rapidjson::Document d;
+            if (d.Parse<0>(keyProperties).HasParseError())
                 {
-                constraintClassObj->AddKey(statement->GetValueText(0));
+                BeAssert(false && "Could not parse KeyProperty JSON string.");
+                return ERROR;
+                }
+
+            BeAssert(d.IsArray());
+            const rapidjson::SizeType count = d.Size();
+            for (rapidjson::SizeType i = 0; i < count; i++)
+                {
+                BeAssert(d[i].IsString());
+                constraintClassObj->AddKey(d[i].GetString());
                 }
             }
         }
 
     return SUCCESS;
     }
-
-
 
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        05/2012

@@ -610,7 +610,7 @@ void PropertyPath::Reset()
 //+---------------+---------------+---------------+---------------+---------------+------
 void PropertyPath::Location::SetProperty(ECPropertyCR property)
     {
-    BeAssert(property.GetName().Equals(GetPropertyName()));
+    // NEEDSWORK_STRUCTS: BeAssert(property.GetName().Equals(GetPropertyName()));
     m_property = &property;
     }
 

@@ -166,7 +166,7 @@ BentleyStatus ClassMapInfo::DoEvaluateMapStrategy(bool& baseClassesNotMappedYet,
         {
         m_parentClassMap = parentClassMap;
         BeAssert(parentStrategy.GetStrategy() == ECDbMapStrategy::Strategy::SharedTable && parentStrategy.AppliesToSubclasses());
-        m_tableName = m_parentClassMap->GetSecondaryTable().GetName();
+        m_tableName = m_parentClassMap->GetJoinedTable().GetName();
         UserECDbMapStrategy const* parentUserStrategy = m_ecdbMap.GetSchemaImportContext()->GetUserStrategy(parentClassMap->GetClass());
         if (parentUserStrategy == nullptr)
             {
@@ -175,7 +175,7 @@ BentleyStatus ClassMapInfo::DoEvaluateMapStrategy(bool& baseClassesNotMappedYet,
             }
         
         //use same ECInstanceId column name for derived classes.
-        ECDbSqlColumn const* parentECInstanceIdCol = m_parentClassMap->GetSecondaryTable().GetFilteredColumnFirst(ColumnKind::ECInstanceId);
+        ECDbSqlColumn const* parentECInstanceIdCol = m_parentClassMap->GetJoinedTable().GetFilteredColumnFirst(ColumnKind::ECInstanceId);
         if (parentECInstanceIdCol != nullptr)
             m_ecInstanceIdColumnName.assign(parentECInstanceIdCol->GetName());
 

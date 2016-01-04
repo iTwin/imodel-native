@@ -78,45 +78,6 @@ struct DbBaseClassInfo : DbInfoBase
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        05/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct DbECPropertyInfo : DbInfoBase
-    {
-    public:
-        enum Columns
-            {
-            COL_Id = 0x0001,
-            COL_ClassId = 0x0002,
-            COL_Name = 0x0004,
-            COL_DisplayLabel = 0x0008,
-            COL_Description = 0x0010,
-            COL_IsArray = 0x0020,
-            COL_PrimitiveType = 0x0040,
-            COL_StructType = 0x0080,
-            COL_Ordinal = 0x0100,
-            COL_IsReadonly = 0x0200,
-            COL_MinOccurs = 0x1000,
-            COL_MaxOccurs = 0x2000,
-
-            COL_ALL = 0xffffffff
-            };
-
-        ECClassId     m_ecClassId;
-        ECPropertyId  m_ecPropertyId;
-        Utf8String    m_name;
-        Utf8String    m_displayLabel;
-        Utf8String    m_description;
-        bool          m_isArray;
-        PrimitiveType m_primitiveType;
-        ECClassId     m_structType;
-        uint32_t      m_minOccurs;
-        uint32_t      m_maxOccurs;
-        int32_t       m_ordinal;
-
-        bool          m_isReadOnly;
-    };
-
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Affan.Khan        05/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
 struct DbECRelationshipConstraintInfo : DbInfoBase
     {
     public:
@@ -124,8 +85,8 @@ struct DbECRelationshipConstraintInfo : DbInfoBase
             {
             COL_RelationshipClassId = 0x01,
             COL_RelationshipEnd = 0x02,
-            COL_CardinalityLowerLimit = 0x04,
-            COL_CardinalityUpperLimit = 0x08,
+            COL_MultiplicityLowerLimit = 0x04,
+            COL_MultiplicityUpperLimit = 0x08,
             COL_RoleLabel = 0x10,
             COL_IsPolymorphic = 0x20,
             COL_ALL = 0xffffffff
@@ -133,50 +94,10 @@ struct DbECRelationshipConstraintInfo : DbInfoBase
 
         ECClassId         m_relationshipClassId;
         ECRelationshipEnd m_ecRelationshipEnd;
-        uint32_t          m_cardinalityLowerLimit;
-        uint32_t          m_cardinalityUpperLimit;
+        uint32_t          m_multiplicityLowerLimit;
+        uint32_t          m_multiplicityUpperLimit;
         Utf8String        m_roleLabel;
         bool              m_isPolymorphic;
-    };
-
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Affan.Khan        05/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-struct DbECRelationshipConstraintClassInfo : DbInfoBase
-    {
-    public:
-        enum Columns
-            {
-            COL_RelationshipClassId = 0x01,
-            COL_ConstraintClassId = 0x02,
-            COL_RelationshipEnd = 0x04,
-            COL_ALL = 0xffffffff
-            };
-
-        ECClassId         m_relationshipClassId;
-        ECClassId         m_constraintClassId;
-        ECRelationshipEnd m_ecRelationshipEnd;
-    };
-
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Affan.Khan        05/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-struct DbECRelationshipConstraintClassKeyPropertyInfo : DbInfoBase
-    {
-    public:
-        enum Columns
-            {
-            COL_RelationshipClassId = 0x01,
-            COL_ConstraintClassId = 0x02,
-            COL_RelationshipEnd = 0x04,
-            COL_KeyPropertyName = 0x08,
-            COL_ALL = 0xffffffff
-            };
-
-        ECClassId         m_relationECClassId;
-        ECClassId         m_constraintClassId;
-        ECRelationshipEnd m_ecRelationshipEnd;
-        Utf8String        m_keyPropertyName;
     };
 
 /*---------------------------------------------------------------------------------------
@@ -267,6 +188,14 @@ public:
     };
 
 
+enum class ECPropertyKind
+    {
+    Primitive = 0,
+    Struct = 1,
+    PrimitiveArray = 2,
+    StructArray = 3,
+    Navigation = 4
+    };
 
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        05/2012
@@ -285,10 +214,9 @@ struct ECDbSchemaPersistence
         static  DbResult InsertECSchema(ECDbCR, DbECSchemaInfo const&);
         static  BentleyStatus InsertECClass(ECDbCR, ECN::ECClassCR);
         static  BentleyStatus InsertBaseClass(ECDbCR, DbBaseClassInfo const&);
-        static  BentleyStatus InsertECProperty(ECDbCR, DbECPropertyInfo const&);
+        static  BentleyStatus InsertECProperty(ECDbCR, ECN::ECPropertyCR, int ordinal);
         static  BentleyStatus InsertECRelationshipConstraint(ECDbCR, DbECRelationshipConstraintInfo const&);
-        static  BentleyStatus InsertECRelationshipConstraintClass(ECDbCR, DbECRelationshipConstraintClassInfo const&);
-        static  BentleyStatus InsertECRelationshipConstraintClassKeyProperty(ECDbCR, DbECRelationshipConstraintClassKeyPropertyInfo const&);
+        static  BentleyStatus InsertECRelationshipConstraintClass(ECDbCR, ECN::ECClassId relClassId, ECN::ECRelationshipConstraintClassCR, ECN::ECRelationshipEnd);
         static  BentleyStatus InsertCustomAttribute(ECDbCR, DbCustomAttributeInfo const&);
         static  BentleyStatus InsertECSchemaReference(ECDbCR, DbECSchemaReferenceInfo const&);
 
@@ -298,15 +226,9 @@ struct ECDbSchemaPersistence
         //Find BaseClass
         static  BentleyStatus FindBaseClass(BeSQLite::CachedStatementPtr&, ECDbCR, DbBaseClassInfo const&);
         static  BeSQLite::DbResult Step(DbBaseClassInfo&, BeSQLite::Statement&);
-        //Find ECPropertyInfo
-        static  BentleyStatus FindECProperty(BeSQLite::CachedStatementPtr&, ECDbCR, DbECPropertyInfo const&);
-        static  BeSQLite::DbResult Step(DbECPropertyInfo&, BeSQLite::Statement&);
         //Find ECRelationConstraintInfo 
         static  BentleyStatus FindECRelationshipConstraint(BeSQLite::CachedStatementPtr&, ECDbCR, DbECRelationshipConstraintInfo const&);
         static  BeSQLite::DbResult Step(DbECRelationshipConstraintInfo&, BeSQLite::Statement&);
-        //Find ECRelationConstraintInfo 
-        static  BentleyStatus FindECRelationshipConstraintClass(BeSQLite::CachedStatementPtr&, ECDbCR, DbECRelationshipConstraintClassInfo const&);
-        static  BeSQLite::DbResult Step(DbECRelationshipConstraintClassInfo&, BeSQLite::Statement&);
         //Find CustomAttributeInfo
         static  BentleyStatus FindCustomAttribute(BeSQLite::CachedStatementPtr&, ECDbCR, DbCustomAttributeInfo const&);
         static  BeSQLite::DbResult Step(DbCustomAttributeInfo&, BeSQLite::Statement&);

@@ -65,12 +65,12 @@ struct ECSqlMetadataQueryTest : SchemaImportTestFixture
                                   "        <ECProperty propertyName='Name' typeName='string' />"
                                   "        <ECProperty propertyName='DisplayLabel' typeName='string' />"
                                   "        <ECProperty propertyName='Description' typeName='string' />"
-                                  "        <ECProperty propertyName='IsArray' typeName='boolean' />"
-                                  "        <ECProperty propertyName='MinOccurs' typeName='int' />"
-                                  "        <ECProperty propertyName='MaxOccurs' typeName='int' />"
-                                  "        <ECProperty propertyName='IsReadOnly' typeName='boolean' displayLabel='Read Only' />"
+                                  "        <ECProperty propertyName='IsReadOnly' typeName='boolean' />"
+                                  "        <ECProperty propertyName='Kind' typeName='int' />"
                                   "        <ECProperty propertyName='PrimitiveType' typeName='int' />"
-                                  "        <ECProperty propertyName='StructType' typeName='long' />"
+                                  "        <ECProperty propertyName='NonPrimitiveType' typeName='long' />"
+                                  "        <ECProperty propertyName='ArrayMinOccurs' typeName='int' />"
+                                  "        <ECProperty propertyName='ArrayMaxOccurs' typeName='int' />"
                                   "        <ECProperty propertyName='ClassId' typeName='long' />"
                                   "    </ECClass>"
                                   "    <ECRelationshipClass typeName='ClassHasLocalProperty' strength='embedding'>"
@@ -175,16 +175,25 @@ void ECSqlMetadataQueryTest::ComparePropertyDefProperties(ECPropertyCR expectedP
     actualProperty.GetValue(v, "Description");
     EXPECT_TRUE(u.Equals(v));
 
-    u.SetBoolean(expectedProperty.GetIsArray());
-    actualProperty.GetValue(v, "IsArray");
-    EXPECT_TRUE(u.Equals(v));
-    if (v.GetBoolean())
+    enum class ECPropertyKind
+        {
+        Primitive = 0,
+        Struct = 1,
+        PrimitiveArray = 2,
+        StructArray = 3,
+        Navigation = 4
+        };
+
+    actualProperty.GetValue(v, "Kind");
+    ECPropertyKind propKind = (ECPropertyKind) v.GetInteger();
+
+    if (propKind == ECPropertyKind::PrimitiveArray || propKind == ECPropertyKind::StructArray)
         {
         u.SetInteger(expectedProperty.GetAsArrayProperty()->GetMinOccurs());
-        actualProperty.GetValue(v, "MinOccurs");
+        actualProperty.GetValue(v, "ArrayMinOccurs");
         EXPECT_TRUE(u.Equals(v));
         u.SetInteger(expectedProperty.GetAsArrayProperty()->GetStoredMaxOccurs());
-        actualProperty.GetValue(v, "MaxOccurs");
+        actualProperty.GetValue(v, "ArrayMaxOccurs");
         EXPECT_TRUE(u.Equals(v));
 
         if (ARRAYKIND_Primitive == expectedProperty.GetAsArrayProperty()->GetKind())
@@ -196,15 +205,15 @@ void ECSqlMetadataQueryTest::ComparePropertyDefProperties(ECPropertyCR expectedP
         else if (ARRAYKIND_Struct == expectedProperty.GetAsArrayProperty()->GetKind())
             {
             u.SetLong(expectedProperty.GetAsStructArrayProperty()->GetStructElementType()->GetId());
-            actualProperty.GetValue(v, "StructType");
+            actualProperty.GetValue(v, "NonPrimitiveType");
             EXPECT_TRUE(u.Equals(v));
             }
         }
     else
         {
-        actualProperty.GetValue(v, "MinOccurs");
+        actualProperty.GetValue(v, "ArrayMinOccurs");
         EXPECT_TRUE(v.IsNull());
-        actualProperty.GetValue(v, "MaxOccurs");
+        actualProperty.GetValue(v, "ArrayMaxOccurs");
         EXPECT_TRUE(v.IsNull());
 
         if (expectedProperty.GetIsPrimitive())
@@ -222,12 +231,12 @@ void ECSqlMetadataQueryTest::ComparePropertyDefProperties(ECPropertyCR expectedP
         if (expectedProperty.GetIsStruct())
             {
             u.SetLong(expectedProperty.GetAsStructProperty()->GetType().GetId());
-            actualProperty.GetValue(v, "StructType");
+            actualProperty.GetValue(v, "NonPrimitiveType");
             EXPECT_TRUE(u.Equals(v));
             }
         else
             {
-            actualProperty.GetValue(v, "StructType");
+            actualProperty.GetValue(v, "NonPrimitiveType");
             EXPECT_TRUE(v.IsNull());
             }
         }
