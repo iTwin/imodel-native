@@ -277,7 +277,7 @@ void* Realloc (void* ptr, size_t newBytes, size_t oldBytes)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Free (void* ptr, size_t size)
     {
-    BeAssert (ptr != this);
+    BeAssert(ptr != this);
 
     size_t numChunks = NumChunks(size);
 

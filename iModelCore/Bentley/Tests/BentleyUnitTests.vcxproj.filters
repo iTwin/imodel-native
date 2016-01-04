@@ -69,6 +69,12 @@
     <ClCompile Include="Published\BeStringUtilities_tests.cpp">
       <Filter>Published</Filter>
     </ClCompile>
+    <ClCompile Include="Published\BeTextFile_Test.cpp">
+      <Filter>Published</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\Utf8String_test.cpp">
+      <Filter>Published</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="BentleyUnitTests.PartFile.xml" />

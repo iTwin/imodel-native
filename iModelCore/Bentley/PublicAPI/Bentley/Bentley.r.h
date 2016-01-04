@@ -15,8 +15,6 @@
 
 #if defined (mdl_resource_compiler) || defined (mdl_type_resource_generator)
 
-    #define BEGIN_BENTLEY_NAMESPACE
-    #define END_BENTLEY_NAMESPACE
     #define ALIGNMENT_ATTRIBUTE(B)
     #define ENUM_UNDERLYING_TYPE(T)
 

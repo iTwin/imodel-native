@@ -8,6 +8,9 @@ BeFileNameTests.UNCReadOnlyTest         # Testable UNC path is required to be av
 #----------------------------------------------------------------------------------------
 #   Tests that need attention
 #----------------------------------------------------------------------------------------
+BeTextFileTests.*
+BeStringUtilitiesTests.UriEncoding
+Utf8StringTest.ContainsI
 
 #----------------------------------------------------------------------------------------
 # *** Broken in 06; need to be re-visited ***
