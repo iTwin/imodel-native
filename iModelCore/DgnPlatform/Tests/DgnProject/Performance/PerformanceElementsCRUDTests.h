@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/DgnProject/Performance/PerformanceElementsCRUDTests.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatform/DgnPlatformApi.h>
@@ -22,6 +22,7 @@ USING_DGNDB_UNIT_TESTS_NAMESPACE
 #define ELEMENT_PERFORMANCE_ELEMENT2_CLASS      "Element2"
 #define ELEMENT_PERFORMANCE_ELEMENT3_CLASS      "Element3"
 #define ELEMENT_PERFORMANCE_ELEMENT4_CLASS      "Element4"
+#define ELEMENT_ASPECT_CLASS                    "TestMultiAspect"
 
 struct PerformanceElement1;
 struct PerformanceElement2;
@@ -59,6 +60,7 @@ struct PerformanceElement1 : Dgn::PhysicalElement
 
         PerformanceElement1CPtr Insert ();
         PerformanceElement1CPtr Update ();
+        void AddGeomtry();
     };
 
 //---------------------------------------------------------------------------------------
@@ -170,6 +172,43 @@ struct PerformanceElement4 : PerformanceElement3
         PerformanceElement4CPtr Insert ();
         PerformanceElement4CPtr Update ();
     };
+
+//=======================================================================================
+// @bsiclass                                                     Sam.Wilson      06/15
+//=======================================================================================
+struct TestMultiAspect : Dgn::DgnElement::MultiAspect
+{
+    DEFINE_T_SUPER(Dgn::DgnElement::UniqueAspect)
+private:
+    friend struct TestMultiAspectHandler;
+
+    Utf8String m_testMultiAspectProperty;
+
+    explicit TestMultiAspect(Utf8CP prop) : m_testMultiAspectProperty(prop) { ; }
+
+    Utf8CP _GetECSchemaName() const override { return ELEMENT_PERFORMANCE_TEST_SCHEMA_NAME; }
+    Utf8CP _GetECClassName() const override { return ELEMENT_ASPECT_CLASS; }
+    // Dummy implementation
+    Dgn::DgnDbStatus _LoadProperties(Dgn::DgnElementCR el) override { return DgnDbStatus::Success; };
+    Dgn::DgnDbStatus _UpdateProperties(Dgn::DgnElementCR el) override { return DgnDbStatus::Success; };
+
+public:
+    static RefCountedPtr<TestMultiAspect> Create(Utf8CP prop) { return new TestMultiAspect(prop); }
+
+    static ECN::ECClassCP GetECClass(Dgn::DgnDbR db) { return db.Schemas().GetECClass(ELEMENT_PERFORMANCE_TEST_SCHEMA_NAME, ELEMENT_ASPECT_CLASS); }
+
+    Utf8StringCR GetTestMultiAspectProperty() const { return m_testMultiAspectProperty; }
+    void SetTestMultiAspectProperty(Utf8CP s) { m_testMultiAspectProperty = s; }
+};
+
+//=======================================================================================
+// @bsiclass                                                     Sam.Wilson      06/15
+//=======================================================================================
+struct TestMultiAspectHandler : Dgn::dgn_AspectHandler::Aspect
+{
+    DOMAINHANDLER_DECLARE_MEMBERS(ELEMENT_ASPECT_CLASS, TestMultiAspectHandler, Dgn::dgn_AspectHandler::Aspect, )
+        RefCountedPtr<Dgn::DgnElement::Aspect> _CreateInstance() override { return new TestMultiAspect(""); }
+};
 
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Carole.MacDonald            08/2015
