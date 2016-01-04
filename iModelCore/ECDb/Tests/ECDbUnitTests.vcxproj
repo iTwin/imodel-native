@@ -75,6 +75,7 @@
     <ClCompile Include="Published\FieldEngineer_Test.cpp" />
     <ClCompile Include="Published\FSRTests.cpp" />
     <ClCompile Include="Published\InstanceCRUDTests.cpp" />
+    <ClCompile Include="Published\JsonInserterTests.cpp" />
     <ClCompile Include="Published\JsonLibrary_Test.cpp" />
     <ClCompile Include="Published\JsonUpdaterTests.cpp" />
     <ClCompile Include="Published\RandomECInstanceGenerator.cpp" />
