@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECDbSchemaWriter.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +-------------------------------------------------------------------------------------*/
 #pragma once
@@ -22,9 +22,8 @@ private:
 
     explicit ECDbSchemaWriter(ECDbR ecdb) : m_ecdb(ecdb) {}
 
-    DbResult CreateECSchemaEntry(ECSchemaCR, ECSchemaId);
+    DbResult CreateECSchemaEntry(ECSchemaCR);
     BentleyStatus CreateBaseClassEntry(ECClassId ecClassId, ECClassCR baseClass, int index);
-    BentleyStatus CreateECPropertyEntry(ECPropertyCR ecProperty, int32_t index);
     BentleyStatus CreateECRelationshipConstraintEntry(ECClassId relationshipClassId, ECN::ECRelationshipConstraintR relationshipConstraint, ECRelationshipEnd endpoint);
     BentleyStatus InsertCAEntry(IECInstanceP customAttribute, ECClassId ecClassId, ECContainerId containerId, ECContainerType containerType, ECContainerId overridenContainerId, int index);
     BentleyStatus CreateECSchemaReferenceEntry(ECSchemaId ecSchemaId, ECSchemaId ecReferencedSchemaId);
@@ -32,13 +31,12 @@ private:
     BentleyStatus ImportCustomAttributes(IECCustomAttributeContainerCR sourceContainer, ECContainerId sourceContainerId, ECContainerType containerType, Utf8CP onlyImportCAWithClassName = nullptr);
 
     BentleyStatus ImportECClass(ECN::ECClassCR);
+    BentleyStatus ImportECEnumeration(ECN::ECEnumerationCR);
 
     BentleyStatus ImportECProperty(ECN::ECPropertyCR, int32_t index);
     BentleyStatus ImportECRelationshipClass(ECN::ECRelationshipClassCP, ECClassId relationshipClassId);
     BentleyStatus ImportECRelationshipConstraint(ECClassId relationshipClassId, ECN::ECRelationshipConstraintR, ECRelationshipEnd);
-    BentleyStatus ImportECCustomAttributeECClass(ECN::IECCustomAttributeContainerCR);
     BentleyStatus EnsureECSchemaExists(ECClassCR);
-
 
 public:
     BentleyStatus Import(ECSchemaCR ecSchema);

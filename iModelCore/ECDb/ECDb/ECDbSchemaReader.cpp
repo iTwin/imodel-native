@@ -241,8 +241,8 @@ BentleyStatus ECDbSchemaReader::ReadECEnumeration(ECEnumerationP& ecEnum, ECN::E
 
     Utf8CP displayLabel = stmt->IsColumnNull(displayLabelColIx) ? nullptr : stmt->GetValueText(displayLabelColIx);
     Utf8CP description = stmt->IsColumnNull(descriptionColIx) ? nullptr : stmt->GetValueText(descriptionColIx);
-    PrimitiveType underlyingType = (PrimitiveType) stmt->GetValueInt(typeColIx);
-    bool isStrict = stmt->GetValueInt(isStrictColIx) != 0;
+    const PrimitiveType underlyingType = (PrimitiveType) stmt->GetValueInt(typeColIx);
+    const bool isStrict = stmt->GetValueInt(isStrictColIx) != 0;
     Utf8CP enumValuesJsonStr = stmt->GetValueText(valuesColIx);
 
     ecEnum = nullptr;
@@ -469,37 +469,38 @@ BentleyStatus ECDbSchemaReader::LoadClassesAndEnumsFromDb(DbECSchemaEntry* ecSch
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus ECDbSchemaReader::LoadECSchemaFromDb(ECSchemaPtr& ecSchemaOut, ECSchemaId ecSchemaId) const
     {
-    DbECSchemaInfo info;
-    info.ColsWhere = DbECSchemaInfo::COL_Id;
-    info.ColsSelect =
-        DbECSchemaInfo::COL_Name            |
-        DbECSchemaInfo::COL_DisplayLabel    |
-        DbECSchemaInfo::COL_Description     |
-        DbECSchemaInfo::COL_NamespacePrefix |
-        DbECSchemaInfo::COL_VersionMajor    |
-        DbECSchemaInfo::COL_VersionMinor;
-    info.ColsNull = 0;
-    info.m_ecSchemaId = ecSchemaId;        
-
     CachedStatementPtr stmt = nullptr;
-    if (SUCCESS != ECDbSchemaPersistence::FindECSchema(stmt, m_db, info))
+    if (BE_SQLITE_OK != m_db.GetCachedStatement(stmt, "SELECT Name,DisplayLabel,Description,NamespacePrefix,VersionMajor,VersionMinor FROM ec_Schema WHERE Id=?"))
         return ERROR;
 
-    if (BE_SQLITE_ROW != ECDbSchemaPersistence::Step(info, *stmt))
+    if (BE_SQLITE_OK != stmt->BindInt64(1, ecSchemaId))
         return ERROR;
 
-    if (ECSchema::CreateSchema(ecSchemaOut, info.m_name.c_str(), info.m_versionMajor, info.m_versionMinor) 
-        != ECObjectsStatus::Success )
+    if (BE_SQLITE_ROW != stmt->Step())
+        return ERROR;
+
+    Utf8CP schemaName = stmt->GetValueText(0);
+    Utf8CP displayLabel = stmt->IsColumnNull(1) ? nullptr : stmt->GetValueText(1);
+    Utf8CP description = stmt->GetValueText(2);
+    Utf8CP nsprefix = stmt->GetValueText(3);
+    uint32_t versionMajor = (uint32_t) stmt->GetValueInt(4);
+    uint32_t versionMinor = (uint32_t) stmt->GetValueInt(5);
+
+    if (ECSchema::CreateSchema(ecSchemaOut, schemaName, versionMajor, versionMinor) != ECObjectsStatus::Success)
         return ERROR;
 
     ecSchemaOut->SetId(ecSchemaId);
-    m_cache.AddSchema(*ecSchemaOut); 
-    ecSchemaOut->SetNamespacePrefix(info.m_namespacePrefix.c_str());
-    if (!(info.ColsNull & DbECSchemaInfo::COL_DisplayLabel))
-        ecSchemaOut->SetDisplayLabel(info.m_displayLabel.c_str());
-    if (!(info.ColsNull & DbECSchemaInfo::COL_Description))
-        ecSchemaOut->SetDescription(info.m_description.c_str());      
 
+    if (!Utf8String::IsNullOrEmpty(displayLabel))
+        ecSchemaOut->SetDisplayLabel(displayLabel);
+
+    if (!Utf8String::IsNullOrEmpty(description))
+        ecSchemaOut->SetDescription(description);
+
+    if (!Utf8String::IsNullOrEmpty(nsprefix))
+        ecSchemaOut->SetNamespacePrefix(nsprefix);
+
+    m_cache.AddSchema(*ecSchemaOut);
     return SUCCESS;
     }
 

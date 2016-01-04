@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECDbSchemaPersistence.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +-------------------------------------------------------------------------------------*/
 #pragma once
@@ -29,32 +29,6 @@ struct DbInfoBase
             };
         uint32_t ColsNull;
         DbInfoBase() : ColsNull(0), ColsInsert(0), ColsUpdate(0) {}
-    };
-
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Affan.Khan        05/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-struct DbECSchemaInfo : DbInfoBase
-    {
-    public:
-        enum Columns
-            {
-            COL_Id = 0x001,
-            COL_Name = 0x002,
-            COL_Description = 0x004,
-            COL_NamespacePrefix = 0x008,
-            COL_VersionMajor = 0x010,
-            COL_VersionMinor = 0x020,
-            COL_DisplayLabel = 0x100,
-            COL_ALL = 0xffffffff
-            };
-        ECSchemaId          m_ecSchemaId;
-        Utf8String          m_name;
-        Utf8String          m_displayLabel;
-        Utf8String          m_description;
-        Utf8String          m_namespacePrefix;
-        int32_t             m_versionMajor;
-        int32_t             m_versionMinor;
     };
 
 /*---------------------------------------------------------------------------------------
@@ -240,26 +214,15 @@ struct ECDbSchemaPersistence
     {
     public:
         typedef bvector<ECN::ECClassId>   ECClassIdList;
-        typedef ECClassIdList*            ECClassIdListP;
-        typedef ECClassIdList&            ECClassIdListR;
         typedef bvector<DbECSchemaEntry>  ECSchemaKeyList;
-        typedef ECSchemaKeyList&          ECSchemaKeyListR;
-        typedef ECSchemaKeyList*          ECSchemaKeyListP;
 
         //Insert new item
-        static  DbResult InsertECSchema(ECDbCR, DbECSchemaInfo const&);
-        static  BentleyStatus InsertECClass(ECDbCR, ECN::ECClassCR);
         static  BentleyStatus InsertBaseClass(ECDbCR, DbBaseClassInfo const&);
-        static  BentleyStatus InsertECProperty(ECDbCR, ECN::ECPropertyCR, int ordinal);
         static  BentleyStatus InsertECRelationshipConstraint(ECDbCR, DbECRelationshipConstraintInfo const&);
         static  BentleyStatus InsertECRelationshipConstraintClass(ECDbCR, ECN::ECClassId relClassId, ECN::ECRelationshipConstraintClassCR, ECN::ECRelationshipEnd);
-        static  BentleyStatus InsertECEnum(ECDbCR, ECN::ECEnumerationCR);
         static  BentleyStatus InsertCustomAttribute(ECDbCR, DbCustomAttributeInfo const&);
         static  BentleyStatus InsertECSchemaReference(ECDbCR, DbECSchemaReferenceInfo const&);
 
-        //Find ECSchemaInfo
-        static  BentleyStatus FindECSchema(BeSQLite::CachedStatementPtr&, ECDbCR, DbECSchemaInfo const&);
-        static  BeSQLite::DbResult Step(DbECSchemaInfo&, BeSQLite::Statement&);
         //Find BaseClass
         static  BentleyStatus FindBaseClass(BeSQLite::CachedStatementPtr&, ECDbCR, DbBaseClassInfo const&);
         static  BeSQLite::DbResult Step(DbBaseClassInfo&, BeSQLite::Statement&);
@@ -282,9 +245,8 @@ struct ECDbSchemaPersistence
 
         static BentleyStatus InitializeSystemTables(ECDbCR);
         static bool RequiredSystemTablesExist(ECDbCR);
-        //static BentleyStatus ResolveECClassId(DbECClassEntry& key, ECClassId ecClassId, ECDbCR);
-        static BentleyStatus GetDerivedECClasses(ECClassIdListR classIds, ECClassId baseClassId, ECDbCR);
-        static BentleyStatus GetBaseECClasses(ECClassIdListR baseClassIds, ECClassId ecClassId, ECDbCR);
+        static BentleyStatus GetDerivedECClasses(ECClassIdList& classIds, ECClassId baseClassId, ECDbCR);
+        static BentleyStatus GetBaseECClasses(ECClassIdList& baseClassIds, ECClassId ecClassId, ECDbCR);
         static BentleyStatus ResolveECSchemaId(DbECSchemaEntry& key, ECSchemaId ecSchemaId, ECDbCR);
 
         static BentleyStatus GetECSchemaKeys(ECSchemaKeys&, ECDbCR);

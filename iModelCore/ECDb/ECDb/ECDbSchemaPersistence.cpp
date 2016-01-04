@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECDbSchemaPersistence.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -42,151 +42,6 @@ public:
 //***************************************************************************************
 // ECDbSchemaPersistence
 //***************************************************************************************
-
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Affan.Khan        05/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-DbResult ECDbSchemaPersistence::InsertECSchema(ECDbCR db, DbECSchemaInfo const& info)
-    {
-    CachedStatementPtr stmt = nullptr;
-    DbResult stat = db.GetCachedStatement(stmt, "INSERT INTO ec_Schema(Id,Name,DisplayLabel,Description,NamespacePrefix,VersionMajor,VersionMinor) VALUES(?,?,?,?,?,?,?)");
-    if (BE_SQLITE_OK != stat)
-        return stat;
-
-    if (info.ColsInsert & DbECSchemaInfo::COL_Id) stmt->BindInt64(1, info.m_ecSchemaId);
-    if (info.ColsInsert & DbECSchemaInfo::COL_Name) stmt->BindText(2, info.m_name, Statement::MakeCopy::No);
-    if (info.ColsInsert & DbECSchemaInfo::COL_DisplayLabel) stmt->BindText(3, info.m_displayLabel, Statement::MakeCopy::No);
-    if (info.ColsInsert & DbECSchemaInfo::COL_Description) stmt->BindText(4, info.m_description, Statement::MakeCopy::No);
-    if (info.ColsInsert & DbECSchemaInfo::COL_NamespacePrefix) stmt->BindText(5, info.m_namespacePrefix, Statement::MakeCopy::No);
-    if (info.ColsInsert & DbECSchemaInfo::COL_VersionMajor) stmt->BindInt(6, info.m_versionMajor);
-    if (info.ColsInsert & DbECSchemaInfo::COL_VersionMinor) stmt->BindInt(7, info.m_versionMinor);
-
-    stat = stmt->Step();
-    if (BE_SQLITE_DONE != stat)
-        return stat;
-
-    return BE_SQLITE_OK;
-    }
-
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Affan.Khan        05/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ECDbSchemaPersistence::FindECSchema(BeSQLite::CachedStatementPtr& stmt, ECDbCR db, DbECSchemaInfo const& spec)
-    {
-    SqlClauseBuilder selectClause(",");
-
-    //prepare select list
-    if (spec.ColsSelect & DbECSchemaInfo::COL_Id) selectClause.AddItem("Id");
-    if (spec.ColsSelect & DbECSchemaInfo::COL_Name) selectClause.AddItem("Name");
-    if (spec.ColsSelect & DbECSchemaInfo::COL_DisplayLabel) selectClause.AddItem("DisplayLabel");
-    if (spec.ColsSelect & DbECSchemaInfo::COL_Description) selectClause.AddItem("Description");
-    if (spec.ColsSelect & DbECSchemaInfo::COL_NamespacePrefix) selectClause.AddItem("NamespacePrefix");
-    if (spec.ColsSelect & DbECSchemaInfo::COL_VersionMajor) selectClause.AddItem("VersionMajor");
-    if (spec.ColsSelect & DbECSchemaInfo::COL_VersionMinor) selectClause.AddItem("VersionMinor");
-    BeAssert(!selectClause.IsEmpty());
-
-    Utf8String sql("SELECT ");
-    sql.append(selectClause.ToString()).append(" FROM ec_Schema");
-
-    //prepare where
-    SqlClauseBuilder whereClause("AND");
-    if (spec.ColsWhere & DbECSchemaInfo::COL_Id) whereClause.AddItem("Id=?");
-    if (spec.ColsWhere & DbECSchemaInfo::COL_Name) whereClause.AddItem("Name=?");
-    if (spec.ColsWhere & DbECSchemaInfo::COL_NamespacePrefix) whereClause.AddItem("NamespacePrefix=?");
-    if (spec.ColsWhere & DbECSchemaInfo::COL_VersionMajor) whereClause.AddItem("VersionMajor=?");
-    if (spec.ColsWhere & DbECSchemaInfo::COL_VersionMinor) whereClause.AddItem("VersionMinor=?");
-
-    if (!whereClause.IsEmpty())
-        sql.append(" WHERE ").append(whereClause.ToString());
-
-    if (BE_SQLITE_OK != db.GetCachedStatement(stmt, sql.c_str()))
-        return ERROR;
-
-    int nCol = 1;
-    if (spec.ColsWhere & DbECSchemaInfo::COL_Id) stmt->BindInt64(nCol++, spec.m_ecSchemaId);
-    if (spec.ColsWhere & DbECSchemaInfo::COL_Name) stmt->BindText(nCol++, spec.m_name, Statement::MakeCopy::No);
-    if (spec.ColsWhere & DbECSchemaInfo::COL_NamespacePrefix) stmt->BindText(nCol++, spec.m_namespacePrefix, Statement::MakeCopy::No);
-    if (spec.ColsWhere & DbECSchemaInfo::COL_VersionMajor) stmt->BindInt(nCol++, spec.m_versionMajor);
-    if (spec.ColsWhere & DbECSchemaInfo::COL_VersionMinor) stmt->BindInt(nCol++, spec.m_versionMinor);
-
-    return SUCCESS;
-    }
-
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Affan.Khan        05/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-DbResult ECDbSchemaPersistence::Step(DbECSchemaInfo& info, BeSQLite::Statement& stmt)
-    {
-    DbResult r;
-    if ((r = stmt.Step()) == BE_SQLITE_ROW)
-        {
-        int nCol = 0;
-        info.ColsNull = 0;
-        if (info.ColsSelect & DbECSchemaInfo::COL_Id  )
-            if (stmt.IsColumnNull(nCol)) { info.ColsNull |= DbECSchemaInfo::COL_Id;              nCol++; } else info.m_ecSchemaId   = stmt.GetValueInt64(nCol++);
-        if (info.ColsSelect & DbECSchemaInfo::COL_Name        )
-            if (stmt.IsColumnNull(nCol)) { info.ColsNull |= DbECSchemaInfo::COL_Name;            nCol++; } else info.m_name         = stmt.GetValueText (nCol++);        
-        if (info.ColsSelect & DbECSchemaInfo::COL_DisplayLabel)
-            if (stmt.IsColumnNull(nCol)) { info.ColsNull |= DbECSchemaInfo::COL_DisplayLabel;    nCol++; } else info.m_displayLabel = stmt.GetValueText (nCol++);
-        if (info.ColsSelect & DbECSchemaInfo::COL_Description )
-            if (stmt.IsColumnNull(nCol)) { info.ColsNull |= DbECSchemaInfo::COL_Description;     nCol++; } else info.m_description  = stmt.GetValueText (nCol++);
-        if (info.ColsSelect & DbECSchemaInfo::COL_NamespacePrefix    )
-            if (stmt.IsColumnNull(nCol)) { info.ColsNull |= DbECSchemaInfo::COL_NamespacePrefix; nCol++; } else info.m_namespacePrefix = stmt.GetValueText (nCol++);
-        if (info.ColsSelect & DbECSchemaInfo::COL_VersionMajor)
-            if (stmt.IsColumnNull(nCol)) { info.ColsNull |= DbECSchemaInfo::COL_VersionMajor;    nCol++; } else info.m_versionMajor = stmt.GetValueInt  (nCol++);
-        if (info.ColsSelect & DbECSchemaInfo::COL_VersionMinor)
-            if (stmt.IsColumnNull(nCol)) { info.ColsNull |= DbECSchemaInfo::COL_VersionMinor;    nCol++; } else info.m_versionMinor = stmt.GetValueInt  (nCol++);
-        }
-    return r;
-    }
-
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Affan.Khan        05/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ECDbSchemaPersistence::InsertECClass(ECDbCR db, ECClassCR ecclass)
-    {
-    BeSQLite::CachedStatementPtr stmt = nullptr;
-    if (BE_SQLITE_OK != db.GetCachedStatement(stmt, "INSERT INTO ec_Class(Id,SchemaId,Name,DisplayLabel,Description,Type,Modifier,RelationStrength,RelationStrengthDirection) "
-                                              "VALUES(?,?,?,?,?,?,?,?,?)"))
-        return ERROR;
-
-    if (BE_SQLITE_OK != stmt->BindInt64(1, ecclass.GetId()))
-        return ERROR;
-
-    if (BE_SQLITE_OK != stmt->BindInt64(2, ecclass.GetSchema().GetId()))
-        return ERROR;
-
-    if (BE_SQLITE_OK != stmt->BindText(3, ecclass.GetName().c_str(), Statement::MakeCopy::No))
-        return ERROR;
-
-    if (ecclass.GetIsDisplayLabelDefined())
-        {
-        if (BE_SQLITE_OK != stmt->BindText(4, ecclass.GetDisplayLabel().c_str(), Statement::MakeCopy::No))
-            return ERROR;
-        }
-
-    if (BE_SQLITE_OK != stmt->BindText(5, ecclass.GetDescription().c_str(), Statement::MakeCopy::No))
-        return ERROR;
-
-    if (BE_SQLITE_OK != stmt->BindInt(6, Enum::ToInt(ecclass.GetClassType())))
-        return ERROR;
-
-    if (BE_SQLITE_OK != stmt->BindInt(7, Enum::ToInt(ecclass.GetClassModifier())))
-        return ERROR;
-
-    ECRelationshipClassCP relClass = ecclass.GetRelationshipClassCP();
-    if (relClass != nullptr)
-        {
-        if (BE_SQLITE_OK != stmt->BindInt(8, Enum::ToInt(relClass->GetStrength())))
-            return ERROR;
-
-        if (BE_SQLITE_OK != stmt->BindInt(9, Enum::ToInt(relClass->GetStrengthDirection())))
-            return ERROR;
-        }
-
-    return BE_SQLITE_DONE == stmt->Step() ? SUCCESS : ERROR;
-    }
-
 
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        05/2012
@@ -258,178 +113,6 @@ DbResult ECDbSchemaPersistence::Step (DbBaseClassInfo& info , BeSQLite::Statemen
     return r;
     }
 
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Affan.Khan        05/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ECDbSchemaPersistence::InsertECProperty(ECDbCR db, ECPropertyCR ecProperty, int ordinal)
-    {
-    BeSQLite::CachedStatementPtr stmt = nullptr;
-    if (BE_SQLITE_OK != db.GetCachedStatement(stmt, "INSERT INTO ec_Property (Id, ClassId, Name, DisplayLabel, Description, IsReadonly, Ordinal, Kind, PrimitiveType, NonPrimitiveType, ArrayMinOccurs, ArrayMaxOccurs, NavigationPropertyDirection) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)"))
-        return ERROR;
-
-    if (BE_SQLITE_OK != stmt->BindInt64(1, ecProperty.GetId()))
-        return ERROR;
-
-    if (BE_SQLITE_OK != stmt->BindInt64(2, ecProperty.GetClass().GetId()))
-        return ERROR;
-
-    if (BE_SQLITE_OK != stmt->BindText(3, ecProperty.GetName(), Statement::MakeCopy::No))
-        return ERROR;
-
-    if (ecProperty.GetIsDisplayLabelDefined())
-        {
-        if (BE_SQLITE_OK != stmt->BindText(4, ecProperty.GetDisplayLabel().c_str(), Statement::MakeCopy::No))
-            return ERROR;
-        }
-
-    if (BE_SQLITE_OK != stmt->BindText(5, ecProperty.GetDescription().c_str(), Statement::MakeCopy::No))
-        return ERROR;
-
-    if (BE_SQLITE_OK != stmt->BindInt(6, ecProperty.GetIsReadOnly() ? 1 : 0))
-        return ERROR;
-
-    //WIP Ordinal
-    if (BE_SQLITE_OK != stmt->BindInt(7, ordinal))
-        return ERROR;
-
-    const int kindIndex = 8;
-    const int primitiveTypeIndex = 9;
-    const int nonPrimitiveTypeIndex = 10;
-    if (ecProperty.GetIsPrimitive())
-        {
-        if (BE_SQLITE_OK != stmt->BindInt(kindIndex, Enum::ToInt(ECPropertyKind::Primitive)))
-            return ERROR;
-
-        if (BE_SQLITE_OK != stmt->BindInt(primitiveTypeIndex, (int) ecProperty.GetAsPrimitiveProperty()->GetType()))
-            return ERROR;
-        }
-    else if (ecProperty.GetIsStruct())
-        {
-        if (BE_SQLITE_OK != stmt->BindInt(kindIndex, Enum::ToInt(ECPropertyKind::Struct)))
-            return ERROR;
-
-        if (BE_SQLITE_OK != stmt->BindInt64(nonPrimitiveTypeIndex, ecProperty.GetAsStructProperty()->GetType().GetId()))
-            return ERROR;
-        }
-    else if (ecProperty.GetIsArray())
-        {
-        ArrayECPropertyCP arrayProp = ecProperty.GetAsArrayProperty();
-        if (arrayProp->GetKind() == ARRAYKIND_Primitive)
-            {
-            if (BE_SQLITE_OK != stmt->BindInt(kindIndex, Enum::ToInt(ECPropertyKind::PrimitiveArray)))
-                return ERROR;
-
-            if (BE_SQLITE_OK != stmt->BindInt(primitiveTypeIndex, (int) arrayProp->GetPrimitiveElementType()))
-                return ERROR;
-            }
-        else
-            {
-            if (BE_SQLITE_OK != stmt->BindInt(kindIndex, Enum::ToInt(ECPropertyKind::StructArray)))
-                return ERROR;
-
-            if (BE_SQLITE_OK != stmt->BindInt64(nonPrimitiveTypeIndex, arrayProp->GetAsStructArrayProperty()->GetStructElementType()->GetId()))
-                return ERROR;
-            }
-
-        if (BE_SQLITE_OK != stmt->BindInt(11, (int) arrayProp->GetMinOccurs()))
-            return ERROR;
-
-        //until the max occurs bug in ECObjects (where GetMaxOccurs always returns "unbounded")
-        //has been fixed, we need to call GetStoredMaxOccurs to retrieve the proper max occurs
-        if (BE_SQLITE_OK != stmt->BindInt(12, (int) arrayProp->GetStoredMaxOccurs()))
-            return ERROR;
-        }
-    else if (ecProperty.GetIsNavigation())
-        {
-        if (BE_SQLITE_OK != stmt->BindInt(kindIndex, Enum::ToInt(ECPropertyKind::Navigation)))
-            return ERROR;
-
-        NavigationECPropertyCP navProp = ecProperty.GetAsNavigationPropertyCP();
-        if (BE_SQLITE_OK != stmt->BindInt64(nonPrimitiveTypeIndex, navProp->GetRelationshipClass()->GetId()))
-            return ERROR;
-
-        if (BE_SQLITE_OK != stmt->BindInt(13, Enum::ToInt(navProp->GetDirection())))
-            return ERROR;
-        }
-
-    return BE_SQLITE_DONE == stmt->Step() ? SUCCESS : ERROR;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Krischan.Eberle  12/2015
-//+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECDbSchemaPersistence::InsertECEnum(ECDbCR ecdb, ECN::ECEnumerationCR ecEnum)
-    {
-    BeSQLite::CachedStatementPtr stmt = nullptr;
-    if (BE_SQLITE_OK != ecdb.GetCachedStatement(stmt, "INSERT INTO ec_Enumeration(Id, SchemaId, Name, DisplayLabel, Description, UnderlyingPrimitiveType, IsStrict, EnumValues) VALUES(?,?,?,?,?,?,?,?)"))
-        return ERROR;
-
-    BeBriefcaseBasedId enumId;
-    if (ecdb.GetECDbImplR().GetECEnumIdSequence().GetNextValue(enumId))
-        return ERROR;
-
-    if (BE_SQLITE_OK != stmt->BindId(1, enumId))
-        return ERROR;
-
-    if (BE_SQLITE_OK != stmt->BindInt64(2, ecEnum.GetSchema().GetId()))
-        return ERROR;
-
-    if (BE_SQLITE_OK != stmt->BindText(3, ecEnum.GetName().c_str(), Statement::MakeCopy::No))
-        return ERROR;
-
-    if (ecEnum.GetIsDisplayLabelDefined())
-        {
-        if (BE_SQLITE_OK != stmt->BindText(4, ecEnum.GetDisplayLabel().c_str(), Statement::MakeCopy::No))
-            return ERROR;
-        }
-
-    if (BE_SQLITE_OK != stmt->BindText(5, ecEnum.GetDescription().c_str(), Statement::MakeCopy::No))
-        return ERROR;
-
-    if (BE_SQLITE_OK != stmt->BindInt(6, (int) ecEnum.GetType()))
-        return ERROR;
-
-    if (BE_SQLITE_OK != stmt->BindInt(7, ecEnum.GetIsStrict() ? 1 : 0))
-        return ERROR;
-
-    rapidjson::Document keyPropJson;
-    auto& allocator = keyPropJson.GetAllocator();
-    keyPropJson.SetArray();
-    keyPropJson.Reserve((rapidjson::SizeType) ecEnum.GetEnumeratorCount(), allocator);
-    BeAssert(ecEnum.GetEnumeratorCount() > 0);
-    for (ECEnumerator const* enumValue : ecEnum.GetEnumerators())
-        {
-        rapidjson::Value enumValueJson(rapidjson::kArrayType);
-        enumValueJson.Reserve(2, allocator);
-        if (enumValue->IsInteger())
-            enumValueJson.PushBack(enumValue->GetInteger(), allocator);
-        else if (enumValue->IsString())
-            enumValueJson.PushBack(enumValue->GetString().c_str(), allocator);
-        else
-            {
-            BeAssert(false && "Code needs to be updated as ECEnumeration seems to support types other than int and string.");
-            return ERROR;
-            }
-        
-        if (enumValue->GetIsDisplayLabelDefined())
-            enumValueJson.PushBack(enumValue->GetDisplayLabel().c_str(), allocator);
-        else
-            {
-            rapidjson::Value nullValue;
-            enumValueJson.PushBack(nullValue, allocator);
-            }
-
-        keyPropJson.PushBack(enumValueJson, allocator);
-        }
-
-    rapidjson::StringBuffer buf;
-    rapidjson::Writer<rapidjson::StringBuffer> writer(buf);
-    keyPropJson.Accept(writer);
-    if (BE_SQLITE_OK != stmt->BindText(8, buf.GetString(), Statement::MakeCopy::Yes))
-        return ERROR;
-
-    return BE_SQLITE_DONE == stmt->Step() ? SUCCESS : ERROR;
-    }
 
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        05/2012
@@ -839,7 +522,7 @@ ECSchemaId ECDbSchemaPersistence::GetECSchemaId(ECDbCR db, ECSchemaCR ecSchema)
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        06/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ECDbSchemaPersistence::GetDerivedECClasses(ECClassIdListR classIds, ECClassId baseClassId, ECDbCR db)
+BentleyStatus ECDbSchemaPersistence::GetDerivedECClasses(ECClassIdList& classIds, ECClassId baseClassId, ECDbCR db)
     {
     CachedStatementPtr stmt = nullptr;
     if (BE_SQLITE_OK != db.GetCachedStatement(stmt, "SELECT ClassId FROM ec_BaseClass WHERE BaseClassId = ?"))
@@ -875,7 +558,7 @@ bool ECDbSchemaPersistence::IsCustomAttributeDefined(ECDbCR db, ECClassId classI
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        06/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ECDbSchemaPersistence::GetBaseECClasses(ECClassIdListR baseClassIds, ECClassId ecClassId, ECDbCR db)  // WIP_FNV: take a name, instead... and modify the where clause
+BentleyStatus ECDbSchemaPersistence::GetBaseECClasses(ECClassIdList& baseClassIds, ECClassId ecClassId, ECDbCR db)  // WIP_FNV: take a name, instead... and modify the where clause
     {
     CachedStatementPtr stmt = nullptr;
     if (BE_SQLITE_OK != db.GetCachedStatement(stmt, "SELECT BaseClassId FROM ec_BaseClass WHERE ClassId = ? ORDER BY Ordinal"))

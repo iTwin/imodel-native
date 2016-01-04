@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECDbSchemaWriter.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -13,32 +13,49 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        05/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult ECDbSchemaWriter::CreateECSchemaEntry(ECSchemaCR ecSchema, ECSchemaId ecSchemaId)
+DbResult ECDbSchemaWriter::CreateECSchemaEntry(ECSchemaCR ecSchema)
     {
-    DbECSchemaInfo info;
-    info.ColsInsert =
-        DbECSchemaInfo::COL_Id |
-        DbECSchemaInfo::COL_Name |
-        DbECSchemaInfo::COL_VersionMajor |
-        DbECSchemaInfo::COL_VersionMinor |
-        DbECSchemaInfo::COL_Description |
-        DbECSchemaInfo::COL_NamespacePrefix;
+    CachedStatementPtr stmt = nullptr;
+    DbResult stat = m_ecdb.GetCachedStatement(stmt, "INSERT INTO ec_Schema(Id,Name,DisplayLabel,Description,NamespacePrefix,VersionMajor,VersionMinor) VALUES(?,?,?,?,?,?,?)");
+    if (BE_SQLITE_OK != stat)
+        return stat;
+    
+    stat = stmt->BindInt64(1,ecSchema.GetId());
+    if (BE_SQLITE_OK != stat)
+        return stat;
 
-    info.m_ecSchemaId   = ecSchemaId;
-    info.m_versionMajor = ecSchema.GetVersionMajor();
-    info.m_versionMinor = ecSchema.GetVersionMinor();
-
-    info.m_namespacePrefix = ecSchema.GetNamespacePrefix().c_str();
-    info.m_name = ecSchema.GetName().c_str();
-    info.m_description = ecSchema.GetDescription().c_str();
+    stat = stmt->BindText(2, ecSchema.GetName().c_str(), Statement::MakeCopy::No);
+    if (BE_SQLITE_OK != stat)
+        return stat;
 
     if (ecSchema.GetIsDisplayLabelDefined())
         {
-        info.m_displayLabel = ecSchema.GetDisplayLabel().c_str();
-        info.ColsInsert |= DbECSchemaInfo::COL_DisplayLabel;
+        stat = stmt->BindText(3, ecSchema.GetDisplayLabel().c_str(), Statement::MakeCopy::No);
+        if (BE_SQLITE_OK != stat)
+            return stat;
         }
 
-    return ECDbSchemaPersistence::InsertECSchema (m_ecdb, info);
+    stat = stmt->BindText(4, ecSchema.GetDescription().c_str(), Statement::MakeCopy::No);
+    if (BE_SQLITE_OK != stat)
+        return stat;
+
+    stat = stmt->BindText(5, ecSchema.GetNamespacePrefix().c_str(), Statement::MakeCopy::No);
+    if (BE_SQLITE_OK != stat)
+        return stat;
+
+    stat = stmt->BindInt(6, ecSchema.GetVersionMajor());
+    if (BE_SQLITE_OK != stat)
+        return stat;
+
+    stat = stmt->BindInt(7, ecSchema.GetVersionMinor());
+    if (BE_SQLITE_OK != stat)
+        return stat;
+
+    stat = stmt->Step();
+    if (BE_SQLITE_DONE != stat)
+        return stat;
+
+    return BE_SQLITE_OK;
     }
 
 /*---------------------------------------------------------------------------------------
@@ -145,7 +162,7 @@ BentleyStatus ECDbSchemaWriter::Import(ECN::ECSchemaCR ecSchema)
     ecSchemaId = nextId.GetValue ();
     const_cast<ECSchemaR>(ecSchema).SetId(ecSchemaId);
 
-    DbResult stat = CreateECSchemaEntry(ecSchema, ecSchemaId);
+    DbResult stat = CreateECSchemaEntry(ecSchema);
     if (BE_SQLITE_OK != stat)
         {
         if (BE_SQLITE_CONSTRAINT_UNIQUE == stat)
@@ -198,7 +215,7 @@ BentleyStatus ECDbSchemaWriter::Import(ECN::ECSchemaCR ecSchema)
 
     for (ECEnumerationCP ecEnum : ecSchema.GetEnumerations())
         {
-        if (SUCCESS != ECDbSchemaPersistence::InsertECEnum(m_ecdb, *ecEnum))
+        if (SUCCESS != ImportECEnumeration(*ecEnum))
             {
             m_ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Failed to import ECEnumeration '%s'.", ecEnum->GetFullName().c_str());
             return ERROR;
@@ -232,8 +249,12 @@ BentleyStatus ECDbSchemaWriter::CreateECSchemaReferenceEntry(ECSchemaId ecSchema
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus ECDbSchemaWriter::ImportCustomAttributes(IECCustomAttributeContainerCR sourceContainer, ECContainerId sourceContainerId, ECContainerType containerType, Utf8CP onlyImportCAWithClassName)
     {
-    if (SUCCESS != ImportECCustomAttributeECClass(sourceContainer))
-        return ERROR;
+    //import CA classes first
+    for (IECInstancePtr ca : sourceContainer.GetCustomAttributes(false))
+        {
+        if (SUCCESS != ImportECClass(ca->GetClass()))
+            return ERROR;
+        }
 
     bmap<ECClassCP,bvector<IECInstanceP> > customAttributeMap;
     for (auto& customAttribute: sourceContainer.GetCustomAttributes(false))
@@ -274,15 +295,23 @@ BentleyStatus ECDbSchemaWriter::ImportCustomAttributes(IECCustomAttributeContain
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus ECDbSchemaWriter::EnsureECSchemaExists(ECClassCR ecClass)
     {
-    ECSchemaId ecSchemaId = ecClass.GetSchema().GetId();
+    ECSchemaCR schema = ecClass.GetSchema();
+    ECSchemaId ecSchemaId = schema.GetId();
     if (ECDbSchemaPersistence::ContainsECSchemaWithId(m_ecdb, ecSchemaId))
         return SUCCESS;
     BeAssert(false && "I think we just should assume that the entry already exists, rather than relying on just-in-time? Or is this for when we branch off into related ECClasses?");
     //Add ECSchema entry but do not traverse its ECClasses.
-    if (BE_SQLITE_OK != CreateECSchemaEntry(ecClass.GetSchema(), ecSchemaId))
+    if (BE_SQLITE_OK != CreateECSchemaEntry(schema))
         return ERROR;
 
-    return ImportECCustomAttributeECClass(ecClass.GetSchema());
+    //import CA classes first
+    for (IECInstancePtr ca : schema.GetCustomAttributes(false))
+        {
+        if (SUCCESS != ImportECClass(ca->GetClass()))
+            return ERROR;
+        }
+
+    return SUCCESS;
     }
 
 /*---------------------------------------------------------------------------------------
@@ -308,7 +337,47 @@ BentleyStatus ECDbSchemaWriter::ImportECClass(ECN::ECClassCR ecClass)
 
     EnsureECSchemaExists(ecClass);
 
-    if (SUCCESS != ECDbSchemaPersistence::InsertECClass(m_ecdb,ecClass))
+    //now import actual ECClass
+    BeSQLite::CachedStatementPtr stmt = nullptr;
+    if (BE_SQLITE_OK != m_ecdb.GetCachedStatement(stmt, "INSERT INTO ec_Class(Id,SchemaId,Name,DisplayLabel,Description,Type,Modifier,RelationStrength,RelationStrengthDirection) "
+                                              "VALUES(?,?,?,?,?,?,?,?,?)"))
+        return ERROR;
+
+    if (BE_SQLITE_OK != stmt->BindInt64(1, ecClassId))
+        return ERROR;
+
+    if (BE_SQLITE_OK != stmt->BindInt64(2, ecClass.GetSchema().GetId()))
+        return ERROR;
+
+    if (BE_SQLITE_OK != stmt->BindText(3, ecClass.GetName().c_str(), Statement::MakeCopy::No))
+        return ERROR;
+
+    if (ecClass.GetIsDisplayLabelDefined())
+        {
+        if (BE_SQLITE_OK != stmt->BindText(4, ecClass.GetDisplayLabel().c_str(), Statement::MakeCopy::No))
+            return ERROR;
+        }
+
+    if (BE_SQLITE_OK != stmt->BindText(5, ecClass.GetDescription().c_str(), Statement::MakeCopy::No))
+        return ERROR;
+
+    if (BE_SQLITE_OK != stmt->BindInt(6, Enum::ToInt(ecClass.GetClassType())))
+        return ERROR;
+
+    if (BE_SQLITE_OK != stmt->BindInt(7, Enum::ToInt(ecClass.GetClassModifier())))
+        return ERROR;
+
+    ECRelationshipClassCP relClass = ecClass.GetRelationshipClassCP();
+    if (relClass != nullptr)
+        {
+        if (BE_SQLITE_OK != stmt->BindInt(8, Enum::ToInt(relClass->GetStrength())))
+            return ERROR;
+
+        if (BE_SQLITE_OK != stmt->BindInt(9, Enum::ToInt(relClass->GetStrengthDirection())))
+            return ERROR;
+        }
+
+    if (BE_SQLITE_DONE != stmt->Step())
         return ERROR;
 
     //Import All baseCases
@@ -340,6 +409,76 @@ BentleyStatus ECDbSchemaWriter::ImportECClass(ECN::ECClassCR ecClass)
         }
 
     return ImportCustomAttributes(ecClass, ecClassId, ECContainerType::Class);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Krischan.Eberle  12/2015
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus ECDbSchemaWriter::ImportECEnumeration(ECN::ECEnumerationCR ecEnum)
+    {
+    BeSQLite::CachedStatementPtr stmt = nullptr;
+    if (BE_SQLITE_OK != m_ecdb.GetCachedStatement(stmt, "INSERT INTO ec_Enumeration(Id, SchemaId, Name, DisplayLabel, Description, UnderlyingPrimitiveType, IsStrict, EnumValues) VALUES(?,?,?,?,?,?,?,?)"))
+        return ERROR;
+
+    BeBriefcaseBasedId enumId;
+    if (m_ecdb.GetECDbImplR().GetECEnumIdSequence().GetNextValue(enumId))
+        return ERROR;
+
+    if (BE_SQLITE_OK != stmt->BindId(1, enumId))
+        return ERROR;
+
+    if (BE_SQLITE_OK != stmt->BindInt64(2, ecEnum.GetSchema().GetId()))
+        return ERROR;
+
+    if (BE_SQLITE_OK != stmt->BindText(3, ecEnum.GetName().c_str(), Statement::MakeCopy::No))
+        return ERROR;
+
+    if (ecEnum.GetIsDisplayLabelDefined())
+        {
+        if (BE_SQLITE_OK != stmt->BindText(4, ecEnum.GetDisplayLabel().c_str(), Statement::MakeCopy::No))
+            return ERROR;
+        }
+
+    if (BE_SQLITE_OK != stmt->BindText(5, ecEnum.GetDescription().c_str(), Statement::MakeCopy::No))
+        return ERROR;
+
+    if (BE_SQLITE_OK != stmt->BindInt(6, (int) ecEnum.GetType()))
+        return ERROR;
+
+    if (BE_SQLITE_OK != stmt->BindInt(7, ecEnum.GetIsStrict() ? 1 : 0))
+        return ERROR;
+
+    rapidjson::Document keyPropJson;
+    auto& allocator = keyPropJson.GetAllocator();
+    keyPropJson.SetArray();
+    keyPropJson.Reserve((rapidjson::SizeType) ecEnum.GetEnumeratorCount(), allocator);
+    BeAssert(ecEnum.GetEnumeratorCount() > 0);
+    for (ECEnumerator const* enumValue : ecEnum.GetEnumerators())
+        {
+        rapidjson::Value enumValueJson(rapidjson::kArrayType);
+        if (enumValue->IsInteger())
+            enumValueJson.PushBack(enumValue->GetInteger(), allocator);
+        else if (enumValue->IsString())
+            enumValueJson.PushBack(enumValue->GetString().c_str(), allocator);
+        else
+            {
+            BeAssert(false && "Code needs to be updated as ECEnumeration seems to support types other than int and string.");
+            return ERROR;
+            }
+
+        if (enumValue->GetIsDisplayLabelDefined())
+            enumValueJson.PushBack(enumValue->GetDisplayLabel().c_str(), allocator);
+
+        keyPropJson.PushBack(enumValueJson, allocator);
+        }
+
+    rapidjson::StringBuffer buf;
+    rapidjson::Writer<rapidjson::StringBuffer> writer(buf);
+    keyPropJson.Accept(writer);
+    if (BE_SQLITE_OK != stmt->BindText(8, buf.GetString(), Statement::MakeCopy::Yes))
+        return ERROR;
+
+    return BE_SQLITE_DONE == stmt->Step() ? SUCCESS : ERROR;
     }
 
 /*---------------------------------------------------------------------------------------
@@ -378,7 +517,7 @@ BentleyStatus ECDbSchemaWriter::ImportECRelationshipConstraint(ECClassId relClas
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        05/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ECDbSchemaWriter::ImportECProperty(ECN::ECPropertyCR ecProperty, int32_t index)
+BentleyStatus ECDbSchemaWriter::ImportECProperty(ECN::ECPropertyCR ecProperty, int32_t ordinal)
     {
     // GenerateId
     BeBriefcaseBasedId nextId;
@@ -408,25 +547,102 @@ BentleyStatus ECDbSchemaWriter::ImportECProperty(ECN::ECPropertyCR ecProperty, i
             return ERROR;
         }
 
-    if (SUCCESS != ECDbSchemaPersistence::InsertECProperty(m_ecdb, ecProperty, index))
+    //now insert the actual property
+    BeSQLite::CachedStatementPtr stmt = nullptr;
+    if (BE_SQLITE_OK != m_ecdb.GetCachedStatement(stmt, "INSERT INTO ec_Property (Id, ClassId, Name, DisplayLabel, Description, IsReadonly, Ordinal, Kind, PrimitiveType, NonPrimitiveType, ArrayMinOccurs, ArrayMaxOccurs, NavigationPropertyDirection) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)"))
         return ERROR;
+
+    if (BE_SQLITE_OK != stmt->BindInt64(1, ecProperty.GetId()))
+        return ERROR;
+
+    if (BE_SQLITE_OK != stmt->BindInt64(2, ecProperty.GetClass().GetId()))
+        return ERROR;
+
+    if (BE_SQLITE_OK != stmt->BindText(3, ecProperty.GetName(), Statement::MakeCopy::No))
+        return ERROR;
+
+    if (ecProperty.GetIsDisplayLabelDefined())
+        {
+        if (BE_SQLITE_OK != stmt->BindText(4, ecProperty.GetDisplayLabel().c_str(), Statement::MakeCopy::No))
+            return ERROR;
+        }
+
+    if (BE_SQLITE_OK != stmt->BindText(5, ecProperty.GetDescription().c_str(), Statement::MakeCopy::No))
+        return ERROR;
+
+    if (BE_SQLITE_OK != stmt->BindInt(6, ecProperty.GetIsReadOnly() ? 1 : 0))
+        return ERROR;
+
+    //WIP Ordinal
+    if (BE_SQLITE_OK != stmt->BindInt(7, ordinal))
+        return ERROR;
+
+    const int kindIndex = 8;
+    const int primitiveTypeIndex = 9;
+    const int nonPrimitiveTypeIndex = 10;
+    if (ecProperty.GetIsPrimitive())
+        {
+        if (BE_SQLITE_OK != stmt->BindInt(kindIndex, Enum::ToInt(ECPropertyKind::Primitive)))
+            return ERROR;
+
+        if (BE_SQLITE_OK != stmt->BindInt(primitiveTypeIndex, (int) ecProperty.GetAsPrimitiveProperty()->GetType()))
+            return ERROR;
+        }
+    else if (ecProperty.GetIsStruct())
+        {
+        if (BE_SQLITE_OK != stmt->BindInt(kindIndex, Enum::ToInt(ECPropertyKind::Struct)))
+            return ERROR;
+
+        if (BE_SQLITE_OK != stmt->BindInt64(nonPrimitiveTypeIndex, ecProperty.GetAsStructProperty()->GetType().GetId()))
+            return ERROR;
+        }
+    else if (ecProperty.GetIsArray())
+        {
+        ArrayECPropertyCP arrayProp = ecProperty.GetAsArrayProperty();
+        if (arrayProp->GetKind() == ARRAYKIND_Primitive)
+            {
+            if (BE_SQLITE_OK != stmt->BindInt(kindIndex, Enum::ToInt(ECPropertyKind::PrimitiveArray)))
+                return ERROR;
+
+            if (BE_SQLITE_OK != stmt->BindInt(primitiveTypeIndex, (int) arrayProp->GetPrimitiveElementType()))
+                return ERROR;
+            }
+        else
+            {
+            if (BE_SQLITE_OK != stmt->BindInt(kindIndex, Enum::ToInt(ECPropertyKind::StructArray)))
+                return ERROR;
+
+            if (BE_SQLITE_OK != stmt->BindInt64(nonPrimitiveTypeIndex, arrayProp->GetAsStructArrayProperty()->GetStructElementType()->GetId()))
+                return ERROR;
+            }
+
+        if (BE_SQLITE_OK != stmt->BindInt(11, (int) arrayProp->GetMinOccurs()))
+            return ERROR;
+
+        //until the max occurs bug in ECObjects (where GetMaxOccurs always returns "unbounded")
+        //has been fixed, we need to call GetStoredMaxOccurs to retrieve the proper max occurs
+        if (BE_SQLITE_OK != stmt->BindInt(12, (int) arrayProp->GetStoredMaxOccurs()))
+            return ERROR;
+        }
+    else if (ecProperty.GetIsNavigation())
+        {
+        if (BE_SQLITE_OK != stmt->BindInt(kindIndex, Enum::ToInt(ECPropertyKind::Navigation)))
+            return ERROR;
+
+        NavigationECPropertyCP navProp = ecProperty.GetAsNavigationPropertyCP();
+        if (BE_SQLITE_OK != stmt->BindInt64(nonPrimitiveTypeIndex, navProp->GetRelationshipClass()->GetId()))
+            return ERROR;
+
+        if (BE_SQLITE_OK != stmt->BindInt(13, Enum::ToInt(navProp->GetDirection())))
+            return ERROR;
+        }
+
+    if (BE_SQLITE_DONE != stmt->Step())
+        return ERROR;   
 
     return ImportCustomAttributes(ecProperty, ecPropertyId, ECContainerType::Property);
     }
 
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Affan.Khan        05/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus  ECDbSchemaWriter::ImportECCustomAttributeECClass(ECN::IECCustomAttributeContainerCR caContainer)
-    {
-    for (IECInstancePtr ca : caContainer.GetCustomAttributes(false))
-        {
-        if (SUCCESS != ImportECClass (ca->GetClass()))
-            return ERROR;
-        }
-
-    return SUCCESS;
-    }
 
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        05/2012
