@@ -279,9 +279,9 @@ namespace IndexECPlugin.Source.QueryProviders
                 //We create the " reverse criterion", which we will use to search for every entity related to the instance by the same relationship used in the select.
                 //var reverseCrit = new RelatedCriterion(new QueryRelatedClassSpecifier(relationshipClass, direction, relatedCriterionClass), new WhereCriteria(new ECInstanceIdExpression(instance.InstanceId)));
                 ECInstanceIdExpression ex = new ECInstanceIdExpression(instanceList.Select(inst => inst.InstanceId).ToArray());
-                ex.ExtendedDataValueSetter.Add(new KeyValuePair<string, object>("RequestRelatedId", true));
 
                 var reverseCrit = new RelatedCriterion(new QueryRelatedClassSpecifier(relationshipClass, direction, ecClass), new WhereCriteria(ex));
+                reverseCrit.ExtendedDataValueSetter.Add(new KeyValuePair<string, object>("RequestRelatedId", true));
 
                 relInstQuery.WhereClause = new WhereCriteria(reverseCrit);
 

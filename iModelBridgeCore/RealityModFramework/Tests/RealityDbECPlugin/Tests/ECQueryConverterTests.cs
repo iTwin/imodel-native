@@ -274,6 +274,63 @@ namespace IndexECPlugin.Tests
             }
 
         [Test]
+        public void RelatedQueryTestWithRelatedID ()
+            {
+            IECClass spatialEntityBaseClass = m_schema.GetClass("SpatialEntityBase");
+            IECClass metadataClass = m_schema.GetClass("Metadata");
+            IECRelationshipClass SEBToMetadataClass = m_schema.GetClass("SpatialEntityBaseToMetadata") as IECRelationshipClass;
+            ECQuery query = new ECQuery(spatialEntityBaseClass);
+            query.ExtendedDataValueSetter.Add(new KeyValuePair<string, object>("source", "index"));
+
+            var criteria = new RelatedCriterion(new QueryRelatedClassSpecifier(SEBToMetadataClass, RelatedInstanceDirection.Forward, metadataClass), new WhereCriteria(new ECInstanceIdExpression("1")));
+            criteria.ExtendedDataValueSetter.Add(new KeyValuePair<string, object>("RequestRelatedId", true));
+
+            query.SelectClause.SelectAllProperties = false;
+            query.SelectClause.SelectedProperties.Add(spatialEntityBaseClass["Id"]);
+
+            WhereCriteria relatedCriteria = new WhereCriteria(criteria);
+            query.WhereClause = relatedCriteria;
+
+            ECQuerySettings querySettings = new ECQuerySettings();
+
+            SQLQueryBuilder sqlQueryBuilder = new StandardSQLQueryBuilder();
+
+            ECQueryConverter ecQueryConverter = new ECQueryConverter(query, querySettings, sqlQueryBuilder, null, m_schema, false);
+
+            string sqlCommand;
+            string sqlCount;
+            string idColumnString = spatialEntityBaseClass["Id"].GetCustomAttributes("DBColumn").GetString("ColumnName");
+            string metadataIdColumnString = metadataClass["Id"].GetCustomAttributes("DBColumn").GetString("ColumnName");
+            string fromTableString = spatialEntityBaseClass.GetCustomAttributes("SQLEntity").GetString("FromTableName");
+            string joinedTableString = metadataClass.GetCustomAttributes("SQLEntity").GetString("FromTableName");
+
+            string firstKey = SEBToMetadataClass.GetCustomAttributes("RelationshipKeys").GetString("ContainerKey");
+            string secondKey = SEBToMetadataClass.GetCustomAttributes("RelationshipKeys").GetString("ContainedKey");
+            string firstOrSecond = "(" + firstKey + @".*=.*" + secondKey + "|" + secondKey + @".*=.*" + firstKey + ")";
+
+            string firstOrSecondIdColumn = "(" + Regex.Escape(idColumnString) + @".*,.*" + Regex.Escape(metadataIdColumnString) + "|" + Regex.Escape(metadataIdColumnString) + @".*,.*" + Regex.Escape(idColumnString) + ")";
+
+            DataReadingHelper helper;
+            Dictionary<string, Tuple<string, DbType>> paramNameValueMap;
+
+            ecQueryConverter.CreateSqlCommandStringFromQuery(out sqlCommand, out sqlCount, out helper, out paramNameValueMap);
+
+            //TSql100Parser parser = new TSql100Parser(false);
+            //IList<ParseError> errors;
+            //parser.Parse(new StringReader(sqlCommand), out errors);
+
+            ////This verifies that the sql query is valid
+            //Assert.IsTrue(errors.Count == 0);
+
+            //SELECT tab0.IdStr, tab1.IdStr FROM dbo.SpatialEntityBases tab0 LEFT JOIN dbo.Metadatas tab1 ON tab0.Metadata_Id = tab1.Id  WHERE  (  (  ( tab1.IdStr =@param0  )  )  )  ORDER BY tab1.IdStr ASC ;
+
+
+            Regex reg = new Regex(@".*SELECT .*" + firstOrSecondIdColumn + @".* FROM .*" + Regex.Escape(fromTableString) + ".*LEFT JOIN.*" + Regex.Escape(joinedTableString) + ".*ON.*" + firstOrSecond + @".* WHERE .*" + Regex.Escape(metadataIdColumnString) + @".*");
+            Assert.IsTrue(reg.IsMatch(sqlCommand));
+
+            }
+
+        [Test]
         public void SpatialQueryTest ()
             {
             IECClass spatialEntityBaseClass = m_schema.GetClass("SpatialEntityBase");
@@ -367,90 +424,5 @@ namespace IndexECPlugin.Tests
             Assert.IsTrue(reg.IsMatch(sqlCommand));
             //SELECT tab0.IdStr, tab1.Name, tab0.Processable FROM dbo.SpatialEntityDatasets tab0 LEFT JOIN dbo.SpatialEntityBases tab1 ON tab0.IdStr = tab1.IdStr  ;        
             }
-
-        //[Test]
-        //public void RelatedInstanceSelectTest()
-        //{
-        //    IECClass spatialEntityBaseClass = m_schema.GetClass("SpatialEntityBase");
-        //    IECClass metadataClass = m_schema.GetClass("Metadata");
-        //    IECRelationshipClass SEBToMetadataClass = m_schema.GetClass("SpatialEntityBaseToMetadata") as IECRelationshipClass;
-        //    ECQuery query = new ECQuery(spatialEntityBaseClass);
-        //    query.ExtendedDataValueSetter.Add(new KeyValuePair<string, object>("source", "index"));
-
-        //    query.SelectClause.SelectAllProperties = false;
-        //    query.SelectClause.SelectedProperties.Add(spatialEntityBaseClass["Id"]);
-
-        //    var relatedCrit = new RelatedInstanceSelectCriteria(new QueryRelatedClassSpecifier(SEBToMetadataClass, RelatedInstanceDirection.Forward, metadataClass), true);
-        //    relatedCrit.SelectAllProperties = false;
-        //    relatedCrit.SelectedProperties.Add(metadataClass["Id"]);
-        //    query.SelectClause.SelectedRelatedInstances.Add(relatedCrit);
-
-        //    ECQuerySettings querySettings = new ECQuerySettings();
-
-        //    SQLQueryBuilder sqlQueryBuilder = new StandardSQLQueryBuilder();
-
-        //    ECQueryConverter ecQueryConverter = new ECQueryConverter(query, querySettings, sqlQueryBuilder, null, m_schema, false);
-
-        //    string sqlCommand;
-        //    string sqlCount;
-
-            //DataReadingHelper helper;
-            //Dictionary<string, Tuple<string, DbType>> paramNameValueMap;
-
-            //ecQueryConverter.CreateSqlCommandStringFromQuery(out sqlCommand, out sqlCount, out helper, out paramNameValueMap);
-
-        //    TSql100Parser parser = new TSql100Parser(false);
-        //    IList<ParseError> errors;
-        //    parser.Parse(new StringReader(sqlCommand), out errors);
-
-        //    //This verifies that the sql query is valid
-        //    Assert.IsTrue(errors.Count == 0);
-
-        //    //SELECT tab0.IdStr FROM dbo.SpatialEntityBases tab0  ;
-
-        //}
-
-        //[Test]
-        //public void PolymorphicRelatedInstanceSelectTest()
-        //{
-        //    IECClass WMSServerClass = m_schema.GetClass("WMSServer");
-        //    IECClass WMSSourceClass = m_schema.GetClass("WMSSource");
-        //    IECRelationshipClass SEBToMetadataClass = m_schema.GetClass("ServerToSpatialDataSource") as IECRelationshipClass;
-        //    ECQuery query = new ECQuery(WMSServerClass);
-        //    query.ExtendedDataValueSetter.Add(new KeyValuePair<string, object>("source", "index"));
-
-        //    query.SelectClause.SelectAllProperties = false;
-        //    query.SelectClause.SelectedProperties.Add(WMSServerClass["Id"]);
-
-        //    var relatedCrit = new RelatedInstanceSelectCriteria(new QueryRelatedClassSpecifier(SEBToMetadataClass, RelatedInstanceDirection.Forward, WMSSourceClass), true);
-        //    relatedCrit.SelectAllProperties = false;
-        //    relatedCrit.SelectedProperties.Add(WMSSourceClass["Id"]);
-        //    relatedCrit.SelectedProperties.Add(WMSSourceClass["Title"]);
-        //    query.SelectClause.SelectedRelatedInstances.Add(relatedCrit);
-
-        //    ECQuerySettings querySettings = new ECQuerySettings();
-
-        //    SQLQueryBuilder sqlQueryBuilder = new StandardSQLQueryBuilder();
-
-        //    ECQueryConverter ecQueryConverter = new ECQueryConverter(query, querySettings, sqlQueryBuilder, null, m_schema, false);
-
-        //    string sqlCommand;
-        //    string sqlCount;
-
-            //DataReadingHelper helper;
-            //Dictionary<string, Tuple<string, DbType>> paramNameValueMap;
-
-            //ecQueryConverter.CreateSqlCommandStringFromQuery(out sqlCommand, out sqlCount, out helper, out paramNameValueMap);
-
-        //    TSql100Parser parser = new TSql100Parser(false);
-        //    IList<ParseError> errors;
-        //    parser.Parse(new StringReader(sqlCommand), out errors);
-
-        //    //This verifies that the sql query is valid
-        //    Assert.IsTrue(errors.Count == 0);
-
-        //    //SELECT tab0.IdStr FROM dbo.WMSServers tab0  ;
-        //}
-
         }
     }

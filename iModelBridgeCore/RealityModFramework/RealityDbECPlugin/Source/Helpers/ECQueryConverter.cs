@@ -497,11 +497,11 @@ namespace IndexECPlugin.Source.Helpers
                     string idProperty = queriedClass.GetCustomAttributes("SQLEntity").GetPropertyValue("InstanceIDProperty").StringValue;
                     IECProperty prop = queriedClass[idProperty];
                     IECInstance dbColumn = prop.GetCustomAttributes("DBColumn");
-                    if ( dbColumn == null )
-                        {
-                        //This is not a column in the sql table. We skip it...
-                        continue;
-                        }
+                    //if ( dbColumn == null )
+                    //    {
+                    //    //This is not a column in the sql table. We skip it...
+                    //    continue;
+                    //    }
                     string dbColumnName = dbColumn["ColumnName"].StringValue;
 
                     IECType ecType = prop.Type;
@@ -543,6 +543,8 @@ namespace IndexECPlugin.Source.Helpers
                     IECInstance relationshipKeys = relationshipClass.GetCustomAttributes("RelationshipKeys");
 
                     IECClass relatedClass = classSpecifier.RelatedClass;
+
+                    TableDescriptor finalTableDescriptor;
 
                     if ( relationshipKeys != null )
                         {
@@ -598,7 +600,7 @@ namespace IndexECPlugin.Source.Helpers
                             }
 
                         //We go up in the hierarchy of the table
-                        TableDescriptor finalTableDescriptor = JoinDerivedTables(baseRelatedClass, relatedBaseTableDescriptor, relatedClass);
+                        finalTableDescriptor = JoinDerivedTables(baseRelatedClass, relatedBaseTableDescriptor, relatedClass);
 
                         //string relatedTableName = relatedClass.GetCustomAttributes("SQLEntity")["FromTableName"].StringValue;
 
@@ -614,7 +616,6 @@ namespace IndexECPlugin.Source.Helpers
                         //    relatedTableDescriptor = similarTable;
                         //}
 
-                        extractWhereClause(relatedCrit.RelatedWhereCriteria, relatedClass, finalTableDescriptor);
                         }
                     else
                         {
@@ -688,11 +689,22 @@ namespace IndexECPlugin.Source.Helpers
                             relatedBaseTableDescriptor = similarTable;
                             }
 
-                        TableDescriptor finalTableDescriptor = JoinDerivedTables(baseRelatedClass, relatedBaseTableDescriptor, relatedClass);
-
-                        extractWhereClause(relatedCrit.RelatedWhereCriteria, relatedClass, finalTableDescriptor);
+                        finalTableDescriptor = JoinDerivedTables(baseRelatedClass, relatedBaseTableDescriptor, relatedClass);
 
                         }
+
+                    if ( criterion.ExtendedData.ContainsKey("RequestRelatedId") && ((bool) criterion.ExtendedData["RequestRelatedId"]) )
+                        {
+                        string idProperty = relatedClass.GetCustomAttributes("SQLEntity").GetPropertyValue("InstanceIDProperty").StringValue;
+                        IECProperty prop = relatedClass[idProperty];
+                        IECInstance dbColumn = prop.GetCustomAttributes("DBColumn");
+
+                        string dbColumnName = dbColumn["ColumnName"].StringValue;
+
+                        m_sqlQueryBuilder.AddSelectClause(finalTableDescriptor, dbColumnName, ColumnCategory.relatedInstanceId, null);
+                        }
+
+                    extractWhereClause(relatedCrit.RelatedWhereCriteria, relatedClass, finalTableDescriptor);
 
                     }
                 else if ( criterion is WhereCriteria )
