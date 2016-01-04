@@ -32,6 +32,4 @@ ChangeSummaryTestFixture.ElementChildRelationshipChanges # Notified Raman
 
 ConfigurationManager_Test.*                             # UmarH -- Tests are ported from Vancouver for MacroConfiguration ,seems macros are not expanding on get variable method. 
 
-ComponentModelTest.SimulateDeveloperAndClient           # PaulConnelly -- BE_SQLITE_SCHEMA in TxnManager
-
 DgnProjectPackageTest.VerifyViewsForDgndbFilesConvertedDuringBuild   #Affan #TFS353039
