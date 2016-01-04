@@ -2,7 +2,7 @@
 |
 |     $Source: RealityPlatform/RealityDataDownload.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -115,8 +115,8 @@ RealityDataDownload::RealityDataDownload(const UrlLink_UrlFile& pi_Link_FileName
     curl_global_init(CURL_GLOBAL_DEFAULT);
 
     m_pCurlHandle = curl_multi_init();
-    m_pProgressFunc = NULL;
-    m_pStatusFunc   = NULL;
+    m_pProgressFunc = nullptr;
+    m_pStatusFunc = nullptr;
 
     m_curEntry = 0;
     m_nbEntry = pi_Link_FileName.size();
