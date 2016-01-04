@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/GeomJsTypes/JsCurvePrimitive.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 //__BENTLEY_INTERNAL_ONLY__
@@ -85,11 +85,55 @@ public:
         return nullptr;
         }
 
-    JsDRange3dP Range ()
+    double Length ()
+        {
+        double a;
+        if (m_curvePrimitive->Length (a))
+            return a;
+        return 0.0;
+        }
+    virtual JsDRange3dP Range () override
         {
         DRange3d range;
         m_curvePrimitive->GetRange (range);
         return new JsDRange3d (range);
+        }
+    virtual JsDRange3dP RangeAfterTransform (JsTransformP transformP) override
+        {
+        Transform transform = transformP->Get();
+        DRange3d range;
+        m_curvePrimitive->GetRange (range, transform);
+        return new JsDRange3d (range);
+        }
+
+     virtual bool TryTransformInPlace (JsTransformP jsTransform) override
+        {
+        Transform transform = jsTransform->Get ();
+        return m_curvePrimitive->TransformInPlace (transform);
+        }
+
+     virtual bool IsSameStructureAndGeometry (JsGeometryP other) override
+        {
+        ICurvePrimitivePtr otherPrimitive;
+        if (other != nullptr
+            && (otherPrimitive = other->GetICurvePrimitivePtr (), otherPrimitive.IsValid ())       // COMMA
+            )
+            {
+            return m_curvePrimitive->IsSameStructureAndGeometry (*otherPrimitive);
+            }
+        return false;
+        }
+
+     virtual bool IsSameStructure (JsGeometryP other) override
+        {
+        ICurvePrimitivePtr otherPrimitive;
+        if (other != nullptr
+            && (otherPrimitive = other->GetICurvePrimitivePtr (), otherPrimitive.IsValid ())       // COMMA
+            )
+            {
+            return m_curvePrimitive->IsSameStructure (*otherPrimitive);
+            }
+        return false;
         }
 };
 
