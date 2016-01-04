@@ -159,7 +159,7 @@ ImportOptions const& options
     
     bvector<ECSchemaCP> importedSchemas;
     bvector<ECDiffPtr> diffs;
-    if (SUCCESS != BatchImportOrUpdateECSchemas (context, importedSchemas, diffs, cache, options, true))
+    if (SUCCESS != BatchImportOrUpdateECSchemas (context, importedSchemas, diffs, cache, options))
         return ERROR;
   
     if (MapStatus::Error == m_map.MapSchemas (context, importedSchemas, !diffs.empty ()))
@@ -177,7 +177,7 @@ ImportOptions const& options
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                   Affan.Khan        29/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ECDbSchemaManager::BatchImportOrUpdateECSchemas (SchemaImportContext const& context, bvector<ECN::ECSchemaCP>& importedSchemas, bvector<ECN::ECDiffPtr>&  diffs, ECSchemaCacheR schemaCache, ImportOptions const& options, bool addToReaderCache) const
+BentleyStatus ECDbSchemaManager::BatchImportOrUpdateECSchemas (SchemaImportContext const& context, bvector<ECN::ECSchemaCP>& importedSchemas, bvector<ECN::ECDiffPtr>&  diffs, ECSchemaCacheR schemaCache, ImportOptions const& options) const
     {
     bvector<ECSchemaP> schemas;
     schemaCache.GetSchemas(schemas);
@@ -291,7 +291,7 @@ BentleyStatus ECDbSchemaManager::BatchImportOrUpdateECSchemas (SchemaImportConte
                 diffs.push_back(diff);
             }
         else
-            if (SUCCESS != ImportECSchema(*schema, addToReaderCache))
+            if (SUCCESS != ImportECSchema(*schema))
                 return ERROR;
         }
 
@@ -304,14 +304,12 @@ BentleyStatus ECDbSchemaManager::BatchImportOrUpdateECSchemas (SchemaImportConte
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                   Affan.Khan        05/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ECDbSchemaManager::ImportECSchema (ECSchemaCR ecSchema, bool addToReaderCache) const
+BentleyStatus ECDbSchemaManager::ImportECSchema(ECSchemaCR ecSchema) const
     {
-    if (SUCCESS != m_ecImporter->Import (ecSchema))
+    if (SUCCESS != m_ecImporter->Import(ecSchema))
         return ERROR;
 
-    if (addToReaderCache)
-        m_ecReader->AddECSchemaToCache (ecSchema);
-
+    m_ecReader->AddECSchemaToCache(ecSchema);
     return SUCCESS;
     }
 
@@ -446,6 +444,14 @@ ECDerivedClassesList const& ECDbSchemaManager::GetDerivedECClasses (ECClassCR ba
        }
 
     return baseECClass.GetDerivedClasses ();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Krischan.Eberle    12/2015
+//+---------------+---------------+---------------+---------------+---------------+------
+ECEnumerationCP ECDbSchemaManager::GetECEnumeration(Utf8CP schemaName, Utf8CP enumName) const
+    {
+    return m_ecReader->GetECEnumeration(schemaName, enumName);
     }
 
 /*---------------------------------------------------------------------------------------
