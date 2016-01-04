@@ -11,6 +11,8 @@
 
 #include "UpdateLogging.h"
 
+//#define TRACE_QUERY_LOGIC 1
+
 #if defined (BENTLEY_WIN32)
     #define MAX_TO_DRAW_IN_DYNAMIC_UPDATE  6000
 #else
@@ -109,6 +111,10 @@ bool QueryViewController::_WantElementLoadStart(DgnViewportR vp, double currentT
 +---------------+---------------+---------------+---------------+---------------+------*/
 void QueryViewController::_OnDynamicUpdate(DgnViewportR vp, ViewContextR context, DynamicUpdateInfo& info)
     {
+#if defined (TRACE_QUERY_LOGIC)
+    static int32_t s_count = 0;
+#endif
+
     DrawPurpose newUpdateType = info.GetDoBackingStore() ? DrawPurpose::Update : DrawPurpose::UpdateDynamic;
     m_lastUpdateType = newUpdateType;
     if (m_forceNewQuery || info.GetDoBackingStore())
@@ -234,6 +240,10 @@ void QueryViewController::StartSelectProcessing(DgnViewportR viewport, DrawPurpo
         if (hitLimit > computedLimit)
             hitLimit = std::min(computedLimit,(uint32_t)MAX_TO_DRAW_IN_DYNAMIC_UPDATE);
         }
+
+#if defined (TRACE_QUERY_LOGIC)
+    printf("QVC: StartSelectProcessing: hitLimit %d\n", hitLimit);
+#endif
 
     QueryModel::Selector& selector = m_queryModel.GetSelector();
     selector.StartProcessing(viewport, *this, _GetRTreeMatchSql(viewport).c_str(), hitLimit, GetMaxElementMemory(), minimumPixels, 
@@ -432,8 +442,8 @@ Utf8String QueryViewController::_GetRTreeMatchSql(DgnViewportR)
         m_dgndb.Models().GetModel(id);
 
     return Utf8String("SELECT rTreeAccept(r.ElementId) FROM "
-           DGN_VTABLE_RTree3d " AS r, " DGN_TABLE(DGN_CLASSNAME_Element) " AS e, " DGN_TABLE(DGN_CLASSNAME_ElementGeom) " AS g "
-           "WHERE r.ElementId MATCH rTreeMatch(1) AND e.Id=r.ElementId AND g.ElementId=r.ElementId"
+           DGN_VTABLE_RTree3d " AS r, " DGN_TABLE(DGN_CLASSNAME_Element) " AS e, " DGN_TABLE(DGN_CLASSNAME_SpatialElement) " AS g "
+           "WHERE r.ElementId MATCH rTreeMatch(1) AND e.Id=r.ElementId AND g.Id=r.ElementId"
            " AND InVirtualSet(@vSet,e.ModelId,g.CategoryId)");
     }
 
@@ -704,5 +714,8 @@ uint32_t QueryViewController::GetMaxElementsToLoad()
     double maxElementsFactor = inputFactor/100.0;
     maxElementsToLoad += static_cast <int> (static_cast <double> (maxElementsToLoad) * maxElementsFactor * 0.90);
 
+#if defined (TRACE_QUERY_LOGIC)
+    printf("QVC: GetMaxElementsToLoad %d\n", maxElementsToLoad);
+#endif
     return maxElementsToLoad;
     }

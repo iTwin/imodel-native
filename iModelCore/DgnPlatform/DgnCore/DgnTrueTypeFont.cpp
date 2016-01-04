@@ -714,6 +714,9 @@ BentleyStatus DgnTrueTypeFont::_LayoutGlyphs(DgnGlyphLayoutResultR result, DgnGl
 //---------------------------------------------------------------------------------------
 double DgnTrueTypeFont::_GetDescenderRatio(DgnFontStyle fontStyle) const
     {
+    if (!IsResolved())
+        return 0.0;
+    
     bool isBold, isItalic;
     DgnFont::FontStyleToBoldItalic(isBold, isItalic, fontStyle);
     FT_Face effectiveFace = determineFace(fontStyle, isBold, isItalic, (IDgnTrueTypeFontData&)*m_data);

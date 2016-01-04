@@ -58,10 +58,10 @@ static void openDb (DgnDbPtr& db, BeFileNameCR name, DgnDb::OpenMode mode)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-static DgnDbStatus createPhysicalModel(PhysicalModelPtr& catalogModel, DgnDbR db, DgnModel::Code const& code)
+static DgnDbStatus createSpatialModel(SpatialModelPtr& catalogModel, DgnDbR db, DgnModel::Code const& code)
     {
-    DgnClassId mclassId = DgnClassId(db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_PhysicalModel));
-    catalogModel = new PhysicalModel(DgnModel3d::CreateParams(db, mclassId, code));
+    DgnClassId mclassId = DgnClassId(db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_SpatialModel));
+    catalogModel = new SpatialModel(DgnModel3d::CreateParams(db, mclassId, code));
     catalogModel->SetInGuiList(false);
     return catalogModel->Insert();
     }
@@ -70,17 +70,9 @@ static DgnDbStatus createPhysicalModel(PhysicalModelPtr& catalogModel, DgnDbR db
 * @bsimethod                                    Sam.Wilson                      04/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
 template<typename T>
-RefCountedPtr<T> getModelByName(DgnDbR db, Utf8CP cmname)
+RefCountedPtr<T> getModelByName(DgnDbR db, Utf8StringCR cmname)
     {
     return db.Models().Get<T>(db.Models().QueryModelId(DgnModel::CreateModelCode(cmname)));
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Sam.Wilson      06/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-static size_t countElementsInModel (DgnModelR model)
-    {
-    return model.GetElements().size();
     }
 
 /*=================================================================================**//**
@@ -127,19 +119,98 @@ static void checkSlabDimensions(GeometrySourceCR el, double expectedX, double ex
     EXPECT_DOUBLE_EQ( expectedZ, box.m_topOrigin.Distance(box.m_baseOrigin) );
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      06/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-static void checkElementClassesInModel(DgnModelCR model, bset<DgnClassId> const& allowedClasses)
-    {
-    Statement statement(model.GetDgnDb(), "SELECT ECClassId FROM " DGN_TABLE(DGN_CLASSNAME_Element) " WHERE ModelId=?");
-    statement.BindId(1, model.GetModelId());
-    while (BE_SQLITE_ROW == statement.Step())
+/*=================================================================================**//**
+* @bsiclass                                                     Sam.Wilson     12/2015
++===============+===============+===============+===============+===============+======*/
+struct NamedECValue
+{
+    Utf8String m_name;
+    ECN::ECValue m_value;
+
+    NamedECValue(Utf8StringCR n, ECN::ECValueCR v) : m_name(n), m_value(v) {;}
+};
+
+/*=================================================================================**//**
+* @bsiclass                                                     Sam.Wilson     12/2015
++===============+===============+===============+===============+===============+======*/
+struct VariationSpec
+{
+    Utf8String m_componentName;
+    Utf8String m_name;
+    bvector<NamedECValue> m_propValues;
+
+    VariationSpec() {;}
+    VariationSpec(Utf8StringCR cn, Utf8StringCR n) : m_componentName(cn), m_name(n) {;}
+    VariationSpec(VariationSpec const& rhs) : m_componentName(rhs.m_componentName), m_name(rhs.m_name), m_propValues(rhs.m_propValues) {;}
+
+    ECN::IECInstancePtr MakeVariationSpec(DgnDbR db) const;
+    void CheckInstance(DgnElementCR el, size_t expectedSolidCount) const;
+    void MakeUniqueInstance(DgnElementCPtr&, DgnModelR destModel, size_t expectedSolidCount);
+    void MakeVariation(DgnElementCPtr&, SpatialModelR destModel);
+
+    void SetValue(Utf8CP name, ECN::ECValueCR v)
         {
-        DgnClassId foundClassId = statement.GetValueId<DgnClassId>(0);
-        ASSERT_TRUE( allowedClasses.find(foundClassId) != allowedClasses.end() ) << Utf8PrintfString("Did not expect to find an instance of class %s", model.GetDgnDb().Schemas().GetECClass(ECN::ECClassId(foundClassId.GetValue()))->GetName().c_str()).c_str();
+        for (auto& pv : m_propValues)
+            {
+            if (pv.m_name == name)
+                {
+                pv.m_value = v;
+                return;
+                }
+            }
         }
+};
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      12/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+ECN::IECInstancePtr VariationSpec::MakeVariationSpec(DgnDbR db) const
+    {
+    ComponentDefPtr cdef = ComponentDef::FromECClass(nullptr, db, *db.Schemas().GetECClass(TEST_JS_NAMESPACE, m_componentName.c_str()));
+    if (!cdef.IsValid())
+        return nullptr;
+    ECN::IECInstancePtr instance = cdef->MakeVariationSpec();
+    for (auto const& pv : m_propValues)
+        instance->SetValue(pv.m_name.c_str(), pv.m_value);
+
+    return instance;
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      12/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+void VariationSpec::CheckInstance(DgnElementCR el, size_t expectedSolidCount) const
+    {
+    ComponentDefPtr cdef = ComponentDef::FromECClass(nullptr, el.GetDgnDb(), *el.GetElementClass());
+    ASSERT_TRUE(cdef.IsValid());
+    ASSERT_STREQ(cdef->GetName().c_str(), m_componentName.c_str());
+    checkGeomStream(*el.ToGeometrySource(), ElementGeometry::GeometryType::SolidPrimitive, expectedSolidCount);
+    checkSlabDimensions(*el.ToGeometrySource(), m_propValues[0].m_value.GetDouble(), m_propValues[1].m_value.GetDouble(), m_propValues[2].m_value.GetDouble());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      12/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+void VariationSpec::MakeUniqueInstance(DgnElementCPtr& inst, DgnModelR destModel, size_t expectedSolidCount)
+    {
+    DgnDbR db = destModel.GetDgnDb();
+    inst = ComponentDef::MakeUniqueInstance(nullptr, destModel, *MakeVariationSpec(db));
+    ASSERT_TRUE(inst.IsValid()); 
+    CheckInstance(*inst, expectedSolidCount);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      12/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+void VariationSpec::MakeVariation(DgnElementCPtr& variation, SpatialModelR destModel)
+    {
+    DgnDbStatus status;
+    auto vspec = MakeVariationSpec(destModel.GetDgnDb());
+    ASSERT_TRUE(vspec.IsValid());
+    variation = ComponentDef::MakeVariation(&status, destModel, *vspec, m_name);
+    ASSERT_TRUE(variation.IsValid()) << Utf8PrintfString("MakeVariation failed with error %x", status);
+    }
+
 
 /*=================================================================================**//**
 * @bsiclass                                                     Sam.Wilson     02/2012
@@ -152,26 +223,22 @@ BeFileName         m_clientDbName;
 DgnDbPtr           m_componentDb;
 DgnDbPtr           m_clientDb;
 Dgn::ScopedDgnHost m_host;
-Json::Value m_wsln1, m_wsln3, m_wsln4, m_wsln44, m_gsln1, m_nsln1;
+VariationSpec m_wsln1, m_wsln3, m_wsln4, m_wsln44, m_gsln1, m_nsln1;
 
 Dgn::DgnDbStatus _FetchScript(Utf8StringR sText, DgnScriptType& stypeFound, DateTime& lmt, DgnDbR, Utf8CP sName, DgnScriptType stypePreferred) override;
 
 ComponentModelTest();
-DgnCategoryId Developer_CreateCategory(Utf8CP code, ColorDef const&);
-void Developer_CreateCMs();
 void OpenComponentDb(DgnDb::OpenMode mode) {openDb(m_componentDb, m_componentDbName, mode);}
 void CloseComponentDb() {if (m_componentDb.IsValid()) m_componentDb->CloseDb(); m_componentDb=nullptr;}
 void OpenClientDb(DgnDb::OpenMode mode) {openDb(m_clientDb, m_clientDbName, mode);}
 void CloseClientDb() {if (m_clientDb.IsValid()) m_clientDb->CloseDb(); m_clientDb=nullptr;}
-void Developer_TestWidgetSolver();
-void Developer_TestGadgetSolver();
-void Developer_TestThingSolver();
-void Developer_CreateCapturedSolution(DgnElementCPtr&, PhysicalModelR catalogModel, Utf8CP componentName, Json::Value const& parms, Utf8CP catalogItemName);
-void Client_ImportCM(Utf8CP componentName);
+DgnCategoryId Developer_CreateCategory(Utf8CP code, ColorDef const&);
+void Developer_DefineSchema();
+void Client_ImportComponentDef(Utf8CP componentName);
 void Client_InsertNonInstanceElement(Utf8CP modelName, Utf8CP code = nullptr);
-void Client_PlaceInstanceOfSolution(DgnElementId&, Utf8CP targetModelName, DgnElementCR catalogItem);
-void Client_PlaceInstance(DgnElementId&, Utf8CP targetModelName, PhysicalModelR catalogModel, Utf8CP componentName, Utf8CP ciname, bool expectToFindSolution);
-void Client_CheckComponentInstance(DgnElementId, size_t expectedSolidCount, double x, double y, double z);
+void Client_PlaceInstanceOfVariation(DgnElementId&, Utf8StringCR targetModelName, DgnElementCR variation);
+void Client_PlaceInstance(DgnElementId&, Utf8CP targetModelName, SpatialModelR catalogModel, Utf8StringCR componentName, Utf8StringCR variationName, bool expectToFindVariation);
+void Client_CheckComponentInstance(DgnElementId eid, size_t expectedSolidCount, VariationSpec const& vc);
 void Client_CheckNestedInstance(DgnElementCR instanceElement, Utf8CP expectedChildComponentName, int nChildrenExpected);
 
 void SimulateDeveloper();
@@ -199,34 +266,95 @@ AutoCloseComponentDb(ComponentModelTest& t) : m_test(t) {;}
 +---------------+---------------+---------------+---------------+---------------+------*/
 ComponentModelTest::ComponentModelTest()
     {
-    // *** WARNING: Keep these parameters names consistent with ComponentModelTest.ts
-    m_wsln1 = Json::objectValue;
-    m_wsln1["X"] = 10;
-    m_wsln1["Y"] = 11;
-    m_wsln1["Z"] = 12;
-
-    m_wsln3 = m_wsln1;
-    m_wsln3["X"] = 100;
-
-    m_wsln4 = m_wsln3;
-    m_wsln4["X"] = 2;
-
-    m_wsln44 = m_wsln4;
-    m_wsln44["X"] = 44;
-
-    m_gsln1 = Json::objectValue;
-    m_gsln1["Q"] = 3;
-    m_gsln1["W"] = 2;
-    m_gsln1["R"] = 1;
-    m_gsln1["T"] = "text";
-
-    m_nsln1 = Json::objectValue;
-    m_nsln1["A"] = 1;
-    m_nsln1["B"] = 1;
-    m_nsln1["C"] = 1;
-
     T_HOST.GetScriptAdmin().RegisterScriptNotificationHandler(*new DetectJsErrors);
     m_host.SetFetchScriptCallback(this);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      06/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void ComponentModelTest::Developer_DefineSchema()
+    {
+    OpenComponentDb(Db::OpenMode::ReadWrite);
+    AutoCloseComponentDb closeComponentDb(*this);
+    
+    ECN::ECSchemaPtr testSchema = ComponentDefCreator::GenerateSchema(*m_componentDb, TEST_JS_NAMESPACE);
+    ASSERT_TRUE(testSchema.IsValid());
+
+    ECN::ECClassCP baseClass = m_componentDb->Schemas().GetECClass(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_PhysicalElement);
+
+    // Widget
+        {
+        Developer_CreateCategory("WidgetCategory", ColorDef(0xff0000FF));
+
+        ComponentDefCreator creator(*m_componentDb, *testSchema, TEST_WIDGET_COMPONENT_NAME, *baseClass, TEST_JS_NAMESPACE "." TEST_WIDGET_COMPONENT_NAME, "WidgetCategory", "");
+        creator.AddPropertySpec(ComponentDefCreator::PropertySpec("X", ECN::PrimitiveType::PRIMITIVETYPE_Double, ComponentDef::ParameterVariesPer::Instance));
+        creator.AddPropertySpec(ComponentDefCreator::PropertySpec("Y", ECN::PrimitiveType::PRIMITIVETYPE_Double, ComponentDef::ParameterVariesPer::Instance));
+        creator.AddPropertySpec(ComponentDefCreator::PropertySpec("Z", ECN::PrimitiveType::PRIMITIVETYPE_Double, ComponentDef::ParameterVariesPer::Instance));
+        ECN::ECClassCP ecClass = creator.GenerateECClass();
+        ASSERT_TRUE(nullptr != ecClass);
+
+        m_wsln1 = VariationSpec(TEST_WIDGET_COMPONENT_NAME, "wsln1");
+        m_wsln1.m_propValues.push_back(NamedECValue("X", ECN::ECValue(10.0)));
+        m_wsln1.m_propValues.push_back(NamedECValue("Y", ECN::ECValue(11.0)));
+        m_wsln1.m_propValues.push_back(NamedECValue("Z", ECN::ECValue(12.0)));
+
+        m_wsln3 = VariationSpec(TEST_WIDGET_COMPONENT_NAME, "wsln3");
+        m_wsln3.m_propValues = m_wsln1.m_propValues;
+        m_wsln3.SetValue("X", ECN::ECValue(100.0));
+
+        m_wsln4 = VariationSpec(TEST_WIDGET_COMPONENT_NAME, "wsln4");
+        m_wsln4.m_propValues = m_wsln3.m_propValues;
+        m_wsln4.SetValue("X", ECN::ECValue(2.0));
+
+        m_wsln44 = VariationSpec(TEST_WIDGET_COMPONENT_NAME, "wsln44");
+        m_wsln44.m_propValues = m_wsln4.m_propValues;
+        m_wsln44.SetValue("X", ECN::ECValue(44.0));
+        }
+
+    // Gadget
+        {
+        Developer_CreateCategory("GadgetCategory", ColorDef(0x00ff00FF));
+
+        ComponentDefCreator creator(*m_componentDb, *testSchema, TEST_GADGET_COMPONENT_NAME, *baseClass, TEST_JS_NAMESPACE "." TEST_GADGET_COMPONENT_NAME, "GadgetCategory", "");
+        creator.AddPropertySpec(ComponentDefCreator::PropertySpec("Q", ECN::PrimitiveType::PRIMITIVETYPE_Double, ComponentDef::ParameterVariesPer::Instance));
+        creator.AddPropertySpec(ComponentDefCreator::PropertySpec("W", ECN::PrimitiveType::PRIMITIVETYPE_Double, ComponentDef::ParameterVariesPer::Instance));
+        creator.AddPropertySpec(ComponentDefCreator::PropertySpec("R", ECN::PrimitiveType::PRIMITIVETYPE_Double, ComponentDef::ParameterVariesPer::Instance));
+        creator.AddPropertySpec(ComponentDefCreator::PropertySpec("T", ECN::PrimitiveType::PRIMITIVETYPE_String, ComponentDef::ParameterVariesPer::Instance));
+        ECN::ECClassCP ecClass = creator.GenerateECClass();
+        ASSERT_TRUE(nullptr != ecClass);
+
+        m_gsln1 = VariationSpec(TEST_GADGET_COMPONENT_NAME, "gsln1");
+        m_gsln1.m_propValues.push_back(NamedECValue("Q", ECN::ECValue(3.0)));
+        m_gsln1.m_propValues.push_back(NamedECValue("W", ECN::ECValue(2.0)));
+        m_gsln1.m_propValues.push_back(NamedECValue("R", ECN::ECValue(1.0)));
+        m_gsln1.m_propValues.push_back(NamedECValue("T", ECN::ECValue("text")));
+        }
+
+    // Thing
+        {
+        Developer_CreateCategory("ThingCategory", ColorDef(0x0000ffFF));
+
+        ComponentDefCreator creator(*m_componentDb, *testSchema, TEST_THING_COMPONENT_NAME, *baseClass, TEST_JS_NAMESPACE "." TEST_THING_COMPONENT_NAME, "ThingCategory", "");
+        creator.AddPropertySpec(ComponentDefCreator::PropertySpec("A", ECN::PrimitiveType::PRIMITIVETYPE_Double, ComponentDef::ParameterVariesPer::Instance));
+        creator.AddPropertySpec(ComponentDefCreator::PropertySpec("B", ECN::PrimitiveType::PRIMITIVETYPE_Double, ComponentDef::ParameterVariesPer::Instance));
+        creator.AddPropertySpec(ComponentDefCreator::PropertySpec("C", ECN::PrimitiveType::PRIMITIVETYPE_Double, ComponentDef::ParameterVariesPer::Instance));
+        ECN::ECClassCP ecClass = creator.GenerateECClass();
+        ASSERT_TRUE(nullptr != ecClass);
+
+        m_nsln1 = VariationSpec(TEST_THING_COMPONENT_NAME, "nsln1");
+        m_nsln1.m_propValues.push_back(NamedECValue("A", ECN::ECValue(1.0)));
+        m_nsln1.m_propValues.push_back(NamedECValue("B", ECN::ECValue(1.0)));
+        m_nsln1.m_propValues.push_back(NamedECValue("C", ECN::ECValue(1.0)));
+        }
+
+    ASSERT_TRUE(ComponentDefCreator::ImportSchema(*m_componentDb, *testSchema, false) != nullptr);
+
+    //  Verify that we can look up an existing component
+    //ComponentDefPtr widgetCDef = ComponentDef::FromECSqlName(nullptr, *m_componentDb, TEST_JS_NAMESPACE "." TEST_WIDGET_COMPONENT_NAME);
+    //ASSERT_TRUE(widgetCDef.IsValid());
+    //ASSERT_STREQ(TEST_WIDGET_COMPONENT_NAME, widgetCDef->GetName().c_str());
+    //ASSERT_STREQ("WidgetCategory", widgetCDef->GetCategoryName().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -258,264 +386,74 @@ DgnCategoryId ComponentModelTest::Developer_CreateCategory(Utf8CP code, ColorDef
     }
 
 /*---------------------------------------------------------------------------------**//**
-* This function defines 2 ComponenModels: a Widget and a Gadget.
 * @bsimethod                                    Sam.Wilson                      04/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ComponentModelTest::Developer_CreateCMs()
-    {
-    OpenComponentDb(Db::OpenMode::ReadWrite);
-    AutoCloseComponentDb closeComponentDb(*this);
-
-    ASSERT_TRUE(m_componentDb.IsValid());
-
-    // Define the CM's Element Category (in the CM's DgnDb). Use the same name as the component model. 
-    ASSERT_TRUE( Developer_CreateCategory("WidgetCategory", ColorDef(0xff,0x00,0x00)).IsValid() );
-    ASSERT_TRUE( Developer_CreateCategory("GadgetCategory", ColorDef(0x00,0xff,0x00)).IsValid() );
-    ASSERT_TRUE( Developer_CreateCategory("ThingCategory", ColorDef(0x00,0x00,0xff)).IsValid() );
-
-    ModelSolverDef::Parameter::Scope ip = ModelSolverDef::Parameter::Scope::Instance;
-    ModelSolverDef::Parameter::Scope tp = ModelSolverDef::Parameter::Scope::Type;
-
-    // Widget
-        {
-        bvector<ModelSolverDef::Parameter> wparameters;
-        wparameters.push_back(ModelSolverDef::Parameter("X", tp, ECN::ECValue(1.0))); 
-        wparameters.push_back(ModelSolverDef::Parameter("Y", tp, ECN::ECValue(1.0))); 
-        wparameters.push_back(ModelSolverDef::Parameter("Z", tp, ECN::ECValue(1.0))); 
-        wparameters.push_back(ModelSolverDef::Parameter("Other", ip, ECN::ECValue("Something else")));
-        ModelSolverDef wsolver(ModelSolverDef::Type::Script, TEST_JS_NAMESPACE "." TEST_WIDGET_COMPONENT_NAME, wparameters);
-                                                           // ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ This must match the name used in the .ts file in the call to RegisterModelSolver
-        ComponentModel::CreateParams wparms(*m_componentDb, TEST_WIDGET_COMPONENT_NAME, DGN_SCHEMA(DGN_CLASSNAME_PhysicalElement), "WidgetCategory", "", wsolver);
-        ComponentModelPtr wcm = new ComponentModel(wparms);
-        ASSERT_TRUE( wcm->IsValid() );
-        ASSERT_EQ( DgnDbStatus::Success , wcm->Insert() );
-        }
-
-    //  Gadget
-        {
-        bvector<ModelSolverDef::Parameter> gparameters; 
-        gparameters.push_back(ModelSolverDef::Parameter("Q", tp, ECN::ECValue(1.0))); 
-        gparameters.push_back(ModelSolverDef::Parameter("W", tp, ECN::ECValue(1.0))); 
-        gparameters.push_back(ModelSolverDef::Parameter("R", tp, ECN::ECValue(1.0))); 
-        gparameters.push_back(ModelSolverDef::Parameter("T", ip, ECN::ECValue("Some other parm")));
-        ModelSolverDef gsolver(ModelSolverDef::Type::Script, TEST_JS_NAMESPACE "." TEST_GADGET_COMPONENT_NAME, gparameters);
-
-        ComponentModel::CreateParams gparms(*m_componentDb, TEST_GADGET_COMPONENT_NAME, DGN_SCHEMA(DGN_CLASSNAME_PhysicalElement), "GadgetCategory", "", gsolver);
-        ComponentModelPtr gcm = new ComponentModel(gparms);
-        ASSERT_TRUE( gcm->IsValid() );
-        ASSERT_EQ( DgnDbStatus::Success , gcm->Insert() );
-        }
-
-    //  Thing
-        {
-        bvector<ModelSolverDef::Parameter> nparameters; 
-        nparameters.push_back(ModelSolverDef::Parameter("A", tp, ECN::ECValue(1.0))); 
-        nparameters.push_back(ModelSolverDef::Parameter("B", tp, ECN::ECValue(1.0))); 
-        nparameters.push_back(ModelSolverDef::Parameter("C", tp, ECN::ECValue(1.0))); 
-        ModelSolverDef nsolver(ModelSolverDef::Type::Script, TEST_JS_NAMESPACE "." TEST_THING_COMPONENT_NAME, nparameters);
-
-        ComponentModel::CreateParams nparms(*m_componentDb, TEST_THING_COMPONENT_NAME, DGN_SCHEMA(DGN_CLASSNAME_PhysicalElement), "ThingCategory", "", nsolver);
-        ComponentModelPtr ncm = new ComponentModel(nparms);
-        ASSERT_TRUE( ncm->IsValid() );
-        ASSERT_EQ( DgnDbStatus::Success , ncm->Insert() );
-        }
-
-    m_componentDb->SaveChanges(); // should trigger validation
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      04/2013
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ComponentModelTest::Developer_TestWidgetSolver()
-    {
-    OpenComponentDb(Db::OpenMode::ReadWrite);
-    AutoCloseComponentDb closeComponentDb(*this);
-
-    ComponentModelPtr cm = getModelByName<ComponentModel>(*m_componentDb, TEST_WIDGET_COMPONENT_NAME);
-    ASSERT_TRUE( cm.IsValid() );
-
-    ModelSolverDef::ParameterSet params = cm->GetSolver().GetParameters();
-
-    for (int i=0; i<10; ++i)
-        {
-        params.GetParameterP("X")->SetValue(ECN::ECValue(1*i));
-        params.GetParameterP("Y")->SetValue(ECN::ECValue(2*i));
-        params.GetParameterP("Z")->SetValue(ECN::ECValue(3*i));
-
-        ASSERT_EQ( DgnDbStatus::Success , cm->Solve(params) );
-    
-        cm->FillModel();
-        ASSERT_EQ( 2 , countElementsInModel(*cm) );
-
-        RefCountedCPtr<DgnElement> el = cm->begin()->second;
-        checkGeomStream(*el->ToGeometrySource(), ElementGeometry::GeometryType::SolidPrimitive, 1);
-        checkSlabDimensions(*el->ToGeometrySource(),  params.GetParameter("X")->GetValue().GetDouble(), 
-                                                        params.GetParameter("Y")->GetValue().GetDouble(),
-                                                        params.GetParameter("Z")->GetValue().GetDouble());
-        }
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      04/2013
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ComponentModelTest::Developer_TestGadgetSolver()
-    {
-    OpenComponentDb(Db::OpenMode::ReadWrite);
-    AutoCloseComponentDb closeComponentDb(*this);
-
-    ComponentModelPtr cm = getModelByName<ComponentModel>(*m_componentDb, TEST_GADGET_COMPONENT_NAME);
-    ASSERT_TRUE( cm.IsValid() );
-
-    ModelSolverDef::ParameterSet params = cm->GetSolver().GetParameters();
-
-    for (int i=0; i<10; ++i)
-        {
-        params.GetParameterP("Q")->SetValue(ECN::ECValue(1*i));
-        params.GetParameterP("W")->SetValue(ECN::ECValue(2*i));
-        params.GetParameterP("R")->SetValue(ECN::ECValue(3*i));
-
-        ASSERT_EQ( DgnDbStatus::Success , cm->Solve(params) );
-    
-        cm->FillModel();
-        ASSERT_EQ( 1 , countElementsInModel(*cm) );
-
-        RefCountedCPtr<DgnElement> el = cm->begin()->second;
-        checkGeomStream(*el->ToGeometrySource(), ElementGeometry::GeometryType::SolidPrimitive, 1);
-        checkSlabDimensions(*el->ToGeometrySource(),  params.GetParameter("Q")->GetValue().GetDouble(), 
-                                                        params.GetParameter("W")->GetValue().GetDouble(),
-                                                        params.GetParameter("R")->GetValue().GetDouble());
-        }
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      04/2013
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ComponentModelTest::Developer_TestThingSolver()
-    {
-    OpenComponentDb(Db::OpenMode::ReadWrite);
-    AutoCloseComponentDb closeComponentDb(*this);
-
-    ComponentModelPtr cm = getModelByName<ComponentModel>(*m_componentDb, TEST_THING_COMPONENT_NAME);
-    ASSERT_TRUE( cm.IsValid() );
-
-    ModelSolverDef::ParameterSet params = cm->GetSolver().GetParameters();
-
-    for (int i=0; i<10; ++i)
-        {
-        params.GetParameterP("A")->SetValue(ECN::ECValue(1*i));
-        params.GetParameterP("B")->SetValue(ECN::ECValue(2*i));
-        params.GetParameterP("C")->SetValue(ECN::ECValue(3*i));
-
-        ASSERT_EQ( DgnDbStatus::Success , cm->Solve(params) );
-    
-        cm->FillModel();
-        ASSERT_EQ( 2 , countElementsInModel(*cm) );
-
-        RefCountedCPtr<DgnElement> el = cm->begin()->second;
-        checkGeomStream(*el->ToGeometrySource(), ElementGeometry::GeometryType::SolidPrimitive, 1);
-        checkSlabDimensions(*el->ToGeometrySource(),  params.GetParameter("A")->GetValue().GetDouble(), 
-                                                        params.GetParameter("B")->GetValue().GetDouble(),
-                                                        params.GetParameter("C")->GetValue().GetDouble());
-        }
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* ONLY DO THIS ONCE per CM. This might be done on demand, the first time that an instance of a particular CM is placed.
-* @bsimethod                                    Sam.Wilson                      04/2013
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ComponentModelTest::Client_ImportCM(Utf8CP componentName)
+void ComponentModelTest::Client_ImportComponentDef(Utf8CP componentName)
     {
     OpenComponentDb(Db::OpenMode::Readonly);
     AutoCloseComponentDb closeComponentDb(*this);
+
+    m_componentDb->Schemas().GetECSchema(TEST_JS_NAMESPACE, true);
+
+    //  ------------------------
+    //  Copy in the ComponentDef's ECClass
+    //  ------------------------
+    ComponentDefPtr sourceCdef = ComponentDef::FromECSqlName(nullptr, *m_componentDb, Utf8PrintfString("%s.%s", TEST_JS_NAMESPACE, componentName));
+
+    DgnImportContext ctx(*m_componentDb, *m_clientDb);
+    ASSERT_EQ( DgnDbStatus::Success , sourceCdef->Export(ctx, true, true));
+
+    ComponentDefPtr importedCdef = ComponentDef::FromECSqlName(nullptr, *m_clientDb, Utf8PrintfString("%s.%s", TEST_JS_NAMESPACE, componentName));
+    ASSERT_TRUE(importedCdef.IsValid());
     
-    ComponentModelPtr cmOriginal = getModelByName<ComponentModel>(*m_componentDb, componentName);
+    //  ------------------------
+    //  Copy in the variations
+    //  ------------------------
+    SpatialModelPtr sourceCatalogModel = getModelByName<SpatialModel>(*m_componentDb, "Catalog");
+    ASSERT_TRUE(sourceCatalogModel.IsValid());
 
-    ASSERT_TRUE( cmOriginal.IsValid() );
-
-    ComponentModel::Importer importer(*m_clientDb, *cmOriginal);
-    
-    //  Import the component model itself
-    ComponentModelPtr cmCopy = importer.ImportComponentModel();
-
-    ASSERT_TRUE( cmCopy.IsValid() );
-
-    ASSERT_EQ( countElementsInModel(*cmOriginal), countElementsInModel(*cmCopy) ); // at least make sure the copy has the same number of elements.
-
-    bset<DgnClassId> cmModelElementClasses;
-    cmModelElementClasses.insert(DgnClassId(m_componentDb->Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_PhysicalElement)));
-    checkElementClassesInModel(*cmOriginal, cmModelElementClasses);
-
-    bset<DgnClassId> cmCopyModelElementClasses;
-    cmCopyModelElementClasses.insert(DgnClassId(m_clientDb->Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_PhysicalElement)));
-    checkElementClassesInModel(*cmCopy, cmCopyModelElementClasses);
-
-    // Import the item catalog
-    PhysicalModelPtr catalogModel = getModelByName<PhysicalModel>(*m_clientDb, "Catalog");
+    SpatialModelPtr catalogModel = getModelByName<SpatialModel>(*m_clientDb, "Catalog");
     if (!catalogModel.IsValid())
-        createPhysicalModel(catalogModel, *m_clientDb, DgnModel::CreateModelCode("Catalog"));
+        createSpatialModel(catalogModel, *m_clientDb, DgnModel::CreateModelCode("Catalog"));
 
     ASSERT_TRUE(catalogModel.IsValid());
 
-    importer.ImportSolutions(*catalogModel);
+    bvector<DgnElementId> originalVariations, importedVariations;
+    sourceCdef->QueryVariations(originalVariations, sourceCatalogModel->GetModelId());
+    importedCdef->QueryVariations(importedVariations, catalogModel->GetModelId());
+    ASSERT_EQ( 0 , importedVariations.size() );
 
-    bvector<DgnElementId> originalSolutions, importedSolutions;
-    cmOriginal->QuerySolutions(originalSolutions);
-    cmCopy->QuerySolutions(importedSolutions);
-    ASSERT_EQ( originalSolutions.size() , importedSolutions.size() );
+    ASSERT_EQ( DgnDbStatus::Success , sourceCdef->ExportVariations(*catalogModel, sourceCatalogModel->GetModelId(), ctx) );
+    
+    importedCdef->QueryVariations(importedVariations, catalogModel->GetModelId());
+    ASSERT_NE( 0 , importedVariations.size() );
+    ASSERT_EQ( originalVariations.size() , importedVariations.size() );
 
     m_clientDb->SaveChanges();
-
-    //  Verify that we can look up an existing component
-    DgnModelId ccId = m_clientDb->Models().QueryModelId(DgnModel::CreateModelCode(componentName));
-    ASSERT_EQ( ccId.GetValue(), cmCopy->GetModelId().GetValue() );
     }
     
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ComponentModelTest::Client_CheckComponentInstance(DgnElementId eid, size_t expectedSolidCount, double x, double y, double z)
+void ComponentModelTest::Client_CheckComponentInstance(DgnElementId eid, size_t expectedSolidCount, VariationSpec const& vc)
     {
     DgnElementCPtr el = m_clientDb->Elements().Get<DgnElement>(eid);
-    checkGeomStream(*el->ToGeometrySource(), ElementGeometry::GeometryType::SolidPrimitive, expectedSolidCount);
-    checkSlabDimensions(*el->ToGeometrySource(), x, y, z);
+    vc.CheckInstance(*el, expectedSolidCount);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ComponentModelTest::Developer_CreateCapturedSolution(DgnElementCPtr& catalogItem, PhysicalModelR catalogModel, Utf8CP componentName, Json::Value const& parmsToChange, Utf8CP catalogItemName)
-    {
-    ComponentModelPtr componentModel = getModelByName<ComponentModel>(*m_componentDb, componentName);  // Open the client's imported copy
-    ASSERT_TRUE( componentModel.IsValid() );
-
-    ModelSolverDef::ParameterSet newParameterValues = componentModel->GetSolver().GetParameters();
-    for (auto pname : parmsToChange.getMemberNames())
-        {
-        ModelSolverDef::Parameter* sparam = newParameterValues.GetParameterP(pname.c_str());
-        ASSERT_NE( nullptr , sparam );
-        ECN::ECValue ecv;
-        ECUtils::ConvertJsonToECValue(ecv, parmsToChange[pname], sparam->GetValue().GetPrimitiveType());
-        sparam->SetValue(ecv);
-        }
-
-    DgnDbStatus status;
-    catalogItem = componentModel->CaptureSolution(&status, catalogModel, newParameterValues, catalogItemName);
-    ASSERT_TRUE(catalogItem.IsValid()) << Utf8PrintfString("ComponentModel::CaptureSolution failed with error %x", status);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      04/2013
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ComponentModelTest::Client_PlaceInstanceOfSolution(DgnElementId& ieid, Utf8CP targetModelName, DgnElementCR catalogItem)
+void ComponentModelTest::Client_PlaceInstanceOfVariation(DgnElementId& ieid, Utf8StringCR targetModelName, DgnElementCR variation)
     {
     ASSERT_TRUE(m_clientDb.IsValid() && "Caller must have already opened the Client DB");
 
-    PhysicalModelPtr targetModel = getModelByName<PhysicalModel>(*m_clientDb, targetModelName);
+    SpatialModelPtr targetModel = getModelByName<SpatialModel>(*m_clientDb, targetModelName);
     ASSERT_TRUE( targetModel.IsValid() );
 
     DgnDbStatus status;
-    DgnElementCPtr instanceElement = ComponentModel::MakeInstance(&status, *targetModel, catalogItem);
-    ASSERT_TRUE(instanceElement.IsValid()) << Utf8PrintfString("CreateInstanceItem failed with error code %x", status);
+    DgnElementCPtr instanceElement = ComponentDef::MakeInstanceOfVariation(&status, *targetModel, variation, nullptr);
+    ASSERT_TRUE(instanceElement.IsValid()) << Utf8PrintfString("MakeInstanceOfVariation failed with error code %x", status);
 
     ieid = instanceElement->GetElementId();
 
@@ -525,22 +463,24 @@ void ComponentModelTest::Client_PlaceInstanceOfSolution(DgnElementId& ieid, Utf8
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ComponentModelTest::Client_PlaceInstance(DgnElementId& ieid, Utf8CP targetModelName, PhysicalModelR catalogModel, Utf8CP componentName, Utf8CP ciname, bool expectToFindSolution)
+void ComponentModelTest::Client_PlaceInstance(DgnElementId& ieid, Utf8CP targetModelName, SpatialModelR catalogModel, Utf8StringCR componentName, Utf8StringCR variationName, bool expectToFindVariation)
     {
     ASSERT_TRUE(m_clientDb.IsValid() && "Caller must have already opened the Client DB");
 
-    ComponentModelPtr componentModel = getModelByName<ComponentModel>(*m_clientDb, componentName);  // Open the client's imported copy
-    ASSERT_TRUE( componentModel.IsValid() );
-    DgnElementCPtr catalogItem;
-    ModelSolverDef::ParameterSet cmparams;
-    componentModel->QuerySolutionByName(catalogItem, cmparams, ciname);
-    if (!expectToFindSolution)
+
+    ComponentDefPtr cdef = ComponentDef::FromECClass(nullptr, catalogModel.GetDgnDb(), *catalogModel.GetDgnDb().Schemas().GetECClass(TEST_JS_NAMESPACE, componentName.c_str()));
+    ASSERT_TRUE(cdef.IsValid());
+
+    DgnElementCPtr variation = cdef->QueryVariationByName(variationName);
+
+    if (!expectToFindVariation)
         {
-        ASSERT_FALSE(catalogItem.IsValid());
+        ASSERT_FALSE(variation.IsValid());
         return;
         }
-    ASSERT_TRUE(catalogItem.IsValid());
-    Client_PlaceInstanceOfSolution(ieid, targetModelName, *catalogItem);
+
+    ASSERT_TRUE(variation.IsValid());
+    Client_PlaceInstanceOfVariation(ieid, targetModelName, *variation);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -548,7 +488,7 @@ void ComponentModelTest::Client_PlaceInstance(DgnElementId& ieid, Utf8CP targetM
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ComponentModelTest::Client_InsertNonInstanceElement(Utf8CP modelName, Utf8CP code)
     {
-    PhysicalModelPtr targetModel = getModelByName<PhysicalModel>(*m_clientDb, modelName);
+    SpatialModelPtr targetModel = getModelByName<SpatialModel>(*m_clientDb, modelName);
     ASSERT_TRUE( targetModel.IsValid() );
     DgnClassId classid = DgnClassId(m_clientDb->Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_PhysicalElement));
     DgnCategoryId catid = DgnCategory::QueryHighestCategoryId(*m_clientDb);
@@ -563,29 +503,94 @@ void ComponentModelTest::Client_InsertNonInstanceElement(Utf8CP modelName, Utf8C
 void ComponentModelTest::SimulateDeveloper()
     {
     //  Simulate a customizer who creates a component definition 
-    Developer_CreateCMs();
-    Developer_TestWidgetSolver();
-    Developer_TestGadgetSolver();
-    Developer_TestThingSolver();
+    Developer_DefineSchema();   // first, the customizer defines his schema
 
     // Create catalogs of components
-    OpenComponentDb(Db::OpenMode::ReadWrite);
-    AutoCloseComponentDb closeComponentDb(*this);
+    DgnElementId wsln1UniqueInstanceId, wsln1VariationId;
+        {
+        OpenComponentDb(Db::OpenMode::ReadWrite);
+        AutoCloseComponentDb closeComponentDb(*this);
 
-    PhysicalModelPtr catalogModel;
-    ASSERT_EQ( DgnDbStatus::Success , createPhysicalModel(catalogModel, *m_componentDb, DgnModel::CreateModelCode("Catalog")) );
+        //  Test the components
+        SpatialModelPtr tmpModel;
+        createSpatialModel(tmpModel, *m_componentDb, DgnModel::CreateModelCode("tmp"));
 
-    DgnElementCPtr ci;
-    Developer_CreateCapturedSolution(ci, *catalogModel, TEST_WIDGET_COMPONENT_NAME, m_wsln1, "wsln1");
-    Developer_CreateCapturedSolution(ci, *catalogModel, TEST_WIDGET_COMPONENT_NAME, m_wsln3, "wsln3");
-    Developer_CreateCapturedSolution(ci, *catalogModel, TEST_WIDGET_COMPONENT_NAME, m_wsln4, "wsln4");
-    Developer_CreateCapturedSolution(ci, *catalogModel, TEST_WIDGET_COMPONENT_NAME, m_wsln44, "wsln44");
+        DgnElementCPtr inst;
+        m_wsln1.MakeUniqueInstance(inst, *tmpModel, 2);
+        wsln1UniqueInstanceId = inst->GetElementId();
+        m_wsln3.MakeUniqueInstance(inst, *tmpModel, 2);
+        m_wsln4.MakeUniqueInstance(inst, *tmpModel, 2);
+        m_wsln44.MakeUniqueInstance(inst, *tmpModel, 2);
+        m_gsln1.MakeUniqueInstance(inst, *tmpModel, 1);
+        m_nsln1.MakeUniqueInstance(inst, *tmpModel, 1);
+        inst = nullptr;
 
-    Developer_CreateCapturedSolution(ci, *catalogModel, TEST_GADGET_COMPONENT_NAME, m_gsln1, "gsln1");
+        tmpModel->Delete();
 
-    Developer_CreateCapturedSolution(ci, *catalogModel, TEST_THING_COMPONENT_NAME, m_nsln1, "nsln1");
-    
-    ci = nullptr;
+        //  Create catalogs
+
+        SpatialModelPtr catalogModel;
+        ASSERT_EQ( DgnDbStatus::Success , createSpatialModel(catalogModel, *m_componentDb, DgnModel::CreateModelCode("Catalog")) );
+
+        if (true)
+            {
+            ComponentDefPtr thingCdef = ComponentDef::FromECSqlName(nullptr, *m_componentDb, TEST_JS_NAMESPACE "." TEST_THING_COMPONENT_NAME);
+            ASSERT_TRUE(thingCdef.IsValid());
+            bvector<DgnElementId> thingVariations;
+            thingCdef->QueryVariations(thingVariations, catalogModel->GetModelId());
+            ASSERT_EQ(0, thingVariations.size()) << "no variations should exist yet";
+            }
+
+        DgnElementCPtr var;
+        m_wsln1.MakeVariation(var, *catalogModel); 
+        wsln1VariationId = var->GetElementId();
+        m_wsln3.MakeVariation(var, *catalogModel); 
+        m_wsln4.MakeVariation(var, *catalogModel); 
+        m_wsln44.MakeVariation(var, *catalogModel); 
+        m_gsln1.MakeVariation(var, *catalogModel); 
+        m_nsln1.MakeVariation(var, *catalogModel);
+
+        if (true)
+            {
+            ComponentDefPtr thingCdef = ComponentDef::FromECSqlName(nullptr, *m_componentDb, TEST_JS_NAMESPACE "." TEST_THING_COMPONENT_NAME);
+            ASSERT_TRUE(thingCdef.IsValid());
+            bvector<DgnElementId> thingVariations;
+            thingCdef->QueryVariations(thingVariations, catalogModel->GetModelId());
+            ASSERT_EQ(1, thingVariations.size()) << "1 variation of thing should have been created";
+            }
+
+        m_componentDb->SaveChanges();
+        }
+
+    //  Double-check the class of the instances created by the component def 
+        {
+        OpenComponentDb(Db::OpenMode::Readonly);
+        AutoCloseComponentDb closeComponentDb(*this);
+
+        ComponentDefPtr widgetCDef = ComponentDef::FromECSqlName(nullptr, *m_componentDb, TEST_JS_NAMESPACE "." TEST_WIDGET_COMPONENT_NAME);
+        ASSERT_TRUE(widgetCDef.IsValid());
+
+        DgnElementCPtr var = m_componentDb->Elements().GetElement(wsln1VariationId);
+        ASSERT_EQ(&widgetCDef->GetECClass(), var->GetElementClass());
+        }
+
+    //  Exercise QueryComponentDefs
+        {
+        OpenComponentDb(Db::OpenMode::Readonly);
+        AutoCloseComponentDb closeComponentDb(*this);
+
+        DgnClassId widgetClassId = DgnClassId(m_componentDb->Schemas().GetECClassId(TEST_JS_NAMESPACE, TEST_WIDGET_COMPONENT_NAME));
+        DgnClassId gadgetClassId = DgnClassId(m_componentDb->Schemas().GetECClassId(TEST_JS_NAMESPACE, TEST_GADGET_COMPONENT_NAME));
+        DgnClassId  thingClassId = DgnClassId(m_componentDb->Schemas().GetECClassId(TEST_JS_NAMESPACE,  TEST_THING_COMPONENT_NAME));
+
+        bvector<DgnClassId> componentClassIds;
+        ComponentDef::QueryComponentDefs(componentClassIds, *m_componentDb, *m_componentDb->Schemas().GetECClass(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_PhysicalElement));
+        ASSERT_EQ(3, componentClassIds.size());
+        ASSERT_TRUE(std::find(componentClassIds.begin(), componentClassIds.end(), widgetClassId) != componentClassIds.end());
+        ASSERT_TRUE(std::find(componentClassIds.begin(), componentClassIds.end(), gadgetClassId) != componentClassIds.end());
+        ASSERT_TRUE(std::find(componentClassIds.begin(), componentClassIds.end(), thingClassId) != componentClassIds.end());
+        }
+
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -601,18 +606,14 @@ void ComponentModelTest::Client_CheckNestedInstance(DgnElementCR instanceElement
     DgnElementCPtr nestedInstance = m_clientDb->Elements().GetElement(*instanceChildren.begin());
     ASSERT_TRUE(nestedInstance.IsValid());
 
-    DgnElementCPtr nestedSln = ComponentModel::QuerySolutionFromInstance(*nestedInstance); 
-    ASSERT_TRUE(nestedSln.IsValid());
-    
-    DgnModelId nestedSlnComponentModelId;
-    ModelSolverDef::ParameterSet nestedslnparams;
-    ASSERT_EQ(DgnDbStatus::Success, ComponentModel::QuerySolutionInfo(nestedSlnComponentModelId, nestedslnparams, *nestedSln));
-    
-    ASSERT_EQ(ComponentModel::FindModelByName(*m_clientDb, expectedChildComponentName)->GetModelId(), nestedSlnComponentModelId);
+    ComponentDefPtr cdef = ComponentDef::FromECClass(nullptr, nestedInstance->GetDgnDb(), *nestedInstance->GetElementClass());
+    ASSERT_TRUE(cdef.IsValid());
+
+    ASSERT_STREQ(expectedChildComponentName, cdef->GetName().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
-* Simulate a client who receives a ComponentModel and then places instances of solutions to it.
+* Simulate a client who imports a ComponentDef and then places instances of solutions to it.
 * @bsimethod                                    Sam.Wilson                      04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ComponentModelTest::SimulateClient()
@@ -623,27 +624,46 @@ void ComponentModelTest::SimulateClient()
         {
         AutoCloseClientDb closeClientDbAtEnd(*this);
         //  Create the target model in the client. (Do this first, so that the first imported CM's will get a model id other than 1. Hopefully, that will help us catch more bugs.)
-        PhysicalModelPtr targetModel;
-        ASSERT_EQ( DgnDbStatus::Success , createPhysicalModel(targetModel, *m_clientDb, DgnModel::CreateModelCode("Instances")) );
+        SpatialModelPtr targetModel;
+        ASSERT_EQ( DgnDbStatus::Success , createSpatialModel(targetModel, *m_clientDb, DgnModel::CreateModelCode("Instances")) );
 
         //  Add a few unrelated elements to the target model. That way, the first placed CM instance will get an element id other than 1. Hopefully, that will help us catch more bugs.
         for (int i=0; i<10; ++i)
             Client_InsertNonInstanceElement("Instances");
 
-        //  Once per component, import the component model
-        Client_ImportCM(TEST_WIDGET_COMPONENT_NAME);
+        //  Once per component, import the component def
+        Client_ImportComponentDef(TEST_WIDGET_COMPONENT_NAME);
 
-        PhysicalModelPtr catalogModel = getModelByName<PhysicalModel>(*m_clientDb, "Catalog");
+        //  Exercise QueryComponentDefs
+            {
+            // Note that when we import the schema, all 3 ecclasses are imported. Therefore, we find 3 components, not just one.
+            // We have not yet imported the variations or the models of the other components, however.
+            OpenComponentDb(Db::OpenMode::Readonly);
+            AutoCloseComponentDb closeComponentDb(*this);
+
+            DgnClassId widgetClassId = DgnClassId(m_componentDb->Schemas().GetECClassId(TEST_JS_NAMESPACE, TEST_WIDGET_COMPONENT_NAME));
+            DgnClassId gadgetClassId = DgnClassId(m_componentDb->Schemas().GetECClassId(TEST_JS_NAMESPACE, TEST_GADGET_COMPONENT_NAME));
+            DgnClassId  thingClassId = DgnClassId(m_componentDb->Schemas().GetECClassId(TEST_JS_NAMESPACE,  TEST_THING_COMPONENT_NAME));
+
+            bvector<DgnClassId> componentClassIds;
+            ComponentDef::QueryComponentDefs(componentClassIds, *m_componentDb, *m_componentDb->Schemas().GetECClass(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_PhysicalElement));
+            ASSERT_EQ(3, componentClassIds.size());
+            ASSERT_TRUE(std::find(componentClassIds.begin(), componentClassIds.end(), widgetClassId) != componentClassIds.end());
+            ASSERT_TRUE(std::find(componentClassIds.begin(), componentClassIds.end(), gadgetClassId) != componentClassIds.end());
+            ASSERT_TRUE(std::find(componentClassIds.begin(), componentClassIds.end(), thingClassId)  != componentClassIds.end());
+            }
+
+        SpatialModelPtr catalogModel = getModelByName<SpatialModel>(*m_clientDb, "Catalog");
         ASSERT_TRUE( catalogModel.IsValid() ) << "importing component should also import its catalog";
 
         // Now start placing instances of Widgets
-        Client_PlaceInstance(w1, "Instances", *catalogModel, TEST_WIDGET_COMPONENT_NAME, "wsln1", true);
-        Client_PlaceInstance(w2, "Instances", *catalogModel, TEST_WIDGET_COMPONENT_NAME, "wsln1", true);
+        Client_PlaceInstance(w1, "Instances", *catalogModel, TEST_WIDGET_COMPONENT_NAME, m_wsln1.m_name, true);
+        Client_PlaceInstance(w2, "Instances", *catalogModel, TEST_WIDGET_COMPONENT_NAME, m_wsln1.m_name, true);
         ASSERT_TRUE( w1.IsValid() );
         ASSERT_TRUE( w2.IsValid() );
         ASSERT_NE( w1.GetValue() , w2.GetValue() );
-        Client_CheckComponentInstance(w1, 2, m_wsln1["X"].asDouble(), m_wsln1["Y"].asDouble(), m_wsln1["Z"].asDouble());
-        Client_CheckComponentInstance(w2, 2, m_wsln1["X"].asDouble(), m_wsln1["Y"].asDouble(), m_wsln1["Z"].asDouble()); // 2nd instance of same solution should have the same instance geometry
+        Client_CheckComponentInstance(w1, 2, m_wsln1);
+        Client_CheckComponentInstance(w2, 2, m_wsln1); // 2nd instance of same solution should have the same instance geometry
     
         DgnElementId noidexpected;
         Client_PlaceInstance(noidexpected, "Instances", *catalogModel, TEST_WIDGET_COMPONENT_NAME, "no_such_solution", false);
@@ -653,18 +673,18 @@ void ComponentModelTest::SimulateClient()
         for (int i=0; i<5; ++i)
             Client_InsertNonInstanceElement("Instances");
 
-        Client_PlaceInstance(w3, "Instances", *catalogModel, TEST_WIDGET_COMPONENT_NAME, "wsln3", true);
+        Client_PlaceInstance(w3, "Instances", *catalogModel, TEST_WIDGET_COMPONENT_NAME, m_wsln3.m_name, true);
     
-        Client_CheckComponentInstance(w3, 2, m_wsln3["X"].asDouble(), m_wsln3["Y"].asDouble(), m_wsln3["Z"].asDouble());
-        Client_CheckComponentInstance(w1, 2, m_wsln1["X"].asDouble(), m_wsln1["Y"].asDouble(), m_wsln1["Z"].asDouble());  // new instance of new solution should not affect existing instances of other solutions
+        Client_CheckComponentInstance(w3, 2, m_wsln3);
+        Client_CheckComponentInstance(w1, 2, m_wsln1);  // new instance of new solution should not affect existing instances of other solutions
 
         //  new instance of new solution should not affect existing instances of other solutions
         if (true)
             {
             DgnElementId w1_second_time;
-            Client_PlaceInstance(w1_second_time, "Instances", *catalogModel, TEST_WIDGET_COMPONENT_NAME, "wsln1", true);
+            Client_PlaceInstance(w1_second_time, "Instances", *catalogModel, TEST_WIDGET_COMPONENT_NAME, m_wsln1.m_name, true);
             ASSERT_TRUE(w1_second_time.IsValid());
-            Client_CheckComponentInstance(w1_second_time, 2, m_wsln1["X"].asDouble(), m_wsln1["Y"].asDouble(), m_wsln1["Z"].asDouble());  // new instance of new solution should not affect existing instances of other solutions
+            Client_CheckComponentInstance(w1_second_time, 2, m_wsln1);  // new instance of new solution should not affect existing instances of other solutions
             }
 
         // Just for a little variety, close the client Db and re-open it
@@ -678,34 +698,35 @@ void ComponentModelTest::SimulateClient()
     OpenClientDb(Db::OpenMode::ReadWrite);
         {
         AutoCloseClientDb closeClientDbAtEnd(*this);
-        PhysicalModelPtr catalogModel = getModelByName<PhysicalModel>(*m_clientDb, "Catalog");
+        SpatialModelPtr catalogModel = getModelByName<SpatialModel>(*m_clientDb, "Catalog");
 
         DgnElementId w4;
-        Client_PlaceInstance(w4, "Instances", *catalogModel, TEST_WIDGET_COMPONENT_NAME, "wsln4", true);
+        Client_PlaceInstance(w4, "Instances", *catalogModel, TEST_WIDGET_COMPONENT_NAME, m_wsln4.m_name, true);
         ASSERT_TRUE(w4.IsValid());
 
-        Client_CheckComponentInstance(w4, 2, m_wsln4["X"].asDouble(), m_wsln4["Y"].asDouble(), m_wsln4["Z"].asDouble());
-        Client_CheckComponentInstance(w1, 2, m_wsln1["X"].asDouble(), m_wsln1["Y"].asDouble(), m_wsln1["Z"].asDouble());  // new instance of new solution should not affect existing instances of other solutions
+        Client_CheckComponentInstance(w4, 2, m_wsln4);
+        Client_CheckComponentInstance(w1, 2, m_wsln1);  // new instance of new solution should not affect existing instances of other solutions
 
         // Now start placing instances of Gadgets
-        Client_ImportCM(TEST_GADGET_COMPONENT_NAME);
+        Client_ImportComponentDef(TEST_GADGET_COMPONENT_NAME);
+
         DgnElementId g1, g2;
-        Client_PlaceInstance(g1, "Instances", *catalogModel, TEST_GADGET_COMPONENT_NAME, "gsln1", true);
-        Client_PlaceInstance(g2, "Instances", *catalogModel, TEST_GADGET_COMPONENT_NAME, "gsln1", true);
+        Client_PlaceInstance(g1, "Instances", *catalogModel, TEST_GADGET_COMPONENT_NAME, m_gsln1.m_name, true);
+        Client_PlaceInstance(g2, "Instances", *catalogModel, TEST_GADGET_COMPONENT_NAME, m_gsln1.m_name, true);
         ASSERT_TRUE(g1.IsValid());
         ASSERT_TRUE(g2.IsValid());
 
-        Client_CheckComponentInstance(g1, 1, m_gsln1["Q"].asDouble(), m_gsln1["W"].asDouble(), m_gsln1["R"].asDouble());
-        Client_CheckComponentInstance(g2, 1, m_gsln1["Q"].asDouble(), m_gsln1["W"].asDouble(), m_gsln1["R"].asDouble());
+        Client_CheckComponentInstance(g1, 1, m_gsln1);
+        Client_CheckComponentInstance(g2, 1, m_gsln1);
 
         //  And place another Widget
         DgnElementId w44;
-        Client_PlaceInstance(w44, "Instances", *catalogModel, TEST_WIDGET_COMPONENT_NAME, "wsln44", true);
+        Client_PlaceInstance(w44, "Instances", *catalogModel, TEST_WIDGET_COMPONENT_NAME, m_wsln44.m_name, true);
         ASSERT_TRUE(w44.IsValid());
 
-        Client_CheckComponentInstance(w3, 2, m_wsln3["X"].asDouble(), m_wsln3["Y"].asDouble(), m_wsln3["Z"].asDouble());
-        Client_CheckComponentInstance(w1, 2, m_wsln1["X"].asDouble(), m_wsln1["Y"].asDouble(), m_wsln1["Z"].asDouble());
-        Client_CheckComponentInstance(g1, 1, m_gsln1["Q"].asDouble(), m_gsln1["W"].asDouble(), m_gsln1["R"].asDouble());
+        Client_CheckComponentInstance(w3, 2, m_wsln3);
+        Client_CheckComponentInstance(w1, 2, m_wsln1);
+        Client_CheckComponentInstance(g1, 1, m_gsln1);
         }
 
     }
@@ -739,28 +760,29 @@ TEST_F(ComponentModelTest, SimulateDeveloperAndClientWithNestingSingleton)
 
     SimulateDeveloper();
 
+    //  Create the target model in the client. (Do this first, so that the first imported CM's will get a model id other than 1. Hopefully, that will help us catch more bugs.)
+    if(true)
+        {
+        OpenClientDb(Db::OpenMode::ReadWrite);
+        AutoCloseClientDb closeClientDbAtEnd(*this);
+        
+        Client_ImportComponentDef(TEST_GADGET_COMPONENT_NAME);
+        }
+
     OpenClientDb(Db::OpenMode::ReadWrite);
     AutoCloseClientDb closeClientDbAtEnd(*this);
 
-    //  Create the target model in the client. (Do this first, so that the first imported CM's will get a model id other than 1. Hopefully, that will help us catch more bugs.)
-    PhysicalModelPtr targetModel;
-    ASSERT_EQ( DgnDbStatus::Success , createPhysicalModel(targetModel, *m_clientDb, DgnModel::CreateModelCode("Instances")) );
+    Client_ImportComponentDef(TEST_THING_COMPONENT_NAME);
 
-    Client_ImportCM(TEST_GADGET_COMPONENT_NAME);
-    Client_ImportCM(TEST_THING_COMPONENT_NAME);
+    SpatialModelPtr targetModel;
+    ASSERT_EQ( DgnDbStatus::Success , createSpatialModel(targetModel, *m_clientDb, DgnModel::CreateModelCode("Instances")) );
 
-    ComponentModelPtr nestingComponentModel = getModelByName<ComponentModel>(*m_clientDb, TEST_THING_COMPONENT_NAME);  // Open the client's imported copy
-    ASSERT_TRUE( nestingComponentModel.IsValid() );
+    VariationSpec nparms = m_nsln1;
+    nparms.m_propValues[0].m_value.SetDouble(9999);
 
-    DgnDbStatus status;
-    ModelSolverDef::ParameterSet params = nestingComponentModel->GetSolver().GetParameters(); // get a copy of the component's parameters
-    params.GetParameterP("A")->SetValue(ECN::ECValue(1));   // set some new values ...
-    params.GetParameterP("B")->SetValue(ECN::ECValue(2));
-    params.GetParameterP("C")->SetValue(ECN::ECValue(3));
-
-    DgnElementCPtr instanceElement = nestingComponentModel->MakeInstance(&status, *targetModel, "", params); // create a unique/singleton instance with these parameters
-    ASSERT_TRUE(instanceElement.IsValid()) << Utf8PrintfString("CreateInstanceItem failed with error code %x", status);
-    Client_CheckComponentInstance(instanceElement->GetElementId(), 1, params.GetParameterP("A")->GetValue().GetDouble(), params.GetParameterP("B")->GetValue().GetDouble(), params.GetParameterP("C")->GetValue().GetDouble());
+    DgnElementCPtr instanceElement;
+    nparms.MakeUniqueInstance(instanceElement, *targetModel, 1);
+    ASSERT_TRUE(instanceElement.IsValid());
 
     Client_CheckNestedInstance(*instanceElement, TEST_GADGET_COMPONENT_NAME, 1);
 
@@ -780,30 +802,87 @@ TEST_F(ComponentModelTest, SimulateDeveloperAndClientWithNesting)
     m_componentSchemaFileName.AppendToPath(TEST_JS_NAMESPACE_W L"0.0.ECSchema.xml");
 
     SimulateDeveloper();
+    
+    if (true)
+        {
+        OpenClientDb(Db::OpenMode::ReadWrite);
+        AutoCloseClientDb closeClientDbAtEnd(*this);
+
+        Client_ImportComponentDef(TEST_THING_COMPONENT_NAME);
+
+        ComponentDefPtr thingCdef = ComponentDef::FromECSqlName(nullptr, *m_clientDb, TEST_JS_NAMESPACE "." TEST_THING_COMPONENT_NAME);
+        ASSERT_TRUE(thingCdef.IsValid());
+        }
 
     OpenClientDb(Db::OpenMode::ReadWrite);
     AutoCloseClientDb closeClientDbAtEnd(*this);
 
-    //  Create the target model in the client. (Do this first, so that the first imported CM's will get a model id other than 1. Hopefully, that will help us catch more bugs.)
-    PhysicalModelPtr targetModel;
-    ASSERT_EQ( DgnDbStatus::Success , createPhysicalModel(targetModel, *m_clientDb, DgnModel::CreateModelCode("Instances")) );
+    Client_ImportComponentDef(TEST_GADGET_COMPONENT_NAME);
 
-    Client_ImportCM(TEST_GADGET_COMPONENT_NAME);
-    Client_ImportCM(TEST_THING_COMPONENT_NAME);
+    SpatialModelPtr targetModel;
+    ASSERT_EQ( DgnDbStatus::Success , createSpatialModel(targetModel, *m_clientDb, DgnModel::CreateModelCode("Instances")) );
 
-    ComponentModelPtr nestingComponentModel = getModelByName<ComponentModel>(*m_clientDb, TEST_THING_COMPONENT_NAME);  // Open the client's imported copy
-    ASSERT_TRUE( nestingComponentModel.IsValid() );
+    DgnElementCPtr instanceElement;
+    m_nsln1.MakeUniqueInstance(instanceElement, *targetModel, 1);
+    ASSERT_TRUE(instanceElement.IsValid());
 
-    PhysicalModelPtr catalogModel = getModelByName<PhysicalModel>(*m_clientDb, "Catalog");
-
-    DgnElementId n1;
-    Client_PlaceInstance(n1, "Instances", *catalogModel, TEST_THING_COMPONENT_NAME, "nsln1", true);
-    ASSERT_TRUE(n1.IsValid());
-
-    Client_CheckComponentInstance(n1, 1, m_nsln1["A"].asDouble(), m_nsln1["B"].asDouble(), m_nsln1["C"].asDouble());
-
-    Client_CheckNestedInstance(*m_clientDb->Elements().GetElement(n1), TEST_GADGET_COMPONENT_NAME, 1);
+    Client_CheckNestedInstance(*instanceElement, TEST_GADGET_COMPONENT_NAME, 1);
     }
 
+//#ifdef COMMENT_OUT // *** SchemaImportTest, SelectAfterImport will fail with an assertion failure in ECDbMap::TryGetClassMap
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+static ECN::ECClassCP generateECClass(DgnDbR db, ECN::ECSchemaR schema, Utf8CP className, ECN::ECClassCR baseClass)
+    {
+    schema.AddReferencedSchema(const_cast<ECN::ECSchemaR>(baseClass.GetSchema()));
+
+    ECN::ECEntityClassP ecclass;      
+    if (ECN::ECObjectsStatus::Success != schema.CreateEntityClass(ecclass, className))
+        return nullptr;
+
+    if (ECN::ECObjectsStatus::Success != ecclass->AddBaseClass(baseClass))
+        return nullptr;
+
+    ECN::PrimitiveECPropertyP ecprop;
+    if (ECN::ECObjectsStatus::Success != ecclass->CreatePrimitiveProperty(ecprop, "X"))
+        return nullptr;
+
+    ecprop->SetType(ECN::PRIMITIVETYPE_Double);
+
+    return ecclass;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      12/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST(SchemaImportTest, SelectAfterImport)
+    {
+    Dgn::ScopedDgnHost host;
+
+    BeFileName componentDbName = copyDb(L"DgnDb/3dMetricGeneral.idgndb", L"ComponentModelTest_ImportTwoInARow.dgndb");
+    DgnDbPtr db;
+    openDb(db, componentDbName, DgnDb::OpenMode::ReadWrite);
+
+    if (true)
+        {
+        ECN::ECSchemaPtr schema;
+        ASSERT_EQ( ECN::ECObjectsStatus::Success , ECN::ECSchema::CreateSchema(schema, "ImportTwoInARow", 0, 0) );
+        schema->SetNamespacePrefix("tir");
+
+        ECN::ECClassCP baseClass = db->Schemas().GetECClass(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_PhysicalElement);
+
+        ASSERT_TRUE( nullptr != generateECClass(*db, *schema, "C1", *baseClass) );
+
+        ComponentDefCreator::ImportSchema(*db, *schema, false);
+        }
+    db->ClearECDbCache();
+    EC::ECSqlStatement selectC1after;
+    selectC1after.Prepare(*db, "SELECT ECInstanceId FROM tir.C1");
+    selectC1after.Step();
+
+    db->SaveChanges();
+    }
+//#endif
 
 #endif //ndef BENTLEYCONFIG_NO_JAVASCRIPT

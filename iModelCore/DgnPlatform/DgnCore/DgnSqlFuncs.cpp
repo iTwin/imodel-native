@@ -24,7 +24,7 @@ DgnDb defines types and built-in functions that you can use in SQL statements.
 //  They are here to represent the SQL extension functions, so that Doyxgen will generate doc for them.
 
 //! A point in the DgnDb's Cartesian coordinate system. All coordinates are in meters. If the point represents a location in a 2D model, then the z-coordinate will be zero.
-//! @see DGN_point_value, DGN_point_distance, DGN_point_min_distance_to_bbox 
+//! @see DGN_point_value, DGN_point_distance, DGN_point_min_distance_to_bbox
 struct DGN_point
 {
 protected:
@@ -71,6 +71,47 @@ protected:
 };
 // __PUBLISH_SECTION_END__
 #endif
+
+/*---------------------------------------------------------------------------------**//**
+* @bsistruct                                                    Paul.Connelly   12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+struct BlobFunction : ScalarFunction
+{
+protected:
+    BlobFunction(Utf8CP name, int nArgs) : ScalarFunction(name, nArgs, DbValueType::BlobVal) { }
+
+    DPoint3d const& ToPoint(DbValue& value) const { return *reinterpret_cast<DPoint3d const*>(value.GetValueBlob()); }
+    YawPitchRollAngles const& ToAngles(DbValue& value) const { return *reinterpret_cast<YawPitchRollAngles const*>(value.GetValueBlob()); }
+    ElementAlignedBox3d const& ToBBox(DbValue& value) const { return *reinterpret_cast<ElementAlignedBox3d const*>(value.GetValueBlob()); }
+};
+
+/*---------------------------------------------------------------------------------**//**
+* @bsistruct                                                    Paul.Connelly   12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+struct DGN_point : BlobFunction
+{
+    DGN_point() : BlobFunction("DGN_point", 3) { }
+
+    virtual void _ComputeScalar(Context& ctx, int nArgs, DbValue* args) override
+        {
+        DPoint3d pt = DPoint3d::FromXYZ(args[0].GetValueDouble(), args[1].GetValueDouble(), args[2].GetValueDouble());
+        ctx.SetResultBlob(&pt, sizeof(pt));
+        }
+};
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+struct DGN_placement : BlobFunction
+{
+    DGN_placement() : BlobFunction("DGN_placement", 3) { }
+
+    virtual void _ComputeScalar(Context& ctx, int nArgs, DbValue* args) override
+        {
+        Placement3d placement(ToPoint(args[0]), ToAngles(args[1]), ToBBox(args[2]));
+        ctx.SetResultBlob(&placement, sizeof(placement));
+        }
+};
 
 //=======================================================================================
 // @bsiclass                                                    Keith.Bentley   04/15
@@ -845,7 +886,9 @@ void DgnBaseDomain::_OnDgnDbOpened(DgnDbR db) const
                           new DGN_placement_origin,
                           new DGN_point_distance,
                           new DGN_point_min_distance_to_bbox,
-                          new DGN_point_value
+                          new DGN_point_value,
+                          new DGN_point,
+                          new DGN_placement
                           };
 
     static RTreeMatchFunction* s_matchFuncs[] = 

@@ -35,25 +35,26 @@
 #define DGN_CLASSNAME_ElementAspect         "ElementAspect"
 #define DGN_CLASSNAME_ElementDescription    "ElementDescription"
 #define DGN_CLASSNAME_ElementExternalKey    "ElementExternalKey"
-#define DGN_CLASSNAME_ElementGeom           "ElementGeom"
 #define DGN_CLASSNAME_ElementMultiAspect    "ElementMultiAspect"
+#define DGN_CLASSNAME_GeometricModel        "GeometricModel"
+#define DGN_CLASSNAME_GeometrySource        "GeometrySource"
 #define DGN_CLASSNAME_GeomPart              "GeomPart"
 #define DGN_CLASSNAME_LineStyle             "LineStyle"
 #define DGN_CLASSNAME_Link                  "Link"
 #define DGN_CLASSNAME_LocalAuthority        "LocalAuthority"
 #define DGN_CLASSNAME_Model                 "Model"
 #define DGN_CLASSNAME_Model2d               "Model2d"
+#define DGN_CLASSNAME_Model3d               "Model3d"
 #define DGN_CLASSNAME_VolumeElement         "VolumeElement"
 #define DGN_CLASSNAME_NamespaceAuthority    "NamespaceAuthority"
 #define DGN_CLASSNAME_PhysicalElement       "PhysicalElement"
-#define DGN_CLASSNAME_PhysicalModel         "PhysicalModel"
-#define DGN_CLASSNAME_PhysicalView          "PhysicalView"
-#define DGN_CLASSNAME_PlanarPhysicalModel   "PlanarPhysicalModel"
+#define DGN_CLASSNAME_SpatialModel          "SpatialModel"
 #define DGN_CLASSNAME_SectionDrawingModel   "SectionDrawingModel"
 #define DGN_CLASSNAME_SheetElement          "SheetElement"
 #define DGN_CLASSNAME_SheetModel            "SheetModel"
 #define DGN_CLASSNAME_SpatialElement        "SpatialElement"
 #define DGN_CLASSNAME_SpatialGroupElement   "SpatialGroupElement"
+#define DGN_CLASSNAME_SpatialRedlineModel   "SpatialRedlineModel"
 #define DGN_CLASSNAME_SystemElement         "SystemElement"
 #define DGN_CLASSNAME_SystemModel           "SystemModel"
 #define DGN_CLASSNAME_TextAnnotationSeed    "TextAnnotationSeed"
@@ -72,8 +73,9 @@
 // ECRelationshipClass names (combine with DGN_SCHEMA macro for use in ECSql)
 //-----------------------------------------------------------------------------------------
 #define DGN_RELNAME_ElementDrivesElement        "ElementDrivesElement"
-#define DGN_RELNAME_ElementGeomUsesParts        "ElementGeomUsesParts"
+#define DGN_RELNAME_ElementUsesGeomParts        "ElementUsesGeomParts"
 #define DGN_RELNAME_ElementGroupsMembers        "ElementGroupsMembers"
+#define DGN_RELNAME_ElementOwnsChildElements    "ElementOwnsChildElements"
 #define DGN_RELNAME_SolutionOfComponent         "SolutionOfComponent"
 #define DGN_RELNAME_InstantiationOfTemplate     "InstantiationOfTemplate"
 #define DGN_RELNAME_ElementHasLinks             "ElementHasLinks"
@@ -84,6 +86,7 @@
 #include "DgnLink.h"
 #include "DgnFont.h"
 #include "DgnCoreEvent.h"
+#include "ECSqlClassParams.h"
 #include <Bentley/HeapZone.h>
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
@@ -198,10 +201,12 @@ private:
     friend struct DgnModel;
     friend struct dgn_TxnTable::Model;
     typedef bmap<DgnModelId,DgnModelPtr> T_DgnModelMap;
+    typedef bmap<DgnClassId, ECSqlClassInfo> T_ClassInfoMap;
 
     T_DgnModelMap   m_models;
     QvCache*        m_qvCache;
     bmap<DgnModelId,uint64_t> m_modelDependencyIndices;
+    T_ClassInfoMap  m_classInfos;
 
     void ClearLoaded();
     DgnModelPtr LoadDgnModel(DgnModelId modelId);
@@ -209,6 +214,11 @@ private:
     void Empty() {ClearLoaded(); FreeQvCache();}
     void AddLoadedModel(DgnModelR);
     void DropLoadedModel(DgnModelR);
+
+    ECSqlClassInfo const& FindClassInfo(DgnModelR model);
+    BeSQLite::EC::CachedECSqlStatementPtr GetSelectStmt(DgnModelR model);
+    BeSQLite::EC::CachedECSqlStatementPtr GetInsertStmt(DgnModelR model);
+    BeSQLite::EC::CachedECSqlStatementPtr GetUpdateStmt(DgnModelR model);
 
     DgnModels(DgnDbR db) : DgnDbTable(db) {m_qvCache= nullptr;}
     ~DgnModels() {} // don't call empty on destructor, Elements() has already been deleted.
@@ -367,6 +377,12 @@ public:
 
     //! Query for a DgnGeomPartId by code.
     DGNPLATFORM_EXPORT DgnGeomPartId QueryGeomPartId(Utf8CP code);
+
+    //! Query the range of a DgnGeomPart by ID.
+    //! @param[out]     range      On successful return, holds the DgnGeomPart's range
+    //! @param[in]      geomPartId The ID of the DgnGeomPart to query
+    //! @return SUCCESS if the range was retrieved, or else ERROR if e.g. no DgnGeomPart exists with the specified ID
+    DGNPLATFORM_EXPORT BentleyStatus QueryGeomPartRange(DRange3dR range, DgnGeomPartId geomPartId);
 
     //! Insert a geometry part into the DgnDb.
     //! @param[in] geomPart geometry part to insert

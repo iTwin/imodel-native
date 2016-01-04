@@ -248,7 +248,7 @@ virtual StatusInt    /*AuxCoordSys::*/_SetFlags (ACSFlags flags) override
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  02/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual StatusInt   /*AuxCoordSys::*/_CompleteSetupFromViewController (PhysicalViewControllerCP info)
+virtual StatusInt   /*AuxCoordSys::*/_CompleteSetupFromViewController (SpatialViewControllerCP info)
     {
     m_attachedToView = true;
 
@@ -1234,7 +1234,7 @@ IACSManager::IACSManager ()
 +---------------+---------------+---------------+---------------+---------------+------*/
 IAuxCoordSysP   IACSManager::GetActive (DgnViewportR vp)
     {
-    PhysicalViewControllerCP viewController = vp.GetPhysicalViewControllerCP ();
+    SpatialViewControllerCP viewController = vp.GetSpatialViewControllerCP ();
     if (NULL == viewController)
         return NULL;
 
@@ -1274,7 +1274,7 @@ IAuxCoordSysP   IACSManager::GetActive (DgnViewportR vp)
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt       IACSManager::SetActive (IAuxCoordSysP auxCoordSys, DgnViewportR vp)
     {
-    PhysicalViewControllerP viewController = vp.GetPhysicalViewControllerP();
+    SpatialViewControllerP viewController = vp.GetSpatialViewControllerP();
     if (NULL == viewController)
         return ERROR;
 
@@ -1455,7 +1455,7 @@ int             extenderData[1];
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   01/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            IACSManager::ReadSettings (PhysicalViewControllerP viewController)
+void            IACSManager::ReadSettings (SpatialViewControllerP viewController)
     {
 #ifdef DGN_IMPORTER_REORG_WIP
     // NEEDSWORK...
@@ -1465,7 +1465,7 @@ void            IACSManager::ReadSettings (PhysicalViewControllerP viewControlle
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   01/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-void IACSManager::SaveSettings (PhysicalViewControllerCP viewController)
+void IACSManager::SaveSettings (SpatialViewControllerCP viewController)
     {
 #ifdef DGN_IMPORTER_REORG_WIP
     XAttributeChangeSet* changeSet;

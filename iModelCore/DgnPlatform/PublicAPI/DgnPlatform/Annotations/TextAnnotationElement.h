@@ -18,12 +18,12 @@ DGNPLATFORM_TYPEDEFS(TextAnnotationData);
 DGNPLATFORM_REF_COUNTED_PTR(TextAnnotationData);
 DGNPLATFORM_TYPEDEFS(TextAnnotationElement);
 DGNPLATFORM_REF_COUNTED_PTR(TextAnnotationElement);
-DGNPLATFORM_TYPEDEFS(PhysicalTextAnnotationElement);
-DGNPLATFORM_REF_COUNTED_PTR(PhysicalTextAnnotationElement);
+DGNPLATFORM_TYPEDEFS(SpatialTextAnnotationElement);
+DGNPLATFORM_REF_COUNTED_PTR(SpatialTextAnnotationElement);
 
 #define DGN_CLASSNAME_TextAnnotationData "TextAnnotationData"
 #define DGN_CLASSNAME_TextAnnotationElement "TextAnnotationElement"
-#define DGN_CLASSNAME_PhysicalTextAnnotationElement "PhysicalTextAnnotationElement"
+#define DGN_CLASSNAME_SpatialTextAnnotationElement "SpatialTextAnnotationElement"
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
@@ -130,9 +130,9 @@ namespace dgn_ElementHandler
 //=======================================================================================
 // @bsiclass                                                    Jeff.Marker     09/2015
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE PhysicalTextAnnotationElement : PhysicalElement
+struct EXPORT_VTABLE_ATTRIBUTE SpatialTextAnnotationElement : SpatialElement
 {
-    DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_PhysicalTextAnnotationElement, PhysicalElement);
+    DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_SpatialTextAnnotationElement, SpatialElement);
 
 protected:
     virtual bool _DrawHit(HitDetailCR, ViewContextR) const override { return false; } // Don't flash text box...
@@ -144,20 +144,20 @@ protected:
     DGNPLATFORM_EXPORT TextAnnotationDataR GetItemR();
 
 public:
-    static ECN::ECClassId QueryECClassId(DgnDbR db) { return db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_PhysicalTextAnnotationElement); }
+    static ECN::ECClassId QueryECClassId(DgnDbR db) { return db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_SpatialTextAnnotationElement); }
     static ECN::ECClassCP QueryECClass(DgnDbR db) { return db.Schemas().GetECClass(QueryECClassId(db)); }
     static DgnClassId QueryDgnClassId(DgnDbR db) { return DgnClassId(QueryECClassId(db)); }
-    static PhysicalTextAnnotationElementCPtr Get(DgnDbR db, DgnElementId id) { return db.Elements().Get<PhysicalTextAnnotationElement>(id); }
-    static PhysicalTextAnnotationElementPtr GetForEdit(DgnDbR db, DgnElementId id) { return db.Elements().GetForEdit<PhysicalTextAnnotationElement>(id); }
+    static SpatialTextAnnotationElementCPtr Get(DgnDbR db, DgnElementId id) { return db.Elements().Get<SpatialTextAnnotationElement>(id); }
+    static SpatialTextAnnotationElementPtr GetForEdit(DgnDbR db, DgnElementId id) { return db.Elements().GetForEdit<SpatialTextAnnotationElement>(id); }
 
-    explicit PhysicalTextAnnotationElement(CreateParams const& params) : T_Super(params) {}
-    static PhysicalTextAnnotationElementPtr Create(CreateParams const& params) { return new PhysicalTextAnnotationElement(params); }
+    explicit SpatialTextAnnotationElement(CreateParams const& params) : T_Super(params) {}
+    static SpatialTextAnnotationElementPtr Create(CreateParams const& params) { return new SpatialTextAnnotationElement(params); }
     
     TextAnnotationCP GetAnnotation() const { TextAnnotationDataCP item = GetItemCP(); return item ? item->GetAnnotation() : nullptr; }
     void SetAnnotation(TextAnnotationCP value) { GetItemR().SetAnnotation(value); }
     
-    PhysicalTextAnnotationElementCPtr Insert() { return GetDgnDb().Elements().Insert<PhysicalTextAnnotationElement>(*this); }
-    PhysicalTextAnnotationElementCPtr Update() { return GetDgnDb().Elements().Update<PhysicalTextAnnotationElement>(*this); }
+    SpatialTextAnnotationElementCPtr Insert() { return GetDgnDb().Elements().Insert<SpatialTextAnnotationElement>(*this); }
+    SpatialTextAnnotationElementCPtr Update() { return GetDgnDb().Elements().Update<SpatialTextAnnotationElement>(*this); }
     DgnDbStatus Delete() { return GetDgnDb().Elements().Delete(*this); }
 };
 
@@ -166,9 +166,10 @@ namespace dgn_ElementHandler
     //=======================================================================================
     // @bsiclass                                                    Jeff.Marker     09/2015
     //=======================================================================================
-    struct PhysicalTextAnnotationHandler : Physical
+    struct SpatialTextAnnotationHandler : Element
     {
-        ELEMENTHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_PhysicalTextAnnotationElement, PhysicalTextAnnotationElement, PhysicalTextAnnotationHandler, Physical, DGNPLATFORM_EXPORT);
+        ELEMENTHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_SpatialTextAnnotationElement, SpatialTextAnnotationElement, SpatialTextAnnotationHandler, Element, DGNPLATFORM_EXPORT);
+        virtual void _GetClassParams(ECSqlClassParamsR params) override { T_Super::_GetClassParams(params); ElementGeom3d::AddClassParams(params); }
     };
 }
 
