@@ -180,6 +180,7 @@ DgnDbStatus PerformanceElement1::_BindInsertParams (BeSQLite::EC::ECSqlStatement
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus PerformanceElement1::_ReadSelectParams (ECSqlStatement& stmt, ECSqlClassParams const& params)
     {
+    EXPECT_EQ (DgnDbStatus::Success, T_Super::_ReadSelectParams (stmt, params));
     EXPECT_EQ (0, strcmp (stmt.GetValueText (params.GetSelectIndex ("Prop1_1")), "Element1 - InitValue"));
     EXPECT_EQ (10000000, stmt.GetValueInt64 (params.GetSelectIndex ("Prop1_2")));
     EXPECT_EQ (-3.1415, stmt.GetValueDouble (params.GetSelectIndex ("Prop1_3")));
@@ -534,7 +535,13 @@ void PerformanceElementsCRUDTestFixture::CreateElements (int numInstances, Utf8C
     DgnCategoryId catid = DgnCategory::QueryHighestCategoryId (*m_db);
     DgnClassId classId = DgnClassId (m_db->Schemas ().GetECClassId (ELEMENT_PERFORMANCE_TEST_SCHEMA_NAME, className));
 
+#ifdef PERF_ELEM_CRUD_WANT_GEOM
+    bool addGeometry = true;
+#else
+    // Not clear why it's useful to profile geometric elements without geometry.
     bool addGeometry = false;
+#endif
+
     bool addMultiAspect = false;
     bool addDescription = false;
     bool addExtKey = false;
@@ -1839,6 +1846,9 @@ void PerformanceElementsCRUDTestFixture::LogTiming(StopWatch& timer, Utf8CP desc
     Utf8String totalDescription;
     totalDescription.Sprintf("%s %s '%s' [Initial count: %d]", description, noClassIdFilterStr, testClassName, initialInstanceCount);
     LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), totalDescription.c_str(), opCount);
+#ifdef PERF_ELEM_CRUD_LOG_TO_CONSOLE
+    printf("%.8f %s\n", timer.GetElapsedSeconds(), totalDescription.c_str());
+#endif
     }
 
 //---------------------------------------------------------------------------------------
