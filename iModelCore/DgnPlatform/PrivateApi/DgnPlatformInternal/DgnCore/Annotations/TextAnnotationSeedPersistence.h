@@ -19,14 +19,25 @@ BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 //=======================================================================================
 // @bsiclass                                                    Jeff.Marker     07/2014
 //=======================================================================================
-struct TextAnnotationSeedPersistence : NonCopyableClass
+struct TextAnnotationSeedPersistence : public NonCopyableClass
 {
+    //=======================================================================================
+    // @bsiclass                                                    Jeff.Marker     07/2014
+    //=======================================================================================
+    enum struct FlatBufEncodeOptions
+    {
+        SettersAreOverrides = 1 << 0,
+        Default = 0
+    
+    }; // FlatBufEncodeOptions
+
 private:
     TextAnnotationSeedPersistence(){}
 
 public:
     static BentleyStatus EncodeAsFlatBuf(FB::TextAnnotationSeedSetters&, TextAnnotationSeedPropertyBagCR);
-    static BentleyStatus EncodeAsFlatBuf(bvector<Byte>&, TextAnnotationSeedCR);
+    static BentleyStatus EncodeAsFlatBuf(FB::TextAnnotationSeedSetters&, TextAnnotationSeedPropertyBagCR, FlatBufEncodeOptions);
+    static BentleyStatus EncodeAsFlatBuf(bvector<Byte>&, TextAnnotationSeedCR, FlatBufEncodeOptions);
     
     static BentleyStatus DecodeFromFlatBuf(TextAnnotationSeedPropertyBagR, FB::TextAnnotationSeedSetterVector const&);
     static BentleyStatus DecodeFromFlatBuf(TextAnnotationSeedR, ByteCP, size_t numBytes);

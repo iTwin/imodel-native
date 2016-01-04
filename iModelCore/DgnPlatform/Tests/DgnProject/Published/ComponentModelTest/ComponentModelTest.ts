@@ -30,9 +30,9 @@ module ComponentModelTest
     }
 
     //  Utility function that creates a new (non-persistent) PhysicalElement object in memory and assigns it to the correct category 
-    function makeElement(model: be.DgnModel, options: be.ModelSolverOptions): be.PhysicalElement
+    function makeElement(model: be.DgnModel, cdef: be.ComponentDef): be.PhysicalElement
     {
-        return be.PhysicalElement.Create(model, be.DgnCategory.QueryCategoryId(options.Category, model.DgnDb), '');
+        return be.PhysicalElement.Create(model, cdef.Category.CategoryId, '');
     }
 
     /**
@@ -40,26 +40,19 @@ module ComponentModelTest
      */
     module Gadget
     {
-        /** The parameters that the Gadget component requires as inputs */
-        export class Parameters
-        {
-            // *** WARNING: Keep this consistent with ComponentModelTest.cpp
-            Q: number;
-            W: number;
-            R: number;
-        }
-
         /** The Gadget component's logic */
-        export function GenerateElements(model: be.DgnModel, params: Parameters, options: be.ModelSolverOptions)
+        export function GenerateElements(componentModel: be.ComponentModel, destModel: be.DgnModel, instance: be.ECInstance, cdef: be.ComponentDef): number
         {
-            model.DeleteAllElements();
+            var Q = instance.GetValue('Q').GetDouble();
+            var W = instance.GetValue('W').GetDouble();
+            var R = instance.GetValue('R').GetDouble();
 
-            var element = makeElement(model, options);
+            var element = makeElement(componentModel, cdef);
 
             var origin = new be.DPoint3d(0, 0, 0);
             var angles = new be.YawPitchRollAngles(0, 0, 45);
 
-            makeBox(element, origin, angles, params.Q, params.W, params.R);
+            makeBox(element, origin, angles, Q, W, R);
 
             element.Insert();
 
@@ -72,30 +65,23 @@ module ComponentModelTest
      */
     module Widget
     {
-        /** The parameters that the Widget component requires as inputs */
-        export class Parameters
-        {
-            // *** WARNING: Keep this consistent with ComponentModelTest.cpp
-            X: number;
-            Y: number;
-            Z: number;
-        }
-
         /** The Widget component's logic */
-        export function GenerateElements(model: be.DgnModel, params: Parameters, options: be.ModelSolverOptions): number
+        export function GenerateElements(componentModel: be.ComponentModel, destModel: be.DgnModel, instance: be.ECInstance, cdef: be.ComponentDef): number
         {
-            model.DeleteAllElements();
+            var X = instance.GetValue('X').GetDouble();
+            var Y = instance.GetValue('Y').GetDouble();
+            var Z = instance.GetValue('Z').GetDouble();
 
-            var element = makeElement(model, options);
+            var element = makeElement(componentModel, cdef);
             var origin = new be.DPoint3d(1, 2, 3);
             var angles = new be.YawPitchRollAngles(0, 0, 0);
-            makeBox(element, origin, angles, params.X, params.Y, params.Z);
+            makeBox(element, origin, angles, X, Y, Z);
             element.Insert();
 
-            var element2 = makeElement(model, options);
+            var element2 = makeElement(componentModel, cdef);
             var origin2 = new be.DPoint3d(10, 12, 13);
             var angles2 = new be.YawPitchRollAngles(0, 0, 0);
-            makeBox(element2, origin2, angles2, params.X, params.Y, params.Z);
+            makeBox(element2, origin2, angles2, X, Y, Z);
             element2.Insert();
 
             element.SetParent(element2);
@@ -110,31 +96,27 @@ module ComponentModelTest
      */
     module Thing
     {
-        /** The parameters that the 'Thing' component requires as inputs */
-        export class Parameters
-        {
-            // *** WARNING: Keep this consistent with ComponentModelTest.cpp
-            A: number;
-            B: number;
-            C: number;
-        }
-
         /** The Thing component's logic */
-        export function GenerateElements(model: be.DgnModel, params: Parameters, options: be.ModelSolverOptions)
+        export function GenerateElements(componentModel: be.ComponentModel, destModel: be.DgnModel, instance: be.ECInstance, cdef: be.ComponentDef): number
         {
-            var db = model.DgnDb;
+            var db = componentModel.DgnDb;
 
-            model.DeleteAllElements();
+            var A = instance.GetValue('A').GetDouble();
+            var B = instance.GetValue('B').GetDouble();
+            var C = instance.GetValue('C').GetDouble();
 
-            var element = makeElement(model, options);
+            var element = makeElement(componentModel, cdef);
             var origin = new be.DPoint3d(2, 0, 0);
             var angles = new be.YawPitchRollAngles(45, 0, 0);
-            makeBox(element, origin, angles, params.A, params.B, params.C);
+            makeBox(element, origin, angles, A, B, C);
             element.Insert();
 
-            var gadgetComponentModel = be.ComponentModel.FindModelByName(db, TEST_GADGET_COMPONENT_NAME);
-            var gparams: Gadget.Parameters = { Q: params.A + 1, W: params.B + 1, R: params.C + 1 };
-            var element2 = gadgetComponentModel.MakeInstance(model, "", JSON.stringify(gparams), null);
+            var gadgetComponentDef = be.ComponentDef.FindByName(db, TEST_JS_NAMESPACE + '.' + TEST_GADGET_COMPONENT_NAME);
+            var gparams = gadgetComponentDef.ComponentECClass.MakeInstance();
+            gparams.SetValue('Q', be.ECValue.FromDouble(A + 1));
+            gparams.SetValue('W', be.ECValue.FromDouble(B + 1));
+            gparams.SetValue('R', be.ECValue.FromDouble(C + 1));
+            var element2 = gadgetComponentDef.MakeUniqueInstance(componentModel, gparams, null);
 
             // *** TBD:
             //var gorigin = origin.Plus(new be.DVector3d(1, 0, 0));

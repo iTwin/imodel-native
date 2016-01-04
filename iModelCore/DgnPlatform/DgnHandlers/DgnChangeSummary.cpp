@@ -320,6 +320,7 @@ BentleyStatus DgnChangeSummary::GetElementsWithAspectUpdates(DgnElementIdSet& el
 //---------------------------------------------------------------------------------------
 void DgnChangeSummary::GetElementsWithGeometryUpdates(DgnElementIdSet& elementIds)
     {
+#ifdef NEEDSWORK_ELEMENT_GEOM_DOES_NOT_EXIST
     // Element -> ElementOwnsGeom -> ElementGeom
     BentleyStatus status = GetElementsWithAspectUpdates(elementIds, "dgn.Element", "dgn.ElementOwnsGeom", "dgn.ElementGeom");
     BeAssert(status == SUCCESS);
@@ -335,6 +336,9 @@ void DgnChangeSummary::GetElementsWithGeometryUpdates(DgnElementIdSet& elementId
     FindUpdatedInstanceIds(updatedGeomParts, "dgn", "GeomPart");
     ecsql = "SELECT el.ECInstanceId FROM dgn.Element el JOIN dgn.ElementGeom USING dgn.ElementOwnsGeom  JOIN dgn.GeomPart gp USING dgn.ElementGeomUsesParts WHERE InVirtualSet(?, gp.ECInstanceId)";
     FindRelatedInstanceIds(elementIds, ecsql, updatedGeomParts);
+#else
+    elementIds.clear();
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**

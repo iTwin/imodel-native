@@ -24,6 +24,7 @@
 #define DPTEST_TEST_REQUIREMENT_CLASS_NAME               "TestRequirement"
 #define DPTEST_TEST_ELEMENT_DRIVES_ELEMENT_CLASS_NAME    "TestElementDrivesElement"
 #define DPTEST_TEST_ELEMENT_TestElementProperty          "TestElementProperty"
+#define DPTEST_TEST_ELEMENT_WITHOUT_HANDLER_CLASS_NAME   "TestElementWithNoHandler"
 
 #ifdef WIP_ELEMENT_ITEM // *** pending redesign
 #define DPTEST_TEST_ITEM_CLASS_NAME                      "TestItem"
@@ -58,7 +59,7 @@ struct TestElement : Dgn::PhysicalElement
     friend struct TestElementHandler;
 
     DGNELEMENT_DECLARE_MEMBERS(DPTEST_TEST_ELEMENT_CLASS_NAME, Dgn::PhysicalElement) 
-
+public:
     TestElement(CreateParams const& params) : T_Super(params) {} 
 
 protected:
@@ -276,7 +277,7 @@ struct TestItemHandler : Dgn::dgn_AspectHandler::Aspect
 //=======================================================================================
 struct TestUniqueAspect : Dgn::DgnElement::UniqueAspect
 {
-    DEFINE_T_SUPER(Dgn::DgnElement::UniqueAspect)
+    DGNASPECT_DECLARE_MEMBERS(DPTEST_SCHEMA_NAME, DPTEST_TEST_UNIQUE_ASPECT_CLASS_NAME, Dgn::DgnElement::UniqueAspect);
 private:
     friend struct TestUniqueAspectHandler;
 
@@ -284,8 +285,6 @@ private:
 
     explicit TestUniqueAspect(Utf8CP prop) : m_testUniqueAspectProperty(prop) {;}
 
-    Utf8CP _GetECSchemaName() const override {return DPTEST_SCHEMA_NAME;}
-    Utf8CP _GetECClassName() const override {return DPTEST_TEST_UNIQUE_ASPECT_CLASS_NAME;}
     Dgn::DgnDbStatus _LoadProperties(Dgn::DgnElementCR el) override;
     Dgn::DgnDbStatus _UpdateProperties(Dgn::DgnElementCR el) override;
 
@@ -319,7 +318,7 @@ struct TestUniqueAspectHandler : Dgn::dgn_AspectHandler::Aspect
 //=======================================================================================
 struct TestMultiAspect : Dgn::DgnElement::MultiAspect
 {
-    DEFINE_T_SUPER(Dgn::DgnElement::MultiAspect)
+    DGNASPECT_DECLARE_MEMBERS(DPTEST_SCHEMA_NAME, DPTEST_TEST_MULTI_ASPECT_CLASS_NAME, Dgn::DgnElement::MultiAspect);
 private:
     friend struct TestMultiAspectHandler;
 
@@ -327,8 +326,6 @@ private:
 
     explicit TestMultiAspect(Utf8CP prop) : m_testMultiAspectProperty(prop) {;}
 
-    Utf8CP _GetECSchemaName() const override {return DPTEST_SCHEMA_NAME;}
-    Utf8CP _GetECClassName() const override {return DPTEST_TEST_MULTI_ASPECT_CLASS_NAME;}
     Dgn::DgnDbStatus _LoadProperties(Dgn::DgnElementCR el) override;
     Dgn::DgnDbStatus _UpdateProperties(Dgn::DgnElementCR el) override;
 

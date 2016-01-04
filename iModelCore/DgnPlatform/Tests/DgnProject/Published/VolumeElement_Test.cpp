@@ -7,6 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include "ChangeTestFixture.h"
 #include <DgnPlatform/DgnHandlersAPI.h>
+#include <DgnPlatform/VolumeElement.h>
 
 #define LOG (*BentleyApi::NativeLogging::LoggingManager::GetLogger (L"Dgn"))
 
@@ -50,7 +51,7 @@ VolumeElementCPtr VolumeElementTestFixture::InsertVolume(DPoint3dCR origin, DPoi
     {
     bvector<DPoint2d> shape(shapeArr, shapeArr + 5);
 
-    VolumeElementPtr volume = VolumeElement::Create(*(m_testModel->ToPhysicalModel()), origin, shape, height, label);
+    VolumeElementPtr volume = VolumeElement::Create(*(m_testModel->ToSpatialModel()), origin, shape, height, label);
     return volume->Insert();
     }
 
@@ -59,7 +60,7 @@ VolumeElementCPtr VolumeElementTestFixture::InsertVolume(DPoint3dCR origin, DPoi
 //---------------------------------------------------------------------------------------
 PhysicalElementCPtr VolumeElementTestFixture::InsertBlock(DPoint3dCR center, double dimension)
     {
-    PhysicalElementPtr physicalElementPtr = PhysicalElement::Create(*(m_testModel->ToPhysicalModelP()), m_testCategoryId);
+    PhysicalElementPtr physicalElementPtr = PhysicalElement::Create(*(m_testModel->ToSpatialModelP()), m_testCategoryId);
 
     DgnBoxDetail blockDetail = DgnBoxDetail::InitFromCenterAndSize(DPoint3d::FromZero(), DPoint3d::From(dimension, dimension, dimension), true);
     ISolidPrimitivePtr geomPtr = ISolidPrimitive::CreateDgnBox(blockDetail);

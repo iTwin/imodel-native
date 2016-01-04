@@ -10,6 +10,8 @@
 #include "../TestFixture/DgnDbTestFixtures.h"
 #include <DgnPlatform/DgnMaterial.h>
 #include <DgnPlatform/DgnTexture.h>
+#include <DgnPlatform/DgnFontData.h>
+#include <DgnPlatform/Annotations/TextAnnotationElement.h>
 
 USING_NAMESPACE_BENTLEY_SQLITE
 USING_NAMESPACE_BENTLEY_DPTEST
@@ -128,18 +130,18 @@ static DgnElementCPtr getSingleElementInModel(DgnModelR model)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Sam.Wilson      05/15
 //---------------------------------------------------------------------------------------
-static PhysicalModelPtr copyPhysicalModelSameDb(PhysicalModelCR model, Utf8CP newName)
+static SpatialModelPtr copySpatialModelSameDb(SpatialModelCR model, Utf8CP newName)
 {
-    return dynamic_cast<PhysicalModel*>(DgnModel::CopyModel(model, DgnModel::CreateModelCode(newName)).get());
+    return dynamic_cast<SpatialModel*>(DgnModel::CopyModel(model, DgnModel::CreateModelCode(newName)).get());
 }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Sam.Wilson      05/15
 //---------------------------------------------------------------------------------------
-static PhysicalModelPtr createPhysicalModel(DgnDbR db, Utf8CP newName)
+static SpatialModelPtr createSpatialModel(DgnDbR db, Utf8CP newName)
 {
-    DgnClassId mclassId = DgnClassId(db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_PhysicalModel));
-    PhysicalModelPtr model = new PhysicalModel(PhysicalModel::CreateParams(db, mclassId, DgnModel::CreateModelCode(newName)));
+    DgnClassId mclassId = DgnClassId(db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_SpatialModel));
+    SpatialModelPtr model = new SpatialModel(SpatialModel::CreateParams(db, mclassId, DgnModel::CreateModelCode(newName)));
     if (!model.IsValid())
         return nullptr;
     if (DgnDbStatus::Success != model->Insert())
@@ -172,7 +174,7 @@ TEST_F(ImportTest, ImportGroups)
     // ******************************
     //  Create model1
 
-    PhysicalModelPtr model1 = createPhysicalModel(*m_db, "Model1");
+    SpatialModelPtr model1 = createSpatialModel(*m_db, "Model1");
     ASSERT_TRUE(model1.IsValid());
     {
         // Put a group into moddel1
@@ -195,7 +197,7 @@ TEST_F(ImportTest, ImportGroups)
     //  Create model2 as a copy of model1
     if (true)
     {
-        PhysicalModelPtr model2 = copyPhysicalModelSameDb(*model1, "Model2");
+        SpatialModelPtr model2 = copySpatialModelSameDb(*model1, "Model2");
         ASSERT_TRUE(model2.IsValid());
 
         checkGroupHasOneMemberInModel(*model2);
@@ -207,7 +209,7 @@ TEST_F(ImportTest, ImportGroups)
     {
         DgnImportContext import3(*m_db, *m_db);
         DgnDbStatus stat;
-        PhysicalModelPtr model3 = DgnModel::Import(&stat, *model1, import3);
+        SpatialModelPtr model3 = DgnModel::Import(&stat, *model1, import3);
         ASSERT_TRUE(!model3.IsValid());
         ASSERT_NE(DgnDbStatus::Success, stat);
     }
@@ -221,7 +223,7 @@ TEST_F(ImportTest, ImportGroups)
 
         DgnImportContext import3(*m_db, *db2);
         DgnDbStatus stat;
-        PhysicalModelPtr model3 = DgnModel::Import(&stat, *model1, import3);
+        SpatialModelPtr model3 = DgnModel::Import(&stat, *model1, import3);
         ASSERT_TRUE(model3.IsValid());
         ASSERT_EQ(DgnDbStatus::Success, stat);
 
@@ -422,7 +424,7 @@ TEST_F(ImportTest, ImportElementAndCategory1)
     DgnSubCategoryId sourceSubCategory2Id = sourceSubCategory2->GetSubCategoryId();
 
     //  Create the source model
-    PhysicalModelPtr sourcemod = createPhysicalModel(*sourceDb, "sourcemod");
+    SpatialModelPtr sourcemod = createSpatialModel(*sourceDb, "sourcemod");
     ASSERT_TRUE( sourcemod.IsValid() );
 
     // Put elements in this category into the source model
@@ -454,7 +456,7 @@ TEST_F(ImportTest, ImportElementAndCategory1)
             ASSERT_TRUE( createCategory(*destDb, Utf8PrintfString("Unrelated%d",i), DgnCategory::Scope::Any, createAppearance(ColorDef(7,8,9,10))).IsValid() );
             }
 
-        PhysicalModelPtr destmod = createPhysicalModel(*destDb, "destmod");
+        SpatialModelPtr destmod = createSpatialModel(*destDb, "destmod");
         ASSERT_TRUE( destmod.IsValid() );
 
         DgnImportContext importContext(*sourceDb, *destDb);
@@ -519,8 +521,8 @@ TEST_F(ImportTest, ImportElementsWithAuthorities)
     // ******************************
     //  Create model1
 
-    DgnClassId mclassId = DgnClassId(m_db->Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_PhysicalModel));
-    PhysicalModelPtr model1 = new PhysicalModel(PhysicalModel::CreateParams(*m_db, mclassId, DgnModel::CreateModelCode("Model1")));
+    DgnClassId mclassId = DgnClassId(m_db->Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_SpatialModel));
+    SpatialModelPtr model1 = new SpatialModel(SpatialModel::CreateParams(*m_db, mclassId, DgnModel::CreateModelCode("Model1")));
     ASSERT_EQ(DgnDbStatus::Success, model1->Insert());
 
     // Put an element with an Item into moddel1
@@ -551,7 +553,7 @@ TEST_F(ImportTest, ImportElementsWithAuthorities)
 
         DgnImportContext import3(*m_db, *db2);
         DgnDbStatus stat;
-        PhysicalModelPtr model3 = DgnModel::Import(&stat, *model1, import3);
+        SpatialModelPtr model3 = DgnModel::Import(&stat, *model1, import3);
         ASSERT_TRUE(model3.IsValid());
         ASSERT_EQ(DgnDbStatus::Success, stat);
 
@@ -580,8 +582,8 @@ TEST_F(ImportTest, ImportElementsWithItems)
     // ******************************
     //  Create model1
 
-    DgnClassId mclassId = DgnClassId(m_db->Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_PhysicalModel));
-    PhysicalModelPtr model1 = new PhysicalModel(PhysicalModel::CreateParams(*m_db, mclassId, DgnModel::CreateModelCode("Model1")));
+    DgnClassId mclassId = DgnClassId(m_db->Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_SpatialModel));
+    SpatialModelPtr model1 = new SpatialModel(SpatialModel::CreateParams(*m_db, mclassId, DgnModel::CreateModelCode("Model1")));
     ASSERT_EQ(DgnDbStatus::Success, model1->Insert());
 
     // Put an element with an Item into moddel1
@@ -603,7 +605,7 @@ TEST_F(ImportTest, ImportElementsWithItems)
     //  Create model2 as a copy of model1
     if (true)
     {
-        PhysicalModelPtr model2 = copyPhysicalModelSameDb(*model1, "Model2");
+        SpatialModelPtr model2 = copySpatialModelSameDb(*model1, "Model2");
         ASSERT_TRUE(model2.IsValid());
 
         DgnElementCPtr el = getSingleElementInModel(*model2);
@@ -619,7 +621,7 @@ TEST_F(ImportTest, ImportElementsWithItems)
 
         DgnImportContext import3(*m_db, *db2);
         DgnDbStatus stat;
-        PhysicalModelPtr model3 = DgnModel::Import(&stat, *model1, import3);
+        SpatialModelPtr model3 = DgnModel::Import(&stat, *model1, import3);
         ASSERT_TRUE(model3.IsValid());
         ASSERT_EQ(DgnDbStatus::Success, stat);
 
@@ -642,8 +644,8 @@ TEST_F(ImportTest, ImportElementsWithDependencies)
     // ******************************
     //  Create model1
 
-    DgnClassId mclassId = DgnClassId(m_db->Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_PhysicalModel));
-    PhysicalModelPtr model1 = new PhysicalModel(PhysicalModel::CreateParams(*m_db, mclassId, DgnModel::CreateModelCode("Model1")));
+    DgnClassId mclassId = DgnClassId(m_db->Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_SpatialModel));
+    SpatialModelPtr model1 = new SpatialModel(SpatialModel::CreateParams(*m_db, mclassId, DgnModel::CreateModelCode("Model1")));
     ASSERT_EQ(DgnDbStatus::Success, model1->Insert());
 
     // Create 2 elements and make the first depend on the second
@@ -668,7 +670,7 @@ TEST_F(ImportTest, ImportElementsWithDependencies)
     //  Create model2 as a copy of model1
     if (true)
     {
-        PhysicalModelPtr model2 = copyPhysicalModelSameDb(*model1, "Model2");
+        SpatialModelPtr model2 = copySpatialModelSameDb(*model1, "Model2");
         ASSERT_TRUE(model2.IsValid());
 
         m_db->SaveChanges();
@@ -685,7 +687,7 @@ TEST_F(ImportTest, ImportElementsWithDependencies)
 
         DgnImportContext import3(*m_db, *db2);
         DgnDbStatus stat;
-        PhysicalModelPtr model3 = DgnModel::Import(&stat, *model1, import3);
+        SpatialModelPtr model3 = DgnModel::Import(&stat, *model1, import3);
         ASSERT_TRUE(model3.IsValid());
         ASSERT_EQ(DgnDbStatus::Success, stat);
 
@@ -695,3 +697,106 @@ TEST_F(ImportTest, ImportElementsWithDependencies)
     }
 }
 
+#if defined (BENTLEY_WIN32) // Relies on getting fonts from the OS; this is Windows Desktop-only.
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Jeff.Marker     12/2015
+//---------------------------------------------------------------------------------------
+TEST_F(ImportTest, ElementGeomIOCausesFontRemap)
+    {
+    //.............................................................................................
+    DgnDbPtr db1;
+    DgnDbTestFixture::OpenDb(db1, DgnDbTestFixture::CopyDb(L"DgnDb/3dMetricGeneral.idgndb", L"ImportTest.ElementGeomIOCausesFontRemap-1.dgndb"), DgnDb::OpenMode::ReadWrite, true);
+    ASSERT_TRUE(db1.IsValid());
+
+    DgnFontPtr db1_font = DgnFontPersistence::OS::FromGlobalTrueTypeRegistry("Arial");
+    ASSERT_TRUE(db1_font.IsValid());
+    DgnFontId db1_fontId = db1->Fonts().AcquireId(*db1_font);
+    ASSERT_TRUE(db1_fontId.IsValid());
+    
+    BentleyStatus db1_fontEmbedStatus = DgnFontPersistence::Db::Embed(db1->Fonts().DbFaceData(), *db1_font);
+    ASSERT_TRUE(SUCCESS == db1_fontEmbedStatus);
+
+    BentleyApi::ECN::ECClassCP db1_physicalClass = db1->Schemas().GetECClass(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_PhysicalElement);
+    BeAssert(nullptr != db1_physicalClass);
+    DgnClassId db1_physicalDgnClass = DgnClassId(db1_physicalClass->GetId());
+    BeAssert(db1_physicalDgnClass.IsValid());
+
+    TextStringPtr db1_text = TextString::Create();
+    db1_text->SetText("ImportTest.ElementGeomIOCausesFontRemap-1");
+    db1_text->GetStyleR().SetFont(*db1_font);
+    db1_text->GetStyleR().SetHeight(1.0);
+
+    PhysicalElementPtr db1_element = PhysicalElement::Create(PhysicalElement::CreateParams(*db1, db1->Models().QueryFirstModelId(), db1_physicalDgnClass, DgnCategory::QueryFirstCategoryId(*db1)));
+    ElementGeometryBuilderPtr db1_builder = ElementGeometryBuilder::CreateWorld(*db1->Models().GetModel(db1->Models().QueryFirstModelId()), DgnCategory::QueryFirstCategoryId(*db1));
+    db1_builder->Append(*db1_text);
+    db1_builder->SetGeomStreamAndPlacement(*db1_element->ToGeometrySourceP());
+
+    DgnElementCPtr db1_insertedElement = db1_element->Insert();
+    ASSERT_TRUE(db1_insertedElement.IsValid());
+    DgnElementId db1_elementId = db1_insertedElement->GetElementId();
+    ASSERT_TRUE(db1_insertedElement.IsValid());
+
+    db1->SaveChanges();
+
+    //.............................................................................................
+    DgnDbPtr db2;
+    DgnDbTestFixture::OpenDb(db2, DgnDbTestFixture::CopyDb(L"DgnDb/3dMetricGeneral.idgndb", L"ImportTest.ElementGeomIOCausesFontRemap-2.dgndb"), DgnDb::OpenMode::ReadWrite, true);
+    ASSERT_TRUE(db2.IsValid());
+
+    ASSERT_TRUE(nullptr == db2->Fonts().FindFontByTypeAndName(db1_font->GetType(), db1_font->GetName().c_str()));
+
+    DgnModelPtr db2_destModel = db2->Models().GetModel(db2->Models().QueryFirstModelId());
+    ASSERT_TRUE(db2_destModel.IsValid());
+
+    DgnImportContext import1to2(*db1, *db2);
+    DgnDbStatus import1to2Status = DgnDbStatus::BadArg;
+    DgnElementCPtr db2_insertedElement = db1_insertedElement->Import(&import1to2Status, *db2_destModel, import1to2);
+    ASSERT_TRUE(DgnDbStatus::Success == import1to2Status);
+    ASSERT_TRUE(db2_insertedElement.IsValid());
+
+    ASSERT_TRUE(nullptr != db2->Fonts().FindFontByTypeAndName(db1_font->GetType(), db1_font->GetName().c_str()));
+
+    db2->SaveChanges();
+
+    //.............................................................................................
+    DgnDbPtr db3;
+    DgnDbTestFixture::OpenDb(db3, DgnDbTestFixture::CopyDb(L"DgnDb/3dMetricGeneral.idgndb", L"ImportTest.ElementGeomIOCausesFontRemap-3.dgndb"), DgnDb::OpenMode::ReadWrite, true);
+    ASSERT_TRUE(db3.IsValid());
+
+    ASSERT_TRUE(nullptr == db3->Fonts().FindFontByTypeAndName(db1_font->GetType(), db1_font->GetName().c_str()));
+
+    DgnFontPtr db3_font = DgnFontPersistence::OS::FromGlobalTrueTypeRegistry("Courier New");
+    ASSERT_TRUE(db3_font.IsValid());
+    DgnFontId db3_fontId = db3->Fonts().AcquireId(*db3_font);
+    ASSERT_TRUE(db3_fontId.IsValid());
+
+    auto db3_fontIter1 = db3->Fonts().DbFontMap().MakeIterator();
+    size_t db3_numFonts = 0;
+    for (auto iter = db3_fontIter1.begin(); iter != db3_fontIter1.end(); ++iter)
+        ++db3_numFonts;
+
+    EXPECT_TRUE(db3_numFonts > 0);
+
+    DgnModelPtr db3_destModel = db3->Models().GetModel(db3->Models().QueryFirstModelId());
+    ASSERT_TRUE(db3_destModel.IsValid());
+
+    DgnImportContext import1to3(*db1, *db3);
+    DgnDbStatus import1to3Status = DgnDbStatus::BadArg;
+    DgnElementCPtr db3_insertedElement = db1_insertedElement->Import(&import1to3Status, *db3_destModel, import1to3);
+    ASSERT_TRUE(DgnDbStatus::Success == import1to3Status);
+    ASSERT_TRUE(db3_insertedElement.IsValid());
+
+    ASSERT_TRUE(nullptr != db3->Fonts().FindFontByTypeAndName(db1_font->GetType(), db1_font->GetName().c_str()));
+
+    auto db3_fontIter2 = db3->Fonts().DbFontMap().MakeIterator();
+    size_t db3_numFonts2 = 0;
+    for (auto iter = db3_fontIter2.begin(); iter != db3_fontIter2.end(); ++iter)
+        ++db3_numFonts2;
+
+    ASSERT_TRUE((db3_numFonts + 1) == db3_numFonts2);
+
+    db3->SaveChanges();
+    }
+
+#endif

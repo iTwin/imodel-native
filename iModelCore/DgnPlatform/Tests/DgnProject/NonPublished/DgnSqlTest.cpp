@@ -31,7 +31,7 @@ public:
     void SetupProject(WCharCP dgnDbFileName, WCharCP inFileName, BeSQLite::Db::OpenMode);
     void InsertElement(PhysicalElementR pelem);
     DgnModelR GetDefaultModel() {return *m_db->Models().GetModel(m_defaultModelId);}
-    PhysicalModelP GetDefaultPhysicalModel() {return dynamic_cast<PhysicalModelP>(&GetDefaultModel());}
+    SpatialModelP GetDefaultSpatialModel() {return dynamic_cast<SpatialModelP>(&GetDefaultModel());}
     DgnElement::Code CreateCode(Utf8StringCR value) const { return NamespaceAuthority::CreateCode("SqlFunctionsTest", value, *m_db); }
     };
 
@@ -86,6 +86,7 @@ void SqlFunctionsTest::InsertElement(PhysicalElementR pelem)
     ASSERT_TRUE( m_db->Elements().Insert(pelem).IsValid() );
     ASSERT_TRUE( pelem.GetElementId().IsValid() ) << L"Insert is supposed to set the ElementId";
     }
+#define EABB_FROM_GEOM "DGN_bbox(Placement_Box_Low_X,Placement_Box_Low_Y,Placement_Box_Low_Z,Placement_Box_High_X,Placement_Box_High_Y,Placement_Box_High_Z)"
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      05/15
@@ -99,11 +100,11 @@ TEST_F(SqlFunctionsTest, placement_areaxy)
     DPoint3d o1origin = DPoint3d::From(0,o1y,0);
     DPoint3d o2origin = DPoint3d::From(o2x,0,0);
 
-    ObstacleElementPtr obstacleAt0 = ObstacleElement::Create(*GetDefaultPhysicalModel(), m_defaultCategoryId, o1origin, 0.0, CreateCode("obstacleAt0"));
+    ObstacleElementPtr obstacleAt0 = ObstacleElement::Create(*GetDefaultSpatialModel(), m_defaultCategoryId, o1origin, 0.0, CreateCode("obstacleAt0"));
     InsertElement(*obstacleAt0);
     obstacleAt0->SetSomeProperty(*m_db, "B");
 
-    ObstacleElementPtr obstacle2At90 = ObstacleElement::Create(*GetDefaultPhysicalModel(), m_defaultCategoryId, o2origin, 90.0, CreateCode("obstacle2At90"));
+    ObstacleElementPtr obstacle2At90 = ObstacleElement::Create(*GetDefaultSpatialModel(), m_defaultCategoryId, o2origin, 90.0, CreateCode("obstacle2At90"));
     InsertElement(*obstacle2At90);
     obstacle2At90->SetSomeProperty(*m_db, "A");
 
@@ -115,7 +116,7 @@ TEST_F(SqlFunctionsTest, placement_areaxy)
         // This statement is wrong, because DGN_placement_angles returns a DGN_angles object, while DGN_bbox_areaxy expects a DGN_bbox object.
         // Note that the error is detected when you try to step the statement, not when you prepare it.
         Statement stmt;
-        stmt.Prepare(*m_db, "SELECT DGN_bbox_areaxy(DGN_placement_angles(Placement)) FROM " DGN_TABLE(DGN_CLASSNAME_ElementGeom));
+        stmt.Prepare(*m_db, "SELECT DGN_bbox_areaxy(DGN_angles(Placement_Rotation_Yaw,Placement_Rotation_Pitch,Placement_Rotation_Roll)) FROM " DGN_TABLE(DGN_CLASSNAME_SpatialElement));
         DbResult rc = stmt.Step(); // rc will be BE_SQLITE_ERROR, and m_db->GetLastError() will return "Illegal input to DGN_bbox_areaxy"
         //__PUBLISH_EXTRACT_END__
         ASSERT_EQ( BE_SQLITE_ERROR , rc );
@@ -131,7 +132,7 @@ TEST_F(SqlFunctionsTest, placement_areaxy)
     double totalAreaXy = 0.0;
         {
         Statement stmt;
-        stmt.Prepare(*m_db, "SELECT DGN_bbox_areaxy(DGN_placement_eabb(Placement)) FROM " DGN_TABLE(DGN_CLASSNAME_ElementGeom));
+        stmt.Prepare(*m_db, "SELECT DGN_bbox_areaxy(" EABB_FROM_GEOM ") FROM " DGN_TABLE(DGN_CLASSNAME_SpatialElement));
 
         DbResult rc;
         while (BE_SQLITE_ROW == (rc = stmt.Step()))
@@ -152,7 +153,7 @@ TEST_F(SqlFunctionsTest, placement_areaxy)
         // This is an example of using DGN_placement_eabb to sum up element areas. Note that we must to use 
         // element-aligned bounding boxes in this query, rather than axis-aligned bounding boxes.
         Statement stmt;
-        stmt.Prepare(*m_db, "SELECT SUM(DGN_bbox_areaxy(DGN_placement_eabb(Placement))) FROM " DGN_TABLE(DGN_CLASSNAME_ElementGeom));
+        stmt.Prepare(*m_db, "SELECT SUM(DGN_bbox_areaxy(" EABB_FROM_GEOM ")) FROM " DGN_TABLE(DGN_CLASSNAME_SpatialElement));
         //__PUBLISH_EXTRACT_END__
 
         ASSERT_EQ( BE_SQLITE_ROW , stmt.Step() );
@@ -163,13 +164,16 @@ TEST_F(SqlFunctionsTest, placement_areaxy)
     if (true)
         {
         Statement stmt;
-        stmt.Prepare(*m_db, "SELECT SUM(area) FROM (SELECT DGN_bbox_areaxy(DGN_placement_eabb(Placement)) AS area FROM " DGN_TABLE(DGN_CLASSNAME_ElementGeom) ")");
+        stmt.Prepare(*m_db, "SELECT SUM(area) FROM (SELECT DGN_bbox_areaxy(" EABB_FROM_GEOM ") AS area FROM " DGN_TABLE(DGN_CLASSNAME_SpatialElement) ")");
 
         ASSERT_EQ( BE_SQLITE_ROW , stmt.Step() );
         ASSERT_EQ( totalAreaXy , stmt.GetValueDouble(0) );
         }
 
     }
+
+#define ANGLES_FROM_PLACEMENT "DGN_angles(g.Placement_Rotation_Yaw,g.Placement_Rotation_Pitch,g.Placement_Rotation_Roll)"
+#define EC_ANGLES_FROM_PLACEMENT "DGN_angles(g.Placement.Rotation.Yaw,g.Placement.Rotation.Pitch,g.Placement.Rotation.Roll)"
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      05/15
@@ -184,18 +188,18 @@ TEST_F(SqlFunctionsTest, placement_angles)
     DPoint3d o2origin = DPoint3d::From(o2x,0,0);
 
     //  Create an element @ 0 degrees
-    ObstacleElementPtr elemAt0 = ObstacleElement::Create(*GetDefaultPhysicalModel(), m_defaultCategoryId, o1origin, 0.0, CreateCode("elemAt0"));
+    ObstacleElementPtr elemAt0 = ObstacleElement::Create(*GetDefaultSpatialModel(), m_defaultCategoryId, o1origin, 0.0, CreateCode("elemAt0"));
     InsertElement(*elemAt0);
     elemAt0->SetSomeProperty(*m_db, "B");
 
     //  Create an element @ 90 degrees
-    ObstacleElementPtr elem1At90 = ObstacleElement::Create(*GetDefaultPhysicalModel(), m_defaultCategoryId, o2origin, 90.0, CreateCode("elem1At90"));
+    ObstacleElementPtr elem1At90 = ObstacleElement::Create(*GetDefaultSpatialModel(), m_defaultCategoryId, o2origin, 90.0, CreateCode("elem1At90"));
     InsertElement(*elem1At90);
     elem1At90->SetSomeProperty(*m_db, "A");
 
     //  Verify that only one is found with a placement angle of 90
     Statement stmt;
-    stmt.Prepare(*m_db, "SELECT g.ElementId FROM " DGN_TABLE(DGN_CLASSNAME_ElementGeom) " AS g WHERE DGN_angles_maxdiff(DGN_placement_angles(g.Placement),DGN_Angles(90,0,0)) < 1.0");
+    stmt.Prepare(*m_db, "SELECT g.Id FROM " DGN_TABLE(DGN_CLASSNAME_SpatialElement) " AS g WHERE DGN_angles_maxdiff(" ANGLES_FROM_PLACEMENT ",DGN_Angles(90,0,0)) < 1.0");
 
     ASSERT_EQ( BE_SQLITE_ROW , stmt.Step() );
     ASSERT_EQ( elem1At90->GetElementId() , stmt.GetValueId<DgnElementId>(0) );
@@ -207,7 +211,7 @@ TEST_F(SqlFunctionsTest, placement_angles)
         Statement stmt2;
         //__PUBLISH_EXTRACT_START__ DgnSchemaDomain_SqlFuncs_DGN_angles_value.sampleCode
         // This query uses DGN_angles_value to extract the Yaw angle of an element's placement, in order to compare it with 90.
-        stmt2.Prepare(*m_db, "SELECT g.ElementId FROM " DGN_TABLE(DGN_CLASSNAME_ElementGeom) " AS g WHERE ABS(DGN_angles_value(DGN_placement_angles(g.Placement), 0) - 90) < 1.0");
+        stmt2.Prepare(*m_db, "SELECT g.Id FROM " DGN_TABLE(DGN_CLASSNAME_SpatialElement) " AS g WHERE ABS(g.Placement_Rotation_Yaw - 90) < 1.0");
         //__PUBLISH_EXTRACT_END__
 
         ASSERT_EQ( BE_SQLITE_ROW , stmt2.Step() );
@@ -216,7 +220,7 @@ TEST_F(SqlFunctionsTest, placement_angles)
         }
     
     //  Create anoter element @ 90 degrees
-    ObstacleElementPtr elem2At90 = ObstacleElement::Create(*GetDefaultPhysicalModel(), m_defaultCategoryId, o2origin, 90.0, CreateCode("elem2At90"));
+    ObstacleElementPtr elem2At90 = ObstacleElement::Create(*GetDefaultSpatialModel(), m_defaultCategoryId, o2origin, 90.0, CreateCode("elem2At90"));
     InsertElement(*elem2At90);
     elem2At90->SetSomeProperty(*m_db, "B");
 
@@ -236,7 +240,7 @@ TEST_F(SqlFunctionsTest, placement_angles)
 
     //  Only one should be found with a placement angle of 0
     stmt.Finalize();
-    stmt.Prepare(*m_db, "SELECT g.ElementId FROM " DGN_TABLE(DGN_CLASSNAME_ElementGeom) " AS g WHERE DGN_angles_maxdiff(DGN_placement_angles(g.Placement),DGN_Angles(0,0,0)) < 1.0");
+    stmt.Prepare(*m_db, "SELECT g.Id FROM " DGN_TABLE(DGN_CLASSNAME_SpatialElement) " AS g WHERE DGN_angles_maxdiff(" ANGLES_FROM_PLACEMENT ",DGN_Angles(0,0,0)) < 1.0");
 
     ASSERT_EQ( BE_SQLITE_ROW , stmt.Step() );
     ASSERT_EQ( elemAt0->GetElementId() , stmt.GetValueId<DgnElementId>(0) );
@@ -250,14 +254,19 @@ TEST_F(SqlFunctionsTest, placement_angles)
     // This example uses ECSql.
     ECSqlStatement estmt;
     estmt.Prepare(*m_db, "SELECT o.ECInstanceId FROM " 
-                            DGN_SCHEMA(DGN_CLASSNAME_ElementGeom) " AS g,"
+                            DGN_SCHEMA(DGN_CLASSNAME_SpatialElement) " AS g,"
                             DGN_SQL_TEST_SCHEMA_NAME "." DGN_SQL_TEST_OBSTACLE_CLASS " AS o"
-                            " WHERE (o.ECInstanceId=g.ECInstanceId) AND (o.SomeProperty = 'B') AND (DGN_angles_maxdiff(DGN_placement_angles(g.Placement),DGN_Angles(90.0,0,0)) < 1.0)");
+                            " WHERE (o.ECInstanceId=g.ECInstanceId) AND (o.SomeProperty = 'B') AND (DGN_angles_maxdiff(" EC_ANGLES_FROM_PLACEMENT ",DGN_Angles(90.0,0,0)) < 1.0)");
     //__PUBLISH_EXTRACT_END__
     ASSERT_EQ(BE_SQLITE_ROW , estmt.Step());
     ASSERT_EQ( elem2At90->GetElementId() , estmt.GetValueId<DgnElementId>(0) );
     ASSERT_EQ(BE_SQLITE_DONE, estmt.Step());
     }
+
+#define ORIGIN_FROM_PLACEMENT "DGN_point(g.Placement_Origin_X,g.Placement_Origin_Y,g.Placement_Origin_Z)"
+#define BBOX_FROM_PLACEMENT "DGN_bbox(g.Placement_Box_Low_X,g.Placement_Box_Low_Y,g.Placement_Box_Low_Z,g.Placement_Box_High_X,g.Placement_Box_High_Y,g.Placement_Box_High_Z)"
+#define PLACEMENT_FROM_GEOM "DGN_placement(" ORIGIN_FROM_PLACEMENT "," ANGLES_FROM_PLACEMENT "," BBOX_FROM_PLACEMENT ")"
+#define AABB_FROM_PLACEMENT "DGN_placement_aabb(" PLACEMENT_FROM_GEOM ")"
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      05/15
@@ -273,22 +282,22 @@ TEST_F(SqlFunctionsTest, DGN_point_min_distance_to_bbox)
 
     DgnElementId r1, o1, o1a, o2, o2a;
         {
-        RobotElementPtr robot1 = RobotElement::Create(*GetDefaultPhysicalModel(), m_defaultCategoryId, DPoint3d::From(0,0,0), 0.0, CreateCode("Robot1"));
+        RobotElementPtr robot1 = RobotElement::Create(*GetDefaultSpatialModel(), m_defaultCategoryId, DPoint3d::From(0,0,0), 0.0, CreateCode("Robot1"));
         InsertElement(*robot1);
 
-        ObstacleElementPtr obstacle1 = ObstacleElement::Create(*GetDefaultPhysicalModel(), m_defaultCategoryId, o1origin, 0.0, CreateCode("Obstacle1"));
+        ObstacleElementPtr obstacle1 = ObstacleElement::Create(*GetDefaultSpatialModel(), m_defaultCategoryId, o1origin, 0.0, CreateCode("Obstacle1"));
         InsertElement(*obstacle1);
         obstacle1->SetTestUniqueAspect(*m_db, "SomeKindOfObstacle");
 
-        ObstacleElementPtr obstacle1a = ObstacleElement::Create(*GetDefaultPhysicalModel(), m_defaultCategoryId, o1origin, 0.0, CreateCode("Obstacle1a"));
+        ObstacleElementPtr obstacle1a = ObstacleElement::Create(*GetDefaultSpatialModel(), m_defaultCategoryId, o1origin, 0.0, CreateCode("Obstacle1a"));
         InsertElement(*obstacle1a);
         obstacle1a->SetTestUniqueAspect(*m_db, "SomeOtherKindOfObstacle");
 
-        ObstacleElementPtr obstacle2 = ObstacleElement::Create(*GetDefaultPhysicalModel(), m_defaultCategoryId, o2origin, 90.0, CreateCode("Obstacle2"));
+        ObstacleElementPtr obstacle2 = ObstacleElement::Create(*GetDefaultSpatialModel(), m_defaultCategoryId, o2origin, 90.0, CreateCode("Obstacle2"));
         InsertElement(*obstacle2);
         obstacle2->SetTestUniqueAspect(*m_db, "SomeKindOfObstacle");
 
-        ObstacleElementPtr obstacle2a = ObstacleElement::Create(*GetDefaultPhysicalModel(), m_defaultCategoryId, o2origin, 90.0, CreateCode("Obstacle2a"));
+        ObstacleElementPtr obstacle2a = ObstacleElement::Create(*GetDefaultSpatialModel(), m_defaultCategoryId, o2origin, 90.0, CreateCode("Obstacle2a"));
         InsertElement(*obstacle2a);
         obstacle2a->SetTestUniqueAspect(*m_db, "SomeOtherKindOfObstacle");
 
@@ -312,11 +321,11 @@ TEST_F(SqlFunctionsTest, DGN_point_min_distance_to_bbox)
     
     Statement stmt;
     stmt.Prepare(*m_db, 
-        "SELECT aspect.ElementId, aspect.TestUniqueAspectProperty FROM dgn_Element e,dptest_TestUniqueAspect aspect,dgn_ElementGeom g,dgn_RTree3d rt WHERE"
+        "SELECT aspect.ElementId, aspect.TestUniqueAspectProperty FROM dgn_Element e,dptest_TestUniqueAspect aspect,dgn_SpatialElement g,dgn_RTree3d rt WHERE"
              " rt.ElementId MATCH DGN_rtree_overlap_aabb(:bbox)" // FROM R-Tree
-             " AND g.ElementId=rt.ElementId"
-             " AND DGN_point_min_distance_to_bbox(:testPoint, DGN_placement_aabb(g.Placement)) <= :maxDistance"  // select geoms that are within some distance of a specified point
-             " AND e.Id=g.ElementId"
+             " AND g.Id=rt.ElementId"
+             " AND DGN_point_min_distance_to_bbox(:testPoint, " AABB_FROM_PLACEMENT ") <= :maxDistance"  // select geoms that are within some distance of a specified point
+             " AND e.Id=g.Id"
              " AND e.ECClassId=:ecClass"       //  select only Obstacles
              " AND aspect.ElementId=e.Id AND aspect.TestUniqueAspectProperty=:propertyValue"       // ... with certain items
         );
@@ -405,22 +414,22 @@ TEST_F(SqlFunctionsTest, spatialQueryECSql)
 
     DgnElementId r1, o1, o1a, o2, o2a;
         {
-        RobotElementPtr robot1 = RobotElement::Create(*GetDefaultPhysicalModel(), m_defaultCategoryId, DPoint3d::From(0,0,0), 0.0, CreateCode("Robot1"));
+        RobotElementPtr robot1 = RobotElement::Create(*GetDefaultSpatialModel(), m_defaultCategoryId, DPoint3d::From(0,0,0), 0.0, CreateCode("Robot1"));
         InsertElement(*robot1);
 
-        ObstacleElementPtr obstacle1 = ObstacleElement::Create(*GetDefaultPhysicalModel(), m_defaultCategoryId, o1origin, 0.0, CreateCode("Obstacle1"));
+        ObstacleElementPtr obstacle1 = ObstacleElement::Create(*GetDefaultSpatialModel(), m_defaultCategoryId, o1origin, 0.0, CreateCode("Obstacle1"));
         InsertElement(*obstacle1);
         obstacle1->SetTestUniqueAspect(*m_db, "SomeKindOfObstacle");
 
-        ObstacleElementPtr obstacle1a = ObstacleElement::Create(*GetDefaultPhysicalModel(), m_defaultCategoryId, o1origin, 0.0, CreateCode("Obstacle1a"));
+        ObstacleElementPtr obstacle1a = ObstacleElement::Create(*GetDefaultSpatialModel(), m_defaultCategoryId, o1origin, 0.0, CreateCode("Obstacle1a"));
         InsertElement(*obstacle1a);
         obstacle1a->SetTestUniqueAspect(*m_db, "SomeOtherKindOfObstacle");
 
-        ObstacleElementPtr obstacle2 = ObstacleElement::Create(*GetDefaultPhysicalModel(), m_defaultCategoryId, o2origin, 90.0, CreateCode("Obstacle2"));
+        ObstacleElementPtr obstacle2 = ObstacleElement::Create(*GetDefaultSpatialModel(), m_defaultCategoryId, o2origin, 90.0, CreateCode("Obstacle2"));
         InsertElement(*obstacle2);
         obstacle2->SetTestUniqueAspect(*m_db, "SomeKindOfObstacle");
 
-        ObstacleElementPtr obstacle2a = ObstacleElement::Create(*GetDefaultPhysicalModel(), m_defaultCategoryId, o2origin, 90.0, CreateCode("Obstacle2a"));
+        ObstacleElementPtr obstacle2a = ObstacleElement::Create(*GetDefaultSpatialModel(), m_defaultCategoryId, o2origin, 90.0, CreateCode("Obstacle2a"));
         InsertElement(*obstacle2a);
         obstacle2a->SetTestUniqueAspect(*m_db, "SomeOtherKindOfObstacle");
 
@@ -619,22 +628,22 @@ TEST_F(SqlFunctionsTest, spatialQuery)
 
     DgnElementId r1, o1, o1a, o2, o2a;
         {
-        RobotElementPtr robot1 = RobotElement::Create(*GetDefaultPhysicalModel(), m_defaultCategoryId, DPoint3d::From(0,0,0), 0.0, CreateCode("Robot1"));
+        RobotElementPtr robot1 = RobotElement::Create(*GetDefaultSpatialModel(), m_defaultCategoryId, DPoint3d::From(0,0,0), 0.0, CreateCode("Robot1"));
         InsertElement(*robot1);
 
-        ObstacleElementPtr obstacle1 = ObstacleElement::Create(*GetDefaultPhysicalModel(), m_defaultCategoryId, o1origin, 0.0, CreateCode("Obstacle1"));
+        ObstacleElementPtr obstacle1 = ObstacleElement::Create(*GetDefaultSpatialModel(), m_defaultCategoryId, o1origin, 0.0, CreateCode("Obstacle1"));
         InsertElement(*obstacle1);
         obstacle1->SetTestUniqueAspect(*m_db, "SomeKindOfObstacle");
 
-        ObstacleElementPtr obstacle1a = ObstacleElement::Create(*GetDefaultPhysicalModel(), m_defaultCategoryId, o1origin, 0.0, CreateCode("Obstacle1a"));
+        ObstacleElementPtr obstacle1a = ObstacleElement::Create(*GetDefaultSpatialModel(), m_defaultCategoryId, o1origin, 0.0, CreateCode("Obstacle1a"));
         InsertElement(*obstacle1a);
         obstacle1a->SetTestUniqueAspect(*m_db, "SomeOtherKindOfObstacle");
 
-        ObstacleElementPtr obstacle2 = ObstacleElement::Create(*GetDefaultPhysicalModel(), m_defaultCategoryId, o2origin, 90.0, CreateCode("Obstacle2"));
+        ObstacleElementPtr obstacle2 = ObstacleElement::Create(*GetDefaultSpatialModel(), m_defaultCategoryId, o2origin, 90.0, CreateCode("Obstacle2"));
         InsertElement(*obstacle2);
         obstacle2->SetTestUniqueAspect(*m_db, "SomeKindOfObstacle");
 
-        ObstacleElementPtr obstacle2a = ObstacleElement::Create(*GetDefaultPhysicalModel(), m_defaultCategoryId, o2origin, 90.0, CreateCode("Obstacle2a"));
+        ObstacleElementPtr obstacle2a = ObstacleElement::Create(*GetDefaultSpatialModel(), m_defaultCategoryId, o2origin, 90.0, CreateCode("Obstacle2a"));
         InsertElement(*obstacle2a);
         obstacle2a->SetTestUniqueAspect(*m_db, "SomeOtherKindOfObstacle");
 
@@ -823,8 +832,8 @@ TEST_F(SqlFunctionsTest, bbox_union)
     //__PUBLISH_EXTRACT_START__ DgnSchemaDomain_SqlFuncs_DGN_bbox_union.sampleCode
     // This is an example of accumlating the union of bounding boxes.
     // Note that when computing a union, it only makes sense to use axis-aligned bounding boxes, not element-aligned bounding boxes.
-    stmt.Prepare(*dgndb, "SELECT DGN_bbox_union(DGN_placement_aabb(g.Placement)) FROM " DGN_TABLE(DGN_CLASSNAME_Element) " AS e," DGN_TABLE(DGN_CLASSNAME_ElementGeom) 
-                    " AS g WHERE e.ModelId=2 AND e.id=g.ElementId");
+    stmt.Prepare(*dgndb, "SELECT DGN_bbox_union(" AABB_FROM_PLACEMENT ") FROM " DGN_TABLE(DGN_CLASSNAME_Element) " AS e," DGN_TABLE(DGN_CLASSNAME_SpatialElement) 
+                    " AS g WHERE e.ModelId=2 AND e.id=g.Id");
     //__PUBLISH_EXTRACT_END__
     auto rc = stmt.Step();
     ASSERT_EQ(BE_SQLITE_ROW, rc);
@@ -835,10 +844,11 @@ TEST_F(SqlFunctionsTest, bbox_union)
     ASSERT_TRUE(result.IsValid());
 
     stmt.Finalize();
+#ifdef NEEDSWORK_PLACEMENT_STRUCT
     //__PUBLISH_EXTRACT_START__ DgnSchemaDomain_SqlFuncs_DGN_angles.sampleCode
     // An example of constructing a DGN_Angles object in order to test the placement angles of elements in the Db.
     Utf8CP anglesSql = "SELECT count(*) FROM (SELECT Placement FROM "
-        DGN_TABLE(DGN_CLASSNAME_ElementGeom)
+        DGN_TABLE(DGN_CLASSNAME_SpatialElement)
         " WHERE Placement IS NOT NULL) WHERE DGN_angles_maxdiff(DGN_placement_angles(Placement),DGN_Angles(0,0,90)) < 1.0";
 
     stmt.Prepare(*dgndb, anglesSql);
@@ -850,8 +860,11 @@ TEST_F(SqlFunctionsTest, bbox_union)
     ASSERT_NE(count, 0);
 
     stmt.Finalize();
+#else
+    int count = 0;
+#endif
     stmt.Prepare(*dgndb, "SELECT count(*) FROM "
-                         DGN_TABLE(DGN_CLASSNAME_ElementGeom) " AS g WHERE DGN_angles_value(DGN_placement_angles(g.Placement),2) < 90");
+                         DGN_TABLE(DGN_CLASSNAME_SpatialElement) " AS g WHERE g.Placement_Rotation_Roll < 90");
 
     rc = stmt.Step();
     ASSERT_EQ(BE_SQLITE_ROW, rc);

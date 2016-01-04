@@ -24,7 +24,8 @@
     /** The alias of the dgn schema namespace */
     export var DGN_ECSCHEMA_NAME = "dgn";
 
-    /** The name of the PhysicalElement class in the dgn schema. */
+    /** The names of classes in the dgn schema. */
+    export var DGN_CLASSNAME_SpatialElement = "SpatialElement";
     export var DGN_CLASSNAME_PhysicalElement = "PhysicalElement";
 
     /**

@@ -42,6 +42,8 @@ DgnDbStatus ECUtils::StoreECValueAsJson(Json::Value& json, ECN::ECValueCR ecv)
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus ECUtils::LoadECValueFromJson(ECN::ECValueR ecv, Json::Value const& json)
     {
+    if (!json.isMember("Value") || json["Value"].isNull())
+        return DgnDbStatus::BadArg;
     ecv = ECValue(json["Value"].asCString());
     return ecv.ConvertToPrimitiveType(ECUtils::ECPrimtiveTypeFromString(json["Type"].asCString()))? DgnDbStatus::Success: DgnDbStatus::BadArg;
     }

@@ -264,8 +264,7 @@ DgnCategoryId DgnCategory::QueryHighestCategoryId(DgnDbR db)
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnCategoryId DgnCategory::QueryElementCategoryId(DgnElementId elemId, DgnDbR db)
     {
-    CachedStatementPtr stmt;
-    db.GetCachedStatement(stmt, "SELECT CategoryId FROM " DGN_TABLE(DGN_CLASSNAME_ElementGeom) " WHERE ElementId=?");
+    CachedECSqlStatementPtr stmt = db.GetPreparedECSqlStatement("SELECT CategoryId FROM " DGN_SCHEMA(DGN_CLASSNAME_GeometrySource) " WHERE ECInstanceId=? LIMIT 1");
     stmt->BindId(1, elemId);
     return BE_SQLITE_ROW == stmt->Step() ? stmt->GetValueId<DgnCategoryId>(0) : DgnCategoryId();
     }
@@ -803,4 +802,3 @@ DgnDbStatus DgnSubCategory::_OnUpdate(DgnElementCR el)
     {
     return DgnCategory::IsValidName(GetSubCategoryName()) ? T_Super::_OnUpdate(el) : DgnDbStatus::InvalidName;
     }
-

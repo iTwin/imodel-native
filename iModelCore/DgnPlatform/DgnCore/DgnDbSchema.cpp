@@ -43,6 +43,11 @@ static void importDgnSchema(DgnDbR db, bool updateExisting)
     }
 
 #define GEOM_IN_PHYSICAL_SPACE_CLAUSE " 1 = new.InPhysicalSpace "
+#define ORIGIN_FROM_PLACEMENT "DGN_point(NEW.Placement_Origin_X,NEW.Placement_Origin_Y,NEW.Placement_Origin_Z)"
+#define ANGLES_FROM_PLACEMENT "DGN_angles(NEW.Placement_Rotation_Yaw,NEW.Placement_Rotation_Pitch,NEW.Placement_Rotation_Roll)"
+#define BBOX_FROM_PLACEMENT "DGN_bbox(NEW.Placement_Box_Low_X,NEW.Placement_Box_Low_Y,NEW.Placement_Box_Low_Z,NEW.Placement_Box_High_X,NEW.Placement_Box_High_Y,NEW.Placement_Box_High_Z)"
+#define PLACEMENT_FROM_GEOM "DGN_placement(" ORIGIN_FROM_PLACEMENT "," ANGLES_FROM_PLACEMENT "," BBOX_FROM_PLACEMENT ")"
+#define AABB_FROM_PLACEMENT "DGN_placement_aabb(" PLACEMENT_FROM_GEOM ")"
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
@@ -98,24 +103,24 @@ DbResult DgnDb::CreateDgnDbTables()
     // Every DgnDb has a dictionary model
     CreateDictionaryModel();
 
-    ExecuteSql("CREATE TRIGGER dgn_prjrange_del AFTER DELETE ON " DGN_TABLE(DGN_CLASSNAME_ElementGeom)
-               " BEGIN DELETE FROM " DGN_VTABLE_RTree3d " WHERE ElementId=old.ElementId;END");
+    ExecuteSql("CREATE TRIGGER dgn_prjrange_del AFTER DELETE ON " DGN_TABLE(DGN_CLASSNAME_SpatialElement)
+               " BEGIN DELETE FROM " DGN_VTABLE_RTree3d " WHERE ElementId=old.Id;END");
 
-    ExecuteSql("CREATE TRIGGER dgn_rtree_upd AFTER UPDATE ON " DGN_TABLE(DGN_CLASSNAME_ElementGeom) 
-               " WHEN new.Placement IS NOT NULL AND " GEOM_IN_PHYSICAL_SPACE_CLAUSE
-               "BEGIN INSERT OR REPLACE INTO " DGN_VTABLE_RTree3d "(ElementId,minx,maxx,miny,maxy,minz,maxz) SELECT new.ElementId,"
+    ExecuteSql("CREATE TRIGGER dgn_rtree_upd AFTER UPDATE ON " DGN_TABLE(DGN_CLASSNAME_SpatialElement) 
+               " WHEN new.Placement_Origin_X IS NOT NULL AND " GEOM_IN_PHYSICAL_SPACE_CLAUSE
+               "BEGIN INSERT OR REPLACE INTO " DGN_VTABLE_RTree3d "(ElementId,minx,maxx,miny,maxy,minz,maxz) SELECT new.Id,"
                "DGN_bbox_value(bb,0),DGN_bbox_value(bb,3),DGN_bbox_value(bb,1),DGN_bbox_value(bb,4),DGN_bbox_value(bb,2),DGN_bbox_value(bb,5)"
-               " FROM (SELECT DGN_placement_aabb(NEW.Placement) as bb);END");
+               " FROM (SELECT " AABB_FROM_PLACEMENT " as bb);END");
 
-    ExecuteSql("CREATE TRIGGER dgn_rtree_upd1 AFTER UPDATE ON " DGN_TABLE(DGN_CLASSNAME_ElementGeom) 
-                " WHEN OLD.Placement IS NOT NULL AND NEW.Placement IS NULL"
-                " BEGIN DELETE FROM " DGN_VTABLE_RTree3d " WHERE ElementId=OLD.ElementId;END");
+    ExecuteSql("CREATE TRIGGER dgn_rtree_upd1 AFTER UPDATE ON " DGN_TABLE(DGN_CLASSNAME_SpatialElement) 
+                " WHEN OLD.Placement_Origin_X IS NOT NULL AND NEW.Placement_Origin_X IS NULL"
+                " BEGIN DELETE FROM " DGN_VTABLE_RTree3d " WHERE ElementId=OLD.Id;END");
 
-    ExecuteSql("CREATE TRIGGER dgn_rtree_ins AFTER INSERT ON " DGN_TABLE(DGN_CLASSNAME_ElementGeom) 
-               " WHEN new.Placement IS NOT NULL AND " GEOM_IN_PHYSICAL_SPACE_CLAUSE
-               "BEGIN INSERT INTO " DGN_VTABLE_RTree3d "(ElementId,minx,maxx,miny,maxy,minz,maxz) SELECT new.ElementId,"
+    ExecuteSql("CREATE TRIGGER dgn_rtree_ins AFTER INSERT ON " DGN_TABLE(DGN_CLASSNAME_SpatialElement) 
+               " WHEN new.Placement_Origin_X IS NOT NULL AND " GEOM_IN_PHYSICAL_SPACE_CLAUSE
+               "BEGIN INSERT INTO " DGN_VTABLE_RTree3d "(ElementId,minx,maxx,miny,maxy,minz,maxz) SELECT new.Id,"
                "DGN_bbox_value(bb,0),DGN_bbox_value(bb,3),DGN_bbox_value(bb,1),DGN_bbox_value(bb,4),DGN_bbox_value(bb,2),DGN_bbox_value(bb,5)"
-               " FROM (SELECT DGN_placement_aabb(NEW.Placement) as bb);END");
+               " FROM (SELECT " AABB_FROM_PLACEMENT " as bb);END");
 
 #ifdef NEEDSWORK_VIEW_SETTINGS_TRIGGER
     ExecuteSql("CREATE TRIGGER delete_viewProps AFTER DELETE ON " DGN_TABLE(DGN_CLASSNAME_View) " BEGIN DELETE FROM " BEDB_TABLE_Property

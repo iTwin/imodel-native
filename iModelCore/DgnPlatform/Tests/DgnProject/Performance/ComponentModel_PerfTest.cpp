@@ -55,10 +55,10 @@ static void openDb (DgnDbPtr& db, BeFileNameCR name, DgnDb::OpenMode mode)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-static DgnDbStatus createPhysicalModel(PhysicalModelPtr& catalogModel, DgnDbR db, DgnModel::Code const& code)
+static DgnDbStatus createSpatialModel(SpatialModelPtr& catalogModel, DgnDbR db, DgnModel::Code const& code)
     {
-    DgnClassId mclassId = DgnClassId(db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_PhysicalModel));
-    catalogModel = new PhysicalModel(DgnModel3d::CreateParams(db, mclassId, code));
+    DgnClassId mclassId = DgnClassId(db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_SpatialModel));
+    catalogModel = new SpatialModel(DgnModel3d::CreateParams(db, mclassId, code));
     catalogModel->SetInGuiList(false);
     return catalogModel->Insert();
     }
@@ -70,14 +70,6 @@ template<typename T>
 RefCountedPtr<T> getModelByName(DgnDbR db, Utf8CP cmname)
     {
     return db.Models().Get<T>(db.Models().QueryModelId(DgnModel::CreateModelCode(cmname)));
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Sam.Wilson      06/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-static size_t countElementsInModel (DgnModelR model)
-    {
-    return model.GetElements().size();
     }
 
 /*=================================================================================**//**
@@ -101,20 +93,6 @@ struct FakeScriptLibrary : ScopedDgnHost::FetchScriptCallback
         }
     };
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      06/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-static void checkElementClassesInModel(DgnModelCR model, bset<DgnClassId> const& allowedClasses)
-    {
-    Statement statement(model.GetDgnDb(), "SELECT ECClassId FROM " DGN_TABLE(DGN_CLASSNAME_Element) " WHERE ModelId=?");
-    statement.BindId(1, model.GetModelId());
-    while (BE_SQLITE_ROW == statement.Step())
-        {
-        DgnClassId foundClassId = statement.GetValueId<DgnClassId>(0);
-        ASSERT_TRUE( allowedClasses.find(foundClassId) != allowedClasses.end() ) << Utf8PrintfString("Did not expect to find an instance of class %s", model.GetDgnDb().Schemas().GetECClass(ECN::ECClassId(foundClassId.GetValue()))->GetName().c_str()).c_str();
-        }
-    }
-
 /*=================================================================================**//**
 * @bsiclass                                                     Sam.Wilson     02/2012
 +===============+===============+===============+===============+===============+======*/
@@ -136,8 +114,6 @@ void OpenComponentDb(DgnDb::OpenMode mode) {openDb(m_componentDb, m_componentDbN
 void CloseComponentDb() {m_componentDb->CloseDb(); m_componentDb=nullptr;}
 void OpenClientDb(DgnDb::OpenMode mode) {openDb(m_clientDb, m_clientDbName, mode);}
 void CloseClientDb() {m_clientDb->CloseDb(); m_clientDb=nullptr;}
-void Client_ImportCM(Utf8CP componentName);
-void Client_SolveAndCapture(DgnElementCPtr&, PhysicalModelR catalogModel, Utf8CP componentName, Json::Value const& parms, Utf8StringCR);
 
 void PlaceInstances(int ninstances, int boxCount, DPoint3d boxSize);
 void PlaceElements(int ninstances, int boxCount, DPoint3d boxSize);
@@ -186,21 +162,20 @@ void ComponentModelPerfTest::Developer_CreateCMs()
     // Define the CM's Element Category (in the CM's DgnDb). Use the same name as the component model. 
     ASSERT_TRUE( Developer_CreateCategory("Boxes", ColorDef(0xff,0x00,0x00)).IsValid() );
 
-    // Define the Solver wparameters for use by this model.
-    //ModelSolverDef::Parameter::Scope ip = ModelSolverDef::Parameter::Scope::Instance;
-    ModelSolverDef::Parameter::Scope tp = ModelSolverDef::Parameter::Scope::Type;
-    bvector<ModelSolverDef::Parameter> wparameters;
-    wparameters.push_back(ModelSolverDef::Parameter("H", tp, ECN::ECValue(1.0))); 
-    wparameters.push_back(ModelSolverDef::Parameter("W", tp, ECN::ECValue(1.0))); 
-    wparameters.push_back(ModelSolverDef::Parameter("D", tp, ECN::ECValue(1.0))); 
-    wparameters.push_back(ModelSolverDef::Parameter("box_count", tp, ECN::ECValue(1.0)));
-    ModelSolverDef wsolver(ModelSolverDef::Type::Script, TEST_JS_NAMESPACE ".Boxes", wparameters); // Identify the JS solver that should be used. Note: this JS program must be in the script library
+    ECN::ECSchemaPtr testSchema = ComponentDefCreator::GenerateSchema(*m_componentDb, TEST_JS_NAMESPACE);
+    ASSERT_TRUE(testSchema.IsValid());
 
-    // Create the models
-    ComponentModel::CreateParams wparms(*m_componentDb, TEST_BOXES_COMPONENT_NAME, "dgn.PhysicalElement", "Boxes", "", wsolver);
-    ComponentModelPtr wcm = new ComponentModel(wparms);
-    ASSERT_TRUE( wcm->IsValid() );
-    ASSERT_EQ( DgnDbStatus::Success , wcm->Insert() );       /* Insert the new model into the DgnDb */
+    ECN::ECClassCP baseClass = m_componentDb->Schemas().GetECClass(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_PhysicalElement);
+
+    ComponentDefCreator creator(*m_componentDb, *testSchema, TEST_BOXES_COMPONENT_NAME, *baseClass, TEST_JS_NAMESPACE "." TEST_BOXES_COMPONENT_NAME, "Boxes", "");
+    creator.AddPropertySpec(ComponentDefCreator::PropertySpec("H", ECN::PrimitiveType::PRIMITIVETYPE_Double, ComponentDef::ParameterVariesPer::Instance));
+    creator.AddPropertySpec(ComponentDefCreator::PropertySpec("W", ECN::PrimitiveType::PRIMITIVETYPE_Double, ComponentDef::ParameterVariesPer::Instance));
+    creator.AddPropertySpec(ComponentDefCreator::PropertySpec("D", ECN::PrimitiveType::PRIMITIVETYPE_Double, ComponentDef::ParameterVariesPer::Instance));
+    creator.AddPropertySpec(ComponentDefCreator::PropertySpec("box_count", ECN::PrimitiveType::PRIMITIVETYPE_Double, ComponentDef::ParameterVariesPer::Instance));
+    ECN::ECClassCP ecClass = creator.GenerateECClass();
+    ASSERT_TRUE(nullptr != ecClass);
+
+    ASSERT_TRUE(ComponentDefCreator::ImportSchema(*m_componentDb, *testSchema, false) != nullptr);
 
     // Here is the model solver that should be used. 
     // Note that we must put it into the Script library under the same name that was used in the model definition above.
@@ -209,7 +184,6 @@ void ComponentModelPerfTest::Developer_CreateCMs()
     AddToFakeScriptLibrary(TEST_JS_NAMESPACE, 
 "(function () { \
     function makeBoxes(model, params, options) { \
-        model.DeleteAllElements();\
         var angles = new Bentley.Dgn.YawPitchRollAngles(0,0,0);\
         for (var i = 0; i < params.box_count; i++)\
             {\
@@ -227,79 +201,16 @@ void ComponentModelPerfTest::Developer_CreateCMs()
     Bentley.Dgn.RegisterModelSolver('" TEST_JS_NAMESPACE ".Boxes" "', makeBoxes); \
 })();\
 ");
-    ASSERT_TRUE( wcm.IsValid() );
 
     m_componentDb->SaveChanges(); // should trigger validation
 
     CloseComponentDb();
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      04/2013
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ComponentModelPerfTest::Client_ImportCM(Utf8CP componentName)
-    {
-    OpenComponentDb(Db::OpenMode::Readonly);
-    
-    ComponentModelPtr componentModel = getModelByName<ComponentModel>(*m_componentDb, componentName);
-
-    // ONLY DO THIS ONCE per CM. This might be done on demand, the first time that an instance of a particular CM is placed.
-    ASSERT_TRUE( componentModel.IsValid() );
-
-    DgnImportContext importer(*m_componentDb, *m_clientDb);
-
-    DgnDbStatus status;
-    ComponentModelPtr cmCopy = DgnModel::Import(&status, *componentModel, importer);
-    
-    ASSERT_TRUE( cmCopy.IsValid() );
-
-    ASSERT_EQ( countElementsInModel(*componentModel), countElementsInModel(*cmCopy) ); // at least make sure the copy has the same number of elements.
-
-    // Original ComponentModel and the copy should contain only PhysicalElements (in this test)
-    bset<DgnClassId> cmModelElementClasses;
-    cmModelElementClasses.insert(DgnClassId(m_componentDb->Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_PhysicalElement)));
-    checkElementClassesInModel(*componentModel, cmModelElementClasses);
-
-    bset<DgnClassId> cmCopyModelElementClasses;
-    cmCopyModelElementClasses.insert(DgnClassId(m_clientDb->Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_PhysicalElement)));
-    checkElementClassesInModel(*cmCopy, cmCopyModelElementClasses);
-
-    m_clientDb->SaveChanges();
-
-    //  Verify that we can look up an existing cmCopy
-    DgnModelId ccId = m_clientDb->Models().QueryModelId(DgnModel::CreateModelCode(componentName));
-    ASSERT_EQ( ccId.GetValue(), cmCopy->GetModelId().GetValue() );
-
-    CloseComponentDb();
-    }
-    
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      04/2013
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ComponentModelPerfTest::Client_SolveAndCapture(DgnElementCPtr& catalogItem, PhysicalModelR catalogModel, Utf8CP componentName, Json::Value const& parmsToChange, Utf8StringCR ciname)
-    {
-    ComponentModelPtr componentModel = getModelByName<ComponentModel>(*m_clientDb, componentName);  // Open the client's imported copy
-    ASSERT_TRUE( componentModel.IsValid() );
-
-    ModelSolverDef::ParameterSet newParameterValues = componentModel->GetSolver().GetParameters();
-    for (auto pname : parmsToChange.getMemberNames())
-        {
-        ModelSolverDef::Parameter* sparam = newParameterValues.GetParameterP(pname.c_str());
-        ASSERT_NE( nullptr , sparam );
-        ECN::ECValue ecv;
-        ECUtils::ConvertJsonToECValue(ecv, parmsToChange[pname], sparam->GetValue().GetPrimitiveType());
-        sparam->SetValue(ecv);
-        }
-
-    DgnDbStatus status;
-    catalogItem = componentModel->CaptureSolution(&status, catalogModel, newParameterValues, ciname);
-    ASSERT_TRUE(catalogItem.IsValid()) << Utf8PrintfString("ComponentModel::CaptureSolution failed with error %x", status);
-    }
-
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    06/2015
 //---------------------------------------------------------------------------------------
-static void insertBoxesElement(DgnElementId& eid, PhysicalModelR physicalTestModel, DgnCategoryId testCategoryId, DPoint3dCR placementOrigin, DPoint3dCR sizeOfBlock, bvector<DPoint3d> const& originsOfBlocks)
+static void insertBoxesElement(DgnElementId& eid, SpatialModelR physicalTestModel, DgnCategoryId testCategoryId, DPoint3dCR placementOrigin, DPoint3dCR sizeOfBlock, bvector<DPoint3d> const& originsOfBlocks)
     {
     PhysicalElementPtr testElement = PhysicalElement::Create(physicalTestModel, testCategoryId);
 
@@ -327,50 +238,68 @@ void ComponentModelPerfTest::PlaceInstances(int ninstances, int boxCount, DPoint
     // Create component models (in component db)
     Developer_CreateCMs();
 
+    if (true)
+        {
+        OpenClientDb(Db::OpenMode::ReadWrite);
+
+        //  Import the component model
+        OpenComponentDb(Db::OpenMode::Readonly);
+        m_componentDb->Schemas().GetECSchema(TEST_JS_NAMESPACE, true);
+        ComponentDefPtr sourceCdef = ComponentDef::FromECSqlName(nullptr, *m_componentDb, Utf8PrintfString("%s.%s", TEST_JS_NAMESPACE, TEST_BOXES_COMPONENT_NAME));
+        DgnImportContext ctx(*m_componentDb, *m_clientDb);
+        ASSERT_EQ( DgnDbStatus::Success , sourceCdef->Export(ctx, true, true));
+        CloseComponentDb();
+
+        m_clientDb->SaveChanges();
+        CloseClientDb();
+        }
+
     OpenClientDb(Db::OpenMode::ReadWrite);
 
     //  Create the catalog model in the client.
-    PhysicalModelPtr catalogModel;
-    ASSERT_EQ( DgnDbStatus::Success , createPhysicalModel(catalogModel, *m_clientDb, DgnModel::CreateModelCode("Catalog")) );
+    SpatialModelPtr catalogModel;
+    ASSERT_EQ( DgnDbStatus::Success , createSpatialModel(catalogModel, *m_clientDb, DgnModel::CreateModelCode("Catalog")) );
 
     //  Create the target model in the client.
-    PhysicalModelPtr targetModel;
-    ASSERT_EQ( DgnDbStatus::Success , createPhysicalModel(targetModel, *m_clientDb, DgnModel::CreateModelCode("Instances")) );
+    SpatialModelPtr targetModel;
+    ASSERT_EQ( DgnDbStatus::Success , createSpatialModel(targetModel, *m_clientDb, DgnModel::CreateModelCode("Instances")) );
 
     StopWatch timer("place components");
     timer.Start();
-
-    //  Import the component model
-    Client_ImportCM(TEST_BOXES_COMPONENT_NAME);
-
-    //  Cache a solution
-    Json::Value parameters(Json::objectValue);
-    parameters["H"] = boxSize.x;
-    parameters["W"] = boxSize.y;
-    parameters["D"] = boxSize.z;
-    parameters["box_count"] = boxCount;
-    DgnElementId w1;
-    DgnElementCPtr catalogItem;
-    Client_SolveAndCapture(catalogItem, *catalogModel, TEST_BOXES_COMPONENT_NAME, parameters, "catalog_item_name");
-
-    DgnDbStatus status;
-    YawPitchRollAngles placementAngles;
-
-    //  Place instances of this solution
-    for (int i=0; i<ninstances; ++i)
         {
-        DgnElementCPtr instance = ComponentModel::MakeInstance(&status, *targetModel, *catalogItem);
+        ComponentDefPtr cdef = ComponentDef::FromECSqlName(nullptr, *m_clientDb, TEST_JS_NAMESPACE "." TEST_BOXES_COMPONENT_NAME);
+        ASSERT_TRUE(cdef.IsValid());
 
-        PhysicalElementPtr pinst = instance->MakeCopy<PhysicalElement>();
-        Placement3d placement;
-        placement.GetOriginR() = DPoint3d::From(-i,-i,-i);
-        pinst->SetPlacement(placement);
-        pinst->Update();
+        //  Cache a solution
+        ECN::IECInstancePtr params = cdef->MakeVariationSpec();
+        params->SetValue("H", ECN::ECValue(boxSize.x));
+        params->SetValue("W", ECN::ECValue(boxSize.y));
+        params->SetValue("D", ECN::ECValue(boxSize.z));
+        params->SetValue("box_count", ECN::ECValue(boxCount));
+        DgnElementCPtr variation = cdef->MakeVariation(nullptr, *catalogModel, *params, "stuff");
+        ASSERT_TRUE(variation.IsValid());
+
+        DgnDbStatus status;
+        YawPitchRollAngles placementAngles;
+
+        //  Place instances of this solution
+        for (int i=0; i<ninstances; ++i)
+            {
+            DgnElementCPtr instance = cdef->MakeInstanceOfVariation(&status, *targetModel, *variation, nullptr);
+
+            PhysicalElementPtr pinst = instance->MakeCopy<PhysicalElement>();
+            Placement3d placement;
+            placement.GetOriginR() = DPoint3d::From(-i,-i,-i);
+            pinst->SetPlacement(placement);
+            pinst->Update();
+            }
         }
     timer.Stop();
     NativeLogging::LoggingManager::GetLogger("Performance")->infov("place instances of %d solutions: %lf seconds (%lf instances / second)", ninstances, timer.GetElapsedSeconds(), ninstances/timer.GetElapsedSeconds());
 
     m_clientDb->SaveChanges();
+
+    CloseClientDb();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -382,8 +311,8 @@ void ComponentModelPerfTest::PlaceElements(int ninstances, int boxCount, DPoint3
 
     OpenClientDb(Db::OpenMode::ReadWrite);
     
-    PhysicalModelPtr targetModel;
-    createPhysicalModel(targetModel, *m_clientDb, DgnModel::CreateModelCode("Instances"));
+    SpatialModelPtr targetModel;
+    createSpatialModel(targetModel, *m_clientDb, DgnModel::CreateModelCode("Instances"));
     DgnCategoryId someCat = DgnCategory::QueryFirstCategoryId(*m_clientDb);
 
     bvector<DPoint3d> originsOfBoxes;
@@ -443,3 +372,4 @@ TEST_F(ComponentModelPerfTest, PlaceElements_TwentyBoxes)
     };
 
 #endif //ndef BENTLEYCONFIG_NO_JAVASCRIPT
+

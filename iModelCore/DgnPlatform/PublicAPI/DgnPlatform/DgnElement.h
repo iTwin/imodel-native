@@ -39,6 +39,7 @@ protected:
     bmap<DgnElementId, DgnElementId> m_elementId;
     bmap<DgnClassId, DgnClassId> m_classId;
     bmap<DgnAuthorityId, DgnAuthorityId> m_authorityId;
+    bmap<DgnFontId, DgnFontId> m_fontId;
 
     template<typename T> T Find(bmap<T,T> const& table, T sourceId) const {auto i = table.find(sourceId); return (i == table.end())? T(): i->second;}
     template<typename T> T FindElement(T sourceId) const {return T(Find<DgnElementId>(m_elementId, sourceId).GetValueUnchecked());}
@@ -60,6 +61,8 @@ public:
     DgnTextureId Add(DgnTextureId sourceId, DgnTextureId targetId) {return DgnTextureId((m_elementId [sourceId] = targetId).GetValueUnchecked()); }
     DgnStyleId Find(DgnStyleId sourceId) const {return FindElement<DgnStyleId>(sourceId);}
     DgnStyleId Add(DgnStyleId sourceId, DgnStyleId targetId) {return DgnStyleId((m_elementId [sourceId] = targetId).GetValueUnchecked()); }
+    DgnFontId Find(DgnFontId sourceId) const { return Find<DgnFontId>(m_fontId, sourceId); }
+    DgnFontId Add(DgnFontId sourceId, DgnFontId targetId) { return m_fontId[sourceId] = targetId; }
 
     DgnSubCategoryId Find(DgnSubCategoryId sourceId) const {return FindElement<DgnSubCategoryId>(sourceId);}
     DgnSubCategoryId Add(DgnSubCategoryId sourceId, DgnSubCategoryId targetId) {return DgnSubCategoryId((m_elementId[sourceId] = targetId).GetValueUnchecked());}
@@ -163,6 +166,8 @@ public:
     //! Look up a copy of a Material
     //! Make sure that any ids referenced by the supplied GeomStream have been imported
     DGNPLATFORM_EXPORT DgnDbStatus RemapGeomStreamIds(GeomStreamR geom);
+    //! Remap a font between databases. If it exists by-type and -name, the ID is simply remapped; if not, a deep copy is made. If a deep copy is made and the source database contained the font data, the font data is also deep copied.
+    DGNPLATFORM_EXPORT DgnFontId RemapFont(DgnFontId);
     //! @}
 
     //! @name GCS coordinate system shift
@@ -242,7 +247,8 @@ typedef QvElemSet<QvKey32> T_QvElemSet;
     public:     static Utf8CP MyECSchemaName() {return __ECSchemaName__;}\
                 static Utf8CP MyECClassName() {return __ECClassName__;}\
     protected:  virtual Utf8CP _GetECSchemaName() const override {return MyECSchemaName();}\
-                virtual Utf8CP _GetECClassName() const override {return MyECClassName();}
+                virtual Utf8CP _GetECClassName() const override {return MyECClassName();}\
+                virtual Utf8CP _GetSuperECClassName() const override {return T_Super::_GetECClassName();}
 
 //=======================================================================================
 //! An instance of a DgnElement in memory. DgnElements are the building blocks for a DgnDb.
@@ -388,7 +394,10 @@ public:
         virtual Utf8CP _GetECSchemaName() const = 0;
 
         //! The subclass must implement this method to return the name of the class that defines the aspect.
-        virtual Utf8CP _GetECClassName() const = 0;
+        virtual Utf8CP _GetECClassName() const { return DGN_CLASSNAME_ElementAspect; }
+
+        //! The subclass must implement this method to return the name of the superclass
+        virtual Utf8CP _GetSuperECClassName() const { return nullptr; }
 
         //! The subclass must implement this method to report an existing instance on the host element that this instance will replace.
         virtual BeSQLite::EC::ECInstanceKey _QueryExistingInstanceKey(DgnElementCR) = 0;
@@ -410,6 +419,9 @@ public:
         virtual DgnDbStatus _LoadProperties(DgnElementCR el) = 0;
 
     public:
+        Utf8CP GetECClassName() const { return _GetECClassName(); }
+        Utf8CP GetSuperECClassName() const { return _GetSuperECClassName(); }
+
         //! Prepare to delete this aspect.
         //! @note The aspect will not actually be deleted in the Db until you call DgnElements::Update on the aspect's host element.
         void Delete() {m_changeType = ChangeType::Delete;}
@@ -979,6 +991,9 @@ protected:
 
 public:
     static Utf8CP MyECClassName() {return DGN_CLASSNAME_Element;}
+    Utf8CP GetECClassName() const {return _GetECClassName();}
+    Utf8CP GetSuperECClassName() const {return _GetSuperECClassName();}
+
 
     DGNPLATFORM_EXPORT void AddRef() const;  //!< @private
     DGNPLATFORM_EXPORT void Release() const; //!< @private
@@ -1378,9 +1393,6 @@ virtual AxisAlignedBox3d _CalculateRange3d() const override final {return _GetPl
 virtual Placement3dCR _GetPlacement() const = 0;
 virtual DgnDbStatus _SetPlacement(Placement3dCR placement) = 0;
 
-DGNPLATFORM_EXPORT DgnDbStatus InsertGeomSourceInDb();
-DGNPLATFORM_EXPORT DgnDbStatus UpdateGeomSourceInDb();
-
 public:
 
 Placement3dCR GetPlacement() const {return _GetPlacement();} //!< Get the Placement3d of this element
@@ -1399,9 +1411,6 @@ virtual GeometrySource3dCP _ToGeometrySource3d() const override final {return nu
 virtual AxisAlignedBox3d _CalculateRange3d() const override final {return _GetPlacement().CalculateRange();}
 virtual Placement2dCR _GetPlacement() const = 0;
 virtual DgnDbStatus _SetPlacement(Placement2dCR placement) = 0;
-
-DGNPLATFORM_EXPORT DgnDbStatus InsertGeomSourceInDb();
-DGNPLATFORM_EXPORT DgnDbStatus UpdateGeomSourceInDb();
 
 public:
 
@@ -1424,7 +1433,11 @@ protected:
     explicit ElementGeomData(DgnCategoryId category) : m_categoryId(category) { }
 
     virtual bool _IsPlacementValid() const = 0;
-    virtual void _SetPlacement(void const* placement) = 0;
+
+    DgnDbStatus ReadFrom(BeSQLite::EC::ECSqlStatement& stmt, ECSqlClassParams const& params);
+    DgnDbStatus BindTo(BeSQLite::EC::ECSqlStatement& stmt);
+    DgnDbStatus WriteGeomStream(DgnElementCR el, Utf8CP tableName) const;
+    static void AddBaseClassParams(ECSqlClassParams& params);
 public:
     DgnCategoryId GetCategoryId() const { return m_categoryId; }
     GeomStreamCR GetGeomStream() const { return m_geom; }
@@ -1432,8 +1445,10 @@ public:
     DGNPLATFORM_EXPORT DgnDbStatus SetCategoryId(DgnCategoryId catId, DgnElementCR el);
 
     DGNPLATFORM_EXPORT DgnDbStatus Validate() const;
-    DGNPLATFORM_EXPORT DgnDbStatus LoadFromDb(DgnElementId elemId, DgnDbR db);
     DGNPLATFORM_EXPORT void RemapIds(DgnImportContext& importer);
+    DGNPLATFORM_EXPORT DgnDbStatus InsertGeomStream(DgnElementCR el, Utf8CP tableName) const;
+    DGNPLATFORM_EXPORT DgnDbStatus UpdateGeomStream(DgnElementCR el, Utf8CP tableName) const;
+    DGNPLATFORM_EXPORT DgnDbStatus LoadGeomStream(DgnElementCR el, Utf8CP tableName);
 };
 
 //=======================================================================================
@@ -1449,7 +1464,6 @@ private:
     Placement3d     m_placement;
 
     virtual bool _IsPlacementValid() const override { return m_placement.IsValid(); }
-    DGNPLATFORM_EXPORT virtual void _SetPlacement(void const* placement) override;
 public:
     explicit ElementGeom3d(DgnCategoryId category=DgnCategoryId(), Placement3dCR placement=Placement3d()) : ElementGeomData(category), m_placement(placement) { }
 
@@ -1459,6 +1473,10 @@ public:
 
     DGNPLATFORM_EXPORT void AdjustPlacementForImport(DgnImportContext const& importer);
     DGNPLATFORM_EXPORT void CopyFrom(GeometrySource3dCP geomSource);
+
+    DGNPLATFORM_EXPORT DgnDbStatus Read(BeSQLite::EC::ECSqlStatement&, ECSqlClassParams const&);
+    DGNPLATFORM_EXPORT DgnDbStatus Bind(BeSQLite::EC::ECSqlStatement&, DgnElementCR el);
+    DGNPLATFORM_EXPORT static void AddClassParams(ECSqlClassParams& params);
 };
 
 //=======================================================================================
@@ -1481,6 +1499,9 @@ protected:
     explicit GeometricElement(CreateParams const& params, DgnCategoryId category=DgnCategoryId(), T_Placement const& placement=T_Placement())
         : T_Base(params), m_geom(category, placement) { }
 
+    // Sub-class must implement this to return the name of the SQL table which contains the Geometry property which holds the binary GeomStream data
+    virtual Utf8CP _GetGeometryColumnTableName() const = 0;
+
     virtual DgnDbR _GetSourceDgnDb() const override final {return this->GetDgnDb();}
     virtual DgnElementCP _ToElement() const override final {return this;}
     virtual GeometrySourceCP _ToGeometrySource() const override final {return this;}
@@ -1493,12 +1514,22 @@ protected:
     virtual DgnDbStatus _SetPlacement(T_Placement const& placement) override { return m_geom.SetPlacement(placement, *this); }
     virtual void _AdjustPlacementForImport(DgnImportContext const& importer) override { m_geom.AdjustPlacementForImport(importer); }
 
+    virtual DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement& stmt, ECSqlClassParamsCR params) override
+        { auto status = T_Base::_ReadSelectParams(stmt, params); return DgnDbStatus::Success == status ? m_geom.Read(stmt, params) : status; }
+    virtual DgnDbStatus _BindInsertParams(BeSQLite::EC::ECSqlStatement& stmt) override
+        { auto status = T_Base::_BindInsertParams(stmt); return DgnDbStatus::Success == status ? m_geom.Bind(stmt, *this) : status; }
+    virtual DgnDbStatus _BindUpdateParams(BeSQLite::EC::ECSqlStatement& stmt) override
+        { auto status = T_Base::_BindUpdateParams(stmt); return DgnDbStatus::Success == status ? m_geom.Bind(stmt, *this) : status; }
+
+    virtual DgnDbStatus _LoadFromDb() override
+        { auto status = T_Base::_LoadFromDb(); return DgnDbStatus::Success == status ? m_geom.LoadGeomStream(*this, _GetGeometryColumnTableName()) : status; }
+    virtual DgnDbStatus _InsertInDb() override
+        { auto status = T_Base::_InsertInDb(); return DgnDbStatus::Success == status ? m_geom.InsertGeomStream(*this, _GetGeometryColumnTableName()) : status; }
+    virtual DgnDbStatus _UpdateInDb() override
+        { auto status = T_Base::_UpdateInDb(); return DgnDbStatus::Success == status ? m_geom.UpdateGeomStream(*this, _GetGeometryColumnTableName()) : status; }
+
     virtual DgnDbStatus _OnInsert() override { auto status = m_geom.Validate(); return DgnDbStatus::Success == status ? T_Base::_OnInsert() : status; }
     virtual DgnDbStatus _OnUpdate(DgnElementCR original) override { auto status = m_geom.Validate(); return DgnDbStatus::Success == status ? T_Base::_OnUpdate(original) : status; }
-
-    virtual DgnDbStatus _LoadFromDb() override { auto status = T_Base::_LoadFromDb(); return DgnDbStatus::Success == status ? m_geom.LoadFromDb(this->GetElementId(), this->GetDgnDb()) : status; }
-    virtual DgnDbStatus _InsertInDb() override { auto status = T_Base::_InsertInDb(); return DgnDbStatus::Success == status ? this->InsertGeomSourceInDb() : status; }
-    virtual DgnDbStatus _UpdateInDb() override { auto status = T_Base::_UpdateInDb(); return DgnDbStatus::Success == status ? this->UpdateGeomSourceInDb() : status; }
 
     virtual void _RemapIds(DgnImportContext& importer) override { T_Base::_RemapIds(importer); m_geom.RemapIds(importer); }
     virtual uint32_t _GetMemSize() const override {return T_Base::_GetMemSize() + static_cast<uint32_t>(sizeof(m_geom));}
@@ -1558,7 +1589,7 @@ struct EXPORT_VTABLE_ATTRIBUTE SpatialElement : GeometricElement3d<DgnElement>
 
 protected:
     SpatialElementCP _ToSpatialElement() const override final {return this;}
-
+    virtual Utf8CP _GetGeometryColumnTableName() const override final { return DGN_TABLE(DGN_CLASSNAME_SpatialElement); }
 public:
     typedef ElementCreateParams3d CreateParams;
 
@@ -1585,9 +1616,9 @@ public:
     static PhysicalElementPtr Create(CreateParams const& params) {return new PhysicalElement(params);}
 
     //! Create an instance of a PhysicalElement from a model and DgnCategoryId, using the default values for all other parameters.
-    //! @param[in] model The PhysicalModel for the new PhysicalElement.
+    //! @param[in] model The SpatialModel for the new PhysicalElement.
     //! @param[in] categoryId The category for the new PhysicalElement.
-    DGNPLATFORM_EXPORT static PhysicalElementPtr Create(PhysicalModelR model, DgnCategoryId categoryId);
+    DGNPLATFORM_EXPORT static PhysicalElementPtr Create(SpatialModelR model, DgnCategoryId categoryId);
 };
 
 //=======================================================================================
@@ -1617,7 +1648,6 @@ private:
     Placement2d     m_placement;
 
     virtual bool _IsPlacementValid() const override { return m_placement.IsValid(); }
-    DGNPLATFORM_EXPORT virtual void _SetPlacement(void const* placement) override;
 public:
     explicit ElementGeom2d(DgnCategoryId category=DgnCategoryId(), Placement2dCR placement=Placement2d()) : ElementGeomData(category), m_placement(placement) { }
 
@@ -1627,6 +1657,10 @@ public:
 
     DGNPLATFORM_EXPORT void AdjustPlacementForImport(DgnImportContext const& importer);
     DGNPLATFORM_EXPORT void CopyFrom(GeometrySource2dCP geomSource);
+
+    DGNPLATFORM_EXPORT DgnDbStatus Read(BeSQLite::EC::ECSqlStatement&, ECSqlClassParams const&);
+    DGNPLATFORM_EXPORT DgnDbStatus Bind(BeSQLite::EC::ECSqlStatement&, DgnElementCR);
+    DGNPLATFORM_EXPORT static void AddClassParams(ECSqlClassParams& params);
 };
 
 //=======================================================================================
@@ -1663,6 +1697,7 @@ public:
     static AnnotationElementPtr Create(CreateParams const& params) {return new AnnotationElement(params);}
 protected:
     virtual AnnotationElementCP _ToAnnotationElement() const override final {return this;}
+    virtual Utf8CP _GetGeometryColumnTableName() const override final { return DGN_TABLE(DGN_CLASSNAME_AnnotationElement); }
 
     explicit AnnotationElement(CreateParams const& params) : T_Super(params, params.m_categoryId, params.m_placement) { }
 }; // AnnotationElement
@@ -1683,6 +1718,7 @@ public:
     static DrawingElementPtr Create(CreateParams const& params) {return new DrawingElement(params);}
 protected:
     virtual DrawingElementCP _ToDrawingElement() const override final {return this;}
+    virtual Utf8CP _GetGeometryColumnTableName() const override final { return DGN_TABLE(DGN_CLASSNAME_DrawingElement); }
 
     explicit DrawingElement(CreateParams const& params) : T_Super(params, params.m_categoryId, params.m_placement) { }
 }; // DrawingElement
@@ -1703,6 +1739,7 @@ public:
     static SheetElementPtr Create(CreateParams const& params) {return new SheetElement(params);}
 protected:
     virtual SheetElementCP _ToSheetElement() const override final {return this;}
+    virtual Utf8CP _GetGeometryColumnTableName() const override final { return DGN_TABLE(DGN_CLASSNAME_SheetElement); }
 
     explicit SheetElement(CreateParams const& params) : T_Super(params, params.m_categoryId, params.m_placement) { }
 }; // SheetElement
@@ -1731,11 +1768,12 @@ protected:
 struct ElementGroupsMembers : NonCopyableClass
 {
 public:
-    DGNPLATFORM_EXPORT static DgnDbStatus Insert(DgnElementCR group, DgnElementCR member);
+    DGNPLATFORM_EXPORT static DgnDbStatus Insert(DgnElementCR group, DgnElementCR member, int priority);
     DGNPLATFORM_EXPORT static DgnDbStatus Delete(DgnElementCR group, DgnElementCR member);
     DGNPLATFORM_EXPORT static bool HasMember(DgnElementCR group, DgnElementCR member);
     DGNPLATFORM_EXPORT static DgnElementIdSet QueryMembers(DgnElementCR group);
     DGNPLATFORM_EXPORT static DgnElementIdSet QueryGroups(DgnElementCR member);
+    DGNPLATFORM_EXPORT static int QueryMemberPriority(DgnElementCR group, DgnElementCR member);
 };
 
 //=======================================================================================
@@ -1755,6 +1793,9 @@ public:
     DgnElementIdSet QueryMembers() const {return ElementGroupsMembers::QueryMembers(*_ToGroupElement());}
     //! Returns true if this group has the specified member
     bool HasMemberElement(DgnElementCR member) const {return ElementGroupsMembers::HasMember(*_ToGroupElement(), member);}
+    //! Query for the priority of the specified member within this group
+    //! @return the priority or -1 in case of an error
+    int QueryMemberPriority(DgnElementCR member) const {return ElementGroupsMembers::QueryMemberPriority(*_ToGroupElement(), member);}
 };
 
 //=======================================================================================
@@ -1785,7 +1826,7 @@ protected:
 
 public:
     //! Add a member to this group
-    DgnDbStatus AddMember(T const& member) const
+    DgnDbStatus AddMember(T const& member, int priority=0) const
         {
         DgnElementCR groupElement = *_ToGroupElement();
         DgnElementCR memberElement = static_cast<DgnElementCR>(member); // see static_assert in constructor
@@ -1794,7 +1835,7 @@ public:
         if (DgnDbStatus::Success != status)
             return status;
 
-        status = ElementGroupsMembers::Insert(groupElement, memberElement);
+        status = ElementGroupsMembers::Insert(groupElement, memberElement, priority);
         if (DgnDbStatus::Success != status)
             return status;
 
@@ -1852,9 +1893,9 @@ public:
     explicit SpatialGroupElement(CreateParams const& params) : T_Super(params) {}
 
     //! Create a new SpatialGroupElement from a model and DgnCategoryId, using the default values for all other parameters.
-    //! @param[in] model The PhysicalModel for the new SpatialGroupElement.
+    //! @param[in] model The SpatialModel for the new SpatialGroupElement.
     //! @param[in] categoryId The category for the new SpatialGroupElement.
-    DGNPLATFORM_EXPORT static SpatialGroupElementPtr Create(PhysicalModelR model, DgnCategoryId categoryId);
+    DGNPLATFORM_EXPORT static SpatialGroupElementPtr Create(SpatialModelR model, DgnCategoryId categoryId);
 
     //! Creates a new SpatialGroupElement
     static SpatialGroupElementPtr Create(CreateParams const& params) {return new SpatialGroupElement(params);}
@@ -1910,8 +1951,6 @@ protected:
     explicit DictionaryElement(CreateParams const& params) : T_Super(params) { }
 };
 
-struct ECSqlClassInfo;
-
 //=======================================================================================
 //! The DgnElements for a DgnDb.
 //! This class holds a cache of reference-counted DgnElements. All in-memory DgnElements for a DgnDb are held in its DgnElements member.
@@ -1960,26 +1999,12 @@ private:
         ElementSelectStatement(BeSQLite::EC::CachedECSqlStatement* stmt, ECSqlClassParamsCR params) : m_statement(stmt), m_params(params) { }
     };
 
-    struct HandlerStatementCache
+    struct ClassInfo : ECSqlClassInfo
     {
-    private:
-        struct Entry
-        {
-            ElementHandlerP m_handler;
-            BeSQLite::EC::CachedECSqlStatementPtr m_select;
-
-            explicit Entry(ElementHandlerP handler=nullptr) : m_handler(handler) { }
-        };
-
-        typedef bvector<Entry> Entries;
-
-        mutable Entries m_entries;
-
-        Entry* FindEntry(ElementHandlerR handler) const;
-    public:
-        ElementSelectStatement GetPreparedSelectStatement(DgnElementR el, ElementHandlerR handler, ECSqlClassInfo const& classInfo) const;
-        void Empty();
+        BeSQLite::EC::CachedECSqlStatementPtr m_selectStmt;
     };
+
+    typedef bmap<DgnClassId, ClassInfo> ClassInfoMap;
 
     DgnElementId  m_nextAvailableId;
     struct ElemIdTree* m_tree;
@@ -1989,7 +2014,7 @@ private:
     BeSQLite::SnappyToBlob m_snappyTo;
     DgnElementIdSet m_selectionSet;
     mutable BeSQLite::BeDbMutex m_mutex;
-    HandlerStatementCache m_handlerStmts;
+    mutable ClassInfoMap m_classInfos;
 
     void OnReclaimed(DgnElementCR);
     void OnUnreferenced(DgnElementCR);
@@ -2009,6 +2034,7 @@ private:
     DGNPLATFORM_EXPORT DgnElementCPtr InsertElement(DgnElementR element, DgnDbStatus* stat);
     DGNPLATFORM_EXPORT DgnElementCPtr UpdateElement(DgnElementR element, DgnDbStatus* stat);
 
+    ClassInfo& FindClassInfo(DgnElementCR el) const;
     ElementSelectStatement GetPreparedSelectStatement(DgnElementR el) const;
     BeSQLite::EC::CachedECSqlStatementPtr GetPreparedInsertStatement(DgnElementR el) const;
     BeSQLite::EC::CachedECSqlStatementPtr GetPreparedUpdateStatement(DgnElementR el) const;

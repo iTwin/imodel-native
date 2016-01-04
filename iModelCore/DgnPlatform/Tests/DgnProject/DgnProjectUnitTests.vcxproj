@@ -32,6 +32,7 @@
     <ClCompile Include="BackDoor\DgnPlatformTestDomain.cpp" />
     <ClCompile Include="NonPublished\BeTextFile_Test.cpp" />
     <ClCompile Include="NonPublished\Category_Test.cpp" />
+    <ClCompile Include="NonPublished\ConfigurationManager_Test.cpp" />
     <ClCompile Include="NonPublished\DgnAuthority_Test.cpp" />
     <ClCompile Include="NonPublished\DgnColors_Test.cpp" />
     <ClCompile Include="NonPublished\DgnFonts_Test.cpp" />
@@ -75,7 +76,6 @@
     <ClCompile Include="Published\AnnotationTestFixture.cpp" />
     <ClCompile Include="Published\AnnotationTextBlock_Test.cpp" />
     <ClCompile Include="Published\AnnotationTextStyle_Test.cpp" />
-    <ClCompile Include="Published\BackwardsCompatibility_Tests.cpp" />
     <ClCompile Include="Published\ChangeSummary_Test.cpp" />
     <ClCompile Include="Published\ChangeTestFixture.cpp" />
     <ClCompile Include="Published\ComponentModelTest.cpp" />
