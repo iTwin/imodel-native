@@ -28,21 +28,22 @@ void ECDbSchemaReader::AddECSchemaToCache (ECSchemaCR schema)
     if (m_ecSchemaCache.find(ecSchemaId) != m_ecSchemaCache.end())
         return;
 
-    unique_ptr<DbECSchemaEntry> schemaEntry = unique_ptr<DbECSchemaEntry>(new DbECSchemaEntry(schema));
+    unique_ptr<DbECSchemaEntry> schemaEntry = unique_ptr<DbECSchemaEntry>(new DbECSchemaEntry(const_cast<ECSchemaR>(schema)));
     DbECSchemaEntry* schemaEntryP = schemaEntry.get();
     m_ecSchemaCache[ecSchemaId] = move(schemaEntry);
 
     for (ECClassCP ecClass : schemaEntryP->m_cachedECSchema->GetClasses())
         {
         if (!ecClass->HasId())
-            const_cast<ECClassP>(ecClass)->SetId(
-                ECDbSchemaPersistence::GetECClassId(m_db,
-                                                    ecClass->GetSchema().GetName().c_str(),
-                                                    ecClass->GetName().c_str(), ResolveSchema::BySchemaName));
+            {
+            ECClassId ecClassId = ECDbSchemaPersistenceHelper::GetECClassId(m_db, ecClass->GetSchema().GetName().c_str(),
+                                                                            ecClass->GetName().c_str(), ResolveSchema::BySchemaName);
+            const_cast<ECClassP>(ecClass)->SetId(ecClassId);
+            }
 
         unique_ptr<DbECClassEntry> classEntry = unique_ptr<DbECClassEntry>(new DbECClassEntry(ecSchemaId, *ecClass));
         m_ecClassCache[classEntry->m_ecClassId] = std::move(classEntry);
-        schemaEntryP->m_nTypesInSchema++;
+        schemaEntryP->m_typeCountInSchema++;
         }
 
     for (ECEnumerationCP ecEnum : schemaEntryP->m_cachedECSchema->GetEnumerations())
@@ -50,10 +51,10 @@ void ECDbSchemaReader::AddECSchemaToCache (ECSchemaCR schema)
         unique_ptr<DbECEnumEntry> enumEntry = unique_ptr<DbECEnumEntry>(new DbECEnumEntry(ecSchemaId, *ecEnum));
         DbECEnumEntry* enumEntryP = enumEntry.get();
         m_ecEnumCache[enumEntryP->m_enumName] = std::move(enumEntry);
-        schemaEntryP->m_nTypesInSchema++;
+        schemaEntryP->m_typeCountInSchema++;
         }
 
-    schemaEntryP->m_nTypesLoaded = schemaEntryP->m_nTypesInSchema;
+    schemaEntryP->m_loadedTypeCount = schemaEntryP->m_typeCountInSchema;
     }
 
 
@@ -189,7 +190,7 @@ BentleyStatus ECDbSchemaReader::ReadECClass(ECClassP& ecClass, ECClassId ecClass
             return ERROR;
         }
 
-    schemaKey->m_nTypesLoaded++;
+    schemaKey->m_loadedTypeCount++;
 
     //cache the class
     m_ecClassCache[ecClassId] = unique_ptr<DbECClassEntry>(new DbECClassEntry(schemaId, *ecClass));
@@ -309,33 +310,25 @@ BentleyStatus ECDbSchemaReader::ReadECEnumeration(ECEnumerationP& ecEnum, ECN::E
     DbECEnumEntry* enumEntryP = enumEntry.get();
     m_ecEnumCache[enumEntryP->m_enumName] = move(enumEntry);
 
-    schemaKey->m_nTypesLoaded++;
+    schemaKey->m_loadedTypeCount++;
     return SUCCESS;
     }
 
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        05/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ECDbSchemaReader::LoadECSchemaDefinition(DbECSchemaEntry*& outECSchemaKey, bvector<DbECSchemaEntry*>& newlyLoadedSchemas, ECSchemaId ecSchemaId) const
+BentleyStatus ECDbSchemaReader::LoadECSchemaDefinition(DbECSchemaEntry*& schemaEntry, bvector<DbECSchemaEntry*>& newlyLoadedSchemas, ECSchemaId ecSchemaId) const
     {
     auto schemaIterator = m_ecSchemaCache.find(ecSchemaId);
     if (schemaIterator != m_ecSchemaCache.end())
         {
         BeAssert(schemaIterator->second->m_cachedECSchema != nullptr);
-        outECSchemaKey = schemaIterator->second.get();
+        schemaEntry = schemaIterator->second.get();
         return SUCCESS;
         }
 
-    unique_ptr<DbECSchemaEntry> schemaEntry = unique_ptr<DbECSchemaEntry>(new DbECSchemaEntry());
-    if (SUCCESS != ECDbSchemaPersistence::ResolveECSchemaId(*schemaEntry, ecSchemaId, m_db))
+    if (SUCCESS != LoadECSchemaFromDb(schemaEntry, ecSchemaId))
         return ERROR;
-
-    DbECSchemaEntry* schemaEntryP = schemaEntry.get();
-    m_ecSchemaCache[ecSchemaId] = move(schemaEntry);
-
-    if (SUCCESS != LoadECSchemaFromDb(schemaEntryP->m_cachedECSchema, ecSchemaId))
-        return ERROR;
-
 
     CachedStatementPtr stmt = nullptr;
     if (BE_SQLITE_OK != m_db.GetCachedStatement(stmt, "SELECT ReferencedSchemaId FROM ec_SchemaReference WHERE SchemaId=?"))
@@ -344,7 +337,7 @@ BentleyStatus ECDbSchemaReader::LoadECSchemaDefinition(DbECSchemaEntry*& outECSc
     if (BE_SQLITE_OK != stmt->BindInt64(1, ecSchemaId))
         return ERROR;
 
-    newlyLoadedSchemas.push_back(schemaEntryP);
+    newlyLoadedSchemas.push_back(schemaEntry);
     while (BE_SQLITE_ROW == stmt->Step())
         {
         BeAssert(!stmt->IsColumnNull(0));
@@ -353,13 +346,12 @@ BentleyStatus ECDbSchemaReader::LoadECSchemaDefinition(DbECSchemaEntry*& outECSc
         if (SUCCESS != LoadECSchemaDefinition(referenceSchemaKey, newlyLoadedSchemas, referencedSchemaId))
             return ERROR;
 
-        ECObjectsStatus s = schemaEntryP->m_cachedECSchema->AddReferencedSchema(*referenceSchemaKey->m_cachedECSchema);
+        ECObjectsStatus s = schemaEntry->m_cachedECSchema->AddReferencedSchema(*referenceSchemaKey->m_cachedECSchema);
         if (s != ECObjectsStatus::Success)
             return ERROR;
         }
 
-    outECSchemaKey = schemaEntryP;
-    BeAssert(schemaEntryP->m_cachedECSchema != nullptr);
+    BeAssert(schemaEntry->m_cachedECSchema != nullptr);
     return SUCCESS;
     }
 
@@ -375,7 +367,8 @@ BentleyStatus ECDbSchemaReader::ReadECSchema(DbECSchemaEntry*& outECSchemaKey, E
 
     for (DbECSchemaEntry* newlyLoadedSchema : newlyLoadedSchemas)
         {
-        if (SUCCESS != LoadCAFromDb(*(newlyLoadedSchema->m_cachedECSchema), newlyLoadedSchema->m_ecSchemaId, ECContainerType::Schema))
+        ECSchemaR schema = *newlyLoadedSchema->m_cachedECSchema;
+        if (SUCCESS != LoadCAFromDb(schema, schema.GetId(), ECContainerType::Schema))
             return ERROR;
         }
 
@@ -436,7 +429,7 @@ BentleyStatus ECDbSchemaReader::LoadClassesAndEnumsFromDb(DbECSchemaEntry* ecSch
     if (stmt == nullptr)
         return ERROR;
 
-    if (BE_SQLITE_OK != stmt->BindInt64(1, ecSchemaKey->m_ecSchemaId))
+    if (BE_SQLITE_OK != stmt->BindInt64(1, ecSchemaKey->GetId()))
         return ERROR;
 
     while (BE_SQLITE_ROW == stmt->Step())
@@ -454,13 +447,13 @@ BentleyStatus ECDbSchemaReader::LoadClassesAndEnumsFromDb(DbECSchemaEntry* ecSch
     if (stmt == nullptr)
         return ERROR;
 
-    if (BE_SQLITE_OK != stmt->BindInt64(1, ecSchemaKey->m_ecSchemaId))
+    if (BE_SQLITE_OK != stmt->BindInt64(1, ecSchemaKey->GetId()))
         return ERROR;
 
     while (BE_SQLITE_ROW == stmt->Step())
         {
         ECEnumerationP ecEnum = nullptr;
-        if (SUCCESS != ReadECEnumeration(ecEnum, ecSchemaKey->m_ecSchemaId, stmt->GetValueText(0)))
+        if (SUCCESS != ReadECEnumeration(ecEnum, ecSchemaKey->GetId(), stmt->GetValueText(0)))
             return ERROR;
 
         if (ecSchemaKey->IsFullyLoaded())
@@ -473,10 +466,12 @@ BentleyStatus ECDbSchemaReader::LoadClassesAndEnumsFromDb(DbECSchemaEntry* ecSch
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        05/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ECDbSchemaReader::LoadECSchemaFromDb(ECSchemaPtr& ecSchemaOut, ECSchemaId ecSchemaId) const
+BentleyStatus ECDbSchemaReader::LoadECSchemaFromDb(DbECSchemaEntry*& schemaEntry, ECSchemaId ecSchemaId) const
     {
     CachedStatementPtr stmt = nullptr;
-    if (BE_SQLITE_OK != m_db.GetCachedStatement(stmt, "SELECT Name,DisplayLabel,Description,NamespacePrefix,VersionMajor,VersionMinor FROM ec_Schema WHERE Id=?"))
+    if (BE_SQLITE_OK != m_db.GetCachedStatement(stmt, "SELECT S.Name, S.DisplayLabel,S.Description,S.NamespacePrefix,S.VersionMajor,S.VersionMinor, "
+        "(SELECT COUNT(*) FROM ec_Class C WHERE S.Id = C.SchemaID) + (SELECT COUNT(*) FROM ec_Enumeration e WHERE S.Id = e.SchemaID) "
+        "FROM ec_Schema S WHERE S.Id = ?"))
         return ERROR;
 
     if (BE_SQLITE_OK != stmt->BindInt64(1, ecSchemaId))
@@ -491,22 +486,28 @@ BentleyStatus ECDbSchemaReader::LoadECSchemaFromDb(ECSchemaPtr& ecSchemaOut, ECS
     Utf8CP nsprefix = stmt->GetValueText(3);
     uint32_t versionMajor = (uint32_t) stmt->GetValueInt(4);
     uint32_t versionMinor = (uint32_t) stmt->GetValueInt(5);
+    const int typesInSchema = stmt->GetValueInt(6);
 
-    if (ECSchema::CreateSchema(ecSchemaOut, schemaName, versionMajor, versionMinor) != ECObjectsStatus::Success)
+    ECSchemaPtr schema = nullptr;
+    if (ECSchema::CreateSchema(schema, schemaName, versionMajor, versionMinor) != ECObjectsStatus::Success)
         return ERROR;
 
-    ecSchemaOut->SetId(ecSchemaId);
+    schema->SetId(ecSchemaId);
 
     if (!Utf8String::IsNullOrEmpty(displayLabel))
-        ecSchemaOut->SetDisplayLabel(displayLabel);
+        schema->SetDisplayLabel(displayLabel);
 
     if (!Utf8String::IsNullOrEmpty(description))
-        ecSchemaOut->SetDescription(description);
+        schema->SetDescription(description);
 
     if (!Utf8String::IsNullOrEmpty(nsprefix))
-        ecSchemaOut->SetNamespacePrefix(nsprefix);
+        schema->SetNamespacePrefix(nsprefix);
 
-    m_cache.AddSchema(*ecSchemaOut);
+    unique_ptr<DbECSchemaEntry> schemaEntryPtr = unique_ptr<DbECSchemaEntry>(new DbECSchemaEntry(schema, typesInSchema));
+    DbECSchemaEntry* schemaEntryP = schemaEntryPtr.get();
+    m_ecSchemaCache[ecSchemaId] = move(schemaEntryPtr);
+    m_cache.AddSchema(*schemaEntryP->m_cachedECSchema);
+
     return SUCCESS;
     }
 
@@ -894,7 +895,7 @@ ECClassP ECDbSchemaReader::GetECClass(ECClassId ecClassId) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ECDbSchemaReader::TryGetECClassId(ECClassId& id, Utf8CP schemaName, Utf8CP className, ResolveSchema resolveSchema) const
     {
-    ECClassId ecClassId = ECDbSchemaPersistence::GetECClassId(m_db, schemaName, className, resolveSchema); // needswork: if this is a performance issue, try to look it up in-memory, first
+    ECClassId ecClassId = ECDbSchemaPersistenceHelper::GetECClassId(m_db, schemaName, className, resolveSchema); // needswork: if this is a performance issue, try to look it up in-memory, first
     if (ecClassId == ECClass::UNSET_ECCLASSID)
         return false;
 
@@ -907,7 +908,7 @@ bool ECDbSchemaReader::TryGetECClassId(ECClassId& id, Utf8CP schemaName, Utf8CP 
 //+---------------+---------------+---------------+---------------+---------------+------
 ECEnumerationCP ECDbSchemaReader::GetECEnumeration(Utf8CP schemaName, Utf8CP enumName) const
     {
-    ECSchemaId schemaId = ECDbSchemaPersistence::GetECSchemaId(m_db, schemaName);
+    ECSchemaId schemaId = ECDbSchemaPersistenceHelper::GetECSchemaId(m_db, schemaName);
     if (schemaId == INT64_C(0))
         return nullptr;
 
@@ -916,6 +917,27 @@ ECEnumerationCP ECDbSchemaReader::GetECEnumeration(Utf8CP schemaName, Utf8CP enu
         return nullptr;
 
     return ecEnum;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    affan.khan      03/2013
+//---------------------------------------------------------------------------------------
+BentleyStatus ECDbSchemaReader::EnsureDerivedClassesExist(ECClassId baseClassId) const
+    {
+    CachedStatementPtr stmt = nullptr;
+    if (BE_SQLITE_OK != m_db.GetCachedStatement(stmt, "SELECT ClassId FROM ec_BaseClass WHERE BaseClassId = ?"))
+        return ERROR;
+
+    if (BE_SQLITE_OK != stmt->BindInt64(1, baseClassId))
+        return ERROR;
+
+    while (stmt->Step() == BE_SQLITE_ROW)
+        {
+        if (GetECClass((ECClassId) stmt->GetValueInt64(0)) == nullptr)
+            return ERROR;
+        }
+
+    return SUCCESS;
     }
 
 /*---------------------------------------------------------------------------------------

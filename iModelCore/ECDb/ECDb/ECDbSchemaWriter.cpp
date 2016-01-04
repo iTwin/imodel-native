@@ -165,7 +165,7 @@ BentleyStatus ECDbSchemaWriter::Import(ECN::ECSchemaCR ecSchema)
     for (ECSchemaReferenceList::const_iterator iter = referencedSchemas.begin(); iter != referencedSchemas.end(); ++iter)
         {
         ECSchemaCP reference = iter->second.get();
-        ECSchemaId referenceId = ECDbSchemaPersistence::GetECSchemaId(m_ecdb, reference->GetName().c_str());
+        ECSchemaId referenceId = ECDbSchemaPersistenceHelper::GetECSchemaId(m_ecdb, reference->GetName().c_str());
         if (0ULL == referenceId)
             {
             BeAssert(false && "BuildDependencyOrderedSchemaList used by caller should have ensured that all references are already imported");
@@ -290,7 +290,7 @@ BentleyStatus ECDbSchemaWriter::EnsureECSchemaExists(ECClassCR ecClass)
     ECSchemaCR schema = ecClass.GetSchema();
     ECSchemaId ecSchemaId = schema.GetId();
 
-    if (ECDbSchemaPersistence::ContainsECSchema(m_ecdb, ecSchemaId))
+    if (ECDbSchemaPersistenceHelper::ContainsECSchema(m_ecdb, ecSchemaId))
         return SUCCESS;
 
     BeAssert(false && "I think we just should assume that the entry already exists, rather than relying on just-in-time? Or is this for when we branch off into related ECClasses?");
@@ -313,7 +313,7 @@ BentleyStatus ECDbSchemaWriter::EnsureECSchemaExists(ECClassCR ecClass)
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus ECDbSchemaWriter::ImportECClass(ECN::ECClassCR ecClass)
     {
-    if (ECDbSchemaPersistence::ContainsECClass(m_ecdb, ecClass))
+    if (ECDbSchemaPersistenceHelper::ContainsECClass(m_ecdb, ecClass))
         {
         if (!ecClass.HasId())
             ECDbSchemaManager::GetClassIdForECClassFromDuplicateECSchema(m_ecdb, ecClass); //Callers will assume it has a valid Id

@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: ECDb/ECDbSchemaPersistence.cpp $
+|     $Source: ECDb/ECDbSchemaPersistenceHelper.cpp $
 |
 |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -9,44 +9,11 @@
 USING_NAMESPACE_BENTLEY_EC
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
-//=================================================================================
-// @bsiclass                                                    Krischan.Eberle  02/2015
-//+===============+===============+===============+===============+===============+======
-struct SqlClauseBuilder
-    {
-private:
-    Utf8String m_clause;
-    Utf8String m_delimiter;
-
-public:
-    explicit SqlClauseBuilder (Utf8CP delimiter) : m_delimiter (delimiter) {}
-
-    //! Adds the specified item to the clause.
-    //! If there are already other items in the clause, the 
-    //! delimiter specified to the constructor is injected, too.
-    //! Escaping tokens has to be done by the caller.
-    void AddItem (Utf8CP item)
-        {
-        if (!m_clause.empty ())
-            m_clause.append(" ").append (m_delimiter).append (" ");
-        
-        m_clause.append (item);
-        }
-
-    bool IsEmpty () const { return m_clause.empty (); }
-
-    Utf8CP ToString () const { return m_clause.c_str (); }
-    };
-
-
-//***************************************************************************************
-// ECDbSchemaPersistence
-//***************************************************************************************
 
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        05/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ECDbSchemaPersistence::ContainsECClass(ECDbCR db, ECClassCR ecClass)
+bool ECDbSchemaPersistenceHelper::ContainsECClass(ECDbCR db, ECClassCR ecClass)
     {
     if (ecClass.HasId()) //This is unsafe but since we donot delete ecclass any class that hasId does exist in db
         return true;
@@ -56,37 +23,11 @@ bool ECDbSchemaPersistence::ContainsECClass(ECDbCR db, ECClassCR ecClass)
 
     return classId > ECClass::UNSET_ECCLASSID;
     }
-
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Affan.Khan        06/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ECDbSchemaPersistence::ResolveECSchemaId(DbECSchemaEntry& key, ECSchemaId ecSchemaId, ECDbCR db)
-    {
-    CachedStatementPtr stmt = nullptr;
-    if (BE_SQLITE_OK != db.GetCachedStatement(stmt, "SELECT S.Id, S.Name, S.VersionMajor, S.VersionMinor, "
-                                              "(SELECT COUNT(*) FROM ec_Class C WHERE S.Id = C.SchemaID) + (SELECT COUNT(*) FROM ec_Enumeration e WHERE S.Id = e.SchemaID) "
-                                              "FROM ec_Schema S WHERE S.Id = ?"))
-        return ERROR;
-
-    stmt->BindInt64 (1, ecSchemaId);
-
-    if (BE_SQLITE_ROW != stmt->Step())
-        return ERROR;
-
-    key.m_ecSchemaId = stmt->GetValueInt64(0);
-    key.m_schemaName = stmt->GetValueText (1);
-    key.m_versionMajor = (uint32_t) stmt->GetValueInt (2);
-    key.m_versionMinor = (uint32_t) stmt->GetValueInt (3);
-    key.m_nTypesInSchema = (uint32_t) stmt->GetValueInt (4);
-    key.m_nTypesLoaded = 0;
-    key.m_cachedECSchema = nullptr;
-    return SUCCESS;
-    }
     
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        07/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ECDbSchemaPersistence::GetECSchemaKeys(ECSchemaKeys& keys, ECDbCR db)
+BentleyStatus ECDbSchemaPersistenceHelper::GetECSchemaKeys(ECSchemaKeys& keys, ECDbCR db)
     {
     keys.clear();
     CachedStatementPtr stmt = nullptr;
@@ -107,11 +48,10 @@ BentleyStatus ECDbSchemaPersistence::GetECSchemaKeys(ECSchemaKeys& keys, ECDbCR 
     return SUCCESS;
     }
 
-
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        05/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ECDbSchemaPersistence::ContainsECSchema(ECDbCR db, ECSchemaId ecSchemaId)
+bool ECDbSchemaPersistenceHelper::ContainsECSchema(ECDbCR db, ECSchemaId ecSchemaId)
     {
     CachedStatementPtr stmt = nullptr;
     if (BE_SQLITE_OK != db.GetCachedStatement(stmt, "SELECT NULL FROM ec_Schema WHERE Id = ?"))
@@ -124,7 +64,7 @@ bool ECDbSchemaPersistence::ContainsECSchema(ECDbCR db, ECSchemaId ecSchemaId)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Casey.Mullen      01/2013
 //---------------------------------------------------------------------------------------
-ECSchemaId ECDbSchemaPersistence::GetECSchemaId(ECDbCR db, Utf8CP schemaName)
+ECSchemaId ECDbSchemaPersistenceHelper::GetECSchemaId(ECDbCR db, Utf8CP schemaName)
     {
     CachedStatementPtr stmt = nullptr;
     if (BE_SQLITE_OK != db.GetCachedStatement(stmt, "SELECT Id FROM ec_Schema WHERE Name = ?"))
@@ -139,26 +79,9 @@ ECSchemaId ECDbSchemaPersistence::GetECSchemaId(ECDbCR db, Utf8CP schemaName)
     }
 
 /*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Affan.Khan        06/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ECDbSchemaPersistence::GetDerivedECClasses(ECClassIdList& classIds, ECClassId baseClassId, ECDbCR db)
-    {
-    CachedStatementPtr stmt = nullptr;
-    if (BE_SQLITE_OK != db.GetCachedStatement(stmt, "SELECT ClassId FROM ec_BaseClass WHERE BaseClassId = ?"))
-        return ERROR;
-
-    stmt->BindInt64 (1, baseClassId);
-    while (stmt->Step () == BE_SQLITE_ROW)
-        classIds.push_back (stmt->GetValueInt64 (0));
-
-    return SUCCESS;
-    }
-
-
-/*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        07/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ECDbSchemaPersistence::GetECClassKeys(ECClassKeys& keys, ECSchemaId schemaId, ECDbCR db) // WIP_FNV: take a name, instead... and modify the where clause
+BentleyStatus ECDbSchemaPersistenceHelper::GetECClassKeys(ECClassKeys& keys, ECSchemaId schemaId, ECDbCR db) // WIP_FNV: take a name, instead... and modify the where clause
     {
     keys.clear ();
     CachedStatementPtr stmt = nullptr;
@@ -182,7 +105,7 @@ BentleyStatus ECDbSchemaPersistence::GetECClassKeys(ECClassKeys& keys, ECSchemaI
 // @bsimethod                                                    Casey.Mullen      01/2013
 //---------------------------------------------------------------------------------------
 //static
-ECClassId ECDbSchemaPersistence::GetECClassId(ECDbCR db, Utf8CP schemaNameOrPrefix, Utf8CP className, ResolveSchema resolveSchema)
+ECClassId ECDbSchemaPersistenceHelper::GetECClassId(ECDbCR db, Utf8CP schemaNameOrPrefix, Utf8CP className, ResolveSchema resolveSchema)
     {
     Utf8CP sql = nullptr;
     switch (resolveSchema)
@@ -215,7 +138,7 @@ ECClassId ECDbSchemaPersistence::GetECClassId(ECDbCR db, Utf8CP schemaNameOrPref
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan      05/2013
 //---------------------------------------------------------------------------------------
-ECPropertyId ECDbSchemaPersistence::GetECPropertyId(ECDbCR db, Utf8CP schemaName, Utf8CP className, Utf8CP propertyName)
+ECPropertyId ECDbSchemaPersistenceHelper::GetECPropertyId(ECDbCR db, Utf8CP schemaName, Utf8CP className, Utf8CP propertyName)
     {
     CachedStatementPtr stmt = nullptr;
     if (BE_SQLITE_OK != db.GetCachedStatement(stmt, "SELECT p.Id FROM ec_Property p INNER JOIN ec_Class c ON p.ClassId = c.Id INNER JOIN ec_Schema s WHERE c.SchemaId = s.Id AND s.Name = ? AND c.Name = ? AND p.Name = ?"))
