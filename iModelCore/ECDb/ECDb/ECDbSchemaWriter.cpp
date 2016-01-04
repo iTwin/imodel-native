@@ -191,20 +191,21 @@ BentleyStatus ECDbSchemaWriter::Import(ECN::ECSchemaCR ecSchema)
             }
         }
 
-    for (ECClassCP ecClass : ecSchema.GetClasses())
-        {
-        if (SUCCESS != ImportECClass(*ecClass))
-            {
-            m_ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Failed to import ECClass '%s'.", ecClass->GetFullName());
-            return ERROR;
-            }
-        }
-
+    //enums must be imported before ECClasses as properties reference enums
     for (ECEnumerationCP ecEnum : ecSchema.GetEnumerations())
         {
         if (SUCCESS != ImportECEnumeration(*ecEnum))
             {
             m_ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Failed to import ECEnumeration '%s'.", ecEnum->GetFullName().c_str());
+            return ERROR;
+            }
+        }
+
+    for (ECClassCP ecClass : ecSchema.GetClasses())
+        {
+        if (SUCCESS != ImportECClass(*ecClass))
+            {
+            m_ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Failed to import ECClass '%s'.", ecClass->GetFullName());
             return ERROR;
             }
         }
@@ -442,37 +443,19 @@ BentleyStatus ECDbSchemaWriter::ImportECEnumeration(ECN::ECEnumerationCR ecEnum)
     if (BE_SQLITE_OK != stmt->BindInt(7, ecEnum.GetIsStrict() ? 1 : 0))
         return ERROR;
 
-    rapidjson::Document keyPropJson;
-    auto& allocator = keyPropJson.GetAllocator();
-    keyPropJson.SetArray();
-    keyPropJson.Reserve((rapidjson::SizeType) ecEnum.GetEnumeratorCount(), allocator);
-    BeAssert(ecEnum.GetEnumeratorCount() > 0);
-    for (ECEnumerator const* enumValue : ecEnum.GetEnumerators())
-        {
-        rapidjson::Value enumValueJson(rapidjson::kArrayType);
-        if (enumValue->IsInteger())
-            enumValueJson.PushBack(enumValue->GetInteger(), allocator);
-        else if (enumValue->IsString())
-            enumValueJson.PushBack(enumValue->GetString().c_str(), allocator);
-        else
-            {
-            BeAssert(false && "Code needs to be updated as ECEnumeration seems to support types other than int and string.");
-            return ERROR;
-            }
-
-        if (enumValue->GetIsDisplayLabelDefined())
-            enumValueJson.PushBack(enumValue->GetDisplayLabel().c_str(), allocator);
-
-        keyPropJson.PushBack(enumValueJson, allocator);
-        }
-
-    rapidjson::StringBuffer buf;
-    rapidjson::Writer<rapidjson::StringBuffer> writer(buf);
-    keyPropJson.Accept(writer);
-    if (BE_SQLITE_OK != stmt->BindText(8, buf.GetString(), Statement::MakeCopy::Yes))
+    Utf8String enumValueJson;
+    if (SUCCESS != ECDbSchemaPersistenceHelper::SerializeECEnumerationValues(enumValueJson, ecEnum))
         return ERROR;
 
-    return BE_SQLITE_DONE == stmt->Step() ? SUCCESS : ERROR;
+    if (BE_SQLITE_OK != stmt->BindText(8, enumValueJson.c_str(), Statement::MakeCopy::No))
+        return ERROR;
+
+    if (BE_SQLITE_DONE != stmt->Step())
+        return ERROR;
+
+    //cache the id because the ECEnumeration class itself doesn't have an id.
+    m_enumIdCache[&ecEnum] = enumId.GetValue();
+    return SUCCESS;
     }
 
 /*---------------------------------------------------------------------------------------
@@ -521,20 +504,9 @@ BentleyStatus ECDbSchemaWriter::ImportECRelationshipConstraint(ECClassId relClas
         bvector<Utf8String> const& keyPropNames = constraintClassObj->GetKeys();
         if (!keyPropNames.empty())
             {
-            rapidjson::Document keyPropJson;
-            auto& allocator = keyPropJson.GetAllocator();
-            keyPropJson.SetArray();
-            keyPropJson.Reserve((rapidjson::SizeType) keyPropNames.size(), allocator);
-
-            for (Utf8StringCR keyPropertyName : keyPropNames)
-                {
-                keyPropJson.PushBack(keyPropertyName.c_str(), allocator);
-                }
-
-            rapidjson::StringBuffer buf;
-            rapidjson::Writer<rapidjson::StringBuffer> writer(buf);
-            keyPropJson.Accept(writer);
-            if (BE_SQLITE_OK != stmt->BindText(4, buf.GetString(), Statement::MakeCopy::Yes))
+            Utf8String keyPropJson;
+            ECDbSchemaPersistenceHelper::SerializeRelationshipKeyProperties(keyPropJson, keyPropNames);
+            if (BE_SQLITE_OK != stmt->BindText(4, keyPropJson.c_str(), Statement::MakeCopy::No))
                 return ERROR;
             }
 
@@ -586,7 +558,7 @@ BentleyStatus ECDbSchemaWriter::ImportECProperty(ECN::ECPropertyCR ecProperty, i
 
     //now insert the actual property
     BeSQLite::CachedStatementPtr stmt = nullptr;
-    if (BE_SQLITE_OK != m_ecdb.GetCachedStatement(stmt, "INSERT INTO ec_Property (Id, ClassId, Name, DisplayLabel, Description, IsReadonly, Ordinal, Kind, PrimitiveType, NonPrimitiveType, ArrayMinOccurs, ArrayMaxOccurs, NavigationPropertyDirection) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)"))
+    if (BE_SQLITE_OK != m_ecdb.GetCachedStatement(stmt, "INSERT INTO ec_Property(Id,ClassId,Name,DisplayLabel,Description,IsReadonly,Ordinal,Kind,PrimitiveType,NonPrimitiveType,Enumeration,ArrayMinOccurs,ArrayMaxOccurs,NavigationPropertyDirection) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?)"))
         return ERROR;
 
     if (BE_SQLITE_OK != stmt->BindInt64(1, ecProperty.GetId()))
@@ -617,13 +589,39 @@ BentleyStatus ECDbSchemaWriter::ImportECProperty(ECN::ECPropertyCR ecProperty, i
     const int kindIndex = 8;
     const int primitiveTypeIndex = 9;
     const int nonPrimitiveTypeIndex = 10;
+    const int enumTypeIndex = 11;
+    const int arrayMinIndex = 12;
+    const int arrayMaxIndex = 13;
+    const int navDirIndex = 14;
     if (ecProperty.GetIsPrimitive())
         {
-        if (BE_SQLITE_OK != stmt->BindInt(kindIndex, Enum::ToInt(ECPropertyKind::Primitive)))
-            return ERROR;
+        PrimitiveECPropertyCP primProp = ecProperty.GetAsPrimitiveProperty();
+        ECEnumerationCP ecenum = primProp->GetEnumeration();
+        if (ecenum == nullptr)
+            {
+            if (BE_SQLITE_OK != stmt->BindInt(kindIndex, Enum::ToInt(ECPropertyKind::Primitive)))
+                return ERROR;
 
-        if (BE_SQLITE_OK != stmt->BindInt(primitiveTypeIndex, (int) ecProperty.GetAsPrimitiveProperty()->GetType()))
-            return ERROR;
+            if (BE_SQLITE_OK != stmt->BindInt(primitiveTypeIndex, (int) ecProperty.GetAsPrimitiveProperty()->GetType()))
+                return ERROR;
+            }
+        else
+            {
+            auto it = m_enumIdCache.find(ecenum);
+            if (it == m_enumIdCache.end())
+                {
+                BeAssert(false && "ECEnumeration should have been imported before any ECProperty");
+                return ERROR;
+                }
+
+            const uint64_t enumId = it->second;
+
+            if (BE_SQLITE_OK != stmt->BindInt(kindIndex, Enum::ToInt(ECPropertyKind::Enumeration)))
+                return ERROR;
+
+            if (BE_SQLITE_OK != stmt->BindInt64(enumTypeIndex, enumId))
+                return ERROR;
+            }
         }
     else if (ecProperty.GetIsStruct())
         {
@@ -653,12 +651,12 @@ BentleyStatus ECDbSchemaWriter::ImportECProperty(ECN::ECPropertyCR ecProperty, i
                 return ERROR;
             }
 
-        if (BE_SQLITE_OK != stmt->BindInt(11, (int) arrayProp->GetMinOccurs()))
+        if (BE_SQLITE_OK != stmt->BindInt(arrayMinIndex, (int) arrayProp->GetMinOccurs()))
             return ERROR;
 
         //until the max occurs bug in ECObjects (where GetMaxOccurs always returns "unbounded")
         //has been fixed, we need to call GetStoredMaxOccurs to retrieve the proper max occurs
-        if (BE_SQLITE_OK != stmt->BindInt(12, (int) arrayProp->GetStoredMaxOccurs()))
+        if (BE_SQLITE_OK != stmt->BindInt(arrayMaxIndex, (int) arrayProp->GetStoredMaxOccurs()))
             return ERROR;
         }
     else if (ecProperty.GetIsNavigation())
@@ -670,7 +668,7 @@ BentleyStatus ECDbSchemaWriter::ImportECProperty(ECN::ECPropertyCR ecProperty, i
         if (BE_SQLITE_OK != stmt->BindInt64(nonPrimitiveTypeIndex, navProp->GetRelationshipClass()->GetId()))
             return ERROR;
 
-        if (BE_SQLITE_OK != stmt->BindInt(13, Enum::ToInt(navProp->GetDirection())))
+        if (BE_SQLITE_OK != stmt->BindInt(navDirIndex, Enum::ToInt(navProp->GetDirection())))
             return ERROR;
         }
 
@@ -678,15 +676,6 @@ BentleyStatus ECDbSchemaWriter::ImportECProperty(ECN::ECPropertyCR ecProperty, i
         return ERROR;   
 
     return ImportCustomAttributes(ecProperty, ecPropertyId, ECContainerType::Property);
-    }
-
-
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Affan.Khan        05/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECDbSchemaWriterPtr ECDbSchemaWriter::Create (ECDbR ecdb)
-    {
-    return new ECDbSchemaWriter(ecdb);
     }
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

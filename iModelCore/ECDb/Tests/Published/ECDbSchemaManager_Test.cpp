@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/Published/ECDbSchemaManager_Test.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPublishedTests.h"
@@ -139,7 +139,7 @@ TEST_F(ECDbSchemaManagerTests, GetDerivedECClassesWithoutIncrementalLoading)
     ECDb testFile;
     ASSERT_EQ (BE_SQLITE_OK, testFile.OpenBeSQLiteDb (testFilePath, ECDb::OpenParams (Db::OpenMode::Readonly))) << "Could not open test file " << testFilePath.GetNameUtf8 ().c_str ();
 
-    auto const& schemaManager = testFile. Schemas ();
+    auto const& schemaManager = testFile.Schemas ();
     ECSchemaCP testSchema = schemaManager.GetECSchema (TEST_SCHEMA_NAME, true);
     ASSERT_TRUE (testSchema != nullptr);
 
@@ -150,6 +150,59 @@ TEST_F(ECDbSchemaManagerTests, GetDerivedECClassesWithoutIncrementalLoading)
 
     //derived classes are expected to be loaded when calling ECDbSchemaManager::GetDerivedClasses
     ASSERT_EQ (2, schemaManager.GetDerivedECClasses (*baseClass).size ()) << "Unexpected derived class count";
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsiclass                                     Krischan.Eberle                  01/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECDbSchemaManagerTests, GetEnumeration)
+    {
+    BeFileName testFilePath(ECDbTestUtility::BuildECDbPath("ecschemamanagertest.ecdb"));
+    SetupTestECDb(testFilePath);
+
+    {
+    ECDb ecdb;
+    ASSERT_EQ(BE_SQLITE_OK, ecdb.OpenBeSQLiteDb(testFilePath, ECDb::OpenParams(Db::OpenMode::Readonly))) << "Could not open test file " << testFilePath.GetNameUtf8().c_str();
+
+    ECEnumerationCP ecEnum = ecdb.Schemas().GetECEnumeration("ECDb_FileInfo", "StandardRootFolderType");
+    ASSERT_TRUE(ecEnum != nullptr);
+    ASSERT_EQ(4, ecEnum->GetEnumeratorCount());
+    }
+
+    {
+    ECDb ecdb;
+    ASSERT_EQ(BE_SQLITE_OK, ecdb.OpenBeSQLiteDb(testFilePath, ECDb::OpenParams(Db::OpenMode::Readonly))) << "Could not open test file " << testFilePath.GetNameUtf8().c_str();
+
+    ECSchemaCP schema = ecdb.Schemas().GetECSchema("ECDb_FileInfo", false);
+    ASSERT_TRUE(schema != nullptr);
+    ASSERT_EQ(0, schema->GetEnumerationCount());
+    ECClassCP classWithEnum = ecdb.Schemas().GetECClass("ECDb_FileInfo", "ExternalFileInfo");
+    ASSERT_TRUE(classWithEnum != nullptr);
+
+    ECPropertyCP prop = classWithEnum->GetPropertyP("RootFolder");
+    ASSERT_TRUE(prop != nullptr);
+    PrimitiveECPropertyCP primProp = prop->GetAsPrimitiveProperty();
+    ASSERT_TRUE(primProp != nullptr);
+    ECEnumerationCP ecEnum = primProp->GetEnumeration();
+    ASSERT_TRUE(ecEnum != nullptr);
+    ASSERT_EQ(4, ecEnum->GetEnumeratorCount());
+
+    ecEnum = schema->GetEnumerationCP("StandardRootFolderType");
+    ASSERT_TRUE(ecEnum != nullptr);
+    ASSERT_EQ(4, ecEnum->GetEnumeratorCount());
+    }
+
+    {
+    ECDb ecdb;
+    ASSERT_EQ(BE_SQLITE_OK, ecdb.OpenBeSQLiteDb(testFilePath, ECDb::OpenParams(Db::OpenMode::Readonly))) << "Could not open test file " << testFilePath.GetNameUtf8().c_str();
+
+    ECSchemaCP schema = ecdb.Schemas().GetECSchema("ECDb_FileInfo", true);
+    ASSERT_TRUE(schema != nullptr);
+    ECEnumerationCP ecEnum = schema->GetEnumerationCP("StandardRootFolderType");
+    ASSERT_TRUE(ecEnum != nullptr);
+    ASSERT_EQ(4, ecEnum->GetEnumeratorCount());
+    }
+
     }
 
 //---------------------------------------------------------------------------------------
@@ -196,7 +249,6 @@ ECSchemaPtr CreateTestSchema ()
 
     PrimitiveECPropertyP prop = nullptr;
     baseClass->CreatePrimitiveProperty (prop, "bprop", PrimitiveType::PRIMITIVETYPE_Double);
-
 
     ECEntityClassP sub1Class = nullptr;
     stat = testSchema->CreateEntityClass(sub1Class, "Sub1");
