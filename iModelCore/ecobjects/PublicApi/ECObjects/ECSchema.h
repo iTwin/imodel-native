@@ -1612,7 +1612,11 @@ protected:
     ECCustomAttributeClassP _GetCustomAttributeClassP() override { return this; }
 
 public:
-    ECOBJECTS_EXPORT CustomAttributeContainerType GetContainerType() const;
+    CustomAttributeContainerType GetContainerType() const { return m_containerType; }
+
+    //! Sets the container type which this custom attribute can be applied to. Use this carefully as it might render existing instances invalid!
+    // @param[in]   containerType   The new container type to apply
+    void SetContainerType(CustomAttributeContainerType containerType) { m_containerType = containerType; }
 };
 
 //---------------------------------------------------------------------------------------
