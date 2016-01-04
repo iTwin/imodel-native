@@ -31,9 +31,9 @@
  *  GeometrySource3d : GeometrySource
  *      InPhysicalSpace : boolean
  *      Origin : point3d
- *      Yaw
- *      Pitch
- *      Roll
+ *      Yaw : double
+ *      Pitch : double
+ *      Roll : double
  *      BBoxLow : point3d
  *      BBoxHigh : point3d
  */
