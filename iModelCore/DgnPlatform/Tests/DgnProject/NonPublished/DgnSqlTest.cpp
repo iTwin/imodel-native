@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/DgnProject/NonPublished/DgnSqlTest.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "DgnHandlersTests.h"
@@ -86,7 +86,7 @@ void SqlFunctionsTest::InsertElement(PhysicalElementR pelem)
     ASSERT_TRUE( m_db->Elements().Insert(pelem).IsValid() );
     ASSERT_TRUE( pelem.GetElementId().IsValid() ) << L"Insert is supposed to set the ElementId";
     }
-#define EABB_FROM_GEOM "DGN_bbox(Placement_Box_Low_X,Placement_Box_Low_Y,Placement_Box_Low_Z,Placement_Box_High_X,Placement_Box_High_Y,Placement_Box_High_Z)"
+#define EABB_FROM_GEOM "DGN_bbox(BBoxLow_X,BBoxLow_Y,BBoxLow_Z,BBoxHigh_X,BBoxHigh_Y,BBoxHigh_Z)"
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      05/15
@@ -116,7 +116,7 @@ TEST_F(SqlFunctionsTest, placement_areaxy)
         // This statement is wrong, because DGN_placement_angles returns a DGN_angles object, while DGN_bbox_areaxy expects a DGN_bbox object.
         // Note that the error is detected when you try to step the statement, not when you prepare it.
         Statement stmt;
-        stmt.Prepare(*m_db, "SELECT DGN_bbox_areaxy(DGN_angles(Placement_Rotation_Yaw,Placement_Rotation_Pitch,Placement_Rotation_Roll)) FROM " DGN_TABLE(DGN_CLASSNAME_SpatialElement));
+        stmt.Prepare(*m_db, "SELECT DGN_bbox_areaxy(DGN_angles(Yaw,Pitch,Roll)) FROM " DGN_TABLE(DGN_CLASSNAME_SpatialElement));
         DbResult rc = stmt.Step(); // rc will be BE_SQLITE_ERROR, and m_db->GetLastError() will return "Illegal input to DGN_bbox_areaxy"
         //__PUBLISH_EXTRACT_END__
         ASSERT_EQ( BE_SQLITE_ERROR , rc );
@@ -172,8 +172,8 @@ TEST_F(SqlFunctionsTest, placement_areaxy)
 
     }
 
-#define ANGLES_FROM_PLACEMENT "DGN_angles(g.Placement_Rotation_Yaw,g.Placement_Rotation_Pitch,g.Placement_Rotation_Roll)"
-#define EC_ANGLES_FROM_PLACEMENT "DGN_angles(g.Placement.Rotation.Yaw,g.Placement.Rotation.Pitch,g.Placement.Rotation.Roll)"
+#define ANGLES_FROM_PLACEMENT "DGN_angles(g.Yaw,g.Pitch,g.Roll)"
+#define EC_ANGLES_FROM_PLACEMENT "DGN_angles(g.Yaw,g.Pitch,g.Roll)"
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      05/15
@@ -211,7 +211,7 @@ TEST_F(SqlFunctionsTest, placement_angles)
         Statement stmt2;
         //__PUBLISH_EXTRACT_START__ DgnSchemaDomain_SqlFuncs_DGN_angles_value.sampleCode
         // This query uses DGN_angles_value to extract the Yaw angle of an element's placement, in order to compare it with 90.
-        stmt2.Prepare(*m_db, "SELECT g.Id FROM " DGN_TABLE(DGN_CLASSNAME_SpatialElement) " AS g WHERE ABS(g.Placement_Rotation_Yaw - 90) < 1.0");
+        stmt2.Prepare(*m_db, "SELECT g.Id FROM " DGN_TABLE(DGN_CLASSNAME_SpatialElement) " AS g WHERE ABS(g.Yaw - 90) < 1.0");
         //__PUBLISH_EXTRACT_END__
 
         ASSERT_EQ( BE_SQLITE_ROW , stmt2.Step() );
@@ -263,8 +263,8 @@ TEST_F(SqlFunctionsTest, placement_angles)
     ASSERT_EQ(BE_SQLITE_DONE, estmt.Step());
     }
 
-#define ORIGIN_FROM_PLACEMENT "DGN_point(g.Placement_Origin_X,g.Placement_Origin_Y,g.Placement_Origin_Z)"
-#define BBOX_FROM_PLACEMENT "DGN_bbox(g.Placement_Box_Low_X,g.Placement_Box_Low_Y,g.Placement_Box_Low_Z,g.Placement_Box_High_X,g.Placement_Box_High_Y,g.Placement_Box_High_Z)"
+#define ORIGIN_FROM_PLACEMENT "DGN_point(g.Origin_X,g.Origin_Y,g.Origin_Z)"
+#define BBOX_FROM_PLACEMENT "DGN_bbox(g.BBoxLow_X,g.BBoxLow_Y,g.BBoxLow_Z,g.BBoxHigh_X,g.BBoxHigh_Y,g.BBoxHigh_Z)"
 #define PLACEMENT_FROM_GEOM "DGN_placement(" ORIGIN_FROM_PLACEMENT "," ANGLES_FROM_PLACEMENT "," BBOX_FROM_PLACEMENT ")"
 #define AABB_FROM_PLACEMENT "DGN_placement_aabb(" PLACEMENT_FROM_GEOM ")"
 
@@ -864,7 +864,7 @@ TEST_F(SqlFunctionsTest, bbox_union)
     int count = 0;
 #endif
     stmt.Prepare(*dgndb, "SELECT count(*) FROM "
-                         DGN_TABLE(DGN_CLASSNAME_SpatialElement) " AS g WHERE g.Placement_Rotation_Roll < 90");
+                         DGN_TABLE(DGN_CLASSNAME_SpatialElement) " AS g WHERE g.Roll < 90");
 
     rc = stmt.Step();
     ASSERT_EQ(BE_SQLITE_ROW, rc);

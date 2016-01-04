@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/DgnElement.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -24,44 +24,30 @@
  *      Geometry : binary
  *      CategoryId : long
  *  GeometrySource2d : GeometrySource
- *      Placement : Placement2d
- *          Origin : point2d
- *          Rotation : double
- *          Box : ElementAlignedBox2d
- *              Low : point2d
- *              High : point2d
+ *      Origin : point2d
+ *      Rotation : double
+ *      BBoxLow : point2d
+ *      BBoxHigh : point2d
  *  GeometrySource3d : GeometrySource
  *      InPhysicalSpace : boolean
- *      Placement : Placement3d
- *          Origin : point3d
- *          Rotation : YawPitchRollAngles
- *              Yaw
- *              Pitch
- *              Roll
- *          Box : ElementAlignedBox3d
- *              Low : point3d
- *              High : point3d
+ *      Origin : point3d
+ *      Yaw
+ *      Pitch
+ *      Roll
+ *      BBoxLow : point3d
+ *      BBoxHigh : point3d
  */
 
 #define GEOM_Geometry "Geometry"
 #define GEOM_Category "CategoryId"
-#define GEOM_Origin "Placement.Origin"
-#define GEOM_Box_Low "Placement.Box.Low"
-#define GEOM_Box_High "Placement.Box.High"
-#define GEOM2_Rotation "Placement.Rotation"
+#define GEOM_Origin "Origin"
+#define GEOM_Box_Low "BBoxLow"
+#define GEOM_Box_High "BBoxHigh"
+#define GEOM2_Rotation "Rotation"
 #define GEOM3_InPhysicalSpace "InPhysicalSpace"
-#define GEOM3_Yaw "Placement.Rotation.Yaw"
-#define GEOM3_Pitch "Placement.Rotation.Pitch"
-#define GEOM3_Roll "Placement.Rotation.Roll"
-#define GEOM_Placement "Placement"
-#define PLACEMENT_Origin "Origin"
-#define PLACEMENT_Rotation "Rotation"
-#define PLACEMENT_Box "Box"
-#define BOX_Low "Low"
-#define BOX_High "High"
-#define ROTATION_Yaw "Yaw"
-#define ROTATION_Pitch "Pitch"
-#define ROTATION_Roll "Roll"
+#define GEOM3_Yaw "Yaw"
+#define GEOM3_Pitch "Pitch"
+#define GEOM3_Roll "Roll"
 
 #ifdef WIP_ELEMENT_ITEM // *** pending redesign
 DgnElement::Item::Key&  DgnElement::Item::GetKey() {static Key s_key; return s_key;}
@@ -2718,36 +2704,25 @@ DgnDbStatus ElementGeom3d::Read(ECSqlStatement& stmt, ECSqlClassParams const& pa
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void bindNull(IECSqlStructBinder& binder, Utf8CP prop)
-    {
-    binder.GetMember(prop).BindNull();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   12/15
-+---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus ElementGeom2d::Bind(ECSqlStatement& stmt, DgnElementCR)
     {
     auto status = BindTo(stmt);
     if (DgnDbStatus::Success != status)
         return status;
 
-    IECSqlStructBinder& placementBinder = stmt.BindStruct(stmt.GetParameterIndex(GEOM_Placement));
-    IECSqlStructBinder& boxBinder = placementBinder.GetMember(PLACEMENT_Box).BindStruct();
-
     if (!m_placement.IsValid())
         {
-        bindNull(placementBinder, PLACEMENT_Origin);
-        bindNull(placementBinder, PLACEMENT_Rotation);
-        bindNull(boxBinder, BOX_Low);
-        bindNull(boxBinder, BOX_High);
+        stmt.BindNull(stmt.GetParameterIndex(GEOM_Origin));
+        stmt.BindNull(stmt.GetParameterIndex(GEOM_Box_Low));
+        stmt.BindNull(stmt.GetParameterIndex(GEOM_Box_High));
+        stmt.BindNull(stmt.GetParameterIndex(GEOM2_Rotation));
         }
     else
         {
-        placementBinder.GetMember(PLACEMENT_Origin).BindPoint2D(m_placement.GetOrigin());
-        placementBinder.GetMember(PLACEMENT_Rotation).BindDouble(m_placement.GetAngle().Degrees());
-        boxBinder.GetMember(BOX_Low).BindPoint2D(m_placement.GetElementBox().low);
-        boxBinder.GetMember(BOX_High).BindPoint2D(m_placement.GetElementBox().high);
+        stmt.BindPoint2D(stmt.GetParameterIndex(GEOM_Origin), m_placement.GetOrigin());
+        stmt.BindDouble(stmt.GetParameterIndex(GEOM2_Rotation), m_placement.GetAngle().Degrees());
+        stmt.BindPoint2D(stmt.GetParameterIndex(GEOM_Box_Low), m_placement.GetElementBox().low);
+        stmt.BindPoint2D(stmt.GetParameterIndex(GEOM_Box_High), m_placement.GetElementBox().high);
         }
 
     return DgnDbStatus::Success;
@@ -2770,27 +2745,23 @@ DgnDbStatus ElementGeom3d::Bind(ECSqlStatement& stmt, DgnElementCR el)
 
     stmt.BindInt(stmt.GetParameterIndex(GEOM3_InPhysicalSpace), CoordinateSpace::World == geomModel->GetCoordinateSpace() ? 1 : 0);
 
-    IECSqlStructBinder& placementBinder = stmt.BindStruct(stmt.GetParameterIndex(GEOM_Placement));
-    IECSqlStructBinder& rotBinder = placementBinder.GetMember(PLACEMENT_Rotation).BindStruct();
-    IECSqlStructBinder& boxBinder = placementBinder.GetMember(PLACEMENT_Box).BindStruct();
-
     if (!m_placement.IsValid())
         {
-        bindNull(placementBinder, PLACEMENT_Origin);
-        bindNull(rotBinder, ROTATION_Yaw);
-        bindNull(rotBinder, ROTATION_Pitch);
-        bindNull(rotBinder, ROTATION_Roll);
-        bindNull(boxBinder, BOX_Low);
-        bindNull(boxBinder, BOX_High);
+        stmt.BindNull(stmt.GetParameterIndex(GEOM_Origin));
+        stmt.BindNull(stmt.GetParameterIndex(GEOM3_Yaw));
+        stmt.BindNull(stmt.GetParameterIndex(GEOM3_Pitch));
+        stmt.BindNull(stmt.GetParameterIndex(GEOM3_Roll));
+        stmt.BindNull(stmt.GetParameterIndex(GEOM_Box_Low));
+        stmt.BindNull(stmt.GetParameterIndex(GEOM_Box_High));
         }
     else
         {
-        placementBinder.GetMember(PLACEMENT_Origin).BindPoint3D(m_placement.GetOrigin());
-        rotBinder.GetMember(ROTATION_Yaw).BindDouble(m_placement.GetAngles().GetYaw().Degrees());
-        rotBinder.GetMember(ROTATION_Pitch).BindDouble(m_placement.GetAngles().GetPitch().Degrees());
-        rotBinder.GetMember(ROTATION_Roll).BindDouble(m_placement.GetAngles().GetRoll().Degrees());
-        boxBinder.GetMember(BOX_Low).BindPoint3D(m_placement.GetElementBox().low);
-        boxBinder.GetMember(BOX_High).BindPoint3D(m_placement.GetElementBox().high);
+        stmt.BindPoint3D(stmt.GetParameterIndex(GEOM_Origin), m_placement.GetOrigin());
+        stmt.BindDouble(stmt.GetParameterIndex(GEOM3_Yaw), m_placement.GetAngles().GetYaw().Degrees());
+        stmt.BindDouble(stmt.GetParameterIndex(GEOM3_Pitch), m_placement.GetAngles().GetPitch().Degrees());
+        stmt.BindDouble(stmt.GetParameterIndex(GEOM3_Roll), m_placement.GetAngles().GetRoll().Degrees());
+        stmt.BindPoint3D(stmt.GetParameterIndex(GEOM_Box_Low), m_placement.GetElementBox().low);
+        stmt.BindPoint3D(stmt.GetParameterIndex(GEOM_Box_High), m_placement.GetElementBox().high);
         }
 
     return DgnDbStatus::Success;
@@ -2901,14 +2872,9 @@ DgnDbStatus ElementGeomData::LoadGeomStream(DgnElementCR el, Utf8CP tableName)
 void ElementGeomData::AddBaseClassParams(ECSqlClassParams& params)
     {
     params.Add(GEOM_Category);
-
-    // It's necessary to bind to structs for INSERT/UPDATE.
-    params.Add(GEOM_Placement, ECSqlClassParams::StatementType::InsertUpdate);
-
-    // In SELECT statements, it's much easier to select individual struct members.
-    params.Add(GEOM_Origin, ECSqlClassParams::StatementType::Select);
-    params.Add(GEOM_Box_Low, ECSqlClassParams::StatementType::Select);
-    params.Add(GEOM_Box_High, ECSqlClassParams::StatementType::Select);
+    params.Add(GEOM_Origin);
+    params.Add(GEOM_Box_Low);
+    params.Add(GEOM_Box_High);
 
     // NB: We read and write the GeomStream separately from the other properties.
     }
@@ -2919,6 +2885,7 @@ void ElementGeomData::AddBaseClassParams(ECSqlClassParams& params)
 void ElementGeom2d::AddClassParams(ECSqlClassParams& params)
     {
     AddBaseClassParams(params);
+
     params.Add(GEOM2_Rotation, ECSqlClassParams::StatementType::Select);
     }
 
@@ -2928,10 +2895,11 @@ void ElementGeom2d::AddClassParams(ECSqlClassParams& params)
 void ElementGeom3d::AddClassParams(ECSqlClassParams& params)
     {
     AddBaseClassParams(params);
+
     params.Add(GEOM3_InPhysicalSpace);
-    params.Add(GEOM3_Yaw, ECSqlClassParams::StatementType::Select);
-    params.Add(GEOM3_Pitch, ECSqlClassParams::StatementType::Select);
-    params.Add(GEOM3_Roll, ECSqlClassParams::StatementType::Select);
+    params.Add(GEOM3_Yaw);
+    params.Add(GEOM3_Pitch);
+    params.Add(GEOM3_Roll);
     }
 
 

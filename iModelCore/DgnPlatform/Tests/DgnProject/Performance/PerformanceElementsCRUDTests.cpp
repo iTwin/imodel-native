@@ -535,6 +535,7 @@ void PerformanceElementsCRUDTestFixture::CreateElements (int numInstances, Utf8C
     DgnCategoryId catid = DgnCategory::QueryHighestCategoryId (*m_db);
     DgnClassId classId = DgnClassId (m_db->Schemas ().GetECClassId (ELEMENT_PERFORMANCE_TEST_SCHEMA_NAME, className));
 
+//#define PERF_ELEM_CRUD_WANT_GEOM 1
 #ifdef PERF_ELEM_CRUD_WANT_GEOM
     bool addGeometry = true;
 #else
@@ -1846,6 +1847,7 @@ void PerformanceElementsCRUDTestFixture::LogTiming(StopWatch& timer, Utf8CP desc
     Utf8String totalDescription;
     totalDescription.Sprintf("%s %s '%s' [Initial count: %d]", description, noClassIdFilterStr, testClassName, initialInstanceCount);
     LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), totalDescription.c_str(), opCount);
+//#define PERF_ELEM_CRUD_LOG_TO_CONSOLE 1
 #ifdef PERF_ELEM_CRUD_LOG_TO_CONSOLE
     printf("%.8f %s\n", timer.GetElapsedSeconds(), totalDescription.c_str());
 #endif

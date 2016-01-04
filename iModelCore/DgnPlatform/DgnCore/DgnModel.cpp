@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/DgnModel.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -1241,11 +1241,11 @@ AxisAlignedBox3d GeometricModel::_QueryModelRange() const
         "SELECT DGN_bbox_union("
             "DGN_placement_aabb("
                 "DGN_placement("
-                    "DGN_point(g.Placement_Origin_X,g.Placement_Origin_Y,g.Placement_Origin_Z),"
-                    "DGN_angles(g.Placement_Rotation_Yaw,g.Placement_Rotation_Pitch,g.Placement_Rotation_Roll),"
+                    "DGN_point(g.Origin_X,g.Origin_Y,g.Origin_Z),"
+                    "DGN_angles(g.Yaw,g.Pitch,g.Roll),"
                     "DGN_bbox("
-                        "g.Placement_Box_Low_X,g.Placement_Box_Low_Y,g.Placement_Box_Low_Z,"
-                        "g.Placement_Box_High_X,g.Placement_Box_High_Y,g.Placement_Box_High_Z))))"
+                        "g.BBoxLow_X,g.BBoxLow_Y,g.BBoxLow_Z,"
+                        "g.BBoxHigh_X,g.BBoxHigh_Y,g.BBoxHigh_Z))))"
         " FROM " DGN_TABLE(DGN_CLASSNAME_Element) " AS e," DGN_TABLE(DGN_CLASSNAME_SpatialElement) " As g"
         " WHERE e.ModelId=? AND e.Id=g.Id");
 
