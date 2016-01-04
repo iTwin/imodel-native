@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/RasterSchema/RasterFileHandler.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -33,7 +33,7 @@ struct RasterFileProperties
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE RasterFileModel : RasterModel
 {
-    DEFINE_T_SUPER(RasterModel)
+DGNMODEL_DECLARE_MEMBERS(RASTER_CLASSNAME_RasterFileModel, RasterModel)
 
 private:
     RasterFileProperties    m_fileProperties;

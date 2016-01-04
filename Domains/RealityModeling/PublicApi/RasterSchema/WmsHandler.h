@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/RasterSchema/WmsHandler.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -71,7 +71,7 @@ struct WmsMap
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE WmsModel : RasterModel
 {
-    DEFINE_T_SUPER(RasterModel)
+DGNMODEL_DECLARE_MEMBERS(RASTER_CLASSNAME_WmsModel, RasterModel)
 
 private:
     WmsMap m_map;

@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/PointCloudSchema/PointCloudHandler.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -24,7 +24,7 @@ struct PointCloudModelHandler;
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE PointCloudModel : Dgn::SpatialModel
 {
-    DEFINE_T_SUPER(Dgn::SpatialModel)
+DGNMODEL_DECLARE_MEMBERS(POINTCLOUD_CLASSNAME_PointCloudModel, Dgn::SpatialModel)
 
 private:
     BePointCloud::PointCloudScenePtr    m_pointCloudScenePtr;
@@ -77,7 +77,7 @@ public:
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE PointCloudModelHandler : Dgn::dgn_ModelHandler::Spatial
 {
-    MODELHANDLER_DECLARE_MEMBERS ("PointCloudModel", PointCloudModel, PointCloudModelHandler, Dgn::dgn_ModelHandler::Spatial, POINTCLOUDSCHEMA_EXPORT)
+    MODELHANDLER_DECLARE_MEMBERS(POINTCLOUD_CLASSNAME_PointCloudModel, PointCloudModel, PointCloudModelHandler, Dgn::dgn_ModelHandler::Spatial, POINTCLOUDSCHEMA_EXPORT)
 
 public:
     POINTCLOUDSCHEMA_EXPORT static Dgn::DgnModelId CreatePointCloudModel(DgnDbR db, Utf8StringCR fileId);

@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/RasterSchema/RasterHandler.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -19,8 +19,8 @@ struct RasterModelHandler;
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE RasterModel : Dgn::SpatialModel
 {
-    DEFINE_T_SUPER(Dgn::SpatialModel)
-    
+DGNMODEL_DECLARE_MEMBERS(RASTER_CLASSNAME_RasterModel, Dgn::SpatialModel)
+
 protected:
     friend struct RasterModelHandler;
 

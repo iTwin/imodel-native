@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/PointCloudSchema/PointCloudSchemaCommon.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -14,3 +14,8 @@
 
 #define POINTCLOUDSCHEMA_TYPEDEFS(_name_) \
     BEGIN_BENTLEY_POINTCLOUDSCHEMA_NAMESPACE DEFINE_POINTER_SUFFIX_TYPEDEFS(_name_) END_BENTLEY_POINTCLOUDSCHEMA_NAMESPACE
+
+//-----------------------------------------------------------------------------------------
+// ECClass name
+//-----------------------------------------------------------------------------------------
+#define POINTCLOUD_CLASSNAME_PointCloudModel        "PointCloudModel"
