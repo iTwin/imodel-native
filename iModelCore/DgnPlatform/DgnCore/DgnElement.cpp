@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/DgnElement.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -62,12 +62,6 @@
 #define ROTATION_Pitch "Pitch"
 #define ROTATION_Roll "Roll"
 
-#ifdef WIP_ELEMENT_ITEM // *** pending redesign
-DgnElement::Item::Key&  DgnElement::Item::GetKey() {static Key s_key; return s_key;}
-#endif
-
-
-void From(bvector<uint8_t>& from);
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   09/12
 +---------------+---------------+---------------+---------------+---------------+------*/

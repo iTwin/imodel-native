@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/DgnViewport.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -767,11 +767,9 @@ public:
 /** @name Changing DgnViewport Frustum */
 /** @{ */
     //! Scroll the DgnViewport by a given number of pixels in the view's X and/or Y direction. This method will move the DgnViewport's frustum
-    //! in the indicated direction, but does \em not update the screen (even if the DgnViewport happens to be a visible View.) This method does
-    //! change the ViewController associated with the DgnViewport.
-    //! @param[in]      viewDist    The distance to scroll, in pixels.
-    //! @note To update the view, see ViewManager::UpdateView or ViewManager::UpdateViewDynamic. To save the change to the ViewController
-    //!       in the view undo buffer, see SynchWithViewController.
+    //! in the indicated direction, but does \em not update the screen (even if the DgnViewport happens to be visible.) This method 
+    //! changes the ViewController associated with the DgnViewport.
+    //! @param[in] viewDist The distance to scroll, in pixels.
     DGNPLATFORM_EXPORT ViewportStatus Scroll(Point2dCP viewDist);
 
     //! Change the size of this DgnViewport's frustum by a ratio to its current size. Also, specify a new center point
@@ -781,16 +779,12 @@ public:
     //! @param[in]      newCenterRoot   The position, in DgnCoordSystem::World, for the new center of the frustum. If NULL, center is unchanged.
     //! @param[in]      factor          Scale factor to apply to current frustum. Scale factors greater than 1.0 zoom out (that is, the view
     //!                                   frustum gets larger and shows more of the model), and scale factors less than 1.0 zoom in.
-    //! @note To update the view, see ViewManager::UpdateView or ViewManager::UpdateViewDynamic. To save the change to the ViewController
-    //!       in the view undo buffer, see SynchWithViewController.
     DGNPLATFORM_EXPORT ViewportStatus Zoom(DPoint3dCP newCenterRoot, double factor);
 
     //! Change the frustum for this DgnViewport. The frustum is an 8-point array of points in DgnCoordSystem::World coordinates
     //! in the order specified by NpcCorners.
     //! This method will change the DgnViewport's frustum, but does \em not update the screen (even if the DgnViewport happens
-    //! to be a visible View.) This method \em does change the ViewController associated with the DgnViewport.
-    //! @note To update the view, see ViewManager::UpdateView or ViewManager::UpdateViewDynamic. To save the change to the ViewController
-    //!       in the view undo buffer, see SynchWithViewController.
+    //! to be visible.) This method \em does change the ViewController associated with the DgnViewport.
     DGNPLATFORM_EXPORT ViewportStatus SetupFromFrustum(Frustum const& frustPts);
 /** @} */
 
