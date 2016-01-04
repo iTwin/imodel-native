@@ -235,6 +235,20 @@ TEST_F(ECDbInstances, DeleteECInstances)
     ECDbR ecdb = test.Create ("StartupCompany.ecdb", L"StartupCompany.02.00.ecschema.xml", true);
 
     // Check all the instances inserted
+    ECClassKeys classes;
+    ecdb.Schemas().GetECClassKeys(classes, "StartupCompany");
+    for (ECClassKey const& classKey : classes)
+        {
+        ECClassCP ecClass = ecdb.Schemas().GetECClass(classKey.GetECClassId());
+        if (!ecClass->IsEntityClass() && !ecClass->IsRelationshipClass())
+            continue;
+
+        Utf8String ecsql;
+        ecsql.Sprintf("SELECT ECInstanceId FROM ONLY %s", classKey.GetName());
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, esql.c_str()));
+        }
+
     ECInstanceMapCR importedInstances = test.GetImportedECInstances();
     for (ECInstanceMap::const_iterator iter = importedInstances.begin(); iter != importedInstances.end(); iter++)
         {
