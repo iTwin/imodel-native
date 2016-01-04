@@ -1135,6 +1135,7 @@ TEST (RapidJson, WriterString)
 //---------------------------------------------------------------------------------------
 // @bsiMethod                                      Muhammad Hassan                  12/15
 //+---------------+---------------+---------------+---------------+---------------+------
+#ifdef WIP_MERGE
 TEST (JsonUpdaterTests, UpdateRelationshipProperty)
     {
     ECDbTestProject::Initialize ();
@@ -1242,5 +1243,6 @@ TEST (JsonUpdaterTests, UpdateRelationshipProperty)
     checkStmt.Reset ();
     checkStmt.ClearBindings ();
     }
-
+#endif
+    
 END_ECDBUNITTESTS_NAMESPACE
