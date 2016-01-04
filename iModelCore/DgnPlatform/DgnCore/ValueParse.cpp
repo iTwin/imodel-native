@@ -5,7 +5,8 @@
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include    <DgnPlatformInternal.h>
+#include <DgnPlatformInternal.h>
+#include <DgnPlatform/DgnGeoCoord.h>
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 
@@ -661,7 +662,10 @@ void            DirectionParser::InitModelSettings(GeometricModelCR model)
     SetDirectionMode(displayInfo.GetDirectionMode());
     SetClockwise(displayInfo.GetDirectionClockwise());
     SetBaseDirection(displayInfo.GetDirectionBaseDir());
-    SetTrueNorthValue (model.GetDgnDb().Units().GetAzimuth ());
+
+    DgnGCS* dgnGcs = model.GetDgnDb().Units().GetDgnGCS();
+    double azimuth = (dgnGcs != nullptr) ? dgnGcs->GetAzimuth() : 0.0;
+    SetTrueNorthValue(azimuth);
     }
 
 /*---------------------------------------------------------------------------------**//**

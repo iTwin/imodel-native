@@ -126,25 +126,25 @@ static const long IMAGEFILE_MAX_COM_RESERVED = 2000;
 #endif
 
 /*----------------------------------------------------------------------+
-|                                   |
-|   Image Formats                           |
-|                                   |
+|
+|   Image Formats
+|
 +----------------------------------------------------------------------*/
-typedef enum
+enum class ImageFormat
     {
-    IMAGEFORMAT_BitMap              = 1,
-    IMAGEFORMAT_RLEBitMap           = 2,
-    IMAGEFORMAT_ByteMap             = 3,
-    IMAGEFORMAT_GreyScale           = 4,
-    IMAGEFORMAT_RGBSeparate         = 5,
-    IMAGEFORMAT_RGB                 = 6,
-    IMAGEFORMAT_RGBA                = 7,
-    IMAGEFORMAT_PackByte            = 8,
-    IMAGEFORMAT_RLEByteMap          = 9,
-    IMAGEFORMAT_BGRA                = 10, // Same as Windows DIB
-    IMAGEFORMAT_RGBASeparate        = 11,
-    IMAGEFORMAT_BGRSeparate         = 12
-    } ImageFormat;
+    BitMap              = 1,
+    RLEBitMap           = 2,
+    ByteMap             = 3,
+    GreyScale           = 4,
+    RGBSeparate         = 5,
+    RGB                 = 6,
+    RGBA                = 7,
+    PackByte            = 8,
+    RLEByteMap          = 9,
+    BGRA                = 10,   // Same as Windows DIB
+    RGBASeparate        = 11,
+    BGRSeparate         = 12
+    };
 
 /*----------------------------------------------------------------------+
 |                                   |

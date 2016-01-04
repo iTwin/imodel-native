@@ -7,6 +7,7 @@
 
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
 USING_NAMESPACE_BENTLEY_SQLITE
+USING_NAMESPACE_BENTLEY_SQLITE_EC
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    06/2015
@@ -80,7 +81,7 @@ void ChangeTestFixture::CloseDgnDb()
 //---------------------------------------------------------------------------------------
 void ChangeTestFixture::InsertModel()
     {
-    ModelHandlerR handler = dgn_ModelHandler::Physical::GetHandler();
+    ModelHandlerR handler = dgn_ModelHandler::Spatial::GetHandler();
     DgnClassId classId = m_testDb->Domains().GetClassId(handler);
     m_testModel = handler.Create(DgnModel::CreateParams(*m_testDb, classId, DgnModel::CreateModelCode("ChangeSetModel")));
 
@@ -98,7 +99,7 @@ void ChangeTestFixture::CreateDefaultView()
     CameraViewDefinition viewRow(CameraViewDefinition::CreateParams(*m_testDb, "Default", ViewDefinition::Data(m_testModel->GetModelId(), DgnViewSource::Generated)));
     ASSERT_TRUE(viewRow.Insert().IsValid());
 
-    PhysicalViewController viewController(*m_testDb, viewRow.GetViewId());
+    SpatialViewController viewController(*m_testDb, viewRow.GetViewId());
     viewController.SetStandardViewRotation(StandardView::Iso);
     viewController.GetViewFlagsR().SetRenderMode(Render::RenderMode::SmoothShade);
 
@@ -130,7 +131,7 @@ void ChangeTestFixture::UpdateDgnDbExtents()
     physicalExtents = m_testDb->Units().ComputeProjectExtents();
     m_testDb->Units().SaveProjectExtents(physicalExtents);
 
-    PhysicalViewDefinitionCPtr view = dynamic_cast<PhysicalViewDefinitionCP>(ViewDefinition::QueryView("Default", *m_testDb).get());
+    SpatialViewDefinitionCPtr view = dynamic_cast<SpatialViewDefinitionCP>(ViewDefinition::QueryView("Default", *m_testDb).get());
     ASSERT_TRUE(view.IsValid());
 
     ViewControllerPtr viewController = view->LoadViewController(ViewDefinition::FillModels::No);
@@ -171,7 +172,7 @@ void ChangeTestFixture::InsertAuthority()
 //---------------------------------------------------------------------------------------
 DgnElementId ChangeTestFixture::InsertElement(int x, int y, int z)
     {
-    PhysicalModelP physicalTestModel = dynamic_cast<PhysicalModelP> (m_testModel.get());
+    SpatialModelP physicalTestModel = dynamic_cast<SpatialModelP> (m_testModel.get());
     BeAssert(physicalTestModel != nullptr);
     BeAssert(m_testCategoryId.IsValid());
 
@@ -190,4 +191,23 @@ DgnElementId ChangeTestFixture::InsertElement(int x, int y, int z)
 
     DgnElementId elementId = m_testDb->Elements().Insert(*testElement)->GetElementId();
     return elementId;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Ramanujam.Raman                    12/2015
+//---------------------------------------------------------------------------------------
+int ChangeTestFixture::GetChangeSummaryInstanceCount(ChangeSummaryCR changeSummary, Utf8CP qualifiedClassName) const
+    {
+    Utf8PrintfString ecSql("SELECT COUNT(*) FROM %s WHERE IsChangedInstance(?, GetECClassId(), ECInstanceId)", qualifiedClassName);
+
+    ECSqlStatement stmt;
+    ECSqlStatus ecSqlStatus = stmt.Prepare(*m_testDb, ecSql.c_str());
+    BeAssert(ecSqlStatus.IsSuccess());
+
+    stmt.BindInt64(1, (int64_t) &changeSummary);
+
+    DbResult ecSqlStepStatus = stmt.Step();
+    BeAssert(ecSqlStepStatus == BE_SQLITE_ROW);
+
+    return stmt.GetValueInt(0);
     }

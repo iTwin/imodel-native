@@ -182,7 +182,7 @@ TEST_F (DgpRoundtripExpressionTests, Roundtrip)
     Roundtrip ("this.Property", "this.Property");
     Roundtrip ("this.Property *  this[\"Property\"]", "this.Property*this[\"Property\"]");
     Roundtrip ("Something.Method ( )", "Something.Method()");
-    Roundtrip ("Something.Method (0,1.5, 2.000,  \t\"string\", this.Property   )", "Something.Method(0,1.5,2,\"string\",this.Property)");
+    Roundtrip ("Something.Method (0,1.5, 2.000,  \t\"string\", this.Property   )", "Something.Method(0,1.5,2.0,\"string\",this.Property)");
     Roundtrip ("IIf (True,  Null, \t2 ^3  -3* 4)", "IIf(True,Null,2^3-3*4)");
     Roundtrip ("X = \"Thing\" OrElse X = \"Stuff\"", "X=\"Thing\"OrElse X=\"Stuff\"");
 
@@ -199,7 +199,7 @@ TEST_F (DgpRoundtripExpressionTests, Roundtrip)
     Roundtrip ("0.00390625", "0.00390625");
     Roundtrip ("method (method (True, method (method (1.5), False)))", "method(method(True,method(method(1.5),False)))");
 
-    Roundtrip ("X => X < 5.0 AndAlso X > 1.5", "X=>X<5 AndAlso X>1.5");
+    Roundtrip ("X => X < 5.0 AndAlso X > 1.5", "X=>X<5.0 AndAlso X>1.5");
     Roundtrip ("this.Array.Any (X => X.Name = \"Chuck\" OrElse X.Name = \"Bob\")", "this.Array.Any(X=>X.Name=\"Chuck\"OrElse X.Name=\"Bob\")");
     }
 

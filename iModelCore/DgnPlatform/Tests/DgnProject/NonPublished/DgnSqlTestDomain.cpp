@@ -63,7 +63,7 @@ static void setUpElement(PhysicalElementR el, DPoint3dCR origin, double yaw, ICu
 * Robots are always 1 meter cubes 
 * @bsimethod                                                    Sam.Wilson      01/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-RobotElement::RobotElement(PhysicalModelR model, DgnCategoryId categoryId, DPoint3dCR origin, double yaw, DgnElement::Code elementCode)
+RobotElement::RobotElement(SpatialModelR model, DgnCategoryId categoryId, DPoint3dCR origin, double yaw, DgnElement::Code elementCode)
     : PhysicalElement(CreateParams(model.GetDgnDb(), model.GetModelId(), QueryClassId(model.GetDgnDb()), categoryId))
     {
     setUpElement(*this, origin, yaw, *createBox(DPoint3d::From(0,0,0), DPoint3d::From(1,1,1)), elementCode);
@@ -73,7 +73,7 @@ RobotElement::RobotElement(PhysicalModelR model, DgnCategoryId categoryId, DPoin
 * Obstacles are always slabs 10 meters long, 1 meter high, and 1 cm thick
 * @bsimethod                                                    Sam.Wilson      01/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-ObstacleElement::ObstacleElement(PhysicalModelR model, DgnCategoryId categoryId, DPoint3dCR origin, double yaw, DgnElement::Code elementCode)
+ObstacleElement::ObstacleElement(SpatialModelR model, DgnCategoryId categoryId, DPoint3dCR origin, double yaw, DgnElement::Code elementCode)
     : PhysicalElement(CreateParams(model.GetDgnDb(), model.GetModelId(), QueryClassId(model.GetDgnDb()), categoryId))
     {
     setUpElement(*this, origin, yaw, *createBox(DPoint3d::From(0,0,0), DPoint3d::From(10,0.1,1)), elementCode);

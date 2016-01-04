@@ -31,7 +31,7 @@ QueryModels are associated with a QueryViewController by passing a QueryModel to
 */
 // @bsiclass                                                    Keith.Bentley   10/11
 //=======================================================================================
-struct QueryModel : PhysicalModel
+struct QueryModel : SpatialModel
 {
     friend struct QueryViewController;
 

@@ -59,47 +59,15 @@ struct DgnScript
     DGNPLATFORM_EXPORT static DgnDbStatus ExecuteEga(int& functionReturnStatus, Dgn::DgnElementR el, Utf8CP jsEgaFunctionName, DPoint3dCR origin, YawPitchRollAnglesCR angles, Json::Value const& parms);
 
     /**
-    Call a DgnModel validation solver function that is implemented in JavaScript.
+    Call a ComponentModel element generator function that is implemented in JavaScript.
 
-    <h2>Signature of a JavaScript model solver function.</h2>
-    A model solver function written in TypeScript must have the following signature:
     @verbatim
-    function myModelSolverFunction(model: BentleyApi.Dgn.JsDgnModel, params: any) : number
-    @endverbatim
-    Or, in JavaScript:
-    @verbatim
-    function myModelSolverFunction(model, params)
+        export function GenerateElements(componentModel: be.ComponentModel, destModel: be.DgnModel, instance: be.ECInstance, cdef: be.ComponentDef): number
     @endverbatim
 
-    <h2>Registering a JavaScript model solver function.</h2>
-    The JavaScript program must register a model solver function in its start-up logic like this:
-    @verbatim
-    BentleyApi.Dgn.RegisterModelSolver('myNamespace.myModelSolverPublicName', myModelSolverFunction);
-    @endverbatim
-    The \a myModelSolverPublicName parameter must match the name used to register a JavaScript model solver.
-
-    <h2>Specifying a JavaScript model solver in an model solver.</h2>
-    Every DgnModel can have a model solver. To specify a JavaScript model solver, an application must supply a Solver object in the model's CreateParams, and 
-    the Solver object must be set up as follows: type = ModelSolverDef::Type::Script, identifer = full name of the script function in the script library.
-    For example,
-    @verbatim
-    Json::Value parameters(Json::objectValue);
-    ... define parameters, as expected by the solver function ...
-    ModelSolverDef solver(ModelSolverDef::Type::Script, myNamespace.myModelSolverPublicName", parameters);
-    @endverbatim
-
-    Note the use of the ModelSolverDef::Type::Script type. 
-    Also note that the solver identifier "myNamespace.myModelSolverPublicName" must match the string passed to BentleyApi.Dgn.RegisterModelSolver.
-    And, the namespace part of the identifer "myNamespace" must match the identifier of a JavaScript program in the script library.
-
-    @param[out] functionReturnStatus    The function's integer return value. 0 means success.
-    @param[in] model           The model to validate
-    @param[in] jsFunctionName   Identifies the Script function to be executed. Must be of the form namespace.functionname
-    @param[in] parms        The parameters to pass to the solver. 
-    @param[in] options      Additional parameters to pass to the solver. 
     @return non-zero if the specified namespace is not found in the JavaScript library or if the specified function could not be found or failed to execute.
     **/
-    DGNPLATFORM_EXPORT static DgnDbStatus ExecuteModelSolver(int& functionReturnStatus, Dgn::DgnModelR model, Utf8CP jsFunctionName, Json::Value const& parms, Json::Value const& options);
+    DGNPLATFORM_EXPORT static DgnDbStatus ExecuteComponentGenerateElements(int& functionReturnStatus, Dgn::ComponentModelR componentModel, Dgn::DgnModelR destModel, ECN::IECInstanceR instance, Dgn::ComponentDefR cdef, Utf8StringCR functionName);
 
     DGNPLATFORM_EXPORT static DgnDbStatus ExecuteDgnDbScript(int& functionReturnStatus, Dgn::DgnDbR db, Utf8StringCR functionName, Json::Value const& parms);
 

@@ -82,7 +82,7 @@ public:
     DGNPLATFORM_EXPORT explicit VolumeElement(CreateParams const& params);
 
     //! Creates a new VolumeElement element
-    static VolumeElementPtr Create(PhysicalModelCR model, DPoint3dCR origin, bvector<DPoint2d> const& shape, double height, Utf8CP label=nullptr) { return new VolumeElement(CreateParams(model.GetDgnDb(), model.GetModelId(), origin, shape, height, label)); }
+    static VolumeElementPtr Create(SpatialModelCR model, DPoint3dCR origin, bvector<DPoint2d> const& shape, double height, Utf8CP label=nullptr) { return new VolumeElement(CreateParams(model.GetDgnDb(), model.GetModelId(), origin, shape, height, label)); }
 
     //! Creates a new VolumeElement element
     static VolumeElementPtr Create(CreateParams const& params) { return new VolumeElement(params); }
@@ -183,6 +183,7 @@ namespace dgn_ElementHandler
     struct EXPORT_VTABLE_ATTRIBUTE VolumeElementHandler : Element
     {
         ELEMENTHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_VolumeElement, VolumeElement, VolumeElementHandler, Element, DGNPLATFORM_EXPORT)
+        virtual void _GetClassParams(ECSqlClassParamsR params) override { T_Super::_GetClassParams(params); ElementGeom3d::AddClassParams(params); }
     };
 }
 

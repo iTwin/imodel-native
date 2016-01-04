@@ -14,7 +14,6 @@ DgnUnits::DgnUnits(DgnDbR project) : m_dgndb(project)
     {
     m_globalOrigin.Zero();
     m_extent = AxisAlignedBox3d();
-    m_azimuth = 0.0;
     m_hasCheckedForGCS = false;
     m_geoServices = NULL;
     m_gcs = NULL;
@@ -56,7 +55,6 @@ BentleyStatus DgnUnits::LatLongFromXyz(GeoPointR outLatLong, DPoint3dCR inUors) 
     }
 
 static Utf8CP DGNPROPERTYJSON_GlobalOrigin    = "globalOrigin";
-static Utf8CP DGNPROPERTYJSON_Azimuth         = "azimuth";
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   09/13
@@ -75,7 +73,6 @@ DgnDbStatus DgnUnits::Load()
 
     JsonUtils::DPoint3dFromJson(m_globalOrigin, jsonObj[DGNPROPERTYJSON_GlobalOrigin]);
 
-    m_azimuth = jsonObj[DGNPROPERTYJSON_Azimuth].asDouble();
     LoadProjectExtents();
     return  DgnDbStatus::Success;
     }
@@ -88,7 +85,6 @@ void DgnUnits::Save()
     Json::Value jsonObj;
 
     JsonUtils::DPoint3dToJson(jsonObj[DGNPROPERTYJSON_GlobalOrigin], m_globalOrigin);
-    jsonObj[DGNPROPERTYJSON_Azimuth] = m_azimuth;
 
     m_dgndb.SavePropertyString(DgnProjectProperty::Units(), Json::FastWriter::ToString(jsonObj));
     }

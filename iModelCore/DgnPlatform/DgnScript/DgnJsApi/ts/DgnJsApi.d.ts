@@ -10,6 +10,8 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
     type YawPitchRollAnglesP = cxx_pointer<YawPitchRollAngles>;
     type SolidPrimitiveP = cxx_pointer<SolidPrimitive>;
 
+    enum ECPropertyPrimitiveType { }
+
     //! Logging serverity level.
     enum LoggingSeverity { }
 
@@ -63,6 +65,7 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
     {
         /*** NATIVE_TYPE_NAME = JsDgnDb ***/
         Models: DgnModelsP;
+        Schemas: SchemaManagerP;
         OnDispose(): void;
         Dispose(): void;
     }
@@ -182,38 +185,107 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
         Code: AuthorityIssuedCode;
         DgnDb: DgnDbP;
         static CreateModelCode(name: Bentley_Utf8String): AuthorityIssuedCode;
-        DeleteAllElements(): void;
         OnDispose(): void;
         Dispose(): void;
     }
 
     type DgnModelP = cxx_pointer<DgnModel>;
 
+    /**
+     * A "sandbox" model where a component definition script can write elements and aspects that will be harvested by the platform and combined into instances.
+     */
     class ComponentModel extends DgnModel implements IDisposable, BeJsProjection_RefCounted, BeJsProjection_SuppressConstructor
     {
         /*** NATIVE_TYPE_NAME = JsComponentModel ***/
-        Name: Bentley_Utf8String;
-
-        /** Find a component model by name 
-         * @param db The DgnDB that contains the component model
-         * @param name The name of the component model to search for.
-         * @return A pointer to the component model with that name or null if not found.
-         */
-        static FindModelByName(db: DgnDbP, name: Bentley_Utf8String): ComponentModelP;
-
-        /** Place an instance of a component 
-         * @param targetModel The model where the new instance will be placed.
-         * @param capturedSolutionName Optional. The name of the captured solution to copy. If not specified, then \a params must be specified.
-         * @param params Optional. The parameters to use to look up or to generate the instance. If \a capturedSolutionName is specified, then params may be null.
-         * @param code Optional. The code for the new instance. If not specified, then the newly created element will have no Code.
-         * @return A new, persistent element that is an instance of the specified solution of the specified component, or null if the component could not supply that solution.
-         */
-        MakeInstance(targetModel: DgnModelP, capturedSolutionName: Bentley_Utf8String, params: Bentley_Utf8String, code: AuthorityIssuedCode): DgnElementP;
+        
         OnDispose(): void;
         Dispose(): void;
     }
 
     type ComponentModelP = cxx_pointer<ComponentModel>;
+
+    /**
+     * A component definition
+     */
+    class ComponentDef implements IDisposable, BeJsProjection_RefCounted, BeJsProjection_SuppressConstructor {
+        /*** NATIVE_TYPE_NAME = JsComponentDef ***/
+        
+        /**
+         * The name of the component
+         */
+        Name: Bentley_Utf8String;
+
+        /**
+         * The ECClass of the component
+         */
+        ComponentECClass: ECClassP;
+
+        /**
+         * The Category of the component
+         */
+        Category: DgnCategoryP;
+
+        /**
+         * The name of the CodeAuthority of the component
+         */
+        CodeAuthority: Bentley_Utf8String;
+
+        /** Find a component definition by name 
+         * @param db The DgnDB that contains the component definition
+         * @param name The name of the component definition to search for.
+         * @return A pointer to the component model with that name or null if not found.
+         */
+        static FindByName(db: DgnDbP, name: Bentley_Utf8String): ComponentDefP;
+
+        /** Look up a variation by name
+         * @param variationName The name of the variation to look up.
+         * @return the variation or null if not found
+         */
+        QueryVariationByName(variationName: Bentley_Utf8String): DgnElementP;
+
+        /** Return the properties of the specified instance of this component in the form of an IECInstance.
+         * @param instance The component instance element.
+         * @returns nullptr if \a instance is an instance of a component
+         * @see QueryVariationByName
+         */
+        static GetParameters(instance: DgnElementP): ECInstanceP;
+
+        /** Place an instance of a component 
+         * If \a variation has instance parameters, then the \a instanceParameters argument may be passed into specific the instance parameter values to use.
+         * If the values in \a instanceParameters differs from the instance parameters of \a variation, then a unique instance is created.
+         * If \a instanceParameters is not specified or if it matches the instance parameters of \a variation, then a copy of \a variation is made.
+         * @note Per-type parameters are ignored when comparing \a parameters to \a variation. It is illegal for the caller to specify new values for per-type parameters.
+         * @param targetModel The model where the new instance will be placed.
+         * @param variation The variation that is to be turned into an instance.
+         * @param instanceParameters The instance parameters to use. If null, then default instance parameter values are used. Pass null if the variation has no instance parameters.
+         * @param code Optional. The code to assign to the new instance. If invalid, then a code will be generated by the CodeAuthority associated with this component definition.
+         * @return null if the variation or instanceParamters are invalie. Otherwise, instance that was created and persisted in \a destModel. If more than one element was created, the returned element is the parent. 
+         * @see QueryVariationByName, GetParameters
+         */
+        MakeInstanceOfVariation(targetModel: DgnModelP, variation: DgnElementP, instanceParameters: ECInstanceP, code: AuthorityIssuedCode): DgnElementP;
+
+        /**
+         * Make a unique instance that is not based on a pre-defined variation. This method must be used if \a parameters include per-instance parameters that do not match the default values
+         * of any pre-defined variation. This method may also be used for components that do not have pre-defined variations.
+         * @note This function should not be used when the compponent definition does define a set of variations. In that case, call MakeInstanceOfVariation instead.
+         * @param[out] stat        Optional. If not null, then an error code is stored here in case the creation of the instance fails.
+         * @param[in] targetModel  The model where the instance is to be inserted
+         * @param[in] parameters   The parameters that specify the desired variation
+         * @param[in] code         Optional. The code to assign to the new item. If invalid, then a code will be generated by the CodeAuthority associated with this component model
+         * @return A handle to the instance that was created and persisted in \a destModel. If more than one element was created, the returned element is the parent. If the instance
+         * cannot be created, then this function returns nullptr and sets \a stat to a non-error status. Some of the possible error values include:
+         *     * DgnDbStatus::WrongClass - \a parameters is not an instance of a component definition ECClass.
+         *     * DgnDbStatus::WrongDgnDb - \a parameters and \a targetModel must both be in the same DgnDb.
+         *     * DgnDbStatus::BadRequest - The component's geometry could not be generated, possibly because the values in \a parameters are invalid.
+         * @see MakeInstanceOfVariation
+         */
+        MakeUniqueInstance(targetModel: DgnModelP, instanceParameters: ECInstanceP, code: AuthorityIssuedCode): DgnElementP;
+
+        OnDispose(): void;
+        Dispose(): void;
+    }
+
+    type ComponentDefP = cxx_pointer<ComponentDef>;
 
     class GeometryBuilder implements IDisposable, BeJsProjection_RefCounted, BeJsProjection_SuppressConstructor
     {
@@ -224,4 +296,148 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
         OnDispose(): void;
         Dispose(): void;
     }
-}
+
+
+    /* ------------------------------------------ EC -----------------------------------------------*/
+
+    class SchemaManager implements IDisposable, BeJsProjection_RefCounted, BeJsProjection_SuppressConstructor
+    {
+        /*** NATIVE_TYPE_NAME = JsECDbSchemaManager ***/
+        GetECClass(schemaNameOrPrefix: Bentley_Utf8String, className: Bentley_Utf8String): ECClassP;
+        OnDispose(): void;
+        Dispose(): void;
+    }
+
+    type SchemaManagerP = cxx_pointer<SchemaManager>;
+
+    class ECSchema implements IDisposable, BeJsProjection_RefCounted, BeJsProjection_SuppressConstructor
+    {
+        /*** NATIVE_TYPE_NAME = JsECSchema ***/
+        Name: Bentley_Utf8String;
+        GetECClass(className: Bentley_Utf8String): ECClassP;
+
+        OnDispose(): void;
+        Dispose(): void;
+    }
+
+    type ECSchemaP = cxx_pointer<ECSchema>;
+
+    class ECClass implements IDisposable, BeJsProjection_RefCounted, BeJsProjection_SuppressConstructor
+    {
+        /*** NATIVE_TYPE_NAME = JsECClass ***/ 
+        Name: Bentley_Utf8String;
+        BaseClasses: ECClassCollectionP;
+        DerivedClasses: ECClassCollectionP;
+        Properties: ECPropertyCollectionP;
+        GetCustomAttribute(className: Bentley_Utf8String): ECInstanceP;
+
+        MakeInstance(): ECInstanceP;
+
+        OnDispose(): void;
+        Dispose(): void;
+    }
+
+    type ECClassP = cxx_pointer<ECClass>;
+
+    class ECInstance implements IDisposable, BeJsProjection_RefCounted, BeJsProjection_SuppressConstructor
+    {
+        /*** NATIVE_TYPE_NAME = JsECInstance ***/
+        Class: ECClassP;
+        GetValue(propertyName: Bentley_Utf8String): ECValueP;
+        SetValue(propertyName: Bentley_Utf8String, value: ECValueP): void;
+
+        OnDispose(): void;
+        Dispose(): void;
+    }
+
+    type ECInstanceP = cxx_pointer<ECInstance>;
+
+    class ECValue implements IDisposable, BeJsProjection_RefCounted, BeJsProjection_SuppressConstructor
+    {
+        /*** NATIVE_TYPE_NAME = JsECValue ***/
+
+        static FromDouble(v: cxx_double): ECValueP;
+        static FromString(v: Bentley_Utf8String): ECValueP;
+
+        IsNull: cxx_bool;
+        IsPrimitive: cxx_bool;
+        PrimitiveType: cxx_enum_class_uint32_t<ECPropertyPrimitiveType>;
+        GetString(): Bentley_Utf8String;
+        GetInteger(): cxx_int32_t;
+        GetDouble(): cxx_double;
+
+        OnDispose(): void;
+        Dispose(): void;
+    }
+
+    type ECValueP = cxx_pointer<ECValue>;
+
+    class ECClassCollectionIterator implements IDisposable, BeJsProjection_SuppressConstructor, BeJsProjection_RefCounted
+    {
+        /*** NATIVE_TYPE_NAME = JsECClassCollectionIterator ***/
+        OnDispose(): void;
+        Dispose(): void;
+    }
+
+    type ECClassCollectionIteratorP = cxx_pointer<ECClassCollectionIterator>;
+
+    class ECClassCollection implements IDisposable, BeJsProjection_SuppressConstructor, BeJsProjection_RefCounted
+    {
+        /*** NATIVE_TYPE_NAME = JsECClassCollection ***/
+        Begin(): ECClassCollectionIteratorP;
+        IsValid(iter: ECClassCollectionIteratorP): cxx_bool;
+        ToNext(iter: ECClassCollectionIteratorP): cxx_bool;
+        GetECClass(iter: ECClassCollectionIteratorP): ECClassP;
+
+        OnDispose(): void;
+        Dispose(): void;
+    }
+
+    type ECClassCollectionP = cxx_pointer<ECClassCollection>;
+
+    class ECProperty implements IDisposable, BeJsProjection_RefCounted, BeJsProjection_SuppressConstructor
+    {
+        /*** NATIVE_TYPE_NAME = JsECProperty ***/
+        Name: Bentley_Utf8String;
+        IsPrimitive: cxx_bool;
+        GetCustomAttribute(className: Bentley_Utf8String): ECInstanceP;
+
+        OnDispose(): void;
+        Dispose(): void;
+    }
+
+    type ECPropertyP = cxx_pointer<ECProperty>;
+
+    class PrimitiveECProperty extends ECProperty implements IDisposable, BeJsProjection_RefCounted, BeJsProjection_SuppressConstructor
+    {
+        /*** NATIVE_TYPE_NAME = JsPrimitiveECProperty ***/
+        Type: cxx_enum_class_uint32_t<ECPropertyPrimitiveType>;
+
+        OnDispose(): void;
+        Dispose(): void;
+    }
+
+    type PrimitiveECPropertyP = cxx_pointer<PrimitiveECProperty>;
+
+    class ECPropertyCollectionIterator implements IDisposable, BeJsProjection_SuppressConstructor, BeJsProjection_RefCounted
+    {
+        /*** NATIVE_TYPE_NAME = JsECPropertyCollectionIterator ***/
+        OnDispose(): void;
+        Dispose(): void;
+    }
+
+    type ECPropertyCollectionIteratorP = cxx_pointer<ECPropertyCollectionIterator>;
+
+    class ECPropertyCollection implements IDisposable, BeJsProjection_SuppressConstructor, BeJsProjection_RefCounted
+    {
+        /*** NATIVE_TYPE_NAME = JsECPropertyCollection ***/
+        Begin(): ECPropertyCollectionIteratorP;
+        IsValid(iter: ECPropertyCollectionIteratorP): cxx_bool;
+        ToNext(iter: ECPropertyCollectionIteratorP): cxx_bool;
+        GetECProperty(iter: ECPropertyCollectionIteratorP): ECPropertyP;
+
+        OnDispose(): void;
+        Dispose(): void;
+    }
+
+    type ECPropertyCollectionP = cxx_pointer<ECPropertyCollection>;}

@@ -56,9 +56,9 @@ struct DgnViewElemTest : DgnViewsTest
 
     DgnModelPtr AddModel(Utf8StringCR name)
         {
-        DgnClassId classId(project->Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_PhysicalModel));
+        DgnClassId classId(project->Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_SpatialModel));
         DgnModel::CreateParams params(*project, classId, DgnModel::CreateModelCode(name));
-        DgnModelPtr model = new PhysicalModel(params);
+        DgnModelPtr model = new SpatialModel(params);
         EXPECT_EQ(DgnDbStatus::Success, model->Insert());
 
         return model;
@@ -257,7 +257,7 @@ TEST_F(DgnViewElemTest, Iterate)
             {
             Utf8String viewName(model->GetCode().GetValue());
             viewName.append(s_viewSourceNames[i]);
-            ViewDefinitionCPtr view = AddView<PhysicalViewDefinition>(viewName, model->GetModelId(), s_viewSources[i], s_viewDescriptions[i]);
+            ViewDefinitionCPtr view = AddView<SpatialViewDefinition>(viewName, model->GetModelId(), s_viewSources[i], s_viewDescriptions[i]);
             ASSERT_TRUE(view.IsValid());
             ASSERT_TRUE(view->GetViewId().IsValid());
             }

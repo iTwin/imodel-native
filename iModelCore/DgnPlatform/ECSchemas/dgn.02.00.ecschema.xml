@@ -5,23 +5,77 @@ xmlns:ecschema="http://www.bentley.com/schemas/Bentley.ECXML.2.0"
 xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 xsi:schemaLocation="ecschema ECSchema.xsd" >
 
-    <ECSchemaReference name="EditorCustomAttributes" version="01.00" prefix="beca" />
     <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="01.12" prefix="bsca" />
-    <ECSchemaReference name="Bentley_Standard_Classes" version="01.00" prefix="bsm" />
     <ECSchemaReference name="ECDbMap" version="01.00" prefix="ecdbmap" />
-
-    <ECCustomAttributes>
-        <SystemSchema xmlns="Bentley_Standard_CustomAttributes.01.12"/>
-    </ECCustomAttributes>
     
     <!-- Applied to an ECClass to indicate that a subclass of DgnDomain::Handler will be supplied for it at run-time.
          It must be applied to any ECClass if the application/domain registers a Handler for that ECClass.
          It should not be applied to any other ECClass.
          It is an error to call RegisterHandler() with a handler for an ECClass which lacks this custom attribute. -->
-    <ECClass typeName="ClassHasHandler" isDomainClass="False" isCustomAttributeClass="True" description="Applied to an ECClass to indicate that a subclass of DgnDomain::Handler will be supplied for it at run-time.">
+    <ECClass typeName="ClassHasHandler" isCustomAttributeClass="True" description="Applied to an ECClass to indicate that a subclass of DgnDomain::Handler will be supplied for it at run-time.">
         <!-- Defines a list of names of actions which are prohibited when the associated handler is not available (e.g., because the DgnDomain is not loaded).
              Restrictions are inherited from superclasses; a subclass can only be as or more restrictive than its superclass, never less. -->
         <ECArrayProperty propertyName="Restrictions" typeName="string" description="List of actions which are not permitted when the associated handler is not available" minOccurs="0" maxOccurs="unbounded" />
+    </ECClass>
+
+    <!-- ////////////////////////////////////////////////////////////////////////////// -->
+    <!-- // Geometry-related core classes -->
+    <!-- ////////////////////////////////////////////////////////////////////////////// -->
+
+    <ECClass typeName="BoundingBox2d" isStruct="True">
+        <ECProperty propertyName="Low" typeName="point2d" />
+        <ECProperty propertyName="High" typeName="point2d" />
+    </ECClass>
+    <ECClass typeName="Placement2d" isStruct="True">
+        <ECProperty propertyName="Origin" typeName="point2d" />
+        <ECProperty propertyName="Rotation" typeName="double" />
+        <ECStructProperty propertyName="Box" typeName="BoundingBox2d" />
+    </ECClass>
+
+    <ECClass typeName="YawPitchRollAngles" isStruct="True">
+        <ECProperty propertyName="Yaw" typeName="double" />
+        <ECProperty propertyName="Pitch" typeName="double" />
+        <ECProperty propertyName="Roll" typeName="double" />
+    </ECClass>
+    <ECClass typeName="BoundingBox3d" isStruct="True">
+        <ECProperty propertyName="Low" typeName="point3d" />
+        <ECProperty propertyName="High" typeName="point3d" />
+    </ECClass>
+    <ECClass typeName="Placement3d" isStruct="True">
+        <ECProperty propertyName="Origin" typeName="point3d" />
+        <ECStructProperty propertyName="Rotation" typeName="YawPitchRollAngles" />
+        <ECStructProperty propertyName="Box" typeName="BoundingBox3d" />
+    </ECClass>
+
+    <ECClass typeName="GeometrySource" isDomainClass="False" isCustomAttributeClass="False" isStruct="False">
+        <!-- abstract - interface adopted by Elements which have geometry. 
+             NOTE: Derive from GeometrySource2d or GeometrySource3d. -->
+        <!-- No, ECDb will not accept this.
+        <ECCustomAttributes>
+            <ClassMap xmlns="ECDbMap.01.00">
+                <Indexes>
+                    <DbIndex>
+                        <Name>idx_dgn_GeometrySource_CategoryId</Name>
+                        <IsUnique>False</IsUnique>
+                        <Properties>
+                            <string>CategoryId</string>
+                        </Properties>
+                    </DbIndex>
+                </Indexes>
+            </ClassMap>
+        </ECCustomAttributes>
+        -->
+        <ECProperty propertyName="CategoryId" typeName="long" /><!-- should be non-nullable but shared table... -->
+        <ECProperty propertyName="Geometry" typeName="binary" />
+    </ECClass>
+    <ECClass typeName="GeometrySource2d" isDomainClass="False" isCustomAttributeClass="False" isStruct="False">
+        <BaseClass>GeometrySource</BaseClass>
+        <ECStructProperty propertyName="Placement" typeName="Placement2d" />
+    </ECClass>
+    <ECClass typeName="GeometrySource3d" isDomainClass="False" isCustomAttributeClass="False" isStruct="False">
+        <BaseClass>GeometrySource</BaseClass>
+        <ECStructProperty propertyName="Placement" typeName="Placement3d" />
+        <ECProperty propertyName="InPhysicalSpace" typeName="boolean" />
     </ECClass>
 
     <!-- ////////////////////////////////////////////////////////////////////////////// -->
@@ -179,23 +233,17 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
         <BaseClass>GeometricModel</BaseClass>
         <ECProperty propertyName="GlobalOrigin" displayLabel="Global Origin" typeName="point2d" />
     </ECClass>
-    <ECClass typeName="PhysicalModel" isDomainClass="True">
+    <ECClass typeName="SpatialModel" isDomainClass="True">
         <ECCustomAttributes>
             <ClassHasHandler xmlns="dgn.02.00" />
         </ECCustomAttributes>
         <BaseClass>Model3d</BaseClass>
     </ECClass>
-    <ECClass typeName="PlanarPhysicalModel" isDomainClass="True">
-        <ECCustomAttributes>
-            <ClassHasHandler xmlns="dgn.02.00" />
-        </ECCustomAttributes>
-        <BaseClass>Model2d</BaseClass>
-    </ECClass>
     <ECClass typeName="SectionDrawingModel" isDomainClass="True">
         <ECCustomAttributes>
             <ClassHasHandler xmlns="dgn.02.00" />
         </ECCustomAttributes>
-        <BaseClass>PlanarPhysicalModel</BaseClass>
+        <BaseClass>Model2d</BaseClass>
     </ECClass>
     <ECClass typeName="SheetModel" isDomainClass="True">
         <ECCustomAttributes>
@@ -210,23 +258,17 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
         </ECCustomAttributes>
         <BaseClass>SheetModel</BaseClass>
     </ECClass>
-    <ECClass typeName="PhysicalRedlineModel" isDomainClass="True">
+    <ECClass typeName="SpatialRedlineModel" isDomainClass="True">
         <ECCustomAttributes>
             <ClassHasHandler xmlns="dgn.02.00" />
         </ECCustomAttributes>
-        <BaseClass>PhysicalModel</BaseClass>
+        <BaseClass>SpatialModel</BaseClass>
     </ECClass>
     <ECClass typeName="ComponentModel" isDomainClass="True">
         <ECCustomAttributes>
             <ClassHasHandler xmlns="dgn.02.00" />
         </ECCustomAttributes>
         <BaseClass>Model3d</BaseClass>
-        <ECProperty propertyName="Solver" typeName="string" />
-        <!--  These are in the model's Props JSON
-        <ECProperty propertyName="ItemECClass" typeName="string" description="Full name of ECClass of Item that is customized by this model"/>
-        <ECProperty propertyName="ItemCategory" typeName="string" description="Name of Category used by harvestable Items in this model"/>
-        <ECProperty propertyName="ItemCodeAuthority" typeName="string" description="Name of CodeAuthority to be used when creating component instances"/>
-        -->
     </ECClass>
     <ECClass typeName="DefinitionModel" isDomainClass="True">
         <ECCustomAttributes>
@@ -244,7 +286,7 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
         <ECCustomAttributes>
             <ClassHasHandler xmlns="dgn.02.00" />
         </ECCustomAttributes>
-        <BaseClass>PhysicalModel</BaseClass>
+        <BaseClass>SpatialModel</BaseClass>
     </ECClass>
     <ECClass typeName="StreetMapModel" isDomainClass="True" >
         <ECCustomAttributes>
@@ -367,11 +409,6 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
         </ECProperty>
     </ECClass>
 
-    <ECClass typeName="GeometrySource" isDomainClass="False" isCustomAttributeClass="False" isStruct="False">
-        <!-- abstract - interface adopted by Elements which have geometry
-             Note this is intended to serve as a relationship endpoint, but ECDb doesn't support an abstract relationship endpoint (needs primary key)... -->
-    </ECClass>
-
     <ECClass typeName="DefinitionElement" isDomainClass="False" isCustomAttributeClass="False" isStruct="False">
         <BaseClass>Element</BaseClass>
     </ECClass>
@@ -385,17 +422,22 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
     <ECClass typeName="SpatialElement" isDomainClass="False" isCustomAttributeClass="False" isStruct="False">
         <!-- An element that occupies real world space -->
         <BaseClass>Element</BaseClass>
-        <BaseClass>GeometrySource</BaseClass>
+        <BaseClass>GeometrySource3d</BaseClass>
     </ECClass>
     <ECClass typeName="PhysicalElement" isDomainClass="True">
         <!-- A SpatialElement that has mass and can be "touched" -->
         <ECCustomAttributes>
             <ClassHasHandler xmlns="dgn.02.00" />
+			   <ClassMap xmlns="ECDbMap.01.00">
+                <MapStrategy>
+                    <Options>SharedColumnsForSubclasses</Options>
+                </MapStrategy>		
+			</ClassMap>				
         </ECCustomAttributes>
         <BaseClass>SpatialElement</BaseClass>
     </ECClass>
     <ECClass typeName="SpatialLocationElement" isDomainClass="False" isCustomAttributeClass="False" isStruct="False">
-        <!-- A SpatialElement that identifies a "tracked" real word location but has no mass and cannot be "touched" -->
+        <!-- A SpatialElement that identifies a "tracked" real world location but has no mass and cannot be "touched" -->
         <BaseClass>SpatialElement</BaseClass>
     </ECClass>
     <ECClass typeName="SpatialGroupElement" isDomainClass="True">
@@ -418,7 +460,7 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
             <ClassHasHandler xmlns="dgn.02.00" />
         </ECCustomAttributes>
         <BaseClass>Element</BaseClass>
-        <BaseClass>GeometrySource</BaseClass>
+        <BaseClass>GeometrySource2d</BaseClass>
     </ECClass>
     <ECClass typeName="DrawingElement" isDomainClass="True">
         <!-- 2D element used in drawings -->
@@ -426,7 +468,7 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
             <ClassHasHandler xmlns="dgn.02.00" />
         </ECCustomAttributes>
         <BaseClass>Element</BaseClass>
-        <BaseClass>GeometrySource</BaseClass>
+        <BaseClass>GeometrySource2d</BaseClass>
     </ECClass>
     <ECClass typeName="SheetElement" isDomainClass="True">
         <!-- 2D element used in sheets -->
@@ -434,7 +476,7 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
             <ClassHasHandler xmlns="dgn.02.00" />
         </ECCustomAttributes>
         <BaseClass>Element</BaseClass>
-        <BaseClass>GeometrySource</BaseClass>
+        <BaseClass>GeometrySource2d</BaseClass>
     </ECClass>
 
     <ECClass typeName="TextAnnotationData" isDomainClass="True">
@@ -450,11 +492,11 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
         </ECCustomAttributes>
         <BaseClass>AnnotationElement</BaseClass>
     </ECClass>
-    <ECClass typeName="PhysicalTextAnnotationElement" isDomainClass="True">
+    <ECClass typeName="SpatialTextAnnotationElement" isDomainClass="True">
         <ECCustomAttributes>
             <ClassHasHandler xmlns="dgn.02.00" />
         </ECCustomAttributes>
-        <BaseClass>PhysicalElement</BaseClass>
+        <BaseClass>SpatialElement</BaseClass>
     </ECClass>
 
     <ECClass typeName="AnnotationTableElement" isDomainClass="True">
@@ -609,7 +651,6 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
             <ClassHasHandler xmlns="dgn.02.00" />
         </ECCustomAttributes>
         <BaseClass>SheetElement</BaseClass>
-        <BaseClass>GeometrySource</BaseClass>
         <ECProperty propertyName="ViewId" typeName="long">
             <!-- Foreign key relationship: ViewIsAttached.ViewId -->
             <!-- Should have IsNullable=False but shared table... -->
@@ -634,43 +675,6 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
                     <Property name="ViewId" />
                 </Key>
             </Class>
-        </Target>
-    </ECRelationshipClass>
-
-    <!-- An Item in (a catalog/template model) can hold a soultion of a ComponentModel. 
-        There can be many Items, each holding a different solution (based on a unique set of parameters), of a single ComponentModel. 
-        There can be many different ComponentModels.
-    -->
-    <ECRelationshipClass typeName="SolutionOfComponent" isDomainClass="True" strength="referencing" strengthDirection="forward">
-        <Source cardinality="(0,N)" roleLabel="many unique solutions" polymorphic="True">
-            <Class class="Element" />
-        </Source>
-        <Target cardinality="(0,N)" roleLabel="of a ComponentModel" polymorphic="True">
-            <Class class="ComponentModel" />
-        </Target>
-        <!-- JSON representation of parameters that were used to solve the target model in order to produce the source element -->
-        <ECProperty propertyName="Parameters" typeName="string"/>
-    </ECRelationshipClass>
-
-    <!-- An Item can be a copy of a (template) Item. 
-        There can be many copies of a single template Item. 
-        There can be many different template Items. 
-    -->
-    <ECRelationshipClass typeName="InstantiationOfTemplate" isDomainClass="True" strength="referencing" strengthDirection="forward">
-        <ECCustomAttributes>
-            <ClassMap xmlns="ECDbMap.01.00">
-                <ECInstanceIdColumn>Id</ECInstanceIdColumn>
-            </ClassMap>
-            <LinkTableRelationshipMap xmlns="ECDbMap.01.00">
-                <SourceECInstanceIdColumn>InstanceId</SourceECInstanceIdColumn>
-                <TargetECInstanceIdColumn>TemplateId</TargetECInstanceIdColumn>
-            </LinkTableRelationshipMap>
-        </ECCustomAttributes>
-        <Source cardinality="(0,N)" roleLabel="many instances" polymorphic="True">
-            <Class class="Element" />
-        </Source>
-        <Target cardinality="(0,N)" roleLabel="of one template" polymorphic="True">
-            <Class class="Element"/>
         </Target>
     </ECRelationshipClass>
 
@@ -709,6 +713,9 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
         <Target cardinality="(0,N)" polymorphic="True">
             <Class class="Element" />
         </Target>
+        <ECProperty propertyName="MemberPriority" typeName="int">
+            <!-- Can be used to prioritize or order members within an ElementGroup. Values do not have to be unique within a particular group. -->
+        </ECProperty>
     </ECRelationshipClass>
 
     <ECClass typeName="ElementAspect" isDomainClass="False" isStruct="False" isCustomAttributeClass="False">
@@ -763,56 +770,6 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
             </ECCustomAttributes>
         </ECProperty>
     </ECClass>
-
-    <ECClass typeName="ElementGeom" isDomainClass="True" >
-        <!-- The aspect that holds the cached/resovled geometry for an Element -->
-        <!-- This aspect is not subclassed -->
-        <BaseClass>ElementUniqueAspect</BaseClass>
-        <ECCustomAttributes>
-            <ClassMap xmlns="ECDbMap.01.00">
-                <!-- The ECInstanceId for ElementGeom is the same as the Id of the owning Element -->
-                <ECInstanceIdColumn>ElementId</ECInstanceIdColumn>
-                <Indexes>
-                    <DbIndex>
-                        <!-- Index on CategoryId -->
-                        <Name>idx_dgn_ElementGeom_CategoryId</Name>
-                        <IsUnique>False</IsUnique>
-                        <Properties>
-                            <string>CategoryId</string>
-                        </Properties>
-                    </DbIndex>
-                </Indexes>
-            </ClassMap>
-        </ECCustomAttributes>
-        <ECProperty propertyName="Placement" typeName="binary"/>
-        <ECProperty propertyName="Geom" typeName="binary"/>
-        <ECProperty propertyName="InPhysicalSpace" typeName="int" /><!-- Used strictly for the trigger that updates the range index -->
-        <ECProperty propertyName="CategoryId" typeName="long">
-            <!-- Foreign key relationship: CategoryContainsElementGeom.CategoryId -->
-            <ECCustomAttributes>
-                <PropertyMap xmlns="ECDbMap.01.00">
-                    <IsNullable>False</IsNullable>
-                </PropertyMap>
-            </ECCustomAttributes>
-        </ECProperty>
-    </ECClass>
-    <ECRelationshipClass typeName="ElementOwnsGeom" isDomainClass="True" strength="embedding" strengthDirection="forward">
-        <ECCustomAttributes>
-            <ForeignKeyRelationshipMap xmlns="ECDbMap.01.00">
-                <OnDeleteAction>Cascade</OnDeleteAction>
-            </ForeignKeyRelationshipMap>
-        </ECCustomAttributes>
-        <Source cardinality="(1,1)" polymorphic="True">
-            <Class class="Element" />
-        </Source>
-        <Target cardinality="(0,1)" polymorphic="False">
-            <Class class="ElementGeom">
-                <Key>
-                    <Property name="ECInstanceId"/>
-                </Key>
-            </Class>
-        </Target>
-    </ECRelationshipClass>
 
     <ECClass typeName="ElementExternalKey" isDomainClass="True" >
         <!-- The aspect that holds an identifier from an external system -->
@@ -1108,14 +1065,14 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
         </Target>
     </ECRelationshipClass>
 
-    <ECClass typeName="PhysicalViewDefinition" isDomainClass="True">
+    <ECClass typeName="SpatialViewDefinition" isDomainClass="True">
         <BaseClass>ViewDefinition</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="dgn.02.00" />
         </ECCustomAttributes>
     </ECClass>
     <ECClass typeName="CameraViewDefinition" isDomainClass="True">
-        <BaseClass>PhysicalViewDefinition</BaseClass>
+        <BaseClass>SpatialViewDefinition</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="dgn.02.00" />
         </ECCustomAttributes>
@@ -1187,7 +1144,7 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
     <!-- // DgnDb "implementation detail" classes -->
     <!-- ////////////////////////////////////////////////////////////////////////////// -->
 
-    <ECClass typeName="EGASpecifier" description="Specifies an EGA" isDomainClass="False" isCustomAttributeClass="True">
+    <ECClass typeName="EGASpecifier" description="Specifies an EGA" isCustomAttributeClass="True">
         <ECProperty propertyName="Type" typeName="string" description="The kind of EGA implementation that must be executed. One of: JavaScript, ... TBD" />
         <ECProperty propertyName="Name" typeName="string" description="Identifies the script or parametric model within the Db that will be executed. For scripts, this should have the form program_name:function_name" />
         <ECProperty propertyName="Inputs" typeName="string" description="comma-separated list of input parameter names. These are bound by name to the item's properties." />
@@ -1235,9 +1192,16 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
                 </PropertyMap>
             </ECCustomAttributes>
         </ECProperty>
+        <ECStructProperty propertyName="BBox" typeName="BoundingBox3d">
+            <ECCustomAttributes>
+                <PropertyMap xmlns="ECDbMap.01.00">
+                    <IsNullable>False</IsNullable>
+                </PropertyMap>
+            </ECCustomAttributes>
+        </ECStructProperty>
     </ECClass>
-    <ECRelationshipClass typeName="ElementGeomUsesParts" isDomainClass="True" strength="referencing" strengthDirection="forward">
-        <!-- Used to indicate that an ElementGeom uses a GeomPart.  This is useful for "garbage collecting" or finding Elements that would be affected by a change to a GeomPart. -->
+    <ECRelationshipClass typeName="ElementUsesGeomParts" isDomainClass="True" strength="referencing" strengthDirection="forward">
+        <!-- Used to indicate that an Element uses a GeomPart.  This is useful for "garbage collecting" or finding Elements that would be affected by a change to a GeomPart. -->
         <ECCustomAttributes>
             <ClassMap xmlns="ECDbMap.01.00">
                 <ECInstanceIdColumn>Id</ECInstanceIdColumn>
@@ -1248,31 +1212,49 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
             </LinkTableRelationshipMap>
         </ECCustomAttributes>
         <Source cardinality="(0,N)" polymorphic="False">
-            <Class class="ElementGeom" />
+            <Class class="Element" />
         </Source>
         <Target cardinality="(0,N)" polymorphic="False">
             <Class class="GeomPart" />
         </Target>
     </ECRelationshipClass>
-    <ECRelationshipClass typeName="CategoryContainsElementGeom" isDomainClass="True" strengthDirection="forward" strength="referencing">
+    <!-- NEEDSWORK ECRelationships don't support abstract endpoints
+    <ECRelationshipClass typeName="CategoryContainsGeometry" isDomainClass="True" strengthDirection="forward" strength="referencing">
         <ECCustomAttributes>
             <ForeignKeyRelationshipMap xmlns="ECDbMap.01.00">
-                <OnDeleteAction>NoAction</OnDeleteAction><!-- because you can't actually delete categories currently -->
-                <CreateIndex>True</CreateIndex><!-- because we expect to query for geometry in a particular category -->
+                <OnDeleteAction>NoAction</OnDeleteAction>
+                <CreateIndex>True</CreateIndex>
             </ForeignKeyRelationshipMap>
         </ECCustomAttributes>
         <Source cardinality="(1,1)" roleLabel="contains geometry" polymorphic="False">
             <Class class="Category" />
         </Source>
         <Target cardinality="(0,N)" roleLabel="is in category" polymorphic="False">
-            <Class class="ElementGeom">
+            <Class class="GeometrySource">
                 <Key>
                     <Property name="CategoryId" />
                 </Key>
             </Class>
         </Target>
     </ECRelationshipClass>
+    -->
     
+    <!-- ////////////////////////////////////////////////////////////////////////////// -->
+    <!-- // Experimental classes -->
+    <!-- ////////////////////////////////////////////////////////////////////////////// -->
+
+    <ECClass typeName="ComponentSpecification" description="Defines a DgnComponent." displayLabel="Component Specification" isDomainClass="False" isCustomAttributeClass="True">
+        <ECProperty propertyName="Category" typeName="string" description="The name of the Category to assign to instances of this component. Must not be null." />
+        <ECProperty propertyName="CodeAuthority" typeName="string" description="The name of the CodeAuthority to use then assigning Codes to instances of this component. May be null." />
+        <ECProperty propertyName="ElementGenerator" typeName="string" description="The name of the script to execute in order to create a variation of the component. May be null if the component is based on persistent geometry. In that case, Model must not be null." />
+        <ECProperty propertyName="Model" typeName="string" description="The name of the model that the component definition uses to hold the persistent geometry and other data such as constraints. May be null for components that generate their geometry from scratch." />
+        <ECProperty propertyName="Inputs" typeName="string" description="The names of the properties that are the main inputs to the component's element generator script." />
+    </ECClass>
+
+    <ECClass typeName="ComponentParameterSpecification" description="Provides information about a property that plays the role of a parameter to a component's solver." displayLabel="Component Parameter Specification" isDomainClass="False" isCustomAttributeClass="True">
+        <ECProperty propertyName="VariesPer" typeName="string" description="Indicates if the parameter may be varied for individual instances or if it is fixed for all instances of a particular variation. Possible values: Variation or Instance." />
+    </ECClass>
+
     <!-- ////////////////////////////////////////////////////////////////////////////// -->
     <!-- // Deprecated classes -->
     <!-- ////////////////////////////////////////////////////////////////////////////// -->

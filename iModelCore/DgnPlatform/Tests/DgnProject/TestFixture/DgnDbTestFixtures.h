@@ -63,6 +63,6 @@ public:
     DgnElementId InsertElementUsingGeomPart(DgnGeomPartId gpId, DgnModelId mid = DgnModelId(), DgnCategoryId categoryId = DgnCategoryId(), DgnElement::Code elementCode = DgnElement::Code());
     DgnElementId InsertElementUsingGeomPart2d(Utf8CP gpCode, DgnModelId mid = DgnModelId(), DgnCategoryId categoryId = DgnCategoryId(), DgnElement::Code elementCode = DgnElement::Code());
 
-    void setUpPhysicalView(DgnDbR dgnDb, DgnModelR model, ElementAlignedBox3d elementBox, DgnCategoryId categoryId);
+    void setUpSpatialView(DgnDbR dgnDb, DgnModelR model, ElementAlignedBox3d elementBox, DgnCategoryId categoryId);
 };
 

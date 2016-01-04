@@ -404,7 +404,7 @@ void DgnViewport::_AdjustZPlanesToModel(DPoint3dR origin, DVec3dR delta, ViewCon
     DVec3d  zVec;
     m_rotMatrix.GetRow(zVec, 2);
 
-    double maxDepth = PhysicalViewController::CalculateMaxDepth(delta, zVec);
+    double maxDepth = SpatialViewController::CalculateMaxDepth(delta, zVec);
     double minDepth = std::max(std::max(delta.x, delta.y),(DgnUnits::OneMillimeter() * 150.)); // About 6 inches...
 
     if (minDepth > maxDepth)
@@ -460,7 +460,7 @@ ViewportStatus DgnViewport::SetupFromViewController()
     m_viewDelta     = m_viewDeltaUnexpanded = delta;
     m_zClipAdjusted = false;
 
-    PhysicalViewControllerP physicalView = GetPhysicalViewControllerP();
+    SpatialViewControllerP physicalView = GetSpatialViewControllerP();
     if (nullptr != physicalView)
         {
         CameraViewControllerP cameraView = GetCameraViewControllerP();

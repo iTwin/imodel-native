@@ -18,7 +18,15 @@ USING_NAMESPACE_BENTLEY_SQLITE_EC
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct ElementGeomPartTests : public DgnDbTestFixture
 {
-
+    static void ExpectEqualRange(DRange3dCR a, DRange3dCR b)
+        {
+        EXPECT_EQ(a.low.x, b.low.x);
+        EXPECT_EQ(a.low.y, b.low.y);
+        EXPECT_EQ(a.low.z, b.low.z);
+        EXPECT_EQ(a.high.x, b.high.x);
+        EXPECT_EQ(a.high.y, b.high.y);
+        EXPECT_EQ(a.high.z, b.high.z);
+        }
 };
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Umar.Hayat      07/15
@@ -36,6 +44,11 @@ TEST_F(ElementGeomPartTests, CRUD)
     EXPECT_TRUE(geomPartPtr != NULL);
     EXPECT_EQ(SUCCESS, builder->SetGeometryStream(*geomPartPtr));
     
+    // Test the range
+    ElementAlignedBox3d partBox = geomPartPtr->GetBoundingBox();
+    EXPECT_TRUE(partBox.IsValid());
+    ExpectEqualRange(partBox, builder->GetPlacement3d().GetElementBox());
+
     // Insert
     //
     ASSERT_EQ(SUCCESS, geomPartTable.InsertGeomPart(*geomPartPtr));
@@ -49,6 +62,12 @@ TEST_F(ElementGeomPartTests, CRUD)
     EXPECT_TRUE(stream.HasGeometry());
     uint32_t size  = stream.GetSize();
     EXPECT_TRUE(geomPartPtr->GetGeometryStream().GetSize() == size);
+    ExpectEqualRange(geomPartPtr->GetBoundingBox(), partBox);
+    
+    // Query range
+    DRange3d partRange;
+    EXPECT_EQ(SUCCESS, geomPartTable.QueryGeomPartRange(partRange, partId));
+    ExpectEqualRange(partRange, partBox);
 
     // Update
     builder->Append(*elGPtr);
@@ -152,7 +171,7 @@ TEST_F(ElementGeomPartTests, ElementGeomUsesParts)
     DgnElementCPtr elem = m_db->Elements().GetElement(elementId);
     
     Statement stmt;
-    ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(*m_db, "SELECT * FROM " DGN_TABLE(DGN_RELNAME_ElementGeomUsesParts)));
+    ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(*m_db, "SELECT * FROM " DGN_TABLE(DGN_RELNAME_ElementUsesGeomParts)));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
     ASSERT_EQ(1,stmt.GetValueInt(0));
     ASSERT_EQ(elementId.GetValue(), stmt.GetValueInt64(1));
@@ -188,7 +207,7 @@ TEST_F(ElementGeomPartTests, ElementGeomUsesParts_DeleteGeomPart)
     // Delete Geom Part
     EXPECT_EQ(SUCCESS, m_db->GeomParts().DeleteGeomPart(existingPartId));
     Statement stmt;
-    ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(*m_db, "SELECT * FROM " DGN_TABLE(DGN_RELNAME_ElementGeomUsesParts)));
+    ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(*m_db, "SELECT * FROM " DGN_TABLE(DGN_RELNAME_ElementUsesGeomParts)));
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
     }
 
@@ -221,7 +240,7 @@ TEST_F(ElementGeomPartTests, ElementGeomUsesParts_DeleteElement)
     // Delete Element
     ASSERT_EQ(DgnDbStatus::Success, m_db->Elements().Delete(*m_db->Elements().GetElement(elementId)));
     Statement stmt;
-    ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(*m_db, "SELECT * FROM " DGN_TABLE(DGN_RELNAME_ElementGeomUsesParts)));
+    ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(*m_db, "SELECT * FROM " DGN_TABLE(DGN_RELNAME_ElementUsesGeomParts)));
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
 
     EXPECT_TRUE(m_db->GeomParts().QueryGeomPartId(geomPartPtr->GetCode()).IsValid());

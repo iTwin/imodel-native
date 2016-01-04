@@ -7,6 +7,8 @@
 #include <DgnPlatform/Annotations/Annotations.h>
 #include <DgnPlatformInternal/DgnCore/Annotations/AnnotationFrameStylePersistence.h>
 
+template<typename T> static bool isEnumFlagSet(T testBit, T options) { return 0 != ((int)options & (int)testBit); }
+
 USING_NAMESPACE_BENTLEY_DGN
 using namespace flatbuffers;
 
@@ -103,7 +105,7 @@ DgnDbStatus AnnotationFrameStyle::_ReadSelectParams(BeSQLite::EC::ECSqlStatement
 static DgnDbStatus bindParams(BeSQLite::EC::ECSqlStatement& stmt, AnnotationFrameStyleCR style)
     {
     bvector<Byte> data;
-    if (SUCCESS != AnnotationFrameStylePersistence::EncodeAsFlatBuf(data, style))
+    if (SUCCESS != AnnotationFrameStylePersistence::EncodeAsFlatBuf(data, style, AnnotationFrameStylePersistence::FlatBufEncodeOptions::Default))
         return DgnDbStatus::BadArg;
 
     if (ECSqlStatus::Success != stmt.BindText(stmt.GetParameterIndex(PROP_Description), style.GetDescription().c_str(), IECSqlBinder::MakeCopy::No))
@@ -304,14 +306,15 @@ FB::AnnotationFrameStyleSetters& setters,
 AnnotationFrameStylePropertyBagCR data,
 AnnotationFrameStyleProperty tsProp,
 decltype(declval<FB::AnnotationFrameStyleSetter>().key()) fbProp,
-decltype(declval<FB::AnnotationFrameStyleSetter>().integerValue()) defaultValue
+decltype(declval<FB::AnnotationFrameStyleSetter>().integerValue()) defaultValue,
+bool writeIfDefault
 )
     {
     if (!data.HasProperty(tsProp))
         return;
 
     auto value = data.GetIntegerProperty(tsProp);
-    if (value == defaultValue)
+    if (!writeIfDefault && (value == defaultValue))
         return;
 
     setters.push_back(FB::AnnotationFrameStyleSetter(fbProp, value, 0.0));
@@ -326,14 +329,15 @@ FB::AnnotationFrameStyleSetters& setters,
 AnnotationFrameStylePropertyBagCR data,
 AnnotationFrameStyleProperty tsProp,
 decltype(declval<FB::AnnotationFrameStyleSetter>().key()) fbProp,
-decltype(declval<FB::AnnotationFrameStyleSetter>().realValue()) defaultValue
+decltype(declval<FB::AnnotationFrameStyleSetter>().realValue()) defaultValue,
+bool writeIfDefault
 )
     {
     if (!data.HasProperty(tsProp))
         return;
 
     auto value = data.GetRealProperty(tsProp);
-    if (value == defaultValue)
+    if (!writeIfDefault && (value == defaultValue))
         return;
 
     setters.push_back(FB::AnnotationFrameStyleSetter(fbProp, 0, value));
@@ -342,22 +346,25 @@ decltype(declval<FB::AnnotationFrameStyleSetter>().realValue()) defaultValue
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     06/2014
 //---------------------------------------------------------------------------------------
-BentleyStatus AnnotationFrameStylePersistence::EncodeAsFlatBuf(FB::AnnotationFrameStyleSetters& setters, AnnotationFrameStylePropertyBagCR data)
+BentleyStatus AnnotationFrameStylePersistence::EncodeAsFlatBuf(FB::AnnotationFrameStyleSetters& setters, AnnotationFrameStylePropertyBagCR data) { return EncodeAsFlatBuf(setters, data, FlatBufEncodeOptions::Default); }
+BentleyStatus AnnotationFrameStylePersistence::EncodeAsFlatBuf(FB::AnnotationFrameStyleSetters& setters, AnnotationFrameStylePropertyBagCR data, FlatBufEncodeOptions options)
     {
-    appendRealSetter(setters, data, AnnotationFrameStyleProperty::CloudBulgeFactor, FB::AnnotationFrameStyleProperty_CloudBulgeFactor, DEFAULT_CLOUDBULGEFACTOR_VALUE);
-    appendRealSetter(setters, data, AnnotationFrameStyleProperty::CloudDiameterFactor, FB::AnnotationFrameStyleProperty_CloudDiameterFactor, DEFAULT_CLOUDDIAMETERFACTOR_VALUE);
-    appendIntegerSetter(setters, data, AnnotationFrameStyleProperty::FillColorType, FB::AnnotationFrameStyleProperty_FillColorType, DEFAULT_FILLCOLOR_TYPE_VALUE);
-    appendIntegerSetter(setters, data, AnnotationFrameStyleProperty::FillColorValue, FB::AnnotationFrameStyleProperty_FillColorValue, DEFAULT_FILLCOLOR_VALUE_VALUE);
-    appendRealSetter(setters, data, AnnotationFrameStyleProperty::FillTransparency, FB::AnnotationFrameStyleProperty_FillTransparency, DEFAULT_FILLTRANSPARENCY_VALUE);
-    appendRealSetter(setters, data, AnnotationFrameStyleProperty::HorizontalPadding, FB::AnnotationFrameStyleProperty_HorizontalPadding, DEFAULT_HORIZONTALPADDING_VALUE);
-    appendIntegerSetter(setters, data, AnnotationFrameStyleProperty::IsFillEnabled, FB::AnnotationFrameStyleProperty_IsFillEnabled, DEFAULT_ISFILLENABLED_VALUE);
-    appendIntegerSetter(setters, data, AnnotationFrameStyleProperty::IsStrokeCloud, FB::AnnotationFrameStyleProperty_IsStrokeCloud, DEFAULT_ISSTROKECLOUD_VALUE);
-    appendIntegerSetter(setters, data, AnnotationFrameStyleProperty::IsStrokeEnabled, FB::AnnotationFrameStyleProperty_IsStrokeEnabled, DEFAULT_ISSTROKEENABLED_VALUE);
-    appendIntegerSetter(setters, data, AnnotationFrameStyleProperty::StrokeColorType, FB::AnnotationFrameStyleProperty_StrokeColorType, DEFAULT_STROKECOLOR_TYPE_VALUE);
-    appendIntegerSetter(setters, data, AnnotationFrameStyleProperty::StrokeColorValue, FB::AnnotationFrameStyleProperty_StrokeColorValue, DEFAULT_STROKECOLOR_VALUE_VALUE);
-    appendIntegerSetter(setters, data, AnnotationFrameStyleProperty::StrokeWeight, FB::AnnotationFrameStyleProperty_StrokeWeight, DEFAULT_STROKEWEIGHT_VALUE);
-    appendIntegerSetter(setters, data, AnnotationFrameStyleProperty::Type, FB::AnnotationFrameStyleProperty_Type, DEFAULT_TYPE_VALUE);
-    appendRealSetter(setters, data, AnnotationFrameStyleProperty::VerticalPadding, FB::AnnotationFrameStyleProperty_VerticalPadding, DEFAULT_VERTICALPADDING_VALUE);
+    bool writeIfDefault = isEnumFlagSet(FlatBufEncodeOptions::SettersAreOverrides, options);
+    
+    appendRealSetter(setters, data, AnnotationFrameStyleProperty::CloudBulgeFactor, FB::AnnotationFrameStyleProperty_CloudBulgeFactor, DEFAULT_CLOUDBULGEFACTOR_VALUE, writeIfDefault);
+    appendRealSetter(setters, data, AnnotationFrameStyleProperty::CloudDiameterFactor, FB::AnnotationFrameStyleProperty_CloudDiameterFactor, DEFAULT_CLOUDDIAMETERFACTOR_VALUE, writeIfDefault);
+    appendIntegerSetter(setters, data, AnnotationFrameStyleProperty::FillColorType, FB::AnnotationFrameStyleProperty_FillColorType, DEFAULT_FILLCOLOR_TYPE_VALUE, writeIfDefault);
+    appendIntegerSetter(setters, data, AnnotationFrameStyleProperty::FillColorValue, FB::AnnotationFrameStyleProperty_FillColorValue, DEFAULT_FILLCOLOR_VALUE_VALUE, writeIfDefault);
+    appendRealSetter(setters, data, AnnotationFrameStyleProperty::FillTransparency, FB::AnnotationFrameStyleProperty_FillTransparency, DEFAULT_FILLTRANSPARENCY_VALUE, writeIfDefault);
+    appendRealSetter(setters, data, AnnotationFrameStyleProperty::HorizontalPadding, FB::AnnotationFrameStyleProperty_HorizontalPadding, DEFAULT_HORIZONTALPADDING_VALUE, writeIfDefault);
+    appendIntegerSetter(setters, data, AnnotationFrameStyleProperty::IsFillEnabled, FB::AnnotationFrameStyleProperty_IsFillEnabled, DEFAULT_ISFILLENABLED_VALUE, writeIfDefault);
+    appendIntegerSetter(setters, data, AnnotationFrameStyleProperty::IsStrokeCloud, FB::AnnotationFrameStyleProperty_IsStrokeCloud, DEFAULT_ISSTROKECLOUD_VALUE, writeIfDefault);
+    appendIntegerSetter(setters, data, AnnotationFrameStyleProperty::IsStrokeEnabled, FB::AnnotationFrameStyleProperty_IsStrokeEnabled, DEFAULT_ISSTROKEENABLED_VALUE, writeIfDefault);
+    appendIntegerSetter(setters, data, AnnotationFrameStyleProperty::StrokeColorType, FB::AnnotationFrameStyleProperty_StrokeColorType, DEFAULT_STROKECOLOR_TYPE_VALUE, writeIfDefault);
+    appendIntegerSetter(setters, data, AnnotationFrameStyleProperty::StrokeColorValue, FB::AnnotationFrameStyleProperty_StrokeColorValue, DEFAULT_STROKECOLOR_VALUE_VALUE, writeIfDefault);
+    appendIntegerSetter(setters, data, AnnotationFrameStyleProperty::StrokeWeight, FB::AnnotationFrameStyleProperty_StrokeWeight, DEFAULT_STROKEWEIGHT_VALUE, writeIfDefault);
+    appendIntegerSetter(setters, data, AnnotationFrameStyleProperty::Type, FB::AnnotationFrameStyleProperty_Type, DEFAULT_TYPE_VALUE, writeIfDefault);
+    appendRealSetter(setters, data, AnnotationFrameStyleProperty::VerticalPadding, FB::AnnotationFrameStyleProperty_VerticalPadding, DEFAULT_VERTICALPADDING_VALUE, writeIfDefault);
     
     return SUCCESS;
     }
@@ -365,7 +372,7 @@ BentleyStatus AnnotationFrameStylePersistence::EncodeAsFlatBuf(FB::AnnotationFra
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     06/2014
 //---------------------------------------------------------------------------------------
-BentleyStatus AnnotationFrameStylePersistence::EncodeAsFlatBuf(bvector<Byte>& buffer, AnnotationFrameStyleCR style)
+BentleyStatus AnnotationFrameStylePersistence::EncodeAsFlatBuf(bvector<Byte>& buffer, AnnotationFrameStyleCR style, FlatBufEncodeOptions options)
     {
     FlatBufferBuilder encoder;
     
@@ -374,7 +381,7 @@ BentleyStatus AnnotationFrameStylePersistence::EncodeAsFlatBuf(bvector<Byte>& bu
 
     //.............................................................................................
     FB::AnnotationFrameStyleSetters setters;
-    POSTCONDITION(SUCCESS == EncodeAsFlatBuf(setters, style.m_data), ERROR);
+    POSTCONDITION(SUCCESS == EncodeAsFlatBuf(setters, style.m_data, options), ERROR);
 
     FB::AnnotationFrameStyleSetterVectorOffset settersOffset;
     if (!setters.empty())

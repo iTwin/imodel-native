@@ -97,6 +97,7 @@ struct DgnFontPersistence : NonCopyableClass
         DGNPLATFORM_EXPORT static DgnFontPtr FromDb(struct DgnFonts&, DgnFontId, DgnFontType, Utf8CP name, Byte const* metadata, size_t metadataSize);
         DGNPLATFORM_EXPORT static BentleyStatus MetadataToDb(bvector<Byte>&, DgnFontCR);
         DGNPLATFORM_EXPORT static BentleyStatus Embed(DgnFonts::DbFaceDataDirect&, DgnFontCR);
+        DGNPLATFORM_EXPORT static bool IsAnyFaceEmbedded(DgnFontCR, DgnFonts::DbFaceDataDirect&);
     };
 
     struct File

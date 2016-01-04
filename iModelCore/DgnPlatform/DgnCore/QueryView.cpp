@@ -11,6 +11,8 @@
 
 #include "UpdateLogging.h"
 
+//#define TRACE_QUERY_LOGIC 1
+
 #if defined (BENTLEY_WIN32)
     #define MAX_TO_DRAW_IN_DYNAMIC_UPDATE  6000
 #else
@@ -447,8 +449,8 @@ Utf8String QueryViewController::_GetRTreeMatchSql(DgnViewportR)
         m_dgndb.Models().GetModel(id);
 
     return Utf8String("SELECT rTreeAccept(r.ElementId) FROM "
-           DGN_VTABLE_RTree3d " AS r, " DGN_TABLE(DGN_CLASSNAME_Element) " AS e, " DGN_TABLE(DGN_CLASSNAME_ElementGeom) " AS g "
-           "WHERE r.ElementId MATCH rTreeMatch(1) AND e.Id=r.ElementId AND g.ElementId=r.ElementId"
+           DGN_VTABLE_RTree3d " AS r, " DGN_TABLE(DGN_CLASSNAME_Element) " AS e, " DGN_TABLE(DGN_CLASSNAME_SpatialElement) " AS g "
+           "WHERE r.ElementId MATCH rTreeMatch(1) AND e.Id=r.ElementId AND g.Id=r.ElementId"
            " AND InVirtualSet(@vSet,e.ModelId,g.CategoryId)");
     }
 

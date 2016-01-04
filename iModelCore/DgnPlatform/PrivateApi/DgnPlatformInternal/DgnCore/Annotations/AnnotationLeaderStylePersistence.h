@@ -18,12 +18,23 @@ BEGIN_BENTLEY_DGN_NAMESPACE
 //=======================================================================================
 struct AnnotationLeaderStylePersistence : public NonCopyableClass
 {
+    //=======================================================================================
+    // @bsiclass                                                    Jeff.Marker     06/2014
+    //=======================================================================================
+    enum struct FlatBufEncodeOptions
+    {
+        SettersAreOverrides = 1 << 0,
+        Default = 0
+    
+    }; // FlatBufEncodeOptions
+
 private:
     AnnotationLeaderStylePersistence(){}
 
 public:
     static BentleyStatus EncodeAsFlatBuf(FB::AnnotationLeaderStyleSetters&, AnnotationLeaderStylePropertyBagCR);
-    static BentleyStatus EncodeAsFlatBuf(bvector<Byte>&, AnnotationLeaderStyleCR);
+    static BentleyStatus EncodeAsFlatBuf(FB::AnnotationLeaderStyleSetters&, AnnotationLeaderStylePropertyBagCR, FlatBufEncodeOptions);
+    static BentleyStatus EncodeAsFlatBuf(bvector<Byte>&, AnnotationLeaderStyleCR, FlatBufEncodeOptions);
     
     static BentleyStatus DecodeFromFlatBuf(AnnotationLeaderStylePropertyBagR, FB::AnnotationLeaderStyleSetterVector const&);
     static BentleyStatus DecodeFromFlatBuf(AnnotationLeaderStyleR, ByteCP, size_t numBytes);

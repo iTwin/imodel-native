@@ -93,7 +93,7 @@ DgnViewId RedlineModel::GetFirstView()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnViewId PhysicalRedlineModel::GetFirstView()
+DgnViewId SpatialRedlineModel::GetFirstView()
     {
     auto db = GetDgnMarkupProject();
     return db? db->GetFirstViewOf(GetModelId()): DgnViewId();
@@ -102,9 +102,9 @@ DgnViewId PhysicalRedlineModel::GetFirstView()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      08/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-PhysicalRedlineViewController::PhysicalRedlineViewController(PhysicalRedlineModel& rdlModel, PhysicalViewController& subjectView, DgnViewId physicalRedlineViewId, bvector<PhysicalRedlineModelP> const& otherRdlsToView) 
+SpatialRedlineViewController::SpatialRedlineViewController(SpatialRedlineModel& rdlModel, SpatialViewController& subjectView, DgnViewId physicalRedlineViewId, bvector<SpatialRedlineModelP> const& otherRdlsToView) 
     : 
-    PhysicalViewController (*rdlModel.GetDgnMarkupProject(), physicalRedlineViewId.IsValid()? physicalRedlineViewId: rdlModel.GetFirstView()),
+    SpatialViewController (*rdlModel.GetDgnMarkupProject(), physicalRedlineViewId.IsValid()? physicalRedlineViewId: rdlModel.GetFirstView()),
     m_subjectView(subjectView),
     m_otherRdlsInView(otherRdlsToView)
     {
@@ -117,14 +117,14 @@ PhysicalRedlineViewController::PhysicalRedlineViewController(PhysicalRedlineMode
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      08/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-PhysicalRedlineViewController::~PhysicalRedlineViewController()
+SpatialRedlineViewController::~SpatialRedlineViewController()
     {
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   10/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-void PhysicalRedlineViewController::_OnViewOpened(DgnViewportR vp)
+void SpatialRedlineViewController::_OnViewOpened(DgnViewportR vp)
     {
     // Setup a view aligned ACS that all points/snaps will be projected to...
     if (!m_auxCoordSys.IsValid())
@@ -142,7 +142,7 @@ void PhysicalRedlineViewController::_OnViewOpened(DgnViewportR vp)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      08/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-void PhysicalRedlineViewController::SynchWithSubjectViewController()
+void SpatialRedlineViewController::SynchWithSubjectViewController()
     {
     // There can only be one set of view flags. It will be used to initialize the viewport and qv. 
     // *** EXPERIMENTAL: Here, I force a couple of flags to suit the redline view better. Does this cause too much of a change in the subject view??
@@ -156,7 +156,7 @@ void PhysicalRedlineViewController::SynchWithSubjectViewController()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      08/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-IAuxCoordSysP PhysicalRedlineViewController::_GetAuxCoordinateSystem() const
+IAuxCoordSysP SpatialRedlineViewController::_GetAuxCoordinateSystem() const
     {
     // Redline views have their own ACS
     return T_Super::_GetAuxCoordinateSystem();
@@ -166,7 +166,7 @@ IAuxCoordSysP PhysicalRedlineViewController::_GetAuxCoordinateSystem() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      08/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-ColorDef PhysicalRedlineViewController::_GetBackgroundColor() const
+ColorDef SpatialRedlineViewController::_GetBackgroundColor() const
     {
     // There can only be one background color
     return m_subjectView._GetBackgroundColor();
@@ -175,7 +175,7 @@ ColorDef PhysicalRedlineViewController::_GetBackgroundColor() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      08/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-DPoint3d PhysicalRedlineViewController::_GetOrigin() const
+DPoint3d SpatialRedlineViewController::_GetOrigin() const
     {
     return m_subjectView.GetOrigin();
     }
@@ -183,7 +183,7 @@ DPoint3d PhysicalRedlineViewController::_GetOrigin() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      08/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-DVec3d PhysicalRedlineViewController::_GetDelta() const
+DVec3d SpatialRedlineViewController::_GetDelta() const
     {
     return m_subjectView.GetDelta();
     }
@@ -191,7 +191,7 @@ DVec3d PhysicalRedlineViewController::_GetDelta() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      08/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-RotMatrix PhysicalRedlineViewController::_GetRotation() const
+RotMatrix SpatialRedlineViewController::_GetRotation() const
     {
     return m_subjectView.GetRotation();
     }
@@ -199,7 +199,7 @@ RotMatrix PhysicalRedlineViewController::_GetRotation() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      08/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-void PhysicalRedlineViewController::_SetOrigin(DPoint3dCR org)
+void SpatialRedlineViewController::_SetOrigin(DPoint3dCR org)
     {
     T_Super::_SetOrigin(org);
     m_subjectView.SetOrigin(org);
@@ -208,7 +208,7 @@ void PhysicalRedlineViewController::_SetOrigin(DPoint3dCR org)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      08/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-void PhysicalRedlineViewController::_SetDelta(DVec3dCR delta)
+void SpatialRedlineViewController::_SetDelta(DVec3dCR delta)
     {
     T_Super::_SetDelta(delta);
     m_subjectView.SetDelta(delta);
@@ -217,7 +217,7 @@ void PhysicalRedlineViewController::_SetDelta(DVec3dCR delta)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      08/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-void PhysicalRedlineViewController::_AdjustAspectRatio(double aspect, bool expandView)
+void SpatialRedlineViewController::_AdjustAspectRatio(double aspect, bool expandView)
     {
     T_Super::_AdjustAspectRatio(aspect, expandView);
     m_subjectView.AdjustAspectRatio(aspect, expandView);
@@ -226,7 +226,7 @@ void PhysicalRedlineViewController::_AdjustAspectRatio(double aspect, bool expan
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      08/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-DPoint3d PhysicalRedlineViewController::_GetTargetPoint() const
+DPoint3d SpatialRedlineViewController::_GetTargetPoint() const
     {
     return m_subjectView.GetTargetPoint();
     }
@@ -234,12 +234,12 @@ DPoint3d PhysicalRedlineViewController::_GetTargetPoint() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      08/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool PhysicalRedlineViewController::_Allow3dManipulations() const {return m_subjectView.Allow3dManipulations();}
+bool SpatialRedlineViewController::_Allow3dManipulations() const {return m_subjectView.Allow3dManipulations();}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      08/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-void PhysicalRedlineViewController::_SetRotation(RotMatrixCR rot)
+void SpatialRedlineViewController::_SetRotation(RotMatrixCR rot)
     {
     T_Super::_SetRotation(rot);
     m_subjectView.SetRotation(rot);
@@ -248,40 +248,29 @@ void PhysicalRedlineViewController::_SetRotation(RotMatrixCR rot)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Sam.Wilson      03/14
 //---------------------------------------------------------------------------------------
-void PhysicalRedlineViewController::_SaveToSettings(JsonValueR jsonObj) const 
+void SpatialRedlineViewController::_SaveToSettings(JsonValueR jsonObj) const 
     {
     m_subjectView._SaveToSettings(jsonObj);
     }
 
 #ifdef WIP_RDL_QUERYVIEWS
-bool PhysicalRedlineViewController::_IsInSet (int nVal, BeSQLite::DbValue const* vals) const {return m_subjectView._IsInSet(nVal,vals);}
+bool SpatialRedlineViewController::_IsInSet (int nVal, BeSQLite::DbValue const* vals) const {return m_subjectView._IsInSet(nVal,vals);}
 
-bool PhysicalRedlineViewController::_WantElementLoadStart (ViewportR viewport, double currentTime, double lastQueryTime, uint32_t maxElementsDrawnInDynamicUpdate, Frustum const& queryFrustum) {return m_subjectView._WantElementLoadStart(viewport,currentTime,lastQueryTime,maxElementsDrawnInDynamicUpdate,queryFrustum);}
-uint32_t PhysicalRedlineViewController::_GetMaxElementsToLoad () {return m_subjectView._GetMaxElementsToLoad();}
-Utf8String PhysicalRedlineViewController::_GetRTreeMatchSql (ViewportR viewport) {return m_subjectView._GetRTreeMatchSql(viewport);}
-int32_t PhysicalRedlineViewController::_GetMaxElementFactor() {return m_subjectView._GetMaxElementFactor();}
-double PhysicalRedlineViewController::_GetMinimumSizePixels (DrawPurpose updateType) {return m_subjectView._GetMinimumSizePixels (updateType);}
-uint64_t PhysicalRedlineViewController::_GetMaxElementMemory () {return m_subjectView._GetMaxElementMemory();}
+bool SpatialRedlineViewController::_WantElementLoadStart (ViewportR viewport, double currentTime, double lastQueryTime, uint32_t maxElementsDrawnInDynamicUpdate, Frustum const& queryFrustum) {return m_subjectView._WantElementLoadStart(viewport,currentTime,lastQueryTime,maxElementsDrawnInDynamicUpdate,queryFrustum);}
+uint32_t SpatialRedlineViewController::_GetMaxElementsToLoad () {return m_subjectView._GetMaxElementsToLoad();}
+Utf8String SpatialRedlineViewController::_GetRTreeMatchSql (ViewportR viewport) {return m_subjectView._GetRTreeMatchSql(viewport);}
+int32_t SpatialRedlineViewController::_GetMaxElementFactor() {return m_subjectView._GetMaxElementFactor();}
+double SpatialRedlineViewController::_GetMinimumSizePixels (DrawPurpose updateType) {return m_subjectView._GetMinimumSizePixels (updateType);}
+uint64_t SpatialRedlineViewController::_GetMaxElementMemory () {return m_subjectView._GetMaxElementMemory();}
 #endif
 
-ViewController::FitComplete PhysicalRedlineViewController::_ComputeFitRange (DRange3dR range, DgnViewportR viewport, FitViewParamsR params) {return m_subjectView._ComputeFitRange(range,viewport,params);}
+ViewController::FitComplete SpatialRedlineViewController::_ComputeFitRange (DRange3dR range, DgnViewportR viewport, FitViewParamsR params) {return m_subjectView._ComputeFitRange(range,viewport,params);}
 
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   John.Gooding    09/2014
-//---------------------------------------------------------------------------------------
-Render::GraphicPtr PhysicalRedlineViewController::_StrokeGeometry(ViewContextR context, GeometrySourceCR source, double pixelSize)
-    {
-    if (m_targetModelIsInSubjectView)
-        return m_subjectView._StrokeGeometry(context, source, pixelSize);
-    else
-        return T_Super::_StrokeGeometry(context, source, pixelSize);
-    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      08/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-GeometricModelP PhysicalRedlineViewController::_GetTargetModel() const
+GeometricModelP SpatialRedlineViewController::_GetTargetModel() const
     {
     return m_targetModelIsInSubjectView? m_subjectView.GetTargetModel(): T_Super::_GetTargetModel();
     }
@@ -289,7 +278,7 @@ GeometricModelP PhysicalRedlineViewController::_GetTargetModel() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      08/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbR PhysicalRedlineViewController::_GetDgnDb() const
+DgnDbR SpatialRedlineViewController::_GetDgnDb() const
     {
     return m_targetModelIsInSubjectView? m_subjectView.GetDgnDb(): T_Super::_GetDgnDb();
     }
@@ -297,7 +286,7 @@ DgnDbR PhysicalRedlineViewController::_GetDgnDb() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      08/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-AxisAlignedBox3d PhysicalRedlineViewController::_GetViewedExtents() const
+AxisAlignedBox3d SpatialRedlineViewController::_GetViewedExtents() const
     {
     AxisAlignedBox3d subjectRange = m_subjectView.GetViewedExtents();
     AxisAlignedBox3d rdlRange = T_Super::_GetViewedExtents();
@@ -309,7 +298,7 @@ AxisAlignedBox3d PhysicalRedlineViewController::_GetViewedExtents() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      08/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-void PhysicalRedlineViewController::_RestoreFromSettings(JsonValueCR settings)
+void SpatialRedlineViewController::_RestoreFromSettings(JsonValueCR settings)
     {
     T_Super::_RestoreFromSettings(settings);
     SynchWithSubjectViewController();
@@ -318,7 +307,7 @@ void PhysicalRedlineViewController::_RestoreFromSettings(JsonValueCR settings)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Sam.wilson      10/2015
 //---------------------------------------------------------------------------------------
-void PhysicalRedlineViewController::_OnAttachedToViewport(DgnViewportR vp)
+void SpatialRedlineViewController::_OnAttachedToViewport(DgnViewportR vp)
     {
     T_Super::_OnAttachedToViewport(vp);
     m_subjectView._OnAttachedToViewport(vp);
@@ -327,7 +316,7 @@ void PhysicalRedlineViewController::_OnAttachedToViewport(DgnViewportR vp)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    08/2014
 //---------------------------------------------------------------------------------------
-void PhysicalRedlineViewController::_OnHealUpdate(DgnViewportR viewport, ViewContextR context, bool fullHeal)
+void SpatialRedlineViewController::_OnHealUpdate(DgnViewportR viewport, ViewContextR context, bool fullHeal)
     {
     T_Super::_OnHealUpdate(viewport, context, fullHeal);
     m_subjectView._OnHealUpdate(viewport, context, fullHeal);
@@ -336,7 +325,7 @@ void PhysicalRedlineViewController::_OnHealUpdate(DgnViewportR viewport, ViewCon
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    08/2014
 //---------------------------------------------------------------------------------------
-void PhysicalRedlineViewController::_OnFullUpdate(DgnViewportR viewport, ViewContextR context)
+void SpatialRedlineViewController::_OnFullUpdate(DgnViewportR viewport, ViewContextR context)
     {
     T_Super::_OnFullUpdate(viewport, context);
     m_subjectView._OnFullUpdate(viewport, context);
@@ -345,7 +334,7 @@ void PhysicalRedlineViewController::_OnFullUpdate(DgnViewportR viewport, ViewCon
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    08/2014
 //---------------------------------------------------------------------------------------
-void PhysicalRedlineViewController::_OnDynamicUpdate(DgnViewportR viewport, DynamicUpdateInfo const& info)
+void SpatialRedlineViewController::_OnDynamicUpdate(DgnViewportR viewport, DynamicUpdateInfo const& info)
     {
     T_Super::_OnDynamicUpdate(viewport, info);
     m_subjectView._OnDynamicUpdate(viewport, info);
@@ -354,7 +343,7 @@ void PhysicalRedlineViewController::_OnDynamicUpdate(DgnViewportR viewport, Dyna
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    08/2014
 //---------------------------------------------------------------------------------------
-void PhysicalRedlineViewController::_OnCategoryChange(bool singleEnabled)
+void SpatialRedlineViewController::_OnCategoryChange(bool singleEnabled)
     {
     T_Super::_OnCategoryChange(singleEnabled);
     m_subjectView._OnCategoryChange(singleEnabled);
@@ -363,7 +352,7 @@ void PhysicalRedlineViewController::_OnCategoryChange(bool singleEnabled)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    08/2014
 //---------------------------------------------------------------------------------------
-void PhysicalRedlineViewController::_ChangeModelDisplay(DgnModelId modelId, bool onOff)
+void SpatialRedlineViewController::_ChangeModelDisplay(DgnModelId modelId, bool onOff)
     {
     m_subjectView._ChangeModelDisplay(modelId, onOff);
     }
@@ -371,7 +360,7 @@ void PhysicalRedlineViewController::_ChangeModelDisplay(DgnModelId modelId, bool
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      08/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-void PhysicalRedlineViewController::_DrawView(ViewContextR context)
+void SpatialRedlineViewController::_DrawView(ViewContextR context)
     {
     //  Draw subject model
         {
@@ -526,9 +515,9 @@ DbResult DgnMarkupProject::ConvertToMarkupProject(BeFileNameCR fileNameIn, Creat
     SavePropertyString(DgnProjectProperty::ProjectType(), s_projectType);   // identifies the .dgndb as a Markup project.
     SetAssociation(mpp.GetSubjectDgnProject());
 
-    if (mpp.GetPhysicalRedlining())
+    if (mpp.GetSpatialRedlining())
         {
-        SavePropertyString(DgnProjectProperty::IsPhysicalRedline(), "true");
+        SavePropertyString(DgnProjectProperty::IsSpatialRedline(), "true");
         }
 
     //  ------------------------------------------------------------------
@@ -565,7 +554,7 @@ DbResult DgnMarkupProject::ConvertToMarkupProject(BeFileNameCR fileNameIn, Creat
 
 
     // POST CONDITIONS
-    BeAssert(!mpp.GetPhysicalRedlining() || IsPhysicalRedlineProject());
+    BeAssert(!mpp.GetSpatialRedlining() || IsSpatialRedlineProject());
 
     return BE_SQLITE_OK;
     }
@@ -715,10 +704,10 @@ DgnMarkupProjectPtr DgnMarkupProject::CreateDgnDb(DbResult* result, BeFileNameCR
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool DgnMarkupProject::IsPhysicalRedlineProject() const
+bool DgnMarkupProject::IsSpatialRedlineProject() const
     {
     Utf8String rdlPropVal;
-    return QueryProperty(rdlPropVal, DgnProjectProperty::IsPhysicalRedline()) == BE_SQLITE_ROW  &&  rdlPropVal == "true";
+    return QueryProperty(rdlPropVal, DgnProjectProperty::IsSpatialRedline()) == BE_SQLITE_ROW  &&  rdlPropVal == "true";
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -815,7 +804,7 @@ DgnMarkupProject* RedlineModel::GetDgnMarkupProject() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnMarkupProject* PhysicalRedlineModel::GetDgnMarkupProject() const
+DgnMarkupProject* SpatialRedlineModel::GetDgnMarkupProject() const
     {
     return dynamic_cast<DgnMarkupProject*>(&GetDgnDb());
     }
@@ -1086,15 +1075,15 @@ RedlineModelPtr RedlineModel::Create(DgnMarkupProjectR markupProject, Utf8CP nam
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-PhysicalRedlineModelPtr PhysicalRedlineModel::Create(DgnMarkupProjectR markupProject, Utf8CP name, PhysicalModelCR subjectViewTargetModel)
+SpatialRedlineModelPtr SpatialRedlineModel::Create(DgnMarkupProjectR markupProject, Utf8CP name, SpatialModelCR subjectViewTargetModel)
     {
-    DgnClassId rmodelClassId = DgnClassId(markupProject.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, "PhysicalRedlineModel"));
+    DgnClassId rmodelClassId = DgnClassId(markupProject.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_SpatialRedlineModel));
 
-    PhysicalRedlineModelPtr rdlModel = new PhysicalRedlineModel(PhysicalRedlineModel::CreateParams(markupProject, rmodelClassId, CreateModelCode(name)));
+    SpatialRedlineModelPtr rdlModel = new SpatialRedlineModel(SpatialRedlineModel::CreateParams(markupProject, rmodelClassId, CreateModelCode(name)));
     if (!rdlModel.IsValid())
         {
-        DGNCORELOG->error("PhysicalRedlineModel::CreateModel failed");
-        BeAssert(false && "PhysicalRedlineModel::CreateModel failed");
+        DGNCORELOG->error("SpatialRedlineModel::CreateModel failed");
+        BeAssert(false && "SpatialRedlineModel::CreateModel failed");
         return nullptr;
         }
 
@@ -1747,8 +1736,8 @@ DgnViewId RedlineModel::GetViewId () const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      03/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-#ifdef WIP_PhysicalRedlineViewController // *** we need the PhysicalViewController& of the subject view in order to create a PhysicalRedlineViewController
-ViewControllerPtr PhysicalRedlineViewController::Create(DgnViewType viewType, Utf8CP viewSubtype, DgnDbR project, DgnViewId viewId)
+#ifdef WIP_SpatialRedlineViewController // *** we need the SpatialViewController& of the subject view in order to create a SpatialRedlineViewController
+ViewControllerPtr SpatialRedlineViewController::Create(DgnViewType viewType, Utf8CP viewSubtype, DgnDbR project, DgnViewId viewId)
     {
     if (CheckViewSubType(viewSubtype,GetViewSubType()) != BSISUCCESS)
         return NULL;
@@ -1759,13 +1748,13 @@ ViewControllerPtr PhysicalRedlineViewController::Create(DgnViewType viewType, Ut
     auto rdlModel = rdlView.IsValid() ? markupProject->OpenRedlineModel(rdlView.GetBaseModelId()) : nullptr;
     if (rdlModel == NULL)
         return NULL;
-    return new PhysicalRedlineViewController(*rdlModel, subjectViewController);
+    return new SpatialRedlineViewController(*rdlModel, subjectViewController);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      03/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-PhysicalRedlineViewControllerPtr PhysicalRedlineViewController::InsertView(PhysicalRedlineModel& model, PhysicalViewController& subjectView)
+SpatialRedlineViewControllerPtr SpatialRedlineViewController::InsertView(SpatialRedlineModel& model, SpatialViewController& subjectView)
     {
     DgnViews::View view(DgnViewType::Physical, GetViewSubType(), model.GetModelId(),model.GetModelName(), NULL, DgnViewSource::Generated);
 
@@ -1773,11 +1762,11 @@ PhysicalRedlineViewControllerPtr PhysicalRedlineViewController::InsertView(Physi
     if (BE_SQLITE_OK != rc)
         return NULL;
 
-    auto controller = new PhysicalRedlineViewController(model, subjectView, view.GetId());
+    auto controller = new SpatialRedlineViewController(model, subjectView, view.GetId());
 
     //  The physical redline view is always exactly the same as the subject DgnDb view. Start it off with a copy of the subject view's settings.
     //  Note: we route the view settings through Json to avoid problems in the case where dgnView is not exactly the same type as this view controller.
-    //  We know it's a sub-class of PhysicalViewController, and so it has all of the properties that we care about. 
+    //  We know it's a sub-class of SpatialViewController, and so it has all of the properties that we care about. 
     Json::Value json;
     subjectView._SaveToSettings(json);
     controller->_RestoreFromSettings(json);
@@ -1789,12 +1778,12 @@ PhysicalRedlineViewControllerPtr PhysicalRedlineViewController::InsertView(Physi
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      06/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnViewId DgnMarkupProject::CreatePhysicalRedlineModelView(PhysicalRedlineModelR model, PhysicalViewControllerR dgnView)
+DgnViewId DgnMarkupProject::CreateSpatialRedlineModelView(SpatialRedlineModelR model, SpatialViewControllerR dgnView)
     {
     if (CheckIsOpen() != BSISUCCESS)
         return DgnViewId();
 
-    auto controller = PhysicalRedlineViewController::InsertView(model, dgnView);
+    auto controller = SpatialRedlineViewController::InsertView(model, dgnView);
     if (!controller.IsValid())
         {
         BeAssert(false && "We must always generate rdl views with unique names!");
@@ -1811,7 +1800,7 @@ DgnViewId DgnMarkupProject::CreatePhysicalRedlineModelView(PhysicalRedlineModelR
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      06/13
-DgnViewId PhysicalRedlineModel::GetViewId () const
+DgnViewId SpatialRedlineModel::GetViewId () const
     {
     int64_t v;
     if (m_dgndb->QueryProperty (&v, sizeof(v), RedlineModelProperty::ViewId(), GetModelId().GetValue()) != BE_SQLITE_ROW)
@@ -1842,12 +1831,12 @@ RedlineModelP DgnMarkupProject::CreateRedlineModel(Utf8CP name, DgnModelId templ
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-PhysicalRedlineModelP DgnMarkupProject::CreatePhysicalRedlineModel(Utf8CP name, PhysicalModelCR subjectViewTargetModel)
+SpatialRedlineModelP DgnMarkupProject::CreateSpatialRedlineModel(Utf8CP name, SpatialModelCR subjectViewTargetModel)
     {
     if (CheckIsOpen() != BSISUCCESS)
         return nullptr;
 
-    PhysicalRedlineModelPtr rdlModel = PhysicalRedlineModel::Create(*this, name, subjectViewTargetModel);
+    SpatialRedlineModelPtr rdlModel = SpatialRedlineModel::Create(*this, name, subjectViewTargetModel);
 
     if (!rdlModel.IsValid())
         return nullptr;
@@ -1881,12 +1870,12 @@ RedlineModelP DgnMarkupProject::OpenRedlineModel(DgnModelId mid)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-PhysicalRedlineModelP DgnMarkupProject::OpenPhysicalRedlineModel(DgnModelId mid)
+SpatialRedlineModelP DgnMarkupProject::OpenSpatialRedlineModel(DgnModelId mid)
     {
     if (CheckIsOpen() != BSISUCCESS)
         return NULL;
 
-    PhysicalRedlineModelPtr redlineModel = Models().Get<PhysicalRedlineModel>(mid);
+    SpatialRedlineModelPtr redlineModel = Models().Get<SpatialRedlineModel>(mid);
     if (!redlineModel.IsValid())
         return nullptr;
 
@@ -1916,7 +1905,7 @@ BentleyStatus DgnMarkupProject::EmptyRedlineModel(DgnModelId mid)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus DgnMarkupProject::EmptyPhysicalRedlineModel(DgnModelId mid)
+BentleyStatus DgnMarkupProject::EmptySpatialRedlineModel(DgnModelId mid)
     {
     return EmptyRedlineModel(mid);
     }

@@ -85,7 +85,7 @@ DG_INLINE StatusInt IAuxCoordSys::StringFromPoint(WStringR outString, WStringR e
 DG_INLINE StatusInt IAuxCoordSys::SetFlags(ACSFlags flags) {return _SetFlags(flags);}
 DG_INLINE void IAuxCoordSys::DrawGrid(DgnViewportP viewport) const {return _DrawGrid(viewport);}
 DG_INLINE void IAuxCoordSys::PointToGrid(DgnViewportP viewport, DPoint3dR point) const {_PointToGrid(viewport, point);}
-DG_INLINE StatusInt IAuxCoordSys::CompleteSetupFromViewController(PhysicalViewControllerCP info) {return _CompleteSetupFromViewController(info);}
+DG_INLINE StatusInt IAuxCoordSys::CompleteSetupFromViewController(SpatialViewControllerCP info) {return _CompleteSetupFromViewController(info);}
 DG_INLINE bool IAuxCoordSys::Equals(IAuxCoordSysCP other) const {return _Equals(other);}
 DG_INLINE IAuxCoordSysPtr IAuxCoordSys::Clone() const {return _Clone();}
 
