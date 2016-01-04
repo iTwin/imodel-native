@@ -119,7 +119,6 @@ TEST_F (JsonUpdaterTests, UpdateRelationshipProperty)
     ASSERT_EQ (ECSqlStatus::Success, stmt.BindId (1, sourceInstanceId));
     ASSERT_EQ (ECSqlStatus::Success, stmt.BindId (2, targetInstanceId));
 
-
     ECInstanceKey relKey;
     ASSERT_EQ (BE_SQLITE_DONE, stmt.Step (relKey));
     relInstanceId = relKey.GetECInstanceId ();
@@ -165,6 +164,89 @@ TEST_F (JsonUpdaterTests, UpdateRelationshipProperty)
 
     ASSERT_EQ (ECSqlStatus::Success, checkStmt.BindId (1, relInstanceId));
     ASSERT_EQ (ECSqlStatus::Success, checkStmt.BindText (2, expectedVal, IECSqlBinder::MakeCopy::No));
+    ASSERT_EQ (BE_SQLITE_ROW, checkStmt.Step ());
+    checkStmt.Reset ();
+    checkStmt.ClearBindings ();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsiMethod                                      Muhammad Hassan                  12/15
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F (JsonUpdaterTests, UpdateProperties)
+    {
+    ECDb ecdb;
+    ECInstanceKey key;
+    {
+    SchemaItem testItem ("<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='testSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
+        "    <ECClass typeName='A' isDomainClass='True'>"
+        "        <ECProperty propertyName='P1' typeName='int' />"
+        "        <ECProperty propertyName='P2' typeName='string' />"
+        "        <ECProperty propertyName='P3' typeName='double' />"
+        "    </ECClass>"
+        "</ECSchema>",
+        true, "");
+
+    bool asserted = false;
+    AssertSchemaImport (ecdb, asserted, testItem, "updateClassProperties.ecdb");
+    ASSERT_FALSE (asserted);
+
+    ECSqlStatement stmt;
+    ASSERT_EQ (ECSqlStatus::Success, stmt.Prepare (ecdb, "INSERT INTO ts.A (P1, P2, P3) VALUES(100, 'JsonTest', 1000.10)"));
+    ASSERT_EQ (DbResult::BE_SQLITE_DONE, stmt.Step (key));
+    }
+
+    ECClassCP ecClass = ecdb.Schemas ().GetECClass ("testSchema", "A");
+    ASSERT_TRUE (ecClass != nullptr);
+    JsonReader reader (ecdb, ecClass->GetId ());
+    Json::Value ecClassJson;
+    ASSERT_EQ (SUCCESS, reader.ReadInstance (ecClassJson, key.GetECInstanceId(), JsonECSqlSelectAdapter::FormatOptions (ECValueFormat::RawNativeValues)));
+    ASSERT_EQ (100, ecClassJson["P1"].asInt());
+    ASSERT_STREQ ("JsonTest", ecClassJson["P2"].asCString ());
+    ASSERT_EQ (1000.10, ecClassJson["P3"].asDouble ());
+    printf ("%s\r\n", ecClassJson.toStyledString ().c_str ());
+
+    // Update ecClass properties
+    JsonUpdater updater (ecdb, *ecClass);
+
+    /*
+    * Update class properties via Json::Value API
+    */
+    Utf8CP expectedVal = "Json API";
+    ecClassJson["P1"] = 200;
+    ecClassJson["P2"] = expectedVal;
+    ecClassJson["P3"] = 2000.20;
+    printf ("%s\r\n", ecClassJson.toStyledString ().c_str ());
+    ASSERT_EQ (SUCCESS, updater.Update (key.GetECInstanceId (), ecClassJson));
+
+    ECSqlStatement checkStmt;
+    ASSERT_EQ (ECSqlStatus::Success, checkStmt.Prepare (ecdb, "SELECT NULL FROM ts.A WHERE ECInstanceId=? AND P1=? AND P2=? AND P3=?"));
+
+    ASSERT_EQ (ECSqlStatus::Success, checkStmt.BindId (1, key.GetECInstanceId()));
+    ASSERT_EQ (ECSqlStatus::Success, checkStmt.BindInt (2, 200));
+    ASSERT_EQ (ECSqlStatus::Success, checkStmt.BindText (3, expectedVal, IECSqlBinder::MakeCopy::No));
+    ASSERT_EQ (ECSqlStatus::Success, checkStmt.BindDouble (4, 2000.20));
+
+    ASSERT_EQ (BE_SQLITE_ROW, checkStmt.Step ());
+    checkStmt.Reset ();
+    checkStmt.ClearBindings ();
+
+    /*
+    * Update class properties via rapidjson
+    */
+    expectedVal = "RapidJson";
+    rapidjson::Document ecClassRapidJson;
+    ecClassRapidJson.SetObject ();
+    ecClassRapidJson.AddMember ("P1", 300, ecClassRapidJson.GetAllocator ());
+    ecClassRapidJson.AddMember ("P2", expectedVal, ecClassRapidJson.GetAllocator ());
+    ecClassRapidJson.AddMember ("P3", 3000.30, ecClassRapidJson.GetAllocator ());
+
+    ASSERT_EQ (SUCCESS, updater.Update (key.GetECInstanceId(), ecClassRapidJson));
+
+    ASSERT_EQ (ECSqlStatus::Success, checkStmt.BindId (1, key.GetECInstanceId()));
+    ASSERT_EQ (ECSqlStatus::Success, checkStmt.BindInt (2, 300));
+    ASSERT_EQ (ECSqlStatus::Success, checkStmt.BindText (3, expectedVal, IECSqlBinder::MakeCopy::No));
+    ASSERT_EQ (ECSqlStatus::Success, checkStmt.BindDouble (4, 3000.30));
     ASSERT_EQ (BE_SQLITE_ROW, checkStmt.Step ());
     checkStmt.Reset ();
     checkStmt.ClearBindings ();

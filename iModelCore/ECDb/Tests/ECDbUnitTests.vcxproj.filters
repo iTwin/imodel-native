@@ -208,6 +208,9 @@
     <ClCompile Include="Published\ECSqlNavigationProps_Tests.cpp">
       <Filter>Published\ECSql</Filter>
     </ClCompile>
+    <ClCompile Include="Published\JsonInserterTests.cpp">
+      <Filter>Published\ECSql</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Performance\PerformanceTests.h">
