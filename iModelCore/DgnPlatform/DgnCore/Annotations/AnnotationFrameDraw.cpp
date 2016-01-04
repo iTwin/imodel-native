@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/Annotations/AnnotationFrameDraw.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h> 
@@ -101,7 +101,7 @@ BentleyStatus AnnotationFrameDraw::Draw(ViewContextR context) const
         output.DrawCurveVector(*frameGeometry, false);
         }
 
-    if (frameStyle->IsFillEnabled())
+    if (frameStyle->IsFillEnabled() && (frameStyle->GetFillTransparency() < 1.0))
         {
         setFillSymbology(context, frameStyle->GetFillColorType(), frameStyle->GetFillColorValue(), frameStyle->GetFillTransparency());
         frameGeometry->SetBoundaryType(CurveVector::BOUNDARY_TYPE_Outer);
