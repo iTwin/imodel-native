@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECDbMap.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -781,14 +781,14 @@ std::set<IClassMap const*>  ECDbMap::GetClassMapsFromRelationshipEnd( ECRelation
 //+---------------+---------------+---------------+---------------+---------------+------
 void ECDbMap::GetClassMapsFromRelationshipEnd(std::set<IClassMap const*>& classMaps, ECClassCR ecClass) const
     {
-    for (auto ecClass : ecClass.GetDerivedClasses())
+    for (auto derivedClass : ecClass.GetDerivedClasses())
         {
-        IClassMap const* classMap = GetClassMap(*ecClass, false);
+        IClassMap const* classMap = GetClassMap(*derivedClass, false);
         if (classMap->GetMapStrategy().IsNotMapped())
             continue;
 
         classMaps.insert(classMap);
-        GetClassMapsFromRelationshipEnd(classMaps, *ecClass);
+        GetClassMapsFromRelationshipEnd(classMaps, *derivedClass);
         }
     }
 //---------------------------------------------------------------------------------------
