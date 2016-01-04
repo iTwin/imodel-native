@@ -163,6 +163,7 @@ public:
     BentleyStatus               CreateECClassViewsInDb() const;
     ECDbSqlTable*               FindOrCreateTable(SchemaImportContext*, Utf8CP tableName, TableType, bool isVirtual, Utf8CP primaryKeyColumnName);
 
+    ECDbSqlTable const*         GetPrimaryTable(ECDbSqlTable const& joinedTable) const;
     //!Loads the class maps if they were not loaded yet
     void                        GetClassMapsFromRelationshipEnd(bset<IClassMap const*>& endClassMaps, ECN::ECRelationshipConstraintCR relationshipEnd, bool loadIfNotFound) const;
     std::vector<ECN::ECClassCP> GetClassesFromRelationshipEnd(ECN::ECRelationshipConstraintCR) const;

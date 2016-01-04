@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECDbSchemaReader.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +-------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -514,10 +514,6 @@ BentleyStatus ECDbSchemaReader::LoadECPropertiesFromDb(ECClassP& ecClass, ECClas
     const int displayLabelIx = 3;
     const int descrIx = 4;
     const int isReadonlyIx = 5;
-    const int primTypeIx = 6;
-    const int nonPrimTypeIx = 7;
-    const int minOccursIx = 8;
-    const int maxOccursIx = 9;
     const int navPropDirectionIx = 10;
 
     struct PropReaderHelper
@@ -535,6 +531,7 @@ BentleyStatus ECDbSchemaReader::LoadECPropertiesFromDb(ECClassP& ecClass, ECClas
 
         static BentleyStatus TryReadPrimitiveType(PrimitiveType& primType, CachedStatement& stmt)
             {
+            const int primTypeIx = 6;
             if (stmt.IsColumnNull(primTypeIx))
                 return ERROR;
 
@@ -544,6 +541,7 @@ BentleyStatus ECDbSchemaReader::LoadECPropertiesFromDb(ECClassP& ecClass, ECClas
 
         static BentleyStatus TryReadNonPrimitiveType(ECClassP& nonPrimType, ECDbSchemaReader const& schemaReader, CachedStatement& stmt)
             {
+            const int nonPrimTypeIx = 7;
             if (stmt.IsColumnNull(nonPrimTypeIx))
                 return ERROR;
 
@@ -554,6 +552,8 @@ BentleyStatus ECDbSchemaReader::LoadECPropertiesFromDb(ECClassP& ecClass, ECClas
 
         static BentleyStatus TryReadArrayConstraints(uint32_t& minOccurs, uint32_t& maxOccurs, CachedStatement& stmt)
             {
+            const int minOccursIx = 8;
+            const int maxOccursIx = 9;
             if (stmt.IsColumnNull(minOccursIx) || stmt.IsColumnNull(maxOccursIx))
                 return ERROR;
 

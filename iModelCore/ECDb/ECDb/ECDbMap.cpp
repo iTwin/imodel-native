@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECDbMap.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -38,6 +38,29 @@ bool ECDbMap::IsImportingSchema () const
     return m_schemaImportContext != nullptr;
     }
 
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan      12/2015
+//---------------+---------------+---------------+---------------+---------------+--------
+ECDbSqlTable const* ECDbMap::GetPrimaryTable(ECDbSqlTable const& joinedTable) const
+    {
+    if (joinedTable.GetTableType() != TableType::Joined)
+        return &joinedTable;
+
+    for (ECClassId firstClassId : GetLightweightCache().GetClassesForTable(joinedTable))
+        {
+        ClassMapCP classMap = GetClassMapCP(firstClassId);
+        if (classMap != nullptr)
+            {
+            if (!classMap->IsMappedToSingleTable())
+                {
+                return &classMap->GetPrimaryTable();
+                }
+            }
+        }
+
+    BeAssert(false && "Must find a classmap");
+    return nullptr;
+    }
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan      02/2015
 //---------------+---------------+---------------+---------------+---------------+--------
@@ -725,12 +748,15 @@ size_t ECDbMap::GetTableCountOnRelationshipEnd(ECRelationshipConstraintCR relati
     if (hasAnyClass)
         return SIZE_MAX;
 
-    std::map<PersistenceType,std::set<ECDbSqlTable const*>> tables;
-
+    std::map<PersistenceType, std::set<ECDbSqlTable const*>> tables;
+    bool abstractEndPoint = relationshipEnd.GetClasses().size() == 1 && relationshipEnd.GetClasses().front()->GetClassModifier() == ECClassModifier::Abstract;
     std::vector<ECClassCP> classes = GetClassesFromRelationshipEnd(relationshipEnd);
     for (IClassMap const* classMap : classMaps)
         {
-        tables[classMap->GetPrimaryTable().GetPersistenceType()].insert(&classMap->GetPrimaryTable());
+        if (abstractEndPoint)
+            tables[classMap->GetPrimaryTable().GetPersistenceType()].insert(&classMap->GetJoinedTable());
+        else
+            tables[classMap->GetPrimaryTable().GetPersistenceType()].insert(&classMap->GetPrimaryTable());
         }
 
     if (tables[PersistenceType::Persisted].size() > 0)
@@ -780,10 +806,11 @@ std::set<IClassMap const*>  ECDbMap::GetClassMapsFromRelationshipEnd( ECRelation
 // @bsimethod                                Affan.Khan                      12/2015
 //+---------------+---------------+---------------+---------------+---------------+------
 void ECDbMap::GetClassMapsFromRelationshipEnd(std::set<IClassMap const*>& classMaps, ECClassCR ecClass) const
-    {
-    for (ECClassCP subclass : ecClass.GetDerivedClasses())
+    {    
+    for (ECClassCP subclass : GetECDb().Schemas().GetDerivedECClasses(ecClass))
         {
-        IClassMap const* subclassMap = GetClassMap(*subclass, false);
+        IClassMap const* subclassMap = GetClassMap(*subclass);
+        BeAssert(subclassMap != nullptr && "ClassMap should not be null");
         if (subclassMap->GetMapStrategy().IsNotMapped())
             continue;
 
