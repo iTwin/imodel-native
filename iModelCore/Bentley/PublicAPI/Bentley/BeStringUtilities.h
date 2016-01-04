@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/Bentley/BeStringUtilities.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -93,8 +93,13 @@ public:
     static const size_t NPOS = (size_t)-1;                  //!< A maximum value used to indicate that the buffer is NULL-terminated.
     static const size_t AsManyAsPossible = ((size_t)-1);    //!< A large value indicating to use as many characters as possible. 
 
-    //! This method must be called once per process before any conversion methods are called. This is effectively used to initialize ICU, the conversion engine on some platforms.
+    //! Must be called once per host session before any conversion methods are called. This is effectively used to initialize ICU, the conversion engine on some platforms.
     BENTLEYDLL_EXPORT static void Initialize(BeFileNameCR assetPathW);
+
+    //! Call this to free memory used by ICU, the conversion engine on some platforms.
+    //! After calling this, you cannot call any character conversion functions until Initialize is called again.
+    //! If you wish to call Intiailize more than once in a process, you must first terminate.
+    BENTLEYDLL_EXPORT static void Terminate();
 
     //! Converts a UTF-16 buffer to a WChar string.
     //! @note Up to \a count characters will be converted; less may be converted if a NULL is encountered earlier. If count is BeStringUtilities::NPOS, the input is assumed to be NULL-terminated.
