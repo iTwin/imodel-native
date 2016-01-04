@@ -13,69 +13,58 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        05/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult ECDbSchemaWriter::CreateECSchemaEntry(ECSchemaCR ecSchema)
+BentleyStatus ECDbSchemaWriter::CreateECSchemaEntry(ECSchemaCR ecSchema)
     {
     CachedStatementPtr stmt = nullptr;
-    DbResult stat = m_ecdb.GetCachedStatement(stmt, "INSERT INTO ec_Schema(Id,Name,DisplayLabel,Description,NamespacePrefix,VersionMajor,VersionMinor) VALUES(?,?,?,?,?,?,?)");
-    if (BE_SQLITE_OK != stat)
-        return stat;
-    
-    stat = stmt->BindInt64(1,ecSchema.GetId());
-    if (BE_SQLITE_OK != stat)
-        return stat;
+    if (BE_SQLITE_OK != m_ecdb.GetCachedStatement(stmt, "INSERT INTO ec_Schema(Id,Name,DisplayLabel,Description,NamespacePrefix,VersionMajor,VersionMinor) VALUES(?,?,?,?,?,?,?)"))
+        return ERROR;
 
-    stat = stmt->BindText(2, ecSchema.GetName().c_str(), Statement::MakeCopy::No);
-    if (BE_SQLITE_OK != stat)
-        return stat;
+    if (BE_SQLITE_OK != stmt->BindInt64(1,ecSchema.GetId()))
+        return ERROR;
+
+    if (BE_SQLITE_OK != stmt->BindText(2, ecSchema.GetName().c_str(), Statement::MakeCopy::No))
+        return ERROR;
 
     if (ecSchema.GetIsDisplayLabelDefined())
         {
-        stat = stmt->BindText(3, ecSchema.GetDisplayLabel().c_str(), Statement::MakeCopy::No);
-        if (BE_SQLITE_OK != stat)
-            return stat;
+        if (BE_SQLITE_OK != stmt->BindText(3, ecSchema.GetDisplayLabel().c_str(), Statement::MakeCopy::No))
+            return ERROR;
         }
 
-    stat = stmt->BindText(4, ecSchema.GetDescription().c_str(), Statement::MakeCopy::No);
-    if (BE_SQLITE_OK != stat)
-        return stat;
+    if (BE_SQLITE_OK != stmt->BindText(4, ecSchema.GetDescription().c_str(), Statement::MakeCopy::No))
+        return ERROR;
 
-    stat = stmt->BindText(5, ecSchema.GetNamespacePrefix().c_str(), Statement::MakeCopy::No);
-    if (BE_SQLITE_OK != stat)
-        return stat;
+    if (BE_SQLITE_OK != stmt->BindText(5, ecSchema.GetNamespacePrefix().c_str(), Statement::MakeCopy::No))
+        return ERROR;
 
-    stat = stmt->BindInt(6, ecSchema.GetVersionMajor());
-    if (BE_SQLITE_OK != stat)
-        return stat;
+    if (BE_SQLITE_OK != stmt->BindInt(6, ecSchema.GetVersionMajor()))
+        return ERROR;
 
-    stat = stmt->BindInt(7, ecSchema.GetVersionMinor());
-    if (BE_SQLITE_OK != stat)
-        return stat;
+    if (BE_SQLITE_OK != stmt->BindInt(7, ecSchema.GetVersionMinor()))
+        return ERROR;
 
-    stat = stmt->Step();
-    if (BE_SQLITE_DONE != stat)
-        return stat;
-
-    return BE_SQLITE_OK;
+    return BE_SQLITE_DONE == stmt->Step() ? SUCCESS : ERROR;
     }
 
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        05/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ECDbSchemaWriter::CreateBaseClassEntry(ECClassId ecClassId, ECClassCR baseClass, int index)
+BentleyStatus ECDbSchemaWriter::CreateBaseClassEntry(ECClassId ecClassId, ECClassCR baseClass, int ordinal)
     {
-    DbBaseClassInfo info;
+    CachedStatementPtr stmt = nullptr;
+    if (BE_SQLITE_OK != m_ecdb.GetCachedStatement(stmt, "INSERT INTO ec_BaseClass(ClassId,BaseClassId,Ordinal) VALUES(?,?,?)"))
+        return ERROR;
 
-    info.ColsInsert =
-        DbBaseClassInfo::COL_ClassId     |
-        DbBaseClassInfo::COL_BaseClassId |
-        DbBaseClassInfo::COL_Ordinal;
+    if (BE_SQLITE_OK != stmt->BindInt64(1, ecClassId))
+        return ERROR;
 
-    info.m_ecClassId      = ecClassId;
-    info.m_baseECClassId  = baseClass.GetId();
-    info.m_ecIndex        = index;
+    if (BE_SQLITE_OK != stmt->BindInt64(2, baseClass.GetId()))
+        return ERROR;
 
-    //save to db
-    return ECDbSchemaPersistence::InsertBaseClass (m_ecdb, info);
+    if (BE_SQLITE_OK != stmt->BindInt(3, ordinal))
+        return ERROR;
+
+    return BE_SQLITE_DONE == stmt->Step() ? SUCCESS : ERROR;
     }
 
 /*---------------------------------------------------------------------------------------
@@ -83,58 +72,64 @@ BentleyStatus ECDbSchemaWriter::CreateBaseClassEntry(ECClassId ecClassId, ECClas
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus ECDbSchemaWriter::CreateECRelationshipConstraintEntry(ECClassId relationshipClassId, ECN::ECRelationshipConstraintR relationshipConstraint, ECRelationshipEnd endpoint)
     {
-    DbECRelationshipConstraintInfo info;
+    CachedStatementPtr stmt = nullptr;
+    if (BE_SQLITE_OK != m_ecdb.GetCachedStatement(stmt, "INSERT INTO ec_RelationshipConstraint (RelationshipClassId,RelationshipEnd,MultiplicityLowerLimit,MultiplicityUpperLimit,RoleLabel,IsPolymorphic) VALUES (?,?,?,?,?,?)"))
+        return ERROR;
 
-    info.ColsInsert =
-        DbECRelationshipConstraintInfo::COL_RelationshipClassId   |
-        DbECRelationshipConstraintInfo::COL_RelationshipEnd |
-        DbECRelationshipConstraintInfo::COL_MultiplicityLowerLimit |
-        DbECRelationshipConstraintInfo::COL_MultiplicityUpperLimit |
-        DbECRelationshipConstraintInfo::COL_IsPolymorphic;
+    if (BE_SQLITE_OK != stmt->BindInt64(1, relationshipClassId))
+        return ERROR;
 
-    info.m_relationshipClassId = relationshipClassId;
-    info.m_ecRelationshipEnd = endpoint;
-    info.m_multiplicityLowerLimit = relationshipConstraint.GetCardinality().GetLowerLimit();
-    info.m_multiplicityUpperLimit = relationshipConstraint.GetCardinality().GetUpperLimit();
-    info.m_isPolymorphic         = relationshipConstraint.GetIsPolymorphic();
+    if (BE_SQLITE_OK != stmt->BindInt(2, endpoint))
+        return ERROR;
+
+    if (BE_SQLITE_OK != stmt->BindInt(3, relationshipConstraint.GetCardinality().GetLowerLimit()))
+        return ERROR;
+
+    if (BE_SQLITE_OK != stmt->BindInt(4, relationshipConstraint.GetCardinality().GetUpperLimit()))
+        return ERROR;
 
     if (relationshipConstraint.IsRoleLabelDefined())
         {
-        info.m_roleLabel = relationshipConstraint.GetRoleLabel().c_str();
-        info.ColsInsert |= DbECRelationshipConstraintInfo::COL_RoleLabel;
+        if (BE_SQLITE_OK != stmt->BindText(5, relationshipConstraint.GetRoleLabel().c_str(), Statement::MakeCopy::No))
+            return ERROR;
         }
-    //save to db
-    return ECDbSchemaPersistence::InsertECRelationshipConstraint (m_ecdb, info);
+
+    if (BE_SQLITE_OK != stmt->BindInt(6, relationshipConstraint.GetIsPolymorphic() ? 1 : 0))
+        return ERROR;
+
+    return BE_SQLITE_DONE == stmt->Step() ? SUCCESS : ERROR;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle  11/2012
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECDbSchemaWriter::InsertCAEntry(IECInstanceP customAttribute, ECClassId ecClassId, ECContainerId containerId, ECContainerType containerType, ECContainerId overridenContainerId, int index)
+BentleyStatus ECDbSchemaWriter::InsertCAEntry(IECInstanceP customAttribute, ECClassId ecClassId, ECContainerId containerId, ECContainerType containerType, int ordinal)
     {
-    BeAssert (overridenContainerId == 0 && "OverriddenContainerId was removed from ec_CustomAttribute. We don't expect that to be set during schema import/update.");
-    DbCustomAttributeInfo insertInfo;
-    insertInfo.ColsInsert =
-        DbCustomAttributeInfo::COL_ContainerId |
-        DbCustomAttributeInfo::COL_ContainerType |
-        DbCustomAttributeInfo::COL_ClassId |
-        DbCustomAttributeInfo::COL_Ordinal;
+    CachedStatementPtr stmt = nullptr;
+    if (BE_SQLITE_OK != m_ecdb.GetCachedStatement(stmt, "INSERT INTO ec_CustomAttribute(ContainerId,ContainerType,ClassId,Ordinal,Instance) VALUES(?,?,?,?,?)"))
+        return ERROR;
 
+    if (BE_SQLITE_OK != stmt->BindInt64(1, containerId))
+        return ERROR;
 
-    insertInfo.m_containerId = containerId;
-    insertInfo.m_containerType = containerType;
-    insertInfo.m_ecClassId = ecClassId;
-    insertInfo.m_index = index;
+    if (BE_SQLITE_OK != stmt->BindInt(2, Enum::ToInt(containerType)))
+        return ERROR;
 
-    if (customAttribute != nullptr)
-        {
-        if (SUCCESS != insertInfo.SerializeCaInstance(*customAttribute))
-            return ERROR;
+    if (BE_SQLITE_OK != stmt->BindInt64(3, ecClassId))
+        return ERROR;
 
-        insertInfo.ColsInsert |=DbCustomAttributeInfo::COL_Instance;
-        }
+    if (BE_SQLITE_OK != stmt->BindInt(4, ordinal))
+        return ERROR;
 
-    return ECDbSchemaPersistence::InsertCustomAttribute (m_ecdb, insertInfo);
+    Utf8String caXml;
+    if (InstanceWriteStatus::Success != customAttribute->WriteToXmlString(caXml, false, //don't write XML description header as we only store an XML fragment
+                                            true)) //store instance id for the rare cases where the client specified one.
+        return ERROR;
+
+    if (BE_SQLITE_OK != stmt->BindText(5, caXml.c_str(), Statement::MakeCopy::No))
+        return ERROR;
+
+    return BE_SQLITE_DONE == stmt->Step() ? SUCCESS : ERROR;
     }
 
 
@@ -144,12 +139,6 @@ BentleyStatus ECDbSchemaWriter::InsertCAEntry(IECInstanceP customAttribute, ECCl
 BentleyStatus ECDbSchemaWriter::Import(ECN::ECSchemaCR ecSchema)
     {
     BeMutexHolder lock(m_mutex);
-    ECSchemaId ecSchemaId = ECDbSchemaPersistence::GetECSchemaId(m_ecdb, ecSchema);
-    if (0 != ecSchemaId)
-        {
-        BeAssert(false && "Did not import ECSchema (it already exists in the ECDb). We should have checked earlier, that it already exists");
-        return SUCCESS;
-        }
 
     // GenerateId
     BeBriefcaseBasedId nextId;
@@ -159,13 +148,14 @@ BentleyStatus ECDbSchemaWriter::Import(ECN::ECSchemaCR ecSchema)
         return ERROR;
         }
 
-    ecSchemaId = nextId.GetValue ();
+    const ECSchemaId ecSchemaId = nextId.GetValue ();
     const_cast<ECSchemaR>(ecSchema).SetId(ecSchemaId);
 
-    DbResult stat = CreateECSchemaEntry(ecSchema);
-    if (BE_SQLITE_OK != stat)
+    if (SUCCESS != CreateECSchemaEntry(ecSchema))
         {
-        if (BE_SQLITE_CONSTRAINT_UNIQUE == stat)
+        DbResult lastErrorCode;
+        m_ecdb.GetLastError(&lastErrorCode);
+        if (BE_SQLITE_CONSTRAINT_UNIQUE == lastErrorCode)
             m_ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Failed to import ECSchema '%s'. Namespace prefix '%s' is already used by an existing ECSchema.", 
                                                             ecSchema.GetFullSchemaName().c_str(), ecSchema.GetNamespacePrefix().c_str());
         return ERROR;
@@ -175,7 +165,7 @@ BentleyStatus ECDbSchemaWriter::Import(ECN::ECSchemaCR ecSchema)
     for (ECSchemaReferenceList::const_iterator iter = referencedSchemas.begin(); iter != referencedSchemas.end(); ++iter)
         {
         ECSchemaCP reference = iter->second.get();
-        ECSchemaId referenceId = ECDbSchemaPersistence::GetECSchemaId (m_ecdb, *reference); 
+        ECSchemaId referenceId = ECDbSchemaPersistence::GetECSchemaId(m_ecdb, reference->GetName().c_str());
         if (0ULL == referenceId)
             {
             BeAssert(false && "BuildDependencyOrderedSchemaList used by caller should have ensured that all references are already imported");
@@ -191,16 +181,13 @@ BentleyStatus ECDbSchemaWriter::Import(ECN::ECSchemaCR ecSchema)
             // the in-memory duplicate copy. In Graphite02, we might risk cleaning this up to force use of the already-persisted ECSchema
             // or else to do a one-shot validation of the ECSchema and updating of its ids. 
             // Grep for GetClassIdForECClassFromDuplicateECSchema and GetPropertyIdForECPropertyFromDuplicateECSchema for other ramifications of this.
-            const_cast<ECSchemaP>(reference)->SetId(referenceId); 
+            const_cast<ECSchemaP>(reference)->SetId(referenceId);
             }
 
-        if (!ECDbSchemaPersistence::ContainsECSchemaReference (m_ecdb, ecSchemaId, referenceId))
+        if (SUCCESS != CreateECSchemaReferenceEntry(ecSchemaId, referenceId))
             {
-            if (SUCCESS != CreateECSchemaReferenceEntry(ecSchemaId, referenceId))
-                {
-                BeAssert(false && "Could not insert schema reference entry");
-                return ERROR;
-                }
+            BeAssert(false && "Could not insert schema reference entry");
+            return ERROR;
             }
         }
 
@@ -234,14 +221,19 @@ BentleyStatus ECDbSchemaWriter::Import(ECN::ECSchemaCR ecSchema)
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        05/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ECDbSchemaWriter::CreateECSchemaReferenceEntry(ECSchemaId ecSchemaId, ECSchemaId ecReferencedSchemaId)
+BentleyStatus ECDbSchemaWriter::CreateECSchemaReferenceEntry(ECSchemaId schemaId, ECSchemaId referencedSchemaId)
     {
-    DbECSchemaReferenceInfo  info;
-    info.ColsInsert          = DbECSchemaReferenceInfo::COL_SchemaId | DbECSchemaReferenceInfo::COL_ReferencedSchemaId ;
-    info.m_ecSchemaId          = ecSchemaId;
-    info.m_referencedECSchemaId = ecReferencedSchemaId;
+    CachedStatementPtr stmt = nullptr;
+    if (BE_SQLITE_OK != m_ecdb.GetCachedStatement(stmt, "INSERT INTO ec_SchemaReference (SchemaId,ReferencedSchemaId) VALUES(?,?)"))
+        return ERROR;
 
-    return ECDbSchemaPersistence::InsertECSchemaReference(m_ecdb, info);
+    if (BE_SQLITE_OK != stmt->BindInt64(1, schemaId))
+        return ERROR;
+
+    if (BE_SQLITE_OK != stmt->BindInt64(2, referencedSchemaId))
+        return ERROR;
+
+    return BE_SQLITE_DONE == stmt->Step() ? SUCCESS : ERROR;
     }
 
 /*---------------------------------------------------------------------------------------
@@ -283,7 +275,7 @@ BentleyStatus ECDbSchemaWriter::ImportCustomAttributes(IECCustomAttributeContain
         else
             customAttributeClassId = ECDbSchemaManager::GetClassIdForECClassFromDuplicateECSchema (m_ecdb, *ecClass);
 
-        if (SUCCESS != InsertCAEntry (customAttribute, customAttributeClassId, sourceContainerId, containerType, 0 /*Overriden continer id is nullptr=0*/, index++))
+        if (SUCCESS != InsertCAEntry (customAttribute, customAttributeClassId, sourceContainerId, containerType, index++))
             return ERROR;
         }
 
@@ -297,11 +289,13 @@ BentleyStatus ECDbSchemaWriter::EnsureECSchemaExists(ECClassCR ecClass)
     {
     ECSchemaCR schema = ecClass.GetSchema();
     ECSchemaId ecSchemaId = schema.GetId();
-    if (ECDbSchemaPersistence::ContainsECSchemaWithId(m_ecdb, ecSchemaId))
+
+    if (ECDbSchemaPersistence::ContainsECSchema(m_ecdb, ecSchemaId))
         return SUCCESS;
+
     BeAssert(false && "I think we just should assume that the entry already exists, rather than relying on just-in-time? Or is this for when we branch off into related ECClasses?");
     //Add ECSchema entry but do not traverse its ECClasses.
-    if (BE_SQLITE_OK != CreateECSchemaEntry(schema))
+    if (SUCCESS != CreateECSchemaEntry(schema))
         return ERROR;
 
     //import CA classes first
@@ -404,7 +398,7 @@ BentleyStatus ECDbSchemaWriter::ImportECClass(ECN::ECClassCR ecClass)
     ECN::ECRelationshipClassCP relationship = ecClass.GetRelationshipClassCP();
     if (relationship != nullptr)
         {
-        if (SUCCESS != ImportECRelationshipClass(relationship, ecClassId))
+        if (SUCCESS != ImportECRelationshipClass(relationship))
             return ERROR;
         }
 
@@ -484,33 +478,76 @@ BentleyStatus ECDbSchemaWriter::ImportECEnumeration(ECN::ECEnumerationCR ecEnum)
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        05/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ECDbSchemaWriter::ImportECRelationshipClass(ECN::ECRelationshipClassCP relationship, ECClassId relationshipClassId)
+BentleyStatus ECDbSchemaWriter::ImportECRelationshipClass(ECN::ECRelationshipClassCP relationship)
     {
-    if (SUCCESS != ImportECRelationshipConstraint(relationshipClassId, relationship->GetSource(), ECRelationshipEnd_Source))
+    const ECClassId relClassId = relationship->GetId();
+    if (SUCCESS != ImportECRelationshipConstraint(relClassId, relationship->GetSource(), ECRelationshipEnd_Source))
         return ERROR;
 
-    return ImportECRelationshipConstraint(relationshipClassId, relationship->GetTarget(), ECRelationshipEnd_Target);
+    return ImportECRelationshipConstraint(relClassId, relationship->GetTarget(), ECRelationshipEnd_Target);
     }
 
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        05/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ECDbSchemaWriter::ImportECRelationshipConstraint(ECClassId relClassId, ECN::ECRelationshipConstraintR relationshipConstraint, ECRelationshipEnd endpoint)
+BentleyStatus ECDbSchemaWriter::ImportECRelationshipConstraint(ECClassId relClassId, ECN::ECRelationshipConstraintR relationshipConstraint, ECRelationshipEnd end)
     {
-    if (SUCCESS != CreateECRelationshipConstraintEntry(relClassId, relationshipConstraint, endpoint))
+    BeAssert(relClassId != ECClass::UNSET_ECCLASSID);
+
+    if (SUCCESS != CreateECRelationshipConstraintEntry(relClassId, relationshipConstraint, end))
+        return ERROR;
+
+    CachedStatementPtr stmt = nullptr;
+    if (BE_SQLITE_OK != m_ecdb.GetCachedStatement(stmt, "INSERT INTO ec_RelationshipConstraintClass(RelationshipClassId,RelationshipEnd,ClassId,KeyProperties) VALUES(?,?,?,?)"))
         return ERROR;
 
     for (ECRelationshipConstraintClassCP constraintClassObj : relationshipConstraint.GetConstraintClasses())
         {
         ECClassCR constraintClass = constraintClassObj->GetClass();
+        BeAssert(constraintClass.GetId() != ECClass::UNSET_ECCLASSID);
+
         if (SUCCESS != ImportECClass(constraintClass))
             return ERROR;
 
-        if (SUCCESS != ECDbSchemaPersistence::InsertECRelationshipConstraintClass(m_ecdb, relClassId, *constraintClassObj, endpoint))
+        if (BE_SQLITE_OK != stmt->BindInt64(1, relClassId))
             return ERROR;
+
+        if (BE_SQLITE_OK != stmt->BindInt(2, (int) end))
+            return ERROR;
+
+        if (BE_SQLITE_OK != stmt->BindInt64(3, constraintClass.GetId()))
+            return ERROR;
+
+        bvector<Utf8String> const& keyPropNames = constraintClassObj->GetKeys();
+        if (!keyPropNames.empty())
+            {
+            rapidjson::Document keyPropJson;
+            auto& allocator = keyPropJson.GetAllocator();
+            keyPropJson.SetArray();
+            keyPropJson.Reserve((rapidjson::SizeType) keyPropNames.size(), allocator);
+
+            for (Utf8StringCR keyPropertyName : keyPropNames)
+                {
+                keyPropJson.PushBack(keyPropertyName.c_str(), allocator);
+                }
+
+            rapidjson::StringBuffer buf;
+            rapidjson::Writer<rapidjson::StringBuffer> writer(buf);
+            keyPropJson.Accept(writer);
+            if (BE_SQLITE_OK != stmt->BindText(4, buf.GetString(), Statement::MakeCopy::Yes))
+                return ERROR;
+            }
+
+        if (BE_SQLITE_DONE != stmt->Step())
+            return ERROR;
+
+        stmt->Reset();
+        stmt->ClearBindings();
         }
 
-    ECContainerType containerType = endpoint == ECRelationshipEnd_Source ? ECContainerType::RelationshipConstraintSource : ECContainerType::RelationshipConstraintTarget;
+    stmt = nullptr;
+
+    ECContainerType containerType = end == ECRelationshipEnd_Source ? ECContainerType::RelationshipConstraintSource : ECContainerType::RelationshipConstraintTarget;
     return ImportCustomAttributes(relationshipConstraint, relClassId, containerType);
     }
 

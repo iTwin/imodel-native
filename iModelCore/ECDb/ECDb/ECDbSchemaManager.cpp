@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECDbSchemaManager.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -188,7 +188,7 @@ BentleyStatus ECDbSchemaManager::BatchImportOrUpdateECSchemas (SchemaImportConte
         BeAssert(schema != nullptr);
         if (schema == nullptr) continue;
 
-        ECSchemaId id = ECDbSchemaPersistence::GetECSchemaId(this->m_ecdb, *schema);
+        ECSchemaId id = ECDbSchemaPersistence::GetECSchemaId(this->m_ecdb, schema->GetName().c_str());
         if (schema->HasId() && (id == 0 || id != schema->GetId()))
             {
             m_ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "ECSchema %s is owned by some other ECDb file.", schema->GetFullSchemaName().c_str());
@@ -543,7 +543,7 @@ ECPropertyId ECDbSchemaManager::GetPropertyIdForECPropertyFromDuplicateECSchema(
 //---------------------------------------------------------------------------------------
 ECSchemaId ECDbSchemaManager::GetSchemaIdForECSchemaFromDuplicateECSchema(ECDbCR db, ECSchemaCR ecSchema)
     {
-    const ECSchemaId ecSchemaId = ECDbSchemaPersistence::GetECSchemaId(db, ecSchema);
+    const ECSchemaId ecSchemaId = ECDbSchemaPersistence::GetECSchemaId(db, ecSchema.GetName().c_str());
     const_cast<ECSchemaR>(ecSchema).SetId(ecSchemaId);
     return ecSchemaId;
     }

@@ -336,13 +336,19 @@ BentleyStatus ECDbSchemaReader::LoadECSchemaDefinition(DbECSchemaEntry*& outECSc
     if (SUCCESS != LoadECSchemaFromDb(schemaEntryP->m_cachedECSchema, ecSchemaId))
         return ERROR;
 
-    bvector<ECSchemaId> referencedSchemaIds;
-    if (SUCCESS != ECDbSchemaPersistence::GetReferencedSchemas(referencedSchemaIds, m_db, ecSchemaId))
+
+    CachedStatementPtr stmt = nullptr;
+    if (BE_SQLITE_OK != m_db.GetCachedStatement(stmt, "SELECT ReferencedSchemaId FROM ec_SchemaReference WHERE SchemaId=?"))
+        return ERROR;
+
+    if (BE_SQLITE_OK != stmt->BindInt64(1, ecSchemaId))
         return ERROR;
 
     newlyLoadedSchemas.push_back(schemaEntryP);
-    for (ECSchemaId referencedSchemaId : referencedSchemaIds)
+    while (BE_SQLITE_ROW == stmt->Step())
         {
+        BeAssert(!stmt->IsColumnNull(0));
+        ECSchemaId referencedSchemaId = (ECSchemaId) stmt->GetValueInt64(0);
         DbECSchemaEntry* referenceSchemaKey = nullptr;
         if (SUCCESS != LoadECSchemaDefinition(referenceSchemaKey, newlyLoadedSchemas, referencedSchemaId))
             return ERROR;
@@ -724,13 +730,17 @@ BentleyStatus ECDbSchemaReader::LoadECPropertiesFromDb(ECClassP& ecClass, ECClas
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus ECDbSchemaReader::LoadBaseClassesFromDb(ECClassP& ecClass, ECClassId ecClassId) const
     {
-    ECDbSchemaPersistence::ECClassIdList baseClassIds;
-    if (SUCCESS != ECDbSchemaPersistence::GetBaseECClasses(baseClassIds, ecClassId, m_db))
+    CachedStatementPtr stmt = nullptr;
+    if (BE_SQLITE_OK != m_db.GetCachedStatement(stmt, "SELECT BaseClassId FROM ec_BaseClass WHERE ClassId=? ORDER BY Ordinal"))
         return ERROR;
 
-    ECClassP baseClass;
-    for (ECClassId baseClassId : baseClassIds)
+    if (BE_SQLITE_OK != stmt->BindInt64(1, ecClassId))
+        return ERROR;
+
+    while (stmt->Step() == BE_SQLITE_ROW)
         {
+        ECClassId baseClassId = stmt->GetValueInt64(0);
+        ECClassP baseClass = nullptr;
         if (SUCCESS != ReadECClass(baseClass, baseClassId))
             return ERROR;
 
@@ -746,52 +756,30 @@ BentleyStatus ECDbSchemaReader::LoadBaseClassesFromDb(ECClassP& ecClass, ECClass
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus ECDbSchemaReader::LoadCAFromDb(ECN::IECCustomAttributeContainerR  caConstainer, ECContainerId containerId, ECContainerType containerType) const
     {
-    DbCustomAttributeInfo readerInfo;
-    readerInfo.ColsWhere  =
-        DbCustomAttributeInfo::COL_ContainerId |
-        DbCustomAttributeInfo::COL_ContainerType;
-
-    readerInfo.ColsSelect =
-        DbCustomAttributeInfo::COL_ClassId |
-        DbCustomAttributeInfo::COL_Instance;
-
-    readerInfo.m_containerId = containerId;
-    readerInfo.m_containerType = containerType;
-
     CachedStatementPtr stmt = nullptr;
-    if (SUCCESS != ECDbSchemaPersistence::FindCustomAttribute(stmt, m_db, readerInfo))
+    if (BE_SQLITE_OK != m_db.GetCachedStatement(stmt, "SELECT ClassId,Instance FROM ec_CustomAttribute WHERE ContainerId=? AND ContainerType=? ORDER BY Ordinal"))
         return ERROR;
 
-    readerInfo.Clear();
-    while (ECDbSchemaPersistence::Step(readerInfo, *stmt) == BE_SQLITE_ROW)
+    if (BE_SQLITE_OK != stmt->BindInt64(1, containerId))
+        return ERROR;
+
+    if (BE_SQLITE_OK != stmt->BindInt(2, Enum::ToInt(containerType)))
+        return ERROR;
+
+    while (stmt->Step() == BE_SQLITE_ROW)
         {
+        ECClassId caClassId = stmt->GetValueInt64(0);
         ECClassP caClass = nullptr;
-        if (SUCCESS != ReadECClass(caClass, readerInfo.m_ecClassId))
+        if (SUCCESS != ReadECClass(caClass, caClassId))
             return ERROR;
 
-        IECInstancePtr inst;
-        if (!Utf8String::IsNullOrEmpty(readerInfo.GetCaInstanceXml()) && !(DbCustomAttributeInfo::COL_Instance & readerInfo.ColsNull))
-            {
-            if (SUCCESS != readerInfo.DeserializeCaInstance (inst, caClass->GetSchema ()))
-                {
-                LOG.error("Deserializing custom attribute instance from XML failed.");
-                return ERROR;
-                }
-            }
-        else
-            {
-            LOG.error("Custom attribute defined but its content is missing. It doesn't have a ECInstanceId or corresponding xml.");
+        Utf8CP caXml = stmt->GetValueText(1);
+        ECInstanceReadContextPtr readContext = ECInstanceReadContext::CreateContext(caClass->GetSchema());
+        IECInstancePtr deserializedCa = nullptr;
+        if (InstanceReadStatus::Success != IECInstance::ReadFromXmlString(deserializedCa, caXml, *readContext))
             return ERROR;
-            }
-
-        if (!inst.IsNull())
-            caConstainer.SetCustomAttribute(*inst);
-        else
-            {
-            LOG.error("Error getting Custom attribute for a container");
-            return ERROR;
-            }
-        readerInfo.Clear();
+        BeAssert(deserializedCa != nullptr);
+        caConstainer.SetCustomAttribute(*deserializedCa);
         }
 
     return SUCCESS;
@@ -802,35 +790,26 @@ BentleyStatus ECDbSchemaReader::LoadCAFromDb(ECN::IECCustomAttributeContainerR  
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus ECDbSchemaReader::LoadECRelationshipConstraintFromDb(ECRelationshipClassP& ecRelationship, ECClassId relationshipClassId, ECRelationshipEnd relationshipEnd) const
     {
-    DbECRelationshipConstraintInfo info;
-    info.ColsWhere =
-        DbECRelationshipConstraintInfo::COL_RelationshipClassId   |
-        DbECRelationshipConstraintInfo::COL_RelationshipEnd;
-
-    info.ColsSelect =
-        DbECRelationshipConstraintInfo::COL_MultiplicityLowerLimit |
-        DbECRelationshipConstraintInfo::COL_MultiplicityUpperLimit |
-        DbECRelationshipConstraintInfo::COL_IsPolymorphic         |
-        DbECRelationshipConstraintInfo::COL_RoleLabel ;
-
-    info.ColsNull = 0;
-
-    info.m_relationshipClassId = relationshipClassId;
-    info.m_ecRelationshipEnd = relationshipEnd;
-
     CachedStatementPtr stmt = nullptr;
-    if (SUCCESS != ECDbSchemaPersistence::FindECRelationshipConstraint(stmt, m_db, info))
+    if (BE_SQLITE_OK != m_db.GetCachedStatement(stmt, "SELECT MultiplicityLowerLimit,MultiplicityUpperLimit,IsPolymorphic,RoleLabel FROM ec_RelationshipConstraint WHERE RelationshipClassId=? AND RelationshipEnd=?"))
         return ERROR;
 
-    if (BE_SQLITE_ROW != ECDbSchemaPersistence::Step (info, *stmt))
+    if (BE_SQLITE_OK != stmt->BindInt64(1, relationshipClassId))
         return ERROR;
 
+    if (BE_SQLITE_OK != stmt->BindInt(2, relationshipEnd))
+        return ERROR;
+
+    if (BE_SQLITE_ROW != stmt->Step())
+        return ERROR;
+   
     ECRelationshipConstraintR constraint = (relationshipEnd == ECRelationshipEnd_Target) ? ecRelationship->GetTarget() : ecRelationship->GetSource();
-    constraint.SetCardinality(RelationshipCardinality(info.m_multiplicityLowerLimit, info.m_multiplicityUpperLimit));
-    constraint.SetIsPolymorphic(info.m_isPolymorphic);
 
-    if (!(info.ColsNull & DbECRelationshipConstraintInfo::COL_RoleLabel))
-        constraint.SetRoleLabel(info.m_roleLabel);
+    constraint.SetCardinality(RelationshipCardinality(stmt->GetValueInt(0), stmt->GetValueInt(1)));
+    constraint.SetIsPolymorphic(stmt->GetValueInt(2) != 0);
+
+    if (!stmt->IsColumnNull(3))
+        constraint.SetRoleLabel(stmt->GetValueText(3));
 
     if (SUCCESS != LoadECRelationshipConstraintClassesFromDb(constraint, relationshipClassId, relationshipEnd))
         return ERROR;
