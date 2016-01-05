@@ -41,7 +41,7 @@ private:
     virtual ECSqlStatus _Prepare (ECDbCR ecdb, Utf8CP ecsql) override;
     virtual ECSqlPrepareContext _InitializePrepare (ECDbCR ecdb, Utf8CP ecsql) override;
 
-    void Finalize(bool removeFromRegistry);
+    void DoFinalize(bool removeFromRegistry);
     virtual void _Finalize() override;
 
     void UnregisterFromRegistry(ECDbCR);

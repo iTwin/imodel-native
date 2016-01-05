@@ -24,9 +24,8 @@ NativeLogging::ILogger* ECSqlStatement::Impl::s_prepareDiagnosticsLogger = nullp
 //---------------------------------------------------------------------------------------
 ECSqlStatement::Impl::~Impl()
     {
-    ECDb const* ecdb = GetECDb();
-    if (ecdb != nullptr)
-        UnregisterFromRegistry(*ecdb);
+    if (IsPrepared())
+        UnregisterFromRegistry(*GetECDb());
     }
 
 //---------------------------------------------------------------------------------------
@@ -54,14 +53,10 @@ ECSqlPrepareContext ECSqlStatement::Impl::_InitializePrepare (ECDbCR ecdb, Utf8C
 //---------------------------------------------------------------------------------------
 // @bsimethod                                             Krischan.Eberle      01/2016
 //---------------------------------------------------------------------------------------
-void ECSqlStatement::Impl::Finalize(bool removeFromRegistry)
+void ECSqlStatement::Impl::DoFinalize(bool removeFromRegistry)
     {
-    if (removeFromRegistry)
-        {
-        ECDb const* ecdb = GetECDb();
-        if (ecdb != nullptr)
-            UnregisterFromRegistry(*ecdb);
-        }
+    if (removeFromRegistry && IsPrepared())
+        UnregisterFromRegistry(*GetECDb());
 
     ECSqlStatementBase::_Finalize();
     }
@@ -71,7 +66,7 @@ void ECSqlStatement::Impl::Finalize(bool removeFromRegistry)
 //---------------------------------------------------------------------------------------
 void ECSqlStatement::Impl::_Finalize()
     {
-    Finalize(true);
+    DoFinalize(true);
     }
 
 //---------------------------------------------------------------------------------------
@@ -89,7 +84,7 @@ ECSqlStatus ECSqlStatement::Impl::Reprepare()
     BeAssert(ecdb != nullptr);
     Utf8String ecsql = GetECSql();
     //finalize the statement, but don't remove it from the registry as we will reprepare it
-    Finalize(false);
+    DoFinalize(false);
 
     ECSqlStatus stat = Prepare(*ecdb, ecsql.c_str());
     if (!stat.IsSuccess())
