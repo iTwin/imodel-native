@@ -28,13 +28,12 @@ BentleyApi::NativeLogging::ILogger* s_logger = BentleyApi::NativeLogging::Loggin
 //---------------------------------------------------------------------------------------
 static void ShowUsage(char* str)
     {
-    fprintf(stderr, "\n%s -i <inputSchemaPath> -o <outputDirectory> [-x EXMLVERSION] [-d DIRECTORIES] [-l DIRECTORY] [-a] [-r VERSION] [-s] [-v VERSION]\n\n%s\n\n%s\n\n%s\t%s\n%s\t%s\n%s\t%s\n%s\t%s\n%s\t%s\n%s\t%s\n%s\t%s\n\n",
+    fprintf(stderr, "\n%s -i <inputSchemaPath> -o <outputDirectory> [-x exmlVersion] [-d directories] [-c directory] [-a] [-s] [-v version]\n\n%s\n\n%s\n\n%s\t\t%s\n%s\t\t%s\n%s\t%s\n%s\t\t%s\n%s\t\t%s\n%s\t\t%s\n\n",
         str, "Tool to convert between different versions of ECSchema(s)", "options:",
-        " -x --xml 2|3", "the schema will be converted to the specified exmlversion",
-        " -d --dir DIR", "looks into the following directories for reference schemas",
-        " -l --look DIR", "looks for the conversionschema file in this directory",
+        " -x --xml 2|3", "convert to the specified exmlversion",
+        " -d --dir DIR", "other directories for reference schemas",
+        " -c --conversion DIR", "looks for the conversionschema file in this directory",
         " -a --all", "convert the entire schema graph",
-        " -r --ref 2|3", "convert all the reference schemas to this version",
         " -s --sup", "convert all the supplemental schemas",
         " -v --ver XX.XX", "specify the schema version");
     }
@@ -134,7 +133,6 @@ BeFileNameCR outputDirectory,
 bvector<BeFileName> referenceDirectories, 
 BeFileNameCR otherDirectory, 
 int exmlversion,
-int refVersion,
 bpair<uint32_t, uint32_t> versions,  
 bool all,  
 bool supplemental, 
@@ -153,7 +151,7 @@ bool versionProvided
     SchemaReadStatus readSchemaStatus = ECSchema::ReadFromXmlFile(schema, ecSchemaFile.GetName(), *contextPtr);
     if (SchemaReadStatus::Success != readSchemaStatus)
         return (int)readSchemaStatus;
-            
+        
     BeFileName outputFile;
     GetOutputFile(outputFile, schema, versions, versionProvided, outputDirectory);
     // Check for overwriting the file already in the directory
@@ -180,10 +178,8 @@ bool versionProvided
         
     //Convert the reference schema according to the version specified
     if (all)
-        refVersion=exmlversion;
-    if (refVersion != 0)
         {
-        if (0 != ConvertReferenceSchemas(schema, refVersion, outputDirectory))
+        if (0 != ConvertReferenceSchemas(schema, exmlversion, outputDirectory))
             return -1;
         }
 
@@ -202,7 +198,6 @@ int main(int argc, char** argv)
     bvector<char*> directories;
     int version = 3;
     int flag = 0;
-    int refversion = 0;
     bpair<uint32_t, uint32_t> versions(0,0);
     bool supplementalSchemas = false;
     bool otherDir = false;
@@ -281,7 +276,7 @@ int main(int argc, char** argv)
             ShowUsage(argv[0]);
             return -1;
             }
-        else if (strcmp(argv[i], "--look") == 0 || strcmp(argv[i], "-l") == 0)
+        else if (strcmp(argv[i], "--conversion") == 0 || strcmp(argv[i], "-c") == 0)
             {
             bool check = false;
             otherDir = true;
@@ -319,21 +314,6 @@ int main(int argc, char** argv)
                 }
             else
                 version = atoi(argv[++i]);
-            }
-        else if (strcmp(argv[i], "-r") == 0 || strcmp(argv[i], "--ref") == 0)
-            {
-            if (i + 1 == argc)
-                {
-                ShowUsage(argv[0]);
-                return -1;
-                }
-            else if ((argv[i + 1])[0] == '-' || !(atof(argv[i + 1]) - 2 == 0 || atof(argv[i + 1]) - 3 == 0))
-                {
-                fprintf(stderr, " -r/--ref should be follwed by either the version 2.0(2) or 3.0(3)\n");
-                return -1;
-                }
-            else
-                refversion = atoi(argv[++i]);
             }
         else if (strcmp(argv[i], "-d") == 0 || strcmp(argv[i], "--dir") == 0)
             {
@@ -411,6 +391,6 @@ int main(int argc, char** argv)
     if (otherDir)
         otherDirectory.AppendUtf8(other);
     s_logger->infov(L"Loading schema '%ls' for conversion to teh specified version", inputFileName.GetName());
-    return ConvertSchema(inputFileName, outputDirectory, refDirectories, otherDirectory, version, refversion, versions, all, supplementalSchemas, otherDir, versionProvided);
+    return ConvertSchema(inputFileName, outputDirectory, refDirectories, otherDirectory, version, versions, all, supplementalSchemas, otherDir, versionProvided);
     }
 
