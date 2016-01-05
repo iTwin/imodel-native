@@ -2,7 +2,7 @@
 |
 |     $Source: Bentley/nonport/BeFileName.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #if defined (BENTLEY_WIN32)||defined(BENTLEY_WINRT)
@@ -1649,7 +1649,7 @@ BeFileNameStatus BeFileName::BeMoveFile (WCharCP source, WCharCP target, int num
         WString fixedTarget;
         FixPathName (fixedTarget, target, true);
 
-        if (0 != ::MoveFileExW (fixedSource.c_str(), fixedTarget.c_str(), 0))
+        if (0 != ::MoveFileExW (fixedSource.c_str(), fixedTarget.c_str(), MOVEFILE_COPY_ALLOWED/*Needed when changing drive*/))
             return  BeFileNameStatus::Success;
 
 #elif defined (__unix__)
