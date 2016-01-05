@@ -2638,7 +2638,6 @@ DbResult BlobIO::Read(void* data, int numBytes, int offset) {return (DbResult) s
 DbResult BlobIO::Write(const void* data, int numBytes, int offset) {return (DbResult) sqlite3_blob_write(m_blob, data, numBytes, offset);}
 int BlobIO::GetNumBytes() const {return sqlite3_blob_bytes(m_blob);}
 
-#define SNAPPY_UNCOMPRESSED_BUFFER_SIZE (34*1024)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/10
 +---------------+---------------+---------------+---------------+---------------+------*/
