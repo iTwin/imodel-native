@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ClassMap.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -92,8 +92,6 @@ struct PropertyMapSet : NonCopyableClass
         static BentleyStatus AddSystemEndPoint (PropertyMapSet& propertySet, IClassMap const& classMap, ColumnKind, ECN::ECValueCR value, ECDbSqlColumn const* column = nullptr);
         static PropertyMapSet::Ptr Create (IClassMap const& classMap);
     };
-
-
 
 //=======================================================================================
 //! Maps an ECClass to a DbTable
@@ -195,6 +193,7 @@ public:
     static BentleyStatus DetermineTableName(Utf8StringR tableName, ECN::ECClassCR, Utf8CP tablePrefix = nullptr);
     static BentleyStatus DetermineTablePrefix(Utf8StringR tablePrefix, ECN::ECClassCR);
     static bool IsAnyClass (ECN::ECClassCR);
+    virtual bool SupportECSql(ECSqlType ecsqlType, Utf8StringP reason = nullptr) const { BeAssert(false); return false;}
     };
 
 //======================================================================================
@@ -360,6 +359,7 @@ struct ClassMap : public IClassMap, RefCountedBase
 
         ColumnFactory const& GetColumnFactory() const { return m_columnFactory; }
         ColumnFactory& GetColumnFactoryR() { return m_columnFactory; }
+
     };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

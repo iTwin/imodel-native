@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECDbMap.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -818,6 +818,35 @@ void ECDbMap::GetClassMapsFromRelationshipEnd(std::set<IClassMap const*>& classM
         GetClassMapsFromRelationshipEnd(classMaps, *subclass);
         }
     }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Affan.Khan                      12/2015
+//+---------------+---------------+---------------+---------------+---------------+------
+const std::set<ECDbSqlTable const*> ECDbMap::GetTablesFromRelationshipEnd(ECRelationshipConstraintCR relationshipEnd) const
+    {
+    bool hasAnyClass = false;
+    std::set<IClassMap const*> classMaps = GetClassMapsFromRelationshipEnd(relationshipEnd, &hasAnyClass);
+
+    if (hasAnyClass)
+        return std::set<ECDbSqlTable const*>();
+
+    std::map<PersistenceType, std::set<ECDbSqlTable const*>> tables;
+    bool abstractEndPoint = relationshipEnd.GetClasses().size() == 1 && relationshipEnd.GetClasses().front()->GetClassModifier() == ECClassModifier::Abstract;
+    std::vector<ECClassCP> classes = GetClassesFromRelationshipEnd(relationshipEnd);
+    for (IClassMap const* classMap : classMaps)
+        {
+        if (abstractEndPoint)
+            tables[classMap->GetPrimaryTable().GetPersistenceType()].insert(&classMap->GetJoinedTable());
+        else
+            tables[classMap->GetPrimaryTable().GetPersistenceType()].insert(&classMap->GetPrimaryTable());
+        }
+
+    if (tables[PersistenceType::Persisted].size() > 0)
+        return tables[PersistenceType::Persisted];
+
+    return tables[PersistenceType::Virtual];
+    }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Affan.Khan                      12/2015
 //+---------------+---------------+---------------+---------------+---------------+------

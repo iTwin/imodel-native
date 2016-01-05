@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/Published/ECSqlStatement_Tests.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECSqlStatementTestFixture.h"
@@ -1423,7 +1423,42 @@ TEST_F (ECSqlStatementTestFixture, BindSourceAndTargetECInstanceId)
     {
     ECDbR ecdb = SetupECDb("ecsqlstatementtests.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"));
 
+    ECSqlStatement stmt;
+  
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ecsql.PSA(ECInstanceId) VALUES(111)"));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    stmt.Finalize();
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ecsql.PSA(ECInstanceId) VALUES(222)"));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    stmt.Finalize();
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ecsql.PSA(ECInstanceId) VALUES(1111)"));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    stmt.Finalize();
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ecsql.PSA(ECInstanceId) VALUES(2222)"));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    stmt.Finalize();
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ecsql.PSA(ECInstanceId) VALUES(11111)"));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    stmt.Finalize();
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ecsql.PSA(ECInstanceId) VALUES(22222)"));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    stmt.Finalize();
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ecsql.PSA(ECInstanceId) VALUES(1111111)"));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    stmt.Finalize();
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ecsql.PSA(ECInstanceId) VALUES(2222222)"));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    stmt.Finalize();
+
     ECSqlStatement statement;
+   
     auto stat = statement.Prepare (ecdb, "INSERT INTO ecsql.PSAHasPSA (SourceECInstanceId, TargetECInstanceId) VALUES(?,?)");
     ASSERT_EQ(ECSqlStatus::Success, stat);
 
@@ -1458,8 +1493,8 @@ TEST_F (ECSqlStatementTestFixture, BindSourceAndTargetECInstanceId)
         statement.Reset ();
         statement.ClearBindings ();
 
-        ASSERT_EQ(ECSqlStatus::Success, statement.BindText (1, "111111", IECSqlBinder::MakeCopy::No));
-        ASSERT_EQ(ECSqlStatus::Success, statement.BindText (2, "222222", IECSqlBinder::MakeCopy::No));
+        ASSERT_EQ(ECSqlStatus::Success, statement.BindText (1, "1111111", IECSqlBinder::MakeCopy::No));
+        ASSERT_EQ(ECSqlStatus::Success, statement.BindText (2, "2222222", IECSqlBinder::MakeCopy::No));
 
         ECInstanceKey key;
         ASSERT_EQ (BE_SQLITE_DONE, statement.Step (key));

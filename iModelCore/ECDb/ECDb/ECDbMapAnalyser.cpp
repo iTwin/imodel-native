@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECDbMapAnalyser.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -1720,11 +1720,17 @@ void ECDbMapAnalyser::HandleLinkTable (Storage* fromStorage, std::map<ECDbMapAna
         std::set<ECDbSqlColumn const*> forignKeys;
         for (auto relationship : relationships)
             {
-            if (isFrom)
-                forignKeys.insert (relationship->From ().GetInstanceId ()->GetFirstColumn ());
-            else
-                forignKeys.insert (relationship->To ().GetInstanceId ()->GetFirstColumn ());
+            if (relationship->GetRelationshipClassMap().GetDataIntegrityEnforcementMethod() == DataIntegrityEnforcementMethod::Trigger)
+                {
+                if (isFrom)
+                    forignKeys.insert(relationship->From().GetInstanceId()->GetFirstColumn());
+                else
+                    forignKeys.insert(relationship->To().GetInstanceId()->GetFirstColumn());
+                }
             }
+
+        if (forignKeys.empty())
+            continue;
 
         auto& builder = fromStorage->GetTriggerListR ().Create (SqlTriggerBuilder::Type::Delete, SqlTriggerBuilder::Condition::After, false);
         builder.GetNameBuilder ()
@@ -1816,6 +1822,9 @@ void ECDbMapAnalyser::ProcessEndTableRelationships ()
             continue;
 
         if (relationship->IsMarkedForCascadeDelete ())
+            continue;
+
+        if (relationship->GetRelationshipClassMap().GetDataIntegrityEnforcementMethod() == DataIntegrityEnforcementMethod::ForeignKey)
             continue;
 
         bool isSelfRelationship = false;
@@ -2140,16 +2149,29 @@ BentleyStatus ECClassViewGenerator::BuildRelationshipJoinIfAny(NativeSqlBuilder&
     if (!ecclassIdPropertyMap->IsMappedToPrimaryTable())
         {
         auto ecInstanceIdPropertyMap = static_cast<PropertyMapRelationshipConstraintECInstanceId const*>(endPoint == ECRelationshipEnd::ECRelationshipEnd_Source ? classMap.GetSourceECInstanceIdPropMap() : classMap.GetTargetECInstanceIdPropMap());
+        ECDbMapCR ecdbMap = classMap.GetECDbMap();
+        size_t tableCount = ecdbMap.GetTableCountOnRelationshipEnd(endPoint == ECRelationshipEnd::ECRelationshipEnd_Source ? classMap.GetRelationshipClass().GetSource() : classMap.GetRelationshipClass().GetTarget());
+        ECDbSqlTable const* targetTable = &ecclassIdPropertyMap->GetFirstColumn()->GetTable();
+        if (tableCount > 1
+            /*In this case we expecting we have relationship with one end abstract we only support it in case joinedTable*/)
+            {
+            BeAssert(targetTable->GetTableType() == TableType::Joined);
+            if (targetTable->GetTableType() != TableType::Joined)
+                return ERROR;
 
-        auto const& targetTable = ecclassIdPropertyMap->GetFirstColumn()->GetTable();
+            targetTable = ecdbMap.GetPrimaryTable(ecclassIdPropertyMap->GetFirstColumn()->GetTable());
+            if (!targetTable)
+                return ERROR;
+            }
+
         sqlBuilder.Append(" INNER JOIN ");
-        sqlBuilder.AppendEscaped(targetTable.GetName().c_str());
+        sqlBuilder.AppendEscaped(targetTable->GetName().c_str());
         sqlBuilder.AppendSpace();
         sqlBuilder.Append(GetECClassIdPrimaryTableAlias(endPoint));
         sqlBuilder.Append(" ON ");
         sqlBuilder.Append(GetECClassIdPrimaryTableAlias(endPoint));
         sqlBuilder.AppendDot();
-        auto targetECInstanceIdColumn = targetTable.GetFilteredColumnFirst(ColumnKind::ECInstanceId);
+        auto targetECInstanceIdColumn = targetTable->GetFilteredColumnFirst(ColumnKind::ECInstanceId);
         if (targetECInstanceIdColumn == nullptr)
             {
             BeAssert(false && "Failed to find ECInstanceId column in target table");

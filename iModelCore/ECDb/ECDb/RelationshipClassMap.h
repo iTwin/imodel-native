@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/RelationshipClassMap.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -11,11 +11,18 @@
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
+enum class DataIntegrityEnforcementMethod
+    {
+    None,
+    ForeignKey,
+    Trigger
+    };
 /*=================================================================================**//**
 * @bsiclass                                                 Ramanujam.Raman      06/2012
 +===============+===============+===============+===============+===============+======*/
 struct RelationshipClassMap : ClassMap
 {
+
 protected:
     //=======================================================================================
     // @bsiclass                                                 Krischan.Eberle      07/2014
@@ -50,6 +57,10 @@ protected:
         bool ClassIdMatchesConstraint (ECN::ECClassId candidateClassId) const;
         bool TryGetSingleClassIdFromConstraint (ECN::ECClassId& classId) const;
         ECN::ECRelationshipConstraintCR GetRelationshipConstraint()const;
+        bool IsSingleAbstractClass() const
+            {
+            return m_constraint.GetClasses().size() == 1 && m_constraint.GetClasses().front()->GetClassModifier() == ECN::ECClassModifier::Abstract;
+            }
         };
 
     static Utf8CP const DEFAULT_SOURCEECINSTANCEID_COLUMNNAME;
@@ -82,7 +93,7 @@ public:
     PropertyMapCP GetSourceECClassIdPropMap () const { return m_sourceConstraintMap.GetECClassIdPropMap (); }
     PropertyMapCP GetTargetECInstanceIdPropMap () const { return m_targetConstraintMap.GetECInstanceIdPropMap (); }
     PropertyMapCP GetTargetECClassIdPropMap () const { return m_targetConstraintMap.GetECClassIdPropMap (); }
-
+    virtual DataIntegrityEnforcementMethod GetDataIntegrityEnforcementMethod() const =0;
     };
 
 /*=================================================================================**//**
@@ -132,8 +143,9 @@ public:
     PropertyMapCP GetOtherEndECClassIdPropMap () const;
 
     bool GetOtherEndECClassIdColumnName (Utf8StringR columnName, ECDbSqlTable const& table) const { return GetOtherEndECClassIdColumnName (columnName, table, false);}
-
     static ClassMapPtr Create (ECN::ECRelationshipClassCR ecRelClass, ECDbMapCR ecDbMap, ECDbMapStrategy mapStrategy, bool setIsDirty) { return new RelationshipClassEndTableMap (ecRelClass, ecDbMap, mapStrategy, setIsDirty); }
+    virtual DataIntegrityEnforcementMethod GetDataIntegrityEnforcementMethod() const override;
+
     };
 
 /*==========================================================================
@@ -172,6 +184,7 @@ public:
     static ClassMapPtr  Create (ECN::ECRelationshipClassCR ecRelClass, ECDbMapCR ecDbMap, ECDbMapStrategy mapStrategy, bool setIsDirty) { return new RelationshipClassLinkTableMap (ecRelClass, ecDbMap, mapStrategy, setIsDirty); }
 
     bool                GetConstraintECClassIdColumnName (Utf8StringR columnName, ECN::ECRelationshipEnd relationshipEnd, ECDbSqlTable const& table) const;
+    virtual DataIntegrityEnforcementMethod GetDataIntegrityEnforcementMethod() const override;
 };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE
