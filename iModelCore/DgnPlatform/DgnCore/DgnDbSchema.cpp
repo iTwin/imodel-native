@@ -75,11 +75,6 @@ DbResult DgnDb::CreateDictionaryModel()
 static const Utf8CP s_unusedStructTableNames[] =
     {
     "dgn_AuthorityIssuedCode",
-    "dgn_BoundingBox2d",
-    "dgn_BoundingBox3d",
-    "dgn_Placement2d",
-    "dgn_Placement3d",
-    "dgn_YawPitchRollAngles",
     "dgn_AnnotationTableCellIndex"
     };
 

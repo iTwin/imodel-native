@@ -61,6 +61,7 @@ struct PerformanceElement1 : Dgn::PhysicalElement
         PerformanceElement1CPtr Insert ();
         PerformanceElement1CPtr Update ();
         void AddGeomtry();
+        void ExtendGeometry();
     };
 
 //---------------------------------------------------------------------------------------

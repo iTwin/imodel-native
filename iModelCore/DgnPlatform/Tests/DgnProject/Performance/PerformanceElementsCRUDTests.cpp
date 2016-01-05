@@ -7,6 +7,9 @@
 +--------------------------------------------------------------------------------------*/
 #include "PerformanceElementsCRUDTests.h"
 
+// Uncomment this if you want elapsed time of each test case logged to console in addition to the log file.
+// #define PERF_ELEM_CRUD_LOG_TO_CONSOLE 1
+
 HANDLER_DEFINE_MEMBERS (PerformanceElement1Handler)
 HANDLER_DEFINE_MEMBERS (PerformanceElement2Handler)
 HANDLER_DEFINE_MEMBERS (PerformanceElement3Handler)
@@ -231,6 +234,19 @@ PerformanceElement1CPtr PerformanceElement1::Update ()
     return GetDgnDb ().Elements ().Update<PerformanceElement1> (*this);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/16
++---------------+---------------+---------------+---------------+---------------+------*/
+static bool appendEllipse3d(ElementGeometryBuilder& builder, double cx, double cy, double cz)
+    {
+    DEllipse3d ellipseData = DEllipse3d::From(cx, cy, cz,
+        0, 0, 2,
+        0, 3, 0,
+        0.0, Angle::TwoPi());
+    ICurvePrimitivePtr ellipse = ICurvePrimitive::CreateArc(ellipseData);
+    return builder.Append(*ellipse);
+    }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Majd.Uddin            12/2015
 //---------------+---------------+---------------+---------------+---------------+-------
@@ -238,18 +254,27 @@ void PerformanceElement1::AddGeomtry()
 {
     GeometrySourceP geomElem = this->ToGeometrySourceP();
     ElementGeometryBuilderPtr builder = ElementGeometryBuilder::Create(*this->GetModel(), this->GetCategoryId(), DPoint3d::From(0.0, 0.0, 0.0));
-    //  CurvePrimitive
-    DEllipse3d ellipseData = DEllipse3d::From(1, 2, 3,
-        0, 0, 2,
-        0, 3, 0,
-        0.0, Angle::TwoPi());
-    ICurvePrimitivePtr ellipse = ICurvePrimitive::CreateArc(ellipseData);
-    ASSERT_TRUE(builder->Append(*ellipse));
+    ASSERT_TRUE(appendEllipse3d(*builder, 1, 2, 3));
     ASSERT_EQ(SUCCESS, builder->SetGeomStreamAndPlacement(*geomElem));
 
     ASSERT_TRUE(this->HasGeometry());
 }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void PerformanceElement1::ExtendGeometry()
+    {
+    GeometrySourceP geomElem = this->ToGeometrySourceP();
+    ElementGeometryBuilderPtr builder = ElementGeometryBuilder::Create(*this->GetModel(), this->GetCategoryId(), DPoint3d::From(0.0, 0.0, 0.0));
+    ASSERT_TRUE(appendEllipse3d(*builder, 0, 0, 0));
+    ASSERT_TRUE(appendEllipse3d(*builder, 1, 2, 3));
+    ASSERT_TRUE(appendEllipse3d(*builder, 3, 2, 1));
+
+    ASSERT_EQ(SUCCESS, builder->SetGeomStreamAndPlacement(*geomElem));
+
+    ASSERT_TRUE(this->HasGeometry());
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            09/2015
@@ -535,14 +560,6 @@ void PerformanceElementsCRUDTestFixture::CreateElements (int numInstances, Utf8C
     DgnCategoryId catid = DgnCategory::QueryHighestCategoryId (*m_db);
     DgnClassId classId = DgnClassId (m_db->Schemas ().GetECClassId (ELEMENT_PERFORMANCE_TEST_SCHEMA_NAME, className));
 
-//#define PERF_ELEM_CRUD_WANT_GEOM 1
-#ifdef PERF_ELEM_CRUD_WANT_GEOM
-    bool addGeometry = true;
-#else
-    // Not clear why it's useful to profile geometric elements without geometry.
-    bool addGeometry = false;
-#endif
-
     bool addMultiAspect = false;
     bool addDescription = false;
     bool addExtKey = false;
@@ -552,8 +569,7 @@ void PerformanceElementsCRUDTestFixture::CreateElements (int numInstances, Utf8C
         for (int i = 0; i < numInstances; i++)
             {
             PerformanceElement1Ptr element = PerformanceElement1::Create (*m_db, targetModel->GetModelId (), classId, catid, specifyProperyValues);
-            if (addGeometry)
-                element->AddGeomtry();
+            element->AddGeomtry();
             if (addMultiAspect)
                 DgnElement::MultiAspect::AddAspect(*element, *TestMultiAspect::Create("Initial Value"));
             if (addDescription)
@@ -577,8 +593,7 @@ void PerformanceElementsCRUDTestFixture::CreateElements (int numInstances, Utf8C
         for (int i = 0; i < numInstances; i++)
             {
             PerformanceElement2Ptr element = PerformanceElement2::Create (*m_db, targetModel->GetModelId (), classId, catid, specifyProperyValues);
-            if (addGeometry)
-                element->AddGeomtry();
+            element->AddGeomtry();
             if (addMultiAspect)
                 DgnElement::MultiAspect::AddAspect(*element, *TestMultiAspect::Create("Initial Value"));
             if (addDescription)
@@ -602,8 +617,7 @@ void PerformanceElementsCRUDTestFixture::CreateElements (int numInstances, Utf8C
         for (int i = 0; i < numInstances; i++)
             {
             PerformanceElement3Ptr element = PerformanceElement3::Create (*m_db, targetModel->GetModelId (), classId, catid, specifyProperyValues);
-            if (addGeometry)
-                element->AddGeomtry();
+            element->AddGeomtry();
             if (addMultiAspect)
                 DgnElement::MultiAspect::AddAspect(*element, *TestMultiAspect::Create("Initial Value"));
             if (addDescription)
@@ -627,8 +641,7 @@ void PerformanceElementsCRUDTestFixture::CreateElements (int numInstances, Utf8C
         for (int i = 0; i < numInstances; i++)
             {
             PerformanceElement4Ptr element = PerformanceElement4::Create (*m_db, targetModel->GetModelId (), classId, catid, specifyProperyValues);
-            if (addGeometry)
-                element->AddGeomtry();
+            element->AddGeomtry();
             if (addMultiAspect)
                 DgnElement::MultiAspect::AddAspect(*element, *TestMultiAspect::Create("Initial Value"));
             if (addDescription)
@@ -1541,11 +1554,13 @@ void PerformanceElementsCRUDTestFixture::ApiUpdateTime(Utf8CP className, int ini
     for (uint64_t i = 0; i < opCount; i++)
         {
         const DgnElementId id(s_firstElementId + i*elementIdIncrement);
-        DgnElementPtr element = m_db->Elements().GetForEdit<DgnElement>(id);
+        PerformanceElement1Ptr element = m_db->Elements().GetForEdit<PerformanceElement1>(id);
         ASSERT_TRUE(element != nullptr);
 
+        element->ExtendGeometry();
+
         DgnDbStatus stat = DgnDbStatus::Success;
-        element->Update (&stat);
+        element->DgnElement::Update (&stat);
         ASSERT_EQ (DgnDbStatus::Success, stat);
         }
 
@@ -1847,7 +1862,6 @@ void PerformanceElementsCRUDTestFixture::LogTiming(StopWatch& timer, Utf8CP desc
     Utf8String totalDescription;
     totalDescription.Sprintf("%s %s '%s' [Initial count: %d]", description, noClassIdFilterStr, testClassName, initialInstanceCount);
     LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), totalDescription.c_str(), opCount);
-//#define PERF_ELEM_CRUD_LOG_TO_CONSOLE 1
 #ifdef PERF_ELEM_CRUD_LOG_TO_CONSOLE
     printf("%.8f %s\n", timer.GetElapsedSeconds(), totalDescription.c_str());
 #endif

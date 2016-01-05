@@ -648,14 +648,13 @@ DgnDbStatus GeomStream::WriteGeomStreamAndStep(DgnDbR dgnDb, Utf8CP table, Utf8C
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus GeomStream::ReadGeomStream(DgnDbR dgnDb, Utf8CP table, Utf8CP colname, uint64_t rowId)
+DgnDbStatus GeomStream::ReadGeomStream(DgnDbR dgnDb, void const* blob, int blobSize)
     {
-    auto& pool = dgnDb.Elements();
-    SnappyFromBlob& snappy = pool.GetSnappyFrom();
+    if (0 == blobSize && nullptr == blob)
+        return DgnDbStatus::Success;
 
-    if (ZIP_SUCCESS != snappy.Init(pool.GetDgnDb(), table, colname, rowId))
-        return DgnDbStatus::Success; // this row has no geometry
-
+    SnappyFromMemory& snappy = dgnDb.Elements().GetSnappyFrom();
+    snappy.Init(const_cast<void*>(blob), static_cast<uint32_t>(blobSize));
     GeomBlobHeader header(snappy);
     if ((GeomBlobHeader::Signature != header.m_signature) || 0 == header.m_size)
         {
@@ -666,9 +665,9 @@ DgnDbStatus GeomStream::ReadGeomStream(DgnDbR dgnDb, Utf8CP table, Utf8CP colnam
     ReserveMemory(header.m_size);
 
     uint32_t actuallyRead;
-    snappy.ReadAndFinish(GetDataR(), GetSize(), actuallyRead);
+    auto readStatus = snappy._Read(GetDataR(), GetSize(), actuallyRead);
 
-    if (actuallyRead != GetSize())
+    if (ZIP_SUCCESS != readStatus || actuallyRead != GetSize())
         {
         BeAssert(false);
         return DgnDbStatus::ReadError;
@@ -2624,25 +2623,61 @@ DgnDbStatus DgnEditElementCollector::Write()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus ElementGeomData::ReadFrom(ECSqlStatement& stmt, ECSqlClassParams const& params)
+DgnDbStatus ElementGeomData::ReadFrom(ECSqlStatement& stmt, ECSqlClassParams const& params, DgnElementCR el)
     {
     m_categoryId = stmt.GetValueId<DgnCategoryId>(params.GetSelectIndex(GEOM_Category));
 
-    // ###TODO: Read GeomStream...
+    // Read GeomStream
+    auto geomIndex = params.GetSelectIndex(GEOM_Geometry);
+    if (stmt.IsValueNull(geomIndex))
+        return DgnDbStatus::Success;    // no geometry...
 
-    return DgnDbStatus::Success;
+    int blobSize;
+    void const* blob = stmt.GetValueBinary(geomIndex, &blobSize);
+    return m_geom.ReadGeomStream(el.GetDgnDb(), blob, blobSize);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus ElementGeomData::BindTo(ECSqlStatement& stmt)
+DgnDbStatus ElementGeomData::BindTo(ECSqlStatement& stmt, DgnElementCR el)
     {
     stmt.BindId(stmt.GetParameterIndex(GEOM_Category), m_categoryId);
 
-    // Binding the GeomStream now would require making a potentially large allocation and then copying it, and then
-    // possibly copying it again...wait until _OnInserted/Updated()
-    // Note this means our spatial index triggers may execute redundantly a second time.
+    // Compress the serialized GeomStream
+    m_multiChunkGeomStream = false;
+    SnappyToBlob& snappyTo = el.GetDgnDb().Elements().GetSnappyTo();
+    snappyTo.Init();
+
+    if (0 < m_geom.GetSize())
+        {
+        GeomBlobHeader header(m_geom);
+        snappyTo.Write((Byte const*)&header, sizeof(header));
+        snappyTo.Write(m_geom.GetData(), m_geom.GetSize());
+        }
+
+    auto geomIndex = stmt.GetParameterIndex(GEOM_Geometry);
+    uint32_t zipSize = snappyTo.GetCompressedSize();
+    if (0 < zipSize)
+        {
+        if (1 == snappyTo.GetCurrChunk())
+            {
+            // Common case - only one chunk in geom stream. Bind it directly.
+            // NB: This requires that no other code uses DgnElements::SnappyToBlob() until our ECSqlStatement is executed...
+            stmt.BindBinary(geomIndex, snappyTo.GetChunkData(0), zipSize, IECSqlBinder::MakeCopy::No);
+            }
+        else
+            {
+            // More than one chunk in geom stream. Avoid expensive alloc+copy by deferring writing geom stream until ECSqlStatement executes.
+            m_multiChunkGeomStream = true;
+            stmt.BindNull(geomIndex);
+            }
+        }
+    else
+        {
+        // No geometry
+        stmt.BindNull(geomIndex);
+        }
 
     return DgnDbStatus::Success;
     }
@@ -2650,9 +2685,9 @@ DgnDbStatus ElementGeomData::BindTo(ECSqlStatement& stmt)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus ElementGeom2d::Read(ECSqlStatement& stmt, ECSqlClassParams const& params)
+DgnDbStatus ElementGeom2d::Read(ECSqlStatement& stmt, ECSqlClassParams const& params, DgnElementCR el)
     {
-    auto status = ReadFrom(stmt, params);
+    auto status = ReadFrom(stmt, params, el);
     if (DgnDbStatus::Success != status)
         return status;
 
@@ -2675,9 +2710,9 @@ DgnDbStatus ElementGeom2d::Read(ECSqlStatement& stmt, ECSqlClassParams const& pa
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus ElementGeom3d::Read(ECSqlStatement& stmt, ECSqlClassParams const& params)
+DgnDbStatus ElementGeom3d::Read(ECSqlStatement& stmt, ECSqlClassParams const& params, DgnElementCR el)
     {
-    auto status = ReadFrom(stmt, params);
+    auto status = ReadFrom(stmt, params, el);
     if (DgnDbStatus::Success != status)
         return status;
 
@@ -2704,9 +2739,9 @@ DgnDbStatus ElementGeom3d::Read(ECSqlStatement& stmt, ECSqlClassParams const& pa
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus ElementGeom2d::Bind(ECSqlStatement& stmt, DgnElementCR)
+DgnDbStatus ElementGeom2d::Bind(ECSqlStatement& stmt, DgnElementCR el)
     {
-    auto status = BindTo(stmt);
+    auto status = BindTo(stmt, el);
     if (DgnDbStatus::Success != status)
         return status;
 
@@ -2733,7 +2768,7 @@ DgnDbStatus ElementGeom2d::Bind(ECSqlStatement& stmt, DgnElementCR)
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus ElementGeom3d::Bind(ECSqlStatement& stmt, DgnElementCR el)
     {
-    auto status = BindTo(stmt);
+    auto status = BindTo(stmt, el);
     if (DgnDbStatus::Success != status)
         return status;
 
@@ -2772,15 +2807,32 @@ DgnDbStatus ElementGeom3d::Bind(ECSqlStatement& stmt, DgnElementCR el)
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus ElementGeomData::WriteGeomStream(DgnElementCR el, Utf8CP tableName) const
     {
+    if (!m_multiChunkGeomStream)
+        return DgnDbStatus::Success;
+
+    m_multiChunkGeomStream = false;
+
+    DgnElements& pool = el.GetDgnDb().Elements();
+    SnappyToBlob& snappyTo = pool.GetSnappyTo();
+    if (1 >= snappyTo.GetCurrChunk())
+        {
+        BeAssert(false);    // Somebody overwrote our data.
+        return DgnDbStatus::WriteError;
+        }
+
+    // SaveToRow() requires a blob of the required size has already been allocated in the blob column.
+    // Ideally we would do this in BindTo(), but ECSql does not support binding a zero blob.
     Utf8String sql("UPDATE ");
     sql.append(tableName);
     sql.append(" SET " GEOM_Geometry "=? WHERE Id=?");
+    CachedStatementPtr stmt = pool.GetStatement(sql.c_str());
+    stmt->BindId(2, el.GetElementId());
+    stmt->BindZeroBlob(1, snappyTo.GetCompressedSize());
+    if (BE_SQLITE_DONE != stmt->Step())
+        return DgnDbStatus::WriteError;
 
-    DgnElementId eid = el.GetElementId();
-    DgnDbR db = el.GetDgnDb();
-    CachedStatementPtr stmt = db.Elements().GetStatement(sql.c_str());
-    stmt->BindId(2, eid);
-    return m_geom.WriteGeomStreamAndStep(db, tableName, GEOM_Geometry, eid.GetValue(), *stmt, 1);
+    StatusInt status = snappyTo.SaveToRow(el.GetDgnDb(), tableName, GEOM_Geometry, el.GetElementId().GetValue());
+    return SUCCESS == status ? DgnDbStatus::Success : DgnDbStatus::WriteError;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2861,22 +2913,13 @@ DgnDbStatus ElementGeomData::UpdateGeomStream(DgnElementCR el, Utf8CP tableName)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus ElementGeomData::LoadGeomStream(DgnElementCR el, Utf8CP tableName)
-    {
-    return m_geom.ReadGeomStream(el.GetDgnDb(), tableName, GEOM_Geometry, el.GetElementId().GetValue());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   12/15
-+---------------+---------------+---------------+---------------+---------------+------*/
 void ElementGeomData::AddBaseClassParams(ECSqlClassParams& params)
     {
     params.Add(GEOM_Category);
     params.Add(GEOM_Origin);
     params.Add(GEOM_Box_Low);
     params.Add(GEOM_Box_High);
-
-    // NB: We read and write the GeomStream separately from the other properties.
+    params.Add(GEOM_Geometry);
     }
 
 /*---------------------------------------------------------------------------------**//**
