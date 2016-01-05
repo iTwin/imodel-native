@@ -51,8 +51,8 @@ public:
     static void                        LoadRuleFromXmlNode (BeXmlNodeP ruleNode, RuleCollectionType& rulesCollection)
         {
         RuleType* rule = new RuleType ();
-        if (rule->ReadXml (ruleNode))
-            rulesCollection.push_back (rule);
+        if (rule->ReadXml(ruleNode))
+            AddToListByPriority(rulesCollection, *rule);
         else
             delete rule;
         }
