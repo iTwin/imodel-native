@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECDbSql.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -2447,11 +2447,8 @@ std::vector<ECDbClassMapInfo const*> const* ECDbMapStorage::FindClassMapsByClass
     {
     auto itor = m_classMapByClassId.find (id);
     if (itor != m_classMapByClassId.end ())
-        {
         return &itor->second;
-        }
 
-    //BeAssert (false && "Failed to find ECClassId");
     return nullptr;
     }
 //---------------------------------------------------------------------------------------

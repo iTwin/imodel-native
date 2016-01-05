@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/BackDoor/PublicAPI/BackDoor/ECDb/ECDbTestProject.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -22,7 +22,6 @@ public:
 
 private:
     BeSQLite::EC::ECDb*    m_ecdb;
-    ECInstanceMap          m_ecInstances;
     std::map<ECN::ECClassCP, std::unique_ptr<ECInstanceInserter>> m_inserterCache;
 
     static bool            s_isInitialized;
@@ -53,7 +52,6 @@ public:
     DbResult               Open (Utf8CP ecdbFilePath, BeSQLite::EC::ECDb::OpenParams openParams = BeSQLite::EC::ECDb::OpenParams (BeSQLite::EC::ECDb::OpenMode::Readonly));
     BeSQLite::EC::ECDbR    GetECDb ();
     BeSQLite::EC::ECDbCR   GetECDbCR () const;
-    ECInstanceMapCR        GetImportedECInstances() const   {return m_ecInstances;}
     BentleyStatus          GetInstances (bvector<ECN::IECInstancePtr>& instances, Utf8CP schemaName, Utf8CP className);
     BentleyStatus InsertECInstance (BeSQLite::EC::ECInstanceKey& ecInstanceKey, ECN::IECInstancePtr ecInstance);
  

@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/RelationshipClassMap.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -104,8 +104,8 @@ private:
 
     bool GetOtherEndKeyColumnName (Utf8StringR columnName, ECDbSqlTable const& table, bool mappingInProgress) const;
     bool GetOtherEndECClassIdColumnName (Utf8StringR columnName, ECDbSqlTable const& table, bool mappingInProgress) const;
-    virtual MapStatus _InitializePart1 (SchemaImportContext*, ClassMapInfo const& classMapInfo, IClassMap const* parentClassMap) override;
-    virtual MapStatus _InitializePart2 (SchemaImportContext*, ClassMapInfo const& classMapInfo, IClassMap const* parentClassMap) override;
+    virtual MapStatus _MapPart1 (SchemaImportContext&, ClassMapInfo const& classMapInfo, IClassMap const* parentClassMap) override;
+    virtual MapStatus _MapPart2 (SchemaImportContext&, ClassMapInfo const& classMapInfo, IClassMap const* parentClassMap) override;
 
     //! Tries to retrieve the column to which the key property on the specified constraint is mapped to.
     //! @param[out] keyPropertyColumn found column or nullptr if no key property was defined on the constraint.
@@ -153,8 +153,8 @@ private:
     RelationshipClassLinkTableMap (ECN::ECRelationshipClassCR ecRelClass, ECDbMapCR ecDbMap, ECDbMapStrategy mapStrategy, bool setIsDirty);
     virtual Type  _GetClassMapType () const override { return Type::RelationshipLinkTable; };
 
-    virtual MapStatus   _InitializePart1 (SchemaImportContext*, ClassMapInfo const& classMapInfo, IClassMap const* parentClassMap) override;
-    virtual MapStatus   _InitializePart2 (SchemaImportContext*, ClassMapInfo const& classMapInfo, IClassMap const* parentClassMap) override;
+    virtual MapStatus   _MapPart1 (SchemaImportContext&, ClassMapInfo const& classMapInfo, IClassMap const* parentClassMap) override;
+    virtual MapStatus   _MapPart2 (SchemaImportContext&, ClassMapInfo const& classMapInfo, IClassMap const* parentClassMap) override;
 
     MapStatus           CreateConstraintPropMaps (SchemaImportContext*, RelationshipMapInfo const&, bool addSourceECClassIdColumnToTable, ECN::ECClassId defaultSourceECClassid, bool addTargetECClassIdColumnToTable, ECN::ECClassId defaultTargetECClassId);
 

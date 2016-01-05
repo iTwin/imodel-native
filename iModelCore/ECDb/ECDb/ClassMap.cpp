@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ClassMap.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -379,23 +379,26 @@ BentleyStatus IClassMap::DetermineTablePrefix(Utf8StringR tablePrefix, ECN::ECCl
 ClassMap::ClassMap(ECClassCR ecClass, ECDbMapCR ecDbMap, ECDbMapStrategy mapStrategy, bool setIsDirty)
     : IClassMap(), m_ecDbMap(ecDbMap), m_ecClass(ecClass), m_mapStrategy(mapStrategy),
     m_parentMapClassId(ECClass::UNSET_ECCLASSID), m_dbView(nullptr), m_isDirty(setIsDirty), m_columnFactory(*this), m_id(0ULL)
-    {}
+    {
+    if (SUCCESS != InitializeDisableECInstanceIdAutogeneration())
+        {
+        BeAssert(false && "InitializeDisableECInstanceIdAutogeneration failed");
+        }
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      06/2013
 //---------------------------------------------------------------------------------------
-MapStatus ClassMap::Initialize(SchemaImportContext* schemaImportContext, ClassMapInfo const& mapInfo)
+MapStatus ClassMap::Map(SchemaImportContext& schemaImportContext, ClassMapInfo const& mapInfo)
     {
-    m_isECInstanceIdAutogenerationDisabled = mapInfo.IsECInstanceIdAutogenerationDisabled();
-
     ECDbMapStrategy const& mapStrategy = GetMapStrategy();
     IClassMap const* effectiveParentClassMap = (mapStrategy.GetStrategy() == ECDbMapStrategy::Strategy::SharedTable && mapStrategy.AppliesToSubclasses()) ? mapInfo.GetParentClassMap() : nullptr;
 
-    auto stat = _InitializePart1(schemaImportContext, mapInfo, effectiveParentClassMap);
+    auto stat = _MapPart1(schemaImportContext, mapInfo, effectiveParentClassMap);
     if (stat != MapStatus::Success)
         return stat;
     
-    stat = _InitializePart2(schemaImportContext, mapInfo, effectiveParentClassMap);
+    stat = _MapPart2(schemaImportContext, mapInfo, effectiveParentClassMap);
     if (stat != MapStatus::Success)
         return stat;
 
@@ -405,7 +408,7 @@ MapStatus ClassMap::Initialize(SchemaImportContext* schemaImportContext, ClassMa
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      06/2013
 //---------------------------------------------------------------------------------------
-MapStatus ClassMap::_InitializePart1(SchemaImportContext* schemaImportContext, ClassMapInfo const& mapInfo, IClassMap const* parentClassMap)
+MapStatus ClassMap::_MapPart1(SchemaImportContext& schemaImportContext, ClassMapInfo const& mapInfo, IClassMap const* parentClassMap)
     {
     m_dbView = std::unique_ptr<ClassDbView> (new ClassDbView(*this));
     TableType tableType = TableType::Primary;
@@ -419,7 +422,7 @@ MapStatus ClassMap::_InitializePart1(SchemaImportContext* schemaImportContext, C
 
     auto findOrCreateTable = [&] ()
         {
-        ECDbSqlTable* table = const_cast<ECDbMapR>(m_ecDbMap).FindOrCreateTable(schemaImportContext, mapInfo.GetTableName(), tableType,
+        ECDbSqlTable* table = const_cast<ECDbMapR>(m_ecDbMap).FindOrCreateTable(&schemaImportContext, mapInfo.GetTableName(), tableType,
             mapInfo.IsMapToVirtualTable(), mapInfo.GetECInstanceIdColumnName());
 
         if (!EXPECTED_CONDITION(table != nullptr))
@@ -467,12 +470,12 @@ MapStatus ClassMap::_InitializePart1(SchemaImportContext* schemaImportContext, C
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      06/2013
 //---------------------------------------------------------------------------------------
-MapStatus ClassMap::_InitializePart2(SchemaImportContext* schemaImportContext, ClassMapInfo const& mapInfo, IClassMap const* parentClassMap)
+MapStatus ClassMap::_MapPart2(SchemaImportContext& schemaImportContext, ClassMapInfo const& mapInfo, IClassMap const* parentClassMap)
     {
-    MapStatus stat = AddPropertyMaps(schemaImportContext, parentClassMap, nullptr,&mapInfo);
+    MapStatus stat = AddPropertyMaps(&schemaImportContext, parentClassMap, nullptr,&mapInfo);
     if (stat != MapStatus::Success)
         return stat;
-    if (mapInfo.GetClassHasCurrentTimeStampProperty() != NULL)
+    if (mapInfo.GetClassHasCurrentTimeStampProperty() != nullptr)
         {
         PropertyMapCP propertyMap = GetPropertyMap(mapInfo.GetClassHasCurrentTimeStampProperty()->GetName().c_str());
         if (propertyMap != nullptr)
@@ -535,10 +538,7 @@ MapStatus ClassMap::_InitializePart2(SchemaImportContext* schemaImportContext, C
             }
         }
 
-	if (schemaImportContext != nullptr)
-        return ProcessStandardKeySpecifications(*schemaImportContext, mapInfo) == SUCCESS ? MapStatus::Success : MapStatus::Error;
-
-    return MapStatus::Success;
+    return ProcessStandardKeySpecifications(schemaImportContext, mapInfo) == SUCCESS ? MapStatus::Success : MapStatus::Error;
     }
 
 //---------------------------------------------------------------------------------------
@@ -782,6 +782,56 @@ BentleyStatus ClassMap::CreateUserProvidedIndices(SchemaImportContext& schemaImp
     return SUCCESS;
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                 Krischan.Eberle                09/2015
+//+---------------+---------------+---------------+---------------+---------------+------
+bool ClassHasDisableECInstanceIdAutogenerationCA(bool* appliesToSubclasses, ECClassCR ecclass)
+    {
+    if (appliesToSubclasses != nullptr)
+        *appliesToSubclasses = false;
+
+    IECInstancePtr disableECInstanceIdAutoGenerationCA = ecclass.GetCustomAttributeLocal("DisableECInstanceIdAutogeneration");
+    if (disableECInstanceIdAutoGenerationCA != nullptr && appliesToSubclasses != nullptr)
+        {
+        ECValue v;
+        if (ECObjectsStatus::Success != disableECInstanceIdAutoGenerationCA->GetValue(v, "AppliesToSubclasses"))
+            {
+            BeAssert(false && "CA DisableECInstanceIdAutogeneration is expected to have a property AppliesToSubclasses");
+            return false;
+            }
+
+        *appliesToSubclasses = v.IsNull() || v.GetBoolean();
+        }
+
+    return disableECInstanceIdAutoGenerationCA != nullptr;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                 Krischan.Eberle                09/2015
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus ClassMap::InitializeDisableECInstanceIdAutogeneration()
+    {
+    if (ClassHasDisableECInstanceIdAutogenerationCA(nullptr, m_ecClass))
+        {
+        m_isECInstanceIdAutogenerationDisabled = true;
+        return SUCCESS;
+        }
+
+    for (ECClassCP baseClass : m_ecClass.GetBaseClasses())
+        {
+        bool appliesToSubclasses = false;
+        if (ClassHasDisableECInstanceIdAutogenerationCA(&appliesToSubclasses, *baseClass))
+            {
+            if (appliesToSubclasses)
+                {
+                m_isECInstanceIdAutogenerationDisabled = true;
+                return SUCCESS;
+                }
+            }
+        }
+
+    return SUCCESS;
+    }
 
 //------------------------------------------------------------------------------------------
 //@bsimethod                                                    casey.mullen      11 / 2011

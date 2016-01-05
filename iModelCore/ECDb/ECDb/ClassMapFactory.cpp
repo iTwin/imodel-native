@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ClassMapFactory.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -18,14 +18,10 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //static
 ClassMapPtr ClassMapFactory::Load (MapStatus& mapStatus, ECClassCR ecClass, ECDbMapCR ecdbMap)
     {   
-    auto const& schemaManager = ecdbMap.GetECDbR().Schemas();
-    auto& mapStorage = ecdbMap.GetSQLManager().GetMapStorage();
-    auto classMaps = mapStorage.FindClassMapsByClassId (ecClass.GetId());
+    ECDbSchemaManager const& schemaManager = ecdbMap.GetECDbR().Schemas();
+    std::vector<ECDbClassMapInfo const*> const* classMaps = ecdbMap.GetSQLManager().GetMapStorage().FindClassMapsByClassId (ecClass.GetId());
     if (classMaps == nullptr)
-        {
-     //   BeAssert (false && "Failed to find classMap info for give ECClass");
         return nullptr;
-        }
 
     if (classMaps->empty())
         {
@@ -38,19 +34,20 @@ ClassMapPtr ClassMapFactory::Load (MapStatus& mapStatus, ECClassCR ecClass, ECDb
         BeAssert (false && "Feature of nested class map not implemented");
         return nullptr;
         }
-    auto& classMapInfo = *classMaps->front();
-    auto baseClassMapInfo = classMapInfo.GetBaseClassMap();
-    auto baseClass = baseClassMapInfo == nullptr ? nullptr : schemaManager.GetECClass (baseClassMapInfo->GetClassId());
-    auto baseClassMap = baseClass == nullptr ? nullptr : ecdbMap.GetClassMap (*baseClass);
+
+    ECDbClassMapInfo const& classMapInfo = *classMaps->front();
+    ECDbClassMapInfo const* baseClassMapInfo = classMapInfo.GetBaseClassMap();
+    ECClassCP baseClass = baseClassMapInfo == nullptr ? nullptr : schemaManager.GetECClass (baseClassMapInfo->GetClassId());
+    IClassMap const* baseClassMap = baseClass == nullptr ? nullptr : ecdbMap.GetClassMap (*baseClass);
 
     bool setIsDirty = false;
-    auto mapStrategy = classMapInfo.GetMapStrategy();
+    ECDbMapStrategy const& mapStrategy = classMapInfo.GetMapStrategy();
     ClassMapPtr classMap = nullptr;
     if (mapStrategy.IsNotMapped())
         classMap = UnmappedClassMap::Create (ecClass, ecdbMap, mapStrategy, setIsDirty);
     else
         {
-        auto ecRelationshipClass = ecClass.GetRelationshipClassCP();
+        ECRelationshipClassCP ecRelationshipClass = ecClass.GetRelationshipClassCP();
         if (ecRelationshipClass != nullptr)
             {
             if (mapStrategy.IsForeignKeyMapping())
@@ -66,17 +63,13 @@ ClassMapPtr ClassMapFactory::Load (MapStatus& mapStatus, ECClassCR ecClass, ECDb
     classMap->SetId (classMapInfo.GetId());
 
     std::set<ClassMap const*> loadGraph;
-    auto stat = classMap->Load (loadGraph, classMapInfo, baseClassMap);
-    if (stat != BentleyStatus::SUCCESS)
-        {
+    if (SUCCESS != classMap->Load (loadGraph, classMapInfo, baseClassMap))
         return nullptr;
-        }
 
     ECRelationshipClassCP ecRelationshipClass = ecClass.GetRelationshipClassCP();
     // Construct and initialize the class map
     if (ecRelationshipClass != nullptr)
         {
-        //Load Relation End ECClasses before creating instance of RelationshipECClass
         for (ECClassCP endECClassToLoad : ecdbMap.GetClassesFromRelationshipEnd (ecRelationshipClass->GetSource()))
             {
             ecdbMap.GetClassMap (*endECClassToLoad);
@@ -95,7 +88,7 @@ ClassMapPtr ClassMapFactory::Load (MapStatus& mapStatus, ECClassCR ecClass, ECDb
 // @bsimethod                                 Krischan.Eberle                    02/2014
 //---------------------------------------------------------------------------------------
 //static
-ClassMapPtr ClassMapFactory::Create (MapStatus& mapStatus, SchemaImportContext& schemaImportContext, ECN::ECClassCR ecClass, ECDbMapCR ecdbMap)
+ClassMapPtr ClassMapFactory::Create(MapStatus& mapStatus, SchemaImportContext& schemaImportContext, ECN::ECClassCR ecClass, ECDbMapCR ecdbMap)
     {
     if (ecdbMap.AssertIfIsNotImportingSchema())
         {
@@ -103,49 +96,35 @@ ClassMapPtr ClassMapFactory::Create (MapStatus& mapStatus, SchemaImportContext& 
         return nullptr;
         }
 
-    BeAssert (ecdbMap.GetClassMap (ecClass, false) == nullptr);
+    BeAssert(ecdbMap.GetClassMap(ecClass, false) == nullptr);
 
     std::unique_ptr<ClassMapInfo> classMapInfo = ClassMapInfoFactory::Create(mapStatus, schemaImportContext, ecClass, ecdbMap);
     if (classMapInfo == nullptr)
         return nullptr;
 
-    ClassMapPtr classMap = ClassMapFactory::CreateInstance (mapStatus, &schemaImportContext, *classMapInfo, true);
-    if (classMap == nullptr)
-        return nullptr;
-
-    schemaImportContext.CacheClassMapInfo(*classMap, classMapInfo);
-    return classMap;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                 Krischan.Eberle                    02/2014
-//---------------------------------------------------------------------------------------
-ClassMapPtr ClassMapFactory::CreateInstance (MapStatus& mapStatus, SchemaImportContext* schemaImportContext, ClassMapInfo const& mapInfo, bool setIsDirty)
-    {
-    auto const& ecClass = mapInfo.GetECClass();
-    auto const& ecdbMap = mapInfo.GetECDbMap();
-    ECDbMapStrategy const& mapStrategy = mapInfo.GetMapStrategy();
+    ECDbMapStrategy const& mapStrategy = classMapInfo->GetMapStrategy();
 
     ClassMapPtr classMap = nullptr;
     if (mapStrategy.IsNotMapped())
-        classMap = UnmappedClassMap::Create (ecClass, ecdbMap, mapStrategy, setIsDirty);
+        classMap = UnmappedClassMap::Create(ecClass, ecdbMap, mapStrategy, true);
     else
         {
         auto ecRelationshipClass = ecClass.GetRelationshipClassCP();
         if (ecRelationshipClass != nullptr)
             {
             if (mapStrategy.IsForeignKeyMapping())
-                classMap = RelationshipClassEndTableMap::Create(*ecRelationshipClass, ecdbMap, mapStrategy, setIsDirty);
+                classMap = RelationshipClassEndTableMap::Create(*ecRelationshipClass, ecdbMap, mapStrategy, true);
             else
-                classMap = RelationshipClassLinkTableMap::Create(*ecRelationshipClass, ecdbMap, mapStrategy, setIsDirty);
+                classMap = RelationshipClassLinkTableMap::Create(*ecRelationshipClass, ecdbMap, mapStrategy, true);
             }
-        else if (IClassMap::MapsToStructArrayTable (ecClass))
-            classMap = StructClassMap::Create (ecClass, ecdbMap, mapStrategy, setIsDirty);
+        else if (IClassMap::MapsToStructArrayTable(ecClass))
+            classMap = StructClassMap::Create(ecClass, ecdbMap, mapStrategy, true);
         else
-            classMap = ClassMap::Create (ecClass, ecdbMap, mapStrategy, setIsDirty);
+            classMap = ClassMap::Create(ecClass, ecdbMap, mapStrategy, true);
         }
 
-    mapStatus = classMap->Initialize (schemaImportContext, mapInfo);
+    mapStatus = classMap->Map(schemaImportContext, *classMapInfo);
+    schemaImportContext.CacheClassMapInfo(*classMap, classMapInfo);
     return classMap;
     }
 

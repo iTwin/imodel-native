@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ClassMap.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -306,6 +306,7 @@ struct ClassMap : public IClassMap, RefCountedBase
 
     private:
         BentleyStatus ProcessStandardKeySpecifications(SchemaImportContext&, ClassMapInfo const&);
+        BentleyStatus InitializeDisableECInstanceIdAutogeneration();
 
         //! Used to find an ECProperty from a propertyAccessString
         //! @param propertyAccessString (as used here) does not support access "inside" arrays, e.g. you can access a struct member inside an array of structs
@@ -317,8 +318,8 @@ struct ClassMap : public IClassMap, RefCountedBase
     protected:
         ClassMap(ECN::ECClassCR ecClass, ECDbMapCR ecDbMap, ECDbMapStrategy mapStrategy, bool setIsDirty);
 
-        virtual MapStatus _InitializePart1(SchemaImportContext*, ClassMapInfo const& classMapInfo, IClassMap const* parentClassMap);
-        virtual MapStatus _InitializePart2(SchemaImportContext*, ClassMapInfo const& classMapInfo, IClassMap const* parentClassMap);
+        virtual MapStatus _MapPart1(SchemaImportContext&, ClassMapInfo const& classMapInfo, IClassMap const* parentClassMap);
+        virtual MapStatus _MapPart2(SchemaImportContext&, ClassMapInfo const& classMapInfo, IClassMap const* parentClassMap);
         virtual BentleyStatus _Save(std::set<ClassMap const*>& savedGraph); virtual BentleyStatus _Load(std::set<ClassMap const*>& loadGraph, ECDbClassMapInfo const& mapInfo, IClassMap const* parentClassMap);
 
         MapStatus AddPropertyMaps(SchemaImportContext*, IClassMap const* parentClassMap, ECDbClassMapInfo const* loadInfo, ClassMapInfo const* classMapInfo);
@@ -342,7 +343,12 @@ struct ClassMap : public IClassMap, RefCountedBase
         ECDbSchemaManagerCR Schemas() const;
     public:
         static ClassMapPtr Create(ECN::ECClassCR ecClass, ECDbMapCR ecdbMap, ECDbMapStrategy mapStrategy, bool setIsDirty) { return new ClassMap(ecClass, ecdbMap, mapStrategy, setIsDirty); }
-        MapStatus Initialize(SchemaImportContext*, ClassMapInfo const& classMapInfo);
+        
+        //! Called when loading an existing class map from the ECDb file 
+        BentleyStatus Load(std::set<ClassMap const*>& loadGraph, ECDbClassMapInfo const& mapInfo, IClassMap const*  parentClassMap) { return _Load(loadGraph, mapInfo, parentClassMap); }
+
+        //! Called during schema import when creating the class map from the imported ECClass 
+        MapStatus Map(SchemaImportContext&, ClassMapInfo const& classMapInfo);
 
         ECDbSqlColumn* FindOrCreateColumnForProperty(SchemaImportContext*, ClassMapCR classMap, ClassMapInfo const* classMapInfo, PropertyMapR propertyMap,
                                                      Utf8CP requestedColumnName, ECN::PrimitiveType primitiveType, bool nullable, bool unique, ECDbSqlColumn::Constraint::Collation, Utf8CP accessStringPrefix);
@@ -356,7 +362,6 @@ struct ClassMap : public IClassMap, RefCountedBase
         ECDbClassMapId GetId() const { return m_id; }
         void SetId(ECDbClassMapId id) { m_id = id; }
         BentleyStatus Save(std::set<ClassMap const*>& savedGraph) { return _Save(savedGraph); }
-        BentleyStatus Load(std::set<ClassMap const*>& loadGraph, ECDbClassMapInfo const& mapInfo, IClassMap const*  parentClassMap) { return _Load(loadGraph, mapInfo, parentClassMap); }
 
         ColumnFactory const& GetColumnFactory() const { return m_columnFactory; }
         ColumnFactory& GetColumnFactoryR() { return m_columnFactory; }
