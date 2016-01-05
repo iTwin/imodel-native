@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/WebServices/Cache/Util/ECDbAdapterTests.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -12,6 +12,12 @@
 
 using namespace ::testing;
 USING_NAMESPACE_BENTLEY_WEBSERVICES
+
+#define INSERT_INSTANCE(db, ecClassCP, keyOut) \
+    ASSERT_EQ(SUCCESS, JsonInserter(db, *ecClassCP).Insert(keyOut, Json::Value()));
+
+#define INSERT_RELATIONSHIP(db, ecRelClassCP, source, target) \
+    ASSERT_TRUE(ECDbAdapter(db).RelateInstances(ecRelClassCP, source, target).IsValid());
 
 std::shared_ptr<ObservableECDb> ECDbAdapterTests::s_readonlyReusableDb;
 
@@ -33,7 +39,12 @@ std::shared_ptr<ObservableECDb> ECDbAdapterTests::CreateTestDb(ECSchemaPtr schem
     {
     auto db = std::make_shared<ObservableECDb>();
 
-    EXPECT_EQ(BE_SQLITE_OK, db->CreateNewDb(":memory:"));
+    BeFileName path;
+    path = StubFilePath("ecdbAdapterTest.ecdb");
+    path = BeFileName(L":memory:");
+    path.BeDeleteFile();
+
+    EXPECT_EQ(BE_SQLITE_OK, db->CreateNewDb(path.GetNameUtf8().c_str()));
 
     auto cache = ECSchemaCache::Create();
     cache->AddSchema(*schema);
@@ -541,4 +552,44 @@ TEST_F(ECDbAdapterTests, RelateInstances_RelationshipAlreadyExists_ReturnsSameRe
     EXPECT_TRUE(relationshipKey1.IsValid());
     EXPECT_TRUE(relationshipKey2.IsValid());
     EXPECT_EQ(relationshipKey2, relationshipKey1);
+    }
+
+TEST_F(ECDbAdapterTests, ECDbBrokenCardinality)
+    {
+    auto schema = ParseSchema(R"xml(
+        <ECSchema schemaName="TestSchema" nameSpacePrefix="TS" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+            <ECClass typeName="A" />
+            <ECClass typeName="B" />
+            <ECClass typeName="C" />
+            <ECRelationshipClass typeName="Rel" isDomainClass="True" strength="holding" >
+                <Source cardinality="(0,N)" polymorphic="False">
+                    <Class class="A" />
+                </Source>
+                <Target cardinality="(1,1)" polymorphic="False">
+                    <Class class="B" />
+                    <Class class="C" />
+                </Target>
+            </ECRelationshipClass>
+        </ECSchema>)xml");
+
+    // Target cardinality (x,N) makes this work fine, (x,1) causes problems
+
+    auto db = CreateTestDb(schema);
+    ECDbAdapter adapter(*db);
+
+    ECInstanceKey a, b;
+    INSERT_INSTANCE(*db, adapter.GetECClass("TestSchema.A"), a);
+    INSERT_INSTANCE(*db, adapter.GetECClass("TestSchema.B"), b);
+
+    INSERT_RELATIONSHIP(*db, adapter.GetECRelationshipClass("TestSchema.Rel"), a, b);
+    db->SaveChanges();
+
+    ECInstanceFinder finder(*db);
+    ECInstanceFinder::FindOptions options(ECInstanceFinder::RelatedDirection_HeldChildren, UINT8_MAX);
+
+    ECInstanceKeyMultiMap related, seed;
+    seed.Insert(a.GetECClassId(), a.GetECInstanceId());
+
+    EXPECT_EQ(SUCCESS, finder.FindInstances(related, seed, options));
+    EXPECT_EQ(2, related.size());
     }
