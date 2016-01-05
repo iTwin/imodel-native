@@ -17,16 +17,13 @@ ECDbSchemas.Verify_TFS_14829_A
 
 #TFS268976 will address this (Affan)
 ECDbMappingTestFixture.MismatchDataTypesInExistingTable
-
-#TFS333029 to address this (Raman)
-JsonUpdaterTests.UpdateRelationshipProperty
-ECDbInstances.UpdateRelationshipProperty
+ECDbMappingTestFixture.PropertiesWithoutColumnsInExistingTable
 
 #TFS344205 (Affan)
 JoinedTableECDbMapStrategyTests.RelationshipsWithKeyProp
 
-#Raman will take a look
-ECDbInstances.CommonGeometryJsonSerialization
+#TFS353210 will adress this (Raman)
+JsonUpdaterTests.CommonGeometryJsonSerialization
 
 #TFS349028 (Affan)
 JoinedTableECDbMapStrategyTests.PopulateECSql_TestDbWithTestData

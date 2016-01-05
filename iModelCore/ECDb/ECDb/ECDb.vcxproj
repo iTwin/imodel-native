@@ -26,7 +26,7 @@
     <ClCompile Include="ECDbMapAnalyser.cpp" />
     <ClCompile Include="ECDbPolicyManager.cpp" />
     <ClCompile Include="ECDbSchemaManager.cpp" />
-    <ClCompile Include="ECDbSchemaPersistence.cpp" />
+    <ClCompile Include="ECDbSchemaPersistenceHelper.cpp" />
     <ClCompile Include="ECDbSql.cpp" />
     <ClCompile Include="ECDbMap.cpp" />
     <ClCompile Include="ECDbPch.cpp" />
@@ -153,7 +153,7 @@
     <ClInclude Include="ECDbMapAnalyser.h" />
     <ClInclude Include="ECDbPch.h" />
     <ClInclude Include="ECDbPolicyManager.h" />
-    <ClInclude Include="ECDbSchemaPersistence.h" />
+    <ClInclude Include="ECDbSchemaPersistenceHelper.h" />
     <ClInclude Include="ECDbSchemaReader.h" />
     <ClInclude Include="ECDbSchemaWriter.h" />
     <ClInclude Include="ECDbSql.h" />

@@ -2,14 +2,13 @@
 |
 |  $Source: Tests/Performance/PerformanceJsonInserterTests.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "PerformanceTests.h"
 #include "../BackDoor/PublicAPI/BackDoor/ECDb/ECDbTestProject.h"
 
-using namespace BentleyApi::ECN;
-
+USING_NAMESPACE_BENTLEY_EC
 BEGIN_ECDBUNITTESTS_NAMESPACE
 
 //---------------------------------------------------------------------------------------
@@ -18,11 +17,12 @@ BEGIN_ECDBUNITTESTS_NAMESPACE
 TEST(PerformanceJsonInserter, InsertJsonCppUsingPresistanceAPI)
 {
     ECDbTestProject testProject;
-    auto& ecdb = testProject.Create("performancejsoninserter.ecdb", L"eB_PW_CommonSchema_WSB.01.00.ecschema.xml", false);
+    ECDbR ecdb = testProject.Create("performancejsoninserter.ecdb", L"eB_PW_CommonSchema_WSB.01.00.ecschema.xml", false);
 
     // Read JSON input from file
     BeFileName jsonInputFile;
     BeTest::GetHost().GetDocumentsRoot(jsonInputFile);
+    jsonInputFile.AppendToPath (L"ECDb");
     jsonInputFile.AppendToPath(L"FieldEngineerStructArray.json");
 
     // Parse JSON value using JsonCpp
@@ -30,30 +30,36 @@ TEST(PerformanceJsonInserter, InsertJsonCppUsingPresistanceAPI)
     ECDbTestUtility::ReadJsonInputFromFile(jsonInput, jsonInputFile);
     ECClassCP documentClass = ecdb.Schemas().GetECClass("eB_PW_CommonSchema_WSB", "Document");
     ASSERT_TRUE(documentClass != nullptr);
-    ASSERT_TRUE(documentClass != nullptr);
     JsonInserter inserter(ecdb, *documentClass);
-    const int repetitionCount = 1000;
+    const int repetitionCount = 10000;
+
     //----------------------------------------------------------------------------------- 
     // Insert using JsonCpp
     //-----------------------------------------------------------------------------------
     StopWatch timer(true);
     for (int i = 0; i < repetitionCount; i++)
     {
-        ECInstanceKey id;
-        auto insertStatus = inserter.Insert(id, jsonInput);
-        ASSERT_EQ(SUCCESS, insertStatus);
+        ECInstanceKey key;
+        ASSERT_EQ(SUCCESS, inserter.Insert (key, jsonInput));
+        ASSERT_TRUE (key.IsValid ());
     }
     timer.Stop();
     ecdb.SaveChanges();
+
+    ECSqlStatement statement;
+    statement.Prepare (ecdb, "SELECT COUNT(*) FROM eBPWC.Document");
+    DbResult::BE_SQLITE_ROW, statement.Step ();
+    ASSERT_EQ (repetitionCount, statement.GetValueInt (0)) << "Expected Number of Instances not inserted in Db";
+
     LOG.infov("Inserting JsonCpp JSON objects into ECDb %d times took %.4f msecs.", repetitionCount, timer.GetElapsedSeconds() * 1000.0);
-    LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), "Inserting JsonCpp JSON objects into ECDb For repetitionCount", 1000);
+    LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), "Inserting JsonCpp JSON objects into ECDb For repetitionCount", repetitionCount);
 }
 
 
 //---------------------------------------------------------------------------------------
 // @bsiclass                                   Muhammad.Zaighum                  05/13
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST(PerformanceJsonInserter, InsertRapidJsonInsertJasonCppUsingPresistanceAPI)
+TEST(PerformanceJsonInserter, InsertRapidJsonUsingPresistanceAPI)
 {
     ECDbTestProject testProject;
     auto& ecdb = testProject.Create("performancejsoninserter.ecdb", L"eB_PW_CommonSchema_WSB.01.00.ecschema.xml", false);
@@ -61,6 +67,7 @@ TEST(PerformanceJsonInserter, InsertRapidJsonInsertJasonCppUsingPresistanceAPI)
     // Read JSON input from file
     BeFileName jsonInputFile;
     BeTest::GetHost().GetDocumentsRoot(jsonInputFile);
+    jsonInputFile.AppendToPath (L"ECDb");
     jsonInputFile.AppendToPath(L"FieldEngineerStructArray.json");
 
     // Parse JSON value using JsonCpp
@@ -76,23 +83,27 @@ TEST(PerformanceJsonInserter, InsertRapidJsonInsertJasonCppUsingPresistanceAPI)
     ASSERT_TRUE(documentClass != nullptr);
     JsonInserter inserter(ecdb, *documentClass);
 
-    const int repetitionCount = 1000;
+    const int repetitionCount = 10000;
     //-----------------------------------------------------------------------------------
     // Insert using RapidJson
     //-----------------------------------------------------------------------------------
-    StopWatch rapidJasintimer(true);
+    StopWatch timer(true);
     for (int i = 0; i < repetitionCount; i++)
     {
         ECInstanceKey ecInstanceKey;
-        auto insertStatus = inserter.Insert(ecInstanceKey, rapidJsonInput);
-        ASSERT_EQ(SUCCESS, insertStatus);
+        ASSERT_EQ(SUCCESS, inserter.Insert (ecInstanceKey, rapidJsonInput));
         ASSERT_TRUE(ecInstanceKey.IsValid());
     }
-    rapidJasintimer.Stop();
+    timer.Stop();
     ecdb.SaveChanges();
-    LOG.infov("Inserting RapidJson JSON objects into ECDb %d times took %.4f msecs.", repetitionCount, rapidJasintimer.GetElapsedSeconds() * 1000.0);
 
-    LOGTODB(TEST_DETAILS, rapidJasintimer.GetElapsedSeconds(), "Inserting RapidJson JSON objects into ECDb For repetitionCount", 1000);
+    ECSqlStatement statement;
+    statement.Prepare (ecdb, "SELECT COUNT(*) FROM eBPWC.Document");
+    DbResult::BE_SQLITE_ROW, statement.Step ();
+    ASSERT_EQ (repetitionCount, statement.GetValueInt (0)) << "Expected Number of Instances not inserted in Db";
+
+    LOG.infov ("Inserting RapidJson JSON objects into ECDb %d times took %.4f msecs.", repetitionCount, timer.GetElapsedSeconds () * 1000.0);
+    LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), "Inserting RapidJson JSON objects into ECDb For repetitionCount", repetitionCount);
 }
 
 END_ECDBUNITTESTS_NAMESPACE

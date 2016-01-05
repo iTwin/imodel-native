@@ -2,7 +2,7 @@
 #
 #     $Source: ECDb/ECDb.mke $
 #
-#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
 %include mdl.mki
@@ -49,7 +49,7 @@ ECDbAllHeaders = \
                 $(baseDir)RelationshipClassMap.h \
                 $(baseDir)PropertyMap.h \
                 $(baseDir)SystemPropertyMap.h \
-                $(baseDir)ECDbSchemaPersistence.h \
+                $(baseDir)ECDbSchemaPersistenceHelper.h \
                 $(baseDir)ECDbSchemaReader.h \
                 $(baseDir)ECDbSchemaWriter.h \
                 $(baseDir)ECSchemaValidator.h \
@@ -188,7 +188,7 @@ $(o)ECDb$(oext):											$(baseDir)ECDb.cpp                          $(ECDbAll
 
 $(o)ECInstanceId$(oext):									$(baseDir)ECInstanceId.cpp                  $(ECDbAllHeaders) ${MultiCompileDepends}
 
-$(o)ECDbSchemaPersistence$(oext):							$(baseDir)ECDbSchemaPersistence.cpp         $(ECDbAllHeaders) ${MultiCompileDepends}
+$(o)ECDbSchemaPersistenceHelper$(oext):                     $(baseDir)ECDbSchemaPersistenceHelper.cpp   $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)ECDbSchemaReader$(oext):								$(baseDir)ECDbSchemaReader.cpp              $(ECDbAllHeaders) ${MultiCompileDepends}
 
