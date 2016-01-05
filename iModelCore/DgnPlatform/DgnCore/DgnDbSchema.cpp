@@ -69,15 +69,6 @@ DbResult DgnDb::CreateDictionaryModel()
     return result;
     }
 
-// ECDb insists on creating a table for every struct ECClass just in case someone later wants to use it for a struct array property
-// Ideally it would do this only when it actually finds such a struct array property.
-// For now we must manually remove the tables.
-static const Utf8CP s_unusedStructTableNames[] =
-    {
-    "dgn_AuthorityIssuedCode",
-    "dgn_AnnotationTableCellIndex"
-    };
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/11
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -105,13 +96,6 @@ DbResult DgnDb::CreateDgnDbTables()
     ExecuteSql("CREATE VIRTUAL TABLE " DGN_VTABLE_RTree3d " USING rtree(ElementId,MinX,MaxX,MinY,MaxY,MinZ,MaxZ)"); // Define this before importing dgn schema!
 
     importDgnSchema(*this, false);
-
-#ifdef NEEDSWORK_ECDB_STRUCT_ARRAY_TABLES
-    // Remove useless struct array tables
-    // This works, until you try to import another ECSchema, at which point it tries to create indexes on the dropped tables again
-    for (auto const& structTableName : s_unusedStructTableNames)
-        DropTable(structTableName);
-#endif
 
     // Every DgnDb has a few built-in authorities for element codes
     CreateAuthorities();
