@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/DgnProject/Published/ComponentModelTest.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #ifndef BENTLEYCONFIG_NO_JAVASCRIPT
@@ -398,10 +398,14 @@ void ComponentModelTest::Client_ImportComponentDef(Utf8CP componentName)
     //  ------------------------
     //  Copy in the ComponentDef's ECClass
     //  ------------------------
+    m_clientDb->SaveChanges();
+
     ComponentDefPtr sourceCdef = ComponentDef::FromECSqlName(nullptr, *m_componentDb, Utf8PrintfString("%s.%s", TEST_JS_NAMESPACE, componentName));
 
     DgnImportContext ctx(*m_componentDb, *m_clientDb);
     ASSERT_EQ( DgnDbStatus::Success , sourceCdef->Export(ctx, true, true));
+
+    m_clientDb->SaveChanges();
 
     ComponentDefPtr importedCdef = ComponentDef::FromECSqlName(nullptr, *m_clientDb, Utf8PrintfString("%s.%s", TEST_JS_NAMESPACE, componentName));
     ASSERT_TRUE(importedCdef.IsValid());
