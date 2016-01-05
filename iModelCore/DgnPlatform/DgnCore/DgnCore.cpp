@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/DgnCore.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -355,6 +355,8 @@ void DgnPlatformLib::Host::TerminateDgnCore(bool onProgramExit)
 
     TERMINATE_HOST_OBJECT(m_exceptionHandler, onProgramExit);
     TERMINATE_HOST_OBJECT(m_knownLocationsAdmin, onProgramExit);
+
+    BeStringUtilities::Terminate();
 
     ForgetHost();
     BeAssert(NULL == DgnPlatformLib::QueryHost());
