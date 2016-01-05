@@ -236,7 +236,7 @@ PerformanceElement1CPtr PerformanceElement1::Update ()
 void PerformanceElement1::AddGeomtry()
 {
     GeometrySourceP geomElem = this->ToGeometrySourceP();
-    ElementGeometryBuilderPtr builder = ElementGeometryBuilder::Create(*this->GetModel(), this->GetCategoryId(), DPoint3d::From(0.0, 0.0, 0.0));
+    GeometryBuilderPtr builder = GeometryBuilder::Create(*this->GetModel(), this->GetCategoryId(), DPoint3d::From(0.0, 0.0, 0.0));
     //  CurvePrimitive
     DEllipse3d ellipseData = DEllipse3d::From(1, 2, 3,
         0, 0, 2,
@@ -244,7 +244,7 @@ void PerformanceElement1::AddGeomtry()
         0.0, Angle::TwoPi());
     ICurvePrimitivePtr ellipse = ICurvePrimitive::CreateArc(ellipseData);
     ASSERT_TRUE(builder->Append(*ellipse));
-    ASSERT_EQ(SUCCESS, builder->SetGeomStreamAndPlacement(*geomElem));
+    ASSERT_EQ(SUCCESS, builder->SetGeometryStreamAndPlacement(*geomElem));
 
     ASSERT_TRUE(this->HasGeometry());
 }
