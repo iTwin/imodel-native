@@ -2,7 +2,7 @@
 |
 |     $Source: BeSQLite.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #define ZLIB_INTERNAL
@@ -2768,14 +2768,6 @@ ZipErrors SnappyFromBlob::_Read(Byte* data, uint32_t bufSize, uint32_t& bytesAct
     return  ZIP_SUCCESS;
     }
 
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   John.Gooding    06/2012
-//--------------+------------------------------------------------------------------------
-uint32_t SnappyFromMemory::GetUncompressedBufferSize()
-    {
-    return SNAPPY_UNCOMPRESSED_BUFFER_SIZE;
-    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    John.Gooding                    05/12
