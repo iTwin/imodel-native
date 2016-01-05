@@ -592,8 +592,7 @@ void InitializeSDK(DgnPlatformLib::Host& host)
         file = DgnFile::Create(*docPtr, DgnFileOpenMode::ReadWrite);
         DgnModelStatus createStatus;
         file->SetScratchFileFlag(true);
-        DgnModel* model = file->CreateNewModel(&createStatus, L"Model",DgnModelType::Normal, true);
-        
+        DgnModel* model = file->CreateNewModel(&createStatus, L"Model",DgnModelType::Normal, true);        
         RscFileManager::StaticInitialize(L"not-used");
         
         static ExeHost smHost;
