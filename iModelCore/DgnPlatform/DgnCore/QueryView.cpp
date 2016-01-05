@@ -148,6 +148,9 @@ void QueryViewController::_OnFullUpdate(DgnViewportR vp, ViewContextR context)
     if (m_forceNewQuery || FrustumChanged(vp))
         StartSelectProcessing(vp, DrawPurpose::CreateScene);
 
+    if (context.GetWaitForQueryToComplete())
+        m_queryModel.WaitUntilFinished(&context);
+
     PickUpResults();
     }
 
