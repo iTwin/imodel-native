@@ -14,21 +14,20 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //--------------------------------------------------------------------------------------
 // @bsimethod                                Krischan.Eberle                09/2012
 //---------------+---------------+---------------+---------------+---------------+------
-ECDb::Impl::Impl(ECDbR ecdb)
-    : m_ecdb(ecdb), m_schemaManager(nullptr),
-    m_ecdbMap(std::unique_ptr<ECDbMap>(new ECDbMap(ecdb))),
-    m_ecInstanceIdSequence(ecdb, "ec_ecinstanceidsequence"),
-    m_ecSchemaIdSequence(ecdb, "ec_ecschemaidsequence"),
-    m_ecClassIdSequence(ecdb, "ec_ecclassidsequence"),
-    m_ecPropertyIdSequence(ecdb, "ec_ecpropertyidsequence"),
-    m_ecEnumIdSequence(ecdb,"ec_ecenumidsequence"),
-    m_tableIdSequence(ecdb, "ec_tableidsequence"),
-    m_columnIdSequence(ecdb, "ec_columnidsequence"),
-    m_indexIdSequence(ecdb, "ec_indexidsequence"),
-    m_constraintIdSequence(ecdb, "ec_constraintidsequence"),
-    m_classmapIdSequence(ecdb, "ec_classmapidsequence"),
-    m_propertypathIdSequence(ecdb, "ec_propertypathidsequence"),
-    m_issueReporter(ecdb)
+ECDb::Impl::Impl(ECDbR ecdb) : m_ecdb(ecdb), m_schemaManager(nullptr),
+                            m_ecdbMap(std::unique_ptr<ECDbMap>(new ECDbMap(ecdb))),
+                            m_ecInstanceIdSequence(ecdb, "ec_ecinstanceidsequence"),
+                            m_ecSchemaIdSequence(ecdb, "ec_ecschemaidsequence"),
+                            m_ecClassIdSequence(ecdb, "ec_ecclassidsequence"),
+                            m_ecPropertyIdSequence(ecdb, "ec_ecpropertyidsequence"),
+                            m_ecEnumIdSequence(ecdb, "ec_ecenumidsequence"),
+                            m_tableIdSequence(ecdb, "ec_tableidsequence"),
+                            m_columnIdSequence(ecdb, "ec_columnidsequence"),
+                            m_indexIdSequence(ecdb, "ec_indexidsequence"),
+                            m_constraintIdSequence(ecdb, "ec_constraintidsequence"),
+                            m_classmapIdSequence(ecdb, "ec_classmapidsequence"),
+                            m_propertypathIdSequence(ecdb, "ec_propertypathidsequence"),
+                            m_issueReporter(ecdb)
     {
     m_schemaManager = std::unique_ptr<ECDbSchemaManager>(new ECDbSchemaManager(ecdb, *m_ecdbMap));
     }
@@ -131,7 +130,7 @@ void ECDb::Impl::ClearECDbCache () const
     if (m_schemaManager != nullptr)
         m_schemaManager->ClearCache ();
 
-    LOG.debug("Cleared ECDb cache.");
+    m_statementRegistry.ReprepareStatements();
     }
 
 //--------------------------------------------------------------------------------------
@@ -158,7 +157,7 @@ std::vector<BeBriefcaseBasedIdSequence const*> ECDb::Impl::GetSequences () const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan       06/2012
 //+---------------+---------------+---------------+---------------+---------------+------
-ECDbSchemaManagerCR ECDb::Impl::Schemas () const
+ECDbSchemaManagerCR ECDb::Impl::Schemas() const
     {
     return *m_schemaManager;
     }
@@ -166,7 +165,7 @@ ECDbSchemaManagerCR ECDb::Impl::Schemas () const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle  12/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-ECN::IECSchemaLocaterR ECDb::Impl::GetSchemaLocater () const
+ECN::IECSchemaLocaterR ECDb::Impl::GetSchemaLocater() const
     {
     return *m_schemaManager;
     }
@@ -174,7 +173,7 @@ ECN::IECSchemaLocaterR ECDb::Impl::GetSchemaLocater () const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle  12/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-ECN::IECClassLocaterR ECDb::Impl::GetClassLocater () const
+ECN::IECClassLocaterR ECDb::Impl::GetClassLocater() const
     {
     return *m_schemaManager;
     }
@@ -212,14 +211,6 @@ bool ECDb::Impl::TryGetSqlFunction(DbFunction*& function, Utf8CP name, int argCo
 
     function = it->second;
     return true;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan       06/2012
-//+---------------+---------------+---------------+---------------+---------------+------
-ECDbMap const& ECDb::Impl::GetECDbMap () const
-    {
-    return *m_ecdbMap;
     }
 
 //---------------------------------------------------------------------------------------
@@ -323,6 +314,57 @@ BentleyStatus ECDb::Impl::PurgeFileInfos() const
     }
 
     return SUCCESS;
+    }
+
+//******************************************
+// ECDb::Impl::ECSqlStatementRegistry
+//******************************************
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Krischan.Eberle  02/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+void ECDb::Impl::ECSqlStatementRegistry::Add(ECSqlStatement::Impl& stmt) const
+    {
+    BeMutexHolder lock(m_mutex);
+    m_statements.insert(&stmt);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Krischan.Eberle  02/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+void ECDb::Impl::ECSqlStatementRegistry::Remove(ECSqlStatement::Impl& stmt) const
+    {
+    BeMutexHolder lock(m_mutex);
+    auto it = m_statements.find(&stmt);
+    if (it != m_statements.end())
+        m_statements.erase(it);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                Krischan.Eberle                01/2016
+//---------------+---------------+---------------+---------------+---------------+------
+ECSqlStatus ECDb::Impl::ECSqlStatementRegistry::ReprepareStatements() const
+    {
+    BeMutexHolder lock(m_mutex);
+    for (ECSqlStatement::Impl* stmt : m_statements)
+        {
+        if (stmt != nullptr && stmt->IsPrepared())
+            stmt->Reprepare();
+        }
+
+    return ECSqlStatus::Success;
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                Krischan.Eberle                01/2016
+//---------------+---------------+---------------+---------------+---------------+------
+void ECDb::Impl::ECSqlStatementRegistry::FinalizeStatements() const
+    {
+    BeMutexHolder lock(m_mutex);
+    for (ECSqlStatement::Impl* stmt : m_statements)
+        {
+        if (stmt != nullptr)
+            stmt->Finalize();
+        }
     }
 
 //******************************************

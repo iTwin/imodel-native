@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/ECSqlStatementCache.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -20,7 +20,7 @@ uint32_t CachedECSqlStatement::Release ()
     if (0 == --m_refCount)
         {
         delete this;
-        return  0;
+        return 0;
         }
 
     // CachedECSqlStatements are always held in a ECSqlStatementCache, so the ref count will be 1 if no
@@ -155,9 +155,9 @@ CachedECSqlStatementPtr ECSqlStatementCache::GetPreparedStatement (ECDbCR ecdb, 
 //---------------------------------------------------------------------------------------
 CachedECSqlStatement* ECSqlStatementCache::FindEntry (Utf8CP ecsql) const
     {
-    for (auto& stmt : m_entries)
+    for (CachedECSqlStatementPtr& stmt : m_entries)
         {
-        if (0 == strcmp (stmt->GetECSql (), ecsql))
+        if (stmt->IsPrepared() && (0 == strcmp (stmt->GetECSql (), ecsql)))
             {
             // if statement > 1, the statement is currently in use, we can't share it
             if (stmt->GetRefCount () <= 1)

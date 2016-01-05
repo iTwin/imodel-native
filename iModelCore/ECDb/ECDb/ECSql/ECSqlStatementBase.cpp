@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/ECSqlStatementBase.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -14,10 +14,10 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle        10/13
 //---------------------------------------------------------------------------------------
-void ECSqlStatementBase::Finalize ()
+void ECSqlStatementBase::_Finalize()
     {
     m_preparedStatement = nullptr;
-    BeAssert (!IsPrepared ());
+    BeAssert(!IsPrepared());
     }
 
 //---------------------------------------------------------------------------------------

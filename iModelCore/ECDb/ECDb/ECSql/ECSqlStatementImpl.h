@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/ECSqlStatementImpl.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -23,21 +23,17 @@ struct ECSqlStatement::Impl : ECSqlStatementBase, NonCopyableClass
 private:
     struct Diagnostics : NonCopyableClass
         {
-    private:
-        static const NativeLogging::SEVERITY LOG_SEVERITY = NativeLogging::LOG_DEBUG;
-        NativeLogging::ILogger& m_logger;
-        std::unique_ptr<StopWatch> m_timer;
-        Utf8CP m_ecsql;
+        private:
+            static const NativeLogging::SEVERITY LOG_SEVERITY = NativeLogging::LOG_DEBUG;
+            NativeLogging::ILogger& m_logger;
+            std::unique_ptr<StopWatch> m_timer;
+            Utf8CP m_ecsql;
 
-        void Start ();
-        void Stop ();
-        void Log ();
-
-        bool CanLog () const;
-    public:
-        Diagnostics (Utf8CP ecsql, NativeLogging::ILogger& logger, bool startTimer);
-        ~Diagnostics ();
-
+            void Log();
+            bool CanLog() const;
+        public:
+            Diagnostics(Utf8CP ecsql, NativeLogging::ILogger& logger, bool startTimer);
+            ~Diagnostics() { Log(); }
         };
 
     static NativeLogging::ILogger* s_prepareDiagnosticsLogger;
@@ -45,11 +41,18 @@ private:
     virtual ECSqlStatus _Prepare (ECDbCR ecdb, Utf8CP ecsql) override;
     virtual ECSqlPrepareContext _InitializePrepare (ECDbCR ecdb, Utf8CP ecsql) override;
 
+    void Finalize(bool removeFromRegistry);
+    virtual void _Finalize() override;
+
+    void UnregisterFromRegistry(ECDbCR);
+
     static NativeLogging::ILogger& GetPrepareDiagnosticsLogger ();
 
 public:
-    Impl () : ECSqlStatementBase() {}
-    ~Impl () {}
+    explicit Impl () : ECSqlStatementBase() {}
+    ~Impl();
+
+    ECSqlStatus Reprepare();
     };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE
