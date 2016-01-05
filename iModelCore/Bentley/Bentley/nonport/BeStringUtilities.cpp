@@ -2,7 +2,7 @@
 |
 |     $Source: Bentley/nonport/BeStringUtilities.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #if defined (BENTLEY_WIN32) || defined (BENTLEY_WINRT)
@@ -38,6 +38,8 @@
 
 #include <icu4c/unicode/putil.h>
 #include <icu4c/unicode/ucnv.h>
+#include <icu4c/unicode/udata.h>
+#include <icu4c/unicode/uclean.h>
 
 // Conflicts with ICU.
 #define NO_UCHAR_TYPEDEF
@@ -48,6 +50,7 @@
 
 #include <Bentley/BeStringUtilities.h>
 #include <Bentley/BeFileName.h>
+#include <Bentley/BeFile.h>
 #include <Bentley/WString.h>
 #include <Bentley/ScopedArray.h>
 #include <Bentley/BeAssert.h>
@@ -2856,10 +2859,59 @@ WString  BeStringUtilities::ParseFileURI (WCharCP uri, WCharCP basePath)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     05/2014
 //---------------------------------------------------------------------------------------
+static bvector<Byte>* g_icuData;
 void BeStringUtilities::Initialize(BeFileNameCR assetPathW)
     {
-    Utf8String assetPath(assetPathW.c_str());
-    u_setDataDirectory(assetPath.c_str());
+    // While ICU allows you to manually set the data file path, on Win32, it only accepts locale char*.
+    // This is unacceptable because install paths are Unicode, are under user control, and thus cannot be reliably represented in locale char*.
+    // However, we can short-circuit ICU's path searching and file open code by opening the data ourselves and passing a pointer.
+    // We must retain this data for the lifetime of calls to ICU.
+
+    // I can see no way to clear and un-assign ICU's common data once set through udata_setCommonData.
+    // Passing nullptr simply results in an error code and changes nothing inside ICU.
+    // You can, however, call udata_setCommonData a second time with a different pointer.
+    // Thus, while we cannot reliably provide a Terminate call to free the memory, we can support multiple calls to this method just in case somebody needs to swap the asset path.
+
+    if (nullptr != g_icuData)
+        { BeAssert(false); return; }
+
+    WString icuDataFileName(U_ICUDATA_NAME, BentleyCharEncoding::Utf8);
+    icuDataFileName += L".dat";
+
+    BeFileName icuDataPath = assetPathW;
+    icuDataPath.AppendToPath(icuDataFileName.c_str());
+
+    BeFile icuDataFile;
+    if (BeFileStatus::Success != icuDataFile.Open(icuDataPath.c_str(), BeFileAccess::Read))
+        {
+        BeAssert (false);
+        return;
+        }
+    
+    g_icuData = new bvector<Byte>();
+    if (BeFileStatus::Success != icuDataFile.ReadEntireFile(*g_icuData))
+        {
+        BeAssert (false);
+        return;
+        }
+
+    UErrorCode icuErr = U_ZERO_ERROR;
+    udata_setCommonData(&g_icuData->at(0), &icuErr);
+
+    if (U_FAILURE(icuErr))
+        { BeAssert(false); }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Jeff.Marker     01/2016
+//---------------------------------------------------------------------------------------
+void BeStringUtilities::Terminate()
+    {
+    if (nullptr == g_icuData)
+        { BeAssert(false); return; }
+
+    u_cleanup();
+    DELETE_AND_CLEAR(g_icuData);
     }
 
 //---------------------------------------------------------------------------------------
