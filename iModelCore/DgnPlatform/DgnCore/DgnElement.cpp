@@ -650,7 +650,7 @@ DgnDbStatus GeometryStream::ReadGeometryStream(DgnDbR dgnDb, void const* blob, i
     ReserveMemory(header.m_size);
 
     uint32_t actuallyRead;
-    auto readStatus = snappy._Read(GetDataR(), GetSize(), actuallyRead);
+    auto readStatus = snappy._Read(GetDataP(), GetSize(), actuallyRead);
 
     if (ZIP_SUCCESS != readStatus || actuallyRead != GetSize())
         {
@@ -2569,7 +2569,7 @@ DgnDbStatus ElementGeomData::ReadFrom(ECSqlStatement& stmt, ECSqlClassParams con
 
     int blobSize;
     void const* blob = stmt.GetValueBinary(geomIndex, &blobSize);
-    return m_geom.ReadGeomStream(el.GetDgnDb(), blob, blobSize);
+    return m_geom.ReadGeometryStream(el.GetDgnDb(), blob, blobSize);
     }
 
 /*---------------------------------------------------------------------------------**//**

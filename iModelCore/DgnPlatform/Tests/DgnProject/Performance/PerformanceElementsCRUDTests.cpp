@@ -214,8 +214,8 @@ PerformanceElement1Ptr PerformanceElement1::Create(Dgn::DgnDbR db, Dgn::DgnModel
     {
     if (specifyProperyValues)
         return new PerformanceElement1(PhysicalElement::CreateParams(db, modelId, classId, category), "Element1 - InitValue", 10000000LL, -3.1415);
-    else
-        return new PerformanceElement1(PhysicalElement::CreateParams(db, modelId, classId, category));
+
+    return new PerformanceElement1(PhysicalElement::CreateParams(db, modelId, classId, category));
     }
 
 //---------------------------------------------------------------------------------------
@@ -237,7 +237,7 @@ PerformanceElement1CPtr PerformanceElement1::Update()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-static bool appendEllipse3d(ElementGeometryBuilder& builder, double cx, double cy, double cz)
+static bool appendEllipse3d(GeometryBuilder& builder, double cx, double cy, double cz)
     {
     DEllipse3d ellipseData = DEllipse3d::From(cx, cy, cz,
         0, 0, 2,
@@ -252,12 +252,12 @@ static bool appendEllipse3d(ElementGeometryBuilder& builder, double cx, double c
 //---------------+---------------+---------------+---------------+---------------+-------
 void PerformanceElement1::AddGeomtry()
 {
-    GeometrySourceP geomElem = this->ToGeometrySourceP();
-    ElementGeometryBuilderPtr builder = ElementGeometryBuilder::Create(*this->GetModel(), this->GetCategoryId(), DPoint3d::From(0.0, 0.0, 0.0));
+    GeometrySourceP geomElem = ToGeometrySourceP();
+    GeometryBuilderPtr builder = GeometryBuilder::Create(*GetModel(), GetCategoryId(), DPoint3d::From(0.0, 0.0, 0.0));
     ASSERT_TRUE(appendEllipse3d(*builder, 1, 2, 3));
     ASSERT_EQ(SUCCESS, builder->SetGeometryStreamAndPlacement(*geomElem));
 
-    ASSERT_TRUE(this->HasGeometry());
+    ASSERT_TRUE(HasGeometry());
 }
 
 /*---------------------------------------------------------------------------------**//**
@@ -265,15 +265,15 @@ void PerformanceElement1::AddGeomtry()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void PerformanceElement1::ExtendGeometry()
     {
-    GeometrySourceP geomElem = this->ToGeometrySourceP();
-    ElementGeometryBuilderPtr builder = ElementGeometryBuilder::Create(*this->GetModel(), this->GetCategoryId(), DPoint3d::From(0.0, 0.0, 0.0));
+    GeometrySourceP geomElem = ToGeometrySourceP();
+    GeometryBuilderPtr builder = GeometryBuilder::Create(*GetModel(), GetCategoryId(), DPoint3d::From(0.0, 0.0, 0.0));
     ASSERT_TRUE(appendEllipse3d(*builder, 0, 0, 0));
     ASSERT_TRUE(appendEllipse3d(*builder, 1, 2, 3));
     ASSERT_TRUE(appendEllipse3d(*builder, 3, 2, 1));
 
-    ASSERT_EQ(SUCCESS, builder->SetGeomStreamAndPlacement(*geomElem));
+    ASSERT_EQ(SUCCESS, builder->SetGeometryStreamAndPlacement(*geomElem));
 
-    ASSERT_TRUE(this->HasGeometry());
+    ASSERT_TRUE(HasGeometry());
     }
 
 //---------------------------------------------------------------------------------------
