@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/DgnDbSchema.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "DgnPlatformInternal.h"
@@ -43,9 +43,9 @@ static void importDgnSchema(DgnDbR db, bool updateExisting)
     }
 
 #define GEOM_IN_PHYSICAL_SPACE_CLAUSE " 1 = new.InPhysicalSpace "
-#define ORIGIN_FROM_PLACEMENT "DGN_point(NEW.Placement_Origin_X,NEW.Placement_Origin_Y,NEW.Placement_Origin_Z)"
-#define ANGLES_FROM_PLACEMENT "DGN_angles(NEW.Placement_Rotation_Yaw,NEW.Placement_Rotation_Pitch,NEW.Placement_Rotation_Roll)"
-#define BBOX_FROM_PLACEMENT "DGN_bbox(NEW.Placement_Box_Low_X,NEW.Placement_Box_Low_Y,NEW.Placement_Box_Low_Z,NEW.Placement_Box_High_X,NEW.Placement_Box_High_Y,NEW.Placement_Box_High_Z)"
+#define ORIGIN_FROM_PLACEMENT "DGN_point(NEW.Origin_X,NEW.Origin_Y,NEW.Origin_Z)"
+#define ANGLES_FROM_PLACEMENT "DGN_angles(NEW.Yaw,NEW.Pitch,NEW.Roll)"
+#define BBOX_FROM_PLACEMENT "DGN_bbox(NEW.BBoxLow_X,NEW.BBoxLow_Y,NEW.BBoxLow_Z,NEW.BBoxHigh_X,NEW.BBoxHigh_Y,NEW.BBoxHigh_Z)"
 #define PLACEMENT_FROM_GEOM "DGN_placement(" ORIGIN_FROM_PLACEMENT "," ANGLES_FROM_PLACEMENT "," BBOX_FROM_PLACEMENT ")"
 #define AABB_FROM_PLACEMENT "DGN_placement_aabb(" PLACEMENT_FROM_GEOM ")"
 
@@ -68,6 +68,15 @@ DbResult DgnDb::CreateDictionaryModel()
     BeAssert(BE_SQLITE_DONE == result && "Failed to create dictionary model");
     return result;
     }
+
+// ECDb insists on creating a table for every struct ECClass just in case someone later wants to use it for a struct array property
+// Ideally it would do this only when it actually finds such a struct array property.
+// For now we must manually remove the tables.
+static const Utf8CP s_unusedStructTableNames[] =
+    {
+    "dgn_AuthorityIssuedCode",
+    "dgn_AnnotationTableCellIndex"
+    };
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/11
@@ -97,6 +106,13 @@ DbResult DgnDb::CreateDgnDbTables()
 
     importDgnSchema(*this, false);
 
+#ifdef NEEDSWORK_ECDB_STRUCT_ARRAY_TABLES
+    // Remove useless struct array tables
+    // This works, until you try to import another ECSchema, at which point it tries to create indexes on the dropped tables again
+    for (auto const& structTableName : s_unusedStructTableNames)
+        DropTable(structTableName);
+#endif
+
     // Every DgnDb has a few built-in authorities for element codes
     CreateAuthorities();
 
@@ -107,17 +123,17 @@ DbResult DgnDb::CreateDgnDbTables()
                " BEGIN DELETE FROM " DGN_VTABLE_RTree3d " WHERE ElementId=old.Id;END");
 
     ExecuteSql("CREATE TRIGGER dgn_rtree_upd AFTER UPDATE ON " DGN_TABLE(DGN_CLASSNAME_SpatialElement) 
-               " WHEN new.Placement_Origin_X IS NOT NULL AND " GEOM_IN_PHYSICAL_SPACE_CLAUSE
+               " WHEN new.Origin_X IS NOT NULL AND " GEOM_IN_PHYSICAL_SPACE_CLAUSE
                "BEGIN INSERT OR REPLACE INTO " DGN_VTABLE_RTree3d "(ElementId,minx,maxx,miny,maxy,minz,maxz) SELECT new.Id,"
                "DGN_bbox_value(bb,0),DGN_bbox_value(bb,3),DGN_bbox_value(bb,1),DGN_bbox_value(bb,4),DGN_bbox_value(bb,2),DGN_bbox_value(bb,5)"
                " FROM (SELECT " AABB_FROM_PLACEMENT " as bb);END");
 
     ExecuteSql("CREATE TRIGGER dgn_rtree_upd1 AFTER UPDATE ON " DGN_TABLE(DGN_CLASSNAME_SpatialElement) 
-                " WHEN OLD.Placement_Origin_X IS NOT NULL AND NEW.Placement_Origin_X IS NULL"
+                " WHEN OLD.Origin_X IS NOT NULL AND NEW.Origin_X IS NULL"
                 " BEGIN DELETE FROM " DGN_VTABLE_RTree3d " WHERE ElementId=OLD.Id;END");
 
     ExecuteSql("CREATE TRIGGER dgn_rtree_ins AFTER INSERT ON " DGN_TABLE(DGN_CLASSNAME_SpatialElement) 
-               " WHEN new.Placement_Origin_X IS NOT NULL AND " GEOM_IN_PHYSICAL_SPACE_CLAUSE
+               " WHEN new.Origin_X IS NOT NULL AND " GEOM_IN_PHYSICAL_SPACE_CLAUSE
                "BEGIN INSERT INTO " DGN_VTABLE_RTree3d "(ElementId,minx,maxx,miny,maxy,minz,maxz) SELECT new.Id,"
                "DGN_bbox_value(bb,0),DGN_bbox_value(bb,3),DGN_bbox_value(bb,1),DGN_bbox_value(bb,4),DGN_bbox_value(bb,2),DGN_bbox_value(bb,5)"
                " FROM (SELECT " AABB_FROM_PLACEMENT " as bb);END");

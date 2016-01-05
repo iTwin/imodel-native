@@ -23,44 +23,31 @@
  *      Geometry : binary
  *      CategoryId : long
  *  GeometrySource2d : GeometrySource
- *      Placement : Placement2d
- *          Origin : point2d
- *          Rotation : double
- *          Box : ElementAlignedBox2d
- *              Low : point2d
- *              High : point2d
+ *      Origin : point2d
+ *      Rotation : double
+ *      BBoxLow : point2d
+ *      BBoxHigh : point2d
  *  GeometrySource3d : GeometrySource
  *      InPhysicalSpace : boolean
- *      Placement : Placement3d
- *          Origin : point3d
- *          Rotation : YawPitchRollAngles
- *              Yaw
- *              Pitch
- *              Roll
- *          Box : ElementAlignedBox3d
- *              Low : point3d
- *              High : point3d
+ *      Origin : point3d
+ *      Yaw : double
+ *      Pitch : double
+ *      Roll : double
+ *      BBoxLow : point3d
+ *      BBoxHigh : point3d
  */
 
 #define GEOM_Geometry "Geometry"
 #define GEOM_Category "CategoryId"
-#define GEOM_Origin "Placement.Origin"
-#define GEOM_Box_Low "Placement.Box.Low"
-#define GEOM_Box_High "Placement.Box.High"
-#define GEOM2_Rotation "Placement.Rotation"
+#define GEOM_Origin "Origin"
+#define GEOM_Box_Low "BBoxLow"
+#define GEOM_Box_High "BBoxHigh"
+#define GEOM2_Rotation "Rotation"
 #define GEOM3_InPhysicalSpace "InPhysicalSpace"
-#define GEOM3_Yaw "Placement.Rotation.Yaw"
-#define GEOM3_Pitch "Placement.Rotation.Pitch"
-#define GEOM3_Roll "Placement.Rotation.Roll"
-#define GEOM_Placement "Placement"
-#define PLACEMENT_Origin "Origin"
-#define PLACEMENT_Rotation "Rotation"
-#define PLACEMENT_Box "Box"
-#define BOX_Low "Low"
-#define BOX_High "High"
-#define ROTATION_Yaw "Yaw"
-#define ROTATION_Pitch "Pitch"
-#define ROTATION_Roll "Roll"
+#define GEOM3_Yaw "Yaw"
+#define GEOM3_Pitch "Pitch"
+#define GEOM3_Roll "Roll"
+
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   09/12
@@ -646,14 +633,13 @@ DgnDbStatus GeometryStream::WriteGeometryStreamAndStep(DgnDbR dgnDb, Utf8CP tabl
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus GeometryStream::ReadGeometryStream(DgnDbR dgnDb, Utf8CP table, Utf8CP colname, uint64_t rowId)
+DgnDbStatus GeometryStream::ReadGeometryStream(DgnDbR dgnDb, void const* blob, int blobSize)
     {
-    auto& pool = dgnDb.Elements();
-    SnappyFromBlob& snappy = pool.GetSnappyFrom();
+    if (0 == blobSize && nullptr == blob)
+        return DgnDbStatus::Success;
 
-    if (ZIP_SUCCESS != snappy.Init(pool.GetDgnDb(), table, colname, rowId))
-        return DgnDbStatus::Success; // this row has no geometry
-
+    SnappyFromMemory& snappy = dgnDb.Elements().GetSnappyFrom();
+    snappy.Init(const_cast<void*>(blob), static_cast<uint32_t>(blobSize));
     GeomBlobHeader header(snappy);
     if ((GeomBlobHeader::Signature != header.m_signature) || 0 == header.m_size)
         {
@@ -664,9 +650,9 @@ DgnDbStatus GeometryStream::ReadGeometryStream(DgnDbR dgnDb, Utf8CP table, Utf8C
     ReserveMemory(header.m_size);
 
     uint32_t actuallyRead;
-    snappy.ReadAndFinish(GetDataP(), GetSize(), actuallyRead);
+    auto readStatus = snappy._Read(GetDataR(), GetSize(), actuallyRead);
 
-    if (actuallyRead != GetSize())
+    if (ZIP_SUCCESS != readStatus || actuallyRead != GetSize())
         {
         BeAssert(false);
         return DgnDbStatus::ReadError;
@@ -2572,25 +2558,61 @@ DgnDbStatus DgnEditElementCollector::Write()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus ElementGeomData::ReadFrom(ECSqlStatement& stmt, ECSqlClassParams const& params)
+DgnDbStatus ElementGeomData::ReadFrom(ECSqlStatement& stmt, ECSqlClassParams const& params, DgnElementCR el)
     {
     m_categoryId = stmt.GetValueId<DgnCategoryId>(params.GetSelectIndex(GEOM_Category));
 
-    // ###TODO: Read GeomStream...
+    // Read GeomStream
+    auto geomIndex = params.GetSelectIndex(GEOM_Geometry);
+    if (stmt.IsValueNull(geomIndex))
+        return DgnDbStatus::Success;    // no geometry...
 
-    return DgnDbStatus::Success;
+    int blobSize;
+    void const* blob = stmt.GetValueBinary(geomIndex, &blobSize);
+    return m_geom.ReadGeomStream(el.GetDgnDb(), blob, blobSize);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus ElementGeomData::BindTo(ECSqlStatement& stmt)
+DgnDbStatus ElementGeomData::BindTo(ECSqlStatement& stmt, DgnElementCR el)
     {
     stmt.BindId(stmt.GetParameterIndex(GEOM_Category), m_categoryId);
 
-    // Binding the GeomStream now would require making a potentially large allocation and then copying it, and then
-    // possibly copying it again...wait until _OnInserted/Updated()
-    // Note this means our spatial index triggers may execute redundantly a second time.
+    // Compress the serialized GeomStream
+    m_multiChunkGeomStream = false;
+    SnappyToBlob& snappyTo = el.GetDgnDb().Elements().GetSnappyTo();
+    snappyTo.Init();
+
+    if (0 < m_geom.GetSize())
+        {
+        GeomBlobHeader header(m_geom);
+        snappyTo.Write((Byte const*)&header, sizeof(header));
+        snappyTo.Write(m_geom.GetData(), m_geom.GetSize());
+        }
+
+    auto geomIndex = stmt.GetParameterIndex(GEOM_Geometry);
+    uint32_t zipSize = snappyTo.GetCompressedSize();
+    if (0 < zipSize)
+        {
+        if (1 == snappyTo.GetCurrChunk())
+            {
+            // Common case - only one chunk in geom stream. Bind it directly.
+            // NB: This requires that no other code uses DgnElements::SnappyToBlob() until our ECSqlStatement is executed...
+            stmt.BindBinary(geomIndex, snappyTo.GetChunkData(0), zipSize, IECSqlBinder::MakeCopy::No);
+            }
+        else
+            {
+            // More than one chunk in geom stream. Avoid expensive alloc+copy by deferring writing geom stream until ECSqlStatement executes.
+            m_multiChunkGeomStream = true;
+            stmt.BindNull(geomIndex);
+            }
+        }
+    else
+        {
+        // No geometry
+        stmt.BindNull(geomIndex);
+        }
 
     return DgnDbStatus::Success;
     }
@@ -2598,9 +2620,9 @@ DgnDbStatus ElementGeomData::BindTo(ECSqlStatement& stmt)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus ElementGeom2d::Read(ECSqlStatement& stmt, ECSqlClassParams const& params)
+DgnDbStatus ElementGeom2d::Read(ECSqlStatement& stmt, ECSqlClassParams const& params, DgnElementCR el)
     {
-    auto status = ReadFrom(stmt, params);
+    auto status = ReadFrom(stmt, params, el);
     if (DgnDbStatus::Success != status)
         return status;
 
@@ -2623,9 +2645,9 @@ DgnDbStatus ElementGeom2d::Read(ECSqlStatement& stmt, ECSqlClassParams const& pa
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus ElementGeom3d::Read(ECSqlStatement& stmt, ECSqlClassParams const& params)
+DgnDbStatus ElementGeom3d::Read(ECSqlStatement& stmt, ECSqlClassParams const& params, DgnElementCR el)
     {
-    auto status = ReadFrom(stmt, params);
+    auto status = ReadFrom(stmt, params, el);
     if (DgnDbStatus::Success != status)
         return status;
 
@@ -2652,36 +2674,25 @@ DgnDbStatus ElementGeom3d::Read(ECSqlStatement& stmt, ECSqlClassParams const& pa
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void bindNull(IECSqlStructBinder& binder, Utf8CP prop)
+DgnDbStatus ElementGeom2d::Bind(ECSqlStatement& stmt, DgnElementCR el)
     {
-    binder.GetMember(prop).BindNull();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   12/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus ElementGeom2d::Bind(ECSqlStatement& stmt, DgnElementCR)
-    {
-    auto status = BindTo(stmt);
+    auto status = BindTo(stmt, el);
     if (DgnDbStatus::Success != status)
         return status;
 
-    IECSqlStructBinder& placementBinder = stmt.BindStruct(stmt.GetParameterIndex(GEOM_Placement));
-    IECSqlStructBinder& boxBinder = placementBinder.GetMember(PLACEMENT_Box).BindStruct();
-
     if (!m_placement.IsValid())
         {
-        bindNull(placementBinder, PLACEMENT_Origin);
-        bindNull(placementBinder, PLACEMENT_Rotation);
-        bindNull(boxBinder, BOX_Low);
-        bindNull(boxBinder, BOX_High);
+        stmt.BindNull(stmt.GetParameterIndex(GEOM_Origin));
+        stmt.BindNull(stmt.GetParameterIndex(GEOM_Box_Low));
+        stmt.BindNull(stmt.GetParameterIndex(GEOM_Box_High));
+        stmt.BindNull(stmt.GetParameterIndex(GEOM2_Rotation));
         }
     else
         {
-        placementBinder.GetMember(PLACEMENT_Origin).BindPoint2D(m_placement.GetOrigin());
-        placementBinder.GetMember(PLACEMENT_Rotation).BindDouble(m_placement.GetAngle().Degrees());
-        boxBinder.GetMember(BOX_Low).BindPoint2D(m_placement.GetElementBox().low);
-        boxBinder.GetMember(BOX_High).BindPoint2D(m_placement.GetElementBox().high);
+        stmt.BindPoint2D(stmt.GetParameterIndex(GEOM_Origin), m_placement.GetOrigin());
+        stmt.BindDouble(stmt.GetParameterIndex(GEOM2_Rotation), m_placement.GetAngle().Degrees());
+        stmt.BindPoint2D(stmt.GetParameterIndex(GEOM_Box_Low), m_placement.GetElementBox().low);
+        stmt.BindPoint2D(stmt.GetParameterIndex(GEOM_Box_High), m_placement.GetElementBox().high);
         }
 
     return DgnDbStatus::Success;
@@ -2692,7 +2703,7 @@ DgnDbStatus ElementGeom2d::Bind(ECSqlStatement& stmt, DgnElementCR)
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus ElementGeom3d::Bind(ECSqlStatement& stmt, DgnElementCR el)
     {
-    auto status = BindTo(stmt);
+    auto status = BindTo(stmt, el);
     if (DgnDbStatus::Success != status)
         return status;
 
@@ -2704,27 +2715,23 @@ DgnDbStatus ElementGeom3d::Bind(ECSqlStatement& stmt, DgnElementCR el)
 
     stmt.BindInt(stmt.GetParameterIndex(GEOM3_InPhysicalSpace), CoordinateSpace::World == geomModel->GetCoordinateSpace() ? 1 : 0);
 
-    IECSqlStructBinder& placementBinder = stmt.BindStruct(stmt.GetParameterIndex(GEOM_Placement));
-    IECSqlStructBinder& rotBinder = placementBinder.GetMember(PLACEMENT_Rotation).BindStruct();
-    IECSqlStructBinder& boxBinder = placementBinder.GetMember(PLACEMENT_Box).BindStruct();
-
     if (!m_placement.IsValid())
         {
-        bindNull(placementBinder, PLACEMENT_Origin);
-        bindNull(rotBinder, ROTATION_Yaw);
-        bindNull(rotBinder, ROTATION_Pitch);
-        bindNull(rotBinder, ROTATION_Roll);
-        bindNull(boxBinder, BOX_Low);
-        bindNull(boxBinder, BOX_High);
+        stmt.BindNull(stmt.GetParameterIndex(GEOM_Origin));
+        stmt.BindNull(stmt.GetParameterIndex(GEOM3_Yaw));
+        stmt.BindNull(stmt.GetParameterIndex(GEOM3_Pitch));
+        stmt.BindNull(stmt.GetParameterIndex(GEOM3_Roll));
+        stmt.BindNull(stmt.GetParameterIndex(GEOM_Box_Low));
+        stmt.BindNull(stmt.GetParameterIndex(GEOM_Box_High));
         }
     else
         {
-        placementBinder.GetMember(PLACEMENT_Origin).BindPoint3D(m_placement.GetOrigin());
-        rotBinder.GetMember(ROTATION_Yaw).BindDouble(m_placement.GetAngles().GetYaw().Degrees());
-        rotBinder.GetMember(ROTATION_Pitch).BindDouble(m_placement.GetAngles().GetPitch().Degrees());
-        rotBinder.GetMember(ROTATION_Roll).BindDouble(m_placement.GetAngles().GetRoll().Degrees());
-        boxBinder.GetMember(BOX_Low).BindPoint3D(m_placement.GetElementBox().low);
-        boxBinder.GetMember(BOX_High).BindPoint3D(m_placement.GetElementBox().high);
+        stmt.BindPoint3D(stmt.GetParameterIndex(GEOM_Origin), m_placement.GetOrigin());
+        stmt.BindDouble(stmt.GetParameterIndex(GEOM3_Yaw), m_placement.GetAngles().GetYaw().Degrees());
+        stmt.BindDouble(stmt.GetParameterIndex(GEOM3_Pitch), m_placement.GetAngles().GetPitch().Degrees());
+        stmt.BindDouble(stmt.GetParameterIndex(GEOM3_Roll), m_placement.GetAngles().GetRoll().Degrees());
+        stmt.BindPoint3D(stmt.GetParameterIndex(GEOM_Box_Low), m_placement.GetElementBox().low);
+        stmt.BindPoint3D(stmt.GetParameterIndex(GEOM_Box_High), m_placement.GetElementBox().high);
         }
 
     return DgnDbStatus::Success;
@@ -2735,15 +2742,32 @@ DgnDbStatus ElementGeom3d::Bind(ECSqlStatement& stmt, DgnElementCR el)
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus ElementGeomData::WriteGeomStream(DgnElementCR el, Utf8CP tableName) const
     {
+    if (!m_multiChunkGeomStream)
+        return DgnDbStatus::Success;
+
+    m_multiChunkGeomStream = false;
+
+    DgnElements& pool = el.GetDgnDb().Elements();
+    SnappyToBlob& snappyTo = pool.GetSnappyTo();
+    if (1 >= snappyTo.GetCurrChunk())
+        {
+        BeAssert(false);    // Somebody overwrote our data.
+        return DgnDbStatus::WriteError;
+        }
+
+    // SaveToRow() requires a blob of the required size has already been allocated in the blob column.
+    // Ideally we would do this in BindTo(), but ECSql does not support binding a zero blob.
     Utf8String sql("UPDATE ");
     sql.append(tableName);
     sql.append(" SET " GEOM_Geometry "=? WHERE Id=?");
+    CachedStatementPtr stmt = pool.GetStatement(sql.c_str());
+    stmt->BindId(2, el.GetElementId());
+    stmt->BindZeroBlob(1, snappyTo.GetCompressedSize());
+    if (BE_SQLITE_DONE != stmt->Step())
+        return DgnDbStatus::WriteError;
 
-    DgnElementId eid = el.GetElementId();
-    DgnDbR db = el.GetDgnDb();
-    CachedStatementPtr stmt = db.Elements().GetStatement(sql.c_str());
-    stmt->BindId(2, eid);
-    return m_geom.WriteGeometryStreamAndStep(db, tableName, GEOM_Geometry, eid.GetValue(), *stmt, 1);
+    StatusInt status = snappyTo.SaveToRow(el.GetDgnDb(), tableName, GEOM_Geometry, el.GetElementId().GetValue());
+    return SUCCESS == status ? DgnDbStatus::Success : DgnDbStatus::WriteError;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2824,27 +2848,13 @@ DgnDbStatus ElementGeomData::UpdateGeomStream(DgnElementCR el, Utf8CP tableName)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus ElementGeomData::LoadGeomStream(DgnElementCR el, Utf8CP tableName)
-    {
-    return m_geom.ReadGeometryStream(el.GetDgnDb(), tableName, GEOM_Geometry, el.GetElementId().GetValue());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   12/15
-+---------------+---------------+---------------+---------------+---------------+------*/
 void ElementGeomData::AddBaseClassParams(ECSqlClassParams& params)
     {
     params.Add(GEOM_Category);
-
-    // It's necessary to bind to structs for INSERT/UPDATE.
-    params.Add(GEOM_Placement, ECSqlClassParams::StatementType::InsertUpdate);
-
-    // In SELECT statements, it's much easier to select individual struct members.
-    params.Add(GEOM_Origin, ECSqlClassParams::StatementType::Select);
-    params.Add(GEOM_Box_Low, ECSqlClassParams::StatementType::Select);
-    params.Add(GEOM_Box_High, ECSqlClassParams::StatementType::Select);
-
-    // NB: We read and write the GeomStream separately from the other properties.
+    params.Add(GEOM_Origin);
+    params.Add(GEOM_Box_Low);
+    params.Add(GEOM_Box_High);
+    params.Add(GEOM_Geometry);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2853,6 +2863,7 @@ void ElementGeomData::AddBaseClassParams(ECSqlClassParams& params)
 void ElementGeom2d::AddClassParams(ECSqlClassParams& params)
     {
     AddBaseClassParams(params);
+
     params.Add(GEOM2_Rotation, ECSqlClassParams::StatementType::Select);
     }
 
@@ -2862,10 +2873,11 @@ void ElementGeom2d::AddClassParams(ECSqlClassParams& params)
 void ElementGeom3d::AddClassParams(ECSqlClassParams& params)
     {
     AddBaseClassParams(params);
+
     params.Add(GEOM3_InPhysicalSpace);
-    params.Add(GEOM3_Yaw, ECSqlClassParams::StatementType::Select);
-    params.Add(GEOM3_Pitch, ECSqlClassParams::StatementType::Select);
-    params.Add(GEOM3_Roll, ECSqlClassParams::StatementType::Select);
+    params.Add(GEOM3_Yaw);
+    params.Add(GEOM3_Pitch);
+    params.Add(GEOM3_Roll);
     }
 
 

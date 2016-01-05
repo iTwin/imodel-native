@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/DgnElement.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -1188,7 +1188,7 @@ public:
     bool HasGeometry() const {return HasData();}  //!< return false if this GeometryStream is empty.
 
     DgnDbStatus WriteGeometryStreamAndStep(DgnDbR dgnDb, Utf8CP table, Utf8CP colname, uint64_t rowId, BeSQLite::Statement& stmt, int stmtcolidx) const;
-    DgnDbStatus ReadGeometryStream(DgnDbR dgnDb, Utf8CP table, Utf8CP colname, uint64_t rowId);
+    DgnDbStatus ReadGeometryStream(DgnDbR dgnDb, void const* blob, int blobSize);
 };
 
 //=======================================================================================
@@ -1381,13 +1381,14 @@ struct EXPORT_VTABLE_ATTRIBUTE ElementGeomData
 protected:
     DgnCategoryId   m_categoryId;
     GeometryStream  m_geom;
+    mutable bool    m_multiChunkGeomStream;
 
-    explicit ElementGeomData(DgnCategoryId category) : m_categoryId(category) {}
+    explicit ElementGeomData(DgnCategoryId category) : m_categoryId(category), m_multiChunkGeomStream(false) { }
 
     virtual bool _IsPlacementValid() const = 0;
 
-    DgnDbStatus ReadFrom(BeSQLite::EC::ECSqlStatement& stmt, ECSqlClassParams const& params);
-    DgnDbStatus BindTo(BeSQLite::EC::ECSqlStatement& stmt);
+    DgnDbStatus ReadFrom(BeSQLite::EC::ECSqlStatement& stmt, ECSqlClassParams const& params, DgnElementCR el);
+    DgnDbStatus BindTo(BeSQLite::EC::ECSqlStatement& stmt, DgnElementCR el);
     DgnDbStatus WriteGeomStream(DgnElementCR el, Utf8CP tableName) const;
     static void AddBaseClassParams(ECSqlClassParams& params);
 public:
@@ -1400,7 +1401,6 @@ public:
     DGNPLATFORM_EXPORT void RemapIds(DgnImportContext& importer);
     DGNPLATFORM_EXPORT DgnDbStatus InsertGeomStream(DgnElementCR el, Utf8CP tableName) const;
     DGNPLATFORM_EXPORT DgnDbStatus UpdateGeomStream(DgnElementCR el, Utf8CP tableName) const;
-    DGNPLATFORM_EXPORT DgnDbStatus LoadGeomStream(DgnElementCR el, Utf8CP tableName);
 };
 
 //=======================================================================================
@@ -1426,7 +1426,7 @@ public:
     DGNPLATFORM_EXPORT void AdjustPlacementForImport(DgnImportContext const& importer);
     DGNPLATFORM_EXPORT void CopyFrom(GeometrySource3dCP geomSource);
 
-    DGNPLATFORM_EXPORT DgnDbStatus Read(BeSQLite::EC::ECSqlStatement&, ECSqlClassParams const&);
+    DGNPLATFORM_EXPORT DgnDbStatus Read(BeSQLite::EC::ECSqlStatement&, ECSqlClassParams const&, DgnElementCR el);
     DGNPLATFORM_EXPORT DgnDbStatus Bind(BeSQLite::EC::ECSqlStatement&, DgnElementCR el);
     DGNPLATFORM_EXPORT static void AddClassParams(ECSqlClassParams& params);
 };
@@ -1465,14 +1465,12 @@ protected:
     virtual DgnDbStatus _SetPlacement(T_Placement const& placement) override { return m_geom.SetPlacement(placement, *this);}
     virtual void _AdjustPlacementForImport(DgnImportContext const& importer) override { m_geom.AdjustPlacementForImport(importer);}
     virtual DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement& stmt, ECSqlClassParamsCR params) override
-        { auto status = T_Base::_ReadSelectParams(stmt, params); return DgnDbStatus::Success == status ? m_geom.Read(stmt, params) : status; }
+        { auto status = T_Base::_ReadSelectParams(stmt, params); return DgnDbStatus::Success == status ? m_geom.Read(stmt, params, *this) : status; }
     virtual DgnDbStatus _BindInsertParams(BeSQLite::EC::ECSqlStatement& stmt) override
         { auto status = T_Base::_BindInsertParams(stmt); return DgnDbStatus::Success == status ? m_geom.Bind(stmt, *this) : status; }
     virtual DgnDbStatus _BindUpdateParams(BeSQLite::EC::ECSqlStatement& stmt) override
         { auto status = T_Base::_BindUpdateParams(stmt); return DgnDbStatus::Success == status ? m_geom.Bind(stmt, *this) : status; }
 
-    virtual DgnDbStatus _LoadFromDb() override
-        { auto status = T_Base::_LoadFromDb(); return DgnDbStatus::Success == status ? m_geom.LoadGeomStream(*this, _GetGeometryColumnTableName()) : status; }
     virtual DgnDbStatus _InsertInDb() override
         { auto status = T_Base::_InsertInDb(); return DgnDbStatus::Success == status ? m_geom.InsertGeomStream(*this, _GetGeometryColumnTableName()) : status; }
     virtual DgnDbStatus _UpdateInDb() override
@@ -1608,7 +1606,7 @@ public:
     DGNPLATFORM_EXPORT void AdjustPlacementForImport(DgnImportContext const& importer);
     DGNPLATFORM_EXPORT void CopyFrom(GeometrySource2dCP geomSource);
 
-    DGNPLATFORM_EXPORT DgnDbStatus Read(BeSQLite::EC::ECSqlStatement&, ECSqlClassParams const&);
+    DGNPLATFORM_EXPORT DgnDbStatus Read(BeSQLite::EC::ECSqlStatement&, ECSqlClassParams const&, DgnElementCR);
     DGNPLATFORM_EXPORT DgnDbStatus Bind(BeSQLite::EC::ECSqlStatement&, DgnElementCR);
     DGNPLATFORM_EXPORT static void AddClassParams(ECSqlClassParams& params);
 };
@@ -1961,7 +1959,8 @@ private:
     struct ElemIdTree* m_tree;
     HeapZone m_heapZone;
     BeSQLite::StatementCache m_stmts;
-    BeSQLite::SnappyFromBlob m_snappyFrom;
+    Byte m_snappyFromBuffer[BeSQLite::SnappyReader::SNAPPY_UNCOMPRESSED_BUFFER_SIZE];
+    BeSQLite::SnappyFromMemory m_snappyFrom;
     BeSQLite::SnappyToBlob m_snappyTo;
     DgnElementIdSet m_selectionSet;
     mutable BeSQLite::BeDbMutex m_mutex;
@@ -1993,8 +1992,8 @@ private:
     virtual int64_t _Purge(int64_t memTarget) override;
 
 public:
-    BeSQLite::SnappyFromBlob& GetSnappyFrom() {return m_snappyFrom;}
-    BeSQLite::SnappyToBlob& GetSnappyTo() {return m_snappyTo;}
+    BeSQLite::SnappyFromMemory& GetSnappyFrom() {return m_snappyFrom;} // NB: Not to be used during loading of a geometric element!
+    BeSQLite::SnappyToBlob& GetSnappyTo() {return m_snappyTo;} // NB: Not to be used during insert or update of a geometric element!
     DGNPLATFORM_EXPORT BeSQLite::CachedStatementPtr GetStatement(Utf8CP sql) const;
     DGNPLATFORM_EXPORT void ChangeMemoryUsed(int32_t delta) const;
     DGNPLATFORM_EXPORT void DropFromPool(DgnElementCR) const;

@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/GeomPart.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -232,7 +232,7 @@ DgnGeomPartPtr DgnGeomParts::LoadGeomPart(DgnGeomPartId geomPartId)
    
     auto& elements = m_dgndb.Elements();
 
-    CachedStatementPtr stmt=elements.GetStatement("SELECT Code," GEOMPART_BBOX " FROM " DGN_TABLE(DGN_CLASSNAME_GeomPart) " WHERE Id=?");
+    CachedStatementPtr stmt=elements.GetStatement("SELECT Code," GEOMPART_BBOX ",Geom FROM " DGN_TABLE(DGN_CLASSNAME_GeomPart) " WHERE Id=?");
     stmt->BindId(1, geomPartId);
 
     DbResult result = stmt->Step();
@@ -245,7 +245,8 @@ DgnGeomPartPtr DgnGeomParts::LoadGeomPart(DgnGeomPartId geomPartId)
     geomPartPtr->SetBoundingBox(bbox);
 
     GeometryStreamR    geom = geomPartPtr->GetGeometryStreamR();
-    if (DgnDbStatus::Success != geom.ReadGeometryStream(GetDgnDb(), DGN_TABLE(DGN_CLASSNAME_GeomPart), "Geom", geomPartId.GetValue()))
+    DgnDbStatus status = stmt->IsColumnNull(7) ? DgnDbStatus::Success : geom.ReadGeometryStream(GetDgnDb(), stmt->GetValueBlob(7), stmt->GetColumnBytes(7));
+    if (DgnDbStatus::Success != status)
         return nullptr;
 
     geomPartPtr->SetId(geomPartId);
