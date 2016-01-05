@@ -31,7 +31,7 @@ TEST(PerformanceJsonInserter, InsertJsonCppUsingPresistanceAPI)
     ECClassCP documentClass = ecdb.Schemas().GetECClass("eB_PW_CommonSchema_WSB", "Document");
     ASSERT_TRUE(documentClass != nullptr);
     JsonInserter inserter(ecdb, *documentClass);
-    const int repetitionCount = 1000;
+    const int repetitionCount = 10000;
 
     //----------------------------------------------------------------------------------- 
     // Insert using JsonCpp
@@ -49,10 +49,10 @@ TEST(PerformanceJsonInserter, InsertJsonCppUsingPresistanceAPI)
     ECSqlStatement statement;
     statement.Prepare (ecdb, "SELECT COUNT(*) FROM eBPWC.Document");
     DbResult::BE_SQLITE_ROW, statement.Step ();
-    ASSERT_EQ (1000, statement.GetValueInt (0)) << "Expected Number of Instances not inserted in Db";
+    ASSERT_EQ (repetitionCount, statement.GetValueInt (0)) << "Expected Number of Instances not inserted in Db";
 
     LOG.infov("Inserting JsonCpp JSON objects into ECDb %d times took %.4f msecs.", repetitionCount, timer.GetElapsedSeconds() * 1000.0);
-    LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), "Inserting JsonCpp JSON objects into ECDb For repetitionCount", 1000);
+    LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), "Inserting JsonCpp JSON objects into ECDb For repetitionCount", repetitionCount);
 }
 
 
@@ -83,7 +83,7 @@ TEST(PerformanceJsonInserter, InsertRapidJsonUsingPresistanceAPI)
     ASSERT_TRUE(documentClass != nullptr);
     JsonInserter inserter(ecdb, *documentClass);
 
-    const int repetitionCount = 1000;
+    const int repetitionCount = 10000;
     //-----------------------------------------------------------------------------------
     // Insert using RapidJson
     //-----------------------------------------------------------------------------------
@@ -100,10 +100,10 @@ TEST(PerformanceJsonInserter, InsertRapidJsonUsingPresistanceAPI)
     ECSqlStatement statement;
     statement.Prepare (ecdb, "SELECT COUNT(*) FROM eBPWC.Document");
     DbResult::BE_SQLITE_ROW, statement.Step ();
-    ASSERT_EQ (1000, statement.GetValueInt (0)) << "Expected Number of Instances not inserted in Db";
+    ASSERT_EQ (repetitionCount, statement.GetValueInt (0)) << "Expected Number of Instances not inserted in Db";
 
     LOG.infov ("Inserting RapidJson JSON objects into ECDb %d times took %.4f msecs.", repetitionCount, timer.GetElapsedSeconds () * 1000.0);
-    LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), "Inserting RapidJson JSON objects into ECDb For repetitionCount", 1000);
+    LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), "Inserting RapidJson JSON objects into ECDb For repetitionCount", repetitionCount);
 }
 
 END_ECDBUNITTESTS_NAMESPACE
