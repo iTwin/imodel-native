@@ -2,7 +2,7 @@
  |
  |     $Source: Connect/ConnectSpaces.cpp $
  |
- |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 #include "ClientInternal.h"
@@ -237,8 +237,12 @@ void ConnectSpaces::ResetEula(bool getNewToken)
         // Note: error sent to UI thread in GetNewTokenIfNeeded().
         return;
         }
-    Utf8String url = eulaUrl + "/Agreements/RevokeAgreementService/" + 
-        ConnectAuthenticationPersistence::GetShared()->GetCredentials().GetUsername();
+
+    // The agreement service stores usernames (email addresses) in lower case and performs case-sensitive checks on them,
+    // so we must map accordingly.
+    Utf8String usernameLowerCase(ConnectAuthenticationPersistence::GetShared()->GetCredentials().GetUsername());
+    usernameLowerCase.ToLower();
+    Utf8String url = eulaUrl + "/Agreements/RevokeAgreementService/" + usernameLowerCase;
     HttpRequest request = m_client.CreatePostRequest(url);
     request.GetHeaders().SetValue("Content-Type", "application/json");
     m_credentialsCriticalSection.Enter();
