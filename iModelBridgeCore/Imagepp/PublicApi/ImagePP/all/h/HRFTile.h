@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRFTile.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -13,10 +13,13 @@
 
 #include "HFCPtr.h"
 #include <Imagepp/all/h/HFCExclusiveKey.h>
+#include "HFCEvent.h"
+#include <ImagePP/all/h/HFCException.h>
 
 BEGIN_IMAGEPP_NAMESPACE
-class HRFTile : public HFCShareableObject<HRFTile>, 
-                public HFCExclusiveKey
+class HRFTile : public HFCShareableObject<HRFTile>,
+    public HFCExclusiveKey,
+    public HFCEvent
     {
 public:
     //--------------------------------------
@@ -35,7 +38,7 @@ public:
     // Tile Methods
     //--------------------------------------
 
-    // Tile positioning info
+    // Tile positionnig info
     uint64_t           GetID() const;
     uint64_t           GetIndex() const;
     uint64_t           GetPosX() const;
@@ -52,18 +55,6 @@ public:
                                 size_t                pi_DataSize);
     void                SetData(const Byte*          pi_pData,    // ownership will be transfered
                                 size_t                pi_DataSize);
-
-    void                WaitUntilSignaled()
-        {
-        std::unique_lock<std::mutex> lk(m_mutex);
-        m_condition.wait(lk, [this]{return true == m_signaled;});
-        };
-
-    void                Signal()
-        {
-        m_signaled = true;  // once signaled it remains for the entire lifetime of this instance.
-        m_condition.notify_all();
-        };
 
 private:
     //--------------------------------------
@@ -83,10 +74,6 @@ private:
     // Tile Data
     HArrayAutoPtr<Byte>    m_pData;
     size_t                  m_DataSize;
-    
-    std::atomic<bool>       m_signaled;
-    std::mutex              m_mutex;
-    std::condition_variable m_condition;
     };
 END_IMAGEPP_NAMESPACE
 

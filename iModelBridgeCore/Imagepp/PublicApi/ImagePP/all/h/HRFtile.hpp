@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRFtile.hpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -21,6 +21,7 @@ inline HRFTile::HRFTile(uint64_t pi_ID,
                         uint64_t pi_PosX,
                         uint64_t pi_PosY,
                         unsigned short pi_Resolution)
+    : HFCEvent(true, false)
     {
     m_ID            = pi_ID;
     m_Index         = pi_Index;
@@ -29,7 +30,6 @@ inline HRFTile::HRFTile(uint64_t pi_ID,
     m_Resolution    = pi_Resolution;
     m_Valid         = false;        // Not valid until a SetData()
     m_DataSize      = 0;
-    m_signaled      = false;
     }
 
 
@@ -110,7 +110,7 @@ inline bool HRFTile::IsValid() const
 //-----------------------------------------------------------------------------
 inline size_t HRFTile::GetDataSize() const
     {
-    HPRECONDITION(m_signaled);   // the tile must have arrived
+    HPRECONDITION(WaitUntilSignaled(0));   // the tile must have arrived
     HPRECONDITION(IsValid());              // and valid
     HFCMonitor Monitor(const_cast<HRFTile*>(this));
 
@@ -124,7 +124,7 @@ inline size_t HRFTile::GetDataSize() const
 //-----------------------------------------------------------------------------
 inline const Byte* HRFTile::GetData() const
     {
-    HPRECONDITION(m_signaled);   // the tile must have arrived
+    HPRECONDITION(WaitUntilSignaled(0));   // the tile must have arrived
     HPRECONDITION(IsValid());              // and valid
     HPRECONDITION(GetDataSize() > 0);
     HFCMonitor Monitor(const_cast<HRFTile*>(this));
