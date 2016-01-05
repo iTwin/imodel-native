@@ -452,7 +452,7 @@ DbResult ECDbProfileManager::CreateECProfileTables(ECDbR ecdb)
                            "ContainerType INTEGER NOT NULL,"
                            "Ordinal INTEGER NOT NULL,"
                            "ClassId INTEGER NOT NULL REFERENCES ec_Class(Id),"
-                           "Instance TEXT,"
+                           "Instance TEXT NOT NULL,"
                            "PRIMARY KEY (ContainerId, ContainerType, ClassId))");
     if (BE_SQLITE_OK != stat)
         return stat;

@@ -191,9 +191,6 @@
     <ClInclude Include="ECSql\ECSqlPropertyPathImpl.h">
       <Filter>ECSql\ECSqlStatement</Filter>
     </ClInclude>
-    <ClInclude Include="ECDbSchemaPersistence.h">
-      <Filter>ECDbSchemaManager</Filter>
-    </ClInclude>
     <ClInclude Include="ECDbSchemaReader.h">
       <Filter>ECDbSchemaManager</Filter>
     </ClInclude>
@@ -418,6 +415,9 @@
     <ClInclude Include="ECSql\OptionsExp.h">
       <Filter>ECSql\ECSqlParser</Filter>
     </ClInclude>
+    <ClInclude Include="ECDbSchemaPersistenceHelper.h">
+      <Filter>ECDbSchemaManager</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="ECDb.mke">
@@ -563,9 +563,6 @@
     </ClCompile>
     <ClCompile Include="ECSql\ECSqlPropertyPathImpl.cpp">
       <Filter>ECSql\ECSqlStatement</Filter>
-    </ClCompile>
-    <ClCompile Include="ECDbSchemaPersistence.cpp">
-      <Filter>ECDbSchemaManager</Filter>
     </ClCompile>
     <ClCompile Include="ECDbSchemaReader.cpp">
       <Filter>ECDbSchemaManager</Filter>
@@ -771,6 +768,9 @@
     <ClCompile Include="BeBriefcaseBasedIdSequence.cpp" />
     <ClCompile Include="ECSql\OptionsExp.cpp">
       <Filter>ECSql\ECSqlParser</Filter>
+    </ClCompile>
+    <ClCompile Include="ECDbSchemaPersistenceHelper.cpp">
+      <Filter>ECDbSchemaManager</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

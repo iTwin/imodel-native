@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECDbSchemaManager.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -188,7 +188,7 @@ BentleyStatus ECDbSchemaManager::BatchImportOrUpdateECSchemas (SchemaImportConte
         BeAssert(schema != nullptr);
         if (schema == nullptr) continue;
 
-        ECSchemaId id = ECDbSchemaPersistence::GetECSchemaId(this->m_ecdb, *schema);
+        ECSchemaId id = ECDbSchemaPersistenceHelper::GetECSchemaId(this->m_ecdb, schema->GetName().c_str());
         if (schema->HasId() && (id == 0 || id != schema->GetId()))
             {
             m_ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "ECSchema %s is owned by some other ECDb file.", schema->GetFullSchemaName().c_str());
@@ -278,7 +278,7 @@ BentleyStatus ECDbSchemaManager::BatchImportOrUpdateECSchemas (SchemaImportConte
         importedSchemas.push_back(schema);
 
         ECDiffPtr diff;
-        if (0ULL != ECDbSchemaPersistence::GetECSchemaId(m_ecdb, schema->GetName().c_str()))
+        if (0ULL != ECDbSchemaPersistenceHelper::GetECSchemaId(m_ecdb, schema->GetName().c_str()))
             {
             if (!options.UpdateExistingSchemas())
                 continue;
@@ -368,7 +368,7 @@ BentleyStatus ECDbSchemaManager::UpdateECSchema (ECDiffPtr& diff, ECSchemaCR ecS
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECSchemaCP ECDbSchemaManager::GetECSchema (Utf8CP schemaName, bool ensureAllClassesLoaded) const
     {
-    const ECSchemaId schemaId = ECDbSchemaPersistence::GetECSchemaId(GetECDb(), schemaName); //WIP_FNV: could be more efficient if it first looked through those already cached in memory...
+    const ECSchemaId schemaId = ECDbSchemaPersistenceHelper::GetECSchemaId(GetECDb(), schemaName); //WIP_FNV: could be more efficient if it first looked through those already cached in memory...
     if (0 == schemaId)
         return nullptr;
 
@@ -402,7 +402,7 @@ bool ECDbSchemaManager::ContainsECSchema (Utf8CP schemaName)  const
         return false;
         }
 
-    return ECDbSchemaPersistence::GetECSchemaId (m_ecdb, schemaName) > 0ULL;
+    return ECDbSchemaPersistenceHelper::GetECSchemaId (m_ecdb, schemaName) > 0ULL;
     }
 
 /*---------------------------------------------------------------------------------------
@@ -459,7 +459,7 @@ ECEnumerationCP ECDbSchemaManager::GetECEnumeration(Utf8CP schemaName, Utf8CP en
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus ECDbSchemaManager::GetECSchemaKeys (ECSchemaKeys& keys) const
     {
-    return ECDbSchemaPersistence::GetECSchemaKeys(keys, m_ecdb);
+    return ECDbSchemaPersistenceHelper::GetECSchemaKeys(keys, m_ecdb);
     }
 
 /*---------------------------------------------------------------------------------------
@@ -468,8 +468,8 @@ BentleyStatus ECDbSchemaManager::GetECSchemaKeys (ECSchemaKeys& keys) const
 BentleyStatus ECDbSchemaManager::GetECClassKeys (ECClassKeys& keys, Utf8CP schemaName) const
     {
     PRECONDITION(schemaName != nullptr && "schemaName parameter cannot be null", ERROR);
-    ECSchemaId schemaId = ECDbSchemaPersistence::GetECSchemaId (m_ecdb, schemaName);
-    return ECDbSchemaPersistence::GetECClassKeys(keys, schemaId, m_ecdb);
+    ECSchemaId schemaId = ECDbSchemaPersistenceHelper::GetECSchemaId (m_ecdb, schemaName);
+    return ECDbSchemaPersistenceHelper::GetECClassKeys(keys, schemaId, m_ecdb);
     }
 
 /*---------------------------------------------------------------------------------------
@@ -491,7 +491,7 @@ ECDbCR ECDbSchemaManager::GetECDb () const { return m_ecdb; }
 ECSchemaPtr ECDbSchemaManager::_LocateSchema (SchemaKeyR key, SchemaMatchType matchType, ECSchemaReadContextR schemaContext)
     {
     Utf8String schemaName(key.m_schemaName);
-    const ECSchemaId schemaId = ECDbSchemaPersistence::GetECSchemaId(GetECDb (), schemaName.c_str()); //WIP_FNV: could be more efficient if it first looked through those already cached in memory...
+    const ECSchemaId schemaId = ECDbSchemaPersistenceHelper::GetECSchemaId(GetECDb (), schemaName.c_str()); //WIP_FNV: could be more efficient if it first looked through those already cached in memory...
     if (0 == schemaId)
         return nullptr;
 
@@ -533,7 +533,7 @@ ECClassId ECDbSchemaManager::GetClassIdForECClassFromDuplicateECSchema (ECDbCR d
 //---------------------------------------------------------------------------------------
 ECPropertyId ECDbSchemaManager::GetPropertyIdForECPropertyFromDuplicateECSchema(ECDbCR db, ECPropertyCR ecProperty)
     {
-    ECPropertyId ecPropertyId = ECDbSchemaPersistence::GetECPropertyId (db, ecProperty.GetClass().GetSchema().GetName().c_str(), ecProperty.GetClass().GetName().c_str(), ecProperty.GetName().c_str()); 
+    ECPropertyId ecPropertyId = ECDbSchemaPersistenceHelper::GetECPropertyId (db, ecProperty.GetClass().GetSchema().GetName().c_str(), ecProperty.GetClass().GetName().c_str(), ecProperty.GetName().c_str()); 
     const_cast<ECPropertyR>(ecProperty).SetId(ecPropertyId);
     return ecPropertyId;
     }
@@ -543,7 +543,7 @@ ECPropertyId ECDbSchemaManager::GetPropertyIdForECPropertyFromDuplicateECSchema(
 //---------------------------------------------------------------------------------------
 ECSchemaId ECDbSchemaManager::GetSchemaIdForECSchemaFromDuplicateECSchema(ECDbCR db, ECSchemaCR ecSchema)
     {
-    const ECSchemaId ecSchemaId = ECDbSchemaPersistence::GetECSchemaId(db, ecSchema);
+    const ECSchemaId ecSchemaId = ECDbSchemaPersistenceHelper::GetECSchemaId(db, ecSchema.GetName().c_str());
     const_cast<ECSchemaR>(ecSchema).SetId(ecSchemaId);
     return ecSchemaId;
     }
@@ -554,22 +554,12 @@ ECSchemaId ECDbSchemaManager::GetSchemaIdForECSchemaFromDuplicateECSchema(ECDbCR
 BentleyStatus ECDbSchemaManager::EnsureDerivedClassesExist(ECN::ECClassCR ecClass) const
     {
     ECClassId ecClassId = ECClass::UNSET_ECCLASSID;
-    if (ecClass.HasId ())
-        ecClassId = ecClass.GetId ();
+    if (ecClass.HasId())
+        ecClassId = ecClass.GetId();
     else
         ecClassId = GetClassIdForECClassFromDuplicateECSchema(m_ecdb, ecClass);
 
-    ECDbSchemaPersistence::ECClassIdList derivedClassIds;
-    if (SUCCESS != ECDbSchemaPersistence::GetDerivedECClasses(derivedClassIds, ecClassId, m_ecdb))
-        return ERROR;
-
-    for (ECClassId derivedClassId : derivedClassIds)
-        {
-        if (GetECClass (derivedClassId) == nullptr)
-            return ERROR;
-        }
-
-    return SUCCESS;
+    return m_ecReader->EnsureDerivedClassesExist(ecClassId);
     }
 
 //---------------------------------------------------------------------------------------

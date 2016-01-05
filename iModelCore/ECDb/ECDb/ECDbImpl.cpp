@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECDbImpl.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -112,7 +112,6 @@ void ECDb::Impl::OnDbChangedByOtherConnection () const
     ClearECDbCache ();
     }
 
-
 //--------------------------------------------------------------------------------------
 // @bsimethod                                Krischan.Eberle                07/2013
 //---------------+---------------+---------------+---------------+---------------+------
@@ -120,7 +119,6 @@ DbResult ECDb::Impl::VerifySchemaVersion (Db::OpenParams const& params) const
     {
     return ECDbProfileManager::UpgradeECProfile (m_ecdb, params);
     }
-
 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                Krischan.Eberle                12/2014
