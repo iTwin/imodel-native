@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/BeSQLite/BeSQLite.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -2852,8 +2852,12 @@ public:
 //=======================================================================================
 struct SnappyReader
 {
+    static const uint32_t SNAPPY_UNCOMPRESSED_BUFFER_SIZE = (34*1024);
+
     virtual ~SnappyReader() {}
     virtual ZipErrors _Read(Byte* data, uint32_t size, uint32_t& actuallyRead) = 0;
+
+    static uint32_t GetUncompressedBufferSize() { return SNAPPY_UNCOMPRESSED_BUFFER_SIZE; }
 };
 
 //=======================================================================================
@@ -2875,7 +2879,6 @@ private:
     ZipErrors TransferFromBlob(void* data, uint32_t numBytes, int offset);
 
 public:
-    BE_SQLITE_EXPORT static uint32_t GetUncompressedBufferSize();
     BE_SQLITE_EXPORT SnappyFromMemory(void* uncompressedBuffer, uint32_t uncompressedBufferSize);
     BE_SQLITE_EXPORT void Init(void* blobBuffer, uint32_t blobBufferSize);
     BE_SQLITE_EXPORT virtual ZipErrors _Read(Byte* data, uint32_t size, uint32_t& actuallyRead) override;

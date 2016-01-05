@@ -2,7 +2,7 @@
 |
 |     $Source: BeSQLite.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #define ZLIB_INTERNAL
@@ -2643,7 +2643,6 @@ DbResult BlobIO::Read(void* data, int numBytes, int offset) {return (DbResult) s
 DbResult BlobIO::Write(const void* data, int numBytes, int offset) {return (DbResult) sqlite3_blob_write(m_blob, data, numBytes, offset);}
 int BlobIO::GetNumBytes() const {return sqlite3_blob_bytes(m_blob);}
 
-#define SNAPPY_UNCOMPRESSED_BUFFER_SIZE (34*1024)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/10
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -2773,14 +2772,6 @@ ZipErrors SnappyFromBlob::_Read(Byte* data, uint32_t bufSize, uint32_t& bytesAct
     return  ZIP_SUCCESS;
     }
 
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   John.Gooding    06/2012
-//--------------+------------------------------------------------------------------------
-uint32_t SnappyFromMemory::GetUncompressedBufferSize()
-    {
-    return SNAPPY_UNCOMPRESSED_BUFFER_SIZE;
-    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    John.Gooding                    05/12
