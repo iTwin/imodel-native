@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/WebMercator.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -1194,7 +1194,7 @@ void WebMercatorDisplay::DrawView (ViewContextR context)
 * This callback is invoked on a timer during progressive display.
 * @bsimethod                                                    Sam.Wilson      10/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-IProgressiveDisplay::Completion WebMercatorDisplay::_Process (ViewContextR context)
+ProgressiveDisplay::Completion WebMercatorDisplay::_Process (ViewContextR context)
     {
     if (BeTimeUtilities::GetCurrentTimeAsUnixMillis() < m_nextRetryTime)
         {
@@ -1274,7 +1274,7 @@ IProgressiveDisplay::Completion WebMercatorDisplay::_Process (ViewContextR conte
         }
 
     //  Don't report "Finished" unless all missing tiles have been found and displayed.
-    return m_missingTilesPending.empty()? Completion::Finished: Completion::Aborted;
+    return m_missingTilesPending.empty() ? Completion::Finished : Completion::Aborted;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1292,7 +1292,6 @@ WebMercatorDisplay::WebMercatorDisplay (WebMercatorModel& model, DgnViewportR vp
     m_nextRetryTime(0),
     m_failedAttempts(0)
     {
-    DEFINE_BENTLEY_REF_COUNTED_MEMBER_INIT
     T_HOST.RegisterCopyrightSupplier(*this);
     }
 

@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/DgnDomain.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -300,7 +300,6 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnDomain : NonCopyableClass
 
         virtual ElementHandlerP _ToElementHandler() {return nullptr;}       //!< dynamic_cast this Handler to an ElementHandler
         virtual ModelHandlerP _ToModelHandler() {return nullptr;}           //!< dynamic_cast this Handler to a ModelHandler
-        virtual ViewHandlerP _ToViewHandler() {return nullptr;}             //!< dynamic_cast this Handler to a ViewHandler
         virtual AuthorityHandlerP _ToAuthorityHandler() {return nullptr;}   //!< dynamic_cast this Handler to an AuthorityHandler
 
         static Handler& z_GetHandlerInstance(); //!< @private

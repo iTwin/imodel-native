@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/DgnRangeTree.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include    <DgnPlatformInternal.h>
@@ -1971,24 +1971,22 @@ int ProgressiveViewFilter::_TestRange(QueryInfo const& info)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    10/2014
 //---------------------------------------------------------------------------------------
-bool ProgressiveViewFilter::_WantTimeoutSet(uint32_t& limit)
+uint32_t ProgressiveViewFilter::_GetTimeoutMillis()
     {
     //  We want to limit how long ProgressiveDisplay runs but don't want to start the timer
     //  until it has drawn at least one element.
     if (!m_drewElementThisPass || m_setTimeout)
-        return false;
+        return 0;
 
     m_setTimeout = true;
-    limit = 1000;
-
-    return true;
+    return 1000;
     }
 
 #define DEBUG_PRINTF(arg)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-IProgressiveDisplay::Completion ProgressiveViewFilter::_Process(ViewContextR context)
+ProgressiveDisplay::Completion ProgressiveViewFilter::_Process(ViewContextR context)
     {
     m_context = &context;
     m_nThisPass = 0; // restart every pass
@@ -1999,11 +1997,11 @@ IProgressiveDisplay::Completion ProgressiveViewFilter::_Process(ViewContextR con
         {
         m_rangeStmt->Reset();
         DEBUG_PRINTF("aborted progressive display\n");
-        return IProgressiveDisplay::Completion::Aborted;
+        return Completion::Aborted;
         }
     DEBUG_PRINTF("finished progressive display\n");
 
-    return IProgressiveDisplay::Completion::Finished;
+    return Completion::Finished;
     }
 
 /*---------------------------------------------------------------------------------**//**

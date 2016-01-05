@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/WebMercator.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -214,10 +214,8 @@ public:
 // Dislays tiles of a street map as they become available over time.
 // @bsiclass                                                    Sam.Wilson      10/2014
 //=======================================================================================
-struct WebMercatorDisplay : IProgressiveDisplay, CopyrightSupplier, NonCopyableClass
+struct WebMercatorDisplay : ProgressiveDisplay, CopyrightSupplier
 {
-    DEFINE_BENTLEY_REF_COUNTED_MEMBERS
-
     friend struct WebMercatorModel;
 
 protected:
@@ -262,9 +260,6 @@ protected:
     //! This function stops whenever view.CheckStop is true.
     //! OUTPUT: This function removes 0 or more items from m_missingTiles.
     DGNPLATFORM_EXPORT virtual Completion _Process(ViewContextR) override;
-
-    // set limit and returns true to cause caller to call EnableStopAfterTimout
-    DGNPLATFORM_EXPORT virtual bool _WantTimeoutSet(uint32_t& limit) override {return false;}
 
     DGNPLATFORM_EXPORT void DrawView (ViewContextR);
 

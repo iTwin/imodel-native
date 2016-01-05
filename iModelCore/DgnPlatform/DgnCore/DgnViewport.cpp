@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/DgnViewport.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include    <DgnPlatformInternal.h>
@@ -1258,20 +1258,9 @@ ColorDef DgnViewport::GetBackgroundColor() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      10/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnViewport::ScheduleProgressiveDisplay(IProgressiveDisplay& pd)
+void DgnViewport::ScheduleProgressiveDisplay(ProgressiveDisplay& pd)
     {
-    IProgressiveDisplayPtr pdptr(&pd);
-
-    auto iFound = std::find(m_progressiveDisplay.begin(), m_progressiveDisplay.end(), pdptr);
-    if (iFound != m_progressiveDisplay.end())
-        {
-        *iFound = pdptr;
-        }
-    else
-        {
-        m_progressiveDisplay.push_back(pdptr);
-        }
-    // *** TBD: Sort in priority order
+    m_progressiveDisplay.push_back(&pd);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1331,18 +1320,8 @@ void DgnViewport::ClearUndo()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnViewport::ChangeViewController(ViewControllerR viewController)
     {
-
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    // first discard the current ViewController.
-    // save undo state.
-    bool undoActive = IsUndoActive();
-    _Destroy();
-    _Initialize(viewController);
-#else
-    // At least discard the graphics until above NEEDS_WORK is addressed
     if (m_viewController.IsValid())
         m_viewController->GetDgnDb().Elements().DropGraphicsForViewport(*this);
-#endif
 
     ClearUndo();
 

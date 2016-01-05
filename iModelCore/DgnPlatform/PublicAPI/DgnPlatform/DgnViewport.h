@@ -83,11 +83,11 @@ struct OverlapScorer
 //=======================================================================================
 // @bsiclass                                                    Keith.Bentley   04/14
 //=======================================================================================
-struct IProgressiveDisplay : IRefCounted
+struct ProgressiveDisplay : RefCounted<NonCopyableClass>
 {
     enum class Completion {HealRequired = -1, Finished=0, Aborted=1, Failed=2};
-    virtual Completion _Process(ViewContextR) = 0;   // if this returns Finished, it is removed from the viewport
-    virtual bool _WantTimeoutSet(uint32_t& limit) = 0;  // set limit and returns true to cause caller to call EnableStopAfterTimeout
+    virtual Completion _Process(ViewContextR) = 0;      // if this returns Finished, it is removed from the viewport
+    virtual uint32_t _GetTimeoutMillis() {return 0;}  // return non-zero set timeout
 };
 
 //=======================================================================================
@@ -117,7 +117,7 @@ struct RtreeViewFilter : BeSQLite::RTreeAcceptFunction::Tester
 //=======================================================================================
 // @bsiclass                                                    Keith.Bentley   04/14
 //=======================================================================================
-struct ProgressiveViewFilter : RefCounted<IProgressiveDisplay>, RtreeViewFilter
+struct ProgressiveViewFilter : ProgressiveDisplay, RtreeViewFilter
 {
     friend struct QueryViewController;
 
@@ -143,7 +143,7 @@ struct ProgressiveViewFilter : RefCounted<IProgressiveDisplay>, RtreeViewFilter
 
     virtual int _TestRange(QueryInfo const&) override;
     virtual void _StepRange(BeSQLite::DbFunction::Context&, int nArgs, BeSQLite::DbValue* args) override;
-    virtual bool _WantTimeoutSet(uint32_t& limit) override;
+    virtual uint32_t _GetTimeoutMillis() override;
     virtual Completion _Process(ViewContextR context) override;
 };
 
@@ -406,7 +406,7 @@ protected:
     double          m_frustFraction;
     Utf8String      m_viewTitle;
     ViewControllerPtr m_viewController;
-    bvector<IProgressiveDisplayPtr> m_progressiveDisplay;    // progressive display of a query view and reality data.
+    bvector<ProgressiveDisplayPtr> m_progressiveDisplay;    // list of progressive display suppliers
     DPoint3d        m_viewCmdTargetCenter;
     Utf8String      m_currentBaseline;
     ViewStateStack  m_forwardStack;
@@ -450,9 +450,9 @@ public:
     DGNPLATFORM_EXPORT void GridFix(DPoint3dR point, RotMatrixCR rMatrixRoot, DPoint3dCR originRoot, DPoint2dCR roundingDistanceRoot, bool isoGrid);
     DGNPLATFORM_EXPORT void DrawStandardGrid(DPoint3dR gridOrigin, RotMatrixR rMatrix, DPoint2d spacing, uint32_t gridsPerRef, bool isoGrid, Point2dCP fixedRepetitions = nullptr);
     void AlignWithRootZ();
-    IProgressiveDisplay::Completion DoProgressiveDisplay();
+    ProgressiveDisplay::Completion DoProgressiveDisplay();
     void ClearProgressiveDisplay() {m_progressiveDisplay.clear();}
-    DGNPLATFORM_EXPORT void ScheduleProgressiveDisplay(IProgressiveDisplay& pd);
+    DGNPLATFORM_EXPORT void ScheduleProgressiveDisplay(ProgressiveDisplay& pd);
     DGNPLATFORM_EXPORT double GetFocusPlaneNpc();
     DGNPLATFORM_EXPORT StatusInt RootToNpcFromViewDef(DMap4d&, double&, CameraInfo const*, DPoint3dCR, DPoint3dCR, RotMatrixCR) const;
     DGNPLATFORM_EXPORT static int32_t GetMaxDisplayPriority();
