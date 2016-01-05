@@ -2,7 +2,7 @@
 |
 |     $Source: DgnScript/DgnScript.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -188,6 +188,15 @@ DgnDbStatus DgnScriptContext::ExecuteDgnDbScript(int& functionReturnStatus, Dgn:
     functionReturnStatus = -1;
 
     BeJsFunction jsfunc = m_dgndbScriptRegistry.GetFunctionProperty(functionName.c_str());
+    if (jsfunc.IsUndefined())
+        {
+        DgnDbStatus status = LoadProgram(db, functionName.c_str());
+        if (DgnDbStatus::Success != status)
+            return status;
+        
+        jsfunc = m_dgndbScriptRegistry.GetFunctionProperty(functionName.c_str());
+        }
+
     if (jsfunc.IsUndefined() || !jsfunc.IsFunction())
         {
         NativeLogging::LoggingManager::GetLogger("DgnScript")->errorv ("[%s] is not registered as a DgnDbScript", functionName.c_str());
