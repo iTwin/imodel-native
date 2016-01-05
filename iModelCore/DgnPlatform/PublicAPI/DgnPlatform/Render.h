@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/Render.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -166,6 +166,7 @@ struct Task : RefCounted<NonCopyableClass>
         ChangeScene,
         ChangeDynamics,
         ChangeDecorations,
+        DrawProgressive,
         DrawFrame,
         AssignDC,
     };
@@ -200,7 +201,7 @@ public:
     //! Determine whether this Task can replace a pending entry in the Queue.
     //! @param[in] other a pending task for the same Render::Target
     //! @return true if this Task should replace the other pending task.
-    virtual bool _CanReplace(Task& other) const {return m_operation == other.m_operation;}
+    virtual bool _Replaces(Task& other) const {return m_operation == other.m_operation;}
 
     Target* GetTarget() const {return m_target.get();} //!< Get the Target of this Task
     Operation GetOperation() const {return m_operation;} //!< Get the Operation of this Task.
@@ -1156,16 +1157,19 @@ struct Decorations
 struct Plan
 {
     enum class AntiAliasPref {Detect=0, On=1, Off=2};
+    enum class PaintScene : bool {No=0, Yes=1,};
 
     ViewFlags     m_viewFlags;
     bool          m_is3d;
+    PaintScene    m_paintScene;
     Frustum       m_frustum;
     double        m_fraction;
     ColorDef      m_bgColor;
     AntiAliasPref m_aaLines;
     AntiAliasPref m_aaText;
 
-    DGNPLATFORM_EXPORT Plan(DgnViewportCR);
+    DGNPLATFORM_EXPORT Plan(DgnViewportCR, PaintScene);
+    bool WantScene() const {return PaintScene::Yes == m_paintScene;}
 };
 
 //=======================================================================================
@@ -1207,6 +1211,7 @@ public:
     virtual void _ChangeDynamics(GraphicListR dynamics) {Queue::VerifyRenderThread(true); m_dynamics = &dynamics;}
     virtual void _ChangeDecorations(Decorations& decorations) {Queue::VerifyRenderThread(true); m_decorations = decorations;}
     virtual void _DrawFrame(PlanCR) = 0;
+    virtual void _DrawProgressive(GraphicListR progressiveList) = 0;
     virtual double _GetCameraFrustumNearScaleLimit() const = 0;
     virtual bool _WantInvertBlackBackground() {return false;}
 

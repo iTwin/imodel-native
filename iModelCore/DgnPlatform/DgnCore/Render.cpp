@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/Render.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "DgnPlatformInternal.h"
@@ -62,7 +62,7 @@ void Render::Queue::AddTask(Task& task)
     // see whether the new task should replace any existing tasks
     for (auto entry=m_tasks.begin(); entry != m_tasks.end();)
         {
-        if (task.GetTarget() == (*entry)->GetTarget() && task._CanReplace(**entry))
+        if ((task.GetTarget() == (*entry)->GetTarget()) && task._Replaces(**entry))
             {
             (*entry)->m_outcome = Render::Task::Outcome::Abandoned;
             entry = m_tasks.erase(entry);
@@ -168,10 +168,11 @@ void DgnViewport::StartRenderThread()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-Render::Plan::Plan(DgnViewportCR vp)
+Render::Plan::Plan(DgnViewportCR vp, PaintScene paintScene)
     {
     m_viewFlags = vp.GetViewFlags();
     m_is3d      = vp.Is3dView();
+    m_paintScene = paintScene;
     m_frustum   = vp.GetFrustum(DgnCoordSystem::World, true);
     m_bgColor   = vp.GetBackgroundColor();
     m_fraction  = vp.GetFrustumFraction();

@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/ViewContext.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -189,6 +189,8 @@ protected:
     bool                    m_useNpcSubRange = false;
     bool                    m_ignoreViewRange = false;
     bool                    m_scanRangeValid = false;
+    bool                    m_stopAfterTimeout = false;
+    uint64_t                m_endTime = 0;     // abort after this time.
     Render::ViewFlags       m_viewflags;
     DrawPurpose             m_purpose;
     DRange3d                m_npcSubRange;
@@ -267,8 +269,8 @@ public:
     void InitScanRangeAndPolyhedron() {_InitScanRangeAndPolyhedron();}
     void VisitDgnModel(DgnModelP model){_VisitDgnModel(model);}
     void SetScanReturn() {_SetScanReturn();}
+    void EnableStopAfterTimout(uint64_t timeout) {m_endTime = BeTimeUtilities::QueryMillisecondsCounter()+timeout; m_stopAfterTimeout=true;}
 
-public:
     Render::GraphicPtr CreateGraphic(Render::Graphic::CreateParams const& params=Render::Graphic::CreateParams()) {return _CreateGraphic(params);}
     void AddSubGraphic(Render::GraphicR graphic, DgnGeomPartId partId, TransformCR subToGraphic, Render::GeometryParamsR geomParams) {_AddSubGraphic(graphic, partId, subToGraphic, geomParams);}
     StatusInt VisitElement(GeometrySourceCR elem) {return _VisitElement(elem);}

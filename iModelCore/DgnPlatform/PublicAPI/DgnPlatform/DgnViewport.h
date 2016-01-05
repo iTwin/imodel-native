@@ -85,9 +85,8 @@ struct OverlapScorer
 //=======================================================================================
 struct ProgressiveDisplay : RefCounted<NonCopyableClass>
 {
-    enum class Completion {HealRequired = -1, Finished=0, Aborted=1, Failed=2};
-    virtual Completion _Process(ViewContextR) = 0;      // if this returns Finished, it is removed from the viewport
-    virtual uint32_t _GetTimeoutMillis() {return 0;}  // return non-zero set timeout
+    enum class Completion {Finished=0, Aborted=1, Failed=2};
+    virtual Completion _Process(ViewContextR) = 0;  // if this returns Finished, it is removed from the viewport
 };
 
 //=======================================================================================
@@ -124,26 +123,23 @@ struct ProgressiveViewFilter : ProgressiveDisplay, RtreeViewFilter
     ViewContextP                 m_context;
     uint32_t                     m_nThisPass;
     uint32_t                     m_nLastPass;
-    bool                         m_drewElementThisPass;
     bool                         m_setTimeout;
     DgnModelR                    m_existing;
     DgnDbR                       m_dgndb;
     uint64_t                     m_elementReleaseTrigger;
     uint64_t                     m_purgeTrigger;
     BeSQLite::CachedStatementPtr m_rangeStmt;
-    static const double          s_purgeFactor ;
     ProgressiveViewFilter(DgnViewportCR vp, DgnDbR dgndb, DgnModelR existing, DgnElementIdSet const* exclude, uint64_t maxMemory, BeSQLite::CachedStatement* stmt)
          : RtreeViewFilter(vp, dgndb, 0.0, exclude), m_dgndb(dgndb), m_existing(existing), m_elementReleaseTrigger(maxMemory), m_purgeTrigger(maxMemory), m_rangeStmt(stmt) 
         {
         m_nThisPass = m_nLastPass = 0;
-        m_drewElementThisPass = m_setTimeout = false;
-        m_context=NULL;
+        m_setTimeout = false;
+        m_context = nullptr;
         }  
     ~ProgressiveViewFilter();
 
     virtual int _TestRange(QueryInfo const&) override;
     virtual void _StepRange(BeSQLite::DbFunction::Context&, int nArgs, BeSQLite::DbValue* args) override;
-    virtual uint32_t _GetTimeoutMillis() override;
     virtual Completion _Process(ViewContextR context) override;
 };
 
@@ -427,7 +423,7 @@ protected:
     virtual GridOrientationType _GetGridOrientationType() const {return GridOrientationType::View;}
     DGNPLATFORM_EXPORT static void StartRenderThread();
     DMap4d CalcNpcToView();
-    void QueueDrawFrame();
+    void QueueDrawFrame(Render::Plan::PaintScene);
 
 public:
     DgnViewport(Render::TargetP target) : m_renderTarget(target) {}
@@ -491,7 +487,7 @@ public:
     void ClearUndo();
     void ChangeDynamics(Render::GraphicListP list);
     void ApplyViewState(Utf8StringCR val, int animationTime);
-    void Refresh();
+    void Refresh(Render::Plan::PaintScene);
     DGNVIEW_EXPORT void ApplyNext(int animationTime);
     DGNVIEW_EXPORT void ApplyPrevious(int animationTime);
     DGNPLATFORM_EXPORT void CheckForChanges();

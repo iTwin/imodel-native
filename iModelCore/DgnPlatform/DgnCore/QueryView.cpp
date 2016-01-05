@@ -613,10 +613,8 @@ void QueryViewController::_DrawView(ViewContextR context)
             geomModel->AddGraphicsToScene(context);
         }
 
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     //  We count on progressive display to draw zero length strings and points that are excluded by LOD filtering in the occlusion step.
-    if ((DrawPurpose::UpdateHealing == context.GetDrawPurpose() || 
-         DrawPurpose::Update == context.GetDrawPurpose()) && (results->m_reachedMaxElements || results->m_eliminatedByLOD) && !m_noQuery)
+    if ((DrawPurpose::CreateScene == context.GetDrawPurpose()) && (results->m_reachedMaxElements || results->m_eliminatedByLOD) && !m_noQuery)
         {
         wt_OperationForGraphics highPriority;  //  see comments in BeSQLite.h
         DgnViewportP vp = context.GetViewport();
@@ -632,7 +630,6 @@ void QueryViewController::_DrawView(ViewContextR context)
 
         vp->ScheduleProgressiveDisplay(*pvFilter);
         }
-#endif
     }
 
 //---------------------------------------------------------------------------------------

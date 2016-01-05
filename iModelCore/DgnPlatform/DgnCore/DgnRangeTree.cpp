@@ -55,6 +55,7 @@ DRTPrefs()
 };
 
 static DRTPrefs  s_prefs;
+#define DEBUG_PRINTF(arg)
 
 //#define DRT_DEBUGGING
 #if defined (DRT_DEBUGGING)
@@ -1864,7 +1865,6 @@ int DgnDbRTreeFitFilter::_TestRange(QueryInfo const& info)
     return  BE_SQLITE_OK;
     }
 
-const double ProgressiveViewFilter::s_purgeFactor = 1.3;
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/14
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1893,8 +1893,13 @@ void ProgressiveViewFilter::_StepRange(DbFunction::Context&, int nArgs, DbValue*
         GeometrySourceCP geomElem = el->ToGeometrySource();
         if (nullptr != geomElem)
             {
-            m_drewElementThisPass = true;
             m_context->VisitElement(*geomElem);
+
+            if (!m_setTimeout)
+                { // don't set the timeout until after we've drawn one element
+                m_context->EnableStopAfterTimout(BeTimeUtilities::QueryMillisecondsCounterUInt32() + 1000);
+                m_setTimeout = true;
+                }
             }
         }
 
@@ -1908,6 +1913,8 @@ void ProgressiveViewFilter::_StepRange(DbFunction::Context&, int nArgs, DbValue*
         return;
 
     pool.Purge(m_elementReleaseTrigger);   // Try to get back to the elementPurgeTrigger
+
+    static const double s_purgeFactor = 1.3;
 
     // The purge may not have succeeded if there are elements in the QueryView's list of elements and those elements hold symbol references.
     // When that is true, we leave it to QueryViewController::_DrawView to try to clean up.  This logic just tries to recover from the
@@ -1968,21 +1975,6 @@ int ProgressiveViewFilter::_TestRange(QueryInfo const& info)
     return BE_SQLITE_OK;
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   John.Gooding    10/2014
-//---------------------------------------------------------------------------------------
-uint32_t ProgressiveViewFilter::_GetTimeoutMillis()
-    {
-    //  We want to limit how long ProgressiveDisplay runs but don't want to start the timer
-    //  until it has drawn at least one element.
-    if (!m_drewElementThisPass || m_setTimeout)
-        return 0;
-
-    m_setTimeout = true;
-    return 1000;
-    }
-
-#define DEBUG_PRINTF(arg)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/14
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1990,7 +1982,7 @@ ProgressiveDisplay::Completion ProgressiveViewFilter::_Process(ViewContextR cont
     {
     m_context = &context;
     m_nThisPass = 0; // restart every pass
-    m_drewElementThisPass = m_setTimeout = false;
+    m_setTimeout = false;
 
     DEBUG_PRINTF("start progressive display\n");
     if (BE_SQLITE_ROW != StepRTree(*m_rangeStmt))
