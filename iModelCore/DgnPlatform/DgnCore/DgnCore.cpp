@@ -12,7 +12,15 @@
 #include <DgnPlatform/DgnGeoCoord.h>
 
 BeThreadLocalStorage g_hostForThread;
+BeThreadLocalStorage g_threadId;
+
 double const fc_hugeVal = 1e37;
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   01/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnPlatformLib::ThreadId DgnPlatformLib::GetThreadId() {return (ThreadId) g_threadId.GetValueAsInteger();}
+void DgnPlatformLib::SetThreadId(ThreadId id) {g_threadId.SetValueAsInteger((int) id);}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/14
@@ -270,6 +278,7 @@ NotificationManager::MessageBoxValue NotificationManager::OpenMessageBox(Message
 void DgnPlatformLib::AdoptHost(DgnPlatformLib::Host& host)
     {
     g_hostForThread.SetValueAsPointer(&host);
+    SetThreadId(ThreadId::Client);
     }
 
 /*---------------------------------------------------------------------------------**//**

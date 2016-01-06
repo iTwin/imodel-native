@@ -2,14 +2,13 @@
 |
 |     $Source: DgnCore/QueryModel.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "DgnPlatformInternal.h"
 #include <DgnPlatform/QueryModel.h>
 #include <DgnPlatform/QueryView.h>
 #include <DgnPlatform/ViewContext.h>
-#include <Bentley/BeThreadLocalStorage.h>
 #include "UpdateLogging.h"
 
 #if !defined (NDEBUG)
@@ -18,18 +17,6 @@
 
 //#define TRACE_QUERY_LOGIC 1
 //#define DEBUG_CALLS 1
-
-BeThreadLocalStorage g_queryThreadChecker;
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   12/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-static void verifyQueryThread(bool wantQueryThread)
-    {
-#ifdef DEBUG_THREADS
-    BeAssert(wantQueryThread == TO_BOOL(g_queryThreadChecker.GetValueAsInteger()));
-#endif
-    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    09/2012
@@ -71,7 +58,7 @@ void QueryModel::WaitUntilFinished(ICheckStop* checkStop) { GetDgnDb().QueryMode
 +---------------+---------------+---------------+---------------+---------------+------*/
 void QueryModel::SaveQueryResults()
     {
-    verifyQueryThread(false);
+    DgnPlatformLib::VerifyClientThread();
 
     if (m_updatedResults.IsNull())
         {
@@ -171,10 +158,8 @@ struct ProcessorImpl : QueryModel::Processor, ICheckStop
 +---------------+---------------+---------------+---------------+---------------+------*/
 THREAD_MAIN_IMPL QueryModel::Queue::qt_Main(void* arg)
     {
-#ifdef DEBUG_THREADS
     BeThreadUtilities::SetCurrentThreadName("QueryModel");
-    g_queryThreadChecker.SetValueAsInteger(true);
-#endif
+    DgnPlatformLib::SetThreadId(DgnPlatformLib::ThreadId::Query);
 
     auto pThis = reinterpret_cast<Queue*>(arg);
     pThis->qt_WaitForWork();
@@ -196,7 +181,7 @@ bool QueryModel::Queue::_TestCondition(BeConditionVariable& cv)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void QueryModel::Queue::Terminate()
     {
-    verifyQueryThread(false);
+    DgnPlatformLib::VerifyClientThread();
 
     BeMutexHolder lock(m_cv.GetMutex());
     if (State::Terminated != m_state)
@@ -215,7 +200,8 @@ void QueryModel::Queue::Terminate()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void QueryModel::Queue::RequestProcessing(Processor::Params const& params)
     {
-    verifyQueryThread(false);
+    DgnPlatformLib::VerifyClientThread();
+
     QueryModelR model = params.m_model;
     BeAssert(&model.GetDgnDb() == &m_db);
 
@@ -263,7 +249,7 @@ public:
 +---------------+---------------+---------------+---------------+---------------+------*/
 void QueryModel::Queue::RequestAbort(QueryModelR model, bool waitUntilFinished)
     {
-    verifyQueryThread(false);
+    DgnPlatformLib::VerifyClientThread();
     BeAssert(&model.GetDgnDb() == &m_db);
 
     if (true) // hold lock while we test/set state
@@ -350,7 +336,7 @@ struct GenericPredicate : IConditionVariablePredicate
 +---------------+---------------+---------------+---------------+---------------+------*/
 void QueryModel::Queue::qt_WaitForWork()
     {
-    verifyQueryThread(true);
+    DgnPlatformLib::VerifyQueryThread();
 
     GenericPredicate predicate([&]() { return State::TerminateRequested == this->m_state || !m_pending.empty(); });
 
@@ -447,7 +433,7 @@ bool ProcessorImpl::LoadElements(DgnDbRTree3dViewFilter::T_OcclusionScoreMap& ma
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ProcessorImpl::_Process()
     {
-    verifyQueryThread(true);
+    DgnPlatformLib::VerifyQueryThread();
 
 #if defined TRACE_QUERY_LOGIC
     printf("QMQ: Processing\n");

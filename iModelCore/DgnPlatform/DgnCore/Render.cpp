@@ -30,11 +30,6 @@
 #   define LOG_PRINTF(fmt, ...)
 #endif
 
-#if defined (DEBUG_THREADS)
-    #include <Bentley/BeThreadLocalStorage.h>
-    BeThreadLocalStorage g_threadChecker;
-#endif
-
 BEGIN_UNNAMED_NAMESPACE
     static Render::Queue* s_renderQueue = nullptr;
 END_UNNAMED_NAMESPACE
@@ -42,20 +37,14 @@ END_UNNAMED_NAMESPACE
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void Render::Queue::VerifyRenderThread(bool yesNo)
-    {
-#if defined (DEBUG_THREADS)
-    BeAssert (yesNo == TO_BOOL((g_threadChecker.GetValueAsInteger())));
-#endif
-    }
-
+void Render::Target::VerifyRenderThread() {DgnPlatformLib::VerifyRenderThread();}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Render::Queue::AddTask(Task& task)
     {
-    VerifyRenderThread(false);
+    DgnPlatformLib::VerifyClientThread();
 
     BeMutexHolder lock(m_cv.GetMutex());
 
@@ -80,7 +69,7 @@ void Render::Queue::AddTask(Task& task)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Render::Queue::WaitForIdle()
     {
-    VerifyRenderThread(false);
+    DgnPlatformLib::VerifyClientThread();
 
     BeMutexHolder holder(m_cv.GetMutex());
     while (m_currTask.IsValid() || !m_tasks.empty())
@@ -135,10 +124,7 @@ void Render::Queue::Process()
 THREAD_MAIN_IMPL Render::Queue::Main(void* arg)
     {
     BeThreadUtilities::SetCurrentThreadName("Render"); // for debugging only
-
-#if defined (DEBUG_THREADS)
-    g_threadChecker.SetValueAsInteger(true);
-#endif
+    DgnPlatformLib::SetThreadId(DgnPlatformLib::ThreadId::Render);
 
     ((Render::Queue*)arg)->Process(); // this never returns
     return 0;
@@ -155,10 +141,6 @@ void DgnViewport::StartRenderThread()
         return;
         }
 
-#if defined (DEBUG_THREADS)
-    g_threadChecker.SetValueAsInteger(false);
-#endif
-    
     s_renderQueue = new Render::Queue();
 
     // create the rendering thread
