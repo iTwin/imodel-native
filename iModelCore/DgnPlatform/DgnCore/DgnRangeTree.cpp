@@ -55,7 +55,7 @@ DRTPrefs()
 };
 
 static DRTPrefs  s_prefs;
-#define DEBUG_PRINTF(arg)
+#define DEBUG_PRINTF(arg) 
 
 //#define DRT_DEBUGGING
 #if defined (DRT_DEBUGGING)
@@ -75,7 +75,6 @@ static inline double   timeGetSeconds()
 
     return timeGetTime() / s_timerResolution;
     }
-
 
 #define INCLUDE_TIMER(t)            IncludeTimer  includer(t)
 #define EXCLUDE_TIMER(t)            ExcludeTimer  excluder(t)
@@ -1883,7 +1882,7 @@ void ProgressiveViewFilter::_StepRange(DbFunction::Context&, int nArgs, DbValue*
     if (nullptr != m_exclude && m_exclude->find(elementId) != m_exclude->end())
         return;
 
-    if (m_existing.FindElementById(elementId))
+    if (m_queryModel.FindElementById(elementId))
         return;
 
     DgnElements& pool = m_dgndb.Elements();
@@ -1980,6 +1979,19 @@ int ProgressiveViewFilter::_TestRange(QueryInfo const& info)
 +---------------+---------------+---------------+---------------+---------------+------*/
 ProgressiveDisplay::Completion ProgressiveViewFilter::_Process(ViewContextR context)
     {
+    DgnPlatformLib::VerifyClientThread();
+
+    // Progressive display happens on the client thread. It uses SQLite, and therefore cannot run at the same time 
+    // as the query thread (that causes deadlocks, race conditions, crashes, etc.). This test is the only necessary 
+    // synchronization to ensure that they do not run at the same time. It tests whether the query queue is currently
+    // idle. If not, we simply return "aborted" and wait for the next chance to begin. If the query queue is empty and 
+    // inactive, it can't be restarted during this call because only this thread can add entries to it.
+    if (!m_dgndb.QueryModels().IsIdle())
+        {
+        DEBUG_PRINTF("can't start progressive display\n");
+        return Completion::Aborted;
+        }
+
     m_context = &context;
     m_nThisPass = 0; // restart every pass
     m_setTimeout = false;
@@ -2001,6 +2013,5 @@ ProgressiveDisplay::Completion ProgressiveViewFilter::_Process(ViewContextR cont
 +---------------+---------------+---------------+---------------+---------------+------*/
 ProgressiveViewFilter::~ProgressiveViewFilter()
     {
-    wt_OperationForGraphics  _v_v;
     m_rangeStmt = nullptr;
     }

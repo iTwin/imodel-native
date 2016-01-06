@@ -11,10 +11,6 @@
 #include <DgnPlatform/ViewContext.h>
 #include "UpdateLogging.h"
 
-#if !defined (NDEBUG)
-#define DEBUG_THREADS 1
-#endif
-
 //#define TRACE_QUERY_LOGIC 1
 //#define DEBUG_CALLS 1
 
@@ -78,22 +74,6 @@ void QueryModel::SaveQueryResults()
     // Now add everything that is in the secondary list but not the first.
     for (auto const& result : m_currQueryResults->m_closeElements)
         _OnLoadedElement(*result);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   John.Gooding    05/2012
-//--------------+------------------------------------------------------------------------
-void QueryModel::SetState(State newState)
-    {
-    m_state = newState;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   12/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-void QueryModel::SetUpdatedResults(Results* results)
-    {
-    m_updatedResults = results;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -298,6 +278,8 @@ void QueryModel::Queue::RequestAbort(QueryModelR model, bool waitUntilFinished)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void QueryModel::Queue::WaitUntilFinished(QueryModelR model, ICheckStop* checkStop)
     {
+    DgnPlatformLib::VerifyClientThread();
+
     WaitUntilIdlePredicate predicate(model);
     while (QueryModel::State::Idle != model.GetState())
         {
@@ -339,57 +321,53 @@ void QueryModel::Queue::qt_WaitForWork()
     DgnPlatformLib::VerifyQueryThread();
 
     GenericPredicate predicate([&]() { return State::TerminateRequested == this->m_state || !m_pending.empty(); });
+    StopWatch timer(false);
 
     while (State::TerminateRequested != m_state)
         {
         m_cv.WaitOnCondition(&predicate, BeConditionVariable::Infinite);
 
-        ProcessorPtr processing;
-
             {
             BeMutexHolder lock(m_cv.GetMutex());
 
             if (State::TerminateRequested == m_state)
-                {
                 break;
-                }
-            else if (!m_pending.empty())
+
+            if (!m_pending.empty())
                 {
-                processing = m_pending.front();
+                m_active = m_pending.front();
                 m_pending.pop_front();
-                if (processing->GetModel().GetState() == QueryModel::State::Pending)
-                    processing->GetModel().SetState(QueryModel::State::Processing);
+                if (m_active->GetModel().GetState() == QueryModel::State::Pending)
+                    m_active->GetModel().SetState(QueryModel::State::Processing);
                 }
             }
 
-        if (processing.IsValid())
+        if (m_active.IsValid())
             {
-            auto& model = processing->GetModel();
-            StopWatch timer(nullptr, true);
-            if (processing->Process())
+            auto& model = m_active->GetModel();
+            timer.Start();
+            if (m_active->Process())
                 {
 #if defined TRACE_QUERY_LOGIC
                 printf("QMQ: Processing complete\n");
 #endif
-                auto updatedResults = processing->GetResults();
+                auto updatedResults = m_active->GetResults();
                 BeAssert(nullptr != updatedResults);
 
-                timer.Stop();
 #if defined TRACE_QUERY_LOGIC
-                printf("QMQ: Elapsed query time %.8f\n", timer.GetElapsedSeconds());
+                printf("QMQ: Elapsed query time %.8f\n", timer.GetCurrentSeconds());
 #endif
-                updatedResults->m_elapsedSeconds = timer.GetElapsedSeconds();
+                updatedResults->m_elapsedSeconds = timer.GetCurrentSeconds();
                 model.SetUpdatedResults(updatedResults);
                 
-                processing->OnCompleted();
+                m_active->OnCompleted();
                 }
 #if defined TRACE_QUERY_LOGIC
             else
                 printf("QMQ: Processing aborted\n");
 #endif
 
-            processing = nullptr;
-
+            m_active = nullptr;
                 {
                 BeMutexHolder lock(m_cv.GetMutex());
                 if (QueryModel::State::Pending != model.GetState())
