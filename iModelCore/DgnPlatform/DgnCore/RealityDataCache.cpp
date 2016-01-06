@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/RealityDataCache.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -846,24 +846,16 @@ protected:
             return RealityDataSourceResponse::Create(RealityDataSourceResult::Error_NotFound, m_filename.c_str(), *m_data);
 
         // open the file
-        FILE* file = fopen (m_filename.c_str (), "rb");
-        if (NULL == file)
+        BeFile configFile;
+        if (BeFileStatus::Success != configFile.Open(m_filename.c_str(), BeFileAccess::Read))
             {
             BeAssert (false);
             return RealityDataSourceResponse::Create(RealityDataSourceResult::Error_Unknown, m_filename.c_str(), *m_data);
             }
     
-        // get file size
-        fseek (file, 0, SEEK_END);
-        long size = ftell (file);
-        rewind (file);
-
         // read file content
         bvector<Byte> data;
-        data.resize(size);
-        size_t bytesRead = fread (&data[0], sizeof (Utf8Char), size, file);
-        fclose(file);
-        if (bytesRead != size)
+        if (BeFileStatus::Success != configFile.ReadEntireFile(data))
             {
             BeAssert (false);
             return RealityDataSourceResponse::Create(RealityDataSourceResult::Error_Unknown, m_filename.c_str(), *m_data);
