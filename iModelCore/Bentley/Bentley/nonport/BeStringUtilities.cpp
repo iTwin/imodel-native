@@ -2861,6 +2861,7 @@ WString  BeStringUtilities::ParseFileURI (WCharCP uri, WCharCP basePath)
 // @bsimethod                                                   Jeff.Marker     05/2014
 //---------------------------------------------------------------------------------------
 BeThreadLocalStorage g_icuTlsData;
+typedef bvector<Byte> T_IcuData;
 void BeStringUtilities::Initialize(BeFileNameCR assetPathW)
     {
     // While ICU allows you to manually set the data file path, on Win32, it only accepts locale char*.
@@ -2884,7 +2885,7 @@ void BeStringUtilities::Initialize(BeFileNameCR assetPathW)
         return;
         }
     
-    bvector<Byte>* icuData = new bvector<Byte>();
+    T_IcuData* icuData = new T_IcuData();
     g_icuTlsData.SetValueAsPointer(icuData);
 
     if (BeFileStatus::Success != icuDataFile.ReadEntireFile(*icuData))
@@ -2909,7 +2910,7 @@ void BeStringUtilities::Terminate()
         { BeAssert(false); return; }
 
     u_cleanup();
-    delete g_icuTlsData.GetValueAsPointer();
+    delete (T_IcuData*)g_icuTlsData.GetValueAsPointer();
     g_icuTlsData.SetValueAsPointer(nullptr);
     }
 
