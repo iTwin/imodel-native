@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/DgnDomain.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "DgnPlatformInternal.h"
@@ -238,7 +238,7 @@ void DgnDomains::OnDbClose()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Shaun.Sewall                    04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnDomain::ImportSchema(DgnDbR db, BeFileNameCR schemaFile) const
+DgnDbStatus DgnDomain::ImportSchema(DgnDbR db, BeFileNameCR schemaFile, ImportSchemaOptions options) const
     {
     if (!schemaFile.DoesPathExist())
         {
@@ -270,7 +270,7 @@ DgnDbStatus DgnDomain::ImportSchema(DgnDbR db, BeFileNameCR schemaFile) const
     if (BentleyStatus::SUCCESS != db.Schemas().ImportECSchemas(contextPtr->GetCache()))
         return DgnDbStatus::BadSchema;
 
-    if (BentleyStatus::SUCCESS != db.Schemas().CreateECClassViewsInDb())
+    if ((ImportSchemaOptions::CreateECClassViews == (options & ImportSchemaOptions::CreateECClassViews)) && (BentleyStatus::SUCCESS != db.Schemas().CreateECClassViewsInDb()))
         return DgnDbStatus::WriteError;
 
     db.Domains().SyncWithSchemas();
