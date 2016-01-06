@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HTIFFUtils.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -633,8 +633,6 @@ public:
 
     uint64_t           GetSize     ();
     HFCAccessMode       GetMode     () const;
-    void                Lock        (uint64_t pi_Pos, uint64_t pi_Size, bool pi_Share = false);
-    void                Unlock      (uint64_t pi_Pos, uint64_t pi_Size);
 
     void                AddInitialFreeBlock (const uint64_t* pi_pOffset, const uint64_t* pi_pSize, uint32_t pi_Count);
     void                AddInitialFreeBlock (const uint32_t* pi_pOffset, const uint32_t* pi_pSize, uint32_t pi_Count);

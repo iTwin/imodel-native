@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/HTiff/src/HTIFFUtils.cpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -344,26 +344,6 @@ HTIFFStream::~HTIFFStream()
 HFCPtr<HFCURL> HTIFFStream::GetURL() const
     {
     return m_pStream->GetURL();
-    }
-
-//-----------------------------------------------------------------------------
-//
-//-----------------------------------------------------------------------------
-
-void HTIFFStream::Lock(uint64_t pi_Pos, uint64_t pi_Size, bool pi_Share)
-    {
-    HASSERT(m_pStream != 0);
-    m_pStream->Lock(pi_Pos, pi_Size, pi_Share);
-    }
-
-//-----------------------------------------------------------------------------
-//
-//-----------------------------------------------------------------------------
-
-void HTIFFStream::Unlock(uint64_t pi_Pos, uint64_t pi_Size)
-    {
-    HASSERT(m_pStream != 0);
-    m_pStream->Unlock(pi_Pos, pi_Size);
     }
 
 //-----------------------------------------------------------------------------
