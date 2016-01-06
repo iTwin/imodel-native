@@ -57,12 +57,6 @@ public:
     static JsCurvePrimitiveP StronglyTypedJsCurvePrimitive (ICurvePrimitivePtr &data, bool nullifyCurveVector);
 
 
-    static JsCurvePrimitiveP CreateLineString (JsDPoint3dArrayP data)
-        {
-        ICurvePrimitivePtr cp = ICurvePrimitive::CreateLineString (data->GetRef ());
-        return new JsCurvePrimitive (cp);
-        }
-
     double CurvePrimitiveType (){return (double)(int)m_curvePrimitive->GetCurvePrimitiveType ();}
     JsDPoint3dP PointAtFraction (double f)
         {
@@ -151,6 +145,20 @@ public:
 
 };
 
+struct JsLineString : JsCurvePrimitive
+{
+public:
+    JsLineString () {}
+    JsLineString (ICurvePrimitivePtr const &data) {Set (data);}
+    JsLineString (JsDPoint3dArrayP points)
+        {
+        ICurvePrimitivePtr cp = ICurvePrimitive::CreateLineString (points->GetRef ());
+        Set (cp);
+        }
+    virtual JsLineString * Clone () override {return new JsLineString (m_curvePrimitive->Clone ());}
+
+};
+
 struct JsEllipticArc: JsCurvePrimitive
 {
 public:
@@ -231,6 +239,36 @@ public:
         return data.IsValid () ? data->IsClosed () : false;
         }
 };
+
+
+//=======================================================================================
+// @bsiclass                                                    Eariln.Lutz     08/15
+//=======================================================================================
+struct JsCatenaryCurve: JsCurvePrimitive
+{
+private:
+public:
+    JsCatenaryCurve () {}
+    JsCatenaryCurve (ICurvePrimitivePtr const &data) {Set (data);}
+    virtual JsCatenaryCurve * Clone () override {return new JsCatenaryCurve (m_curvePrimitive->Clone ());}
+
+    // Create a catenary curve:   xyz = origin + x * xVector + yVector * a * cosh(x/a)
+    static JsCatenaryCurve * CreateFromCoefficientAndXLimits (JsDPoint3dP origin, JsDVector3dP xVector, JsDVector3dP yVector, double a, double xStart, double xEnd)
+        {
+        auto nativePrimitive = ICurvePrimitive::CreateCatenary (
+                            a,
+                            DPoint3dDVec3dDVec3d (origin->Get (), xVector->Get (), yVector->Get ()),
+                            xStart,
+                            xEnd);
+        if (nativePrimitive.IsValid ())
+            {
+            return new JsCatenaryCurve (nativePrimitive);
+            }
+        return nullptr;
+        }
+};
+
+
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE
 

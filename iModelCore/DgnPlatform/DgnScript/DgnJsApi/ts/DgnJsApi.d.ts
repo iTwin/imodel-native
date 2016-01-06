@@ -3,12 +3,18 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
     /*** BEGIN_FORWARD_DECLARATIONS ***/
     class DPoint3d { /*** NATIVE_TYPE_NAME = JsDPoint3d ***/ }
     class YawPitchRollAngles { /*** NATIVE_TYPE_NAME = JsYawPitchRollAngles ***/ }
-    class SolidPrimitive { /*** NATIVE_TYPE_NAME = JsSolidPrimitive ***/ }
+    class SolidPrimitive extends Geometry { /*** NATIVE_TYPE_NAME = JsSolidPrimitive ***/ }
+    class DgnSphere extends SolidPrimitive {/*** NATIVE_TYPE_NAME = JsDgnSphere ***/ }
+    class DgnBox extends SolidPrimitive {/*** NATIVE_TYPE_NAME = JsDgnBpx ***/ }
+    class Geometry { /*** NATIVE_TYPE_NAME = JsGeometry ***/ }
     /*** END_FORWARD_DECLARATIONS ***/
 
-    type DPoint3dP = cxx_pointer<DPoint3d>;
-    type YawPitchRollAnglesP = cxx_pointer<YawPitchRollAngles>;
-    type SolidPrimitiveP = cxx_pointer<SolidPrimitive>;
+    type DPoint3dP              = cxx_pointer<DPoint3d>;
+    type YawPitchRollAnglesP    = cxx_pointer<YawPitchRollAngles>;
+    type SolidPrimitiveP        = cxx_pointer<SolidPrimitive>;
+    type DgnSphereP             = cxx_pointer<DgnSphere>;
+    type DgnBoxP                = cxx_pointer<DgnBox>;
+    type GeometryP              = cxx_pointer<Geometry>;
 
     enum ECPropertyPrimitiveType { }
 
@@ -291,7 +297,8 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
     {
         /*** NATIVE_TYPE_NAME = JsElementGeometryBuilder ***/ 
         constructor(el: DgnElementP, o: DPoint3dP, angles: YawPitchRollAnglesP);
-        Append(solid: SolidPrimitiveP): void;
+        Append(geometry: GeometryP): void;
+        AppendSolidPrimitive(geometry: SolidPrimitiveP): void;
         SetGeomStreamAndPlacement(element: DgnElementP): cxx_double;
         OnDispose(): void;
         Dispose(): void;

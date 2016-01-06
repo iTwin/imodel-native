@@ -65,6 +65,7 @@ JsSTRUCT(JsGeometry)
         JsSTRUCT(JsLineSegment)
         JsSTRUCT(JsEllipticArc)
         JsSTRUCT(JsBsplineCurve)
+        JsSTRUCT(JsCatenaryCurve)
 
     JsSTRUCT(JsCurveVector)
         JsSTRUCT(JsUnstructuredCurveVector)

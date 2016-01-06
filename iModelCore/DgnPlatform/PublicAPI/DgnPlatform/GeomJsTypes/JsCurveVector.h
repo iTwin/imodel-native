@@ -74,9 +74,9 @@ public:
 
     virtual bool IsSameStructureAndGeometry (JsGeometryP other) override
         {
-        ICurveVectorPtr otherVector;
+        CurveVectorPtr otherVector;
         if (other != nullptr
-            && (otherVector = other->GetICurveVectorPtr (), otherVector.IsValid ())       // COMMA
+            && (otherVector = other->GetCurveVectorPtr (), otherVector.IsValid ())       // COMMA
             )
             {
             return m_curveVector->IsSameStructureAndGeometry (*otherVector);
@@ -86,9 +86,9 @@ public:
 
     virtual bool IsSameStructure (JsGeometryP other) override
         {
-        ICurveVectorPtr otherVector;
+        CurveVectorPtr otherVector;
         if (other != nullptr
-            && (otherVector = other->GetICurveVectorPtr (), otherVector.IsValid ())       // COMMA
+            && (otherVector = other->GetCurveVectorPtr (), otherVector.IsValid ())       // COMMA
             )
             {
             return m_curveVector->IsSameStructure (*otherVector);

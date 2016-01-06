@@ -193,7 +193,7 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
 
     
     //! A strongly typed angle, with explicitly named access to degrees and radians
-    class Angle implements IDisposable {
+    class Angle implements IDisposable, BeJsProjection_SuppressConstructor {
         /*** NATIVE_TYPE_NAME = JsAngle ***/ 
 
         Clone () : AngleP;        
@@ -482,7 +482,7 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
 
 /********************************************************************************
 * TREE CLASSES:
-*   (CurvePrimitive LineSegment EllipticArc BsplineCurve)
+*   (CurvePrimitive LineSegment EllipticArc BsplineCurve CatenaryCurve)
 *   (CurveVector    Path Loop ParityRegion UnionRegion UnstructuredCurveVector)
 *   (SolidPrimitive DgnBox DgnSphere DgnTorusPipe DgnCone DgnExtrusion DgnRotationalSweep)
 *   Polyface
@@ -502,7 +502,6 @@ class CurvePrimitive extends Geometry implements BeJsProjection_SuppressConstruc
     {
     /*** NATIVE_TYPE_NAME = JsCurvePrimitive ***/ 
     Clone(): CurvePrimitiveP;
-    static CreateLineString(points: DPoint3dArrayP): CurvePrimitiveP;
     CurvePrimitiveType(): cxx_double;
     PointAtFraction(f: cxx_double): DPoint3dP; 
 
@@ -520,6 +519,16 @@ class CurvePrimitive extends Geometry implements BeJsProjection_SuppressConstruc
     }
 
     type LineSegmentP = cxx_pointer<LineSegment>;
+
+
+    //! A wrapper for BentleyApi::JsLineString
+    class LineString extends CurvePrimitive {
+        /*** NATIVE_TYPE_NAME = JsLineString ***/
+        Clone(): LineStringP;
+        constructor (points: DPoint3dArrayP);
+    }
+
+    type LineStringP = cxx_pointer<LineString>;
 
 
 
@@ -551,6 +560,19 @@ class CurvePrimitive extends Geometry implements BeJsProjection_SuppressConstruc
     }
 
     type BsplineCurveP = cxx_pointer<BsplineCurve>;
+
+    //! A wrapper for a bspline curve
+
+    class CatenaryCurve extends CurvePrimitive implements BeJsProjection_SuppressConstructor
+    {
+        /*** NATIVE_TYPE_NAME = JsCatenaryCurve ***/
+        constructor ();
+        Clone(): CatenaryCurveP;
+        // Create a catenary curve:   xyz = origin + x * xVector + yVector * a * cosh(x/a)        
+        static CreateFromCoefficientAndXLimits (origin: DPoint3dP, xVector: DVector3dP, yVector: DVector3dP, a: cxx_double, xStart: cxx_double, xEnd: cxx_double) : CatenaryCurveP;
+    }
+
+    type CatenaryCurveP = cxx_pointer<CatenaryCurve>;
 
 
 
@@ -701,7 +723,7 @@ type PolyfaceVisitorP = cxx_pointer<PolyfaceVisitor>;
 
 
 //! A non-instantiable wrapper for BentleyApi::JsSolidPrimitive
-class SolidPrimitive implements BeJsProjection_SuppressConstructor {
+class SolidPrimitive extends Geometry implements BeJsProjection_SuppressConstructor {
     /*** NATIVE_TYPE_NAME = JsSolidPrimitive ***/
     Clone(): SolidPrimitiveP;
 }
