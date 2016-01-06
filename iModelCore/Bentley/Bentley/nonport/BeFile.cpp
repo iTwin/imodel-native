@@ -2,7 +2,7 @@
 |
 |     $Source: Bentley/nonport/BeFile.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #if defined (BENTLEY_WIN32) || defined (BENTLEY_WINRT)
@@ -38,7 +38,7 @@
 * @bsimethod                                                    Sam.Wilson      06/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
 #if defined (BENTLEYCONFIG_OS_WINDOWS)
-static BeFileStatus translateHResultToBeFileStatus (int32_t result)
+static BeFileStatus translateHResultToBeFileStatus(int32_t result)
     {
     switch (result)
         {
@@ -74,10 +74,10 @@ static BeFileStatus translateHResultToBeFileStatus (int32_t result)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    sam.wilson                      07/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-static Utf8String toUtf8 (wchar_t const* w)
+static Utf8String toUtf8(wchar_t const* w)
     {
     Utf8String u;
-    BeStringUtilities::WCharToUtf8 (u, w);
+    BeStringUtilities::WCharToUtf8(u, w);
     return u;
     }
 #endif
@@ -85,28 +85,28 @@ static Utf8String toUtf8 (wchar_t const* w)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      06/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-BeFile::BeFile ()
+BeFile::BeFile()
     :
     m_mode(BeFileAccess::Read),
     m_handle(INVALID_HANDLE_VALUE),
-    m_lastError (BeFileStatus::UnknownError)
+    m_lastError(BeFileStatus::UnknownError)
     {;}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            BeFile::Swap (BeFile& f2)
+void            BeFile::Swap(BeFile& f2)
     {
-    std::swap (m_handle,    f2.m_handle);
-    std::swap (m_mode,      f2.m_mode);
-    std::swap (m_lastError, f2.m_lastError);
+    std::swap(m_handle,    f2.m_handle);
+    std::swap(m_mode,      f2.m_mode);
+    std::swap(m_lastError, f2.m_lastError);
     }
 
 #if defined (__unix__)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      06/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-static BeFileStatus translateErrnoToBeFileStatus (int e)
+static BeFileStatus translateErrnoToBeFileStatus(int e)
     {
     switch (e)
         {
@@ -122,7 +122,7 @@ static BeFileStatus translateErrnoToBeFileStatus (int e)
         case ENOENT:
             return BeFileStatus::FileNotFoundError;
 
-#if defined(ENOSPC)
+#if defined (ENOSPC)
         case ENOSPC:
             return BeFileStatus::DiskFull;
 #endif
@@ -135,16 +135,16 @@ static BeFileStatus translateErrnoToBeFileStatus (int e)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      06/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-BeFileStatus BeFile::SetLastError () const
+BeFileStatus BeFile::SetLastError() const
     {
 #if defined (BENTLEYCONFIG_OS_WINDOWS)
     HRESULT r = ::GetLastError();
-    BeAssert ((S_OK != r) && "SetLastError called when there is no failure?!");
-    return m_lastError = translateHResultToBeFileStatus (r);
+    BeAssert((S_OK != r) && "SetLastError called when there is no failure?!");
+    return m_lastError = translateHResultToBeFileStatus(r);
 
 #elif defined (BENTLEYCONFIG_OS_UNIX)
 
-    return m_lastError = translateErrnoToBeFileStatus (errno);
+    return m_lastError = translateErrnoToBeFileStatus(errno);
 
 #else
 #error unknonwn runtime
@@ -154,26 +154,26 @@ BeFileStatus BeFile::SetLastError () const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      06/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-BeFileStatus BeFile::SetPointer (uint64_t pos, BeFileSeekOrigin origin)
+BeFileStatus BeFile::SetPointer(uint64_t pos, BeFileSeekOrigin origin)
     {
 #if defined (BENTLEYCONFIG_OS_WINDOWS)
 
-    if (::SetFilePointerEx (m_handle, *((LARGE_INTEGER*) &pos), NULL, static_cast<int>(origin)))
+    if (::SetFilePointerEx(m_handle, *((LARGE_INTEGER*) &pos), NULL, static_cast<int>(origin)))
         return BeFileStatus::Success;
 
-    return SetLastError ();
+    return SetLastError();
 
 #elif defined (BENTLEYCONFIG_OS_UNIX)
 
     if (pos != (uint32_t)pos)
         return m_lastError = BeFileStatus::UnknownError;
 
-    if (lseek (AS_FDES(m_handle), (uint32_t)pos, (int)origin) != -1)
+    if (lseek(AS_FDES(m_handle), (uint32_t)pos, (int)origin) != -1)
         return BeFileStatus::Success;
 
-    lseek (AS_FDES(m_handle), 0, SEEK_END); // make sure the next read fails
+    lseek(AS_FDES(m_handle), 0, SEEK_END); // make sure the next read fails
 
-    return SetLastError ();
+    return SetLastError();
 
 #else
 #error unknown runtime
@@ -183,27 +183,27 @@ BeFileStatus BeFile::SetPointer (uint64_t pos, BeFileSeekOrigin origin)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   03/05
 +---------------+---------------+---------------+---------------+---------------+------*/
-BeFileStatus BeFile::GetPointer (uint64_t& pos)
+BeFileStatus BeFile::GetPointer(uint64_t& pos)
     {
 #if defined (BENTLEYCONFIG_OS_WINDOWS)
 
     LARGE_INTEGER cur;
     cur.QuadPart = 0;
-    if (::SetFilePointerEx (m_handle, cur, (LARGE_INTEGER*)&pos, FILE_CURRENT))
+    if (::SetFilePointerEx(m_handle, cur, (LARGE_INTEGER*)&pos, FILE_CURRENT))
         return BeFileStatus::Success;
 
-    return SetLastError ();
+    return SetLastError();
 
 #elif defined (BENTLEYCONFIG_OS_UNIX)
 
-    long v = lseek (AS_FDES(m_handle), 0, SEEK_CUR);
+    long v = lseek(AS_FDES(m_handle), 0, SEEK_CUR);
     if (v != -1)
         {
         pos = (uint64_t)v;
         return BeFileStatus::Success;
         }
 
-    return SetLastError ();
+    return SetLastError();
 
 #else
 #error unknown runtime
@@ -213,13 +213,13 @@ BeFileStatus BeFile::GetPointer (uint64_t& pos)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    09/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-BeFileStatus BeFile::GetSize (uint64_t& sz) const
+BeFileStatus BeFile::GetSize(uint64_t& sz) const
     {
 #if defined (BENTLEYCONFIG_OS_WINDOWS)
 
     FILE_STANDARD_INFO info;
-    if (!::GetFileInformationByHandleEx (m_handle, FileStandardInfo, &info, sizeof(info)))
-        return SetLastError ();
+    if (!::GetFileInformationByHandleEx(m_handle, FileStandardInfo, &info, sizeof(info)))
+        return SetLastError();
 
     sz = info.EndOfFile.QuadPart;
 
@@ -231,7 +231,7 @@ BeFileStatus BeFile::GetSize (uint64_t& sz) const
 
     struct stat status;
 
-    if (fstat (AS_FDES(m_handle), &status) == 0)
+    if (fstat(AS_FDES(m_handle), &status) == 0)
         {
         sz = status.st_size;
         return BeFileStatus::Success;
@@ -240,14 +240,14 @@ BeFileStatus BeFile::GetSize (uint64_t& sz) const
 
     struct stat64 status;
 
-    if (fstat64 (AS_FDES(m_handle), &status) == 0)
+    if (fstat64(AS_FDES(m_handle), &status) == 0)
         {
         sz = status.st_size;
         return BeFileStatus::Success;
         }
     #endif
 
-    return SetLastError ();
+    return SetLastError();
 
 #else
 #error unknown runtime
@@ -257,28 +257,28 @@ BeFileStatus BeFile::GetSize (uint64_t& sz) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   03/05
 +---------------+---------------+---------------+---------------+---------------+------*/
-BeFileStatus BeFile::SetSize (uint64_t pos)
+BeFileStatus BeFile::SetSize(uint64_t pos)
     {
 #if defined (BENTLEYCONFIG_OS_WINDOWS)
 
     LARGE_INTEGER lpos;
     lpos.QuadPart = pos;
-    if (::SetFilePointerEx (m_handle, lpos, NULL, 0) && ::SetEndOfFile (m_handle))
+    if (::SetFilePointerEx(m_handle, lpos, NULL, 0) && ::SetEndOfFile(m_handle))
         return BeFileStatus::Success;
 
-    return SetLastError ();
+    return SetLastError();
 
 #elif defined (BENTLEYCONFIG_OS_UNIX)
 
     #if defined (ANDROID) || defined (__APPLE__)
-        if (ftruncate (AS_FDES(m_handle), (uint32_t)pos) == 0)
+        if (ftruncate(AS_FDES(m_handle), (uint32_t)pos) == 0)
             return BeFileStatus::Success;
     #else
-        if (ftruncate64 (AS_FDES(m_handle), pos) == 0)
+        if (ftruncate64(AS_FDES(m_handle), pos) == 0)
             return BeFileStatus::Success;
     #endif
 
-    return SetLastError ();
+    return SetLastError();
 
 #else
 #error unknown runtime
@@ -288,7 +288,7 @@ BeFileStatus BeFile::SetSize (uint64_t pos)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   03/05
 +---------------+---------------+---------------+---------------+---------------+------*/
-BeFileStatus BeFile::Read (void* buffer, uint32_t* bytesRead, uint32_t numBytes)
+BeFileStatus BeFile::Read(void* buffer, uint32_t* bytesRead, uint32_t numBytes)
     {
 #if defined (BENTLEYCONFIG_OS_WINDOWS)
 
@@ -296,10 +296,10 @@ BeFileStatus BeFile::Read (void* buffer, uint32_t* bytesRead, uint32_t numBytes)
     if (NULL == bytesRead)
         bytesRead = &bytesRead_;
 
-    if (::ReadFile (m_handle, buffer, (DWORD)numBytes, (DWORD*)bytesRead, NULL))
+    if (::ReadFile(m_handle, buffer, (DWORD)numBytes, (DWORD*)bytesRead, NULL))
         return BeFileStatus::Success;
 
-    return SetLastError ();
+    return SetLastError();
 
 #elif defined (BENTLEYCONFIG_OS_UNIX) 
 
@@ -307,11 +307,11 @@ BeFileStatus BeFile::Read (void* buffer, uint32_t* bytesRead, uint32_t numBytes)
     if (NULL == bytesRead)
         bytesRead = &bytesRead_;
 
-    if (-1 != (*bytesRead = read (AS_FDES(m_handle), buffer, numBytes)))
+    if (-1 != (*bytesRead = read(AS_FDES(m_handle), buffer, numBytes)))
         return BeFileStatus::Success;
 
     *bytesRead = 0;
-    return SetLastError ();
+    return SetLastError();
 
 #else
 #error unknown runtime
@@ -321,15 +321,15 @@ BeFileStatus BeFile::Read (void* buffer, uint32_t* bytesRead, uint32_t numBytes)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   03/05
 +---------------+---------------+---------------+---------------+---------------+------*/
-BeFileStatus BeFile::Write (uint32_t* bytesWritten, void const* buf, uint32_t numBytes)
+BeFileStatus BeFile::Write(uint32_t* bytesWritten, void const* buf, uint32_t numBytes)
     {
 #if defined (BENTLEYCONFIG_OS_WINDOWS)
 
     ULONG bytesWritten_;
-    if (::WriteFile (m_handle, buf, (ULONG)numBytes, bytesWritten? (ULONG*)bytesWritten: &bytesWritten_, NULL))
+    if (::WriteFile(m_handle, buf, (ULONG)numBytes, bytesWritten? (ULONG*)bytesWritten: &bytesWritten_, NULL))
         return BeFileStatus::Success;
 
-    return SetLastError ();
+    return SetLastError();
 
 #elif defined (BENTLEYCONFIG_OS_UNIX)
 
@@ -337,10 +337,10 @@ BeFileStatus BeFile::Write (uint32_t* bytesWritten, void const* buf, uint32_t nu
     if (NULL == bytesWritten)
         bytesWritten = &bytesWritten_;
 
-    if (-1 != (*bytesWritten = write (AS_FDES(m_handle), buf, numBytes)))
+    if (-1 != (*bytesWritten = write(AS_FDES(m_handle), buf, numBytes)))
         return BeFileStatus::Success;
 
-    return SetLastError ();
+    return SetLastError();
 
 #else
 #error unknown runtime
@@ -350,12 +350,12 @@ BeFileStatus BeFile::Write (uint32_t* bytesWritten, void const* buf, uint32_t nu
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   01/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-BeFileStatus BeFile::ReadEntireFile (bvector<Byte>& buffer)
+BeFileStatus BeFile::ReadEntireFile(bvector<Byte>& buffer)
     {
     buffer.clear();
 
     uint64_t fileSize;
-    BeFileStatus stat = GetSize (fileSize);
+    BeFileStatus stat = GetSize(fileSize);
 
     if (BeFileStatus::Success != stat)
         return  stat;
@@ -365,9 +365,26 @@ BeFileStatus BeFile::ReadEntireFile (bvector<Byte>& buffer)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   01/13
++---------------+---------------+---------------+---------------+---------------+------*/
+BeFileStatus BeFile::ReadEntireFile(ByteStream& buffer)
+    {
+    buffer.Clear();
+
+    uint64_t fileSize;
+    BeFileStatus stat = GetSize(fileSize);
+
+    if (BeFileStatus::Success != stat)
+        return  stat;
+
+    buffer.ReserveMemory(static_cast <uint32_t> (fileSize));
+    return Read(buffer.GetDataP(), nullptr, static_cast <uint32_t> (fileSize));
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   03/05
 +---------------+---------------+---------------+---------------+---------------+------*/
-BeFileStatus BeFile::Flush ()
+BeFileStatus BeFile::Flush()
     {
 #if defined (BENTLEYCONFIG_OS_WINDOWS)
     if (FlushFileBuffers(m_handle))
@@ -375,13 +392,13 @@ BeFileStatus BeFile::Flush ()
 
 #elif defined (BENTLEYCONFIG_OS_UNIX)
 
-    if (fsync (AS_FDES(m_handle)) == 0)
+    if (fsync(AS_FDES(m_handle)) == 0)
         return BeFileStatus::Success;
 
 #else
 #error unknown runtime
 #endif
-    return SetLastError ();
+    return SetLastError();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -394,25 +411,25 @@ BeFileStatus BeFile::Close()
 
 #if defined (BENTLEYCONFIG_OS_WINDOWS)
 
-    if (::CloseHandle (m_handle))
+    if (::CloseHandle(m_handle))
         {
         m_handle = INVALID_HANDLE_VALUE;
         return BeFileStatus::Success;
         }
 
-    return SetLastError ();
+    return SetLastError();
 
 #elif defined (BENTLEYCONFIG_OS_UNIX)
 
-    BeAssert (AS_FDES(m_handle) > 2);
+    BeAssert(AS_FDES(m_handle) > 2);
 
-    if (close (AS_FDES(m_handle)) == 0)
+    if (close(AS_FDES(m_handle)) == 0)
         {
         m_handle = INVALID_HANDLE_VALUE;
         return BeFileStatus::Success;
         }
 
-    return SetLastError ();
+    return SetLastError();
 
 #else
 #error unknown runtime
@@ -431,7 +448,7 @@ bool BeFile::IsOpen() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      06/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-uint32_t BeFile::GetWinntAccessMode (BeFileAccess m)
+uint32_t BeFile::GetWinntAccessMode(BeFileAccess m)
     {
     DWORD a = 0;
     if ((m & BeFileAccess::Read) == BeFileAccess::Read)
@@ -446,7 +463,7 @@ uint32_t BeFile::GetWinntAccessMode (BeFileAccess m)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    sam.wilson                      07/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-static int getLinuxAccessMode (BeFileAccess m)
+static int getLinuxAccessMode(BeFileAccess m)
     {
     int a;
     if ((m & BeFileAccess::ReadWrite) == BeFileAccess::ReadWrite)
@@ -469,7 +486,7 @@ static int getLinuxAccessMode (BeFileAccess m)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    12/00
 +---------------+---------------+---------------+---------------+---------------+------*/
-BeFileStatus   BeFile::Create (WCharCP filename, bool createAlways)
+BeFileStatus   BeFile::Create(WCharCP filename, bool createAlways)
     {
     m_mode  = BeFileAccess::ReadWrite;
 
@@ -478,7 +495,7 @@ BeFileStatus   BeFile::Create (WCharCP filename, bool createAlways)
     DWORD   createOptions = createAlways? CREATE_ALWAYS: CREATE_NEW;
 
     WString fixedFileName;
-    BeFileName::FixPathName (fixedFileName, filename, true);
+    BeFileName::FixPathName(fixedFileName, filename, true);
 
     // grant read and write permissions to others. This is how Unix open works. We want them to be consistent.
     m_handle = ::CreateFileW (fixedFileName.c_str(), GetWinntAccessMode(m_mode), FILE_SHARE_READ|FILE_SHARE_WRITE, NULL, createOptions, FILE_ATTRIBUTE_NORMAL, NULL);
@@ -488,14 +505,14 @@ BeFileStatus   BeFile::Create (WCharCP filename, bool createAlways)
     DWORD   createOptions = createAlways? CREATE_ALWAYS: CREATE_NEW;
 
     CREATEFILE2_EXTENDED_PARAMETERS xparms;
-    memset (&xparms, 0, sizeof(xparms));
+    memset(&xparms, 0, sizeof(xparms));
     xparms.dwSize = sizeof(xparms);
     xparms.dwFileFlags = FILE_ATTRIBUTE_NORMAL;
 
     WString fixedFileName;
-    BeFileName::FixPathName (fixedFileName, filename, true);
+    BeFileName::FixPathName(fixedFileName, filename, true);
 
-    m_handle = CreateFile2 (fixedFileName.c_str(), GetWinntAccessMode(m_mode), FILE_SHARE_READ|FILE_SHARE_WRITE, createOptions, &xparms);
+    m_handle = CreateFile2(fixedFileName.c_str(), GetWinntAccessMode(m_mode), FILE_SHARE_READ|FILE_SHARE_WRITE, createOptions, &xparms);
 
 #elif defined (BENTLEYCONFIG_OS_UNIX)
 
@@ -505,7 +522,7 @@ BeFileStatus   BeFile::Create (WCharCP filename, bool createAlways)
     else
         flags |= O_EXCL;
 
-    m_handle = (void*) open (toUtf8(filename).c_str(), flags, CREAT_MODE);
+    m_handle = (void*) open(toUtf8(filename).c_str(), flags, CREAT_MODE);
 
 #else
 #error unknown runtime
@@ -513,46 +530,46 @@ BeFileStatus   BeFile::Create (WCharCP filename, bool createAlways)
 
     if (IsOpen())
         {
-        BeAssert (GetHandle() == m_handle);
+        BeAssert(GetHandle() == m_handle);
         return  BeFileStatus::Success;
         }
-    return SetLastError ();
+    return SetLastError();
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    01/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-BeFileStatus BeFile::Open (WCharCP filename, BeFileAccess mode)
+BeFileStatus BeFile::Open(WCharCP filename, BeFileAccess mode)
     {
     m_mode  = mode;
 
 #if defined (BENTLEYCONFIG_OS_WINRT)
 
     CREATEFILE2_EXTENDED_PARAMETERS xparms;
-    memset (&xparms, 0, sizeof(xparms));
+    memset(&xparms, 0, sizeof(xparms));
     xparms.dwSize = sizeof (xparms);
     xparms.dwFileFlags = FILE_ATTRIBUTE_NORMAL;
 
-    m_handle = ::CreateFile2 (filename, GetWinntAccessMode(mode), FILE_SHARE_READ|FILE_SHARE_WRITE, OPEN_EXISTING, &xparms);
+    m_handle = ::CreateFile2(filename, GetWinntAccessMode(mode), FILE_SHARE_READ|FILE_SHARE_WRITE, OPEN_EXISTING, &xparms);
 
 #elif defined (BENTLEYCONFIG_OS_WINDOWS)
 
     // grant read and write permissions to others. This is how Unix open works. We want them to be consistent.
-    m_handle = ::CreateFileW (filename, GetWinntAccessMode (mode), FILE_SHARE_READ|FILE_SHARE_WRITE, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+    m_handle = ::CreateFileW (filename, GetWinntAccessMode(mode), FILE_SHARE_READ|FILE_SHARE_WRITE, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
 
 #elif defined (BENTLEYCONFIG_OS_UNIX)
 
-    m_handle = (void*) open (toUtf8(filename).c_str(), getLinuxAccessMode (mode));
+    m_handle = (void*) open(toUtf8(filename).c_str(), getLinuxAccessMode(mode));
 
 #else
 #error unknown runtime
 #endif
 
-    if (IsOpen ())
+    if (IsOpen())
         {
-        BeAssert (GetAccess() == mode);
-        BeAssert (GetHandle() == m_handle);
+        BeAssert(GetAccess() == mode);
+        BeAssert(GetHandle() == m_handle);
         return  BeFileStatus::Success;
         }
-    return SetLastError ();
+    return SetLastError();
     }
