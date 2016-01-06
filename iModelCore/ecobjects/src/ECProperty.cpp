@@ -2,7 +2,7 @@
 |
 |     $Source: src/ECProperty.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -127,6 +127,60 @@ ECObjectsStatus ECProperty::SetDescription (Utf8StringCR description)
     {        
     m_description = description;
     return ECObjectsStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+@bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus ECProperty::SetMinimumValue(Utf8StringCR min)
+    {
+    m_minimumValue = min;
+    return ECObjectsStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+@bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ECProperty::IsMinimumValueDefined()
+    {
+    if ("" == m_minimumValue)
+        return false;
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+@bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8StringCR ECProperty::GetMinimumValue()
+    {
+    return m_minimumValue;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+@bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus ECProperty::SetMaximumValue(Utf8StringCR max)
+    {
+    m_maximumValue = max;
+    return ECObjectsStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+@bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ECProperty::IsMaximumValueDefined()
+    {
+    if ("" == m_maximumValue)
+        return false;
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+@bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8StringCR ECProperty::GetMaximumValue()
+    {
+    return m_maximumValue;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -320,7 +374,9 @@ SchemaReadStatus ECProperty::_ReadXml (BeXmlNodeR propertyNode, ECSchemaReadCont
     
     // OPTIONAL attributes - If these attributes exist they MUST be valid    
     READ_OPTIONAL_XML_ATTRIBUTE (propertyNode, DESCRIPTION_ATTRIBUTE,         this, Description)
+    READ_OPTIONAL_XML_ATTRIBUTE (propertyNode, MINIMUM_VALUE_ATTRIBUTE,       this, MinimumValue)
     READ_OPTIONAL_XML_ATTRIBUTE (propertyNode, DISPLAY_LABEL_ATTRIBUTE,       this, DisplayLabel)    
+    READ_OPTIONAL_XML_ATTRIBUTE (propertyNode, MAXIMUM_VALUE_ATTRIBUTE,       this, MaximumValue)
 
     // OPTIONAL attributes - If these attributes exist they do not need to be valid.  We will ignore any errors setting them and use default values.
     // NEEDSWORK This is due to the current implementation in managed ECObjects.  We should reconsider whether it is the correct behavior.
@@ -366,6 +422,10 @@ SchemaWriteStatus ECProperty::_WriteXml (BeXmlWriterR xmlWriter, Utf8CP elementN
     if (GetIsDisplayLabelDefined())
         xmlWriter.WriteAttribute(DISPLAY_LABEL_ATTRIBUTE, this->GetInvariantDisplayLabel().c_str());
     xmlWriter.WriteAttribute(READONLY_ATTRIBUTE, this->IsReadOnlyFlagSet());
+    if (IsMinimumValueDefined())
+        xmlWriter.WriteAttribute(MINIMUM_VALUE_ATTRIBUTE, this->GetMinimumValue().c_str());
+    if (IsMaximumValueDefined())
+        xmlWriter.WriteAttribute(MAXIMUM_VALUE_ATTRIBUTE, this->GetMaximumValue().c_str());
     
     if (nullptr != additionalAttributes)
         {

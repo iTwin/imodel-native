@@ -590,6 +590,8 @@ friend struct ECClass;
 
 private:
     Utf8String              m_description;
+    Utf8String              m_minimumValue;
+    Utf8String              m_maximumValue;
     ECValidatedName         m_validatedName;
     mutable ECPropertyId    m_ecPropertyId;
     bool                    m_readOnly;
@@ -704,6 +706,18 @@ public:
     ECOBJECTS_EXPORT Utf8String         GetTypeName() const;
     //! Sets the description for this ECProperty
     ECOBJECTS_EXPORT ECObjectsStatus    SetDescription(Utf8StringCR value);
+    //! Sets the minimum value for this ECProperty
+    ECOBJECTS_EXPORT ECObjectsStatus    SetMinimumValue(Utf8StringCR min);
+    //! Gets whether the minimum value has been defined explicitly
+    ECOBJECTS_EXPORT bool               IsMinimumValueDefined();
+    //! Gets the minimum value for this ECProperty
+    ECOBJECTS_EXPORT Utf8StringCR       GetMinimumValue();
+    //! Sets the maximum value for this ECProperty
+    ECOBJECTS_EXPORT ECObjectsStatus    SetMaximumValue(Utf8StringCR max);
+    //! Gets whether the maximum value has been defined explicitly
+    ECOBJECTS_EXPORT bool               IsMaximumValueDefined();
+    //! Gets the maximum value for this ECProperty
+    ECOBJECTS_EXPORT Utf8StringCR       GetMaximumValue();
     //! The Description of this ECProperty.  Returns the localized description if one exists.
     ECOBJECTS_EXPORT Utf8StringCR       GetDescription() const;
     //! Gets the invariant description for this ECProperty.

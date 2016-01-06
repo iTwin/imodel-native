@@ -2,7 +2,7 @@
 |
 |     $Source: src/ecxml.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -56,6 +56,7 @@ static Utf8CP      ECXML_URI                           = "http://www.bentley.com
 #define     RELATIONSHIP_NAME_ATTRIBUTE         "relationshipName"
 #define     DIRECTION_ATTRIBUTE                 "direction"
 #define     DESCRIPTION_ATTRIBUTE               "description"
+#define     MINIMUM_VALUE_ATTRIBUTE             "MinimumValue"
 #define     SCHEMA_NAME_ATTRIBUTE               "schemaName"
 #define     SCHEMA_NAMESPACE_PREFIX_ATTRIBUTE   "nameSpacePrefix"
 #define     SCHEMA_VERSION_ATTRIBUTE            "version"
