@@ -2,12 +2,12 @@
 |
 |     $Source: Core/cppwrappers/bcDTMClass.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma warning(disable: 4018)
 #pragma warning(disable: 4786)
-
+#pragma warning(disable: 4102)
 /*----------------------------------------------------------------------+
 | Include standard library header files                                 |
 +----------------------------------------------------------------------*/

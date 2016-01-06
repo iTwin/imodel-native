@@ -2,7 +2,7 @@
 |
 |     $Source: Core/PublicAPI/DTMDefs.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 //__BENTLEY_INTERNAL_ONLY__
@@ -1274,10 +1274,10 @@ struct DTMContourParams
          realInterval = 0;
          interval = 0;
          conReg = 0;
-         loadRange = 0;
+         loadRange = true;
          conMin = 0;
          conMax = 0;
-         loadValues = 0;
+         loadValues = FALSE;
          conValuesP = nullptr;
          numConValues = 0;
          smoothOption = DTMContourSmoothing::None;

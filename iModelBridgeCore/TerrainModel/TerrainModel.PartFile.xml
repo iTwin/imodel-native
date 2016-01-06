@@ -126,6 +126,7 @@
     <Part Name="RunTerrainModelTests" BMakeFile="Tests\TerrainModelTests\RunBentleyTest.mke">
         <SubPart PartName="TerrainModelTestData" />
         <SubPart PartName="Formats" />
+        <SubPart PartName="BuildTerrainModelTests"/>
         <SubPart PartName="google_gtest_lib" PartFile="gtest" Repository="util-gtest"/>
         <SubPart PartName="google_gtest"        PartFile="gtest"            Repository="util-gtest" />
         <SubPart PartName="UnitTests_Published" PartFile="BentleyUnitTests" Repository="BentleyUnitTests"/>
@@ -143,20 +144,19 @@
         </Bindings>
     </Part>
 
-    <Part Name="BuildTerrainModelTests" BMakeFile="Tests\TerrainModelTests\BuildTerrainModelTests.mke" >
+    <Part Name="BuildTerrainModelTests" BMakeFile="Tests\TerrainModelTests\BuildTerrainModelTests.mke" BMakeOptions="+dUSE_GTEST +dCOMPILE_MAIN_TESTS">
         <SubPart PartName="TerrainModelTestData" />
         <SubPart PartName="TestDependencies"/>
         <SubPart PartName="TerrainModelNET" />
         <SubPart PartName="FormatsNET" />
 
         <SubPart PartName="google_gtest_lib" PartFile="gtest" Repository="util-gtest"/>
-        <SubPart PartName="google_gtest"        PartFile="gtest"            Repository="util-gtest" />
+        <SubPart PartName="bentley_gtest"        PartFile="gtest"            Repository="util-gtest" />
         <SubPart PartName="UnitTests_Published" PartFile="BentleyUnitTests" Repository="BentleyUnitTests"/>
 
         <Bindings>
-            <Assemblies ProductDirectoryName="managedtests">
-                Delivery\TerrainModelTest_Published.dll
-            </Assemblies>
+            <Files ProductDirectoryName="managedtests">Delivery\TerrainModelTests.exe</Files>
+            <Files ProductDirectoryName="managedtests">Delivery\TerrainModelTests.log.config.xml</Files>
         </Bindings>
     </Part>
 
@@ -187,28 +187,28 @@
         <ProductDirectory Name="Libs"                               Path="lib" Deliver="false" />
         <ProductDirectory Name="PublicAPI"                          Deliver="false" />
         <ProductDirectory Name="VendorAPI"                          Deliver="false" />
-        <ProductDirectory Name="BentleyNativeAssemblies"            Path="Tests"/>
-        <ProductDirectory Name="BentleyGeometryNetAssemblies"       Path="Tests"/>
-        <ProductDirectory Name="GeomNativeAssemblies"               Path="Tests"/>
-        <ProductDirectory Name="LoggingNativeAssemblies"            Path="Tests"/>
-        <ProductDirectory Name="PlatformTechAssemblies"             Path="Tests"/>
-        <ProductDirectory Name="LoggingManagedAssemblies"           Path="Tests"/>
-        <ProductDirectory Name="ImagePPAssemblies"                  Path="Tests"/>
-        <ProductDirectory Name="GeoCoordNativeAssemblies"           Path="Tests"/>
-        <ProductDirectory Name="GeoCoordManagedAssemblies"          Path="Tests"/>
+        <ProductDirectory Name="BentleyNativeAssemblies"            />
+        <ProductDirectory Name="BentleyGeometryNetAssemblies"       />
+        <ProductDirectory Name="GeomNativeAssemblies"               />
+        <ProductDirectory Name="LoggingNativeAssemblies"            />
+        <ProductDirectory Name="PlatformTechAssemblies"             />
+        <ProductDirectory Name="LoggingManagedAssemblies"           />
+        <ProductDirectory Name="ImagePPAssemblies"                  />
+        <ProductDirectory Name="GeoCoordNativeAssemblies"           />
+        <ProductDirectory Name="GeoCoordManagedAssemblies"          />
 
-        <ProductDirectory Name="RmgrToolsNativeAssemblies"          Path="Tests"/>
-        <ProductDirectory Name="GeoCoordData"                       Path="Tests/GeoCoordData"/>
+        <ProductDirectory Name="RmgrToolsNativeAssemblies"          />
+        <ProductDirectory Name="GeoCoordData"                       Path="GeoCoordData"/>
 
 
-        <ProductDirectory Name="TerrainModelNetAssemblies"          Path="Tests"/>
-        <ProductDirectory Name="TerrainModelNativeAssemblies"       Path="Tests"/>
-        <ProductDirectory Name="TerrainModelConsole"                Path="Tests"/>
+        <ProductDirectory Name="TerrainModelNetAssemblies"          />
+        <ProductDirectory Name="TerrainModelNativeAssemblies"       />
+        <ProductDirectory Name="TerrainModelConsole"                />
 
         <ProductDirectory Name="NUnit 2.5.10 binaries"               Path="" />
-        <ProductDirectory Name="NUnit 2.5.10 core references"        Path="Tests"/>
-        <ProductDirectory Name="managedtests"                        Path="Tests"/>
-        <ProductDirectory Name="TerrainModelTestData"                Path="Tests\Data"/>
+        <ProductDirectory Name="NUnit 2.5.10 core references"        />
+        <ProductDirectory Name="managedtests"                        />
+        <ProductDirectory Name="TerrainModelTestData"                Path="Data"/>
 
         <ProductDirectory Name="CSMapMergeModules"                Deliver="false"/>
     
@@ -227,7 +227,7 @@
         <ProductDirectory Name="Libs"  LibType="static"  Deliver="false" />
 
         
-        <ProductDirectory Name="TestBin"         Path="Tests"/>
+        <ProductDirectory Name="TestBin"         />
         <ProductDirectory Name="TestBin" LibType="static" Deliver="false" />
 
     </ProductDirectoryList>
@@ -238,6 +238,7 @@
         <SubPart PartName="TerrainModelNET" />
         <SubPart PartName="BuildTerrainModelTests" />
         <SubPart PartName="BuildTerrainModelNETTests" />
+        <SubPart PartName="RunTerrainModelTests"/>
 
         <SubPart PartName="TestRunner"        PartFile="gtest"                      Repository="util-gtest"/>
 

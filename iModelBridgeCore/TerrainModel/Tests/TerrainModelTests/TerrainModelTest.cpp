@@ -2,347 +2,191 @@
 |
 |     $Source: Tests/TerrainModelTests/TerrainModelTest.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma warning(disable:4505) // unreferenced local function has been removed [in gtest-port.h]
 
-#include <Bentley/Bentley.h>
-#include <gtest/gtest.h>
+#include "stdafx.h"
+#pragma warning(disable:4189) // unreferenced local function has been removed [in gtest-port.h]
 
-extern "C"
+StackExaminer* g_stackExaminer = NULL;
+BSIBaseGeomExaminer* g_bsiBaseGeomExaminer = NULL;
+
+WString s_dllPath = L"";
+
+static void* getDLLInstance()
     {
-    /*--------------------------------------------------------------------------------**//**
-    * @bsimethod                                                    KevinNyman      03/10
-    +---------------+---------------+---------------+---------------+---------------+------*/
-    EXPORT_ATTRIBUTE int Run (int argc, char **argv, void*, char const*)
-        {
-        ::testing::InitGoogleTest (&argc, argv);
+    MEMORY_BASIC_INFORMATION    mbi;
+    if (VirtualQuery((void*)&getDLLInstance, &mbi, sizeof mbi))
+        return mbi.AllocationBase;
 
-        printf ("__START_TESTS__\n");
-        int status = RUN_ALL_TESTS ();
-        printf ("__END_TESTS__\n");
-
-        return status;
-        }
-
-    EXPORT_ATTRIBUTE int InitializeHost (int argc, char* argv[], char const* outFolder)
-        {
-        printf ("__InitializeHost__");
-        return 0;
-        }
-
-
-    EXPORT_ATTRIBUTE void* GetHost ()
-        {
-        return nullptr;
-        }
-
-    EXPORT_ATTRIBUTE int ShutdownHost ()
-        {
-        return 0;
-        }
-
-    //BOOL APIENTRY DllMain (HANDLE hModule, DWORD dwReason, LPVOID lpReserved)
-    //    {
-    //    return TRUE;
-    //    }
-
-
+    return 0;
     }
 
-#include <TerrainModel/TerrainModel.h>
-#include <TerrainModel/Core/IDTM.h>
-#include <TerrainModel/Core/bcDTMClass.h>
-#include <Bentley/WString.h>
-#include <TerrainModel/Drainage/Drainage.h>
-#include <TerrainModel/Core\bcdtmInlines.h>
-#include <TerrainModel/Formats/Formats.h>
-#include <TerrainModel/Formats/TerrainImporter.h>
+/*---------------------------------------------------------------------------------******
+ * @bsimethod                                    Carole.MacDonald                08/2010
+ +---------------+---------------+---------------+---------------+---------------+------*/
+static WString GetDllPath()
+    {
+    if (s_dllPath.empty())
+        {
+        HINSTANCE ecobjectsHInstance = (HINSTANCE)getDLLInstance();
+        wchar_t strExePath[MAX_PATH];
+        if (0 == (GetModuleFileNameW(ecobjectsHInstance, strExePath, MAX_PATH)))
+            return L"";
+
+        wchar_t executingDirectory[_MAX_DIR];
+        wchar_t executingDrive[_MAX_DRIVE];
+        _wsplitpath(strExePath, executingDrive, executingDirectory, NULL, NULL);
+        wchar_t filepath[MAX_PATH];
+        _wmakepath(filepath, executingDrive, executingDirectory, NULL, NULL);
+        s_dllPath = filepath;
+        }
+    return s_dllPath;
+    }
+/*---------------------------------------------------------------------------------**//**
+                                                                                      * @bsimethod                                                    Carole.MacDonald 02/10
+                                                                                      +---------------+---------------+---------------+---------------+---------------+------*/
+WString TMHelpers::GetTestDataPath(WCharCP dataFile)
+    {
+    WString testData(GetDllPath());
+    //testData.append(L"Data\\");
+    testData.append(dataFile);
+    return testData;
+    }
 
 USING_NAMESPACE_BENTLEY
 USING_NAMESPACE_BENTLEY_TERRAINMODEL
 
-BcDTMPtr LoadTerrainModel (WCharCP filename, WCharCP name = nullptr)
+BcDTMPtr TMHelpers::LoadTerrainModel(WCharCP filename, WCharCP name)
     {
-    TerrainImporterPtr reader = TerrainImporter::CreateImporter (filename);
+    WString fullFilePath = GetTestDataPath(filename);
+
+    printf("Loading File %ls\n", filename);
+    TerrainImporterPtr reader = TerrainImporter::CreateImporter(fullFilePath.c_str());
     WString surfaceName;
 
     if (name == nullptr)
         {
-        TerrainInfoList surfaceInfos = reader->GetTerrains ();
+        TerrainInfoList surfaceInfos = reader->GetTerrains();
 
-        if (surfaceInfos.size () == 0)
+        if (surfaceInfos.size() == 0)
             return nullptr;
 
-        surfaceName = surfaceInfos[0].GetName ();
+        surfaceName = surfaceInfos[0].GetName();
         }
     else
         surfaceName = name;
 
-    ImportedTerrain dtm = reader->ImportTerrain (surfaceName.GetWCharCP());
-    return dtm.GetTerrain ();
+    ImportedTerrain dtm = reader->ImportTerrain(surfaceName.GetWCharCP());
+
+    return dtm.GetTerrain();
     }
 
-TEST (TmTest, Triangulate)
+bool TMHelpers::ValidateTM(BcDTMR dtm, const TMHelpers::ValidateParams& params)
     {
-    Bentley::TerrainModel::BcDTMPtr dtm = Bentley::TerrainModel::BcDTM::Create ();
+    if (dtm.CheckTriangulation() != SUCCESS)
+        return false;
 
-    DPoint3d pts[4];
+    if (dtm.GetDTMState() != DTMState::Tin)
+        if (dtm.Triangulate() != SUCCESS)
+            return false;
 
-    pts[0].x = 100; pts[0].y = 100; pts[0].z = 0;
-    pts[1].x = 200; pts[1].y = 100; pts[1].z = 0;
-    pts[2].x = 200; pts[2].y = 200; pts[2].z = 0;
-    pts[3].x = 100; pts[3].y = 200; pts[3].z = 0;
-    dtm->AddPoints (pts, 4);
-    ASSERT_TRUE (dtm->Triangulate () == SUCCESS);
-    SUCCEED ();
-    }
-int numDtmFeatures = 0;
-int bcdtmDrainage_callBackFunction (DTMFeatureType dtmFeatureType, DTMUserTag userTag, DTMFeatureId featureId, DPoint3d *featurePtsP, size_t numFeaturePts, void *userP)
-    {
-    /*
-    ** Sample DTM Interrupt Load Function
-    **
-    ** This Function Receives The Load Features From The DTM
-    ** As The DTM Reuses The Feature Points Memory Do Not Free It
-    ** If You Require The Feature Points Then Make A Copy
-    **
-    */
-    int  ret = DTM_SUCCESS, dbg = DTM_TRACE_VALUE (0);
-    char  dtmFeatureTypeName[100];
-    BC_DTM_OBJ *dtmP = NULL;
-    DPoint3d  *p3dP;
-    /*
-    ** Check For DTMFeatureType::CheckStop
-    */
-    // if(dtmFeatureType == DTMFeatureType::CheckStop) bcdtmWrite_message(0,0,0,"DTMFeatureType::CheckStop") ;
-    /*
-    ** Initialise
-    */
-    // if(numDtmFeatures % 1000 == 0) bcdtmWrite_message(0,0,0,"numDtmFeatures = %8ld",numDtmFeatures) ;
-    ++numDtmFeatures;
-    /*
-    ** Write Record
-    */
-    if (dbg == 1)
-        {
-        bcdtmData_getDtmFeatureTypeNameFromDtmFeatureType (dtmFeatureType, dtmFeatureTypeName);
-        bcdtmWrite_message (0, 0, 0, "Feature[%8ld] ** %s userTag = %10I64d featureId = %10I64d featurePtsP = %p numFeaturePts = %6ld userP = %p", numDtmFeatures, dtmFeatureTypeName, userTag, featureId, featurePtsP, numFeaturePts, userP);
-        }
-    /*
-    ** Write Points
-    */
-    if (dbg == 1)
-        {
-        bcdtmWrite_message (0, 0, 0, "Number Of Feature Points = %6ld", numFeaturePts);
-        for (p3dP = featurePtsP; p3dP < featurePtsP + numFeaturePts; ++p3dP)
-            {
-            bcdtmWrite_message (0, 0, 0, "Point[%6ld] = %12.4lf %12.4lf %10.4lf", (long)(p3dP - featurePtsP), p3dP->x, p3dP->y, p3dP->z);
-            }
-        }
-    /*
-    ** Store DTM Features In DTM
-    */
-    //    if( userP != NULL && ( dtmFeatureType == DTMFeatureType::LowPointPond || dtmFeatureType == DTMFeatureType::DescentTrace ))
-    if (userP != NULL && dtmFeatureType != DTMFeatureType::CheckStop)
-        {
-        dtmP = (BC_DTM_OBJ *)userP;
-        if (bcdtmObject_testForValidDtmObject (dtmP)) goto errexit;
+    int numFeatures = 0;
+    DTMFeatureEnumeratorPtr featureEnum = DTMFeatureEnumerator::Create(dtm);
 
-        if (dtmFeatureType == DTMFeatureType::SumpLine || dtmFeatureType == DTMFeatureType::RidgeLine)
-            {
-            DPoint3d *lineP = featurePtsP;
-            for (lineP = featurePtsP; lineP < featurePtsP + numFeaturePts * 2; lineP = lineP + 2)
-                {
-                if (bcdtmObject_storeDtmFeatureInDtmObject (dtmP, DTMFeatureType::Breakline, dtmP->nullUserTag, 1, &dtmP->nullFeatureId, lineP, 2)) goto errexit;
-                }
-            }
-        else
-            {
-            if (bcdtmObject_storeDtmFeatureInDtmObject (dtmP, DTMFeatureType::Breakline, dtmP->nullUserTag, 1, &dtmP->nullFeatureId, featurePtsP, (long)numFeaturePts)) goto errexit;
-            }
-        /*
-        if(userTag == 99)
+    for (const auto& featureInfo : *featureEnum)
         {
-        if(bcdtmObject_storeDtmFeatureInDtmObject(dtmP,DTMFeatureType::ContourLine,dtmP->nullUserTag,1,&dtmP->nullFeatureId,featurePtsP,(long)numFeaturePts)) goto errexit ;
+        numFeatures++;
         }
-        if(userTag == 2)
+    featureEnum = nullptr;
+    printf("Num of features %d\n", numFeatures);
+
+    DTMMeshEnumeratorPtr meshEnum = DTMMeshEnumerator::Create(dtm);
+
+    for (auto poly : *meshEnum)
         {
-        if(bcdtmObject_storeDtmFeatureInDtmObject(dtmP,DTMFeatureType::Breakline,dtmP->nullUserTag,1,&dtmP->nullFeatureId,featurePtsP,(long)numFeaturePts)) goto errexit ;
         }
-        */
-        }
-    /*
-    ** Clean Up
-    */
-cleanup:
-    /*
-    ** Job Completed
-    */
-    if (dbg && ret == DTM_SUCCESS) bcdtmWrite_message (0, 0, 0, "Call Back Function Completed");
-    if (dbg && ret != DTM_SUCCESS) bcdtmWrite_message (0, 0, 0, "Call Back Function Error");
-    return(ret);
-    /*
-    ** Error Exit
-    */
-errexit:
-    if (ret == DTM_SUCCESS) ret = DTM_ERROR;
-    goto cleanup;
+    meshEnum = nullptr;
+
+    int numContours = 0;
+    dtm.BrowseContours(params.contourParams, params.fence, nullptr, [&numContours](DTMFeatureType dtmFeatureType, DTMUserTag userTag, DTMFeatureId featureId, DPoint3d *points, size_t numPoints, void* userArg)
+        {
+        numContours++;
+        return SUCCESS;
+        });
+    printf("Num of contours %d\n", numContours);
+
+    double flatArea = 0, slopeArea = 0;
+    dtm.CalculateSlopeArea(flatArea, slopeArea, nullptr, 0);
+    printf("Num of flatArea %f, slopeArea %f\n", flatArea, slopeArea);
+
+
+    BcDTMVolumeAreaResult result;
+    dtm.ComputePlanarPrismoidalVolume(result, 0, nullptr, 0, nullptr, 0);
+
+    printf("CutVolume %f FillVolume %f\n", result.cutVolume, result.fillVolume);
+
+    return true;
     }
 
-void DoPondTest (BcDTMR iDtm)
+int main(int argc, char **argv)
     {
-//    int ret = DTM_SUCCESS;
-    int dbg = DTM_TRACE_VALUE (1);
-    long startTime = bcdtmClock ();
-    BC_DTM_OBJ *dtmP = NULL;
-//    BC_DTM_OBJ* depressionDtmP = NULL;
-//    BC_DTM_OBJ *traceDtmP = NULL;
-//    void  *userP = NULL;
-//    Bentley::TerrainModel::DTMFenceParams  fence;
-//    DPoint3d  fencePts[10];
-//    DPoint3d  traceStartPoint, sumpPoint;
-//    double    maxPondDepth;
-//    BcDTMPtr refinedDtm = nullptr;
-//    bvector<DPoint3d> catchmentPoints;
+#if defined (_DEBUG)
+    int dbgFlag = _CrtSetDbgFlag(_CRTDBG_REPORT_FLAG);
 
-    // Variables To Test Maximum Descent And Ascent Tracing
+    /*
+    * Set the debug-heap flag to no longer keep freed blocks in the
+    * heap's linked list and turn on Debug type allocations (CLIENT)
+    */
+    dbgFlag |= _CRTDBG_ALLOC_MEM_DF;
+    dbgFlag |= _CRTDBG_DELAY_FREE_MEM_DF;
 
-//    int pnt1, pnt2, pnt3, clPtr, voidTriangle, numTrianglesTraced = 0;
-//    double x, y, falseLowDepth = 0.0;
+    // Clear the upper 16 bits and OR in the desired freqency
+    dbgFlag = (dbgFlag & 0x0000FFFF) | _CRTDBG_CHECK_EVERY_1024_DF;
 
-    //  Drainage Tests
+    _CrtSetDbgFlag(dbgFlag);
+#endif
 
-    DTMDrainageTables *drainageTablesP = NULL;
-//    DTMFeatureCallback callBackFunction = (DTMFeatureCallback)bcdtmDrainage_callBackFunction;
+#ifdef argHandler
+    ArgHandlerList handlers;
+    Args arghandlers;
+    arghandlers.AddArgsToList(handlers);
 
-    if (bcdtmObject_createDtmObject (&dtmP)) goto errexit;
-    //           BcDTMDrainage::CreateDrainageTables(ibcDtm.get(), drainageTablesP) ;
-    bcdtmWrite_message (0, 0, 0, "Determing Ponds");
-    if (BcDTMDrainage::DeterminePonds (&iDtm, drainageTablesP, (DTMFeatureCallback)bcdtmDrainage_callBackFunction, dtmP) == DTM_SUCCESS)
+    CommandLineArgHandler args(handlers, argc, argv);
+
+    int status = 0;
+    if (args.ShouldRunTests())
         {
-        bcdtmWrite_message (0, 0, 0, "Determing Ponds Completed");
-        bcdtmWrite_message (0, 0, 0, "Number Of Ponds = %8ld", dtmP->numFeatures);
-        bcdtmWrite_message (0, 0, 0, "Time To Determine Ponds = %8.3lf Seconds", bcdtmClock_elapsedTime (bcdtmClock (), startTime));
-        bcdtmWrite_geopakDatFileFromDtmObject (dtmP, L"ponds.dat");
+        ::testing::InitGoogleTest(args.GetCountP(), args.GetArgVP());
 
-        //              Analyse Ponds - Have To Set It Up And Test For The Aborted Way It Is Done In CF
+        g_stackExaminer = new StackExaminer;  // this must be alloced because gtest frees it up.
+        ::testing::TestEventListeners& listeners = ::testing::UnitTest::GetInstance()->listeners();
+        listeners.Append(g_stackExaminer);
 
-        bool analysePonds = true;
-        if (analysePonds)
-            {
-            long dtmFeature, numFeaturePts;
-            double area;
-            DTMDirection direction;
-            DPoint3d *p3dP, *featurePtsP = NULL;
-            BC_DTM_FEATURE *dtmFeatureP;
-            BC_DTM_OBJ *tempDtmP = NULL;
-            if (bcdtmObject_createDtmObject (&tempDtmP) != DTM_SUCCESS) goto errexit;
-            for (dtmFeature = 0; dtmFeature < dtmP->numFeatures; ++dtmFeature)
-                {
-                dtmFeatureP = ftableAddrP (dtmP, dtmFeature);
-                if (dtmFeatureP->dtmFeatureState == DTMFeatureState::Data && dtmFeatureP->dtmFeatureType == DTMFeatureType::Breakline)
-                    {
-                    if (bcdtmList_copyDtmFeaturePointsToPointArrayDtmObject (dtmP, dtmFeature, &featurePtsP, &numFeaturePts) != DTM_SUCCESS) goto errexit;
-                    bcdtmMath_getPolygonDirectionP3D (featurePtsP, numFeaturePts, &direction, &area);
-                    bcdtmWrite_message (0, 0, 0, "Processing Pond Feature %8ld ** numPondPoints = %8ld ** Direction = %2ld Area = %15.8lf", dtmFeature, numFeaturePts, direction, area);
-                    if (dtmFeature == -99)
-                        {
-                        for (p3dP = featurePtsP; p3dP < featurePtsP + numFeaturePts; ++p3dP)
-                            {
-                            bcdtmWrite_message (0, 0, 0, "FeaturePoint[%4ld] = %12.5lf %12.5lf %10.4lf", (long)(p3dP - featurePtsP), p3dP->x, p3dP->y, p3dP->z);
-                            }
-                        }
-                    if (numFeaturePts >= 4)
-                        {
-                        tempDtmP->ppTol = tempDtmP->plTol = 0.0;
-                        if (bcdtmObject_storeDtmFeatureInDtmObject (tempDtmP, DTMFeatureType::Breakline, tempDtmP->nullUserTag, 1, &tempDtmP->nullFeatureId, featurePtsP, numFeaturePts) != DTM_SUCCESS) goto errexit;
-                        if (bcdtmObject_triangulateDtmObject (tempDtmP) != DTM_SUCCESS) goto errexit;
-                        if (bcdtmList_removeNoneFeatureHullLinesDtmObject (tempDtmP) != DTM_SUCCESS) goto errexit;
-
-                        //  Get Point For Pond Determination
-
-                        int ap, np, sp = tempDtmP->hullPoint;
-                        double x, y, z;
-                        bool pointFound = false;
-                        do
-                            {
-                            np = nodeAddrP (tempDtmP, sp)->hPtr;
-                            if ((ap = bcdtmList_nextAntDtmObject (tempDtmP, sp, np)) < 0) goto errexit;
-                            if (nodeAddrP (tempDtmP, ap)->hPtr != sp)
-                                {
-                                pointFound = true;
-                                x = (pointAddrP (tempDtmP, sp)->x + pointAddrP (tempDtmP, ap)->x) / 2.0;
-                                y = (pointAddrP (tempDtmP, sp)->y + pointAddrP (tempDtmP, ap)->y) / 2.0;
-                                z = (pointAddrP (tempDtmP, sp)->z + pointAddrP (tempDtmP, ap)->z) / 2.0;
-                                }
-                            sp = np;
-                            } while (pointFound == false && sp != tempDtmP->hullPoint);
-
-                        if (!pointFound && tempDtmP->numPoints == 3)
-                            {
-                            pointFound = true;
-                            x = (pointAddrP (tempDtmP, 0)->x + pointAddrP (tempDtmP, 1)->x + pointAddrP (tempDtmP, 2)->x) / 3.0;
-                            y = (pointAddrP (tempDtmP, 0)->y + pointAddrP (tempDtmP, 1)->y + pointAddrP (tempDtmP, 2)->y) / 3.0;
-                            z = (pointAddrP (tempDtmP, 0)->z + pointAddrP (tempDtmP, 1)->z + pointAddrP (tempDtmP, 2)->z) / 3.0;
-                            }
-
-                        // Determine Pond
-
-                        if (pointFound)
-                            {
-                            bool pondDetermined = false;
-                            double pondElevation, pondDepth, pondVolume, pondArea;
-                            Bentley::TerrainModel::DTMDynamicFeatureArray pondFeatures;
-                            if (BcDTMDrainage::CalculatePondForPoint (&iDtm, x, y, 0.0, pondDetermined, pondElevation, pondDepth, pondArea, pondVolume, pondFeatures) == DTM_SUCCESS)
-                                if (dbg && pondDetermined)
-                                    {
-                                    bcdtmWrite_message (0, 0, 0, "Pond Determined ** elevation = %8.3lf depth = %8.3lf volume = %12.3lf area = %15.8lf", pondElevation, pondDepth, pondVolume, pondArea);
-                                    }
-                            }
-                        }
-
-
-                    }
-                bcdtmObject_initialiseDtmObject (tempDtmP);
-                }
-            }
+        status = RUN_ALL_TESTS();
         }
-    else
-        {
-        bcdtmWrite_message (0, 0, 0, "Determing Ponds Error");
-        }
-errexit:
+#else
 
-    // Clean Up
-    return;
-    }
+    ::testing::InitGoogleTest(&argc, argv);
 
-TEST (TmTest, LoadDTM)
-    {
-    Bentley::TerrainModel::BcDTMPtr dtm = LoadTerrainModel (L"Data\\TerrainModelNet\\Bentley.Civil.Dtm.Light.NUnit.dll\\groupSpot.tin");
-    ASSERT_TRUE (dtm->Triangulate () == SUCCESS);
-    DoPondTest (*dtm);
-    SUCCEED ();
-    }
+    g_stackExaminer = new StackExaminer;  // this must be alloced because gtest frees it up.
+    g_bsiBaseGeomExaminer = new BSIBaseGeomExaminer();  // this must be alloced because gtest frees it up.
+    ::testing::TestEventListeners& listeners = ::testing::UnitTest::GetInstance()->listeners();
+    listeners.Append(g_stackExaminer);
+    listeners.Append(g_bsiBaseGeomExaminer);
 
+#endif
+    int stat = RUN_ALL_TESTS();
+    g_stackExaminer->DumpStackInfo();
 
+    printf(" BSIBaseGeom counters: (Malloc %ld) (Calloc %ld) (Realloc %ld) (Free %ld) (DIFF %ld)\n",
+        BSIBaseGeom::GetNumMalloc(),
+        BSIBaseGeom::GetNumCalloc(),
+        BSIBaseGeom::GetNumRealloc(),
+        BSIBaseGeom::GetNumFree(),
+        BSIBaseGeom::GetAllocationDifference());
 
-TEST (TmTest, DeterminePonds)
-    {
-    Bentley::TerrainModel::BcDTMPtr dtm = Bentley::TerrainModel::BcDTM::CreateFromTinFile (L"Data\\TerrainModelNet\\Bentley.Civil.Dtm.NUnit.dll\\DTMDrainageTests\\DTMDrainageCatchmentTests\\mine.dtm");
-    ASSERT_TRUE (dtm.IsValid ());
-    ASSERT_TRUE (dtm->Triangulate () == SUCCESS);
-
-    DoPondTest (*dtm);
-    SUCCEED ();
-    }
-
-TEST (TmTest, CreateFromXyz)
-    {
-    Bentley::TerrainModel::BcDTMPtr dtm = LoadTerrainModel (L"Data\\TerrainModelNet\\Bentley.Civil.Dtm.NUnit.dll\\DTMTriangulationTest\\DTMTriangulationXyzTest\\1M.xyz");
-    ASSERT_TRUE (dtm->Triangulate () == SUCCESS);
-    DoPondTest (*dtm);
-    SUCCEED ();
+    return stat;
     }

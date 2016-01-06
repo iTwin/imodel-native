@@ -2,10 +2,11 @@
 |
 |     $Source: Core/PrivateAPI/base/bcGmcNorm.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #if !defined (mdl) && !defined (resource)
+#pragma warning(push)
 #pragma warning(disable: 4102) 
 #endif
 
@@ -75,3 +76,5 @@
    RTYPE(version,((objNum)/(16*16))%16,((objNum)/16)%16,(objNum)%16)
 
 #define  BC_NONERSCID  0xffff
+
+#pragma warning(pop)
