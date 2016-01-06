@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/ECObjects/ECDiff.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -131,7 +131,9 @@ enum class DiffNodeId
     ConstraintClass = 39,
     NamespacePrefix = 40,
     IsAbstract = 41,
-    IsSealed = 42
+    IsSealed = 42,
+    MinimumValue = 43,
+    MaximumValue = 44
     };
 
 //======================================================================================
