@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/DgnPlatformLib.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -994,7 +994,6 @@ public:
         GeoCoordinationAdmin&   GetGeoCoordinationAdmin()  {return *m_geoCoordAdmin;}
         TxnAdmin&               GetTxnAdmin()              {return *m_txnAdmin;}
         IACSManagerR            GetAcsManager()            {return *m_acsManager;}
-        //  LineStyleManagerR       GetLineStyleManager()      {return *m_lineStyleManager;}
         FormatterAdmin&         GetFormatterAdmin()        {return *m_formatterAdmin;}
         RealityDataAdmin&       GetRealityDataAdmin()      {return *m_realityDataAdmin;}
         ScriptAdmin&            GetScriptAdmin()           {return *m_scriptingAdmin;}
@@ -1049,6 +1048,16 @@ public:
     //! Get the Host that associated with the current thread
     //! @return a reference to the Host object. WARNING: Do not call this function unless you know that there is a Host.
     DGNPLATFORM_EXPORT static Host& GetHost();
+
+    //! Ids for DgnPlatform threads
+    enum class ThreadId {Unknown=0, Client=100, Render=101, Query=102,};
+
+    DGNPLATFORM_EXPORT static ThreadId GetThreadId();        //!< Get the ThreadId for the current thread
+    static void SetThreadId(ThreadId);    //!< Set the ThreadId for the current thread
+    static void VerifyThread(ThreadId id) {BeAssert(id==GetThreadId());}   //!< Ensure that this is a specific DgnPlatform thread
+    static void VerifyClientThread() {VerifyThread(ThreadId::Client);}     //!< Ensure that this is the Client thread
+    static void VerifyRenderThread() {VerifyThread(ThreadId::Render);}     //!< Ensure that this is the Render thread
+    static void VerifyQueryThread()  {VerifyThread(ThreadId::Query);}      //!< Ensure that this is the Query thread
 
     //! Used by DgnDbFileIO to initialize logging for Graphite code.
     //! @param configFileName Optional. The name of the logging configuration file to parse. Pass nullptr for logging to the console with default severities.

@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/ElementGeometry.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -3742,7 +3742,30 @@ BentleyStatus GeometryBuilder::SetGeometryStream(DgnGeomPartR part)
         return ERROR;
 
     part.GetGeometryStreamR().SaveData(&m_writer.m_buffer.front(), (uint32_t) m_writer.m_buffer.size());
-    part.SetBoundingBox(m_is3d ? m_placement3d.GetElementBox() : ElementAlignedBox3d(m_placement2d.GetElementBox()));
+
+    ElementAlignedBox3d localRange = (m_is3d ? m_placement3d.GetElementBox() : ElementAlignedBox3d(m_placement2d.GetElementBox()));
+
+    // NOTE: GeometryBuilder::CreateGeomPart doesn't supply range...need to compute it...
+    if (!localRange.IsValid())
+        {
+        GeometryCollection collection(part.GetGeometryStream(), m_dgnDb);
+
+        collection.SetBRepOutput(GeometryCollection::BRepOutput::Mesh); // Can just use the mesh and avoid creating the ISolidKernelEntity...
+
+        for (auto iter : collection)
+            {
+            GeometricPrimitivePtr geom = iter.GetGeometryPtr();
+            DRange3d range;
+
+            if (geom.IsValid() && geom->GetRange(range))
+                localRange.Extend(range);
+            }
+
+        if (!localRange.IsValid())
+            return ERROR;
+        }
+
+    part.SetBoundingBox(localRange);
 
     return SUCCESS;
     }

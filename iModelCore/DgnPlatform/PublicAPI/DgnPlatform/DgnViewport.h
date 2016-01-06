@@ -124,13 +124,13 @@ struct ProgressiveViewFilter : ProgressiveDisplay, RtreeViewFilter
     uint32_t                     m_nThisPass;
     uint32_t                     m_nLastPass;
     bool                         m_setTimeout;
-    DgnModelR                    m_existing;
+    QueryModelR                  m_queryModel;
     DgnDbR                       m_dgndb;
     uint64_t                     m_elementReleaseTrigger;
     uint64_t                     m_purgeTrigger;
     BeSQLite::CachedStatementPtr m_rangeStmt;
-    ProgressiveViewFilter(DgnViewportCR vp, DgnDbR dgndb, DgnModelR existing, DgnElementIdSet const* exclude, uint64_t maxMemory, BeSQLite::CachedStatement* stmt)
-         : RtreeViewFilter(vp, dgndb, 0.0, exclude), m_dgndb(dgndb), m_existing(existing), m_elementReleaseTrigger(maxMemory), m_purgeTrigger(maxMemory), m_rangeStmt(stmt) 
+    ProgressiveViewFilter(DgnViewportCR vp, DgnDbR dgndb, QueryModelR queryModel, DgnElementIdSet const* exclude, uint64_t maxMemory, BeSQLite::CachedStatement* stmt)
+         : RtreeViewFilter(vp, dgndb, 0.0, exclude), m_dgndb(dgndb), m_queryModel(queryModel), m_elementReleaseTrigger(maxMemory), m_purgeTrigger(maxMemory), m_rangeStmt(stmt) 
         {
         m_nThisPass = m_nLastPass = 0;
         m_setTimeout = false;
@@ -328,7 +328,6 @@ public:
     void SetTouchCheckStopLimit(bool enabled, uint32_t pixels, uint32_t numberTouches, Point2dCP touches);
     };
 
-
 /*=================================================================================**//**
 * @bsiclass
 +===============+===============+===============+===============+===============+======*/
@@ -375,6 +374,11 @@ public:
     friend struct ViewManager;
     friend struct ViewSet;
 
+//! @private
+typedef bpair<Render::GraphicSet, ElementAlignedBox3d> GraphicSetRangePair;
+//! @private
+typedef bmap<DgnGeomPartId, GraphicSetRangePair> PartGraphicMap;
+
 protected:
     typedef std::deque<Utf8String> ViewStateStack;
 
@@ -410,6 +414,7 @@ protected:
     Utf8String      m_currentBaseline;
     ViewStateStack  m_forwardStack;
     ViewStateStack  m_backStack;
+    mutable PartGraphicMap m_partGraphics;
 
     DGNPLATFORM_EXPORT void DestroyViewport();
     DGNPLATFORM_EXPORT virtual void _AdjustZPlanesToModel(DPoint3dR origin, DVec3dR delta, ViewControllerCR) const;
@@ -437,6 +442,7 @@ public:
     Byte GetDynamicsTransparency() const {return m_dynamicsTransparency;}
     void SetDynamicsTransparency(Byte val) {m_dynamicsTransparency = val;}
 
+    PartGraphicMap& GetPartGraphics() const {return m_partGraphics;}
     void SetRenderTarget(Render::Target* target) {m_renderTarget=target;}
     double GetFrustumFraction() const {return m_frustFraction;}
     bool IsVisible() {return _IsVisible();}
