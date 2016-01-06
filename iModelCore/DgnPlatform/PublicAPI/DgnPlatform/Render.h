@@ -14,44 +14,7 @@
 #include "AreaPattern.h"
 #include <Bentley/BeTimeUtilities.h>
 
-BEGIN_BENTLEY_DISPLAY_NAMESPACE
-    DEFINE_POINTER_SUFFIX_TYPEDEFS(Device)
-    DEFINE_REF_COUNTED_PTR(Device)
-END_BENTLEY_DISPLAY_NAMESPACE
-
 BEGIN_BENTLEY_RENDER_NAMESPACE
-
-DEFINE_POINTER_SUFFIX_TYPEDEFS(GeometryParams)
-DEFINE_POINTER_SUFFIX_TYPEDEFS(GradientSymb)
-DEFINE_POINTER_SUFFIX_TYPEDEFS(Graphic)
-DEFINE_POINTER_SUFFIX_TYPEDEFS(GraphicList)
-DEFINE_POINTER_SUFFIX_TYPEDEFS(GraphicParams)
-DEFINE_POINTER_SUFFIX_TYPEDEFS(ISprite)
-DEFINE_POINTER_SUFFIX_TYPEDEFS(ITiledRaster)
-DEFINE_POINTER_SUFFIX_TYPEDEFS(Image)
-DEFINE_POINTER_SUFFIX_TYPEDEFS(LineStyleInfo)
-DEFINE_POINTER_SUFFIX_TYPEDEFS(LineStyleParams)
-DEFINE_POINTER_SUFFIX_TYPEDEFS(LineStyleSymb)
-DEFINE_POINTER_SUFFIX_TYPEDEFS(LineTexture)
-DEFINE_POINTER_SUFFIX_TYPEDEFS(Material)
-DEFINE_POINTER_SUFFIX_TYPEDEFS(MultiResImage)
-DEFINE_POINTER_SUFFIX_TYPEDEFS(OvrGraphicParams)
-DEFINE_POINTER_SUFFIX_TYPEDEFS(Plan)
-DEFINE_POINTER_SUFFIX_TYPEDEFS(Target)
-DEFINE_POINTER_SUFFIX_TYPEDEFS(Task)
-DEFINE_POINTER_SUFFIX_TYPEDEFS(Texture)
-
-DEFINE_REF_COUNTED_PTR(GradientSymb)
-DEFINE_REF_COUNTED_PTR(Graphic)
-DEFINE_REF_COUNTED_PTR(GraphicList)
-DEFINE_REF_COUNTED_PTR(Image)
-DEFINE_REF_COUNTED_PTR(LineStyleInfo)
-DEFINE_REF_COUNTED_PTR(LineTexture)
-DEFINE_REF_COUNTED_PTR(Material)
-DEFINE_REF_COUNTED_PTR(MultiResImage)
-DEFINE_REF_COUNTED_PTR(Target)
-DEFINE_REF_COUNTED_PTR(Task)
-DEFINE_REF_COUNTED_PTR(Texture)
 
 //=======================================================================================
 // @bsiclass                                                    Keith.Bentley   12/14
@@ -133,8 +96,6 @@ private:
     THREAD_MAIN_DECL Main(void*);
 
 public:
-    DGNPLATFORM_EXPORT static void VerifyRenderThread(bool yesNo);
-
     //! Add a Render::Task to the render queue. The Task will replace any existing pending entries in the Queue
     //! for the same Render::Target for which task._CanReplace(existing) returns true.
     //! @param[in] task The Render::Task to add to the queue.
@@ -1205,11 +1166,12 @@ protected:
     virtual DVec2d _GetDpiScale() const = 0;
 
     ~Target();
+    DGNPLATFORM_EXPORT static void VerifyRenderThread();
 
 public:
-    virtual void _ChangeScene(GraphicListR scene) {Queue::VerifyRenderThread(true); m_currentScene = &scene;}
-    virtual void _ChangeDynamics(GraphicListR dynamics) {Queue::VerifyRenderThread(true); m_dynamics = &dynamics;}
-    virtual void _ChangeDecorations(Decorations& decorations) {Queue::VerifyRenderThread(true); m_decorations = decorations;}
+    virtual void _ChangeScene(GraphicListR scene) {VerifyRenderThread(); m_currentScene = &scene;}
+    virtual void _ChangeDynamics(GraphicListR dynamics) {VerifyRenderThread(); m_dynamics = &dynamics;}
+    virtual void _ChangeDecorations(Decorations& decorations) {VerifyRenderThread(); m_decorations = decorations;}
     virtual void _DrawFrame(PlanCR) = 0;
     virtual void _DrawProgressive(GraphicListR progressiveList) = 0;
     virtual double _GetCameraFrustumNearScaleLimit() const = 0;

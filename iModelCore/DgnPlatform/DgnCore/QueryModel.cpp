@@ -2,34 +2,17 @@
 |
 |     $Source: DgnCore/QueryModel.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "DgnPlatformInternal.h"
 #include <DgnPlatform/QueryModel.h>
 #include <DgnPlatform/QueryView.h>
 #include <DgnPlatform/ViewContext.h>
-#include <Bentley/BeThreadLocalStorage.h>
 #include "UpdateLogging.h"
-
-#if !defined (NDEBUG)
-#define DEBUG_THREADS 1
-#endif
 
 //#define TRACE_QUERY_LOGIC 1
 //#define DEBUG_CALLS 1
-
-BeThreadLocalStorage g_queryThreadChecker;
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   12/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-static void verifyQueryThread(bool wantQueryThread)
-    {
-#ifdef DEBUG_THREADS
-    BeAssert(wantQueryThread == TO_BOOL(g_queryThreadChecker.GetValueAsInteger()));
-#endif
-    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    09/2012
@@ -71,7 +54,7 @@ void QueryModel::WaitUntilFinished(ICheckStop* checkStop) { GetDgnDb().QueryMode
 +---------------+---------------+---------------+---------------+---------------+------*/
 void QueryModel::SaveQueryResults()
     {
-    verifyQueryThread(false);
+    DgnPlatformLib::VerifyClientThread();
 
     if (m_updatedResults.IsNull())
         {
@@ -91,22 +74,6 @@ void QueryModel::SaveQueryResults()
     // Now add everything that is in the secondary list but not the first.
     for (auto const& result : m_currQueryResults->m_closeElements)
         _OnLoadedElement(*result);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   John.Gooding    05/2012
-//--------------+------------------------------------------------------------------------
-void QueryModel::SetState(State newState)
-    {
-    m_state = newState;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   12/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-void QueryModel::SetUpdatedResults(Results* results)
-    {
-    m_updatedResults = results;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -171,10 +138,8 @@ struct ProcessorImpl : QueryModel::Processor, ICheckStop
 +---------------+---------------+---------------+---------------+---------------+------*/
 THREAD_MAIN_IMPL QueryModel::Queue::qt_Main(void* arg)
     {
-#ifdef DEBUG_THREADS
     BeThreadUtilities::SetCurrentThreadName("QueryModel");
-    g_queryThreadChecker.SetValueAsInteger(true);
-#endif
+    DgnPlatformLib::SetThreadId(DgnPlatformLib::ThreadId::Query);
 
     auto pThis = reinterpret_cast<Queue*>(arg);
     pThis->qt_WaitForWork();
@@ -196,7 +161,7 @@ bool QueryModel::Queue::_TestCondition(BeConditionVariable& cv)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void QueryModel::Queue::Terminate()
     {
-    verifyQueryThread(false);
+    DgnPlatformLib::VerifyClientThread();
 
     BeMutexHolder lock(m_cv.GetMutex());
     if (State::Terminated != m_state)
@@ -215,7 +180,8 @@ void QueryModel::Queue::Terminate()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void QueryModel::Queue::RequestProcessing(Processor::Params const& params)
     {
-    verifyQueryThread(false);
+    DgnPlatformLib::VerifyClientThread();
+
     QueryModelR model = params.m_model;
     BeAssert(&model.GetDgnDb() == &m_db);
 
@@ -263,7 +229,7 @@ public:
 +---------------+---------------+---------------+---------------+---------------+------*/
 void QueryModel::Queue::RequestAbort(QueryModelR model, bool waitUntilFinished)
     {
-    verifyQueryThread(false);
+    DgnPlatformLib::VerifyClientThread();
     BeAssert(&model.GetDgnDb() == &m_db);
 
     if (true) // hold lock while we test/set state
@@ -312,6 +278,8 @@ void QueryModel::Queue::RequestAbort(QueryModelR model, bool waitUntilFinished)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void QueryModel::Queue::WaitUntilFinished(QueryModelR model, ICheckStop* checkStop)
     {
+    DgnPlatformLib::VerifyClientThread();
+
     WaitUntilIdlePredicate predicate(model);
     while (QueryModel::State::Idle != model.GetState())
         {
@@ -350,60 +318,56 @@ struct GenericPredicate : IConditionVariablePredicate
 +---------------+---------------+---------------+---------------+---------------+------*/
 void QueryModel::Queue::qt_WaitForWork()
     {
-    verifyQueryThread(true);
+    DgnPlatformLib::VerifyQueryThread();
 
     GenericPredicate predicate([&]() { return State::TerminateRequested == this->m_state || !m_pending.empty(); });
+    StopWatch timer(false);
 
     while (State::TerminateRequested != m_state)
         {
         m_cv.WaitOnCondition(&predicate, BeConditionVariable::Infinite);
 
-        ProcessorPtr processing;
-
             {
             BeMutexHolder lock(m_cv.GetMutex());
 
             if (State::TerminateRequested == m_state)
-                {
                 break;
-                }
-            else if (!m_pending.empty())
+
+            if (!m_pending.empty())
                 {
-                processing = m_pending.front();
+                m_active = m_pending.front();
                 m_pending.pop_front();
-                if (processing->GetModel().GetState() == QueryModel::State::Pending)
-                    processing->GetModel().SetState(QueryModel::State::Processing);
+                if (m_active->GetModel().GetState() == QueryModel::State::Pending)
+                    m_active->GetModel().SetState(QueryModel::State::Processing);
                 }
             }
 
-        if (processing.IsValid())
+        if (m_active.IsValid())
             {
-            auto& model = processing->GetModel();
-            StopWatch timer(nullptr, true);
-            if (processing->Process())
+            auto& model = m_active->GetModel();
+            timer.Start();
+            if (m_active->Process())
                 {
 #if defined TRACE_QUERY_LOGIC
                 printf("QMQ: Processing complete\n");
 #endif
-                auto updatedResults = processing->GetResults();
+                auto updatedResults = m_active->GetResults();
                 BeAssert(nullptr != updatedResults);
 
-                timer.Stop();
 #if defined TRACE_QUERY_LOGIC
-                printf("QMQ: Elapsed query time %.8f\n", timer.GetElapsedSeconds());
+                printf("QMQ: Elapsed query time %.8f\n", timer.GetCurrentSeconds());
 #endif
-                updatedResults->m_elapsedSeconds = timer.GetElapsedSeconds();
+                updatedResults->m_elapsedSeconds = timer.GetCurrentSeconds();
                 model.SetUpdatedResults(updatedResults);
                 
-                processing->OnCompleted();
+                m_active->OnCompleted();
                 }
 #if defined TRACE_QUERY_LOGIC
             else
                 printf("QMQ: Processing aborted\n");
 #endif
 
-            processing = nullptr;
-
+            m_active = nullptr;
                 {
                 BeMutexHolder lock(m_cv.GetMutex());
                 if (QueryModel::State::Pending != model.GetState())
@@ -447,7 +411,7 @@ bool ProcessorImpl::LoadElements(DgnDbRTree3dViewFilter::T_OcclusionScoreMap& ma
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ProcessorImpl::_Process()
     {
-    verifyQueryThread(true);
+    DgnPlatformLib::VerifyQueryThread();
 
 #if defined TRACE_QUERY_LOGIC
     printf("QMQ: Processing\n");

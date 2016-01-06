@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/QueryModel.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -116,6 +116,7 @@ struct QueryModel : SpatialModel
         DgnDbR                      m_db;
         BeConditionVariable         m_cv;
         std::deque<ProcessorPtr>    m_pending;
+        ProcessorPtr                m_active;
         State                       m_state;
 
         void qt_WaitForWork();
@@ -138,6 +139,8 @@ struct QueryModel : SpatialModel
 
         //! Suspends the calling thread until the specified model is in the idle state
         DGNPLATFORM_EXPORT void WaitUntilFinished(QueryModelR model, ICheckStop* checkStop);
+
+        bool IsIdle() const {return m_pending.empty() && !m_active.IsValid();}
     };
 
     //! The possible states of a QueryModel
@@ -160,11 +163,9 @@ private:
 
 public:
     State GetState() const { return m_state; } //!< @private
-    void SetState(State state); //!< @private
-    void SetUpdatedResults(Results* results); //!< @private
-
+    void SetState(State newState){m_state = newState;} //!< @private
+    void SetUpdatedResults(Results* results) {m_updatedResults = results;}//!< @private
     Results* GetCurrentResults() {return m_currQueryResults.get();} //!< @private
-
     void SaveQueryResults(); //!< @private
     void ResizeElementList(uint32_t newCount); //!< @private
     void ClearQueryResults(); //!< @private

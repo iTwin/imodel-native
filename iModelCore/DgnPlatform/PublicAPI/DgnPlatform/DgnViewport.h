@@ -124,13 +124,13 @@ struct ProgressiveViewFilter : ProgressiveDisplay, RtreeViewFilter
     uint32_t                     m_nThisPass;
     uint32_t                     m_nLastPass;
     bool                         m_setTimeout;
-    DgnModelR                    m_existing;
+    QueryModelR                  m_queryModel;
     DgnDbR                       m_dgndb;
     uint64_t                     m_elementReleaseTrigger;
     uint64_t                     m_purgeTrigger;
     BeSQLite::CachedStatementPtr m_rangeStmt;
-    ProgressiveViewFilter(DgnViewportCR vp, DgnDbR dgndb, DgnModelR existing, DgnElementIdSet const* exclude, uint64_t maxMemory, BeSQLite::CachedStatement* stmt)
-         : RtreeViewFilter(vp, dgndb, 0.0, exclude), m_dgndb(dgndb), m_existing(existing), m_elementReleaseTrigger(maxMemory), m_purgeTrigger(maxMemory), m_rangeStmt(stmt) 
+    ProgressiveViewFilter(DgnViewportCR vp, DgnDbR dgndb, QueryModelR queryModel, DgnElementIdSet const* exclude, uint64_t maxMemory, BeSQLite::CachedStatement* stmt)
+         : RtreeViewFilter(vp, dgndb, 0.0, exclude), m_dgndb(dgndb), m_queryModel(queryModel), m_elementReleaseTrigger(maxMemory), m_purgeTrigger(maxMemory), m_rangeStmt(stmt) 
         {
         m_nThisPass = m_nLastPass = 0;
         m_setTimeout = false;
@@ -295,13 +295,16 @@ private:
 
     StopEvents m_stopEvents;
     uint32_t   m_timeout;                 // in milliseconds
+    bool       m_waitForQuery;
 
 public:
-    FullUpdateInfo(uint32_t timeout=400) : m_stopEvents(StopEvents::ForFullUpdate), m_timeout(timeout) {}
+    FullUpdateInfo(uint32_t timeout=400) : m_stopEvents(StopEvents::ForFullUpdate), m_timeout(timeout), m_waitForQuery(false) {}
     void SetStopEvents(StopEvents stopEvents) {m_stopEvents = stopEvents;}
     void SetTouchCheckStopLimit(bool enabled, uint32_t pixels, uint32_t numberTouches, Point2dCP touches);
     void SetTimeout(uint32_t timeout) {m_timeout=timeout;}
     uint32_t GetTimeout() const {return m_timeout;}
+    void SetWaitForQuery(bool syncOnQuery) {m_waitForQuery=syncOnQuery;}
+    bool GetWaitForQuery() const {return m_waitForQuery;}
     };
 
 //=======================================================================================
@@ -482,7 +485,7 @@ public:
     DGNVIEW_EXPORT void GetGridOrientation(DPoint3dP origin, RotMatrixP);
     DGNVIEW_EXPORT double PixelsFromInches(double inches) const;
     DGNVIEW_EXPORT void ForceHeal();
-    StatusInt HealViewport(uint64_t timeout);
+    StatusInt HealViewport(uint64_t timeout, bool waitForQuery = false);
     bool GetNeedsHeal() {return m_needsHeal;}
     DGNVIEW_EXPORT void ForceHealImmediate(uint64_t timeout=500); // default 1/2 second
     DGNVIEW_EXPORT void SuspendForBackground();

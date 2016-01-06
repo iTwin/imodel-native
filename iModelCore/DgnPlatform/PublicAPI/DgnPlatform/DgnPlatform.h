@@ -15,6 +15,7 @@
 #include <Bentley/Bentley.h>
 #include <Bentley/RefCounted.h>
 #include <Bentley/BeFileName.h>
+#include <Bentley/ByteStream.h> 
 #include "ExportMacros.h"
 #include <Geom/GeomApi.h>
 #include <Bentley/NonCopyableClass.h>
@@ -47,13 +48,11 @@
 #define GEOCOORD_TYPEDEFS(_name_) \
     BEGIN_BENTLEY_NAMESPACE namespace GeoCoordinates { DEFINE_POINTER_SUFFIX_TYPEDEFS(_name_) } END_BENTLEY_NAMESPACE
 
-BENTLEY_NAMESPACE_TYPEDEFS (BitMask)
-BENTLEY_NAMESPACE_TYPEDEFS (DataExternalizer)
-BENTLEY_NAMESPACE_TYPEDEFS (GPArray)
-BENTLEY_NAMESPACE_TYPEDEFS (GraphicsPointArray)
-BENTLEY_NAMESPACE_TYPEDEFS (IRefCounted)
-BENTLEY_NAMESPACE_TYPEDEFS (BeJsContext)
-BENTLEY_NAMESPACE_TYPEDEFS (BeJsEnvironment)
+BENTLEY_NAMESPACE_TYPEDEFS(BitMask)
+BENTLEY_NAMESPACE_TYPEDEFS(GPArray)
+BENTLEY_NAMESPACE_TYPEDEFS(GraphicsPointArray)
+BENTLEY_NAMESPACE_TYPEDEFS(BeJsContext)
+BENTLEY_NAMESPACE_TYPEDEFS(BeJsEnvironment)
 
 DGNPLATFORM_TYPEDEFS(AnnotationElement)
 DGNPLATFORM_TYPEDEFS(AxisAlignedBox2d)
@@ -196,53 +195,89 @@ DGNPLATFORM_TYPEDEFS(ViewController)
 DGNPLATFORM_TYPEDEFS(ViewDefinition)
 DGNPLATFORM_TYPEDEFS(ViewManager)
 
-DGNPLATFORM_REF_COUNTED_PTR (DefinitionElement)
-DGNPLATFORM_REF_COUNTED_PTR (DictionaryElement)
-DGNPLATFORM_REF_COUNTED_PTR (DgnDb)
-DGNPLATFORM_REF_COUNTED_PTR (DgnDbExpressionContext)
-DGNPLATFORM_REF_COUNTED_PTR (DgnElement)
-DGNPLATFORM_REF_COUNTED_PTR (DgnElementExpressionContext)
-DGNPLATFORM_REF_COUNTED_PTR (DgnFont)
-DGNPLATFORM_REF_COUNTED_PTR (DgnGCS)
-DGNPLATFORM_REF_COUNTED_PTR (DgnGeomPart)
-DGNPLATFORM_REF_COUNTED_PTR (DgnMarkupProject)
-DGNPLATFORM_REF_COUNTED_PTR (DgnModel)
-DGNPLATFORM_REF_COUNTED_PTR (DgnRevision)
-DGNPLATFORM_REF_COUNTED_PTR (DgnViewport)
-DGNPLATFORM_REF_COUNTED_PTR (AnnotationElement)
-DGNPLATFORM_REF_COUNTED_PTR (DrawingElement)
-DGNPLATFORM_REF_COUNTED_PTR (SheetElement)
-DGNPLATFORM_REF_COUNTED_PTR (SpatialElement)
-DGNPLATFORM_REF_COUNTED_PTR (SpatialGroupElement)
-DGNPLATFORM_REF_COUNTED_PTR (ILocksManager)
-DGNPLATFORM_REF_COUNTED_PTR (PatternParams)
-DGNPLATFORM_REF_COUNTED_PTR (PhysicalElement)
-DGNPLATFORM_REF_COUNTED_PTR (ComponentDef)
-DGNPLATFORM_REF_COUNTED_PTR (ComponentModel)
-DGNPLATFORM_REF_COUNTED_PTR (SpatialModel)
-DGNPLATFORM_REF_COUNTED_PTR (SpatialRedlineViewController)
-DGNPLATFORM_REF_COUNTED_PTR (QueryViewController)
-DGNPLATFORM_REF_COUNTED_PTR (RedlineViewController)
-DGNPLATFORM_REF_COUNTED_PTR (SheetViewController)
-DGNPLATFORM_REF_COUNTED_PTR (TxnManager)
-DGNPLATFORM_REF_COUNTED_PTR (DgnAuthority)
-DGNPLATFORM_REF_COUNTED_PTR (ImageBuffer)
-DGNPLATFORM_REF_COUNTED_PTR (ViewDefinition)
-DGNPLATFORM_REF_COUNTED_PTR (SpatialViewDefinition)
-DGNPLATFORM_REF_COUNTED_PTR (DrawingViewDefinition)
-DGNPLATFORM_REF_COUNTED_PTR (SheetViewDefinition)
-DGNPLATFORM_REF_COUNTED_PTR (TextString)
-DGNPLATFORM_REF_COUNTED_PTR (TextStringStyle)
+DGNPLATFORM_REF_COUNTED_PTR(AnnotationElement)
+DGNPLATFORM_REF_COUNTED_PTR(ClipPrimitive)
+DGNPLATFORM_REF_COUNTED_PTR(ClipVector)
+DGNPLATFORM_REF_COUNTED_PTR(ComponentDef)
+DGNPLATFORM_REF_COUNTED_PTR(ComponentModel)
+DGNPLATFORM_REF_COUNTED_PTR(DefinitionElement)
+DGNPLATFORM_REF_COUNTED_PTR(DgnAuthority)
+DGNPLATFORM_REF_COUNTED_PTR(DgnDb)
+DGNPLATFORM_REF_COUNTED_PTR(DgnDbExpressionContext)
+DGNPLATFORM_REF_COUNTED_PTR(DgnElement)
+DGNPLATFORM_REF_COUNTED_PTR(DgnElementExpressionContext)
+DGNPLATFORM_REF_COUNTED_PTR(DgnFont)
+DGNPLATFORM_REF_COUNTED_PTR(DgnGCS)
+DGNPLATFORM_REF_COUNTED_PTR(DgnGeomPart)
+DGNPLATFORM_REF_COUNTED_PTR(DgnMarkupProject)
+DGNPLATFORM_REF_COUNTED_PTR(DgnModel)
+DGNPLATFORM_REF_COUNTED_PTR(DgnRevision)
+DGNPLATFORM_REF_COUNTED_PTR(DgnViewport)
+DGNPLATFORM_REF_COUNTED_PTR(DictionaryElement)
+DGNPLATFORM_REF_COUNTED_PTR(DisplayStyleHandlerSettings)
+DGNPLATFORM_REF_COUNTED_PTR(DrawingElement)
+DGNPLATFORM_REF_COUNTED_PTR(DrawingViewDefinition)
+DGNPLATFORM_REF_COUNTED_PTR(IElemTopology)
+DGNPLATFORM_REF_COUNTED_PTR(ILocksManager)
+DGNPLATFORM_REF_COUNTED_PTR(ImageBuffer)
+DGNPLATFORM_REF_COUNTED_PTR(PatternParams)
+DGNPLATFORM_REF_COUNTED_PTR(PatternParams)
+DGNPLATFORM_REF_COUNTED_PTR(PhysicalElement)
+DGNPLATFORM_REF_COUNTED_PTR(ProgressiveDisplay)
+DGNPLATFORM_REF_COUNTED_PTR(QueryViewController)
+DGNPLATFORM_REF_COUNTED_PTR(RedlineViewController)
+DGNPLATFORM_REF_COUNTED_PTR(SheetElement)
+DGNPLATFORM_REF_COUNTED_PTR(SheetViewController)
+DGNPLATFORM_REF_COUNTED_PTR(SheetViewDefinition)
+DGNPLATFORM_REF_COUNTED_PTR(SpatialElement)
+DGNPLATFORM_REF_COUNTED_PTR(SpatialGroupElement)
+DGNPLATFORM_REF_COUNTED_PTR(SpatialModel)
+DGNPLATFORM_REF_COUNTED_PTR(SpatialRedlineViewController)
+DGNPLATFORM_REF_COUNTED_PTR(SpatialViewDefinition)
+DGNPLATFORM_REF_COUNTED_PTR(TextString)
+DGNPLATFORM_REF_COUNTED_PTR(TextStringStyle)
+DGNPLATFORM_REF_COUNTED_PTR(TxnManager)
+DGNPLATFORM_REF_COUNTED_PTR(ViewController)
+DGNPLATFORM_REF_COUNTED_PTR(ViewDefinition)
 
-/** @cond BENTLEY_SDK_Internal */
-DGNPLATFORM_REF_COUNTED_PTR (ClipPrimitive)
-DGNPLATFORM_REF_COUNTED_PTR (ClipVector)
-DGNPLATFORM_REF_COUNTED_PTR (PatternParams)
-DGNPLATFORM_REF_COUNTED_PTR (DisplayStyleHandlerSettings)
-DGNPLATFORM_REF_COUNTED_PTR (IElemTopology)
-DGNPLATFORM_REF_COUNTED_PTR (ProgressiveDisplay)
-DGNPLATFORM_REF_COUNTED_PTR (ViewController)
-/** @endcond */
+BEGIN_BENTLEY_DISPLAY_NAMESPACE
+    DEFINE_POINTER_SUFFIX_TYPEDEFS(Device)
+    DEFINE_REF_COUNTED_PTR(Device)
+END_BENTLEY_DISPLAY_NAMESPACE
+
+BEGIN_BENTLEY_RENDER_NAMESPACE
+    DEFINE_POINTER_SUFFIX_TYPEDEFS(GeometryParams)
+    DEFINE_POINTER_SUFFIX_TYPEDEFS(GradientSymb)
+    DEFINE_POINTER_SUFFIX_TYPEDEFS(Graphic)
+    DEFINE_POINTER_SUFFIX_TYPEDEFS(GraphicList)
+    DEFINE_POINTER_SUFFIX_TYPEDEFS(GraphicParams)
+    DEFINE_POINTER_SUFFIX_TYPEDEFS(ISprite)
+    DEFINE_POINTER_SUFFIX_TYPEDEFS(ITiledRaster)
+    DEFINE_POINTER_SUFFIX_TYPEDEFS(Image)
+    DEFINE_POINTER_SUFFIX_TYPEDEFS(LineStyleInfo)
+    DEFINE_POINTER_SUFFIX_TYPEDEFS(LineStyleParams)
+    DEFINE_POINTER_SUFFIX_TYPEDEFS(LineStyleSymb)
+    DEFINE_POINTER_SUFFIX_TYPEDEFS(LineTexture)
+    DEFINE_POINTER_SUFFIX_TYPEDEFS(Material)
+    DEFINE_POINTER_SUFFIX_TYPEDEFS(MultiResImage)
+    DEFINE_POINTER_SUFFIX_TYPEDEFS(OvrGraphicParams)
+    DEFINE_POINTER_SUFFIX_TYPEDEFS(Plan)
+    DEFINE_POINTER_SUFFIX_TYPEDEFS(Target)
+    DEFINE_POINTER_SUFFIX_TYPEDEFS(Task)
+    DEFINE_POINTER_SUFFIX_TYPEDEFS(Texture)
+
+    DEFINE_REF_COUNTED_PTR(GradientSymb)
+    DEFINE_REF_COUNTED_PTR(Graphic)
+    DEFINE_REF_COUNTED_PTR(GraphicList)
+    DEFINE_REF_COUNTED_PTR(Image)
+    DEFINE_REF_COUNTED_PTR(LineStyleInfo)
+    DEFINE_REF_COUNTED_PTR(LineTexture)
+    DEFINE_REF_COUNTED_PTR(Material)
+    DEFINE_REF_COUNTED_PTR(MultiResImage)
+    DEFINE_REF_COUNTED_PTR(Target)
+    DEFINE_REF_COUNTED_PTR(Task)
+    DEFINE_REF_COUNTED_PTR(Texture)
+END_BENTLEY_RENDER_NAMESPACE
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 
@@ -876,53 +911,6 @@ typedef T_DoubleVector const&  T_DoubleVectorCR;
 #define   IMINI8      INT64_MIN
 #define   IMAXUI8     UINT64_MAX
 
-//=======================================================================================
-//! A stream of bytes in a resizeable buffer. Released on destruction, never gets smaller.
-//! This class is more efficient than bvector<byte> since it does not initialize the memory to zeros.
-// @bsiclass                                                    Keith.Bentley   11/15
-//=======================================================================================
-struct ByteStream
-{
-private:
-    uint32_t m_size;
-    uint32_t m_allocSize;
-    uint8_t* m_data;
-    void swap(ByteStream& rhs) {std::swap(m_size,rhs.m_size); std::swap(m_allocSize,rhs.m_allocSize); std::swap(m_data,rhs.m_data);}
-
-public:
-    void Init() {m_size=m_allocSize=0; m_data=nullptr;}
-    ByteStream() {Init();}
-    explicit ByteStream(uint32_t size) {Init(); ReserveMemory(size);}
-    ByteStream(uint8_t const* data, uint32_t size) {Init(); SaveData(data, size);}
-    ByteStream(ByteStream const& other) {Init(); SaveData(other.m_data, other.m_size);}
-    ~ByteStream() {Clear();}
-    ByteStream(ByteStream&& rhs) : m_size(rhs.m_size), m_allocSize(rhs.m_allocSize), m_data(rhs.m_data) {rhs.m_size=rhs.m_allocSize=0; rhs.m_data=nullptr;}
-    ByteStream& operator=(ByteStream const& other) {if (this != &other) SaveData(other.m_data, other.m_size); return *this;}
-    ByteStream& operator=(ByteStream&& rhs) {ByteStream(std::move(rhs)).swap(*this); return *this;}
-
-    //! Get the size, in bytes, of the memory allocated for this ByteStream.
-    //! @note The allocated size may be larger than the currently used size returned by GetSize.
-    uint32_t GetAllocSize() const {return m_allocSize;}
-    uint32_t GetSize() const {return m_size;}   //!< Get the size in bytes of the current data in this ByteStream.
-    uint8_t const* GetData() const {return m_data;} //!< Get a const pointer to the ByteStream.
-    uint8_t* GetDataP() const {return m_data;}      //!< Get a writable pointer to the ByteStream.
-    bool HasData() const {return 0 != m_size;}  //!< return false if this ByteStream is empty.
-    void Clear() {FREE_AND_CLEAR(m_data); m_size = m_allocSize = 0;} //!< Return this object to an empty/uninitialized state.
-
-    //! Reserve memory for this ByteStream.
-    //! @param[in] size the number of bytes to reserve
-    void ReserveMemory(uint32_t size) {m_size=size; if (size<=m_allocSize) return; m_data = (uint8_t*) realloc(m_data, size); m_allocSize = size;}
-
-    //! Save a stream of bytes into this ByteStream.
-    //! @param[in] data the data to save
-    //! @param[in] size number of bytes in data
-    void SaveData(uint8_t const* data, uint32_t size) {ReserveMemory(size); if (data) memcpy(m_data, data, size);}
-
-    //! Append a stream of byes to the current end of this ByteStream.
-    //! @param[in] data the data to save
-    //! @param[in] size number of bytes in data
-    void Append(uint8_t const* data, uint32_t size) {ReserveMemory(size+m_size); if (data) memcpy(m_data+m_size, data, size);}
-};
 
 //=======================================================================================
 // @bsiclass                                                    Keith.Bentley   12/14
