@@ -854,7 +854,7 @@ protected:
             }
     
         // read file content
-        bvector<Byte> data;
+        ByteStream data;
         if (BeFileStatus::Success != configFile.ReadEntireFile(data))
             {
             BeAssert (false);
