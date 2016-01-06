@@ -2,7 +2,7 @@
 |
 |     $Source: src/ECSchema.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -2423,6 +2423,22 @@ size_t ECSchemaCache::GetSchemas (bvector<ECSchemaP>& schemas) const
     for (SchemaMap::const_iterator it = m_schemas.begin(); it != m_schemas.end(); it++)
         schemas.push_back (it->second.get());
     return schemas.size();
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Colin.Kerr                      01/2016
+//--------------------------------------------------------------------------------------
+void ECSchemaCache::GetSupplementalSchemasFor(Utf8CP schemaName, bvector<ECSchemaP>& supplementalSchemas) const
+    {
+    supplementalSchemas.clear();
+
+    Utf8String supplementalName(schemaName);
+    supplementalName.append("_Supplemental");
+    for (auto const& schema : m_schemas)
+        {
+        if (schema.first.GetName().StartsWithI(supplementalName.c_str()))
+            supplementalSchemas.push_back(schema.second.get());
+        }
     }
 
 /////////////////////////////////////////////////////////////////////////////////////////
