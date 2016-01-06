@@ -493,7 +493,7 @@ public:
     DGNVIEW_EXPORT RenderContext(DgnViewportR vp, DrawPurpose);
     void _AddContextOverrides(Render::OvrGraphicParamsR ovrMatSymb, GeometrySourceCP source) override;
     Render::GraphicP _GetCachedGraphic(GeometrySourceCR source, double pixelSize) override {return source.Graphics().Find(*m_viewport, pixelSize);}
-    void _SavePartGraphic(DgnGeomPartId partId, Render::GraphicR graphic, ElementAlignedBox3dCR localRange) override {graphic.Close();} // NEEDSWORK...
+    DGNVIEW_EXPORT Render::GraphicP _GetCachedPartGraphic(DgnGeomPartId, double pixelSize, ElementAlignedBox3dR) override;
     void _PushFrustumClip() override {}
     Render::GraphicPtr _CreateGraphic(Render::Graphic::CreateParams const& params) override {return m_target.CreateGraphic(params);}
 };
