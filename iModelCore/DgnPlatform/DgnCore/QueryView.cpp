@@ -769,7 +769,7 @@ int32_t QueryViewController::_GetMaxElementFactor(DgnViewportCR vp)
 
     double fps = std::max(1.0 / lastQueryTime, 0.0);
 
-    double diff = qps - s_acceptableFramesPerSecond;
+    double diff = fps - s_acceptableFramesPerSecond;
     double factor = (100.0 / s_acceptableFramesPerSecond) * diff;
 
     int32_t iFactor = (static_cast<int32_t>(factor) / s_granularity) * s_granularity;
