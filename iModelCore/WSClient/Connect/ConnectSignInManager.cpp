@@ -110,7 +110,7 @@ ConnectSignInManager::UserInfo ConnectSignInManager::GetUserInfo() const
 std::shared_ptr<AuthenticationHandler> ConnectSignInManager::GetAuthenticationHandler(Utf8StringCR serverUrl, IHttpHandlerPtr customHandler)
     {
     auto persistence = ConnectAuthenticationPersistence::GetShared();
-    auto provider = std::make_shared<ConnectTokenProvider>(persistence, ConnectSignInManager::IsTokenBasedAuthentication());
+    auto provider = std::make_shared<ConnectTokenProvider>(persistence);
     auto handler = UrlProvider::GetSecurityConfigurator(customHandler);
     return std::make_shared<ConnectAuthenticationHandler>(serverUrl, provider, handler);
     }
