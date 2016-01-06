@@ -1244,26 +1244,85 @@
         </Target>
     </ECRelationshipClass>
 
-    <!-- NEEDSWORK ECRelationships don't support abstract endpoints
-    <ECRelationshipClass typeName="CategoryContainsGeometry" strength="referencing">
+    <!-- NEEDSWORK ECRelationships don't support abstract endpoints.
+         ECRelationship is required in order to generate foreign key constraint.
+         Therefore we must define an ECRelationship for each concrete subclass of GeometrySource to get a foreign key constraint on CategoryId -->
+    <ECRelationshipClass typeName="SpatialElementIsInCategory" description="Element is in Category" strength="referencing">
         <ECCustomAttributes>
             <ForeignKeyRelationshipMap xmlns="ECDbMap.01.00">
                 <OnDeleteAction>NoAction</OnDeleteAction>
-                <CreateIndex>True</CreateIndex>
+                <CreateIndex>True</CreateIndex><!-- NEEDSWORK: ECDb ignores this; we explicitly specify the index on subclasses of GeometrySource instead -->
+                <End>Source</End>
             </ForeignKeyRelationshipMap>
         </ECCustomAttributes>
-        <Source cardinality="(1,1)" roleLabel="contains geometry" polymorphic="False">
-            <Class class="Category" />
-        </Source>
-        <Target cardinality="(0,N)" roleLabel="is in category" polymorphic="False">
-            <Class class="GeometrySource">
+        <Source cardinality="(0,N)" roleLabel="is in category" polymorphic="false">
+            <Class class="SpatialElement">
                 <Key>
-                    <Property name="CategoryId" />
+                    <Property name="CategoryId"/>
                 </Key>
             </Class>
+        </Source>
+        <Target cardinality="(1,1)" roleLabel="contains elements" polymorphic="true">
+            <Class class="Category"/>
         </Target>
     </ECRelationshipClass>
-    -->
+    <ECRelationshipClass typeName="AnnotationElementIsInCategory" description="Element is in Category" strength="referencing">
+        <ECCustomAttributes>
+            <ForeignKeyRelationshipMap xmlns="ECDbMap.01.00">
+                <OnDeleteAction>NoAction</OnDeleteAction>
+                <CreateIndex>True</CreateIndex><!-- NEEDSWORK: ECDb ignores this; we explicitly specify the index on subclasses of GeometrySource instead -->
+                <End>Source</End>
+            </ForeignKeyRelationshipMap>
+        </ECCustomAttributes>
+        <Source cardinality="(0,N)" roleLabel="is in category" polymorphic="false">
+            <Class class="AnnotationElement">
+                <Key>
+                    <Property name="CategoryId"/>
+                </Key>
+            </Class>
+        </Source>
+        <Target cardinality="(1,1)" roleLabel="contains elements" polymorphic="true">
+            <Class class="Category"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="DrawingElementIsInCategory" description="Element is in Category" strength="referencing">
+        <ECCustomAttributes>
+            <ForeignKeyRelationshipMap xmlns="ECDbMap.01.00">
+                <OnDeleteAction>NoAction</OnDeleteAction>
+                <CreateIndex>True</CreateIndex><!-- NEEDSWORK: ECDb ignores this; we explicitly specify the index on subclasses of GeometrySource instead -->
+                <End>Source</End>
+            </ForeignKeyRelationshipMap>
+        </ECCustomAttributes>
+        <Source cardinality="(0,N)" roleLabel="is in category" polymorphic="false">
+            <Class class="DrawingElement">
+                <Key>
+                    <Property name="CategoryId"/>
+                </Key>
+            </Class>
+        </Source>
+        <Target cardinality="(1,1)" roleLabel="contains elements" polymorphic="true">
+            <Class class="Category"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="SheetElementIsInCategory" description="Element is in Category" strength="referencing">
+        <ECCustomAttributes>
+            <ForeignKeyRelationshipMap xmlns="ECDbMap.01.00">
+                <OnDeleteAction>NoAction</OnDeleteAction>
+                <CreateIndex>True</CreateIndex><!-- NEEDSWORK: ECDb ignores this; we explicitly specify the index on subclasses of GeometrySource instead -->
+                <End>Source</End>
+            </ForeignKeyRelationshipMap>
+        </ECCustomAttributes>
+        <Source cardinality="(0,N)" roleLabel="is in category" polymorphic="false">
+            <Class class="SheetElement">
+                <Key>
+                    <Property name="CategoryId"/>
+                </Key>
+            </Class>
+        </Source>
+        <Target cardinality="(1,1)" roleLabel="contains elements" polymorphic="true">
+            <Class class="Category"/>
+        </Target>
+    </ECRelationshipClass>
     
     <!-- ////////////////////////////////////////////////////////////////////////////// -->
     <!-- // Experimental classes -->
