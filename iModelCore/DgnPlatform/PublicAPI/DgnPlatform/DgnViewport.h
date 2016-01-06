@@ -295,13 +295,16 @@ private:
 
     StopEvents m_stopEvents;
     uint32_t   m_timeout;                 // in milliseconds
+    bool       m_waitForQuery;
 
 public:
-    FullUpdateInfo(uint32_t timeout=400) : m_stopEvents(StopEvents::ForFullUpdate), m_timeout(timeout) {}
+    FullUpdateInfo(uint32_t timeout=400) : m_stopEvents(StopEvents::ForFullUpdate), m_timeout(timeout), m_waitForQuery(false) {}
     void SetStopEvents(StopEvents stopEvents) {m_stopEvents = stopEvents;}
     void SetTouchCheckStopLimit(bool enabled, uint32_t pixels, uint32_t numberTouches, Point2dCP touches);
     void SetTimeout(uint32_t timeout) {m_timeout=timeout;}
     uint32_t GetTimeout() const {return m_timeout;}
+    void SetWaitForQuery(bool syncOnQuery) {m_waitForQuery=syncOnQuery;}
+    bool GetWaitForQuery() const {return m_waitForQuery;}
     };
 
 //=======================================================================================
@@ -476,7 +479,7 @@ public:
     DGNVIEW_EXPORT void GetGridOrientation(DPoint3dP origin, RotMatrixP);
     DGNVIEW_EXPORT double PixelsFromInches(double inches) const;
     DGNVIEW_EXPORT void ForceHeal();
-    StatusInt HealViewport(uint64_t timeout);
+    StatusInt HealViewport(uint64_t timeout, bool waitForQuery = false);
     bool GetNeedsHeal() {return m_needsHeal;}
     DGNVIEW_EXPORT void ForceHealImmediate(uint64_t timeout=500); // default 1/2 second
     DGNVIEW_EXPORT void SuspendForBackground();
