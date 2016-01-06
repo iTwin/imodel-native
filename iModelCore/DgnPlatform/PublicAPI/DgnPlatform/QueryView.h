@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/QueryView.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -42,6 +42,7 @@ protected:
     uint32_t    m_intermediatePaintsThreshold;
     uint32_t    m_maxToDrawInDynamicUpdate;
     uint32_t    m_maxDrawnInDynamicUpdate;
+    uint32_t    m_lastNumberElements;
     uint64_t    m_maxElementMemory;
     Frustum     m_startQueryFrustum;
     Frustum     m_saveQueryFrustum;

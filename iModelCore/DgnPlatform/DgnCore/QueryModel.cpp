@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/QueryModel.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "DgnPlatformInternal.h"
@@ -239,6 +239,7 @@ void QueryModel::Queue::RequestProcessing(Processor::Params const& params)
 #endif
 
     ProcessorPtr proc = new ProcessorImpl(params);
+    //  NEEDSWORK_CONTINUOUS_RENDERING -- the query thread might be in the processing state. If so, changing it to Pending is invalid.
     model.SetState(QueryModel::State::Pending);
     m_pending.push_back(proc);
 

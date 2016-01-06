@@ -11,8 +11,6 @@
 
 #include "UpdateLogging.h"
 
-//#define TRACE_QUERY_LOGIC 1
-
 #if defined (BENTLEY_WIN32)
     #define MAX_TO_DRAW_IN_DYNAMIC_UPDATE  6000
 #else
@@ -31,6 +29,7 @@ QueryViewController::QueryViewController(DgnDbR dgndb, DgnViewId id) : CameraVie
     m_maxToDrawInDynamicUpdate = MAX_TO_DRAW_IN_DYNAMIC_UPDATE;
     m_intermediatePaintsThreshold = 0;
     m_maxDrawnInDynamicUpdate = 0;
+    m_lastNumberElements = 0;
     m_maxElementMemory = 0;
     m_noQuery = false;
     m_secondaryHitLimit = 0;
@@ -48,7 +47,8 @@ QueryViewController::~QueryViewController()
 
 // On iOS we draw less in a frame that occurs while the query is running.
 // Holding back some leads to fewer flashing frames.
-static double s_dynamicLoadFrequency = 0.75;
+static double s_dynamicLoadFrequency4Cpus = 0.1;
+static double s_dynamicLoadFrequency2Cpus = 0.75;
 static uint32_t s_dynamicLoadTrigger = 800;
 
 /*---------------------------------------------------------------------------------**//**
@@ -80,19 +80,15 @@ bool QueryViewController::_WantElementLoadStart(DgnViewportR vp, double currentT
     if (0 == s_numberOfCpus)
         s_numberOfCpus = BeSystemInfo::GetNumberOfCpus();
 
-    if (s_numberOfCpus <= 4)
+    //  Try to avoid contention between query and update. If 2 CPUs there is contention for CPU time.
+    //  If 4 or more CPU's there may be contention over SQLite mutex.
+    double dynamicLoadFrequency = s_numberOfCpus < 4 ? s_dynamicLoadFrequency2Cpus : s_dynamicLoadFrequency4Cpus;
+    if ((currentTime - lastQueryTime) < dynamicLoadFrequency)
         {
-        //  Wait a while if there is contention for CPU's. Generally, we want to wait on platforms
-        //  where we sometimes fail the test for dynamic trigger so we don't often get to this code 
-        //  if we don't want it to execute. We've seen that this is important on iOS and don't know if
-        //  it is on other platforms.
-        if ((currentTime - lastQueryTime) < s_dynamicLoadFrequency)
-            {
 #if defined (TRACE_QUERY_LOGIC)
-            printf("_WantElementLoadStart : FAILED time test = %g\n", currentTime - lastQueryTime);
+        printf("_WantElementLoadStart : FAILED time test = %g\n", currentTime - lastQueryTime);
 #endif
-            return false;
-            }
+        return false;
         }
 
 #if defined (TRACE_QUERY_LOGIC)
@@ -604,6 +600,8 @@ void QueryViewController::_DrawView(ViewContextR context)
     if (isDynamicUpdate && numDrawn > m_maxDrawnInDynamicUpdate)
         m_maxDrawnInDynamicUpdate = numDrawn;
 
+    m_lastNumberElements = numDrawn;
+
     if (context.WasAborted())
         return;
 
@@ -721,14 +719,18 @@ uint64_t QueryViewController::ComputeMaxElementMemory(DgnViewportCR vp)
 //---------------------------------------------------------------------------------------
 uint32_t QueryViewController::GetMaxElementsToLoad(DgnViewportCR vp)
     {
-    uint32_t maxElementsToLoad = _GetMaxElementsToLoad();
-    int32_t inputFactor = _GetMaxElementFactor(vp);
+    if (0 == m_lastNumberElements)
+        m_lastNumberElements = _GetMaxElementsToLoad();
 
-    if (inputFactor < -100)
-        inputFactor = -100;
+    uint32_t maxElementsToLoad = m_lastNumberElements;
+    
+    int32_t inputFactor = _GetMaxElementFactor(vp);  //  this tells us how much change is required from the previous value.
 
-    if (inputFactor > 100)
-        inputFactor = 100;
+    if (inputFactor < -25)
+        inputFactor = -25;
+
+    if (inputFactor > 300)
+        inputFactor = 300;
 
     double maxElementsFactor = inputFactor/100.0;
     maxElementsToLoad += static_cast <int> (static_cast <double> (maxElementsToLoad) * maxElementsFactor * 0.90);
@@ -753,26 +755,27 @@ int32_t QueryViewController::_GetMaxElementFactor(DgnViewportCR vp)
     // The time spent creating the scene from the set of elements returned by the query is not currently tracked.
 
     // How many queries do we want to be able to complete per second
-    static const double s_acceptableQueriesPerSecond = 30.0;
+    static const double s_acceptableFramesPerSecond = 30.0;
     // Elapsed query time required to satisfy QPS
     //  static const double s_acceptableQueryTime = 1.0 / s_acceptableQueriesPerSecond;
     // Reduce pop-in/out of elements due to small fluctuations in query time
     static const int32_t s_granularity = 5;
 
-    auto results = m_queryModel.GetCurrentResults();
-    double lastQueryTime = nullptr != results ? results->GetElapsedSeconds() : 0.0;
+    auto renderTarget = vp.GetRenderTarget();
+
+    double lastQueryTime = nullptr != renderTarget ? renderTarget->GetLastFrameMillis() / 1000.0 : 0.0;
     if (0.0 == lastQueryTime)
-        return 100;
+        return 0;
 
-    double qps = std::max(1.0 / lastQueryTime, 0.0);
+    double fps = std::max(1.0 / lastQueryTime, 0.0);
 
-    double diff = qps - s_acceptableQueriesPerSecond;
-    double factor = (100.0 / s_acceptableQueriesPerSecond) * diff;
+    double diff = qps - s_acceptableFramesPerSecond;
+    double factor = (100.0 / s_acceptableFramesPerSecond) * diff;
 
     int32_t iFactor = (static_cast<int32_t>(factor) / s_granularity) * s_granularity;
 
 #if defined (TRACE_QUERY_LOGIC)
-    printf("QVC: MaxElementFactor: %d (LastQueryTime: %f) (QPS: %f)\n", static_cast<int32_t>(iFactor), lastQueryTime, qps);
+    printf("QVC: MaxElementFactor: %d (LastQueryTime: %f) FQPS: %f)\n", static_cast<int32_t>(iFactor), lastQueryTime, fps);
 #endif
 
     return iFactor;
