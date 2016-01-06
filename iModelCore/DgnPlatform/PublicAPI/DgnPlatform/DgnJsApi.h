@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/DgnJsApi.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 //__BENTLEY_INTERNAL_ONLY__
@@ -567,9 +567,9 @@ struct JsECValue : RefCountedBaseWithCreate
     bool GetIsPrimitive() const {return m_value.IsPrimitive();}
     bool GetIsNull() const {return m_value.IsNull();}
     ECPropertyPrimitiveType GetPrimitiveType() const {return (ECPropertyPrimitiveType)m_value.GetPrimitiveType();}
-    Utf8String GetString() const {return m_value.ToString();}
-    int32_t GetInteger() const {return m_value.GetInteger();}
-    double GetDouble() const {return m_value.GetDouble();}
+    Utf8String GetString() const {return m_value.IsNull()? "": m_value.ToString();}
+    int32_t GetInteger() const {return m_value.IsNull()? 0: m_value.GetInteger();}
+    double GetDouble() const {return m_value.IsNull()? 0.0: m_value.GetDouble();}
 
     STUB_OUT_SET_METHOD(PrimitiveType,ECPropertyPrimitiveType)
     STUB_OUT_SET_METHOD(IsPrimitive,bool)

@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/ComponentModel.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -1033,7 +1033,7 @@ static ECN::ECClassCP getSameClassIn(DgnDbR db, ECN::ECClassCR cls)
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-DgnDbStatus ComponentDef::Export(DgnImportContext& context, bool exportSchema, bool exportCategory)
+DgnDbStatus ComponentDef::Export(DgnImportContext& context, ExportOptions const& options)
     {
     if (&GetDgnDb() != &context.GetSourceDb()) 
         {
@@ -1041,7 +1041,7 @@ DgnDbStatus ComponentDef::Export(DgnImportContext& context, bool exportSchema, b
         return DgnDbStatus::WrongDgnDb;
         }
 
-    if (exportSchema)
+    if (options.m_exportSchema)
         {
         ECN::ECObjectsStatus ecstatus = ECN::ECObjectsStatus::Success;
         importECSchema(ecstatus, context.GetDestinationDb(), GetECClass().GetSchema(), true);
@@ -1049,7 +1049,24 @@ DgnDbStatus ComponentDef::Export(DgnImportContext& context, bool exportSchema, b
             return DgnDbStatus::BadSchema;
         }
 
-    if (exportCategory && !DgnCategory::QueryCategoryId(GetCategoryName(), context.GetDestinationDb()).IsValid()) // *** WIP_COMPONENT - update existing category definition??
+    if (options.m_embedScript && !GetElementGeneratorName().empty())
+        {
+        Utf8String jsProgramName (GetElementGeneratorName());
+        size_t idot = jsProgramName.find('.');
+        if (idot != Utf8String::npos)
+            jsProgramName = jsProgramName.substr(0, idot);
+
+        Utf8String sText;
+        DgnScriptType sType;
+        DateTime lmt;
+        if (DgnDbStatus::Success == T_HOST.GetScriptAdmin()._FetchScript(sText, sType, lmt, context.GetSourceDb(), jsProgramName.c_str(), DgnScriptType::JavaScript))
+            {
+            DgnScriptLibrary slib(context.GetDestinationDb());
+            slib.RegisterScript(jsProgramName.c_str(), sText.c_str(), sType, lmt, true);
+            }
+        }
+
+    if (options.m_exportCategory && !DgnCategory::QueryCategoryId(GetCategoryName(), context.GetDestinationDb()).IsValid()) // *** WIP_COMPONENT - update existing category definition??
         {
         auto sourceCat = DgnCategory::QueryCategory(GetCategoryName(), GetDgnDb());
         if (sourceCat.IsValid())
@@ -1059,8 +1076,12 @@ DgnDbStatus ComponentDef::Export(DgnImportContext& context, bool exportSchema, b
             }
         }
 
-    if (!UsesTemporaryModel() && !context.GetDestinationDb().Models().QueryModelId(DgnModel::CreateModelCode(GetModelName())).IsValid()) 
+    if (!UsesTemporaryModel()) 
         {
+        DgnModelPtr existingModel = context.GetDestinationDb().Models().GetModel(context.GetDestinationDb().Models().QueryModelId(DgnModel::CreateModelCode(GetModelName())));
+        if (existingModel.IsValid())
+            existingModel->Delete();
+
         DgnDbStatus status;
         if (!DgnModel::Import(&status, GetModel(), context).IsValid())
             return status;

@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/DgnModel.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -1091,12 +1091,23 @@ struct ComponentDef : RefCountedBase
     //! @returns nullptr if \a instance is an instance of a component
     DGNPLATFORM_EXPORT static ECN::IECInstancePtr GetParameters(DgnElementCR instance);
 
+    //! Controls export/import of ComponentDefs
+    struct ExportOptions
+        {
+        bool m_exportSchema, m_exportCategory, m_embedScript;
+        //! Initialize ExporParams
+        //! @param exportSchema     Export the ECSchema that includes this component definition's ECClass to the destination DgnDb? The export will fail if \a destDb does not contain this component definition's ECClass. Pass false if you expect the schema already to be defined. Pass true to update an existing schema.
+        //! @param exportCategory   Export the Category used by this component definition to the destination DgnDb? The export will fail if \a destDb does not contain this component definition's Category. Pass false if you expect the category already to be defined. If you pass true and if the category already exists, it is \em not updated.
+        //! @param embedScript      Copy and store the script used by this component definition in the destination DgnDb?  Pass false if the script is to be loaded from disk or the network. If true and if the script already exists in the destination DgnDb, it will be updated.
+        ExportOptions(bool exportSchema = true, bool exportCategory = true, bool embedScript = true) : m_exportSchema(exportSchema), m_exportCategory(exportCategory), m_embedScript(embedScript) {;}
+        };
+
     //! Export this component definition to the specified DgnDb. 
     //! @param context The id remapping context to use
-    //! @param exportSchema Export the ECSchema that includes this component definition's ECClass? The export will fail if \a destDb does not contain this component definition's ECClass.
-    //! @param exportCategory Export the Category used by this component definition? The export will fail if \a destDb does not contain this component definition's Category.
-    //! @return non-zero error if the import failed.
-    DGNPLATFORM_EXPORT DgnDbStatus Export(DgnImportContext& context, bool exportSchema = true, bool exportCategory = false);
+    //! @param options Export options
+    //! @return non-zero error if the export/import failed.
+    //! @see ExportVariations
+    DGNPLATFORM_EXPORT DgnDbStatus Export(DgnImportContext& context, ExportOptions const& options = ExportOptions());
 
     //! Export variations of this component definition to the the specified model. 
     //! @param destVariationsModel Write copies of variations to this model.
@@ -1104,6 +1115,7 @@ struct ComponentDef : RefCountedBase
     //! @param context The id remapping context to use
     //! @param variationFilter If specified, the variations to export. If not specified and if \a destVariationsModel is specified, then all variations are exported.
     //! @return non-zero error if the import failed.
+    //! @see Export
     DGNPLATFORM_EXPORT DgnDbStatus ExportVariations(DgnModelR destVariationsModel, DgnModelId sourceVariationsModel, DgnImportContext& context, bvector<DgnElementId> const& variationFilter = bvector<DgnElementId>());
 
     //! Creates a variation of a component, based on the specified parameters.
