@@ -348,6 +348,9 @@
     <ClCompile Include="Cache\Persistence\Upgrade\UpgraderFromV9ToV10.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Connect\ConnectSignInManager.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Client\WebApi\WebApi.h">
@@ -756,6 +759,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Cache\Persistence\Upgrade\UpgraderFromV9ToV10.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\WebServices\Connect\ConnectSignInManager.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
