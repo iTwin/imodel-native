@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/DgnProject/Published/DgnScriptTest/DgnScriptTest.ts $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 // Script that is executed by one of the unit tests in DgnScriptContext_Test.cpp
@@ -43,7 +43,41 @@ module DgnScriptTests {
         var builder = new be.ElementGeometryBuilder(ele, new be.DPoint3d(0, 0, 0), new be.YawPitchRollAngles(0, 0, 0));
 
         var sphere = be.DgnSphere.CreateSphere(new be.DPoint3d(0, 0, 0), 1.0);
-        builder.Append(sphere);
+        builder.AppendSolidPrimitive(sphere);
+
+        var arc = new be.EllipticArc (
+                    new be.DPoint3d (2,2,2),
+                    new be.DVector3d (2,0,0),
+                    new be.DVector3d (0,2,0),
+                    be.Angle.CreateDegrees (0.0),
+                    be.Angle.CreateDegrees (95.0)
+                    );
+         builder.Append (arc);
+
+
+        var line = new be.LineSegment (new be.DPoint3d (0,0,0), new be.DPoint3d(0,4,0));
+        builder.Append (line);
+
+        var points = new be.DPoint3dArray ();
+            points.Add (new be.DPoint3d (0,4,0));
+            points.Add (new be.DPoint3d (1,4,0));
+            points.Add (new be.DPoint3d (1,5,0));
+            points.Add (new be.DPoint3d (0,5,0));
+            points.Add (new be.DPoint3d (0,4.5,0));
+            points.Add (new be.DPoint3d (0.5,4.5,0));
+        var linestring = new be.LineString (points);
+        builder.Append (linestring);
+        var catenary = be.CatenaryCurve.CreateFromCoefficientAndXLimits (
+                    new be.DPoint3d (0,0,0),
+                    new be.DVector3d (1,0,0),
+                    new be.DVector3d (0,1,0),
+                     4.0,
+                    -2.0,
+                     6.0
+                    );
+        builder.Append (catenary);
+
+
 
         if (0 != builder.SetGeomStreamAndPlacement(ele))
             be.Script.ReportError('SetGeomStreamAndPlacement failed');

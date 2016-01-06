@@ -2,7 +2,7 @@
 |
 |     $Source: DgnScript/GeomJsApi/GeomJsApi.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -171,6 +171,22 @@ JsCurvePrimitiveP JsCurvePrimitive::StronglyTypedJsCurvePrimitive (ICurvePrimiti
     // wrap everything else as curve primitive base type ....
     return new JsCurvePrimitive (data);
     }
+
+// Default RangeTransformed --- apply transform to simple range.  This is typically an oversized range.
+//  Derived classes that implement this will return a tighter range.
+JsDRange3dP JsGeometry::RangeAfterTransform (JsTransformP transform)
+    {
+    JsDRange3dP jsRangeA = Range ();
+    if (jsRangeA->IsNull())
+        return jsRangeA;
+    DRange3d rangeB = jsRangeA->Get ();
+    Transform transformB = transform->Get ();
+    DRange3d rangeC;
+    transformB.Multiply (rangeC, rangeB);
+    return new JsDRange3d (rangeC);
+    }
+
+JsDRange3dP JsGeometry::Range (){ return new JsDRange3d ();}
 
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE
