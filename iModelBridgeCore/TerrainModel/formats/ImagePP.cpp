@@ -2,7 +2,7 @@
 |
 |     $Source: formats/ImagePP.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <Bentley/WString.h>
@@ -17,7 +17,7 @@
 #include <ImagePP/all/h/HPMPool.h>
 #include <ImagePP/all/h/HUTDEMRasterXYZPointsExtractor.h>
 #include <ImagePP/all/h/HRFRasterFileFactory.h>
-
+#include <ImagePP/all/h/HFCException.h>
 
 using namespace BENTLEY_NAMESPACE_NAME::GeoCoordinates;
 USING_NAMESPACE_IMAGEPP
