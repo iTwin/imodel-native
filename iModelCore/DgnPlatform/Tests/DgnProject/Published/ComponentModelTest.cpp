@@ -403,7 +403,7 @@ void ComponentModelTest::Client_ImportComponentDef(Utf8CP componentName)
     ComponentDefPtr sourceCdef = ComponentDef::FromECSqlName(nullptr, *m_componentDb, Utf8PrintfString("%s.%s", TEST_JS_NAMESPACE, componentName));
 
     DgnImportContext ctx(*m_componentDb, *m_clientDb);
-    ASSERT_EQ( DgnDbStatus::Success , sourceCdef->Export(ctx, true, true));
+    ASSERT_EQ( DgnDbStatus::Success , sourceCdef->Export(ctx));
 
     m_clientDb->SaveChanges();
 

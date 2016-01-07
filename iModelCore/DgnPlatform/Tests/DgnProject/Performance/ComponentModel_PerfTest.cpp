@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/DgnProject/Performance/ComponentModel_PerfTest.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #ifndef BENTLEYCONFIG_NO_JAVASCRIPT
@@ -247,7 +247,7 @@ void ComponentModelPerfTest::PlaceInstances(int ninstances, int boxCount, DPoint
         m_componentDb->Schemas().GetECSchema(TEST_JS_NAMESPACE, true);
         ComponentDefPtr sourceCdef = ComponentDef::FromECSqlName(nullptr, *m_componentDb, Utf8PrintfString("%s.%s", TEST_JS_NAMESPACE, TEST_BOXES_COMPONENT_NAME));
         DgnImportContext ctx(*m_componentDb, *m_clientDb);
-        ASSERT_EQ( DgnDbStatus::Success , sourceCdef->Export(ctx, true, true));
+        ASSERT_EQ( DgnDbStatus::Success , sourceCdef->Export(ctx));
         CloseComponentDb();
 
         m_clientDb->SaveChanges();
