@@ -164,6 +164,12 @@ struct JsEllipticArc: JsCurvePrimitive
 public:
     JsEllipticArc () {}
     JsEllipticArc (ICurvePrimitivePtr const &data) {Set (data);}
+    JsEllipticArc (DEllipse3dCR source)
+        {
+        ICurvePrimitivePtr cp = ICurvePrimitive::CreateArc (source);
+        Set(cp);
+        }
+
     JsEllipticArc (JsDPoint3dP center, JsDVector3dP vector0, JsDVector3dP vector90, JsAngleP startAngle, JsAngleP sweepAngle)
         {
         ICurvePrimitivePtr cp = ICurvePrimitive::CreateArc 
@@ -173,31 +179,61 @@ public:
 
     virtual JsEllipticArc * Clone () override {return new JsEllipticArc (m_curvePrimitive->Clone ());}
 
-JsDPoint3d * GetCenter()
+    static JsEllipticArc *CreateCircleXY (JsDPoint3dP center, double radius)
+        {
+        return new JsEllipticArc (DEllipse3d::FromCenterRadiusXY (center->Get (), radius));
+        }
+
+    static JsEllipticArc *CreateCircleStartMidEnd (JsDPoint3dP pointA, JsDPoint3dP pointB, JsDPoint3dP pointC)
+        {
+        return new JsEllipticArc (DEllipse3d::FromPointsOnArc (pointA->Get (), pointB->Get (), pointC->Get ()));
+        }
+
+
+JsDPoint3dDVector3dDVector3d * GetBasisPlane () const
+    {
+    DEllipse3d data;
+    return m_curvePrimitive->TryGetArc (data)
+            ? new JsDPoint3dDVector3dDVector3d (data.center, data.vector0, data.vector90)
+            : nullptr;
+    }
+
+JsDPoint3d * GetCenter() const
     {
     DEllipse3d data;
     return m_curvePrimitive->TryGetArc (data) ? new JsDPoint3d (data.center) : nullptr;
     }
 
-JsDVector3d * GetVector0()
+JsDVector3d * GetVector0() const
     {
     DEllipse3d data;
     return m_curvePrimitive->TryGetArc (data) ? new JsDVector3d (data.vector0) : nullptr;
     }
-JsDVector3d * GetVector90()
+JsDVector3d * GetVector90() const
     {
     DEllipse3d data;
     return m_curvePrimitive->TryGetArc (data) ? new JsDVector3d (data.vector90) : nullptr;
     }
-JsAngle * GetStartAngle ()
+JsAngle * GetStartAngle () const
     {
     DEllipse3d data;
     return m_curvePrimitive->TryGetArc (data) ? new JsAngle (AngleInDegrees::FromRadians (data.start)) : nullptr;
     }
-JsAngle * GetSweepAngle ()
+JsAngle * GetSweepAngle () const
     {
     DEllipse3d data;
     return m_curvePrimitive->TryGetArc (data) ? new JsAngle (AngleInDegrees::FromRadians (data.sweep)) : nullptr;
+    }
+JsAngle * GetEndAngle () const
+    {
+    DEllipse3d data;
+    return m_curvePrimitive->TryGetArc (data) ? new JsAngle (AngleInDegrees::FromRadians (data.start + data.sweep)) : nullptr;
+    }
+
+JsEllipticArcP CloneWithPerpendicularAxes () const
+    {
+    DEllipse3d data;
+    return m_curvePrimitive->TryGetArc (data) ? new JsEllipticArc (DEllipse3d::FromPerpendicularAxes (data)) : nullptr;
     }
 };
 
@@ -214,7 +250,7 @@ public:
     JsBsplineCurve (ICurvePrimitivePtr const &data) {Set (data);}
     virtual JsBsplineCurve * Clone () override {return new JsBsplineCurve (m_curvePrimitive->Clone ());}
 
-    static JsBsplineCurve * CreateFromPoles (JsDPoint3dArrayP xyz, 
+    static JsBsplineCurve * Create (JsDPoint3dArrayP xyz, 
         JsDoubleArrayP weights, JsDoubleArrayP knots,
         double order, bool closed, bool preWeighted)
         {
@@ -233,6 +269,12 @@ public:
             }
         return nullptr;
         }
+
+    static JsBsplineCurve * CreateFromPoles (JsDPoint3dArrayP xyz, double order)
+        {
+        return Create (xyz, nullptr, nullptr, order, false, true);
+        }
+
     bool IsPeriodic ()
         {
         auto data = m_curvePrimitive->GetBsplineCurvePtr ();
