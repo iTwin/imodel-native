@@ -945,9 +945,6 @@ public:
     DGNPLATFORM_EXPORT static ComponentModelPtr Create(DgnDbR db, Utf8StringCR componentDefClassECSqlName);
 
     Utf8StringCR GetComponentECClassFullName() const {return m_componentECClass;}
-
-DGNPLATFORM_EXPORT static void OnElementCopied(DgnElementCR outputElement, DgnElementCR sourceElement, DgnCloneContext&); //!< @private
-DGNPLATFORM_EXPORT static void OnElementImported(DgnElementCR outputElement, DgnElementCR sourceElement, DgnImportContext&); //!< @private
 };
 
 //=======================================================================================

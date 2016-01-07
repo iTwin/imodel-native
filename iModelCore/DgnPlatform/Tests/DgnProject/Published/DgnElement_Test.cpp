@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/DgnProject/Published/DgnElement_Test.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "../TestFixture/DgnDbTestFixtures.h"
@@ -120,16 +120,6 @@ TEST_F (DgnElementTests, UpdateElement)
     DgnElementId e1id = keyE1->GetElementId();
     DgnElementCPtr e1 = m_db->Elements().GetElement(e1id);
     EXPECT_TRUE(e1 != nullptr);
-
-#ifdef WIP_ELEMENT_ITEM // *** pending redesign
-    //Creating a copy of element to edit.
-    DgnElementPtr e1Copy = e1->CopyForEdit();
-    dynamic_cast<TestElement*>(e1Copy.get())->SetTestElementProperty("Updated Test Element");
-
-    DgnElementCPtr updatedElement = e1Copy->Update();
-
-    EXPECT_STREQ("Updated Test Element", dynamic_cast<TestElement const*>(updatedElement.get())->GetTestElementProperty().c_str());
-#endif
     }
 
 /*---------------------------------------------------------------------------------**//**

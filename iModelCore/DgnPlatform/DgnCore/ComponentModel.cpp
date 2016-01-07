@@ -876,12 +876,9 @@ DgnElementCPtr ComponentDef::MakeInstanceOfVariation(DgnDbStatus* statusOut, Dgn
     DgnCloneContext ctx;
     ElementCopier copier(ctx);
     copier.SetCopyChildren(true);
-    DgnElementCPtr inst = copier.MakeCopy(&status, destModel, variation, icode); // >> OnElementCopied, which creates the instance->solution relationship
+    DgnElementCPtr inst = copier.MakeCopy(&status, destModel, variation, icode);
     if (!inst.IsValid())
         return nullptr;
-
-    // *** WIP_COMPONENT
-    //BeAssert(queryInstantiationOfTemplateTarget(db, inst->GetElementId()) == catalogItem.GetElementId());
 
     return inst;
     }
@@ -1313,87 +1310,6 @@ DgnDbStatus ComponentModel::_OnDelete()
     deleteAllSolutionsOfComponentRelationships(GetDgnDb(), GetModelId());
 #endif
     return DgnDbStatus::Success;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      10/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ComponentModel::OnElementCopied(DgnElementCR outputElement, DgnElementCR sourceElement, DgnCloneContext&)
-    {
-#ifdef WIP_COMPONENT
-    DgnDbR db = sourceElement.GetDgnDb();
-    BeAssert(&db == &outputElement.GetDgnDb());
-
-    DgnModelId cmid;
-    ModelSolverDef::ParameterSet prms;
-    if (BE_SQLITE_OK == querySolutionOfComponentTargetAndParameters(cmid, prms, db, sourceElement.GetElementId()))
-        {
-        ComponentModelPtr cm = db.Models().Get<ComponentModel>(cmid);
-        if (!cm.IsValid())
-            return;
-        if (IsCapturedSolutionCode(sourceElement.GetCode()))
-            {
-            //  Copying a non-unique solution means that we are creating an instance
-            createInstanceOfTemplateRelationship(outputElement, sourceElement);
-            return;
-            }
-        // Copying a unique/singleton solution - preserve it as such
-        createSolutionOfComponentRelationship(outputElement, *cm, prms);
-        createInstanceOfTemplateRelationship(outputElement, outputElement);
-        return;
-        }
-
-    DgnElementCPtr solutionElement = sourceElement.GetDgnDb().Elements().GetElement(queryInstantiationOfTemplateTarget(db, sourceElement.GetElementId()));
-    if (solutionElement.IsValid())
-        {
-        //  When we copy an instance, we must connect to the solution from which the original was created. The copy is just another instance.
-        createInstanceOfTemplateRelationship(outputElement, *solutionElement);
-        }
-#endif
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      10/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ComponentModel::OnElementImported(DgnElementCR outputElement, DgnElementCR sourceElement, DgnImportContext& importer)
-    {
-#ifdef WIP_COMPONENT
-    DgnDbR sourceDb = importer.GetSourceDb();
-    DgnDbR destDb = importer.GetDestinationDb();
-
-    //  Solutions must remap to their component models
-    DgnModelId sourceComponentModelId;
-    ModelSolverDef::ParameterSet sourceParameters;
-    querySolutionOfComponentTargetAndParameters(sourceComponentModelId, sourceParameters, sourceDb, sourceElement.GetElementId());
-    ComponentModelPtr sourceComponentModel = sourceDb.Models().Get<ComponentModel>(sourceComponentModelId);
-    bool isSolution = false;
-    if (sourceComponentModel.IsValid())
-        {
-        //  Look up the component in the destination by its name
-        ComponentModelPtr destComponentModel = ComponentModel::FindModelByName(destDb, sourceComponentModel->GetModelName());
-        if (!destComponentModel.IsValid())
-            return; // if the component model hasn't been imported, then this solution element must become an orphan
-        createSolutionOfComponentRelationship(outputElement, *destComponentModel, sourceParameters);     // set up the copy as a solution of the target's copy of the component
-        isSolution = true;
-        }
-
-    //  Instances must remap to their solutions
-    DgnElementCPtr sourceSolutionElement = sourceDb.Elements().GetElement(queryInstantiationOfTemplateTarget(sourceDb, sourceElement.GetElementId()));
-    if (sourceSolutionElement.IsValid())
-        {
-        //  Look up the solution in the destination by its code
-        DgnElementCPtr destSolutionElement;
-        if (isSolution)
-            destSolutionElement = &outputElement;       // this is a unique/singleton instance: it is both an instance and a solution
-        else
-            destSolutionElement = destDb.Elements().GetElement(destDb.Elements().QueryElementIdByCode(sourceSolutionElement->GetCode()));
-
-        if (!destSolutionElement.IsValid())
-            return; // if solution has not been imported, then this instance must become an orphan
-
-        createInstanceOfTemplateRelationship(outputElement, *destSolutionElement);  // set up the copy as an instance of the same solution in the destination db
-        }
-#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
