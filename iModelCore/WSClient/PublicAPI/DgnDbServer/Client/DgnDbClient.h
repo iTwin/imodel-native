@@ -44,7 +44,7 @@ private:
 //__PUBLISH_SECTION_START__
 public:
     //! Set up the DgnDbServer Client library. Needs to be called from the work thread where DgnPlatform is initialized.
-    DGNDBSERVERCLIENT_EXPORT static void Initialize(); 
+    DGNDBSERVERCLIENT_EXPORT static void Initialize();
 
     //! Create an instance of the client.
     //! @param[in] clientInfo Application information sent to server.

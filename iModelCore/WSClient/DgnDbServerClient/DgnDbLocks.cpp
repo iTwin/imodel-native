@@ -2,7 +2,7 @@
 |
 |     $Source: DgnDbServerClient/DgnDbLocks.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnDbServer/Client/DgnDbLocks.h>
@@ -50,7 +50,7 @@ LockStatus DgnDbLocks::_QueryLocksHeld(bool& held, LockRequestCR locks, DgnDbR d
             }
         }
     else
-        return LockStatus::ServerUnavailable;//NEEDSWORK: Should this be false?
+        return LockStatus::ServerUnavailable;
     }
 
 LockRequest::Response DgnDbLocks::_AcquireLocks(LockRequestCR locks, DgnDbR db)

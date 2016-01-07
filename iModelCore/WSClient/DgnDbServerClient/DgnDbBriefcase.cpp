@@ -2,7 +2,7 @@
 |
 |     $Source: DgnDbServerClient/DgnDbBriefcase.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatform/TxnManager.h>
@@ -38,6 +38,7 @@ DgnDbBriefcasePtr DgnDbBriefcase::Create(Dgn::DgnDbPtr db, DgnDbRepositoryConnec
 AsyncTaskPtr<DgnDbResult> DgnDbBriefcase::PullAndMerge(HttpRequest::ProgressCallbackCR callback, ICancellationTokenPtr cancellationToken)
     {
     BeAssert(DgnDbServerHost::IsInitialized() && Error::NotInitialized);
+    std::shared_ptr<DgnDbServerHost> host = std::make_shared<DgnDbServerHost>();
     if (!m_db.IsValid() || !m_db->IsDbOpen())
         {
         return CreateCompletedAsyncTask<DgnDbResult>(DgnDbResult::Error(Error::DbNotFound));
@@ -63,9 +64,9 @@ AsyncTaskPtr<DgnDbResult> DgnDbBriefcase::PullAndMerge(HttpRequest::ProgressCall
             RevisionStatus mergeStatus = RevisionStatus::Success;
             if (!revisions.empty())
                 {
-                Dgn::DgnPlatformLib::AdoptHost(DgnDbServerHost::Host());
+                DgnDbServerHost::Adopt(host);
                 mergeStatus = m_db->Revisions().MergeRevisions(revisions);
-                Dgn::DgnPlatformLib::ForgetHost();
+                DgnDbServerHost::Forget(host);
                 }
             if (RevisionStatus::Success == mergeStatus)
                 return DgnDbResult::Success();
@@ -84,6 +85,7 @@ AsyncTaskPtr<DgnDbResult> DgnDbBriefcase::PullMergeAndPush(HttpRequest::Progress
     HttpRequest::ProgressCallbackCR uploadCallback, ICancellationTokenPtr cancellationToken)
     {
     BeAssert(DgnDbServerHost::IsInitialized() && Error::NotInitialized);
+    std::shared_ptr<DgnDbServerHost> host = std::make_shared<DgnDbServerHost>();
     if (!m_db.IsValid() || !m_db->IsDbOpen())
         {
         return CreateCompletedAsyncTask<DgnDbResult>(DgnDbResult::Error(Error::DbNotFound));
@@ -101,43 +103,46 @@ AsyncTaskPtr<DgnDbResult> DgnDbBriefcase::PullMergeAndPush(HttpRequest::Progress
         {
         if (result.IsSuccess())
             {
-            Dgn::DgnPlatformLib::AdoptHost(DgnDbServerHost::Host());
+            DgnDbServerHost::Adopt(host);
             BeAssert(m_db.IsValid());
             if (!m_db->Txns().IsUndoPossible())
                 {
-                Dgn::DgnPlatformLib::ForgetHost();
+                DgnDbServerHost::Forget(host, false);
                 finalResult->SetSuccess();
                 }
             else
                 {
                 DgnRevisionPtr revision = m_db->Revisions().StartCreateRevision();
-                Dgn::DgnPlatformLib::ForgetHost();
-                Utf8String revisionId = revision->GetId();
-                BeFileName revisionFile(m_db->GetDbFileName());
-                m_repositoryConnection->Push(revision, m_db->GetBriefcaseId().GetValue(), uploadCallback, cancellationToken)->Then
-                    ([=] (const DgnDbResult& pushResult)
+                DgnDbServerHost::Forget(host, false);
+                if (revision.IsValid())
                     {
-                    if (pushResult.IsSuccess())
+                    Utf8String revisionId = revision->GetId();
+                    BeFileName revisionFile(m_db->GetDbFileName());
+                    m_repositoryConnection->Push(revision, m_db->GetBriefcaseId().GetValue(), uploadCallback, cancellationToken)->Then
+                        ([=] (const DgnDbResult& pushResult)
                         {
-                        Dgn::DgnPlatformLib::AdoptHost(DgnDbServerHost::Host());
-                        Dgn::RevisionStatus status = m_db->Revisions().FinishCreateRevision();
-                        m_db->SaveChanges();
-                        Dgn::DgnPlatformLib::ForgetHost();
-                        if (RevisionStatus::Success == status)
+                        if (pushResult.IsSuccess())
                             {
-                            finalResult->SetSuccess();
+                            DgnDbServerHost::Adopt(host);
+                            Dgn::RevisionStatus status = m_db->Revisions().FinishCreateRevision();
+                            m_db->SaveChanges();
+                            DgnDbServerHost::Forget(host);
+                            if (RevisionStatus::Success == status)
+                                {
+                                finalResult->SetSuccess();
+                                }
+                            else
+                                finalResult->SetError(status);
                             }
                         else
-                            finalResult->SetError(status);
-                        }
-                    else
-                        {
-                        Dgn::DgnPlatformLib::AdoptHost(DgnDbServerHost::Host());
-                        m_db->Revisions().AbandonCreateRevision();
-                        Dgn::DgnPlatformLib::ForgetHost();
-                        finalResult->SetError(pushResult.GetError());
-                        }
-                    });
+                            {
+                            DgnDbServerHost::Adopt(host);
+                            m_db->Revisions().AbandonCreateRevision();
+                            DgnDbServerHost::Forget(host);
+                            finalResult->SetError(pushResult.GetError());
+                            }
+                        });
+                    }
                 }
             }
         else
