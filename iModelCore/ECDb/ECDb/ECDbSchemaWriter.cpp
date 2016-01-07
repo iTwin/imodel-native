@@ -506,7 +506,7 @@ BentleyStatus ECDbSchemaWriter::ImportECRelationshipConstraint(ECClassId relClas
         if (!keyPropNames.empty())
             {
             ECDbSchemaPersistenceHelper::SerializeRelationshipKeyProperties(keyPropJson, keyPropNames);
-            if (BE_SQLITE_OK != stmt->BindText(4, keyPropJson.c_str(), Statement::MakeCopy::Yes))
+            if (BE_SQLITE_OK != stmt->BindText(4, keyPropJson.c_str(), Statement::MakeCopy::No))
                 return ERROR;
             }
 
