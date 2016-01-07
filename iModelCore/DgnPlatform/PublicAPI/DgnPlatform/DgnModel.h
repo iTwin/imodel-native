@@ -940,9 +940,9 @@ public:
 
     //! Create a ComponentModel that can be used by a component definition
     //! @param db The DgnDb that is intended to hold the new model
-    //! @param componentDefClassFullName The full ECSQL name of the component definition ECClass
+    //! @param componentDefClassECSqlName The full ECSQL name of the component definition ECClass
     //! @return a new, non-persistent component model
-    DGNPLATFORM_EXPORT static ComponentModelPtr Create(DgnDbR db, Utf8StringCR componentDefClassFullName);
+    DGNPLATFORM_EXPORT static ComponentModelPtr Create(DgnDbR db, Utf8StringCR componentDefClassECSqlName);
 
     Utf8StringCR GetComponentECClassFullName() const {return m_componentECClass;}
 
@@ -965,7 +965,6 @@ struct ComponentDef : RefCountedBase
     static Utf8String GetCaValueString(ECN::IECInstanceCR, Utf8CP propName);
     ECN::IECInstancePtr GetPropSpecCA(ECN::ECPropertyCR prop);
 
-    Utf8String GetGeneratedName() const;
     DgnElement::Code CreateVariationCode(Utf8StringCR slnId);
 
     //! Test if the specified code is that of a component variation instance element.

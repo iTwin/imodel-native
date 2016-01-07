@@ -612,16 +612,6 @@ ECN::IECInstancePtr ComponentDef::MakeVariationSpec()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String ComponentDef::GetGeneratedName() const
-    {
-    Utf8String name(m_class.GetFullName());
-    DgnDbTable::ReplaceInvalidCharacters(name, DgnModels::GetIllegalCharacters(), '_');
-    return name;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      12/15
-+---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String ComponentDef::GetModelName() const {return GetCaValueString(*m_ca, CDEF_CA_MODEL);}
 
 /*---------------------------------------------------------------------------------**//**
@@ -698,10 +688,10 @@ ComponentModelR ComponentDef::GetModel()
 
     //  model name not specified, or model does not exist. This component will use a sandbox model.
 
-    Utf8String componentDefClassFullName = GetECClass().GetFullName();
-    componentDefClassFullName.ReplaceAll(":", ".");
+    Utf8String sandboxModelName = GetClassECSqlName();
+    DgnDbTable::ReplaceInvalidCharacters(sandboxModelName, DgnModels::GetIllegalCharacters(), '_');
 
-    m_model = m_db.Models().Get<ComponentModel>(m_db.Models().QueryModelId(DgnModel::CreateModelCode(componentDefClassFullName)));
+    m_model = m_db.Models().Get<ComponentModel>(m_db.Models().QueryModelId(DgnModel::CreateModelCode(sandboxModelName)));
     if (m_model.IsValid())
         {
         //  Sandbox model already exists. Clean it out and re-use it.
@@ -712,7 +702,7 @@ ComponentModelR ComponentDef::GetModel()
         }
 
     //  Create a sandbox model.
-    m_model = ComponentModel::Create(m_db, componentDefClassFullName.c_str());
+    m_model = ComponentModel::Create(m_db, GetClassECSqlName().c_str());
     m_model->Insert();
 
     return *m_model;
@@ -723,6 +713,11 @@ ComponentModelR ComponentDef::GetModel()
 +---------------+---------------+---------------+---------------+---------------+------*/
 ComponentModelPtr ComponentModel::Create(DgnDbR db, Utf8StringCR componentDefClassFullName)
     {
+    if (componentDefClassFullName.find('.') == Utf8String::npos)
+        {
+        BeAssert(false && "requires full schema.class ECSql class name");
+        return nullptr;
+        }
     Utf8String modelName(componentDefClassFullName);
     DgnDbTable::ReplaceInvalidCharacters(modelName, DgnModels::GetIllegalCharacters(), '_');
     modelName = db.Models().GetUniqueModelName(modelName.c_str());
@@ -975,6 +970,7 @@ void ComponentDef::CopyInstanceParameters(ECN::IECInstanceR target, ECN::IECInst
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
+#ifdef COMMENT_OUT_UNUSED
 static ECN::ECSchemaPtr copyECSchema(ECN::ECSchemaCR schemaIn)
     {
     ECN::ECSchemaPtr cc;
@@ -986,6 +982,7 @@ static ECN::ECSchemaPtr copyECSchema(ECN::ECSchemaCR schemaIn)
         return nullptr;
     return cc;
     }
+#endif
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
@@ -1005,10 +1002,28 @@ static ECN::ECSchemaCP importECSchema(ECN::ECObjectsStatus& ecstatus, DgnDbR db,
 
     ECDbSchemaManager::ImportOptions options(false, updateExistingSchemas);
 
+    ECN::ECSchemaReadContextPtr contextPtr = ECN::ECSchemaReadContext::CreateContext();
+
+#ifdef NEEDS_WORK_ECDB // *** If schemaIn is a real schema (from another file), then I will get an assertion failure in ECDbMapStorage::InsertOrReplace
+                        // *** That happens, because the base class of new class points to the new class twice.
     ECN::ECSchemaPtr imported = copyECSchema(schemaIn);
 
-    ECN::ECSchemaReadContextPtr contextPtr = ECN::ECSchemaReadContext::CreateContext();
     ECSUCCESS(contextPtr->AddSchema(*imported));
+
+#else
+
+    Utf8String ecschemaXml;
+    schemaIn.WriteToXmlString(ecschemaXml);
+
+    contextPtr->AddSchemaLocater(db.GetSchemaLocater());
+
+    ECSchemaPtr imported;
+    SchemaReadStatus readSchemaStatus = ECSchema::ReadFromXmlString(imported, ecschemaXml.c_str(), *contextPtr);
+    if (SchemaReadStatus::Success != readSchemaStatus)
+        return nullptr;
+
+#endif
+
     if (BentleyStatus::SUCCESS != db.Schemas().ImportECSchemas(contextPtr->GetCache()))
         {
         ecstatus = ECObjectsStatus::Error;
