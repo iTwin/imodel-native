@@ -325,13 +325,12 @@ private:
 
 public:
     DGNVIEW_EXPORT DynamicUpdateInfo();
-    Point2d GetLastCursorPos() {return m_lastCursorPos;}
-    StopEvents GetStopEvents() {return m_stopEvents;}
+    Point2d GetLastCursorPos() const {return m_lastCursorPos;}
+    StopEvents GetStopEvents() const {return m_stopEvents;}
     void ClearLastMotion() {m_haveLastMotion = false; m_lastTotalMotion = 0; m_lastCursorPos.x = m_lastCursorPos.y = 0;}
     void SetStopEvents(StopEvents stopEvents) {m_stopEvents = stopEvents;}
     void SetTouchCheckStopLimit(bool enabled, uint32_t pixels, uint32_t numberTouches, Point2dCP touches);
     };
-
 
 /*=================================================================================**//**
 * @bsiclass
@@ -379,6 +378,11 @@ public:
     friend struct ViewManager;
     friend struct ViewSet;
 
+//! @private
+typedef bpair<Render::GraphicSet, ElementAlignedBox3d> GraphicSetRangePair;
+//! @private
+typedef bmap<DgnGeomPartId, GraphicSetRangePair> PartGraphicMap;
+
 protected:
     typedef std::deque<Utf8String> ViewStateStack;
 
@@ -414,6 +418,7 @@ protected:
     Utf8String      m_currentBaseline;
     ViewStateStack  m_forwardStack;
     ViewStateStack  m_backStack;
+    mutable PartGraphicMap m_partGraphics;
 
     DGNPLATFORM_EXPORT void DestroyViewport();
     DGNPLATFORM_EXPORT virtual void _AdjustZPlanesToModel(DPoint3dR origin, DVec3dR delta, ViewControllerCR) const;
@@ -441,6 +446,7 @@ public:
     Byte GetDynamicsTransparency() const {return m_dynamicsTransparency;}
     void SetDynamicsTransparency(Byte val) {m_dynamicsTransparency = val;}
 
+    PartGraphicMap& GetPartGraphics() const {return m_partGraphics;}
     void SetRenderTarget(Render::Target* target) {m_renderTarget=target;}
     double GetFrustumFraction() const {return m_frustFraction;}
     bool IsVisible() {return _IsVisible();}

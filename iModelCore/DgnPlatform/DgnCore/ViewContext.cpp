@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/ViewContext.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -443,7 +443,7 @@ void ViewContext::_AddSubGraphic(Render::GraphicR graphic, DgnGeomPartId partId,
             if (WasAborted()) // if we aborted, the graphic may not be complete, don't save it
                 return;
 
-            _SavePartGraphic(partId, *partGraphic, localRange);
+            _SavePartGraphic(partId, *partGraphic, partGeometry->GetBoundingBox());
             }
         }
 
