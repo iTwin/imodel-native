@@ -336,6 +336,13 @@ MapStatus RelationshipClassEndTableMap::_InitializePart1 (SchemaImportContext* s
     auto thisEndTable = const_cast<ECDbSqlTable*>(GetECDbMap().GetFirstTableFromRelationshipEnd(thisEndConstraint));
     if (thisEndTableCount != 1)
         {
+        GetECDbMap().GetECDbR().GetECDbImplR().GetIssueReporter().Report(
+            ECDbIssueSeverity::Error,
+            "Relationship %s is evaluated to more then one table for persisted (%s) side. ECDb expect only one table on each side.",
+            relationshipClassMapInfo.GetECClass().GetFullName(),
+            otherEnd == ECRelationshipEnd_Source ? "Source" : "Target"
+            );
+
         BeAssert(thisEndTableCount == 1 && "ForeignKey end of relationship has more than one tables or has no table at all");
         return MapStatus::Error;
         }
@@ -434,6 +441,13 @@ MapStatus RelationshipClassEndTableMap::_InitializePart1 (SchemaImportContext* s
 
         if (GetECDbMap().GetTableCountOnRelationshipEnd(otherEndConstraint) != 1)
             {
+            GetECDbMap().GetECDbR().GetECDbImplR().GetIssueReporter().Report(
+                ECDbIssueSeverity::Error,
+                "Relationship %s is evaluated to more then one table for primary (%s) side. ECDb expect only one table on each side.",
+                relationshipClassMapInfo.GetECClass().GetFullName(),
+                otherEnd == ECRelationshipEnd_Source ? "Source" : "Target"
+                );
+
             BeAssert(false);
             return MapStatus::Error;
             }
@@ -459,39 +473,7 @@ MapStatus RelationshipClassEndTableMap::_InitializePart1 (SchemaImportContext* s
         else
             foreignKey->SetOnDeleteAction(ForeignKeyActionType::SetNull);
         }
-    //! Add referential integrity if user requested it.
-    //else if (relationshipClassMapInfo.CreateForeignKeyConstraint() && relationshipClass.GetStrength() != StrengthType::Holding)
-    //    {
-    //    auto const& otherEndConstraint = thisEnd != ECRelationshipEnd_Source ? sourceConstraint : targetConstraint;
-    //    auto const& otherEndConstraintMap = thisEnd != ECRelationshipEnd_Source ? m_sourceConstraintMap : m_targetConstraintMap;
 
-    //    if (GetECDbMap().GetTableCountOnRelationshipEnd(otherEndConstraint) != 1)
-    //        {
-    //        BeAssert(false);
-    //        return MapStatus::Error;
-    //        }
-
-    //    auto foreignKeyColumn = otherEndConstraintMap.GetECInstanceIdPropMap()->GetFirstColumn();
-    //    auto& foreignTable = GetPrimaryTable();
-    //    auto primaryClassMap = GetECDbMap().GetClassMap(*otherEndConstraintMap.GetRelationshipConstraint().GetClasses()[0]);
-
-    //    BeAssert(primaryClassMap!=nullptr && "Primary Class map is null");
-    //    auto primaryKeyColumn = primaryClassMap->GetPrimaryTable().GetFilteredColumnFirst(ColumnKind::ECInstanceId);
-    //    auto& primaryTable = primaryKeyColumn->GetTable();
-    //    
-    //    BeAssert (foreignKeyColumn != nullptr);
-    //    BeAssert (primaryKeyColumn != nullptr);
-    //    if (foreignKeyColumn == nullptr || primaryKeyColumn == nullptr)
-    //        return MapStatus::Error;
-    //        
-    //    //Create foreign key constraint
-    //    auto foreignKey = foreignTable.CreateForeignKeyConstraint (primaryTable);
-    //    foreignKey->Add (foreignKeyColumn->GetName ().c_str (), primaryKeyColumn->GetName ().c_str ());
-    //    
-    //    foreignKey->SetOnDeleteAction(relationshipClassMapInfo.GetOnDeleteAction());
-    //    foreignKey->SetOnUpdateAction(relationshipClassMapInfo.GetOnUpdateAction());
-    //    }
-    
     return stat;
     }
 
