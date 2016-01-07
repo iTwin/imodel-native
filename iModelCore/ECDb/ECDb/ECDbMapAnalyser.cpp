@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECDbMapAnalyser.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -1569,58 +1569,62 @@ DbResult ECDbMapAnalyser::ApplyChanges ()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Affan.Khan                         09/2015
 //---------------------------------------------------------------------------------------
-BentleyStatus ECDbMapAnalyser::Analyse (bool applyChanges)
+BentleyStatus ECDbMapAnalyser::Analyse(bool applyChanges)
     {
-    m_classes.clear ();
-    m_derivedClassLookup.clear ();
-    m_relationships.clear ();
-    m_storage.clear ();
-    m_viewInfos.clear ();
+    m_classes.clear();
+    m_derivedClassLookup.clear();
+    m_relationships.clear();
+    m_storage.clear();
+    m_viewInfos.clear();
 
-    SetupDerivedClassLookup ();
-    for (auto rootClassId : GetRootClassIds())
+    SetupDerivedClassLookup();
+    for (ECClassId rootClassId : GetRootClassIds())
         {
-        auto classMap = GetClassMap(rootClassId);
-        BeAssert(classMap != nullptr);
-        if (classMap != nullptr && !classMap->GetMapStrategy().IsNotMapped())
-            if (AnalyseClass(*classMap) != BentleyStatus::SUCCESS)
-                return BentleyStatus::ERROR;
+        ClassMapCP classMap = GetClassMap(rootClassId);
+        if (classMap == nullptr)
+            return ERROR;
+
+        if (!classMap->GetMapStrategy().IsNotMapped())
+            if (AnalyseClass(*classMap) != SUCCESS)
+                return ERROR;
         }
 
 
-    for (auto rootClassId : GetRelationshipClassIds ())
+    for (ECClassId rootClassId : GetRelationshipClassIds())
         {
-        auto classMap = GetClassMap(rootClassId);
-        BeAssert(classMap != nullptr);
-        if (classMap != nullptr && !classMap->GetMapStrategy().IsNotMapped())
-            if (AnalyseRelationshipClass (static_cast<RelationshipClassMapCR> (*classMap)) != BentleyStatus::SUCCESS)
-                return BentleyStatus::ERROR;
+        ClassMapCP classMap = GetClassMap(rootClassId);
+        if (classMap == nullptr)
+            return ERROR;
+
+        if (!classMap->GetMapStrategy().IsNotMapped())
+            if (AnalyseRelationshipClass(static_cast<RelationshipClassMapCR> (*classMap)) != SUCCESS)
+                return ERROR;
         }
 
 
-    for (auto& i : m_classes)
+    for (auto const& kvPair : m_classes)
         {
-        auto ecclass = i.second.get ();
-        if (!ecclass->RequireView ())
+        Class& ecclass = *kvPair.second;
+        if (!ecclass.RequireView())
             continue;
 
-        auto& viewInfo = m_viewInfos[ecclass];
-        viewInfo.GetViewR () = std::move (BuildView (*ecclass));
-        BuildPolymorphicDeleteTrigger (*ecclass);
-        BuildPolymorphicUpdateTrigger (*ecclass);
+        ViewInfo& viewInfo = m_viewInfos[&ecclass];
+        viewInfo.GetViewR() = std::move(BuildView(ecclass));
+        BuildPolymorphicDeleteTrigger(ecclass);
+        BuildPolymorphicUpdateTrigger(ecclass);
         }
 
-    ProcessEndTableRelationships ();
-    ProcessLinkTableRelationships ();
-    for (auto& storage : m_storage)
+    ProcessEndTableRelationships();
+    ProcessLinkTableRelationships();
+    for (auto const& kvPair : m_storage)
         {
-        storage.second->Generate ();
+        kvPair.second->Generate();
         }
 
     if (applyChanges)
-        return ApplyChanges () == DbResult::BE_SQLITE_OK ? BentleyStatus::SUCCESS : BentleyStatus::ERROR;
+        return ApplyChanges() == DbResult::BE_SQLITE_OK ? SUCCESS : ERROR;
 
-    return BentleyStatus::SUCCESS;
+    return SUCCESS;
     }
 
 //---------------------------------------------------------------------------------------
