@@ -42,26 +42,30 @@ ConnectSignInManager::~ConnectSignInManager()
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                           Vytautas.Barkauskas    12/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ConnectSignInManager::SignInWithToken(Utf8StringCR tokenStr)
+void ConnectSignInManager::SignInWithToken(Utf8StringCR tokenStr)
     {
     ConnectAuthenticationPersistence::GetShared()->SetToken(std::make_shared<SamlToken>(tokenStr));
-    return SUCCESS;
     }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                           Vytautas.Barkauskas    12/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ConnectSignInManager::SignInWithCredentials(CredentialsCR credentials)
+AsyncTaskPtr<SignInResult> ConnectSignInManager::SignInWithCredentials(CredentialsCR credentials)
     {
     auto token = std::make_shared<SamlToken>();
-    if (Connect::BC_SUCCESS != Connect::Login(credentials, *token))
+    StatusInt result = Connect::Login(credentials, *token);
+    if (Connect::BC_LOGIN_ERROR == result)
         {
-        return ERROR;
+        return CreateCompletedAsyncTask(SignInResult::Error(ConnectLocalizedString(ALERT_SignInFailed_Message)));
         }
-    
+    else if (Connect::BC_SUCCESS != result)
+        {
+        return CreateCompletedAsyncTask(SignInResult::Error(ConnectLocalizedString(ALERT_SignInFailed_ServerError)));
+        }
+
     ConnectAuthenticationPersistence::GetShared()->SetToken(token);
     ConnectAuthenticationPersistence::GetShared()->SetCredentials(credentials);
-    return SUCCESS;
+    return CreateCompletedAsyncTask(SignInResult::Success());
     }
 
 /*--------------------------------------------------------------------------------------+
