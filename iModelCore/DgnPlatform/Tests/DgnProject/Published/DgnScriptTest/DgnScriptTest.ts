@@ -17,10 +17,11 @@ module DgnScriptTests {
         categoryName: string;
     };
 
-
+    var shiftXSize = 5.0;
+    var shiftYsize = 2.5;
     function Shift (g: be.Geometry, dx: number, dy: number)
         {
-        g.TryTransformInPlace (be.Transform.CreateTranslationXYZ (dx*2.0, dy*2.0, 0.0));
+        g.TryTransformInPlace (be.Transform.CreateTranslationXYZ (dx*shiftXSize, dy*shiftYsize, 0.0));
         }
     function ShowPoint (builder : be.ElementGeometryBuilder, point: be.DPoint3d)
         {
@@ -71,19 +72,30 @@ module DgnScriptTests {
         //  Try out SolidPrimitive
         var builder = new be.ElementGeometryBuilder(ele, new be.DPoint3d(0, 0, 0), new be.YawPitchRollAngles(0, 0, 0));
 
+        var shiftCount = 0;
+
         var sphere = be.DgnSphere.CreateSphere(new be.DPoint3d(0, 0, 0), 1.0);
+        Shift (sphere, shiftCount, 0);
         builder.AppendSolidPrimitive(sphere);
-        var center = new be.DPoint3d (5,0,zz);
-        var vector0 = new be.DVector3d (2,1,0);
-        var vector90 = new be.DVector3d (1,4,0);
+
+        var cone = be.DgnCone.CreateCircularCone (
+                new be.DPoint3d (0,0,0),
+                new be.DPoint3d (1,1,0),
+                0.5, 0.3, true);
+        Shift (cone, shiftCount, 1);
+        builder.AppendSolidPrimitive(cone);
+        shiftCount++;
+        var center = new be.DPoint3d (0,0,zz);
+        var vector0 = new be.DVector3d (2,1,0).Scale (0.3);
+        var vector90 = new be.DVector3d (1,4,0).Scale(0.3);
         var arc = new be.EllipticArc (center, vector0, vector90,
                     be.Angle.CreateDegrees (-10.0),
                     be.Angle.CreateDegrees (95.0)
                     );
 
         var arcPerp = arc.CloneWithPerpendicularAxes ();
-        var shiftVector = arc.GetVector0 ().Scale (2.5);
-        arcPerp.TryTransformInPlace (be.Transform.CreateTranslationXYZ (shiftVector.X, shiftVector.Y, shiftVector.Z));
+        Shift (arc, shiftCount, 0);
+        Shift (arcPerp, shiftCount, 1);
 
         ShowArc (builder, arc);
         ShowArc (builder, arcPerp);
@@ -96,36 +108,47 @@ module DgnScriptTests {
         builder.Append (centerToCenterLine);
         builder.Append (startTestLine);
         builder.Append (endTestLine);
-
         var line = new be.LineSegment (new be.DPoint3d (0,0,zz), new be.DPoint3d(0,4,zz));
         builder.Append (line);
+        shiftCount++;
 
         var points = new be.DPoint3dArray ();
-            points.Add (new be.DPoint3d (0,4,zz));
-            points.Add (new be.DPoint3d (1,4,zz));
-            points.Add (new be.DPoint3d (1,5,zz));
-            points.Add (new be.DPoint3d (0,5,zz));
-            points.Add (new be.DPoint3d (0,4.5,zz));
-            points.Add (new be.DPoint3d (0.5,4.5,zz));
+            points.Add (new be.DPoint3d (0,0,zz));
+            points.Add (new be.DPoint3d (1,0,zz));
+            points.Add (new be.DPoint3d (1,1,zz));
+            points.Add (new be.DPoint3d (0,1,zz));
+            points.Add (new be.DPoint3d (0,0.4,zz));
+            points.Add (new be.DPoint3d (0.5,0.7,zz));
         var linestring = new be.LineString (points);
+        Shift (linestring, shiftCount, 0);
+        shiftCount++;
         builder.Append (linestring);
         var catenary = be.CatenaryCurve.CreateFromCoefficientAndXLimits (
                     new be.DPoint3d (0,0,zz),
                     new be.DVector3d (1,0,0),
                     new be.DVector3d (0,1,0),
-                     4.0,
-                    -2.0,
-                     6.0
+                     1.0,
+                    -0.5,
+                     1.0
                     );
+        Shift (catenary, shiftCount, 0);
+        shiftCount++;
         builder.Append (catenary);
 
         var arc3 = be.EllipticArc.CreateCircleStartMidEnd (new be.DPoint3d (1,0,0), new be.DPoint3d (0,1,0), new be.DPoint3d (-1,0,0));
-        Shift(arc3, 10,0);
+        Shift(arc3, shiftCount,0);
+        shiftCount++;
         builder.Append (arc3);
 
-        var bspline = be.BsplineCurve.CreateFromPoles (points, 4);
-        if (bspline.TryTransformInPlace (be.Transform.CreateTranslationXYZ (2,0,0)))
-            builder.Append (bspline);
+        var bspline2 = be.BsplineCurve.CreateFromPoles (points, 2);
+        Shift (bspline2, shiftCount,0);      builder.Append (bspline2);
+        var bspline3 = be.BsplineCurve.CreateFromPoles (points, 3);
+        Shift (bspline3, shiftCount, 2);     builder.Append (bspline3);
+        var bspline4 = be.BsplineCurve.CreateFromPoles (points, 4);
+        Shift (bspline4, shiftCount, 4);     builder.Append (bspline4);
+        var bspline5 = be.BsplineCurve.CreateFromPoles (points, 5);
+        Shift (bspline5, shiftCount, 6);     builder.Append (bspline5);
+
 
         if (0 != builder.SetGeomStreamAndPlacement(ele))
             be.Script.ReportError('SetGeomStreamAndPlacement failed');
