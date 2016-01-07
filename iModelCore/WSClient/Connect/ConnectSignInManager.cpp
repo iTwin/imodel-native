@@ -42,9 +42,16 @@ ConnectSignInManager::~ConnectSignInManager()
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                           Vytautas.Barkauskas    12/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ConnectSignInManager::SignInWithToken(Utf8StringCR tokenStr)
+AsyncTaskPtr<SignInResult> ConnectSignInManager::SignInWithToken(Utf8StringCR tokenStr)
     {
+    auto token = std::make_shared<SamlToken>(tokenStr);
+    if (!token->IsSupported())
+        {
+        return CreateCompletedAsyncTask(SignInResult::Error(ConnectLocalizedString(ALERT_UnsupportedToken)));
+        }
+
     ConnectAuthenticationPersistence::GetShared()->SetToken(std::make_shared<SamlToken>(tokenStr));
+    return CreateCompletedAsyncTask(SignInResult::Success());
     }
 
 /*--------------------------------------------------------------------------------------+

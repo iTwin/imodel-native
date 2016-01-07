@@ -38,7 +38,7 @@ struct ConnectSignInManager
         WSCLIENT_EXPORT ConnectSignInManager();
         WSCLIENT_EXPORT virtual ~ConnectSignInManager();
 
-        WSCLIENT_EXPORT void SignInWithToken(Utf8StringCR token);
+        WSCLIENT_EXPORT AsyncTaskPtr<SignInResult> SignInWithToken(Utf8StringCR token);
         WSCLIENT_EXPORT AsyncTaskPtr<SignInResult> SignInWithCredentials(CredentialsCR credentials);
         WSCLIENT_EXPORT void SignOut();
         WSCLIENT_EXPORT bool IsSignedIn() const;
