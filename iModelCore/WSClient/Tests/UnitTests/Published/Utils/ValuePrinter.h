@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/Utils/ValuePrinter.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -55,7 +55,7 @@ namespace rapidjson
     void PrintTo(const Document& value, ::std::ostream* os);
     }
 
-// Duplicating symbols with UnitTests, enable with custom builds only
+// Duplicating symbols with DgnClientFx SDK UnitTests, enable with custom builds only
 // #define WSCLIENT_ENABLE_DUPLICATING_SYMBOLS
 #ifdef WSCLIENT_ENABLE_DUPLICATING_SYMBOLS
 
