@@ -132,6 +132,10 @@ BentleyStatus ECDbSchemaReader::ReadECClass(ECClassP& ecClass, ECClassId ecClass
     BeAssert(stmt->Step() == BE_SQLITE_DONE);
     stmt = nullptr; //to release it, so that it can be reused without repreparation
 
+    //cache the class, before loading properties and base classes, because the class can be referenced by other classes (e.g. via nav props)
+    schemaKey->m_loadedTypeCount++;
+    m_ecClassCache[ecClassId] = unique_ptr<DbECClassEntry>(new DbECClassEntry(*ecClass));
+
     if (SUCCESS != LoadBaseClassesFromDb(ecClass, ecClassId))
         return ERROR;
 
@@ -151,10 +155,6 @@ BentleyStatus ECDbSchemaReader::ReadECClass(ECClassP& ecClass, ECClassId ecClass
             return ERROR;
         }
 
-    schemaKey->m_loadedTypeCount++;
-
-    //cache the class
-    m_ecClassCache[ecClassId] = unique_ptr<DbECClassEntry>(new DbECClassEntry(*ecClass));
     return SUCCESS;
     }
 

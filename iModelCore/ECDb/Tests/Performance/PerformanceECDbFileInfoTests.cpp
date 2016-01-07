@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/Performance/PerformanceECDbFileInfoTests.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "PerformanceTests.h"
@@ -32,6 +32,16 @@ protected:
 
     static const int s_initialInstanceCountPerClass = 1000;
     static const int s_fileInfoCountPerClass = 200;
+
+    virtual void TearDown() override 
+        {
+        GetECDb().AbandonChanges();
+        }
+
+    static bool IsSchemaWithoutFilebackedInstances(ECN::ECSchemaCR schema)
+        {
+        return schema.IsStandardSchema() || schema.IsSystemSchema() || schema.GetName().EqualsI("ecdb_fileinfo");
+        }
 
     //---------------------------------------------------------------------------------------
     // @bsimethod                                      Affan.Khan                  10/15
@@ -84,7 +94,7 @@ protected:
             GetECDb().Schemas().GetECSchemas(schemas, true);
             for (ECSchemaCP schema : schemas)
                 {
-                if (schema->IsStandardSchema() || schema->IsSystemSchema())
+                if (IsSchemaWithoutFilebackedInstances(*schema))
                     continue;
 
                 for (ECClassCP ecclass : schema->GetClasses())
@@ -236,6 +246,7 @@ protected:
         return SUCCESS;
         }
 
+
     void LogTiming(Utf8CP scenario, StopWatch& timer) const
         {
         Utf8String testDescr;
@@ -243,6 +254,7 @@ protected:
                             scenario, s_initialInstanceCountPerClass, s_fileInfoCountPerClass);
         LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), testDescr.c_str(), 1);
         }
+
     };
 
 BeFileName PerformanceECDbFileInfoTests::s_seedFilePath;
@@ -267,12 +279,19 @@ TEST_F(PerformanceECDbFileInfoTests, PurgeAfterSingleDeletion)
     ECClassId testClassId = GetECDb().Schemas().GetECClassId("ECSqlTest", "P");
     ASSERT_NE(ECClass::UNSET_ECCLASSID, testClassId);
 
+    FileInfoStats beforeDeleteStats;
+    ASSERT_EQ(SUCCESS, RetrieveFileInfoStats(beforeDeleteStats));
+    ASSERT_EQ(beforeDeleteStats.m_fileInfoCount, beforeDeleteStats.m_ownershipCount) << "Before deleting anything";
+
     int deletedCount = -1;
     ASSERT_EQ(SUCCESS, DeleteOwners(deletedCount, testClassId, 1));
+    ASSERT_EQ(1, deletedCount) << "After deleting one owner";
 
     FileInfoStats beforePurgeStats;
     ASSERT_EQ(SUCCESS, RetrieveFileInfoStats(beforePurgeStats));
-    ASSERT_EQ(beforePurgeStats.m_fileInfoCount, beforePurgeStats.m_ownershipCount);
+    ASSERT_EQ(beforeDeleteStats.m_fileInfoCount, beforePurgeStats.m_fileInfoCount) << "FileInfo count after deleting one owner without purging";
+    ASSERT_EQ(beforeDeleteStats.m_ownershipCount, beforePurgeStats.m_ownershipCount) << "Onwership count after deleting one owner without purging";
+    ASSERT_EQ(beforePurgeStats.m_fileInfoCount, beforePurgeStats.m_ownershipCount) << "Before purging";
 
     BentleyStatus purgeStat = SUCCESS;
     StopWatch timer(true);
@@ -331,7 +350,7 @@ TEST_F(PerformanceECDbFileInfoTests, PurgeAfterDeletionOfOneInstancePerClass)
     GetECDb().Schemas().GetECSchemas(schemas, true);
     for (ECSchemaCP schema : schemas)
         {
-        if (schema->IsStandardSchema() || schema->IsSystemSchema())
+        if (IsSchemaWithoutFilebackedInstances(*schema))
             continue;
 
         for (ECClassCP ecclass : schema->GetClasses())
