@@ -1354,24 +1354,24 @@ ECSqlTestDataset ECSqlInsertTestDataset::RelationshipWithAdditionalPropsTests (E
     ECSqlTestDataset dataset;
 
     //Additional props
-    Utf8CP ecsql = "INSERT INTO ecsql.PSAHasPWithPrimProps (SourceECInstanceId, TargetECInstanceId) VALUES (400, 234);";
+    Utf8CP ecsql = "INSERT INTO ecsql.PSAHasPWithPrimProps (SourceECInstanceId, TargetECInstanceId) VALUES (113, 83);";
     ECSqlTestFrameworkHelper::AddNonSelect (dataset, ecsql);
 
     {
     Utf8String ecsqlStr;
-    ecsqlStr.Sprintf ("INSERT INTO ecsql.PSAHasPWithPrimProps (SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId, B, D, I, S) VALUES (401, %lld, 235, %lld, True, 3.14, 123, 'hello');", psaClassId, pClassId);
+    ecsqlStr.Sprintf ("INSERT INTO ecsql.PSAHasPWithPrimProps (SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId, B, D, I, S) VALUES (117, %lld, 84, %lld, True, 3.14, 123, 'hello');", psaClassId, pClassId);
     ECSqlTestFrameworkHelper::AddNonSelect (dataset, ecsqlStr.c_str ());
     }
 
     {
     Utf8String ecsqlStr;
-    ecsqlStr.Sprintf ("INSERT INTO ecsql.PSAHasPWithPrimProps (SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId) VALUES (402, %lld, 236, %lld);", psaClassId, pClassId);
+    ecsqlStr.Sprintf ("INSERT INTO ecsql.PSAHasPWithPrimProps (SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId) VALUES (121, %lld, 85, %lld);", psaClassId, pClassId);
     ECSqlTestFrameworkHelper::AddNonSelect (dataset, ecsqlStr.c_str ());
     }
 
     {
     Utf8String ecsqlStr;
-    ecsqlStr.Sprintf ("INSERT INTO ecsql.PSAHasPWithPrimProps (SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId, D, B) VALUES (403, %lld, 237, %lld, 3.14, True);", psaClassId, pClassId);
+    ecsqlStr.Sprintf ("INSERT INTO ecsql.PSAHasPWithPrimProps (SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId, D, B) VALUES (125, %lld, 86, %lld, 3.14, True);", psaClassId, pClassId);
     ECSqlTestFrameworkHelper::AddNonSelect (dataset, ecsqlStr.c_str ());
     }
 

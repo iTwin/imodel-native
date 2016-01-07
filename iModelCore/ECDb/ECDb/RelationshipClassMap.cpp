@@ -299,7 +299,8 @@ ECDbSqlColumn* RelationshipClassEndTableMap::ConfigureForeignECClassIdKey(Schema
 //---------------------------------------------------------------------------------------
 DataIntegrityEnforcementMethod RelationshipClassEndTableMap::GetDataIntegrityEnforcementMethod() const
     {
-    if (GetPrimaryTable().GetTableType() == TableType::Existing)
+    if (GetPrimaryTable().GetTableType() == TableType::Existing || GetRelationshipClass().GetClassModifier() == ECClassModifier::Abstract
+        || GetRelationshipClass().GetSource().GetClasses().empty() || GetRelationshipClass().GetTarget().GetClasses().empty() )
         return DataIntegrityEnforcementMethod::None;
 
     if (GetRelationshipClass().GetStrength() == StrengthType::Referencing || GetRelationshipClass().GetStrength() == StrengthType::Embedding)

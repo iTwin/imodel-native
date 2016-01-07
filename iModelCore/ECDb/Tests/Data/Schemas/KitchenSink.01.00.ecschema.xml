@@ -2,6 +2,8 @@
 <ECSchema schemaName="KitchenSink" version="01.00" nameSpacePrefix="ks" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0" xmlns:ec="http://www.bentley.com/schemas/Bentley.ECXML.2.0" xmlns:ods="Bentley_ODS.01.02">
     <ECSchemaReference name="EditorCustomAttributes" version="01.00" prefix="beca" />
     <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="01.08" prefix="bsca" />
+    <ECSchemaReference name="ECDbMap" version="01.00" prefix="ecdbmap" />
+
     <ECCustomAttributes>
         <IdentificationOfStandardClasses xmlns="Bentley_Standard_CustomAttributes.01.08">
             <DocumentBaseClass>Document</DocumentBaseClass>
@@ -67,6 +69,16 @@
                 <Description>The default category</Description>
                 <Priority>100000</Priority>
             </Category>
+      <!-- **************************************************************************************************
+        AffanK: Added SharedTable strategy to avoid schema
+        import failure that occure in ImplicitRelationshipClass relationship as it end up with more then one table on one side 
+      **************************************************************************************************  -->
+            <ClassMap xmlns="ECDbMap.01.00">
+                <MapStrategy>
+                    <Strategy>SharedTable</Strategy>
+                    <AppliesToSubclasses>True</AppliesToSubclasses>
+                </MapStrategy>
+            </ClassMap>
         </ECCustomAttributes>
         <ECProperty propertyName="BaseClassMember" typeName="int" />
     </ECClass>
@@ -353,7 +365,22 @@
         </Target>
     </ECRelationshipClass>
 
+    <ECClass typeName="FM_Equipment" displayLabel="Equipment" isDomainClass="False">
+        <!-- **************************************************************************************************
+        AffanK: Added FM_Equipment abstract base class with SharedTable strategy to avoid schema
+        import failure that occure in FM_Furniture relationship as it end up with more then one table on one side 
+      **************************************************************************************************  -->
+        <ECCustomAttributes>
+            <ClassMap xmlns="ECDbMap.01.00">
+                <MapStrategy>
+                    <Strategy>SharedTable</Strategy>
+                    <AppliesToSubclasses>True</AppliesToSubclasses>
+                </MapStrategy>
+            </ClassMap>
+        </ECCustomAttributes>
+    </ECClass>
     <ECClass typeName="FM_Chair" displayLabel="Chair" isDomainClass="True">
+        <BaseClass>FM_Equipment</BaseClass>
         <ECProperty propertyName="FM_Type" typeName="string" />
         <ECProperty propertyName="FM_Cost" typeName="int" />
         <ECProperty propertyName="FM_Room" typeName="int" />
@@ -361,6 +388,7 @@
         <ECProperty propertyName="FM_Color" typeName="string" />
     </ECClass>
     <ECClass typeName="FM_Desk" displayLabel="Desk" isDomainClass="True">
+        <BaseClass>FM_Equipment</BaseClass>
         <ECProperty propertyName="FM_Type" typeName="string" />
         <ECProperty propertyName="FM_Cost" typeName="int" />
         <ECProperty propertyName="FM_Room" typeName="int" />
@@ -368,11 +396,13 @@
         <ECProperty propertyName="FM_Size" typeName="string" />
     </ECClass>
     <ECClass typeName="FM_Phone" displayLabel="Phone" isDomainClass="True">
+        <BaseClass>FM_Equipment</BaseClass>
         <ECProperty propertyName="FM_Number" typeName="int" />
         <ECProperty propertyName="FM_Room" typeName="int" />
         <ECProperty propertyName="FM_Owner" typeName="string" />
     </ECClass>
     <ECClass typeName="FM_Computer" displayLabel="Computer" isDomainClass="True">
+        <BaseClass>FM_Equipment</BaseClass>
         <ECProperty propertyName="FM_Vendor" typeName="string" />
         <ECProperty propertyName="FM_Make" typeName="string" />
         <ECProperty propertyName="FM_Model" typeName="string" />
@@ -380,6 +410,7 @@
         <ECProperty propertyName="FM_Owner" typeName="string" />
     </ECClass>
     <ECClass typeName="FM_Monitor" displayLabel="Monitor" isDomainClass="True">
+        <BaseClass>FM_Equipment</BaseClass>
         <ECProperty propertyName="FM_Vendor" typeName="string" />
         <ECProperty propertyName="FM_Make" typeName="string" />
         <ECProperty propertyName="FM_Model" typeName="string" />
@@ -394,6 +425,7 @@
         <ECProperty propertyName="FM_SSN" typeName="int" />
         <ECProperty propertyName="FM_Room" typeName="int" />
     </ECClass>
+    
     <ECRelationshipClass typeName="FM_Furniture" strength="referencing">
         <Source cardinality="(0,n)" roleLabel="Owned by employee" polymorphic="True">
             <Class class="FM_Employee" />
