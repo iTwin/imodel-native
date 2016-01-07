@@ -2,7 +2,7 @@
 |
 |     $Source: test/Published/SchemaTests.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "../ECObjectsTestPCH.h"
@@ -1731,8 +1731,24 @@ TEST_F (SchemaSerializationTest, SerializeComprehensiveSchema)
     relationshipClass->GetTarget().AddClass(*entityClass);
     relationshipClass->GetTarget().SetCardinality(RelationshipCardinality::ZeroOne());
 
+    NavigationECPropertyP navProp;
+    entityClass->CreateNavigationProperty(navProp, "NavigationProperty", *relationshipClass, ECRelatedInstanceDirection::Forward);
+
     SchemaWriteStatus status2 = schema->WriteToXmlFile (ECTestFixture::GetTempDataPath (L"ComprehensiveSchema.01.00.ecschema.xml").c_str (), 3);
     EXPECT_EQ (SchemaWriteStatus::Success, status2);
+    }
+
+//This test ensures we support any unknown element or attribute put into existing ECSchema XML. Important for backwards compatibility of future EC versions.
+TEST_F(SchemaSerializationTest, DeserializeComprehensiveSchemaWithUnknowns)
+    {
+    ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
+
+    ECSchemaPtr schema;
+    SchemaReadStatus status = ECSchema::ReadFromXmlFile(schema, ECTestFixture::GetTestDataPath(L"ComprehensiveSchemaWithUnknowns.01.00.ecschema.xml").c_str(), *schemaContext);
+    ASSERT_EQ(SchemaReadStatus::Success, status) << "Failed to load ComprehensiveSchemaWithUnknowns for test";
+
+    EXPECT_EQ(6, schema->GetClassCount());
+    EXPECT_EQ(1, schema->GetEnumerationCount());
     }
 
 /*---------------------------------------------------------------------------------**//**
