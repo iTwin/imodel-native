@@ -55,7 +55,7 @@ DRTPrefs()
 };
 
 static DRTPrefs  s_prefs;
-#define DEBUG_PRINTF(arg) 
+#define DEBUG_PRINTF(arg) printf(arg)
 
 //#define DRT_DEBUGGING
 #if defined (DRT_DEBUGGING)
@@ -1896,9 +1896,12 @@ void ProgressiveViewFilter::_StepRange(DbFunction::Context&, int nArgs, DbValue*
 
             if (!m_setTimeout)
                 { // don't set the timeout until after we've drawn one element
-                m_context->EnableStopAfterTimout(BeTimeUtilities::QueryMillisecondsCounterUInt32() + 1000);
+                m_context->EnableStopAfterTimout(1000);
                 m_setTimeout = true;
                 }
+
+            if (++m_thisBatch >= m_maxInBatch) // limit the number or elements added per batch
+                m_context->SetAborted();
             }
         }
 
@@ -1995,7 +1998,7 @@ ProgressiveDisplay::Completion ProgressiveViewFilter::_Process(ViewContextR cont
         }
 
     m_context = &context;
-    m_nThisPass = 0; // restart every pass
+    m_nThisPass = m_thisBatch = 0; // restart every pass
     m_setTimeout = false;
 
     DEBUG_PRINTF("start progressive display\n");

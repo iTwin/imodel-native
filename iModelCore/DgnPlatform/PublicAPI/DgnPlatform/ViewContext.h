@@ -270,7 +270,7 @@ public:
     void InitScanRangeAndPolyhedron() {_InitScanRangeAndPolyhedron();}
     void VisitDgnModel(DgnModelP model){_VisitDgnModel(model);}
     void SetScanReturn() {_SetScanReturn();}
-    void EnableStopAfterTimout(uint64_t timeout) {m_endTime = BeTimeUtilities::QueryMillisecondsCounter()+timeout; m_stopAfterTimeout=true;}
+    void EnableStopAfterTimout(uint32_t timeout) {m_endTime = BeTimeUtilities::QueryMillisecondsCounter()+timeout; m_stopAfterTimeout=true;}
     bool GetWaitForQueryToComplete() { return m_waitForQueryToComplete; }
     void SetWaitForQueryToComplete(bool synchOnQuery) { m_waitForQueryToComplete = synchOnQuery; }
 

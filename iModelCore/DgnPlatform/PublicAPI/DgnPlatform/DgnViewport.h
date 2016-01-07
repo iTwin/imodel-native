@@ -113,6 +113,7 @@ struct RtreeViewFilter : BeSQLite::RTreeAcceptFunction::Tester
     DGNPLATFORM_EXPORT RtreeViewFilter(DgnViewportCR, BeSQLite::DbR db, double minimumSizeScreenPixels, DgnElementIdSet const* exclude);
     };
 
+enum {PROGRESSIVE_VIEW_BATCH_SIZE = 30000};
 //=======================================================================================
 // @bsiclass                                                    Keith.Bentley   04/14
 //=======================================================================================
@@ -120,19 +121,22 @@ struct ProgressiveViewFilter : ProgressiveDisplay, RtreeViewFilter
 {
     friend struct QueryViewController;
 
-    ViewContextP                 m_context;
-    uint32_t                     m_nThisPass;
-    uint32_t                     m_nLastPass;
-    bool                         m_setTimeout;
-    QueryModelR                  m_queryModel;
-    DgnDbR                       m_dgndb;
-    uint64_t                     m_elementReleaseTrigger;
-    uint64_t                     m_purgeTrigger;
+    ViewContextP   m_context;
+    QueryModelR    m_queryModel;
+    DgnDbR         m_dgndb;
+    uint32_t       m_nThisPass;
+    uint32_t       m_nLastPass;
+    uint32_t       m_thisBatch;
+    uint32_t       m_maxInBatch;
+    uint64_t       m_elementReleaseTrigger;
+    uint64_t       m_purgeTrigger;
+    bool           m_setTimeout;
     BeSQLite::CachedStatementPtr m_rangeStmt;
     ProgressiveViewFilter(DgnViewportCR vp, DgnDbR dgndb, QueryModelR queryModel, DgnElementIdSet const* exclude, uint64_t maxMemory, BeSQLite::CachedStatement* stmt)
          : RtreeViewFilter(vp, dgndb, 0.0, exclude), m_dgndb(dgndb), m_queryModel(queryModel), m_elementReleaseTrigger(maxMemory), m_purgeTrigger(maxMemory), m_rangeStmt(stmt) 
         {
-        m_nThisPass = m_nLastPass = 0;
+        m_nThisPass = m_nLastPass = m_thisBatch = 0;
+        m_maxInBatch = PROGRESSIVE_VIEW_BATCH_SIZE;
         m_setTimeout = false;
         m_context = nullptr;
         }  
