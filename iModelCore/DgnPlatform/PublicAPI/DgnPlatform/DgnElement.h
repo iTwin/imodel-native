@@ -1129,10 +1129,6 @@ public:
     //! Get the DgnClassId of this DgnElement.
     DgnClassId GetElementClassId() const {return m_classId;}
 
-    //! DEPRECATED: use GetElementId (preferred) or GetECInstanceKey (for ECRelationships) instead
-    //! @private
-    DgnElementKey GetElementKey() const {return DgnElementKey(GetElementClassId(), GetElementId());}
-
     //! Get the ECInstanceKey (the element DgnClassId and DgnElementId) of this DgnElement
     //! @see GetElementClassId, GetElementId
     BeSQLite::EC::ECInstanceKey GetECInstanceKey() const {return BeSQLite::EC::ECInstanceKey(GetElementClassId().GetValue(), GetElementId());}
