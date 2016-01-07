@@ -11,6 +11,7 @@
 #include <bcdtminlines.h>
 #include <TerrainModel/Core/DTMIterators.h>
 #include <TerrainModel/Core/TMTransformHelper.h>
+#include <algorithm>
 
 USING_NAMESPACE_BENTLEY_TERRAINMODEL
 
@@ -756,6 +757,7 @@ DTMStatusInt DTMMeshEnumerator::Initialize () const
     ** Allocate Memory For Mesh Faces
     */
     meshFaces.resize (maxTriangles * 3);
+    m_useFence = useFence;
     return DTM_SUCCESS;
 errexit:
     if (m_dtmP->dtmState == DTMState::Tin)
@@ -968,7 +970,7 @@ void DTMMeshEnumerator::Reset ()
             {
             long dbg = DTM_TRACE_VALUE (0);
             DTMFenceType fenceType = m_fence.fenceType;
-            bool useFence = fenceType != DTMFenceType::None;
+            bool useFence = m_useFence;
 
             m_initialized = false;
             if (m_dtmP->dtmState == DTMState::Tin) bcdtmList_nullTptrValuesDtmObject (m_dtmP);
@@ -977,7 +979,104 @@ void DTMMeshEnumerator::Reset ()
         }
 
 
-int DTMMeshEnumerator::bcdtmList_testForRegionLineDtmObject(BC_DTM_OBJ *dtmP, long P1, long P2) const
+int DTMMeshEnumerator::bcdtmList_isPtInsideFeature(BC_DTM_OBJ *dtmP, long P1, long testPnt, long featureNum) const
+    {
+    int numFound = 0;
+    enum
+        {
+        unknown, inside, outside
+        } state = unknown;
+    bool foundPt = false;
+    long clPtr;
+    /*
+    ** Test For Void Hull Line
+    */
+    clPtr = nodeAddrP(dtmP, P1)->cPtr;
+    while (clPtr != dtmP->nullPtr)
+        {
+        long P2 = clistAddrP(dtmP, clPtr)->pntNum;
+
+        if (testPnt == P2)
+            {
+            foundPt = true;
+            if (state != unknown)
+                return state == inside;
+            }
+        else
+            {
+            if (bcdtmList_testForRegionLineDtmObject(dtmP, P2, P1, featureNum))
+                {
+                state = inside;
+                if (foundPt)
+                    return false;
+                }
+            else if (bcdtmList_testForRegionLineDtmObject(dtmP, P1, P2, featureNum))
+                {
+                state = outside;
+                if (foundPt)
+                    return true;
+                }
+            }
+        clPtr = clistAddrP(dtmP, clPtr)->nextPtr;
+        }
+    BeAssert(foundPt);
+    /*
+    ** Job Completed
+    */
+    return false;
+
+    }
+
+// This is a simple test as most cases they will only be one region scanned.
+int DTMMeshEnumerator::bcdtmList_testTriangleInsideRegionDtmObject(BC_DTM_OBJ *dtmP, long P1, long P2, long P3) const
+/*
+** This Function Tests If The Line P1-P2 is A Void Or Hole Hull Line
+*/
+    {
+    long clPtr;
+    /*
+    ** Test For Void Hull Line
+    */
+    clPtr = nodeAddrP(dtmP, P1)->fPtr;
+    while (clPtr != dtmP->nullPtr)
+        {
+        long dtmFeature = flistAddrP(dtmP, clPtr)->dtmFeature;
+
+        if (ftableAddrP(dtmP, dtmFeature)->dtmFeatureType == DTMFeatureType::Region)
+            {
+            bool addRegion = false;
+            if (m_regionMode == RegionMode::RegionUserTag)
+                {
+                if (ftableAddrP(dtmP, flistAddrP(dtmP, clPtr)->dtmFeature)->dtmUserTag == m_regionUserTag)
+                    addRegion = true;
+                }
+            else if (m_regionMode == RegionMode::RegionFeatureId)
+                {
+                if (ftableAddrP(dtmP, flistAddrP(dtmP, clPtr)->dtmFeature)->dtmFeatureId == m_regionFeatureId)
+                    addRegion = true;
+                }
+            else
+                addRegion = true;
+
+            if (addRegion)
+                {
+                long testPnt = P2;
+                if (bcdtmList_testForRegionLineDtmObject(dtmP, P1, P2, dtmFeature))
+                    testPnt = P3;
+                if (bcdtmList_isPtInsideFeature(dtmP, P1, testPnt, dtmFeature))
+                    return true;
+                }
+
+            }
+        clPtr = flistAddrP(dtmP, clPtr)->nextPtr;
+        }
+    /*
+    ** Job Completed
+    */
+    return false;
+    }
+
+int DTMMeshEnumerator::bcdtmList_testForRegionLineDtmObject(BC_DTM_OBJ *dtmP, long P1, long P2, long featureNum) const
 /*
 ** This Function Tests If The Line P1-P2 is A Void Or Hole Hull Line
 */
@@ -991,20 +1090,28 @@ int DTMMeshEnumerator::bcdtmList_testForRegionLineDtmObject(BC_DTM_OBJ *dtmP, lo
         {
         if (flistAddrP (dtmP, clPtr)->nextPnt == P2)
             {
-            if (ftableAddrP(dtmP, flistAddrP(dtmP, clPtr)->dtmFeature)->dtmFeatureType == DTMFeatureType::Region)
+            if (featureNum == -1)
                 {
-                if (m_regionMode == RegionMode::RegionUserTag)
+                if (ftableAddrP(dtmP, flistAddrP(dtmP, clPtr)->dtmFeature)->dtmFeatureType == DTMFeatureType::Region)
                     {
-                    if (ftableAddrP(dtmP, flistAddrP(dtmP, clPtr)->dtmFeature)->dtmUserTag == m_regionUserTag)
-                        return 1;
+                    if (m_regionMode == RegionMode::RegionUserTag)
+                        {
+                        if (ftableAddrP(dtmP, flistAddrP(dtmP, clPtr)->dtmFeature)->dtmUserTag == m_regionUserTag)
+                            return 1;
+                        }
+                    else if (m_regionMode == RegionMode::RegionFeatureId)
+                        {
+                        if (ftableAddrP(dtmP, flistAddrP(dtmP, clPtr)->dtmFeature)->dtmFeatureId == m_regionFeatureId)
+                            return 1;
+                        }
+                    else
+                        return(1);
                     }
-                else if (m_regionMode == RegionMode::RegionFeatureId)
-                    {
-                    if (ftableAddrP(dtmP, flistAddrP(dtmP, clPtr)->dtmFeature)->dtmFeatureId == m_regionFeatureId)
-                        return 1;
-                    }
+                }
                 else
-                    return(1);
+                {
+                if (featureNum == flistAddrP(dtmP, clPtr)->dtmFeature)
+                    return 1;
                 }
             }
         clPtr = flistAddrP (dtmP, clPtr)->nextPtr;
@@ -1031,11 +1138,16 @@ bool DTMMeshEnumerator::bcdtmList_testForRegionTriangleDtmObject(BC_DTM_OBJ *dtm
     if (bcdtmList_testForRegionLineDtmObject (dtmP, P2, P1)) return true;
     if (bcdtmList_testForRegionLineDtmObject (dtmP, P3, P2)) return true;
     if (bcdtmList_testForRegionLineDtmObject (dtmP, P1, P3)) return true;
+
+    if (bcdtmList_testTriangleInsideRegionDtmObject(dtmP, P1, P2, P3)) return true;
+
     return false;
     }
 
     bool DTMMeshEnumerator::MoveNext (long& pnt1, long& pnt2) const
         {
+        if (!m_initialized) Initialize ();
+
         long dbg = DTM_TRACE_VALUE (0), tdbg = DTM_TIME_VALUE (0);
         long  pnt3, clPtr, numTriangles = 0;
         bool voidTriangle;
@@ -1043,9 +1155,8 @@ bool DTMMeshEnumerator::bcdtmList_testForRegionTriangleDtmObject(BC_DTM_OBJ *dtm
         DTM_CIR_LIST  *clistP;
         DTM_TIN_NODE  *node1P, *node2P, *node3P;
         DTMFenceType fenceType = m_fence.fenceType;
-        bool useFence = fenceType != DTMFenceType::None;
         bool usePnt2 = pnt1 != -1;
-        if (!m_initialized) Initialize ();
+        bool useFence = m_useFence;
 
         if (m_dtmP->dtmState != DTMState::Tin)
             return false;

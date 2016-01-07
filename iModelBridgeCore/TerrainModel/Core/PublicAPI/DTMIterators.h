@@ -236,7 +236,7 @@ struct DTMMeshEnumerator : RefCountedBase
     private: long vectorOption;        /* ==> Vector Option <1=Surface Derivatives,2=Averaged Triangle Surface Normals> */
     private: double zAxisFactor;       /* ==> Factor To Exaggerate The z Axis default value 1.0  */
     private: DTMFenceParams m_fence;
-
+    private: mutable bool m_useFence;
     private: mutable long m_pointMark;
     private: mutable bool voidsInDtm;
     private: mutable long startPnt, lastPnt, leftMostPnt;
@@ -258,8 +258,10 @@ struct DTMMeshEnumerator : RefCountedBase
     private: bool MoveNext (long& pnt1, long& pnt2) const;
     private: void ScanAndMarkRegions () const;
     private: void ScanAndMarkRegion(long featureId,long& minPnt, long& maxPnt) const;
-    private: int bcdtmList_testForRegionLineDtmObject(BC_DTM_OBJ *dtmP, long P1, long P2) const;
+    private: int bcdtmList_testForRegionLineDtmObject(BC_DTM_OBJ *dtmP, long P1, long P2, long featureNum = -1) const;
+    private: int bcdtmList_testTriangleInsideRegionDtmObject(BC_DTM_OBJ *dtmP, long P1, long P2, long P3) const;
     private: bool bcdtmList_testForRegionTriangleDtmObject(BC_DTM_OBJ *dtmP, std::vector<bool>& pointMask, long P1, long P2, long P3) const;
+    private: int bcdtmList_isPtInsideFeature(BC_DTM_OBJ *dtmP, long P1, long testPnt, long featureNum) const;
 
 
     protected: BENTLEYDTM_EXPORT DTMMeshEnumerator (BcDTMR dtm);
