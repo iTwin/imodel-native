@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECDbPch.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <BeSQLite/BeSQLite.h>
@@ -32,7 +32,7 @@
 #include "ECDbPolicyManager.h"
 #include "ViewGenerator.h"
 #include "ECDbMapAnalyser.h"
-#include "ECDbSchemaPersistence.h"
+#include "ECDbSchemaPersistenceHelper.h"
 #include "ECDbSchemaReader.h"
 #include "ECDbSchemaWriter.h"
 #include "ECSchemaValidator.h"

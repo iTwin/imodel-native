@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECDbProfileManager.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -367,6 +367,23 @@ DbResult ECDbProfileManager::CreateECProfileTables(ECDbR ecdb)
     if (BE_SQLITE_OK != stat)
         return stat;
 
+    //ec_Enumeration
+    stat = ecdb.ExecuteSql("CREATE TABLE ec_Enumeration("
+                           "Id INTEGER PRIMARY KEY,"
+                           "SchemaId INTEGER NOT NULL REFERENCES ec_Schema(Id) ON DELETE CASCADE,"
+                           "Name TEXT NOT NULL,"
+                           "DisplayLabel TEXT,"
+                           "Description TEXT,"
+                           "UnderlyingPrimitiveType INTEGER NOT NULL,"
+                           "IsStrict BOOL NOT NULL CHECK(IsStrict IN (0,1)),"
+                           "EnumValues JSON NOT NULL)");
+    if (BE_SQLITE_OK != stat)
+        return stat;
+
+    stat = ecdb.ExecuteSql("CREATE UNIQUE INDEX uix_ec_Enumeration_SchemaId_Name ON ec_Enumeration(SchemaId,Name)");
+    if (BE_SQLITE_OK != stat)
+        return stat;
+
     //ec_Property
     stat = ecdb.ExecuteSql("CREATE TABLE ec_Property("
                            "Id INTEGER PRIMARY KEY,"
@@ -379,6 +396,7 @@ DbResult ECDbProfileManager::CreateECProfileTables(ECDbR ecdb)
                            "Ordinal INTEGER,"
                            "PrimitiveType INTEGER,"
                            "NonPrimitiveType INTEGER REFERENCES ec_Class(Id) ON DELETE CASCADE,"
+                           "Enumeration INTEGER REFERENCES ec_Enumeration(Id) ON DELETE CASCADE,"
                            "ArrayMinOccurs INTEGER,"
                            "ArrayMaxOccurs INTEGER,"
                            "NavigationPropertyDirection INTEGER)");
@@ -401,20 +419,7 @@ DbResult ECDbProfileManager::CreateECProfileTables(ECDbR ecdb)
     if (BE_SQLITE_OK != stat)
         return stat;
 
-    stat = ecdb.ExecuteSql("CREATE UNIQUE INDEX uix_ec_PropertyPath_RootPropertyId_AccessString ON ec_PropertyPath(RootPropertyId, AccessString)");
-    if (BE_SQLITE_OK != stat)
-        return stat;
-
-    //ec_Enumeration
-    stat = ecdb.ExecuteSql("CREATE TABLE ec_Enumeration("
-                           "Id INTEGER PRIMARY KEY,"
-                           "SchemaId INTEGER NOT NULL REFERENCES ec_Schema(Id) ON DELETE CASCADE,"
-                           "Name TEXT NOT NULL,"
-                           "DisplayLabel TEXT,"
-                           "Description TEXT,"
-                           "UnderlyingPrimitiveType INTEGER NOT NULL,"
-                           "IsStrict BOOL NOT NULL CHECK(IsStrict IN (0,1)),"
-                           "EnumValues JSON NOT NULL)");
+    stat = ecdb.ExecuteSql("CREATE UNIQUE INDEX uix_ec_PropertyPath_RootPropertyId_AccessString ON ec_PropertyPath(RootPropertyId,AccessString)");
     if (BE_SQLITE_OK != stat)
         return stat;
 
@@ -447,7 +452,7 @@ DbResult ECDbProfileManager::CreateECProfileTables(ECDbR ecdb)
                            "ContainerType INTEGER NOT NULL,"
                            "Ordinal INTEGER NOT NULL,"
                            "ClassId INTEGER NOT NULL REFERENCES ec_Class(Id),"
-                           "Instance TEXT,"
+                           "Instance TEXT NOT NULL,"
                            "PRIMARY KEY (ContainerId, ContainerType, ClassId))");
     if (BE_SQLITE_OK != stat)
         return stat;
