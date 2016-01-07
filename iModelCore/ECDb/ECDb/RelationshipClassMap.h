@@ -16,7 +16,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 +===============+===============+===============+===============+===============+======*/
 struct RelationshipClassMap : ClassMap
 {
-protected:
+public:
     //=======================================================================================
     // @bsiclass                                                 Krischan.Eberle      07/2014
     //+===============+===============+===============+===============+===============+======
@@ -52,6 +52,7 @@ protected:
         ECN::ECRelationshipConstraintCR GetRelationshipConstraint()const;
         };
 
+protected:
     static Utf8CP const DEFAULT_SOURCEECINSTANCEID_COLUMNNAME;
     static Utf8CP const DEFAULT_SOURCEECCLASSID_COLUMNNAME;
     static Utf8CP const DEFAULT_TARGETECINSTANCEID_COLUMNNAME;

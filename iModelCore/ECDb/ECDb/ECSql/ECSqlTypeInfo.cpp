@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/ECSqlTypeInfo.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -15,10 +15,9 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                     08/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
-ECSqlTypeInfo::ECSqlTypeInfo (ECSqlTypeInfo::Kind kind)
-: m_kind (kind), m_structType (nullptr), m_minOccurs (0), m_maxOccurs (0), m_propertyMap (nullptr), m_primitiveType (static_cast<ECN::PrimitiveType>(0))
-    {
-    }
+ECSqlTypeInfo::ECSqlTypeInfo(ECSqlTypeInfo::Kind kind)
+    : m_kind(kind), m_structType(nullptr), m_minOccurs(0), m_maxOccurs(0), m_propertyMap(nullptr), m_primitiveType(static_cast<ECN::PrimitiveType>(0))
+    {}
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                     08/2013
@@ -392,11 +391,22 @@ ECN::ArrayKind ECSqlTypeInfo::GetArrayKind () const
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       05/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-void ECSqlTypeInfo::DetermineTypeInfo (ECPropertyCR ecProperty)  
+void ECSqlTypeInfo::DetermineTypeInfo(ECPropertyCR ecProperty)
     {
+    NavigationECPropertyCP navProp = ecProperty.GetAsNavigationPropertyCP();
+    if (navProp != nullptr)
+        {
+        if (NavigationPropertyMap::CanOnlyHaveOneRelatedInstance(*navProp))
+            m_kind = Kind::InstanceKey;
+        else
+            m_kind = Kind::InstanceKeyList;
+
+        return;
+        }
+
     auto primitiveType = ECN::PRIMITIVETYPE_Integer;
     ECClassCP structType = nullptr;
-    const auto isArray = ecProperty.GetIsArray ();
+    const auto isArray = ecProperty.GetIsArray();
 
     uint32_t minOccurs = 0;
     uint32_t maxOccurs = 0;
@@ -409,35 +419,37 @@ void ECSqlTypeInfo::DetermineTypeInfo (ECPropertyCR ecProperty)
         else
             {
             BeAssert(nullptr != arrayProperty);
-            primitiveType = arrayProperty->GetPrimitiveElementType ();
+            primitiveType = arrayProperty->GetPrimitiveElementType();
             }
 
-        minOccurs = arrayProperty->GetMinOccurs ();
-        maxOccurs = arrayProperty->GetMaxOccurs ();
+        minOccurs = arrayProperty->GetMinOccurs();
+        maxOccurs = arrayProperty->GetMaxOccurs();
         }
     //no array
     else if (ecProperty.GetIsStruct())
-        structType = &ecProperty.GetAsStructProperty ()->GetType ();
-    else
+        structType = &ecProperty.GetAsStructProperty()->GetType();
+    else if (ecProperty.GetIsPrimitive())
+        primitiveType = ecProperty.GetAsPrimitiveProperty()->GetType();
+    else if (ecProperty.GetIsNavigation())
         {
-        BeAssert (ecProperty.GetIsPrimitive ());
-        primitiveType = ecProperty.GetAsPrimitiveProperty ()->GetType ();
+        //WIP_NAVPROP Not implemented yet
+        BeAssert(false && "NavProps not implemented yet.");
         }
 
     if (structType != nullptr)
         {
-        Populate (isArray, nullptr, structType, minOccurs, maxOccurs, nullptr);
+        Populate(isArray, nullptr, structType, minOccurs, maxOccurs, nullptr);
         return;
         }
 
     if (primitiveType == ECN::PRIMITIVETYPE_DateTime)
         {
         DateTimeInfo dateTimeInfo;
-        StandardCustomAttributeHelper::GetDateTimeInfo (dateTimeInfo, ecProperty);
-        Populate (isArray, &primitiveType, nullptr, minOccurs, maxOccurs, &dateTimeInfo);
+        StandardCustomAttributeHelper::GetDateTimeInfo(dateTimeInfo, ecProperty);
+        Populate(isArray, &primitiveType, nullptr, minOccurs, maxOccurs, &dateTimeInfo);
         }
     else
-        Populate (isArray, &primitiveType, nullptr, minOccurs, maxOccurs, nullptr);
+        Populate(isArray, &primitiveType, nullptr, minOccurs, maxOccurs, nullptr);
     }
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/JsonECSqlSelectAdapter.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -471,8 +471,10 @@ void JsonECSqlSelectAdapter::JsonFromProperty(JsonValueR propertyJson, ECPropert
         propertyJson["IsPrimitive"] = true;
     else if (ecProperty.GetIsStruct())
         propertyJson["IsStruct"] = true;
-    else /* if (ecProperty.GetIsArray()) */
+    else if (ecProperty.GetIsArray())
         propertyJson["IsArray"] = true;
+    else if (ecProperty.GetIsNavigation())
+        propertyJson["IsNavigation"] = true;
 
     propertyJson["ClassKey"] = GetClassKey(ecClass);
     propertyJson["InstanceIndex"] = (instanceIndex >= 0) ? instanceIndex : Json::nullValue;
@@ -999,12 +1001,20 @@ bool JsonECSqlSelectAdapter::JsonFromPropertyValue(JsonValueR jsonValue, IECSqlV
         return JsonFromPrimitive(jsonValue, ecsqlValue, *ecProperty, false);
     else if (ecProperty->GetIsStruct())
         return JsonFromStruct(jsonValue, ecsqlValue);
-    else
+    else if (ecProperty->GetIsArray())
         {
         ArrayECPropertyCP arrayProperty = ecProperty->GetAsArrayProperty();
         BeAssert(arrayProperty != nullptr);
         return JsonFromArray(jsonValue, ecsqlValue, *arrayProperty);
         }
+    else if (ecProperty->GetIsNavigation())
+        {
+        //WIP_NAVPROP Not implemented yet
+        return true;
+        }
+
+    BeAssert(false && "Unhandled ECProperty type. Adjust the code for this new ECProperty type");
+    return false;
     }
    
 /*---------------------------------------------------------------------------------**//**

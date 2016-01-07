@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/ECSqlFieldFactory.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -302,7 +302,7 @@ ECSqlColumnInfo&& structFieldColumnInfo
     auto newStructField = unique_ptr<StructMappedToColumnsECSqlField>(new StructMappedToColumnsECSqlField(ctx.GetECSqlStatementR (), move(structFieldColumnInfo)));
 
     ECSqlStatus status = ECSqlStatus::Success;
-    for(auto childPropertyMap : childPropertyMaps)
+    for(PropertyMapCP childPropertyMap : childPropertyMaps)
         {
         if (childPropertyMap->IsUnmapped ())
             continue;
@@ -310,7 +310,7 @@ ECSqlColumnInfo&& structFieldColumnInfo
         ECSqlColumnInfo childColumnInfo = ECSqlColumnInfo::CreateChild (newStructField->GetColumnInfo (), childPropertyMap->GetProperty ());
 
         std::unique_ptr<ECSqlField> childField = nullptr;
-        if (auto childStructPropMap = dynamic_cast<PropertyMapStructCP>(childPropertyMap))
+        if (PropertyMapStructCP childStructPropMap = dynamic_cast<PropertyMapStructCP>(childPropertyMap))
             {
             status = CreateStructMemberFields (childField, sqlColumnIndex, ctx, *childStructPropMap, move (childColumnInfo));
             if ( !status.IsSuccess())
@@ -320,7 +320,7 @@ ECSqlColumnInfo&& structFieldColumnInfo
             {           
             if (childPropertyMap->GetProperty().GetIsPrimitive())
                 {          
-                auto primitiveType = childPropertyMap->GetProperty().GetAsPrimitiveProperty()->GetType();
+                PrimitiveType primitiveType = childPropertyMap->GetProperty().GetAsPrimitiveProperty()->GetType();
                 status = CreatePrimitiveField(childField, sqlColumnIndex, ctx, move (childColumnInfo), nullptr, primitiveType);
                 }
             if (childPropertyMap->GetProperty().GetIsStruct())
@@ -329,16 +329,20 @@ ECSqlColumnInfo&& structFieldColumnInfo
                 }
             else if (childPropertyMap->GetProperty().GetIsArray())
                 {          
-                auto arrayProperty = childPropertyMap->GetProperty().GetAsArrayProperty();
+                ArrayECPropertyCP arrayProperty = childPropertyMap->GetProperty().GetAsArrayProperty();
                 if (arrayProperty->GetKind() == ArrayKind::ARRAYKIND_Primitive)
                     {
-                    auto primitiveType = arrayProperty->GetPrimitiveElementType();
+                    PrimitiveType primitiveType = arrayProperty->GetPrimitiveElementType();
                     status = CreatePrimitiveArrayField(childField, sqlColumnIndex, ctx, move (childColumnInfo), nullptr, primitiveType);
                     }
                 else
-                    {
                     status = CreateStructArrayField(childField, sqlColumnIndex, ctx, move(childColumnInfo), *childPropertyMap);
-                    }
+                }
+            else if (childPropertyMap->GetProperty().GetIsNavigation())
+                {
+                //WIP_NAVPROP Not implemented yet
+                BeAssert(false && "NavProps not implemented yet.");
+                return ECSqlStatus::Error;
                 }
             }
 

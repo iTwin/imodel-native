@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/ECSqlColumnInfo.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -530,7 +530,7 @@ ECTypeDescriptor ECSqlColumnInfo::DetermineDataType (ECPropertyCR ecProperty)
         return ECTypeDescriptor::CreatePrimitiveTypeDescriptor (ecProperty.GetAsPrimitiveProperty ()->GetType ());
     else if (ecProperty.GetIsStruct ())
         return ECTypeDescriptor::CreateStructTypeDescriptor ();
-    else
+    else if (ecProperty.GetIsArray())
         {
         auto arrayProp = ecProperty.GetAsArrayProperty ();
         if (arrayProp->GetKind () == ARRAYKIND_Primitive)
@@ -538,6 +538,15 @@ ECTypeDescriptor ECSqlColumnInfo::DetermineDataType (ECPropertyCR ecProperty)
         else
             return ECTypeDescriptor::CreateStructArrayTypeDescriptor ();
         }
+    else if (ecProperty.GetIsNavigation())
+        {
+        //WIP_NAVPROP Not implemented yet
+        BeAssert(false && "NavProps not implemented. Need ECTypeDEscriptor and ValueKind for it");
+        return ECTypeDescriptor();
+        }
+
+    BeAssert(false && "Unhandled ECProperty type. Adjust code to new ECProperty type");
+    return ECTypeDescriptor();
     }
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

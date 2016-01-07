@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/ECSqlPropertyNameExpPreparer.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -51,8 +51,6 @@ ECSqlStatus ECSqlPropertyNameExpPreparer::Prepare(NativeSqlBuilder::List& native
     if (!NeedsPreparation(currentScope, propMap))
         return ECSqlStatus::Success;
 
-
-    const ECSqlType currentScopeECSqlType = currentScope.GetECSqlType();
     //in SQLite table aliases are only allowed for SELECT statements
     Utf8String classIdentifier = nullptr;
     auto resolveClassIdentifier = [&] () 
@@ -78,6 +76,14 @@ ECSqlStatus ECSqlPropertyNameExpPreparer::Prepare(NativeSqlBuilder::List& native
         return ECSqlStatus::Success;
         };
 
+    const ECSqlType currentScopeECSqlType = currentScope.GetECSqlType();
+    NavigationPropertyMap const* navPropMap = propMap.GetProperty().GetIsNavigation() ? static_cast<NavigationPropertyMap const*> (&propMap) : nullptr;
+    if (!navPropMap->CanOnlyHaveOneRelatedInstance())
+        {
+        ctx.GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "NavigationProperties can only be used in ECSQL when they can only point to a single related instance..");
+        return ECSqlStatus::InvalidECSql;
+        }
+
     if (currentScopeECSqlType == ECSqlType::Select)
         {
         classIdentifier = exp->GetClassRefExp()->GetId().c_str();
@@ -102,19 +108,18 @@ ECSqlStatus ECSqlPropertyNameExpPreparer::Prepare(NativeSqlBuilder::List& native
 // @bsimethod                                    Krischan.Eberle                    01/2014
 //+---------------+---------------+---------------+---------------+---------------+--------
 //static
-bool ECSqlPropertyNameExpPreparer::NeedsPreparation (ECSqlPrepareContext::ExpScope const& currentScope, PropertyMapCR propertyMap)
+bool ECSqlPropertyNameExpPreparer::NeedsPreparation(ECSqlPrepareContext::ExpScope const& currentScope, PropertyMapCR propertyMap)
     {
-    const auto currentScopeECSqlType = currentScope.GetECSqlType ();
+    const auto currentScopeECSqlType = currentScope.GetECSqlType();
 
     //Property maps to virtual column which can mean that the exp doesn't need to be translated.
-    if (propertyMap.IsVirtual () || (!propertyMap.IsMappedToPrimaryTable() && currentScopeECSqlType != ECSqlType::Select))
+    if (propertyMap.IsVirtual() || (!propertyMap.IsMappedToPrimaryTable() && currentScopeECSqlType != ECSqlType::Select))
         {
         //In INSERT statements, virtual columns are always ignored
         if (currentScopeECSqlType == ECSqlType::Insert)
             return false;
 
-        const auto expType = currentScope.GetExp ().GetType ();
-        switch (expType)
+        switch (currentScope.GetExp().GetType())
             {
                 case Exp::Type::AssignmentList: //UPDATE SET clause
                 case Exp::Type::OrderBy:

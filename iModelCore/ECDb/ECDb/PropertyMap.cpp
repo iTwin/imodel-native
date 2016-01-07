@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/PropertyMap.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -136,7 +136,7 @@ PropertyMapPtr PropertyMap::CreateAndEvaluateMapping (ECPropertyCR ecProperty, E
         return PropertyMapStruct::Create(ecProperty, ecDbMap, propertyAccessString, primaryTable, parentPropertyMap); // The individual properties get their own binding, but we need a placeholder for the overall struct
 
     BeAssert(ecProperty.GetIsNavigation());
-    return new NavigationPropertyMap(ecProperty, propertyAccessString, primaryTable, parentPropertyMap);
+    return new NavigationPropertyMap(ecProperty, ecDbMap, propertyAccessString, primaryTable, parentPropertyMap);
     }
 
 //---------------------------------------------------------------------------------------
@@ -176,56 +176,22 @@ bool PropertyMap::_IsSystemPropertyMap () const
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus PropertyMap::_Save(ECDbClassMapInfo & classMapInfo) const
     {
-    auto& children = GetChildren ();
-    if (children.IsEmpty ())
-        {
-        std::vector<ECDbSqlColumn const*> columns;
-        GetColumns (columns);
-        if (columns.size () == 0)
-            return SUCCESS;
-
-        if (columns.size () > 1)
-            {
-            BeAssert (false && "Overide this funtion for multicolumn mapping");
-            return ERROR;
-            }
-
-        auto mapInfo = classMapInfo.CreatePropertyMap (GetRoot ().GetProperty ().GetId (), Utf8String (GetPropertyAccessString ()).c_str (), *columns.at (0));
-        if (mapInfo != nullptr)
-            m_propertyPathId = mapInfo->GetPropertyPath ().GetId ();
-        else
-            return ERROR;
-
+    std::vector<ECDbSqlColumn const*> columns;
+    GetColumns(columns);
+    if (columns.size() == 0)
         return SUCCESS;
-        }
 
-    for (auto& child : children)
+    if (columns.size() > 1)
         {
-        if (SUCCESS != child->Save (classMapInfo))
-            return ERROR;
-        }
-
-    return SUCCESS;
-    }
-
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    affan.khan      01/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus PropertyMap::_Load(ECDbClassMapInfo const& classMapInfo)
-    {
-    auto& children = GetChildren ();
-    if (children.IsEmpty ())
-        {
-        BeAssert (false && "This funtion must be overriden in derived class");
+        BeAssert(false && "Overide this funtion for multicolumn mapping");
         return ERROR;
         }
 
-    for (auto child : children)
-        {
-        if (SUCCESS != const_cast<PropertyMap*>(child)->Load (classMapInfo))
-            return ERROR;
-        }
+    ECDbPropertyMapInfo* mapInfo = classMapInfo.CreatePropertyMap(GetRoot().GetProperty().GetId(), GetPropertyAccessString(), *columns.at(0));
+    if (mapInfo == nullptr)
+        return ERROR;
 
+    m_propertyPathId = mapInfo->GetPropertyPath().GetId();
     return SUCCESS;
     }
 
@@ -634,6 +600,34 @@ BentleyStatus PropertyMapStruct::_FindOrCreateColumnsInTable(SchemaImportContext
     return SUCCESS;
     }
 
+/*---------------------------------------------------------------------------------------
+* @bsimethod                                                    affan.khan      01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus PropertyMapStruct::_Load(ECDbClassMapInfo const& classMapInfo)
+    {
+    for (PropertyMap const* child : GetChildren())
+        {
+        if (SUCCESS != const_cast<PropertyMap*>(child)->Load(classMapInfo))
+            return ERROR;
+        }
+
+    return SUCCESS;
+    }
+
+
+/*---------------------------------------------------------------------------------------
+* @bsimethod                                                    affan.khan      01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus PropertyMapStruct::_Save(ECDbClassMapInfo& classMapInfo) const
+    {
+    for (PropertyMap const* child : GetChildren())
+        {
+        if (SUCCESS != child->Save(classMapInfo))
+            return ERROR;
+        }
+
+    return SUCCESS;
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Affan.Khan     09/2013
@@ -957,7 +951,6 @@ PropertyMapPrimitiveArray::PropertyMapPrimitiveArray (ECPropertyCR ecProperty, U
     m_primitiveArrayEnabler = primitiveArrayPersistenceClass->GetDefaultStandaloneEnabler();
     }
 
-
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    casey.mullen      11/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -970,14 +963,70 @@ Utf8String PropertyMapPrimitiveArray::_ToString() const
                             GetProperty().GetName().c_str(), ExpHelper::ToString(arrayProperty->GetPrimitiveElementType()), m_columnInfo.GetName());
     }
 
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                      12/2015
 //---------------------------------------------------------------------------------------
-NavigationPropertyMap::NavigationPropertyMap(ECN::ECPropertyCR prop, Utf8CP propertyAccessString, ECDbSqlTable const* primaryTable, PropertyMapCP parentPropertyMap)
+NavigationPropertyMap::NavigationPropertyMap(ECN::ECPropertyCR prop, ECDbMapCR ecdbMap, Utf8CP propertyAccessString, ECDbSqlTable const* primaryTable, PropertyMapCP parentPropertyMap)
     : PropertyMap(prop, propertyAccessString, primaryTable, parentPropertyMap), m_navigationProperty(prop.GetAsNavigationPropertyCP())
     {
     BeAssert(prop.GetIsNavigation());
+
+    IClassMap const* relClassMap = ecdbMap.GetClassMap(*m_navigationProperty->GetRelationshipClass(), true);
+    BeAssert(relClassMap != nullptr && relClassMap->IsRelationshipClassMap());
+    m_relClassMap = static_cast<RelationshipClassMap const*> (relClassMap);
     }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                 Krischan.Eberle                      01/2016
+//---------------------------------------------------------------------------------------
+NativeSqlBuilder::List NavigationPropertyMap::_ToNativeSql(Utf8CP classIdentifier, ECSqlType ecsqlType, bool wrapInParentheses) const
+    {
+    RelationshipClassMap::ConstraintMap const& constraintMap = m_relClassMap->GetConstraintMap(GetConstraintEnd());
+
+    NativeSqlBuilder::List sqlSnippets = constraintMap.GetECInstanceIdPropMap()->ToNativeSql(classIdentifier, ecsqlType, wrapInParentheses);
+
+    PropertyMapCP classIdPropMap = constraintMap.GetECClassIdPropMap();
+    if (!classIdPropMap->IsVirtual())
+        {
+        NativeSqlBuilder::List classIdSnippets = classIdPropMap->ToNativeSql(classIdentifier, ecsqlType, wrapInParentheses);
+        sqlSnippets.insert(sqlSnippets.end(), classIdSnippets.begin(), classIdSnippets.end());
+        }
+
+    return std::move(sqlSnippets);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                 Krischan.Eberle                      01/2016
+//---------------------------------------------------------------------------------------
+ECRelationshipEnd NavigationPropertyMap::GetConstraintEnd() const
+    {
+    ECRelationshipClassCP relClass = m_navigationProperty->GetRelationshipClass();
+    BeAssert(relClass != nullptr);
+    return m_navigationProperty->GetDirection() == ECRelatedInstanceDirection::Forward ? ECRelationshipEnd::ECRelationshipEnd_Target : ECRelationshipEnd::ECRelationshipEnd_Source;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                 Krischan.Eberle                      01/2016
+//---------------------------------------------------------------------------------------
+//static
+bool NavigationPropertyMap::CanOnlyHaveOneRelatedInstance(NavigationECPropertyCR navProp)
+    {
+    ECRelationshipConstraintCR constraint = GetConstraint(navProp);
+    return constraint.GetCardinality().GetUpperLimit() <= 1;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                 Krischan.Eberle                      01/2016
+//---------------------------------------------------------------------------------------
+//static
+ECRelationshipConstraintCR NavigationPropertyMap::GetConstraint(NavigationECPropertyCR navProp)
+    {
+    ECRelationshipClassCP relClass = navProp.GetRelationshipClass();
+    BeAssert(relClass != nullptr);
+    return navProp.GetDirection() == ECRelatedInstanceDirection::Forward ? relClass->GetTarget() : relClass->GetSource();
+    }
+
 
 END_BENTLEY_SQLITE_EC_NAMESPACE
 

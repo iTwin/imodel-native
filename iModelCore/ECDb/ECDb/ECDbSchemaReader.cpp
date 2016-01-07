@@ -649,6 +649,9 @@ BentleyStatus ECDbSchemaReader::LoadECPropertiesFromDb(ECClassP& ecClass, ECClas
                 NavigationECPropertyP navProp = nullptr;
                 if (ECObjectsStatus::Success != ecClass->GetEntityClassP()->CreateNavigationProperty(navProp, propName, *relClassRaw->GetRelationshipClassCP(), direction))
                     return ERROR;
+
+                prop = navProp;
+                break;
                 }
 
                 default:

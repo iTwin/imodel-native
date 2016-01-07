@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/ECInstanceInserter.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -121,6 +121,10 @@ void ECInstanceInserter::Impl::Initialize ()
         {
         //Current time stamp props are populated by SQLite, so ignore them here.
         if (hasCurrentTimeStampProp && ecProperty == currentTimeStampProp)
+            continue;
+
+        //WIP_NAVPROP Not implemented yet
+        if (ecProperty->GetIsNavigation())
             continue;
 
         if (!m_needsCalculatedPropertyEvaluation)

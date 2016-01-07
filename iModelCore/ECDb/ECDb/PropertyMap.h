@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/PropertyMap.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -102,8 +102,8 @@ protected:
 
     virtual bool _IsECInstanceIdPropertyMap () const;
     virtual bool _IsSystemPropertyMap () const;
-    virtual BentleyStatus _Save (ECDbClassMapInfo & classMapInfo) const;
-    virtual BentleyStatus _Load(ECDbClassMapInfo const& classMapInfo);
+    virtual BentleyStatus _Save(ECDbClassMapInfo & classMapInfo) const;
+    virtual BentleyStatus _Load(ECDbClassMapInfo const& classMapInfo) { return SUCCESS; }
 
     //! For debugging and logging
     virtual Utf8String _ToString() const;
@@ -218,7 +218,6 @@ private:
     +---------------+---------------+---------------+---------------+---------------+------*/
     virtual BentleyStatus _Load(ECDbClassMapInfo const& classMapInfo) override
         {
-        
         BeAssert (m_column == nullptr);
         auto info = classMapInfo.FindPropertyMap (GetRoot ().GetProperty ().GetId (), Utf8String (GetPropertyAccessString ()).c_str ());
         if (info == nullptr)
@@ -265,14 +264,17 @@ struct PropertyMapStruct : PropertyMap
 {
 friend PropertyMapPtr PropertyMap::CreateAndEvaluateMapping(ECN::ECPropertyCR ecProperty, ECDbMapCR ecDbMap, ECN::ECClassCR rootClass, Utf8CP propertyAccessString, ECDbSqlTable const* primaryTable, PropertyMapCP parentPropertyMap);
 friend PropertyMapPtr PropertyMap::Clone(PropertyMapCR proto, ECDbSqlTable const* newContext, PropertyMap const* parentPropertyMap);
-private:
 
+private:
+    virtual void _GetColumns(std::vector<ECDbSqlColumn const*>& columns) const override;
+    virtual BentleyStatus _FindOrCreateColumnsInTable(SchemaImportContext*, ClassMap& classMap, ClassMapInfo const* classMapInfo) override;
+    virtual BentleyStatus _Load(ECDbClassMapInfo const& classMapInfo) override;
+    virtual BentleyStatus _Save(ECDbClassMapInfo & classMapInfo) const override;
 
     //! For debugging and logging
     virtual Utf8String _ToString() const override;
 
-protected:
-    PropertyMapStruct (ECN::ECPropertyCR ecProperty, Utf8CP propertyAccessString, ECDbSqlTable const* primaryTable, PropertyMapCP parentPropertyMap);
+    PropertyMapStruct(ECN::ECPropertyCR ecProperty, Utf8CP propertyAccessString, ECDbSqlTable const* primaryTable, PropertyMapCP parentPropertyMap);
     PropertyMapStruct(PropertyMapStruct const& proto, ECDbSqlTable const* primaryTable, PropertyMap const* parentPropertyMap)
         :PropertyMap(proto.GetProperty(), proto.GetPropertyAccessString(), primaryTable, parentPropertyMap)
         {
@@ -283,9 +285,6 @@ protected:
         }
 
     BentleyStatus Initialize(ECDbMapCR map);
-
-    virtual void _GetColumns(std::vector<ECDbSqlColumn const*>& columns) const override;
-    virtual BentleyStatus _FindOrCreateColumnsInTable(SchemaImportContext*, ClassMap& classMap, ClassMapInfo const* classMapInfo) override;
 
 public:
     static PropertyMapStructPtr Create (ECN::ECPropertyCR prop, ECDbMapCR ecDbMap, Utf8CP propertyAccessString, ECDbSqlTable const* primaryTable, PropertyMapCP parentPropertyMap);
@@ -388,23 +387,32 @@ public:
 //+===============+===============+===============+===============+===============+======
 struct NavigationPropertyMap : PropertyMap
     {
-    private:
-        friend PropertyMapPtr PropertyMap::CreateAndEvaluateMapping(ECN::ECPropertyCR ecProperty, ECDbMapCR ecDbMap, ECN::ECClassCR rootClass, Utf8CP propertyAccessString, ECDbSqlTable const* primaryTable, PropertyMapCP parentPropertyMap);
-        friend PropertyMapPtr PropertyMap::Clone(PropertyMapCR proto, ECDbSqlTable const* newContext, PropertyMap const* parentPropertyMap);
+private:
+    friend PropertyMapPtr PropertyMap::CreateAndEvaluateMapping(ECN::ECPropertyCR ecProperty, ECDbMapCR ecDbMap, ECN::ECClassCR rootClass, Utf8CP propertyAccessString, ECDbSqlTable const* primaryTable, PropertyMapCP parentPropertyMap);
+    friend PropertyMapPtr PropertyMap::Clone(PropertyMapCR proto, ECDbSqlTable const* newContext, PropertyMap const* parentPropertyMap);
 
-        ECN::NavigationECPropertyCP m_navigationProperty;
+    ECN::NavigationECPropertyCP m_navigationProperty;
+    RelationshipClassMap const* m_relClassMap;
 
-        virtual Utf8String _ToString() const override { return Utf8PrintfString("NavigationPropertyMap: ecProperty=%s.%s", m_ecProperty.GetClass().GetFullName(), m_ecProperty.GetName().c_str()); }
+    virtual NativeSqlBuilder::List _ToNativeSql(Utf8CP classIdentifier, ECSqlType ecsqlType, bool wrapInParentheses) const override;
+    virtual Utf8String _ToString() const override { return Utf8PrintfString("NavigationPropertyMap: ecProperty=%s.%s", m_ecProperty.GetClass().GetFullName(), m_ecProperty.GetName().c_str()); }
 
-        //BentleyStatus _FindOrCreateColumnsInTable(SchemaImportContext*, ClassMap&, ClassMapInfo const*) override;
-        //void _GetColumns(std::vector<ECDbSqlColumn const*>& columns) const;
+    //BentleyStatus _FindOrCreateColumnsInTable(SchemaImportContext*, ClassMap&, ClassMapInfo const*) override;
+    //void _GetColumns(std::vector<ECDbSqlColumn const*>& columns) const;
 
-        NavigationPropertyMap(ECN::ECPropertyCR, Utf8CP propertyAccessString, ECDbSqlTable const* primaryTable, PropertyMapCP parentPropertyMap);
-        NavigationPropertyMap(NavigationPropertyMap const& proto, ECDbSqlTable const* primaryTable, PropertyMap const* parentPropertyMap)
-            :PropertyMap(proto.GetProperty(), proto.GetPropertyAccessString(), primaryTable, parentPropertyMap), m_navigationProperty(proto.m_navigationProperty)
-            {}
-    public:
-        ~NavigationPropertyMap() {}
+    NavigationPropertyMap(ECN::ECPropertyCR, ECDbMapCR, Utf8CP propertyAccessString, ECDbSqlTable const* primaryTable, PropertyMapCP parentPropertyMap);
+    NavigationPropertyMap(NavigationPropertyMap const& proto, ECDbSqlTable const* primaryTable, PropertyMap const* parentPropertyMap)
+        :PropertyMap(proto.GetProperty(), proto.GetPropertyAccessString(), primaryTable, parentPropertyMap), m_navigationProperty(proto.m_navigationProperty)
+        {}
+
+    ECN::ECRelationshipEnd GetConstraintEnd() const;
+
+public:
+    ~NavigationPropertyMap() {}
+
+    bool CanOnlyHaveOneRelatedInstance() const { return CanOnlyHaveOneRelatedInstance(*m_navigationProperty); }
+    static bool CanOnlyHaveOneRelatedInstance(ECN::NavigationECPropertyCR);
+    static ECN::ECRelationshipConstraintCR GetConstraint(ECN::NavigationECPropertyCR);
     };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

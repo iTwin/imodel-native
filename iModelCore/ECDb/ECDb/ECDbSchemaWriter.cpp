@@ -502,9 +502,9 @@ BentleyStatus ECDbSchemaWriter::ImportECRelationshipConstraint(ECClassId relClas
             return ERROR;
 
         bvector<Utf8String> const& keyPropNames = constraintClassObj->GetKeys();
+        Utf8String keyPropJson;
         if (!keyPropNames.empty())
             {
-            Utf8String keyPropJson;
             ECDbSchemaPersistenceHelper::SerializeRelationshipKeyProperties(keyPropJson, keyPropNames);
             if (BE_SQLITE_OK != stmt->BindText(4, keyPropJson.c_str(), Statement::MakeCopy::No))
                 return ERROR;

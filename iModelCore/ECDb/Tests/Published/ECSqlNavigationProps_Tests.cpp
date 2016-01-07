@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/Published/ECSqlNavigationProps_Tests.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECSqlStatementTestFixture.h"
@@ -19,7 +19,7 @@ struct ECSqlNavigationPropertyTestFixture : ECDbTestFixture
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlNavigationPropertyTestFixture, InsertOnOneEnd_ForeignKeyMapping)
     {
-/*    ECDbR ecdb = SetupECDb("ecsqlnavprops.ecdb", BeFileName(L"ECSql_NavigationProperties.01.00.ecschema.xml"), 3, ECDb::OpenParams(Db::OpenMode::ReadWrite));
+    ECDbR ecdb = SetupECDb("ecsqlnavprops.ecdb", BeFileName(L"ECSql_NavigationProperties.01.00.ecschema.xml"), 3, ECDb::OpenParams(Db::OpenMode::ReadWrite));
 
     ECInstanceKey modelKey;
     {
@@ -30,7 +30,7 @@ TEST_F(ECSqlNavigationPropertyTestFixture, InsertOnOneEnd_ForeignKeyMapping)
     modelKey = ECInstanceKey(stmt.GetValueInt64(0), stmt.GetValueId<ECInstanceId>(1));
     ASSERT_TRUE(modelKey.IsValid());
     }
-    */
+    
     {
     /*ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO np.DgnElement(Model,Code) VALUES(?,?)"));
