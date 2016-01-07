@@ -1,0 +1,24 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<ECSchema schemaName="Generic" nameSpacePrefix="generic" version="01.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.0">
+
+    <ECSchemaReference name="dgn" version="02.00" prefix="dgn"/>
+
+    <ECEntityClass typeName="PhysicalObject" modifier="Sealed">
+        <!-- A generic PhysicalObject is used, for example, when a conversion process did not have enough information to choose anything better -->
+        <!-- NOTE: This class is marked as "Sealed" because applications should subclass PhysicalElement directly rather than subclassing generic:PhysicalObject -->
+        <BaseClass>dgn:PhysicalElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="dgn.02.00"/>
+        </ECCustomAttributes>
+    </ECEntityClass>
+
+    <ECEntityClass typeName="SpatialLocation" modifier="Sealed">
+        <!-- A generic SpatialLocation is used, for example, when a conversion process did not have enough information to choose anything better -->
+        <!-- NOTE: This class is marked as "Sealed" because applications should subclass SpatialLocationElement directly rather than subclassing generic:SpatialLocation -->
+        <BaseClass>dgn:SpatialLocationElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="dgn.02.00"/>
+        </ECCustomAttributes>
+    </ECEntityClass>
+
+</ECSchema>

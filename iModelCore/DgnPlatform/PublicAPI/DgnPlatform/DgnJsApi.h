@@ -362,7 +362,7 @@ struct JsElementGeometryBuilder : RefCountedBaseWithCreate
     ~JsElementGeometryBuilder() {}
 
 
-    void Append(JsSolidPrimitiveP solid) {if (solid && solid->GetISolidPrimitivePtr().IsValid()) m_builder->Append(*solid->GetISolidPrimitivePtr());}
+    void AppendSolidPrimitive(JsSolidPrimitiveP solid) {if (solid && solid->GetISolidPrimitivePtr().IsValid()) m_builder->Append(*solid->GetISolidPrimitivePtr());}
     void Append(JsCurvePrimitiveP curve) {if (curve && curve->GetICurvePrimitivePtr().IsValid()) m_builder->Append(*curve->GetICurvePrimitivePtr());}
     void Append(JsCurveVectorP curve) {if (curve && curve->GetCurveVectorPtr().IsValid()) m_builder->Append(*curve->GetCurveVectorPtr());}
 
