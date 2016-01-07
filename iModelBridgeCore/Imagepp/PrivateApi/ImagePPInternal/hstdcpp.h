@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PrivateApi/ImagePPInternal/hstdcpp.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //*****************************************************************************
@@ -93,6 +93,8 @@
 #include <ImagePP/all/h/HIMOnDemandMosaic.h>
 
 #include <ImagePP/all/h/HGSMemorySurfaceDescriptor.h>
+
+#include <ImagePP/all/h/HFCLocalBinStream.h>
 
 #include <ImagePPInternal/gra/ImageCommon.h>
 #include <ImagePPInternal/gra/HRAImageSampler.h>

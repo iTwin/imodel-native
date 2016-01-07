@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFDoqEditor.cpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class HRFRawLineEditor
@@ -61,8 +61,7 @@ HRFDoqEditor::~HRFDoqEditor()
 //-----------------------------------------------------------------------------
 HSTATUS HRFDoqEditor::ReadBlock(uint64_t pi_PosBlockX,
                                 uint64_t pi_PosBlockY,
-                                Byte*  po_pData,
-                                HFCLockMonitor const* pi_pSisterFileLock)
+                                Byte*  po_pData)
     {
     HPRECONDITION (po_pData != 0);
     HPRECONDITION (pi_PosBlockY >= 0);
@@ -83,15 +82,6 @@ HSTATUS HRFDoqEditor::ReadBlock(uint64_t pi_PosBlockX,
 
     if(m_nNbChannel == 1)
         {
-        // Lock the sister file if needed
-        HFCLockMonitor SisterFileLock;
-        if(pi_pSisterFileLock == 0)
-            {
-            // Get lock and synch.
-            AssignRasterFileLock(GetRasterFile(), SisterFileLock, true);
-            pi_pSisterFileLock = &SisterFileLock;
-            }
-
         if (m_pRasterFile->m_pDoqFile->GetCurrentPos() != m_Offset)
             m_pRasterFile->m_pDoqFile->SeekToPos(m_Offset);
 
@@ -99,14 +89,11 @@ HSTATUS HRFDoqEditor::ReadBlock(uint64_t pi_PosBlockX,
         uint32_t DataSize = (uint32_t)GetResolutionDescriptor()->GetBytesPerWidth();
         if (m_pRasterFile->m_pDoqFile->Read(po_pData, DataSize) != DataSize)
             goto WRAPUP;    // H_ERROR
-
-        // Unlock the sister file.
-        SisterFileLock.ReleaseKey();
         }
     else if(m_nNbChannel == 3)
         {
         if (8 == m_nbBitsPerBandPerPixel)
-            Status = Read24BitRgbBlock(pi_PosBlockX, pi_PosBlockY, po_pData, pi_pSisterFileLock);
+            Status = Read24BitRgbBlock(pi_PosBlockX, pi_PosBlockY, po_pData);
         else
             goto WRAPUP; // H_ERROR //TODO : tko
         }
@@ -128,8 +115,7 @@ WRAPUP:
 
 HSTATUS HRFDoqEditor::Read24BitRgbBlock(uint64_t pi_PosBlockX,
                                         uint64_t pi_PosBlockY,
-                                        Byte*  po_pData,
-                                        HFCLockMonitor const* pi_pSisterFileLock)
+                                        Byte*  po_pData)
     {
     HPRECONDITION(po_pData != 0);
     HPRECONDITION(m_AccessMode.m_HasReadAccess);
@@ -147,15 +133,6 @@ HSTATUS HRFDoqEditor::Read24BitRgbBlock(uint64_t pi_PosBlockX,
     m_pRedLineBuffer = new Byte[m_LineWidth];
     m_pGreenLineBuffer = new Byte[m_LineWidth];
     m_pBlueLineBuffer = new Byte[m_LineWidth];
-
-    // Lock the sister file
-    HFCLockMonitor SisterFileLock;
-    if(pi_pSisterFileLock == 0)
-        {
-        // Lock the file.
-        AssignRasterFileLock(GetRasterFile(), SisterFileLock, true);
-        pi_pSisterFileLock = &SisterFileLock;
-        }
 
     if (GetResolutionDescriptor()->GetScanlineOrientation().IsUpper())
         {
@@ -195,8 +172,6 @@ HSTATUS HRFDoqEditor::Read24BitRgbBlock(uint64_t pi_PosBlockX,
             goto WRAPUP;
         }
 
-    SisterFileLock.ReleaseKey();
-
     if (GetResolutionDescriptor()->GetScanlineOrientation().IsLeft())
         {
         for (PixelIndex = 0; PixelIndex < m_LineWidth; PixelIndex++)
@@ -231,8 +206,7 @@ WRAPUP:
 //-----------------------------------------------------------------------------
 HSTATUS HRFDoqEditor::WriteBlock(uint64_t     pi_PosBlockX,
                                  uint64_t     pi_PosBlockY,
-                                 const Byte*  pi_pData,
-                                 HFCLockMonitor const* pi_pSisterFileLock)
+                                 const Byte*  pi_pData)
     {
     HPRECONDITION (m_AccessMode.m_HasWriteAccess);
     HPRECONDITION (pi_pData != 0);

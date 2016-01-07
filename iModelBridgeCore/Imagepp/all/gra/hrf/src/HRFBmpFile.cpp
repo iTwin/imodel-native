@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFBmpFile.cpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class HRFBmpFile
@@ -348,9 +348,6 @@ bool HRFBmpCreator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
     BmpBitMasksHeader       BitMasks;
     HAutoPtr<HFCBinStream>  pFile;
 
-    (const_cast<HRFBmpCreator*>(this))->SharingControlCreate(pi_rpURL);
-    HFCLockMonitor SisterFileLock(GetLockManager());
-
     // Open the BMP File & place file pointer at the start of the file
     pFile = HFCBinStream::Instanciate(pi_rpURL, pi_Offset, HFC_READ_ONLY | HFC_SHARE_READ_WRITE);
 
@@ -444,11 +441,6 @@ bool HRFBmpCreator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
     bResult = true;
 
 WRAPUP:
-    SisterFileLock.ReleaseKey();
-
-    HASSERT(!(const_cast<HRFBmpCreator*>(this))->m_pSharingControl->IsLocked());
-    (const_cast<HRFBmpCreator*>(this))->m_pSharingControl = 0;
-
     return bResult;
     }
 
@@ -750,9 +742,6 @@ bool HRFBmpFile::Open()
         // Open the actual bmp file.
         m_pBmpFile = HFCBinStream::Instanciate(GetURL(), m_Offset, GetPhysicalAccessMode(), 0, true);
 
-        // This creates the sister file for file sharing control if necessary.
-        SharingControlCreate();
-
         // Initialisation of file struct.
         if (!GetFileHeaderFromFile() ||
             !GetBmpInfoHeaderFromFile())
@@ -958,9 +947,6 @@ void HRFBmpFile::SaveBmpFile(bool pi_CloseFile)
                 SaveHeader = true;
                 }
 
-            // Lock the sister file for the SetPalette operation
-            HFCLockMonitor SisterFileLock(GetLockManager());
-
             if(pPageDescriptor->GetResolutionDescriptor(0)->PaletteHasChanged())
                 {
                 m_pBmpFile->SeekToPos(54 + m_BmpFileHeaderOffset);
@@ -981,9 +967,6 @@ void HRFBmpFile::SaveBmpFile(bool pi_CloseFile)
                 }
 
             m_pBmpFile->Flush();
-
-            // Unlock the sister file.
-            SisterFileLock.ReleaseKey();
             }
 
         if(pi_CloseFile)
@@ -1022,9 +1005,6 @@ bool HRFBmpFile::Create()
     {
     // Open the file.
     m_pBmpFile = HFCBinStream::Instanciate(GetURL(), GetAccessMode(), 0, true);
-
-    // This creates the sister file for file sharing control if necessary.
-    SharingControlCreate();
 
     m_IsOpen = true;
 
@@ -1276,9 +1256,6 @@ bool HRFBmpFile::GetFileHeaderFromFile()
     {
     HPRECONDITION(m_pBmpFile != 0);
 
-    // Lock the sister file for the getFileHeaderFromFile method
-    HFCLockMonitor SisterFileLock(GetLockManager());
-
     if (m_pBmpFile->Read(&m_BmpFileHeader.m_Type, sizeof m_BmpFileHeader.m_Type) != sizeof m_BmpFileHeader.m_Type)
         return false; // Error
 
@@ -1302,9 +1279,6 @@ bool HRFBmpFile::GetFileHeaderFromFile()
         m_pBmpFile->Read(&m_BmpFileHeader.m_OffBitsToData, sizeof m_BmpFileHeader.m_OffBitsToData)   != sizeof m_BmpFileHeader.m_OffBitsToData)
         return false; // Error
 
-    // Unlock the sister file
-    SisterFileLock.ReleaseKey();
-
     return true; // No Errors
     }
 
@@ -1317,17 +1291,11 @@ void HRFBmpFile::SetFileHeaderToFile()
     {
     HPRECONDITION(m_pBmpFile != 0);
 
-    // Lock the sister file for the SetFileHeadertoFile method
-    HFCLockMonitor SisterFileLock(GetLockManager());
-
     m_pBmpFile->Write(&m_BmpFileHeader.m_Type,          sizeof m_BmpFileHeader.m_Type);
     m_pBmpFile->Write(&m_BmpFileHeader.m_FileSize,      sizeof m_BmpFileHeader.m_FileSize);
     m_pBmpFile->Write(&m_BmpFileHeader.m_Reserved1,     sizeof m_BmpFileHeader.m_Reserved1);
     m_pBmpFile->Write(&m_BmpFileHeader.m_Reserved2,     sizeof m_BmpFileHeader.m_Reserved2);
     m_pBmpFile->Write(&m_BmpFileHeader.m_OffBitsToData, sizeof m_BmpFileHeader.m_OffBitsToData);
-
-    // Unlock the sister file.
-    SisterFileLock.ReleaseKey();
     }
 
 //-----------------------------------------------------------------------------
@@ -1338,9 +1306,6 @@ void HRFBmpFile::SetFileHeaderToFile()
 bool HRFBmpFile::GetBmpInfoHeaderFromFile()
     {
     HPRECONDITION(m_pBmpFile != 0);
-
-    // Lock the sister file for the GetBmpInfoHeaderFromFile method
-    HFCLockMonitor SisterFileLock(GetLockManager());
 
     m_pBmpFile->Read(&m_BmpInfo.m_BmpInfoHeader.m_StructSize,    sizeof m_BmpInfo.m_BmpInfoHeader.m_StructSize);
 
@@ -1412,9 +1377,6 @@ bool HRFBmpFile::GetBmpInfoHeaderFromFile()
 
     GetPaletteFromFile();
 
-    // Unlock the sister file;
-    SisterFileLock.ReleaseKey();
-
     // NOTE: It was initially assumed that no read error could happen reading those fields
     return true; // No Errors
     }
@@ -1427,9 +1389,6 @@ bool HRFBmpFile::GetBmpInfoHeaderFromFile()
 void HRFBmpFile::SetBmpInfoHeaderToFile()
     {
     HPRECONDITION(m_pBmpFile != 0);
-
-    // Lock the sister file for the SetBmpInfoHeaderToFile method
-    HFCLockMonitor SisterFileLock(GetLockManager());
 
     m_pBmpFile->Write(&m_BmpInfo.m_BmpInfoHeader.m_StructSize,    sizeof m_BmpInfo.m_BmpInfoHeader.m_StructSize);
     m_pBmpFile->Write(&m_BmpInfo.m_BmpInfoHeader.m_Width,         sizeof m_BmpInfo.m_BmpInfoHeader.m_Width);
@@ -1453,9 +1412,6 @@ void HRFBmpFile::SetBmpInfoHeaderToFile()
         }
 
     SetPaletteToFile();
-
-    // Unlock the sister file.
-    SisterFileLock.ReleaseKey();
     }
 
 //-----------------------------------------------------------------------------
@@ -1490,9 +1446,6 @@ void HRFBmpFile::GetPaletteFromFile()
 
         m_BmpInfo.m_RgbColors = new RGBColor[maxColor];
 
-        // Lock the sister file for the GetPaletteFromFile method
-        HFCLockMonitor SisterFileLock(GetLockManager());
-
         for (uint32_t color=0; color < maxColor; color++)
             {
             m_pBmpFile->Read(&m_BmpInfo.m_RgbColors[color].m_rgbBlue,  sizeof m_BmpInfo.m_RgbColors[color].m_rgbBlue);
@@ -1503,9 +1456,6 @@ void HRFBmpFile::GetPaletteFromFile()
             else
                 m_BmpInfo.m_RgbColors[color].m_rgbReserved = 0;
             }
-
-        // Unlock the sister file
-        SisterFileLock.ReleaseKey();
         }
 
     }
@@ -1533,9 +1483,6 @@ void HRFBmpFile::SetPaletteToFile()
         else
             maxColor = m_BmpInfo.m_BmpInfoHeader.m_ClrUsed;
 
-        // Lock the sister file for the SetPaletteToFile method
-        HFCLockMonitor SisterFileLock(GetLockManager());
-
         for (uint32_t color=0; color<maxColor; color++)
             {
             m_pBmpFile->Write(&m_BmpInfo.m_RgbColors[color].m_rgbBlue,     sizeof m_BmpInfo.m_RgbColors[color].m_rgbBlue);
@@ -1543,9 +1490,6 @@ void HRFBmpFile::SetPaletteToFile()
             m_pBmpFile->Write(&m_BmpInfo.m_RgbColors[color].m_rgbRed,      sizeof m_BmpInfo.m_RgbColors[color].m_rgbRed);
             m_pBmpFile->Write(&m_BmpInfo.m_RgbColors[color].m_rgbReserved, sizeof m_BmpInfo.m_RgbColors[color].m_rgbReserved);
             }
-
-        // Unlock the sister file.
-        SisterFileLock.ReleaseKey();
         }
     }
 

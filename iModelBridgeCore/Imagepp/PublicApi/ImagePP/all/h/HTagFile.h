@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HTagFile.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -15,8 +15,6 @@
 #include "HTiffUtils.h"
 #include "HTIFFDirectory.h"
 #include "HFCURL.h"
-#include "HFCBinStreamLockManager.h"
-#include "HFCMonitor.h"
 
 BEGIN_IMAGEPP_NAMESPACE
 class HTIFFDirectory;
@@ -81,10 +79,6 @@ public:
     void                        SetAsBigEndian                 (bool pi_AsBigEndian = true);
 
     IMAGEPP_EXPORT HFCBinStream*        GetFilePtr                     () const;
-    // Returns a pointer on the HFCBinStreamLockManager object.
-    HFCBinStreamLockManager*    GetLockManager                 () const;
-
-    //HFCAccessMode               GetAccessMode                  () const;
 
     IMAGEPP_EXPORT uint32_t             NumberOfDirectory              (HTagFile::DirectoryType pi_DirType = STANDARD) const;
 
@@ -272,10 +266,6 @@ protected:
     HArrayAutoPtr<HAutoPtr<HMRDirectory64> >
     m_ppListHMRDir64;
     uint32_t                    m_ListHMRDirCount;
-
-
-    HAutoPtr<HFCBinStreamLockManager>
-    m_pLockManager;
 
     const HTagInfo&             m_rTagInfo;
 

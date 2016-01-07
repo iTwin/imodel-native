@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFVirtualEarthEditor.cpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class HRFVirtualEarthEditor
@@ -51,8 +51,7 @@ HRFVirtualEarthEditor::~HRFVirtualEarthEditor()
 //-----------------------------------------------------------------------------
 HSTATUS HRFVirtualEarthEditor::ReadBlock(uint64_t             pi_PosBlockX,
                                          uint64_t             pi_PosBlockY,
-                                         Byte*                po_pData,
-                                         HFCLockMonitor const* pi_pSisterFileLock)
+                                         Byte*                po_pData)
     {
     HPRECONDITION(m_AccessMode.m_HasReadAccess);
     HPRECONDITION(po_pData != 0);
@@ -129,8 +128,7 @@ HSTATUS HRFVirtualEarthEditor::ReadBlock(uint64_t             pi_PosBlockX,
 //-----------------------------------------------------------------------------
 HSTATUS HRFVirtualEarthEditor::WriteBlock(uint64_t pi_PosBlockX,
                                           uint64_t pi_PosBlockY,
-                                          const Byte* pi_pData,
-                                          HFCLockMonitor const* pi_pSisterFileLock)
+                                          const Byte* pi_pData)
     {
     //Virtual Earth is supported only in read only mode.
     HASSERT(false);
@@ -142,8 +140,7 @@ HSTATUS HRFVirtualEarthEditor::WriteBlock(uint64_t pi_PosBlockX,
 //-----------------------------------------------------------------------------
 HSTATUS HRFVirtualEarthEditor::WriteBlock(uint64_t pi_PosBlockX,
                                           uint64_t pi_PosBlockY,
-                                          const HFCPtr<HCDPacket>&    pi_rpPacket,
-                                          HFCLockMonitor const*       pi_pSisterFileLock)
+                                          const HFCPtr<HCDPacket>&    pi_rpPacket)
     {
     //Virtual Earth is supported only in read only mode.
     HASSERT(false);

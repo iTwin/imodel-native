@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFAdaptLineToImage.cpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -98,8 +98,7 @@ HRFAdaptLineToImage::~HRFAdaptLineToImage()
 //-----------------------------------------------------------------------------
 HSTATUS HRFAdaptLineToImage::ReadBlock(uint64_t pi_PosBlockX,
                                        uint64_t pi_PosBlockY,
-                                       Byte* po_pData,
-                                       HFCLockMonitor const* pi_pSisterFileLock)
+                                       Byte* po_pData)
     {
     HPRECONDITION (m_AccessMode.m_HasReadAccess);
     HSTATUS Status      = H_SUCCESS;
@@ -108,20 +107,9 @@ HSTATUS HRFAdaptLineToImage::ReadBlock(uint64_t pi_PosBlockX,
 
     uint32_t ImageHeight = (uint32_t)m_pResolutionDescriptor->GetHeight();
 
-    // Lock the sister file
-    HFCLockMonitor SisterFileLock;
-    if(pi_pSisterFileLock == 0)
-        {
-        // Lock the file.
-        AssignRasterFileLock(m_pTheTrueOriginalFile, SisterFileLock, true);
-        pi_pSisterFileLock = &SisterFileLock;
-        }
-
     // Read these line from file and copy their data to the output buffer
     for (uint32_t NoLine=0; NoLine < ImageHeight && (Status == H_SUCCESS); NoLine++)
-        Status = m_pAdaptedResolutionEditor->ReadBlock(0, NoLine, po_pData+(NoLine * m_ExactBytesPerImageWidth), pi_pSisterFileLock);
-
-    SisterFileLock.ReleaseKey();
+        Status = m_pAdaptedResolutionEditor->ReadBlock(0, NoLine, po_pData+(NoLine * m_ExactBytesPerImageWidth));
 
     return Status;
     }
@@ -133,10 +121,9 @@ HSTATUS HRFAdaptLineToImage::ReadBlock(uint64_t pi_PosBlockX,
 //-----------------------------------------------------------------------------
 HSTATUS HRFAdaptLineToImage::ReadBlock(uint64_t             pi_PosBlockX,
                                        uint64_t             pi_PosBlockY,
-                                       HFCPtr<HCDPacket>&   po_rpPacket,
-                                       HFCLockMonitor const* pi_pSisterFileLock)
+                                       HFCPtr<HCDPacket>&   po_rpPacket)
     {
-    return T_Super::ReadBlock(pi_PosBlockX,pi_PosBlockY,po_rpPacket,pi_pSisterFileLock);
+    return T_Super::ReadBlock(pi_PosBlockX,pi_PosBlockY,po_rpPacket);
     }
 
 //-----------------------------------------------------------------------------
@@ -146,8 +133,7 @@ HSTATUS HRFAdaptLineToImage::ReadBlock(uint64_t             pi_PosBlockX,
 //-----------------------------------------------------------------------------
 HSTATUS HRFAdaptLineToImage::ReadBlockRLE(uint64_t                 pi_PosBlockX,
                                           uint64_t                 pi_PosBlockY,
-                                          HFCPtr<HCDPacketRLE>&    po_rpPacketRLE,
-                                          HFCLockMonitor const*    pi_pSisterFileLock)
+                                          HFCPtr<HCDPacketRLE>&    po_rpPacketRLE)
     {
     HPRECONDITION(m_AccessMode.m_HasReadAccess);
     HPRECONDITION(po_rpPacketRLE->HasBufferOwnership());    // Must be owner of buffer.
@@ -167,19 +153,11 @@ HSTATUS HRFAdaptLineToImage::ReadBlockRLE(uint64_t                 pi_PosBlockX,
     pLinePacket->SetLineBuffer(0, new Byte[workBufferSize], workBufferSize, 0);
     pLinePacket->SetBufferOwnership(true);
 
-    // Lock the sister file
-    HFCLockMonitor SisterFileLock;
-    if(pi_pSisterFileLock == 0)
-        {
-        // Lock the file.
-        AssignRasterFileLock(m_pTheTrueOriginalFile, SisterFileLock, true);
-        pi_pSisterFileLock = &SisterFileLock;
-        }
 
     // Read these lines from file and copy their data to the output buffer
     for (uint32_t NoLine=0; NoLine < ImageHeight; ++NoLine)
         {
-        if(H_SUCCESS != (Status = m_pAdaptedResolutionEditor->ReadBlockRLE(0, NoLine, pLinePacket, pi_pSisterFileLock)))
+        if(H_SUCCESS != (Status = m_pAdaptedResolutionEditor->ReadBlockRLE(0, NoLine, pLinePacket)))
             break;  // We failed stop now!
 
         size_t LineDataSize = pLinePacket->GetLineDataSize(0);
@@ -195,7 +173,6 @@ HSTATUS HRFAdaptLineToImage::ReadBlockRLE(uint64_t                 pi_PosBlockX,
         memcpy(po_rpPacketRLE->GetLineBuffer(NoLine), pLinePacket->GetLineBuffer(0), LineDataSize);
         po_rpPacketRLE->SetLineDataSize(NoLine, LineDataSize);
         }
-    SisterFileLock.ReleaseKey();
 
     return Status;
     }
@@ -207,8 +184,7 @@ HSTATUS HRFAdaptLineToImage::ReadBlockRLE(uint64_t                 pi_PosBlockX,
 //-----------------------------------------------------------------------------
 HSTATUS HRFAdaptLineToImage::WriteBlock(uint64_t        pi_PosBlockX,
                                         uint64_t        pi_PosBlockY,
-                                        const Byte*     pi_pData,
-                                        HFCLockMonitor const* pi_pSisterFileLock)
+                                        const Byte*     pi_pData)
     {
     HPRECONDITION (m_AccessMode.m_HasWriteAccess || m_AccessMode.m_HasCreateAccess );
     HSTATUS Status      = H_SUCCESS;
@@ -217,23 +193,9 @@ HSTATUS HRFAdaptLineToImage::WriteBlock(uint64_t        pi_PosBlockX,
 
     uint32_t  ImageHeight = (uint32_t)m_pResolutionDescriptor->GetHeight();
 
-    // Lock the sister file
-    HFCLockMonitor SisterFileLock;
-    if(pi_pSisterFileLock == 0)
-        {
-        // Lock the file.
-        AssignRasterFileLock(m_pTheTrueOriginalFile, SisterFileLock, false);
-        pi_pSisterFileLock = &SisterFileLock;
-        }
-
     // Write these strip from file and copy their data to the output buffer
     for (uint32_t NoLine=0; NoLine < ImageHeight && (Status == H_SUCCESS); NoLine++)
-        Status = m_pAdaptedResolutionEditor->WriteBlock(0, NoLine, pi_pData+(NoLine * m_ExactBytesPerImageWidth), pi_pSisterFileLock);
-
-    m_pTheTrueOriginalFile->SharingControlIncrementCount();
-
-    // Unlock the sister file.
-    SisterFileLock.ReleaseKey();
+        Status = m_pAdaptedResolutionEditor->WriteBlock(0, NoLine, pi_pData+(NoLine * m_ExactBytesPerImageWidth));
 
     return Status;
     }
@@ -245,8 +207,7 @@ HSTATUS HRFAdaptLineToImage::WriteBlock(uint64_t        pi_PosBlockX,
 //-----------------------------------------------------------------------------
 HSTATUS HRFAdaptLineToImage::WriteBlockRLE(uint64_t              pi_PosBlockX,
                                            uint64_t              pi_PosBlockY,
-                                           HFCPtr<HCDPacketRLE>& pi_rpPacketRLE,
-                                           HFCLockMonitor const* pi_pSisterFileLock)
+                                           HFCPtr<HCDPacketRLE>& pi_rpPacketRLE)
     {
     HPRECONDITION (m_AccessMode.m_HasWriteAccess || m_AccessMode.m_HasCreateAccess );
     HSTATUS Status      = H_SUCCESS;
@@ -255,15 +216,6 @@ HSTATUS HRFAdaptLineToImage::WriteBlockRLE(uint64_t              pi_PosBlockX,
     HASSERT(m_pResolutionDescriptor->GetWidth() <= ULONG_MAX);
 
     uint32_t  ImageHeight = (uint32_t)m_pResolutionDescriptor->GetHeight();
-
-    // Lock the sister file
-    HFCLockMonitor SisterFileLock;
-    if(pi_pSisterFileLock == 0)
-        {
-        // Lock the file.
-        AssignRasterFileLock(m_pTheTrueOriginalFile, SisterFileLock, false);
-        pi_pSisterFileLock = &SisterFileLock;
-        }
 
     // Create a packet that will contains only the current line.
     HFCPtr<HCDPacketRLE> pOneLinePacketRLE(new HCDPacketRLE((uint32_t)m_pResolutionDescriptor->GetWidth(), 1));
@@ -275,13 +227,8 @@ HSTATUS HRFAdaptLineToImage::WriteBlockRLE(uint64_t              pi_PosBlockX,
         // Fill packet with current line
         pOneLinePacketRLE->SetLineBuffer(0, pi_rpPacketRLE->GetLineBuffer(NoLine), pi_rpPacketRLE->GetLineBufferSize(NoLine), pi_rpPacketRLE->GetLineDataSize(NoLine));
 
-        Status = m_pAdaptedResolutionEditor->WriteBlockRLE(0, NoLine, pOneLinePacketRLE, pi_pSisterFileLock);
+        Status = m_pAdaptedResolutionEditor->WriteBlockRLE(0, NoLine, pOneLinePacketRLE);
         }
-
-    m_pTheTrueOriginalFile->SharingControlIncrementCount();
-
-    // Unlock the sister file.
-    SisterFileLock.ReleaseKey();
 
     return Status;
     }
@@ -293,8 +240,7 @@ HSTATUS HRFAdaptLineToImage::WriteBlockRLE(uint64_t              pi_PosBlockX,
 //-----------------------------------------------------------------------------
 HSTATUS HRFAdaptLineToImage::WriteBlock(uint64_t                    pi_PosBlockX,
                                         uint64_t                    pi_PosBlockY,
-                                        const HFCPtr<HCDPacket>&    pi_rpPacket,
-                                        HFCLockMonitor const*       pi_pSisterFileLock)
+                                        const HFCPtr<HCDPacket>&    pi_rpPacket)
     {
     HPRECONDITION (m_AccessMode.m_HasWriteAccess || m_AccessMode.m_HasCreateAccess);
     HSTATUS Status = H_ERROR;

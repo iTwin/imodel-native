@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HFCMonitor.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -98,9 +98,3 @@ END_IMAGEPP_NAMESPACE
 // Define the default HFCMonitor that works on HFCExclusiveKeys
 // #include <Imagepp/all/h/HFCExclusiveKey.h>
 // typedef HFCGenericMonitor<HFCExclusiveKey> HFCMonitor;
-
-// #include "HFCBinStreamLockManager.h"
-// typedef HFCGenericMonitor<HFCBinStreamLockManager>
-// HFCLockMonitor;
-
-

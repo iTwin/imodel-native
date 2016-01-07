@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRFRasterFile.hpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Inline methods for class HRFRasterFile
@@ -243,97 +243,12 @@ inline bool HRFRasterFile::HasLookAheadByExtent(uint32_t pi_Page) const
 
 //-----------------------------------------------------------------------------
 // Public
-// Returns a pointer on the LockManager object
-//-----------------------------------------------------------------------------
-inline HFCBinStreamLockManager* HRFRasterFile::GetLockManager()
-    {
-    HPRECONDITION (m_pSharingControl != 0);
-    return m_pSharingControl->GetLockManager();
-    }
-
-
-//-----------------------------------------------------------------------------
-// Public
-// Creates an instance of the HRFSharingControl class.
-//-----------------------------------------------------------------------------
-inline void HRFRasterFile::SharingControlCreate()
-    {
-    HPRECONDITION (GetURL() != 0);
-
-    if (m_pSharingControl == 0)
-        m_pSharingControl = new HRFSisterFileSharing(GetURL(), GetAccessMode());
-    }
-
-//-----------------------------------------------------------------------------
-// Public
-// Returns true if the logical counter is desynchronized with the physical one.
-//-----------------------------------------------------------------------------
-inline bool HRFRasterFile::SharingControlNeedSynchronization()
-    {
-    HPRECONDITION (m_pSharingControl != 0);
-
-    return m_pSharingControl->NeedSynchronization();
-    }
-
-//-----------------------------------------------------------------------------
-// Public
-// Synchronizes the logical and physical counters.
-//-----------------------------------------------------------------------------
-inline void HRFRasterFile::SharingControlSynchronize()
-    {
-    HPRECONDITION (m_pSharingControl != 0);
-
-    m_pSharingControl->Synchronize();
-    }
-
-//-----------------------------------------------------------------------------
-// Public
-// Increment the physical and logical counters.
-//-----------------------------------------------------------------------------
-inline void HRFRasterFile::SharingControlIncrementCount()
-    {
-    HPRECONDITION (m_pSharingControl != 0);
-
-    m_pSharingControl->IncrementCurrentModifCount();
-    }
-
-//-----------------------------------------------------------------------------
-// Public
-// Return a pointer on the HRFSharingControl instance.
-//-----------------------------------------------------------------------------
-inline HRFSharingControl* HRFRasterFile::GetSharingControl()
-    {
-    return (m_pSharingControl);
-    }
-
-//-----------------------------------------------------------------------------
-// Public
-// Return true if the sharing control file has been locked.
-//-----------------------------------------------------------------------------
-inline bool HRFRasterFile::SharingControlIsLocked()
-    {
-    HPRECONDITION (m_pSharingControl != 0);
-
-    return m_pSharingControl->IsLocked();
-    }
-
-
-//-----------------------------------------------------------------------------
-// Public
 // IsOriginalRasterDataStorage
 //-----------------------------------------------------------------------------
 inline bool HRFRasterFile::IsOriginalRasterDataStorage() const
     {
     return true;
     }
-
-
-//-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
-// The rest of this file is the implentation of the sharing control for the
-// Creator struct.
-//-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
 // Public
@@ -345,38 +260,6 @@ inline bool HRFRasterFileCreator::GetRelatedURLs(const HFCPtr<HFCURL>& pi_rpURL,
                                                   ListOfRelatedURLs&    pio_rRelatedURLs) const
     {
     return false;
-    }
-
-//-----------------------------------------------------------------------------
-// Public
-// Creates an instance of the HRFSharingControl class.
-//-----------------------------------------------------------------------------
-inline void HRFRasterFileCreator::SharingControlCreate(const HFCPtr<HFCURL>& pi_pURL)
-    {
-    HPRECONDITION (pi_pURL != 0);
-
-    if (m_pSharingControl == 0)
-        m_pSharingControl = new HRFSisterFileSharing(pi_pURL, HFC_READ_ONLY | HFC_SHARE_READ_WRITE);
-    }
-
-//-----------------------------------------------------------------------------
-// Public
-// Return a pointer on the HRFSharingControl instance.
-//-----------------------------------------------------------------------------
-inline HRFSharingControl* HRFRasterFileCreator::GetSharingControl() const
-    {
-    return (m_pSharingControl);
-    }
-
-//-----------------------------------------------------------------------------
-// Public
-// Return a pointer on the HFCBinStreamLockManager instance.
-//-----------------------------------------------------------------------------
-inline HFCBinStreamLockManager* HRFRasterFileCreator::GetLockManager() const
-    {
-    HPRECONDITION (m_pSharingControl != 0);
-
-    return m_pSharingControl->GetLockManager();
     }
 
 //-----------------------------------------------------------------------------

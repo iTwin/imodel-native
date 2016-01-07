@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFTiffStripEditor.cpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class HRFTiffStripEditor
@@ -69,26 +69,15 @@ HRFTiffStripEditor::~HRFTiffStripEditor()
 //-----------------------------------------------------------------------------
 HSTATUS HRFTiffStripEditor::ReadBlock(uint64_t pi_PosBlockX,
                                         uint64_t pi_PosBlockY,
-                                        Byte*  po_pData,
-                                        HFCLockMonitor const* pi_pSisterFileLock)
+                                        Byte*  po_pData)
     {
     HPRECONDITION (m_AccessMode.m_HasReadAccess);
     HPRECONDITION (po_pData != 0);
     HPRECONDITION (m_pResolutionDescriptor->GetBlockType() == HRFBlockType::STRIP);
     HSTATUS Status = H_SUCCESS;
-
-
+    
     if (!GetAccessMode().m_HasCreateAccess)
         {
-        // Lock the sister file
-        HFCLockMonitor SisterFileLock;
-        if(pi_pSisterFileLock == 0)
-            {
-            // Lock the file.
-            AssignRasterFileLock(GetRasterFile(), SisterFileLock, true);
-            pi_pSisterFileLock = &SisterFileLock;
-            }
-
         // Select the page and the resolution
         RASTER_FILE->SetImageInSubImage (m_IndexOfPage+m_Resolution);
 
@@ -97,9 +86,6 @@ HSTATUS HRFTiffStripEditor::ReadBlock(uint64_t pi_PosBlockX,
         HASSERT_X64(StripIndex < ULONG_MAX);
 
         Status = TIFF_FILE->StripRead(po_pData, (StripIndex <= ULONG_MAX) ? (uint32_t)StripIndex : 0);
-
-        // Unlock the sister file.
-        SisterFileLock.ReleaseKey();
         }
     else
         Status = H_NOT_FOUND;
@@ -114,8 +100,7 @@ HSTATUS HRFTiffStripEditor::ReadBlock(uint64_t pi_PosBlockX,
 //-----------------------------------------------------------------------------
 HSTATUS HRFTiffStripEditor::ReadBlock(uint64_t pi_PosBlockX,
                                       uint64_t pi_PosBlockY,
-                                      HFCPtr<HCDPacket>&      po_rpPacket,
-                                      HFCLockMonitor const*   pi_pSisterFileLock)
+                                      HFCPtr<HCDPacket>& po_rpPacket)
 
     {
     HPRECONDITION (m_AccessMode.m_HasReadAccess);
@@ -125,15 +110,6 @@ HSTATUS HRFTiffStripEditor::ReadBlock(uint64_t pi_PosBlockX,
 
     if (!GetAccessMode().m_HasCreateAccess)
         {
-        // Lock the sister file
-        HFCLockMonitor SisterFileLock;
-        if(pi_pSisterFileLock == 0)
-            {
-            // Lock the file.
-            AssignRasterFileLock(GetRasterFile(), SisterFileLock, true);
-            pi_pSisterFileLock = &SisterFileLock;
-            }
-
         // Select the page and the resolution
         RASTER_FILE->SetImageInSubImage (m_IndexOfPage+m_Resolution);
 
@@ -148,9 +124,6 @@ HSTATUS HRFTiffStripEditor::ReadBlock(uint64_t pi_PosBlockX,
         HASSERT_X64(StripIndex <= ULONG_MAX);
 
         Status = TIFF_FILE->StripRead(po_rpPacket, (StripIndex < ULONG_MAX) ? (uint32_t)StripIndex : 0);
-
-        // Unlock the sister file.
-        SisterFileLock.ReleaseKey();
         }
     else
         Status = H_NOT_FOUND;
@@ -164,8 +137,7 @@ HSTATUS HRFTiffStripEditor::ReadBlock(uint64_t pi_PosBlockX,
 //-----------------------------------------------------------------------------
 HSTATUS HRFTiffStripEditor::ReadBlockRLE(uint64_t pi_PosBlockX,
                                          uint64_t pi_PosBlockY,
-                                         HFCPtr<HCDPacketRLE>&    po_rpPacketRLE,
-                                         HFCLockMonitor const*    pi_pSisterFileLock)
+                                         HFCPtr<HCDPacketRLE>&    po_rpPacketRLE)
     {
     HPRECONDITION(m_AccessMode.m_HasReadAccess);
     HPRECONDITION(po_rpPacketRLE->HasBufferOwnership());    // Must be owner of buffers.
@@ -181,7 +153,7 @@ HSTATUS HRFTiffStripEditor::ReadBlockRLE(uint64_t pi_PosBlockX,
         HFCPtr<HCDPacket> pCompressData = new HCDPacket(0,0);
 
         // Read compress data.
-        if(H_SUCCESS != (Status = ReadBlock(pi_PosBlockX, pi_PosBlockY, pCompressData, pi_pSisterFileLock)))
+        if(H_SUCCESS != (Status = ReadBlock(pi_PosBlockX, pi_PosBlockY, pCompressData)))
             return Status;
 
         // Make sure we can do the DecompressRLE
@@ -207,7 +179,7 @@ HSTATUS HRFTiffStripEditor::ReadBlockRLE(uint64_t pi_PosBlockX,
         }
 
     // Use default implementation.
-    return HRFResolutionEditor::ReadBlockRLE(pi_PosBlockX, pi_PosBlockY, po_rpPacketRLE, pi_pSisterFileLock);
+    return HRFResolutionEditor::ReadBlockRLE(pi_PosBlockX, pi_PosBlockY, po_rpPacketRLE);
     }
 
 //-----------------------------------------------------------------------------
@@ -217,21 +189,11 @@ HSTATUS HRFTiffStripEditor::ReadBlockRLE(uint64_t pi_PosBlockX,
 //-----------------------------------------------------------------------------
 HSTATUS HRFTiffStripEditor::WriteBlock(uint64_t pi_PosBlockX,
                                        uint64_t pi_PosBlockY,
-                                       const Byte* pi_pData,
-                                       HFCLockMonitor const* pi_pSisterFileLock)
+                                       const Byte* pi_pData)
     {
     HPRECONDITION (m_AccessMode.m_HasWriteAccess || m_AccessMode.m_HasCreateAccess);
     HPRECONDITION (m_pResolutionDescriptor->GetBlockType() == HRFBlockType::STRIP);
     HSTATUS Status = H_SUCCESS;
-
-    // Lock the sister file
-    HFCLockMonitor SisterFileLock;
-    if(pi_pSisterFileLock == 0)
-        {
-        // Lock the file.
-        AssignRasterFileLock(GetRasterFile(), SisterFileLock, false);
-        pi_pSisterFileLock = &SisterFileLock;
-        }
 
     // Select the page and the resolution
     RASTER_FILE->SetImageInSubImage (m_IndexOfPage+m_Resolution);
@@ -243,11 +205,7 @@ HSTATUS HRFTiffStripEditor::WriteBlock(uint64_t pi_PosBlockX,
     Status = TIFF_FILE->StripWrite(pi_pData, (StripIndex <= ULONG_MAX) ? (uint32_t)StripIndex : 0);
 
     // Update the directories.
-    GetRasterFile()->SharingControlIncrementCount();
     RASTER_FILE->SaveDescriptors();
-
-    // Unlock the sister file.
-    SisterFileLock.ReleaseKey();
 
     return Status;
     }
@@ -259,22 +217,12 @@ HSTATUS HRFTiffStripEditor::WriteBlock(uint64_t pi_PosBlockX,
 //-----------------------------------------------------------------------------
 HSTATUS HRFTiffStripEditor::WriteBlock(uint64_t                 pi_PosBlockX,
                                        uint64_t                 pi_PosBlockY,
-                                       const HFCPtr<HCDPacket>& pi_rpPacket,
-                                       HFCLockMonitor const*    pi_pSisterFileLock)
+                                       const HFCPtr<HCDPacket>& pi_rpPacket)
     {
     HPRECONDITION (pi_rpPacket != 0);
     HPRECONDITION (m_AccessMode.m_HasWriteAccess || m_AccessMode.m_HasCreateAccess);
     HPRECONDITION (m_pResolutionDescriptor->GetBlockType() == HRFBlockType::STRIP);
     HSTATUS Status = H_SUCCESS;
-
-    // Lock the sister file
-    HFCLockMonitor SisterFileLock;
-    if(pi_pSisterFileLock == 0)
-        {
-        // Lock the file.
-        AssignRasterFileLock(GetRasterFile(), SisterFileLock, false);
-        pi_pSisterFileLock = &SisterFileLock;
-        }
 
     // Select the page and the resolution
     RASTER_FILE->SetImageInSubImage (m_IndexOfPage+m_Resolution);
@@ -311,11 +259,7 @@ HSTATUS HRFTiffStripEditor::WriteBlock(uint64_t                 pi_PosBlockX,
         }
 
     // Update the directories.
-    GetRasterFile()->SharingControlIncrementCount();
     RASTER_FILE->SaveDescriptors();
-
-    // Unlock the sister file.
-    SisterFileLock.ReleaseKey();
 
     return Status;
     }
@@ -327,8 +271,7 @@ HSTATUS HRFTiffStripEditor::WriteBlock(uint64_t                 pi_PosBlockX,
 //-----------------------------------------------------------------------------
 HSTATUS HRFTiffStripEditor::WriteBlockRLE(uint64_t pi_PosBlockX,
                                           uint64_t pi_PosBlockY,
-                                          HFCPtr<HCDPacketRLE>& pi_rpPacketRLE,
-                                          HFCLockMonitor const* pi_pSisterFileLock)
+                                          HFCPtr<HCDPacketRLE>& pi_rpPacketRLE)
     {
     HPRECONDITION (pi_rpPacketRLE != 0);
     HPRECONDITION (m_AccessMode.m_HasWriteAccess || m_AccessMode.m_HasCreateAccess);
@@ -336,15 +279,5 @@ HSTATUS HRFTiffStripEditor::WriteBlockRLE(uint64_t pi_PosBlockX,
 
     // For now always use default implementation.
     // Problem: Htiff use internal compress routines. See m_pCompressFunc in HTIFFFileCodec.cpp
-    return HRFResolutionEditor::WriteBlockRLE(pi_PosBlockX, pi_PosBlockY, pi_rpPacketRLE, pi_pSisterFileLock);
-    }
-
-//-----------------------------------------------------------------------------
-// public
-// OnSynchronizedSharingControl
-//-----------------------------------------------------------------------------
-void HRFTiffStripEditor::OnSynchronizedSharingControl()
-    {
-    // Reload directories if necessary
-    RASTER_FILE->ReloadDescriptors();
+    return HRFResolutionEditor::WriteBlockRLE(pi_PosBlockX, pi_PosBlockY, pi_rpPacketRLE);
     }

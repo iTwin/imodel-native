@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFSpotCAPFile.cpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -211,8 +211,6 @@ bool HRFSpotCAPFile::Create()
     // Open the file
     m_pFilFile = HFCBinStream::Instanciate(this->GetURL(), GetAccessMode(), 0, true);
 
-    SharingControlCreate();
-
     m_IsOpen = true;
 
     return true;
@@ -236,10 +234,6 @@ bool HRFSpotCAPCreator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
     char*                       ValueStartPos;
     HFCPtr<HFCURL>              ImagFileUrl;
 
-
-    (const_cast<HRFSpotCAPCreator*>(this))->SharingControlCreate(pi_rpURL);
-    HFCLockMonitor SisterFileLock (GetLockManager());
-
     // Open the Spot Scenes Records File : CD_DIR.FIL
     pFile = HFCBinStream::Instanciate(pi_rpURL, HFC_READ_ONLY | HFC_SHARE_READ_ONLY);
     if (pFile == 0 || pFile->GetLastException() != 0)
@@ -256,11 +250,6 @@ bool HRFSpotCAPCreator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
     ValueStartPos = strstr((char*)Header, "SCENE");
     if (ValueStartPos != NULL)
         {
-        // Unlock the sister file
-        SisterFileLock.ReleaseKey();
-        HASSERT(!(const_cast<HRFSpotCAPCreator*>(this))->m_pSharingControl->IsLocked());
-        (const_cast<HRFSpotCAPCreator*>(this))->m_pSharingControl = 0;
-
         ValueStartPos += 5;
         HAutoPtr<char> SceneNumber;
         SceneNumber = new char[3];
@@ -296,11 +285,6 @@ bool HRFSpotCAPCreator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
             // Create related files
             ImagFileUrl = new HFCURLFile(FileName + WString(L".dat"));
 
-
-            // This creates the sister file for file sharing control if necessary.
-            (const_cast<HRFSpotCAPCreator*>(this))->ImagSharingControlCreate(ImagFileUrl);
-            HFCLockMonitor SisterFileLock(GetImagLockManager());
-
             pImagDirectoryFile = HFCBinStream::Instanciate(ImagFileUrl, HFC_READ_ONLY | HFC_SHARE_READ_ONLY);
 
             if (pImagDirectoryFile != 0 && pImagDirectoryFile->GetLastException() == 0)
@@ -318,9 +302,6 @@ bool HRFSpotCAPCreator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
                     Result = true;
                     }
                 }
-            SisterFileLock.ReleaseKey();
-            HASSERT(!(const_cast<HRFSpotCAPCreator*>(this))->m_pImagSharingControl->IsLocked());
-            (const_cast<HRFSpotCAPCreator*>(this))->m_pImagSharingControl = 0;
             }
         }
     //we could be directly opening the IMAG_XX.DAT file
@@ -338,11 +319,6 @@ bool HRFSpotCAPCreator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
             //at least for this record
             Result = true;
             }
-
-        // Unlock the sister file
-        SisterFileLock.ReleaseKey();
-        HASSERT(!(const_cast<HRFSpotCAPCreator*>(this))->m_pSharingControl->IsLocked());
-        (const_cast<HRFSpotCAPCreator*>(this))->m_pSharingControl = 0;
         }
 
 WRAPUP:
@@ -494,11 +470,7 @@ bool HRFSpotCAPFile::Open()
         {
         m_pFilFile = HFCBinStream::Instanciate(GetURL(), m_Offset, HFC_READ_ONLY | HFC_SHARE_READ_ONLY, 0, true);
 
-        // This creates the sister file for file sharing control if necessary.
-        SharingControlCreate();
-
         // Initialization of file struct.
-        HFCLockMonitor SisterFileLock(GetLockManager());
         bool IsHeaderFileRead = false;
 
         m_IsFilHeader = IsFilHeader();
@@ -524,9 +496,6 @@ bool HRFSpotCAPFile::Open()
             {
             //do nothing. that file is not essential
             }
-
-        SisterFileLock.ReleaseKey();
-
         m_IsOpen = true;
         }
 
@@ -621,12 +590,6 @@ bool HRFSpotCAPFile::ReadImagHeader()
         //open the IMAG_XX.DAT file
         m_pImagFile = HFCBinStream::Instanciate(pImagFileURL, HFC_READ_ONLY | HFC_SHARE_READ_ONLY, 0, true);
 
-        // This creates the sister file for file sharing control if necessary.
-        ImagSharingControlCreate(pImagFileURL);
-
-        // Initialisation of file struct.
-        HFCLockMonitor SisterFileLock(GetImagLockManager());
-
         Result = true;
 
         m_pImagFile->SeekToPos(8);//9
@@ -672,10 +635,6 @@ bool HRFSpotCAPFile::ReadImagHeader()
             m_ImgHeader.GreenChannel = 0;
             m_ImgHeader.BlueChannel = 0;
             }
-
-        // Unlock the sister file
-        SisterFileLock.ReleaseKey();
-
         }
     else
         {
@@ -784,12 +743,6 @@ bool HRFSpotCAPFile::ReadLeadHeader()
 
     //open the LEAD_XX.DAT file
     m_pLeadFile = HFCBinStream::Instanciate(pLeadFileURL, HFC_READ_ONLY | HFC_SHARE_READ_ONLY);
-
-    // This creates the sister file for file sharing control if necessary.
-    LeadSharingControlCreate(pLeadFileURL);
-
-    // Initialisation of file struct.
-    HFCLockMonitor SisterFileLock(GetLeadLockManager());
 
     if(m_pLeadFile != 0 && m_pLeadFile->GetLastException() == 0)
         {
@@ -908,8 +861,6 @@ bool HRFSpotCAPFile::ReadLeadHeader()
 
         }
 
-    SisterFileLock.ReleaseKey();
-
     return Result;
     }
 
@@ -959,11 +910,6 @@ bool HRFSpotCAPFile::ReadVoldHeader()
     //open the VOLD_XX.DAT file
     m_pVoldFile = HFCBinStream::Instanciate(pVoldFileURL, HFC_READ_ONLY | HFC_SHARE_READ_ONLY);
 
-    // This creates the sister file for file sharing control if necessary.
-    VoldSharingControlCreate(pVoldFileURL);
-
-    // Initialisation of file struct.
-    HFCLockMonitor SisterFileLock(GetVoldLockManager());
 
     if(m_pVoldFile != 0 && m_pVoldFile->GetLastException() == 0)
         {
@@ -972,10 +918,7 @@ bool HRFSpotCAPFile::ReadVoldHeader()
         m_pVoldFile->SeekToPos(8);//9
         m_pVoldFile->Read(WordBuffer,4);
         m_VoldHeader.RecordSize = WordBuffer[0]<<24 | (WordBuffer[1]&0xff)<<16 | (WordBuffer[2]&0xff)<<8 | (WordBuffer[3]&0xff);
-
         }
-
-    SisterFileLock.ReleaseKey();
 
     return Result;
     }
@@ -1601,280 +1544,4 @@ int32_t HRFSpotCAPFile::GetGreenChannel() const
 int32_t HRFSpotCAPFile::GetBlueChannel() const
     {
     return m_ImgHeader.BlueChannel;
-    }
-
-//-----------------------------------------------------------------------------
-// Public
-// Returns a pointer on the LockManager object
-//-----------------------------------------------------------------------------
-HFCBinStreamLockManager* HRFSpotCAPFile::GetVoldLockManager()
-    {
-    HPRECONDITION (m_pVoldSharingControl != 0);
-    return m_pVoldSharingControl->GetLockManager();
-    }
-
-
-//-----------------------------------------------------------------------------
-// Public
-// Creates an instance of the HRFSharingControl class.
-//-----------------------------------------------------------------------------
-void HRFSpotCAPFile::VoldSharingControlCreate(HFCURL* pi_pVoldUrl)
-    {
-    HPRECONDITION (pi_pVoldUrl != 0);
-
-    if (m_pVoldSharingControl == 0)
-        m_pVoldSharingControl = new HRFSisterFileSharing(pi_pVoldUrl, GetAccessMode());
-    }
-
-//-----------------------------------------------------------------------------
-// Public
-// Returns true if the logical counter is desynchronized with the physical one.
-//-----------------------------------------------------------------------------
-bool HRFSpotCAPFile::VoldSharingControlNeedSynchronization()
-    {
-    HPRECONDITION (m_pVoldSharingControl != 0);
-
-    return m_pVoldSharingControl->NeedSynchronization();
-    }
-
-//-----------------------------------------------------------------------------
-// Public
-// Synchronizes the logical and physical counters.
-//-----------------------------------------------------------------------------
-void HRFSpotCAPFile::VoldSharingControlSynchronize()
-    {
-    HPRECONDITION (m_pVoldSharingControl != 0);
-
-    m_pVoldSharingControl->Synchronize();
-    }
-
-//-----------------------------------------------------------------------------
-// Public
-// Increment the physical and logical counters.
-//-----------------------------------------------------------------------------
-void HRFSpotCAPFile::VoldSharingControlIncrementCount()
-    {
-    HPRECONDITION (m_pVoldSharingControl != 0);
-
-    m_pVoldSharingControl->IncrementCurrentModifCount();
-    }
-
-//-----------------------------------------------------------------------------
-// Public
-// Return a pointer on the HRFSharingControl instance.
-//-----------------------------------------------------------------------------
-HRFSharingControl* HRFSpotCAPFile::GetVoldSharingControl()
-    {
-    HPRECONDITION (m_pVoldSharingControl != 0);
-
-    return (m_pVoldSharingControl);
-    }
-
-//-----------------------------------------------------------------------------
-// Public
-// Return true if the sharing control file has been locked.
-//-----------------------------------------------------------------------------
-bool HRFSpotCAPFile::VoldSharingControlIsLocked()
-    {
-    HPRECONDITION (m_pVoldSharingControl != 0);
-
-    return m_pVoldSharingControl->IsLocked();
-    }
-
-//-----------------------------------------------------------------------------
-// Public
-// Returns a pointer on the LockManager object
-//-----------------------------------------------------------------------------
-HFCBinStreamLockManager* HRFSpotCAPFile::GetImagLockManager()
-    {
-    HPRECONDITION (m_pImagSharingControl != 0);
-    return m_pImagSharingControl->GetLockManager();
-    }
-
-
-//-----------------------------------------------------------------------------
-// Public
-// Creates an instance of the HRFSharingControl class.
-//-----------------------------------------------------------------------------
-void HRFSpotCAPFile::ImagSharingControlCreate(HFCURL* pi_pImagUrl)
-    {
-    HPRECONDITION (pi_pImagUrl != 0);
-
-    if (m_pImagSharingControl == 0)
-        m_pImagSharingControl = new HRFSisterFileSharing(pi_pImagUrl, GetAccessMode());
-    }
-
-//-----------------------------------------------------------------------------
-// Public
-// Returns true if the logical counter is desynchronized with the physical one.
-//-----------------------------------------------------------------------------
-bool HRFSpotCAPFile::ImagSharingControlNeedSynchronization()
-    {
-    HPRECONDITION (m_pImagSharingControl != 0);
-
-    return m_pImagSharingControl->NeedSynchronization();
-    }
-
-//-----------------------------------------------------------------------------
-// Public
-// Synchronizes the logical and physical counters.
-//-----------------------------------------------------------------------------
-void HRFSpotCAPFile::ImagSharingControlSynchronize()
-    {
-    HPRECONDITION (m_pImagSharingControl != 0);
-
-    m_pImagSharingControl->Synchronize();
-    }
-
-//-----------------------------------------------------------------------------
-// Public
-// Increment the physical and logical counters.
-//-----------------------------------------------------------------------------
-void HRFSpotCAPFile::ImagSharingControlIncrementCount()
-    {
-    HPRECONDITION (m_pImagSharingControl != 0);
-
-    m_pImagSharingControl->IncrementCurrentModifCount();
-    }
-
-//-----------------------------------------------------------------------------
-// Public
-// Return a pointer on the HRFSharingControl instance.
-//-----------------------------------------------------------------------------
-HRFSharingControl* HRFSpotCAPFile::GetImagSharingControl()
-    {
-    HPRECONDITION (m_pImagSharingControl != 0);
-
-    return (m_pImagSharingControl);
-    }
-
-//-----------------------------------------------------------------------------
-// Public
-// Return true if the sharing control file has been locked.
-//-----------------------------------------------------------------------------
-bool HRFSpotCAPFile::ImagSharingControlIsLocked()
-    {
-    HPRECONDITION (m_pImagSharingControl != 0);
-
-    return m_pImagSharingControl->IsLocked();
-    }
-
-//-----------------------------------------------------------------------------
-// Public
-// Returns a pointer on the LockManager object
-//-----------------------------------------------------------------------------
-HFCBinStreamLockManager* HRFSpotCAPFile::GetLeadLockManager()
-    {
-    HPRECONDITION (m_pLeadSharingControl != 0);
-    return m_pLeadSharingControl->GetLockManager();
-    }
-
-
-//-----------------------------------------------------------------------------
-// Public
-// Creates an instance of the HRFSharingControl class.
-//-----------------------------------------------------------------------------
-void HRFSpotCAPFile::LeadSharingControlCreate(HFCURL* pi_pLeadUrl)
-    {
-    HPRECONDITION (pi_pLeadUrl != 0);
-
-    if (m_pLeadSharingControl == 0)
-        m_pLeadSharingControl = new HRFSisterFileSharing(pi_pLeadUrl, GetAccessMode());
-    }
-
-//-----------------------------------------------------------------------------
-// Public
-// Returns true if the logical counter is desynchronized with the physical one.
-//-----------------------------------------------------------------------------
-bool HRFSpotCAPFile::LeadSharingControlNeedSynchronization()
-    {
-    HPRECONDITION (m_pLeadSharingControl != 0);
-
-    return m_pLeadSharingControl->NeedSynchronization();
-    }
-
-//-----------------------------------------------------------------------------
-// Public
-// Synchronizes the logical and physical counters.
-//-----------------------------------------------------------------------------
-void HRFSpotCAPFile::LeadSharingControlSynchronize()
-    {
-    HPRECONDITION (m_pLeadSharingControl != 0);
-
-    m_pLeadSharingControl->Synchronize();
-    }
-
-//-----------------------------------------------------------------------------
-// Public
-// Increment the physical and logical counters.
-//-----------------------------------------------------------------------------
-void HRFSpotCAPFile::LeadSharingControlIncrementCount()
-    {
-    HPRECONDITION (m_pLeadSharingControl != 0);
-
-    m_pLeadSharingControl->IncrementCurrentModifCount();
-    }
-
-//-----------------------------------------------------------------------------
-// Public
-// Return a pointer on the HRFSharingControl instance.
-//-----------------------------------------------------------------------------
-HRFSharingControl* HRFSpotCAPFile::GetLeadSharingControl()
-    {
-    HPRECONDITION (m_pLeadSharingControl != 0);
-
-    return (m_pLeadSharingControl);
-    }
-
-//-----------------------------------------------------------------------------
-// Public
-// Return true if the sharing control file has been locked.
-//-----------------------------------------------------------------------------
-bool HRFSpotCAPFile::LeadSharingControlIsLocked()
-    {
-    HPRECONDITION (m_pLeadSharingControl != 0);
-
-    return m_pLeadSharingControl->IsLocked();
-    }
-
-//-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
-// The rest of this file is the implentation of the sharing control for the
-// Creator struct.
-//-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
-
-
-//-----------------------------------------------------------------------------
-// Public
-// Creates an instance of the HRFSharingControl class.
-//-----------------------------------------------------------------------------
-void HRFSpotCAPCreator::ImagSharingControlCreate(const HFCPtr<HFCURL>& pi_pURL)
-    {
-    HPRECONDITION (pi_pURL != 0);
-
-    if (m_pImagSharingControl == 0)
-        m_pImagSharingControl = new HRFSisterFileSharing(pi_pURL, HFC_READ_ONLY);
-    }
-
-//-----------------------------------------------------------------------------
-// Public
-// Return a pointer on the HRFSharingControl instance.
-//-----------------------------------------------------------------------------
-HRFSharingControl* HRFSpotCAPCreator::GetImagSharingControl() const
-    {
-    HPRECONDITION (m_pImagSharingControl != 0);
-
-    return (m_pImagSharingControl);
-    }
-
-//-----------------------------------------------------------------------------
-// Public
-// Return a pointer on the HFCBinStreamLockManager instance.
-//-----------------------------------------------------------------------------
-HFCBinStreamLockManager* HRFSpotCAPCreator::GetImagLockManager() const
-    {
-    HPRECONDITION (m_pImagSharingControl != 0);
-
-    return m_pImagSharingControl->GetLockManager();
     }

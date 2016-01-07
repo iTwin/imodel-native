@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFAdaptImageToLine.cpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -105,8 +105,7 @@ HRFAdaptImageToLine::~HRFAdaptImageToLine()
 //-----------------------------------------------------------------------------
 HSTATUS HRFAdaptImageToLine::ReadBlock(uint64_t pi_PosBlockX,
                                        uint64_t pi_PosBlockY,
-                                       Byte*  po_pData,
-                                       HFCLockMonitor const* pi_pSisterFileLock)
+                                       Byte*  po_pData)
     {
     HPRECONDITION (m_AccessMode.m_HasReadAccess);
     HSTATUS Status = H_SUCCESS;
@@ -115,16 +114,7 @@ HSTATUS HRFAdaptImageToLine::ReadBlock(uint64_t pi_PosBlockX,
         {
         Alloc_m_pImage();
 
-        // Lock the sister file
-        HFCLockMonitor SisterFileLock;
-        if(pi_pSisterFileLock == 0)
-            {
-            // Lock the file.
-            AssignRasterFileLock(m_pTheTrueOriginalFile, SisterFileLock, true);
-            pi_pSisterFileLock = &SisterFileLock;
-            }
-
-        Status = m_pAdaptedResolutionEditor->ReadBlock(0, 0, m_pImage, pi_pSisterFileLock);
+        Status = m_pAdaptedResolutionEditor->ReadBlock(0, 0, m_pImage);
         }
     HASSERT(m_pImage != 0);
 
@@ -143,8 +133,7 @@ HSTATUS HRFAdaptImageToLine::ReadBlock(uint64_t pi_PosBlockX,
 //-----------------------------------------------------------------------------
 HSTATUS HRFAdaptImageToLine::WriteBlock(uint64_t    pi_PosBlockX,
                                         uint64_t    pi_PosBlockY,
-                                        const Byte* pi_pData,
-                                        HFCLockMonitor const* pi_pSisterFileLock)
+                                        const Byte* pi_pData)
     {
     HPRECONDITION (m_AccessMode.m_HasWriteAccess || m_AccessMode.m_HasCreateAccess);
     HSTATUS Status = H_SUCCESS;
@@ -160,18 +149,7 @@ HSTATUS HRFAdaptImageToLine::WriteBlock(uint64_t    pi_PosBlockX,
 
     if (pi_PosBlockY == m_RasterHeight-1)
         {
-        // Lock the sister file
-        HFCLockMonitor SisterFileLock;
-        if(pi_pSisterFileLock == 0)
-            {
-            // Lock the file.
-            AssignRasterFileLock(m_pTheTrueOriginalFile, SisterFileLock, false);
-            pi_pSisterFileLock = &SisterFileLock;
-            }
-
-        Status = m_pAdaptedResolutionEditor->WriteBlock(0, 0, m_pImage, pi_pSisterFileLock);
-
-        m_pTheTrueOriginalFile->SharingControlIncrementCount();
+        Status = m_pAdaptedResolutionEditor->WriteBlock(0, 0, m_pImage);
         }
 
     return Status;

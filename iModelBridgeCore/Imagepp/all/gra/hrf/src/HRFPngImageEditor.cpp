@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFPngImageEditor.cpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class HRFPngImageEditor
@@ -53,8 +53,7 @@ HRFPngImageEditor::~HRFPngImageEditor()
 //-----------------------------------------------------------------------------
 HSTATUS HRFPngImageEditor::ReadBlock(uint64_t pi_PosBlockX,
                                        uint64_t pi_PosBlockY,
-                                       Byte*  po_pData,
-                                       HFCLockMonitor const* pi_pSisterFileLock)
+                                       Byte*  po_pData)
     {
     HPRECONDITION(po_pData != 0);
     HPRECONDITION(m_AccessMode.m_HasReadAccess);
@@ -64,15 +63,6 @@ HSTATUS HRFPngImageEditor::ReadBlock(uint64_t pi_PosBlockX,
     // Temporary need for virtual ptr.
     if (!GetRasterFile()->GetAccessMode().m_HasCreateAccess)
         {
-        // Lock the sister file
-        HFCLockMonitor SisterFileLock;
-        if(pi_pSisterFileLock == 0)
-            {
-            // Lock the file.
-            AssignRasterFileLock(GetRasterFile(), SisterFileLock, true);
-            pi_pSisterFileLock = &SisterFileLock;
-            }
-
         // Restart the file at the beginning when the ask for a before block
         if ((PNG_RASTERFILE->m_InterlaceFileReaded))
             {
@@ -99,9 +89,6 @@ HSTATUS HRFPngImageEditor::ReadBlock(uint64_t pi_PosBlockX,
 
         png_read_image(PNG_RASTERFILE->m_pPngFileStruct, ppLines);
 
-        // Unlock the sister file.
-        SisterFileLock.ReleaseKey();
-
         //  The entire image is read
         PNG_RASTERFILE->m_InterlaceFileReaded = true;
         }
@@ -118,22 +105,12 @@ HSTATUS HRFPngImageEditor::ReadBlock(uint64_t pi_PosBlockX,
 //-----------------------------------------------------------------------------
 HSTATUS HRFPngImageEditor::WriteBlock(uint64_t     pi_PosBlockX,
                                         uint64_t     pi_PosBlockY,
-                                        const Byte*  pi_pData,
-                                        HFCLockMonitor const* pi_pSisterFileLock)
+                                        const Byte*  pi_pData)
     {
     HPRECONDITION(m_AccessMode.m_HasWriteAccess || m_AccessMode.m_HasCreateAccess);
     HPRECONDITION(pi_pData != 0);
 
     HSTATUS Status = H_SUCCESS;
-
-    // Lock the sister file
-    HFCLockMonitor SisterFileLock;
-    if(pi_pSisterFileLock == 0)
-        {
-        // Lock the file.
-        AssignRasterFileLock(GetRasterFile(), SisterFileLock, false);
-        pi_pSisterFileLock = &SisterFileLock;
-        }
 
     // Restart the file at the begining when the ask for a before block
     if ((PNG_RASTERFILE->m_pPngFileStruct->row_number > pi_PosBlockY) ||
@@ -160,12 +137,6 @@ HSTATUS HRFPngImageEditor::WriteBlock(uint64_t     pi_PosBlockX,
 
     png_write_image(PNG_RASTERFILE->m_pPngFileStruct, ppLines);
 
-    // Increment the counters.
-    GetRasterFile()->SharingControlIncrementCount();
-
-    // Unlock the sister file.
-    SisterFileLock.ReleaseKey();
-
     return Status;
     }
 
@@ -176,8 +147,7 @@ HSTATUS HRFPngImageEditor::WriteBlock(uint64_t     pi_PosBlockX,
 //-----------------------------------------------------------------------------
 HSTATUS HRFPngImageEditor::ReadBlock(uint64_t           pi_PosBlockX,
                                      uint64_t           pi_PosBlockY,
-                                     HFCPtr<HCDPacket>& po_rpPacket,
-                                     HFCLockMonitor const* pi_pSisterFileLock)
+                                     HFCPtr<HCDPacket>& po_rpPacket)
     {
     HPRECONDITION (m_AccessMode.m_HasReadAccess);
 
@@ -193,7 +163,7 @@ HSTATUS HRFPngImageEditor::ReadBlock(uint64_t           pi_PosBlockX,
     po_rpPacket->SetDataSize(m_pResolutionDescriptor->GetBlockSizeInBytes());
     po_rpPacket->SetCodec(new HCDCodecIdentity(m_pResolutionDescriptor->GetBlockSizeInBytes()));
 
-    return ReadBlock(pi_PosBlockX, pi_PosBlockY, po_rpPacket->GetBufferAddress(), pi_pSisterFileLock);
+    return ReadBlock(pi_PosBlockX, pi_PosBlockY, po_rpPacket->GetBufferAddress());
     }
 
 //-----------------------------------------------------------------------------
@@ -203,8 +173,7 @@ HSTATUS HRFPngImageEditor::ReadBlock(uint64_t           pi_PosBlockX,
 //-----------------------------------------------------------------------------
 HSTATUS HRFPngImageEditor::WriteBlock(uint64_t                 pi_PosBlockX,
                                       uint64_t                 pi_PosBlockY,
-                                      const HFCPtr<HCDPacket>& pi_rpPacket,
-                                      HFCLockMonitor const*    pi_pSisterFileLock)
+                                      const HFCPtr<HCDPacket>& pi_rpPacket)
     {
     HPRECONDITION (m_AccessMode.m_HasWriteAccess || m_AccessMode.m_HasCreateAccess);
     HSTATUS Status = H_SUCCESS;
@@ -215,31 +184,7 @@ HSTATUS HRFPngImageEditor::WriteBlock(uint64_t                 pi_PosBlockX,
 
     pi_rpPacket->Decompress(&Uncompressed);
 
-    WriteBlock(pi_PosBlockX, pi_PosBlockY, Uncompressed.GetBufferAddress(), pi_pSisterFileLock);
+    WriteBlock(pi_PosBlockX, pi_PosBlockY, Uncompressed.GetBufferAddress());
 
     return Status;
-    }
-
-//-----------------------------------------------------------------------------
-// public
-// OnSynchronizedSharingControl
-//-----------------------------------------------------------------------------
-void HRFPngImageEditor::OnSynchronizedSharingControl()
-    {
-    PNG_RASTERFILE->SavePngFile(true);
-    PNG_RASTERFILE->Open();
-
-    // Set the number of pass need to read a line.
-    png_set_interlace_handling(PNG_RASTERFILE->m_pPngFileStruct);
-
-    m_BytesByRow  = ((uint32_t)GetResolutionDescriptor()->GetWidth() *
-                     GetResolutionDescriptor()->GetPixelType()->CountPixelRawDataBits()) / 8;
-
-    //  The entire image is not read
-    PNG_RASTERFILE->m_InterlaceFileReaded = false;
-
-    // If the file has been modified by another process, the counters will not
-    // be equal and we will need to synchronize it. It also indicates that we
-    // should refresh the file info structure and restart the reading operation
-    // of the data. This has been done by the close-open sequence.
     }

@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFDtedEditor.cpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -78,8 +78,7 @@ HRFDtedEditor::~HRFDtedEditor()
 //-----------------------------------------------------------------------------
 HSTATUS HRFDtedEditor::ReadBlock(uint64_t                 pi_PosBlockX,
                                  uint64_t                 pi_PosBlockY,
-                                 Byte*                    po_pData,
-                                 HFCLockMonitor const*    pi_pSisterFileLock)
+                                 Byte*                    po_pData)
     {
     HPRECONDITION(pi_PosBlockX <= ULONG_MAX && pi_PosBlockY <= ULONG_MAX);
 

@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFPcxFile.cpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class HRFPcxFile
@@ -222,9 +222,6 @@ bool HRFPcxCreator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
     HAutoPtr<HFCBinStream>      pFile;
     HRFPcxFile::PcxFileHeader   PcxHdr;
 
-    (const_cast<HRFPcxCreator*>(this))->SharingControlCreate(pi_rpURL);
-    HFCLockMonitor SisterFileLock(GetLockManager());
-
     //:> Open the PCX file & place file pointer at the start of the file
     pFile = HFCBinStream::Instanciate(pi_rpURL, pi_Offset, HFC_READ_ONLY | HFC_SHARE_READ_WRITE);
 
@@ -286,10 +283,6 @@ bool HRFPcxCreator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
     Result = true;
 
 WRAPUP:
-    SisterFileLock.ReleaseKey();
-    HASSERT(!(const_cast<HRFPcxCreator*>(this))->m_pSharingControl->IsLocked());
-    (const_cast<HRFPcxCreator*>(this))->m_pSharingControl = 0;
-
     return Result;
     }
 
@@ -412,9 +405,6 @@ void HRFPcxFile::SavePcxFile()
                 for (uint32_t i = 0; i < rPalette.CountUsedEntries(); i++, pPtr += 3)
                     memcpy (pPtr, (Byte*)rPalette.GetCompositeValue(i), 3);
 
-                //:> Lock the sister file for the GetField operation
-                HFCLockMonitor SisterFileLock (GetLockManager());
-
                 //:> Write the palette at the end of the raster data.
                 HASSERT (m_VGAPaletteOffset != 0);
                 m_pPcxFile->SeekToPos(m_VGAPaletteOffset);
@@ -424,9 +414,6 @@ void HRFPcxFile::SavePcxFile()
                 //:> Set the end of file caracter at the current position.
                 if (m_pPcxFile->IsCompatibleWith(HFCLocalBinStream::CLASS_ID))
                     ((HFCPtr<HFCLocalBinStream>&)m_pPcxFile)->SetEOF();
-
-                //:> Unlock the sister file.
-                SisterFileLock.ReleaseKey();
                 }
             }
         //:> Reset the EGA palette to the header in the file
@@ -451,17 +438,11 @@ void HRFPcxFile::SavePcxFile()
                 for (uint32_t i = 0; i < 256; i++, pPtr+=3)
                     memset (pPtr, (Byte)i, 3);
 
-                //:> Lock the sister file for the GetField operation
-                HFCLockMonitor SisterFileLock (GetLockManager());
-
                 //:> Write the palette at the end of the raster data.
                 HASSERT (m_VGAPaletteOffset != 0);
                 m_pPcxFile->SeekToPos(m_VGAPaletteOffset);
 
                 m_pPcxFile->Write(pVgaPalette, VGAPALETTESIZE+1);
-
-                //:> Unlock the sister file.
-                SisterFileLock.ReleaseKey();
                 }
             }
 
@@ -650,9 +631,6 @@ void HRFPcxFile::ExtractEgaPaletteFromPageDesc()
 ------------------------------------------------------------------------------*/
 bool HRFPcxFile::Create()
     {
-    //:> This method creates the sharing control sister file
-    SharingControlCreate();
-
     //:> Open the file
     m_pPcxFile = HFCBinStream::Instanciate(GetURL(), GetAccessMode(), 0, true);
 
@@ -671,9 +649,6 @@ bool HRFPcxFile::Open()
     if (!m_IsOpen)
         {
         m_pPcxFile = HFCBinStream::Instanciate(GetURL(), m_Offset, GetAccessMode(), 0, true);
-
-        //:> This creates the sister file for file sharing control if necessary.
-        SharingControlCreate();
 
         //:> Initialisation of file struct.
         GetFileHeaderFromFile();
@@ -701,9 +676,6 @@ void HRFPcxFile::GetFileHeaderFromFile()
 
     m_pPcxHdr = new PcxFileHeader;
 
-    //:> Lock the sister file for the GetField operation
-    HFCLockMonitor SisterFileLock (GetLockManager());
-
     m_pPcxFile->SeekToBegin();
     m_pPcxFile->Read(&m_pPcxHdr->Identifier,     sizeof(Byte));
     m_pPcxFile->Read(&m_pPcxHdr->Version,        sizeof(Byte));
@@ -723,9 +695,6 @@ void HRFPcxFile::GetFileHeaderFromFile()
     m_pPcxFile->Read(&m_pPcxHdr->HorzScreenSize, sizeof(unsigned short));
     m_pPcxFile->Read(&m_pPcxHdr->VertScreenSize, sizeof(unsigned short));
     m_pPcxFile->Read( m_pPcxHdr->Reserved2,       sizeof(Byte)*RESERVEDSIZE);
-
-    //:> Unlock the sister file
-    SisterFileLock.ReleaseKey();
     }
 
 /**-----------------------------------------------------------------------------
@@ -841,9 +810,6 @@ HFCPtr<HRPPixelType> HRFPcxFile::CreatePixelTypeFromFile()
                 {
                 pPixelType = new HRPPixelTypeI8R8G8B8();
 
-                //:> Lock the sister file for the GetField operation
-                HFCLockMonitor SisterFileLock (GetLockManager());
-
                 pValue = new Byte[VGAPALETTESIZE];
                 m_pPcxFile->SeekToEnd();
                 m_pPcxFile->Seek(-(VGAPALETTESIZE+1));
@@ -863,9 +829,6 @@ HFCPtr<HRPPixelType> HRFPcxFile::CreatePixelTypeFromFile()
 
                     pPixelType->UnlockPalette();
                     }
-
-                //:> Unlock the sister file.
-                SisterFileLock.ReleaseKey();
                 break;
                 }
             case 3 :        //:> 24 bits True Colors
@@ -888,10 +851,6 @@ HFCPtr<HRPPixelType> HRFPcxFile::CreatePixelTypeFromFile()
 ------------------------------------------------------------------------------*/
 void HRFPcxFile::SetHeaderToFile()
     {
-
-    //:> Lock the sister file for the GetField operation
-    HFCLockMonitor SisterFileLock (GetLockManager());
-
     m_pPcxFile->SeekToBegin();
     m_pPcxFile->Write(&m_pPcxHdr->Identifier,     sizeof(Byte));
     m_pPcxFile->Write(&m_pPcxHdr->Version,        sizeof(Byte));
@@ -911,9 +870,6 @@ void HRFPcxFile::SetHeaderToFile()
     m_pPcxFile->Write(&m_pPcxHdr->HorzScreenSize, sizeof(unsigned short));
     m_pPcxFile->Write(&m_pPcxHdr->VertScreenSize, sizeof(unsigned short));
     m_pPcxFile->Write( m_pPcxHdr->Reserved2,      sizeof(Byte)*RESERVEDSIZE);
-
-    //:> Unlock the sister file.
-    SisterFileLock.ReleaseKey();
     }
 
 /**-----------------------------------------------------------------------------

@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFTgaFile.cpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class HRFTgaFile
@@ -266,9 +266,6 @@ bool HRFTgaCreator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
     HRFTgaFile::TgaFileHeader   TgaHdr;
     HRFTgaFile::TgaFileFooter   TgaFtr;
 
-    (const_cast<HRFTgaCreator*>(this))->SharingControlCreate(pi_rpURL);
-    HFCLockMonitor SisterFileLock(GetLockManager());
-
     // Open the TGA File & place file pointer at the start of the file
     pFile = HFCBinStream::Instanciate(pi_rpURL, pi_Offset, HFC_READ_ONLY | HFC_SHARE_READ_WRITE);
 
@@ -360,10 +357,6 @@ bool HRFTgaCreator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
     Result = true;
 
 WRAPUP:
-    SisterFileLock.ReleaseKey();
-    HASSERT(!(const_cast<HRFTgaCreator*>(this))->m_pSharingControl->IsLocked());
-    (const_cast<HRFTgaCreator*>(this))->m_pSharingControl = 0;
-
     return Result;
     }
 
@@ -392,21 +385,11 @@ bool HRFTgaFile::Open()
         {
         m_pTgaFile = HFCBinStream::Instanciate(GetURL(), m_Offset, GetAccessMode(), 0, true);
 
-        // This creates the sister file for file sharing control if necessary.
-        SharingControlCreate();
-
-        // Lock the sister file
-        HFCLockMonitor SisterFileLock (GetLockManager());
-
         // Initialisation of file struct.
         GetFileHeaderFromFile();
         GetMapInfoFromFile();
         GetFileFooterFromFile();
         GetExtensionAreaFromFile();
-
-        // Unlock the sister file
-        SisterFileLock.ReleaseKey();
-
 
         // If it's a compress raster file.
         if ((m_pTgaFileHeader->m_ImageType >= 9) && (m_pTgaFileHeader->m_ImageType <= 11) &&
@@ -695,10 +678,6 @@ void HRFTgaFile::SaveTgaFile(bool pi_CloseFile)
     // execute the destroyer.
     if (m_IsOpen && (CountPages() > 0) && CanWrite)
         {
-
-        // Lock the sister file.
-        HFCLockMonitor SisterFileLock (GetLockManager());
-
         HFCPtr<HRFPageDescriptor> pPageDescriptor = GetPageDescriptor(0);
 
         // Set the color-map into file
@@ -854,9 +833,6 @@ void HRFTgaFile::SaveTgaFile(bool pi_CloseFile)
 
         if(pi_CloseFile)
             {
-            // Unlock the sister file.
-            SisterFileLock.ReleaseKey();
-
             m_IsOpen = false;
             }
         else
@@ -934,16 +910,10 @@ bool HRFTgaFile::AddPage(HFCPtr<HRFPageDescriptor> pi_pPage)
     m_pTgaExtentionArea = new TgaExtensionArea;
     m_pTgaExtTableArea  = new TgaExtTableArea;
 
-    // Lock the sister file.
-    HFCLockMonitor SisterFileLock (GetLockManager());
-
     // make sure that the pixel depth is initialized;
     m_pTgaFileHeader->m_PixelDepth = 0;
 
     SetFileHeaderToFile();
-
-    // Unlock the sister file.
-    SisterFileLock.ReleaseKey();
 
     InitializeFileFooter();
 
@@ -1067,7 +1037,6 @@ HFCPtr<HCDCodec> HRFTgaFile::CreateCodecFromFile() const
 void HRFTgaFile::GetFileHeaderFromFile()
     {
     HPRECONDITION (m_pTgaFile != 0);
-    HPRECONDITION (SharingControlIsLocked());
 
     m_pTgaFile->SeekToPos(0);
     m_pTgaFileHeader = new HRFTgaFile::TgaFileHeader;
@@ -1085,7 +1054,6 @@ void HRFTgaFile::GetFileHeaderFromFile()
 void HRFTgaFile::GetFileFooterFromFile()
     {
     HPRECONDITION (m_pTgaFile != 0);
-    HPRECONDITION (SharingControlIsLocked());
 
     // Seek for 26 caracters from the end of the file.
     m_pTgaFile->SeekToPos(m_pTgaFile->GetSize() - (long)(sizeof(HRFTgaFile::TgaFileFooter)));
@@ -1114,7 +1082,6 @@ void HRFTgaFile::GetFileFooterFromFile()
 void HRFTgaFile::GetMapInfoFromFile()
     {
     HPRECONDITION (m_pTgaFile != 0);
-    HPRECONDITION (SharingControlIsLocked());
 
     // Create the ImageData Structure
     m_pTgaImageData = new TgaImageData;
@@ -1203,7 +1170,6 @@ void HRFTgaFile::GetMapInfoFromFile()
 void HRFTgaFile::GetExtensionAreaFromFile()
     {
     HPRECONDITION (m_pTgaFile != 0);
-    HPRECONDITION (SharingControlIsLocked());
 
     if ((m_pTgaFileFooter != 0) && (0 != m_pTgaFileFooter->m_ExtensionAreaOffset))
         {
@@ -1327,9 +1293,6 @@ bool HRFTgaFile::Create()
     // Open the file
     m_pTgaFile = HFCBinStream::Instanciate(GetURL(), GetAccessMode(), 0, true);
 
-    // Instanciate the SharingControl object for file sharing
-    SharingControlCreate();
-
     m_IsOpen = true;
 
     return m_IsOpen;
@@ -1374,7 +1337,6 @@ bool HRFTgaFile::IsCompressed() const
 void HRFTgaFile::SetFileHeaderToFile()
     {
     HPRECONDITION (m_pTgaFile != 0);
-    HPRECONDITION (SharingControlIsLocked());
     HPRECONDITION (GetAccessMode().m_HasWriteAccess || GetAccessMode().m_HasCreateAccess);
     HPRECONDITION (CountPages() > 0);
 
@@ -1503,7 +1465,6 @@ void HRFTgaFile::SetFileHeaderToFile()
 void HRFTgaFile::SetFileFooterToFile(bool pi_HasExt)
     {
     HPRECONDITION (m_pTgaFile != 0);
-    HPRECONDITION (SharingControlIsLocked());
     HPRECONDITION (CountPages() > 0);
     HPRECONDITION (GetPageDescriptor(0)->CountResolutions() > 0);
 
@@ -1570,7 +1531,6 @@ void HRFTgaFile::SetFileFooterToFile(bool pi_HasExt)
 void HRFTgaFile::SetPaletteToFile()
     {
     HPRECONDITION (m_pTgaFile != 0);
-    HPRECONDITION (SharingControlIsLocked());
     HPRECONDITION (CountPages() > 0);
     HPRECONDITION (GetPageDescriptor(0)->CountResolutions() > 0);
 
@@ -1619,7 +1579,6 @@ void HRFTgaFile::SetPaletteToFile()
 ------------------------------------------------------------------------------*/
 bool HRFTgaFile::SetThumbnailToFile()
     {
-    HPRECONDITION (SharingControlIsLocked());
     HPRECONDITION (CountPages() > 0);
 
     HFCPtr<HRFPageDescriptor>   pPageDescriptor = GetPageDescriptor(0);
@@ -1703,8 +1662,6 @@ const HFCPtr<HRFRasterFileCapabilities>& HRFTgaFile::GetCapabilities () const
 ------------------------------------------------------------------------------*/
 void HRFTgaFile::ResetHeader()
     {
-    HPRECONDITION (SharingControlIsLocked());
-
     if ((0x00 == m_pTgaFileHeader->m_ImageDescriptor) || (0x10 == m_pTgaFileHeader->m_ColorMapEntrySize))
         {
         SetFileHeaderToFile();
@@ -1782,12 +1739,6 @@ void HRFTgaFile::InitializeFileFooter()
 bool HRFTgaFile::RunLengthsSpanScanlines()
     {
     bool Result = false;
-
-    // Lock the sister file
-    HFCLockMonitor SisterFileLock(GetLockManager());
-
-    if (SharingControlNeedSynchronization())
-        SharingControlSynchronize();
 
     uint32_t Pos;
     uint32_t NbPixels;

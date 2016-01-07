@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFEpsFile.cpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 #include <ImagePPInternal/hstdcpp.h>
@@ -338,9 +338,6 @@ bool HRFEpsFile::Create()
     // Open the file.
     m_pFile = HFCBinStream::Instanciate(GetURL(), GetAccessMode(), 0, true);
 
-    // This creates the sister file for file sharing control if necessary.
-    SharingControlCreate();
-
     m_IsOpen = true;
 
     return true;
@@ -382,9 +379,6 @@ void HRFEpsFile::WriteHeader(HFCPtr<HRFResolutionDescriptor>& pi_rpResDescriptor
 
     bool IsRGBFile = pi_rpResDescriptor->GetPixelType()->IsCompatibleWith(HRPPixelTypeV24R8G8B8::CLASS_ID);
     bool Is1Bit    = pi_rpResDescriptor->GetPixelType()->IsCompatibleWith(HRPPixelTypeV1Gray1::CLASS_ID);
-
-    // Lock the sister file for the GetBmpInfoHeaderFromFile method
-    HFCLockMonitor SisterFileLock(GetLockManager());
 
     // Start line
     m_pFile->Write(s_FileHeader.c_str(), s_FileHeader.size());
@@ -471,9 +465,6 @@ void HRFEpsFile::WriteHeader(HFCPtr<HRFResolutionDescriptor>& pi_rpResDescriptor
         m_pFile->Write(s_ImageStatement.c_str(), s_ImageStatement.size());
         m_pFile->Write(s_EndOfLine.c_str(), s_EndOfLine.size());
         }
-
-    // Unlock the sister file.
-    SisterFileLock.ReleaseKey();
     }
 
 

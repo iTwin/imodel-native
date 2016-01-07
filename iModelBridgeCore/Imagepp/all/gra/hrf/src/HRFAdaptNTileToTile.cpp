@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFAdaptNTileToTile.cpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -105,8 +105,7 @@ HRFAdaptNTileToTile::~HRFAdaptNTileToTile()
 //-----------------------------------------------------------------------------
 HSTATUS HRFAdaptNTileToTile::ReadBlock(uint64_t pi_PosBlockX,
                                        uint64_t pi_PosBlockY,
-                                       Byte*  po_pData,
-                                       HFCLockMonitor const* pi_pSisterFileLock)
+                                       Byte*  po_pData)
     {
     HPRECONDITION (m_AccessMode.m_HasReadAccess);
     HSTATUS Status = H_SUCCESS;
@@ -134,15 +133,6 @@ HSTATUS HRFAdaptNTileToTile::ReadBlock(uint64_t pi_PosBlockX,
     HArrayAutoPtr<Byte> pSmallTile(new Byte[m_pAdaptedResolutionEditor->GetResolutionDescriptor()->GetBlockSizeInBytes()]);
     Byte* pPosInSmallTile = pSmallTile;
 
-    // Lock the sister file
-    HFCLockMonitor SisterFileLock;
-    if(pi_pSisterFileLock == 0)
-        {
-        // Lock the file.
-        AssignRasterFileLock(m_pTheTrueOriginalFile, SisterFileLock, true);
-        pi_pSisterFileLock = &SisterFileLock;
-        }
-
     // Load the block from file to the client data out
     for (uint32_t NoTileWidth=0; (NoTileWidth < NumberOfBlockToAccessPerWidth) && (Status == H_SUCCESS); NoTileWidth++)
         {
@@ -156,7 +146,7 @@ HSTATUS HRFAdaptNTileToTile::ReadBlock(uint64_t pi_PosBlockX,
             {
             Status = m_pAdaptedResolutionEditor->ReadBlock(pi_PosBlockX + (NoTileWidth  * m_TileWidth),
                                                            pi_PosBlockY + (NoTileHeight * m_TileHeight),
-                                                           pSmallTile, pi_pSisterFileLock);
+                                                           pSmallTile);
             if (Status == H_SUCCESS)
                 {
                 // reset to the first line in the buffer
@@ -183,8 +173,7 @@ HSTATUS HRFAdaptNTileToTile::ReadBlock(uint64_t pi_PosBlockX,
 //-----------------------------------------------------------------------------
 HSTATUS HRFAdaptNTileToTile::WriteBlock(uint64_t     pi_PosBlockX,
                                         uint64_t     pi_PosBlockY,
-                                        const Byte*  pi_pData,
-                                        HFCLockMonitor const* pi_pSisterFileLock)
+                                        const Byte*  pi_pData)
     {
     HPRECONDITION (m_AccessMode.m_HasWriteAccess || m_AccessMode.m_HasCreateAccess);
     HSTATUS Status = H_SUCCESS;
@@ -213,15 +202,6 @@ HSTATUS HRFAdaptNTileToTile::WriteBlock(uint64_t     pi_PosBlockX,
     HArrayAutoPtr<Byte> pSmallTile(new Byte[m_pAdaptedResolutionEditor->GetResolutionDescriptor()->GetBlockSizeInBytes()]);
     Byte* pPosInSmallTile = pSmallTile;
 
-    // Lock the sister file
-    HFCLockMonitor SisterFileLock;
-    if(pi_pSisterFileLock == 0)
-        {
-        // Lock the file.
-        AssignRasterFileLock(m_pTheTrueOriginalFile, SisterFileLock, false);
-        pi_pSisterFileLock = &SisterFileLock;
-        }
-
     // Load the block from file to the client data out
     for (uint32_t NoTileWidth=0; (NoTileWidth < NumberOfBlockToAccessPerWidth) && (Status == H_SUCCESS); NoTileWidth++)
         {
@@ -247,10 +227,9 @@ HSTATUS HRFAdaptNTileToTile::WriteBlock(uint64_t     pi_PosBlockX,
 
             Status = m_pAdaptedResolutionEditor->WriteBlock(pi_PosBlockX + (NoTileWidth  * m_TileWidth),
                                                             pi_PosBlockY + (NoTileHeight * m_TileHeight),
-                                                            pSmallTile, pi_pSisterFileLock);
+                                                            pSmallTile);
             }
         }
-    m_pTheTrueOriginalFile->SharingControlIncrementCount();
 
     return Status;
     }

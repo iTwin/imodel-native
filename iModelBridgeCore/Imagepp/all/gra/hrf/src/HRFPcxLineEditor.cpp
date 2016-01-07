@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFPcxLineEditor.cpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class HRFPcxLineEditor
@@ -75,8 +75,7 @@ HRFPcxLineEditor::~HRFPcxLineEditor()
 ------------------------------------------------------------------------------*/
 HSTATUS HRFPcxLineEditor::ReadBlock(uint64_t pi_PosBlockX,
                                     uint64_t pi_PosBlockY,
-                                    Byte*  po_pData,
-                                    HFCLockMonitor const* pi_pSisterFileLock)
+                                    Byte*  po_pData)
     {
     /**
         Here, we did not implement a codec for this file format. But the raster data are
@@ -95,20 +94,11 @@ HSTATUS HRFPcxLineEditor::ReadBlock(uint64_t pi_PosBlockX,
 
     HSTATUS             Status       = H_SUCCESS;
     HFCPtr<HRFPcxFile>  pPcxFile     = static_cast<HRFPcxFile*>(GetRasterFile().GetPtr());
-    HFCLockMonitor SisterFileLock;
 
     if (pPcxFile->GetAccessMode().m_HasCreateAccess)
         {
         Status = H_NOT_FOUND;
         goto WRAPUP;
-        }
-
-    // Lock the sister file for the ReadBlock operation
-    if(pi_pSisterFileLock == 0)
-        {
-        // Lock the file.
-        AssignRasterFileLock(GetRasterFile(), SisterFileLock, true);
-        pi_pSisterFileLock = &SisterFileLock;
         }
 
     //:> Reset the file pointer to the begining of the file if an edition occured since
@@ -130,18 +120,15 @@ HSTATUS HRFPcxLineEditor::ReadBlock(uint64_t pi_PosBlockX,
     //:> If the line asked is further than the current one, we must skip those lines
     while (m_CurrentLineNumber < pi_PosBlockY)
         {
-        Status = ReadAndDecompressPcxLine (0, pi_pSisterFileLock);
+        Status = ReadAndDecompressPcxLine (0);
         ++m_CurrentLineNumber;
         }
 
     // Read and decompress the current line
     //        memset (pConvert, 0x00, m_ConvertSize);
-    Status = ReadAndDecompressPcxLine (m_pConvert, pi_pSisterFileLock);
+    Status = ReadAndDecompressPcxLine (m_pConvert);
     ++m_CurrentLineNumber;
 
-
-    //:> Unlock the sister file
-    SisterFileLock.ReleaseKey();
 
     if (!ConvertDataToPcxFormat(m_pConvert, po_pData))
         {
@@ -161,7 +148,7 @@ WRAPUP:
 
  @param po_pConvert The buffer to return the decompressed data.
 ------------------------------------------------------------------------------*/
-HSTATUS HRFPcxLineEditor::ReadAndDecompressPcxLine(Byte* po_pConvert, HFCLockMonitor const* pi_pSisterFileLock)
+HSTATUS HRFPcxLineEditor::ReadAndDecompressPcxLine(Byte* po_pConvert)
     {
     HFCPtr<HRFPcxFile>  pPcxFile   = static_cast<HRFPcxFile*>(GetRasterFile().GetPtr());
     uint32_t             DataIndex  = 0;
@@ -200,22 +187,10 @@ HSTATUS HRFPcxLineEditor::ReadAndDecompressPcxLine(Byte* po_pConvert, HFCLockMon
             {
             HASSERT ((m_FileBufferIndex == m_FileBufferSize-1) || (m_FileBufferIndex == m_FileBufferSize));
 
-            // Lock the sister file
-            HFCLockMonitor SisterFileLock;
-            if(pi_pSisterFileLock == 0)
-                {
-                // Lock the file.
-                AssignRasterFileLock(GetRasterFile(), SisterFileLock, false);
-                pi_pSisterFileLock = &SisterFileLock;
-                }
-
             pPcxFile->m_pPcxFile->SeekToPos(m_FilePos+m_FileBufferIndex);
             uint32_t ReadSize = (uint32_t)MIN(pPcxFile->m_pPcxFile->GetSize() - pPcxFile->m_pPcxFile->GetCurrentPos(), (uint64_t)m_FileBufferSize);
             if (pPcxFile->m_pPcxFile->Read(m_pFileBuffer, ReadSize) != ReadSize)
                 goto WRAPUP;    // H_ERROR;
-
-            //:> Unlock the sister file.
-            SisterFileLock.ReleaseKey();
 
             m_FilePos += m_FileBufferIndex;
             m_FileBufferIndex = 0;
@@ -348,8 +323,7 @@ bool HRFPcxLineEditor::ConvertDataToPcxFormat(Byte* pi_pConvert, Byte* po_pData)
 ------------------------------------------------------------------------------*/
 HSTATUS HRFPcxLineEditor::WriteBlock(uint64_t     pi_PosBlockX,
                                      uint64_t     pi_PosBlockY,
-                                     const Byte*  pi_pData,
-                                     HFCLockMonitor const* pi_pSisterFileLock)
+                                     const Byte*  pi_pData)
     {
     HPRECONDITION (m_AccessMode.m_HasWriteAccess || m_AccessMode.m_HasCreateAccess);
     HPRECONDITION (pi_pData != 0);
@@ -371,7 +345,6 @@ HSTATUS HRFPcxLineEditor::WriteBlock(uint64_t     pi_PosBlockX,
     uint32_t             PlaneSize    = pPcxFile->m_pPcxHdr->BytesPerLine;
     uint32_t             ConvertIndex = 0;
     uint32_t             EncodedIndex = 0;
-    HFCLockMonitor      SisterFileLock;
 
     //:> Parsing the decoded line
     switch (GetResolutionDescriptor()->GetBitsPerPixel())
@@ -459,14 +432,6 @@ HSTATUS HRFPcxLineEditor::WriteBlock(uint64_t     pi_PosBlockX,
         }
     while (ConvertIndex < m_ConvertSize);
 
-    // Lock the sister file
-    if(pi_pSisterFileLock == 0)
-        {
-        // Lock the file.
-        AssignRasterFileLock(GetRasterFile(), SisterFileLock, false);
-        pi_pSisterFileLock = &SisterFileLock;
-        }
-
     //:> Set the file pointer for the first line
     if (0 == pi_PosBlockY)
         {
@@ -490,7 +455,7 @@ HSTATUS HRFPcxLineEditor::WriteBlock(uint64_t     pi_PosBlockX,
 
         while (m_CurrentLineNumber != pi_PosBlockY)
             {
-            ReadAndDecompressPcxLine(0, pi_pSisterFileLock);
+            ReadAndDecompressPcxLine(0);
             ++m_CurrentLineNumber;
             }
         }
@@ -498,9 +463,6 @@ HSTATUS HRFPcxLineEditor::WriteBlock(uint64_t     pi_PosBlockX,
     //:> Write the encoded scan line to the file.
     if(pPcxFile->m_pPcxFile->Write(m_pEncoded, EncodedIndex) != EncodedIndex)
         goto WRAPUP;    // H_ERROR
-
-    //:> Increment the modifications counter;
-    GetRasterFile()->SharingControlIncrementCount();
 
     ++m_CurrentLineNumber;
 
@@ -520,24 +482,8 @@ HSTATUS HRFPcxLineEditor::WriteBlock(uint64_t     pi_PosBlockX,
 
         }
 
-    //:> Unlock the sister file.
-    SisterFileLock.ReleaseKey();
-
     Status = H_SUCCESS;
 
 WRAPUP:
     return Status;
-    }
-
-//-----------------------------------------------------------------------------
-// public
-// OnSynchronizedSharingControl
-//-----------------------------------------------------------------------------
-void HRFPcxLineEditor::OnSynchronizedSharingControl()
-    {
-    m_CurrentLineNumber = 0;
-    m_FileBufferIndex   = 0;
-    m_FilePos           = END_OF_HEADER_OFFSET;
-    static_cast<HRFPcxFile*>(GetRasterFile().GetPtr())->m_pPcxFile->SeekToPos(END_OF_HEADER_OFFSET);
-    static_cast<HRFPcxFile*>(GetRasterFile().GetPtr())->m_pPcxFile->Read(m_pFileBuffer, m_FileBufferSize);
     }

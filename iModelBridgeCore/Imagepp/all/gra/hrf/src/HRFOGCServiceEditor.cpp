@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFOGCServiceEditor.cpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class HRFOGCServiceEditor
@@ -80,8 +80,7 @@ HRFOGCServiceEditor::~HRFOGCServiceEditor()
 //-----------------------------------------------------------------------------
 HSTATUS HRFOGCServiceEditor::ReadBlock(uint64_t             pi_PosBlockX,
                                        uint64_t             pi_PosBlockY,
-                                       Byte*                po_pData,
-                                       HFCLockMonitor const* pi_pSisterFileLock)
+                                       Byte*                po_pData)
     {
     HPRECONDITION (m_AccessMode.m_HasReadAccess);
     HPRECONDITION (po_pData != 0);
@@ -150,8 +149,7 @@ HSTATUS HRFOGCServiceEditor::ReadBlock(uint64_t             pi_PosBlockX,
 //-----------------------------------------------------------------------------
 HSTATUS HRFOGCServiceEditor::WriteBlock(uint64_t              pi_PosBlockX,
                                         uint64_t              pi_PosBlockY,
-                                        const Byte*           pi_pData,
-                                        HFCLockMonitor const* pi_pSisterFileLock)
+                                        const Byte*           pi_pData)
     {
     HASSERT(0); // not supported
 

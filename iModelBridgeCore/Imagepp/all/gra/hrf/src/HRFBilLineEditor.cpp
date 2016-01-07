@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFBilLineEditor.cpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -70,8 +70,7 @@ HRFBilLineEditor::~HRFBilLineEditor()
 
 HSTATUS HRFBilLineEditor::ReadBlock(uint64_t pi_PosBlockX,
                                     uint64_t pi_PosBlockY,
-                                    Byte* po_pData,
-                                    HFCLockMonitor const* pi_pSisterFileLock)
+                                    Byte* po_pData)
     {
     HPRECONDITION(po_pData != 0);
     HPRECONDITION(m_AccessMode.m_HasReadAccess);
@@ -84,16 +83,16 @@ HSTATUS HRFBilLineEditor::ReadBlock(uint64_t pi_PosBlockX,
         if (3 <= m_nNbChannel)
             {
             if (8 == m_nbBitsPerBandPerPixel)
-                Status = Read24BitRgbBlock(pi_PosBlockX, pi_PosBlockY, po_pData, pi_pSisterFileLock);
+                Status = Read24BitRgbBlock(pi_PosBlockX, pi_PosBlockY, po_pData);
             else if (16 == m_nbBitsPerBandPerPixel)
-                Status = Read48BitRgbBlock(pi_PosBlockX, pi_PosBlockY, po_pData, pi_pSisterFileLock);
+                Status = Read48BitRgbBlock(pi_PosBlockX, pi_PosBlockY, po_pData);
             }
         else
             {
             if (8 == m_nbBitsPerBandPerPixel)
-                Status = Read8BitGrayBlock(pi_PosBlockX, pi_PosBlockY, po_pData, pi_pSisterFileLock);
+                Status = Read8BitGrayBlock(pi_PosBlockX, pi_PosBlockY, po_pData);
             else if (16 == m_nbBitsPerBandPerPixel)
-                Status = Read16BitGrayBlock(pi_PosBlockX, pi_PosBlockY, po_pData, pi_pSisterFileLock);
+                Status = Read16BitGrayBlock(pi_PosBlockX, pi_PosBlockY, po_pData);
             }
         }
     else
@@ -109,8 +108,7 @@ HSTATUS HRFBilLineEditor::ReadBlock(uint64_t pi_PosBlockX,
 
 HSTATUS HRFBilLineEditor::Read24BitRgbBlock(uint64_t pi_PosBlockX,
                                             uint64_t pi_PosBlockY,
-                                            Byte* po_pData,
-                                            HFCLockMonitor const* pi_pSisterFileLock)
+                                            Byte* po_pData)
     {
     HPRECONDITION(po_pData != 0);
     HPRECONDITION(m_AccessMode.m_HasReadAccess);
@@ -129,15 +127,6 @@ HSTATUS HRFBilLineEditor::Read24BitRgbBlock(uint64_t pi_PosBlockX,
         m_pGreenLineBuffer = new Byte[m_LineWidth];
     if (NULL == m_pBlueLineBuffer)
         m_pBlueLineBuffer = new Byte[m_LineWidth];
-
-    // Lock the sister file
-    HFCLockMonitor SisterFileLock;
-    if(pi_pSisterFileLock == 0)
-        {
-        // Lock the file.
-        AssignRasterFileLock(GetRasterFile(), SisterFileLock, true);
-        pi_pSisterFileLock = &SisterFileLock;
-        }
 
     if (GetResolutionDescriptor()->GetScanlineOrientation().IsUpper())
         {
@@ -178,8 +167,6 @@ HSTATUS HRFBilLineEditor::Read24BitRgbBlock(uint64_t pi_PosBlockX,
             goto WRAPUP;
         }
 
-    SisterFileLock.ReleaseKey();
-
     if (GetResolutionDescriptor()->GetScanlineOrientation().IsLeft())
         {
         for (PixelIndex = 0; PixelIndex < m_LineWidth; PixelIndex++)
@@ -213,8 +200,7 @@ WRAPUP:
 
 HSTATUS HRFBilLineEditor::Read48BitRgbBlock(uint64_t pi_PosBlockX,
                                             uint64_t pi_PosBlockY,
-                                            Byte* po_pData,
-                                            HFCLockMonitor const* pi_pSisterFileLock)
+                                            Byte* po_pData)
     {
     HASSERT(!"Read48BitRgbBlock not supported");
     // The code below is not good. Nothing get copied over to the output buffer(po_pData).
@@ -240,15 +226,6 @@ HSTATUS HRFBilLineEditor::Read48BitRgbBlock(uint64_t pi_PosBlockX,
     if (NULL == m_pBlueLineBuffer)
         m_pBlueLineBuffer = new Byte[m_LineWidth];
 
-    // Lock the sister file
-    HFCLockMonitor SisterFileLock;
-    if(pi_pSisterFileLock == 0)
-        {
-        // Lock the file.
-        AssignRasterFileLock(GetRasterFile(), SisterFileLock, true);
-        pi_pSisterFileLock = &SisterFileLock;
-        }
-
     uint64_t offSetToLine = m_Offset + (pi_PosBlockY * GetBilRasterFile()->GetTotalRowBytes());
     offSetToLine += m_LineWidth * (RedChannel - 1);
     GetBilRasterFile()->m_pBilFile->SeekToPos(offSetToLine);
@@ -265,8 +242,6 @@ HSTATUS HRFBilLineEditor::Read48BitRgbBlock(uint64_t pi_PosBlockX,
 
     if(GetBilRasterFile()->m_pBilFile->Read(m_pBlueLineBuffer, m_LineWidth) != m_LineWidth)
         goto WRAPUP;
-
-    SisterFileLock.ReleaseKey();
 
     unsigned short* pRedBuffer = (unsigned short*)m_pRedLineBuffer;
     unsigned short* pGreenBuffer = (unsigned short*)m_pGreenLineBuffer;
@@ -309,8 +284,7 @@ WRAPUP:
 
 HSTATUS HRFBilLineEditor::Read8BitGrayBlock(uint64_t pi_PosBlockX,
                                             uint64_t pi_PosBlockY,
-                                            Byte* po_pData,
-                                            HFCLockMonitor const* pi_pSisterFileLock)
+                                            Byte* po_pData)
     {
     HPRECONDITION(po_pData != 0);
     HPRECONDITION(m_AccessMode.m_HasReadAccess);
@@ -320,15 +294,6 @@ HSTATUS HRFBilLineEditor::Read8BitGrayBlock(uint64_t pi_PosBlockX,
 
     int64_t GrayChannel    = GetBilRasterFile()->GetRedChannel();
     int64_t BytesPerBandRow = m_LineWidth;
-
-    // Lock the sister file
-    HFCLockMonitor SisterFileLock;
-    if(pi_pSisterFileLock == 0)
-        {
-        // Lock the file.
-        AssignRasterFileLock(GetRasterFile(), SisterFileLock, true);
-        pi_pSisterFileLock = &SisterFileLock;
-        }
 
     if (GetResolutionDescriptor()->GetScanlineOrientation().IsUpper())
         {
@@ -344,8 +309,6 @@ HSTATUS HRFBilLineEditor::Read8BitGrayBlock(uint64_t pi_PosBlockX,
 
     if (GetBilRasterFile()->m_pBilFile->Read(po_pData, m_LineWidth) != m_LineWidth)
         goto WRAPUP;    // H_ERROR
-
-    SisterFileLock.ReleaseKey();
 
     if (GetResolutionDescriptor()->GetScanlineOrientation().IsRight())
         {
@@ -371,8 +334,7 @@ WRAPUP:
 
 HSTATUS HRFBilLineEditor::Read16BitGrayBlock(uint64_t pi_PosBlockX,
                                              uint64_t pi_PosBlockY,
-                                             Byte* po_pData,
-                                             HFCLockMonitor const* pi_pSisterFileLock)
+                                             Byte* po_pData)
     {
     HPRECONDITION(po_pData != 0);
     HPRECONDITION(m_AccessMode.m_HasReadAccess);
@@ -384,23 +346,12 @@ HSTATUS HRFBilLineEditor::Read16BitGrayBlock(uint64_t pi_PosBlockX,
     int64_t GrayChannel     = GetBilRasterFile()->GetRedChannel();
     int64_t BytesPerBandRow = m_LineWidth;
 
-    // Lock the sister file
-    HFCLockMonitor SisterFileLock;
-    if(pi_pSisterFileLock == 0)
-        {
-        // Lock the file.
-        AssignRasterFileLock(GetRasterFile(), SisterFileLock, true);
-        pi_pSisterFileLock = &SisterFileLock;
-        }
-
     uint64_t offSetToLine = m_Offset + (pi_PosBlockY * GetBilRasterFile()->GetTotalRowBytes());
     offSetToLine += BytesPerBandRow * (GrayChannel - 1);
     GetBilRasterFile()->m_pBilFile->SeekToPos(offSetToLine);
 
     if(GetBilRasterFile()->m_pBilFile->Read(po_pData, m_LineWidth) != m_LineWidth)
         goto WRAPUP;    // H_ERROR;
-
-    SisterFileLock.ReleaseKey();
 
     if (GetBilRasterFile()->IsMsByteFirst())
         {
@@ -428,8 +379,7 @@ WRAPUP:
 //-----------------------------------------------------------------------------
 HSTATUS HRFBilLineEditor::WriteBlock(uint64_t     pi_PosBlockX,
                                      uint64_t     pi_PosBlockY,
-                                     const Byte* pi_pData,
-                                     HFCLockMonitor const* pi_pSisterFileLock)
+                                     const Byte* pi_pData)
     {
     HASSERT(0); // not supported
 

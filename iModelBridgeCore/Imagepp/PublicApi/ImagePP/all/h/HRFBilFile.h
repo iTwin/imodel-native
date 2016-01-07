@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRFBilFile.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -152,40 +152,6 @@ public:
     int32_t GetBandGapBytes     () const;
     bool   IsMsByteFirst       () const;
 
-    //--------------------------------------
-    // Sharing control methods for other header files
-    //--------------------------------------
-
-    // Hdr
-    HFCBinStreamLockManager*      GetHdrLockManager                ();
-    void                          HdrSharingControlCreate          (HFCURL* pi_pHdrUrl);
-    bool                         HdrSharingControlNeedSynchronization();
-    void                          HdrSharingControlSynchronize     ();
-    void                          HdrSharingControlIncrementCount  ();
-    bool                         HdrSharingControlIsLocked        ();
-
-    HRFSharingControl*            GetHdrSharingControl             ();
-
-    // Bnd
-    HFCBinStreamLockManager*      GetBndLockManager                ();
-    void                          BndSharingControlCreate          (HFCURL* pi_pBndUrl);
-    bool                         BndSharingControlNeedSynchronization();
-    void                          BndSharingControlSynchronize     ();
-    void                          BndSharingControlIncrementCount  ();
-    bool                         BndSharingControlIsLocked        ();
-
-    HRFSharingControl*            GetBndSharingControl             ();
-
-    // Stx
-    HFCBinStreamLockManager*      GetStxLockManager                ();
-    void                          StxSharingControlCreate          (HFCURL* pi_pStxUrl);
-    bool                         StxSharingControlNeedSynchronization();
-    void                          StxSharingControlSynchronize     ();
-    void                          StxSharingControlIncrementCount  ();
-    bool                         StxSharingControlIsLocked        ();
-
-    HRFSharingControl*            GetStxSharingControl             ();
-
     virtual void                  Save();
 
     virtual uint64_t                GetFileCurrentSize() const;
@@ -224,10 +190,6 @@ private:
     HAutoPtr<HFCBinStream>  m_pHdrFile;
     HAutoPtr<HFCBinStream>  m_pBndFile;
     HAutoPtr<HFCBinStream>  m_pStxFile;
-
-    HAutoPtr<HRFSharingControl>  m_pHdrSharingControl;
-    HAutoPtr<HRFSharingControl>  m_pBndSharingControl;
-    HAutoPtr<HRFSharingControl>  m_pStxSharingControl;
 
     RawPixelFileHeader        m_bilFileHeader;
     BilFileInfo             m_bilFileInfo;
@@ -270,9 +232,6 @@ struct HRFBilCreator : public HRFRasterFileCreator
                                              HFCAccessMode         pi_AccessMode = HFC_READ_ONLY,
                                              uint64_t              pi_Offset = 0) const;
 
-    void                  HdrSharingControlCreate          (const HFCPtr<HFCURL>& pi_pURL);
-    HRFSharingControl*    GetHdrSharingControl             () const;
-    HFCBinStreamLockManager* GetHdrLockManager             () const;
 protected:
     bool IsKindOfFileWithExternalHeader(const HFCPtr<HFCURL>& pi_rpURL, uint64_t pi_Offset) const;
     bool IsKindOfFileWithInternalHeader(const HFCPtr<HFCURL>& pi_rpURL, uint64_t pi_Offset) const;
@@ -283,8 +242,6 @@ protected:
                                    const HFCPtr<HFCURL>& pi_rpURL) const;
     bool IsValidChar(const char pi_Char)const;
     void  CleanUpString(string* pio_pString)const;
-
-    HAutoPtr<HRFSharingControl>  m_pHdrSharingControl;
 
 private:
     HFC_DECLARE_SINGLETON_DLL(IMAGEPP_EXPORT, HRFBilCreator)

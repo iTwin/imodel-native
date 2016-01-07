@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFGifFile.cpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class HRFGifFile
@@ -204,9 +204,6 @@ bool HRFGifCreator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
     GifApplication          gifApplication;
     GifComment              gifComment;
 
-    (const_cast<HRFGifCreator*>(this))->SharingControlCreate(pi_rpURL);
-    HFCLockMonitor SisterFileLock(GetLockManager());
-
     // Boolean that indicate if the end of the file has been reach.
     bool   EndOfGifFile = false;
 
@@ -311,12 +308,6 @@ bool HRFGifCreator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
             }
         Status = true;
         }
-
-
-    SisterFileLock.ReleaseKey();
-    HASSERT(!(const_cast<HRFGifCreator*>(this))->m_pSharingControl->IsLocked());
-    (const_cast<HRFGifCreator*>(this))->m_pSharingControl = 0;
-
 
 WRAPUP:
     return Status;
@@ -451,9 +442,6 @@ bool HRFGifFile::AssignStructTo(HFCPtr<HRFPageDescriptor> pi_pPage)
     // Gif Graphic Block to be add in the list.
     GifGraphicBlock     gifGraphicBlock;
 
-    // Lock the sister file
-    HFCLockMonitor SisterFileLock(GetLockManager());
-
     unsigned short BitsByPixel((unsigned short)pResolutionDescriptor->GetPixelType()->CountPixelRawDataBits());
 
     // First Page
@@ -499,10 +487,6 @@ bool HRFGifFile::AssignStructTo(HFCPtr<HRFPageDescriptor> pi_pPage)
     if (!WriteGifImageDesc((GifImageDescriptor*) &gifGraphicBlock.ImageDescriptor, m_pGifFile))
         goto WRAPUP;
 
-
-    // Unlock the sister file
-    SisterFileLock.ReleaseKey();
-
     m_ListGifGraphicBlock.push_back((const GifGraphicBlock&) gifGraphicBlock);
 
     // Adding the offset to the list
@@ -541,17 +525,8 @@ bool HRFGifFile::Open()
         // uses stdio HFCBinStream*, so open the file and satisfy the library
         m_pGifFile = HFCBinStream::Instanciate(GetURL(), m_Offset, GetAccessMode(), 0, true);
 
-        // This creates the sister file for file sharing control if necessary.
-        SharingControlCreate();
-
-        // Lock the sister file
-        HFCLockMonitor SisterFileLock(GetLockManager());
-
         // Initialisation of file struct.
         LookUpBlocks();
-
-        // Unlock the sister file
-        SisterFileLock.ReleaseKey();
 
         // Animated GIF supported only in read-only
         if ((m_ImageCount > 1) &&
@@ -673,9 +648,6 @@ void HRFGifFile::SaveGifFile(bool pi_CloseFile)
 
     if ((GetAccessMode().m_HasCreateAccess || GetAccessMode().m_HasWriteAccess) /*&& m_RasterIsDirty*/)
         {
-        // Lock the sister file
-        HFCLockMonitor SisterFileLock(GetLockManager());
-
         for (TagIterator  = pPageDescriptor->GetTags().begin();
              TagIterator != pPageDescriptor->GetTags().end(); TagIterator++)
             {
@@ -821,9 +793,6 @@ void HRFGifFile::SaveGifFile(bool pi_CloseFile)
             }
 
         m_pGifFile->Flush();
-
-        // Unlock the sister file
-        SisterFileLock.ReleaseKey();
         }
 
     if (pi_CloseFile)
@@ -846,9 +815,6 @@ bool HRFGifFile::Create()
     {
     // Open the file.
     m_pGifFile = HFCBinStream::Instanciate(GetURL(), m_Offset, GetAccessMode(), 0, true);
-
-    // Create the sister file for file sharing control if necessary.
-    SharingControlCreate();
 
     m_IsOpen = true;
 
@@ -996,8 +962,6 @@ HFCPtr<HRPPixelType> HRFGifFile::CreatePixelTypeFromFile(uint32_t pi_PageIndex) 
 //-----------------------------------------------------------------------------
 bool HRFGifFile::LookUpBlocks()
     {
-    HPRECONDITION (SharingControlIsLocked());
-
     bool Status       = false;
     bool EndOfGifFile = false; // Boolean that indicate if the end of the file has been reach.
     unsigned short LineCount;          // Count of the number of table lines displayed.
@@ -1109,8 +1073,6 @@ WRAPUP:
 //-----------------------------------------------------------------------------
 bool HRFGifFile::LookUpExtensionBlocks()
     {
-    HPRECONDITION (SharingControlIsLocked());
-
     bool Status = false;
 
     GifGraphicControl   gifGraphicControl;
@@ -1249,7 +1211,7 @@ WRAPUP:
 //-----------------------------------------------------------------------------
 bool HRFGifFile::ReadGifHeader(GifHeader* pio_pGifHeader, HFCBinStream* pi_pGifFile, HRFRasterFile* pi_pRaster)
     {
-    HPRECONDITION ((pi_pRaster == 0) || pi_pRaster->SharingControlIsLocked());
+    HPRECONDITION (pi_pRaster == 0);
 
     bool Status = false;
 
@@ -1292,7 +1254,7 @@ WRAPUP:
 //-----------------------------------------------------------------------------
 bool HRFGifFile::ReadGifImageDesc(GifImageDescriptor* pio_pGifImageDesc, HFCBinStream* pi_pGifFile, HRFRasterFile* pi_pRaster)
     {
-    HPRECONDITION ((pi_pRaster == 0) || pi_pRaster->SharingControlIsLocked());
+    HPRECONDITION (pi_pRaster == 0);
 
     bool Status = false;
 
@@ -1331,7 +1293,7 @@ WRAPUP:
 //-----------------------------------------------------------------------------
 bool HRFGifFile::ReadGifGraphicControl(GifGraphicControl* pio_pGifGraphicControl, HFCBinStream* pi_pGifFile, HRFRasterFile* pi_pRaster)
     {
-    HPRECONDITION ((pi_pRaster == 0) || pi_pRaster->SharingControlIsLocked());
+    HPRECONDITION (pi_pRaster == 0);
 
     bool Status = true;
 
@@ -1355,7 +1317,7 @@ bool HRFGifFile::ReadGifGraphicControl(GifGraphicControl* pio_pGifGraphicControl
 //-----------------------------------------------------------------------------
 bool HRFGifFile::ReadGifPlainText(GifPlainText* pio_pGifPlainText, HFCBinStream* pi_pGifFile, HRFRasterFile* pi_pRaster)
     {
-    HPRECONDITION ((pi_pRaster == 0) || pi_pRaster->SharingControlIsLocked());
+    HPRECONDITION (pi_pRaster == 0);
 
     bool Status = false;
 
@@ -1392,7 +1354,7 @@ WRAPUP:
 //-----------------------------------------------------------------------------
 bool HRFGifFile::ReadGifApplication(GifApplication* pio_pGifApplication, HFCBinStream* pi_pGifFile, HRFRasterFile* pi_pRaster)
     {
-    HPRECONDITION ((pi_pRaster == 0) || pi_pRaster->SharingControlIsLocked());
+    HPRECONDITION (pi_pRaster == 0);
 
     bool Status = false;
 
@@ -1421,7 +1383,7 @@ WRAPUP:
 //-----------------------------------------------------------------------------
 bool HRFGifFile::ReadGifComment(GifComment* pio_pGifComment, HFCBinStream* pi_pGifFile, HRFRasterFile* pi_pRaster)
     {
-    HPRECONDITION ((pi_pRaster == 0) || pi_pRaster->SharingControlIsLocked());
+    HPRECONDITION (pi_pRaster == 0);
 
     bool Status = true;
 
@@ -1447,7 +1409,7 @@ bool HRFGifFile::ReadGifComment(GifComment* pio_pGifComment, HFCBinStream* pi_pG
 //-----------------------------------------------------------------------------
 Byte* HRFGifFile::ReadDataSubBlocks(HFCBinStream* pi_pGifFile, HRFRasterFile* pi_pRaster)
     {
-    HPRECONDITION ((pi_pRaster == 0) || pi_pRaster->SharingControlIsLocked());
+    HPRECONDITION (pi_pRaster == 0);
 
 #define BUFFER_INCREMENT 4096
 
@@ -1500,8 +1462,6 @@ Byte* HRFGifFile::ReadDataSubBlocks(HFCBinStream* pi_pGifFile, HRFRasterFile* pi
 //-----------------------------------------------------------------------------
 bool HRFGifFile::WriteGifHeader(GifHeader* pi_pGifHeader, HFCBinStream* pio_pGifFile)
     {
-    HPRECONDITION (SharingControlIsLocked());
-
     bool Status = false;
 
     // Number of entires in the Global Color Table.
@@ -1540,8 +1500,6 @@ WRAPUP:
 //-----------------------------------------------------------------------------
 bool HRFGifFile::WritePalette(GifColorTable pi_pColorTable, uint32_t pi_TableSize, HFCBinStream* pio_pGifFile)
     {
-    HPRECONDITION (SharingControlIsLocked());
-
     for (unsigned short i = 0; i < pi_TableSize; i++)
         {
         if (pio_pGifFile->Write(&pi_pColorTable[i].Red,   sizeof pi_pColorTable[i].Red)   != sizeof(Byte) ||
@@ -1562,8 +1520,6 @@ bool HRFGifFile::WritePalette(GifColorTable pi_pColorTable, uint32_t pi_TableSiz
 //-----------------------------------------------------------------------------
 bool HRFGifFile::WriteGifImageDesc(GifImageDescriptor* pi_pGifImageDesc, HFCBinStream* pio_pGifFile)
     {
-    HPRECONDITION (SharingControlIsLocked());
-
     bool Status = false;
 
     // Number of entries in the Local Color Table.
@@ -1602,8 +1558,6 @@ WRAPUP:
 //-----------------------------------------------------------------------------
 bool HRFGifFile::WriteGifGraphicControl(GifGraphicControl* pi_pGifGraphicControl, HFCBinStream* pio_pGifFile)
     {
-    HPRECONDITION (SharingControlIsLocked());
-
     bool Status = true;
 
     if ((pio_pGifFile->Write(&pi_pGifGraphicControl->Introducer,    sizeof pi_pGifGraphicControl->Introducer)     != (sizeof pi_pGifGraphicControl->Introducer)) ||
@@ -1627,8 +1581,6 @@ bool HRFGifFile::WriteGifGraphicControl(GifGraphicControl* pi_pGifGraphicControl
 //-----------------------------------------------------------------------------
 bool HRFGifFile::WriteGifPlainText(GifPlainText* pi_pGifPlainText, uint32_t pi_SizeOfData, HFCBinStream* pio_pGifFile)
     {
-    HPRECONDITION (SharingControlIsLocked());
-
     bool Status = false;
 
     if ((pio_pGifFile->Write(&pi_pGifPlainText->Introducer,         sizeof pi_pGifPlainText->Introducer)          != (sizeof pi_pGifPlainText->Introducer)) ||
@@ -1664,8 +1616,6 @@ WRAPUP:
 //-----------------------------------------------------------------------------
 bool HRFGifFile::WriteGifApplication(GifApplication* pi_pGifApplication, uint32_t pi_SizeOfData, HFCBinStream* pio_pGifFile)
     {
-    HPRECONDITION (SharingControlIsLocked());
-
     bool Status = false;
 
     if ((pio_pGifFile->Write(&pi_pGifApplication->Introducer,   sizeof pi_pGifApplication->Introducer)   != (sizeof pi_pGifApplication->Introducer)) ||
@@ -1693,8 +1643,6 @@ WRAPUP:
 //-----------------------------------------------------------------------------
 bool HRFGifFile::WriteGifComment(GifComment* pi_pGifComment, uint32_t pi_SizeOfData, HFCBinStream* pio_pGifFile)
     {
-    HPRECONDITION (SharingControlIsLocked());
-
     bool Status = false;
 
     if ((pio_pGifFile->Write(&pi_pGifComment->Introducer,   sizeof pi_pGifComment->Introducer)   != (sizeof pi_pGifComment->Introducer)) ||
@@ -1725,8 +1673,6 @@ WRAPUP:
 //-----------------------------------------------------------------------------
 bool HRFGifFile::WriteDataSubBlocks(uint32_t pi_BufferSize, Byte* pi_pBuffer, HFCBinStream* pio_pGifFile)
     {
-    HPRECONDITION (SharingControlIsLocked());
-
     bool Status = false;
 
     uint32_t indexInBuffer           = 0;

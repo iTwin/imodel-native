@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/HTiff/src/HTIFFFile.cpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -32,7 +32,6 @@
 #include <Imagepp/all/h/HFCMonitor.h>
 #include <Imagepp/all/h/HFCLocalBinStream.h>
 #include <Imagepp/all/h/HFCURL.h>
-#include <Imagepp/all/h/HFCBinStreamLockManager.h>
 #include <Imagepp/all/h/HCDPacket.h>
 #include <Imagepp/all/h/HCDCodec.h>
 #include <Imagepp/all/h/HTIFFTag.h>
@@ -1427,7 +1426,6 @@ HSTATUS HTIFFFile::StripWriteCompress  (const Byte* pi_pData, uint32_t pi_DataLe
 bool HTIFFFile::ReadProjectWiseBlob(uint32_t pi_Page, Byte* po_pData, uint32_t* po_pSize) const
     {
     bool Ret = false;
-    HFCLockMonitor CacheFileLock (m_pLockManager.get());
 
     HMRDirectory64* pHMRDir = m_ppListHMRDir64[pi_Page];
     if ((pHMRDir != 0) && pHMRDir->m_pDirectory->TagIsPresent(HMR_PROJECTWISE_BLOB))
@@ -1456,8 +1454,6 @@ bool HTIFFFile::ReadProjectWiseBlob(uint32_t pi_Page, Byte* po_pData, uint32_t* 
             }
         }
 
-    CacheFileLock.ReleaseKey();
-
     return Ret;
     }
 
@@ -1471,8 +1467,6 @@ bool HTIFFFile::WriteProjectWiseBlob(uint32_t pi_Page, const Byte* pi_pData, uin
     HPRECONDITION(pi_Page < m_ListHMRDirCount);
     HPRECONDITION(pi_pData != 0);
     HPRECONDITION(pi_pSize > 0);
-
-    HFCLockMonitor CacheFileLock (m_pLockManager.get());
 
     bool Ret = false;
     HMRDirectory64* pHMRDir = m_ppListHMRDir64[pi_Page];
@@ -1556,8 +1550,6 @@ bool HTIFFFile::WriteProjectWiseBlob(uint32_t pi_Page, const Byte* pi_pData, uin
         // Flag the tag as dirty
         pHMRDir->m_pDirectory->Touched(HMR_PROJECTWISE_BLOB);
         }
-
-    CacheFileLock.ReleaseKey();
 
     return Ret;
     }
@@ -2369,8 +2361,6 @@ HSTATUS HTIFFFile::WriteData (const Byte* pi_pData, uint32_t pi_StripTile, uint3
     HFCMonitor Monitor(m_Key);
     HSTATUS Ret = H_SUCCESS;
 
-    HFCLockMonitor CacheFileLock (m_pLockManager.get());
-
     // If list of Strip\Tile not already allocated
     if (m_NbData32 == 0)
         InitStripList();
@@ -2531,8 +2521,6 @@ HSTATUS HTIFFFile::WriteData (const Byte* pi_pData, uint32_t pi_StripTile, uint3
     m_DataWasModified = true;
 
 WRAPUP:
-    CacheFileLock.ReleaseKey();
-
     return Ret;
     }
 
@@ -2671,8 +2659,6 @@ HSTATUS HTIFFFile::ReadDataWithPacket(HFCPtr<HCDPacket>& po_rpPacket, uint32_t p
 
     HFCMonitor Monitor(m_Key);
     HSTATUS Ret = H_SUCCESS;
-
-    HFCLockMonitor CacheFileLock (m_pLockManager.get());
 
     uint32_t DataSize           = GetCount(pi_StripTile);
     uint32_t LineIndexTableSize = 0;
@@ -2855,7 +2841,6 @@ HSTATUS HTIFFFile::ReadDataWithPacket(HFCPtr<HCDPacket>& po_rpPacket, uint32_t p
     po_rpPacket->SetDataSize(DataSize);
 
 WRAPUP:
-    CacheFileLock.ReleaseKey();
     return Ret;
     }
 
@@ -3367,7 +3352,6 @@ void HTIFFFile::ComputeNbBitUsed()
 bool HTIFFFile::SetSynchroField()
     {
     bool Ret = true;
-    HFCLockMonitor CacheFileLock (m_pLockManager.get());
 
     // Check if we need to write in the file the offset used to implement the synchro
     // need by the Concurrence support.
@@ -3397,8 +3381,6 @@ bool HTIFFFile::SetSynchroField()
         {
         m_pHMRDir->GetValues (HMR_SYNCHRONIZE_FIELD, &m_SynchroOffset);
         }
-
-    CacheFileLock.ReleaseKey();
 
     return Ret;
     }

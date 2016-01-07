@@ -2,7 +2,7 @@
 #
 #     $Source: all/imagepp.mke $
 #
-#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
 BUILD_NO_STACK_CHECK        = 1
@@ -982,8 +982,6 @@ $(o)HRSObjectStore$(oext) : $(ippGraDir)hrs/src/HRSObjectStore.cpp $(ippAllInc)H
 
 $(o)HRFCacheController$(oext) : $(ippGraDir)hrf/src/HRFCacheController.cpp $(ippAllInc)HRFCacheController.h ${MultiCompileDepends}
 
-$(o)HRFCacheFileSharing$(oext) : $(ippGraDir)hrf/src/HRFCacheFileSharing.cpp $(ippAllInc)HRFCacheFileSharing.h ${MultiCompileDepends}
-
 $(o)HRFCapability$(oext) : $(ippGraDir)hrf/src/HRFCapability.cpp $(ippAllInc)HRFCapability.h ${MultiCompileDepends}
 
 $(o)HRFExportOptions$(oext) : $(ippGraDir)hrf/src/HRFExportOptions.cpp $(ippAllInc)HRFExportOptions.h ${MultiCompileDepends}
@@ -1007,10 +1005,6 @@ $(o)HRFRasterFileFactory$(oext) : $(ippGraDir)hrf/src/HRFRasterFileFactory.cpp $
 $(o)HRFResolutionDescriptor$(oext) : $(ippGraDir)hrf/src/HRFResolutionDescriptor.cpp $(ippAllInc)HRFResolutionDescriptor.h ${MultiCompileDepends}
 
 $(o)HRFResolutionEditor$(oext) : $(ippGraDir)hrf/src/HRFResolutionEditor.cpp $(ippAllInc)HRFResolutionEditor.h ${MultiCompileDepends}
-
-$(o)HRFSharingControl$(oext) : $(ippGraDir)hrf/src/HRFSharingControl.cpp $(ippAllInc)HRFSharingControl.h ${MultiCompileDepends}
-
-$(o)HRFSisterFileSharing$(oext) : $(ippGraDir)hrf/src/HRFSisterFileSharing.cpp $(ippAllInc)HRFSisterFileSharing.h ${MultiCompileDepends}
 
 $(o)HRFThumbnail$(oext) : $(ippGraDir)hrf/src/HRFThumbnail.cpp $(ippAllInc)HRFThumbnail.h ${MultiCompileDepends}
 

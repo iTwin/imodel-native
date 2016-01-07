@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFIntergraphTG4File.cpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class HRFIntergraphTG4File
@@ -214,9 +214,6 @@ bool HRFIntergraphTG4Creator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
     unsigned short WordToFollow;
     uint32_t HeaderLen;
 
-    (const_cast<HRFIntergraphTG4Creator*>(this))->SharingControlCreate(pi_rpURL);
-    HFCLockMonitor SisterFileLock(GetLockManager());
-
     // Open the TG4 File & place file pointer at the start of the file
     pFile = HFCBinStream::Instanciate(pi_rpURL, pi_Offset, HFC_READ_ONLY | HFC_SHARE_READ_WRITE);
     if (pFile != 0 && pFile->GetLastException() == 0)
@@ -252,10 +249,6 @@ bool HRFIntergraphTG4Creator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
         }
 
 WRAPUP:
-    SisterFileLock.ReleaseKey();
-    HASSERT(!(const_cast<HRFIntergraphTG4Creator*>(this))->m_pSharingControl->IsLocked());
-    (const_cast<HRFIntergraphTG4Creator*>(this))->m_pSharingControl = 0;
-
     return Result;
     }
 

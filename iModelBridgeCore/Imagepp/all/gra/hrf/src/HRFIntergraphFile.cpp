@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFIntergraphFile.cpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class HRFIntergraphFile
@@ -268,18 +268,12 @@ HRFResolutionEditor* HRFIntergraphFile::CreateResolutionEditor(uint32_t       pi
             //m_pIntergraphFile->SeekToEnd();
             uint32_t CursorFilePosition = (uint32_t)m_pIntergraphFile->GetCurrentPos();
 
-            // Lock the sister file.
-            HFCLockMonitor SisterFileLock (GetLockManager());
-
             // Get the cursor pos, now we have the next offset overview...
             // Be sure to update the packet overview before writing the tile directory
             UpdatePacketOverview(CursorFilePosition, pi_Resolution);
             if (GetPageDescriptor(pi_PageIndex)->GetResolutionDescriptor(pi_Resolution)->GetBlockType()
                 == HRFBlockType::TILE)
                 WriteTileDirectory(pi_Resolution);
-
-            // Unlock the sister file.
-            SisterFileLock.ReleaseKey();
             }
         }
 
@@ -319,9 +313,6 @@ void HRFIntergraphFile::Save()
                 {
                 HFCPtr<HRFPageDescriptor> pPageDescriptor = GetPageDescriptor(Page);
 
-                // Lock the sister file.
-                HFCLockMonitor SisterFileLock (GetLockManager());
-
                 // Update the palette
                 if (pPageDescriptor->GetResolutionDescriptor(0)->PaletteHasChanged())
                     {
@@ -340,9 +331,6 @@ void HRFIntergraphFile::Save()
                     {
                     UpdatePacketOverview(0, 0);
                     }
-
-                // Unlock the sister file
-                SisterFileLock.ReleaseKey();
                 }
             m_pIntergraphFile->Flush();
             }
@@ -361,9 +349,6 @@ bool HRFIntergraphFile::Open()
     // Be sure the Intergraph raster file is NOT already open.
     m_pIntergraphFile = HFCBinStream::Instanciate(GetURL(), m_Offset, GetAccessMode(), 0, true);
 
-    // This creates the sister file for file sharing control if necessary.
-    SharingControlCreate();
-
     m_IsOpen = true;
 
     return m_IsOpen;
@@ -381,9 +366,6 @@ bool HRFIntergraphFile::Create()
     HPRECONDITION(!m_pIntergraphFile);
 
     m_pIntergraphFile = HFCBinStream::Instanciate(GetURL(), m_Offset, GetAccessMode(), 0, true);
-
-    // This creates the sister file for file sharing control if necessary.
-    SharingControlCreate();
 
     m_IsOpen = true;
 
@@ -429,8 +411,6 @@ void HRFIntergraphFile::Close()
 
 void HRFIntergraphFile::IntergraphTagUpdate(HFCPtr<HRFPageDescriptor> pi_pPageDescriptor)
     {
-    HPRECONDITION (SharingControlIsLocked());
-
     bool RasterFileNeedUpdate = false;
 
     // Unkown unit
@@ -523,7 +503,6 @@ bool HRFIntergraphFile::WriteTransfoModel(const HFCPtr<HGF2DTransfoModel>& pi_rp
     // Validate the file access
     HPRECONDITION(GetAccessMode().m_HasWriteAccess || GetAccessMode().m_HasCreateAccess);
     HPRECONDITION(pi_rpTransfoModel != 0);
-    HPRECONDITION(SharingControlIsLocked());
 
     bool Status = false;
 
@@ -1399,9 +1378,6 @@ bool HRFIntergraphFile::FillFileHeader()
 
     m_HasHeaderFilled = false;
 
-    // Lock the sister file.
-    HFCLockMonitor SisterFileLock (GetLockManager());
-
     // Be sure the stream pointer are at the begining of the file
     m_pIntergraphFile->SeekToPos(GetpageOffset(m_CurentPageIndex));
 
@@ -1468,9 +1444,6 @@ bool HRFIntergraphFile::FillFileHeader()
             }
         }
 
-    // Unlock the sister file.
-    SisterFileLock.ReleaseKey();
-
     return m_HasHeaderFilled;
     }
 
@@ -1496,9 +1469,6 @@ void HRFIntergraphFile::ReadTileDirectory(unsigned short pi_SubImage)
     if (pi_SubImage != 0)
         FileOffset += m_IntergraphResDescriptors[pi_SubImage]->pOverviewEntry->S;
 
-    // Lock the sister file
-    HFCLockMonitor SisterFileLock (GetLockManager());
-
     // Be sure to be at the right place in the raster
     m_pIntergraphFile->SeekToPos(FileOffset);
 
@@ -1518,9 +1488,6 @@ void HRFIntergraphFile::ReadTileDirectory(unsigned short pi_SubImage)
 
     // Read all tile entry.
     m_pIntergraphFile->Read(m_IntergraphResDescriptors[pi_SubImage]->pTileDirectoryEntry, sizeof(TileEntry) * TotalTileNumber);
-
-    // Unlock the sister file.
-    SisterFileLock.ReleaseKey();
     }
 
 //-----------------------------------------------------------------------------
@@ -1578,7 +1545,6 @@ void HRFIntergraphFile::SetPalette (const HRPPixelPalette& pi_rPalette)
     {
     // Validate the file access
     HPRECONDITION(GetAccessMode().m_HasWriteAccess || GetAccessMode().m_HasCreateAccess);
-    HPRECONDITION(SharingControlIsLocked());
 
     // Lock the palette and unlock it after the replace value
     HRPPixelPalette& rPalette = GetPixelType()->LockPalette();
@@ -1911,9 +1877,6 @@ bool HRFIntergraphFile::CreateFileHeader(HFCPtr<HRFPageDescriptor> pi_pPage)
         //GenerateHeader8BitsPalette(AnalysePalette(pPalette), pPalette);
         }
 
-    // Lock the sister file.
-    HFCLockMonitor SisterFileLock (GetLockManager());
-
     // Write freshly created header physically into the file...
     m_HasHeaderFilled = WriteFileHeader(pi_pPage);
     if (m_HasHeaderFilled)
@@ -1941,9 +1904,6 @@ bool HRFIntergraphFile::CreateFileHeader(HFCPtr<HRFPageDescriptor> pi_pPage)
             }
         }
 
-    // Unlock the sister file.
-    SisterFileLock.ReleaseKey();
-
     return m_HasHeaderFilled;
     }
 
@@ -1953,8 +1913,6 @@ bool HRFIntergraphFile::CreateFileHeader(HFCPtr<HRFPageDescriptor> pi_pPage)
 
 bool HRFIntergraphFile::WriteFileHeader(HFCPtr<HRFPageDescriptor> pi_pPage)
     {
-    HPRECONDITION (SharingControlIsLocked());
-
     // Copy the packet overview if present into the right m_pIntergraphBlockSupp...
     uint32_t NumberOfSubImage = pi_pPage->CountResolutions() - 1;
 
@@ -2221,7 +2179,6 @@ bool HRFIntergraphFile::WriteTileDirectory(unsigned short pi_SubImage)
     HPRECONDITION(m_IsOpen);
     HPRECONDITION(pi_SubImage <= m_SubResolution);
     HPRECONDITION(GetAccessMode().m_HasWriteAccess || GetAccessMode().m_HasCreateAccess);
-    HPRECONDITION(SharingControlIsLocked());
 
     bool  Status = false;
     uint32_t FileOffset;
@@ -2366,8 +2323,6 @@ bool HRFIntergraphFile::CreatePacketOverview(HFCPtr<HRFPageDescriptor> pi_pPage)
 
 bool HRFIntergraphFile::UpdatePacketOverview(uint32_t pi_FileCursorPosition, uint32_t pi_Resolution)
     {
-    HPRECONDITION (SharingControlIsLocked());
-
     bool  Status = false;
 
     // Always work on the Page 0, at this time we don't support multiple pages raster file.
@@ -2461,9 +2416,6 @@ bool HRFIntergraphFile::IsSingleColor()
         // The data type code is hidden into the tile directory..
         FileOffset = GetpageOffset(m_CurentPageIndex) + (m_BlockNumInHeader * HRF_INTERGRAGH_HEADER_BLOCK_LENGTH);
 
-        // Lock the sister file.
-        HFCLockMonitor SisterFileLock (GetLockManager());
-
         // Backup the last cursor position...
         int32_t CurrentCursorPosition = (uint32_t)m_pIntergraphFile->GetCurrentPos();
 
@@ -2475,9 +2427,6 @@ bool HRFIntergraphFile::IsSingleColor()
 
         // Reset the cursor to it's old position.
         m_pIntergraphFile->SeekToPos(CurrentCursorPosition);
-
-        // Unlock the sister file.
-        SisterFileLock.ReleaseKey();
 
         DataTypeCode = TempResDescriptors.TileDirectory.DataTypeCode;
         }

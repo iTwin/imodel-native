@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFPDFEditor.cpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class HRFPDFEditor
@@ -259,8 +259,7 @@ HSTATUS HRFPDFEditor::ReadBlockPDF(uint32_t    pi_MinX,
 //-----------------------------------------------------------------------------
 HSTATUS HRFPDFEditor::ReadBlock(uint64_t pi_PosBlockX,
                                   uint64_t pi_PosBlockY,
-                                  Byte*  po_pData,
-                                  HFCLockMonitor const* pi_pSisterFileLock)
+                                  Byte*  po_pData)
     {
     //Something with more bits than UInt64 should be used on architecture with pointer greater than 64 bits.
     HPRECONDITION(sizeof(PDF_RASTERFILE->GetContext(m_Page).GetPtr()) <= 8);
@@ -334,8 +333,7 @@ HSTATUS HRFPDFEditor::ReadBlock(uint64_t pi_PosBlockX,
 //-----------------------------------------------------------------------------
 HSTATUS HRFPDFEditor::WriteBlock(uint64_t     pi_PosBlockX,
                                    uint64_t     pi_PosBlockY,
-                                   const Byte*  pi_pData,
-                                   HFCLockMonitor const* pi_pSisterFileLock)
+                                   const Byte*  pi_pData)
     {
     HASSERT(0); // not supported
 

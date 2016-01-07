@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/HTiff/src/HTagFile.cpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -259,11 +259,6 @@ bool HTagFile::OpenTiffFile (const HFCPtr<HFCURL>* pi_pURL,       // by URL
     {
     HFCMonitor Monitor(m_Key);
 
-    // The Lock monitor is embeded in an HAutoPtr object because we can not
-    // instantiate it directly when we need it. The initialization of the
-    // object may be skiped by the precedent 'goto WRAPUP'
-    HAutoPtr<HFCLockMonitor> pCacheFileLock;
-
     if (pi_pURL != 0)
         m_pFile = new HTIFFStream(*pi_pURL, pi_AccessMode, pi_OriginOffset);
     else
@@ -276,11 +271,6 @@ bool HTagFile::OpenTiffFile (const HFCPtr<HFCURL>* pi_pURL,       // by URL
         goto WRAPUP;
         }
 
-    // Creation of the lock manager object;
-//DMx    m_pLockManager = new HFCBinStreamLockManager(m_pFile->GetFilePtr(), 0, 8, false);
-    m_pLockManager = new HFCBinStreamLockManager(0, 0, 8, false);
-    pCacheFileLock = new HFCLockMonitor(m_pLockManager.get());
-
     // Read TIFF Header
     ReadFail = (m_pFile->Read(&m_Header.Magic, sizeof(unsigned short), 1) != 1);
     ReadFail |= (m_pFile->Read(&m_Header.Version, sizeof(unsigned short), 1) != 1);
@@ -289,8 +279,6 @@ bool HTagFile::OpenTiffFile (const HFCPtr<HFCURL>* pi_pURL,       // by URL
         ErrorMsg(&m_pError, HTIFFError::CANNOT_READ_HEADER, 0, true);
         goto WRAPUP;
         }
-
-    pCacheFileLock->ReleaseKey();
 
     // Validate TIFF HEader
     if (m_Header.Magic != GetBigEndianMagicNumber() &&
@@ -421,11 +409,6 @@ bool HTagFile::CreateTiffFile (const HFCPtr<HFCURL>*  pi_pURL,
     {
     HFCMonitor Monitor(m_Key);
 
-    // The Lock monitor is embeded in an HAutoPtr object because we can not
-    // instantiate it directly when we need it. The initialization of the
-    // object may be skiped by the precedent 'goto WRAPUP'
-    HAutoPtr<HFCLockMonitor> pCacheFileLock;
-
     if (pi_pURL != 0)
         m_pFile = new HTIFFStream(*pi_pURL, pi_AccessMode);
     else if (pi_pFilename != 0)
@@ -442,18 +425,12 @@ bool HTagFile::CreateTiffFile (const HFCPtr<HFCURL>*  pi_pURL,
         goto WRAPUP;
         }
 
-    // Creation of the lock manager object;
-//DMx    m_pLockManager = new HFCBinStreamLockManager(m_pFile->GetFilePtr(), 0, 8, false);
-    m_pLockManager = new HFCBinStreamLockManager(0, 0, 8, false);
-
     // Set TIFF Header
     if (m_ByteOrder.IsBigEndianSystem())
         m_Header.Magic = GetBigEndianMagicNumber();
     else
         m_Header.Magic = GetLittleEndianMagicNumber();
     m_ByteOrder.SetStoredAsBigEndian(m_ByteOrder.IsBigEndianSystem());
-
-    pCacheFileLock  = new HFCLockMonitor(m_pLockManager.get());
 
     bool WriteFail;
     if (pi_CreateBigTifFormat)
@@ -503,8 +480,6 @@ bool HTagFile::CreateTiffFile (const HFCPtr<HFCURL>*  pi_pURL,
         goto WRAPUP;
         }
 #endif
-
-    pCacheFileLock->ReleaseKey();
 
     return true;
 WRAPUP:
@@ -1059,8 +1034,6 @@ bool HTagFile::ReadDirectories (bool pi_ValidateDir)
     HPRECONDITION(m_pFile != 0);
     HFCMonitor Monitor(m_Key);
 
-    HFCLockMonitor CacheFileLock(m_pLockManager.get());
-
     // Force reload in SetDirectory
     m_CurDir = ULONG_MAX;
 
@@ -1201,19 +1174,14 @@ bool HTagFile::ReadDirectories (bool pi_ValidateDir)
             }
         }
 
-    CacheFileLock.ReleaseKey();
     return true;
 WRAPUP:
-    CacheFileLock.ReleaseKey();
     return false;
     }
 
 void HTagFile::WriteDirectories()
     {
     HFCMonitor Monitor(m_Key);
-
-    HFCLockMonitor CacheFileLock (m_pLockManager.get());
-
 
     // Do nothing if file open in ReadOnly mode
     //
@@ -1316,7 +1284,6 @@ void HTagFile::WriteDirectories()
                 }
             }
         }
-    CacheFileLock.ReleaseKey();
     }
 
 

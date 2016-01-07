@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFWMSFile.cpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class HRFWMSFile
@@ -154,9 +154,6 @@ bool HRFWMSCreator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
             XMLFileName += L"\\";
             XMLFileName += ((HFCPtr<HFCURLFile>&)pi_rpURL)->GetPath();
 
-            (const_cast<HRFWMSCreator*>(this))->SharingControlCreate(pi_rpURL);
-            HFCLockMonitor SisterFileLock(GetLockManager());
-
             // *** At some point in the development of WMS we were creating bad formated XML files.
             // The SERVERCAPABILITIES tag was closed with "</SERVERCAPABILTIES>" notice the missing 'I'.
             // The new xml lib reject the file because of that.
@@ -173,11 +170,6 @@ bool HRFWMSCreator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
                 if (NULL != pMainNode && BeStringUtilities::Stricmp (pMainNode->GetName(), "BentleyWMSFile") == 0)
                     bResult = true;
                 }
-
-            SisterFileLock.ReleaseKey();
-
-            HASSERT(!(const_cast<HRFWMSCreator*>(this))->m_pSharingControl->IsLocked());
-            (const_cast<HRFWMSCreator*>(this))->m_pSharingControl = 0;
             }
         }
     else if (pi_rpURL->IsCompatibleWith(HFCURLMemFile::CLASS_ID))
@@ -249,8 +241,6 @@ HRFWMSFile::HRFWMSFile(const HFCPtr<HFCURL>& pi_rpURL,
         //this is a read-only format
         throw HFCFileReadOnlyException(pi_rpURL->GetURL());
         }
-
-    SharingControlCreate();
 
     BeXmlDomPtr pXmlDom;
     BeXmlStatus xmlStatus=BEXML_ParseError;

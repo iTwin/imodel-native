@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFGdalSupportedFileEditor.cpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -359,8 +359,7 @@ void HRFGdalSupportedFileEditor::DetermineScalingMethod()
 //-----------------------------------------------------------------------------
 HSTATUS HRFGdalSupportedFileEditor::ReadIntegerBlock(uint64_t pi_PosBlockX,
                                                      uint64_t pi_PosBlockY,
-                                                     Byte* po_pData,
-                                                     HFCLockMonitor const* pi_pSisterFileLock)
+                                                     Byte* po_pData)
     {
     HPRECONDITION(po_pData != 0);
     HPRECONDITION(m_AccessMode.m_HasReadAccess);
@@ -369,15 +368,6 @@ HSTATUS HRFGdalSupportedFileEditor::ReadIntegerBlock(uint64_t pi_PosBlockX,
     HSTATUS Status = H_SUCCESS;
 
     ComputeIOblockSize((uint32_t)pi_PosBlockX, (uint32_t)pi_PosBlockY);
-
-    // Lock the sister file
-    HFCLockMonitor SisterFileLock;
-    if(pi_pSisterFileLock == 0)
-        {
-        // Lock the file.
-        AssignRasterFileLock(GetRasterFile(), SisterFileLock, true);
-        pi_pSisterFileLock = &SisterFileLock;
-        }
 
     Byte* pData = po_pData;
 
@@ -390,8 +380,6 @@ HSTATUS HRFGdalSupportedFileEditor::ReadIntegerBlock(uint64_t pi_PosBlockX,
 
         pData += m_NbBytePerBandPerPixel;
         }
-
-    SisterFileLock.ReleaseKey();
 
     if (m_UseLinearBandScaling == true)
         {
@@ -437,8 +425,7 @@ void HRFGdalSupportedFileEditor::ComputeIOblockSize(uint32_t pi_PosBlockX, uint3
 //-----------------------------------------------------------------------------
 HSTATUS HRFGdalSupportedFileEditor::ReadRealBlock(uint64_t pi_PosBlockX,
                                                   uint64_t pi_PosBlockY,
-                                                  Byte* po_pData,
-                                                  HFCLockMonitor const* pi_pSisterFileLock)
+                                                  Byte* po_pData)
     {
     HPRECONDITION(m_AccessMode.m_HasReadAccess);
     HPRECONDITION(RASTER_FILE->IsReadPixelReal() == true); //INT not tested
@@ -447,15 +434,6 @@ HSTATUS HRFGdalSupportedFileEditor::ReadRealBlock(uint64_t pi_PosBlockX,
     HSTATUS Status = H_SUCCESS;
 
     ComputeIOblockSize((uint32_t)pi_PosBlockX, (uint32_t)pi_PosBlockY);
-
-    // Lock the sister file
-    HFCLockMonitor SisterFileLock;
-    if(pi_pSisterFileLock == 0)
-        {
-        // Lock the file.
-        AssignRasterFileLock(GetRasterFile(), SisterFileLock, true);
-        pi_pSisterFileLock = &SisterFileLock;
-        }
 
     if (m_GdalDataType == GDT_Float32)
         {
@@ -484,7 +462,6 @@ HSTATUS HRFGdalSupportedFileEditor::ReadRealBlock(uint64_t pi_PosBlockX,
 
             pTempBuffer++;
             }
-        SisterFileLock.ReleaseKey();
 
         if (Status == H_SUCCESS && m_UseLinearBandScaling == true)
             {
@@ -507,8 +484,6 @@ HSTATUS HRFGdalSupportedFileEditor::ReadRealBlock(uint64_t pi_PosBlockX,
             pTempBuffer++;
             }
 
-        SisterFileLock.ReleaseKey();
-
         if (Status == H_SUCCESS && m_UseLinearBandScaling == true)
             {
             ScalingDoubleBlock(po_pData);
@@ -525,8 +500,7 @@ HSTATUS HRFGdalSupportedFileEditor::ReadRealBlock(uint64_t pi_PosBlockX,
 //-----------------------------------------------------------------------------
 HSTATUS HRFGdalSupportedFileEditor::ReadBlock(uint64_t pi_PosBlockX,
                                               uint64_t pi_PosBlockY,
-                                              Byte* po_pData,
-                                              HFCLockMonitor const* pi_pSisterFileLock)
+                                              Byte* po_pData)
     {
     HPRECONDITION(po_pData != 0);
     HPRECONDITION(m_AccessMode.m_HasReadAccess);
@@ -534,8 +508,7 @@ HSTATUS HRFGdalSupportedFileEditor::ReadBlock(uint64_t pi_PosBlockX,
 
     return (this->*m_pReadBlockFnc)(pi_PosBlockX,
                                     pi_PosBlockY,
-                                    po_pData,
-                                    pi_pSisterFileLock);
+                                    po_pData);
     }
 
 //-----------------------------------------------------------------------------
@@ -813,7 +786,7 @@ void HRFGdalSupportedFileEditor::FindRealPVminMax(double*   po_pMin,
         while (BlockPosY  < (uint32_t)RASTER_FILE->GetImageHeight())
             {
             //The read data will be put in the temporary buffer.
-            ReadRealBlock(BlockPosX, BlockPosY, 0, 0);
+            ReadRealBlock(BlockPosX, BlockPosY, 0);
 
             if (m_GdalDataType == GDT_Float32)
                 {
@@ -886,8 +859,7 @@ void HRFGdalSupportedFileEditor::FindRealPVminMax(double*   po_pMin,
 //-----------------------------------------------------------------------------
 HSTATUS HRFGdalSupportedFileEditor::WriteBlock(uint64_t              pi_PosBlockX,
                                                uint64_t              pi_PosBlockY,
-                                               const Byte*          pi_pData,
-                                               HFCLockMonitor const* pi_pSisterFileLock)
+                                               const Byte*          pi_pData)
     {
     HPRECONDITION(pi_pData != 0);
     HPRECONDITION(m_AccessMode.m_HasWriteAccess || m_AccessMode.m_HasCreateAccess);
@@ -915,14 +887,6 @@ HSTATUS HRFGdalSupportedFileEditor::WriteBlock(uint64_t              pi_PosBlock
         m_HeightToRead = RASTER_FILE->GetBlockHeight();
         }
 
-    // Lock the sister file
-    HFCLockMonitor SisterFileLock;
-    if(pi_pSisterFileLock == 0)
-        {
-        // Lock the file.
-        AssignRasterFileLock(GetRasterFile(), SisterFileLock, true);
-        pi_pSisterFileLock = &SisterFileLock;
-        }
 
     if (RASTER_FILE->IsUnsignedPixelTypeForSignedData() == true)
         {
@@ -958,8 +922,6 @@ HSTATUS HRFGdalSupportedFileEditor::WriteBlock(uint64_t              pi_PosBlock
 
         pDataToWrite += m_NbBytePerBandPerPixel;
         }
-
-    SisterFileLock.ReleaseKey();
 
     return Status;
     };

@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFAdaptTileToImage.cpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -118,8 +118,7 @@ HRFAdaptTileToImage::~HRFAdaptTileToImage()
 //-----------------------------------------------------------------------------
 HSTATUS HRFAdaptTileToImage::ReadBlock(uint64_t pi_PosBlockX,
                                        uint64_t pi_PosBlockY,
-                                       Byte*  po_pData,
-                                       HFCLockMonitor const* pi_pSisterFileLock)
+                                       Byte*  po_pData)
     {
     HPRECONDITION (m_AccessMode.m_HasReadAccess);
     HSTATUS Status = H_SUCCESS;
@@ -128,15 +127,6 @@ HSTATUS HRFAdaptTileToImage::ReadBlock(uint64_t pi_PosBlockX,
     m_pTile = new Byte[m_TileSize];
 
     Byte* pPosInBlock = po_pData;
-
-    // Lock the sister file
-    HFCLockMonitor SisterFileLock;
-    if(pi_pSisterFileLock == 0)
-        {
-        // Lock the file.
-        AssignRasterFileLock(m_pTheTrueOriginalFile, SisterFileLock, true);
-        pi_pSisterFileLock = &SisterFileLock;
-        }
 
     // Load the block from file to the client data out
     for (uint32_t NoCol=0; (NoCol<m_TilePerWidth) && (Status == H_SUCCESS); NoCol++)
@@ -152,7 +142,7 @@ HSTATUS HRFAdaptTileToImage::ReadBlock(uint64_t pi_PosBlockX,
 
         for (uint32_t NoRow=0; (NoRow< m_TilePerHeight) && (Status == H_SUCCESS); NoRow++)
             {
-            Status = m_pAdaptedResolutionEditor->ReadBlock(NoCol*m_TileWidth, NoRow*m_TileHeight, m_pTile, pi_pSisterFileLock);
+            Status = m_pAdaptedResolutionEditor->ReadBlock(NoCol*m_TileWidth, NoRow*m_TileHeight, m_pTile);
 
             if (Status == H_SUCCESS)
                 {
@@ -175,7 +165,6 @@ HSTATUS HRFAdaptTileToImage::ReadBlock(uint64_t pi_PosBlockX,
                 }
             }
         }
-    SisterFileLock.ReleaseKey();
 
     // Free working buffer
     m_pTile = 0;
@@ -190,10 +179,9 @@ HSTATUS HRFAdaptTileToImage::ReadBlock(uint64_t pi_PosBlockX,
 //-----------------------------------------------------------------------------
 HSTATUS HRFAdaptTileToImage::ReadBlock(uint64_t            pi_PosBlockX,
                                        uint64_t            pi_PosBlockY,
-                                       HFCPtr<HCDPacket>&  po_rpPacket,
-                                       HFCLockMonitor const* pi_pSisterFileLock)
+                                       HFCPtr<HCDPacket>&  po_rpPacket)
     {
-    return T_Super::ReadBlock(pi_PosBlockX,pi_PosBlockY,po_rpPacket,pi_pSisterFileLock);
+    return T_Super::ReadBlock(pi_PosBlockX,pi_PosBlockY,po_rpPacket);
     }
 
 //-----------------------------------------------------------------------------
@@ -203,8 +191,7 @@ HSTATUS HRFAdaptTileToImage::ReadBlock(uint64_t            pi_PosBlockX,
 //-----------------------------------------------------------------------------
 HSTATUS HRFAdaptTileToImage::WriteBlock(uint64_t    pi_PosBlockX,
                                         uint64_t    pi_PosBlockY,
-                                        const Byte* pi_pData,
-                                        HFCLockMonitor const* pi_pSisterFileLock)
+                                        const Byte* pi_pData)
     {
     HPRECONDITION (m_AccessMode.m_HasWriteAccess || m_AccessMode.m_HasCreateAccess);
     HSTATUS         Status = H_SUCCESS;
@@ -212,15 +199,6 @@ HSTATUS HRFAdaptTileToImage::WriteBlock(uint64_t    pi_PosBlockX,
 
     // Alloc working buffer
     m_pTile = new Byte[m_TileSize];
-
-    // Lock the sister file
-    HFCLockMonitor SisterFileLock;
-    if(pi_pSisterFileLock == 0)
-        {
-        // Lock the file.
-        AssignRasterFileLock(m_pTheTrueOriginalFile, SisterFileLock, false);
-        pi_pSisterFileLock = &SisterFileLock;
-        }
 
     // Write the block to the file
     for (uint32_t NoCol=0; (NoCol<m_TilePerWidth) && (Status == H_SUCCESS); NoCol++)
@@ -258,13 +236,9 @@ HSTATUS HRFAdaptTileToImage::WriteBlock(uint64_t    pi_PosBlockX,
                 pPosInBlock += m_ExactBytesPerWidth;
                 }
 
-            Status = m_pAdaptedResolutionEditor->WriteBlock(NoCol*m_TileWidth, NoRow*m_TileHeight, m_pTile, pi_pSisterFileLock);
+            Status = m_pAdaptedResolutionEditor->WriteBlock(NoCol*m_TileWidth, NoRow*m_TileHeight, m_pTile);
             }
         }
-    m_pTheTrueOriginalFile->SharingControlIncrementCount();
-
-    // Unlock the sister file.
-    SisterFileLock.ReleaseKey();
 
     // Free working buffer
     m_pTile = 0;
@@ -279,8 +253,7 @@ HSTATUS HRFAdaptTileToImage::WriteBlock(uint64_t    pi_PosBlockX,
 //-----------------------------------------------------------------------------
 HSTATUS HRFAdaptTileToImage::WriteBlock(uint64_t                   pi_PosBlockX,
                                         uint64_t                   pi_PosBlockY,
-                                        const HFCPtr<HCDPacket>&   pi_rpPacket,
-                                        HFCLockMonitor const* pi_pSisterFileLock)
+                                        const HFCPtr<HCDPacket>&   pi_rpPacket)
     {
     HPRECONDITION (m_AccessMode.m_HasWriteAccess || m_AccessMode.m_HasCreateAccess);
     HSTATUS Status      = H_ERROR;

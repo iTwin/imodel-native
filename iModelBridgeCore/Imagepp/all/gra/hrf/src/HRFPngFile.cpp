@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFPngFile.cpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class HRFPngFile
@@ -312,11 +312,6 @@ bool HRFPngCreator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
     png_infop               pPngInfo       = 0;
     png_infop               pPngEndInfo    = 0;
 
-    //TFS#132036: Sharing control is not thread-safe and we do not understand why it would be required.
-    //            Disable it for now.
-    //(const_cast<HRFPngCreator*>(this))->SharingControlCreate(pi_rpURL);
-    //HFCLockMonitor SisterFileLock(GetLockManager());
-
     // Open the PNG File & place file pointer at the start of the file
     // Read the first 8 bytes
     // Check if the file is a PNG or not
@@ -357,14 +352,8 @@ bool HRFPngCreator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
 
             // Free the memory
             png_destroy_read_struct(&pPngFileStruct, &pPngInfo, &pPngEndInfo);
+            }
         }
-    }
-
-    //TFS#132036: Sharing control is not thread-safe and we do not understand why it would be required.
-    //            disable it for now.
-    //SisterFileLock.Release();
-    //HASSERT(!(const_cast<HRFPngCreator*>(this))->m_pSharingControl->IsLocked());
-    //(const_cast<HRFPngCreator*>(this))->m_pSharingControl = 0;
 
     return Result;
     }
@@ -698,14 +687,8 @@ bool HRFPngFile::AssignStructTo(HFCPtr<HRFPageDescriptor> pi_pPage)
         png_set_interlace_handling(m_pPngFileStruct);
         }
 
-    // Lock the sister file
-    HFCLockMonitor SisterFileLock (GetLockManager());
-
     // Write the file header information.
     png_write_info(m_pPngFileStruct, m_pPngInfo);
-
-    // Unlock the sister file.
-    SisterFileLock.ReleaseKey();
 
     return true;
     }
@@ -742,9 +725,6 @@ bool HRFPngFile::Open()
         // uses stdio FILE*, so open the file and satisfy the library
         m_pPngFile = HFCBinStream::Instanciate(GetURL(), m_Offset, GetAccessMode(), 0, true);
 
-        // This creates the sister file for file sharing control if necessary.
-        SharingControlCreate();
-
         // Get the file read struct && the file read struct && the file end info struct &&
         if((m_pPngFileStruct  = png_create_read_struct(PNG_LIBPNG_VER_STRING, 0, 0, 0)) &&
            (m_pPngInfo        = png_create_info_struct(m_pPngFileStruct))               &&
@@ -761,16 +741,10 @@ bool HRFPngFile::Open()
                                  m_pPngFile,                    // IO stream
                                  hmr_png_read_data);            // IO Read function
 
-                // Lock the sister file.
-                HFCLockMonitor SisterFileLock (GetLockManager());
-
                 // Read the file information.
                 png_read_info(m_pPngFileStruct, m_pPngInfo);
                 // *** BoB: OK we read pre-image data info but we do not check if info is present after image data!!!
                 //          And it can be the case with some text tags...! To do! ***
-
-                // Unlock the sister file
-                SisterFileLock.ReleaseKey();
 
                 // This call has been  added to provide an initialization for the PNG structure
                 // when exporting the same png file without closing it between exports.
@@ -1059,9 +1033,6 @@ void HRFPngFile::SavePngFile(bool pi_CloseFile)
             {
             HFCPtr<HRFPageDescriptor> pPageDescriptor = GetPageDescriptor(0);
 
-            // Lock the sister file.
-            HFCLockMonitor SisterFileLock (GetLockManager());
-
             // Free all memory allocated by the read or write process.
             // If the number of written rows is not equal to the number of rows
             // we can not save the PngInfo structure.
@@ -1083,9 +1054,6 @@ void HRFPngFile::SavePngFile(bool pi_CloseFile)
                 }
 
             m_pPngFile->Flush();
-
-            // Unlock the sister file.
-            SisterFileLock.ReleaseKey();
             }
 
         if(pi_CloseFile)
@@ -1123,9 +1091,6 @@ bool HRFPngFile::Create()
 
     // Open the file.
     m_pPngFile = HFCBinStream::Instanciate(GetURL(), m_Offset, GetAccessMode(), 0, true);
-
-    // Create the sister file for file sharing control
-    SharingControlCreate();
 
     // Get the file write struct && the file read struct &&
     if((m_pPngFileStruct = png_create_write_struct(PNG_LIBPNG_VER_STRING, 0, 0, 0)) &&

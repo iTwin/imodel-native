@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRFAdaptLineToImage.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HRFAdaptLineToImage
@@ -68,33 +68,27 @@ public:
     // Edition by Block
     virtual HSTATUS ReadBlock(uint64_t                 pi_PosBlockX,
                               uint64_t                 pi_PosBlockY,
-                              Byte*                    po_pData,
-                              HFCLockMonitor const*    pi_pSisterFileLock = 0) override;
+                              Byte*                    po_pData) override;
 
     virtual HSTATUS ReadBlock(uint64_t                 pi_PosBlockX,
                               uint64_t                 pi_PosBlockY,
-                              HFCPtr<HCDPacket>&       po_rpPacket,
-                              HFCLockMonitor const*    pi_pSisterFileLock = 0) override;
+                              HFCPtr<HCDPacket>&       po_rpPacket) override;
 
     virtual HSTATUS ReadBlockRLE(uint64_t                 pi_PosBlockX,
                                  uint64_t                 pi_PosBlockY,
-                                 HFCPtr<HCDPacketRLE>&    po_rpPacketRLE,
-                                 HFCLockMonitor const*    pi_pSisterFileLock = 0) override;
+                                 HFCPtr<HCDPacketRLE>&    po_rpPacketRLE) override;
 
     virtual HSTATUS WriteBlock(uint64_t                 pi_PosBlockX,
                                uint64_t                 pi_PosBlockY,
-                               const Byte*              pi_pData,
-                               HFCLockMonitor const*    pi_pSisterFileLock = 0) override;
+                               const Byte*              pi_pData) override;
 
     virtual HSTATUS WriteBlock(uint64_t                 pi_PosBlockX,
                                uint64_t                 pi_PosBlockY,
-                               const HFCPtr<HCDPacket>& pi_rpPacket,
-                               HFCLockMonitor const*    pi_pSisterFileLock = 0) override;
+                               const HFCPtr<HCDPacket>& pi_rpPacket) override;
 
     virtual HSTATUS WriteBlockRLE(uint64_t              pi_PosBlockX,
                                   uint64_t              pi_PosBlockY,
-                                  HFCPtr<HCDPacketRLE>& pi_rpPacketRLE,
-                                  HFCLockMonitor const* pi_pSisterFileLock = 0) override;
+                                  HFCPtr<HCDPacketRLE>& pi_rpPacketRLE) override;
 
 protected:
     uint32_t        m_ExactBytesPerImageWidth;

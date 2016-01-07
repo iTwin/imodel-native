@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFArcInfoAsciiGridFile.cpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HRFArcInfoAsciiGridFile
@@ -311,9 +311,6 @@ bool HRFArcInfoAsciiGridCreator::IsKindOfFile (const HFCPtr<HFCURL>&    pi_rpURL
 
     HFCPtr<HFCURLFile> pFileURL(new HFCURLFile(pi_rpURL->GetURL()));
 
-    (const_cast<HRFArcInfoAsciiGridCreator*>(this))->SharingControlCreate(pi_rpURL);
-    HFCLockMonitor SisterFileLock (GetLockManager());
-
     HAutoPtr<HFCBinStream> pFile(HFCBinStream::Instanciate(pi_rpURL, HFC_READ_ONLY | HFC_SHARE_READ_WRITE));
 
     if (pFile != 0 && pFile->GetLastException() == NULL)
@@ -354,10 +351,6 @@ bool HRFArcInfoAsciiGridCreator::IsKindOfFile (const HFCPtr<HFCURL>&    pi_rpURL
         Success = !FoundInvalidProperty && 
                   (MIN_SAMPLED_PROPERTY_COUNT <= FoundPropertyCount);
         }
-
-    SisterFileLock.ReleaseKey();
-    HASSERT(!(const_cast<HRFArcInfoAsciiGridCreator*>(this))->m_pSharingControl->IsLocked());
-    (const_cast<HRFArcInfoAsciiGridCreator*>(this))->m_pSharingControl = 0;
 
     return Success;
     }

@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFErMapperSupportedFileEditor.cpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class HRFErMapperSupportedFileEditor
@@ -129,8 +129,7 @@ HRFErMapperSupportedFileEditor::~HRFErMapperSupportedFileEditor()
 
 HSTATUS HRFErMapperSupportedFileEditor::ReadBlock(uint64_t    pi_PosBlockX,
                                                   uint64_t    pi_PosBlockY,
-                                                  Byte*       po_pData,
-                                                  HFCLockMonitor const* pi_pSisterFileLock)
+                                                  Byte*       po_pData)
     {
     HPRECONDITION(po_pData != 0);
 
@@ -155,8 +154,7 @@ HSTATUS HRFErMapperSupportedFileEditor::ReadBlock(uint64_t    pi_PosBlockX,
                              pi_PosBlockY,
                              BLOCK_WIDTH_ERMAPPER,
                              BLOCK_HEIGHT_ERMAPPER,
-                             po_pData,
-                             pi_pSisterFileLock);
+                             po_pData);
         }
 
     return Status;
@@ -169,8 +167,7 @@ HSTATUS HRFErMapperSupportedFileEditor::ReadBlock(uint64_t    pi_PosBlockX,
 //-----------------------------------------------------------------------------
 HSTATUS HRFErMapperSupportedFileEditor::WriteBlock(uint64_t      pi_PosBlockX,
                                                    uint64_t      pi_PosBlockY,
-                                                   const Byte*    pi_pData,
-                                                   HFCLockMonitor const* pi_pSisterFileLock)
+                                                   const Byte*    pi_pData)
     {
     HASSERT(0); // not supported
     return H_ERROR;
@@ -185,8 +182,7 @@ HSTATUS HRFErMapperSupportedFileEditor::ReadBlock(uint64_t pi_PosBlockX,
                                                   uint64_t pi_PosBlockY,
                                                   uint64_t pi_BlockWidth,
                                                   uint64_t pi_BlockHeight,
-                                                  Byte*   po_pData,
-                                                  HFCLockMonitor const* pi_pSisterFileLock)
+                                                  Byte*   po_pData)
     {
     HSTATUS                   Status = H_SUCCESS;
     unsigned short            i;

@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFPDFFile.cpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -726,9 +726,6 @@ bool HRFPDFCreator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
                                L"\\" +
                                ((const HFCPtr<HFCURLFile>&)pi_rpURL)->GetPath();
 
-            (const_cast<HRFPDFCreator*>(this))->SharingControlCreate(pi_rpURL);
-            HFCLockMonitor SisterFileLock (GetLockManager());
-
             if ((pFile = _wfopen(FileName.c_str(), L"rb")) != 0)
                 {
                 char aBuffer[5] = {0, 0, 0, 0, 0};
@@ -737,10 +734,6 @@ bool HRFPDFCreator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
                 if (strncmp(aBuffer, "%PDF-", 5) == 0)
                     bResult = true;
                 }
-
-            SisterFileLock.ReleaseKey();
-            HASSERT(!(const_cast<HRFPDFCreator*>(this))->m_pSharingControl->IsLocked());
-            (const_cast<HRFPDFCreator*>(this))->m_pSharingControl = 0;
             }
         }
 
@@ -1330,14 +1323,8 @@ HRFPDFFile::HRFPDFFile(const HFCPtr<HFCURL>& pi_rURL,
         //this is a read-only format
         throw HFCFileReadOnlyException(pi_rURL->GetURL());
         }
-
-    SharingControlCreate();
-
-    // Lock the sister file for the read_header operation
-    HFCLockMonitor SisterFileLock (GetLockManager());
-
+ 
     m_pPDFWrapper = new IppPDFWrapper(FileName);
-
 
     // Create Page and Res Descriptors.
     CreateDescriptors();

@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFIG4StripEditor.cpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class HRFIG4StripEditor
@@ -44,9 +44,6 @@ HRFIG4StripEditor::HRFIG4StripEditor(HFCPtr<HRFRasterFile> pi_rpRasterFile,
     m_UncompressedBufferSize = (uint32_t)ceil((float)(m_pResolutionDescriptor->GetWidth()) *
                                             ((float)m_BitPerPixel / 8.0)) *
                                m_StripHeight;
-
-    // Lock the sister file before accessing the physical file..
-    HFCLockMonitor SisterFileLock(GetRasterFile()->GetLockManager());
     }
 
 //-----------------------------------------------------------------------------
@@ -66,8 +63,7 @@ HRFIG4StripEditor::~HRFIG4StripEditor()
 
 HSTATUS HRFIG4StripEditor::ReadBlock(uint64_t pi_PosBlockX,
                                      uint64_t pi_PosBlockY,
-                                     Byte*    po_pData,
-                                     HFCLockMonitor const* pi_pSisterFileLock)
+                                     Byte*    po_pData)
     {
     // We assume that we have check the header file integrity in the
     // constructor for the release version.
@@ -102,15 +98,6 @@ HSTATUS HRFIG4StripEditor::ReadBlock(uint64_t pi_PosBlockX,
         }
 
         {
-        // Lock the sister file
-        HFCLockMonitor SisterFileLock;
-        if(pi_pSisterFileLock == 0)
-            {
-            // Lock the file.
-            AssignRasterFileLock(GetRasterFile(), SisterFileLock, true);
-            pi_pSisterFileLock = &SisterFileLock;
-            }
-
         uint32_t StripOffset;
         uint32_t StripSizeInBytes;
 
@@ -126,9 +113,6 @@ HSTATUS HRFIG4StripEditor::ReadBlock(uint64_t pi_PosBlockX,
 
         if(m_pIG4File->Read(pCompressedData, StripSizeInBytes) != StripSizeInBytes)
             goto WRAPUP;
-
-        // Unlock the sister file
-        SisterFileLock.ReleaseKey();
 
         m_CompressPacket.SetBuffer(pCompressedData, StripSizeInBytes);
         m_CompressPacket.SetBufferOwnership(false);
@@ -160,8 +144,7 @@ WRAPUP:
 //-----------------------------------------------------------------------------
 HSTATUS HRFIG4StripEditor::WriteBlock(uint64_t     pi_PosBlockX,
                                       uint64_t     pi_PosBlockY,
-                                      const Byte*  pi_pData,
-                                      HFCLockMonitor const* pi_pSisterFileLock)
+                                      const Byte*  pi_pData)
     {
     HASSERT(0); // not supported
 

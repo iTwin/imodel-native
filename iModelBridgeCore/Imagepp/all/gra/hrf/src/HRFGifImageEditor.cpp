@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFGifImageEditor.cpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class HRFGifImageEditor
@@ -56,8 +56,7 @@ HRFGifImageEditor::~HRFGifImageEditor()
 //-----------------------------------------------------------------------------
 HSTATUS HRFGifImageEditor::ReadBlock(uint64_t pi_PosBlockX,
                                      uint64_t pi_PosBlockY,
-                                     Byte*   po_pData,
-                                     HFCLockMonitor const* pi_pSisterFileLock)
+                                     Byte*   po_pData)
     {
     HPRECONDITION(po_pData != 0);
     HPRECONDITION(m_AccessMode.m_HasReadAccess);
@@ -68,16 +67,6 @@ HSTATUS HRFGifImageEditor::ReadBlock(uint64_t pi_PosBlockX,
     // Temporary need for virtual ptr.
     if (!GetRasterFile()->GetAccessMode().m_HasCreateAccess)
         {
-        // Since this type of GIF is IMAGE, there is nothing to do for synchronization.
-        // Lock the sister file
-        HFCLockMonitor SisterFileLock;
-        if(pi_pSisterFileLock == 0)
-            {
-            // Lock the file.
-            AssignRasterFileLock(GetRasterFile(), SisterFileLock, true);
-            pi_pSisterFileLock = &SisterFileLock;
-            }
-
         if (m_pRasterFile->m_ListGifGraphicBlock[m_Page].ImageDescriptor.PackedField & 0x40)
             {
             uint32_t NoLine = 0;
@@ -115,9 +104,6 @@ HSTATUS HRFGifImageEditor::ReadBlock(uint64_t pi_PosBlockX,
             for (uint32_t NoLine=0; NoLine < ImageHeight && (Status == H_SUCCESS); NoLine++)
                 Status = m_pLineEditor->ReadBlock(0, NoLine, po_pData+(NoLine * m_ExactBytesPerImageWidth));
             }
-
-        // Unlock the sister file.
-        SisterFileLock.ReleaseKey();
         }
     else
         Status = H_NOT_FOUND;
@@ -133,23 +119,13 @@ HSTATUS HRFGifImageEditor::ReadBlock(uint64_t pi_PosBlockX,
 //-----------------------------------------------------------------------------
 HSTATUS HRFGifImageEditor::WriteBlock(uint64_t        pi_PosBlockX,
                                       uint64_t        pi_PosBlockY,
-                                      const Byte*     pi_pData,
-                                      HFCLockMonitor const* pi_pSisterFileLock)
+                                      const Byte*     pi_pData)
     {
     HPRECONDITION(pi_pData != 0);
     HPRECONDITION(m_AccessMode.m_HasWriteAccess || m_AccessMode.m_HasCreateAccess);
 
     HSTATUS Status      = H_SUCCESS;
     uint32_t ImageHeight = (uint32_t)m_pResolutionDescriptor->GetHeight();
-
-    // Lock the sister file
-    HFCLockMonitor SisterFileLock;
-    if(pi_pSisterFileLock == 0)
-        {
-        // Lock the file.
-        AssignRasterFileLock(GetRasterFile(), SisterFileLock, false);
-        pi_pSisterFileLock = &SisterFileLock;
-        }
 
     // Image is interlace.
     if (m_pRasterFile->m_ListGifGraphicBlock[m_Page].ImageDescriptor.PackedField & 0x40)
@@ -189,12 +165,6 @@ HSTATUS HRFGifImageEditor::WriteBlock(uint64_t        pi_PosBlockX,
         for (uint32_t NoLine=0; NoLine < ImageHeight && (Status == H_SUCCESS); NoLine++)
             Status = m_pLineEditor->WriteBlock(0, NoLine, pi_pData+(NoLine * m_ExactBytesPerImageWidth));
         }
-
-    // Increment the sharing control counter
-    GetRasterFile()->SharingControlIncrementCount();
-
-    // Unlock the sister file.
-    SisterFileLock.ReleaseKey();
 
     return Status;
     }

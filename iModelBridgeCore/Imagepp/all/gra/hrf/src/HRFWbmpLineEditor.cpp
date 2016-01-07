@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFWbmpLineEditor.cpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class HRFWbmpLineEditor
@@ -60,28 +60,18 @@ HRFWbmpLineEditor::~HRFWbmpLineEditor()
 //-----------------------------------------------------------------------------
 HSTATUS HRFWbmpLineEditor::ReadBlock(uint64_t pi_PosBlockX,
                                      uint64_t pi_PosBlockY,
-                                     Byte*  po_pData,
-                                     HFCLockMonitor const* pi_pSisterFileLock)
+                                     Byte*  po_pData)
     {
     HPRECONDITION(po_pData != 0);
     HPRECONDITION(m_AccessMode.m_HasReadAccess);
 
     HSTATUS Status = H_ERROR;
-    HFCLockMonitor SisterFileLock;
 
     // Temporary need for virtual ptr.
     if (GetRasterFile()->GetAccessMode().m_HasCreateAccess)
         {
         Status = H_NOT_FOUND;
         return Status;
-        }
-
-    // Lock the sister file
-    if(pi_pSisterFileLock == 0)
-        {
-        // Lock the file.
-        AssignRasterFileLock(GetRasterFile(), SisterFileLock, true);
-        pi_pSisterFileLock = &SisterFileLock;
         }
 
     size_t offSetToLine = m_pRasterFile->m_OffsetToFirstRowInByte + ((uint32_t)pi_PosBlockY * m_ExactBytesPerRow);
@@ -91,8 +81,6 @@ HSTATUS HRFWbmpLineEditor::ReadBlock(uint64_t pi_PosBlockX,
     uint32_t DataSize = GetResolutionDescriptor()->GetBytesPerBlockWidth();
     if(m_pRasterFile->m_pWbmpFile->Read(po_pData, DataSize) != DataSize)
         return Status;
-
-    SisterFileLock.ReleaseKey();
 
     Status = H_SUCCESS;
     return Status;
@@ -105,8 +93,7 @@ HSTATUS HRFWbmpLineEditor::ReadBlock(uint64_t pi_PosBlockX,
 //-----------------------------------------------------------------------------
 HSTATUS HRFWbmpLineEditor::WriteBlock(uint64_t              pi_PosBlockX,
                                       uint64_t              pi_PosBlockY,
-                                      const Byte*           pi_pData,
-                                      HFCLockMonitor const* pi_pSisterFileLock)
+                                      const Byte*           pi_pData)
     {
     HPRECONDITION(m_AccessMode.m_HasWriteAccess || m_AccessMode.m_HasCreateAccess);
     HPRECONDITION(pi_pData != 0);
@@ -117,24 +104,10 @@ HSTATUS HRFWbmpLineEditor::WriteBlock(uint64_t              pi_PosBlockX,
 
     memcpy(m_pLineBuffer, pi_pData, GetResolutionDescriptor()->GetBytesPerBlockWidth());
 
-    // Lock the sister file
-    HFCLockMonitor SisterFileLock;
-    if(pi_pSisterFileLock == 0)
-        {
-        // Lock the file.
-        AssignRasterFileLock(GetRasterFile(), SisterFileLock, false);
-        pi_pSisterFileLock = &SisterFileLock;
-        }
-
     m_pRasterFile->m_pWbmpFile->SeekToPos(offSetToLine);
 
     if(m_pRasterFile->m_pWbmpFile->Write(m_pLineBuffer.get(), m_ExactBytesPerRow) != m_ExactBytesPerRow)
         return Status;
-
-    GetRasterFile()->SharingControlIncrementCount();
-
-    // Unlock the sister file.
-    SisterFileLock.ReleaseKey();
 
     Status = H_SUCCESS;
     return Status;

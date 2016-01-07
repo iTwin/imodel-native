@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFUSgsSDTSDEMEditor.cpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -80,10 +80,9 @@ HRFUSgsSDTSDEMEditor::~HRFUSgsSDTSDEMEditor()
 //-----------------------------------------------------------------------------
 HSTATUS HRFUSgsSDTSDEMEditor::ReadBlock(uint64_t                 pi_PosBlockX,
                                         uint64_t                 pi_PosBlockY,
-                                        Byte*                   po_pData,
-                                        HFCLockMonitor const*    pi_pSisterFileLock)
+                                        Byte*                   po_pData)
     {
-    HSTATUS ReadStatus = T_Super::ReadBlock(pi_PosBlockX, pi_PosBlockY, po_pData, pi_pSisterFileLock);
+    HSTATUS ReadStatus = T_Super::ReadBlock(pi_PosBlockX, pi_PosBlockY, po_pData);
     if(ReadStatus != H_SUCCESS)
         return ReadStatus;
 

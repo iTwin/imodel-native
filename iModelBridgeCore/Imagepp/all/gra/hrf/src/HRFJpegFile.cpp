@@ -3,7 +3,7 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFJpegFile.cpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class HRFJpegFile
@@ -672,15 +672,6 @@ bool HRFJpegCreator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
 
     HPRECONDITION(pi_rpURL != 0);
 
-    //TFS#132036: Sharing control is not thread-safe and we do not understand why it would be required.
-
-    //            disable it for now.
-
-    //(const_cast<HRFJpegCreator*>(this))->SharingControlCreate(pi_rpURL);
-
-    //HFCLockMonitor SisterFileLock(GetLockManager());
-
-
     // A JPEG image starts with the SOI segment which contain only the
     // SOI marker, hex FF D8
     // The SOI segment is followed by a misc marker (which starts with FF)
@@ -771,17 +762,6 @@ bool HRFJpegCreator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
         }
 
 WRAPUP:
-    //TFS#132036: Sharing control is not thread-safe and we do not understand why it would be required.
-
-    //            disable it for now.
-
-    //SisterFileLock.Release();
-
-    //HASSERT(!(const_cast<HRFJpegCreator*>(this))->m_pSharingControl->IsLocked());
-
-    //(const_cast<HRFJpegCreator*>(this))->m_pSharingControl = 0;
-
-
     return bResult;
     }
 
@@ -1134,12 +1114,6 @@ bool HRFJpegFile::Open()
         // Assign the opened file to the jpeg object
         ////////////////////////////////////////
 
-        // This creates the sister file for file sharing control if necessary.
-        SharingControlCreate();
-
-        // Lock the sister file for the read_header operation
-        HFCLockMonitor SisterFileLock (GetLockManager());
-
         // Assign the file as the source of the decompress struct
         // of the m_Jpeg member
         HRF_jpeg_stdio_src(m_Jpeg.m_pDecompress, m_pJpegFile);
@@ -1153,9 +1127,6 @@ bool HRFJpegFile::Open()
         // information about the file in the Decompression struct of the
         // m_Jpeg member
         jpeg_read_header(m_Jpeg.m_pDecompress, true);
-
-        // Unlock the sister file.
-        SisterFileLock.ReleaseKey();
 
         ////////////////////////////////////////
         // start the decompression
@@ -1282,10 +1253,6 @@ void HRFJpegFile::SaveJpegFile(bool pi_CloseFile)
         // if this is a compression object
         else if (m_Jpeg.m_pCompress)
             {
-
-            // Lock the sister file for the jpeg_finish_compress method
-            HFCLockMonitor SisterFileLock (GetLockManager());
-
             // Check if the image data was saved, cause we can't finish the
             // compression if no data was saved.
             if (m_IfCompressionNotTerminated && m_Jpeg.m_pCompress->image_height == m_Jpeg.m_pCompress->next_scanline)
@@ -1297,9 +1264,6 @@ void HRFJpegFile::SaveJpegFile(bool pi_CloseFile)
 
             if(pi_CloseFile)
                 {
-                // Unlock the sister file.
-                SisterFileLock.ReleaseKey();
-
                 // destroy the decompression object
                 jpeg_destroy_compress(m_Jpeg.m_pCompress);
                 delete m_Jpeg.m_pCompress;
@@ -1368,17 +1332,9 @@ bool HRFJpegFile::Create()
     // Assign the opened file to the jpeg object
     ////////////////////////////////////////
 
-    // This creates the sister file for file sharing control if necessary.
-    SharingControlCreate();
-
-    // Lock the sister file for the read_header operation
-    HFCLockMonitor SisterFileLock (GetLockManager());
-
     // Assign the file as the destination of the compress struct
     // of the m_Jpeg member
     HRF_jpeg_stdio_dest(m_Jpeg.m_pCompress, m_pJpegFile);
-
-    SisterFileLock.ReleaseKey();
 
     m_IsOpen = true;
     return true;

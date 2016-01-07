@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFJpegLineEditor.cpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class HRFJpegLineEditor
@@ -64,8 +64,7 @@ HRFJpegLineEditor::~HRFJpegLineEditor()
 //-----------------------------------------------------------------------------
 HSTATUS HRFJpegLineEditor::ReadBlock(uint64_t pi_PosBlockX,
                                      uint64_t pi_PosBlockY,
-                                     Byte*  po_pData,
-                                     HFCLockMonitor const* pi_pSisterFileLock)
+                                     Byte*  po_pData)
     {
     HPRECONDITION (m_AccessMode.m_HasReadAccess);
     HPRECONDITION(po_pData != 0);
@@ -79,21 +78,12 @@ HSTATUS HRFJpegLineEditor::ReadBlock(uint64_t pi_PosBlockX,
         }
     if (m_IsCMYK)
         {
-        Status = ReadCMYKBlock(pi_PosBlockX, pi_PosBlockY, po_pData, pi_pSisterFileLock);
+        Status = ReadCMYKBlock(pi_PosBlockX, pi_PosBlockY, po_pData);
         }
     else
         {
         // get the JPEG member to simplify thing in the method
         pJpeg = static_cast<HRFJpegFile*>(GetRasterFile().GetPtr())->GetFilePtr();
-
-        // Lock the sister file if needed
-        HFCLockMonitor SisterFileLock;
-        if(pi_pSisterFileLock == 0)
-            {
-            // Lock the file.
-            AssignRasterFileLock(GetRasterFile(), SisterFileLock, true);
-            pi_pSisterFileLock = &SisterFileLock;
-            }
 
         // Restart the file at the begining when the ask for a before block
         // or if we need to synchronize the file with the memory.
@@ -129,9 +119,6 @@ HSTATUS HRFJpegLineEditor::ReadBlock(uint64_t pi_PosBlockX,
             else
                 goto WRAPUP;    // H_ERROR
             }
-
-        // Unlock the sister file.
-        SisterFileLock.ReleaseKey();
         }
 
     Status = H_SUCCESS;
@@ -146,8 +133,7 @@ WRAPUP:
 
 HSTATUS HRFJpegLineEditor::ReadCMYKBlock(uint64_t pi_PosBlockX,
                                          uint64_t pi_PosBlockY,
-                                         Byte*  po_pData,
-                                         HFCLockMonitor const* pi_pSisterFileLock)
+                                         Byte*  po_pData)
     {
     HPRECONDITION(po_pData != 0);
     HSTATUS Status = H_SUCCESS;
@@ -155,14 +141,6 @@ HSTATUS HRFJpegLineEditor::ReadCMYKBlock(uint64_t pi_PosBlockX,
 
     // get the JPEG member to simplify thing in the method
     pJpeg = static_cast<HRFJpegFile*>(GetRasterFile().GetPtr())->GetFilePtr();
-
-    HFCLockMonitor SisterFileLock;
-    if(pi_pSisterFileLock == 0)
-        {
-        // Lock the file.
-        AssignRasterFileLock(GetRasterFile(), SisterFileLock, true);
-        pi_pSisterFileLock = &SisterFileLock;
-        }
 
     // Restart the file at the begining when the ask for a before block
     // or if we need to synchronize the file with the memory.
@@ -199,9 +177,6 @@ HSTATUS HRFJpegLineEditor::ReadCMYKBlock(uint64_t pi_PosBlockX,
             Status = H_ERROR;
         }
 
-    // Unlock the sister file.
-    SisterFileLock.ReleaseKey();
-
     if (Status == H_SUCCESS && m_pCMYKData)
         {
         // Convert data from CMYK buffer to RGB buffer.
@@ -220,8 +195,7 @@ HSTATUS HRFJpegLineEditor::ReadCMYKBlock(uint64_t pi_PosBlockX,
 //-----------------------------------------------------------------------------
 HSTATUS HRFJpegLineEditor::WriteBlock(uint64_t     pi_PosBlockX,
                                       uint64_t     pi_PosBlockY,
-                                      const Byte*  pi_pData,
-                                      HFCLockMonitor const* pi_pSisterFileLock)
+                                      const Byte*  pi_pData)
     {
     HPRECONDITION (m_AccessMode.m_HasWriteAccess || m_AccessMode.m_HasCreateAccess);
     HSTATUS Status = H_ERROR;
@@ -229,18 +203,10 @@ HSTATUS HRFJpegLineEditor::WriteBlock(uint64_t     pi_PosBlockX,
 
     if (m_IsCMYK)
         {
-        Status = WriteCMYKBlock(pi_PosBlockX, pi_PosBlockY, pi_pData, pi_pSisterFileLock);
+        Status = WriteCMYKBlock(pi_PosBlockX, pi_PosBlockY, pi_pData);
         }
     else
         {
-        HFCLockMonitor SisterFileLock;
-        if(pi_pSisterFileLock == 0)
-            {
-            // Lock the file.
-            AssignRasterFileLock(GetRasterFile(), SisterFileLock, false);
-            pi_pSisterFileLock = &SisterFileLock;
-            }
-
         // get the JPEG member to simplify thing in the method
         pJpeg = static_cast<HRFJpegFile*>(GetRasterFile().GetPtr())->GetFilePtr();
 
@@ -280,15 +246,9 @@ HSTATUS HRFJpegLineEditor::WriteBlock(uint64_t     pi_PosBlockX,
             // verify that the correct line number was read
             if (jpeg_write_scanlines(pJpeg->m_pCompress,(JSAMPARRAY) &pi_pData,1) == 1)
                 {
-                // Increment the modification counter;
-                GetRasterFile()->SharingControlIncrementCount();
-
                 Status = H_SUCCESS;
                 }
             }
-
-        // Unlock the sister file.
-        SisterFileLock.ReleaseKey();
         }
     return Status;
     }
@@ -300,8 +260,7 @@ HSTATUS HRFJpegLineEditor::WriteBlock(uint64_t     pi_PosBlockX,
 //-----------------------------------------------------------------------------
 HSTATUS HRFJpegLineEditor::WriteCMYKBlock(uint64_t     pi_PosBlockX,
                                           uint64_t     pi_PosBlockY,
-                                          const Byte*  pi_pData,
-                                          HFCLockMonitor const* pi_pSisterFileLock)
+                                          const Byte*  pi_pData)
     {
     HPRECONDITION (m_AccessMode.m_HasWriteAccess || m_AccessMode.m_HasCreateAccess);
     HPRECONDITION (m_pCMYKData != 0);
@@ -309,15 +268,6 @@ HSTATUS HRFJpegLineEditor::WriteCMYKBlock(uint64_t     pi_PosBlockX,
 
     HSTATUS Status = H_ERROR;
     HRFJpegFile::JPEG* pJpeg;
-
-    // Lock the sister file for the ReadBlock operation
-    HFCLockMonitor SisterFileLock;
-    if(pi_pSisterFileLock == 0)
-        {
-        // Lock the file.
-        AssignRasterFileLock(GetRasterFile(), SisterFileLock, false);
-        pi_pSisterFileLock = &SisterFileLock;
-        }
 
     // get the JPEG member to simplify thing in the method
     pJpeg = static_cast<HRFJpegFile*>(GetRasterFile().GetPtr())->GetFilePtr();
@@ -363,23 +313,9 @@ HSTATUS HRFJpegLineEditor::WriteCMYKBlock(uint64_t     pi_PosBlockX,
         // verify that the correct line number was read
         if (jpeg_write_scanlines(pJpeg->m_pCompress,(JSAMPARRAY) &m_pCMYKData,1) == 1)
             {
-            // Increment the modification counter;
-            GetRasterFile()->SharingControlIncrementCount();
             Status = H_SUCCESS;
             }
         }
-    // Unlock the sister file.
-    SisterFileLock.ReleaseKey();
 
     return Status;
-    }
-
-//-----------------------------------------------------------------------------
-// public
-// OnSynchronizedSharingControl
-//-----------------------------------------------------------------------------
-void HRFJpegLineEditor::OnSynchronizedSharingControl()
-    {
-    static_cast<HRFJpegFile*>(GetRasterFile().GetPtr())->SaveJpegFile(true);
-    static_cast<HRFJpegFile*>(GetRasterFile().GetPtr())->Open();
     }

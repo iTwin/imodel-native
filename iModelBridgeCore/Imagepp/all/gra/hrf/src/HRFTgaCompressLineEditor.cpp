@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFTgaCompressLineEditor.cpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class HRFTgaCompressLineEditor
@@ -99,8 +99,7 @@ HRFTgaCompressLineEditor::~HRFTgaCompressLineEditor()
 ------------------------------------------------------------------------------*/
 HSTATUS HRFTgaCompressLineEditor::ReadBlock(uint64_t  pi_PosBlockX,
                                             uint64_t  pi_PosBlockY,
-                                            Byte*     po_pData,
-                                            HFCLockMonitor const* pi_pSisterFileLock)
+                                            Byte*     po_pData)
     {
     HPRECONDITION(m_AccessMode.m_HasReadAccess);
     HPRECONDITION(pi_PosBlockY < GetResolutionDescriptor()->GetHeight());
@@ -108,15 +107,14 @@ HSTATUS HRFTgaCompressLineEditor::ReadBlock(uint64_t  pi_PosBlockX,
 
     HSTATUS Status = H_SUCCESS;
     HFCPtr<HRFResolutionDescriptor> pResolution = GetResolutionDescriptor();
-
-
+    
     if (!(GetRasterFile()->GetAccessMode().m_HasCreateAccess))
         {
         // Create a packet to perform the decompression
         HFCPtr<HCDPacket> pCompressed = new HCDPacket;
 
         // Read the data into the compressed packet
-        Status = ReadBlock(pi_PosBlockX, pi_PosBlockY, pCompressed, pi_pSisterFileLock);
+        Status = ReadBlock(pi_PosBlockX, pi_PosBlockY, pCompressed);
 
         if (Status == H_SUCCESS)
             {
@@ -146,8 +144,7 @@ HSTATUS HRFTgaCompressLineEditor::ReadBlock(uint64_t  pi_PosBlockX,
 ------------------------------------------------------------------------------*/
 HSTATUS HRFTgaCompressLineEditor::ReadBlock(uint64_t           pi_PosBlockX,
                                             uint64_t           pi_PosBlockY,
-                                            HFCPtr<HCDPacket>& po_rpPacket,
-                                            HFCLockMonitor const* pi_pSisterFileLock)
+                                            HFCPtr<HCDPacket>& po_rpPacket)
     {
     HPRECONDITION(m_AccessMode.m_HasReadAccess);
     HPRECONDITION(po_rpPacket != 0);
@@ -155,7 +152,6 @@ HSTATUS HRFTgaCompressLineEditor::ReadBlock(uint64_t           pi_PosBlockX,
     HPRECONDITION(pi_PosBlockX == 0);
 
     HSTATUS Status = H_ERROR;
-    HFCLockMonitor SisterFileLock;
 
     uint64_t           Line;
     uint32_t           NbBytesRead;
@@ -165,14 +161,6 @@ HSTATUS HRFTgaCompressLineEditor::ReadBlock(uint64_t           pi_PosBlockX,
         {
         Status = H_NOT_FOUND;
         goto WRAPUP;
-        }
-
-    // Lock the sister file
-    if(pi_pSisterFileLock == 0)
-        {
-        // Lock the file.
-        AssignRasterFileLock(GetRasterFile(), SisterFileLock, true);
-        pi_pSisterFileLock = &SisterFileLock;
         }
 
     // If there is already a LineOffsetTbl in the file, copy it to the structure.
@@ -231,9 +219,6 @@ HSTATUS HRFTgaCompressLineEditor::ReadBlock(uint64_t           pi_PosBlockX,
         po_rpPacket->SetDataSize (NbBytesRead);
         }
 
-    // Unlock the sister file.
-    SisterFileLock.ReleaseKey();
-
     Status = H_SUCCESS;
 
 WRAPUP:
@@ -255,8 +240,7 @@ WRAPUP:
 ------------------------------------------------------------------------------*/
 HSTATUS HRFTgaCompressLineEditor::WriteBlock(uint64_t                 pi_PosBlockX,
                                              uint64_t                 pi_PosBlockY,
-                                             const Byte*              pi_pData,
-                                             HFCLockMonitor const*    pi_pSisterFileLock)
+                                             const Byte*              pi_pData)
     {
     HPRECONDITION(m_AccessMode.m_HasWriteAccess || m_AccessMode.m_HasCreateAccess);
     HPRECONDITION(pi_pData != 0);
@@ -281,7 +265,7 @@ HSTATUS HRFTgaCompressLineEditor::WriteBlock(uint64_t                 pi_PosBloc
     Uncompressed.Compress(pCompressed);
 
     // Write the compressed data to the file.
-    return WriteBlock(pi_PosBlockX, pi_PosBlockY, pCompressed, pi_pSisterFileLock);
+    return WriteBlock(pi_PosBlockX, pi_PosBlockY, pCompressed);
     }
 
 /**-----------------------------------------------------------------------------
@@ -297,8 +281,7 @@ HSTATUS HRFTgaCompressLineEditor::WriteBlock(uint64_t                 pi_PosBloc
 ------------------------------------------------------------------------------*/
 HSTATUS HRFTgaCompressLineEditor::WriteBlock(uint64_t                 pi_PosBlockX,
                                              uint64_t                 pi_PosBlockY,
-                                             const HFCPtr<HCDPacket>& pi_rpPacket,
-                                             HFCLockMonitor const*    pi_pSisterFileLock)
+                                             const HFCPtr<HCDPacket>& pi_rpPacket)
     {
     HPRECONDITION(m_AccessMode.m_HasWriteAccess || m_AccessMode.m_HasCreateAccess);
     HPRECONDITION(pi_rpPacket != 0);
@@ -307,15 +290,6 @@ HSTATUS HRFTgaCompressLineEditor::WriteBlock(uint64_t                 pi_PosBloc
 
     HSTATUS             Status      = H_ERROR;
     HFCPtr<HRFTgaFile>  pTgaFile   = TGA_RASTERFILE;
-
-    // Lock the sister file
-    HFCLockMonitor SisterFileLock;
-    if(pi_pSisterFileLock == 0)
-        {
-        // Lock the file.
-        AssignRasterFileLock(GetRasterFile(), SisterFileLock, false);
-        pi_pSisterFileLock = &SisterFileLock;
-        }
 
     // Rewrite the file header if necessary...
     if (pi_PosBlockY == 0)
@@ -339,12 +313,6 @@ HSTATUS HRFTgaCompressLineEditor::WriteBlock(uint64_t                 pi_PosBloc
         goto WRAPUP;    // H_ERROR
 
     m_pLineOffsetTbl[pi_PosBlockY+1] = (uint32_t)pTgaFile->m_pTgaFile->GetCurrentPos();
-
-    // Increment the counters
-    GetRasterFile()->SharingControlIncrementCount();
-
-    // Unlock the sister file.
-    SisterFileLock.ReleaseKey();
 
     // If this is the last block, get the offset of the end of the data.
     if (pi_PosBlockY == GetResolutionDescriptor()->GetHeight() - 1)
@@ -374,8 +342,6 @@ WRAPUP:
 -----------------------------------------------------------------------------*/
 bool HRFTgaCompressLineEditor::GetLineOffsetTableFromFile()
     {
-    HPRECONDITION (GetRasterFile()->SharingControlIsLocked());
-
     HFCPtr<HRFTgaFile> pTgaFile = TGA_RASTERFILE;
     uint32_t Pos;
     uint32_t NbPixels;
@@ -433,17 +399,4 @@ bool HRFTgaCompressLineEditor::GetLineOffsetTableFromFile()
         }
 
     return FileIsValid;
-    }
-
-//-----------------------------------------------------------------------------
-// public
-// OnSynchronizedSharingControl
-//-----------------------------------------------------------------------------
-void HRFTgaCompressLineEditor::OnSynchronizedSharingControl()
-    {
-    (TGA_RASTERFILE)->SaveTgaFile(true);
-    (TGA_RASTERFILE)->Open();
-    // Synch used to be called in this order. Does not look like it matter right now.
-    // GetRasterFile()->SharingControlSynchronize();
-    m_pLineOffsetTbl[1] = 0x00;
     }

@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFRawFile.cpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class HRFRawFile
@@ -294,9 +294,6 @@ void HRFRawCreator::AutoDetectFileSize (const HFCPtr<HFCURL>& pi_rpURL,
     uint32_t                 Size;
     HAutoPtr<HFCBinStream>  pFile;
 
-    (const_cast<HRFRawCreator*>(this))->SharingControlCreate(pi_rpURL);
-    HFCLockMonitor SisterFileLock(GetLockManager());
-
     // Open the Raw File & place file pointer at the start of the file
     pFile = HFCBinStream::Instanciate(pi_rpURL, pi_Offset, HFC_READ_ONLY | HFC_SHARE_READ_WRITE);
 
@@ -327,11 +324,6 @@ void HRFRawCreator::AutoDetectFileSize (const HFCPtr<HFCURL>& pi_rpURL,
             po_Width = (uint32_t)(FileSize / Size);
             }
         }
-
-    SisterFileLock.ReleaseKey();
-    HASSERT(!(const_cast<HRFRawCreator*>(this))->m_pSharingControl->IsLocked());
-    (const_cast<HRFRawCreator*>(this))->m_pSharingControl = 0;
-
     }
 
 //-----------------------------------------------------------------------------
@@ -349,9 +341,6 @@ HFCPtr<HRPPixelType> HRFRawCreator::AutoDetectPixelType (const HFCPtr<HFCURL>& p
     size_t                  FileSize;
     HAutoPtr<HFCBinStream>  pFile;
     HFCPtr<HRPPixelType>    pPixelType = 0;
-
-    (const_cast<HRFRawCreator*>(this))->SharingControlCreate(pi_rpURL);
-    HFCLockMonitor SisterFileLock(GetLockManager());
 
     // Open the Raw File & place file pointer at the start of the file
     pFile = HFCBinStream::Instanciate(pi_rpURL, pi_Offset, HFC_READ_ONLY | HFC_SHARE_READ_WRITE);
@@ -381,10 +370,6 @@ HFCPtr<HRPPixelType> HRFRawCreator::AutoDetectPixelType (const HFCPtr<HFCURL>& p
             }
         }
 
-    SisterFileLock.ReleaseKey();
-    HASSERT(!(const_cast<HRFRawCreator*>(this))->m_pSharingControl->IsLocked());
-    (const_cast<HRFRawCreator*>(this))->m_pSharingControl = 0;
-
     m_pPixelType = pPixelType;
 
     return pPixelType;
@@ -400,9 +385,6 @@ bool HRFRawFile::Open()
     if (!m_IsOpen)
         {
         m_pRawFile = HFCBinStream::Instanciate(GetURL(), m_Offset, GetAccessMode(), 0, true);
-
-        // This creates the sister file for file sharing control if necessary.
-        SharingControlCreate();
 
         m_IsOpen = true;
         }
@@ -575,14 +557,8 @@ bool HRFRawFile::AddPage(HFCPtr<HRFPageDescriptor> pi_pPage)
         Byte* pTempon = new Byte[(size_t)m_Offset];
         memset(pTempon,0x00,(size_t)m_Offset);
 
-        // Lock the sister file.
-        HFCLockMonitor SisterFileLock (GetLockManager());
-
         m_pRawFile->SeekToBegin();
         m_pRawFile->Write(pTempon, (size_t)m_Offset);
-
-        // Unlock the sister file.
-        SisterFileLock.ReleaseKey();
 
         delete[] pTempon;
         }
@@ -598,9 +574,6 @@ bool HRFRawFile::Create()
     {
     // Open the file
     m_pRawFile = HFCBinStream::Instanciate(GetURL(), GetAccessMode(), 0, true);
-
-    // Create the sharing control object for file sharing
-    SharingControlCreate();
 
     m_IsOpen = true;
 

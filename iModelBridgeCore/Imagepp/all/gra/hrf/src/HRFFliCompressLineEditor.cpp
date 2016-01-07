@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFFliCompressLineEditor.cpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class HRFPngLineEditor
@@ -72,8 +72,7 @@ HRFFliCompressLineEditor::~HRFFliCompressLineEditor()
 //-----------------------------------------------------------------------------
 HSTATUS HRFFliCompressLineEditor::ReadBlock(uint64_t              pi_PosBlockX,
                                             uint64_t              pi_PosBlockY,
-                                            HFCPtr<HCDPacket>&    po_rpPacket,
-                                            HFCLockMonitor const* pi_pSisterFileLock)
+                                            HFCPtr<HCDPacket>&    po_rpPacket)
     {
 
 
@@ -81,7 +80,6 @@ HSTATUS HRFFliCompressLineEditor::ReadBlock(uint64_t              pi_PosBlockX,
     HPRECONDITION(m_AccessMode.m_HasReadAccess);
 
     HSTATUS Status = H_ERROR;
-    HFCLockMonitor SisterFileLock;
     Byte*    pCompressBuffer = 0;
     uint32_t CompressDateSize = 0;
 
@@ -89,14 +87,6 @@ HSTATUS HRFFliCompressLineEditor::ReadBlock(uint64_t              pi_PosBlockX,
         {
         Status = H_NOT_FOUND;
         goto WRAPUP;
-        }
-
-    // Lock the sister file
-    if(pi_pSisterFileLock == 0)
-        {
-        // Lock the file.
-        AssignRasterFileLock(GetRasterFile(), SisterFileLock, true);
-        pi_pSisterFileLock = &SisterFileLock;
         }
 
     // Read the data from the file.
@@ -109,9 +99,6 @@ HSTATUS HRFFliCompressLineEditor::ReadBlock(uint64_t              pi_PosBlockX,
 
     if(m_pRasterFile->m_pFliFile->Read(pCompressBuffer, CompressDateSize) != CompressDateSize)
         goto WRAPUP;    // H_ERROR
-
-    // Unlock the sister file
-    SisterFileLock.ReleaseKey();
 
     // Set the current codec to the Packet.
     po_rpPacket->SetCodec((HFCPtr<HCDCodec> &) m_pCodec);
@@ -144,35 +131,17 @@ WRAPUP:
 //-----------------------------------------------------------------------------
 HSTATUS HRFFliCompressLineEditor::WriteBlock(uint64_t              pi_PosBlockX,
                                              uint64_t              pi_PosBlockY,
-                                             const Byte*           pi_pData,
-                                             HFCLockMonitor const* pi_pSisterFileLock)
+                                             const Byte*           pi_pData)
     {
     HPRECONDITION(m_AccessMode.m_HasWriteAccess || m_AccessMode.m_HasCreateAccess);
     HPRECONDITION(pi_pData != 0);
-
-    HSTATUS Status = H_SUCCESS;
-
-    // Lock the sister file
-    HFCLockMonitor SisterFileLock;
-    if(pi_pSisterFileLock == 0)
-        {
-        // Lock the file.
-        AssignRasterFileLock(GetRasterFile(), SisterFileLock, false);
-        pi_pSisterFileLock = &SisterFileLock;
-        }
 
     // Verify that the line number specified is the same as the next line
     // to be written, since PNG file don't have random access.
     Byte*  ppLine[1];
     ppLine[0] = (Byte*)pi_pData;
 
-    // Increment the counters
-    GetRasterFile()->SharingControlIncrementCount();
-
-    // Unlock the sister file.
-    SisterFileLock.ReleaseKey();
-
-    return Status;
+    return H_SUCCESS;
     }
 
 
@@ -184,24 +153,11 @@ HSTATUS HRFFliCompressLineEditor::WriteBlock(uint64_t              pi_PosBlockX,
 //-----------------------------------------------------------------------------
 HSTATUS HRFFliCompressLineEditor::WriteBlock(uint64_t                 pi_PosBlockX,
                                              uint64_t                 pi_PosBlockY,
-                                             const HFCPtr<HCDPacket>& pi_rpPacket,
-                                             HFCLockMonitor const*    pi_pSisterFileLock)
+                                             const HFCPtr<HCDPacket>& pi_rpPacket)
     {
     HPRECONDITION (m_AccessMode.m_HasWriteAccess || m_AccessMode.m_HasCreateAccess);
 
     return H_ERROR;
-    }
-
-//-----------------------------------------------------------------------------
-// public
-// OnSynchronizedSharingControl
-//-----------------------------------------------------------------------------
-void HRFFliCompressLineEditor::OnSynchronizedSharingControl()
-    {
-    // The close-open sequence will reload the info of the file. This way, we
-    // are sure that the information that will be read will be up to date.
-    static_cast<HRFFliFile*>(GetRasterFile().GetPtr())->SaveFliFile(true);
-    static_cast<HRFFliFile*>(GetRasterFile().GetPtr())->Open();
     }
 
 

@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRFVirtualEarthFile.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HRFVirtualEarthFile
@@ -15,7 +15,6 @@
 #include <Imagepp/all/h/HFCHTTPConnection.h>
 #include "HFCMacros.h"
 #include "HFCSemaphore.h"
-#include "HRFCacheFileSharing.h"
 #include "HRFException.h"
 #include "HRFRasterFile.h"
 #include "HRFRasterFileCapabilities.h"

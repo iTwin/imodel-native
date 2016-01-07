@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFPictLineEditor.cpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class HRFPictLineEditor
@@ -110,8 +110,7 @@ HRFPictLineEditor::~HRFPictLineEditor()
 //-----------------------------------------------------------------------------
 HSTATUS HRFPictLineEditor::ReadBlock(uint64_t                pi_PosBlockX,
                                      uint64_t                pi_PosBlockY,
-                                     Byte*                   po_pData,
-                                     HFCLockMonitor const*   pi_pSisterFileLock)
+                                     Byte*                   po_pData)
     {
 
     HPRECONDITION (m_AccessMode.m_HasReadAccess);
@@ -122,17 +121,6 @@ HSTATUS HRFPictLineEditor::ReadBlock(uint64_t                pi_PosBlockX,
     HPRECONDITION (m_pResolutionDescriptor->GetBlockType() == HRFBlockType::LINE);
 
     HSTATUS         Status = H_ERROR;
-    HFCLockMonitor  SisterFileLock;
-
-
-    // Lock the sister file for the ReadBlock operation
-    if (pi_pSisterFileLock == 0)
-        {
-        // Lock the file.
-        AssignRasterFileLock(GetRasterFile(), SisterFileLock, true);
-        pi_pSisterFileLock = &SisterFileLock;
-        }
-
 
     // The desired line is before our current or the current line has been reinitialized
     if (m_CurrentReadLine > pi_PosBlockY || 0 == m_CurrentReadLine)
@@ -166,9 +154,6 @@ HSTATUS HRFPictLineEditor::ReadBlock(uint64_t                pi_PosBlockX,
         goto WRAPUP;
         }
 
-    // Unlock the sister file
-    SisterFileLock.ReleaseKey();
-
     if (m_ReorganizeLineColorRepresentation)
         ReorganizeColorsToRGB(po_pData, m_BytesPerBlockWidth);
 
@@ -199,8 +184,7 @@ WRAPUP:
 //-----------------------------------------------------------------------------
 HSTATUS HRFPictLineEditor::WriteBlock(uint64_t               pi_PosBlockX,
                                       uint64_t               pi_PosBlockY,
-                                      const Byte*            pi_pData,
-                                      HFCLockMonitor const*  pi_pSisterFileLock)
+                                      const Byte*            pi_pData)
     {
     HPRECONDITION (m_AccessMode.m_HasWriteAccess || m_AccessMode.m_HasCreateAccess);
     HPRECONDITION (pi_pData != 0);
@@ -210,7 +194,6 @@ HSTATUS HRFPictLineEditor::WriteBlock(uint64_t               pi_PosBlockX,
     HPRECONDITION (m_pResolutionDescriptor->GetBlockType() == HRFBlockType::LINE);
 
     HSTATUS         Status = H_ERROR;
-    HFCLockMonitor  SisterFileLock;
 
     if (0 == m_CurrentWriteLine)
         {
@@ -249,15 +232,6 @@ HSTATUS HRFPictLineEditor::WriteBlock(uint64_t               pi_PosBlockX,
     else
         memcpy(m_pWriteLineBuffer2, pi_pData, m_BytesPerBlockWidth);
 
-
-    // Lock the sister file for the WriteBlock operation
-    if (pi_pSisterFileLock == 0)
-        {
-        // Lock the file.
-        AssignRasterFileLock(GetRasterFile(), SisterFileLock, true);
-        pi_pSisterFileLock = &SisterFileLock;
-        }
-
     if (!PackAndWriteLine(m_pWriteLineBuffer2, m_BytesPerBlockWidth))
         {
         Status = H_WRITE_ERROR;
@@ -280,9 +254,6 @@ HSTATUS HRFPictLineEditor::WriteBlock(uint64_t               pi_PosBlockX,
             goto WRAPUP;
             }
         }
-
-    // Unlock the sister file
-    SisterFileLock.ReleaseKey();
 
     Status = H_SUCCESS;
 

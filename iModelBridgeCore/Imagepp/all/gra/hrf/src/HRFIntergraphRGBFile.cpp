@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFIntergraphRGBFile.cpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class HRFIntergraphRGBFile
@@ -213,9 +213,6 @@ bool HRFIntergraphRGBCreator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
     unsigned short WordToFollow;
     uint32_t HeaderLen;
 
-    (const_cast<HRFIntergraphRGBCreator*>(this))->SharingControlCreate(pi_rpURL);
-    HFCLockMonitor SisterFileLock(GetLockManager());
-
     // Open the RGB File & place file pointer at the start of the file
     pFile = HFCBinStream::Instanciate(pi_rpURL, pi_Offset, HFC_READ_ONLY | HFC_SHARE_READ_WRITE);
 
@@ -257,10 +254,6 @@ bool HRFIntergraphRGBCreator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
         }
 
 WRAPUP:
-    SisterFileLock.ReleaseKey();
-    HASSERT(!(const_cast<HRFIntergraphRGBCreator*>(this))->m_pSharingControl->IsLocked());
-    (const_cast<HRFIntergraphRGBCreator*>(this))->m_pSharingControl = 0;
-
     return Result;
     }
 
