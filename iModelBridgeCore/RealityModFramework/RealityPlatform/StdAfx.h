@@ -2,7 +2,7 @@
 |
 |     $Source: RealityPlatform/StdAfx.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <windows.h>
@@ -25,6 +25,7 @@
 #include <Imagepp/all/h/HVE2DRectangle.h>
 #include <Imagepp/all/h/HRFUtility.h>
 #include <Imagepp/all/h/HGF2DPolygonOfSegments.h>
+#include <Imagepp/all/h/HFCException.h>
 
 USING_NAMESPACE_IMAGEPP
 
