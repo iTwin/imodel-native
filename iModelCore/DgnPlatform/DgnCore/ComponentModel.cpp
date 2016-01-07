@@ -546,10 +546,6 @@ ComponentDefPtr ComponentDef::FromECSqlName(DgnDbStatus* statusOut, DgnDbR db, U
 +---------------+---------------+---------------+---------------+---------------+------*/
 ComponentDef::~ComponentDef()
     {
-    //  *** WIP_COMPONENT: Instead of deleting the model, destructor should check the sandbox model back in to the pool.
-
-    if (m_model.IsValid() && UsesTemporaryModel())
-        m_model->Delete();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -700,11 +696,23 @@ ComponentModelR ComponentDef::GetModel()
             return *m_model;
         }
 
-    //  model name not specified, or model does not exist. Generate one.
+    //  model name not specified, or model does not exist. This component will use a sandbox model.
 
-    //  *** WIP_COMPONENT: Instead of creating a new one, check out a model from a pool of pre-allocated anonymous "sandbox" ComponentModels. Destructor would then check the sandbox model back in.
+    Utf8String componentDefClassFullName = GetECClass().GetFullName();
+    componentDefClassFullName.ReplaceAll(":", ".");
 
-    m_model = ComponentModel::Create(m_db, GetECClass().GetFullName());
+    m_model = m_db.Models().Get<ComponentModel>(m_db.Models().QueryModelId(DgnModel::CreateModelCode(componentDefClassFullName)));
+    if (m_model.IsValid())
+        {
+        //  Sandbox model already exists. Clean it out and re-use it.
+        CachedECSqlStatementPtr delStmt = m_db.GetPreparedECSqlStatement("DELETE FROM " DGN_SCHEMA(DGN_CLASSNAME_Element) " WHERE ModelId=?");
+        delStmt->BindId(1, m_model->GetModelId());
+        delStmt->Step();
+        return *m_model;
+        }
+
+    //  Create a sandbox model.
+    m_model = ComponentModel::Create(m_db, componentDefClassFullName.c_str());
     m_model->Insert();
 
     return *m_model;
