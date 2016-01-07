@@ -1,7 +1,8 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <ECSchema schemaName="MetaSchema" nameSpacePrefix="ms" version="2.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+    <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="01.00" prefix="bsca" />
     <ECSchemaReference name="EditorCustomAttributes" version="01.00" prefix="beca" />
-    <ECSchemaReference name="Bentley_Standard_Classes" version="01.00" prefix="bsm" />
+    <ECSchemaReference name="Bentley_Standard_Classes" version="01.01" prefix="bsm" />
     <ECClass typeName="CustomAttributeContainerDef" description="CustomAttributeContainer" displayLabel="CustomAttributeContainer" isDomainClass="False" />
     <ECClass typeName="PropertyCustomAttribute" isDomainClass="True" isCustomAttributeClass="True">
         <ECProperty propertyName="IsReadOnly" typeName="boolean" />
@@ -9,6 +10,11 @@
     </ECClass>
     <ECClass typeName="ECClassDef" description="ECClass" displayLabel="ECClass" isStruct="True" isDomainClass="True">
         <BaseClass>CustomAttributeContainerDef</BaseClass>
+        <ECCustomAttributes>
+            <InstanceLabelSpecification xmlns="Bentley_Standard_CustomAttributes.01.00">
+                <PropertyName>DisplayLabel</PropertyName>
+            </InstanceLabelSpecification>
+        </ECCustomAttributes>
         <ECProperty propertyName="Name" typeName="string">
             <ECCustomAttributes>
                 <PropertyCustomAttribute xmlns="MetaSchema.02.00">
@@ -93,6 +99,11 @@
     </ECRelationshipClass>
     <ECClass typeName="ECPropertyDef" description="ECProperty" displayLabel="ECProperty" isStruct="True" isDomainClass="True">
         <BaseClass>CustomAttributeContainerDef</BaseClass>
+        <ECCustomAttributes>
+            <InstanceLabelSpecification xmlns="Bentley_Standard_CustomAttributes.01.00">
+                <PropertyName>DisplayLabel</PropertyName>
+            </InstanceLabelSpecification>
+        </ECCustomAttributes>
         <ECProperty propertyName="Name" typeName="string">
             <ECCustomAttributes>
                 <PropertyCustomAttribute xmlns="MetaSchema.02.00">
@@ -352,6 +363,11 @@
     </ECClass>
     <ECClass typeName="ECRelationshipConstraintDef" description="RelationshipConstraint" displayLabel="RelationshipConstraint" isStruct="True" isDomainClass="True">
         <BaseClass>CustomAttributeContainerDef</BaseClass>
+        <ECCustomAttributes>
+            <InstanceLabelSpecification xmlns="Bentley_Standard_CustomAttributes.01.00">
+                <PropertyName>RoleLabel</PropertyName>
+            </InstanceLabelSpecification>
+        </ECCustomAttributes>
         <ECProperty propertyName="RoleLabel" typeName="string">
             <ECCustomAttributes>
                 <PropertyCustomAttribute xmlns="MetaSchema.02.00">
@@ -395,6 +411,11 @@
     </ECClass>
     <ECClass typeName="ECSchemaDef" description="ECSchema" displayLabel="ECSchema" isStruct="True" isDomainClass="True">
         <BaseClass>CustomAttributeContainerDef</BaseClass>
+        <ECCustomAttributes>
+            <InstanceLabelSpecification xmlns="Bentley_Standard_CustomAttributes.01.00">
+                <PropertyName>DisplayLabel</PropertyName>
+            </InstanceLabelSpecification>
+        </ECCustomAttributes>
         <ECProperty propertyName="Name" typeName="string">
             <ECCustomAttributes>
                 <PropertyCustomAttribute xmlns="MetaSchema.02.00">
