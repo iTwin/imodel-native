@@ -15,6 +15,8 @@
 
 BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 
+typedef AsyncResult<void, AsyncError> SignInResult;
+
 /*--------------------------------------------------------------------------------------+
 * @bsiclass
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -36,8 +38,8 @@ struct ConnectSignInManager
         WSCLIENT_EXPORT ConnectSignInManager();
         WSCLIENT_EXPORT virtual ~ConnectSignInManager();
 
-        WSCLIENT_EXPORT BentleyStatus SignInWithToken(Utf8StringCR token);
-        WSCLIENT_EXPORT BentleyStatus SignInWithCredentials(CredentialsCR credentials);
+        WSCLIENT_EXPORT void SignInWithToken(Utf8StringCR token);
+        WSCLIENT_EXPORT AsyncTaskPtr<SignInResult> SignInWithCredentials(CredentialsCR credentials);
         WSCLIENT_EXPORT void SignOut();
         WSCLIENT_EXPORT bool IsSignedIn() const;
         WSCLIENT_EXPORT UserInfo GetUserInfo() const;
