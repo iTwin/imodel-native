@@ -2,7 +2,7 @@
 |
 |     $Source: DgnDbServerClient/DgnDbServerUtils.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -56,6 +56,7 @@ namespace ServerSchema
         static Utf8CP PushDate = "PushDate";
         static Utf8CP Published = "Published";
         static Utf8CP ObjectId = "ObjectId";
+        static Utf8CP ObjectIds = "ObjectIds";
         static Utf8CP LockType = "LockType";
         static Utf8CP LockLevel = "LockLevel";
         static Utf8CP URL = "URL";
@@ -71,7 +72,7 @@ namespace Locks
     static Utf8CP ObjectId = "LockableId";
     namespace Object
         {
-        static Utf8CP Id = "Id";
+        static Utf8CP Id = "LockableId";
         static Utf8CP Type = "Type";
         }
     static Utf8CP Level = "Level";
@@ -138,20 +139,24 @@ struct CallbackQueue
 //=======================================================================================
 struct DgnDbServerHost : public Dgn::DgnPlatformLib::Host
     {
+    DEFINE_T_SUPER(Dgn::DgnPlatformLib::Host);
     private:
-        BeFileNameCR m_temp;
-        BeFileNameCR m_assets;
-        static std::unique_ptr<DgnDbServerHost> m_host;
+        bool m_initialized;
+        bool m_terminated;
+        static BeFileName m_temp;
+        static BeFileName m_assets;
     public:
-        DgnDbServerHost(BeFileNameCR temp, BeFileNameCR assets);
+        DgnDbServerHost();
         ~DgnDbServerHost();
-        static void Initialize(BeFileNameCR temp, BeFileNameCR assets);
-        static bool IsInitialized();
 
         virtual void _SupplyProductName(Utf8StringR name) override { name.assign("DgnDb Server"); }
         virtual IKnownLocationsAdmin& _SupplyIKnownLocationsAdmin() override;
         virtual BeSQLite::L10N::SqlangFiles _SupplySqlangFiles() { return BeSQLite::L10N::SqlangFiles(BeFileName()); }
 
-        static DgnDbServerHost& Host();
+        static void Initialize(BeFileNameCR temp, BeFileNameCR assets);
+        static void Adopt(std::shared_ptr<DgnDbServerHost> const& host);
+        static void Forget(std::shared_ptr<DgnDbServerHost> const& host, bool terminate = true);
+
+        static bool IsInitialized();
     };
 END_BENTLEY_DGNDBSERVER_NAMESPACE

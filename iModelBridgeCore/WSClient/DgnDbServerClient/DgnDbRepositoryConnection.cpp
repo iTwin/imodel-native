@@ -105,7 +105,8 @@ DgnDbResult DgnDbRepositoryConnection::WriteBriefcaseIdIntoFile(BeFileName fileP
     {
     BeSQLite::DbResult status;
 
-    Dgn::DgnPlatformLib::AdoptHost(DgnDbServerHost::Host());
+    std::shared_ptr<DgnDbServerHost> host = std::make_shared<DgnDbServerHost>();
+    DgnDbServerHost::Adopt(host);
     Dgn::DgnDbPtr db = Dgn::DgnDb::OpenDgnDb(&status, filePath, Dgn::DgnDb::OpenParams(Dgn::DgnDb::OpenMode::ReadWrite));
 
     if (BeSQLite::DbResult::BE_SQLITE_OK == status)
@@ -114,13 +115,13 @@ DgnDbResult DgnDbRepositoryConnection::WriteBriefcaseIdIntoFile(BeFileName fileP
     if (BeSQLite::DbResult::BE_SQLITE_DONE == status)
         {
         db->CloseDb();
-        Dgn::DgnPlatformLib::ForgetHost();
+        DgnDbServerHost::Forget(host, true);
         return DgnDbResult::Success();
         }
 
     Utf8String error = db->GetLastError(&status);
     db->CloseDb();
-    Dgn::DgnPlatformLib::ForgetHost();
+    DgnDbServerHost::Forget(host, true);
     return DgnDbResult::Error(error.c_str());
     }
 
@@ -194,23 +195,69 @@ AsyncTaskPtr<DgnDbResult> DgnDbRepositoryConnection::DownloadRevisionFile(DgnDbS
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             12/2015
 //---------------------------------------------------------------------------------------
-std::shared_ptr<WSChangeset> LockJsonRequest(JsonValueCR locks, const BeBriefcaseId& briefcaseId, const WSChangeset::ChangeState& changeState)
+Json::Value CreateLockInstanceJson(bvector<uint64_t> const& ids, const BeBriefcaseId& briefcaseId, Utf8StringCR description, LockableType type, LockLevel level)
     {
-    std::shared_ptr<WSChangeset> changeset(new WSChangeset());
-    for (auto& lock : locks[Locks::Locks])
+    Json::Value properties;
+
+    properties[ServerSchema::Property::Description] = description;
+    properties[ServerSchema::Property::BriefcaseId] = briefcaseId.GetValue();
+    DgnLocksJson::LockableTypeToJson(properties[ServerSchema::Property::LockType], type);
+    DgnLocksJson::LockLevelToJson(properties[ServerSchema::Property::LockLevel], level);
+
+    properties[ServerSchema::Property::ObjectIds] = Json::arrayValue;
+    int i = 0;
+    for (auto const& id : ids)
         {
-        Json::Value properties;
-        properties[ServerSchema::Property::Description] = locks[Locks::Description];
-        properties[ServerSchema::Property::ObjectId] = lock[Locks::ObjectId][Locks::Object::Id];
-        properties[ServerSchema::Property::LockType] = lock[Locks::ObjectId][Locks::Object::Type];
-        properties[ServerSchema::Property::LockLevel] = lock[Locks::Level];
-        properties[ServerSchema::Property::BriefcaseId] = briefcaseId.GetValue();
-        ObjectId lockObject(ServerSchema::Schema::Repository, ServerSchema::Class::Lock, "");
-        changeset->AddInstance(lockObject, changeState, std::make_shared<Json::Value>(properties));
+        Utf8String idStr;
+        idStr.Sprintf("%ull", id);
+        properties[ServerSchema::Property::ObjectIds][i++] = idStr;
         }
-    return changeset;
+
+    return properties;
     }
 
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     Karolis.Dziedzelis             12/2015
+//---------------------------------------------------------------------------------------
+void AddToInstance(std::shared_ptr<WSChangeset> changeset, WSChangeset::ChangeState const& changeState, bvector<uint64_t> const& ids,
+                   const BeBriefcaseId& briefcaseId, Utf8StringCR description, LockableType type, LockLevel level)
+    {
+    if (ids.empty())
+        return;
+    ObjectId lockObject(ServerSchema::Schema::Repository, ServerSchema::Class::Lock, "");
+    changeset->AddInstance(lockObject, changeState, std::make_shared<Json::Value>(CreateLockInstanceJson(ids, briefcaseId, description, type, level)));
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     Karolis.Dziedzelis             12/2015
+//---------------------------------------------------------------------------------------
+std::shared_ptr<WSChangeset> LockJsonRequest(JsonValueCR locks, const BeBriefcaseId& briefcaseId, const WSChangeset::ChangeState& changeState)
+    {
+    bvector<uint64_t> objects[6];
+
+    for (auto& lock : locks[Locks::Locks])
+        {
+        LockableType type;
+        DgnLocksJson::LockableTypeFromJson(type, lock[Locks::ObjectId][Locks::Object::Type]);
+        LockLevel level;
+        DgnLocksJson::LockLevelFromJson(level, lock[Locks::Level]);
+        uint64_t id = lock[Locks::ObjectId][Locks::Object::Id].asUInt64();
+        int index = static_cast<int32_t>(type) * 2 + static_cast<int32_t>(level) - 1;
+        if (index >= 0 && index <= 6)
+            objects[index].push_back(id);
+        }
+
+    std::shared_ptr<WSChangeset> changeset(new WSChangeset());
+    Utf8String description = locks[Locks::Description].asString();
+    AddToInstance(changeset, changeState, objects[0], briefcaseId, description, LockableType::Db, LockLevel::Shared);
+    AddToInstance(changeset, changeState, objects[1], briefcaseId, description, LockableType::Db, LockLevel::Exclusive);
+    AddToInstance(changeset, changeState, objects[2], briefcaseId, description, LockableType::Model, LockLevel::Shared);
+    AddToInstance(changeset, changeState, objects[3], briefcaseId, description, LockableType::Model, LockLevel::Exclusive);
+    AddToInstance(changeset, changeState, objects[4], briefcaseId, description, LockableType::Element, LockLevel::Shared);
+    AddToInstance(changeset, changeState, objects[5], briefcaseId, description, LockableType::Element, LockLevel::Exclusive);
+
+    return changeset;
+    }
 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             12/2015
@@ -428,11 +475,12 @@ AsyncTaskPtr<WSCreateObjectResult> DgnDbRepositoryConnection::AcquireBriefcaseId
 //---------------------------------------------------------------------------------------
 DgnDbServerRevisionPtr ParseRevision(JsonValueCR jsonValue)
     {
-    Dgn::DgnPlatformLib::AdoptHost(DgnDbServerHost::Host());
+    std::shared_ptr<DgnDbServerHost> host = std::make_shared<DgnDbServerHost>();
+    DgnDbServerHost::Adopt(host);
     RevisionStatus status;
     DgnDbServerRevisionPtr indexedRevision = DgnDbServerRevision::Create(DgnRevision::Create(&status, jsonValue[ServerSchema::Property::Id].asString(),
     jsonValue[ServerSchema::Property::ParentId].asString(), jsonValue[ServerSchema::Property::MasterFileId].asString()));
-    Dgn::DgnPlatformLib::ForgetHost();
+    DgnDbServerHost::Forget(host);
     if (RevisionStatus::Success == status)
         {
         indexedRevision->GetRevision()->SetSummary(jsonValue[ServerSchema::Property::Description].asCString());

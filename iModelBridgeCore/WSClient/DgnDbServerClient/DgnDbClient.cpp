@@ -26,10 +26,13 @@ void DgnDbClient::Initialize()
     {
     static bool initialized = false;
     BeAssert(!initialized);
-    auto serverUrl = Dgn::DgnPlatformLib::QueryHost();
-    BeAssert(serverUrl);
-    DgnDbServerHost::Initialize(serverUrl->GetIKnownLocationsAdmin().GetLocalTempDirectoryBaseName(),
-                                serverUrl->GetIKnownLocationsAdmin().GetDgnPlatformAssetsDirectory());
+
+    auto host = Dgn::DgnPlatformLib::QueryHost();
+    BeAssert(host);
+
+    BeFileName temp = host->GetIKnownLocationsAdmin().GetLocalTempDirectoryBaseName();
+    BeFileName assets = host->GetIKnownLocationsAdmin().GetDgnPlatformAssetsDirectory();
+    DgnDbServerHost::Initialize(temp, assets);
     initialized = true;
     }
 
@@ -385,6 +388,7 @@ AsyncTaskPtr<DgnDbFileNameResult> DgnDbClient::AquireBriefcase(Utf8StringCR repo
     HttpRequest::ProgressCallbackCR callback, ICancellationTokenPtr cancellationToken)
     {
     BeAssert(DgnDbServerHost::IsInitialized() && Error::NotInitialized);
+    std::shared_ptr<DgnDbServerHost> host = std::make_shared<DgnDbServerHost>();
     if (repositoryId.empty())
         {
         return CreateCompletedAsyncTask<DgnDbFileNameResult>(DgnDbFileNameResult::Error(Error::InvalidRepository));
@@ -440,12 +444,18 @@ AsyncTaskPtr<DgnDbFileNameResult> DgnDbClient::AquireBriefcase(Utf8StringCR repo
                         AsyncTask::WhenAll(tasks)->Then([=] ()
                             {
                             if (!briefcaseTask->GetResult().IsSuccess())
+                                {
                                 finalResult->SetError(briefcaseTask->GetResult().GetError());
+                                return;
+                                }
                             if (!pullTask->GetResult().IsSuccess())
+                                {
                                 finalResult->SetError(pullTask->GetResult().GetError());
+                                return;
+                                }
 
                             BeSQLite::DbResult status;
-                            Dgn::DgnPlatformLib::AdoptHost(DgnDbServerHost::Host());
+                            DgnDbServerHost::Adopt(host);
                             Dgn::DgnDbPtr db = Dgn::DgnDb::OpenDgnDb(&status, filePath, Dgn::DgnDb::OpenParams(Dgn::DgnDb::OpenMode::ReadWrite));
                             if (BeSQLite::DbResult::BE_SQLITE_OK == status)
                                 {
@@ -459,7 +469,7 @@ AsyncTaskPtr<DgnDbFileNameResult> DgnDbClient::AquireBriefcase(Utf8StringCR repo
                                     mergeStatus = db->Revisions().MergeRevisions(mergeRevisions);
                                     db->CloseDb();
                                     }
-                                Dgn::DgnPlatformLib::ForgetHost();
+                                DgnDbServerHost::Forget(host);
                                 if (RevisionStatus::Success != mergeStatus)
                                     finalResult->SetError(mergeStatus);
                                 else
@@ -467,7 +477,7 @@ AsyncTaskPtr<DgnDbFileNameResult> DgnDbClient::AquireBriefcase(Utf8StringCR repo
                                 }
                             else
                                 {
-                                Dgn::DgnPlatformLib::ForgetHost();
+                                DgnDbServerHost::Forget(host);
                                 finalResult->SetError(db->GetLastError(&status).c_str());
                                 }
                             });

@@ -67,12 +67,13 @@ struct DgnDbServerLocationsAdmin : public Dgn::DgnPlatformLib::Host::IKnownLocat
         virtual ~DgnDbServerLocationsAdmin() {}
     };
 
-std::unique_ptr<DgnDbServerHost> DgnDbServerHost::m_host(nullptr);
+BeFileName DgnDbServerHost::m_temp(L"");
+BeFileName DgnDbServerHost::m_assets(L"");
 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             11/2015
 //---------------------------------------------------------------------------------------
-DgnDbServerHost::DgnDbServerHost(BeFileNameCR temp, BeFileNameCR assets) : m_temp(temp), m_assets(assets)
+DgnDbServerHost::DgnDbServerHost() : m_initialized(false), m_terminated(false)
     {
     }
 
@@ -81,9 +82,8 @@ DgnDbServerHost::DgnDbServerHost(BeFileNameCR temp, BeFileNameCR assets) : m_tem
 //---------------------------------------------------------------------------------------
 void DgnDbServerHost::Initialize(BeFileNameCR temp, BeFileNameCR assets)
     {
-    BeAssert(!m_host);
-    m_host = std::make_unique<DgnDbServerHost>(temp, assets);
-    Dgn::DgnPlatformLib::Initialize(*m_host, true, false);
+    m_temp = temp;
+    m_assets = assets;
     }
 
 //---------------------------------------------------------------------------------------
@@ -91,7 +91,46 @@ void DgnDbServerHost::Initialize(BeFileNameCR temp, BeFileNameCR assets)
 //---------------------------------------------------------------------------------------
 bool DgnDbServerHost::IsInitialized()
     {
-    return (nullptr != m_host);
+    return !m_assets.IsEmpty() && !m_temp.IsEmpty();
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     Karolis.Dziedzelis             01/2016
+//---------------------------------------------------------------------------------------
+void DgnDbServerHost::Adopt(std::shared_ptr<DgnDbServerHost> const& host)
+    {
+    if (DgnPlatformLib::QueryHost())
+        return;
+
+    if (!host->m_initialized)
+        {
+        DgnPlatformLib::Initialize(*host, false);
+        host->m_initialized = true;
+        }
+    else
+        {
+        DgnPlatformLib::AdoptHost(*host);
+        BeStringUtilities::Initialize(host->GetIKnownLocationsAdmin().GetDgnPlatformAssetsDirectory());
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     Karolis.Dziedzelis             01/2016
+//---------------------------------------------------------------------------------------
+void DgnDbServerHost::Forget(std::shared_ptr<DgnDbServerHost> const& host, bool terminate)
+    {
+    if (DgnPlatformLib::QueryHost() == host.get())
+        {
+        if (terminate && host->m_initialized && !host->m_terminated)
+            {
+            host->m_terminated = true;
+            host->Terminate(false);
+            }
+        else
+            {
+            DgnPlatformLib::ForgetHost();
+            }
+        }
     }
 
 //---------------------------------------------------------------------------------------
@@ -99,10 +138,23 @@ bool DgnDbServerHost::IsInitialized()
 //---------------------------------------------------------------------------------------
 DgnDbServerHost::~DgnDbServerHost()
     {
-    if (m_host)
+    if (m_initialized && !m_terminated)
         {
-        Dgn::DgnPlatformLib::AdoptHost(*m_host);
-        Terminate(true);
+        auto wasHost = DgnPlatformLib::QueryHost();
+        if (wasHost && wasHost != this)
+            {
+            DgnPlatformLib::ForgetHost();
+            DgnPlatformLib::AdoptHost(*this);
+            }
+        else if (!wasHost)
+            {
+            DgnPlatformLib::AdoptHost(*this);
+            }
+        Terminate(false);
+        if (wasHost && wasHost != this)
+            {
+            DgnPlatformLib::AdoptHost(*wasHost);
+            }
         }
     }
 
@@ -112,13 +164,5 @@ DgnDbServerHost::~DgnDbServerHost()
 DgnPlatformLib::Host::IKnownLocationsAdmin& DgnDbServerHost::_SupplyIKnownLocationsAdmin()
     {
     return *new DgnDbServerLocationsAdmin(m_temp, m_assets);
-    }
-
-//---------------------------------------------------------------------------------------
-//@bsimethod                                     Karolis.Dziedzelis             11/2015
-//---------------------------------------------------------------------------------------
-DgnDbServerHost& DgnDbServerHost::Host()
-    {
-    return *m_host;
     }
 END_BENTLEY_DGNDBSERVER_NAMESPACE
