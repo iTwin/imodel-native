@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/DgnAuthority.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -516,7 +516,7 @@ DgnAuthority::Code DgnTexture::CreateTextureCode(Utf8StringCR name)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnAuthority::Code DgnTexture::_GenerateDefaultCode()
+DgnAuthority::Code DgnTexture::_GenerateDefaultCode() const
     {
     // unnamed textures are supported.
     return DgnAuthority::CreateDefaultCode();
@@ -637,4 +637,70 @@ bool AuthorityIssuedCode::operator<(AuthorityIssuedCode const& rhs) const
 
     return GetNamespace().CompareTo(rhs.GetNamespace()) < 0;
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnAuthorityCPtr ICodedObject::GetCodeAuthority() const
+    {
+    return GetDgnDb().Authorities().GetAuthority(GetCode().GetAuthority());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus ICodedObject::SetCode(Code const& newCode)
+    {
+    Code oldCode = GetCode();
+    if (oldCode == newCode)
+        return DgnDbStatus::Success;
+
+    DgnDbStatus status = _SetCode(newCode);
+    if (DgnDbStatus::Success != status)
+        return status;
+
+    status = ValidateCode();
+    if (DgnDbStatus::Success != status)
+        _SetCode(oldCode);
+
+    return status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus ICodedObject::ValidateCode() const
+    {
+    DgnAuthorityCPtr auth = GetCodeAuthority();
+    if (auth.IsNull() || !SupportsCodeAuthority(*auth))
+        return DgnDbStatus::InvalidCodeAuthority;
+    else
+        return auth->ValidateCode(*this);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus DgnAuthority::_ValidateCode(ICodedObjectCR obj) const
+    {
+    Code const& code = obj.GetCode();
+    if (!code.IsValid())
+        return DgnDbStatus::InvalidName;
+
+    BeAssert(code.GetAuthority() == GetAuthorityId());
+    if (code.GetAuthority() != GetAuthorityId())
+        return DgnDbStatus::InvalidCodeAuthority;
+
+    return DgnDbStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/16
++---------------+---------------+---------------+---------------+---------------+------*/
+bool DgnModel::_SupportsCodeAuthority(DgnAuthorityCR auth) const
+    {
+    // No reason not to allow customized model code authorities.
+    return SystemAuthority::GetId(SystemAuthority::Local) != auth.GetAuthorityId();
+    }
+
 

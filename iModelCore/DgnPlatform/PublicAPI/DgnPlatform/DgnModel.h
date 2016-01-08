@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/DgnModel.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -65,7 +65,7 @@ struct DgnElementMap : bmap<DgnElementId, DgnElementCPtr>
 //! @ingroup DgnModelGroup
 // @bsiclass                                                     KeithBentley    10/00
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE DgnModel : RefCountedBase
+struct EXPORT_VTABLE_ATTRIBUTE DgnModel : RefCountedBase, ICodedObject
     {
     friend struct DgnModels;
     friend struct DgnElement;
@@ -74,8 +74,6 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnModel : RefCountedBase
     friend struct dgn_TxnTable::Model;
 
     struct CreateParams;
-
-    typedef DgnAuthority::Code Code;
 
     //========================================================================================
     //! Application data attached to a DgnModel. Create a subclass of this to store non-persistent information on a DgnModel and
@@ -395,7 +393,12 @@ protected:
     virtual DgnRangeTree* _GetRangeIndexP(bool create) const {return nullptr;}
     virtual void _OnValidate() { }
 
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _SetCode(Code const& code);
+    virtual Code const& _GetCode() const override final { return m_code; }
+    virtual DgnDbR _GetDgnDb() const override final { return m_dgndb; }
+    virtual DgnModelCP _ToDgnModel() const override final { return this; }
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _SetCode(Code const& code) override final;
+    DGNPLATFORM_EXPORT virtual bool _SupportsCodeAuthority(DgnAuthorityCR) const override;
+    virtual Code _GenerateDefaultCode() const override { return Code(); }
 public:
     virtual Utf8CP _GetECClassName() const { return DGN_CLASSNAME_Model; }
     virtual Utf8CP _GetSuperECClassName() const { return nullptr; }
@@ -426,12 +429,6 @@ public:
     //! A model is "persistent" if it was loaded via DgnModels::GetModel, or after it is inserted into the DgnDb via Insert.
     //! A newly created model before it is inserted, or a model after calling Delete, is not persistent.
     bool IsPersistent() const {return m_persistent;}
-
-    //! Get the Code of this DgnModel
-    Code const& GetCode() const {return m_code;}
-
-    //! Change the Code of this DgnModel
-    DgnDbStatus SetCode(Code const& code) { return _SetCode(code); }
 
     //! Get the DgnClassId of this DgnModel
     DgnClassId GetClassId() const {return m_classId;}

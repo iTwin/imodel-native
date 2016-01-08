@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/DgnAuthority.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -10,12 +10,51 @@
 
 #include "DgnDomain.h"
 
+DGNPLATFORM_TYPEDEFS(ICodedObject);
+
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
 struct SystemAuthority;
 
 //=======================================================================================
-//! A DgnAuthority serves issues DgnAuthority::Codes when objects are created and cloned.
+//! Interface adopted by an object which possesses an AuthorityIssuedCode, such as a model
+//! or element.
+// @bsistruct                                                    Paul.Connelly   01/16
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE ICodedObject
+{
+    typedef AuthorityIssuedCode Code;
+protected:
+    virtual DgnDbR _GetDgnDb() const = 0; //!< Return the DgnDb in which this object resides
+    virtual bool _SupportsCodeAuthority(DgnAuthorityCR authority) const = 0; //!< Return whether this object supports codes issued by the specified authority.
+    virtual Code _GenerateDefaultCode() const = 0; //!< Generate a code for this object on insertion, when no code has yet been assigned
+    virtual Code const& _GetCode() const = 0; //!< Return this object's Code
+    virtual DgnDbStatus _SetCode(Code const& code) = 0; //!< Set the code directly if permitted. Do not perform any validation of the code itself.
+    virtual DgnElementCP _ToDgnElement() const { return nullptr; }
+    virtual DgnModelCP _ToDgnModel() const { return nullptr; }
+public:
+    DgnDbR GetDgnDb() const { return _GetDgnDb(); }
+    bool SupportsCodeAuthority(DgnAuthorityCR authority) const { return _SupportsCodeAuthority(authority); }
+    Code GenerateDefaultCode() const { return _GenerateDefaultCode(); }
+    Code const& GetCode() const { return _GetCode(); }
+    DgnElementCP ToDgnElement() const { return _ToDgnElement(); }
+    DgnModelCP ToDgnModel() const { return _ToDgnModel(); }
+
+    DGNPLATFORM_EXPORT DgnDbStatus SetCode(Code const& newCode);
+    DGNPLATFORM_EXPORT DgnDbStatus ValidateCode() const;
+    DGNPLATFORM_EXPORT DgnAuthorityCPtr GetCodeAuthority() const;
+};
+
+//=======================================================================================
+//! A DgnAuthority issues and validates Codes for coded objects like elements and models.
+//! There are 2 general types of codes issued by authorities:
+//!   - User/Application-supplied: The user/application supplies a Code and the authority
+//!     simply enforces uniqueness and any constraints on e.g. allowable characters
+//!   - Generated: The authority generates a Code for an object based on the object's
+//!     properties, and/or some external logic. e.g., sequence numbers.
+//! Some authorities may combine both approaches. e.g., sub-category names are supplied by
+//! the user or application, but their Code namespaces are generated from the category
+//! to which they belong.
 // @bsistruct                                                    Paul.Connelly   09/15
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE DgnAuthority : RefCountedBase
@@ -53,6 +92,9 @@ protected:
 
     DGNPLATFORM_EXPORT virtual DgnAuthority::Code _CloneCodeForImport(DgnElementCR srcElem, DgnModelR destModel, DgnImportContext& importer) const;
 
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _ValidateCode(ICodedObjectCR codedObject) const;
+    virtual DgnAuthority::Code _RegenerateCode(ICodedObjectCR codedObject) const { return codedObject.GetCode(); }
+
     static DgnAuthority::Code CreateCode(DgnAuthorityId authorityId, Utf8StringCR value, Utf8StringCR nameSpace) { return DgnAuthority::Code(authorityId, value, nameSpace); }
     DgnAuthority::Code CreateCode(Utf8StringCR value, Utf8StringCR nameSpace) const { return DgnAuthority::Code(m_authorityId, value, nameSpace); }
 
@@ -66,6 +108,8 @@ public:
 
     DGNPLATFORM_EXPORT DgnDbStatus Insert();
 
+    DgnDbStatus ValidateCode(ICodedObjectCR obj) const { return _ValidateCode(obj); }
+    DgnAuthority::Code RegenerateCode(ICodedObjectCR obj) const { return _RegenerateCode(obj); }
     DgnAuthority::Code CloneCodeForImport(DgnElementCR srcElem, DgnModelR destModel, DgnImportContext& importer) const { return _CloneCodeForImport(srcElem, destModel, importer); }
 
     DGNPLATFORM_EXPORT static DgnAuthorityPtr Import(DgnDbStatus* status, DgnAuthorityCR sourceAuthority, DgnImportContext& importer);
@@ -74,7 +118,7 @@ public:
 };
 
 //=======================================================================================
-//! The built-in default code-issuing authority. Codes are based on element ID + class ID.
+//! The built-in default code-issuing authority.
 // @bsistruct                                                    Paul.Connelly   09/15
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE LocalAuthority : DgnAuthority

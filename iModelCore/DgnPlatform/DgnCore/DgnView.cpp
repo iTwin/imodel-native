@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/DgnView.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -281,6 +281,7 @@ void ViewDefinition::_RemapIds(DgnImportContext& importer)
         }
     }
 
+#ifdef TODO_CODES
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   11/15
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -288,6 +289,7 @@ DgnDbStatus ViewDefinition::_SetCode(Code const& code)
     {
     return IsValidCode(code) ? T_Super::_SetCode(code) : DgnDbStatus::InvalidName;
     }
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   11/15

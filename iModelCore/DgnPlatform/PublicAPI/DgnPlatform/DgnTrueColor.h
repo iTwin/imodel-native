@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/DgnTrueColor.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -57,7 +57,7 @@ protected:
     virtual DgnDbStatus _OnUpdate(DgnElementCR) override { return DgnDbStatus::WrongElement; }
     virtual DgnDbStatus _OnDelete() const override { return DgnDbStatus::DeletionProhibited; }
     virtual uint32_t _GetMemSize() const override { return T_Super::_GetMemSize() + static_cast<uint32_t>(sizeof(m_colorDef)); }
-    virtual Code _GenerateDefaultCode() override { return Code(); }
+    virtual Code _GenerateDefaultCode() const override { return Code(); }
 public:
     //! Construct a new DgnTrueColor with the specified parameters.
     explicit DgnTrueColor(CreateParams const& params) : T_Super(params), m_colorDef(params.m_colorDef) { }

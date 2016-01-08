@@ -1671,9 +1671,12 @@ uint64_t DgnModel::RestrictedAction::Parse(Utf8CP name)
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus DgnModel::_SetCode(Code const& code)
     {
+#ifdef TODO_CODES
     if (!DgnModels::IsValidName(m_code.GetValue()))
         return DgnDbStatus::InvalidName;
-    else if (GetModelHandler()._IsRestrictedAction(RestrictedAction::SetCode))
+    else
+#endif 
+        if (GetModelHandler()._IsRestrictedAction(RestrictedAction::SetCode))
         return DgnDbStatus::MissingHandler;
 
     m_code = code;

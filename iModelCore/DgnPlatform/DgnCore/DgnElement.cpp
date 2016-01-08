@@ -171,7 +171,7 @@ ECClassCP DgnElement::GetElementClass() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElement::Code DgnElement::_GenerateDefaultCode()
+DgnElement::Code DgnElement::_GenerateDefaultCode() const
     {
     return DgnAuthority::CreateDefaultCode();
     }

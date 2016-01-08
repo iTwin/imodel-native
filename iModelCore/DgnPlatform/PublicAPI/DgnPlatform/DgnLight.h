@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/DgnLight.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -77,7 +77,7 @@ protected:
     DGNPLATFORM_EXPORT virtual void _CopyFrom(DgnElementCR source) override;
 
     virtual uint32_t _GetMemSize() const override { return T_Super::_GetMemSize() + m_data.GetMemSize(); }
-    virtual Code _GenerateDefaultCode() override { return Code(); }
+    virtual Code _GenerateDefaultCode() const override { return Code(); }
 public:
     //! Construct a new LightDefinition with the specified parameters
     explicit LightDefinition(CreateParams const& params) : T_Super(params), m_data(params.m_data) { }

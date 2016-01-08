@@ -255,7 +255,7 @@ typedef QvElemSet<QvKey32> T_QvElemSet;
 //! @ingroup DgnElementGroup
 // @bsiclass                                                     KeithBentley    10/13
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE DgnElement : NonCopyableClass
+struct EXPORT_VTABLE_ATTRIBUTE DgnElement : NonCopyableClass, ICodedObject
 {
 public:
     friend struct DgnElements;
@@ -265,8 +265,6 @@ public:
     friend struct dgn_TxnTable::Element;
     friend struct MultiAspect;
     friend struct GeometrySource;
-
-    typedef DgnAuthority::Code Code;
 
     //! Parameters for creating a new DgnElement
     struct CreateParams
@@ -955,14 +953,12 @@ protected:
     //! Override to validate the parent/child relationship and return a value other than DgnDbStatus::Success to reject proposed new parent.
     DGNPLATFORM_EXPORT virtual DgnDbStatus _SetParentId(DgnElementId parentId);
 
-    //! Change the code of this DgnElement.
-    //! The default implementation sets the code without doing any checking.
-    //! Override to validate the code.
-    //! @return DgnDbStatus::Success if the code was changed, error status otherwise.
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _SetCode(Code const& code);
-
-    //! Override to customize how the DgnElement subclass generates its code.
-    DGNPLATFORM_EXPORT virtual Code _GenerateDefaultCode();
+    virtual Code const& _GetCode() const override final { return m_code; }
+    virtual bool _SupportsCodeAuthority(DgnAuthorityCR) const override { return true; }
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _SetCode(Code const& code) override final;
+    DGNPLATFORM_EXPORT virtual Code _GenerateDefaultCode() const override;
+    virtual DgnElementCP _ToDgnElement() const override final { return this; }
+    virtual DgnDbR _GetDgnDb() const override final { return m_dgndb; }
 
     virtual GeometrySourceCP _ToGeometrySource() const {return nullptr;}
     virtual SpatialElementCP _ToSpatialElement() const {return nullptr;}
@@ -1119,10 +1115,6 @@ public:
     //! Get the DgnModel of this DgnElement.
     DGNPLATFORM_EXPORT DgnModelPtr GetModel() const;
 
-    //! Get the DgnDb of this element.
-    //! @note This is merely a shortcut for GetDgnModel().GetDgnDb().
-    DgnDbR GetDgnDb() const {return m_dgndb;}
-
     //! Get the DgnElementId of this DgnElement
     DgnElementId GetElementId() const {return m_elementId;}
 
@@ -1145,14 +1137,6 @@ public:
     //! @return DgnDbStatus::Success if the parent was set
     //! @note This call can fail if a DgnElement subclass overrides _SetParentId and rejects the parent.
     DgnDbStatus SetParentId(DgnElementId parentId) {return parentId == GetParentId() ? DgnDbStatus::Success : _SetParentId(parentId);}
-
-    //! Get the code (business key) of this DgnElement.
-    Code GetCode() const {return m_code;}
-    //! Set the code (business key) of this DgnElement.
-    //! @see GetCode, _SetCode
-    //! @return DgnDbStatus::Success if the code was set
-    //! @note This call can fail if a subclass overrides _SetCode and rejects the code.
-    DgnDbStatus SetCode(Code const& code) {return _SetCode(code);}
 
     //! Query the database for the last modified time of this DgnElement.
     DGNPLATFORM_EXPORT DateTime QueryTimeStamp() const;

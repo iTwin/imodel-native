@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/DgnCategory.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -269,6 +269,7 @@ DgnCategoryId DgnCategory::QueryElementCategoryId(DgnElementId elemId, DgnDbR db
     return BE_SQLITE_ROW == stmt->Step() ? stmt->GetValueId<DgnCategoryId>(0) : DgnCategoryId();
     }
 
+#ifdef TODO_CODES
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -276,11 +277,12 @@ DgnDbStatus DgnCategory::_SetCode(Code const& code)
     {
     return code.GetNamespace().empty() && IsValidName(code.GetValue()) ? T_Super::_SetCode(code) : DgnDbStatus::InvalidName;
     }
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnAuthority::Code DgnCategory::_GenerateDefaultCode()
+DgnAuthority::Code DgnCategory::_GenerateDefaultCode() const
     {
     BeAssert(false && "Creator of a category must set its code");
     return Code();
@@ -333,6 +335,7 @@ DgnDbStatus DgnSubCategory::BindParams(ECSqlStatement& stmt)
         return DgnDbStatus::Success;
     }
 
+#ifdef TODO_CODES
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -358,6 +361,7 @@ DgnDbStatus DgnSubCategory::_SetCode(Code const& code)
 
     return T_Super::_SetCode(code);
     }
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
@@ -490,7 +494,7 @@ bool DgnSubCategory::IsDefaultSubCategory() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnAuthority::Code DgnSubCategory::_GenerateDefaultCode()
+DgnAuthority::Code DgnSubCategory::_GenerateDefaultCode() const
     {
     DgnCategoryCPtr cat = IsDefaultSubCategory() ? DgnCategory::QueryCategory(GetCategoryId(), GetDgnDb()) : nullptr;
     if (cat.IsValid())

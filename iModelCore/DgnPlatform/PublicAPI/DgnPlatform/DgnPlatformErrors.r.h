@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/DgnPlatformErrors.r.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -94,6 +94,7 @@ enum class DgnDbStatus : int
     DeletionProhibited,
     InDynamicTransaction,
     NoMultiTxnOperation,
+    InvalidCodeAuthority,
     };
 
 //! Status Values for DgnViewport methods
