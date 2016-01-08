@@ -31,7 +31,6 @@
     <ClCompile Include="BackDoor\DgnElementHelpers.cpp" />
     <ClCompile Include="BackDoor\DgnPlatformTestDomain.cpp" />
     <ClCompile Include="BackDoor\TestDomainElements.cpp" />
-    <ClCompile Include="NonPublished\BeTextFile_Test.cpp" />
     <ClCompile Include="NonPublished\Category_Test.cpp" />
     <ClCompile Include="NonPublished\DgnAuthority_Test.cpp" />
     <ClCompile Include="NonPublished\DgnColors_Test.cpp" />

@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/DgnProject/NonPublished/Category_Test.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -165,6 +165,24 @@ TEST_F (CategoryTests, InsertCategory)
 
     EXPECT_EQ(1, nNotCompared);
     EXPECT_EQ(4, nCompared);
+    
+    // Ordered List verification
+    int count = 0;
+    DgnCategoryIdList orderedList = DgnCategory::QueryOrderedCategories(*m_db);
+    
+    DgnCategoryId lastId;
+    for (DgnCategoryId id : orderedList)
+        {
+        if (lastId.IsValid())
+        {
+        DgnCategoryCPtr current = DgnCategory::QueryCategory(id, *m_db);
+        DgnCategoryCPtr lastCategory = DgnCategory::QueryCategory(lastId, *m_db);
+        EXPECT_TRUE(current->GetCode().GetValue().CompareTo( lastCategory->GetCode().GetValue().c_str()) > 0);
+        ++count;
+        }
+        lastId = id;
+        }
+    EXPECT_EQ(5, orderedList.size());
     }
 
 //=======================================================================================
@@ -280,7 +298,12 @@ TEST_F (CategoryTests, InsertSubCategory)
     appearence.SetWeight (weight);
     appearence.SetTransparency (trans);
     appearence.SetDisplayPriority (dp);
-
+    appearence.SetDontLocate(true);
+    appearence.SetDontPlot(true);
+    appearence.SetDontSnap(true);
+    appearence.SetDisplayPriority(1);
+    // TODO: Set line style 
+    
     //Inserts a category
     EXPECT_TRUE(category.Insert(appearence).IsValid());
     DgnCategoryId id = DgnCategory::QueryCategoryId(name, *m_db);
@@ -289,9 +312,11 @@ TEST_F (CategoryTests, InsertSubCategory)
     Utf8CP sub_name = "Test SubCategory";
     Utf8CP sub_desc = "This is a test subcategory";
     DgnSubCategory subcategory(DgnSubCategory::CreateParams(*m_db, id, sub_name, appearence, sub_desc));
+    
 
     //Inserts a subcategory
     EXPECT_TRUE(subcategory.Insert().IsValid());
+    DgnElement::Code code = subcategory.GetCode();
 
     //Verifying appearence properties
     DgnSubCategory::Appearance app = subcategory.GetAppearance ();
@@ -305,6 +330,10 @@ TEST_F (CategoryTests, InsertSubCategory)
     //Verifying subcategory properties
     DgnSubCategoryId subcat_id = DgnSubCategory::QuerySubCategoryId(id, sub_name, *m_db);
     EXPECT_TRUE (subcat_id.IsValid ());
+
+    DgnSubCategoryId subcat_id_byCode = DgnSubCategory::QuerySubCategoryId(code, *m_db);
+    EXPECT_TRUE(subcat_id_byCode.IsValid());
+    EXPECT_TRUE(subcat_id == subcat_id_byCode);
 
     DgnSubCategoryCPtr query_sub = DgnSubCategory::QuerySubCategory(subcat_id, *m_db);
     EXPECT_TRUE (query_sub.IsValid ());
@@ -325,6 +354,8 @@ TEST_F (CategoryTests, InsertSubCategory)
 
     DgnSubCategory subcategory3(DgnSubCategory::CreateParams(*m_db, id, sub3_name, appearence, sub3_desc));
     EXPECT_TRUE(subcategory3.Insert().IsValid());
+
+    EXPECT_EQ(4, (int)category.QuerySubCategoryCount());
 
     //Iterator for subcategories.
     DgnSubCategoryIdSet subcatIds = DgnSubCategory::QuerySubCategories(*m_db, id);
@@ -358,6 +389,7 @@ TEST_F (CategoryTests, InsertSubCategory)
 
     EXPECT_EQ(3, nCompared);
     EXPECT_EQ(1, nNotCompared); // default sub-category
+
     }
 
 /*---------------------------------------------------------------------------------**//**
