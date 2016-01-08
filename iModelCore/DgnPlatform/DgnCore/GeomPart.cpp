@@ -7,7 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
 
-#define GEOMPART_BBOX "BBox_Low_X,BBox_Low_Y,BBox_Low_Z,BBox_High_X,BBox_High_Y,BBox_High_Z"
+#define GEOMPART_BBOX "BBoxLow_X,BBoxLow_Y,BBoxLow_Z,BBoxHigh_X,BBoxHigh_Y,BBoxHigh_Z"
 
 //=======================================================================================
 // @bsiclass                                                    Brien.Bastings  03/15
@@ -69,8 +69,8 @@ void DbGeomPartsWriter::PrepareUpdateStatement()
             "UPDATE " DGN_TABLE(DGN_CLASSNAME_GeomPart) " SET "
                 "Code=?2,"
                 "Geom=?3,"
-                "BBox_Low_X=?4,BBox_Low_Y=?5,BBox_Low_Z=?6,"
-                "BBox_High_X=?7,BBox_High_Y=?8,BBox_High_Z=?9"
+                "BBoxLow_X=?4,BBoxLow_Y=?5,BBoxLow_Z=?6,"
+                "BBoxHigh_X=?7,BBoxHigh_Y=?8,BBoxHigh_Z=?9"
             " WHERE Id=?1";
 
     m_dgndb.GetCachedStatement(m_stmt, updateSql);

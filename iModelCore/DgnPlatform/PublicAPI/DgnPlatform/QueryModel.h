@@ -163,8 +163,8 @@ private:
 
 public:
     State GetState() const { return m_state; } //!< @private
-    void SetState(State newState){m_state = newState;} //!< @private
-    void SetUpdatedResults(Results* results) {m_updatedResults = results;}//!< @private
+    void SetState(State newState); //!< @private
+    void SetUpdatedResults(Results* results); //!< @private
     Results* GetCurrentResults() {return m_currQueryResults.get();} //!< @private
     void SaveQueryResults(); //!< @private
     void ResizeElementList(uint32_t newCount); //!< @private

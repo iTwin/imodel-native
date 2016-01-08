@@ -321,8 +321,8 @@ private:
 
 public:
     DGNVIEW_EXPORT DynamicUpdateInfo();
-    Point2d GetLastCursorPos() {return m_lastCursorPos;}
-    StopEvents GetStopEvents() {return m_stopEvents;}
+    Point2d GetLastCursorPos() const {return m_lastCursorPos;}
+    StopEvents GetStopEvents() const {return m_stopEvents;}
     void ClearLastMotion() {m_haveLastMotion = false; m_lastTotalMotion = 0; m_lastCursorPos.x = m_lastCursorPos.y = 0;}
     void SetStopEvents(StopEvents stopEvents) {m_stopEvents = stopEvents;}
     void SetTouchCheckStopLimit(bool enabled, uint32_t pixels, uint32_t numberTouches, Point2dCP touches);

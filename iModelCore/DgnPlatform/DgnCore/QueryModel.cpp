@@ -76,6 +76,22 @@ void QueryModel::SaveQueryResults()
         _OnLoadedElement(*result);
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    05/2012
+//--------------+------------------------------------------------------------------------
+void QueryModel::SetState(State newState)
+    {
+    m_state = newState;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void QueryModel::SetUpdatedResults(Results* results)
+    {
+    m_updatedResults = results;
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -205,6 +221,7 @@ void QueryModel::Queue::RequestProcessing(Processor::Params const& params)
 #endif
 
     ProcessorPtr proc = new ProcessorImpl(params);
+    //  NEEDSWORK_CONTINUOUS_RENDERING -- the query thread might be in the processing state. If so, changing it to Pending is invalid.
     model.SetState(QueryModel::State::Pending);
     m_pending.push_back(proc);
 
