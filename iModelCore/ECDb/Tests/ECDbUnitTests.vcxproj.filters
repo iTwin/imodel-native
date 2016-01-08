@@ -193,9 +193,6 @@
     <ClCompile Include="Published\ECSqlStatementTestsSchemaHelper.cpp">
       <Filter>Published</Filter>
     </ClCompile>
-    <ClCompile Include="Published\ECDbTestHelper.cpp">
-      <Filter>Published</Filter>
-    </ClCompile>
     <ClCompile Include="Performance\PerformanceECSqlVsSqliteTests.cpp">
       <Filter>Performance</Filter>
     </ClCompile>
@@ -207,6 +204,15 @@
     </ClCompile>
     <ClCompile Include="Published\JsonInserterTests.cpp">
       <Filter>Published\ECSql</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\ECDbTestHelper.cpp">
+      <Filter>Published</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\ECSqlInsertTests.cpp">
+      <Filter>Published</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\ECSqlSelectTests.cpp">
+      <Filter>Published</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -276,11 +282,11 @@
     <ClInclude Include="Published\ECSqlStatementTestsSchemaHelper.h">
       <Filter>Published</Filter>
     </ClInclude>
-    <ClInclude Include="Published\ECDbTestHelper.h">
-      <Filter>Published</Filter>
-    </ClInclude>
     <ClInclude Include="Performance\PerformanceCRUDTestsHelper.h">
       <Filter>Performance</Filter>
+    </ClInclude>
+    <ClInclude Include="Published\ECDbTestHelper.h">
+      <Filter>Published</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
