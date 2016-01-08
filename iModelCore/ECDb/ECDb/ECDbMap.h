@@ -171,6 +171,7 @@ public:
     std::set<IClassMap const*>  GetClassMapsFromRelationshipEnd(ECN::ECRelationshipConstraintCR relationshipEnd, bool* hasAnyClass= nullptr) const;
     ECDbSqlTable const*         GetFirstTableFromRelationshipEnd(ECN::ECRelationshipConstraintCR relationshipEnd) const;
     const std::set<ECDbSqlTable const*> GetTablesFromRelationshipEnd(ECN::ECRelationshipConstraintCR relationshipEnd) const;
+    const std::set<ECDbSqlTable const*> GetTablesFromRelationshipEndWithColumn(ECN::ECRelationshipConstraintCR relationshipEnd, Utf8CP column) const;
     void                        ClearCache();
     RelationshipClassMapCP GetRelationshipClassMap (ECN::ECClassId ecRelationshipClassId) const;
     ClassMapCP             GetClassMapCP (ECN::ECClassId classId) const;

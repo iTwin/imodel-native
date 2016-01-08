@@ -333,20 +333,20 @@ MapStatus RelationshipClassEndTableMap::_InitializePart1 (SchemaImportContext* s
 
     auto thisEndClass = thisEndConstraint.GetClasses()[0];
     auto thisEndClassMap = GetECDbMap ().GetClassMapCP (*thisEndClass, true);
-    size_t thisEndTableCount = GetECDbMap ().GetTableCountOnRelationshipEnd (thisEndConstraint);
     auto thisEndTable = const_cast<ECDbSqlTable*>(GetECDbMap().GetFirstTableFromRelationshipEnd(thisEndConstraint));
-    if (thisEndTableCount != 1)
-        {
-        GetECDbMap().GetECDbR().GetECDbImplR().GetIssueReporter().Report(
-            ECDbIssueSeverity::Error,
-            "Relationship %s is evaluated to more then one table for persisted (%s) side. ECDb expect only one table on each side.",
-            relationshipClassMapInfo.GetECClass().GetFullName(),
-            otherEnd == ECRelationshipEnd_Source ? "Source" : "Target"
-            );
+    //size_t thisEndTableCount = GetECDbMap().GetTableCountOnRelationshipEnd(thisEndConstraint);
+    //if (thisEndTableCount != 1)
+    //    {
+    //    GetECDbMap().GetECDbR().GetECDbImplR().GetIssueReporter().Report(
+    //        ECDbIssueSeverity::Error,
+    //        "Relationship %s is evaluated to more then one table for persisted (%s) side. ECDb expect only one table on each side.",
+    //        relationshipClassMapInfo.GetECClass().GetFullName(),
+    //        otherEnd == ECRelationshipEnd_Source ? "Source" : "Target"
+    //        );
 
-        BeAssert(thisEndTableCount == 1 && "ForeignKey end of relationship has more than one tables or has no table at all");
-        return MapStatus::Error;
-        }
+    //    BeAssert(thisEndTableCount == 1 && "ForeignKey end of relationship has more than one tables or has no table at all");
+    //    return MapStatus::Error;
+    //    }
 
     auto otherEndClass = otherEndConstraint.GetClasses ()[0];
    // auto otheEndClassMap = GetECDbMap ().GetClassMapCP (*otherEndClass, true);
@@ -439,7 +439,9 @@ MapStatus RelationshipClassEndTableMap::_InitializePart1 (SchemaImportContext* s
         {
         auto const& otherEndConstraint = thisEnd != ECRelationshipEnd_Source ? sourceConstraint : targetConstraint;
         auto const& otherEndConstraintMap = thisEnd != ECRelationshipEnd_Source ? m_sourceConstraintMap : m_targetConstraintMap;
+        auto foreignColumnName = thisEnd != ECRelationshipEnd_Source ? GetSourceECInstanceIdPropMap()->GetFirstColumn()->GetName().c_str() : GetTargetECInstanceIdPropMap()->GetFirstColumn()->GetName().c_str();
 
+        const std::set<ECDbSqlTable const*> foreignTables = GetECDbMap().GetTablesFromRelationshipEndWithColumn(thisEndConstraint, foreignColumnName);
         if (GetECDbMap().GetTableCountOnRelationshipEnd(otherEndConstraint) != 1)
             {
             GetECDbMap().GetECDbR().GetECDbImplR().GetIssueReporter().Report(
@@ -453,28 +455,35 @@ MapStatus RelationshipClassEndTableMap::_InitializePart1 (SchemaImportContext* s
             return MapStatus::Error;
             }
 
-        auto foreignKeyColumn = otherEndConstraintMap.GetECInstanceIdPropMap()->GetFirstColumn();
-        auto& foreignTable = GetPrimaryTable();
         auto primaryClassMap = GetECDbMap().GetClassMap(*otherEndConstraintMap.GetRelationshipConstraint().GetClasses()[0]);
-
         BeAssert(primaryClassMap != nullptr && "Primary Class map is null");
         auto primaryKeyColumn = primaryClassMap->GetPrimaryTable().GetFilteredColumnFirst(ColumnKind::ECInstanceId);
         auto& primaryTable = primaryKeyColumn->GetTable();
+        if (primaryTable.GetPersistenceType() == PersistenceType::Persisted)
+            {
+            BeAssert(primaryKeyColumn != nullptr);
 
-        BeAssert(foreignKeyColumn != nullptr);
-        BeAssert(primaryKeyColumn != nullptr);
-        if (foreignKeyColumn == nullptr || primaryKeyColumn == nullptr)
-            return MapStatus::Error;
+            for (ECDbSqlTable const* foreignTable : foreignTables)
+                {
+                if (foreignTable->GetPersistenceType() == PersistenceType::Virtual)
+                    continue;
 
-        //Create foreign key constraint
-        auto foreignKey = foreignTable.CreateForeignKeyConstraint(primaryTable);
-        foreignKey->Add(foreignKeyColumn->GetName().c_str(), primaryKeyColumn->GetName().c_str());
-        if (GetRelationshipClass().GetStrength() == StrengthType::Embedding)
-            foreignKey->SetOnDeleteAction(ForeignKeyActionType::Cascade);
-        else
-            foreignKey->SetOnDeleteAction(ForeignKeyActionType::SetNull);
+                auto foreignKeyColumn = foreignTable->FindColumnCP(foreignColumnName);
+                BeAssert(foreignKeyColumn != nullptr);
+
+                if (foreignKeyColumn == nullptr || primaryKeyColumn == nullptr)
+                    return MapStatus::Error;
+
+                //Create foreign key constraint
+                auto foreignKey = const_cast<ECDbSqlTable*>(foreignTable)->CreateForeignKeyConstraint(primaryTable);
+                foreignKey->Add(foreignKeyColumn->GetName().c_str(), primaryKeyColumn->GetName().c_str());
+                if (GetRelationshipClass().GetStrength() == StrengthType::Embedding)
+                    foreignKey->SetOnDeleteAction(ForeignKeyActionType::Cascade);
+                else
+                    foreignKey->SetOnDeleteAction(ForeignKeyActionType::SetNull);
+                }
+            }
         }
-
     return stat;
     }
 
@@ -1094,6 +1103,18 @@ MapStatus RelationshipClassLinkTableMap::_InitializePart2(SchemaImportContext* c
 
     if (GetDataIntegrityEnforcementMethod() == DataIntegrityEnforcementMethod::ForeignKey)
         {
+        if (GetRelationshipClass().GetStrength() == StrengthType::Embedding)
+            {
+            GetECDbMap().GetECDbR().GetECDbImplR().GetIssueReporter().Report(
+                ECDbIssueSeverity::Error,
+                "Relationship %s is of type embedding and desgniated to be mapped as LinkTable which is not supported in ECDb",
+                GetRelationshipClass().GetFullName()
+                );
+
+            BeAssert(false);
+            return MapStatus::Error;
+            }
+
         std::set<ECDbSqlTable const*> sourceTables = GetECDbMap().GetTablesFromRelationshipEnd(GetRelationshipClass().GetSource());
         std::set<ECDbSqlTable const*> targetTables = GetECDbMap().GetTablesFromRelationshipEnd(GetRelationshipClass().GetTarget());
         

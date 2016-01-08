@@ -831,11 +831,11 @@ const std::set<ECDbSqlTable const*> ECDbMap::GetTablesFromRelationshipEnd(ECRela
         return std::set<ECDbSqlTable const*>();
 
     std::map<PersistenceType, std::set<ECDbSqlTable const*>> tables;
-    bool abstractEndPoint = relationshipEnd.GetClasses().size() == 1 && relationshipEnd.GetClasses().front()->GetClassModifier() == ECClassModifier::Abstract;
+    bool singleEndClass = relationshipEnd.GetClasses().size() == 1;
     std::vector<ECClassCP> classes = GetClassesFromRelationshipEnd(relationshipEnd);
     for (IClassMap const* classMap : classMaps)
         {
-        if (abstractEndPoint)
+        if (singleEndClass)
             tables[classMap->GetPrimaryTable().GetPersistenceType()].insert(&classMap->GetJoinedTable());
         else
             tables[classMap->GetPrimaryTable().GetPersistenceType()].insert(&classMap->GetPrimaryTable());
@@ -846,7 +846,35 @@ const std::set<ECDbSqlTable const*> ECDbMap::GetTablesFromRelationshipEnd(ECRela
 
     return tables[PersistenceType::Virtual];
     }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Affan.Khan                      12/2015
+//+---------------+---------------+---------------+---------------+---------------+------
+const std::set<ECDbSqlTable const*> ECDbMap::GetTablesFromRelationshipEndWithColumn(ECRelationshipConstraintCR relationshipEnd, Utf8CP column) const
+    {
+    bool hasAnyClass = false;
+    std::set<IClassMap const*> classMaps = GetClassMapsFromRelationshipEnd(relationshipEnd, &hasAnyClass);
 
+    if (hasAnyClass)
+        return std::set<ECDbSqlTable const*>();
+
+    std::map<PersistenceType, std::set<ECDbSqlTable const*>> tables;
+    std::vector<ECClassCP> classes = GetClassesFromRelationshipEnd(relationshipEnd);
+    for (IClassMap const* classMap : classMaps)
+        {
+        ECDbSqlTable const* table = classMap->GetPrimaryTable().FindColumnCP(column) != nullptr ? &classMap->GetPrimaryTable() : nullptr;
+        if (table == nullptr && !classMap->IsMappedToSingleTable())
+            table = classMap->GetJoinedTable().FindColumnCP(column) != nullptr ? &classMap->GetJoinedTable() : nullptr;
+
+        if (table)
+            tables[table->GetPersistenceType()].insert(table);
+        }
+
+
+    if (tables[PersistenceType::Persisted].size() > 0)
+        return tables[PersistenceType::Persisted];
+
+    return tables[PersistenceType::Virtual];
+    }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Affan.Khan                      12/2015
 //+---------------+---------------+---------------+---------------+---------------+------
