@@ -283,7 +283,7 @@
     <ECRelationshipClass typeName="ModelContainsElements" description="Associates elements with a model" strength="embedding">
         <ECCustomAttributes>
             <ForeignKeyRelationshipMap xmlns="ECDbMap.01.00">
-                <OnDeleteAction>NoAction</OnDeleteAction>
+                <OnDeleteAction>Restrict</OnDeleteAction>
             </ForeignKeyRelationshipMap>
         </ECCustomAttributes>
         <Source cardinality="(1,1)" roleLabel="is on 1 model" polymorphic="true">
@@ -891,7 +891,7 @@
         <Source cardinality="(1,1)" polymorphic="true">
             <Class class="Element"/>
         </Source>
-        <Target cardinality="(0,N)" polymorphic="true">
+        <Target cardinality="(0,1)" polymorphic="true">
             <Class class="ElementDescription">
                 <Key>
                     <Property name="ECInstanceId"/>
@@ -1076,7 +1076,7 @@
     <ECRelationshipClass typeName="BaseModelForView" strength="embedding"><!-- only "embedding" because ECDb requires that for ON DELETE CASCADE... -->
         <ECCustomAttributes>
             <ForeignKeyRelationshipMap xmlns="ECDbMap.01.00">
-                <OnDeleteAction>Cascade</OnDeleteAction>
+                <OnDeleteAction>Restrict</OnDeleteAction>
             </ForeignKeyRelationshipMap>
         </ECCustomAttributes>
         <Source cardinality="(1,1)" roleLabel="is base model for view" polymorphic="true">
