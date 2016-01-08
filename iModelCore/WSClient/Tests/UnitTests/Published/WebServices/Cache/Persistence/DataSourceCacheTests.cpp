@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/WebServices/Cache/Persistence/DataSourceCacheTests.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -369,6 +369,25 @@ TEST_F(DataSourceCacheTests, RemoveInstance_InstanceCached_Deletes)
 
     EXPECT_EQ(CacheStatus::OK, status);
     EXPECT_FALSE(cache->GetCachedObjectInfo({"TestSchema.TestClass", "Foo"}).IsFullyCached());
+    }
+
+TEST_F(DataSourceCacheTests, RemoveInstance_NavigationBaseObject_Deletes)
+    {
+    auto cache = GetTestCache();
+
+    ASSERT_EQ(SUCCESS, cache->LinkInstanceToRoot("Foo", ObjectId()));
+    ASSERT_TRUE(cache->FindInstance(ObjectId()).IsValid());
+
+    EXPECT_EQ(CacheStatus::OK, cache->RemoveInstance(ObjectId()));
+    EXPECT_FALSE(cache->FindInstance(ObjectId()).IsValid());
+    }
+
+TEST_F(DataSourceCacheTests, RemoveInstance_NotExistingNavigationBaseObject_ReturnsDataNotCached)
+    {
+    auto cache = GetTestCache();
+
+    ASSERT_FALSE(cache->FindInstance(ObjectId()).IsValid());
+    EXPECT_EQ(CacheStatus::DataNotCached, cache->RemoveInstance(ObjectId()));
     }
 
 TEST_F(DataSourceCacheTests, RemoveInstance_ChildQueryExists_DeletesQueryResults)
