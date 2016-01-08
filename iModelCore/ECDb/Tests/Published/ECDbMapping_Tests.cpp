@@ -2589,7 +2589,6 @@ TEST_F (ECDbMappingTestFixture, CascadeDeletion)
         "    <ECRelationshipClass typeName='AHasB' isDomainClass='True' strength='embedding'>"
         "        <ECCustomAttributes>"
         "            <ForeignKeyRelationshipMap xmlns='ECDbMap.01.00'>"
-        "               <CreateConstraint>True</CreateConstraint>"
         "               <OnDeleteAction>Cascade</OnDeleteAction>"
         "            </ForeignKeyRelationshipMap>"
         "        </ECCustomAttributes>"

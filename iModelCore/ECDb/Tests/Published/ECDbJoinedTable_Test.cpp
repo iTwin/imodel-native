@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/Published/ECDbJoinedTable_Test.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPublishedTests.h"
@@ -14,7 +14,7 @@ USING_NAMESPACE_BENTLEY_EC
 BEGIN_ECDBUNITTESTS_NAMESPACE
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                   Affan.Khan                         10/05
+// @bsimethod                                   Affan.Khan                         10/15
 //---------------+---------------+---------------+---------------+---------------+-------
 struct JoinedTableECDbMapStrategyTests: ECDbMappingTestFixture
     {
@@ -672,7 +672,7 @@ TEST_F(JoinedTableECDbMapStrategyTests, AcrossMultipleSchemaImports)
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                   Affan.Khan                         10/05
+// @bsimethod                                   Affan.Khan                         10/15
 //---------------+---------------+---------------+---------------+---------------+-------
 TEST_F(JoinedTableECDbMapStrategyTests, InsertWithParameterBinding)
     {
@@ -818,7 +818,7 @@ TEST_F(JoinedTableECDbMapStrategyTests, InsertWithParameterBinding)
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                   Affan.Khan                         10/05
+// @bsimethod                                   Affan.Khan                         10/15
 //---------------+---------------+---------------+---------------+---------------+-------
 TEST_F(JoinedTableECDbMapStrategyTests, InsertWithUnnamedParameterBinding)
     {
@@ -938,7 +938,7 @@ TEST_F(JoinedTableECDbMapStrategyTests, InsertWithUnnamedParameterBinding)
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                   Affan.Khan                         10/05
+// @bsimethod                                   Affan.Khan                         10/15
 //---------------+---------------+---------------+---------------+---------------+-------
 TEST_F(JoinedTableECDbMapStrategyTests, AbstractBaseAndEmptyChildClass)
     {
@@ -2458,5 +2458,47 @@ TEST_F(JoinedTableECDbMapStrategyTests, MultiInheritence1)
 
     db.Schemas().CreateECClassViewsInDb();
 
+    }
+
+TEST_F (JoinedTableECDbMapStrategyTests, JoinedTableForClassesWithoutBusinessProperties)
+    {
+    SchemaItem testSchema (
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='JoinedTableTest' nameSpacePrefix='dgn' version='1.0'"
+        "   xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
+        "    <ECEntityClass typeName='BaseClass'>"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.01.00'>"
+        "                <MapStrategy>"
+        "                    <Strategy>SharedTable</Strategy>"
+        "                    <AppliesToSubclasses>True</AppliesToSubclasses>"
+        "                    <Options>JoinedTablePerDirectSubclass</Options>"
+        "                </MapStrategy>"
+        "            </ClassMap>"
+        "        </ECCustomAttributes>"
+        "        <ECProperty propertyName='B1' typeName='long'/>"
+        "        <ECProperty propertyName='B2' typeName='string'/>"
+        "    </ECEntityClass>"
+        "   <ECEntityClass typeName='Derived0'>"
+        "        <BaseClass>BaseClass</BaseClass>"
+        "        <ECProperty propertyName='D01' typeName='long'/>"
+        "    </ECEntityClass>"
+        "   <ECEntityClass typeName='Derived1' modifier='Abstract'>"
+        "        <BaseClass>BaseClass</BaseClass>"
+        "    </ECEntityClass>"
+        "   <ECEntityClass typeName='Derived2'>"
+        "        <BaseClass>BaseClass</BaseClass>"
+        "    </ECEntityClass>"
+        "</ECSchema>");
+
+    ECDbR db = SetupECDb ("ClassesWithoutBusinessProperties.ecdb", testSchema);
+    ASSERT_TRUE (db.IsDbOpen ());
+
+    //Verify that only one base table and one Secondary Table have been created, rest of the tables will not be mapped as joined table because they don't have business properties.
+    Statement statement;
+    ASSERT_EQ (DbResult::BE_SQLITE_OK, statement.Prepare (db, "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name LIKE 'dgn_%'"));
+    ASSERT_EQ (DbResult::BE_SQLITE_ROW, statement.Step ());
+    ASSERT_EQ (2, statement.GetValueInt (0));
     }
 END_ECDBUNITTESTS_NAMESPACE
