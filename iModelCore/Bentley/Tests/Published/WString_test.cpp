@@ -157,8 +157,6 @@ TEST(WStringTest, BentleyConstructorTest)
     WString w1 (uni);   VERIFY( w1 == L"abc" ); VERIFY( w1 == uni );
     //  Copy constructor
     WString wcc (w1);   VERIFY( wcc == w1 );    VERIFY( wcc == L"abc" );
-    
-    BeStringUtilities::Terminate();
 }
 
 // ******************************************************
@@ -186,8 +184,6 @@ TEST(WStringTest, CharToMSWChar)
     str.AppendA ("def");
     VERIFY( str == L"abcdef" );
     VERIFY( str.length() == 6 );
-    
-    BeStringUtilities::Terminate();
     }
 
 TEST(WStringTest, Utils)

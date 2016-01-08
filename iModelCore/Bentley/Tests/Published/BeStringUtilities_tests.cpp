@@ -566,8 +566,6 @@ TEST(BeStringUtilitiesTests, RoundtripUtf8)
 
     ASSERT_EQ(0, wcscmp(TESTDATA_StringW, strWString.c_str()));
 
-    BeStringUtilities::Terminate();
-
     SUCCEED();
     }
 
@@ -587,8 +585,6 @@ TEST(BeStringUtilitiesTests, RoundtripUtf16)
 
     ASSERT_EQ(0, wcscmp(TESTDATA_StringW, strWString.c_str()));
 
-    BeStringUtilities::Terminate();
-    
     SUCCEED();
     }
 
@@ -665,8 +661,6 @@ TEST(BeStringUtilitiesTests, Utf16ToWCharTest1)
     char asc[256];
     BeStringUtilities::WCharToCurrentLocaleChar (asc, wstr.c_str(), _countof(asc)); // locale <- wchar
     ASSERT_TRUE (0 == strcmp (asc, const_ascii) );
-
-    BeStringUtilities::Terminate();
     }
 
 //---------------------------------------------------------------------------------------

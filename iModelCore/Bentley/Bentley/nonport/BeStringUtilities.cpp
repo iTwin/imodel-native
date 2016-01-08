@@ -54,7 +54,7 @@
 #include <Bentley/WString.h>
 #include <Bentley/ScopedArray.h>
 #include <Bentley/BeAssert.h>
-#include <Bentley/BeThreadLocalStorage.h>
+#include <Bentley/BeThread.h>
 #include "strfunc.h"
 
 #include "utf8.h"
@@ -2860,8 +2860,6 @@ WString  BeStringUtilities::ParseFileURI (WCharCP uri, WCharCP basePath)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     05/2014
 //---------------------------------------------------------------------------------------
-BeThreadLocalStorage g_icuTlsData;
-typedef bvector<Byte> T_IcuData;
 void BeStringUtilities::Initialize(BeFileNameCR assetPathW)
     {
     // While ICU allows you to manually set the data file path, on Win32, it only accepts locale char*.
@@ -2869,8 +2867,18 @@ void BeStringUtilities::Initialize(BeFileNameCR assetPathW)
     // However, we can short-circuit ICU's path searching and file open code by opening the data ourselves and passing a pointer.
     // We must retain this data for the lifetime of calls to ICU.
 
-    if (nullptr != g_icuTlsData.GetValueAsPointer())
-        { BeAssert(false); return; }
+    // ICU can only maintain data statically per-process.
+    // However, the data file is version-specific to ICU, and contains all required locale data, so there should be no need to change during a process.
+
+    typedef bvector<Byte> T_IcuData;
+    static T_IcuData* s_icuData;
+
+    BeSystemMutexHolder holdBeSystemMutex;
+    
+    if (nullptr != s_icuData)
+        return;
+
+    s_icuData = new T_IcuData();
 
     WString icuDataFileName(U_ICUDATA_NAME, BentleyCharEncoding::Utf8);
     icuDataFileName += L".dat";
@@ -2885,33 +2893,17 @@ void BeStringUtilities::Initialize(BeFileNameCR assetPathW)
         return;
         }
     
-    T_IcuData* icuData = new T_IcuData();
-    g_icuTlsData.SetValueAsPointer(icuData);
-
-    if (BeFileStatus::Success != icuDataFile.ReadEntireFile(*icuData))
+    if (BeFileStatus::Success != icuDataFile.ReadEntireFile(*s_icuData))
         {
         BeAssert (false);
         return;
         }
 
     UErrorCode icuErr = U_ZERO_ERROR;
-    udata_setCommonData(&icuData->at(0), &icuErr);
+    udata_setCommonData(&s_icuData->at(0), &icuErr);
 
     if (U_FAILURE(icuErr))
         { BeAssert(false); }
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Jeff.Marker     01/2016
-//---------------------------------------------------------------------------------------
-void BeStringUtilities::Terminate()
-    {
-    if (nullptr == g_icuTlsData.GetValueAsPointer())
-        { BeAssert(false); return; }
-
-    u_cleanup();
-    delete (T_IcuData*)g_icuTlsData.GetValueAsPointer();
-    g_icuTlsData.SetValueAsPointer(nullptr);
     }
 
 //---------------------------------------------------------------------------------------

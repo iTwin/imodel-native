@@ -91,8 +91,6 @@ TEST(Utf8StringTest, Utils)
     VERIFY (str2 == cc2);
     VERIFY (trimmed2.Equals (" Test "));
     VERIFY (trimmed2.length() == 6);
-    
-    BeStringUtilities::Terminate();
     }
 
 //---------------------------------------------------------------------------------------
