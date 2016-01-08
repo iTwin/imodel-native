@@ -60,6 +60,7 @@ struct DbECEnumEntry
             }
     };
 
+
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        05/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -69,6 +70,27 @@ struct ECDbSchemaReader: public RefCountedBase
     typedef std::map<ECClassId, std::unique_ptr<DbECClassEntry>> DbECClassEntryMap;
     typedef std::map<uint64_t, std::unique_ptr<DbECEnumEntry>> DbECEnumEntryMap;
 
+public:
+    struct Context : NonCopyableClass
+        {
+    private:
+        std::vector<ECN::NavigationECProperty*> m_navProps;
+
+    public:
+        Context() {}
+
+        void AddNavigationProperty(ECN::NavigationECProperty& navProp) { m_navProps.push_back(&navProp); }
+
+        BentleyStatus Postprocess() const
+            {
+            /*for (ECN::NavigationECProperty* navProp : m_navProps)
+                {
+                if (ECObjectsStatus::Success != navProp->Validate())
+                    return ERROR;
+                }*/
+            return SUCCESS;
+            }
+        };
 private:
     ECDbCR m_db;
     mutable ECSchemaCache m_cache;
@@ -79,32 +101,27 @@ private:
 
     explicit ECDbSchemaReader(ECDbCR db) :m_db(db) {}
 
-    BentleyStatus         LoadClassesAndEnumsFromDb(DbECSchemaEntry* ecSchemaKey, std::set<DbECSchemaEntry*>& fullyLoadedSchemas) const;
+    BentleyStatus         LoadClassesAndEnumsFromDb(DbECSchemaEntry* ecSchemaKey, Context&, std::set<DbECSchemaEntry*>& fullyLoadedSchemas) const;
     BentleyStatus         LoadECSchemaFromDb(DbECSchemaEntry*&, ECSchemaId) const;
-    BentleyStatus         LoadECPropertiesFromDb(ECClassP& ecClass, ECClassId ecClassId) const;
-    BentleyStatus         LoadBaseClassesFromDb(ECClassP& ecClass, ECClassId ecClassId) const;
-    BentleyStatus         LoadCAFromDb(ECN::IECCustomAttributeContainerR  caConstainer, ECContainerId containerId, ECContainerType containerType) const;
-    BentleyStatus         LoadECRelationshipConstraintFromDb(ECRelationshipClassP&, ECClassId constraintClassId, ECRelationshipEnd) const;
-    BentleyStatus         LoadECRelationshipConstraintClassesFromDb(ECRelationshipConstraintR, ECClassId relationshipClassId, ECRelationshipEnd) const;
+    BentleyStatus         LoadECPropertiesFromDb(ECClassP& ecClass, Context&, ECClassId ecClassId) const;
+    BentleyStatus         LoadBaseClassesFromDb(ECClassP& ecClass, Context&, ECClassId ecClassId) const;
+    BentleyStatus         LoadCAFromDb(ECN::IECCustomAttributeContainerR  caConstainer, Context&, ECContainerId containerId, ECContainerType containerType) const;
+    BentleyStatus         LoadECRelationshipConstraintFromDb(ECRelationshipClassP&, Context&, ECClassId constraintClassId, ECRelationshipEnd) const;
+    BentleyStatus         LoadECRelationshipConstraintClassesFromDb(ECRelationshipConstraintR, Context&, ECClassId relationshipClassId, ECRelationshipEnd) const;
     BentleyStatus         LoadECSchemaDefinition(DbECSchemaEntry*&, bvector<DbECSchemaEntry*>& newlyLoadedSchemas, ECSchemaId ctxECSchemaId) const;
 
-    BentleyStatus         ReadECSchema(DbECSchemaEntry*&, ECSchemaId ctxECSchemaId, bool ensureAllClassesExist) const;
-    BentleyStatus         ReadECSchema(ECSchemaP& ecSchemaOut, Utf8CP schemaName, uint32_t versionMajor, uint32_t versinMinor, bool partial) const;
-    BentleyStatus         ReadECClass(ECClassP&, ECClassId) const;
-    BentleyStatus         ReadECEnumeration(ECEnumerationP&, ECN::ECSchemaId, Utf8CP enumName) const;
-    BentleyStatus         ReadECEnumeration(ECEnumerationP&, uint64_t ecenumId) const;
+    BentleyStatus         ReadECSchema(DbECSchemaEntry*&, Context&, ECSchemaId ctxECSchemaId, bool loadClasses) const;
+    BentleyStatus         ReadECEnumeration(ECEnumerationP&, Context&, uint64_t ecenumId) const;
 
 public:
     ~ECDbSchemaReader() {}
 
-    BentleyStatus         GetECSchema(ECSchemaP& ecSchemaOut, ECSchemaId ecSchemaId, bool loadClasses) const;
-    ECClassP              GetECClass (ECClassId ecClassId) const;
-    BentleyStatus         GetECClass(/*OUT*/ ECClassP& ecClass, Utf8CP qualifiedName) const; //schema:classname
+    ECSchemaCP            GetECSchema(Context&, ECSchemaId ecSchemaId, bool loadClasses) const;
+    ECClassP              GetECClass (Context&, ECClassId ecClassId) const;
+    ECEnumerationCP       GetECEnumeration(Context&, Utf8CP schemaName, Utf8CP enumName) const;
+
+    BentleyStatus         EnsureDerivedClassesExist(Context&, ECClassId baseClassId) const;
     bool                  TryGetECClassId(ECN::ECClassId& id, Utf8CP schemaNameOrPrefix, Utf8CP className, ResolveSchema) const;
-
-    ECEnumerationCP       GetECEnumeration(Utf8CP schemaName, Utf8CP enumName) const;
-
-    BentleyStatus         EnsureDerivedClassesExist(ECClassId baseClassId) const;
     void                  ClearCache ();
 
     static ECDbSchemaReaderPtr Create(ECDbCR);
