@@ -747,15 +747,15 @@ TEST_F(DataSourceCacheTests, RemoveRoot_RootContainsCachedQueryWithCyclicRelatio
     {
     auto cache = GetTestCache();
 
-    cache->LinkInstanceToRoot(nullptr, {"TestSchema.TestClass", "CyclicParent"});
-    auto instanceA = cache->FindInstance({"TestSchema.TestClass", "CyclicParent"});
+    ASSERT_EQ(SUCCESS, cache->LinkInstanceToRoot("Root", {"TestSchema.TestClass", "CyclicParent"}));
+    auto parent = cache->FindInstance({"TestSchema.TestClass", "CyclicParent"});
+    CachedResponseKey key(parent, "Foo");
 
     StubInstances instances;
     instances.Add({"TestSchema.TestClass", "CyclicParent"});
-    cache->CacheResponse({instanceA, "TestQuery"}, instances.ToWSObjectsResponse());
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(key, instances.ToWSObjectsResponse()));
 
-    cache->RemoveRoot(nullptr);
-
+    ASSERT_EQ(SUCCESS, cache->RemoveRoot("Root"));
     EXPECT_FALSE(cache->GetCachedObjectInfo({"TestSchema.TestClass", "CyclicParent"}).IsInCache());
     }
 

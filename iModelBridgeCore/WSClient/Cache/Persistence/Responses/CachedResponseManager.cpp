@@ -550,7 +550,7 @@ const InstanceCacheHelper::CachedInstances& instances
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus CachedResponseManager::RelateResultInstancesToPage
 (
-ECInstanceKeyCR responseParentKey,
+ECInstanceKeyCR responseParentNodeKey,
 CacheNodeKeyCR pageKey,
 const InstanceCacheHelper::CachedInstances& instances
 )
@@ -563,7 +563,7 @@ const InstanceCacheHelper::CachedInstances& instances
             }
 
         ECRelationshipClassCP resultRelClass = m_responsePageToResultClass;
-        if (responseParentKey == resultInstance.GetInstanceKey())
+        if (responseParentNodeKey == resultInstance.GetInfoKey())
             {
             resultRelClass = m_responsePageToResultWeakClass;
             }
