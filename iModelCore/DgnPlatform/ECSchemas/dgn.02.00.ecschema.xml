@@ -507,6 +507,7 @@
         <BaseClass>GeometrySource2d</BaseClass>
     </ECEntityClass>
 
+    <!-- Text element data (shared by 2D and 3D) -->
     <ECEntityClass typeName="TextAnnotationData">
         <ECCustomAttributes>
             <ClassHasHandler xmlns="dgn.02.00"/>
@@ -514,18 +515,50 @@
         <BaseClass>ElementUniqueAspect</BaseClass>
         <ECProperty propertyName="TextAnnotation" typeName="binary"/>
     </ECEntityClass>
+
+    <!-- 2D text element -->
     <ECEntityClass typeName="TextAnnotationElement">
         <ECCustomAttributes>
             <ClassHasHandler xmlns="dgn.02.00"/>
         </ECCustomAttributes>
         <BaseClass>AnnotationElement</BaseClass>
     </ECEntityClass>
+    
+    <ECRelationshipClass typeName="TextAnnotationElementOwnsTextAnnotationData" strength="embedding">
+        <!-- only exists to get automatic deletion of a text element's unique aspect -->
+        <Source cardinality="(1,1)" polymorphic="true">
+            <Class class="TextAnnotationElement"/>
+        </Source>
+        <Target cardinality="(0,1)" polymorphic="true">
+            <Class class="TextAnnotationData">
+                <Key>
+                    <Property name="ECInstanceId"/>
+                </Key>
+            </Class>
+        </Target>
+    </ECRelationshipClass>
+    
+    <!-- 3D text element -->
     <ECEntityClass typeName="SpatialTextAnnotationElement">
         <ECCustomAttributes>
             <ClassHasHandler xmlns="dgn.02.00"/>
         </ECCustomAttributes>
         <BaseClass>SpatialElement</BaseClass>
     </ECEntityClass>
+    
+    <ECRelationshipClass typeName="SpatialTextAnnotationElementOwnsTextAnnotationData" strength="embedding">
+        <!-- only exists to get automatic deletion of a text element's unique aspect -->
+        <Source cardinality="(1,1)" polymorphic="true">
+            <Class class="SpatialTextAnnotationElement"/>
+        </Source>
+        <Target cardinality="(0,1)" polymorphic="true">
+            <Class class="TextAnnotationData">
+                <Key>
+                    <Property name="ECInstanceId"/>
+                </Key>
+            </Class>
+        </Target>
+    </ECRelationshipClass>
 
     <ECEntityClass typeName="AnnotationTableElement">
         <!-- An AnnotationTableElement is an annotation element that displays a grid containing text and or graphics -->
