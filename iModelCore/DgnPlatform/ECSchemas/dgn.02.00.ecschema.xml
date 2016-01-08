@@ -526,6 +526,11 @@
     
     <ECRelationshipClass typeName="TextAnnotationElementOwnsTextAnnotationData" strength="embedding">
         <!-- only exists to get automatic deletion of a text element's unique aspect -->
+        <ECCustomAttributes>
+            <ForeignKeyRelationshipMap xmlns="ECDbMap.01.00">
+                <OnDeleteAction>Cascade</OnDeleteAction>
+            </ForeignKeyRelationshipMap>
+        </ECCustomAttributes>
         <Source cardinality="(1,1)" polymorphic="true">
             <Class class="TextAnnotationElement"/>
         </Source>
@@ -548,6 +553,11 @@
     
     <ECRelationshipClass typeName="SpatialTextAnnotationElementOwnsTextAnnotationData" strength="embedding">
         <!-- only exists to get automatic deletion of a text element's unique aspect -->
+        <ECCustomAttributes>
+            <ForeignKeyRelationshipMap xmlns="ECDbMap.01.00">
+                <OnDeleteAction>Cascade</OnDeleteAction>
+            </ForeignKeyRelationshipMap>
+        </ECCustomAttributes>
         <Source cardinality="(1,1)" polymorphic="true">
             <Class class="SpatialTextAnnotationElement"/>
         </Source>
