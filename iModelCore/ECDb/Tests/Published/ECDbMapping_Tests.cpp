@@ -2848,11 +2848,11 @@ TEST_F(ECDbMappingTestFixture, ECInstanceIdAutoGeneration)
                 "                  <AppliesToSubclasses>True</AppliesToSubclasses>"
                 "            </DisableECInstanceIdAutogeneration>"
                 "        </ECCustomAttributes>"
-                "        <ECProperty propertyName='P0' typeName='String' />"
+                "        <ECProperty propertyName='P0' typeName='string' />"
                 "    </ECClass>"
                 "    <ECClass typeName='Child' isDomainClass='True'>"
                 "    <BaseClass>Parent</BaseClass>"
-                "        <ECProperty propertyName='P1' typeName='String' />"
+                "        <ECProperty propertyName='P1' typeName='string' />"
                 "    </ECClass>"
                 "</ECSchema>", true);
 
@@ -2878,11 +2878,11 @@ TEST_F(ECDbMappingTestFixture, ECInstanceIdAutoGeneration)
                 "                  <AppliesToSubclasses>False</AppliesToSubclasses>"
                 "            </DisableECInstanceIdAutogeneration>"
                 "        </ECCustomAttributes>"
-                "        <ECProperty propertyName='P0' typeName='String' />"
+                "        <ECProperty propertyName='P0' typeName='string' />"
                 "    </ECClass>"
                 "    <ECClass typeName='Child' isDomainClass='True'>"
                 "    <BaseClass>Parent</BaseClass>"
-                "        <ECProperty propertyName='P1' typeName='String' />"
+                "        <ECProperty propertyName='P1' typeName='string' />"
                 "    </ECClass>"
                 "</ECSchema>", true);
 

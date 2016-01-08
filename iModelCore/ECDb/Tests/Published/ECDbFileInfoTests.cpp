@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/Published/ECDbFileInfoTests.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPublishedTests.h"
@@ -37,8 +37,14 @@ TEST_F(ECDbFileInfoTests, EmptyECDbHasFileInfoSchema)
 
     ECClassCP ecClass = schemaManager.GetECClass(ECDB_FILEINFO_SCHEMA_NAME, "FileInfo");
     ASSERT_TRUE(ecClass != nullptr);
+
+    ECEnumerationCP rootFolderEnum = schemaManager.GetECEnumeration(ECDB_FILEINFO_SCHEMA_NAME, "StandardRootFolderType");
+    ASSERT_TRUE(rootFolderEnum != nullptr);
+    ASSERT_FALSE(rootFolderEnum->GetIsStrict());
+
     ecClass = schemaManager.GetECClass(ECDB_FILEINFO_SCHEMA_NAME, "ExternalFileInfo");
     ASSERT_TRUE(ecClass != nullptr);
+
     ecClass = schemaManager.GetECClass(ECDB_FILEINFO_SCHEMA_NAME, "EmbeddedFileInfo");
     ASSERT_TRUE(ecClass != nullptr);
     ecClass = schemaManager.GetECClass(ECDB_FILEINFO_SCHEMA_NAME, "FileInfoOwnership");

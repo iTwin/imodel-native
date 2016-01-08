@@ -202,9 +202,6 @@
     <ClCompile Include="Performance\PerformanceCRUDTestsHelper.cpp">
       <Filter>Performance</Filter>
     </ClCompile>
-    <ClCompile Include="Published\SqliteJSonSupport.cpp">
-      <Filter>Published</Filter>
-    </ClCompile>
     <ClCompile Include="Published\ECSqlNavigationProps_Tests.cpp">
       <Filter>Published\ECSql</Filter>
     </ClCompile>

@@ -36,11 +36,10 @@ public:
 struct DbECClassEntry
     {
     public:
-        ECSchemaId m_ecSchemaId;
         ECClassId m_ecClassId;
         ECN::ECClassP m_cachedECClass;
 
-        DbECClassEntry(ECN::ECSchemaId schemaId, ECN::ECClassCR ecClass) : m_ecSchemaId(schemaId), m_ecClassId(ecClass.GetId())
+        explicit DbECClassEntry(ECN::ECClassCR ecClass) : m_ecClassId(ecClass.GetId())
             {
             m_cachedECClass = const_cast<ECN::ECClassP> (&ecClass);
             }
@@ -52,11 +51,10 @@ struct DbECClassEntry
 struct DbECEnumEntry
     {
     public:
-        ECSchemaId m_ecSchemaId;
-        Utf8CP m_enumName;
+        uint64_t m_enumId;
         ECN::ECEnumerationP m_cachedECEnum;
 
-        DbECEnumEntry(ECN::ECSchemaId schemaId, ECN::ECEnumerationCR ecEnum) : m_ecSchemaId(schemaId), m_enumName(ecEnum.GetName().c_str())
+        DbECEnumEntry(uint64_t enumId, ECN::ECEnumerationCR ecEnum) : m_enumId(enumId)
             {
             m_cachedECEnum = const_cast<ECN::ECEnumerationP> (&ecEnum);
             }
@@ -69,7 +67,7 @@ struct ECDbSchemaReader: public RefCountedBase
     {
     typedef std::map<ECSchemaId, std::unique_ptr<DbECSchemaEntry>> DbECSchemaMap;
     typedef std::map<ECClassId, std::unique_ptr<DbECClassEntry>> DbECClassEntryMap;
-    typedef std::map<Utf8CP, std::unique_ptr<DbECEnumEntry>, CompareUtf8> DbECEnumEntryMap;
+    typedef std::map<uint64_t, std::unique_ptr<DbECEnumEntry>> DbECEnumEntryMap;
 
 private:
     ECDbCR m_db;
@@ -94,7 +92,8 @@ private:
     BentleyStatus         ReadECSchema(ECSchemaP& ecSchemaOut, Utf8CP schemaName, uint32_t versionMajor, uint32_t versinMinor, bool partial) const;
     BentleyStatus         ReadECClass(ECClassP&, ECClassId) const;
     BentleyStatus         ReadECEnumeration(ECEnumerationP&, ECN::ECSchemaId, Utf8CP enumName) const;
-                               
+    BentleyStatus         ReadECEnumeration(ECEnumerationP&, uint64_t ecenumId) const;
+
 public:
     ~ECDbSchemaReader() {}
 
@@ -106,7 +105,6 @@ public:
     ECEnumerationCP       GetECEnumeration(Utf8CP schemaName, Utf8CP enumName) const;
 
     BentleyStatus         EnsureDerivedClassesExist(ECClassId baseClassId) const;
-    void                  AddECSchemaToCache (ECSchemaCR schema);
     void                  ClearCache ();
 
     static ECDbSchemaReaderPtr Create(ECDbCR);

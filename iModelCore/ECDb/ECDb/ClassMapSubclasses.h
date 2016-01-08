@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ClassMapSubclasses.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -70,8 +70,8 @@ public:
 struct UnmappedClassMap : public ClassMap
     {
 private:
-     virtual MapStatus _InitializePart1 (SchemaImportContext*, ClassMapInfo const& classMapInfo, IClassMap const* parentClassMap) override;
-     virtual MapStatus _InitializePart2(SchemaImportContext*, ClassMapInfo const& classMapInfo, IClassMap const* parentClassMap) override { return MapStatus::Success; }
+     virtual MapStatus _MapPart1 (SchemaImportContext&, ClassMapInfo const& classMapInfo, IClassMap const* parentClassMap) override;
+     virtual MapStatus _MapPart2(SchemaImportContext&, ClassMapInfo const& classMapInfo, IClassMap const* parentClassMap) override { return MapStatus::Success; }
     virtual Type _GetClassMapType () const override { return IClassMap::Type::Unmapped; }
     UnmappedClassMap (ECN::ECClassCR ecClass, ECDbMapCR ecdbMap, ECDbMapStrategy mapStrategy, bool setIsDirty);
     virtual BentleyStatus _Load (std::set<ClassMap const*>& loadGraph, ECDbClassMapInfo const& mapInfo, IClassMap const* parentClassMap) override

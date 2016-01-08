@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/ECSqlStatementImpl.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -20,12 +20,26 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 NativeLogging::ILogger* ECSqlStatement::Impl::s_prepareDiagnosticsLogger = nullptr;
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                                Krischan.Eberle        01/16
+//---------------------------------------------------------------------------------------
+ECSqlStatement::Impl::~Impl()
+    {
+    if (IsPrepared())
+        UnregisterFromRegistry(*GetECDb());
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle        10/13
 //---------------------------------------------------------------------------------------
 ECSqlStatus ECSqlStatement::Impl::_Prepare (ECDbCR ecdb, Utf8CP ecsql)
     {
     Diagnostics diag (ecsql, GetPrepareDiagnosticsLogger (), true);
-    return ECSqlStatementBase::_Prepare (ecdb, ecsql);
+    
+    ECSqlStatus stat = ECSqlStatementBase::_Prepare(ecdb, ecsql);
+    if (stat.IsSuccess())
+        ecdb.GetECDbImplR().GetStatementRegistry().Add(*this);
+
+    return stat;
     }
 
 //---------------------------------------------------------------------------------------
@@ -34,6 +48,62 @@ ECSqlStatus ECSqlStatement::Impl::_Prepare (ECDbCR ecdb, Utf8CP ecsql)
 ECSqlPrepareContext ECSqlStatement::Impl::_InitializePrepare (ECDbCR ecdb, Utf8CP ecsql)
     {
     return ECSqlPrepareContext(ecdb, *this);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                             Krischan.Eberle      01/2016
+//---------------------------------------------------------------------------------------
+void ECSqlStatement::Impl::DoFinalize(bool removeFromRegistry)
+    {
+    if (removeFromRegistry && IsPrepared())
+        UnregisterFromRegistry(*GetECDb());
+
+    ECSqlStatementBase::_Finalize();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                             Krischan.Eberle      01/2016
+//---------------------------------------------------------------------------------------
+void ECSqlStatement::Impl::_Finalize()
+    {
+    DoFinalize(true);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                             Krischan.Eberle      01/2016
+//---------------------------------------------------------------------------------------
+ECSqlStatus ECSqlStatement::Impl::Reprepare()
+    {
+    if (!IsPrepared())
+        {
+        BeAssert(false);
+        return ECSqlStatus::Error;
+        }
+
+    ECDb const* ecdb = GetECDb();
+    BeAssert(ecdb != nullptr);
+    Utf8String ecsql = GetECSql();
+    //finalize the statement, but don't remove it from the registry as we will reprepare it
+    DoFinalize(false);
+
+    ECSqlStatus stat = Prepare(*ecdb, ecsql.c_str());
+    if (!stat.IsSuccess())
+        {
+        UnregisterFromRegistry(*ecdb);
+        ecdb->GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Warning, "Repreparation of the ECSqlStatement (%s) failed. ECSqlStatement was finalized.", ecsql.c_str());
+        }
+    else
+        LOG.infov("Reprepared ECSqlStatement (%s).", ecsql.c_str());
+
+    return stat;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                             Krischan.Eberle      01/2016
+//---------------------------------------------------------------------------------------
+void ECSqlStatement::Impl::UnregisterFromRegistry(ECDbCR ecdb)
+    {
+    ecdb.GetECDbImplR().GetStatementRegistry().Remove(*this);
     }
 
 //---------------------------------------------------------------------------------------
@@ -61,14 +131,6 @@ ECSqlStatement::Impl::Diagnostics::Diagnostics (Utf8CP ecsql, NativeLogging::ILo
     {
     if (startTimer && CanLog ())
         m_timer = std::unique_ptr<StopWatch> (new StopWatch (true));
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                             Krischan.Eberle      01/2014
-//---------------------------------------------------------------------------------------
-ECSqlStatement::Impl::Diagnostics::~Diagnostics ()
-    {
-    Log ();
     }
 
 //---------------------------------------------------------------------------------------

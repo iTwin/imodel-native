@@ -313,7 +313,7 @@ DataIntegrityEnforcementMethod RelationshipClassEndTableMap::GetDataIntegrityEnf
 //---------------------------------------------------------------------------------------
 // @bsimethod                                               Krischan.Eberle       06/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-MapStatus RelationshipClassEndTableMap::_InitializePart1 (SchemaImportContext* schemaImportContext, ClassMapInfo const& classMapInfo, IClassMap const* parentClassMap)
+MapStatus RelationshipClassEndTableMap::_MapPart1 (SchemaImportContext& schemaImportContext, ClassMapInfo const& classMapInfo, IClassMap const* parentClassMap)
     {
     //Don't call base class method as end table map requires its own handling
     BeAssert (GetMapStrategy ().IsForeignKeyMapping());
@@ -417,7 +417,7 @@ MapStatus RelationshipClassEndTableMap::_InitializePart1 (SchemaImportContext* s
     const ECClassId defaultThisEndECClassId = thisEndClass->GetId ();
 
     //**** Other End
-    ECDbSqlColumn* foreignKeyClassIdColumn = ConfigureForeignECClassIdKey (schemaImportContext, relationshipClassMapInfo, otherEndConstraint, *otherEndTable, otherEndTableCount);
+    ECDbSqlColumn* foreignKeyClassIdColumn = ConfigureForeignECClassIdKey (&schemaImportContext, relationshipClassMapInfo, otherEndConstraint, *otherEndTable, otherEndTableCount);
     if (foreignKeyClassIdColumn == nullptr)
         {
         BeAssert (false && "Failed to create foreign ECClassId column for relationship");
@@ -425,13 +425,13 @@ MapStatus RelationshipClassEndTableMap::_InitializePart1 (SchemaImportContext* s
         }
 
     ECDbSqlColumn* foreignKeyIdColumn = nullptr;
-    auto stat = CreateConstraintColumns(foreignKeyIdColumn, schemaImportContext, relationshipClassMapInfo, thisEnd, thisEndConstraint);
+    auto stat = CreateConstraintColumns(foreignKeyIdColumn, &schemaImportContext, relationshipClassMapInfo, thisEnd, thisEndConstraint);
     if (stat != MapStatus::Success)
         return stat;
 
     //**** Prop Maps
 
-    stat = CreateConstraintPropMaps (schemaImportContext, thisEnd, defaultThisEndECClassId, foreignKeyIdColumn, foreignKeyClassIdColumn, otherEndClass->GetId());
+    stat = CreateConstraintPropMaps (&schemaImportContext, thisEnd, defaultThisEndECClassId, foreignKeyIdColumn, foreignKeyClassIdColumn, otherEndClass->GetId());
     if (stat != MapStatus::Success)
         return stat;
 
@@ -490,15 +490,12 @@ MapStatus RelationshipClassEndTableMap::_InitializePart1 (SchemaImportContext* s
 //---------------------------------------------------------------------------------------
 // @bsimethod                                               Krischan.Eberle       06/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-MapStatus RelationshipClassEndTableMap::_InitializePart2(SchemaImportContext* schemaImportContext, ClassMapInfo const& classMapInfo, IClassMap const* parentClassMap)
+MapStatus RelationshipClassEndTableMap::_MapPart2(SchemaImportContext& schemaImportContext, ClassMapInfo const& classMapInfo, IClassMap const* parentClassMap)
     {
     //add non-system property maps
-    AddPropertyMaps(schemaImportContext, parentClassMap, nullptr, &classMapInfo);
+    AddPropertyMaps(&schemaImportContext, parentClassMap, nullptr, &classMapInfo);
     
-    //only during schema import:
-    if (schemaImportContext != nullptr)
-        AddIndexToRelationshipEnd(*schemaImportContext, classMapInfo);
-
+    AddIndexToRelationshipEnd(schemaImportContext, classMapInfo);
     return MapStatus::Success;
     }
 
@@ -995,12 +992,12 @@ RelationshipClassLinkTableMap::RelationshipClassLinkTableMap (ECRelationshipClas
 //---------------------------------------------------------------------------------------
 //@bsimethod                                   Ramanujam.Raman                   06 / 12
 //---------------------------------------------------------------------------------------
-MapStatus RelationshipClassLinkTableMap::_InitializePart1 (SchemaImportContext* context, ClassMapInfo const& classMapInfo, IClassMap const* parentClassMap)
+MapStatus RelationshipClassLinkTableMap::_MapPart1 (SchemaImportContext& context, ClassMapInfo const& classMapInfo, IClassMap const* parentClassMap)
     {
     BeAssert (!GetMapStrategy ().IsForeignKeyMapping() &&
         "RelationshipClassLinkTableMap is not meant to be used with other map strategies.");
 
-    auto stat = RelationshipClassMap::_InitializePart1 (context, classMapInfo, parentClassMap);
+    auto stat = RelationshipClassMap::_MapPart1 (context, classMapInfo, parentClassMap);
     if (stat != MapStatus::Success)
         return stat;
 
@@ -1029,7 +1026,7 @@ MapStatus RelationshipClassLinkTableMap::_InitializePart1 (SchemaImportContext* 
     bool addTargetECClassIdColumnToTable = false;
     ECClassId defaultTargetECClassId = ECClass::UNSET_ECCLASSID;
     DetermineConstraintClassIdColumnHandling (addTargetECClassIdColumnToTable, defaultTargetECClassId, targetConstraint);
-    return CreateConstraintPropMaps (context, relationClassMapInfo, addSourceECClassIdColumnToTable, defaultSourceECClassId, addTargetECClassIdColumnToTable, defaultTargetECClassId);
+    return CreateConstraintPropMaps (&context, relationClassMapInfo, addSourceECClassIdColumnToTable, defaultSourceECClassId, addTargetECClassIdColumnToTable, defaultTargetECClassId);
     }
 
 //---------------------------------------------------------------------------------------
@@ -1095,9 +1092,9 @@ DataIntegrityEnforcementMethod RelationshipClassLinkTableMap::GetDataIntegrityEn
 //---------------------------------------------------------------------------------------
 //@bsimethod                                   Ramanujam.Raman                   06 / 12
 //---------------------------------------------------------------------------------------
-MapStatus RelationshipClassLinkTableMap::_InitializePart2(SchemaImportContext* context, ClassMapInfo const& classMapInfo, IClassMap const* parentClassMap)
+MapStatus RelationshipClassLinkTableMap::_MapPart2 (SchemaImportContext& context, ClassMapInfo const& classMapInfo, IClassMap const* parentClassMap)
     {
-    MapStatus stat = RelationshipClassMap::_InitializePart2(context, classMapInfo, parentClassMap);
+    MapStatus stat = RelationshipClassMap::_MapPart2 (context, classMapInfo, parentClassMap);
     if (stat != MapStatus::Success)
         return stat;
 
@@ -1133,10 +1130,7 @@ MapStatus RelationshipClassLinkTableMap::_InitializePart2(SchemaImportContext* c
         targetFK->SetOnDeleteAction(ForeignKeyActionType::Cascade);
         }
 
-    //**** Add relationship indices (only during schema import)
-    if (context != nullptr)
-        AddIndices(*context, classMapInfo);
-
+    AddIndices (context, classMapInfo);
     return MapStatus::Success;
     }
 

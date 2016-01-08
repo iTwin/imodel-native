@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/ECDb/ECDbSchemaManager.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -181,11 +181,9 @@ private:
     ECDb& m_ecdb;
     ECDbMap& m_map;
     RefCountedPtr<ECDbSchemaReader> m_ecReader;
-    RefCountedPtr<ECDbSchemaWriter> m_ecImporter;
     mutable BeMutex m_criticalSection;
 
     BentleyStatus BatchImportOrUpdateECSchemas (SchemaImportContext const&, bvector<ECN::ECSchemaCP>& importedSchemas, bvector<ECN::ECDiffPtr>&  diffs, ECN::ECSchemaCacheR, ImportOptions const&) const;
-    BentleyStatus ImportECSchema (ECN::ECSchemaCR) const;
     BentleyStatus UpdateECSchema (ECN::ECDiffPtr&, ECN::ECSchemaCR) const;
     void ReportUpdateError (ECN::ECSchemaCR newSchema, ECN::ECSchemaCR existingSchema, Utf8CP reason) const;
     

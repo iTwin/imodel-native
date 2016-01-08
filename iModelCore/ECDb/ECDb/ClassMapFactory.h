@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ClassMapFactory.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -22,8 +22,6 @@ struct ClassMapFactory
 private:
     ClassMapFactory ();
     ~ClassMapFactory ();
-
-    static ClassMapPtr CreateInstance(MapStatus&, SchemaImportContext*, ClassMapInfo const&, bool setIsDirty);
 
 public:
     static ClassMapPtr Load (MapStatus&, ECN::ECClassCR, ECDbMapCR);

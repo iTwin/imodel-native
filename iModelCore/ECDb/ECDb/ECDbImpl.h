@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECDbImpl.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -67,6 +67,22 @@ private:
             };
         };
 
+    struct ECSqlStatementRegistry : NonCopyableClass
+        {
+    private:
+        mutable bset<ECSqlStatement::Impl*> m_statements;
+        mutable BeMutex m_mutex;
+
+    public:
+        ECSqlStatementRegistry() {}
+
+        void Add(ECSqlStatement::Impl&) const;
+        void Remove(ECSqlStatement::Impl&) const;
+
+        ECSqlStatus ReprepareStatements() const;
+        void FinalizeStatements() const;
+        };
+
     ECDbR m_ecdb;
     std::unique_ptr<ECDbSchemaManager> m_schemaManager;
     std::unique_ptr<ECDbMap> m_ecdbMap;
@@ -84,6 +100,7 @@ private:
     BeBriefcaseBasedIdSequence m_propertypathIdSequence;
 
     mutable bmap<DbFunctionKey, DbFunction*, DbFunctionKey::Comparer> m_sqlFunctions;
+    ECSqlStatementRegistry m_statementRegistry;
 
     IssueReporter m_issueReporter;
 
@@ -105,7 +122,6 @@ private:
     void RemoveIssueListener() { m_issueReporter.RemoveListener(); }
 
     void ClearECDbCache() const;
-
     DbResult OnDbOpened () const;
     DbResult OnDbCreated () const;
     DbResult OnBriefcaseIdChanged (BeBriefcaseId newBriefcaseId);
@@ -115,11 +131,10 @@ private:
     //other private methods
     std::vector<BeBriefcaseBasedIdSequence const*> GetSequences () const;
 
-        
 public:
-    ~Impl () {}
+    ~Impl() {}
 
-    ECDbMap const& GetECDbMap () const;
+    ECDbMap const& GetECDbMap () const { return *m_ecdbMap; }
 
     DbResult ResetSequences (BeBriefcaseId* repoId = nullptr);
     BeBriefcaseBasedIdSequence& GetECInstanceIdSequence () { return m_ecInstanceIdSequence; }
@@ -136,6 +151,7 @@ public:
 
     bool TryGetSqlFunction(DbFunction*& function, Utf8CP name, int argCount) const;
 
+    ECSqlStatementRegistry const& GetStatementRegistry() const { return m_statementRegistry; }
     IssueReporter const& GetIssueReporter() const { return m_issueReporter; }
     };
 
