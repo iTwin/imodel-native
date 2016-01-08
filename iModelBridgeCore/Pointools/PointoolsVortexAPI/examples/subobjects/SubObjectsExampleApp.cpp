@@ -51,6 +51,7 @@ This example demonstrates the layer based editing capabilities of Vortex
 #include "..\include\FileTool.h"		// file open/close
 #include "..\include\ShaderTool.h"		// shading options
 #include "..\snapping\snaptest.h"		// editing features
+#include "..\include\editTool.h"
 #include "SubObjectsTool.h"
 #include "..\include\CloudVisibilityTool.h"
 
@@ -64,6 +65,7 @@ int main(int argc, char* argv[])
 		SubObjectsTool * subobj = new SubObjectsTool;
 
 		example.addTool(new FileTool);
+		example.addTool(new EditTool(false) );
 		example.addTool(subobj);			// see code in EditingTool.cpp for implementation of editing features
 		example.addTool(new SnapTest);		
 		example.addTool(new ShaderTool);

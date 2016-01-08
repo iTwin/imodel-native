@@ -193,6 +193,7 @@ public:
 
 	virtual void drawPostDisplay()		{}
 	virtual void drawPreDisplay()		{}
+	virtual void onPostSwap()			{}
 
 	bool	ownsCmd( int cmdId ) const 	
 	{ 

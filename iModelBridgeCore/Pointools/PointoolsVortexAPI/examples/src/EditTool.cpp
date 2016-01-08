@@ -129,6 +129,14 @@ void EditTool::command( int cmdId )
 			viewRedraw();
 			break;
 
+		case CmdRegenEdit		: 
+			ptSetEditWorkingMode( PT_EDIT_WORK_ON_ALL );
+			ptRefreshEdit();
+			ptSetEditWorkingMode( PT_EDIT_WORK_ON_VIEW );
+			VortexExampleApp::instance()->updateBoundingBox();
+			viewRedraw();
+			break;
+
 		case CmdDeselect		: 
 			ptUnselectAll();
 			viewRedraw();

@@ -907,6 +907,9 @@ void	VortexExampleApp::glutDisplay()
 	m_view.freezeIdle = false;
 
 	glutSwapBuffers(); 
+
+	for (i = m_tools.begin(); i!=m_tools.end(); i++)		// Tool post draw
+		(*i)->onPostSwap();
 }
 //-----------------------------------------------------------------------------
 void	VortexExampleApp::glutIdleHandler()

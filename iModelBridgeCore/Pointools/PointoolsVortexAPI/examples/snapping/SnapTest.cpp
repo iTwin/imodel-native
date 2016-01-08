@@ -11,6 +11,8 @@ Copyright (c) 2015 Bentley Systems, Incorporated. All rights reserved.
 *******************************************************************************/
 #include "SnapTest.h"
 
+SnapTest *g_snaptestInstance = 0;
+
 //-----------------------------------------------------------------------------
 SnapTest::SnapTest() : Tool(CmdMeasurePnt, CmdMeasurePntScene)
 //-----------------------------------------------------------------------------
@@ -18,6 +20,8 @@ SnapTest::SnapTest() : Tool(CmdMeasurePnt, CmdMeasurePntScene)
 	m_output = 0;
 	m_active = false;
 	m_lastPointType = PointInvalid;
+
+	g_snaptestInstance = this;
 }
 //-----------------------------------------------------------------------------
 void SnapTest::buildUserInterface( GLUI_Node *parent )
@@ -60,6 +64,13 @@ const double * SnapTest::lastSnapPoint() const
 		return m_lastSnapPoint;
 	else return 0;
 }
+//
+SnapTest* SnapTest::instance()
+//
+{
+	return g_snaptestInstance;
+}
+
 //-----------------------------------------------------------------------------
 bool SnapTest::onMouseButtonDown( int button, int x, int y )
 //-----------------------------------------------------------------------------

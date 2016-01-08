@@ -149,6 +149,10 @@ PTSHADEROPTIONF ptShaderOptionf = 0;
 PTSHADEROPTIONFV ptShaderOptionfv = 0;
 PTSHADEROPTIONI ptShaderOptioni = 0;
 
+PTSETOVERRIDECOLOR ptSetOverrideColor=0;
+PTGETOVERRIDECOLOR ptGetOverrideColor=0;
+PTREMOVEOVERRIDECOLOR ptRemoveOverrideColor=0;
+
 PTGETSHADEROPTIONF ptGetShaderOptionf = 0;
 PTGETSHADEROPTIONF ptGetShaderOptionfv = 0;
 PTGETSHADEROPTIONI ptGetShaderOptioni = 0;
@@ -265,6 +269,7 @@ PTGETEDITWORKINGMODE ptGetEditWorkingMode = 0;
 
 PTCREATESELPOINTSQUERY ptCreateSelPointsQuery = 0;
 PTCREATEVISPOINTSQUERY ptCreateVisPointsQuery = 0;
+PTCREATEALLPOINTSQUERY ptCreateAllPointsQuery = 0;
 PTCREATEBOUNDINGBOXQUERY ptCreateBoundingBoxQuery = 0;
 PTCREATEORIENTEDBOUNDINGBOXQUERY ptCreateOrientedBoundingBoxQuery = 0;
 PTCREATEBOUNDINGSPHEREQUERY ptCreateBoundingSphereQuery = 0;
@@ -483,6 +488,11 @@ bool LoadPointoolsDLL(const TCHAR*filepath)
 
 		ptShowScene = (PTSHOWSCENE)GetAPIFunc("ptShowScene");
 		ptShowCloud = (PTSHOWCLOUD)GetAPIFunc("ptShowCloud");
+
+		ptSetOverrideColor = (PTSETOVERRIDECOLOR) GetAPIFunc("ptSetOverrideColor");
+		ptGetOverrideColor = (PTGETOVERRIDECOLOR) GetAPIFunc("ptGetOverrideColor");
+		ptRemoveOverrideColor = (PTREMOVEOVERRIDECOLOR) GetAPIFunc("ptRemoveOverrideColor");
+
 		ptIsSceneVisible = (PTISSCENEVISIBLE) GetAPIFunc("ptIsSceneVisible");
 		ptIsCloudVisible = (PTISCLOUDVISIBLE) GetAPIFunc("ptIsCloudVisible");
 		ptUnloadScene = (PTUNLOADSCENE)GetAPIFunc("ptUnloadScene");
@@ -653,6 +663,7 @@ bool LoadPointoolsDLL(const TCHAR*filepath)
 		/* Query */ 
 		ptCreateSelPointsQuery = (PTCREATESELPOINTSQUERY) GetAPIFunc("ptCreateSelPointsQuery");
 		ptCreateVisPointsQuery = (PTCREATEVISPOINTSQUERY) GetAPIFunc("ptCreateVisPointsQuery");
+		ptCreateAllPointsQuery = (PTCREATEALLPOINTSQUERY) GetAPIFunc("ptCreateAllPointsQuery");
 		ptCreateBoundingBoxQuery = (PTCREATEBOUNDINGBOXQUERY) GetAPIFunc("ptCreateBoundingBoxQuery");
 		ptCreateOrientedBoundingBoxQuery = (PTCREATEORIENTEDBOUNDINGBOXQUERY) GetAPIFunc("ptCreateOrientedBoundingBoxQuery");
 		ptCreateBoundingSphereQuery = (PTCREATEBOUNDINGSPHEREQUERY) GetAPIFunc("ptCreateBoundingSphereQuery");
