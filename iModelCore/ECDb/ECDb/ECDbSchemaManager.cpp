@@ -365,15 +365,7 @@ ECSchemaCP ECDbSchemaManager::GetECSchema (Utf8CP schemaName, bool ensureAllClas
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECSchemaCP ECDbSchemaManager::GetECSchema (ECSchemaId schemaId, bool ensureAllClassesLoaded) const
     {
-    ECDbSchemaReader::Context ctx;
-    ECSchemaCP schema = m_ecReader->GetECSchema(ctx, schemaId, ensureAllClassesLoaded);
-    if (schema == nullptr)
-        return nullptr;
-
-    if (SUCCESS != ctx.Postprocess())
-        return nullptr;
-
-    return schema;
+    return m_ecReader->GetECSchema(schemaId, ensureAllClassesLoaded);
     }
 
 /*---------------------------------------------------------------------------------------
@@ -407,15 +399,7 @@ ECClassCP ECDbSchemaManager::GetECClass (Utf8CP schemaNameOrPrefix, Utf8CP class
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECClassCP ECDbSchemaManager::GetECClass(ECClassId ecClassId) const
     {
-    ECDbSchemaReader::Context ctx;
-    ECClassCP ecClass = m_ecReader->GetECClass(ctx, ecClassId);
-    if (ecClass != nullptr)
-        {
-        if (SUCCESS != ctx.Postprocess())
-            return nullptr;
-        }
-
-    return ecClass;
+    return m_ecReader->GetECClass(ecClassId);
     }
 
 /*---------------------------------------------------------------------------------------
@@ -444,15 +428,7 @@ ECDerivedClassesList const& ECDbSchemaManager::GetDerivedECClasses (ECClassCR ba
 //+---------------+---------------+---------------+---------------+---------------+------
 ECEnumerationCP ECDbSchemaManager::GetECEnumeration(Utf8CP schemaName, Utf8CP enumName) const
     {
-    ECDbSchemaReader::Context ctx;
-    ECEnumerationCP ecenum = m_ecReader->GetECEnumeration(ctx, schemaName, enumName);
-    if (ecenum == nullptr)
-        return nullptr;
-
-    if (SUCCESS != ctx.Postprocess())
-        return nullptr;
-
-    return ecenum;
+    return m_ecReader->GetECEnumeration(schemaName, enumName);
     }
 
 /*---------------------------------------------------------------------------------------
@@ -496,12 +472,8 @@ ECSchemaPtr ECDbSchemaManager::_LocateSchema (SchemaKeyR key, SchemaMatchType ma
     if (0 == schemaId)
         return nullptr;
 
-    ECDbSchemaReader::Context ctx;
-    ECSchemaCP schema = m_ecReader->GetECSchema(ctx, schemaId, true);
+    ECSchemaCP schema = m_ecReader->GetECSchema(schemaId, true);
     if (schema == nullptr)
-        return nullptr;
-
-    if (SUCCESS != ctx.Postprocess())
         return nullptr;
 
     if (schema->GetSchemaKey ().Matches (key, matchType))
@@ -565,11 +537,7 @@ BentleyStatus ECDbSchemaManager::EnsureDerivedClassesExist(ECN::ECClassCR ecClas
     else
         ecClassId = GetClassIdForECClassFromDuplicateECSchema(m_ecdb, ecClass);
 
-    ECDbSchemaReader::Context ctx;
-    if (SUCCESS != m_ecReader->EnsureDerivedClassesExist(ctx, ecClassId))
-        return ERROR;
-
-    return ctx.Postprocess();
+    return m_ecReader->EnsureDerivedClassesExist(ecClassId);
     }
 
 //---------------------------------------------------------------------------------------

@@ -70,28 +70,28 @@ struct ECDbSchemaReader: public RefCountedBase
     typedef std::map<ECClassId, std::unique_ptr<DbECClassEntry>> DbECClassEntryMap;
     typedef std::map<uint64_t, std::unique_ptr<DbECEnumEntry>> DbECEnumEntryMap;
 
-public:
+private:
     struct Context : NonCopyableClass
         {
-    private:
-        std::vector<ECN::NavigationECProperty*> m_navProps;
+        private:
+            std::vector<ECN::NavigationECProperty*> m_navProps;
 
-    public:
-        Context() {}
+        public:
+            Context() {}
 
-        void AddNavigationProperty(ECN::NavigationECProperty& navProp) { m_navProps.push_back(&navProp); }
+            void AddNavigationProperty(ECN::NavigationECProperty& navProp) { m_navProps.push_back(&navProp); }
 
-        BentleyStatus Postprocess() const
-            {
-            /*for (ECN::NavigationECProperty* navProp : m_navProps)
+            BentleyStatus Postprocess() const
+                {
+                /*for (ECN::NavigationECProperty* navProp : m_navProps)
                 {
                 if (ECObjectsStatus::Success != navProp->Validate())
-                    return ERROR;
+                return ERROR;
                 }*/
-            return SUCCESS;
-            }
+                return SUCCESS;
+                }
         };
-private:
+
     ECDbCR m_db;
     mutable ECSchemaCache m_cache;
     mutable DbECSchemaMap m_ecSchemaCache;
@@ -100,6 +100,10 @@ private:
     mutable BeMutex m_criticalSection;
 
     explicit ECDbSchemaReader(ECDbCR db) :m_db(db) {}
+
+    ECSchemaCP            GetECSchema(Context&, ECSchemaId ecSchemaId, bool loadClasses) const;
+    ECClassP              GetECClass(Context&, ECClassId ecClassId) const;
+    ECEnumerationCP       GetECEnumeration(Context&, Utf8CP schemaName, Utf8CP enumName) const;
 
     BentleyStatus         LoadClassesAndEnumsFromDb(DbECSchemaEntry* ecSchemaKey, Context&, std::set<DbECSchemaEntry*>& fullyLoadedSchemas) const;
     BentleyStatus         LoadECSchemaFromDb(DbECSchemaEntry*&, ECSchemaId) const;
@@ -113,14 +117,16 @@ private:
     BentleyStatus         ReadECSchema(DbECSchemaEntry*&, Context&, ECSchemaId ctxECSchemaId, bool loadClasses) const;
     BentleyStatus         ReadECEnumeration(ECEnumerationP&, Context&, uint64_t ecenumId) const;
 
+    BentleyStatus         EnsureDerivedClassesExist(Context&, ECClassId baseClassId) const;
+
 public:
     ~ECDbSchemaReader() {}
 
-    ECSchemaCP            GetECSchema(Context&, ECSchemaId ecSchemaId, bool loadClasses) const;
-    ECClassP              GetECClass (Context&, ECClassId ecClassId) const;
-    ECEnumerationCP       GetECEnumeration(Context&, Utf8CP schemaName, Utf8CP enumName) const;
+    ECSchemaCP            GetECSchema(ECSchemaId ecSchemaId, bool loadClasses) const;
+    ECClassCP              GetECClass (ECClassId ecClassId) const;
+    ECEnumerationCP       GetECEnumeration(Utf8CP schemaName, Utf8CP enumName) const;
 
-    BentleyStatus         EnsureDerivedClassesExist(Context&, ECClassId baseClassId) const;
+    BentleyStatus         EnsureDerivedClassesExist(ECClassId baseClassId) const;
     bool                  TryGetECClassId(ECN::ECClassId& id, Utf8CP schemaNameOrPrefix, Utf8CP className, ResolveSchema) const;
     void                  ClearCache ();
 

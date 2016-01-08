@@ -20,6 +20,100 @@ ECDbSchemaReaderPtr ECDbSchemaReader::Create(ECDbCR db)
     }
 
 /*---------------------------------------------------------------------------------------
+* @bsimethod                                                    Affan.Khan        06/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+ECSchemaCP ECDbSchemaReader::GetECSchema(ECSchemaId ecSchemaId, bool ensureAllClassesLoaded) const
+    {
+    ECDbSchemaReader::Context ctx;
+    ECSchemaCP schema = GetECSchema(ctx, ecSchemaId, ensureAllClassesLoaded);
+    if (schema == nullptr)
+        return nullptr;
+
+    if (SUCCESS != ctx.Postprocess())
+        return nullptr;
+
+    return schema;
+    }
+
+/*---------------------------------------------------------------------------------------
+* @bsimethod                                                    Affan.Khan        06/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+ECSchemaCP ECDbSchemaReader::GetECSchema(Context& ctx, ECSchemaId ecSchemaId, bool ensureAllClassesLoaded) const
+    {
+    DbECSchemaEntry* outECSchemaKey = nullptr;
+    if (SUCCESS != ReadECSchema(outECSchemaKey, ctx, ecSchemaId, ensureAllClassesLoaded))
+        return nullptr;
+
+    return outECSchemaKey->m_cachedECSchema.get();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Krischan.Eberle    12/2015
+//+---------------+---------------+---------------+---------------+---------------+------
+ECEnumerationCP ECDbSchemaReader::GetECEnumeration(Utf8CP schemaName, Utf8CP enumName) const
+    {
+    ECDbSchemaReader::Context ctx;
+    ECEnumerationCP ecenum = GetECEnumeration(ctx, schemaName, enumName);
+    if (ecenum == nullptr)
+        return nullptr;
+
+    if (SUCCESS != ctx.Postprocess())
+        return nullptr;
+
+    return ecenum;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    affan.khan      03/2013
+//---------------------------------------------------------------------------------------
+BentleyStatus ECDbSchemaReader::EnsureDerivedClassesExist(ECClassId baseClassId) const
+    {
+    ECDbSchemaReader::Context ctx;
+    if (SUCCESS != EnsureDerivedClassesExist(ctx, baseClassId))
+        return ERROR;
+
+    return ctx.Postprocess();
+    }
+
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    affan.khan      03/2013
+//---------------------------------------------------------------------------------------
+BentleyStatus ECDbSchemaReader::EnsureDerivedClassesExist(Context& ctx, ECClassId baseClassId) const
+    {
+    CachedStatementPtr stmt = nullptr;
+    if (BE_SQLITE_OK != m_db.GetCachedStatement(stmt, "SELECT ClassId FROM ec_BaseClass WHERE BaseClassId = ?"))
+        return ERROR;
+
+    if (BE_SQLITE_OK != stmt->BindInt64(1, baseClassId))
+        return ERROR;
+
+    while (stmt->Step() == BE_SQLITE_ROW)
+        {
+        if (GetECClass(ctx, (ECClassId) stmt->GetValueInt64(0)) == nullptr)
+            return ERROR;
+        }
+
+    return SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------------
+* @bsimethod                                                    Affan.Khan        05/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+ECClassCP ECDbSchemaReader::GetECClass(ECClassId ecClassId) const
+    {
+    ECDbSchemaReader::Context ctx;
+    ECClassCP ecclass = GetECClass(ctx, ecClassId);
+    if (ecclass == nullptr)
+        return nullptr;
+
+    if (SUCCESS != ctx.Postprocess())
+        return nullptr;
+
+    return ecclass;
+    }
+
+/*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        05/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECClassP ECDbSchemaReader::GetECClass(Context& ctx, ECClassId ecClassId) const
@@ -151,6 +245,22 @@ ECClassP ECDbSchemaReader::GetECClass(Context& ctx, ECClassId ecClassId) const
         }
 
     return ecClass;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Krischan.Eberle    12/2015
+//+---------------+---------------+---------------+---------------+---------------+------
+ECEnumerationCP ECDbSchemaReader::GetECEnumeration(Context& ctx, Utf8CP schemaName, Utf8CP enumName) const
+    {
+    uint64_t enumId = ECDbSchemaPersistenceHelper::GetECEnumerationId(m_db, schemaName, enumName);
+    if (enumId == INT64_C(0))
+        return nullptr;
+
+    ECEnumerationP ecEnum = nullptr;
+    if (SUCCESS != ReadECEnumeration(ecEnum, ctx, enumId))
+        return nullptr;
+
+    return ecEnum;
     }
 
 //---------------------------------------------------------------------------------------
@@ -289,18 +399,6 @@ BentleyStatus ECDbSchemaReader::ReadECSchema(DbECSchemaEntry*& outECSchemaKey, C
         
         }
     return SUCCESS;
-    }
-
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Affan.Khan        06/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECSchemaCP ECDbSchemaReader::GetECSchema(Context& ctx, ECSchemaId ecSchemaId, bool ensureAllClassesLoaded) const
-    {
-    DbECSchemaEntry* outECSchemaKey = nullptr;
-    if (SUCCESS != ReadECSchema(outECSchemaKey,ctx,  ecSchemaId, ensureAllClassesLoaded))
-        return nullptr;
-
-    return outECSchemaKey->m_cachedECSchema.get();
     }
 
 /*---------------------------------------------------------------------------------------
@@ -821,42 +919,6 @@ bool ECDbSchemaReader::TryGetECClassId(ECClassId& id, Utf8CP schemaName, Utf8CP 
     return true;
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Krischan.Eberle    12/2015
-//+---------------+---------------+---------------+---------------+---------------+------
-ECEnumerationCP ECDbSchemaReader::GetECEnumeration(Context& ctx, Utf8CP schemaName, Utf8CP enumName) const
-    {
-    uint64_t enumId = ECDbSchemaPersistenceHelper::GetECEnumerationId(m_db, schemaName, enumName);
-    if (enumId == INT64_C(0))
-        return nullptr;
-
-    ECEnumerationP ecEnum = nullptr;
-    if (SUCCESS != ReadECEnumeration(ecEnum, ctx, enumId))
-        return nullptr;
-
-    return ecEnum;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    affan.khan      03/2013
-//---------------------------------------------------------------------------------------
-BentleyStatus ECDbSchemaReader::EnsureDerivedClassesExist(Context& ctx, ECClassId baseClassId) const
-    {
-    CachedStatementPtr stmt = nullptr;
-    if (BE_SQLITE_OK != m_db.GetCachedStatement(stmt, "SELECT ClassId FROM ec_BaseClass WHERE BaseClassId = ?"))
-        return ERROR;
-
-    if (BE_SQLITE_OK != stmt->BindInt64(1, baseClassId))
-        return ERROR;
-
-    while (stmt->Step() == BE_SQLITE_ROW)
-        {
-        if (GetECClass(ctx, (ECClassId) stmt->GetValueInt64(0)) == nullptr)
-            return ERROR;
-        }
-
-    return SUCCESS;
-    }
 
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        06/2012
