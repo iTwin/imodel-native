@@ -48,7 +48,7 @@ struct CachedResponseManager : public IECDbAdapter::DeleteListener
     private:
         BentleyStatus RelateResultInstancesToPage
             (
-            ECInstanceKeyCR responseParentKey,
+            ECInstanceKeyCR responseParentNodeKey,
             CacheNodeKeyCR pageKey,
             const InstanceCacheHelper::CachedInstances& instances
             );
