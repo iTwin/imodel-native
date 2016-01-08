@@ -1335,6 +1335,8 @@ void SimplifyGraphic::ClipAndProcessText(TextStringCR text) const
 
         for (size_t iGlyph = 0; iGlyph < numGlyphs; ++iGlyph)
             sGraphic->ClipAndProcessGlyph(font, *glyphs[iGlyph], glyphOrigins[iGlyph]);
+
+        text.AddUnderline(*graphic); // NOTE: Issue with supporting bold resource fonts, don't want underline bolded...
         return;
         }
     }

@@ -532,7 +532,7 @@ void GeometricPrimitive::AddToGraphic(Render::GraphicR graphic, ViewContextR con
             {
             TextStringPtr geom = GetAsTextString();
 
-            graphic.AddTextString(*geom); // Ignores underline...
+            graphic.AddTextString(*geom);
             break;
             }
 
@@ -4200,7 +4200,6 @@ bool GeometryBuilder::Append(ISolidKernelEntityCR geom)
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool GeometryBuilder::Append(TextStringCR text)
     {
-    //NEEDSWORK_RENDER_GRAPHIC - Underline?
     if (m_haveLocalGeom)
         {
         DRange3d localRange;

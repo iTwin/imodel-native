@@ -408,7 +408,6 @@ void TextString::AddUnderline(Render::GraphicR graphic) const
     Update(); 
     
     DPoint3d    pts[2];
-    Transform   transform = ComputeTransform();
     
     pts[0].x = m_range.low.x;
     pts[0].y = (m_range.low.y - (m_style.GetHeight() * DEFAULT_UNDERLINE_OFFSET_FACTOR));
@@ -418,7 +417,6 @@ void TextString::AddUnderline(Render::GraphicR graphic) const
     pts[1].y = pts[0].y;
     pts[1].z = 0.0;
 
-    transform.Multiply(pts, pts, 2);
     graphic.AddLineString(2, pts, nullptr);
     }
 
