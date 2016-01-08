@@ -480,6 +480,19 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
         Dispose(): void;
     }
 
+    //! A wrapper for BentleyApi::DPoint3dDVec3dDVec3d
+    class DPoint3dDVector3dDVector3d implements IDisposable {
+        /*** NATIVE_TYPE_NAME = JsDPoint3dDVector3dDVector3d ***/ 
+        constructor(origin: DPoint3dP, vectorU: DVector3dP, vectorV: DVector3dP)
+        Evaluate (u: cxx_double, v: cxx_double) : DPoint3dP;
+        OnDispose(): void;
+        Dispose(): void;
+    }
+
+    type DPoint3dDVector3dDVector3dP = cxx_pointer<DPoint3dDVector3dDVector3d>;
+
+
+
 /********************************************************************************
 * TREE CLASSES:
 *   (CurvePrimitive LineSegment EllipticArc BsplineCurve CatenaryCurve)
@@ -494,6 +507,7 @@ class Geometry implements IDisposable, BeJsProjection_SuppressConstructor
 Clone (): GeometryP;
     OnDispose(): void;
     Dispose(): void;
+    TryTransformInPlace (transform: TransformP) : cxx_bool;
 }
 type GeometryP = cxx_pointer<Geometry>;
    
@@ -533,10 +547,22 @@ class CurvePrimitive extends Geometry implements BeJsProjection_SuppressConstruc
 
 
     //! A wrapper for BentleyApi::JsEllipticArc
-    class EllipticArc extends CurvePrimitive {
+    class EllipticArc extends CurvePrimitive implements BeJsProjection_SuppressConstructor
+        {
         /*** NATIVE_TYPE_NAME = JsEllipticArc ***/
         Clone(): EllipticArcP;
         constructor(center: DPoint3dP, vector0: DVector3dP, vector90: DVector3dP, startAngle: AngleP, sweepAngle : AngleP);
+        static CreateCircleStartMidEnd (startPoint: DPoint3dP, interiorPoint: DPoint3dP, endPoint: DPoint3dP) : EllipticArcP;
+        static CreateCircleXY (center: DPoint3dP, radius: cxx_double) : EllipticArcP;
+        GetCenter (): DPoint3dP;
+        GetVector0 (): DVector3dP;
+        GetVector90 (): DVector3dP;
+        GetStartAngle (): AngleP;
+        GetSweepAngle(): AngleP;
+        GetEndAngle (): AngleP;
+
+        CloneWithPerpendicularAxes () :EllipticArcP;
+        GetBasisPlane () : DPoint3dDVector3dDVector3dP;
     }
 
     type EllipticArcP = cxx_pointer<EllipticArc>;
@@ -551,12 +577,14 @@ class CurvePrimitive extends Geometry implements BeJsProjection_SuppressConstruc
         /*** NATIVE_TYPE_NAME = JsBsplineCurve ***/
         constructor ();
         Clone(): BsplineCurveP;
-        
+
         IsPeriodic(): cxx_bool;
-        static CreateFromPoles(xyz: DPoint3dArrayP,
+        static Create(xyz: DPoint3dArrayP,
             weights: DoubleArrayP,
             knots: DoubleArrayP,
             order: cxx_double, closed: cxx_bool, preWeighted: cxx_bool): BsplineCurveP;
+        static CreateFromPoles(xyz: DPoint3dArrayP, order: cxx_double): BsplineCurveP;
+
     }
 
     type BsplineCurveP = cxx_pointer<BsplineCurve>;

@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/GeomJsTypes/JsDPoint3dDVector3dDVector3d.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 //__BENTLEY_INTERNAL_ONLY__
@@ -19,6 +19,8 @@ BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 struct JsDPoint3dDVector3dDVector3d: JsGeomWrapperBase<DPoint3dDVec3dDVec3d>
 {
 public:
+    JsDPoint3dDVector3dDVector3d (){}
+
     JsDPoint3dDVector3dDVector3d (DPoint3dDVec3dDVec3dCR data) {m_data = data;}
     JsDPoint3dDVector3dDVector3d (DPoint3dCR origin, DVec3dCR vectorU, DVec3dCR vectorV)
         {
@@ -31,7 +33,10 @@ public:
         
     JsDPoint3dDVector3dDVector3dP Clone () { return new JsDPoint3dDVector3dDVector3d (m_data);}
 
-    JsDPoint3dP GetPoint (){return new JsDPoint3d (m_data.origin);}
+    JsDPoint3dP Evaluate (double u, double v){return new JsDPoint3d (m_data.origin + m_data.vectorU * u + m_data.vectorV * v);}
+
+
+    JsDPoint3dP GetOrigin (){return new JsDPoint3d (m_data.origin);}
     JsDVector3dP GetVectorU (){return new JsDVector3d (m_data.vectorU);}
     JsDVector3dP GetVectorV (){return new JsDVector3d (m_data.vectorV);}
 

@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/Annotations/TextAnnotationElement.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -113,7 +113,6 @@ public:
     
     TextAnnotationElementCPtr Insert() { return GetDgnDb().Elements().Insert<TextAnnotationElement>(*this); }
     TextAnnotationElementCPtr Update() { return GetDgnDb().Elements().Update<TextAnnotationElement>(*this); }
-    DgnDbStatus Delete() { return GetDgnDb().Elements().Delete(*this); }
 };
 
 namespace dgn_ElementHandler
@@ -158,7 +157,6 @@ public:
     
     SpatialTextAnnotationElementCPtr Insert() { return GetDgnDb().Elements().Insert<SpatialTextAnnotationElement>(*this); }
     SpatialTextAnnotationElementCPtr Update() { return GetDgnDb().Elements().Update<SpatialTextAnnotationElement>(*this); }
-    DgnDbStatus Delete() { return GetDgnDb().Elements().Delete(*this); }
 };
 
 namespace dgn_ElementHandler
