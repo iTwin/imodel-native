@@ -17,8 +17,38 @@ module DgnScriptTests {
         categoryName: string;
     };
 
+    var shiftXSize = 5.0;
+    var shiftYsize = 2.5;
+    function Shift (g: be.Geometry, dx: number, dy: number)
+        {
+        g.TryTransformInPlace (be.Transform.CreateTranslationXYZ (dx*shiftXSize, dy*shiftYsize, 0.0));
+        }
+    function ShowPoint (builder : be.ElementGeometryBuilder, point: be.DPoint3d)
+        {
+        var arc = be.EllipticArc.CreateCircleXY (point, 0.05);
+        builder.Append (arc);
+        }
+
+    function ShowArc (builder: be.ElementGeometryBuilder, arc: be.EllipticArc )
+        {
+        builder.Append (arc);
+        ShowPoint (builder, arc.PointAtFraction (0.0));
+        var basis = arc.GetBasisPlane ();
+        builder.Append (new be.LineSegment (basis.Evaluate (0,0), basis.Evaluate(1.4,0)));
+        builder.Append (new be.LineSegment (basis.Evaluate (0,0), basis.Evaluate(0,0.95)));
+        var points = new be.DPoint3dArray ();
+            points.Add (basis.Evaluate (1,-1));
+            points.Add (basis.Evaluate (1,1));
+            points.Add (basis.Evaluate (-1,1));
+            points.Add (basis.Evaluate (-1,-1));
+            points.Add (basis.Evaluate (1,-1));
+        builder.Append (new be.LineString (points));
+        }
+
+
     function TestDgnDbScript(db: be.DgnDb, params: Params): number
     {
+        var zz = 0.1;
         // Try out the new categories iterator
         var catid: be.DgnObjectId = null;
         var categories: be.DgnObjectIdSet = be.DgnCategory.QueryCategories(db);
@@ -42,41 +72,82 @@ module DgnScriptTests {
         //  Try out SolidPrimitive
         var builder = new be.ElementGeometryBuilder(ele, new be.DPoint3d(0, 0, 0), new be.YawPitchRollAngles(0, 0, 0));
 
+        var shiftCount = 0;
+
         var sphere = be.DgnSphere.CreateSphere(new be.DPoint3d(0, 0, 0), 1.0);
+        Shift (sphere, shiftCount, 0);
         builder.AppendSolidPrimitive(sphere);
 
-        var arc = new be.EllipticArc (
-                    new be.DPoint3d (2,2,2),
-                    new be.DVector3d (2,0,0),
-                    new be.DVector3d (0,2,0),
-                    be.Angle.CreateDegrees (0.0),
+        var cone = be.DgnCone.CreateCircularCone (
+                new be.DPoint3d (0,0,0),
+                new be.DPoint3d (1,1,0),
+                0.5, 0.3, true);
+        Shift (cone, shiftCount, 1);
+        builder.AppendSolidPrimitive(cone);
+        shiftCount++;
+        var center = new be.DPoint3d (0,0,zz);
+        var vector0 = new be.DVector3d (2,1,0).Scale (0.3);
+        var vector90 = new be.DVector3d (1,4,0).Scale(0.3);
+        var arc = new be.EllipticArc (center, vector0, vector90,
+                    be.Angle.CreateDegrees (-10.0),
                     be.Angle.CreateDegrees (95.0)
                     );
-         builder.Append (arc);
+
+        var arcPerp = arc.CloneWithPerpendicularAxes ();
+        Shift (arc, shiftCount, 0);
+        Shift (arcPerp, shiftCount, 1);
+
+        ShowArc (builder, arc);
+        ShowArc (builder, arcPerp);
 
 
-        var line = new be.LineSegment (new be.DPoint3d (0,0,0), new be.DPoint3d(0,4,0));
+        var centerToCenterVector = arc.GetCenter ().VectorTo (arcPerp.GetCenter ());
+        var centerToCenterLine  = new be.LineSegment (arc.GetCenter (), arc.GetCenter().Plus (centerToCenterVector));
+        var startTestLine = new be.LineSegment (arc.PointAtFraction (0.0), arc.PointAtFraction (0.0).Plus (centerToCenterVector));
+        var endTestLine   = new be.LineSegment (arc.PointAtFraction (1.0), arc.PointAtFraction (1.0).Plus (centerToCenterVector));
+        builder.Append (centerToCenterLine);
+        builder.Append (startTestLine);
+        builder.Append (endTestLine);
+        var line = new be.LineSegment (new be.DPoint3d (0,0,zz), new be.DPoint3d(0,4,zz));
         builder.Append (line);
+        shiftCount++;
 
         var points = new be.DPoint3dArray ();
-            points.Add (new be.DPoint3d (0,4,0));
-            points.Add (new be.DPoint3d (1,4,0));
-            points.Add (new be.DPoint3d (1,5,0));
-            points.Add (new be.DPoint3d (0,5,0));
-            points.Add (new be.DPoint3d (0,4.5,0));
-            points.Add (new be.DPoint3d (0.5,4.5,0));
+            points.Add (new be.DPoint3d (0,0,zz));
+            points.Add (new be.DPoint3d (1,0,zz));
+            points.Add (new be.DPoint3d (1,1,zz));
+            points.Add (new be.DPoint3d (0,1,zz));
+            points.Add (new be.DPoint3d (0,0.4,zz));
+            points.Add (new be.DPoint3d (0.5,0.7,zz));
         var linestring = new be.LineString (points);
+        Shift (linestring, shiftCount, 0);
+        shiftCount++;
         builder.Append (linestring);
         var catenary = be.CatenaryCurve.CreateFromCoefficientAndXLimits (
-                    new be.DPoint3d (0,0,0),
+                    new be.DPoint3d (0,0,zz),
                     new be.DVector3d (1,0,0),
                     new be.DVector3d (0,1,0),
-                     4.0,
-                    -2.0,
-                     6.0
+                     1.0,
+                    -0.5,
+                     1.0
                     );
+        Shift (catenary, shiftCount, 0);
+        shiftCount++;
         builder.Append (catenary);
 
+        var arc3 = be.EllipticArc.CreateCircleStartMidEnd (new be.DPoint3d (1,0,0), new be.DPoint3d (0,1,0), new be.DPoint3d (-1,0,0));
+        Shift(arc3, shiftCount,0);
+        shiftCount++;
+        builder.Append (arc3);
+
+        var bspline2 = be.BsplineCurve.CreateFromPoles (points, 2);
+        Shift (bspline2, shiftCount,0);      builder.Append (bspline2);
+        var bspline3 = be.BsplineCurve.CreateFromPoles (points, 3);
+        Shift (bspline3, shiftCount, 2);     builder.Append (bspline3);
+        var bspline4 = be.BsplineCurve.CreateFromPoles (points, 4);
+        Shift (bspline4, shiftCount, 4);     builder.Append (bspline4);
+        var bspline5 = be.BsplineCurve.CreateFromPoles (points, 5);
+        Shift (bspline5, shiftCount, 6);     builder.Append (bspline5);
 
 
         if (0 != builder.SetGeomStreamAndPlacement(ele))
