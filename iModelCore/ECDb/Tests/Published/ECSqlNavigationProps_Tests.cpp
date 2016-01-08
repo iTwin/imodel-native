@@ -12,7 +12,71 @@ BEGIN_ECDBUNITTESTS_NAMESPACE
 
 struct ECSqlNavigationPropertyTestFixture : ECDbTestFixture
     {
+    protected:
+        void AssertPrepare(Utf8CP ecsql, bool expectedToSucceed, Utf8CP assertMessage) const
+            {
+            ECSqlStatement stmt;
+            ECSqlStatus stat = stmt.Prepare(GetECDb(), ecsql);
+            if (expectedToSucceed)
+                ASSERT_EQ(ECSqlStatus::Success, stat) << assertMessage << " - ECSQL: " << ecsql;
+            else
+                ASSERT_EQ(ECSqlStatus::InvalidECSql, stat) << assertMessage << " - ECSQL: " << ecsql;
+            }
     };
+
+//---------------------------------------------------------------------------------------
+// @bsiclass                                     Krischan.Eberle                 01/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlNavigationPropertyTestFixture, ECSqlSupport)
+    {
+    SetupECDb("ecsqlnavpropsupport.ecdb",
+              SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
+                         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+                         "    <ECEntityClass typeName='A'>"
+                         "        <ECProperty propertyName='PA' typeName='int' />"
+                         "        <ECNavigationProperty propertyName='BChildren' relationshipName='AHasB' direction='Forward' />"
+                         "    </ECEntityClass>"
+                         "    <ECEntityClass typeName='B'>"
+                         "        <ECProperty propertyName='PB' typeName='int' />"
+                         "        <ECNavigationProperty propertyName='AParent' relationshipName='AHasB' direction='Backward' />"
+                         "    </ECEntityClass>"
+                         "    <ECEntityClass typeName='C'>"
+                         "        <ECProperty propertyName='PC' typeName='int' />"
+                         "        <ECNavigationProperty propertyName='DChildren' relationshipName='CHasDLinkTable' direction='Forward' />"
+                         "    </ECEntityClass>"
+                         "    <ECEntityClass typeName='D'>"
+                         "        <ECProperty propertyName='PD' typeName='int' />"
+                         "        <ECNavigationProperty propertyName='CParent' relationshipName='CHasDLinkTable' direction='Backward' />"
+                         "    </ECEntityClass>"
+                         "   <ECRelationshipClass typeName='AHasB' strength='Embedding'>"
+                         "      <Source cardinality='(0,1)' polymorphic='False'>"
+                         "          <Class class ='A' />"
+                         "      </Source>"
+                         "      <Target cardinality='(0,N)' polymorphic='False'>"
+                         "          <Class class ='B' />"
+                         "      </Target>"
+                         "   </ECRelationshipClass>"
+                         "   <ECRelationshipClass typeName='CHasDLinkTable' strength='Referencing'>"
+                         "      <Source cardinality='(0,1)' polymorphic='False'>"
+                         "          <Class class ='C' />"
+                         "      </Source>"
+                         "      <Target cardinality='(0,N)' polymorphic='False'>"
+                         "          <Class class ='D' />"
+                         "      </Target>"
+                         "      <ECProperty propertyName='P1' typeName='int' />"
+                         "    </ECRelationshipClass>"
+                         "</ECSchema>"));
+
+ /*   AssertPrepare("INSERT INTO ts.B (PB,AParent) VALUES(123,?)", true, "NavProp with single related instance is expected to be supported.");
+    AssertPrepare("INSERT INTO ts.A (PA,BChildren) VALUES(123,?)", false, "NavProp with multiple related instances is not supported.");
+    AssertPrepare("INSERT INTO ts.D (PD,CParent) VALUES(123,?)", false, "NavProp with link table relationship is not supported.");
+    AssertPrepare("INSERT INTO ts.C (PC,DChildren) VALUES(123,?)", false, "NavProp with link table relationship is not supported.");
+
+    AssertPrepare("UPDATE ONLY ts.B SET AParent=?", false, "Updating NavProp is not supported.");
+    AssertPrepare("UPDATE ONLY ts.A SET BChildren=?", false, "Updating NavProp is not supported.");
+    AssertPrepare("UPDATE ONLY ts.D SET CParent=?", false, "Updating NavProp is not supported.");
+    AssertPrepare("UPDATE ONLY ts.C SET DChildren=?", false, "Updating NavProp is not supported.");*/
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                 12/15

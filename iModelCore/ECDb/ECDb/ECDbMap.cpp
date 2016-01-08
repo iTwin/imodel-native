@@ -224,6 +224,16 @@ MapStatus ECDbMap::DoMapSchemas(bvector<ECSchemaCP> const& mapSchemas, bool forc
             return status;
         }
 
+    //NavigationPropertyMaps can only be finished after all relationships have been mapped
+    for (NavigationPropertyMap* navPropMap : GetSchemaImportContext()->GetNavigationPropertyMaps())
+        {
+        if (SUCCESS != navPropMap->Postprocess(*this))
+            {
+            LOG.errorv("Finishing set-up of NavigationPropertyMap failed.");
+            return MapStatus::Error;
+            }
+        }
+
     BeAssert(status != MapStatus::BaseClassesNotMapped && "Expected to resolve all class maps by now.");
     for (std::pair<ClassMap const*, std::unique_ptr<ClassMapInfo>> const& kvpair : GetSchemaImportContext()->GetClassMapInfoCache())
         {

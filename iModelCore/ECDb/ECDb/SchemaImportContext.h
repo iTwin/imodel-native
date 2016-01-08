@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/SchemaImportContext.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -94,6 +94,8 @@ private:
     mutable std::map<ECN::ECClassCP, std::unique_ptr<UserECDbMapStrategy>> m_userStrategyCache;
     std::vector<std::pair<ClassMap const*, std::unique_ptr<ClassMapInfo>>> m_classMapInfoCache;
 
+    std::vector<NavigationPropertyMap*> m_navPropMaps;
+
     UserECDbMapStrategy* GetUserStrategyP(ECN::ECClassCR, ECN::ECDbClassMap const*) const;
 
 public:
@@ -108,6 +110,9 @@ public:
 
     void CacheClassMapInfo(ClassMap const&, std::unique_ptr<ClassMapInfo>&);
     std::vector<std::pair<ClassMap const*, std::unique_ptr<ClassMapInfo>>> const& GetClassMapInfoCache() const { return m_classMapInfoCache; }
+
+    void AddNavigationPropertyMap(NavigationPropertyMap& propMap) { m_navPropMaps.push_back(&propMap); }
+    std::vector<NavigationPropertyMap*> const& GetNavigationPropertyMaps() const {return m_navPropMaps; }
 
     SchemaImportECDbMapDb& GetECDbMapDb() { return m_ecdbMapDb; }
     };

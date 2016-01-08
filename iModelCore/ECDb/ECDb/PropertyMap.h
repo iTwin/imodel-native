@@ -193,8 +193,7 @@ public:
     //! For debugging and logging
     Utf8String ToString() const;
 
-    PropertyMapPtr Clone(ECDbSqlTable const* newContext = nullptr) const { return Clone(*this, newContext, nullptr); }
-    static PropertyMapPtr Clone(PropertyMapCR proto, ECDbSqlTable const* newContext, PropertyMap const* parentPropertyMap);
+    static PropertyMapPtr Clone(ECDbMapCR ecdbMap, PropertyMapCR proto, ECDbSqlTable const* newContext, PropertyMap const* parentPropertyMap);
 
     //! An abstract factory method that constructs a subtype of PropertyMap, based on the ecProperty, hints, and mapping rules
     static PropertyMapPtr CreateAndEvaluateMapping (ECN::ECPropertyCR ecProperty, ECDbMapCR ecDbMap, ECN::ECClassCR rootClass, Utf8CP propertyAccessString, ECDbSqlTable const* primaryTable, PropertyMapCP parentPropertyMap);
@@ -206,9 +205,10 @@ public:
 //=======================================================================================
 struct PropertyMapSingleColumn : PropertyMap
 {
-friend PropertyMapPtr PropertyMap::CreateAndEvaluateMapping (ECN::ECPropertyCR ecProperty, ECDbMapCR ecDbMap, ECN::ECClassCR rootClass, Utf8CP propertyAccessString, ECDbSqlTable const* primaryTable, PropertyMapCP parentPropertyMap);
-friend PropertyMapPtr PropertyMap::Clone(PropertyMapCR proto, ECDbSqlTable const* newContext, PropertyMap const* parentPropertyMap);
 private:
+    friend PropertyMapPtr PropertyMap::CreateAndEvaluateMapping (ECN::ECPropertyCR, ECDbMapCR, ECN::ECClassCR rootClass, Utf8CP propertyAccessString, ECDbSqlTable const* primaryTable, PropertyMapCP parentPropertyMap);
+    friend PropertyMapPtr PropertyMap::Clone(ECDbMapCR, PropertyMapCR proto, ECDbSqlTable const* newContext, PropertyMap const* parentPropertyMap);
+
     ECN::PrimitiveECPropertyCP m_primitiveProperty;
 
     virtual bool _IsVirtual () const override;
@@ -262,10 +262,10 @@ public:
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct PropertyMapStruct : PropertyMap
 {
-friend PropertyMapPtr PropertyMap::CreateAndEvaluateMapping(ECN::ECPropertyCR ecProperty, ECDbMapCR ecDbMap, ECN::ECClassCR rootClass, Utf8CP propertyAccessString, ECDbSqlTable const* primaryTable, PropertyMapCP parentPropertyMap);
-friend PropertyMapPtr PropertyMap::Clone(PropertyMapCR proto, ECDbSqlTable const* newContext, PropertyMap const* parentPropertyMap);
-
 private:
+    friend PropertyMapPtr PropertyMap::CreateAndEvaluateMapping(ECN::ECPropertyCR ecProperty, ECDbMapCR ecDbMap, ECN::ECClassCR rootClass, Utf8CP propertyAccessString, ECDbSqlTable const* primaryTable, PropertyMapCP parentPropertyMap);
+    friend PropertyMapPtr PropertyMap::Clone(ECDbMapCR, PropertyMapCR proto, ECDbSqlTable const* newContext, PropertyMap const* parentPropertyMap);
+
     virtual void _GetColumns(std::vector<ECDbSqlColumn const*>& columns) const override;
     virtual BentleyStatus _FindOrCreateColumnsInTable(SchemaImportContext*, ClassMap& classMap, ClassMapInfo const* classMapInfo) override;
     virtual BentleyStatus _Load(ECDbClassMapInfo const& classMapInfo) override;
@@ -275,12 +275,12 @@ private:
     virtual Utf8String _ToString() const override;
 
     PropertyMapStruct(ECN::ECPropertyCR ecProperty, Utf8CP propertyAccessString, ECDbSqlTable const* primaryTable, PropertyMapCP parentPropertyMap);
-    PropertyMapStruct(PropertyMapStruct const& proto, ECDbSqlTable const* primaryTable, PropertyMap const* parentPropertyMap)
+    PropertyMapStruct(ECDbMapCR ecdbMap, PropertyMapStruct const& proto, ECDbSqlTable const* primaryTable, PropertyMap const* parentPropertyMap)
         :PropertyMap(proto.GetProperty(), proto.GetPropertyAccessString(), primaryTable, parentPropertyMap)
         {
-        for (auto const& protoChild : proto.m_children)
+        for (PropertyMap const* protoChild : proto.m_children)
             {
-            m_children.AddPropertyMap(protoChild->GetProperty().GetName().c_str(), PropertyMap::Clone(*protoChild, primaryTable, this));
+            m_children.AddPropertyMap(protoChild->GetProperty().GetName().c_str(), PropertyMap::Clone(ecdbMap, *protoChild, primaryTable, this));
             }
         }
 
@@ -298,9 +298,10 @@ public:
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct PropertyMapStructArray : PropertyMap
 {
-friend PropertyMapPtr PropertyMap::CreateAndEvaluateMapping(ECN::ECPropertyCR ecProperty, ECDbMapCR ecDbMap, ECN::ECClassCR rootClass, Utf8CP propertyAccessString, ECDbSqlTable const* primaryTable, PropertyMapCP parentPropertyMap);
-friend PropertyMapPtr PropertyMap::Clone(PropertyMapCR proto, ECDbSqlTable const* newContext, PropertyMap const* parentPropertyMap);
 private:
+    friend PropertyMapPtr PropertyMap::CreateAndEvaluateMapping(ECN::ECPropertyCR ecProperty, ECDbMapCR ecDbMap, ECN::ECClassCR rootClass, Utf8CP propertyAccessString, ECDbSqlTable const* primaryTable, PropertyMapCP parentPropertyMap);
+    friend PropertyMapPtr PropertyMap::Clone(ECDbMapCR, PropertyMapCR proto, ECDbSqlTable const* newContext, PropertyMap const* parentPropertyMap);
+
     // WIP_ECDB: These seem redundant, m_elementType will always be the ECClass from m_classMapForProperty, right?
     ECN::ECClassCR m_structElementType;
 
@@ -327,9 +328,10 @@ public:
 //=======================================================================================
 struct PropertyMapPrimitiveArray : PropertyMapSingleColumn
 {
-friend PropertyMapPtr PropertyMap::CreateAndEvaluateMapping (ECN::ECPropertyCR ecProperty, ECDbMapCR ecDbMap, ECN::ECClassCR rootClass, Utf8CP propertyAccessString, ECDbSqlTable const* primaryTable, PropertyMapCP parentPropertyMap);
-friend PropertyMapPtr PropertyMap::Clone(PropertyMapCR proto, ECDbSqlTable const* newContext, PropertyMap const* parentPropertyMap);
 private:
+    friend PropertyMapPtr PropertyMap::CreateAndEvaluateMapping (ECN::ECPropertyCR ecProperty, ECDbMapCR ecDbMap, ECN::ECClassCR rootClass, Utf8CP propertyAccessString, ECDbSqlTable const* primaryTable, PropertyMapCP parentPropertyMap);
+    friend PropertyMapPtr PropertyMap::Clone(ECDbMapCR, PropertyMapCR proto, ECDbSqlTable const* newContext, PropertyMap const* parentPropertyMap);
+
     ECN::StandaloneECEnablerP       m_primitiveArrayEnabler;
 
     //! basic constructor
@@ -347,9 +349,10 @@ private:
 //=======================================================================================
 struct PropertyMapPoint : PropertyMap
 {
-friend PropertyMapPtr PropertyMap::CreateAndEvaluateMapping (ECN::ECPropertyCR ecProperty, ECDbMapCR ecDbMap, ECN::ECClassCR rootClass, Utf8CP propertyAccessString, ECDbSqlTable const* primaryTable, PropertyMapCP parentPropertyMap);
-friend PropertyMapPtr PropertyMap::Clone(PropertyMapCR proto, ECDbSqlTable const* newContext, PropertyMap const* parentPropertyMap);
 private:
+    friend PropertyMapPtr PropertyMap::CreateAndEvaluateMapping (ECN::ECPropertyCR ecProperty, ECDbMapCR ecDbMap, ECN::ECClassCR rootClass, Utf8CP propertyAccessString, ECDbSqlTable const* primaryTable, PropertyMapCP parentPropertyMap);
+    friend PropertyMapPtr PropertyMap::Clone(ECDbMapCR, PropertyMapCR proto, ECDbSqlTable const* newContext, PropertyMap const* parentPropertyMap);
+
     //! true if 3d, false if 2d
     bool            m_is3d;
 
@@ -389,7 +392,7 @@ struct NavigationPropertyMap : PropertyMap
     {
 private:
     friend PropertyMapPtr PropertyMap::CreateAndEvaluateMapping(ECN::ECPropertyCR ecProperty, ECDbMapCR ecDbMap, ECN::ECClassCR rootClass, Utf8CP propertyAccessString, ECDbSqlTable const* primaryTable, PropertyMapCP parentPropertyMap);
-    friend PropertyMapPtr PropertyMap::Clone(PropertyMapCR proto, ECDbSqlTable const* newContext, PropertyMap const* parentPropertyMap);
+    friend PropertyMapPtr PropertyMap::Clone(ECDbMapCR, PropertyMapCR proto, ECDbSqlTable const* newContext, PropertyMap const* parentPropertyMap);
 
     ECN::NavigationECPropertyCP m_navigationProperty;
     RelationshipClassMap const* m_relClassMap;
@@ -401,17 +404,20 @@ private:
     //void _GetColumns(std::vector<ECDbSqlColumn const*>& columns) const;
 
     NavigationPropertyMap(ECN::ECPropertyCR, ECDbMapCR, Utf8CP propertyAccessString, ECDbSqlTable const* primaryTable, PropertyMapCP parentPropertyMap);
-    NavigationPropertyMap(NavigationPropertyMap const& proto, ECDbSqlTable const* primaryTable, PropertyMap const* parentPropertyMap)
-        :PropertyMap(proto.GetProperty(), proto.GetPropertyAccessString(), primaryTable, parentPropertyMap), m_navigationProperty(proto.m_navigationProperty)
-        {}
+    NavigationPropertyMap(ECDbMapCR ecdbMap, NavigationPropertyMap const& proto, ECDbSqlTable const* primaryTable, PropertyMap const* parentPropertyMap);
 
     ECN::ECRelationshipEnd GetConstraintEnd() const;
 
 public:
     ~NavigationPropertyMap() {}
 
+    BentleyStatus Postprocess(ECDbMapCR);
+
+    RelationshipClassMap const& GetRelationshipClassMap() const { BeAssert(m_relClassMap != nullptr); return *m_relClassMap; }
     bool CanOnlyHaveOneRelatedInstance() const { return CanOnlyHaveOneRelatedInstance(*m_navigationProperty); }
     static bool CanOnlyHaveOneRelatedInstance(ECN::NavigationECPropertyCR);
+
+    ECN::ECRelationshipConstraintCR GetConstraint() const { return GetConstraint(*m_navigationProperty); }
     static ECN::ECRelationshipConstraintCR GetConstraint(ECN::NavigationECPropertyCR);
     };
 

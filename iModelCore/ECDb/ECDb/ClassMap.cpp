@@ -554,20 +554,18 @@ MapStatus ClassMap::_OnInitialized()
 //---------------------------------------------------------------------------------------
 MapStatus ClassMap::AddPropertyMaps(SchemaImportContext* schemaImportContext, IClassMap const* parentClassMap, ECDbClassMapInfo const* loadInfo,ClassMapInfo const* classMapInfo)
     {
-
     bool isJoinedTable = isJoinedTable = Enum::Contains(GetMapStrategy().GetOptions(), ECDbMapStrategy::Options::JoinedTable);
     bool isMappingPhase = classMapInfo != nullptr && loadInfo == nullptr;
     if (!isMappingPhase && isJoinedTable)
         parentClassMap = nullptr;
 
-    std::vector<ECPropertyP> propertiesToMap;
+    std::vector<ECPropertyCP> propertiesToMap;
     PropertyMapPtr propMap = nullptr;
-    for (auto property : m_ecClass.GetProperties(true))
+    for (ECPropertyCP property : m_ecClass.GetProperties(true))
         {
-        Utf8CP propertyAccessString = property->GetName().c_str();
         propMap = nullptr;
         if (&property->GetClass() != &m_ecClass && parentClassMap != nullptr)
-            parentClassMap->GetPropertyMaps().TryGetPropertyMap(propMap, propertyAccessString);
+            parentClassMap->GetPropertyMaps().TryGetPropertyMap(propMap, property->GetName().c_str());
 
         if (propMap == nullptr)
             propertiesToMap.push_back(property);
@@ -576,14 +574,14 @@ MapStatus ClassMap::AddPropertyMaps(SchemaImportContext* schemaImportContext, IC
             if (!isJoinedTable)
                 GetPropertyMapsR().AddPropertyMap(propMap);
             else
-                GetPropertyMapsR().AddPropertyMap(propMap->Clone(&GetJoinedTable()));
+                GetPropertyMapsR().AddPropertyMap(PropertyMap::Clone(m_ecDbMap, *propMap, &GetJoinedTable(), nullptr));
             }
         }
 
     if (loadInfo == nullptr)
         GetColumnFactoryR().Update();
 
-    for (auto property : propertiesToMap)
+    for (ECPropertyCP property : propertiesToMap)
         {
         Utf8CP propertyAccessString = property->GetName().c_str();
         propMap = PropertyMap::CreateAndEvaluateMapping(*property, m_ecDbMap, m_ecClass, propertyAccessString, &GetJoinedTable(), nullptr);

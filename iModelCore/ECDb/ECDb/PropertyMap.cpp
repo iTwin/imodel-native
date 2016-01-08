@@ -26,7 +26,7 @@ PropertyMap::PropertyMap (ECPropertyCR ecProperty, Utf8CP propertyAccessString, 
 // @bsimethod                                                Affan.Khan          10/2015
 //---------------------------------------------------------------------------------------
 //static
-PropertyMapPtr PropertyMap::Clone(PropertyMapCR proto , ECDbSqlTable const* newContext , PropertyMap const* parentPropertyMap ) 
+PropertyMapPtr PropertyMap::Clone(ECDbMapCR ecdbMap, PropertyMapCR proto, ECDbSqlTable const* newContext , PropertyMap const* parentPropertyMap ) 
     {
     if (!newContext)
         newContext = proto.GetPrimaryTable();
@@ -49,11 +49,11 @@ PropertyMapPtr PropertyMap::Clone(PropertyMapCR proto , ECDbSqlTable const* newC
         }
     else if (auto protoMap = dynamic_cast<PropertyMapStruct const*>(&proto))
         {
-        return new PropertyMapStruct(*protoMap, newContext, parentPropertyMap);
+        return new PropertyMapStruct(ecdbMap, *protoMap, newContext, parentPropertyMap);
         }
     else if (auto protoMap = dynamic_cast<NavigationPropertyMap const*>(&proto))
         {
-        return new NavigationPropertyMap(*protoMap, newContext, parentPropertyMap);
+        return new NavigationPropertyMap(ecdbMap, *protoMap, newContext, parentPropertyMap);
         }
 
     BeAssert(false && "Case is not handled");
@@ -968,14 +968,42 @@ Utf8String PropertyMapPrimitiveArray::_ToString() const
 // @bsimethod                                 Krischan.Eberle                      12/2015
 //---------------------------------------------------------------------------------------
 NavigationPropertyMap::NavigationPropertyMap(ECN::ECPropertyCR prop, ECDbMapCR ecdbMap, Utf8CP propertyAccessString, ECDbSqlTable const* primaryTable, PropertyMapCP parentPropertyMap)
-    : PropertyMap(prop, propertyAccessString, primaryTable, parentPropertyMap), m_navigationProperty(prop.GetAsNavigationPropertyCP())
+    : PropertyMap(prop, propertyAccessString, primaryTable, parentPropertyMap), m_navigationProperty(prop.GetAsNavigationPropertyCP()), m_relClassMap(nullptr)
     {
     BeAssert(prop.GetIsNavigation());
 
-    IClassMap const* relClassMap = ecdbMap.GetClassMap(*m_navigationProperty->GetRelationshipClass(), true);
-    BeAssert(relClassMap != nullptr && relClassMap->IsRelationshipClassMap());
-    m_relClassMap = static_cast<RelationshipClassMap const*> (relClassMap);
+    //if during schema import, we need to wait with finishing the nav prop map set up to the end when all relationships have been imported and mapped
+    if (ecdbMap.IsImportingSchema())
+        ecdbMap.GetSchemaImportContext()->AddNavigationPropertyMap(*this);
+    else
+        Postprocess(ecdbMap);
     }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                 Krischan.Eberle                      01/2016
+//---------------------------------------------------------------------------------------
+NavigationPropertyMap::NavigationPropertyMap(ECDbMapCR ecdbMap, NavigationPropertyMap const& proto, ECDbSqlTable const* primaryTable, PropertyMap const* parentPropertyMap) :PropertyMap(proto.GetProperty(), proto.GetPropertyAccessString(), primaryTable, parentPropertyMap), m_navigationProperty(proto.m_navigationProperty), m_relClassMap(proto.m_relClassMap)
+    {
+    BeAssert(ecdbMap.IsImportingSchema() && "This clone constructor is expected to only be called during schema import");
+    ecdbMap.GetSchemaImportContext()->AddNavigationPropertyMap(*this);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                 Krischan.Eberle                      01/2016
+//---------------------------------------------------------------------------------------
+BentleyStatus NavigationPropertyMap::Postprocess(ECDbMapCR ecdbMap)
+    {
+    IClassMap const* relClassMap = ecdbMap.GetClassMap(*m_navigationProperty->GetRelationshipClass(), true);
+    if (relClassMap == nullptr || !relClassMap->IsRelationshipClassMap())
+        {
+        BeAssert(false && "RelationshipClassMap should not be nullptr when finishing the NavigationPropMap");
+        return ERROR;
+        }
+
+    m_relClassMap = static_cast<RelationshipClassMap const*> (relClassMap);
+    return SUCCESS;
+    }
+
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                      01/2016
