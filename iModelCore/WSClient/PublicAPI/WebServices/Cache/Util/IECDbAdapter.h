@@ -2,7 +2,7 @@
  |
  |     $Source: PublicAPI/WebServices/Cache/Util/IECDbAdapter.h $
  |
- |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -32,6 +32,9 @@ typedef std::shared_ptr<Savepoint> SavepointPtr;
 
 struct EXPORT_VTABLE_ATTRIBUTE IECDbAdapter
     {
+    public:
+        struct DeleteListener;
+
     public:
         virtual ~IECDbAdapter()
             {};
@@ -137,7 +140,31 @@ struct EXPORT_VTABLE_ATTRIBUTE IECDbAdapter
         virtual ECInstanceKey FindRelationship(ECRelationshipClassCP relClass, ECInstanceKeyCR source, ECInstanceKeyCR target) = 0;
         virtual bool HasRelationship(ECRelationshipClassCP relClass, ECInstanceKeyCR source, ECInstanceKeyCR target) = 0;
 
+        //! Delete instances by nofiying any related instance deletion by embedded or holding relationship rules.
+        //! Will invoke each registered DeleteListener for each deleted instance skipping deleted relationships.
+        virtual BentleyStatus DeleteInstances(const ECInstanceKeyMultiMap& instances) = 0;
+
+        //! Delete relationship.
+        //! Will not invoke any DeleteListener for relationship instance.
         virtual BentleyStatus DeleteRelationship(ECRelationshipClassCP relClass, ECInstanceKeyCR source, ECInstanceKeyCR target) = 0;
+
+        virtual void RegisterDeleteListener(DeleteListener* listener) = 0;
+        virtual void UnRegisterDeleteListener(DeleteListener* listener) = 0;
+    };
+
+/*--------------------------------------------------------------------------------------+
+* @bsiclass                                                     Vincas.Razma    12/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+struct IECDbAdapter::DeleteListener
+    {
+    public:
+        //! Do any cleanup work if needed.
+        //! Do not create any relationships to specified instance, modify instance itself or do deletions in this method.
+        //! @param[in] ecClass class of instance that will be deleted
+        //! @param[in] ecInstanceId id of instance that will be deleted
+        //! @param[out] additionalToDeleteOut put any instances that require additional deletion after this is deleted
+        //! @return ERROR to stop further deletion due to errors
+        virtual BentleyStatus OnBeforeDelete(ECClassCR ecClass, ECInstanceId ecInstanceId, bset<ECInstanceKey>& additionalToDeleteOut) = 0;
     };
 
 typedef IECDbAdapter& IECDbAdapterR;
