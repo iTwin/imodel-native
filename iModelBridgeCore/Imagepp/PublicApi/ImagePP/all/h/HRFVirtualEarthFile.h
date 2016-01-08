@@ -11,18 +11,18 @@
 //-----------------------------------------------------------------------------
 #pragma once
 
-#include <ImagePP/h/HArrayAutoPtr.h>
 #include <Imagepp/all/h/HFCHTTPConnection.h>
 #include "HFCMacros.h"
-#include "HFCSemaphore.h"
 #include "HRFException.h"
 #include "HRFRasterFile.h"
 #include "HRFRasterFileCapabilities.h"
-#include "HRFTilePool.h"
 
 BEGIN_IMAGEPP_NAMESPACE
+
 class HRPPixelType;
-class HRFVirtualEarthTileReaderThread;
+struct WorkerPool;
+struct VirtualEarthTileQuery;
+class HRFVirtualEarthFile;
 
 // The most common ImagerySet that can be used with HRFVirtualEarthFile::ComposeURL. 
 // See Bing Maps REST API(http://msdn.microsoft.com/en-us/library/ff701721.aspx/)
@@ -73,24 +73,6 @@ private:
     HRFVirtualEarthConnection& operator=(const HRFVirtualEarthConnection);
     };
 
-//-----------------------------------------------------------------------------
-// HRFVirtualEarthTileRequest struct
-//-----------------------------------------------------------------------------
-struct HRFVirtualEarthTileRequest
-{
-    public:
-        uint64_t              m_TileID;
-        uint64_t              m_PosX;
-        uint64_t              m_PosY;
-        int                    m_LevelOfDetail;
-        uint32_t               m_BlockWidth;
-        uint32_t               m_BlockHeight;
-        uint32_t               m_BlockSizeInBytes;
-        uint32_t               m_BytesPerBlockWidth;
-        uint32_t               m_Page;
-        HFCPtr<HRPPixelType>   m_PixelType;
-};
-
 
 //-----------------------------------------------------------------------------
 // HRFVirtualEarthFile class
@@ -99,7 +81,7 @@ class HRFVirtualEarthFile : public HRFRasterFile
     {
 public:
     friend class HRFVirtualEarthEditor;
-    friend class HRFVirtualEarthTileReaderThread;
+    friend struct VirtualEarthTileQuery;
 
     //Class ID for this class.
     HDECLARE_CLASS_ID(HRFFileId_VirtualEarth, HRFRasterFile)
@@ -214,16 +196,9 @@ protected:
     virtual void CancelLookAhead(uint32_t              pi_Page);
 
 private:
-
     friend struct HRFVirtualEarthCreator;
 
-    //Threading look ahead related member
-    void StartReadingThreads();
-
     HFCExclusiveKey   m_HRFKey;
-    HFCExclusiveKey   m_RequestKey;
-        list<HRFVirtualEarthTileRequest> m_RequestList;
-    HFCSemaphore      m_RequestEvent;
 
     void                QueryImageURI(WStringCR bingMapKey);
     HFCPtr<HFCBuffer>   SendAndReceiveRequest(WStringCR URLRequest) const;
@@ -235,8 +210,10 @@ private:
     ImageryProviders    m_Providers;
     WString             m_LogoURI;                // ex: "http://dev.virtualearth.net/Branding/logo_powered_by.png"
 
-    HArrayAutoPtr<HAutoPtr<HRFVirtualEarthTileReaderThread>> m_ppBlocksReadersThread;
-    HRFTilePool                                              m_TilePool;
+    WorkerPool&         GetWorkerPool();
+    std::unique_ptr<WorkerPool> m_pWorkerPool;
+
+    std::map<uint64_t, RefCountedPtr<VirtualEarthTileQuery>> m_tileQueryMap;
 
     //Disabled methods
     HRFVirtualEarthFile(const HRFVirtualEarthFile& pi_rObj);

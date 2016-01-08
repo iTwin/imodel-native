@@ -1,6 +1,6 @@
 //:>--------------------------------------------------------------------------------------+
 //:>
-//:>     $Source: PublicApi/ImagePP/all/h/HRFVirtualEarthEditor.h $
+//:>     $Source: all/gra/hrf/src/HRFVirtualEarthEditor.h $
 //:>
 //:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
@@ -9,17 +9,50 @@
 //-----------------------------------------------------------------------------
 #pragma once
 
-#include "HFCSemaphore.h"
-#include "HFCThread.h"
-#include "HGFTileIDDescriptor.h"
-#include "HRFResolutionEditor.h"
-#include "HRFTilePool.h"
+#include <Imagepp/all/h/HGFTileIDDescriptor.h>
+#include <Imagepp/all/h/HRFResolutionEditor.h>
+
+#include <ImagePPInternal/gra/Task.h>
 
 BEGIN_IMAGEPP_NAMESPACE
 class HRFVirtualEarthConnection;
 class HRFVirtualEarthFile;
-class HRFVirtualEarthTileReaderThread;
-struct HRFVirtualEarthTileRequest;
+
+//-----------------------------------------------------------------------------
+// HRFVirtualEarthTileRequest struct
+//-----------------------------------------------------------------------------
+struct HRFVirtualEarthTileRequest
+{
+    uint64_t                m_TileID;
+    uint64_t                m_PosX;
+    uint64_t                m_PosY;
+    int                     m_LevelOfDetail;
+    uint32_t                m_BlockWidth;
+    uint32_t                m_BlockHeight;
+    size_t                  m_BlockSizeInBytes;
+    size_t                  m_BytesPerBlockWidth;
+    uint32_t                m_Page;
+    HFCPtr<HRPPixelType>    m_PixelType;
+};
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   Mathieu.Marchand  1/2016
+//----------------------------------------------------------------------------------------
+struct VirtualEarthTileQuery : public WorkerPool::Task
+{
+    VirtualEarthTileQuery(HRFVirtualEarthTileRequest& tileRequest, HRFVirtualEarthFile& rasterFile) 
+    :m_tileRequest(tileRequest),m_rasterFile(rasterFile), m_dataSize(0)
+        {}
+
+    virtual ~VirtualEarthTileQuery(){};
+    
+    virtual void _Run() override;
+
+    std::unique_ptr<Byte[]>     m_data;
+    size_t                      m_dataSize;
+    HRFVirtualEarthTileRequest  m_tileRequest;
+    HRFVirtualEarthFile&        m_rasterFile;
+};
 
 //-----------------------------------------------------------------------------
 // HRFVirtualEarthEditor class
@@ -59,19 +92,13 @@ public:
 protected:
 
     //Constructor
-    HRFVirtualEarthEditor
-    (HFCPtr<HRFRasterFile> pi_rpRasterFile,
-     uint32_t              pi_Page,
-     unsigned short       pi_Resolution,
-     HFCAccessMode         pi_AccessMode);
+    HRFVirtualEarthEditor    (HFCPtr<HRFRasterFile> pi_rpRasterFile, uint32_t pi_Page, unsigned short pi_Resolution, HFCAccessMode pi_AccessMode);
 
     //Request look ahead
         virtual void                    RequestLookAhead(const HGFTileIDList& pi_rTileIDList);       
         virtual void                    InitTileRequest(uint64_t TileId, HRFVirtualEarthTileRequest& Request);
 
 private:
-
-    friend class HRFVirtualEarthTileReaderThread;
 
     HGFTileIDDescriptor m_TileIDDescriptor;
 
@@ -111,24 +138,4 @@ private:
     HRFVirtualEarthEditor& operator=(const HRFVirtualEarthEditor& pi_rObj);
     };
 
-//-----------------------------------------------------------------------------
-// HRFVirtualEarthTileReaderThread class
-//-----------------------------------------------------------------------------
-class HRFVirtualEarthTileReaderThread : public HFCThread
-    {
-public:
-    HRFVirtualEarthTileReaderThread(const string&        pi_rThreadName,
-                                    HRFVirtualEarthFile* pi_pVirtualEarthFile);
-    virtual ~HRFVirtualEarthTileReaderThread();
-
-    virtual void Go();
-
-    void         ReadBlockFromServer(HRFVirtualEarthTileRequest const& Request);
-
-private:
-
-    //Thread control
-    HFCEvent             m_ThreadStarted;
-    HRFVirtualEarthFile* m_pVirtualEarthFile;
-    };
 END_IMAGEPP_NAMESPACE
