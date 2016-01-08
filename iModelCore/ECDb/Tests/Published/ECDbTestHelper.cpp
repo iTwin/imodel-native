@@ -407,7 +407,7 @@ uint64_t ECSqlStatementHelper::assertUInt64 (int columnIndex, int64_t expectedVa
 //+---------------+---------------+---------------+---------------+---------------+------
 template <class TBeInt64Id> TBeInt64Id ECSqlStatementHelper::assertId (int columnIndex, int64_t expectedVal)
     {
-    return stmt.GetValueId (columnIndex);
+    return stmt.GetValueId<TBeInt64Id> (columnIndex);
     }
 
 //---------------------------------------------------------------------------------------

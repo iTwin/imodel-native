@@ -87,6 +87,8 @@ BEGIN_ECDBUNITTESTS_NAMESPACE
 #define BIND_BINARY(ParameterIndex, Val, binarySize, makeCopy)                                      \
       EXPECT_EQ (ECSqlStatus::Success,obj.m_bindValues.bindBinary (ParameterIndex, Val, binarySize, makeCopy));
 
+#ifdef CANNOT_REDEFINE_MACROS_ON_GCC
+
 //Methods to bind values to the named parameter.The status is assumed to be success in this case.
 #define BIND_NULL(ParameterName)                                                                    \
       EXPECT_EQ (ECSqlStatus::Success,obj.m_bindValues.bindNull (ParameterName));
@@ -117,6 +119,8 @@ BEGIN_ECDBUNITTESTS_NAMESPACE
 #define BIND_BINARY(ParameterName, Val, binarySize, makeCopy)                                       \
       EXPECT_EQ (ECSqlStatus::Success,obj.m_bindValues.bindBinary (ParameterName, Val, binarySize, makeCopy));
 
+#endif
+  
 //Compares the bind status with the status specified by the user.
 #define BIND_NULL_STATUS(ParameterIndex, expectedStatus)                                            \
       EXPECT_EQ (expectedStatus,obj.m_bindValues.bindNull (ParameterIndex));
