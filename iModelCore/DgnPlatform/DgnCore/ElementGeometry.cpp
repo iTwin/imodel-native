@@ -530,11 +530,9 @@ void GeometricPrimitive::AddToGraphic(Render::GraphicR graphic, ViewContextR con
 
         case GeometryType::TextString:
             {
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
             TextStringPtr geom = GetAsTextString();
 
-            context.AddTextString(*geom);
-#endif
+            graphic.AddTextString(*geom); // Ignores underline...
             break;
             }
 
@@ -3193,6 +3191,7 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicR graphic, ViewContextR c
                 if (SUCCESS != TextStringPersistence::DecodeFromFlatBuf(text, egOp.m_data, egOp.m_dataSize, context.GetDgnDb()))
                     break;
 
+                geomParamsChanged = text.GetGlyphSymbology(geomParams); // Modify for glyph draw (do we need to restore afterwards???)
                 DrawHelper::CookGeometryParams(context, geomParams, graphic, geomParamsChanged);
 
                 if (!context.Is3dView())
@@ -3201,7 +3200,7 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicR graphic, ViewContextR c
                     break;
                     }
 
-                context.AddTextString(text);
+                graphic.AddTextString(text);
                 break;
                 }
 
@@ -4201,6 +4200,7 @@ bool GeometryBuilder::Append(ISolidKernelEntityCR geom)
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool GeometryBuilder::Append(TextStringCR text)
     {
+    //NEEDSWORK_RENDER_GRAPHIC - Underline?
     if (m_haveLocalGeom)
         {
         DRange3d localRange;
