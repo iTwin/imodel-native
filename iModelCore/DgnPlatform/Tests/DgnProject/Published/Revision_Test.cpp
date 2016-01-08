@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/DgnProject/Published/Revision_Test.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ChangeTestFixture.h"
@@ -363,7 +363,7 @@ TEST_F(RevisionTestFixture, Codes)
     ExpectCodes(expectedCodes, createdCodes);
 
     // Create two elements with a code, and one with a default (empty) code. We only care about non-empty codes.
-    auto defaultCode = DgnAuthority::CreateDefaultCode();
+    auto defaultCode = DgnAuthority::Code::CreateEmpty();
     auto auth = NamespaceAuthority::CreateNamespaceAuthority("MyAuthority", db);
     EXPECT_EQ(DgnDbStatus::Success, auth->Insert());
 

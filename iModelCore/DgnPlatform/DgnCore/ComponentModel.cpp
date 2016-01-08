@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/ComponentModel.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -866,7 +866,7 @@ DgnElementCPtr ComponentDef::MakeInstanceOfVariation(DgnDbStatus* statusOut, Dgn
         //  Generate the item code. This will be a null code, unless there's a specified authority for the componentmodel.
         DgnAuthorityCPtr authority = cdef->GetCodeAuthority();
         if (authority.IsValid())
-            icode = authority->CreateDefaultCode();  // *** WIP_COMPONENT_MODEL -- how do I ask an Authority to issue a code?
+            icode = DgnElement::Code::CreateEmpty();  // *** WIP_COMPONENT_MODEL -- how do I ask an Authority to issue a code?
         }
 
     //  Creating the item is just a matter of copying the catalog item (and its children)

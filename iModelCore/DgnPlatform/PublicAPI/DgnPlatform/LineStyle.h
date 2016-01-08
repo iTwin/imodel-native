@@ -1591,7 +1591,7 @@ private:
     Utf8String m_description;
     Utf8String m_data;
 
-    DGNPLATFORM_EXPORT static Code CreateCodeFromName(Utf8CP);
+    static Code CreateCodeFromName(Utf8StringCR name) { return ResourceAuthority::CreateResourceCode(name, DGN_CLASSNAME_LineStyle); }
     DgnDbStatus BindParams(BeSQLite::EC::ECSqlStatement& stmt);
 
 protected:
@@ -1602,6 +1602,7 @@ protected:
     virtual DgnDbStatus _OnDelete() const override { return DgnDbStatus::DeletionProhibited; /* Must be "purged" */ }
     virtual uint32_t _GetMemSize() const override { return (uint32_t)(m_description.size() + m_data.size() + 2); }
     virtual Code _GenerateDefaultCode() const override { return Code(); }
+    virtual bool _SupportsCodeAuthority(DgnAuthorityCR auth) const override { return ResourceAuthority::IsResourceAuthority(auth); }
 
 public:
     static ECN::ECClassId QueryECClassId(DgnDbR db) { return db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_LineStyle); }

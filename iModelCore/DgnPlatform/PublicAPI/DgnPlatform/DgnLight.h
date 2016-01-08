@@ -78,6 +78,7 @@ protected:
 
     virtual uint32_t _GetMemSize() const override { return T_Super::_GetMemSize() + m_data.GetMemSize(); }
     virtual Code _GenerateDefaultCode() const override { return Code(); }
+    virtual bool _SupportsCodeAuthority(DgnAuthorityCR auth) const override { return ResourceAuthority::IsResourceAuthority(auth); }
 public:
     //! Construct a new LightDefinition with the specified parameters
     explicit LightDefinition(CreateParams const& params) : T_Super(params), m_data(params.m_data) { }
@@ -100,7 +101,7 @@ public:
     LightDefinitionCPtr Update(DgnDbStatus* status=nullptr) { return GetDgnDb().Elements().Update<LightDefinition>(*this, status); }
 
     //! Creates a Code for a light definition.
-    DGNPLATFORM_EXPORT static DgnElement::Code CreateLightDefinitionCode(Utf8StringCR name);
+    static DgnElement::Code CreateLightDefinitionCode(Utf8StringCR name) { return ResourceAuthority::CreateResourceCode(name, DGN_CLASSNAME_ViewDefinition); }
 
     //! Looks up the ID of the light definition with the specified code.
     DGNPLATFORM_EXPORT static DgnLightId QueryLightId(DgnElement::Code const& code, DgnDbR db);

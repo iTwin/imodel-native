@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/DgnDbTables.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -21,6 +21,8 @@
 #define DGN_CLASSNAME_AnnotationTextStyle   "AnnotationTextStyle"
 #define DGN_CLASSNAME_Authority             "Authority"
 #define DGN_CLASSNAME_TrueColor             "TrueColor"
+#define DGN_CLASSNAME_CategoryAuthority     "CategoryAuthority"
+#define DGN_CLASSNAME_ComponentAuthority    "ComponentAuthority"
 #define DGN_CLASSNAME_ComponentModel        "ComponentModel"
 #ifdef WIP_COMPONENT_MODEL // *** Pending redesign
 #define DGN_CLASSNAME_ComponentSolution     "ComponentSolution"
@@ -42,12 +44,15 @@
 #define DGN_CLASSNAME_LineStyle             "LineStyle"
 #define DGN_CLASSNAME_Link                  "Link"
 #define DGN_CLASSNAME_LocalAuthority        "LocalAuthority"
+#define DGN_CLASSNAME_MaterialAuthority     "MaterialAuthority"
 #define DGN_CLASSNAME_Model                 "Model"
+#define DGN_CLASSNAME_ModelAuthority        "ModelAuthority"
 #define DGN_CLASSNAME_Model2d               "Model2d"
 #define DGN_CLASSNAME_Model3d               "Model3d"
 #define DGN_CLASSNAME_VolumeElement         "VolumeElement"
 #define DGN_CLASSNAME_NamespaceAuthority    "NamespaceAuthority"
 #define DGN_CLASSNAME_PhysicalElement       "PhysicalElement"
+#define DGN_CLASSNAME_ResourceAuthority     "ResourceAuthority"
 #define DGN_CLASSNAME_SpatialModel          "SpatialModel"
 #define DGN_CLASSNAME_SectionDrawingModel   "SectionDrawingModel"
 #define DGN_CLASSNAME_SheetElement          "SheetElement"
@@ -59,6 +64,7 @@
 #define DGN_CLASSNAME_SystemModel           "SystemModel"
 #define DGN_CLASSNAME_TextAnnotationSeed    "TextAnnotationSeed"
 #define DGN_CLASSNAME_Texture               "Texture"
+#define DGN_CLASSNAME_TrueColorAuthority    "TrueColorAuthority"
 
 //-----------------------------------------------------------------------------------------
 // DgnDb table names
@@ -122,13 +128,15 @@ private:
     Utf8String      m_value;
     Utf8String      m_nameSpace;
 
-    friend struct DgnAuthority;
-    friend struct SystemAuthority;
-
-    AuthorityIssuedCode(DgnAuthorityId authorityId, Utf8StringCR value, Utf8StringCR nameSpace) : m_authority(authorityId), m_value(value), m_nameSpace(nameSpace) { }
 public:
-    //! Constructs an empty, invalid code
+    //! Constructs an invalid code
     AuthorityIssuedCode() { }
+
+    //! Constructor
+    AuthorityIssuedCode(DgnAuthorityId authorityId, Utf8StringCR value, Utf8StringCR nameSpace) : m_authority(authorityId), m_value(value), m_nameSpace(nameSpace) { }
+
+    //! Construct a code with the specified ID as its namespace
+    DGNPLATFORM_EXPORT AuthorityIssuedCode(DgnAuthorityId authorityId, Utf8StringCR value, BeSQLite::BeInt64Id namespaceId);
 
     //! Determine whether this Code is valid. A valid code has a valid authority ID and either:
     //!     - An empty namespace and value; or
@@ -152,7 +160,11 @@ public:
     DgnAuthorityId GetAuthority() const {return m_authority;}
     void RelocateToDestinationDb(DgnImportContext&);
 
-    void From(DgnAuthorityId authorityId, Utf8StringCR value, Utf8StringCR nameSpace); //!< @private DO NOT EXPORT
+    //! Re-initialize to the specified values.
+    void From(DgnAuthorityId authorityId, Utf8StringCR value, Utf8StringCR nameSpace);
+
+    //! Create an empty, non-unique code with no special meaning.
+    DGNPLATFORM_EXPORT static AuthorityIssuedCode CreateEmpty();
 };
 
 typedef bset<AuthorityIssuedCode> AuthorityIssuedCodeSet;

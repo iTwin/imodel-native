@@ -100,6 +100,7 @@ protected:
 
     virtual uint32_t _GetMemSize() const override { return T_Super::_GetMemSize() + m_data.GetMemSize(); }
     virtual Code _GenerateDefaultCode() const override { return Code(); }
+    virtual bool _SupportsCodeAuthority(DgnAuthorityCR auth) const override { return ResourceAuthority::IsResourceAuthority(auth); }
 
     DGNPLATFORM_EXPORT virtual DgnDbStatus _OnInsert() override;
     DGNPLATFORM_EXPORT virtual DgnDbStatus _OnUpdate(DgnElementCR) override;
@@ -149,7 +150,7 @@ public:
     DGNPLATFORM_EXPORT static ViewControllerPtr LoadViewController(DgnViewId viewId, DgnDbR db, FillModels fillModels=FillModels::No);
 
     //! Create a Code for a view with the specified name
-    DGNPLATFORM_EXPORT static Code CreateCode(Utf8StringCR name);
+    static Code CreateCode(Utf8StringCR name) { return ResourceAuthority::CreateResourceCode(name, DGN_CLASSNAME_ViewDefinition); }
 
     //! Look up the ID of the view with the specified Code
     DGNPLATFORM_EXPORT static DgnViewId QueryViewId(Code const& code, DgnDbR db);

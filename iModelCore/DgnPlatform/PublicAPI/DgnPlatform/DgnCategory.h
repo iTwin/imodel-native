@@ -162,6 +162,7 @@ protected:
     DGNPLATFORM_EXPORT void _CopyFrom(DgnElementCR source) override;
     DGNPLATFORM_EXPORT DgnDbStatus _SetParentId(DgnElementId parentId) override;
     DGNPLATFORM_EXPORT Code _GenerateDefaultCode() const override;
+    virtual bool _SupportsCodeAuthority(DgnAuthorityCR auth) const override { return CategoryAuthority::GetCategoryAuthorityId() == auth.GetAuthorityId(); }
     DGNPLATFORM_EXPORT DgnDbStatus _OnInsert() override;
     DGNPLATFORM_EXPORT DgnDbStatus _OnUpdate(DgnElementCR) override;
     DGNPLATFORM_EXPORT void _RemapIds(DgnImportContext&) override;
@@ -190,7 +191,7 @@ public:
     void SetDescription(Utf8StringCR descr) { m_data.m_descr = descr; } //!< Set the description
 
     //! Create a Code for the name of a sub-category of the specified category
-    DGNPLATFORM_EXPORT static Code CreateSubCategoryCode(DgnCategoryId categoryId, Utf8StringCR subCategoryName);
+    static Code CreateSubCategoryCode(DgnCategoryId categoryId, Utf8StringCR subCategoryName) { return CategoryAuthority::CreateSubCategoryCode(categoryId, subCategoryName); }
 
     //! Create a Code for the name of a sub-category of the specified category
     DGNPLATFORM_EXPORT static Code CreateSubCategoryCode(DgnCategoryCR category, Utf8StringCR subCategoryName);
@@ -301,6 +302,7 @@ protected:
     DGNPLATFORM_EXPORT void _CopyFrom(DgnElementCR source) override;
     DGNPLATFORM_EXPORT void _RemapIds(DgnImportContext&) override;
     DGNPLATFORM_EXPORT Code _GenerateDefaultCode() const override;
+    virtual bool _SupportsCodeAuthority(DgnAuthorityCR auth) const override { return CategoryAuthority::GetCategoryAuthorityId() == auth.GetAuthorityId(); }
     DGNPLATFORM_EXPORT DgnDbStatus _OnChildDelete(DgnElementCR child) const override;
     DGNPLATFORM_EXPORT DgnDbStatus _OnDelete() const override;
     DGNPLATFORM_EXPORT DgnDbStatus _OnInsert() override;
@@ -345,7 +347,7 @@ public:
     void SetScope(Scope scope) { m_data.m_scope = scope; } //!< Set the category's scope.
     void SetRank(Rank rank) { m_data.m_rank = rank; } //!< Set the category's rank.
 
-    DGNPLATFORM_EXPORT static Code CreateCategoryCode(Utf8StringCR categoryName); //!< Creates a Code for a category name.
+    static Code CreateCategoryCode(Utf8StringCR categoryName) { return CategoryAuthority::CreateCategoryCode(categoryName); } //!< Creates a Code for a category name.
     DGNPLATFORM_EXPORT static DgnCategoryId QueryCategoryId(Code const& code, DgnDbR db); //!< Looks up the ID of a category by code.
     static DgnCategoryId QueryCategoryId(Utf8StringCR categoryName, DgnDbR db) { return QueryCategoryId(CreateCategoryCode(categoryName), db); } //!< Looks up the ID of a category by name.
     static DgnCategoryCPtr QueryCategory(DgnCategoryId categoryId, DgnDbR db) { return db.Elements().Get<DgnCategory>(categoryId); } //!< Looks up a category by ID.

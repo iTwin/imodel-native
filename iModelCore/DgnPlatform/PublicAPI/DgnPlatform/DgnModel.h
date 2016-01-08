@@ -598,7 +598,7 @@ public:
     void OnValidate() { _OnValidate(); }
 
     //! Creates a Code for a model with the given name, associated with the default DgnAuthority for models.
-    DGNPLATFORM_EXPORT static Code CreateModelCode(Utf8StringCR modelName);
+    static Code CreateModelCode(Utf8StringCR modelName) { return ModelAuthority::CreateModelCode(modelName); }
 };
 
 //=======================================================================================
@@ -963,7 +963,7 @@ struct ComponentDef : RefCountedBase
     ECN::IECInstancePtr GetPropSpecCA(ECN::ECPropertyCR prop);
 
     Utf8String GetGeneratedName() const;
-    DgnElement::Code CreateVariationCode(Utf8StringCR slnId);
+    DgnElement::Code CreateVariationCode(Utf8StringCR slnId) { return ComponentAuthority::CreateVariationCode(slnId, GetName()); }
 
     //! Test if the specified code is that of a component variation instance element.
     static bool IsComponentVariationCode(DgnElement::Code const& icode);

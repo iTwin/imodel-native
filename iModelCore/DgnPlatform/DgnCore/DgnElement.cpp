@@ -173,7 +173,7 @@ ECClassCP DgnElement::GetElementClass() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnElement::Code DgnElement::_GenerateDefaultCode() const
     {
-    return DgnAuthority::CreateDefaultCode();
+    return DgnElement::Code::CreateEmpty();
     }
 
 /*---------------------------------------------------------------------------------**//**

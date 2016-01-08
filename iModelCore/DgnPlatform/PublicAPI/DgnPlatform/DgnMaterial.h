@@ -93,6 +93,7 @@ protected:
 
     virtual uint32_t _GetMemSize() const override { return T_Super::_GetMemSize() + m_data.GetMemSize(); }
     virtual Code _GenerateDefaultCode() const override { return Code(); }
+    virtual bool _SupportsCodeAuthority(DgnAuthorityCR auth) const override { return MaterialAuthority::GetMaterialAuthorityId() == auth.GetAuthorityId(); }
 //__PUBLISH_SECTION_END__
 public:
     static DgnMaterialId ImportMaterial(DgnMaterialId source, DgnImportContext& importer);
@@ -137,7 +138,7 @@ public:
     BentleyStatus GetRenderingAsset(JsonValueR value) const {return GetAsset(value, MATERIAL_ASSET_Rendering);}
 
     //! Creates a Code for a material. The palette name serves as the namespace, and the material name as the value.
-    DGNPLATFORM_EXPORT static DgnElement::Code CreateMaterialCode(Utf8StringCR paletteName, Utf8StringCR materialName);
+    static DgnElement::Code CreateMaterialCode(Utf8StringCR paletteName, Utf8StringCR materialName) { return MaterialAuthority::CreateMaterialCode(paletteName, materialName); }
 
     //! Looks up the ID of the material with the specified code.
     DGNPLATFORM_EXPORT static DgnMaterialId QueryMaterialId(DgnElement::Code const& code, DgnDbR db);

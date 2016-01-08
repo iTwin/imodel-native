@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/DgnProject/NonPublished/Category_Test.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -383,7 +383,7 @@ TEST_F(CategoryTests, SubCategoryInvariants)
     // Code validation
     DgnSubCategoryPtr defaultSubCat1Edit = defaultSubCat1->MakeCopy<DgnSubCategory>();
     DgnAuthority::Code code;    // invalid code
-    EXPECT_EQ(DgnDbStatus::InvalidName, defaultSubCat1Edit->SetCode(code));
+    EXPECT_EQ(DgnDbStatus::InvalidCodeAuthority, defaultSubCat1Edit->SetCode(code));
     code = DgnSubCategory::CreateSubCategoryCode(cat2Id, "Cat1"); // wrong category
     EXPECT_EQ(DgnDbStatus::InvalidName, defaultSubCat1Edit->SetCode(code));
     code = DgnSubCategory::CreateSubCategoryCode(cat2Id, "Cat2"); // wrong category

@@ -96,6 +96,42 @@
         </ECCustomAttributes>
         <BaseClass>Authority</BaseClass>
     </ECEntityClass>
+    <ECEntityClass typeName="MaterialAuthority">
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="dgn.02.00"/>
+        </ECCustomAttributes>
+        <BaseClass>NamespaceAuthority</BaseClass>
+    </ECEntityClass>
+    <ECEntityClass typeName="ComponentAuthority">
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="dgn.02.00"/>
+        </ECCustomAttributes>
+        <BaseClass>NamespaceAuthority</BaseClass>
+    </ECEntityClass>
+    <ECEntityClass typeName="ModelAuthority">
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="dgn.02.00"/>
+        </ECCustomAttributes>
+        <BaseClass>NamespaceAuthority</BaseClass>
+    </ECEntityClass>
+    <ECEntityClass typeName="TrueColorAuthority">
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="dgn.02.00"/>
+        </ECCustomAttributes>
+        <BaseClass>NamespaceAuthority</BaseClass>
+    </ECEntityClass>
+    <ECEntityClass typeName="ResourceAuthority">
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="dgn.02.00"/>
+        </ECCustomAttributes>
+        <BaseClass>NamespaceAuthority</BaseClass>
+    </ECEntityClass>
+    <ECEntityClass typeName="CategoryAuthority">
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="dgn.02.00"/>
+        </ECCustomAttributes>
+        <BaseClass>NamespaceAuthority</BaseClass>
+    </ECEntityClass>
 
     <ECStructClass typeName="AuthorityIssuedCode">
         <ECProperty propertyName="AuthorityId" typeName="long">

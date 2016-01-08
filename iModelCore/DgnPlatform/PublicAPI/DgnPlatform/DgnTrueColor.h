@@ -58,6 +58,7 @@ protected:
     virtual DgnDbStatus _OnDelete() const override { return DgnDbStatus::DeletionProhibited; }
     virtual uint32_t _GetMemSize() const override { return T_Super::_GetMemSize() + static_cast<uint32_t>(sizeof(m_colorDef)); }
     virtual Code _GenerateDefaultCode() const override { return Code(); }
+    virtual bool _SupportsCodeAuthority(DgnAuthorityCR auth) const override { return TrueColorAuthority::GetTrueColorAuthorityId() == auth.GetAuthorityId(); }
 public:
     //! Construct a new DgnTrueColor with the specified parameters.
     explicit DgnTrueColor(CreateParams const& params) : T_Super(params), m_colorDef(params.m_colorDef) { }
@@ -68,7 +69,7 @@ public:
     ColorDef GetColorDef() const { return m_colorDef; } //!< The value of this color
 
     //! Creates a code for a color with the given name and book name
-    DGNPLATFORM_EXPORT static Code CreateColorCode(Utf8StringCR name, Utf8StringCR book);
+    static Code CreateColorCode(Utf8StringCR name, Utf8StringCR book) { return TrueColorAuthority::CreateTrueColorCode(name, book); }
 
     static ECN::ECClassId QueryECClassId(DgnDbR db) { return db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_TrueColor); } //!< The class ID associated with true colors within the given DgnDb
     static DgnClassId QueryDgnClassId(DgnDbR db) { return DgnClassId(QueryECClassId(db)); } //!< The class ID associated with true colors within the given DgnDb

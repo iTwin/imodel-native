@@ -269,16 +269,6 @@ DgnCategoryId DgnCategory::QueryElementCategoryId(DgnElementId elemId, DgnDbR db
     return BE_SQLITE_ROW == stmt->Step() ? stmt->GetValueId<DgnCategoryId>(0) : DgnCategoryId();
     }
 
-#ifdef TODO_CODES
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   10/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnCategory::_SetCode(Code const& code)
-    {
-    return code.GetNamespace().empty() && IsValidName(code.GetValue()) ? T_Super::_SetCode(code) : DgnDbStatus::InvalidName;
-    }
-#endif
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -334,34 +324,6 @@ DgnDbStatus DgnSubCategory::BindParams(ECSqlStatement& stmt)
     else
         return DgnDbStatus::Success;
     }
-
-#ifdef TODO_CODES
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   10/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnSubCategory::_SetCode(Code const& code)
-    {
-    if (!DgnCategory::IsValidName(code.GetValue()))
-        return DgnDbStatus::InvalidName;
-
-    // all sub-category codes have namespace = category ID
-    uint64_t categoryIdVal;
-    if (SUCCESS != BeStringUtilities::ParseUInt64(categoryIdVal, code.GetNamespace().c_str()) || GetCategoryId().GetValue() != categoryIdVal)
-        return DgnDbStatus::InvalidName;
-
-    if (m_elementId.IsValid()) // (_SetCode is called during copying. In that case, this SubCategory does not yet have an ID.)
-        {
-        // default sub-category has same name as category
-        DgnCategoryCPtr cat = DgnCategory::QueryCategory(GetCategoryId(), GetDgnDb());
-        if (!cat.IsValid())
-            return DgnDbStatus::InvalidCategory;
-        else if ((code.GetValue().Equals(cat->GetCategoryName()) != IsDefaultSubCategory()))
-            return DgnDbStatus::InvalidName;
-        }
-
-    return T_Super::_SetCode(code);
-    }
-#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
