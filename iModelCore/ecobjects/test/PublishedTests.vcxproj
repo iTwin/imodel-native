@@ -73,6 +73,7 @@
     <ClCompile Include="Published\MacroTests.cpp" />
     <ClCompile Include="Published\MemoryLayoutTests.cpp" />
     <ClCompile Include="Published\NavigationECPropertyTests.cpp" />
+    <ClCompile Include="Published\SchemaPropertiesTest.cpp" />
     <ClCompile Include="Published\SchemaTests.cpp" />
     <ClCompile Include="Published\DateTimeInfoCustomAttributeTests.cpp" />
     <ClCompile Include="Published\SchemaVersionConverstionTests.cpp" />
