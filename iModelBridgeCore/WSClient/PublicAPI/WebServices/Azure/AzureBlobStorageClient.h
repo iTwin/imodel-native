@@ -8,6 +8,7 @@
 #pragma once
 //__PUBLISH_SECTION_START__
 
+#include <WebServices/Client/WebServicesClient.h>
 #include <DgnClientFx/Utils/Http/HttpError.h>
 #include <DgnClientFx/Utils/Http/HttpResponse.h>
 #include <DgnClientFx/Utils/Threading/AsyncResult.h>
