@@ -2,7 +2,7 @@
  |
  |     $Source: Cache/Persistence/Files/FileInfoManager.cpp $
  |
- |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 
@@ -220,7 +220,7 @@ BeFileName FileInfoManager::ReadFilePath(CachedInstanceKeyCR instanceKey)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    12/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus FileInfoManager::OnBeforeDelete(ECClassCR ecClass, ECInstanceId ecInstanceId)
+BentleyStatus FileInfoManager::OnBeforeDelete(ECClassCR ecClass, ECInstanceId ecInstanceId, bset<ECInstanceKey>& additionalInstancesOut)
     {
     if (&ecClass != m_externalFileInfoClass)
         {
@@ -234,14 +234,6 @@ BentleyStatus FileInfoManager::OnBeforeDelete(ECClassCR ecClass, ECInstanceId ec
     FileInfo info(Json::nullValue, infoJson, CachedInstanceKey(), this);
 
     m_fileStorage.CleanupCachedFile(info.GetFilePath());
-    return SUCCESS;
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Vincas.Razma    03/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus FileInfoManager::OnAfterDelete(bset<ECInstanceKey>& instancesToDeleteOut)
-    {
     return SUCCESS;
     }
 

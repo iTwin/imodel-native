@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnDbServer/Client/DgnDbClient.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -38,6 +38,9 @@ private:
 
     AsyncTaskPtr<DgnDbRepositoryConnectionResult> ConnectToRepository(RepositoryInfoPtr repository, ICancellationTokenPtr cancellationToken = nullptr);
     DgnDbClient(WebServices::ClientInfoPtr clientInfo);
+    AsyncTaskPtr<DgnDbRepositoryResult> InitializeRepository(WebServices::IWSRepositoryClientPtr client, Utf8StringCR repositoryId, Json::Value repositoryCreationJson,
+                                                             WebServices::ObjectId repositoryObjectId, HttpRequest::ProgressCallbackCR callback = nullptr,
+                                                             ICancellationTokenPtr cancellationToken = nullptr);
 //__PUBLISH_SECTION_START__
 public:
     //! Set up the DgnDbServer Client library. Needs to be called from the work thread where DgnPlatform is initialized.

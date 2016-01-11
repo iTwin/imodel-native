@@ -2,7 +2,7 @@
  |
  |     $Source: Cache/Persistence/Hierarchy/HierarchyManager.cpp $
  |
- |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 
@@ -27,17 +27,11 @@ ECDbAdapterR ecdbAdapter,
 WebServices::ECSqlStatementCache& statementCache,
 ObjectInfoManager& objectInfoManager,
 ChangeInfoManager& changeInfoManager
-#if defined (NEEDS_WORK_PORT_GRA06_ECDbDeleteHandler) // Port 0503 to 06
-, std::vector<ECDbDeleteHandler*> deleteHandlers
-#endif
 ) :
 m_dbAdapter(ecdbAdapter),
 m_statementCache(statementCache),
 m_objectInfoManager(objectInfoManager),
 m_changeInfoManager(changeInfoManager)
-#if defined (NEEDS_WORK_PORT_GRA06_ECDbDeleteHandler) // Port 0503 to 06
-, m_deleteHandlers(deleteHandlers)
-#endif
     {}
 
 /*--------------------------------------------------------------------------------------+
@@ -45,39 +39,6 @@ m_changeInfoManager(changeInfoManager)
 +---------------+---------------+---------------+---------------+---------------+------*/
 HierarchyManager::~HierarchyManager()
     {}
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Vincas.Razma    04/2013
-+---------------+---------------+---------------+---------------+---------------+------*/
-#if defined (NEEDS_WORK_PORT_GRA06_ECDbDeleteHandler) // Port 0503 to 06
-void HierarchyManager::_OnBeforeDelete(ECN::ECClassCR ecClass, ECInstanceId ecInstanceId, ECDbR ecDb)
-    {
-    for (auto handler : m_deleteHandlers)
-        {
-        if (SUCCESS != handler->OnBeforeDelete(ecClass, ecInstanceId))
-            {
-            BeAssert(false);
-            }
-        }
-    }
-#endif
-/*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Vincas.Razma    04/2013
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus HierarchyManager::GetAdditonalInstancesToDelete(bset<ECInstanceKey>& instancesToDeleteOut)
-    {
-#if defined (NEEDS_WORK_PORT_GRA06_ECDbDeleteHandler) // Port 0503 to 06
-    for (auto handler : m_deleteHandlers)
-        {
-        if (SUCCESS != handler->OnAfterDelete(instancesToDeleteOut))
-            {
-            BeAssert(false);
-            return ERROR;
-            }
-        }
-#endif
-    return SUCCESS;
-    }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    01/2013
@@ -179,24 +140,10 @@ BentleyStatus HierarchyManager::CheckAndCleanupHiearchy(ECInstanceKeyCR instance
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus HierarchyManager::DeleteInstance(ECInstanceKeyCR instance)
     {
-    ECClassCP ecClass = m_dbAdapter.GetECClass(instance);
-    if (nullptr == ecClass)
-        {
-        return ERROR;
-        }
+    ECInstanceKeyMultiMap instances;
+    instances.Insert(instance.GetECClassId(), instance.GetECInstanceId());
 
-    ECInstanceDeleter deleter(m_dbAdapter.GetECDb(), *ecClass);
-    if (!deleter.IsValid() || SUCCESS != deleter.Delete(instance.GetECInstanceId()))
-        {
-        return ERROR;
-        }
-
-    bset<ECInstanceKey> additionalInstances;
-    if (SUCCESS != GetAdditonalInstancesToDelete(additionalInstances))
-        {
-        return ERROR;
-        }
-    return DeleteInstances(additionalInstances);
+    return m_dbAdapter.DeleteInstances(instances);
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -218,59 +165,35 @@ BentleyStatus HierarchyManager::DeleteInstance(CachedInstanceKeyCR instance)
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus HierarchyManager::DeleteInstances(ECSqlStatement& ecInstanceKeyStatement)
     {
+    ECInstanceKeyMultiMap instances;
+
     DbResult status;
     while (BE_SQLITE_ROW == (status = ecInstanceKeyStatement.Step()))
         {
         ECClassId ecClassId = ecInstanceKeyStatement.GetValueInt64(0);
         ECInstanceId ecInstanceId = ecInstanceKeyStatement.GetValueId<ECInstanceId>(1);
-        if (SUCCESS != DeleteInstance(ECInstanceKey(ecClassId, ecInstanceId)))
-            {
-            return ERROR;
-            }
+        instances.Insert(ecClassId, ecInstanceId);
         }
+
     if (BE_SQLITE_DONE != status)
         {
         return ERROR;
         }
 
-    bset<ECInstanceKey> additionalInstances;
-    if (SUCCESS != GetAdditonalInstancesToDelete(additionalInstances))
-        {
-        return ERROR;
-        }
-    return DeleteInstances(additionalInstances);
+    return m_dbAdapter.DeleteInstances(instances);
     }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus HierarchyManager::DeleteInstances(bset<ECInstanceKey> instances)
+BentleyStatus HierarchyManager::DeleteInstances(bset<ECInstanceKey> instancesSet)
     {
-    while (!instances.empty())
+    ECInstanceKeyMultiMap instances;
+    for (ECInstanceKeyCR instance : instancesSet)
         {
-        for (ECInstanceKeyCR instance : instances)
-            {
-            ECClassCP ecClass = m_dbAdapter.GetECClass(instance);
-            if (nullptr == ecClass)
-                {
-                return ERROR;
-                }
-
-            ECInstanceDeleter deleter(m_dbAdapter.GetECDb(), *ecClass);
-            if (!deleter.IsValid() || SUCCESS != deleter.Delete(instance.GetECInstanceId()))
-                {
-                return ERROR;
-                }
-            }
-
-        instances.clear();
-        if (SUCCESS != GetAdditonalInstancesToDelete(instances))
-            {
-            return ERROR;
-            }
+        instances.Insert(instance.GetECClassId(), instance.GetECInstanceId());
         }
-
-    return SUCCESS;
+    return m_dbAdapter.DeleteInstances(instances);
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -345,6 +268,7 @@ BentleyStatus HierarchyManager::DeleteRelationship(ECInstanceKeyCR relationship)
         BeAssert(false);
         return ERROR;
         }
+    // WIP06: deletions
     return DeleteInstance(relationship);
     }
 

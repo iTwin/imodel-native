@@ -2,7 +2,7 @@
  |
  |     $Source: Cache/Persistence/Hierarchy/HierarchyManager.h $
  |
- |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 
@@ -11,7 +11,6 @@
 #include <ECDb/ECDbApi.h>
 #include <WebServices/Cache/Util/ECDbAdapter.h>
 #include <WebServices/Cache/Util/ECSqlStatementCache.h>
-#include "IDeleteHandler.h"
 #include "../Instances/CachedInstanceKey.h"
 
 USING_NAMESPACE_BENTLEY_EC
@@ -25,11 +24,7 @@ struct ObjectInfoManager;
 /*--------------------------------------------------------------------------------------+
 * @bsiclass                                                     Vincas.Razma    06/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-#if defined (NEEDS_WORK_PORT_GRA06_ECDbDeleteHandler) // Port 0504 to 06
-struct HierarchyManager : public ECDbDeleteHandler
-#else
 struct HierarchyManager
-#endif
     {
     private:
         ECDbAdapter&            m_dbAdapter;
@@ -37,15 +32,11 @@ struct HierarchyManager
         ObjectInfoManager&      m_objectInfoManager;
         ChangeInfoManager&      m_changeInfoManager;
 
-#if defined (NEEDS_WORK_PORT_GRA06_ECDbDeleteHandler) // Port 0504 to 06
-        std::vector<ECInstanceDeleter> m_deleteHandlers;
-#endif
     private:
         BentleyStatus DeleteRelationships(ECInstanceKeyCR source, const bvector<ECInstanceKey>& targets, ECRelationshipClassCP relationshipClass);
 
         //! If instance has no parents, it will be deleted with possible hiearchy cleanup
         BentleyStatus CheckAndCleanupHiearchy(ECInstanceKeyCR instance);
-        BentleyStatus GetAdditonalInstancesToDelete(bset<ECInstanceKey>& instancesToDeleteOut);
 
     public:
         HierarchyManager
@@ -54,16 +45,8 @@ struct HierarchyManager
             ECSqlStatementCache& statementCache,
             ObjectInfoManager& objectInfoManager,
             ChangeInfoManager& changeInfoManager
-#if defined (NEEDS_WORK_PORT_GRA06_ECDbDeleteHandler) // Port 0504 to 06
-            , std::vector<IDeleteHandler*> deleteHandlers
-#endif
             );
         ~HierarchyManager();
-
-#if defined (NEEDS_WORK_PORT_GRA06_ECDbDeleteHandler) // Port 0504 to 06
-        //! ECDbDeleteHandler
-        virtual void _OnBeforeDelete(ECN::ECClassCR ecClass, ECInstanceId ecInstanceId, ECDbR ecDb) override;
-#endif
 
         ECInstanceKey RelateInstances(ECInstanceKeyCR source, ECInstanceKeyCR target, ECRelationshipClassCP relationshipClass);
         BentleyStatus CopyRelationshipsBySource(ECInstanceKeyCR instanceFrom, ECInstanceKeyCR instanceTo, ECRelationshipClassCP relationshipClass);

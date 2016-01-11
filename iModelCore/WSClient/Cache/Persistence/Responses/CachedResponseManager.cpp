@@ -2,7 +2,7 @@
 |
 |     $Source: Cache/Persistence/Responses/CachedResponseManager.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -87,7 +87,7 @@ CacheNodeKey CachedResponseManager::GetCacheNodeKey(ECInstanceKeyCR instanceKey)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus CachedResponseManager::OnBeforeDelete(ECN::ECClassCR ecClass, ECInstanceId ecInstanceId)
+BentleyStatus CachedResponseManager::OnBeforeDelete(ECN::ECClassCR ecClass, ECInstanceId ecInstanceId, bset<ECInstanceKey>& additionalInstancesOut)
     {
     // TODO: can this be taken care of by ECDb with configuration that would tread referencing relationship as holding?
     if (&ecClass != m_responseToParentClass)
@@ -114,17 +114,7 @@ BentleyStatus CachedResponseManager::OnBeforeDelete(ECN::ECClassCR ecClass, ECIn
         return ERROR;
         }
 
-    m_responsesToDelete.insert(responseInfoKey);
-    return SUCCESS;
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Vincas.Razma    03/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus CachedResponseManager::OnAfterDelete(bset<ECInstanceKey>& instancesToDeleteOut)
-    {
-    instancesToDeleteOut.insert(m_responsesToDelete.begin(), m_responsesToDelete.end());
-    m_responsesToDelete.clear();
+    additionalInstancesOut.insert(responseInfoKey);
     return SUCCESS;
     }
 
@@ -232,7 +222,7 @@ BentleyStatus CachedResponseManager::DeleteInfo(ResponseKeyCR responseKey)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus CachedResponseManager::DeleteResponses(Utf8StringCR name, DateTimeCR accessedBeforeDateUtc, const ECInstanceKeyMultiMap& instancesToLeave)
+BentleyStatus CachedResponseManager::DeleteResponses(Utf8StringCR name, DateTimeCR accessedBeforeDateUtc, const ECInstanceKeyMultiMap& nodesToLeave)
     {
     if (accessedBeforeDateUtc.GetInfo().GetKind() != DateTime::Kind::Utc)
         {
@@ -256,7 +246,7 @@ BentleyStatus CachedResponseManager::DeleteResponses(Utf8StringCR name, DateTime
     while (BE_SQLITE_ROW == statement->Step())
         {
         ECInstanceKey responseKey(m_responseClass->GetId(), statement->GetValueId<ECInstanceId>(0));
-        if (ECDbHelper::IsInstanceInMultiMap(responseKey, instancesToLeave))
+        if (ECDbHelper::IsInstanceInMultiMap(responseKey, nodesToLeave))
             {
             continue;
             }
@@ -560,7 +550,7 @@ const InstanceCacheHelper::CachedInstances& instances
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus CachedResponseManager::RelateResultInstancesToPage
 (
-ECInstanceKeyCR responseParentKey,
+ECInstanceKeyCR responseParentNodeKey,
 CacheNodeKeyCR pageKey,
 const InstanceCacheHelper::CachedInstances& instances
 )
@@ -573,7 +563,7 @@ const InstanceCacheHelper::CachedInstances& instances
             }
 
         ECRelationshipClassCP resultRelClass = m_responsePageToResultClass;
-        if (responseParentKey == resultInstance.GetInstanceKey())
+        if (responseParentNodeKey == resultInstance.GetInfoKey())
             {
             resultRelClass = m_responsePageToResultWeakClass;
             }
@@ -882,7 +872,7 @@ const ECInstanceKeyMultiMap& fullyPersistedNodes
 +--------------------------------------------------------------------------------------*/
 BentleyStatus CachedResponseManager::InvalidateResponsePagesContainingInstance(CachedInstanceKeyCR cachedKey)
     {
-    ECInstanceKey instanceKey = cachedKey.GetInstanceKey();
+    ECInstanceKey nodeKey = cachedKey.GetInfoKey();
 
     bvector<ECInstanceId> pageIds;
 
@@ -896,8 +886,8 @@ BentleyStatus CachedResponseManager::InvalidateResponsePagesContainingInstance(C
             "WHERE rel.TargetECClassId = ? AND rel.TargetECInstanceId = ? ";
         });
 
-    statement->BindInt64(1, instanceKey.GetECClassId());
-    statement->BindId(2, instanceKey.GetECInstanceId());
+    statement->BindInt64(1, nodeKey.GetECClassId());
+    statement->BindId(2, nodeKey.GetECInstanceId());
 
     if (SUCCESS != m_dbAdapter.ExtractECIdsFromStatement(*statement, 0, pageIds))
         {
@@ -914,8 +904,8 @@ BentleyStatus CachedResponseManager::InvalidateResponsePagesContainingInstance(C
             "WHERE rel.TargetECClassId = ? AND rel.TargetECInstanceId = ? ";
         });
 
-    statement->BindInt64(1, instanceKey.GetECClassId());
-    statement->BindId(2, instanceKey.GetECInstanceId());
+    statement->BindInt64(1, nodeKey.GetECClassId());
+    statement->BindId(2, nodeKey.GetECInstanceId());
 
     if (SUCCESS != m_dbAdapter.ExtractECIdsFromStatement(*statement, 0, pageIds))
         {
