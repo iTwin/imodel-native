@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/Published/ECSqlUpdateTestDataset.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECSqlUpdateTestDataset.h"
@@ -756,7 +756,7 @@ ECSqlTestDataset ECSqlUpdateTestDataset::RelationshipWithAdditionalPropsTests (E
 
         {
         Savepoint savepoint (ecdb, "Inserting test instances");
-        const auto ecInstanceId = ECSqlTestFrameworkHelper::InsertTestInstance (ecdb, "INSERT INTO ecsql.PSAHasPWithPrimProps (SourceECInstanceId, TargetECInstanceId) VALUES (100, 200)");
+        const auto ecInstanceId = ECSqlTestFrameworkHelper::InsertTestInstance (ecdb, "INSERT INTO ecsql.PSAHasPWithPrimProps (SourceECInstanceId, TargetECInstanceId) VALUES (113, 83)");
         if (!ecInstanceId.IsValid ())
             {
             savepoint.Cancel ();

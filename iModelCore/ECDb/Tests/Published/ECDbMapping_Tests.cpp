@@ -4576,7 +4576,10 @@ TEST_F(ECDbMappingTestFixture, ForeignKeyMapWithKeyProperty)
         auto containsDefaultNamedRelationalKeyColumn = [] (Utf8StringCR str) { return BeStringUtilities::Strnicmp(str.c_str(), "ForeignEC", 9) == 0; };
         auto it = std::find_if(columns.begin(), columns.end(), containsDefaultNamedRelationalKeyColumn);
         ASSERT_TRUE(it == columns.end()) << childTableName << " table should not contain an extra foreign key column as the relationship specifies a Key property";
-        AssertForeignKey(false, ecdb, childTableName);
+        //  ---------<
+        //  In following we expected 'false' but with trigger replaced with FK. We create FK constraint automatically so now it set to 'true'
+        AssertForeignKey(true, ecdb, childTableName);
+        //  --------->
         }
 
         {
@@ -4625,7 +4628,11 @@ TEST_F(ECDbMappingTestFixture, ForeignKeyMapWithKeyProperty)
         auto it = std::find_if(columns.begin(), columns.end(), containsDefaultNamedRelationalKeyColumn);
         ASSERT_TRUE(it == columns.end()) << childTableName << " table should not contain an extra foreign key column as the relationship specifies a Key property";
 
-        AssertForeignKey(false, ecdb, childTableName);
+        //  ---------<
+        //  In following we expected 'false' but with trigger replaced with FK. We create FK constraint automatically so now it set to 'true'
+        AssertForeignKey(true, ecdb, childTableName);
+        //  --------->
+
         }
 
         {
@@ -4835,7 +4842,11 @@ TEST_F(ECDbMappingTestFixture, ForeignKeyMapWithECInstanceIdKeyProperty)
         auto it = std::find_if(columns.begin(), columns.end(), containsDefaultNamedRelationalKeyColumn);
         ASSERT_TRUE(it == columns.end()) << childTableName << " table should not contain an extra foreign key column as the relationship specifies a Key property";
 
-        AssertForeignKey(false, ecdb, childTableName);
+        //  ---------<
+        //  In following we expected 'false' but with trigger replaced with FK. We create FK constraint automatically so now it set to 'true'
+        AssertForeignKey(true, ecdb, childTableName);
+        //  --------->
+
         }
 
         {
@@ -4883,7 +4894,10 @@ TEST_F(ECDbMappingTestFixture, ForeignKeyMapWithECInstanceIdKeyProperty)
         auto it = std::find_if(columns.begin(), columns.end(), containsDefaultNamedRelationalKeyColumn);
         ASSERT_TRUE(it == columns.end()) << childTableName << " table should not contain an extra foreign key column as the relationship specifies a Key property";
 
-        AssertForeignKey(false, ecdb, childTableName);
+        //  ---------<
+        //  In following we expected 'false' but with trigger replaced with FK. We create FK constraint automatically so now it set to 'true'
+        AssertForeignKey(true, ecdb, childTableName);
+        //  --------->
         }
 
         {
@@ -5068,7 +5082,10 @@ TEST_F(ECDbMappingTestFixture, ForeignKeyMapWithoutKeyProperty)
         auto it = std::find_if(columns.begin(), columns.end(), containsDefaultNamedRelationalKeyColumn);
         ASSERT_TRUE(it != columns.end()) << "ts_child table should contain a default-name extra foreign key column as there is no relationship map CA";
 
-        AssertForeignKey(false, ecdb, childTableName);
+        //  ---------<
+        //  In following we expected 'false' but with trigger replaced with FK. We create FK constraint automatically so now it set to 'true'
+        AssertForeignKey(true, ecdb, childTableName);
+        //  --------->
         }
 
         {

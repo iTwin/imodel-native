@@ -434,7 +434,7 @@ ClassMapPtr ECDbMap::DoGetClassMap (ECClassCR ecClass) const
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    casey.mullen      11/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECDbSqlTable* ECDbMap::FindOrCreateTable (SchemaImportContext* schemaImportContext, Utf8CP tableName, TableType tableType, bool isVirtual, Utf8CP primaryKeyColumnName)
+ECDbSqlTable* ECDbMap::FindOrCreateTable (SchemaImportContext* schemaImportContext, Utf8CP tableName, TableType tableType, bool isVirtual, Utf8CP primaryKeyColumnName, ECDbSqlTable const* baseTable)
     {
     if (AssertIfIsNotImportingSchema ())
         return nullptr;
@@ -458,7 +458,7 @@ ECDbSqlTable* ECDbMap::FindOrCreateTable (SchemaImportContext* schemaImportConte
 
     if (tableType != TableType::Existing)
         {
-        table = GetSQLManagerR ().GetDbSchemaR ().CreateTable (tableName, tableType, isVirtual ? PersistenceType::Virtual : PersistenceType::Persisted);
+        table = GetSQLManagerR ().GetDbSchemaR ().CreateTable (tableName, tableType, isVirtual ? PersistenceType::Virtual : PersistenceType::Persisted, baseTable);
         if (Utf8String::IsNullOrEmpty (primaryKeyColumnName))
             primaryKeyColumnName = ECDB_COL_ECInstanceId;
 
@@ -771,6 +771,63 @@ void ECDbMap::GetClassMapsFromRelationshipEnd(std::set<ClassMap const*>& classMa
         classMaps.insert(subclassMap);
         GetClassMapsFromRelationshipEnd(classMaps, *subclass);
         }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Affan.Khan                      12/2015
+//+---------------+---------------+---------------+---------------+---------------+------
+const std::set<ECDbSqlTable const*> ECDbMap::GetTablesFromRelationshipEnd(ECRelationshipConstraintCR relationshipEnd) const
+    {
+    bool hasAnyClass = false;
+    std::set<IClassMap const*> classMaps = GetClassMapsFromRelationshipEnd(relationshipEnd, &hasAnyClass);
+
+    if (hasAnyClass)
+        return std::set<ECDbSqlTable const*>();
+
+    std::map<PersistenceType, std::set<ECDbSqlTable const*>> tables;
+    bool singleEndClass = relationshipEnd.GetClasses().size() == 1;
+    std::vector<ECClassCP> classes = GetClassesFromRelationshipEnd(relationshipEnd);
+    for (IClassMap const* classMap : classMaps)
+        {
+        if (singleEndClass)
+            tables[classMap->GetPrimaryTable().GetPersistenceType()].insert(&classMap->GetJoinedTable());
+        else
+            tables[classMap->GetPrimaryTable().GetPersistenceType()].insert(&classMap->GetPrimaryTable());
+        }
+
+    if (tables[PersistenceType::Persisted].size() > 0)
+        return tables[PersistenceType::Persisted];
+
+    return tables[PersistenceType::Virtual];
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Affan.Khan                      12/2015
+//+---------------+---------------+---------------+---------------+---------------+------
+const std::set<ECDbSqlTable const*> ECDbMap::GetTablesFromRelationshipEndWithColumn(ECRelationshipConstraintCR relationshipEnd, Utf8CP column) const
+    {
+    bool hasAnyClass = false;
+    std::set<IClassMap const*> classMaps = GetClassMapsFromRelationshipEnd(relationshipEnd, &hasAnyClass);
+
+    if (hasAnyClass)
+        return std::set<ECDbSqlTable const*>();
+
+    std::map<PersistenceType, std::set<ECDbSqlTable const*>> tables;
+    std::vector<ECClassCP> classes = GetClassesFromRelationshipEnd(relationshipEnd);
+    for (IClassMap const* classMap : classMaps)
+        {
+        ECDbSqlTable const* table = classMap->GetPrimaryTable().FindColumnCP(column) != nullptr ? &classMap->GetPrimaryTable() : nullptr;
+        if (table == nullptr && !classMap->IsMappedToSingleTable())
+            table = classMap->GetJoinedTable().FindColumnCP(column) != nullptr ? &classMap->GetJoinedTable() : nullptr;
+
+        if (table)
+            tables[table->GetPersistenceType()].insert(table);
+        }
+
+
+    if (tables[PersistenceType::Persisted].size() > 0)
+        return tables[PersistenceType::Persisted];
+
+    return tables[PersistenceType::Virtual];
     }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Affan.Khan                      12/2015

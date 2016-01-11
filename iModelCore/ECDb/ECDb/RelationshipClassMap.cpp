@@ -293,7 +293,22 @@ ECDbSqlColumn* RelationshipClassEndTableMap::ConfigureForeignECClassIdKey(Relati
 
     return otherEndECClassIdColumn;
     }
+//---------------------------------------------------------------------------------------
+//@bsimethod                                   Affan.Khan                         1 / 16
+//---------------------------------------------------------------------------------------
+DataIntegrityEnforcementMethod RelationshipClassEndTableMap::GetDataIntegrityEnforcementMethod() const
+    {
+    if (GetPrimaryTable().GetTableType() == TableType::Existing || GetRelationshipClass().GetClassModifier() == ECClassModifier::Abstract
+        || GetRelationshipClass().GetSource().GetClasses().empty() || GetRelationshipClass().GetTarget().GetClasses().empty() )
+        return DataIntegrityEnforcementMethod::None;
 
+    if (GetRelationshipClass().GetStrength() == StrengthType::Referencing || GetRelationshipClass().GetStrength() == StrengthType::Embedding)
+        {
+        return DataIntegrityEnforcementMethod::ForeignKey;
+        }
+
+    return DataIntegrityEnforcementMethod::Trigger;
+    }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                               Krischan.Eberle       06/2013
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -317,13 +332,7 @@ MapStatus RelationshipClassEndTableMap::_MapPart1 (SchemaImportContext&, ClassMa
 
     ECEntityClass const* thisEndClass = thisEndConstraint.GetClasses()[0];
     ClassMap const* thisEndClassMap = GetECDbMap ().GetClassMap (*thisEndClass);
-    size_t thisEndTableCount = GetECDbMap ().GetTableCountOnRelationshipEnd (thisEndConstraint);
     ECDbSqlTable* thisEndTable = const_cast<ECDbSqlTable*>(GetECDbMap().GetFirstTableFromRelationshipEnd(thisEndConstraint));
-    if (thisEndTableCount != 1)
-        {
-        BeAssert(thisEndTableCount == 1 && "ForeignKey end of relationship has more than one tables or has no table at all");
-        return MapStatus::Error;
-        }
 
     ECEntityClass const* otherEndClass = otherEndConstraint.GetClasses ()[0];
     size_t otherEndTableCount = GetECDbMap().GetTableCountOnRelationshipEnd(otherEndConstraint);
@@ -411,39 +420,57 @@ MapStatus RelationshipClassEndTableMap::_MapPart1 (SchemaImportContext&, ClassMa
     if (stat != MapStatus::Success)
         return stat;
 
-    //! Add referential integrity if user requested it.
-    if (relationshipClassMapInfo.CreateForeignKeyConstraint() && relationshipClass.GetStrength() != StrengthType::Holding)
+    if (GetDataIntegrityEnforcementMethod() == DataIntegrityEnforcementMethod::ForeignKey)
         {
         auto const& otherEndConstraint = thisEnd != ECRelationshipEnd_Source ? sourceConstraint : targetConstraint;
         auto const& otherEndConstraintMap = thisEnd != ECRelationshipEnd_Source ? m_sourceConstraintMap : m_targetConstraintMap;
+        auto foreignColumnName = thisEnd != ECRelationshipEnd_Source ? GetSourceECInstanceIdPropMap()->GetFirstColumn()->GetName().c_str() : GetTargetECInstanceIdPropMap()->GetFirstColumn()->GetName().c_str();
 
+        const std::set<ECDbSqlTable const*> foreignTables = GetECDbMap().GetTablesFromRelationshipEndWithColumn(thisEndConstraint, foreignColumnName);
         if (GetECDbMap().GetTableCountOnRelationshipEnd(otherEndConstraint) != 1)
             {
+            GetECDbMap().GetECDbR().GetECDbImplR().GetIssueReporter().Report(
+                ECDbIssueSeverity::Error,
+                "Relationship %s is evaluated to more then one table for primary (%s) side. ECDb expect only one table on each side.",
+                relationshipClassMapInfo.GetECClass().GetFullName(),
+                otherEnd == ECRelationshipEnd_Source ? "Source" : "Target"
+                );
+
             BeAssert(false);
             return MapStatus::Error;
             }
 
-        auto foreignKeyColumn = otherEndConstraintMap.GetECInstanceIdPropMap()->GetFirstColumn();
-        auto& foreignTable = GetPrimaryTable();
         auto primaryClassMap = GetECDbMap().GetClassMap(*otherEndConstraintMap.GetRelationshipConstraint().GetClasses()[0]);
-
-        BeAssert(primaryClassMap!=nullptr && "Primary Class map is null");
+        BeAssert(primaryClassMap != nullptr && "Primary Class map is null");
         auto primaryKeyColumn = primaryClassMap->GetPrimaryTable().GetFilteredColumnFirst(ColumnKind::ECInstanceId);
         auto& primaryTable = primaryKeyColumn->GetTable();
-        
-        BeAssert (foreignKeyColumn != nullptr);
-        BeAssert (primaryKeyColumn != nullptr);
-        if (foreignKeyColumn == nullptr || primaryKeyColumn == nullptr)
-            return MapStatus::Error;
-            
-        //Create foreign key constraint
-        auto foreignKey = foreignTable.CreateForeignKeyConstraint (primaryTable);
-        foreignKey->Add (foreignKeyColumn->GetName ().c_str (), primaryKeyColumn->GetName ().c_str ());
-        
-        foreignKey->SetOnDeleteAction(relationshipClassMapInfo.GetOnDeleteAction());
-        foreignKey->SetOnUpdateAction(relationshipClassMapInfo.GetOnUpdateAction());
+        if (primaryTable.GetPersistenceType() == PersistenceType::Persisted)
+            {
+            BeAssert(primaryKeyColumn != nullptr);
+
+            for (ECDbSqlTable const* foreignTable : foreignTables)
+                {
+                if (foreignTable->GetPersistenceType() == PersistenceType::Virtual)
+                    continue;
+
+                auto foreignKeyColumn = foreignTable->FindColumnCP(foreignColumnName);
+                BeAssert(foreignKeyColumn != nullptr);
+
+                if (foreignKeyColumn == nullptr || primaryKeyColumn == nullptr)
+                    return MapStatus::Error;
+
+                //Create foreign key constraint
+                auto foreignKey = const_cast<ECDbSqlTable*>(foreignTable)->CreateForeignKeyConstraint(primaryTable);
+                foreignKey->Add(foreignKeyColumn->GetName().c_str(), primaryKeyColumn->GetName().c_str());
+                if (GetRelationshipClass().GetStrength() == StrengthType::Embedding)
+                    foreignKey->SetOnDeleteAction(ForeignKeyActionType::Cascade);
+                else
+                    foreignKey->SetOnDeleteAction(ForeignKeyActionType::SetNull);
+
+                foreignKey->RemoveIfDuplicate();
+                }
+            }
         }
-    
     return stat;
     }
 
@@ -1026,6 +1053,28 @@ ECDbSqlColumn* RelationshipClassLinkTableMap::ConfigureForeignECClassIdKey(Relat
 
     return endECClassIdColumn;
     }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                   Affan.Khan                         1 / 16
+//---------------------------------------------------------------------------------------
+DataIntegrityEnforcementMethod RelationshipClassLinkTableMap::GetDataIntegrityEnforcementMethod() const
+    {
+    if (GetPrimaryTable().GetTableType() == TableType::Existing)
+        return DataIntegrityEnforcementMethod::None;
+
+    size_t nSourceTables = GetECDbMap().GetTableCountOnRelationshipEnd(GetRelationshipClass().GetSource());
+    size_t nTargetTables = GetECDbMap().GetTableCountOnRelationshipEnd(GetRelationshipClass().GetTarget());
+
+    if (GetRelationshipClass().GetStrength() == StrengthType::Referencing)
+        {
+        if (nSourceTables == 1 && nTargetTables == 1)
+            {
+            return DataIntegrityEnforcementMethod::ForeignKey;
+            }
+        }
+
+    return DataIntegrityEnforcementMethod::Trigger;
+    }
 //---------------------------------------------------------------------------------------
 //@bsimethod                                   Ramanujam.Raman                   06 / 12
 //---------------------------------------------------------------------------------------
@@ -1034,6 +1083,42 @@ MapStatus RelationshipClassLinkTableMap::_MapPart2 (SchemaImportContext& context
     MapStatus stat = RelationshipClassMap::_MapPart2 (context, classMapInfo, parentClassMap);
     if (stat != MapStatus::Success)
         return stat;
+
+    if (GetDataIntegrityEnforcementMethod() == DataIntegrityEnforcementMethod::ForeignKey)
+        {
+        if (GetRelationshipClass().GetStrength() == StrengthType::Embedding)
+            {
+            GetECDbMap().GetECDbR().GetECDbImplR().GetIssueReporter().Report(
+                ECDbIssueSeverity::Error,
+                "Relationship %s is of type embedding and desgniated to be mapped as LinkTable which is not supported in ECDb",
+                GetRelationshipClass().GetFullName()
+                );
+
+            BeAssert(false);
+            return MapStatus::Error;
+            }
+
+        std::set<ECDbSqlTable const*> sourceTables = GetECDbMap().GetTablesFromRelationshipEnd(GetRelationshipClass().GetSource());
+        std::set<ECDbSqlTable const*> targetTables = GetECDbMap().GetTablesFromRelationshipEnd(GetRelationshipClass().GetTarget());
+        
+        //Create FK from Source-Primary to LinkTable
+        ECDbSqlTable * sourceTable = const_cast<ECDbSqlTable*>(*sourceTables.begin());
+        ECDbSqlForeignKeyConstraint* sourceFK = GetPrimaryTable().CreateForeignKeyConstraint(*sourceTable);
+        ECDbSqlColumn const* souceColumn = sourceTable->GetFilteredColumnFirst(ColumnKind::ECInstanceId);
+        sourceFK->Add(GetSourceECInstanceIdPropMap()->GetFirstColumn()->GetName().c_str(), souceColumn->GetName().c_str());
+        sourceFK->SetOnDeleteAction(ForeignKeyActionType::Cascade);
+        sourceFK->RemoveIfDuplicate();
+        sourceFK = nullptr;
+
+        //Create FK from Target-Primary to LinkTable
+        ECDbSqlTable * targetTable = const_cast<ECDbSqlTable*>(*targetTables.begin());
+        ECDbSqlForeignKeyConstraint* targetFK = GetPrimaryTable().CreateForeignKeyConstraint(*targetTable);
+        ECDbSqlColumn const* targetColumn = targetTable->GetFilteredColumnFirst(ColumnKind::ECInstanceId);
+        targetFK->Add(GetTargetECInstanceIdPropMap()->GetFirstColumn()->GetName().c_str(), targetColumn->GetName().c_str());
+        targetFK->SetOnDeleteAction(ForeignKeyActionType::Cascade);
+        targetFK->RemoveIfDuplicate();
+        targetFK = nullptr;
+        }
 
     AddIndices (context, classMapInfo);
     return MapStatus::Success;

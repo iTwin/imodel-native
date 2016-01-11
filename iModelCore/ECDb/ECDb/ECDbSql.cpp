@@ -270,6 +270,22 @@ size_t ECDbSqlTable::IndexOf(ECDbSqlColumn const& column) const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        09/2014
 //---------------------------------------------------------------------------------------
+BentleyStatus ECDbSqlTable::RemoveConstraint(ECDbSqlConstraint const& constraint)
+    {
+    for (auto itor = m_constraints.begin(); itor != m_constraints.end(); ++itor)
+        {
+        if (itor->get() == &constraint)
+            {
+            m_constraints.erase(itor);
+            return SUCCESS;
+            }
+        }
+
+    return ERROR;
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan        09/2014
+//---------------------------------------------------------------------------------------
 ECDbSqlColumn* ECDbSqlTable::CreateColumn (Utf8CP name, ECDbSqlColumn::Type type, size_t position, ColumnKind kind, PersistenceType persistenceType)
     {
     if (GetEditHandleR ().AssertNotInEditMode ())
@@ -568,7 +584,7 @@ BentleyStatus ECDbMapDb::DropTable (Utf8CP name)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        09/2014
 //---------------------------------------------------------------------------------------
-ECDbSqlTable* ECDbMapDb::CreateTable (Utf8CP name, TableType tableType, PersistenceType persType)
+ECDbSqlTable* ECDbMapDb::CreateTable (Utf8CP name, TableType tableType, PersistenceType persType, ECDbSqlTable const* baseTable)
     {
     ECDbSqlTable* newTableDef;
     if (!Utf8String::IsNullOrEmpty (name))
@@ -579,7 +595,7 @@ ECDbSqlTable* ECDbMapDb::CreateTable (Utf8CP name, TableType tableType, Persiste
             return nullptr;
             }
 
-        newTableDef = new ECDbSqlTable (name, *this, GetManagerR ().GetIdGenerator ().NextTableId (), persType, tableType);
+        newTableDef = new ECDbSqlTable (name, *this, GetManagerR ().GetIdGenerator ().NextTableId (), persType, tableType, baseTable);
         }
     else
         {
@@ -589,7 +605,7 @@ ECDbSqlTable* ECDbMapDb::CreateTable (Utf8CP name, TableType tableType, Persiste
             m_nameGenerator.Generate (generatedName);
             } while (FindTable (generatedName.c_str ()));
 
-            newTableDef = new ECDbSqlTable (generatedName.c_str (), *this, GetManagerR ().GetIdGenerator ().NextTableId (), persType, tableType);
+            newTableDef = new ECDbSqlTable (generatedName.c_str (), *this, GetManagerR ().GetIdGenerator ().NextTableId (), persType, tableType, baseTable);
         }
 
     m_tables[newTableDef->GetName ().c_str ()] = std::unique_ptr<ECDbSqlTable> (newTableDef);
@@ -613,7 +629,7 @@ ECDbSqlTable* ECDbMapDb::CreateTableForExistingTableMapStrategy (Utf8CP existing
         return nullptr;
         }
 
-    auto newTableDef = new ECDbSqlTable (existingTableName, *this, GetManagerR ().GetIdGenerator ().NextTableId (), PersistenceType::Persisted, TableType::Existing);
+    auto newTableDef = new ECDbSqlTable (existingTableName, *this, GetManagerR ().GetIdGenerator ().NextTableId (), PersistenceType::Persisted, TableType::Existing, nullptr);
     newTableDef->GetEditHandleR ().EndEdit (); //we do not want this table to be editable;
     m_tables[newTableDef->GetName ().c_str ()] = std::unique_ptr<ECDbSqlTable> (newTableDef);
     return newTableDef;
@@ -643,7 +659,7 @@ ECDbSqlTable* ECDbMapDb::CreateTableForExistingTableMapStrategy (ECDbCR ecdb, Ut
         }
 
 
-    ECDbSqlTable* newTableDef = new ECDbSqlTable(existingTableName, *this, GetManagerR().GetIdGenerator().NextTableId(), PersistenceType::Persisted, TableType::Existing);
+    ECDbSqlTable* newTableDef = new ECDbSqlTable(existingTableName, *this, GetManagerR().GetIdGenerator().NextTableId(), PersistenceType::Persisted, TableType::Existing, nullptr);
     
     Statement stmt;
     if (stmt.Prepare (ecdb, SqlPrintfString ("PRAGMA table_info('%s')", existingTableName)) != BE_SQLITE_OK)
@@ -735,9 +751,16 @@ ECDbSqlTable* ECDbMapDb::FindTableP (Utf8CP name) const
 const std::vector<ECDbSqlTable const*> ECDbMapDb::GetTables () const
     {
     std::vector<ECDbSqlTable const*> tables;
+    std::vector<ECDbSqlTable const*> joinedTables;
     for (auto const& key : m_tables)
-        tables.push_back (key.second.get ());
+        {
+        if (key.second->GetTableType() == TableType::Joined)
+            joinedTables.push_back(key.second.get());
+        else
+            tables.push_back(key.second.get());
+        }
 
+    tables.insert(tables.end(), joinedTables.begin(), joinedTables.end());
     return tables;
     }
 //---------------------------------------------------------------------------------------
@@ -970,6 +993,75 @@ BentleyStatus ECDbSqlForeignKeyConstraint::Add (Utf8CP sourceColumn, Utf8CP targ
     return BentleyStatus::SUCCESS;
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan        09/2014
+//---------------------------------------------------------------------------------------
+bool ECDbSqlForeignKeyConstraint::IsDuplicate() const
+    {
+    for (auto constraint : GetSourceTable().GetConstraints())
+        {
+        if (constraint->GetType() == ECDbSqlConstraint::Type::ForeignKey)
+            {
+            auto fkConstraint = static_cast<ECDbSqlForeignKeyConstraint const*>(constraint);
+            if (fkConstraint == this)
+                continue;
+
+            if (Equalls(*fkConstraint))
+                return true;
+            }
+        }
+
+    return false;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan        09/2014
+//---------------------------------------------------------------------------------------
+void ECDbSqlForeignKeyConstraint::RemoveIfDuplicate()
+    {
+    if (IsDuplicate())
+        const_cast<ECDbSqlTable&>(GetSourceTable()).RemoveConstraint(*this);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan        09/2014
+//---------------------------------------------------------------------------------------
+bool ECDbSqlForeignKeyConstraint::Equalls(ECDbSqlForeignKeyConstraint const& rhs) const
+    {
+    if (&rhs == this)
+        return true;
+
+    if (rhs.m_onDeleteAction != m_onDeleteAction)
+        return false;
+
+    if (rhs.m_onUpdateAction != m_onUpdateAction)
+        return false;
+
+    if (rhs.m_sourceColumns.size() != m_sourceColumns.size())
+        return false;
+
+    if (&this->GetSourceTable() != &GetSourceTable())
+        return false;
+
+    if (&this->GetTargetTable() != &GetTargetTable())
+        return false;
+
+    std::set<ECDbSqlColumn const*> rhsSourceColumns = std::set<ECDbSqlColumn const*>(rhs.m_sourceColumns.begin(), rhs.m_sourceColumns.end());
+    std::set<ECDbSqlColumn const*> rhsTargetColumns = std::set<ECDbSqlColumn const*>(rhs.m_targetColumns.begin(), rhs.m_targetColumns.end());
+    for (auto col : m_sourceColumns)
+        {
+        if (rhsSourceColumns.find(col) == rhsSourceColumns.end())
+            return false;
+        }
+
+    for (auto col : m_targetColumns)
+        {
+        if (rhsTargetColumns.find(col) == rhsTargetColumns.end())
+            return false;
+        }
+
+    return true;
+    }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        09/2014
 //---------------------------------------------------------------------------------------
@@ -1924,13 +2016,23 @@ DbResult ECDbSqlPersistence::ReadTable(Statement& stmt, ECDbMapDb& o)
     auto name = stmt.GetValueText(1);
     TableType tableType = Enum::FromInt<TableType>(stmt.GetValueInt(2));
     auto persistenceType = stmt.GetValueInt(3) == 1 ? PersistenceType::Virtual : PersistenceType::Persisted;
+    auto baseTableName = stmt.GetValueText(4);
 
     ECDbSqlTable* table = nullptr;
     if (tableType == TableType::Existing)
         table = o.CreateTableForExistingTableMapStrategy(name);
     else
-        table = o.CreateTable(name, tableType, persistenceType);
-
+        {
+        if (baseTableName == nullptr)
+            table = o.CreateTable(name, tableType, persistenceType);
+        else
+            {
+            auto baseTable = o.FindTable(baseTableName);
+            BeAssert(baseTable != nullptr && "Failed to find base table");
+            BeAssert(TableType::Joined == tableType && "Expecting JoinedTable");
+            table = o.CreateTable(name, tableType, persistenceType, baseTable);
+            }
+        }
     if (table == nullptr)
         {
         BeAssert(false && "Failed to create table definition");
@@ -2114,7 +2216,6 @@ DbResult ECDbSqlPersistence::ReadForeignKey (Statement& stmt, ECDbSqlTable& o)
 DbResult ECDbSqlPersistence::Insert (ECDbMapDb const& db)
     {
     auto tables = db.GetTables ();
-
     for (auto table : tables)
         {
         DbResult stat = InsertTable (*table);
@@ -2148,6 +2249,11 @@ DbResult ECDbSqlPersistence::InsertTable (ECDbSqlTable const& o)
     stmt->BindText (2, o.GetName ().c_str (), Statement::MakeCopy::No);
     stmt->BindInt (3, Enum::ToInt(o.GetTableType ()));
     stmt->BindInt (4, o.GetPersistenceType () == PersistenceType::Virtual ? 1 : 0);
+    if (auto baseTable = o.GetBaseTable())
+        stmt->BindInt64(5, baseTable->GetId());
+    else
+        stmt->BindNull(5);
+
 
     auto stat = stmt->Step ();
     if (stat != BE_SQLITE_DONE)

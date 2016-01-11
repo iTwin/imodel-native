@@ -122,8 +122,6 @@ struct PropertyMapSet : NonCopyableClass
         static PropertyMapSet::Ptr Create (IClassMap const& classMap);
     };
 
-
-
 //=======================================================================================
 //! Maps an ECClass to a DbTable
 //! @remarks This is the base interface for querying information for a class mapping.
@@ -224,6 +222,7 @@ public:
     static BentleyStatus DetermineTableName(Utf8StringR tableName, ECN::ECClassCR, Utf8CP tablePrefix = nullptr);
     static BentleyStatus DetermineTablePrefix(Utf8StringR tablePrefix, ECN::ECClassCR);
     static bool IsAnyClass (ECN::ECClassCR);
+    virtual bool SupportECSql(ECSqlType ecsqlType, Utf8StringP reason = nullptr) const { BeAssert(false); return false;}
     };
 
 //======================================================================================
@@ -396,6 +395,7 @@ struct ClassMap : public IClassMap, RefCountedBase
 
         ColumnFactory const& GetColumnFactory() const { return m_columnFactory; }
         ColumnFactory& GetColumnFactoryR() { return m_columnFactory; }
+
     };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE
