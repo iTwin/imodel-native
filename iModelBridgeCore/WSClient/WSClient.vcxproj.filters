@@ -363,6 +363,12 @@
     <ClCompile Include="Cache\Persistence\Core\WSCacheState.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Azure\AzureBlobStorageClient.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Tests\UnitTests\Published\WebServices\Azure\AzureBlobStorageClientTests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Client\WebApi\WebApi.h">
@@ -797,6 +803,12 @@
     <ClInclude Include="Cache\Persistence\Hierarchy\CacheNodeKey.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="PublicAPI\WebServices\Azure\AzureBlobStorageClient.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Tests\UnitTests\Published\WebServices\Azure\AzureBlobStorageClientTests.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Xml Include="WSClient.PartFile.xml" />
@@ -830,5 +842,6 @@
     <None Include="BentleyDesktopClientCCApi.prewire.mke" />
     <None Include="DgnDbServerClientLib.mke" />
     <None Include="DgnDbServerClientPrewire.mke" />
+    <None Include="Azure\Azure.mki" />
   </ItemGroup>
 </Project>
