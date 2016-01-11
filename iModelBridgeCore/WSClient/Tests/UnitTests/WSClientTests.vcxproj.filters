@@ -149,6 +149,7 @@
     <ClInclude Include="Published\Utils\MockTests.h" />
     <ClInclude Include="Published\Utils\AsyncTestCheckpoint.h" />
     <ClInclude Include="Published\WebServices\Cache\Util\JsonUtilTests.h" />
+    <ClInclude Include="Published\WebServices\Cache\Util\MockECDbAdapterDeleteListener.h" />
     <ClInclude Include="Published\WebServices\Azure\AzureBlobStorageClientTests.h" />
   </ItemGroup>
   <ItemGroup>
