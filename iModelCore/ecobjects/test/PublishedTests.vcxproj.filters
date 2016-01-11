@@ -63,7 +63,7 @@
     <ClCompile Include="TestFixture\TestFixture.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Published\SchemaPropertiesTest.cpp">
+    <ClCompile Include="Published\ValueValidationTests.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
