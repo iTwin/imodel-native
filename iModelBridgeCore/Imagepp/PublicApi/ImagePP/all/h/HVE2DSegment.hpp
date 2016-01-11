@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HVE2DSegment.hpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -385,12 +385,22 @@ inline double HVE2DSegment::CalculateRelativePosition(const HGF2DLocation& pi_rP
     // from start point
 
     // Check if segment is vertical or close but not perfectly horizontal
-    const double result = ((HDOUBLE_EQUAL(m_StartPoint.GetX(), m_EndPoint.GetX(), GetTolerance()) && 
-                           (m_StartPoint.GetY() != m_EndPoint.GetY())) ?
-                           ((pi_rPointOnLinear.GetY() - m_StartPoint.GetY()) / (m_EndPoint.GetY() - m_StartPoint.GetY())) :
-                           ((pi_rPointOnLinear.GetX() - m_StartPoint.GetX()) / (m_EndPoint.GetX() - m_StartPoint.GetX())));
+    double relativePosition;
+    double deltaX = m_EndPoint.GetX() - m_StartPoint.GetX();
+    double deltaY = m_EndPoint.GetY() - m_StartPoint.GetY();
 
-    return (result <= 1.0 ? result : 1.0);
+    if (fabs(deltaX) > fabs(deltaY))
+        relativePosition = (pi_rPointOnLinear.GetX() - m_StartPoint.GetX()) / deltaX;
+    else
+        relativePosition = (pi_rPointOnLinear.GetY() - m_StartPoint.GetY()) / deltaY;
+
+    // Computation errors may result in values slightly lower than 0 or higher than 1 (within tolerance)
+    // we thus clamp
+    if (relativePosition < 0.0)
+        relativePosition = 0.0;
+    if (relativePosition > 1.0)
+        relativePosition = 1.0;
+    return relativePosition;
     }
 
 //-----------------------------------------------------------------------------

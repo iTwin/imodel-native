@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: Tests/NonPublished/IppGraLibs/HGF2DPolySegmentTester.cpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -97,8 +97,6 @@ HGF2DPolySegmentTester::HGF2DPolySegmentTester()
     HGF2DDisplacement disp1 = HGF2DDisplacement(HGFBearing(77.5* PI / 180), MYEPSILON);
     MiscPolySegment3 = HGF2DPolySegment(HGF2DPosition(0.1, 0.1), 
                                         HGF2DPosition(0.1 + disp1.GetDeltaX(), 0.1 + disp1.GetDeltaY()));
-    MiscPolySegment3A = HGF2DPolySegment(HGF2DPosition(0.1+MYEPSILON, 0.1), 
-                                         HGF2DPosition(0.1+MYEPSILON + disp1.GetDeltaX(), 0.1 + disp1.GetDeltaY()));
     MiscPolySegment4 = HGF2DPolySegment(HGF2DPosition(0.2, 0.1),
                                         HGF2DPosition(0.2 + disp1.GetDeltaX(), 0.1 + disp1.GetDeltaY()));
     MiscPolySegment6 = HGF2DPolySegment(HGF2DPosition(0.1, 0.1), HGF2DPosition(-9.9, 10.1));
@@ -1291,13 +1289,13 @@ TEST_F (HGF2DPolySegmentTester, CalculateRelativePositionTest)
 
     // Test with PolySegments way into positive regions
     ASSERT_NEAR(0.0, PositivePolySegment1.CalculateRelativePosition(PositivePoint0d0), MYEPSILON);
-    ASSERT_DOUBLE_EQ(0.1, PositivePolySegment1.CalculateRelativePosition(PositivePoint0d1));
+    ASSERT_NEAR(0.1, PositivePolySegment1.CalculateRelativePosition(PositivePoint0d1), MYEPSILON);
     ASSERT_DOUBLE_EQ(0.5, PositivePolySegment1.CalculateRelativePosition(PositivePoint0d5));
     ASSERT_DOUBLE_EQ(1.0, PositivePolySegment1.CalculateRelativePosition(PositivePoint1d0));
 
     // Test with PolySegments way into negative regions
     ASSERT_NEAR(0.0, NegativePolySegment1.CalculateRelativePosition(NegativePoint0d0), MYEPSILON);
-    ASSERT_DOUBLE_EQ(0.1, NegativePolySegment1.CalculateRelativePosition(NegativePoint0d1));
+    ASSERT_NEAR(0.1, NegativePolySegment1.CalculateRelativePosition(NegativePoint0d1), MYEPSILON);
     ASSERT_DOUBLE_EQ(0.5, NegativePolySegment1.CalculateRelativePosition(NegativePoint0d5));
     ASSERT_DOUBLE_EQ(1.0, NegativePolySegment1.CalculateRelativePosition(NegativePoint1d0));
 
@@ -3314,6 +3312,7 @@ TEST_F (HGF2DPolySegmentTester, CloningTest)
     // Test with a translation between systems
     Translation = HGF2DDisplacement (10.0, 10.0);
     HGF2DTranslation myTranslation(Translation);
+    myTranslation.Reverse();
 
     HFCPtr<HGF2DPolySegment> pClone5 = (HGF2DPolySegment*)MiscPolySegment1.AllocPolySegmentTransformDirect(myTranslation);
     ASSERT_TRUE(pClone5->IsPointOn(HGF2DPosition(-9.9, -9.9))); 
@@ -3324,6 +3323,7 @@ TEST_F (HGF2DPolySegmentTester, CloningTest)
     myStretch.SetTranslation(Translation);
     myStretch.SetXScaling(0.5);
     myStretch.SetYScaling(0.5);
+    myStretch.Reverse();
 
     HFCPtr<HGF2DPolySegment> pClone6 = (HGF2DPolySegment*)MiscPolySegment1.AllocPolySegmentTransformDirect(myStretch);
     ASSERT_TRUE(pClone6->IsPointOn(HGF2DPosition(-19.8, -19.8))); 
@@ -3333,6 +3333,7 @@ TEST_F (HGF2DPolySegmentTester, CloningTest)
     HGF2DSimilitude mySimilitude;
     mySimilitude.SetRotation(PI);
     mySimilitude.SetScaling(0.5);
+    mySimilitude.Reverse();
 
     HFCPtr<HGF2DPolySegment> pClone7 = (HGF2DPolySegment*)MiscPolySegment1.AllocPolySegmentTransformDirect(mySimilitude);
     ASSERT_TRUE(pClone7->IsPointOn(HGF2DPosition(-0.2,-0.2 ))); 
@@ -3344,6 +3345,7 @@ TEST_F (HGF2DPolySegmentTester, CloningTest)
     myAffine.SetRotation(PI);
     myAffine.SetXScaling(0.5);
     myAffine.SetYScaling(0.5);
+    myAffine.Reverse();
 
     HFCPtr<HGF2DPolySegment> pClone8 = (HGF2DPolySegment*)MiscPolySegment1.AllocPolySegmentTransformDirect(myAffine);
     ASSERT_TRUE(pClone8->IsPointOn(HGF2DPosition(19.8, 19.8))); 
@@ -3502,9 +3504,9 @@ TEST_F (HGF2DPolySegmentTester, InteractionTest)
 
     ASSERT_FALSE(MiscPolySegment1.IsPointOn(HGF2DPosition(20, 20)));
     ASSERT_FALSE(MiscPolySegment1.IsPointOn(HGF2DPosition(0.1, 0.1-1.1*MYEPSILON)));
-    ASSERT_FALSE(MiscPolySegment1.IsPointOn(HGF2DPosition(MiscMidPoint1A.GetX()-1.1*MYEPSILON, MiscMidPoint1A.GetY() - 1.1*MYEPSILON)));
+    ASSERT_FALSE(MiscPolySegment1.IsPointOn(HGF2DPosition(MiscMidPoint1A.GetX()-1.1*MYEPSILON, MiscMidPoint1A.GetY() + 1.1*MYEPSILON)));
     ASSERT_FALSE(MiscPolySegment1.IsPointOn(HGF2DPosition(MiscMidPoint1A.GetX()+1.1*MYEPSILON, MiscMidPoint1A.GetY() - 1.1*MYEPSILON)));
-    ASSERT_TRUE(MiscPolySegment1.IsPointOn(HGF2DPosition (MiscMidPoint1A.GetX()-0.7*MYEPSILON, MiscMidPoint1A.GetY() - 0.7*MYEPSILON)));
+    ASSERT_TRUE(MiscPolySegment1.IsPointOn(HGF2DPosition (MiscMidPoint1A.GetX()-0.7*MYEPSILON, MiscMidPoint1A.GetY() + 0.7*MYEPSILON)));
     ASSERT_TRUE(MiscPolySegment1.IsPointOn(HGF2DPosition (MiscMidPoint1A.GetX()+0.7*MYEPSILON, MiscMidPoint1A.GetY() - 0.7*MYEPSILON)));
     ASSERT_TRUE(MiscPolySegment1.IsPointOn(MiscPolySegment1.GetStartPoint()));
     ASSERT_TRUE(MiscPolySegment1.IsPointOn(MiscPolySegment1.GetEndPoint()));
@@ -3524,9 +3526,9 @@ TEST_F (HGF2DPolySegmentTester, InteractionTest)
 
     ASSERT_FALSE(MiscPolySegment2.IsPointOn(HGF2DPosition(20, 20)));
     ASSERT_FALSE(MiscPolySegment2.IsPointOn(HGF2DPosition(0.1, 0.1-1.1*MYEPSILON)));
-    ASSERT_FALSE(MiscPolySegment2.IsPointOn(HGF2DPosition(MiscMidPoint1A.GetX()-1.1*MYEPSILON, MiscMidPoint1A.GetY() - 1.1*MYEPSILON)));
+    ASSERT_FALSE(MiscPolySegment2.IsPointOn(HGF2DPosition(MiscMidPoint1A.GetX()-1.1*MYEPSILON, MiscMidPoint1A.GetY() + 1.1*MYEPSILON)));
     ASSERT_FALSE(MiscPolySegment2.IsPointOn(HGF2DPosition(MiscMidPoint1A.GetX()+1.1*MYEPSILON, MiscMidPoint1A.GetY() - 1.1*MYEPSILON)));
-    ASSERT_TRUE(MiscPolySegment2.IsPointOn (HGF2DPosition(MiscMidPoint1A.GetX()-0.7*MYEPSILON, MiscMidPoint1A.GetY() - 0.7*MYEPSILON)));
+    ASSERT_TRUE(MiscPolySegment2.IsPointOn (HGF2DPosition(MiscMidPoint1A.GetX()-0.7*MYEPSILON, MiscMidPoint1A.GetY() + 0.7*MYEPSILON)));
     ASSERT_TRUE(MiscPolySegment2.IsPointOn (HGF2DPosition(MiscMidPoint1A.GetX()+0.7*MYEPSILON, MiscMidPoint1A.GetY() - 0.7*MYEPSILON)));
     ASSERT_TRUE(MiscPolySegment2.IsPointOn(MiscPolySegment1.GetStartPoint()));
     ASSERT_TRUE(MiscPolySegment2.IsPointOn(MiscPolySegment1.GetEndPoint()));
@@ -3547,8 +3549,8 @@ TEST_F (HGF2DPolySegmentTester, InteractionTest)
     ASSERT_FALSE(VerticalPolySegment3.Crosses(MiscPolySegment1));
     ASSERT_FALSE(VerticalPolySegment3.AreAdjacent(MiscPolySegment1));
 
-    ASSERT_FALSE(VerticalPolySegment3.Crosses(MiscPolySegment3A));
-    ASSERT_FALSE(VerticalPolySegment3.AreAdjacent(MiscPolySegment3A));
+    ASSERT_FALSE(VerticalPolySegment3.Crosses(MiscPolySegment3));
+    ASSERT_FALSE(VerticalPolySegment3.AreAdjacent(MiscPolySegment3));
 
     ASSERT_FALSE(VerticalPolySegment3.Crosses(LargePolySegment1));
     ASSERT_FALSE(VerticalPolySegment3.AreAdjacent(LargePolySegment1));
@@ -3574,8 +3576,8 @@ TEST_F (HGF2DPolySegmentTester, InteractionTest)
     ASSERT_FALSE(HorizontalPolySegment3.Crosses(MiscPolySegment1));
     ASSERT_FALSE(HorizontalPolySegment3.AreAdjacent(MiscPolySegment1));
 
-    ASSERT_FALSE(HorizontalPolySegment3.Crosses(MiscPolySegment3A));
-    ASSERT_FALSE(HorizontalPolySegment3.AreAdjacent(MiscPolySegment3A));
+    ASSERT_FALSE(HorizontalPolySegment3.Crosses(MiscPolySegment3));
+    ASSERT_FALSE(HorizontalPolySegment3.AreAdjacent(MiscPolySegment3));
 
     ASSERT_FALSE(HorizontalPolySegment3.Crosses(LargePolySegment1));
     ASSERT_FALSE(HorizontalPolySegment3.AreAdjacent(LargePolySegment1));
@@ -3595,25 +3597,25 @@ TEST_F (HGF2DPolySegmentTester, InteractionTest)
     ASSERT_TRUE(HorizontalPolySegment3.IsPointOn(HorizontalMidPoint3A));
 
     // Tests with a miscalenious EPSILON sized PolySegment
-    ASSERT_FALSE(MiscPolySegment3A.Crosses(MiscPolySegment1));
-    ASSERT_FALSE(MiscPolySegment3A.AreAdjacent(MiscPolySegment1));
+    ASSERT_FALSE(MiscPolySegment3.Crosses(MiscPolySegment1));
+    ASSERT_FALSE(MiscPolySegment3.AreAdjacent(MiscPolySegment1));
 
-    ASSERT_FALSE(MiscPolySegment3A.Crosses(LargePolySegment1));
-    ASSERT_FALSE(MiscPolySegment3A.AreAdjacent(LargePolySegment1));
+    ASSERT_FALSE(MiscPolySegment3.Crosses(LargePolySegment1));
+    ASSERT_FALSE(MiscPolySegment3.AreAdjacent(LargePolySegment1));
 
-    ASSERT_FALSE(MiscPolySegment3A.IsPointOn(HGF2DPosition(10, 10)));
-    ASSERT_FALSE(MiscPolySegment3A.IsPointOn(HGF2DPosition(0.1, 0.1-1.1*MYEPSILON)));
-    ASSERT_FALSE(MiscPolySegment3A.IsPointOn(HGF2DPosition(MiscMidPoint3A.GetX() - 1.1*MYEPSILON, MiscMidPoint3A.GetY() + 1.1*MYEPSILON)));
-    ASSERT_FALSE(MiscPolySegment3A.IsPointOn(HGF2DPosition(MiscMidPoint3A.GetX() + 1.1*MYEPSILON, MiscMidPoint3A.GetY() - 1.1*MYEPSILON)));
-    ASSERT_TRUE(MiscPolySegment3A.IsPointOn (HGF2DPosition(MiscMidPoint3A.GetX() - 0.9*MYEPSILON, MiscMidPoint3A.GetY() - 0.9*MYEPSILON)));
-    ASSERT_TRUE(MiscPolySegment3A.IsPointOn (HGF2DPosition(MiscMidPoint3A.GetX() + 0.9*MYEPSILON, MiscMidPoint3A.GetY() + 0.9*MYEPSILON)));
-    ASSERT_TRUE(MiscPolySegment3A.IsPointOn(MiscPolySegment3A.GetStartPoint()));
-    ASSERT_TRUE(MiscPolySegment3A.IsPointOn(MiscPolySegment3A.GetEndPoint()));
-    ASSERT_TRUE(MiscPolySegment3A.IsPointOn(MiscMidPoint3A));
+    ASSERT_FALSE(MiscPolySegment3.IsPointOn(HGF2DPosition(10, 10)));
+    ASSERT_FALSE(MiscPolySegment3.IsPointOn(HGF2DPosition(0.1, 0.1-1.1*MYEPSILON)));
+    ASSERT_FALSE(MiscPolySegment3.IsPointOn(HGF2DPosition(MiscMidPoint3A.GetX() - 1.1*MYEPSILON, MiscMidPoint3A.GetY() + 1.1*MYEPSILON)));
+    ASSERT_FALSE(MiscPolySegment3.IsPointOn(HGF2DPosition(MiscMidPoint3A.GetX() + 1.1*MYEPSILON, MiscMidPoint3A.GetY() - 1.1*MYEPSILON)));
+    ASSERT_TRUE(MiscPolySegment3.IsPointOn (HGF2DPosition(MiscMidPoint3A.GetX() - 0.9*MYEPSILON, MiscMidPoint3A.GetY() - 0.9*MYEPSILON)));
+    ASSERT_TRUE(MiscPolySegment3.IsPointOn (HGF2DPosition(MiscMidPoint3A.GetX() + 0.9*MYEPSILON, MiscMidPoint3A.GetY() + 0.9*MYEPSILON)));
+    ASSERT_TRUE(MiscPolySegment3.IsPointOn(MiscPolySegment3.GetStartPoint()));
+    ASSERT_TRUE(MiscPolySegment3.IsPointOn(MiscPolySegment3.GetEndPoint()));
+    ASSERT_TRUE(MiscPolySegment3.IsPointOn(MiscMidPoint3A));
 
-    ASSERT_TRUE(MiscPolySegment3A.IsPointOn(MiscPolySegment3A.GetStartPoint()));
-    ASSERT_TRUE(MiscPolySegment3A.IsPointOn(MiscPolySegment3A.GetEndPoint()));
-    ASSERT_TRUE(MiscPolySegment3A.IsPointOn(MiscMidPoint3));
+    ASSERT_TRUE(MiscPolySegment3.IsPointOn(MiscPolySegment3.GetStartPoint()));
+    ASSERT_TRUE(MiscPolySegment3.IsPointOn(MiscPolySegment3.GetEndPoint()));
+    ASSERT_TRUE(MiscPolySegment3.IsPointOn(MiscMidPoint3));
 
     // Due to precision problems, the following
     // Tests with a very large PolySegment
@@ -3643,8 +3645,8 @@ TEST_F (HGF2DPolySegmentTester, InteractionTest)
     ASSERT_FALSE(PositivePolySegment1.Crosses(MiscPolySegment1));
     ASSERT_FALSE(PositivePolySegment1.AreAdjacent(MiscPolySegment1));
 
-    ASSERT_FALSE(PositivePolySegment1.Crosses(MiscPolySegment3A));
-    ASSERT_FALSE(PositivePolySegment1.AreAdjacent(MiscPolySegment3A));
+    ASSERT_FALSE(PositivePolySegment1.Crosses(MiscPolySegment3));
+    ASSERT_FALSE(PositivePolySegment1.AreAdjacent(MiscPolySegment3));
 
     ASSERT_FALSE(PositivePolySegment1.Crosses(LargePolySegment1));
     ASSERT_FALSE(PositivePolySegment1.AreAdjacent(LargePolySegment1));
@@ -3666,8 +3668,8 @@ TEST_F (HGF2DPolySegmentTester, InteractionTest)
     ASSERT_FALSE(NegativePolySegment1.Crosses(MiscPolySegment1));
     ASSERT_FALSE(NegativePolySegment1.AreAdjacent(MiscPolySegment1));
 
-    ASSERT_FALSE(NegativePolySegment1.Crosses(MiscPolySegment3A));
-    ASSERT_FALSE(NegativePolySegment1.AreAdjacent(MiscPolySegment3A));
+    ASSERT_FALSE(NegativePolySegment1.Crosses(MiscPolySegment3));
+    ASSERT_FALSE(NegativePolySegment1.AreAdjacent(MiscPolySegment3));
 
     ASSERT_FALSE(NegativePolySegment1.Crosses(LargePolySegment1));
     ASSERT_FALSE(NegativePolySegment1.AreAdjacent(LargePolySegment1));
@@ -3751,7 +3753,7 @@ TEST_F (HGF2DPolySegmentTester, BearingTest)
     ASSERT_DOUBLE_EQ(-1.7889624832338027, MiscPolySegment3.CalculateBearing(MiscMidPoint3A, HGF2DVector::ALPHA).GetAngle());
 
     // Obtain bearing BETA of a miscaleniuous EPSILON SIZED PolySegment
-    ASSERT_DOUBLE_EQ(1.3526301703559906, MiscPolySegment3A.CalculateBearing(MiscMidPoint3A, HGF2DVector::BETA).GetAngle());
+    ASSERT_DOUBLE_EQ(1.3526301703559906, MiscPolySegment3.CalculateBearing(MiscMidPoint3A, HGF2DVector::BETA).GetAngle());
 
     // Obtain bearing ALPHA of a very large PolySegment
     ASSERT_DOUBLE_EQ(-1.8157749899217608, LargePolySegment1.CalculateBearing(LargeMidPoint1A, HGF2DVector::ALPHA).GetAngle());
@@ -4720,15 +4722,15 @@ TEST_F (HGF2DPolySegmentTester, CalculateRelativePositionTest2)
 
     // Test with PolySegment2
     ASSERT_NEAR(0.0, PolySegment2.CalculateRelativePosition(PolySegment2Point0d0), MYEPSILON);
-    ASSERT_DOUBLE_EQ(0.099999999999999381, PolySegment2.CalculateRelativePosition(PolySegment2Point0d1));
-    ASSERT_DOUBLE_EQ(0.500000000000001670, PolySegment2.CalculateRelativePosition(PolySegment2Point0d5));
+    ASSERT_NEAR(0.099999999999999381, PolySegment2.CalculateRelativePosition(PolySegment2Point0d1), MYEPSILON);
+    ASSERT_NEAR(0.500000000000001670, PolySegment2.CalculateRelativePosition(PolySegment2Point0d5), MYEPSILON);
 
     // NORMAL Strange behavior provoqued by auto-clossing condition
     ASSERT_NEAR(0.0, PolySegment2.CalculateRelativePosition(PolySegment2Point1d0), MYEPSILON);
 
     // Test with PolySegment3 (epsilon sized container)
     ASSERT_NEAR(0.0, PolySegment3.CalculateRelativePosition(PolySegment3Point0d0), MYEPSILON);
-    ASSERT_DOUBLE_EQ(0.10000000000000007, PolySegment3.CalculateRelativePosition(PolySegment3Point0d1));
+    ASSERT_NEAR(0.10000000000000007, PolySegment3.CalculateRelativePosition(PolySegment3Point0d1), MYEPSILON);
     
     #ifdef WIP_IPPTEST_BUG_5 
     // Strange behavior due to epsilon size of PolySegment
@@ -5370,6 +5372,7 @@ TEST_F (HGF2DPolySegmentTester, CloningTest2)
     // Test with a translation between systems
     Translation = HGF2DDisplacement (10.0, 10.0);
     HGF2DTranslation myTranslation(Translation);
+    myTranslation.Reverse();
 
     HFCPtr<HGF2DPolySegment> pClone5 = (HGF2DPolySegment*) PolySegment1.AllocPolySegmentTransformDirect(myTranslation);
 
@@ -5386,6 +5389,7 @@ TEST_F (HGF2DPolySegmentTester, CloningTest2)
     myStretch.SetTranslation(Translation);
     myStretch.SetXScaling(0.5);
     myStretch.SetYScaling(0.5);
+    myStretch.Reverse();
 
     HFCPtr<HGF2DPolySegment> pClone6 = (HGF2DPolySegment*) PolySegment1.AllocPolySegmentTransformDirect(myStretch);
 
@@ -5401,6 +5405,7 @@ TEST_F (HGF2DPolySegmentTester, CloningTest2)
     HGF2DSimilitude mySimilitude;
     mySimilitude.SetRotation(PI);
     mySimilitude.SetScaling(0.5);
+    mySimilitude.Reverse();
 
     HFCPtr<HGF2DPolySegment> pClone7 = (HGF2DPolySegment*) PolySegment1.AllocPolySegmentTransformDirect(mySimilitude);
 
@@ -5418,6 +5423,7 @@ TEST_F (HGF2DPolySegmentTester, CloningTest2)
     myAffine.SetRotation(PI);
     myAffine.SetXScaling(0.5);
     myAffine.SetYScaling(0.5);
+    myAffine.Reverse();
 
     HFCPtr<HGF2DPolySegment> pClone8 = (HGF2DPolySegment*) PolySegment1.AllocPolySegmentTransformDirect(myAffine);
 

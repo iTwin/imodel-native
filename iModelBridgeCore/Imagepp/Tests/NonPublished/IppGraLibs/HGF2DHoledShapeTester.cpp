@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: Tests/NonPublished/IppGraLibs/HGF2DHoledShapeTester.cpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -30,11 +30,11 @@ HGF2DHoledShapeTester::HGF2DHoledShapeTester()
     MyLinear2.AppendPoint(HGF2DPosition(12.0, 12.0));
     
     MyLinear4 = HGF2DPolySegment();
-    MyLinear4.AppendPoint(HGF2DPosition(18.0, 12.0));
+    MyLinear4.AppendPoint(HGF2DPosition(12.0, 12.0));
+    MyLinear4.AppendPoint(HGF2DPosition(12.0, 18.0));
     MyLinear4.AppendPoint(HGF2DPosition(18.0, 18.0));
-    MyLinear4.AppendPoint(HGF2DPosition(20.0, 18.0));
-    MyLinear4.AppendPoint(HGF2DPosition(20.0, 12.0));
     MyLinear4.AppendPoint(HGF2DPosition(18.0, 12.0));
+    MyLinear4.AppendPoint(HGF2DPosition(12.0, 12.0));
     
     
     MyLinear5 = HGF2DPolySegment();
@@ -45,11 +45,18 @@ HGF2DHoledShapeTester::HGF2DHoledShapeTester()
     MyLinear5.AppendPoint(HGF2DPosition(12.0, 10.0));
     
     MyLinear6 = HGF2DPolySegment();
-    MyLinear6.AppendPoint(HGF2DPosition(17.0, 12.0));
-    MyLinear6.AppendPoint(HGF2DPosition(17.0, 18.0));
+    MyLinear6.AppendPoint(HGF2DPosition(18.0, 12.0));
+    MyLinear6.AppendPoint(HGF2DPosition(18.0, 18.0));
     MyLinear6.AppendPoint(HGF2DPosition(20.0, 18.0));
     MyLinear6.AppendPoint(HGF2DPosition(20.0, 12.0));
-    MyLinear6.AppendPoint(HGF2DPosition(17.0, 12.0));
+    MyLinear6.AppendPoint(HGF2DPosition(18.0, 12.0));
+
+    MyLinear7 = HGF2DPolySegment();
+    MyLinear7.AppendPoint(HGF2DPosition(17.0, 12.0));
+    MyLinear7.AppendPoint(HGF2DPosition(17.0, 18.0));
+    MyLinear7.AppendPoint(HGF2DPosition(20.0, 18.0));
+    MyLinear7.AppendPoint(HGF2DPosition(20.0, 12.0));
+    MyLinear7.AppendPoint(HGF2DPosition(17.0, 12.0));
 
     Poly1Point0d0 = HGF2DPosition(10.0, 10.0);
     Poly1Point0d1 = HGF2DPosition(15.0, 10.0);
@@ -750,7 +757,7 @@ TEST_F (HGF2DHoledShapeTester,  DifferentiateTest)
     HoledShape2.Move(HGF2DDisplacement(2.0, 0.0));
     HFCPtr<HGF2DShape>     pResultShape5 = HoledShape1.DifferentiateShape(HoledShape2);
 
-    ASSERT_EQ(HGF2DPolygonOfSegments::CLASS_ID, pResultShape5->GetShapeType());
+    ASSERT_EQ(HGF2DRectangle::CLASS_ID, pResultShape5->GetShapeType());
 
     ASSERT_TRUE(pResultShape5->IsPointOn(HGF2DPosition(10.0, 10.0)));
     ASSERT_TRUE(pResultShape5->IsPointOn(HGF2DPosition(12.0, 10.0)));
@@ -966,6 +973,7 @@ TEST_F (HGF2DHoledShapeTester,  CloningTest)
     // Test with a translation between systems
     Translation = HGF2DDisplacement (10.0, 10.0);
     HGF2DTranslation myTranslation(Translation);
+    myTranslation.Reverse();
   
     HFCPtr<HGF2DHoledShape> pClone5 = (HGF2DHoledShape*) (&*(HoledShape1.AllocTransformDirect(myTranslation)));
     ASSERT_FALSE(pClone5->IsEmpty());
@@ -984,6 +992,7 @@ TEST_F (HGF2DHoledShapeTester,  CloningTest)
     myStretch.SetTranslation(Translation);
     myStretch.SetXScaling(0.5);
     myStretch.SetYScaling(0.5);
+    myStretch.Reverse();
    
     HFCPtr<HGF2DHoledShape> pClone6 = (HGF2DHoledShape*)(&*(HoledShape1.AllocTransformDirect(myStretch)));
     ASSERT_FALSE(pClone6->IsEmpty());
@@ -1001,6 +1010,7 @@ TEST_F (HGF2DHoledShapeTester,  CloningTest)
     HGF2DSimilitude mySimilitude;
     mySimilitude.SetRotation(PI);
     mySimilitude.SetScaling(0.5);
+    mySimilitude.Reverse();
   
     HFCPtr<HGF2DHoledShape> pClone7 = (HGF2DHoledShape*)(&*(HoledShape1.AllocTransformDirect(mySimilitude)));
     ASSERT_FALSE(pClone7->IsEmpty());
@@ -1020,6 +1030,7 @@ TEST_F (HGF2DHoledShapeTester,  CloningTest)
     myAffine.SetRotation(PI);
     myAffine.SetXScaling(0.5);
     myAffine.SetYScaling(0.5);
+    myAffine.Reverse();
    
     HFCPtr<HGF2DHoledShape> pClone8 = (HGF2DHoledShape*)(&*(HoledShape1.AllocTransformDirect(myAffine)));
     ASSERT_FALSE(pClone8->IsEmpty());
@@ -1071,6 +1082,37 @@ TEST_F (HGF2DHoledShapeTester, ModifyShapeTest)
 
     }
 
+//==================================================================================
+// Diff test with overlapping hole
+//==================================================================================
+TEST_F (HGF2DHoledShapeTester, ModifyShapeTestAdditional)
+    {
+   
+    HGF2DPolygonOfSegments    Poly1A(MyLinear1);
+    HGF2DHoledShape HoledShape1(Poly1A);
+
+    HGF2DPolygonOfSegments    Poly1B(MyLinear2);
+    HoledShape1.AddHole(Poly1B);
+
+    HGF2DPolygonOfSegments    Poly1C(MyLinear7);
+
+    HFCPtr<HGF2DShape> pResultShape = HoledShape1.DifferentiateShape(Poly1C);
+    ASSERT_FALSE(pResultShape->HasHoles());
+    ASSERT_DOUBLE_EQ(52.0, pResultShape->CalculateArea());
+
+    HFCPtr<HGF2DShape> pResultShape2 = HoledShape1.IntersectShape(Poly1C);
+    ASSERT_FALSE(pResultShape2->HasHoles());
+    ASSERT_DOUBLE_EQ(12.0, pResultShape2->CalculateArea());
+
+    HFCPtr<HGF2DShape> pResultShape3 = HoledShape1.UnifyShape(Poly1C);
+    ASSERT_TRUE(pResultShape3->HasHoles());
+    ASSERT_DOUBLE_EQ(70.0, pResultShape3->CalculateArea());
+
+    HFCPtr<HGF2DShape> pResultShape4 = Poly1C.DifferentiateFromShape(HoledShape1);
+    ASSERT_FALSE(pResultShape4->HasHoles());
+    ASSERT_DOUBLE_EQ(52.0, pResultShape4->CalculateArea());
+
+    }
 //==================================================================================
 // Diff test with overlapping hole
 //==================================================================================

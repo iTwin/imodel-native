@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: Tests/NonPublished/IppGraLibs/HGF2DSegmentTester.cpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -574,8 +574,8 @@ TEST_F (HGF2DSegmentTester, GetTypeTest)
     {
 
     // Basic test
-    ASSERT_EQ(HGF2DSegment::CLASS_ID, MiscSegment1.GetBasicLinearType());
-    ASSERT_EQ(HGF2DSegment::CLASS_ID, VerticalSegment1.GetBasicLinearType());
+    ASSERT_EQ(HGF2DSegment::CLASS_ID, MiscSegment1A.GetBasicLinearType());
+    ASSERT_EQ(HGF2DSegment::CLASS_ID, VerticalSegment1A.GetBasicLinearType());
 
     }
 
@@ -587,31 +587,31 @@ TEST_F (HGF2DSegmentTester, CalculateLengthTest)
     {
 
     // Test with vertical segment
-    ASSERT_DOUBLE_EQ(10.0000000000000, VerticalSegment1.CalculateLength());
+    ASSERT_DOUBLE_EQ(10.0000000000000, VerticalSegment1A.CalculateLength());
 
     // Test with inverted vertical segment
-    ASSERT_DOUBLE_EQ(10.0000000000000, VerticalSegment2.CalculateLength());
+    ASSERT_DOUBLE_EQ(10.0000000000000, VerticalSegment2A.CalculateLength());
 
     // Test with horizontal segment
-    ASSERT_DOUBLE_EQ(10.00000000000000, HorizontalSegment1.CalculateLength());
+    ASSERT_DOUBLE_EQ(10.00000000000000, HorizontalSegment1A.CalculateLength());
 
     // Test with inverted horizontal segment
     ASSERT_DOUBLE_EQ(10.00000000000000, HorizontalSegment2.CalculateLength());
 
     // Tests with miscalenious segment
-    ASSERT_DOUBLE_EQ(14.142135623730951, MiscSegment1.CalculateLength());
+    ASSERT_DOUBLE_EQ(14.142135623730951, MiscSegment1A.CalculateLength());
 
     // Test with very large segment
-    ASSERT_DOUBLE_EQ(4.12310562561766099E124, LargeSegment1.CalculateLength());
+    ASSERT_DOUBLE_EQ(4.12310562561766099E124, LargeSegment1A.CalculateLength());
 
     // Test with segments way into positive regions
-    ASSERT_DOUBLE_EQ(2.2360679774997898E124, PositiveSegment1.CalculateLength());
+    ASSERT_DOUBLE_EQ(2.2360679774997898E124, PositiveSegment1A.CalculateLength());
 
     // Test with segments way into negative regions
-    ASSERT_DOUBLE_EQ(2.23606797749978976E124, NegativeSegment1.CalculateLength());
+    ASSERT_DOUBLE_EQ(2.23606797749978976E124, NegativeSegment1A.CalculateLength());
 
     // Test with a NULL segment
-    ASSERT_NEAR(0.0, NullSegment1.CalculateLength(), MYEPSILON);
+    ASSERT_NEAR(0.0, NullSegment1A.CalculateLength(), MYEPSILON);
     
     }
 
@@ -623,136 +623,136 @@ TEST_F (HGF2DSegmentTester, CalculateRelativePointTest)
     {
 
     // Test with vertical segment
-    ASSERT_DOUBLE_EQ(0.10, VerticalSegment1.CalculateRelativePoint(0.0).GetX());
-    ASSERT_DOUBLE_EQ(0.10, VerticalSegment1.CalculateRelativePoint(0.0).GetY());
-    ASSERT_DOUBLE_EQ(0.10, VerticalSegment1.CalculateRelativePoint(0.1).GetX());
-    ASSERT_DOUBLE_EQ(1.10, VerticalSegment1.CalculateRelativePoint(0.1).GetY());
-    ASSERT_DOUBLE_EQ(0.10, VerticalSegment1.CalculateRelativePoint(0.5).GetX());
-    ASSERT_DOUBLE_EQ(5.10, VerticalSegment1.CalculateRelativePoint(0.5).GetY());
-    ASSERT_DOUBLE_EQ(0.10, VerticalSegment1.CalculateRelativePoint(0.7).GetX());
-    ASSERT_DOUBLE_EQ(7.10, VerticalSegment1.CalculateRelativePoint(0.7).GetY());
-    ASSERT_DOUBLE_EQ(0.10, VerticalSegment1.CalculateRelativePoint(1.0).GetX());
-    ASSERT_DOUBLE_EQ(10.1, VerticalSegment1.CalculateRelativePoint(1.0).GetY());
+    ASSERT_DOUBLE_EQ(0.10, VerticalSegment1A.CalculateRelativePoint(0.0).GetX());
+    ASSERT_DOUBLE_EQ(0.10, VerticalSegment1A.CalculateRelativePoint(0.0).GetY());
+    ASSERT_DOUBLE_EQ(0.10, VerticalSegment1A.CalculateRelativePoint(0.1).GetX());
+    ASSERT_DOUBLE_EQ(1.10, VerticalSegment1A.CalculateRelativePoint(0.1).GetY());
+    ASSERT_DOUBLE_EQ(0.10, VerticalSegment1A.CalculateRelativePoint(0.5).GetX());
+    ASSERT_DOUBLE_EQ(5.10, VerticalSegment1A.CalculateRelativePoint(0.5).GetY());
+    ASSERT_DOUBLE_EQ(0.10, VerticalSegment1A.CalculateRelativePoint(0.7).GetX());
+    ASSERT_DOUBLE_EQ(7.10, VerticalSegment1A.CalculateRelativePoint(0.7).GetY());
+    ASSERT_DOUBLE_EQ(0.10, VerticalSegment1A.CalculateRelativePoint(1.0).GetX());
+    ASSERT_DOUBLE_EQ(10.1, VerticalSegment1A.CalculateRelativePoint(1.0).GetY());
 
     // Test with inverted vertical segment
-    ASSERT_DOUBLE_EQ(0.100000000000000000, VerticalSegment2.CalculateRelativePoint(0.0).GetX());
-    ASSERT_DOUBLE_EQ(10.10000000000000000, VerticalSegment2.CalculateRelativePoint(0.0).GetY());
-    ASSERT_DOUBLE_EQ(0.100000000000000000, VerticalSegment2.CalculateRelativePoint(0.1).GetX());
-    ASSERT_DOUBLE_EQ(9.100000000000000000, VerticalSegment2.CalculateRelativePoint(0.1).GetY());
-    ASSERT_DOUBLE_EQ(0.100000000000000000, VerticalSegment2.CalculateRelativePoint(0.5).GetX());
-    ASSERT_DOUBLE_EQ(5.100000000000000000, VerticalSegment2.CalculateRelativePoint(0.5).GetY());
-    ASSERT_DOUBLE_EQ(0.100000000000000000, VerticalSegment2.CalculateRelativePoint(0.7).GetX());
-    ASSERT_DOUBLE_EQ(3.100000000000000000, VerticalSegment2.CalculateRelativePoint(0.7).GetY());
-    ASSERT_DOUBLE_EQ(0.100000000000000000, VerticalSegment2.CalculateRelativePoint(1.0).GetX());
-    ASSERT_DOUBLE_EQ(0.099999999999999645, VerticalSegment2.CalculateRelativePoint(1.0).GetY());
+    ASSERT_DOUBLE_EQ(0.100000000000000000, VerticalSegment2A.CalculateRelativePoint(0.0).GetX());
+    ASSERT_DOUBLE_EQ(10.10000000000000000, VerticalSegment2A.CalculateRelativePoint(0.0).GetY());
+    ASSERT_DOUBLE_EQ(0.100000000000000000, VerticalSegment2A.CalculateRelativePoint(0.1).GetX());
+    ASSERT_DOUBLE_EQ(9.100000000000000000, VerticalSegment2A.CalculateRelativePoint(0.1).GetY());
+    ASSERT_DOUBLE_EQ(0.100000000000000000, VerticalSegment2A.CalculateRelativePoint(0.5).GetX());
+    ASSERT_DOUBLE_EQ(5.100000000000000000, VerticalSegment2A.CalculateRelativePoint(0.5).GetY());
+    ASSERT_DOUBLE_EQ(0.100000000000000000, VerticalSegment2A.CalculateRelativePoint(0.7).GetX());
+    ASSERT_DOUBLE_EQ(3.100000000000000000, VerticalSegment2A.CalculateRelativePoint(0.7).GetY());
+    ASSERT_DOUBLE_EQ(0.100000000000000000, VerticalSegment2A.CalculateRelativePoint(1.0).GetX());
+    ASSERT_DOUBLE_EQ(0.099999999999999645, VerticalSegment2A.CalculateRelativePoint(1.0).GetY());
 
     // Test with horizontal segment
-    ASSERT_DOUBLE_EQ(0.10, HorizontalSegment1.CalculateRelativePoint(0.0).GetX());
-    ASSERT_DOUBLE_EQ(0.10, HorizontalSegment1.CalculateRelativePoint(0.0).GetY());
-    ASSERT_DOUBLE_EQ(1.10, HorizontalSegment1.CalculateRelativePoint(0.1).GetX());
-    ASSERT_DOUBLE_EQ(0.10, HorizontalSegment1.CalculateRelativePoint(0.1).GetY());
-    ASSERT_DOUBLE_EQ(5.10, HorizontalSegment1.CalculateRelativePoint(0.5).GetX());
-    ASSERT_DOUBLE_EQ(0.10, HorizontalSegment1.CalculateRelativePoint(0.5).GetY());
-    ASSERT_DOUBLE_EQ(7.10, HorizontalSegment1.CalculateRelativePoint(0.7).GetX());
-    ASSERT_DOUBLE_EQ(0.10, HorizontalSegment1.CalculateRelativePoint(0.7).GetY());
-    ASSERT_DOUBLE_EQ(10.1, HorizontalSegment1.CalculateRelativePoint(1.0).GetX());
-    ASSERT_DOUBLE_EQ(0.10, HorizontalSegment1.CalculateRelativePoint(1.0).GetY());
+    ASSERT_DOUBLE_EQ(0.10, HorizontalSegment1A.CalculateRelativePoint(0.0).GetX());
+    ASSERT_DOUBLE_EQ(0.10, HorizontalSegment1A.CalculateRelativePoint(0.0).GetY());
+    ASSERT_DOUBLE_EQ(1.10, HorizontalSegment1A.CalculateRelativePoint(0.1).GetX());
+    ASSERT_DOUBLE_EQ(0.10, HorizontalSegment1A.CalculateRelativePoint(0.1).GetY());
+    ASSERT_DOUBLE_EQ(5.10, HorizontalSegment1A.CalculateRelativePoint(0.5).GetX());
+    ASSERT_DOUBLE_EQ(0.10, HorizontalSegment1A.CalculateRelativePoint(0.5).GetY());
+    ASSERT_DOUBLE_EQ(7.10, HorizontalSegment1A.CalculateRelativePoint(0.7).GetX());
+    ASSERT_DOUBLE_EQ(0.10, HorizontalSegment1A.CalculateRelativePoint(0.7).GetY());
+    ASSERT_DOUBLE_EQ(10.1, HorizontalSegment1A.CalculateRelativePoint(1.0).GetX());
+    ASSERT_DOUBLE_EQ(0.10, HorizontalSegment1A.CalculateRelativePoint(1.0).GetY());
 
     // Test with inverted horizontal segment
-    ASSERT_DOUBLE_EQ(10.1000000000000000, HorizontalSegment2.CalculateRelativePoint(0.0).GetX());
-    ASSERT_DOUBLE_EQ(0.10000000000000000, HorizontalSegment2.CalculateRelativePoint(0.0).GetY());
-    ASSERT_DOUBLE_EQ(9.10000000000000000, HorizontalSegment2.CalculateRelativePoint(0.1).GetX());
-    ASSERT_DOUBLE_EQ(0.10000000000000000, HorizontalSegment2.CalculateRelativePoint(0.1).GetY());
-    ASSERT_DOUBLE_EQ(5.10000000000000000, HorizontalSegment2.CalculateRelativePoint(0.5).GetX());
-    ASSERT_DOUBLE_EQ(0.10000000000000000, HorizontalSegment2.CalculateRelativePoint(0.5).GetY());
-    ASSERT_DOUBLE_EQ(3.10000000000000000, HorizontalSegment2.CalculateRelativePoint(0.7).GetX());
-    ASSERT_DOUBLE_EQ(0.10000000000000000, HorizontalSegment2.CalculateRelativePoint(0.7).GetY());
-    ASSERT_DOUBLE_EQ(0.099999999999999645, HorizontalSegment2.CalculateRelativePoint(1.0).GetX());
-    ASSERT_DOUBLE_EQ(0.10, HorizontalSegment2.CalculateRelativePoint(1.0).GetY());
+    ASSERT_DOUBLE_EQ(10.1000000000000000, HorizontalSegment2A.CalculateRelativePoint(0.0).GetX());
+    ASSERT_DOUBLE_EQ(0.10000000000000000, HorizontalSegment2A.CalculateRelativePoint(0.0).GetY());
+    ASSERT_DOUBLE_EQ(9.10000000000000000, HorizontalSegment2A.CalculateRelativePoint(0.1).GetX());
+    ASSERT_DOUBLE_EQ(0.10000000000000000, HorizontalSegment2A.CalculateRelativePoint(0.1).GetY());
+    ASSERT_DOUBLE_EQ(5.10000000000000000, HorizontalSegment2A.CalculateRelativePoint(0.5).GetX());
+    ASSERT_DOUBLE_EQ(0.10000000000000000, HorizontalSegment2A.CalculateRelativePoint(0.5).GetY());
+    ASSERT_DOUBLE_EQ(3.10000000000000000, HorizontalSegment2A.CalculateRelativePoint(0.7).GetX());
+    ASSERT_DOUBLE_EQ(0.10000000000000000, HorizontalSegment2A.CalculateRelativePoint(0.7).GetY());
+    ASSERT_DOUBLE_EQ(0.099999999999999645, HorizontalSegment2A.CalculateRelativePoint(1.0).GetX());
+    ASSERT_DOUBLE_EQ(0.10, HorizontalSegment2A.CalculateRelativePoint(1.0).GetY());
 
     // Tests with vertical EPSILON sized segment
-    ASSERT_DOUBLE_EQ(0.10000000, VerticalSegment3.CalculateRelativePoint(0.0).GetX());
-    ASSERT_DOUBLE_EQ(0.10000000, VerticalSegment3.CalculateRelativePoint(0.0).GetY());
-    ASSERT_DOUBLE_EQ(0.10000000, VerticalSegment3.CalculateRelativePoint(0.1).GetX());
-    ASSERT_DOUBLE_EQ(0.10000001, VerticalSegment3.CalculateRelativePoint(0.1).GetY());
-    ASSERT_DOUBLE_EQ(0.10000000, VerticalSegment3.CalculateRelativePoint(0.5).GetX());
-    ASSERT_DOUBLE_EQ(0.10000005, VerticalSegment3.CalculateRelativePoint(0.5).GetY());
-    ASSERT_DOUBLE_EQ(0.10000000, VerticalSegment3.CalculateRelativePoint(0.7).GetX());
-    ASSERT_DOUBLE_EQ(0.10000007, VerticalSegment3.CalculateRelativePoint(0.7).GetY());
-    ASSERT_DOUBLE_EQ(0.10000000, VerticalSegment3.CalculateRelativePoint(1.0).GetX());
-    ASSERT_DOUBLE_EQ(0.10000010, VerticalSegment3.CalculateRelativePoint(1.0).GetY());
+    ASSERT_DOUBLE_EQ(0.10000000, VerticalSegment3A.CalculateRelativePoint(0.0).GetX());
+    ASSERT_DOUBLE_EQ(0.10000000, VerticalSegment3A.CalculateRelativePoint(0.0).GetY());
+    ASSERT_DOUBLE_EQ(0.10000000, VerticalSegment3A.CalculateRelativePoint(0.1).GetX());
+    ASSERT_DOUBLE_EQ(0.10000001, VerticalSegment3A.CalculateRelativePoint(0.1).GetY());
+    ASSERT_DOUBLE_EQ(0.10000000, VerticalSegment3A.CalculateRelativePoint(0.5).GetX());
+    ASSERT_DOUBLE_EQ(0.10000005, VerticalSegment3A.CalculateRelativePoint(0.5).GetY());
+    ASSERT_DOUBLE_EQ(0.10000000, VerticalSegment3A.CalculateRelativePoint(0.7).GetX());
+    ASSERT_DOUBLE_EQ(0.10000007, VerticalSegment3A.CalculateRelativePoint(0.7).GetY());
+    ASSERT_DOUBLE_EQ(0.10000000, VerticalSegment3A.CalculateRelativePoint(1.0).GetX());
+    ASSERT_DOUBLE_EQ(0.10000010, VerticalSegment3A.CalculateRelativePoint(1.0).GetY());
 
     // Tests with horizontal EPSILON sized segment
-    ASSERT_DOUBLE_EQ(0.10000000, HorizontalSegment3.CalculateRelativePoint(0.0).GetX());
-    ASSERT_DOUBLE_EQ(0.10000000, HorizontalSegment3.CalculateRelativePoint(0.0).GetY());
-    ASSERT_DOUBLE_EQ(0.10000001, HorizontalSegment3.CalculateRelativePoint(0.1).GetX());
-    ASSERT_DOUBLE_EQ(0.10000000, HorizontalSegment3.CalculateRelativePoint(0.1).GetY());
-    ASSERT_DOUBLE_EQ(0.10000005, HorizontalSegment3.CalculateRelativePoint(0.5).GetX());
-    ASSERT_DOUBLE_EQ(0.10000000, HorizontalSegment3.CalculateRelativePoint(0.5).GetY());
-    ASSERT_DOUBLE_EQ(0.10000007, HorizontalSegment3.CalculateRelativePoint(0.7).GetX());
-    ASSERT_DOUBLE_EQ(0.10000000, HorizontalSegment3.CalculateRelativePoint(0.7).GetY());
-    ASSERT_DOUBLE_EQ(0.10000010, HorizontalSegment3.CalculateRelativePoint(1.0).GetX());
-    ASSERT_DOUBLE_EQ(0.10000000, HorizontalSegment3.CalculateRelativePoint(1.0).GetY());
+    ASSERT_DOUBLE_EQ(0.10000000, HorizontalSegment3A.CalculateRelativePoint(0.0).GetX());
+    ASSERT_DOUBLE_EQ(0.10000000, HorizontalSegment3A.CalculateRelativePoint(0.0).GetY());
+    ASSERT_DOUBLE_EQ(0.10000001, HorizontalSegment3A.CalculateRelativePoint(0.1).GetX());
+    ASSERT_DOUBLE_EQ(0.10000000, HorizontalSegment3A.CalculateRelativePoint(0.1).GetY());
+    ASSERT_DOUBLE_EQ(0.10000005, HorizontalSegment3A.CalculateRelativePoint(0.5).GetX());
+    ASSERT_DOUBLE_EQ(0.10000000, HorizontalSegment3A.CalculateRelativePoint(0.5).GetY());
+    ASSERT_DOUBLE_EQ(0.10000007, HorizontalSegment3A.CalculateRelativePoint(0.7).GetX());
+    ASSERT_DOUBLE_EQ(0.10000000, HorizontalSegment3A.CalculateRelativePoint(0.7).GetY());
+    ASSERT_DOUBLE_EQ(0.10000010, HorizontalSegment3A.CalculateRelativePoint(1.0).GetX());
+    ASSERT_DOUBLE_EQ(0.10000000, HorizontalSegment3A.CalculateRelativePoint(1.0).GetY());
 
     // Tests with miscalenious EPSILON size segment
-    ASSERT_DOUBLE_EQ(0.10000000000000000, MiscSegment3.CalculateRelativePoint(0.0).GetX());
-    ASSERT_DOUBLE_EQ(0.10000000000000000, MiscSegment3.CalculateRelativePoint(0.0).GetY());
-    ASSERT_DOUBLE_EQ(0.10000000216439614, MiscSegment3.CalculateRelativePoint(0.1).GetX());
-    ASSERT_DOUBLE_EQ(0.10000000976296007, MiscSegment3.CalculateRelativePoint(0.1).GetY());
-    ASSERT_DOUBLE_EQ(0.10000001082198071, MiscSegment3.CalculateRelativePoint(0.5).GetX());
-    ASSERT_DOUBLE_EQ(0.10000004881480036, MiscSegment3.CalculateRelativePoint(0.5).GetY());
-    ASSERT_DOUBLE_EQ(0.10000001515077298, MiscSegment3.CalculateRelativePoint(0.7).GetX());
-    ASSERT_DOUBLE_EQ(0.10000006834072050, MiscSegment3.CalculateRelativePoint(0.7).GetY());
-    ASSERT_DOUBLE_EQ(0.10000002164396139, MiscSegment3.CalculateRelativePoint(1.0).GetX());
-    ASSERT_DOUBLE_EQ(0.10000009762960071, MiscSegment3.CalculateRelativePoint(1.0).GetY());
+    ASSERT_DOUBLE_EQ(0.10000000000000000, MiscSegment3B.CalculateRelativePoint(0.0).GetX());
+    ASSERT_DOUBLE_EQ(0.10000000000000000, MiscSegment3B.CalculateRelativePoint(0.0).GetY());
+    ASSERT_DOUBLE_EQ(0.10000000216439614, MiscSegment3B.CalculateRelativePoint(0.1).GetX());
+    ASSERT_DOUBLE_EQ(0.10000000976296007, MiscSegment3B.CalculateRelativePoint(0.1).GetY());
+    ASSERT_DOUBLE_EQ(0.10000001082198071, MiscSegment3B.CalculateRelativePoint(0.5).GetX());
+    ASSERT_DOUBLE_EQ(0.10000004881480036, MiscSegment3B.CalculateRelativePoint(0.5).GetY());
+    ASSERT_DOUBLE_EQ(0.10000001515077298, MiscSegment3B.CalculateRelativePoint(0.7).GetX());
+    ASSERT_DOUBLE_EQ(0.10000006834072050, MiscSegment3B.CalculateRelativePoint(0.7).GetY());
+    ASSERT_DOUBLE_EQ(0.10000002164396139, MiscSegment3B.CalculateRelativePoint(1.0).GetX());
+    ASSERT_DOUBLE_EQ(0.10000009762960071, MiscSegment3B.CalculateRelativePoint(1.0).GetY());
 
     // Test with very large segment
-    ASSERT_DOUBLE_EQ(-1.00E123, LargeSegment1.CalculateRelativePoint(0.0).GetX());
-    ASSERT_DOUBLE_EQ(-21.0E123, LargeSegment1.CalculateRelativePoint(0.0).GetY());
-    ASSERT_NEAR(0.0, LargeSegment1.CalculateRelativePoint(0.1).GetX(), MYEPSILON);
-    ASSERT_DOUBLE_EQ(-17.0E123, LargeSegment1.CalculateRelativePoint(0.1).GetY());
-    ASSERT_DOUBLE_EQ(4.000E123, LargeSegment1.CalculateRelativePoint(0.5).GetX());
-    ASSERT_DOUBLE_EQ(-1.00E123, LargeSegment1.CalculateRelativePoint(0.5).GetY());
-    ASSERT_DOUBLE_EQ(6.000E123, LargeSegment1.CalculateRelativePoint(0.7).GetX());
-    ASSERT_DOUBLE_EQ(7.000E123, LargeSegment1.CalculateRelativePoint(0.7).GetY());
-    ASSERT_DOUBLE_EQ(9.000E123, LargeSegment1.CalculateRelativePoint(1.0).GetX());
-    ASSERT_DOUBLE_EQ(19.00E123, LargeSegment1.CalculateRelativePoint(1.0).GetY());
+    ASSERT_DOUBLE_EQ(-1.00E123, LargeSegment1A.CalculateRelativePoint(0.0).GetX());
+    ASSERT_DOUBLE_EQ(-21.0E123, LargeSegment1A.CalculateRelativePoint(0.0).GetY());
+    ASSERT_NEAR(0.0, LargeSegment1A.CalculateRelativePoint(0.1).GetX(), MYEPSILON);
+    ASSERT_DOUBLE_EQ(-17.0E123, LargeSegment1A.CalculateRelativePoint(0.1).GetY());
+    ASSERT_DOUBLE_EQ(4.000E123, LargeSegment1A.CalculateRelativePoint(0.5).GetX());
+    ASSERT_DOUBLE_EQ(-1.00E123, LargeSegment1A.CalculateRelativePoint(0.5).GetY());
+    ASSERT_DOUBLE_EQ(6.000E123, LargeSegment1A.CalculateRelativePoint(0.7).GetX());
+    ASSERT_DOUBLE_EQ(7.000E123, LargeSegment1A.CalculateRelativePoint(0.7).GetY());
+    ASSERT_DOUBLE_EQ(9.000E123, LargeSegment1A.CalculateRelativePoint(1.0).GetX());
+    ASSERT_DOUBLE_EQ(19.00E123, LargeSegment1A.CalculateRelativePoint(1.0).GetY());
 
     // Test with segments way into positive regions
-    ASSERT_DOUBLE_EQ(1.00E123, PositiveSegment1.CalculateRelativePoint(0.0).GetX());
-    ASSERT_DOUBLE_EQ(21.0E123, PositiveSegment1.CalculateRelativePoint(0.0).GetY());
-    ASSERT_DOUBLE_EQ(2.00E123, PositiveSegment1.CalculateRelativePoint(0.1).GetX());
-    ASSERT_DOUBLE_EQ(23.0E123, PositiveSegment1.CalculateRelativePoint(0.1).GetY());
-    ASSERT_DOUBLE_EQ(6.00E123, PositiveSegment1.CalculateRelativePoint(0.5).GetX());
-    ASSERT_DOUBLE_EQ(31.0E123, PositiveSegment1.CalculateRelativePoint(0.5).GetY());
-    ASSERT_DOUBLE_EQ(8.00E123, PositiveSegment1.CalculateRelativePoint(0.7).GetX());
-    ASSERT_DOUBLE_EQ(35.0E123, PositiveSegment1.CalculateRelativePoint(0.7).GetY());
-    ASSERT_DOUBLE_EQ(11.0E123, PositiveSegment1.CalculateRelativePoint(1.0).GetX());
-    ASSERT_DOUBLE_EQ(41.0E123, PositiveSegment1.CalculateRelativePoint(1.0).GetY());
+    ASSERT_DOUBLE_EQ(1.00E123, PositiveSegment1A.CalculateRelativePoint(0.0).GetX());
+    ASSERT_DOUBLE_EQ(21.0E123, PositiveSegment1A.CalculateRelativePoint(0.0).GetY());
+    ASSERT_DOUBLE_EQ(2.00E123, PositiveSegment1A.CalculateRelativePoint(0.1).GetX());
+    ASSERT_DOUBLE_EQ(23.0E123, PositiveSegment1A.CalculateRelativePoint(0.1).GetY());
+    ASSERT_DOUBLE_EQ(6.00E123, PositiveSegment1A.CalculateRelativePoint(0.5).GetX());
+    ASSERT_DOUBLE_EQ(31.0E123, PositiveSegment1A.CalculateRelativePoint(0.5).GetY());
+    ASSERT_DOUBLE_EQ(8.00E123, PositiveSegment1A.CalculateRelativePoint(0.7).GetX());
+    ASSERT_DOUBLE_EQ(35.0E123, PositiveSegment1A.CalculateRelativePoint(0.7).GetY());
+    ASSERT_DOUBLE_EQ(11.0E123, PositiveSegment1A.CalculateRelativePoint(1.0).GetX());
+    ASSERT_DOUBLE_EQ(41.0E123, PositiveSegment1A.CalculateRelativePoint(1.0).GetY());
 
     // Test with segments way into negative regions
-    ASSERT_DOUBLE_EQ(-1.00E123, NegativeSegment1.CalculateRelativePoint(0.0).GetX());
-    ASSERT_DOUBLE_EQ(-21.0E123, NegativeSegment1.CalculateRelativePoint(0.0).GetY());
-    ASSERT_DOUBLE_EQ(-2.00E123, NegativeSegment1.CalculateRelativePoint(0.1).GetX());
-    ASSERT_DOUBLE_EQ(-23.0E123, NegativeSegment1.CalculateRelativePoint(0.1).GetY());
-    ASSERT_DOUBLE_EQ(-6.00E123, NegativeSegment1.CalculateRelativePoint(0.5).GetX());
-    ASSERT_DOUBLE_EQ(-31.0E123, NegativeSegment1.CalculateRelativePoint(0.5).GetY());
-    ASSERT_DOUBLE_EQ(-8.00E123, NegativeSegment1.CalculateRelativePoint(0.7).GetX());
-    ASSERT_DOUBLE_EQ(-35.0E123, NegativeSegment1.CalculateRelativePoint(0.7).GetY());
-    ASSERT_DOUBLE_EQ(-11.0E123, NegativeSegment1.CalculateRelativePoint(1.0).GetX());
-    ASSERT_DOUBLE_EQ(-41.0E123, NegativeSegment1.CalculateRelativePoint(1.0).GetY());
+    ASSERT_DOUBLE_EQ(-1.00E123, NegativeSegment1A.CalculateRelativePoint(0.0).GetX());
+    ASSERT_DOUBLE_EQ(-21.0E123, NegativeSegment1A.CalculateRelativePoint(0.0).GetY());
+    ASSERT_DOUBLE_EQ(-2.00E123, NegativeSegment1A.CalculateRelativePoint(0.1).GetX());
+    ASSERT_DOUBLE_EQ(-23.0E123, NegativeSegment1A.CalculateRelativePoint(0.1).GetY());
+    ASSERT_DOUBLE_EQ(-6.00E123, NegativeSegment1A.CalculateRelativePoint(0.5).GetX());
+    ASSERT_DOUBLE_EQ(-31.0E123, NegativeSegment1A.CalculateRelativePoint(0.5).GetY());
+    ASSERT_DOUBLE_EQ(-8.00E123, NegativeSegment1A.CalculateRelativePoint(0.7).GetX());
+    ASSERT_DOUBLE_EQ(-35.0E123, NegativeSegment1A.CalculateRelativePoint(0.7).GetY());
+    ASSERT_DOUBLE_EQ(-11.0E123, NegativeSegment1A.CalculateRelativePoint(1.0).GetX());
+    ASSERT_DOUBLE_EQ(-41.0E123, NegativeSegment1A.CalculateRelativePoint(1.0).GetY());
 
     // Test with a NULL segment
-    ASSERT_NEAR(0.0, NullSegment1.CalculateRelativePoint(0.0).GetX(), MYEPSILON);
-    ASSERT_NEAR(0.0, NullSegment1.CalculateRelativePoint(0.0).GetY(), MYEPSILON);
-    ASSERT_NEAR(0.0, NullSegment1.CalculateRelativePoint(0.1).GetX(), MYEPSILON);
-    ASSERT_NEAR(0.0, NullSegment1.CalculateRelativePoint(0.1).GetY(), MYEPSILON);
-    ASSERT_NEAR(0.0, NullSegment1.CalculateRelativePoint(0.5).GetX(), MYEPSILON);
-    ASSERT_NEAR(0.0, NullSegment1.CalculateRelativePoint(0.5).GetY(), MYEPSILON);
-    ASSERT_NEAR(0.0, NullSegment1.CalculateRelativePoint(0.7).GetX(), MYEPSILON);
-    ASSERT_NEAR(0.0, NullSegment1.CalculateRelativePoint(0.7).GetY(), MYEPSILON);
-    ASSERT_NEAR(0.0, NullSegment1.CalculateRelativePoint(1.0).GetX(), MYEPSILON);
-    ASSERT_NEAR(0.0, NullSegment1.CalculateRelativePoint(1.0).GetY(), MYEPSILON);
+    ASSERT_NEAR(0.0, NullSegment1A.CalculateRelativePoint(0.0).GetX(), MYEPSILON);
+    ASSERT_NEAR(0.0, NullSegment1A.CalculateRelativePoint(0.0).GetY(), MYEPSILON);
+    ASSERT_NEAR(0.0, NullSegment1A.CalculateRelativePoint(0.1).GetX(), MYEPSILON);
+    ASSERT_NEAR(0.0, NullSegment1A.CalculateRelativePoint(0.1).GetY(), MYEPSILON);
+    ASSERT_NEAR(0.0, NullSegment1A.CalculateRelativePoint(0.5).GetX(), MYEPSILON);
+    ASSERT_NEAR(0.0, NullSegment1A.CalculateRelativePoint(0.5).GetY(), MYEPSILON);
+    ASSERT_NEAR(0.0, NullSegment1A.CalculateRelativePoint(0.7).GetX(), MYEPSILON);
+    ASSERT_NEAR(0.0, NullSegment1A.CalculateRelativePoint(0.7).GetY(), MYEPSILON);
+    ASSERT_NEAR(0.0, NullSegment1A.CalculateRelativePoint(1.0).GetX(), MYEPSILON);
+    ASSERT_NEAR(0.0, NullSegment1A.CalculateRelativePoint(1.0).GetY(), MYEPSILON);
 
     }
 
@@ -764,64 +764,64 @@ TEST_F (HGF2DSegmentTester, CalculateRelativePositionTest)
     {
 
     // Test with vertical segment
-    ASSERT_NEAR(0.0, VerticalSegment1.CalculateRelativePosition(VerticalPoint0d0), MYEPSILON);
-    ASSERT_DOUBLE_EQ(0.1, VerticalSegment1.CalculateRelativePosition(VerticalPoint0d1));
-    ASSERT_DOUBLE_EQ(0.5, VerticalSegment1.CalculateRelativePosition(VerticalPoint0d5));
-    ASSERT_DOUBLE_EQ(1.0, VerticalSegment1.CalculateRelativePosition(VerticalPoint1d0));
+    ASSERT_NEAR(0.0, VerticalSegment1A.CalculateRelativePosition(VerticalPoint0d0A), MYEPSILON);
+    ASSERT_DOUBLE_EQ(0.1, VerticalSegment1A.CalculateRelativePosition(VerticalPoint0d1A));
+    ASSERT_DOUBLE_EQ(0.5, VerticalSegment1A.CalculateRelativePosition(VerticalPoint0d5A));
+    ASSERT_DOUBLE_EQ(1.0, VerticalSegment1A.CalculateRelativePosition(VerticalPoint1d0A));
 
     // Test with inverted vertical segment
-    ASSERT_DOUBLE_EQ(1.0, VerticalSegment2.CalculateRelativePosition(VerticalPoint0d0));
-    ASSERT_DOUBLE_EQ(0.9, VerticalSegment2.CalculateRelativePosition(VerticalPoint0d1));
-    ASSERT_DOUBLE_EQ(0.5, VerticalSegment2.CalculateRelativePosition(VerticalPoint0d5));
-    ASSERT_NEAR(0.0, VerticalSegment2.CalculateRelativePosition(VerticalPoint1d0), MYEPSILON);
+    ASSERT_DOUBLE_EQ(1.0, VerticalSegment2A.CalculateRelativePosition(VerticalPoint0d0A));
+    ASSERT_DOUBLE_EQ(0.9, VerticalSegment2A.CalculateRelativePosition(VerticalPoint0d1A));
+    ASSERT_DOUBLE_EQ(0.5, VerticalSegment2A.CalculateRelativePosition(VerticalPoint0d5A));
+    ASSERT_NEAR(0.0, VerticalSegment2A.CalculateRelativePosition(VerticalPoint1d0A), MYEPSILON);
 
     // Test with horizontal segment
-    ASSERT_NEAR(0.0, HorizontalSegment1.CalculateRelativePosition(HorizontalPoint0d0), MYEPSILON);
-    ASSERT_DOUBLE_EQ(0.1, HorizontalSegment1.CalculateRelativePosition(HorizontalPoint0d1));
-    ASSERT_DOUBLE_EQ(0.5, HorizontalSegment1.CalculateRelativePosition(HorizontalPoint0d5));
-    ASSERT_DOUBLE_EQ(1.0, HorizontalSegment1.CalculateRelativePosition(HorizontalPoint1d0));
+    ASSERT_NEAR(0.0, HorizontalSegment1A.CalculateRelativePosition(HorizontalPoint0d0A), MYEPSILON);
+    ASSERT_DOUBLE_EQ(0.1, HorizontalSegment1A.CalculateRelativePosition(HorizontalPoint0d1A));
+    ASSERT_DOUBLE_EQ(0.5, HorizontalSegment1A.CalculateRelativePosition(HorizontalPoint0d5A));
+    ASSERT_DOUBLE_EQ(1.0, HorizontalSegment1A.CalculateRelativePosition(HorizontalPoint1d0A));
 
     // Test with inverted horizontal segment
-    ASSERT_DOUBLE_EQ(1.0, HorizontalSegment2.CalculateRelativePosition(HorizontalPoint0d0));
-    ASSERT_DOUBLE_EQ(0.9, HorizontalSegment2.CalculateRelativePosition(HorizontalPoint0d1));
-    ASSERT_DOUBLE_EQ(0.5, HorizontalSegment2.CalculateRelativePosition(HorizontalPoint0d5));
-    ASSERT_NEAR(0.0, HorizontalSegment2.CalculateRelativePosition(HorizontalPoint1d0), MYEPSILON);
+    ASSERT_DOUBLE_EQ(1.0, HorizontalSegment2A.CalculateRelativePosition(HorizontalPoint0d0A));
+    ASSERT_DOUBLE_EQ(0.9, HorizontalSegment2A.CalculateRelativePosition(HorizontalPoint0d1A));
+    ASSERT_DOUBLE_EQ(0.5, HorizontalSegment2A.CalculateRelativePosition(HorizontalPoint0d5A));
+    ASSERT_NEAR(0.0, HorizontalSegment2A.CalculateRelativePosition(HorizontalPoint1d0A), MYEPSILON);
 
     // Tests with vertical EPSILON sized segment
     ASSERT_NEAR(0.0, VerticalSegment3.CalculateRelativePosition(Vertical3Point0d0), MYEPSILON);
-    ASSERT_DOUBLE_EQ(0.099999999944488854, VerticalSegment3.CalculateRelativePosition(Vertical3Point0d1));
-    ASSERT_DOUBLE_EQ(0.500000000000000000, VerticalSegment3.CalculateRelativePosition(Vertical3Point0d5));
-    ASSERT_DOUBLE_EQ(1.000000000000000000, VerticalSegment3.CalculateRelativePosition(Vertical3Point1d0));
+    ASSERT_DOUBLE_EQ(0.099999999944488854, VerticalSegment3A.CalculateRelativePosition(Vertical3Point0d1A));
+    ASSERT_DOUBLE_EQ(0.500000000000000000, VerticalSegment3A.CalculateRelativePosition(Vertical3Point0d5A));
+    ASSERT_DOUBLE_EQ(1.000000000000000000, VerticalSegment3A.CalculateRelativePosition(Vertical3Point1d0A));
 
     // Tests with horizontal EPSILON sized segment
-    ASSERT_NEAR(0.0, HorizontalSegment3.CalculateRelativePosition(Horizontal3Point0d0), MYEPSILON);
-    ASSERT_DOUBLE_EQ(0.099999999944488854, HorizontalSegment3.CalculateRelativePosition(Horizontal3Point0d1));
-    ASSERT_DOUBLE_EQ(0.500000000000000000, HorizontalSegment3.CalculateRelativePosition(Horizontal3Point0d5));
-    ASSERT_DOUBLE_EQ(1.000000000000000000, HorizontalSegment3.CalculateRelativePosition(Horizontal3Point1d0));
+    ASSERT_NEAR(0.0, HorizontalSegment3A.CalculateRelativePosition(Horizontal3Point0d0A), MYEPSILON);
+    ASSERT_DOUBLE_EQ(0.099999999944488854, HorizontalSegment3A.CalculateRelativePosition(Horizontal3Point0d1A));
+    ASSERT_DOUBLE_EQ(0.500000000000000000, HorizontalSegment3A.CalculateRelativePosition(Horizontal3Point0d5A));
+    ASSERT_DOUBLE_EQ(1.000000000000000000, HorizontalSegment3A.CalculateRelativePosition(Horizontal3Point1d0A));
 
     // Tests with miscalenious EPSILON size segment
-    ASSERT_NEAR(0.0, MiscSegment3.CalculateRelativePosition(Misc3Point0d0), MYEPSILON);
-    ASSERT_DOUBLE_EQ(0.099999999943141071, MiscSegment3.CalculateRelativePosition(Misc3Point0d1));
-    ASSERT_DOUBLE_EQ(0.500000000000000000, MiscSegment3.CalculateRelativePosition(Misc3Point0d5));
-    ASSERT_DOUBLE_EQ(1.000000000000000000, MiscSegment3.CalculateRelativePosition(Misc3Point1d0));
+    ASSERT_NEAR(0.0, MiscSegment3B.CalculateRelativePosition(Misc3Point0d0A), MYEPSILON);
+    ASSERT_DOUBLE_EQ(0.099999999943141071, MiscSegment3B.CalculateRelativePosition(Misc3Point0d1A));
+    ASSERT_DOUBLE_EQ(0.500000000000000000, MiscSegment3B.CalculateRelativePosition(Misc3Point0d5A));
+    ASSERT_DOUBLE_EQ(1.000000000000000000, MiscSegment3B.CalculateRelativePosition(Misc3Point1d0A));
 
     // Test with very large segment
-    ASSERT_NEAR(0.0, LargeSegment1.CalculateRelativePosition(LargePoint0d0), MYEPSILON);
-    ASSERT_DOUBLE_EQ(0.1, LargeSegment1.CalculateRelativePosition(LargePoint0d1));
-    ASSERT_DOUBLE_EQ(0.5, LargeSegment1.CalculateRelativePosition(LargePoint0d5));
-    ASSERT_DOUBLE_EQ(1.0, LargeSegment1.CalculateRelativePosition(LargePoint1d0));
+    ASSERT_NEAR(0.0, LargeSegment1A.CalculateRelativePosition(LargePoint0d0A), MYEPSILON);
+    ASSERT_DOUBLE_EQ(0.1, LargeSegment1A.CalculateRelativePosition(LargePoint0d1A));
+    ASSERT_DOUBLE_EQ(0.5, LargeSegment1A.CalculateRelativePosition(LargePoint0d5A));
+    ASSERT_DOUBLE_EQ(1.0, LargeSegment1A.CalculateRelativePosition(LargePoint1d0A));
 
     // Test with segments way into positive regions
-    ASSERT_NEAR(0.0, PositiveSegment1.CalculateRelativePosition(PositivePoint0d0), MYEPSILON);
-    ASSERT_DOUBLE_EQ(0.1, PositiveSegment1.CalculateRelativePosition(PositivePoint0d1));
-    ASSERT_DOUBLE_EQ(0.5, PositiveSegment1.CalculateRelativePosition(PositivePoint0d5));
-    ASSERT_DOUBLE_EQ(1.0, PositiveSegment1.CalculateRelativePosition(PositivePoint1d0));
+    ASSERT_NEAR(0.0, PositiveSegment1A.CalculateRelativePosition(PositivePoint0d0A), MYEPSILON);
+    ASSERT_NEAR(0.1, PositiveSegment1A.CalculateRelativePosition(PositivePoint0d1A), MYEPSILON);
+    ASSERT_DOUBLE_EQ(0.5, PositiveSegment1A.CalculateRelativePosition(PositivePoint0d5A));
+    ASSERT_DOUBLE_EQ(1.0, PositiveSegment1A.CalculateRelativePosition(PositivePoint1d0A));
 
     // Test with segments way into negative regions
-    ASSERT_NEAR(0.0, NegativeSegment1.CalculateRelativePosition(NegativePoint0d0), MYEPSILON);
-    ASSERT_DOUBLE_EQ(0.1, NegativeSegment1.CalculateRelativePosition(NegativePoint0d1));
-    ASSERT_DOUBLE_EQ(0.5, NegativeSegment1.CalculateRelativePosition(NegativePoint0d5));
-    ASSERT_DOUBLE_EQ(1.0, NegativeSegment1.CalculateRelativePosition(NegativePoint1d0));
+    ASSERT_NEAR(0.0, NegativeSegment1A.CalculateRelativePosition(NegativePoint0d0A), MYEPSILON);
+    ASSERT_NEAR(0.1, NegativeSegment1A.CalculateRelativePosition(NegativePoint0d1A), MYEPSILON);
+    ASSERT_DOUBLE_EQ(0.5, NegativeSegment1A.CalculateRelativePosition(NegativePoint0d5A));
+    ASSERT_DOUBLE_EQ(1.0, NegativeSegment1A.CalculateRelativePosition(NegativePoint1d0A));
 
     }
 
@@ -1902,8 +1902,8 @@ TEST_F (HGF2DSegmentTester,ShorteningTest)
 
     Segment1 = MiscSegment3B;
     Segment1.ShortenFrom(MiscMidPoint3A);
-    ASSERT_DOUBLE_EQ(0.099999974681068096, Segment1.GetStartPoint().GetX());
-    ASSERT_DOUBLE_EQ(0.10000004311556202, Segment1.GetStartPoint().GetY());
+    ASSERT_DOUBLE_EQ(0.10000001082198071, Segment1.GetStartPoint().GetX());
+    ASSERT_DOUBLE_EQ(0.10000004881480036, Segment1.GetStartPoint().GetY());
     ASSERT_DOUBLE_EQ(0.10000002164396139, Segment1.GetEndPoint().GetX());
     ASSERT_DOUBLE_EQ(0.10000009762960071, Segment1.GetEndPoint().GetY());
 
@@ -1925,8 +1925,8 @@ TEST_F (HGF2DSegmentTester,ShorteningTest)
     Segment1.ShortenTo(MiscMidPoint3A);
     ASSERT_DOUBLE_EQ(0.100000000000000000, Segment1.GetStartPoint().GetX());
     ASSERT_DOUBLE_EQ(0.100000000000000000, Segment1.GetStartPoint().GetY());
-    ASSERT_DOUBLE_EQ(0.099999974681068096, Segment1.GetEndPoint().GetX());
-    ASSERT_DOUBLE_EQ(0.10000004311556202, Segment1.GetEndPoint().GetY());
+    ASSERT_DOUBLE_EQ(0.10000001082198071, Segment1.GetEndPoint().GetX());
+    ASSERT_DOUBLE_EQ(0.10000004881480036, Segment1.GetEndPoint().GetY());
 
     Segment1 = MiscSegment3B;
     Segment1.ShortenTo(Segment1.GetStartPoint());
@@ -1946,13 +1946,13 @@ TEST_F (HGF2DSegmentTester,ShorteningTest)
     Segment1.Shorten(Segment1.GetStartPoint(), MiscMidPoint3A);
     ASSERT_DOUBLE_EQ(0.100000000000000000, Segment1.GetStartPoint().GetX());
     ASSERT_DOUBLE_EQ(0.100000000000000000, Segment1.GetStartPoint().GetY());
-    ASSERT_DOUBLE_EQ(0.099999974681068096, Segment1.GetEndPoint().GetX());
-    ASSERT_DOUBLE_EQ(0.100000043115562020, Segment1.GetEndPoint().GetY());
+    ASSERT_DOUBLE_EQ(0.10000001082198071, Segment1.GetEndPoint().GetX());
+    ASSERT_DOUBLE_EQ(0.10000004881480036, Segment1.GetEndPoint().GetY());
 
     Segment1 = MiscSegment3B;
     Segment1.Shorten(MiscMidPoint3A, Segment1.GetEndPoint());
-    ASSERT_DOUBLE_EQ(0.099999974681068096, Segment1.GetStartPoint().GetX());
-    ASSERT_DOUBLE_EQ(0.100000043115562020, Segment1.GetStartPoint().GetY());
+    ASSERT_DOUBLE_EQ(0.10000001082198071, Segment1.GetStartPoint().GetX());
+    ASSERT_DOUBLE_EQ(0.10000004881480036, Segment1.GetStartPoint().GetY());
     ASSERT_DOUBLE_EQ(0.10000002164396139, Segment1.GetEndPoint().GetX());
     ASSERT_DOUBLE_EQ(0.10000009762960071, Segment1.GetEndPoint().GetY());
 
@@ -3386,10 +3386,10 @@ TEST_F (HGF2DSegmentTester, GetExtentTest)
     ASSERT_DOUBLE_EQ(0.1000000, HorizontalSegment3A.GetExtent().GetYMax());
 
     // Obtain extent of a miscaleniuous EPSILON SIZED segment
-    ASSERT_DOUBLE_EQ(0.10000000000000000, MiscSegment3A.GetExtent().GetXMin());
-    ASSERT_DOUBLE_EQ(0.10000000000000000, MiscSegment3A.GetExtent().GetYMin());
-    ASSERT_DOUBLE_EQ(0.10000000000000000, VerticalSegment1A.GetExtent().GetXMax());
-    ASSERT_DOUBLE_EQ(0.10000009762960071, MiscSegment3A.GetExtent().GetYMax());
+    ASSERT_DOUBLE_EQ(0.10000000000000000, MiscSegment3B.GetExtent().GetXMin());
+    ASSERT_DOUBLE_EQ(0.10000000000000000, MiscSegment3B.GetExtent().GetYMin());
+    ASSERT_DOUBLE_EQ(0.10000002164396139, MiscSegment3B.GetExtent().GetXMax());
+    ASSERT_DOUBLE_EQ(0.10000009762960071, MiscSegment3B.GetExtent().GetYMax());
 
     // Obtain extent of a very large segment
     ASSERT_DOUBLE_EQ(-1.00E123, LargeSegment1A.GetExtent().GetXMin());

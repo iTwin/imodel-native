@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: Tests/NonPublished/IppGraLibs/HVE2DHoledShapeTester.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HVE2DHoledShapeTester
@@ -50,6 +50,12 @@ protected:
     HVE2DSegment    Segment3F;
     HVE2DSegment    Segment4F;
     HVE2DComplexLinear  MyLinear6;
+
+    HVE2DSegment    Segment1G;
+    HVE2DSegment    Segment2G;
+    HVE2DSegment    Segment3G;
+    HVE2DSegment    Segment4G;
+    HVE2DComplexLinear  MyLinear7;
 
     //Points
     HGF2DLocation Poly1Point0d0;

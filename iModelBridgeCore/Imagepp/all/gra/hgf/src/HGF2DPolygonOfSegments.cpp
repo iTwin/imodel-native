@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hgf/src/HGF2DPolygonOfSegments.cpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Methods for class HGF2DPolygonOfSegments
@@ -1296,8 +1296,6 @@ HGF2DShape::SpatialPosition HGF2DPolygonOfSegments::CalculateSpatialPositionOfPo
     return (PointIsOn ? HGF2DShape::S_ON : ((NumberOfCrossPoints % 2 == 1) ? HGF2DShape::S_IN : HGF2DShape::S_OUT));
     }
 
-
-
 //-----------------------------------------------------------------------------
 // ObtainContiguousnessPoints
 // Finds contiguousness points with vector
@@ -2286,7 +2284,10 @@ HGF2DShape* HGF2DPolygonOfSegments::IntersectPolygon(const HGF2DPolygonOfSegment
                     // Self cannot be PARTIALY_IN nor ON the given
                     // (since the given is not PARTIALY_IN nor ON self), then
                     // Self is located IN the given ... the result is therefore self
-                    pMyResultShape = static_cast<HGF2DShape*>(Clone());
+                    if (RepresentsARectangle())
+                        pMyResultShape = (HGF2DShape*)GenerateCorrespondingRectangle();
+                    else
+                        pMyResultShape = static_cast<HGF2DShape*>(Clone());
                     }
                 else
                     {
@@ -5216,10 +5217,10 @@ HGF2DShape* HGF2DPolygonOfSegments::AllocateComplexShapeFromAutoContiguousPolySe
     // Pre-calculate tolerance
     double Tolerance = pi_rPolySegment.GetTolerance();
 
-    HFCPtr<HGF2DShape> pResultShape;
+    HAutoPtr<HGF2DShape> pResultShape;
 
     // Create result complex shape
-    HFCPtr<HGF2DComplexShape> pResultComplex = new HGF2DComplexShape();
+    HAutoPtr<HGF2DComplexShape> pResultComplex(new HGF2DComplexShape());
     pResultComplex->SetAutoToleranceActive(pi_rPolySegment.IsAutoToleranceActive());
     pResultComplex->SetTolerance(pi_rPolySegment.GetTolerance());
 
@@ -5374,10 +5375,10 @@ HGF2DShape* HGF2DPolygonOfSegments::AllocateComplexShapeFromAutoContiguousPolySe
     else
         {
         // Result is the complex
-        pResultShape = pResultComplex;
+        pResultShape = pResultComplex.release();
         }
 
 
-    return pResultShape;
+    return pResultShape.release();
     }
 

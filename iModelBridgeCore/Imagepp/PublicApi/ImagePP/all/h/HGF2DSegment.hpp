@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HGF2DSegment.hpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -349,11 +349,26 @@ inline double HGF2DSegment::CalculateRelativePosition(const HGF2DPosition& pi_rP
     // The relative position is distance ratio between distance to given and to end point
     // from start point
 
+    if (m_StartPoint == m_EndPoint)
+        return 0.0;
+
     // Check if segment is vertical or close but not perfectly horizontal
-    return((HDOUBLE_EQUAL(m_StartPoint.GetX(), m_EndPoint.GetX(), GetTolerance()) &&
-            (m_StartPoint.GetY() != m_EndPoint.GetY())) ?
-           ((pi_rPointOnLinear.GetY() - m_StartPoint.GetY()) / (m_EndPoint.GetY() - m_StartPoint.GetY())) :
-           ((pi_rPointOnLinear.GetX() - m_StartPoint.GetX()) / (m_EndPoint.GetX() - m_StartPoint.GetX())));
+    double relativePosition;
+    double deltaX = m_EndPoint.GetX() - m_StartPoint.GetX();
+    double deltaY = m_EndPoint.GetY() - m_StartPoint.GetY();
+
+    if (fabs(deltaX) > fabs(deltaY))
+        relativePosition = (pi_rPointOnLinear.GetX() - m_StartPoint.GetX()) / deltaX;
+    else
+        relativePosition = (pi_rPointOnLinear.GetY() - m_StartPoint.GetY()) / deltaY;
+
+    // Computation errors may result in values slightly lower than 0 or higher than 1 (within tolerance)
+    // we thus clamp
+    if (relativePosition < 0.0)
+        relativePosition = 0.0;
+    if (relativePosition > 1.0)
+        relativePosition = 1.0;
+    return relativePosition;
     }
 
 //-----------------------------------------------------------------------------

@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: Tests/NonPublished/IppGraLibs/HGF2DUniverseTester.cpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -81,7 +81,7 @@ TEST_F (HGF2DUniverseTester, LinearTest)
    
     HFCPtr<HGF2DPolySegment> Linear1 = static_cast<HGF2DPolySegment*>(&*(Universe1.GetLinear(HGF2DSimpleShape::CW)));
 
-    ASSERT_EQ(4, Linear1->GetSize());   
+    ASSERT_EQ(5, Linear1->GetSize());   
     ASSERT_DOUBLE_EQ(-DOUBLE_MAX, Linear1->GetStartPoint().GetX()); 
     ASSERT_DOUBLE_EQ(-DOUBLE_MAX, Linear1->GetStartPoint().GetY());      
 

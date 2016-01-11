@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: Tests/NonPublished/IppGraLibs/HVE2DHoledShapeTester.cpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -68,6 +68,17 @@ HVE2DHoledShapeTester::HVE2DHoledShapeTester()
     MyLinear6.AppendLinear(Segment2F);
     MyLinear6.AppendLinear(Segment3F);
     MyLinear6.AppendLinear(Segment4F);
+
+    Segment1G = HVE2DSegment(HGF2DLocation(17.0, 12.0, pWorld), HGF2DLocation(17.0, 18.0, pWorld));
+    Segment2G = HVE2DSegment(HGF2DLocation(17.0, 18.0, pWorld), HGF2DLocation(20.0, 18.0, pWorld));
+    Segment3G = HVE2DSegment(HGF2DLocation(20.0, 18.0, pWorld), HGF2DLocation(20.0, 12.0, pWorld));
+    Segment4G = HVE2DSegment(HGF2DLocation(20.0, 12.0, pWorld), HGF2DLocation(17.0, 12.0, pWorld));
+
+    MyLinear7 = HVE2DComplexLinear(pWorld);
+    MyLinear7.AppendLinear(Segment1G);
+    MyLinear7.AppendLinear(Segment2G);
+    MyLinear7.AppendLinear(Segment3G);
+    MyLinear7.AppendLinear(Segment4G);
 
     //Point
     Poly1Point0d0 = HGF2DLocation(10.0, 10.0, pWorld);
@@ -1118,6 +1129,40 @@ TEST_F (HVE2DHoledShapeTester, ModifyShapeTest)
     ASSERT_DOUBLE_EQ(52.0, pResultShape4->CalculateArea());
 
     }
+
+
+//==================================================================================
+// Diff test with overlapping hole
+//==================================================================================
+TEST_F (HVE2DHoledShapeTester, ModifyShapeTestAdditional)
+    {
+   
+    HVE2DPolygon    Poly1A(MyLinear1);
+    HVE2DHoledShape HoledShape1(Poly1A);
+
+    HVE2DPolygon    Poly1B(MyLinear2);
+    HoledShape1.AddHole(Poly1B);
+
+    HVE2DPolygon    Poly1C(MyLinear7);
+
+    HFCPtr<HVE2DShape> pResultShape = HoledShape1.DifferentiateShape(Poly1C);
+    ASSERT_FALSE(pResultShape->HasHoles());
+    ASSERT_DOUBLE_EQ(52.0, pResultShape->CalculateArea());
+
+    HFCPtr<HVE2DShape> pResultShape2 = HoledShape1.IntersectShape(Poly1C);
+    ASSERT_FALSE(pResultShape2->HasHoles());
+    ASSERT_DOUBLE_EQ(12.0, pResultShape2->CalculateArea());
+
+    HFCPtr<HVE2DShape> pResultShape3 = HoledShape1.UnifyShape(Poly1C);
+    ASSERT_TRUE(pResultShape3->HasHoles());
+    ASSERT_DOUBLE_EQ(70.0, pResultShape3->CalculateArea());
+
+    HFCPtr<HVE2DShape> pResultShape4 = Poly1C.DifferentiateFromShapeSCS(HoledShape1);
+    ASSERT_FALSE(pResultShape4->HasHoles());
+    ASSERT_DOUBLE_EQ(52.0, pResultShape4->CalculateArea());
+
+    }
+
 
 //==================================================================================
 // Diff test with overlapping hole

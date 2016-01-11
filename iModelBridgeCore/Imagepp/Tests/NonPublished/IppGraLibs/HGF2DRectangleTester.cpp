@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: Tests/NonPublished/IppGraLibs/HGF2DRectangleTester.cpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -141,7 +141,7 @@ TEST_F (HGF2DRectangleTest, GetLinearTest)
     HGF2DPolySegment  MyLinearOfRect1(*thePolySegment);
 
     // verify that there are 4 linears
-    ASSERT_EQ(4, MyLinearOfRect1.GetSize());
+    ASSERT_EQ(5, MyLinearOfRect1.GetSize());
 
     ASSERT_DOUBLE_EQ(10.0, MyLinearOfRect1.GetPoint(0).GetX());
     ASSERT_DOUBLE_EQ(10.0, MyLinearOfRect1.GetPoint(0).GetY());
@@ -159,7 +159,7 @@ TEST_F (HGF2DRectangleTest, GetLinearTest)
     HFCPtr<HGF2DPolySegment> thePolySegment2 = static_cast<HGF2DPolySegment*>(&*theLinear2);
     
     HGF2DPolySegment  MyLinearOfRectCW(*thePolySegment2);
-    ASSERT_EQ(4, MyLinearOfRectCW.GetSize());
+    ASSERT_EQ(5, MyLinearOfRectCW.GetSize());
 
     ASSERT_DOUBLE_EQ(10.0, MyLinearOfRectCW.GetPoint(0).GetX());
     ASSERT_DOUBLE_EQ(10.0, MyLinearOfRectCW.GetPoint(0).GetY());
@@ -177,7 +177,7 @@ TEST_F (HGF2DRectangleTest, GetLinearTest)
     HFCPtr<HGF2DPolySegment> thePolySegment3 = static_cast<HGF2DPolySegment*>(&*theLinear3);
 
     HGF2DPolySegment  MyLinearOfRectCCW(*thePolySegment3);
-    ASSERT_EQ(4, MyLinearOfRectCCW.GetSize());
+    ASSERT_EQ(5, MyLinearOfRectCCW.GetSize());
 
     ASSERT_DOUBLE_EQ(10.0, MyLinearOfRectCCW.GetPoint(0).GetX());
     ASSERT_DOUBLE_EQ(10.0, MyLinearOfRectCCW.GetPoint(0).GetY());
@@ -442,6 +442,7 @@ TEST_F (HGF2DRectangleTest, CloningTest)
     // Test with a translation between systems
     Translation = HGF2DDisplacement (10.0, 10.0);
     HGF2DTranslation myTranslation(Translation);
+    myTranslation.Reverse();
 
     HFCPtr<HGF2DRectangle> pClone5 = (HGF2DRectangle*)(&*(Rect1A.AllocTransformDirect(myTranslation)));
     ASSERT_FALSE(pClone5->IsEmpty());
@@ -457,6 +458,7 @@ TEST_F (HGF2DRectangleTest, CloningTest)
     myStretch.SetTranslation(Translation);
     myStretch.SetXScaling(0.5);
     myStretch.SetYScaling(0.5);
+    myStretch.Reverse();
 
     HFCPtr<HGF2DRectangle> pClone6 = (HGF2DRectangle*)(&*(Rect1A.AllocTransformDirect(myStretch)));
     ASSERT_FALSE(pClone6->IsEmpty());
@@ -471,6 +473,7 @@ TEST_F (HGF2DRectangleTest, CloningTest)
     HGF2DStretch myStretch2;
     myStretch2.SetXScaling(0.5);
     myStretch2.SetYScaling(0.5);
+    myStretch2.Reverse();
 
     HFCPtr<HGF2DRectangle> pClone10 = (HGF2DRectangle*)(&*(Rect1A.AllocTransformDirect(myStretch2)));
     ASSERT_FALSE(pClone10->IsEmpty());
@@ -485,6 +488,7 @@ TEST_F (HGF2DRectangleTest, CloningTest)
     HGF2DSimilitude mySimilitude;
     mySimilitude.SetRotation(PI);
     mySimilitude.SetScaling(0.5);
+    mySimilitude.Reverse();
 
     HFCPtr<HGF2DRectangle> pClone7 = (HGF2DRectangle*)(&*(Rect1A.AllocTransformDirect(mySimilitude)));
     ASSERT_FALSE(pClone7->IsEmpty());
@@ -501,6 +505,7 @@ TEST_F (HGF2DRectangleTest, CloningTest)
     myAffine.SetRotation(PI);
     myAffine.SetXScaling(0.5);
     myAffine.SetYScaling(0.5);
+    myAffine.Reverse();
 
     HFCPtr<HGF2DRectangle> pClone8 = (HGF2DRectangle*)(&*(Rect1A.AllocTransformDirect(myAffine)));
     ASSERT_FALSE(pClone8->IsEmpty());

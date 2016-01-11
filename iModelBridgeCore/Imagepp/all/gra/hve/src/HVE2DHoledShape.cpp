@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hve/src/HVE2DHoledShape.cpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Methods for class HVE2DHoledShape
@@ -1812,7 +1812,7 @@ HVE2DShape* HVE2DHoledShape::DifferentiateSimpleShapeSCS(
             }
 
         // Finaly we add as hole the final shape if it is simple
-        if (pShape->IsSimple())
+        if (pShape->IsSimple() && !pResultHoled->AreContiguous(*pShape))
             {
             pResultHoled->AddHole(*(static_cast<HVE2DSimpleShape*>(&(*pShape))));
 

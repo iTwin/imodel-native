@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: Tests/NonPublished/IppGraLibs/HVE2DPolygonOfSegmentsTesterWithEpsilon.cpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -97,7 +97,7 @@ TEST_F(HVE2DPolygonOfSegmentsTester,  IntersectShapeTestWithPointer2)
 
     HFCPtr<HVE2DShape> pResult = pShape1->IntersectShape(*pShape2);
     ASSERT_DOUBLE_EQ(21248.0, pResult->CalculateArea());
-    ASSERT_NE(static_cast<HGF2DShapeTypeId>(HVE2DRectangle::CLASS_ID), pResult->GetShapeType());
+    ASSERT_EQ(static_cast<HGF2DShapeTypeId>(HVE2DRectangle::CLASS_ID), pResult->GetShapeType());
       
     }
 

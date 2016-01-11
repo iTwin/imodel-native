@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: Tests/NonPublished/IppGraLibs/EnvironnementTest.cpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -119,7 +119,7 @@
     Misc3Point1d0 = HGF2DLocation(0.1, 0.1, pWorld) + HGF2DDisplacement(HGFBearing(77.5* PI/180), MYEPSILON);
     MiscMidPoint1 = HGF2DLocation(5.1, 5.1, pWorld);
 
-    MiscMidPoint3 = HGF2DLocation(0.1, 0.1, pWorld)+ HGF2DDisplacement(HGFBearing(77.5), MYEPSILON / 2);
+    MiscMidPoint3 = HGF2DLocation(0.1, 0.1, pWorld)+ HGF2DDisplacement(HGFBearing(77.5* PI/180), MYEPSILON / 2);
     MiscClosePoint3A = HGF2DLocation(0.0, 0.0, pWorld);
     MiscClosePoint3B = HGF2DLocation(0.0, 0.1 + (2*MYEPSILON/3), pWorld);
     MiscClosePoint3C = HGF2DLocation(0.2, 0.1 + (MYEPSILON/3), pWorld);
@@ -549,7 +549,7 @@
     // MISC SEGMENTS
     MiscSegment1A = HGF2DSegment(HGF2DPosition(0.1, 0.1), HGF2DPosition(10.1, 10.1));
     MiscSegment2A = HGF2DSegment(HGF2DPosition(10.1, 10.1), HGF2DPosition(0.1, 0.1));
-    MiscSegment3AA = HGF2DSegment(HGF2DPosition(0.1, 0.1), HGF2DDisplacement(HGFBearing(77.5 * PI/180), MYEPSILON));
+    MiscSegment3B = HGF2DSegment(HGF2DPosition(0.1, 0.1), HGF2DDisplacement(HGFBearing(77.5 * PI/180), MYEPSILON));
     MiscSegment4A = HGF2DSegment(HGF2DPosition(0.2, 0.1), HGF2DDisplacement((77.5), MYEPSILON));
     MiscSegment6A = HGF2DSegment(HGF2DPosition(0.1, 0.1), HGF2DPosition(-9.9, 10.1));
     MiscSegment7A = HGF2DSegment(HGF2DPosition(0.2, 0.0), HGF2DPosition(-9.8, 10.0));
@@ -576,7 +576,7 @@
     Misc3Point1d0A = HGF2DPosition(0.1, 0.1) + HGF2DDisplacement(HGFBearing(77.5* PI/180), MYEPSILON);
     MiscMidPoint1A = HGF2DPosition(5.1, 5.1);
 
-    MiscMidPoint3A = HGF2DPosition(0.1, 0.1)+ HGF2DDisplacement(HGFBearing(77.5), MYEPSILON / 2);
+    MiscMidPoint3A = HGF2DPosition(0.1, 0.1)+ HGF2DDisplacement(HGFBearing(77.5 * PI/180), MYEPSILON / 2);
     MiscClosePoint3AA = HGF2DPosition(0.0, 0.0);
     MiscClosePoint3BA = HGF2DPosition(0.0, 0.1 + (2*MYEPSILON/3));
     MiscClosePoint3CA = HGF2DPosition(0.2, 0.1 + (MYEPSILON/3));

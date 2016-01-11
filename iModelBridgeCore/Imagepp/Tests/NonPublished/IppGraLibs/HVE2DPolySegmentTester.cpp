@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: Tests/NonPublished/IppGraLibs/HVE2DPolySegmentTester.cpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -96,8 +96,6 @@ HVE2DPolySegmentTester::HVE2DPolySegmentTester()
     MiscPolySegment2 = HVE2DPolySegment(HGF2DLocation(10.1, 10.1, pWorld), HGF2DLocation(0.1, 0.1, pWorld));
     MiscPolySegment3 = HVE2DPolySegment(HGF2DLocation(0.1, 0.1, pWorld), 
                                         HGF2DLocation(0.1, 0.1, pWorld) + HGF2DDisplacement(HGFBearing(77.5* PI / 180), MYEPSILON));
-    MiscPolySegment3A = HVE2DPolySegment(HGF2DLocation(0.1+MYEPSILON, 0.1, pWorld), 
-                                         HGF2DLocation(0.1+MYEPSILON, 0.1, pWorld) + HGF2DDisplacement(HGFBearing(77.5* PI / 180), MYEPSILON));
     MiscPolySegment4 = HVE2DPolySegment(HGF2DLocation(0.2, 0.1, pWorld),
                                         HGF2DLocation(0.2, 0.1, pWorld) + HGF2DDisplacement(HGFBearing(77.5* PI / 180), MYEPSILON));
     MiscPolySegment6 = HVE2DPolySegment(HGF2DLocation(0.1, 0.1, pWorld), HGF2DLocation(-9.9, 10.1, pWorld));
@@ -1307,13 +1305,13 @@ TEST_F (HVE2DPolySegmentTester, CalculateRelativePositionTest)
 
     // Test with PolySegments way into positive regions
     ASSERT_NEAR(0.0, PositivePolySegment1.CalculateRelativePosition(PositivePoint0d0), MYEPSILON);
-    ASSERT_DOUBLE_EQ(0.1, PositivePolySegment1.CalculateRelativePosition(PositivePoint0d1));
+    ASSERT_NEAR(0.1, PositivePolySegment1.CalculateRelativePosition(PositivePoint0d1), MYEPSILON);
     ASSERT_DOUBLE_EQ(0.5, PositivePolySegment1.CalculateRelativePosition(PositivePoint0d5));
     ASSERT_DOUBLE_EQ(1.0, PositivePolySegment1.CalculateRelativePosition(PositivePoint1d0));
 
     // Test with PolySegments way into negative regions
     ASSERT_NEAR(0.0, NegativePolySegment1.CalculateRelativePosition(NegativePoint0d0), MYEPSILON);
-    ASSERT_DOUBLE_EQ(0.1, NegativePolySegment1.CalculateRelativePosition(NegativePoint0d1));
+    ASSERT_NEAR(0.1, NegativePolySegment1.CalculateRelativePosition(NegativePoint0d1), MYEPSILON);
     ASSERT_DOUBLE_EQ(0.5, NegativePolySegment1.CalculateRelativePosition(NegativePoint0d5));
     ASSERT_DOUBLE_EQ(1.0, NegativePolySegment1.CalculateRelativePosition(NegativePoint1d0));
 
@@ -4750,7 +4748,7 @@ TEST_F (HVE2DPolySegmentTester, CalculateRelativePositionTest2)
     // Test with PolySegment2
     ASSERT_NEAR(0.0, PolySegment2.CalculateRelativePosition(PolySegment2Point0d0), MYEPSILON);
     ASSERT_DOUBLE_EQ(0.099999999999999381, PolySegment2.CalculateRelativePosition(PolySegment2Point0d1));
-    ASSERT_DOUBLE_EQ(0.500000000000001670, PolySegment2.CalculateRelativePosition(PolySegment2Point0d5));
+    ASSERT_NEAR(0.500000000000001670, PolySegment2.CalculateRelativePosition(PolySegment2Point0d5), MYEPSILON);
 
     // NORMAL Strange behavior provoqued by auto-clossing condition
     ASSERT_NEAR(0.0, PolySegment2.CalculateRelativePosition(PolySegment2Point1d0), MYEPSILON);

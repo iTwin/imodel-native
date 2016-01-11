@@ -2,7 +2,7 @@
 ////:>
 ////:>     $Source: Tests/NonPublished/IppGraLibs/HGF2DPolygonOfSegmentsTester.cpp $
 ////:>
-////:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+////:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 ////:>
 ////:>+--------------------------------------------------------------------------------------
 
@@ -147,7 +147,7 @@ TEST_F(HGF2DPolygonOfSegmentsTester,  ConstructorTest)
     HFCPtr<HGF2DLinear> theLinear = APoly4.GetLinear();  
     HFCPtr<HGF2DPolySegment> thePolySegment = static_cast<HGF2DPolySegment*>(&*theLinear);
     HGF2DPolySegment  AComp2(*thePolySegment);
-    ASSERT_EQ(4, AComp2.GetSize());
+    ASSERT_EQ(5, AComp2.GetSize());
 
     ASSERT_DOUBLE_EQ(10.0, AComp2.GetPoint(0).GetX());
     ASSERT_DOUBLE_EQ(10.1, AComp2.GetPoint(0).GetY());
@@ -179,7 +179,6 @@ TEST_F(HGF2DPolygonOfSegmentsTester,  ConstructorTest)
 TEST_F(HGF2DPolygonOfSegmentsTester,  OperatorTest)
     {
 
-    HGF2DPolygonOfSegments    APoly1A;
 
     HGF2DPolySegment  AComp1;
     AComp1.AppendPoint(HGF2DPosition(10.0, 10.1));
@@ -191,6 +190,8 @@ TEST_F(HGF2DPolygonOfSegmentsTester,  OperatorTest)
 // &&AR The SetLinear method has been deactivated from HGF2DPolygonOfSegment
 //    APoly1A.SetLinear(AComp1);
 
+    HGF2DPolygonOfSegments    APoly1A(AComp1);
+
     HGF2DPolygonOfSegments    APoly2;
 
     APoly2 = APoly1A;
@@ -198,7 +199,7 @@ TEST_F(HGF2DPolygonOfSegmentsTester,  OperatorTest)
     HFCPtr<HGF2DLinear> theLinear = APoly2.GetLinear();  
     HFCPtr<HGF2DPolySegment> thePolySegment = static_cast<HGF2DPolySegment*>(&*theLinear);
     HGF2DPolySegment  AComp2(*thePolySegment);
-    ASSERT_EQ(4, AComp2.GetSize());
+    ASSERT_EQ(5, AComp2.GetSize());
 
     ASSERT_DOUBLE_EQ(10.0, AComp2.GetPoint(0).GetX());
     ASSERT_DOUBLE_EQ(10.1, AComp2.GetPoint(0).GetY());
@@ -478,7 +479,7 @@ TEST_F(HGF2DPolygonOfSegmentsTester,  GetPointTest)
     HGF2DPolySegment  MyLinearOfPoly1A(*thePolySegment);
 
     // verify that there are 4 linears
-    ASSERT_EQ(4, MyLinearOfPoly1A.GetSize());
+    ASSERT_EQ(5, MyLinearOfPoly1A.GetSize());
 
     ASSERT_DOUBLE_EQ(10.0, MyLinearOfPoly1A.GetPoint(0).GetX());
     ASSERT_DOUBLE_EQ(10.0, MyLinearOfPoly1A.GetPoint(0).GetY());
@@ -499,7 +500,7 @@ TEST_F(HGF2DPolygonOfSegmentsTester,  GetPointTest)
     HFCPtr<HGF2DPolySegment> thePolySegment2 = static_cast<HGF2DPolySegment*>(&*theLinear2);
 
     HGF2DPolySegment  MyLinearOfPolyCW(*thePolySegment2);
-    ASSERT_EQ(4, MyLinearOfPolyCW.GetSize());
+    ASSERT_EQ(5, MyLinearOfPolyCW.GetSize());
 
     ASSERT_DOUBLE_EQ(10.0, MyLinearOfPolyCW.GetPoint(0).GetX());
     ASSERT_DOUBLE_EQ(10.0, MyLinearOfPolyCW.GetPoint(0).GetY());
@@ -520,7 +521,7 @@ TEST_F(HGF2DPolygonOfSegmentsTester,  GetPointTest)
     HFCPtr<HGF2DPolySegment> thePolySegment3 = static_cast<HGF2DPolySegment*>(&*theLinear3);
     
     HGF2DPolySegment  MyLinearOfPolyCCW(*thePolySegment3);
-    ASSERT_EQ(4, MyLinearOfPolyCCW.GetSize());
+    ASSERT_EQ(5, MyLinearOfPolyCCW.GetSize());
 
     ASSERT_DOUBLE_EQ(10.0, MyLinearOfPolyCCW.GetPoint(0).GetX());
     ASSERT_DOUBLE_EQ(10.0, MyLinearOfPolyCCW.GetPoint(0).GetY());
@@ -674,7 +675,7 @@ TEST_F(HGF2DPolygonOfSegmentsTester,  IntersectTest)
     ASSERT_DOUBLE_EQ(10.0, DumPoints[0].GetY());
     DumPoints.clear();
 
-    ASSERT_EQ(0, Poly1A.Intersect(ComplexLinearCase5B, &DumPoints));
+    ASSERT_EQ(0, Poly1A.Intersect(ComplexLinearCase5AA, &DumPoints));
     DumPoints.clear();
 
     ASSERT_EQ(0, Poly1A.Intersect(ComplexLinearCase6A, &DumPoints));
@@ -810,6 +811,7 @@ TEST_F(HGF2DPolygonOfSegmentsTester,  CloningTest)
     // Test with a translation between systems
     Translation = HGF2DDisplacement (10.0, 10.0);
     HGF2DTranslation myTranslation(Translation);
+    myTranslation.Reverse();
    
     HFCPtr<HGF2DPolygonOfSegments> pClone5 = (HGF2DPolygonOfSegments*)(&*(Poly1A.AllocTransformDirect(myTranslation)));
 
@@ -826,6 +828,7 @@ TEST_F(HGF2DPolygonOfSegmentsTester,  CloningTest)
     myStretch.SetTranslation(Translation);
     myStretch.SetXScaling(0.5);
     myStretch.SetYScaling(0.5);
+    myStretch.Reverse();
     
     HFCPtr<HGF2DPolygonOfSegments> pClone6 = (HGF2DPolygonOfSegments*)(&*(Poly1A.AllocTransformDirect(myStretch)));
 
@@ -841,7 +844,7 @@ TEST_F(HGF2DPolygonOfSegmentsTester,  CloningTest)
     HGF2DSimilitude mySimilitude;
     mySimilitude.SetRotation(PI);
     mySimilitude.SetScaling(0.5);
-   
+    mySimilitude.Reverse();
     HFCPtr<HGF2DPolygonOfSegments> pClone7 = (HGF2DPolygonOfSegments*)(&*(Poly1A.AllocTransformDirect(mySimilitude)));
 
     ASSERT_FALSE(pClone7->IsEmpty());
@@ -858,7 +861,7 @@ TEST_F(HGF2DPolygonOfSegmentsTester,  CloningTest)
     myAffine.SetRotation(PI);
     myAffine.SetXScaling(0.5);
     myAffine.SetYScaling(0.5);
-    
+    myAffine.Reverse();
     HFCPtr<HGF2DPolygonOfSegments> pClone8 = (HGF2DPolygonOfSegments*)(&*(Poly1A.AllocTransformDirect(myAffine)));
 
     ASSERT_FALSE(pClone8->IsEmpty());
@@ -1176,7 +1179,7 @@ TEST_F(HGF2DPolygonOfSegmentsTester,  UnifyShapeTest)
     ASSERT_EQ(static_cast<HGF2DShapeTypeId>(HGF2DRectangle::CLASS_ID), pResultShape1->GetShapeType());
 
     AComp2 = (*static_cast<HGF2DPolySegment*>(&*(pResultShape1->GetLinear(HGF2DSimpleShape::CW))));
-    ASSERT_EQ(4, AComp2.GetSize());
+    ASSERT_EQ(5, AComp2.GetSize());
 
     ASSERT_DOUBLE_EQ(10.0, AComp2.GetPoint(0).GetX());
     ASSERT_DOUBLE_EQ(10.0, AComp2.GetPoint(0).GetY());
@@ -1196,7 +1199,7 @@ TEST_F(HGF2DPolygonOfSegmentsTester,  UnifyShapeTest)
     ASSERT_EQ(static_cast<HGF2DShapeTypeId>(HGF2DRectangle::CLASS_ID), pResultShape2->GetShapeType());
 
     AComp2 =  (*static_cast<HGF2DPolySegment*>(&*(pResultShape2->GetLinear(HGF2DSimpleShape::CW))));
-    ASSERT_EQ(4, AComp2.GetSize());
+    ASSERT_EQ(5, AComp2.GetSize());
 
     ASSERT_DOUBLE_EQ(10.0, AComp2.GetPoint(0).GetX());
     ASSERT_DOUBLE_EQ(10.0, AComp2.GetPoint(0).GetY());
@@ -1216,7 +1219,7 @@ TEST_F(HGF2DPolygonOfSegmentsTester,  UnifyShapeTest)
     ASSERT_EQ(static_cast<HGF2DShapeTypeId>(HGF2DRectangle::CLASS_ID), pResultShape3->GetShapeType());
 
     AComp2 =  (*static_cast<HGF2DPolySegment*>(&*(pResultShape3->GetLinear(HGF2DSimpleShape::CW))));
-    ASSERT_EQ(4, AComp2.GetSize());
+    ASSERT_EQ(5, AComp2.GetSize());
 
     ASSERT_NEAR(0.0, AComp2.GetPoint(0).GetX(), MYEPSILON);
     ASSERT_DOUBLE_EQ(10.0, AComp2.GetPoint(0).GetY());
@@ -1236,7 +1239,7 @@ TEST_F(HGF2DPolygonOfSegmentsTester,  UnifyShapeTest)
     ASSERT_EQ(static_cast<HGF2DShapeTypeId>(HGF2DRectangle::CLASS_ID), pResultShape4->GetShapeType());
 
     AComp2 =  (*static_cast<HGF2DPolySegment*>(&*(pResultShape4->GetLinear(HGF2DSimpleShape::CW))));
-    ASSERT_EQ(4, AComp2.GetSize());
+    ASSERT_EQ(5, AComp2.GetSize());
 
     ASSERT_DOUBLE_EQ(10.0, AComp2.GetPoint(0).GetX());
     ASSERT_NEAR(0.0, AComp2.GetPoint(0).GetY(), MYEPSILON);
@@ -1250,13 +1253,13 @@ TEST_F(HGF2DPolygonOfSegmentsTester,  UnifyShapeTest)
     ASSERT_DOUBLE_EQ(20.0, AComp2.GetPoint(3).GetX());
     ASSERT_NEAR(0.0, AComp2.GetPoint(3).GetY(), MYEPSILON);
 
-    HFCPtr<HGF2DPolygonOfSegments>     pResultShape5 = (HGF2DPolygonOfSegments *) Poly1A.UnifyShape(VerticalFitPolyA);
+    HFCPtr<HGF2DRectangle>     pResultShape5 = (HGF2DRectangle *) Poly1A.UnifyShape(VerticalFitPolyA);
 
     ASSERT_DOUBLE_EQ(150.0, pResultShape5->CalculateArea());
     ASSERT_EQ(static_cast<HGF2DShapeTypeId>(HGF2DRectangle::CLASS_ID), pResultShape5->GetShapeType());
 
     AComp2 = (*static_cast<HGF2DPolySegment*>(&*(pResultShape5->GetLinear(HGF2DSimpleShape::CW))));
-    ASSERT_EQ(4, AComp2.GetSize());
+    ASSERT_EQ(5, AComp2.GetSize());
 
     ASSERT_DOUBLE_EQ(10.0, AComp2.GetPoint(0).GetX());
     ASSERT_DOUBLE_EQ(10.0, AComp2.GetPoint(0).GetY());
@@ -1276,7 +1279,7 @@ TEST_F(HGF2DPolygonOfSegmentsTester,  UnifyShapeTest)
     ASSERT_EQ(static_cast<HGF2DShapeTypeId>(HGF2DRectangle::CLASS_ID), pResultShape6->GetShapeType());
 
     AComp2 = (*static_cast<HGF2DPolySegment*>(&*(pResultShape6->GetLinear(HGF2DSimpleShape::CW))));
-    ASSERT_EQ(4, AComp2.GetSize());
+    ASSERT_EQ(5, AComp2.GetSize());
 
     ASSERT_DOUBLE_EQ(10.0, AComp2.GetPoint(0).GetX());
     ASSERT_DOUBLE_EQ(10.0, AComp2.GetPoint(0).GetY());
@@ -1303,7 +1306,7 @@ TEST_F(HGF2DPolygonOfSegmentsTester,  UnifyShapeTest)
     ASSERT_DOUBLE_EQ(175.0, pResultShape8->CalculateArea());
 
     AComp2 = (*static_cast<HGF2DPolySegment*>(&*(pResultShape8->GetLinear(HGF2DSimpleShape::CW))));
-    ASSERT_EQ(8, AComp2.GetSize()); 
+    ASSERT_EQ(9, AComp2.GetSize()); 
 
     ASSERT_DOUBLE_EQ(10.0, AComp2.GetPoint(0).GetX());
     ASSERT_DOUBLE_EQ(15.0, AComp2.GetPoint(0).GetY());
@@ -1338,7 +1341,7 @@ TEST_F(HGF2DPolygonOfSegmentsTester,  UnifyShapeTest)
     #endif
 
     AComp2 = (*static_cast<HGF2DPolySegment*>(&*(pResultShape9->GetLinear(HGF2DSimpleShape::CW))));
-    ASSERT_EQ(4, AComp2.GetSize());
+    ASSERT_EQ(5, AComp2.GetSize());
 
     ASSERT_DOUBLE_EQ(10.0, AComp2.GetPoint(0).GetX());
     ASSERT_DOUBLE_EQ(10.0, AComp2.GetPoint(0).GetY());
@@ -1360,7 +1363,7 @@ TEST_F(HGF2DPolygonOfSegmentsTester,  UnifyShapeTest)
     #endif
 
     AComp2 = (*static_cast<HGF2DPolySegment*>(&*(pResultShape10->GetLinear(HGF2DSimpleShape::CW))));
-    ASSERT_EQ(4, AComp2.GetSize());
+    ASSERT_EQ(5, AComp2.GetSize());
 
     ASSERT_NEAR(0.0, AComp2.GetPoint(0).GetX(), MYEPSILON);
     ASSERT_NEAR(0.0, AComp2.GetPoint(0).GetY(), MYEPSILON);
@@ -1382,7 +1385,7 @@ TEST_F(HGF2DPolygonOfSegmentsTester,  UnifyShapeTest)
     #endif
 
     AComp2 = (*static_cast<HGF2DPolySegment*>(&*(pResultShape11->GetLinear(HGF2DSimpleShape::CW))));
-    ASSERT_EQ(4, AComp2.GetSize());
+    ASSERT_EQ(5, AComp2.GetSize());
 
     ASSERT_DOUBLE_EQ(10.0, AComp2.GetPoint(0).GetX());
     ASSERT_DOUBLE_EQ(10.0, AComp2.GetPoint(0).GetY());
@@ -1402,7 +1405,7 @@ TEST_F(HGF2DPolygonOfSegmentsTester,  UnifyShapeTest)
     ASSERT_EQ(static_cast<HGF2DShapeTypeId>(HGF2DRectangle::CLASS_ID), pResultShape12->GetShapeType());
 
     AComp2 = (*static_cast<HGF2DPolySegment*>(&*(pResultShape12->GetLinear(HGF2DSimpleShape::CW))));
-    ASSERT_EQ(4, AComp2.GetSize());
+    ASSERT_EQ(5, AComp2.GetSize());
 
     ASSERT_DOUBLE_EQ(10.0, AComp2.GetPoint(0).GetX());
     ASSERT_DOUBLE_EQ(10.0, AComp2.GetPoint(0).GetY());
@@ -1422,7 +1425,7 @@ TEST_F(HGF2DPolygonOfSegmentsTester,  UnifyShapeTest)
     ASSERT_EQ(static_cast<HGF2DShapeTypeId>(HGF2DRectangle::CLASS_ID), pResultShape13->GetShapeType());
 
     AComp2 = (*static_cast<HGF2DPolySegment*>(&*(pResultShape13->GetLinear(HGF2DSimpleShape::CW))));
-    ASSERT_EQ(4, AComp2.GetSize());
+    ASSERT_EQ(5, AComp2.GetSize());
 
     ASSERT_DOUBLE_EQ(10.0, AComp2.GetPoint(0).GetX());
     ASSERT_DOUBLE_EQ(10.0, AComp2.GetPoint(0).GetY());
@@ -1442,7 +1445,7 @@ TEST_F(HGF2DPolygonOfSegmentsTester,  UnifyShapeTest)
     ASSERT_EQ(static_cast<HGF2DShapeTypeId>(HGF2DRectangle::CLASS_ID), pResultShape14->GetShapeType());
 
     AComp2 = (*static_cast<HGF2DPolySegment*>(&*(pResultShape14->GetLinear(HGF2DSimpleShape::CW))));
-    ASSERT_EQ(4, AComp2.GetSize());
+    ASSERT_EQ(5, AComp2.GetSize());
 
     ASSERT_DOUBLE_EQ(10.0, AComp2.GetPoint(0).GetX());
     ASSERT_DOUBLE_EQ(10.0, AComp2.GetPoint(0).GetY());
@@ -1462,7 +1465,7 @@ TEST_F(HGF2DPolygonOfSegmentsTester,  UnifyShapeTest)
     ASSERT_EQ(static_cast<HGF2DShapeTypeId>(HGF2DRectangle::CLASS_ID), pResultShape15->GetShapeType());
 
     AComp2 = (*static_cast<HGF2DPolySegment*>(&*(pResultShape15->GetLinear(HGF2DSimpleShape::CW))));
-    ASSERT_EQ(4, AComp2.GetSize());
+    ASSERT_EQ(5, AComp2.GetSize());
 
     ASSERT_DOUBLE_EQ(10.0, AComp2.GetPoint(0).GetX());
     ASSERT_DOUBLE_EQ(10.0, AComp2.GetPoint(0).GetY());
@@ -1482,7 +1485,7 @@ TEST_F(HGF2DPolygonOfSegmentsTester,  UnifyShapeTest)
     ASSERT_NE(static_cast<HGF2DShapeTypeId>(HGF2DRectangle::CLASS_ID), pResultShape16->GetShapeType());
 
     AComp2 = (*static_cast<HGF2DPolySegment*>(&*(pResultShape16->GetLinear(HGF2DSimpleShape::CW))));
-    ASSERT_EQ(4, AComp2.GetSize());
+    ASSERT_EQ(5, AComp2.GetSize());
 
     ASSERT_DOUBLE_EQ(10.0, AComp2.GetPoint(0).GetX());
     ASSERT_DOUBLE_EQ(10.0, AComp2.GetPoint(0).GetY()); 
@@ -1502,7 +1505,7 @@ TEST_F(HGF2DPolygonOfSegmentsTester,  UnifyShapeTest)
     ASSERT_EQ(static_cast<HGF2DShapeTypeId>(HGF2DRectangle::CLASS_ID), pResultShape17->GetShapeType());
 
     AComp2 = (*static_cast<HGF2DPolySegment*>(&*(pResultShape17->GetLinear(HGF2DSimpleShape::CW))));
-    ASSERT_EQ(4, AComp2.GetSize());
+    ASSERT_EQ(5, AComp2.GetSize());
 
     ASSERT_DOUBLE_EQ(10.0, AComp2.GetPoint(0).GetX());
     ASSERT_DOUBLE_EQ(10.0, AComp2.GetPoint(0).GetY());
@@ -1522,7 +1525,7 @@ TEST_F(HGF2DPolygonOfSegmentsTester,  UnifyShapeTest)
     ASSERT_EQ(static_cast<HGF2DShapeTypeId>(HGF2DRectangle::CLASS_ID), pResultShape18->GetShapeType());
 
     AComp2 = (*static_cast<HGF2DPolySegment*>(&*(pResultShape18->GetLinear(HGF2DSimpleShape::CW))));
-    ASSERT_EQ(4, AComp2.GetSize());
+    ASSERT_EQ(5, AComp2.GetSize());
 
     ASSERT_DOUBLE_EQ(10.0, AComp2.GetPoint(0).GetX());
     ASSERT_DOUBLE_EQ(10.0, AComp2.GetPoint(0).GetY());
@@ -1542,7 +1545,7 @@ TEST_F(HGF2DPolygonOfSegmentsTester,  UnifyShapeTest)
     ASSERT_EQ(static_cast<HGF2DShapeTypeId>(HGF2DRectangle::CLASS_ID), pResultShape19->GetShapeType());
 
     AComp2 = (*static_cast<HGF2DPolySegment*>(&*(pResultShape19->GetLinear(HGF2DSimpleShape::CW))));
-    ASSERT_EQ(4, AComp2.GetSize());
+    ASSERT_EQ(5, AComp2.GetSize());
 
     ASSERT_DOUBLE_EQ(10.0, AComp2.GetPoint(0).GetX());
     ASSERT_DOUBLE_EQ(10.0, AComp2.GetPoint(0).GetY());
@@ -1562,7 +1565,7 @@ TEST_F(HGF2DPolygonOfSegmentsTester,  UnifyShapeTest)
     ASSERT_EQ(static_cast<HGF2DShapeTypeId>(HGF2DRectangle::CLASS_ID), pResultShape20->GetShapeType());
 
     AComp2 = (*static_cast<HGF2DPolySegment*>(&*(pResultShape20->GetLinear(HGF2DSimpleShape::CW))));
-    ASSERT_EQ(4, AComp2.GetSize());
+    ASSERT_EQ(5, AComp2.GetSize());
 
     ASSERT_DOUBLE_EQ(10.0, AComp2.GetPoint(0).GetX());
     ASSERT_DOUBLE_EQ(10.0, AComp2.GetPoint(0).GetY());
@@ -1582,7 +1585,7 @@ TEST_F(HGF2DPolygonOfSegmentsTester,  UnifyShapeTest)
     ASSERT_EQ(static_cast<HGF2DShapeTypeId>(HGF2DRectangle::CLASS_ID), pResultShape21->GetShapeType());
 
     AComp2 = (*static_cast<HGF2DPolySegment*>(&*(pResultShape21->GetLinear(HGF2DSimpleShape::CW))));
-    ASSERT_EQ(4, AComp2.GetSize());
+    ASSERT_EQ(5, AComp2.GetSize());
 
     ASSERT_DOUBLE_EQ(10.0, AComp2.GetPoint(0).GetX());
     ASSERT_DOUBLE_EQ(10.0, AComp2.GetPoint(0).GetY());
@@ -1629,7 +1632,7 @@ TEST_F(HGF2DPolygonOfSegmentsTester,  IntersectShapeTest)
     ASSERT_EQ(static_cast<HGF2DShapeTypeId>(HGF2DRectangle::CLASS_ID), pResultShape5->GetShapeType());
 
     AComp2 = (*static_cast<HGF2DPolySegment*>(&*(pResultShape5->GetLinear(HGF2DSimpleShape::CW))));
-    ASSERT_EQ(4, AComp2.GetSize());
+    ASSERT_EQ(5, AComp2.GetSize());
 
     ASSERT_DOUBLE_EQ(15.0, AComp2.GetPoint(0).GetX());
     ASSERT_DOUBLE_EQ(10.0, AComp2.GetPoint(0).GetY());
@@ -1650,7 +1653,7 @@ TEST_F(HGF2DPolygonOfSegmentsTester,  IntersectShapeTest)
     ASSERT_EQ(static_cast<HGF2DShapeTypeId>(HGF2DRectangle::CLASS_ID), pResultShape6->GetShapeType());
 
     AComp2 = (*static_cast<HGF2DPolySegment*>(&*(pResultShape6->GetLinear(HGF2DSimpleShape::CW))));
-    ASSERT_EQ(4, AComp2.GetSize());
+    ASSERT_EQ(5, AComp2.GetSize());
 
     ASSERT_DOUBLE_EQ(10.0, AComp2.GetPoint(0).GetX());
     ASSERT_DOUBLE_EQ(15.0, AComp2.GetPoint(0).GetY());
@@ -1674,7 +1677,7 @@ TEST_F(HGF2DPolygonOfSegmentsTester,  IntersectShapeTest)
     ASSERT_EQ(static_cast<HGF2DShapeTypeId>(HGF2DRectangle::CLASS_ID), pResultShape8->GetShapeType());
 
     AComp2 = (*static_cast<HGF2DPolySegment*>(&*(pResultShape8->GetLinear(HGF2DSimpleShape::CW))));
-    ASSERT_EQ(4, AComp2.GetSize());
+    ASSERT_EQ(5, AComp2.GetSize());
 
     ASSERT_DOUBLE_EQ(10.0, AComp2.GetPoint(0).GetX());
     ASSERT_DOUBLE_EQ(10.0, AComp2.GetPoint(0).GetY());
@@ -1696,7 +1699,7 @@ TEST_F(HGF2DPolygonOfSegmentsTester,  IntersectShapeTest)
     #endif
 
     AComp2 = (*static_cast<HGF2DPolySegment*>(&*(pResultShape9->GetLinear(HGF2DSimpleShape::CW))));
-    ASSERT_EQ(4, AComp2.GetSize());
+    ASSERT_EQ(5, AComp2.GetSize());
 
     ASSERT_DOUBLE_EQ(10.0, AComp2.GetPoint(0).GetX());
     ASSERT_DOUBLE_EQ(10.0, AComp2.GetPoint(0).GetY());
@@ -1718,7 +1721,7 @@ TEST_F(HGF2DPolygonOfSegmentsTester,  IntersectShapeTest)
     #endif
 
     AComp2 = (*static_cast<HGF2DPolySegment*>(&*(pResultShape10->GetLinear(HGF2DSimpleShape::CW))));
-    ASSERT_EQ(4, AComp2.GetSize());
+    ASSERT_EQ(5, AComp2.GetSize());
 
     ASSERT_DOUBLE_EQ(10.0, AComp2.GetPoint(0).GetX());
     ASSERT_DOUBLE_EQ(10.0, AComp2.GetPoint(0).GetY());
@@ -1732,15 +1735,13 @@ TEST_F(HGF2DPolygonOfSegmentsTester,  IntersectShapeTest)
     ASSERT_DOUBLE_EQ(20.0, AComp2.GetPoint(3).GetX());
     ASSERT_DOUBLE_EQ(10.0, AComp2.GetPoint(3).GetY());
 
-    HFCPtr<HGF2DPolygonOfSegments>     pResultShape11 = (HGF2DPolygonOfSegments*)Poly1A.IntersectShape(EnglobPoly3A);
+    HFCPtr<HGF2DSimpleShape>     pResultShape11 = (HGF2DSimpleShape*)Poly1A.IntersectShape(EnglobPoly3A);
 
     ASSERT_DOUBLE_EQ(100.0, pResultShape11->CalculateArea());
-    #ifdef WIP_IPPTEST_BUG_1
     ASSERT_EQ(static_cast<HGF2DShapeTypeId>(HGF2DRectangle::CLASS_ID), pResultShape11->GetShapeType());
-    #endif
 
     AComp2 = (*static_cast<HGF2DPolySegment*>(&*(pResultShape11->GetLinear(HGF2DSimpleShape::CW))));
-    ASSERT_EQ(4, AComp2.GetSize());
+    ASSERT_EQ(5, AComp2.GetSize());
 
     ASSERT_DOUBLE_EQ(10.0, AComp2.GetPoint(0).GetX());
     ASSERT_DOUBLE_EQ(10.0, AComp2.GetPoint(0).GetY());
@@ -1754,13 +1755,13 @@ TEST_F(HGF2DPolygonOfSegmentsTester,  IntersectShapeTest)
     ASSERT_DOUBLE_EQ(20.0, AComp2.GetPoint(3).GetX());
     ASSERT_DOUBLE_EQ(10.0, AComp2.GetPoint(3).GetY());
 
-    HFCPtr<HGF2DPolygonOfSegments>     pResultShape12 = (HGF2DPolygonOfSegments*)Poly1A.IntersectShape(IncludedPoly1A);
+    HFCPtr<HGF2DSimpleShape>     pResultShape12 = (HGF2DSimpleShape*)Poly1A.IntersectShape(IncludedPoly1A);
 
     ASSERT_DOUBLE_EQ(25.0, pResultShape12->CalculateArea());
     ASSERT_EQ(static_cast<HGF2DShapeTypeId>(HGF2DRectangle::CLASS_ID), pResultShape12->GetShapeType());
 
     AComp2 = (*static_cast<HGF2DPolySegment*>(&*(pResultShape12->GetLinear(HGF2DSimpleShape::CW))));
-    ASSERT_EQ(4, AComp2.GetSize());
+    ASSERT_EQ(5, AComp2.GetSize());
 
     ASSERT_DOUBLE_EQ(10.0, AComp2.GetPoint(0).GetX());
     ASSERT_DOUBLE_EQ(10.0, AComp2.GetPoint(0).GetY());
@@ -1774,13 +1775,13 @@ TEST_F(HGF2DPolygonOfSegmentsTester,  IntersectShapeTest)
     ASSERT_DOUBLE_EQ(15.0, AComp2.GetPoint(3).GetX());
     ASSERT_DOUBLE_EQ(10.0, AComp2.GetPoint(3).GetY());
 
-    HFCPtr<HGF2DPolygonOfSegments>     pResultShape13 = (HGF2DPolygonOfSegments*) Poly1A.IntersectShape(IncludedPoly2A);
+    HFCPtr<HGF2DSimpleShape>     pResultShape13 = (HGF2DSimpleShape*) Poly1A.IntersectShape(IncludedPoly2A);
 
     ASSERT_DOUBLE_EQ(25.0, pResultShape13->CalculateArea());
     ASSERT_EQ(static_cast<HGF2DShapeTypeId>(HGF2DRectangle::CLASS_ID), pResultShape13->GetShapeType());
 
     AComp2 = (*static_cast<HGF2DPolySegment*>(&*(pResultShape13->GetLinear(HGF2DSimpleShape::CW))));
-    ASSERT_EQ(4, AComp2.GetSize());
+    ASSERT_EQ(5, AComp2.GetSize());
 
     ASSERT_DOUBLE_EQ(15.0, AComp2.GetPoint(0).GetX());
     ASSERT_DOUBLE_EQ(10.0, AComp2.GetPoint(0).GetY());
@@ -1794,13 +1795,13 @@ TEST_F(HGF2DPolygonOfSegmentsTester,  IntersectShapeTest)
     ASSERT_DOUBLE_EQ(20.0, AComp2.GetPoint(3).GetX());
     ASSERT_DOUBLE_EQ(10.0, AComp2.GetPoint(3).GetY());
 
-    HFCPtr<HGF2DPolygonOfSegments>     pResultShape14 = (HGF2DPolygonOfSegments*)Poly1A.IntersectShape(IncludedPoly3A);
+    HFCPtr<HGF2DSimpleShape>     pResultShape14 = (HGF2DSimpleShape*)Poly1A.IntersectShape(IncludedPoly3A);
 
     ASSERT_DOUBLE_EQ(25.0, pResultShape14->CalculateArea());
     ASSERT_EQ(static_cast<HGF2DShapeTypeId>(HGF2DRectangle::CLASS_ID), pResultShape14->GetShapeType());
 
     AComp2 = (*static_cast<HGF2DPolySegment*>(&*(pResultShape14->GetLinear(HGF2DSimpleShape::CW))));
-    ASSERT_EQ(4, AComp2.GetSize());
+    ASSERT_EQ(5, AComp2.GetSize());
 
     ASSERT_DOUBLE_EQ(15.0, AComp2.GetPoint(0).GetX());
     ASSERT_DOUBLE_EQ(15.0, AComp2.GetPoint(0).GetY());
@@ -1814,13 +1815,13 @@ TEST_F(HGF2DPolygonOfSegmentsTester,  IntersectShapeTest)
     ASSERT_DOUBLE_EQ(20.0, AComp2.GetPoint(3).GetX());
     ASSERT_DOUBLE_EQ(15.0, AComp2.GetPoint(3).GetY());
 
-    HFCPtr<HGF2DPolygonOfSegments>     pResultShape15 = (HGF2DPolygonOfSegments*) Poly1A.IntersectShape(IncludedPoly4A);
+    HFCPtr<HGF2DSimpleShape>     pResultShape15 = (HGF2DSimpleShape*) Poly1A.IntersectShape(IncludedPoly4A);
 
     ASSERT_DOUBLE_EQ(25.0, pResultShape15->CalculateArea());
     ASSERT_EQ(static_cast<HGF2DShapeTypeId>(HGF2DRectangle::CLASS_ID), pResultShape15->GetShapeType());
 
     AComp2 = (*static_cast<HGF2DPolySegment*>(&*(pResultShape15->GetLinear(HGF2DSimpleShape::CW))));
-    ASSERT_EQ(4, AComp2.GetSize());
+    ASSERT_EQ(5, AComp2.GetSize());
 
     ASSERT_DOUBLE_EQ(10.0, AComp2.GetPoint(0).GetX());
     ASSERT_DOUBLE_EQ(15.0, AComp2.GetPoint(0).GetY());
@@ -1834,13 +1835,13 @@ TEST_F(HGF2DPolygonOfSegmentsTester,  IntersectShapeTest)
     ASSERT_DOUBLE_EQ(15.0, AComp2.GetPoint(3).GetX());
     ASSERT_DOUBLE_EQ(15.0, AComp2.GetPoint(3).GetY());
 
-    HFCPtr<HGF2DPolygonOfSegments>     pResultShape16 = (HGF2DPolygonOfSegments*)Poly1A.IntersectShape(IncludedPoly5A);
+    HFCPtr<HGF2DSimpleShape>     pResultShape16 = (HGF2DSimpleShape*)Poly1A.IntersectShape(IncludedPoly5A);
 
     ASSERT_DOUBLE_EQ(36.0, pResultShape16->CalculateArea());
     ASSERT_EQ(static_cast<HGF2DShapeTypeId>(HGF2DRectangle::CLASS_ID), pResultShape16->GetShapeType());
 
     AComp2 = (*static_cast<HGF2DPolySegment*>(&*(pResultShape16->GetLinear(HGF2DSimpleShape::CW))));
-    ASSERT_EQ(4, AComp2.GetSize());
+    ASSERT_EQ(5, AComp2.GetSize());
 
     ASSERT_DOUBLE_EQ(12.0, AComp2.GetPoint(0).GetX());
     ASSERT_DOUBLE_EQ(12.0, AComp2.GetPoint(0).GetY());
@@ -1854,13 +1855,13 @@ TEST_F(HGF2DPolygonOfSegmentsTester,  IntersectShapeTest)
     ASSERT_DOUBLE_EQ(18.0, AComp2.GetPoint(3).GetX());
     ASSERT_DOUBLE_EQ(12.0, AComp2.GetPoint(3).GetY());
 
-    HFCPtr<HGF2DPolygonOfSegments>     pResultShape17 = (HGF2DPolygonOfSegments*) Poly1A.IntersectShape(IncludedPoly6A);
+    HFCPtr<HGF2DSimpleShape>     pResultShape17 = (HGF2DSimpleShape*) Poly1A.IntersectShape(IncludedPoly6A);
 
     ASSERT_DOUBLE_EQ(50.0, pResultShape17->CalculateArea());
     ASSERT_EQ(static_cast<HGF2DShapeTypeId>(HGF2DRectangle::CLASS_ID), pResultShape17->GetShapeType());
 
     AComp2 = (*static_cast<HGF2DPolySegment*>(&*(pResultShape17->GetLinear(HGF2DSimpleShape::CW))));
-    ASSERT_EQ(4, AComp2.GetSize());
+    ASSERT_EQ(5, AComp2.GetSize());
 
     ASSERT_DOUBLE_EQ(10.0, AComp2.GetPoint(0).GetX());
     ASSERT_DOUBLE_EQ(10.0, AComp2.GetPoint(0).GetY());
@@ -1874,13 +1875,13 @@ TEST_F(HGF2DPolygonOfSegmentsTester,  IntersectShapeTest)
     ASSERT_DOUBLE_EQ(20.0, AComp2.GetPoint(3).GetX());
     ASSERT_DOUBLE_EQ(10.0, AComp2.GetPoint(3).GetY());
 
-    HFCPtr<HGF2DPolygonOfSegments>     pResultShape18 = (HGF2DPolygonOfSegments*)Poly1A.IntersectShape(IncludedPoly7A);
+    HFCPtr<HGF2DSimpleShape>     pResultShape18 = (HGF2DSimpleShape*)Poly1A.IntersectShape(IncludedPoly7A);
 
     ASSERT_DOUBLE_EQ(50.0, pResultShape18->CalculateArea());
     ASSERT_EQ(static_cast<HGF2DShapeTypeId>(HGF2DRectangle::CLASS_ID), pResultShape18->GetShapeType());
 
     AComp2 = (*static_cast<HGF2DPolySegment*>(&*(pResultShape18->GetLinear(HGF2DSimpleShape::CW))));
-    ASSERT_EQ(4, AComp2.GetSize());
+    ASSERT_EQ(5, AComp2.GetSize());
 
     ASSERT_DOUBLE_EQ(10.0, AComp2.GetPoint(0).GetX());
     ASSERT_DOUBLE_EQ(10.0, AComp2.GetPoint(0).GetY());
@@ -1894,13 +1895,13 @@ TEST_F(HGF2DPolygonOfSegmentsTester,  IntersectShapeTest)
     ASSERT_DOUBLE_EQ(15.0, AComp2.GetPoint(3).GetX());
     ASSERT_DOUBLE_EQ(10.0, AComp2.GetPoint(3).GetY());
 
-    HFCPtr<HGF2DPolygonOfSegments>     pResultShape19 = (HGF2DPolygonOfSegments*)Poly1A.IntersectShape(IncludedPoly8A);
+    HFCPtr<HGF2DSimpleShape>     pResultShape19 = (HGF2DSimpleShape*)Poly1A.IntersectShape(IncludedPoly8A);
 
     ASSERT_DOUBLE_EQ(50.0, pResultShape19->CalculateArea());
     ASSERT_EQ(static_cast<HGF2DShapeTypeId>(HGF2DRectangle::CLASS_ID), pResultShape19->GetShapeType());
 
     AComp2 = (*static_cast<HGF2DPolySegment*>(&*(pResultShape19->GetLinear(HGF2DSimpleShape::CW))));
-    ASSERT_EQ(4, AComp2.GetSize());
+    ASSERT_EQ(5, AComp2.GetSize());
 
     ASSERT_DOUBLE_EQ(15.0, AComp2.GetPoint(0).GetX());
     ASSERT_DOUBLE_EQ(10.0, AComp2.GetPoint(0).GetY());
@@ -1914,13 +1915,13 @@ TEST_F(HGF2DPolygonOfSegmentsTester,  IntersectShapeTest)
     ASSERT_DOUBLE_EQ(20.0, AComp2.GetPoint(3).GetX());
     ASSERT_DOUBLE_EQ(10.0, AComp2.GetPoint(3).GetY());
 
-    HFCPtr<HGF2DPolygonOfSegments>     pResultShape20 = (HGF2DPolygonOfSegments*) Poly1A.IntersectShape(IncludedPoly9A);
+    HFCPtr<HGF2DSimpleShape>     pResultShape20 = (HGF2DSimpleShape*) Poly1A.IntersectShape(IncludedPoly9A);
 
     ASSERT_DOUBLE_EQ(50.0, pResultShape20->CalculateArea());
     ASSERT_EQ(static_cast<HGF2DShapeTypeId>(HGF2DRectangle::CLASS_ID), pResultShape20->GetShapeType());
 
     AComp2 = (*static_cast<HGF2DPolySegment*>(&*(pResultShape20->GetLinear(HGF2DSimpleShape::CW))));
-    ASSERT_EQ(4, AComp2.GetSize());
+    ASSERT_EQ(5, AComp2.GetSize());
 
     ASSERT_DOUBLE_EQ(10.0, AComp2.GetPoint(0).GetX());
     ASSERT_DOUBLE_EQ(15.0, AComp2.GetPoint(0).GetY());
@@ -1934,13 +1935,13 @@ TEST_F(HGF2DPolygonOfSegmentsTester,  IntersectShapeTest)
     ASSERT_DOUBLE_EQ(20.0, AComp2.GetPoint(3).GetX());
     ASSERT_DOUBLE_EQ(15.0, AComp2.GetPoint(3).GetY());
 
-    HFCPtr<HGF2DPolygonOfSegments>     pResultShape21 = (HGF2DPolygonOfSegments*)Poly1A.IntersectShape(IncludedPoly9A);
+    HFCPtr<HGF2DSimpleShape>     pResultShape21 = (HGF2DSimpleShape*)Poly1A.IntersectShape(IncludedPoly9A);
 
     ASSERT_DOUBLE_EQ(50.0, pResultShape21->CalculateArea());
     ASSERT_EQ(static_cast<HGF2DShapeTypeId>(HGF2DRectangle::CLASS_ID), pResultShape21->GetShapeType());
 
     AComp2 = (*static_cast<HGF2DPolySegment*>(&*(pResultShape21->GetLinear(HGF2DSimpleShape::CW))));
-    ASSERT_EQ(4, AComp2.GetSize());
+    ASSERT_EQ(5, AComp2.GetSize());
 
     ASSERT_DOUBLE_EQ(10.0, AComp2.GetPoint(0).GetX());
     ASSERT_DOUBLE_EQ(15.0, AComp2.GetPoint(0).GetY());
@@ -1964,15 +1965,12 @@ TEST_F(HGF2DPolygonOfSegmentsTester,  DifferentiateShapeTest)
 
     HGF2DPolySegment  AComp2;
 
-    HFCPtr<HGF2DPolygonOfSegments>     pResultShape1 = (HGF2DPolygonOfSegments*) Poly1A.DifferentiateShape(NorthContiguousPolyA);
+    HFCPtr<HGF2DSimpleShape>     pResultShape1 = (HGF2DSimpleShape*) Poly1A.DifferentiateShape(NorthContiguousPolyA);
     
     ASSERT_DOUBLE_EQ(100.0, pResultShape1->CalculateArea());    
-    #ifdef WIP_IPPTEST_BUG_1
-    ASSERT_EQ(static_cast<HGF2DShapeTypeId>(HGF2DRectangle::CLASS_ID), pResultShape1->GetShapeType());
-    #endif
 
     AComp2 = (*static_cast<HGF2DPolySegment*>(&*(pResultShape1->GetLinear(HGF2DSimpleShape::CW))));
-    ASSERT_EQ(4, AComp2.GetSize());
+    ASSERT_EQ(5, AComp2.GetSize());
 
     ASSERT_DOUBLE_EQ(10.0, AComp2.GetPoint(0).GetX());
     ASSERT_DOUBLE_EQ(10.0, AComp2.GetPoint(0).GetY());
@@ -1986,7 +1984,7 @@ TEST_F(HGF2DPolygonOfSegmentsTester,  DifferentiateShapeTest)
     ASSERT_DOUBLE_EQ(20.0, AComp2.GetPoint(3).GetX());
     ASSERT_DOUBLE_EQ(10.0, AComp2.GetPoint(3).GetY());
 
-    HFCPtr<HGF2DPolygonOfSegments>     pResultShape2 = (HGF2DPolygonOfSegments*) Poly1A.DifferentiateShape(EastContiguousPolyA);
+    HFCPtr<HGF2DSimpleShape>     pResultShape2 = (HGF2DSimpleShape*) Poly1A.DifferentiateShape(EastContiguousPolyA);
 
     ASSERT_DOUBLE_EQ(100.0, pResultShape2->CalculateArea());
     #ifdef WIP_IPPTEST_BUG_1
@@ -1994,7 +1992,7 @@ TEST_F(HGF2DPolygonOfSegmentsTester,  DifferentiateShapeTest)
     #endif
 
     AComp2 = (*static_cast<HGF2DPolySegment*>(&*(pResultShape2->GetLinear(HGF2DSimpleShape::CW))));
-    ASSERT_EQ(4, AComp2.GetSize());
+    ASSERT_EQ(5, AComp2.GetSize());
 
     ASSERT_DOUBLE_EQ(10.0, AComp2.GetPoint(0).GetX());
     ASSERT_DOUBLE_EQ(10.0, AComp2.GetPoint(0).GetY());
@@ -2008,14 +2006,14 @@ TEST_F(HGF2DPolygonOfSegmentsTester,  DifferentiateShapeTest)
     ASSERT_DOUBLE_EQ(20.0, AComp2.GetPoint(3).GetX());
     ASSERT_DOUBLE_EQ(10.0, AComp2.GetPoint(3).GetY());
 
-    HFCPtr<HGF2DPolygonOfSegments>     pResultShape3 = (HGF2DPolygonOfSegments*) Poly1A.DifferentiateShape(WestContiguousPolyA);
+    HFCPtr<HGF2DSimpleShape>     pResultShape3 = (HGF2DSimpleShape*) Poly1A.DifferentiateShape(WestContiguousPolyA);
 
     ASSERT_DOUBLE_EQ(100.0, pResultShape3->CalculateArea());
     #ifdef WIP_IPPTEST_BUG_1
     ASSERT_EQ(static_cast<HGF2DShapeTypeId>(HGF2DRectangle::CLASS_ID), pResultShape3->GetShapeType());
     #endif
     AComp2 = (*static_cast<HGF2DPolySegment*>(&*(pResultShape3->GetLinear(HGF2DSimpleShape::CW))));
-    ASSERT_EQ(4, AComp2.GetSize());
+    ASSERT_EQ(5, AComp2.GetSize());
 
     ASSERT_DOUBLE_EQ(10.0, AComp2.GetPoint(0).GetX());
     ASSERT_DOUBLE_EQ(10.0, AComp2.GetPoint(0).GetY());
@@ -2029,7 +2027,7 @@ TEST_F(HGF2DPolygonOfSegmentsTester,  DifferentiateShapeTest)
     ASSERT_DOUBLE_EQ(20.0, AComp2.GetPoint(3).GetX());
     ASSERT_DOUBLE_EQ(10.0, AComp2.GetPoint(3).GetY());
 
-    HFCPtr<HGF2DPolygonOfSegments>     pResultShape4 = (HGF2DPolygonOfSegments*) Poly1A.DifferentiateShape(SouthContiguousPolyA);
+    HFCPtr<HGF2DSimpleShape>     pResultShape4 = (HGF2DSimpleShape*) Poly1A.DifferentiateShape(SouthContiguousPolyA);
 
     ASSERT_DOUBLE_EQ(100.0, pResultShape4->CalculateArea());
     #ifdef WIP_IPPTEST_BUG_1
@@ -2037,7 +2035,7 @@ TEST_F(HGF2DPolygonOfSegmentsTester,  DifferentiateShapeTest)
     #endif
 
     AComp2 = (*static_cast<HGF2DPolySegment*>(&*(pResultShape4->GetLinear(HGF2DSimpleShape::CW))));
-    ASSERT_EQ(4, AComp2.GetSize());
+    ASSERT_EQ(5, AComp2.GetSize());
 
     ASSERT_DOUBLE_EQ(10.0, AComp2.GetPoint(0).GetX());
     ASSERT_DOUBLE_EQ(10.0, AComp2.GetPoint(0).GetY());
@@ -2051,13 +2049,13 @@ TEST_F(HGF2DPolygonOfSegmentsTester,  DifferentiateShapeTest)
     ASSERT_DOUBLE_EQ(20.0, AComp2.GetPoint(3).GetX());
     ASSERT_DOUBLE_EQ(10.0, AComp2.GetPoint(3).GetY());
 
-    HFCPtr<HGF2DPolygonOfSegments>     pResultShape5 = (HGF2DPolygonOfSegments*) Poly1A.DifferentiateShape(VerticalFitPolyA);
+    HFCPtr<HGF2DSimpleShape>     pResultShape5 = (HGF2DSimpleShape*) Poly1A.DifferentiateShape(VerticalFitPolyA);
 
     ASSERT_DOUBLE_EQ(50.0, pResultShape5->CalculateArea());
     ASSERT_EQ(static_cast<HGF2DShapeTypeId>(HGF2DRectangle::CLASS_ID), pResultShape5->GetShapeType());
 
     AComp2 = (*static_cast<HGF2DPolySegment*>(&*(pResultShape5->GetLinear(HGF2DSimpleShape::CW))));
-    ASSERT_EQ(4, AComp2.GetSize());
+    ASSERT_EQ(5, AComp2.GetSize());
 
     ASSERT_DOUBLE_EQ(10.0, AComp2.GetPoint(0).GetX());
     ASSERT_DOUBLE_EQ(10.0, AComp2.GetPoint(0).GetY());
@@ -2071,13 +2069,13 @@ TEST_F(HGF2DPolygonOfSegmentsTester,  DifferentiateShapeTest)
     ASSERT_DOUBLE_EQ(15.0, AComp2.GetPoint(3).GetX());
     ASSERT_DOUBLE_EQ(10.0, AComp2.GetPoint(3).GetY());
 
-    HFCPtr<HGF2DPolygonOfSegments>     pResultShape6 = (HGF2DPolygonOfSegments*) Poly1A.DifferentiateShape(HorizontalFitPolyA);
+    HFCPtr<HGF2DSimpleShape>     pResultShape6 = (HGF2DSimpleShape*) Poly1A.DifferentiateShape(HorizontalFitPolyA);
 
     ASSERT_DOUBLE_EQ(50.0, pResultShape6->CalculateArea());
     ASSERT_EQ(static_cast<HGF2DShapeTypeId>(HGF2DRectangle::CLASS_ID), pResultShape6->GetShapeType());
 
     AComp2 = (*static_cast<HGF2DPolySegment*>(&*(pResultShape6->GetLinear(HGF2DSimpleShape::CW))));
-    ASSERT_EQ(4, AComp2.GetSize());
+    ASSERT_EQ(5, AComp2.GetSize());
 
     ASSERT_DOUBLE_EQ(10.0, AComp2.GetPoint(0).GetX());
     ASSERT_DOUBLE_EQ(10.0, AComp2.GetPoint(0).GetY());
@@ -2091,13 +2089,13 @@ TEST_F(HGF2DPolygonOfSegmentsTester,  DifferentiateShapeTest)
     ASSERT_DOUBLE_EQ(20.0, AComp2.GetPoint(3).GetX());
     ASSERT_DOUBLE_EQ(10.0, AComp2.GetPoint(3).GetY());
 
-    HFCPtr<HGF2DPolygonOfSegments>     pResultShape7 = (HGF2DPolygonOfSegments*) Poly1A.DifferentiateShape(DisjointPolyA);
+    HFCPtr<HGF2DSimpleShape>     pResultShape7 = (HGF2DSimpleShape*) Poly1A.DifferentiateShape(DisjointPolyA);
 
     ASSERT_DOUBLE_EQ(100.0, pResultShape7->CalculateArea());
     ASSERT_NE(static_cast<HGF2DShapeTypeId>(HGF2DRectangle::CLASS_ID), pResultShape7->GetShapeType());
 
     AComp2 = (*static_cast<HGF2DPolySegment*>(&*(pResultShape7->GetLinear(HGF2DSimpleShape::CW))));
-    ASSERT_EQ(4, AComp2.GetSize());
+    ASSERT_EQ(5, AComp2.GetSize());
 
     ASSERT_DOUBLE_EQ(10.0, AComp2.GetPoint(0).GetX());
     ASSERT_DOUBLE_EQ(10.0, AComp2.GetPoint(0).GetY());
@@ -2111,13 +2109,13 @@ TEST_F(HGF2DPolygonOfSegmentsTester,  DifferentiateShapeTest)
     ASSERT_DOUBLE_EQ(20.0, AComp2.GetPoint(3).GetX());
     ASSERT_DOUBLE_EQ(10.0, AComp2.GetPoint(3).GetY());
 
-    HFCPtr<HGF2DPolygonOfSegments>     pResultShape8 = (HGF2DPolygonOfSegments*) Poly1A.DifferentiateShape(MiscPoly1A);
+    HFCPtr<HGF2DSimpleShape>     pResultShape8 = (HGF2DSimpleShape*) Poly1A.DifferentiateShape(MiscPoly1A);
 
     ASSERT_DOUBLE_EQ(75.0, pResultShape8->CalculateArea());
     ASSERT_NE(static_cast<HGF2DShapeTypeId>(HGF2DRectangle::CLASS_ID), pResultShape8->GetShapeType());
 
     AComp2 = (*static_cast<HGF2DPolySegment*>(&*(pResultShape8->GetLinear(HGF2DSimpleShape::CW))));
-    ASSERT_EQ(6, AComp2.GetSize());
+    ASSERT_EQ(7, AComp2.GetSize());
 
     ASSERT_DOUBLE_EQ(10.0, AComp2.GetPoint(0).GetX());
     ASSERT_DOUBLE_EQ(15.0, AComp2.GetPoint(0).GetY());
@@ -2158,13 +2156,13 @@ TEST_F(HGF2DPolygonOfSegmentsTester,  DifferentiateShapeTest)
 
     ASSERT_NEAR(0.0, pResultShape11->CalculateArea(), MYEPSILON); // must be 0
 
-    HFCPtr<HGF2DPolygonOfSegments>     pResultShape12 = (HGF2DPolygonOfSegments*) Poly1A.DifferentiateShape(IncludedPoly1A);
+    HFCPtr<HGF2DSimpleShape>     pResultShape12 = (HGF2DSimpleShape*) Poly1A.DifferentiateShape(IncludedPoly1A);
 
     ASSERT_DOUBLE_EQ(75.0, pResultShape12->CalculateArea());
     ASSERT_NE(static_cast<HGF2DShapeTypeId>(HGF2DRectangle::CLASS_ID), pResultShape12->GetShapeType());
 
     AComp2 = (*static_cast<HGF2DPolySegment*>(&*(pResultShape12->GetLinear(HGF2DSimpleShape::CW))));
-    ASSERT_EQ(6, AComp2.GetSize());
+    ASSERT_EQ(7, AComp2.GetSize());
 
     ASSERT_DOUBLE_EQ(10.0, AComp2.GetPoint(0).GetX());
     ASSERT_DOUBLE_EQ(15.0, AComp2.GetPoint(0).GetY());
@@ -2184,13 +2182,13 @@ TEST_F(HGF2DPolygonOfSegmentsTester,  DifferentiateShapeTest)
     ASSERT_DOUBLE_EQ(15.0, AComp2.GetPoint(5).GetX());
     ASSERT_DOUBLE_EQ(15.0, AComp2.GetPoint(5).GetY());
 
-    HFCPtr<HGF2DPolygonOfSegments>     pResultShape13 = (HGF2DPolygonOfSegments*) Poly1A.DifferentiateShape(IncludedPoly2A);
+    HFCPtr<HGF2DSimpleShape>     pResultShape13 = (HGF2DSimpleShape*) Poly1A.DifferentiateShape(IncludedPoly2A);
 
     ASSERT_DOUBLE_EQ(75.0, pResultShape13->CalculateArea());
     ASSERT_NE(static_cast<HGF2DShapeTypeId>(HGF2DRectangle::CLASS_ID), pResultShape13->GetShapeType());
 
     AComp2 = (*static_cast<HGF2DPolySegment*>(&*(pResultShape13->GetLinear(HGF2DSimpleShape::CW))));
-    ASSERT_EQ(6, AComp2.GetSize());
+    ASSERT_EQ(7, AComp2.GetSize());
 
     ASSERT_DOUBLE_EQ(10.0, AComp2.GetPoint(0).GetX());
     ASSERT_DOUBLE_EQ(10.0, AComp2.GetPoint(0).GetY());
@@ -2210,13 +2208,13 @@ TEST_F(HGF2DPolygonOfSegmentsTester,  DifferentiateShapeTest)
     ASSERT_DOUBLE_EQ(15.0, AComp2.GetPoint(5).GetX());
     ASSERT_DOUBLE_EQ(10.0, AComp2.GetPoint(5).GetY());
 
-    HFCPtr<HGF2DPolygonOfSegments>     pResultShape14 = (HGF2DPolygonOfSegments*) Poly1A.DifferentiateShape(IncludedPoly3A);
+    HFCPtr<HGF2DSimpleShape>     pResultShape14 = (HGF2DSimpleShape*) Poly1A.DifferentiateShape(IncludedPoly3A);
 
     ASSERT_DOUBLE_EQ(75.0, pResultShape14->CalculateArea());
     ASSERT_NE(static_cast<HGF2DShapeTypeId>(HGF2DRectangle::CLASS_ID), pResultShape14->GetShapeType());
 
     AComp2 = (*static_cast<HGF2DPolySegment*>(&*(pResultShape14->GetLinear(HGF2DSimpleShape::CW))));
-    ASSERT_EQ(6, AComp2.GetSize());
+    ASSERT_EQ(7, AComp2.GetSize());
     
     ASSERT_DOUBLE_EQ(10.0, AComp2.GetPoint(0).GetX());
     ASSERT_DOUBLE_EQ(10.0, AComp2.GetPoint(0).GetY());
@@ -2236,13 +2234,13 @@ TEST_F(HGF2DPolygonOfSegmentsTester,  DifferentiateShapeTest)
     ASSERT_DOUBLE_EQ(20.0, AComp2.GetPoint(5).GetX());
     ASSERT_DOUBLE_EQ(10.0, AComp2.GetPoint(5).GetY());
 
-    HFCPtr<HGF2DPolygonOfSegments>     pResultShape15 = (HGF2DPolygonOfSegments*) Poly1A.DifferentiateShape(IncludedPoly4A);
+    HFCPtr<HGF2DSimpleShape>     pResultShape15 = (HGF2DSimpleShape*) Poly1A.DifferentiateShape(IncludedPoly4A);
 
     ASSERT_DOUBLE_EQ(75.0, pResultShape15->CalculateArea());
     ASSERT_NE(static_cast<HGF2DShapeTypeId>(HGF2DRectangle::CLASS_ID), pResultShape15->GetShapeType());
 
     AComp2 = (*static_cast<HGF2DPolySegment*>(&*(pResultShape15->GetLinear(HGF2DSimpleShape::CW))));
-    ASSERT_EQ(6, AComp2.GetSize());
+    ASSERT_EQ(7, AComp2.GetSize());
 
     ASSERT_DOUBLE_EQ(10.0, AComp2.GetPoint(0).GetX());
     ASSERT_DOUBLE_EQ(10.0, AComp2.GetPoint(0).GetY());
@@ -2268,13 +2266,13 @@ TEST_F(HGF2DPolygonOfSegmentsTester,  DifferentiateShapeTest)
     ASSERT_TRUE(pResultShape16->HasHoles());
     ASSERT_DOUBLE_EQ(64.0, pResultShape16->CalculateArea());
 
-    HFCPtr<HGF2DPolygonOfSegments>     pResultShape17 = (HGF2DPolygonOfSegments*) Poly1A.DifferentiateShape(IncludedPoly6A);
+    HFCPtr<HGF2DSimpleShape>     pResultShape17 = (HGF2DSimpleShape*) Poly1A.DifferentiateShape(IncludedPoly6A);
 
     ASSERT_DOUBLE_EQ(50.0, pResultShape17->CalculateArea());
     ASSERT_EQ(static_cast<HGF2DShapeTypeId>(HGF2DRectangle::CLASS_ID), pResultShape17->GetShapeType());
 
     AComp2 = (*static_cast<HGF2DPolySegment*>(&*(pResultShape17->GetLinear(HGF2DSimpleShape::CW))));
-    ASSERT_EQ(4, AComp2.GetSize());
+    ASSERT_EQ(5, AComp2.GetSize());
 
     ASSERT_DOUBLE_EQ(10.0, AComp2.GetPoint(0).GetX());
     ASSERT_DOUBLE_EQ(15.0, AComp2.GetPoint(0).GetY());
@@ -2294,7 +2292,7 @@ TEST_F(HGF2DPolygonOfSegmentsTester,  DifferentiateShapeTest)
     ASSERT_EQ(static_cast<HGF2DShapeTypeId>(HGF2DRectangle::CLASS_ID), pResultShape18->GetShapeType());
 
     AComp2 = (*static_cast<HGF2DPolySegment*>(&*(pResultShape18->GetLinear(HGF2DSimpleShape::CW))));
-    ASSERT_EQ(4, AComp2.GetSize());
+    ASSERT_EQ(5, AComp2.GetSize());
 
     ASSERT_DOUBLE_EQ(15.0, AComp2.GetPoint(0).GetX());
     ASSERT_DOUBLE_EQ(10.0, AComp2.GetPoint(0).GetY());
@@ -2314,7 +2312,7 @@ TEST_F(HGF2DPolygonOfSegmentsTester,  DifferentiateShapeTest)
     ASSERT_EQ(static_cast<HGF2DShapeTypeId>(HGF2DRectangle::CLASS_ID), pResultShape19->GetShapeType());
 
     AComp2 = (*static_cast<HGF2DPolySegment*>(&*(pResultShape19->GetLinear(HGF2DSimpleShape::CW))));
-    ASSERT_EQ(4, AComp2.GetSize());
+    ASSERT_EQ(5, AComp2.GetSize());
 
     ASSERT_DOUBLE_EQ(10.0, AComp2.GetPoint(0).GetX());
     ASSERT_DOUBLE_EQ(10.0, AComp2.GetPoint(0).GetY());
@@ -2334,7 +2332,7 @@ TEST_F(HGF2DPolygonOfSegmentsTester,  DifferentiateShapeTest)
     ASSERT_EQ(static_cast<HGF2DShapeTypeId>(HGF2DRectangle::CLASS_ID), pResultShape20->GetShapeType());
 
     AComp2 = (*static_cast<HGF2DPolySegment*>(&*(pResultShape20->GetLinear(HGF2DSimpleShape::CW))));
-    ASSERT_EQ(4, AComp2.GetSize());
+    ASSERT_EQ(5, AComp2.GetSize());
 
     ASSERT_DOUBLE_EQ(10.0, AComp2.GetPoint(0).GetX());
     ASSERT_DOUBLE_EQ(10.0, AComp2.GetPoint(0).GetY());
@@ -2366,7 +2364,7 @@ TEST_F(HGF2DPolygonOfSegmentsTester,  DifferentiateFromShapeTest)
     ASSERT_EQ(static_cast<HGF2DShapeTypeId>(HGF2DRectangle::CLASS_ID), pResultShape1->GetShapeType());
 
     AComp2 = (*static_cast<HGF2DPolySegment*>(&*(pResultShape1->GetLinear(HGF2DSimpleShape::CW))));
-    ASSERT_EQ(4, AComp2.GetSize());
+    ASSERT_EQ(5, AComp2.GetSize());
 
     ASSERT_DOUBLE_EQ(10.0, AComp2.GetPoint(0).GetX());
     ASSERT_DOUBLE_EQ(20.0, AComp2.GetPoint(0).GetY());
@@ -2386,7 +2384,7 @@ TEST_F(HGF2DPolygonOfSegmentsTester,  DifferentiateFromShapeTest)
     ASSERT_EQ(static_cast<HGF2DShapeTypeId>(HGF2DRectangle::CLASS_ID), pResultShape2->GetShapeType());
 
     AComp2 = (*static_cast<HGF2DPolySegment*>(&*(pResultShape2->GetLinear(HGF2DSimpleShape::CW))));
-    ASSERT_EQ(4, AComp2.GetSize());
+    ASSERT_EQ(5, AComp2.GetSize());
 
     ASSERT_DOUBLE_EQ(20.0, AComp2.GetPoint(0).GetX());
     ASSERT_DOUBLE_EQ(10.0, AComp2.GetPoint(0).GetY());
@@ -2406,7 +2404,7 @@ TEST_F(HGF2DPolygonOfSegmentsTester,  DifferentiateFromShapeTest)
     ASSERT_EQ(static_cast<HGF2DShapeTypeId>(HGF2DRectangle::CLASS_ID), pResultShape3->GetShapeType());
 
     AComp2 = (*static_cast<HGF2DPolySegment*>(&*(pResultShape3->GetLinear(HGF2DSimpleShape::CW))));
-    ASSERT_EQ(4, AComp2.GetSize());
+    ASSERT_EQ(5, AComp2.GetSize());
 
     ASSERT_NEAR(0.0, AComp2.GetPoint(0).GetX(), MYEPSILON);
     ASSERT_DOUBLE_EQ(10.0, AComp2.GetPoint(0).GetY());
@@ -2426,7 +2424,7 @@ TEST_F(HGF2DPolygonOfSegmentsTester,  DifferentiateFromShapeTest)
     ASSERT_EQ(static_cast<HGF2DShapeTypeId>(HGF2DRectangle::CLASS_ID), pResultShape4->GetShapeType());
 
     AComp2 = (*static_cast<HGF2DPolySegment*>(&*(pResultShape4->GetLinear(HGF2DSimpleShape::CW))));
-    ASSERT_EQ(4, AComp2.GetSize());
+    ASSERT_EQ(5, AComp2.GetSize());
 
     ASSERT_DOUBLE_EQ(10.0, AComp2.GetPoint(0).GetX());
     ASSERT_NEAR(0.0, AComp2.GetPoint(0).GetY(), MYEPSILON);
@@ -2446,7 +2444,7 @@ TEST_F(HGF2DPolygonOfSegmentsTester,  DifferentiateFromShapeTest)
     ASSERT_EQ(static_cast<HGF2DShapeTypeId>(HGF2DRectangle::CLASS_ID), pResultShape5->GetShapeType());
 
     AComp2 = (*static_cast<HGF2DPolySegment*>(&*(pResultShape5->GetLinear(HGF2DSimpleShape::CW))));
-    ASSERT_EQ(4, AComp2.GetSize());
+    ASSERT_EQ(5, AComp2.GetSize());
 
     ASSERT_DOUBLE_EQ(20.0, AComp2.GetPoint(0).GetX());
     ASSERT_DOUBLE_EQ(10.0, AComp2.GetPoint(0).GetY());
@@ -2466,7 +2464,7 @@ TEST_F(HGF2DPolygonOfSegmentsTester,  DifferentiateFromShapeTest)
     ASSERT_EQ(static_cast<HGF2DShapeTypeId>(HGF2DRectangle::CLASS_ID), pResultShape6->GetShapeType());
 
     AComp2 = (*static_cast<HGF2DPolySegment*>(&*(pResultShape6->GetLinear(HGF2DSimpleShape::CW))));
-    ASSERT_EQ(4, AComp2.GetSize());
+    ASSERT_EQ(5, AComp2.GetSize());
 
     ASSERT_DOUBLE_EQ(10.0, AComp2.GetPoint(0).GetX());
     ASSERT_DOUBLE_EQ(20.0, AComp2.GetPoint(0).GetY());
@@ -2486,7 +2484,7 @@ TEST_F(HGF2DPolygonOfSegmentsTester,  DifferentiateFromShapeTest)
     ASSERT_EQ(static_cast<HGF2DShapeTypeId>(HGF2DRectangle::CLASS_ID), pResultShape7->GetShapeType());
     
     AComp2 = (*static_cast<HGF2DPolySegment*>(&*(pResultShape7->GetLinear(HGF2DSimpleShape::CW))));
-    ASSERT_EQ(4, AComp2.GetSize());
+    ASSERT_EQ(5, AComp2.GetSize());
 
     ASSERT_DOUBLE_EQ(-10.0, AComp2.GetPoint(0).GetX());
     ASSERT_DOUBLE_EQ(-10.0, AComp2.GetPoint(0).GetY());
@@ -2506,7 +2504,7 @@ TEST_F(HGF2DPolygonOfSegmentsTester,  DifferentiateFromShapeTest)
     ASSERT_NE(static_cast<HGF2DShapeTypeId>(HGF2DRectangle::CLASS_ID), pResultShape8->GetShapeType());
     
     AComp2 = (*static_cast<HGF2DPolySegment*>(&*(pResultShape8->GetLinear(HGF2DSimpleShape::CW))));
-    ASSERT_EQ(6, AComp2.GetSize());
+    ASSERT_EQ(7, AComp2.GetSize());
 
     ASSERT_DOUBLE_EQ(10.0, AComp2.GetPoint(0).GetX());
     ASSERT_DOUBLE_EQ(10.0, AComp2.GetPoint(0).GetY());
@@ -2532,7 +2530,7 @@ TEST_F(HGF2DPolygonOfSegmentsTester,  DifferentiateFromShapeTest)
     ASSERT_NE(static_cast<HGF2DShapeTypeId>(HGF2DRectangle::CLASS_ID), pResultShape9->GetShapeType());
 
     AComp2 = (*static_cast<HGF2DPolySegment*>(&*(pResultShape9->GetLinear(HGF2DSimpleShape::CW))));
-    ASSERT_EQ(6, AComp2.GetSize());
+    ASSERT_EQ(7, AComp2.GetSize());
 
     ASSERT_DOUBLE_EQ(20.0, AComp2.GetPoint(0).GetX());
     ASSERT_DOUBLE_EQ(10.0, AComp2.GetPoint(0).GetY());
@@ -2558,13 +2556,13 @@ TEST_F(HGF2DPolygonOfSegmentsTester,  DifferentiateFromShapeTest)
     ASSERT_TRUE(pResultShape10->HasHoles());
     ASSERT_DOUBLE_EQ(800.0, pResultShape10->CalculateArea());
 
-    HFCPtr<HGF2DPolygonOfSegments>     pResultShape11 = (HGF2DPolygonOfSegments*) Poly1A.DifferentiateFromShape(EnglobPoly3A);
+    HFCPtr<HGF2DSimpleShape>     pResultShape11 = (HGF2DSimpleShape*) Poly1A.DifferentiateFromShape(EnglobPoly3A);
 
     ASSERT_DOUBLE_EQ(100.0, pResultShape11->CalculateArea());
     ASSERT_EQ(static_cast<HGF2DShapeTypeId>(HGF2DRectangle::CLASS_ID), pResultShape11->GetShapeType());
 
     AComp2 = (*static_cast<HGF2DPolySegment*>(&*(pResultShape11->GetLinear(HGF2DSimpleShape::CW))));
-    ASSERT_EQ(4, AComp2.GetSize());
+    ASSERT_EQ(5, AComp2.GetSize());
 
     ASSERT_DOUBLE_EQ(10.0, AComp2.GetPoint(0).GetX());
     ASSERT_DOUBLE_EQ(20.0, AComp2.GetPoint(0).GetY());
@@ -2661,7 +2659,7 @@ TEST_F(HGF2DPolygonOfSegmentsTester,  IntersectShapeTestWhoFailed)
 
     HGF2DPolySegment  AComp1A;
     AComp1A = (*static_cast<HGF2DPolySegment*>(&*(pResult1A->GetLinear(HGF2DSimpleShape::CW))));
-    ASSERT_EQ(4, AComp1A.GetSize());
+    ASSERT_EQ(5, AComp1A.GetSize());
 
     ASSERT_NEAR(0.0, AComp1A.GetPoint(0).GetX(), MYEPSILON);
     ASSERT_NEAR(0.0, AComp1A.GetPoint(0).GetY(), MYEPSILON);
@@ -2687,37 +2685,35 @@ TEST_F(HGF2DPolygonOfSegmentsTester,  IntersectShapeTestWithPointerWhoFailed)
 
     HGF2DPolySegment  TheLinear;
 
-    TheLinear.AppendPoint(HGF2DPosition(0.0 , 256.02));
-    TheLinear.AppendPoint(HGF2DPosition(83.0 , 256.02));
-    TheLinear.AppendPoint(HGF2DPosition(83.0 , 0.02));
-    TheLinear.AppendPoint(HGF2DPosition(0.0 , 0.02)); 
-    TheLinear.AppendPoint(HGF2DPosition(0.0 , 256.02));
+    TheLinear.AppendPoint(HGF2DPosition(0.0 , 256.0));
+    TheLinear.AppendPoint(HGF2DPosition(83.0 , 256.0));
+    TheLinear.AppendPoint(HGF2DPosition(83.0 , 0.0));
+    TheLinear.AppendPoint(HGF2DPosition(0.0 , 0.0)); 
+    TheLinear.AppendPoint(HGF2DPosition(0.0 , 256.0));
 
     HFCPtr<HGF2DShape> pShape2 = new HGF2DPolygonOfSegments(TheLinear);
 
-    HFCPtr<HGF2DPolygonOfSegments> pResult = (HGF2DPolygonOfSegments*) pShape1->IntersectShape(*pShape2);
+    HFCPtr<HGF2DRectangle> pResult = (HGF2DRectangle*) pShape1->IntersectShape(*pShape2);
 
     ASSERT_DOUBLE_EQ(21248.0, pResult->CalculateArea());
-    #ifdef WIP_IPPTEST_BUG_1
     ASSERT_EQ(static_cast<HGF2DShapeTypeId>(HGF2DRectangle::CLASS_ID), pResult->GetShapeType());
-    #endif       
     ASSERT_TRUE(pResult->IsSimple());
 
     HGF2DPolySegment  AComp;
     AComp = (*static_cast<HGF2DPolySegment*>(&*(pResult->GetLinear(HGF2DSimpleShape::CW))));
-    ASSERT_EQ(4, AComp.GetSize());
+    ASSERT_EQ(5, AComp.GetSize());
 
     ASSERT_NEAR(0.0, AComp.GetPoint(0).GetX(), MYEPSILON);
-    ASSERT_DOUBLE_EQ(256.0, AComp.GetPoint(0).GetY());
+    ASSERT_DOUBLE_EQ(0.0 , AComp.GetPoint(0).GetY());
     
-    ASSERT_DOUBLE_EQ(83.00, AComp.GetPoint(1).GetX());
-    ASSERT_DOUBLE_EQ(256.0, AComp.GetPoint(1).GetY());
+    ASSERT_DOUBLE_EQ(83.00, AComp.GetPoint(2).GetX());
+    ASSERT_DOUBLE_EQ(256.0, AComp.GetPoint(2).GetY());
 
-    ASSERT_DOUBLE_EQ(83.0, AComp.GetPoint(2).GetX());
-    ASSERT_NEAR(0.0, AComp.GetPoint(2).GetY(), MYEPSILON);
-
-    ASSERT_NEAR(0.0, AComp.GetPoint(3).GetX(), MYEPSILON);
+    ASSERT_DOUBLE_EQ(83.0, AComp.GetPoint(3).GetX());
     ASSERT_NEAR(0.0, AComp.GetPoint(3).GetY(), MYEPSILON);
+
+    ASSERT_NEAR(0.0, AComp.GetPoint(1).GetX(), MYEPSILON);
+    ASSERT_NEAR(256.0, AComp.GetPoint(1).GetY(), MYEPSILON);
 
     }
 
@@ -2740,11 +2736,11 @@ TEST_F(HGF2DPolygonOfSegmentsTester,  IntersectShapeTestWithPointerWhoFailed2)
 
     HGF2DPolySegment  TheLinear2;
 
-    TheLinear2.AppendPoint(HGF2DPosition(256.0, 105.02));
-    TheLinear2.AppendPoint(HGF2DPosition(256.0, 0.02));
-    TheLinear2.AppendPoint(HGF2DPosition(0.0, 0.02));
-    TheLinear2.AppendPoint(HGF2DPosition(0.0, 105.02));
-    TheLinear2.AppendPoint(HGF2DPosition(256.0, 105.02));
+    TheLinear2.AppendPoint(HGF2DPosition(256.0, 105.0));
+    TheLinear2.AppendPoint(HGF2DPosition(256.0, 0.0));
+    TheLinear2.AppendPoint(HGF2DPosition(0.0, 0.0));
+    TheLinear2.AppendPoint(HGF2DPosition(0.0, 105.0));
+    TheLinear2.AppendPoint(HGF2DPosition(256.0, 105.0));
 
     HFCPtr<HGF2DShape> pShape2 = new HGF2DPolygonOfSegments(TheLinear2);
 
@@ -2786,11 +2782,11 @@ TEST_F(HGF2DPolygonOfSegmentsTester,  IntersectShapeTestWithPointerWhoFailed3)
 
     HGF2DPolySegment  Linear2;
 
-    Linear2.AppendPoint(HGF2DPosition(256.0 , 331.906808367982));
-    Linear2.AppendPoint(HGF2DPosition(172.85086905196 , 370.679884897982));
-    Linear2.AppendPoint(HGF2DPosition(53.476108564268 , 114.679884897982));
-    Linear2.AppendPoint(HGF2DPosition(256.0 , 114.679884897982));
-    Linear2.AppendPoint(HGF2DPosition(256.0 , 331.906808367982));
+    Linear2.AppendPoint(HGF2DPosition(256.0 , 331.90680836798));
+    Linear2.AppendPoint(HGF2DPosition(172.85086905196 , 370.67988489798));
+    Linear2.AppendPoint(HGF2DPosition(53.476108564268 , 114.67988489798));
+    Linear2.AppendPoint(HGF2DPosition(256.0 , 114.67988489798));
+    Linear2.AppendPoint(HGF2DPosition(256.0 , 331.90680836798));
 
     HFCPtr<HGF2DShape> pShape2 = new HGF2DPolygonOfSegments(Linear2);
 
@@ -2802,7 +2798,7 @@ TEST_F(HGF2DPolygonOfSegmentsTester,  IntersectShapeTestWithPointerWhoFailed3)
 
     HGF2DPolySegment  AComp;
     AComp = (*static_cast<HGF2DPolySegment*>(&*(pResult->GetLinear(HGF2DSimpleShape::CW))));
-    ASSERT_EQ(4, AComp.GetSize());  
+    ASSERT_EQ(5, AComp.GetSize());  
 
     ASSERT_DOUBLE_EQ(256.00000000000, AComp.GetPoint(0).GetX());
     ASSERT_DOUBLE_EQ(331.90680836798, AComp.GetPoint(0).GetY());
@@ -2826,21 +2822,21 @@ TEST_F(HGF2DPolygonOfSegmentsTester,  IntersectShapeTestWithPointerWhoFailed4)
            
     HGF2DPolySegment  TheLinear1;
 
-    TheLinear1.AppendPoint(HGF2DPosition(0.0 , 0.0));
-    TheLinear1.AppendPoint(HGF2DPosition(0.0 , 256.0));
+    TheLinear1.AppendPoint(HGF2DPosition(0.0   , 0.0  ));
+    TheLinear1.AppendPoint(HGF2DPosition(0.0   , 256.0));
     TheLinear1.AppendPoint(HGF2DPosition(256.0 , 256.0));
-    TheLinear1.AppendPoint(HGF2DPosition(256.0 , 0.0));
-    TheLinear1.AppendPoint(HGF2DPosition(0.0 , 0.0));
+    TheLinear1.AppendPoint(HGF2DPosition(256.0 , 0.0  ));
+    TheLinear1.AppendPoint(HGF2DPosition(0.0   , 0.0  ));
 
     HFCPtr<HGF2DShape> pShape1 = new HGF2DPolygonOfSegments(TheLinear1);
 
     HGF2DPolySegment  TheLinear2;
 
-    TheLinear2.AppendPoint(HGF2DPosition(256.0 , 38.7730765300082));
-    TheLinear2.AppendPoint(HGF2DPosition(172.85086905196, 0.02));
-    TheLinear2.AppendPoint(HGF2DPosition(53.476108564268 , 256.02));
-    TheLinear2.AppendPoint(HGF2DPosition(256.0 , 256.02));
-    TheLinear2.AppendPoint(HGF2DPosition(256.0 , 38.7730765300082));
+    TheLinear2.AppendPoint(HGF2DPosition(256.0           , 38.773076530008));
+    TheLinear2.AppendPoint(HGF2DPosition(172.85086905196 , 0.0             ));
+    TheLinear2.AppendPoint(HGF2DPosition(53.476108564268 , 256.0          ));
+    TheLinear2.AppendPoint(HGF2DPosition(256.0           , 256.0          ));
+    TheLinear2.AppendPoint(HGF2DPosition(256.0           , 38.773076530008));
 
     HFCPtr<HGF2DShape> pShape2 = new HGF2DPolygonOfSegments(TheLinear2);
 
@@ -2852,7 +2848,7 @@ TEST_F(HGF2DPolygonOfSegmentsTester,  IntersectShapeTestWithPointerWhoFailed4)
 
     HGF2DPolySegment  AComp;
     AComp = (*static_cast<HGF2DPolySegment*>(&*(pResult->GetLinear(HGF2DSimpleShape::CW))));
-    ASSERT_EQ(4, AComp.GetSize());
+    ASSERT_EQ(5, AComp.GetSize());
 
     ASSERT_DOUBLE_EQ(256.00000000000, AComp.GetPoint(0).GetX());
     ASSERT_DOUBLE_EQ(38.773076530008, AComp.GetPoint(0).GetY());
@@ -2886,9 +2882,10 @@ TEST_F(HGF2DPolygonOfSegmentsTester,  IntersectShapeTestWithPointerWhoFailed5)
 
     HGF2DPolySegment  TheLinear2;
 
-    TheLinear2.AppendPoint(HGF2DPosition(77.0, 165.127032879222));
-    TheLinear2.AppendPoint(HGF2DPosition(77.0, 114.679884897982));
-    TheLinear2.AppendPoint(HGF2DPosition(53.476108564268 , 114.679884897982));
+    TheLinear2.AppendPoint(HGF2DPosition(77.0, 165.12703287922));
+    TheLinear2.AppendPoint(HGF2DPosition(77.0, 114.67988489798));
+    TheLinear2.AppendPoint(HGF2DPosition(53.476108564268 , 114.67988489798));
+    TheLinear2.AppendPoint(HGF2DPosition(77.0, 165.12703287922));
 
     HFCPtr<HGF2DShape> pShape2 = new HGF2DPolygonOfSegments(TheLinear2);
 
@@ -2900,7 +2897,7 @@ TEST_F(HGF2DPolygonOfSegmentsTester,  IntersectShapeTestWithPointerWhoFailed5)
 
     HGF2DPolySegment  AComp;
     AComp = (*static_cast<HGF2DPolySegment*>(&*(pResult->GetLinear(HGF2DSimpleShape::CW))));
-    ASSERT_EQ(3, AComp.GetSize());
+    ASSERT_EQ(4, AComp.GetSize());
 
     ASSERT_DOUBLE_EQ(77.000000000000, AComp.GetPoint(0).GetX());
     ASSERT_DOUBLE_EQ(165.12703287922, AComp.GetPoint(0).GetY());
@@ -2949,7 +2946,7 @@ TEST_F(HGF2DPolygonOfSegmentsTester,  IntersectShapeTestWithPointerWhoFailed6)
 
     HGF2DPolySegment  AComp;
     AComp = (*static_cast<HGF2DPolySegment*>(&*(pResult->GetLinear(HGF2DSimpleShape::CW))));
-    ASSERT_EQ(6, AComp.GetSize());
+    ASSERT_EQ(7, AComp.GetSize());
 
     ASSERT_DOUBLE_EQ(256.000000000000000, AComp.GetPoint(0).GetX());
     ASSERT_DOUBLE_EQ(-56.753833636595999, AComp.GetPoint(0).GetY());
@@ -3177,7 +3174,7 @@ TEST_F(HGF2DPolygonOfSegmentsTester,  ModifyShapeWithPointerWhoFailed5)
     HFCPtr<HGF2DShape> pShape2 = new HGF2DPolygonOfSegments(TheLinear2);
 
     HFCPtr<HGF2DShape> pResult = pShape1->IntersectShape(*pShape2);
-    ASSERT_DOUBLE_EQ(62464.0024044066740, pResult->CalculateArea());
+    ASSERT_NEAR(62464.0024044066740, pResult->CalculateArea(), sqrt(pResult->GetTolerance()));
     
     pResult = pShape1->UnifyShape(*pShape2);
     ASSERT_DOUBLE_EQ(65536.0025806352787, pResult->CalculateArea());
@@ -3395,7 +3392,7 @@ TEST_F(HGF2DPolygonOfSegmentsTester,  ModifyShapeWithPointerWhoFailed9)
 
     // Resumate of problem
     HFCPtr<HGF2DShape> pResult = pShape1->IntersectShape(*pShape2);
-    ASSERT_DOUBLE_EQ(4536.00173557470679, pResult->CalculateArea());
+    ASSERT_NEAR(4536.00173557470679, pResult->CalculateArea(), sqrt(pResult->GetTolerance()));
     
     pResult = pShape1->UnifyShape(*pShape2);
     ASSERT_DOUBLE_EQ(65536.0012903176248, pResult->CalculateArea());
@@ -3437,7 +3434,7 @@ TEST_F(HGF2DPolygonOfSegmentsTester,  ModifyShapeWithPointerWhoFailed10)
     HFCPtr<HGF2DShape> pShape2 = new HGF2DPolygonOfSegments(TheLinear2);
 
     HFCPtr<HGF2DShape> pResult = pShape1->IntersectShape(*pShape2);
-    ASSERT_DOUBLE_EQ(8615.0493413454733, pResult->CalculateArea());
+    ASSERT_NEAR(8615.0493413454733, pResult->CalculateArea(), sqrt(pResult->GetTolerance()));
     
     pResult = pShape1->UnifyShape(*pShape2);
     ASSERT_DOUBLE_EQ(122208.33332679553, pResult->CalculateArea());   
@@ -3567,7 +3564,7 @@ TEST_F(HGF2DPolygonOfSegmentsTester,  ModifyShapeWithPointerWhoFailed13)
     HFCPtr<HGF2DShape> pShape2 = new HGF2DPolygonOfSegments(TheLinear2);
 
     HFCPtr<HGF2DShape> pResult = pShape1->IntersectShape(*pShape2);
-    ASSERT_DOUBLE_EQ(62464.004123923172, pResult->CalculateArea());
+    ASSERT_NEAR(62464.004123923172, pResult->CalculateArea(), sqrt(pResult->GetTolerance()));
     
     pResult = pShape1->UnifyShape(*pShape2);
     ASSERT_DOUBLE_EQ(262144.00344084483, pResult->CalculateArea());
@@ -3609,7 +3606,7 @@ TEST_F(HGF2DPolygonOfSegmentsTester,  ModifyShapeWithPointerWhoFailed14)
     HFCPtr<HGF2DShape> pShape2 = new HGF2DPolygonOfSegments(TheLinear2);
 
     HFCPtr<HGF2DShape> pResult = pShape1->IntersectShape(*pShape2);
-    ASSERT_DOUBLE_EQ(60512.002365251079, pResult->CalculateArea());
+    ASSERT_NEAR(60512.002365251079, pResult->CalculateArea(), sqrt(pResult->GetTolerance()));
     
     pResult = pShape1->UnifyShape(*pShape2);
     ASSERT_DOUBLE_EQ(65536.002580635250, pResult->CalculateArea());    
@@ -3651,7 +3648,7 @@ TEST_F(HGF2DPolygonOfSegmentsTester,  ModifyShapeWithPointerWhoFailed15)
     HFCPtr<HGF2DShape> pShape2 = new HGF2DPolygonOfSegments(TheLinear2);
 
     HFCPtr<HGF2DShape> pResult = pShape1->IntersectShape(*pShape2);
-    ASSERT_DOUBLE_EQ(12862.3138841326217, pResult->CalculateArea());
+    ASSERT_NEAR(12862.3138841326217, pResult->CalculateArea(), sqrt(pResult->GetTolerance()));
     
     pResult = pShape1->UnifyShape(*pShape2);
     ASSERT_DOUBLE_EQ(65536.0000000000000, pResult->CalculateArea());    
@@ -4052,6 +4049,7 @@ TEST_F(HGF2DPolygonOfSegmentsTester,  ModifyShapeWithPointerWhoFailed21)
     TheLinear2.AppendPoint(HGF2DPosition(0.0, 256.0 ));
     TheLinear2.AppendPoint(HGF2DPosition(256.0, 256.0));
     TheLinear2.AppendPoint(HGF2DPosition(256.0, 0.0));
+    TheLinear2.AppendPoint(HGF2DPosition(0.0, 0.0));
 
     HFCPtr<HGF2DShape> pShape2 = new HGF2DPolygonOfSegments(TheLinear2);
 
@@ -5212,11 +5210,11 @@ TEST_F(HGF2DPolygonOfSegmentsTester,  AllocateCopyInCoordSysTestWhoFailed3)
 
     HFCPtr<HGF2DShape> pShape1 = new HGF2DPolygonOfSegments(TheLinear1);
 
-    HFCPtr<HGF2DShape> pResult = static_cast<HGF2DShape*>(pShape1->AllocTransformDirect(HGF2DStretch(HGF2DDisplacement(0.0, 0.0), 10.0, 10.0)));
+    HFCPtr<HGF2DShape> pResult = static_cast<HGF2DShape*>(pShape1->AllocTransformDirect(HGF2DStretch(HGF2DDisplacement(0.0, 0.0), 0.1, 0.1)));
     ASSERT_TRUE(pResult->IsComplex());
     ASSERT_EQ(2, pResult->GetShapeList().size());
     
-    pResult = static_cast<HGF2DShape*>(pShape1->AllocTransformDirect(HGF2DStretch(HGF2DDisplacement(0.0, 0.0), 100.0, 100.0)));
+    pResult = static_cast<HGF2DShape*>(pShape1->AllocTransformDirect(HGF2DStretch(HGF2DDisplacement(0.0, 0.0), 0.01, 0.01)));
     ASSERT_TRUE(pResult->IsComplex());
     ASSERT_EQ(2, pResult->GetShapeList().size());
        
@@ -5242,11 +5240,11 @@ TEST_F(HGF2DPolygonOfSegmentsTester,  AllocateCopyInCoordSysTestWhoFailed4)
 
     HFCPtr<HGF2DShape> pShape1 = new HGF2DPolygonOfSegments(TheLinear1);
 
-    HFCPtr<HGF2DShape> pResult = static_cast<HGF2DShape*>(pShape1->AllocTransformDirect(HGF2DStretch(HGF2DDisplacement(0.0, 0.0), 10.0, 10.0)));
+    HFCPtr<HGF2DShape> pResult = static_cast<HGF2DShape*>(pShape1->AllocTransformDirect(HGF2DStretch(HGF2DDisplacement(0.0, 0.0), 0.1, 0.1)));
     ASSERT_TRUE(pResult->IsComplex());
     ASSERT_EQ(2, pResult->GetShapeList().size());
     
-    pResult = static_cast<HGF2DShape*>(pShape1->AllocTransformDirect(HGF2DStretch(HGF2DDisplacement(0.0, 0.0), 100.0, 100.0)));
+    pResult = static_cast<HGF2DShape*>(pShape1->AllocTransformDirect(HGF2DStretch(HGF2DDisplacement(0.0, 0.0), 0.01, 0.01)));
     ASSERT_TRUE(pResult->IsComplex());
     ASSERT_EQ(2, pResult->GetShapeList().size());
     
@@ -5274,11 +5272,11 @@ TEST_F(HGF2DPolygonOfSegmentsTester,  AllocateCopyInCoordSysTestWhoFailed5)
 
     HFCPtr<HGF2DShape> pShape1 = new HGF2DPolygonOfSegments(TheLinear1);
 
-    HFCPtr<HGF2DShape> pResult = static_cast<HGF2DShape*>(pShape1->AllocTransformDirect(HGF2DStretch(HGF2DDisplacement(0.0, 0.0), 10.0, 10.0)));
+    HFCPtr<HGF2DShape> pResult = static_cast<HGF2DShape*>(pShape1->AllocTransformDirect(HGF2DStretch(HGF2DDisplacement(0.0, 0.0), 0.1, 0.1)));
     ASSERT_TRUE(pResult->IsComplex());
     ASSERT_EQ(2, pResult->GetShapeList().size());    
 
-    pResult = static_cast<HGF2DShape*>(pShape1->AllocTransformDirect(HGF2DStretch(HGF2DDisplacement(0.0, 0.0), 100.0, 100.0)));
+    pResult = static_cast<HGF2DShape*>(pShape1->AllocTransformDirect(HGF2DStretch(HGF2DDisplacement(0.0, 0.0), 0.01, 0.001)));
     ASSERT_TRUE(pResult->IsComplex());
     ASSERT_EQ(2, pResult->GetShapeList().size());
     
@@ -5308,11 +5306,11 @@ TEST_F(HGF2DPolygonOfSegmentsTester,  AllocateCopyInCoordSysTestWhoFailed6)
 
     HFCPtr<HGF2DShape> pShape1 = new HGF2DPolygonOfSegments(TheLinear1);
 
-    HFCPtr<HGF2DShape> pResult = static_cast<HGF2DShape*>(pShape1->AllocTransformDirect(HGF2DStretch(HGF2DDisplacement(0.0, 0.0), 10.0, 10.0)));
+    HFCPtr<HGF2DShape> pResult = static_cast<HGF2DShape*>(pShape1->AllocTransformDirect(HGF2DStretch(HGF2DDisplacement(0.0, 0.0), 0.1, 0.1)));
     ASSERT_TRUE(pResult->IsComplex());
     ASSERT_EQ(2, pResult->GetShapeList().size());    
 
-    pResult = static_cast<HGF2DShape*>(pShape1->AllocTransformDirect(HGF2DStretch(HGF2DDisplacement(0.0, 0.0), 100.0, 100.0)));
+    pResult = static_cast<HGF2DShape*>(pShape1->AllocTransformDirect(HGF2DStretch(HGF2DDisplacement(0.0, 0.0), 0.01, 0.01)));
     ASSERT_TRUE(pResult->IsComplex());
     ASSERT_EQ(2, pResult->GetShapeList().size());    
 
@@ -5342,11 +5340,11 @@ TEST_F(HGF2DPolygonOfSegmentsTester,  AllocateCopyInCoordSysTestWhoFailed7)
 
     HFCPtr<HGF2DShape> pShape1 = new HGF2DPolygonOfSegments(TheLinear1);
 
-    HFCPtr<HGF2DShape> pResult = static_cast<HGF2DShape*>(pShape1->AllocTransformDirect(HGF2DStretch(HGF2DDisplacement(0.0, 0.0), 10.0, 10.0)));
+    HFCPtr<HGF2DShape> pResult = static_cast<HGF2DShape*>(pShape1->AllocTransformDirect(HGF2DStretch(HGF2DDisplacement(0.0, 0.0), 0.1, 0.1)));
     ASSERT_TRUE(pResult->IsComplex());
     ASSERT_EQ(3, pResult->GetShapeList().size());
     
-    pResult = static_cast<HGF2DShape*>(pShape1->AllocTransformDirect(HGF2DStretch(HGF2DDisplacement(0.0, 0.0), 100.0, 100.0)));
+    pResult = static_cast<HGF2DShape*>(pShape1->AllocTransformDirect(HGF2DStretch(HGF2DDisplacement(0.0, 0.0), 0.01, 0.01)));
     ASSERT_TRUE(pResult->IsComplex());
     ASSERT_EQ(3, pResult->GetShapeList().size());
     
@@ -5623,6 +5621,7 @@ TEST_F(HGF2DPolygonOfSegmentsTester, ModifyShapeWithPointerWhoFailed48)
     TheLinear2.AppendPoint(HGF2DPosition(1.5796703223791, 0.29618890691438000));
     TheLinear2.AppendPoint(HGF2DPosition(1.5796703223792, 0.29621359212672000));
     TheLinear2.AppendPoint(HGF2DPosition(1.9745879029739, 0.29621359212763000));
+    TheLinear2.AppendPoint(HGF2DPosition(1.9746125868655, 0.29621359212831000));
 
     HFCPtr<HGF2DShape> pShape2 = new HGF2DPolygonOfSegments(TheLinear2);
 
@@ -6356,16 +6355,17 @@ TEST_F(HGF2DPolygonOfSegmentsTester, AllocateCopyInCoordSysTestWhoFailed8)
     TheLinear1.AppendPoint(HGF2DPosition(24998.375000608570 , 0.100067755764000));
     TheLinear1.AppendPoint(HGF2DPosition(25000.000000000000 , 0.100067755688000));
     TheLinear1.AppendPoint(HGF2DPosition(25000.000000000000 , 0.000000000000000));
+    TheLinear1.AppendPoint(HGF2DPosition(24998.375000170640 , 0.000000000000000));
 
     HFCPtr<HGF2DShape> pShape1 = new HGF2DPolygonOfSegments(TheLinear1);
     pShape1->SetAutoToleranceActive(false);
     pShape1->SetTolerance(1E-8);
 
-    HFCPtr<HGF2DShape> pResult = static_cast<HGF2DShape*>(pShape1->AllocTransformDirect(HGF2DStretch(HGF2DDisplacement(0.0, 0.0), 100.0, 100.0)));
+    HFCPtr<HGF2DShape> pResult = static_cast<HGF2DShape*>(pShape1->AllocTransformDirect(HGF2DStretch(HGF2DDisplacement(0.0, 0.0), 0.01, 0.01)));
     ASSERT_TRUE(pResult->IsComplex());
     ASSERT_EQ(2, pResult->GetShapeList().size());
     
-    pResult = static_cast<HGF2DShape*>(pShape1->AllocTransformDirect(HGF2DStretch(HGF2DDisplacement(0.0, 0.0), 1000.0, 1000.0)));
+    pResult = static_cast<HGF2DShape*>(pShape1->AllocTransformDirect(HGF2DStretch(HGF2DDisplacement(0.0, 0.0), 0.001, 0.001)));
     ASSERT_TRUE(pResult->IsComplex());
     ASSERT_EQ(2, pResult->GetShapeList().size());
        
@@ -6392,11 +6392,11 @@ TEST_F(HGF2DPolygonOfSegmentsTester, AllocateCopyInCoordSysTestWhoFailed9)
 
     HFCPtr<HGF2DShape> pShape1 = new HGF2DPolygonOfSegments(TheLinear1);
 
-    HFCPtr<HGF2DShape> pResult = static_cast<HGF2DShape*>(pShape1->AllocTransformDirect(HGF2DStretch(HGF2DDisplacement(0.0, 0.0), 100.0, 100.0)));
+    HFCPtr<HGF2DShape> pResult = static_cast<HGF2DShape*>(pShape1->AllocTransformDirect(HGF2DStretch(HGF2DDisplacement(0.0, 0.0), 0.01, 0.01)));
     ASSERT_TRUE(pResult->IsComplex());
     ASSERT_EQ(2, pResult->GetShapeList().size());
     
-    pResult = static_cast<HGF2DShape*>(pShape1->AllocTransformDirect(HGF2DStretch(HGF2DDisplacement(0.0, 0.0),  1000.0, 1000.0)));
+    pResult = static_cast<HGF2DShape*>(pShape1->AllocTransformDirect(HGF2DStretch(HGF2DDisplacement(0.0, 0.0),  0.001, 0.001)));
     ASSERT_TRUE(pResult->IsComplex());
     ASSERT_EQ(2, pResult->GetShapeList().size());
         
@@ -6424,11 +6424,11 @@ TEST_F(HGF2DPolygonOfSegmentsTester, AllocateCopyInCoordSysTestWhoFailed10)
 
     HFCPtr<HGF2DShape> pShape1 = new HGF2DPolygonOfSegments(TheLinear1);
 
-    HFCPtr<HGF2DShape> pResult = static_cast<HGF2DShape*>(pShape1->AllocTransformDirect(HGF2DStretch(HGF2DDisplacement(0.0, 0.0), 100.0, 100.0)));
+    HFCPtr<HGF2DShape> pResult = static_cast<HGF2DShape*>(pShape1->AllocTransformDirect(HGF2DStretch(HGF2DDisplacement(0.0, 0.0), 0.01, 0.01)));
     ASSERT_TRUE(pResult->IsComplex());
     ASSERT_EQ(2, pResult->GetShapeList().size());
     
-    pResult = static_cast<HGF2DShape*>(pShape1->AllocTransformDirect(HGF2DStretch(HGF2DDisplacement(0.0, 0.0), 1000.0, 1000.0)));
+    pResult = static_cast<HGF2DShape*>(pShape1->AllocTransformDirect(HGF2DStretch(HGF2DDisplacement(0.0, 0.0), 0.001, 0.001)));
     ASSERT_TRUE(pResult->IsComplex());
     ASSERT_EQ(2, pResult->GetShapeList().size());  
     
@@ -6456,11 +6456,11 @@ TEST_F(HGF2DPolygonOfSegmentsTester, AllocateCopyInCoordSysTestWhoFailed11)
 
     HFCPtr<HGF2DShape> pShape1 = new HGF2DPolygonOfSegments(TheLinear1);
 
-    HFCPtr<HGF2DShape> pResult = static_cast<HGF2DShape*>(pShape1->AllocTransformDirect(HGF2DStretch(HGF2DDisplacement(0.0, 0.0), 100.0, 100.0)));
+    HFCPtr<HGF2DShape> pResult = static_cast<HGF2DShape*>(pShape1->AllocTransformDirect(HGF2DStretch(HGF2DDisplacement(0.0, 0.0), 0.01, 0.01)));
     ASSERT_TRUE(pResult->IsComplex());
     ASSERT_EQ(2, pResult->GetShapeList().size());
     
-    pResult = static_cast<HGF2DShape*>(pShape1->AllocTransformDirect(HGF2DStretch(HGF2DDisplacement(0.0, 0.0), 1000.0, 1000.0)));
+    pResult = static_cast<HGF2DShape*>(pShape1->AllocTransformDirect(HGF2DStretch(HGF2DDisplacement(0.0, 0.0), 0.001, 0.001)));
     ASSERT_TRUE(pResult->IsComplex());
     ASSERT_EQ(2, pResult->GetShapeList().size());
         
@@ -6490,11 +6490,11 @@ TEST_F(HGF2DPolygonOfSegmentsTester, AllocateCopyInCoordSysTestWhoFailed12)
 
     HFCPtr<HGF2DShape> pShape1 = new HGF2DPolygonOfSegments(TheLinear1);
 
-    HFCPtr<HGF2DShape> pResult = static_cast<HGF2DShape*>(pShape1->AllocTransformDirect(HGF2DStretch(HGF2DDisplacement(0.0, 0.0), 100.0, 100.0)));
+    HFCPtr<HGF2DShape> pResult = static_cast<HGF2DShape*>(pShape1->AllocTransformDirect(HGF2DStretch(HGF2DDisplacement(0.0, 0.0), 0.01, 0.01)));
     ASSERT_TRUE(pResult->IsComplex());
     ASSERT_EQ(2, pResult->GetShapeList().size());
     
-    pResult = static_cast<HGF2DShape*>(pShape1->AllocTransformDirect(HGF2DStretch(HGF2DDisplacement(0.0, 0.0), 1000.0, 1000.0)));
+    pResult = static_cast<HGF2DShape*>(pShape1->AllocTransformDirect(HGF2DStretch(HGF2DDisplacement(0.0, 0.0), 0.001, 0.001)));
     ASSERT_TRUE(pResult->IsComplex());
     ASSERT_EQ(2, pResult->GetShapeList().size());
      
@@ -6524,11 +6524,11 @@ TEST_F(HGF2DPolygonOfSegmentsTester, AllocateCopyInCoordSysTestWhoFailed13)
 
     HFCPtr<HGF2DShape> pShape1 = new HGF2DPolygonOfSegments(TheLinear1);
 
-    HFCPtr<HGF2DShape> pResult = static_cast<HGF2DShape*>(pShape1->AllocTransformDirect(HGF2DStretch(HGF2DDisplacement(0.0, 0.0), 100.0, 100.0)));
+    HFCPtr<HGF2DShape> pResult = static_cast<HGF2DShape*>(pShape1->AllocTransformDirect(HGF2DStretch(HGF2DDisplacement(0.0, 0.0), 0.01, 0.01)));
     ASSERT_TRUE(pResult->IsComplex());
     ASSERT_EQ(3, pResult->GetShapeList().size());
     
-    pResult = static_cast<HGF2DShape*>(pShape1->AllocTransformDirect(HGF2DStretch(HGF2DDisplacement(0.0, 0.0), 1000.0, 1000.0)));
+    pResult = static_cast<HGF2DShape*>(pShape1->AllocTransformDirect(HGF2DStretch(HGF2DDisplacement(0.0, 0.0), 0.001, 0.001)));
     ASSERT_TRUE(pResult->IsComplex());
     ASSERT_EQ(3, pResult->GetShapeList().size());
        
@@ -6646,6 +6646,7 @@ TEST_F(HGF2DPolygonOfSegmentsTester,  ModifyShapeWithPointerWhoFailed61)
     TheLinear2.AppendPoint(HGF2DPosition(223.99999999999890 ,1024.00000000000000));
     TheLinear2.AppendPoint(HGF2DPosition(479.99999999999890 ,1024.00000000000000));
     TheLinear2.AppendPoint(HGF2DPosition(479.99999999999890 , 768.00000000000000));
+    TheLinear2.AppendPoint(HGF2DPosition(363.70849898475970 , 768.00000000000000));
 
     HFCPtr<HGF2DShape> pShape2 = new HGF2DPolygonOfSegments(TheLinear2);
     
