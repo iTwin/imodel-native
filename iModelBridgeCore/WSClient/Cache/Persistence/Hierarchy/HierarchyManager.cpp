@@ -70,55 +70,50 @@ bvector<ECInstanceKey>& targetsOut
     }
 
 /*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Vincas.Razma    01/2013
+* @bsimethod                                                    Vincas.Razma    06/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus HierarchyManager::ReleaseOldChildren
+BentleyStatus HierarchyManager::RelateCachedInstancesToHolder
 (
-ECInstanceKeyCR parent,
-const bset<ECInstanceKey>& newChildren,
-ECRelationshipClassCP relationshipClass
+CacheNodeKeyCR holder,
+ECRelationshipClassCP holderToInfoRelClass,
+const bset<CachedInstanceKey>& cachedInstances
 )
     {
-    bvector<ECInstanceKey> currentChildren;
-    if (SUCCESS != ReadTargetKeys(parent, relationshipClass, currentChildren))
+    for (auto& cachedInstance : cachedInstances)
         {
-        return ERROR;
-        }
-
-    bvector<ECInstanceKey> obsoleteInstances;
-    for (ECInstanceKey child : currentChildren)
-        {
-        if (newChildren.find(child) != newChildren.end())
-            {
-            continue;
-            }
-
-        auto changeStatus = m_changeInfoManager.GetObjectChangeStatus(child);
-        if (IChangeManager::ChangeStatus::Created == changeStatus)
-            {
-            // Dont remove created objects
-            continue;
-            }
-
-        if (SUCCESS != DeleteRelationship(parent, child, relationshipClass))
-            {
-            return ERROR;
-            }
-
-        if (IChangeManager::ChangeStatus::NoChange != changeStatus || m_objectInfoManager.FindCachedInstance(child).IsEmpty())
-            { BeAssert(false && "<Warning> Local change was removed"); }
-
-        obsoleteInstances.push_back(child);
-        }
-
-    for (ECInstanceKeyCR instance : obsoleteInstances)
-        {
-        if (SUCCESS != CheckAndCleanupHiearchy(instance))
+        if (!RelateInstances(holder, cachedInstance.GetInfoKey(), holderToInfoRelClass).IsValid())
             {
             return ERROR;
             }
         }
+    return SUCCESS;
+    }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    06/2014
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus HierarchyManager::RemoveCachedInstancesFromHolder
+(
+CacheNodeKeyCR holder,
+ECRelationshipClassCP holderToInfoRelClass,
+const bset<CachedInstanceKey>& cachedInstancesToRemove
+)
+    {
+    for (auto& cachedInstance : cachedInstancesToRemove)
+        {
+        if (SUCCESS != DeleteRelationship(holder, cachedInstance.GetInfoKey(), holderToInfoRelClass))
+            {
+            return ERROR;
+            }
+        if (IsInstanceHeldByOtherInstances(cachedInstance.GetInfoKey()))
+            {
+            continue;
+            }
+        if (SUCCESS != DeleteInstance(cachedInstance))
+            {
+            return ERROR;
+            }
+        }
     return SUCCESS;
     }
 

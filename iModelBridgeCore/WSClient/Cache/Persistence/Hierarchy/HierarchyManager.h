@@ -35,9 +35,6 @@ struct HierarchyManager
     private:
         BentleyStatus DeleteRelationships(ECInstanceKeyCR source, const bvector<ECInstanceKey>& targets, ECRelationshipClassCP relationshipClass);
 
-        //! If instance has no parents, it will be deleted with possible hiearchy cleanup
-        BentleyStatus CheckAndCleanupHiearchy(ECInstanceKeyCR instance);
-
     public:
         HierarchyManager
             (
@@ -50,6 +47,20 @@ struct HierarchyManager
 
         ECInstanceKey RelateInstances(ECInstanceKeyCR source, ECInstanceKeyCR target, ECRelationshipClassCP relationshipClass);
         BentleyStatus CopyRelationshipsBySource(ECInstanceKeyCR instanceFrom, ECInstanceKeyCR instanceTo, ECRelationshipClassCP relationshipClass);
+
+        BentleyStatus RelateCachedInstancesToHolder
+            (
+            CacheNodeKeyCR holder,
+            ECRelationshipClassCP holderToInfoRelClass,
+            const bset<CachedInstanceKey>& cachedInstances
+            );
+
+        BentleyStatus RemoveCachedInstancesFromHolder
+            (
+            CacheNodeKeyCR holder,
+            ECRelationshipClassCP holderToInfoRelClass,
+            const bset<CachedInstanceKey>& cachedInstances
+            );
 
         //! Will only delete relationship without affecting source or target
         BentleyStatus DeleteRelationship(ECInstanceKeyCR source, ECInstanceKeyCR target, ECRelationshipClassCP relationshipClass);
@@ -68,13 +79,8 @@ struct HierarchyManager
         //! Delete ECInstance and all held hierarchy of instnaes if any. Column 0 - ECClassId, Column 1 - ECInstanceId.
         BentleyStatus DeleteInstances(ECSqlStatement& ecInstanceKeyStatement);
 
-        //! Check for children changes and cleanups obsolete children
-        BentleyStatus ReleaseOldChildren
-            (
-            ECInstanceKeyCR parent,
-            const bset<ECInstanceKey>& newChildren,
-            ECRelationshipClassCP relationshipClass
-            );
+        //! If instance has no parents, it will be deleted with possible hiearchy cleanup
+        BentleyStatus CheckAndCleanupHiearchy(ECInstanceKeyCR instance);
 
         //! Removes child from instance and cleanups obsolete tree. Will succeed and do nothing if relationship does not exist
         BentleyStatus RemoveChildFromParent(ECInstanceKeyCR parent, ECInstanceKeyCR child, ECRelationshipClassCP relationshipClass);

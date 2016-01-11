@@ -2,7 +2,7 @@
  |
  |     $Source: Cache/Persistence/Instances/ObjectInfoManager.h $
  |
- |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 
@@ -57,7 +57,9 @@ struct ObjectInfoManager
         CachedInstanceKey ReadCachedInstanceKey(ECInstanceKeyCR instanceKey);
         CachedInstanceKey ReadCachedInstanceKey(ObjectIdCR objectId);
         CachedInstanceKey ReadCachedInstanceKey(CacheNodeKeyCR relatedKey, ECRelationshipClassCR relClass);
+        CachedInstanceKey ReadCachedInstanceKey(CacheNodeKeyCR infoKey);
         BentleyStatus ReadCachedInstanceKeys(CacheNodeKeyCR relatedKey, ECRelationshipClassCR relClass, ECInstanceKeyMultiMap& instanceKeysOut);
+        BentleyStatus ReadCachedInstanceKeys(CacheNodeKeyCR relatedKey, ECRelationshipClassCR relClass, bset<CachedInstanceKey>& instanceKeysOut);
         BentleyStatus ReadCachedInstanceKeys(const ECInstanceKeyMultiMap& infoKeys, ECInstanceKeyMultiMap& instanceKeysOut);
         BentleyStatus ReadCachedInstanceIds(CacheNodeKeyCR relatedKey, ECRelationshipClassCR relClass, bset<ObjectId>& idsOut);
 

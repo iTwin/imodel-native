@@ -33,7 +33,6 @@ struct RelationshipInfoManager : public IECDbAdapter::DeleteListener
         ECSqlAdapterLoader<JsonUpdater>         m_infoUpdater;
 
     private:
-        BentleyStatus DeleteCachedRelationship(const CachedInstanceKey& relationship);
         ECInstanceKey ReadRelationshipKeyByInfo(CacheNodeKeyCR infoKey);
         ECInstanceId ReadInfoIdByRelationship(ECInstanceKeyCR relationship);
 
@@ -67,25 +66,11 @@ struct RelationshipInfoManager : public IECDbAdapter::DeleteListener
         //! Read ends for existing cached relationship
         BentleyStatus ReadRelationshipEnds(ECInstanceKeyCR relationship, ECInstanceKeyR sourceOut, ECInstanceKeyR targetOut);
 
-        BentleyStatus RelateCachedRelationshipsToHolder
-            (
-            ECInstanceKeyCR holder,
-            ECRelationshipClassCP holderToInfoRelClass,
-            const bset<CachedInstanceKey>& cachedRelationships
-            );
-
         BentleyStatus ReadCachedRelationshipsFromHolder
             (
             ECInstanceKeyCR holder,
             ECRelationshipClassCP holderToInfoRelClass,
             bset<CachedInstanceKey>& cachedRelationshipsOut
-            );
-
-        BentleyStatus RemoveCachedRelationshipsFromHolder
-            (
-            ECInstanceKeyCR holder,
-            ECRelationshipClassCP holderToInfoRelClass,
-            const bset<CachedInstanceKey>& cachedRelationshipsToRemove
             );
 
         BentleyStatus DeleteRelationshipLeavingInfo(RelationshipInfoR info);
