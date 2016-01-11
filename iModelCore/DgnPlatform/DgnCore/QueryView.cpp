@@ -555,7 +555,7 @@ uint64_t QueryViewController::ComputeMaxElementMemory(DgnViewportCR vp)
 #endif
     baseValue *= oneMeg;
 
-    int32_t inputFactor = _GetMaxElementFactor(vp);
+    int32_t inputFactor = 0; // NEEDS_WORK_CONTINUOUS_RENDER  _GetMaxElementFactor(vp);
     bool decrease = false;
     if (inputFactor < 0)
         {
