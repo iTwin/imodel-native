@@ -2,7 +2,7 @@
 |
 |     $Source: src/SchemaXml.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -49,8 +49,9 @@ struct SchemaXmlReader2 : SchemaXmlReaderImpl
     {
     private:
         ECSchemaPtr m_conversionSchema;
-        void DetermineClassTypeAndModifier(Utf8StringCR className, ECSchemaPtr schemaOut, ECClassType& classType, ECClassModifier& classModifier, bool isCA, bool isStruct, bool isDomain, bool isSealed);
-        ECClassModifier DetermineRelationshipClassModifier(Utf8StringCR className, bool isDomain);
+        void DetermineClassTypeAndModifier(Utf8StringCR className, ECSchemaPtr schemaOut, ECClassType& classType, ECClassModifier& classModifier, bool isCA, bool isStruct, bool isDomain, bool isSealed) const;
+        ECClassModifier DetermineRelationshipClassModifier(Utf8StringCR className, bool isDomain) const;
+        bool DropClassAttributeDefined(Utf8StringCR className) const;
 
     protected:
         bool ReadClassNode(ECClassP &ecClass, BeXmlNodeR classNode, ECSchemaPtr& schemaOut) override;
@@ -340,6 +341,9 @@ bool SchemaXmlReader2::ReadClassNode(ECClassP &ecClass, BeXmlNodeR classNode, EC
     Utf8String     className;
     classNode.GetAttributeStringValue(className, TYPE_NAME_ATTRIBUTE);
 
+    if (DropClassAttributeDefined(className))
+        return false;
+
     Utf8String boolStr;
     bool isDomain = true; // defaults to true
     if (BEXML_Success == classNode.GetAttributeStringValue(boolStr, IS_DOMAINCLASS_ATTRIBUTE))
@@ -382,13 +386,25 @@ bool SchemaXmlReader2::ReadClassNode(ECClassP &ecClass, BeXmlNodeR classNode, EC
     return true;
     }
 
+bool SchemaXmlReader2::DropClassAttributeDefined(Utf8StringCR className) const
+    {
+    if (!m_conversionSchema.IsValid())
+        return false;
+
+    ECClassCP ecClass = m_conversionSchema->GetClassCP(className.c_str());
+    if (nullptr == ecClass)
+        return false;
+
+    return ecClass->IsDefined("DropClass");
+    }
+
 void WriteLogMessage(ECClassCP ecClass, Utf8CP classDescription, Utf8CP forcedType)
     {
     LOG.debugv("Forcing %s '%s:%s' to be %s because the 'ECv3ConversionAttributes:Force%s' custom attribute is applied to the %s",
                classDescription, ecClass->GetSchema().GetFullSchemaName().c_str(), ecClass->GetName().c_str(), forcedType, forcedType, classDescription);
     }
 
-ECClassModifier SchemaXmlReader2::DetermineRelationshipClassModifier(Utf8StringCR className, bool isDomain)
+ECClassModifier SchemaXmlReader2::DetermineRelationshipClassModifier(Utf8StringCR className, bool isDomain) const
     {
     ECClassModifier modifier = ECClassModifier::Abstract;
     if (isDomain)
@@ -415,7 +431,7 @@ ECClassModifier SchemaXmlReader2::DetermineRelationshipClassModifier(Utf8StringC
     return modifier;
     }
 
-void SchemaXmlReader2::DetermineClassTypeAndModifier(Utf8StringCR className, ECSchemaPtr schemaOut, ECClassType& classType, ECClassModifier& classModifier, bool isCA, bool isStruct, bool isDomain, bool isSealed)
+void SchemaXmlReader2::DetermineClassTypeAndModifier(Utf8StringCR className, ECSchemaPtr schemaOut, ECClassType& classType, ECClassModifier& classModifier, bool isCA, bool isStruct, bool isDomain, bool isSealed) const
     {
     if (isStruct)
         classType = ECClassType::Struct;
