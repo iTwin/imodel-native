@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/CrawlerLib/Url.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 //__BENTLEY_INTERNAL_ONLY__
@@ -17,7 +17,6 @@
 
 #include <regex>
 #include <set>
-#include <exception>
 
 BEGIN_BENTLEY_CRAWLERLIB_NAMESPACE
 
@@ -70,25 +69,25 @@ struct Url : public RefCountedBase
     CRAWLERLIB_EXPORT Url(WString const& url, UrlPtr const& parent);
     CRAWLERLIB_EXPORT virtual ~Url() {}
 
-    CRAWLERLIB_EXPORT inline DomainName const& GetDomainName() const {return m_DomainName;}
-    CRAWLERLIB_EXPORT inline WString const& GetUrlWString() const {return m_Url;}
+    DomainName const& GetDomainName() const {return m_DomainName;}
+    WString const& GetUrlWString() const {return m_Url;}
 
     
     //---------------------------------------------------------------------------------------
     // Returns pointer to parent Url. This parent can be null for seeds.
     //---------------------------------------------------------------------------------------
-    CRAWLERLIB_EXPORT inline UrlPtr const& GetParent() const {return m_Parent;}
+    UrlPtr const& GetParent() const {return m_Parent;}
 
     
     //---------------------------------------------------------------------------------------
     // Returns depth of Url path. Seeds have a depth of 0.
     //---------------------------------------------------------------------------------------
-    CRAWLERLIB_EXPORT inline uint32_t GetDepth() const {return m_Depth;}
-    CRAWLERLIB_EXPORT inline bool IsExternalPage() const {return m_IsExternalPage;}
+    uint32_t GetDepth() const {return m_Depth;}
+    bool IsExternalPage() const {return m_IsExternalPage;}
     CRAWLERLIB_EXPORT bool IsSubUrlOf(Url const& parent);
 
-    CRAWLERLIB_EXPORT inline bool operator==(Url const& other) const;
-    CRAWLERLIB_EXPORT inline bool operator<(Url const& other) const;
+    CRAWLERLIB_EXPORT bool operator==(Url const& other) const;
+    CRAWLERLIB_EXPORT bool operator<(Url const& other) const;
 
 
     protected:

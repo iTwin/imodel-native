@@ -2,7 +2,7 @@
 |
 |     $Source: CrawlerLib/Crawler.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <CrawlerLib/Crawler.h>
@@ -11,6 +11,13 @@
 #include "PageDownloader.h"
 
 #include <curl/curl.h>
+
+//#include <vector>
+#include <chrono>
+#include <future>
+#include <atomic>
+#include <mutex>
+#include <condition_variable>
 
 USING_NAMESPACE_BENTLEY_CRAWLERLIB
 using namespace std;
@@ -23,7 +30,7 @@ const chrono::milliseconds s_AsyncWaitTime = chrono::milliseconds(75);
 CrawlerPtr Crawler::Create(size_t maxNumberOfSimultaneousDownloads)
     {
     CrawlDelaySleeperPtr sleeper = new CrawlDelaySleeper;
-    std::vector<IPageDownloader*> downloaders;
+    bvector<IPageDownloader*> downloaders;
     for(size_t i = 0; i < maxNumberOfSimultaneousDownloads; ++i)
         {
         IPageDownloader* downloader = new PageDownloader(sleeper);
@@ -42,7 +49,7 @@ CrawlerPtr Crawler::Create(size_t maxNumberOfSimultaneousDownloads)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                 Alexandre.Gariepy   08/15
 //+---------------+---------------+---------------+---------------+---------------+------
-CrawlerPtr Crawler::Create(UrlQueue* queue, std::vector<IPageDownloader*> const& downloaders)
+CrawlerPtr Crawler::Create(UrlQueue* queue, bvector<IPageDownloader*> const& downloaders)
     { 
       return new Crawler(queue, downloaders);
     }
@@ -50,7 +57,7 @@ CrawlerPtr Crawler::Create(UrlQueue* queue, std::vector<IPageDownloader*> const&
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                 Alexandre.Gariepy   08/15
 //+---------------+---------------+---------------+---------------+---------------+------
-Crawler::Crawler(UrlQueue* queue, std::vector<IPageDownloader*> const& downloaders)
+Crawler::Crawler(UrlQueue* queue, bvector<IPageDownloader*> const& downloaders)
     : m_NumberOfDownloaders(downloaders.size()), m_StopFlag(false), m_PauseFlag(false)
     {
     curl_global_init(CURL_GLOBAL_ALL);
@@ -70,6 +77,19 @@ Crawler::~Crawler()
     curl_global_cleanup();
     }
 
+//--------------------------------------------------------------------------------------
+// @bsiclass                                                 Martin-Yanick.Guille   11/15
+//+---------------+---------------+---------------+---------------+---------------+------
+struct TestPredicate : IConditionVariablePredicate
+{
+	bool& m_PauseFlagIn;
+
+	TestPredicate(bool& pauseFlag) : m_PauseFlagIn(pauseFlag) {}
+	virtual bool _TestCondition(BeConditionVariable &cv) override { return m_PauseFlagIn == false; 	}
+};
+
+
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                 Alexandre.Gariepy   08/15
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -84,8 +104,11 @@ StatusInt Crawler::Crawl(UrlPtr const& seed)
     while(!IsStopped() && (m_pQueue->NumberOfUrls() > 0 || !AllDownloadsFinished(asyncDownloadThreads)))
         {
         // If pause, wait for unpaused.
-        std::unique_lock<std::mutex> lock(m_PauseFlagMutex);
-        m_PauseFlagConditionVariable.wait(lock, [this]{return m_PauseFlag == false;});
+        //std::unique_lock<BeMutex> lock(m_PauseFlagMutex);
+        //m_PauseFlagConditionVariable.wait(lock, [this]{return m_PauseFlag == false;});
+		BeMutexHolder holder(m_PauseFlagMutex);
+		TestPredicate predicate(m_PauseFlag);
+		m_PauseFlagConditionVariable.ProtectedWaitOnCondition(holder, &predicate, BeConditionVariable::Infinite );
 
         future<PageContentPtr>& currentDownloadThread = asyncDownloadThreads[i];
         IPageDownloader* currentDownloader = m_pDownloaders[i];
@@ -329,7 +352,7 @@ void Crawler::SetCrawlLinksFromPagesWithNoFollowMetaTag(bool crawlLinks)
 //+---------------+---------------+---------------+---------------+---------------+------
 void Crawler::Pause()
     {
-    std::lock_guard<std::mutex> lock(m_PauseFlagMutex);
+    std::lock_guard<BeMutex> lock(m_PauseFlagMutex);
     m_PauseFlag = true;
     }
 
@@ -339,7 +362,7 @@ void Crawler::Pause()
 void Crawler::Unpause()
     {
         {
-        std::lock_guard<std::mutex> lock(m_PauseFlagMutex);
+        std::lock_guard<BeMutex> lock(m_PauseFlagMutex);
         m_PauseFlag = false;
         }
     m_PauseFlagConditionVariable.notify_one();

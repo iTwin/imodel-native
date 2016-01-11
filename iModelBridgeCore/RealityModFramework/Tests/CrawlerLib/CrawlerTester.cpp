@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/CrawlerLib/CrawlerTester.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <Bentley/BeTest.h>
@@ -75,7 +75,7 @@ class SingleDownloaderCrawlerTester : public ::testing::Test
         queue = new UrlQueueMock(politeness);
 
         downloader = new PageDownloaderMock;
-        std::vector<IPageDownloader*> downloaders;
+        bvector<IPageDownloader*> downloaders;
         downloaders.push_back(downloader);
 
         crawler = Crawler::Create(queue, downloaders);
@@ -222,7 +222,7 @@ class MultiDownloaderCrawlerTester : public ::testing::Test
 
         downloader1 = new PageDownloaderMock;
         downloader2 = new PageDownloaderMock;
-        std::vector<IPageDownloader*> downloaders;
+        bvector<IPageDownloader*> downloaders;
         downloaders.push_back(downloader1);
         downloaders.push_back(downloader2);
 

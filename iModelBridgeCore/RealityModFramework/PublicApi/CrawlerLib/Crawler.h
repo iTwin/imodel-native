@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/CrawlerLib/Crawler.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 //__BENTLEY_INTERNAL_ONLY__
@@ -13,14 +13,12 @@
 
 #include <Bentley/Bentley.h>
 #include <Bentley/bvector.h>
+#include <Bentley/BeThread.h>
 
+#ifndef _M_CEE
+	#include <future>
 #include <vector>
-#include <chrono>
-#include <future>
-#include <atomic>
-#include <mutex>
-#include <condition_variable>
-
+#endif /* _M_CEE */
 
 BEGIN_BENTLEY_CRAWLERLIB_NAMESPACE
 
@@ -72,7 +70,7 @@ struct Crawler : public RefCountedBase
     // @bsimethod                                                 Alain.Robert   09/15
     //+---------------+---------------+---------------+---------------+---------------+------
     CRAWLERLIB_EXPORT static CrawlerPtr Create(size_t maxNumberOfSimultaneousDownloads = 8);
-    CRAWLERLIB_EXPORT static CrawlerPtr Create(UrlQueue* queue, std::vector<IPageDownloader*> const& downloaders);
+    CRAWLERLIB_EXPORT static CrawlerPtr Create(UrlQueue* queue, bvector<IPageDownloader*> const& downloaders);
 
     //---------------------------------------------------------------------------------------
     // Starts the crawling process according to the crawler settings set using the various
@@ -302,31 +300,32 @@ struct Crawler : public RefCountedBase
     //
     // @bsimethod                                                 Alexandre.Gariepy   08/15
     //+---------------+---------------+---------------+---------------+---------------+------
-    Crawler(UrlQueue* queue, std::vector<IPageDownloader*> const& downloaders);
+    Crawler(UrlQueue* queue, bvector<IPageDownloader*> const& downloaders);
     Crawler() = delete;
     virtual ~Crawler();
 
-
+#ifndef _M_CEE
     bool CanStartDownload(std::future<PageContentPtr> const& asyncDownloadThread) const;
     bool IsDownloadResultReady(std::future<PageContentPtr> const& asyncDownloadThread) const;
     void StartNextDownload(std::future<PageContentPtr>& asyncDownloadThread, IPageDownloader* downloaderToUse);
     bool AllDownloadsFinished(std::vector<std::future<PageContentPtr>> const& downloads) const;
     void DiscardRemainingDownloads(std::vector<std::future<PageContentPtr>>& downloads) const;
+#endif /* _M_CEE */
 
     bool IsStopped() const;
 
     UrlQueue* m_pQueue;         // List of urls to explore.
 
-    std::vector<IPageDownloader*> m_pDownloaders;
+    bvector<IPageDownloader*> m_pDownloaders;
 
     ICrawlerObserver* m_pObserver;
 
     const size_t m_NumberOfDownloaders;
 
-    std::atomic<bool>       m_StopFlag;
+    BeAtomic<bool>       m_StopFlag;
     bool                    m_PauseFlag;
-    std::mutex              m_PauseFlagMutex;
-    std::condition_variable m_PauseFlagConditionVariable;
+    BeMutex              m_PauseFlagMutex;
+	BeConditionVariable m_PauseFlagConditionVariable;
     };
 
 END_BENTLEY_CRAWLERLIB_NAMESPACE
