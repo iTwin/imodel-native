@@ -2,15 +2,57 @@
 |
 |     $Source: PublicAPI/DgnPlatform/DgnScript.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
 //__PUBLISH_SECTION_START__
 #include <DgnPlatform/DgnPlatform.h>
 #include <DgnPlatform/DgnElement.h>
+#include <DgnPlatform/DgnModel.h>
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
+
+//========================================================================================
+//! A component definition parameter 
+//! Defines the standard JSON format for a parameter
+//========================================================================================
+struct TsComponentParameter
+    {
+    ComponentDef::ParameterVariesPer m_variesPer;
+    ECN::ECValue m_value;
+
+    TsComponentParameter() : m_variesPer(ComponentDef::ParameterVariesPer::Instance) {;}
+    //! Construct a new Parameter
+    TsComponentParameter(ComponentDef::ParameterVariesPer s, ECN::ECValueCR v) : m_variesPer(s), m_value(v) {;}
+    //! From JSON
+    DGNPLATFORM_EXPORT explicit TsComponentParameter(Json::Value const&);
+    //! To JSON
+    DGNPLATFORM_EXPORT Json::Value ToJson() const;
+    //! Get the scope of this parameter
+    ComponentDef::ParameterVariesPer GetScope() const {return m_variesPer;}
+    //! Get the value of this parameter
+    ECN::ECValueCR GetValue() const {return m_value;}
+    //! Set the value of this parameter
+    DgnDbStatus SetValue(ECN::ECValueCR newValue);
+
+    bool EqualValues(TsComponentParameter const& rhs) {return m_value.Equals(rhs.m_value);}
+    bool operator==(TsComponentParameter const& rhs) const {return m_variesPer == rhs.m_variesPer && m_value.Equals(rhs.m_value);}
+    };
+    
+//========================================================================================
+//! A collection of named component definition parameters
+//! Defines the standard JSON format for a parameter set
+//========================================================================================
+struct TsComponentParameterSet : bmap<Utf8String,TsComponentParameter>
+    {
+    TsComponentParameterSet() {}
+    DGNPLATFORM_EXPORT TsComponentParameterSet(ComponentDefR, ECN::IECInstanceCR);
+    DGNPLATFORM_EXPORT TsComponentParameterSet(Json::Value const& v);
+
+    DGNPLATFORM_EXPORT Json::Value ToJson() const;
+    DGNPLATFORM_EXPORT void ToECProperties(ECN::IECInstanceR) const;
+    };
 
 //=======================================================================================
 //! Enables JavaScript programs to access the DgnPlatform API.
@@ -19,7 +61,7 @@ BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 //! @section JavaScriptLibrary The JavaScript Library
 //! JavaScript programs are loaded from the JavaScript library. The \a myNamespace portion of the myNamespace.myEgaPublicName EGA identifier string must identify a program in the library.
 //! <p>The JavaScript library is a virtual storage. An application may use the DgnJavaScriptLibrary class to store a JavaScript program inside a DgnDb. 
-//! Or, an application may override the Dgn::DgnPlatformLib::Host::ScriptAdmin::_FetchJavaScript method in order to locate and supply the text of JavaScript programs from some other source.
+//! Or, an application may override the DgnPlatformLib::Host::ScriptAdmin::_FetchJavaScript method in order to locate and supply the text of JavaScript programs from some other source.
 // @bsiclass                                                    Sam.Wilson      06/15
 //=======================================================================================
 struct DgnScript
@@ -56,7 +98,7 @@ struct DgnScript
     @param[in] parms        Any additional parameters to pass to the EGA function. 
     @return non-zero if the EGA is not in JavaScript, if the egaInstance properties are invalid, or if the JavaScript function could not be found or failed to execute.
     **/
-    DGNPLATFORM_EXPORT static DgnDbStatus ExecuteEga(int& functionReturnStatus, Dgn::DgnElementR el, Utf8CP jsEgaFunctionName, DPoint3dCR origin, YawPitchRollAnglesCR angles, Json::Value const& parms);
+    DGNPLATFORM_EXPORT static DgnDbStatus ExecuteEga(int& functionReturnStatus, DgnElementR el, Utf8CP jsEgaFunctionName, DPoint3dCR origin, YawPitchRollAnglesCR angles, Json::Value const& parms);
 
     /**
     Call a ComponentModel element generator function that is implemented in JavaScript.
@@ -67,9 +109,9 @@ struct DgnScript
 
     @return non-zero if the specified namespace is not found in the JavaScript library or if the specified function could not be found or failed to execute.
     **/
-    DGNPLATFORM_EXPORT static DgnDbStatus ExecuteComponentGenerateElements(int& functionReturnStatus, Dgn::ComponentModelR componentModel, Dgn::DgnModelR destModel, ECN::IECInstanceR instance, Dgn::ComponentDefR cdef, Utf8StringCR functionName);
+    DGNPLATFORM_EXPORT static DgnDbStatus ExecuteComponentGenerateElements(int& functionReturnStatus, ComponentModelR componentModel, DgnModelR destModel, ECN::IECInstanceR instance, ComponentDefR cdef, Utf8StringCR functionName);
 
-    DGNPLATFORM_EXPORT static DgnDbStatus ExecuteDgnDbScript(int& functionReturnStatus, Dgn::DgnDbR db, Utf8StringCR functionName, Json::Value const& parms);
+    DGNPLATFORM_EXPORT static DgnDbStatus ExecuteDgnDbScript(int& functionReturnStatus, DgnDbR db, Utf8StringCR functionName, Json::Value const& parms);
 
 }; 
 

@@ -1473,3 +1473,93 @@ ECN::ECSchemaPtr ComponentDefCreator::GenerateSchema(DgnDbR db, Utf8StringCR sch
     
     return schema;
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      07/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TsComponentParameterSet::TsComponentParameterSet(Json::Value const& json)
+    {
+    for (auto const& pname: json.getMemberNames())
+        (*this)[pname] = TsComponentParameter(json[pname]);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      07/15
++---------------+---------------+---------------+---------------+---------------+------*/
+Json::Value TsComponentParameterSet::ToJson() const
+    {
+    Json::Value parametersJson (Json::objectValue);
+    for (auto const& entry : *this)
+        parametersJson[entry.first] = entry.second.ToJson();
+    return parametersJson;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      07/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TsComponentParameterSet::TsComponentParameterSet(ComponentDef& cdef, ECN::IECInstanceCR inst)
+    {
+    for (auto const& paramName : cdef.GetInputs())
+        {
+        ECN::ECPropertyP prop = cdef.GetECClass().GetPropertyP(paramName.c_str());
+
+        ECValue v;
+        inst.GetValue(v, paramName.c_str());
+        TsComponentParameter tsparam (cdef.GetVariationScope(*prop), v);
+
+        (*this)[paramName] = tsparam;
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      07/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void TsComponentParameterSet::ToECProperties(ECN::IECInstanceR props) const
+    {
+    for (auto const& entry : *this)
+        {
+        props.SetValue(entry.first.c_str(), entry.second.GetValue());
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      07/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus TsComponentParameter::SetValue(ECN::ECValueCR valueIn)
+    {
+    if (!m_value.IsPrimitive())
+        return DgnDbStatus::BadArg;
+        
+    ECN::ECValue value = valueIn;
+    if (!value.ConvertToPrimitiveType(m_value.GetPrimitiveType()))
+        return DgnDbStatus::BadArg;
+
+    m_value = value;
+    return DgnDbStatus::Success;
+    }
+
+#define PARARMETER_VARIES_PER_INSTANCE 0
+#define PARARMETER_VARIES_PER_VARIATION 1
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      07/15
++---------------+---------------+---------------+---------------+---------------+------*/
+Json::Value TsComponentParameter::ToJson() const
+    {
+    // *** Keep this consistent with ComponentParametersPane.ts! ***
+    Json::Value v;
+    v["VariesPer"] = (ComponentDef::ParameterVariesPer::Variation == m_variesPer)? PARARMETER_VARIES_PER_VARIATION: PARARMETER_VARIES_PER_INSTANCE;
+    ECUtils::StoreECValueAsJson(v["Value"], m_value);
+    return v;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      07/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TsComponentParameter::TsComponentParameter(Json::Value const& json)
+    {
+    // *** Keep this consistent with ComponentParametersPane.ts! ***
+    auto s = json["VariesPer"].asInt();
+    m_variesPer = (PARARMETER_VARIES_PER_VARIATION == s)? ComponentDef::ParameterVariesPer::Variation: ComponentDef::ParameterVariesPer::Instance;
+    ECUtils::LoadECValueFromJson(m_value, json["Value"]);
+    }
