@@ -122,43 +122,23 @@ static void checkSlabDimensions(GeometrySourceCR el, double expectedX, double ex
 /*=================================================================================**//**
 * @bsiclass                                                     Sam.Wilson     12/2015
 +===============+===============+===============+===============+===============+======*/
-struct NamedECValue
-{
-    Utf8String m_name;
-    ECN::ECValue m_value;
-
-    NamedECValue(Utf8StringCR n, ECN::ECValueCR v) : m_name(n), m_value(v) {;}
-};
-
-/*=================================================================================**//**
-* @bsiclass                                                     Sam.Wilson     12/2015
-+===============+===============+===============+===============+===============+======*/
 struct VariationSpec
 {
     Utf8String m_componentName;
     Utf8String m_name;
-    bvector<NamedECValue> m_propValues;
+    TsComponentParameterSet m_params;
+    bvector<Utf8String> m_slabDimensions;
 
     VariationSpec() {;}
     VariationSpec(Utf8StringCR cn, Utf8StringCR n) : m_componentName(cn), m_name(n) {;}
-    VariationSpec(VariationSpec const& rhs) : m_componentName(rhs.m_componentName), m_name(rhs.m_name), m_propValues(rhs.m_propValues) {;}
+    //VariationSpec(VariationSpec const& rhs) : m_componentName(rhs.m_componentName), m_name(rhs.m_name), m_params(rhs.m_params) {;}
 
     ECN::IECInstancePtr MakeVariationSpec(DgnDbR db) const;
     void CheckInstance(DgnElementCR el, size_t expectedSolidCount) const;
     void MakeUniqueInstance(DgnElementCPtr&, DgnModelR destModel, size_t expectedSolidCount);
     void MakeVariation(DgnElementCPtr&, SpatialModelR destModel);
 
-    void SetValue(Utf8CP name, ECN::ECValueCR v)
-        {
-        for (auto& pv : m_propValues)
-            {
-            if (pv.m_name == name)
-                {
-                pv.m_value = v;
-                return;
-                }
-            }
-        }
+    void SetValue(Utf8CP name, ECN::ECValueCR v) {m_params[name].m_value = v;}
 };
 
 /*---------------------------------------------------------------------------------**//**
@@ -170,9 +150,7 @@ ECN::IECInstancePtr VariationSpec::MakeVariationSpec(DgnDbR db) const
     if (!cdef.IsValid())
         return nullptr;
     ECN::IECInstancePtr instance = cdef->MakeVariationSpec();
-    for (auto const& pv : m_propValues)
-        instance->SetValue(pv.m_name.c_str(), pv.m_value);
-
+    m_params.ToECProperties(*instance);
     return instance;
     }
 
@@ -185,7 +163,9 @@ void VariationSpec::CheckInstance(DgnElementCR el, size_t expectedSolidCount) co
     ASSERT_TRUE(cdef.IsValid());
     ASSERT_STREQ(cdef->GetName().c_str(), m_componentName.c_str());
     checkGeomStream(*el.ToGeometrySource(), ElementGeometry::GeometryType::SolidPrimitive, expectedSolidCount);
-    checkSlabDimensions(*el.ToGeometrySource(), m_propValues[0].m_value.GetDouble(), m_propValues[1].m_value.GetDouble(), m_propValues[2].m_value.GetDouble());
+    checkSlabDimensions(*el.ToGeometrySource(), m_params.find(m_slabDimensions[0])->second.m_value.GetDouble(), 
+                                                m_params.find(m_slabDimensions[1])->second.m_value.GetDouble(), 
+                                                m_params.find(m_slabDimensions[2])->second.m_value.GetDouble());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -295,21 +275,27 @@ void ComponentModelTest::Developer_DefineSchema()
         ASSERT_TRUE(nullptr != ecClass);
 
         m_wsln1 = VariationSpec(TEST_WIDGET_COMPONENT_NAME, "wsln1");
-        m_wsln1.m_propValues.push_back(NamedECValue("X", ECN::ECValue(10.0)));
-        m_wsln1.m_propValues.push_back(NamedECValue("Y", ECN::ECValue(11.0)));
-        m_wsln1.m_propValues.push_back(NamedECValue("Z", ECN::ECValue(12.0)));
+        m_wsln1.m_params["X"] = TsComponentParameter(ComponentDef::ParameterVariesPer::Instance, ECN::ECValue(10.0));
+        m_wsln1.m_params["Y"] = TsComponentParameter(ComponentDef::ParameterVariesPer::Instance, ECN::ECValue(11.0));
+        m_wsln1.m_params["Z"] = TsComponentParameter(ComponentDef::ParameterVariesPer::Instance, ECN::ECValue(12.0));
+        m_wsln1.m_slabDimensions.push_back("X");
+        m_wsln1.m_slabDimensions.push_back("Y");
+        m_wsln1.m_slabDimensions.push_back("Z");
 
         m_wsln3 = VariationSpec(TEST_WIDGET_COMPONENT_NAME, "wsln3");
-        m_wsln3.m_propValues = m_wsln1.m_propValues;
-        m_wsln3.SetValue("X", ECN::ECValue(100.0));
+        m_wsln3.m_params = m_wsln1.m_params;
+        m_wsln3.m_slabDimensions = m_wsln1.m_slabDimensions;
+        m_wsln3.m_params["X"].m_value = ECN::ECValue(100.0);
 
         m_wsln4 = VariationSpec(TEST_WIDGET_COMPONENT_NAME, "wsln4");
-        m_wsln4.m_propValues = m_wsln3.m_propValues;
-        m_wsln4.SetValue("X", ECN::ECValue(2.0));
+        m_wsln4.m_params = m_wsln3.m_params;
+        m_wsln4.m_slabDimensions = m_wsln1.m_slabDimensions;
+        m_wsln4.m_params["X"].m_value = ECN::ECValue(2.0);
 
         m_wsln44 = VariationSpec(TEST_WIDGET_COMPONENT_NAME, "wsln44");
-        m_wsln44.m_propValues = m_wsln4.m_propValues;
-        m_wsln44.SetValue("X", ECN::ECValue(44.0));
+        m_wsln44.m_params = m_wsln4.m_params;
+        m_wsln44.m_slabDimensions = m_wsln1.m_slabDimensions;
+        m_wsln44.m_params["X"].m_value = ECN::ECValue(44.0);
         }
 
     // Gadget
@@ -325,10 +311,13 @@ void ComponentModelTest::Developer_DefineSchema()
         ASSERT_TRUE(nullptr != ecClass);
 
         m_gsln1 = VariationSpec(TEST_GADGET_COMPONENT_NAME, "gsln1");
-        m_gsln1.m_propValues.push_back(NamedECValue("Q", ECN::ECValue(3.0)));
-        m_gsln1.m_propValues.push_back(NamedECValue("W", ECN::ECValue(2.0)));
-        m_gsln1.m_propValues.push_back(NamedECValue("R", ECN::ECValue(1.0)));
-        m_gsln1.m_propValues.push_back(NamedECValue("T", ECN::ECValue("text")));
+        m_gsln1.m_params["Q"] = TsComponentParameter(ComponentDef::ParameterVariesPer::Instance, ECN::ECValue(3.0));
+        m_gsln1.m_params["W"] = TsComponentParameter(ComponentDef::ParameterVariesPer::Instance, ECN::ECValue(2.0));
+        m_gsln1.m_params["R"] = TsComponentParameter(ComponentDef::ParameterVariesPer::Instance, ECN::ECValue(1.0));
+        m_gsln1.m_params["T"] = TsComponentParameter(ComponentDef::ParameterVariesPer::Instance, ECN::ECValue("text"));
+        m_gsln1.m_slabDimensions.push_back("Q");
+        m_gsln1.m_slabDimensions.push_back("W");
+        m_gsln1.m_slabDimensions.push_back("R");
         }
 
     // Thing
@@ -343,9 +332,12 @@ void ComponentModelTest::Developer_DefineSchema()
         ASSERT_TRUE(nullptr != ecClass);
 
         m_nsln1 = VariationSpec(TEST_THING_COMPONENT_NAME, "nsln1");
-        m_nsln1.m_propValues.push_back(NamedECValue("A", ECN::ECValue(1.0)));
-        m_nsln1.m_propValues.push_back(NamedECValue("B", ECN::ECValue(1.0)));
-        m_nsln1.m_propValues.push_back(NamedECValue("C", ECN::ECValue(1.0)));
+        m_nsln1.m_params["A"] = TsComponentParameter(ComponentDef::ParameterVariesPer::Instance, ECN::ECValue(1.0));
+        m_nsln1.m_params["B"] = TsComponentParameter(ComponentDef::ParameterVariesPer::Instance, ECN::ECValue(1.0));
+        m_nsln1.m_params["C"] = TsComponentParameter(ComponentDef::ParameterVariesPer::Instance, ECN::ECValue(1.0));
+        m_nsln1.m_slabDimensions.push_back("A");
+        m_nsln1.m_slabDimensions.push_back("B");
+        m_nsln1.m_slabDimensions.push_back("C");
         }
 
     ASSERT_TRUE(ComponentDefCreator::ImportSchema(*m_componentDb, *testSchema, false) != nullptr);
@@ -782,7 +774,7 @@ TEST_F(ComponentModelTest, SimulateDeveloperAndClientWithNestingSingleton)
     ASSERT_EQ( DgnDbStatus::Success , createSpatialModel(targetModel, *m_clientDb, DgnModel::CreateModelCode("Instances")) );
 
     VariationSpec nparms = m_nsln1;
-    nparms.m_propValues[0].m_value.SetDouble(9999);
+    nparms.m_params["A"].m_value.SetDouble(9999);
 
     DgnElementCPtr instanceElement;
     nparms.MakeUniqueInstance(instanceElement, *targetModel, 1);
