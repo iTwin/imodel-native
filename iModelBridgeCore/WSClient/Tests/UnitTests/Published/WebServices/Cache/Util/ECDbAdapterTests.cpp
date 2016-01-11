@@ -11,6 +11,9 @@
 #include <WebServices/Cache/Util/ECDbAdapter.h>
 #include "MockECDbAdapterDeleteListener.h"
 
+// StrictMock is not portable
+#if defined (BENTLEY_WIN32)
+
 using namespace ::testing;
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 
@@ -1299,3 +1302,5 @@ TEST_F(ECDbAdapterTests, ECDbDeleteRelationshio_ShouldNotDeleteEnds3)
     notDeletedInstances = adapter.FindInstances(holdingRelClass);
     EXPECT_EQ(0, notDeletedInstances.size());
     }
+
+#endif
