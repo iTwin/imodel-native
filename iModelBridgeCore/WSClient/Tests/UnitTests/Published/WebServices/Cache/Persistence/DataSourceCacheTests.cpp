@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/WebServices/Cache/Persistence/DataSourceCacheTests.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -371,6 +371,25 @@ TEST_F(DataSourceCacheTests, RemoveInstance_InstanceCached_Deletes)
     EXPECT_FALSE(cache->GetCachedObjectInfo({"TestSchema.TestClass", "Foo"}).IsFullyCached());
     }
 
+TEST_F(DataSourceCacheTests, RemoveInstance_NavigationBaseObject_Deletes)
+    {
+    auto cache = GetTestCache();
+
+    ASSERT_EQ(SUCCESS, cache->LinkInstanceToRoot("Foo", ObjectId()));
+    ASSERT_TRUE(cache->FindInstance(ObjectId()).IsValid());
+
+    EXPECT_EQ(CacheStatus::OK, cache->RemoveInstance(ObjectId()));
+    EXPECT_FALSE(cache->FindInstance(ObjectId()).IsValid());
+    }
+
+TEST_F(DataSourceCacheTests, RemoveInstance_NotExistingNavigationBaseObject_ReturnsDataNotCached)
+    {
+    auto cache = GetTestCache();
+
+    ASSERT_FALSE(cache->FindInstance(ObjectId()).IsValid());
+    EXPECT_EQ(CacheStatus::DataNotCached, cache->RemoveInstance(ObjectId()));
+    }
+
 TEST_F(DataSourceCacheTests, RemoveInstance_ChildQueryExists_DeletesQueryResults)
     {
     auto cache = GetTestCache();
@@ -728,15 +747,15 @@ TEST_F(DataSourceCacheTests, RemoveRoot_RootContainsCachedQueryWithCyclicRelatio
     {
     auto cache = GetTestCache();
 
-    cache->LinkInstanceToRoot(nullptr, {"TestSchema.TestClass", "CyclicParent"});
-    auto instanceA = cache->FindInstance({"TestSchema.TestClass", "CyclicParent"});
+    ASSERT_EQ(SUCCESS, cache->LinkInstanceToRoot("Root", {"TestSchema.TestClass", "CyclicParent"}));
+    auto parent = cache->FindInstance({"TestSchema.TestClass", "CyclicParent"});
+    CachedResponseKey key(parent, "Foo");
 
     StubInstances instances;
     instances.Add({"TestSchema.TestClass", "CyclicParent"});
-    cache->CacheResponse({instanceA, "TestQuery"}, instances.ToWSObjectsResponse());
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(key, instances.ToWSObjectsResponse()));
 
-    cache->RemoveRoot(nullptr);
-
+    ASSERT_EQ(SUCCESS, cache->RemoveRoot("Root"));
     EXPECT_FALSE(cache->GetCachedObjectInfo({"TestSchema.TestClass", "CyclicParent"}).IsInCache());
     }
 

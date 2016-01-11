@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnDbServer/Client/DgnDbRepositoryConnection.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -11,6 +11,7 @@
 #include <DgnDbServer/DgnDbServerCommon.h>
 #include <DgnDbServer/Client/RepositoryInfo.h>
 #include <DgnDbServer/Client/DgnDbServerRevision.h>
+#include <WebServices/Azure/AzureBlobStorageClient.h>
 
 BEGIN_BENTLEY_DGNDBSERVER_NAMESPACE
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
@@ -42,10 +43,14 @@ struct DgnDbRepositoryConnection
 private:
     RepositoryInfoPtr m_repositoryInfo;
     WebServices::IWSRepositoryClientPtr m_wsRepositoryClient;
+    WebServices::IAzureBlobStorageClientPtr m_azureClient;
 
     friend struct DgnDbClient;
     friend struct DgnDbBriefcase;
     friend struct DgnDbLocks;
+
+    //! Returns AzureBlobStorageClient. Creates if doesn't exist.
+    WebServices::IAzureBlobStorageClientPtr GetAzureClient();
 
     //! Update repository info from the server.
     AsyncTaskPtr<DgnDbResult> UpdateRepositoryInfo(ICancellationTokenPtr cancellationToken = nullptr);
@@ -53,12 +58,15 @@ private:
     //! Aquire a new briefcase id for this repository.
     AsyncTaskPtr<WebServices::WSCreateObjectResult> AcquireBriefcaseId(ICancellationTokenPtr cancellationToken = nullptr);
 
-    //! Download a copy of the master file from the repository and write the briefcaseId into it.
-    AsyncTaskPtr<DgnDbResult> DownloadBriefcaseFile(BeFileName localFile, const BeSQLite::BeBriefcaseId& briefcaseId,
+    //! Write the briefcaseId into the file.
+    DgnDbResult WriteBriefcaseIdIntoFile(BeFileName filePath, const BeSQLite::BeBriefcaseId& briefcaseId);
+
+    //! Download a copy of the master file from the repository
+    AsyncTaskPtr<DgnDbResult> DownloadBriefcaseFile(BeFileName localFile, const BeSQLite::BeBriefcaseId& briefcaseId, Utf8StringCR url,
     HttpRequest::ProgressCallbackCR callback = nullptr, ICancellationTokenPtr cancellationToken = nullptr);
 
     //! Download the file for this revision from server.
-    AsyncTaskPtr<DgnDbResult> DownloadRevisionFile(DgnRevisionPtr revision, HttpRequest::ProgressCallbackCR callback = nullptr,
+    AsyncTaskPtr<DgnDbResult> DownloadRevisionFile(DgnDbServerRevisionPtr revision, HttpRequest::ProgressCallbackCR callback = nullptr,
     ICancellationTokenPtr cancellationToken = nullptr);
 
     //! Push this revision file to server.

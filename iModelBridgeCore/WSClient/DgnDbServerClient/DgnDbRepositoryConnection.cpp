@@ -2,7 +2,7 @@
 |
 |     $Source: DgnDbServerClient/DgnDbRepositoryConnection.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnDbServer/Client/DgnDbRepositoryConnection.h>
@@ -37,6 +37,17 @@ RepositoryInfoPtr RepositoryInfoParser(Utf8StringCR repositoryUrl, JsonValueCR v
     return RepositoryInfo::Create(repositoryUrl, value[ServerSchema::Property::Id].asString(), value[ServerSchema::Property::FileId].asString(),
                                   value[ServerSchema::Property::URL].asString(), value[ServerSchema::Property::Description].asString(),
                                   value[ServerSchema::Property::UserUploaded].asString(), uploadedDate);
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     Andrius.Zonys                  01/2016
+//---------------------------------------------------------------------------------------
+IAzureBlobStorageClientPtr DgnDbRepositoryConnection::GetAzureClient()
+    {
+    if (nullptr == m_azureClient)
+        m_azureClient = AzureBlobStorageClient::Create();
+
+    return m_azureClient;
     }
 
 //---------------------------------------------------------------------------------------
@@ -90,65 +101,94 @@ AsyncTaskPtr<DgnDbRepositoryConnectionResult> DgnDbRepositoryConnection::Create(
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             10/2015
 //---------------------------------------------------------------------------------------
-AsyncTaskPtr<DgnDbResult> DgnDbRepositoryConnection::DownloadBriefcaseFile(BeFileName localFile, const BeSQLite::BeBriefcaseId& briefcaseId,
-    HttpRequest::ProgressCallbackCR callback, ICancellationTokenPtr cancellationToken)
+DgnDbResult DgnDbRepositoryConnection::WriteBriefcaseIdIntoFile(BeFileName filePath, const BeSQLite::BeBriefcaseId& briefcaseId)
     {
-    Utf8String instanceId;
-    instanceId.Sprintf("%d", briefcaseId.GetValue());
-    ObjectId fileObject(ServerSchema::Schema::Repository, ServerSchema::Class::Briefcase, instanceId);
-    return m_wsRepositoryClient->SendGetFileRequest(fileObject, localFile, nullptr, callback, cancellationToken)->Then<DgnDbResult>
-            ([=] (const WSFileResult& fileResult)
-            {
-            if (fileResult.IsSuccess())
-                {
-                BeFileName resultPath = fileResult.GetValue().GetFilePath();
-                BeSQLite::DbResult status;
+    BeSQLite::DbResult status;
 
-                Dgn::DgnPlatformLib::AdoptHost(DgnDbServerHost::Host());
-                Dgn::DgnDbPtr db = Dgn::DgnDb::OpenDgnDb(&status, resultPath, Dgn::DgnDb::OpenParams(Dgn::DgnDb::OpenMode::ReadWrite));
+    Dgn::DgnPlatformLib::AdoptHost(DgnDbServerHost::Host());
+    Dgn::DgnDbPtr db = Dgn::DgnDb::OpenDgnDb(&status, filePath, Dgn::DgnDb::OpenParams(Dgn::DgnDb::OpenMode::ReadWrite));
 
-                if (BeSQLite::DbResult::BE_SQLITE_OK == status)
-                    status = RepositoryInfo::WriteRepositoryInfo(*db, *m_repositoryInfo, briefcaseId);
+    if (BeSQLite::DbResult::BE_SQLITE_OK == status)
+        status = RepositoryInfo::WriteRepositoryInfo(*db, *m_repositoryInfo, briefcaseId);
 
-                if (BeSQLite::DbResult::BE_SQLITE_DONE == status)
-                    {
-                    db->CloseDb();
-                    Dgn::DgnPlatformLib::ForgetHost();
-                    return DgnDbResult::Success();
-                    }
+    if (BeSQLite::DbResult::BE_SQLITE_DONE == status)
+        {
+        db->CloseDb();
+        Dgn::DgnPlatformLib::ForgetHost();
+        return DgnDbResult::Success();
+        }
 
-                Utf8String error = db->GetLastError(&status);
-                db->CloseDb();
-                Dgn::DgnPlatformLib::ForgetHost();
-                return DgnDbResult::Error(error.c_str());
-                }
-            else
-                {
-                return DgnDbResult::Error(fileResult.GetError());
-                }
-            });
+    Utf8String error = db->GetLastError(&status);
+    db->CloseDb();
+    Dgn::DgnPlatformLib::ForgetHost();
+    return DgnDbResult::Error(error.c_str());
     }
 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             10/2015
 //---------------------------------------------------------------------------------------
-AsyncTaskPtr<DgnDbResult> DgnDbRepositoryConnection::DownloadRevisionFile(Dgn::DgnRevisionPtr revision, HttpRequest::ProgressCallbackCR callback,
+AsyncTaskPtr<DgnDbResult> DgnDbRepositoryConnection::DownloadBriefcaseFile(BeFileName localFile, const BeSQLite::BeBriefcaseId& briefcaseId,
+    Utf8StringCR url, HttpRequest::ProgressCallbackCR callback, ICancellationTokenPtr cancellationToken)
+    {
+    if (url.empty())
+        {
+        Utf8String instanceId;
+        instanceId.Sprintf("%d", briefcaseId.GetValue());
+        ObjectId fileObject(ServerSchema::Schema::Repository, ServerSchema::Class::Briefcase, instanceId);
+        return m_wsRepositoryClient->SendGetFileRequest(fileObject, localFile, nullptr, callback, cancellationToken)
+            ->Then<DgnDbResult>([=] (const WSFileResult& fileResult)
+            {
+            if (fileResult.IsSuccess())
+                return WriteBriefcaseIdIntoFile(fileResult.GetValue().GetFilePath(), briefcaseId);
+            else
+                return DgnDbResult::Error(fileResult.GetError());
+            });
+        }
+    else
+        {
+        // Download file directly from the url.
+        return GetAzureClient()->SendGetFileRequest(url, localFile, callback, cancellationToken)
+            ->Then<DgnDbResult>([=] (const AzureResult& result)
+            {
+            if (result.IsSuccess())
+                return WriteBriefcaseIdIntoFile(localFile, briefcaseId);
+            else
+                return DgnDbResult::Error(DgnDbServerError(result.GetError().GetDisplayMessage().c_str()));
+            });
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     Karolis.Dziedzelis             10/2015
+//---------------------------------------------------------------------------------------
+AsyncTaskPtr<DgnDbResult> DgnDbRepositoryConnection::DownloadRevisionFile(DgnDbServerRevisionPtr revision, HttpRequest::ProgressCallbackCR callback,
     ICancellationTokenPtr cancellationToken)
     {
-    ObjectId fileObject(ServerSchema::Schema::Repository, ServerSchema::Class::Revision, revision->GetId());
+    ObjectId fileObject(ServerSchema::Schema::Repository, ServerSchema::Class::Revision, revision->GetRevision()->GetId());
     
-    return m_wsRepositoryClient->SendGetFileRequest(fileObject, revision->GetChangeStreamFile(), nullptr, callback, cancellationToken)->
-        Then<DgnDbResult>([=] (const WSFileResult& fileResult)
+    if (revision->GetURL().empty())
         {
-        if (fileResult.IsSuccess())
+        return m_wsRepositoryClient->SendGetFileRequest(fileObject, revision->GetRevision()->GetChangeStreamFile(), nullptr, callback, cancellationToken)
+            ->Then<DgnDbResult>([=] (const WSFileResult& fileResult)
             {
-            return DgnDbResult::Success();
-            }
-        else
+            if (fileResult.IsSuccess())
+                return DgnDbResult::Success();
+            else
+                return DgnDbResult::Error(fileResult.GetError());
+            });
+        }
+    else
+        {
+        // Download file directly from the url.
+        return GetAzureClient()->SendGetFileRequest(revision->GetURL(), revision->GetRevision()->GetChangeStreamFile(), nullptr, cancellationToken)
+            ->Then<DgnDbResult>([=] (const AzureResult& result)
             {
-            return DgnDbResult::Error(fileResult.GetError());
-            }
-        });
+            if (result.IsSuccess())
+                return DgnDbResult::Success();
+            else
+                return DgnDbResult::Error(DgnDbServerError(result.GetError().GetDisplayMessage().c_str()));
+            });
+        }
     }
 
 //---------------------------------------------------------------------------------------
@@ -521,7 +561,7 @@ AsyncTaskPtr<DgnDbResult> DgnDbRepositoryConnection::DownloadRevisions(const bve
     {
     bset<std::shared_ptr<AsyncTask>> tasks;
     for (auto& revision : revisions)
-        tasks.insert(DownloadRevisionFile(revision->GetRevision(), callback, cancellationToken));
+        tasks.insert(DownloadRevisionFile(revision, callback, cancellationToken));
     return AsyncTask::WhenAll(tasks)->Then<DgnDbResult>([=] ()
         {
         for (auto task : tasks)
@@ -585,6 +625,24 @@ Json::Value PushRevisionJson(Dgn::DgnRevisionPtr revision, Utf8StringCR reposito
     }
 
 //---------------------------------------------------------------------------------------
+//@bsimethod                                     Andrius.Zonys                  01/2016
+//---------------------------------------------------------------------------------------
+AsyncTaskPtr<DgnDbResult> InitializeRevision(Json::Value pushJson, ObjectId revisionObjectId, IWSRepositoryClientPtr client,
+    HttpRequest::ProgressCallbackCR callback, ICancellationTokenPtr cancellationToken)
+    {
+    Json::Value revisionProperties = Json::Value(pushJson[ServerSchema::Instance][ServerSchema::Properties]);
+    revisionProperties[ServerSchema::Property::IsUploaded] = true;
+    return client->SendUpdateObjectRequest(revisionObjectId, revisionProperties, nullptr, callback, cancellationToken)
+        ->Then<DgnDbResult>([=] (const WSUpdateObjectResult& finishPushResult)
+        {
+        if (finishPushResult.IsSuccess())
+            return DgnDbResult::Success();
+        else
+            return DgnDbResult::Error(finishPushResult.GetError());
+        });
+    }
+
+//---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             10/2015
 //---------------------------------------------------------------------------------------
 AsyncTaskPtr<DgnDbResult> DgnDbRepositoryConnection::Push(Dgn::DgnRevisionPtr revision, uint32_t repositoryId,
@@ -593,40 +651,66 @@ AsyncTaskPtr<DgnDbResult> DgnDbRepositoryConnection::Push(Dgn::DgnRevisionPtr re
     // Stage 1. Create revision.
     auto pushJson = PushRevisionJson(revision, m_repositoryInfo->GetId(), repositoryId);
     std::shared_ptr<DgnDbResult> finalResult = std::make_shared<DgnDbResult>();
-    return m_wsRepositoryClient->SendCreateObjectRequest(pushJson, BeFileName(), callback, cancellationToken)->Then
-        ([=] (const WSCreateObjectResult& initializePushResult)
+    return m_wsRepositoryClient->SendCreateObjectRequest(pushJson, BeFileName(), callback, cancellationToken)
+        ->Then([=] (const WSCreateObjectResult& initializePushResult)
         {
-        if (initializePushResult.IsSuccess())
+        if (!initializePushResult.IsSuccess())
             {
-            // Stage 2. Upload revision file. 
-            JsonValueCR revisionInstance   = initializePushResult.GetValue().GetObject()[ServerSchema::ChangedInstance][ServerSchema::InstanceAfterChange];
-            Utf8String  revisionInstanceId = revisionInstance[ServerSchema::InstanceId].asString();
-            ObjectId    revisionObjectId   = ObjectId(ServerSchema::Schema::Repository, ServerSchema::Class::Revision, revisionInstanceId);
+            finalResult->SetError(initializePushResult.GetError());
+            return;
+            }
 
-            m_wsRepositoryClient->SendUpdateFileRequest(revisionObjectId, revision->GetChangeStreamFile(), callback, cancellationToken)->Then
-                ([=](const WSUpdateObjectResult& uploadRevisionResult)
+        // Stage 2. Upload revision file. 
+        JsonValueCR revisionInstance   = initializePushResult.GetValue().GetObject()[ServerSchema::ChangedInstance][ServerSchema::InstanceAfterChange];
+        Utf8String  revisionInstanceId = revisionInstance[ServerSchema::InstanceId].asString();
+        ObjectId    revisionObjectId   = ObjectId(ServerSchema::Schema::Repository, ServerSchema::Class::Revision, revisionInstanceId);
+        Utf8StringCR url = revisionInstance[ServerSchema::Properties][ServerSchema::Property::URL].asString();
+
+        if (url.empty())
+            {
+            m_wsRepositoryClient->SendUpdateFileRequest(revisionObjectId, revision->GetChangeStreamFile(), callback, cancellationToken)
+                ->Then([=] (const WSUpdateObjectResult& uploadRevisionResult)
                 {
-                if (uploadRevisionResult.IsSuccess())
+                if (!uploadRevisionResult.IsSuccess())
                     {
-                    // Stage 3. Initialize revision.
-                    Json::Value revisionProperties = Json::Value(pushJson[ServerSchema::Instance][ServerSchema::Properties]);
-                    revisionProperties[ServerSchema::Property::IsUploaded] = true;
-                    m_wsRepositoryClient->SendUpdateObjectRequest(revisionObjectId, revisionProperties, nullptr, callback, cancellationToken)->Then
-                        ([=](const WSUpdateObjectResult& finishPushResult)
-                        {
-                        if (finishPushResult.IsSuccess())
-                            finalResult->SetSuccess();
-                        else
-                            finalResult->SetError(finishPushResult.GetError());
-                        });
-                    }
-                else
                     finalResult->SetError(uploadRevisionResult.GetError());
+                    return;
+                    }
+
+                // Stage 3. Initialize revision.
+                InitializeRevision(pushJson, revisionObjectId, m_wsRepositoryClient, callback, cancellationToken)
+                    ->Then([=] (const DgnDbResult& result)
+                    {
+                    if (result.IsSuccess())
+                        finalResult->SetSuccess();
+                    else
+                        finalResult->SetError(result.GetError());
+                    });
                 });
             }
         else
-            finalResult->SetError(initializePushResult.GetError());
-        })->Then<DgnDbResult>([=]()
+            {
+            GetAzureClient()->SendUpdateFileRequest(url, revision->GetChangeStreamFile(), callback, cancellationToken)
+                ->Then([=] (const AzureResult& result)
+                {
+                if (!result.IsSuccess())
+                    {
+                    finalResult->SetError(DgnDbServerError(result.GetError().GetDisplayMessage().c_str()));
+                    return;
+                    }
+
+                // Stage 3. Initialize revision.
+                InitializeRevision(pushJson, revisionObjectId, m_wsRepositoryClient, callback, cancellationToken)
+                    ->Then([=] (const DgnDbResult& result)
+                    {
+                    if (result.IsSuccess())
+                        finalResult->SetSuccess();
+                    else
+                        finalResult->SetError(result.GetError());
+                    });
+                });
+            }
+        })->Then<DgnDbResult>([=]
             {
             return *finalResult;
             });
