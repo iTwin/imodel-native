@@ -235,21 +235,16 @@ protected:
     //! The in-memory representation of a column definition in the database
     ECDbSqlColumn*     m_column;
 
-    //! basic constructor
     PropertyMapSingleColumn (ECN::ECPropertyCR ecProperty, Utf8CP propertyAccessString, ECDbSqlTable const* primaryTable, ColumnInfoCR columnInfo, PropertyMapCP parentPropertyMap);
     PropertyMapSingleColumn(PropertyMapSingleColumn const& proto, ECDbSqlTable const* primaryTable, PropertyMap const* parentPropertyMap)
         :PropertyMap(proto.GetProperty(), proto.GetPropertyAccessString(), primaryTable, parentPropertyMap), m_columnInfo(proto.m_columnInfo), m_column(proto.m_column)
         {}
 
-    //! Make sure our table has the necessary columns, if any
     virtual BentleyStatus _FindOrCreateColumnsInTable(ClassMap& classMap, ClassMapInfo const* classMapInfo) override;
 
-    //! @see PropertyMap::GetColumns
     virtual void _GetColumns(std::vector<ECDbSqlColumn const*>& columns) const;
    
-    //! For debugging and logging
     virtual Utf8String _ToString() const override;
-
 };
 
 /*---------------------------------------------------------------------------------------
@@ -267,7 +262,6 @@ private:
     virtual BentleyStatus _Load(ECDbClassMapInfo const&) override;
     virtual BentleyStatus _Save(ECDbClassMapInfo&) const override;
 
-    //! For debugging and logging
     virtual Utf8String _ToString() const override;
 
     PropertyMapStruct(ECN::ECPropertyCR, Utf8CP propertyAccessString, ECDbSqlTable const* primaryTable, PropertyMapCP parentPropertyMap);
@@ -301,7 +295,6 @@ private:
     // WIP_ECDB: These seem redundant, m_elementType will always be the ECClass from m_classMapForProperty, right?
     ECN::ECClassCR m_structElementType;
 
-    //! For debugging and logging
     virtual Utf8String _ToString() const override;
 
 protected:
@@ -328,15 +321,13 @@ private:
     friend PropertyMapPtr PropertyMap::CreateAndEvaluateMapping (ClassMapLoadContext&, ECDbCR, ECN::ECPropertyCR, ECN::ECClassCR rootClass, Utf8CP propertyAccessString, ECDbSqlTable const* primaryTable, PropertyMapCP parentPropertyMap);
     friend PropertyMapPtr PropertyMap::Clone(ECDbMapCR, PropertyMapCR proto, ECDbSqlTable const* newContext, PropertyMap const* parentPropertyMap);
 
-    ECN::StandaloneECEnablerP       m_primitiveArrayEnabler;
+    ECN::StandaloneECEnablerP m_primitiveArrayEnabler;
 
-    //! basic constructor
     PropertyMapPrimitiveArray(ECDbCR, ECN::ECPropertyCR, Utf8CP propertyAccessString, ECDbSqlTable const* primaryTable, ColumnInfoCR, PropertyMapCP parentPropertyMap);
     PropertyMapPrimitiveArray(PropertyMapPrimitiveArray const& proto, ECDbSqlTable const* primaryTable, PropertyMap const* parentPropertyMap)
         :PropertyMapSingleColumn(static_cast<PropertyMapSingleColumn const&>(proto), primaryTable, parentPropertyMap), m_primitiveArrayEnabler(proto.m_primitiveArrayEnabler)
         {}
 
-    //! For debugging and logging
     Utf8String _ToString() const override;
 };
 
@@ -350,32 +341,29 @@ private:
     friend PropertyMapPtr PropertyMap::Clone(ECDbMapCR, PropertyMapCR proto, ECDbSqlTable const* newContext, PropertyMap const* parentPropertyMap);
 
     //! true if 3d, false if 2d
-    bool            m_is3d;
+    bool m_is3d;
 
     //! Metadata from which the columns can be created
-    ColumnInfo      m_columnInfo;
+    ColumnInfo m_columnInfo;
 
     //! The in-memory representation of the database column definitions
-    ECDbSqlColumn*     m_xColumn;
-    ECDbSqlColumn*     m_yColumn;
-    ECDbSqlColumn*     m_zColumn;
+    ECDbSqlColumn* m_xColumn;
+    ECDbSqlColumn* m_yColumn;
+    ECDbSqlColumn* m_zColumn;
 
     //! basic constructor
     PropertyMapPoint (ECN::ECPropertyCR ecProperty, Utf8CP propertyAccessString, ECDbSqlTable const* primaryTable, ColumnInfoCR columnInfo, PropertyMapCP parentPropertyMap);
     PropertyMapPoint(PropertyMapPoint const& proto, ECDbSqlTable const* primaryTable, PropertyMap const* parentPropertyMap)
         :PropertyMap(proto.GetProperty(), proto.GetPropertyAccessString(), primaryTable, parentPropertyMap), 
         m_xColumn(proto.m_xColumn), m_yColumn(proto.m_yColumn), m_zColumn(proto.m_zColumn), m_is3d(proto.m_is3d), m_columnInfo(proto.m_columnInfo)
-        {
-        }
-    //! Make sure our table has the necessary columns, if any
+        {}
+
     BentleyStatus _FindOrCreateColumnsInTable( ClassMap& classMap, ClassMapInfo const* classMapInfo) override;
 
-    //! @see PropertyMap::GetColumns
     void _GetColumns (std::vector<ECDbSqlColumn const*>& columns) const;
 
     virtual BentleyStatus _Save(ECDbClassMapInfo & classMapInfo) const override;
     virtual BentleyStatus _Load(ECDbClassMapInfo const& classMapInfo) override;
-    //! For debugging and logging
     Utf8String _ToString() const override;
 public:
     bool Is3d () const { return m_is3d; }
@@ -396,7 +384,6 @@ private:
     virtual NativeSqlBuilder::List _ToNativeSql(Utf8CP classIdentifier, ECSqlType ecsqlType, bool wrapInParentheses) const override;
     virtual Utf8String _ToString() const override { return Utf8PrintfString("NavigationPropertyMap: ecProperty=%s.%s", m_ecProperty.GetClass().GetFullName(), m_ecProperty.GetName().c_str()); }
 
-    //BentleyStatus _FindOrCreateColumnsInTable(ClassMap&, ClassMapInfo const*) override;
     //void _GetColumns(std::vector<ECDbSqlColumn const*>& columns) const;
 
     NavigationPropertyMap(ClassMapLoadContext&, ECN::ECPropertyCR, Utf8CP propertyAccessString, ECDbSqlTable const* primaryTable, PropertyMapCP parentPropertyMap);

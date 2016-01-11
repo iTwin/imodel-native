@@ -20,24 +20,17 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 struct ClassMapLoadContext : NonCopyableClass
     {
 private:
-    /*static int s_id;
-
-    const int m_id;*/
     std::vector<NavigationPropertyMap*> m_navPropMaps;
 
 public:
-    ClassMapLoadContext() //: m_id(s_id)
-        {
-        //s_id++;
-        //LOG.infov("Created ClassMapLoadContext #%d", m_id);
+    ClassMapLoadContext() {}
+
+    void AddNavigationPropertyMap(NavigationPropertyMap& propMap) 
+        { 
+        LOG.debugv("ClassMapLoadContext> Added NavPropMap '%s.%s' to context %p.",propMap.GetProperty().GetClass().GetFullName(), propMap.GetProperty().GetName().c_str(), this);
+        m_navPropMaps.push_back(&propMap); 
         }
 
-    ~ClassMapLoadContext()
-        {
-        //LOG.infov("Destroyed ClassMapLoadContext #%d", m_id);
-        }
-
-    void AddNavigationPropertyMap(NavigationPropertyMap& propMap) { m_navPropMaps.push_back(&propMap); }
     std::vector<NavigationPropertyMap*> const& GetNavigationPropertyMaps() const { return m_navPropMaps; }
 
     BentleyStatus Postprocess(ECDbMapCR ecdbMap) const
@@ -47,7 +40,7 @@ public:
             if (SUCCESS != propMap->Postprocess(ecdbMap))
                 {
                 LOG.errorv("Finishing creation of NavigationPropertyMap for NavigationProperty '%s.%s' failed.",
-                           propMap->GetProperty().GetClass().GetFullName(),  propMap->GetProperty().GetName());
+                          propMap->GetProperty().GetClass().GetFullName(), propMap->GetProperty().GetName().c_str());
                 return ERROR;
                 }
             }
@@ -56,7 +49,6 @@ public:
         }
     };
 
-//int ClassMapLoadContext::s_id = 1;
 
 struct NativeSqlBuilder;
 struct StorageDescription;

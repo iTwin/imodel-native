@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/ECSqlParser.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -1419,8 +1419,8 @@ BentleyStatus ECSqlParser::parse_relationship_join (unique_ptr<RelationshipJoinE
     JoinDirection direction = JoinDirection::Implied;
     if (op_relationship_direction->getTokenID() == SQL_TOKEN_FORWARD)
         direction = JoinDirection::Forward;
-    else if (op_relationship_direction->getTokenID() == SQL_TOKEN_REVERSE)
-        direction = JoinDirection::Reverse;
+    else if (op_relationship_direction->getTokenID() == SQL_TOKEN_BACKWARD)
+        direction = JoinDirection::Backward;
 
     exp = unique_ptr<RelationshipJoinExp>(new RelationshipJoinExp(move (from_table_ref), move (to_table_ref),  move (table_node), direction));
     return SUCCESS;

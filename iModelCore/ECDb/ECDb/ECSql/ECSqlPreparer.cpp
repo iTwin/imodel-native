@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/ECSqlPreparer.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -1255,7 +1255,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareRelationshipJoinExp (ECSqlPrepareContext& c
                     {
                     fromIsSource = TriState::True;
                     } break;
-                case JoinDirection::Reverse:
+                case JoinDirection::Backward:
                     {
                     fromIsSource = TriState::False;
                     } break;
@@ -1268,7 +1268,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareRelationshipJoinExp (ECSqlPrepareContext& c
                 {
                 if (direction != JoinDirection::Forward)
                     {
-                    ctx.GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Invalid join direction REVERSE in %s. Either specify FORWARD or omit the direction as the direction can be unambiguously implied in this ECSQL.", exp.ToString().c_str());
+                    ctx.GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Invalid join direction BACKWARD in %s. Either specify FORWARD or omit the direction as the direction can be unambiguously implied in this ECSQL.", exp.ToString().c_str());
                     return ECSqlStatus::InvalidECSql;
                     }
                 }       
@@ -1279,9 +1279,9 @@ ECSqlStatus ECSqlExpPreparer::PrepareRelationshipJoinExp (ECSqlPrepareContext& c
             {
             if (direction != JoinDirection::Implied)
                 {
-                if (direction != JoinDirection::Reverse)
+                if (direction != JoinDirection::Backward)
                     {
-                    ctx.GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Invalid join direction FORWARD in %s. Either specify REVERSE or omit the direction as the direction can be unambiguously implied in this ECSQL.", exp.ToString().c_str());
+                    ctx.GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Invalid join direction FORWARD in %s. Either specify BACKWARD or omit the direction as the direction can be unambiguously implied in this ECSQL.", exp.ToString().c_str());
                     return ECSqlStatus::InvalidECSql;
                     }
                 }

@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSqlBuilderClauses.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -452,9 +452,9 @@ Utf8String JoinUsingClause::ToString() const
             break;
             }
 
-        case JoinDirection::Reverse:
+        case JoinDirection::Backward:
             {
-            joinUsing.append (" REVERSE");
+            joinUsing.append (" BACKWARD");
             break;
             }
 

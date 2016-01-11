@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/Published/ECSqlSelectTestDataset.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECSqlSelectTestDataset.h"
@@ -1408,7 +1408,7 @@ ECSqlTestDataset ECSqlSelectTestDataset::JoinTests( int rowCountPerClass )
     Utf8CP ecsql = "select ECInstanceId FROM ecsql.PSA parent JOIN ecsql.PSA child USING ecsql.PSAHasPSA";
     ECSqlTestFrameworkHelper::AddPrepareFailing (dataset, ecsql, ECSqlExpectedResult::Category::Invalid);
 
-    ecsql = "select parent.ECInstanceId, child.ECInstanceId FROM ecsql.PSA parent JOIN ecsql.PSA child USING ecsql.PSAHasPSA REVERSE";
+    ecsql = "select parent.ECInstanceId, child.ECInstanceId FROM ecsql.PSA parent JOIN ecsql.PSA child USING ecsql.PSAHasPSA BACKWARD";
     ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 2, 0);
 
     ecsql = "select parent.ECInstanceId, child.ECInstanceId FROM ecsql.PSA parent JOIN ecsql.PSA child USING ecsql.PSAHasPSA FORWARD";
@@ -1426,19 +1426,19 @@ ECSqlTestDataset ECSqlSelectTestDataset::JoinTests( int rowCountPerClass )
     ecsql = "SELECT end1.I, end2.I FROM ONLY ecsql.PSA end1 JOIN ONLY ecsql.PSA end2 USING ecsql.PSAHasPSA FORWARD";
     ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 2, 0);
 
-    ecsql = "SELECT end1.I, end2.I FROM ONLY ecsql.PSA end1 JOIN ONLY ecsql.PSA end2 USING ecsql.PSAHasPSA REVERSE";
+    ecsql = "SELECT end1.I, end2.I FROM ONLY ecsql.PSA end1 JOIN ONLY ecsql.PSA end2 USING ecsql.PSAHasPSA BACKWARD";
     ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 2, 0);
 
     ecsql = "SELECT end1.I, end2.I FROM ecsql.PSA end1 JOIN ecsql.PSA end2 USING ecsql.PSAHasPSA";
     ECSqlTestFrameworkHelper::AddPrepareFailing (dataset, ecsql, ECSqlExpectedResult::Category::Invalid);
 
-    ecsql = "SELECT end1.I, end2.I FROM ecsql.PSA end1 JOIN ecsql.PSA end2 USING ecsql.PSAHasPSA REVERSE";
+    ecsql = "SELECT end1.I, end2.I FROM ecsql.PSA end1 JOIN ecsql.PSA end2 USING ecsql.PSAHasPSA BACKWARD";
     ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 2, 0);
 
     ecsql = "SELECT end1.I, end2.I FROM ONLY ecsql.PSA end1 JOIN ecsql.PSA end2 USING ecsql.PSAHasPSA";
     ECSqlTestFrameworkHelper::AddPrepareFailing (dataset, ecsql, ECSqlExpectedResult::Category::Invalid);
 
-    ecsql = "SELECT end1.I, end2.I FROM ONLY ecsql.PSA end1 JOIN ecsql.PSA end2 USING ecsql.PSAHasPSA REVERSE";
+    ecsql = "SELECT end1.I, end2.I FROM ONLY ecsql.PSA end1 JOIN ecsql.PSA end2 USING ecsql.PSAHasPSA BACKWARD";
     ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 2, 0);
 
     ecsql = "SELECT end1.I, end2.I FROM ONLY ecsql.PSA end1 JOIN ONLY ecsql.P end2 USING ecsql.PSAHasP";
@@ -1447,7 +1447,7 @@ ECSqlTestDataset ECSqlSelectTestDataset::JoinTests( int rowCountPerClass )
     ecsql = "SELECT end1.I, end1.L FROM ONLY ecsql.PSA end1 JOIN ONLY ecsql.PSA end2 USING ecsql.PSAHasPSA FORWARD WHERE end2.I = 123";
     ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 2, 0);
 
-    ecsql = "SELECT end1.I, end1.L FROM ONLY ecsql.PSA end1 JOIN ONLY ecsql.PSA end2 USING ecsql.PSAHasPSA REVERSE WHERE end2.I = 123";
+    ecsql = "SELECT end1.I, end1.L FROM ONLY ecsql.PSA end1 JOIN ONLY ecsql.PSA end2 USING ecsql.PSAHasPSA BACKWARD WHERE end2.I = 123";
     ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 2, 0);
 
     ecsql = "SELECT end1.I, end2.L FROM ONLY ecsql.PSA end1 JOIN ONLY ecsql.P end2 USING ecsql.PSAHasP WHERE end2.I = 123";
@@ -1456,11 +1456,11 @@ ECSqlTestDataset ECSqlSelectTestDataset::JoinTests( int rowCountPerClass )
     ecsql = "SELECT end1.I, end2.L FROM ONLY ecsql.PSA end1 JOIN ONLY ecsql.P end2 USING ecsql.PSAHasP FORWARD";
     ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 2, 0);
 
-    ecsql = "SELECT end1.I, end2.L FROM ONLY ecsql.PSA end1 JOIN ONLY ecsql.P end2 USING ecsql.PSAHasP REVERSE";
+    ecsql = "SELECT end1.I, end2.L FROM ONLY ecsql.PSA end1 JOIN ONLY ecsql.P end2 USING ecsql.PSAHasP BACKWARD";
     ECSqlTestFrameworkHelper::AddPrepareFailing (dataset, ecsql, ECSqlExpectedResult::Category::Invalid);
 
     //ambiguous properties in select clause
-    ecsql = "SELECT I, L FROM ONLY ecsql.PSA JOIN ONLY ecsql.PSA USING ecsql.PSAHasPSA REVERSE";
+    ecsql = "SELECT I, L FROM ONLY ecsql.PSA JOIN ONLY ecsql.PSA USING ecsql.PSAHasPSA BACKWARD";
     ECSqlTestFrameworkHelper::AddPrepareFailing (dataset, ecsql, ECSqlExpectedResult::Category::Invalid);
 
     //ambiguous properties in select clause
@@ -1495,7 +1495,7 @@ ECSqlTestDataset ECSqlSelectTestDataset::JoinTests( int rowCountPerClass )
     ecsql = "select PSA.ECInstanceId, P.ECInstanceId FROM ecsql.PSA JOIN ecsql.P USING ecsql.PSAHasP FORWARD";
     ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 2, 0);
 
-    ecsql = "select PSA.ECInstanceId, P.ECInstanceId FROM ecsql.PSA JOIN ecsql.P USING ecsql.PSAHasP REVERSE";
+    ecsql = "select PSA.ECInstanceId, P.ECInstanceId FROM ecsql.PSA JOIN ecsql.P USING ecsql.PSAHasP BACKWARD";
     ECSqlTestFrameworkHelper::AddPrepareFailing (dataset, ecsql, ECSqlExpectedResult::Category::Invalid);
 
     ecsql = "select * FROM ecsql.PSA INNER JOIN ecsql.PSAHasP ON PSA.ECInstanceId = PSAHasP.SourceECInstanceId INNER JOIN ecsql.P ON P.ECInstanceId = PSAHasP.TargetECInstanceId";
@@ -1557,7 +1557,7 @@ ECSqlTestDataset ECSqlSelectTestDataset::JoinTests( int rowCountPerClass )
     ecsql = "select PSAHasPSA_1N.*, PARENT.*, CHILD.* FROM ONLY ecsql.PSA PARENT JOIN ecsql.PSA CHILD USING ecsql.PSAHasPSA_1N FORWARD ORDER BY PSAHasPSA_1N.ECInstanceId DESC";
     ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 51, 0);
 
-    ecsql = "select  PSAHasPSA_11.*, PARENT.*, CHILD.*  FROM ONLY ecsql.PSA PARENT JOIN ecsql.PSA CHILD USING ecsql.PSAHasPSA_11 REVERSE ORDER BY PSAHasPSA_11.ECInstanceId DESC";
+    ecsql = "select  PSAHasPSA_11.*, PARENT.*, CHILD.*  FROM ONLY ecsql.PSA PARENT JOIN ecsql.PSA CHILD USING ecsql.PSAHasPSA_11 BACKWARD ORDER BY PSAHasPSA_11.ECInstanceId DESC";
     ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 51, 0);
 
     ecsql = "select PSAHasPSA_NN.*, PARENT.*, CHILD.* FROM ONLY ecsql.PSA PARENT JOIN  ecsql.PSA CHILD USING ecsql.PSAHasPSA_NN FORWARD ORDER BY PSAHasPSA_NN.ECInstanceId DESC";
@@ -1566,7 +1566,7 @@ ECSqlTestDataset ECSqlSelectTestDataset::JoinTests( int rowCountPerClass )
     ecsql = "select PHasSA_11P.*, P.*, SA.* FROM ONLY ecsql.P JOIN ecsql.SA USING ecsql.PHasSA_11P ORDER BY PHasSA_11P.ECInstanceId DESC";
     ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 32, 0);
 
-    ecsql = "select PHasP_1NPSA.*, PARENT.*, CHILD.* FROM ecsql.P PARENT JOIN ecsql.P CHILD USING ecsql.PHasP_1NPSA REVERSE ORDER BY PHasP_1NPSA.ECInstanceId DESC";
+    ecsql = "select PHasP_1NPSA.*, PARENT.*, CHILD.* FROM ecsql.P PARENT JOIN ecsql.P CHILD USING ecsql.PHasP_1NPSA BACKWARD ORDER BY PHasP_1NPSA.ECInstanceId DESC";
     ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 53, 0);
 
     return dataset;
