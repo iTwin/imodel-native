@@ -2,7 +2,7 @@
 #
 #     $Source: Connect/Connect.mki $
 #
-#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 #
 #---------------------------------------------------------------------------------------+
 
@@ -18,6 +18,7 @@ ConnectMkiHeaders = $(ConnectMkiPublicApiDir)Authentication.h                   
                     $(ConnectMkiPublicApiDir)ConnectAuthenticationPersistence.h    \
                     $(ConnectMkiPublicApiDir)ConnectMessaging.h                    \
                     $(ConnectMkiPublicApiDir)ConnectSetup.h                        \
+                    $(ConnectMkiPublicApiDir)ConnectSignInManager.h                \
                     $(ConnectMkiPublicApiDir)ConnectSpaces.h                       \
                     $(ConnectMkiPublicApiDir)ConnectTokenProvider.h                \
                     $(ConnectMkiPublicApiDir)IConnectAuthenticationPersistence.h   \
@@ -40,6 +41,8 @@ $(o)ConnectAuthenticationHandler$(oext)     : $(ConnectMkiSourceDir)ConnectAuthe
 $(o)ConnectAuthenticationPersistence$(oext) : $(ConnectMkiSourceDir)ConnectAuthenticationPersistence.cpp $(ConnectMkiHeaders) ${MultiCompileDepends}
 
 $(o)ConnectSetup$(oext)                     : $(ConnectMkiSourceDir)ConnectSetup.cpp $(ConnectMkiHeaders) ${MultiCompileDepends}
+
+$(o)ConnectSignInManager$(oext)             : $(ConnectMkiSourceDir)ConnectSignInManager.cpp $(ConnectMkiHeaders) ${MultiCompileDepends}
 
 $(o)ConnectSpaces$(oext)                    : $(ConnectMkiSourceDir)ConnectSpaces.cpp $(ConnectMkiHeaders) ${MultiCompileDepends}
 
