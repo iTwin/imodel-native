@@ -117,7 +117,7 @@ DgnCategory::CreateParams::CreateParams(DgnDbR db, Utf8StringCR name, Scope scop
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnCategoryId DgnCategory::QueryCategoryId(Code const& code, DgnDbR db)
+DgnCategoryId DgnCategory::QueryCategoryId(DgnCode const& code, DgnDbR db)
     {
     return DgnCategoryId(db.Elements().QueryElementIdByCode(code).GetValueUnchecked());
     }
@@ -272,10 +272,10 @@ DgnCategoryId DgnCategory::QueryElementCategoryId(DgnElementId elemId, DgnDbR db
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnAuthority::Code DgnCategory::_GenerateDefaultCode() const
+DgnCode DgnCategory::_GenerateDefaultCode() const
     {
     BeAssert(false && "Creator of a category must set its code");
-    return Code();
+    return DgnCode();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -348,7 +348,7 @@ DgnSubCategory::CreateParams::CreateParams(DgnDbR db, DgnCategoryId catId, Utf8S
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnSubCategoryId DgnSubCategory::QuerySubCategoryId(Code const& code, DgnDbR db)
+DgnSubCategoryId DgnSubCategory::QuerySubCategoryId(DgnCode const& code, DgnDbR db)
     {
     return DgnSubCategoryId(db.Elements().QueryElementIdByCode(code).GetValueUnchecked());
     }
@@ -456,14 +456,14 @@ bool DgnSubCategory::IsDefaultSubCategory() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnAuthority::Code DgnSubCategory::_GenerateDefaultCode() const
+DgnCode DgnSubCategory::_GenerateDefaultCode() const
     {
     DgnCategoryCPtr cat = IsDefaultSubCategory() ? DgnCategory::QueryCategory(GetCategoryId(), GetDgnDb()) : nullptr;
     if (cat.IsValid())
         return CreateSubCategoryCode(*cat, cat->GetCategoryName());
 
     BeAssert(false && "The creator of a sub-category must set its code");
-    return Code();
+    return DgnCode();
     }
 
 static Utf8CP APPEARANCE_Invisible  = "invisible";

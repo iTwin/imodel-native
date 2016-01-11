@@ -29,6 +29,7 @@ enum DgnErrorCategories
     MARKUPPROJECT_ERROR_BASE        = 0x14000,
     LOCK_ERROR_BASE                 = 0x15000,
     REVISION_ERROR_BASE             = 0x16000,
+    CODE_ERROR_BASE                 = 0x17000,
     };
 
 //=======================================================================================
@@ -151,6 +152,17 @@ enum class RevisionStatus : int
     TransactionHasUnsavedChanges, //!< Cannot perform the operation since current transaction has unsaved changes
     WrongDgnDb, //!< Revision originated in a different Db
     };
+
+//! Return statuses for methods which perform operations related to authority-issued codes
+enum class CodeStatus : int
+{
+    Success = SUCCESS, //!< Operation completed successfully
+    ServerUnavailable = CODE_ERROR_BASE + 1, //!< The codes server did not respond to a request or could not be reached
+    InvalidResponse, //!< Response from server not understood
+    RevisionRequired, //!< A revision committed to the server must be integrated into the briefcase before the operation can be completed
+    CodeUnavailable, //!< A requested Code is reserved by another briefcase or in use
+    SyncError, //!< Failed to sync local codes with server
+};
 
 /** @cond BENTLEY_SDK_Publisher */
 

@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/DgnProject/Published/SystemModel_Test.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "../TestFixture/DgnDbTestFixtures.h"
@@ -14,7 +14,7 @@ USING_NAMESPACE_BENTLEY_DPTEST
 //---------------------------------------------------------------------------------------
 struct SystemModelTests : public DgnDbTestFixture
 {
-    DgnModel::Code GetSystemModelCode() const {return DgnModel::CreateModelCode("TestSystemModel");}
+    DgnCode GetSystemModelCode() const {return DgnModel::CreateModelCode("TestSystemModel");}
 };
 
 //---------------------------------------------------------------------------------------

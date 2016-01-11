@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/DgnProject/NonPublished/ElementGeometryBuilder_Tests.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -25,7 +25,7 @@ TEST_F(ElementGeometryBuilderTests, CreateElement3d)
     {
     SetupProject(L"3dMetricGeneral.idgndb", L"ElementGeometryBuilderTests_CreateElement3d.idgndb", BeSQLite::Db::OpenMode::ReadWrite);
 
-    DgnElementPtr el = TestElement::Create(*m_db, m_defaultModelId, m_defaultCategoryId, DgnElement::Code());
+    DgnElementPtr el = TestElement::Create(*m_db, m_defaultModelId, m_defaultCategoryId, DgnCode());
 
     DgnModelP model = m_db->Models().GetModel(m_defaultModelId).get();
     GeometrySourceP geomElem = el->ToGeometrySourceP();
@@ -108,7 +108,7 @@ TEST_F(ElementGeometryBuilderTests, CreateElement2d)
     {
     SetupProject(L"2dMetricGeneral.idgndb", L"ElementGeometryBuilderTests_CreateElement2d.idgndb", BeSQLite::Db::OpenMode::ReadWrite);
 
-    DgnElementPtr el = TestElement2d::Create(*m_db, m_defaultModelId, m_defaultCategoryId, DgnElement::Code(),100);
+    DgnElementPtr el = TestElement2d::Create(*m_db, m_defaultModelId, m_defaultCategoryId, DgnCode(),100);
 
     DgnModelP model = m_db->Models().GetModel(m_defaultModelId).get();
     GeometrySourceP geomElem = el->ToGeometrySourceP();

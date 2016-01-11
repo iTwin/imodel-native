@@ -57,7 +57,7 @@ protected:
     virtual DgnDbStatus _OnUpdate(DgnElementCR) override { return DgnDbStatus::WrongElement; }
     virtual DgnDbStatus _OnDelete() const override { return DgnDbStatus::DeletionProhibited; }
     virtual uint32_t _GetMemSize() const override { return T_Super::_GetMemSize() + static_cast<uint32_t>(sizeof(m_colorDef)); }
-    virtual Code _GenerateDefaultCode() const override { return Code(); }
+    virtual DgnCode _GenerateDefaultCode() const override { return DgnCode(); }
     virtual bool _SupportsCodeAuthority(DgnAuthorityCR auth) const override { return TrueColorAuthority::GetTrueColorAuthorityId() == auth.GetAuthorityId(); }
 public:
     //! Construct a new DgnTrueColor with the specified parameters.
@@ -69,7 +69,7 @@ public:
     ColorDef GetColorDef() const { return m_colorDef; } //!< The value of this color
 
     //! Creates a code for a color with the given name and book name
-    static Code CreateColorCode(Utf8StringCR name, Utf8StringCR book) { return TrueColorAuthority::CreateTrueColorCode(name, book); }
+    static DgnCode CreateColorCode(Utf8StringCR name, Utf8StringCR book) { return TrueColorAuthority::CreateTrueColorCode(name, book); }
 
     static ECN::ECClassId QueryECClassId(DgnDbR db) { return db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_TrueColor); } //!< The class ID associated with true colors within the given DgnDb
     static DgnClassId QueryDgnClassId(DgnDbR db) { return DgnClassId(QueryECClassId(db)); } //!< The class ID associated with true colors within the given DgnDb
@@ -77,8 +77,8 @@ public:
     //! Inserts this color into the database and returns the persistent copy
     DgnTrueColorCPtr Insert(DgnDbStatus* status=nullptr) { return GetDgnDb().Elements().Insert<DgnTrueColor>(*this, status); }
 
-    //! Look up a color ID by Code
-    DGNPLATFORM_EXPORT static DgnTrueColorId QueryColorId(Code const& code, DgnDbR db);
+    //! Look up a color ID by DgnCode
+    DGNPLATFORM_EXPORT static DgnTrueColorId QueryColorId(DgnCode const& code, DgnDbR db);
 
     //! Look up a color ID by name + book name
     static DgnTrueColorId QueryColorId(Utf8StringCR name, Utf8StringCR book, DgnDbR db) { return QueryColorId(CreateColorCode(name, book), db); }

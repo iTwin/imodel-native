@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/DgnProject/Performance/ComponentModel_PerfTest.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #ifndef BENTLEYCONFIG_NO_JAVASCRIPT
@@ -55,7 +55,7 @@ static void openDb (DgnDbPtr& db, BeFileNameCR name, DgnDb::OpenMode mode)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-static DgnDbStatus createSpatialModel(SpatialModelPtr& catalogModel, DgnDbR db, DgnModel::Code const& code)
+static DgnDbStatus createSpatialModel(SpatialModelPtr& catalogModel, DgnDbR db, DgnCode const& code)
     {
     DgnClassId mclassId = DgnClassId(db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_SpatialModel));
     catalogModel = new SpatialModel(DgnModel3d::CreateParams(db, mclassId, code));

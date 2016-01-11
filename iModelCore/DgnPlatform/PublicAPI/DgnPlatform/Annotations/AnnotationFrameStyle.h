@@ -108,7 +108,7 @@ private:
     Utf8String m_description;
     AnnotationFrameStylePropertyBag m_data;
 
-    static Code CreateCodeFromName(Utf8StringCR name) { return ResourceAuthority::CreateResourceCode(name, DGN_CLASSNAME_AnnotationFrameStyle); }
+    static DgnCode CreateCodeFromName(Utf8StringCR name) { return ResourceAuthority::CreateResourceCode(name, DGN_CLASSNAME_AnnotationFrameStyle); }
 
 protected:
     DGNPLATFORM_EXPORT virtual DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement& statement, ECSqlClassParams const& selectParams) override;
@@ -117,14 +117,14 @@ protected:
     DGNPLATFORM_EXPORT virtual void _CopyFrom(DgnElementCR source) override;
     virtual DgnDbStatus _OnDelete() const override { return DgnDbStatus::DeletionProhibited; /* Must be "purged" */ }
     virtual uint32_t _GetMemSize() const override { return (uint32_t)(m_description.size() + 1 + m_data.GetMemSize()); }
-    virtual Code _GenerateDefaultCode() const override { return Code(); }
+    virtual DgnCode _GenerateDefaultCode() const override { return DgnCode(); }
     virtual bool _SupportsCodeAuthority(DgnAuthorityCR auth) const override { return ResourceAuthority::IsResourceAuthority(auth); }
 
 public:
     static ECN::ECClassId QueryECClassId(DgnDbR db) { return db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_AnnotationFrameStyle); }
     static DgnClassId QueryDgnClassId(DgnDbR db) { return DgnClassId(QueryECClassId(db)); }
 
-    explicit AnnotationFrameStyle(DgnDbR db) : T_Super(CreateParams(db, QueryDgnClassId(db), Code())) {}
+    explicit AnnotationFrameStyle(DgnDbR db) : T_Super(CreateParams(db, QueryDgnClassId(db), DgnCode())) {}
     explicit AnnotationFrameStyle(CreateParams const& params) : T_Super(params) {}
     static AnnotationFrameStylePtr Create(DgnDbR db) { return new AnnotationFrameStyle(db); }
     AnnotationFrameStylePtr CreateCopy() const { return MakeCopy<AnnotationFrameStyle>(); }

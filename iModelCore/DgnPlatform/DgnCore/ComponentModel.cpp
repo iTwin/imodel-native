@@ -69,7 +69,7 @@ struct HarvestedSolutionWriter
     public:
     virtual DgnDbR _GetOutputDgnDb() {return m_destModel.GetDgnDb();}
     virtual DgnModelR _GetOutputModel() {return m_destModel;}
-    virtual DgnElementPtr _CreateInstance(DgnDbStatus& status, DgnClassId iclass, DgnElement::Code const& icode); // (rarely need to override this)
+    virtual DgnElementPtr _CreateInstance(DgnDbStatus& status, DgnClassId iclass, DgnCodeCR icode); // (rarely need to override this)
     virtual DgnElementCPtr _WriteInstance(DgnDbStatus&, DgnElementR) = 0;
     HarvestedSolutionWriter(DgnModelR m, ComponentModel& c) : m_destModel(m), m_cm(c) {;}
     };
@@ -120,18 +120,18 @@ struct ComponentGeometryHarvester
     ComponentDef& m_cdef;
 
     DgnDbStatus HarvestModel(bvector<bpair<DgnSubCategoryId, DgnGeomPartId>>& geomBySubcategory, bvector<DgnElementCPtr>& nestedInstances);
-    DgnElementPtr CreateInstance(DgnDbStatus& status, DgnElement::Code const& icode, bvector<bpair<DgnSubCategoryId, DgnGeomPartId>> const&, HarvestedSolutionWriter& writer);
+    DgnElementPtr CreateInstance(DgnDbStatus& status, DgnCode const& icode, bvector<bpair<DgnSubCategoryId, DgnGeomPartId>> const&, HarvestedSolutionWriter& writer);
 
     public:
     ComponentGeometryHarvester(ComponentDef& c) : m_cdef(c) {;}
 
-    DgnElementCPtr MakeInstance(DgnDbStatus& status, DgnElement::Code const& icode, HarvestedSolutionWriter& WriterHandler);
+    DgnElementCPtr MakeInstance(DgnDbStatus& status, DgnCode const& icode, HarvestedSolutionWriter& WriterHandler);
     };
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElementPtr HarvestedSolutionWriter::_CreateInstance(DgnDbStatus& status, DgnClassId iclass, DgnElement::Code const& icode)
+DgnElementPtr HarvestedSolutionWriter::_CreateInstance(DgnDbStatus& status, DgnClassId iclass, DgnCode const& icode)
     {
     DgnElement::CreateParams cparams(m_destModel.GetDgnDb(), m_destModel.GetModelId(), iclass, icode);
     dgn_ElementHandler::Element* handler = dgn_ElementHandler::Element::FindHandler(m_destModel.GetDgnDb(), iclass);
@@ -280,7 +280,7 @@ DgnDbStatus ComponentGeometryHarvester::HarvestModel(bvector<bpair<DgnSubCategor
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElementPtr ComponentGeometryHarvester::CreateInstance(DgnDbStatus& status, DgnElement::Code const& icode,
+DgnElementPtr ComponentGeometryHarvester::CreateInstance(DgnDbStatus& status, DgnCode const& icode,
     bvector<bpair<DgnSubCategoryId, DgnGeomPartId>> const& geomBySubcategory, HarvestedSolutionWriter& writer)
     {
     DgnElementPtr capturedSolutionElement = writer._CreateInstance(status, DgnClassId(m_cdef.GetECClass().GetId()), icode);
@@ -314,7 +314,7 @@ DgnElementPtr ComponentGeometryHarvester::CreateInstance(DgnDbStatus& status, Dg
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElementCPtr ComponentGeometryHarvester::MakeInstance(DgnDbStatus& status, DgnElement::Code const& icode, HarvestedSolutionWriter& writer)
+DgnElementCPtr ComponentGeometryHarvester::MakeInstance(DgnDbStatus& status, DgnCode const& icode, HarvestedSolutionWriter& writer)
     {
     DgnDbR db = m_cdef.GetDgnDb();
 
@@ -346,7 +346,7 @@ DgnElementCPtr ComponentGeometryHarvester::MakeInstance(DgnDbStatus& status, Dgn
     ElementCopier copier(ctx);
     for (auto nestedInstance : nestedInstances)
         {
-        copier.MakeCopy(&status, writer._GetOutputModel(), *nestedInstance, DgnElement::Code(), storedSolutionElement->GetElementId());
+        copier.MakeCopy(&status, writer._GetOutputModel(), *nestedInstance, DgnCode(), storedSolutionElement->GetElementId());
         // *** TBD: 
         }
 
@@ -694,7 +694,7 @@ ComponentModelR ComponentDef::GetModel()
     Utf8String modelName = GetModelName();
     if (!modelName.empty())
         {
-        DgnModel::Code modelCode = DgnModel::CreateModelCode(modelName);
+        DgnCode modelCode = DgnModel::CreateModelCode(modelName);
         m_model = m_db.Models().Get<ComponentModel>(m_db.Models().QueryModelId(modelCode));
         if (m_model.IsValid())
             return *m_model;
@@ -718,7 +718,7 @@ ComponentModelPtr ComponentModel::Create(DgnDbR db, Utf8StringCR componentDefCla
     Utf8String modelName(componentDefClassFullName);
     DgnDbTable::ReplaceInvalidCharacters(modelName, DgnModels::GetIllegalCharacters(), '_');
     modelName = db.Models().GetUniqueModelName(modelName.c_str());
-    DgnModel::Code modelCode = DgnModel::CreateModelCode(modelName);
+    DgnCode modelCode = DgnModel::CreateModelCode(modelName);
     return new ComponentModel(db, modelCode, componentDefClassFullName);
     }
 
@@ -752,7 +752,7 @@ DgnDbStatus ComponentDef::GenerateElements(DgnModelR destModel, ECN::IECInstance
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElementCPtr ComponentDef::MakeInstance0(DgnDbStatus* statusOut, DgnModelR destModel, ECN::IECInstanceCR parameters, DgnElement::Code const& code)
+DgnElementCPtr ComponentDef::MakeInstance0(DgnDbStatus* statusOut, DgnModelR destModel, ECN::IECInstanceCR parameters, DgnCode const& code)
     {
     DgnDbStatus ALLOW_NULL_OUTPUT(status, statusOut);
     if (DgnDbStatus::Success != (status = GenerateElements(destModel, parameters)))
@@ -801,7 +801,7 @@ DgnElementCPtr ComponentDef::MakeVariation(DgnDbStatus* statusOut, DgnModelR des
         return nullptr;
         }
 
-    DgnElement::Code vcode = componentCDef->CreateVariationCode(variationName);
+    DgnCode vcode = componentCDef->CreateVariationCode(variationName);
 
     return componentCDef->MakeInstance0(statusOut, destModel, variationParms, vcode);
     }
@@ -809,7 +809,7 @@ DgnElementCPtr ComponentDef::MakeVariation(DgnDbStatus* statusOut, DgnModelR des
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElementCPtr ComponentDef::MakeUniqueInstance(DgnDbStatus* statusOut, DgnModelR destModel, ECN::IECInstanceCR variationParms, DgnElement::Code const& code)
+DgnElementCPtr ComponentDef::MakeUniqueInstance(DgnDbStatus* statusOut, DgnModelR destModel, ECN::IECInstanceCR variationParms, DgnCode const& code)
     {
     DgnDbStatus ALLOW_NULL_OUTPUT(status, statusOut);
 
@@ -825,7 +825,7 @@ DgnElementCPtr ComponentDef::MakeUniqueInstance(DgnDbStatus* statusOut, DgnModel
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElementCPtr ComponentDef::MakeInstanceOfVariation(DgnDbStatus* statusOut, DgnModelR destModel, DgnElementCR variation, ECN::IECInstanceCP instanceParms, DgnElement::Code const& code)
+DgnElementCPtr ComponentDef::MakeInstanceOfVariation(DgnDbStatus* statusOut, DgnModelR destModel, DgnElementCR variation, ECN::IECInstanceCP instanceParms, DgnCode const& code)
     {
     DgnDbStatus ALLOW_NULL_OUTPUT(status, statusOut);
     
@@ -860,13 +860,13 @@ DgnElementCPtr ComponentDef::MakeInstanceOfVariation(DgnDbStatus* statusOut, Dgn
             }
         }
 
-    DgnElement::Code icode = code;
+    DgnCode icode = code;
     if (!code.IsValid())
         {
         //  Generate the item code. This will be a null code, unless there's a specified authority for the componentmodel.
         DgnAuthorityCPtr authority = cdef->GetCodeAuthority();
         if (authority.IsValid())
-            icode = DgnElement::Code::CreateEmpty();  // *** WIP_COMPONENT_MODEL -- how do I ask an Authority to issue a code?
+            icode = DgnCode::CreateEmpty();  // *** WIP_COMPONENT_MODEL -- how do I ask an Authority to issue a code?
         }
 
     //  Creating the item is just a matter of copying the catalog item (and its children)
@@ -1198,7 +1198,7 @@ static DgnClassId getComponentModelClassId(DgnDbR db)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-ComponentModel::ComponentModel(DgnDbR db, DgnModel::Code code, Utf8StringCR defName) : DgnModel3d(CreateParams(db, getComponentModelClassId(db), code))
+ComponentModel::ComponentModel(DgnDbR db, DgnCode code, Utf8StringCR defName) : DgnModel3d(CreateParams(db, getComponentModelClassId(db), code))
     {
     m_componentECClass = defName;
     BeAssert(!m_componentECClass.empty());

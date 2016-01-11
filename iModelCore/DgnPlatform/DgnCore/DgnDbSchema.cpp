@@ -56,7 +56,7 @@ DbResult DgnDb::CreateDictionaryModel()
     {
     Utf8String dictionaryName = DgnCoreL10N::GetString(DgnCoreL10N::MODELNAME_Dictionary());
     
-    DgnModel::Code modelCode = DgnModel::CreateModelCode(dictionaryName);
+    DgnCode modelCode = DgnModel::CreateModelCode(dictionaryName);
     Statement stmt(*this, "INSERT INTO " DGN_TABLE(DGN_CLASSNAME_Model) " (Id,Code_Value,Label,ECClassId,Visibility,Code_AuthorityId,Code_Namespace) VALUES(?,?,'',?,0,?,?)");
     stmt.BindId(1, DgnModel::DictionaryId());
     stmt.BindText(2, modelCode.GetValueCP(), Statement::MakeCopy::No);

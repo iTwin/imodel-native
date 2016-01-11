@@ -789,7 +789,7 @@ void PerformanceElementsCRUDTestFixture::BindParams (DgnElementPtr& element, BeS
     ASSERT_EQ (DbResult::BE_SQLITE_OK, stmt.BindId (stmt.GetParameterIndex (":Id"), id));
     ASSERT_EQ (DbResult::BE_SQLITE_OK, stmt.BindId (stmt.GetParameterIndex (":ModelId"), element->GetModelId ()));
 
-    DgnAuthority::Code elementCode = DgnAuthority::Code::CreateEmpty ();
+    DgnCode elementCode = DgnCode::CreateEmpty ();
     if (elementCode.IsEmpty ())
         {
         ASSERT_EQ (DbResult::BE_SQLITE_OK, stmt.BindNull (stmt.GetParameterIndex (":Code_Value")));
@@ -988,7 +988,7 @@ void PerformanceElementsCRUDTestFixture::BindParams (DgnElementPtr& element, ECS
 
     // Bind Code
         {
-        DgnAuthority::Code elementCode = DgnAuthority::Code::CreateEmpty ();
+        DgnCode elementCode = DgnCode::CreateEmpty ();
         IECSqlStructBinder& codeBinder = stmt.BindStruct(stmt.GetParameterIndex("Code"));
 
         if (elementCode.IsEmpty())

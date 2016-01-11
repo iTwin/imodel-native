@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/DgnLight.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -107,7 +107,7 @@ LightDefinition::CreateParams::CreateParams(DgnDbR db, Utf8StringCR name, Utf8St
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnLightId LightDefinition::QueryLightId(DgnElement::Code const& code, DgnDbR db)
+DgnLightId LightDefinition::QueryLightId(DgnCode const& code, DgnDbR db)
     {
     DgnElementId elemId = db.Elements().QueryElementIdByCode(code);
     return DgnLightId(elemId.GetValueUnchecked());

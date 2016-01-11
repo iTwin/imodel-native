@@ -161,7 +161,7 @@ protected:
     DGNPLATFORM_EXPORT DgnDbStatus _BindUpdateParams(BeSQLite::EC::ECSqlStatement& stmt) override;
     DGNPLATFORM_EXPORT void _CopyFrom(DgnElementCR source) override;
     DGNPLATFORM_EXPORT DgnDbStatus _SetParentId(DgnElementId parentId) override;
-    DGNPLATFORM_EXPORT Code _GenerateDefaultCode() const override;
+    DGNPLATFORM_EXPORT DgnCode _GenerateDefaultCode() const override;
     virtual bool _SupportsCodeAuthority(DgnAuthorityCR auth) const override { return CategoryAuthority::GetCategoryAuthorityId() == auth.GetAuthorityId(); }
     DGNPLATFORM_EXPORT DgnDbStatus _OnInsert() override;
     DGNPLATFORM_EXPORT DgnDbStatus _OnUpdate(DgnElementCR) override;
@@ -190,14 +190,14 @@ public:
     Appearance& GetAppearanceR() { return m_data.m_appearance; } //!< A writable reference to this sub-category's appearance
     void SetDescription(Utf8StringCR descr) { m_data.m_descr = descr; } //!< Set the description
 
-    //! Create a Code for the name of a sub-category of the specified category
-    static Code CreateSubCategoryCode(DgnCategoryId categoryId, Utf8StringCR subCategoryName) { return CategoryAuthority::CreateSubCategoryCode(categoryId, subCategoryName); }
+    //! Create a DgnCode for the name of a sub-category of the specified category
+    static DgnCode CreateSubCategoryCode(DgnCategoryId categoryId, Utf8StringCR subCategoryName) { return CategoryAuthority::CreateSubCategoryCode(categoryId, subCategoryName); }
 
-    //! Create a Code for the name of a sub-category of the specified category
-    DGNPLATFORM_EXPORT static Code CreateSubCategoryCode(DgnCategoryCR category, Utf8StringCR subCategoryName);
+    //! Create a DgnCode for the name of a sub-category of the specified category
+    DGNPLATFORM_EXPORT static DgnCode CreateSubCategoryCode(DgnCategoryCR category, Utf8StringCR subCategoryName);
 
     //! Looks up a sub-category ID by code.
-    DGNPLATFORM_EXPORT static DgnSubCategoryId QuerySubCategoryId(Code const& code, DgnDbR db);
+    DGNPLATFORM_EXPORT static DgnSubCategoryId QuerySubCategoryId(DgnCode const& code, DgnDbR db);
 
     //! Looks up a sub-category ID by name and category ID.
     static DgnSubCategoryId QuerySubCategoryId(DgnCategoryId categoryId, Utf8StringCR subCategoryName, DgnDbR db) { return QuerySubCategoryId(CreateSubCategoryCode(categoryId, subCategoryName), db); }
@@ -279,7 +279,7 @@ public:
             : T_Super(params), m_data(scope, rank, descr) { }
 
         //! Constructs parameters for a category. Chiefly for internal use.
-        CreateParams(DgnDbR db, DgnModelId modelId, DgnClassId classId, Code const& code, Utf8CP label=nullptr, DgnElementId parent=DgnElementId(),
+        CreateParams(DgnDbR db, DgnModelId modelId, DgnClassId classId, DgnCode const& code, Utf8CP label=nullptr, DgnElementId parent=DgnElementId(),
                 Scope scope=Scope::Any, Rank rank=Rank::User, Utf8StringCR descr="")
             : T_Super(db, modelId, classId, code, label, parent), m_data(scope, rank, descr) { }
 
@@ -301,7 +301,7 @@ protected:
     DGNPLATFORM_EXPORT DgnDbStatus _BindUpdateParams(BeSQLite::EC::ECSqlStatement& stmt) override;
     DGNPLATFORM_EXPORT void _CopyFrom(DgnElementCR source) override;
     DGNPLATFORM_EXPORT void _RemapIds(DgnImportContext&) override;
-    DGNPLATFORM_EXPORT Code _GenerateDefaultCode() const override;
+    DGNPLATFORM_EXPORT DgnCode _GenerateDefaultCode() const override;
     virtual bool _SupportsCodeAuthority(DgnAuthorityCR auth) const override { return CategoryAuthority::GetCategoryAuthorityId() == auth.GetAuthorityId(); }
     DGNPLATFORM_EXPORT DgnDbStatus _OnChildDelete(DgnElementCR child) const override;
     DGNPLATFORM_EXPORT DgnDbStatus _OnDelete() const override;
@@ -347,8 +347,8 @@ public:
     void SetScope(Scope scope) { m_data.m_scope = scope; } //!< Set the category's scope.
     void SetRank(Rank rank) { m_data.m_rank = rank; } //!< Set the category's rank.
 
-    static Code CreateCategoryCode(Utf8StringCR categoryName) { return CategoryAuthority::CreateCategoryCode(categoryName); } //!< Creates a Code for a category name.
-    DGNPLATFORM_EXPORT static DgnCategoryId QueryCategoryId(Code const& code, DgnDbR db); //!< Looks up the ID of a category by code.
+    static DgnCode CreateCategoryCode(Utf8StringCR categoryName) { return CategoryAuthority::CreateCategoryCode(categoryName); } //!< Creates a Code for a category name.
+    DGNPLATFORM_EXPORT static DgnCategoryId QueryCategoryId(DgnCode const& code, DgnDbR db); //!< Looks up the ID of a category by code.
     static DgnCategoryId QueryCategoryId(Utf8StringCR categoryName, DgnDbR db) { return QueryCategoryId(CreateCategoryCode(categoryName), db); } //!< Looks up the ID of a category by name.
     static DgnCategoryCPtr QueryCategory(DgnCategoryId categoryId, DgnDbR db) { return db.Elements().Get<DgnCategory>(categoryId); } //!< Looks up a category by ID.
     static DgnCategoryCPtr QueryCategory(Utf8StringCR categoryName, DgnDbR db) { return QueryCategory(QueryCategoryId(categoryName, db), db); } //!< Looks up a category by name.

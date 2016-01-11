@@ -65,9 +65,9 @@ DgnDbStatus DgnAuthority::Insert()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-AuthorityIssuedCode DgnAuthority::_CloneCodeForImport(DgnElementCR srcElem, DgnModelR destModel, DgnImportContext& importer) const
+DgnCode DgnAuthority::_CloneCodeForImport(DgnElementCR srcElem, DgnModelR destModel, DgnImportContext& importer) const
     {
-    return importer.IsBetweenDbs() ? srcElem.GetCode() : AuthorityIssuedCode();
+    return importer.IsBetweenDbs() ? srcElem.GetCode() : DgnCode();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -326,11 +326,11 @@ RefCountedPtr<NamespaceAuthority> NamespaceAuthority::CreateNamespaceAuthority(U
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-AuthorityIssuedCode NamespaceAuthority::CreateCode(Utf8CP authorityName, Utf8StringCR value, DgnDbR dgndb, Utf8StringCR nameSpace)
+DgnCode NamespaceAuthority::CreateCode(Utf8CP authorityName, Utf8StringCR value, DgnDbR dgndb, Utf8StringCR nameSpace)
     {
     auto auth = dgndb.Authorities().Get<NamespaceAuthority>(authorityName);
     BeDataAssert(auth.IsValid());
-    return auth.IsValid() ? auth->CreateCode(value, nameSpace) : AuthorityIssuedCode();
+    return auth.IsValid() ? auth->CreateCode(value, nameSpace) : DgnCode();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -357,8 +357,8 @@ struct SystemAuthority
     };
 
     static DgnAuthorityId GetId(BuiltinId which) { return DgnAuthorityId((uint64_t)which); }
-    static AuthorityIssuedCode CreateCode(BuiltinId which, Utf8StringCR value, Utf8StringCR nameSpace="") { return AuthorityIssuedCode(GetId(which), value, nameSpace); }
-    static AuthorityIssuedCode CreateCode(BuiltinId which, Utf8StringCR value, BeInt64Id nameSpaceId);
+    static DgnCode CreateCode(BuiltinId which, Utf8StringCR value, Utf8StringCR nameSpace="") { return DgnCode(GetId(which), value, nameSpace); }
+    static DgnCode CreateCode(BuiltinId which, Utf8StringCR value, BeInt64Id nameSpaceId);
 
     static DbResult Insert(DgnDbR db, Statement& stmt, Info const& info)
         {
@@ -375,12 +375,12 @@ struct SystemAuthority
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-AuthorityIssuedCode SystemAuthority::CreateCode(BuiltinId which, Utf8StringCR value, BeInt64Id nameSpaceId)
+DgnCode SystemAuthority::CreateCode(BuiltinId which, Utf8StringCR value, BeInt64Id nameSpaceId)
     {
     if (!nameSpaceId.IsValid())
-        return AuthorityIssuedCode();
+        return DgnCode();
 
-    return AuthorityIssuedCode(GetId(which), value, nameSpaceId);
+    return DgnCode(GetId(which), value, nameSpaceId);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -420,7 +420,7 @@ DbResult DgnDb::CreateAuthorities()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-AuthorityIssuedCode CategoryAuthority::CreateCategoryCode(Utf8StringCR name)
+DgnCode CategoryAuthority::CreateCategoryCode(Utf8StringCR name)
     {
     return SystemAuthority::CreateCode(SystemAuthority::Category, name);
     }
@@ -428,7 +428,7 @@ AuthorityIssuedCode CategoryAuthority::CreateCategoryCode(Utf8StringCR name)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-AuthorityIssuedCode CategoryAuthority::CreateSubCategoryCode(DgnCategoryId categoryId, Utf8StringCR name)
+DgnCode CategoryAuthority::CreateSubCategoryCode(DgnCategoryId categoryId, Utf8StringCR name)
     {
     return SystemAuthority::CreateCode(SystemAuthority::Category, name, categoryId);
     }
@@ -436,7 +436,7 @@ AuthorityIssuedCode CategoryAuthority::CreateSubCategoryCode(DgnCategoryId categ
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-AuthorityIssuedCode DgnSubCategory::CreateSubCategoryCode(DgnCategoryCR cat, Utf8StringCR name)
+DgnCode DgnSubCategory::CreateSubCategoryCode(DgnCategoryCR cat, Utf8StringCR name)
     {
     return CreateSubCategoryCode(cat.GetCategoryId(), name);
     }
@@ -444,7 +444,7 @@ AuthorityIssuedCode DgnSubCategory::CreateSubCategoryCode(DgnCategoryCR cat, Utf
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-AuthorityIssuedCode MaterialAuthority::CreateMaterialCode(Utf8StringCR palette, Utf8StringCR material)
+DgnCode MaterialAuthority::CreateMaterialCode(Utf8StringCR palette, Utf8StringCR material)
     {
     return SystemAuthority::CreateCode(SystemAuthority::Material, material, palette);
     }
@@ -452,7 +452,7 @@ AuthorityIssuedCode MaterialAuthority::CreateMaterialCode(Utf8StringCR palette, 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-AuthorityIssuedCode TrueColorAuthority::CreateTrueColorCode(Utf8StringCR name, Utf8StringCR book)
+DgnCode TrueColorAuthority::CreateTrueColorCode(Utf8StringCR name, Utf8StringCR book)
     {
     return SystemAuthority::CreateCode(SystemAuthority::TrueColor, name, book);
     }
@@ -460,7 +460,7 @@ AuthorityIssuedCode TrueColorAuthority::CreateTrueColorCode(Utf8StringCR name, U
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-AuthorityIssuedCode ResourceAuthority::CreateResourceCode(Utf8StringCR name, Utf8StringCR nameSpace)
+DgnCode ResourceAuthority::CreateResourceCode(Utf8StringCR name, Utf8StringCR nameSpace)
     {
     return SystemAuthority::CreateCode(SystemAuthority::Resource, name, nameSpace);
     }
@@ -476,7 +476,7 @@ DgnAuthorityId TrueColorAuthority::GetTrueColorAuthorityId() { return SystemAuth
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   11/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-static bool validateResourceCode(AuthorityIssuedCode const& code, Utf8CP nameSpace)
+static bool validateResourceCode(DgnCode const& code, Utf8CP nameSpace)
     {
     return code.GetAuthority() == SystemAuthority::GetId(SystemAuthority::Resource) && code.GetNamespace().Equals(nameSpace) && !code.GetValue().empty();
     }
@@ -484,7 +484,7 @@ static bool validateResourceCode(AuthorityIssuedCode const& code, Utf8CP nameSpa
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   11/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ViewDefinition::IsValidCode(Code const& code)
+bool ViewDefinition::IsValidCode(DgnCode const& code)
     {
     return validateResourceCode(code, DGN_CLASSNAME_ViewDefinition);
     }
@@ -492,16 +492,16 @@ bool ViewDefinition::IsValidCode(Code const& code)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-AuthorityIssuedCode DgnTexture::CreateTextureCode(Utf8StringCR name)
+DgnCode DgnTexture::CreateTextureCode(Utf8StringCR name)
     {
     // unnamed textures are supported.
-    return name.empty() ? AuthorityIssuedCode::CreateEmpty() : ResourceAuthority::CreateResourceCode(name, DGN_CLASSNAME_Texture);
+    return name.empty() ? DgnCode::CreateEmpty() : ResourceAuthority::CreateResourceCode(name, DGN_CLASSNAME_Texture);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-AuthorityIssuedCode ModelAuthority::CreateModelCode(Utf8StringCR modelName)
+DgnCode ModelAuthority::CreateModelCode(Utf8StringCR modelName)
     {
     // ###TODO_CODES: Silently replace illegal characters?
     Utf8String trimmed(modelName);
@@ -513,7 +513,7 @@ AuthorityIssuedCode ModelAuthority::CreateModelCode(Utf8StringCR modelName)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-AuthorityIssuedCode ComponentAuthority::CreateVariationCode(Utf8StringCR slnId, Utf8StringCR name)
+DgnCode ComponentAuthority::CreateVariationCode(Utf8StringCR slnId, Utf8StringCR name)
     {
     return SystemAuthority::CreateCode(SystemAuthority::Component, slnId, name);
     }
@@ -521,7 +521,7 @@ AuthorityIssuedCode ComponentAuthority::CreateVariationCode(Utf8StringCR slnId, 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ComponentDef::IsComponentVariationCode(DgnElement::Code const& icode)
+bool ComponentDef::IsComponentVariationCode(DgnCode const& icode)
     {
     return icode.GetAuthority() == SystemAuthority::GetId(SystemAuthority::Component);
     }
@@ -529,7 +529,7 @@ bool ComponentDef::IsComponentVariationCode(DgnElement::Code const& icode)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-AuthorityIssuedCode AuthorityIssuedCode::CreateEmpty()
+DgnCode DgnCode::CreateEmpty()
     {
     // The default code is not unique and has no special meaning.
     return SystemAuthority::CreateCode(SystemAuthority::Local, "");
@@ -538,7 +538,7 @@ AuthorityIssuedCode AuthorityIssuedCode::CreateEmpty()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-AuthorityIssuedCode::AuthorityIssuedCode(DgnAuthorityId id, Utf8StringCR value, BeInt64Id namespaceId) : m_authority(id), m_value(value)
+DgnCode::DgnCode(DgnAuthorityId id, Utf8StringCR value, BeInt64Id namespaceId) : m_authority(id), m_value(value)
     {
     Utf8Char buf[0x11] = { 0 };
     BeStringUtilities::FormatUInt64(buf, _countof(buf), namespaceId.GetValue(), HexFormatOptions());
@@ -548,7 +548,7 @@ AuthorityIssuedCode::AuthorityIssuedCode(DgnAuthorityId id, Utf8StringCR value, 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   11/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void AuthorityIssuedCode::From(DgnAuthorityId id, Utf8StringCR value, Utf8StringCR nameSpace)
+void DgnCode::From(DgnAuthorityId id, Utf8StringCR value, Utf8StringCR nameSpace)
     {
     m_authority = id;
     m_value = value;
@@ -558,7 +558,7 @@ void AuthorityIssuedCode::From(DgnAuthorityId id, Utf8StringCR value, Utf8String
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool AuthorityIssuedCode::operator<(AuthorityIssuedCode const& rhs) const
+bool DgnCode::operator<(DgnCode const& rhs) const
     {
     if (GetAuthority().GetValueUnchecked() != rhs.GetAuthority().GetValueUnchecked())
         return GetAuthority().GetValueUnchecked() < rhs.GetAuthority().GetValueUnchecked();
@@ -581,9 +581,9 @@ DgnAuthorityCPtr ICodedObject::GetCodeAuthority() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus ICodedObject::SetCode(Code const& newCode)
+DgnDbStatus ICodedObject::SetCode(DgnCode const& newCode)
     {
-    Code oldCode = GetCode();
+    DgnCode oldCode = GetCode();
     if (oldCode == newCode)
         return DgnDbStatus::Success;
 
@@ -615,7 +615,7 @@ DgnDbStatus ICodedObject::ValidateCode() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus DgnAuthority::_ValidateCode(ICodedObjectCR obj) const
     {
-    Code const& code = obj.GetCode();
+    DgnCode const& code = obj.GetCode();
     if (!code.IsValid())
         return DgnDbStatus::InvalidName;
 
@@ -679,7 +679,7 @@ DgnDbStatus CategoryAuthority::_ValidateCode(ICodedObjectCR obj) const
     if (nullptr == el)
         return DgnDbStatus::InvalidCodeAuthority;
 
-    Code const& code = obj.GetCode();
+    DgnCode const& code = obj.GetCode();
 
     // Reject illegal characters...
     if (!DgnCategory::IsValidName(code.GetValue()))

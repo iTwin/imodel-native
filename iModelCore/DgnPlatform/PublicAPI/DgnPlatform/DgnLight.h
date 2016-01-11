@@ -52,7 +52,7 @@ public:
         explicit CreateParams(DgnElement::CreateParams const& params, Utf8StringCR value="", Utf8StringCR descr="") : T_Super(params), m_data(value, descr) { }
 
         //! Constructs parameters for a light definition with the specified values. Primarily for internal use.
-        CreateParams(DgnDbR db, DgnModelId modelId, DgnClassId classId, Code code, Utf8CP label=nullptr,
+        CreateParams(DgnDbR db, DgnModelId modelId, DgnClassId classId, DgnCode code, Utf8CP label=nullptr,
                      DgnElementId parent = DgnElementId(), Utf8StringCR value="", Utf8StringCR descr="")
             : T_Super(db, modelId, classId, code, label, parent), m_data(value, descr) { }
 
@@ -77,7 +77,7 @@ protected:
     DGNPLATFORM_EXPORT virtual void _CopyFrom(DgnElementCR source) override;
 
     virtual uint32_t _GetMemSize() const override { return T_Super::_GetMemSize() + m_data.GetMemSize(); }
-    virtual Code _GenerateDefaultCode() const override { return Code(); }
+    virtual DgnCode _GenerateDefaultCode() const override { return DgnCode(); }
     virtual bool _SupportsCodeAuthority(DgnAuthorityCR auth) const override { return ResourceAuthority::IsResourceAuthority(auth); }
 public:
     //! Construct a new LightDefinition with the specified parameters
@@ -100,11 +100,11 @@ public:
     //! Update this light definition in the DgnDb and return the updated persistent light definition
     LightDefinitionCPtr Update(DgnDbStatus* status=nullptr) { return GetDgnDb().Elements().Update<LightDefinition>(*this, status); }
 
-    //! Creates a Code for a light definition.
-    static DgnElement::Code CreateLightDefinitionCode(Utf8StringCR name) { return ResourceAuthority::CreateResourceCode(name, DGN_CLASSNAME_ViewDefinition); }
+    //! Creates a DgnCode for a light definition.
+    static DgnCode CreateLightDefinitionCode(Utf8StringCR name) { return ResourceAuthority::CreateResourceCode(name, DGN_CLASSNAME_ViewDefinition); }
 
     //! Looks up the ID of the light definition with the specified code.
-    DGNPLATFORM_EXPORT static DgnLightId QueryLightId(DgnElement::Code const& code, DgnDbR db);
+    DGNPLATFORM_EXPORT static DgnLightId QueryLightId(DgnCode const& code, DgnDbR db);
 
     //! Looks up the ID of the light definition with the specified name
     static DgnLightId QueryLightId(Utf8StringCR name, DgnDbR db) { return QueryLightId(CreateLightDefinitionCode(name), db); }

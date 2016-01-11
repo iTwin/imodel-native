@@ -59,14 +59,14 @@ public:
         explicit CreateParams(DgnElement::CreateParams const& params, Utf8StringCR value="", Utf8StringCR descr="") : T_Super(params), m_data(value, descr) { }
 
         //! Constructs parameters for a material with the specified values. Primarily for internal use.
-        CreateParams(DgnDbR db, DgnModelId modelId, DgnClassId classId, Code code, Utf8CP label=nullptr,
+        CreateParams(DgnDbR db, DgnModelId modelId, DgnClassId classId, DgnCode code, Utf8CP label=nullptr,
                      DgnElementId parent = DgnElementId(), Utf8StringCR value="", Utf8StringCR descr="")
             : T_Super(db, modelId, classId, code, label, parent), m_data(value, descr) { }
 
         //! Constructs parameters for creating a material.
         //! @param[in]      db               The DgnDb in which the material will reside
-        //! @param[in]      paletteName      The name of the material's palette. This becomes the namespace of the material's Code.
-        //! @param[in]      materialName     The name of the material. This becomes the value of the material's Code.
+        //! @param[in]      paletteName      The name of the material's palette. This becomes the namespace of the material's DgnCode.
+        //! @param[in]      materialName     The name of the material. This becomes the value of the material's DgnCode.
         //! @param[in]      value            A JSON string describing the material data.
         //! @param[in]      parentMaterialId Optional ID of the parent material. If specified, this material inherits and can override the parent's material data.
         //! @param[in]      descr            Optional description of the material.
@@ -92,7 +92,7 @@ protected:
     DGNPLATFORM_EXPORT virtual DgnDbStatus _OnDelete() const override;
 
     virtual uint32_t _GetMemSize() const override { return T_Super::_GetMemSize() + m_data.GetMemSize(); }
-    virtual Code _GenerateDefaultCode() const override { return Code(); }
+    virtual DgnCode _GenerateDefaultCode() const override { return DgnCode(); }
     virtual bool _SupportsCodeAuthority(DgnAuthorityCR auth) const override { return MaterialAuthority::GetMaterialAuthorityId() == auth.GetAuthorityId(); }
 //__PUBLISH_SECTION_END__
 public:
@@ -137,11 +137,11 @@ public:
     //! Get the rendering material asset.
     BentleyStatus GetRenderingAsset(JsonValueR value) const {return GetAsset(value, MATERIAL_ASSET_Rendering);}
 
-    //! Creates a Code for a material. The palette name serves as the namespace, and the material name as the value.
-    static DgnElement::Code CreateMaterialCode(Utf8StringCR paletteName, Utf8StringCR materialName) { return MaterialAuthority::CreateMaterialCode(paletteName, materialName); }
+    //! Creates a DgnCode for a material. The palette name serves as the namespace, and the material name as the value.
+    static DgnCode CreateMaterialCode(Utf8StringCR paletteName, Utf8StringCR materialName) { return MaterialAuthority::CreateMaterialCode(paletteName, materialName); }
 
     //! Looks up the ID of the material with the specified code.
-    DGNPLATFORM_EXPORT static DgnMaterialId QueryMaterialId(DgnElement::Code const& code, DgnDbR db);
+    DGNPLATFORM_EXPORT static DgnMaterialId QueryMaterialId(DgnCode const& code, DgnDbR db);
 
     //! Looks up the ID of the material with the specified palette + material name.
     static DgnMaterialId QueryMaterialId(Utf8StringCR paletteName, Utf8StringCR materialName, DgnDbR db) { return QueryMaterialId(CreateMaterialCode(paletteName, materialName), db); }

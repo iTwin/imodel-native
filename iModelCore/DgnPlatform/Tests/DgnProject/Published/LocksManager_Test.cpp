@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/DgnProject/Published/LocksManager_Test.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "DgnHandlersTests.h"
@@ -1443,7 +1443,7 @@ TEST_F(ExtractLocksTest, UsedLocks)
         {
         UndoScope V_V_V_Undo(db);
         auto pEl = cpEl->CopyForEdit();
-        DgnElement::Code newCode = DgnCategory::CreateCategoryCode("RenamedCategory");
+        DgnCode newCode = DgnCategory::CreateCategoryCode("RenamedCategory");
         EXPECT_EQ(DgnDbStatus::Success, pEl->SetCode(newCode));
         cpEl = pEl->Update();
         ASSERT_TRUE(cpEl.IsValid());

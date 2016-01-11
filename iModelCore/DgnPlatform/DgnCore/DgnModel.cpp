@@ -22,7 +22,7 @@
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnModelId DgnModels::QueryModelId(DgnModel::Code code) const
+DgnModelId DgnModels::QueryModelId(DgnCode code) const
     {
     CachedStatementPtr stmt;
     GetDgnDb().GetCachedStatement(stmt, "SELECT Id FROM " DGN_TABLE(DGN_CLASSNAME_Model) " WHERE Code_AuthorityId=? AND Code_Namespace=? AND Code_Value=? LIMIT 1");
@@ -58,7 +58,7 @@ BentleyStatus DgnModels::QueryModelById(Model* out, DgnModelId id) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus DgnModels::GetModelCode(DgnModel::Code& code, DgnModelId id) const
+BentleyStatus DgnModels::GetModelCode(DgnCode& code, DgnModelId id) const
     {
     Statement stmt(m_dgndb, "SELECT Code_AuthorityId,Code_Namespace,Code_Value FROM " DGN_TABLE(DGN_CLASSNAME_Model) " WHERE Id=?");
     stmt.BindId(1, id);
@@ -73,9 +73,9 @@ BentleyStatus DgnModels::GetModelCode(DgnModel::Code& code, DgnModelId id) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnModel::Code DgnModels::GetModelCode(Iterator::Entry const& entry)
+DgnCode DgnModels::GetModelCode(Iterator::Entry const& entry)
     {
-    DgnModel::Code code;
+    DgnCode code;
     code.From(entry.GetCodeAuthorityId(), entry.GetCodeValue(), entry.GetCodeNamespace());
     return code;
     }
@@ -1149,7 +1149,7 @@ void DgnModel::_FillModel()
             continue;
             }
 
-        DgnElement::Code code;
+        DgnCode code;
         code.From(stmt.GetValueId<DgnAuthorityId>(Column::Code_AuthorityId), stmt.GetValueText(Column::Code_Value), stmt.GetValueText(Column::Code_Namespace));
         DgnElement::CreateParams createParams(m_dgndb, m_modelId,
             stmt.GetValueId<DgnClassId>(Column::ClassId), 
@@ -1346,7 +1346,7 @@ DgnModel::CreateParams DgnModel::GetCreateParamsForImport(DgnImportContext& impo
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnModelPtr DgnModel::Clone(Code newCode) const
+DgnModelPtr DgnModel::Clone(DgnCode newCode) const
     {
     if (GetModelHandler()._IsRestrictedAction(RestrictedAction::Clone))
         return nullptr;
@@ -1617,7 +1617,7 @@ DgnModelPtr DgnModel::ImportModel(DgnDbStatus* statIn, DgnModelCR sourceModel, D
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Sam.Wilson      05/15
 //---------------------------------------------------------------------------------------
-DgnModelPtr DgnModel::CopyModel(DgnModelCR model, Code newCode)
+DgnModelPtr DgnModel::CopyModel(DgnModelCR model, DgnCode newCode)
     {
     DgnDbR db = model.GetDgnDb();
 
@@ -1669,7 +1669,7 @@ uint64_t DgnModel::RestrictedAction::Parse(Utf8CP name)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnModel::_SetCode(Code const& code)
+DgnDbStatus DgnModel::_SetCode(DgnCode const& code)
     {
     if (GetModelHandler()._IsRestrictedAction(RestrictedAction::SetCode))
         return DgnDbStatus::MissingHandler;
@@ -1681,7 +1681,7 @@ DgnDbStatus DgnModel::_SetCode(Code const& code)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Shaun.Sewall    12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-SystemModelPtr SystemModel::Create(DgnDbR db, DgnModel::Code const& code)
+SystemModelPtr SystemModel::Create(DgnDbR db, DgnCode const& code)
     {
     ModelHandlerR handler = dgn_ModelHandler::System::GetHandler();
     DgnClassId classId = db.Domains().GetClassId(handler);

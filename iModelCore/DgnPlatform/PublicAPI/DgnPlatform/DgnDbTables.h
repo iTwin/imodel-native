@@ -103,12 +103,12 @@ namespace dgn_TxnTable {struct Element; struct Model;};
 struct DgnImportContext;
 
 //=======================================================================================
-//! A Code is an identifier associated with some object in a DgnDb and issued by a
-//! DgnAuthority according to some scheme. The meaning of a Code is determined by the
+//! A DgnCode is an identifier associated with some object in a DgnDb and issued by a
+//! DgnAuthority according to some scheme. The meaning of a DgnCode is determined by the
 //! issuing authority. The issuing authority determines
 //! how (or if) an object's code is transformed when the object is cloned.
 //!
-//! The Code is stored as a three-part identifier: DgnAuthorityId, namespace, and value.
+//! The DgnCode is stored as a three-part identifier: DgnAuthorityId, namespace, and value.
 //! The combination of the three must be unique within all objects of a given type
 //! (e.g., Elements, Models) within a DgnDb. 
 //!
@@ -118,10 +118,10 @@ struct DgnImportContext;
 //! assigns no special meaning to the object's code.
 //! The value may not be an empty string.
 //!
-//! To obtain a Code, talk to the relevant DgnAuthority.
+//! To obtain a DgnCode, talk to the relevant DgnAuthority.
 // @bsiclass                                                     Paul.Connelly  09/15
 //=======================================================================================
-struct AuthorityIssuedCode
+struct DgnCode
 {
 private:
     DgnAuthorityId  m_authority;
@@ -130,33 +130,33 @@ private:
 
 public:
     //! Constructs an invalid code
-    AuthorityIssuedCode() { }
+    DgnCode() { }
 
     //! Constructor
-    AuthorityIssuedCode(DgnAuthorityId authorityId, Utf8StringCR value, Utf8StringCR nameSpace) : m_authority(authorityId), m_value(value), m_nameSpace(nameSpace) { }
+    DgnCode(DgnAuthorityId authorityId, Utf8StringCR value, Utf8StringCR nameSpace) : m_authority(authorityId), m_value(value), m_nameSpace(nameSpace) { }
 
     //! Construct a code with the specified ID as its namespace
-    DGNPLATFORM_EXPORT AuthorityIssuedCode(DgnAuthorityId authorityId, Utf8StringCR value, BeSQLite::BeInt64Id namespaceId);
+    DGNPLATFORM_EXPORT DgnCode(DgnAuthorityId authorityId, Utf8StringCR value, BeSQLite::BeInt64Id namespaceId);
 
-    //! Determine whether this Code is valid. A valid code has a valid authority ID and either:
+    //! Determine whether this DgnCode is valid. A valid code has a valid authority ID and either:
     //!     - An empty namespace and value; or
     //!     - A non-empty value
     bool IsValid() const {return m_authority.IsValid() && (IsEmpty() || !m_value.empty());}
     //! Determine if this code is valid but not otherwise meaningful (and therefore not necessarily unique)
     bool IsEmpty() const {return m_authority.IsValid() && m_nameSpace.empty() && m_value.empty();}
-    //! Determine if two Codes are equivalent
-    bool operator==(AuthorityIssuedCode const& other) const {return m_authority==other.m_authority && m_value==other.m_value && m_nameSpace==other.m_nameSpace;}
-    //! Determine if two Codes are not equivalent
-    bool operator!=(AuthorityIssuedCode const& other) const {return !(*this == other);}
+    //! Determine if two DgnCodes are equivalent
+    bool operator==(DgnCode const& other) const {return m_authority==other.m_authority && m_value==other.m_value && m_nameSpace==other.m_nameSpace;}
+    //! Determine if two DgnCodes are not equivalent
+    bool operator!=(DgnCode const& other) const {return !(*this == other);}
     //! Perform ordered comparison, e.g. for inclusion in associative containers
-    DGNPLATFORM_EXPORT bool operator<(AuthorityIssuedCode const& rhs) const;
+    DGNPLATFORM_EXPORT bool operator<(DgnCode const& rhs) const;
 
-    //! Get the value for this Code
+    //! Get the value for this DgnCode
     Utf8StringCR GetValue() const {return m_value;}
     Utf8CP GetValueCP() const {return !m_value.empty() ? m_value.c_str() : nullptr;}
-    //! Get the namespace for this Code
+    //! Get the namespace for this DgnCode
     Utf8StringCR GetNamespace() const {return m_nameSpace;}
-    //! Get the DgnAuthorityId of the DgnAuthority that issued this Code.
+    //! Get the DgnAuthorityId of the DgnAuthority that issued this DgnCode.
     DgnAuthorityId GetAuthority() const {return m_authority;}
     void RelocateToDestinationDb(DgnImportContext&);
 
@@ -164,10 +164,10 @@ public:
     void From(DgnAuthorityId authorityId, Utf8StringCR value, Utf8StringCR nameSpace);
 
     //! Create an empty, non-unique code with no special meaning.
-    DGNPLATFORM_EXPORT static AuthorityIssuedCode CreateEmpty();
+    DGNPLATFORM_EXPORT static DgnCode CreateEmpty();
 };
 
-typedef bset<AuthorityIssuedCode> AuthorityIssuedCodeSet;
+typedef bset<DgnCode> DgnCodeSet;
 
 //=======================================================================================
 //! A base class for api's that access a table in a DgnDb
@@ -244,7 +244,7 @@ public:
     private:
         DgnModelId          m_id;
         DgnClassId          m_classId;
-        AuthorityIssuedCode m_code;
+        DgnCode             m_code;
         Utf8String          m_label;
         bool                m_inGuiList;
 
@@ -254,19 +254,19 @@ public:
             m_inGuiList = true;
             };
 
-        Model(AuthorityIssuedCode code, DgnClassId classid, DgnModelId id=DgnModelId()) : m_id(id), m_classId(classid), m_code(code)
+        Model(DgnCode code, DgnClassId classid, DgnModelId id=DgnModelId()) : m_id(id), m_classId(classid), m_code(code)
             {
             m_inGuiList = true;
             }
 
-        void SetCode(AuthorityIssuedCode code) {m_code = code;}
+        void SetCode(DgnCode code) {m_code = code;}
         void SetLabel(Utf8CP label) { m_label.AssignOrClear(label); }
         void SetInGuiList(bool inGuiList) { m_inGuiList = inGuiList; }
         void SetId(DgnModelId id) {m_id = id;}
         void SetClassId(DgnClassId classId) {m_classId = classId;}
         void SetModelType(DgnClassId classId) {m_classId = classId;}
 
-        AuthorityIssuedCode const& GetCode() const {return m_code;}
+        DgnCode const& GetCode() const {return m_code;}
         Utf8CP GetLabel() const { return m_label.c_str(); }
         bool GetInGuiList() const { return m_inGuiList; }
         DgnModelId GetId() const { return m_id; }
@@ -289,7 +289,7 @@ public:
 
         public:
             DGNPLATFORM_EXPORT DgnModelId GetModelId() const;
-            DGNPLATFORM_EXPORT AuthorityIssuedCode GetCode() const;
+            DGNPLATFORM_EXPORT DgnCode GetCode() const;
             DGNPLATFORM_EXPORT Utf8CP GetCodeValue() const;
             DGNPLATFORM_EXPORT Utf8CP GetCodeNamespace() const;
             DGNPLATFORM_EXPORT DgnAuthorityId GetCodeAuthorityId() const;
@@ -309,7 +309,7 @@ public:
     };
 
 public:
-    static AuthorityIssuedCode GetModelCode(Iterator::Entry const& entry); //!< @private
+    static DgnCode GetModelCode(Iterator::Entry const& entry); //!< @private
     DGNPLATFORM_EXPORT QvCache* GetQvCache(bool createIfNecessary=true);
     void SetQvCache(QvCache* qvCache) {m_qvCache = qvCache;}
 
@@ -333,11 +333,11 @@ public:
     T_DgnModelMap const& GetLoadedModels() const {return m_models;}
 
     DGNPLATFORM_EXPORT BentleyStatus QueryModelById(Model* out, DgnModelId id) const;
-    DGNPLATFORM_EXPORT BentleyStatus GetModelCode(AuthorityIssuedCode& code, DgnModelId id) const;
+    DGNPLATFORM_EXPORT BentleyStatus GetModelCode(DgnCode& code, DgnModelId id) const;
 
     //! Find the ModelId of the model with the specified code.
     //! @return The model's ModelId. Check dgnModelId.IsValid() to see if the DgnModelId was found.
-    DGNPLATFORM_EXPORT DgnModelId QueryModelId(AuthorityIssuedCode code) const;
+    DGNPLATFORM_EXPORT DgnModelId QueryModelId(DgnCode code) const;
 
     //! Query for the dependency index of the specified model
     //! @param[out] dependencyIndex  The model's DependencyIndex property value

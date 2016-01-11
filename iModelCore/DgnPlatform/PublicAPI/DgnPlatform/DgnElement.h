@@ -273,16 +273,16 @@ public:
         DgnDbR          m_dgndb;
         DgnModelId      m_modelId;
         DgnClassId      m_classId;
-        Code            m_code;
+        DgnCode         m_code;
         Utf8String      m_label;
         DgnElementId    m_id;
         DgnElementId    m_parentId;
 
-        CreateParams(DgnDbR db, DgnModelId modelId, DgnClassId classId, Code const& code=Code(), Utf8CP label=nullptr, DgnElementId parent=DgnElementId())
+        CreateParams(DgnDbR db, DgnModelId modelId, DgnClassId classId, DgnCode const& code=DgnCode(), Utf8CP label=nullptr, DgnElementId parent=DgnElementId())
             : m_dgndb(db), m_modelId(modelId), m_classId(classId), m_code(code), m_parentId(parent) {SetLabel(label);}
 
         DGNPLATFORM_EXPORT void RelocateToDestinationDb(DgnImportContext&);
-        void SetCode(Code code) {m_code = code;}                    //!< Set the Code for elements created with this CreateParams
+        void SetCode(DgnCode code) {m_code = code;}                 //!< Set the DgnCode for elements created with this CreateParams
         void SetLabel(Utf8CP label) {m_label.AssignOrClear(label);} //!< Set the Label for elements created with this CreateParams
         void SetElementId(DgnElementId id) {m_id = id;}             //!< @private
         void SetParentId(DgnElementId parent) {m_parentId=parent;}  //!< Set the ParentId for elements created with this CreateParams
@@ -740,7 +740,7 @@ protected:
     DgnElementId    m_parentId;
     DgnModelId      m_modelId;
     DgnClassId      m_classId;
-    Code            m_code;
+    DgnCode         m_code;
     Utf8String      m_label;
     mutable Flags   m_flags;
     mutable bmap<AppData::Key const*, RefCountedPtr<AppData>, std::less<AppData::Key const*>, 8> m_appData;
@@ -750,7 +750,7 @@ protected:
 
     void SetPersistent(bool val) const {m_flags.m_persistent = val;} //!< @private
     void InvalidateElementId() { m_elementId = DgnElementId(); } //!< @private
-    void InvalidateCode() { m_code = Code(); } //!< @private
+    void InvalidateCode() { m_code = DgnCode(); } //!< @private
     
     //! Invokes _CopyFrom() in the context of _Clone() or _CloneForImport(), preserving this element's code as specified by the CreateParams supplied to those methods.
     void CopyForCloneFrom(DgnElementCR src);
@@ -909,7 +909,7 @@ protected:
     virtual uint32_t _GetMemSize() const {return sizeof(*this);}
 
     //! Virtual writeable deep copy method.
-    //! @remarks If no CreateParams are supplied, a new Code will be generated for the cloned element - it will \em not be copied from this element's Code.
+    //! @remarks If no CreateParams are supplied, a new DgnCode will be generated for the cloned element - it will \em not be copied from this element's DgnCode.
     DGNPLATFORM_EXPORT DgnElementPtr virtual _Clone(DgnDbStatus* stat=nullptr, DgnElement::CreateParams const* params=nullptr) const;
 
     //! Virtual assignment method. If your subclass has member variables, it @b must override this method and copy those values from @a source.
@@ -953,10 +953,10 @@ protected:
     //! Override to validate the parent/child relationship and return a value other than DgnDbStatus::Success to reject proposed new parent.
     DGNPLATFORM_EXPORT virtual DgnDbStatus _SetParentId(DgnElementId parentId);
 
-    virtual Code const& _GetCode() const override final { return m_code; }
+    virtual DgnCode const& _GetCode() const override final { return m_code; }
     virtual bool _SupportsCodeAuthority(DgnAuthorityCR) const override { return true; }
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _SetCode(Code const& code) override final;
-    DGNPLATFORM_EXPORT virtual Code _GenerateDefaultCode() const override;
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _SetCode(DgnCode const& code) override final;
+    DGNPLATFORM_EXPORT virtual DgnCode _GenerateDefaultCode() const override;
     virtual DgnElementCP _ToDgnElement() const override final { return this; }
     virtual DgnDbR _GetDgnDb() const override final { return m_dgndb; }
 
@@ -1043,7 +1043,7 @@ public:
     //! Create a writeable deep copy of a DgnElement for insert into the same or new model.
     //! @param[out] stat Optional status to describe failures, a valid DgnElementPtr will only be returned if successful.
     //! @param[in] params Optional CreateParams. Might specify a different destination model, etc.
-    //! @remarks If no CreateParams are supplied, a new Code will be generated for the cloned element - it will \em not be copied from this element's Code.
+    //! @remarks If no CreateParams are supplied, a new DgnCode will be generated for the cloned element - it will \em not be copied from this element's DgnCode.
     DGNPLATFORM_EXPORT DgnElementPtr Clone(DgnDbStatus* stat=nullptr, DgnElement::CreateParams const* params=nullptr) const;
 
     //! Copy the content of another DgnElement into this DgnElement.
@@ -1543,7 +1543,7 @@ template<typename T_Placement> struct GeometricElementCreateParams : DgnElement:
     DgnCategoryId m_categoryId;
     T_Placement const& m_placement;
 
-    GeometricElementCreateParams(DgnDbR db, DgnModelId modelId, DgnClassId classId, DgnCategoryId category, T_Placement const& placement=T_Placement(), DgnElement::Code const& code=DgnElement::Code(), Utf8CP label=nullptr, DgnElementId parent=DgnElementId()) :
+    GeometricElementCreateParams(DgnDbR db, DgnModelId modelId, DgnClassId classId, DgnCategoryId category, T_Placement const& placement=T_Placement(), DgnCode const& code=DgnCode(), Utf8CP label=nullptr, DgnElementId parent=DgnElementId()) :
         T_Super(db, modelId, classId, code, label, parent), m_categoryId(category), m_placement(placement) {}
 
     explicit GeometricElementCreateParams(T_Super const& params, DgnCategoryId category=DgnCategoryId(), T_Placement const& placement=T_Placement()) : T_Super(params), m_categoryId(category), m_placement(placement) {}
@@ -1913,13 +1913,13 @@ public:
         //! @param[in] code     The element's unique code.
         //! @param[in] label    The element's label
         //! @param[in] parentId The ID of the element's parent element.
-        DGNPLATFORM_EXPORT CreateParams(DgnDbR db, DgnClassId classId, Code const& code, Utf8CP label=nullptr, DgnElementId parentId=DgnElementId());
+        DGNPLATFORM_EXPORT CreateParams(DgnDbR db, DgnClassId classId, DgnCode const& code, Utf8CP label=nullptr, DgnElementId parentId=DgnElementId());
 
         //! Constructor from base class. Primarily for internal use.
         explicit CreateParams(DgnElement::CreateParams const& params) : T_Super(params) { }
 
         //! Constructs parameters for a dictionary element with the specified values. Chiefly for internal use.
-        CreateParams(DgnDbR db, DgnModelId modelId, DgnClassId classId, Code code, Utf8CP label=nullptr, DgnElementId parent=DgnElementId())
+        CreateParams(DgnDbR db, DgnModelId modelId, DgnClassId classId, DgnCode code, Utf8CP label=nullptr, DgnElementId parent=DgnElementId())
             : T_Super(db, modelId, classId, code, label, parent) { }
     };
 protected:
@@ -2036,7 +2036,7 @@ public:
     DGNPLATFORM_EXPORT DgnModelId QueryModelId(DgnElementId elementId) const;
 
     //! Query for the DgnElementId of the element that has the specified code
-    DGNPLATFORM_EXPORT DgnElementId QueryElementIdByCode(DgnElement::Code const& code) const;
+    DGNPLATFORM_EXPORT DgnElementId QueryElementIdByCode(DgnCode const& code) const;
 
     //! Query for the DgnElementId of the element that has the specified code
     DGNPLATFORM_EXPORT DgnElementId QueryElementIdByCode(DgnAuthorityId codeAuthorityId, Utf8StringCR codeValue, Utf8StringCR nameSpace="") const;
@@ -2167,7 +2167,7 @@ public:
     //! @param[in] newParentId  Optional. The element that should be the parent of the new element. If not specified, then the parent of the new element
     //!                             will either be the parent of the source element or the element to which the source parent has been remapped. See DgnCloneContext.
     //! @return a new element if successful
-    DGNPLATFORM_EXPORT DgnElementCPtr MakeCopy(DgnDbStatus* stat, DgnModelR targetModel, DgnElementCR sourceElement, DgnElement::Code const& code, DgnElementId newParentId = DgnElementId());
+    DGNPLATFORM_EXPORT DgnElementCPtr MakeCopy(DgnDbStatus* stat, DgnModelR targetModel, DgnElementCR sourceElement, DgnCode const& code, DgnElementId newParentId = DgnElementId());
 };
 
 //=======================================================================================

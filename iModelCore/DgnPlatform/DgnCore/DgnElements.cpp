@@ -1104,7 +1104,7 @@ DgnElementCPtr DgnElements::LoadElement(DgnElementId elementId, bool makePersist
     if (BE_SQLITE_ROW != result)
         return nullptr;
 
-    DgnElement::Code code;
+    DgnCode code;
     code.From(stmt->GetValueId<DgnAuthorityId>(Column::Code_AuthorityId), stmt->GetValueText(Column::Code_Value), stmt->GetValueText(Column::Code_Namespace));
 
     DgnElement::CreateParams createParams(m_dgndb, stmt->GetValueId<DgnModelId>(Column::ModelId), 
@@ -1354,7 +1354,7 @@ DgnModelId DgnElements::QueryModelId(DgnElementId elementId) const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Shaun.Sewall                    06/2015
 //---------------------------------------------------------------------------------------
-DgnElementId DgnElements::QueryElementIdByCode(DgnElement::Code const& code) const
+DgnElementId DgnElements::QueryElementIdByCode(DgnCode const& code) const
     {
     if (!code.IsValid() || code.IsEmpty())
         return DgnElementId(); // An invalid code won't be found; an empty code won't be unique. So don't bother.

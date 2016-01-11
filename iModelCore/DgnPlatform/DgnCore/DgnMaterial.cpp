@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/DgnMaterial.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -130,7 +130,7 @@ DgnMaterial::CreateParams::CreateParams(DgnDbR db, Utf8StringCR paletteName, Utf
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnMaterialId DgnMaterial::QueryMaterialId(DgnElement::Code const& code, DgnDbR db)
+DgnMaterialId DgnMaterial::QueryMaterialId(DgnCode const& code, DgnDbR db)
     {
     DgnElementId elemId = db.Elements().QueryElementIdByCode(code);
     return DgnMaterialId(elemId.GetValueUnchecked());
