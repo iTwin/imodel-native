@@ -15,12 +15,12 @@ USING_NAMESPACE_BENTLEY_DPTEST
 +===============+===============+===============+===============+===============+======*/
 struct CategoryTests : public DgnDbTestFixture
     {
-    void CompareCategories(DgnCategoryId catId, Utf8CP code, DgnCategory::Scope scope, DgnCategory::Rank rank, Utf8CP descr)
+    void CompareCategories(DgnCategoryId catId, Utf8CP name, DgnCategory::Scope scope, DgnCategory::Rank rank, Utf8CP descr)
         {
         DgnCategoryCPtr cat = DgnCategory::QueryCategory(catId, *m_db);
         EXPECT_TRUE(cat.IsValid());
         if (cat.IsValid())
-            CompareCategories(*cat, code, scope, rank, descr);
+            CompareCategories(*cat, name, scope, rank, descr);
         }
 
     void CompareCategories(DgnCategoryId catId, DgnCategoryCR other)
@@ -36,9 +36,9 @@ struct CategoryTests : public DgnDbTestFixture
         CompareCategories(cat, other.GetCategoryName().c_str(), other.GetScope(), other.GetRank(), other.GetDescription());
         }
 
-    void CompareCategories(DgnCategoryCR cat, Utf8CP code, DgnCategory::Scope scope, DgnCategory::Rank rank, Utf8CP descr)
+    void CompareCategories(DgnCategoryCR cat, Utf8CP name, DgnCategory::Scope scope, DgnCategory::Rank rank, Utf8CP descr)
         {
-        EXPECT_STREQ(code, cat.GetCategoryName().c_str());
+        EXPECT_STREQ(name, cat.GetCategoryName().c_str());
         EXPECT_EQ(scope, cat.GetScope());
         EXPECT_EQ(rank, cat.GetRank());
         EXPECT_STREQ(descr, cat.GetDescription());
@@ -69,10 +69,10 @@ TEST_F (CategoryTests, InsertCategory)
     ASSERT_TRUE(m_db.IsValid());
         
     //Category properties.
-    Utf8CP cat_code = "Test Category";
+    Utf8CP cat_name = "Test Category";
     Utf8CP cat_desc = "This is a test category.";
 
-    DgnCategory category(DgnCategory::CreateParams(*m_db, cat_code, DgnCategory::Scope::Physical, DgnCategory::Rank::Domain, cat_desc));
+    DgnCategory category(DgnCategory::CreateParams(*m_db, cat_name, DgnCategory::Scope::Physical, DgnCategory::Rank::Domain, cat_desc));
 
     //Appearence properties.
     uint32_t weight = 10;
@@ -90,13 +90,13 @@ TEST_F (CategoryTests, InsertCategory)
     ASSERT_TRUE(pCategory.IsValid());
 
     //Verifying category properties
-    CompareCategories(category, cat_code, DgnCategory::Scope::Physical, DgnCategory::Rank::Domain, cat_desc);
+    CompareCategories(category, cat_name, DgnCategory::Scope::Physical, DgnCategory::Rank::Domain, cat_desc);
     EXPECT_TRUE (category.GetCategoryId ().IsValid ());
     EXPECT_FALSE (pCategory->IsSystemCategory ());
     EXPECT_FALSE (pCategory->IsUserCategory ());
     CompareCategories(*pCategory, category);
 
-    DgnCategoryId id = DgnCategory::QueryCategoryId(cat_code, *m_db);
+    DgnCategoryId id = DgnCategory::QueryCategoryId(cat_name, *m_db);
     EXPECT_TRUE (id.IsValid ());
     EXPECT_EQ(id, category.GetCategoryId());
     EXPECT_EQ(id, pCategory->GetCategoryId());
@@ -104,30 +104,30 @@ TEST_F (CategoryTests, InsertCategory)
     DgnCategoryCPtr query = DgnCategory::QueryCategory(id, *m_db);
     EXPECT_TRUE (query.IsValid ());
 
-    DgnCategoryCPtr query_byCode = DgnCategory::QueryCategory(cat_code, *m_db);
-    EXPECT_TRUE (query_byCode.IsValid ());
+    DgnCategoryCPtr query_byname = DgnCategory::QueryCategory(cat_name, *m_db);
+    EXPECT_TRUE (query_byname.IsValid ());
 
     //Inserts Category 2
-    Utf8CP cat2_code = "Test Category 2";
+    Utf8CP cat2_name = "Test Category 2";
     Utf8CP cat2_desc = "This is test category 2.";
 
-    DgnCategory category2(DgnCategory::CreateParams(*m_db, cat2_code, DgnCategory::Scope::Any, DgnCategory::Rank::System, cat2_desc));
+    DgnCategory category2(DgnCategory::CreateParams(*m_db, cat2_name, DgnCategory::Scope::Any, DgnCategory::Rank::System, cat2_desc));
     DgnCategoryCPtr pCategory2 = category2.Insert(appearence);
     ASSERT_TRUE(pCategory2.IsValid());
 
     //Inserts Category 3
-    Utf8CP cat3_code = "Test Category 3";
+    Utf8CP cat3_name = "Test Category 3";
     Utf8CP cat3_desc = "This is test category 3.";
 
-    DgnCategory category3(DgnCategory::CreateParams(*m_db, cat3_code, DgnCategory::Scope::Analytical, DgnCategory::Rank::User, cat3_desc));
+    DgnCategory category3(DgnCategory::CreateParams(*m_db, cat3_name, DgnCategory::Scope::Analytical, DgnCategory::Rank::User, cat3_desc));
     DgnCategoryCPtr pCategory3 = category3.Insert(appearence);
     ASSERT_TRUE(pCategory3.IsValid());
 
     //Inserts Category 4
-    Utf8CP cat4_code = "Test Category 4";
+    Utf8CP cat4_name = "Test Category 4";
     Utf8CP cat4_desc = "This is test category 4.";
 
-    DgnCategory category4(DgnCategory::CreateParams(*m_db, cat4_code, DgnCategory::Scope::Annotation, DgnCategory::Rank::User, cat4_desc));
+    DgnCategory category4(DgnCategory::CreateParams(*m_db, cat4_name, DgnCategory::Scope::Annotation, DgnCategory::Rank::User, cat4_desc));
     DgnCategoryCPtr pCategory4 = category4.Insert(appearence);
     ASSERT_TRUE(pCategory4.IsValid());
 
@@ -165,6 +165,24 @@ TEST_F (CategoryTests, InsertCategory)
 
     EXPECT_EQ(1, nNotCompared);
     EXPECT_EQ(4, nCompared);
+    
+    // Ordered List verification
+    int count = 0;
+    DgnCategoryIdList orderedList = DgnCategory::QueryOrderedCategories(*m_db);
+    
+    DgnCategoryId lastId;
+    for (DgnCategoryId id : orderedList)
+        {
+        if (lastId.IsValid())
+        {
+        DgnCategoryCPtr current = DgnCategory::QueryCategory(id, *m_db);
+        DgnCategoryCPtr lastCategory = DgnCategory::QueryCategory(lastId, *m_db);
+        EXPECT_TRUE(current->GetCode().GetValue().CompareTo( lastCategory->GetCode().GetValue().c_str()) > 0);
+        ++count;
+        }
+        lastId = id;
+        }
+    EXPECT_EQ(5, orderedList.size());
     }
 
 //=======================================================================================
@@ -175,10 +193,10 @@ TEST_F (CategoryTests, DeleteCategory)
     {
     SetupProject (L"3dMetricGeneral.idgndb", L"CategoryTests.idgndb", Db::OpenMode::ReadWrite);
 
-    Utf8CP code = "TestCategory";
+    Utf8CP name = "TestCategory";
     Utf8CP desc = "This is a test category.";
 
-    DgnCategory category(DgnCategory::CreateParams(*m_db, code, DgnCategory::Scope::Physical, DgnCategory::Rank::Domain, desc));
+    DgnCategory category(DgnCategory::CreateParams(*m_db, name, DgnCategory::Scope::Physical, DgnCategory::Rank::Domain, desc));
 
     //Appearence properties.
     uint32_t weight = 10;
@@ -195,13 +213,13 @@ TEST_F (CategoryTests, DeleteCategory)
     //Inserts a category
     DgnCategoryCPtr pCat = category.Insert(appearence);
     ASSERT_TRUE(pCat.IsValid());
-    DgnCategoryId id = DgnCategory::QueryCategoryId(code, *m_db);
+    DgnCategoryId id = DgnCategory::QueryCategoryId(name, *m_db);
     EXPECT_TRUE (id.IsValid ());
 
     // Deletion of a category is not supported.
     DgnDbStatus dlt = pCat->Delete();
     EXPECT_EQ(DgnDbStatus::DeletionProhibited, dlt);
-    DgnCategoryId id1 = DgnCategory::QueryCategoryId(code, *m_db);
+    DgnCategoryId id1 = DgnCategory::QueryCategoryId(name, *m_db);
     EXPECT_TRUE (id1.IsValid ());
     }
 
@@ -214,10 +232,10 @@ TEST_F (CategoryTests, UpdateCategory)
     SetupProject (L"3dMetricGeneral.idgndb", L"CategoryTests.idgndb", Db::OpenMode::ReadWrite);
 
     //Category properties.
-    Utf8CP code = "TestCategory";
+    Utf8CP name = "TestCategory";
     Utf8CP desc = "This is a test category.";
 
-    DgnCategory category(DgnCategory::CreateParams(*m_db, code, DgnCategory::Scope::Physical, DgnCategory::Rank::Domain, desc));
+    DgnCategory category(DgnCategory::CreateParams(*m_db, name, DgnCategory::Scope::Physical, DgnCategory::Rank::Domain, desc));
 
     //Appearence properties.
     uint32_t weight = 10;
@@ -233,24 +251,26 @@ TEST_F (CategoryTests, UpdateCategory)
 
     //Inserts a category
     EXPECT_TRUE(category.Insert(appearence).IsValid());
-    DgnCategoryId id = DgnCategory::QueryCategoryId (code, *m_db);
+    DgnCategoryId id = DgnCategory::QueryCategoryId (name, *m_db);
     EXPECT_TRUE (id.IsValid ());
 
-#ifdef NEEDSWORK_THIS_CODE_DOESNT_EVEN_TEST_UPDATE
-    Utf8CP u_code = "UpdatedTestCategory";
+    //Utf8CP u_name = "UpdatedTestCategory";
     Utf8CP u_desc = "This is the updated test category.";
 
     //Updates category.
-    DgnCategories::Category Updated_category (u_code, DgnCategories::Scope::Any, u_desc, u_label, DgnCategories::Rank::Application);
-    m_db->Categories ().Update (Updated_category);
-    BeSQLite::DbResult insert1 = m_db->Categories ().Insert (Updated_category, appearence);
-    EXPECT_EQ (BE_SQLITE_OK, insert1);
-
-    EXPECT_TRUE (category.GetCategoryId ().IsValid ());
-    EXPECT_STREQ ("UpdatedTestCategory", Updated_category.GetCode ());
-    EXPECT_STREQ ("This is the updated test category.", Updated_category.GetDescription ());
-    EXPECT_STREQ ("UpdatedTestCategory", Updated_category.GetLabel ());
-#endif
+    DgnCategoryPtr toFind = m_db->Elements().GetForEdit<DgnCategory>(id);
+    EXPECT_TRUE(toFind.IsValid());
+    toFind->SetScope(DgnCategory::Scope::Any);
+    toFind->SetDescription(Utf8String(u_desc));
+    DgnDbStatus updateStatus;
+    toFind->Update(&updateStatus);
+    ASSERT_EQ(DgnDbStatus::Success, updateStatus);
+    
+    //Verification of category properties
+    DgnCategoryCPtr updatedCat = DgnCategory::QueryCategory(id, *m_db);
+    EXPECT_TRUE(updatedCat.IsValid());
+    EXPECT_STREQ(u_desc, updatedCat->GetDescription());
+    EXPECT_TRUE(DgnCategory::Scope::Any == updatedCat->GetScope());
     }
 
 //=======================================================================================
@@ -261,10 +281,10 @@ TEST_F (CategoryTests, InsertSubCategory)
     {
     SetupProject (L"3dMetricGeneral.idgndb", L"CategoryTests.idgndb", Db::OpenMode::ReadWrite);
 
-    Utf8CP code = "TestCategory";
+    Utf8CP name = "TestCategory";
     Utf8CP desc = "This is a test category.";
 
-    DgnCategory category(DgnCategory::CreateParams(*m_db, code, DgnCategory::Scope::Physical, DgnCategory::Rank::Domain, desc));
+    DgnCategory category(DgnCategory::CreateParams(*m_db, name, DgnCategory::Scope::Physical, DgnCategory::Rank::Domain, desc));
 
 
     //Appearence properties.
@@ -278,18 +298,25 @@ TEST_F (CategoryTests, InsertSubCategory)
     appearence.SetWeight (weight);
     appearence.SetTransparency (trans);
     appearence.SetDisplayPriority (dp);
-
+    appearence.SetDontLocate(true);
+    appearence.SetDontPlot(true);
+    appearence.SetDontSnap(true);
+    appearence.SetDisplayPriority(1);
+    // TODO: Set line style 
+    
     //Inserts a category
     EXPECT_TRUE(category.Insert(appearence).IsValid());
-    DgnCategoryId id = DgnCategory::QueryCategoryId(code, *m_db);
+    DgnCategoryId id = DgnCategory::QueryCategoryId(name, *m_db);
     EXPECT_TRUE (id.IsValid ());
 
-    Utf8CP sub_code = "Test SubCategory";
+    Utf8CP sub_name = "Test SubCategory";
     Utf8CP sub_desc = "This is a test subcategory";
-    DgnSubCategory subcategory(DgnSubCategory::CreateParams(*m_db, id, sub_code, appearence, sub_desc));
+    DgnSubCategory subcategory(DgnSubCategory::CreateParams(*m_db, id, sub_name, appearence, sub_desc));
+    
 
     //Inserts a subcategory
     EXPECT_TRUE(subcategory.Insert().IsValid());
+    DgnElement::Code code = subcategory.GetCode();
 
     //Verifying appearence properties
     DgnSubCategory::Appearance app = subcategory.GetAppearance ();
@@ -301,8 +328,12 @@ TEST_F (CategoryTests, InsertSubCategory)
     EXPECT_TRUE(app.IsEqual(appearence));
 
     //Verifying subcategory properties
-    DgnSubCategoryId subcat_id = DgnSubCategory::QuerySubCategoryId(id, sub_code, *m_db);
+    DgnSubCategoryId subcat_id = DgnSubCategory::QuerySubCategoryId(id, sub_name, *m_db);
     EXPECT_TRUE (subcat_id.IsValid ());
+
+    DgnSubCategoryId subcat_id_byCode = DgnSubCategory::QuerySubCategoryId(code, *m_db);
+    EXPECT_TRUE(subcat_id_byCode.IsValid());
+    EXPECT_TRUE(subcat_id == subcat_id_byCode);
 
     DgnSubCategoryCPtr query_sub = DgnSubCategory::QuerySubCategory(subcat_id, *m_db);
     EXPECT_TRUE (query_sub.IsValid ());
@@ -311,18 +342,20 @@ TEST_F (CategoryTests, InsertSubCategory)
     EXPECT_EQ(id.GetValue()+1, default_subId.GetValue());
 
     //Inserts sub category 2
-    Utf8CP sub2_code = "Test SubCategory 2";
+    Utf8CP sub2_name = "Test SubCategory 2";
     Utf8CP sub2_desc = "This is a test subcategory 2";
 
-    DgnSubCategory subcategory2(DgnSubCategory::CreateParams(*m_db, id, sub2_code, appearence, sub2_desc));
+    DgnSubCategory subcategory2(DgnSubCategory::CreateParams(*m_db, id, sub2_name, appearence, sub2_desc));
     EXPECT_TRUE(subcategory2.Insert().IsValid());
 
     //Inserts sub category 3
-    Utf8CP sub3_code = "Test SubCategory 3";
+    Utf8CP sub3_name = "Test SubCategory 3";
     Utf8CP sub3_desc = "This is a test subcategory 3";
 
-    DgnSubCategory subcategory3(DgnSubCategory::CreateParams(*m_db, id, sub3_code, appearence, sub3_desc));
+    DgnSubCategory subcategory3(DgnSubCategory::CreateParams(*m_db, id, sub3_name, appearence, sub3_desc));
     EXPECT_TRUE(subcategory3.Insert().IsValid());
+
+    EXPECT_EQ(4, (int)category.QuerySubCategoryCount());
 
     //Iterator for subcategories.
     DgnSubCategoryIdSet subcatIds = DgnSubCategory::QuerySubCategories(*m_db, id);
@@ -356,6 +389,7 @@ TEST_F (CategoryTests, InsertSubCategory)
 
     EXPECT_EQ(3, nCompared);
     EXPECT_EQ(1, nNotCompared); // default sub-category
+
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -459,20 +493,20 @@ TEST_F (CategoryTests, DeleteSubCategory)
     {
     SetupProject (L"3dMetricGeneral.idgndb", L"CategoryTests.idgndb", Db::OpenMode::ReadWrite);
 
-    Utf8CP code = "TestCategory";
+    Utf8CP name = "TestCategory";
     Utf8CP desc = "This is a test category.";
 
-    DgnCategory category(DgnCategory::CreateParams(*m_db, code, DgnCategory::Scope::Physical, DgnCategory::Rank::Domain, desc));
+    DgnCategory category(DgnCategory::CreateParams(*m_db, name, DgnCategory::Scope::Physical, DgnCategory::Rank::Domain, desc));
 
     //Inserts a category.
     DgnSubCategory::Appearance appearence;
     EXPECT_TRUE(category.Insert(appearence).IsValid());
-    DgnCategoryId id = DgnCategory::QueryCategoryId(code, *m_db);
+    DgnCategoryId id = DgnCategory::QueryCategoryId(name, *m_db);
     EXPECT_TRUE (id.IsValid ());
 
-    Utf8CP sub_code = "TestSubCategory";
+    Utf8CP sub_name = "TestSubCategory";
     Utf8CP sub_desc = "This is a test subcategory";
-    DgnSubCategory subcategory(DgnSubCategory::CreateParams(*m_db, id, sub_code, appearence, sub_desc));
+    DgnSubCategory subcategory(DgnSubCategory::CreateParams(*m_db, id, sub_name, appearence, sub_desc));
 
     //Inserts subcategory.
     DgnSubCategoryCPtr pSubCat = subcategory.Insert();
@@ -483,11 +517,10 @@ TEST_F (CategoryTests, DeleteSubCategory)
     EXPECT_STREQ ("This is a test subcategory", subcategory.GetDescription ());
 
     EXPECT_EQ(DgnDbStatus::Success, pSubCat->Delete());
-    DgnSubCategoryId sub_id = DgnSubCategory::QuerySubCategoryId(id, sub_code, *m_db);
+    DgnSubCategoryId sub_id = DgnSubCategory::QuerySubCategoryId(id, sub_name, *m_db);
     EXPECT_FALSE (sub_id.IsValid ());
     }
 
-#ifdef NEEDSWORK_THIS_CODE_DOESNT_EVEN_TEST_UPDATE
 //=======================================================================================
 //! Test for Updating a subcategory.
 // @bsiclass                                                     Maha Nasir      07/15
@@ -496,53 +529,46 @@ TEST_F (CategoryTests, UpdateSubCategory)
     {
     SetupProject (L"3dMetricGeneral.idgndb", L"CategoryTests.idgndb", Db::OpenMode::ReadWrite);
 
-    Utf8CP code = "TestCategory";
+    Utf8CP name = "TestCategory";
     Utf8CP desc = "This is a test category.";
-    Utf8CP label = "TestCategory";
 
-    DgnCategories::Category category (code, DgnCategories::Scope::Physical, desc, label, DgnCategories::Rank::Domain);
-    category.SetCode (code);
-    category.SetDescription (desc);
-    category.SetLabel (label);
-    category.SetRank (DgnCategories::Rank::Domain);
-    category.SetScope (DgnCategories::Scope::Physical);
+    DgnCategory category(DgnCategory::CreateParams(*m_db, name, DgnCategory::Scope::Physical, DgnCategory::Rank::Domain, desc));
 
     //Appearence properties.
     uint32_t weight = 10;
     double trans = 0.5;
     uint32_t dp = 1;
 
-    DgnCategories::SubCategory::Appearance appearence;
+    DgnSubCategory::Appearance appearence;
     appearence.SetInvisible (false);
     appearence.SetColor (ColorDef::DarkRed ());
     appearence.SetWeight (weight);
     appearence.SetTransparency (trans);
     appearence.SetDisplayPriority (dp);
 
-    //Inserts a category
-    BeSQLite::DbResult insert = m_db->Categories ().Insert (category, appearence);
-    EXPECT_EQ (BE_SQLITE_OK, insert);
-    DgnCategoryId id = m_db->Categories ().QueryCategoryId (code);
+    //Insert category
+    EXPECT_TRUE(category.Insert(appearence).IsValid());
+    DgnCategoryId id = DgnCategory::QueryCategoryId(name,*m_db);
     EXPECT_TRUE (id.IsValid ());
 
-    Utf8CP u_code = "UpdatedSubCategory";
+    //Utf8CP u_name = "UpdatedSubCategory";
     Utf8CP u_desc = "This is the updated sub category.";
-    Utf8CP u_label = "UpdatedSubCategory";
-    uint64_t sub = 3;
 
     //Updates category.
-    DgnCategories::SubCategory Updated_subcategory (id, (DgnSubCategoryId)sub, u_code, appearence, u_desc, u_label);
-    m_db->Categories ().UpdateSubCategory (Updated_subcategory);
-    BeSQLite::DbResult insert_sub = m_db->Categories ().InsertSubCategory (Updated_subcategory);
-    EXPECT_EQ (BE_SQLITE_OK, insert_sub);
+    DgnSubCategoryId subCategoryId = DgnCategory::GetDefaultSubCategoryId(id);
+    DgnSubCategoryPtr subCat = m_db->Elements().GetForEdit<DgnSubCategory>(subCategoryId);
+    DgnSubCategory::Appearance appearance2 = subCat->GetAppearance();
+    appearance2.SetColor(ColorDef::Red());
+    subCat->SetDescription(Utf8String(u_desc));
+    DgnDbStatus updateStatus;
+    subCat->Update(&updateStatus);
+    EXPECT_TRUE(DgnDbStatus::Success == updateStatus);
 
     //Verification of category properties
-    EXPECT_TRUE (category.GetCategoryId ().IsValid ());
-    EXPECT_STREQ ("UpdatedSubCategory", Updated_subcategory.GetCode ());
-    EXPECT_STREQ ("This is the updated sub category.", Updated_subcategory.GetDescription ());
-    EXPECT_STREQ ("UpdatedSubCategory", Updated_subcategory.GetLabel ());
+    DgnSubCategoryCPtr updatedSubCat =DgnSubCategory::QuerySubCategory(subCategoryId, *m_db);
+    EXPECT_TRUE(updatedSubCat.IsValid());
+    EXPECT_STREQ(u_desc, updatedSubCat->GetDescription());
     }
-#endif
 
 //=======================================================================================
 //! Test for Quering a category.using elementID
@@ -553,15 +579,15 @@ TEST_F (CategoryTests, QueryByElementId)
     SetupProject (L"3dMetricGeneral.idgndb", L"CategoryTests.idgndb", Db::OpenMode::ReadWrite);
 
     //Category properties.
-    Utf8CP code = "TestCategory";
+    Utf8CP name = "TestCategory";
     Utf8CP desc = "This is a test category.";
 
-    DgnCategory category(DgnCategory::CreateParams(*m_db, code, DgnCategory::Scope::Physical, DgnCategory::Rank::Domain, desc));
+    DgnCategory category(DgnCategory::CreateParams(*m_db, name, DgnCategory::Scope::Physical, DgnCategory::Rank::Domain, desc));
     DgnSubCategory::Appearance appearence;
 
     //Inserts a category
     EXPECT_TRUE(category.Insert(appearence).IsValid());
-    DgnCategoryId categoryId = DgnCategory::QueryCategoryId(code, *m_db);
+    DgnCategoryId categoryId = DgnCategory::QueryCategoryId(name, *m_db);
     EXPECT_TRUE(categoryId.IsValid());
 
     DgnElementPtr el = TestElement::Create(*m_db, m_defaultModelId, categoryId, DgnCode());

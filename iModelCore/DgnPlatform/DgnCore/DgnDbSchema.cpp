@@ -103,6 +103,13 @@ DbResult DgnDb::CreateDgnDbTables()
     // Every DgnDb has a dictionary model
     CreateDictionaryModel();
 
+    // The Generic domain is used when a conversion process doesn't have enough information to pick something better
+    if (DgnDbStatus::Success != GenericDomain::ImportSchema(*this, DgnDomain::ImportSchemaOptions::ImportOnly)) // Let an upper layer decide whether or not to create ECClassViews
+        {
+        BeAssert(false);
+        return BE_SQLITE_NOTFOUND;
+        }
+
     ExecuteSql("CREATE TRIGGER dgn_prjrange_del AFTER DELETE ON " DGN_TABLE(DGN_CLASSNAME_SpatialElement)
                " BEGIN DELETE FROM " DGN_VTABLE_RTree3d " WHERE ElementId=old.Id;END");
 
