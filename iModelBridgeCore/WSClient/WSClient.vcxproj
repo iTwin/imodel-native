@@ -140,6 +140,7 @@
     <ClCompile Include="Connect\ConnectAuthenticationHandler.cpp" />
     <ClCompile Include="Connect\ConnectAuthenticationPersistence.cpp" />
     <ClCompile Include="Connect\ConnectSetup.cpp" />
+    <ClCompile Include="Connect\ConnectSignInManager.cpp" />
     <ClCompile Include="Connect\ConnectSpaces.cpp" />
     <ClCompile Include="Connect\ConnectTokenProvider.cpp" />
     <ClCompile Include="Connect\SamlToken.cpp" />
@@ -294,6 +295,7 @@
     <ClInclude Include="PublicAPI\WebServices\Connect\ConnectAuthenticationPersistence.h" />
     <ClInclude Include="PublicAPI\WebServices\Connect\ConnectMessaging.h" />
     <ClInclude Include="PublicAPI\WebServices\Connect\ConnectSetup.h" />
+    <ClInclude Include="PublicAPI\WebServices\Connect\ConnectSignInManager.h" />
     <ClInclude Include="PublicAPI\WebServices\Connect\ConnectSpaces.h" />
     <ClInclude Include="PublicAPI\WebServices\Connect\ConnectTokenProvider.h" />
     <ClInclude Include="PublicAPI\WebServices\Connect\IConnectAuthenticationPersistence.h" />
