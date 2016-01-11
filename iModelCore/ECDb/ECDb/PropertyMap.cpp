@@ -28,6 +28,12 @@ PropertyMap::PropertyMap (ECPropertyCR ecProperty, Utf8CP propertyAccessString, 
 //static
 PropertyMapPtr PropertyMap::Clone(ECDbMapCR ecdbMap, PropertyMapCR proto, ECDbSqlTable const* newContext , PropertyMap const* parentPropertyMap ) 
     {
+    if (ecdbMap.GetSchemaImportContext() == nullptr)
+        {
+        BeAssert(false && "PropertyMap::Clone must only be called during schema import");
+        return nullptr;
+        }
+
     if (!newContext)
         newContext = proto.GetPrimaryTable();
 
@@ -53,7 +59,7 @@ PropertyMapPtr PropertyMap::Clone(ECDbMapCR ecdbMap, PropertyMapCR proto, ECDbSq
         }
     else if (auto protoMap = dynamic_cast<NavigationPropertyMap const*>(&proto))
         {
-        return new NavigationPropertyMap(ecdbMap, *protoMap, newContext, parentPropertyMap);
+        return new NavigationPropertyMap(ecdbMap.GetSchemaImportContext()->GetClassMapLoadContext(), *protoMap, newContext, parentPropertyMap);
         }
 
     BeAssert(false && "Case is not handled");
@@ -94,13 +100,13 @@ bool PropertyMap::_IsUnmapped () const
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    casey.mullen      11/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-PropertyMapPtr PropertyMap::CreateAndEvaluateMapping (ECPropertyCR ecProperty, ECDbMapCR ecDbMap, ECClassCR rootClass, Utf8CP propertyAccessString, ECDbSqlTable const* primaryTable, PropertyMapCP parentPropertyMap)
+PropertyMapPtr PropertyMap::CreateAndEvaluateMapping(ClassMapLoadContext& ctx, ECDbCR ecdb, ECPropertyCR ecProperty, ECClassCR rootClass, Utf8CP propertyAccessString, ECDbSqlTable const* primaryTable, PropertyMapCP parentPropertyMap)
     {
-    if (!ecProperty.HasId ())
-        ECDbSchemaManager::GetPropertyIdForECPropertyFromDuplicateECSchema (ecDbMap.GetECDbR (), ecProperty);
+    if (!ecProperty.HasId())
+        ECDbSchemaManager::GetPropertyIdForECPropertyFromDuplicateECSchema(ecdb, ecProperty);
 
     // WIP_ECDB: honor the hint for non-default mappings
-    ColumnInfo columnInfo = ColumnInfo::Create (ecProperty, propertyAccessString);
+    ColumnInfo columnInfo = ColumnInfo::Create(ecProperty, propertyAccessString);
     if (!columnInfo.IsValid())
         return nullptr;
 
@@ -109,12 +115,12 @@ PropertyMapPtr PropertyMap::CreateAndEvaluateMapping (ECPropertyCR ecProperty, E
         {
         switch (primitiveProperty->GetType())
             {
-            case PRIMITIVETYPE_Point2D: 
-            case PRIMITIVETYPE_Point3D: 
-                return new PropertyMapPoint (ecProperty, propertyAccessString, primaryTable, columnInfo, parentPropertyMap);
+                case PRIMITIVETYPE_Point2D:
+                case PRIMITIVETYPE_Point3D:
+                    return new PropertyMapPoint(ecProperty, propertyAccessString, primaryTable, columnInfo, parentPropertyMap);
 
-            default:                    
-                return new PropertyMapSingleColumn (ecProperty, propertyAccessString, primaryTable, columnInfo, parentPropertyMap);
+                default:
+                    return new PropertyMapSingleColumn(ecProperty, propertyAccessString, primaryTable, columnInfo, parentPropertyMap);
             }
         }
 
@@ -123,20 +129,20 @@ PropertyMapPtr PropertyMap::CreateAndEvaluateMapping (ECPropertyCR ecProperty, E
     // PropertyMapRule: primitives, primitive arrays , and structs map to 1 or more columns in the ECClass's main table
     if (arrayProperty != nullptr)
         {
-        if (ARRAYKIND_Primitive == arrayProperty->GetKind ())
-            return new PropertyMapPrimitiveArray (ecProperty, propertyAccessString, primaryTable, columnInfo, ecDbMap, parentPropertyMap);
+        if (ARRAYKIND_Primitive == arrayProperty->GetKind())
+            return new PropertyMapPrimitiveArray(ecdb, ecProperty, propertyAccessString, primaryTable, columnInfo, parentPropertyMap);
         else
             {
-            BeAssert (ARRAYKIND_Primitive != arrayProperty->GetKind ());
-            return PropertyMapStructArray::Create (ecProperty, ecDbMap, propertyAccessString, primaryTable, parentPropertyMap);
+            BeAssert(ARRAYKIND_Primitive != arrayProperty->GetKind());
+            return PropertyMapStructArray::Create(ecProperty, propertyAccessString, primaryTable, parentPropertyMap);
             }
         }
 
     if (ecProperty.GetIsStruct())
-        return PropertyMapStruct::Create(ecProperty, ecDbMap, propertyAccessString, primaryTable, parentPropertyMap); // The individual properties get their own binding, but we need a placeholder for the overall struct
+        return PropertyMapStruct::Create(ctx, ecdb, ecProperty, propertyAccessString, primaryTable, parentPropertyMap); // The individual properties get their own binding, but we need a placeholder for the overall struct
 
     BeAssert(ecProperty.GetIsNavigation());
-    return new NavigationPropertyMap(ecProperty, ecDbMap, propertyAccessString, primaryTable, parentPropertyMap);
+    return new NavigationPropertyMap(ctx, ecProperty, propertyAccessString, primaryTable, parentPropertyMap);
     }
 
 //---------------------------------------------------------------------------------------
@@ -267,9 +273,9 @@ NativeSqlBuilder::List PropertyMap::_ToNativeSql(Utf8CP classIdentifier, ECSqlTy
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    casey.mullen      11/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus PropertyMap::FindOrCreateColumnsInTable(SchemaImportContext* schemaImportContext, ClassMap& classMap, ClassMapInfo const* classMapInfo)
+BentleyStatus PropertyMap::FindOrCreateColumnsInTable(ClassMap& classMap, ClassMapInfo const* classMapInfo)
     {
-    return _FindOrCreateColumnsInTable(schemaImportContext, classMap, classMapInfo);
+    return _FindOrCreateColumnsInTable(classMap, classMapInfo);
     }
 
 /*---------------------------------------------------------------------------------------
@@ -565,7 +571,7 @@ void PropertyMapStruct::_GetColumns(std::vector<ECDbSqlColumn const*>& columns) 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Affan.Khan     09/2013
 //---------------------------------------------------------------------------------------
-BentleyStatus PropertyMapStruct::Initialize(ECDbMapCR map)
+BentleyStatus PropertyMapStruct::Initialize(ClassMapLoadContext& ctx, ECDbCR ecdb)
     {
     PRECONDITION(GetProperty().GetIsStruct() && "Expecting a struct type property", ERROR);
     ECClassCR rootClass = GetProperty().GetClass();
@@ -575,7 +581,7 @@ BentleyStatus PropertyMapStruct::Initialize(ECDbMapCR map)
         Utf8String accessString(GetPropertyAccessString());
         accessString.append(".");
         accessString.append(property->GetName());
-        PropertyMapPtr propertyMap = PropertyMap::CreateAndEvaluateMapping(*property, map, rootClass, accessString.c_str(), GetPrimaryTable(), this);
+        PropertyMapPtr propertyMap = PropertyMap::CreateAndEvaluateMapping(ctx, ecdb, *property, rootClass, accessString.c_str(), GetPrimaryTable(), this);
         if (propertyMap.IsValid())
             //don't use full prop access string as key in child collection, but just the relative prop access string which is 
             //just the prop name
@@ -589,11 +595,11 @@ BentleyStatus PropertyMapStruct::Initialize(ECDbMapCR map)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Affan.Khan     09/2013
 //---------------------------------------------------------------------------------------
-BentleyStatus PropertyMapStruct::_FindOrCreateColumnsInTable(SchemaImportContext* schemaImportContext, ClassMap& classMap, ClassMapInfo const* classMapInfo)
+BentleyStatus PropertyMapStruct::_FindOrCreateColumnsInTable(ClassMap& classMap, ClassMapInfo const* classMapInfo)
     {
     for(auto childPropMap : m_children)
         {
-        if (SUCCESS != const_cast<PropertyMapP> (childPropMap)->FindOrCreateColumnsInTable(schemaImportContext, classMap, classMapInfo))
+        if (SUCCESS != const_cast<PropertyMapP> (childPropMap)->FindOrCreateColumnsInTable(classMap, classMapInfo))
             return ERROR;
         }
 
@@ -632,11 +638,11 @@ BentleyStatus PropertyMapStruct::_Save(ECDbClassMapInfo& classMapInfo) const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Affan.Khan     09/2013
 //---------------------------------------------------------------------------------------
-PropertyMapStructPtr PropertyMapStruct::Create (ECN::ECPropertyCR prop, ECDbMapCR ecDbMap, Utf8CP propertyAccessString, ECDbSqlTable const* primaryTable, PropertyMapCP parentPropertyMap)
+PropertyMapStructPtr PropertyMapStruct::Create(ClassMapLoadContext& ctx, ECDbCR ecdb, ECN::ECPropertyCR prop, Utf8CP propertyAccessString, ECDbSqlTable const* primaryTable, PropertyMapCP parentPropertyMap)
     {
-    PRECONDITION (prop.GetIsStruct() && "Expecting a ECStruct type property", nullptr);
-    auto newPropertyMap = new PropertyMapStruct (prop, propertyAccessString, primaryTable, parentPropertyMap);
-    if (newPropertyMap->Initialize(ecDbMap) == BentleyStatus::SUCCESS)
+    PRECONDITION(prop.GetIsStruct() && "Expecting a ECStruct type property", nullptr);
+    PropertyMapStructPtr newPropertyMap = new PropertyMapStruct(prop, propertyAccessString, primaryTable, parentPropertyMap);
+    if (newPropertyMap->Initialize(ctx, ecdb) == BentleyStatus::SUCCESS)
         return newPropertyMap;
 
     return nullptr;
@@ -710,7 +716,7 @@ BentleyStatus PropertyMapStructArray::_Load(ECDbClassMapInfo const& classMapInfo
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    affan.khan      03/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-PropertyMapStructArrayPtr PropertyMapStructArray::Create (ECPropertyCR ecProperty, ECDbMapCR ecDbMap, Utf8CP propertyAccessString, ECDbSqlTable const* primaryTable, PropertyMapCP parentPropertyMap)
+PropertyMapStructArrayPtr PropertyMapStructArray::Create (ECPropertyCR ecProperty, Utf8CP propertyAccessString, ECDbSqlTable const* primaryTable, PropertyMapCP parentPropertyMap)
     {
     StructArrayECPropertyCP structArrayProperty = ecProperty.GetAsStructArrayProperty();
     if (structArrayProperty == nullptr)
@@ -754,15 +760,15 @@ bool PropertyMapSingleColumn::_IsVirtual () const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    casey.mullen      11/2012
 //---------------------------------------------------------------------------------------
-BentleyStatus PropertyMapSingleColumn::_FindOrCreateColumnsInTable (SchemaImportContext* schemaImportContext, ClassMap& classMap , ClassMapInfo const* classMapInfor)
+BentleyStatus PropertyMapSingleColumn::_FindOrCreateColumnsInTable (ClassMap& classMap , ClassMapInfo const* classMapInfor)
     {
     Utf8CP        columnName = m_columnInfo.GetName ();
     PrimitiveType primitiveType = m_columnInfo.GetColumnType ();
     bool          nullable = m_columnInfo.IsNullable ();
     bool          unique = m_columnInfo.IsUnique ();
     ECDbSqlColumn::Constraint::Collation collation = m_columnInfo.GetCollation ();
-    m_column = classMap.FindOrCreateColumnForProperty(schemaImportContext, classMap, classMapInfor, *this, columnName, primitiveType, nullable, unique, collation, nullptr);
-    BeAssert (m_column != nullptr && "This actually indicates a mapping error. The method PropertyMapToColumn::_FindOrCreateColumnsInTable should therefore be changed to return an error.");
+    m_column = classMap.FindOrCreateColumnForProperty(classMap, classMapInfor, *this, columnName, primitiveType, nullable, unique, collation, nullptr);
+    BeAssert (m_column != nullptr && "This actually indicates a mapping error. The method PropertyMapSingleColumn::_FindOrCreateColumnsInTable should therefore be changed to return an error.");
     return SUCCESS;
     }
 
@@ -900,7 +906,7 @@ Utf8String PropertyMapPoint::_ToString() const
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    casey.mullen      11/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus PropertyMapPoint::_FindOrCreateColumnsInTable(SchemaImportContext* schemaImportContext, ClassMap& classMap,  ClassMapInfo const* classMapInfo)
+BentleyStatus PropertyMapPoint::_FindOrCreateColumnsInTable(ClassMap& classMap,  ClassMapInfo const* classMapInfo)
     {
     PrimitiveType primitiveType = PRIMITIVETYPE_Double;
 
@@ -911,17 +917,17 @@ BentleyStatus PropertyMapPoint::_FindOrCreateColumnsInTable(SchemaImportContext*
 
     Utf8String xColumnName(columnName);
     xColumnName.append("_X");
-    m_xColumn = classMap.FindOrCreateColumnForProperty(schemaImportContext, classMap, classMapInfo, *this, xColumnName.c_str(), primitiveType, nullable, unique, collation, "X");
+    m_xColumn = classMap.FindOrCreateColumnForProperty(classMap, classMapInfo, *this, xColumnName.c_str(), primitiveType, nullable, unique, collation, "X");
 
     Utf8String yColumnName(columnName);
     yColumnName.append("_Y");
-    m_yColumn = classMap.FindOrCreateColumnForProperty(schemaImportContext, classMap, classMapInfo, *this, yColumnName.c_str(), primitiveType, nullable, unique, collation, "Y");
+    m_yColumn = classMap.FindOrCreateColumnForProperty(classMap, classMapInfo, *this, yColumnName.c_str(), primitiveType, nullable, unique, collation, "Y");
     if (!m_is3d)
         return SUCCESS;
 
     Utf8String zColumnName(columnName);
     zColumnName.append("_Z");
-    m_zColumn = classMap.FindOrCreateColumnForProperty(schemaImportContext, classMap, classMapInfo, *this, zColumnName.c_str(), primitiveType, nullable, unique, collation, "Z");
+    m_zColumn = classMap.FindOrCreateColumnForProperty(classMap, classMapInfo, *this, zColumnName.c_str(), primitiveType, nullable, unique, collation, "Z");
     return SUCCESS;
     }
 
@@ -939,14 +945,14 @@ void PropertyMapPoint::_GetColumns(std::vector<ECDbSqlColumn const*>& columns) c
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    casey.mullen      11/2012
 //---------------------------------------------------------------------------------------
-PropertyMapPrimitiveArray::PropertyMapPrimitiveArray (ECPropertyCR ecProperty, Utf8CP propertyAccessString, ECDbSqlTable const* primaryTable, ColumnInfoCR columnInfo, ECDbMapCR ecDbMap, PropertyMapCP parentPropertyMap)
+PropertyMapPrimitiveArray::PropertyMapPrimitiveArray (ECDbCR ecdb, ECPropertyCR ecProperty, Utf8CP propertyAccessString, ECDbSqlTable const* primaryTable, ColumnInfoCR columnInfo, PropertyMapCP parentPropertyMap)
     : PropertyMapSingleColumn (ecProperty, propertyAccessString, primaryTable, columnInfo, parentPropertyMap)
     {
     BeAssert (columnInfo.GetColumnType() == PRIMITIVETYPE_Binary); 
     ArrayECPropertyCP arrayProperty = GetProperty().GetAsArrayProperty();
     BeAssert(arrayProperty);
 
-    ECClassCP primitiveArrayPersistenceClass = ECDbSystemSchemaHelper::GetClassForPrimitiveArrayPersistence (ecDbMap.GetECDbR(), arrayProperty->GetPrimitiveElementType());
+    ECClassCP primitiveArrayPersistenceClass = ECDbSystemSchemaHelper::GetClassForPrimitiveArrayPersistence (ecdb, arrayProperty->GetPrimitiveElementType());
     BeAssert(primitiveArrayPersistenceClass != nullptr);
     m_primitiveArrayEnabler = primitiveArrayPersistenceClass->GetDefaultStandaloneEnabler();
     }
@@ -967,25 +973,22 @@ Utf8String PropertyMapPrimitiveArray::_ToString() const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                      12/2015
 //---------------------------------------------------------------------------------------
-NavigationPropertyMap::NavigationPropertyMap(ECN::ECPropertyCR prop, ECDbMapCR ecdbMap, Utf8CP propertyAccessString, ECDbSqlTable const* primaryTable, PropertyMapCP parentPropertyMap)
+NavigationPropertyMap::NavigationPropertyMap(ClassMapLoadContext& ctx, ECN::ECPropertyCR prop, Utf8CP propertyAccessString, ECDbSqlTable const* primaryTable, PropertyMapCP parentPropertyMap)
     : PropertyMap(prop, propertyAccessString, primaryTable, parentPropertyMap), m_navigationProperty(prop.GetAsNavigationPropertyCP()), m_relClassMap(nullptr)
     {
     BeAssert(prop.GetIsNavigation());
 
-    //if during schema import, we need to wait with finishing the nav prop map set up to the end when all relationships have been imported and mapped
-    if (ecdbMap.IsImportingSchema())
-        ecdbMap.GetSchemaImportContext()->AddNavigationPropertyMap(*this);
-    else
-        Postprocess(ecdbMap);
+    //we need to wait with finishing the nav prop map set up to the end when all relationships have been imported and mapped
+    ctx.AddNavigationPropertyMap(*this);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                      01/2016
 //---------------------------------------------------------------------------------------
-NavigationPropertyMap::NavigationPropertyMap(ECDbMapCR ecdbMap, NavigationPropertyMap const& proto, ECDbSqlTable const* primaryTable, PropertyMap const* parentPropertyMap) :PropertyMap(proto.GetProperty(), proto.GetPropertyAccessString(), primaryTable, parentPropertyMap), m_navigationProperty(proto.m_navigationProperty), m_relClassMap(proto.m_relClassMap)
+NavigationPropertyMap::NavigationPropertyMap(ClassMapLoadContext& ctx, NavigationPropertyMap const& proto, ECDbSqlTable const* primaryTable, PropertyMap const* parentPropertyMap) :PropertyMap(proto.GetProperty(), proto.GetPropertyAccessString(), primaryTable, parentPropertyMap), m_navigationProperty(proto.m_navigationProperty), m_relClassMap(proto.m_relClassMap)
     {
-    BeAssert(ecdbMap.IsImportingSchema() && "This clone constructor is expected to only be called during schema import");
-    ecdbMap.GetSchemaImportContext()->AddNavigationPropertyMap(*this);
+    //we need to wait with finishing the nav prop map set up to the end when all relationships have been imported and mapped
+    ctx.AddNavigationPropertyMap(*this);
     }
 
 //---------------------------------------------------------------------------------------
@@ -993,7 +996,7 @@ NavigationPropertyMap::NavigationPropertyMap(ECDbMapCR ecdbMap, NavigationProper
 //---------------------------------------------------------------------------------------
 BentleyStatus NavigationPropertyMap::Postprocess(ECDbMapCR ecdbMap)
     {
-    IClassMap const* relClassMap = ecdbMap.GetClassMap(*m_navigationProperty->GetRelationshipClass(), true);
+    ClassMap const* relClassMap = ecdbMap.GetClassMap(*m_navigationProperty->GetRelationshipClass());
     if (relClassMap == nullptr || !relClassMap->IsRelationshipClassMap())
         {
         BeAssert(false && "RelationshipClassMap should not be nullptr when finishing the NavigationPropMap");

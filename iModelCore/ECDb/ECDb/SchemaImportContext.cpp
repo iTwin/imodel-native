@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/SchemaImportContext.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -305,7 +305,7 @@ BentleyStatus SchemaImportECDbMapDb::GenerateIndexWhereClause(NativeSqlBuilder& 
         return ERROR;
         }
 
-    ClassMapCP classMap = ecdb.GetECDbImplR().GetECDbMap().GetClassMapCP(*ecclass);
+    ClassMapCP classMap = ecdb.GetECDbImplR().GetECDbMap().GetClassMap(*ecclass);
     if (classMap == nullptr)
         {
         BeAssert(false);

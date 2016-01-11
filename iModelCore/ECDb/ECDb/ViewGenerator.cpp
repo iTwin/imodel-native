@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ViewGenerator.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -783,14 +783,16 @@ BentleyStatus ViewGenerator::AppendConstraintClassIdPropMap(NativeSqlBuilder& vi
     {
     if (propMap.IsVirtual())
         {
-        bset<IClassMap const*> classMaps;
-        ecdbMap.GetClassMapsFromRelationshipEnd(classMaps, constraint, true);
+        bool hasAnyClass = false;
+        std::set<ClassMap const*> classMaps = ecdbMap.GetClassMapsFromRelationshipEnd(constraint,&hasAnyClass);
+        BeAssert(!hasAnyClass);
         if (classMaps.size() != 1)
             {
             BeAssert(false && "Expecting exactly one ClassMap at end");
             return BentleyStatus::ERROR;
             }
-        IClassMap const* classMap = *classMaps.begin();
+
+        ClassMap const* classMap = *classMaps.begin();
         BeAssert(classMap != nullptr);
         const ECClassId endClassId = classMap->GetClass().GetId();
 

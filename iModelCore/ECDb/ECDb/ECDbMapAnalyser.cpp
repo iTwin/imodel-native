@@ -1153,7 +1153,7 @@ std::vector<ECN::ECClassId> ECDbMapAnalyser::GetRootClassIds () const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Affan.Khan                         09/2015
 //---------------------------------------------------------------------------------------
-std::vector<ECN::ECClassId> ECDbMapAnalyser::GetRelationshipClassIds () const
+std::vector<ECN::ECClassId> ECDbMapAnalyser::GetRelationshipClassIds() const
     {
     Utf8String sql;
     sql.Sprintf("SELECT C.Id FROM ec_Class C "
@@ -1163,11 +1163,11 @@ std::vector<ECN::ECClassId> ECDbMapAnalyser::GetRelationshipClassIds () const
 
     std::vector<ECN::ECClassId> classIds;
     Statement stmt;
-    stmt.Prepare (GetMap ().GetECDbR (), sql.c_str());
-    while (stmt.Step () == BE_SQLITE_ROW)
-        classIds.push_back (stmt.GetValueInt64 (0));
+    stmt.Prepare(GetMap().GetECDbR(), sql.c_str());
+    while (stmt.Step() == BE_SQLITE_ROW)
+        classIds.push_back(stmt.GetValueInt64(0));
 
-    return std::move (classIds);
+    return std::move(classIds);
     }
 
 //---------------------------------------------------------------------------------------
@@ -1181,12 +1181,13 @@ std::set<ECN::ECClassId> const& ECDbMapAnalyser::GetDerivedClassIds (ECN::ECClas
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Affan.Khan                         09/2015
 //---------------------------------------------------------------------------------------
-ClassMapCP ECDbMapAnalyser::GetClassMap (ECN::ECClassId classId) const
+ClassMapCP ECDbMapAnalyser::GetClassMap(ECN::ECClassId classId) const
     {
-    auto classMap = GetMap ().GetClassMapCP (classId);
-    BeAssert (classMap != nullptr && "ClassMap not found");
+    ClassMapCP classMap = GetMap().GetClassMap(classId);
+    BeAssert(classMap != nullptr && "ClassMap not found");
     return classMap;
     }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Affan.Khan                         09/2015
 //---------------------------------------------------------------------------------------
@@ -1407,7 +1408,7 @@ SqlViewBuilder ECDbMapAnalyser::BuildView (Class& nclass)
 
         NativeSqlBuilder select;
         select.Append ("SELECT ");
-        auto firstChildMap = m_map.GetClassMapCP (hp.GetClassIds ().front ());
+        ClassMapCP firstChildMap = m_map.GetClassMap (hp.GetClassIds ().front ());
         auto childPMS = PropertyMapSet::Create (*firstChildMap);
         auto rootEndPoints = rootPMS->GetEndPoints ();
         for (auto const rootE : rootEndPoints)

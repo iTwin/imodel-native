@@ -16,7 +16,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //* @bsimethod                                 Affan.Khan                           07 / 2012
 //---------------------------------------------------------------------------------------
 //static
-ClassMapPtr ClassMapFactory::Load (MapStatus& mapStatus, ECClassCR ecClass, ECDbMapCR ecdbMap)
+ClassMapPtr ClassMapFactory::Load (MapStatus& mapStatus, ClassMapLoadContext& ctx, ECClassCR ecClass, ECDbMapCR ecdbMap)
     {   
     ECDbSchemaManager const& schemaManager = ecdbMap.GetECDbR().Schemas();
     std::vector<ECDbClassMapInfo const*> const* classMaps = ecdbMap.GetSQLManager().GetMapStorage().FindClassMapsByClassId (ecClass.GetId());
@@ -63,7 +63,7 @@ ClassMapPtr ClassMapFactory::Load (MapStatus& mapStatus, ECClassCR ecClass, ECDb
     classMap->SetId (classMapInfo.GetId());
 
     std::set<ClassMap const*> loadGraph;
-    if (SUCCESS != classMap->Load (loadGraph, classMapInfo, baseClassMap))
+    if (SUCCESS != classMap->Load (loadGraph, ctx, classMapInfo, baseClassMap))
         return nullptr;
 
     ECRelationshipClassCP ecRelationshipClass = ecClass.GetRelationshipClassCP();
@@ -95,8 +95,6 @@ ClassMapPtr ClassMapFactory::Create(MapStatus& mapStatus, SchemaImportContext& s
         mapStatus = MapStatus::Error;
         return nullptr;
         }
-
-    BeAssert(ecdbMap.GetClassMap(ecClass, false) == nullptr);
 
     std::unique_ptr<ClassMapInfo> classMapInfo = ClassMapInfoFactory::Create(mapStatus, schemaImportContext, ecClass, ecdbMap);
     if (classMapInfo == nullptr)

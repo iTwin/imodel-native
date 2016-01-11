@@ -48,7 +48,7 @@ ECDbSqlTable const* ECDbMap::GetPrimaryTable(ECDbSqlTable const& joinedTable) co
 
     for (ECClassId firstClassId : GetLightweightCache().GetClassesForTable(joinedTable))
         {
-        ClassMapCP classMap = GetClassMapCP(firstClassId);
+        ClassMapCP classMap = GetClassMap(firstClassId);
         if (classMap != nullptr)
             {
             if (!classMap->IsMappedToSingleTable())
@@ -152,10 +152,15 @@ BentleyStatus ECDbMap::CreateECClassViewsInDb() const
     while (stmt.Step() == BE_SQLITE_ROW)
         {
         ECClassId classId = (ECClassId)stmt.GetValueInt64(0);
-        ClassMapCP classMap = GetClassMapCP(classId);
-        BeAssert(classMap != nullptr && (classMap->GetClass().IsEntityClass() || classMap->GetClass().IsRelationshipClass()) && classMap->GetClassMapType() != IClassMap::Type::Unmapped);
-        if (classMap != nullptr)
-            classMaps.push_back(classMap);
+        ClassMapCP classMap = GetClassMap(classId);
+        if (classMap == nullptr)
+            {
+            BeAssert(classMap != nullptr);
+            return ERROR;
+            }
+
+        BeAssert((classMap->GetClass().IsEntityClass() || classMap->GetClass().IsRelationshipClass()) && classMap->GetClassMapType() != IClassMap::Type::Unmapped);
+        classMaps.push_back(classMap);
         }
 
     ECClassViewGenerator viewGenerator(*this);
@@ -225,7 +230,7 @@ MapStatus ECDbMap::DoMapSchemas(bvector<ECSchemaCP> const& mapSchemas, bool forc
         }
 
     //NavigationPropertyMaps can only be finished after all relationships have been mapped
-    for (NavigationPropertyMap* navPropMap : GetSchemaImportContext()->GetNavigationPropertyMaps())
+    for (NavigationPropertyMap* navPropMap : GetSchemaImportContext()->GetClassMapLoadContext().GetNavigationPropertyMaps())
         {
         if (SUCCESS != navPropMap->Postprocess(*this))
             {
@@ -253,30 +258,29 @@ MapStatus ECDbMap::DoMapSchemas(bvector<ECSchemaCP> const& mapSchemas, bool forc
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                 Casey.Mullen        11/2011
 //+---------------+---------------+---------------+---------------+---------------+------
-ClassMapPtr ECDbMap::LoadAddClassMap (ECClassCR ecClass)
+ClassMapPtr ECDbMap::LoadAddClassMap(ClassMapLoadContext& ctx, ECClassCR ecClass)
     {
-    BeMutexHolder lock (m_criticalSection);
-    BeAssert (GetClassMap (ecClass, false) == nullptr);
-    MapStatus mapStatus;
-    if (!GetSQLManagerR ().IsLoaded ())
+    BeMutexHolder lock(m_criticalSection);
+    if (!GetSQLManagerR().IsLoaded())
         {
-        if (GetSQLManagerR ().Load () != BentleyStatus::SUCCESS)
+        if (GetSQLManagerR().Load() != SUCCESS)
             {
-            BeAssert (false && "Failed to map information");
+            BeAssert(false && "Failed to map information");
             return nullptr;
             }
         }
 
-    auto classMapPtr = ClassMapFactory::Load (mapStatus, ecClass, *this);
+    MapStatus mapStatus;
+    ClassMapPtr classMapPtr = ClassMapFactory::Load(mapStatus, ctx, ecClass, *this);
     if (classMapPtr != nullptr)
         {
-        if (MapStatus::Error == AddClassMap (classMapPtr))
+        if (MapStatus::Error == AddClassMap(classMapPtr))
             {
-            LOG.errorv ("Failed to add map for class %s", ecClass.GetFullName ());
+            LOG.errorv("Failed to add map for class %s", ecClass.GetFullName());
             return nullptr;
             }
 
-        m_classMapLoadTable.push_back (&ecClass);
+        m_classMapLoadTable.push_back(&ecClass);
         return classMapPtr;
         }
 
@@ -370,91 +374,38 @@ void ECDbMap::RemoveClassMap (IClassMap const& classMap)
     }
 
 //---------------------------------------------------------------------------------------
-//* @bsimethod                                                    Krischan.Eberle   02/2014
+// @bsimethod                                                    Krischan.Eberle   01/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-IClassMap const* ECDbMap::GetClassMap (ECN::ECClassCR ecClass, bool loadIfNotFound) const
+ClassMap const* ECDbMap::GetClassMap(ECN::ECClassCR ecClass) const
     {
-    ClassMapPtr classMap = nullptr;
-    if (TryGetClassMap (classMap, ecClass, loadIfNotFound))
-        {
-        BeAssert (classMap != nullptr);
-        return classMap.get ();
-        }
+    ClassMapLoadContext ctx;
 
-    return nullptr;
+    ClassMapPtr classMap = nullptr;
+    if (!TryGetClassMap(classMap, ctx, ecClass))
+        return nullptr;
+
+    if (SUCCESS != ctx.Postprocess(*this))
+        return nullptr;
+
+    return classMap.get();
     }
 
 //---------------------------------------------------------------------------------------
-//* @bsimethod                                                    Krischan.Eberle   02/2014
+// @bsimethod                                                    Krischan.Eberle   01/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-ClassMapCP ECDbMap::GetClassMapCP (ECN::ECClassCR ecClass, bool loadIfNotFound) const
-    {
-    ClassMapPtr classMap = nullptr;
-    if (TryGetClassMap (classMap, ecClass, loadIfNotFound))
-        {
-        BeAssert (classMap != nullptr);
-        return classMap.get ();
-        }
-
-    return nullptr;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    affan.khan         06/2015
-//---------------------------------------------------------------------------------------
-ClassMapCP ECDbMap::GetClassMapCP(ECN::ECClassId classId) const
+ClassMap const* ECDbMap::GetClassMap(ECN::ECClassId classId) const
     {
     ECClassCP ecClass = GetECDbR().Schemas().GetECClass(classId);
     if (ecClass == nullptr)
-        {
-        BeAssert(false && "Failed to find classmap for given ecclassid");
         return nullptr;
-        }
 
-    return GetClassMapCP(*ecClass);
+    return GetClassMap(*ecClass);
     }
 
 //---------------------------------------------------------------------------------------
-//* @bsimethod                                                    Krischan.Eberle   02/2014
+// @bsimethod                                                    Krischan.Eberle   02/2014
 //+---------------+---------------+---------------+---------------+---------------+------
-ClassMapP ECDbMap::GetClassMapP (ECN::ECClassCR ecClass, bool loadIfNotFound) const
-    {
-    ClassMapPtr classMap = nullptr;
-    if (TryGetClassMap (classMap, ecClass, loadIfNotFound))
-        {
-        BeAssert (classMap != nullptr);
-        return classMap.get ();
-        }
-
-    return nullptr;
-    }
-
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    affan.khan         06/2015
-//---------------------------------------------------------------------------------------
-RelationshipClassMapCP ECDbMap::GetRelationshipClassMap(ECN::ECClassId ecRelationshipClassId) const
-    {
-    ClassMapCP classMap = GetClassMapCP(ecRelationshipClassId);
-    if (classMap == nullptr)
-        {
-        BeAssert(false && "Failed to find classmap for given ecclassid");
-        return nullptr;
-        }
-
-    const IClassMap::Type classMapType = classMap->GetClassMapType();
-    if (classMapType == IClassMap::Type::RelationshipEndTable || classMapType == IClassMap::Type::RelationshipLinkTable)
-        return static_cast<RelationshipClassMapCP>(classMap);
-
-    BeAssert(false && "Can only call this method if class id is referring to a relationship class");
-    return nullptr;
-    }
-
-
-//---------------------------------------------------------------------------------------
-//* @bsimethod                                                    Krischan.Eberle   02/2014
-//+---------------+---------------+---------------+---------------+---------------+------
-bool ECDbMap::TryGetClassMap (ClassMapPtr& classMap, ECN::ECClassCR ecClass, bool loadIfNotFound) const
+bool ECDbMap::TryGetClassMap (ClassMapPtr& classMap, ClassMapLoadContext& ctx, ECN::ECClassCR ecClass) const
     {
     BeMutexHolder lock (m_criticalSection);
     if (!ecClass.HasId ())
@@ -464,13 +415,12 @@ bool ECDbMap::TryGetClassMap (ClassMapPtr& classMap, ECN::ECClassCR ecClass, boo
         }
 
     classMap = DoGetClassMap (ecClass);
-    const bool found = classMap != nullptr;
-    if (found || !loadIfNotFound)
-        return found;
+    if (classMap != nullptr)
+        return true;
 
     //lazy loading the class map implemented with const-casting the actual loading so that the 
     //get method itself can remain const (logically const)
-    classMap = const_cast<ECDbMap*> (this)->LoadAddClassMap (ecClass);
+    classMap = const_cast<ECDbMap*> (this)->LoadAddClassMap (ctx, ecClass);
     return classMap != nullptr;
     }
 
@@ -753,7 +703,7 @@ std::vector<ECClassCP> ECDbMap::GetClassesFromRelationshipEnd (ECRelationshipCon
 size_t ECDbMap::GetTableCountOnRelationshipEnd(ECRelationshipConstraintCR relationshipEnd) const
     {
     bool hasAnyClass = false;
-    std::set<IClassMap const*> classMaps = GetClassMapsFromRelationshipEnd(relationshipEnd, &hasAnyClass);
+    std::set<ClassMap const*> classMaps = GetClassMapsFromRelationshipEnd(relationshipEnd, &hasAnyClass);
 
     if (hasAnyClass)
         return SIZE_MAX;
@@ -781,13 +731,13 @@ size_t ECDbMap::GetTableCountOnRelationshipEnd(ECRelationshipConstraintCR relati
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Affan.Khan                      12/2015
 //+---------------+---------------+---------------+---------------+---------------+------
-std::set<IClassMap const*>  ECDbMap::GetClassMapsFromRelationshipEnd( ECRelationshipConstraintCR relationshipEnd, bool* hasAnyClass) const
+std::set<ClassMap const*> ECDbMap::GetClassMapsFromRelationshipEnd(ECRelationshipConstraintCR constraint, bool* hasAnyClass) const
     {
-    if (hasAnyClass)
+    if (hasAnyClass != nullptr)
         *hasAnyClass = false;
 
-    std::set<IClassMap const*> classMaps;
-    for (ECClassCP ecClass : relationshipEnd.GetClasses())
+    std::set<ClassMap const*> classMaps;
+    for (ECClassCP ecClass : constraint.GetClasses())
         {
         if (IClassMap::IsAnyClass(*ecClass))
             {
@@ -798,12 +748,12 @@ std::set<IClassMap const*>  ECDbMap::GetClassMapsFromRelationshipEnd( ECRelation
             return classMaps;
             }
 
-        IClassMap const* classMap = GetClassMap(*ecClass, false);
+        ClassMap const* classMap = GetClassMap(*ecClass);
         if (classMap->GetMapStrategy().IsNotMapped())
             continue;
 
         classMaps.insert(classMap);
-        if (classMap->GetMapStrategy().GetStrategy() != ECDbMapStrategy::Strategy::SharedTable && relationshipEnd.GetIsPolymorphic())
+        if (classMap->GetMapStrategy().GetStrategy() != ECDbMapStrategy::Strategy::SharedTable && constraint.GetIsPolymorphic())
             {
             GetClassMapsFromRelationshipEnd(classMaps, *ecClass);
             }
@@ -815,11 +765,11 @@ std::set<IClassMap const*>  ECDbMap::GetClassMapsFromRelationshipEnd( ECRelation
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Affan.Khan                      12/2015
 //+---------------+---------------+---------------+---------------+---------------+------
-void ECDbMap::GetClassMapsFromRelationshipEnd(std::set<IClassMap const*>& classMaps, ECClassCR ecClass) const
+void ECDbMap::GetClassMapsFromRelationshipEnd(std::set<ClassMap const*>& classMaps, ECClassCR ecClass) const
     {    
     for (ECClassCP subclass : GetECDb().Schemas().GetDerivedECClasses(ecClass))
         {
-        IClassMap const* subclassMap = GetClassMap(*subclass);
+        ClassMap const* subclassMap = GetClassMap(*subclass);
         BeAssert(subclassMap != nullptr && "ClassMap should not be null");
         if (subclassMap->GetMapStrategy().IsNotMapped())
             continue;
@@ -835,7 +785,7 @@ ECDbSqlTable const* ECDbMap::GetFirstTableFromRelationshipEnd(ECRelationshipCons
     {
     std::map<PersistenceType, std::set<ECDbSqlTable const*>> tables;
     bool hasAnyClass;
-    std::set<IClassMap const*> classMaps = GetClassMapsFromRelationshipEnd(relationshipEnd, &hasAnyClass);
+    std::set<ClassMap const*> classMaps = GetClassMapsFromRelationshipEnd(relationshipEnd, &hasAnyClass);
 
     if (hasAnyClass)
         return nullptr;
@@ -857,24 +807,6 @@ ECDbSqlTable const* ECDbMap::GetFirstTableFromRelationshipEnd(ECRelationshipCons
         return *virtualTables.begin();
 
     return nullptr;
-    }
-//---------------------------------------------------------------------------------------
-// @bsimethod                                Krischan.Eberle                      06/2013
-//+---------------+---------------+---------------+---------------+---------------+------
-void ECDbMap::GetClassMapsFromRelationshipEnd(bset<IClassMap const*>& endClassMaps, ECRelationshipConstraintCR relationshipEnd, bool loadIfNotFound) const
-    {
-    std::vector<ECClassCP> endClasses = GetClassesFromRelationshipEnd(relationshipEnd);
-    for (auto endClass : endClasses)
-        {
-        if (ClassMap::IsAnyClass(*endClass))
-            return;
-
-        auto endClassMap = GetClassMap(*endClass, loadIfNotFound);
-        if (endClassMap->GetMapStrategy().IsNotMapped())
-            continue;
-
-        endClassMaps.insert(endClassMap);
-        }
     }
 
 /*---------------------------------------------------------------------------------**//**

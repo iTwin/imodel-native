@@ -223,14 +223,20 @@ PropertyMapCR propertyMap
         return ECSqlStatus::Error;
         }
 
-    auto structType = structArrayProperty->GetStructElementType();
-    auto structTypeMap = ecdb.GetECDbImplR().GetECDbMap ().GetClassMap (*structType);
+    ECClassCP structType = structArrayProperty->GetStructElementType();
+    ClassMap const* structTypeMap = ecdb.GetECDbImplR().GetECDbMap ().GetClassMap (*structType);
+    if (structTypeMap == nullptr)
+        {
+        BeAssert(false);
+        return ECSqlStatus::Error;
+        }
+
     //1. Generate ECSQL statement to read nested struct array.
     ECSqlSelectBuilder innerECSql;
     Utf8String innerECSqlSelectClause;
     bool isFirstProp = true;
     int selectColumnCount = 0;
-    for (auto propertyMap : structTypeMap->GetPropertyMaps ())
+    for (PropertyMap const* propertyMap : structTypeMap->GetPropertyMaps ())
         {
         if (propertyMap->IsECInstanceIdPropertyMap ())
             continue;
@@ -256,7 +262,7 @@ PropertyMapCR propertyMap
     whereClause.Sprintf (ECDB_COL_ParentECInstanceId " = ? AND " ECDB_COL_ECPropertyPathId " = %d", persistedPropertyId);
     innerECSql.Select (innerECSqlSelectClause.c_str ()).From (*structType, false).Where (whereClause.c_str()).OrderBy (ECDB_COL_ECArrayIndex);
 
-    auto structArrayField = unique_ptr<StructArrayMappedToSecondaryTableECSqlField>(
+    unique_ptr<StructArrayMappedToSecondaryTableECSqlField> structArrayField = unique_ptr<StructArrayMappedToSecondaryTableECSqlField>(
         new StructArrayMappedToSecondaryTableECSqlField (ctx, *structArrayProperty, move (ecsqlColumnInfo)));
 
     //2. Create and prepare the nested ECSqlStatement.

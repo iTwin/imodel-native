@@ -233,40 +233,40 @@ bool IClassMap::IsParentOfJoinedTable() const
 BentleyStatus IClassMap::GetPathToParentOfJoinedTable(std::vector<IClassMap const*>& path) const
     {
     path.clear();
-    auto current = this;
+    IClassMap const* current = this;
     if (!current->HasJoinedTable() && !current->IsParentOfJoinedTable())
-        return BentleyStatus::ERROR;
+        return ERROR;
 
     path.insert(path.begin(), current);
     do
         {
-        auto nextParentId = current->GetParentMapClassId();
+        ECClassId nextParentId = current->GetParentMapClassId();
         if (nextParentId == ECClass::UNSET_ECCLASSID)
-            {
             return SUCCESS;
-            }
 
-        current = GetECDbMap().GetClassMapCP(nextParentId);
-        BeAssert(current != nullptr && "Failed to find parent classmap. This should not happen");
-        if (current)
+        current = GetECDbMap().GetClassMap(nextParentId);
+        if (current == nullptr)
             {
-            if (current->HasJoinedTable() || current->IsParentOfJoinedTable())
-                path.insert(path.begin(), current);
-            else
-                return SUCCESS;
+            BeAssert(current != nullptr && "Failed to find parent classmap. This should not happen");
+            return ERROR;
             }
 
-        } while (current != nullptr);
+        if (current->HasJoinedTable() || current->IsParentOfJoinedTable())
+            path.insert(path.begin(), current);
+        else
+            return SUCCESS;
+        }
+    while (current != nullptr);
 
     path.clear();
-    return BentleyStatus::ERROR;
+    return ERROR;
     }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                         Affan.Khan  10/2015
 //---------------------------------------------------------------------------------------
 IClassMap const* IClassMap::FindClassMapOfParentOfJoinedTable() const
     {
-    auto current = this;
+    IClassMap const* current = this;
     if (!current->HasJoinedTable())
         return nullptr;
 
@@ -279,8 +279,13 @@ IClassMap const* IClassMap::FindClassMapOfParentOfJoinedTable() const
         if (nextParentId == ECClass::UNSET_ECCLASSID)
             return nullptr;
 
-        current = GetECDbMap().GetClassMapCP(nextParentId);
-        BeAssert(current != nullptr && "Failed to find parent classmap. This should not happen");
+        current = GetECDbMap().GetClassMap(nextParentId);
+        if (current == nullptr)
+            {
+            BeAssert(current != nullptr && "Failed to find parent classmap. This should not happen");
+            return nullptr;
+            }
+
         } while (current != nullptr);
 
     return nullptr;
@@ -472,7 +477,7 @@ MapStatus ClassMap::_MapPart1(SchemaImportContext& schemaImportContext, ClassMap
 //---------------------------------------------------------------------------------------
 MapStatus ClassMap::_MapPart2(SchemaImportContext& schemaImportContext, ClassMapInfo const& mapInfo, IClassMap const* parentClassMap)
     {
-    MapStatus stat = AddPropertyMaps(&schemaImportContext, parentClassMap, nullptr,&mapInfo);
+    MapStatus stat = AddPropertyMaps(schemaImportContext.GetClassMapLoadContext(), parentClassMap, nullptr, &mapInfo);
     if (stat != MapStatus::Success)
         return stat;
     if (mapInfo.GetClassHasCurrentTimeStampProperty() != nullptr)
@@ -552,7 +557,7 @@ MapStatus ClassMap::_OnInitialized()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      06/2013
 //---------------------------------------------------------------------------------------
-MapStatus ClassMap::AddPropertyMaps(SchemaImportContext* schemaImportContext, IClassMap const* parentClassMap, ECDbClassMapInfo const* loadInfo,ClassMapInfo const* classMapInfo)
+MapStatus ClassMap::AddPropertyMaps(ClassMapLoadContext& ctx, IClassMap const* parentClassMap, ECDbClassMapInfo const* loadInfo,ClassMapInfo const* classMapInfo)
     {
     bool isJoinedTable = isJoinedTable = Enum::Contains(GetMapStrategy().GetOptions(), ECDbMapStrategy::Options::JoinedTable);
     bool isMappingPhase = classMapInfo != nullptr && loadInfo == nullptr;
@@ -584,7 +589,7 @@ MapStatus ClassMap::AddPropertyMaps(SchemaImportContext* schemaImportContext, IC
     for (ECPropertyCP property : propertiesToMap)
         {
         Utf8CP propertyAccessString = property->GetName().c_str();
-        propMap = PropertyMap::CreateAndEvaluateMapping(*property, m_ecDbMap, m_ecClass, propertyAccessString, &GetJoinedTable(), nullptr);
+        propMap = PropertyMap::CreateAndEvaluateMapping(ctx, m_ecDbMap.GetECDb(), *property, m_ecClass, propertyAccessString, &GetJoinedTable(), nullptr);
         if (propMap == nullptr)
             return MapStatus::Error;
 
@@ -596,7 +601,7 @@ MapStatus ClassMap::AddPropertyMaps(SchemaImportContext* schemaImportContext, IC
 
         if (loadInfo == nullptr)
             {
-            if (SUCCESS == propMap->FindOrCreateColumnsInTable(schemaImportContext, *this, classMapInfo))
+            if (SUCCESS == propMap->FindOrCreateColumnsInTable(*this, classMapInfo))
                 GetPropertyMapsR().AddPropertyMap(propMap);
             }
         else
@@ -834,7 +839,7 @@ BentleyStatus ClassMap::InitializeDisableECInstanceIdAutogeneration()
 //------------------------------------------------------------------------------------------
 //@bsimethod                                                    casey.mullen      11 / 2011
 //------------------------------------------------------------------------------------------
-ECDbSqlColumn* ClassMap::FindOrCreateColumnForProperty(SchemaImportContext* schemaImportContext, ClassMapCR classMap,ClassMapInfo const* classMapInfo, PropertyMapR propertyMap, Utf8CP requestedColumnName, PrimitiveType columnType, bool nullable, bool unique, ECDbSqlColumn::Constraint::Collation collation, Utf8CP accessStringPrefix)
+ECDbSqlColumn* ClassMap::FindOrCreateColumnForProperty(ClassMapCR classMap,ClassMapInfo const* classMapInfo, PropertyMapR propertyMap, Utf8CP requestedColumnName, PrimitiveType columnType, bool nullable, bool unique, ECDbSqlColumn::Constraint::Collation collation, Utf8CP accessStringPrefix)
     {
     ColumnFactory::Specification::Strategy strategy = ColumnFactory::Specification::Strategy::CreateOrReuse;
     ColumnFactory::Specification::GenerateColumnNameOptions generateColumnNameOpts = ColumnFactory::Specification::GenerateColumnNameOptions::NameBasedOnClassIdAndCaseSaveAccessString;
@@ -863,7 +868,7 @@ ECDbSqlColumn* ClassMap::FindOrCreateColumnForProperty(SchemaImportContext* sche
         collation
         );
 
-    return GetColumnFactoryR().Configure(schemaImportContext, spec);
+    return GetColumnFactoryR().Configure(spec);
     }
 
 //---------------------------------------------------------------------------------------
@@ -969,7 +974,7 @@ BentleyStatus ClassMap::_Save(std::set<ClassMap const*>& savedGraph)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    affan.khan      01/2015
 //---------------------------------------------------------------------------------------
-BentleyStatus ClassMap::_Load(std::set<ClassMap const*>& loadGraph, ECDbClassMapInfo const& mapInfo, IClassMap const* parentClassMap)
+BentleyStatus ClassMap::_Load(std::set<ClassMap const*>& loadGraph, ClassMapLoadContext& ctx, ECDbClassMapInfo const& mapInfo, IClassMap const* parentClassMap)
     {
     m_dbView = std::unique_ptr<ClassDbView>(new ClassDbView(*this));
     if (parentClassMap)
@@ -1032,7 +1037,7 @@ BentleyStatus ClassMap::_Load(std::set<ClassMap const*>& loadGraph, ECDbClassMap
 
     GetPropertyMapsR().AddPropertyMap(ecInstanceIdPropertyMap);
 
-    return AddPropertyMaps(nullptr, parentClassMap, &mapInfo, nullptr) == MapStatus::Success ? SUCCESS : ERROR;
+    return AddPropertyMaps(ctx, parentClassMap, &mapInfo, nullptr) == MapStatus::Success ? SUCCESS : ERROR;
     }
 
 //---------------------------------------------------------------------------------------
@@ -1355,7 +1360,7 @@ ECDbSqlColumn* ColumnFactory::ApplyCreateOrReuseStrategy(Specification const& sp
 //------------------------------------------------------------------------------------------
 //@bsimethod                                                    Affan.Khan       01 / 2015
 //------------------------------------------------------------------------------------------
-ECDbSqlColumn* ColumnFactory::ApplyCreateOrReuseSharedColumnStrategy(SchemaImportContext* schemaImportContext, Specification const& specifications, ECDbSqlTable& targetTable, ECClassId propertyLocalToClassId)
+ECDbSqlColumn* ColumnFactory::ApplyCreateOrReuseSharedColumnStrategy(Specification const& specifications, ECDbSqlTable& targetTable, ECClassId propertyLocalToClassId)
     {
     ECDbSqlColumn const* reusableColumn = nullptr;
     if (TryFindReusableSharedDataColumn(reusableColumn, targetTable, specifications.GetCollation()))
@@ -1409,7 +1414,7 @@ ECClassId ColumnFactory::GetPersistenceClassId(Specification const& specificatio
 //------------------------------------------------------------------------------------------
 //@bsimethod                                                    Affan.Khan       01 / 2015
 //------------------------------------------------------------------------------------------
-ECDbSqlColumn* ColumnFactory::Configure(SchemaImportContext* schemaImportContext, Specification const& specifications, ECDbSqlTable& targetTable)
+ECDbSqlColumn* ColumnFactory::Configure(Specification const& specifications, ECDbSqlTable& targetTable)
     {
     ECClassId persistenceClassId = GetPersistenceClassId(specifications);
     if (persistenceClassId == 0)
@@ -1423,7 +1428,7 @@ ECDbSqlColumn* ColumnFactory::Configure(SchemaImportContext* schemaImportContext
         case Specification::Strategy::CreateOrReuse:
             outColumn = ApplyCreateOrReuseStrategy(specifications, targetTable, persistenceClassId); break;
         case Specification::Strategy::CreateOrReuseSharedColumn:
-            outColumn = ApplyCreateOrReuseSharedColumnStrategy(schemaImportContext, specifications, targetTable, persistenceClassId); break;
+            outColumn = ApplyCreateOrReuseSharedColumnStrategy(specifications, targetTable, persistenceClassId); break;
         }
 
     Utf8String const& className = m_classMap.GetClass().GetName();
@@ -1439,9 +1444,9 @@ ECDbSqlColumn* ColumnFactory::Configure(SchemaImportContext* schemaImportContext
 //------------------------------------------------------------------------------------------
 //@bsimethod                                                    Affan.Khan       01 / 2015
 //------------------------------------------------------------------------------------------
-ECDbSqlColumn* ColumnFactory::Configure(SchemaImportContext* schemaImportContext, Specification const& specifications)
+ECDbSqlColumn* ColumnFactory::Configure(Specification const& specs)
     {
-    return Configure(schemaImportContext, specifications, m_classMap.GetJoinedTable());
+    return Configure(specs, m_classMap.GetJoinedTable());
     }
 
 //------------------------------------------------------------------------------------------

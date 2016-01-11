@@ -51,9 +51,9 @@ private:
     virtual Type _GetClassMapType () const override;
     virtual IClassMap const& _GetView (View classView) const override;
     //virtual BentleyStatus _Save (std::set<ClassMap const*>& savedGraph);
-    virtual BentleyStatus _Load (std::set<ClassMap const*>& loadGraph, ECDbClassMapInfo const& mapInfo, IClassMap const* parentClassMap) override
+    virtual BentleyStatus _Load (std::set<ClassMap const*>& loadGraph, ClassMapLoadContext& ctx, ECDbClassMapInfo const& mapInfo, IClassMap const* parentClassMap) override
         {
-        auto a =  ClassMap::_Load (loadGraph, mapInfo, parentClassMap);
+        auto a =  ClassMap::_Load (loadGraph, ctx, mapInfo, parentClassMap);
         m_embeddedTypeClassView->Initialize ();
         return a;
         }
@@ -74,7 +74,7 @@ private:
      virtual MapStatus _MapPart2(SchemaImportContext&, ClassMapInfo const& classMapInfo, IClassMap const* parentClassMap) override { return MapStatus::Success; }
     virtual Type _GetClassMapType () const override { return IClassMap::Type::Unmapped; }
     UnmappedClassMap (ECN::ECClassCR ecClass, ECDbMapCR ecdbMap, ECDbMapStrategy mapStrategy, bool setIsDirty);
-    virtual BentleyStatus _Load (std::set<ClassMap const*>& loadGraph, ECDbClassMapInfo const& mapInfo, IClassMap const* parentClassMap) override
+    virtual BentleyStatus _Load (std::set<ClassMap const*>& loadGraph, ClassMapLoadContext& ctx, ECDbClassMapInfo const& mapInfo, IClassMap const* parentClassMap) override
         {
         auto nullTable = GetECDbMap ().GetSQLManager ().GetNullTable ();
         SetTable (*const_cast<ECDbSqlTable*> (nullTable));
