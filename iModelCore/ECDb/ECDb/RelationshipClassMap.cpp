@@ -481,6 +481,8 @@ MapStatus RelationshipClassEndTableMap::_MapPart1 (SchemaImportContext& schemaIm
                     foreignKey->SetOnDeleteAction(ForeignKeyActionType::Cascade);
                 else
                     foreignKey->SetOnDeleteAction(ForeignKeyActionType::SetNull);
+
+                foreignKey->RemoveIfDuplicate();
                 }
             }
         }
@@ -1121,6 +1123,8 @@ MapStatus RelationshipClassLinkTableMap::_MapPart2 (SchemaImportContext& context
         ECDbSqlColumn const* souceColumn = sourceTable->GetFilteredColumnFirst(ColumnKind::ECInstanceId);
         sourceFK->Add(GetSourceECInstanceIdPropMap()->GetFirstColumn()->GetName().c_str(), souceColumn->GetName().c_str());
         sourceFK->SetOnDeleteAction(ForeignKeyActionType::Cascade);
+        sourceFK->RemoveIfDuplicate();
+        sourceFK = nullptr;
 
         //Create FK from Target-Primary to LinkTable
         ECDbSqlTable * targetTable = const_cast<ECDbSqlTable*>(*targetTables.begin());
@@ -1128,6 +1132,8 @@ MapStatus RelationshipClassLinkTableMap::_MapPart2 (SchemaImportContext& context
         ECDbSqlColumn const* targetColumn = targetTable->GetFilteredColumnFirst(ColumnKind::ECInstanceId);
         targetFK->Add(GetTargetECInstanceIdPropMap()->GetFirstColumn()->GetName().c_str(), targetColumn->GetName().c_str());
         targetFK->SetOnDeleteAction(ForeignKeyActionType::Cascade);
+        targetFK->RemoveIfDuplicate();
+        targetFK = nullptr;
         }
 
     AddIndices (context, classMapInfo);

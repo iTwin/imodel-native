@@ -270,6 +270,22 @@ size_t ECDbSqlTable::IndexOf(ECDbSqlColumn const& column) const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        09/2014
 //---------------------------------------------------------------------------------------
+BentleyStatus ECDbSqlTable::RemoveConstraint(ECDbSqlConstraint const& constraint)
+    {
+    for (auto itor = m_constraints.begin(); itor != m_constraints.end(); ++itor)
+        {
+        if (itor->get() == &constraint)
+            {
+            m_constraints.erase(itor);
+            return SUCCESS;
+            }
+        }
+
+    return ERROR;
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan        09/2014
+//---------------------------------------------------------------------------------------
 ECDbSqlColumn* ECDbSqlTable::CreateColumn (Utf8CP name, ECDbSqlColumn::Type type, size_t position, ColumnKind kind, PersistenceType persistenceType)
     {
     if (GetEditHandleR ().AssertNotInEditMode ())
@@ -970,6 +986,75 @@ BentleyStatus ECDbSqlForeignKeyConstraint::Add (Utf8CP sourceColumn, Utf8CP targ
     return BentleyStatus::SUCCESS;
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan        09/2014
+//---------------------------------------------------------------------------------------
+bool ECDbSqlForeignKeyConstraint::IsDuplicate() const
+    {
+    for (auto constraint : GetSourceTable().GetConstraints())
+        {
+        if (constraint->GetType() == ECDbSqlConstraint::Type::ForeignKey)
+            {
+            auto fkConstraint = static_cast<ECDbSqlForeignKeyConstraint const*>(constraint);
+            if (fkConstraint == this)
+                continue;
+
+            if (Equalls(*fkConstraint))
+                return true;
+            }
+        }
+
+    return false;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan        09/2014
+//---------------------------------------------------------------------------------------
+void ECDbSqlForeignKeyConstraint::RemoveIfDuplicate()
+    {
+    if (IsDuplicate())
+        const_cast<ECDbSqlTable&>(GetSourceTable()).RemoveConstraint(*this);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan        09/2014
+//---------------------------------------------------------------------------------------
+bool ECDbSqlForeignKeyConstraint::Equalls(ECDbSqlForeignKeyConstraint const& rhs) const
+    {
+    if (&rhs == this)
+        return true;
+
+    if (rhs.m_onDeleteAction != m_onDeleteAction)
+        return false;
+
+    if (rhs.m_onUpdateAction != m_onUpdateAction)
+        return false;
+
+    if (rhs.m_sourceColumns.size() != m_sourceColumns.size())
+        return false;
+
+    if (&this->GetSourceTable() != &GetSourceTable())
+        return false;
+
+    if (&this->GetTargetTable() != &GetTargetTable())
+        return false;
+
+    std::set<ECDbSqlColumn const*> rhsSourceColumns = std::set<ECDbSqlColumn const*>(rhs.m_sourceColumns.begin(), rhs.m_sourceColumns.end());
+    std::set<ECDbSqlColumn const*> rhsTargetColumns = std::set<ECDbSqlColumn const*>(rhs.m_targetColumns.begin(), rhs.m_targetColumns.end());
+    for (auto col : m_sourceColumns)
+        {
+        if (rhsSourceColumns.find(col) == rhsSourceColumns.end())
+            return false;
+        }
+
+    for (auto col : m_targetColumns)
+        {
+        if (rhsTargetColumns.find(col) == rhsTargetColumns.end())
+            return false;
+        }
+
+    return true;
+    }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        09/2014
 //---------------------------------------------------------------------------------------

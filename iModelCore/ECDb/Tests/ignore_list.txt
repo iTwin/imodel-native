@@ -28,3 +28,12 @@ JsonUpdaterTests.CommonGeometryJsonSerialization
 #TFS349028 (Affan)
 JoinedTableECDbMapStrategyTests.PopulateECSql_TestDbWithTestData
 
+#For Hassan
+#should be either removed or inverted
+JoinedTableECDbMapStrategyTests.MultiInheritence1  
+#should be either removed or inverted
+ECDbMappingTestFixture.RelationshipWithAbstractClassAsConstraintOnParentEnd
+#should use dynamically read ECInstanceId from db instead of hardcode ones
+ECSqlInsertTestFramework.RelationshipLinkTableMappingTests
+ECSqlInsertTestFramework.RelationshipWithAdditionalPropsTests 
+ECSqlUpdateTestFramework.RelationshipWithAdditionalPropsTests

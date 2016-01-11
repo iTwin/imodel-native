@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECDbSql.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -400,7 +400,9 @@ struct ECDbSqlForeignKeyConstraint : ECDbSqlConstraint
 
         ForeignKeyActionType GetOnDeleteAction () const { return m_onDeleteAction; }
         ForeignKeyActionType GetOnUpdateAction () const { return m_onUpdateAction; }
-
+        bool IsDuplicate() const;
+        void RemoveIfDuplicate();
+        bool Equalls(ECDbSqlForeignKeyConstraint const& rhs) const;
         BentleyStatus Add (Utf8CP sourceColumn, Utf8CP targetColumn);
         BentleyStatus Remove (size_t index);
         std::vector<ECDbSqlColumn const*> const& GetSourceColumns () const { return m_sourceColumns; }
@@ -497,6 +499,7 @@ struct ECDbSqlTable : NonCopyableClass
         EditHandle const& GetEditHandle () const { return m_editInfo; }
         ECDbSqlPrimaryKeyConstraint* GetPrimaryKeyConstraint (bool createIfDonotExist = true);
         ECDbSqlForeignKeyConstraint* CreateForeignKeyConstraint (ECDbSqlTable const& targetTable);
+        BentleyStatus RemoveConstraint(ECDbSqlConstraint const& constraint);
         std::vector<ECDbSqlConstraint const*> GetConstraints () const;   
         BentleyStatus GetFilteredColumnList (std::vector<ECDbSqlColumn const*>& columns, PersistenceType persistenceType) const;
         BentleyStatus GetFilteredColumnList (std::vector<ECDbSqlColumn const*>& columns, ColumnKind knowColumnIds) const;

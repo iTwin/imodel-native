@@ -486,6 +486,7 @@ DbResult ECDbProfileManager::CreateECProfileTables(ECDbR ecdb)
     //ec_Table
     stat = ecdb.ExecuteSql("CREATE TABLE ec_Table("
                            "Id INTEGER PRIMARY KEY,"
+                           "BaseTableId INTEGER REFERENCES ec_Table(Id) ON DELETE CASCADE,"
                            "Name TEXT NOT NULL COLLATE NOCASE,"
                            "Type INTEGER NOT NULL,"
                            "IsVirtual BOOL NOT NULL CHECK (IsVirtual IN (0, 1)))");
