@@ -2,7 +2,7 @@
 |
 |     $Source: Cache/Persistence/Instances/RelationshipInfoManager.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -19,7 +19,7 @@ BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 /*--------------------------------------------------------------------------------------+
 * @bsiclass                                                     Vincas.Razma    06/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct RelationshipInfoManager : public IDeleteHandler
+struct RelationshipInfoManager : public IECDbAdapter::DeleteListener
     {
     private:
         ECDbAdapter&            m_dbAdapter;
@@ -47,9 +47,8 @@ struct RelationshipInfoManager : public IDeleteHandler
 
         ECClassCP GetInfoClass() const;
 
-        //! IDeleteHandler
-        BentleyStatus OnBeforeDelete(ECClassCR ecClass, ECInstanceId ecInstanceId) override;
-        BentleyStatus OnAfterDelete(bset<ECInstanceKey>& instancesToDeleteOut) override;
+        //! IECDbAdapter::DeleteListener
+        BentleyStatus OnBeforeDelete(ECClassCR ecClass, ECInstanceId ecInstanceId, bset<ECInstanceKey>& additionalInstancesOut) override;
 
         //! Read existing info or create RelationshipInfo for saving
         RelationshipInfo ReadInfo(ECRelationshipClassCR relationshipClass, ECInstanceKeyCR source, ECInstanceKeyCR target);

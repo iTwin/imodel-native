@@ -2,7 +2,7 @@
  |
  |     $Source: Cache/Persistence/Files/FileInfoManager.h $
  |
- |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 
@@ -12,7 +12,6 @@
 #include <WebServices/Cache/Util/ECSqlStatementCache.h>
 
 #include "../Instances/ObjectInfoManager.h"
-#include "../Hierarchy/IDeleteHandler.h"
 #include "FileStorage.h"
 #include "FileInfo.h"
 
@@ -23,7 +22,7 @@ struct HierarchyManager;
 /*--------------------------------------------------------------------------------------+
 * @bsiclass                                                     Vincas.Razma    07/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct FileInfoManager : public IDeleteHandler, public FileInfo::IAbsolutePathProvider
+struct FileInfoManager : public IECDbAdapter::DeleteListener, public FileInfo::IAbsolutePathProvider
     {
     protected:
         ECDbAdapter&            m_dbAdapter;
@@ -70,9 +69,8 @@ struct FileInfoManager : public IDeleteHandler, public FileInfo::IAbsolutePathPr
         BeFileName GetAbsoluteFilePath(bool isPersistent, BeFileNameCR relativePath) const override;
         BeFileName ReadFilePath(CachedInstanceKeyCR infoKey);
 
-        //! IDeleteHandler
-        BentleyStatus OnBeforeDelete(ECClassCR ecClass, ECInstanceId ecInstanceId) override;
-        BentleyStatus OnAfterDelete(bset<ECInstanceKey>& instancesToDeleteOut) override;
+        //! IECDbAdapter::DeleteListener
+        BentleyStatus OnBeforeDelete(ECClassCR ecClass, ECInstanceId ecInstanceId, bset<ECInstanceKey>& additionalInstancesOut) override;
     };
 
 END_BENTLEY_WEBSERVICES_NAMESPACE

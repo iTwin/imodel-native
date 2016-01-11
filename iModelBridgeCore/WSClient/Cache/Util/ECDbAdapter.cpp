@@ -357,9 +357,9 @@ bvector<ECRelationshipClassCP> ECDbAdapter::FindRelationshipClassesInSchema(ECCl
             continue;
 
         if ((DoesConstraintSupportECClass(relClass->GetSource(), *sourceClass, true) &&
-             DoesConstraintSupportECClass(relClass->GetTarget(), *targetClass, true)) ||
+            DoesConstraintSupportECClass(relClass->GetTarget(), *targetClass, true)) ||
             (DoesConstraintSupportECClass(relClass->GetSource(), *targetClass, true) &&
-             DoesConstraintSupportECClass(relClass->GetTarget(), *sourceClass, true)))
+            DoesConstraintSupportECClass(relClass->GetTarget(), *sourceClass, true)))
             {
             classes.push_back(relClass);
             }
@@ -1069,4 +1069,198 @@ BentleyStatus ECDbAdapter::GetRelatedTargetKeys(ECRelationshipClassCP relClass, 
         }
 
     return SUCCESS;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    12/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus ECDbAdapter::OnBeforeDelete(ECClassCR ecClass, ECInstanceId instanceId, bset<ECInstanceKey>& additionalToDeleteOut)
+    {
+    if (ecClass.IsRelationshipClass())
+        {
+        return SUCCESS;
+        }
+
+    for (auto listener : m_deleteListeners)
+        {
+        if (SUCCESS != listener->OnBeforeDelete(ecClass, instanceId, additionalToDeleteOut))
+            {
+            return ERROR;
+            }
+        }
+    return SUCCESS;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    12/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus ECDbAdapter::DeleteInstances(const ECInstanceKeyMultiMap& instances)
+    {
+    if (instances.empty())
+        {
+        return SUCCESS;
+        }
+
+    bset<ECInstanceKey> allInstancesBeingDeleted;
+    if (SUCCESS != FindInstancesBeingDeleted(instances, allInstancesBeingDeleted))
+        {
+        return ERROR;
+        }
+
+    bset<ECInstanceKey> additionalInstancesSet;
+    for (ECInstanceKeyCR key : allInstancesBeingDeleted)
+        {
+        ECClassCP ecClass = GetECClass(key);
+        if (nullptr == ecClass)
+            {
+            return ERROR;
+            }
+        for (auto listener : m_deleteListeners)
+            {
+            if (SUCCESS != listener->OnBeforeDelete(*ecClass, key.GetECInstanceId(), additionalInstancesSet))
+                {
+                return ERROR;
+                }
+            }
+        }
+
+    for (auto pair : instances)
+        {
+        Utf8PrintfString key("DeleteInstances:%lld", pair.first);
+        auto statement = m_statementCache.GetPreparedStatement(key, [&]
+            {
+            ECClassCP ecClass = GetECClass(pair.first);
+            if (nullptr == ecClass)
+                {
+                return bastring();
+                }
+
+            return "DELETE FROM ONLY " + ecClass->GetECSqlName() + " WHERE ECInstanceId = ? ";
+            });
+
+        statement->BindId(1, pair.second);
+
+        DbResult result;
+        if (BE_SQLITE_DONE != (result = statement->Step()))
+            {
+            return ERROR;
+            }
+        }
+
+    ECInstanceKeyMultiMap additionalInstancesMap;
+    for (auto& key : additionalInstancesSet)
+        {
+        additionalInstancesMap.Insert(key.GetECClassId(), key.GetECInstanceId());
+        }
+
+    return DeleteInstances(additionalInstancesMap);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus ECDbAdapter::FindInstancesBeingDeleted
+(
+const ECInstanceKeyMultiMap& seedInstancesBeingDeleted,
+bset<ECInstanceKey>& allInstancesBeingDeletedOut
+)
+    {
+    for (auto& pair : seedInstancesBeingDeleted)
+        {
+        ECInstanceKey key (pair.first, pair.second);
+        if (SUCCESS != FindInstancesBeingDeleted(key, allInstancesBeingDeletedOut))
+            {
+            return ERROR;
+            }
+        }
+    return SUCCESS;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus ECDbAdapter::FindInstancesBeingDeleted
+(
+ECInstanceKeyCR instanceToDelete,
+bset<ECInstanceKey>& allInstancesBeingDeletedOut
+)
+    {
+    auto it = allInstancesBeingDeletedOut.find(instanceToDelete);
+    if (it != allInstancesBeingDeletedOut.end())
+        {
+        // Already found instances being deleted
+        return SUCCESS;
+        }
+
+    allInstancesBeingDeletedOut.insert(instanceToDelete);
+
+    ECInstanceFinder& finder = GetECInstanceFinder();
+
+    ECInstanceKeyMultiMap embeddedChildren, heldChildren;
+    if (SUCCESS != finder.FindRelatedInstances(&embeddedChildren, nullptr, instanceToDelete, ECInstanceFinder::RelatedDirection_EmbeddedChildren) ||
+        SUCCESS != finder.FindRelatedInstances(&heldChildren, nullptr, instanceToDelete, ECInstanceFinder::RelatedDirection_HeldChildren))
+        {
+        return ERROR;
+        }
+
+    if (SUCCESS != FindInstancesBeingDeleted(embeddedChildren, allInstancesBeingDeletedOut))
+        {
+        return ERROR;
+        }
+
+    bset<ECInstanceKey> childrenBeingDeleted;
+    for (auto& pair : heldChildren)
+        {
+        ECInstanceKey childKey(pair.first, pair.second);
+
+        ECInstanceKeyMultiMap holdingParents;
+        if (SUCCESS != finder.FindRelatedInstances(&holdingParents, nullptr, childKey, ECInstanceFinder::RelatedDirection_HoldingParents))
+            {
+            return ERROR;
+            }
+
+        ECInstanceKeyMultiMap aliveHoldingParents;
+        for (auto& pair : holdingParents)
+            {
+            ECInstanceKey parentKey(pair.first, pair.second);
+            auto it = allInstancesBeingDeletedOut.find(parentKey);
+            if (it == allInstancesBeingDeletedOut.end())
+                {
+                aliveHoldingParents.insert(pair);
+                }
+            }
+
+        if (!aliveHoldingParents.empty())
+            {
+            continue;
+            }
+
+        childrenBeingDeleted.insert(childKey);
+        }
+
+    for (auto& childKey : childrenBeingDeleted)
+        {
+        if (SUCCESS != FindInstancesBeingDeleted(childKey, allInstancesBeingDeletedOut))
+            {
+            return ERROR;
+            }
+        }
+
+    return SUCCESS;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    12/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+void ECDbAdapter::RegisterDeleteListener(DeleteListener* listener)
+    {
+    m_deleteListeners.insert(listener);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    12/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+void ECDbAdapter::UnRegisterDeleteListener(DeleteListener* listener)
+    {
+    m_deleteListeners.erase(listener);
     }

@@ -54,6 +54,7 @@
     </BuildLog>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Azure\AzureBlobStorageClient.cpp" />
     <ClCompile Include="Cache\CacheNavigationTask.cpp" />
     <ClCompile Include="Cache\CachingDataSource.cpp" />
     <ClCompile Include="Cache\CachingTaskBase.cpp" />
@@ -170,6 +171,7 @@
     <ClCompile Include="Client\WSQuery.cpp" />
     <ClCompile Include="Client\WSRepository.cpp" />
     <ClCompile Include="Client\WSRepositoryClient.cpp" />
+    <ClCompile Include="Tests\UnitTests\Published\WebServices\Azure\AzureBlobStorageClientTests.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Cache\CacheNavigationTask.h" />
@@ -193,7 +195,6 @@
     <ClInclude Include="Cache\Persistence\Files\FileInfo.h" />
     <ClInclude Include="Cache\Persistence\Files\FileInfoManager.h" />
     <ClInclude Include="Cache\Persistence\Hierarchy\HierarchyManager.h" />
-    <ClInclude Include="Cache\Persistence\Hierarchy\IDeleteHandler.h" />
     <ClInclude Include="Cache\Persistence\Hierarchy\RootManager.h" />
     <ClInclude Include="Cache\Persistence\Instances\CachedInstanceKey.h" />
     <ClInclude Include="Cache\Persistence\Hierarchy\CacheNodeKey.h" />
@@ -229,6 +230,7 @@
     <ClInclude Include="PublicAPI\DgnDbServer\Client\DgnDbRepositoryConnection.h" />
     <ClInclude Include="PublicAPI\DgnDbServer\Client\RepositoryInfo.h" />
     <ClInclude Include="PublicAPI\DgnDbServer\DgnDbServerCommon.h" />
+    <ClInclude Include="PublicAPI\WebServices\Azure\AzureBlobStorageClient.h" />
     <ClInclude Include="PublicAPI\WebServices\Cache\CachingDataSource.h" />
     <ClInclude Include="PublicAPI\WebServices\Cache\ICachingDataSource.h" />
     <ClInclude Include="PublicAPI\WebServices\Cache\IQueryProvider.h" />
@@ -316,6 +318,7 @@
     <ClInclude Include="PublicAPI\WebServices\Client\WSRepository.h" />
     <ClInclude Include="PublicAPI\WebServices\Client\WSRepositoryClient.h" />
     <ClInclude Include="PublicAPI\WebServices\WebServices.h" />
+    <ClInclude Include="Tests\UnitTests\Published\WebServices\Azure\AzureBlobStorageClientTests.h" />
   </ItemGroup>
   <ItemGroup>
     <Xml Include="Cache\Persistence\ECSchemas\DataSourceSpecification.01.00.ecschema.xml" />
@@ -334,6 +337,7 @@
     </Xml>
   </ItemGroup>
   <ItemGroup>
+    <None Include="Azure\Azure.mki" />
     <None Include="BentleyDesktopClientCCApi.prewire.mke" />
     <None Include="CacheLib.mke" />
     <None Include="CachePrewire.mke" />
