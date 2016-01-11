@@ -1,6 +1,6 @@
 //-------------------------------------------------------------------------------------- 
 //     $Source: PublicAPI/DgnPlatform/Annotations/AnnotationTextBlockDraw.h $
-//  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //-------------------------------------------------------------------------------------- 
 #pragma once
 
@@ -29,9 +29,9 @@ private:
     AnnotationTextBlockLayoutCP m_layout;
 
     DGNPLATFORM_EXPORT void CopyFrom(AnnotationTextBlockDrawCR);
-    BentleyStatus DrawTextRun(AnnotationLayoutRunCR, ViewContextR) const;
-    BentleyStatus DrawFractionRun(AnnotationLayoutRunCR, ViewContextR) const;
-    BentleyStatus DrawLineBreakRun(AnnotationLayoutRunCR, ViewContextR) const;
+    BentleyStatus DrawTextRun(AnnotationLayoutRunCR, Render::GraphicR, ViewContextR, Render::GeometryParamsR, TransformCR) const;
+    BentleyStatus DrawFractionRun(AnnotationLayoutRunCR, Render::GraphicR, ViewContextR, Render::GeometryParamsR, TransformCR) const;
+    BentleyStatus DrawLineBreakRun(AnnotationLayoutRunCR, Render::GraphicR, ViewContextR, Render::GeometryParamsR, TransformCR) const;
 
 public:
     DGNPLATFORM_EXPORT explicit AnnotationTextBlockDraw(AnnotationTextBlockLayoutCR);
@@ -42,7 +42,7 @@ public:
 
     AnnotationTextBlockLayoutCR GetLayout() const { return *m_layout; }
 
-    DGNPLATFORM_EXPORT BentleyStatus Draw(ViewContextR) const;
+    DGNPLATFORM_EXPORT BentleyStatus Draw(Render::GraphicR, ViewContextR, Render::GeometryParamsR) const;
 };
 
 //! @endGroup

@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/Annotations/TextAnnotationDraw.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -43,10 +43,7 @@ public:
     TransformCR GetDocumentTransform() const { return m_documentTransform; }
     void SetDocumentTransform(TransformCR value) { m_documentTransform = value; }
 
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    DGNVIEW_EXPORT BentleyStatus Draw(DgnViewportR, Render::DgnDrawMode, DrawPurpose, DgnCategoryId) const;
-#endif
-    DGNPLATFORM_EXPORT BentleyStatus Draw(ViewContextR) const;
+    DGNPLATFORM_EXPORT Render::GraphicPtr Draw(ViewContextR, Render::GeometryParamsR) const;
 };
 
 //! @endGroup

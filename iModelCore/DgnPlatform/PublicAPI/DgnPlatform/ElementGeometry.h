@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/ElementGeometry.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -460,6 +460,7 @@ public:
     bool Is3d() const {return m_is3d;} //!< @private
     Placement2dCR GetPlacement2d() const {return m_placement2d;} //!< @private
     Placement3dCR GetPlacement3d() const {return m_placement3d;} //!< @private
+    Render::GeometryParamsCR GetGeometryParams() const {return m_elParams;} //!< @private
     DGNPLATFORM_EXPORT BentleyStatus GetGeometryStream (GeometryStreamR); //!< @private
     DGNPLATFORM_EXPORT GeometryStreamEntryId GetGeometryStreamEntryId() const; //! Return the primitive id of the geometry last added to the builder.
 

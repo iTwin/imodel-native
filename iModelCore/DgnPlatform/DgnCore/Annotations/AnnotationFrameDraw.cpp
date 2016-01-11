@@ -27,61 +27,52 @@ void AnnotationFrameDraw::CopyFrom(AnnotationFrameDrawCR rhs)
     m_frameLayout = rhs.m_frameLayout;
     }
 
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     06/2014
 //---------------------------------------------------------------------------------------
-static void setStrokeSymbology(ViewContextR context, AnnotationColorType colorType, ColorDef colorValue, uint32_t weight)
+static void setStrokeSymbology(Render::GraphicR graphic, ViewContextR context, GeometryParamsR geomParams, AnnotationColorType colorType, ColorDef colorValue, uint32_t weight)
     {
-    GeometryParamsR displayParams = context.GetCurrentGeometryParams();
-
-    displayParams.ResetAppearance();
-
-    displayParams.SetWeight(weight);
-    displayParams.SetFillDisplay(FillDisplay::Never);
-    displayParams.SetTransparency(0.0);
+    geomParams.ResetAppearance();
+    geomParams.SetWeight(weight);
+    geomParams.SetFillDisplay(FillDisplay::Never);
+    geomParams.SetTransparency(0.0);
     
     switch (colorType)
         {
         case AnnotationColorType::ByCategory: /* don't override */break;
-        case AnnotationColorType::RGBA: displayParams.SetLineColor(colorValue); break;
+        case AnnotationColorType::RGBA: geomParams.SetLineColor(colorValue); break;
         case AnnotationColorType::ViewBackground: BeAssert(false) /* unsupported */; break;
         default: BeAssert(false) /* unknown */; break;
         }
 
-    context.CookGeometryParams();
+    context.CookGeometryParams(geomParams, graphic);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     06/2014
 //---------------------------------------------------------------------------------------
-static void setFillSymbology(ViewContextR context, AnnotationColorType colorType, ColorDef colorValue, double transparency)
+static void setFillSymbology(Render::GraphicR graphic, ViewContextR context, GeometryParamsR geomParams, AnnotationColorType colorType, ColorDef colorValue, double transparency)
     {
-    GeometryParamsR displayParams = context.GetCurrentGeometryParams();
-
-    displayParams.ResetAppearance();
-
-    displayParams.SetTransparency(transparency);
-    displayParams.SetFillDisplay(FillDisplay::Blanking);
+    geomParams.ResetAppearance();
+    geomParams.SetTransparency(transparency);
+    geomParams.SetFillDisplay(FillDisplay::Blanking);
 
     switch (colorType)
         {
         case AnnotationColorType::ByCategory: /* don't override */break;
-        case AnnotationColorType::RGBA: displayParams.SetFillColor(colorValue); break;
-        case AnnotationColorType::ViewBackground: displayParams.SetFillColorToViewBackground(); break;
+        case AnnotationColorType::RGBA: geomParams.SetFillColor(colorValue); break;
+        case AnnotationColorType::ViewBackground: geomParams.SetFillColorToViewBackground(); break;
         default: BeAssert(false) /* unknown */; break;
         }
 
-    context.CookGeometryParams();
+    context.CookGeometryParams(geomParams, graphic);
     }
-#endif
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     06/2014
 //---------------------------------------------------------------------------------------
-BentleyStatus AnnotationFrameDraw::Draw(ViewContextR context) const
+BentleyStatus AnnotationFrameDraw::Draw(Render::GraphicR graphic, ViewContextR context, GeometryParamsR geomParams) const
     {
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     AnnotationFrameStylePtr frameStyle = m_frameLayout->GetFrame().CreateEffectiveStyle();
     
     // Invisible?
@@ -92,27 +83,22 @@ BentleyStatus AnnotationFrameDraw::Draw(ViewContextR context) const
     if (!frameStyle->IsStrokeEnabled() && !frameStyle->IsFillEnabled())
         return SUCCESS;
     
-    GraphicR output = context.GetCurrentGraphicR();
-
     // We have to copy so that we can call SetBoundaryType to ensure we get a line string for stroke vs. a surface for fill.
     CurveVectorPtr frameGeometry = m_frameLayout->GetFrameGeometry().Clone();
     
     if (frameStyle->IsStrokeEnabled())
         {
-        setStrokeSymbology(context, frameStyle->GetStrokeColorType(), frameStyle->GetStrokeColorValue(), frameStyle->GetStrokeWeight());
+        setStrokeSymbology(graphic, context, geomParams, frameStyle->GetStrokeColorType(), frameStyle->GetStrokeColorValue(), frameStyle->GetStrokeWeight());
         frameGeometry->SetBoundaryType(CurveVector::BOUNDARY_TYPE_Open);
-        output.AddCurveVector(*frameGeometry, false);
+        graphic.AddCurveVector(*frameGeometry, false);
         }
 
     if (frameStyle->IsFillEnabled() && (frameStyle->GetFillTransparency() < 1.0))
         {
-        setFillSymbology(context, frameStyle->GetFillColorType(), frameStyle->GetFillColorValue(), frameStyle->GetFillTransparency());
+        setFillSymbology(graphic, context, geomParams, frameStyle->GetFillColorType(), frameStyle->GetFillColorValue(), frameStyle->GetFillTransparency());
         frameGeometry->SetBoundaryType(CurveVector::BOUNDARY_TYPE_Outer);
-        output.AddCurveVector(*frameGeometry, true);
+        graphic.AddCurveVector(*frameGeometry, true);
         }
 
     return SUCCESS;
-#else
-    return ERROR;
-#endif
     }

@@ -1,6 +1,6 @@
 //-------------------------------------------------------------------------------------- 
 //     $Source: DgnCore/Annotations/TextAnnotationDraw.cpp $
-//  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //-------------------------------------------------------------------------------------- 
 
 #include <DgnPlatformInternal.h> 
@@ -27,76 +27,61 @@ void TextAnnotationDraw::CopyFrom(TextAnnotationDrawCR rhs)
     m_documentTransform = rhs.m_documentTransform;
     }
 
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-//=======================================================================================
-// @bsiclass                                                    Jeff.Marker     07/2014
-//=======================================================================================
-struct PopTransformClipOnDestruct
-{
-private:
-    bool m_isCancelled;
-    ViewContextR m_context;
-
-    void Pop() { if (!m_isCancelled) { m_context.PopTransformClip(); } }
-
-public:
-    explicit PopTransformClipOnDestruct(ViewContextR context) : m_isCancelled(false), m_context(context) {}
-    ~PopTransformClipOnDestruct() { Pop(); }
-    void CallThenCancel() { Pop(); Cancel(); }
-    void Cancel() { m_isCancelled = true; }
-};
-#endif
-
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     05/2014
 //---------------------------------------------------------------------------------------
-BentleyStatus TextAnnotationDraw::Draw(ViewContextR context) const
+Render::GraphicPtr TextAnnotationDraw::Draw(ViewContextR context, GeometryParamsR geomParams) const
     {
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    BentleyStatus status = SUCCESS;
-    
     //.............................................................................................
-    if (NULL == m_annotation->GetTextCP())
-        return status;
+    if (nullptr == m_annotation->GetTextCP())
+        return nullptr;
 
-    context.PushTransform(m_documentTransform);
-    PopTransformClipOnDestruct autoPopDocumentTransform(context);
+    Render::GraphicPtr graphic = context.CreateGraphic(Graphic::CreateParams(context.GetViewport(), m_documentTransform));
 
     AnnotationTextBlockLayout textLayout(*m_annotation->GetTextCP());
     AnnotationTextBlockDraw textDraw(textLayout);
 
-    if (SUCCESS != textDraw.Draw(context))
-        status = ERROR;
+    textDraw.Draw(*graphic, context, geomParams);
 
     //.............................................................................................
-    if (NULL == m_annotation->GetFrameCP())
-        return status;
-        
-    AnnotationFrameLayout frameLayout(*m_annotation->GetFrameCP(), textLayout);
-    AnnotationFrameDraw frameDraw(frameLayout);
-    
-    if (SUCCESS != frameDraw.Draw(context))
-        status = ERROR;
-    
-    //.............................................................................................
-    if (m_annotation->GetLeaders().empty())
-        return status;
-    
-    autoPopDocumentTransform.CallThenCancel();
-
-    for (auto const& leader : m_annotation->GetLeaders())
+    if (nullptr != m_annotation->GetFrameCP())
         {
-        AnnotationLeaderLayout leaderLayout(*leader, frameLayout);
-        leaderLayout.SetFrameTransform(m_documentTransform);
+        AnnotationFrameLayout frameLayout(*m_annotation->GetFrameCP(), textLayout);
+        AnnotationFrameDraw frameDraw(frameLayout);
+    
+        frameDraw.Draw(*graphic, context, geomParams);
 
-        AnnotationLeaderDraw leaderDraw(leaderLayout);
+        //.............................................................................................
+        if (!m_annotation->GetLeaders().empty())
+            {    
+            Transform   invDocTrans;
+
+            // NEEDSWORK: Probably shouldn't assume that m_documentTransform == element's placement...
+            invDocTrans.InverseOf(m_documentTransform); // Don't want sub-graphic relative to main graphic...
+
+            Render::GraphicPtr subGraphic = graphic->CreateSubGraphic(invDocTrans);
+
+            for (auto const& leader : m_annotation->GetLeaders())
+                {
+                AnnotationLeaderLayout leaderLayout(*leader, frameLayout);
+                leaderLayout.SetFrameTransform(m_documentTransform);
+
+                AnnotationLeaderDraw leaderDraw(leaderLayout);
         
-        if (SUCCESS != leaderDraw.Draw(context))
-            status = ERROR;
+                leaderDraw.Draw(*graphic, context, geomParams);
+                }
+
+            subGraphic->Close();
+
+            // NOTE: Need to cook GeometryParams to get GraphicParams, but we don't want to activate...
+            GraphicParams graphicParams;
+
+            context.CookGeometryParams(geomParams, graphicParams);
+            graphic->AddSubGraphic(*subGraphic, invDocTrans, graphicParams);
+            }
         }
 
-    return status;
-#else
-    return ERROR;
-#endif
+    graphic->Close();
+
+    return graphic;
     }
