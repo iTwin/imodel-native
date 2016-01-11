@@ -195,7 +195,6 @@
     <ClInclude Include="Cache\Persistence\Files\FileInfo.h" />
     <ClInclude Include="Cache\Persistence\Files\FileInfoManager.h" />
     <ClInclude Include="Cache\Persistence\Hierarchy\HierarchyManager.h" />
-    <ClInclude Include="Cache\Persistence\Hierarchy\IDeleteHandler.h" />
     <ClInclude Include="Cache\Persistence\Hierarchy\RootManager.h" />
     <ClInclude Include="Cache\Persistence\Instances\CachedInstanceKey.h" />
     <ClInclude Include="Cache\Persistence\Hierarchy\CacheNodeKey.h" />

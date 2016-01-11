@@ -2,7 +2,7 @@
  |
  |     $Source: PublicAPI/WebServices/Cache/Util/ECDbAdapter.h $
  |
- |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -29,10 +29,22 @@ struct ECDbAdapter : public IECDbAdapter, public IECDbSchemaChangeListener
         ECSqlStatementCache m_statementCache;
         std::shared_ptr<Statement> m_findRelationshipClassesStatement;
         std::shared_ptr<ECInstanceFinder> m_finder;
+        bset<DeleteListener*> m_deleteListeners;
 
     private:
         static bool DoesConstraintSupportECClass(ECRelationshipConstraintCR constraint, ECClassCR ecClass, bool allowPolymorphic);
         static int FindDistanceFromBaseClass(ECClassCP ecClass, ECClassCP targetClass, int dist = 0);
+        BentleyStatus FindInstancesBeingDeleted
+            (
+            const ECInstanceKeyMultiMap& seedInstancesBeingDeleted,
+            bset<ECInstanceKey>& allInstancesBeingDeletedOut
+            );
+        BentleyStatus FindInstancesBeingDeleted
+            (
+            ECInstanceKeyCR instanceToDelete,
+            bset<ECInstanceKey>& allInstancesBeingDeletedOut
+            );
+        BentleyStatus OnBeforeDelete(ECClassCR ecClass, ECInstanceId instanceId, bset<ECInstanceKey>& additionalToDeleteOut);
 
     public:
         WSCACHE_EXPORT ECDbAdapter(ObservableECDb& ecDb);
@@ -44,22 +56,22 @@ struct ECDbAdapter : public IECDbAdapter, public IECDbSchemaChangeListener
         WSCACHE_EXPORT ObservableECDb& GetECDb() override;
         WSCACHE_EXPORT ECInstanceFinder& GetECInstanceFinder() override;
 
-        WSCACHE_EXPORT ECSchemaCP GetECSchema (Utf8StringCR schemaName) override;
+        WSCACHE_EXPORT ECSchemaCP GetECSchema(Utf8StringCR schemaName) override;
         WSCACHE_EXPORT bool HasECSchema(Utf8StringCR schemaName) override;
 
-        WSCACHE_EXPORT ECClassCP GetECClass (Utf8StringCR classKey) override;
-        WSCACHE_EXPORT ECClassCP GetECClass (ECClassId classId) override;
-        WSCACHE_EXPORT ECClassCP GetECClass (Utf8StringCR schemaName, Utf8StringCR className) override;
-        WSCACHE_EXPORT ECClassCP GetECClass (ECInstanceKeyCR instanceKey) override;
-        WSCACHE_EXPORT ECClassCP GetECClass (ObjectIdCR objectId) override;
+        WSCACHE_EXPORT ECClassCP GetECClass(Utf8StringCR classKey) override;
+        WSCACHE_EXPORT ECClassCP GetECClass(ECClassId classId) override;
+        WSCACHE_EXPORT ECClassCP GetECClass(Utf8StringCR schemaName, Utf8StringCR className) override;
+        WSCACHE_EXPORT ECClassCP GetECClass(ECInstanceKeyCR instanceKey) override;
+        WSCACHE_EXPORT ECClassCP GetECClass(ObjectIdCR objectId) override;
 
         WSCACHE_EXPORT bvector<ECClassCP> GetECClasses(const ECInstanceKeyMultiMap& instanceMultiMap) override;
 
-        WSCACHE_EXPORT ECRelationshipClassCP GetECRelationshipClass (Utf8StringCR classKey) override;
-        WSCACHE_EXPORT ECRelationshipClassCP GetECRelationshipClass (ECClassId classId) override;
-        WSCACHE_EXPORT ECRelationshipClassCP GetECRelationshipClass (Utf8StringCR schemaName, Utf8StringCR className) override;
-        WSCACHE_EXPORT ECRelationshipClassCP GetECRelationshipClass (ECInstanceKeyCR instanceKey) override;
-        WSCACHE_EXPORT ECRelationshipClassCP GetECRelationshipClass (ObjectIdCR objectId) override;
+        WSCACHE_EXPORT ECRelationshipClassCP GetECRelationshipClass(Utf8StringCR classKey) override;
+        WSCACHE_EXPORT ECRelationshipClassCP GetECRelationshipClass(ECClassId classId) override;
+        WSCACHE_EXPORT ECRelationshipClassCP GetECRelationshipClass(Utf8StringCR schemaName, Utf8StringCR className) override;
+        WSCACHE_EXPORT ECRelationshipClassCP GetECRelationshipClass(ECInstanceKeyCR instanceKey) override;
+        WSCACHE_EXPORT ECRelationshipClassCP GetECRelationshipClass(ObjectIdCR objectId) override;
 
         WSCACHE_EXPORT bvector<ECRelationshipClassCP> FindRelationshipClasses(ECClassId sourceClassId, ECClassId targetClassId) override;
         WSCACHE_EXPORT bvector<ECRelationshipClassCP> FindRelationshipClassesWithSource(ECClassId sourceClassId, Utf8String schemaName) override;
@@ -125,7 +137,11 @@ struct ECDbAdapter : public IECDbAdapter, public IECDbSchemaChangeListener
         WSCACHE_EXPORT ECInstanceKey FindRelationship(ECRelationshipClassCP relClass, ECInstanceKeyCR source, ECInstanceKeyCR target) override;
         WSCACHE_EXPORT bool HasRelationship(ECRelationshipClassCP relClass, ECInstanceKeyCR source, ECInstanceKeyCR target) override;
 
+        WSCACHE_EXPORT BentleyStatus DeleteInstances(const ECInstanceKeyMultiMap& instances) override;
         WSCACHE_EXPORT BentleyStatus DeleteRelationship(ECRelationshipClassCP relClass, ECInstanceKeyCR source, ECInstanceKeyCR target) override;
+
+        WSCACHE_EXPORT void RegisterDeleteListener(DeleteListener* listener) override;
+        WSCACHE_EXPORT void UnRegisterDeleteListener(DeleteListener* listener) override;
     };
 
 typedef ECDbAdapter& ECDbAdapterR;

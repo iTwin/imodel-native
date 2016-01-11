@@ -554,9 +554,6 @@
     <ClInclude Include="Cache\Persistence\Hierarchy\HierarchyManager.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Cache\Persistence\Hierarchy\IDeleteHandler.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="Cache\Persistence\Hierarchy\RootManager.h">
       <Filter>Header Files</Filter>
     </ClInclude>

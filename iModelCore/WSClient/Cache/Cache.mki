@@ -2,7 +2,7 @@
 #
 #     $Source: Cache/Cache.mki $
 #
-#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 #
 #----------------------------------------------------------------------------------------
 
@@ -73,7 +73,6 @@ ClientMkiHeaders =                                                          \
     $(CacheMkiSourceDir)Persistence/Files/FileInfo.h                        \
     $(CacheMkiSourceDir)Persistence/Files/FileInfoManager.h                 \
     $(CacheMkiSourceDir)Persistence/Hierarchy/HierarchyManager.h            \
-    $(CacheMkiSourceDir)Persistence/Hierarchy/IDeleteHandler.h              \
     $(CacheMkiSourceDir)Persistence/Hierarchy/RootManager.h                 \
     $(CacheMkiSourceDir)Persistence/Instances/InstanceCacheHelper.h         \
     $(CacheMkiSourceDir)Persistence/Instances/NavigationBaseManager.h       \

@@ -2,7 +2,7 @@
 |
 |     $Source: Cache/Persistence/Core/WSCacheState.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -29,11 +29,7 @@ extendedDataAdapter(db),
 objectInfoManager(dbAdapter, statementCache, hierarchyManager),
 relationshipInfoManager(dbAdapter, statementCache, hierarchyManager),
 fileInfoManager(dbAdapter, statementCache, fileStorage, objectInfoManager, hierarchyManager),
-#if defined (NEEDS_WORK_PORT_GRA06_ECDbDeleteHandler) // Port 0503 to 06,
-hierarchyManager(dbAdapter, statementCache, changeInfoManager),
-#else
 hierarchyManager(dbAdapter, statementCache, objectInfoManager, changeInfoManager),
-#endif
 instanceCacheHelper(dbAdapter, hierarchyManager, objectInfoManager, relationshipInfoManager, changeInfoManager),
 rootManager(dbAdapter, statementCache, instanceCacheHelper, hierarchyManager, objectInfoManager),
 responseManager(dbAdapter, statementCache, hierarchyManager, relationshipInfoManager, objectInfoManager),

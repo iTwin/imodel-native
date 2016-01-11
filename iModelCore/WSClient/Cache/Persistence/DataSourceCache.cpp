@@ -2,7 +2,7 @@
 |
 |     $Source: Cache/Persistence/DataSourceCache.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -947,11 +947,15 @@ CacheStatus DataSourceCache::RemoveInstance(ObjectIdCR objectId)
     if (objectId.IsEmpty())
         {
         CacheNodeKey key = m_state->GetNavigationBaseManager().FindNavigationBase();
+        if (!key.IsValid())
+            {
+            return CacheStatus::DataNotCached;
+            }
         if (SUCCESS != m_state->GetHierarchyManager().DeleteInstance(key))
             {
             return CacheStatus::Error;
             }
-
+        return CacheStatus::OK;
         }
 
     CachedInstanceKey cachedKey = m_state->GetObjectInfoManager().ReadCachedInstanceKey(objectId);
@@ -960,8 +964,9 @@ CacheStatus DataSourceCache::RemoveInstance(ObjectIdCR objectId)
         return CacheStatus::DataNotCached;
         }
 
-    if (SUCCESS != m_state->GetCachedResponseManager().InvalidateResponsePagesContainingInstance(cachedKey))
-        {
+    if (SUCCESS != m_state->GetCachedResponseManager().InvalidateResponsePagesContainingInstance(cachedKey) ||
+        SUCCESS != m_state->GetHierarchyManager().DeleteInstance(cachedKey.GetInfoKey()))
+        { 
         return CacheStatus::Error;
         }
 
@@ -1626,14 +1631,14 @@ BentleyStatus DataSourceCache::RemoveTemporaryResponses(Utf8StringCR name, DateT
     {
     LogCacheDataForMethod();
 
-    ECInstanceKeyMultiMap fullyPersistedNodes, fullyPersistedInstances;
+    ECInstanceKeyMultiMap fullyPersistedNodes;
     if (SUCCESS != m_state->GetRootManager().GetNodesByPersistence(CacheRootPersistence::Full, fullyPersistedNodes) ||
-        SUCCESS != m_state->GetObjectInfoManager().ReadCachedInstanceKeys(fullyPersistedNodes, fullyPersistedInstances))
+        SUCCESS != m_state->GetCachedResponseManager().DeleteResponses(name, accessedBeforeDateUtc, fullyPersistedNodes))
         {
         return ERROR;
         }
 
-    return m_state->GetCachedResponseManager().DeleteResponses(name, accessedBeforeDateUtc, fullyPersistedInstances);
+    return SUCCESS;
     }
 
 /*--------------------------------------------------------------------------------------+
