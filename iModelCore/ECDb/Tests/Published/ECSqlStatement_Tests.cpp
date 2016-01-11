@@ -489,6 +489,30 @@ TEST_F (ECSqlStatementTestFixture, VerifyLiteralExpressionAsConstants)
     statement.Finalize ();
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                             Muhammad Hassan                         01/16
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (ECSqlStatementTestFixture, WrapWhereClauseInParams)
+    {
+    ECDbR ecdb = SetupECDb ("ECSqlStatementTests.ecdb", BeFileName (L"ECSqlStatementTests.01.00.ecschema.xml"));
+    ECSqlStatementTestsSchemaHelper::Populate (ecdb);
+
+    ECSqlStatement statement;
+    ASSERT_EQ (ECSqlStatus::Success, statement.Prepare (ecdb, "SELECT Phone FROM ECST.Customer WHERE Country='USA' OR Company='ABC'"));
+    Utf8String nativeSql = statement.GetNativeSql ();
+    ASSERT_TRUE (nativeSql.find ("WHERE ([Customer].[Country] = 'USA' OR [Customer].[Company] = 'ABC')") != nativeSql.npos);
+    statement.Finalize ();
+
+    ASSERT_EQ (ECSqlStatus::Success, statement.Prepare (ecdb, "SELECT Phone FROM ECST.Customer WHERE Country='USA' AND Company='ABC'"));
+    nativeSql = statement.GetNativeSql ();
+    ASSERT_TRUE (nativeSql.find ("WHERE [Customer].[Country] = 'USA' AND [Customer].[Company] = 'ABC'") != nativeSql.npos);
+    statement.Finalize ();
+
+    ASSERT_EQ (ECSqlStatus::Success, statement.Prepare (ecdb, "SELECT Phone FROM ECST.Customer WHERE Country='USA' OR Country='DUBAI' AND ContactTitle='AM'"));
+    nativeSql = statement.GetNativeSql ();
+    ASSERT_TRUE (nativeSql.find ("WHERE ([Customer].[Country] = 'USA' OR [Customer].[Country] = 'DUBAI' AND [Customer].[ContactTitle] = 'AM')") != nativeSql.npos);
+    }
+
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Affan.Khan                 07/14
 //+---------------+---------------+---------------+---------------+---------------+------
