@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/DgnDomain.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -27,7 +27,7 @@
 #define DOMAINHANDLER_DECLARE_MEMBERS_NO_CTOR(__classname__,__exporter__) \
     private:   __exporter__ static __classname__*& z_PeekInstance(); \
                             static __classname__* z_CreateInstance(); \
-    protected: virtual Dgn::DgnDomain::Handler* _CreateMissingHandler(uint64_t restrictions) override {return new Dgn::DgnDomain::MissingHandler<__classname__>(restrictions, *this);}\
+    protected: virtual Dgn::DgnDomain::Handler* _CreateMissingHandler(uint64_t restrictions, Utf8StringCR domainName, Utf8StringCR className) override {return new Dgn::DgnDomain::MissingHandler<__classname__>(restrictions, domainName, className, *this);}\
     public:    __exporter__ static __classname__& GetHandler() {return z_Get##__classname__##Instance();}\
                __exporter__ static __classname__& z_Get##__classname__##Instance();
 
@@ -111,6 +111,14 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnDomain : NonCopyableClass
     //! The current version of the HandlerAPI
     enum {API_VERSION = 1};
 
+    //! Options for ImportSchema
+    //! @see ImportSchema
+    enum class ImportSchemaOptions
+        {
+        ImportOnly = 0,                 //!< No additional processing, only import. For example, don't create ECClassViews. Used when known that ImportSchema will be called multiple times
+        CreateECClassViews = 1 << 0,    //!< Create ECClassViews after importing schema
+        };
+
     struct Handler;
 
     //! A template used to create a proxy handler of a superclass when the handler subclass cannot be found at run-time.
@@ -118,16 +126,19 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnDomain : NonCopyableClass
     template<typename T> struct MissingHandler : T
     {
     private:
-        uint64_t m_restrictions;
+        uint64_t    m_restrictions;
+        Utf8String  m_domainName;
 
-        virtual DgnDomain::Handler* _CreateMissingHandler(uint64_t restrictions) override { return T::_CreateMissingHandler(restrictions); }
+        virtual DgnDomain::Handler* _CreateMissingHandler(uint64_t restrictions, Utf8StringCR domainName, Utf8StringCR className) override { return T::_CreateMissingHandler(restrictions, domainName, className); }
         virtual bool _IsRestrictedAction(uint64_t restrictedAction) const override { return 0 != (m_restrictions & restrictedAction); }
         virtual bool _IsMissingHandler() const override { return true; }
+        virtual Utf8CP _GetDomainName() const override { return m_domainName.c_str(); }
     public:
-        explicit MissingHandler(uint64_t restrictions, T& base) : m_restrictions(restrictions)
+        explicit MissingHandler(uint64_t restrictions, Utf8StringCR domainName, Utf8StringCR className, T& base) : m_restrictions(restrictions), m_domainName(domainName)
             {
             this->m_domain = &base.GetDomain();
             this->m_superClass = &base;
+            this->m_ecClassName = className;
             }
     };
 
@@ -257,10 +268,9 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnDomain : NonCopyableClass
         void SetSuperClass(Handler* super) {m_superClass = super;}
         void SetDomain(DgnDomain& domain) {m_domain = &domain;}
         DGNPLATFORM_EXPORT virtual DgnDbStatus _VerifySchema(DgnDomains&);
-        virtual Handler* _CreateMissingHandler(uint64_t restrictions) { return new MissingHandler<Handler>(restrictions, *this); }
+        virtual Handler* _CreateMissingHandler(uint64_t restrictions, Utf8StringCR domainName, Utf8StringCR className) { return new MissingHandler<Handler>(restrictions, domainName, className, *this); }
         virtual uint64_t _ParseRestrictedAction(Utf8CP restriction) const { return RestrictedAction::Parse(restriction); }
 
-        Handler* GetRootClass();
     public:
         //! To enable version-checking for your handler, override this method to report the
         //! API version that was used to compiler your handler.
@@ -271,9 +281,14 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnDomain : NonCopyableClass
         virtual uint32_t _GetApiVersion() {return API_VERSION;}
 
         Handler* GetSuperClass() const {return m_superClass;}
+        Handler* GetRootClass();
 
         //! Get the name of the ECClass handled by this Handler
         Utf8StringCR GetClassName() const {return m_ecClassName;}
+
+        //! Get the name of the DgnDomain from which this handler's ECClass originated.
+        //! Note in the case of a missing domain, this may differ from GetDomain().GetDomainName()
+        virtual Utf8CP _GetDomainName() const { return GetDomain().GetDomainName(); }
 
         //! Get DgnDomain of Handler
         DgnDomainCR GetDomain() const {return *m_domain;}
@@ -372,14 +387,17 @@ public:
     //! Import an ECSchema for this DgnDomain.
     //! @param[in] db Import the domain schema into this DgnDb
     //! @param[in] schemaFileName The domain ECSchema file to import
-    DGNPLATFORM_EXPORT DgnDbStatus ImportSchema(DgnDbR db, BeFileNameCR schemaFileName) const;
+    //! @param[in] options Optional parameter for controlling additional processing
+    //! @see ECDbSchemaManager::CreateECClassViewsInDb
+    DGNPLATFORM_EXPORT DgnDbStatus ImportSchema(DgnDbR db, BeFileNameCR schemaFileName, ImportSchemaOptions options=ImportSchemaOptions::CreateECClassViews) const;
 
     //! Import an ECSchema for this DgnDomain.
     //! @param[in] db Import the domain schema into this DgnDb
     //! @param[in] schemaCache The ECSchemaCache containing the schema to import
     DGNPLATFORM_EXPORT DgnDbStatus ImportSchema(DgnDbR db, ECN::ECSchemaCacheR schemaCache) const;
-
 };
+
+ENUM_IS_FLAGS(DgnDomain::ImportSchemaOptions);
 
 //=======================================================================================
 //! The set of DgnDomains used by this DgnDb. This class also caches the DgnDomain::Handler to DgnDb-specific

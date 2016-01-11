@@ -11,22 +11,24 @@
 #include "DgnDomain.h"
 #include "DgnElement.h"
 #include "DgnAuthority.h"
-#include "ModelSolverDef.h"
+#include "ECSqlClassParams.h"
 #include <Bentley/ValueFormat.h>
 #include <DgnPlatform/DgnProperties.h>
 
-DGNPLATFORM_TYPEDEFS (GeometricModel)
-DGNPLATFORM_TYPEDEFS (ResourceModel)
-DGNPLATFORM_TYPEDEFS (DgnModel2d)
-DGNPLATFORM_TYPEDEFS (DgnModel3d)
-DGNPLATFORM_TYPEDEFS (DgnRangeTree)
-DGNPLATFORM_TYPEDEFS (ICheckStop)
-DGNPLATFORM_TYPEDEFS (PlanarPhysicalModel)
-DGNPLATFORM_TYPEDEFS (SheetModel)
-DGNPLATFORM_TYPEDEFS (DictionaryModel)
+DGNPLATFORM_TYPEDEFS(GeometricModel)
+DGNPLATFORM_TYPEDEFS(DefinitionModel)
+DGNPLATFORM_TYPEDEFS(DgnModel2d)
+DGNPLATFORM_TYPEDEFS(DgnModel3d)
+DGNPLATFORM_TYPEDEFS(DgnRangeTree)
+DGNPLATFORM_TYPEDEFS(ICheckStop)
+DGNPLATFORM_TYPEDEFS(SectionDrawingModel)
+DGNPLATFORM_TYPEDEFS(SheetModel)
+DGNPLATFORM_TYPEDEFS(DictionaryModel)
+DGNPLATFORM_TYPEDEFS(SystemModel)
 DGNPLATFORM_REF_COUNTED_PTR(SheetModel)
-DGNPLATFORM_REF_COUNTED_PTR(ResourceModel)
+DGNPLATFORM_REF_COUNTED_PTR(DefinitionModel)
 DGNPLATFORM_REF_COUNTED_PTR(DictionaryModel)
+DGNPLATFORM_REF_COUNTED_PTR(SystemModel)
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
@@ -51,6 +53,12 @@ struct DgnElementMap : bmap<DgnElementId, DgnElementCPtr>
 /** @addtogroup DgnModelGroup DgnModels
 @ref PAGE_ModelOverview
 */
+
+#define DGNMODEL_DECLARE_MEMBERS(__ECClassName__,__superclass__)\
+    private: typedef __superclass__ T_Super;\
+    public: static Utf8CP MyECClassName() {return __ECClassName__;}\
+    protected:  virtual Utf8CP _GetECClassName() const override {return MyECClassName();}\
+                virtual Utf8CP _GetSuperECClassName() const override {return T_Super::_GetECClassName();}
 
 //=======================================================================================
 //! A DgnModel represents a model in memory and may hold references to elements that belong to it.
@@ -116,119 +124,32 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnModel : RefCountedBase
     };
 
     //=======================================================================================
-    //! The properties for a DgnModel. These are stored as a JSON string in the "Props" column of the DgnModel table.
-    //! These properties are saved by calling DgnModel::Update
-    //! @ingroup DgnModelGroup
-    //=======================================================================================
-    struct Properties
-    {
-        friend struct DgnModel;
-
-    private:
-        struct FormatterFlags
-        {
-            uint32_t m_linearUnitMode:2;
-            uint32_t m_linearPrecType:4;
-            uint32_t m_linearPrecision:8;
-            uint32_t m_angularMode:3;
-            uint32_t m_angularPrecision:8;
-            uint32_t m_directionMode:2;
-            uint32_t m_directionClockwise:1;
-            void FromJson(Json::Value const& inValue);
-            void ToJson(Json::Value& outValue) const;
-        };
-
-        FormatterFlags m_formatterFlags;               //!< format flags
-        UnitDefinition m_masterUnit;                   //!< Master Unit information
-        UnitDefinition m_subUnit;                      //!< Sub Unit information
-        double         m_roundoffUnit;                 //!< unit lock roundoff val
-        double         m_roundoffRatio;                //!< Unit roundoff ratio y to x (if 0 use Grid Ratio)
-        double         m_formatterBaseDir;             //!< Base Direction used for Direction To/From String
-        double         m_azimuthAngle;                 //!< Azimuth angle.  CCW from y axis.
-
-    public:
-        Properties()
-            {
-            m_formatterFlags.m_linearUnitMode = 0;
-            m_formatterFlags.m_linearPrecType = 0;
-            m_formatterFlags.m_linearPrecision= 0;
-            m_formatterFlags.m_angularMode = 0;
-            m_formatterFlags.m_angularPrecision = 0;
-            m_formatterFlags.m_directionMode = 0;
-            m_formatterFlags.m_directionClockwise = 0;
-            m_roundoffRatio = 0;
-            m_formatterBaseDir = 0;
-            m_roundoffUnit = 0;
-            m_subUnit.Init(UnitBase::Meter, UnitSystem::Metric, 1.0, 1.0, L"m");
-            m_masterUnit = m_subUnit;
-            }
-
-        void FromJson(Json::Value const& inValue);
-        void ToJson(Json::Value& outValue) const;
-
-        //! Set master units and sub-units. Units must be valid and comparable.
-        DGNPLATFORM_EXPORT BentleyStatus SetUnits(UnitDefinitionCR newMasterUnit, UnitDefinitionCR newSubUnit);
-        void SetLinearUnitMode(DgnUnitFormat value) { m_formatterFlags.m_linearUnitMode = (uint32_t)value; }
-        void SetLinearPrecision(PrecisionFormat value) {
-                m_formatterFlags.m_linearPrecType  = static_cast<uint32_t>(DoubleFormatter::GetTypeFromPrecision(value));
-                m_formatterFlags.m_linearPrecision = DoubleFormatter::GetByteFromPrecision(value);}
-        void SetAngularMode(AngleMode value) { m_formatterFlags.m_angularMode = (uint32_t)value; }
-        void SetAngularPrecision(AnglePrecision value) { m_formatterFlags.m_angularPrecision = (uint32_t)value; }
-        void SetDirectionMode(DirectionMode value) {m_formatterFlags.m_directionMode = (uint32_t)value; }
-        void SetDirectionClockwise(bool value) { m_formatterFlags.m_directionClockwise = value; }
-        void SetDirectionBaseDir(double value) { m_formatterBaseDir = value; }
-        void SetAzimuthAngle (double azimuthAngle) { m_azimuthAngle = azimuthAngle; }
-        DgnUnitFormat GetLinearUnitMode() const {return (DgnUnitFormat) m_formatterFlags.m_linearUnitMode; }
-        PrecisionFormat GetLinearPrecision() const {return DoubleFormatter::ToPrecisionEnum((PrecisionType) m_formatterFlags.m_linearPrecType, m_formatterFlags.m_linearPrecision); }
-        AngleMode GetAngularMode() const {return (AngleMode) m_formatterFlags.m_angularMode; }
-        AnglePrecision GetAngularPrecision() const {return (AnglePrecision) m_formatterFlags.m_angularPrecision; }
-        DirectionMode GetDirectionMode() const {return (DirectionMode) m_formatterFlags.m_directionMode; }
-        bool GetDirectionClockwise() const {return m_formatterFlags.m_directionClockwise; }
-        double GetDirectionBaseDir() const {return m_formatterBaseDir; }
-        void SetRoundoffUnit(double roundoffUnit, double roundoffRatio) {m_roundoffUnit  = roundoffUnit;m_roundoffRatio = roundoffRatio;}
-        double GetRoundoffUnit() const {return m_roundoffUnit;}
-        double GetRoundoffRatio() const {return m_roundoffRatio;}
-        FormatterFlags GetFormatterFlags() const    {return m_formatterFlags;}
-        double GetAzimuthAngle() const { return m_azimuthAngle; }
-
-        //! Get the master units for this DgnModel.
-        //! Master units are the major display units for coordinates in a DgnModel (e.g. "Meters", or "Feet").
-        //! @see SetUnits, GetSubUnits
-        UnitDefinitionCR GetMasterUnits() const {return m_masterUnit;}
-
-        //! Get the sub-units for this DgnModel.
-        //! Sub units are the minor readout units for coordinates in a DgnModel (e.g. "Centimeters, or "Inches").
-        //! @see SetUnits, GetMasterUnits
-        UnitDefinitionCR GetSubUnits() const {return m_subUnit;}
-
-        //! Get the number of millimeters per master unit.
-        //! @see GetMasterUnits
-        DGNPLATFORM_EXPORT double GetMillimetersPerMaster() const;
-
-        //! Get the number of sub units per master unit.
-        //! @see GetSubUnits
-        DGNPLATFORM_EXPORT double GetSubPerMaster() const;
-    };
-
-    //=======================================================================================
     //! Parameters to create a new instances of a DgnModel.
     //! @ingroup DgnModelGroup
     //=======================================================================================
     struct CreateParams
     {
         DgnDbR      m_dgndb;
-        DgnModelId  m_id;
         DgnClassId  m_classId;
         Code        m_code;
-        Properties  m_props;
+        Utf8String  m_label;
+        bool        m_inGuiList;
+
         //! Parameters to create a new instance of a DgnModel.
         //! @param[in] dgndb The DgnDb for the new DgnModel
         //! @param[in] classId The DgnClassId for the new DgnModel.
         //! @param[in] code The code for the DgnModel
-        //! @param[in] props The properties for the new DgnModel.
-        //! @param[in] id Internal only, must be DgnModelId() to create a new DgnModel.
-        CreateParams(DgnDbR dgndb, DgnClassId classId, Code code, Properties props=Properties(), DgnModelId id=DgnModelId()) :
-            m_dgndb(dgndb), m_id(id), m_classId(classId), m_code(code), m_props(props) {}
+        //! @param[in] label Label of the new DgnModel
+        //! @param[in] inGuiList Controls the visibility of the new DgnModel in model lists shown to the user
+        CreateParams(DgnDbR dgndb, DgnClassId classId, Code code, Utf8CP label = nullptr, bool inGuiList = true) :
+            m_dgndb(dgndb), m_classId(classId), m_code(code), m_inGuiList(inGuiList)
+            {
+            SetLabel(label);
+            }
+
+        void SetCode(Code code) { m_code = code; }                    //!< Set the Code for models created with this CreateParams
+        void SetLabel(Utf8CP label) { m_label.AssignOrClear(label); } //!< Set the Label for models created with this CreateParams
+        void SetInGuiList(bool inGuiList) { m_inGuiList = inGuiList; } //!< Set the visibility of models created with this CreateParams in model lists shown to the user
 
         DGNPLATFORM_EXPORT void RelocateToDestinationDb(DgnImportContext&);
     };
@@ -242,9 +163,9 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnModel : RefCountedBase
         static const uint64_t UpdateElement = InsertElement << 1; //!< Modify an element in this model. "UpdateElement"
         static const uint64_t DeleteElement = UpdateElement << 1; //!< Delete an element in this model. "DeleteElement"
         static const uint64_t Clone = DeleteElement << 1; //!< Create a copy of this model. "Clone"
+        static const uint64_t SetCode = Clone << 1; //!< Change this model's Code. "SetCode"
 
-        static const uint64_t Reserved_1 = Clone << 1; //!< Reserved for future use 
-        static const uint64_t Reserved_2 = Reserved_1 << 1; //!< Reserved for future use 
+        static const uint64_t Reserved_2 = SetCode << 1; //!< Reserved for future use 
         static const uint64_t Reserved_3 = Reserved_2 << 1; //!< Reserved for future use 
         static const uint64_t Reserved_4 = Reserved_3 << 1; //!< Reserved for future use 
         static const uint64_t Reserved_5 = Reserved_4 << 1; //!< Reserved for future use 
@@ -260,12 +181,17 @@ private:
     void RegisterElement(DgnElementCR el) {_RegisterElement(el);}
     void ReleaseAllElements();
 
+    DgnDbStatus BindInsertAndUpdateParams(BeSQLite::EC::ECSqlStatement& statement);
+    DgnDbStatus Read(DgnModelId modelId);
 protected:
     DgnDbR          m_dgndb;
     DgnModelId      m_modelId;
     DgnClassId      m_classId;
     Code            m_code;
-    Properties      m_properties;
+    Utf8String      m_label;
+    bool            m_inGuiList;
+    int             m_dependencyIndex;
+
     DgnElementMap   m_elements;
     mutable bmap<AppData::Key const*, RefCountedPtr<AppData>, std::less<AppData::Key const*>, 8> m_appData;
     mutable bool    m_persistent;   // true if this DgnModel is in the DgnModels "loaded models" list.
@@ -278,8 +204,42 @@ protected:
     virtual void DGNPLATFORM_EXPORT _RegisterElement(DgnElementCR element);
 
     DGNPLATFORM_EXPORT virtual void _InitFrom(DgnModelCR other);            //!< @private
-    DGNPLATFORM_EXPORT virtual void _ToPropertiesJson(Json::Value&) const;//!< @private
-    DGNPLATFORM_EXPORT virtual void _FromPropertiesJson(Json::Value const&);//!< @private
+
+    //! Invoked when loading a model from the table, to allow subclasses to extract their property values
+    //! from the SELECT statement. The parameters are those which were specified by this elements Handler.
+    //! @param[in] statement The SELECT statement which selected the class using ECSql
+    //! @param[in] params The properties selected by the SELECT statement. Use this to obtain an index into the statement.
+    //! @return DgnDbStatus::Success if the data was loaded successfully, or else an error status.
+    //! @note If you override this method, you @em must first call T_Super::_ReadSelectParams, forwarding its status.
+    //! You should then extract your subclass properties from the supplied ECSqlStatement, using
+    //! selectParams.GetParameterIndex() to look up the index of each parameter within the statement.
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement& statement, ECSqlClassParamsCR params);
+
+    //! Called to bind the model's property values to the ECSqlStatement when inserting
+    //! a new model.  The parameters to bind were the ones specified by this model's Handler.
+    //! @note If you override this method, you should bind your subclass properties
+    //! to the supplied ECSqlStatement, using statement.GetParameterIndex with your property's name.
+    //! Then you @em must call T_Super::_BindInsertParams, forwarding its status.
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _BindInsertParams(BeSQLite::EC::ECSqlStatement& statement);
+
+    //! Called to bind the model's property values to the ECSqlStatement when updating
+    //! an existing model.  The parameters to bind were the ones specified by this model's Handler
+    //! @note If you override this method, you should bind your subclass properties
+    //! to the supplied ECSqlStatement, using statement.GetParameterIndex with your property's name.
+    //! Then you @em must call T_Super::_BindUpdateParams, forwarding its status.
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _BindUpdateParams(BeSQLite::EC::ECSqlStatement& statement);
+
+    //! Invoked when writing the Properties field into the Db as part of an Insert or Update operation.
+    //! @note If you override this method, you @em must call T_Super::_WriteJsonProperties. Consider
+    //! writing your properties into a sub node of the value to avoid collisions with the 
+    //! super class properties.
+    virtual void _WriteJsonProperties(Json::Value& value) const {}
+
+    //! Invoked when reading the Properties field from the Db. 
+    //! @note If you override this method, you @em must call T_Super::_WriteJsonProperties. Consider
+    //! writing your properties into a sub node of the value to avoid collisions with the 
+    //! super class properties.
+    virtual void _ReadJsonProperties(Json::Value const& value) {}
 
     /** @name Events associated with DgnElements of a DgnModel */
     /** @{ */
@@ -354,10 +314,6 @@ protected:
     //! Load all of the DgnElements of this DgnModel into memory.
     DGNPLATFORM_EXPORT virtual void _FillModel();
 
-    //! Load this model's data from the database. If overridden, @em must first call the T_Super implementation, forwarding its status.
-    DGNPLATFORM_EXPORT virtual void _ReadProperties();
-    //! Update this model's data in the database. If overridden, @em must first call the T_Super implementation, forwarding its status.
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _Update();
 
     /** @name Events for a DgnModel */
     /** @{ */
@@ -387,15 +343,14 @@ protected:
     /** @name Dynamic cast shortcuts for a DgnModel */
     /** @{ */
     virtual GeometricModelCP _ToGeometricModel() const {return nullptr;}
-    virtual ResourceModelCP _ToResourceModel() const {return nullptr;}
+    virtual DefinitionModelCP _ToDefinitionModel() const {return nullptr;}
     virtual DgnModel2dCP _ToDgnModel2d() const {return nullptr;}
     virtual DgnModel3dCP _ToDgnModel3d() const {return nullptr;}
-    virtual PhysicalModelCP _ToPhysicalModel() const {return nullptr;}
-    virtual PlanarPhysicalModelCP _ToPlanarPhysicalModel() const {return nullptr;}
+    virtual SpatialModelCP _ToSpatialModel() const {return nullptr;}
+    virtual SectionDrawingModelCP _ToSectionDrawingModel() const {return nullptr;}
     virtual SheetModelCP _ToSheetModel() const {return nullptr;}
+    virtual SystemModelCP _ToSystemModel() const {return nullptr;}
     /** @} */
-
-    void ReadProperties();
 
     //! The sublcass should import elements from the source model into this model. 
     //! Import is done in phases. The import framework will call _ImportElementAspectsFrom and then _ImportECRelationshipsFrom after calling this method.
@@ -439,7 +394,12 @@ protected:
     DGNPLATFORM_EXPORT virtual void _EmptyModel();
     virtual DgnRangeTree* _GetRangeIndexP(bool create) const {return nullptr;}
     virtual void _OnValidate() { }
+
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _SetCode(Code const& code);
 public:
+    virtual Utf8CP _GetECClassName() const { return DGN_CLASSNAME_Model; }
+    virtual Utf8CP _GetSuperECClassName() const { return nullptr; }
+
     DGNPLATFORM_EXPORT ModelHandlerR GetModelHandler() const;
     DgnRangeTree* GetRangeIndexP(bool create) const {return _GetRangeIndexP(create);}
 
@@ -467,14 +427,11 @@ public:
     //! A newly created model before it is inserted, or a model after calling Delete, is not persistent.
     bool IsPersistent() const {return m_persistent;}
 
-    //! Get a writable reference to the Properties for this DgnModel.
-    Properties& GetPropertiesR() {return m_properties;}
-
-    //! Get the Properties for this DgnModel.
-    Properties const& GetProperties() const {return m_properties;}
-
     //! Get the Code of this DgnModel
     Code const& GetCode() const {return m_code;}
+
+    //! Change the Code of this DgnModel
+    DgnDbStatus SetCode(Code const& code) { return _SetCode(code); }
 
     //! Get the DgnClassId of this DgnModel
     DgnClassId GetClassId() const {return m_classId;}
@@ -482,30 +439,46 @@ public:
     //! Get the DgnModelId of this DgnModel
     DgnModelId GetModelId() const {return m_modelId;}
 
+    //! Get the label of this DgnModel.
+    //! @note may be nullptr
+    Utf8CP GetLabel() const { return m_label.c_str(); }
+    
+    //! Set the label of this DgnModel.
+    void SetLabel(Utf8CP label) { m_label.AssignOrClear(label); }
+
+    //! Get the visibility in model lists shown to the user
+    bool GetInGuiList() const { return m_inGuiList; }
+
+    //! Set the visibility in model lists shown to the user
+    void SetInGuiList(bool val) { m_inGuiList = val; }
+
     //! @name Dynamic casting to DgnModel subclasses
     //@{
     GeometricModelCP ToGeometricModel() const {return _ToGeometricModel();} //!< more efficient substitute for dynamic_cast<GeometricModelCP>(model)
-    ResourceModelCP ToResourceModel() const {return _ToResourceModel();} //!< more efficient substitute for dynamic_cast<ResourceModelCP>(model)
+    DefinitionModelCP ToDefinitionModel() const {return _ToDefinitionModel();} //!< more efficient substitute for dynamic_cast<DefinitionModelCP>(model)
     DgnModel2dCP ToDgnModel2d() const {return _ToDgnModel2d();} //!< more efficient substitute for dynamic_cast<DgnModel2dCP>(model)
     DgnModel3dCP ToDgnModel3d() const {return _ToDgnModel3d();} //!< more efficient substitute for dynamic_cast<DgnModel3dCP>(model)
-    PhysicalModelCP ToPhysicalModel() const {return _ToPhysicalModel();} //!< more efficient substitute for dynamic_cast<PhysicalModelCP>(model)
-    PlanarPhysicalModelCP ToPlanarPhysicalModel() const {return _ToPlanarPhysicalModel();} //!< more efficient substitute for dynamic_cast<PlanarPhysicalModelCP>(model)
+    SpatialModelCP ToSpatialModel() const {return _ToSpatialModel();} //!< more efficient substitute for dynamic_cast<SpatialModelCP>(model)
+    SectionDrawingModelCP ToSectionDrawingModel() const {return _ToSectionDrawingModel();} //!< more efficient substitute for dynamic_cast<SectionDrawingModelCP>(model)
     SheetModelCP ToSheetModel() const {return _ToSheetModel();} //!< more efficient substitute for dynamic_cast<SheetModelCP>(model)
+    SystemModelCP ToSystemModel() const {return _ToSystemModel();} //!< more efficient substitute for dynamic_cast<SystemModelCP>(model)
     GeometricModelP ToGeometricModelP() {return const_cast<GeometricModelP>(_ToGeometricModel());} //!< more efficient substitute for dynamic_cast<GeometricModelP>(model)
-    ResourceModelP ToResourceModelP() {return const_cast<ResourceModelP>(_ToResourceModel());} //!< more efficient substitute for dynamic_cast<ResourceModelP>(model)
+    DefinitionModelP ToDefinitionModelP() {return const_cast<DefinitionModelP>(_ToDefinitionModel());} //!< more efficient substitute for dynamic_cast<DefinitionModelP>(model)
     DgnModel2dP ToDgnModel2dP() {return const_cast<DgnModel2dP>(_ToDgnModel2d());} //!< more efficient substitute for dynamic_cast<DgnModel2dP>(model)
     DgnModel3dP ToDgnModel3dP() {return const_cast<DgnModel3dP>(_ToDgnModel3d());} //!< more efficient substitute for dynamic_cast<DgnModel3dP>(model)
-    PhysicalModelP ToPhysicalModelP() {return const_cast<PhysicalModelP>(_ToPhysicalModel());} //!< more efficient substitute for dynamic_cast<PhysicalModelP>(model)
-    PlanarPhysicalModelP ToPlanarPhysicalModelP() {return const_cast<PlanarPhysicalModelP>(_ToPlanarPhysicalModel());} //!< more efficient substitute for dynamic_cast<PlanarPhysicalModelP>(model)
+    SpatialModelP ToSpatialModelP() {return const_cast<SpatialModelP>(_ToSpatialModel());} //!< more efficient substitute for dynamic_cast<SpatialModelP>(model)
+    SectionDrawingModelP ToSectionDrawingModelP() {return const_cast<SectionDrawingModelP>(_ToSectionDrawingModel());} //!< more efficient substitute for dynamic_cast<SectionDrawingModelP>(model)
     SheetModelP ToSheetModelP() {return const_cast<SheetModelP>(_ToSheetModel());}//!< more efficient substitute for dynamic_cast<SheetModelP>(model)
+    SystemModelP ToSystemModelP() {return const_cast<SystemModelP>(_ToSystemModel());}//!< more efficient substitute for dynamic_cast<SystemModelP>(model)
 
     bool IsGeometricModel() const { return nullptr != ToGeometricModel(); }
-    bool IsPhysicalModel() const { return nullptr != ToPhysicalModel(); }
+    bool IsSpatialModel() const { return nullptr != ToSpatialModel(); }
     bool Is2dModel() const { return nullptr != ToDgnModel2d(); }
     bool Is3dModel() const { return nullptr != ToDgnModel3d(); }
-    bool IsResourceModel() const { return nullptr != ToResourceModel(); }
+    bool IsDefinitionModel() const { return nullptr != ToDefinitionModel(); }
     bool IsSheetModel() const { return nullptr != ToSheetModel(); }
     bool IsDictionaryModel() const { return DictionaryId() == GetModelId(); }
+    bool IsSystemModel() const { return nullptr != ToSystemModel(); }
     //@}
 
     //! Get the DgnDb of this DgnModel.
@@ -513,7 +486,7 @@ public:
 
     //! Insert this model into the DgnDb.
     //! @return DgnDbStatus::Success if this model was successfully inserted, error otherwise.
-    DGNPLATFORM_EXPORT DgnDbStatus Insert(Utf8CP description=nullptr, bool inGuiList=true);
+    DGNPLATFORM_EXPORT DgnDbStatus Insert();
 
     //! Delete this model from the DgnDb
     //! @note All elements from this model are deleted as well. This method will fail on the first element that cannot be successfully deleted.
@@ -601,7 +574,7 @@ public:
     //!     -# Insert
     //!     -# _CopyContentsFrom
     //! @param[out] stat        Optional status to describe failures, a valid DgnModelPtr will only be returned if successful.
-    //! @param importer     Enables the model to copy the resources that it needs (if copying between DgnDbs)
+    //! @param importer     Enables the model to copy the definitions that it needs (if copying between DgnDbs)
     //! @param sourceModel The model to copy
     //! @return the copied model, already inserted into the destination Db.
     DGNPLATFORM_EXPORT static DgnModelPtr ImportModel(DgnDbStatus* stat, DgnModelCR sourceModel, DgnImportContext& importer);
@@ -609,7 +582,7 @@ public:
     //! Make a copy of the specified model, including all of the contents of the model, where the destination may be a different DgnDb.
     //! @param[out] stat        Optional status to describe failures, a valid DgnModelPtr will only be returned if successful.
     //! @param sourceModel  The model to copy
-    //! @param importer     Enables the model to copy the resources that it needs (if copying between DgnDbs)
+    //! @param importer     Enables the model to copy the definitions that it needs (if copying between DgnDbs)
     //! @return the copied model
     //! @see ImportModel
     template<typename T>
@@ -639,52 +612,140 @@ public:
 struct EXPORT_VTABLE_ATTRIBUTE GeometricModel : DgnModel
 {
     DEFINE_T_SUPER(DgnModel);
+public:
+    //=======================================================================================
+    //! The DisplayInfo for a DgnModel. These are stored within a "DisplayInfo"
+    //! node of the JSON value that's serialized as a string in "Properties" column of the DgnModel table.
+    //! @ingroup DgnModelGroup
+    //=======================================================================================
+    struct DisplayInfo
+    {
+    friend struct GeometricModel;
+
+    private:
+        struct FormatterFlags
+            {
+            uint32_t m_linearUnitMode : 2;
+            uint32_t m_linearPrecType : 4;
+            uint32_t m_linearPrecision : 8;
+            uint32_t m_angularMode : 3;
+            uint32_t m_angularPrecision : 8;
+            uint32_t m_directionMode : 2;
+            uint32_t m_directionClockwise : 1;
+            void FromJson(Json::Value const& inValue);
+            void ToJson(Json::Value& outValue) const;
+            };
+
+        FormatterFlags m_formatterFlags;               //!< format flags
+        UnitDefinition m_masterUnit;                   //!< Master Unit information
+        UnitDefinition m_subUnit;                      //!< Sub Unit information
+        double         m_roundoffUnit;                 //!< unit lock roundoff val
+        double         m_roundoffRatio;                //!< Unit roundoff ratio y to x (if 0 use Grid Ratio)
+        double         m_formatterBaseDir;             //!< Base Direction used for Direction To/From String
+
+    public:
+        DisplayInfo()
+            {
+            m_formatterFlags.m_linearUnitMode = 0;
+            m_formatterFlags.m_linearPrecType = 0;
+            m_formatterFlags.m_linearPrecision = 0;
+            m_formatterFlags.m_angularMode = 0;
+            m_formatterFlags.m_angularPrecision = 0;
+            m_formatterFlags.m_directionMode = 0;
+            m_formatterFlags.m_directionClockwise = 0;
+            m_roundoffRatio = 0;
+            m_formatterBaseDir = 0;
+            m_roundoffUnit = 0;
+            m_subUnit.Init(UnitBase::Meter, UnitSystem::Metric, 1.0, 1.0, L"m");
+            m_masterUnit = m_subUnit;
+            }
+
+        void FromJson(Json::Value const& inValue);
+        void ToJson(Json::Value& outValue) const;
+
+        //! Set master units and sub-units. Units must be valid and comparable.
+        DGNPLATFORM_EXPORT BentleyStatus SetUnits(UnitDefinitionCR newMasterUnit, UnitDefinitionCR newSubUnit);
+        void SetLinearUnitMode(DgnUnitFormat value) { m_formatterFlags.m_linearUnitMode = (uint32_t) value; }
+        void SetLinearPrecision(PrecisionFormat value)
+            {
+            m_formatterFlags.m_linearPrecType = static_cast<uint32_t>(DoubleFormatter::GetTypeFromPrecision(value));
+            m_formatterFlags.m_linearPrecision = DoubleFormatter::GetByteFromPrecision(value);
+            }
+        void SetAngularMode(AngleMode value) { m_formatterFlags.m_angularMode = (uint32_t) value; }
+        void SetAngularPrecision(AnglePrecision value) { m_formatterFlags.m_angularPrecision = (uint32_t) value; }
+        void SetDirectionMode(DirectionMode value) { m_formatterFlags.m_directionMode = (uint32_t) value; }
+        void SetDirectionClockwise(bool value) { m_formatterFlags.m_directionClockwise = value; }
+        void SetDirectionBaseDir(double value) { m_formatterBaseDir = value; }
+        DgnUnitFormat GetLinearUnitMode() const { return (DgnUnitFormat) m_formatterFlags.m_linearUnitMode; }
+        PrecisionFormat GetLinearPrecision() const { return DoubleFormatter::ToPrecisionEnum((PrecisionType) m_formatterFlags.m_linearPrecType, m_formatterFlags.m_linearPrecision); }
+        AngleMode GetAngularMode() const { return (AngleMode) m_formatterFlags.m_angularMode; }
+        AnglePrecision GetAngularPrecision() const { return (AnglePrecision) m_formatterFlags.m_angularPrecision; }
+        DirectionMode GetDirectionMode() const { return (DirectionMode) m_formatterFlags.m_directionMode; }
+        bool GetDirectionClockwise() const { return m_formatterFlags.m_directionClockwise; }
+        double GetDirectionBaseDir() const { return m_formatterBaseDir; }
+        void SetRoundoffUnit(double roundoffUnit, double roundoffRatio) { m_roundoffUnit = roundoffUnit; m_roundoffRatio = roundoffRatio; }
+        double GetRoundoffUnit() const { return m_roundoffUnit; }
+        double GetRoundoffRatio() const { return m_roundoffRatio; }
+        FormatterFlags GetFormatterFlags() const { return m_formatterFlags; }
+
+        //! Get the master units for this DgnModel.
+        //! Master units are the major display units for coordinates in a DgnModel (e.g. "Meters", or "Feet").
+        //! @see SetUnits, GetSubUnits
+        UnitDefinitionCR GetMasterUnits() const { return m_masterUnit; }
+
+        //! Get the sub-units for this DgnModel.
+        //! Sub units are the minor readout units for coordinates in a DgnModel (e.g. "Centimeters, or "Inches").
+        //! @see SetUnits, GetMasterUnits
+        UnitDefinitionCR GetSubUnits() const { return m_subUnit; }
+
+        //! Get the number of millimeters per master unit.
+        //! @see GetMasterUnits
+        DGNPLATFORM_EXPORT double GetMillimetersPerMaster() const;
+
+        //! Get the number of sub units per master unit.
+        //! @see GetSubUnits
+        DGNPLATFORM_EXPORT double GetSubPerMaster() const;
+    };
 
     struct CreateParams : T_Super::CreateParams
     {
         DEFINE_T_SUPER(GeometricModel::T_Super::CreateParams);
+        DisplayInfo  m_displayInfo;
 
-        ModelSolverDef m_solver;
-
-        //! Parameters to create a new instance of a DgnModel.
+        //! Parameters to create a new instance of a GeometricModel.
         //! @param[in] dgndb The DgnDb for the new DgnModel
         //! @param[in] classId The DgnClassId for the new DgnModel.
         //! @param[in] code The Code for the DgnModel
-        //! @param[in] props The properties for the new DgnModel.
-        //! @param[in] solver The definition of the solver to be used by this model when validating changes to its content.
-        //! @param[in] id Internal only, must be DgnModelId() to create a new DgnModel.
-        CreateParams(DgnDbR dgndb, DgnClassId classId, Code code, Properties props=Properties(), ModelSolverDef solver=ModelSolverDef(), DgnModelId id=DgnModelId())
-            : T_Super(dgndb, classId, code, props, id), m_solver(solver) { }
+        //! @param[in] label Label of the new DgnModel
+        //! @param[in] displayInfo The DisplayInfo for the new DgnModel.
+        //! @param[in] inGuiList Controls the visibility of the new DgnModel in model lists shown to the user
+        CreateParams(DgnDbR dgndb, DgnClassId classId, Code code, Utf8CP label = nullptr, DisplayInfo displayInfo = DisplayInfo(), bool inGuiList = true)
+            : T_Super(dgndb, classId, code, label, inGuiList), m_displayInfo(displayInfo)
+            {}
 
         //! @private
         //! This constructor is used only by the model handler to create a new instance, prior to calling ReadProperties on the model object
         CreateParams(DgnModel::CreateParams const& params) : T_Super(params) { }
 
-        //! Get the model solver
-        ModelSolverDef const& GetSolver() const {return m_solver;}
-        //! Set the model solver
-        void SetSolver(ModelSolverDef const& s) {m_solver=s;}
+        DisplayInfo const& GetDisplayInfo() const { return m_displayInfo; } //!< Get the DisplayInfo
+        void SetDisplayInfo(DisplayInfo const& displayInfo) { m_displayInfo = displayInfo; } //!< Set the DisplayInfo
     };
+
+
 
 private:
     mutable DgnRangeTreeP m_rangeIndex;
-    ModelSolverDef m_solver;
+    DisplayInfo  m_displayInfo;
 
     DGNPLATFORM_EXPORT void AllocateRangeIndex() const;
     void AddToRangeIndex(DgnElementCR);
     void RemoveFromRangeIndex(DgnElementCR);
     void UpdateRangeIndex(DgnElementCR modified, DgnElementCR original);
-
+    
 protected:
-    void SetSolver(ModelSolverDef const& solver) { m_solver = solver; }
-
     void ClearRangeIndex();
 
     virtual void _SetFilled() override {T_Super::_SetFilled(); AllocateRangeIndex();}
-
-    //! Get the Global Origin for this DgnMode.
-    //! The global origin is on offset that is added to all coordinate values stored in this model.
-    DGNPLATFORM_EXPORT virtual DPoint3d _GetGlobalOrigin() const;//!< @private
 
     //! Get the coordinate space in which the model's geometry is defined.
     virtual CoordinateSpace _GetCoordinateSpace() const = 0;
@@ -712,35 +773,27 @@ protected:
     DGNPLATFORM_EXPORT virtual void _OnUpdatedElement(DgnElementCR modified, DgnElementCR original) override;
     DGNPLATFORM_EXPORT virtual void _OnReversedUpdateElement(DgnElementCR modified, DgnElementCR original) override;
 
-    DGNPLATFORM_EXPORT virtual void _InitFrom(DgnModelCR other);            //!< @private
-    DGNPLATFORM_EXPORT DgnModelPtr virtual _CloneForImport(DgnDbStatus* stat, DgnImportContext& importer) const override;
-    DGNPLATFORM_EXPORT virtual void _ReadProperties();
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _Update();
-    virtual void _GetSolverOptions(Json::Value&) {;}
-    DGNPLATFORM_EXPORT virtual void _OnValidate() override;
+    DGNPLATFORM_EXPORT virtual void _WriteJsonProperties(Json::Value&) const override;
+    DGNPLATFORM_EXPORT virtual void _ReadJsonProperties(Json::Value const&) override;
 
     virtual GeometricModelCP _ToGeometricModel() const override {return this;}
     
-    explicit GeometricModel(CreateParams const& params) : T_Super(params), m_rangeIndex(nullptr), m_solver(params.m_solver) { }
+    explicit GeometricModel(CreateParams const& params) : T_Super(params), m_rangeIndex(nullptr), m_displayInfo(params.m_displayInfo) {}
+
 public:
     void AddGraphicsToScene(ViewContextR context) {_AddGraphicsToScene(context);}
 
-    //! Get the AxisAlignedBox3d of the contents of this DgnModel.
+    //! Get the AxisAlignedBox3d of the contents of this model.
     AxisAlignedBox3d QueryModelRange() const {return _QueryModelRange();}
-
-    //! Get the Global Origin for this DgnModel.
-    //! The global origin is an offset that is added to all coordinate values of this DgnModel when reporting them to the user.
-    //! @note all PhysicalModels have the same coordinate system and the same global origin.
-    DPoint3d GetGlobalOrigin() const {return _GetGlobalOrigin();}
 
     //! Get the coordinate space in which the model's geometry is defined.
     CoordinateSpace GetCoordinateSpace() const {return _GetCoordinateSpace();}
 
-    //! Get the solver that is used to validate this model.
-    ModelSolverDef const& GetSolver() const {return m_solver;}
-    ModelSolverDef& GetSolver() {return m_solver;}
+    //! Get a writable reference to the DisplayInfo for this model.
+    DisplayInfo& GetDisplayInfoR() { return m_displayInfo; }
 
-    void GetSolverOptions(Json::Value& options) { _GetSolverOptions(options); }
+    //! Get the Properties for this model.
+    DisplayInfo const& GetDisplayInfo() const { return m_displayInfo; }
 };
 
 //=======================================================================================
@@ -750,7 +803,7 @@ public:
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE DgnModel3d : GeometricModel
 {
-    DEFINE_T_SUPER(GeometricModel)
+    DEFINE_T_SUPER(GeometricModel);
 
 protected:
     virtual DgnModel3dCP _ToDgnModel3d() const override {return this;}
@@ -766,63 +819,56 @@ public:
 // @bsiclass                                                    Keith.Bentley   10/11
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE DgnModel2d : GeometricModel
-    {
-    DEFINE_T_SUPER(GeometricModel)
+{
+    DGNMODEL_DECLARE_MEMBERS(DGN_CLASSNAME_Model2d, GeometricModel);
 
 protected:
-    DPoint2d m_globalOrigin;    //!< Global Origin - all coordinates are offset by this value.
-
-    DGNPLATFORM_EXPORT void _ToPropertiesJson(Json::Value&) const override;
-    DGNPLATFORM_EXPORT void _FromPropertiesJson(Json::Value const&) override;
-    DPoint3d _GetGlobalOrigin() const override {return DPoint3d::From(m_globalOrigin);}
     DgnModel2dCP _ToDgnModel2d() const override {return this;}
 
     CoordinateSpace _GetCoordinateSpace() const override {return CoordinateSpace::Local;}
     DGNPLATFORM_EXPORT virtual DgnDbStatus _OnInsertElement(DgnElementR element);
 
 public:
-    void SetGlobalOrigin(DPoint2dCR org) {m_globalOrigin = org;}
-
-    explicit DgnModel2d(CreateParams const& params, DPoint2dCR origin=DPoint2d::FromZero()) : T_Super(params), m_globalOrigin(origin) {}
-    };
+    explicit DgnModel2d(CreateParams const& params, DPoint2dCR origin=DPoint2d::FromZero()) : T_Super(params) {}
+};
 
 //=======================================================================================
-//! A DgnModel3d that occupies physical space in the DgnDb. All PhysicalModels in a DgnDb have the same coordinate
+//! A DgnModel3d that occupies physical space in the DgnDb. All SpatialModels in a DgnDb have the same coordinate
 //! space (CoordinateSpace::World), aka "Physical Space".
-//! DgnElements from PhysicalModels are indexed in the persistent range tree of the DgnDb (the DGN_VTABLE_RTree3d).
+//! DgnElements from SpatialModels are indexed in the persistent range tree of the DgnDb (the DGN_VTABLE_RTree3d).
 //! @ingroup DgnModelGroup
 // @bsiclass                                                    Keith.Bentley   10/11
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE PhysicalModel : DgnModel3d
+struct EXPORT_VTABLE_ATTRIBUTE SpatialModel : DgnModel3d
 {
-    DEFINE_T_SUPER(DgnModel3d)
+    DGNMODEL_DECLARE_MEMBERS(DGN_CLASSNAME_SpatialModel, DgnModel3d);
 protected:
-    PhysicalModelCP _ToPhysicalModel() const override {return this;}
+    SpatialModelCP _ToSpatialModel() const override {return this;}
     CoordinateSpace _GetCoordinateSpace() const override {return CoordinateSpace::World;}
 
 public:
-    explicit PhysicalModel(CreateParams const& params) : T_Super(params) {}
+    explicit SpatialModel(CreateParams const& params) : T_Super(params) {}
 };
 
 //=======================================================================================
-//! A model which holds only non-geometric resources.
+//! A model which holds only definitions.
 //! @ingroup DgnModelGroup
 // @bsiclass                                                    Paul.Connelly   09/15
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE ResourceModel : DgnModel
+struct EXPORT_VTABLE_ATTRIBUTE DefinitionModel : DgnModel
 {
-    DEFINE_T_SUPER(DgnModel);
+    DGNMODEL_DECLARE_MEMBERS(DGN_CLASSNAME_DefinitionModel, DgnModel);
 protected:
-    ResourceModelCP _ToResourceModel() const override {return this;}
+    DefinitionModelCP _ToDefinitionModel() const override {return this;}
     DGNPLATFORM_EXPORT virtual DgnDbStatus _OnInsertElement(DgnElementR element) override;
 public:
-    explicit ResourceModel(CreateParams const& params) : T_Super(params) { }
+    explicit DefinitionModel(CreateParams const& params) : T_Super(params) { }
 
-    static ResourceModelPtr Create(CreateParams const& params) { return new ResourceModel(params); }
+    static DefinitionModelPtr Create(CreateParams const& params) { return new DefinitionModel(params); }
 };
 
 //=======================================================================================
-//! A resource model which holds resources like materials and styles which are used
+//! A definition model which holds definitions like materials and styles which are used
 //! throughout a DgnDb. Each DgnDb has exactly one DictionaryModel.
 //! A DictionaryModel can contain @em only DictionaryElements; and likewise, a
 //! DictionaryElement can @em only reside in a DictionaryModel.
@@ -832,9 +878,9 @@ public:
 //! @ingroup DgnModelGroup
 // @bsiclass                                                    Paul.Connelly   10/15
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE DictionaryModel : ResourceModel
+struct EXPORT_VTABLE_ATTRIBUTE DictionaryModel : DefinitionModel
 {
-    DEFINE_T_SUPER(ResourceModel);
+    DGNMODEL_DECLARE_MEMBERS(DGN_CLASSNAME_DictionaryModel, DefinitionModel);
 protected:
     virtual DgnDbStatus _OnDelete() override { return DgnDbStatus::WrongModel; }
     virtual void _OnDeleted() override { BeAssert(false && "The dictionary model cannot be deleted"); }
@@ -844,286 +890,340 @@ public:
     explicit DictionaryModel(CreateParams const& params) : T_Super(params) { }
 };
 
+//=======================================================================================
+//! A SystemModel holds SystemElements which are used to model functional systems.
+//! @see SystemElement
+//! @ingroup DgnModelGroup
+// @bsiclass                                                    Shaun.Sewall    12/15
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE SystemModel : DgnModel
+{
+    DGNMODEL_DECLARE_MEMBERS(DGN_CLASSNAME_SystemModel, DgnModel);
+
+protected:
+    SystemModelCP _ToSystemModel() const override {return this;}
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _OnInsertElement(DgnElementR element) override;
+
+public:
+    explicit SystemModel(CreateParams const& params) : T_Super(params) {}
+    static SystemModelPtr Create(CreateParams const& params) {return new SystemModel(params);}
+    DGNPLATFORM_EXPORT static SystemModelPtr Create(DgnDbR, Code const&);
+};
+
+struct ComponentDef;
+
 /*=======================================================================================*//**
-* A ComponentModel represents a set of possible configurations of a single type of thing. 
-*
-* <p>The type of the component is defined by the ECClass that is specified by the component's ItemECClassName property.
-* Note that a ComponentModel does not define a type; it generates possible configurations of an existing type.
-*
-* <p>A ComponentModel uses an algorithm called a "solver" that generates a configuration, based on the values of a pre-defined set of parameters.
-* The component's solver and its input parameters are specified by the model's ModelSolverDef.
-*
-* <p>The Items in a ComponentModel that are to be harvested are in the Category that is identified by the model's ItemCategoryName property.
-* See #GetItemCategoryName for the name of this category. Items in the ComponentModel that are not assigned to the Element Category are considered to be 
-* construction elements and are not harvested.
+* A ComponentModel is used by a ComponentDef 
 * @bsiclass                                                    Keith.Bentley   10/11
 **//*=======================================================================================*/
 struct EXPORT_VTABLE_ATTRIBUTE ComponentModel : DgnModel3d
 {
-private:
-    DEFINE_T_SUPER(DgnModel3d)
+    DGNMODEL_DECLARE_MEMBERS(DGN_CLASSNAME_ComponentModel, DgnModel3d);
+    
+    friend struct ComponentDef;
 
-    struct CompProps
-        {
-        Utf8String m_itemECClassName;
-        Utf8String m_itemCategoryName;
-        Utf8String m_itemCodeAuthority;
+protected:
+    Utf8String m_componentECClass;
 
-        CompProps(Utf8StringCR iclass, Utf8StringCR icat, Utf8String iauthority) : m_itemECClassName(iclass), m_itemCategoryName(icat), m_itemCodeAuthority(iauthority) {;}
-        bool IsValid(DgnDbR) const;
-        void FromJson(Json::Value const& inValue);
-        void ToJson(Json::Value& outValue) const;
+    CoordinateSpace _GetCoordinateSpace() const override final {return CoordinateSpace::Local;}
+    DGNPLATFORM_EXPORT DgnDbStatus _OnDelete() override;
+    //DgnDbStatus _OnUpdate() override;
+    DGNPLATFORM_EXPORT void _InitFrom(DgnModelCR other) override;
 
-        DgnClassId GetItemECClassId(DgnDbR) const;
-        DgnCategoryId QueryItemCategoryId(DgnDbR) const;
-        };
+    DGNPLATFORM_EXPORT virtual void _WriteJsonProperties(Json::Value&) const override;
+    DGNPLATFORM_EXPORT virtual void _ReadJsonProperties(Json::Value const&) override;
+
+    DGNPLATFORM_EXPORT ComponentModel(DgnDbR db, DgnModel::Code, Utf8StringCR defName);
 
 public:
-    //=======================================================================================
-    //! Parameters to create a new instances of a ComponentModel.
-    //! @ingroup DgnModelGroup
-    //=======================================================================================
-    struct CreateParams : DgnModel3d::CreateParams
-    {
-    private:
-        DEFINE_T_SUPER(DgnModel3d::CreateParams)
-        friend struct ComponentModel;
-        CompProps m_compProps;
-    public:
-        //! Parameters to create a new instance of a ComponentModel.
-        //! @param[in] dgndb The DgnDb for the new ComponentModel
-        //! @param[in] name The name for the ComponentModel
-        //! @param[in] iclass The full (namespace.class) name of the ECClass that should be used when creating an Item from this component.
-        //! @param[in] icat The name of the category that will be used by Items that should be harvested and that should be used when creating an instance Item from this component.
-        //! @param[in] iauthority The name of the CodeAuthority that should be used when creating an instance Item from this component.
-        //! @param[in] solver The definition of the solver to be used by this model when validating changes to its content.
-        DGNPLATFORM_EXPORT CreateParams(DgnDbR dgndb, Utf8StringCR name, Utf8StringCR iclass, Utf8StringCR icat, Utf8String iauthority, ModelSolverDef const& solver);
+    ComponentModel(CreateParams const& params) : DgnModel3d(params) {;} //!< @private
 
-        //! @private
-        //! This constructor is used only by the model handler to create a new instance, prior to calling ReadProperties on the model object
-        explicit CreateParams(DgnModel::CreateParams const& params) : T_Super(params), m_compProps("","","") {}
+    //! Create a ComponentModel that can be used by a component definition
+    //! @param db The DgnDb that is intended to hold the new model
+    //! @param componentDefClassFullName The full ECSQL name of the component definition ECClass
+    //! @return a new, non-persistent component model
+    DGNPLATFORM_EXPORT static ComponentModelPtr Create(DgnDbR db, Utf8StringCR componentDefClassFullName);
+
+    Utf8StringCR GetComponentECClassFullName() const {return m_componentECClass;}
+
+DGNPLATFORM_EXPORT static void OnElementCopied(DgnElementCR outputElement, DgnElementCR sourceElement, DgnCloneContext&); //!< @private
+DGNPLATFORM_EXPORT static void OnElementImported(DgnElementCR outputElement, DgnElementCR sourceElement, DgnImportContext&); //!< @private
+};
+
+//=======================================================================================
+//! A component definition.
+// @bsiclass                                                    Sam.Wilson      12/15
+//=======================================================================================
+struct ComponentDef : RefCountedBase
+{
+ private:
+    DgnDbR m_db;
+    ECN::ECClassCR m_class;
+    ECN::IECInstancePtr m_ca;
+    ComponentModelPtr m_model;
+
+    static Utf8String GetCaValueString(ECN::IECInstanceCR, Utf8CP propName);
+    ECN::IECInstancePtr GetPropSpecCA(ECN::ECPropertyCR prop);
+
+    Utf8String GetGeneratedName() const;
+    DgnElement::Code CreateVariationCode(Utf8StringCR slnId);
+
+    //! Test if the specified code is that of a component variation instance element.
+    static bool IsComponentVariationCode(DgnElement::Code const& icode);
+
+    //! This is the basic logic to create an instance of this component. It is used to create variations and singletons.
+    DgnElementCPtr MakeInstance0(DgnDbStatus* stat, DgnModelR targetModel, ECN::IECInstanceCR parameters, DgnElement::Code const& code);
+    
+    //! Compare two instances and return true if their parameter values are the same.
+    //! @note This function infers that that parameters to be compared are the properties of \a lhs that are not ECInstanceId and are not NULL.
+    bool HaveEqualParameters(ECN::IECInstanceCR lhs, ECN::IECInstanceCR rhs, bool compareOnlyInstanceParameters = true);
+
+    //! Copy instance parameters from source to target
+    void CopyInstanceParameters(ECN::IECInstanceR target, ECN::IECInstanceCR source);
+
+    ComponentDef(DgnDbR db, ECN::ECClassCR componentDefClass);
+    ~ComponentDef();
+
+ public:
+    static Utf8String GetClassECSqlName(ECN::ECClassCR cls) {Utf8String ns(cls.GetSchema().GetNamespacePrefix()); return ns.append(".").append(cls.GetName());}
+    Utf8String GetClassECSqlName() const {return GetClassECSqlName(m_class);}
+
+    //! @private - called only by componenteditor
+    DGNPLATFORM_EXPORT DgnDbStatus GenerateElements(DgnModelR destModel, ECN::IECInstanceCR variationSpec);
+
+    //! Get the list of properties that are the main inputs to the component's element generator
+    DGNPLATFORM_EXPORT bvector<Utf8String> GetInputs() const;
+
+    //! Get the list of input properties in a form that can be put into a SQL SELECT statement
+    DGNPLATFORM_EXPORT Utf8String GetInputsForSelect() const;
+
+    //! Get a list of all of the component definitions derived from the specified base class in the specified DgnDb
+    //! @param[out] componentDefs    Where to return the results
+    //! @param[in] db               The Db to search
+    //! @param[in] baseClass        The base class to start from
+    DGNPLATFORM_EXPORT static void QueryComponentDefs(bvector<DgnClassId>& componentDefs, DgnDbR db, ECN::ECClassCR baseClass);
+
+    //! Make a ComponentDef object
+    //! @param db           The DgnDb that contains the component def
+    //! @param componentDefClass   The ECClass that defines the component
+    //! @param status       If not null, an error code in case of failure
+    //! @note possible status values include:
+    //! DgnDbStatus::BadModel - the component definition specifies a model, but the model does not exist in \a db
+    //! DgnDbStatus::InvalidCategory - the component definition's category cannot be found in \a db
+    //! DgnDbStatus::WrongClass - \a componentDefClass is not a component definition ECClass
+    DGNPLATFORM_EXPORT static ComponentDefPtr FromECClass(DgnDbStatus* status, DgnDbR db, ECN::ECClassCR componentDefClass);
+
+    //! Make a ComponentDef object
+    //! @param db           The DgnDb that contains the component def
+    //! @param componentDefClassId Identfies the ECClass that defines the component
+    //! @param status       If not null, an error code in case the component definition could not be returned
+    //! @see FromECClass
+    DGNPLATFORM_EXPORT static ComponentDefPtr FromECClassId(DgnDbStatus* status, DgnDbR db, DgnClassId componentDefClassId);
+
+    //! Make a ComponentDef object
+    //! @param db           The DgnDb that contains the component def
+    //! @param ecsqlClassName   The full ECSQL name of the ECClass that defines the component
+    //! @param status       If not null, an error code in case of failure
+    //! @see FromECClass
+    DGNPLATFORM_EXPORT static ComponentDefPtr FromECSqlName(DgnDbStatus* status, DgnDbR db, Utf8StringCR ecsqlClassName);
+
+    //! Get the ComponentDef corresponding to the specified component instance
+    //! @param instance     An element that might be an instance of a component
+    //! @param status       If not null, an error code in case of failure
+    //! @see FromECClass
+    DGNPLATFORM_EXPORT static ComponentDefPtr FromInstance(DgnDbStatus* status, DgnElementCR instance);
+
+    //! Get the ComponentDef corresponding to the specified ComponentModel
+    //! @param model        A ComponentModel
+    //! @param status       If not null, an error code in case of failure
+    //! @see FromECClass
+    DGNPLATFORM_EXPORT static ComponentDefPtr FromComponentModel(DgnDbStatus* status, ComponentModelCR model);
+
+    //! Delete a component definition.
+    //! @param db           The DgnDb that contains the component def
+    //! @param ecsqlClassName   The full ECSQL name of the ECClass that defines the component
+    //! @return non-zero error status if \a componentDefClass is not a component definition class
+    //! @note All existing variations and instances are also deleted. The component def's work model is also deleted.
+    DGNPLATFORM_EXPORT static DgnDbStatus DeleteComponentDef(DgnDbR db, Utf8StringCR ecsqlClassName);
+
+    struct ElementGenerator
+        {
+        //! Generate geometry
+        //! @param destModel The model where instances of this component will be placed
+        //! @param componentWorkModel The model where intermediate results may be written. Everything written to the work model will be harvested when instances are placed.
+        //! @param variationSpec The input parameters and their values
+        //! @param cdef The definition of the component that is to be instanced
+        //! @return non-zero error status if elements could not be generated
+        virtual DgnDbStatus _GenerateElements(DgnModelR destModel, DgnModelR componentWorkModel, ECN::IECInstanceCR variationSpec, ComponentDef& cdef) = 0;
+        };
+
+    //! Component parameter variation scope
+    enum class ParameterVariesPer
+    {
+        Instance = 0,   //!< Varies per instance
+        Variation = 1   //!< Varies per Variation
     };
 
-    friend struct CreateParams;
+    DgnDbR GetDgnDb() const {return m_db;}
 
-private:
-    CompProps m_compProps;
+    ECN::ECClassCR GetECClass() const {return m_class;}
 
-    DPoint3d _GetGlobalOrigin() const override final {return DPoint3d::FromZero();}
-    CoordinateSpace _GetCoordinateSpace() const override final {return CoordinateSpace::Local;}
-    DGNPLATFORM_EXPORT void _GetSolverOptions(Json::Value&) override;
-    DGNPLATFORM_EXPORT DgnDbStatus _OnDelete() override;
+    DGNPLATFORM_EXPORT Utf8String GetModelName() const;
+    DGNPLATFORM_EXPORT ComponentModelR GetModel();
 
-protected:
-    //! @private
-    DGNPLATFORM_EXPORT virtual void _ToPropertiesJson(Json::Value&) const;//!< @private
-    //! @private
-    DGNPLATFORM_EXPORT virtual void _FromPropertiesJson(Json::Value const&);//!< @private
+    DGNPLATFORM_EXPORT bool UsesTemporaryModel() const;
 
-    //! @private
-    DgnElement::Code CreateCapturedSolutionCode(Utf8StringCR slnId);
+    //! Get the name of this component
+    Utf8String GetName() const {return m_class.GetName();}
 
-    //! @private
-    DGNPLATFORM_EXPORT PhysicalElementCPtr HarvestSolution(DgnDbStatus& status, PhysicalModelR capturedSolutionModel, Utf8StringCR solutionName, DgnElement::Code const& icode, Placement3dCR placement);
+    DGNPLATFORM_EXPORT Utf8String GetElementGeneratorName() const;
 
-    //! @private
-    DGNPLATFORM_EXPORT PhysicalElementCPtr CaptureSolution(DgnDbStatus* stat, PhysicalModelR destModel, ModelSolverDef::ParameterSet const& parameters, Utf8StringCR solutionItemName, Placement3dCR placement, DgnElement::Code code, bool isSingleton);
+    DGNPLATFORM_EXPORT Utf8String GetCategoryName() const;
+    DGNPLATFORM_EXPORT DgnCategoryId QueryCategoryId() const;
 
-public:
-    //! @private - used in testing only 
-    DGNPLATFORM_EXPORT DgnDbStatus Solve(ModelSolverDef::ParameterSet const& parameters);
+    DGNPLATFORM_EXPORT Utf8String GetCodeAuthorityName() const;
+    DGNPLATFORM_EXPORT DgnAuthorityCPtr GetCodeAuthority() const;
 
-    /**
-     *The constructor for ComponentModel.
-    * @see DgnScript
-    */
-    DGNPLATFORM_EXPORT explicit ComponentModel(CreateParams const& params);
+    DGNPLATFORM_EXPORT ECN::IECInstancePtr MakeVariationSpec();
 
-    //! Query if the ComponentModel is correctly defined.
-    DGNPLATFORM_EXPORT bool IsValid() const;
+    //! Return the properties of the specified instance of this component in the form of an IECInstance.
+    //! @param instance The component instance element.
+    //! @returns nullptr if \a instance is an instance of a component
+    DGNPLATFORM_EXPORT static ECN::IECInstancePtr GetParameters(DgnElementCR instance);
 
-    //! @private - used by unit test
-    void Developer_RedefineSolver(ModelSolverDef const& s) {SetSolver(s);}
+    //! Export this component definition to the specified DgnDb. 
+    //! @param context The id remapping context to use
+    //! @param exportSchema Export the ECSchema that includes this component definition's ECClass? The export will fail if \a destDb does not contain this component definition's ECClass.
+    //! @param exportCategory Export the Category used by this component definition? The export will fail if \a destDb does not contain this component definition's Category.
+    //! @return non-zero error if the import failed.
+    DGNPLATFORM_EXPORT DgnDbStatus Export(DgnImportContext& context, bool exportSchema = true, bool exportCategory = false);
 
-    //! Get the full (namespace.class) name of the ECClass that should be used when creating an Item from this component.
-    DGNPLATFORM_EXPORT Utf8String GetItemECClassName() const;
+    //! Export variations of this component definition to the the specified model. 
+    //! @param destVariationsModel Write copies of variations to this model.
+    //! @param sourceVariationsModel Query variations in this model.
+    //! @param context The id remapping context to use
+    //! @param variationFilter If specified, the variations to export. If not specified and if \a destVariationsModel is specified, then all variations are exported.
+    //! @return non-zero error if the import failed.
+    DGNPLATFORM_EXPORT DgnDbStatus ExportVariations(DgnModelR destVariationsModel, DgnModelId sourceVariationsModel, DgnImportContext& context, bvector<DgnElementId> const& variationFilter = bvector<DgnElementId>());
 
-    //! Get the name of the category that will be used by Items that should be harvested and that should be used when creating an instance Item from this component.
-    //! Items in this model that are in other categories should be treated as construction geometry.
-    DGNPLATFORM_EXPORT Utf8String GetItemCategoryName() const;
+    //! Creates a variation of a component, based on the specified parameters.
+    //! @param[out] stat        Optional. If not null and if the variation cannot be computed, then an error code is stored here to explain what happened, as explained below.
+    //! @param[in] destModel    The output model, where the variation instance should be stored.
+    //! @param[in] variationParameters  The parameters that specify the solution. Note that the ECClass of this instance also identifies the component.
+    //! @param[in] variationName The name of the variation that is to be created in the destModel. This cannot be blank, and it must be unique among all variations for this component.
+    //! @return A handle to the variation instance that was created and persisted in \a destModel. If more than one element was created, the returned element is the parent. If the instance
+    //! cannot be created, then this function returns nullptr and sets \a stat to a non-error status. Some of the possible error values include:
+    //!     * DgnDbStatus::WrongClass - \a variationParameters is not an instance of a component definition ECClass.
+    //!     * DgnDbStatus::BadRequest - The component's geometry could not be generated, possibly because the values in \a variationParameters are invalid.
+    //!     * DgnDbStatus::DuplicateCode - An element already exists with a name equal to \a variationName
+    //! @see MakeInstanceOfVariation
+    DGNPLATFORM_EXPORT static DgnElementCPtr MakeVariation(DgnDbStatus* stat, DgnModelR destModel, ECN::IECInstanceCR variationParameters, Utf8StringCR variationName);
 
-    //! Get the name of the CodeAuthority that should be used when creating an instance Item from this component.
-    DGNPLATFORM_EXPORT Utf8String GetItemCodeAuthority() const;
+    //! Delete a variation.
+    //! @return non-zero error status if \a variation is not a variation of any componentdef, or if it is a variation but is currently used by existing instances.
+    DGNPLATFORM_EXPORT static DgnDbStatus DeleteVariation(DgnElementCR variation);
 
-    //! Get the name of the component.
-    Utf8CP GetModelName() const { return GetCode().GetValueCP(); }
+    //! Look up a variation by name
+    //! @param[in] variationName The name of the variation to look up.
+    //! @return the variation or an invalid handle if not found
+    DGNPLATFORM_EXPORT DgnElementCPtr QueryVariationByName(Utf8StringCR variationName);
 
-    /** @name Capturing Solutions */
-    /** @{ */
+    //! Search for all variations of this component definition
+    //! @param variations    Where to return the IDs of the captured solutions
+    //! @param variationModelId The model that contains the variations
+    //! @see MakeVariation, QueryVariationByName
+    DGNPLATFORM_EXPORT void QueryVariations(bvector<DgnElementId>& variations, DgnModelId variationModelId);
 
-    //! Captures the result of solving for the specified parameters. This may be called to create an Item in a solution, or it may be called to capture a unique, singleton solution.
-    //! @param[out] stat        Optional. If not null and if the solution cannot be captured, then an error code is stored here to explain what happened, as explained below.
-    //! @param[in] destModel    The output model, where the captured solution item(s) is(are) stored.
-    //! @param[in] parameters   The parameters that specify the solution
-    //! @param[in] solutionItemName The name of the Item to be created in the destModel
-    //! @return A handle to the Item that was created and persisted in \a destModel. If more than one element was created, the returned element is the parent.
-    //! @note This function is used only for solutions that result in PhysicalElements. That is, the ECClass identified by #GetItemECClassName must be a subclass of PhysicalElement.
-    //! @note When a solution cannot be captured, the error code will be:
-    //!     * DgnDbStatus::ValidationFailed - The model could not be solved, possibly because the values in \a parameters are invalid.
-    //!     * DgnDbStatus::DuplicateCode - An Item already exists with the same name for this component.
-    //!     * DgnDbStatus::NotFound - no element in the solution is in the category identified by #GetItemCategoryName.
-    //!     * DgnDbStatus::SQLiteError or DgnDbStatus::WriteError - The solution could not be written to the Db. 
-    //!     * DgnDbStatus::LockNotHeld - Failure to lock this component model or the output model.
-    //!     * DgnDbStatus::InvalidCategory - The category identified by #GetItemCategoryName does not exist in this Db.
-    //!     * DgnDbStatus::MissingDomain - The ECClass identified by #GetItemECClassName does not exist in this Db.
-    //!     * DgnDbStatus::MissingHandler - The handler for the ECClass identified by #GetItemECClassName has not been registered.
-    //!     * DgnDbStatus::WrongClass - The ECClass identified by #GetItemECClassName is not a subclass of PhysicalElement.
-    //! @see MakeInstanceOfSolution, QuerySolutionByName
-    DGNPLATFORM_EXPORT PhysicalElementCPtr CaptureSolution(DgnDbStatus* stat, PhysicalModelR destModel, ModelSolverDef::ParameterSet const& parameters, Utf8StringCR solutionItemName);
+    //! Get the scope of the specified property
+    DGNPLATFORM_EXPORT ParameterVariesPer GetVariationScope(ECN::ECPropertyCR prop);
 
-    //! Test if the specified code is that of a captured solution element.
-    DGNPLATFORM_EXPORT bool IsCapturedSolutionCode(DgnElement::Code const& icode);
-
-    //! Delete the specified solution Item. This function also deletes the ECRelationship that relates the Item to this component model.
-    //! @return DgnDbStatus::BadRequest if \a solutionItem is not an element that capatures a solution to this component model.
-    //! @note This function does not delete all existing instances of the specified solution Item
-    //! @see MakeInstanceOfSolution
-    DGNPLATFORM_EXPORT DgnDbStatus DeleteSolution(PhysicalElementCR solutionItem);
-
-    //! Search for all captured solutions for this component model
-    //! @param solutions    Where to return the IDs of the captured solutions
-    //! @see CaptureSolution, QuerySolutionById, QuerySolutionByName, MakeInstanceOfSolution
-    DGNPLATFORM_EXPORT void QuerySolutions(bvector<DgnElementId>& solutions);
-
-    //! Get the specified captured solution element. 
-    //! This function looks up an element by ElementId and then calls QuerySolutionInfo.
-    //! This method is better than DgnElements::Get, in that it \em also checks that the specified DgnElementId identifies an element that captures a solution to this component model
-    //! and returns information about the solution.
-    //! @param[out] capturedSolutionElement The element that captures the solution
-    //! @param[out] params      The parameters that were used to generate the specified captured solution element
-    //! @param[in] capturedSolutionElementId The ID of the captured solution element
-    //! @return non-zero error status if \a capturedSolutionElementId does not identify an element that captures a solution of this component model
-    //! @see CaptureSolution, QuerySolutionByName, QuerySolutionInfo
-    DGNPLATFORM_EXPORT DgnDbStatus QuerySolutionById(PhysicalElementCPtr& capturedSolutionElement, ModelSolverDef::ParameterSet& params, DgnElementId capturedSolutionElementId);
-    
-    //! Get the element that captures the result of solving for the captured solution element Name.
-    //! This function looks up an element by code and then calls QuerySolutionInfo.
-    //! This method is better than DgnElements::Get, in that it \em also checks that the specified DgnElementId identifies an element that captures a solution to this component model
-    //! and returns information about the solution.
-    //! @param[out] capturedSolutionElement The element that captures the solution
-    //! @param[out] params      The parameters that were used to generate the specified captured solution element
-    //! @param[in] capturedSolutionName The name of the captured solution element
-    //! @return non-zero error status if \a capturedSolutionName does not identify an element that captures a solution of this component model
-    //! @see CaptureSolution, QuerySolutionById, QuerySolutionInfo
-    DGNPLATFORM_EXPORT DgnDbStatus QuerySolutionByName(PhysicalElementCPtr& capturedSolutionElement, ModelSolverDef::ParameterSet& params, Utf8StringCR capturedSolutionName);
-
-    //! Get the ComponentModel and parameters that were used to generate the specified captured solution element
-    //! @param[out] params      The parameters that were used to generate the specified captured solution element
-    //! @param[in] capturedSolutionElement  The captured solution element that is to be queried
-    //! @return non-zero error status if \a capturedSolution is not an element that captures a solution of this component model
-    //! @see MakeInstanceOfSolution
-    DGNPLATFORM_EXPORT DgnDbStatus QuerySolutionInfo(ModelSolverDef::ParameterSet& params, PhysicalElementCR capturedSolutionElement);
-
-    //! Get the ComponentModel and parameters that were used to generate the specified captured solution element
-    //! @param[out] cmid        The ID of the ComponentModel that was used to generate the specified captured solution element
-    //! @param[out] params      The parameters that were used to generate the specified captured solution element
-    //! @param[in] capturedSolutionElement The captured solution element
-    //! @return non-zero error status if \a capturedSolution is not the solution of any component model
-    //! @see MakeInstanceOfSolution
-    DGNPLATFORM_EXPORT static DgnDbStatus QuerySolutionInfo(DgnModelId& cmid, ModelSolverDef::ParameterSet& params, PhysicalElementCR capturedSolutionElement);
-
-    //! Helper class for importing component models and their captured solutions
-    struct Importer : DgnImportContext
-        {
-        ComponentModelR m_sourceComponent;
-        ComponentModelPtr m_destComponent;
-
-        //! Construct a new importer
-        DGNPLATFORM_EXPORT Importer(DgnDbR destDb, ComponentModel& sourceComponent);
-
-        //! If necessary, set the destination component model. 
-        //! @note This is rarely needed. ImportComponentModel will set the destination model automatically.
-        void SetDestComponent(ComponentModelR m) {m_destComponent=&m;}
-
-        //! Import the component model.
-        //! @param[out] status  Optional. If not null, then an error code is stored here in case the clone fails.
-        //! @return the newly created component model in the destinataion Db
-        DGNPLATFORM_EXPORT ComponentModelPtr ImportComponentModel(DgnDbStatus* status = nullptr);
-
-        //! Import all or selected solutions of this component model.
-        //! @param destModel    The model to which solutions are to be copied. 
-        //! @param solutionFilter Optional. If not empty, this is the list of solutions to import. If empty, then all solutions are imported.
-        //! @return non-zero error status if the import failed, including \a DgnDbStatus::WrongDgnDb if \a destModel is not in the
-        //!         same DgnDb as the destination component model, \a DgnDbStatus::WrongModel if \a destModel is the same as the destination component model,
-        //!         or \a DgnDbStatus::BadModel if the destination component model is not set, or some other
-        //!         error code if the import of any individual solution Item fails.
-        //! @note \a destModel must be different from but in the same DgnDb as the destination component model.
-        DGNPLATFORM_EXPORT DgnDbStatus ImportSolutions(DgnModelR destModel, bvector<AuthorityIssuedCode> const& solutionFilter = bvector<AuthorityIssuedCode>());
-        };
-
-    /** @} */
-
-    /** @name Placing Instances of Captured Slutions */
-    /** @{ */
-
-    //! Make a persistent copy of a specified solution Item, along with all of its children.
-    //! Call this function if you are sure that you just need a copy of an already captured solution.
-    //! @param[out] stat        Optional. If not null, then an error code is stored here in case the copy fails.
+    //! Make either a persistent copy of a specified variation or a unique instance of the component definition.
+    //! If \a variation has instance parameters, then the \a instanceParameters argument may be passed into specific the instance parameter values to use.
+    //! If the values in \a instanceParameters differs from the instance parameters of \a variation, then a unique instance is created.
+    //! If \a instanceParameters is not specified or if it matches the instance parameters of \a variation, then a copy of \a variation is made.
+    //! @note Per-type parameters are ignored when comparing \a parameters to \a variation. It is illegal for the caller to specify new values for per-type parameters.
+    //! @param[out] stat        Optional. If not null, then an error code is stored here in case the copy fails. Set to DgnDbStatus::WrongClass if \a variation is not an instance of a component. Otherwise, see ElementCopier for possible error codes.
     //! @param[in] targetModel  The model where the instance is to be inserted
-    //! @param[in] capturedSolution  The captured solution element that is to be copied
-    //! @param[in] placement    The new element's placement.
-    //! @param[in] code         Optional. The code to assign to the new item. If invalid, then a code will be generated by the CodeAuthority associated with this component model
-    //! @return the instance item if successful
-    //! @see QuerySolutionByName
-    DGNPLATFORM_EXPORT static PhysicalElementCPtr MakeInstanceOfSolution(DgnDbStatus* stat, PhysicalModelR targetModel, 
-                                                    PhysicalElementCR capturedSolution,
-                                                    Placement3dCR placement, DgnElement::Code const& code = DgnElement::Code());
+    //! @param[in] variation    The variation that is to be turned into an instance.
+    //! @param[in] instanceParameters   The instance parameters to use. If null, then default instance parameter values are used. Pass null if the variation has no instance parameters.
+    //! @param[in] code         Optional. The code to assign to the new instance. If invalid, then a code will be generated by the CodeAuthority associated with this component definition.
+    //! @return A handle to the instance that was created and persisted in \a destModel. If more than one element was created, the returned element is the parent. If the instance
+    //! cannot be created, then this function returns nullptr and sets \a stat to a non-error status. Some of the possible error values include:
+    //!     * DgnDbStatus::WrongClass - \a variation is not an instance of a component definition ECClass or \a the ECClass of instanceParms and of \a variation do not match.
+    //!     * DgnDbStatus::WrongDgnDb - \a variation and \a targetModel must both be in the same DgnDb.
+    //!     * DgnDbStatus::NotFound - \a parameters does not match the parameters of \a variation. Call 
+    //! @see MakeVariation
+    DGNPLATFORM_EXPORT static DgnElementCPtr MakeInstanceOfVariation(DgnDbStatus* stat, DgnModelR targetModel, DgnElementCR variation, ECN::IECInstanceCP instanceParameters, DgnElement::Code const& code = DgnElement::Code());
 
-    //! Make a persistent copy of a specified solution Item or create a unique/singleton Item.
-    //! Call this function if you might need a unique/singleton solution.
-    //! If \a capturedSolutionName is valid and identifies an existing solution \em and if \a parameters matches the captured solution's parameters, then this function calls MakeInstanceOfSolution to make a copy of the captured solution.
-    //! Otherwise, this function calls CaptureSolution to create a unique/singleton solution.
+    //! Make a unique instance that is not based on a pre-defined variation. This method must be used if \a parameters include per-instance parameters that do not match the default values
+    //! of any pre-defined variation. This method may also be used for components that do not have pre-defined variations.
+    //! @note This function should not be used when the compponent definition does define a set of variations. In that case, call MakeInstanceOfVariation instead.
     //! @param[out] stat        Optional. If not null, then an error code is stored here in case the creation of the instance fails.
     //! @param[in] targetModel  The model where the instance is to be inserted
-    //! @param[in] capturedSolutionName  The name of the captured solution element that is to be copied, if any. Pass the empty string to create a unique/singleton solution.
-    //! @param[in] parameters   The parameters that specify the solution
-    //! @param[in] placement    The new element's placement.
+    //! @param[in] parameters   The parameters that specify the desired variation
     //! @param[in] code         Optional. The code to assign to the new item. If invalid, then a code will be generated by the CodeAuthority associated with this component model
-    //! @return the instance item if successful
-    //! @see QuerySolutionByName
-    DGNPLATFORM_EXPORT PhysicalElementCPtr MakeInstanceOfSolution(DgnDbStatus* stat, PhysicalModelR targetModel, 
-                                                    Utf8StringCR capturedSolutionName,
-                                                    ModelSolverDef::ParameterSet const& parameters, 
-                                                    Placement3dCR placement, DgnElement::Code const& code = DgnElement::Code());
-
-    //! Search for all instances of the specified captured solution for this component model
-    //! @param instances    Where to return the IDs of the instances
-    //! @param solutionId   The captured solution element
-    DGNPLATFORM_EXPORT void QueryInstances(bvector<DgnElementId>& instances, DgnElementId solutionId);
-    /** @} */
+    //! @return A handle to the instance that was created and persisted in \a destModel. If more than one element was created, the returned element is the parent. If the instance
+    //! cannot be created, then this function returns nullptr and sets \a stat to a non-error status. Some of the possible error values include:
+    //!     * DgnDbStatus::WrongClass - \a parameters is not an instance of a component definition ECClass.
+    //!     * DgnDbStatus::WrongDgnDb - \a parameters and \a targetModel must both be in the same DgnDb.
+    //!     * DgnDbStatus::BadRequest - The component's geometry could not be generated, possibly because the values in \a parameters are invalid.
+    //! @see MakeInstanceOfVariation
+    DGNPLATFORM_EXPORT static DgnElementCPtr MakeUniqueInstance(DgnDbStatus* stat, DgnModelR targetModel, ECN::IECInstanceCR parameters, DgnElement::Code const& code = DgnElement::Code());
 };
 
 //=======================================================================================
-//! A PlanarPhysicalModel is an infinite planar model that subdivides physical space into two halves. The plane of a
-//! PhysicalPlanar model may be mapped into physical space in non-linear way, but every finite point in physical space is
-//! either "in front" or "in back" of the plane.
-//! @note a PlanarPhysicalModel @b is @b a DgnModel2d, and all of its elements are 2-dimensional.
-//! Also note that any (2d) point on a PlanarPhysicalModel corresponds to a single point in physical space.
-//! @ingroup DgnModelGroup
-// @bsiclass                                                    Keith.Bentley   10/11
+//! A helper class that makes it easier to create a ComponentDefinition ECClass
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE PlanarPhysicalModel : DgnModel2d
+struct ComponentDefCreator
 {
-    DEFINE_T_SUPER(DgnModel2d)
-
-protected:
-    PlanarPhysicalModelCP _ToPlanarPhysicalModel() const override {return this;}
 public:
-    explicit PlanarPhysicalModel(CreateParams const& params) : T_Super(params) {}
+    struct PropertySpec
+        {
+        Utf8String m_name;
+        ECN::PrimitiveType m_type;
+        ComponentDef::ParameterVariesPer m_variesPer;
+        PropertySpec(Utf8StringCR n, ECN::PrimitiveType pt, ComponentDef::ParameterVariesPer vp) : m_name(n), m_type(pt), m_variesPer(vp) {;} 
+        };
+
+private:
+    DgnDbR m_db;
+    ECN::ECSchemaR m_schema;
+    ECN::ECClassCR m_baseClass;
+    Utf8String m_name;
+    Utf8String m_scriptName;
+    Utf8String m_categoryName;
+    Utf8String m_codeAuthorityName;
+    Utf8String m_modelName;
+    Utf8String m_inputs;
+    bvector<PropertySpec> m_propSpecs;
+    
+    ECN::IECInstancePtr CreatePropSpecCA();
+    ECN::IECInstancePtr CreateSpecCA();
+    ECN::IECInstancePtr AddSpecCA(ECN::ECClassR);
+
+public:
+    DGNPLATFORM_EXPORT static ECN::ECSchemaPtr GenerateSchema(DgnDbR, Utf8StringCR schemaNameIn);
+
+    DGNPLATFORM_EXPORT static ECN::ECSchemaCP ImportSchema(DgnDbR db, ECN::ECSchemaCR schemaIn, bool updateExistingSchemas);
+  
+    ComponentDefCreator(DgnDbR db, ECN::ECSchemaR schema, Utf8StringCR name, ECN::ECClassCR baseClass, Utf8StringCR geomgen, Utf8StringCR cat, Utf8StringCR codeauth)
+        :m_db(db), m_schema(schema), m_baseClass(baseClass), m_name(name), m_scriptName(geomgen), m_categoryName(cat), m_codeAuthorityName(codeauth)
+        {
+        }
+
+    //! Set the model name. The default is no model name, indicating that the component should use a temporary "sandbox" model.
+    void SetModelName(Utf8StringCR n) {m_modelName=n;}
+
+    void AddPropertySpec(PropertySpec const& s) {m_propSpecs.push_back(s); AddInput(s.m_name);}
+
+    DGNPLATFORM_EXPORT void AddInput(Utf8StringCR inp); //!< You can call this directly to mark existing (subclass) properties as inputs
+
+    DGNPLATFORM_EXPORT ECN::ECClassCP GenerateECClass();
 };
 
 //=======================================================================================
-//! A SectionDrawingModel is a PlanarPhysicalModel that is mapped into physical space such that the vertical direction (Y
+//! A SectionDrawingModel is an infinite planar model that subdivides physical space into two halves.
+//! The plane of a SectionDrawingModel is mapped into physical space such that the vertical direction (Y
 //! vector) of the SectionDrawingModel is constant in physical space. That is, physical space is divided in half (cut) by a
 //! series of line segments, continuous and monotonically increasing along the X axis, in the XZ plane of the drawing. This
 //! is called the "section plane", and the line segments are called the "section lines". In AEC section drawings, a further
@@ -1137,13 +1237,16 @@ public:
 //! Other elements in the SectionDrawingModel are computed by projecting element behind the section plane onto the section
 //! plane according to some rules. These elements are called "reverse graphics". Lastly, the SectionDrawingModel may contain
 //! elements that are pure annotation placed by the user or created by other rules.
+//! @note Any (2d) point on a SectionDrawingModel corresponds to a single point in physical space.
 //! @ingroup DgnModelGroup
 // @bsiclass                                                    Keith.Bentley   10/11
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE SectionDrawingModel : PlanarPhysicalModel
+struct EXPORT_VTABLE_ATTRIBUTE SectionDrawingModel : DgnModel2d
 {
-    DEFINE_T_SUPER(PlanarPhysicalModel)
-
+    DGNMODEL_DECLARE_MEMBERS(DGN_CLASSNAME_SectionDrawingModel, DgnModel2d);
+protected:
+    SectionDrawingModelCP _ToSectionDrawingModel() const override final {return this;}
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _OnInsertElement(DgnElementR element) override;
 public:
     SectionDrawingModel(CreateParams const& params) : T_Super(params) {}
 };
@@ -1157,8 +1260,8 @@ public:
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE SheetModel : DgnModel2d
 {
-    DEFINE_T_SUPER(DgnModel2d)
-
+    DGNMODEL_DECLARE_MEMBERS(DGN_CLASSNAME_SheetModel, DgnModel2d);
+public:
     struct CreateParams : DgnModel2d::CreateParams
     {
         DEFINE_T_SUPER(DgnModel2d::CreateParams);
@@ -1169,21 +1272,34 @@ struct EXPORT_VTABLE_ATTRIBUTE SheetModel : DgnModel2d
         //! @param[in] classId the DgnClassId of thew new SheetModel (must be or derive from SheetModel)
         //! @param[in] code the code of the new SheetModel
         //! @param[in] size the size of the SheetModel, in meters.
-        //! @param[in] props the Properties of the new SheetModel
-        //! @param[in] id the DgnModelId of thew new SheetModel. This should be DgnModelId() when creating a new model.
-        CreateParams(DgnDbR dgndb, DgnClassId classId, Code code, DPoint2d size, Properties props=Properties(), DgnModelId id=DgnModelId()) :
-            T_Super(dgndb, classId, code, props, ModelSolverDef(), id), m_size(size) {}
+        //! @param[in] label Label of the new DgnModel
+        //! @param[in] displayInfo the Properties of the new SheetModel
+        //! @param[in] inGuiList Controls the visibility of the new DgnModel in model lists shown to the user
+        CreateParams(DgnDbR dgndb, DgnClassId classId, Code code, DPoint2d size, Utf8CP label = nullptr, DisplayInfo displayInfo = DisplayInfo(), bool inGuiList = true) :
+            T_Super(dgndb, classId, code, label, displayInfo, inGuiList), m_size(size)
+            {}
 
         explicit CreateParams(DgnModel::CreateParams const& params, DPoint2d size=DPoint2d::FromZero()) : T_Super(params), m_size(size) {}
+
+        DPoint2dCR GetSize() const { return m_size; } //!< Get the size of the SheetModel to be created, in meters. 
+        void SetSize(DPoint2dCR size) { m_size = size; } //!< Set the size of the SheetModel to be created, in meters. 
     };
+
+private:
+    DgnDbStatus BindInsertAndUpdateParams(BeSQLite::EC::ECSqlStatement& statement);
 
 protected:
     DPoint2d m_size;
 
     SheetModelCP _ToSheetModel() const override {return this;}
 
-    DGNPLATFORM_EXPORT virtual void _ToPropertiesJson(Json::Value&) const override;
-    DGNPLATFORM_EXPORT virtual void _FromPropertiesJson(Json::Value const&) override;
+    DGNPLATFORM_EXPORT virtual void _InitFrom(DgnModelCR other) override;
+
+    DGNPLATFORM_EXPORT DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement& statement, ECSqlClassParamsCR params) override;
+    DGNPLATFORM_EXPORT DgnDbStatus _BindInsertParams(BeSQLite::EC::ECSqlStatement& statement) override;
+    DGNPLATFORM_EXPORT DgnDbStatus _BindUpdateParams(BeSQLite::EC::ECSqlStatement& statement) override;
+
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _OnInsertElement(DgnElementR element) override;
 
 public:
     //! construct a new SheetModel
@@ -1198,7 +1314,7 @@ public:
 };
 
 #define MODELHANDLER_DECLARE_MEMBERS(__ECClassName__,__classname__,_handlerclass__,_handlersuperclass__,__exporter__) \
-        private: virtual DgnModel* _CreateInstance(DgnModel::CreateParams const& params) override {return new __classname__(__classname__::CreateParams(params));}\
+        private: virtual Dgn::DgnModel* _CreateInstance(Dgn::DgnModel::CreateParams const& params) override {return new __classname__(__classname__::CreateParams(params));}\
         protected: virtual uint64_t _ParseRestrictedAction(Utf8CP name) const override { return __classname__::RestrictedAction::Parse(name); }\
         DOMAINHANDLER_DECLARE_MEMBERS(__ECClassName__,_handlerclass__,_handlersuperclass__,__exporter__)
 
@@ -1210,14 +1326,25 @@ public:
 namespace dgn_ModelHandler
 {
     //! The ModelHandler for DgnModel
-    struct EXPORT_VTABLE_ATTRIBUTE Model : DgnDomain::Handler
+    struct EXPORT_VTABLE_ATTRIBUTE Model : DgnDomain::Handler, IECSqlClassParamsProvider
     {
+        friend struct Dgn::DgnModel;
+        friend struct Dgn::DgnModels;
         DOMAINHANDLER_DECLARE_MEMBERS (DGN_CLASSNAME_Model, Model, DgnDomain::Handler, DGNPLATFORM_EXPORT)
 
+    private:
+        ECSqlClassParams m_classParams;
+
+        ECSqlClassParams const& GetECSqlClassParams();
     protected:
         ModelHandlerP _ToModelHandler() override {return this;}
         virtual DgnModelP _CreateInstance(DgnModel::CreateParams const& params) {return nullptr;}
         virtual uint64_t _ParseRestrictedAction(Utf8CP name) const override { return DgnModel::RestrictedAction::Parse(name); }
+        DGNPLATFORM_EXPORT virtual DgnDbStatus _VerifySchema(DgnDomains&) override;
+
+        //! Add the names of any subclass properties used by ECSql INSERT, UPDATE, and/or SELECT statements to the ECSqlClassParams list.
+        //! If you override this method, you @em must invoke T_Super::_GetClassParams().
+        DGNPLATFORM_EXPORT virtual void _GetClassParams(ECSqlClassParamsR params) override;
 
     public:
         //! Find an ModelHandler for a subclass of dgn.Model. This is just a shortcut for FindHandler with the base class
@@ -1229,52 +1356,54 @@ namespace dgn_ModelHandler
         DgnModelPtr Create(DgnModel::CreateParams const& params) {return _CreateInstance(params);}
     };
 
-    //! The ModelHandler for PhysicalModel
-    struct EXPORT_VTABLE_ATTRIBUTE Physical : Model
+    //! The ModelHandler for Model2d
+    struct EXPORT_VTABLE_ATTRIBUTE Model2d : Model
     {
-        MODELHANDLER_DECLARE_MEMBERS (DGN_CLASSNAME_PhysicalModel, PhysicalModel, Physical, Model, DGNPLATFORM_EXPORT)
+        MODELHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_Model2d, DgnModel2d, Model2d, Model, DGNPLATFORM_EXPORT)
+    };
+
+    //! The ModelHandler for SpatialModel
+    struct EXPORT_VTABLE_ATTRIBUTE Spatial : Model
+    {
+        MODELHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_SpatialModel, SpatialModel, Spatial, Model, DGNPLATFORM_EXPORT)
     };
 
     //! The ModelHandler for ComponentModel
     struct EXPORT_VTABLE_ATTRIBUTE Component : Model
     {
-        MODELHANDLER_DECLARE_MEMBERS (DGN_CLASSNAME_ComponentModel, ComponentModel, Component, Model, DGNPLATFORM_EXPORT)
-    };
-
-    //! The ModelHandler for PlanarPhysicalModel
-    struct EXPORT_VTABLE_ATTRIBUTE PlanarPhysical : Model
-    {
-        MODELHANDLER_DECLARE_MEMBERS (DGN_CLASSNAME_PlanarPhysicalModel, PlanarPhysicalModel, PlanarPhysical, Model, DGNPLATFORM_EXPORT)
+        MODELHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_ComponentModel, ComponentModel, Component, Model, DGNPLATFORM_EXPORT)
     };
 
     //! The ModelHandler for SectionDrawingModel
-    struct EXPORT_VTABLE_ATTRIBUTE SectionDrawing : PlanarPhysical
+    struct EXPORT_VTABLE_ATTRIBUTE SectionDrawing : Model2d
     {
-        MODELHANDLER_DECLARE_MEMBERS (DGN_CLASSNAME_SectionDrawingModel, SectionDrawingModel, SectionDrawing, PlanarPhysical, DGNPLATFORM_EXPORT)
+        MODELHANDLER_DECLARE_MEMBERS (DGN_CLASSNAME_SectionDrawingModel, SectionDrawingModel, SectionDrawing, Model2d, DGNPLATFORM_EXPORT)
     };
 
     //! The ModelHandler for SheetModel
-    struct EXPORT_VTABLE_ATTRIBUTE Sheet : Model
+    struct EXPORT_VTABLE_ATTRIBUTE Sheet : Model2d
     {
-        MODELHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_SheetModel, SheetModel, Sheet, Model, DGNPLATFORM_EXPORT)
+        MODELHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_SheetModel, SheetModel, Sheet, Model2d, DGNPLATFORM_EXPORT)
+    protected:
+        DGNPLATFORM_EXPORT virtual void _GetClassParams(ECSqlClassParamsR params) override;
     };
 
-    //! The ModelHandler for ResourceModel
-    struct EXPORT_VTABLE_ATTRIBUTE Resource : Model
+    //! The ModelHandler for DefinitionModel
+    struct EXPORT_VTABLE_ATTRIBUTE Definition : Model
     {
-        MODELHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_ResourceModel, ResourceModel, Resource, Model, DGNPLATFORM_EXPORT)
+        MODELHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_DefinitionModel, DefinitionModel, Definition, Model, DGNPLATFORM_EXPORT)
     };
 
     //! The ModelHandler for DictionaryModel
-    struct EXPORT_VTABLE_ATTRIBUTE Dictionary : Resource
+    struct EXPORT_VTABLE_ATTRIBUTE Dictionary : Definition
     {
-        MODELHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_DictionaryModel, DictionaryModel, Dictionary, Resource, DGNPLATFORM_EXPORT)
+        MODELHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_DictionaryModel, DictionaryModel, Dictionary, Definition, DGNPLATFORM_EXPORT)
     };
 
-    //! The ModelHandler for Model2d
-    struct EXPORT_VTABLE_ATTRIBUTE Model2d : Model
+    //! The ModelHandler for SystemModel
+    struct EXPORT_VTABLE_ATTRIBUTE System : Model
     {
-        MODELHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_Model2d, DgnModel2d, Model2d, Model, DGNPLATFORM_EXPORT)
+        MODELHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_SystemModel, SystemModel, System, Model, DGNPLATFORM_EXPORT)
     };
 };
 

@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/DgnProject/Performance/DgnECPerformanceTests.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -69,7 +69,13 @@ StatusInt PerformanceDgnECTests::CreateArbitraryElement (DgnElementPtr& out, Dgn
 +---------------+---------------+---------------+---------------+---------------+------*/
 void PerformanceDgnECTests::RunInsertTests (ECSchemaR schema, DgnDbTestDgnManager tdm, Utf8String testcaseName, Utf8String testName)
     {
-    DgnModelP model = tdm.GetDgnModelP ();
+    DgnDbR project = *tdm.GetDgnProjectP ();
+    DgnModels& modelTable = project.Models ();
+    DgnModelId id = modelTable.QueryModelId (DgnModel::CreateModelCode ("Default"));
+    DgnModelPtr model = modelTable.GetModel (id);
+    if (model.IsValid ())
+        model->FillModel ();
+
     ECClassP testClass = schema.GetClassP (TEST_CLASS_NAME);
     // We don't want to time the creation of the elements.  So we create them in one loop, and then insert instances
     // in a second loop
@@ -143,6 +149,7 @@ void PerformanceDgnECTests::RunInsertTests (ECSchemaR schema, DgnDbTestDgnManage
         }
     attachingTimer.Stop ();
     totalInsertingStopwatch.Stop ();
+
     PERFORMANCELOG.infov (L"Inserting %d instances (total): %.4lf", TESTCLASS_INSTANCE_COUNT, totalInsertingStopwatch.GetElapsedSeconds ());
     LOGTODB (testcaseName, testName, totalInsertingStopwatch.GetElapsedSeconds (), "Inserting instances (total)", TESTCLASS_INSTANCE_COUNT);
     PERFORMANCELOG.infov (L"Inserting %d instances (inserting): %.4lf", TESTCLASS_INSTANCE_COUNT, insertingTimer.GetElapsedSeconds ());
@@ -168,23 +175,16 @@ void PerformanceDgnECTests::RunInsertTests (ECSchemaR schema, DgnDbTestDgnManage
 +---------------+---------------+---------------+---------------+---------------+------*/
 void PerformanceDgnECTests::RunQueryTests (ECSchemaR schema, DgnDbTestDgnManager tdm, Utf8String testcaseName, Utf8String testName)
     {
-    //DgnModelP model = tdm.GetDgnModelP();
-
     ECClassP testClass = schema.GetClassP (TEST_CLASS_NAME);
 
     ECSqlStatement statement;
     Utf8String query;
-    query.Sprintf ("SELECT * FROM %ls.%ls", schema.GetName ().c_str (), TEST_CLASS_NAME);
+    query.Sprintf ("SELECT * FROM %s.%s", schema.GetNamespacePrefix ().c_str (), TEST_CLASS_NAME);
     statement.Prepare (*tdm.GetDgnProjectP (), query.c_str ());
 
     int count = 0;
-    wchar_t findName[256];
-    BeStringUtilities::Snwprintf (findName, L"Querying for %d instances (%ls schema)", TESTCLASS_INSTANCE_COUNT, schema.GetFullSchemaName ().c_str ());
 
-    StopWatch stopwatch (findName, false);
-    // WIP_ECSQL - this should all be replaced by the ECSqlInstanceAdapter when it is ready
-
-    stopwatch.Start ();
+    StopWatch timer (true);
     while (statement.Step () == BE_SQLITE_ROW)
         {
         IECInstancePtr current = testClass->GetDefaultStandaloneEnabler ()->CreateInstance ();
@@ -248,30 +248,17 @@ void PerformanceDgnECTests::RunQueryTests (ECSchemaR schema, DgnDbTestDgnManager
             }
         count++;
         }
-    stopwatch.Stop ();
-    bmap<Utf8String, double> results;
-    PERFORMANCELOG.infov ("Found %d instances of class %ls:%ls in %.4lf seconds", count, schema.GetFullSchemaName ().c_str (), TEST_CLASS_NAME, stopwatch.GetElapsedSeconds ());
-    LOGTODB (testcaseName, testName, stopwatch.GetElapsedSeconds (), Utf8PrintfString ("Found Instance of class: %ls ", TEST_CLASS_NAME).c_str (), count);
-    results[Utf8String (stopwatch.GetDescription ().c_str ())] = stopwatch.GetElapsedSeconds ();
+    timer.Stop ();
+    statement.Finalize ();
 
-    wchar_t countName[256];
-    BeStringUtilities::Snwprintf (countName, L"Instance counts for %ls.%ls", schema.GetFullSchemaName ().c_str (), TEST_CLASS_NAME);
+    query.Sprintf ("SELECT Count(*) FROM %s.%s", schema.GetName ().c_str (), TEST_CLASS_NAME);
+    statement.Prepare (*tdm.GetDgnProjectP (), query.c_str ());
+    ASSERT_EQ (DbResult::BE_SQLITE_ROW, statement.Step ());
+    ASSERT_EQ (count, statement.GetValueInt (0));
 
-    StopWatch countWatch (countName, false);
-    query.Sprintf ("SELECT Count(*) FROM %ls.%ls", schema.GetName ().c_str (), TEST_CLASS_NAME);
-    ECSqlStatement statement2;
-    statement2.Prepare (*tdm.GetDgnProjectP (), query.c_str ());
+    PERFORMANCELOG.infov ("Found %d instances of class %s:%s in %.4lf seconds", count, schema.GetFullSchemaName ().c_str (), TEST_CLASS_NAME, timer.GetElapsedSeconds ());
+    LOGTODB (testcaseName, testName, timer.GetElapsedSeconds (), Utf8PrintfString ("Found Instance of class: %s ", TEST_CLASS_NAME).c_str (), count);
 
-    countWatch.Start ();
-    while (statement2.Step () == BE_SQLITE_ROW)
-        {
-        count = statement2.GetValueInt (0);
-        }
-    countWatch.Stop ();
-    PERFORMANCELOG.infov ("Found %d instances of class %ls:%ls in %.4lf seconds", count, schema.GetFullSchemaName ().c_str (), TEST_CLASS_NAME, countWatch.GetElapsedSeconds ());
-    LOGTODB (testcaseName, testName, stopwatch.GetElapsedSeconds (), Utf8PrintfString ("Found Instance of class: %ls ", TEST_CLASS_NAME).c_str (), count);
-    results[Utf8String (countWatch.GetDescription ().c_str ())] = countWatch.GetElapsedSeconds ();
-    LogResultsToFile (results);
     }
 
 TEST_F (PerformanceDgnECTests, InsertingAndQueryingInstances)

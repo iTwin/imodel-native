@@ -22,6 +22,8 @@ USING_NAMESPACE_BENTLEY_DGNPLATFORM
 +---------------+---------------+---------------+---------------+---------------+------*/
 static RefCountedPtr<PhysicalElement> createPhysicalElement(DgnModelR model, Utf8CP ecSqlClassName, DgnCategoryId catid)//, RefCountedPtr<T> geom)
     {
+    if (!ecSqlClassName || !*ecSqlClassName)
+        ecSqlClassName = DGN_SCHEMA(DGN_CLASSNAME_PhysicalElement);
     Utf8CP dot = strchr(ecSqlClassName, '.');
     if (nullptr == dot)
         return nullptr;
@@ -34,77 +36,171 @@ static RefCountedPtr<PhysicalElement> createPhysicalElement(DgnModelR model, Utf
     return el;
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      06/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-void JsDgnModel::DeleteAllElements() 
-    {
-    m_model->FillModel();
-    bvector<DgnElementCPtr> elementsInModel;
-    for (auto const& emapEntry : *m_model)
-        elementsInModel.push_back(emapEntry.second);
-    for (auto const& el : elementsInModel)
-        el->Delete();
-    }
-
-//---------------------------------------------------------------------------------------
-// *** TEMPORARY METHOD *** 
-// @bsimethod                                   Sam.Wilson                      06/15
-//---------------------------------------------------------------------------------------
-void JsElementGeometryBuilder::AppendBox(double x, double y, double z)
-    {
-    // *** TEMPORARY METHOD *** 
-    DPoint3d localOrigin;
-    localOrigin.x = 0.0;
-    localOrigin.y = 0.0;
-    localOrigin.z = 0.0;
-
-    DPoint3d localTop (localOrigin);
-    localTop.z = z;
-
-    DVec3d localX = DVec3d::From(1,0,0);
-    DVec3d localY = DVec3d::From(0,1,0);
-
-    DgnBoxDetail boxd(localOrigin, localTop, localX, localY, x, y, x, y, true);
-    ISolidPrimitivePtr solid = ISolidPrimitive::CreateDgnBox(boxd);
-
-    m_builder->Append(*solid);
-    }
-
-//---------------------------------------------------------------------------------------
-// *** TEMPORARY METHOD *** 
-// @bsimethod                                   Sam.Wilson                      06/15
-//---------------------------------------------------------------------------------------
-void JsElementGeometryBuilder::AppendSphere(double radius)
-    {
-    DgnSphereDetail sphere(DPoint3d::FromZero(), radius);
-    ISolidPrimitivePtr solid = ISolidPrimitive::CreateDgnSphere(sphere);
-    m_builder->Append(*solid);
-    }
-
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson                      06/15
 //---------------------------------------------------------------------------------------
 JsElementGeometryBuilder::JsElementGeometryBuilder(JsDgnElementP e, JsDPoint3dP o, JsYawPitchRollAnglesP a)
     {
-    DgnElement3dP e3d = dynamic_cast<DgnElement3dP>(e->m_el.get());
-    if (nullptr != e3d)
-        m_builder = ElementGeometryBuilder::Create(*e3d, o->Get (), a->GetYawPitchRollAngles ());
+    GeometrySource3dCP source3d = e->m_el->ToGeometrySource3d();
+    if (nullptr != source3d)
+        m_builder = ElementGeometryBuilder::Create(*source3d, o->Get (), a->GetYawPitchRollAngles ());
     else
         {
-        DgnElement2dP e2d = dynamic_cast<DgnElement2dP>(e->m_el.get());
-        if (nullptr != e2d)
-            m_builder = ElementGeometryBuilder::Create(*e2d, DPoint2d::From(o->GetX(), o->GetY()), AngleInDegrees::FromDegrees(a->GetYawDegrees ()));
+        GeometrySource2dCP source2d = e->m_el->ToGeometrySource2d();
+        if (nullptr != source2d)
+            m_builder = ElementGeometryBuilder::Create(*source2d, DPoint2d::From(o->GetX(), o->GetY()), AngleInDegrees::FromDegrees(a->GetYawDegrees ()));
         }
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson                      06/15
 //---------------------------------------------------------------------------------------
-JsDgnElement* JsDgnModel::CreateElement(Utf8StringCR ecSqlClassName, Utf8StringCR categoryName)
+JsPhysicalElement* JsPhysicalElement::Create(JsDgnModelP model, JsDgnObjectIdP categoryId, Utf8StringCR ecSqlClassName)
     {
-    DgnCategoryId catid = DgnCategory::QueryCategoryId(categoryName.c_str(), m_model->GetDgnDb());
-    return new JsDgnElement(*createPhysicalElement(*m_model, ecSqlClassName.c_str(), catid));
+    if (!categoryId || !categoryId->IsValid() || !model || !model->m_model.IsValid())
+        return nullptr;
+    DgnCategoryId catid(categoryId->m_id);
+    return new JsPhysicalElement(*createPhysicalElement(*model->m_model, ecSqlClassName.c_str(), catid));
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Sam.Wilson                      12/15
+//---------------------------------------------------------------------------------------
+JsDgnModelP JsDgnElement::GetModel() {return new JsDgnModel(*m_el->GetModel());}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Sam.Wilson                      12/15
+//---------------------------------------------------------------------------------------
+JsDgnModelsP JsDgnDb::GetModels() {return new JsDgnModels(m_db->Models());}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Sam.Wilson                      12/15
+//---------------------------------------------------------------------------------------
+JsComponentDefP JsComponentDef::FindByName(JsDgnDbP db, Utf8StringCR name) 
+    {
+    ComponentDefPtr cdef = ComponentDef::FromECSqlName(nullptr, *db->m_db, name);
+    if (!cdef.IsValid())
+        return nullptr;
+    return new JsComponentDef(*cdef);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Sam.Wilson                      12/15
+//---------------------------------------------------------------------------------------
+JsDgnCategoryP JsComponentDef::GetCategory() const 
+    {
+    if (!m_cdef.IsValid())
+        return nullptr;
+    DgnCategoryCPtr cat = DgnCategory::QueryCategory(m_cdef->GetCategoryName(), m_cdef->GetDgnDb());
+    return cat.IsValid()? new JsDgnCategory(*cat): nullptr;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Sam.Wilson                      12/15
+//---------------------------------------------------------------------------------------
+JsECClassP JsComponentDef::GetComponentECClass() const
+    {
+    if (!m_cdef.IsValid())
+        return nullptr;
+    return new JsECClass(m_cdef->GetECClass());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Sam.Wilson                      12/15
+//---------------------------------------------------------------------------------------
+JsDgnElementP JsComponentDef::QueryVariationByName(Utf8StringCR variationName)
+    {
+    if (!m_cdef.IsValid())
+        return nullptr;
+    auto velem = m_cdef->QueryVariationByName(variationName);
+    return velem.IsValid()? new JsDgnElement(*velem->CopyForEdit()): nullptr;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Sam.Wilson                      12/15
+//---------------------------------------------------------------------------------------
+JsECInstanceP JsComponentDef::GetParameters(JsDgnElementP instance)
+    {
+    if (nullptr == instance || !instance->m_el.IsValid())
+        return nullptr;
+    auto params = ComponentDef::GetParameters(*instance->m_el);
+    if (!params.IsValid())
+        return nullptr;
+    return new JsECInstance(*params);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Sam.Wilson                      12/15
+//---------------------------------------------------------------------------------------
+JsDgnElementP JsComponentDef::MakeInstanceOfVariation(JsDgnModelP targetModel, JsDgnElementP variation, JsECInstanceP instanceParameters, JsAuthorityIssuedCodeP code)
+    {
+    if (!m_cdef.IsValid() || nullptr == targetModel || !targetModel->m_model.IsValid() || nullptr == variation || !variation->m_el.IsValid())
+        return nullptr;
+    auto inst = m_cdef->MakeInstanceOfVariation(nullptr, *targetModel->m_model, *variation->m_el, 
+                                                instanceParameters? instanceParameters->m_instance.get(): nullptr, 
+                                                code? code->m_code: DgnElement::Code()); 
+    if (!inst.IsValid())
+        return nullptr;
+    return new JsDgnElement(*inst->CopyForEdit());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Sam.Wilson                      12/15
+//---------------------------------------------------------------------------------------
+JsDgnElementP JsComponentDef::MakeUniqueInstance(JsDgnModelP targetModel, JsECInstanceP instanceParameters, JsAuthorityIssuedCodeP code)
+    {
+    if (!m_cdef.IsValid() || nullptr == targetModel || !targetModel->m_model.IsValid() || nullptr == instanceParameters || !instanceParameters->m_instance.IsValid())
+        return nullptr;
+    auto inst = m_cdef->MakeUniqueInstance(nullptr, *targetModel->m_model, *instanceParameters->m_instance, code? code->m_code: DgnElement::Code()); 
+    if (!inst.IsValid())
+        return nullptr;
+    return new JsDgnElement(*inst->CopyForEdit());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+template<typename T>
+JsECInstanceP getCustomAttribute(T* ccontainer, Utf8StringCR className)
+    {
+    if (nullptr == ccontainer)
+        return nullptr;
+    ECN::IECInstancePtr ca = ccontainer->GetCustomAttribute(className);
+    return ca.IsValid()? new JsECInstance(*ca): nullptr;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+JsECInstanceP JsECClass::GetCustomAttribute(Utf8StringCR className) {return getCustomAttribute(m_ecClass, className);}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+JsECInstanceP JsECProperty::GetCustomAttribute(Utf8StringCR className) {return getCustomAttribute(m_property, className);}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+JsECClassP JsECClassCollection::GetECClass(JsECClassCollectionIteratorP iter) {return (IsValid(iter) && (nullptr != *iter->m_iter))? new JsECClass(**iter->m_iter): nullptr;}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+JsECPropertyP JsECPropertyCollection::GetECProperty(JsECPropertyCollectionIteratorP iter) {return (IsValid(iter) && (nullptr != *iter->m_iter))? new JsECProperty(**iter->m_iter): nullptr;}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+JsECDbSchemaManagerP JsDgnDb::GetSchemas() {return m_db.IsValid()? new JsECDbSchemaManager(m_db->Schemas()): nullptr;}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+JsECInstanceP JsECClass::MakeInstance() 
+    {
+    ECN::IECInstancePtr inst = m_ecClass? m_ecClass->GetDefaultStandaloneEnabler()->CreateInstance(): nullptr; 
+    return inst.IsValid()? new JsECInstance(*inst): nullptr;
     }
 
 //---------------------------------------------------------------------------------------

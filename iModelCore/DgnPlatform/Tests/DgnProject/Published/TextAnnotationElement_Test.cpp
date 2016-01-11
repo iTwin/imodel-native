@@ -1,6 +1,6 @@
 //-------------------------------------------------------------------------------------- 
 //     $Source: Tests/DgnProject/Published/TextAnnotationElement_Test.cpp $
-//  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //-------------------------------------------------------------------------------------- 
 
 #include "DgnHandlersTests.h"
@@ -188,12 +188,31 @@ TEST(TextAnnotationElementTest, BasicCrud)
         ASSERT_TRUE(AnnotationRunType::Text == existingRuns[0]->GetType());
         EXPECT_TRUE(0 == strcmp(ANNOTATION_TEXT_2, ((AnnotationTextRunCP)existingRuns[0].get())->GetContent().c_str()));
         }
+    
+    // Delete the element.
+    //.............................................................................................
+        {
+        //.........................................................................................
+        DbResult openStatus;
+        DgnDbPtr db = DgnDb::OpenDgnDb(&openStatus, dbPath, DgnDb::OpenParams(Db::OpenMode::ReadWrite));
+        ASSERT_TRUE(BE_SQLITE_OK == openStatus);
+        ASSERT_TRUE(db.IsValid());
+
+        //.........................................................................................
+        TextAnnotationElementCPtr annotationElementC = TextAnnotationElement::Get(*db, insertedElementId);
+        ASSERT_TRUE(annotationElementC.IsValid());
+
+        annotationElementC->Delete();
+
+        annotationElementC = TextAnnotationElement::Get(*db, insertedElementId);
+        ASSERT_TRUE(!annotationElementC.IsValid());
+        }
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     06/2015
 //---------------------------------------------------------------------------------------
-TEST(PhysicalTextAnnotationElementTest, BasicCrud)
+TEST(SpatialTextAnnotationElementTest, BasicCrud)
     {
     // The goal of this is to exercise persistence into and out of the database.
     // To defeat element caching, liberally open and close the DB.
@@ -201,7 +220,7 @@ TEST(PhysicalTextAnnotationElementTest, BasicCrud)
     ScopedDgnHost host;
 
     BeFileName dbPath;
-    ASSERT_TRUE(SUCCESS == DgnDbTestDgnManager::GetTestDataOut(dbPath, L"3dMetricGeneral.idgndb", L"PhysicalTextAnnotationElementTest-BasicCrud.dgndb", __FILE__));
+    ASSERT_TRUE(SUCCESS == DgnDbTestDgnManager::GetTestDataOut(dbPath, L"3dMetricGeneral.idgndb", L"SpatialTextAnnotationElementTest-BasicCrud.dgndb", __FILE__));
 
     DgnModelId modelId;
     DgnElementId textStyleId;
@@ -225,7 +244,7 @@ TEST(PhysicalTextAnnotationElementTest, BasicCrud)
         DgnCategoryId categoryId = category.GetCategoryId();
         ASSERT_TRUE(categoryId.IsValid());
 
-        DgnModelPtr model = new PhysicalModel(PhysicalModel::CreateParams(*db, DgnClassId(db->Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_PhysicalModel)), DgnModel::CreateModelCode("Physical Model")));
+        DgnModelPtr model = new SpatialModel(SpatialModel::CreateParams(*db, DgnClassId(db->Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_SpatialModel)), DgnModel::CreateModelCode("Physical Model")));
         ASSERT_TRUE(DgnDbStatus::Success == model->Insert());
 
         modelId = model->GetModelId();
@@ -239,11 +258,11 @@ TEST(PhysicalTextAnnotationElementTest, BasicCrud)
         ASSERT_TRUE(nullptr != annotation.GetTextCP());
 
         //.........................................................................................
-        PhysicalTextAnnotationElementPtr annotationElement = new PhysicalTextAnnotationElement(PhysicalTextAnnotationElement::CreateParams(*db, modelId, PhysicalTextAnnotationElement::QueryDgnClassId(*db), categoryId));
+        SpatialTextAnnotationElementPtr annotationElement = new SpatialTextAnnotationElement(SpatialTextAnnotationElement::CreateParams(*db, modelId, SpatialTextAnnotationElement::QueryDgnClassId(*db), categoryId));
         annotationElement->SetAnnotation(&annotation);
         ASSERT_TRUE(nullptr != annotationElement->GetAnnotation());
 
-        PhysicalTextAnnotationElementCPtr insertedAnnotationElement = annotationElement->Insert();
+        SpatialTextAnnotationElementCPtr insertedAnnotationElement = annotationElement->Insert();
         ASSERT_TRUE(insertedAnnotationElement.IsValid());
         
         insertedElementId = insertedAnnotationElement->GetElementId();
@@ -251,13 +270,13 @@ TEST(PhysicalTextAnnotationElementTest, BasicCrud)
 
         // This is only here to aid in debugging so you can open the file in a viewer and see the element you just created.
         //.........................................................................................
-        CameraViewDefinition view(CameraViewDefinition::CreateParams(*db, "PhysicalTextAnnotationElementTest-BasicCrud",
+        CameraViewDefinition view(CameraViewDefinition::CreateParams(*db, "SpatialTextAnnotationElementTest-BasicCrud",
                     ViewDefinition::Data(modelId, DgnViewSource::Generated)));
         EXPECT_TRUE(view.Insert().IsValid());
 
         ViewController::MarginPercent viewMargin(0.1, 0.1, 0.1, 0.1);
         
-        PhysicalViewController viewController(*db, view.GetViewId());
+        SpatialViewController viewController(*db, view.GetViewId());
         viewController.SetStandardViewRotation(StandardView::Top);
         viewController.LookAtVolume(insertedAnnotationElement->CalculateRange3d(), nullptr, &viewMargin);
         viewController.GetViewFlagsR().SetRenderMode(DgnRenderMode::Wireframe);
@@ -278,7 +297,7 @@ TEST(PhysicalTextAnnotationElementTest, BasicCrud)
         ASSERT_TRUE(db.IsValid());
         
         //.........................................................................................
-        PhysicalTextAnnotationElementCPtr annotationElementC = PhysicalTextAnnotationElement::Get(*db, insertedElementId);
+        SpatialTextAnnotationElementCPtr annotationElementC = SpatialTextAnnotationElement::Get(*db, insertedElementId);
         ASSERT_TRUE(annotationElementC.IsValid());
 
         // Spot check some properties; rely on other TextAnnotation tests to more fully test serialization, which should be relatively pass/fail on the element itself.
@@ -305,12 +324,12 @@ TEST(PhysicalTextAnnotationElementTest, BasicCrud)
         TextAnnotation annotation(*db);
         annotation.SetText(AnnotationTextBlock::Create(*db, textStyleId, ANNOTATION_TEXT_2).get());
 
-        PhysicalTextAnnotationElementPtr annotationElement = PhysicalTextAnnotationElement::GetForEdit(*db, insertedElementId);
+        SpatialTextAnnotationElementPtr annotationElement = SpatialTextAnnotationElement::GetForEdit(*db, insertedElementId);
         ASSERT_TRUE(annotationElement.IsValid());
 
         annotationElement->SetAnnotation(&annotation);
         
-        PhysicalTextAnnotationElementCPtr updatedAnnotationElement = annotationElement->Update();
+        SpatialTextAnnotationElementCPtr updatedAnnotationElement = annotationElement->Update();
         ASSERT_TRUE(updatedAnnotationElement.IsValid());
         EXPECT_TRUE(updatedAnnotationElement->GetElementId().IsValid());
         }
@@ -325,7 +344,7 @@ TEST(PhysicalTextAnnotationElementTest, BasicCrud)
         ASSERT_TRUE(db.IsValid());
 
         //.........................................................................................
-        PhysicalTextAnnotationElementCPtr annotationElementC = PhysicalTextAnnotationElement::Get(*db, insertedElementId);
+        SpatialTextAnnotationElementCPtr annotationElementC = SpatialTextAnnotationElement::Get(*db, insertedElementId);
         ASSERT_TRUE(annotationElementC.IsValid());
 
         // Spot check some properties; rely on other TextAnnotation tests to more fully test serialization, which should be relatively pass/fail on the element itself.
@@ -346,5 +365,24 @@ TEST(PhysicalTextAnnotationElementTest, BasicCrud)
 
         ASSERT_TRUE(AnnotationRunType::Text == existingRuns[0]->GetType());
         EXPECT_TRUE(0 == strcmp(ANNOTATION_TEXT_2, ((AnnotationTextRunCP)existingRuns[0].get())->GetContent().c_str()));
+        }
+    
+    // Delete the element.
+    //.............................................................................................
+        {
+        //.........................................................................................
+        DbResult openStatus;
+        DgnDbPtr db = DgnDb::OpenDgnDb(&openStatus, dbPath, DgnDb::OpenParams(Db::OpenMode::ReadWrite));
+        ASSERT_TRUE(BE_SQLITE_OK == openStatus);
+        ASSERT_TRUE(db.IsValid());
+
+        //.........................................................................................
+        SpatialTextAnnotationElementCPtr annotationElementC = SpatialTextAnnotationElement::Get(*db, insertedElementId);
+        ASSERT_TRUE(annotationElementC.IsValid());
+
+        annotationElementC->Delete();
+
+        annotationElementC = SpatialTextAnnotationElement::Get(*db, insertedElementId);
+        ASSERT_TRUE(!annotationElementC.IsValid());
         }
     }

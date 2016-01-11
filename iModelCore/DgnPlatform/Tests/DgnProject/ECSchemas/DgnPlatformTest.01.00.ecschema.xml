@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <ECSchema schemaName="DgnPlatformTest" nameSpacePrefix="dptest" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
 
     <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="01.10" prefix="bsca" />
@@ -18,31 +18,39 @@
         <ECCustomAttributes>
             <ClassHasHandler xmlns="dgn.02.00" />
         </ECCustomAttributes>
-        <BaseClass>dgn:DrawingElement</BaseClass>
+        <BaseClass>dgn:AnnotationElement</BaseClass>
         <ECProperty propertyName="TestElementProperty" typeName="string" />
-    </ECClass>
-
-    <ECClass typeName="TestItem" isDomainClass="True">
-        <ECCustomAttributes>
-            <ClassHasHandler xmlns="dgn.02.00" />
-        </ECCustomAttributes>
-        <BaseClass>dgn:ElementItem</BaseClass>
-        <ECProperty propertyName="TestItemProperty" typeName="string" />
-        <ECProperty propertyName="Length" typeName="double" />
-    </ECClass>
-
-    <ECClass typeName="TestItem2" isDomainClass="True">
-        <BaseClass>dgn:ElementItem</BaseClass>
-        <ECProperty propertyName="TestItem2Property" typeName="string" />
     </ECClass>
 
     <ECClass typeName="TestUniqueAspect" isDomainClass="True">
         <ECCustomAttributes>
             <ClassHasHandler xmlns="dgn.02.00" />
+            <ClassMap xmlns="ECDbMap.01.00">
+            <ECInstanceIdColumn>ElementId</ECInstanceIdColumn>
+            </ClassMap>
         </ECCustomAttributes>
         <BaseClass>dgn:ElementUniqueAspect</BaseClass>
         <ECProperty propertyName="TestUniqueAspectProperty" typeName="string" />
+        <ECProperty propertyName="Length" typeName="double" />
     </ECClass>
+
+    <ECRelationshipClass typeName="ElementOwnsTestUniqueAspect" isDomainClass="True" strength="embedding" strengthDirection="forward">
+        <ECCustomAttributes>
+            <ForeignKeyRelationshipMap xmlns="ECDbMap.01.00">
+                <OnDeleteAction>Cascade</OnDeleteAction>
+            </ForeignKeyRelationshipMap>
+        </ECCustomAttributes>
+        <Source cardinality="(1,1)" polymorphic="True">
+            <Class class="dgn:Element" />
+        </Source>
+        <Target cardinality="(0,1)" polymorphic="False">
+          <Class class="TestUniqueAspect">
+            <Key>
+                <Property name="ECInstanceId" />
+            </Key>
+          </Class>
+        </Target>
+    </ECRelationshipClass>
 
     <ECClass typeName="TestMultiAspect" isDomainClass="True">
         <ECCustomAttributes>
@@ -79,6 +87,14 @@
             <ClassHasHandler xmlns="dgn.02.00" />
         </ECCustomAttributes>
         <BaseClass>dgn:PhysicalElement</BaseClass>
+    </ECClass>
+
+    <ECClass typeName="TestRequirement" isDomainClass="True">
+        <!-- Used to test the dgn:SystemElement abstract base class -->
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="dgn.02.00" />
+        </ECCustomAttributes>
+        <BaseClass>dgn:SystemElement</BaseClass>
     </ECClass>
 
     <ECClass typeName="Robot" isDomainClass="true">
@@ -128,7 +144,7 @@
         </ECCustomAttributes>
         <BaseClass>dgn:PhysicalElement</BaseClass>
     </ECClass>
-    
+
     <ECClass typeName="TestAuthority" isDomainClass="True">
         <ECCustomAttributes>
             <ClassHasHandler xmlns="dgn.02.00" />
@@ -165,7 +181,7 @@
         <ECProperty propertyName='Prop3_2' typeName='long' />
         <ECProperty propertyName='Prop3_3' typeName='double' />
     </ECClass>
-    
+
     <ECClass typeName="TestStruct" isStruct="True" >
         <ECProperty propertyName="TestStructDoubleMember" typeName="double" />"
         <ECProperty propertyName="TestStructIntMember" typeName="int" />"
@@ -174,7 +190,7 @@
     
     <ECClass typeName="TestElementComplex" isDomainClass="True">
         <ECCustomAttributes>
-            <ClassHasHandler xmlns="dgn.02.00" />
+          <ClassHasHandler xmlns="dgn.02.00" />
         </ECCustomAttributes>
         <BaseClass>TestElement</BaseClass>
         <ECProperty propertyName='Prop_point3d' typeName='point3d' />
@@ -182,4 +198,3 @@
     </ECClass>
     
 </ECSchema>
-

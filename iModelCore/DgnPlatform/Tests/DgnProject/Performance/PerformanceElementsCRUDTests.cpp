@@ -2,10 +2,13 @@
 |
 |  $Source: Tests/DgnProject/Performance/PerformanceElementsCRUDTests.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "PerformanceElementsCRUDTests.h"
+
+// Uncomment this if you want elapsed time of each test case logged to console in addition to the log file.
+// #define PERF_ELEM_CRUD_LOG_TO_CONSOLE 1
 
 HANDLER_DEFINE_MEMBERS (PerformanceElement1Handler)
 HANDLER_DEFINE_MEMBERS (PerformanceElement2Handler)
@@ -52,7 +55,7 @@ void PerformanceElementsCRUDTestFixture::SetUpTestDgnDb (WCharCP destFileName, U
         schemaContext->AddSchemaPath (searchDir.GetName ());
 
         ECN::ECSchemaPtr schema = nullptr;
-        ASSERT_EQ (ECN::SCHEMA_READ_STATUS_Success, ECN::ECSchema::ReadFromXmlString (schema, s_testSchemaXml, *schemaContext));
+        ASSERT_EQ (ECN::SchemaReadStatus::Success, ECN::ECSchema::ReadFromXmlString (schema, s_testSchemaXml, *schemaContext));
 
         schemaContext->AddSchema (*schema);
         DgnBaseDomain::GetDomain ().ImportSchema (*m_db, schemaContext->GetCache ());
@@ -66,7 +69,6 @@ void PerformanceElementsCRUDTestFixture::SetUpTestDgnDb (WCharCP destFileName, U
             element->Insert (&stat);
             ASSERT_EQ (DgnDbStatus::Success, stat);
             }
-
         m_db->SaveChanges ();
         m_db->CloseDb ();
         }
@@ -82,6 +84,8 @@ void PerformanceElementsCRUDTestFixture::SetUpTestDgnDb (WCharCP destFileName, U
     EXPECT_EQ (DbResult::BE_SQLITE_OK, status) << status;
     ASSERT_TRUE (m_db.IsValid ());
     }
+
+int64_t PerformanceElementsCRUDTestFixture::s_elementId = INT64_C(2000000);
 
 Utf8CP const PerformanceElementsCRUDTestFixture::s_testSchemaXml =
     "<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
@@ -132,11 +136,10 @@ Utf8CP const PerformanceElementsCRUDTestFixture::s_testSchemaXml =
         "    <ECProperty propertyName='Prop4b_3' typeName='double' />"
         "    <ECProperty propertyName='Prop4b_4' typeName='point3d' />"
         "  </ECClass>"
-        "  <ECClass typeName='SimpleElement'>"
-        "    <ECCustomAttributes>"
-        "       <ClassHasHandler xmlns=\"dgn.02.00\" />"
-        "    </ECCustomAttributes>"
-        "    <BaseClass>dgn:Element</BaseClass>"
+        "  <ECClass typeName='TestMultiAspect' isDomainClass='True'>"
+        "    <BaseClass>dgn:ElementMultiAspect</BaseClass>"
+        "    <ECProperty propertyName='TestMultiAspectProperty' typeName='string' />"
+        "    <ECProperty propertyName='Length' typeName='double' />"
         "  </ECClass>"
         "</ECSchema>";
 
@@ -178,8 +181,9 @@ DgnDbStatus PerformanceElement1::_BindInsertParams (BeSQLite::EC::ECSqlStatement
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus PerformanceElement1::_ExtractSelectParams (ECSqlStatement& stmt, ECSqlClassParams const& params)
+DgnDbStatus PerformanceElement1::_ReadSelectParams (ECSqlStatement& stmt, ECSqlClassParams const& params)
     {
+    EXPECT_EQ (DgnDbStatus::Success, T_Super::_ReadSelectParams (stmt, params));
     EXPECT_EQ (0, strcmp (stmt.GetValueText (params.GetSelectIndex ("Prop1_1")), "Element1 - InitValue"));
     EXPECT_EQ (10000000, stmt.GetValueInt64 (params.GetSelectIndex ("Prop1_2")));
     EXPECT_EQ (-3.1415, stmt.GetValueDouble (params.GetSelectIndex ("Prop1_3")));
@@ -206,12 +210,12 @@ DgnDbStatus PerformanceElement1::_BindUpdateParams (BeSQLite::EC::ECSqlStatement
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            08/2015
 //---------------+---------------+---------------+---------------+---------------+-------
-PerformanceElement1Ptr PerformanceElement1::Create (Dgn::DgnDbR db, Dgn::DgnModelId modelId, Dgn::DgnClassId classId, Dgn::DgnCategoryId category, DgnElementId id, bool specifyProperyValues)
+PerformanceElement1Ptr PerformanceElement1::Create (Dgn::DgnDbR db, Dgn::DgnModelId modelId, Dgn::DgnClassId classId, Dgn::DgnCategoryId category, bool specifyProperyValues)
     {
     if (specifyProperyValues)
         return new PerformanceElement1 (PhysicalElement::CreateParams (db, modelId, classId, category), "Element1 - InitValue", 10000000LL, -3.1415);
     else
-        return new PerformanceElement1 (PhysicalElement::CreateParams (db, modelId, classId, category, Dgn::Placement3d (), Dgn::DgnElement::Code (), id, Dgn::DgnElementId ()));
+        return new PerformanceElement1 (PhysicalElement::CreateParams (db, modelId, classId, category));
     }
 
 //---------------------------------------------------------------------------------------
@@ -228,6 +232,48 @@ PerformanceElement1CPtr PerformanceElement1::Insert ()
 PerformanceElement1CPtr PerformanceElement1::Update ()
     {
     return GetDgnDb ().Elements ().Update<PerformanceElement1> (*this);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/16
++---------------+---------------+---------------+---------------+---------------+------*/
+static bool appendEllipse3d(ElementGeometryBuilder& builder, double cx, double cy, double cz)
+    {
+    DEllipse3d ellipseData = DEllipse3d::From(cx, cy, cz,
+        0, 0, 2,
+        0, 3, 0,
+        0.0, Angle::TwoPi());
+    ICurvePrimitivePtr ellipse = ICurvePrimitive::CreateArc(ellipseData);
+    return builder.Append(*ellipse);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Majd.Uddin            12/2015
+//---------------+---------------+---------------+---------------+---------------+-------
+void PerformanceElement1::AddGeomtry()
+{
+    GeometrySourceP geomElem = this->ToGeometrySourceP();
+    ElementGeometryBuilderPtr builder = ElementGeometryBuilder::Create(*this->GetModel(), this->GetCategoryId(), DPoint3d::From(0.0, 0.0, 0.0));
+    ASSERT_TRUE(appendEllipse3d(*builder, 1, 2, 3));
+    ASSERT_EQ(SUCCESS, builder->SetGeomStreamAndPlacement(*geomElem));
+
+    ASSERT_TRUE(this->HasGeometry());
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void PerformanceElement1::ExtendGeometry()
+    {
+    GeometrySourceP geomElem = this->ToGeometrySourceP();
+    ElementGeometryBuilderPtr builder = ElementGeometryBuilder::Create(*this->GetModel(), this->GetCategoryId(), DPoint3d::From(0.0, 0.0, 0.0));
+    ASSERT_TRUE(appendEllipse3d(*builder, 0, 0, 0));
+    ASSERT_TRUE(appendEllipse3d(*builder, 1, 2, 3));
+    ASSERT_TRUE(appendEllipse3d(*builder, 3, 2, 1));
+
+    ASSERT_EQ(SUCCESS, builder->SetGeomStreamAndPlacement(*geomElem));
+
+    ASSERT_TRUE(this->HasGeometry());
     }
 
 //---------------------------------------------------------------------------------------
@@ -268,9 +314,9 @@ DgnDbStatus PerformanceElement2::_BindInsertParams (BeSQLite::EC::ECSqlStatement
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus PerformanceElement2::_ExtractSelectParams (ECSqlStatement& stmt, ECSqlClassParams const& params)
+DgnDbStatus PerformanceElement2::_ReadSelectParams (ECSqlStatement& stmt, ECSqlClassParams const& params)
     {
-    EXPECT_EQ (DgnDbStatus::Success, T_Super::_ExtractSelectParams (stmt, params));
+    EXPECT_EQ (DgnDbStatus::Success, T_Super::_ReadSelectParams (stmt, params));
     EXPECT_EQ (0, strcmp (stmt.GetValueText (params.GetSelectIndex ("Prop2_1")), "Element2 - InitValue"));
     EXPECT_EQ (20000000, stmt.GetValueInt64 (params.GetSelectIndex ("Prop2_2")));
     EXPECT_EQ (2.71828, stmt.GetValueDouble (params.GetSelectIndex ("Prop2_3")));
@@ -297,12 +343,12 @@ DgnDbStatus PerformanceElement2::_BindUpdateParams (BeSQLite::EC::ECSqlStatement
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            09/2015
 //---------------+---------------+---------------+---------------+---------------+-------
-PerformanceElement2Ptr PerformanceElement2::Create (Dgn::DgnDbR db, Dgn::DgnModelId modelId, Dgn::DgnClassId classId, Dgn::DgnCategoryId category, DgnElementId id, bool specifyProperyValues)
+PerformanceElement2Ptr PerformanceElement2::Create (Dgn::DgnDbR db, Dgn::DgnModelId modelId, Dgn::DgnClassId classId, Dgn::DgnCategoryId category, bool specifyProperyValues)
     {
     if (specifyProperyValues)
         return new PerformanceElement2 (PhysicalElement::CreateParams (db, modelId, classId, category), "Element1 - InitValue", 10000000LL, -3.1415, "Element2 - InitValue", 20000000LL, 2.71828);
     else
-        return new PerformanceElement2 (PhysicalElement::CreateParams (db, modelId, classId, category, Dgn::Placement3d (), Dgn::DgnElement::Code (), id, Dgn::DgnElementId ()));
+        return new PerformanceElement2 (PhysicalElement::CreateParams (db, modelId, classId, category));
     }
 
 //---------------------------------------------------------------------------------------
@@ -359,9 +405,9 @@ DgnDbStatus PerformanceElement3::_BindInsertParams (BeSQLite::EC::ECSqlStatement
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus PerformanceElement3::_ExtractSelectParams (ECSqlStatement& stmt, ECSqlClassParams const& params)
+DgnDbStatus PerformanceElement3::_ReadSelectParams (ECSqlStatement& stmt, ECSqlClassParams const& params)
     {
-    EXPECT_EQ (DgnDbStatus::Success, T_Super::_ExtractSelectParams (stmt, params));
+    EXPECT_EQ (DgnDbStatus::Success, T_Super::_ReadSelectParams (stmt, params));
     EXPECT_EQ (0, strcmp (stmt.GetValueText (params.GetSelectIndex ("Prop3_1")), "Element3 - InitValue"));
     EXPECT_EQ (30000000, stmt.GetValueInt64 (params.GetSelectIndex ("Prop3_2")));
     EXPECT_EQ (1.414121, stmt.GetValueDouble (params.GetSelectIndex ("Prop3_3")));
@@ -388,12 +434,12 @@ DgnDbStatus PerformanceElement3::_BindUpdateParams (BeSQLite::EC::ECSqlStatement
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            09/2015
 //---------------+---------------+---------------+---------------+---------------+-------
-PerformanceElement3Ptr PerformanceElement3::Create (Dgn::DgnDbR db, Dgn::DgnModelId modelId, Dgn::DgnClassId classId, Dgn::DgnCategoryId category, DgnElementId id, bool specifyProperyValues)
+PerformanceElement3Ptr PerformanceElement3::Create (Dgn::DgnDbR db, Dgn::DgnModelId modelId, Dgn::DgnClassId classId, Dgn::DgnCategoryId category, bool specifyProperyValues)
     {
     if (specifyProperyValues)
         return new PerformanceElement3 (PhysicalElement::CreateParams (db, modelId, classId, category), "Element1 - InitValue", 10000000LL, -3.1415, "Element2 - InitValue", 20000000LL, 2.71828, "Element3 - InitValue", 30000000LL, 1.414121);
     else
-        return new PerformanceElement3 (PhysicalElement::CreateParams (db, modelId, classId, category, Dgn::Placement3d (), Dgn::DgnElement::Code (), id, Dgn::DgnElementId ()));
+        return new PerformanceElement3 (PhysicalElement::CreateParams (db, modelId, classId, category));
     }
 
 //---------------------------------------------------------------------------------------
@@ -450,9 +496,9 @@ DgnDbStatus PerformanceElement4::_BindInsertParams (BeSQLite::EC::ECSqlStatement
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus PerformanceElement4::_ExtractSelectParams (ECSqlStatement& stmt, ECSqlClassParams const& params)
+DgnDbStatus PerformanceElement4::_ReadSelectParams (ECSqlStatement& stmt, ECSqlClassParams const& params)
     {
-    EXPECT_EQ (DgnDbStatus::Success, T_Super::_ExtractSelectParams (stmt, params));
+    EXPECT_EQ (DgnDbStatus::Success, T_Super::_ReadSelectParams (stmt, params));
     EXPECT_EQ (0, strcmp (stmt.GetValueText (params.GetSelectIndex ("Prop4_1")), "Element4 - InitValue"));
     EXPECT_EQ (40000000, stmt.GetValueInt64 (params.GetSelectIndex ("Prop4_2")));
     EXPECT_EQ (1.61803398874, stmt.GetValueDouble (params.GetSelectIndex ("Prop4_3")));
@@ -479,12 +525,12 @@ DgnDbStatus PerformanceElement4::_BindUpdateParams (BeSQLite::EC::ECSqlStatement
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            09/2015
 //---------------+---------------+---------------+---------------+---------------+-------
-PerformanceElement4Ptr PerformanceElement4::Create (Dgn::DgnDbR db, Dgn::DgnModelId modelId, Dgn::DgnClassId classId, Dgn::DgnCategoryId category, DgnElementId id, bool specifyProperyValues)
+PerformanceElement4Ptr PerformanceElement4::Create (Dgn::DgnDbR db, Dgn::DgnModelId modelId, Dgn::DgnClassId classId, Dgn::DgnCategoryId category, bool specifyProperyValues)
     {
     if (specifyProperyValues)
         return new PerformanceElement4 (PhysicalElement::CreateParams (db, modelId, classId, category), "Element1 - InitValue", 10000000LL, -3.1415, "Element2 - InitValue", 20000000LL, 2.71828, "Element3 - InitValue", 30000000LL, 1.414121, "Element4 - InitValue", 40000000LL, 1.61803398874);
     else
-        return new PerformanceElement4 (PhysicalElement::CreateParams (db, modelId, classId, category, Dgn::Placement3d (), Dgn::DgnElement::Code (), id, Dgn::DgnElementId ()));
+        return new PerformanceElement4 (PhysicalElement::CreateParams (db, modelId, classId, category));
     }
 
 //---------------------------------------------------------------------------------------
@@ -508,18 +554,36 @@ PerformanceElement4CPtr PerformanceElement4::Update ()
 //+---------------+---------------+---------------+---------------+---------------+------
 void PerformanceElementsCRUDTestFixture::CreateElements (int numInstances, Utf8CP className, bvector<DgnElementPtr>& elements, Utf8String modelCode, bool specifyProperyValues) const
     {
-    DgnClassId mclassId = DgnClassId (m_db->Schemas ().GetECClassId (DGN_ECSCHEMA_NAME, DGN_CLASSNAME_PhysicalModel));
-    PhysicalModelPtr targetModel = new PhysicalModel (PhysicalModel::CreateParams (*m_db, mclassId, DgnModel::CreateModelCode (modelCode)));
+    DgnClassId mclassId = DgnClassId (m_db->Schemas ().GetECClassId (DGN_ECSCHEMA_NAME, DGN_CLASSNAME_SpatialModel));
+    SpatialModelPtr targetModel = new SpatialModel (SpatialModel::CreateParams (*m_db, mclassId, DgnModel::CreateModelCode (modelCode)));
     EXPECT_EQ (DgnDbStatus::Success, targetModel->Insert ());       /* Insert the new model into the DgnDb */
     DgnCategoryId catid = DgnCategory::QueryHighestCategoryId (*m_db);
     DgnClassId classId = DgnClassId (m_db->Schemas ().GetECClassId (ELEMENT_PERFORMANCE_TEST_SCHEMA_NAME, className));
+
+    bool addMultiAspect = false;
+    bool addDescription = false;
+    bool addExtKey = false;
 
     if (0 == strcmp (className, ELEMENT_PERFORMANCE_ELEMENT1_CLASS))
         {
         for (int i = 0; i < numInstances; i++)
             {
-            DgnElementId id = DgnElementId ((uint64_t)(2000000 + i));
-            PerformanceElement1Ptr element = PerformanceElement1::Create (*m_db, targetModel->GetModelId (), classId, catid, id, specifyProperyValues);
+            PerformanceElement1Ptr element = PerformanceElement1::Create (*m_db, targetModel->GetModelId (), classId, catid, specifyProperyValues);
+            element->AddGeomtry();
+            if (addMultiAspect)
+                DgnElement::MultiAspect::AddAspect(*element, *TestMultiAspect::Create("Initial Value"));
+            if (addDescription)
+            {
+                DgnElement::DescriptionAspectPtr descriptionAspect = DgnElement::DescriptionAspect::Create("TestDescription");
+                ASSERT_TRUE(descriptionAspect.IsValid());
+                element->AddAppData(DgnElement::DescriptionAspect::GetAppDataKey(), descriptionAspect.get());
+            }
+            if (addExtKey)
+            {
+                DgnElement::ExternalKeyAspectPtr extkeyAspect = DgnElement::ExternalKeyAspect::Create(DgnAuthorityId((uint64_t)1), "TestExtKey");
+                ASSERT_TRUE(extkeyAspect.IsValid());
+                element->AddAppData(DgnElement::ExternalKeyAspect::GetAppDataKey(), extkeyAspect.get());
+            }
             ASSERT_TRUE (element != nullptr);
             elements.push_back (element);
             }
@@ -528,8 +592,22 @@ void PerformanceElementsCRUDTestFixture::CreateElements (int numInstances, Utf8C
         {
         for (int i = 0; i < numInstances; i++)
             {
-            DgnElementId id = DgnElementId ((uint64_t)(2000000 + i));
-            PerformanceElement2Ptr element = PerformanceElement2::Create (*m_db, targetModel->GetModelId (), classId, catid, id, specifyProperyValues);
+            PerformanceElement2Ptr element = PerformanceElement2::Create (*m_db, targetModel->GetModelId (), classId, catid, specifyProperyValues);
+            element->AddGeomtry();
+            if (addMultiAspect)
+                DgnElement::MultiAspect::AddAspect(*element, *TestMultiAspect::Create("Initial Value"));
+            if (addDescription)
+            {
+                DgnElement::DescriptionAspectPtr descriptionAspect = DgnElement::DescriptionAspect::Create("TestDescription");
+                ASSERT_TRUE(descriptionAspect.IsValid());
+                element->AddAppData(DgnElement::DescriptionAspect::GetAppDataKey(), descriptionAspect.get());
+            }
+            if (addExtKey)
+            {
+                DgnElement::ExternalKeyAspectPtr extkeyAspect = DgnElement::ExternalKeyAspect::Create(DgnAuthorityId((uint64_t)1), "TestExtKey");
+                ASSERT_TRUE(extkeyAspect.IsValid());
+                element->AddAppData(DgnElement::ExternalKeyAspect::GetAppDataKey(), extkeyAspect.get());
+            }
             ASSERT_TRUE (element != nullptr);
             elements.push_back (element);
             }
@@ -538,8 +616,22 @@ void PerformanceElementsCRUDTestFixture::CreateElements (int numInstances, Utf8C
         {
         for (int i = 0; i < numInstances; i++)
             {
-            DgnElementId id = DgnElementId ((uint64_t)(2000000 + i));
-            PerformanceElement3Ptr element = PerformanceElement3::Create (*m_db, targetModel->GetModelId (), classId, catid, id, specifyProperyValues);
+            PerformanceElement3Ptr element = PerformanceElement3::Create (*m_db, targetModel->GetModelId (), classId, catid, specifyProperyValues);
+            element->AddGeomtry();
+            if (addMultiAspect)
+                DgnElement::MultiAspect::AddAspect(*element, *TestMultiAspect::Create("Initial Value"));
+            if (addDescription)
+            {
+                DgnElement::DescriptionAspectPtr descriptionAspect = DgnElement::DescriptionAspect::Create("TestDescription");
+                ASSERT_TRUE(descriptionAspect.IsValid());
+                element->AddAppData(DgnElement::DescriptionAspect::GetAppDataKey(), descriptionAspect.get());
+            }
+            if (addExtKey)
+            {
+                DgnElement::ExternalKeyAspectPtr extkeyAspect = DgnElement::ExternalKeyAspect::Create(DgnAuthorityId((uint64_t)1), "TestExtKey");
+                ASSERT_TRUE(extkeyAspect.IsValid());
+                element->AddAppData(DgnElement::ExternalKeyAspect::GetAppDataKey(), extkeyAspect.get());
+            }
             ASSERT_TRUE (element != nullptr);
             elements.push_back (element);
             }
@@ -548,8 +640,22 @@ void PerformanceElementsCRUDTestFixture::CreateElements (int numInstances, Utf8C
         {
         for (int i = 0; i < numInstances; i++)
             {
-            DgnElementId id = DgnElementId ((uint64_t)(2000000 + i));
-            PerformanceElement4Ptr element = PerformanceElement4::Create (*m_db, targetModel->GetModelId (), classId, catid, id, specifyProperyValues);
+            PerformanceElement4Ptr element = PerformanceElement4::Create (*m_db, targetModel->GetModelId (), classId, catid, specifyProperyValues);
+            element->AddGeomtry();
+            if (addMultiAspect)
+                DgnElement::MultiAspect::AddAspect(*element, *TestMultiAspect::Create("Initial Value"));
+            if (addDescription)
+            {
+                DgnElement::DescriptionAspectPtr descriptionAspect = DgnElement::DescriptionAspect::Create("TestDescription");
+                ASSERT_TRUE(descriptionAspect.IsValid());
+                element->AddAppData(DgnElement::DescriptionAspect::GetAppDataKey(), descriptionAspect.get());
+            }
+            if (addExtKey)
+            {
+                DgnElement::ExternalKeyAspectPtr extkeyAspect = DgnElement::ExternalKeyAspect::Create(DgnAuthorityId((uint64_t)1), "TestExtKey");
+                ASSERT_TRUE(extkeyAspect.IsValid());
+                element->AddAppData(DgnElement::ExternalKeyAspect::GetAppDataKey(), extkeyAspect.get());
+            }
             ASSERT_TRUE (element != nullptr);
             elements.push_back (element);
             }
@@ -679,8 +785,10 @@ DgnDbStatus PerformanceElementsCRUDTestFixture::BindElement4PropertyParams (BeSQ
 void PerformanceElementsCRUDTestFixture::BindParams (DgnElementPtr& element, BeSQLite::Statement& stmt, Utf8CP className)
     {
     bool updateParams = false;
-    ASSERT_EQ (DbResult::BE_SQLITE_OK, stmt.BindId (stmt.GetParameterIndex (":Id"), element->GetElementId ()));
+    const ECInstanceId id (s_elementId++);
+    ASSERT_EQ (DbResult::BE_SQLITE_OK, stmt.BindId (stmt.GetParameterIndex (":Id"), id));
     ASSERT_EQ (DbResult::BE_SQLITE_OK, stmt.BindId (stmt.GetParameterIndex (":ModelId"), element->GetModelId ()));
+
     DgnAuthority::Code elementCode = DgnAuthority::CreateDefaultCode ();
     if (elementCode.IsEmpty ())
         {
@@ -692,6 +800,16 @@ void PerformanceElementsCRUDTestFixture::BindParams (DgnElementPtr& element, BeS
         }
     ASSERT_EQ (DbResult::BE_SQLITE_OK, stmt.BindId (stmt.GetParameterIndex (":Code_AuthorityId"), elementCode.GetAuthority ()));
     ASSERT_EQ (DbResult::BE_SQLITE_OK, stmt.BindText (stmt.GetParameterIndex (":Code_Namespace"), elementCode.GetNamespace ().c_str (), BeSQLite::Statement::MakeCopy::No));
+    
+    if (element->HasLabel())
+        {
+        ASSERT_EQ(DbResult::BE_SQLITE_OK, stmt.BindText(stmt.GetParameterIndex(":Label"), element->GetLabel(), BeSQLite::Statement::MakeCopy::No));
+        }
+    else
+        {
+        ASSERT_EQ(DbResult::BE_SQLITE_OK, stmt.BindNull(stmt.GetParameterIndex(":Label")));
+        }
+
     ASSERT_EQ (DbResult::BE_SQLITE_OK, stmt.BindId (stmt.GetParameterIndex (":ParentId"), element->GetParentId ()));
 
     if (0 == strcmp (className, ELEMENT_PERFORMANCE_ELEMENT1_CLASS))
@@ -864,7 +982,8 @@ DgnDbStatus PerformanceElementsCRUDTestFixture::BindElement4PropertyParams (ECSq
 void PerformanceElementsCRUDTestFixture::BindParams (DgnElementPtr& element, ECSqlStatement& stmt, Utf8CP className)
     {
     bool updateParams = false;
-    ASSERT_EQ (ECSqlStatus::Success, stmt.BindId (stmt.GetParameterIndex ("ECInstanceId"), element->GetElementId ()));
+    const ECInstanceId id (s_elementId++);
+    ASSERT_EQ (ECSqlStatus::Success, stmt.BindId (stmt.GetParameterIndex ("ECInstanceId"), id));
     ASSERT_EQ (ECSqlStatus::Success, stmt.BindId (stmt.GetParameterIndex ("ModelId"), element->GetModelId ()));
 
     // Bind Code
@@ -883,6 +1002,15 @@ void PerformanceElementsCRUDTestFixture::BindParams (DgnElementPtr& element, ECS
 
         ASSERT_EQ (ECSqlStatus::Success, codeBinder.GetMember("AuthorityId").BindId(elementCode.GetAuthority()));
         ASSERT_EQ (ECSqlStatus::Success, codeBinder.GetMember("Namespace").BindText(elementCode.GetNamespace().c_str(), IECSqlBinder::MakeCopy::No));
+        }
+
+    if (element->HasLabel())
+        {
+        ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(stmt.GetParameterIndex("Label"), element->GetLabel(), IECSqlBinder::MakeCopy::No));
+        }
+    else
+        {
+        ASSERT_EQ(ECSqlStatus::Success, stmt.BindNull(stmt.GetParameterIndex("Label")));
         }
 
     ASSERT_EQ (ECSqlStatus::Success, stmt.BindId (stmt.GetParameterIndex ("ParentId"), element->GetParentId ()));
@@ -937,9 +1065,9 @@ void PerformanceElementsCRUDTestFixture::BindUpdateParams (ECSqlStatement& stmt,
 //static
 DgnDbStatus PerformanceElementsCRUDTestFixture::ExtractElement1SelectParams (BeSQLite::Statement& stmt)
     {
-    if ((0 != strcmp ("Element1 - InitValue", stmt.GetValueText (6))) ||
-        (stmt.GetValueInt64 (7) != 10000000) ||
-        (stmt.GetValueDouble (8) != -3.1415))
+    if ((0 != strcmp ("Element1 - InitValue", stmt.GetValueText (7))) ||
+        (stmt.GetValueInt64 (8) != 10000000) ||
+        (stmt.GetValueDouble (9) != -3.1415))
         return DgnDbStatus::ReadError;
 
     return DgnDbStatus::Success;
@@ -952,9 +1080,9 @@ DgnDbStatus PerformanceElementsCRUDTestFixture::ExtractElement1SelectParams (BeS
 DgnDbStatus PerformanceElementsCRUDTestFixture::ExtractElement2SelectParams (BeSQLite::Statement& stmt)
     {
     if ((DgnDbStatus::Success != ExtractElement1SelectParams (stmt)) ||
-        (0 != strcmp ("Element2 - InitValue", stmt.GetValueText (9))) ||
-        (stmt.GetValueInt64 (10) != 20000000) ||
-        (stmt.GetValueDouble (11) != 2.71828))
+        (0 != strcmp ("Element2 - InitValue", stmt.GetValueText (10))) ||
+        (stmt.GetValueInt64 (11) != 20000000) ||
+        (stmt.GetValueDouble (12) != 2.71828))
         return DgnDbStatus::ReadError;
 
     return DgnDbStatus::Success;
@@ -967,9 +1095,9 @@ DgnDbStatus PerformanceElementsCRUDTestFixture::ExtractElement2SelectParams (BeS
 DgnDbStatus PerformanceElementsCRUDTestFixture::ExtractElement3SelectParams (BeSQLite::Statement& stmt)
     {
     if ((DgnDbStatus::Success != ExtractElement2SelectParams (stmt)) ||
-        (0 != strcmp ("Element3 - InitValue", stmt.GetValueText (12))) ||
-        (stmt.GetValueInt64 (13) != 30000000) ||
-        (stmt.GetValueDouble (14) != 1.414121))
+        (0 != strcmp ("Element3 - InitValue", stmt.GetValueText (13))) ||
+        (stmt.GetValueInt64 (14) != 30000000) ||
+        (stmt.GetValueDouble (15) != 1.414121))
         return DgnDbStatus::ReadError;
 
     return DgnDbStatus::Success;
@@ -982,9 +1110,9 @@ DgnDbStatus PerformanceElementsCRUDTestFixture::ExtractElement3SelectParams (BeS
 DgnDbStatus PerformanceElementsCRUDTestFixture::ExtractElement4SelectParams (BeSQLite::Statement& stmt)
     {
     if ((DgnDbStatus::Success != ExtractElement3SelectParams (stmt)) ||
-        (0 != strcmp ("Element4 - InitValue", stmt.GetValueText (15))) ||
-        (stmt.GetValueInt64 (16) != 40000000) ||
-        (stmt.GetValueDouble (17) != 1.61803398874))
+        (0 != strcmp ("Element4 - InitValue", stmt.GetValueText (16))) ||
+        (stmt.GetValueInt64 (17) != 40000000) ||
+        (stmt.GetValueDouble (18) != 1.61803398874))
         return DgnDbStatus::ReadError;
 
     return DgnDbStatus::Success;
@@ -1025,9 +1153,9 @@ DgnDbStatus PerformanceElementsCRUDTestFixture::ExtractElement1SelectParams (ECS
     //printf ("\n int Prop : %d", stmt.GetValueInt64 (5));
     //printf ("\n double Prop : %f", stmt.GetValueDouble (6));
 
-    if ((0 != strcmp ("Element1 - InitValue", stmt.GetValueText (4))) ||
-        (stmt.GetValueInt64 (5) != 10000000) ||
-        (stmt.GetValueDouble (6) != -3.1415))
+    if ((0 != strcmp ("Element1 - InitValue", stmt.GetValueText (5))) ||
+        (stmt.GetValueInt64 (6) != 10000000) ||
+        (stmt.GetValueDouble (7) != -3.1415))
         return DgnDbStatus::ReadError;
 
     return DgnDbStatus::Success;
@@ -1040,9 +1168,9 @@ DgnDbStatus PerformanceElementsCRUDTestFixture::ExtractElement1SelectParams (ECS
 DgnDbStatus PerformanceElementsCRUDTestFixture::ExtractElement2SelectParams (ECSqlStatement& stmt)
     {
     if ((DgnDbStatus::Success != ExtractElement1SelectParams (stmt)) ||
-        (0 != strcmp ("Element2 - InitValue", stmt.GetValueText (7))) ||
-        (stmt.GetValueInt64 (8) != 20000000) ||
-        (stmt.GetValueDouble (9) != 2.71828))
+        (0 != strcmp ("Element2 - InitValue", stmt.GetValueText (8))) ||
+        (stmt.GetValueInt64 (9) != 20000000) ||
+        (stmt.GetValueDouble (10) != 2.71828))
         return DgnDbStatus::ReadError;
 
     return DgnDbStatus::Success;
@@ -1055,9 +1183,9 @@ DgnDbStatus PerformanceElementsCRUDTestFixture::ExtractElement2SelectParams (ECS
 DgnDbStatus PerformanceElementsCRUDTestFixture::ExtractElement3SelectParams (ECSqlStatement& stmt)
     {
     if ((DgnDbStatus::Success != ExtractElement2SelectParams (stmt)) ||
-        (0 != strcmp ("Element3 - InitValue", stmt.GetValueText (10))) ||
-        (stmt.GetValueInt64 (11) != 30000000) ||
-        (stmt.GetValueDouble (12) != 1.414121))
+        (0 != strcmp ("Element3 - InitValue", stmt.GetValueText (11))) ||
+        (stmt.GetValueInt64 (12) != 30000000) ||
+        (stmt.GetValueDouble (13) != 1.414121))
         return DgnDbStatus::ReadError;
 
     return DgnDbStatus::Success;
@@ -1070,9 +1198,9 @@ DgnDbStatus PerformanceElementsCRUDTestFixture::ExtractElement3SelectParams (ECS
 DgnDbStatus PerformanceElementsCRUDTestFixture::ExtractElement4SelectParams (ECSqlStatement& stmt)
     {
     if ((DgnDbStatus::Success != ExtractElement3SelectParams (stmt)) ||
-        (0 != strcmp ("Element4 - InitValue", stmt.GetValueText (13))) ||
-        (stmt.GetValueInt64 (14) != 40000000) ||
-        (stmt.GetValueDouble (15) != 1.61803398874))
+        (0 != strcmp ("Element4 - InitValue", stmt.GetValueText (14))) ||
+        (stmt.GetValueInt64 (15) != 40000000) ||
+        (stmt.GetValueDouble (16) != 1.61803398874))
         return DgnDbStatus::ReadError;
 
     return DgnDbStatus::Success;
@@ -1166,39 +1294,38 @@ void PerformanceElementsCRUDTestFixture::GetSelectSql (Utf8CP className, Utf8Str
 
     if (!asTranslatedFromECSql)
         {
-
         selectSql = "SELECT ";
         bool isFirstItem = true;
         for (auto prop : ecClass->GetProperties(true))
             {
-            if (!prop->GetIsStruct ())
+            Utf8CP alias = prop->GetName().StartsWithI("Prop") ? "p." : "e.";
+
+            if (!prop->GetIsStruct())
                 {
                 if (!isFirstItem)
-                    {
-                    selectSql.append (", ");
-                    }
-                selectSql.append (prop->GetName ());
+                    selectSql.append(",");
+
+                selectSql.append(alias).append(prop->GetName());
                 isFirstItem = false;
                 }
             else
                 {
-                for (auto structProp : prop->GetAsStructProperty ()->GetType ().GetProperties ())
+                for (auto structProp : prop->GetAsStructProperty()->GetType().GetProperties())
                     {
                     if (!isFirstItem)
-                        {
-                        selectSql.append (", ");
-                        }
-                    selectSql.append (prop->GetName ()).append ("_").append (structProp->GetName ());
+                        selectSql.append(",");
+
+                    selectSql.append(alias).append(prop->GetName()).append("_").append(structProp->GetName());
                     isFirstItem = false;
                     }
                 }
             }
 
-        selectSql.append(" FROM dgn_Element WHERE Id = ?");
+        selectSql.append(" FROM dgn_Element e, dgn_PhysicalElement p WHERE e.Id=p.ECInstanceId AND e.ECClassId=p.ECClassId AND e.Id=?");
         if (!omitClassIdFilter)
             {
             Utf8String classIdFilter;
-            classIdFilter.Sprintf(" AND ECClassId=%lld", ecClass->GetId());
+            classIdFilter.Sprintf(" AND e.ECClassId=%lld", ecClass->GetId());
             selectSql.append(classIdFilter);
             }
 
@@ -1226,7 +1353,7 @@ void PerformanceElementsCRUDTestFixture::GetUpdateSql (Utf8CP className, Utf8Str
     bool isFirstItem = true;
     for (auto prop : ecClass->GetProperties (true))
         {
-        if (0 == strcmp ("ModelId", prop->GetName ().c_str ()) || 0 == strcmp ("Code", prop->GetName ().c_str ()) || 0 == strcmp ("ParentId", prop->GetName ().c_str ()) || 0 == strcmp ("LastMod", prop->GetName ().c_str ()))
+        if (0 == strcmp ("ModelId", prop->GetName().c_str()) || 0 == strcmp ("Code", prop->GetName().c_str()) || 0 == strcmp ("Label", prop->GetName().c_str()) || 0 == strcmp ("ParentId", prop->GetName().c_str()) || 0 == strcmp ("LastMod", prop->GetName().c_str()))
             continue;
         if (!isFirstItem)
             {
@@ -1272,10 +1399,8 @@ void PerformanceElementsCRUDTestFixture::GetInsertECSql (Utf8CP className, Utf8S
     ECN::ECClassCP ecClass = m_db->Schemas ().GetECClass (ELEMENT_PERFORMANCE_TEST_SCHEMA_NAME, className);
     ASSERT_TRUE(ecClass != nullptr);
 
-    Utf8String ecClassName = ECSqlBuilder::ToECSqlSnippet (*ecClass);
-
     insertECSql = Utf8String ("INSERT INTO ");
-    insertECSql.append (ecClassName).append (" ([ECInstanceId], ");
+    insertECSql.append (ecClass->GetECSqlName()).append (" ([ECInstanceId], ");
     Utf8String insertValuesSql (") VALUES (:[ECInstanceId], ");
     bool isFirstItem = true;
     for (auto prop : ecClass->GetProperties (true))
@@ -1305,7 +1430,6 @@ void PerformanceElementsCRUDTestFixture::GetSelectECSql (Utf8CP className, Utf8S
     ECN::ECClassCP ecClass = m_db->Schemas ().GetECClass (ELEMENT_PERFORMANCE_TEST_SCHEMA_NAME, className);
     ASSERT_TRUE(ecClass != nullptr);
 
-    Utf8String ecClassName = ECSqlBuilder::ToECSqlSnippet (*ecClass);
     selectECSql = "SELECT ";
     bool isFirstItem = true;
     for (auto prop : ecClass->GetProperties (true))
@@ -1318,7 +1442,7 @@ void PerformanceElementsCRUDTestFixture::GetSelectECSql (Utf8CP className, Utf8S
         isFirstItem = false;
         }
 
-    selectECSql.append(" FROM ").append(ecClassName).append(" WHERE ECInstanceId = ?");
+    selectECSql.append(" FROM ").append(ecClass->GetECSqlName()).append(" WHERE ECInstanceId = ?");
     if(omitClassIdFilter)
         selectECSql.append(" ECSQLOPTIONS NoECClassIdFilter");
     }
@@ -1331,13 +1455,12 @@ void PerformanceElementsCRUDTestFixture::GetUpdateECSql (Utf8CP className, Utf8S
     ECN::ECClassCP ecClass = m_db->Schemas ().GetECClass (ELEMENT_PERFORMANCE_TEST_SCHEMA_NAME, className);
     ASSERT_TRUE(ecClass != nullptr);
 
-    Utf8String ecClassName = ECSqlBuilder::ToECSqlSnippet (*ecClass);
     updateECSql = "UPDATE ";
-    updateECSql.append (ecClassName).append (" SET ");
+    updateECSql.append (ecClass->GetECSqlName()).append (" SET ");
     bool isFirstItem = true;
     for (auto prop : ecClass->GetProperties (true))
         {
-        if (0 == strcmp ("ModelId", prop->GetName ().c_str ()) || 0 == strcmp ("Code", prop->GetName ().c_str ()) || 0 == strcmp ("ParentId", prop->GetName ().c_str ()) || 0 == strcmp ("LastMod", prop->GetName ().c_str ()))
+        if (0 == strcmp("ModelId", prop->GetName().c_str()) || 0 == strcmp("Code", prop->GetName().c_str()) || 0 == strcmp("Label", prop->GetName().c_str()) || 0 == strcmp("ParentId", prop->GetName().c_str()) || 0 == strcmp("LastMod", prop->GetName().c_str()))
             continue;
         if (!isFirstItem)
             {
@@ -1361,9 +1484,8 @@ void PerformanceElementsCRUDTestFixture::GetDeleteECSql (Utf8CP className, Utf8S
     ECN::ECClassCP ecClass = m_db->Schemas ().GetECClass (ELEMENT_PERFORMANCE_TEST_SCHEMA_NAME, className);
     ASSERT_TRUE(ecClass != nullptr);
 
-    Utf8String ecClassName = ECSqlBuilder::ToECSqlSnippet (*ecClass);
     deleteECSql = "DELETE FROM ONLY ";
-    deleteECSql.append (ecClassName).append (" WHERE ").append ("ECInstanceId = ?");
+    deleteECSql.append (ecClass->GetECSqlName()).append (" WHERE ").append ("ECInstanceId = ?");
 
     if (omitClassIdFilter)
         deleteECSql.append(" ECSQLOPTIONS NoECClassIdFilter");
@@ -1387,6 +1509,7 @@ void PerformanceElementsCRUDTestFixture::ApiInsertTime(Utf8CP className, int ini
     for (DgnElementPtr& element : testElements)
         {
         DgnDbStatus stat = DgnDbStatus::Success;
+        //DgnElement::MultiAspect::AddAspect(*element, *TestMultiAspect::Create("Initial Value"));
         element->Insert (&stat);
         ASSERT_EQ (DgnDbStatus::Success, stat);
         }
@@ -1431,11 +1554,13 @@ void PerformanceElementsCRUDTestFixture::ApiUpdateTime(Utf8CP className, int ini
     for (uint64_t i = 0; i < opCount; i++)
         {
         const DgnElementId id(s_firstElementId + i*elementIdIncrement);
-        DgnElementPtr element = m_db->Elements().GetForEdit<DgnElement>(id);
+        PerformanceElement1Ptr element = m_db->Elements().GetForEdit<PerformanceElement1>(id);
         ASSERT_TRUE(element != nullptr);
 
+        element->ExtendGeometry();
+
         DgnDbStatus stat = DgnDbStatus::Success;
-        element->Update (&stat);
+        element->DgnElement::Update (&stat);
         ASSERT_EQ (DgnDbStatus::Success, stat);
         }
 
@@ -1737,6 +1862,9 @@ void PerformanceElementsCRUDTestFixture::LogTiming(StopWatch& timer, Utf8CP desc
     Utf8String totalDescription;
     totalDescription.Sprintf("%s %s '%s' [Initial count: %d]", description, noClassIdFilterStr, testClassName, initialInstanceCount);
     LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), totalDescription.c_str(), opCount);
+#ifdef PERF_ELEM_CRUD_LOG_TO_CONSOLE
+    printf("%.8f %s\n", timer.GetElapsedSeconds(), totalDescription.c_str());
+#endif
     }
 
 //---------------------------------------------------------------------------------------

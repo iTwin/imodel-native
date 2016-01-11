@@ -91,15 +91,15 @@ DG_INLINE void ViewController::SetBackgroundColor(ColorDef color) {m_backgroundC
 DG_INLINE bool ViewController::IsLoaded() const { return m_baseModelId.IsValid();}
 DG_INLINE void ViewController::ChangeModelDisplay(DgnModelId modelId, bool onOff) {_ChangeModelDisplay(modelId, onOff);}
 DG_INLINE bool ViewController::Allow3dManipulations() const {return _Allow3dManipulations();}
-DG_INLINE DgnModelP ViewController::GetTargetModel() const {return _GetTargetModel();}
+DG_INLINE GeometricModelP ViewController::GetTargetModel() const {return _GetTargetModel();}
 DG_INLINE bool ViewController::OnGeoLocationEvent(GeoLocationEventStatus& status, GeoPointCR point) {return _OnGeoLocationEvent(status, point);}
 DG_INLINE void ViewController::OnViewOpened(DgnViewportR vp) {_OnViewOpened(vp);}
 
-DG_INLINE ClipVectorPtr PhysicalViewController::GetClipVector() const {return _GetClipVector();}
+DG_INLINE ClipVectorPtr SpatialViewController::GetClipVector() const {return _GetClipVector();}
 DG_INLINE void CameraViewController::SetClipVector(ClipVectorR c) {m_clipVector = &c;}
 DG_INLINE void CameraViewController::ClearClipVector() {m_clipVector=NULL;}
 DG_INLINE ClipVectorPtr CameraViewController::_GetClipVector() const {return m_clipVector;}
-DG_INLINE IAuxCoordSysP PhysicalViewController::GetAuxCoordinateSystem() const {return _GetAuxCoordinateSystem();}
+DG_INLINE IAuxCoordSysP SpatialViewController::GetAuxCoordinateSystem() const {return _GetAuxCoordinateSystem();}
 
 DG_INLINE IACSManagerR IACSManager::GetManager() {return T_HOST.GetAcsManager();}
 
@@ -129,7 +129,7 @@ DG_INLINE StatusInt IAuxCoordSys::StringFromPoint(WStringR outString, WStringR e
 DG_INLINE StatusInt IAuxCoordSys::SetFlags(ACSFlags flags) {return _SetFlags(flags);}
 DG_INLINE void IAuxCoordSys::DrawGrid(DgnViewportP viewport) const {return _DrawGrid(viewport);}
 DG_INLINE void IAuxCoordSys::PointToGrid(DgnViewportP viewport, DPoint3dR point) const {_PointToGrid(viewport, point);}
-DG_INLINE StatusInt IAuxCoordSys::CompleteSetupFromViewController(PhysicalViewControllerCP info) {return _CompleteSetupFromViewController(info);}
+DG_INLINE StatusInt IAuxCoordSys::CompleteSetupFromViewController(SpatialViewControllerCP info) {return _CompleteSetupFromViewController(info);}
 DG_INLINE bool IAuxCoordSys::Equals(IAuxCoordSysCP other) const {return _Equals(other);}
 DG_INLINE IAuxCoordSysPtr IAuxCoordSys::Clone() const {return _Clone();}
 
@@ -215,7 +215,7 @@ DG_INLINE void ViewContext::SetCurrentLevelOfDetail(double levelOfDetail) { m_le
 DG_INLINE ViewContext::ContextMark::~ContextMark() {Pop();}
 
 DG_INLINE IElemTopologyCP   ViewContext::GetElemTopology() const {return(m_currElemTopo.IsValid() ? m_currElemTopo.get() : nullptr);}
-DG_INLINE void              ViewContext::SetElemTopology(IElemTopologyP topo) {m_currElemTopo = topo;}
+DG_INLINE void              ViewContext::SetElemTopology(IElemTopologyCP topo) {m_currElemTopo = topo;}
 DG_INLINE GeomStreamEntryId ViewContext::GetGeomStreamEntryId() const {return m_currGeomStreamEntryId;}
 DG_INLINE void              ViewContext::SetGeomStreamEntryId(GeomStreamEntryId geomId) {m_currGeomStreamEntryId = geomId;}
 

@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/DgnElements.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -879,7 +879,7 @@ void DgnElements::Destroy()
     m_tree->Destroy();
     m_heapZone.EmptyAll();
     m_stmts.Empty();
-    m_handlerStmts.Empty();
+    m_classInfos.clear();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -984,7 +984,7 @@ CachedStatementPtr DgnElements::GetStatement(Utf8CP sql) const
 * @bsimethod                                    Keith.Bentley                   06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnElement::DgnElement(CreateParams const& params) : m_refCount(0), m_elementId(params.m_id), m_dgndb(params.m_dgndb), m_modelId(params.m_modelId), m_classId(params.m_classId),
-    m_code(params.m_code), m_parentId(params.m_parentId)
+    m_code(params.m_code), m_label(params.m_label), m_parentId(params.m_parentId)
     {
     ++GetDgnDb().Elements().m_tree->m_totals.m_extant;
     }
@@ -1007,7 +1007,7 @@ void DgnElements::ResetStatistics() {m_tree->m_stats.Reset();}
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   09/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElements::DgnElements(DgnDbR dgndb) : DgnDbTable(dgndb), m_heapZone(0, false), m_mutex(BeDbMutex::MutexType::Recursive), m_stmts(20)
+DgnElements::DgnElements(DgnDbR dgndb) : DgnDbTable(dgndb), m_heapZone(0, false), m_mutex(BeDbMutex::MutexType::Recursive), m_stmts(20), m_snappyFrom(m_snappyFromBuffer, _countof(m_snappyFromBuffer))
     {
     m_tree = new ElemIdTree(dgndb);
     }
@@ -1096,8 +1096,8 @@ DgnElementCPtr DgnElements::LoadElement(DgnElement::CreateParams const& params, 
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnElementCPtr DgnElements::LoadElement(DgnElementId elementId, bool makePersistent) const
     {
-    enum Column : int       {ClassId=0,ModelId=1,Code_Value=2,ParentId=3,Code_AuthorityId=4,Code_Namespace=5};
-    CachedStatementPtr stmt = GetStatement("SELECT ECClassId,ModelId,Code_Value,ParentId,Code_AuthorityId,Code_Namespace FROM " DGN_TABLE(DGN_CLASSNAME_Element) " WHERE Id=?");
+    enum Column : int {ClassId=0,ModelId=1,Code_AuthorityId=2,Code_Namespace=3,Code_Value=4,Label=5,ParentId=6};
+    CachedStatementPtr stmt = GetStatement("SELECT ECClassId,ModelId,Code_AuthorityId,Code_Namespace,Code_Value,Label,ParentId FROM " DGN_TABLE(DGN_CLASSNAME_Element) " WHERE Id=?");
     stmt->BindId(1, elementId);
 
     DbResult result = stmt->Step();
@@ -1107,12 +1107,15 @@ DgnElementCPtr DgnElements::LoadElement(DgnElementId elementId, bool makePersist
     DgnElement::Code code;
     code.From(stmt->GetValueId<DgnAuthorityId>(Column::Code_AuthorityId), stmt->GetValueText(Column::Code_Value), stmt->GetValueText(Column::Code_Namespace));
 
-    return LoadElement(DgnElement::CreateParams(m_dgndb, stmt->GetValueId<DgnModelId>(Column::ModelId), 
+    DgnElement::CreateParams createParams(m_dgndb, stmt->GetValueId<DgnModelId>(Column::ModelId), 
                     stmt->GetValueId<DgnClassId>(Column::ClassId), 
                     code,
-                    elementId, 
-                    stmt->GetValueId<DgnElementId>(Column::ParentId)),
-                    makePersistent);
+                    stmt->GetValueText(Column::Label), 
+                    stmt->GetValueId<DgnElementId>(Column::ParentId));
+
+    createParams.SetElementId(elementId);
+
+    return LoadElement(createParams, makePersistent);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1128,16 +1131,6 @@ DgnElementCPtr DgnElements::GetElement(DgnElementId elementId) const
     BeDbMutexHolder _v(m_mutex);
     DgnElementCP element = FindElement(elementId);
     return (nullptr != element) ? element : LoadElement(elementId, true);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                  Krischan.Eberle                  05/15
-//+---------------+---------------+---------------+---------------+---------------+------
-DgnElementKey DgnElements::QueryElementKey(DgnElementId elementId) const
-    {
-    CachedStatementPtr stmt =GetStatement("SELECT ECClassId FROM " DGN_TABLE(DGN_CLASSNAME_Element) " WHERE Id=?");
-    stmt->BindInt64(1, elementId.GetValueUnchecked());
-    return BE_SQLITE_ROW == stmt->Step() ? DgnElementKey(stmt->GetValueId<DgnClassId>(0), elementId) : DgnElementKey();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1388,21 +1381,34 @@ DgnElementId DgnElements::QueryElementIdByCode(DgnAuthorityId authority, Utf8Str
     statement->BindText(3, nameSpace, Statement::MakeCopy::No);
     return (BE_SQLITE_ROW != statement->Step()) ? DgnElementId() : statement->GetValueId<DgnElementId>(0);
     }
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   09/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnElements::HandlerStatementCache::Entry* DgnElements::HandlerStatementCache::FindEntry(ElementHandlerR handler) const
-    {
-    auto found = std::find_if(m_entries.begin(), m_entries.end(), [&handler](Entry& arg) { return &handler == arg.m_handler; });
-    return m_entries.end() != found ? found : nullptr;
-    }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   09/15
+* @bsimethod                                                    Paul.Connelly   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnElements::HandlerStatementCache::Empty()
+DgnElements::ClassInfo& DgnElements::FindClassInfo(DgnElementCR el) const
     {
-    m_entries.clear();
+    DgnClassId classId = el.GetElementClassId();
+    auto found = m_classInfos.find(classId);
+    if (m_classInfos.end() != found)
+        return found->second;
+
+    ClassInfo& classInfo = m_classInfos[classId];
+    bool populated = el.GetElementHandler().GetECSqlClassParams().BuildClassInfo(classInfo, GetDgnDb(), classId);
+    BeAssert(populated);
+    UNUSED_VARIABLE(populated);
+
+    Utf8StringCR selectECSql = classInfo.GetSelectECSql();
+    if (!selectECSql.empty())
+        {
+        classInfo.m_selectStmt = new CachedECSqlStatement();
+        if (ECSqlStatus::Success != classInfo.m_selectStmt->Prepare(GetDgnDb(), selectECSql.c_str()))
+            {
+            BeAssert(false);
+            classInfo.m_selectStmt = nullptr;
+            }
+        }
+
+    return classInfo;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1410,9 +1416,26 @@ void DgnElements::HandlerStatementCache::Empty()
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnElements::ElementSelectStatement DgnElements::GetPreparedSelectStatement(DgnElementR el) const
     {
+    // Cached per ECClass to make speed up loading of elements.
     BeDbMutexHolder _v(m_mutex);
-    auto& handler = el.GetElementHandler();
-    return m_handlerStmts.GetPreparedSelectStatement(el, handler, handler.GetECSqlClassInfo());
+
+    auto& classInfo = FindClassInfo(el);
+    CachedECSqlStatementPtr stmt = classInfo.m_selectStmt;
+    if (stmt.IsValid() && stmt->GetRefCount() > 2)  // +1 from above line, +1 from bmap...
+        {
+        // The cached statement is already in use...create a new one for this caller
+        stmt = new CachedECSqlStatement();
+        if (ECSqlStatus::Success != stmt->Prepare(GetDgnDb(), classInfo.GetSelectECSql().c_str()))
+            {
+            BeAssert(false);
+            stmt = nullptr;
+            }
+        }
+
+    if (stmt.IsValid())
+        stmt->BindId(1, el.GetElementId());
+
+    return ElementSelectStatement(stmt.get(), el.GetElementHandler().GetECSqlClassParams());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1421,8 +1444,7 @@ DgnElements::ElementSelectStatement DgnElements::GetPreparedSelectStatement(DgnE
 CachedECSqlStatementPtr DgnElements::GetPreparedInsertStatement(DgnElementR el) const
     {
     // Not bothering to cache per handler...use our general-purpose ECSql statement cache
-    ECSqlClassInfo const& info = el.GetElementHandler().GetECSqlClassInfo();
-    return info.m_insert.empty() ? nullptr : GetDgnDb().GetPreparedECSqlStatement(info.m_insert.c_str());
+    return FindClassInfo(el).GetInsertStmt(GetDgnDb());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1431,152 +1453,18 @@ CachedECSqlStatementPtr DgnElements::GetPreparedInsertStatement(DgnElementR el) 
 CachedECSqlStatementPtr DgnElements::GetPreparedUpdateStatement(DgnElementR el) const
     {
     // Not bothering to cache per handler...use our general-purpose ECSql statement cache
-    ECSqlClassInfo const& info = el.GetElementHandler().GetECSqlClassInfo();
-    CachedECSqlStatementPtr stmt = info.m_update.empty() ? nullptr : GetDgnDb().GetPreparedECSqlStatement(info.m_update.c_str());
-    if (stmt.IsValid())
-        stmt->BindId(info.m_numUpdateParams+1, el.GetElementId());
-
-    return stmt;
+    return FindClassInfo(el).GetUpdateStmt(GetDgnDb(), el.GetElementId());
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElements::ElementSelectStatement DgnElements::HandlerStatementCache::GetPreparedSelectStatement(DgnElementR el, ElementHandlerR handler, ECSqlClassInfo const& classInfo) const
+ECSqlClassParams const& dgn_ElementHandler::Element::GetECSqlClassParams()
     {
-    CachedECSqlStatementPtr stmt;
-    if (!classInfo.m_select.empty())
-        {
-        Entry* entry = FindEntry(handler);
-        if (nullptr != entry)
-            {
-            if (entry->m_select.IsNull() || entry->m_select->GetRefCount() <= 1)
-                {
-                stmt = entry->m_select;
-                }
-            else
-                {
-                // The cached statement is already in use...create a new one for this caller
-                stmt = new CachedECSqlStatement();
-                if (ECSqlStatus::Success != stmt->Prepare(el.GetDgnDb(), classInfo.m_select.c_str()))
-                    {
-                    BeAssert(false);
-                    stmt = nullptr;
-                    }
-                }
-            }
-        else
-            {
-            // First request for this handler...create an entry
-            m_entries.push_back(Entry(&handler));
-            entry = &m_entries.back();
-            entry->m_select = new CachedECSqlStatement();
-            if (ECSqlStatus::Success != entry->m_select->Prepare(el.GetDgnDb(), classInfo.m_select.c_str()))
-                {
-                BeAssert(false);
-                entry->m_select = nullptr;
-                }
+    if (!m_classParams.IsInitialized())
+        m_classParams.Initialize(*this);
 
-            stmt = entry->m_select;
-            }
-        }
-
-    if (stmt.IsValid())
-        {
-        BeAssert(el.GetElementId().IsValid());
-        stmt->BindId(1, el.GetElementId());
-        }
-
-    return ElementSelectStatement(stmt.get(), classInfo.m_params);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   09/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-template<typename T> static uint16_t buildParamString(Utf8StringR str, ECSqlClassParams::Entries const& entries, ECSqlClassParams::StatementType type, T func)
-    {
-    uint16_t count = 0;
-    for (auto const& entry : entries)
-        {
-        if (type != (entry.m_type & type))
-            continue;
-
-        if (0 < count)
-            str.append(1, ',');
-
-        func(entry.m_name, count);
-        ++count;
-        }
-
-    return count;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   09/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECSqlClassInfo const& dgn_ElementHandler::Element::GetECSqlClassInfo()
-    {
-    if (!m_classInfo.m_initialized)
-        {
-        _GetClassParams(m_classInfo.m_params);
-
-        auto const& entries = m_classInfo.m_params.GetEntries();
-
-        Utf8String fullClassName("[");
-        fullClassName.append(GetDomain().GetDomainName()).append("].[").append(GetClassName()).append(1, ']');
-
-        // Build SELECT statement
-        m_classInfo.m_select = "SELECT ";
-        uint16_t numSelectParams = buildParamString(m_classInfo.m_select, entries, ECSqlClassParams::StatementType::Select,
-            [&](Utf8CP name, uint16_t count) { m_classInfo.m_select.append(1, '[').append(name).append(1, ']'); });
-
-        if (0 < numSelectParams)
-            {
-            m_classInfo.m_select.append(" FROM ONLY ").append(fullClassName);
-            m_classInfo.m_select.append(" WHERE ECInstanceId=?");
-            }
-        else
-            {
-            m_classInfo.m_select.clear();
-            }
-
-        // Build INSERT statement
-        m_classInfo.m_insert.append("INSERT INTO ").append(fullClassName).append(1, '(');
-        Utf8String insertValues;
-        uint16_t numInsertParams = buildParamString(m_classInfo.m_insert, entries, ECSqlClassParams::StatementType::Insert,
-            [&](Utf8CP name, uint16_t count)
-                {
-                m_classInfo.m_insert.append(1, '[').append(name).append(1, ']');
-                if (0 < count)
-                    insertValues.append(1, ',');
-
-                insertValues.append(":[").append(name).append(1, ']');
-                });
-
-        if (0 < numInsertParams)
-            m_classInfo.m_insert.append(")VALUES(").append(insertValues).append(1, ')');
-        else
-            m_classInfo.m_insert.clear();
-
-        // Build UPDATE statement
-        m_classInfo.m_update.append("UPDATE ONLY ").append(fullClassName).append(" SET ");
-        m_classInfo.m_numUpdateParams = buildParamString(m_classInfo.m_update, entries, ECSqlClassParams::StatementType::Update,
-            [&](Utf8CP name, uint16_t count)
-                {
-                m_classInfo.m_update.append(1, '[').append(name).append("]=:[").append(name).append(1, ']');
-                });
-        if (0 < m_classInfo.m_numUpdateParams)
-            m_classInfo.m_update.append( "WHERE ECInstanceId=?");
-        else
-            m_classInfo.m_update.clear();
-
-        // We no longer need any param names except those used in INSERT.
-        m_classInfo.m_params.RemoveAllButSelect();
-
-        m_classInfo.m_initialized = true;
-        }
-
-    return m_classInfo;
+    return m_classParams;
     }
 
 

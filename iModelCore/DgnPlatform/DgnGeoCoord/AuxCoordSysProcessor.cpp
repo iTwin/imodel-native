@@ -7,7 +7,7 @@
 +----------------------------------------------------------------------*/
 #include    <Geom\msgeomstructs.hpp>
 
-#include    <DgnGeoCoord\DgnGeoCoord.h>
+#include    <DgnGeoCoord/DgnGeoCoord.h>
 #include    <DgnPlatform\Tools\stringop.h>
 #include    <DgnPlatform/DgnCoreAPI.h>
 

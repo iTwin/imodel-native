@@ -51,7 +51,7 @@ struct DgnProjectProperty
     static ProjectProperty ProjectType()     {return ProjectProperty("ProjectType");}
     static ProjectProperty LastEditor()      {return ProjectProperty("LastEditor");}
     static ProjectProperty Extents()         {return ProjectProperty("Extents");}
-    static ProjectProperty IsPhysicalRedline() {return ProjectProperty("IsPhysicalRedline");}
+    static ProjectProperty IsSpatialRedline() {return ProjectProperty("IsSpatialRedline");}
     static ProjectProperty Units()           {return ProjectProperty("Units");}
     static ProjectProperty DgnGCS()          {return ProjectProperty("DgnGCS");}
 };
@@ -156,7 +156,8 @@ struct LineStyleProperty
     static ComponentProperty LineCode()         {return ComponentProperty("LineCodeV1");}
     static ComponentProperty LinePoint()        {return ComponentProperty("LinePointV1");}
     static ComponentProperty PointSym()         {return ComponentProperty("PointSymV1");}
-    static ComponentProperty RasterImage()      {return ComponentProperty("RasterImage");}
+    static ComponentProperty RasterComponent()  {return ComponentProperty("RasterComponentV1");}
+    static ComponentProperty RasterImage()      {return ComponentProperty("RasterImageV1");}
 };
 END_BENTLEY_DGNPLATFORM_NAMESPACE
 

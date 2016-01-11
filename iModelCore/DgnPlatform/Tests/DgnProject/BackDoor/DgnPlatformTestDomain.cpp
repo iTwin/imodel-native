@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/DgnProject/BackDoor/DgnPlatformTestDomain.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <Bentley/BeTest.h>
@@ -25,6 +25,7 @@ HANDLER_DEFINE_MEMBERS(TestItemHandler)
 HANDLER_DEFINE_MEMBERS(TestUniqueAspectHandler)
 HANDLER_DEFINE_MEMBERS(TestMultiAspectHandler)
 HANDLER_DEFINE_MEMBERS(TestGroupHandler)
+HANDLER_DEFINE_MEMBERS(TestRequirementHandler)
 DOMAIN_DEFINE_MEMBERS(DgnPlatformTestDomain)
 HANDLER_DEFINE_MEMBERS(TestElementDrivesElementHandler)
 
@@ -150,9 +151,9 @@ DgnDbStatus TestElement::_InsertInDb()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus TestElement::_ExtractSelectParams(ECSqlStatement& stmt, ECSqlClassParams const& params)
+DgnDbStatus TestElement::_ReadSelectParams(ECSqlStatement& stmt, ECSqlClassParams const& params)
     {
-    auto status = T_Super::_ExtractSelectParams(stmt, params);
+    auto status = T_Super::_ReadSelectParams(stmt, params);
     if (DgnDbStatus::Success == status)
         m_testElemProperty = stmt.GetValueText(params.GetSelectIndex(DPTEST_TEST_ELEMENT_TestElementProperty));
 
@@ -310,6 +311,18 @@ TestGroupPtr TestGroup::Create(DgnDbR db, DgnModelId modelId, DgnCategoryId cate
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Shaun.Sewall    12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TestRequirementPtr TestRequirement::Create(DgnDbR db, DgnModelId modelId)
+    {
+    ElementHandlerR handler = TestRequirementHandler::GetHandler();
+    DgnClassId classId = db.Domains().GetClassId(handler);
+    DgnElementPtr requirement = handler.Create(CreateParams(db, modelId, classId));
+    BeAssert(requirement.IsValid());
+    return static_cast<TestRequirementP>(requirement.get());
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 #ifdef WIP_ELEMENT_ITEM // *** pending redesign
@@ -441,6 +454,7 @@ DgnPlatformTestDomain::DgnPlatformTestDomain() : DgnDomain(DPTEST_SCHEMA_NAME, "
     RegisterHandler(TestElementHandler::GetHandler());
     RegisterHandler(TestElement2dHandler::GetHandler());
     RegisterHandler(TestGroupHandler::GetHandler());
+    RegisterHandler(TestRequirementHandler::GetHandler());
 #ifdef WIP_ELEMENT_ITEM // *** pending redesign
     RegisterHandler(TestItemHandler::GetHandler());
 #endif
@@ -512,7 +526,7 @@ DgnDbStatus DgnPlatformTestDomain::ImportDummySchema(DgnDbR db)
 
     ECN::ECSchemaPtr schemaPtr;
     ECN::SchemaReadStatus readSchemaStatus = ECN::ECSchema::ReadFromXmlFile(schemaPtr, schemaFile.GetName(), *contextPtr);
-    if (ECN::SCHEMA_READ_STATUS_Success != readSchemaStatus)
+    if (ECN::SchemaReadStatus::Success != readSchemaStatus)
         return DgnDbStatus::ReadError;
 
     if (BentleyStatus::SUCCESS != db.Schemas().ImportECSchemas(contextPtr->GetCache()))

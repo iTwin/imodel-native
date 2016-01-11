@@ -19,15 +19,15 @@ module DgnScriptTests {
             Bentley.Dgn.Script.ReportError('bad Z');
     }
 
-    function test2(): void {
+    function test2(): void
+    {
         var pointA = new Bentley.Dgn.DPoint3d(2, 1, 3);
         var pointB = new Bentley.Dgn.DPoint3d(4, 0.4, 2);
-        var segmentC = new Bentley.Dgn.DSegment3d(pointA, pointB);
-        var curveD = Bentley.Dgn.CurvePrimitive.CreateLineSegment(segmentC);
-        var s = 0.4;
-        var pointC1 = segmentC.PointAtFraction(s);
-        var pointD1 = curveD.PointAtFraction(s);
-        checker.IsNearDPoint3d(pointD1, pointD1);
+        var curveD = new Bentley.Dgn.LineSegment (pointA, pointB);
+        var pointA1=curveD.PointAtFraction(0.0);
+        var pointB1 = curveD.PointAtFraction(1.0);
+        checker.IsNearDPoint3d(pointA, pointA1);
+        checker.IsNearDPoint3d(pointB, pointB1);
     }
 
     function test3(): void {
@@ -36,7 +36,7 @@ module DgnScriptTests {
         arrayA.Add(new Bentley.Dgn.DPoint3d(2, 3, 4));
         arrayA.Add(new Bentley.Dgn.DPoint3d(4, 3, 4));
         checker.NearDouble(3, arrayA.Size(), true);
-        var cpLineStringA = Bentley.Dgn.CurvePrimitive.CreateLineString(arrayA);
+        var cpLineStringA = new Bentley.Dgn.LineString (arrayA);
         var pointB = cpLineStringA.PointAtFraction(0.5);
 
 

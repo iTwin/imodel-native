@@ -24,7 +24,7 @@ BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
 namespace dgn_ElementHandler
 {
-    VIEWDEF_HANDLER_DEFINE_MEMBERS(PhysicalViewDef);
+    VIEWDEF_HANDLER_DEFINE_MEMBERS(SpatialViewDef);
     VIEWDEF_HANDLER_DEFINE_MEMBERS(DrawingViewDef);
     VIEWDEF_HANDLER_DEFINE_MEMBERS(SheetViewDef);
     HANDLER_DEFINE_MEMBERS(CameraViewDef);
@@ -72,9 +72,9 @@ DgnDbStatus ViewDefinition::_BindUpdateParams(ECSqlStatement& stmt)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   11/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus ViewDefinition::_ExtractSelectParams(ECSqlStatement& stmt, ECSqlClassParams const& params)
+DgnDbStatus ViewDefinition::_ReadSelectParams(ECSqlStatement& stmt, ECSqlClassParams const& params)
     {
-    auto status = T_Super::_ExtractSelectParams(stmt, params);
+    auto status = T_Super::_ReadSelectParams(stmt, params);
     if (DgnDbStatus::Success == status)
         {
         Utf8String descr = stmt.GetValueText(params.GetSelectIndex(PROPNAME_Descr));
@@ -144,7 +144,15 @@ ViewControllerPtr ViewDefinition::LoadViewController(DgnViewId viewId, DgnDbR db
 +---------------+---------------+---------------+---------------+---------------+------*/
 ViewControllerPtr ViewDefinition::LoadViewController(FillModels fillModels) const
     {
-    ViewControllerOverride* ovr = ViewControllerOverride::Cast(GetElementHandler());
+    return LoadViewController(true, fillModels);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+ViewControllerPtr ViewDefinition::LoadViewController(bool allowOverrides, FillModels fillModels) const
+    {
+    ViewControllerOverride* ovr = allowOverrides ? ViewControllerOverride::Cast(GetElementHandler()) : nullptr;
     ViewControllerPtr controller = ovr ? ovr->_SupplyController(*this) : nullptr;
     if (controller.IsNull())
         controller = _SupplyController();
@@ -162,7 +170,7 @@ ViewControllerPtr ViewDefinition::LoadViewController(FillModels fillModels) cons
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   11/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-ViewControllerPtr PhysicalViewDefinition::_SupplyController() const
+ViewControllerPtr SpatialViewDefinition::_SupplyController() const
     {
     return new QueryViewController(GetDgnDb(), GetViewId());
     }
@@ -223,10 +231,38 @@ DgnDbStatus ViewDefinition::_OnUpdate(DgnElementCR orig)
 DgnDbStatus ViewDefinition::_OnDelete() const
     {
     auto status = T_Super::_OnDelete();
-    if (DgnDbStatus::Success == status)
-        DeleteSettings();
+    if (DgnDbStatus::Success != status)
+        return status;
 
-    return status;
+    // Foreign key constraint will be enforced for ViewAttachments which reference this view.
+    // But we should delete them through element API.
+    status = DeleteReferences();
+    if (DgnDbStatus::Success != status)
+        return status;
+
+    DeleteSettings();
+    return DgnDbStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus ViewDefinition::DeleteReferences() const
+    {
+    CachedECSqlStatementPtr stmt = GetDgnDb().GetPreparedECSqlStatement("SELECT ECInstanceId FROM " DGN_SCHEMA(DGN_CLASSNAME_ViewAttachment) " WHERE ViewId=?");
+    stmt->BindId(1, GetViewId());
+    while (BE_SQLITE_ROW == stmt->Step())
+        {
+        auto el = GetDgnDb().Elements().GetElement(stmt->GetValueId<DgnElementId>(0));
+        if (el.IsValid())
+            {
+            DgnDbStatus stat = el->Delete();
+            if (DgnDbStatus::Success != stat)
+                return stat;
+            }
+        }
+
+    return DgnDbStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -432,7 +468,7 @@ template<typename T_Desired> static bool isEntryOfClass(ViewDefinition::Entry co
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   11/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ViewDefinition::Entry::IsPhysicalView() const { return isEntryOfClass<PhysicalViewDefinition>(*this); }
+bool ViewDefinition::Entry::IsSpatialView() const { return isEntryOfClass<SpatialViewDefinition>(*this); }
 bool ViewDefinition::Entry::IsDrawingView() const { return isEntryOfClass<DrawingViewDefinition>(*this); }
 bool ViewDefinition::Entry::IsSheetView() const { return isEntryOfClass<SheetViewDefinition>(*this); }
 

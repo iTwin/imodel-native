@@ -8,6 +8,7 @@
 #include <DgnPlatformInternal.h>
 #include <Geom/eigensys3d.fdf>
 #include <DgnPlatform/DgnMarkupProject.h>
+#include <DgnPlatform/DgnGeoCoord.h>
 
 static Utf8CP VIEW_SETTING_Area2d                = "area2d";
 static Utf8CP VIEW_SETTING_BackgroundColor       = "bgColor";
@@ -170,7 +171,7 @@ void ViewController::_ChangeCategoryDisplay(DgnCategoryId categoryId, bool onOff
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      08/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnModelP ViewController::_GetTargetModel() const {return m_dgndb.Models().GetModel(m_targetModelId).get();}
+GeometricModelP ViewController::_GetTargetModel() const { return m_dgndb.Models().Get<GeometricModel>(m_targetModelId).get(); }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/12
@@ -314,7 +315,7 @@ DbResult ViewController::SaveAs(Utf8CP newName)
     if (cpView.IsNull())
         return BE_SQLITE_INTERNAL;
 
-    DgnElement::CreateParams params(cpView->GetDgnDb(), cpView->GetModelId(), cpView->GetElementClassId(), ViewDefinition::CreateCode(newName), DgnElementId());
+    DgnElement::CreateParams params(cpView->GetDgnDb(), cpView->GetModelId(), cpView->GetElementClassId(), ViewDefinition::CreateCode(newName));
     ViewDefinitionPtr newView = dynamic_cast<ViewDefinitionP>(cpView->Clone(nullptr, &params).get());
     BeAssert(newView.IsValid());
     if (newView.IsNull() || newView->Insert().IsNull())
@@ -719,7 +720,7 @@ void ViewController::LookAtViewAlignedVolume(DRange3dCR volume, double const* as
         newDelta.z = minimumDepth;
         }
 
-    PhysicalViewControllerP physView =(PhysicalViewControllerP) _ToPhysicalView();
+    SpatialViewControllerP physView =(SpatialViewControllerP) _ToSpatialView();
     CameraViewControllerP cameraView =(CameraViewControllerP) _ToCameraView();
     DPoint3d origNewDelta = newDelta;
 
@@ -821,7 +822,7 @@ void ViewController::_FillModels()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Shaun.Sewall                    08/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-PhysicalViewController::PhysicalViewController(DgnDbR dgndb, DgnViewId viewId) : ViewController(dgndb, viewId)
+SpatialViewController::SpatialViewController(DgnDbR dgndb, DgnViewId viewId) : ViewController(dgndb, viewId)
     {
     // not valid, but better than random
     m_origin.Zero();
@@ -832,7 +833,7 @@ PhysicalViewController::PhysicalViewController(DgnDbR dgndb, DgnViewId viewId) :
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      03/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-void PhysicalViewController::_OnTransform(TransformCR trans)
+void SpatialViewController::_OnTransform(TransformCR trans)
     {
     RotMatrix rMatrix;
     trans.GetMatrix(rMatrix);
@@ -858,7 +859,7 @@ void CameraViewController::_OnTransform(TransformCR trans)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-void PhysicalViewController::TransformBy(TransformCR trans)
+void SpatialViewController::TransformBy(TransformCR trans)
     {
     _OnTransform(trans);
     }
@@ -866,7 +867,7 @@ void PhysicalViewController::TransformBy(TransformCR trans)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus PhysicalViewController::SetTargetModel(DgnModelP target)
+BentleyStatus SpatialViewController::SetTargetModel(GeometricModelP target)
     {
     if (!m_viewedModels.Contains(target->GetModelId()))
         return  ERROR;
@@ -963,7 +964,7 @@ void SectionDrawingViewController::_DrawElement(ViewContextR context, GeometrySo
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Shaun.Sewall                    08/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-CameraViewController::CameraViewController(DgnDbR project, DgnViewId viewId) : PhysicalViewController(project, viewId)
+CameraViewController::CameraViewController(DgnDbR project, DgnViewId viewId) : SpatialViewController(project, viewId)
     {
     // not valid, but better than random
     m_isCameraOn = false;
@@ -1014,7 +1015,7 @@ void CameraViewController::CenterFocusDistance()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   08/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-double PhysicalViewController::CalculateMaxDepth(DVec3dCR delta, DVec3dCR zVec)
+double SpatialViewController::CalculateMaxDepth(DVec3dCR delta, DVec3dCR zVec)
     {
     // We are going to limit maximum depth to a value that will avoid subtractive cancellation
     // errors on the inverse frustum matrix. - These values will occur when the Z'th row values
@@ -1074,7 +1075,7 @@ bool CameraViewController::_OnGeoLocationEvent(GeoLocationEventStatus& status, G
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   MattGooding     11/13
 //---------------------------------------------------------------------------------------
-bool PhysicalViewController::_OnGeoLocationEvent(GeoLocationEventStatus& status, GeoPointCR location)
+bool SpatialViewController::_OnGeoLocationEvent(GeoLocationEventStatus& status, GeoPointCR location)
     {
     DPoint3d worldPoint;
     if (!convertToWorldPointWithStatus(worldPoint, status, m_dgndb.Units(), location))
@@ -1094,11 +1095,6 @@ bool PhysicalViewController::_OnGeoLocationEvent(GeoLocationEventStatus& status,
     return true;
     }
 
-// Temporary hack to make this work properly. The first rotation I receive from CM seems
-// to always be the reference frame - using that at best causes the camera to skip for a frame,
-// and at worst causes it to be permanently wrong (RelativeHeading).  Will remove and clean
-// up alongside s_defaultForward/s_defaultUp.
-static bool s_isFirstMotion = false;
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   MattGooding     11/13
@@ -1106,36 +1102,110 @@ static bool s_isFirstMotion = false;
 void ViewController::ResetDeviceOrientation()
     {
     m_defaultDeviceOrientationValid = false;
-    s_isFirstMotion = true;
     }
 
 static DVec3d s_defaultForward, s_defaultUp;
+static UiOrientation s_lastUi;
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   MattGooding     11/13
 //---------------------------------------------------------------------------------------
-bool ViewController::OnOrientationEvent(RotMatrixCR matrix, OrientationMode mode, UiOrientation ui)
+bool ViewController::OnOrientationEvent (RotMatrixCR matrix, OrientationMode mode, UiOrientation ui, uint32_t nEventsSinceEnabled)
     {
-    if (!m_defaultDeviceOrientationValid)
+    if (!m_defaultDeviceOrientationValid || s_lastUi != ui)
         {
-        if (s_isFirstMotion)
+        if (nEventsSinceEnabled < 2)
             {
-            s_isFirstMotion = false;
+            // Hack to make this work properly. The first rotation received from CM seems
+            // to always be the reference frame - using that at best causes the camera to skip for a frame,
+            // and at worst causes it to be permanently wrong (RelativeHeading).  Someone should remove and clean
+            // up alongside s_defaultForward/s_defaultUp.
             return false;
             }
         m_defaultDeviceOrientation = matrix;
         m_defaultDeviceOrientationValid = true;
         s_defaultUp = GetYVector();
         s_defaultForward = GetZVector();
+        s_lastUi = ui;
         }
 
     return _OnOrientationEvent(matrix, mode, ui);
     }
 
+// Gyro vector convention:
+// gyrospace X,Y,Z are (respectively) DOWN, RIGHT, and TOWARDS THE EYE.
+// (gyrospace vectors are in the absolute system of the device.  But it is not important what that is -- just so they are to the same space and their row versus column usage is clarified by the gyroByRow parameter.
+//
+// @bsimethod                                                   Earlin.Lutz     12/2015
+//
+void ApplyGyroChangeToViewingVectors 
+(
+UiOrientation ui,
+RotMatrixCR gyro0,      //!< [in] first gyro -- corresponds to forward0, up0.   Maps screen to gyrospace
+RotMatrixCR gyro1,      //!< [in] second gyro.  Maps screen to gyrospace
+DVec3dCR forward0,      //!< [in] model coordinates forward vector when gyro0 was recorded
+DVec3dCR up0,           //!< [in] model coordinates up vector when gyro0 was recorded
+DVec3dR forward1,       //!< [out] model coordinates up vector for gyro2
+DVec3dR up1             //!< [out] model coordinates up vector for gyro1
+)
+    {
+    RotMatrix gyroToBSIColumnShuffler;
+    
+    if (ui == UiOrientation::LandscapeLeft) 
+        gyroToBSIColumnShuffler = RotMatrix::FromRowValues
+            (
+            0,-1,0,         //  negative X becomes Y
+            1,0,0,          //  Y becomes X
+            0,0,1           //  Z remains Z
+            );
+    else if (ui == UiOrientation::LandscapeRight) 
+        gyroToBSIColumnShuffler = RotMatrix::FromRowValues
+            (
+            0,1,0,          //  X becomes Y
+            -1,0,0,         //  negative Y becomes X
+            0,0,1           //  Z remains Z
+            );
+    else if (ui == UiOrientation::Portrait) 
+        gyroToBSIColumnShuffler = RotMatrix::FromRowValues
+            (
+            1,0,0,
+            0,1,0,
+            0,0,1
+            );
+    else
+        {
+        BeAssert (ui == UiOrientation::PortraitUpsideDown);
+        gyroToBSIColumnShuffler = RotMatrix::FromRowValues
+            (
+            -1,0,0,
+            0,-1,0,
+            0,0,1
+            );
+        }
+
+    RotMatrix H0, H1;
+    H0.InitProduct (gyro0, gyroToBSIColumnShuffler);
+    H1.InitProduct (gyro1, gyroToBSIColumnShuffler);
+    RotMatrix H1T;
+    H1T.TransposeOf (H1);
+    RotMatrix screenToScreenMotion;
+    screenToScreenMotion.InitProduct (H1T, H0);
+    DVec3d right0 = DVec3d::FromCrossProduct (up0, forward0);
+    RotMatrix screenToModel = RotMatrix::FromColumnVectors (right0, up0, forward0);
+    RotMatrix modelToScreen;
+    modelToScreen.TransposeOf (screenToModel);
+    RotMatrix modelToModel;
+
+    screenToScreenMotion.Transpose ();
+    modelToModel.InitProduct (screenToModel, screenToScreenMotion, modelToScreen);
+    modelToModel.Multiply (forward1, forward0);
+    modelToModel.Multiply (up1, up0);
+    }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   MattGooding     11/13
 //---------------------------------------------------------------------------------------
-bool PhysicalViewController::ViewVectorsFromOrientation(DVec3dR forward, DVec3dR up, RotMatrixCR orientation, OrientationMode mode, UiOrientation ui)
+bool SpatialViewController::ViewVectorsFromOrientation(DVec3dR forward, DVec3dR up, RotMatrixCR orientation, OrientationMode mode, UiOrientation ui)
     {
     double azimuthCorrection = 0.0;
     DVec3d currForward = GetZVector();
@@ -1144,17 +1214,24 @@ bool PhysicalViewController::ViewVectorsFromOrientation(DVec3dR forward, DVec3dR
     switch(mode)
         {
         case OrientationMode::CompassHeading:
-            azimuthCorrection = msGeomConst_radiansPerDegree *(90.0 + m_dgndb.Units().GetAzimuth());
+            {
+            DgnGCS* dgnGcs = m_dgndb.Units().GetDgnGCS();
+            double azimuth = (dgnGcs != nullptr) ? dgnGcs->GetAzimuth() : 0.0;
+            azimuthCorrection = msGeomConst_radiansPerDegree *(90.0 + azimuth);
             forward.RotateXY(azimuthCorrection);
             break;
+            }
         case OrientationMode::IgnoreHeading:
             forward.x = currForward.x;
             forward.y = currForward.y;
             break;
         case OrientationMode::RelativeHeading:
-            forward.x = s_defaultForward.x +(orientation.form3d[0][2] - m_defaultDeviceOrientation.form3d[0][2]);
-            forward.y = s_defaultForward.y +(orientation.form3d[1][2] - m_defaultDeviceOrientation.form3d[1][2]);
+            {
+            //  orientation is arranged in columns.  The axis from the home button to other end of tablet is Y.  Z is out of the screen.  X is Y cross Z.
+            //  Therefore, when the UiOrientation is Portrait, orientation Y is up and orientation X points to the right.
+            ApplyGyroChangeToViewingVectors (ui, m_defaultDeviceOrientation, orientation, s_defaultForward, s_defaultUp, forward, up);
             break;
+            }
         }
     forward.Normalize();
 
@@ -1178,7 +1255,7 @@ bool PhysicalViewController::ViewVectorsFromOrientation(DVec3dR forward, DVec3dR
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   MattGooding     11/13
 //---------------------------------------------------------------------------------------
-bool PhysicalViewController::_OnOrientationEvent(RotMatrixCR orientation, OrientationMode mode, UiOrientation ui)
+bool SpatialViewController::_OnOrientationEvent(RotMatrixCR orientation, OrientationMode mode, UiOrientation ui)
     {
     DVec3d forward, up;
     if (!ViewVectorsFromOrientation(forward, up, orientation, mode, ui))
@@ -1519,7 +1596,7 @@ void CameraViewController::_RestoreFromSettings(JsonValueCR jsonObj)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   MattGooding     09/12
 //---------------------------------------------------------------------------------------
-void PhysicalViewController::_RestoreFromSettings(JsonValueCR jsonObj)
+void SpatialViewController::_RestoreFromSettings(JsonValueCR jsonObj)
     {
     T_Super::_RestoreFromSettings(jsonObj);
 
@@ -1554,7 +1631,7 @@ void CameraViewController::_SaveToSettings(JsonValueR jsonObj) const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   MattGooding     09/12
 //---------------------------------------------------------------------------------------
-void PhysicalViewController::_SaveToSettings(JsonValueR jsonObj) const
+void SpatialViewController::_SaveToSettings(JsonValueR jsonObj) const
     {
     T_Super::_SaveToSettings(jsonObj);
 
@@ -1569,7 +1646,7 @@ void PhysicalViewController::_SaveToSettings(JsonValueR jsonObj) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Brien.Bastings                  11/06
 +---------------+---------------+---------------+---------------+---------------+------*/
-IAuxCoordSysP PhysicalViewController::_GetAuxCoordinateSystem() const
+IAuxCoordSysP SpatialViewController::_GetAuxCoordinateSystem() const
     {
 #ifdef DGNV10FORMAT_CHANGES_WIP
     // if we don't have an ACS when this is called, try to get one.
@@ -1588,7 +1665,7 @@ IAuxCoordSysP PhysicalViewController::_GetAuxCoordinateSystem() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Brien.Bastings                  11/06
 +---------------+---------------+---------------+---------------+---------------+------*/
-void PhysicalViewController::SetAuxCoordinateSystem(IAuxCoordSysP acs)
+void SpatialViewController::SetAuxCoordinateSystem(IAuxCoordSysP acs)
     {
     // if no change, return.
     if (m_auxCoordSys.get() != acs)
@@ -1618,7 +1695,7 @@ void ViewFlags::InitDefaults()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-void PhysicalViewController::_AdjustAspectRatio(double windowAspect, bool expandView)
+void SpatialViewController::_AdjustAspectRatio(double windowAspect, bool expandView)
     {
     windowAspect *= GetAspectRatioSkew();
 
@@ -1879,21 +1956,20 @@ StatusInt ViewController::_VisitHit (HitDetailCR hit, ViewContextR context) cons
     if (nullptr == geom)
         {
         IElemTopologyCP elemTopo = hit.GetElemTopology();
-        ITransientGeometryHandlerP transientHandler = (nullptr != elemTopo ? elemTopo->_GetTransientGeometryHandler() : nullptr);
 
-        if (nullptr == transientHandler)
+        if (nullptr == (geom = (nullptr != elemTopo ? elemTopo->_ToGeometrySource() : nullptr)))
             return ERROR;
-
-        transientHandler->_DrawTransient(hit, context);
-        return SUCCESS;
         }
 
-    if (&GetDgnDb() != &element->GetDgnDb() || !IsModelViewed(element->GetModelId()))
-        return SUCCESS;
+    if (&GetDgnDb() != &geom->GetSourceDgnDb())
+        return ERROR;
+
+    if (element.IsValid() && !IsModelViewed(element->GetModelId()))
+        return ERROR;
 
     ViewContext::ContextMark mark(&context);
 
-    // Allow element sub-class involvement for flashing sub-entities...
+    // Allow sub-class involvement for flashing sub-entities...
     if (geom->DrawHit(hit, context))
         return SUCCESS;
 

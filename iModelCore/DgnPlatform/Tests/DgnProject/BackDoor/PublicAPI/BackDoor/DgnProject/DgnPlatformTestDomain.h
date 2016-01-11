@@ -21,8 +21,10 @@
 #define DPTEST_TEST_ELEMENT_CLASS_NAME                   "TestElement"
 #define DPTEST_TEST_ELEMENT2d_CLASS_NAME                 "TestElement2d"
 #define DPTEST_TEST_GROUP_CLASS_NAME                     "TestGroup"
+#define DPTEST_TEST_REQUIREMENT_CLASS_NAME               "TestRequirement"
 #define DPTEST_TEST_ELEMENT_DRIVES_ELEMENT_CLASS_NAME    "TestElementDrivesElement"
 #define DPTEST_TEST_ELEMENT_TestElementProperty          "TestElementProperty"
+#define DPTEST_TEST_ELEMENT_WITHOUT_HANDLER_CLASS_NAME   "TestElementWithNoHandler"
 
 #ifdef WIP_ELEMENT_ITEM // *** pending redesign
 #define DPTEST_TEST_ITEM_CLASS_NAME                      "TestItem"
@@ -57,7 +59,7 @@ struct TestElement : Dgn::PhysicalElement
     friend struct TestElementHandler;
 
     DGNELEMENT_DECLARE_MEMBERS(DPTEST_TEST_ELEMENT_CLASS_NAME, Dgn::PhysicalElement) 
-
+public:
     TestElement(CreateParams const& params) : T_Super(params) {} 
 
 protected:
@@ -68,7 +70,7 @@ protected:
     virtual Dgn::DgnDbStatus _UpdateInDb() override;
     virtual Dgn::DgnDbStatus _DeleteInDb() const override;
 
-    virtual Dgn::DgnDbStatus _ExtractSelectParams(BeSQLite::EC::ECSqlStatement& statement, Dgn::ECSqlClassParams const& selectParams) override;
+    virtual Dgn::DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement& statement, Dgn::ECSqlClassParams const& selectParams) override;
     virtual Dgn::DgnDbStatus _BindInsertParams(BeSQLite::EC::ECSqlStatement& stmt) override;
     virtual Dgn::DgnDbStatus _BindUpdateParams(BeSQLite::EC::ECSqlStatement& stmt) override;
     virtual void _CopyFrom(Dgn::DgnElementCR el) override;
@@ -115,9 +117,9 @@ protected:
 //! A test Element
 // @bsiclass                                                     Sam.Wilson      04/15
 //=======================================================================================
-struct TestElement2d : Dgn::DrawingElement
+struct TestElement2d : Dgn::AnnotationElement
 {
-    DGNELEMENT_DECLARE_MEMBERS(DPTEST_TEST_ELEMENT2d_CLASS_NAME, Dgn::DrawingElement) 
+    DGNELEMENT_DECLARE_MEMBERS(DPTEST_TEST_ELEMENT2d_CLASS_NAME, Dgn::AnnotationElement) 
 
 public:
     TestElement2d(CreateParams const& params) : T_Super(params) {}
@@ -133,9 +135,9 @@ typedef TestElement2d const& TestElement2dCR;
 //! A test ElementHandler
 // @bsiclass                                                     Sam.Wilson      01/15
 //=======================================================================================
-struct TestElement2dHandler : Dgn::dgn_ElementHandler::Drawing
+struct TestElement2dHandler : Dgn::dgn_ElementHandler::Annotation
 {
-    ELEMENTHANDLER_DECLARE_MEMBERS(DPTEST_TEST_ELEMENT2d_CLASS_NAME, TestElement2d, TestElement2dHandler, Dgn::dgn_ElementHandler::Drawing, )
+    ELEMENTHANDLER_DECLARE_MEMBERS(DPTEST_TEST_ELEMENT2d_CLASS_NAME, TestElement2d, TestElement2dHandler, Dgn::dgn_ElementHandler::Annotation, )
 };
 
 //=======================================================================================
@@ -167,6 +169,59 @@ typedef TestGroup const& TestGroupCR;
 struct TestGroupHandler : Dgn::dgn_ElementHandler::Physical
 {
     ELEMENTHANDLER_DECLARE_MEMBERS(DPTEST_TEST_GROUP_CLASS_NAME, TestGroup, TestGroupHandler, Dgn::dgn_ElementHandler::Physical, )
+};
+
+//=======================================================================================
+// @bsiclass                                                     Shaun.Sewall    12/15
+//=======================================================================================
+struct TestRequirement : Dgn::SystemElement
+{
+    DGNELEMENT_DECLARE_MEMBERS(DPTEST_TEST_REQUIREMENT_CLASS_NAME, Dgn::SystemElement)
+    friend struct TestRequirementHandler;
+
+protected:
+    explicit TestRequirement(CreateParams const& params) : T_Super(params) {}
+
+public:
+    static RefCountedPtr<TestRequirement> Create(Dgn::DgnDbR, Dgn::DgnModelId);
+};
+
+typedef RefCountedPtr<TestRequirement> TestRequirementPtr;
+typedef RefCountedCPtr<TestRequirement> TestRequirementCPtr;
+typedef TestRequirement* TestRequirementP;
+typedef TestRequirement& TestRequirementR;
+typedef TestRequirement const& TestRequirementCR;
+
+//=======================================================================================
+// @bsiclass                                                     Shaun.Sewall    12/15
+//=======================================================================================
+struct TestRequirementHandler : Dgn::dgn_ElementHandler::Element
+{
+    ELEMENTHANDLER_DECLARE_MEMBERS(DPTEST_TEST_REQUIREMENT_CLASS_NAME, TestRequirement, TestRequirementHandler, Dgn::dgn_ElementHandler::Element, )
+};
+
+//=======================================================================================
+//! Make sure GeometricElement2d can be introduced at an arbitrary point in the class hierarchy
+// @bsiclass                                                     Shaun.Sewall    12/15
+//=======================================================================================
+struct TestDefinition2d : Dgn::GeometricElement2d<Dgn::DefinitionElement>
+{
+    DEFINE_T_SUPER(Dgn::GeometricElement2d<Dgn::DefinitionElement>)
+  
+protected:
+    explicit TestDefinition2d(CreateParams const& params) : T_Super(params) {}
+};
+
+//=======================================================================================
+//! Make sure GeometricElement3d can be introduced at an arbitrary point in the class hierarchy
+// @bsiclass                                                     Shaun.Sewall    12/15
+//=======================================================================================
+struct TestDefinition3d : Dgn::GeometricElement3d<Dgn::DefinitionElement>
+{
+    DEFINE_T_SUPER(Dgn::GeometricElement3d<Dgn::DefinitionElement>)
+  
+protected:
+    explicit TestDefinition3d(CreateParams const& params) : T_Super(params) {}
 };
 
 //=======================================================================================
@@ -222,7 +277,7 @@ struct TestItemHandler : Dgn::dgn_AspectHandler::Aspect
 //=======================================================================================
 struct TestUniqueAspect : Dgn::DgnElement::UniqueAspect
 {
-    DEFINE_T_SUPER(Dgn::DgnElement::UniqueAspect)
+    DGNASPECT_DECLARE_MEMBERS(DPTEST_SCHEMA_NAME, DPTEST_TEST_UNIQUE_ASPECT_CLASS_NAME, Dgn::DgnElement::UniqueAspect);
 private:
     friend struct TestUniqueAspectHandler;
 
@@ -230,8 +285,6 @@ private:
 
     explicit TestUniqueAspect(Utf8CP prop) : m_testUniqueAspectProperty(prop) {;}
 
-    Utf8CP _GetECSchemaName() const override {return DPTEST_SCHEMA_NAME;}
-    Utf8CP _GetECClassName() const override {return DPTEST_TEST_UNIQUE_ASPECT_CLASS_NAME;}
     Dgn::DgnDbStatus _LoadProperties(Dgn::DgnElementCR el) override;
     Dgn::DgnDbStatus _UpdateProperties(Dgn::DgnElementCR el) override;
 
@@ -265,7 +318,7 @@ struct TestUniqueAspectHandler : Dgn::dgn_AspectHandler::Aspect
 //=======================================================================================
 struct TestMultiAspect : Dgn::DgnElement::MultiAspect
 {
-    DEFINE_T_SUPER(Dgn::DgnElement::MultiAspect)
+    DGNASPECT_DECLARE_MEMBERS(DPTEST_SCHEMA_NAME, DPTEST_TEST_MULTI_ASPECT_CLASS_NAME, Dgn::DgnElement::MultiAspect);
 private:
     friend struct TestMultiAspectHandler;
 
@@ -273,8 +326,6 @@ private:
 
     explicit TestMultiAspect(Utf8CP prop) : m_testMultiAspectProperty(prop) {;}
 
-    Utf8CP _GetECSchemaName() const override {return DPTEST_SCHEMA_NAME;}
-    Utf8CP _GetECClassName() const override {return DPTEST_TEST_MULTI_ASPECT_CLASS_NAME;}
     Dgn::DgnDbStatus _LoadProperties(Dgn::DgnElementCR el) override;
     Dgn::DgnDbStatus _UpdateProperties(Dgn::DgnElementCR el) override;
 

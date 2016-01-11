@@ -231,10 +231,9 @@ DgnLinks::OnElementIterator::const_iterator DgnLinks::OnElementIterator::begin()
     {
     if (!m_stmt.IsValid())
         {
-        Utf8String sql = MakeSqlString ("SELECT Link.Id,Link.Type,Link.DisplayLabel FROM " DGN_TABLE (DGN_CLASSNAME_Link) " Link INNER JOIN " DGN_TABLE (DGN_RELNAME_ElementHasLinks) " Rel ON Link.Id=Rel.LinkId INNER JOIN " DGN_TABLE (DGN_CLASSNAME_Element) " Elm ON Elm.Id=Rel.ElementId WHERE Elm.ECClassId=? AND Elm.Id=?", true);
+        Utf8String sql = MakeSqlString ("SELECT Link.Id,Link.Type,Link.DisplayLabel FROM " DGN_TABLE (DGN_CLASSNAME_Link) " Link INNER JOIN " DGN_TABLE (DGN_RELNAME_ElementHasLinks) " Rel ON Link.Id=Rel.LinkId INNER JOIN " DGN_TABLE (DGN_CLASSNAME_Element) " Elm ON Elm.Id=Rel.ElementId WHERE Elm.Id=?", true);
         m_db->GetCachedStatement(m_stmt, sql.c_str());
-        m_stmt->BindInt64(1, m_elementKey.GetECClassId());
-        m_stmt->BindId(2, m_elementKey.GetECInstanceId());
+        m_stmt->BindId(1, m_elementId);
         m_params.Bind(*m_stmt);
         }
     else
@@ -250,12 +249,11 @@ DgnLinks::OnElementIterator::const_iterator DgnLinks::OnElementIterator::begin()
 //---------------------------------------------------------------------------------------
 size_t DgnLinks::OnElementIterator::QueryCount() const
     {
-    Utf8String sql = MakeSqlString ("SELECT COUNT(*) FROM " DGN_TABLE (DGN_RELNAME_ElementHasLinks) " Rel INNER JOIN " DGN_TABLE (DGN_CLASSNAME_Element) " Elm ON Elm.Id = Rel.ElementId WHERE Elm.ECClassId = ? AND Elm.Id = ? ", true);
+    Utf8String sql = MakeSqlString ("SELECT COUNT(*) FROM " DGN_TABLE (DGN_RELNAME_ElementHasLinks) " Rel INNER JOIN " DGN_TABLE (DGN_CLASSNAME_Element) " Elm ON Elm.Id = Rel.ElementId WHERE Elm.Id=? ", true);
 
     Statement query;
     query.Prepare(*m_db, sql.c_str());
-    query.BindInt64(1, m_elementKey.GetECClassId());
-    query.BindId(2, m_elementKey.GetECInstanceId());
+    query.BindId(1, m_elementId);
     m_params.Bind(query);
 
     POSTCONDITION(BE_SQLITE_ROW == query.Step(), 0);
@@ -266,7 +264,7 @@ size_t DgnLinks::OnElementIterator::QueryCount() const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     02/2015
 //---------------------------------------------------------------------------------------
-DgnElementKey DgnLinks::ReferencesLinkIterator::Entry::GetKey() const { Verify(); return DgnElementKey((ECClassId)m_sql->GetValueInt64(0), m_sql->GetValueId<ECInstanceId>(1)); }
+ECInstanceKey DgnLinks::ReferencesLinkIterator::Entry::GetECInstanceKey() const { Verify(); return ECInstanceKey((ECClassId)m_sql->GetValueInt64(0), m_sql->GetValueId<ECInstanceId>(1)); }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     02/2015
@@ -357,7 +355,7 @@ BentleyStatus DgnLinks::Update(DgnLinkCR link)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     02/2015
 //---------------------------------------------------------------------------------------
-BentleyStatus DgnLinks::InsertOnElement(DgnElementKey elementKey, DgnLinkR link)
+BentleyStatus DgnLinks::InsertOnElement(DgnElementId elementId, DgnLinkR link)
     {
     // Don't assert to ensure an invalid ID.
     Utf8String data = Json::FastWriter::ToString(link.m_data);
@@ -375,15 +373,15 @@ BentleyStatus DgnLinks::InsertOnElement(DgnElementKey elementKey, DgnLinkR link)
 
     link.SetId(nextId);
 
-    return InsertOnElement(elementKey, link.GetId());
+    return InsertOnElement(elementId, link.GetId());
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     02/2015
 //---------------------------------------------------------------------------------------
-BentleyStatus DgnLinks::InsertOnElement(DgnElementKey elementKey, DgnLinkId linkId)
+BentleyStatus DgnLinks::InsertOnElement(DgnElementId elementId, DgnLinkId linkId)
     {
-    PRECONDITION(elementKey.IsValid(), ERROR);
+    PRECONDITION(elementId.IsValid(), ERROR);
     PRECONDITION(linkId.IsValid(), ERROR);
 
     DgnLinkId nextId(m_dgndb, DGN_TABLE(DGN_RELNAME_ElementHasLinks), "Id");
@@ -391,7 +389,7 @@ BentleyStatus DgnLinks::InsertOnElement(DgnElementKey elementKey, DgnLinkId link
     Statement insert;
     insert.Prepare(m_dgndb, "INSERT INTO " DGN_TABLE(DGN_RELNAME_ElementHasLinks) " (Id,ElementId,LinkId) VALUES (?,?,?)");
     insert.BindId(1, nextId);
-    insert.BindId(2, elementKey.GetECInstanceId());
+    insert.BindId(2, elementId);
     insert.BindId(3, linkId);
 
     POSTCONDITION(BE_SQLITE_DONE == insert.Step(), ERROR);
@@ -402,14 +400,14 @@ BentleyStatus DgnLinks::InsertOnElement(DgnElementKey elementKey, DgnLinkId link
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     02/2015
 //---------------------------------------------------------------------------------------
-BentleyStatus DgnLinks::DeleteFromElement(DgnElementKey elementKey, DgnLinkId linkId)
+BentleyStatus DgnLinks::DeleteFromElement(DgnElementId elementId, DgnLinkId linkId)
     {
-    PRECONDITION(elementKey.IsValid(), ERROR);
+    PRECONDITION(elementId.IsValid(), ERROR);
     PRECONDITION(linkId.IsValid(), ERROR);
     
     Statement del;
     del.Prepare(m_dgndb, "DELETE FROM " DGN_TABLE(DGN_RELNAME_ElementHasLinks) " WHERE ElementId=? AND LinkId=?");
-    del.BindId(1, elementKey.GetECInstanceId());
+    del.BindId(1, elementId);
     del.BindId(2, linkId);
     
     POSTCONDITION(BE_SQLITE_DONE == del.Step(), ERROR);

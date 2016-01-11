@@ -63,7 +63,7 @@ static void setUpElement(PhysicalElementR el, DPoint3dCR origin, double yaw, ICu
 * Robots are always 1 meter cubes 
 * @bsimethod                                                    Sam.Wilson      01/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-RobotElement::RobotElement(PhysicalModelR model, DgnCategoryId categoryId, DPoint3dCR origin, double yaw, DgnElement::Code elementCode)
+RobotElement::RobotElement(SpatialModelR model, DgnCategoryId categoryId, DPoint3dCR origin, double yaw, DgnElement::Code elementCode)
     : PhysicalElement(CreateParams(model.GetDgnDb(), model.GetModelId(), QueryClassId(model.GetDgnDb()), categoryId))
     {
     setUpElement(*this, origin, yaw, *createBox(DPoint3d::From(0,0,0), DPoint3d::From(1,1,1)), elementCode);
@@ -73,7 +73,7 @@ RobotElement::RobotElement(PhysicalModelR model, DgnCategoryId categoryId, DPoin
 * Obstacles are always slabs 10 meters long, 1 meter high, and 1 cm thick
 * @bsimethod                                                    Sam.Wilson      01/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-ObstacleElement::ObstacleElement(PhysicalModelR model, DgnCategoryId categoryId, DPoint3dCR origin, double yaw, DgnElement::Code elementCode)
+ObstacleElement::ObstacleElement(SpatialModelR model, DgnCategoryId categoryId, DPoint3dCR origin, double yaw, DgnElement::Code elementCode)
     : PhysicalElement(CreateParams(model.GetDgnDb(), model.GetModelId(), QueryClassId(model.GetDgnDb()), categoryId))
     {
     setUpElement(*this, origin, yaw, *createBox(DPoint3d::From(0,0,0), DPoint3d::From(10,0.1,1)), elementCode);
@@ -97,16 +97,16 @@ void ObstacleElement::SetSomeProperty(DgnDbR db, Utf8CP value)
 * Obstacles are always slabs 10 meters long, 1 meter high, and 1 cm thick
 * @bsimethod                                                    Sam.Wilson      01/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ObstacleElement::SetTestItem(DgnDbR db, Utf8CP value)
+void ObstacleElement::SetTestUniqueAspect(DgnDbR db, Utf8CP value)
     {
     ECSqlStatement insertStmt;
-    insertStmt.Prepare(db, "INSERT INTO " DGN_SQL_TEST_SCHEMA_NAME "." DGN_SQL_TEST_TEST_ITEM_CLASS_NAME " (TestItemProperty,ECInstanceId) VALUES(?,?)");
+    insertStmt.Prepare(db, "INSERT INTO " DGN_SQL_TEST_SCHEMA_NAME "." DGN_SQL_TEST_TEST_UNIQUE_ASPECT_CLASS_NAME " (TestUniqueAspectProperty,ECInstanceId) VALUES(?,?)");
     insertStmt.BindText(1, value, BeSQLite::EC::IECSqlBinder::MakeCopy::No);
     insertStmt.BindId(2, GetElementId());
     if (insertStmt.Step() != BE_SQLITE_DONE)
         {
         ECSqlStatement updateStmt;
-        updateStmt.Prepare(db, "UPDATE " DGN_SQL_TEST_SCHEMA_NAME "." DGN_SQL_TEST_TEST_ITEM_CLASS_NAME " SET TestItemProperty=? WHERE ECInstanceId=?");
+        updateStmt.Prepare(db, "UPDATE " DGN_SQL_TEST_SCHEMA_NAME "." DGN_SQL_TEST_TEST_UNIQUE_ASPECT_CLASS_NAME " SET TestUniqueAspectProperty=? WHERE ECInstanceId=?");
         updateStmt.BindText(1, value, BeSQLite::EC::IECSqlBinder::MakeCopy::No);
         updateStmt.BindId(2, GetElementId());
         ASSERT_EQ(BE_SQLITE_DONE , updateStmt.Step() );

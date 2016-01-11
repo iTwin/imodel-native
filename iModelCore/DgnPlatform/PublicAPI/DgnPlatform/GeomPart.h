@@ -29,9 +29,10 @@ struct DgnGeomPart : RefCountedBase
 
 //__PUBLISH_SECTION_START__
 private:
-    DgnGeomPartId   m_id;       //!< Id of this geometry part.  Invalid until DgnGeomParts::InsertGeomPart is called or part is read from the DgnDb.
-    Utf8String      m_code;     //!< Code of this geometry part for "named" look-ups. Code is optional.
-    GeomStream      m_geometry; //!< Geometry of part
+    DgnGeomPartId       m_id;       //!< Id of this geometry part.  Invalid until DgnGeomParts::InsertGeomPart is called or part is read from the DgnDb.
+    Utf8String          m_code;     //!< Code of this geometry part for "named" look-ups. Code is optional.
+    GeomStream          m_geometry; //!< Geometry of part
+    ElementAlignedBox3d m_bbox;     //!< Bounding box of part geometry
 
     explicit DgnGeomPart(Utf8CP code) {SetCode(code);}
 
@@ -42,7 +43,7 @@ protected:
 
     //! Only ElementGeometryBuilder should have write access to the GeomStream...
     GeomStreamR GetGeomStreamR() {return m_geometry;}
-
+    void SetBoundingBox(ElementAlignedBox3dCR box) {m_bbox = box;}
 public:
     //! Create a DgnGeomPart
     //! @see DgnGeomParts::InsertGeomPart
@@ -58,6 +59,9 @@ public:
 
     //! Get the geometry for this part (part local coordinates)
     GeomStreamCR GetGeomStream() const {return m_geometry;}
+
+    //! Get the bounding box for this part (part local coordinates)
+    ElementAlignedBox3dCR GetBoundingBox() const {return m_bbox;}
 };
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE

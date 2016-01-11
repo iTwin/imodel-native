@@ -65,9 +65,9 @@ DgnDbStatus DgnCategory::_BindUpdateParams(BeSQLite::EC::ECSqlStatement& stmt)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnCategory::_ExtractSelectParams(ECSqlStatement& stmt, ECSqlClassParams const& params)
+DgnDbStatus DgnCategory::_ReadSelectParams(ECSqlStatement& stmt, ECSqlClassParams const& params)
     {
-    auto status = T_Super::_ExtractSelectParams(stmt, params);
+    auto status = T_Super::_ReadSelectParams(stmt, params);
     if (DgnDbStatus::Success == status)
         {
         m_data.Init(
@@ -264,8 +264,7 @@ DgnCategoryId DgnCategory::QueryHighestCategoryId(DgnDbR db)
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnCategoryId DgnCategory::QueryElementCategoryId(DgnElementId elemId, DgnDbR db)
     {
-    CachedStatementPtr stmt;
-    db.GetCachedStatement(stmt, "SELECT CategoryId FROM " DGN_TABLE(DGN_CLASSNAME_ElementGeom) " WHERE ElementId=?");
+    CachedECSqlStatementPtr stmt = db.GetPreparedECSqlStatement("SELECT CategoryId FROM " DGN_SCHEMA(DGN_CLASSNAME_GeometrySource) " WHERE ECInstanceId=? LIMIT 1");
     stmt->BindId(1, elemId);
     return BE_SQLITE_ROW == stmt->Step() ? stmt->GetValueId<DgnCategoryId>(0) : DgnCategoryId();
     }
@@ -308,9 +307,9 @@ DgnDbStatus DgnSubCategory::_BindUpdateParams(BeSQLite::EC::ECSqlStatement& stmt
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnSubCategory::_ExtractSelectParams(ECSqlStatement& stmt, ECSqlClassParams const& params)
+DgnDbStatus DgnSubCategory::_ReadSelectParams(ECSqlStatement& stmt, ECSqlClassParams const& params)
     {
-    auto status = T_Super::_ExtractSelectParams(stmt, params);
+    auto status = T_Super::_ReadSelectParams(stmt, params);
     if (DgnDbStatus::Success == status)
         {
         m_data.m_descr = stmt.GetValueText(params.GetSelectIndex(SUBCAT_PROP_Descr));
@@ -376,9 +375,8 @@ void DgnSubCategory::_CopyFrom(DgnElementCR el)
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnSubCategory::CreateParams::CreateParams(DgnDbR db, DgnCategoryId catId, Utf8StringCR name, Appearance const& app, Utf8StringCR descr)
-    : T_Super(db, QueryDgnClassId(db), CreateSubCategoryCode(catId, name), catId), m_data(app, descr)
+    : T_Super(db, QueryDgnClassId(db), CreateSubCategoryCode(catId, name), nullptr, catId), m_data(app, descr)
     {
-    //
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -804,4 +802,3 @@ DgnDbStatus DgnSubCategory::_OnUpdate(DgnElementCR el)
     {
     return DgnCategory::IsValidName(GetSubCategoryName()) ? T_Super::_OnUpdate(el) : DgnDbStatus::InvalidName;
     }
-

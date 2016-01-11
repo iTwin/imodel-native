@@ -59,9 +59,9 @@ public:
         explicit CreateParams(DgnElement::CreateParams const& params, Utf8StringCR value="", Utf8StringCR descr="") : T_Super(params), m_data(value, descr) { }
 
         //! Constructs parameters for a material with the specified values. Primarily for internal use.
-        CreateParams(DgnDbR db, DgnModelId modelId, DgnClassId classId, Code code, DgnElementId id = DgnElementId(),
+        CreateParams(DgnDbR db, DgnModelId modelId, DgnClassId classId, Code code, Utf8CP label=nullptr,
                      DgnElementId parent = DgnElementId(), Utf8StringCR value="", Utf8StringCR descr="")
-            : T_Super(db, modelId, classId, code, id, parent), m_data(value, descr) { }
+            : T_Super(db, modelId, classId, code, label, parent), m_data(value, descr) { }
 
         //! Constructs parameters for creating a material.
         //! @param[in]      db               The DgnDb in which the material will reside
@@ -83,7 +83,7 @@ private:
 
     DgnDbStatus BindParams(BeSQLite::EC::ECSqlStatement& stmt);
 protected:
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _ExtractSelectParams(BeSQLite::EC::ECSqlStatement& statement, ECSqlClassParams const& selectParams) override;
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement& statement, ECSqlClassParams const& selectParams) override;
     DGNPLATFORM_EXPORT virtual DgnDbStatus _BindInsertParams(BeSQLite::EC::ECSqlStatement& stmt) override;
     DGNPLATFORM_EXPORT virtual DgnDbStatus _BindUpdateParams(BeSQLite::EC::ECSqlStatement& stmt) override;
     DGNPLATFORM_EXPORT virtual void _CopyFrom(DgnElementCR source) override;
@@ -101,7 +101,7 @@ public:
     //! Construct a new DgnMaterial with the specified parameters
     explicit DgnMaterial(CreateParams const& params) : T_Super(params), m_data(params.m_data) { }
 
-    DgnMaterialId GetMaterialId() const { return DgnMaterialId(GetElementId().GetValue()); } //!< Returns the ID of this material.
+    DgnMaterialId GetMaterialId() const { return DgnMaterialId(GetElementId().GetValue()); } //!< Returns the Id of this material.
     Utf8String GetPaletteName() const { return GetCode().GetNamespace(); } //!< Returns the palette name
     Utf8String GetMaterialName() const { return GetCode().GetValue(); } //!< Returns the material name
 

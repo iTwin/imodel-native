@@ -10,6 +10,7 @@
 
 #include "DgnDomain.h"
 #include "DgnElement.h"
+#include "ECSqlClassParams.h"
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
@@ -44,27 +45,6 @@ public:
     void SetMirrorPlane(RotMatrixCR mirrorPlane) {m_mirrorPlane = mirrorPlane, m_haveMirrorPlane = true;}
 };
 
-//=======================================================================================
-//! Stores information about an ECClass used in ECSql SELECT, INSERT, and UPDATE statements.
-//! An ECSqlClassInfo is constructed once and cached for each ElementHandler, based on
-//! the results of ElementHandler::_GetClassParams(). The cached information is
-//! subsequently used to efficiently construct and execute ECSql statements when loading,
-//! inserting, and updating elements in the DgnDb.
-//! @ingroup DgnElementGroup
-// @bsiclass                                                     Paul.Connelly   09/15
-//=======================================================================================
-struct ECSqlClassInfo
-{
-    Utf8String m_select;
-    Utf8String m_insert;
-    Utf8String m_update;
-    ECSqlClassParams m_params;
-    uint16_t m_numUpdateParams;
-    bool m_initialized;
-
-    ECSqlClassInfo() : m_numUpdateParams(0), m_initialized(false) { }
-};
-
 // This macro declares the required members for an ElementHandler. It is often the entire contents of an ElementHandler's class declaration.
 // @param[in] __ECClassName__ a string with the ECClass this ElementHandler manaages
 // @param[in] __classname__ the name of the C++ class (must be a subclass of DgnElement) this ElementHandler creates
@@ -90,16 +70,16 @@ namespace dgn_ElementHandler
     //! @see DgnElement
     //! @ingroup DgnElementGroup
     //=======================================================================================
-    struct EXPORT_VTABLE_ATTRIBUTE Element : DgnDomain::Handler
+    struct EXPORT_VTABLE_ATTRIBUTE Element : DgnDomain::Handler, IECSqlClassParamsProvider
     {
         friend struct Dgn::DgnElement;
         friend struct Dgn::DgnElements;
         DOMAINHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_Element, Element, DgnDomain::Handler, DGNPLATFORM_EXPORT)
 
     private:
-        ECSqlClassInfo m_classInfo;
+        ECSqlClassParams m_classParams;
 
-        ECSqlClassInfo const& GetECSqlClassInfo();
+        ECSqlClassParams const& GetECSqlClassParams();
     protected:
         virtual DgnElement* _CreateInstance(DgnElement::CreateParams const& params) {return new DgnElement(params);}
         virtual ElementHandlerP _ToElementHandler() {return this;}
@@ -109,7 +89,7 @@ namespace dgn_ElementHandler
 
         //! Add the names of any subclass properties used by ECSql INSERT, UPDATE, and/or SELECT statements to the ECSqlClassParams list.
         //! If you override this method, you @em must invoke T_Super::_GetClassParams().
-        DGNPLATFORM_EXPORT virtual void _GetClassParams(ECSqlClassParams& params);
+        DGNPLATFORM_EXPORT virtual void _GetClassParams(ECSqlClassParamsR params) override;
     public:
         //! Create a new instance of a DgnElement from a CreateParams. 
         //! @note The actual type of the returned DgnElement will depend on the DgnClassId in @a params.
@@ -123,18 +103,35 @@ namespace dgn_ElementHandler
     struct EXPORT_VTABLE_ATTRIBUTE Physical : Element
     {
         ELEMENTHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_PhysicalElement, PhysicalElement, Physical, Element, DGNPLATFORM_EXPORT)
+        virtual void _GetClassParams(ECSqlClassParamsR params) override { T_Super::_GetClassParams(params); ElementGeom3d::AddClassParams(params); }
+    };
+
+    //! The ElementHandler for AnnotationElement
+    struct EXPORT_VTABLE_ATTRIBUTE Annotation : Element
+    {
+        ELEMENTHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_AnnotationElement, AnnotationElement, Annotation, Element, DGNPLATFORM_EXPORT)
+        virtual void _GetClassParams(ECSqlClassParamsR params) override { T_Super::_GetClassParams(params); ElementGeom2d::AddClassParams(params); }
     };
 
     //! The ElementHandler for DrawingElement
     struct EXPORT_VTABLE_ATTRIBUTE Drawing : Element
     {
         ELEMENTHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_DrawingElement, DrawingElement, Drawing, Element, DGNPLATFORM_EXPORT)
+        virtual void _GetClassParams(ECSqlClassParamsR params) override { T_Super::_GetClassParams(params); ElementGeom2d::AddClassParams(params); }
     };
 
-    //! The ElementHandler for ElementGroup
-    struct EXPORT_VTABLE_ATTRIBUTE Group : Element
+    //! The ElementHandler for SheetElement
+    struct EXPORT_VTABLE_ATTRIBUTE Sheet : Element
     {
-        ELEMENTHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_ElementGroup, ElementGroup, Group, Element, DGNPLATFORM_EXPORT)
+        ELEMENTHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_SheetElement, SheetElement, Sheet, Element, DGNPLATFORM_EXPORT)
+        virtual void _GetClassParams(ECSqlClassParamsR params) override { T_Super::_GetClassParams(params); ElementGeom2d::AddClassParams(params); }
+    };
+
+    //! The ElementHandler for SpatialGroupElement
+    struct EXPORT_VTABLE_ATTRIBUTE SpatialGroup : Element
+    {
+        ELEMENTHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_SpatialGroupElement, SpatialGroupElement, SpatialGroup, Element, DGNPLATFORM_EXPORT)
+        virtual void _GetClassParams(ECSqlClassParamsR params) override { T_Super::_GetClassParams(params); ElementGeom3d::AddClassParams(params); }
     };
 };
 
@@ -154,7 +151,9 @@ namespace dgn_AspectHandler
     {
         friend struct DgnElement;
         DOMAINHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_ElementAspect, Aspect, DgnDomain::Handler, DGNPLATFORM_EXPORT)
-
+    protected:
+        DGNPLATFORM_EXPORT virtual DgnDbStatus _VerifySchema(DgnDomains&) override;
+    public:
         //! The subclass must override this method in order to create an instance using its default constructor.
         //! (The caller will populate and/or persist the returned instance by invoking virtual methods on it.)
         virtual RefCountedPtr<DgnElement::Aspect> _CreateInstance() {return nullptr;}

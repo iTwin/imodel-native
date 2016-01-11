@@ -2,14 +2,14 @@
 |
 |     $Source: PublicAPI/DgnPlatform/GeomJsApi.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 //__BENTLEY_INTERNAL_ONLY__
 #pragma once
 
-#ifndef _GEOM_JS_API_H_
-#define _GEOM_JS_API_H_
+#ifndef _GEOM_Js_API_H_
+#define _GEOM_Js_API_H_
 
 #include <BeJavaScript/BeJavaScript.h>
 #include <DgnPlatform/DgnPlatform.h>
@@ -17,10 +17,23 @@
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
-#define JSSTRUCT(_JsStructName_) \
+#define JsSTRUCT(_JsStructName_) \
 struct _JsStructName_;  \
 typedef struct _JsStructName_ * _JsStructName_##P;
 
+// Templatized wrapper for a native value class.
+// A Js wrapper instantiates this as a base class.
+// This instance implements:
+//   1) A copy of the native structure as private member var m_data
+//   2) A "copy out" Get() method.
+//      REMARK: The Get() method ensures Js-side classes that have Js members can readily get to (copies of)
+//            their native data.
+//      REMARK: This is really important for macros to implement consistent Point/Vector ops.
+//      REMARK: In "that case" (the point/Vector ops) the cost of "copy out" is insignificant.
+//      REMARK: When used for DgnXXXDetail solid that contain CurveVectorPtr, "copy out" has
+//                 the (tolerable?) side effect of making ref counts do gymnastics.
+//  3) Hence add a GetR() method to get a reference.  As with all "return a reference" methods,
+//       caller takes responsibility for (restricting) the life of the reference.
 template<typename NativeType>
 struct JsGeomWrapperBase : RefCountedBase   
 {
@@ -28,33 +41,56 @@ protected:
 NativeType m_data;
 public:
 NativeType Get () const {return m_data;}
+NativeType &GetR () {return m_data;}
+NativeType const &GetCR () const {return m_data;}
 };
 
+JsSTRUCT(JsDPoint3d)
+JsSTRUCT(JsDPoint2d)
+JsSTRUCT(JsDVector3d)
+JsSTRUCT(JsDVector2d)
+JsSTRUCT(JsDRay3d)
+JsSTRUCT(JsDRange3d)
+JsSTRUCT(JsDPoint3dDVector3dDVector3d)
+JsSTRUCT(JsAngle)
+JsSTRUCT(JsYawPitchRollAngles)
+JsSTRUCT(JsRotMatrix)
+JsSTRUCT(JsTransform)
+JsSTRUCT(JsDPoint3dArray)
+JsSTRUCT(JsDoubleArray)
 
-JSSTRUCT(JsDPoint3d);
-JSSTRUCT(JsDPoint2d);
-JSSTRUCT(JsDVector3d);
-JSSTRUCT(JsDVector2d);
-JSSTRUCT(JsDEllipse3d);
-JSSTRUCT(JsDSegment3d);
-JSSTRUCT(JsDRay3d);
-JSSTRUCT(JsDRange3d);
-JSSTRUCT(JsDPoint3dDVector3dDVector3d);
-JSSTRUCT(JsCurvePrimitive);
-JSSTRUCT(JsCurveVector);
-JSSTRUCT(JsSolidPrimitive);
-JSSTRUCT(JsBsplineCurve);
-JSSTRUCT(JsBsplineSurface);
-JSSTRUCT(JsAngle);
-JSSTRUCT(JsYawPitchRollAngles);
-JSSTRUCT(JsRotMatrix);
-JSSTRUCT(JsTransform);
+JsSTRUCT(JsGeometry)
 
-JSSTRUCT(JsDPoint3dArray)
-JSSTRUCT(JsDoubleArray)
+    JsSTRUCT(JsCurvePrimitive)
+        JsSTRUCT(JsLineSegment)
+        JsSTRUCT(JsEllipticArc)
+        JsSTRUCT(JsBsplineCurve)
+        JsSTRUCT(JsCatenaryCurve)
 
-JSSTRUCT(JsPolyfaceMesh)
-JSSTRUCT(JsPolyfaceVisitor)
+    JsSTRUCT(JsCurveVector)
+        JsSTRUCT(JsUnstructuredCurveVector)
+        JsSTRUCT(JsPath)
+        JsSTRUCT(JsLoop)
+        JsSTRUCT(JsParityRegion)
+        JsSTRUCT(JsUnionRegion)
+
+    JsSTRUCT(JsBsplineSurface)
+
+    JsSTRUCT(JsSolidPrimitive)
+        JsSTRUCT(JsDgnCone)
+        JsSTRUCT(JsDgnSphere)
+        JsSTRUCT(JsDgnTorusPipe)
+        JsSTRUCT(JsDgnBox)
+        JsSTRUCT(JsDgnExtrusion)
+        JsSTRUCT(JsDgnRotationalSweep)
+        JsSTRUCT(JsDgnRuledSweep)
+
+    JsSTRUCT(JsPolyfaceMesh)
+
+
+
+JsSTRUCT(JsPolyfaceVisitor)
+
 // Forward declare access methods so JsDPoint2d and JsDPoint3d can query their vector peers.
 DVec3d GetData (JsDVector3dP);
 DVec2d GetData (JsDVector2dP);
@@ -64,6 +100,35 @@ JsDVector2dP CreateJsVector (DVec2dCR data);
 JsDVector3dP CreateJsVector (DVec3dCR data, double length);
 // Create vector with specfied length -- return nullptr if input vector is zero length
 JsDVector2dP CreateJsVector (DVec2dCR data, double length);
+
+// truncate to size_t and check range.
+bool TryDoubleToIndex (double a, size_t upperBound, size_t &index);
+
+// Base class for the CurvePrimitive+Surface+Mesh+SolidPrimitive tree
+struct JsGeometry : RefCountedBase
+{
+virtual JsGeometry *Clone () = 0;
+virtual bool TryTransformInPlace (JsTransformP transform){return false;}
+virtual bool IsSameStructureAndGeometry (JsGeometryP other){return false;}
+virtual bool IsSameStructure (JsGeometryP other){return false;}
+// Native-side type signatures . . .base class returns null for all native Ptr queries. Derived classes override as appropriate
+virtual ICurvePrimitivePtr GetICurvePrimitivePtr (){return nullptr;}
+virtual ISolidPrimitivePtr GetISolidPrimitivePtr (){return nullptr;}
+virtual CurveVectorPtr GetCurveVectorPtr () {return nullptr;}
+virtual PolyfaceHeaderPtr GetPolyfaceHeaderPtr () {return nullptr;}
+
+// Wrapable type signatures . . . Derived classes override . .
+virtual JsCurvePrimitiveP AsCurvePrimitive (){return nullptr;}
+virtual JsCurveVectorP AsCurveVector (){return nullptr;}
+virtual JsSolidPrimitiveP AsSolidPrimitive () {return nullptr;}
+virtual JsPolyfaceMeshP AsPolyfaceMesh () {return nullptr;}
+
+// real implementation is expectged for all types .... stubs do something if possible . . 
+virtual JsDRange3dP Range ();
+virtual JsDRange3dP RangeAfterTransform (JsTransformP transform);
+};
+
+
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE
 
@@ -107,31 +172,33 @@ END_BENTLEY_DGNPLATFORM_NAMESPACE
  #define DeclareAndImplementMethods_VectorTo(NativeVectorType,PointTypeP,VectorTypeP) \
     VectorTypeP VectorTo(PointTypeP other){return NativeVectorType::FromStartEnd (m_data, other->m_data);}
 
+
+
 #include <DgnPlatform/GeomJsTypes/JsAngle.h>
-#include <DgnPlatform/GeomJsTypes/JSDPoint3d.h>
-#include <DgnPlatform/GeomJsTypes/JSDVector3d.h>
-#include <DgnPlatform/GeomJsTypes/JSDPoint2d.h>
-#include <DgnPlatform/GeomJsTypes/JSDVector2d.h>
-#include <DgnPlatform/GeomJsTypes/JSDVector2d.h>
-#include <DgnPlatform/GeomJsTypes/JSDRange3d.h>
+#include <DgnPlatform/GeomJsTypes/JsDPoint3d.h>
+#include <DgnPlatform/GeomJsTypes/JsDVector3d.h>
+#include <DgnPlatform/GeomJsTypes/JsDPoint2d.h>
+#include <DgnPlatform/GeomJsTypes/JsDVector2d.h>
+#include <DgnPlatform/GeomJsTypes/JsDVector2d.h>
+#include <DgnPlatform/GeomJsTypes/JsDRange3d.h>
 
 
-#include <DgnPlatform/GeomJsTypes/JSYawPitchRollAngles.h>
-#include <DgnPlatform/GeomJsTypes/JSDRay3d.h>
-#include <DgnPlatform/GeomJsTypes/JSDPoint3dDVector3dDVector3d.h>
-#include <DgnPlatform/GeomJsTypes/JsDSegment3d.h>
-#include <DgnPlatform/GeomJsTypes/JsDEllipse3d.h>
-#include <DgnPlatform/GeomJsTypes/JSRotMatrix.h>
-#include <DgnPlatform/GeomJsTypes/JSTransform.h>
+#include <DgnPlatform/GeomJsTypes/JsYawPitchRollAngles.h>
+#include <DgnPlatform/GeomJsTypes/JsDRay3d.h>
+#include <DgnPlatform/GeomJsTypes/JsDPoint3dDVector3dDVector3d.h>
+#include <DgnPlatform/GeomJsTypes/JsRotMatrix.h>
+#include <DgnPlatform/GeomJsTypes/JsTransform.h>
 
 
 #include <DgnPlatform/GeomJsTypes/JsDPoint3dArray.h>
 
-#include <DgnPlatform/GeomJsTypes/JSBsplineCurve.h>
-
+// This has CurvePrimitive, LineSegment, EllipticArc, BsplineCurve ...
 #include <DgnPlatform/GeomJsTypes/JsCurvePrimitive.h>
+#include <DgnPlatform/GeomJsTypes/JsCurveVector.h>
+
 #include <DgnPlatform/GeomJsTypes/JsPolyfaceMesh.h>
 #include <DgnPlatform/GeomJsTypes/JsPolyfaceVisitor.h>
+#include <DgnPlatform/GeomJsTypes/JsDgnXXXDetail.h>
 
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
@@ -151,5 +218,5 @@ struct GeomJsApi : DgnPlatformLib::Host::ScriptAdmin::ScriptLibraryImporter
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE
 
-#endif//ndef _GEOM_JS_API_H_
+#endif//ndef _GEOM_Js_API_H_
 

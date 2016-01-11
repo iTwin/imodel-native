@@ -27,7 +27,6 @@ static Utf8CP DGNPROPERTYJSON_System                = "sys";
 static Utf8CP DGNPROPERTYJSON_Numerator             = "num";
 static Utf8CP DGNPROPERTYJSON_Denominator           = "den";
 static Utf8CP DGNPROPERTYJSON_Label                 = "label";
-static Utf8CP DGNPROPERTYJSON_Azimuth               = "azimuth";
 
 
 //---------------------------------------------------------------------------------------
@@ -60,7 +59,7 @@ void UnitDefinition::ToJson(JsonValueR outValue) const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   MattGooding     09/12
 //---------------------------------------------------------------------------------------
-void DgnModel::Properties::FormatterFlags::FromJson(JsonValueCR inValue)
+void GeometricModel::DisplayInfo::FormatterFlags::FromJson(JsonValueCR inValue)
     {
     m_linearUnitMode     = inValue[DGNPROPERTYJSON_LinearUnitMode].asUInt();
     m_linearPrecType     = inValue[DGNPROPERTYJSON_LinearPrecType].asUInt();
@@ -74,7 +73,7 @@ void DgnModel::Properties::FormatterFlags::FromJson(JsonValueCR inValue)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   MattGooding     09/12
 //---------------------------------------------------------------------------------------
-void DgnModel::Properties::FormatterFlags::ToJson(JsonValueR outValue) const
+void GeometricModel::DisplayInfo::FormatterFlags::ToJson(JsonValueR outValue) const
     {
     outValue[DGNPROPERTYJSON_LinearUnitMode]     = (uint32_t) m_linearUnitMode;
     outValue[DGNPROPERTYJSON_LinearPrecType]     = (uint32_t) m_linearPrecType;
@@ -88,7 +87,7 @@ void DgnModel::Properties::FormatterFlags::ToJson(JsonValueR outValue) const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   MattGooding     09/12
 //---------------------------------------------------------------------------------------
-void DgnModel::Properties::FromJson(JsonValueCR inValue)
+void GeometricModel::DisplayInfo::FromJson(JsonValueCR inValue)
     {
     m_formatterFlags.FromJson(inValue[DGNPROPERTYJSON_FormatterFlags]);
 
@@ -98,13 +97,12 @@ void DgnModel::Properties::FromJson(JsonValueCR inValue)
     m_roundoffUnit      = inValue[DGNPROPERTYJSON_RoundoffUnit].asDouble();
     m_roundoffRatio     = inValue[DGNPROPERTYJSON_RoundoffRatio].asDouble();
     m_formatterBaseDir  = inValue[DGNPROPERTYJSON_FormatterBaseDir].asDouble();
-    m_azimuthAngle      = inValue[DGNPROPERTYJSON_Azimuth].asDouble();
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   MattGooding     09/12
 //---------------------------------------------------------------------------------------
-void DgnModel::Properties::ToJson(JsonValueR outValue) const
+void GeometricModel::DisplayInfo::ToJson(JsonValueR outValue) const
     {
     m_formatterFlags.ToJson(outValue[DGNPROPERTYJSON_FormatterFlags]);
 
@@ -114,5 +112,4 @@ void DgnModel::Properties::ToJson(JsonValueR outValue) const
     outValue[DGNPROPERTYJSON_RoundoffUnit] = m_roundoffUnit;
     outValue[DGNPROPERTYJSON_RoundoffRatio]    = m_roundoffRatio;
     outValue[DGNPROPERTYJSON_FormatterBaseDir] = m_formatterBaseDir;
-    outValue[DGNPROPERTYJSON_Azimuth] = m_azimuthAngle;
     }

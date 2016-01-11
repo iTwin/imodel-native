@@ -14,6 +14,9 @@
 //__PUBLISH_SECTION_END__
 #include "ViewContext.h"  // For ILineStyleComponent
 #include "DgnPlatform.r.h"
+#include <DgnPlatform/DgnElement.h>
+#include <DgnPlatform/ElementHandler.h>
+#include <DgnPlatform/ECSqlStatementIterator.h>
 #include <DgnPlatform/Tools/KeyTree.h>
 
 //  These are both used to try different configurations while testing.  They must both be eliminated
@@ -23,6 +26,9 @@
 #define LSID_HARDWARE       0x80000000
 #define LSID_HWMASK         0x0000000f
 #define IS_LINECODE(styleNo)    ((styleNo) >= MIN_LINECODE && (styleNo) <= MAX_LINECODE)
+
+DGNPLATFORM_TYPEDEFS(LineStyleElement);
+DGNPLATFORM_REF_COUNTED_PTR(LineStyleElement);
 
 //__PUBLISH_SECTION_START__
 
@@ -45,7 +51,6 @@ LINESTYLE_TYPEDEFS (LsLocation)
 LINESTYLE_TYPEDEFS (LsLineCodeComponent)
 LINESTYLE_TYPEDEFS (LsOffsetComponent)
 LINESTYLE_TYPEDEFS (LsPointComponent)
-LINESTYLE_TYPEDEFS (LsPointSymbolComponent)
 LINESTYLE_TYPEDEFS (LsRasterImageComponent)
 LINESTYLE_TYPEDEFS (LsStroke)
 LINESTYLE_TYPEDEFS (LsStrokePatternComponent)
@@ -90,19 +95,6 @@ enum LsKnownStyleNumber
     STYLE_Invalid     = 0x7fffff00
 };
 
-//! Values held in line style definition elements; normally not used by clients of this API
-//! @ingroup LineStyleManagerModule
-enum class LsComponentType
-{
-    Unknown         = 0,             //!<   Unknown, should never occur
-    PointSymbol     = 1,
-    Compound        = 2,
-    LineCode        = 3,
-    LinePoint       = 4,
-    Internal        = 6,
-    RasterImage     = 7,
-};
-
 enum class LsOkayForTextureGeneration
 {
     Unknown                 = -1,  //  Only used as component's cached value
@@ -133,6 +125,21 @@ public:
     bool IsColorBySymbol(ColorDef& lineColor, ColorDef& fillColor) { lineColor = m_lineColor; fillColor = m_fillColor; return m_colorBySymbol; }
     bool IsColorByLevel() { return m_isColorByLevel; }
     bool IsWeightBySymbol(uint32_t& lineWeight) { lineWeight = m_weight; return m_weightBySymbol; }
+};
+
+//=======================================================================================
+// @bsiclass                                                    John.Gooding    12/2015
+//=======================================================================================
+struct LsJsonHelpers
+{
+    static Utf8CP CompId;
+    
+    static double GetDouble(JsonValueCR json, CharCP fieldName, double defaultValue);
+    static uint32_t GetUInt32(JsonValueCR json, CharCP fieldName, uint32_t defaultValue);
+    static int32_t GetInt32(JsonValueCR json, CharCP fieldName, int32_t defaultValue);
+    static uint64_t GetUInt64(JsonValueCR json, CharCP fieldName, uint64_t defaultValue);
+    static Utf8String GetString(JsonValueCR json, CharCP fieldName, CharCP defaultValue);
+    static LsComponentId GetComponentId(JsonValueCR json, CharCP typeName, CharCP idName, LsComponentType defaultType = LsComponentType::Internal);
 };
 
 #pragma pack(push)
@@ -175,37 +182,6 @@ struct V10ComponentBase
     DGNPLATFORM_EXPORT void SetVersion ();
 };
 
-//=======================================================================================
-//! Included in a V10LinePoint to describe how symbols are used.
-// @bsiclass                                                    John.Gooding    11/2012
-//=======================================================================================
-struct V10PointSymbolInfo
-{
-    uint32_t      m_symType;              //  must specify a symbol component in the same file
-    uint32_t      m_symID;                //                  ""
-    uint16_t      m_strokeNo;             //  If (!(mod1 & LCPOINT_ANYVERTEX)) && (mod1 & LCPOINT_ONSTROKE)) selects stroke number from stroke pattern
-    uint16_t      m_mod1;
-
-    double        m_xOffset;
-    double        m_yOffset;
-    double        m_zAngle;               //  angle in degrees
-};
-
-//=======================================================================================
-//! Describes the binary representation of LineCode component in a DgnDb
-// @bsiclass                                                    John.Gooding    11/2012
-//=======================================================================================
-struct          V10LinePoint : V10ComponentBase
-{
-    uint32_t      m_lcType;
-    uint32_t      m_lcID;
-    uint32_t      m_nSymbols;
-    V10PointSymbolInfo m_symbol[1];
-
-    // Note: we used to use offsetof(V10LinePoint,m_symbol). It's not legal to use offsetof macro on a non-POD struct, however. 
-    // The cast on nullptr accomplishes the same thing as offsetof. It is safe because we know that V10LinePoint uses standard layout.
-    static uint32_t GetBufferSize(uint32_t numberSymbols) { return ((uint32_t)(intptr_t)&(((V10LinePoint*)nullptr)->m_symbol)) + sizeof (V10PointSymbolInfo) * numberSymbols; }
-};
 
 //=======================================================================================
 //! Describes the binary representation of LsRasterImageComponent component in a DgnDb
@@ -224,65 +200,6 @@ struct V10RasterImage : V10ComponentBase
     static uint32_t GetBufferSize(uint32_t m_nImageBytes) { return ((uint32_t)(intptr_t)&(((V10RasterImage*)nullptr)->m_imageData)) + m_nImageBytes; }
 };
 
-//=======================================================================================
-// @bsiclass                                                    John.Gooding    11/2012
-//=======================================================================================
-struct V10StrokeData
-    {
-    double      m_length;         /* Stroke length                       */
-    double      m_width;          /* Stroke width (or start width)       */
-    double      m_endWidth;       /* End width of tapered stroke         */
-
-    uint8_t     m_strokeMode;     /* bit 0: dash          | gap    dash  */
-                                /* bit 1: trace mode    | linear ray   */
-                                /* bit 2: scale mode    | off    on    */
-                                /* bit 3: start invert                 */
-                                /* bit 4: end invert                   */
-
-    uint8_t     m_widthMode;      /* bit 0: left half     | off    on    */
-                                /* bit 1: right half    | off    on    */
-                                /* bit 2: in taper      | no     yes   */
-                                /* bit 3: end taper     | no     yes   */
-    uint8_t     m_capMode;
-    uint8_t     m_bReserved;
-    };
-
-//=======================================================================================
-//! Describes the binary representation of LsStrokePatternComponent component in a DgnDb
-// @bsiclass                                                    John.Gooding    11/2012
-//=======================================================================================
-struct V10LineCode : V10ComponentBase
-{
-    double        m_phase;
-    uint32_t      m_options;
-    uint32_t      m_maxIterate;
-    uint32_t      m_nStrokes;
-    V10StrokeData m_stroke[1];
-    static uint32_t GetBufferSize(uint32_t numberStrokes) { return ((uint32_t)(intptr_t)&(((V10LineCode*)nullptr)->m_stroke)) + sizeof (V10StrokeData) * numberStrokes; }
-};
-
-//=======================================================================================
-//! Describe how a V10Compound component refers to the components
-// @bsiclass                                                    John.Gooding    11/2012
-//=======================================================================================
-struct V10ComponentInfo
-    {
-    uint32_t    m_type;
-    uint32_t    m_id;
-    double      m_offset;
-    };
-
-//=======================================================================================
-//! Describes the binary representation of LsCompoundComponent component in a DgnDb
-// @bsiclass                                                    John.Gooding    11/2012
-//=======================================================================================
-struct V10Compound : V10ComponentBase
-{
-    uint32_t        m_nComponents;
-    V10ComponentInfo   m_component[1];
-    static uint32_t GetBufferSize(uint32_t numberComponents) { return ((uint32_t)(intptr_t)&(((V10Compound*)nullptr)->m_component)) + sizeof (V10ComponentInfo) * numberComponents; }
-};
-
 typedef struct
     {
     DPoint3d        low;
@@ -292,39 +209,7 @@ typedef struct
 #define LSSYM_3D                0x01    /* 3d symbol                   */
 #define LSSYM_NOSCALE           0x02    /* Acad compat - don't scale symbol at all. */
 
-//=======================================================================================
-//! Describes the binary representation of an LsSymbolComponent component in a DgnDb
-// @bsiclass                                                    John.Gooding    11/2012
-//=======================================================================================
-struct V10Symbol : V10ComponentBase
-{
-    SymbolRange m_range;
-    double      m_scale;
-    uint64_t    m_geomPartId;
-
-    uint32_t    m_lineColor;
-    uint32_t    m_fillColor;
-    uint32_t    m_weight;
-    uint32_t    m_symFlags;
-    bool        m_colorByLevel;
-
-    static uint32_t GetBufferSize() { return sizeof (V10Symbol); }
-};
 #pragma pack(pop)
-
-//=======================================================================================
-// @bsiclass
-//=======================================================================================
-struct LsComponentId
-{
-private:
-    uint32_t            m_id;              // Component property ID
-public:
-    uint32_t GetValue() const { return m_id; }
-    LsComponentId() { m_id = 0xFFFFFFFF; }
-    bool IsValid() const { return m_id != 0xFFFFFFFF; }
-    explicit LsComponentId(uint32_t value) : m_id(value) {}
-};
 
 enum class LsCapMode
 {
@@ -344,6 +229,7 @@ enum class LsCapMode
 };
 
 //__PUBLISH_SECTION_END__
+
 enum DwgShapeFlag
 {
     SHAPEFLAG_TextSymbol    = 0x0002,
@@ -357,19 +243,17 @@ typedef struct DecomposedDwgLine*               DecomposedDwgLineP;
 typedef struct Centerline*                      CenterlineP;
 
 //=======================================================================================
-// @bsiclass                                                      Chuck.Kirschman   01/03
+// @bsiclass  
 //=======================================================================================
 struct  LsLocation
 {
 private:
-    DgnDbP              m_dgndb;
-    LsComponentType     m_componentType;            // Component type
-    LsComponentId         m_componentId;              // Component property ID
+    DgnDbP                  m_dgndb;
+    LsComponentId           m_componentId;              // Component property ID
 
     void Init ()
         {
-        m_componentType = LsComponentType::Unknown;
-        m_componentId   = LsComponentId(0xffffffff);
+        m_componentId   = LsComponentId();
         m_dgndb         = NULL;
         }
 
@@ -379,26 +263,19 @@ public:
     LsLocation          (LsLocationCP base) { SetFrom (base); }
 
     bool const operator < (LsLocation const &r ) const;
-    void SetLocation    (DgnDbR project, LsComponentType componentType, LsComponentId componentId);  //  after conversion to DgnDb this should be the only SetLocation
-    void SetFrom        (LsLocationCP base, LsComponentType componentType);
+    void SetLocation    (DgnDbR project, LsComponentId componentId);
+
+    void SetFrom        (LsLocationCP base, LsComponentId componentId);
     void SetFrom        (LsLocationCP base);
-    DGNPLATFORM_EXPORT LsComponentId GetComponentId () const;
-    DGNPLATFORM_EXPORT intptr_t GetFileKey      () const;
-    DGNPLATFORM_EXPORT LsComponentType GetComponentType  () const;
+    DGNPLATFORM_EXPORT LsComponentId GetComponentId() const;
+    DGNPLATFORM_EXPORT intptr_t GetFileKey() const;
+    DGNPLATFORM_EXPORT LsComponentType GetComponentType() const;
     DgnDbP GetDgnDb () const {return m_dgndb;}
     LsCacheP GetCacheP () const;
 
     bool IsValid () const;
 
-    bool IsInternalDefault () const {return (LsComponentType::Internal == m_componentType && LSID_DEFAULT == GetComponentId().GetValue()) ? true : false;}
-
-    BentleyStatus GetLineCodeLocation (struct LsComponentReader*);
-    BentleyStatus GetPointSymbolLocation (struct LsComponentReader*, int symbolNumber);
-    BentleyStatus GetCompoundComponentLocation (struct LsComponentReader*, int componentNumber);
-
-#if defined(NOTNOW)
-    DGNPLATFORM_EXPORT void* GetResource () const;
-#endif
+    bool IsInternalDefault () const {return (LsComponentType::Internal == m_componentId.GetType() && LSID_DEFAULT == GetComponentId().GetValue()) ? true : false;}
 };
 
 //=======================================================================================
@@ -409,15 +286,14 @@ struct          LsComponentReader
 protected:
     LsLocationCP        m_source;
     DgnDbR              m_dgndb;
-    LsComponentType     m_componentType;
-    V10ComponentBase*   m_rsc;
+    LsComponentId       m_componentId;
+    Utf8String          m_jsonSource;
 
 public:
     LsComponentReader (LsLocationCP source, DgnDbR project) : m_dgndb(project)
     {
         m_source            = source;
-        m_rsc               = NULL;
-        m_componentType     = m_source->GetComponentType();
+        m_componentId       = m_source->GetComponentId();
     }
 
     virtual ~LsComponentReader();
@@ -425,30 +301,11 @@ public:
 
     LsLocationCP    GetSource()     {return m_source;}
     DgnDbR          GetDgnDb ()     {return m_dgndb; }
-    V10ComponentBase*GetRsc()        {return m_rsc;}
-    LsComponentType GetComponentType()  {return m_componentType;}
+    void            GetJsonValue(JsonValueR componentDef);
+    LsComponentType GetComponentType()  {return m_componentId.GetType();}
 
     static LsComponentReader* GetRscReader (LsLocationCP source, DgnDbR dgnProject);
 };
-
-//=======================================================================================
-// @bsiclass                                                    John.Gooding    10/2013
-//=======================================================================================
-struct          LsComponentTypeAndId
-    {
-    uint32_t m_type;
-    uint32_t m_id;
-    bool operator<(LsComponentTypeAndId const&r) const
-        {
-        if (this->m_type < r.m_type)
-            return true;
-
-        if (this->m_type > r.m_type)
-            return false;
-
-        return this->m_id < r.m_id;
-        }
-    };
 
 //__PUBLISH_SECTION_START__
 
@@ -473,17 +330,22 @@ protected:
     // Should only be used for setting descr in resource definition
     void      CopyDescription (Utf8CP buffer);
     static void UpdateLsOkayForTextureGeneration(LsOkayForTextureGeneration&current, LsOkayForTextureGeneration const&newValue);
+    virtual LsComponentPtr _Import(DgnImportContext& importer) const = 0;
+    void SaveToJson(Json::Value& result) const;
 
 public:
-    LsComponent (DgnDbR, LsComponentType componentType, LsComponentId componentId);
+    void ExtractDescription(JsonValueCR result);
+    LsComponent (DgnDbR, LsComponentId componentId);
     LsComponent (LsLocationCP location);
     LsComponent (LsComponent const* base) : m_isDirty (false)
         {
         m_location.SetFrom (&base->m_location);
+        m_descr = base->m_descr;
         }
 
-    DGNPLATFORM_EXPORT static void GetNextComponentId (LsComponentId& id, DgnDbR project, BeSQLite::PropertySpec spec);
-    DGNPLATFORM_EXPORT static LineStyleStatus AddComponentAsProperty (LsComponentId& componentId, DgnDbR project, BeSQLite::PropertySpec spec, V10ComponentBase const*data, uint32_t dataSize);
+    DGNPLATFORM_EXPORT static void GetNextComponentNumber (uint32_t& id, DgnDbR project, BeSQLite::PropertySpec spec);
+    DGNPLATFORM_EXPORT static LineStyleStatus AddComponentAsJsonProperty (LsComponentId& componentId, DgnDbR project, LsComponentType componentType, JsonValueCR jsonValue);
+    DGNPLATFORM_EXPORT static LineStyleStatus AddRasterComponentAsJson (LsComponentId& componentId, DgnDbR project, JsonValueCR jsonDef, uint8_t const*imageData, uint32_t dataSize);
 
     bool                IsWidthDiscernible (ViewContextP, LineStyleSymbCP, DPoint3dCR) const;
     bool                IsSingleRepDiscernible (ViewContextP, LineStyleSymbCP, DPoint3dCR) const;
@@ -522,8 +384,10 @@ public:
     DGNPLATFORM_EXPORT void SetDescription (Utf8StringCR descr) { m_descr = descr; }
     DGNPLATFORM_EXPORT void SetDescription (Utf8CP descr) { m_descr = Utf8String (descr); }
 
-    DGNPLATFORM_EXPORT static void QueryComponentIds(bset<LsComponentTypeAndId>& ids, DgnDbCR project, LsComponentType lsType);
     DGNPLATFORM_EXPORT static bool IsValidComponentType(LsComponentType value);
+
+    static LsComponentId Import(LsComponentId sourceId, DgnImportContext& importer);
+    static LsComponentPtr GetImportedComponent(LsComponentId sourceId, DgnImportContext& importer);
 
 //__PUBLISH_CLASS_VIRTUAL__
 //__PUBLISH_SECTION_START__
@@ -561,10 +425,12 @@ private:
     Point2d             m_size;
     uint32_t            m_flags;
     double              m_trueWidth;
+    uint32_t            m_imageDataId;
     bvector<uint8_t>    m_image;
 
-    LsRasterImageComponent   (LsLocationCP pLocation);
-    LsRasterImageComponent (V10RasterImage* rasterImageResource, LsLocationCP location);
+    LsRasterImageComponent(LsRasterImageComponentCR);
+    LsRasterImageComponent(LsLocationCP pLocation);
+    LsRasterImageComponent(V10RasterImage* rasterImageResource, LsLocationCP location);
 
     DGNPLATFORM_EXPORT static LsRasterImageComponentPtr Create (BeFileNameCR fileName);
                        static LsRasterImageComponentPtr Create (LsLocation const& location) { LsRasterImageComponentP retVal = new LsRasterImageComponent (&location); retVal->m_isDirty = true; return retVal; }
@@ -577,8 +443,11 @@ protected:
     virtual void _StartTextureGeneration() const override {}
     virtual LsComponentPtr _GetForTextureGeneration() const override { return const_cast<LsRasterImageComponentP>(this); }
     virtual LsOkayForTextureGeneration _IsOkayForTextureGeneration() const override { return LsOkayForTextureGeneration::NoChangeRequired; }
+    virtual LsComponentPtr _Import(DgnImportContext& importer) const;
 
 public:
+    void SaveToJson(Json::Value& result, bvector<uint8_t>& imageData) const;
+    static LineStyleStatus CreateFromJson(LsRasterImageComponentP*, Json::Value const & jsonDef, LsLocationCP location);
     static LsRasterImageComponent* LoadRasterImage  (LsComponentReader* reader);
     static BentleyStatus CreateRscFromDgnDb(V10RasterImage** rscOut, DgnDbR project, LsComponentId id);
 
@@ -606,7 +475,6 @@ struct          LsSymbolComponent : public LsComponent
 //__PUBLISH_SECTION_END__
 private:
     bool                m_isModified;
-    WChar               m_descr[LS_MAX_DESCR];
 
     DgnGeomPartId       m_geomPartId;
     mutable DgnGeomPartPtr m_geomPart;
@@ -623,10 +491,16 @@ private:
 
     explicit LsSymbolComponent (LsLocationCP pLocation);
     virtual ~LsSymbolComponent ();
+    LsSymbolComponent(LsSymbolComponentCR src);
 
+protected:
+    virtual LsComponentPtr _Import(DgnImportContext& importer) const;
+    
 public:
     static LsSymbolComponent* LoadPointSym  (LsComponentReader* reader);
     static LsSymbolComponentPtr Create (LsLocation& location) { LsSymbolComponentP retval = new LsSymbolComponent (&location); retval->m_isDirty = true; return retval; }
+    void SaveToJson(Json::Value& result) const;
+    static LineStyleStatus CreateFromJson(LsSymbolComponentP*, Json::Value const & jsonDef, LsLocationCP location);
 
     void                SetColors           (bool colorByLevel, ColorDef lineColor, ColorDef fillColor);
     void                SetWeight           (uint32_t weight);
@@ -655,12 +529,12 @@ public:
     //  Should never be called; symbol components should never be drawn this way.  Therefore, a line style
     //  resource must not directly refer to a symbol component.
     StatusInt           _DoStroke           (ViewContextP, DPoint3dCP, int, LineStyleSymbCP) const override;
-    BentleyStatus       CreateFromComponent (LsPointSymbolComponentCP lpsComp);
 
-    static BentleyStatus CreateRscFromDgnDb(V10Symbol** rscOut, DgnDbR project, LsComponentId id);
     virtual LsComponentPtr _GetForTextureGeneration() const override { return const_cast<LsSymbolComponentP>(this); }
     virtual LsOkayForTextureGeneration _IsOkayForTextureGeneration() const override { return LsOkayForTextureGeneration::NoChangeRequired; }
     virtual void _StartTextureGeneration() const override {}
+    DGNPLATFORM_EXPORT static void SaveSymbolDataToJson(Json::Value& result, DPoint3dCR base, DPoint3dCR size, DgnGeomPartId const& geomPartId, int32_t flags, double storedScale, 
+                                             bool colorBySubcategory, ColorDefCR lineColor, ColorDefCR fillColor, bool weightBySubcategory, int weight);
 
 //__PUBLISH_SECTION_START__
 public:
@@ -837,13 +711,15 @@ private:
                     LsCompoundComponent         (LsCompoundComponentCR source);
 protected:
     virtual         ~LsCompoundComponent        ();
+    virtual LsComponentPtr _Import(DgnImportContext& importer) const;
 
 public:
     static LsCompoundComponentP  LoadCompoundComponent  (LsComponentReader*reader);
     static LsCompoundComponentPtr Create (LsLocation& location) { LsCompoundComponentP retval = new LsCompoundComponent (&location); retval->m_isDirty = true; return retval; }
     void            CalculateSize                       (DgnModelP modelRef);
 
-    static BentleyStatus CreateRscFromDgnDb(V10Compound** rscOut, DgnDbR project, LsComponentId id);
+    void SaveToJson(Json::Value& result) const;
+    static LineStyleStatus CreateFromJson(LsCompoundComponentP*, Json::Value const & jsonDef, LsLocationCP location);
 
     virtual void    _PostProcessLoad            (DgnModelP modelRef) override;
     virtual void    _ClearPostProcess           () override;
@@ -1057,14 +933,14 @@ protected:
     void            StrokeLocal             (ViewContextP, ISymbolProcess const*, DPoint3dCP, int, double, LineStyleSymbCP, DPoint3dCP, DPoint3dCP, int segFlag) const;
     explicit LsStrokePatternComponent       (LsLocationCP pLocation);
     void            FixDashWidths           (double& orgWidth, double& endWidth, bool taper, ViewContextCP context, DPoint3dCP pt);
-    void            Init                    (V10LineCode const* lcRsc);
+    virtual LsComponentPtr _Import(DgnImportContext& importer) const;
 
 public:
 
+    void SaveToJson(Json::Value& result) const;
+    static LineStyleStatus CreateFromJson(LsStrokePatternComponentP*, Json::Value const & jsonDef, LsLocationCP location);
     static LsStrokePatternComponentP  LoadStrokePatternComponent    (LsComponentReader*reader);
     static LsStrokePatternComponentPtr Create                       (LsLocation& location) { LsStrokePatternComponentP retval = new LsStrokePatternComponent (&location); retval->m_isDirty = true; return retval; };
-    BentleyStatus   CreateFromRsrc          (V10LineCode const* pRsc);
-    static BentleyStatus   CreateRscFromDgnDb      (V10LineCode** rsc, DgnDbR project, LsComponentId id);
 
     BentleyStatus   PostCreate              ();
 
@@ -1254,6 +1130,7 @@ private:
 
 protected:
     ~LsPointComponent   ();
+    virtual LsComponentPtr _Import(DgnImportContext& importer) const;
 
 public:
     virtual void                    _PostProcessLoad        (DgnModelP modelRef) override;
@@ -1275,7 +1152,10 @@ public:
     LsOkayForTextureGeneration VerifySymbols() const;
     LsOkayForTextureGeneration VerifySymbol(double& adjustment, double startingOffset, double patternLength, uint32_t strokeIndex) const;
 
-    static BentleyStatus   CreateRscFromDgnDb(V10LinePoint** rscOut, DgnDbR project, LsComponentId id);
+    void SaveToJson(Json::Value& result) const;
+    static LineStyleStatus CreateFromJson(LsPointComponentP*, Json::Value const & jsonDef, LsLocationCP location);
+    DGNPLATFORM_EXPORT static void SaveLineCodeIdToJson(JsonValueR result, LsComponentId patternId);
+    DGNPLATFORM_EXPORT static void SaveSymbolIdToJson(JsonValueR result, LsComponentId symbolId);
 
 //__PUBLISH_SECTION_START__
 public:
@@ -1332,6 +1212,7 @@ public:
     static LsInternalComponentPtr CreateInternalComponent   (LsLocation&location);
     virtual LsComponentPtr _GetForTextureGeneration() const override { return const_cast<LsInternalComponentP>(this); }
     virtual LsOkayForTextureGeneration _IsOkayForTextureGeneration() const override { return LsOkayForTextureGeneration::NoChangeRequired; }
+    virtual LsComponentPtr _Import(DgnImportContext& importer) const { return const_cast<LsInternalComponent*>(this); }
 
 //__PUBLISH_SECTION_START__
 public:
@@ -1356,8 +1237,6 @@ typedef T_LsIdTree::Iterator                  T_LsIdIterator;
 //!  @ingroup LineStyleManagerModule
 enum class LsUnit
 {
-    //  Master      = 0,    //!< Master Units -- not supported in DgnDb
-    Uor         = 1,        //!< Internal Units (UORS)
     Device      = 2,        //!< Pixel units
     Meters      = 3,        //!< Meters
 };
@@ -1395,7 +1274,7 @@ private:
     mutable double      m_textureWidth;
 
     void Init (CharCP nName, Json::Value& lsDefinition, DgnStyleId styleId);
-    void SetHWStyle (LsComponentType componentType, LsComponentId componentID);
+    void SetHWStyle(LsComponentId componentID);
     int                 GetUnits                () const {return m_attributes & LSATTR_UNITMASK;}
     intptr_t            GenerateTexture(ViewContextR viewContext, LineStyleSymbR lineStyleSymb);
     LsDefinition (Utf8CP name, DgnDbR project, Json::Value& lsDefinition, DgnStyleId styleId);
@@ -1403,7 +1282,6 @@ private:
 public:
     DGNPLATFORM_EXPORT static double GetUnitDef (Json::Value& lsDefinition);
     DGNPLATFORM_EXPORT static uint32_t GetAttributes (Json::Value& lsDefinition);
-    DGNPLATFORM_EXPORT static LsComponentType GetComponentType (Json::Value& lsDefinition);
     DGNPLATFORM_EXPORT static LsComponentId GetComponentId (Json::Value& lsDefinition);
 
     DGNPLATFORM_EXPORT static void Destroy (LsDefinitionP);
@@ -1443,7 +1321,7 @@ public:
     void MarkDirty (bool value = true) { m_isDirty = value; }
     StatusInt Commit ();
 
-    static void InitializeJsonObject (Json::Value& jsonObj, LsComponentId componentId, LsComponentType componentType, uint32_t flags, double unitDefinition);
+    static void InitializeJsonObject (Json::Value& jsonObj, LsComponentId componentId, uint32_t flags, double unitDefinition);
     void InitializeJsonObject (Json::Value& jsonObj);
 
 //__PUBLISH_CLASS_VIRTUAL__
@@ -1455,8 +1333,6 @@ public:
     DGNPLATFORM_EXPORT void SetUnitsDefinition (double newValue);
     DGNPLATFORM_EXPORT void SetUnitsType (LsUnit unitsType);
     DGNPLATFORM_EXPORT LsUnit GetUnitsType () const;
-    //!  This is equivalent to "LsUnit::Uor == GetUnits()"
-    DGNPLATFORM_EXPORT bool IsUnitsUOR () const;
     //!  This is equivalent to "LsUnit::Meters == GetUnits()"
     DGNPLATFORM_EXPORT bool IsUnitsMeters () const;
     //!  This is equivalent to "LsUnit::Device == GetUnits()"
@@ -1482,10 +1358,6 @@ public:
 
     DGNPLATFORM_EXPORT bool                     IsContinuous            () const;
     DGNPLATFORM_EXPORT void                     SetIsContinuous         (bool newValue);
-    //!  Controls whether the line style scale is independent of the scale of shared cells
-    DGNPLATFORM_EXPORT bool                     IsSCScaleIndependent    () const;
-    //!  Controls whether the line style scale is independent of the scale of shared cells
-    DGNPLATFORM_EXPORT void                     SetIsSCScaleIndependent (bool newValue);
     //!  Gets the LsComponent for the line style.
     //!
     //!  An LsDefinition can only directly reference one LsComponent.  That LsComponent
@@ -1691,21 +1563,113 @@ private:
 
 public:
     DGNPLATFORM_EXPORT static LsComponent* GetLsComponent(LsLocationCR location);
-    DGNPLATFORM_EXPORT LsComponentPtr GetLsComponent(LsComponentType componentType, LsComponentId componentId);
-    DGNPLATFORM_EXPORT void PrepareToQueryAllLineStyles(BeSQLite::Statement& stmt);
-    DGNPLATFORM_EXPORT void PrepareToQueryLineStyle(BeSQLite::Statement& stmt, DgnStyleId styleId);
-    DGNPLATFORM_EXPORT LineStyleStatus LoadStyle(LsDefinitionP&style, DgnStyleId styleId);
+    DGNPLATFORM_EXPORT LsComponentPtr GetLsComponent(LsComponentId componentId);
 
 //__PUBLISH_SECTION_START__
     //! Adds a new line style to the project. If a style already exists by-name, no action is performed.
-    DGNPLATFORM_EXPORT BentleyStatus Insert(DgnStyleId& newStyleId, Utf8CP name, LsComponentId id, LsComponentType componentType, uint32_t flags, double unitDefinition);
+    DGNPLATFORM_EXPORT BentleyStatus Insert(DgnStyleId& newStyleId, Utf8CP name, LsComponentId id, uint32_t flags, double unitDefinition);
 
     //! Updates an a Line Style in the styles table..
-    DGNPLATFORM_EXPORT BentleyStatus Update(DgnStyleId styleId, Utf8CP name, LsComponentId id, LsComponentType componentType, uint32_t flags, double unitDefinition);
+    DGNPLATFORM_EXPORT BentleyStatus Update(DgnStyleId styleId, Utf8CP name, LsComponentId id, uint32_t flags, double unitDefinition);
 
     DGNPLATFORM_EXPORT LsCacheP GetLsCacheP (bool load=true);
     DGNPLATFORM_EXPORT LsCacheR ReloadMap();
 };
+
+//__PUBLISH_SECTION_END__
+
+//=======================================================================================
+//! Provides access to the line style data in the element table.
+//!  @ingroup LineStyleManagerModule
+// @bsiclass
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE LineStyleElement : DictionaryElement
+{
+    DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_LineStyle, DictionaryElement);
+    
+private:
+    Utf8String m_description;
+    Utf8String m_data;
+
+    DGNPLATFORM_EXPORT static Code CreateCodeFromName(Utf8CP);
+    DgnDbStatus BindParams(BeSQLite::EC::ECSqlStatement& stmt);
+
+protected:
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement&, ECSqlClassParams const&) override;
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _BindInsertParams(BeSQLite::EC::ECSqlStatement&) override;
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _BindUpdateParams(BeSQLite::EC::ECSqlStatement&) override;
+    DGNPLATFORM_EXPORT virtual void _CopyFrom(DgnElementCR) override;
+    virtual DgnDbStatus _OnDelete() const override { return DgnDbStatus::DeletionProhibited; /* Must be "purged" */ }
+    virtual uint32_t _GetMemSize() const override { return (uint32_t)(m_description.size() + m_data.size() + 2); }
+    virtual Code _GenerateDefaultCode() override { return Code(); }
+    virtual DgnDbStatus _SetCode(Code const&) override { return DgnDbStatus::BadArg; /* Restricted to an internal DgnAuthority; use GetName/SetName. */ }
+
+public:
+    static ECN::ECClassId QueryECClassId(DgnDbR db) { return db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_LineStyle); }
+    static DgnClassId QueryDgnClassId(DgnDbR db) { return DgnClassId(QueryECClassId(db)); }
+    
+    explicit LineStyleElement(DgnDbR db) : T_Super(CreateParams(db, QueryDgnClassId(db), Code())) {}
+    explicit LineStyleElement(CreateParams const& params) : T_Super(params) {}
+    static LineStyleElementPtr Create(DgnDbR db) { return new LineStyleElement(db); }
+    LineStyleElementPtr CreateCopy() const { return MakeCopy<LineStyleElement>(); }
+
+    Utf8String GetName() const { return GetCode().GetValue(); }
+    void SetName(Utf8CP value) { T_Super::_SetCode(CreateCodeFromName(value)); /* Only SetName is allowed to SetCode. */ }
+    Utf8StringCR GetDescription() const { return m_description; }
+    void SetDescription(Utf8CP value) { m_description.AssignOrClear(value); }
+    Utf8StringCR GetData() const { return m_data; }
+    void SetData(Utf8CP value) { m_data.AssignOrClear(value); }
+    
+    static DgnStyleId QueryId(DgnDbR db, Utf8CP name) { return DgnStyleId(db.Elements().QueryElementIdByCode(CreateCodeFromName(name)).GetValueUnchecked()); }
+    static LineStyleElementCPtr Get(DgnDbR db, Utf8CP name) { return Get(db, QueryId(db, name)); }
+    static LineStyleElementCPtr Get(DgnDbR db, DgnStyleId id) { return db.Elements().Get<LineStyleElement>(id); }
+    static LineStyleElementPtr GetForEdit(DgnDbR db, DgnStyleId id) { return db.Elements().GetForEdit<LineStyleElement>(id); }
+    static LineStyleElementPtr GetForEdit(DgnDbR db, Utf8CP name) { return GetForEdit(db, QueryId(db, name)); }
+    LineStyleElementCPtr Insert() { return GetDgnDb().Elements().Insert<LineStyleElement>(*this); }
+    LineStyleElementCPtr Update() { return GetDgnDb().Elements().Update<LineStyleElement>(*this); }
+
+    //=======================================================================================
+    // @bsiclass                                                   
+    //=======================================================================================
+    struct Entry : ECSqlStatementEntry
+    {
+        DEFINE_T_SUPER(ECSqlStatementEntry);
+        friend struct ECSqlStatementIterator<Entry>;
+        friend struct LineStyleElement;
+    
+    private:
+        Entry() : T_Super(nullptr) {}
+        Entry(BeSQLite::EC::ECSqlStatement* stmt) : T_Super(stmt) {}
+    
+    public:
+        DgnStyleId GetElementId() const { return m_statement->GetValueId<DgnStyleId>(0); }
+        Utf8CP GetName() const { return m_statement->GetValueText(1); }
+        Utf8CP GetDescription() const { return m_statement->GetValueText(2); }
+        Utf8CP GetData() const { return m_statement->GetValueText(3); }
+    };
+
+    typedef ECSqlStatementIterator<Entry> Iterator;
+
+    static DgnStyleId ImportLineStyle(DgnStyleId srcStyleId, DgnImportContext& importer);
+    DGNPLATFORM_EXPORT static Iterator MakeIterator(DgnDbR);
+    DGNPLATFORM_EXPORT static size_t QueryCount(DgnDbR);
+};
+
+namespace dgn_ElementHandler
+{
+    //=======================================================================================
+    //! The handler for annotation text styles
+    //! @bsistruct                                                  Paul.Connelly   10/15
+    //=======================================================================================
+    struct LineStyleHandler : Element
+    {
+        ELEMENTHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_LineStyle, LineStyleElement, LineStyleHandler, Element, DGNPLATFORM_EXPORT);
+
+    protected:
+        DGNPLATFORM_EXPORT virtual void _GetClassParams(ECSqlClassParams&) override;
+    };
+}
+//__PUBLISH_SECTION_START__
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE
 

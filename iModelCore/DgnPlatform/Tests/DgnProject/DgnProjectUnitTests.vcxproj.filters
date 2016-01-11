@@ -70,9 +70,6 @@
     <ClCompile Include="Published\MarkupProject_Test.cpp">
       <Filter>Published</Filter>
     </ClCompile>
-    <ClCompile Include="Published\BackwardsCompatibility_Tests.cpp">
-      <Filter>Published</Filter>
-    </ClCompile>
     <ClCompile Include="Published\DgnECNavigator_Test.cpp">
       <Filter>Published</Filter>
     </ClCompile>
@@ -240,6 +237,12 @@
     </ClCompile>
     <ClCompile Include="BackDoor\TestDomainElements.cpp">
       <Filter>BackDoor</Filter>
+    </ClCompile>
+    <ClCompile Include="Performance\ElementDependencyGraphPerformance.cpp">
+      <Filter>Performance</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\ConfigurationManager_Test.cpp">
+      <Filter>NonPublished</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

@@ -763,7 +763,7 @@ TEST_F(ElementDependencyGraph, ModelDependenciesTest)
     //       ---> m3
     //
 
-    auto modelClassId = m_db->Schemas().GetECClass("dgn", "Model")->GetId();
+    auto modelClassId = m_db->Schemas().GetECClass(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_Model)->GetId();
     auto m1key = ECInstanceKey(modelClassId, ECInstanceId(m1id.GetValue()));
     auto m2key = ECInstanceKey(modelClassId, ECInstanceId(m2id.GetValue()));
     auto m3key = ECInstanceKey(modelClassId, ECInstanceId(m3id.GetValue()));
@@ -862,7 +862,7 @@ TEST_F(ElementDependencyGraph, ModelDependenciesWithCycleTest)
     //       ---> m3
     //
 
-    auto modelClassId = m_db->Schemas().GetECClass("dgn", "PhysicalModel")->GetId();
+    auto modelClassId = m_db->Schemas().GetECClass(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_SpatialModel)->GetId();
     auto m1key = ECInstanceKey(modelClassId, ECInstanceId(m1id.GetValue()));
     auto m2key = ECInstanceKey(modelClassId, ECInstanceId(m2id.GetValue()));
     auto m3key = ECInstanceKey(modelClassId, ECInstanceId(m3id.GetValue()));
@@ -910,7 +910,7 @@ TEST_F(ElementDependencyGraph, ModelDependenciesInvalidDirectionTest)
     auto m2id = m2->GetModelId();
 
     // Make m2 depend on m1
-    auto modelClassId = m_db->Schemas().GetECClass("dgn", "PhysicalModel")->GetId();
+    auto modelClassId = m_db->Schemas().GetECClass(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_SpatialModel)->GetId();
     auto m1key = ECInstanceKey(modelClassId, ECInstanceId(m1id.GetValue()));
     auto m2key = ECInstanceKey(modelClassId, ECInstanceId(m2id.GetValue()));
 

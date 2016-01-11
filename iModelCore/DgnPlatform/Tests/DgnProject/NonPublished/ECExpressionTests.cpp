@@ -17,8 +17,8 @@
 
 #include <algorithm>
 
-#define EXPECT_SUCCESS(EXPR) EXPECT_TRUE(SUCCESS == (EXPR))
-#define EXPECT_ERROR(EXPR) EXPECT_FALSE(SUCCESS == (EXPR))
+#define EXPECT_SUCCESS(EXPR) EXPECT_TRUE(ExpressionStatus::Success == (EXPR))
+#define EXPECT_ERROR(EXPR) EXPECT_FALSE(ExpressionStatus::Success == (EXPR))
 #define EXPECT_NOT_NULL(EXPR) EXPECT_FALSE(NULL == (EXPR))
 #define EXPECT_NULL(EXPR) EXPECT_TRUE(NULL == (EXPR))
 
@@ -84,7 +84,7 @@ struct DgpExpressionTests : public ::testing::Test
         EvaluationResult result;
         ExpressionStatus status = EvaluateExpression (result, expr, instance);
         EXPECT_SUCCESS (status);
-        if (SUCCESS == status)
+        if (ExpressionStatus::Success == status)
             {
             EXPECT_TRUE (result.IsECValue());
             if (result.IsECValue ())
@@ -102,7 +102,7 @@ struct DgpExpressionTests : public ::testing::Test
         EvaluationResult result;
         ExpressionStatus status = EvaluateExpression (result, expr, requiredSymbolSets, instance);
         EXPECT_SUCCESS (status);
-        if (SUCCESS == status)
+        if (ExpressionStatus::Success == status)
             {
             EXPECT_TRUE (result.IsECValue());
             if (result.IsECValue())
@@ -120,7 +120,7 @@ struct DgpExpressionTests : public ::testing::Test
         EvaluationResult result;
         ExpressionStatus status = EvaluateExpression (result, expr);
         EXPECT_SUCCESS (status);
-        if (SUCCESS == status)
+        if (ExpressionStatus::Success == status)
             {
             EXPECT_TRUE (result.IsECValue());
             if (result.IsECValue())
@@ -143,7 +143,7 @@ struct DgpExpressionTests : public ::testing::Test
         EvaluationResult result;
         ExpressionStatus status = EvaluateExpression (result, expr, instance);
         EXPECT_SUCCESS (status);
-        if (SUCCESS == status)
+        if (ExpressionStatus::Success == status)
             {
             if (result.IsECValue())
                 EXPECT_EQ (expectNull, result.GetECValue()->IsNull());
@@ -182,7 +182,7 @@ TEST_F (DgpRoundtripExpressionTests, Roundtrip)
     Roundtrip ("this.Property", "this.Property");
     Roundtrip ("this.Property *  this[\"Property\"]", "this.Property*this[\"Property\"]");
     Roundtrip ("Something.Method ( )", "Something.Method()");
-    Roundtrip ("Something.Method (0,1.5, 2.000,  \t\"string\", this.Property   )", "Something.Method(0,1.5,2,\"string\",this.Property)");
+    Roundtrip ("Something.Method (0,1.5, 2.000,  \t\"string\", this.Property   )", "Something.Method(0,1.5,2.0,\"string\",this.Property)");
     Roundtrip ("IIf (True,  Null, \t2 ^3  -3* 4)", "IIf(True,Null,2^3-3*4)");
     Roundtrip ("X = \"Thing\" OrElse X = \"Stuff\"", "X=\"Thing\"OrElse X=\"Stuff\"");
 
@@ -199,7 +199,7 @@ TEST_F (DgpRoundtripExpressionTests, Roundtrip)
     Roundtrip ("0.00390625", "0.00390625");
     Roundtrip ("method (method (True, method (method (1.5), False)))", "method(method(True,method(method(1.5),False)))");
 
-    Roundtrip ("X => X < 5.0 AndAlso X > 1.5", "X=>X<5 AndAlso X>1.5");
+    Roundtrip ("X => X < 5.0 AndAlso X > 1.5", "X=>X<5.0 AndAlso X>1.5");
     Roundtrip ("this.Array.Any (X => X.Name = \"Chuck\" OrElse X.Name = \"Bob\")", "this.Array.Any(X=>X.Name=\"Chuck\"OrElse X.Name=\"Bob\")");
     }
 
@@ -219,7 +219,7 @@ public:
             {
             Utf8String schemaXMLString = GetTestSchemaXMLString();
             ECSchemaReadContextPtr  schemaContext = ECSchemaReadContext::CreateContext();
-            EXPECT_EQ (SUCCESS, ECSchema::ReadFromXmlString (m_schema, schemaXMLString.c_str(), *schemaContext));  
+            EXPECT_EQ (SchemaReadStatus::Success, ECSchema::ReadFromXmlString (m_schema, schemaXMLString.c_str(), *schemaContext));  
             }
 
         return *m_schema;
@@ -506,10 +506,10 @@ struct DgpInstanceListExpressionTests : DgpInstanceExpressionTests
     void    AddArrayElement (IECInstanceR instance, Utf8CP accessString, ECValueCR entryVal)
         {
         ECValue arrayVal;
-        EXPECT_SUCCESS (instance.GetValue (arrayVal, accessString));
+        EXPECT_EQ (ECObjectsStatus::Success, instance.GetValue (arrayVal, accessString));
         uint32_t index = arrayVal.GetArrayInfo().GetCount();
-        EXPECT_SUCCESS (instance.AddArrayElements (accessString, 1));
-        EXPECT_SUCCESS (instance.SetValue (accessString, entryVal, index));
+        EXPECT_EQ(ECObjectsStatus::Success, instance.AddArrayElements (accessString, 1));
+        EXPECT_EQ(ECObjectsStatus::Success, instance.SetValue (accessString, entryVal, index));
         }
     };
 
@@ -569,7 +569,7 @@ TEST_F (DgpInstanceListExpressionTests, DgnComplexExpressions)
         EvaluationResult result;
         ExpressionStatus status = EvaluateExpression (result, expr, *a);
         EXPECT_SUCCESS (status);
-        if (ExprStatus_Success != status)
+        if (ExpressionStatus::Success != status)
             continue;
 
         EXPECT_TRUE (result.IsECValue());

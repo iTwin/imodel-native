@@ -449,6 +449,7 @@ TEST_F(CategoryTests, SubCategoryInvariants)
     DgnSubCategoryCPtr cpSubcat2B = subcat2B.Insert();
     ASSERT_TRUE(cpSubcat2B.IsValid());
 
+    db.SaveChanges();
     DgnSubCategoryPtr pSubcat2B = cpSubcat2B->MakeCopy<DgnSubCategory>();
     pSubcat2B->SetCode(DgnSubCategory::CreateSubCategoryCode(cat2Id, "2A"));
     EXPECT_TRUE(pSubcat2B->Update(&status).IsNull());

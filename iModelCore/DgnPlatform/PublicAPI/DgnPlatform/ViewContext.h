@@ -363,7 +363,7 @@ protected:
     EdgeMaskState           m_edgeMaskState;
     DgnElement::Hilited     m_hiliteState;
     RasterDisplayParams     m_rasterDisplayParams;
-    IElemTopologyPtr        m_currElemTopo;
+    IElemTopologyCPtr       m_currElemTopo;
     GeomStreamEntryId       m_currGeomStreamEntryId;
 
     bool                    m_scanRangeValid;
@@ -809,7 +809,7 @@ DGNPLATFORM_EXPORT IElemTopologyCP GetElemTopology() const;
 
 //! Set the current IElementTopology.
 //! @param topo An object holding additional information about the graphics to be drawn or nullptr to clear the current topology pointer.
-DGNPLATFORM_EXPORT void SetElemTopology(IElemTopologyP topo);
+DGNPLATFORM_EXPORT void SetElemTopology(IElemTopologyCP topo);
 
 //! Query the current GeomStreamEntryId.
 DGNPLATFORM_EXPORT GeomStreamEntryId GetGeomStreamEntryId() const;

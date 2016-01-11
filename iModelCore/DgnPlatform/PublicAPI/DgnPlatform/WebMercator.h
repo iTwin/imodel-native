@@ -282,9 +282,9 @@ protected:
 // in order to send requests to a tile server.
 // @bsiclass                                                    Sam.Wilson      10/2014
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE WebMercatorModel : PhysicalModel
+struct EXPORT_VTABLE_ATTRIBUTE WebMercatorModel : SpatialModel
 {
-    DEFINE_T_SUPER(PhysicalModel)
+    DGNMODEL_DECLARE_MEMBERS("WebMercatorModel", SpatialModel);
 
 public:
     struct Mercator
@@ -313,8 +313,8 @@ public:
     WebMercatorModel(CreateParams const& params) : T_Super(params) {}
 
     DGNPLATFORM_EXPORT void _AddGraphicsToScene(ViewContextR) override;
-    DGNPLATFORM_EXPORT void _ToPropertiesJson(Json::Value&) const override;
-    DGNPLATFORM_EXPORT void _FromPropertiesJson(Json::Value const&) override;
+    DGNPLATFORM_EXPORT void _WriteJsonProperties(Json::Value&) const override;
+    DGNPLATFORM_EXPORT void _ReadJsonProperties(Json::Value const&) override;
     AxisAlignedBox3d _QueryModelRange() const override {return m_mercator.m_range;}
 
     //! Call this after creating a new model, in order to set up subclass-specific properties.
@@ -329,9 +329,9 @@ namespace dgn_ModelHandler
     //! Specifically, then will need to call the _CreateUrl method.
     // @bsiclass                                                    Sam.Wilson      10/2014
     //=======================================================================================
-    struct EXPORT_VTABLE_ATTRIBUTE WebMercator : Model
+    struct EXPORT_VTABLE_ATTRIBUTE WebMercator : Spatial
     {
-        MODELHANDLER_DECLARE_MEMBERS ("WebMercatorModel", WebMercatorModel, WebMercator, Model, DGNPLATFORM_EXPORT)
+        MODELHANDLER_DECLARE_MEMBERS ("WebMercatorModel", WebMercatorModel, WebMercator, Spatial, DGNPLATFORM_EXPORT)
 
     public:
         //! Create the URL to request the specified tile from a map service.
@@ -357,7 +357,8 @@ namespace dgn_ModelHandler
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE StreetMapModel : WebMercatorModel
 {
-    DEFINE_T_SUPER(WebMercatorModel)
+    DGNMODEL_DECLARE_MEMBERS("StreetMapModel", WebMercatorModel);
+public:
     StreetMapModel(CreateParams const& params) : T_Super(params) {}
 };
 
@@ -413,7 +414,7 @@ namespace dgn_ModelHandler
 // @bsiclass                                                    Sam.Wilson      10/2014
 //=======================================================================================
 #ifdef TBD_LATLNG_GRID
-struct LatLongGridRealityDataHandler : PhysicalModel
+struct LatLongGridRealityDataHandler : SpatialModel
 {
 protected:
     DGNPLATFORM_EXPORT virtual void _DrawView (ViewContextR) override;

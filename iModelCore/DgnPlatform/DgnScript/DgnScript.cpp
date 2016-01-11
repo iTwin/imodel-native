@@ -2,7 +2,7 @@
 |
 |     $Source: DgnScript/DgnScript.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -23,6 +23,7 @@ struct DgnScriptContext : BeJsContext
 {
     BeJsObject m_egaRegistry;
     BeJsObject m_modelSolverRegistry;
+    BeJsObject m_dgndbScriptRegistry;
     bset<Utf8String> m_jsScriptsExecuted;
 
     DgnScriptContext(BeJsEnvironmentR jsenv) : BeJsContext(jsenv, "DgnScript")
@@ -35,14 +36,17 @@ struct DgnScriptContext : BeJsContext
         
         m_egaRegistry = EvaluateScript("Bentley.Dgn.GetEgaRegistry()");
         m_modelSolverRegistry = EvaluateScript("Bentley.Dgn.GetModelSolverRegistry()");
+        m_dgndbScriptRegistry = EvaluateScript("Bentley.Dgn.GetDgnDbScriptRegistry()");
 
         BeAssert(!m_egaRegistry.IsUndefined() && m_egaRegistry.IsObject());
         BeAssert(!m_modelSolverRegistry.IsUndefined() && m_modelSolverRegistry.IsObject());
+        BeAssert(!m_dgndbScriptRegistry.IsUndefined() && m_dgndbScriptRegistry.IsObject());
         }
 
     DgnDbStatus LoadProgram(Dgn::DgnDbR db, Utf8CP tsFunctionSpec);
     DgnDbStatus ExecuteEga(int& functionReturnStatus, Dgn::DgnElementR el, Utf8CP jsEgaFunctionName, DPoint3dCR origin, YawPitchRollAnglesCR angles, Json::Value const& parms);
-    DgnDbStatus ExecuteModelSolver(int& functionReturnStatus, Dgn::DgnModelR model, Utf8CP jsFunctionName, Json::Value const& parms, Json::Value const& options);
+    DgnDbStatus ExecuteComponentGenerateElements(int& functionReturnStatus, Dgn::ComponentModelR componentModel, Dgn::DgnModelR destModel, ECN::IECInstanceR instance, Dgn::ComponentDefR cdef, Utf8StringCR functionName);
+    DgnDbStatus ExecuteDgnDbScript(int& functionReturnStatus, Dgn::DgnDbR db, Utf8StringCR jsFunctionName, Json::Value const& parms);
 };
 END_BENTLEY_DGNPLATFORM_NAMESPACE
 
@@ -71,7 +75,8 @@ DgnDbStatus DgnScriptContext::LoadProgram(Dgn::DgnDbR db, Utf8CP jsFunctionSpec)
     DgnScriptType sTypePreferred = DgnScriptType::JavaScript;
     DgnScriptType sTypeFound;
     Utf8String jsprog;
-    DgnDbStatus status = T_HOST.GetScriptAdmin()._FetchScript(jsprog, sTypeFound, db, jsProgramName.c_str(), sTypePreferred);
+    DateTime lastModifiedTime;
+    DgnDbStatus status = T_HOST.GetScriptAdmin()._FetchScript(jsprog, sTypeFound, lastModifiedTime, db, jsProgramName.c_str(), sTypePreferred);
     if (DgnDbStatus::Success != status)
         {
         NativeLogging::LoggingManager::GetLogger("DgnScript")->infov ("Script program %s is not registered in the script library", jsProgramName.c_str());
@@ -101,7 +106,20 @@ DgnDbStatus DgnScriptContext::LoadProgram(Dgn::DgnDbR db, Utf8CP jsFunctionSpec)
 
     NativeLogging::LoggingManager::GetLogger("DgnScript")->tracev ("Evaluating %s", jsProgramName.c_str());
 
-    EvaluateScript(jsprog.c_str(), fileUrl.c_str());   // evaluate the whole script, allowing it to define objecjs and their properties. 
+    EvaluateStatus jsStatus = EvaluateStatus::Success;
+    EvaluateException jsException;
+    EvaluateScript(jsprog.c_str(), fileUrl.c_str(), &jsStatus, &jsException);   // evaluate the whole script, allowing it to define objects and their properties. 
+
+    if (EvaluateStatus::Success != jsStatus)
+        {
+        if (EvaluateStatus::RuntimeError == jsStatus)
+            T_HOST.GetScriptAdmin().HandleScriptError(DgnPlatformLib::Host::ScriptAdmin::ScriptNotificationHandler::Category::Exception, jsException.message.c_str(), jsException.trace.c_str());
+        else if (EvaluateStatus::ParseError   == jsStatus)
+            T_HOST.GetScriptAdmin().HandleScriptError(DgnPlatformLib::Host::ScriptAdmin::ScriptNotificationHandler::Category::ParseError, jsProgramName.c_str(), jsException.message.c_str());
+        else
+            T_HOST.GetScriptAdmin().HandleScriptError(DgnPlatformLib::Host::ScriptAdmin::ScriptNotificationHandler::Category::Other, jsProgramName.c_str(), "");
+        }
+
     return DgnDbStatus::Success;
     }
 
@@ -156,41 +174,94 @@ DgnDbStatus DgnScriptContext::ExecuteEga(int& functionReturnStatus, Dgn::DgnElem
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   BentleySystems
 //---------------------------------------------------------------------------------------
-DgnDbStatus DgnScript::ExecuteModelSolver(int& functionReturnStatus, Dgn::DgnModelR model, Utf8CP jsFunctionName, Json::Value const& parms, Json::Value const& options)
+DgnDbStatus DgnScript::ExecuteDgnDbScript(int& functionReturnStatus, Dgn::DgnDbR db, Utf8StringCR functionName, Json::Value const& parms)
     {
     DgnScriptContext& ctx = static_cast<DgnScriptContext&>(T_HOST.GetScriptAdmin().GetDgnScriptContext());
-    return ctx.ExecuteModelSolver(functionReturnStatus, model, jsFunctionName, parms, options);
+    return ctx.ExecuteDgnDbScript(functionReturnStatus, db, functionName, parms);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   BentleySystems
 //---------------------------------------------------------------------------------------
-DgnDbStatus DgnScriptContext::ExecuteModelSolver(int& functionReturnStatus, Dgn::DgnModelR model, Utf8CP jsFunctionName, Json::Value const& parms, Json::Value const& options)
+DgnDbStatus DgnScriptContext::ExecuteDgnDbScript(int& functionReturnStatus, Dgn::DgnDbR db, Utf8StringCR functionName, Json::Value const& parms)
     {
     functionReturnStatus = -1;
 
-    DgnDbStatus status = LoadProgram(model.GetDgnDb(), jsFunctionName);
-    if (DgnDbStatus::Success != status)
-        return status;
+    BeJsFunction jsfunc = m_dgndbScriptRegistry.GetFunctionProperty(functionName.c_str());
+    if (jsfunc.IsUndefined())
+        {
+        DgnDbStatus status = LoadProgram(db, functionName.c_str());
+        if (DgnDbStatus::Success != status)
+            return status;
+        
+        jsfunc = m_dgndbScriptRegistry.GetFunctionProperty(functionName.c_str());
+        }
 
-    BeJsFunction jsfunc = m_modelSolverRegistry.GetFunctionProperty(jsFunctionName);
     if (jsfunc.IsUndefined() || !jsfunc.IsFunction())
         {
-        NativeLogging::LoggingManager::GetLogger("DgnScript")->errorv ("[%s] is not registered as a model solver", jsFunctionName);
-        BeAssert(false && "model solver not registered");
+        NativeLogging::LoggingManager::GetLogger("DgnScript")->errorv ("[%s] is not registered as a DgnDbScript", functionName.c_str());
+        BeAssert(false && "DgnDbScript not found");
         return DgnDbStatus::NotEnabled;
         }
 
     BeginCallContext();
     BeJsObject parmsObj = EvaluateJson(parms);
-    BeJsObject optionsObj = EvaluateJson(options);
-    BeJsNativePointer jsModel = ObtainProjectedClassInstancePointer(new JsDgnModel(model), true);
-    BeJsValue retval = jsfunc(jsModel, parmsObj, optionsObj);
+    BeJsNativePointer jsdb = ObtainProjectedClassInstancePointer(new JsDgnDb(db), true);
+    BeJsValue retval = jsfunc(jsdb, parmsObj);
     EndCallContext();
 
     if (!retval.IsNumber())
         {
-        NativeLogging::LoggingManager::GetLogger("DgnScript")->errorv ("[%s] does not have the correct signature for a model solver - must return an int", jsFunctionName);
+        NativeLogging::LoggingManager::GetLogger("DgnScript")->errorv ("[%s] does not have the correct signature for an DgnDbScript - must return an int", functionName.c_str());
+        BeAssert(false && "DgnDbScript has incorrect return type");
+        return DgnDbStatus::NotEnabled;
+        }
+
+    BeJsNumber num(retval);
+    functionReturnStatus = num.GetIntegerValue();
+    return DgnDbStatus::Success;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   BentleySystems
+//---------------------------------------------------------------------------------------
+DgnDbStatus DgnScript::ExecuteComponentGenerateElements(int& functionReturnStatus, Dgn::ComponentModelR componentModel, Dgn::DgnModelR destModel, ECN::IECInstanceR instance, Dgn::ComponentDefR cdef, Utf8StringCR functionName)
+    {
+    DgnScriptContext& ctx = static_cast<DgnScriptContext&>(T_HOST.GetScriptAdmin().GetDgnScriptContext());
+    return ctx.ExecuteComponentGenerateElements(functionReturnStatus, componentModel, destModel, instance, cdef, functionName);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   BentleySystems
+//---------------------------------------------------------------------------------------
+DgnDbStatus DgnScriptContext::ExecuteComponentGenerateElements(int& functionReturnStatus, Dgn::ComponentModelR componentModel, Dgn::DgnModelR destModel, ECN::IECInstanceR instance, Dgn::ComponentDefR cdef, Utf8StringCR jsFunctionName)
+    {
+    functionReturnStatus = -1;
+
+    DgnDbStatus status = LoadProgram(componentModel.GetDgnDb(), jsFunctionName.c_str());
+    if (DgnDbStatus::Success != status)
+        return status;
+
+    BeJsFunction jsfunc = m_modelSolverRegistry.GetFunctionProperty(jsFunctionName.c_str());
+    if (jsfunc.IsUndefined() || !jsfunc.IsFunction())
+        {
+        NativeLogging::LoggingManager::GetLogger("DgnScript")->errorv ("[%s] is not registered as a model solver", jsFunctionName.c_str());
+        BeAssert(false && "model solver not registered");
+        return DgnDbStatus::NotEnabled;
+        }
+
+    BeginCallContext();
+    BeJsObject jsInstance = ObtainProjectedClassInstancePointer(new JsECInstance(const_cast<ECN::IECInstanceR>(instance)), true);
+    BeJsNativePointer jsCompDef = ObtainProjectedClassInstancePointer(new JsComponentDef(cdef), true);
+    BeJsNativePointer jsCompModel = ObtainProjectedClassInstancePointer(new JsComponentModel(componentModel), true);
+    BeJsNativePointer jsDestModel = ObtainProjectedClassInstancePointer(new JsDgnModel(destModel), true);
+    // export function GenerateElements(componentModel: be.ComponentModel, destModel: be.DgnModel, instance: be.ECInstance, cdef: be.ComponentDef): number
+    BeJsValue retval = jsfunc(jsCompModel, jsDestModel, jsInstance, jsCompDef);
+    EndCallContext();
+
+    if (!retval.IsNumber())
+        {
+        NativeLogging::LoggingManager::GetLogger("DgnScript")->errorv ("[%s] does not have the correct signature for a model solver - must return an int", jsFunctionName.c_str());
         BeAssert(false && "model solver has incorrect return type");
         return DgnDbStatus::NotEnabled;
         }
@@ -215,8 +286,10 @@ DgnPlatformLib::Host::ScriptAdmin::ScriptAdmin()
 //---------------------------------------------------------------------------------------
 DgnPlatformLib::Host::ScriptAdmin::~ScriptAdmin()
     {
+#ifdef WIP_BEJAVASCRIPT // *** This triggers an assertion failure . . EDL 
     if (nullptr != m_jsContext)
         delete m_jsContext;
+#endif
 #ifdef WIP_BEJAVASCRIPT // *** This triggers an assertion failure because JsDisposeRuntime returns JsErrorRuntimeInUse
     if (nullptr != m_jsenv)
         delete m_jsenv;
@@ -354,10 +427,10 @@ void DgnPlatformLib::Host::ScriptAdmin::_OnHostTermination(bool px)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson                      07/15
 //---------------------------------------------------------------------------------------
-DgnDbStatus DgnPlatformLib::Host::ScriptAdmin::_FetchScript(Utf8StringR sText, DgnScriptType& stypeFound, DgnDbR db, Utf8CP sName, DgnScriptType stypePreferred)
+DgnDbStatus DgnPlatformLib::Host::ScriptAdmin::_FetchScript(Utf8StringR sText, DgnScriptType& stypeFound, DateTime& lastModifiedTime, DgnDbR db, Utf8CP sName, DgnScriptType stypePreferred)
     {
     DgnScriptLibrary jslib(db);
-    return jslib.QueryScript(sText, stypeFound, sName, stypePreferred);
+    return jslib.QueryScript(sText, stypeFound, lastModifiedTime, sName, stypePreferred);
     }
 
 //---------------------------------------------------------------------------------------

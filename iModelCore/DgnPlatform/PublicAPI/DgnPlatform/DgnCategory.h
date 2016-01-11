@@ -156,7 +156,7 @@ private:
 
     DgnDbStatus BindParams(BeSQLite::EC::ECSqlStatement& stmt);
 protected:
-    DGNPLATFORM_EXPORT DgnDbStatus _ExtractSelectParams(BeSQLite::EC::ECSqlStatement& statement, ECSqlClassParams const& selectParams) override;
+    DGNPLATFORM_EXPORT DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement& statement, ECSqlClassParams const& selectParams) override;
     DGNPLATFORM_EXPORT DgnDbStatus _BindInsertParams(BeSQLite::EC::ECSqlStatement& stmt) override;
     DGNPLATFORM_EXPORT DgnDbStatus _BindUpdateParams(BeSQLite::EC::ECSqlStatement& stmt) override;
     DGNPLATFORM_EXPORT void _CopyFrom(DgnElementCR source) override;
@@ -225,7 +225,7 @@ public:
 };
 
 //=======================================================================================
-//! Categorizes a geometric element. Each category one default sub-category and any number
+//! Categorizes a geometric element. Each category has one default sub-category and any number
 //! of additional sub-categories.
 //! @ingroup DgnCategoryGroup
 //=======================================================================================
@@ -279,9 +279,9 @@ public:
             : T_Super(params), m_data(scope, rank, descr) { }
 
         //! Constructs parameters for a category. Chiefly for internal use.
-        CreateParams(DgnDbR db, DgnModelId modelId, DgnClassId classId, Code const& code, DgnElementId id=DgnElementId(), DgnElementId parent=DgnElementId(),
+        CreateParams(DgnDbR db, DgnModelId modelId, DgnClassId classId, Code const& code, Utf8CP label=nullptr, DgnElementId parent=DgnElementId(),
                 Scope scope=Scope::Any, Rank rank=Rank::User, Utf8StringCR descr="")
-            : T_Super(db, modelId, classId, code, id, parent), m_data(scope, rank, descr) { }
+            : T_Super(db, modelId, classId, code, label, parent), m_data(scope, rank, descr) { }
 
         //! Constructs parameters for creating a category.
         //! @param[in]      db    The DgnDb in which the category resides
@@ -296,7 +296,7 @@ private:
 
     DgnDbStatus BindParams(BeSQLite::EC::ECSqlStatement& stmt);
 protected:
-    DGNPLATFORM_EXPORT DgnDbStatus _ExtractSelectParams(BeSQLite::EC::ECSqlStatement& statement, ECSqlClassParams const& selectParams) override;
+    DGNPLATFORM_EXPORT DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement& statement, ECSqlClassParams const& selectParams) override;
     DGNPLATFORM_EXPORT DgnDbStatus _BindInsertParams(BeSQLite::EC::ECSqlStatement& stmt) override;
     DGNPLATFORM_EXPORT DgnDbStatus _BindUpdateParams(BeSQLite::EC::ECSqlStatement& stmt) override;
     DGNPLATFORM_EXPORT void _CopyFrom(DgnElementCR source) override;

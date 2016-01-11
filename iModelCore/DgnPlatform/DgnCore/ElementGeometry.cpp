@@ -2354,6 +2354,27 @@ DgnDbStatus ElementGeomIO::Import(GeomStreamR dest, GeomStreamCR source, DgnImpo
                 break;
                 }
 
+            case ElementGeomIO::OpCode::TextString:
+                {
+                TextStringPtr text = TextString::Create();
+                if (SUCCESS != TextStringPersistence::DecodeFromFlatBuf(*text, egOp.m_data, egOp.m_dataSize, importer.GetSourceDb()))
+                    break;
+
+                // What is interesting is that TextString's persistence stores ID, but at runtime it only ever cares about font objects.
+                // While you might think it'd be nifty to simply deserialize from the old DB and re-serialize into the new DB (thus getting a new ID based on font type/name), you'd miss out on potentially cloning over embedded face data.
+                // Since the TextString came from persistence, assume the ID is valid.
+                DgnFontId srcFontId = importer.GetSourceDb().Fonts().FindId(text->GetStyle().GetFont());
+                DgnFontId dstFontId = importer.RemapFont(srcFontId);
+                DgnFontCP dstFont = importer.GetDestinationDb().Fonts().FindFontById(dstFontId);
+                
+                if (nullptr == dstFont)
+                    { BeDataAssert(nullptr != dstFont); }
+                else
+                    text->GetStyleR().SetFont(*dstFont);
+                
+                writer.Append(*text);
+                }
+            
             default:
                 {
                 writer.Append(egOp);
@@ -3272,7 +3293,21 @@ void GeometrySource::_Draw(ViewContextR context) const
     DgnElementCP el = ToElement();
 
     if (nullptr == el)
+        {
+        // NEEDSWORK: Temporary - Continous rendering DgnGraphic will allow this to be cached...
+        Transform   placementTrans = GetPlacementTransform();
+        ViewFlags   viewFlags;
+
+        if (nullptr != context.GetViewFlags())
+            viewFlags = *context.GetViewFlags();
+        else
+            viewFlags.InitDefaults();
+
+        context.PushTransform(placementTrans);
+        ElementGeomIO::Collection(GetGeomStream().GetData(), GetGeomStream().GetSize()).Draw(context, GetCategoryId(), viewFlags);
+        context.PopTransformClip();
         return;
+        }
 
     // NEEDSWORK: Assumes QVElems will be cached per-view unlike Vancouver...
     ViewFlags   viewFlags;
@@ -3748,6 +3783,7 @@ BentleyStatus ElementGeometryBuilder::SetGeomStream(DgnGeomPartR part)
         return ERROR;
 
     part.GetGeomStreamR().SaveData(&m_writer.m_buffer.front(), (uint32_t) m_writer.m_buffer.size());
+    part.SetBoundingBox(m_is3d ? m_placement3d.GetElementBox() : ElementAlignedBox3d(m_placement2d.GetElementBox()));
 
     return SUCCESS;
     }
@@ -3854,39 +3890,14 @@ bool ElementGeometryBuilder::Append(DgnGeomPartId geomPartId, TransformCR geomTo
     if (!m_havePlacement)
         return false; // geomToElement must be relative to an already defined placement (i.e. not computed placement from CreateWorld)...
 
-    DgnGeomPartPtr geomPart = m_dgnDb.GeomParts().LoadGeomPart(geomPartId);
-
-    if (!geomPart.IsValid())
-        return false;
-
-    DRange3d localRange = DRange3d::NullRange();
-    ElementGeometryCollection collection(m_dgnDb, geomPart->GetGeomStream());
-
-    collection.SetBRepOutput(ElementGeometryCollection::BRepOutput::Mesh); // Can just use the mesh and avoid creating the ISolidKernelEntity...
-
-    for (ElementGeometryPtr geom : collection)
-        {
-        if (!geom.IsValid())
-            continue;
-
-        if (!m_is3d && is3dGeometryType(geom->GetGeometryType()))
-            {
-            BeAssert(false); // 3d only geometry...
-            return false;
-            }
-
-        DRange3d range;
-
-        if (!geom->GetRange(range))
-            continue;
-
-        localRange.Extend(range);
-        }
+    DRange3d partRange;
+    if (SUCCESS != m_dgnDb.GeomParts().QueryGeomPartRange(partRange, geomPartId))
+        return false; // part probably doesn't exist...
 
     if (!geomToElement.IsIdentity())
-        geomToElement.Multiply(localRange, localRange);
+        geomToElement.Multiply(partRange, partRange);
 
-    OnNewGeom(localRange);
+    OnNewGeom(partRange);
     m_writer.Append(geomPartId, &geomToElement);
 
     return true;
@@ -3897,19 +3908,6 @@ bool ElementGeometryBuilder::Append(DgnGeomPartId geomPartId, TransformCR geomTo
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ElementGeometryBuilder::OnNewGeom(DRange3dCR localRange)
     {
-    if (m_isPartCreate)
-        {
-        // NOTE: Don't need placement or want sub-category to be added, but we do want to
-        //       store symbology/material attachments that aren't from the sub-category appearance.
-        if (m_appearanceChanged)
-            {
-            m_writer.Append(m_elParams, m_isPartCreate);
-            m_appearanceChanged = false;
-            }
-
-        return;
-        }
-
     if (m_is3d)
         m_placement3d.GetElementBoxR().Extend(localRange);
     else
@@ -4249,10 +4247,11 @@ private:
     ElementGeometryBuilderR m_builder;
     DgnCategoryId m_categoryId;
     Transform m_transform;
+    Transform m_geomToElem;
 
 public:
-    TextAnnotationDrawToElementGeometry(TextAnnotationDrawCR annotationDraw, ElementGeometryBuilderR builder, DgnCategoryId categoryId) :
-        m_annotationDraw(annotationDraw), m_builder(builder), m_categoryId(categoryId), m_transform(Transform::FromIdentity()) {}
+    TextAnnotationDrawToElementGeometry(TextAnnotationDrawCR annotationDraw, TransformCR geomToElem, ElementGeometryBuilderR builder, DgnCategoryId categoryId) :
+        m_annotationDraw(annotationDraw), m_builder(builder), m_categoryId(categoryId), m_geomToElem (geomToElem), m_transform(Transform::FromIdentity()) {}
 
     virtual void _AnnounceTransform(TransformCP transform) override { if (nullptr != transform) { m_transform = *transform; } else { m_transform.InitIdentity(); } }
     virtual void _AnnounceElemDisplayParams(ElemDisplayParamsCR params) override { m_builder.Append(params); }
@@ -4304,8 +4303,10 @@ BentleyStatus TextAnnotationDrawToElementGeometry::_ProcessCurveVector(CurveVect
 //---------------------------------------------------------------------------------------
 void TextAnnotationDrawToElementGeometry::_OutputGraphics(ViewContextR context)
     {
+    context.PushTransform(m_geomToElem);
     context.GetCurrentDisplayParams().SetCategoryId(m_categoryId);
     m_annotationDraw.Draw(context);
+    context.PopTransformClip();
     }
 
 END_UNNAMED_NAMESPACE
@@ -4313,10 +4314,10 @@ END_UNNAMED_NAMESPACE
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ElementGeometryBuilder::Append(TextAnnotationCR text)
+bool ElementGeometryBuilder::Append(TextAnnotationCR text, TransformCR transform)
     {
     TextAnnotationDraw annotationDraw(text);
-    TextAnnotationDrawToElementGeometry annotationDrawToGeom(annotationDraw, *this, m_elParams.GetCategoryId());
+    TextAnnotationDrawToElementGeometry annotationDrawToGeom(annotationDraw, transform, *this, m_elParams.GetCategoryId());
     ElementGraphicsOutput::Process(annotationDrawToGeom, m_dgnDb);
 
     return true;
@@ -4336,6 +4337,7 @@ void ElementGeometryBuilder::SetUseCurrentDisplayParams(bool newValue)
 ElementGeometryBuilder::ElementGeometryBuilder(DgnDbR dgnDb, DgnCategoryId categoryId, Placement3dCR placement) : m_dgnDb(dgnDb), m_is3d(true), m_writer(dgnDb)
     {
     m_placement3d = placement;
+    m_placement2d.GetElementBoxR().Init(); //throw away pre-existing bounding box...
     m_haveLocalGeom = m_havePlacement = true;
     m_appearanceChanged = false;
 
@@ -4349,6 +4351,7 @@ ElementGeometryBuilder::ElementGeometryBuilder(DgnDbR dgnDb, DgnCategoryId categ
 ElementGeometryBuilder::ElementGeometryBuilder(DgnDbR dgnDb, DgnCategoryId categoryId, Placement2dCR placement) : m_dgnDb(dgnDb), m_is3d(false), m_writer(dgnDb)
     {
     m_placement2d = placement;
+    m_placement2d.GetElementBoxR().Init(); //throw away pre-existing bounding box...
     m_haveLocalGeom = m_havePlacement = true;
     m_appearanceChanged = false;
 

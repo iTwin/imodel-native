@@ -146,18 +146,15 @@ void GeometrySource::_GetInfoString(HitDetailCR hit, Utf8StringR descr, Utf8CP d
 +---------------+---------------+---------------+---------------+---------------+------*/
 void HitDetail::_GetInfoString(Utf8StringR descr, Utf8CP delimiter) const
     {
-    // NOT_NOW_GEOMETRY_SOURCE - ITransientGeometryHandler should provide a GeometrySource...
     DgnElementCPtr   element = GetElement();
     GeometrySourceCP geom = (element.IsValid() ? element->ToGeometrySource() : nullptr);
 
     if (nullptr == geom)
         {
         IElemTopologyCP elemTopo = GetElemTopology();
-        ITransientGeometryHandlerP transientHandler = (nullptr != elemTopo ? elemTopo->_GetTransientGeometryHandler() : nullptr);
 
-        if (nullptr != transientHandler)
-            transientHandler->_GetTransientInfoString(*this, descr, delimiter);
-        return;
+        if (nullptr == (geom = (nullptr != elemTopo ? elemTopo->_ToGeometrySource() : nullptr)))
+            return;
         }
 
     geom->GetInfoString(*this, descr, delimiter);

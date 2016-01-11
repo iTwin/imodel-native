@@ -14,19 +14,11 @@ JsonTests.JsonValueStructure                            # Fails after geomlibs/e
 # *** Broken in 06; need to be re-visited ***
 #----------------------------------------------------------------------------------------
 DgnLineStyleTest.*                                      # WIP DgnLineStyles
-DgpRoundtripExpressionTests.Roundtrip                   # Fails on some expressions return a decimal point where it is not expected. Further investigation needed.
-NamedVolume.CrudTest                                    # Fails because dgn_NamedVolume table is not there
 DgnECNavigatorTest.Ifc_WithLatestDgnDb                  # WIP DgnItem
 
 ECInstanceSelectTests.SelectQueriesOnDbGeneratedDuringBuild_79Main # WIP_ELEMENT_ITEM this test seems to find 4 things now, but it expects to find 3
 
 ElementDisplayProperties.SetDisplayPattern              # informed Jeff
-
-DgnChangeSummaryTestFixture.CreateSampleDataSet # crashing on optimized 06; notified Raman
-DgnChangeSummaryTestFixture.ValidateChangeSummaries # crashing on optimized 06; notified Raman
-RevisionTestFixture.Workflow # crashing on optimized 06; notified Raman
-RevisionTestFixture.ConflictError # crashing on optimized 06; notified Raman
-ChangeSummaryTestFixture.* # crashing on optimized 06; notified Raman
 
 UnitManagerTest.GetStandardUnitByName                   # fails randomonly on 06Dev; will have to find someone to investigate... maybe Josh
 UnitManagerTest.GetStandardLabel                        # fails randomonly on 06Dev; will have to find someone to investigate... maybe Josh
@@ -36,3 +28,8 @@ UnitIterator.GetName                                    # fails randomonly on 06
 ElementGeometryBuilderTests.CreateElement2d     # UmarH -- WIP Domain imlementation merge and test clean up
 ElementGeomPartTests.GeomPart2d                 # UmarH -- WIP Domain imlementation merge and test clean up
 
+ChangeSummaryTestFixture.ElementChildRelationshipChanges # Notified Raman
+DgnScriptTest.CRUD # notified Sam
+ConfigurationManager_Test.*                             # UmarH -- Tests are ported from Vancouver for MacroConfiguration ,seems macros are not expanding on get variable method. 
+
+DgnProjectPackageTest.VerifyViewsForDgndbFilesConvertedDuringBuild   #Affan #TFS353039

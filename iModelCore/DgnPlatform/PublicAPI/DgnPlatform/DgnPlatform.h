@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/DgnPlatform.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -62,11 +62,10 @@ BENTLEY_NAMESPACE_TYPEDEFS (BeJsEnvironment)
 DGNPLATFORM_TYPEDEFS (ColorDef)
 DGNPLATFORM_TYPEDEFS (BoundingBox2d)
 DGNPLATFORM_TYPEDEFS (BoundingBox3d)
+DGNPLATFORM_TYPEDEFS (DefinitionElement)
 DGNPLATFORM_TYPEDEFS (DictionaryElement)
 DGNPLATFORM_TYPEDEFS (DgnDb)
 DGNPLATFORM_TYPEDEFS (DgnElement)
-DGNPLATFORM_TYPEDEFS (DgnElement2d)
-DGNPLATFORM_TYPEDEFS (DgnElement3d)
 DGNPLATFORM_TYPEDEFS (DgnFont)
 DGNPLATFORM_TYPEDEFS (DgnGeomPart)
 DGNPLATFORM_TYPEDEFS (DgnGlyph)
@@ -80,14 +79,16 @@ DGNPLATFORM_TYPEDEFS (DgnResourceURI)
 DGNPLATFORM_TYPEDEFS (DgnGlyph)
 DGNPLATFORM_TYPEDEFS (DgnGlyphLayoutContext)
 DGNPLATFORM_TYPEDEFS (DgnGlyphLayoutResult)
-DGNPLATFORM_TYPEDEFS (DgnRevision);
+DGNPLATFORM_TYPEDEFS (DgnRevision)
 DGNPLATFORM_TYPEDEFS (DgnRscFont)
 DGNPLATFORM_TYPEDEFS (DgnShxFont)
 DGNPLATFORM_TYPEDEFS (DgnTrueTypeFont)
 DGNPLATFORM_TYPEDEFS (DgnViewport)
 DGNPLATFORM_TYPEDEFS (DisplayStyle)
 DGNPLATFORM_TYPEDEFS (DisplayStyleFlags)
+DGNPLATFORM_TYPEDEFS (AnnotationElement)
 DGNPLATFORM_TYPEDEFS (DrawingElement)
+DGNPLATFORM_TYPEDEFS (SheetElement)
 DGNPLATFORM_TYPEDEFS (GeomStream)
 DGNPLATFORM_TYPEDEFS (GeometrySource)
 DGNPLATFORM_TYPEDEFS (GeometrySource2d)
@@ -107,9 +108,12 @@ DGNPLATFORM_TYPEDEFS (IViewOutput)
 DGNPLATFORM_TYPEDEFS (LineStyleInfo)
 DGNPLATFORM_TYPEDEFS (LineStyleSymb)
 DGNPLATFORM_TYPEDEFS (PhysicalElement)
-DGNPLATFORM_TYPEDEFS (PhysicalRedlineModel)
+DGNPLATFORM_TYPEDEFS (SpatialRedlineModel)
 DGNPLATFORM_TYPEDEFS (PlotInfo)
 DGNPLATFORM_TYPEDEFS (RedlineModel)
+DGNPLATFORM_TYPEDEFS (SpatialElement)
+DGNPLATFORM_TYPEDEFS (SpatialGroupElement)
+DGNPLATFORM_TYPEDEFS (SystemElement)
 DGNPLATFORM_TYPEDEFS (ViewContext)
 DGNPLATFORM_TYPEDEFS (ViewController)
 DGNPLATFORM_TYPEDEFS (ViewFlags)
@@ -127,6 +131,7 @@ DGNPLATFORM_TYPEDEFS (ChangeAnnotationScale)
 DGNPLATFORM_TYPEDEFS (ClipPrimitive)
 DGNPLATFORM_TYPEDEFS (ClipVector)
 DGNPLATFORM_TYPEDEFS (ClipVolumeOverrides)
+DGNPLATFORM_TYPEDEFS (ComponentDef)
 DGNPLATFORM_TYPEDEFS (ComponentModel)
 DGNPLATFORM_TYPEDEFS (CutGraphicsCachedKey)
 DGNPLATFORM_TYPEDEFS (Dgn3DInputEvent)
@@ -197,9 +202,9 @@ DGNPLATFORM_TYPEDEFS (PatternParams)
 DGNPLATFORM_TYPEDEFS (PermanentTopologicalId)
 DGNPLATFORM_TYPEDEFS (PersistentElementPath)
 DGNPLATFORM_TYPEDEFS (PersistentSnapDetail)
-DGNPLATFORM_TYPEDEFS (PhysicalModel)
-DGNPLATFORM_TYPEDEFS (PhysicalRedlineViewController)
-DGNPLATFORM_TYPEDEFS (PhysicalViewController)
+DGNPLATFORM_TYPEDEFS (SpatialModel)
+DGNPLATFORM_TYPEDEFS (SpatialRedlineViewController)
+DGNPLATFORM_TYPEDEFS (SpatialViewController)
 DGNPLATFORM_TYPEDEFS (Placement2d)
 DGNPLATFORM_TYPEDEFS (Placement3d)
 DGNPLATFORM_TYPEDEFS (PropertyContext)
@@ -211,33 +216,35 @@ DGNPLATFORM_TYPEDEFS (QvUnsizedKey)
 DGNPLATFORM_TYPEDEFS (QvViewport)
 DGNPLATFORM_TYPEDEFS (RedlineViewController)
 DGNPLATFORM_TYPEDEFS (RegionGraphicsContext)
-DGNPLATFORM_TYPEDEFS (RevisionManager);
-DGNPLATFORM_TYPEDEFS (ScanCriteria)
-DGNPLATFORM_TYPEDEFS (SelectionSetManager)
-DGNPLATFORM_TYPEDEFS (SheetViewController)
-DGNPLATFORM_TYPEDEFS (SnapContext)
-DGNPLATFORM_TYPEDEFS (SnapDetail)
-DGNPLATFORM_TYPEDEFS (StampQvElemMap)
-DGNPLATFORM_TYPEDEFS (TextString)
-DGNPLATFORM_TYPEDEFS (TextStringStyle)
-DGNPLATFORM_TYPEDEFS (TransformClipStack)
-DGNPLATFORM_TYPEDEFS (TransformInfo)
-DGNPLATFORM_TYPEDEFS (UpdateContext)
-DGNPLATFORM_TYPEDEFS (ViewHandler)
-DGNPLATFORM_TYPEDEFS (ViewManager)
-DGNPLATFORM_TYPEDEFS (VisibleEdgeCache)
-DGNPLATFORM_TYPEDEFS (RenderMaterial)
-DGNPLATFORM_TYPEDEFS (RenderMaterialMap)
-DGNPLATFORM_TYPEDEFS (ViewDefinition)
-DGNPLATFORM_TYPEDEFS (PhysicalViewDefinition)
-DGNPLATFORM_TYPEDEFS (DrawingViewDefinition)
-DGNPLATFORM_TYPEDEFS (SheetViewDefinition)
-DGNPLATFORM_TYPEDEFS (ImageBuffer)
+DGNPLATFORM_TYPEDEFS (RevisionManager)
+DGNPLATFORM_TYPEDEFS(ScanCriteria)
+DGNPLATFORM_TYPEDEFS(SelectionSetManager)
+DGNPLATFORM_TYPEDEFS(SheetViewController)
+DGNPLATFORM_TYPEDEFS(SnapContext)
+DGNPLATFORM_TYPEDEFS(SnapDetail)
+DGNPLATFORM_TYPEDEFS(StampQvElemMap)
+DGNPLATFORM_TYPEDEFS(TextString)
+DGNPLATFORM_TYPEDEFS(TextStringStyle)
+DGNPLATFORM_TYPEDEFS(TransformClipStack)
+DGNPLATFORM_TYPEDEFS(TransformInfo)
+DGNPLATFORM_TYPEDEFS(UpdateContext)
+DGNPLATFORM_TYPEDEFS(ViewHandler)
+DGNPLATFORM_TYPEDEFS(ViewManager)
+DGNPLATFORM_TYPEDEFS(VisibleEdgeCache)
+DGNPLATFORM_TYPEDEFS(RenderMaterial)
+DGNPLATFORM_TYPEDEFS(RenderMaterialMap)
+DGNPLATFORM_TYPEDEFS(ViewDefinition)
+DGNPLATFORM_TYPEDEFS(SpatialViewDefinition)
+DGNPLATFORM_TYPEDEFS(DrawingViewDefinition)
+DGNPLATFORM_TYPEDEFS(SheetViewDefinition)
+DGNPLATFORM_TYPEDEFS(ImageBuffer)
+DGNPLATFORM_TYPEDEFS(ECSqlClassParams)
 
 /** @endcond */
 DGNPLATFORM_TYPEDEFS (DgnGCS)
 DGNPLATFORM_TYPEDEFS (IGeoCoordinateServices)
 
+DGNPLATFORM_REF_COUNTED_PTR (DefinitionElement)
 DGNPLATFORM_REF_COUNTED_PTR (DictionaryElement)
 DGNPLATFORM_REF_COUNTED_PTR (DgnDb)
 DGNPLATFORM_REF_COUNTED_PTR (DgnDbExpressionContext)
@@ -249,14 +256,18 @@ DGNPLATFORM_REF_COUNTED_PTR (DgnGeomPart)
 DGNPLATFORM_REF_COUNTED_PTR (DgnMarkupProject)
 DGNPLATFORM_REF_COUNTED_PTR (DgnModel)
 DGNPLATFORM_REF_COUNTED_PTR (DgnRevision)
+DGNPLATFORM_REF_COUNTED_PTR (AnnotationElement)
 DGNPLATFORM_REF_COUNTED_PTR (DrawingElement)
-DGNPLATFORM_REF_COUNTED_PTR (GeometricElement)
+DGNPLATFORM_REF_COUNTED_PTR (SheetElement)
+DGNPLATFORM_REF_COUNTED_PTR (SpatialElement)
+DGNPLATFORM_REF_COUNTED_PTR (SpatialGroupElement)
 DGNPLATFORM_REF_COUNTED_PTR (ILocksManager)
 DGNPLATFORM_REF_COUNTED_PTR (PatternParams)
 DGNPLATFORM_REF_COUNTED_PTR (PhysicalElement)
+DGNPLATFORM_REF_COUNTED_PTR (ComponentDef)
 DGNPLATFORM_REF_COUNTED_PTR (ComponentModel)
-DGNPLATFORM_REF_COUNTED_PTR (PhysicalModel)
-DGNPLATFORM_REF_COUNTED_PTR (PhysicalRedlineViewController)
+DGNPLATFORM_REF_COUNTED_PTR (SpatialModel)
+DGNPLATFORM_REF_COUNTED_PTR (SpatialRedlineViewController)
 DGNPLATFORM_REF_COUNTED_PTR (QueryViewController)
 DGNPLATFORM_REF_COUNTED_PTR (RedlineViewController)
 DGNPLATFORM_REF_COUNTED_PTR (SheetViewController)
@@ -266,7 +277,7 @@ DGNPLATFORM_REF_COUNTED_PTR (RenderMaterial)
 DGNPLATFORM_REF_COUNTED_PTR (RenderMaterialMap)
 DGNPLATFORM_REF_COUNTED_PTR (ImageBuffer)
 DGNPLATFORM_REF_COUNTED_PTR (ViewDefinition)
-DGNPLATFORM_REF_COUNTED_PTR (PhysicalViewDefinition)
+DGNPLATFORM_REF_COUNTED_PTR (SpatialViewDefinition)
 DGNPLATFORM_REF_COUNTED_PTR (DrawingViewDefinition)
 DGNPLATFORM_REF_COUNTED_PTR (SheetViewDefinition)
 
@@ -280,28 +291,6 @@ DGNPLATFORM_REF_COUNTED_PTR (IProgressiveDisplay)
 DGNPLATFORM_REF_COUNTED_PTR (ViewController)
 /** @endcond */
 
-//__PUBLISH_SECTION_END__
-// ///////////////////////////////////////////////////////////////////////////////////////////////////
-// DO NOT USE: these MAX*LENGTH values are not portable or correct!
-// ///////////////////////////////////////////////////////////////////////////////////////////////////
-BEGIN_BENTLEY_NAMESPACE
-
-enum
-{
-    DGNPLATFORM_RESOURCE_MAXFILELENGTH                    = 256,
-    DGNPLATFORM_RESOURCE_MAXNAMELENGTH                    = 256,
-    DGNPLATFORM_RESOURCE_MAXEXTENSIONLENGTH               = 256,
-
-    MAXFILELENGTH         = DGNPLATFORM_RESOURCE_MAXFILELENGTH,
-    MAXDIRLENGTH          = 256,
-    MAXDEVICELENGTH       = 256,
-    MAXNAMELENGTH         = DGNPLATFORM_RESOURCE_MAXNAMELENGTH,
-    MAXEXTENSIONLENGTH    = DGNPLATFORM_RESOURCE_MAXEXTENSIONLENGTH,
-};
-
-END_BENTLEY_NAMESPACE
-
-//__PUBLISH_SECTION_START__
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
 BEBRIEFCASEBASED_ID_CLASS(DgnElementId)       //!< An Id that is assigned to an Element. @ingroup DgnElementGroup
@@ -311,6 +300,7 @@ BEBRIEFCASEBASED_ID_CLASS(DgnLinkId)          //!< An Id that is assigned to a D
 BEBRIEFCASEBASED_ID_SUBCLASS(DgnMaterialId, DgnElementId) //!< An element Id that refers to a material.
 BEBRIEFCASEBASED_ID_SUBCLASS(DgnTextureId, DgnElementId) //!< An element Id that refers to a named texture.
 BEBRIEFCASEBASED_ID_SUBCLASS(DgnLightId, DgnElementId) //!< An element Id that refers to a light definition.
+BEBRIEFCASEBASED_ID_SUBCLASS(DgnStyleId, DgnElementId) //!< An Id that is assigned to a style. See DgnDb#Styles.
 BEBRIEFCASEBASED_ID_SUBCLASS(DgnCategoryId, DgnElementId) //!< An element Id that refers to a DgnCategory. @ingroup DgnCategoryGroup
 BEBRIEFCASEBASED_ID_SUBCLASS(DgnSubCategoryId, DgnElementId) //!< An element Id that refers to a DgnSubCategory. @ingroup DgnCategoryGroup
 BEBRIEFCASEBASED_ID_SUBCLASS(DgnTrueColorId, DgnElementId) //!< An element Id that refers a a DgnTrueColor.
@@ -319,7 +309,6 @@ BEBRIEFCASEBASED_ID_SUBCLASS(DgnViewId, DgnElementId) //!< An element Id that re
 BESERVER_ISSUED_ID_CLASS(DgnAuthorityId)
 BESERVER_ISSUED_ID_CLASS(DgnFontId)
 BESERVER_ISSUED_ID_CLASS(DgnSessionId)       //!< An Id that is assigned to a session. See DgnDb#Sessions.
-BESERVER_ISSUED_ID_CLASS(DgnStyleId)         //!< An Id that is assigned to a style. See DgnDb#Styles.
 
 namespace dgn_ElementHandler{struct Element;};
 namespace dgn_ModelHandler  {struct Model;};
@@ -397,25 +386,6 @@ struct DgnClassId : BeSQLite::BeInt64Id
     DgnClassId(DgnClassId const& rhs) : BeInt64Id(rhs) {}
     DgnClassId& operator=(DgnClassId const& rhs) {m_id = rhs.m_id; return *this;}
 };
-
-//=======================================================================================
-//! The key (classId,instanceId) of a DgnElement.
-//=======================================================================================
-struct DgnElementKey : BeSQLite::EC::ECInstanceKey
-{
-    DgnElementKey() : BeSQLite::EC::ECInstanceKey() {}
-    DgnElementKey(ECN::ECClassId classId, BeSQLite::EC::ECInstanceId instanceId) : BeSQLite::EC::ECInstanceKey(classId, instanceId) {}
-    DgnElementKey(DgnClassId classId, BeSQLite::EC::ECInstanceId instanceId) : BeSQLite::EC::ECInstanceKey(classId.GetValue(), instanceId) {}
-
-    //! Converts an ECInstanceKey to a DgnElementKey.
-    //! @note Does a simple type conversion without checking if the specified ECInstanceKey is a valid DgnElementKey
-    explicit DgnElementKey(BeSQLite::EC::ECInstanceKeyCR key) : BeSQLite::EC::ECInstanceKey(key) {}
-
-    DgnClassId GetClassId() const {return DgnClassId(GetECClassId());}
-    DgnElementId GetElementId() const {return DgnElementId(GetECInstanceId().GetValue());}
-};
-
-typedef DgnElementKey const& DgnElementKeyCR;
 
 #ifdef WIP_ELEMENT_ITEM // *** pending redesign
 //=======================================================================================
@@ -698,6 +668,46 @@ enum class ClipMask
 };
 
 ENUM_IS_FLAGS(ClipMask)
+
+//! Values held in line style definition elements; normally not used by clients of this API
+//! @ingroup LineStyleManagerModule
+enum class LsComponentType
+{
+    Unknown         = 0,             //!<   Unknown, should never occur
+    PointSymbol     = 1,
+    Compound        = 2,
+    LineCode        = 3,
+    LinePoint       = 4,
+    Internal        = 6,
+    RasterImage     = 7,
+};
+
+//=======================================================================================
+// @bsiclass
+//=======================================================================================
+struct LsComponentId
+{
+private:
+    uint32_t            m_number;              // Component property ID
+    LsComponentType     m_type;
+public:
+    uint32_t GetValue() const { return m_number; }
+    LsComponentType GetType() const { return m_type; }
+    LsComponentId() { m_type = LsComponentType::Unknown; m_number = 0xFFFFFFFF; }
+    bool IsValid() const { return m_number != 0xFFFFFFFF; }
+    explicit LsComponentId(LsComponentType type, uint32_t value) : m_type(type), m_number(value) {}
+
+    bool operator<(LsComponentId const&r) const
+        {
+        if (this->m_type < r.m_type)
+            return true;
+
+        if (this->m_type > r.m_type)
+            return false;
+
+        return this->m_number < r.m_number;
+        }
+};
 
 enum
 {

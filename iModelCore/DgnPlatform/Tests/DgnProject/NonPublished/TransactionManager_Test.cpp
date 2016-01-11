@@ -265,9 +265,9 @@ TEST_F(TransactionManagerTests, ElementAssembly)
 +---------------+---------------+---------------+---------------+---------------+------*/
 static void testModelUndoRedo(DgnDbR db)
     {
-    Utf8String name = db.Models().GetUniqueModelName("testphysical");
+    Utf8String name = db.Models().GetUniqueModelName("TestSpatial");
 
-    ModelHandlerR handler = dgn_ModelHandler::Physical::GetHandler();
+    ModelHandlerR handler = dgn_ModelHandler::Spatial::GetHandler();
     DgnModelPtr model = handler.Create(DgnModel::CreateParams(db, db.Domains().GetClassId(handler), DgnModel::CreateModelCode(name)));
     auto modelStatus = model->Insert();
     ASSERT_TRUE(DgnDbStatus::Success == modelStatus);
@@ -338,23 +338,23 @@ static void testModelUndoRedo(DgnDbR db)
     model = db.Models().GetModel(model->GetModelId());
     ASSERT_TRUE(model->IsPersistent());
 
-    auto& props = model->GetPropertiesR();
-    props.SetRoundoffUnit(100.0, 200.0);
-    ASSERT_TRUE(100.0 == props.GetRoundoffUnit());
-    ASSERT_TRUE(200.0 == props.GetRoundoffRatio());
+    auto& displayInfo = model->ToGeometricModelP()->GetDisplayInfoR();
+    displayInfo.SetRoundoffUnit(100.0, 200.0);
+    ASSERT_TRUE(100.0 == displayInfo.GetRoundoffUnit());
+    ASSERT_TRUE(200.0 == displayInfo.GetRoundoffRatio());
 
     model->Update();
     db.SaveChanges("updated model");
     stat = txns.ReverseSingleTxn(); // undo update
-    ASSERT_TRUE(&props == &model->GetPropertiesR());
+    ASSERT_TRUE(&displayInfo == &model->ToGeometricModelP()->GetDisplayInfoR());
     ASSERT_TRUE(DgnDbStatus::Success == stat);
-    ASSERT_TRUE(100.0 != props.GetRoundoffUnit());
-    ASSERT_TRUE(200.0 != props.GetRoundoffRatio());
+    ASSERT_TRUE(100.0 != displayInfo.GetRoundoffUnit());
+    ASSERT_TRUE(200.0 != displayInfo.GetRoundoffRatio());
 
     stat = txns.ReinstateTxn();  // redo the update
     ASSERT_TRUE(DgnDbStatus::Success == stat);
-    ASSERT_TRUE(100.0 == props.GetRoundoffUnit());
-    ASSERT_TRUE(200.0 == props.GetRoundoffRatio());
+    ASSERT_TRUE(100.0 == displayInfo.GetRoundoffUnit());
+    ASSERT_TRUE(200.0 == displayInfo.GetRoundoffRatio());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -708,9 +708,6 @@ TEST_F(TransactionManagerTests, ElementInsertReverse)
     EXPECT_EQ(nullptr, m_db->Elements().FindElement(e1id));
     EXPECT_EQ(nullptr, m_db->Elements().FindElement(e2id));
 
-    EXPECT_FALSE(m_db->Elements().QueryElementKey(e1id).IsValid());
-    EXPECT_FALSE(m_db->Elements().QueryElementKey(e2id).IsValid());
-
     //Reinstate transcation.The elements should be back in the model.
     stat = txns.ReinstateTxn();
     EXPECT_EQ (DgnDbStatus::Success, stat);
@@ -761,8 +758,7 @@ TEST_F (TransactionManagerTests, ElementDeleteReverse)
     EXPECT_EQ (DgnDbStatus::Success, m_db->Elements().Delete(*pE1));
     m_db->SaveChanges("changeSet3");
 
-    EXPECT_FALSE(m_db->Elements().QueryElementKey(e1id).IsValid());
-    EXPECT_TRUE(m_db->Elements().GetElement(e1id) == nullptr);
+    EXPECT_FALSE(m_db->Elements().GetElement(e1id).IsValid());
 
     //Reverse Transaction. Element should be back in the model now.
     auto stat = txns.ReverseTxns(1);
@@ -775,7 +771,7 @@ TEST_F (TransactionManagerTests, ElementDeleteReverse)
     EXPECT_EQ(DgnDbStatus::Success, stat);
     m_db->SaveChanges("changeSet4");
 
-    EXPECT_FALSE(m_db->Elements().QueryElementKey(e1id).IsValid());
+    EXPECT_FALSE(m_db->Elements().GetElement(e1id).IsValid());
 
     //Both the elements and the model should'nt be in the database.
     txns.ReverseAll(true);
@@ -850,7 +846,8 @@ TEST_F (TransactionManagerTests, MultiTxnOperation)
     DgnModelId seedModelId = m_defaultModelId;
     DgnModelPtr seedModel = m_db->Models().GetModel(seedModelId);
     DgnModelPtr model1 = seedModel->Clone(DgnModel::CreateModelCode("Model1"));
-    model1->Insert("Test Model 1");
+    model1->SetLabel("Test Model 1");
+    model1->Insert();
     m_db->SaveChanges("changeSet1");
 
     ASSERT_TRUE (model1 != nullptr);
@@ -860,7 +857,8 @@ TEST_F (TransactionManagerTests, MultiTxnOperation)
 
     //Inserts 2 models..
     DgnModelPtr model2 = seedModel->Clone(DgnModel::CreateModelCode("Model2"));
-    model2->Insert("Test Model 2");
+    model2->SetLabel("Test Model 2");
+    model2->Insert();
     m_db->SaveChanges("changeSet2");
 
     ASSERT_TRUE (model2 != nullptr);
@@ -871,7 +869,8 @@ TEST_F (TransactionManagerTests, MultiTxnOperation)
     m_db->SaveChanges("changeSet3");
 
     DgnModelPtr model3 = seedModel->Clone(DgnModel::CreateModelCode("Model3"));
-    model3->Insert("Test Model 3");
+    model3->SetLabel("Test Model 3");
+    model3->Insert();
     auto t3 = txns.GetCurrentTxnId();
     m_db->SaveChanges("changeSet4");
 

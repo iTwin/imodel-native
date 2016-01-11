@@ -186,7 +186,7 @@ void DgnModelTests::InsertElement(DgnDbR db,   DgnModelId mid, bool is3d, bool e
     if (is3d)
         gelem = PhysicalElement::Create(PhysicalElement::CreateParams(db, mid, DgnClassId(db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, "PhysicalElement")), cat, Placement3d()));
     else
-        gelem = DrawingElement::Create(DrawingElement::CreateParams(db, mid, DgnClassId(db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, "DrawingElement")), cat, Placement2d()));
+        gelem = AnnotationElement::Create(AnnotationElement::CreateParams(db, mid, DgnClassId(db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, "AnnotationElement")), cat, Placement2d()));
 
     ElementGeometryBuilderPtr builder = ElementGeometryBuilder::CreateWorld(*gelem->ToGeometrySource());
     builder->Append(*ICurvePrimitive::CreateLine(DSegment3d::From(DPoint3d::FromZero(), DPoint3d::From(1,0,0))));
@@ -198,7 +198,7 @@ void DgnModelTests::InsertElement(DgnDbR db,   DgnModelId mid, bool is3d, bool e
         }
 
     DgnElementCPtr newElem = db.Elements().Insert(*gelem);
-    ASSERT_EQ( expectSuccess , newElem.IsValid() && newElem->GetElementKey().IsValid() );
+    ASSERT_EQ( expectSuccess , newElem.IsValid() && newElem->GetElementId().IsValid() );
     }
 
 //---------------------------------------------------------------------------------------
@@ -226,23 +226,25 @@ TEST_F(DgnModelTests, SheetModelCRUD)
                                 DgnModel::CreateModelCode(s_sheet1Name), sheetSize);
         SheetModelPtr sheet1 = SheetModel::Create(params);
         ASSERT_TRUE( sheet1.IsValid() );
-        ASSERT_EQ( DgnDbStatus::Success, sheet1->Insert("a sheet model (in mm)") );
+        sheet1->SetLabel("a sheet model (in mm)");
+        ASSERT_EQ( DgnDbStatus::Success, sheet1->Insert() );
         ASSERT_TRUE( sheet1->GetModelId().IsValid() );
 
         ASSERT_EQ( 1 , countSheets(*db) );
 
         //  Test some insert errors
-        ASSERT_NE( DgnDbStatus::Success, sheet1->Insert("") ) << "Should be illegal to add sheet that is already persistent";
+        ASSERT_NE( DgnDbStatus::Success, sheet1->Insert() ) << "Should be illegal to add sheet that is already persistent";
 
         SheetModelPtr sheetSameName = SheetModel::Create(params);
-        ASSERT_NE( DgnDbStatus::Success, sheetSameName->Insert("") ) << "Should be illegal to add a second sheet with the same name";
+        ASSERT_NE( DgnDbStatus::Success, sheetSameName->Insert() ) << "Should be illegal to add a second sheet with the same name";
 
         //  Create a second sheet
         SheetModel::CreateParams params2(*db, DgnClassId(db->Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_SheetModel)),
                                 DgnModel::CreateModelCode(s_sheet2Name), sheetSize);
         SheetModelPtr sheet2 = SheetModel::Create(params2);
-        ASSERT_TRUE( sheet1.IsValid() );
-        ASSERT_EQ( DgnDbStatus::Success, sheet2->Insert("a second sheet model") );
+        ASSERT_TRUE(sheet2.IsValid());
+        sheet2->SetLabel("a second sheet model");
+        ASSERT_EQ( DgnDbStatus::Success, sheet2->Insert() );
         ASSERT_TRUE( sheet2->GetModelId().IsValid() );
         ASSERT_NE( sheet2->GetModelId() , sheet1->GetModelId() );
 
@@ -333,7 +335,7 @@ TEST_F(DgnModelTests, WorkWithDgnModelTable)
             continue;
 
         WString entryNameW(entry.GetCodeValue(), true);               // string conversion
-        WString entryDescriptionW(entry.GetDescription(), true); // string conversion
+        WString entryDescriptionW(entry.GetLabel(), true); // string conversion
         testModel.SetTestModelProperties(entryNameW.c_str(), entryDescriptionW.c_str());
         testModel.IsEqual(models[i]);
         i++;
@@ -387,15 +389,18 @@ TEST_F (DgnModelTests, ModelsIterator)
     EXPECT_TRUE (seedModel != nullptr);
 
     //Inserts models
-    DgnModelPtr M1 = seedModel->Clone (DgnModel::CreateModelCode("Model1"));
-    M1->Insert ("Test Model 1");
+    DgnModelPtr m1 = seedModel->Clone (DgnModel::CreateModelCode("Model1"));
+    m1->SetLabel("Test Model 1");
+    m1->Insert();
     db.SaveChanges ("changeSet1");
 
-    DgnModelPtr M2 = seedModel->Clone (DgnModel::CreateModelCode("Model2"));
-    M2->Insert ("Test Model 2", true);
+    DgnModelPtr m2 = seedModel->Clone (DgnModel::CreateModelCode("Model2"));
+    m2->SetLabel("Test Model 2");
+    m2->Insert ();
 
-    DgnModelPtr M3 = seedModel->Clone (DgnModel::CreateModelCode("Model3"));
-    M3->Insert ("Test Model 3", true);
+    DgnModelPtr m3 = seedModel->Clone (DgnModel::CreateModelCode("Model3"));
+    m3->SetLabel("Test Model 3");
+    m3->Insert();
     db.SaveChanges ("changeSet1");
 
     EXPECT_TRUE (db.Models ().QueryModelId (DgnModel::CreateModelCode("Model1")).IsValid ());
@@ -419,24 +424,24 @@ TEST_F (DgnModelTests, ModelsIterator)
         {
         if (entry.GetModelId () == m1id)
             {
-            EXPECT_EQ (M1->GetClassId ().GetValue (), entry.GetClassId ().GetValue ());
+            EXPECT_EQ (m1->GetClassId ().GetValue (), entry.GetClassId ().GetValue ());
             EXPECT_STREQ ("Model1", entry.GetCodeValue ());
-            EXPECT_STREQ ("Test Model 1", entry.GetDescription ());
-            EXPECT_EQ (true, entry.InGuiList ());
+            EXPECT_STREQ ("Test Model 1", entry.GetLabel());
+            EXPECT_EQ (true, entry.GetInGuiList ());
             }
         else if (entry.GetModelId () == m2id)
             {
-            EXPECT_EQ (M2->GetClassId ().GetValue (), entry.GetClassId ().GetValue ());
+            EXPECT_EQ (m2->GetClassId ().GetValue (), entry.GetClassId ().GetValue ());
             EXPECT_STREQ ("Model2", entry.GetCodeValue ());
-            EXPECT_STREQ ("Test Model 2", entry.GetDescription ());
-            EXPECT_EQ (true, entry.InGuiList ());
+            EXPECT_STREQ("Test Model 2", entry.GetLabel());
+            EXPECT_EQ(true, entry.GetInGuiList());
             }
         else if (entry.GetModelId () == m3id)
             {
-            EXPECT_EQ (M3->GetClassId ().GetValue (), entry.GetClassId ().GetValue ());;
+            EXPECT_EQ (m3->GetClassId ().GetValue (), entry.GetClassId ().GetValue ());;
             EXPECT_STREQ ("Model3", entry.GetCodeValue ());
-            EXPECT_STREQ ("Test Model 3", entry.GetDescription ());
-            EXPECT_EQ (true, entry.InGuiList ());
+            EXPECT_STREQ("Test Model 3", entry.GetLabel());
+            EXPECT_EQ(true, entry.GetInGuiList());
             }
         i++;
         }
@@ -456,13 +461,14 @@ TEST_F (DgnModelTests, AbandonChanges)
     EXPECT_TRUE (seedModel != nullptr);
 
     //Inserts a model
-    DgnModelPtr M1 = seedModel->Clone (DgnModel::CreateModelCode("Model1"));
-    M1->Insert ("Test Model 1");
-    EXPECT_TRUE (M1 != nullptr);
+    DgnModelPtr m1 = seedModel->Clone (DgnModel::CreateModelCode("Model1"));
+    m1->SetLabel("Test Model 1");
+    m1->Insert ();
+    EXPECT_TRUE (m1 != nullptr);
     db.SaveChanges ("changeSet1");
 
     EXPECT_TRUE (db.Models ().QueryModelId (DgnModel::CreateModelCode("Model1")).IsValid ());
-    M1->Delete ();
+    m1->Delete ();
     EXPECT_FALSE (db.Models ().QueryModelId (DgnModel::CreateModelCode("Model1")).IsValid ());
 
     DgnModelPtr model2 = seedModel->Clone (DgnModel::CreateModelCode("Model2"));
@@ -502,17 +508,18 @@ TEST_F (DgnModelTests, AddAppData)
     EXPECT_TRUE (seedModel != nullptr);
 
     //Inserts a model
-    DgnModelPtr M1 = seedModel->Clone (DgnModel::CreateModelCode("Model1"));
-    M1->Insert ("Test Model 1");
-    EXPECT_TRUE (M1 != nullptr);
+    DgnModelPtr m1 = seedModel->Clone (DgnModel::CreateModelCode("Model1"));
+    m1->SetLabel("Test Model 1");
+    m1->Insert ();
+    EXPECT_TRUE (m1 != nullptr);
     EXPECT_TRUE (db.Models ().QueryModelId (DgnModel::CreateModelCode("Model1")).IsValid ());
 
     static DgnModel::AppData::Key m_key;
     TestAppData *m_AppData = new TestAppData ();
-    M1->AddAppData (m_key, m_AppData);
-    M1->FillModel ();
+    m1->AddAppData (m_key, m_AppData);
+    m1->FillModel ();
     EXPECT_TRUE (m_AppData->isFilled);
-    EXPECT_TRUE (M1->FindAppData (m_key) != nullptr);
+    EXPECT_TRUE (m1->FindAppData (m_key) != nullptr);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -529,19 +536,20 @@ TEST_F (DgnModelTests, DropAppData)
     EXPECT_TRUE (seedModel != nullptr);
 
     //Inserts a model
-    DgnModelPtr M1 = seedModel->Clone (DgnModel::CreateModelCode("Model1"));
-    M1->Insert ("Test Model 1");
-    EXPECT_TRUE (M1 != nullptr);
+    DgnModelPtr m1 = seedModel->Clone (DgnModel::CreateModelCode("Model1"));
+    m1->SetLabel("Test Model 1");
+    m1->Insert();
+    EXPECT_TRUE (m1 != nullptr);
     EXPECT_TRUE (db.Models ().QueryModelId (DgnModel::CreateModelCode("Model1")).IsValid ());
 
     static DgnModel::AppData::Key m_key;
     TestAppData *m_AppData = new TestAppData ();
-    M1->AddAppData (m_key, m_AppData);
-    M1->FillModel ();
+    m1->AddAppData (m_key, m_AppData);
+    m1->FillModel ();
     EXPECT_TRUE (m_AppData->isFilled);
-    StatusInt status = M1->DropAppData (m_key);
+    StatusInt status = m1->DropAppData (m_key);
     EXPECT_TRUE (status == 0);
-    EXPECT_TRUE (M1->FindAppData (m_key) == nullptr);
+    EXPECT_TRUE (m1->FindAppData (m_key) == nullptr);
     }
 
 /*---------------------------------------------------------------------------------**//**

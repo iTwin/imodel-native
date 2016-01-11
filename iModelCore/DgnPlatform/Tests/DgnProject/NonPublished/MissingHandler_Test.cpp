@@ -18,7 +18,7 @@
 +---------------+---------------+---------------+---------------+---------------+------*/
 static PhysicalElement::CreateParams makeCreateParams(DgnDbR db, DgnModelId model, DgnClassId classId, DgnCategoryId cat, DgnElementId parentId=DgnElementId())
     {
-    return PhysicalElement::CreateParams(db, model, classId, cat, Placement3d(), DgnElement::Code(), DgnElementId(), parentId);
+    return PhysicalElement::CreateParams(db, model, classId, cat, Placement3d(), DgnElement::Code(), nullptr, parentId);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -101,7 +101,7 @@ public:
         {
         BeFileName schemaFile = schemasDir;
         schemaFile.AppendToPath(L"ECSchemas/" MHTEST_SCHEMAW L".01.00.ecschema.xml");
-        ASSERT_TRUE(DgnDbStatus::Success == DgnBaseDomain::GetDomain().ImportSchema(db, schemaFile));
+        ASSERT_TRUE(DgnDbStatus::Success == DgnDomain::ImportSchema(db, schemaFile));
         }
 };
 
@@ -142,7 +142,8 @@ struct MissingHandlerTest : public ::testing::Test
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnElementId MissingHandlerTest::CreatePhysicalElement(DgnDbR db, DgnElementId parentId)
     {
-    PhysicalElement elem(makeCreateParams(db, m_defaultModelId, PhysicalElement::QueryClassId(db), m_defaultCategoryId, parentId));
+    DgnClassId classId = db.Domains().GetClassId(dgn_ElementHandler::Physical::GetHandler());
+    PhysicalElement elem(makeCreateParams(db, m_defaultModelId, classId, m_defaultCategoryId, parentId));
     elem.Insert();
     return elem.GetElementId();
     }
@@ -173,7 +174,7 @@ void MissingHandlerTest::InitDb(DgnDbR db)
     m_defaultModelId = db.Models().QueryFirstModelId();
     DgnModelPtr defaultModel = db.Models().GetModel(m_defaultModelId);
     ASSERT_TRUE(defaultModel.IsValid());
-    ASSERT_TRUE(nullptr != defaultModel->ToPhysicalModel());
+    ASSERT_TRUE(nullptr != defaultModel->ToSpatialModel());
 
     m_defaultCategoryId = DgnCategory::QueryFirstCategoryId(db);
     DgnCategory altCat(DgnCategory::CreateParams(db, "AltCategory", DgnCategory::Scope::Any));
@@ -297,7 +298,7 @@ void MissingHandlerTest::TestRestrictions(ElemInfo const& info, DgnDbR db, uint6
         }
 
     // Change geometry
-    auto model = db.Models().Get<PhysicalModel>(m_defaultModelId);
+    auto model = db.Models().Get<SpatialModel>(m_defaultModelId);
     ASSERT_TRUE(model.IsValid());
     ElementGeometryBuilderPtr builder = ElementGeometryBuilder::Create(*model, pElem->GetCategoryId(), placement.GetOrigin());
     ASSERT_TRUE(builder.IsValid());
@@ -362,13 +363,13 @@ TEST_F(MissingHandlerTest, HandlerRestrictions)
     // Reopen the dgndb once more, with handlers loaded again
         {
         ScopedDgnHost host;
-        DgnDbPtr db = DgnDb::OpenDgnDb(nullptr, fullDgnDbFileName, DgnDb::OpenParams(BeSQLite::Db::OpenMode::ReadWrite));
-        ASSERT_TRUE(db.IsValid());
 
         // register domain and handlers
         MissingHandlerDomain domain;
         DgnDomains::RegisterDomain(domain);
-        domain.ImportSchema(*db, T_HOST.GetIKnownLocationsAdmin().GetDgnPlatformAssetsDirectory());
+
+        DgnDbPtr db = DgnDb::OpenDgnDb(nullptr, fullDgnDbFileName, DgnDb::OpenParams(BeSQLite::Db::OpenMode::ReadWrite));
+        ASSERT_TRUE(db.IsValid());
 
         // Confirm operations are all supported again now that handler is available
         TestRestrictions(m_elem1Info, *db, 0);

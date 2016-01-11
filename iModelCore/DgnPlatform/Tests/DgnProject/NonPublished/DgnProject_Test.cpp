@@ -9,6 +9,7 @@
 #include <Bentley/BeTimeUtilities.h>
 #include <DgnPlatform/DgnIModel.h>
 #include <DgnPlatform/ColorUtil.h>
+#include <DgnPlatform/DgnGeoCoord.h>
 
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
 USING_NAMESPACE_BENTLEY_EC
@@ -128,9 +129,9 @@ TEST (DgnDb, CheckStandardProperties)
     DgnModelPtr defaultModel = project->Models().GetModel(project->Models().QueryFirstModelId());
 
     //  Use ModelInfo as an alt. way to get at some of the same property data
-    DgnModel::Properties const& minfo = defaultModel->GetProperties();
-    ASSERT_TRUE( minfo.GetMasterUnits().GetBase() == UnitBase::Meter );
-    ASSERT_TRUE( minfo.GetSubUnits().GetBase() == UnitBase::Meter );
+    GeometricModel::DisplayInfo const& displayInfo = defaultModel->ToGeometricModel()->GetDisplayInfo();
+    ASSERT_TRUE(displayInfo.GetMasterUnits().GetBase() == UnitBase::Meter);
+    ASSERT_TRUE(displayInfo.GetSubUnits().GetBase() == UnitBase::Meter);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -336,10 +337,11 @@ TEST(DgnDb, GetCoordinateSystemProperties)
     //Open project
     DgnDbPtr dgnProj;
     openProject(dgnProj, fullFileName, BeSQLite::Db::OpenMode::Readonly);
-    double azmth = dgnProj->Units().GetAzimuth();
-    double azmthExpected = 178.2912;
+    DgnGCS* dgnGCS = dgnProj->Units().GetDgnGCS();
+    double azimuth = (dgnGCS != nullptr) ? dgnGCS->GetAzimuth() : 0.0;
+    double azimuthExpected = 178.2912;
     double eps = 0.0001;
-    EXPECT_TRUE(fabs(azmthExpected - azmth) < eps )<<"Expected diffrent azimuth ";
+    EXPECT_TRUE(fabs(azimuthExpected - azimuth) < eps) << "Expected different azimuth ";
     GeoPoint gorigin;
     dgnProj->Units().LatLongFromXyz(gorigin, DPoint3d::FromZero());
     double const latitudeExpected = 42.3413;
@@ -719,4 +721,48 @@ TEST(DgnProject, DuplicateElementId)
     //     ASSERT_TRUE(secondAddId.IsValid());
     //     ASSERT_TRUE(secondAddId > firstAddId);
     //     }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                             Muhammad Hassan                         12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (DgnProjectPackageTest, VerifyViewsForDgndbFilesConvertedDuringBuild)
+    {
+    std::vector<Utf8String> dgndbFiles;
+    dgndbFiles.push_back ("79_Main.i.idgndb");
+    dgndbFiles.push_back ("04_Plant.i.idgndb");
+    dgndbFiles.push_back ("BGRSubset.i.idgndb");
+    dgndbFiles.push_back ("fonts.dgn.i.idgndb");
+    dgndbFiles.push_back ("2dMetricGeneral.idgndb");
+    dgndbFiles.push_back ("3dMetricGeneral.idgndb");
+
+    BeFileName dgndbFilesPath;
+    BeTest::GetHost ().GetDocumentsRoot (dgndbFilesPath);
+    dgndbFilesPath.AppendToPath (L"DgnDb");
+
+    DbResult status;
+    DgnDbPtr dgnProj;
+
+    for (auto dgndbFileName : dgndbFiles)
+        {
+        BeFileName filePath = dgndbFilesPath;
+        filePath.AppendToPath ((BeFileName)dgndbFileName);
+        
+        dgnProj = DgnDb::OpenDgnDb (&status, filePath, DgnDb::OpenParams (Db::OpenMode::ReadWrite));
+        ASSERT_EQ (DbResult::BE_SQLITE_OK, status) << status;
+
+        Statement statement;
+        ASSERT_EQ (DbResult::BE_SQLITE_OK, statement.Prepare (*dgnProj, "select '[' || name || ']'  from sqlite_master where type = 'view' and instr (name,'.') and instr(sql, '--### ECCLASS VIEW')"));
+        while (statement.Step () == BE_SQLITE_ROW)
+            {
+            //printf ("\n Schema : %s ,     View Name : %s   \n", statement.GetValueText (0), statement.GetValueText (1));
+            Statement stmt;
+            Utf8String sql;
+            sql.Sprintf ("SELECT * FROM %s", statement.GetValueText (0));
+            ASSERT_EQ (DbResult::BE_SQLITE_OK, stmt.Prepare (*dgnProj, sql.c_str ())) << "Prepare failed : " << sql.c_str () << " in DgnDb : " << dgndbFileName.c_str ();
+            }
+        statement.Finalize ();
+
+        dgnProj->CloseDb ();
+        }
     }

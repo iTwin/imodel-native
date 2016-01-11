@@ -28,15 +28,15 @@
 * A "markup" is an annotation applied to a DgnDb. A markup has text properties but no graphics.
 * 
 * A "redline" is an annotation applied to a DgnDb or view that has both text and graphics.
-* Redline graphics are stored in models within a DgnMarkupProject. There are two types of models that hold redlines, RedlineModel and PhysicalRedlineModel.
+* Redline graphics are stored in models within a DgnMarkupProject. There are two types of models that hold redlines, RedlineModel and SpatialRedlineModel.
 * A redline model must be created or opened in order to store redlines.
 *
-* @section DgnMarkupProjectGroup_PhysicalRedlines Physical vs. non-physical redlines.
+* @section DgnMarkupProjectGroup_SpatialRedlines Physical vs. non-physical redlines.
 * Suppose you want to draw redlines  on top of a map. The extent of the map is so great that no single view will show it very well. 
 * You want to be able to zoom in and out and pan around and draw your redlines at any location in the map. Therefore, you want the redline 
 * view to show you a live view of the map, combined with a live view of the redline model. In this case, you need a "physical" redline 
-* model and view. It's called "physical" because in this case the redline model itself is a (3-D) PhysicalModel, and the associated 
-* ViewController is derived from PhysicalViewController. In the normal (non-physical) redline case, the redline view shows you a 
+* model and view. It's called "physical" because in this case the redline model itself is a (3-D) SpatialModel, and the associated 
+* ViewController is derived from SpatialViewController. In the normal (non-physical) redline case, the redline view shows you a 
 * static image of a view of the DgnDb or some other static image. The redline model in that case is a (2-D) SheetModel, and the 
 * associated redline view is a SheetViewController.
 */
@@ -47,14 +47,14 @@
 #endif
 
 DGNPLATFORM_REF_COUNTED_PTR(RedlineModel)
-DGNPLATFORM_REF_COUNTED_PTR(PhysicalRedlineModel)
+DGNPLATFORM_REF_COUNTED_PTR(SpatialRedlineModel)
 DGNPLATFORM_REF_COUNTED_PTR(RedlineViewController)
-DGNPLATFORM_REF_COUNTED_PTR(PhysicalRedlineViewController)
+DGNPLATFORM_REF_COUNTED_PTR(SpatialRedlineViewController)
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
 struct RedlineModelHandler;
-struct PhysicalRedlineModelHandler;
+struct SpatialRedlineModelHandler;
 
 enum DgnMarkupProjectSchemaValues
     {
@@ -150,7 +150,7 @@ struct DgnViewAssociationData : DgnProjectAssociationData
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE RedlineModel : SheetModel
     {
-    DEFINE_T_SUPER(SheetModel)
+    DGNMODEL_DECLARE_MEMBERS("RedlineModel", SheetModel);
 
 public:
     //! Describes the format, size, and display location of the static image to be displayed as the background of a redline model.
@@ -182,8 +182,8 @@ private:
     friend struct RedlineModelHandler;
 
 protected:
-    void _ToPropertiesJson(Json::Value&) const override;
-    void _FromPropertiesJson(Json::Value const&) override;
+    void _WriteJsonProperties(Json::Value&) const override;
+    void _ReadJsonProperties(Json::Value const&) override;
 
     void DefineImageTexturesForRow(ImageDef const& imageDef, uint8_t const* rowStart, DPoint3dCR rowOrigin, Point2dCR tileDims, uint32_t nTilesAcross);
 
@@ -296,29 +296,29 @@ public:
 };
 
 //=======================================================================================
-//! Displays a PhysicalRedlineModel in conjunction with the display of another view controller.
+//! Displays a SpatialRedlineModel in conjunction with the display of another view controller.
 //!@remarks
-//! PhysicalRedlineViewController is a normal physical view in most respects, and its PhysicalRedlineModel is its target model.
+//! SpatialRedlineViewController is a normal physical view in most respects, and its SpatialRedlineModel is its target model.
 //! 
-//! PhysicalRedlineViewController is unusual in that it also tries work in sync with another view controller.
-//! This other controller is called the "subject view controller." It must be be supplied in the PhysicalRedlineViewController constructor.
-//! A PhysicalRedlineViewController actually has no view parameters of its own. Instead, it adopts the view parameters of the subject view controller on the fly. 
-//! PhysicalRedlineViewController overrides _DrawView to draw its own PhysicalRedlineModel. It then forwards the draw request to the subject view controller.
-//! A PhysicalRedlineViewController handles most viewing-related queries by applying them to itself and then forwarding them to the subject view controller, so that
+//! SpatialRedlineViewController is unusual in that it also tries work in sync with another view controller.
+//! This other controller is called the "subject view controller." It must be be supplied in the SpatialRedlineViewController constructor.
+//! A SpatialRedlineViewController actually has no view parameters of its own. Instead, it adopts the view parameters of the subject view controller on the fly. 
+//! SpatialRedlineViewController overrides _DrawView to draw its own SpatialRedlineModel. It then forwards the draw request to the subject view controller.
+//! A SpatialRedlineViewController handles most viewing-related queries by applying them to itself and then forwarding them to the subject view controller, so that
 //! the two view controllers are always in sync.
 //! 
 //! <h4>Locating and Editing</h4>
-//! Locates and edits are normally directed to the PhysicalRedlineModel, since that is the normal target model of a PhysicalRedlineViewController.
-//! If an app wants to re-direct locates and/or edits to the target of the subject view controller instead, it should PhysicalRedlineViewController::SetTargetModel
-//! in order to change the PhysicalRedlineViewController's target model.
+//! Locates and edits are normally directed to the SpatialRedlineModel, since that is the normal target model of a SpatialRedlineViewController.
+//! If an app wants to re-direct locates and/or edits to the target of the subject view controller instead, it should SpatialRedlineViewController::SetTargetModel
+//! in order to change the SpatialRedlineViewController's target model.
 //!
-//! @see @ref DgnMarkupProjectGroup_PhysicalRedlines
+//! @see @ref DgnMarkupProjectGroup_SpatialRedlines
 //! @ingroup DgnViewGroup
 // @bsiclass                                                    Keith.Bentley   03/12
 //=======================================================================================
-struct PhysicalRedlineViewController : PhysicalViewController
+struct SpatialRedlineViewController : SpatialViewController
 {
-    DEFINE_T_SUPER (PhysicalViewController);
+    DEFINE_T_SUPER (SpatialViewController);
 
 #if !defined (DOCUMENTATION_GENERATOR)
     friend struct DgnMarkupProject;
@@ -326,8 +326,8 @@ struct PhysicalRedlineViewController : PhysicalViewController
 
 #if !defined (DOCUMENTATION_GENERATOR)
 protected:
-    PhysicalViewController& m_subjectView;
-    bvector<PhysicalRedlineModelP> m_otherRdlsInView;
+    SpatialViewController& m_subjectView;
+    bvector<SpatialRedlineModelP> m_otherRdlsInView;
 
     bool                    m_targetModelIsInSubjectView;
 
@@ -340,7 +340,7 @@ protected:
     virtual void _SetOrigin(DPoint3dCR org) override;
     virtual void _SetDelta(DVec3dCR delta) override;
     virtual void _SetRotation(RotMatrixCR rot) override;
-    virtual DgnModelP _GetTargetModel() const override;
+    virtual GeometricModelP _GetTargetModel() const override;
     virtual DgnDbR _GetDgnDb() const override;
     virtual void _AdjustAspectRatio(double , bool expandView) override;
     virtual DPoint3d _GetTargetPoint() const override;
@@ -372,7 +372,7 @@ protected:
     virtual void _OnAttachedToViewport(DgnViewportR) override;
     virtual FitComplete _ComputeFitRange (DRange3dR range, DgnViewportR viewport, FitViewParamsR params) override;
 
-#ifdef WIP_PhysicalRedlineViewController
+#ifdef WIP_SpatialRedlineViewController
     // QueryViewController
     virtual bool _IsInSet (int nVal, BeSQLite::DbValue const*) const override;
     virtual bool _WantElementLoadStart (ViewportR viewport, double currentTime, double lastQueryTime, uint32_t maxElementsDrawnInDynamicUpdate, Frustum const& queryFrustum) override;
@@ -389,44 +389,44 @@ protected:
 #endif // DOCUMENTATION_GENERATOR
 
 public:
-    //! Create a PhysicalRedlineViewController
-    //! @param model    The PhysicalRedlineModel to view
+    //! Create a SpatialRedlineViewController
+    //! @param model    The SpatialRedlineModel to view
     //! @param subjectView The view of the underlying physical coordinate space to overlay
     //! @param physicalRedlineViewId The view id
-    //! @param otherRdlsToView Optional. Other PhysicalRedlineModels to show in the view.
-    DGNPLATFORM_EXPORT PhysicalRedlineViewController (PhysicalRedlineModel& model, PhysicalViewController& subjectView, DgnViewId physicalRedlineViewId, bvector<PhysicalRedlineModelP> const& otherRdlsToView);
+    //! @param otherRdlsToView Optional. Other SpatialRedlineModels to show in the view.
+    DGNPLATFORM_EXPORT SpatialRedlineViewController (SpatialRedlineModel& model, SpatialViewController& subjectView, DgnViewId physicalRedlineViewId, bvector<SpatialRedlineModelP> const& otherRdlsToView);
 
-    DGNPLATFORM_EXPORT ~PhysicalRedlineViewController();
+    DGNPLATFORM_EXPORT ~SpatialRedlineViewController();
 
     //! Create a new redline view in the database
     //! @return The newly created view controller
     //! @param[in] model the physical redline model to display
     //! @param[in] subjectView the subject view to display underneath the physical redline model
-    DGNPLATFORM_EXPORT static PhysicalRedlineViewControllerPtr InsertView(PhysicalRedlineModel& model, PhysicalViewController& subjectView);
+    DGNPLATFORM_EXPORT static SpatialRedlineViewControllerPtr InsertView(SpatialRedlineModel& model, SpatialViewController& subjectView);
 };
 
 //=======================================================================================
 //! Holds "redline" graphics and other annotations for a physical view of a subject DgnDb. 
-//! This type of redline model is displayed simultaneously with view of the subject project by PhysicalRedlineViewController.
+//! This type of redline model is displayed simultaneously with view of the subject project by SpatialRedlineViewController.
 //! The subject view is live, not a static image.
-//! A PhysicalRedlineModel has the same units and coordinate system as the target model of the view of the subject project.
-//! Note that the DgnMarkupProject that holds a PhysicalRedlineModel must have the same StorageUnits as the subject project. See CreateDgnMarkupProjectParams.
-//! @see @ref DgnMarkupProjectGroup_PhysicalRedlines
+//! A SpatialRedlineModel has the same units and coordinate system as the target model of the view of the subject project.
+//! Note that the DgnMarkupProject that holds a SpatialRedlineModel must have the same StorageUnits as the subject project. See CreateDgnMarkupProjectParams.
+//! @see @ref DgnMarkupProjectGroup_SpatialRedlines
 // @bsiclass                                                    Sam.Wilson      05/13
 //=======================================================================================
-struct PhysicalRedlineModel : PhysicalModel
+struct SpatialRedlineModel : SpatialModel
     {
+    DGNMODEL_DECLARE_MEMBERS("SpatialRedlineModel", SpatialModel);
 private:
-    DEFINE_T_SUPER(PhysicalModel)
 
     friend struct DgnMarkupProject;
-    friend struct PhysicalRedlineModelHandler;
+    friend struct SpatialRedlineModelHandler;
 
 protected:
-    static PhysicalRedlineModelPtr Create(DgnMarkupProjectR markupProject, Utf8CP name, PhysicalModelCR subjectViewTargetModel);
+    static SpatialRedlineModelPtr Create(DgnMarkupProjectR markupProject, Utf8CP name, SpatialModelCR subjectViewTargetModel);
 
 public:
-    explicit PhysicalRedlineModel(CreateParams const& params) : T_Super(params) {}
+    explicit SpatialRedlineModel(CreateParams const& params) : T_Super(params) {}
 
     DgnViewId GetFirstView();
 
@@ -444,7 +444,7 @@ struct CreateDgnMarkupProjectParams : CreateDgnDbParams
 private:
     DgnDbR          m_dgnDb;
     bool            m_overwriteExisting;
-    bool            m_physicalRedlining;
+    bool            m_spatialRedlining;
 
 public:
     //! ctor
@@ -460,9 +460,9 @@ public:
     void SetOverwriteExisting(bool val) {m_overwriteExisting = val;}
     bool GetOverwriteExisting() const {return m_overwriteExisting;}
 
-    //! Specify if this markup project is to contain physical redline models. @see @ref DgnMarkupProjectGroup_PhysicalRedlines
-    void SetPhysicalRedlining(bool val) {m_physicalRedlining = val;}
-    bool GetPhysicalRedlining() const {return m_physicalRedlining;}
+    //! Specify if this markup project is to contain physical redline models. @see @ref DgnMarkupProjectGroup_SpatialRedlines
+    void SetSpatialRedlining(bool val) {m_spatialRedlining = val;}
+    bool GetSpatialRedlining() const {return m_spatialRedlining;}
 };
 
 //=======================================================================================
@@ -525,8 +525,8 @@ public:
     DGNPLATFORM_EXPORT static DgnMarkupProjectPtr CreateDgnDb(BeSQLite::DbResult* status, BeFileNameCR filename, CreateDgnMarkupProjectParams const& params);
 
     //! Query if this project has been initialized for physical redlining.
-    //! @see CreateDgnMarkupProjectParams::SetPhysicalRedlining
-    DGNPLATFORM_EXPORT bool IsPhysicalRedlineProject() const;
+    //! @see CreateDgnMarkupProjectParams::SetSpatialRedlining
+    DGNPLATFORM_EXPORT bool IsSpatialRedlineProject() const;
 
 /** @name Association to DgnDb */
 /** @{ */
@@ -580,32 +580,32 @@ public:
     DGNPLATFORM_EXPORT BentleyStatus EmptyRedlineModel(DgnModelId modelId);
 /** @} */
 
-/** @name PhysicalRedline Models */
+/** @name SpatialRedline Models */
 /** @{ */
     //! Create a physical redline model.
     //! @param name                     A unique identifier for the physical redline model.
-    //! @param subjectViewTargetModel   The target model of the view of the subject DgnDb. The PhysicalRedlineModel's units are set to match the units of subjectViewTargetModel.
+    //! @param subjectViewTargetModel   The target model of the view of the subject DgnDb. The SpatialRedlineModel's units are set to match the units of subjectViewTargetModel.
     //! @return a pointer to the new model
-    //! @see OpenPhysicalRedlineModel, @ref DgnMarkupProjectGroup_PhysicalRedlines
-    DGNPLATFORM_EXPORT PhysicalRedlineModelP CreatePhysicalRedlineModel(Utf8CP name, PhysicalModelCR subjectViewTargetModel);
+    //! @see OpenSpatialRedlineModel, @ref DgnMarkupProjectGroup_SpatialRedlines
+    DGNPLATFORM_EXPORT SpatialRedlineModelP CreateSpatialRedlineModel(Utf8CP name, SpatialModelCR subjectViewTargetModel);
 
 #if defined (NEEDS_WORK_VIEW_HANDLER_REFACTOR)
     //! Create a view of the physical redline model
-    //! @param redlineModel     The physical redline model returned by CreatePhysicalRedlineModel
+    //! @param redlineModel     The physical redline model returned by CreateSpatialRedlineModel
     //! @param dgnView          The view of the subject DgnDb
     //! @return the ID of the new redline view
-    DGNPLATFORM_EXPORT DgnViewId CreatePhysicalRedlineModelView(PhysicalRedlineModelR redlineModel, PhysicalViewControllerR dgnView);
+    DGNPLATFORM_EXPORT DgnViewId CreateSpatialRedlineModelView(SpatialRedlineModelR redlineModel, SpatialViewControllerR dgnView);
 #endif
 
     //! Open an existing physical redline model.
     //! @param modelId  Identifies the physical redline model to open
-    //! @see CreatePhysicalRedlineModel
-    DGNPLATFORM_EXPORT PhysicalRedlineModelP OpenPhysicalRedlineModel(DgnModelId modelId);
+    //! @see CreateSpatialRedlineModel
+    DGNPLATFORM_EXPORT SpatialRedlineModelP OpenSpatialRedlineModel(DgnModelId modelId);
 
     //! Empty an existing physical redline model. This function may be called after viewing a model. It releases memory held by the model.
     //! @param modelId  Identifies the physical redline model to empty
-    //! @see OpenPhysicalRedlineModel
-    DGNPLATFORM_EXPORT BentleyStatus EmptyPhysicalRedlineModel(DgnModelId modelId);
+    //! @see OpenSpatialRedlineModel
+    DGNPLATFORM_EXPORT BentleyStatus EmptySpatialRedlineModel(DgnModelId modelId);
 /** @} */
 
 };
@@ -618,10 +618,10 @@ namespace dgn_ModelHandler
         MODELHANDLER_DECLARE_MEMBERS("RedlineModel", RedlineModel, Redline, Sheet,)
     };
 
-    //! The ModelHandler for PhysicalRedlineModel.
-    struct PhysicalRedline : Physical
+    //! The ModelHandler for SpatialRedlineModel.
+    struct SpatialRedline : Spatial
     {
-        MODELHANDLER_DECLARE_MEMBERS("PhysicalRedlineModel", PhysicalRedlineModel, PhysicalRedline, Physical,)
+        MODELHANDLER_DECLARE_MEMBERS("SpatialRedlineModel", SpatialRedlineModel, SpatialRedline, Spatial,)
     };
 };
 

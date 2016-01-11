@@ -11,9 +11,9 @@
 #define DGN_SQL_TEST_SCHEMA_NAMEW L"DgnPlatformTest"
 #define DGN_SQL_TEST_ROBOT_CLASS   "Robot"
 #define DGN_SQL_TEST_OBSTACLE_CLASS "Obstacle"
-#define DGN_SQL_TEST_TEST_ITEM_CLASS_NAME                       "TestItem"
-#define DGN_SQL_TEST_TEST_ITEM_TestItemProperty               L"TestItemProperty"
-#define DGN_SQL_TEST_TEST_ITEM_TestItemPropertyA               "TestItemProperty"
+#define DGN_SQL_TEST_TEST_UNIQUE_ASPECT_CLASS_NAME                  "TestUniqueAspect"
+#define DGN_SQL_TEST_TEST_UNIQUE_ASPECT_TestUniqueAspectProperty    L"TestUniqueAspectProperty"
+#define DGN_SQL_TEST_TEST_UNIQUE_ASPECT_TestUniqueAspectPropertyA   "TestUniqueAspectProperty"
 
 namespace DgnSqlTestNamespace {
 
@@ -29,12 +29,12 @@ struct RobotElement : PhysicalElement
 private:
     friend struct RobotElementHandler;
     RobotElement(PhysicalElement::CreateParams const& params) : PhysicalElement(params) {;}
-    RobotElement(PhysicalModelR model, DgnCategoryId categoryId, DPoint3dCR origin, double yaw, Code elementCode);
+    RobotElement(SpatialModelR model, DgnCategoryId categoryId, DPoint3dCR origin, double yaw, Code elementCode);
 public:
     //! Factory method that creates an instance of a RobotElement
-    //! @param[in] model Create the RobotElement in this PhysicalModel
+    //! @param[in] model Create the RobotElement in this SpatialModel
     //! @param[in] categoryId specifies the category for the RobotElement.
-    static RefCountedPtr<RobotElement> Create(PhysicalModelR model, DgnCategoryId categoryId, DPoint3dCR origin, double yaw, DgnElement::Code elementCode)
+    static RefCountedPtr<RobotElement> Create(SpatialModelR model, DgnCategoryId categoryId, DPoint3dCR origin, double yaw, DgnElement::Code elementCode)
         {return new RobotElement(model, categoryId, origin, yaw, elementCode);}
 
     //! Query the DgnClassId for the Robot ECClass in the specified DgnDb.
@@ -53,12 +53,12 @@ struct ObstacleElement : PhysicalElement
 private:
     friend struct ObstacleElementHandler;
     ObstacleElement(PhysicalElement::CreateParams const& params) : PhysicalElement(params) {;}
-    ObstacleElement(PhysicalModelR model, DgnCategoryId categoryId, DPoint3dCR origin, double yaw, DgnElement::Code elementCode);
+    ObstacleElement(SpatialModelR model, DgnCategoryId categoryId, DPoint3dCR origin, double yaw, DgnElement::Code elementCode);
 public:
     //! Factory method that creates an instance of a ObstacleElement
-    //! @param[in] model Create the ObstacleElement in this PhysicalModel
+    //! @param[in] model Create the ObstacleElement in this SpatialModel
     //! @param[in] categoryId specifies the category for the ObstacleElement.
-    static RefCountedPtr<ObstacleElement> Create(PhysicalModelR model, DgnCategoryId categoryId, DPoint3dCR origin, double yaw, DgnElement::Code elementCode)
+    static RefCountedPtr<ObstacleElement> Create(SpatialModelR model, DgnCategoryId categoryId, DPoint3dCR origin, double yaw, DgnElement::Code elementCode)
         {return new ObstacleElement(model, categoryId, origin, yaw, elementCode);}
 
     //! Query the DgnClassId for the Obstacle ECClass in the specified DgnDb.
@@ -67,8 +67,8 @@ public:
     //! Set the value of the "SomeProperty" property
     void SetSomeProperty(DgnDbR db, Utf8CP value);
 
-    //! An Obstacle can have an associated "TestItem". This method sets the value of the TestItem, inserting the item if necessary.
-    void SetTestItem(DgnDbR db, Utf8CP itemPropertyValue);
+    //! An Obstacle can have an associated "TestUniqueAspect". This method sets the value of the TestUniqueAspect, inserting the item if necessary.
+    void SetTestUniqueAspect(DgnDbR db, Utf8CP itemPropertyValue);
 };
 
 typedef RefCountedPtr<RobotElement>     RobotElementPtr;
