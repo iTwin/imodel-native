@@ -2,7 +2,7 @@
 |
 |     $Source: Cache/Persistence/Responses/CachedResponseManager.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -24,7 +24,7 @@ BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 /*--------------------------------------------------------------------------------------+
 * @bsiclass                                                     Vincas.Razma    06/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct CachedResponseManager : public IDeleteHandler
+struct CachedResponseManager : public IECDbAdapter::DeleteListener
     {
     private:
         ECDbAdapter&                m_dbAdapter;
@@ -45,12 +45,10 @@ struct CachedResponseManager : public IDeleteHandler
         ECSqlAdapterLoader<JsonInserter> m_responseInserter;
         ECSqlAdapterLoader<JsonUpdater>  m_responseUpdater;
 
-        bset<ECInstanceKey> m_responsesToDelete;
-
     private:
         BentleyStatus RelateResultInstancesToPage
             (
-            ECInstanceKeyCR responseParentKey,
+            ECInstanceKeyCR responseParentNodeKey,
             CacheNodeKeyCR pageKey,
             const InstanceCacheHelper::CachedInstances& instances
             );
@@ -97,9 +95,8 @@ struct CachedResponseManager : public IDeleteHandler
             ObjectInfoManager& objectInfoManager
             );
 
-        //! IDeleteHandler
-        BentleyStatus OnBeforeDelete(ECClassCR ecClass, ECInstanceId ecInstanceId) override;
-        BentleyStatus OnAfterDelete(bset<ECInstanceKey>& instancesToDeleteOut) override;
+        //! IECDbAdapter::DeleteListener
+        BentleyStatus OnBeforeDelete(ECClassCR ecClass, ECInstanceId ecInstanceId, bset<ECInstanceKey>& additionalInstancesOut) override;
 
         //! Convert between public and internal ResponseKey
         //! WIP06
@@ -112,7 +109,7 @@ struct CachedResponseManager : public IDeleteHandler
         //! Delete query info and any response instances that are not held anything else
         BentleyStatus DeleteInfo(ResponseKeyCR responseKey);
         //! Delete responses that were accessed before date specified
-        BentleyStatus DeleteResponses(Utf8StringCR responseName, DateTimeCR accessedBeforeDateUtc, const ECInstanceKeyMultiMap& instancesToLeave);
+        BentleyStatus DeleteResponses(Utf8StringCR responseName, DateTimeCR accessedBeforeDateUtc, const ECInstanceKeyMultiMap& nodesToLeave);
         //! Delete responses with same name
         BentleyStatus DeleteResponses(Utf8StringCR responseName);
         //! Save query info
