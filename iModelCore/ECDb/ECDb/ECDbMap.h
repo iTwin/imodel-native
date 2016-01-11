@@ -161,7 +161,7 @@ public:
     //! @copydoc ECDbMap::GetClassMap
     ClassMapCP                  GetClassMapCP(ECN::ECClassCR ecClass, bool loadIfNotFound = true) const;
     BentleyStatus               CreateECClassViewsInDb() const;
-    ECDbSqlTable*               FindOrCreateTable(SchemaImportContext*, Utf8CP tableName, TableType, bool isVirtual, Utf8CP primaryKeyColumnName);
+    ECDbSqlTable*               FindOrCreateTable(SchemaImportContext*, Utf8CP tableName, TableType, bool isVirtual, Utf8CP primaryKeyColumnName, ECDbSqlTable const* baseTable);
 
     ECDbSqlTable const*         GetPrimaryTable(ECDbSqlTable const& joinedTable) const;
     //!Loads the class maps if they were not loaded yet

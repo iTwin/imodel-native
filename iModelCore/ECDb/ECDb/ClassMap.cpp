@@ -411,9 +411,13 @@ MapStatus ClassMap::Map(SchemaImportContext& schemaImportContext, ClassMapInfo c
 MapStatus ClassMap::_MapPart1(SchemaImportContext& schemaImportContext, ClassMapInfo const& mapInfo, IClassMap const* parentClassMap)
     {
     m_dbView = std::unique_ptr<ClassDbView> (new ClassDbView(*this));
+    ECDbSqlTable const* baseTable = nullptr;
     TableType tableType = TableType::Primary;
     if (Enum::Contains(mapInfo.GetMapStrategy().GetOptions(), ECDbMapStrategy::Options::JoinedTable))
+        {
         tableType = TableType::Joined;
+        baseTable = &parentClassMap->GetPrimaryTable();
+        }
     else if (IClassMap::MapsToStructArrayTable(m_ecClass))
         tableType = TableType::StructArray;
     else if (mapInfo.GetMapStrategy().GetStrategy() == ECDbMapStrategy::Strategy::ExistingTable)
@@ -422,8 +426,13 @@ MapStatus ClassMap::_MapPart1(SchemaImportContext& schemaImportContext, ClassMap
 
     auto findOrCreateTable = [&] ()
         {
+        if (TableType::Joined == tableType)
+            {
+            BeAssert(baseTable != nullptr);
+            }
+
         ECDbSqlTable* table = const_cast<ECDbMapR>(m_ecDbMap).FindOrCreateTable(&schemaImportContext, mapInfo.GetTableName(), tableType,
-            mapInfo.IsMapToVirtualTable(), mapInfo.GetECInstanceIdColumnName());
+            mapInfo.IsMapToVirtualTable(), mapInfo.GetECInstanceIdColumnName(), baseTable);
 
         if (!EXPECTED_CONDITION(table != nullptr))
             return MapStatus::Error;

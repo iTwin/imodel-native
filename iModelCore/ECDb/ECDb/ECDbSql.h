@@ -218,7 +218,8 @@ public:
     virtual ~ECDbMapDb() {}
 
     //! Create a table with a given name or if name is null a name will be generated
-    ECDbSqlTable* CreateTable (Utf8CP name, TableType, PersistenceType type = PersistenceType::Persisted);
+    ECDbSqlTable* CreateTable (Utf8CP name, TableType, PersistenceType type = PersistenceType::Persisted , ECDbSqlTable const* baseTable = nullptr);
+
     ECDbSqlTable* CreateTableForExistingTableMapStrategy (ECDbCR, Utf8CP existingTableName);
     ECDbSqlTable* CreateTableForExistingTableMapStrategy (Utf8CP existingTableName);
     BeVersion const& GetVersion () const { return m_version; }
@@ -431,7 +432,7 @@ struct ECDbSqlTable : NonCopyableClass
         Created,
         Deleted
         };
-    friend ECDbSqlTable* ECDbMapDb::CreateTable (Utf8CP name, TableType, PersistenceType);
+    friend ECDbSqlTable* ECDbMapDb::CreateTable (Utf8CP name, TableType, PersistenceType, ECDbSqlTable const*);
     friend ECDbSqlTable* ECDbMapDb::CreateTableForExistingTableMapStrategy (ECDbCR, Utf8CP existingTableName);
     friend ECDbSqlTable* ECDbMapDb::CreateTableForExistingTableMapStrategy (Utf8CP existingTableName);
     friend std::weak_ptr<ECDbSqlColumn> ECDbSqlColumn::GetWeakPtr () const;
@@ -452,6 +453,7 @@ struct ECDbSqlTable : NonCopyableClass
         };
 
     private:
+        ECDbSqlTable const* m_baseTable;
         ECDbMapDb& m_dbDef;
         ECDbTableId m_id;
         Utf8String m_name;
@@ -466,17 +468,39 @@ struct ECDbSqlTable : NonCopyableClass
         std::vector<std::unique_ptr<ECDbSqlConstraint>> m_constraints;
         PersistenceManager m_persistenceManager;
         EditHandle m_editInfo;
+        std::vector<ECDbSqlTable const*> m_childTables;
         std::vector<std::function<void (ColumnEvent, ECDbSqlColumn&)>> m_columnEvents;
     private:
-        ECDbSqlTable (Utf8CP name, ECDbMapDb& sqlDbDef, ECDbTableId id, PersistenceType type, TableType tableType)
+        ECDbSqlTable (Utf8CP name, ECDbMapDb& sqlDbDef, ECDbTableId id, PersistenceType type, TableType tableType, ECDbSqlTable const* baseTable)
             : m_dbDef(sqlDbDef), m_id(id), m_name(name), m_nameGeneratorForColumn("sc%02x"), m_persistenceType(type), m_tableType(tableType),
-            m_isClassIdColumnCached(false), m_classIdColumn(nullptr), m_persistenceManager(*this)
-            {}
+            m_isClassIdColumnCached(false), m_classIdColumn(nullptr), m_persistenceManager(*this), m_baseTable(baseTable)
+            {
+            if (tableType == TableType::Joined)
+                {
+                if (baseTable == nullptr)
+                    {
+                    BeAssert(false && "BaseTable must be provided for TableType::Joined");
+                    }
+                else 
+                    const_cast<ECDbSqlTable*>(baseTable)->m_childTables.push_back(this);
+                }
+            else
+                {
+                if (baseTable != nullptr)
+                    {
+                    BeAssert("BaseTable parameter is only valid for TableType::Joined");
+                    m_baseTable = nullptr;
+                    }
+                }
+            }
 
         std::weak_ptr<ECDbSqlColumn> GetColumnWeakPtr (Utf8CP name) const;
     public:
         virtual ~ECDbSqlTable() {}
-
+        ECDbSqlTable const* GetBaseTable() const
+            {
+            return m_baseTable;
+            }
         ECDbTableId GetId () const { return m_id; }
         void SetId (ECDbTableId id) { m_id = id; }
         Utf8StringCR GetName () const { return m_name; }
@@ -488,7 +512,8 @@ struct ECDbSqlTable : NonCopyableClass
         //! Any type will be mark as reusable column
         ECDbSqlColumn* CreateColumn (Utf8CP name, ECDbSqlColumn::Type type, ColumnKind kind = ColumnKind::DataColumn, PersistenceType persistenceType = PersistenceType::Persisted);
         ECDbSqlColumn* CreateColumn (Utf8CP name, ECDbSqlColumn::Type type, size_t position, ColumnKind kind = ColumnKind::DataColumn, PersistenceType persistenceType = PersistenceType::Persisted);
-
+        std::vector<ECDbSqlTable const*> const& GetChildTables() const {return m_childTables;}
+            
         BentleyStatus CreateTrigger(Utf8CP triggerName, ECDbSqlTable& table, Utf8CP condition, Utf8CP body, TriggerType ecsqlType,TriggerSubType triggerSubType);
         std::vector<const ECDbSqlTrigger*> GetTriggers()const;
         ECDbSqlColumn const* FindColumnCP (Utf8CP name) const;
@@ -804,11 +829,11 @@ public:
 struct ECDbSqlPersistence : NonCopyableClass
     {
     private:
-        const Utf8CP Sql_InsertTable = "INSERT OR REPLACE INTO ec_Table (Id, Name, Type, IsVirtual) VALUES (?, ?, ?, ?)";
+        const Utf8CP Sql_InsertTable = "INSERT OR REPLACE INTO ec_Table (Id, Name, Type, IsVirtual, BaseTableId) VALUES (?, ?, ?, ?, ?)";
         const Utf8CP Sql_InsertColumn = "INSERT OR REPLACE INTO ec_Column (Id, TableId, Name, Type, IsVirtual, Ordinal, NotNullConstraint, UniqueConstraint, CheckConstraint, DefaultConstraint, CollationConstraint, OrdinalInPrimaryKey, ColumnKind) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
         const Utf8CP Sql_InsertForeignKey = "INSERT OR REPLACE INTO ec_ForeignKey (Id, TableId, ReferencedTableId, Name, OnDelete, OnUpdate) VALUES (?, ?, ?, ?, ?, ?)";
         const Utf8CP Sql_InsertForeignKeyColumn = "INSERT OR REPLACE INTO ec_ForeignKeyColumn (ForeignKeyId, ColumnId, ReferencedColumnId, Ordinal) VALUES (?, ?, ?, ?)";
-        const Utf8CP Sql_SelectTable = "SELECT Id, Name, Type, IsVirtual FROM ec_Table";
+        const Utf8CP Sql_SelectTable = "SELECT A.Id, A.Name, A.Type, A.IsVirtual,  B.Name BaseTableName FROM ec_Table A LEFT JOIN ec_Table B ON A.BaseTableId = B.Id ORDER BY A.BaseTableId";
         const Utf8CP Sql_SelectColumn = "SELECT Id, Name, Type, IsVirtual, NotNullConstraint, UniqueConstraint, CheckConstraint, DefaultConstraint, CollationConstraint, OrdinalInPrimaryKey, ColumnKind FROM ec_Column WHERE TableId = ? ORDER BY Ordinal";
         const Utf8CP Sql_SelectForeignKey = "SELECT F.Id, R.Name, F.Name, F.OnDelete, F.OnUpdate FROM ec_ForeignKey F INNER JOIN ec_Table R ON R.Id = F.ReferencedTableId WHERE F.TableId = ?";
         const Utf8CP Sql_SelectForeignKeyColumn = "SELECT A.Name, B.Name FROM ec_ForeignKeyColumn F INNER JOIN ec_Column A ON F.ColumnId = A.Id INNER JOIN ec_Column B ON F.ReferencedColumnId = B.Id  WHERE F.ForeignKeyId = ? ORDER BY F.Ordinal";
