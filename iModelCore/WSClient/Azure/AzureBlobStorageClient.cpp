@@ -89,10 +89,10 @@ ICancellationTokenPtr ct
     blockIdStream << std::setw(5) << std::setfill('0') << chunkNumber;
     std::string blockId = blockIdStream.str();
     Utf8String encodedBlockId = Base64Utilities::Encode(blockId.c_str()).c_str();
-    blockIds += Utf8PrintfString("<Latest>%s</Latest>", encodedBlockId);
+    blockIds += Utf8PrintfString("<Latest>%s</Latest>", encodedBlockId.c_str());
 
     // Update URL
-    Utf8String blockUrl = Utf8PrintfString("%s&comp=block&blockid=%s", url, encodedBlockId);
+    Utf8String blockUrl = Utf8PrintfString("%s&comp=block&blockid=%s", url.c_str(), encodedBlockId.c_str());
     uint64_t bytesTo = chunkSize * chunkNumber + chunkSize - 1; // -1 because ranges are inclusive.
     if (bytesTo >= fileSize)
         bytesTo = fileSize - 1;
@@ -126,8 +126,8 @@ ICancellationTokenPtr ct
             return;
             }
 
-        Utf8String finalBody = Utf8PrintfString("<?xml version=\"1.0\" encoding=\"utf-8\"?><BlockList>%s</BlockList>", blockIds);
-        Utf8String blockListUrl = Utf8PrintfString("%s&comp=blocklist", url);
+        Utf8String finalBody = Utf8PrintfString("<?xml version=\"1.0\" encoding=\"utf-8\"?><BlockList>%s</BlockList>", blockIds.c_str());
+        Utf8String blockListUrl = Utf8PrintfString("%s&comp=blocklist", url.c_str());
 
         HttpRequest finalRequest(blockListUrl, "PUT", m_customHandler);
         finalRequest.SetRequestBody(HttpStringBody::Create(finalBody));

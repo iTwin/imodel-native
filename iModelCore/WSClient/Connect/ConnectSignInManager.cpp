@@ -10,7 +10,7 @@
 #include <WebServices/Connect/ConnectSignInManager.h>
 
 #include <Bentley/Base64Utilities.h>
-#include <MobileDgn/MobileDgnUi.h>
+#include <DgnClientFx/DgnClientUi.h>
 #include <WebServices/Connect/Connect.h>
 #include <WebServices/Connect/ConnectAuthenticationPersistence.h>
 #include <WebServices/Connect/ConnectSpaces.h>
@@ -25,7 +25,7 @@
 USING_NAMESPACE_BENTLEY_EC
 USING_NAMESPACE_BENTLEY_SQLITE
 USING_NAMESPACE_BENTLEY_WEBSERVICES
-USING_NAMESPACE_BENTLEY_MOBILEDGN_UTILS
+USING_NAMESPACE_BENTLEY_DGNCLIENTFX_UTILS
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                           Vytautas.Barkauskas    12/2015

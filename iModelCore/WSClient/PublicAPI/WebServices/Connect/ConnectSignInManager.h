@@ -9,9 +9,8 @@
 //__PUBLISH_SECTION_START__
 
 #include <WebServices/Client/WebServicesClient.h>
-#include <MobileDgn/MobileDgnApplication.h>
 #include <WebServices/Connect/SamlToken.h>
-#include <MobileDgn/Utils/Http/AuthenticationHandler.h>
+#include <DgnClientFx/Utils/Http/AuthenticationHandler.h>
 
 BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 
