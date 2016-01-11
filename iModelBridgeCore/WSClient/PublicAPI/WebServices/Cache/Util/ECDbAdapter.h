@@ -46,6 +46,8 @@ struct ECDbAdapter : public IECDbAdapter, public IECDbSchemaChangeListener
             );
         BentleyStatus OnBeforeDelete(ECClassCR ecClass, ECInstanceId instanceId, bset<ECInstanceKey>& additionalToDeleteOut);
 
+        BentleyStatus DeleteInstance(ECClassId classId, ECInstanceId instanceId);
+
     public:
         WSCACHE_EXPORT ECDbAdapter(ObservableECDb& ecDb);
         WSCACHE_EXPORT virtual ~ECDbAdapter();

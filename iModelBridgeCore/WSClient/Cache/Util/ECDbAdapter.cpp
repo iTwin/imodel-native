@@ -893,15 +893,7 @@ BentleyStatus ECDbAdapter::DeleteRelationship(ECRelationshipClassCP relClass, EC
         {
         return ERROR;
         }
-#if defined (NEEDS_WORK_PORT_GRA06) // Port 0504 to 06,
-    ECPersistencePtr persistence = m_ecDb->GetECPersistence(nullptr, *relClass);
-    if (persistence.IsNull() ||
-        DELETE_Success != persistence->Delete(relationship.GetECInstanceId()))
-        {
-        return ERROR;
-        }
-#endif
-    return SUCCESS;
+    return DeleteInstance(relationship.GetECClassId(), relationship.GetECInstanceId());
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -1126,22 +1118,7 @@ BentleyStatus ECDbAdapter::DeleteInstances(const ECInstanceKeyMultiMap& instance
 
     for (auto pair : instances)
         {
-        Utf8PrintfString key("DeleteInstances:%lld", pair.first);
-        auto statement = m_statementCache.GetPreparedStatement(key, [&]
-            {
-            ECClassCP ecClass = GetECClass(pair.first);
-            if (nullptr == ecClass)
-                {
-                return bastring();
-                }
-
-            return "DELETE FROM ONLY " + ecClass->GetECSqlName() + " WHERE ECInstanceId = ? ";
-            });
-
-        statement->BindId(1, pair.second);
-
-        DbResult result;
-        if (BE_SQLITE_DONE != (result = statement->Step()))
+        if (SUCCESS != DeleteInstance(pair.first, pair.second))
             {
             return ERROR;
             }
@@ -1159,6 +1136,33 @@ BentleyStatus ECDbAdapter::DeleteInstances(const ECInstanceKeyMultiMap& instance
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus ECDbAdapter::DeleteInstance(ECClassId classId, ECInstanceId instanceId)
+    {
+    Utf8PrintfString key("DeleteInstance:%lld", classId);
+    auto statement = m_statementCache.GetPreparedStatement(key, [&]
+        {
+        ECClassCP ecClass = GetECClass(classId);
+        if (nullptr == ecClass)
+            {
+            return bastring();
+            }
+        return "DELETE FROM ONLY " + ecClass->GetECSqlName() + " WHERE ECInstanceId = ? ";
+        });
+
+    statement->BindId(1, instanceId);
+
+    DbResult result;
+    if (BE_SQLITE_DONE != (result = statement->Step()))
+        {
+        return ERROR;
+        }
+
+    return SUCCESS;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus ECDbAdapter::FindInstancesBeingDeleted
 (
 const ECInstanceKeyMultiMap& seedInstancesBeingDeleted,
@@ -1167,7 +1171,7 @@ bset<ECInstanceKey>& allInstancesBeingDeletedOut
     {
     for (auto& pair : seedInstancesBeingDeleted)
         {
-        ECInstanceKey key (pair.first, pair.second);
+        ECInstanceKey key(pair.first, pair.second);
         if (SUCCESS != FindInstancesBeingDeleted(key, allInstancesBeingDeletedOut))
             {
             return ERROR;
