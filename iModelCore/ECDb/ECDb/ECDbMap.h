@@ -154,13 +154,13 @@ public:
     bool IsImportingSchema() const;
     SchemaImportContext* GetSchemaImportContext() const;
     bool AssertIfIsNotImportingSchema() const;
+    ECDbSqlTable*  FindOrCreateTable(SchemaImportContext*, Utf8CP tableName, TableType, bool isVirtual, Utf8CP primaryKeyColumnName, ECDbSqlTable const* baseTable);
 
     LightweightCache const& GetLightweightCache() const { return m_lightweightCache; }
     ECDbR GetECDbR() const { return m_ecdb; }
     ECDbCR GetECDb()  const { return m_ecdb; }
-    ECDbSqlTable*               FindOrCreateTable(SchemaImportContext*, Utf8CP tableName, TableType, bool isVirtual, Utf8CP primaryKeyColumnName, ECDbSqlTable const* baseTable);
-    const std::set<ECDbSqlTable const*> GetTablesFromRelationshipEnd(ECN::ECRelationshipConstraintCR relationshipEnd) const;
-    const std::set<ECDbSqlTable const*> GetTablesFromRelationshipEndWithColumn(ECN::ECRelationshipConstraintCR relationshipEnd, Utf8CP column) const;
+    std::set<ECDbSqlTable const*> GetTablesFromRelationshipEnd(ECN::ECRelationshipConstraintCR relationshipEnd) const;
+    std::set<ECDbSqlTable const*> GetTablesFromRelationshipEndWithColumn(ECN::ECRelationshipConstraintCR relationshipEnd, Utf8CP column) const;
 
     static void ParsePropertyAccessString(bvector<Utf8String>&, Utf8CP propAccessString);
     };

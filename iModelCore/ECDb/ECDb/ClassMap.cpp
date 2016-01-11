@@ -1582,7 +1582,7 @@ PropertyMapSet::Ptr PropertyMapSet::Create (IClassMap const& classMap)
             if (pm->Is3d ())
                 propertySet->m_orderedEndPoints.push_back (std::unique_ptr<EndPoint> (new EndPoint ((baseAccessString + ".Z").c_str (), *columns[2], ECValue ())));
             }
-        else if (nullptr != dynamic_cast<PropertyMapStructArray const*> (propMap))
+        else if (nullptr != propMap->GetAsPropertyMapStructArray() || nullptr != dynamic_cast<NavigationPropertyMap const*> (propMap))
             {
             feedback = TraversalFeedback::NextSibling;
             }

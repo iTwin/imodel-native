@@ -306,7 +306,7 @@ MapStatus ECDbMap::MapClass (ECClassCR ecClass, bool forceRevaluationOfMapStrate
      * updates the class map with new property maps. If the schema has new classes, the fall
      * through the code below creates the new class maps 
      */
-    auto classMap = GetClassMap (ecClass);
+    ClassMap const* classMap = GetClassMap (ecClass);
     bool revaluateMapStrategy = (classMap != nullptr && forceRevaluationOfMapStrategy);
 
     MapStatus status = classMap == nullptr ? MapStatus::Success : MapStatus::AlreadyMapped;
@@ -776,10 +776,10 @@ void ECDbMap::GetClassMapsFromRelationshipEnd(std::set<ClassMap const*>& classMa
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Affan.Khan                      12/2015
 //+---------------+---------------+---------------+---------------+---------------+------
-const std::set<ECDbSqlTable const*> ECDbMap::GetTablesFromRelationshipEnd(ECRelationshipConstraintCR relationshipEnd) const
+std::set<ECDbSqlTable const*> ECDbMap::GetTablesFromRelationshipEnd(ECRelationshipConstraintCR relationshipEnd) const
     {
     bool hasAnyClass = false;
-    std::set<IClassMap const*> classMaps = GetClassMapsFromRelationshipEnd(relationshipEnd, &hasAnyClass);
+    std::set<ClassMap const*> classMaps = GetClassMapsFromRelationshipEnd(relationshipEnd, &hasAnyClass);
 
     if (hasAnyClass)
         return std::set<ECDbSqlTable const*>();
@@ -800,13 +800,14 @@ const std::set<ECDbSqlTable const*> ECDbMap::GetTablesFromRelationshipEnd(ECRela
 
     return tables[PersistenceType::Virtual];
     }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Affan.Khan                      12/2015
 //+---------------+---------------+---------------+---------------+---------------+------
-const std::set<ECDbSqlTable const*> ECDbMap::GetTablesFromRelationshipEndWithColumn(ECRelationshipConstraintCR relationshipEnd, Utf8CP column) const
+std::set<ECDbSqlTable const*> ECDbMap::GetTablesFromRelationshipEndWithColumn(ECRelationshipConstraintCR relationshipEnd, Utf8CP column) const
     {
     bool hasAnyClass = false;
-    std::set<IClassMap const*> classMaps = GetClassMapsFromRelationshipEnd(relationshipEnd, &hasAnyClass);
+    std::set<ClassMap const*> classMaps = GetClassMapsFromRelationshipEnd(relationshipEnd, &hasAnyClass);
 
     if (hasAnyClass)
         return std::set<ECDbSqlTable const*>();
@@ -829,6 +830,7 @@ const std::set<ECDbSqlTable const*> ECDbMap::GetTablesFromRelationshipEndWithCol
 
     return tables[PersistenceType::Virtual];
     }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Affan.Khan                      12/2015
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -841,7 +843,7 @@ ECDbSqlTable const* ECDbMap::GetFirstTableFromRelationshipEnd(ECRelationshipCons
     if (hasAnyClass)
         return nullptr;
         
-    for (IClassMap const* classMap : classMaps)
+    for (ClassMap const* classMap : classMaps)
         {
         tables[classMap->GetJoinedTable().GetPersistenceType()].insert(&classMap->GetJoinedTable());
         }

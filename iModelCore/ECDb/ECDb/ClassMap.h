@@ -20,10 +20,22 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 struct ClassMapLoadContext : NonCopyableClass
     {
 private:
+    /*static int s_id;
+
+    const int m_id;*/
     std::vector<NavigationPropertyMap*> m_navPropMaps;
 
 public:
-    ClassMapLoadContext() {}
+    ClassMapLoadContext() //: m_id(s_id)
+        {
+        //s_id++;
+        //LOG.infov("Created ClassMapLoadContext #%d", m_id);
+        }
+
+    ~ClassMapLoadContext()
+        {
+        //LOG.infov("Destroyed ClassMapLoadContext #%d", m_id);
+        }
 
     void AddNavigationPropertyMap(NavigationPropertyMap& propMap) { m_navPropMaps.push_back(&propMap); }
     std::vector<NavigationPropertyMap*> const& GetNavigationPropertyMaps() const { return m_navPropMaps; }
@@ -34,7 +46,7 @@ public:
             {
             if (SUCCESS != propMap->Postprocess(ecdbMap))
                 {
-                LOG.errorv("Finishing set-up of NavigationPropertyMap for NavigationProperty '%s.%s' failed.",
+                LOG.errorv("Finishing creation of NavigationPropertyMap for NavigationProperty '%s.%s' failed.",
                            propMap->GetProperty().GetClass().GetFullName(),  propMap->GetProperty().GetName());
                 return ERROR;
                 }
@@ -43,6 +55,8 @@ public:
         return SUCCESS;
         }
     };
+
+//int ClassMapLoadContext::s_id = 1;
 
 struct NativeSqlBuilder;
 struct StorageDescription;

@@ -93,13 +93,11 @@ protected:
     virtual bool _IsVirtual () const;
     virtual bool _IsUnmapped () const;
 
-    //! @see PropertyMap::GetColumns
     virtual void _GetColumns(std::vector<ECDbSqlColumn const*>& columns) const;
 
     //! Make sure our table has the necessary columns, if any
     virtual BentleyStatus _FindOrCreateColumnsInTable(ClassMap& classMap, ClassMapInfo const* classMapInfo) { return SUCCESS; }
 
-    virtual PropertyMapSingleColumn const* _GetAsPropertyMapSingleColumn () const { return nullptr; }
     virtual PropertyMapStructArray const* _GetAsPropertyMapStructArray () const { return nullptr; }
 
     virtual bool _IsECInstanceIdPropertyMap () const;
@@ -113,7 +111,6 @@ protected:
 public:
     virtual ~PropertyMap () {}
     ECDbPropertyPathId GetPropertyPathId () const  { BeAssert (m_propertyPathId != 0); return m_propertyPathId; }
-    PropertyMapSingleColumn const* GetAsPropertyMapSingleColumn() const { return _GetAsPropertyMapSingleColumn(); }
     PropertyMapStructArrayCP GetAsPropertyMapStructArray () const {return _GetAsPropertyMapStructArray();}
     ECN::ECPropertyCR GetProperty () const;
     PropertyMapCP GetParent () const { return m_parentPropertyMap; }
@@ -244,8 +241,6 @@ protected:
         :PropertyMap(proto.GetProperty(), proto.GetPropertyAccessString(), primaryTable, parentPropertyMap), m_columnInfo(proto.m_columnInfo), m_column(proto.m_column)
         {}
 
-    virtual PropertyMapSingleColumn const* _GetAsPropertyMapSingleColumn() const override { return this; }
-
     //! Make sure our table has the necessary columns, if any
     virtual BentleyStatus _FindOrCreateColumnsInTable(ClassMap& classMap, ClassMapInfo const* classMapInfo) override;
 
@@ -254,7 +249,6 @@ protected:
    
     //! For debugging and logging
     virtual Utf8String _ToString() const override;
-public:
 
 };
 
