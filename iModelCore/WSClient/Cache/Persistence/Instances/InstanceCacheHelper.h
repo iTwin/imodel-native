@@ -2,7 +2,7 @@
  |
  |     $Source: Cache/Persistence/Instances/InstanceCacheHelper.h $
  |
- |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 
@@ -107,12 +107,10 @@ struct InstanceCacheHelper::CachedInstances
     {
     private:
         bset<CachedInstanceKey> m_cachedInstances;
-        bset<CachedInstanceKey> m_cachedRelationships;
         bmap<ObjectId, ECInstanceKey> m_cachedInstancesByObjectId;
 
     public:
         void AddInstance(ObjectIdCR objectId, CachedInstanceKeyCR key);
-        void AddRelationship(ObjectIdCR objectId, CachedInstanceKeyCR key);
 
         bool HasCachedInstance(ObjectIdCR objectId) const;
         ECInstanceKey GetCachedInstance(ObjectIdCR objectId) const;
@@ -120,7 +118,6 @@ struct InstanceCacheHelper::CachedInstances
         const bset<CachedInstanceKey>& GetCachedInstances() const;
         bset<ObjectId> GetCachedInstanceObjectIds() const;
         const bmap<ObjectId, ECInstanceKey>& GetCachedInstancesByObjectId() const;
-        const bset<CachedInstanceKey>& GetCachedRelationships() const;
     };
 
 /*--------------------------------------------------------------------------------------+

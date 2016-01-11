@@ -2,7 +2,7 @@
 |
 |     $Source: Cache/Persistence/Instances/ObjectInfoManager.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -342,6 +342,35 @@ CachedInstanceKey ObjectInfoManager::ReadCachedInstanceKey(ObjectIdCR objectId)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
+CachedInstanceKey ObjectInfoManager::ReadCachedInstanceKey(CacheNodeKeyCR infoKey)
+    {
+    Utf8PrintfString key("ObjectInfoManager::ReadCachedInstanceKey:InfoKey");
+    auto statement = m_statementCache.GetPreparedStatement(key, [&]
+        {
+        return
+            "SELECT "
+            "   info.[" CLASS_CachedObjectInfo_PROPERTY_ClassId "], "
+            "   info.[" CLASS_CachedObjectInfo_PROPERTY_InstanceId "] "
+            "FROM ONLY " ECSql_CachedObjectInfo " info "
+            "WHERE info.ECInstanceId = ? "
+            "LIMIT 1 ";
+        });
+
+    statement->BindId(1, infoKey.GetECInstanceId());
+
+    DbResult status = statement->Step();
+    if (status != BE_SQLITE_ROW)
+        {
+        return CachedInstanceKey();
+        }
+
+    ECInstanceKey instanceKey(statement->GetValueInt64(0), statement->GetValueId<ECInstanceId>(1));
+    return CachedInstanceKey(infoKey, instanceKey);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++--------------------------------------------------------------------------------------*/
 CachedInstanceKey ObjectInfoManager::ReadCachedInstanceKey(CacheNodeKeyCR relatedKey, ECRelationshipClassCR relClass)
     {
     ECClassCP relatedClass = m_dbAdapter.GetECClass(relatedKey);
@@ -422,7 +451,7 @@ ECInstanceKeyMultiMap& instanceKeysOut
         return ERROR;
         }
 
-    Utf8PrintfString key("ObjectInfoManager::ReadCachedInstanceKeys:%lld:%lld", relatedClass->GetId(), relClass.GetId());
+    Utf8PrintfString key("ObjectInfoManager::ReadCachedInstanceKeys:Map:%lld:%lld", relatedClass->GetId(), relClass.GetId());
     auto statement = m_statementCache.GetPreparedStatement(key, [&]
         {
         return
@@ -440,6 +469,52 @@ ECInstanceKeyMultiMap& instanceKeysOut
     while (BE_SQLITE_ROW == (status = statement->Step()))
         {
         instanceKeysOut.Insert(statement->GetValueId<ECClassId>(0), statement->GetValueId<ECInstanceId>(1));
+        }
+    if (BE_SQLITE_DONE != status)
+        {
+        return ERROR;
+        }
+    return SUCCESS;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++--------------------------------------------------------------------------------------*/
+BentleyStatus ObjectInfoManager::ReadCachedInstanceKeys
+(
+CacheNodeKeyCR relatedKey,
+ECRelationshipClassCR relClass,
+bset<CachedInstanceKey>& instanceKeysOut
+)
+    {
+    ECClassCP relatedClass = m_dbAdapter.GetECClass(relatedKey);
+    if (nullptr == relatedClass)
+        {
+        return ERROR;
+        }
+
+    Utf8PrintfString key("ObjectInfoManager::ReadCachedInstanceKeys:Set:%lld:%lld", relatedClass->GetId(), relClass.GetId());
+    auto statement = m_statementCache.GetPreparedStatement(key, [&]
+        {
+        return
+            "SELECT "
+            "   info.GetECClassId(), "
+            "   info.ECInstanceId, "
+            "   info.[" CLASS_CachedObjectInfo_PROPERTY_ClassId "], "
+            "   info.[" CLASS_CachedObjectInfo_PROPERTY_InstanceId "] "
+            "FROM ONLY " ECSql_CachedObjectInfo " info "
+            "JOIN " + relatedClass->GetECSqlName() + " related USING " + relClass.GetECSqlName() + " "
+            "WHERE related.ECInstanceId = ? ";
+        });
+
+    statement->BindId(1, relatedKey.GetECInstanceId());
+
+    DbResult status;
+    while (BE_SQLITE_ROW == (status = statement->Step()))
+        {
+        CacheNodeKey infoKey(statement->GetValueId<ECClassId>(0), statement->GetValueId<ECInstanceId>(1));
+        ECInstanceKey instanceKey(statement->GetValueId<ECClassId>(2), statement->GetValueId<ECInstanceId>(3));
+        instanceKeysOut.insert(CachedInstanceKey(infoKey, instanceKey));
         }
     if (BE_SQLITE_DONE != status)
         {

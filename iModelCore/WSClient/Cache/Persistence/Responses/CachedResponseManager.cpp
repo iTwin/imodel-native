@@ -499,45 +499,7 @@ const InstanceCacheHelper::CachedInstances& instances
 
     CacheNodeKey pageKey = SavePage(info, page, cacheTag);
 
-    if (SUCCESS != RelateResultInstancesToPage(info.GetKey().GetParent(), pageKey, instances) ||
-        SUCCESS != RelateResultRelationshipInstancesToPage(pageKey, instances))
-        {
-        return ERROR;
-        }
-
-    return SUCCESS;
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Vincas.Razma    06/2014
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus CachedResponseManager::RelateResultRelationshipInstancesToPage
-(
-CacheNodeKeyCR pageKey,
-const InstanceCacheHelper::CachedInstances& instances
-)
-    {
-    const bset<CachedInstanceKey>& newCachedRels = instances.GetCachedRelationships();
-    bset<CachedInstanceKey> oldCachedRelInfos;
-
-    if (SUCCESS != m_relationshipInfoManager.ReadCachedRelationshipsFromHolder(pageKey, m_responsePageToResultClass, oldCachedRelInfos))
-        {
-        return ERROR;
-        }
-
-    bset<CachedInstanceKey> outdatedRels;
-    bset<CachedInstanceKey> newRels;
-
-    std::set_difference(oldCachedRelInfos.begin(), oldCachedRelInfos.end(),
-                        newCachedRels.begin(), newCachedRels.end(),
-                        std::inserter(outdatedRels, outdatedRels.end()));
-
-    std::set_difference(newCachedRels.begin(), newCachedRels.end(),
-                        oldCachedRelInfos.begin(), oldCachedRelInfos.end(),
-                        std::inserter(newRels, newRels.end()));
-
-    if (SUCCESS != m_relationshipInfoManager.RelateCachedRelationshipsToHolder(pageKey, m_responsePageToResultClass, newRels) ||
-        SUCCESS != m_relationshipInfoManager.RemoveCachedRelationshipsFromHolder(pageKey, m_responsePageToResultClass, outdatedRels))
+    if (SUCCESS != RelateResultInstancesToPage(info.GetKey().GetHolder(), pageKey, instances))
         {
         return ERROR;
         }
@@ -550,38 +512,44 @@ const InstanceCacheHelper::CachedInstances& instances
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus CachedResponseManager::RelateResultInstancesToPage
 (
-ECInstanceKeyCR responseParentNodeKey,
+CacheNodeKeyCR responseHolderNodeKey,
 CacheNodeKeyCR pageKey,
 const InstanceCacheHelper::CachedInstances& instances
 )
     {
-    for (CachedInstanceKeyCR resultInstance : instances.GetCachedInstances())
+    const bset<CachedInstanceKey>& newCached = instances.GetCachedInstances();
+    bset<CachedInstanceKey> oldCached;
+    
+    if (SUCCESS != m_objectInfoManager.ReadCachedInstanceKeys(pageKey, *m_responsePageToResultClass, oldCached) ||
+        SUCCESS != m_relationshipInfoManager.ReadCachedRelationshipsFromHolder(pageKey, m_responsePageToResultClass, oldCached))
         {
-        if (nullptr != m_dbAdapter.GetECRelationshipClass(resultInstance.GetInstanceKey()))
-            {
-            continue;
-            }
-
-        ECRelationshipClassCP resultRelClass = m_responsePageToResultClass;
-        if (responseParentNodeKey == resultInstance.GetInfoKey())
-            {
-            resultRelClass = m_responsePageToResultWeakClass;
-            }
-
-        if (!m_hierarchyManager.RelateInstances(pageKey, resultInstance.GetInfoKey(), resultRelClass).IsValid())
-            {
-            return ERROR;
-            }
+        return ERROR;
         }
 
-    // Remove old instances from query
-    bset<ECInstanceKey> resultNodeKeys;
-    for (auto& key : instances.GetCachedInstances())
+    bset<CachedInstanceKey> instancesToAdd, instancesToRemove;
+
+    std::set_difference(newCached.begin(), newCached.end(),
+                        oldCached.begin(), oldCached.end(),
+                        std::inserter(instancesToAdd, instancesToAdd.end()));
+
+    std::set_difference(oldCached.begin(), oldCached.end(),
+                        newCached.begin(), newCached.end(),
+                        std::inserter(instancesToRemove, instancesToRemove.end()));
+
+    if (SUCCESS != m_hierarchyManager.RelateCachedInstancesToHolder(pageKey, m_responsePageToResultClass, instancesToAdd) ||
+        SUCCESS != m_hierarchyManager.RemoveCachedInstancesFromHolder(pageKey, m_responsePageToResultClass, instancesToRemove))
         {
-        resultNodeKeys.insert(key.GetInfoKey());
+        return ERROR;
         }
 
-    return m_hierarchyManager.ReleaseOldChildren(pageKey, resultNodeKeys, m_responsePageToResultClass);
+    CachedInstanceKey holderKey = m_objectInfoManager.ReadCachedInstanceKey(responseHolderNodeKey);
+    if (newCached.find(holderKey) != newCached.end())
+        {
+        // TODO: Fix cycle if any with weak rel
+        return ERROR;
+        }
+
+    return SUCCESS;
     }
 
 /*--------------------------------------------------------------------------------------+

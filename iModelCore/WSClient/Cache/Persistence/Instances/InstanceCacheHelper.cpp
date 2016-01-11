@@ -2,7 +2,7 @@
  |
  |     $Source: Cache/Persistence/Instances/InstanceCacheHelper.cpp $
  |
- |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 
@@ -264,7 +264,7 @@ CachedInstances& cachedInstancesInOut
 
     CachedInstanceKey relInfo = m_relationshipInfoManager.ReadCachedRelationshipKey(relationshipKey, relationshipObjectId.remoteId.c_str());
 
-    cachedInstancesInOut.AddRelationship(relationshipObjectId, relInfo);
+    cachedInstancesInOut.AddInstance(relationshipObjectId, relInfo);
 
     return SUCCESS;
     }
@@ -405,16 +405,6 @@ void InstanceCacheHelper::CachedInstances::AddInstance(ObjectIdCR objectId, Cach
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    06/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-void InstanceCacheHelper::CachedInstances::AddRelationship(ObjectIdCR objectId, CachedInstanceKeyCR key)
-    {
-    m_cachedInstances.insert(key);
-    m_cachedInstancesByObjectId.insert({objectId, key.GetInstanceKey()});
-    m_cachedRelationships.insert(key);
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Vincas.Razma    06/2014
-+---------------+---------------+---------------+---------------+---------------+------*/
 bool InstanceCacheHelper::CachedInstances::HasCachedInstance(ObjectIdCR objectId) const
     {
     return m_cachedInstancesByObjectId.find(objectId) != m_cachedInstancesByObjectId.end();
@@ -460,14 +450,6 @@ bset<ObjectId> InstanceCacheHelper::CachedInstances::GetCachedInstanceObjectIds(
 const bmap<ObjectId, ECInstanceKey>& InstanceCacheHelper::CachedInstances::GetCachedInstancesByObjectId() const
     {
     return m_cachedInstancesByObjectId;
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Vincas.Razma    06/2014
-+---------------+---------------+---------------+---------------+---------------+------*/
-const bset<CachedInstanceKey>& InstanceCacheHelper::CachedInstances::GetCachedRelationships() const
-    {
-    return m_cachedRelationships;
     }
 
 /*--------------------------------------------------------------------------------------+

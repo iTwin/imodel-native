@@ -417,54 +417,6 @@ bset<CachedInstanceKey>& cachedRelationshipsOut
     }
 
 /*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Vincas.Razma    06/2014
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus RelationshipInfoManager::RelateCachedRelationshipsToHolder
-(
-ECInstanceKeyCR holder,
-ECRelationshipClassCP holderToInfoRelClass,
-const bset<CachedInstanceKey>& cachedRelationships
-)
-    {
-    for (auto& cachedRelationship : cachedRelationships)
-        {
-        if (!m_hierarchyManager.RelateInstances(holder, cachedRelationship.GetInfoKey(), holderToInfoRelClass).IsValid())
-            {
-            return ERROR;
-            }
-        }
-    return SUCCESS;
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Vincas.Razma    06/2014
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus RelationshipInfoManager::RemoveCachedRelationshipsFromHolder
-(
-ECInstanceKeyCR holder,
-ECRelationshipClassCP holderToInfoRelClass,
-const bset<CachedInstanceKey>& cachedRelationshipsToRemove
-)
-    {
-    for (auto& relInfo : cachedRelationshipsToRemove)
-        {
-        if (SUCCESS != m_hierarchyManager.DeleteRelationship(holder, relInfo.GetInfoKey(), holderToInfoRelClass))
-            {
-            return ERROR;
-            }
-        if (m_hierarchyManager.IsInstanceHeldByOtherInstances(relInfo.GetInfoKey()))
-            {
-            continue;
-            }
-        if (SUCCESS != DeleteCachedRelationship(relInfo))
-            {
-            return ERROR;
-            }
-        }
-    return SUCCESS;
-    }
-
-/*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    08/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus RelationshipInfoManager::DeleteRelationshipLeavingInfo(RelationshipInfoR info)
@@ -482,22 +434,6 @@ BentleyStatus RelationshipInfoManager::DeleteRelationshipLeavingInfo(Relationshi
         return ERROR;
         }
 
-    return SUCCESS;
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Vincas.Razma    06/2014
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus RelationshipInfoManager::DeleteCachedRelationship(const CachedInstanceKey& key)
-    {
-    if (SUCCESS != m_hierarchyManager.DeleteInstance(key.GetInfoKey()))
-        {
-        return ERROR;
-        }
-    if (SUCCESS != m_hierarchyManager.DeleteRelationship(key.GetInstanceKey()))
-        {
-        return ERROR;
-        }
     return SUCCESS;
     }
 
