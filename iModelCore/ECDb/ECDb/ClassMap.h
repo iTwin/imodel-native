@@ -40,7 +40,7 @@ public:
             if (SUCCESS != propMap->Postprocess(ecdbMap))
                 {
                 LOG.errorv("Finishing creation of NavigationPropertyMap for NavigationProperty '%s.%s' failed.",
-                          propMap->GetProperty().GetClass().GetFullName(), propMap->GetProperty().GetName().c_str());
+                           propMap->GetProperty().GetClass().GetFullName(), propMap->GetProperty().GetName().c_str());
                 return ERROR;
                 }
             }
