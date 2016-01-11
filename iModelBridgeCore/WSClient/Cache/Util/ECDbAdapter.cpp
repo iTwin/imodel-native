@@ -2,7 +2,7 @@
  |
  |     $Source: Cache/Util/ECDbAdapter.cpp $
  |
- |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 
@@ -920,7 +920,7 @@ BentleyStatus ECDbAdapter::GetRelatedTargetIds(ECRelationshipClassCP relClass, E
         "SELECT t.ECInstanceId "
         "FROM ONLY " + targetClass->GetECSqlName() + " t "
         "JOIN ONLY " + sourceClass->GetECSqlName() + " s "
-        "USING " + relClass->GetECSqlName() + " REVERSE "
+        "USING " + relClass->GetECSqlName() + " BACKWARD "
         "WHERE s.ECInstanceId = ? ";
 
     ECSqlStatement statement;
@@ -1010,7 +1010,7 @@ BentleyStatus ECDbAdapter::GetJsonRelatedTargets(JsonValueR arrayOut, ECRelation
         "SELECT t.* "
         "FROM ONLY " + targetClass->GetECSqlName() + " t "
         "JOIN ONLY " + sourceClass->GetECSqlName() + " s "
-        "USING " + relClass->GetECSqlName() + " REVERSE "
+        "USING " + relClass->GetECSqlName() + " BACKWARD "
         "WHERE s.ECInstanceId = ? ";
 
     if (nullptr != orderBy)
