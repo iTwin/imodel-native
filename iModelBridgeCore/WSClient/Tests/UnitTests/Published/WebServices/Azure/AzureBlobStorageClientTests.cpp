@@ -12,7 +12,7 @@
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 USING_NAMESPACE_BENTLEY_DGNCLIENTFX_UTILS
 
-TEST_F(AzureBlobStorageClientTests, SendGetFileRequest)
+TEST_F(AzureBlobStorageClientTests, SendGetFileRequest_ResponseIsOK_ReturnsSuccess)
     {
     auto client = AzureBlobStorageClient::Create(GetHandlerPtr());
 
@@ -33,7 +33,7 @@ TEST_F(AzureBlobStorageClientTests, SendGetFileRequest)
     EXPECT_TRUE(response.IsSuccess());
     }
 
-TEST_F(AzureBlobStorageClientTests, SendUpdateFileRequest_Success)
+TEST_F(AzureBlobStorageClientTests, SendUpdateFileRequest_ResponseIsOK_ReturnsSuccess)
     {
     auto client = AzureBlobStorageClient::Create(GetHandlerPtr());
     uint32_t chunkSize = 4 * 1024 * 1024; // 4MB
@@ -70,7 +70,7 @@ TEST_F(AzureBlobStorageClientTests, SendUpdateFileRequest_Success)
     EXPECT_TRUE(client->SendUpdateFileRequest("SASUrl", fileName)->GetResult().IsSuccess());
     }
 
-TEST_F(AzureBlobStorageClientTests, SendUpdateFileRequest_Fail)
+TEST_F(AzureBlobStorageClientTests, SendUpdateFileRequest_ResponseIsBadRequest_ReturnsError)
     {
     auto client = AzureBlobStorageClient::Create(GetHandlerPtr());
     uint32_t chunkSize = 4 * 1024 * 1024; // 4MB
