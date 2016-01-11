@@ -1210,14 +1210,14 @@
                 </PropertyMap>
             </ECCustomAttributes>
         </ECProperty>
-        <ECProperty propertyName="BBox_Low" typeName="point3d">
+        <ECProperty propertyName="BBoxLow" typeName="point3d">
             <ECCustomAttributes>
                 <PropertyMap xmlns="ECDbMap.01.00">
                     <IsNullable>False</IsNullable>
                 </PropertyMap>
             </ECCustomAttributes>
         </ECProperty>
-        <ECProperty propertyName="BBox_High" typeName="point3d">
+        <ECProperty propertyName="BBoxHigh" typeName="point3d">
             <ECCustomAttributes>
                 <PropertyMap xmlns="ECDbMap.01.00">
                     <IsNullable>False</IsNullable>

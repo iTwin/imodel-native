@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/TextString.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -60,9 +60,7 @@ void TextStringStyle::Reset()
 
 static const double DEFAULT_ITALIC_ANGLE = Angle::DegreesToRadians(30.0);
 static const uint32_t DEFAULT_BOLD_WEIGHT = 2;
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    static const double DEFAULT_UNDERLINE_OFFSET_FACTOR = 0.15;
-#endif
+static const double DEFAULT_UNDERLINE_OFFSET_FACTOR = 0.15;
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     01/2015
@@ -369,40 +367,47 @@ void TextString::ApplyTransform(TransformCR transform)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     01/2015
 //---------------------------------------------------------------------------------------
-void TextString::GetGlyphSymbology(GeometryParamsR params) const
+bool TextString::GetGlyphSymbology(GeometryParamsR params) const
     {
     // Generally speaking, use the GeometryParams that the user already set up...
+    bool changed = false;
     
     // Though we may actually care about weight...
-    params.SetWeight((m_style.IsBold() && m_style.GetFont().CanDrawWithLineWeight()) ? DEFAULT_BOLD_WEIGHT : 0);
+    uint32_t weight = ((m_style.IsBold() && m_style.GetFont().CanDrawWithLineWeight()) ? DEFAULT_BOLD_WEIGHT : 0);
+
+    if (params.IsWeightFromSubCategoryAppearance() || weight != params.GetWeight())
+        {
+        params.SetWeight(weight);
+        changed = true;
+        }
     
-    // And we should force these values, lest they interfere under various scenarios.
-    params.SetLineStyle(0);
-    params.SetFillDisplay(FillDisplay::Never);
+    // And we should force these values, lest they interfere under various scenarios. NOT SURE THIS IS STILL NECESSARY...
+    if (params.IsLineStyleFromSubCategoryAppearance() || nullptr != params.GetLineStyle())
+        {
+        params.SetLineStyle(nullptr);
+        changed = true;
+        }
+
+    if (FillDisplay::Never != params.GetFillDisplay())
+        {
+        params.SetFillDisplay(FillDisplay::Never);
+        changed = true;
+        }
+
+    return changed;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     01/2015
 //---------------------------------------------------------------------------------------
-void TextString::DrawTextAdornments(ViewContextR context) const
+void TextString::AddUnderline(Render::GraphicR graphic) const
     {
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    if (DrawPurpose::RegionFlood == context.GetDrawPurpose())
-        return;
-
-    // The only current possible adornment is underline.
     if (!m_style.IsUnderlined())
         return;
 
-    GraphicR output = context.GetCurrentGraphicR();
-
-    GeometryParamsR elParams = context.GetCurrentGeometryParams();
-    GetGlyphSymbology(elParams);
-    elParams.SetWeight(0); // IsBold should not affect underline.
-
     Update(); 
     
-    DPoint3d pts[2];
+    DPoint3d    pts[2];
     
     pts[0].x = m_range.low.x;
     pts[0].y = (m_range.low.y - (m_style.GetHeight() * DEFAULT_UNDERLINE_OFFSET_FACTOR));
@@ -412,11 +417,7 @@ void TextString::DrawTextAdornments(ViewContextR context) const
     pts[1].y = pts[0].y;
     pts[1].z = 0.0;
 
-    context.PushTransform(ComputeTransform());
-    context.CookGeometryParams();
-    output.AddLineString(2, pts, NULL);
-    context.PopTransformClip();
-#endif
+    graphic.AddLineString(2, pts, nullptr);
     }
 
 static const uint8_t CURRENT_STYLE_MAJOR_VERSION = 1;

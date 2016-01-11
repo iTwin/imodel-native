@@ -1330,8 +1330,13 @@ void SimplifyGraphic::ClipAndProcessText(TextStringCR text) const
         DgnGlyphCP const* glyphs = text.GetGlyphs();
         DPoint3dCP glyphOrigins = text.GetGlyphOrigins();
 
+        if (text.GetGlyphSymbology(sGraphic->m_currGeometryParams))
+            m_context.CookGeometryParams(sGraphic->m_currGeometryParams, *graphic);
+
         for (size_t iGlyph = 0; iGlyph < numGlyphs; ++iGlyph)
             sGraphic->ClipAndProcessGlyph(font, *glyphs[iGlyph], glyphOrigins[iGlyph]);
+
+        text.AddUnderline(*graphic); // NOTE: Issue with supporting bold resource fonts, don't want underline bolded...
         return;
         }
     }
