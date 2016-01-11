@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFIntergraphLineEditor.cpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class HRFIntergraphLineEditor
@@ -112,8 +112,7 @@ HRFIntergraphLineEditor::~HRFIntergraphLineEditor()
 
 HSTATUS HRFIntergraphLineEditor::ReadBlock(uint64_t  pi_PosBlockX,
                                            uint64_t  pi_PosBlockY,
-                                           Byte*      po_pData,
-                                           HFCLockMonitor const* pi_pSisterFileLock)
+                                           Byte*      po_pData)
     {
     // We assume that we have check the header file integrity in the
     // constructor for the release version.
@@ -121,20 +120,10 @@ HSTATUS HRFIntergraphLineEditor::ReadBlock(uint64_t  pi_PosBlockX,
     HPRECONDITION (m_pResolutionDescriptor->GetBlockType() == HRFBlockType::LINE);
     HPRECONDITION (po_pData != 0);
     HSTATUS Status = H_ERROR;
-
-    HFCLockMonitor SisterFileLock;
     if (GetRasterFile()->GetAccessMode().m_HasCreateAccess)
         {
         Status = H_NOT_FOUND;   // we are in creation mode
         goto WRAPUP;
-        }
-
-    // Lock the sister file if needed
-    if (pi_pSisterFileLock == 0)
-        {
-        // Get lock and synch.
-        AssignRasterFileLock(GetRasterFile(), SisterFileLock, true);
-        pi_pSisterFileLock = &SisterFileLock;
         }
 
     if (m_IntergraphResolutionDescriptor.pCodec != 0)
@@ -275,9 +264,6 @@ HSTATUS HRFIntergraphLineEditor::ReadBlock(uint64_t  pi_PosBlockX,
 #endif
         }
 
-    // Unlock the sister file
-    SisterFileLock.ReleaseKey();
-
     if (static_cast<HRFIntergraphFile*>(GetRasterFile().GetPtr())->HasLUTColorCorrection())
         {
         ApplyLUTColorCorrection(po_pData, (uint32_t)m_pResolutionDescriptor->GetWidth());
@@ -295,8 +281,7 @@ WRAPUP:
 //-----------------------------------------------------------------------------
 HSTATUS HRFIntergraphLineEditor::ReadBlockRLE(uint64_t pi_PosBlockX,
                                               uint64_t pi_PosBlockY,
-                                              HFCPtr<HCDPacketRLE>& pio_rpPacketRLE,
-                                              HFCLockMonitor const* pi_pSisterFileLock)
+                                              HFCPtr<HCDPacketRLE>& pio_rpPacketRLE)
     {
 
     // We assume that we have check the header file integrity in the
@@ -335,15 +320,6 @@ HSTATUS HRFIntergraphLineEditor::ReadBlockRLE(uint64_t pi_PosBlockX,
 
         if (m_CurrentReadLine == 0)
             {
-            // Lock the sister file if needed
-            HFCLockMonitor SisterFileLock;
-            if (pi_pSisterFileLock == 0)
-                {
-                // Get lock and synch.
-                AssignRasterFileLock(GetRasterFile(), SisterFileLock, true);
-                pi_pSisterFileLock = &SisterFileLock;
-                }
-
             // this is the first line we move to the begin of image data
             m_pIntergraphFile->SeekToPos(m_RasterOffset);
 
@@ -376,9 +352,6 @@ HSTATUS HRFIntergraphLineEditor::ReadBlockRLE(uint64_t pi_PosBlockX,
             m_CompressPacket.SetBufferOwnership(true);
             m_CompressPacket.SetDataSize(m_ResSizeInBytes);
             m_CompressPacket.SetCodec((HFCPtr<class HCDCodec>)(m_IntergraphResolutionDescriptor.pCodec));
-
-            // Unlock the sister file
-            SisterFileLock.ReleaseKey();
             }
 
         // Move to the needed line
@@ -405,7 +378,7 @@ HSTATUS HRFIntergraphLineEditor::ReadBlockRLE(uint64_t pi_PosBlockX,
     else
         {
         // Use default implementation.
-        Status = HRFResolutionEditor::ReadBlockRLE(pi_PosBlockX, pi_PosBlockY, pio_rpPacketRLE, pi_pSisterFileLock);
+        Status = HRFResolutionEditor::ReadBlockRLE(pi_PosBlockX, pi_PosBlockY, pio_rpPacketRLE);
         }
 
 WRAPUP:
@@ -420,8 +393,7 @@ WRAPUP:
 
 HSTATUS HRFIntergraphLineEditor::WriteBlock(uint64_t       pi_PosBlockX,
                                             uint64_t       pi_PosBlockY,
-                                            const Byte*    pi_pData,
-                                            HFCLockMonitor const* pi_pSisterFileLock)
+                                            const Byte*    pi_pData)
     {
     HPRECONDITION((pi_PosBlockY == m_CurrentReadLine + 1) || (pi_PosBlockY == 0));
     HPRECONDITION (m_AccessMode.m_HasWriteAccess || m_AccessMode.m_HasCreateAccess);
@@ -430,15 +402,6 @@ HSTATUS HRFIntergraphLineEditor::WriteBlock(uint64_t       pi_PosBlockX,
 
     HSTATUS Status = H_ERROR;
     Byte*  pRasterData;
-
-    // Lock the sister file if needed
-    HFCLockMonitor SisterFileLock;
-    if(pi_pSisterFileLock == 0)
-        {
-        // Get lock without synch.
-        AssignRasterFileLock(GetRasterFile(), SisterFileLock, false);
-        pi_pSisterFileLock = &SisterFileLock;
-        }
 
     // Be sure, even in release mode, for accessing an already open file and
     // for a correct access type (Lined vs Tiled)
@@ -580,13 +543,6 @@ HSTATUS HRFIntergraphLineEditor::WriteBlock(uint64_t       pi_PosBlockX,
             }
         }
 
-
-    // Increment the counters
-    GetRasterFile()->SharingControlIncrementCount();
-
-    // Unlock the sister file.
-    SisterFileLock.ReleaseKey();
-
     Status = H_SUCCESS;
 
 WRAPUP:
@@ -599,8 +555,7 @@ WRAPUP:
 //-----------------------------------------------------------------------------
 HSTATUS HRFIntergraphLineEditor::WriteBlockRLE(uint64_t               pi_PosBlockX,
                                                uint64_t               pi_PosBlockY,
-                                               HFCPtr<HCDPacketRLE>&  pi_rpPacketRLE,
-                                               HFCLockMonitor const*  pi_pSisterFileLock)
+                                               HFCPtr<HCDPacketRLE>&  pi_rpPacketRLE)
     {
     HPRECONDITION((pi_PosBlockY == m_CurrentReadLine + 1) || (pi_PosBlockY == 0));
     HPRECONDITION (m_AccessMode.m_HasWriteAccess || m_AccessMode.m_HasCreateAccess);
@@ -611,20 +566,11 @@ HSTATUS HRFIntergraphLineEditor::WriteBlockRLE(uint64_t               pi_PosBloc
     // If output codec does not support compression directly from RLE use default implementation
     if (m_IntergraphResolutionDescriptor.pCodec == 0 || m_IntergraphResolutionDescriptor.pCodec->GetRLEInterface() == 0)
         {
-        return HRFResolutionEditor::WriteBlockRLE(pi_PosBlockX, pi_PosBlockY, pi_rpPacketRLE, pi_pSisterFileLock);
+        return HRFResolutionEditor::WriteBlockRLE(pi_PosBlockX, pi_PosBlockY, pi_rpPacketRLE);
         }
 
     HSTATUS Status = H_ERROR;
     Byte*  pRasterData;
-
-    // Lock the sister file if needed
-    HFCLockMonitor SisterFileLock;
-    if(pi_pSisterFileLock == 0)
-        {
-        // Get lock without synch.
-        AssignRasterFileLock(GetRasterFile(), SisterFileLock, false);
-        pi_pSisterFileLock = &SisterFileLock;
-        }
 
     // Be sure, even in release mode, for accessing an already open file and
     // for a correct access type (Lined vs Tiled)
@@ -738,13 +684,6 @@ HSTATUS HRFIntergraphLineEditor::WriteBlockRLE(uint64_t               pi_PosBloc
             static_cast<HRFIntergraphFile*>(GetRasterFile().GetPtr())->UpdatePacketOverview(m_IntergraphResolutionDescriptor.pOverviewEntry->S, m_Resolution);
             }
         }
-
-
-    // Increment the counters
-    GetRasterFile()->SharingControlIncrementCount();
-
-    // Unlock the sister file.
-    SisterFileLock.ReleaseKey();
 
     Status = H_SUCCESS;
 
@@ -1082,21 +1021,7 @@ void HRFIntergraphLineEditor::BuildJpegLumiChromaTable(double pi_QualityFactor, 
 
 //-----------------------------------------------------------------------------
 // public
-// OnSynchronizedSharingControl
-//-----------------------------------------------------------------------------
-void HRFIntergraphLineEditor::OnSynchronizedSharingControl()
-    {
-    if (m_IntergraphResolutionDescriptor.pCodec != 0)
-        {
-        // We have a compressed file. We must reread all the file.
-        m_CompressPacket.SetBuffer(0, 0);
-        m_CurrentReadLine = 0;
-        }
-    }
-
-//-----------------------------------------------------------------------------
-// public
-// OnSynchronizedSharingControl
+// ApplyLUTColorCorrection
 //-----------------------------------------------------------------------------
 
 void HRFIntergraphLineEditor::ApplyLUTColorCorrection(Byte* pio_pData, uint32_t pi_pixelCount)

@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFErdasImgFile.cpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -314,9 +314,6 @@ bool HRFErdasImgCreator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
 
     bool  Result = false;
 
-    (const_cast<HRFErdasImgCreator*>(this))->SharingControlCreate(pi_rpURL);
-    HFCLockMonitor SisterFileLock (GetLockManager());
-
     GDALDriver* pHFADriver = GetGDALDriverManager()->GetDriverByName("HFA");
     if(pHFADriver != NULL && pHFADriver->pfnIdentify != NULL) 
         {
@@ -328,10 +325,6 @@ bool HRFErdasImgCreator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
         GDALOpenInfo oOpenInfo(filenameUtf8.c_str(), GA_ReadOnly);
         Result = (0 != pHFADriver->pfnIdentify(&oOpenInfo));
         }
-
-    SisterFileLock.ReleaseKey();
-    HASSERT(!(const_cast<HRFErdasImgCreator*>(this))->m_pSharingControl->IsLocked());
-    (const_cast<HRFErdasImgCreator*>(this))->m_pSharingControl = 0;
 
     return Result;
     }
@@ -712,9 +705,6 @@ void HRFErdasImgFile::CreateDescriptors()
 bool HRFErdasImgFile::Create()
     {
     m_IsOpen = true;
-
-    // Create the sharing control object for file sharing
-    SharingControlCreate();
 
     return m_IsOpen;
     }

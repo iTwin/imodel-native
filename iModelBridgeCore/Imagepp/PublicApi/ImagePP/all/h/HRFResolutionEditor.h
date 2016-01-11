@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRFResolutionEditor.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HRFResolutionEditor
@@ -61,13 +61,11 @@ public:
     // Edition by Block
     IMAGEPP_EXPORT virtual HSTATUS ReadBlock(uint64_t                pi_PosBlockX,
                                             uint64_t                pi_PosBlockY,
-                                            Byte*                   po_pData,
-                                            HFCLockMonitor const*   pi_pSisterFileLock = 0);
+                                            Byte*                   po_pData);
 
     IMAGEPP_EXPORT virtual HSTATUS ReadBlock(uint64_t                pi_PosBlockX,
                                             uint64_t                pi_PosBlockY,
-                                            HFCPtr<HCDPacket>&      po_rpPacket,
-                                            HFCLockMonitor const*   pi_pSisterFileLock = 0);
+                                            HFCPtr<HCDPacket>&      po_rpPacket);
 
     // Binary raster optimization.
     // Use for 1 bit processing. Your implementation can avoid the decompression/compression(RLE) overhead
@@ -75,29 +73,19 @@ public:
     // Default implementation will do a standard read block and then compress in RLE.
     IMAGEPP_EXPORT virtual HSTATUS ReadBlockRLE(uint64_t                pi_PosBlockX,
                                                uint64_t                pi_PosBlockY,
-                                               HFCPtr<HCDPacketRLE>&   po_rpPacketRLE,
-                                               HFCLockMonitor const*   pi_pSisterFileLock = 0);
+                                               HFCPtr<HCDPacketRLE>&   po_rpPacketRLE);
 
     IMAGEPP_EXPORT virtual HSTATUS WriteBlockRLE(uint64_t                pi_PosBlockX,
                                                 uint64_t                pi_PosBlockY,
-                                                HFCPtr<HCDPacketRLE>&   pi_rpPacketRLE,
-                                                HFCLockMonitor const*   pi_pSisterFileLock = 0);
+                                                HFCPtr<HCDPacketRLE>&   pi_rpPacketRLE);
 
     IMAGEPP_EXPORT virtual HSTATUS WriteBlock(uint64_t                pi_PosBlockX,
                                              uint64_t                pi_PosBlockY,
-                                             const Byte*             pi_pData,
-                                             HFCLockMonitor const*   pi_pSisterFileLock = 0);
+                                             const Byte*             pi_pData);
 
     IMAGEPP_EXPORT virtual HSTATUS WriteBlock(uint64_t                 pi_PosBlockX,
                                              uint64_t                 pi_PosBlockY,
-                                             const HFCPtr<HCDPacket>& pi_rpPacket,
-                                             HFCLockMonitor const*    pi_pSisterFileLock = 0);
-
-    // Your implementation can override OnSynchronizedSharingControl() to execute its specific
-    // lock and file synchronization operations.
-    // Only file editor and HRFBlockAdapters(via m_pTheTrueOriginalFile) should instantiate lock and
-    // pass it as a parameter to the Read/Write operation.
-    void                            AssignRasterFileLock(const HFCPtr<HRFRasterFile>& pi_rpRasterFile, HFCLockMonitor& pio_rSisterFileLock, bool pi_SynchronizedSharingControl);
+                                             const HFCPtr<HCDPacket>& pi_rpPacket);
 
     virtual void                    NoMoreRead();
 
@@ -111,9 +99,6 @@ public:
     IMAGEPP_EXPORT virtual void             ResolutionSizeHasChanged() const;
 
 protected:
-
-    // Default implementation does nothing.
-    virtual void OnSynchronizedSharingControl() {};
 
     // Pointer to the raster file to edit, to the resolution descriptor
     // and to the capabilities

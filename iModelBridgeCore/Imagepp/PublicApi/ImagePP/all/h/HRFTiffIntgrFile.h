@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRFTiffIntgrFile.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HRFTiffIntgrFile
@@ -17,7 +17,6 @@
 #include "HRFException.h"
 #include "HRFRasterFile.h"
 #include "HRFRasterFileCapabilities.h"
-#include "HRFCacheFileSharing.h"
 
 BEGIN_IMAGEPP_NAMESPACE
 class HRFTiffIntgrCapabilities : public HRFRasterFileCapabilities

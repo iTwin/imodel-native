@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFImgRGBLineEditor.cpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -57,14 +57,12 @@ HRFImgRGBLineEditor::~HRFImgRGBLineEditor()
  */
 HSTATUS HRFImgRGBLineEditor::ReadBlock(uint64_t pi_PosBlockX,
                                        uint64_t pi_PosBlockY, 
-                                       Byte*  po_pData,
-                                       HFCLockMonitor const* pi_pSisterFileLock)
+                                       Byte*  po_pData)
     {
     HPRECONDITION (po_pData != 0);
     HPRECONDITION (m_AccessMode.m_HasReadAccess);
 
     HSTATUS Status = H_ERROR;
-    HFCLockMonitor SisterFileLock;
 
     if (GetRasterFile()->GetAccessMode().m_HasCreateAccess)
         {
@@ -80,14 +78,6 @@ HSTATUS HRFImgRGBLineEditor::ReadBlock(uint64_t pi_PosBlockX,
         Byte* pBuffGreen = &(pBuffRed[channelLineLength]);
         Byte* pBuffBlue  = &(pBuffRed[channelLineLength*2]);
 
-        // Lock the sister file if needed
-        if(pi_pSisterFileLock == 0)
-            {
-            // Get lock and synch.
-            AssignRasterFileLock(GetRasterFile(), SisterFileLock, true);
-            pi_pSisterFileLock = &SisterFileLock;
-            }
-
         //:> Place file ptrs
         if (static_cast<HRFImgRGBFile*>(GetRasterFile().GetPtr())->m_pRedFile->GetCurrentPos() != Offset)
             static_cast<HRFImgRGBFile*>(GetRasterFile().GetPtr())->m_pRedFile->SeekToPos(Offset);
@@ -101,9 +91,6 @@ HSTATUS HRFImgRGBLineEditor::ReadBlock(uint64_t pi_PosBlockX,
            static_cast<HRFImgRGBFile*>(GetRasterFile().GetPtr())->m_pGreenFile->Read(pBuffGreen, channelLineLength) != channelLineLength ||
            static_cast<HRFImgRGBFile*>(GetRasterFile().GetPtr())->m_pBlueFile->Read(pBuffBlue, channelLineLength) != channelLineLength)
             goto WRAPUP;
-
-        //:> Unlock the sister file
-        SisterFileLock.ReleaseKey();
 
         //:> Fill client buffer
         for (uint32_t pos=0, bufPos=0; pos<channelLineLength; pos++, bufPos+=3)
@@ -132,8 +119,7 @@ WRAPUP:
  */
 HSTATUS HRFImgRGBLineEditor::WriteBlock(uint64_t      pi_PosBlockX,
                                         uint64_t      pi_PosBlockY,
-                                        const Byte*   pi_pData,
-                                        HFCLockMonitor const* pi_pSisterFileLock)
+                                        const Byte*   pi_pData)
     {
     HPRECONDITION(m_AccessMode.m_HasWriteAccess || m_AccessMode.m_HasCreateAccess);
     HPRECONDITION(pi_pData != 0);
@@ -155,15 +141,6 @@ HSTATUS HRFImgRGBLineEditor::WriteBlock(uint64_t      pi_PosBlockX,
         pBuffBlue[pos]  = pi_pData[bufPos+2];
         }
 
-    // Lock the sister file if needed
-    HFCLockMonitor SisterFileLock;
-    if(pi_pSisterFileLock == 0)
-        {
-        // Get lock and synch.
-        AssignRasterFileLock(GetRasterFile(), SisterFileLock, false);
-        pi_pSisterFileLock = &SisterFileLock;
-        }
-
     //:> Place file ptrs
     if (static_cast<HRFImgRGBFile*>(GetRasterFile().GetPtr())->m_pRedFile->GetCurrentPos() != Offset)
         static_cast<HRFImgRGBFile*>(GetRasterFile().GetPtr())->m_pRedFile->SeekToPos(Offset);
@@ -177,12 +154,6 @@ HSTATUS HRFImgRGBLineEditor::WriteBlock(uint64_t      pi_PosBlockX,
         static_cast<HRFImgRGBFile*>(GetRasterFile().GetPtr())->m_pGreenFile->Write(pBuffGreen, channelLineLength)  != channelLineLength ||
         static_cast<HRFImgRGBFile*>(GetRasterFile().GetPtr())->m_pBlueFile->Write(pBuffBlue, channelLineLength) != channelLineLength)
         Status = H_ERROR;
-
-    //:> Increment the counters for sharing control
-    GetRasterFile()->SharingControlIncrementCount();
-
-    //:> Unlock the sister file.
-    SisterFileLock.ReleaseKey();
 
     return Status;
     }

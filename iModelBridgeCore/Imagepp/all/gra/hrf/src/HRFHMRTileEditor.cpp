@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFHMRTileEditor.cpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class HRFHMRTileEditor
@@ -54,8 +54,7 @@ HRFHMRTileEditor::~HRFHMRTileEditor()
 //-----------------------------------------------------------------------------
 HSTATUS HRFHMRTileEditor::ReadBlock(uint64_t pi_PosBlockX,
                                     uint64_t pi_PosBlockY,
-                                    Byte*  po_pData,
-                                    HFCLockMonitor const* pi_pSisterFileLock)
+                                    Byte*  po_pData)
     {
     HPRECONDITION (m_AccessMode.m_HasReadAccess);
     HPRECONDITION (po_pData != 0);
@@ -63,15 +62,6 @@ HSTATUS HRFHMRTileEditor::ReadBlock(uint64_t pi_PosBlockX,
     HPRECONDITION (pi_PosBlockX <= ULONG_MAX && pi_PosBlockY <= ULONG_MAX);
 
     HSTATUS Status = H_SUCCESS;
-
-    // Lock the sister file for the GetField operation
-    HFCLockMonitor SisterFileLock;
-    if(pi_pSisterFileLock == 0)
-        {
-        // Will reload directories if necessary
-        AssignRasterFileLock(GetRasterFile(), SisterFileLock, true);
-        pi_pSisterFileLock = &SisterFileLock;
-        }
 
     // Select the page and the resolution
     static_cast<HRFHMRFile*>(GetRasterFile().GetPtr())->SetImageInSubImage (m_IndexOfPage+m_Resolution);
@@ -101,9 +91,6 @@ HSTATUS HRFHMRTileEditor::ReadBlock(uint64_t pi_PosBlockX,
                                              (uint32_t)pi_PosBlockX,
                                              (uint32_t)pi_PosBlockY + m_pResolutionDescriptor->GetBlockHeight());
 
-            // Unlock the sister file
-            SisterFileLock.ReleaseKey();
-
             if (Status == H_SUCCESS)
                 memcpy (&(po_pData[Lenght]), HMR_RASTERFILE->m_pTileBuffer, LenghtPadding);
             }
@@ -120,22 +107,12 @@ HSTATUS HRFHMRTileEditor::ReadBlock(uint64_t pi_PosBlockX,
 //-----------------------------------------------------------------------------
 HSTATUS HRFHMRTileEditor::ReadBlock(uint64_t           pi_PosBlockX,
                                     uint64_t           pi_PosBlockY,
-                                    HFCPtr<HCDPacket>& po_rpPacket,
-                                    HFCLockMonitor const* pi_pSisterFileLock)
+                                    HFCPtr<HCDPacket>& po_rpPacket)
 
     {
     HPRECONDITION (m_AccessMode.m_HasReadAccess);
     HPRECONDITION (po_rpPacket != 0);
     HPRECONDITION (m_pResolutionDescriptor->GetBlockType() == HRFBlockType::TILE);
-
-    // Lock the sister file for the GetField operation
-    HFCLockMonitor SisterFileLock;
-    if(pi_pSisterFileLock == 0)
-        {
-        // Will reload directories if necessary
-        AssignRasterFileLock(GetRasterFile(), SisterFileLock, true);
-        pi_pSisterFileLock = &SisterFileLock;
-        }
 
     // Select the page and the resolution
     static_cast<HRFHMRFile*>(GetRasterFile().GetPtr())->SetImageInSubImage (m_IndexOfPage+m_Resolution);
@@ -157,7 +134,7 @@ HSTATUS HRFHMRTileEditor::ReadBlock(uint64_t           pi_PosBlockX,
     po_rpPacket->SetDataSize(BufferSize);
     po_rpPacket->SetCodec(new HCDCodecIdentity(BufferSize));
 
-    return ReadBlock(pi_PosBlockX, pi_PosBlockY, po_rpPacket->GetBufferAddress(), pi_pSisterFileLock);
+    return ReadBlock(pi_PosBlockX, pi_PosBlockY, po_rpPacket->GetBufferAddress());
     }
 
 
@@ -169,22 +146,12 @@ HSTATUS HRFHMRTileEditor::ReadBlock(uint64_t           pi_PosBlockX,
 //-----------------------------------------------------------------------------
 HSTATUS HRFHMRTileEditor::WriteBlock(uint64_t     pi_PosBlockX,
                                      uint64_t     pi_PosBlockY,
-                                     const Byte*  pi_pData,
-                                     HFCLockMonitor const* pi_pSisterFileLock)
+                                     const Byte*  pi_pData)
     {
     HPRECONDITION (m_AccessMode.m_HasWriteAccess || m_AccessMode.m_HasCreateAccess);
     HPRECONDITION (m_pResolutionDescriptor->GetBlockType() == HRFBlockType::TILE);
 
     HSTATUS   Status = H_SUCCESS;
-
-    // Lock the sister file for the GetField operation
-    HFCLockMonitor SisterFileLock;
-    if(pi_pSisterFileLock == 0)
-        {
-        // Get lock but do not synch.
-        AssignRasterFileLock(GetRasterFile(), SisterFileLock, false);
-        pi_pSisterFileLock = &SisterFileLock;
-        }
 
     // Select the page and the resolution
     static_cast<HRFHMRFile*>(GetRasterFile().GetPtr())->SetImageInSubImage (m_IndexOfPage+m_Resolution);
@@ -246,11 +213,7 @@ HSTATUS HRFHMRTileEditor::WriteBlock(uint64_t     pi_PosBlockX,
         }
 
     // Update the directories.
-    GetRasterFile()->SharingControlIncrementCount();
     static_cast<HRFHMRFile*>(GetRasterFile().GetPtr())->SaveDescriptors();
-
-    // Unlock the sister file.
-    SisterFileLock.ReleaseKey();
 
     return Status;
     }
@@ -262,22 +225,12 @@ HSTATUS HRFHMRTileEditor::WriteBlock(uint64_t     pi_PosBlockX,
 //-----------------------------------------------------------------------------
 HSTATUS HRFHMRTileEditor::WriteBlock(uint64_t                 pi_PosBlockX,
                                      uint64_t                 pi_PosBlockY,
-                                     const HFCPtr<HCDPacket>& pi_rpPacket,
-                                     HFCLockMonitor const* pi_pSisterFileLock)
+                                     const HFCPtr<HCDPacket>& pi_rpPacket)
     {
     HPRECONDITION (pi_rpPacket != 0);
     HPRECONDITION (m_AccessMode.m_HasWriteAccess || m_AccessMode.m_HasCreateAccess);
     HPRECONDITION (m_pResolutionDescriptor->GetBlockType() == HRFBlockType::TILE);
     HSTATUS Status = H_SUCCESS;
-
-    // Lock the sister file for the GetField operation
-    HFCLockMonitor SisterFileLock;
-    if(pi_pSisterFileLock == 0)
-        {
-        // Get lock but do not synch.
-        AssignRasterFileLock(GetRasterFile(), SisterFileLock, false);
-        pi_pSisterFileLock = &SisterFileLock;
-        }
 
     // Select the page and the resolution
     static_cast<HRFHMRFile*>(GetRasterFile().GetPtr())->SetImageInSubImage (m_IndexOfPage+m_Resolution);
@@ -298,17 +251,13 @@ HSTATUS HRFHMRTileEditor::WriteBlock(uint64_t                 pi_PosBlockX,
         ((HCDPacket*)pi_rpPacket)->Decompress(&Uncompressed);
 
         // Write the uncompressed data
-        Status = WriteBlock(pi_PosBlockX, pi_PosBlockY, Uncompressed.GetBufferAddress(), pi_pSisterFileLock);
+        Status = WriteBlock(pi_PosBlockX, pi_PosBlockY, Uncompressed.GetBufferAddress());
         }
     else
-        Status = WriteBlock(pi_PosBlockX, pi_PosBlockY, pi_rpPacket->GetBufferAddress(), pi_pSisterFileLock);
+        Status = WriteBlock(pi_PosBlockX, pi_PosBlockY, pi_rpPacket->GetBufferAddress());
 
     // Update the directories.
-    GetRasterFile()->SharingControlIncrementCount();
     static_cast<HRFHMRFile*>(GetRasterFile().GetPtr())->SaveDescriptors();
-
-    // Unlock the sister file
-    SisterFileLock.ReleaseKey();
 
     return Status;
     }

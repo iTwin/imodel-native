@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFErMapperSupportedFileEditor.cpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class HRFErMapperSupportedFileEditor
@@ -129,8 +129,7 @@ HRFErMapperSupportedFileEditor::~HRFErMapperSupportedFileEditor()
 
 HSTATUS HRFErMapperSupportedFileEditor::ReadBlock(uint64_t    pi_PosBlockX,
                                                   uint64_t    pi_PosBlockY,
-                                                  Byte*       po_pData,
-                                                  HFCLockMonitor const* pi_pSisterFileLock)
+                                                  Byte*       po_pData)
     {
     HPRECONDITION(po_pData != 0);
 
@@ -155,8 +154,7 @@ HSTATUS HRFErMapperSupportedFileEditor::ReadBlock(uint64_t    pi_PosBlockX,
                              pi_PosBlockY,
                              BLOCK_WIDTH_ERMAPPER,
                              BLOCK_HEIGHT_ERMAPPER,
-                             po_pData,
-                             pi_pSisterFileLock);
+                             po_pData);
         }
 
     return Status;
@@ -169,8 +167,7 @@ HSTATUS HRFErMapperSupportedFileEditor::ReadBlock(uint64_t    pi_PosBlockX,
 //-----------------------------------------------------------------------------
 HSTATUS HRFErMapperSupportedFileEditor::WriteBlock(uint64_t      pi_PosBlockX,
                                                    uint64_t      pi_PosBlockY,
-                                                   const Byte*    pi_pData,
-                                                   HFCLockMonitor const* pi_pSisterFileLock)
+                                                   const Byte*    pi_pData)
     {
     HASSERT(0); // not supported
     return H_ERROR;
@@ -185,8 +182,7 @@ HSTATUS HRFErMapperSupportedFileEditor::ReadBlock(uint64_t pi_PosBlockX,
                                                   uint64_t pi_PosBlockY,
                                                   uint64_t pi_BlockWidth,
                                                   uint64_t pi_BlockHeight,
-                                                  Byte*   po_pData,
-                                                  HFCLockMonitor const* pi_pSisterFileLock)
+                                                  Byte*   po_pData)
     {
     HSTATUS                   Status = H_SUCCESS;
     unsigned short            i;
@@ -411,7 +407,6 @@ uint64_t s_RemapXChannelsToRGBA (Byte* const       po_pBIPOutputBuffer,
 
 #ifdef __ECW_EXPORT_ENABLE__
 
-#include <Imagepp/all/h/HFCThread.h>
 #include <Imagepp/all/h/HUTExportProgressIndicator.h>
 #include <Imagepp/all/h/HRFRasterFileExtender.h>
 #include <Imagepp/all/h/HCDCodecErMapperSupported.h>
@@ -421,7 +416,6 @@ uint64_t s_RemapXChannelsToRGBA (Byte* const       po_pBIPOutputBuffer,
 #include <Imagepp/all/h/HRFException.h>
 #include <Imagepp/all/h/HFCException.h>
 #include <Imagepp/all/h/HRAPyramidRaster.h>
-#include <Imagepp/all/h/HFCEvent.h>
 #include <Imagepp/all/h/HRSObjectStore.h>
 #include <Imagepp/all/h/HRACopyFromOptions.h>
 
@@ -436,9 +430,7 @@ uint64_t s_RemapXChannelsToRGBA (Byte* const       po_pBIPOutputBuffer,
 struct ECWReadInfoStruct
     {
     ECWReadInfoStruct()
-        : m_ComputeStripEvent(false, false),
-          m_StripComputedEvent(false, false),
-          m_CancelExport(false)
+        : m_CancelExport(false)
         {
         };
 
@@ -469,8 +461,11 @@ struct ECWReadInfoStruct
     uint32_t                          m_CurrentStripPos;
 
     // PDF export
-    HFCEvent                        m_ComputeStripEvent;
-    HFCEvent                        m_StripComputedEvent;
+    std::mutex                      m_cv_main_mutex;
+    std::condition_variable         m_notifyMainThread;
+
+    std::mutex                      m_cv_ecw_mutex;
+    std::condition_variable         m_notifyEcwThread;
 
     bool                            m_CancelExport;
     Byte                            m_ECWVersion;
@@ -581,23 +576,28 @@ static ErMapperLibrary s_ErMapperLibrary;
 static BOOLEAN ReadCallback(NCSEcwCompressClient* pClient, uint32_t nNextLine, IEEE4** ppOutputBandBufferArray);
 static BOOLEAN CancelCallback(NCSEcwCompressClient* pClient);
 
-class ERMapperExporterThread : public HFCThread
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                  
+//----------------------------------------------------------------------------------------
+class ERMapperExporter
     {
     public:
-        ERMapperExporterThread(ECWReadInfoStruct& pi_rCompressReadInfo)
-            : HFCThread(),
-              m_rCompressReadInfo(pi_rCompressReadInfo),
+        //----------------------------------------------------------------------------------------
+        // @bsimethod                                                  
+        //----------------------------------------------------------------------------------------
+        ERMapperExporter(ECWReadInfoStruct& pi_rCompressReadInfo)
+            : m_rCompressReadInfo(pi_rCompressReadInfo),
               m_ExportCompleted(false),
               m_LastError(NCS_SUCCESS)
             {
             };
 
-        ~ERMapperExporterThread()
-            {
-            WaitUntilSignaled();    // wait until the thread is terminated
-            };
+        ~ERMapperExporter(){};
 
-        void Go()
+        //----------------------------------------------------------------------------------------
+        // @bsimethod                                                  
+        //----------------------------------------------------------------------------------------
+        void operator()()
             {
             s_ErMapperLibrary.Init();
 
@@ -708,23 +708,23 @@ class ERMapperExporterThread : public HFCThread
             s_ErMapperLibrary.Term();
 
             HASSERT(!m_pCompressClient);
+
+            m_ExportCompleted = true;   // This is how the main thread know that we are done. It doesn't mean we have a success.
+            m_rCompressReadInfo.m_notifyMainThread.notify_all();     // notify we have completed.
             };
 
+        //----------------------------------------------------------------------------------------
+        // @bsimethod                                                  
+        //----------------------------------------------------------------------------------------
         NCSError GetLastError()
             {
             return m_LastError;
             }
 
-        // Build a strip
-        // This method is called by the ReadCallback function. All information need to copy the strip was
-        // calculated by ReadCallback().
-        void ComputeStrip()
-            {
-        m_rCompressReadInfo.m_pDestinationBitmap->CopyFrom(*m_rCompressReadInfo.m_pSourceRaster, m_rCompressReadInfo.m_CopyFromOptions);
-            m_rCompressReadInfo.m_StripComputedEvent.Signal();
-            };
-
+        //----------------------------------------------------------------------------------------
         // Initialize the callback structure for ErMapper API.
+        // @bsimethod                                                  
+        //----------------------------------------------------------------------------------------
         bool InitializeECWCallbackStruct()
             {
             bool CreationStatus = false;
@@ -905,11 +905,17 @@ class ERMapperExporterThread : public HFCThread
             return CreationStatus;
             };
 
+        //----------------------------------------------------------------------------------------
+        // @bsimethod
+        //----------------------------------------------------------------------------------------
         bool ExportCompleted() const
             {
             return m_ExportCompleted;
             }
 
+        //----------------------------------------------------------------------------------------
+        // @bsimethod                                                   
+        //--------------------------------------------------------------------------------------
         void CancelExport()
             {
             m_rCompressReadInfo.m_CancelExport = true;
@@ -921,7 +927,6 @@ class ERMapperExporterThread : public HFCThread
         ECWReadInfoStruct&      m_rCompressReadInfo;
         NCSEcwCompressClient*   m_pCompressClient;
         NCSError                m_LastError;
-
     };
 
 
@@ -942,9 +947,10 @@ static BOOLEAN ReadCallback(NCSEcwCompressClient* pClient,
         // Copy data from the source raster into the destination one.
         pReadInfo->m_pDestinationBitmap->Clear();
         // signal the event, the main thread will execute the CopyFrom...
-        pReadInfo->m_ComputeStripEvent.Signal();
+        pReadInfo->m_notifyMainThread.notify_all();
         // wait until the main signal that the CopyFrom is terminate
-        pReadInfo->m_StripComputedEvent.WaitUntilSignaled();
+        std::unique_lock<std::mutex> lk(pReadInfo->m_cv_ecw_mutex);
+        pReadInfo->m_notifyEcwThread.wait(lk);
         }
     else if (nNextLine >= pReadInfo->m_CurrentStripPos + pReadInfo->m_StripHeight)
         {
@@ -958,9 +964,10 @@ static BOOLEAN ReadCallback(NCSEcwCompressClient* pClient,
         // Copy data from the source raster into the destination one.
         pReadInfo->m_pDestinationBitmap->Clear();
         // signal the event, the main thread will execute the CopyFrom...
-        pReadInfo->m_ComputeStripEvent.Signal();
+        pReadInfo->m_notifyMainThread.notify_all();
         // wait until the main signal that the CopyFrom is terminate
-        pReadInfo->m_StripComputedEvent.WaitUntilSignaled();
+        std::unique_lock<std::mutex> lk(pReadInfo->m_cv_ecw_mutex);
+        pReadInfo->m_notifyEcwThread.wait(lk);
 
         pReadInfo->m_CurrentStripPos = pReadInfo->m_CurrentStripPos + pReadInfo->m_StripHeight;
         }
@@ -1008,15 +1015,14 @@ void Export_ECW_Jpeg2000_Helper(ECWReadInfoStruct& pio_rReadInfo)
     {
     // TR #194882
     // PDF library must be run into a single thread, this means that the CopyFrom() must be run into the main thread.
-    // When we export to ECW, the ReadCallback() function is called by another thread then the main thread. For this
+    // When we export to ECW, the ReadCallback() function is called by another thread than the main thread. For this
     // reason, we create a new thread, the ECW API is initialized into the new thread, the ReadCallback() signal an
     // event for the main thread
     // Create the thread
     // This thread will initialize ECW API and call NCSEcwCompress()
     // The callback function ReadCallback will be called by ECW API for each line.
     // When the PDF data is needed, ReadCallback() will signal m_ComputeStripEvent.
-    ERMapperExporterThread ExportThread(pio_rReadInfo);
-
+    
     //DMx ------------------------------------------------------------------------------------------------
 #if 0
     s_ErMapperLibrary.Init();
@@ -1079,41 +1085,40 @@ void Export_ECW_Jpeg2000_Helper(ECWReadInfoStruct& pio_rReadInfo)
     LastError = NCSEcwCompressOpen(pClient /*ExportThread.m_pCompressClient*/, false);
 #endif
     //DMx ------------------------------------------------------------------------------------------------
+    // Create work and start thread. Use std::ref to share 'ECWExporter' with both threads.
+    ERMapperExporter ECWExporter(pio_rReadInfo); 
+    std::thread ecwThread(std::ref(ECWExporter));
 
-    ExportThread.StartThread();
-
-    HFCSynchroContainer Synchros;
-    Synchros.AddSynchro(&ExportThread);    // ExportThread will be signaled when the thread stop
-    Synchros.AddSynchro(&pio_rReadInfo.m_ComputeStripEvent);
-
-    if (0 != HFCSynchro::WaitForMultipleObjects(Synchros, false))
+    while(1)
         {
-        do
-            {
-            // execute the CopyFrom
-            ExportThread.ComputeStrip();
+        std::unique_lock<std::mutex> lk(pio_rReadInfo.m_cv_main_mutex);
+        pio_rReadInfo.m_notifyMainThread.wait(lk);
 
-            } while (0 != HFCSynchro::WaitForMultipleObjects(Synchros, false) && HUTExportProgressIndicator::GetInstance()->ContinueIteration(pio_rReadInfo.m_pDestinationFile, 0));
+        // If the export completed, exited on error or whatever.
+        if(ECWExporter.ExportCompleted())   
+            break;
+
+        // Execute the CopyFrom (from the this thread).  The ecwThread is waiting for us.
+        pio_rReadInfo.m_pDestinationBitmap->CopyFrom(*pio_rReadInfo.m_pSourceRaster, pio_rReadInfo.m_CopyFromOptions);
+             
+        // Notify caller and cancel if requested.
+        if(!HUTExportProgressIndicator::GetInstance()->ContinueIteration(pio_rReadInfo.m_pDestinationFile, 0))
+            ECWExporter.CancelExport();    // flag ecw to cancel. we don't know when it will happen so we keep going until ExportCompleted().
+
+        // give control back to ecw thread
+        pio_rReadInfo.m_notifyEcwThread.notify_all();
         }
 
-    if (!ExportThread.ExportCompleted())
-        {
-        ExportThread.CancelExport();
-        //Wait until the library cancels the export
-        do
-            {
-            pio_rReadInfo.m_StripComputedEvent.Signal();
-            } while (!ExportThread.WaitUntilSignaled(100));
-        }
+    ecwThread.join();   // Wait until the thread exit.
 
-    if ((ExportThread.GetLastError() != NCS_SUCCESS) &&
-        (ExportThread.GetLastError() != NCS_USER_CANCELLED_COMPRESSION))
+    if ((ECWExporter.GetLastError() != NCS_SUCCESS) &&
+        (ECWExporter.GetLastError() != NCS_USER_CANCELLED_COMPRESSION))
         {
-        if (ExportThread.GetLastError() == NCS_INPUT_SIZE_TOO_SMALL)
+        if (ECWExporter.GetLastError() == NCS_INPUT_SIZE_TOO_SMALL)
             {
             throw HRFTooSmallForEcwCompressionException(pio_rReadInfo.m_pDestinationFile->GetURL()->GetURL());
             }
-        else if (ExportThread.GetLastError() == NCS_INPUT_SIZE_EXCEEDED)
+        else if (ECWExporter.GetLastError() == NCS_INPUT_SIZE_EXCEEDED)
             {
             throw HRFTooBigForEcwCompressionException(pio_rReadInfo.m_pDestinationFile->GetURL()->GetURL());
             }

@@ -974,7 +974,7 @@ void HIMColorBalancedImage::_Draw(HGFMappedSurface& pio_destSurface, HRADrawOpti
     // Draw the source directly
     if (!DrawDone)
         {
-        HWARNING(GetNumberOfNeighbors() <= 0, L"HIMColorBalancedImage::Draw out of memory. Color balancing will not be applied.");
+        HWARNING(GetNumberOfNeighbors() <= 0, "HIMColorBalancedImage::Draw out of memory. Color balancing will not be applied.");
 
         GetSource()->Draw(pio_destSurface, pi_Options);
         }

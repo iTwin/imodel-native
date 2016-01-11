@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFGifLineEditor.cpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class HRFGifLineEditor
@@ -73,8 +73,6 @@ bool HRFGifLineEditor::ReadFromFile(uint32_t&         pio_rLastValidIndex,
                                      uint32_t&         pio_rMaxBufferSize,
                                      HFCBinStream*  pi_pFile)
     {
-    HPRECONDITION(GetRasterFile()->SharingControlIsLocked());
-
     Byte DataSize   = 0;
     uint32_t MaxSize    = pio_rMaxBufferSize;
 
@@ -127,8 +125,7 @@ bool HRFGifLineEditor::ReadFromFile(uint32_t&         pio_rLastValidIndex,
 //-----------------------------------------------------------------------------
 HSTATUS HRFGifLineEditor::ReadBlock(uint64_t  pi_PosBlockX,
                                     uint64_t  pi_PosBlockY,
-                                    Byte*     po_pData,
-                                    HFCLockMonitor const* pi_pSisterFileLock)
+                                    Byte*     po_pData)
     {
     HPRECONDITION(m_AccessMode.m_HasReadAccess);
     HPRECONDITION(po_pData != 0);
@@ -141,15 +138,6 @@ HSTATUS HRFGifLineEditor::ReadBlock(uint64_t  pi_PosBlockX,
 
     if (!GetRasterFile()->GetAccessMode().m_HasCreateAccess)
         {
-        // Lock the sister file if needed
-        HFCLockMonitor SisterFileLock;
-        if(pi_pSisterFileLock == 0)
-            {
-            // Get lock and synch.
-            AssignRasterFileLock(GetRasterFile(), SisterFileLock, true);
-            pi_pSisterFileLock = &SisterFileLock;
-            }
-
         // Restart the file at the begining when ask for a before block
         if ((m_pRasterFile->m_ListGifGraphicBlock[m_Page].ImageDescriptor.LineIndex > pi_PosBlockY))
             {
@@ -190,12 +178,12 @@ HSTATUS HRFGifLineEditor::ReadBlock(uint64_t  pi_PosBlockX,
             // we decompress the data in the output buffer
             HFCPtr<HCDPacket> pCompressed = new HCDPacket();
 
-            Byte* pReturnBuffer = new Byte[m_BufferSize];
-            memcpy(pReturnBuffer, m_pCompressBuffer, m_MaxOffsetInBuffer);
+            std::unique_ptr<Byte[]> pReturnBuffer(new Byte[m_BufferSize]);
+            memcpy(pReturnBuffer.get(), m_pCompressBuffer, m_MaxOffsetInBuffer);
 
             // Set the current codec to the Packet.
-            pCompressed->SetCodec((HFCPtr<HCDCodec> &) m_pCodec);
-            pCompressed->SetBuffer(pReturnBuffer, m_BufferSize);
+            pCompressed->SetCodec(m_pCodec.GetPtr());
+            pCompressed->SetBuffer(pReturnBuffer.get(), m_BufferSize);
 
             // Set the compressed buffer.
             pCompressed->SetDataSize(m_MaxOffsetInBuffer);
@@ -232,13 +220,7 @@ HSTATUS HRFGifLineEditor::ReadBlock(uint64_t  pi_PosBlockX,
                 free(m_pCompressBuffer);
                 m_pCompressBuffer = 0;
                 }
-
-            delete[] pReturnBuffer;
             }
-
-        // Unlock the sister file
-        SisterFileLock.ReleaseKey();
-
         }
     else
         Status = H_NOT_FOUND;
@@ -253,14 +235,12 @@ HSTATUS HRFGifLineEditor::ReadBlock(uint64_t  pi_PosBlockX,
 //-----------------------------------------------------------------------------
 HSTATUS  HRFGifLineEditor::WriteBlock(uint64_t        pi_PosBlockX,
                                       uint64_t        pi_PosBlockY,
-                                      const Byte*     pi_pData,
-                                      HFCLockMonitor const* pi_pSisterFileLock)
+                                      const Byte*     pi_pData)
     {
     HPRECONDITION (m_AccessMode.m_HasWriteAccess || m_AccessMode.m_HasCreateAccess);
     HPRECONDITION (m_pResolutionDescriptor->GetCodec() != 0);
 
     HSTATUS Status = H_SUCCESS;
-    Byte* pReturnBuffer;
 
     // Compute Histogram if CreationMode and Transparency
     if (GetRasterFile()->GetAccessMode().m_HasCreateAccess &&
@@ -283,15 +263,6 @@ HSTATUS  HRFGifLineEditor::WriteBlock(uint64_t        pi_PosBlockX,
         m_pCodec->SetSubset((uint32_t)m_pResolutionDescriptor->GetWidth(), 1);
         }
 
-    // Lock the sister file if needed
-    HFCLockMonitor SisterFileLock;
-    if(pi_pSisterFileLock == 0)
-        {
-        // Get lock and synch.
-        AssignRasterFileLock(GetRasterFile(), SisterFileLock, false);
-        pi_pSisterFileLock = &SisterFileLock;
-        }
-
     // Restart the file at the begining when the ask for a before block
     if (((!GetRasterFile()->GetAccessMode().m_HasCreateAccess) && (pi_PosBlockY == 0)) ||
         (m_pRasterFile->m_ListGifGraphicBlock[m_Page].ImageDescriptor.LineIndex > pi_PosBlockY))
@@ -307,11 +278,12 @@ HSTATUS  HRFGifLineEditor::WriteBlock(uint64_t        pi_PosBlockX,
             m_pRasterFile->m_ListGifGraphicBlock[Page].ImageDescriptor.LineIndex = 0;
 
         }
+
     size_t MaxSubsetCompressed = m_pCodec->GetSubsetMaxCompressedSize();
 
-    pReturnBuffer = (Byte*) malloc(MaxSubsetCompressed);
+    std::unique_ptr<Byte[]> pReturnBuffer(new Byte[MaxSubsetCompressed]);
 
-    HFCPtr<HCDPacket> pCompressed(new HCDPacket((HFCPtr<HCDCodec> &) m_pCodec, pReturnBuffer, MaxSubsetCompressed));
+    HFCPtr<HCDPacket> pCompressed(new HCDPacket(m_pCodec.GetPtr(), pReturnBuffer.get(), MaxSubsetCompressed));
 
     pCompressed->SetBufferOwnership(false);
 
@@ -319,13 +291,6 @@ HSTATUS  HRFGifLineEditor::WriteBlock(uint64_t        pi_PosBlockX,
 
     Status = WriteBlock(pi_PosBlockX, pi_PosBlockY, pCompressed);
 
-    // Increment the sharing control modification counter.
-    GetRasterFile()->SharingControlIncrementCount();
-
-    // Unlock the sister file.
-    SisterFileLock.ReleaseKey();
-
-    free(pReturnBuffer);
     m_pRasterFile->m_ListGifGraphicBlock[m_Page].ImageDescriptor.LineIndex++;
     m_pRasterFile->SetDirty(true);
 
@@ -340,22 +305,12 @@ HSTATUS  HRFGifLineEditor::WriteBlock(uint64_t        pi_PosBlockX,
 //-----------------------------------------------------------------------------
 HSTATUS HRFGifLineEditor::WriteBlock(uint64_t                 pi_PosBlockX,
                                      uint64_t                 pi_PosBlockY,
-                                     const HFCPtr<HCDPacket>& pi_rpPacket,
-                                     HFCLockMonitor const*    pi_pSisterFileLock)
+                                     const HFCPtr<HCDPacket>& pi_rpPacket)
     {
     HPRECONDITION(m_AccessMode.m_HasWriteAccess || m_AccessMode.m_HasCreateAccess);
     HPRECONDITION(pi_rpPacket != 0);
 
     HSTATUS Status = H_ERROR;
-
-    // Lock the sister file if needed
-    HFCLockMonitor SisterFileLock;
-    if(pi_pSisterFileLock == 0)
-        {
-        // Get lock and synch.
-        AssignRasterFileLock(GetRasterFile(), SisterFileLock, false);
-        pi_pSisterFileLock = &SisterFileLock;
-        }
 
     // Restart the file at the begining when the ask for a before block
     if ((!GetRasterFile()->GetAccessMode().m_HasCreateAccess) && (pi_PosBlockY == 0))
@@ -375,31 +330,10 @@ HSTATUS HRFGifLineEditor::WriteBlock(uint64_t                 pi_PosBlockX,
         if (m_pRasterFile->m_pGifFile->Write((pi_rpPacket->GetBufferAddress()), pi_rpPacket->GetDataSize()) != pi_rpPacket->GetDataSize())
             goto WRAPUP;
 
-    // Increment the sharing control modification counter.
-    GetRasterFile()->SharingControlIncrementCount();
-
     Status = H_SUCCESS;
     m_pRasterFile->SetDirty(true);
 
 WRAPUP:
-    // Unlock the sister file.
-    SisterFileLock.ReleaseKey();
 
     return Status;
-    }
-
-//-----------------------------------------------------------------------------
-// public
-// OnSynchronizedSharingControl
-//-----------------------------------------------------------------------------
-void HRFGifLineEditor::OnSynchronizedSharingControl()
-    {
-    m_pRasterFile->SaveGifFile(true);
-    m_pRasterFile->Open();
-
-    // Do this for all pages
-    for (uint32_t Page=0; Page < m_pRasterFile->CountPages(); Page++)
-        m_pRasterFile->m_ListGifGraphicBlock[Page].ImageDescriptor.LineIndex = 0;
-
-    m_PosInFile = m_pRasterFile->m_ListPageDataOffset[m_Page];
     }

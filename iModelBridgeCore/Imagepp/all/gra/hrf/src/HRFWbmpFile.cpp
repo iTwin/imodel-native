@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFWbmpFile.cpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class HRFWbmpFile
@@ -167,9 +167,6 @@ bool HRFWbmpCreator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
     size_t HeaderLength = 0;
     HAutoPtr<HFCBinStream>  pFile;
 
-    (const_cast<HRFWbmpCreator*>(this))->SharingControlCreate(pi_rpURL);
-    HFCLockMonitor SisterFileLock(GetLockManager());
-
     // Open the BMP File & place file pointer at the start of the file
     pFile = HFCBinStream::Instanciate(pi_rpURL, pi_Offset, HFC_READ_ONLY | HFC_SHARE_READ_WRITE);
 
@@ -199,11 +196,6 @@ bool HRFWbmpCreator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
     bResult = true;
 
 WRAPUP:
-    SisterFileLock.ReleaseKey();
-
-    HASSERT(!(const_cast<HRFWbmpCreator*>(this))->m_pSharingControl->IsLocked());
-    (const_cast<HRFWbmpCreator*>(this))->m_pSharingControl = 0;
-
     return bResult;
     }
 
@@ -366,15 +358,10 @@ bool HRFWbmpFile::AddPage(HFCPtr<HRFPageDescriptor> pi_pPage)
             m_PaddingBitsPerRow = 0;
             }
 
-        // Lock the sister file
-        HFCLockMonitor SisterFileLock(GetLockManager());
 
         // Write the file header information.
         m_pWbmpFile->SeekToPos(0);
         SetFileHeaderToFile();
-
-        // Unlock the sister file.
-        SisterFileLock.ReleaseKey();
 
         IsPageAdded = true;
         }
@@ -405,17 +392,8 @@ bool HRFWbmpFile::Open()
         // Open the actual wbmp file.
         m_pWbmpFile = HFCBinStream::Instanciate(GetURL(), m_Offset, GetPhysicalAccessMode(), 0, true);
 
-        // This creates the sister file for file sharing control if necessary.
-        SharingControlCreate();
-
-        // Lock the sister file
-        HFCLockMonitor SisterFileLock(GetLockManager());
-
         // Initialisation of file struct.
         m_OffsetToFirstRowInByte = GetFileHeaderFromFile(*m_pWbmpFile, m_WbmpFileHeader);
-
-        // Unlock the sister file.
-        SisterFileLock.ReleaseKey();
 
         m_IsOpen = true;
         }
@@ -505,9 +483,6 @@ void HRFWbmpFile::SaveWbmpFile(bool pi_CloseFile)
 
             HFCPtr<HRFPageDescriptor> pPageDescriptor = GetPageDescriptor(0);
 
-            // Lock the sister file
-            HFCLockMonitor SisterFileLock(GetLockManager());
-
             // Write the file header information.
             m_pWbmpFile->SeekToPos(0);
 
@@ -534,9 +509,6 @@ void HRFWbmpFile::SaveWbmpFile(bool pi_CloseFile)
 
             pPageDescriptor->Saved();
             pPageDescriptor->GetResolutionDescriptor(0)->Saved();
-
-            // Unlock the sister file.
-            SisterFileLock.ReleaseKey();
             }
 
         if (pi_CloseFile)
@@ -576,9 +548,6 @@ bool HRFWbmpFile::Create()
     {
     // Open the file.
     m_pWbmpFile = HFCBinStream::Instanciate(GetURL(), GetAccessMode(), 0, true);
-
-    // This creates the sister file for file sharing control if necessary.
-    SharingControlCreate();
 
     m_IsOpen = true;
 
@@ -712,9 +681,6 @@ void HRFWbmpFile::SetFileHeaderToFile()
     {
     HPRECONDITION(m_pWbmpFile != 0);
 
-    // Lock the sister file for the SetFileHeadertoFile method
-    HFCLockMonitor SisterFileLock(GetLockManager());
-
     m_OffsetToFirstRowInByte = 0;
 
     m_OffsetToFirstRowInByte += WriteNextMultiByteInteger(*m_pWbmpFile, m_WbmpFileHeader.m_TypeField);
@@ -722,7 +688,4 @@ void HRFWbmpFile::SetFileHeaderToFile()
     HASSERT(m_WbmpFileHeader.m_pExtFields == 0);
     m_OffsetToFirstRowInByte += WriteNextMultiByteInteger(*m_pWbmpFile, m_WbmpFileHeader.m_Width);
     m_OffsetToFirstRowInByte += WriteNextMultiByteInteger(*m_pWbmpFile, m_WbmpFileHeader.m_Height);
-
-    // Unlock the sister file.
-    SisterFileLock.ReleaseKey();
     }

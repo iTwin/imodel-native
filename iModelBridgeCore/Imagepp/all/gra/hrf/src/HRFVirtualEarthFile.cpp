@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFVirtualEarthFile.cpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class HRFVirtualEarthFile
@@ -13,7 +13,7 @@
 
 #include <Imagepp/all/h/HFCURLHTTP.h>
 #include <Imagepp/all/h/HRFVirtualEarthFile.h>
-#include <Imagepp/all/h/HRFVirtualEarthEditor.h>
+#include "HRFVirtualEarthEditor.h"
 #include <Imagepp/all/h/HRFRasterFileCapabilities.h>
 #include <Imagepp/all/h/HRFUtility.h>
 #include <Imagepp/all/h/HRFException.h>
@@ -29,10 +29,10 @@
 
 #include <BeXml/BeXml.h>
 
+#include <ImagePPInternal/gra/Task.h>
+
 // Do not change this number without validating resolution descriptor creation.
 #define NB_BLOCK_READER_THREAD 10
-
-
 
 // Debug only
 //#define BINGMAPS_AUTO_PASSWORD
@@ -693,21 +693,6 @@ HRFVirtualEarthFile::HRFVirtualEarthFile(const HFCPtr<HFCURL>& pi_rURL,
 //-----------------------------------------------------------------------------
 HRFVirtualEarthFile::~HRFVirtualEarthFile()
     {
-    if (m_ppBlocksReadersThread != 0)
-        {
-        // Stop all threads and then wait.
-        for (uint32_t i = 0; i < NB_BLOCK_READER_THREAD; i++)
-            {
-            if (m_ppBlocksReadersThread[i] != 0)
-                m_ppBlocksReadersThread[i]->StopThread();
-        }
-
-        for (uint32_t i = 0; i < NB_BLOCK_READER_THREAD; i++)
-            {
-            if (m_ppBlocksReadersThread[i] != 0)
-                m_ppBlocksReadersThread[i]->WaitUntilSignaled();
-            }
-        }
     }
 
 //-----------------------------------------------------------------------------
@@ -1023,33 +1008,8 @@ void HRFVirtualEarthFile::CancelLookAhead(uint32_t pi_Page)
     {
     HPRECONDITION(pi_Page == 0);
 
-    HFCMonitor Monitor(m_RequestKey);
-    m_RequestList.clear();
-    }
-
-//-----------------------------------------------------------------------------
-// Private
-// Start the threads that are going to be used to read tiles from the server.
-//-----------------------------------------------------------------------------
-void HRFVirtualEarthFile::StartReadingThreads()
-    {
-    HPRECONDITION(m_ppBlocksReadersThread == 0);
-
-    m_ppBlocksReadersThread = new HAutoPtr<HRFVirtualEarthTileReaderThread>[NB_BLOCK_READER_THREAD];
-
-    for (uint32_t i = 0; i < NB_BLOCK_READER_THREAD; i++)
-        {
-        ostringstream ThreadName;
-        ThreadName << "HRFVirtualEarthBlockReader " << i + 1;
-
-        m_ppBlocksReadersThread[i] = new HRFVirtualEarthTileReaderThread(ThreadName.str(),
-                                                                         HFCPtr<HRFVirtualEarthFile>(this));
-
-        if (!m_ppBlocksReadersThread[i]->StartThread())
-            {
-            m_ppBlocksReadersThread[i] = 0;
-            }
-        }
+    // I assumed that HRF is not thread safe and that there will be only one thread that will execute LookAHead request and copyFrom(ReadBlock).
+    m_tileQueryMap.clear();
     }
 
 //-----------------------------------------------------------------------------
@@ -1058,6 +1018,17 @@ void HRFVirtualEarthFile::StartReadingThreads()
 const HGF2DWorldIdentificator HRFVirtualEarthFile::GetWorldIdentificator () const
     {
     return HGF2DWorld_HMRWORLD;
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   Mathieu.Marchand  1/2016
+//----------------------------------------------------------------------------------------
+WorkerPool& HRFVirtualEarthFile::GetWorkerPool()
+    {
+    if(m_pWorkerPool == nullptr)
+        m_pWorkerPool.reset(new WorkerPool(NB_BLOCK_READER_THREAD));
+
+    return *m_pWorkerPool;
     }
 
 //-----------------------------------------------------------------------------

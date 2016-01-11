@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFVirtualEarthEditor.cpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class HRFVirtualEarthEditor
@@ -11,7 +11,7 @@
 #include <ImagePPInternal/hstdcpp.h>
 
 
-#include <Imagepp/all/h/HRFVirtualEarthEditor.h>
+#include "HRFVirtualEarthEditor.h"
 #include <Imagepp/all/h/HRFVirtualEarthFile.h>
 #include <Imagepp/all/h/HRPPixelConverter.h>
 #include <Imagepp/all/h/HFCExceptionHandler.h>
@@ -19,7 +19,165 @@
 #include <Imagepp/all/h/HRFJpegFile.h>
 #include <Imagepp/all/h/HRFPngFile.h>
 
+#include <ImagePPInternal/gra/Task.h>
+
 #define RASTER_FILE     static_cast<HRFVirtualEarthFile*>(GetRasterFile().GetPtr())
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   Mathieu.Marchand  1/2016
+//----------------------------------------------------------------------------------------
+void VirtualEarthTileQuery::_Run()
+    {
+    HSTATUS Status = H_SUCCESS;
+    
+    WString ServerURL = m_rasterFile.GetTileURI((int)m_tileRequest.m_PosX, (int)m_tileRequest.m_PosY, m_tileRequest.m_LevelOfDetail);
+
+    WString::size_type RequestPos = ServerURL.find('?');
+    WString            Request    = ServerURL.substr(RequestPos + 1);
+
+    ServerURL.erase(RequestPos);
+
+    HFCPtr<HRFVirtualEarthConnection> pConnection = new HRFVirtualEarthConnection(ServerURL);
+
+    if (!pConnection->Connect(pConnection->GetUserName(), pConnection->GetPassword()))
+        {
+        Status = H_ERROR;
+        }
+    else
+        {
+        pConnection->NewRequest();
+
+        try
+            {
+            LangCodePage codePage;
+            BeStringUtilities::GetCurrentCodePage (codePage);
+
+            AString requestA;
+            BeStringUtilities::WCharToLocaleChar (requestA, codePage, Request.c_str());
+
+            //&&Backlog should have a unicode version of pConnection->Send
+
+            //Send the command
+            pConnection->Send((Byte const*)requestA.c_str(), requestA.size());
+
+            size_t            DataAvailable;
+            HFCPtr<HFCBuffer> pBuffer(new HFCBuffer(1, 1));
+
+            //Read the response
+            while (!pConnection->RequestEnded())
+                {
+                //Wait for data to arrive
+                if ((DataAvailable = pConnection->WaitDataAvailable(pConnection->GetTimeOut())) > 0)
+                    {
+                    //Read it
+                    pConnection->Receive(pBuffer->PrepareForNewData(DataAvailable), (int32_t)DataAvailable);
+                    pBuffer->SetNewDataSize(DataAvailable);
+                    }
+                }
+
+            pConnection->Disconnect(); //Release the connection
+
+            //Create a memory JPEG file with the server response
+            HFCPtr<HFCURL>        pURL(new HFCURLMemFile(L"memory://mem.file", pBuffer));
+            HFCPtr<HRFRasterFile> pFile;
+
+            //Creators are singletons and are not thread safe
+            HFCMonitor HRFMonitor(m_rasterFile.m_HRFKey);       //&&MM this is wrong! the key is on virtual earth file instance and
+                                                                // will not prevent other instances to access the singletons.
+                                                                // Moreover jpeg and png lib are thread safe so we should find
+                                                                // a way to take advantage of that instead of locking.
+
+            //&&MM we should read the type of file from the http header.
+            if (HRFJpegCreator::GetInstance()->IsKindOfFile(pURL))
+                {
+                pFile = new HRFJpegFile(pURL, HFC_READ_ONLY);
+                }
+            else if (HRFPngCreator::GetInstance()->IsKindOfFile(pURL) == true)
+                {
+                pFile = new HRFPngFile(pURL, HFC_READ_ONLY);
+                }
+            else
+                {
+                HASSERT(0);
+                }
+            HRFMonitor.ReleaseKey();
+
+            HAutoPtr<HRFResolutionEditor> pEditor(pFile->CreateResolutionEditor(0, (unsigned short)0, HFC_READ_ONLY));
+
+            m_dataSize = m_tileRequest.m_BlockSizeInBytes;
+            m_data.reset(new Byte[m_dataSize]);
+            
+            if (!pEditor->GetResolutionDescriptor()->GetPixelType()->HasSamePixelInterpretation(*m_tileRequest.m_PixelType))
+                {
+                //Need to convert the data
+                HFCPtr<HRPPixelConverter> pConverter;
+                HAutoPtr<Byte>           pReadBuffer;
+                pConverter = pEditor->GetResolutionDescriptor()->GetPixelType()->GetConverterTo(m_tileRequest.m_PixelType);
+
+                pReadBuffer = new Byte[pEditor->GetResolutionDescriptor()->GetBlockSizeInBytes()];
+
+                if (pEditor->GetResolutionDescriptor()->GetBlockHeight() == 1)
+                    {
+                    Byte* pOutput = m_data.get();
+                    size_t LineSizeInBytes = m_tileRequest.m_BytesPerBlockWidth;
+
+                    HFCMonitor HRFMonitor(m_rasterFile.m_HRFKey);
+                    for (uint32_t i = 0; (i < m_tileRequest.m_BlockHeight) && (Status == H_SUCCESS); i++)
+                        {
+                        Status = pEditor->ReadBlock(0, i, pReadBuffer);
+                        pConverter->Convert(pReadBuffer, pOutput, m_tileRequest.m_BlockWidth);
+                        pOutput += LineSizeInBytes;
+                        }
+                    }
+                else if (pEditor->GetResolutionDescriptor()->GetBlockHeight() == m_tileRequest.m_BlockWidth)
+                    {
+                    HFCMonitor HRFMonitor(m_rasterFile.m_HRFKey);
+                    Status = pEditor->ReadBlock((uint64_t)0, (uint64_t)0, pReadBuffer);
+                    pConverter->Convert(pReadBuffer, m_data.get(), m_tileRequest.m_BlockWidth * m_tileRequest.m_BlockHeight);
+                    }
+                else
+                    {
+                    //Not supported
+                    HASSERT(0);
+                    Status = H_ERROR;
+                    }
+                }
+            else
+                {
+                //Can read directly into the output buffer
+                if (pEditor->GetResolutionDescriptor()->GetBlockHeight() == 1)
+                    {
+                    Byte* pOutput = m_data.get();
+                    size_t LineSizeInBytes = m_tileRequest.m_BytesPerBlockWidth;
+
+                    for (uint32_t i = 0; i < m_tileRequest.m_BlockHeight && Status == H_SUCCESS; i++)
+                        {
+                        Status = pEditor->ReadBlock(0, i, pOutput);
+                        pOutput += LineSizeInBytes;
+                        }
+                    }
+                else if (pEditor->GetResolutionDescriptor()->GetBlockHeight() == m_tileRequest.m_BlockHeight)
+                    {
+                    Status = pEditor->ReadBlock((uint64_t)0, (uint64_t)0, m_data.get());
+                    }
+                else
+                    {
+                    //Not supported
+                    HASSERT(0);
+                    Status = H_ERROR;
+                    }
+                }
+
+            m_rasterFile.NotifyBlockReady(m_tileRequest.m_Page, m_tileRequest.m_TileID);            
+            }
+        catch(...)
+            {
+            m_rasterFile.NotifyBlockReady(m_tileRequest.m_Page, m_tileRequest.m_TileID);
+
+            Status = H_ERROR;
+            }
+        }
+    }
 
 //-----------------------------------------------------------------------------
 // Constructor
@@ -51,8 +209,7 @@ HRFVirtualEarthEditor::~HRFVirtualEarthEditor()
 //-----------------------------------------------------------------------------
 HSTATUS HRFVirtualEarthEditor::ReadBlock(uint64_t             pi_PosBlockX,
                                          uint64_t             pi_PosBlockY,
-                                         Byte*                po_pData,
-                                         HFCLockMonitor const* pi_pSisterFileLock)
+                                         Byte*                po_pData)
     {
     HPRECONDITION(m_AccessMode.m_HasReadAccess);
     HPRECONDITION(po_pData != 0);
@@ -60,25 +217,16 @@ HSTATUS HRFVirtualEarthEditor::ReadBlock(uint64_t             pi_PosBlockX,
     HPRECONDITION(m_AccessMode.m_HasReadAccess);
     HPRECONDITION(po_pData != 0);
 
-    if (RASTER_FILE->m_ppBlocksReadersThread == 0)
-        {
-        RASTER_FILE->StartReadingThreads();
-        }
-
     HSTATUS Status = H_ERROR;
 
     // check if the tile is already in the pool
     uint64_t TileID = m_TileIDDescriptor.ComputeID(pi_PosBlockX, pi_PosBlockY, m_Resolution);
-    HFCPtr<HRFTile> pTile;
-    if ((pTile = RASTER_FILE->m_TilePool.GetTile(TileID)) == 0)
-        {
-        // the tile is not in the pool, create and add it
-        pTile = RASTER_FILE->m_TilePool.CreateTile(TileID,
-                                                   m_TileIDDescriptor.GetIndex(TileID),
-                                                   pi_PosBlockX,
-                                                   pi_PosBlockY,
-                                                   0);
 
+    RefCountedPtr<VirtualEarthTileQuery> pTileQuery;
+
+    auto tileQueryItr = RASTER_FILE->m_tileQueryMap.find(TileID);
+    if(tileQueryItr == RASTER_FILE->m_tileQueryMap.end())
+        {
 #ifdef _RETURN_RED_TILES_IF_NOT_IN_LOOKAHEAD    // Debug purpose only
         memset(po_pData, 0, GetResolutionDescriptor()->GetBlockSizeInBytes()); 
 
@@ -88,29 +236,29 @@ HSTATUS HRFVirtualEarthEditor::ReadBlock(uint64_t             pi_PosBlockX,
         
         return H_SUCCESS;
 #else
-        HFCMonitor RequestMonitor(RASTER_FILE->m_RequestKey);
-
         HRFVirtualEarthTileRequest Request;
         InitTileRequest(TileID, Request);
 
-        RASTER_FILE->m_RequestList.push_front(Request);
-        RequestMonitor.ReleaseKey();
-        RASTER_FILE->m_RequestEvent.Signal();    // signal thread
-#endif
-        }
+        // Tile was not in lookAHead request.
+        pTileQuery = new VirtualEarthTileQuery(Request, *RASTER_FILE);
 
-    if (pTile != 0)
+        WorkerPool& pool = RASTER_FILE->GetWorkerPool();
+        pool.Enqueue(*pTileQuery, true/*atFront*/); 
+#endif    
+        }
+    else
         {
-        pTile->WaitUntilSignaled();
-
-        if (pTile->IsValid())
-            {
-            memcpy(po_pData, pTile->GetData(), pTile->GetDataSize());
-            Status = H_SUCCESS;
-            }
+        pTileQuery = tileQueryItr->second;
         }
 
-    if(H_SUCCESS != Status)
+    pTileQuery->Wait();
+
+    if (pTileQuery->m_dataSize > 0)
+        {
+        memcpy(po_pData, pTileQuery->m_data.get(), pTileQuery->m_dataSize);
+        Status = H_SUCCESS;
+        }
+    else
         {
         // If the connection failed or whatever...
         // Clear output and return SUCCESS anyway because HRFObjectStore will add an empty tile to the pool and 
@@ -129,8 +277,7 @@ HSTATUS HRFVirtualEarthEditor::ReadBlock(uint64_t             pi_PosBlockX,
 //-----------------------------------------------------------------------------
 HSTATUS HRFVirtualEarthEditor::WriteBlock(uint64_t pi_PosBlockX,
                                           uint64_t pi_PosBlockY,
-                                          const Byte* pi_pData,
-                                          HFCLockMonitor const* pi_pSisterFileLock)
+                                          const Byte* pi_pData)
     {
     //Virtual Earth is supported only in read only mode.
     HASSERT(false);
@@ -142,8 +289,7 @@ HSTATUS HRFVirtualEarthEditor::WriteBlock(uint64_t pi_PosBlockX,
 //-----------------------------------------------------------------------------
 HSTATUS HRFVirtualEarthEditor::WriteBlock(uint64_t pi_PosBlockX,
                                           uint64_t pi_PosBlockY,
-                                          const HFCPtr<HCDPacket>&    pi_rpPacket,
-                                          HFCLockMonitor const*       pi_pSisterFileLock)
+                                          const HFCPtr<HCDPacket>&    pi_rpPacket)
     {
     //Virtual Earth is supported only in read only mode.
     HASSERT(false);
@@ -158,62 +304,35 @@ void HRFVirtualEarthEditor::RequestLookAhead(const HGFTileIDList& pi_rTileIDList
     {
     HPRECONDITION(!pi_rTileIDList.empty());
 
-    // start thread if not already done
-    if (RASTER_FILE->m_ppBlocksReadersThread == 0)
-        {
-        RASTER_FILE->StartReadingThreads();
-        }
+    std::map<uint64_t, RefCountedPtr<VirtualEarthTileQuery>> newTileQuery;
 
-    // clear the block pool
-    RASTER_FILE->m_TilePool.InvalidateTilesNotIn(pi_rTileIDList, true);
+    WorkerPool& pool = RASTER_FILE->GetWorkerPool();
 
-    // signal all valid tile
-    HFCMonitor Monitor(RASTER_FILE->m_TilePool);
-    const HRFTilePool::TileMap&  rTileMap(RASTER_FILE->m_TilePool.GetTiles());
-    HRFTilePool::TileMap::const_iterator TileItr(rTileMap.begin());
-    while (TileItr != rTileMap.end())
+    for(auto tileId : pi_rTileIDList)
         {
-        if (TileItr->second->IsValid())
+        auto tileQueryItr = RASTER_FILE->m_tileQueryMap.find(tileId);
+        if(tileQueryItr != RASTER_FILE->m_tileQueryMap.end())
             {
-            TileItr->second->Signal();
-            GetRasterFile()->NotifyBlockReady(GetPage(),
-                                              TileItr->first);
+            // Reuse existing query.
+            newTileQuery.insert(*tileQueryItr);
+            
+            //&&MM Not sure about that?? tile may or may not be ready
+            //GetRasterFile()->NotifyBlockReady(GetPage(), TileItr->first);
             }
-        ++TileItr;
-        }
-
-    Monitor.ReleaseKey();
-
-    // add an entry for each tile
-    uint64_t PosX;
-    uint64_t PosY;
-
-    HGFTileIDList::const_iterator Itr(pi_rTileIDList.begin());
-    HFCMonitor                 RequestMonitor(RASTER_FILE->m_RequestKey);
-    HRFVirtualEarthTileRequest TileRequest;
-
-    // Rebuild request list for invalid tiles
-    RASTER_FILE->m_RequestList.clear();
-    while (Itr != pi_rTileIDList.end())
-        {
-        HPRECONDITION(m_TileIDDescriptor.GetLevel(*Itr) == m_Resolution);
-
-        m_TileIDDescriptor.GetPositionFromID(*Itr, &PosX, &PosY);
-        HFCPtr<HRFTile> pTile = RASTER_FILE->m_TilePool.GetTile(*Itr);
-        if (pTile == 0)
-            pTile = RASTER_FILE->m_TilePool.CreateTile(*Itr, m_TileIDDescriptor.GetIndex(*Itr), PosX, PosY, 0);            
-
-        if(!pTile->IsValid())
+        else
             {
-            InitTileRequest(*Itr, TileRequest);
+            // Tile was not in lookAHead, create a new request
 
-            RASTER_FILE->m_RequestList.push_back(TileRequest);
-            RASTER_FILE->m_RequestEvent.Signal();
-            }
-        
-        ++Itr;
+            HRFVirtualEarthTileRequest Request;
+            InitTileRequest(tileId, Request);
+
+            RefCountedPtr<VirtualEarthTileQuery> pTileQuery = new VirtualEarthTileQuery(Request, *RASTER_FILE);
+            newTileQuery.insert({tileId, pTileQuery});
+            pool.Enqueue(*pTileQuery);
+            }        
         }
-    RequestMonitor.ReleaseKey();
+
+    RASTER_FILE->m_tileQueryMap = std::move(newTileQuery);       // Replace with the new queries, old ones will be canceled.
     }
 
 
@@ -484,236 +603,3 @@ void HRFVirtualEarthEditor::VirtualEarthTileSystem::QuadKeyToTileXY(string quadK
         }
     }
 
-//-----------------------------------------------------------------------------//
-//                         HRFVirtualEarthTileReaderThread                     //
-//-----------------------------------------------------------------------------//
-
-//-----------------------------------------------------------------------------
-// Constructor
-//-----------------------------------------------------------------------------
-HRFVirtualEarthTileReaderThread::HRFVirtualEarthTileReaderThread(const string&        pi_rThreadName,
-                                                                 HRFVirtualEarthFile* pi_pVirtualEarthFile)
-    : HFCThread(false, pi_rThreadName),
-      m_pVirtualEarthFile(pi_pVirtualEarthFile)
-    {
-    }
-
-//-----------------------------------------------------------------------------
-// Destructor
-//-----------------------------------------------------------------------------
-HRFVirtualEarthTileReaderThread::~HRFVirtualEarthTileReaderThread()
-    {
-    StopThread();
-    WaitUntilSignaled();
-    }
-
-//-----------------------------------------------------------------------------
-// The function which contains the thread's function calls
-//-----------------------------------------------------------------------------
-void HRFVirtualEarthTileReaderThread::Go()
-    {
-    HFCSynchroContainer Synchros;
-    Synchros.AddSynchro (&m_StopEvent);
-    Synchros.AddSynchro (&m_pVirtualEarthFile->m_RequestEvent);
-
-    HRFVirtualEarthTileRequest Request;
-
-    while (0 != WaitForMultipleObjects (Synchros, false))
-        {
-        HFCMonitor RequestMonitor(m_pVirtualEarthFile->m_RequestKey);
-        //It's possible that the m_RequestEvent is signaled and
-        //m_RequestList is empty if CancelLookAhead or/and RequestLookAhead
-        //is called before the thread arrives here.
-        if (m_pVirtualEarthFile->m_RequestList.size() > 0)
-            {
-            Request = *(m_pVirtualEarthFile->m_RequestList.begin());
-            m_pVirtualEarthFile->m_RequestList.pop_front();
-            RequestMonitor.ReleaseKey();
-
-            ReadBlockFromServer(Request);
-            }
-        }
-    }
-
-//-----------------------------------------------------------------------------
-// Private
-// ReadBlocksFromServer
-//-----------------------------------------------------------------------------
-void HRFVirtualEarthTileReaderThread::ReadBlockFromServer(HRFVirtualEarthTileRequest const& TileRequest)
-    {
-    HSTATUS Status = H_SUCCESS;
-    
-    WString ServerURL = m_pVirtualEarthFile->GetTileURI((int)TileRequest.m_PosX, (int)TileRequest.m_PosY, TileRequest.m_LevelOfDetail);
-
-    WString::size_type RequestPos = ServerURL.find('?');
-    WString            Request    = ServerURL.substr(RequestPos + 1);
-
-    ServerURL.erase(RequestPos);
-
-    HFCPtr<HRFVirtualEarthConnection> pConnection = new HRFVirtualEarthConnection(ServerURL);
-
-    if (!pConnection->Connect(pConnection->GetUserName(), pConnection->GetPassword()))
-        {
-        Status = H_ERROR;
-        }
-    else
-        {
-        pConnection->NewRequest();
-
-        try
-            {
-            LangCodePage codePage;
-            BeStringUtilities::GetCurrentCodePage (codePage);
-
-            AString requestA;
-            BeStringUtilities::WCharToLocaleChar (requestA, codePage, Request.c_str());
-
-            //&&Backlog should have a unicode version of pConnection->Send
-
-            //Send the command
-            pConnection->Send((Byte const*)requestA.c_str(), requestA.size());
-
-            size_t            DataAvailable;
-            HFCPtr<HFCBuffer> pBuffer(new HFCBuffer(1, 1));
-
-            //Read the response
-            while (!pConnection->RequestEnded())
-                {
-                //Wait for data to arrive
-                if ((DataAvailable = pConnection->WaitDataAvailable(pConnection->GetTimeOut())) > 0)
-                    {
-                    //Read it
-                    pConnection->Receive(pBuffer->PrepareForNewData(DataAvailable), (int32_t)DataAvailable);
-                    pBuffer->SetNewDataSize(DataAvailable);
-                    }
-                }
-
-            pConnection->Disconnect(); //Release the connection
-
-            //Create a memory JPEG file with the server response
-            HFCPtr<HFCURL>        pURL(new HFCURLMemFile(L"memory://mem.file", pBuffer));
-            HFCPtr<HRFRasterFile> pFile;
-
-            //Creators are singletons and are not thread safe
-            HFCMonitor HRFMonitor(m_pVirtualEarthFile->m_HRFKey);
-            if (HRFJpegCreator::GetInstance()->IsKindOfFile(pURL))
-                {
-                pFile = new HRFJpegFile(pURL, HFC_READ_ONLY);
-                }
-            else if (HRFPngCreator::GetInstance()->IsKindOfFile(pURL) == true)
-                {
-                pFile = new HRFPngFile(pURL, HFC_READ_ONLY);
-                }
-            else
-                {
-                HASSERT(0);
-                }
-            HRFMonitor.ReleaseKey();
-
-            HAutoPtr<HRFResolutionEditor> pEditor(pFile->CreateResolutionEditor(0,
-                                                                                (unsigned short)0,
-                                                                                HFC_READ_ONLY));
-
-            HArrayAutoPtr<Byte> pTileData(new Byte[(size_t)TileRequest.m_BlockSizeInBytes]);
-
-            if (!pEditor->GetResolutionDescriptor()->GetPixelType()->HasSamePixelInterpretation(*TileRequest.m_PixelType))
-                {
-                //Need to convert the data
-                HFCPtr<HRPPixelConverter> pConverter;
-                HAutoPtr<Byte>           pReadBuffer;
-                pConverter = pEditor->GetResolutionDescriptor()->
-                             GetPixelType()->
-                                      GetConverterTo(TileRequest.m_PixelType);
-
-                pReadBuffer = new Byte[pEditor->GetResolutionDescriptor()->
-                                        GetBlockSizeInBytes()];
-
-                if (pEditor->GetResolutionDescriptor()->GetBlockHeight() == 1)
-                    {
-                    Byte* pOutput = pTileData.get();
-                    uint32_t LineSizeInBytes = TileRequest.m_BytesPerBlockWidth;
-
-                    HFCMonitor HRFMonitor(m_pVirtualEarthFile->m_HRFKey);
-                    for (uint32_t i = 0; (i < TileRequest.m_BlockHeight) && (Status == H_SUCCESS); i++)
-                        {
-                        Status = pEditor->ReadBlock(0, i, pReadBuffer);
-                        pConverter->Convert(pReadBuffer,
-                                            pOutput,
-                                            TileRequest.m_BlockWidth);
-                        pOutput += LineSizeInBytes;
-                        }
-                    }
-                else if (pEditor->GetResolutionDescriptor()->GetBlockHeight() == TileRequest.m_BlockWidth)
-                    {
-                    HFCMonitor HRFMonitor(m_pVirtualEarthFile->m_HRFKey);
-                    Status = pEditor->ReadBlock((uint64_t)0, (uint64_t)0, pReadBuffer);
-                    pConverter->Convert(pReadBuffer,
-                                        pTileData.get(),
-                                        TileRequest.m_BlockWidth * 
-                                        TileRequest.m_BlockHeight);
-                    }
-                else
-                    {
-                    //Not supported
-                    HASSERT(0);
-                    Status = H_ERROR;
-                    }
-                }
-            else
-                {
-                //Can read directly into the output buffer
-                if (pEditor->GetResolutionDescriptor()->GetBlockHeight() == 1)
-                    {
-                    Byte* pOutput = pTileData.get();
-                    uint32_t LineSizeInBytes = TileRequest.m_BytesPerBlockWidth;
-
-                    for (uint32_t i = 0; i < TileRequest.m_BlockHeight && Status == H_SUCCESS; i++)
-                        {
-                        Status = pEditor->ReadBlock(0, i, pOutput);
-                        pOutput += LineSizeInBytes;
-                        }
-                    }
-                else if (pEditor->GetResolutionDescriptor()->GetBlockHeight() == TileRequest.m_BlockHeight)
-                    {
-                    Status = pEditor->ReadBlock((uint64_t)0, (uint64_t)0, pTileData.get());
-                    }
-                else
-                    {
-                    //Not supported
-                    HASSERT(0);
-                    Status = H_ERROR;
-                    }
-                }
-
-            HFCPtr<HRFTile> pTile(m_pVirtualEarthFile->m_TilePool.GetTile(TileRequest.m_TileID));                
-
-            //If the tile has been removed from the pool because another lookahead
-            //has occurred during the fetching of this tile, do nothing.
-            if (pTile != 0)
-                {
-                //Copy the data to the tile if the data was successfully fetched.
-                if (Status == H_SUCCESS)
-                    {
-                    pTile->SetData(pTileData, (size_t)TileRequest.m_BlockSizeInBytes);
-                    }
-                pTile->Signal();
-                }
-
-            m_pVirtualEarthFile->NotifyBlockReady(TileRequest.m_Page, TileRequest.m_TileID);            
-            }
-        catch(...)
-            {
-            HFCPtr<HRFTile> pTile(m_pVirtualEarthFile->m_TilePool.GetTile(TileRequest.m_TileID));                
-
-            //Signal the tile even if an error occurred to ensure that no read block hanged
-            //waiting for the tile to be signaled.
-            if (pTile != 0)
-                {
-                pTile->Signal();
-                }
-            m_pVirtualEarthFile->NotifyBlockReady(TileRequest.m_Page, TileRequest.m_TileID);
-
-            Status = H_ERROR;
-            }
-        }
-    }

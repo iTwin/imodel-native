@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFAdaptTileToLine.cpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -117,8 +117,7 @@ HRFAdaptTileToLine::~HRFAdaptTileToLine()
 //-----------------------------------------------------------------------------
 HSTATUS HRFAdaptTileToLine::ReadBlock(uint64_t pi_PosBlockX,
                                       uint64_t pi_PosBlockY,
-                                      Byte*  po_pData,
-                                      HFCLockMonitor const* pi_pSisterFileLock)
+                                      Byte*  po_pData)
     {
     HPRECONDITION (m_AccessMode.m_HasReadAccess);
     HPRECONDITION (pi_PosBlockX <= ULONG_MAX && pi_PosBlockY <= ULONG_MAX);
@@ -130,7 +129,7 @@ HSTATUS HRFAdaptTileToLine::ReadBlock(uint64_t pi_PosBlockX,
 
     if (TileIndexY != m_BufferedTileIndexY)
         {
-        ReadAStripOfTiles (TileIndexY, pi_pSisterFileLock);
+        ReadAStripOfTiles (TileIndexY);
         m_BufferedTileIndexY = TileIndexY;
         }
 
@@ -168,8 +167,7 @@ HSTATUS HRFAdaptTileToLine::ReadBlock(uint64_t pi_PosBlockX,
 //-----------------------------------------------------------------------------
 HSTATUS HRFAdaptTileToLine::WriteBlock(uint64_t     pi_PosBlockX,
                                        uint64_t     pi_PosBlockY,
-                                       const Byte*  pi_pData,
-                                       HFCLockMonitor const* pi_pSisterFileLock)
+                                       const Byte*  pi_pData)
     {
     HPRECONDITION (m_AccessMode.m_HasWriteAccess || m_AccessMode.m_HasCreateAccess);
     HPRECONDITION (pi_PosBlockX <= ULONG_MAX && pi_PosBlockY <= ULONG_MAX);
@@ -219,7 +217,7 @@ HSTATUS HRFAdaptTileToLine::WriteBlock(uint64_t     pi_PosBlockX,
         }
 
     if (LineInTile == m_TileHeight - 1 || pi_PosBlockY == m_RasterHeight-1)
-        Status = WriteAStripOfTiles (TileIndexY, pi_pSisterFileLock);
+        Status = WriteAStripOfTiles (TileIndexY);
 
     if (pi_PosBlockY == m_RasterHeight-1)
         Delete_m_ppTiles();
@@ -259,7 +257,7 @@ void HRFAdaptTileToLine::Delete_m_ppTiles()
 // ReadAStripOfTiles :
 // Edition by Block
 //-----------------------------------------------------------------------------
-HSTATUS HRFAdaptTileToLine::ReadAStripOfTiles(uint32_t pi_TileIndexY, HFCLockMonitor const* pi_pSisterFileLock)
+HSTATUS HRFAdaptTileToLine::ReadAStripOfTiles(uint32_t pi_TileIndexY)
     {
     HSTATUS Status   = H_SUCCESS;
     uint32_t PosBlocY = pi_TileIndexY * m_TileHeight;
@@ -270,18 +268,10 @@ HSTATUS HRFAdaptTileToLine::ReadAStripOfTiles(uint32_t pi_TileIndexY, HFCLockMon
     if (m_ppTiles == 0)
         Alloc_m_ppTiles ();
 
-    // Lock the sister file
-    HFCLockMonitor SisterFileLock;
-    if(pi_pSisterFileLock == 0)
-        {
-        // Lock the file.
-        AssignRasterFileLock(m_pTheTrueOriginalFile, SisterFileLock, true);
-        pi_pSisterFileLock = &SisterFileLock;
-        }
     // Read each tiles in a line
     for (uint32_t NoCol=0; (NoCol<m_TilePerWidth) && (Status == H_SUCCESS); NoCol++)
         {
-        Status = m_pAdaptedResolutionEditor->ReadBlock(NoCol*m_TileWidth, PosBlocY, m_ppTiles[NoCol], pi_pSisterFileLock);
+        Status = m_pAdaptedResolutionEditor->ReadBlock(NoCol*m_TileWidth, PosBlocY, m_ppTiles[NoCol]);
         }
 
     return Status;
@@ -291,7 +281,7 @@ HSTATUS HRFAdaptTileToLine::ReadAStripOfTiles(uint32_t pi_TileIndexY, HFCLockMon
 // WriteAStripOfTiles :
 // Edition by Block
 //-----------------------------------------------------------------------------
-HSTATUS HRFAdaptTileToLine::WriteAStripOfTiles (uint32_t pi_TileIndexY, HFCLockMonitor const* pi_pSisterFileLock)
+HSTATUS HRFAdaptTileToLine::WriteAStripOfTiles (uint32_t pi_TileIndexY)
     {
     HSTATUS Status   = H_SUCCESS;
     uint32_t PosBlocY = pi_TileIndexY * m_TileHeight;
@@ -299,23 +289,13 @@ HSTATUS HRFAdaptTileToLine::WriteAStripOfTiles (uint32_t pi_TileIndexY, HFCLockM
     HASSERT (PosBlocY < m_pResolutionDescriptor->GetHeight());
     HASSERT (m_ppTiles != 0);
 
-    // Lock the sister file
-    HFCLockMonitor SisterFileLock;
-    if(pi_pSisterFileLock == 0)
-        {
-        // Lock the file.
-        AssignRasterFileLock(m_pTheTrueOriginalFile, SisterFileLock, false);
-        pi_pSisterFileLock = &SisterFileLock;
-        }
-
     // Write each tiles in a line
     for (uint32_t NoCol=0; (NoCol<m_TilePerWidth) && (Status == H_SUCCESS); NoCol++)
         {
         HASSERT (m_ppTiles[NoCol] != 0);
 
-        Status = m_pAdaptedResolutionEditor->WriteBlock(NoCol*m_TileWidth, PosBlocY, m_ppTiles[NoCol], pi_pSisterFileLock);
+        Status = m_pAdaptedResolutionEditor->WriteBlock(NoCol*m_TileWidth, PosBlocY, m_ppTiles[NoCol]);
         }
-    m_pTheTrueOriginalFile->SharingControlIncrementCount();
 
     return Status;
     }

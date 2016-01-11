@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFImgMappedFile.cpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -193,9 +193,6 @@ bool HRFImgMappedCreator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
     uint32_t                 Height;
     bool                   Ret = false;
 
-    (const_cast<HRFImgMappedCreator*>(this))->SharingControlCreate(pi_rpURL);
-    HFCLockMonitor SisterFileLock (GetLockManager());
-
     pFile = HFCBinStream::Instanciate(pi_rpURL, pi_Offset, HFC_READ_ONLY | HFC_SHARE_READ_WRITE);
 
     // Note: Extensive use of return here to keep code light
@@ -257,9 +254,6 @@ bool HRFImgMappedCreator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
     Ret = true;
 
 WRAPUP:
-    SisterFileLock.ReleaseKey();
-    HASSERT(!(const_cast<HRFImgMappedCreator*>(this))->m_pSharingControl->IsLocked());
-    (const_cast<HRFImgMappedCreator*>(this))->m_pSharingControl = 0;
 
     return Ret;
     }
@@ -432,14 +426,8 @@ bool HRFImgMappedFile::AddPage(HFCPtr<HRFPageDescriptor> pi_pPage)
         // Add the page descriptor to the list
         if (HRFRasterFile::AddPage(pi_pPage))
             {
-            // Lock the sister file
-            HFCLockMonitor SisterFileLock(GetLockManager());
-
             // Write new header to file
             WriteFileHeader();
-
-            // Unlock the sister file
-            SisterFileLock.ReleaseKey();
             }
         else
             Result = false;
@@ -512,17 +500,8 @@ bool HRFImgMappedFile::Open()
         // Open main file
         m_pImgMappedFile = HFCBinStream::Instanciate(GetURL(), m_Offset, GetAccessMode(), 0, true);
 
-        // Creating the sister file for sharing control
-        SharingControlCreate();
-
-        // Lock the sister file
-        HFCLockMonitor SisterFileLock(GetLockManager());
-
         // Get file info
         ReadFileHeader();
-
-        // Unlock the sister file.
-        SisterFileLock.ReleaseKey();
 
         m_IsOpen = true;
         }
@@ -623,15 +602,9 @@ void HRFImgMappedFile::SaveImgMappedFile(bool pi_CloseFile)
         // if Create mode or the header is changed
         if (GetAccessMode().m_HasCreateAccess)
             {
-            // Lock the sister file
-            HFCLockMonitor SisterFileLock(GetLockManager());
-
             WriteFileHeader();
 
             m_pImgMappedFile->Flush();
-
-            // Unlock the sister file
-            SisterFileLock.ReleaseKey();
             }
 
         pPageDescriptor->Saved();
@@ -660,9 +633,6 @@ bool HRFImgMappedFile::Create()
         // Open file
         m_pImgMappedFile = HFCBinStream::Instanciate(GetURL(), m_Offset, GetAccessMode(), 0, true);
 
-        // Creation of the sister file
-        SharingControlCreate();
-
         m_IsOpen = true;
 
         Result = true;
@@ -678,7 +648,6 @@ bool HRFImgMappedFile::Create()
 void HRFImgMappedFile::ReadFileHeader()
     {
     HPRECONDITION(m_pImgMappedFile != 0);
-    HPRECONDITION(SharingControlIsLocked());
 
     char  aBuffer[11]; // File read access buffer
     char* pBuffer;
@@ -757,7 +726,6 @@ void HRFImgMappedFile::ReadFileHeader()
 void HRFImgMappedFile::WriteFileHeader()
     {
     HPRECONDITION(m_pImgMappedFile != 0);
-    HPRECONDITION(SharingControlIsLocked());
 
     char  aBuffer[13]; // File write access buffer
     char* pBuffer;

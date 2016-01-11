@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFGeoRasterFile.cpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -471,9 +471,6 @@ bool HRFGeoRasterCreator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
         XMLFileName += L"\\";
         XMLFileName += ((HFCPtr<HFCURLFile>&)pi_rpURL)->GetPath();
 
-        (const_cast<HRFGeoRasterCreator*>(this))->SharingControlCreate(pi_rpURL);
-        HFCLockMonitor SisterFileLock(GetLockManager());
-
         // Open XML file
         BeXmlStatus xmlStatus;
         BeXmlDomPtr pXmlDom = BeXmlDom::CreateAndReadFromFile(xmlStatus, XMLFileName.c_str());
@@ -484,11 +481,6 @@ bool HRFGeoRasterCreator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
             if (NULL != pMainNode && BeStringUtilities::Stricmp (pMainNode->GetName(), "BentleyOracleGeoRaster") == 0)
                 bResult = true;
             }
-
-        SisterFileLock.ReleaseKey();
-
-        HASSERT(!(const_cast<HRFGeoRasterCreator*>(this))->m_pSharingControl->IsLocked());
-        (const_cast<HRFGeoRasterCreator*>(this))->m_pSharingControl = 0;
         }
     else if (pi_rpURL->IsCompatibleWith(HFCURLMemFile::CLASS_ID))
         {
@@ -658,8 +650,6 @@ HRFGeoRasterFile::HRFGeoRasterFile(const HFCPtr<HFCURL>& pi_rpURL,
         ReadXORA_1_1(pMainNode, SDOGeoRasterWrapper::IsConnected());
     else
         throw HFCFileNotSupportedException(GetURL()->GetURL());
-
-    SharingControlCreate();
 
     if (!SDOGeoRasterWrapper::IsConnected())
         {

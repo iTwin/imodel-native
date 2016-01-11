@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFiTiffFile.cpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -704,17 +704,6 @@ bool HRFiTiffCreatorBase::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
     // it is not a TIFF, so set the result to false
     HTIFFError* pErr;
 
-    if (pi_IsItiff64 == true)
-        {
-        ((HRFiTiff64Creator*)this)->SharingControlCreate(pi_rpURL);
-        }
-    else
-        {
-        ((HRFiTiffCreator*)this)->SharingControlCreate(pi_rpURL);
-        }
-
-    HFCLockMonitor SisterFileLock (GetLockManager());
-
     pTiff = new HTIFFFile (pi_rpURL, pi_Offset, HFC_READ_ONLY | HFC_SHARE_READ_WRITE);
     if ((pTiff->IsValid(&pErr) || ((pErr != 0) && !pErr->IsFatal())) && (pTiff->IsTiff64() == pi_IsItiff64))
         {
@@ -803,19 +792,6 @@ bool HRFiTiffCreatorBase::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
         }
     else
         bResult = false;
-
-    SisterFileLock.ReleaseKey();
-
-    if (pi_IsItiff64 == true)
-        {
-        HASSERT(!((HRFiTiff64Creator*)this)->m_pSharingControl->IsLocked());
-        ((HRFiTiff64Creator*)this)->m_pSharingControl = 0;
-        }
-    else
-        {
-        HASSERT(!((HRFiTiffCreator*)this)->m_pSharingControl->IsLocked());
-        ((HRFiTiffCreator*)this)->m_pSharingControl = 0;
-        }
 
     return bResult;
     }
@@ -1175,66 +1151,6 @@ const HFCPtr<HRFRasterFileCapabilities>& HRFiTiffFile::GetCapabilities () const
     {
     return HRFiTiffCreator::GetInstance()->GetCapabilities();
     }
-
-
-#if 0
-disable, GT 27/09/2004
-//-----------------------------------------------------------------------------
-// AltaPhoto project
-//
-//-----------------------------------------------------------------------------
-// Public
-// Read_AltaPhotoBlob
-//-----------------------------------------------------------------------------
-bool HRFiTiffFile::Read_AltaPhotoBlob (vector<Byte>* po_pData) const
-    {
-    uint32_t BlobSize = 0;
-    bool  Ret      = true;
-
-    // Lock the sister file for the GetField operation
-    HFCLockMonitor SisterFileLock(const_cast<HRFiTiffFile*>(this)->GetLockManager());
-
-    GetFilePtr()->ReadAltaPhotoBlob(0, &BlobSize);
-
-    // Unlock the sister file.
-    SisterFileLock.ReleaseKey();
-
-    if (BlobSize != 0)
-        {
-        po_pData->resize(BlobSize);
-
-        // Lock the sister file for the GetField operation
-        HFCLockMonitor SisterFileLock(const_cast<HRFiTiffFile*>(this)->GetLockManager());
-
-        Ret = GetFilePtr()->ReadAltaPhotoBlob(&((*po_pData)[0]), 0);
-
-        SisterFileLock.ReleaseKey();
-        }
-    else
-        Ret = false;
-
-    return Ret;
-    }
-
-//-----------------------------------------------------------------------------
-// Public
-// Write_AltaPhotoBlob
-//-----------------------------------------------------------------------------
-bool HRFiTiffFile::Write_AltaPhotoBlob   (const vector<Byte>& pi_pData)
-    {
-    // Lock the sister file for the GetField operation
-    HFCLockMonitor SisterFileLock (GetLockManager());
-
-    return GetFilePtr()->WriteAltaPhotoBlob(&(pi_pData[0]), pi_pData.size());
-
-    // The sister file is automatically unlock at the destruction of
-    // SisterFileLock
-    }
-
-// AltaPhoto project End
-//-----------------------------------------------------------------------------
-#endif
-
 
 //-----------------------------------------------------------------------------
 // Protected

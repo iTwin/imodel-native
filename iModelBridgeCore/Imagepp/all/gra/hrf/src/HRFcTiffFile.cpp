@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFcTiffFile.cpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class HRFcTiffFile
@@ -859,9 +859,6 @@ bool HRFcTiffCreator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
     // it is not a TIFF, so set the result to false
     HTIFFError* pErr;
 
-    (const_cast<HRFcTiffCreator*>(this))->SharingControlCreate(pi_rpURL);
-    HFCLockMonitor SisterFileLock (GetLockManager());
-
     pTiff = new HTIFFFile (pi_rpURL, pi_Offset, HFC_READ_ONLY | HFC_SHARE_READ_WRITE);
 
     if (((pTiff->IsValid(&pErr)) || ((pErr != 0) && !pErr->IsFatal())) && (pTiff->IsTiff64() == false))
@@ -882,11 +879,6 @@ bool HRFcTiffCreator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
         }
     else
         bResult = false;
-
-
-    SisterFileLock.ReleaseKey();
-    HASSERT(!(const_cast<HRFcTiffCreator*>(this))->m_pSharingControl->IsLocked());
-    (const_cast<HRFcTiffCreator*>(this))->m_pSharingControl = 0;
 
     return bResult;
     }
@@ -2150,62 +2142,3 @@ void  HRFcTiffFile::SetOriginalFileAccessMode(HFCAccessMode pi_AccessMode)
     {
     m_OriginalFileAccessMode = pi_AccessMode;
     }
-
-/*
-//-----------------------------------------------------------------------------
-// ProjectWise project
-//
-
-//-----------------------------------------------------------------------------
-// Public
-// Read_ProjectWiseBlob
-//-----------------------------------------------------------------------------
-bool HRFiTiffFile::Read_ProjectWiseBlob (vector<Byte>* po_pData) const
-{
-    UInt32 BlobSize = 0;
-    bool  Ret      = true;
-
-    // Lock the sister file for the GetField operation
-    HFCLockMonitor SisterFileLock(const_cast<HRFiTiffFile*>(this)->GetLockManager());
-
-    GetFilePtr()->ReadProjectWiseBlob(0, &BlobSize);
-
-    // Unlock the sister file.
-    SisterFileLock.ReleaseKey();
-
-    if (BlobSize != 0)
-    {
-        po_pData->resize(BlobSize);
-
-        // Lock the sister file for the GetField operation
-        HFCLockMonitor SisterFileLock(const_cast<HRFiTiffFile*>(this)->GetLockManager());
-
-        Ret = GetFilePtr()->ReadProjectWiseBlob(&((*po_pData)[0]), 0);
-
-        SisterFileLock.ReleaseKey();
-    }
-    else
-        Ret = false;
-
-    return Ret;
-}
-
-//-----------------------------------------------------------------------------
-// Public
-// Write_ProjectWiseBlob
-//-----------------------------------------------------------------------------
-bool HRFiTiffFile::Write_WriteProjectBlob(const vector<Byte>& pi_pData)
-{
-    // Lock the sister file for the GetField operation
-    HFCLockMonitor SisterFileLock (GetLockManager());
-
-    return GetFilePtr()->WriteProjectWiseBlob(&(pi_pData[0]), pi_pData.size());
-
-    // The sister file is automatically unlock at the destruction of
-    // SisterFileLock
-}
-
-// ProjectWise project End
-//-----------------------------------------------------------------------------
-
-*/

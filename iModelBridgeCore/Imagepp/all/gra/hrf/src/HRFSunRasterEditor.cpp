@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFSunRasterEditor.cpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class HRFSunRasterLineEditor
@@ -62,14 +62,12 @@ HRFSunRasterLineEditor::~HRFSunRasterLineEditor()
 //-----------------------------------------------------------------------------
 HSTATUS HRFSunRasterLineEditor::ReadBlock(uint64_t pi_PosBlockX,
                                           uint64_t pi_PosBlockY,
-                                          Byte*  po_pData,
-                                          HFCLockMonitor const* pi_pSisterFileLock)
+                                          Byte*  po_pData)
     {
     HPRECONDITION(po_pData != 0);
     HPRECONDITION(m_AccessMode.m_HasReadAccess);
 
     HSTATUS Status = H_ERROR;
-    HFCLockMonitor SisterFileLock;
 
     if (GetRasterFile()->GetAccessMode().m_HasCreateAccess)
         {
@@ -80,22 +78,11 @@ HSTATUS HRFSunRasterLineEditor::ReadBlock(uint64_t pi_PosBlockX,
     uint64_t offsetToLine;
     offsetToLine = m_DataOffset + (pi_PosBlockY * m_ExactBytesPerRow);
 
-    // Lock the sister file if needed
-    if(pi_pSisterFileLock == 0)
-        {
-        // Get lock and synch.
-        AssignRasterFileLock(GetRasterFile(), SisterFileLock, true);
-        pi_pSisterFileLock = &SisterFileLock;
-        }
-
     m_pRasterFile->m_pSunRasterFile->SeekToPos(offsetToLine);
 
     uint32_t DataSize = GetResolutionDescriptor()->GetBytesPerBlockWidth();
     if(m_pRasterFile->m_pSunRasterFile->Read(po_pData, DataSize) != DataSize)
         return Status;    // H_ERROR
-
-    // Unlock the sister file.
-    SisterFileLock.ReleaseKey();
 
     // Switch reb end blue.
     if(m_pRasterFile->m_IsBGR)
@@ -120,8 +107,7 @@ HSTATUS HRFSunRasterLineEditor::ReadBlock(uint64_t pi_PosBlockX,
 //-----------------------------------------------------------------------------
 HSTATUS HRFSunRasterLineEditor::WriteBlock(uint64_t     pi_PosBlockX,
                                            uint64_t     pi_PosBlockY,
-                                           const Byte*  pi_pData,
-                                           HFCLockMonitor const* pi_pSisterFileLock)
+                                           const Byte*  pi_pData)
     {
     HPRECONDITION(m_AccessMode.m_HasWriteAccess || m_AccessMode.m_HasCreateAccess);
     HPRECONDITION(pi_pData != 0);
@@ -145,25 +131,10 @@ HSTATUS HRFSunRasterLineEditor::WriteBlock(uint64_t     pi_PosBlockX,
             }
         }
 
-    // Lock the sister file if needed
-    HFCLockMonitor SisterFileLock;
-    if(pi_pSisterFileLock == 0)
-        {
-        // Get lock and synch.
-        AssignRasterFileLock(GetRasterFile(), SisterFileLock, false);
-        pi_pSisterFileLock = &SisterFileLock;
-        }
-
     m_pRasterFile->m_pSunRasterFile->SeekToPos(offsetToLine);
 
     if(m_pRasterFile->m_pSunRasterFile->Write(m_pLineBuffer, m_ExactBytesPerRow) != m_ExactBytesPerRow)
         Status = H_ERROR;
-
-    // Increment the counters
-    GetRasterFile()->SharingControlIncrementCount();
-
-    // Unlock the sister file.
-    SisterFileLock.ReleaseKey();
 
     return Status;
     }
@@ -213,14 +184,12 @@ HRFSunRasterImageEditor::~HRFSunRasterImageEditor()
 
 HSTATUS HRFSunRasterImageEditor::ReadBlock(uint64_t       pi_PosBlockX,
                                            uint64_t       pi_PosBlockY,
-                                           Byte*          po_pData,
-                                           HFCLockMonitor const* pi_pSisterFileLock)
+                                           Byte*          po_pData)
     {
     HPRECONDITION(m_AccessMode.m_HasReadAccess);
     HPRECONDITION(po_pData != 0);
 
     HSTATUS Status = H_ERROR;
-    HFCLockMonitor SisterFileLock;
     HArrayAutoPtr<Byte>   pCompressImage;
 
     if (GetRasterFile()->GetAccessMode().m_HasCreateAccess)
@@ -237,21 +206,10 @@ HSTATUS HRFSunRasterImageEditor::ReadBlock(uint64_t       pi_PosBlockX,
     if (!(m_pRasterFile->m_FileHeader.m_Maptype == HRFSunRasterFile::RMT_NOMAP))
         DataOffset += m_pRasterFile->m_FileHeader.m_Maplen;
 
-    // Lock the sister file if needed
-    if(pi_pSisterFileLock == 0)
-        {
-        // Get lock and synch.
-        AssignRasterFileLock(GetRasterFile(), SisterFileLock, true);
-        pi_pSisterFileLock = &SisterFileLock;
-        }
-
     // Read the compressed image in memory
     m_pRasterFile->m_pSunRasterFile->SeekToPos(DataOffset);
     if (m_pRasterFile->m_pSunRasterFile->Read(pCompressImage, ImageLen) != ImageLen)
         return Status;    // H_ERROR
-
-    // Unlock the sister file.
-    SisterFileLock.ReleaseKey();
 
     Byte* pSrcData = pCompressImage;
     Byte* pDstData = po_pData;
@@ -294,8 +252,7 @@ HSTATUS HRFSunRasterImageEditor::ReadBlock(uint64_t       pi_PosBlockX,
 //-----------------------------------------------------------------------------
 HSTATUS  HRFSunRasterImageEditor::WriteBlock(uint64_t     pi_PosBlockX,
                                              uint64_t     pi_PosBlockY,
-                                             const Byte* pi_pData,
-                                             HFCLockMonitor const* pi_pSisterFileLock)
+                                             const Byte* pi_pData)
     {
     HPRECONDITION (m_AccessMode.m_HasWriteAccess || m_AccessMode.m_HasCreateAccess);
     HPRECONDITION (m_pResolutionDescriptor->GetCodec() != 0);
@@ -305,15 +262,6 @@ HSTATUS  HRFSunRasterImageEditor::WriteBlock(uint64_t     pi_PosBlockX,
     HArrayAutoPtr<Byte>   pCompressSection;
     uint32_t                SizeMaxCompressSection = 2048;
     pCompressSection = new Byte[SizeMaxCompressSection+4];
-
-    // Lock the sister file if needed
-    HFCLockMonitor SisterFileLock;
-    if(pi_pSisterFileLock == 0)
-        {
-        // Get lock and synch.
-        AssignRasterFileLock(GetRasterFile(), SisterFileLock, false);
-        pi_pSisterFileLock = &SisterFileLock;
-        }
 
     // Offset Data begin
     uint32_t DataOffset            = HRFSunRasterFile::COLORMAP_OFFSET;
@@ -380,12 +328,6 @@ HSTATUS  HRFSunRasterImageEditor::WriteBlock(uint64_t     pi_PosBlockX,
 
         CompressedSize          += CurCompressSizeSection;
         }
-
-    // Increment the counters
-    GetRasterFile()->SharingControlIncrementCount();
-
-    // Unlock the sister file.
-    SisterFileLock.ReleaseKey();
 
     m_pRasterFile->m_FileHeader.m_Length = CompressedSize;
     m_pRasterFile->m_HeaderChanged       = true;

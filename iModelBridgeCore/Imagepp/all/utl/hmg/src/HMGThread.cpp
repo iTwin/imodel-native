@@ -160,7 +160,5 @@ void HMGThread::MessageEntry::Send()
 
 HMGThreadID HMGThread::GetCurrentThreadID()
     {
-#ifdef _WIN32
-    return GetCurrentThreadId();
-#endif
+    return BeThreadUtilities::GetCurrentThreadId();
     }

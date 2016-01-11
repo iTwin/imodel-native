@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFUtility.cpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -983,11 +983,6 @@ Byte* ImagePP::HRFStretcher(HFCPtr<HRFRasterFile>& pi_rpSource,
 
     HRFThumbnailProgressIndicator::GetInstance()->Restart(NeededBlocks.size());
 
-    // Lock the sister file once for all the ReadBlock
-    HFCLockMonitor SisterFileLock;
-    if(pi_rpSource->GetSharingControl() != NULL)
-        pSrcResolutionEditor->AssignRasterFileLock(pi_rpSource, SisterFileLock, true);
-
     // Step two: copy the blocks
     set<uint64_t>::const_iterator Itr(NeededBlocks.begin());
     while (Itr != NeededBlocks.end() && HRFThumbnailProgressIndicator::GetInstance()->ContinueIteration())
@@ -995,7 +990,7 @@ Byte* ImagePP::HRFStretcher(HFCPtr<HRFRasterFile>& pi_rpSource,
         // Calc the block position
         pSrcResolutionDescriptor->ComputeBlockPosition(*Itr, &BlockPosX, &BlockPosY);
         // Read directly the required block
-        pSrcResolutionEditor->ReadBlock(BlockPosX, BlockPosY, pSrcPacket->GetBufferAddress(), &SisterFileLock);
+        pSrcResolutionEditor->ReadBlock(BlockPosX, BlockPosY, pSrcPacket->GetBufferAddress());
 
         pBlitModel = new HGF2DStretch(HGF2DDisplacement(-(double)BlockPosX, -(double)BlockPosY),
                                       ScaleX,
@@ -1048,8 +1043,6 @@ Byte* ImagePP::HRFStretcher(HFCPtr<HRFRasterFile>& pi_rpSource,
 
         ++Itr;
         }
-
-    SisterFileLock.ReleaseKey();
 
     // Quality Down sampling to the specified size
     Byte* pOutputData;

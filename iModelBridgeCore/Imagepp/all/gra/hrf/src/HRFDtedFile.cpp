@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFDtedFile.cpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -206,9 +206,6 @@ bool HRFDtedCreator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
     HAutoPtr<HFCBinStream>      pFile;
     HArrayAutoPtr<char>        pLine(new char[4]);
 
-    (const_cast<HRFDtedCreator*>(this))->SharingControlCreate(pi_rpURL);
-    HFCLockMonitor SisterFileLock (GetLockManager());
-
     // Open the IMG File & place file pointer at the start of the file
     pFile = HFCBinStream::Instanciate(pi_rpURL, pi_Offset, HFC_READ_ONLY | HFC_SHARE_READ_WRITE);
 
@@ -235,10 +232,6 @@ bool HRFDtedCreator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
                 }
             }
         }
-
-    SisterFileLock.ReleaseKey();
-    HASSERT(!(const_cast<HRFDtedCreator*>(this))->m_pSharingControl->IsLocked());
-    (const_cast<HRFDtedCreator*>(this))->m_pSharingControl = 0;
 
     return Result;
     }

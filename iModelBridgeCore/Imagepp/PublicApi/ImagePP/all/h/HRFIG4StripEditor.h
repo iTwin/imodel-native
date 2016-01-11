@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRFIG4StripEditor.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // This class describes the resolution editor interface
@@ -32,18 +32,15 @@ public:
     // Edition by block
     virtual HSTATUS ReadBlock(uint64_t   pi_PosBlockX,
                               uint64_t   pi_PosBlockY,
-                              Byte*      po_pData,
-                              HFCLockMonitor const* pi_pSisterFileLock = 0) override;
+                              Byte*      po_pData) override;
 
 //     virtual HSTATUS ReadBlockRLE(UInt64                 pi_PosBlockX,
 //                                  UInt64                 pi_PosBlockY,
-//                                  HFCPtr<HCDPacketRLE>&  pio_rpPacketRLE,
-//                                  HFCLockMonitor const*  pi_pSisterFileLock = 0);
+//                                  HFCPtr<HCDPacketRLE>&  pio_rpPacketRLE;
 
     virtual HSTATUS WriteBlock(uint64_t     pi_PosBlockX,
                                uint64_t     pi_PosBlockY,
-                               const Byte*  pi_pData,
-                               HFCLockMonitor const* pi_pSisterFileLock = 0) override;
+                               const Byte*  pi_pData) override;
 
 protected:
     // See the parent for Pointer to the raster file, to the resolution descriptor

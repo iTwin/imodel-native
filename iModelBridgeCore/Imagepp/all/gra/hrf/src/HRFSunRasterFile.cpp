@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFSunRasterFile.cpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class HRFSunRasterFile
@@ -210,9 +210,6 @@ bool HRFSunRasterCreator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
     bool                   bResult = false;
     HAutoPtr<HFCBinStream>  pFile;
 
-    (const_cast<HRFSunRasterCreator*>(this))->SharingControlCreate(pi_rpURL);
-    HFCLockMonitor SisterFileLock(GetLockManager());
-
     // Open the SunRaster File & place file pointer at the start of the file
     pFile = HFCBinStream::Instanciate(pi_rpURL, pi_Offset, HFC_READ_ONLY | HFC_SHARE_READ_WRITE);
 
@@ -263,10 +260,6 @@ bool HRFSunRasterCreator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
     bResult = true;
 
 WRAPUP:
-    SisterFileLock.ReleaseKey();
-    HASSERT(!(const_cast<HRFSunRasterCreator*>(this))->m_pSharingControl->IsLocked());
-    (const_cast<HRFSunRasterCreator*>(this))->m_pSharingControl = 0;
-
     return bResult;
     }
 
@@ -427,20 +420,11 @@ bool HRFSunRasterFile::AddPage(HFCPtr<HRFPageDescriptor> pi_pPage)
     m_FileHeader.m_Length = m_FileHeader.m_Height *
                             ((UsedBitsPerRow + m_PaddingBitsPerRow)/8);
 
-    // Lock the sister file.
-    HFCLockMonitor SisterFileLock (GetLockManager());
-
     // Set the image color space.
     SetPixelTypeToPage(pResolutionDescriptor);
 
     // Write the file header information.
     SetFileHeaderToFile();
-
-    // Increment the counters
-    SharingControlIncrementCount();
-
-    // Unlock the sister file.
-    SisterFileLock.ReleaseKey();
 
     return true;
     }
@@ -467,18 +451,9 @@ bool HRFSunRasterFile::Open()
         {
         m_pSunRasterFile = HFCBinStream::Instanciate(GetURL(), m_Offset, GetAccessMode(), 0, true);
 
-        // This creates the sister file for file sharing control if necessary.
-        SharingControlCreate();
-
-        // Lock the sister file.
-        HFCLockMonitor SisterFileLock (GetLockManager());
-
         // Initialisation of file struct.
         GetFileHeaderFromFile();
         GetPaletteFromFile();
-
-        // Unlock the sister file.
-        SisterFileLock.ReleaseKey();
 
         m_IsOpen = true;
         }
@@ -572,19 +547,12 @@ void HRFSunRasterFile::SaveSunRasterFile(bool pi_CloseFile)
     // execute the destroyer.
     if (m_IsOpen && m_ListOfPageDescriptor.size() > 0)
         {
-
         HFCPtr<HRFPageDescriptor> pPageDescriptor = GetPageDescriptor(0);
-
-        // Lock the sister file.
-        HFCLockMonitor SisterFileLock (GetLockManager());
 
         // if Create mode or the header is changed
         if (GetAccessMode().m_HasCreateAccess || m_HeaderChanged)
             {
             SetFileHeaderToFile();
-
-            // Increment the counters
-            SharingControlIncrementCount();
             }
 
         if(pPageDescriptor->GetResolutionDescriptor(0)->PaletteHasChanged())
@@ -593,22 +561,12 @@ void HRFSunRasterFile::SaveSunRasterFile(bool pi_CloseFile)
             SetPixelTypeToPage(pPageDescriptor->GetResolutionDescriptor(0));
             SetPaletteToFile();
 
-            // Increment the counters
-            SharingControlIncrementCount();
-
             pPageDescriptor->Saved();
             pPageDescriptor->GetResolutionDescriptor(0)->Saved();
             }
 
-
-
-        // Unlock the sister file.
-        SisterFileLock.ReleaseKey();
-
         if(pi_CloseFile)
             m_IsOpen = false;
-
-
         }
     }
 
@@ -621,9 +579,6 @@ bool HRFSunRasterFile::Create()
     {
     // Open the file.
     m_pSunRasterFile = HFCBinStream::Instanciate(GetURL(), GetAccessMode(), 0, true);
-
-    // Instanciate the Sharing Control Object.
-    SharingControlCreate();
 
     memset(&m_FileHeader, 0, sizeof(m_FileHeader));
     m_FileHeader.m_MagicNumber = RAS_MAGIC;
@@ -797,7 +752,6 @@ void HRFSunRasterFile::SetPixelTypeToPage(HFCPtr<HRFResolutionDescriptor> pi_pRe
 void HRFSunRasterFile::GetFileHeaderFromFile()
     {
     HPRECONDITION(m_pSunRasterFile != 0);
-    HPRECONDITION(SharingControlIsLocked());
 
     m_pSunRasterFile->SeekToPos(HEADER_OFFSET);
 
@@ -842,7 +796,6 @@ void HRFSunRasterFile::GetFileHeaderFromFile()
 void HRFSunRasterFile::SetFileHeaderToFile()
     {
     HPRECONDITION(m_pSunRasterFile != 0);
-    HPRECONDITION(SharingControlIsLocked());
 
     uint32_t MagicNumber = m_FileHeader.m_MagicNumber;
     uint32_t Width       = m_FileHeader.m_Width;
@@ -892,7 +845,6 @@ void HRFSunRasterFile::SetFileHeaderToFile()
 void HRFSunRasterFile::GetPaletteFromFile()
     {
     HPRECONDITION(m_pSunRasterFile != 0);
-    HPRECONDITION(SharingControlIsLocked());
 
     if ((m_FileHeader.m_Maptype != RMT_NOMAP) &&
         (m_FileHeader.m_Maplen != 0))
@@ -918,7 +870,6 @@ void HRFSunRasterFile::GetPaletteFromFile()
 void HRFSunRasterFile::SetPaletteToFile()
     {
     HPRECONDITION(m_pSunRasterFile != 0);
-    HPRECONDITION(SharingControlIsLocked());
 
     if ((m_FileHeader.m_Maptype != RMT_NOMAP) && (m_pColorMapB != 0))
         {

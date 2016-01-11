@@ -1,25 +1,58 @@
 //:>--------------------------------------------------------------------------------------+
 //:>
-//:>     $Source: PublicApi/ImagePP/all/h/HRFVirtualEarthEditor.h $
+//:>     $Source: all/gra/hrf/src/HRFVirtualEarthEditor.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // This class describes the resolution editor interface
 //-----------------------------------------------------------------------------
 #pragma once
 
-#include "HFCSemaphore.h"
-#include "HFCThread.h"
-#include "HGFTileIDDescriptor.h"
-#include "HRFResolutionEditor.h"
-#include "HRFTilePool.h"
+#include <Imagepp/all/h/HGFTileIDDescriptor.h>
+#include <Imagepp/all/h/HRFResolutionEditor.h>
+
+#include <ImagePPInternal/gra/Task.h>
 
 BEGIN_IMAGEPP_NAMESPACE
 class HRFVirtualEarthConnection;
 class HRFVirtualEarthFile;
-class HRFVirtualEarthTileReaderThread;
-struct HRFVirtualEarthTileRequest;
+
+//-----------------------------------------------------------------------------
+// HRFVirtualEarthTileRequest struct
+//-----------------------------------------------------------------------------
+struct HRFVirtualEarthTileRequest
+{
+    uint64_t                m_TileID;
+    uint64_t                m_PosX;
+    uint64_t                m_PosY;
+    int                     m_LevelOfDetail;
+    uint32_t                m_BlockWidth;
+    uint32_t                m_BlockHeight;
+    size_t                  m_BlockSizeInBytes;
+    size_t                  m_BytesPerBlockWidth;
+    uint32_t                m_Page;
+    HFCPtr<HRPPixelType>    m_PixelType;
+};
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   Mathieu.Marchand  1/2016
+//----------------------------------------------------------------------------------------
+struct VirtualEarthTileQuery : public WorkerPool::Task
+{
+    VirtualEarthTileQuery(HRFVirtualEarthTileRequest& tileRequest, HRFVirtualEarthFile& rasterFile) 
+    :m_tileRequest(tileRequest),m_rasterFile(rasterFile), m_dataSize(0)
+        {}
+
+    virtual ~VirtualEarthTileQuery(){};
+    
+    virtual void _Run() override;
+
+    std::unique_ptr<Byte[]>     m_data;
+    size_t                      m_dataSize;
+    HRFVirtualEarthTileRequest  m_tileRequest;
+    HRFVirtualEarthFile&        m_rasterFile;
+};
 
 //-----------------------------------------------------------------------------
 // HRFVirtualEarthEditor class
@@ -36,46 +69,36 @@ public:
     //Edition by Block
     virtual HSTATUS ReadBlock(uint64_t pi_PosBlockX,
                               uint64_t pi_PosBlockY,
-                              Byte*   po_pData,
-                              HFCLockMonitor const* pi_pSisterFileLock = 0) override;
+                              Byte*   po_pData) override;
 
     virtual HSTATUS ReadBlock(uint64_t pi_PosBlockX,
                               uint64_t pi_PosBlockY,
-                              HFCPtr<HCDPacket>&      po_rpPacket,
-                              HFCLockMonitor const*   pi_pSisterFileLock = 0)
+                              HFCPtr<HCDPacket>&      po_rpPacket)
         {
-        return T_Super::ReadBlock(pi_PosBlockX,pi_PosBlockY,po_rpPacket,pi_pSisterFileLock);
+        return T_Super::ReadBlock(pi_PosBlockX,pi_PosBlockY,po_rpPacket);
         }
 
 
     virtual HSTATUS WriteBlock(uint64_t pi_PosBlockX,
                                uint64_t pi_PosBlockY,
-                               const Byte* pi_pData,
-                               HFCLockMonitor const* pi_pSisterFileLock = 0) override;
+                               const Byte* pi_pData) override;
 
     virtual HSTATUS WriteBlock(uint64_t pi_PosBlockX,
                                uint64_t pi_PosBlockY,
-                               const HFCPtr<HCDPacket>& pi_rpPacket,
-                               HFCLockMonitor const*    pi_pSisterFileLock = 0) override;
+                               const HFCPtr<HCDPacket>& pi_rpPacket) override;
 
     int GetLevelOfDetail() const;
 
 protected:
 
     //Constructor
-    HRFVirtualEarthEditor
-    (HFCPtr<HRFRasterFile> pi_rpRasterFile,
-     uint32_t              pi_Page,
-     unsigned short       pi_Resolution,
-     HFCAccessMode         pi_AccessMode);
+    HRFVirtualEarthEditor    (HFCPtr<HRFRasterFile> pi_rpRasterFile, uint32_t pi_Page, unsigned short pi_Resolution, HFCAccessMode pi_AccessMode);
 
     //Request look ahead
         virtual void                    RequestLookAhead(const HGFTileIDList& pi_rTileIDList);       
         virtual void                    InitTileRequest(uint64_t TileId, HRFVirtualEarthTileRequest& Request);
 
 private:
-
-    friend class HRFVirtualEarthTileReaderThread;
 
     HGFTileIDDescriptor m_TileIDDescriptor;
 
@@ -115,24 +138,4 @@ private:
     HRFVirtualEarthEditor& operator=(const HRFVirtualEarthEditor& pi_rObj);
     };
 
-//-----------------------------------------------------------------------------
-// HRFVirtualEarthTileReaderThread class
-//-----------------------------------------------------------------------------
-class HRFVirtualEarthTileReaderThread : public HFCThread
-    {
-public:
-    HRFVirtualEarthTileReaderThread(const string&        pi_rThreadName,
-                                    HRFVirtualEarthFile* pi_pVirtualEarthFile);
-    virtual ~HRFVirtualEarthTileReaderThread();
-
-    virtual void Go();
-
-    void         ReadBlockFromServer(HRFVirtualEarthTileRequest const& Request);
-
-private:
-
-    //Thread control
-    HFCEvent             m_ThreadStarted;
-    HRFVirtualEarthFile* m_pVirtualEarthFile;
-    };
 END_IMAGEPP_NAMESPACE

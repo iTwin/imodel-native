@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRFAdaptTileToLine.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HRFAdaptTileToLine
@@ -70,28 +70,24 @@ public:
     // Edition by Block
     virtual HSTATUS ReadBlock(uint64_t                 pi_PosBlockX,
                               uint64_t                 pi_PosBlockY,
-                              Byte*                    po_pData,
-                              HFCLockMonitor const*    pi_pSisterFileLock = 0) override;
+                              Byte*                    po_pData) override;
 
     virtual HSTATUS ReadBlock(uint64_t                 pi_PosBlockX,
                               uint64_t                 pi_PosBlockY,
-                              HFCPtr<HCDPacket>&       po_rpPacket,
-                              HFCLockMonitor const*    pi_pSisterFileLock = 0) override
+                              HFCPtr<HCDPacket>&       po_rpPacket) override
         {
-        return T_Super::ReadBlock(pi_PosBlockX,pi_PosBlockY,po_rpPacket,pi_pSisterFileLock);
+        return T_Super::ReadBlock(pi_PosBlockX,pi_PosBlockY,po_rpPacket);
         }
 
     virtual HSTATUS WriteBlock(uint64_t                 pi_PosBlockX,
                                uint64_t                 pi_PosBlockY,
-                               const Byte*              pi_pData,
-                               HFCLockMonitor const*    pi_pSisterFileLock = 0) override;
+                               const Byte*              pi_pData) override;
 
     virtual HSTATUS WriteBlock(uint64_t                 pi_PosBlockX,
                                uint64_t                 pi_PosBlockY,
-                               const HFCPtr<HCDPacket>& pi_rpPacket,
-                               HFCLockMonitor const*    pi_pSisterFileLock = 0) override
+                               const HFCPtr<HCDPacket>& pi_rpPacket) override
         {
-        return T_Super::WriteBlock(pi_PosBlockX,pi_PosBlockY,pi_rpPacket,pi_pSisterFileLock);
+        return T_Super::WriteBlock(pi_PosBlockX,pi_PosBlockY,pi_rpPacket);
         }
 
 
@@ -119,8 +115,8 @@ private:
 
     void    Alloc_m_ppTiles             (void);
     void    Delete_m_ppTiles            (void);
-    HSTATUS ReadAStripOfTiles           (uint32_t pi_TileIndexY, HFCLockMonitor const* pi_pSisterFileLock);
-    HSTATUS WriteAStripOfTiles          (uint32_t pi_TileIndexY, HFCLockMonitor const* pi_pSisterFileLock);
+    HSTATUS ReadAStripOfTiles           (uint32_t pi_TileIndexY);
+    HSTATUS WriteAStripOfTiles          (uint32_t pi_TileIndexY);
 
     // Methods Disabled
     HRFAdaptTileToLine(const HRFAdaptTileToLine& pi_rObj);

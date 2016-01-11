@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFRLCFile.cpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class HRFRLCFile
@@ -317,9 +317,6 @@ bool HRFRLCFile::Open()
     m_pRLCFile = HFCBinStream::Instanciate(GetURL(), m_Offset, GetAccessMode(), 0, true);
 
     m_IsOpen = true;
-
-    // This creates the sister file for file sharing control if necessary.
-    SharingControlCreate();
 
     return m_IsOpen;
     }

@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFEpsLineEditor.cpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -77,8 +77,7 @@ HRFEpsLineEditor::~HRFEpsLineEditor()
 */
 HSTATUS HRFEpsLineEditor::ReadBlock(uint64_t     pi_PosBlockX,
                                     uint64_t     pi_PosBlockY,
-                                    Byte*        pi_pData,
-                                    HFCLockMonitor const* pi_pSisterFileLock)
+                                    Byte*        pi_pData)
     {
     return H_DATA_NOT_AVAILABLE;
     }
@@ -93,8 +92,7 @@ HSTATUS HRFEpsLineEditor::ReadBlock(uint64_t     pi_PosBlockX,
 */
 HSTATUS HRFEpsLineEditor::WriteBlock(uint64_t     pi_PosBlockX,
                                      uint64_t     pi_PosBlockY,
-                                     const Byte*  pi_pData,
-                                     HFCLockMonitor const* pi_pSisterFileLock)
+                                     const Byte*  pi_pData)
     {
     // Full lines only
     HASSERT(pi_PosBlockX == 0);
@@ -113,15 +111,6 @@ HSTATUS HRFEpsLineEditor::WriteBlock(uint64_t     pi_PosBlockX,
         uint32_t CurrentPositionInBuffer = 0;
         unsigned short BytesLeftInLine;
         unsigned short BytesToWrite;
-
-        // Lock the sister file if needed
-        HFCLockMonitor SisterFileLock;
-        if(pi_pSisterFileLock == 0)
-            {
-            // Get lock and synch.
-            AssignRasterFileLock(GetRasterFile(), SisterFileLock, false);
-            pi_pSisterFileLock = &SisterFileLock;
-            }
 
         // Write lines in output. Maximum 254 characters per line.
         while (BytesToProcess > 0)
@@ -145,11 +134,6 @@ HSTATUS HRFEpsLineEditor::WriteBlock(uint64_t     pi_PosBlockX,
                 m_CurrentOutputPosition = 0;
                 }
             }
-
-        GetRasterFile()->SharingControlIncrementCount();
-
-        // Unlock the sister file.
-        SisterFileLock.ReleaseKey();
 
         ++m_CurrentLine;
         }

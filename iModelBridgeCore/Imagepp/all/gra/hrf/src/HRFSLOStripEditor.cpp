@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFSLOStripEditor.cpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -119,8 +119,7 @@ HRFSLOStripEditor::~HRFSLOStripEditor()
 //-----------------------------------------------------------------------------
 HSTATUS HRFSLOStripEditor::ReadBlock(uint64_t pi_PosBlockX,
                                      uint64_t pi_PosBlockY,
-                                     Byte*   po_pData,
-                                     HFCLockMonitor const* pi_pSisterFileLock)
+                                     Byte*   po_pData)
     {
     HPRECONDITION (m_AccessMode.m_HasReadAccess);
     HPRECONDITION (po_pData != 0);
@@ -164,8 +163,7 @@ HSTATUS HRFSLOStripEditor::ReadBlock(uint64_t pi_PosBlockX,
 //-----------------------------------------------------------------------------
 HSTATUS HRFSLOStripEditor::ReadBlock(uint64_t            pi_PosBlockX,
                                      uint64_t            pi_PosBlockY,
-                                     HFCPtr<HCDPacket>&  po_rpPacket,
-                                     HFCLockMonitor const* pi_pSisterFileLock)
+                                     HFCPtr<HCDPacket>&  po_rpPacket)
     {
     HPRECONDITION (m_AccessMode.m_HasReadAccess);
     HPRECONDITION (pi_PosBlockX <= ULONG_MAX && pi_PosBlockY <= ULONG_MAX);
@@ -258,8 +256,7 @@ HSTATUS HRFSLOStripEditor::ReadBlock(uint64_t            pi_PosBlockX,
 //-----------------------------------------------------------------------------
 HSTATUS HRFSLOStripEditor::WriteBlock(uint64_t      pi_PosBlockX,
                                       uint64_t      pi_PosBlockY,
-                                      const Byte*   pi_pData,
-                                      HFCLockMonitor const* pi_pSisterFileLock)
+                                      const Byte*   pi_pData)
     {
     HPRECONDITION (m_AccessMode.m_HasWriteAccess || m_AccessMode.m_HasCreateAccess);
     HPRECONDITION (pi_PosBlockX <= ULONG_MAX && pi_PosBlockY <= ULONG_MAX);
@@ -301,8 +298,7 @@ HSTATUS HRFSLOStripEditor::WriteBlock(uint64_t      pi_PosBlockX,
 //-----------------------------------------------------------------------------
 HSTATUS HRFSLOStripEditor::WriteBlock(uint64_t            pi_PosBlockX,
                                       uint64_t            pi_PosBlockY,
-                                      const HFCPtr<HCDPacket>&  pi_rpPacket,
-                                      HFCLockMonitor const*     pi_pSisterFileLock)
+                                      const HFCPtr<HCDPacket>&  pi_rpPacket)
     {
     HPRECONDITION (m_AccessMode.m_HasWriteAccess || m_AccessMode.m_HasCreateAccess );
     HPRECONDITION (pi_PosBlockX <= ULONG_MAX && pi_PosBlockY <= ULONG_MAX);

@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFFliFile.cpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class HRFSpotFile
@@ -248,11 +248,6 @@ bool HRFFliCreator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
     FliFilePrefixHeader     PrefixHeader;
     bool                   Result = false;
 
-
-
-    (const_cast<HRFFliCreator*>(this))->SharingControlCreate(pi_rpURL);
-    HFCLockMonitor SisterFileLock(GetLockManager());
-
     // Open the FLI/FLIC File & place file pointer at the start of the file
 
     pFile = HFCBinStream::Instanciate(pi_rpURL, pi_Offset, HFC_READ_ONLY | HFC_SHARE_READ_WRITE);
@@ -302,10 +297,6 @@ bool HRFFliCreator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
     Result = true;
 
 WRAPUP:
-    SisterFileLock.ReleaseKey();
-    HASSERT(!(const_cast<HRFFliCreator*>(this))->m_pSharingControl->IsLocked());
-    (const_cast<HRFFliCreator*>(this))->m_pSharingControl = 0;
-
     return Result;
     }
 
@@ -427,11 +418,7 @@ bool HRFFliFile::Open()
     // Open the file
     if (!m_IsOpen)
         {
-
         m_pFliFile = HFCBinStream::Instanciate(GetURL(), m_Offset, GetAccessMode(), 0, true);
-
-        // This creates the sister file for file sharing control if necessary.
-        SharingControlCreate();
 
         // Initialisation of file struct.
         GetFileHeaderFromFile();
@@ -474,20 +461,12 @@ void HRFFliFile::GetFileHeaderFromFile()
     {
     HPRECONDITION(m_pFliFile != 0);
 
-    // Lock the sister file for the getFileHeaderFromFile method
-    HFCLockMonitor SisterFileLock(GetLockManager());
-
     m_pFliFile->Read(&m_FliFileHeader.size,              sizeof m_FliFileHeader.size);
     m_pFliFile->Read(&m_FliFileHeader.type,              sizeof m_FliFileHeader.type);
     m_pFliFile->Read(&m_FliFileHeader.frames,            sizeof m_FliFileHeader.frames);
     m_pFliFile->Read(&m_FliFileHeader.width,             sizeof m_FliFileHeader.width);
     m_pFliFile->Read(&m_FliFileHeader.height,            sizeof m_FliFileHeader.height);
     m_pFliFile->Read(&m_FliFileHeader.depth,             sizeof m_FliFileHeader.depth);
-
-
-
-    // Unlock the sister file
-    SisterFileLock.ReleaseKey();
     }
 
 //-----------------------------------------------------------------------------
@@ -499,9 +478,6 @@ void HRFFliFile::GetFirstFrameHeaderFromFile()
     {
     HPRECONDITION(m_pFliFile != 0);
 
-    // Lock the sister file for the getFileHeaderFromFile method
-    HFCLockMonitor SisterFileLock(GetLockManager());
-
     m_pFliFile->SeekToBegin();
     m_pFliFile->Seek(FLIC_HEADER_LENGTH);
 
@@ -509,9 +485,6 @@ void HRFFliFile::GetFirstFrameHeaderFromFile()
     m_pFliFile->Read(&m_FliPrefixHeader.type,              sizeof m_FliPrefixHeader.type);
     m_pFliFile->Read(&m_FliPrefixHeader.chunks,            sizeof m_FliPrefixHeader.chunks);
     m_pFliFile->Read(&m_FliPrefixHeader.reserved,          sizeof m_FliPrefixHeader.reserved);
-
-    // Unlock the sister file
-    SisterFileLock.ReleaseKey();
     }
 
 //-----------------------------------------------------------------------------
@@ -523,9 +496,6 @@ void HRFFliFile::GetFirstChunkHeaderFromFile()
     {
     HPRECONDITION(m_pFliFile != 0);
 
-    // Lock the sister file for the getFileHeaderFromFile method
-    HFCLockMonitor SisterFileLock(GetLockManager());
-
     m_pFliFile->SeekToBegin();
     m_pFliFile->Seek(FLIC_HEADER_LENGTH + FLIC_FRAME_HEADER_LENGTH);
 
@@ -536,9 +506,6 @@ void HRFFliFile::GetFirstChunkHeaderFromFile()
     //we prefer to set the offset manually
     // file header              //1st frame header      //first chunk (palette      //header of second chunk
     m_OffsetToData = FLIC_HEADER_LENGTH + FLIC_FRAME_HEADER_LENGTH + m_FliChunkHeader[0].chunkSize + FLIC_CHUNK_HEADER_LENGTH;
-
-    // Unlock the sister file
-    SisterFileLock.ReleaseKey();
     }
 
 //-----------------------------------------------------------------------------
@@ -550,14 +517,8 @@ void HRFFliFile::GetNextChunkHeaderFromFile()
     {
     HPRECONDITION(m_pFliFile != 0);
 
-    // Lock the sister file for the getFileHeaderFromFile method
-    HFCLockMonitor SisterFileLock(GetLockManager());
-
     m_pFliFile->Read(&m_FliChunkHeader[1].chunkSize,              sizeof m_FliChunkHeader[1].chunkSize);
     m_pFliFile->Read(&m_FliChunkHeader[1].chunkType,              sizeof m_FliChunkHeader[1].chunkType);
-
-    // Unlock the sister file
-    SisterFileLock.ReleaseKey();
     }
 
 //-----------------------------------------------------------------------------
@@ -575,8 +536,6 @@ bool HRFFliFile::GetColorChunk()
 
     bool   Result = true;
 
-    // Lock the sister file for the getFileHeaderFromFile method
-    HFCLockMonitor SisterFileLock(GetLockManager());
 
     m_pFliFile->SeekToBegin();
     m_pFliFile->Seek(FLIC_HEADER_LENGTH + FLIC_FRAME_HEADER_LENGTH + FLIC_CHUNK_HEADER_LENGTH);
@@ -601,11 +560,6 @@ bool HRFFliFile::GetColorChunk()
         }
     else
         Result = false;
-
-
-
-    // Unlock the sister file
-    SisterFileLock.ReleaseKey();
 
     return Result;
     }
@@ -713,18 +667,11 @@ void HRFFliFile::SaveFliFile(bool pi_CloseFile)
                 {
                 HFCPtr<HRFPageDescriptor> pPageDescriptor = GetPageDescriptor(0);
 
-                // Lock the sister file.
-                HFCLockMonitor SisterFileLock (GetLockManager());
-
                 // Free all memory allocated by the read or write process.
                 // If the number of writed rows is not equal to the number of rows
                 // we can not save the PngInfo structure.
 
-
                 m_pFliFile->Flush();
-
-                // Unlock the sister file.
-                SisterFileLock.ReleaseKey();
                 }
 
             if(pi_CloseFile)
@@ -754,9 +701,6 @@ bool HRFFliFile::Create()
     // Open the file.
     m_pFliFile = HFCBinStream::Instanciate(GetURL(), m_Offset, GetAccessMode(), 0, true);
 
-    // Create the sister file for file sharing control
-    SharingControlCreate();
-
     return true;
     }
 
@@ -774,9 +718,6 @@ void HRFFliFile::GetPaletteFromFile()
     maxColor = (uint32_t)pow(2.0, (int)m_FliFileHeader.depth);
 
     m_RgbColors = new FliRGBColor[maxColor];
-
-    // Lock the sister file for the GetPaletteFromFile method
-    HFCLockMonitor SisterFileLock(GetLockManager());
 
     switch(m_FliChunkHeader[0].chunkType)
         {
@@ -811,12 +752,6 @@ void HRFFliFile::GetPaletteFromFile()
             break;
 
         }
-
-
-
-    // Unlock the sister file
-    SisterFileLock.ReleaseKey();
-
     }
 
 

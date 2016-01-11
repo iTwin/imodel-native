@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/h/ImagePPClassId.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -273,11 +273,11 @@ enum ImagePPClassId
     HRFEncodingTypeId_Base	                    =	1405,
     HRFImageSizeModeId_Base	                    =	1406,
     HRFGeoreferenceFormatId_Base	            =	1407,
-    HRFSharingControlId_Base	                =	1408,
+    //HRFSharingControlId_Base	                =	1408,
     HRFCacheSizeId_Base	                        =	1409,
     HRFGeoreferenceContextId_Base	            =	1410,
-    HRFSisterFileSharingId	                    =	1414,
-    HRFFileId_CacheSharing	                    =	1415,
+    //HRFSisterFileSharingId	                    =	1414,
+    //HRFFileId_CacheSharing	                    =	1415,
     HRFFileId_USgsNDF	                        =	1416,
     HRFFileId_USgsFastL7A	                    =	1417,
     HRFFileId_Pict	                            =	1418,

@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFTiffFile.cpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class HRFTiffFile
@@ -737,9 +737,6 @@ bool HRFTiffCreator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
     // it is not a TIFF, so set the result to false
     HTIFFError* pErr;
 
-    (const_cast<HRFTiffCreator*>(this))->SharingControlCreate(pi_rpURL);
-    HFCLockMonitor SisterFileLock (GetLockManager());
-
     pTiff = new HTIFFFile (pi_rpURL, pi_Offset, HFC_READ_ONLY | HFC_SHARE_READ_WRITE);
     if (pTiff->IsValid(&pErr) || ((pErr != 0) && !pErr->IsFatal()))
         {
@@ -814,11 +811,6 @@ bool HRFTiffCreator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
         }
     else
         bResult = false;
-
-    SisterFileLock.ReleaseKey();
-
-    HASSERT(!(const_cast<HRFTiffCreator*>(this))->m_pSharingControl->IsLocked());
-    (const_cast<HRFTiffCreator*>(this))->m_pSharingControl = 0;
 
     return bResult;
     }
@@ -1379,14 +1371,8 @@ HFCPtr<HRFThumbnail> HRFTiffFile::ReadThumbnailFromFile(uint32_t pi_Page)
             uint32_t SizeInBytes   = BytesPerWidth * Height;
             HArrayAutoPtr<Byte> pPixels(new Byte[SizeInBytes]);
 
-            // Lock the sister file for the GetField operation
-            HFCLockMonitor SisterFileLock (GetLockManager());
-
             if (m_pTiff->StripRead(pPixels, 0) == H_SUCCESS)
                 pThumbnail = new HRFThumbnail(Width, Height, pPixelType, pPixels, HFC_READ_WRITE, IsThumbnailComposed != 0);
-
-            // Unlock the sister file
-            SisterFileLock.ReleaseKey();
             }
         }
 
@@ -1460,13 +1446,7 @@ void HRFTiffFile::AddThumbnailToFile(uint32_t pi_Page)
             HArrayAutoPtr<Byte> pPixels(new Byte[pThumbnail->GetSizeInBytes()]);
             pThumbnail->Read(pPixels);
 
-            // Lock the sister file for the GetField operation
-            HFCLockMonitor SisterFileLock (GetLockManager());
-
             m_pTiff->StripWrite(pPixels, 0);
-
-            // Unlock the sister file.
-            SisterFileLock.ReleaseKey();
             }
 
         // Reset Directory
@@ -1987,18 +1967,9 @@ bool HRFTiffFile::Open(bool pi_CreateBigTifFormat)
         {
         HFCAccessMode AccessMode = GetAccessMode() | HFC_READ_ONLY;
 
-        // This method creates the sharing control sister file
-        SharingControlCreate();
-
-        // Lock the sister file for the GetField operation
-        HFCLockMonitor SisterFileLock (GetLockManager());
-
         m_pTiff = new HTIFFFile (GetURL(), m_Offset, AccessMode);
 
         m_pTiff->GetFilePtr()->ThrowOnError(); 
-
-        // Unlock the sister file.
-        SisterFileLock.ReleaseKey();
 
         HTIFFError* pErr;
         m_pTiff->IsValid(&pErr);
@@ -2028,21 +1999,11 @@ bool HRFTiffFile::Open(const HFCPtr<HFCURL>&  pi_rpURL)
         {
         HFCAccessMode AccessMode = GetAccessMode() | HFC_READ_ONLY;
 
-        //  Open the file
-        // This method creates the sharing control sister file
-        SharingControlCreate();
-
-        // Lock the sister file for the GetField operation
-        HFCLockMonitor SisterFileLock (GetLockManager());
-
         m_pTiff = new HTIFFFile (pi_rpURL, m_Offset, AccessMode);
 
         if (m_pTiff->GetFilePtr() == 0)
             throw HFCCannotOpenFileException(pi_rpURL->GetURL());
         m_pTiff->GetFilePtr()->ThrowOnError(); 
-
-        // Unlock the sister file.
-        SisterFileLock.ReleaseKey();
 
         HTIFFError* pErr;
         m_pTiff->IsValid(&pErr);
@@ -2471,19 +2432,10 @@ bool HRFTiffFile::Create(bool pi_CreateBigTifFormat)
     // Set no directories
     m_pDirectories = 0;
 
-    // This method creates the sharing control sister file
-    SharingControlCreate();
-
-    // Lock the sister file for the GetField operation
-    HFCLockMonitor SisterFileLock (GetLockManager());
-
     // Create the tiff
     m_pTiff = new HTIFFFile (GetURL(), 0/*offset*/, HFC_READ_WRITE_CREATE, pi_CreateBigTifFormat);
 
     m_pTiff->GetFilePtr()->ThrowOnError(); 
-
-    // Unlock the sister file
-    SisterFileLock.ReleaseKey();
 
     HTIFFError* pErr;
     m_pTiff->IsValid(&pErr);
@@ -3581,13 +3533,7 @@ void HRFTiffFile::SaveTiffFile(bool pi_CloseFile)
                     // Do not call this function if it is a iTiff file, verify if the private tag is present
                     if (!IsTagPresent && !m_IsCreateCancel)
                         {
-                        // Lock the sister file for the GetField operation
-                        HFCLockMonitor SisterFileLock (GetLockManager());
-
                         GetFilePtr()->FillAllEmptyDataBlock();
-
-                        // Unlock the sister file
-                        SisterFileLock.ReleaseKey();
                         }
                     }
                 }
@@ -3595,13 +3541,7 @@ void HRFTiffFile::SaveTiffFile(bool pi_CloseFile)
 
         if (pi_CloseFile)
             {
-            // Lock the sister file
-            HFCLockMonitor SisterFileLock (GetLockManager());
-
             m_pTiff  = 0;
-
-            // Unlock the sister file
-            SisterFileLock.ReleaseKey();
 
             m_IsOpen = false;
             }
@@ -3736,13 +3676,7 @@ void HRFTiffFile::ReloadDescriptors()
     {
     HPRECONDITION(GetFilePtr() != 0);
 
-    // Lock the sister file for the Write PrivateDirectory method
-    HFCLockMonitor SisterFileLock (GetLockManager());
-
     GetFilePtr()->ReadDirectories();
-
-    // Unlock the sister file
-    SisterFileLock.ReleaseKey();
     }
 
 //-----------------------------------------------------------------------------
@@ -3753,14 +3687,7 @@ void HRFTiffFile::SaveDescriptors(uint32_t pi_Page)
     {
     HPRECONDITION (GetFilePtr() != 0);
 
-    // Lock the sister file for the Write PrivateDirectory method
-    HFCLockMonitor SisterFileLock (GetLockManager());
-
     GetFilePtr()->WriteDirectories();
-
-    // Unlock the sister file.
-    SisterFileLock.ReleaseKey();
-
     }
 
 //-----------------------------------------------------------------------------
@@ -3933,37 +3860,4 @@ HTIFFFile* HRFTiffFile::GetFilePtr  () const
     HPRECONDITION (m_pTiff != 0);
 
     return (m_pTiff);
-    }
-
-//-----------------------------------------------------------------------------
-// public
-// Instanciation of the Sharing Control object.
-//-----------------------------------------------------------------------------
-void HRFTiffFile::SharingControlCreate()
-    {
-    if (1) // Disable GetFilePtr()->GetSynchroOffsetInFile() == 0)
-        {
-        // There is no Sharing Control counter in the file, we must create a sister file
-        HASSERT (GetURL() != 0);
-        if (m_pSharingControl == 0)
-            {
-            if (!s_BypassFileSharing)
-                m_pSharingControl = new HRFSisterFileSharing(GetURL(), GetAccessMode());
-            else
-                m_pSharingControl = new HRFSisterFileSharing(GetURL(), GetAccessMode(), true);
-            }
-        }
-#if 0 // Disable
-    else
-        {
-        // There is a sharing control counter in the file, we will use it instead of
-        // a sister file.
-        HASSERT (GetFilePtr()->GetFilePtr() != 0);
-        if (m_pSharingControl == 0)
-            m_pSharingControl = new HRFCacheFileSharing(GetFilePtr()->GetFilePtr(),
-                                                        GetFilePtr()->GetLockManager(),
-                                                        GetFilePtr()->GetSynchroOffsetInFile(),
-                                                        GetAccessMode());
-        }
-#endif
     }

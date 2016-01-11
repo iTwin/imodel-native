@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/HTiff/src/HTIFFFile.cpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -32,7 +32,6 @@
 #include <Imagepp/all/h/HFCMonitor.h>
 #include <Imagepp/all/h/HFCLocalBinStream.h>
 #include <Imagepp/all/h/HFCURL.h>
-#include <Imagepp/all/h/HFCBinStreamLockManager.h>
 #include <Imagepp/all/h/HCDPacket.h>
 #include <Imagepp/all/h/HCDCodec.h>
 #include <Imagepp/all/h/HTIFFTag.h>
@@ -1427,7 +1426,6 @@ HSTATUS HTIFFFile::StripWriteCompress  (const Byte* pi_pData, uint32_t pi_DataLe
 bool HTIFFFile::ReadProjectWiseBlob(uint32_t pi_Page, Byte* po_pData, uint32_t* po_pSize) const
     {
     bool Ret = false;
-    HFCLockMonitor CacheFileLock (m_pLockManager.get());
 
     HMRDirectory64* pHMRDir = m_ppListHMRDir64[pi_Page];
     if ((pHMRDir != 0) && pHMRDir->m_pDirectory->TagIsPresent(HMR_PROJECTWISE_BLOB))
@@ -1456,8 +1454,6 @@ bool HTIFFFile::ReadProjectWiseBlob(uint32_t pi_Page, Byte* po_pData, uint32_t* 
             }
         }
 
-    CacheFileLock.ReleaseKey();
-
     return Ret;
     }
 
@@ -1471,8 +1467,6 @@ bool HTIFFFile::WriteProjectWiseBlob(uint32_t pi_Page, const Byte* pi_pData, uin
     HPRECONDITION(pi_Page < m_ListHMRDirCount);
     HPRECONDITION(pi_pData != 0);
     HPRECONDITION(pi_pSize > 0);
-
-    HFCLockMonitor CacheFileLock (m_pLockManager.get());
 
     bool Ret = false;
     HMRDirectory64* pHMRDir = m_ppListHMRDir64[pi_Page];
@@ -1556,8 +1550,6 @@ bool HTIFFFile::WriteProjectWiseBlob(uint32_t pi_Page, const Byte* pi_pData, uin
         // Flag the tag as dirty
         pHMRDir->m_pDirectory->Touched(HMR_PROJECTWISE_BLOB);
         }
-
-    CacheFileLock.ReleaseKey();
 
     return Ret;
     }
@@ -1969,7 +1961,7 @@ void HTIFFFile::SimulateStripList(uint32_t pi_CompressMode)
         uint64_t StartOffset  = GetOffset(0);      // Keep previous offset
 
 
-        HDEBUGTEXT(L"SimulateStripList: Image with one strip, simulate Offset/Count fields\n");
+        HDEBUGTEXT("SimulateStripList: Image with one strip, simulate Offset/Count fields\n");
 
         // Set members
         // Set row by strip to respect the strip capabilities, MIN 32 with increment of 16
@@ -2011,7 +2003,7 @@ void HTIFFFile::SimulateStripList(uint32_t pi_CompressMode)
              (m_NbData32 == 1) && (!m_pCurDir->TagIsPresent(STRIPBYTECOUNTS) ||
                                    (GetCount(0) != m_StripTileSize)))
         {
-        HDEBUGTEXT(L"SimulateStripList: Image not too big with a missing Strip-Count\n");
+        HDEBUGTEXT("SimulateStripList: Image not too big with a missing Strip-Count\n");
         uint32_t* pDataCount32 = new uint32_t[1];
         HASSERT(pDataCount32 != 0);
 
@@ -2031,7 +2023,7 @@ void HTIFFFile::SimulateStripList(uint32_t pi_CompressMode)
              (m_NbData32 == m_ImageLength) &&
              (GetCount(0) != m_StripTileSize))
         {
-        HDEBUGTEXT(L"SimulateStripList: Line image, with bad strip count\n");
+        HDEBUGTEXT("SimulateStripList: Line image, with bad strip count\n");
         for(uint32_t i=0; i<m_NbData32; i++)
             SetCount(i, m_StripTileSize);
         }
@@ -2045,7 +2037,7 @@ void HTIFFFile::SimulateStripList(uint32_t pi_CompressMode)
              (m_NbData32 == 1) && (!m_pCurDir->TagIsPresent(STRIPBYTECOUNTS) ||
                                    (GetCount(0) >= m_pFile->GetSize())) )
         {
-        HDEBUGTEXT(L"SimulateStripList: Image with a missing Strip-Count and Compressed or Invalid Count\n");
+        HDEBUGTEXT("SimulateStripList: Image with a missing Strip-Count and Compressed or Invalid Count\n");
         uint32_t* pDataCount32 = new uint32_t[1];
         HASSERT(pDataCount32 != 0);
 
@@ -2062,7 +2054,7 @@ void HTIFFFile::SimulateStripList(uint32_t pi_CompressMode)
              (!m_pCurDir->TagIsPresent(STRIPBYTECOUNTS)) &&
              (m_NbData32 > 1) )
         {
-        HDEBUGTEXT(L"SimulateStripList: Image with a missing Strip-Count and UnCompressed\n");
+        HDEBUGTEXT("SimulateStripList: Image with a missing Strip-Count and UnCompressed\n");
         uint32_t* pDataCount32 = new uint32_t[m_NbData32];
         HASSERT(pDataCount32 != 0);
 
@@ -2081,7 +2073,7 @@ void HTIFFFile::SimulateStripList(uint32_t pi_CompressMode)
              (m_NbData32 == 1) &&
              (m_CurDir == 0) )
         {
-        HDEBUGTEXT(L"SimulateLine-StripList: Image with one strip compress, simulate Offset/Count fields with empty value\n");
+        HDEBUGTEXT("SimulateLine-StripList: Image with one strip compress, simulate Offset/Count fields with empty value\n");
 
         // Set members
         m_RowsByStrip   = 1;
@@ -2369,8 +2361,6 @@ HSTATUS HTIFFFile::WriteData (const Byte* pi_pData, uint32_t pi_StripTile, uint3
     HFCMonitor Monitor(m_Key);
     HSTATUS Ret = H_SUCCESS;
 
-    HFCLockMonitor CacheFileLock (m_pLockManager.get());
-
     // If list of Strip\Tile not already allocated
     if (m_NbData32 == 0)
         InitStripList();
@@ -2531,8 +2521,6 @@ HSTATUS HTIFFFile::WriteData (const Byte* pi_pData, uint32_t pi_StripTile, uint3
     m_DataWasModified = true;
 
 WRAPUP:
-    CacheFileLock.ReleaseKey();
-
     return Ret;
     }
 
@@ -2671,8 +2659,6 @@ HSTATUS HTIFFFile::ReadDataWithPacket(HFCPtr<HCDPacket>& po_rpPacket, uint32_t p
 
     HFCMonitor Monitor(m_Key);
     HSTATUS Ret = H_SUCCESS;
-
-    HFCLockMonitor CacheFileLock (m_pLockManager.get());
 
     uint32_t DataSize           = GetCount(pi_StripTile);
     uint32_t LineIndexTableSize = 0;
@@ -2855,7 +2841,6 @@ HSTATUS HTIFFFile::ReadDataWithPacket(HFCPtr<HCDPacket>& po_rpPacket, uint32_t p
     po_rpPacket->SetDataSize(DataSize);
 
 WRAPUP:
-    CacheFileLock.ReleaseKey();
     return Ret;
     }
 
@@ -3367,7 +3352,6 @@ void HTIFFFile::ComputeNbBitUsed()
 bool HTIFFFile::SetSynchroField()
     {
     bool Ret = true;
-    HFCLockMonitor CacheFileLock (m_pLockManager.get());
 
     // Check if we need to write in the file the offset used to implement the synchro
     // need by the Concurrence support.
@@ -3397,8 +3381,6 @@ bool HTIFFFile::SetSynchroField()
         {
         m_pHMRDir->GetValues (HMR_SYNCHRONIZE_FIELD, &m_SynchroOffset);
         }
-
-    CacheFileLock.ReleaseKey();
 
     return Ret;
     }

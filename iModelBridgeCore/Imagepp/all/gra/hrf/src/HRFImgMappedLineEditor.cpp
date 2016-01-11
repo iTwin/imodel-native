@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFImgMappedLineEditor.cpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -57,8 +57,7 @@ HRFImgMappedLineEditor::~HRFImgMappedLineEditor()
  */
 HSTATUS HRFImgMappedLineEditor::ReadBlock(uint64_t pi_PosBlockX,
                                           uint64_t pi_PosBlockY,
-                                          Byte*   po_pData,
-                                          HFCLockMonitor const* pi_pSisterFileLock)
+                                          Byte*   po_pData)
     {
     HPRECONDITION (pi_PosBlockX <= ULONG_MAX && pi_PosBlockY <= ULONG_MAX);
 
@@ -71,15 +70,6 @@ HSTATUS HRFImgMappedLineEditor::ReadBlock(uint64_t pi_PosBlockX,
 
         uint32_t Offset;
 
-        // Lock the sister file if needed
-        HFCLockMonitor SisterFileLock;
-        if(pi_pSisterFileLock == 0)
-            {
-            // Get lock and synch.
-            AssignRasterFileLock(GetRasterFile(), SisterFileLock, true);
-            pi_pSisterFileLock = &SisterFileLock;
-            }
-
         Offset = static_cast<HRFImgMappedFile*>(GetRasterFile().GetPtr())->m_OffsetToPixelData +
                  ((uint32_t)pi_PosBlockY * (uint32_t)GetResolutionDescriptor()->GetBytesPerWidth());
 
@@ -91,9 +81,6 @@ HSTATUS HRFImgMappedLineEditor::ReadBlock(uint64_t pi_PosBlockX,
         uint32_t DataSize = (uint32_t)GetResolutionDescriptor()->GetBytesPerWidth();
         if(static_cast<HRFImgMappedFile*>(GetRasterFile().GetPtr())->m_pImgMappedFile->Read(po_pData, DataSize) != DataSize)
             Status = H_ERROR;
-
-        //:> Unlock the sister file.
-        SisterFileLock.ReleaseKey();
         }
     else
         Status = H_NOT_FOUND;
@@ -113,8 +100,7 @@ HSTATUS HRFImgMappedLineEditor::ReadBlock(uint64_t pi_PosBlockX,
  */
 HSTATUS HRFImgMappedLineEditor::WriteBlock(uint64_t       pi_PosBlockX,
                                            uint64_t       pi_PosBlockY,
-                                           const Byte*    pi_pData,
-                                           HFCLockMonitor const* pi_pSisterFileLock)
+                                           const Byte*    pi_pData)
     {
     HPRECONDITION(m_AccessMode.m_HasWriteAccess || m_AccessMode.m_HasCreateAccess);
     HPRECONDITION(pi_pData != 0);
@@ -127,15 +113,6 @@ HSTATUS HRFImgMappedLineEditor::WriteBlock(uint64_t       pi_PosBlockX,
     Offset = static_cast<HRFImgMappedFile*>(GetRasterFile().GetPtr())->m_OffsetToPixelData +
              ((uint32_t)pi_PosBlockY * (uint32_t)GetResolutionDescriptor()->GetBytesPerWidth());
 
-    // Lock the sister file if needed
-    HFCLockMonitor SisterFileLock;
-    if(pi_pSisterFileLock == 0)
-        {
-        // Get lock and synch.
-        AssignRasterFileLock(GetRasterFile(), SisterFileLock, false);
-        pi_pSisterFileLock = &SisterFileLock;
-        }
-
     //:> Place file ptr
     if (static_cast<HRFImgMappedFile*>(GetRasterFile().GetPtr())->m_pImgMappedFile->GetCurrentPos() != Offset)
         static_cast<HRFImgMappedFile*>(GetRasterFile().GetPtr())->m_pImgMappedFile->SeekToPos(Offset);
@@ -144,13 +121,6 @@ HSTATUS HRFImgMappedLineEditor::WriteBlock(uint64_t       pi_PosBlockX,
     uint32_t DataSize = (uint32_t)GetResolutionDescriptor()->GetBytesPerWidth();
     if(static_cast<HRFImgMappedFile*>(GetRasterFile().GetPtr())->m_pImgMappedFile->Write(pi_pData, DataSize) != DataSize)
         Status = H_ERROR;
-
-    //:> Increment the counter after the edition
-    GetRasterFile()->SharingControlIncrementCount();
-
-    //:> Unlock the sister file
-    SisterFileLock.ReleaseKey();
-
 
     return Status;
     }

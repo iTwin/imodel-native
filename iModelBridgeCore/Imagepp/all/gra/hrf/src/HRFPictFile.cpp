@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFPictFile.cpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class HRFPictFile
@@ -241,16 +241,12 @@ bool HRFPictCreator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
     PictPixelMapHeader                  DataHeader;
     HAutoPtr<HFCBinStream>              pFile;
 
-    (const_cast<HRFPictCreator*>(this))->SharingControlCreate(pi_rpURL);
-    HFCLockMonitor SisterFileLock(GetLockManager());
-
     // Open the BMP File & place file pointer at the start of the file
     pFile = HFCBinStream::Instanciate(pi_rpURL, pi_Offset, HFC_READ_ONLY | HFC_SHARE_READ_WRITE);
 
     if (pFile == 0 || pFile->GetLastException() != 0)
         goto WRAPUP;
-
-
+    
     // Position just after the 512 bytes mac header used by the OS to keep track of the file
     pFile->SeekToPos(s_OffBytesToFileHeader);
 
@@ -311,11 +307,6 @@ bool HRFPictCreator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
     Result = true;
 
 WRAPUP:
-    SisterFileLock.ReleaseKey();
-
-    HASSERT(!(const_cast<HRFPictCreator*>(this))->m_pSharingControl->IsLocked());
-    (const_cast<HRFPictCreator*>(this))->m_pSharingControl = 0;
-
     return Result;
     }
 
@@ -1121,9 +1112,6 @@ bool HRFPictFile::Open()
         // Open the actual PICT file.
         m_pPictFile = HFCBinStream::Instanciate(GetURL(), m_Offset, GetPhysicalAccessMode(), 0, true);
 
-        // This creates the sister file for file sharing control if necessary.
-        SharingControlCreate();
-
         // Initialisation of files headers
         if(!ReadHeaders())
             return false; // Error
@@ -1289,9 +1277,6 @@ void HRFPictFile::SavePictFile             (bool       pi_CloseFile)
 
             // NOTE: Add tag processing here
 
-            // Lock the sister file for the SetPalette operation
-            HFCLockMonitor SisterFileLock(GetLockManager());
-
             if (pPageDescriptor->GetResolutionDescriptor(0)->PaletteHasChanged())
                 {
                 // Set the image color space.
@@ -1312,9 +1297,6 @@ void HRFPictFile::SavePictFile             (bool       pi_CloseFile)
                 }
 
             m_pPictFile->Flush();
-
-            // Unlock the sister file.
-            SisterFileLock.ReleaseKey();
             }
 
         if (pi_CloseFile)
@@ -1352,9 +1334,6 @@ bool HRFPictFile::Create()
     {
     // Open the file.
     m_pPictFile = HFCBinStream::Instanciate(GetURL(), GetAccessMode(), 0, true);
-
-    // This creates the sister file for file sharing control if necessary.
-    SharingControlCreate();
 
     m_IsOpen = true;
 

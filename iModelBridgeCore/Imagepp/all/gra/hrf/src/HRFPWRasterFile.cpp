@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFPWRasterFile.cpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // This class describes a File Raster image.
@@ -306,9 +306,6 @@ bool HRFPWCreator::IsKindOfFile(const HFCPtr<HFCURL>&    pi_rpURL,
     // it is not a TIFF, so set the result to false
     HTIFFError* pErr;
 
-    (const_cast<HRFPWCreator*>(this))->SharingControlCreate(pi_rpURL);
-    HFCLockMonitor SisterFileLock (GetLockManager());
-
     pTiff = new HTIFFFile (pi_rpURL, pi_Offset + sizeof(HRFPWRasterFile::Header), HFC_READ_ONLY | HFC_SHARE_READ_WRITE);
 
     if ((pTiff->IsValid(&pErr)) || ((pErr != 0) && !pErr->IsFatal()))
@@ -332,10 +329,6 @@ bool HRFPWCreator::IsKindOfFile(const HFCPtr<HFCURL>&    pi_rpURL,
 
     // close the file
     delete pTiff;
-
-    SisterFileLock.ReleaseKey();
-    HASSERT(!(const_cast<HRFPWCreator*>(this))->m_pSharingControl->IsLocked());
-    (const_cast<HRFPWCreator*>(this))->m_pSharingControl = 0;
 
     return bResult;
     }

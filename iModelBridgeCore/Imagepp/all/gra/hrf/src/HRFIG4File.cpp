@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFIG4File.cpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class HRFIG4File
@@ -308,10 +308,6 @@ bool HRFIG4File::Open()
     m_pIG4File = HFCBinStream::Instanciate(GetURL(), m_Offset, GetAccessMode(), 0, true);
 
     m_IsOpen = true;
-
-    // This creates the sister file for file sharing control if necessary.
-    SharingControlCreate();
-
 
     // read the image size
     unsigned short aBuffer[2];

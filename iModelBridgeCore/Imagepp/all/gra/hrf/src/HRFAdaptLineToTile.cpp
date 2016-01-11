@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFAdaptLineToTile.cpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -115,7 +115,7 @@ HRFAdaptLineToTile::~HRFAdaptLineToTile()
     {
     // Check to save the intern blocks
     if ( ( m_AccessMode.m_HasWriteAccess || m_AccessMode.m_HasCreateAccess )  && m_IsBlocksOverwritten )
-        SaveTiles(0);
+        SaveTiles();
     }
 
 //-----------------------------------------------------------------------------
@@ -125,8 +125,7 @@ HRFAdaptLineToTile::~HRFAdaptLineToTile()
 //-----------------------------------------------------------------------------
 HSTATUS HRFAdaptLineToTile::ReadBlock(uint64_t pi_PosBlockX,
                                       uint64_t pi_PosBlockY,
-                                      Byte*  po_pData,
-                                      HFCLockMonitor const* pi_pSisterFileLock)
+                                      Byte*  po_pData)
     {
     HPRECONDITION (m_AccessMode.m_HasReadAccess);
     HPRECONDITION (pi_PosBlockX <= ULONG_MAX && pi_PosBlockY <= ULONG_MAX);
@@ -138,17 +137,17 @@ HSTATUS HRFAdaptLineToTile::ReadBlock(uint64_t pi_PosBlockX,
         {
         // if the intern blocks are overwritten we save these blocks
         if (m_IsBlocksOverwritten)
-            Status = SaveTiles(pi_pSisterFileLock);
+            Status = SaveTiles();
 
         // Load the client Block and beside blocks into the intern tile cache
         if (Status == H_SUCCESS)
-            Status = LoadTiles((uint32_t)pi_PosBlockX, (uint32_t)pi_PosBlockY, pi_pSisterFileLock);
+            Status = LoadTiles((uint32_t)pi_PosBlockX, (uint32_t)pi_PosBlockY);
         }
     else
         {
         // if the client Block is not loaded in the intern blocks we load the block into the intern cache
         if (m_IsBlocksEmpty)
-            Status = LoadTiles((uint32_t)pi_PosBlockX, (uint32_t)pi_PosBlockY, pi_pSisterFileLock);
+            Status = LoadTiles((uint32_t)pi_PosBlockX, (uint32_t)pi_PosBlockY);
         }
 
     // Alloc memory if not already done
@@ -167,8 +166,7 @@ HSTATUS HRFAdaptLineToTile::ReadBlock(uint64_t pi_PosBlockX,
 //-----------------------------------------------------------------------------
 HSTATUS HRFAdaptLineToTile::WriteBlock(uint64_t    pi_PosBlockX,
                                        uint64_t    pi_PosBlockY,
-                                       const Byte* pi_pData,
-                                       HFCLockMonitor const* pi_pSisterFileLock)
+                                       const Byte* pi_pData)
     {
     HPRECONDITION (m_AccessMode.m_HasWriteAccess || m_AccessMode.m_HasCreateAccess);
     HPRECONDITION (pi_PosBlockX <= ULONG_MAX && pi_PosBlockY <= ULONG_MAX);
@@ -177,14 +175,14 @@ HSTATUS HRFAdaptLineToTile::WriteBlock(uint64_t    pi_PosBlockX,
 
     // Check to save the intern blocks
     if ((pi_PosBlockY != m_PosTileY) && m_IsBlocksOverwritten)
-        Status = SaveTiles(pi_pSisterFileLock);
+        Status = SaveTiles();
 
     if ((Status == H_SUCCESS) && (m_AccessMode.m_HasReadAccess))
         {
         // Check if the client tile is loaded in the intern tiles
         if ((pi_PosBlockY != m_PosTileY) || m_IsBlocksEmpty)
             // Load the client block and beside blocks into the intern blocks cache
-            Status = LoadTiles((uint32_t)pi_PosBlockX, (uint32_t)pi_PosBlockY, pi_pSisterFileLock);
+            Status = LoadTiles((uint32_t)pi_PosBlockX, (uint32_t)pi_PosBlockY);
         }
 
     // Alloc memory if not already done
@@ -206,8 +204,7 @@ HSTATUS HRFAdaptLineToTile::WriteBlock(uint64_t    pi_PosBlockX,
 // Edition by Block
 //-----------------------------------------------------------------------------
 HSTATUS HRFAdaptLineToTile::LoadTiles(uint32_t pi_PosBlockX,
-                                      uint32_t pi_PosBlockY,
-                                      HFCLockMonitor const* pi_pSisterFileLock)
+                                      uint32_t pi_PosBlockY)
     {
     HPRECONDITION (m_AccessMode.m_HasReadAccess);
     HSTATUS Status = H_SUCCESS;
@@ -222,15 +219,6 @@ HSTATUS HRFAdaptLineToTile::LoadTiles(uint32_t pi_PosBlockX,
     // allocate working buffer
     m_LineBuffer = new Byte[m_ExactBytesPerBlockWidth * m_BlocksPerWidth];
     Alloc_m_ppBlocks();
-
-    // Lock the sister file
-    HFCLockMonitor SisterFileLock;
-    if(pi_pSisterFileLock == 0)
-        {
-        // Lock the file.
-        AssignRasterFileLock(m_pTheTrueOriginalFile, SisterFileLock, true);
-        pi_pSisterFileLock = &SisterFileLock;
-        }
 
     // Load the client block and beside blocks into the intern blocks cache
     for (uint32_t NoLine = 0; (NoLine < NumberOfLines) &&
@@ -270,8 +258,7 @@ HSTATUS HRFAdaptLineToTile::LoadTiles(uint32_t pi_PosBlockX,
                 }
             }
         }
-    // Unlock the sister file.
-    SisterFileLock.ReleaseKey();
+
 
     m_PosTileY = pi_PosBlockY;
     m_IsBlocksEmpty = false;
@@ -286,7 +273,7 @@ HSTATUS HRFAdaptLineToTile::LoadTiles(uint32_t pi_PosBlockX,
 // SaveTiles
 // Edition by Block
 //-----------------------------------------------------------------------------
-HSTATUS HRFAdaptLineToTile::SaveTiles(HFCLockMonitor const* pi_pSisterFileLock)
+HSTATUS HRFAdaptLineToTile::SaveTiles()
     {
     HPRECONDITION (m_AccessMode.m_HasWriteAccess || m_AccessMode.m_HasCreateAccess);
     HSTATUS Status = H_SUCCESS;
@@ -301,15 +288,6 @@ HSTATUS HRFAdaptLineToTile::SaveTiles(HFCLockMonitor const* pi_pSisterFileLock)
     // allocate working buffer
     m_LineBuffer = new Byte[m_ExactBytesPerBlockWidth * m_BlocksPerWidth];
     Alloc_m_ppBlocks();
-
-    // Lock the sister file
-    HFCLockMonitor SisterFileLock;
-    if(pi_pSisterFileLock == 0)
-        {
-        // Lock the file.
-        AssignRasterFileLock(m_pTheTrueOriginalFile, SisterFileLock, false);
-        pi_pSisterFileLock = &SisterFileLock;
-        }
 
     // Save the intern blocks to the file
     for (uint32_t NoLine=0; (NoLine < NumberOfLines) &&
@@ -329,10 +307,6 @@ HSTATUS HRFAdaptLineToTile::SaveTiles(HFCLockMonitor const* pi_pSisterFileLock)
         // Write the line
         Status = m_pAdaptedResolutionEditor->WriteBlock(0, m_PosTileY+NoLine, m_LineBuffer);
         }
-    m_pTheTrueOriginalFile->SharingControlIncrementCount();
-
-    // Unlock the sister file.
-    SisterFileLock.ReleaseKey();
 
     m_IsBlocksOverwritten = false;
     m_LineBuffer    = 0;                    // Free working buffer
@@ -353,7 +327,7 @@ void HRFAdaptLineToTile::NoMoreRead()
     HSTATUS Status = H_SUCCESS;
 
     if (m_IsBlocksOverwritten)
-        Status = SaveTiles(0);
+        Status = SaveTiles();
 
     if (Status == H_SUCCESS)
         for (uint32_t NoTile=0; NoTile < m_BlocksPerWidth; NoTile++)

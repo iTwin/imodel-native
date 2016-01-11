@@ -301,9 +301,9 @@ void HRPContrastStretchFilter16::MapDump(int32_t pi_ChannelIndex)
 
     for (int32_t i = 0; i <= 65535; i++)
         {
-        WChar Text[10] = {0};
+        Utf8Char Text[10] = {0};
 
-        BeStringUtilities::Snwprintf(Text, L"%d\n", pMap[i]);
+        BeStringUtilities::Snprintf(Text, "%d\n", pMap[i]);
         HDEBUGTEXT(Text)
         }
     }

@@ -131,8 +131,8 @@ void HRANearestSamplerRLE1Base::GetPixels(const double*  pi_pPositionsX,
     HPRECONDITION(pi_pPositionsX != 0);
     HPRECONDITION(pi_pPositionsY != 0);
     HPRECONDITION(po_pBuffer != 0);
-    HWARNING(HDOUBLE_EQUAL_EPSILON(m_DeltaX, 0.0), L"The X scaling set into the sampler was not used\n");
-    HWARNING(HDOUBLE_EQUAL_EPSILON(m_DeltaY, 0.0), L"The Y scaling set into the sampler was not used\n");
+    HWARNING(HDOUBLE_EQUAL_EPSILON(m_DeltaX, 0.0), "The X scaling set into the sampler was not used\n");
+    HWARNING(HDOUBLE_EQUAL_EPSILON(m_DeltaY, 0.0), "The Y scaling set into the sampler was not used\n");
 
     //TR#259220: Alloc array that will remember the last position in RLE buffer. It gives a huge performance gains when resampling: 45 MIN -> 2 MIN
     if(m_pLastRLEBufferPosition == 0)

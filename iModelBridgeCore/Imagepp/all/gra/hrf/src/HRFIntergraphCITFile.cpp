@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFIntergraphCITFile.cpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class HRFIntergraphCitFile
@@ -214,9 +214,6 @@ bool HRFIntergraphCitCreator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
     unsigned short DataTypeCode;
     unsigned short WordToFollow;
 
-    (const_cast<HRFIntergraphCitCreator*>(this))->SharingControlCreate(pi_rpURL);
-    HFCLockMonitor SisterFileLock(GetLockManager());
-
     pFile = HFCBinStream::Instanciate(pi_rpURL, pi_Offset, HFC_READ_ONLY | HFC_SHARE_READ_WRITE);
 
     if (pFile != 0 && pFile->GetLastException() == 0)
@@ -240,9 +237,6 @@ bool HRFIntergraphCitCreator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
         }
 
 WRAPUP:
-    SisterFileLock.ReleaseKey();
-    HASSERT(!(const_cast<HRFIntergraphCitCreator*>(this))->m_pSharingControl->IsLocked());
-    (const_cast<HRFIntergraphCitCreator*>(this))->m_pSharingControl = 0;
 
     return Result;
     }

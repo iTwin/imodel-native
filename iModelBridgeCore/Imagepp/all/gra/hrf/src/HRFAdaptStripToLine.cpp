@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFAdaptStripToLine.cpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -109,8 +109,7 @@ HRFAdaptStripToLine::~HRFAdaptStripToLine()
 //-----------------------------------------------------------------------------
 HSTATUS HRFAdaptStripToLine::ReadBlock(uint64_t pi_PosBlockX,
                                        uint64_t pi_PosBlockY,
-                                       Byte*  po_pData,
-                                       HFCLockMonitor const* pi_pSisterFileLock)
+                                       Byte*  po_pData)
     {
     HPRECONDITION (m_AccessMode.m_HasReadAccess);
     HPRECONDITION (pi_PosBlockX <= ULONG_MAX && pi_PosBlockY <= ULONG_MAX);
@@ -121,7 +120,7 @@ HSTATUS HRFAdaptStripToLine::ReadBlock(uint64_t pi_PosBlockX,
 
     if (StripIndexY != m_BufferedStripIndexY)
         {
-        ReadAStrip (StripIndexY, pi_pSisterFileLock);
+        ReadAStrip (StripIndexY);
         m_BufferedStripIndexY = StripIndexY;
         }
     HASSERT(m_pStrip != 0);
@@ -142,8 +141,7 @@ HSTATUS HRFAdaptStripToLine::ReadBlock(uint64_t pi_PosBlockX,
 //-----------------------------------------------------------------------------
 HSTATUS HRFAdaptStripToLine::WriteBlock(uint64_t    pi_PosBlockX,
                                         uint64_t    pi_PosBlockY,
-                                        const Byte* pi_pData,
-                                        HFCLockMonitor const* pi_pSisterFileLock)
+                                        const Byte* pi_pData)
     {
     HPRECONDITION (m_AccessMode.m_HasWriteAccess || m_AccessMode.m_HasCreateAccess);
     HPRECONDITION (pi_PosBlockX <= ULONG_MAX && pi_PosBlockY <= ULONG_MAX);
@@ -162,7 +160,7 @@ HSTATUS HRFAdaptStripToLine::WriteBlock(uint64_t    pi_PosBlockX,
 
     if ((pi_PosBlockY % m_StripHeight) == m_StripHeight - 1 ||
         pi_PosBlockY == m_RasterHeight-1)
-        Status = WriteAStrip ((uint32_t)pi_PosBlockY / m_StripHeight, pi_pSisterFileLock);
+        Status = WriteAStrip ((uint32_t)pi_PosBlockY / m_StripHeight);
 
     if (pi_PosBlockY == m_RasterHeight-1)
         Delete_m_pStrip();
@@ -195,7 +193,7 @@ void HRFAdaptStripToLine::Delete_m_pStrip()
 // ReadAStrip :
 // Edition by Block
 //-----------------------------------------------------------------------------
-HSTATUS HRFAdaptStripToLine::ReadAStrip(uint32_t pi_StripIndexY, HFCLockMonitor const* pi_pSisterFileLock)
+HSTATUS HRFAdaptStripToLine::ReadAStrip(uint32_t pi_StripIndexY)
     {
     HSTATUS Status   = H_SUCCESS;
     uint32_t PosBlocY = pi_StripIndexY * m_StripHeight;
@@ -206,16 +204,7 @@ HSTATUS HRFAdaptStripToLine::ReadAStrip(uint32_t pi_StripIndexY, HFCLockMonitor 
     if (m_pStrip == 0)
         Alloc_m_pStrip ();
 
-    // Lock the sister file
-    HFCLockMonitor SisterFileLock;
-    if(pi_pSisterFileLock == 0)
-        {
-        // Lock the file.
-        AssignRasterFileLock(m_pTheTrueOriginalFile, SisterFileLock, true);
-        pi_pSisterFileLock = &SisterFileLock;
-        }
-
-    Status = m_pAdaptedResolutionEditor->ReadBlock(0, PosBlocY, m_pStrip, pi_pSisterFileLock);
+    Status = m_pAdaptedResolutionEditor->ReadBlock(0, PosBlocY, m_pStrip);
 
     return Status;
     }
@@ -224,7 +213,7 @@ HSTATUS HRFAdaptStripToLine::ReadAStrip(uint32_t pi_StripIndexY, HFCLockMonitor 
 // WriteAStrip :
 // Edition by Block
 //-----------------------------------------------------------------------------
-HSTATUS HRFAdaptStripToLine::WriteAStrip (uint32_t pi_StripIndexY, HFCLockMonitor const* pi_pSisterFileLock)
+HSTATUS HRFAdaptStripToLine::WriteAStrip (uint32_t pi_StripIndexY)
     {
     HSTATUS Status   = H_SUCCESS;
     uint32_t PosBlocY = pi_StripIndexY * m_StripHeight;
@@ -232,18 +221,7 @@ HSTATUS HRFAdaptStripToLine::WriteAStrip (uint32_t pi_StripIndexY, HFCLockMonito
     HASSERT (PosBlocY < m_pResolutionDescriptor->GetHeight());
     HASSERT (m_pStrip != 0);
 
-    // Lock the sister file
-    HFCLockMonitor SisterFileLock;
-    if(pi_pSisterFileLock == 0)
-        {
-        // Lock the file.
-        AssignRasterFileLock(m_pTheTrueOriginalFile, SisterFileLock, false);
-        pi_pSisterFileLock = &SisterFileLock;
-        }
-
-    Status = m_pAdaptedResolutionEditor->WriteBlock(0, PosBlocY, m_pStrip, pi_pSisterFileLock);
-
-    m_pTheTrueOriginalFile->SharingControlIncrementCount();
+    Status = m_pAdaptedResolutionEditor->WriteBlock(0, PosBlocY, m_pStrip);
 
     return Status;
     }

@@ -315,12 +315,7 @@ void HRFTWFPageFile::WriteToDisk()
     catch(...)
         {
         // Errors can happen, but they surely can't propagate in a destructor!
-        // Break anyway so that we can make sure it's not a fatal error.
-#if defined (ANDROID) || defined (__APPLE__)
         HASSERT(!L"Write error TWF file");
-#elif defined (_WIN32)
-        HDEBUGCODE(DebugBreak(););
-#endif
         }
     }
 

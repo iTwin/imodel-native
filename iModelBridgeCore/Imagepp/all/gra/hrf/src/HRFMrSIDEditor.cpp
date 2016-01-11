@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFMrSIDEditor.cpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class HRFMrSIDEditor
@@ -82,8 +82,7 @@ HRFMrSIDEditor::~HRFMrSIDEditor()
 
 HSTATUS HRFMrSIDEditor::ReadBlock(uint64_t pi_PosBlockX,
                                   uint64_t pi_PosBlockY,
-                                  Byte*  po_pData,
-                                  HFCLockMonitor const* pi_pSisterFileLock)
+                                  Byte*  po_pData)
     {
     HPRECONDITION(po_pData != 0);
     HPRECONDITION(m_AccessMode.m_HasReadAccess);
@@ -102,21 +101,12 @@ HSTATUS HRFMrSIDEditor::ReadBlock(uint64_t pi_PosBlockX,
         }
     else
         {
-        HFCLockMonitor SisterFileLock;
         try
             {
             LT_STATUS sts = LT_STS_Uninit;
 
             int BlockHeight = MIN(MAX((int)pMrSIDFile->m_pStdViewHeight[m_ResNb] - (int)pi_PosBlockY, 0), BLOCK_HEIGHT);
             int BlockWidth  = MIN(MAX((int)pMrSIDFile->m_pStdViewWidth[m_ResNb]  - (int)pi_PosBlockX, 0), BLOCK_WIDTH);
-
-            // Lock the sister file
-            if(pi_pSisterFileLock == 0)
-                {
-                // Lock the file.
-                AssignRasterFileLock(GetRasterFile(), SisterFileLock, true);
-                pi_pSisterFileLock = &SisterFileLock;
-                }
 
             delete pMrSIDFile->m_pSceneBuffer;
             pMrSIDFile->m_pSceneBuffer = new LTISceneBuffer(pMrSIDFile->m_pImageReader->getPixelProps(), BlockWidth, BlockHeight, 0);
@@ -138,7 +128,6 @@ HSTATUS HRFMrSIDEditor::ReadBlock(uint64_t pi_PosBlockX,
             {
             _ASSERT(false);
             }
-        SisterFileLock.ReleaseKey();
         }
 
 
@@ -153,8 +142,7 @@ HSTATUS HRFMrSIDEditor::ReadBlock(uint64_t pi_PosBlockX,
 //-----------------------------------------------------------------------------
 HSTATUS HRFMrSIDEditor::WriteBlock(uint64_t     pi_PosBlockX,
                                    uint64_t     pi_PosBlockY,
-                                   const Byte*  pi_pData,
-                                   HFCLockMonitor const* pi_pSisterFileLock)
+                                   const Byte*  pi_pData)
     {
     HASSERT(0); // not supported
 

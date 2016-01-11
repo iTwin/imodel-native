@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFRawLineEditor.cpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class HRFRawLineEditor
@@ -45,8 +45,7 @@ HRFRawLineEditor::~HRFRawLineEditor()
 //-----------------------------------------------------------------------------
 HSTATUS HRFRawLineEditor::ReadBlock(uint64_t pi_PosBlockX,
                                     uint64_t pi_PosBlockY,
-                                    Byte*  po_pData,
-                                    HFCLockMonitor const* pi_pSisterFileLock)
+                                    Byte*  po_pData)
     {
     HPRECONDITION (po_pData != 0);
     HPRECONDITION (pi_PosBlockY >= 0);
@@ -62,14 +61,6 @@ HSTATUS HRFRawLineEditor::ReadBlock(uint64_t pi_PosBlockX,
         uint64_t           Offset = GetRasterFile()->GetOffset() +
                                      (pi_PosBlockY * GetResolutionDescriptor()->GetBytesPerWidth());
 
-        // Lock the sister file if needed
-        HFCLockMonitor SisterFileLock;
-        if(pi_pSisterFileLock == 0)
-            {
-            // Get lock and synch.
-            AssignRasterFileLock(GetRasterFile(), SisterFileLock, true);
-            pi_pSisterFileLock = &SisterFileLock;
-            }
 
         if (pRawFile->m_pRawFile->GetCurrentPos() != Offset)
             pRawFile->m_pRawFile->SeekToPos(Offset);
@@ -78,9 +69,6 @@ HSTATUS HRFRawLineEditor::ReadBlock(uint64_t pi_PosBlockX,
         uint32_t DataSize = (uint32_t)GetResolutionDescriptor()->GetBytesPerWidth();
         if(pRawFile->m_pRawFile->Read(po_pData, DataSize) != DataSize)
             Status = H_ERROR;
-
-        // Unlock the sister file.
-        SisterFileLock.ReleaseKey();
         }
     else
         Status = H_NOT_FOUND;
@@ -95,8 +83,7 @@ HSTATUS HRFRawLineEditor::ReadBlock(uint64_t pi_PosBlockX,
 //-----------------------------------------------------------------------------
 HSTATUS HRFRawLineEditor::WriteBlock(uint64_t     pi_PosBlockX,
                                      uint64_t     pi_PosBlockY,
-                                     const Byte*  pi_pData,
-                                     HFCLockMonitor const* pi_pSisterFileLock)
+                                     const Byte*  pi_pData)
     {
     HPRECONDITION (m_AccessMode.m_HasWriteAccess || m_AccessMode.m_HasCreateAccess);
     HPRECONDITION (pi_pData != 0);
@@ -106,27 +93,12 @@ HSTATUS HRFRawLineEditor::WriteBlock(uint64_t     pi_PosBlockX,
     uint64_t           Offset      = GetRasterFile()->GetOffset() +
                                       (pi_PosBlockY * GetResolutionDescriptor()->GetBytesPerWidth());
 
-    // Lock the sister file if needed
-    HFCLockMonitor SisterFileLock;
-    if(pi_pSisterFileLock == 0)
-        {
-        // Get lock and synch.
-        AssignRasterFileLock(GetRasterFile(), SisterFileLock, false);
-        pi_pSisterFileLock = &SisterFileLock;
-        }
-
     if (pRawFile->m_pRawFile->GetCurrentPos() != Offset)
         pRawFile->m_pRawFile->SeekToPos(Offset);
 
     uint32_t DataSize = (uint32_t)GetResolutionDescriptor()->GetBytesPerWidth();
     if(pRawFile->m_pRawFile->Write (pi_pData, DataSize) != DataSize)
         Status = H_ERROR;
-
-    // Increment the counters.
-    GetRasterFile()->SharingControlIncrementCount();
-
-    // Unlock the sisterfile.
-    SisterFileLock.ReleaseKey();
 
     return Status;
     }

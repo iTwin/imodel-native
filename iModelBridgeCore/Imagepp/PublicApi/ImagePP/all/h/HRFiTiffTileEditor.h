@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRFiTiffTileEditor.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // This class describes the resolution editor interface
@@ -30,27 +30,21 @@ public:
     // Edition by Block
     virtual HSTATUS ReadBlock(uint64_t                 pi_PosBlockX,
                               uint64_t                 pi_PosBlockY,
-                              Byte*                    po_pData,
-                              HFCLockMonitor const*    pi_pSisterFileLock = 0) override;
+                              Byte*                    po_pData) override;
 
     virtual HSTATUS ReadBlock(uint64_t                 pi_PosBlockX,
                               uint64_t                 pi_PosBlockY,
-                              HFCPtr<HCDPacket>&       po_rpPacket,
-                              HFCLockMonitor const*    pi_pSisterFileLock = 0) override;
+                              HFCPtr<HCDPacket>&       po_rpPacket) override;
 
     virtual HSTATUS WriteBlock(uint64_t                 pi_PosBlockX,
                                uint64_t                 pi_PosBlockY,
-                               const Byte*              pi_pData,
-                               HFCLockMonitor const*    pi_pSisterFileLock = 0) override;
+                               const Byte*              pi_pData) override;
 
     virtual HSTATUS WriteBlock(uint64_t                 pi_PosBlockX,
                                uint64_t                 pi_PosBlockY,
-                               const HFCPtr<HCDPacket>& pi_rpPacket,
-                               HFCLockMonitor const*    pi_pSisterFileLock = 0) override;
+                               const HFCPtr<HCDPacket>& pi_rpPacket) override;
 
 protected:
-
-    virtual void OnSynchronizedSharingControl();
 
     uint32_t        m_IndexOfPage;
     // See the parent for Pointer to the raster file, to the resolution descriptor

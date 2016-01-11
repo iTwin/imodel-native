@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFBsbFile.cpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HRFBsbFile
@@ -211,10 +211,6 @@ bool HRFBsbCreator::IsKindOfFile  (const HFCPtr<HFCURL>& pi_rpURL,
     bool                       Result = false;
     HAutoPtr<HFCBinStream>      pFile;
 
-
-    (const_cast<HRFBsbCreator*>(this))->SharingControlCreate(pi_rpURL);
-    HFCLockMonitor SisterFileLock (GetLockManager());
-
     // Open the IMG File & place file pointer at the start of the file
     pFile = HFCBinStream::Instanciate(pi_rpURL, pi_Offset, HFC_READ_ONLY | HFC_SHARE_READ_WRITE);
 
@@ -254,10 +250,6 @@ bool HRFBsbCreator::IsKindOfFile  (const HFCPtr<HFCURL>& pi_rpURL,
 
             }
         }
-
-    SisterFileLock.ReleaseKey();
-    HASSERT(!(const_cast<HRFBsbCreator*>(this))->m_pSharingControl->IsLocked());
-    (const_cast<HRFBsbCreator*>(this))->m_pSharingControl = 0;
 
     return Result;
     }

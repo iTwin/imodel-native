@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HTagFile.hpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -143,22 +143,6 @@ inline HFCBinStream* HTagFile::GetFilePtr() const
 
     return pStream;
     }
-
-inline HFCBinStreamLockManager* HTagFile::GetLockManager() const
-    {
-// DMx
-    HASSERT(false);
-    return m_pLockManager.get();
-    }
-
-/*
-inline HFCAccessMode HTagFile::GetAccessMode () const
-{
-    HPRECONDITION(0 != m_pFile);
-    return GetFilePtr()->GetAccessMode();
-}
-*/
-
 
 /** -----------------------------------------------------------------------------
 static method to manipulate DirectoryID

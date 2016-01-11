@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRFWebFile.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -70,14 +70,6 @@ public:
 
     // Save
     virtual void    Save();
-
-
-    //--------------------------------------
-    // Sharing control methods
-    //--------------------------------------
-    virtual void    SharingControlCreate ();
-
-    virtual HFCBinStreamLockManager* GetLockManager();
 
     //--------------------------------------
     // Utility methods

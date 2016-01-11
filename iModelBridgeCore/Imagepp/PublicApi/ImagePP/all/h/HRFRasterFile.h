@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRFRasterFile.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HRFRasterFile
@@ -12,7 +12,6 @@
 #pragma once
 
 #include "HFCAccessMode.h"
-#include "HFCBinStreamLockManager.h"
 #include "HFCMonitor.h"
 
 #include "HFCInterlockedValue.h"
@@ -27,9 +26,6 @@
 #include "HRFPageDescriptor.h"
 #include "HRFRasterFileCapabilities.h"
 #include "HRFResolutionEditor.h"
-#include "HRFSharingControl.h"
-#include "HRFSisterFileSharing.h"
-
 
 BEGIN_IMAGEPP_NAMESPACE
 class HMDContext;
@@ -37,6 +33,7 @@ class HFCMemoryBinStream;
 class HRARaster;
 class HRAStoredRaster;
 struct HRACopyFromOptions;
+class HFCBinStream;
 
 // Data type: List of related URLs
 typedef bvector<HFCPtr<HFCURL>, allocator<HFCPtr<HFCURL> > > ListOfRelatedURLs;
@@ -113,17 +110,7 @@ public:
     uint64_t                     GetFileCurrentSize(HFCBinStream* pi_pBinStream) const;
 
     uint64_t                      GetMaxFileSizeInBytes() const;
-    //--------------------------------------
-    // Sharing control methods
-    //--------------------------------------
-    virtual void                          SharingControlCreate          ();
-    virtual bool                         SharingControlNeedSynchronization();
-    virtual void                          SharingControlSynchronize     ();
-    virtual void                          SharingControlIncrementCount  ();
-    virtual bool                         SharingControlIsLocked        ();
-
-    virtual HRFSharingControl*            GetSharingControl             ();
-
+    
     IMAGEPP_EXPORT virtual void                   SetDefaultRatioToMeter(double pi_RatioToMeter,
                                                                         uint32_t pi_Page = 0,
                                                                         bool   pi_CheckSpecificUnitSpec = false,
@@ -167,9 +154,6 @@ public:
     IMAGEPP_EXPORT virtual void     StopLookAhead       (uint32_t               pi_Page,
                                                  uint32_t               pi_ConsumerID);
 
-
-    // LockManager
-    virtual HFCBinStreamLockManager* GetLockManager();
 
     IMAGEPP_EXPORT virtual const HFCMemoryBinStream* GetMemoryFilePtr() const;
 
@@ -230,9 +214,6 @@ protected:
     bool                               m_IsOpen;
 
     bool                                m_IsCreateCancel;
-
-    // This is the instance of the sharing control sister file.
-    HAutoPtr<HRFSharingControl>         m_pSharingControl;
 
     vector<double>                     m_DefaultRatioToMeter;
     vector<bool>                       m_DefaultUnitWasFound;
@@ -358,12 +339,6 @@ struct HRFRasterFileCreator
     // Raster file made of multiple files - Get the list of related files from a given URL
     IMAGEPP_EXPORT virtual bool                 GetRelatedURLs(const HFCPtr<HFCURL>& pi_rpURL,
                                                         ListOfRelatedURLs&    pio_rRelatedURLs) const;
-    //--------------------------------------
-    // Sharing control methods
-    //--------------------------------------
-    IMAGEPP_EXPORT virtual void                  SharingControlCreate          (const HFCPtr<HFCURL>& pi_pURL);
-    virtual HRFSharingControl*           GetSharingControl             () const;
-    virtual HFCBinStreamLockManager*     GetLockManager             () const;
 
     // capabilities of Raster file.
     virtual const HFCPtr<HRFRasterFileCapabilities>&
@@ -386,10 +361,6 @@ protected:
 
     // Keep the computed access mode for the file format
     HFCAccessMode                      m_AccessMode;
-
-    // This is the instance of the sharing control sister file.
-    HAutoPtr<HRFSharingControl>       m_pSharingControl;
-
 
     WString                           m_DllDirectory;
     };

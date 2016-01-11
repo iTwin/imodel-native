@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRFAdaptLineToStrip.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HRFAdaptLineToStrip
@@ -70,39 +70,33 @@ public:
     // Edition by Block
     virtual HSTATUS ReadBlock(uint64_t              pi_PosBlockX,
                               uint64_t              pi_PosBlockY,
-                              Byte*                 po_pData,
-                              HFCLockMonitor const* pi_pSisterFileLock = 0);
+                              Byte*                 po_pData);
 
     virtual HSTATUS ReadBlock(uint64_t                 pi_PosBlockX,
                               uint64_t                 pi_PosBlockY,
-                              HFCPtr<HCDPacket>&       po_rpPacket,
-                              HFCLockMonitor const*    pi_pSisterFileLock = 0)
+                              HFCPtr<HCDPacket>&       po_rpPacket)
         {
-        return T_Super::ReadBlock(pi_PosBlockX,pi_PosBlockY,po_rpPacket,pi_pSisterFileLock);
+        return T_Super::ReadBlock(pi_PosBlockX,pi_PosBlockY,po_rpPacket);
         }
 
     virtual HSTATUS ReadBlockRLE(uint64_t              pi_PosBlockX,
                                  uint64_t              pi_PosBlockY,
-                                 HFCPtr<HCDPacketRLE>& po_rpPacketRLE,
-                                 HFCLockMonitor const* pi_pSisterFileLock = 0);
+                                 HFCPtr<HCDPacketRLE>& po_rpPacketRLE);
 
     virtual HSTATUS WriteBlock(uint64_t              pi_PosBlockX,
                                uint64_t              pi_PosBlockY,
-                               const Byte*           pi_pData,
-                               HFCLockMonitor const* pi_pSisterFileLock = 0);
+                               const Byte*           pi_pData);
 
     virtual HSTATUS WriteBlock(uint64_t                 pi_PosBlockX,
                                uint64_t                 pi_PosBlockY,
-                               const HFCPtr<HCDPacket>& pi_rpPacket,
-                               HFCLockMonitor const*    pi_pSisterFileLock = 0)
+                               const HFCPtr<HCDPacket>& pi_rpPacket)
         {
-        return T_Super::WriteBlock(pi_PosBlockX,pi_PosBlockY,pi_rpPacket,pi_pSisterFileLock);
+        return T_Super::WriteBlock(pi_PosBlockX,pi_PosBlockY,pi_rpPacket);
         }
 
     virtual HSTATUS WriteBlockRLE(uint64_t              pi_PosBlockX,
                                   uint64_t              pi_PosBlockY,
-                                  HFCPtr<HCDPacketRLE>& pi_rpPacketRLE,
-                                  HFCLockMonitor const* pi_pSisterFileLock = 0);
+                                  HFCPtr<HCDPacketRLE>& pi_rpPacketRLE);
 
 protected:
 

@@ -284,7 +284,7 @@ void HRADEMRaster::_Draw(HGFMappedSurface& pio_destSurface, HRADrawOptions const
     // Standard draw code, one image at a time, bottom up
     if (!DrawDone)
         {
-        HWARNING(0, L"HRADEMRaster::Draw out of memory. Filter will not be applied.");
+        HWARNING(0, "HRADEMRaster::Draw out of memory. Filter will not be applied.");
 
         GetSource()->Draw(pio_destSurface, pi_Options);
         }

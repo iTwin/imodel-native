@@ -243,7 +243,7 @@ void HFCLocalBinStream::Open(const WString& pi_Filename,
             // Trace for debugging...
             HDEBUGCODE(WChar pTxt[512]);
             HDEBUGCODE(BeStringUtilities::Snwprintf(pTxt, L"NbTry:%d (%ls)\n", NbTry, m_Filename.c_str()););
-            HDEBUGTEXT(pTxt);
+            HDEBUGTEXT(Utf8String(pTxt).c_str());
             }
         }
 
@@ -398,7 +398,7 @@ void HFCLocalBinStream::SetLastExceptionClassID()
                   );
         HDEBUGCODE(BeStringUtilities::Snwprintf (Msg, L"GetLastError: %lu (%ls)\n", LastError, m_Filename.c_str());
                   );
-        HDEBUGTEXT(Msg);
+        HDEBUGTEXT(Utf8String(Msg).c_str());
         HDEBUGCODE(
         });
 
