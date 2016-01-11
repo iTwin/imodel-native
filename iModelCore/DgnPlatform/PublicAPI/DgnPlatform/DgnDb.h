@@ -13,6 +13,7 @@
 #include "DgnDomain.h"
 #include "MemoryManager.h"
 #include "LocksManager.h"
+#include "DgnCodesManager.h"
 #include <Bentley/BeFileName.h>
 
 /** @addtogroup DgnDbGroup
@@ -161,6 +162,7 @@ protected:
     TxnManagerPtr   m_txnManager;
     MemoryManager   m_memoryManager;
     ILocksManagerPtr    m_locksManager;
+    IDgnCodesManagerPtr m_codesManager;
     DgnSearchableText   m_searchableText;
     mutable RevisionManagerP m_revisionManager;
     BeSQLite::EC::ECSqlStatementCache m_ecsqlCache;
@@ -226,6 +228,7 @@ public:
     DGNPLATFORM_EXPORT RevisionManagerR Revisions() const; //!< The Revisions for this DgnDb.
     MemoryManager& Memory() const { return const_cast<MemoryManager&>(m_memoryManager);} //!< Manages memory associated with this DgnDb.
     DGNPLATFORM_EXPORT ILocksManager& Locks(); //!< Manages this DgnDb's locks.
+    DGNPLATFORM_EXPORT IDgnCodesManager& Codes(); //!< Manages this DgnDb's reserved authority-issued codes.
     LocalStateDb& GetLocalStateDb(); //!< @private
 
     //! Gets a cached and prepared ECSqlStatement.

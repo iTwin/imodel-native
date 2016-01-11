@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/LocksManager.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -344,7 +344,6 @@ protected:
     DGNPLATFORM_EXPORT virtual LockStatus _LockElement(DgnElementCR el, LockLevel level, DgnModelId originalModelId);
     DGNPLATFORM_EXPORT virtual LockStatus _LockModel(DgnModelCR model, LockLevel level);
 
-    DGNPLATFORM_EXPORT BeFileName GetLockTableFileName() const;
     DGNPLATFORM_EXPORT ILocksServerP GetLocksServer() const;
 public:
     DgnDbR GetDgnDb() const { return m_db; }

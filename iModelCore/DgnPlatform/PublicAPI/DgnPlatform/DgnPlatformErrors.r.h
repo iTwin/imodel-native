@@ -162,6 +162,9 @@ enum class CodeStatus : int
     RevisionRequired, //!< A revision committed to the server must be integrated into the briefcase before the operation can be completed
     CodeUnavailable, //!< A requested Code is reserved by another briefcase or in use
     SyncError, //!< Failed to sync local codes with server
+    CodeUsed, //!< A code cannot be relinquished because it has been used locally
+    PendingTransactions, //!< An operation requires local changes to be committed or abandoned
+    InvalidRequest, //!< Server did not understand a request
 };
 
 /** @cond BENTLEY_SDK_Publisher */

@@ -257,17 +257,6 @@ LockStatus ILocksManager::LockModel(DgnModelCR model, LockLevel lvl) { return _L
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-BeFileName ILocksManager::GetLockTableFileName() const
-    {
-    // Assumption is that if the dgndb is writable, its directory is too, given that sqlite also needs to create files in that directory for journaling.
-    BeFileName filename = GetDgnDb().GetFileName();
-    filename.AppendExtension(L"locks");
-    return filename;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   10/15
-+---------------+---------------+---------------+---------------+---------------+------*/
 LockStatus ILocksManager::_LockElement(DgnElementCR el, LockLevel level, DgnModelId originalModelId)
     {
     // We don't acquire locks for indirect or dynamic changes.
@@ -1007,7 +996,7 @@ void ILocksManager::BackDoor_SetLockingEnabled(bool enable) { s_enableLocking = 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-ILocksManagerPtr DgnPlatformLib::Host::LocksAdmin::_CreateLocksManager(DgnDbR db) const
+ILocksManagerPtr DgnPlatformLib::Host::ServerAdmin::_CreateLocksManager(DgnDbR db) const
     {
     // NEEDSWORK: Bogus. Currently we have no way of determining if locking is required for a given DgnDb...and we have no actual server
     return (db.IsMasterCopy() || !s_enableLocking) ? UnrestrictedLocksManager::Create(db) : LocalLocksManager::Create(db);
@@ -1018,7 +1007,7 @@ ILocksManagerPtr DgnPlatformLib::Host::LocksAdmin::_CreateLocksManager(DgnDbR db
 +---------------+---------------+---------------+---------------+---------------+------*/
 ILocksServerP ILocksManager::GetLocksServer() const
     {
-    return T_HOST.GetLocksAdmin()._GetLocksServer(GetDgnDb());
+    return T_HOST.GetServerAdmin()._GetLocksServer(GetDgnDb());
     }
 
 #define JSON_Status "Status"            // LockStatus

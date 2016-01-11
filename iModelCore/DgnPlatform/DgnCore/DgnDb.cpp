@@ -59,6 +59,7 @@ void DgnDb::Destroy()
         }
     m_ecsqlCache.Empty();
     m_locksManager = nullptr;
+    m_codesManager = nullptr;
     m_localStateDb.Destroy();
     }
 
@@ -127,11 +128,25 @@ ILocksManagerR DgnDb::Locks()
     // which is not initialized in constructor.
     if (m_locksManager.IsNull())
         {
-        m_locksManager = T_HOST.GetLocksAdmin()._CreateLocksManager(*this);
+        m_locksManager = T_HOST.GetServerAdmin()._CreateLocksManager(*this);
         BeAssert(m_locksManager.IsValid());
         }
 
     return *m_locksManager;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/16
++---------------+---------------+---------------+---------------+---------------+------*/
+IDgnCodesManagerR DgnDb::Codes()
+    {
+    if (m_codesManager.IsNull())
+        {
+        m_codesManager = T_HOST.GetServerAdmin()._CreateCodesManager(*this);
+        BeAssert(m_codesManager.IsValid());
+        }
+
+    return *m_codesManager;
     }
 
 /*---------------------------------------------------------------------------------**//**
