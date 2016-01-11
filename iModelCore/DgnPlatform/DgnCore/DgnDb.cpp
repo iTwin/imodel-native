@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/DgnDb.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "DgnPlatformInternal.h"
@@ -58,6 +58,8 @@ void DgnDb::Destroy()
         m_revisionManager = nullptr;
         }
     m_ecsqlCache.Empty();
+    m_locksManager = nullptr;
+    m_localStateDb.Destroy();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -499,5 +501,57 @@ DictionaryModelR DgnDb::GetDictionaryModel()
     DictionaryModelPtr dict = Models().Get<DictionaryModel>(DgnModel::DictionaryId());
     BeAssert(dict.IsValid() && "A DgnDb always has a dictionary model");
     return *dict;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/16
++---------------+---------------+---------------+---------------+---------------+------*/
+bool DgnDb::LocalStateDb::Validate(DgnDbR dgndb)
+    {
+    switch (m_state)
+        {
+        case DbState::Ready:    return true;
+        case DbState::Invalid:  return false;
+        default:                BeAssert(DbState::New == m_state); break;
+        }
+
+    m_state = DbState::Invalid;
+
+    // Stored alongside the dgndb itself
+    BeFileName filename = dgndb.GetFileName();
+    filename.AppendExtension(L"local");
+
+    // Don't assume existing file contains valid data...
+    filename.BeDeleteFile();
+
+    DbResult result = m_db.CreateNewDb(filename);
+    if (BE_SQLITE_OK == result)
+        m_state = DbState::Ready;
+
+    return IsValid();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnDb::LocalStateDb::Destroy()
+    {
+    if (IsValid())
+        {
+        m_db.CloseDb();
+        BeFileName filename(m_db.GetDbFileName());
+        filename.BeDeleteFile();
+        }
+
+    m_state = DbState::New;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDb::LocalStateDb& DgnDb::GetLocalStateDb()
+    {
+    m_localStateDb.Validate(*this);
+    return m_localStateDb;
     }
 
