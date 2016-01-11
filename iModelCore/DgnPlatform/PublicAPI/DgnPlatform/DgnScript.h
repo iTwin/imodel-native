@@ -113,6 +113,11 @@ struct DgnScript
 
     DGNPLATFORM_EXPORT static DgnDbStatus ExecuteDgnDbScript(int& functionReturnStatus, DgnDbR db, Utf8StringCR functionName, Json::Value const& parms);
 
+    //! Make sure that the script referenced by \a tsFunctionSpec is loaded.
+    //! @param db   The DgnDb that is in use. The script does not have to be stored in the db.
+    //! @param tsFunctionSpec Specifies a script in the library, optionally followed by the name of a function, separated with '.'  
+    DGNPLATFORM_EXPORT static DgnDbStatus LoadScript(Dgn::DgnDbR db, Utf8CP tsFunctionSpec);
+
 }; 
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE
