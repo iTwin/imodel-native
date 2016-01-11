@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/DgnMarkupProject.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "DgnPlatformInternal.h"
@@ -316,28 +316,19 @@ void SpatialRedlineViewController::_OnAttachedToViewport(DgnViewportR vp)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    08/2014
 //---------------------------------------------------------------------------------------
-void SpatialRedlineViewController::_OnHealUpdate(DgnViewportR viewport, ViewContextR context, bool fullHeal)
+void SpatialRedlineViewController::_OnFullUpdate(DgnViewportR viewport, UpdatePlan const& plan)
     {
-    T_Super::_OnHealUpdate(viewport, context, fullHeal);
-    m_subjectView._OnHealUpdate(viewport, context, fullHeal);
+    T_Super::_OnFullUpdate(viewport, plan);
+    m_subjectView._OnFullUpdate(viewport, plan);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    08/2014
 //---------------------------------------------------------------------------------------
-void SpatialRedlineViewController::_OnFullUpdate(DgnViewportR viewport, ViewContextR context)
+void SpatialRedlineViewController::_OnDynamicUpdate(DgnViewportR viewport, UpdatePlan const& plan)
     {
-    T_Super::_OnFullUpdate(viewport, context);
-    m_subjectView._OnFullUpdate(viewport, context);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   John.Gooding    08/2014
-//---------------------------------------------------------------------------------------
-void SpatialRedlineViewController::_OnDynamicUpdate(DgnViewportR viewport, DynamicUpdateInfo const& info)
-    {
-    T_Super::_OnDynamicUpdate(viewport, info);
-    m_subjectView._OnDynamicUpdate(viewport, info);
+    T_Super::_OnDynamicUpdate(viewport, plan);
+    m_subjectView._OnDynamicUpdate(viewport, plan);
     }
 
 //---------------------------------------------------------------------------------------

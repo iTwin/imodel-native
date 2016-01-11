@@ -33,16 +33,11 @@ protected:
     bool        m_forceNewQuery;    //!< If true, before doing the next view update, repopulate the QueryModel with the result of the query 
     bool        m_noQuery;          //!< If true, *only* draw the "always drawn" list - do not query for other elements
     bool        m_selectProcessingActive;
-    uint64_t    m_lastUpdateTime;
     double      m_lastQueryTime;
     double      m_fps;
     DrawPurpose m_lastUpdateType;
     DRange3d    m_secondaryVolume;  //  ignored unless m_secondaryHitLimit > 0
     uint32_t    m_secondaryHitLimit;
-    uint32_t    m_intermediatePaintsThreshold;
-    uint32_t    m_maxToDrawInDynamicUpdate;
-    uint32_t    m_maxDrawnInDynamicUpdate;
-    uint32_t    m_lastNumberElements;
     uint64_t    m_maxElementMemory;
     Frustum     m_startQueryFrustum;
     Frustum     m_saveQueryFrustum;
@@ -50,7 +45,6 @@ protected:
     DgnElementIdSet m_alwaysDrawn;
     DgnElementIdSet m_neverDrawn;
 
-    void ComputeFps();
     DGNPLATFORM_EXPORT void EmptyQueryModel();
     void QueryModelExtents(DRange3dR, DgnViewportR);
 
@@ -59,51 +53,39 @@ protected:
     void SaveSelectResults();
     void PickUpResults();
     bool FrustumChanged(DgnViewportCR vp) const;
-    void StartSelectProcessing(DgnViewportR, DrawPurpose updateType);
+    void StartSelectProcessing(DgnViewportR, UpdatePlan const&);
     DGNPLATFORM_EXPORT virtual bool _IsInSet(int nVal, BeSQLite::DbValue const*) const override;
     virtual void _FillModels() override {} // query models do not load elements in advance
     DGNPLATFORM_EXPORT virtual void _OnAttachedToViewport(DgnViewportR) override;
 
 protected:
-    //! Called at the beginning of a healing update to populate the QueryModel.
-    //! @param[in]  viewport    The viewport that will display the graphics
-    //! @param[in]  context     The context that is processing the graphics.
-    //! @param[in]  fullHeal    if true, this heal is of the entire viewport. Otherwise, just a portion of the viewport is being healed.
-    //! @remarks Applications that override this method normally perform any additional work that is required and then 
-    //! call QueryViewController::_OnHealUpdate to let it decide if is necessary to repopulate the QueryModel.
-    //! @remarks An application may use this and _OnFullUpdate to decide when to display some indication such as a spinner to 
-    //! let the user know that the update is in progress.  The application can override SpatialViewController::_OnUpdateComplete to stop the spinner.
-    DGNPLATFORM_EXPORT virtual void _OnHealUpdate(DgnViewportR viewport, ViewContextR context, bool fullHeal) override;
-
     //! Called at the beginning of a full update to populate the QueryModel.
     //! @param[in] viewport    The viewport that will display the graphics
     //! @param[in] context     The context that is processing the graphics.
-    //! @param[in] info        Options
+    //! @param[in] plan The update plan
     //! @remarks Applications that override this method normally perform any additional work that is required and then call QueryViewController::_OnFullUpdate to 
     //!  let it decide if is necessary to repopulate the QueryModel.
     //! @remarks An application may use this and _OnFullUpdate to decide when to display some indication such as a spinner to 
     //! let the user know that the update is in progress.  The application can override SpatialViewController::_OnUpdateComplete
     //! to know when to stop the spinner.
-    DGNPLATFORM_EXPORT virtual void _OnFullUpdate(DgnViewportR viewport, ViewContextR context) override;
+    DGNPLATFORM_EXPORT virtual void _OnFullUpdate(DgnViewportR viewport, UpdatePlan const& plan) override;
 
     //! Called at the beginning of a dynamic update to populate the QueryModel.
     //! @param[in]  viewport    The viewport that will display the graphics
     //! @param[in]  context     The context that is processing the graphics.
-    //! @param[in]  info        Options
+    //! @param[in]  plan        The update plan
     //! @remarks  Although an application can override this method, the decision on whether or not to repopulate the QueryModel in a dynamic update is typically left to
     //! QueryViewController::_OnDynamicUpdate. It in turn defers the decision to _WantElementLoadStart.
-    DGNPLATFORM_EXPORT virtual void _OnDynamicUpdate(DgnViewportR viewport, DynamicUpdateInfo const& info) override;
+    DGNPLATFORM_EXPORT virtual void _OnDynamicUpdate(DgnViewportR viewport, UpdatePlan const& plan) override;
 
     //! QueryViewController uses this to determine if it should start another background query to repopulate the query model.
     //! QueryViewController calls this from _OnDynamicUpdate and when it detects that the background element query processing is idle during a dynamic update.
     //! @param[in] viewport    The viewport that will display the graphics
     //! @param[in] currentTime The current time in seconds.
     //! @param[in] lastQueryTime The time the last query was started.
-    //! @param[in] maxElementsDrawnInDynamicUpdate The maximum number of elements drawn in any dynamic frame since the QueryModel was last populated.
-    //! @param[in] queryFrustum The frustum used in the last range query used to populate the QueryModel.
-    //! @returns  Return true to start another round.
+    //! @returns  Return true to start query
     //! @remarks It is very rare than an application needs to override this method.
-    DGNPLATFORM_EXPORT virtual bool _WantElementLoadStart(DgnViewportR viewport, double currentTime, double lastQueryTime, uint32_t maxElementsDrawnInDynamicUpdate, Frustum const& queryFrustum);
+    DGNPLATFORM_EXPORT virtual bool _WantElementLoadStart(DgnViewportR viewport, double currentTime, double lastQueryTime);
 
     //! Called when the visibility of a category is changed.
     DGNPLATFORM_EXPORT virtual void _OnCategoryChange(bool singleEnabled) override;
@@ -120,7 +102,7 @@ protected:
     DGNPLATFORM_EXPORT virtual void _DrawView(ViewContextR context) override;
 
     //! Allow the supplied ViewContext to visit every element in the view, not just the best elements in the query model.
-    DGNPLATFORM_EXPORT void _VisitElements(ViewContextR) override;
+    DGNPLATFORM_EXPORT void _VisitAllElements(ViewContextR) override;
 
     //! Return the default maximum number of elements to load. This is then scaled by the value returned from _GetMaxElementFactor.
     virtual uint32_t _GetMaxElementsToLoad() {return 5000;}
@@ -155,12 +137,14 @@ __PUBLISH_INSERT_FILE__  QueryView_GetRTreeMatchSql.sampleCode
     //! @return \a true if the returned \a range is complete. Otherwise the caller will compute the tightest fit for all loaded elements.
     DGNPLATFORM_EXPORT virtual FitComplete _ComputeFitRange(DRange3dR range, DgnViewportR viewport, FitViewParamsR params) override;
 
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     //! Return a value in the range -100 (fewest) to 100 (most) to determine the maximum number of elements loaded by the query.
     //! 0 means the "default" number of elements.
     DGNPLATFORM_EXPORT virtual int32_t _GetMaxElementFactor(DgnViewportCR vp);
 
     //! Return the size in pixels of the smallest element that should be displayed.
     virtual double _GetMinimumSizePixels(DrawPurpose updateType) {return 0.1;}
+#endif
 
     //! Return the maximum number of bytes of memory that should be used to hold loaded element data. Element data may exceed this limit at times and is trimmed back at intervals.
     //! It is recommended that applications use this default implementation and instead control memory usage by overriding _GetMaxElementFactor
@@ -183,8 +167,10 @@ public:
     //! Returns the value computed on the last call to ComputeMaxElementMemory;
     DGNPLATFORM_EXPORT uint64_t GetMaxElementMemory();
 
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     //! Return the maximum number of elements to hold in the associated QueryModel.
     DGNPLATFORM_EXPORT uint32_t GetMaxElementsToLoad(DgnViewportCR vp);
+#endif
 
     //! Get the list of elements that are always drawn
     DgnElementIdSet const& GetAlwaysDrawn() {return m_alwaysDrawn;}

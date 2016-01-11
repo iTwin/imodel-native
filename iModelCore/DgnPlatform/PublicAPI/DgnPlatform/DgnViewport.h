@@ -64,10 +64,12 @@ struct OcclusionScorer
     double      m_lodFilterNPCArea;
     uint32_t    m_orthogonalProjectionIndex;
     bool        m_cameraOn;
+    bool        m_testLOD;
+    void SetTestLOD(bool val) {m_testLOD=val;}
     void InitForViewport(DgnViewportCR viewport, double minimumSizePixels);
     bool ComputeEyeSpanningRangeOcclusionScore(double* score, DPoint3dCP rangeCorners, bool doFrustumCull);
     bool ComputeNPC(DPoint3dR npcOut, DPoint3dCR localIn);
-    bool ComputeOcclusionScore(double* score, bool& overlap, bool& spansEyePlane, bool& eliminatedByLOD, DPoint3dCP localCorners, bool doFrustumCull);
+    bool ComputeOcclusionScore(double* score, bool& overlap, bool& spansEyePlane, DPoint3dCP localCorners, bool doFrustumCull);
 };
 
 //=======================================================================================
@@ -167,7 +169,6 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnDbRTree3dViewFilter : RtreeViewFilter
     bool                    m_passedPrimaryTest;
     bool                    m_passedSecondaryTest;
     bool                    m_useSecondary;
-    bool                    m_eliminatedByLOD;
     uint32_t                m_hitLimit;
     uint32_t                m_occlusionMapCount;
     uint64_t                m_lastId;
@@ -292,44 +293,102 @@ struct StopEvents
 //=======================================================================================
 // @bsiclass                                                    Keith.Bentley   01/12
 //=======================================================================================
-struct FullUpdateInfo
+struct UpdatePlan
     {
-private:
     friend struct ViewSet;
 
-    StopEvents m_stopEvents;
-    uint32_t   m_timeout;                 // in milliseconds
-    bool       m_waitForQuery;
+    struct Query
+    {
+        struct Minimum
+        {
+            bool      m_enable = false;
+            double    m_time = 1.;        // check for minimum number of elements after this time during query (seconds)
+            uint32_t  m_count = 1000;
+            void Enable(bool val) {m_enable=val;}
+            void SetTime(double seconds) {m_time=seconds;}
+            void SetCount(uint32_t count) {m_count=count;}
+        };
+
+        Minimum     m_minimum;
+        double      m_maxTime = 10.;    // maximum time query should run (seconds)
+        double      m_minPixelSize = .1;
+        bool        m_wait = false;
+        uint32_t    m_minElements = 500;
+        uint32_t    m_maxElements = 50000;
+        mutable uint32_t    m_targetNumElements;
+        mutable ICheckStop* m_checkStop = nullptr;
+
+        uint32_t GetMinElements() const {return m_minElements;}
+        uint32_t GetMaxElements() const {return m_maxElements;}
+        void SetMinElements(uint32_t val) {m_minElements = val;}
+        void SetMaxElements(uint32_t val) {m_maxElements = val;}
+        double GetMinimumSizePixels() const {return m_minPixelSize;}
+        void SetMinimumSizePixels(double val) {m_minPixelSize=val;}
+        void SetTargetNumElements(uint32_t val) const {m_targetNumElements=val;}
+        uint32_t GetTargetNumElements() const {return m_targetNumElements;}
+        void SetWait(bool val) {m_wait=val;}
+        bool WantWait() const {return m_wait;}
+        ICheckStop* GetCheckStop() const {return m_checkStop;}
+        void SetCheckStop(ICheckStop* checkStop) const {m_checkStop=checkStop;}
+        Minimum& GetMinimum() {return m_minimum;}
+    };
+
+    struct Scene
+    {   
+        double m_timeout = 0.0; // abort create scene after this time. If 0, no timeout
+        double GetTimeout() const {return m_timeout;}
+        void SetTimeout(double seconds) {m_timeout=seconds;}
+    };
+
+    struct AbortFlags
+    {
+        struct Motion
+        {
+            int     m_tolerance = 0;
+            int     m_total = 0;
+            Point2d m_cursorPos;
+            void Clear() {m_total=0; m_cursorPos.x = m_cursorPos.y = 0;}
+
+            void AddMotion(int val) {m_total += val;}
+            int GetTotalMotion() {return m_total;}
+            void SetCursorPos(Point2d pt) {m_cursorPos=pt;}
+            void SetTolerance(int val) {m_tolerance=val;}
+            int GetTolerance() {return m_tolerance;}
+            Point2d GetCursorPos() {return m_cursorPos;}
+        };
+
+        StopEvents  m_stopEvents = StopEvents::ForFullUpdate;
+        mutable Motion m_motion;
+
+    void SetTouchCheckStopLimit(bool enabled, uint32_t pixels, uint32_t numberTouches, Point2dCP touches);
+    void SetStopEvents(StopEvents stopEvents) {m_stopEvents = stopEvents;}
+    StopEvents GetStopEvents() const {return m_stopEvents;}
+    Motion& GetMotion() const {return m_motion;}
+    bool WantMotionAbort() const {return 0 != m_motion.GetTolerance();}
+    };
+
+    double      m_targetFPS = 20.0; // Frames Per second
+    Query       m_query;
+    Scene       m_scene;
+    AbortFlags  m_abortFlags;
 
 public:
-    FullUpdateInfo(uint32_t timeout=400) : m_stopEvents(StopEvents::ForFullUpdate), m_timeout(timeout), m_waitForQuery(false) {}
-    void SetStopEvents(StopEvents stopEvents) {m_stopEvents = stopEvents;}
-    void SetTouchCheckStopLimit(bool enabled, uint32_t pixels, uint32_t numberTouches, Point2dCP touches);
-    void SetTimeout(uint32_t timeout) {m_timeout=timeout;}
-    uint32_t GetTimeout() const {return m_timeout;}
-    void SetWaitForQuery(bool syncOnQuery) {m_waitForQuery=syncOnQuery;}
-    bool GetWaitForQuery() const {return m_waitForQuery;}
+    double GetTargetFramesPerSecond() const {return m_targetFPS;}
+    void SetTargetFramesPerSecond(double fps) {m_targetFPS = fps;}
+    Query& GetQueryR() {return m_query;}
+    Query const& GetQuery() const {return m_query;}
+    Scene& GetSceneR() {return m_scene;}
+    Scene const& GetScene() const {return m_scene;}
+    AbortFlags const& GetAbortFlags() const {return m_abortFlags;}
+    AbortFlags& GetAbortFlagsR() {return m_abortFlags;}
     };
 
 //=======================================================================================
 // @bsiclass                                                    Keith.Bentley   01/12
 //=======================================================================================
-struct DynamicUpdateInfo
+struct DynamicUpdatePlan : UpdatePlan
     {
-private:
-    friend struct ViewManager;
-    StopEvents   m_stopEvents;
-    bool         m_haveLastMotion;
-    int          m_lastTotalMotion;
-    Point2d      m_lastCursorPos;
-
-public:
-    DGNVIEW_EXPORT DynamicUpdateInfo();
-    Point2d GetLastCursorPos() const {return m_lastCursorPos;}
-    StopEvents GetStopEvents() const {return m_stopEvents;}
-    void ClearLastMotion() {m_haveLastMotion = false; m_lastTotalMotion = 0; m_lastCursorPos.x = m_lastCursorPos.y = 0;}
-    void SetStopEvents(StopEvents stopEvents) {m_stopEvents = stopEvents;}
-    void SetTouchCheckStopLimit(bool enabled, uint32_t pixels, uint32_t numberTouches, Point2dCP touches);
+    DynamicUpdatePlan() {m_abortFlags.SetStopEvents(StopEvents::ForQuickUpdate);}
     };
 
 /*=================================================================================**//**
@@ -436,6 +495,7 @@ protected:
     DGNPLATFORM_EXPORT static void StartRenderThread();
     DMap4d CalcNpcToView();
     void QueueDrawFrame(Render::Plan::PaintScene);
+    void CalcTargetNumElements(UpdatePlan const& plan);
 
 public:
     DgnViewport(Render::TargetP target) : m_renderTarget(target) {}
@@ -489,9 +549,9 @@ public:
     DGNVIEW_EXPORT void GetGridOrientation(DPoint3dP origin, RotMatrixP);
     DGNVIEW_EXPORT double PixelsFromInches(double inches) const;
     DGNVIEW_EXPORT void ForceHeal();
-    StatusInt HealViewport(uint64_t timeout, bool waitForQuery = false);
+    StatusInt HealViewport(UpdatePlan const&);
     bool GetNeedsHeal() {return m_needsHeal;}
-    DGNVIEW_EXPORT void ForceHealImmediate(uint64_t timeout=500); // default 1/2 second
+    DGNVIEW_EXPORT void ForceHealImmediate(uint32_t timeout=500); // default 1/2 second
     DGNVIEW_EXPORT void SuspendForBackground();
     DGNVIEW_EXPORT void ResumeFromBackground();
 
@@ -802,8 +862,8 @@ public:
 
     DGNPLATFORM_EXPORT ColorDef GetSolidFillEdgeColor(ColorDef inColor);
 
-    DGNVIEW_EXPORT void UpdateViewDynamic(DynamicUpdateInfo const& info = DynamicUpdateInfo());
-    DGNVIEW_EXPORT void UpdateView(FullUpdateInfo const& info = FullUpdateInfo());
+    DGNVIEW_EXPORT void UpdateViewDynamic(UpdatePlan const& info = DynamicUpdatePlan());
+    DGNVIEW_EXPORT void UpdateView(UpdatePlan const& info = UpdatePlan());
 
     static double GetMinViewDelta() {return DgnUnits::OneMillimeter() / 100.;}
     static double GetMaxViewDelta() {return 20000 * DgnUnits::OneKilometer();}    // about twice the diameter of the earth

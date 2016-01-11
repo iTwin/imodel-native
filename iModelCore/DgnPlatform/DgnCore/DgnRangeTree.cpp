@@ -55,7 +55,7 @@ DRTPrefs()
 };
 
 static DRTPrefs  s_prefs;
-#define DEBUG_PRINTF(arg) printf(arg)
+#define DEBUG_PRINTF(arg) 
 
 //#define DRT_DEBUGGING
 #if defined (DRT_DEBUGGING)
@@ -1134,13 +1134,14 @@ void OcclusionScorer::InitForViewport(DgnViewportCR viewport, double minimumSize
     m_cameraOn   = viewport.IsCameraOn();
 
     m_lodFilterNPCArea = 0;
+    m_testLOD = false;
 
     if (minimumSizePixels > 0)
         {
         BSIRect  screenRect = viewport.GetViewRect();
         if (screenRect.Width() > 0 && screenRect.Height() > 0)
             {
-            double width = minimumSizePixels/screenRect.Width();
+            double width  = minimumSizePixels/screenRect.Width();
             double height = minimumSizePixels/screenRect.Height();
 
             m_lodFilterNPCArea = width * width + height * height;
@@ -1231,7 +1232,7 @@ bool OcclusionScorer::ComputeEyeSpanningRangeOcclusionScore(double* score, DPoin
 * Algorithm by: Dieter Schmalstieg and Erik Pojar - ACM Transactions on Graphics.
 * @bsimethod                                                    RayBentley      01/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool OcclusionScorer::ComputeOcclusionScore(double* score, bool& overlap, bool& spansEyePlane, bool& eliminatedByLOD, DPoint3dCP localCorners, bool doFrustumCull)
+bool OcclusionScorer::ComputeOcclusionScore(double* score, bool& overlap, bool& spansEyePlane, DPoint3dCP localCorners, bool doFrustumCull)
     {
     INCLUDE_TIMER(s_statistics.m_traverse.m_scoringTime);
     // Note - This routine is VERY time critical - Most of the calls to the geomlib
@@ -1294,7 +1295,6 @@ bool OcclusionScorer::ComputeOcclusionScore(double* score, bool& overlap, bool& 
         OUTSIDE_Back   = (0x00001 << 5),
         };
 
-    eliminatedByLOD = false;
     if (!doFrustumCull && 0.0 == m_lodFilterNPCArea && nullptr == score)
         return true;
 
@@ -1449,9 +1449,8 @@ bool OcclusionScorer::ComputeOcclusionScore(double* score, bool& overlap, bool& 
         DPoint3dR   npcCorner = npcVertices[nVertices/2];
         DPoint2d    extent = { npcCorner.x - npcVertices[0].x, npcCorner.y - npcVertices[0].y};
 
-        if (extent.x * extent.x + extent.y * extent.y < m_lodFilterNPCArea)
+        if (m_testLOD && (extent.x * extent.x + extent.y * extent.y < m_lodFilterNPCArea))
             {
-            eliminatedByLOD = true;
 #ifdef DRT_DEBUGGING
             s_statistics.m_traverse.m_lodFilteredElementCount++;
 #endif
@@ -1552,7 +1551,6 @@ DgnDbRTree3dViewFilter::DgnDbRTree3dViewFilter(DgnViewportCR viewport, ICheckSto
                             DgnElementIdSet const* alwaysDraw, DgnElementIdSet const* exclude)
     : RtreeViewFilter(viewport, db, minimumSizePixels, exclude), m_checkStop(checkStop), m_useSecondary(false), m_alwaysDraw(nullptr)
     {
-    m_eliminatedByLOD = false;
     m_hitLimit = hitLimit;
     m_occlusionMapMinimum = 1.0e20;
     m_occlusionMapCount = 0;
@@ -1693,7 +1691,10 @@ void DgnDbRTree3dViewFilter::RangeAccept(uint64_t elementId)
             ++m_nCalls;
 
             if (m_occlusionMapCount >= m_hitLimit)
+                {
+                m_scorer.SetTestLOD(true); // now that we've found a minimum number of elements, start skipping small ones
                 m_occlusionScoreMap.erase(m_occlusionScoreMap.begin());
+                }
             else
                 m_occlusionMapCount++;
 
@@ -1808,10 +1809,8 @@ int DgnDbRTree3dViewFilter::_TestRange(QueryInfo const& info)
     bool overlap, spansEyePlane;
 
     ++m_nScores;
-    bool eliminatedByLOD;
-    if (!m_scorer.ComputeOcclusionScore(&m_lastScore, overlap, spansEyePlane, eliminatedByLOD, localCorners, true))
+    if (!m_scorer.ComputeOcclusionScore(&m_lastScore, overlap, spansEyePlane, localCorners, true))
         {
-        m_eliminatedByLOD |= eliminatedByLOD;
         m_passedPrimaryTest = false;
         }
     else if (m_occlusionMapCount >= m_hitLimit && m_lastScore <= m_occlusionMapMinimum)
@@ -1962,8 +1961,7 @@ int ProgressiveViewFilter::_TestRange(QueryInfo const& info)
         bool   overlap, spansEyePlane;
         double score;
 
-        bool excludedByLOD;
-        if (!m_scorer.ComputeOcclusionScore(&score, overlap, spansEyePlane, excludedByLOD, localCorners, true))
+        if (!m_scorer.ComputeOcclusionScore(&score, overlap, spansEyePlane, localCorners, true))
             return BE_SQLITE_OK;
 
         info.m_within = info.m_parentWithin == Within::Inside ? Within::Inside : m_boundingRange.Contains(*pt) ? Within::Inside : Within::Partly;
@@ -1993,7 +1991,7 @@ ProgressiveDisplay::Completion ProgressiveViewFilter::_Process(ViewContextR cont
     // attempting to display - that's necessary.  KAB
     if (!m_dgndb.QueryModels().IsIdle())
         {
-        DEBUG_PRINTF("can't start progressive display\n");
+        DEBUG_PRINTF("querying, can't start pd\n");
         return Completion::Aborted;
         }
 

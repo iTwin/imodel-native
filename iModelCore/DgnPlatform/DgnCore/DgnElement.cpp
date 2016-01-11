@@ -544,10 +544,11 @@ DgnDbStatus DgnElement::_LoadFromDb()
     DgnElements::ElementSelectStatement select = GetDgnDb().Elements().GetPreparedSelectStatement(*this);
     if (select.m_statement.IsNull())
         return DgnDbStatus::Success;
-    else if (BE_SQLITE_ROW != select.m_statement->Step())
+    
+    if (BE_SQLITE_ROW != select.m_statement->Step())
         return DgnDbStatus::ReadError;
-    else
-        return _ReadSelectParams(*select.m_statement, select.m_params);
+    
+    return _ReadSelectParams(*select.m_statement, select.m_params);
     }
 
 /*---------------------------------------------------------------------------------**//**

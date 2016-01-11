@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/ViewController.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -1880,10 +1880,3 @@ void ViewController::_DrawView(ViewContextR context)
         context.VisitDgnModel(m_dgndb.Models().GetModel(modelId).get());
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    RayBentley  10/06
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ViewController::_VisitElements(ViewContextR context)
-    {
-    _DrawView(context);
-    }

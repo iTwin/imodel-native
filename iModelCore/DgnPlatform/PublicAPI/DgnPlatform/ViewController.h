@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/ViewController.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -35,8 +35,7 @@ DGNPLATFORM_REF_COUNTED_PTR(HypermodelingViewController)
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 
-struct FullUpdateInfo;
-struct DynamicUpdateInfo;
+struct UpdatePlan;
 
 enum class OrientationMode
 {
@@ -109,7 +108,7 @@ protected:
     friend struct ViewContext;
     friend struct DgnViewport;
     friend struct ViewManager;
-    friend struct  SpatialRedlineViewController;
+    friend struct SpatialRedlineViewController;
     friend struct IACSManager;
     friend struct ToolAdmin;
     friend struct ViewDefinition;
@@ -202,7 +201,7 @@ protected:
 
     //! Invokes the _VisitElement on \a context for <em>each element</em> that is in the view.
     //! For normal views, this does the same thing as _DrawView.
-    DGNPLATFORM_EXPORT virtual void _VisitElements(ViewContextR& context);
+    virtual void _VisitAllElements(ViewContextR& context) {_DrawView(context);}
 
     //! Stroke a single GeometrySource through a ViewContext.
     //! An application can override _StrokeGeometry to change the symbology of a GeometrySource.
@@ -217,17 +216,13 @@ protected:
 
     DGNPLATFORM_EXPORT virtual StatusInt _VisitHit(HitDetailCR hit, DecorateContextR context) const;
 
-    //! Used to notify derived classes when a heal update begins.
-    //! <p>See QueryViewController::_OnHealUpdate
-    virtual void _OnHealUpdate(DgnViewportR vp, ViewContextR context, bool fullHeal) {}
-
     //! Used to notify derived classes when a dynamic update begins.
     //! <p>See QueryViewController::_OnDynamicUpdate
-    virtual void _OnDynamicUpdate(DgnViewportR vp, DynamicUpdateInfo const& info) {}
+    virtual void _OnDynamicUpdate(DgnViewportR vp, UpdatePlan const&) {}    
 
     //! Used to notify derived classes when a full update begins.
     //! <p>See QueryViewController::_OnFullUpdate
-    virtual void _OnFullUpdate(DgnViewportR vp, ViewContextR context) {}
+    virtual void _OnFullUpdate(DgnViewportR vp, UpdatePlan const&) {}
 
     //! Used to notify derived classes of an attempt to locate the viewport around the specified
     //! WGS84 location. Override to change how these points are interpreted.
@@ -289,7 +284,7 @@ public:
 
     StatusInt VisitHit(HitDetailCR hit, DecorateContextR context) const{return _VisitHit(hit, context);}
     void DrawView(ViewContextR context) {return _DrawView(context);}
-    void VisitElements(ViewContextR context) {return _VisitElements(context);}
+    void VisitAllElements(ViewContextR context) {return _VisitAllElements(context);}
     void ChangeModelDisplay(DgnModelId modelId, bool onOff) {_ChangeModelDisplay(modelId, onOff);}
     DGNPLATFORM_EXPORT StatusInt GetRangeForFit(DRange3dR range);
     void OnViewOpened(DgnViewportR vp) {_OnViewOpened(vp);}
@@ -300,8 +295,8 @@ public:
     DGNPLATFORM_EXPORT void LookAtViewAlignedVolume(DRange3dCR volume, double const* aspectRatio=nullptr, MarginPercent const* margin=nullptr, bool expandClippingPlanes=true);
     void SaveToSettings(JsonValueR val) const {_SaveToSettings(val);}
     void RestoreFromSettings(JsonValueCR val) {_RestoreFromSettings(val);}
-    void OnFullUpdate(DgnViewportR vp, ViewContextR context) {_OnFullUpdate(vp,context);}
-    void OnDynamicUpdate(DgnViewportR vp, DynamicUpdateInfo const& info) {_OnDynamicUpdate(vp, info);}
+    void OnFullUpdate(DgnViewportR vp, UpdatePlan const& plan) {_OnFullUpdate(vp, plan);}
+    void OnDynamicUpdate(DgnViewportR vp, UpdatePlan const& plan) {_OnDynamicUpdate(vp, plan);}
 
 public:
     DgnClassId GetClassId() const {return m_classId;}

@@ -190,7 +190,6 @@ protected:
     bool                    m_ignoreViewRange = false;
     bool                    m_scanRangeValid = false;
     bool                    m_stopAfterTimeout = false;
-    bool                    m_waitForQueryToComplete;
     uint64_t                m_endTime = 0;     // abort after this time.
     Render::ViewFlags       m_viewflags;
     DrawPurpose             m_purpose;
@@ -271,8 +270,6 @@ public:
     void VisitDgnModel(DgnModelP model){_VisitDgnModel(model);}
     void SetScanReturn() {_SetScanReturn();}
     void EnableStopAfterTimout(uint32_t timeout) {m_endTime = BeTimeUtilities::QueryMillisecondsCounter()+timeout; m_stopAfterTimeout=true;}
-    bool GetWaitForQueryToComplete() { return m_waitForQueryToComplete; }
-    void SetWaitForQueryToComplete(bool synchOnQuery) { m_waitForQueryToComplete = synchOnQuery; }
 
     Render::GraphicPtr CreateGraphic(Render::Graphic::CreateParams const& params=Render::Graphic::CreateParams()) {return _CreateGraphic(params);}
     void AddSubGraphic(Render::GraphicR graphic, DgnGeomPartId partId, TransformCR subToGraphic, Render::GeometryParamsR geomParams) {_AddSubGraphic(graphic, partId, subToGraphic, geomParams);}

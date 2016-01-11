@@ -40,6 +40,23 @@ END_UNNAMED_NAMESPACE
 void Render::Target::VerifyRenderThread() {DgnPlatformLib::VerifyRenderThread();}
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   01/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void Render::Target::RecordFrameTime(double seconds) 
+    {
+    uint32_t count = m_currentScene->GetCount();
+    if (0 == count)
+        return;
+
+    if (seconds < .001)
+        seconds = .001;
+
+    uint32_t gps = (uint32_t) ((double) count / seconds);
+    printf("GPS=%d\n", gps);
+    m_graphicsPerSecond.store(gps);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Render::Queue::AddTask(Task& task)

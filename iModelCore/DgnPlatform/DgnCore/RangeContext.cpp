@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/RangeContext.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include    <DgnPlatformInternal.h>
@@ -790,17 +790,6 @@ void RangeGraphic::_AddPolyface(PolyfaceQueryCR meshData, bool filled)
     if (numPoint > 0)
         UpdateRange(static_cast<int>(numPoint), meshData.GetPointCP ());
     }
-
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley   09/06
-+---------------+---------------+---------------+---------------+---------------+------*/
-void RangeGraphic::_PopTransClip() 
-    {
-    T_Super::_PopTransClip();
-    m_rangeClipStack.Pop();
-    }
-#endif
 
 /*=================================================================================**//**
 * Context to caclulate the range of all elements within a view.

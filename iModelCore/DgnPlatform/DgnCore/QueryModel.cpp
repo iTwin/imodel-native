@@ -443,7 +443,6 @@ bool ProcessorImpl::_Process()
         printf("QMQ: ncalls=%d, nscores=%d\n", filter.m_nCalls, filter.m_nScores);
 #endif
         m_results->m_reachedMaxElements = (filter.m_occlusionScoreMap.size() == m_params.m_maxElements);
-        m_results->m_eliminatedByLOD = filter.m_eliminatedByLOD;
 
         if (m_results->m_reachedMaxElements)
             m_results->m_lowestOcclusionScore = filter.m_occlusionScoreMap.begin()->first;

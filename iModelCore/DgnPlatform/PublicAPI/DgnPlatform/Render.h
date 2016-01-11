@@ -1087,7 +1087,7 @@ struct GraphicList : RefCounted<NonCopyableClass>
         Node(Graphic& graphic, void* ovr, uint32_t ovrFlags) : m_ptr(&graphic), m_overrides(ovr), m_ovrFlags(ovrFlags) {}
     };
 
-    std::deque<Node> m_list;
+    bvector<Node> m_list;
 
     GraphicList() {}
     DGNPLATFORM_EXPORT virtual ~GraphicList();
@@ -1122,7 +1122,7 @@ struct Plan
 
     ViewFlags     m_viewFlags;
     bool          m_is3d;
-    PaintScene    m_paintScene;
+    mutable PaintScene m_paintScene;
     Frustum       m_frustum;
     double        m_fraction;
     ColorDef      m_bgColor;
@@ -1150,7 +1150,7 @@ protected:
     GraphicListPtr     m_currentScene;
     GraphicListPtr     m_dynamics;        // drawn with zbuffer, with scene lighting
     Decorations        m_decorations;
-    BeAtomic<uint32_t> m_lastFrameMillis;
+    BeAtomic<uint32_t> m_graphicsPerSecond;
 
     virtual GraphicPtr _CreateGraphic(Graphic::CreateParams const& params) = 0;
     virtual GraphicPtr _CreateSprite(ISprite& sprite, DPoint3dCR location, DPoint3dCR xVec, int transparency) = 0;
@@ -1165,6 +1165,7 @@ protected:
     virtual BSIRect _GetViewRect() const = 0;
     virtual DVec2d _GetDpiScale() const = 0;
 
+    Target();
     ~Target();
     DGNPLATFORM_EXPORT static void VerifyRenderThread();
 
@@ -1172,7 +1173,7 @@ public:
     virtual void _ChangeScene(GraphicListR scene) {VerifyRenderThread(); m_currentScene = &scene;}
     virtual void _ChangeDynamics(GraphicListR dynamics) {VerifyRenderThread(); m_dynamics = &dynamics;}
     virtual void _ChangeDecorations(Decorations& decorations) {VerifyRenderThread(); m_decorations = decorations;}
-    virtual void _DrawFrame(PlanCR) = 0;
+    virtual void _DrawFrame(PlanCR, StopWatch&) = 0;
     virtual void _DrawProgressive(GraphicListR progressiveList) = 0;
     virtual double _GetCameraFrustumNearScaleLimit() const = 0;
     virtual bool _WantInvertBlackBackground() {return false;}
@@ -1190,8 +1191,8 @@ public:
     TexturePtr GetTexture(DgnTextureId id, DgnDbR dgndb) const {return _GetTexture(id, dgndb);}
     TexturePtr CreateTileSection(Image* image, bool enableAlpha) const {return _CreateTileSection(image, enableAlpha);}
 
-    uint32_t GetLastFrameMillis() const {return m_lastFrameMillis.load();}
-    void RecordLastFrameMillis(uint32_t millis) {m_lastFrameMillis.store(millis);}
+    uint32_t GetGraphicsPerSecond() const {return m_graphicsPerSecond.load();}
+    DGNPLATFORM_EXPORT void RecordFrameTime(double seconds);
 };
 
 END_BENTLEY_RENDER_NAMESPACE

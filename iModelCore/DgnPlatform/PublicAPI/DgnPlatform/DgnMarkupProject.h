@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/DgnMarkupProject.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -353,9 +353,8 @@ protected:
     virtual void _OnViewOpened(DgnViewportR vp) override;
 
     //  Override and forward the methods that trigger a query.
-    virtual void _OnHealUpdate(DgnViewportR viewport, ViewContextR context, bool fullHeal) override;
-    virtual void _OnFullUpdate(DgnViewportR viewport, ViewContextR context) override;
-    virtual void _OnDynamicUpdate(DgnViewportR viewport, DynamicUpdateInfo const& info) override;
+    virtual void _OnFullUpdate(DgnViewportR viewport, UpdatePlan const&) override;
+    virtual void _OnDynamicUpdate(DgnViewportR viewport, UpdatePlan const&) override;
     virtual void _OnCategoryChange(bool singleEnabled) override;
     virtual void _ChangeModelDisplay(DgnModelId modelId, bool onOff) override;
 
