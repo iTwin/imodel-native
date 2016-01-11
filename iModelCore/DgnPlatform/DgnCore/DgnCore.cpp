@@ -357,8 +357,6 @@ void DgnPlatformLib::Host::TerminateDgnCore(bool onProgramExit)
     TERMINATE_HOST_OBJECT(m_exceptionHandler, onProgramExit);
     TERMINATE_HOST_OBJECT(m_knownLocationsAdmin, onProgramExit);
 
-    BeStringUtilities::Terminate();
-
     ForgetHost();
     BeAssert(NULL == DgnPlatformLib::QueryHost());
 

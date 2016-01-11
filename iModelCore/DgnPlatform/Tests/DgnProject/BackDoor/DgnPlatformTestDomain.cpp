@@ -2,11 +2,12 @@
 |
 |     $Source: Tests/DgnProject/BackDoor/DgnPlatformTestDomain.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <Bentley/BeTest.h>
 #include "PublicAPI/BackDoor/DgnProject/DgnPlatformTestDomain.h"
+#include "TestDomainElements.h"
 #include <DgnPlatform/GeomPart.h>
 #include <DgnPlatform/ElementGeometry.h>
 #include <ECDb/ECDbApi.h>
@@ -460,6 +461,12 @@ DgnPlatformTestDomain::DgnPlatformTestDomain() : DgnDomain(DPTEST_SCHEMA_NAME, "
     RegisterHandler(TestUniqueAspectHandler::GetHandler());
     RegisterHandler(TestMultiAspectHandler::GetHandler());
     RegisterHandler(TestElementDrivesElementHandler::GetHandler());
+
+
+    RegisterHandler(TestElementSub1Handler::GetHandler());
+    RegisterHandler(TestElementSub2Handler::GetHandler());
+    RegisterHandler(TestElementSub3Handler::GetHandler()); 
+    RegisterHandler(TestElementComplexHandler::GetHandler());
     }
 
 /*---------------------------------------------------------------------------------**//**
