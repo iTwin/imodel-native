@@ -28,9 +28,6 @@ JsonUpdaterTests.CommonGeometryJsonSerialization
 #TFS349028 (Affan)
 JoinedTableECDbMapStrategyTests.PopulateECSql_TestDbWithTestData
 
-# NavProp support is WIP
-ECSqlNavigationPropertyTestFixture.*
-
 #For Hassan
 #should be either removed or inverted
 JoinedTableECDbMapStrategyTests.MultiInheritence1  
