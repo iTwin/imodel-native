@@ -194,7 +194,7 @@ public:
 
     static PropertyMapPtr CreateAndEvaluateMapping (ClassMapLoadContext&, ECDbCR, ECN::ECPropertyCR, ECN::ECClassCR rootClass, Utf8CP propertyAccessString, ECDbSqlTable const* primaryTable, PropertyMapCP parentPropertyMap);
     //only called during schema import
-    static PropertyMapPtr Clone(ECDbMapCR ecdbMap, PropertyMapCR proto, ECDbSqlTable const* newContext, PropertyMap const* parentPropertyMap);
+    static PropertyMapPtr Clone(ECDbMapCR, PropertyMapCR proto, ECDbSqlTable const* newContext, PropertyMap const* parentPropertyMap);
     };
 
 //=======================================================================================
@@ -362,12 +362,14 @@ private:
 
     void _GetColumns (std::vector<ECDbSqlColumn const*>& columns) const;
 
-    virtual BentleyStatus _Save(ECDbClassMapInfo & classMapInfo) const override;
-    virtual BentleyStatus _Load(ECDbClassMapInfo const& classMapInfo) override;
+    virtual BentleyStatus _Save(ECDbClassMapInfo&) const override;
+    virtual BentleyStatus _Load(ECDbClassMapInfo const&) override;
     Utf8String _ToString() const override;
 public:
     bool Is3d () const { return m_is3d; }
 };
+
+struct RelationshipConstraintMap;
 
 //=======================================================================================
 // @bsiclass                                                    Krischan.Eberle      12/2015
@@ -384,7 +386,13 @@ private:
     virtual NativeSqlBuilder::List _ToNativeSql(Utf8CP classIdentifier, ECSqlType ecsqlType, bool wrapInParentheses) const override;
     virtual Utf8String _ToString() const override { return Utf8PrintfString("NavigationPropertyMap: ecProperty=%s.%s", m_ecProperty.GetClass().GetFullName(), m_ecProperty.GetName().c_str()); }
 
-    //void _GetColumns(std::vector<ECDbSqlColumn const*>& columns) const;
+    //nothing to do when loading/saving the prop map
+    virtual BentleyStatus _Load(ECDbClassMapInfo const&) override { return SUCCESS; }
+    virtual BentleyStatus _Save(ECDbClassMapInfo&) const override { return SUCCESS; }
+    virtual void _GetColumns(std::vector<ECDbSqlColumn const*>&) const override 
+        { 
+        BeAssert(false && "NavigationPropertyMap::GetColumns is not expected to be called"); 
+        }
 
     NavigationPropertyMap(ClassMapLoadContext&, ECN::ECPropertyCR, Utf8CP propertyAccessString, ECDbSqlTable const* primaryTable, PropertyMapCP parentPropertyMap);
     NavigationPropertyMap(ClassMapLoadContext&, NavigationPropertyMap const& proto, ECDbSqlTable const* primaryTable, PropertyMap const* parentPropertyMap);
@@ -400,6 +408,8 @@ public:
     bool CanOnlyHaveOneRelatedInstance() const { return CanOnlyHaveOneRelatedInstance(*m_navigationProperty); }
     static bool CanOnlyHaveOneRelatedInstance(ECN::NavigationECPropertyCR);
 
+    RelationshipConstraintMap const& GetConstraintMap() const;
+    
     ECN::ECRelationshipConstraintCR GetConstraint() const { return GetConstraint(*m_navigationProperty); }
     static ECN::ECRelationshipConstraintCR GetConstraint(ECN::NavigationECPropertyCR);
     };

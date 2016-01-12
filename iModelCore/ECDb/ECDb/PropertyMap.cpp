@@ -1013,7 +1013,7 @@ BentleyStatus NavigationPropertyMap::Postprocess(ECDbMapCR ecdbMap)
 //---------------------------------------------------------------------------------------
 NativeSqlBuilder::List NavigationPropertyMap::_ToNativeSql(Utf8CP classIdentifier, ECSqlType ecsqlType, bool wrapInParentheses) const
     {
-    RelationshipClassMap::ConstraintMap const& constraintMap = m_relClassMap->GetConstraintMap(GetConstraintEnd());
+    RelationshipConstraintMap const& constraintMap = GetConstraintMap();
 
     NativeSqlBuilder::List sqlSnippets = constraintMap.GetECInstanceIdPropMap()->ToNativeSql(classIdentifier, ecsqlType, wrapInParentheses);
 
@@ -1025,6 +1025,14 @@ NativeSqlBuilder::List NavigationPropertyMap::_ToNativeSql(Utf8CP classIdentifie
         }
 
     return std::move(sqlSnippets);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                 Krischan.Eberle                      01/2016
+//---------------------------------------------------------------------------------------
+RelationshipConstraintMap const& NavigationPropertyMap::GetConstraintMap() const
+    {
+    return m_relClassMap->GetConstraintMap(GetConstraintEnd());
     }
 
 //---------------------------------------------------------------------------------------

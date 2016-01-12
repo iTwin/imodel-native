@@ -1600,4 +1600,32 @@ PropertyMapSet::Ptr PropertyMapSet::Create (IClassMap const& classMap)
     return propertySet;
     }
 
+//------------------------------------------------------------------------------------------
+//@bsimethod                                                    Krischan.Eberle    01/2016
+//------------------------------------------------------------------------------------------
+BentleyStatus ClassMapLoadContext::Postprocess(ECDbMapCR ecdbMap) const
+    {
+    for (ECN::ECClassCP constraintClass : m_constraintClasses)
+        {
+        if (ecdbMap.GetClassMap(*constraintClass) == nullptr)
+            {
+            LOG.errorv("Finishing creation of ECRelationship class map because class map for Constraint ECClass '%s' could not be found.",
+                       constraintClass->GetFullName());
+            return ERROR;
+            }
+        }
+
+    for (NavigationPropertyMap* propMap : m_navPropMaps)
+        {
+        if (SUCCESS != propMap->Postprocess(ecdbMap))
+            {
+            LOG.errorv("Finishing creation of NavigationPropertyMap for NavigationProperty '%s.%s' failed.",
+                       propMap->GetProperty().GetClass().GetFullName(), propMap->GetProperty().GetName().c_str());
+            return ERROR;
+            }
+        }
+
+    return SUCCESS;
+    }
+
 END_BENTLEY_SQLITE_EC_NAMESPACE

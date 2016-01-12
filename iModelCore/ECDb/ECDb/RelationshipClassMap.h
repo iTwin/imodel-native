@@ -17,17 +17,12 @@ enum class DataIntegrityEnforcementMethod
     ForeignKey,
     Trigger
     };
-/*=================================================================================**//**
-* @bsiclass                                                 Ramanujam.Raman      06/2012
-+===============+===============+===============+===============+===============+======*/
-struct RelationshipClassMap : ClassMap
-{
-public:
-    //=======================================================================================
-    // @bsiclass                                                 Krischan.Eberle      07/2014
-    //+===============+===============+===============+===============+===============+======
-    struct ConstraintMap : NonCopyableClass
-        {
+
+//=======================================================================================
+// @bsiclass                                                 Krischan.Eberle      07/2014
+//+===============+===============+===============+===============+===============+======
+struct RelationshipConstraintMap : NonCopyableClass
+    {
     private:
         ECDbSchemaManager const& m_schemaManager;
         ECN::ECRelationshipConstraintCR m_constraint;
@@ -37,39 +32,41 @@ public:
         mutable bool m_isCacheSetup;
         mutable std::set<ECN::ECClassId> m_ecClassIdCache;
 
-        void CacheClassIds () const;
-        void CacheClassIds (ECN::ECConstraintClassesList const& constraintClassList, bool constraintIsPolymorphic) const;
+        void CacheClassIds() const;
+        void CacheClassIds(ECN::ECConstraintClassesList const& constraintClassList, bool constraintIsPolymorphic) const;
 
-        void CacheClassId (ECN::ECClassId classId) const;
-        void SetAnyClassMatches () const;
+        void CacheClassId(ECN::ECClassId classId) const;
+        void SetAnyClassMatches() const;
 
     public:
-        ConstraintMap (ECDbSchemaManager const& schemaManager, ECN::ECRelationshipConstraintCR constraint)
-            : m_schemaManager (schemaManager), m_constraint (constraint), m_ecInstanceIdPropMap (nullptr), m_ecClassIdPropMap (nullptr), m_anyClassMatches (false), m_isCacheSetup (false)
+        RelationshipConstraintMap(ECDbSchemaManager const& schemaManager, ECN::ECRelationshipConstraintCR constraint)
+            : m_schemaManager(schemaManager), m_constraint(constraint), m_ecInstanceIdPropMap(nullptr), m_ecClassIdPropMap(nullptr), m_anyClassMatches(false), m_isCacheSetup(false)
             {}
 
-        PropertyMapCP GetECInstanceIdPropMap () const { return m_ecInstanceIdPropMap; }
-        void SetECInstanceIdPropMap (PropertyMapCP ecinstanceIdPropMap) { m_ecInstanceIdPropMap = ecinstanceIdPropMap; }
-        PropertyMapCP GetECClassIdPropMap () const { return m_ecClassIdPropMap; }
-        void SetECClassIdPropMap (PropertyMapCP ecClassIdPropMap) { m_ecClassIdPropMap = ecClassIdPropMap; }
+        PropertyMapCP GetECInstanceIdPropMap() const { return m_ecInstanceIdPropMap; }
+        void SetECInstanceIdPropMap(PropertyMapCP ecinstanceIdPropMap) { m_ecInstanceIdPropMap = ecinstanceIdPropMap; }
+        PropertyMapCP GetECClassIdPropMap() const { return m_ecClassIdPropMap; }
+        void SetECClassIdPropMap(PropertyMapCP ecClassIdPropMap) { m_ecClassIdPropMap = ecClassIdPropMap; }
 
-        bool ClassIdMatchesConstraint (ECN::ECClassId candidateClassId) const;
-        bool TryGetSingleClassIdFromConstraint (ECN::ECClassId& classId) const;
+        bool ClassIdMatchesConstraint(ECN::ECClassId candidateClassId) const;
+        bool TryGetSingleClassIdFromConstraint(ECN::ECClassId& classId) const;
         ECN::ECRelationshipConstraintCR GetRelationshipConstraint()const;
-        bool IsSingleAbstractClass() const
-            {
-            return m_constraint.GetClasses().size() == 1 && m_constraint.GetClasses().front()->GetClassModifier() == ECN::ECClassModifier::Abstract;
-            }
-        };
+        bool IsSingleAbstractClass() const { return m_constraint.GetClasses().size() == 1 && m_constraint.GetClasses().front()->GetClassModifier() == ECN::ECClassModifier::Abstract; }
+    };
 
+/*=================================================================================**//**
+* @bsiclass                                                 Ramanujam.Raman      06/2012
++===============+===============+===============+===============+===============+======*/
+struct RelationshipClassMap : ClassMap
+{
 protected:
     static Utf8CP const DEFAULT_SOURCEECINSTANCEID_COLUMNNAME;
     static Utf8CP const DEFAULT_SOURCEECCLASSID_COLUMNNAME;
     static Utf8CP const DEFAULT_TARGETECINSTANCEID_COLUMNNAME;
     static Utf8CP const DEFAULT_TARGETECCLASSID_COLUMNNAME;
 
-    ConstraintMap m_sourceConstraintMap;
-    ConstraintMap m_targetConstraintMap;
+    RelationshipConstraintMap m_sourceConstraintMap;
+    RelationshipConstraintMap m_targetConstraintMap;
 
     RelationshipClassMap (ECN::ECRelationshipClassCR ecRelClass, ECDbMapCR ecDbMap, ECDbMapStrategy mapStrategy, bool setIsDirty);
     ECDbSqlColumn* CreateConstraintColumn (Utf8CP columnName, ColumnKind columnId, bool addToTable = false );
@@ -84,7 +81,7 @@ public:
 
     ECN::ECRelationshipClassCR GetRelationshipClass () const { return *(GetClass ().GetRelationshipClassCP ()); }
 
-    ConstraintMap const& GetConstraintMap (ECN::ECRelationshipEnd constraintEnd) const;
+    RelationshipConstraintMap const& GetConstraintMap (ECN::ECRelationshipEnd constraintEnd) const;
 
     PropertyMapCP GetConstraintECInstanceIdPropMap (ECN::ECRelationshipEnd constraintEnd) const;
     PropertyMapCP GetConstraintECClassIdPropMap (ECN::ECRelationshipEnd constraintEnd) const;

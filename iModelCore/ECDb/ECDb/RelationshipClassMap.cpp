@@ -121,7 +121,7 @@ std::unique_ptr<ClassDbView> RelationshipClassMap::CreateClassDbView()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle  07/2014
 //---------------------------------------------------------------------------------------
-RelationshipClassMap::ConstraintMap const& RelationshipClassMap::GetConstraintMap (ECN::ECRelationshipEnd constraintEnd) const
+RelationshipConstraintMap const& RelationshipClassMap::GetConstraintMap (ECN::ECRelationshipEnd constraintEnd) const
     {
     return constraintEnd == ECRelationshipEnd_Source ? m_sourceConstraintMap : m_targetConstraintMap;
     }
@@ -158,11 +158,11 @@ PropertyMapCP RelationshipClassMap::GetConstraintECClassIdPropMap (ECRelationshi
     }
 
 
-//************************ RelationshipClassMap::ConstraintMap ******************************************
+//************************ RelationshipConstraintMap ******************************************
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                    07/2014
 //---------------------------------------------------------------------------------------
-bool RelationshipClassMap::ConstraintMap::ClassIdMatchesConstraint (ECN::ECClassId candidateClassId) const
+bool RelationshipConstraintMap::ClassIdMatchesConstraint (ECN::ECClassId candidateClassId) const
     {
     CacheClassIds ();
 
@@ -174,7 +174,7 @@ bool RelationshipClassMap::ConstraintMap::ClassIdMatchesConstraint (ECN::ECClass
 //---------------------------------------------------------------------------------------
 // @bsimethod                               Muhammad.Zaighum                        04/13
 //---------------------------------------------------------------------------------------
-ECN::ECRelationshipConstraintCR RelationshipClassMap::ConstraintMap::GetRelationshipConstraint()const
+ECN::ECRelationshipConstraintCR RelationshipConstraintMap::GetRelationshipConstraint()const
     {
     return m_constraint;
     }
@@ -182,7 +182,7 @@ ECN::ECRelationshipConstraintCR RelationshipClassMap::ConstraintMap::GetRelation
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                       12/13
 //---------------------------------------------------------------------------------------
-bool RelationshipClassMap::ConstraintMap::TryGetSingleClassIdFromConstraint (ECClassId& constraintClassId) const
+bool RelationshipConstraintMap::TryGetSingleClassIdFromConstraint (ECClassId& constraintClassId) const
     {
     CacheClassIds ();
 
@@ -198,7 +198,7 @@ bool RelationshipClassMap::ConstraintMap::TryGetSingleClassIdFromConstraint (ECC
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                    07/2014
 //---------------------------------------------------------------------------------------
-void RelationshipClassMap::ConstraintMap::CacheClassIds () const
+void RelationshipConstraintMap::CacheClassIds () const
     {
     if (!m_isCacheSetup)
         {
@@ -210,20 +210,20 @@ void RelationshipClassMap::ConstraintMap::CacheClassIds () const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                    07/2014
 //---------------------------------------------------------------------------------------
-void RelationshipClassMap::ConstraintMap::CacheClassIds (ECConstraintClassesList const& constraintClassList, bool constraintIsPolymorphic) const
+void RelationshipConstraintMap::CacheClassIds(ECConstraintClassesList const& constraintClassList, bool constraintIsPolymorphic) const
     {
     //runs through all constraint classes, and if recursive is true through subclasses
     //and caches the class ids as this method here is expensive performance-wise.
-    for (auto constraintClass : constraintClassList)
+    for (ECClassCP constraintClass : constraintClassList)
         {
-        if (IsAnyClass (*constraintClass))
+        if (IClassMap::IsAnyClass(*constraintClass))
             {
-            SetAnyClassMatches ();
+            SetAnyClassMatches();
             return;
             }
 
-        const ECClassId classId = constraintClass->GetId ();
-        CacheClassId (classId);
+        const ECClassId classId = constraintClass->GetId();
+        CacheClassId(classId);
 
         if (constraintIsPolymorphic)
             {
@@ -231,7 +231,7 @@ void RelationshipClassMap::ConstraintMap::CacheClassIds (ECConstraintClassesList
             ECConstraintClassesList derivedClasses;
             for (auto derivedClass : m_schemaManager.GetDerivedECClasses(*constraintClass))
                 derivedClasses.push_back(derivedClass->GetEntityClassP());
-            CacheClassIds (derivedClasses, constraintIsPolymorphic);
+            CacheClassIds(derivedClasses, constraintIsPolymorphic);
             }
         }
     }
@@ -240,7 +240,7 @@ void RelationshipClassMap::ConstraintMap::CacheClassIds (ECConstraintClassesList
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                    07/2014
 //---------------------------------------------------------------------------------------
-void RelationshipClassMap::ConstraintMap::CacheClassId (ECN::ECClassId classId) const
+void RelationshipConstraintMap::CacheClassId (ECN::ECClassId classId) const
     {
     m_ecClassIdCache.insert (classId);
     }
@@ -248,7 +248,7 @@ void RelationshipClassMap::ConstraintMap::CacheClassId (ECN::ECClassId classId) 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                    07/2014
 //---------------------------------------------------------------------------------------
-void RelationshipClassMap::ConstraintMap::SetAnyClassMatches () const
+void RelationshipConstraintMap::SetAnyClassMatches () const
     {
     m_anyClassMatches = true;
     //class id cache not needed if any class matches

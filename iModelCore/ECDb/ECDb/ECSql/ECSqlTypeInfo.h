@@ -25,9 +25,7 @@ public:
         Primitive, //!< Primitive type
         Struct, //!< Struct type
         PrimitiveArray, //!< Primitive array type
-        StructArray, //!< Struct array type
-        InstanceKey, //!< ECSQL column points to an instance key (for a Navigation property pointing to the parent end)
-        InstanceKeyList, //!< ECSQL column points to a list of instance keys (for a Navigation property pointing to the "many" end)
+        StructArray //!< Struct array type
         };
 private:
     Kind m_kind;

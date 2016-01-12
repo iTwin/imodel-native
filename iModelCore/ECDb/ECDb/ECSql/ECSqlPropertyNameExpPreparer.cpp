@@ -48,8 +48,6 @@ ECSqlStatus ECSqlPropertyNameExpPreparer::Prepare(NativeSqlBuilder::List& native
 
     PropertyMap const& propMap = exp->GetPropertyMap();
     ECSqlPrepareContext::ExpScope const& currentScope = ctx.GetCurrentScope();
-    if (!NeedsPreparation(currentScope, propMap))
-        return ECSqlStatus::Success;
 
     NavigationPropertyMap const* navPropMap = propMap.GetProperty().GetIsNavigation() ? static_cast<NavigationPropertyMap const*> (&propMap) : nullptr;
     if (navPropMap != nullptr)
@@ -57,6 +55,11 @@ ECSqlStatus ECSqlPropertyNameExpPreparer::Prepare(NativeSqlBuilder::List& native
         ECSqlStatus stat = ValidateNavigationPropertyExp(nativeSqlSnippets, ctx, *exp, *navPropMap, currentScope);
         if (!stat.IsSuccess())
             return stat;
+        }
+    else
+        {
+        if (!NeedsPreparation(currentScope, propMap))
+            return ECSqlStatus::Success;
         }
 
     //in SQLite table aliases are only allowed for SELECT statements

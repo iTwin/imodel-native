@@ -1049,7 +1049,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareParameterExp (NativeSqlBuilder::List& nativ
         nativeSqlParameterCount = binder->GetMappedSqlParameterCount ();
     else
         {
-        binder = ecsqlParameterMap.AddBinder (ctx.GetECSqlStatementR (), *exp, targetIsVirtual, enforceConstraints);
+        binder = ecsqlParameterMap.AddBinder(ctx.GetECSqlStatementR (), *exp, targetIsVirtual, enforceConstraints);
         if (binder == nullptr)
             return ECSqlStatus::Error;
 

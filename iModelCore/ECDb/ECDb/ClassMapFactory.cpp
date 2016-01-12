@@ -38,7 +38,7 @@ ClassMapPtr ClassMapFactory::Load (MapStatus& mapStatus, ClassMapLoadContext& ct
     ECDbClassMapInfo const& classMapInfo = *classMaps->front();
     ECDbClassMapInfo const* baseClassMapInfo = classMapInfo.GetBaseClassMap();
     ECClassCP baseClass = baseClassMapInfo == nullptr ? nullptr : schemaManager.GetECClass (baseClassMapInfo->GetClassId());
-    IClassMap const* baseClassMap = baseClass == nullptr ? nullptr : ecdbMap.GetClassMap (*baseClass);
+    ClassMap const* baseClassMap = baseClass == nullptr ? nullptr : ecdbMap.GetClassMap (*baseClass);
 
     bool setIsDirty = false;
     ECDbMapStrategy const& mapStrategy = classMapInfo.GetMapStrategy();
@@ -72,12 +72,12 @@ ClassMapPtr ClassMapFactory::Load (MapStatus& mapStatus, ClassMapLoadContext& ct
         {
         for (ECClassCP endECClassToLoad : ecdbMap.GetClassesFromRelationshipEnd (ecRelationshipClass->GetSource()))
             {
-            ecdbMap.GetClassMap (*endECClassToLoad);
+            ctx.AddConstraintClass(*endECClassToLoad);
             }
 
         for (ECClassCP endECClassToLoad : ecdbMap.GetClassesFromRelationshipEnd (ecRelationshipClass->GetTarget()))
             {
-            ecdbMap.GetClassMap (*endECClassToLoad);
+            ctx.AddConstraintClass(*endECClassToLoad);
             }
         }
 

@@ -67,7 +67,7 @@ TEST_F(ECSqlNavigationPropertyTestFixture, ECSqlSupport)
                          "    </ECRelationshipClass>"
                          "</ECSchema>"));
 
- /*   AssertPrepare("INSERT INTO ts.B (PB,AParent) VALUES(123,?)", true, "NavProp with single related instance is expected to be supported.");
+    AssertPrepare("INSERT INTO ts.B (PB,AParent) VALUES(123,?)", true, "NavProp with single related instance is expected to be supported.");
     AssertPrepare("INSERT INTO ts.A (PA,BChildren) VALUES(123,?)", false, "NavProp with multiple related instances is not supported.");
     AssertPrepare("INSERT INTO ts.D (PD,CParent) VALUES(123,?)", false, "NavProp with link table relationship is not supported.");
     AssertPrepare("INSERT INTO ts.C (PC,DChildren) VALUES(123,?)", false, "NavProp with link table relationship is not supported.");
@@ -75,7 +75,7 @@ TEST_F(ECSqlNavigationPropertyTestFixture, ECSqlSupport)
     AssertPrepare("UPDATE ONLY ts.B SET AParent=?", false, "Updating NavProp is not supported.");
     AssertPrepare("UPDATE ONLY ts.A SET BChildren=?", false, "Updating NavProp is not supported.");
     AssertPrepare("UPDATE ONLY ts.D SET CParent=?", false, "Updating NavProp is not supported.");
-    AssertPrepare("UPDATE ONLY ts.C SET DChildren=?", false, "Updating NavProp is not supported.");*/
+    AssertPrepare("UPDATE ONLY ts.C SET DChildren=?", false, "Updating NavProp is not supported.");
     }
 
 //---------------------------------------------------------------------------------------
@@ -94,15 +94,25 @@ TEST_F(ECSqlNavigationPropertyTestFixture, InsertOnOneEnd_ForeignKeyMapping)
     modelKey = ECInstanceKey(stmt.GetValueInt64(0), stmt.GetValueId<ECInstanceId>(1));
     ASSERT_TRUE(modelKey.IsValid());
     }
-    
+
+    ECInstanceKey elementKey;
     {
-    /*ECSqlStatement stmt;
+    ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO np.DgnElement(Model,Code) VALUES(?,?)"));
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, modelKey.GetECInstanceId()));
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(2, "TestCode-1", IECSqlBinder::MakeCopy::No));
-    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());*/
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(elementKey));
     }
-    
+
+    //verify relationship was inserted
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT SourceECInstanceId,SourceECClassId FROM np.ParentHasChildren WHERE TargetECInstanceId=?"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, elementKey.GetECInstanceId()));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    ASSERT_EQ(modelKey.GetECInstanceId().GetValue(), stmt.GetValueId<ECInstanceId>(0).GetValue());
+    ASSERT_EQ(modelKey.GetECClassId(), stmt.GetValueInt64(1));
+    }
     }
 
 END_ECDBUNITTESTS_NAMESPACE
