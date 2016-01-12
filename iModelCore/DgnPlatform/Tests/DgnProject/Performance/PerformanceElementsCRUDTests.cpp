@@ -1178,7 +1178,7 @@ void PerformanceElementsCRUDTestFixture::BindUpdateParams (DgnElementPtr& elemen
     bool updateParams = true;
     // Bind Code
     {
-    DgnAuthority::Code elementCode = element->GetCode ();
+    DgnCode elementCode = element->GetCode ();
     IECSqlStructBinder& codeBinder = stmt.BindStruct (stmt.GetParameterIndex ("Code"));
     if (elementCode.IsEmpty ())
         {
