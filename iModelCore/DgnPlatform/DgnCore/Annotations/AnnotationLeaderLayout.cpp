@@ -1,6 +1,6 @@
 //-------------------------------------------------------------------------------------- 
 //     $Source: DgnCore/Annotations/AnnotationLeaderLayout.cpp $
-//  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //-------------------------------------------------------------------------------------- 
 
 #include <DgnPlatformInternal.h> 
@@ -175,6 +175,7 @@ void AnnotationLeaderLayout::Update()
     switch (m_leader->GetTargetAttachmentType())
         {
         case AnnotationLeaderTargetAttachmentType::PhysicalPoint:
+            // NEEDSWORK: Need target relative to placement (which is different from frame transform!)
             m_targetPhysicalPoint = *m_leader->GetTargetAttachmentDataForPhysicalPoint();
             break;
 
