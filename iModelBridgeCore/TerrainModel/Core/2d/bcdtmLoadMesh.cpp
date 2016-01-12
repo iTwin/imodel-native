@@ -2,7 +2,7 @@
 |
 |     $Source: Core/2d/bcdtmLoadMesh.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "bcDTMBaseDef.h"
@@ -560,7 +560,7 @@ BENTLEYDTM_EXPORT int bcdtmLoad_tinMeshFromDtmObject
 **  Allocate Memory For Mesh Faces Array
 */
     numMeshFaces = numTriangles ;
-    meshFaces.resize (numMeshFaces) ;
+    meshFaces.resize (numMeshFaces * 3) ;
     if( meshFaces.data() == nullptr)
       {
        bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ;
