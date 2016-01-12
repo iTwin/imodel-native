@@ -393,27 +393,17 @@ ECN::ArrayKind ECSqlTypeInfo::GetArrayKind () const
 //+---------------+---------------+---------------+---------------+---------------+------
 void ECSqlTypeInfo::DetermineTypeInfo(ECPropertyCR ecProperty)
     {
-    NavigationECPropertyCP navProp = ecProperty.GetAsNavigationPropertyCP();
-    if (navProp != nullptr)
-        {
-        if (NavigationPropertyMap::CanOnlyHaveOneRelatedInstance(*navProp))
-            m_kind = Kind::Primitive;
-        else
-            m_kind = Kind::PrimitiveArray;
-
-        return;
-        }
-
-    auto primitiveType = ECN::PRIMITIVETYPE_Integer;
+    PrimitiveType primitiveType = ECN::PRIMITIVETYPE_Integer;
     ECClassCP structType = nullptr;
-    const auto isArray = ecProperty.GetIsArray();
+    bool isArray = ecProperty.GetIsArray();
 
     uint32_t minOccurs = 0;
     uint32_t maxOccurs = 0;
+
     if (isArray)
         {
-        auto arrayProperty = ecProperty.GetAsArrayProperty();
-        auto structArrayProperty = ecProperty.GetAsStructArrayProperty();
+        ArrayECPropertyCP arrayProperty = ecProperty.GetAsArrayProperty();
+        StructArrayECPropertyCP structArrayProperty = ecProperty.GetAsStructArrayProperty();
         if (nullptr != structArrayProperty)
             structType = structArrayProperty->GetStructElementType();
         else
@@ -432,8 +422,17 @@ void ECSqlTypeInfo::DetermineTypeInfo(ECPropertyCR ecProperty)
         primitiveType = ecProperty.GetAsPrimitiveProperty()->GetType();
     else if (ecProperty.GetIsNavigation())
         {
-        //WIP_NAVPROP Not implemented yet
-        BeAssert(false && "NavProps not implemented yet.");
+        NavigationECPropertyCP navProp = ecProperty.GetAsNavigationPropertyCP();
+        primitiveType = PRIMITIVETYPE_Long;
+        if (NavigationPropertyMap::CanOnlyHaveOneRelatedInstance(*navProp))
+            isArray = false;
+        else
+            {
+            isArray = true;
+            RelationshipCardinalityCR multiplicity = NavigationPropertyMap::GetConstraint(*navProp).GetCardinality();
+            minOccurs = multiplicity.GetLowerLimit();
+            maxOccurs = multiplicity.GetUpperLimit();
+            }
         }
 
     if (structType != nullptr)

@@ -142,7 +142,7 @@ PropertyMapPtr PropertyMap::CreateAndEvaluateMapping(ClassMapLoadContext& ctx, E
         return PropertyMapStruct::Create(ctx, ecdb, ecProperty, propertyAccessString, primaryTable, parentPropertyMap); // The individual properties get their own binding, but we need a placeholder for the overall struct
 
     BeAssert(ecProperty.GetIsNavigation());
-    return new NavigationPropertyMap(ctx, ecProperty, propertyAccessString, primaryTable, parentPropertyMap);
+    return NavigationPropertyMap::Create(ctx, ecdb, ecProperty, propertyAccessString, primaryTable, parentPropertyMap);
     }
 
 //---------------------------------------------------------------------------------------
@@ -967,6 +967,31 @@ Utf8String PropertyMapPrimitiveArray::_ToString() const
     
     return Utf8PrintfString("PropertyMapPrimitiveArray: ecProperty=%s.%s, type=%s, columnName=%s", GetProperty().GetClass().GetFullName(), 
                             GetProperty().GetName().c_str(), ExpHelper::ToString(arrayProperty->GetPrimitiveElementType()), m_columnInfo.GetName());
+    }
+
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                 Krischan.Eberle                      01/2016
+//---------------------------------------------------------------------------------------
+//static
+PropertyMapPtr NavigationPropertyMap::Create(ClassMapLoadContext& ctx, ECDbCR ecdb, ECN::ECPropertyCR prop, Utf8CP propertyAccessString, ECDbSqlTable const* primaryTable, PropertyMapCP parentPropertyMap)
+    {
+    NavigationECPropertyCP navProp = prop.GetAsNavigationPropertyCP();
+    if (navProp == nullptr)
+        {
+        BeAssert(false);
+        return nullptr;
+        }
+
+    if (!CanOnlyHaveOneRelatedInstance(*navProp))
+        {
+        ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "NavigationECProperty '%s.%s' has a multiplicity of '%s'. ECDb only supports NavigationECProperties with a maximum multiplicity of 1.",
+                                                      navProp->GetClass().GetFullName(), navProp->GetName().c_str(),
+                                                      GetConstraint(*navProp).GetCardinality().ToString().c_str());
+        return nullptr;
+        }
+
+    return new NavigationPropertyMap(ctx, prop, propertyAccessString, primaryTable, parentPropertyMap);
     }
 
 

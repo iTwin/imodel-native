@@ -140,12 +140,21 @@ ECSqlStatus ECSqlPropertyNameExpPreparer::ValidateNavigationPropertyExp(NativeSq
         return ECSqlStatus::InvalidECSql;
         }
 
+    PropertyMapCP classIdPropMap = propMap.GetConstraintMap().GetECClassIdPropMap();
+    if (!classIdPropMap->IsVirtual() && classIdPropMap->IsMappedToPrimaryTable())
+        {
+        ctx.GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "NavigationProperties with ECRelationships which require a constraint ECClassId are not yet supported in ECSQL. Expression: %s",
+                                                               exp.ToECSql().c_str());
+        return ECSqlStatus::InvalidECSql;
+        }
+
     if (propMap.GetRelationshipClassMap().GetClassMapType() == IClassMap::Type::RelationshipLinkTable)
         {
         ctx.GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "NavigationProperties with ECRelationships mapped to link tables cannot be used in ECSQL. Expression: %s",
                                                                exp.ToECSql().c_str());
         return ECSqlStatus::InvalidECSql;
         }
+
 
     if (scope.GetECSqlType() == ECSqlType::Update && scope.GetExp().GetType() == Exp::Type::AssignmentList)
         {

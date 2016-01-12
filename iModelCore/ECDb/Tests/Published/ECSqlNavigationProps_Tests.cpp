@@ -34,7 +34,6 @@ TEST_F(ECSqlNavigationPropertyTestFixture, ECSqlSupport)
                          "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
                          "    <ECEntityClass typeName='A'>"
                          "        <ECProperty propertyName='PA' typeName='int' />"
-                         "        <ECNavigationProperty propertyName='BChildren' relationshipName='AHasB' direction='Forward' />"
                          "    </ECEntityClass>"
                          "    <ECEntityClass typeName='B'>"
                          "        <ECProperty propertyName='PB' typeName='int' />"
@@ -42,7 +41,6 @@ TEST_F(ECSqlNavigationPropertyTestFixture, ECSqlSupport)
                          "    </ECEntityClass>"
                          "    <ECEntityClass typeName='C'>"
                          "        <ECProperty propertyName='PC' typeName='int' />"
-                         "        <ECNavigationProperty propertyName='DChildren' relationshipName='CHasDLinkTable' direction='Forward' />"
                          "    </ECEntityClass>"
                          "    <ECEntityClass typeName='D'>"
                          "        <ECProperty propertyName='PD' typeName='int' />"
@@ -67,15 +65,12 @@ TEST_F(ECSqlNavigationPropertyTestFixture, ECSqlSupport)
                          "    </ECRelationshipClass>"
                          "</ECSchema>"));
 
+    ASSERT_TRUE(GetECDb().IsDbOpen());
     AssertPrepare("INSERT INTO ts.B (PB,AParent) VALUES(123,?)", true, "NavProp with single related instance is expected to be supported.");
-    AssertPrepare("INSERT INTO ts.A (PA,BChildren) VALUES(123,?)", false, "NavProp with multiple related instances is not supported.");
     AssertPrepare("INSERT INTO ts.D (PD,CParent) VALUES(123,?)", false, "NavProp with link table relationship is not supported.");
-    AssertPrepare("INSERT INTO ts.C (PC,DChildren) VALUES(123,?)", false, "NavProp with link table relationship is not supported.");
 
     AssertPrepare("UPDATE ONLY ts.B SET AParent=?", false, "Updating NavProp is not supported.");
-    AssertPrepare("UPDATE ONLY ts.A SET BChildren=?", false, "Updating NavProp is not supported.");
     AssertPrepare("UPDATE ONLY ts.D SET CParent=?", false, "Updating NavProp is not supported.");
-    AssertPrepare("UPDATE ONLY ts.C SET DChildren=?", false, "Updating NavProp is not supported.");
     }
 
 //---------------------------------------------------------------------------------------
@@ -84,6 +79,7 @@ TEST_F(ECSqlNavigationPropertyTestFixture, ECSqlSupport)
 TEST_F(ECSqlNavigationPropertyTestFixture, InsertOnOneEnd_ForeignKeyMapping)
     {
     ECDbR ecdb = SetupECDb("ecsqlnavprops.ecdb", BeFileName(L"ECSql_NavigationProperties.01.00.ecschema.xml"), 3, ECDb::OpenParams(Db::OpenMode::ReadWrite));
+    ASSERT_TRUE(ecdb.IsDbOpen());
 
     ECInstanceKey modelKey;
     {
