@@ -5,7 +5,7 @@
 |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include    <DgnPlatformInternal.h>
+#include <DgnPlatformInternal.h>
 
 BEGIN_UNNAMED_NAMESPACE
 
@@ -1488,7 +1488,6 @@ bool OcclusionScorer::ComputeOcclusionScore(double* score, bool& overlap, bool& 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    05/2012
 //--------------+------------------------------------------------------------------------
-double DgnDbRTree3dViewFilter::MaxOcclusionScore() {return DBL_MAX;}
 void OverlapScorer::Initialize(DRange3dCR boundingRange) {m_boundingRange.FromRange(boundingRange);}
 
 //---------------------------------------------------------------------------------------
@@ -1505,22 +1504,10 @@ bool OverlapScorer::ComputeScore(double* score, BeSQLite::RTree3dValCR testRange
     return intersects;
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   John.Gooding    10/2013
-//---------------------------------------------------------------------------------------
-void DgnDbRTree3dViewFilter::InitializeSecondaryTest(DRange3dCR volume, uint32_t hitLimit)
-    {
-    m_useSecondary = true;
-    m_secondaryFilter.m_hitLimit = hitLimit;
-    m_secondaryFilter.m_occlusionMapCount = 0;
-    m_secondaryFilter.m_occlusionMapMinimum = DBL_MAX;
-    m_secondaryFilter.m_scorer.Initialize(volume);
-    }
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-RtreeViewFilter::RtreeViewFilter(DgnViewportCR viewport, DbR db, double minimumSizePixels, DgnElementIdSet const* exclude)
+RTreeFilter::RTreeFilter(DgnViewportCR viewport, DgnDbR db, double minimumSizePixels, DgnElementIdSet const* exclude)
         : Tester(db), m_minimumSizePixels(minimumSizePixels), m_exclude(exclude), m_clips(nullptr)
     {
     m_nCalls = m_nScores = m_nSkipped = 0;
@@ -1545,39 +1532,6 @@ RtreeViewFilter::RtreeViewFilter(DgnViewportCR viewport, DbR db, double minimumS
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   12/11
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbRTree3dViewFilter::DgnDbRTree3dViewFilter(DgnViewportCR viewport, ICheckStopP checkStop, DbR db, uint32_t hitLimit, double minimumSizePixels,
-                            DgnElementIdSet const* alwaysDraw, DgnElementIdSet const* exclude)
-    : RtreeViewFilter(viewport, db, minimumSizePixels, exclude), m_checkStop(checkStop), m_useSecondary(false), m_alwaysDraw(nullptr)
-    {
-    m_hitLimit = hitLimit;
-    m_occlusionMapMinimum = 1.0e20;
-    m_occlusionMapCount = 0;
-
-    m_secondaryFilter.m_hitLimit = hitLimit;
-    m_secondaryFilter.m_occlusionMapCount = 0;
-    m_secondaryFilter.m_occlusionMapMinimum = DBL_MAX;
-
-    if (nullptr != alwaysDraw)
-        {
-        m_lastScore = MaxOcclusionScore();
-        for (auto const& id : *alwaysDraw)
-            {
-            if (nullptr != m_exclude && m_exclude->find(id) != m_exclude->end())
-                continue;
-
-            m_passedPrimaryTest = true;
-            m_passedSecondaryTest = false;
-            RangeAccept(id.GetValueUnchecked());
-            }
-        }
-
-    //  We do this as the last step. Otherwise, the calls to _RangeAccept in the previous step would not have any effect.
-    m_alwaysDraw = alwaysDraw;
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BJB             12/89
 +---------------+---------------+---------------+---------------+---------------+------*/
 static inline void exchangeAndNegate(double& dbl1, double& dbl2)
@@ -1590,7 +1544,7 @@ static inline void exchangeAndNegate(double& dbl1, double& dbl2)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool RtreeViewFilter::SkewTest(RTree3dValCP pt)
+bool RTreeFilter::SkewTest(RTree3dValCP pt)
     {
     if (!m_doSkewtest || pt->Intersects(m_frontFaceRange))
         return  true;
@@ -1673,52 +1627,10 @@ bool RtreeViewFilter::SkewTest(RTree3dValCP pt)
     return true;
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Ray.Bentley                     04/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-void DgnDbRTree3dViewFilter::RangeAccept(uint64_t elementId)
-    {
-    BeAssert(m_lastId == elementId);
-    
-    if (nullptr != m_exclude && m_exclude->find(DgnElementId(elementId)) != m_exclude->end())
-        return;
-
-    if (m_passedPrimaryTest)
-        {
-        //  Don't add it if the constructor already added it.
-        if (nullptr == m_alwaysDraw || m_alwaysDraw->find(DgnElementId(elementId)) == m_alwaysDraw->end())
-            {
-            ++m_nCalls;
-
-            if (m_occlusionMapCount >= m_hitLimit)
-                {
-                m_scorer.SetTestLOD(true); // now that we've found a minimum number of elements, start skipping small ones
-                m_occlusionScoreMap.erase(m_occlusionScoreMap.begin());
-                }
-            else
-                m_occlusionMapCount++;
-
-            m_occlusionScoreMap.Insert(m_lastScore, elementId);
-            m_occlusionMapMinimum = m_occlusionScoreMap.begin()->first;
-            }
-        }
-
-    if (m_passedSecondaryTest)
-        {
-        if (m_secondaryFilter.m_occlusionMapCount >= m_secondaryFilter.m_hitLimit)
-            m_secondaryFilter.m_occlusionScoreMap.erase(m_secondaryFilter.m_occlusionScoreMap.begin());
-        else
-            m_secondaryFilter.m_occlusionMapCount++;
-
-        m_secondaryFilter.m_occlusionScoreMap.Insert(m_secondaryFilter.m_lastScore, elementId);
-        m_secondaryFilter.m_occlusionMapMinimum = m_secondaryFilter.m_occlusionScoreMap.begin()->first;
-        }
-    }
-
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    06/2013
 //---------------------------------------------------------------------------------------
-bool RtreeViewFilter::AllPointsClippedByOnePlane(ConvexClipPlaneSetCR cps, size_t nPoints, DPoint3dCP points) const
+bool RTreeFilter::AllPointsClippedByOnePlane(ConvexClipPlaneSetCR cps, size_t nPoints, DPoint3dCP points) const
     {
     for (auto const& plane : cps)
         {
@@ -1736,109 +1648,6 @@ bool RtreeViewFilter::AllPointsClippedByOnePlane(ConvexClipPlaneSetCR cps, size_
     return false;
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   04/14
-+---------------+---------------+---------------+---------------+---------------+------*/
-inline static void toLocalCorners(DPoint3dP localCorners, RTree3dValCP pt)
-    {
-    localCorners[0].x = localCorners[3].x = localCorners[4].x = localCorners[7].x = pt->m_minx;     //       7+------+6
-    localCorners[1].x = localCorners[2].x = localCorners[5].x = localCorners[6].x = pt->m_maxx;     //       /|     /|
-                                                                                                    //      / |    / |
-    localCorners[0].y = localCorners[1].y = localCorners[4].y = localCorners[5].y = pt->m_miny;     //     / 4+---/--+5
-    localCorners[2].y = localCorners[3].y = localCorners[6].y = localCorners[7].y = pt->m_maxy;     //   3+------+2 /    y   z
-                                                                                                    //    | /    | /     |  /
-    localCorners[0].z = localCorners[1].z = localCorners[2].z = localCorners[3].z = pt->m_minz;     //    |/     |/      |/
-    localCorners[4].z = localCorners[5].z = localCorners[6].z = localCorners[7].z = pt->m_maxz;     //   0+------+1      *---x
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   12/11
-+---------------+---------------+---------------+---------------+---------------+------*/
-int DgnDbRTree3dViewFilter::_TestRange(QueryInfo const& info)
-    {
-    BeAssert(6 == info.m_nCoord);
-    info.m_within = Within::Outside;
-
-    if (m_checkStop && m_checkStop->_CheckStop())
-        return BE_SQLITE_ERROR;
-
-    RTree3dValCP pt = (RTree3dValCP) info.m_coords;
-    m_passedPrimaryTest   = (info.m_parentWithin == Within::Inside) ? true : (m_boundingRange.Intersects(*pt) && SkewTest(pt));
-    m_passedSecondaryTest = m_useSecondary ? m_secondaryFilter.m_scorer.m_boundingRange.Intersects(*pt) : false;
-
-    if (m_passedSecondaryTest)
-        {
-        if (!m_secondaryFilter.m_scorer.ComputeScore(&m_secondaryFilter.m_lastScore, *pt))
-            {
-            m_passedSecondaryTest = false;
-            }
-        else if (m_secondaryFilter.m_occlusionMapCount >= m_secondaryFilter.m_hitLimit && m_secondaryFilter.m_lastScore <= m_secondaryFilter.m_occlusionMapMinimum)
-            {
-            m_passedSecondaryTest = false;
-            }
-
-        if (m_passedSecondaryTest)
-            info.m_within = Within::Partly;
-        }
-
-    if (!m_passedPrimaryTest)
-        return BE_SQLITE_OK;
-
-    DPoint3d localCorners[8];
-    toLocalCorners(localCorners, pt);
-
-#if defined (NEEDS_WORK_CLIPPING)
-    if (m_clips.IsValid())
-        {
-        bool allClippedByOnePlane = false;
-        for (ConvexClipPlaneSetCR cps : *m_clips)
-            {
-            if (allClippedByOnePlane = AllPointsClippedByOnePlane(cps, 8, localCorners))
-                break;
-            }
-
-        if (allClippedByOnePlane)
-            {
-            m_passedPrimaryTest = false;
-            return BE_SQLITE_OK;
-            }
-        }
-#endif
-
-    BeAssert(m_passedPrimaryTest);
-    bool overlap, spansEyePlane;
-
-    ++m_nScores;
-    if (!m_scorer.ComputeOcclusionScore(&m_lastScore, overlap, spansEyePlane, localCorners, true))
-        {
-        m_passedPrimaryTest = false;
-        }
-    else if (m_occlusionMapCount >= m_hitLimit && m_lastScore <= m_occlusionMapMinimum)
-        {
-        // this box is smaller than the smallest entry we already have, skip it.
-        m_passedPrimaryTest = false;
-        }
-
-    if (m_passedPrimaryTest)
-        {
-        m_lastId = info.m_rowid;  // for debugging - make sure we get entries immediately after we score them.
-
-        if (info.m_level>0)
-            {
-            // For nodes, return 'level-score' (the "-" is because for occlusion score higher is better. But for rtree priority, lower means better).
-            info.m_score = info.m_level - m_lastScore;
-            info.m_within = info.m_parentWithin == Within::Inside ? Within::Inside : m_boundingRange.Contains(*pt) ? Within::Inside : Within::Partly;
-            }
-        else
-            {
-            // For entries (ilevel==0), we return 0 so they are processed immediately (lowest score has highest priority).
-            info.m_score = 0;
-            info.m_within = Within::Partly;
-            }
-        }
-
-    return BE_SQLITE_OK;
-    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/14
@@ -1863,158 +1672,3 @@ int DgnDbRTreeFitFilter::_TestRange(QueryInfo const& info)
     return  BE_SQLITE_OK;
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   04/14
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ProgressiveViewFilter::_StepRange(DbFunction::Context&, int nArgs, DbValue* args) 
-    {
-    if (m_context->WasAborted())
-        return;
-
-    // for restarts, skip calls up to the point where we finished last pass
-    if (++m_nThisPass < m_nLastPass)
-        return;
-
-    ++m_nLastPass;
-
-    DgnElementId elementId(args->GetValueUInt64());
-    if (nullptr != m_exclude && m_exclude->find(elementId) != m_exclude->end())
-        return;
-
-    if (m_queryModel.FindElementById(elementId))
-        return;
-
-    DgnElements& pool = m_dgndb.Elements();
-    DgnElementCPtr el = pool.GetElement(elementId);
-    if (el.IsValid())
-        {
-        GeometrySourceCP geomElem = el->ToGeometrySource();
-        if (nullptr != geomElem)
-            {
-            m_context->VisitElement(*geomElem);
-
-            if (!m_setTimeout)
-                { // don't set the timeout until after we've drawn one element
-                m_context->EnableStopAfterTimout(1000);
-                m_setTimeout = true;
-                }
-
-            if (++m_thisBatch >= m_maxInBatch) // limit the number or elements added per batch
-                m_context->SetAborted();
-            }
-        }
-
-    if (pool.GetTotalAllocated() < (int64_t) m_elementReleaseTrigger)
-        return;
-
-    pool.DropFromPool(*el);
-
-    // Purging the element does not purge the symbols so it may be necessary to do a full purge
-    if (pool.GetTotalAllocated() < (int64_t) m_purgeTrigger)
-        return;
-
-    pool.Purge(m_elementReleaseTrigger);   // Try to get back to the elementPurgeTrigger
-
-    static const double s_purgeFactor = 1.3;
-
-    // The purge may not have succeeded if there are elements in the QueryView's list of elements and those elements hold symbol references.
-    // When that is true, we leave it to QueryViewController::_DrawView to try to clean up.  This logic just tries to recover from the
-    // growth is caused.  It allows some growth between calls to purge to avoid spending too much time in purge.
-    uint64_t newTotalAllocated = (uint64_t)pool.GetTotalAllocated();
-    m_purgeTrigger = (uint64_t)(s_purgeFactor * std::max(newTotalAllocated, m_elementReleaseTrigger));
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   04/14
-+---------------+---------------+---------------+---------------+---------------+------*/
-int ProgressiveViewFilter::_TestRange(QueryInfo const& info)
-    {
-    BeAssert(6 == info.m_nCoord);
-    info.m_within = Within::Outside;
-
-    if (m_context->_CheckStop())
-        return BE_SQLITE_ERROR;
-
-    RTree3dValCP pt = (RTree3dValCP) info.m_coords;
-    if ((info.m_parentWithin != Within::Inside) && !(m_boundingRange.Intersects(*pt) && SkewTest(pt)))
-        return BE_SQLITE_OK;
-
-    DPoint3d localCorners[8];
-    toLocalCorners(localCorners, pt);
-
-#if defined (NEEDS_WORK_CLIPPING)
-    if (m_clips.IsValid())
-        {
-        bool allClippedByOnePlane = false;
-        for (ConvexClipPlaneSetCR cps : *m_clips)
-            {
-            if (allClippedByOnePlane = AllPointsClippedByOnePlane(cps, 8, localCorners))
-                break;
-            }
-        if (allClippedByOnePlane)
-            return BE_SQLITE_OK;
-        }
-#endif
-
-    if (info.m_level > 0) // only score nodes, not elements
-        {
-        bool   overlap, spansEyePlane;
-        double score;
-
-        if (!m_scorer.ComputeOcclusionScore(&score, overlap, spansEyePlane, localCorners, true))
-            return BE_SQLITE_OK;
-
-        info.m_within = info.m_parentWithin == Within::Inside ? Within::Inside : m_boundingRange.Contains(*pt) ? Within::Inside : Within::Partly;
-        info.m_score = info.m_maxLevel - info.m_level - score;
-        }
-    else
-        {
-        info.m_score = 0;
-        info.m_within = Within::Partly;
-        }                                                                                                                                  
-    return BE_SQLITE_OK;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   04/14
-+---------------+---------------+---------------+---------------+---------------+------*/
-ProgressiveDisplay::Completion ProgressiveViewFilter::_Process(ViewContextR context)
-    {
-    DgnPlatformLib::VerifyClientThread();
-
-    // Progressive display happens on the client thread. It uses SQLite, and therefore cannot run at the same time 
-    // as the query thread (that causes deadlocks, race conditions, crashes, etc.). This test is the only necessary 
-    // synchronization to ensure that they do not run at the same time. It tests (unsynchronized) whether the query 
-    // queue is currently idle. If not, we simply return "aborted" and wait for the next chance to begin. If the 
-    // query queue is empty and inactive, it can't be restarted during this call because only this thread can add entries to it.
-    // NOTE: this test is purposely for whether the query thread has work for ANY QueryModel, not just the one we're 
-    // attempting to display - that's necessary.  KAB
-    if (!m_dgndb.QueryModels().IsIdle())
-        {
-        DEBUG_PRINTF("querying, can't start pd\n");
-        return Completion::Aborted;
-        }
-
-    m_context = &context;
-    m_nThisPass = m_thisBatch = 0; // restart every pass
-    m_setTimeout = false;
-
-    DEBUG_PRINTF("start progressive display\n");
-    if (BE_SQLITE_ROW != StepRTree(*m_rangeStmt))
-        {
-        m_rangeStmt->Reset();
-        DEBUG_PRINTF("aborted progressive display\n");
-        return Completion::Aborted;
-        }
-    DEBUG_PRINTF("finished progressive display\n");
-
-    return Completion::Finished;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   04/14
-+---------------+---------------+---------------+---------------+---------------+------*/
-ProgressiveViewFilter::~ProgressiveViewFilter()
-    {
-    m_rangeStmt = nullptr;
-    }

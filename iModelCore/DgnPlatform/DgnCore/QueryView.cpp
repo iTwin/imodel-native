@@ -105,9 +105,6 @@ bool QueryViewController::FrustumChanged(DgnViewportCR vp) const
 //---------------------------------------------------------------------------------------
 void QueryViewController::StartSelectProcessing(DgnViewportR viewport, UpdatePlan const& plan)
     {
-    uint32_t hitLimit = plan.GetQuery().GetTargetNumElements();
-    double minimumPixels = plan.GetQuery().GetMinimumSizePixels();
-
     size_t lastSize = 0;
     QueryModel::Results* results = m_queryModel.GetCurrentResults();
     if (nullptr != results)
@@ -119,7 +116,7 @@ void QueryViewController::StartSelectProcessing(DgnViewportR viewport, UpdatePla
     m_forceNewQuery = false;
 
     m_queryModel.GetDgnDb().QueryModels().RequestProcessing(
-        QueryModel::Processor::Params(m_queryModel, viewport, _GetRTreeMatchSql(viewport), hitLimit, ComputeMaxElementMemory(viewport), minimumPixels,
+        QueryModel::Processor::Params(m_queryModel, viewport, _GetRTreeMatchSql(viewport), plan.GetQuery(), ComputeMaxElementMemory(viewport), 
             m_alwaysDrawn.empty() ? nullptr : &m_alwaysDrawn, m_neverDrawn.empty() ? nullptr : &m_neverDrawn, m_noQuery,
             GetClipVector().get(), m_secondaryHitLimit, m_secondaryVolume));
     }
@@ -403,14 +400,13 @@ void QueryViewController::_DrawView(ViewContextR context)
         return;
         }
 
-    printf("clear progressiv _DrawView\n");
+    printf("clear progressive _DrawView\n");
     context.GetViewport()->ClearProgressiveDisplay();
 
     const uint64_t maxMem = GetMaxElementMemory();
     UNUSED_VARIABLE(maxMem);
-#if !defined (_X64_)
     const int64_t purgeTrigger = static_cast <int64_t> (1.5 * static_cast <double> (maxMem));
-#endif
+
     // this vector is sorted by occlusion score, so we use it to determine the order to draw the view
     uint32_t numDrawn = 0;
     for (auto& thisElement : results->m_elements)
@@ -426,7 +422,6 @@ void QueryViewController::_DrawView(ViewContextR context)
         if (context.WasAborted())
             break;
 
-#if !defined (_X64_)
         DgnElements& pool = m_queryModel.GetDgnDb().Elements();
         if (numDrawn > results->m_drawnBeforePurge && pool.GetTotalAllocated() > purgeTrigger)
             {
@@ -467,7 +462,6 @@ void QueryViewController::_DrawView(ViewContextR context)
                     break;   //  Unable to get low enough
                 }
             }
-#endif
         }
 
     UpdateLogging::RecordDoneUpdate(numDrawn, context.GetDrawPurpose());
@@ -489,13 +483,11 @@ void QueryViewController::_DrawView(ViewContextR context)
         {
         wt_OperationForGraphics highPriority;  //  see comments in BeSQLite.h
         DgnViewportP vp = context.GetViewport();
-        DgnDbR project = m_queryModel.GetDgnDb();
         CachedStatementPtr rangeStmt;
-        project.GetCachedStatement(rangeStmt, _GetRTreeMatchSql(*context.GetViewport()).c_str());
+        m_queryModel.GetDgnDb().GetCachedStatement(rangeStmt, _GetRTreeMatchSql(*context.GetViewport()).c_str());
         BindModelAndCategory(*rangeStmt);
 
-        ProgressiveViewFilter* pvFilter = new ProgressiveViewFilter(*vp, project, m_queryModel,
-                                                m_neverDrawn.empty() ? nullptr : &m_neverDrawn, maxMem, rangeStmt.get());
+        QueryModel::ProgressiveFilter* pvFilter = new QueryModel::ProgressiveFilter(*vp, m_queryModel, m_neverDrawn.empty() ? nullptr : &m_neverDrawn, maxMem, rangeStmt.get());
         if (GetClipVector().IsValid())
             pvFilter->SetClipVector(*GetClipVector());
 
@@ -512,13 +504,12 @@ void QueryViewController::_VisitAllElements(ViewContextR context)
     context.VisitDgnModel(&m_queryModel);
 
     // And step through the rest of the elements that were not loaded (but would be displayed by progressive display).
-    DgnDbR project = m_queryModel.GetDgnDb();
     CachedStatementPtr rangeStmt;
-    project.GetCachedStatement(rangeStmt, _GetRTreeMatchSql(*context.GetViewport()).c_str());
+    m_queryModel.GetDgnDb().GetCachedStatement(rangeStmt, _GetRTreeMatchSql(*context.GetViewport()).c_str());
     BindModelAndCategory(*rangeStmt);
-    ProgressiveViewFilter pvFilter (*context.GetViewport(), project, m_queryModel, m_neverDrawn.empty() ? nullptr : &m_neverDrawn, GetMaxElementMemory(), rangeStmt.get());
+    QueryModel::ProgressiveFilter pvFilter (*context.GetViewport(), m_queryModel, m_neverDrawn.empty() ? nullptr : &m_neverDrawn, GetMaxElementMemory(), rangeStmt.get());
 
-    while (pvFilter._Process(context) != ProgressiveDisplay::Completion::Finished)
+    while (pvFilter._Process(context, 0) != ProgressiveDisplay::Completion::Finished)
         ;
     }
 
@@ -555,7 +546,7 @@ uint64_t QueryViewController::ComputeMaxElementMemory(DgnViewportCR vp)
 #endif
     baseValue *= oneMeg;
 
-    int32_t inputFactor = _GetMaxElementFactor(vp);
+    int32_t inputFactor = 0; // NEEDS_WORK_CONTINUOUS_RENDER  _GetMaxElementFactor(vp);
     bool decrease = false;
     if (inputFactor < 0)
         {

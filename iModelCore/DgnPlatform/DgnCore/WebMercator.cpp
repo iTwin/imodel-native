@@ -1194,7 +1194,7 @@ void WebMercatorDisplay::DrawView (ViewContextR context)
 * This callback is invoked on a timer during progressive display.
 * @bsimethod                                                    Sam.Wilson      10/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-ProgressiveDisplay::Completion WebMercatorDisplay::_Process (ViewContextR context)
+ProgressiveDisplay::Completion WebMercatorDisplay::_Process (ViewContextR context, uint32_t batchSize)
     {
     if (BeTimeUtilities::GetCurrentTimeAsUnixMillis() < m_nextRetryTime)
         {

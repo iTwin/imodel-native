@@ -42,9 +42,9 @@ void Render::Target::VerifyRenderThread() {DgnPlatformLib::VerifyRenderThread();
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void Render::Target::RecordFrameTime(double seconds) 
+void Render::Target::RecordFrameTime(GraphicList& scene, double seconds) 
     {
-    uint32_t count = m_currentScene->GetCount();
+    uint32_t count = scene.GetCount();
     if (0 == count)
         return;
 
