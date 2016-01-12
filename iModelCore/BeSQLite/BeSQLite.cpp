@@ -4671,6 +4671,8 @@ static void logCallback(void *pArg, int iErrCode, Utf8CP zMsg)
     LOG.messagev(severity, "SQLITE_ERROR %x [%s]", iErrCode, zMsg);
     }
 
+// #define NO_LOG_CALLBACK 1
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/11
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -4679,8 +4681,10 @@ DbResult BeSQLiteLib::Initialize(BeFileNameCR tempDir, LogErrors logErrors)
     static bool s_done = false;
     RUNONCE_CHECK(s_done,BE_SQLITE_OK);
 
+#ifndef NO_LOG_CALLBACK
     if (LogErrors::No != logErrors)
         sqlite3_config(SQLITE_CONFIG_LOG, logCallback, nullptr);
+#endif
 
     sqlite3_initialize();
     sqlite3_auto_extension((void(*)(void))&besqlite_db_init);
