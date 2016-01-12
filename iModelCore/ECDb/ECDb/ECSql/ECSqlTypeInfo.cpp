@@ -397,7 +397,7 @@ void ECSqlTypeInfo::DetermineTypeInfo(ECPropertyCR ecProperty)
     if (navProp != nullptr)
         {
         if (NavigationPropertyMap::CanOnlyHaveOneRelatedInstance(*navProp))
-            m_kind = Kind::Null;
+            m_kind = Kind::Primitive;
         else
             m_kind = Kind::PrimitiveArray;
 
