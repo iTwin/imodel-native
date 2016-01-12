@@ -24,14 +24,10 @@ USING_NAMESPACE_BENTLEY_WEBSERVICES
 HierarchyManager::HierarchyManager
 (
 ECDbAdapterR ecdbAdapter,
-WebServices::ECSqlStatementCache& statementCache,
-ObjectInfoManager& objectInfoManager,
-ChangeInfoManager& changeInfoManager
+WebServices::ECSqlStatementCache& statementCache
 ) :
 m_dbAdapter(ecdbAdapter),
-m_statementCache(statementCache),
-m_objectInfoManager(objectInfoManager),
-m_changeInfoManager(changeInfoManager)
+m_statementCache(statementCache)
     {}
 
 /*--------------------------------------------------------------------------------------+
