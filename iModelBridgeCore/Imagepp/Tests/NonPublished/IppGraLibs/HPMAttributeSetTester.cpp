@@ -96,7 +96,7 @@ HPMAttributeSetTester::HPMAttributeSetTester()
 TEST_F (HPMAttributeSetTester, SetTest)
     {
    
-    ASSERT_EQ(14, AttributeSet.size());
+    ASSERT_EQ(15, AttributeSet.size());
 
     }
 
@@ -108,12 +108,12 @@ TEST_F (HPMAttributeSetTester, CopyTest)
     {
 
     HPMAttributeSet AttributeSetCopy(AttributeSet);
-    ASSERT_EQ(14, AttributeSetCopy.size());
+    ASSERT_EQ(15, AttributeSetCopy.size());
     ASSERT_TRUE(AttributeSetCopy.HasAttribute(static_cast<HPMAttributesID>(HRFAttributeDontSupportPersistentColor::ATTRIBUTE_ID)));
     ASSERT_FALSE(AttributeSetCopy.HasAttribute(static_cast<HPMAttributesID>(HPSAttributeImageDescription::ATTRIBUTE_ID)));
    
     HPMAttributeSet AttributeSetEq = AttributeSet;
-    ASSERT_EQ(14, AttributeSetEq.size());
+    ASSERT_EQ(15, AttributeSetEq.size());
     ASSERT_TRUE(AttributeSetEq.HasAttribute(static_cast<HPMAttributesID>(HRFAttributeDontSupportPersistentColor::ATTRIBUTE_ID)));
     ASSERT_FALSE(AttributeSetEq.HasAttribute(static_cast<HPMAttributesID>(HPSAttributeImageDescription::ATTRIBUTE_ID))); 
    
@@ -320,7 +320,7 @@ TEST_F (HPMAttributeSetTester, FindAttributeTest)
 TEST_F (HPMAttributeSetTester, ClearTest)
     { 
 
-    ASSERT_EQ(14, AttributeSet.size());
+    ASSERT_EQ(15, AttributeSet.size());
 
     AttributeSet.Clear();
 
@@ -352,7 +352,6 @@ TEST_F (HPMAttributeSetTester, RemoveTest)
     AttributeSet.Remove(*pHRFAttributeVerticalUnitRatioToMeter);
     ASSERT_EQ(12, AttributeSet.size());
     ASSERT_FALSE(AttributeSet.HasAttribute<HRFAttributeVerticalUnitRatioToMeter>());
-    ASSERT_TRUE(AttributeSet.HasAttribute<HRFAttributeVerticalUnitRatioToMeter>());
 
 
     AttributeSet.Remove(*pHRFAttributeResolutionUnit);
