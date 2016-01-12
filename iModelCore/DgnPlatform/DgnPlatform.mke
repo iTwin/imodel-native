@@ -188,6 +188,8 @@ $(CoreObjs)ElementDependencyGraph$(oext) :          $(DgnCoreDir)ElementDependen
 
 $(coreObjs)LocksManager$(oext):                     $(DgnCoreDir)LocksManager.cpp $(DgnPlatformAPISrc)LocksManager.h ${MultiCompileDepends}
 
+$(coreObjs)DgnCodesManager$(oext):                  $(DgnCoreDir)DgnCodesManager.cpp $(DgnPlatformAPISrc)DgnCodesManager.h ${MultiCompileDepends}
+
 $(CoreObjs)LsName$(oext) :                          $(lineStyleDir)LsName.cpp $(LsLocalDepends) ${MultiCompileDepends}
 
 $(CoreObjs)LsLocation$(oext) :                      $(lineStyleDir)LsLocation.cpp $(LsLocalDepends) ${MultiCompileDepends}

@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/LocksManager.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -257,17 +257,6 @@ LockStatus ILocksManager::LockModel(DgnModelCR model, LockLevel lvl) { return _L
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-BeFileName ILocksManager::GetLockTableFileName() const
-    {
-    // Assumption is that if the dgndb is writable, its directory is too, given that sqlite also needs to create files in that directory for journaling.
-    BeFileName filename = GetDgnDb().GetFileName();
-    filename.AppendExtension(L"locks");
-    return filename;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   10/15
-+---------------+---------------+---------------+---------------+---------------+------*/
 LockStatus ILocksManager::_LockElement(DgnElementCR el, LockLevel level, DgnModelId originalModelId)
     {
     // We don't acquire locks for indirect or dynamic changes.
@@ -364,8 +353,9 @@ struct LocalLocksManager : ILocksManager
 private:
     enum class DbState { New, Ready, Invalid };
 
-    Db m_db;
     DbState m_dbState;
+
+    DbR GetLocalDb() { return GetDgnDb().GetLocalStateDb().GetDb(); }
 
     LocalLocksManager(DgnDbR db) : ILocksManager(db), m_dbState(DbState::New) { }
 
@@ -401,7 +391,7 @@ private:
     bool Validate(LockStatus* status = nullptr);
     LockRequest::Response AcquireLocks(LockRequestR locks, bool cull);
     void Cull(LockRequestR locks);
-    DbResult Save() { return m_db.SaveChanges(); }
+    DbResult Save() { return GetLocalDb().SaveChanges(); }
     void AddDependentElements(DgnLockSet& locks, bvector<DgnModelId> const& models);
     LockStatus PromoteDependentElements(LockRequestCR usedLocks, bvector<DgnModelId> const& models);
 public:
@@ -424,26 +414,20 @@ bool LocalLocksManager::Validate(LockStatus* pStatus)
 
     // Assume something will go wrong.
     m_dbState = DbState::Invalid;
+    status = LockStatus::SyncError;
 
-    // ###TODO? Look for an existing locks db and don't throw away existing if found?
-    BeFileName filename = GetLockTableFileName();
-    filename.BeDeleteFile();
+    DgnDb::LocalStateDb& localState = GetDgnDb().GetLocalStateDb();
+    if (!localState.IsValid())
+        return false;
 
-    DbResult result = m_db.CreateNewDb(filename);
-    if (BE_SQLITE_OK == result)
-        {
-        result = m_db.CreateTable(LOCAL_Table,
-                                    LOCAL_Type " INTEGER,"
-                                    LOCAL_Id " INTEGER,"
-                                    LOCAL_Level " INTEGER,"
-                                    "PRIMARY KEY(" LOCAL_Type "," LOCAL_Id ")");
-        }
+    DbResult result = localState.GetDb().CreateTable(LOCAL_Table,
+                                LOCAL_Type " INTEGER,"
+                                LOCAL_Id " INTEGER,"
+                                LOCAL_Level " INTEGER,"
+                                "PRIMARY KEY(" LOCAL_Type "," LOCAL_Id ")");
 
     if (BE_SQLITE_OK != result)
-        {
-        status = LockStatus::SyncError;
         return false;
-        }
 
     // Request a list of current locks from server
     DgnLockSet locks;
@@ -482,7 +466,7 @@ LockStatus LocalLocksManager::_RefreshLocks()
     if (LockStatus::Success != status)
         return status;
 
-    if (BE_SQLITE_OK != m_db.ExecuteSql("DELETE FROM " LOCAL_Table))
+    if (BE_SQLITE_OK != GetLocalDb().ExecuteSql("DELETE FROM " LOCAL_Table))
         return LockStatus::SyncError;
 
     if (!locks.empty())
@@ -505,7 +489,7 @@ template<typename T> static void bindEnum(Statement& stmt, int32_t index, T val)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void LocalLocksManager::Insert(LockableId id, LockLevel level, bool overwrite)
     {
-    CachedStatementPtr stmt = m_db.GetCachedStatement(overwrite ? STMT_InsertOrReplace : STMT_InsertNew);
+    CachedStatementPtr stmt = GetLocalDb().GetCachedStatement(overwrite ? STMT_InsertOrReplace : STMT_InsertNew);
     bindEnum(*stmt, 1, id.GetType());
     stmt->BindId(2, id.GetId());
     bindEnum(*stmt, 3, level);
@@ -564,7 +548,7 @@ ModelElementLocks::const_iterator ModelElementLocks::begin() const
 LockStatus LocalLocksManager::_QueryLockLevel(LockLevel& level, LockableId id, bool localOnly)
     {
     level = LockLevel::None;
-    CachedStatementPtr select = m_db.GetCachedStatement(STMT_SelectExisting);
+    CachedStatementPtr select = GetLocalDb().GetCachedStatement(STMT_SelectExisting);
     bindEnum(*select, 1, id.GetType());
     select->BindId(2, id.GetId());
     if (BE_SQLITE_ROW == select->Step())
@@ -586,9 +570,9 @@ LockStatus LocalLocksManager::_QueryLockLevel(LockLevel& level, LockableId id, b
 +---------------+---------------+---------------+---------------+---------------+------*/
 template<typename T> void LocalLocksManager::Insert(T const& locks, bool checkExisting)
     {
-    CachedStatementPtr select = checkExisting ? m_db.GetCachedStatement(STMT_SelectExisting) : nullptr,
-                       insert = m_db.GetCachedStatement(STMT_InsertNew),
-                       update = checkExisting ? m_db.GetCachedStatement(STMT_UpdateLevel) : nullptr;
+    CachedStatementPtr select = checkExisting ? GetLocalDb().GetCachedStatement(STMT_SelectExisting) : nullptr,
+                       insert = GetLocalDb().GetCachedStatement(STMT_InsertNew),
+                       update = checkExisting ? GetLocalDb().GetCachedStatement(STMT_UpdateLevel) : nullptr;
 
     // If we obtain exclusive lock on a model, we want to record an exclusive lock on all its elements
     // Likewise, an exclusive lock on the db should record an exclusive lock on everything in it
@@ -695,7 +679,7 @@ void LocalLocksManager::Cull(LockRequestR locks)
     };
 
     VSet vset(locks);
-    CachedStatementPtr stmt = m_db.GetCachedStatement(STMT_SelectInSet);
+    CachedStatementPtr stmt = GetLocalDb().GetCachedStatement(STMT_SelectInSet);
     stmt->BindVirtualSet(1, vset);
     while (BE_SQLITE_ROW == stmt->Step())
         {
@@ -788,7 +772,7 @@ LockStatus LocalLocksManager::_RelinquishLocks()
     else if (!context.GetUsedLocks().IsEmpty())
         return LockStatus::LockUsed;
 
-    if (BE_SQLITE_OK != m_db.ExecuteSql("DELETE FROM " LOCAL_Table) || BE_SQLITE_OK != Save())
+    if (BE_SQLITE_OK != GetLocalDb().ExecuteSql("DELETE FROM " LOCAL_Table) || BE_SQLITE_OK != Save())
         return LockStatus::SyncError;
 
     auto status = server->RelinquishLocks(GetDgnDb());
@@ -910,7 +894,7 @@ void LocalLocksManager::AddDependentElements(DgnLockSet& locks, bvector<DgnModel
     };
 
     VSet vset(models, GetDgnDb());
-    CachedStatementPtr stmt = m_db.GetCachedStatement(STMT_SelectElemsInModels);
+    CachedStatementPtr stmt = GetLocalDb().GetCachedStatement(STMT_SelectElemsInModels);
     stmt->BindVirtualSet(1, vset);
     while (BE_SQLITE_ROW == stmt->Step())
         locks.insert(DgnLock(LockableId(stmt->GetValueId<DgnElementId>(0)), LockLevel::None));
@@ -1012,7 +996,7 @@ void ILocksManager::BackDoor_SetLockingEnabled(bool enable) { s_enableLocking = 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-ILocksManagerPtr DgnPlatformLib::Host::LocksAdmin::_CreateLocksManager(DgnDbR db) const
+ILocksManagerPtr DgnPlatformLib::Host::ServerAdmin::_CreateLocksManager(DgnDbR db) const
     {
     // NEEDSWORK: Bogus. Currently we have no way of determining if locking is required for a given DgnDb...and we have no actual server
     return (db.IsMasterCopy() || !s_enableLocking) ? UnrestrictedLocksManager::Create(db) : LocalLocksManager::Create(db);
@@ -1023,7 +1007,7 @@ ILocksManagerPtr DgnPlatformLib::Host::LocksAdmin::_CreateLocksManager(DgnDbR db
 +---------------+---------------+---------------+---------------+---------------+------*/
 ILocksServerP ILocksManager::GetLocksServer() const
     {
-    return T_HOST.GetLocksAdmin()._GetLocksServer(GetDgnDb());
+    return T_HOST.GetServerAdmin()._GetLocksServer(GetDgnDb());
     }
 
 #define JSON_Status "Status"            // LockStatus

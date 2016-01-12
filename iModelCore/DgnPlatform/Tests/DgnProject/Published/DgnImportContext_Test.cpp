@@ -527,7 +527,7 @@ TEST_F(ImportTest, ImportElementsWithAuthorities)
 
     // Put an element with an Item into moddel1
     {
-        DgnElement::Code code = auth1->CreateCode("TestElement");
+        DgnCode code = auth1->CreateCode("TestElement");
         DgnCategoryId gcatid = DgnCategory::QueryHighestCategoryId(*m_db);
         TestElementPtr tempEl = TestElement::Create(*m_db, model1->GetModelId(), gcatid, code);
         ASSERT_TRUE(m_db->Elements().Insert(*tempEl).IsValid());

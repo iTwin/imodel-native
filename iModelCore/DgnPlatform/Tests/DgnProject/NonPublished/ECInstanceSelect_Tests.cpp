@@ -2,10 +2,11 @@
 |
 |  $Source: Tests/DgnProject/NonPublished/ECInstanceSelect_Tests.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "../TestFixture/DgnDbTestFixtures.h"
+USING_NAMESPACE_BENTLEY_DPTEST
 
 //---------------------------------------------------------------------------------------
 // @bsiClass                                      Muhammad Hassan                  10/15
@@ -158,7 +159,14 @@ TEST_F (ECInstanceSelectTests, SelectQueriesOnDbGeneratedDuringBuild_04Plant)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (ECInstanceSelectTests, SelectQueriesOnDbGeneratedDuringBuild_79Main)
     {
-    SetupProject(L"79_Main.i.idgndb", L"SelectQueriesOnDbGeneratedDuringBuild_79Main.idgndb", BeSQLite::Db::OpenMode::Readonly);
+    WCharCP baseProjFile = L"79_Main.i.idgndb";
+    WCharCP testProjFile = L"SelectQueriesOnDbGeneratedDuringBuild_79Main.idgndb";
+    BeSQLite::Db::OpenMode mode = BeSQLite::Db::OpenMode::ReadWrite;
+
+    BeFileName outFileName;
+    ASSERT_EQ (SUCCESS, DgnDbTestDgnManager::GetTestDataOut (outFileName, baseProjFile, testProjFile, __FILE__));
+
+    OpenDb (m_db, outFileName, mode);
 
     ECSqlStatement stmt;
 
@@ -178,7 +186,7 @@ TEST_F (ECInstanceSelectTests, SelectQueriesOnDbGeneratedDuringBuild_79Main)
     stmt.Finalize ();
 
     ASSERT_EQ (ECSqlStatus::Success, stmt.Prepare (*m_db, "Select EQP_NO From ams.EQUIP_MEQPElementAspect where ELEMENT_ID>5000 ORDER BY EQP_NO ASC"));
-    Utf8String ExpectedStringValue = "104-104-104-";
+    Utf8String ExpectedStringValue = "102-104-104-104-";
     Utf8String ActualStringValue = "";
 
     while (stmt.Step () != DbResult::BE_SQLITE_DONE)
@@ -247,4 +255,20 @@ TEST_F (ECInstanceSelectTests, SelectQueriesOnDbGeneratedDuringBuild_79Main)
     ASSERT_EQ (stmt.Step (), DbResult::BE_SQLITE_ROW);
     ASSERT_STREQ ("N3", stmt.GetValueText (0));
     stmt.Finalize ();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                             Maha Nasir                         1/16
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (ECInstanceSelectTests, ImportSchema)
+    {
+    WCharCP baseProjFile = L"79_Main.i.idgndb";
+    CharCP testProjFile = "TestDb.idgndb";
+    BeSQLite::Db::OpenMode mode = BeSQLite::Db::OpenMode::ReadWrite;
+
+    DgnDbTestDgnManager tdm (baseProjFile, testProjFile, mode, false);
+    m_db = tdm.GetDgnProjectP ();
+
+    auto status = DgnPlatformTestDomain::GetDomain ().ImportSchema (*m_db);
+    ASSERT_EQ (DgnDbStatus::Success, status);
     }

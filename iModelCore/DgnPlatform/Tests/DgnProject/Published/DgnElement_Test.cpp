@@ -418,7 +418,7 @@ TEST_F(DgnElementTests, ElementCopierTests)
         DgnCloneContext ccontext;
         ElementCopier copier(ccontext);
         copier.SetCopyChildren(true);
-        DgnElementCPtr parent_cc = copier.MakeCopy(nullptr, *destModel, *parent, DgnElement::Code());
+        DgnElementCPtr parent_cc = copier.MakeCopy(nullptr, *destModel, *parent, DgnCode());
         ASSERT_TRUE(parent_cc.IsValid());
         auto c1ccId = copier.GetCloneContext().FindElementId(c1->GetElementId());
         ASSERT_TRUE(c1ccId.IsValid());
@@ -437,9 +437,9 @@ TEST_F(DgnElementTests, ElementCopierTests)
         ASSERT_EQ(2, cccount);
 
         // Verify that a second attempt to copy an already copied element does nothing
-        ASSERT_TRUE(parent_cc.get() == copier.MakeCopy(nullptr, *destModel, *parent, DgnElement::Code()).get());
-        ASSERT_TRUE(c1ccId == copier.MakeCopy(nullptr, *destModel, *c1, DgnElement::Code())->GetElementId());
-        ASSERT_TRUE(c2ccId == copier.MakeCopy(nullptr, *destModel, *c2, DgnElement::Code())->GetElementId());
+        ASSERT_TRUE(parent_cc.get() == copier.MakeCopy(nullptr, *destModel, *parent, DgnCode()).get());
+        ASSERT_TRUE(c1ccId == copier.MakeCopy(nullptr, *destModel, *c1, DgnCode())->GetElementId());
+        ASSERT_TRUE(c2ccId == copier.MakeCopy(nullptr, *destModel, *c2, DgnCode())->GetElementId());
         }
 
     // Verify that children are NOT copied
@@ -447,7 +447,7 @@ TEST_F(DgnElementTests, ElementCopierTests)
         DgnCloneContext ccontext;
         ElementCopier copier(ccontext);
         copier.SetCopyChildren(false);
-        DgnElementCPtr parent_cc = copier.MakeCopy(nullptr, *destModel, *parent, DgnElement::Code());
+        DgnElementCPtr parent_cc = copier.MakeCopy(nullptr, *destModel, *parent, DgnCode());
         ASSERT_TRUE(parent_cc.IsValid());
         auto c1ccId = copier.GetCloneContext().FindElementId(c1->GetElementId());
         ASSERT_FALSE(c1ccId.IsValid());
@@ -478,7 +478,7 @@ TEST_F(DgnElementTests, ElementCopierTests_Group)
         DgnCloneContext ccontext;
         ElementCopier copier(ccontext);
         copier.SetCopyGroups(true);
-        DgnElementCPtr group_cc = copier.MakeCopy(nullptr, *destModel, *group, DgnElement::Code());
+        DgnElementCPtr group_cc = copier.MakeCopy(nullptr, *destModel, *group, DgnCode());
         ASSERT_TRUE(group_cc.IsValid());
         auto m1ccId = copier.GetCloneContext().FindElementId(m1->GetElementId());
         ASSERT_TRUE(m1ccId.IsValid());
@@ -497,9 +497,9 @@ TEST_F(DgnElementTests, ElementCopierTests_Group)
         ASSERT_EQ(2, cccount);
 
         // Verify that a second attempt to copy an already copied element does nothing
-        ASSERT_TRUE(group_cc.get() == copier.MakeCopy(nullptr, *destModel, *group, DgnElement::Code()).get());
-        ASSERT_TRUE(m1ccId == copier.MakeCopy(nullptr, *destModel, *m1, DgnElement::Code())->GetElementId());
-        ASSERT_TRUE(m2ccId == copier.MakeCopy(nullptr, *destModel, *m2, DgnElement::Code())->GetElementId());
+        ASSERT_TRUE(group_cc.get() == copier.MakeCopy(nullptr, *destModel, *group, DgnCode()).get());
+        ASSERT_TRUE(m1ccId == copier.MakeCopy(nullptr, *destModel, *m1, DgnCode())->GetElementId());
+        ASSERT_TRUE(m2ccId == copier.MakeCopy(nullptr, *destModel, *m2, DgnCode())->GetElementId());
         }
 
     // Verify that members are NOT copied
@@ -507,7 +507,7 @@ TEST_F(DgnElementTests, ElementCopierTests_Group)
         DgnCloneContext ccontext;
         ElementCopier copier(ccontext);
         copier.SetCopyGroups(false);
-        DgnElementCPtr group_cc = copier.MakeCopy(nullptr, *destModel, *group, DgnElement::Code());
+        DgnElementCPtr group_cc = copier.MakeCopy(nullptr, *destModel, *group, DgnCode());
         ASSERT_TRUE(group_cc.IsValid());
         ASSERT_EQ(0, group_cc->ToIElementGroup()->QueryMembers().size());
         }
@@ -604,7 +604,7 @@ TEST_F(ElementGeomAndPlacementTests, ValidateOnInsert)
         noPlacementNoGeomId = el->GetElementId();
 
         // Non-null placement + non-null geom
-        el = TestElement::Create(*m_db, m_defaultModelId, m_defaultCategoryId, DgnElement::Code());
+        el = TestElement::Create(*m_db, m_defaultModelId, m_defaultCategoryId, DgnCode());
         auto geom = CreateGeom();
         EXPECT_EQ(SUCCESS, geom->SetGeomStreamAndPlacement(*el));
         placement = el->GetPlacement();
@@ -619,7 +619,7 @@ TEST_F(ElementGeomAndPlacementTests, ValidateOnInsert)
         placementAndNoGeomId = el->GetElementId();
 
         // Null placement + non-null geom
-        el = TestElement::Create(*m_db, m_defaultModelId, m_defaultCategoryId, DgnElement::Code());
+        el = TestElement::Create(*m_db, m_defaultModelId, m_defaultCategoryId, DgnCode());
         EXPECT_EQ(SUCCESS, geom->SetGeomStreamAndPlacement(*el));
         el->SetPlacement(Placement3d());
         DgnDbStatus status;
@@ -655,7 +655,7 @@ TEST_F(DgnElementTests, HandlerlessClass)
     SetupProject(L"3dMetricGeneral.idgndb", L"HandlerlessClass.idgndb", BeSQLite::Db::OpenMode::ReadWrite);
 
     DgnClassId classId(m_db->Schemas().GetECClassId(DPTEST_SCHEMA_NAME, DPTEST_TEST_ELEMENT_WITHOUT_HANDLER_CLASS_NAME));
-    TestElement::CreateParams params(*m_db, m_defaultModelId, classId, m_defaultCategoryId, Placement3d(), DgnElement::Code());
+    TestElement::CreateParams params(*m_db, m_defaultModelId, classId, m_defaultCategoryId, Placement3d(), DgnCode());
     TestElement el(params);
     EXPECT_TRUE(el.Insert().IsValid());
 
