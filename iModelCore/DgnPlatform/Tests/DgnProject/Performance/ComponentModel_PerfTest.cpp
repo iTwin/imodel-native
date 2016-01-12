@@ -167,11 +167,13 @@ void ComponentModelPerfTest::Developer_CreateCMs()
 
     ECN::ECClassCP baseClass = m_componentDb->Schemas().GetECClass(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_PhysicalElement);
 
-    ComponentDefCreator creator(*m_componentDb, *testSchema, TEST_BOXES_COMPONENT_NAME, *baseClass, TEST_JS_NAMESPACE "." TEST_BOXES_COMPONENT_NAME, "Boxes", "");
-    creator.AddPropertySpec(ComponentDefCreator::PropertySpec("H", ECN::PrimitiveType::PRIMITIVETYPE_Double, ComponentDef::ParameterVariesPer::Instance));
-    creator.AddPropertySpec(ComponentDefCreator::PropertySpec("W", ECN::PrimitiveType::PRIMITIVETYPE_Double, ComponentDef::ParameterVariesPer::Instance));
-    creator.AddPropertySpec(ComponentDefCreator::PropertySpec("D", ECN::PrimitiveType::PRIMITIVETYPE_Double, ComponentDef::ParameterVariesPer::Instance));
-    creator.AddPropertySpec(ComponentDefCreator::PropertySpec("box_count", ECN::PrimitiveType::PRIMITIVETYPE_Double, ComponentDef::ParameterVariesPer::Instance));
+    TsComponentParameterSet params;
+    params["H"] = TsComponentParameter(ComponentDef::ParameterVariesPer::Instance, ECN::ECValue(1.0));
+    params["W"] = TsComponentParameter(ComponentDef::ParameterVariesPer::Instance, ECN::ECValue(1.0));
+    params["D"] = TsComponentParameter(ComponentDef::ParameterVariesPer::Instance, ECN::ECValue(1.0));
+    params["box_count"] = TsComponentParameter(ComponentDef::ParameterVariesPer::Instance, ECN::ECValue("text"));
+
+    ComponentDefCreator creator(*m_componentDb, *testSchema, TEST_BOXES_COMPONENT_NAME, *baseClass, TEST_JS_NAMESPACE "." TEST_BOXES_COMPONENT_NAME, "Boxes", "", params);
     ECN::ECClassCP ecClass = creator.GenerateECClass();
     ASSERT_TRUE(nullptr != ecClass);
 
