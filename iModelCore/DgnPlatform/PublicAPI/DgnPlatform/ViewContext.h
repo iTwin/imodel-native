@@ -9,9 +9,9 @@
 //__PUBLISH_SECTION_START__
 
 #include "DgnPlatform.h"
+#include "Render.h"
 #include "ClipVector.h"
 #include "TransformClipStack.h"
-#include "Render.h"
 #include "ScanCriteria.h"
 #include "IManipulator.h"
 
@@ -84,32 +84,11 @@ struct  ILineStyle
 //=======================================================================================
 // @bsiclass
 //=======================================================================================
-struct IRangeNodeCheck
+struct RangeNodeCheck
 {
     virtual ScanCriteria::Result _CheckNodeRange(ScanCriteriaCR, DRange3dCR, bool is3d) = 0;
 };
 
-//=======================================================================================
-// @bsiclass                                                    Keith.Bentley   01/12
-//=======================================================================================
-struct ICheckStop
-{  
-private:
-    bool m_aborted;
-
-public:
-    bool InitAborted(bool val) {return m_aborted = val;}
-    bool ClearAborted() {return m_aborted = false;}
-    bool WasAborted()  {return m_aborted;}
-    bool SetAborted() {return m_aborted = true;}
-    bool AddAbortTest(bool val) {return  m_aborted |= val;}
-
-    ICheckStop() {m_aborted=false;}
-
-    //! return true to abort the current operation.
-    //! @note Overrides MUST call SetAborted or use AddAbortTest since WasAborted may be directly tested!
-    virtual bool _CheckStop() {return m_aborted;}
-};
 
 //=======================================================================================
 //! Interface to supply additional topology information that describes the subsequent geometry.
@@ -139,7 +118,7 @@ DEFINE_REF_COUNTED_PTR(IElemTopology)
 //=======================================================================================
 // @bsiclass                                                     KeithBentley    04/01
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE ViewContext : NonCopyableClass, ICheckStop, IRangeNodeCheck
+struct EXPORT_VTABLE_ATTRIBUTE ViewContext : NonCopyableClass, CheckStop, RangeNodeCheck
 {
     friend struct ViewController;
     friend struct SimplifyGraphic;

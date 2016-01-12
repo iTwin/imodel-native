@@ -49,7 +49,7 @@ protected:
     void QueryModelExtents(DRange3dR, DgnViewportR);
 
     //! Populate the QueryModel with the results of the query.
-    void LoadElementsForUpdate(DgnViewportR viewport, DrawPurpose updateType, ICheckStopP checkStop, bool needNewQuery, bool waitForQueryToFinish, bool stopQueryOnAbort);
+    void LoadElementsForUpdate(DgnViewportR viewport, DrawPurpose updateType, CheckStopP checkStop, bool needNewQuery, bool waitForQueryToFinish, bool stopQueryOnAbort);
     void SaveSelectResults();
     void PickUpResults();
     bool FrustumChanged(DgnViewportCR vp) const;
@@ -203,5 +203,6 @@ public:
     //! @note this method can be used to determine if related caches need to be updated
     double GetLastQueryCounter() {return m_lastQueryTime;}
 };
+
 
 END_BENTLEY_DGN_NAMESPACE

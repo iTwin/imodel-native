@@ -1174,7 +1174,7 @@ public:
     virtual void _ChangeDynamics(GraphicListR dynamics) {VerifyRenderThread(); m_dynamics = &dynamics;}
     virtual void _ChangeDecorations(Decorations& decorations) {VerifyRenderThread(); m_decorations = decorations;}
     virtual void _DrawFrame(PlanCR, StopWatch&) = 0;
-    virtual void _DrawProgressive(GraphicListR progressiveList) = 0;
+    virtual void _DrawProgressive(GraphicListR progressiveList, StopWatch&) = 0;
     virtual double _GetCameraFrustumNearScaleLimit() const = 0;
     virtual bool _WantInvertBlackBackground() {return false;}
 
@@ -1192,7 +1192,7 @@ public:
     TexturePtr CreateTileSection(Image* image, bool enableAlpha) const {return _CreateTileSection(image, enableAlpha);}
 
     uint32_t GetGraphicsPerSecond() const {return m_graphicsPerSecond.load();}
-    DGNPLATFORM_EXPORT void RecordFrameTime(double seconds);
+    DGNPLATFORM_EXPORT void RecordFrameTime(GraphicList&, double seconds);
 };
 
 END_BENTLEY_RENDER_NAMESPACE
