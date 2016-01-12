@@ -28,7 +28,6 @@ private:
     DEFINE_T_SUPER(RefCountedBase)
 
     TextAnnotationCP m_annotation;
-    Transform m_documentTransform;
 
     DGNPLATFORM_EXPORT void CopyFrom(TextAnnotationDrawCR);
 
@@ -38,12 +37,9 @@ public:
     TextAnnotationDrawR operator=(TextAnnotationDrawCR rhs) { T_Super::operator=(rhs); if (&rhs != this) CopyFrom(rhs); return *this;}
     static TextAnnotationDrawPtr Create(TextAnnotationCR annotation) { return new TextAnnotationDraw(annotation); }
     TextAnnotationDrawPtr Clone() const { return new TextAnnotationDraw(*this); }
-
     TextAnnotationCR GetAnnotation() const { return *m_annotation; }
-    TransformCR GetDocumentTransform() const { return m_documentTransform; }
-    void SetDocumentTransform(TransformCR value) { m_documentTransform = value; }
 
-    DGNPLATFORM_EXPORT Render::GraphicPtr Draw(ViewContextR, Render::GeometryParamsR) const;
+    DGNPLATFORM_EXPORT BentleyStatus Draw(Render::GraphicR graphic, ViewContextR, Render::GeometryParamsR) const;
 };
 
 //! @endGroup

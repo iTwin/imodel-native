@@ -17,6 +17,7 @@ AnnotationFrameDraw::AnnotationFrameDraw(AnnotationFrameLayoutCR frameLayout) :
     T_Super()
     {
     m_frameLayout = &frameLayout;
+    m_documentTransform.InitIdentity();
     }
 
 //---------------------------------------------------------------------------------------
@@ -25,6 +26,7 @@ AnnotationFrameDraw::AnnotationFrameDraw(AnnotationFrameLayoutCR frameLayout) :
 void AnnotationFrameDraw::CopyFrom(AnnotationFrameDrawCR rhs)
     {
     m_frameLayout = rhs.m_frameLayout;
+    m_documentTransform = rhs.m_documentTransform;
     }
 
 //---------------------------------------------------------------------------------------
@@ -85,6 +87,8 @@ BentleyStatus AnnotationFrameDraw::Draw(Render::GraphicR graphic, ViewContextR c
     
     // We have to copy so that we can call SetBoundaryType to ensure we get a line string for stroke vs. a surface for fill.
     CurveVectorPtr frameGeometry = m_frameLayout->GetFrameGeometry().Clone();
+
+    frameGeometry->TransformInPlace(m_documentTransform);
     
     if (frameStyle->IsStrokeEnabled())
         {
