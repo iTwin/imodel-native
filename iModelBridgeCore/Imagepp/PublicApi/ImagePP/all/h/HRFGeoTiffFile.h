@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRFGeoTiffFile.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HRFGeoTiffFile
@@ -87,9 +87,10 @@ protected:
         return T_Super::WriteTransfoModel(pi_rpTransfoModel);
         }
 
-    virtual bool                         WriteTransfoModel(HCPGeoTiffKeys const*                pi_rpGeoTiffKeys,
-                                                           const HFCPtr<HGF2DTransfoModel>&     pi_rpTransfoModel,
-                                                           uint32_t                            pi_Page);
+    virtual bool                         WriteTransfoModel(GeoCoordinates::BaseGCSCP             pi_pGeocoding,
+                                                           bool                                  pi_PixelIsArea,
+                                                           const HFCPtr<HGF2DTransfoModel>&      pi_rpTransfoModel,
+                                                           uint32_t                              pi_Page);
     virtual void                          StoreUsingModelTransformationTag ();
 
 private:
@@ -103,11 +104,13 @@ private:
     double                     m_RatioToMeter;
 
     // Methods
-    HFCPtr<HGF2DTransfoModel>   CreateTransfoModelFromGeoTiff (HCPGeoTiffKeys const*                pi_rpGeoTiffKeys,
-                                                               uint32_t                            pi_PageNb);
-    void                        WriteTransfoModelFromGeoTiff  (HCPGeoTiffKeys const*                pi_rpGeoTiffKeys,
+    HFCPtr<HGF2DTransfoModel>   CreateTransfoModelFromGeoTiff (GeoCoordinates::BaseGCSCP            pi_pGeocoding,
+                                                               bool                                 pi_PixelIsArea,
+                                                               uint32_t                             pi_PageNb);
+    void                        WriteTransfoModelFromGeoTiff  (GeoCoordinates::BaseGCSCP            pi_pGeocoding,
+                                                               bool                                 pi_PixelIsArea,
                                                                const HFCPtr<HGF2DTransfoModel>&     pi_pModel,
-                                                               uint32_t                            pi_Page);
+                                                               uint32_t                             pi_Page);
     void                        GetGeoTiffKeys                (HFCPtr<HCPGeoTiffKeys>&              po_rpGeoTiffKeys);
     void                        SaveGeoTiffFile();
 

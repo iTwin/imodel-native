@@ -2,7 +2,7 @@
 |
 |     $Source: all/gra/hcp/src/HCPGCoordLatLongModel.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ImagePPInternal/hstdcpp.h>                // must be first for PreCompiledHeader Option
@@ -584,15 +584,21 @@ StatusInt HCPGCoordLatLongModel::ComputeDomain () const
     if (!m_domainComputed)
         {
         // Domain not computed ... we first obtain the geographic domain from GCS
-        HGF2DCoordCollection<double> gcsGeoDomain;
+        HGF2DCoordCollection<double> gcsGeoDomain2;
 
-        HCPGCoordUtility::GetGeoDomain(*m_pBaseGCS, gcsGeoDomain);
+        bvector<GeoPoint> gcsGeoDomain;
+
+        m_pBaseGCS->GetMathematicalDomain(gcsGeoDomain);
+
+        // Convert geo points to Image++ points
+        for (int idx = 0 ; idx < gcsGeoDomain.size() ; idx++)
+            gcsGeoDomain2.push_back(HGF2DCoord<double>(gcsGeoDomain[idx].longitude, gcsGeoDomain[idx].latitude));
 
         // Create the three coordinate systems required for transformation
         HFCPtr<HGF2DCoordSys> latLongCoordinateSystem = new HGF2DCoordSys();
         HFCPtr<HGF2DCoordSys> directCoordinateSystem = new HGF2DCoordSys(*this, latLongCoordinateSystem);
 
-        HFCPtr<HVE2DShape> latLongDomainShape = new HVE2DPolygonOfSegments(HGF2DPolygonOfSegments(gcsGeoDomain), latLongCoordinateSystem);
+        HFCPtr<HVE2DShape> latLongDomainShape = new HVE2DPolygonOfSegments(HGF2DPolygonOfSegments(gcsGeoDomain2), latLongCoordinateSystem);
 
         // Obtain shapes in direct of inverse coordinate systems, drop and copy points
         if (m_reversed)

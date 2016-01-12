@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFErMapperSupportedFile.cpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class HRFErMapperFile
@@ -930,27 +930,26 @@ void HRFErMapperSupportedFile::SetDefaultRatioToMeter(double pi_RatioToMeter,
     HPRECONDITION(GetPageDescriptor(0) != 0);
 
     // Update the model in each page
-    bool                         defaultUnitWasFound = false;
     HFCPtr<HRFPageDescriptor>     pPageDescriptor     = GetPageDescriptor(0);
 
     GeoCoordinates::BaseGCSCP pBaseGCS = pPageDescriptor->GetGeocodingCP();
 
+
+    HFCPtr<HGF2DTransfoModel> pTransfoModel;
+    BuildTransfoModelMatrix (pTransfoModel);
+
+    double effectiveRatioToMeter = pi_RatioToMeter;
     if (pBaseGCS != NULL && pBaseGCS->IsValid())
-        {
-        HFCPtr<HGF2DTransfoModel> pTransfoModel;
-        BuildTransfoModelMatrix (pTransfoModel);
+        effectiveRatioToMeter = 1.0 / pBaseGCS->UnitsFromMeters();
 
-        pTransfoModel = pPageDescriptor->GetRasterFileGeocoding().TranslateToMeter(pTransfoModel,
-                                                                                   pi_RatioToMeter, 
-                                                                                   pi_CheckSpecificUnitSpec,
-                                                                                   &defaultUnitWasFound);
+    pTransfoModel = HCPGCoordUtility::TranslateToMeter(pTransfoModel,
+                                                       effectiveRatioToMeter);
 
+    pPageDescriptor->SetTransfoModel(*pTransfoModel, true);
+    pPageDescriptor->SetTransfoModelUnchanged();
 
-        pPageDescriptor->SetTransfoModel(*pTransfoModel, true);
-        pPageDescriptor->SetTransfoModelUnchanged();
-        }
-
-    SetUnitFoundInFile(defaultUnitWasFound);
+	// Looks like ERMapper files always specify units
+    SetUnitFoundInFile(true);
     }
 
 //-----------------------------------------------------------------------------
@@ -1307,19 +1306,21 @@ void HRFErMapperSupportedFile::CreateDescriptors ()
         }
 
 
-    double factorModelToMeter(1.0);
-    RasterFileGeocodingPtr pGeocoding = ExtractGeocodingInformation(factorModelToMeter);
+    double factorModelToMeter = 1.0;
+    GeoCoordinates::BaseGCSPtr pGeocoding = ExtractGeocodingInformation(factorModelToMeter);
 
     HFCPtr<HGF2DTransfoModel> pTransfoModel;
-    bool                      defaultUnitWasFound = false;
 
     BuildTransfoModelMatrix(pTransfoModel);
-    pTransfoModel = pGeocoding->TranslateToMeter(pTransfoModel,
-                                                 factorModelToMeter,
-                                                 false,
-                                                 &defaultUnitWasFound);
 
-    SetUnitFoundInFile(defaultUnitWasFound);
+    if (!pGeocoding.IsNull() && pGeocoding->IsValid())
+        factorModelToMeter = 1.0 / pGeocoding->UnitsFromMeters();
+
+    pTransfoModel = HCPGCoordUtility::TranslateToMeter(pTransfoModel,
+                                                       factorModelToMeter);
+
+    // ERMapper units are allways specified
+    SetUnitFoundInFile(true);
 
     HFCPtr<HRFPageDescriptor> pPage;
     pPage = new HRFPageDescriptor (GetAccessMode(),
@@ -1335,7 +1336,8 @@ void HRFErMapperSupportedFile::CreateDescriptors ()
                                    0);                          // Duration
 
     // Set geocoding
-    pPage->InitFromRasterFileGeocoding(*pGeocoding);
+    if (pGeocoding->IsValid())
+        pPage->SetGeocoding(pGeocoding.get());
 
     m_ListOfPageDescriptor.push_back(pPage);
     }
@@ -1345,7 +1347,7 @@ void HRFErMapperSupportedFile::CreateDescriptors ()
 // Private
 // Get a list of relevant tags found embedded in the file.
 //-----------------------------------------------------------------------------
-RasterFileGeocodingPtr HRFErMapperSupportedFile::ExtractGeocodingInformation(double & factorModelToMeter) const
+GeoCoordinates::BaseGCSPtr HRFErMapperSupportedFile::ExtractGeocodingInformation(double & factorModelToMeter) const
     {
     WString osUnits;
 
@@ -1382,7 +1384,7 @@ RasterFileGeocodingPtr HRFErMapperSupportedFile::ExtractGeocodingInformation(dou
     uint32_t EPSGCodeFomrERLibrary = GetEPSGFromProjectionAndDatum(projection, datum);
     GeoCoordinates::BaseGCSPtr pBaseGCS = HCPGCoordUtility::CreateRasterGcsFromERSIDS(EPSGCodeFomrERLibrary, projection,datum,osUnits);
 
-    return RasterFileGeocoding::Create(pBaseGCS.get());
+    return pBaseGCS;
     }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     07/2013
@@ -1707,8 +1709,10 @@ const HGF2DWorldIdentificator HRFErMapperSupportedFile::GetWorldIdentificator ()
 
     bool hasGTModelTypeKey = false;
 
-    RasterFileGeocoding const& fileGeocoding = pPageDescriptor->GetRasterFileGeocoding();
-    HCPGeoTiffKeys const& geoKeyContainer = fileGeocoding.GetGeoTiffKeys();
+    GeoCoordinates::BaseGCSCP fileGeocoding = pPageDescriptor->GetGeocodingCP();
+    HCPGeoTiffKeys geoKeyContainer;
+    if (nullptr != fileGeocoding && fileGeocoding->IsValid())
+        fileGeocoding->GetGeoTiffKeys(&geoKeyContainer, true);
 
     hasGTModelTypeKey = geoKeyContainer.HasKey(GTModelType);
 

@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFUSgsDEMFile.cpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -119,6 +119,8 @@ HRFUSgsDEMCapabilities::HRFUSgsDEMCapabilities()
     // Tag capability
     Add(new HRFTagCapability(HFC_READ_ONLY, new HRFAttributeMinSampleValue));
     Add(new HRFTagCapability(HFC_READ_ONLY, new HRFAttributeMaxSampleValue));
+    Add(new HRFTagCapability(HFC_READ_ONLY, new HRFAttributeVerticalUnitRatioToMeter));
+
 
     // Geocoding capability
     HFCPtr<HRFGeocodingCapability> pGeocodingCapability(new HRFGeocodingCapability(HFC_READ_ONLY));
@@ -351,27 +353,6 @@ HRFUSgsDEMFile::~HRFUSgsDEMFile()
     //All the work of closing the file and GDAL is done in the ancestor class.
     }
 
-//-----------------------------------------------------------------------------
-// Protected
-// BuildTransfoModel
-//
-//-----------------------------------------------------------------------------
-RasterFileGeocodingPtr HRFUSgsDEMFile::ExtractGeocodingInformation()
-    {
-    HPRECONDITION(m_NbBands == 1);
-
-    RasterFileGeocodingPtr pGeocoding = HRFGdalSupportedFile::ExtractGeocodingInformation();
-    if (pGeocoding->GetGeocodingCP() != NULL)
-        {
-        // Need to clone GCS to modify the vertical unit.
-        GeoCoordinates::BaseGCSPtr pNewGcs = GeoCoordinates::BaseGCS::CreateGCS(*pGeocoding->GetGeocodingCP());
-        AddVerticalUnitToGeocoding(*pNewGcs);
-
-        pGeocoding = RasterFileGeocoding::Create(pNewGcs.get());
-        }
-    
-    return pGeocoding;
-    }
 
 //-----------------------------------------------------------------------------
 // Protected

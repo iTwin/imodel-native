@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: Tests/IppGraLibs/HPMAttributeSetTester.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HPMAttributeSetTester
@@ -49,6 +49,7 @@ protected :
     //HPMAttribute
     HFCPtr<HPMGenericAttribute>   pHRFAttributeImageDescription; 
     HFCPtr<HPMGenericAttribute>   pHRFAttributeSampleValue;
+    HFCPtr<HPMGenericAttribute>   pHRFAttributeVerticalUnitRatioToMeter; 
     HFCPtr<HPMGenericAttribute>   pHRFAttributeResolutionUnit;
     HFCPtr<HPMGenericAttribute>   pHRFAttribute3DTransformationMatrix;
     HFCPtr<HPMGenericAttribute>   pHRFAttributeForeground;

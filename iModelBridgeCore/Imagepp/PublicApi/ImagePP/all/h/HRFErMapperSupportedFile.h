@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRFErMapperSupportedFile.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 #pragma once
@@ -118,7 +118,8 @@ protected:
 
     void                    BuildTransfoModelMatrix(HFCPtr<HGF2DTransfoModel>&     po_prTranfoModel);
 
-    RasterFileGeocodingPtr       ExtractGeocodingInformation(double & factorModelToMeter) const;
+    GeoCoordinates::BaseGCSPtr
+                            ExtractGeocodingInformation(double & factorModelToMeter) const;
 
     double                  RoundRatio(unsigned long pi_MainImageSize, unsigned long pi_ResImageSize);
 

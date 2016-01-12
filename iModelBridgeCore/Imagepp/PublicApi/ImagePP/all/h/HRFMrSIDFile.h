@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRFMrSIDFile.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 #pragma once
@@ -127,7 +127,8 @@ protected:
     virtual void                        CreateDescriptors   ();
 
     void                                GetFileInfo(HPMAttributeSet&               po_rTagList,
-                                                    RasterFileGeocodingPtr&        po_fileGeocoding);
+                                                    GeoCoordinates::BaseGCSPtr&    po_fileGeocoding,
+                                                    bool&                          po_UnitsInFile);
 
     void                                BuildTransfoModelMatrix(bool pi_HasModelType, HFCPtr<HGF2DTransfoModel>& po_prTranfoModel);
 

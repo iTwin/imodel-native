@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HPMAttribute.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // HPMAttribute
@@ -96,6 +96,7 @@ enum HPMAttributesID
      HRF_ATTRIBUTEID_VerticalCitation,
      HRF_ATTRIBUTEID_VerticalDatum,
      HRF_ATTRIBUTEID_VerticalUnits,
+     HRF_ATTRIBUTEID_VerticalUnitRatioToMeter,
      HRF_ATTRIBUTEID_GPSVersionID,
      HRF_ATTRIBUTEID_GPSLatitudeRef,
      HRF_ATTRIBUTEID_GPSLatitude,
@@ -344,10 +345,11 @@ HPM_DEFINE_ATTRIBUTE(HRFAttributeProjScaleAtCenter,            double,          
 HPM_DEFINE_ATTRIBUTE(HRFAttributeProjAzimuthAngle,             double,               HRF_ATTRIBUTEID_ProjAzimuthAngle,             L"ProjAzimuthAngle");
 HPM_DEFINE_ATTRIBUTE(HRFAttributeProjStraightVertPoleLong,     double,               HRF_ATTRIBUTEID_ProjStraightVertPoleLong,     L"ProjStraightVertPoleLong");
 HPM_DEFINE_ATTRIBUTE(HRFAttributeProjRectifiedGridAngle,       double,               HRF_ATTRIBUTEID_ProjRectifiedGridAngle,       L"ProjRectifiedGridAngle");
-HPM_DEFINE_ATTRIBUTE(HRFAttributeVerticalCSType,               unsigned short,               HRF_ATTRIBUTEID_VerticalCSType,               L"VerticalCSType");
+HPM_DEFINE_ATTRIBUTE(HRFAttributeVerticalCSType,               unsigned short,       HRF_ATTRIBUTEID_VerticalCSType,               L"VerticalCSType");
 HPM_DEFINE_ATTRIBUTE(HRFAttributeVerticalCitation,             WString,              HRF_ATTRIBUTEID_VerticalCitation,             L"VerticalCitation");
-HPM_DEFINE_ATTRIBUTE(HRFAttributeVerticalDatum,                unsigned short,               HRF_ATTRIBUTEID_VerticalDatum,                L"VerticalDatum");
-HPM_DEFINE_ATTRIBUTE(HRFAttributeVerticalUnits,                unsigned short,               HRF_ATTRIBUTEID_VerticalUnits,                L"VerticalUnits");
+HPM_DEFINE_ATTRIBUTE(HRFAttributeVerticalDatum,                unsigned short,       HRF_ATTRIBUTEID_VerticalDatum,                L"VerticalDatum");
+HPM_DEFINE_ATTRIBUTE(HRFAttributeVerticalUnits,                unsigned short,       HRF_ATTRIBUTEID_VerticalUnits,                L"VerticalUnits");
+HPM_DEFINE_ATTRIBUTE(HRFAttributeVerticalUnitRatioToMeter,     double,               HRF_ATTRIBUTEID_VerticalUnitRatioToMeter,     L"VerticalUnitRatioToMeter");
 HPM_DEFINE_ATTRIBUTE(HRFAttributeGPSVersionID,                 vector<Byte>,         HRF_ATTRIBUTEID_GPSVersionID,                 L"GPSVersionID");
 HPM_DEFINE_ATTRIBUTE(HRFAttributeGPSLatitudeRef,               WString,              HRF_ATTRIBUTEID_GPSLatitudeRef,               L"GPSLatitudeRef");
 HPM_DEFINE_ATTRIBUTE(HRFAttributeGPSLatitude,                  vector<double>,       HRF_ATTRIBUTEID_GPSLatitude,                  L"GPSLatitude");

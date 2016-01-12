@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFMrSIDFile.cpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class HRFMrSIDFile
@@ -34,7 +34,7 @@
 
 #include <Imagepp/all/h/HVETileIDIterator.h>
 #include <Imagepp/all/h/HTIFFTag.h>
-
+#include <Imagepp/all/h/HCPGCoordUtility.h>
 #include <Imagepp/all/h/ImagePPMessages.xliff.h>
 
 #if defined(IPP_HAVE_MRSID_SUPPORT) 
@@ -400,17 +400,19 @@ const HGF2DWorldIdentificator HRFMrSIDFile::GetWorldIdentificator () const
 
     // Check geotiff tags
     HFCPtr<HRFPageDescriptor> pPageDescriptor = GetPageDescriptor(0);
-    RasterFileGeocoding const& fileGeocoding = pPageDescriptor->GetRasterFileGeocoding();
+    GeoCoordinates::BaseGCSCP fileGeocoding = pPageDescriptor->GetGeocodingCP();
 
-    HCPGeoTiffKeys const& geoKeyContainer = fileGeocoding.GetGeoTiffKeys();
+    HCPGeoTiffKeys geoKeysContainer;
+    if (nullptr != fileGeocoding && fileGeocoding->IsValid())
+        fileGeocoding->GetGeoTiffKeys(&geoKeysContainer, true);
 
-    if (geoKeyContainer.HasKey(GTModelType))
+    if (geoKeysContainer.HasKey(GTModelType))
         {
         World = HGF2DWorld_GEOTIFFUNKNOWN;
 
         // Change world id if GTModelType is ModelTypeGeographic
         uint32_t GeoLongValue;
-        geoKeyContainer.GetValue(GTModelType, &GeoLongValue);
+        geoKeysContainer.GetValue(GTModelType, &GeoLongValue);
 
         switch (GeoLongValue)
             {
@@ -592,28 +594,29 @@ void HRFMrSIDFile::SetDefaultRatioToMeter(double pi_RatioToMeter,
 
     // In addition to the georeference, for some weird reason the fact the original georeference possesed an indication that of
     // the model type is used int he creation of the transformation matrix below
-    if (pBaseGCS != nullptr)
+    if (pBaseGCS != nullptr && pBaseGCS->IsValid())
         {
         HFCPtr<HGF2DTransfoModel> pTransfoModel;
-        bool                     DefaultUnitWasFound = false;
-
-        RasterFileGeocodingCR fileGeocoding = pPageDescriptor->GetRasterFileGeocoding();
 
         bool hasGTModel(false);
-        hasGTModel = fileGeocoding.GetGeoTiffKeys().HasKey(GTModelType);
+        HCPGeoTiffKeys geoKeysContainer;
+        pBaseGCS->GetGeoTiffKeys(&geoKeysContainer, true);
 
+        hasGTModel = geoKeysContainer.HasKey(GTModelType);
 
         // TranfoModel
         BuildTransfoModelMatrix(hasGTModel, pTransfoModel);
 
         //Ensure that a new GeoCoord is created based on the pi_CheckSpecificUnitSpec
         //configuration.
-        pTransfoModel = pPageDescriptor->GetRasterFileGeocoding().TranslateToMeter(pTransfoModel,
-                                                                                   pi_RatioToMeter,
-                                                                                   pi_CheckSpecificUnitSpec,
-                                                                                   &DefaultUnitWasFound);
+        double effectiveRatioToMeter = pi_RatioToMeter;
+        if (pBaseGCS != nullptr && pBaseGCS->IsValid())
+            effectiveRatioToMeter = 1.0 / pBaseGCS->UnitsFromMeters();
 
-        SetUnitFoundInFile(DefaultUnitWasFound, 0);
+
+        pTransfoModel = HCPGCoordUtility::TranslateToMeter(pTransfoModel,
+                                                           1.0 / pBaseGCS->UnitsFromMeters());
+
 
         pPageDescriptor->SetTransfoModel(*pTransfoModel, true);
         pPageDescriptor->SetTransfoModelUnchanged();
@@ -928,27 +931,30 @@ void HRFMrSIDFile::CreateDescriptors ()
 
     
     // Geokeys are used as part of MrSID files (but apparently not always)
-    RasterFileGeocodingPtr pFileGeocoding;
-    GetFileInfo(TagList, pFileGeocoding);
+    GeoCoordinates::BaseGCSPtr pFileGeocoding;
+    bool                     DefaultUnitWasFound = false;
+    GetFileInfo(TagList, pFileGeocoding, DefaultUnitWasFound);
 
     HFCPtr<HGF2DTransfoModel> pTransfoModel;
-    bool                     DefaultUnitWasFound = false;
 
     bool hasGTModel(false);
-    hasGTModel = pFileGeocoding->GetGeoTiffKeys().HasKey(GTModelType);
+    HCPGeoTiffKeys geoTiffKeys;
+    if ((pFileGeocoding != nullptr) && (pFileGeocoding->IsValid()))
+        pFileGeocoding->GetGeoTiffKeys(&geoTiffKeys, true);
+
+    hasGTModel = geoTiffKeys.HasKey(GTModelType);
 
     BuildTransfoModelMatrix(hasGTModel, pTransfoModel);
 
-    if ((pFileGeocoding->GetGeocodingCP() != 0) && (pFileGeocoding->GetGeocodingCP()->IsValid()))
+    if ((pFileGeocoding != nullptr) && (pFileGeocoding->IsValid()))
         {
         // If file is a kind of "geotiff" then translate transfo model
-        pTransfoModel = pFileGeocoding->TranslateToMeter(pTransfoModel,
-                                                       1.0,
-                                                       false,
-                                                       &DefaultUnitWasFound);
+        pTransfoModel = HCPGCoordUtility::TranslateToMeter(pTransfoModel,
+                                                           1.0 / pFileGeocoding->UnitsFromMeters());
+
+        SetUnitFoundInFile(DefaultUnitWasFound, 0);
         }
 
-    SetUnitFoundInFile(DefaultUnitWasFound);
 
     HFCPtr<HRFPageDescriptor> pPage;
     pPage = new HRFPageDescriptor (GetAccessMode(),
@@ -963,7 +969,8 @@ void HRFMrSIDFile::CreateDescriptors ()
                                    &TagList,                    // Tag
                                    0);                          // Duration
 
-    pPage->InitFromRasterFileGeocoding(*pFileGeocoding);
+    if ((pFileGeocoding != nullptr) && (pFileGeocoding->IsValid()))
+        pPage->SetGeocoding(pFileGeocoding.get());
 
     m_ListOfPageDescriptor.push_back(pPage);
     }
@@ -975,9 +982,11 @@ void HRFMrSIDFile::CreateDescriptors ()
 // Get a list of relevant tags found embedded in the file.
 //-----------------------------------------------------------------------------
 void HRFMrSIDFile::GetFileInfo(HPMAttributeSet&               po_rTagList,
-                               RasterFileGeocodingPtr&        po_pFileGeocoding)
+                               GeoCoordinates::BaseGCSPtr&    po_pFileGeocoding,
+                               bool&                          po_UnitsInFile)
     {
-    po_pFileGeocoding = RasterFileGeocoding::Create();
+
+    po_UnitsInFile = false;
 
     HFCPtr<HCPGeoTiffKeys> po_rpGeoTiffKeys = new HCPGeoTiffKeys();
 
@@ -1089,6 +1098,7 @@ void HRFMrSIDFile::GetFileInfo(HPMAttributeSet&               po_rTagList,
                     pData = pMetaRecord->getScalarData();
 
                     po_rpGeoTiffKeys->AddKey(ProjLinearUnits, (uint32_t)*((unsigned short*)pData));
+                    po_UnitsInFile = true;
                     }
                 }
 
@@ -1101,6 +1111,7 @@ void HRFMrSIDFile::GetFileInfo(HPMAttributeSet&               po_rTagList,
                     pData = pMetaRecord->getScalarData();
 
                     po_rpGeoTiffKeys->AddKey(ProjLinearUnitSize, *((double*)pData));
+                    po_UnitsInFile = true;
                     }
                 }
 
@@ -1133,15 +1144,16 @@ void HRFMrSIDFile::GetFileInfo(HPMAttributeSet&               po_rTagList,
                 }
 
             // Try creating the base GCS with geokeys
-            po_pFileGeocoding = RasterFileGeocoding::Create(po_rpGeoTiffKeys.GetPtr());
+            po_pFileGeocoding = GeoCoordinates::BaseGCS::CreateGCS();
+            po_pFileGeocoding->InitFromGeoTiffKeys(nullptr, nullptr, po_rpGeoTiffKeys, true);
 
             WString WKT;
 
             // TR 239138 - If a WKT is found in the file and a BaseGCS object cannot
             // be created with the GeoTIFF keys, try to create a BaseGCS object with the WKT
             // instead
-            if (/*&&AR GCS review GCSServices->_IsAvailable() &&*/ 
-                MyMetaDataReader.has("IMAGE::WKT"))
+            // To have a GCS we need the engine initialized
+            if (GeoCoordinates::BaseGCS::IsLibraryInitialized() && MyMetaDataReader.has("IMAGE::WKT"))
                 {
                 MyMetaDataReader.get("IMAGE::WKT", pMetaRecord);
                 if (pMetaRecord)
@@ -1154,14 +1166,18 @@ void HRFMrSIDFile::GetFileInfo(HPMAttributeSet&               po_rTagList,
 
                 if ((WKT != L"") && (po_rpGeoTiffKeys->GetNbKeys() > 0))
                     {
-                    if (po_pFileGeocoding->GetGeocodingCP() == NULL || !(po_pFileGeocoding->GetGeocodingCP()->IsValid()))
+                    if (po_pFileGeocoding == NULL || !(po_pFileGeocoding->IsValid()))
                         {
                         //If a basegeocoord cannot be created with the GeoTIFF tags found
                         //and there is a WKT string, try with the WKT string
 
                         GeoCoordinates::BaseGCSPtr pBaseGcs = GeoCoordinates::BaseGCS::CreateGCS();
                         if(SUCCESS == pBaseGcs->InitFromWellKnownText (NULL, NULL, GeoCoordinates::BaseGCS::wktFlavorOGC, WKT.c_str()))
-                            po_pFileGeocoding = RasterFileGeocoding::Create(pBaseGcs.get()); 
+                            {
+                            po_pFileGeocoding = pBaseGcs; 
+                            // Units are always specified in a valid WKT
+                            po_UnitsInFile = true;
+                            }
                         }
                     }
                 }
@@ -1172,6 +1188,10 @@ void HRFMrSIDFile::GetFileInfo(HPMAttributeSet&               po_rTagList,
         //TR 208598 Sometime (randomly), the string array containing the CREATION_DATE
         //have unintelligible characters, for images that hasn't such tag according to mrsidinfo.exe.
         }
+
+    // We prefer returning a null GCS instead of an invalid one.
+    if (!po_pFileGeocoding.IsNull() && !po_pFileGeocoding->IsValid())
+        po_pFileGeocoding = nullptr;
     }
 
 //-----------------------------------------------------------------------------

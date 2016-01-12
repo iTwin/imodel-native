@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFErdasImgFile.cpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -197,6 +197,7 @@ HRFErdasImgCapabilities::HRFErdasImgCapabilities()
     // Tag capability
     Add(new HRFTagCapability(HFC_READ_ONLY, new HRFAttributeMinSampleValue));
     Add(new HRFTagCapability(HFC_READ_ONLY, new HRFAttributeMaxSampleValue));
+    Add(new HRFTagCapability(HFC_READ_ONLY, new HRFAttributeVerticalUnitRatioToMeter));
 
     // Geocoding capability
     HFCPtr<HRFGeocodingCapability> pGeocodingCapability(new HRFGeocodingCapability(HFC_READ_WRITE_CREATE));
@@ -426,9 +427,9 @@ const HFCPtr<HRFRasterFileCapabilities>& HRFErdasImgFile::GetCapabilities () con
 // ExtractGeocodingInformation
 //
 //-----------------------------------------------------------------------------
-RasterFileGeocodingPtr HRFErdasImgFile::ExtractGeocodingInformation()
+GeoCoordinates::BaseGCSPtr HRFErdasImgFile::ExtractGeocodingInformation(double* po_pVerticalUnitsToMeterRatio)
     {
-    RasterFileGeocodingPtr pGeocodingInfo(RasterFileGeocoding::Create());
+    GeoCoordinates::BaseGCSPtr pGeocodingInfo;
     char pLocalCS[] = "LOCAL_CS[\"Unknown\"";
 
     CHECK_ERR(string sProj = m_poDataset->GetProjectionRef();)
@@ -436,7 +437,7 @@ RasterFileGeocodingPtr HRFErdasImgFile::ExtractGeocodingInformation()
     //TR 205873 and TR 230951
     if ((BeStringUtilities::Strnicmp(sProj.c_str(), pLocalCS, sizeof(pLocalCS)) != 0))
         {
-        pGeocodingInfo = HRFGdalSupportedFile::ExtractGeocodingInformation();
+        pGeocodingInfo = HRFGdalSupportedFile::ExtractGeocodingInformation(nullptr);
         }
 
     if ((GetNbBands() == 1) && (m_GrayBandInd != -1))
@@ -462,17 +463,16 @@ RasterFileGeocodingPtr HRFErdasImgFile::ExtractGeocodingInformation()
 
             UnitNameToEPSGCodeMap::iterator UnitToNameIter = m_pUnitToNameToEPSGCodeMap->find(pUnitName);
 
-            if (pGeocodingInfo->GetGeocodingCP()!= NULL && UnitToNameIter != m_pUnitToNameToEPSGCodeMap->end())
+            if ((nullptr != po_pVerticalUnitsToMeterRatio) && (UnitToNameIter != m_pUnitToNameToEPSGCodeMap->end()))
                 {
-                   //&&AR Need vertical units support
-//                 IRasterBaseGcsPtr pGcs(pGeocodingInfo->GetGeocodingCP()->Clone());
-//                 if (UnitToNameIter->second == 9001)   // Meter
-//                     pGcs->SetVerticalUnits(1.0);
-//                 else if (UnitToNameIter->second == 9002)  // International foot
-//                     pGcs->SetVerticalUnits(0.3048);
-//                 else if (UnitToNameIter->second == 9003)  // US Survey foot
-//                     pGcs->SetVerticalUnits(12.0/39.37);
-//                 pGeocodingInfo = RasterFileGeocoding::Create(pGcs.get());
+
+                 if (UnitToNameIter->second == 9001)   // Meter
+                     *po_pVerticalUnitsToMeterRatio = 1.0;
+                 else if (UnitToNameIter->second == 9002)  // International foot
+                     *po_pVerticalUnitsToMeterRatio = 0.3048;
+                 else if (UnitToNameIter->second == 9003)  // US Survey foot
+                     *po_pVerticalUnitsToMeterRatio = 12.0/39.37;
+
                 }
             }
         }

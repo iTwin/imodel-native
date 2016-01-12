@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFWMSFile.cpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class HRFWMSFile
@@ -647,49 +647,20 @@ void HRFWMSFile::CreateDescriptors(uint64_t pi_Width,
         }
 
     // Build keyname from EPSG code
-    WString keyName;
-    BeStringUtilities::CurrentLocaleCharToWChar(keyName, SRS.c_str());
-
-    GeoCoordinates::BaseGCSPtr pBaseGCS = GeoCoordinates::BaseGCS::CreateGCS(keyName.c_str());
-    HFCPtr<HCPGeoTiffKeys> pGeoTiffKeys;
 
 
-    // In all cases including if the assumption that it is a MS GCS keyname has been discared then we
-    // create a set of geo keys...
+    GeoCoordinates::BaseGCSPtr pBaseGCS = GeoCoordinates::BaseGCS::CreateGCS();
+
     if (!invalidEPSG)
+        pBaseGCS->InitFromEPSGCode(nullptr, nullptr, EPSGCode);
+    else
         {
-        pGeoTiffKeys = new HCPGeoTiffKeys();
-
-        // GTModelType
-        pGeoTiffKeys->AddKey(GTModelType, (uint32_t)m_GTModelType);
-
-        // GTRasterType
-        pGeoTiffKeys->AddKey(GTRasterType, (uint32_t)TIFFGeo_RasterPixelIsArea);
-
-        if (EPSGCode != TIFFGeo_Undefined)
-            {
-            if ((EPSGCode >= 4000) && (EPSGCode < 5000))
-                pGeoTiffKeys->AddKey(GeographicType, (uint32_t)EPSGCode);
-            else
-                {
-                if (EPSGCode <= USHRT_MAX)
-                    {
-                    pGeoTiffKeys->AddKey(ProjectedCSType, (uint32_t)EPSGCode);
-                    }
-                else
-                    {
-                    pGeoTiffKeys->AddKey(ProjectedCSTypeLong, (uint32_t)EPSGCode);
-                    }
-                }
-            }
-        else
-        	{
-            // GeogLinearUnits
-            pGeoTiffKeys->AddKey(GeogLinearUnits, (uint32_t)TIFFGeo_Linear_Meter);
-        	}
-        }
-
-
+        // This is not WMS complaint yet historically we allow non-EPSG/CRS codes (keynames)
+        WString keyName;
+        BeStringUtilities::CurrentLocaleCharToWChar(keyName, SRS.c_str());
+        pBaseGCS->SetFromCSName(keyName.c_str());
+        }    
+    
     HFCPtr<HRFPageDescriptor> pPage = new HRFPageDescriptor (GetAccessMode(),
                                                              GetCapabilities(),
                                                              pResolutionDescriptor,
@@ -709,14 +680,8 @@ void HRFWMSFile::CreateDescriptors(uint64_t pi_Width,
                                                              m_MaxImageSize.m_Height);
 
 
-    if (pBaseGCS == NULL)
-        {
-        pPage->InitFromRasterFileGeocoding(*RasterFileGeocoding::Create(pGeoTiffKeys));
-        }
-    else
-        {
-        pPage->InitFromRasterFileGeocoding(*RasterFileGeocoding::Create(pBaseGCS.get()));
-        }
+    if (pBaseGCS == NULL || !pBaseGCS->IsValid())
+        pPage->SetGeocoding(pBaseGCS.get());
 
     HFCPtr<HMDMetaDataContainerList> pMDContainers(new HMDMetaDataContainerList());
 

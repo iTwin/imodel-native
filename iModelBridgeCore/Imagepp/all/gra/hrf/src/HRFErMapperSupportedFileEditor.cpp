@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFErMapperSupportedFileEditor.cpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class HRFErMapperSupportedFileEditor
@@ -15,6 +15,7 @@
 #if defined(IPP_HAVE_ERMAPPER_SUPPORT) 
 
 #include <Imagepp/all/h/HRFErMapperSupportedFileEditor.h>
+#include <Imagepp/all/h/HCPGCoordUtility.h>
 
 // Includes from the ERMapper SDK
 #include <ErdasEcwJpeg2000/NCSECWClient.h>
@@ -508,13 +509,13 @@ bool HRFEcwCreator::_HandleExportToFile(HFCPtr<HRFRasterFile>& pDestinationFile,
     GeoCoordinates::BaseGCSCP pBaseGCS = pDstPageDesc->GetGeocodingCP();
 
     //If some geocoding information is available, get the transformation in the units specified by the geocoding information
-    if (pBaseGCS != nullptr && pBaseGCS->IsValid()) //&&AR GCS assumed that pDstPageDesc->GetRasterFileGeocoding() is using pBaseGcs >>> RasterFileGeocoding cleanup. 
+    if (pBaseGCS != nullptr && pBaseGCS->IsValid()) 
         {
 #if 0 //DMx ECW SDK 5.0 support Geotiff Tag
         ReadInfoStruct.m_pGeotiffKeys = new HCPGeoTiffKeys();
-        baseGCS->GetGeoTiffKeys(ReadInfoStruct.m_pGeotiffKeys);
+        baseGCS->SetGeoTiffKeys(ReadInfoStruct.m_pGeotiffKeys);
 #endif
-        ReadInfoStruct.m_pDestModel = pDstPageDesc->GetRasterFileGeocoding().TranslateFromMeter(ReadInfoStruct.m_pDestModel, false, 0);
+        ReadInfoStruct.m_pDestModel = HCPGCoordUtility::TranslateFromMeter(ReadInfoStruct.m_pDestModel, 1.0 / pBaseGCS->UnitsFromMeters(), 0);
         }
 
     Export_ECW_Jpeg2000_Helper(ReadInfoStruct);     // in HRFErMapperSupportedFileEditor.cpp
@@ -853,7 +854,7 @@ class ERMapperExporterThread : public HFCThread
                 m_pCompressClient->fTargetCompression = (IEEE4) ((HFCPtr<HCDCodecErMapperSupported>&)pCodec)->GetCompressionRatio();
 
                 // Set up client data for read callback
-            m_rCompressReadInfo.m_pDestinationBitmap  = HRABitmap::Create(m_pCompressClient->nInOutSizeX,
+                m_rCompressReadInfo.m_pDestinationBitmap  = HRABitmap::Create(m_pCompressClient->nInOutSizeX,
                                                                           pDstResDesc->GetBlockHeight(),
                                                                           m_rCompressReadInfo.m_pDestinationRaster->GetTransfoModel(),
                                                                           m_rCompressReadInfo.m_pDestinationRaster->GetCoordSys(),

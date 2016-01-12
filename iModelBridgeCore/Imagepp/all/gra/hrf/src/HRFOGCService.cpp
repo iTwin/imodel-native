@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFOGCService.cpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class HRFOGCServiceFile
@@ -40,6 +40,7 @@
 
 #include <Imagepp/all/h/HCDCodecIdentity.h>
 #include <Imagepp/all/h/HCPGeoTiffKeys.h>
+#include <Imagepp/all/h/HCPGCoordUtility.h>
 
 
 
@@ -483,15 +484,12 @@ HFCPtr<HGF2DTransfoModel> HRFOGCService::CreateTransfoModel(GeoCoordinates::Base
         pTransfoModel = pFlipModel->ComposeInverseWithDirectOf(*pTransfoModel);
         }
 
-    bool DefaultUnitWasFound = false;
+    if (pi_geocoding != nullptr && pi_geocoding->IsValid())
+        pTransfoModel = HCPGCoordUtility::TranslateToMeter(pTransfoModel,
+                                                           1.0 / pi_geocoding->UnitsFromMeters());
 
-    RasterFileGeocodingPtr pFileGeocoding(RasterFileGeocoding::Create(pi_geocoding));
-    pTransfoModel = pFileGeocoding->TranslateToMeter(pTransfoModel,
-                                                       1.0,
-                                                       false,
-                                                       &DefaultUnitWasFound);
-
-    SetUnitFoundInFile(DefaultUnitWasFound);
+    // OGC Services never specify units but rely on the EPSG code of a GCS
+    SetUnitFoundInFile(false);
 
     return pTransfoModel;
     }

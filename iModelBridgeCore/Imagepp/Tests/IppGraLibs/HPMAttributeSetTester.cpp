@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: Tests/IppGraLibs/HPMAttributeSetTester.cpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -54,24 +54,26 @@ HPMAttributeSetTester::HPMAttributeSetTester()
     WStringValue =  L"Test";
 
     //HPMAttribute
-    pHRFAttributeImageDescription =      new HRFAttributeImageDescription(WStringValue); 
-    pHRFAttributeSampleValue =           new HRFAttributeMinSampleValue(VectorDouble);
-    pHRFAttributeResolutionUnit =        new HRFAttributeResolutionUnit(UShortValue); 
-    pHRFAttributeForeground =            new HRFAttributeForeground(UInt32Value);
-    pHRFAttributeYResolution =           new HRFAttributeYResolution(DoubleValue);
-    pHRFAttributeProjectedCSTypeLong =   new HRFAttributeProjectedCSTypeLong(uint32_tValue);
-    pHRFAttributeGPSVersionID =          new HRFAttributeGPSVersionID(VectorByte);
-    pHRFAttributeGPSAltitudeRef =        new HRFAttributeGPSAltitudeRef(ByteValue);
-    pHRFAttributeISOSpeedRatings =       new HRFAttributeISOSpeedRatings(VectorUShort);
-    pHRFAttributeExifVersion =           new HRFAttributeExifVersion(VectorChar);
-    pHRFAttributeOriginalFileFormat =    new HRFAttributeOriginalFileFormat(WStringValue);
-    pHRFAttributeOriginalFileSize =      new HRFAttributeOriginalFileSize(UInt64Value);
-    pHRFAttributeDontSupportPersistentColor =  new HRFAttributeDontSupportPersistentColor(true);
-    pHRFAttribute3DTransformationMatrix =      new HRFAttribute3DTransformationMatrix(Matrix);
+    pHRFAttributeImageDescription =                 new HRFAttributeImageDescription(WStringValue); 
+    pHRFAttributeSampleValue =                      new HRFAttributeMinSampleValue(VectorDouble);
+    pHRFAttributeVerticalUnitRatioToMeter =         new HRFAttributeVerticalUnitRatioToMeter(DoubleValue);
+    pHRFAttributeResolutionUnit =                   new HRFAttributeResolutionUnit(UShortValue); 
+    pHRFAttributeForeground =                       new HRFAttributeForeground(UInt32Value);
+    pHRFAttributeYResolution =                      new HRFAttributeYResolution(DoubleValue);
+    pHRFAttributeProjectedCSTypeLong =              new HRFAttributeProjectedCSTypeLong(uint32_tValue);
+    pHRFAttributeGPSVersionID =                     new HRFAttributeGPSVersionID(VectorByte);
+    pHRFAttributeGPSAltitudeRef =                   new HRFAttributeGPSAltitudeRef(ByteValue);
+    pHRFAttributeISOSpeedRatings =                  new HRFAttributeISOSpeedRatings(VectorUShort);
+    pHRFAttributeExifVersion =                      new HRFAttributeExifVersion(VectorChar);
+    pHRFAttributeOriginalFileFormat =               new HRFAttributeOriginalFileFormat(WStringValue);
+    pHRFAttributeOriginalFileSize =                 new HRFAttributeOriginalFileSize(UInt64Value);
+    pHRFAttributeDontSupportPersistentColor =       new HRFAttributeDontSupportPersistentColor(true);
+    pHRFAttribute3DTransformationMatrix =           new HRFAttribute3DTransformationMatrix(Matrix);
 
     //AttributeSet
     AttributeSet.Set(pHRFAttributeImageDescription);
     AttributeSet.Set(pHRFAttributeSampleValue);
+    AttributeSet.Set(pHRFAttributeVerticalUnitRatioToMeter);
     AttributeSet.Set(pHRFAttributeResolutionUnit);
     AttributeSet.Set(pHRFAttribute3DTransformationMatrix);
     AttributeSet.Set(pHRFAttributeForeground);
@@ -125,6 +127,7 @@ TEST_F (HPMAttributeSetTester, HasAttributeTest)
     { 
     ASSERT_TRUE(AttributeSet.HasAttribute(static_cast<HPMAttributesID>(HRFAttributeImageDescription::ATTRIBUTE_ID)));
     ASSERT_TRUE(AttributeSet.HasAttribute(static_cast<HPMAttributesID>(HRFAttributeMinSampleValue::ATTRIBUTE_ID)));
+    ASSERT_TRUE(AttributeSet.HasAttribute(static_cast<HPMAttributesID>(HRFAttributeVerticalUnitRatioToMeter::ATTRIBUTE_ID)));
     ASSERT_TRUE(AttributeSet.HasAttribute(static_cast<HPMAttributesID>(HRFAttributeResolutionUnit::ATTRIBUTE_ID)));
     ASSERT_TRUE(AttributeSet.HasAttribute(static_cast<HPMAttributesID>(HRFAttribute3DTransformationMatrix::ATTRIBUTE_ID)));
     ASSERT_TRUE(AttributeSet.HasAttribute(static_cast<HPMAttributesID>(HRFAttributeForeground::ATTRIBUTE_ID)));
@@ -333,17 +336,24 @@ TEST_F (HPMAttributeSetTester, ClearTest)
 TEST_F (HPMAttributeSetTester, RemoveTest)
     { 
 
-    ASSERT_EQ(14, AttributeSet.size());
+    ASSERT_EQ(15, AttributeSet.size());
 
     AttributeSet.Remove(*pHRFAttributeImageDescription);
-    ASSERT_EQ(13, AttributeSet.size());
+    ASSERT_EQ(14, AttributeSet.size());
     ASSERT_FALSE(AttributeSet.HasAttribute<HRFAttributeImageDescription>());
     ASSERT_TRUE(AttributeSet.HasAttribute<HRFAttributeDontSupportPersistentColor>());
 
     AttributeSet.Remove(*pHRFAttributeSampleValue);
-    ASSERT_EQ(12, AttributeSet.size());
+    ASSERT_EQ(13, AttributeSet.size());
     ASSERT_FALSE(AttributeSet.HasAttribute<HRFAttributeMinSampleValue>());
     ASSERT_TRUE(AttributeSet.HasAttribute<HRFAttributeDontSupportPersistentColor>());
+
+
+    AttributeSet.Remove(*pHRFAttributeVerticalUnitRatioToMeter);
+    ASSERT_EQ(12, AttributeSet.size());
+    ASSERT_FALSE(AttributeSet.HasAttribute<HRFAttributeVerticalUnitRatioToMeter>());
+    ASSERT_TRUE(AttributeSet.HasAttribute<HRFAttributeVerticalUnitRatioToMeter>());
+
 
     AttributeSet.Remove(*pHRFAttributeResolutionUnit);
     ASSERT_EQ(11, AttributeSet.size());

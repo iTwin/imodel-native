@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRFExportOptions.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -120,32 +120,32 @@ public:
 
     HCLASS_ID                       GetCodec() const;
     const HFCPtr<HCDCodec>&         GetCodecSample() const;
-    uint32_t                       GetCompressionQuality() const;
-    uint32_t                       GetCompressionRatio() const;
+    uint32_t                        GetCompressionQuality() const;
+    uint32_t                        GetCompressionRatio() const;
 
 
     HCLASS_ID                       GetSubResCodec() const;
     const HFCPtr<HCDCodec>&         GetSubResCodecSample() const;
-    uint32_t                       GetSubResCompressionQuality() const;
-    uint32_t                       GetSubResCompressionRatio() const;
+    uint32_t                        GetSubResCompressionQuality() const;
+    uint32_t                        GetSubResCompressionRatio() const;
 
     HRFBlockType                    GetBlockType() const;
-    uint32_t                       GetBlockWidth() const;
-    uint32_t                       GetBlockHeight() const;
+    uint32_t                        GetBlockWidth() const;
+    uint32_t                        GetBlockHeight() const;
 
     HRFBlockType                    GetSubResBlockType() const;
-    uint32_t                       GetSubResBlockWidth() const;
-    uint32_t                       GetSubResBlockHeight() const;
+    uint32_t                        GetSubResBlockWidth() const;
+    uint32_t                        GetSubResBlockHeight() const;
 
     bool                            GetResample() const;
-    uint32_t                       GetImageWidth() const;
-    uint32_t                       GetImageHeight() const;
+    uint32_t                        GetImageWidth() const;
+    uint32_t                        GetImageHeight() const;
     double                          GetScaleFactorX() const;
     double                          GetScaleFactorY() const;
 
     HRFEncodingType                 GetEncoding() const;
     HRFGeoreferenceFormat           GetGeoreferenceFormat() const;
-    RasterFileGeocodingCR           GetRasterFileGeocoding() const;
+    GeoCoordinates::BaseGCSCP       GetGeocodingCP() const;
 
     const HPMAttributeSet&          GetTagList() const;
 
@@ -186,7 +186,7 @@ private:
 
     void SetEncoding (HRFEncodingType pi_EncodingType);
     void SetGeoreferenceFormat (HRFGeoreferenceFormat pi_GeoreferenceFormat);
-    void SetRasterFileGeocoding(RasterFileGeocodingR pi_pGeocoding);
+    void SetGeocoding(GeoCoordinates::BaseGCSCP pi_pGeocoding);
 
     void SetResample (bool pi_Resample);
     void SetImageWidth (uint32_t pi_ImageWidth);
@@ -234,7 +234,7 @@ private:
 
     HRFEncodingType             m_Encoding;
     HRFGeoreferenceFormat       m_GeoreferenceFormat;
-    RasterFileGeocodingPtr      m_pGeocoding;
+    GeoCoordinates::BaseGCSCPtr  m_pGeocoding;
 
     HPMAttributeSet             m_TagList;
     HMDMetaDataContainerList    m_ListOfMetaDataContainer;

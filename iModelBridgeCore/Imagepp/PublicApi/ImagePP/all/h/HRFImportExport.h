@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRFImportExport.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HRFImportExport
@@ -230,104 +230,98 @@ public:
     IMAGEPP_EXPORT void                                    SetMetaDataContainer(HFCPtr<HMDMetaDataContainer>&  pi_rpMDContainer);
 
     // Geocoding interface
-    IMAGEPP_EXPORT RasterFileGeocodingCR                GetRasterFileGeocoding() const;
-    IMAGEPP_EXPORT void                                 SetRasterFileGeocoding(RasterFileGeocodingR pi_pGeocoding);
     IMAGEPP_EXPORT GeoCoordinates::BaseGCSCP            GetGeocodingCP() const;
-    IMAGEPP_EXPORT void                                 SetGeocoding(GeoCoordinates::BaseGCSP pi_pGeocoding);
+    IMAGEPP_EXPORT void                                 SetGeocoding(GeoCoordinates::BaseGCSCP pi_pGeocoding);
 
     // Resample interface
-    IMAGEPP_EXPORT virtual void                            SetResample(bool pi_Resample);
-    IMAGEPP_EXPORT virtual bool                           GetResample() const;
+    IMAGEPP_EXPORT virtual void                         SetResample(bool pi_Resample);
+    IMAGEPP_EXPORT virtual bool                         GetResample() const;
 
-    IMAGEPP_EXPORT virtual void                            SetResampleIsForce(bool pi_Resampling);
-    IMAGEPP_EXPORT virtual bool                           GetResampleIsForce() const;
+    IMAGEPP_EXPORT virtual void                         SetResampleIsForce(bool pi_Resampling);
+    IMAGEPP_EXPORT virtual bool                         GetResampleIsForce() const;
 
-    IMAGEPP_EXPORT virtual void                            SetResamplingMethod(const HFCPtr<HRPFilter>& pi_rFilter);
-    IMAGEPP_EXPORT virtual const HFCPtr<HRPFilter>&        GetResamplingMethod() const;
+    IMAGEPP_EXPORT virtual void                         SetResamplingMethod(const HFCPtr<HRPFilter>& pi_rFilter);
+    IMAGEPP_EXPORT virtual const HFCPtr<HRPFilter>&     GetResamplingMethod() const;
 
 
     // Image size interface
-    IMAGEPP_EXPORT virtual void                            SetImageWidth(uint32_t pi_Width);
-    IMAGEPP_EXPORT virtual void                            SetImageHeight(uint32_t pi_Height);
+    IMAGEPP_EXPORT virtual void                         SetImageWidth(uint32_t pi_Width);
+    IMAGEPP_EXPORT virtual void                         SetImageHeight(uint32_t pi_Height);
 
-    IMAGEPP_EXPORT virtual uint32_t                        GetImageWidth() const;
-    IMAGEPP_EXPORT virtual uint32_t                        GetImageHeight() const;
+    IMAGEPP_EXPORT virtual uint32_t                     GetImageWidth() const;
+    IMAGEPP_EXPORT virtual uint32_t                     GetImageHeight() const;
 
     // Scale  interface
-    IMAGEPP_EXPORT virtual void                            SetScaleFactorX(double pi_ScaleFactorX);
-    IMAGEPP_EXPORT virtual void                            SetScaleFactorY(double pi_ScaleFactorY);
+    IMAGEPP_EXPORT virtual void                         SetScaleFactorX(double pi_ScaleFactorX);
+    IMAGEPP_EXPORT virtual void                         SetScaleFactorY(double pi_ScaleFactorY);
 
-    IMAGEPP_EXPORT virtual double                         GetScaleFactorX() const;
-    IMAGEPP_EXPORT virtual double                         GetScaleFactorY() const;
+    IMAGEPP_EXPORT virtual double                       GetScaleFactorX() const;
+    IMAGEPP_EXPORT virtual double                       GetScaleFactorY() const;
 
     // Encoding type interface
-    IMAGEPP_EXPORT virtual uint32_t                        CountEncoding() const;
-    IMAGEPP_EXPORT virtual HRFEncodingType                 GetEncoding(uint32_t pi_Index) const;
+    IMAGEPP_EXPORT virtual uint32_t                     CountEncoding() const;
+    IMAGEPP_EXPORT virtual HRFEncodingType              GetEncoding(uint32_t pi_Index) const;
 
-    IMAGEPP_EXPORT virtual void                            SelectEncodingByIndex(uint32_t pi_Index);
-    IMAGEPP_EXPORT virtual void                            SelectEncoding(HRFEncodingType pi_EncodingType);
+    IMAGEPP_EXPORT virtual void                         SelectEncodingByIndex(uint32_t pi_Index);
+    IMAGEPP_EXPORT virtual void                         SelectEncoding(HRFEncodingType pi_EncodingType);
 
-    IMAGEPP_EXPORT virtual HRFEncodingType                 GetSelectedEncoding() const;
-    IMAGEPP_EXPORT virtual uint32_t                        GetSelectedEncodingIndex() const;
+    IMAGEPP_EXPORT virtual HRFEncodingType              GetSelectedEncoding() const;
+    IMAGEPP_EXPORT virtual uint32_t                     GetSelectedEncodingIndex() const;
 
     // Georeference format interface
-    IMAGEPP_EXPORT virtual uint32_t                        CountGeoreferenceFormats() const;
-    IMAGEPP_EXPORT virtual HRFGeoreferenceFormat           GetGeoreferenceFormat(uint32_t pi_index) const;
+    IMAGEPP_EXPORT virtual uint32_t                     CountGeoreferenceFormats() const;
+    IMAGEPP_EXPORT virtual HRFGeoreferenceFormat        GetGeoreferenceFormat(uint32_t pi_index) const;
 
-    IMAGEPP_EXPORT virtual void                            SelectGeoreferenceFormat(HRFGeoreferenceFormat pi_Format);
-    IMAGEPP_EXPORT virtual void                            SelectGeoreferenceFormatByIndex(uint32_t pi_Index);
+    IMAGEPP_EXPORT virtual void                         SelectGeoreferenceFormat(HRFGeoreferenceFormat pi_Format);
+    IMAGEPP_EXPORT virtual void                         SelectGeoreferenceFormatByIndex(uint32_t pi_Index);
 
-    IMAGEPP_EXPORT virtual HRFGeoreferenceFormat           GetSelectedGeoreferenceFormat() const;
-    IMAGEPP_EXPORT virtual uint32_t                        GetSelectedGeoreferenceFormatIndex() const;
+    IMAGEPP_EXPORT virtual HRFGeoreferenceFormat        GetSelectedGeoreferenceFormat() const;
+    IMAGEPP_EXPORT virtual uint32_t                     GetSelectedGeoreferenceFormatIndex() const;
 
     // Export interface
-    IMAGEPP_EXPORT virtual HFCPtr<HRFRasterFile>           StartExport() = 0;
+    IMAGEPP_EXPORT virtual HFCPtr<HRFRasterFile>        StartExport() = 0;
 
     // BestMatch interface
-    IMAGEPP_EXPORT virtual void                            BestMatchSelectedValues() = 0;
+    IMAGEPP_EXPORT virtual void                         BestMatchSelectedValues() = 0;
 
-    IMAGEPP_EXPORT virtual WString                         ComposeFilenameWithOptions() const;
-    IMAGEPP_EXPORT virtual uint32_t                        ExportToAllOptions(const HFCPtr<HFCURL>& pi_rpURLPath);
+    IMAGEPP_EXPORT virtual WString                      ComposeFilenameWithOptions() const;
+    IMAGEPP_EXPORT virtual uint32_t                     ExportToAllOptions(const HFCPtr<HFCURL>& pi_rpURLPath);
 
     // Default Values
-    IMAGEPP_EXPORT virtual HGF2DPosition                   GetOriginalSize() const;
-    IMAGEPP_EXPORT virtual HGF2DPosition                   GetDefaultResampleSize() const;
-    IMAGEPP_EXPORT virtual double                         GetDefaultResampleScaleFactorX() const;
-    IMAGEPP_EXPORT virtual double                         GetDefaultResampleScaleFactorY() const;
+    IMAGEPP_EXPORT virtual HGF2DPosition                GetOriginalSize() const;
+    IMAGEPP_EXPORT virtual HGF2DPosition                GetDefaultResampleSize() const;
+    IMAGEPP_EXPORT virtual double                       GetDefaultResampleScaleFactorX() const;
+    IMAGEPP_EXPORT virtual double                       GetDefaultResampleScaleFactorY() const;
 
     // Status Information
-    IMAGEPP_EXPORT virtual bool                           ImageSizeIsLock();
-    IMAGEPP_EXPORT virtual bool                           ScaleFactorIsLock();
-    IMAGEPP_EXPORT virtual bool                           MaintainAspectRatioIsCheck();
+    IMAGEPP_EXPORT virtual bool                         ImageSizeIsLock();
+    IMAGEPP_EXPORT virtual bool                         ScaleFactorIsLock();
+    IMAGEPP_EXPORT virtual bool                         MaintainAspectRatioIsCheck();
 
-    IMAGEPP_EXPORT virtual void                            SetImageSizeIsLock(bool pi_Check);
-    IMAGEPP_EXPORT virtual void                            SetScaleFactorIsLock(bool pi_Check);
-    IMAGEPP_EXPORT virtual void                            SetMaintainAspectRatio(bool pi_Check);
+    IMAGEPP_EXPORT virtual void                         SetImageSizeIsLock(bool pi_Check);
+    IMAGEPP_EXPORT virtual void                         SetScaleFactorIsLock(bool pi_Check);
+    IMAGEPP_EXPORT virtual void                         SetMaintainAspectRatio(bool pi_Check);
 
     // Default color
-    IMAGEPP_EXPORT virtual void const*                     GetRGBDefaultColor() const;
-    IMAGEPP_EXPORT virtual void                            SetRGBDefaultColor(const void* pi_pValue);
-    IMAGEPP_EXPORT virtual void                            SetRGBADefaultColor(const void* pi_pValue);
+    IMAGEPP_EXPORT virtual void const*                  GetRGBDefaultColor() const;
+    IMAGEPP_EXPORT virtual void                         SetRGBDefaultColor(const void* pi_pValue);
+    IMAGEPP_EXPORT virtual void                         SetRGBADefaultColor(const void* pi_pValue);
 
-    IMAGEPP_EXPORT virtual bool                           UseDestinationPaletteIfIndexed() const;
-    IMAGEPP_EXPORT virtual void                            SetUseDestinationPaletteIfIndexed(bool pi_UseDestinationPalette);
+    IMAGEPP_EXPORT virtual bool                         UseDestinationPaletteIfIndexed() const;
+    IMAGEPP_EXPORT virtual void                         SetUseDestinationPaletteIfIndexed(bool pi_UseDestinationPalette);
 
 protected:
     // EncodingType list
-    typedef vector<HRFBlockType>
-    ListOfBlockType;
+    typedef vector<HRFBlockType>            ListOfBlockType;
 
     // EncodingType list
-    typedef vector<HRFEncodingType>
-    ListOfEncodingType;
+    typedef vector<HRFEncodingType>         ListOfEncodingType;
 
     // GeoreferenceFormat list
-    typedef vector<HRFGeoreferenceFormat>
-    ListOfGeoreferenceFormats;
+    typedef vector<HRFGeoreferenceFormat>   ListOfGeoreferenceFormats;
 
     // Tag list
-    typedef vector<HFCPtr<HPMGenericAttribute> >
-    ListOfTag; 
+    typedef vector<HFCPtr<HPMGenericAttribute> >    ListOfTag; 
 
     HRFExportOptions  m_ExportOptions;
 
@@ -401,8 +395,8 @@ protected:
     // Default Values
     HGF2DPosition   m_OriginalSize;
     HGF2DPosition   m_DefaultResampleSize;
-    double         m_DefaultResampleScaleFactorX;
-    double         m_DefaultResampleScaleFactorY;
+    double          m_DefaultResampleScaleFactorX;
+    double          m_DefaultResampleScaleFactorY;
 
     // The export shape
     HVEShape        m_ClipShape;
@@ -412,14 +406,12 @@ protected:
     // Default color
     Byte            m_aRGBDefaultColor[3];
     Byte            m_aRGBADefaultColor[4];
-    bool           m_isRGBADefaultColorSet;
+    bool            m_isRGBADefaultColorSet;
 
-    mutable HFCPtr<HRPPixelType>
-    m_pPixelType;
-    mutable bool   m_BuildedPixelTypeSetted;
-    mutable HFCPtr<HRPPixelType>
-    m_pSubResPixelType;
-    mutable bool   m_BuildedSubResPixelTypeSetted;
+    mutable HFCPtr<HRPPixelType>    m_pPixelType;
+    mutable bool                    m_BuildedPixelTypeSetted;
+    mutable HFCPtr<HRPPixelType>    m_pSubResPixelType;
+    mutable bool                    m_BuildedSubResPixelTypeSetted;
 
 private:
 

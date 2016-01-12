@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFUSgsFastL7AFile.cpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -673,7 +673,10 @@ void HRFUSgsFastL7AFile::CreateDescriptors()
                                    0);                   // Filters
 
 
-    pPage->InitFromRasterFileGeocoding(*RasterFileGeocoding::Create(pGeoTiffKeys));
+    GeoCoordinates::BaseGCSPtr pBaseGCS = GeoCoordinates::BaseGCS::CreateGCS();
+    pBaseGCS->InitFromGeoTiffKeys(nullptr, nullptr, pGeoTiffKeys, true);
+    if (pBaseGCS->IsValid())
+        pPage->SetGeocoding(pBaseGCS.get());
 
     m_ListOfPageDescriptor.push_back(pPage);
     }

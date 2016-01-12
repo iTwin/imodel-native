@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hut/src/HUTDEMRasterXYZPointsExtractor.cpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -404,11 +404,28 @@ double HUTDEMRasterXYZPointsExtractor::GetFactorToMeterForZ() const
     {
     double FactorToMeterForZ = 1.0;
 
-    //&&AR GCS no vertical units
-//     GeoCoordinates::BaseGCSCP baseGCS = m_pRasterFile->GetPageDescriptor(0)->GetGeocodingCP();
-// 
-//     if (baseGCS != 0) // Validity is not required
-//         FactorToMeterForZ = baseGCS->GetVerticalUnits();
+
+    // Check if the page has a vertical unit tag definition
+    if (m_pRasterFile->GetPageDescriptor(0)->GetTags().HasAttribute<HRFAttributeVerticalUnitRatioToMeter>())
+        {
+        HRFAttributeVerticalUnitRatioToMeter const* pVertUnitsValueTag = m_pRasterFile->GetPageDescriptor(0)->FindTagCP<HRFAttributeVerticalUnitRatioToMeter>();
+
+        if (pVertUnitsValueTag != 0)
+            {
+            FactorToMeterForZ = pVertUnitsValueTag->GetData();
+
+            // Safeguard against invalid tag values.
+            if (FactorToMeterForZ <= 0.0)       
+                FactorToMeterForZ = 1.0;
+            }
+        }
+    else
+        {
+        // Since expected tag is not present we use the horizontal units of the GeoCoding (if any)
+        GeoCoordinates::BaseGCSCP baseGCS = m_pRasterFile->GetPageDescriptor(0)->GetGeocodingCP();
+        if (nullptr != baseGCS && baseGCS->IsValid())
+            FactorToMeterForZ = 1.0 / baseGCS->UnitsFromMeters();
+        }   
 
     return FactorToMeterForZ;
     }

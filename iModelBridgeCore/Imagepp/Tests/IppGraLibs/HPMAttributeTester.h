@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: Tests/IppGraLibs/HPMAttributeTester.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HPMAttributeTester
@@ -99,6 +99,7 @@ protected :
     HFCPtr<HPMGenericAttribute>  pHRFAttributeVerticalCitation;
     HFCPtr<HPMGenericAttribute>  pHRFAttributeVerticalDatum;
     HFCPtr<HPMGenericAttribute>  pHRFAttributeVerticalUnits;
+    HFCPtr<HPMGenericAttribute>  pHRFAttributeVerticalUnitRatioToMeter;
     HFCPtr<HPMGenericAttribute>  pHRFAttributeGPSVersionID;
     HFCPtr<HPMGenericAttribute>  pHRFAttributeGPSLatitudeRef;
     HFCPtr<HPMGenericAttribute>  pHRFAttributeGPSLatitude;

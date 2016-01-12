@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRFPageDescriptor.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 #pragma once
@@ -36,44 +36,6 @@ BEGIN_IMAGEPP_NAMESPACE
 class HRFRasterFile;
 class HCPGeoTiffKeys;
 
-/*=================================================================================**//**
-* This class is intended to be use as a proxy class to access geocoding created from raster file.
-* The class will keep a copy of the GeoTiff Keys used to create the geocoding object or extract them 
-* only when needed. That way, the relation between the geokeys and geocoding will be keep as 
-* one cannot always be recreate from the other.
-* @bsiclass                                     		Marc.Bedard     06/2013
-+===============+===============+===============+===============+===============+======*/
-struct RasterFileGeocoding : public RefCountedBase
-    {
-private:
-    GeoCoordinates::BaseGCSPtr          m_pGeocoding;
-    mutable HFCPtr<HCPGeoTiffKeys>      m_pGeoTiffKeys;//Optimization: Will be query on first get if not provided at construction
-    mutable bool                        m_isGeotiffKeysCreated;
-
-    RasterFileGeocoding();
-    RasterFileGeocoding(GeoCoordinates::BaseGCSP pi_pGeocoding);
-    RasterFileGeocoding(HCPGeoTiffKeys const* pi_pGeokeys);
-    RasterFileGeocoding(const RasterFileGeocoding& object);
-
-public:
-    IMAGEPP_EXPORT static RasterFileGeocodingPtr Create();
-    IMAGEPP_EXPORT static RasterFileGeocodingPtr Create(GeoCoordinates::BaseGCSP pi_pGeocoding);
-    IMAGEPP_EXPORT static RasterFileGeocodingPtr Create(HCPGeoTiffKeys const* pi_pGeokeys);
-    IMAGEPP_EXPORT        RasterFileGeocodingPtr Clone() const;
-
-    IMAGEPP_EXPORT HFCPtr<HGF2DTransfoModel> TranslateToMeter (const HFCPtr<HGF2DTransfoModel>& pi_pModel,
-                                                              double                          pi_FactorModelToMeter=1.0,
-                                                              bool                            pi_ProjectedCSTypeDefinedWithProjLinearUnitsInterpretation=false,
-                                                              bool*                           po_DefaultUnitWasFound=0) const;
-    IMAGEPP_EXPORT HFCPtr<HGF2DTransfoModel> TranslateFromMeter (const HFCPtr<HGF2DTransfoModel>& pi_pModel,
-                                                                bool                            pi_ProjectedCSTypeDefinedWithProjLinearUnitsInterpretation=false,
-                                                                bool*                           po_DefaultUnitWasFound=0) const;
-
-    GeoCoordinates::BaseGCSCP               GetGeocodingCP() const;
-    IMAGEPP_EXPORT HCPGeoTiffKeys const&    GetGeoTiffKeys() const;
-
-    bool                                    IsValid() const;
-    };
 
 /** -----------------------------------------------------------------------------
     @version 1.0c
@@ -142,8 +104,8 @@ public:
                        bool                                     pi_UnlimitedResolution = false,
                        uint64_t                                 pi_MinWidth = 1,             // use only when pi_UnlimitedResolution is true
                        uint64_t                                 pi_MinHeight = 1,            // use only when pi_UnlimitedResolution is true
-                       uint64_t                                 pi_MaxWidth = UINT64_MAX,   // use only when pi_UnlimitedResolution is true
-                       uint64_t                                 pi_MaxHeight = UINT64_MAX); // use only when pi_UnlimitedResolution is true
+                       uint64_t                                 pi_MaxWidth = UINT64_MAX,    // use only when pi_UnlimitedResolution is true
+                       uint64_t                                 pi_MaxHeight = UINT64_MAX);  // use only when pi_UnlimitedResolution is true
 
     IMAGEPP_EXPORT HRFPageDescriptor (HFCAccessMode                            pi_AccessMode,
                               const HFCPtr<HRFRasterFileCapabilities>& pi_rpPageCapabilities,
@@ -160,8 +122,8 @@ public:
                               bool                                     pi_UnlimitedResolution = false,
                               uint64_t                                 pi_MinWidth = 1,             // use only when pi_UnlimitedResolution is true
                               uint64_t                                 pi_MinHeight = 1,            // use only when pi_UnlimitedResolution is true
-                              uint64_t                                 pi_MaxWidth = UINT64_MAX,   // use only when pi_UnlimitedResolution is true
-                              uint64_t                                 pi_MaxHeight = UINT64_MAX); // use only when pi_UnlimitedResolution is true
+                              uint64_t                                 pi_MaxWidth = UINT64_MAX,    // use only when pi_UnlimitedResolution is true
+                              uint64_t                                 pi_MaxHeight = UINT64_MAX);  // use only when pi_UnlimitedResolution is true
 
     // Constructor for PageFile without resolution descriptor
     HRFPageDescriptor (HFCAccessMode                            pi_AccessMode,
@@ -179,8 +141,8 @@ public:
                        bool                                     pi_UnlimitedResolution = false,
                        uint64_t                                 pi_MinWidth = 1,            // use only when pi_UnlimitedResolution is true
                        uint64_t                                 pi_MinHeight = 1,           // use only when pi_UnlimitedResolution is true
-                       uint64_t                                 pi_MaxWidth = ULONG_MAX,   // use only when pi_UnlimitedResolution is true
-                       uint64_t                                 pi_MaxHeight = ULONG_MAX); // use only when pi_UnlimitedResolution is true
+                       uint64_t                                 pi_MaxWidth = ULONG_MAX,    // use only when pi_UnlimitedResolution is true
+                       uint64_t                                 pi_MaxHeight = ULONG_MAX);  // use only when pi_UnlimitedResolution is true
 
     // Combined two page descriptor
     HRFPageDescriptor (HFCAccessMode                            pi_AccessMode,
@@ -210,9 +172,9 @@ public:
     uint64_t                               CountBlocksForAllRes    () const;
     const HFCPtr<HRFResolutionDescriptor>&  GetResolutionDescriptor (unsigned short pi_Resolution) const;
     bool                                   AddResolutionDescriptor (const HFCPtr<HRFResolutionDescriptor>& pi_rpResolutionDescriptor);
-    HFCAccessMode                           GetAccessMode           () const;
+    HFCAccessMode                           GetAccessMode          () const;
     bool                                   IsEmpty                 () const;
-    const HFCPtr<HRFRasterFileCapabilities> GetCapabilities         () const;
+    const HFCPtr<HRFRasterFileCapabilities> GetCapabilities        () const;
 
     // unlimited resolution information
     bool                                   IsUnlimitedResolution   () const;
@@ -222,7 +184,7 @@ public:
     uint64_t                               GetMaxHeight            () const;
 
     // Get the frame duration in milliseconds - if Media Type is Still Image = 0; if Media Type is Animation = n ms;
-    uint32_t                              GetDuration             () const;
+    uint32_t                              GetDuration              () const;
     bool                                   SetDuration             (uint32_t pi_Duration);
 
     // Page Logical Shape
@@ -248,21 +210,18 @@ public:
     HFCPtr<HPMAttributeSet>&                    GetTagsPtr         () const;
     const HPMAttributeSet&                      GetTags            () const;
 
-    template <typename AttributeT> AttributeT const*	FindTagCP	() const; 
-    template <typename AttributeT> AttributeT*          FindTagP	();
+    template <typename AttributeT> AttributeT const*	FindTagCP  () const; 
+    template <typename AttributeT> AttributeT*          FindTagP   ();
 
-    IMAGEPP_EXPORT bool                                  SetTag 		(const HFCPtr<HPMGenericAttribute>& pi_rpTag);
+    IMAGEPP_EXPORT bool                                  SetTag    (const HFCPtr<HPMGenericAttribute>& pi_rpTag);
 
     // Deprecated. Use non-ptr overload instead.
     IMAGEPP_EXPORT void                           		RemoveTag	(const HFCPtr<HPMGenericAttribute>& pi_rpTag);
     IMAGEPP_EXPORT void                           		RemoveTag	(const HPMGenericAttribute& pi_rTag);
     template <typename AttributeT> void		    RemoveTag	 ();
 
-    IMAGEPP_EXPORT void                      InitFromRasterFileGeocoding(RasterFileGeocodingR pi_geocoding,bool flagGeocodingAsModified=false);
-    IMAGEPP_EXPORT RasterFileGeocodingCR     GetRasterFileGeocoding() const;
-
     IMAGEPP_EXPORT GeoCoordinates::BaseGCSCP GetGeocodingCP() const;
-    IMAGEPP_EXPORT void                      SetGeocoding(GeoCoordinates::BaseGCSP pi_pGeocoding);
+    IMAGEPP_EXPORT void                      SetGeocoding(GeoCoordinates::BaseGCSCP pi_pGeocoding);
 
     // Page Representative Palette
     bool                                   HasRepresentativePalette () const;
@@ -276,7 +235,7 @@ public:
 
     // Page Thumbnail
     bool                                   HasThumbnail             () const;
-    const HFCPtr<HRFThumbnail>&             GetThumbnail             () const;
+    const HFCPtr<HRFThumbnail>&            GetThumbnail             () const;
     bool                                   SetThumbnail             (const HRFThumbnail& pi_rThumbnail);
 
     // Flag to know if the specified data has changed
@@ -318,7 +277,7 @@ private:
     // Page information
     ListOfResolutionDescriptor          m_ListOfResolutionDescriptor;
     HFCPtr<HMDMetaDataContainerList>    m_pListOfMetaDataContainer;
-    RasterFileGeocodingPtr              m_pGeocoding;
+    GeoCoordinates::BaseGCSCPtr         m_pGeocoding;
     uint32_t                            m_Duration;
     HFCAccessMode                       m_AccessMode;
     bool                                m_EmptyPage;

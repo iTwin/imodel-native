@@ -2,7 +2,7 @@
 #
 #     $Source: all/imagepp.mke $
 #
-#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
 BUILD_NO_STACK_CHECK        = 1
@@ -11,8 +11,14 @@ WARNINGS_UP                 = 1
 
 appName             = ImagePP
 SrcImagePP          = $(SrcRoot)ImagePP/
+
+
 %include $(SrcImagepp)mki/imageppdirs.mki
 
+CCompPDBName = $(appName)
+MultiCompileIntermediatePdbFile =   $(o)$(CCompPDBName).pdb
+IntermediatePdbFile             = $(MultiCompileIntermediatePdbFile)
+LIB_PDB_NAME = $(appName).pdb
 
 %if $(TARGET_PLATFORM) == "Windows"
     %if defined (__IPP_EXTERNAL_THIRD_PARTY_SUPPORTED)
@@ -105,14 +111,13 @@ HRasterDepends = $(ippAllInc)HRARaster.h \
 
 
 
-#MultiCompileIntermediatePdbFile =   $(o)$(CCompPDBName).pdb
-#IntermediatePdbFile             = $(MultiCompileIntermediatePdbFile)
 
 #PchCompiland                    = $(baseDir)ConverterInternal.cpp
 #PchOutputDir                    = $(o)
 #PchExtraOptions                 = -Zm220
 
 #%include $(SharedMki)PreCompileHeader.mki
+
 
 CCPchOpts = -YcImagePPInternal/hstdcpp.h -Fp$(o)$(appName).pch -Fd$(o)$(appName).pdb -Zm110 
 
@@ -123,6 +128,7 @@ $(o)HStdcpp$(oext) $(o)$(appName).pch : $(SrcImagepp)PrivateApi/ImagePPInternal/
 CCPchOpts = -YuImagePPInternal/hstdcpp.h -Fp$(o)$(appName).pch -Zm110 -Fd$(o)$(appName).pdb
 
 MultiCompileDepends=$(_MakeFileSpec)
+
 %include MultiCppCompileRule.mki
 
 

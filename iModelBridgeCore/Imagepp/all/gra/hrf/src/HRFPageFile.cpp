@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFPageFile.cpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -17,7 +17,7 @@
 #include <Imagepp/all/h/HRFPageFile.h>
 #include <Imagepp/all/h/HRFResolutionEditor.h>
 #include <Imagepp/all/h/HCPGeoTiffKeys.h>
-
+#include <Imagepp/all/h/HCPGCoordUtility.h>
 
 //-----------------------------------------------------------------------------
 // Public
@@ -61,13 +61,11 @@ void HRFPageFile::SetDefaultRatioToMeter(double pi_RatioToMeter)
 
         HFCPtr<HGF2DTransfoModel> pTransfoModel = pPageDescriptor->GetTransfoModel();
         
-        if (pBaseGCS != nullptr && pBaseGCS->IsValid()) //&&AR GCS crazy way of assuming that pPageDescriptor->GetRasterFileGeocoding() is using that pBaseGCS.>> RasterFileGeocoding cleanup
-            {            
-            pTransfoModel = pPageDescriptor->GetRasterFileGeocoding().TranslateToMeter(pPageDescriptor->GetTransfoModel(),
-                                                             RatioToMeter,
-                                                             false,
-                                                             NULL);
-            }
+        if (pBaseGCS != nullptr && pBaseGCS->IsValid()) 
+            RatioToMeter = 1.0 / pBaseGCS->UnitsFromMeters();
+       
+        pTransfoModel = HCPGCoordUtility::TranslateToMeter(pPageDescriptor->GetTransfoModel(),
+                                                           RatioToMeter);
 
         pPageDescriptor->SetTransfoModel(*pTransfoModel, true /*ignore capabilities*/);
         pPageDescriptor->SetTransfoModelUnchanged();

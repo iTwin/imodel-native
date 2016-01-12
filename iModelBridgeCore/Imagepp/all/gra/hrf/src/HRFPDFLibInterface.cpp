@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFPDFLibInterface.cpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -1365,9 +1365,11 @@ void HRFPDFLibInterface::CreateGeocodingFromWKT(const string&                  p
         {
         pBaseGcs = GeoCoordinates::BaseGCS::CreateGCS();
         HFCPtr<HCPGeoTiffKeys> pGeoKeys = HRFGdalUtilities::ConvertOGCWKTtoGeotiffKeys(pi_rWKT.c_str());
-        if(SUCCESS == pBaseGcs->InitFromGeoTiffKeys(NULL, NULL, *pGeoKeys))
+        if(SUCCESS == pBaseGcs->InitFromGeoTiffKeys(NULL, NULL, *pGeoKeys, true))
             po_rpGeocoding = pBaseGcs;
         }
+    else
+        po_rpGeocoding = pBaseGcs;        
     }
 
 //-----------------------------------------------------------------------------
@@ -1545,8 +1547,8 @@ bool HRFPDFLibInterface::GetGeocodingReferenceFromImage(const PDPage&           
 // private
 //-----------------------------------------------------------------------------
 bool HRFPDFLibInterface::GetGeoreference(const CosObj&                  pi_rMeasureCosObj,
-                                          uint32_t                     pi_RasterizePageWidth,
-                                          uint32_t                     pi_RasterizePageHeight,
+                                          uint32_t                      pi_RasterizePageWidth,
+                                          uint32_t                      pi_RasterizePageHeight,
                                           double                        pi_MediaMinX,
                                           double                        pi_MediaMinY,
                                           double                        pi_MediaMaxX,
@@ -1689,7 +1691,7 @@ bool HRFPDFLibInterface::GetGeoreference(const CosObj&                  pi_rMeas
                 // and this will result in a conversion problem.
 
                 bool  isGeographic = false;
-                if ((pi_rpGeocoding != NULL) && (pi_rpGeocoding->IsValid()) && (pi_rpGeocoding->GetBaseGCS() != NULL))
+                if ((pi_rpGeocoding != NULL) && (pi_rpGeocoding->IsValid()))
                     isGeographic = (!pi_rpGeocoding->IsProjected());
 
                 if (isGeographic)
@@ -1701,7 +1703,10 @@ bool HRFPDFLibInterface::GetGeoreference(const CosObj&                  pi_rMeas
                 else
                     {
                     //Physical coordinate
-                    ConvertionStatus = pi_rpGeocoding->GetCartesianFromLatLong(CartesianPt, GeoPt);
+                    if ((pi_rpGeocoding != NULL) && (pi_rpGeocoding->IsValid()))
+                        ConvertionStatus = pi_rpGeocoding->GetCartesianFromLatLong(CartesianPt, GeoPt);
+                    else
+                        ConvertionStatus = ERROR;
                     }
 
                 // Conversion status can be negative (general error), 1(coordinate outside user domain) or 2(coordinate outside mathematical domain)
@@ -1745,8 +1750,8 @@ bool HRFPDFLibInterface::GetGeoreference(const CosObj&                  pi_rMeas
                 if (pTempTransfoModel != 0)
                     po_rpGeoreference = pTempTransfoModel;
 
-                RasterFileGeocodingPtr pFileGeocoding(RasterFileGeocoding::Create(pi_rpGeocoding->Clone().get()));
-                po_rpGeoreference = pFileGeocoding->TranslateToMeter(po_rpGeoreference, 1.0, false, NULL);
+                if (pi_rpGeocoding != nullptr && pi_rpGeocoding->IsValid())
+                    po_rpGeoreference = HCPGCoordUtility::TranslateToMeter(po_rpGeoreference, pi_rpGeocoding);
 
                 Result = true;
                 }

@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFGdalSupportedFile.cpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -60,6 +60,7 @@
 
 
 #include <Imagepp/all/h/HCPGeoTiffKeys.h>
+#include <Imagepp/all/h/HCPGCoordUtility.h>
 
 //GDAL
 #include <ImagePP-GdalLib/gdal_priv.h>
@@ -930,14 +931,15 @@ void HRFGdalSupportedFile::CreateDescriptorsWith(const HFCPtr<HCDCodec>& pi_rpCo
     // Create Page and resolution Description/Capabilities for this file.
     HFCPtr<HRFResolutionDescriptor> pResolution;
     HFCPtr<HRFPageDescriptor>       pPage;
-    bool                           IsTransfoModel = false;
-    RasterFileGeocodingPtr         pGeocoding = RasterFileGeocoding::Create();//No geocoding by default, HRFFile MUST set it if supported;
+    bool                            IsTransfoModel = false;
+    GeoCoordinates::BaseGCSPtr      pGeocoding; //No geocoding by default, HRFFile MUST set it if supported;
+    double                          verticalUnitRatioToMeter = 1.0;
 
     //warning : GetGeoRefMatrix needs to be called before IsValidGeoRefInfo
     //if theres no valid transfo model, we dont check for GeoInfo
     if(GetGeoRefMatrix())
         {
-        pGeocoding = ExtractGeocodingInformation();
+        pGeocoding = ExtractGeocodingInformation(&verticalUnitRatioToMeter);
         IsTransfoModel = true;
         }
 
@@ -968,20 +970,14 @@ void HRFGdalSupportedFile::CreateDescriptorsWith(const HFCPtr<HCDCodec>& pi_rpCo
     //warning : GetGeoRefInfo needs to be called before IsValidGeoRefInfo
     if (IsTransfoModel && IsValidGeoRefInfo())
         {
-        if (pGeocoding != 0)
+        pBuildTransfoModel = BuildTransfoModel();
+        if (pGeocoding != nullptr && pGeocoding->IsValid())
             {
-            bool DefaultUnitWasFound = false;
+            pBuildTransfoModel = HCPGCoordUtility::TranslateToMeter(pBuildTransfoModel, 
+                                                                    1.0 / pGeocoding->UnitsFromMeters());
 
-            pBuildTransfoModel = pGeocoding->TranslateToMeter(BuildTransfoModel(),
-                                                                1.0,
-                                                                false,
-                                                                &DefaultUnitWasFound);
-
-            SetUnitFoundInFile(DefaultUnitWasFound);
-            }
-        else
-            {
-            pBuildTransfoModel = BuildTransfoModel();
+            // GDAL geocoding specified using WKT ... if GCS present units are allways specified.
+            SetUnitFoundInFile(true);
             }
 
         m_IsGeoReference = true;
@@ -1024,6 +1020,11 @@ void HRFGdalSupportedFile::CreateDescriptorsWith(const HFCPtr<HCDCodec>& pi_rpCo
         AddMinMaxSampleValueTags(pi_rTagList);
         }
 
+    if ((!pi_rTagList.HasAttribute<HRFAttributeVerticalUnitRatioToMeter>())) 
+        {
+        pi_rTagList.Set(new HRFAttributeVerticalUnitRatioToMeter(verticalUnitRatioToMeter));
+        }
+
     pPage = new HRFPageDescriptor (GetAccessMode(),
                                    GetCapabilities(),                       // Capabilities,
                                    pResolution,                             // ResolutionDescriptor,
@@ -1035,7 +1036,8 @@ void HRFGdalSupportedFile::CreateDescriptorsWith(const HFCPtr<HCDCodec>& pi_rpCo
                                    0,                                       // Filters
                                    &pi_rTagList);                           // Attribute set
 
-    pPage->InitFromRasterFileGeocoding(*pGeocoding);
+    if (pGeocoding != nullptr && pGeocoding->IsValid())
+        pPage->SetGeocoding(pGeocoding.get());
 
     m_ListOfPageDescriptor.push_back(pPage);
     }
@@ -1195,7 +1197,6 @@ bool HRFGdalSupportedFile::SetGeoRefMatrix()
     HPRECONDITION(GetPageDescriptor(0)->GetTransfoModel() != 0);
 
     bool       RetVal              = false;
-    bool       DefaultUnitWasFound = false;
     double      adfGeoTransform[6];
 
     HFCPtr<HGF2DTransfoModel> pTransfoModel = GetPageDescriptor(0)->GetTransfoModel();
@@ -1204,12 +1205,13 @@ bool HRFGdalSupportedFile::SetGeoRefMatrix()
     GeoCoordinates::BaseGCSCP pBaseGcs = GetPageDescriptor(0)->GetGeocodingCP();
 
     //If some geocoding information is available, get the transformation model in meters
-    if (pBaseGcs != nullptr && pBaseGcs->IsValid()) //&&AR GCS assumed that pDstPageDesc->GetRasterFileGeocoding() is using pBaseGcs >>> RasterFileGeocoding cleanup. 
+    if (pBaseGcs != nullptr && pBaseGcs->IsValid()) 
         {
-        pTransfoModel = GetPageDescriptor(0)->GetRasterFileGeocoding().TranslateFromMeter(pTransfoModel, false, &DefaultUnitWasFound);
-        }
+        pTransfoModel = HCPGCoordUtility::TranslateFromMeter(pTransfoModel, 1.0 / pBaseGcs->UnitsFromMeters());
 
-    SetUnitFoundInFile(DefaultUnitWasFound);
+        // GDAL geocoding specified using WKT ... if GCS present units are allways specified.
+        SetUnitFoundInFile(true);
+        }
 
     if (pTransfoModel->CanBeRepresentedByAMatrix())
         {
@@ -1793,14 +1795,15 @@ void HRFGdalSupportedFile::SetNoDataValue(HFCPtr<HRPPixelType>& pixelType)
 // GetGeoRefInformation
 //
 //-----------------------------------------------------------------------------
-RasterFileGeocodingPtr HRFGdalSupportedFile::ExtractGeocodingInformation()
+GeoCoordinates::BaseGCSPtr HRFGdalSupportedFile::ExtractGeocodingInformation(double* po_pVerticalUnitRatioToMeter)
     {
-    RasterFileGeocodingPtr pGeocoding(RasterFileGeocoding::Create());
+    GeoCoordinates::BaseGCSPtr pGeocoding;
 
     //init
     m_GTModelType = TIFFGeo_Undefined;
 
-    //&&AR GCS review if (GCSServices->_IsAvailable())
+    // To have a GCS we need the engine initialized
+    if (GeoCoordinates::BaseGCS::IsLibraryInitialized())
         {
         CHECK_ERR(string WktGeocodeTemp = m_poDataset->GetProjectionRef();)
 
@@ -1811,18 +1814,18 @@ RasterFileGeocodingPtr HRFGdalSupportedFile::ExtractGeocodingInformation()
             {   
             //TR 241854 According to the GDAL documentation, the flavor is
             //WktFlavorOGC. But in some case, the WKT has an hybrid flavor,
-            //so unknown is used instead.
-
+            //so unknown is used as an alternative afterwards.
             GeoCoordinates::BaseGCSPtr pBaseGCS = GeoCoordinates::BaseGCS::CreateGCS();
 
-            //&&AR when failing is it OK to return NULL? or we have something partially valid that will preserve unknown data or something?
-            if(SUCCESS == pBaseGCS->InitFromWellKnownText (NULL, NULL, GeoCoordinates::BaseGCS::wktFlavorUnknown, WktGeocode.c_str()))
-                pGeocoding = RasterFileGeocoding::Create(pBaseGCS.get());           
+            if(SUCCESS == pBaseGCS->InitFromWellKnownText (NULL, NULL, GeoCoordinates::BaseGCS::wktFlavorOGC, WktGeocode.c_str()))
+                pGeocoding = pBaseGCS;   
+            else if(SUCCESS == pBaseGCS->InitFromWellKnownText (NULL, NULL, GeoCoordinates::BaseGCS::wktFlavorUnknown, WktGeocode.c_str()))
+                pGeocoding = pBaseGCS;           
             }
         }
 
     //If GeoCoord could not convert the WKT, try with OGR
-    if (pGeocoding->GetGeocodingCP()==NULL)  
+    if (pGeocoding == NULL)  
         {
         //char* pLocalCS = "LOCAL_CS[\"Unknown\"";
 
@@ -1831,52 +1834,40 @@ RasterFileGeocodingPtr HRFGdalSupportedFile::ExtractGeocodingInformation()
         if (sProj != "")
             {
             HFCPtr<HCPGeoTiffKeys> pGeoTiffKeys;
+
             pGeoTiffKeys = HRFGdalUtilities::ConvertOGCWKTtoGeotiffKeys(sProj.c_str());
 
             if(pGeoTiffKeys != NULL)
-                pGeocoding = RasterFileGeocoding::Create(pGeoTiffKeys);
+                {
+                GeoCoordinates::BaseGCSPtr pBaseGCS = GeoCoordinates::BaseGCS::CreateGCS();
+                if(SUCCESS == pBaseGCS->InitFromGeoTiffKeys(nullptr, nullptr, pGeoTiffKeys, true))
+                    pGeocoding = pBaseGCS;     
+                }      
             }
         }
 
     // Get common geotiff tags
-    if (pGeocoding->GetGeocodingCP()!=NULL && pGeocoding->GetGeocodingCP()->IsValid())
+    if (pGeocoding != NULL && pGeocoding->IsValid())
         {
-        m_GTModelType = pGeocoding->GetGeocodingCP()->GetProjectionCode() != GeoCoordinates::BaseGCS::ProjectionCodeValue::pcvUnity ? 1 : 0;
+        m_GTModelType = pGeocoding->GetProjectionCode() != GeoCoordinates::BaseGCS::ProjectionCodeValue::pcvUnity ? 1 : 0;
+
+        // Extract vertical units as the horizontal units (or meters for lat/long)
+        if (nullptr != po_pVerticalUnitRatioToMeter)
+            {
+            *po_pVerticalUnitRatioToMeter = 1.0;
+            if (pGeocoding->GetProjectionCode() != GeoCoordinates::BaseGCS::ProjectionCodeValue::pcvUnity)
+                {
+                *po_pVerticalUnitRatioToMeter = 1.0 / pGeocoding->UnitsFromMeters();
+                }
+            }
         }
+
+    if (pGeocoding != NULL && !pGeocoding->IsValid())
+        return nullptr;
 
     return pGeocoding;
     }
 
-
-//-----------------------------------------------------------------------------
-// Protected
-// AddVerticalUnitToGeocoding
-// Note that this function should currently be used only for obtaining the unit
-// of elevation measurements present in a DEM raster.
-//-----------------------------------------------------------------------------
-void HRFGdalSupportedFile::AddVerticalUnitToGeocoding(GeoCoordinates::BaseGCSR pio_pBaseGCS) const
-    {
-    const char* pUnitType = GetRasterBand(m_GrayBandInd)->GetUnitType();
-    uint32_t     VerticalUnitValue;
-    double        VerticalUnitRatioToMeter = 1.0;
-
-    //The unit type should be "m" for meter or "ft" for feet.
-    if (strncmp(pUnitType, "m", 1) == 0)
-        {
-        HASSERT(strlen(pUnitType) == 1);
-        VerticalUnitValue = TIFFGeo_Linear_Meter;
-        VerticalUnitRatioToMeter = 1.0;
-        }
-    else
-        {
-        HASSERT((strncmp(pUnitType, "ft", 2) == 0) && (strlen(pUnitType) == 2));
-        VerticalUnitValue = TIFFGeo_Linear_Foot;
-        VerticalUnitRatioToMeter = 0.3048;
-        }
-
-    //&&AR GCS vertical units.
-    //pio_pBaseGCS.SetVerticalUnits(VerticalUnitRatioToMeter);
-    }
 
 
 //-----------------------------------------------------------------------------
@@ -1910,21 +1901,21 @@ bool HRFGdalSupportedFile::SetGeocodingInformation()
 
     GeoCoordinates::BaseGCSCP pBaseGCS = pPageDescriptor->GetGeocodingCP();
 
-    if (pBaseGCS != nullptr)
+    if (pBaseGCS != nullptr && pBaseGCS->IsValid())
         {
-        //&&AR GCS rethink that isAvailable thing. we should have invalid or NULL object when Geocoord is not init. 
-     //   if (GCSServices->_IsAvailable())        
+        pBaseGCS->GetWellKnownText(OGCWellKnownText, GeoCoordinates::BaseGCS::WktFlavor::wktFlavorOGC, true);
+        if (OGCWellKnownText != L"")
             {
-            pBaseGCS->GetWellKnownText(OGCWellKnownText, GeoCoordinates::BaseGCS::WktFlavor::wktFlavorOGC);
-            if (OGCWellKnownText != L"")
-                {
-                pGeoTiffKeys = new HCPGeoTiffKeys();
-                pBaseGCS->SetGeoTiffKeys(pGeoTiffKeys);
 
-                pGeoTiffKeys->GetValue(GTModelType, &m_GTModelType);
+// &&AR ???? Why do we extract the WKT if not used here. It appears to serve as some sort of marker
+// yet I think this is really a weird way to implement. If someone understand the intent please
+// correct or recode..
+            pGeoTiffKeys = new HCPGeoTiffKeys();
+            pBaseGCS->GetGeoTiffKeys(pGeoTiffKeys, true);
 
-                IsGeocodingSet = true;
-                }
+            pGeoTiffKeys->GetValue(GTModelType, &m_GTModelType);
+
+            IsGeocodingSet = true;
             }
 
         if (!IsGeocodingSet && pGeoTiffKeys != NULL)

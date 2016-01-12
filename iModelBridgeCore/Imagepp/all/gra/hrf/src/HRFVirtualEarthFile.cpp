@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFVirtualEarthFile.cpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class HRFVirtualEarthFile
@@ -833,42 +833,34 @@ void HRFVirtualEarthFile::CreateDescriptors()
 
     GeoCoordinates::BaseGCSPtr pBaseGCS;
 
-    //&&AR GCS validate that base GCS is init?  or we get an invalid GCS?
-    //if (GCSServices->_IsAvailable())
-        {
-        try
-            {
-            WString WKTString = L"PROJCS[\"EPSG:900913\", \
-                                       GEOGCS[\"GCS_Sphere_WGS84\", \
-                                       DATUM[\"SphereWGS84\", \
-                                       SPHEROID[\"SphereWGS84\",6378137.0,0.0], \
-                                       TOWGS84[0, 0, 0, 0, 0, 0, 0] \
-                                       ], \
-                                           PRIMEM[\"Greenwich\",0.0], \
-                                           UNIT[\"Degree\",0.0174532925199433 ], \
-                                       ], \
-                                       PROJECTION[\"Mercator\"], \
-                                       PARAMETER[\"False_Easting\",0.0], \
-                                       PARAMETER[\"False_Northing\",0.0], \
-                                       PARAMETER[\"Central_Meridian\",0.0], \
-                                       PARAMETER[\"Standard_Parallel_1\",0.0], \
-                                       UNIT[\"Meter\", 1.0] \
-                                       ]";
 
-            // Obtain the GCS
-            pBaseGCS = GeoCoordinates::BaseGCS::CreateGCS();
-            if(SUCCESS == pBaseGCS->InitFromWellKnownText (NULL, NULL, GeoCoordinates::BaseGCS::wktFlavorOGC, WKTString.c_str()))
-                {       
-                GeoPoint geoPoint = {offsetLongitude, offsetLatitude, 0.0};
-                DPoint3d cartesianPoint;
-                pBaseGCS->CartesianFromLatLong (cartesianPoint, geoPoint);
-                pTransfoModel = new HGF2DStretch(HGF2DDisplacement(cartesianPoint.x, cartesianPoint.y), Scale, Scale);
-                }
-            }
-        catch (...)
-            {
-            }
-        }
+     WString WKTString = L"PROJCS[\"EPSG:900913\", \
+                                       GEOGCS[\"GCS_Sphere_WGS84\", \
+                                DATUM[\"SphereWGS84\", \
+                                SPHEROID[\"SphereWGS84\",6378137.0,0.0], \
+                                TOWGS84[0, 0, 0, 0, 0, 0, 0] \
+                                ], \
+                                    PRIMEM[\"Greenwich\",0.0], \
+                                    UNIT[\"Degree\",0.0174532925199433 ], \
+                                ], \
+                                PROJECTION[\"Mercator\"], \
+                                PARAMETER[\"False_Easting\",0.0], \
+                                PARAMETER[\"False_Northing\",0.0], \
+                                PARAMETER[\"Central_Meridian\",0.0], \
+                                PARAMETER[\"Standard_Parallel_1\",0.0], \
+                                UNIT[\"Meter\", 1.0] \
+                                ]";
+
+     // Obtain the GCS
+     pBaseGCS = GeoCoordinates::BaseGCS::CreateGCS();
+     if(SUCCESS == pBaseGCS->InitFromWellKnownText (NULL, NULL, GeoCoordinates::BaseGCS::wktFlavorOGC, WKTString.c_str()))
+         {       
+         GeoPoint geoPoint = {offsetLongitude, offsetLatitude, 0.0};
+         DPoint3d cartesianPoint;
+         pBaseGCS->CartesianFromLatLong (cartesianPoint, geoPoint);
+         pTransfoModel = new HGF2DStretch(HGF2DDisplacement(cartesianPoint.x, cartesianPoint.y), Scale, Scale);
+         }
+
 
     if(pTransfoModel == nullptr)
         pTransfoModel = new HGF2DStretch(HGF2DDisplacement(0.0, 0.0), Scale, Scale);
@@ -949,8 +941,8 @@ void HRFVirtualEarthFile::CreateDescriptors()
                                    0);                           // Defined tag
 
 
-    pPage->InitFromRasterFileGeocoding(*RasterFileGeocoding::Create(pBaseGCS.get()));
-
+    if (!pBaseGCS.IsNull() && pBaseGCS->IsValid())
+        pPage->SetGeocoding(pBaseGCS.get());
 
     m_ListOfPageDescriptor.push_back(pPage);
     }

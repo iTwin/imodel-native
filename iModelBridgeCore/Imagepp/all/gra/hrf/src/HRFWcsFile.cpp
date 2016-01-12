@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFWcsFile.cpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class HRFWCSFile
@@ -447,32 +447,13 @@ void HRFWCSFile::CreateDescriptors(uint64_t pi_Width,
     if (strncmp(CRS.c_str(), "epsg:", 5) == 0)
         {
         // The CRS is in the EPSG format
-        WString keyName;
-        BeStringUtilities::CurrentLocaleCharToWChar(keyName, CRS.c_str());
-
-        pBaseGCS = GeoCoordinates::BaseGCS::CreateGCS(keyName.c_str());
-
-#if (0)
-
+        pBaseGCS = GeoCoordinates::BaseGCS::CreateGCS();
 
         if ((sscanf(CRS.c_str(), "epsg:%d", &EPSGCode) != 1) || EPSGCode < 0)
             EPSGCode = TIFFGeo_Undefined;
-        else
-            {
-            // Load Tables
-            HAutoPtr<HRFGeoTiffTable> pGeoTables(new HRFGeoTiffTable());
-            pGeoTables->LoadTables();
 
-            HRFGeoTiffUnitsTable::HRFGeoTiffUnitsRecord  UnitsRecord;
-            if (pGeoTables->FindCoordSysUnits((unsigned short)EPSGCode, &UnitsRecord) || (EPSGCode > USHRT_MAX))
-                {
-                m_GTModelType = TIFFGeo_ModelTypeProjected;
-                }
-
-            pGeoTables->UnloadTables();
-            }
-
-#endif
+        pBaseGCS->InitFromEPSGCode(nullptr, nullptr, EPSGCode);
+        // If not found then BaseCGS will be invalid.
         }
     else
         {
@@ -483,45 +464,6 @@ void HRFWCSFile::CreateDescriptors(uint64_t pi_Width,
             m_GTModelType = TIFFGeo_ModelTypeProjected;
         }
 
-#if (0)
-    HFCPtr<HCPGeoTiffKeys> pGeoTiffKeys(new HCPGeoTiffKeys());
-
-    // GTModelType
-    pGeoTiffKeys->AddKey(GTModelType, (uint32_t)m_GTModelType);
-
-    // GTRasterType
-    pGeoTiffKeys->AddKey(GTRasterType, (uint32_t)TIFFGeo_RasterPixelIsArea);
-
-    if (EPSGCode != TIFFGeo_Undefined)
-        {
-        if ((EPSGCode > 0) && (EPSGCode < 20000))
-            pGeoTiffKeys->AddKey(GeographicType, (uint32_t)EPSGCode);
-        else
-            {
-            if (EPSGCode <= USHRT_MAX)
-                {
-                pGeoTiffKeys->AddKey(ProjectedCSType, (uint32_t)EPSGCode);
-                }
-            else
-                {
-                pGeoTiffKeys->AddKey(ProjectedCSTypeLong, (uint32_t)EPSGCode);
-                }
-            }
-        }
-    else
-        {
-        // GeogLinearUnits
-        pGeoTiffKeys->AddKey(GeogLinearUnits, (uint32_t)TIFFGeo_Linear_Meter);
-        }
-
-    GeoCoordinates::BaseGCSPtr pBaseGCS = GeoCoordinates::BaseGCS::CreateGCS();
-
-    //&&AR when failing is it OK to return NULL? or we have something partially valid that will preserve unknown data or something?
-    pBaseGCS->InitFromGeoTiffKeys (NULL, NULL, pGeoTiffKeys.GetPtr());
-#endif
-
-    if (pBaseGCS != NULL && !pBaseGCS->IsValid())
-        pBaseGCS = NULL;
 
 
     HFCPtr<HRFPageDescriptor> pPage = new HRFPageDescriptor (GetAccessMode(),
@@ -542,8 +484,8 @@ void HRFWCSFile::CreateDescriptors(uint64_t pi_Width,
                                                              m_MaxImageSize.m_Width,
                                                              m_MaxImageSize.m_Height);
 
-    pPage->InitFromRasterFileGeocoding(*RasterFileGeocoding::Create(pBaseGCS.get()));
-
+    if (!pBaseGCS.IsNull() && pBaseGCS->IsValid())
+        pPage->SetGeocoding(pBaseGCS.get());
 
     m_ListOfPageDescriptor.push_back(pPage);
     }

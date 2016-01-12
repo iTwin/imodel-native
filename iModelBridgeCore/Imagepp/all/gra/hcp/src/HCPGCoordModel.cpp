@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hcp/src/HCPGCoordModel.cpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 #include <ImagePPInternal/hstdcpp.h>                // must be first for PreCompiledHeader Option
@@ -18,6 +18,8 @@
 #include <ImagePP/all/h/HVE2DShape.h>
 #include <ImagePP/all/h/HVE2DPolygonOfSegments.h>
 #include <ImagePP/all/h/HCPGCoordUtility.h>
+
+#include <Geom/GeoPoint.h>
 
 //-----------------------------------------------------------------------------
 // Default Constructor
@@ -658,12 +660,23 @@ StatusInt HCPGCoordModel::ComputeDomain () const
     if (!m_domainComputed)
         {
         // Domain not computed ... we first obtain the geographic domain from both GCS
-        HGF2DCoordCollection<double> sourceGeoDomain;
-        HGF2DCoordCollection<double> destinationGeoDomain;
+        bvector<GeoPoint> sourceGeoDomain;
+        bvector<GeoPoint> destinationGeoDomain;
 
-        HCPGCoordUtility::GetGeoDomain(*m_pSrcGCS, sourceGeoDomain);
-        HCPGCoordUtility::GetGeoDomain(*m_pDestGCS, destinationGeoDomain);
+        HGF2DCoordCollection<double> sourceGeoDomain2;
+        HGF2DCoordCollection<double> destinationGeoDomain2;
 
+        m_pSrcGCS->GetMathematicalDomain(sourceGeoDomain);
+        m_pDestGCS->GetMathematicalDomain(destinationGeoDomain);
+
+        // Convert geo points to Image++ points
+        for (int idx = 0 ; idx < sourceGeoDomain.size() ; idx++)
+            sourceGeoDomain2.push_back(HGF2DCoord<double>(sourceGeoDomain[idx].longitude, sourceGeoDomain[idx].latitude));
+
+        for (int idx = 0 ; idx < destinationGeoDomain.size() ; idx++)
+            destinationGeoDomain2.push_back(HGF2DCoord<double>(destinationGeoDomain[idx].longitude, destinationGeoDomain[idx].latitude));
+
+        
         // Create the three coordinate systems required for transformation
         HFCPtr<HGF2DCoordSys> latLongCoordinateSystem = new HGF2DCoordSys();
         HFCPtr<HGF2DTransfoModel> directLatLongTransfoModel = new HCPGCoordLatLongModel (*m_pSrcGCS);
@@ -673,8 +686,8 @@ StatusInt HCPGCoordModel::ComputeDomain () const
 
         // Create shapes from these
 
-        HFCPtr<HVE2DShape> sourceDomainShape = new HVE2DPolygonOfSegments(HGF2DPolygonOfSegments(sourceGeoDomain), latLongCoordinateSystem);
-        HFCPtr<HVE2DShape> destinationDomainShape = new HVE2DPolygonOfSegments(HGF2DPolygonOfSegments(destinationGeoDomain), latLongCoordinateSystem);
+        HFCPtr<HVE2DShape> sourceDomainShape = new HVE2DPolygonOfSegments(HGF2DPolygonOfSegments(sourceGeoDomain2), latLongCoordinateSystem);
+        HFCPtr<HVE2DShape> destinationDomainShape = new HVE2DPolygonOfSegments(HGF2DPolygonOfSegments(destinationGeoDomain2), latLongCoordinateSystem);
 
         HFCPtr<HVE2DShape> resultDomainShape = sourceDomainShape->IntersectShape (*destinationDomainShape);
 

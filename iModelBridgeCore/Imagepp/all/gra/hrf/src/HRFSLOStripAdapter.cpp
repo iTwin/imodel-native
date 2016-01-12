@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFSLOStripAdapter.cpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class HRFSLOStripAdapter
@@ -413,8 +413,7 @@ void HRFSLOStripAdapter::CreateDescriptors ()
             }
 
         // Geocoding
-        GeoCoordinates::BaseGCSCP baseGCS = pAdaptedPageDescriptor->GetGeocodingCP();
-        pAdapterPageDescriptor->SetGeocoding(const_cast<GeoCoordinates::BaseGCSP>(baseGCS));
+        pAdapterPageDescriptor->SetGeocoding(pAdaptedPageDescriptor->GetGeocodingCP());
 
         // Add the page descriptor to the list
         m_ListOfPageDescriptor.push_back(pAdapterPageDescriptor);

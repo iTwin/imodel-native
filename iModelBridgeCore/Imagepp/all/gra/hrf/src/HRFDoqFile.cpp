@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFDoqFile.cpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -889,13 +889,8 @@ void HRFDoqFile::CreateDescriptors()
         }
     else if(ValueString.compare(0, 4, "feet")==0)
         {
-//        HGFDistanceUnit     Inches(0.0254);
-//        HGFDistanceUnit     Meters;
-//        HGFDistanceUnit     Feet(12, Inches);
-//        Meters.ConvertFrom(Inches, 1.0);
         GeoShortValue = 2;
         m_RatioToMeter = 0.3048;
-
         }
     else
         {
@@ -1028,7 +1023,10 @@ void HRFDoqFile::CreateDescriptors()
                                         &TagList);               // Attribute set
         }
 
-    pPage->InitFromRasterFileGeocoding(*RasterFileGeocoding::Create(pGeoTiffKeys));
+    GeoCoordinates::BaseGCSPtr pBaseGCS = GeoCoordinates::BaseGCS::CreateGCS();
+    pBaseGCS->InitFromGeoTiffKeys(nullptr, nullptr, pGeoTiffKeys, true);
+    if (pBaseGCS->IsValid())
+        pPage->SetGeocoding(pBaseGCS.get());
 
     m_ListOfPageDescriptor.push_back(pPage);
     }

@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRFGdalSupportedFile.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HRFGdalSupportedRasterFile.h
@@ -138,9 +138,9 @@ protected:
     virtual HFCPtr<HGF2DTransfoModel>   BuildTransfoModel();
     virtual HRFScanlineOrientation      GetScanLineOrientation()const;
 
-    virtual RasterFileGeocodingPtr       ExtractGeocodingInformation();
+    virtual GeoCoordinates::BaseGCSPtr   ExtractGeocodingInformation(double* po_pVerticalUnitRatioToMeter);
     bool                                 SetGeocodingInformation();
-    void                                 AddVerticalUnitToGeocoding(GeoCoordinates::BaseGCSR pio_pBaseGCS) const;
+    //void                                 AddVerticalUnitToGeocoding(GeoCoordinates::BaseGCSR pio_pBaseGCS) const;
 
     typedef list<int32_t> BandIndList;
 

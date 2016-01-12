@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFImportExport.cpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class: HRFImportExport
@@ -174,7 +174,8 @@ void HRFImportExport::SetExportOptions(const HFCPtr<HRFExportOptions>& pi_rpExpo
     SetBlockHeight(pi_rpExportOptions->GetBlockHeight());
     SelectEncoding(pi_rpExportOptions->GetEncoding());
 
-    SetRasterFileGeocoding(*(pi_rpExportOptions->GetRasterFileGeocoding().Clone()));
+    
+    SetGeocoding(pi_rpExportOptions->GetGeocodingCP());
 
     if (CountGeoreferenceFormats() > 0)
         SelectGeoreferenceFormat(pi_rpExportOptions->GetGeoreferenceFormat());
@@ -2337,39 +2338,21 @@ uint32_t HRFImportExport::GetSelectedGeoreferenceFormatIndex() const
 
 
 /** ------------------------------------------------------------------
-    SetRasterFileGeocoding
-    ------------------------------------------------------------------
-*/
-void HRFImportExport::SetRasterFileGeocoding(RasterFileGeocoding& pi_pGeocoding)
-    {
-    m_ExportOptions.SetRasterFileGeocoding(pi_pGeocoding);
-    }
-
-/** ------------------------------------------------------------------
-    GetRasterFileGeocoding
-    ------------------------------------------------------------------
-*/
-RasterFileGeocoding const& HRFImportExport::GetRasterFileGeocoding() const
-    {
-    return m_ExportOptions.GetRasterFileGeocoding();
-    }
-/** ------------------------------------------------------------------
     SetGeocoding
     ------------------------------------------------------------------
 */
-void HRFImportExport::SetGeocoding(GeoCoordinates::BaseGCSP pi_pGeocoding)
+void HRFImportExport::SetGeocoding(GeoCoordinates::BaseGCSCP pi_pGeocoding)
     {
-    RasterFileGeocodingPtr fileGeo = RasterFileGeocoding::Create(pi_pGeocoding);
-    m_ExportOptions.SetRasterFileGeocoding(*fileGeo);
+    m_ExportOptions.SetGeocoding(pi_pGeocoding);
     }
 
 /** ------------------------------------------------------------------
-    SetGeocoding
+    GetGeocodingCP
     ------------------------------------------------------------------
 */
 GeoCoordinates::BaseGCSCP HRFImportExport::GetGeocodingCP() const
     {
-    return m_ExportOptions.GetRasterFileGeocoding().GetGeocodingCP();
+    return m_ExportOptions.GetGeocodingCP();
     }
 
 	
@@ -2671,7 +2654,7 @@ HFCPtr<HRFPageDescriptor> HRFImportExport::CreatePageFromSelectedValues()
         }
 
     //Set geocoding in page descriptor
-    pPageDesc->InitFromRasterFileGeocoding(*(GetRasterFileGeocoding().Clone()),true);
+    pPageDesc->SetGeocoding(GetGeocodingCP());
 
     return pPageDesc;
     }

@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFRasterFile.cpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class HRFRasterFile
@@ -25,6 +25,8 @@
 #include <Imagepp/all/h/HFCMemoryBinStream.h>
 #include <ImagePP/all/h/HFCStat.h>
 #include <ImagePP/all/h/HCPGeoTiffKeys.h>
+#include <ImagePP/all/h/HCPGCoordUtility.h>
+
 
 //-----------------------------------------------------------------------------
 // Public
@@ -463,26 +465,21 @@ void HRFRasterFile::SetDefaultRatioToMeter(double pi_RatioToMeter,
         (pi_RatioToMeter != m_DefaultRatioToMeter[pi_Page]))
         {
         double RatioToMeter = pi_RatioToMeter / m_DefaultRatioToMeter[pi_Page];
-        bool   DefaultUnitWasFound = false;
 
         m_DefaultRatioToMeter[pi_Page] = pi_RatioToMeter;
 
         GeoCoordinates::BaseGCSCP pBaseGCS = pPageDescriptor->GetGeocodingCP();
 
-        if (pBaseGCS != NULL && pBaseGCS->IsValid())    // &&AR GCS assumed that pPageDescriptor->GetRasterFileGeocoding() is using pBaseGCS.
-            {
+        if (pBaseGCS != NULL && pBaseGCS->IsValid())    
+            RatioToMeter = 1.0 / pBaseGCS->UnitsFromMeters();
 
-            HFCPtr<HGF2DTransfoModel> pTransfoModel = pPageDescriptor->GetRasterFileGeocoding().TranslateToMeter(pPageDescriptor->GetTransfoModel(),
-                                                                                     RatioToMeter,
-                                                                                     pi_CheckSpecificUnitSpec,
-                                                                                     &DefaultUnitWasFound);
+        HFCPtr<HGF2DTransfoModel> pTransfoModel = HCPGCoordUtility::TranslateToMeter(pPageDescriptor->GetTransfoModel(),
+                                                                                     RatioToMeter);
 
-            if (DefaultUnitWasFound == false)
-                {
-                pPageDescriptor->SetTransfoModel(*pTransfoModel, true /*ignore capabilities*/);
-                pPageDescriptor->SetTransfoModelUnchanged();
-                }
-            }
+
+
+         pPageDescriptor->SetTransfoModel(*pTransfoModel, true /*ignore capabilities*/);
+         pPageDescriptor->SetTransfoModelUnchanged();
         }
     }
 

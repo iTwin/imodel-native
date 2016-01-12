@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HCPGeoTiffKeys.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HCPGeoTiffKeys
@@ -46,10 +46,7 @@ public:
 
     IMAGEPP_EXPORT HCPGeoTiffKeys();
 
-//    IMAGEPP_EXPORT HCPGeoTiffKeys(UInt32 pi_ProjectedCSType);
 
-//    IMAGEPP_EXPORT HCPGeoTiffKeys(const WString&   pi_rWellKnownText,
-//                          int              pi_WktFlavor);
     /** -----------------------------------------------------------------------------
 
         Constructor from ERM strings. This constructor takes the definition of the
@@ -75,11 +72,7 @@ public:
 
         -----------------------------------------------------------------------------
     */
-//    IMAGEPP_EXPORT HCPGeoTiffKeys(const WString&   pi_rErmProjection,
-//                          const WString&   pi_rErmDatum,
-//                          const WString&   pi_rErmUnits);
 
-//    IMAGEPP_EXPORT HCPGeoTiffKeys(const WString&   pi_rCSKeyName);
 
     // Copy constructor
     IMAGEPP_EXPORT HCPGeoTiffKeys(const HCPGeoTiffKeys& pi_rObj);
@@ -116,6 +109,7 @@ public:
     IMAGEPP_EXPORT virtual void     AddKey (unsigned short pi_KeyID, uint32_t pi_value) override;
     IMAGEPP_EXPORT virtual void     AddKey (unsigned short pi_KeyID, double pi_value) override;
     IMAGEPP_EXPORT virtual void     AddKey (unsigned short pi_KeyID, const std::string& pi_value) override;
+    IMAGEPP_EXPORT virtual void     AddKey (const GeoKeyItem& key) override;
 
     IMAGEPP_EXPORT size_t           EraseKey(unsigned short pi_KeyID);
 
@@ -153,49 +147,37 @@ public:
                                                                      const HFCPtr<HGF2DWorldCluster>&     pi_rpWorldCluster,
                                                                      const HFCPtr<HCPGeoTiffKeys>& pi_rpOverwriteSourceCoordSys = HFCPtr<HCPGeoTiffKeys>());
 
-     static HFCPtr<HGF2DTransfoModel> CreateTransfoModelFromGeoTiff(HCPGeoTiffKeys const*   pi_rpGeoTiffKeys,
-                                                                    double                  pi_FactorModelToMeter,
-                                                                    double*                 pi_pMatrix,    // 4 x 4
-                                                                    uint32_t                pi_MatSize,
-                                                                    double*                 pi_pPixelScale=nullptr,
-                                                                    uint32_t                pi_NbPixelScale=0, 
-                                                                    double*                 pi_pTiePoints=nullptr,
-                                                                    uint32_t                pi_NbTiePoints=0,
-                                                                    bool                    pi_ProjectedCSTypeDefinedWithProjLinearUnitsInterpretation=false,
-                                                                    bool*                   po_DefaultUnitWasFound=nullptr);
+     static HFCPtr<HGF2DTransfoModel> CreateTransfoModelFromGeoTiff(GeoCoordinates::BaseGCSCP pi_pGeocoding,
+                                                                    bool                      pi_PixelIsArea,
+                                                                    double                    pi_FactorModelToMeter,
+                                                                    double*                   pi_pMatrix,    // 4 x 4
+                                                                    uint32_t                  pi_MatSize,
+                                                                    double*                   pi_pPixelScale=nullptr,
+                                                                    uint32_t                  pi_NbPixelScale=0, 
+                                                                    double*                   pi_pTiePoints=nullptr,
+                                                                    uint32_t                  pi_NbTiePoints=0,
+                                                                    bool*                     po_DefaultUnitWasFound=nullptr);
 
-     static void WriteTransfoModelFromGeoTiff(HCPGeoTiffKeys const*               pi_rpGeoTiffKeys,
+     static void WriteTransfoModelFromGeoTiff(GeoCoordinates::BaseGCSCP           pi_pGeocoding,
+                                              bool                                pi_PixelIsArea,
                                               const HFCPtr<HGF2DTransfoModel>&    pi_pModel,
                                               uint64_t                            pi_ImageWidth,
                                               uint64_t                            pi_ImageHeight,
                                               bool                                pi_StoreUsingMatrix,
                                               double*                             po_pMatrix,           // 4 x 4  array[16]
-                                              uint32_t&                             pio_MatSize,
+                                              uint32_t&                           pio_MatSize,
                                               double*                             po_pPixelScale,       // array[3]
-                                              uint32_t&                             pio_NbPixelScale,
+                                              uint32_t&                           pio_NbPixelScale,
                                               double*                             po_pTiePoints,        // array[24]
-                                              uint32_t&                             pio_NbTiePoints,
-                                              bool                                pi_ProjectedCSTypeDefinedWithProjLinearUnitsInterpretation,
-                                              bool*                               po_DefaultUnitWasFound);
+                                              uint32_t&                           pio_NbTiePoints,
+                                              bool                                pi_ProjectedCSTypeDefinedWithProjLinearUnitsInterpretation);
 
 
 protected:
 
-//    static  bool FindUnits(HRFGeoTiffTable*                             pi_pGeoTables,
-//                            UInt32                                       pi_ProjectionKey,
-//                            UShort                                      pi_UnitsSource,
-//                            double&                                     po_rFactorToMeter,
-//                            HRFGeoTiffUnitsTable::HRFGeoTiffUnitsRecord* po_pUnitsRecord = 0);
+
 
 private:
-
-//    bool            FillGeoKeyItem (GeoKeyItem* po_Key,
-//                                    HPMAttributeSet::HPMASiterator& pi_Itr);
-
-//    void            CopyGeoTiffKeyOnly (const HPMAttributeSet& pi_TagList);
-
-//    int             CreateBaseGeoCoord(bool pi_ProjectedCSTypeDefinedWithProjLinearUnitsInterpretation = false);
-
 
     // Not implemented
     HCPGeoTiffKeys&   operator=(const HCPGeoTiffKeys& pi_rObj);

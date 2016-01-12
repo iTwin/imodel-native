@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFDtedFile.cpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -320,20 +320,11 @@ void HRFDtedFile::CreateDescriptors()
     // Create Page and resolution Description/Capabilities for this file.
     HPMAttributeSet                         TagList;
 
+    //Elevation values in a DTED file are always in meters.
+    TagList.Set(new HRFAttributeVerticalUnitRatioToMeter(1.0));
+
     HRFGdalSupportedFile::CreateDescriptorsWith(new HCDCodecIdentity(), TagList);
-        
-    GeoCoordinates::BaseGCSPtr pBaseGCS;
-    if (GetPageDescriptor(0)->GetGeocodingCP() == NULL)
-        pBaseGCS = GeoCoordinates::BaseGCS::CreateGCS();
-    else
-		pBaseGCS = GeoCoordinates::BaseGCS::CreateGCS(*GetPageDescriptor(0)->GetGeocodingCP());
-
-//&&AR Need vertical units support
-//     //Elevation values in a DTED file are always in meters.
-//     if(pBaseGCS != NULL)
-//         pBaseGCS->SetVerticalUnits(1.0);
-
-    GetPageDescriptor(0)->InitFromRasterFileGeocoding(*RasterFileGeocoding::Create(pBaseGCS.get()));
+      
     }
 
 //-----------------------------------------------------------------------------

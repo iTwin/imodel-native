@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFGeoRasterFile.cpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -1058,7 +1058,7 @@ void HRFGeoRasterFile::CreateDescriptors()
         }
 
     HFCPtr<HGF2DTransfoModel>     pModel;
-    RasterFileGeocodingPtr pGeocoding(RasterFileGeocoding::Create());
+    GeoCoordinates::BaseGCSPtr pGeocoding = GeoCoordinates::BaseGCS::CreateGCS();
 
 
     if (pSpatialReferenceInfo != 0 && pSpatialReferenceInfo->IsReferenced)
@@ -1093,7 +1093,8 @@ void HRFGeoRasterFile::CreateDescriptors()
             pGeocoding = ExtractGeocodingInformation(*pSpatialReferenceInfo);
 
             //Translate the geo-reference to meter
-            pModel = pGeocoding->TranslateToMeter(pModel, 1.0, false, 0);
+            if (pGeocoding != nullptr && pGeocoding->IsValid())
+                pModel = HCPGCoordUtility::TranslateToMeter(pModel, 1.0 / pGeoCoding->UnitsFromMeters());
             }
         }
 
@@ -1107,7 +1108,8 @@ void HRFGeoRasterFile::CreateDescriptors()
                                                              pModel,
                                                              0);
 
-    pPage->InitFromRasterFileGeocoding(*pGeocoding);
+    if (pGeocoding != nullptr && pGeocoding->IsValid())
+        pPage->SetGeocoding(pGeocoding.get());
 
     m_ListOfPageDescriptor.push_back(pPage);
     }
@@ -2086,11 +2088,12 @@ WRAPUP:
 
 //-----------------------------------------------------------------------------
 // private
-// GetGeocoding
+// ExtractGeocodingInformation
+// This method may return null if no spatial reference could be determined
 //-----------------------------------------------------------------------------
-RasterFileGeocodingPtr HRFGeoRasterFile::ExtractGeocodingInformation(SDOSpatialReferenceInfo const&     pi_rSpatialRefInfo)
+GeoCoordinates::BaseGCSPtr HRFGeoRasterFile::ExtractGeocodingInformation(SDOSpatialReferenceInfo const&     pi_rSpatialRefInfo)
     {
-    RasterFileGeocodingPtr pGeocoding;
+    GeoCoordinates::BaseGCSPtr pGeocoding;
 
     // If the SRID is in the 0 to 32767 range it should be an EPSG code ..
     // We try to obtain the baseGCS directly from dictionary
@@ -2107,24 +2110,27 @@ RasterFileGeocodingPtr HRFGeoRasterFile::ExtractGeocodingInformation(SDOSpatialR
         WString EspgBasedKeyName(L"EPSG:");
 
         EspgBasedKeyName += WString(TempBuffer);
-        GeoCoordinates::BaseGCSPtr pGcs = GeoCoordinates::BaseGCS::CreateGCS(EspgBasedKeyName.c_str());
-        if(pGcs.IsValid() && pGcs->IsValid())
-            pGeocoding = RasterFileGeocoding::Create(pGcs.get());
+
+        pGeocoding = GeoCoordinates::BaseGCS::CreateGCS(EspgBasedKeyName.c_str());
         }
 
     // If the baseGCS was not determined ... we will try parsing the WKT
-    if (GCSServices->_IsAvailable() && pGeocoding->GetGeocodingCP()==NULL)
+    if (nullptr == pGeoCoding || !pGeoCoding->IsValid())
         {
         WString WKTFromOracle;
         if (m_pSDOGeoRasterWrapper->GetWkt(pi_rSpatialRefInfo.SRID, WKTFromOracle))
             {
-            GeoCoordinates::BaseGCSPtr pGcs = GeoCoordinates::BaseGCS::CreateGCS();
+            pGeocoding = GeoCoordinates::BaseGCS::CreateGCS();
 
-            //&&AR when failing is it OK to return NULL? or we have something partially valid that will preserve unknown data or something?
-            if(SUCCESS != pGcs->InitFromWellKnownText (NULL, NULL, WktFlavor::WktFlavorOracle, WKTFromOracle.c_str()))
-                pGeocoding = RasterFileGeocoding::Create(pGcs.get());
+            if (SUCCESS != pGeocoding->InitFromWellKnownText (NULL, NULL, WktFlavor::WktFlavorOracle, WKTFromOracle.c_str()))
+                return nullptr;
             }
         }
+
+    // Even if a GCS was allocated but it is invalid we return null
+    if (nullptr != pGeocoding && !pGeocoding->IsValid())
+        return nullptr;
+
     return pGeocoding;
     }
 

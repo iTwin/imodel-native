@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFERSPageFile.cpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -1148,7 +1148,7 @@ void HRFERSPageFile::CreateDescriptor()
                                   &TagList);            // Tag
 
 
-    pPage->InitFromRasterFileGeocoding(*RasterFileGeocoding::Create(pBaseGCS.get()));
+    pPage->SetGeocoding(pBaseGCS.get());
 
 
     m_ListOfPageDescriptor.push_back(pPage);
@@ -1196,11 +1196,8 @@ HFCPtr<HGF2DTransfoModel> HRFERSPageFile::BuildTransfoModel(double              
 
     HFCPtr<HGF2DTransfoModel> pModel = new HGF2DAffine(Displacement, pi_Rotation * Degree, pi_PixelSizeX, -pi_PixelSizeY, 0.0);
 
-    if (pi_pBaseGCS != nullptr)
-        {
-        RasterFileGeocodingPtr pFileGeocoding(RasterFileGeocoding::Create(pi_pBaseGCS));
-        pModel = pFileGeocoding->TranslateToMeter(pModel, 1.0, false, 0);
-        }
+    if (pi_pBaseGCS != nullptr && pi_pBaseGCS->IsValid())
+        pModel = HCPGCoordUtility::TranslateToMeter(pModel, 1.0 / pi_pBaseGCS->UnitsFromMeters());
 
     return pModel->CreateSimplifiedModel();
     }

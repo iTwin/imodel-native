@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFRasterFileBlockAdapter.cpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -682,8 +682,7 @@ void HRFRasterFileBlockAdapter::CreateDescriptors(const BlockDescriptorMap& pi_r
                 }
 
             // Geocoding
-            GeoCoordinates::BaseGCSCP baseGCS = pAdaptedPageDescriptor->GetGeocodingCP();
-            pAdapterPageDescriptor->SetGeocoding(const_cast<GeoCoordinates::BaseGCSP>(baseGCS));
+            pAdapterPageDescriptor->SetGeocoding(pAdaptedPageDescriptor->GetGeocodingCP());
             }
         else
             pAdapterPageDescriptor = m_pOriginalFile->GetPageDescriptor(Page);

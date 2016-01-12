@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFiTiffFile.cpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -1506,16 +1506,15 @@ void HRFiTiffFile::CreateDescriptors()
 
             pBaseGCS = GeoCoordinates::BaseGCS::CreateGCS();
 
-            //&&AR when failing is it OK to return NULL? or we have something partially valid that will preserve unknown data or something?
             if(SUCCESS != pBaseGCS->InitFromWellKnownText (NULL, NULL, GeoCoordinates::BaseGCS::wktFlavorUnknown, WktGeocode.c_str()))
-                pBaseGCS = nullptr;
+                pBaseGCS = nullptr; // Mark BaseGCS as unitialized for processing below
             }
 
         // set keys since WKT was not used
 
         HFCPtr<HCPGeoTiffKeys> pGeoTiffKeys = 0;
 
-        if (pBaseGCS == nullptr)
+        if (pBaseGCS == nullptr || !pBaseGCS->IsValid())
             {
             char*  pString;
             unsigned short GeoShortValue;
@@ -1829,15 +1828,14 @@ void HRFiTiffFile::CreateDescriptors()
                                        &TagList,                    // Tag
                                        0);                          // Duration
 
-        if (pBaseGCS==0)
+        if (pBaseGCS.IsNull() || !pBaseGCS->IsValid())
             {
-            pPage->InitFromRasterFileGeocoding(*RasterFileGeocoding::Create(pGeoTiffKeys));
+            pBaseGCS = GeoCoordinates::BaseGCS::CreateGCS();
+            pBaseGCS->InitFromGeoTiffKeys(nullptr, nullptr, pGeoTiffKeys, true);
+                
             }
-        else
-            {
-            pPage->InitFromRasterFileGeocoding(*RasterFileGeocoding::Create(pBaseGCS.get()));
-            }
-
+        if (pBaseGCS->IsValid())
+            pPage->SetGeocoding(pBaseGCS.get());
 
         m_ListOfPageDescriptor.push_back(pPage);
 
@@ -1939,35 +1937,28 @@ void HRFiTiffFile::SaveiTiffFile()
 
                     if ((GetFilePtr()->IsTiff64()) && (pPageDescriptor->GeocodingHasChanged() == true))
                         {
-                        RasterFileGeocoding const& fileGeocoding = pPageDescriptor->GetRasterFileGeocoding();
+                        GeoCoordinates::BaseGCSCP fileGeocoding = pPageDescriptor->GetGeocodingCP();
 
                         pHMRHeader->m_HMRDirDirty = true;
 
-                        if (fileGeocoding.GetGeocodingCP() == NULL || !(fileGeocoding.GetGeocodingCP()->IsValid()))
+                        if (fileGeocoding == NULL || !(fileGeocoding->IsValid()))
                             {
                             pHMRHeader->m_WellKnownText = ""; //set to empty
                             }
                         else
                             {
                             // The first reaction is to store the geo key list as it is defined originally.
-                            if (fileGeocoding.GetGeocodingCP() != NULL)
-                                {
-                                WString WellKnownText;
-                                fileGeocoding.GetGeocodingCP()->GetWellKnownText(WellKnownText, GeoCoordinates::BaseGCS::wktFlavorOGC);
+                            WString WellKnownText;
+                            fileGeocoding->GetWellKnownText(WellKnownText, GeoCoordinates::BaseGCS::wktFlavorOGC, true);
 
-                                if (WellKnownText == L"")
-                                    fileGeocoding.GetGeocodingCP()->GetWellKnownText(WellKnownText, GeoCoordinates::BaseGCS::wktFlavorESRI);
+                            if (WellKnownText == L"")
+                                fileGeocoding->GetWellKnownText(WellKnownText, GeoCoordinates::BaseGCS::wktFlavorESRI, true);
 
-                                size_t  destinationBuffSize = WellKnownText.GetMaxLocaleCharBytes();
-                                char*  WellKnownTextMBS= (char*)_alloca (destinationBuffSize);
-                                BeStringUtilities::WCharToCurrentLocaleChar(WellKnownTextMBS,WellKnownText.c_str(),destinationBuffSize);
+                            size_t  destinationBuffSize = WellKnownText.GetMaxLocaleCharBytes();
+                            char*  WellKnownTextMBS= (char*)_alloca (destinationBuffSize);
+                            BeStringUtilities::WCharToCurrentLocaleChar(WellKnownTextMBS,WellKnownText.c_str(),destinationBuffSize);
 
-                                pHMRHeader->m_WellKnownText = string(WellKnownTextMBS);
-                                }
-                            else
-                                {   // we want to read the Keys and not the WKT
-                                pHMRHeader->m_WellKnownText = ""; //set to empty
-                                }
+                            pHMRHeader->m_WellKnownText = string(WellKnownTextMBS);
                             }
                         }
 

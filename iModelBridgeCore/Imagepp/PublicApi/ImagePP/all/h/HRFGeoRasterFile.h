@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRFGeoRasterFile.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // This class describes a File Raster image.
@@ -98,7 +98,7 @@ private:
     void  ReadSpatialReferenceInfo(Bentley::BeXmlNode* pi_pLayerInfoNode, SDOSpatialReferenceInfo* po_pSDOSpatialReferenceInfo);
     void  ReadLayerInfo           (Bentley::BeXmlNode* pi_pRasterInfoNode, SDOLayerInfo* po_pSDOLayerInfo);
 
-    RasterFileGeocodingPtr  ExtractGeocodingInformation  (SDOSpatialReferenceInfo const& pi_rSpatialRefInfo);
+    GeoCoordinates::BaseGCSPtr  ExtractGeocodingInformation  (SDOSpatialReferenceInfo const& pi_rSpatialRefInfo);
 
     // Methods Disabled
     HRFGeoRasterFile(const HRFGeoRasterFile& pi_rObj);

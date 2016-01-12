@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hut/src/HUTImportFromFileExportToFile.cpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -601,7 +601,7 @@ void HUTImportFromFileExportToFile::BestMatchSelectedValues()
                 }
             }
 
-        SetRasterFileGeocoding(*(m_pSelectedImportFile->GetPageDescriptor(Page)->GetRasterFileGeocoding().Clone()));
+        SetGeocoding(m_pSelectedImportFile->GetPageDescriptor(Page)->GetGeocodingCP());
         }
     }
 

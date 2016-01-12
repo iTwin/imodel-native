@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFUSgsNDFFile.cpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -746,7 +746,6 @@ void HRFUSgsNDFFile::CreateDescriptors()
 
     // GeoRef Tag
     HFCPtr<HCPGeoTiffKeys> pGeoTiffKeys;
-
     GetGeoKeyTag(pGeoTiffKeys);
 
     // TranfoModel
@@ -762,7 +761,10 @@ void HRFUSgsNDFFile::CreateDescriptors()
                                    pTransfoModel,        // TransfoModel,
                                    0);                   // Filters
 
-    pPage->InitFromRasterFileGeocoding(*RasterFileGeocoding::Create(pGeoTiffKeys.GetPtr()));
+    GeoCoordinates::BaseGCSPtr pBaseGCS = GeoCoordinates::BaseGCS::CreateGCS();
+    pBaseGCS->InitFromGeoTiffKeys(nullptr, nullptr, pGeoTiffKeys.GetPtr(), true);
+    if (pBaseGCS->IsValid())
+        pPage->SetGeocoding(pBaseGCS.get());
 
     m_ListOfPageDescriptor.push_back(pPage);
     }

@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRFErdasImgFile.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HRFErdasImgFile
@@ -103,7 +103,7 @@ protected:
     // Protected Methods
     virtual void                          CreateDescriptors() override;
     virtual HFCPtr<HGF2DTransfoModel>     BuildTransfoModel() override;
-    virtual RasterFileGeocodingPtr        ExtractGeocodingInformation() override;
+    virtual GeoCoordinates::BaseGCSPtr    ExtractGeocodingInformation(double* po_pVerticalUnitRatioToMeters) override;
 
     virtual void                          HandleNoDisplayBands () override;
 

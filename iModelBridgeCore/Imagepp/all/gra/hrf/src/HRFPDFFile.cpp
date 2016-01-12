@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFPDFFile.cpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -1030,7 +1030,8 @@ HFCPtr<HRFPageDescriptor> HRFPDFFile::GetPageDescriptor(uint32_t pi_Page) const
                                       MaxResolutionSize,
                                       MaxResolutionSize);
 
-        pPage->InitFromRasterFileGeocoding(*RasterFileGeocoding::Create(pBaseGCS.get()));
+        if (!pBaseGCS.IsNull() && pBaseGCS->IsValid())
+            pPage->SetGeocoding(pBaseGCS.get());
 
 
         HFCPtr<HMDMetaDataContainerList> pMDContainers;

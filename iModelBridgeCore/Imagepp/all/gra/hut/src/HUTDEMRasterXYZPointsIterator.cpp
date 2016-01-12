@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hut/src/HUTDEMRasterXYZPointsIterator.cpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -778,13 +778,15 @@ void HUTDEMRasterXYZPointsIterator::Init   (HUTDEMRasterXYZPointsExtractor&    p
         try
             {
             m_pDestCoorSys = GeoCoordinates::BaseGCS::CreateGCS(pi_rDestCoordSysKeyName.c_str());
+            if (!m_pDestCoorSys->IsValid())
+                m_pDestCoorSys = nullptr;
             }
         catch (HFCException&)
             {
             m_IsDestCoordSysCreationFailed = true;
             }
 
-        if (m_pDestCoorSys != 0)
+        if (m_pDestCoorSys != 0 && m_pDestCoorSys->IsValid())
             {
             try
                 {

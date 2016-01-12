@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFTiffFile.cpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class HRFTiffFile
@@ -3345,8 +3345,10 @@ void HRFTiffFile::SaveTiffFile(bool pi_CloseFile)
                         if (GetFilePtr()->TagIsPresent(SMAXSAMPLEVALUE) && !isMaxSampleTagPresent)
                             GetFilePtr()->RemoveTag(SMAXSAMPLEVALUE);
 
-                        RasterFileGeocoding const& fileGeocoding = pPageDescriptor->GetRasterFileGeocoding();
-                        HCPGeoTiffKeys const& geoTiffKeys = fileGeocoding.GetGeoTiffKeys();
+                        GeoCoordinates::BaseGCSCP fileGeocoding = pPageDescriptor->GetGeocodingCP();
+                        HCPGeoTiffKeys geoTiffKeys;
+                        if (nullptr != fileGeocoding && fileGeocoding->IsValid())
+                            fileGeocoding->GetGeoTiffKeys(&geoTiffKeys, true);
 
                         IGeoTiffKeysList::GeoKeyItem GeoTiffKey;
 

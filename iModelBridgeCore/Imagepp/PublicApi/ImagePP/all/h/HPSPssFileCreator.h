@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/ImagePP/all/h/HPSPssFileCreator.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -51,7 +51,7 @@ public:
     IMAGEPP_EXPORT HSTATUS          CreateFileW(WString const& pi_rPssFileName);
     IMAGEPP_EXPORT void             AddImage(WString const& pi_rImageName, uint32_t pi_pageNumber, GeoCoordinates::BaseGCSP pi_projection);
 
-    IMAGEPP_EXPORT void              SetDstProjection(GeoCoordinates::BaseGCSP pi_projection);
+    IMAGEPP_EXPORT void             SetDstProjection(GeoCoordinates::BaseGCSP pi_projection);
     IMAGEPP_EXPORT GeoCoordinates::BaseGCSCP  GetDstProjectionCP() const;
 
 protected:

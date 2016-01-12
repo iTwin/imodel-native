@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFGeoTiffFile.cpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -471,17 +471,12 @@ bool HRFGeoTiffFile::AddPage(HFCPtr<HRFPageDescriptor> pi_pPage)
         }
 
     HFCPtr<HCPGeoTiffKeys> pGeoTiffKeys; 
+    pGeoTiffKeys           = new HCPGeoTiffKeys();
 
     GeoCoordinates::BaseGCSCP pBaseGCS = pi_pPage->GetGeocodingCP();
     if (pBaseGCS != nullptr && pBaseGCS->IsValid())
         {
-        pGeoTiffKeys           = new HCPGeoTiffKeys();
-        pBaseGCS->SetGeoTiffKeys(pGeoTiffKeys);
-        }
-
-    if (pGeoTiffKeys == NULL)
-        {
-        pGeoTiffKeys = new HCPGeoTiffKeys();
+        pBaseGCS->GetGeoTiffKeys(pGeoTiffKeys, true);
         }
 
     uint32_t LongValue;
@@ -554,8 +549,8 @@ bool HRFGeoTiffFile::AddPage(HFCPtr<HRFPageDescriptor> pi_pPage)
             }
         }
 
-    pi_pPage->InitFromRasterFileGeocoding(*RasterFileGeocoding::Create(pGeoTiffKeys),true);
-
+        if (pBaseGCS != nullptr && pBaseGCS->IsValid())
+            pi_pPage->SetGeocoding(pBaseGCS);
 
     // Add the page descriptor to the list
     return HRFTiffFile::AddPage(pi_pPage);
@@ -616,8 +611,11 @@ void HRFGeoTiffFile::SaveGeoTiffFile()
                 // Select the page
                 SetImageInSubImage (GetIndexOfPage(Page));
 
-                RasterFileGeocoding const& fileGeocoding = pPageDescriptor->GetRasterFileGeocoding();
-                HCPGeoTiffKeys const& inputGeoTiffKeys = fileGeocoding.GetGeoTiffKeys();
+                GeoCoordinates::BaseGCSCP fileGeocoding = pPageDescriptor->GetGeocodingCP();
+                HCPGeoTiffKeys inputGeoTiffKeys;
+
+                if (fileGeocoding != nullptr && fileGeocoding->IsValid())
+                    fileGeocoding->GetGeoTiffKeys(&inputGeoTiffKeys, true);
 
                 HFCPtr<HCPGeoTiffKeys> pGeoTiffKeys(inputGeoTiffKeys.Clone());
 
@@ -709,13 +707,27 @@ void HRFGeoTiffFile::SaveGeoTiffFile()
                         }
                     }
                 if (isGeoTiffKeysModified)
-                    pPageDescriptor->InitFromRasterFileGeocoding(*RasterFileGeocoding::Create(pGeoTiffKeys.GetPtr()));
+                    {
+                    GeoCoordinates::BaseGCSPtr pBaseGCS = GeoCoordinates::BaseGCS::CreateGCS();
+                    pBaseGCS->InitFromGeoTiffKeys(nullptr, nullptr ,pGeoTiffKeys, true);
+                    if (pBaseGCS->IsValid())
+                        pPageDescriptor->SetGeocoding(pBaseGCS.get());
+                    }
+
+                
+                uint32_t GTRasterTypeValue(TIFFGeo_RasterPixelIsArea);
+                if (pGeoTiffKeys->HasKey(GTRasterType))
+                    pGeoTiffKeys->GetValue(GTRasterType, &GTRasterTypeValue);
 
                 // Update the TransfoModel
                 if ((pPageDescriptor->HasTransfoModel()) && (pPageDescriptor->TransfoModelHasChanged()))
-                    WriteTransfoModel(pGeoTiffKeys,
+                    WriteTransfoModel(pPageDescriptor->GetGeocodingCP(),
+                                      (TIFFGeo_RasterPixelIsArea == GTRasterTypeValue),
                                       pPageDescriptor->GetTransfoModel(),
                                       Page);
+
+                // Strangely overload units are ignored in MrSID yet used to be able to set unit found in file.
+                SetUnitFoundInFile(false, Page);
                 }
             }
         }
@@ -914,8 +926,20 @@ void HRFGeoTiffFile::CreateDescriptors()
 
         GetGeoTiffKeys(pGeoTiffKeys);
 
+        // Set geocoding
+        GeoCoordinates::BaseGCSPtr pBaseGCS = GeoCoordinates::BaseGCS::CreateGCS();
+        if (SUCCESS != pBaseGCS->InitFromGeoTiffKeys(nullptr, nullptr, pGeoTiffKeys, m_ProjectedCSTypeDefinedWithProjLinearUnitsInterpretation))
+            pBaseGCS = nullptr;
+
+        // If pixelIsPoint(origin center of the pixel), we need to translate the origin to
+        // the upper-left corner.
+        uint32_t GTRasterTypeValue(TIFFGeo_RasterPixelIsArea);
+        if (pGeoTiffKeys->HasKey(GTRasterType))
+            pGeoTiffKeys->GetValue(GTRasterType, &GTRasterTypeValue);
+
+
         // TranfoModel
-        HFCPtr<HGF2DTransfoModel> pTransfoModel = CreateTransfoModelFromGeoTiff(pGeoTiffKeys.GetPtr(), Page);
+        HFCPtr<HGF2DTransfoModel> pTransfoModel = CreateTransfoModelFromGeoTiff(pBaseGCS.get(), (TIFFGeo_RasterPixelIsArea == GTRasterTypeValue), Page);
 
         HFCPtr<HRFPageDescriptor> pPage;
         pPage = new HRFPageDescriptor (AccessMode,
@@ -930,7 +954,14 @@ void HRFGeoTiffFile::CreateDescriptors()
                                        &TagList);                    // Defined Tag
 
         // Set geocoding
-        pPage->InitFromRasterFileGeocoding(*RasterFileGeocoding::Create(pGeoTiffKeys));
+        if (!pBaseGCS.IsNull() && pBaseGCS->IsValid())
+            {
+            pPage->SetGeocoding(pBaseGCS.get());
+
+            // If units were specified and taken into account indicate it
+            if (m_ProjectedCSTypeDefinedWithProjLinearUnitsInterpretation && (pGeoTiffKeys->HasKey(ProjLinearUnits) || pGeoTiffKeys->HasKey(ProjLinearUnitSize)))
+                SetUnitFoundInFile(true, Page);
+            }
 
         m_ListOfPageDescriptor.push_back(pPage);
         }
@@ -947,8 +978,9 @@ void HRFGeoTiffFile::CreateDescriptors()
     <LI><a href = "../../../doc/HRFGeoTiffFile.doc"> HRFGeoTiffFile.doc </a></LI>
     -----------------------------------------------------------------------------
  */
-    HFCPtr<HGF2DTransfoModel> HRFGeoTiffFile::CreateTransfoModelFromGeoTiff(HCPGeoTiffKeys const*          pi_rpGeoTiffKeys,
-                                                                            uint32_t                       pi_PageNb)
+    HFCPtr<HGF2DTransfoModel> HRFGeoTiffFile::CreateTransfoModelFromGeoTiff(GeoCoordinates::BaseGCSCP pi_pGeocoding,
+                                                                            bool                      pi_PixelIsArea,
+                                                                            uint32_t                  pi_PageNb)
     {
     HFCPtr<HGF2DTransfoModel> pTransfoModel = new HGF2DIdentity();
 
@@ -977,14 +1009,14 @@ void HRFGeoTiffFile::CreateDescriptors()
     bool   DefaultUnitWasFound;
     GetDefaultInterpretationGeoRef(&FactorModelToMeter);
 
-    pTransfoModel = HCPGeoTiffKeys::CreateTransfoModelFromGeoTiff(pi_rpGeoTiffKeys, FactorModelToMeter,
-                                                                    pMatrix, MatSize,
-                                                                    pPixelScale, NbPixelScale,
-                                                                    pTiePoints, NbTiePoints,
-                                m_ProjectedCSTypeDefinedWithProjLinearUnitsInterpretation,
+    pTransfoModel = HCPGeoTiffKeys::CreateTransfoModelFromGeoTiff(pi_pGeocoding, 
+                                                                  pi_PixelIsArea, FactorModelToMeter,
+                                                                  pMatrix, MatSize,
+                                                                  pPixelScale, NbPixelScale,
+                                                                  pTiePoints, NbTiePoints,
                                 &DefaultUnitWasFound);
 
-    SetUnitFoundInFile(DefaultUnitWasFound, pi_PageNb);
+
 
     return pTransfoModel;
     }
@@ -995,11 +1027,13 @@ void HRFGeoTiffFile::CreateDescriptors()
 // Used to call different fonction depending of the file type.
 //-----------------------------------------------------------------------------
 
-bool HRFGeoTiffFile::WriteTransfoModel(HCPGeoTiffKeys const*                    pi_rpGeoTiffKeys,
-                                        const HFCPtr<HGF2DTransfoModel>&        pi_rpTransfoModel,
-                                        uint32_t                               pi_Page)
+bool HRFGeoTiffFile::WriteTransfoModel(GeoCoordinates::BaseGCSCP             pi_pGeocoding,
+                                       bool                                  pi_PixelIsArea,
+                                        const HFCPtr<HGF2DTransfoModel>&     pi_rpTransfoModel,
+                                        uint32_t                             pi_Page)
     {
-    WriteTransfoModelFromGeoTiff(pi_rpGeoTiffKeys,
+    WriteTransfoModelFromGeoTiff(pi_pGeocoding,
+                                 pi_PixelIsArea,
                                  pi_rpTransfoModel,
                                  pi_Page);
     return true;
@@ -1009,12 +1043,12 @@ bool HRFGeoTiffFile::WriteTransfoModel(HCPGeoTiffKeys const*                    
 // Private WriteTransfoModelFromGeoTiff - Write the GeoTiff Tag part of the model.
 //-----------------------------------------------------------------------------
 
-void HRFGeoTiffFile::WriteTransfoModelFromGeoTiff(HCPGeoTiffKeys const*                 pi_rpGeoTiffKeys,
+void HRFGeoTiffFile::WriteTransfoModelFromGeoTiff(GeoCoordinates::BaseGCSCP             pi_pGeocoding,
+                                                  bool                                  pi_PixelIsArea,
                                                   const HFCPtr<HGF2DTransfoModel>&      pi_pModel,
-                                                  uint32_t                             pi_Page)
+                                                  uint32_t                              pi_Page)
     {
     // Translate the model units in geotiff units.
-    bool    DefaultUnitWasFound = false;
 
     uint32_t NbTiePoints = 0;
     uint32_t NbPixelScale = 0;
@@ -1040,12 +1074,11 @@ void HRFGeoTiffFile::WriteTransfoModelFromGeoTiff(HCPGeoTiffKeys const*         
     double aPixelScale[3];
     double aTiePoints[24];
 
-    HCPGeoTiffKeys::WriteTransfoModelFromGeoTiff(pi_rpGeoTiffKeys, pi_pModel, ImageWidth, ImageHeight, m_StoreUsingMatrix,
+    HCPGeoTiffKeys::WriteTransfoModelFromGeoTiff(pi_pGeocoding, pi_PixelIsArea, pi_pModel, ImageWidth, ImageHeight, m_StoreUsingMatrix,
                                                  aMatrix, MatSize,
                                                  aPixelScale, NbPixelScale,
                                                  aTiePoints, NbTiePoints,
-                                                 m_ProjectedCSTypeDefinedWithProjLinearUnitsInterpretation,
-                                                 &DefaultUnitWasFound);
+                                                 m_ProjectedCSTypeDefinedWithProjLinearUnitsInterpretation);
 
     if (MatSize == 16)
         GetFilePtr()->SetField(GEOTRANSMATRIX, 16, aMatrix);
@@ -1061,8 +1094,6 @@ void HRFGeoTiffFile::WriteTransfoModelFromGeoTiff(HCPGeoTiffKeys const*         
         GetFilePtr()->SetField(GEOTIEPOINTS, NbTiePoints, aTiePoints);
     else
         GetFilePtr()->RemoveTag(GEOTIEPOINTS);
-
-    SetUnitFoundInFile(DefaultUnitWasFound, pi_Page);
     }
 
 
@@ -1444,10 +1475,10 @@ const HGF2DWorldIdentificator HRFGeoTiffFile::GetWorldIdentificator () const
                                  false: Our standard.(default)
     -----------------------------------------------------------------------------
  */
-void HRFGeoTiffFile::SetDefaultRatioToMeter(double pi_RatioToMeter,
+void HRFGeoTiffFile::SetDefaultRatioToMeter(double   pi_RatioToMeter,
                                             uint32_t pi_Page,
-                                            bool   pi_CheckSpecificUnitSpec,
-                                            bool   pi_InterpretUnitINTGR)
+                                            bool     pi_CheckSpecificUnitSpec,
+                                            bool     pi_InterpretUnitINTGR)
     {
     m_RatioToMeter = pi_RatioToMeter;
     m_ProjectedCSTypeDefinedWithProjLinearUnitsInterpretation = pi_CheckSpecificUnitSpec ;
@@ -1462,13 +1493,23 @@ void HRFGeoTiffFile::SetDefaultRatioToMeter(double pi_RatioToMeter,
         // Select the page
         SetImageInSubImage (GetIndexOfPage(Page));
 
-        // TranfoModel
-        HCPGeoTiffKeys const& geoTiffKeys = pPageDescriptor->GetRasterFileGeocoding().GetGeoTiffKeys();
+        // We need to know if PixelIsArea or not...
+        HFCPtr<HCPGeoTiffKeys> pGeoTiffKeys;
+        GetGeoTiffKeys(pGeoTiffKeys);
+        uint32_t GTRasterTypeValue(TIFFGeo_RasterPixelIsArea);
+        if (pGeoTiffKeys->HasKey(GTRasterType))
+            pGeoTiffKeys->GetValue(GTRasterType, &GTRasterTypeValue);
 
-        HFCPtr<HGF2DTransfoModel> pTransfoModel = CreateTransfoModelFromGeoTiff(&geoTiffKeys,
+        HFCPtr<HGF2DTransfoModel> pTransfoModel = CreateTransfoModelFromGeoTiff(pPageDescriptor->GetGeocodingCP(),
+                                                                                (TIFFGeo_RasterPixelIsArea == GTRasterTypeValue),
                                                                                 Page);
         pPageDescriptor->SetTransfoModel(*pTransfoModel);
         pPageDescriptor->SetTransfoModelUnchanged();
+
+        // Check if units were specified
+        if (pi_CheckSpecificUnitSpec && (pGeoTiffKeys->HasKey(ProjLinearUnits) || pGeoTiffKeys->HasKey(ProjLinearUnitSize)))
+             SetUnitFoundInFile(true, pi_Page);
+
         }
     }
 
