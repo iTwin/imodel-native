@@ -316,7 +316,7 @@ TEST_F (CategoryTests, InsertSubCategory)
 
     //Inserts a subcategory
     EXPECT_TRUE(subcategory.Insert().IsValid());
-    DgnElement::Code code = subcategory.GetCode();
+    DgnCode code = subcategory.GetCode();
 
     //Verifying appearence properties
     DgnSubCategory::Appearance app = subcategory.GetAppearance ();
