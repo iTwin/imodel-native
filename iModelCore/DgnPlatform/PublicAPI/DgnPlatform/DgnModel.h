@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/DgnModel.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -65,7 +65,7 @@ struct DgnElementMap : bmap<DgnElementId, DgnElementCPtr>
 //! @ingroup DgnModelGroup
 // @bsiclass                                                     KeithBentley    10/00
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE DgnModel : RefCountedBase
+struct EXPORT_VTABLE_ATTRIBUTE DgnModel : RefCountedBase, ICodedObject
     {
     friend struct DgnModels;
     friend struct DgnElement;
@@ -74,8 +74,6 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnModel : RefCountedBase
     friend struct dgn_TxnTable::Model;
 
     struct CreateParams;
-
-    typedef DgnAuthority::Code Code;
 
     //========================================================================================
     //! Application data attached to a DgnModel. Create a subclass of this to store non-persistent information on a DgnModel and
@@ -131,7 +129,7 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnModel : RefCountedBase
     {
         DgnDbR      m_dgndb;
         DgnClassId  m_classId;
-        Code        m_code;
+        DgnCode     m_code;
         Utf8String  m_label;
         bool        m_inGuiList;
 
@@ -141,13 +139,13 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnModel : RefCountedBase
         //! @param[in] code The code for the DgnModel
         //! @param[in] label Label of the new DgnModel
         //! @param[in] inGuiList Controls the visibility of the new DgnModel in model lists shown to the user
-        CreateParams(DgnDbR dgndb, DgnClassId classId, Code code, Utf8CP label = nullptr, bool inGuiList = true) :
+        CreateParams(DgnDbR dgndb, DgnClassId classId, DgnCode code, Utf8CP label = nullptr, bool inGuiList = true) :
             m_dgndb(dgndb), m_classId(classId), m_code(code), m_inGuiList(inGuiList)
             {
             SetLabel(label);
             }
 
-        void SetCode(Code code) { m_code = code; }                    //!< Set the Code for models created with this CreateParams
+        void SetCode(DgnCode code) { m_code = code; } //!< Set the DgnCode for models created with this CreateParams
         void SetLabel(Utf8CP label) { m_label.AssignOrClear(label); } //!< Set the Label for models created with this CreateParams
         void SetInGuiList(bool inGuiList) { m_inGuiList = inGuiList; } //!< Set the visibility of models created with this CreateParams in model lists shown to the user
 
@@ -163,7 +161,7 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnModel : RefCountedBase
         static const uint64_t UpdateElement = InsertElement << 1; //!< Modify an element in this model. "UpdateElement"
         static const uint64_t DeleteElement = UpdateElement << 1; //!< Delete an element in this model. "DeleteElement"
         static const uint64_t Clone = DeleteElement << 1; //!< Create a copy of this model. "Clone"
-        static const uint64_t SetCode = Clone << 1; //!< Change this model's Code. "SetCode"
+        static const uint64_t SetCode = Clone << 1; //!< Change this model's DgnCode. "SetCode"
 
         static const uint64_t Reserved_2 = SetCode << 1; //!< Reserved for future use 
         static const uint64_t Reserved_3 = Reserved_2 << 1; //!< Reserved for future use 
@@ -187,7 +185,7 @@ protected:
     DgnDbR          m_dgndb;
     DgnModelId      m_modelId;
     DgnClassId      m_classId;
-    Code            m_code;
+    DgnCode         m_code;
     Utf8String      m_label;
     bool            m_inGuiList;
     int             m_dependencyIndex;
@@ -395,7 +393,12 @@ protected:
     virtual DgnRangeTree* _GetRangeIndexP(bool create) const {return nullptr;}
     virtual void _OnValidate() { }
 
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _SetCode(Code const& code);
+    virtual DgnCode const& _GetCode() const override final { return m_code; }
+    virtual DgnDbR _GetDgnDb() const override final { return m_dgndb; }
+    virtual DgnModelCP _ToDgnModel() const override final { return this; }
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _SetCode(DgnCode const& code) override final;
+    DGNPLATFORM_EXPORT virtual bool _SupportsCodeAuthority(DgnAuthorityCR) const override;
+    virtual DgnCode _GenerateDefaultCode() const override { return DgnCode(); }
 public:
     virtual Utf8CP _GetECClassName() const { return DGN_CLASSNAME_Model; }
     virtual Utf8CP _GetSuperECClassName() const { return nullptr; }
@@ -426,12 +429,6 @@ public:
     //! A model is "persistent" if it was loaded via DgnModels::GetModel, or after it is inserted into the DgnDb via Insert.
     //! A newly created model before it is inserted, or a model after calling Delete, is not persistent.
     bool IsPersistent() const {return m_persistent;}
-
-    //! Get the Code of this DgnModel
-    Code const& GetCode() const {return m_code;}
-
-    //! Change the Code of this DgnModel
-    DgnDbStatus SetCode(Code const& code) { return _SetCode(code); }
 
     //! Get the DgnClassId of this DgnModel
     DgnClassId GetClassId() const {return m_classId;}
@@ -524,13 +521,13 @@ public:
     //! @param[in] newCode The code for the new DgnModel.
     //! @note This makes a new empty, non-persistent, DgnModel with the same properties as this Model, it does NOT clone the elements of this DgnModel.
     //! @see CopyModel, Import
-    DGNPLATFORM_EXPORT DgnModelPtr Clone(Code newCode) const;
+    DGNPLATFORM_EXPORT DgnModelPtr Clone(DgnCode newCode) const;
 
     //! Make a persitent copy of the specified DgnModel and its contents.
     //! @param[in] model The model to copy
-    //! @param[in] newCode The Code for the new DgnModel.
+    //! @param[in] newCode The DgnCode for the new DgnModel.
     //! @see Import
-    DGNPLATFORM_EXPORT static DgnModelPtr CopyModel(DgnModelCR model, Code newCode);
+    DGNPLATFORM_EXPORT static DgnModelPtr CopyModel(DgnModelCR model, DgnCode newCode);
 
     //! Get the collection of elements for this DgnModel that were loaded by a previous call to FillModel.
     DgnElementMap const& GetElements() const {return m_elements;}
@@ -600,8 +597,8 @@ public:
     //! @note This method must make changes of any kind to any other model. Dependent models will be validated later.
     void OnValidate() { _OnValidate(); }
 
-    //! Creates a Code for a model with the given name, associated with the default DgnAuthority for models.
-    DGNPLATFORM_EXPORT static Code CreateModelCode(Utf8StringCR modelName);
+    //! Creates a DgnCode for a model with the given name, associated with the default DgnAuthority for models.
+    static DgnCode CreateModelCode(Utf8StringCR modelName) { return ModelAuthority::CreateModelCode(modelName); }
 };
 
 //=======================================================================================
@@ -715,11 +712,11 @@ public:
         //! Parameters to create a new instance of a GeometricModel.
         //! @param[in] dgndb The DgnDb for the new DgnModel
         //! @param[in] classId The DgnClassId for the new DgnModel.
-        //! @param[in] code The Code for the DgnModel
+        //! @param[in] code The DgnCode for the DgnModel
         //! @param[in] label Label of the new DgnModel
         //! @param[in] displayInfo The DisplayInfo for the new DgnModel.
         //! @param[in] inGuiList Controls the visibility of the new DgnModel in model lists shown to the user
-        CreateParams(DgnDbR dgndb, DgnClassId classId, Code code, Utf8CP label = nullptr, DisplayInfo displayInfo = DisplayInfo(), bool inGuiList = true)
+        CreateParams(DgnDbR dgndb, DgnClassId classId, DgnCode code, Utf8CP label = nullptr, DisplayInfo displayInfo = DisplayInfo(), bool inGuiList = true)
             : T_Super(dgndb, classId, code, label, inGuiList), m_displayInfo(displayInfo)
             {}
 
@@ -907,7 +904,7 @@ protected:
 public:
     explicit SystemModel(CreateParams const& params) : T_Super(params) {}
     static SystemModelPtr Create(CreateParams const& params) {return new SystemModel(params);}
-    DGNPLATFORM_EXPORT static SystemModelPtr Create(DgnDbR, Code const&);
+    DGNPLATFORM_EXPORT static SystemModelPtr Create(DgnDbR, DgnCode const&);
 };
 
 struct ComponentDef;
@@ -933,7 +930,7 @@ protected:
     DGNPLATFORM_EXPORT virtual void _WriteJsonProperties(Json::Value&) const override;
     DGNPLATFORM_EXPORT virtual void _ReadJsonProperties(Json::Value const&) override;
 
-    DGNPLATFORM_EXPORT ComponentModel(DgnDbR db, DgnModel::Code, Utf8StringCR defName);
+    DGNPLATFORM_EXPORT ComponentModel(DgnDbR db, DgnCode, Utf8StringCR defName);
 
 public:
     ComponentModel(CreateParams const& params) : DgnModel3d(params) {;} //!< @private
@@ -966,13 +963,13 @@ struct ComponentDef : RefCountedBase
     ECN::IECInstancePtr GetPropSpecCA(ECN::ECPropertyCR prop);
 
     Utf8String GetGeneratedName() const;
-    DgnElement::Code CreateVariationCode(Utf8StringCR slnId);
+    DgnCode CreateVariationCode(Utf8StringCR slnId) { return ComponentAuthority::CreateVariationCode(slnId, GetName()); }
 
     //! Test if the specified code is that of a component variation instance element.
-    static bool IsComponentVariationCode(DgnElement::Code const& icode);
+    static bool IsComponentVariationCode(DgnCode const& icode);
 
     //! This is the basic logic to create an instance of this component. It is used to create variations and singletons.
-    DgnElementCPtr MakeInstance0(DgnDbStatus* stat, DgnModelR targetModel, ECN::IECInstanceCR parameters, DgnElement::Code const& code);
+    DgnElementCPtr MakeInstance0(DgnDbStatus* stat, DgnModelR targetModel, ECN::IECInstanceCR parameters, DgnCode const& code);
     
     //! Compare two instances and return true if their parameter values are the same.
     //! @note This function infers that that parameters to be compared are the properties of \a lhs that are not ECInstanceId and are not NULL.
@@ -1153,7 +1150,7 @@ struct ComponentDef : RefCountedBase
     //!     * DgnDbStatus::WrongDgnDb - \a variation and \a targetModel must both be in the same DgnDb.
     //!     * DgnDbStatus::NotFound - \a parameters does not match the parameters of \a variation. Call 
     //! @see MakeVariation
-    DGNPLATFORM_EXPORT static DgnElementCPtr MakeInstanceOfVariation(DgnDbStatus* stat, DgnModelR targetModel, DgnElementCR variation, ECN::IECInstanceCP instanceParameters, DgnElement::Code const& code = DgnElement::Code());
+    DGNPLATFORM_EXPORT static DgnElementCPtr MakeInstanceOfVariation(DgnDbStatus* stat, DgnModelR targetModel, DgnElementCR variation, ECN::IECInstanceCP instanceParameters, DgnCode const& code = DgnCode());
 
     //! Make a unique instance that is not based on a pre-defined variation. This method must be used if \a parameters include per-instance parameters that do not match the default values
     //! of any pre-defined variation. This method may also be used for components that do not have pre-defined variations.
@@ -1168,7 +1165,7 @@ struct ComponentDef : RefCountedBase
     //!     * DgnDbStatus::WrongDgnDb - \a parameters and \a targetModel must both be in the same DgnDb.
     //!     * DgnDbStatus::BadRequest - The component's geometry could not be generated, possibly because the values in \a parameters are invalid.
     //! @see MakeInstanceOfVariation
-    DGNPLATFORM_EXPORT static DgnElementCPtr MakeUniqueInstance(DgnDbStatus* stat, DgnModelR targetModel, ECN::IECInstanceCR parameters, DgnElement::Code const& code = DgnElement::Code());
+    DGNPLATFORM_EXPORT static DgnElementCPtr MakeUniqueInstance(DgnDbStatus* stat, DgnModelR targetModel, ECN::IECInstanceCR parameters, DgnCode const& code = DgnCode());
 };
 
 //=======================================================================================
@@ -1275,7 +1272,7 @@ public:
         //! @param[in] label Label of the new DgnModel
         //! @param[in] displayInfo the Properties of the new SheetModel
         //! @param[in] inGuiList Controls the visibility of the new DgnModel in model lists shown to the user
-        CreateParams(DgnDbR dgndb, DgnClassId classId, Code code, DPoint2d size, Utf8CP label = nullptr, DisplayInfo displayInfo = DisplayInfo(), bool inGuiList = true) :
+        CreateParams(DgnDbR dgndb, DgnClassId classId, DgnCode code, DPoint2d size, Utf8CP label = nullptr, DisplayInfo displayInfo = DisplayInfo(), bool inGuiList = true) :
             T_Super(dgndb, classId, code, label, displayInfo, inGuiList), m_size(size)
             {}
 

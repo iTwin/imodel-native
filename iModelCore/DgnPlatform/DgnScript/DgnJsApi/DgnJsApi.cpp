@@ -2,7 +2,7 @@
 |
 |     $Source: DgnScript/DgnJsApi/DgnJsApi.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -138,7 +138,7 @@ JsDgnElementP JsComponentDef::MakeInstanceOfVariation(JsDgnModelP targetModel, J
         return nullptr;
     auto inst = m_cdef->MakeInstanceOfVariation(nullptr, *targetModel->m_model, *variation->m_el, 
                                                 instanceParameters? instanceParameters->m_instance.get(): nullptr, 
-                                                code? code->m_code: DgnElement::Code()); 
+                                                code? code->m_code: DgnCode()); 
     if (!inst.IsValid())
         return nullptr;
     return new JsDgnElement(*inst->CopyForEdit());
@@ -151,7 +151,7 @@ JsDgnElementP JsComponentDef::MakeUniqueInstance(JsDgnModelP targetModel, JsECIn
     {
     if (!m_cdef.IsValid() || nullptr == targetModel || !targetModel->m_model.IsValid() || nullptr == instanceParameters || !instanceParameters->m_instance.IsValid())
         return nullptr;
-    auto inst = m_cdef->MakeUniqueInstance(nullptr, *targetModel->m_model, *instanceParameters->m_instance, code? code->m_code: DgnElement::Code()); 
+    auto inst = m_cdef->MakeUniqueInstance(nullptr, *targetModel->m_model, *instanceParameters->m_instance, code? code->m_code: DgnCode()); 
     if (!inst.IsValid())
         return nullptr;
     return new JsDgnElement(*inst->CopyForEdit());

@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/DgnProject/NonPublished/MissingHandler_Test.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "DgnHandlersTests.h"
@@ -18,7 +18,7 @@
 +---------------+---------------+---------------+---------------+---------------+------*/
 static PhysicalElement::CreateParams makeCreateParams(DgnDbR db, DgnModelId model, DgnClassId classId, DgnCategoryId cat, DgnElementId parentId=DgnElementId())
     {
-    return PhysicalElement::CreateParams(db, model, classId, cat, Placement3d(), DgnElement::Code(), nullptr, parentId);
+    return PhysicalElement::CreateParams(db, model, classId, cat, Placement3d(), DgnCode(), nullptr, parentId);
     }
 
 /*---------------------------------------------------------------------------------**//**

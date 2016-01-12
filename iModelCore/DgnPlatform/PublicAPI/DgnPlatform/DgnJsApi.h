@@ -189,8 +189,8 @@ typedef JsDgnObjectIdSet* JsDgnObjectIdSetP;
 //=======================================================================================
 struct JsAuthorityIssuedCode : RefCountedBaseWithCreate
 {
-    AuthorityIssuedCode m_code;
-    explicit JsAuthorityIssuedCode(AuthorityIssuedCode const& c) : m_code(c) {;}
+    DgnCode m_code;
+    explicit JsAuthorityIssuedCode(DgnCode const& c) : m_code(c) {;}
 
     Utf8String GetValue() const {return m_code.GetValue();}
     Utf8String GetNamespace() const {return m_code.GetNamespace();}
@@ -325,11 +325,11 @@ struct JsComponentDef : RefCountedBaseWithCreate
     // static GetParameters(instance: DgnElementP): ECInstanceP;
     static JsECInstanceP GetParameters(JsDgnElementP instance);
 
-    //            MakeInstanceOfVariation(targetModel: DgnModelP, variation: DgnElementP, instanceParameters: ECInstanceP, code: AuthorityIssuedCode): DgnElementP;
+    //            MakeInstanceOfVariation(targetModel: DgnModelP, variation: DgnElementP, instanceParameters: ECInstanceP, code: DgnCode): DgnElementP;
     JsDgnElementP MakeInstanceOfVariation(JsDgnModelP targetModel, JsDgnElementP variation, JsECInstanceP instanceParameters, JsAuthorityIssuedCodeP code);
 
 
-    //            MakeUniqueInstance(targetModel: DgnElementP, instanceParameters: ECInstanceP, code: AuthorityIssuedCode): DgnElementP;
+    //            MakeUniqueInstance(targetModel: DgnElementP, instanceParameters: ECInstanceP, code: DgnCode): DgnElementP;
     JsDgnElementP MakeUniqueInstance(JsDgnModelP targetModel, JsECInstanceP instanceParameters, JsAuthorityIssuedCodeP code);
 
     STUB_OUT_SET_METHOD(Name,Utf8String)

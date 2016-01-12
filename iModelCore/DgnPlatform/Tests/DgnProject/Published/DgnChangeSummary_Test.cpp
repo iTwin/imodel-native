@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/DgnProject/Published/DgnChangeSummary_Test.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ChangeTestFixture.h"
@@ -35,7 +35,7 @@ struct DgnChangeSummaryTestFixture : public ChangeTestFixture
     };
 
 protected:
-    DgnAuthority::Code CreateCode(int iFloor, int iQuadrant);
+    DgnCode CreateCode(int iFloor, int iQuadrant);
         
     DgnElementId QueryElementId(int iFloor, int iQuadrant);
 
@@ -58,7 +58,7 @@ public:
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    08/2015
 //---------------------------------------------------------------------------------------
-DgnAuthority::Code DgnChangeSummaryTestFixture::CreateCode(int iFloor, int iQuadrant)
+DgnCode DgnChangeSummaryTestFixture::CreateCode(int iFloor, int iQuadrant)
     {
     Utf8PrintfString codeStr("Floor %d,Quadrant %d", iFloor, iQuadrant);
     return m_testAuthority->CreateCode(codeStr);
@@ -83,7 +83,7 @@ void DgnChangeSummaryTestFixture::InsertEmptyBuilding(WCharCP filename)
 //---------------------------------------------------------------------------------------
 DgnElementId DgnChangeSummaryTestFixture::QueryElementId(int iFloor, int iQuadrant)
     {
-    DgnAuthority::Code code = CreateCode(iFloor, iQuadrant);
+    DgnCode code = CreateCode(iFloor, iQuadrant);
     return m_testDb->Elements().QueryElementIdByCode(code);
     }
 

@@ -2,7 +2,7 @@
 |
 |  $Source: DgnHandlers/ScopedDgnHost.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -93,13 +93,13 @@ struct TestingDgnScriptingAdmin : Dgn::DgnPlatformLib::Host::ScriptAdmin
 /*---------------------------------------------------------------------------------**//**
 * @bsistruct                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct ProxyLocksAdmin : Dgn::DgnPlatformLib::Host::LocksAdmin
+struct ProxyServerAdmin : Dgn::DgnPlatformLib::Host::ServerAdmin
 {
-    DEFINE_T_SUPER(LocksAdmin);
+    DEFINE_T_SUPER(ServerAdmin);
 
-    LocksAdmin* m_impl;
+    ServerAdmin* m_impl;
 
-    ProxyLocksAdmin() : m_impl(nullptr) { }
+    ProxyServerAdmin() : m_impl(nullptr) { }
     virtual ILocksManagerPtr _CreateLocksManager(DgnDbR db) const override
         {
         return nullptr != m_impl ? m_impl->_CreateLocksManager(db) : T_Super::_CreateLocksManager(db);
@@ -127,12 +127,12 @@ struct ScopedDgnHostImpl : DgnPlatformLib::Host
     NotificationAdmin& _SupplyNotificationAdmin () override;
     IKnownLocationsAdmin& _SupplyIKnownLocationsAdmin() override;
     ScriptAdmin& _SupplyScriptingAdmin() override {return *new TestingDgnScriptingAdmin();}
-    LocksAdmin& _SupplyLocksAdmin() override {return *new ProxyLocksAdmin();}
+    ServerAdmin& _SupplyServerAdmin() override {return *new ProxyServerAdmin();}
     void _SupplyProductName(Utf8StringR s) override {s="BeTest";}
     L10N::SqlangFiles _SupplySqlangFiles() override {return L10N::SqlangFiles(BeFileName());} // users must have already initialized L10N to use ScopedDgnHost
 
     void SetFetchScriptCallback(ScopedDgnHost::FetchScriptCallback* cb) {((TestingDgnScriptingAdmin*)m_scriptingAdmin)->m_callback = cb;}
-    void SetLocksAdmin(DgnPlatformLib::Host::LocksAdmin* admin) {((ProxyLocksAdmin*)m_locksAdmin)->m_impl = admin;}
+    void SetServerAdmin(DgnPlatformLib::Host::ServerAdmin* admin) {((ProxyServerAdmin*)m_serverAdmin)->m_impl = admin;}
 };
 END_BENTLEY_DGNPLATFORM_NAMESPACE
 
@@ -163,9 +163,9 @@ void ScopedDgnHost::SetFetchScriptCallback(FetchScriptCallback* cb)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ScopedDgnHost::SetLocksAdmin(DgnPlatformLib::Host::LocksAdmin* admin)
+void ScopedDgnHost::SetServerAdmin(DgnPlatformLib::Host::ServerAdmin* admin)
     {
-    m_pimpl->SetLocksAdmin(admin);
+    m_pimpl->SetServerAdmin(admin);
     }
 
 /*---------------------------------------------------------------------------------**//**
