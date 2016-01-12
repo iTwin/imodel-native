@@ -29,7 +29,7 @@ JsonUpdaterTests.CommonGeometryJsonSerialization
 JoinedTableECDbMapStrategyTests.PopulateECSql_TestDbWithTestData
 
 # NavProp support is WIP
-ECSqlNavigationPropertyTestFixture.InsertOnOneEnd_ForeignKeyMapping
+ECSqlNavigationPropertyTestFixture.*
 
 #For Hassan
 #should be either removed or inverted

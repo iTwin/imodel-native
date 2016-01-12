@@ -66,6 +66,15 @@ TEST_F(ECSqlNavigationPropertyTestFixture, ECSqlSupport)
                          "</ECSchema>"));
 
     ASSERT_TRUE(GetECDb().IsDbOpen());
+
+    AssertPrepare("SELECT PB FROM ts.B WHERE ECInstanceId=?", true, "");
+    AssertPrepare("SELECT PB, AParent FROM ts.B WHERE ECInstanceId=?", true, "");
+    AssertPrepare("SELECT * FROM ts.B WHERE ECInstanceId=?", true, "");
+
+    AssertPrepare("SELECT PD FROM ts.D WHERE ECInstanceId=?", true, "");
+    AssertPrepare("SELECT PD, CParent FROM ts.D WHERE ECInstanceId=?", false, "NavProp with link table relationship is not supported.");
+    AssertPrepare("SELECT * FROM ts.D WHERE ECInstanceId=?", false, "NavProp with link table relationship is not supported.");
+
     AssertPrepare("INSERT INTO ts.B (PB,AParent) VALUES(123,?)", true, "NavProp with single related instance is expected to be supported.");
     AssertPrepare("INSERT INTO ts.D (PD,CParent) VALUES(123,?)", false, "NavProp with link table relationship is not supported.");
 
@@ -76,7 +85,7 @@ TEST_F(ECSqlNavigationPropertyTestFixture, ECSqlSupport)
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                 12/15
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSqlNavigationPropertyTestFixture, InsertOnOneEnd_ForeignKeyMapping)
+TEST_F(ECSqlNavigationPropertyTestFixture, SingleInstanceNavProp_ForeignKeyMapping)
     {
     ECDbR ecdb = SetupECDb("ecsqlnavprops.ecdb", BeFileName(L"ECSql_NavigationProperties.01.00.ecschema.xml"), 3, ECDb::OpenParams(Db::OpenMode::ReadWrite));
     ASSERT_TRUE(ecdb.IsDbOpen());
@@ -108,6 +117,34 @@ TEST_F(ECSqlNavigationPropertyTestFixture, InsertOnOneEnd_ForeignKeyMapping)
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
     ASSERT_EQ(modelKey.GetECInstanceId().GetValue(), stmt.GetValueId<ECInstanceId>(0).GetValue());
     ASSERT_EQ(modelKey.GetECClassId(), stmt.GetValueInt64(1));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+
+    stmt.Finalize();
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT TargetECInstanceId,TargetECClassId FROM np.ParentHasChildren WHERE SourceECInstanceId=?"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, modelKey.GetECInstanceId()));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    ASSERT_EQ(elementKey.GetECInstanceId().GetValue(), stmt.GetValueId<ECInstanceId>(0).GetValue());
+    ASSERT_EQ(elementKey.GetECClassId(), stmt.GetValueInt64(1));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    }
+
+    //select from class with navprops
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT Code FROM np.DgnElement WHERE ECInstanceId=?"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, elementKey.GetECInstanceId()));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+
+    stmt.Finalize();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT Code, Model FROM np.Element WHERE ECInstanceId=?"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, elementKey.GetECInstanceId()));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+
+    stmt.Finalize();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT * FROM np.Element WHERE ECInstanceId=?"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, elementKey.GetECInstanceId()));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
     }
     }
 
