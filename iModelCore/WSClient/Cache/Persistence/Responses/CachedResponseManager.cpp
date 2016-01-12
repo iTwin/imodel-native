@@ -44,7 +44,9 @@ m_responsePageToResultWeakClass(m_dbAdapter.GetECRelationshipClass(SCHEMA_CacheS
 
 m_responseInserter(m_dbAdapter.GetECDb(), *m_responseClass),
 m_responseUpdater(m_dbAdapter.GetECDb(), *m_responseClass)
-    {}
+    {
+    dbAdapter.RegisterDeleteListener(this);
+    }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
@@ -536,16 +538,31 @@ const InstanceCacheHelper::CachedInstances& instances
                         newCached.begin(), newCached.end(),
                         std::inserter(instancesToRemove, instancesToRemove.end()));
 
+    // Avoid holding cycles
+    CachedInstanceKey holderKey = m_objectInfoManager.ReadCachedInstanceKey(responseHolderNodeKey);
+    if (0 != instancesToAdd.erase(holderKey))
+        {
+        bset<CachedInstanceKey> oldWeakCached, newWeakCached;
+        newWeakCached.insert(holderKey);
+
+        if (SUCCESS != m_objectInfoManager.ReadCachedInstanceKeys(pageKey, *m_responsePageToResultWeakClass, oldWeakCached))
+            {
+            return ERROR;
+            }
+
+        if (oldWeakCached != newWeakCached)
+            {
+            if (SUCCESS != m_hierarchyManager.RemoveCachedInstancesFromHolder(pageKey, m_responsePageToResultWeakClass, oldWeakCached) ||
+                SUCCESS != m_hierarchyManager.RelateCachedInstancesToHolder(pageKey, m_responsePageToResultWeakClass, newWeakCached))
+                {
+                return ERROR;
+                }
+            }
+        }
+
     if (SUCCESS != m_hierarchyManager.RelateCachedInstancesToHolder(pageKey, m_responsePageToResultClass, instancesToAdd) ||
         SUCCESS != m_hierarchyManager.RemoveCachedInstancesFromHolder(pageKey, m_responsePageToResultClass, instancesToRemove))
         {
-        return ERROR;
-        }
-
-    CachedInstanceKey holderKey = m_objectInfoManager.ReadCachedInstanceKey(responseHolderNodeKey);
-    if (newCached.find(holderKey) != newCached.end())
-        {
-        // TODO: Fix cycle if any with weak rel
         return ERROR;
         }
 
