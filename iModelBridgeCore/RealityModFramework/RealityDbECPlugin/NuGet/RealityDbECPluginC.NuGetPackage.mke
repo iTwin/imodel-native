@@ -22,7 +22,7 @@ always:
     CreateSymLinks.py   -m"$(BuildContext)Subparts/Files=$(SrcRoot)RealityModFramework/RealityDbECPlugin/NuGet/Bentley.RealityDbECPluginC.targets"
 
 always:
-    ~task Exec -i:Command="$(SrcRoot)bsitools/nuget/nuget pack $(SrcRoot)RealityModFramework/RealityDbECPlugin/NuGet/RealityDbECPluginC.nuspec -BasePath $(BuildContext)Subparts -OutputDirectory $(PackageOutputDir) -Version $(AssemblyVersion)" 
+    ~task Exec -i:Command="$(SrcRoot)bsitools/nuget/nuget pack $(SrcRoot)RealityModFramework/RealityDbECPlugin/NuGet/RealityDbECPluginC.nuspec -BasePath $(BuildContext)Subparts -OutputDirectory $(PackageOutputDir) -Version $(AssemblyVersion) -verbosity quiet" 
     
     
 $(ContextDeliveryDir)$(PackageName) : $(PackageOutputDir)$(PackageName)
