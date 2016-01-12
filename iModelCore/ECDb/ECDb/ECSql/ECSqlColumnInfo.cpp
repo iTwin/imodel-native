@@ -540,9 +540,8 @@ ECTypeDescriptor ECSqlColumnInfo::DetermineDataType (ECPropertyCR ecProperty)
         }
     else if (ecProperty.GetIsNavigation())
         {
-        //WIP_NAVPROP Not implemented yet
-        BeAssert(false && "NavProps not implemented. Need ECTypeDEscriptor and ValueKind for it");
-        return ECTypeDescriptor();
+        //WIP_NAVPROP Replace by Create method that takes NavProp directly once available in ECObjects
+        return ECTypeDescriptor::CreatePrimitiveTypeDescriptor(PRIMITIVETYPE_Long);
         }
 
     BeAssert(false && "Unhandled ECProperty type. Adjust code to new ECProperty type");

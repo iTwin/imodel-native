@@ -67,9 +67,8 @@ public:
     const_iterator end () const;
     };
 
-struct PropertyMapSingleColumn;
 struct PropertyMapStructArray;
-struct PropertyMapPrimitiveArray;
+struct NavigationPropertyMap;
 
 /*---------------------------------------------------------------------------------------
 * Abstract class for property mapping
@@ -79,6 +78,25 @@ struct PropertyMap : RefCountedBase, NonCopyableClass
 {
 private:
     virtual NativeSqlBuilder::List _ToNativeSql (Utf8CP classIdentifier, ECSqlType ecsqlType, bool wrapInParentheses) const;
+
+    virtual bool _IsVirtual() const { return false; }
+    virtual bool _IsUnmapped() const { return false; }
+
+    virtual void _GetColumns(std::vector<ECDbSqlColumn const*>& columns) const;
+
+    //! Make sure our table has the necessary columns, if any
+    virtual BentleyStatus _FindOrCreateColumnsInTable(ClassMap& classMap, ClassMapInfo const* classMapInfo) { return SUCCESS; }
+
+    virtual BentleyStatus _Save(ECDbClassMapInfo & classMapInfo) const;
+    virtual BentleyStatus _Load(ECDbClassMapInfo const& classMapInfo) { return SUCCESS; }
+
+    virtual bool _IsECInstanceIdPropertyMap() const;
+    virtual bool _IsSystemPropertyMap() const;
+
+    virtual PropertyMapStructArray const* _GetAsPropertyMapStructArray() const { return nullptr; }
+    virtual NavigationPropertyMap const* _GetAsNavigationPropertyMap() const { return nullptr; }
+
+    virtual Utf8String _ToString() const;
 
 protected:
     ECN::ECPropertyCR       m_ecProperty;
@@ -90,27 +108,10 @@ protected:
     mutable ECDbPropertyPathId      m_propertyPathId;
     PropertyMap (ECN::ECPropertyCR ecProperty, Utf8CP propertyAccessString, ECDbSqlTable const* primaryTable, PropertyMapCP parentPropertyMap);
 
-    virtual bool _IsVirtual () const;
-    virtual bool _IsUnmapped () const;
-
-    virtual void _GetColumns(std::vector<ECDbSqlColumn const*>& columns) const;
-
-    //! Make sure our table has the necessary columns, if any
-    virtual BentleyStatus _FindOrCreateColumnsInTable(ClassMap& classMap, ClassMapInfo const* classMapInfo) { return SUCCESS; }
-
-    virtual PropertyMapStructArray const* _GetAsPropertyMapStructArray () const { return nullptr; }
-
-    virtual bool _IsECInstanceIdPropertyMap () const;
-    virtual bool _IsSystemPropertyMap () const;
-    virtual BentleyStatus _Save(ECDbClassMapInfo & classMapInfo) const;
-    virtual BentleyStatus _Load(ECDbClassMapInfo const& classMapInfo) { return SUCCESS; }
-
-    //! For debugging and logging
-    virtual Utf8String _ToString() const;
-
 public:
     virtual ~PropertyMap () {}
     ECDbPropertyPathId GetPropertyPathId () const  { BeAssert (m_propertyPathId != 0); return m_propertyPathId; }
+    NavigationPropertyMap const* GetAsNavigationPropertyMap() const { return _GetAsNavigationPropertyMap(); }
     PropertyMapStructArrayCP GetAsPropertyMapStructArray () const {return _GetAsPropertyMapStructArray();}
     ECN::ECPropertyCR GetProperty () const;
     PropertyMapCP GetParent () const { return m_parentPropertyMap; }
@@ -387,17 +388,13 @@ private:
     NavigationPropertyMap(ClassMapLoadContext&, NavigationPropertyMap const& proto, ECDbSqlTable const* primaryTable, PropertyMap const* parentPropertyMap);
     static PropertyMapPtr Create(ClassMapLoadContext&, ECDbCR, ECN::ECPropertyCR, Utf8CP propertyAccessString, ECDbSqlTable const* primaryTable, PropertyMapCP parentPropertyMap);
 
-    virtual NativeSqlBuilder::List _ToNativeSql(Utf8CP classIdentifier, ECSqlType ecsqlType, bool wrapInParentheses) const override;
+    virtual void _GetColumns(std::vector<ECDbSqlColumn const*>&) const override;
     virtual Utf8String _ToString() const override { return Utf8PrintfString("NavigationPropertyMap: ecProperty=%s.%s", m_ecProperty.GetClass().GetFullName(), m_ecProperty.GetName().c_str()); }
 
     //nothing to do when loading/saving the prop map
     virtual BentleyStatus _Load(ECDbClassMapInfo const&) override { return SUCCESS; }
     virtual BentleyStatus _Save(ECDbClassMapInfo&) const override { return SUCCESS; }
-    virtual void _GetColumns(std::vector<ECDbSqlColumn const*>&) const override 
-        { 
-        BeAssert(false && "NavigationPropertyMap::GetColumns is not expected to be called"); 
-        }
-
+    virtual NavigationPropertyMap const* _GetAsNavigationPropertyMap() const override { return this; }
 
     ECN::ECRelationshipEnd GetConstraintEnd() const;
 
@@ -405,6 +402,8 @@ public:
     ~NavigationPropertyMap() {}
 
     BentleyStatus Postprocess(ECDbMapCR);
+
+    bool IsSupportedInECSql(bool logIfNotSupported = false, ECDbCP ecdb = nullptr) const;
 
     RelationshipClassMap const& GetRelationshipClassMap() const { BeAssert(m_relClassMap != nullptr); return *m_relClassMap; }
     bool CanOnlyHaveOneRelatedInstance() const { return CanOnlyHaveOneRelatedInstance(*m_navigationProperty); }

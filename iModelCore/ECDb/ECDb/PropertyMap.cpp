@@ -57,7 +57,7 @@ PropertyMapPtr PropertyMap::Clone(ECDbMapCR ecdbMap, PropertyMapCR proto, ECDbSq
         {
         return new PropertyMapStruct(ecdbMap, *protoMap, newContext, parentPropertyMap);
         }
-    else if (auto protoMap = dynamic_cast<NavigationPropertyMap const*>(&proto))
+    else if (auto protoMap = proto.GetAsNavigationPropertyMap())
         {
         return new NavigationPropertyMap(ecdbMap.GetSchemaImportContext()->GetClassMapLoadContext(), *protoMap, newContext, parentPropertyMap);
         }
@@ -74,27 +74,11 @@ bool PropertyMap::IsVirtual () const
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                                Krischan.Eberle     12/2013
-//---------------------------------------------------------------------------------------
-bool PropertyMap::_IsVirtual () const
-    {
-    return false;
-    }
-
-//---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle     03/2014
 //---------------------------------------------------------------------------------------
 bool PropertyMap::IsUnmapped () const
     {
     return _IsUnmapped ();
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                Krischan.Eberle     03/2014
-//---------------------------------------------------------------------------------------
-bool PropertyMap::_IsUnmapped () const
-    {
-    return false;
     }
 
 /*---------------------------------------------------------------------------------------
@@ -994,7 +978,6 @@ PropertyMapPtr NavigationPropertyMap::Create(ClassMapLoadContext& ctx, ECDbCR ec
     return new NavigationPropertyMap(ctx, prop, propertyAccessString, primaryTable, parentPropertyMap);
     }
 
-
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                      12/2015
 //---------------------------------------------------------------------------------------
@@ -1032,24 +1015,56 @@ BentleyStatus NavigationPropertyMap::Postprocess(ECDbMapCR ecdbMap)
     return SUCCESS;
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                 Krischan.Eberle                      01/2016
+//---------------------------------------------------------------------------------------
+bool NavigationPropertyMap::IsSupportedInECSql(bool logIfNotSupported, ECDbCP ecdb) const
+    {
+    BeAssert(!logIfNotSupported || ecdb != nullptr);
+
+    if (!CanOnlyHaveOneRelatedInstance())
+        {
+        if (logIfNotSupported)
+            ecdb->GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, 
+              "NavigationECProperty '%s.%s' cannot be used in ECSQL because its multiplicity is %s. Only the multiplicities %s or %s are supported.",
+                                                           m_navigationProperty->GetClass().GetFullName(), m_navigationProperty->GetName().c_str(),
+                                                           GetConstraint().GetCardinality().ToString().c_str(),
+                                                           RelationshipCardinality::ZeroOne().ToString().c_str(),
+                                                           RelationshipCardinality::OneOne().ToString().c_str());
+        return false;
+        }
+
+    if (m_relClassMap->GetClassMapType() != IClassMap::Type::RelationshipEndTable)
+        {
+        if (logIfNotSupported)
+            ecdb->GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "NavigationECProperty '%s.%s' cannot be used in ECSQL because its ECRelationships is mapped to a link table.",
+                                                           m_navigationProperty->GetClass().GetFullName(), m_navigationProperty->GetName().c_str());
+        return false;
+        }
+
+
+    PropertyMapCP classIdPropMap = GetConstraintMap().GetECClassIdPropMap();
+    if (!classIdPropMap->IsVirtual() && classIdPropMap->IsMappedToPrimaryTable())
+        {
+        if (logIfNotSupported)
+            ecdb->GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "NavigationECProperty '%s.%s' cannot be used in ECSQL because the mapping requires an ECClassId column for the related instances.",
+                                                           m_navigationProperty->GetClass().GetFullName(), m_navigationProperty->GetName().c_str());
+        return false;
+
+        }
+
+    return true;
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                      01/2016
 //---------------------------------------------------------------------------------------
-NativeSqlBuilder::List NavigationPropertyMap::_ToNativeSql(Utf8CP classIdentifier, ECSqlType ecsqlType, bool wrapInParentheses) const
+void NavigationPropertyMap::_GetColumns(std::vector<ECDbSqlColumn const*>& columns) const
     {
+    BeAssert(IsSupportedInECSql() && "NavProperty which is not supported in ECSQL");
+
     RelationshipConstraintMap const& constraintMap = GetConstraintMap();
-
-    NativeSqlBuilder::List sqlSnippets = constraintMap.GetECInstanceIdPropMap()->ToNativeSql(classIdentifier, ecsqlType, wrapInParentheses);
-
-    PropertyMapCP classIdPropMap = constraintMap.GetECClassIdPropMap();
-    if (!classIdPropMap->IsVirtual())
-        {
-        NativeSqlBuilder::List classIdSnippets = classIdPropMap->ToNativeSql(classIdentifier, ecsqlType, wrapInParentheses);
-        sqlSnippets.insert(sqlSnippets.end(), classIdSnippets.begin(), classIdSnippets.end());
-        }
-
-    return std::move(sqlSnippets);
+    constraintMap.GetECInstanceIdPropMap()->GetColumns(columns);
     }
 
 //---------------------------------------------------------------------------------------

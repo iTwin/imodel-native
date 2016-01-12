@@ -213,6 +213,10 @@ BentleyStatus ViewGenerator::GetPropertyMapsOfDerivedClassCastAsBaseClass(std::v
             baseClassPropertyMap->GetAsPropertyMapStructArray())
             continue;
 
+        NavigationPropertyMap const* navPropMap = baseClassPropertyMap->GetAsNavigationPropertyMap();
+        if (navPropMap != nullptr && !navPropMap->IsSupportedInECSql())
+            continue;
+
         PropertyMap const* childClassCounterpartPropMap = childMap.GetPropertyMap(baseClassPropertyMap->GetPropertyAccessString());
         if (childClassCounterpartPropMap == nullptr)
             return ERROR;
@@ -243,7 +247,6 @@ BentleyStatus ViewGenerator::AppendViewPropMapsToQuery(NativeSqlBuilder& viewQue
             continue;
 
         auto aliasSqlSnippets = basePropMap->ToNativeSql(nullptr, ECSqlType::Select, false);
-        //bool isInstanceId = actualPropMap->GetFirstColumn()->GetKind() == ColumnKind::ECInstanceId;
         auto colSqlSnippets = actualPropMap->ToNativeSql(actualPropMap->GetTable()->GetName().c_str(), ECSqlType::Select, false);
         auto colSqlSnippetsWithoutTableNames = actualPropMap->ToNativeSql(nullptr, ECSqlType::Select, false);
 

@@ -49,7 +49,7 @@ ECSqlStatus ECSqlPropertyNameExpPreparer::Prepare(NativeSqlBuilder::List& native
     PropertyMap const& propMap = exp->GetPropertyMap();
     ECSqlPrepareContext::ExpScope const& currentScope = ctx.GetCurrentScope();
 
-    NavigationPropertyMap const* navPropMap = propMap.GetProperty().GetIsNavigation() ? static_cast<NavigationPropertyMap const*> (&propMap) : nullptr;
+    NavigationPropertyMap const* navPropMap = propMap.GetAsNavigationPropertyMap();
     if (navPropMap != nullptr)
         {
         ECSqlStatus stat = ValidateNavigationPropertyExp(nativeSqlSnippets, ctx, *exp, *navPropMap, currentScope);
@@ -133,28 +133,8 @@ bool ECSqlPropertyNameExpPreparer::NeedsPreparation(ECSqlPrepareContext::ExpScop
 //static
 ECSqlStatus ECSqlPropertyNameExpPreparer::ValidateNavigationPropertyExp(NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, PropertyNameExp const& exp, NavigationPropertyMap const& propMap, ECSqlPrepareContext::ExpScope const& scope)
     {
-    if (!propMap.CanOnlyHaveOneRelatedInstance())
-        {
-        ctx.GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "NavigationProperties can only be used in ECSQL when they point to at most one related instance. NavigationProperty '%s' has a multiplicity of %s though.",
-                                                               exp.ToECSql().c_str(), propMap.GetConstraint().GetCardinality().ToString().c_str());
+    if (!propMap.IsSupportedInECSql(true, &ctx.GetECDb()))
         return ECSqlStatus::InvalidECSql;
-        }
-
-    PropertyMapCP classIdPropMap = propMap.GetConstraintMap().GetECClassIdPropMap();
-    if (!classIdPropMap->IsVirtual() && classIdPropMap->IsMappedToPrimaryTable())
-        {
-        ctx.GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "NavigationProperties with ECRelationships which require a constraint ECClassId are not yet supported in ECSQL. Expression: %s",
-                                                               exp.ToECSql().c_str());
-        return ECSqlStatus::InvalidECSql;
-        }
-
-    if (propMap.GetRelationshipClassMap().GetClassMapType() == IClassMap::Type::RelationshipLinkTable)
-        {
-        ctx.GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "NavigationProperties with ECRelationships mapped to link tables cannot be used in ECSQL. Expression: %s",
-                                                               exp.ToECSql().c_str());
-        return ECSqlStatus::InvalidECSql;
-        }
-
 
     if (scope.GetECSqlType() == ECSqlType::Update && scope.GetExp().GetType() == Exp::Type::AssignmentList)
         {
