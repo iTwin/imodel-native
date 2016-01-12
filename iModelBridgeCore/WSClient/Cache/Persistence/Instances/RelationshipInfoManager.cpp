@@ -32,7 +32,9 @@ m_cachedRelationshipInfoClass(m_dbAdapter.GetECClass(SCHEMA_CacheSchema, CLASS_C
 m_infoECInstanceInserter(m_dbAdapter.GetECDb(), *m_cachedRelationshipInfoClass),
 m_infoInserter(m_dbAdapter.GetECDb(), *m_cachedRelationshipInfoClass),
 m_infoUpdater(m_dbAdapter.GetECDb(), *m_cachedRelationshipInfoClass)
-    {}
+    {
+    dbAdapter.RegisterDeleteListener(this);
+    }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
@@ -442,44 +444,29 @@ BentleyStatus RelationshipInfoManager::DeleteRelationshipLeavingInfo(Relationshi
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus RelationshipInfoManager::OnBeforeDelete(ECN::ECClassCR ecClass, ECInstanceId ecInstanceId, bset<ECInstanceKey>& additionalInstancesOut)
     {
-#if defined (NEEDS_WORK_PORT_GRA06_ECDbDeleteHandler) // Port 0503 to 06
-
-    // TODO: optimize when ECDb has API for knowing all instances that will be deleted - no need to delete seperately if it will be deleted.
-
     // Remove relationship that is held by CachedRelationshipInfo
     if (&ecClass == m_cachedRelationshipInfoClass)
         {
-        ECInstanceKey relInfoKey(m_cachedRelationshipInfoClass->GetId(), ecInstanceId);
+        CacheNodeKey relInfoKey(m_cachedRelationshipInfoClass->GetId(), ecInstanceId);
         ECInstanceKey relationship = ReadRelationshipKeyByInfo(relInfoKey);
-
-        ECRelationshipClassCP relClass = m_dbAdapter.GetECRelationshipClass(relationship);
-        ECPersistencePtr persistence = m_dbAdapter.GetECDb().GetEC().GetECPersistence(nullptr, *relClass);
-        if (persistence.IsNull() || DELETE_Success != persistence->Delete(ECInstanceId(relationship.GetECInstanceId())))
+        if (relationship.IsValid())
             {
-            return ERROR;
+            additionalInstancesOut.insert(relationship);
             }
         return SUCCESS;
         }
 
-    // Remove CachedRelationshipInfo for relationship
-    if (ecClass.GetRelationshipClassCP() != nullptr &&
-        !ecClass.GetSchema().GetName().Equals(WIDEN(SCHEMA_CacheSchema)))
+    // Remove CachedRelationshipInfo that manages relationship
+    if (ecClass.IsRelationshipClass() && ecClass.GetSchema().GetId() != m_cachedRelationshipInfoClass->GetSchema().GetId())
         {
         ECInstanceKey relationship(ecClass.GetId(), ecInstanceId);
-        ECInstanceId relInfoId = ReadInfoIdByRelationship(relationship);
-        if (!relInfoId.IsValid())
+        CacheNodeKey relInfoKey(m_cachedRelationshipInfoClass->GetId(), ReadInfoIdByRelationship(relationship));
+        if (relInfoKey.IsValid())
             {
-            // Nothing to delete
-            return SUCCESS;
-            }
-        ECPersistencePtr persistence = m_dbAdapter.GetECDb().GetEC().GetECPersistence(nullptr, *m_cachedRelationshipInfoClass);
-        if (persistence.IsNull() || DELETE_Success != persistence->Delete(relInfoId))
-            {
-            return ERROR;
+            additionalInstancesOut.insert(relInfoKey);
             }
         return SUCCESS;
         }
-#endif
 
     return SUCCESS;
     }

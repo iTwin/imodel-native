@@ -891,7 +891,8 @@ BentleyStatus ECDbAdapter::DeleteRelationship(ECRelationshipClassCP relClass, EC
     ECInstanceKey relationship = FindRelationship(relClass, source, target);
     if (!relationship.IsValid())
         {
-        return ERROR;
+        // Nothing to delete
+        return SUCCESS;
         }
     return DeleteInstance(relationship.GetECClassId(), relationship.GetECInstanceId());
     }
@@ -1189,6 +1190,12 @@ ECInstanceKeyCR instanceToDelete,
 bset<ECInstanceKey>& allInstancesBeingDeletedOut
 )
     {
+    if (!instanceToDelete.IsValid())
+        {
+        BeAssert(false && "ECInstanceKey is invalid");
+        return ERROR;
+        }
+
     auto it = allInstancesBeingDeletedOut.find(instanceToDelete);
     if (it != allInstancesBeingDeletedOut.end())
         {
