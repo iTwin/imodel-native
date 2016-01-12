@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/Annotations/AnnotationLeaderDraw.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h> 
@@ -196,7 +196,7 @@ static CurveVectorPtr createEffectiveLineGeometry(CurveVectorCR originalLineGeom
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     06/2014
 //---------------------------------------------------------------------------------------
-BentleyStatus AnnotationLeaderDraw::Draw(ViewContextR context) const
+BentleyStatus AnnotationLeaderDraw::Draw(Render::GraphicR graphic, ViewContextR context, GeometryParamsR geomParams) const
     {
 #if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     AnnotationLeaderStylePtr leaderStyle = m_leaderLayout->GetLeader().CreateEffectiveStyle();

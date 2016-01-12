@@ -3144,7 +3144,7 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicR graphic, ViewContextR c
             case GeometryStreamIO::OpCode::BRepEdges:
                 {
                 // Don't increment GeometryStreamEntryId...
-                if (!(isPick || isQVWireframe)) // NEEDSWORK: Assumes QVElems are per-view...otherwise must setup WF only matsymb like Vancouver...
+                if (!(isPick || isQVWireframe))
                     break;
 
                 if (!DrawHelper::IsGeometryVisible(context, geomParams))
@@ -3163,7 +3163,7 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicR graphic, ViewContextR c
             case GeometryStreamIO::OpCode::BRepFaceIso:
                 {
                 // Don't increment GeometryStreamEntryId...
-                if (!(isPick || isQVWireframe)) // NEEDSWORK: Assumes QVElems are per-view...otherwise must setup WF only matsymb like Vancouver...
+                if (!(isPick || isQVWireframe))
                     break;
 
                 if (!DrawHelper::IsGeometryVisible(context, geomParams))
@@ -4215,7 +4215,6 @@ bool GeometryBuilder::Append(TextStringCR text)
     return AppendWorld(*GeometricPrimitive::Create(text));
     }
 
-#if defined (NEEDSWORK_RENDER_GRAPHIC)
 BEGIN_UNNAMED_NAMESPACE
 
 //=======================================================================================
@@ -4225,70 +4224,60 @@ BEGIN_UNNAMED_NAMESPACE
 struct TextAnnotationDrawToGeometricPrimitive : IGeometryProcessor
 {
 private:
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    TextAnnotationDrawCR m_annotationDraw;
-#endif
-    GeometryBuilderR m_builder;
-    DgnCategoryId m_categoryId;
-    Transform m_transform;
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    Transform m_geomToElem;
-#endif
+    GeometryBuilderR    m_builder;
+    TextAnnotationCR    m_text;
+    Transform           m_geomToElem;
 
 public:
-    TextAnnotationDrawToGeometricPrimitive(TextAnnotationDrawCR annotationDraw, TransformCR geomToElem, GeometryBuilderR builder, DgnCategoryId categoryId) :
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-        m_annotationDraw(annotationDraw), 
-#endif
-        m_builder(builder), m_categoryId(categoryId), 
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-        m_geomToElem (geomToElem), 
-#endif
-        m_transform(Transform::FromIdentity()) {}
+    TextAnnotationDrawToGeometricPrimitive(TextAnnotationCR text, TransformCR geomToElem, GeometryBuilderR builder) : m_text(text), m_geomToElem(geomToElem), m_builder(builder) {}
 
-    virtual void _AnnounceTransform(TransformCP transform) override { if (nullptr != transform) { m_transform = *transform; } else { m_transform.InitIdentity(); } }
-    virtual void _AnnounceGeometryParams(GeometryParamsCR params) override { m_builder.Append(params); }
-    virtual BentleyStatus _ProcessTextString(TextStringCR) override;
-    virtual BentleyStatus _ProcessCurveVector(CurveVectorCR, bool isFilled) override;
+    virtual bool _ProcessTextString(TextStringCR, SimplifyGraphic const&) override;
+    virtual bool _ProcessCurveVector(CurveVectorCR, bool isFilled, SimplifyGraphic const&) override;
     virtual void _OutputGraphics(ViewContextR) override;
 };
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     09/2015
 //---------------------------------------------------------------------------------------
-BentleyStatus TextAnnotationDrawToGeometricPrimitive::_ProcessTextString(TextStringCR text)
+bool TextAnnotationDrawToGeometricPrimitive::_ProcessTextString(TextStringCR text, SimplifyGraphic const& graphic)
     {
-    if (m_transform.IsIdentity())
+    m_builder.Append(graphic.GetCurrentGeometryParams()); // NOTE: Actual append happens when geometric primitive is added only if changed...
+
+    if (graphic.GetLocalToWorldTransform().IsIdentity())
         {
         m_builder.Append(text);
-        }
-    else
-        {
-        TextString transformedText(text);
-        transformedText.ApplyTransform(m_transform);
-        m_builder.Append(transformedText);
+
+        return true;
         }
 
-    return SUCCESS; // SUCCESS means handled
+    TextString transformedText(text);
+
+    transformedText.ApplyTransform(graphic.GetLocalToWorldTransform());
+    m_builder.Append(transformedText);
+
+    return true;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     09/2015
 //---------------------------------------------------------------------------------------
-BentleyStatus TextAnnotationDrawToGeometricPrimitive::_ProcessCurveVector(CurveVectorCR curves, bool isFilled)
+bool TextAnnotationDrawToGeometricPrimitive::_ProcessCurveVector(CurveVectorCR curves, bool isFilled, SimplifyGraphic const& graphic)
     {
-    if (m_transform.IsIdentity())
+    m_builder.Append(graphic.GetCurrentGeometryParams()); // NOTE: Actual append happens when geometric primitive is added only if changed...
+
+    if (graphic.GetLocalToWorldTransform().IsIdentity())
         {
         m_builder.Append(curves);
-        }
-    else
-        {
-        CurveVector transformedCurves(curves);
-        transformedCurves.TransformInPlace(m_transform);
-        m_builder.Append(transformedCurves);
+
+        return true;
         }
 
-    return SUCCESS; // SUCCESS means handled
+    CurveVector transformedCurves(curves);
+
+    transformedCurves.TransformInPlace(graphic.GetLocalToWorldTransform());
+    m_builder.Append(transformedCurves);
+
+    return true;
     }
 
 //---------------------------------------------------------------------------------------
@@ -4296,31 +4285,27 @@ BentleyStatus TextAnnotationDrawToGeometricPrimitive::_ProcessCurveVector(CurveV
 //---------------------------------------------------------------------------------------
 void TextAnnotationDrawToGeometricPrimitive::_OutputGraphics(ViewContextR context)
     {
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    context.PushTransform(m_geomToElem);
-    context.GetCurrentDisplayParams().SetCategoryId(m_categoryId);
-    m_annotationDraw.Draw(context);
-    context.PopTransformClip();
-#endif
+    TextAnnotationDraw annotationDraw(m_text);
+
+    annotationDraw.SetDocumentTransform(m_geomToElem);
+
+    Render::GeometryParams geomParams(m_builder.GetGeometryParams());
+
+    Render::GraphicPtr graphic = annotationDraw.Draw(context, geomParams);
     }
 
 END_UNNAMED_NAMESPACE
-#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool GeometryBuilder::Append(TextAnnotationCR text, TransformCR transform)
     {
-#if defined (NEEDSWORK_RENDER_GRAPHIC)
-    TextAnnotationDraw annotationDraw(text);
-    TextAnnotationDrawToGeometricPrimitive annotationDrawToGeom(annotationDraw, transform, *this, m_elParams.GetCategoryId());
-    GeometryProcessor::Process(annotationDrawToGeom, m_dgnDb);
+    TextAnnotationDrawToGeometricPrimitive annotationDraw(text, transform, *this);
+
+    GeometryProcessor::Process(annotationDraw, m_dgnDb);
 
     return true;
-#else
-    return false;
-#endif
     }
 
 /*---------------------------------------------------------------------------------**//**

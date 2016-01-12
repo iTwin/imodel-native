@@ -1,6 +1,6 @@
 //-------------------------------------------------------------------------------------- 
 //     $Source: PublicAPI/DgnPlatform/Annotations/AnnotationFrameDraw.h $
-//  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //-------------------------------------------------------------------------------------- 
 #pragma once
 
@@ -39,7 +39,7 @@ public:
 
     AnnotationFrameLayoutCR GetFrameLayout() const { return *m_frameLayout; }
 
-    DGNPLATFORM_EXPORT BentleyStatus Draw(ViewContextR) const;
+    DGNPLATFORM_EXPORT BentleyStatus Draw(Render::GraphicR, ViewContextR, Render::GeometryParamsR) const;
 };
 
 //! @endGroup
