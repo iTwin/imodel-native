@@ -2,7 +2,7 @@
 |
 |     $Source: BaseGeoCoord/PublicAPI/BaseGeoCoord.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -10,6 +10,8 @@
 /*__PUBLISH_SECTION_START__*/
 #include <Geom/GeomApi.h>
 #include "BaseGeoDefs.r.h"
+
+#include    <GeoCoord/IGeoTiffKeysList.h>
 
 typedef struct cs_Csprm_    CSParameters;
 
@@ -131,6 +133,7 @@ typedef class BaseGCS const*            BaseGCSCP;
 typedef class BaseGCS&                  BaseGCSR;
 typedef class BaseGCS const&            BaseGCSCR;
 typedef RefCountedPtr<BaseGCS>          BaseGCSPtr;
+typedef RefCountedCPtr<BaseGCS>         BaseGCSCPtr;
 
 typedef class LocalTransformer*         LocalTransformerP;
 typedef class LocalTransformer const*   LocalTransformerCP;
@@ -165,15 +168,18 @@ typedef class DatumConverter*       DatumConverterP;
 +===============+===============+===============+===============+===============+======*/
 MPUBLIC class EXPORT_VTABLE_ATTRIBUTE BaseGCS : public RefCountedBase
 {
+private:
+static bool                 s_geoCoordInitialized;  // global that indicates if the geocoord engine was initialized. If not then no GCS can 
+                                                            // be created which renders the whole system non-operational
 protected:
 CSParameters*           	m_csParameters;                 // all coordinate system parameters, gathered for use by the CSMap transformation functions.
 mutable BaseGCSCP          	m_destinationGCS;            // current destination coordinate system.
 mutable bvector<BaseGCSCP> 	m_listOfPointingGCS;         // List of BaseGCS that are using the current BaseGCS as a cached destination GCS      
 mutable DatumConverterP 	m_datumConverter;               // datum converter from this Lat/Long to the Lat/Long of m_destinationGCS.
 bool                    	m_reprojectElevation;           // if true, LatLongFromLatLong adjusts elevation values.
-int32_t                  m_coordSysId;                   // our internal coordinate system ID
+int32_t                     m_coordSysId;                   // our internal coordinate system ID
 VertDatumCode           	m_verticalDatum;
-int32_t                  m_csError;
+mutable int32_t             m_csError;
 bool                    	m_canEdit;
 mutable LibraryP        	m_sourceLibrary;                // The library from which the GCS originated. NULL means system library.
 mutable bool            	m_failedToFindSourceLibrary;    // We tried to find the source library, but were unable to do so.
@@ -187,6 +193,11 @@ mutable WStringP        	m_datumDescriptionString;
 mutable WStringP        	m_ellipsoidNameString;
 mutable WStringP        	m_ellipsoidDescriptionString;
 
+mutable bvector<IGeoTiffKeysList::GeoKeyItem> 
+                            m_originalGeoKeys;     // A size of 0 indicates that the BaseGCS was not initialized from GeoTiffKeys or has been modified since init.
+mutable WStringP            m_originalWKT;         // A NULL or empty string indicates the BaseGCS was not initialized from a Well Known Text or as been modified since init.
+
+mutable bool                m_modified;            // Indicates if the BaseGCS has been modified from original definition. At the moment it is only internal.
 /// @cond NODOC
 friend struct GeoTiffKeyInterpreter;
 friend struct GeoTiffKeyCreator;
@@ -259,6 +270,16 @@ BASEGEOCOORD_EXPORTED void RegisterIsADestinationOf(BaseGCSCR baseGCSThatUsesCur
 +---------------+---------------+---------------+---------------+---------------+------*/
 BASEGEOCOORD_EXPORTED void UnRegisterIsADestinationOf(BaseGCSCR baseGCSThatUsesCurrentAsADestination) const;
 
+/*---------------------------------------------------------------------------------**//**
+* Called to indicate the BaseGCS has been modified or not from the original definition.
+* this internal method should be called with true whenever a definition parameter is set
+* and called false whenever the definition is complete from one of the Init method
+* or a call to DefinitionComplete()
+* @bsimethod                                    Alain.Robert                   11/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+void SetModified(bool modified);
+
+
 public:
 
 BASEGEOCOORD_EXPORTED static BaseGCSPtr CreateGCS (CSParameters const& csParameters, int32_t coordSysId);
@@ -274,6 +295,16 @@ public:
 * @bsimethod                                                    Barry.Bentley   04/08
 +---------------+---------------+---------------+---------------+---------------+------*/
 BASEGEOCOORD_EXPORTED static void       Initialize (WCharCP dataDirectory);
+
+/*---------------------------------------------------------------------------------**//**
+* Indicates if the Geographic Coordinate System library was initialized.
+ MicroStation performs the
+* initialization if running within that environment. If basegeocoord.dll is used by
+* a standalone program, that program is responsible for initialization.
+* @return true if geocoord has been initialized.
+* @bsimethod                                                    Alain.Robert   11/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+BASEGEOCOORD_EXPORTED static bool       IsLibraryInitialized ();
 
 public:
 
@@ -432,14 +463,18 @@ int                     epsgCode
 /*---------------------------------------------------------------------------------**//**
 * Gets the Well Known Text string from a coordinate system definition.
 * @return   SUCCESS or a CS_MAP error code.
-* @param    wellKnownText   Out     The Well Known Text specifying the coordinate system.
-* @param    wktFlavor       IN      The WKT Flavor desired. If not known, use wktFlavorUnknown
+* @param    wellKnownText     Out     The Well Known Text specifying the coordinate system.
+* @param    wktFlavor         IN      The WKT Flavor desired. If not known, use wktFlavorUnknown
+* @param    originalIfPresent IN      true indicates that if the BaseGCS originates from a 
+*                                     WKT fragment then this WKT should be returned. In this
+*                                     case the wktFlavor is only used if an original was not present.
 * @bsimethod                                                    Barry.Bentley   10/06
 +---------------+---------------+---------------+---------------+---------------+------*/
 BASEGEOCOORD_EXPORTED StatusInt         GetWellKnownText
 (
 WStringR                wellKnownText,
-WktFlavor               wktFlavor
+WktFlavor               wktFlavor,
+bool                    originalIfPresent
 ) const;
 
 /*---------------------------------------------------------------------------------**//**
@@ -447,30 +482,45 @@ WktFlavor               wktFlavor
 * This compound coordinate system is composed of a PROJCS or GEOCS section followed
 * by a VERT_CS section that contains the definition of the vertical datum used.
 * @return   SUCCESS or a CS_MAP error code.
-* @param    wellKnownText   Out     The Well Known Text specifying the coordinate system.
-* @param    wktFlavor       IN      The WKT Flavor desired. If not known, use wktFlavorUnknown
-* @bsimethod                                                    Barry.Bentley   10/06
+* @param    wellKnownText     Out   The Well Known Text specifying the coordinate system.
+* @param    wktFlavor         IN    The WKT Flavor desired. If not known, use wktFlavorUnknown
+* @param    originalIfPresent IN    true indicates that if the BaseGCS originates from a 
+*                                   WKT fragment then this WKT should be returned. In this
+*                                   case the wktFlavor is only used if an original was not present.
+*                                   Note that if the original was not a compound WKT but a plain
+*                                   WKT then this original fragment will be used internally
+*                                   in the composition of the compound WKT.
+*                                    
+* @bsimethod                                                    Alain.Robert   07/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 BASEGEOCOORD_EXPORTED StatusInt         GetCompoundCSWellKnownText
 (
 WStringR                wellKnownText,
-WktFlavor               wktFlavor
+WktFlavor               wktFlavor,
+bool                    originalIfPresent
 ) const;
 
 /*---------------------------------------------------------------------------------**//**
 * Used in conjunction with the CreateGCS factory method to set the BaseGCS from a
-* set of GeoTiff Keys.
+* set of GeoTiff Keys. Note that the original list of geotiff keys will be preserved
+* inside the BaseGCS object. This mechansim allows to obtain the geotiff keys exactly
+* as they were when interpreted for the sake of comformity to a client data standard.
 * @return   SUCCESS, a CS_MAP error code, or a GeoCoord error code.
 * @param    warning         OUT     if non-NULL, this might reveal a warning even if the return value is SUCCESS.
 * @param    warningErrorMsg OUT     if non-NULL, the WString is filled in with the CS_MAP warning or error message.
 * @param    geoTiffKeys     IN      an object implementing the IGeoTiffKeysList interface.
+* @param    allowUnitsOverride IN   if true then default units can be overriden by the presence
+*                                   a proj linear unit even though the units associated to
+*                                   the GCS specifies different units
+*                                   This parameter is necessary since many client make use of this mechanism.
 * @bsimethod                                                    Barry.Bentley   10/06
 +---------------+---------------+---------------+---------------+---------------+------*/
 BASEGEOCOORD_EXPORTED StatusInt         InitFromGeoTiffKeys
 (
 StatusInt*                  warning,
 WStringP                    warningErrorMsg,
-::IGeoTiffKeysList const*   geoTiffKeys
+::IGeoTiffKeysList const*   geoTiffKeys,
+bool                        allowUnitsOverride
 );
 
 /*__PUBLISH_SECTION_END__*/
@@ -487,11 +537,16 @@ BASEGEOCOORD_EXPORTED StatusInt         SetFromCSName (WCharCP coordinateSystemK
 * set of GeoTiff Keys.
 * @return   SUCCESS, a CS_MAP error code, or a GeoCoord error code.
 * @param    geoTiffKeys     IN      an object implementing the IGeoTiffKeysList interface.
+* @param    originalsIfPresent IN true indicates that original geokeys should be returned
+*                                 if the baseGCS was originally created using geo keys and
+*                                 was not modified. (addition Alain Robert 11/2015)
 * @bsimethod                                                    Barry.Bentley   10/06
 +---------------+---------------+---------------+---------------+---------------+------*/
-BASEGEOCOORD_EXPORTED StatusInt         SetGeoTiffKeys
+BASEGEOCOORD_EXPORTED StatusInt         GetGeoTiffKeys
 (
-::IGeoTiffKeysList*     geoTiffKeys         // The GeoTiff keys list.
+::IGeoTiffKeysList*     geoTiffKeys,         // The GeoTiff keys list.
+bool                    originalsIfPresent   // true indicates the original geokeys should be returned
+
 ) const;
 
 /*---------------------------------------------------------------------------------**//**

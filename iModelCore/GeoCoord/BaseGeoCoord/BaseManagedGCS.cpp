@@ -2,7 +2,7 @@
 |
 |   $Source: BaseGeoCoord/BaseManagedGCS.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +----------------------------------------------------------------------*/
 #pragma  warning(disable:4189) // local variable is initialized but not referenced
@@ -877,12 +877,13 @@ enum class RangeTestResult
 StatusInt       GetWellKnownText
 (
 [SRI::Out] String^%         wellKnownText,
-WellKnownTextFlavor         flavor
+WellKnownTextFlavor         flavor,
+bool                        originalIfPresent
 )
     {
     WString wktString;
     StatusInt status;
-    if (SUCCESS == (status = m_baseGCSPeer->GetWellKnownText (wktString, (BGC::BaseGCS::WktFlavor) flavor)))
+    if (SUCCESS == (status = m_baseGCSPeer->GetWellKnownText (wktString, (BGC::BaseGCS::WktFlavor) flavor, originalIfPresent)))
         wellKnownText = gcnew String (wktString.c_str());
     else
         wellKnownText = String::Empty;

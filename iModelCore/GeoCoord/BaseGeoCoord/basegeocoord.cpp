@@ -2,7 +2,7 @@
 |
 |   $Source: BaseGeoCoord/basegeocoord.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +----------------------------------------------------------------------*/
 #ifdef _MSC_VER
@@ -30,7 +30,7 @@
 
 #endif
 
-#include    <GeoCoord/IGeoTiffKeysList.h>
+
 #include    <Bentley/BeFileName.h>
 
 #include <algorithm>
@@ -72,6 +72,8 @@ extern  bool CS_wktDatumLookUp (const char* datumNameInWkt, char* csDatumName);
 BEGIN_BENTLEY_NAMESPACE
 
 namespace GeoCoordinates {
+
+bool BaseGCS::s_geoCoordInitialized = false;
 
 struct CoordSysData
 {
@@ -237,29 +239,29 @@ virtual ~SRSWKTParser()
 /*---------------------------------------------------------------------------------**//**
 *   @bsimethod                                                  Alain Robert 2004/08
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt Process (BaseGCSPtr baseGCS, WCharCP wktChar)
+StatusInt Process (BaseGCSR baseGCS, WCharCP wktChar)
     {
     WString wkt(wktChar);
     StatusInt status = SUCCESS;
 
     // First thing we do is allocate the m_csParameter structure of the GCS (using a known definition)
-    baseGCS->SetFromCSName (L"LL84");
-    baseGCS->SetName (L"");
-    baseGCS->SetDescription (L"");
-    baseGCS->SetSource(L"");
+    baseGCS.SetFromCSName (L"LL84");
+    baseGCS.SetName (L"");
+    baseGCS.SetDescription (L"");
+    baseGCS.SetSource(L"");
     // Wipe the group name for future definition complete
-    if (baseGCS->GetCSParameters() != NULL)
+    if (baseGCS.GetCSParameters() != NULL)
         {
-        baseGCS->GetCSParameters()->csdef.group[0] = '\0';
+        baseGCS.GetCSParameters()->csdef.group[0] = '\0';
         // Wipe min / max so they can be computed
-        baseGCS->GetCSParameters()->csdef.ll_min[LNG] = 0.0;
-        baseGCS->GetCSParameters()->csdef.ll_min[LAT] = 0.0;
-        baseGCS->GetCSParameters()->csdef.ll_max[LNG] = 0.0;
-        baseGCS->GetCSParameters()->csdef.ll_max[LAT] = 0.0;
-        baseGCS->GetCSParameters()->csdef.xy_min[XX] = 0.0;
-        baseGCS->GetCSParameters()->csdef.xy_min[YY] = 0.0;
-        baseGCS->GetCSParameters()->csdef.xy_max[XX] = 0.0;
-        baseGCS->GetCSParameters()->csdef.xy_max[YY] = 0.0;
+        baseGCS.GetCSParameters()->csdef.ll_min[LNG] = 0.0;
+        baseGCS.GetCSParameters()->csdef.ll_min[LAT] = 0.0;
+        baseGCS.GetCSParameters()->csdef.ll_max[LNG] = 0.0;
+        baseGCS.GetCSParameters()->csdef.ll_max[LAT] = 0.0;
+        baseGCS.GetCSParameters()->csdef.xy_min[XX] = 0.0;
+        baseGCS.GetCSParameters()->csdef.xy_min[YY] = 0.0;
+        baseGCS.GetCSParameters()->csdef.xy_max[XX] = 0.0;
+        baseGCS.GetCSParameters()->csdef.xy_max[YY] = 0.0;
         }
 
     if ((wkt.length() >= 6) && (wkt.substr (0, 6) == (L"PROJCS")))
@@ -292,7 +294,7 @@ private:
 *
 *   @bsimethod                                                  Alain Robert 2004/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt GetProjected (BaseGCSPtr baseGCS, WStringR wkt) const
+StatusInt GetProjected (BaseGCSR baseGCS, WStringR wkt) const
     {
     double conversionToDegree = 1.0;
     bool geocsPresent = false;
@@ -319,7 +321,7 @@ StatusInt GetProjected (BaseGCSPtr baseGCS, WStringR wkt) const
     if (foundUnitCode < 0)
         return ERROR;
 
-    baseGCS->SetUnitCode (foundUnitCode);
+    baseGCS.SetUnitCode (foundUnitCode);
 
 
     wkt.Trim();
@@ -433,7 +435,7 @@ StatusInt GetProjected (BaseGCSPtr baseGCS, WStringR wkt) const
         {
 //TBD Search for an existing equivalent
 //compare if required
-//        baseGCS->SetKey (authorityID->GetKey());
+//        baseGCS.SetKey (authorityID->GetKey());
         }
 #endif
 
@@ -441,11 +443,11 @@ StatusInt GetProjected (BaseGCSPtr baseGCS, WStringR wkt) const
     if (!geocsPresent)
         return ERROR;
 
-    baseGCS->SetName (name.c_str());
-    baseGCS->SetDescription (name.c_str());
-    baseGCS->SetSource(L"WKT");
+    baseGCS.SetName (name.c_str());
+    baseGCS.SetDescription (name.c_str());
+    baseGCS.SetSource(L"WKT");
 
-    return baseGCS->DefinitionComplete();
+    return baseGCS.DefinitionComplete();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -460,7 +462,7 @@ StatusInt GetProjected (BaseGCSPtr baseGCS, WStringR wkt) const
 *
 *   @bsimethod                                                  Alain Robert 2015/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt GetCompound (BaseGCSPtr baseGCS, WStringR wkt) const
+StatusInt GetCompound (BaseGCSR baseGCS, WStringR wkt) const
     {
     StatusInt status = SUCCESS;
 
@@ -528,7 +530,7 @@ StatusInt GetCompound (BaseGCSPtr baseGCS, WStringR wkt) const
     // Complete BaseGCS
     if (ERROR != status)
         {
-        status =  baseGCS->DefinitionComplete();
+        status =  baseGCS.DefinitionComplete();
         }
 
     return status;
@@ -665,7 +667,7 @@ VertDatumCode GetVerticalDatum (WStringR wkt) const
 *
 *   @bsimethod                                                  Alain Robert 2015/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt SetVerticalCS (BaseGCSPtr baseGCS, WStringR wkt) const
+StatusInt SetVerticalCS (BaseGCSR baseGCS, WStringR wkt) const
     {
     if ((wkt.length() < 7) || (!(wkt.substr (0, 7) == L"VERT_CS")))
         return ERROR;
@@ -749,7 +751,7 @@ StatusInt SetVerticalCS (BaseGCSPtr baseGCS, WStringR wkt) const
     // NOTE: We only rely on the authority ID because the name is unthrustworty but if some
     // standard emerges we will be happy to check the vertical cs names to resolve.
 
-    baseGCS->SetVerticalDatumCode (vertDatum);
+    baseGCS.SetVerticalDatumCode (vertDatum);
 
     return SUCCESS;
     }
@@ -766,7 +768,7 @@ StatusInt SetVerticalCS (BaseGCSPtr baseGCS, WStringR wkt) const
 *
 *   @bsimethod                                                  Alain Robert 2004/04
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt GetGeographic (BaseGCSPtr baseGCS, WStringR wkt) const
+StatusInt GetGeographic (BaseGCSR baseGCS, WStringR wkt) const
     {
     if ((wkt.length() < 6) || (!(wkt.substr (0, 6) == L"GEOGCS")))
         return ERROR;
@@ -785,15 +787,15 @@ StatusInt GetGeographic (BaseGCSPtr baseGCS, WStringR wkt) const
         if (geographicAuthorityID.length() > 0)
             {
 // TBD Search for existing entry in dictionary and compare...
-//        baseGCS->SetKey (authorityID->GetKey());
+//        baseGCS.SetKey (authorityID->GetKey());
             }
 #endif
 
-        baseGCS->SetName (geographicName.c_str());
-        baseGCS->SetDescription (geographicName.c_str());
-        baseGCS->SetSource(L"WKT");
+        baseGCS.SetName (geographicName.c_str());
+        baseGCS.SetDescription (geographicName.c_str());
+        baseGCS.SetSource(L"WKT");
 
-        return baseGCS->DefinitionComplete();
+        return baseGCS.DefinitionComplete();
         }
     return status;
     }
@@ -810,7 +812,7 @@ StatusInt GetGeographic (BaseGCSPtr baseGCS, WStringR wkt) const
 *
 *   @bsimethod                                                  Alain Robert 2004/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt GetLocal (BaseGCSPtr baseGCS, WStringR wkt) const
+StatusInt GetLocal (BaseGCSR baseGCS, WStringR wkt) const
     {
     StatusInt status = SUCCESS;
 
@@ -837,8 +839,8 @@ StatusInt GetLocal (BaseGCSPtr baseGCS, WStringR wkt) const
     WString authorityID = GetAuthorityIdFromNameOracleStyle(name);
 
 
-    baseGCS->SetProjectionCode (BaseGCS::pcvNonEarth);
-    baseGCS->SetDatumCode (-1);
+    baseGCS.SetProjectionCode (BaseGCS::pcvNonEarth);
+    baseGCS.SetDatumCode (-1);
 
     bool sectionCompleted = false;
     size_t previousLength;
@@ -888,15 +890,15 @@ StatusInt GetLocal (BaseGCSPtr baseGCS, WStringR wkt) const
     if (authorityID.length() > 0)
         {
 // TBD Search for entry in dictionary
-//        baseGCS->SetKey (authorityID->GetKey());
+//        baseGCS.SetKey (authorityID->GetKey());
         }
 #endif
 
-    baseGCS->SetName (name.c_str());
-    baseGCS->SetDescription (name.c_str());
-    baseGCS->SetSource(L"WKT");
+    baseGCS.SetName (name.c_str());
+    baseGCS.SetDescription (name.c_str());
+    baseGCS.SetSource(L"WKT");
 
-    return baseGCS->DefinitionComplete();
+    return baseGCS.DefinitionComplete();
     }
 
 
@@ -914,7 +916,7 @@ StatusInt GetLocal (BaseGCSPtr baseGCS, WStringR wkt) const
 *
 *   @bsimethod                                                  Alain Robert 2004/04
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt GetGeographicToProjected (WStringR wkt, double* conversionToDegree, BaseGCSPtr coordinateSystem) const
+StatusInt GetGeographicToProjected (WStringR wkt, double* conversionToDegree, BaseGCSR coordinateSystem) const
     {
     WString geographicName;
     WString geographicAuthorityID;
@@ -946,7 +948,7 @@ StatusInt GetGeographicToProjected (WStringR wkt, double* conversionToDegree, Ba
 *
 *   @bsimethod                                                  Alain Robert 2004/04
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt GetGeographicToCoordSys (WStringR wkt, WStringR geographicName, WStringR geographicAuthorityID, double* conversionToDegree, BaseGCSPtr coordinateSystem) const
+StatusInt GetGeographicToCoordSys (WStringR wkt, WStringR geographicName, WStringR geographicAuthorityID, double* conversionToDegree, BaseGCSR coordinateSystem) const
     {
     StatusInt status = SUCCESS;
 
@@ -973,7 +975,7 @@ StatusInt GetGeographicToCoordSys (WStringR wkt, WStringR geographicName, WStrin
     geographicName = GetName (wkt);
     bool sectionCompleted = false;
 
-    coordinateSystem->SetProjectionCode (BaseGCS::pcvUnity);
+    coordinateSystem.SetProjectionCode (BaseGCS::pcvUnity);
 
     size_t previousLength;
     while (wkt.length() > 0 && !sectionCompleted)
@@ -1083,7 +1085,7 @@ int     FindDatumIndex (WCharCP datumName) const
 *
 *   @bsimethod                                                  Alain Robert 2004/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt GetHorizontalDatumToCoordSys (WStringR wkt, BaseGCSPtr coordinateSystem) const
+StatusInt GetHorizontalDatumToCoordSys (WStringR wkt, BaseGCSR coordinateSystem) const
     {
     StatusInt status = SUCCESS;
     wkt.Trim();
@@ -1211,7 +1213,7 @@ StatusInt GetHorizontalDatumToCoordSys (WStringR wkt, BaseGCSPtr coordinateSyste
         int foundIndex = FindDatumIndex (finalDatumName.c_str());
 
         if (foundIndex >= 0)
-            coordinateSystem->SetDatumCode (foundIndex);
+            coordinateSystem.SetDatumCode (foundIndex);
         else
             return ERROR;
 
@@ -1235,7 +1237,7 @@ StatusInt GetHorizontalDatumToCoordSys (WStringR wkt, BaseGCSPtr coordinateSyste
 *
 *   @bsimethod                                                  Alain Robert 2004/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt GetEllipsoidToCoordSys (WStringR wkt, BaseGCSPtr coordinateSystem) const
+StatusInt GetEllipsoidToCoordSys (WStringR wkt, BaseGCSR coordinateSystem) const
     {
     StatusInt status = SUCCESS;
     wkt.Trim();
@@ -1313,7 +1315,7 @@ StatusInt GetEllipsoidToCoordSys (WStringR wkt, BaseGCSPtr coordinateSystem) con
 *
 *   @bsimethod                                                  Alain Robert 2004/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt GetPrimeMeridianToCoordSys (WStringR wkt, BaseGCSPtr coordinateSystem) const
+StatusInt GetPrimeMeridianToCoordSys (WStringR wkt, BaseGCSR coordinateSystem) const
     {
     StatusInt status = SUCCESS;
     wkt.Trim();
@@ -1368,9 +1370,9 @@ StatusInt GetPrimeMeridianToCoordSys (WStringR wkt, BaseGCSPtr coordinateSystem)
     // CSMAP only supports prime meridian values other than Greenwish for
     // lat/long GCS all other projections must use Greenwish.
 
-    if (BaseGCS::pcvUnity == coordinateSystem->GetProjectionCode())
+    if (BaseGCS::pcvUnity == coordinateSystem.GetProjectionCode())
         {
-        coordinateSystem->SetOriginLongitude (longitude);
+        coordinateSystem.SetOriginLongitude (longitude);
         }
     else if ((longitude > (0.00000001)) || (longitude < (-0.00000001))) // Check longitude is zero for any other projections
         return ERROR;
@@ -1397,7 +1399,7 @@ StatusInt GetPrimeMeridianToCoordSys (WStringR wkt, BaseGCSPtr coordinateSystem)
 *
 *   @bsimethod                                                  Alain Robert 2004/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt GetProjectionToCoordSys (WStringR wkt,double conversionToDegree, BaseGCSPtr coordinateSystem) const
+StatusInt GetProjectionToCoordSys (WStringR wkt,double conversionToDegree, BaseGCSR coordinateSystem) const
     {
 
     StatusInt status = SUCCESS;
@@ -1430,7 +1432,7 @@ StatusInt GetProjectionToCoordSys (WStringR wkt,double conversionToDegree, BaseG
     if (BaseGCS::pcvInvalid == projectionCode)
         return ERROR;
 
-    coordinateSystem->SetProjectionCode (projectionCode);
+    coordinateSystem.SetProjectionCode (projectionCode);
 
     wkt.Trim();
 
@@ -1716,7 +1718,7 @@ StatusInt GetExtension (WStringR wkt, WStringR extensionName, WStringR extension
 *
 *   @bsimethod                                                  Alain Robert 2004/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt GetLinearUnitToCoordSys (WStringR wkt, BaseGCSPtr coordinateSystem) const
+StatusInt GetLinearUnitToCoordSys (WStringR wkt, BaseGCSR coordinateSystem) const
     {
     StatusInt   status = SUCCESS;
     double      unitFactor;
@@ -1744,7 +1746,7 @@ StatusInt GetLinearUnitToCoordSys (WStringR wkt, BaseGCSPtr coordinateSystem) co
     if (foundUnitCode < 0)
         return ERROR;
 
-    coordinateSystem->SetUnitCode (foundUnitCode);
+    coordinateSystem.SetUnitCode (foundUnitCode);
 
     return status;
     }
@@ -2002,7 +2004,7 @@ AxisDirection GetAxis (WStringR wkt) const
 *
 *   @bsimethod                                                  Alain Robert 2004/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt GetLocalDatumToCoordSys (WStringR wkt, BaseGCSPtr coordinateSystem) const
+StatusInt GetLocalDatumToCoordSys (WStringR wkt, BaseGCSR coordinateSystem) const
     {
     StatusInt status = SUCCESS;
 
@@ -2065,7 +2067,7 @@ StatusInt GetLocalDatumToCoordSys (WStringR wkt, BaseGCSPtr coordinateSystem) co
 *
 *   @bsimethod                                                  Alain Robert 2004/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt GetTOWGS84ToCoordSys (WStringR wkt, BaseGCSPtr coordinateSystem) const
+StatusInt GetTOWGS84ToCoordSys (WStringR wkt, BaseGCSR coordinateSystem) const
     {
     StatusInt status = SUCCESS;
 
@@ -2120,7 +2122,7 @@ StatusInt GetTOWGS84ToCoordSys (WStringR wkt, BaseGCSPtr coordinateSystem) const
 *
 *   @bsimethod                                                  Alain Robert 2004/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt Get7ParamsDatumTransformationToCoordSys (WStringR wkt, BaseGCSPtr coordinateSystem) const
+StatusInt Get7ParamsDatumTransformationToCoordSys (WStringR wkt, BaseGCSR coordinateSystem) const
     {
     StatusInt status = SUCCESS;
     double shiftX;
@@ -2556,7 +2558,7 @@ BaseGCS::ProjectionCodeValue GetProjectionCodeFromWKTName (WStringR name) const
 *
 *   @bsimethod                                                  Alain Robert 2004/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt SetParameterToCoordSys (WStringR parameterName, WStringR parameterStringValue, double parameterValue, double conversionToDegree, BaseGCSPtr coordinateSystem) const
+StatusInt SetParameterToCoordSys (WStringR parameterName, WStringR parameterStringValue, double parameterValue, double conversionToDegree, BaseGCSR coordinateSystem) const
     {
 
     // Obtain uppercase value
@@ -2565,48 +2567,48 @@ StatusInt SetParameterToCoordSys (WStringR parameterName, WStringR parameterStri
 
 
     if (upperParameterName == L"FALSE_EASTING")
-        coordinateSystem->SetFalseEasting (parameterValue);
+        coordinateSystem.SetFalseEasting (parameterValue);
     else if (upperParameterName == L"FALSE_NORTHING")
-        coordinateSystem->SetFalseNorthing (parameterValue);
+        coordinateSystem.SetFalseNorthing (parameterValue);
     else if ((upperParameterName == L"LATITUDE_OF_ORIGIN") ||
              (upperParameterName == L"LATITUDE_OF_CENTER") ||
              (upperParameterName == L"CENTRAL_PARALLEL"))
         {
-        if ((BaseGCS::pcvHotineObliqueMercator1XY == coordinateSystem->GetProjectionCode()) ||
-            (BaseGCS::pcvRectifiedSkewOrthomorphic == coordinateSystem->GetProjectionCode()))
-            coordinateSystem->SetCentralPointLatitude (parameterValue * conversionToDegree);
+        if ((BaseGCS::pcvHotineObliqueMercator1XY == coordinateSystem.GetProjectionCode()) ||
+            (BaseGCS::pcvRectifiedSkewOrthomorphic == coordinateSystem.GetProjectionCode()))
+            coordinateSystem.SetCentralPointLatitude (parameterValue * conversionToDegree);
         else
-            coordinateSystem->SetOriginLatitude (parameterValue * conversionToDegree);
+            coordinateSystem.SetOriginLatitude (parameterValue * conversionToDegree);
         }
     else if (upperParameterName == L"CENTRAL_MERIDIAN")
         {
-        if ((BaseGCS::pcvObliqueCylindricalSwiss == coordinateSystem->GetProjectionCode()) ||
-            (BaseGCS::pcvLambertConformalConicTwoParallel == coordinateSystem->GetProjectionCode()) ||
-            (BaseGCS::pcvLambertConformalConicOneParallel == coordinateSystem->GetProjectionCode()) ||     // This fixes TR# 288399
-            (BaseGCS::pcvLambertConformalConicBelgian == coordinateSystem->GetProjectionCode()) ||
-            (BaseGCS::pcvAlbersEqualArea == coordinateSystem->GetProjectionCode()) )
-            coordinateSystem->SetOriginLongitude (parameterValue * conversionToDegree);
-        else if ((BaseGCS::pcvHotineObliqueMercator1XY == coordinateSystem->GetProjectionCode()) ||
-                 (BaseGCS::pcvRectifiedSkewOrthomorphic == coordinateSystem->GetProjectionCode()))
-            coordinateSystem->SetCentralPointLongitude (parameterValue * conversionToDegree);
+        if ((BaseGCS::pcvObliqueCylindricalSwiss == coordinateSystem.GetProjectionCode()) ||
+            (BaseGCS::pcvLambertConformalConicTwoParallel == coordinateSystem.GetProjectionCode()) ||
+            (BaseGCS::pcvLambertConformalConicOneParallel == coordinateSystem.GetProjectionCode()) ||     // This fixes TR# 288399
+            (BaseGCS::pcvLambertConformalConicBelgian == coordinateSystem.GetProjectionCode()) ||
+            (BaseGCS::pcvAlbersEqualArea == coordinateSystem.GetProjectionCode()) )
+            coordinateSystem.SetOriginLongitude (parameterValue * conversionToDegree);
+        else if ((BaseGCS::pcvHotineObliqueMercator1XY == coordinateSystem.GetProjectionCode()) ||
+                 (BaseGCS::pcvRectifiedSkewOrthomorphic == coordinateSystem.GetProjectionCode()))
+            coordinateSystem.SetCentralPointLongitude (parameterValue * conversionToDegree);
         else
-            coordinateSystem->SetCentralMeridian (parameterValue * conversionToDegree);
+            coordinateSystem.SetCentralMeridian (parameterValue * conversionToDegree);
         }
     else if (upperParameterName == L"SCALE_FACTOR")
-        coordinateSystem->SetScaleReduction (parameterValue);
+        coordinateSystem.SetScaleReduction (parameterValue);
     else if (upperParameterName == L"STANDARD_PARALLEL_1")
         {
-        if (BaseGCS::pcvBonne == coordinateSystem->GetProjectionCode())
-            coordinateSystem->SetOriginLatitude (parameterValue * conversionToDegree); // Weird occurence !
+        if (BaseGCS::pcvBonne == coordinateSystem.GetProjectionCode())
+            coordinateSystem.SetOriginLatitude (parameterValue * conversionToDegree); // Weird occurence !
         else
-            coordinateSystem->SetStandardParallel1 (parameterValue * conversionToDegree);
+            coordinateSystem.SetStandardParallel1 (parameterValue * conversionToDegree);
         }
     else if (upperParameterName == L"STANDARD_PARALLEL_2")
-        coordinateSystem->SetStandardParallel2 (parameterValue * conversionToDegree);
+        coordinateSystem.SetStandardParallel2 (parameterValue * conversionToDegree);
     else if (upperParameterName == L"AZIMUTH")
-        coordinateSystem->SetAzimuth (parameterValue * conversionToDegree);
+        coordinateSystem.SetAzimuth (parameterValue * conversionToDegree);
         else if (upperParameterName == L"ZONENUMBER")
-        coordinateSystem->SetUTMZone ((int)parameterValue);
+        coordinateSystem.SetUTMZone ((int)parameterValue);
         else if (upperParameterName == L"HEMISPHERE")
         {
         int hemisphere;
@@ -2616,12 +2618,12 @@ StatusInt SetParameterToCoordSys (WStringR parameterName, WStringR parameterStri
             hemisphere = 1;
         else
             hemisphere = -1;
-        coordinateSystem->SetHemisphere (hemisphere);
+        coordinateSystem.SetHemisphere (hemisphere);
         }
         else if ((upperParameterName == L"LONGITUDE_OF_ORIGIN") ||
                  (upperParameterName == L"LONGITUDE_OF_CENTER"))
         {
-        switch (coordinateSystem->GetProjectionCode())
+        switch (coordinateSystem.GetProjectionCode())
             {
             case BaseGCS::pcvGaussKrugerTranverseMercator:
             case BaseGCS::pcvTransverseMercator:
@@ -2636,22 +2638,22 @@ StatusInt SetParameterToCoordSys (WStringR parameterName, WStringR parameterStri
             case BaseGCS::pcvTransverseMercatorMinnesota:
             case BaseGCS::pcvTransverseMercatorWisconsin:
             case BaseGCS::pcvObliqueCylindricalSwiss:
-                coordinateSystem->SetCentralMeridian (parameterValue * conversionToDegree);
+                coordinateSystem.SetCentralMeridian (parameterValue * conversionToDegree);
                 break;
 
             case BaseGCS::pcvHotineObliqueMercator1XY:
             case BaseGCS::pcvRectifiedSkewOrthomorphic:
-                coordinateSystem->SetCentralPointLongitude (parameterValue * conversionToDegree);
+                coordinateSystem.SetCentralPointLongitude (parameterValue * conversionToDegree);
                 break;
             default:
-                coordinateSystem->SetOriginLongitude (parameterValue * conversionToDegree);
+                coordinateSystem.SetOriginLongitude (parameterValue * conversionToDegree);
             }
         }
 
         else if (upperParameterName == L"HEIGHT") // Elevation
-        coordinateSystem->SetElevationAboveGeoid (parameterValue);
+        coordinateSystem.SetElevationAboveGeoid (parameterValue);
     else if (upperParameterName == L"PSEUDO_STANDARD_PARALLEL_1")
-        coordinateSystem->SetStandardParallel1 (parameterValue * conversionToDegree);
+        coordinateSystem.SetStandardParallel1 (parameterValue * conversionToDegree);
     else if (upperParameterName == L"XY_PLANE_ROTATION") // OGR weirdness ... Not really supported ... a variant for skew angle which is not supported by CSMAP
         return ERROR;
     else
@@ -2825,6 +2827,22 @@ enum    CoordTransCodes
     CT_TransvMercator_SouthOriented     = 27,
     };
 
+enum VerticalCSCode
+    {
+    // All entries from 5000 to 5099 refer to non-Orthometric (ellipsoid) vertical datums
+    // A set of geotiff keys can define a vertical CS even if no Geographic CS is defined. 
+    // Since a BaseGCS requires the definition of aqn horizontal Geographic Coordinate System and
+    // allowing the vertical CS to refer to a different geodetic datum and ellipsoid would not make sense at all
+    // For this reason we will interpret all values non-orthometric as plain ellipsoidal (refering to the geodetic datum)
+    // regardless the ellipsoid fit or not.
+    VertCS_Newlyn =  5101,
+    VertCS_North_American_Vertical_Datum_1929 =  5102,
+    VertCS_North_American_Vertical_Datum_1988 =  5103,
+    VertCS_Yellow_Sea_1956 = 5104,
+    VertCS_Baltic_Sea =  5105,
+    VertCS_Caspian_Sea = 5106,
+    };
+
 CSDefinition            m_csDef;
 CSDatumDef              m_csDatumDef;
 CSEllipsoidDef          m_csEllipsoidDef;
@@ -2842,6 +2860,7 @@ int                     m_coordSys;
 double                  m_angularUnitsToDegrees;
 double                  m_azimuthUnitsToDegrees;
 double                  m_linearUnitsToMeters;
+VertDatumCode           m_verticalDatum;
 
 #define UserDefinedKeyValue 32767
 #define UnDefinedKeyValue   0            // GeoTIFF indicates value 0 is "undefined"
@@ -2884,6 +2903,8 @@ GeoTiffKeyInterpreter
     m_haveFalseEasting          = false;
     m_haveFalseNorthing         = false;
 
+    m_verticalDatum             = vdcFromDatum;
+
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2894,7 +2915,8 @@ StatusInt       Process
 BaseGCSR                outGCS,
 StatusInt              *warning,            // Warning. Function returns SUCCESS, but some warning desribed in ERRMSG and warning, passed back.
 WStringP                warningOrErrorMsg,  // Error message.
-IGeoTiffKeysList const& geoTiffKeys         // The GeoTiff key list
+IGeoTiffKeysList const& geoTiffKeys,        // The GeoTiff key list
+bool                    allowUnitsOverride   // Indicates if the presence of a unit can override GCS units. 
 )
     {
     if (NULL != warning)
@@ -2940,12 +2962,14 @@ IGeoTiffKeysList const& geoTiffKeys         // The GeoTiff key list
 
             case GeogLinearUnitsGeoKey:
                 // I think the linear units keys for geographic coordinate systems affect only the user defined ellipse major and minor axes.
-                if (IsFatalGeoTiffError (status = ProcessLinearUnitsKey (geoKey, false)))
+                if (IsFatalGeoTiffError (status = ProcessLinearUnitsKey (geoKey, false, true)))
                     return status;
                 break;
 
             case GeogLinearUnitSizeGeoKey:
-                if (IsFatalGeoTiffError (status = ProcessLinearUnitsSizeKey (geoKey, false)))
+                // Even if GeogLinearUnitsGeoKey is not user-defined the Unit Size if specified (this should be an error)
+                // will be applied
+                if (IsFatalGeoTiffError (status = ProcessLinearUnitsSizeKey (geoKey, false, true)))
                     return status;
                 break;
 
@@ -3011,12 +3035,15 @@ IGeoTiffKeysList const& geoTiffKeys         // The GeoTiff key list
                 break;
 
             case ProjLinearUnitsGeoKey:
-                if (IsFatalGeoTiffError (status = ProcessLinearUnitsKey (geoKey, true)))
+
+                if (IsFatalGeoTiffError (status = ProcessLinearUnitsKey (geoKey, true, allowUnitsOverride)))
                     return status;
                 break;
 
             case ProjLinearUnitSizeGeoKey:
-                if (IsFatalGeoTiffError (status = ProcessLinearUnitsSizeKey (geoKey, true)))
+                // Even if GeogLinearUnitsGeoKey is not user-defined the Unit Size if specified (this should be an error)
+                // will be applied
+                if (IsFatalGeoTiffError (status = ProcessLinearUnitsSizeKey (geoKey, true, allowUnitsOverride)))
                     return status;
                 break;
 
@@ -3084,9 +3111,14 @@ IGeoTiffKeysList const& geoTiffKeys         // The GeoTiff key list
 
             // I don't know what to do with these.
             case VerticalCSTypeGeoKey:
-            case VerticalCitationGeoKey:
-            case VerticalDatumGeoKey:
-            case VerticalUnitsGeoKey:
+                if (IsFatalGeoTiffError (status = ProcessVerticalCSTypeKey (geoKey)))
+                    return status;
+                break;
+
+            // The three following are simply ignored.
+            case VerticalCitationGeoKey: // This is informative only
+            case VerticalDatumGeoKey:    // missdefinition of standard ... may conflict with VerticalCSType
+            case VerticalUnitsGeoKey:    // BaseGCS cannot have vertical units different than horizontal units (meters imposed for lat/long)
                 break;
             }
         }
@@ -3139,6 +3171,9 @@ IGeoTiffKeysList const& geoTiffKeys         // The GeoTiff key list
         outGCS.m_sourceLibrary = LibraryManager::Instance()->GetSystemLibrary();
 
         }
+
+    // Now we set the vertical datum regardless GCS is user-defined or not.
+    outGCS.SetVerticalDatumCode(m_verticalDatum);
 
     return SUCCESS;
     }
@@ -3587,8 +3622,12 @@ StatusInt       ProcessEllipsoidKey (IGeoTiffKeysList::GeoKeyItem& geoKey)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   07/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt       ProcessLinearUnitsKey (IGeoTiffKeysList::GeoKeyItem& geoKey, bool projectedCS)
+StatusInt       ProcessLinearUnitsKey (IGeoTiffKeysList::GeoKeyItem& geoKey, bool projectedCS, bool allowUnitsOverride)
     {
+    // Even though the allowUnitsOverride is false and the GCS user defined we will store the linear unit definiton
+    // for the interpretation of the ellispoid dimension yet we will not change the current CS definition unless it is
+    // not a predefined GCS. (user defined GCS will have units applied)
+
     assert (IGeoTiffKeysList::LONG == geoKey.KeyDataType);
     assert ( (ModelTypeProjected == m_modelType) || (ModelTypeGeographic == m_modelType) );
 
@@ -3601,7 +3640,10 @@ StatusInt       ProcessLinearUnitsKey (IGeoTiffKeysList::GeoKeyItem& geoKey, boo
         if ( (pUnit->type == cs_UTYP_LEN) && (geoCode == pUnit->epsgCode) )
             {
             // put the unit info into csDef. Probably all we need is the name.
-            if (projectedCS)
+            // In order to apply to the cs definition we expect the cs to be user defined
+            // or that the unit override be allowed otherwise we use the units
+            // directly related to the definition of the ProjectCSType key (EPSG code)
+            if (projectedCS && (allowUnitsOverride || !m_haveCS || m_userDefinedProjectedCS))
                 {
                 // convert the offsets to the new unit.
                 double oldToNewUnitConvFactor = m_csDef.unit_scl / pUnit->factor;
@@ -3636,8 +3678,12 @@ StatusInt       ProcessLinearUnitsKey (IGeoTiffKeysList::GeoKeyItem& geoKey, boo
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   07/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt       ProcessLinearUnitsSizeKey (IGeoTiffKeysList::GeoKeyItem& geoKey, bool projectedCS)
+StatusInt       ProcessLinearUnitsSizeKey (IGeoTiffKeysList::GeoKeyItem& geoKey, bool projectedCS, bool allowUnitsOverride)
     {
+    // Even though the allowUnitsOverride is false and the GCS user defined we will store the linear unit definiton
+    // for the interpretation of the ellispoid dimension yet we will not change the current CS definition unless it is
+    // not a predefined GCS. (user defined GCS will have units applied)
+
     assert (IGeoTiffKeysList::DOUBLE == geoKey.KeyDataType);
     assert ( (ModelTypeProjected == m_modelType) || (ModelTypeGeographic == m_modelType) );
 
@@ -3649,7 +3695,10 @@ StatusInt       ProcessLinearUnitsSizeKey (IGeoTiffKeysList::GeoKeyItem& geoKey,
         {
         if ( (pUnit->type == cs_UTYP_LEN) && doubleSame (pUnit->factor, geoValue) )
             {
-            if (projectedCS)
+            // In order to apply to the cs definition we expect the cs to be user defined
+            // or that the unit override be allowed otherwise we use the units
+            // directly related to the definition of the ProjectCSType key (EPSG code)
+            if (projectedCS && (allowUnitsOverride || !m_haveCS || m_userDefinedProjectedCS))
                 {
                 // convert the offsets to the new unit.
                 double oldToNewUnitConvFactor = m_csDef.unit_scl / geoValue;
@@ -4437,6 +4486,30 @@ StatusInt       ProcessStraightVertPoleLongKey (IGeoTiffKeysList::GeoKeyItem& ge
         }
     return GEOCOORDERR_CoordParamNotNeededForTrans;
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Alain.Robert                   11/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+StatusInt       ProcessVerticalCSTypeKey (IGeoTiffKeysList::GeoKeyItem& geoKey)
+    {
+    assert (IGeoTiffKeysList::LONG == geoKey.KeyDataType);
+
+    long verticalCSCode = geoKey.KeyValue.LongVal;
+
+	// Values under 5100 are based on ellipsoid (From Datum)
+    m_verticalDatum = vdcFromDatum;
+    if (verticalCSCode > 5099)
+        {
+        if (VerticalCSCode::VertCS_North_American_Vertical_Datum_1929 == verticalCSCode)
+            m_verticalDatum = vdcNGVD29;
+        else if(VerticalCSCode::VertCS_North_American_Vertical_Datum_1988 == verticalCSCode)
+            m_verticalDatum = vdcNAVD88;
+        else
+            m_verticalDatum = vdcGeoid; // All other values over 5100 is a geoid vertical datum
+        }
+
+    return SUCCESS;
+    }
 };
 
 /*=================================================================================**//**
@@ -5029,7 +5102,10 @@ void BaseGCS::Initialize (WCharCP dataDirectory)
     ::CS_gpfnm ("GeodeticPath.dty");
     ::CS_altdr (WTOUTF8(dir));
 
+    // At this stage the directory is sufficiently initialized to state that the system should be operational
+    s_geoCoordInitialized = true;
 
+    // The remainder concerns user definition overrides.
     // This sets up the user dictionary override
     BeFileName userDir(dir); userDir.AppendToPath (L"UserOverrides");
     ::CS_usrdr(WTOUTF8(userDir));
@@ -5078,6 +5154,16 @@ void BaseGCS::Initialize (WCharCP dataDirectory)
         }
     }
 
+/*=================================================================================**//**
+*
+* static method that returns true if the library was initialized and false otherwise
++===============+===============+===============+===============+===============+======*/
+bool BaseGCS::IsLibraryInitialized ()
+    {
+    return s_geoCoordInitialized;
+    }
+
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Barry.Bentley   07/06
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -5095,6 +5181,15 @@ WCharCP         coordinateSystemName
 )
     {
     Init();
+
+    // Given the library is NOT initialized ...
+    if (!IsLibraryInitialized())
+        {
+        m_csError = GEOCOORDERR_GeoCoordNotInitialized;
+        return;
+        }
+
+   
     if (NULL == (m_csParameters = LibraryManager::Instance()->GetCS (m_sourceLibrary, coordinateSystemName)))
         m_csError = cs_Error;
     else
@@ -5113,6 +5208,14 @@ LibraryP        sourceLibrary
 )
     {
     Init();
+
+    // Given the library is NOT initialized ...
+    if (!IsLibraryInitialized())
+        {
+        m_csError = GEOCOORDERR_GeoCoordNotInitialized;
+        return;
+        }
+
     m_csParameters  = &csParameters;
     m_coordSysId    = coordinateSystemId;
     m_sourceLibrary = sourceLibrary;
@@ -5127,6 +5230,14 @@ LibraryP        sourceLibrary
 BaseGCS::BaseGCS (BaseGCSCR source)
     {
     Init();
+
+    // Given the library is NOT initialized ...
+    if (!IsLibraryInitialized())
+        {
+        m_csError = GEOCOORDERR_GeoCoordNotInitialized;
+        return;
+        }
+
     assert ( NULL != source.m_csParameters );
 
     // copy the parameters structure. 
@@ -5167,6 +5278,9 @@ void            BaseGCS::Init ()
     m_datumDescriptionString        = NULL;
     m_ellipsoidNameString           = NULL;
     m_ellipsoidDescriptionString    = NULL;
+
+    m_originalWKT                   = NULL;
+    m_modified                      = false;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -5174,6 +5288,13 @@ void            BaseGCS::Init ()
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt       BaseGCS::SetFromCSName (WCharCP coordinateSystemKeyName)
     {
+    // Given the library is NOT initialized ...
+    if (!IsLibraryInitialized())
+        {
+        m_csError = GEOCOORDERR_GeoCoordNotInitialized;
+        return m_csError;
+        }
+
     m_csError       = 0;
 
     if (NULL != m_datumConverter)
@@ -5255,6 +5376,16 @@ double                  falseNorthing,
 int                     quadrant
 )
     {
+    // Given the library is NOT initialized ...
+    if (!IsLibraryInitialized())
+        {
+        m_csError = GEOCOORDERR_GeoCoordNotInitialized;
+        return m_csError;
+        }
+
+    SetModified(true);
+    
+
     CSDefinition        csDef;
     memset (&csDef, 0, sizeof(csDef));
 
@@ -5288,6 +5419,8 @@ int                     quadrant
 
     m_coordSysId = COORDSYS_AZMEA;
 
+    SetModified(false);
+
     return SUCCESS;
     }
 
@@ -5304,6 +5437,15 @@ double                  originLongitude,    // displacement from Greenwich
 double                  originLatitude      // displacement from Greenwich
 )
     {
+    // Given the library is NOT initialized ...
+    if (!IsLibraryInitialized())
+        {
+        m_csError = GEOCOORDERR_GeoCoordNotInitialized;
+        return m_csError;
+        }
+
+    SetModified(true);
+
     CSDefinition        csDef;
     memset (&csDef, 0, sizeof(csDef));
 
@@ -5335,6 +5477,8 @@ double                  originLatitude      // displacement from Greenwich
 
     m_coordSysId = COORDSYS_UNITY;
 
+    SetModified(false);
+
     return SUCCESS;
     }
 
@@ -5349,6 +5493,15 @@ WktFlavor               wktFlavor,          // The WKT Flavor.
 WCharCP                 wellKnownText       // The Well Known Text specifying the coordinate system.
 )
     {
+    // Given the library is NOT initialized ...
+    if (!IsLibraryInitialized())
+        {
+        m_csError = GEOCOORDERR_GeoCoordNotInitialized;
+        return m_csError;
+        }
+
+    SetModified(true);
+
     CSDefinition        csDef;
     CSDatumDef          csDatumDef;
     CSEllipsoidDef      csEllipsoidDef;
@@ -5416,7 +5569,7 @@ WCharCP                 wellKnownText       // The Well Known Text specifying th
         try {
 
             SRSWKTParser theWKTParser;
-            StatusInt status2 = theWKTParser.Process (this, wellKnownText);
+            StatusInt status2 = theWKTParser.Process (*this, wellKnownText);
             if ((SUCCESS == status2) && (IsValid()))
                 {
                 // Clear error in case it occured during previous CScsloc2
@@ -5443,6 +5596,16 @@ WCharCP                 wellKnownText       // The Well Known Text specifying th
     // this will cause the type 66 to be saved with coordSysId set the same as projType.
     m_coordSysId = 0;
 
+    // Even if invalid it is indicated as unmodified.
+    SetModified(false);
+
+    // Save the original WKT in case the user wants it back
+    if (IsValid() && (SUCCESS == status))
+        {
+        DELETE_AND_CLEAR (m_originalWKT);
+        m_originalWKT = new WString(wellKnownText);
+        }
+
     return status;
     }
 
@@ -5458,6 +5621,15 @@ WStringP                warningOrErrorMsg,  // Error message.
 int                     epsgCode
 )
     {
+    // Given the library is NOT initialized ...
+    if (!IsLibraryInitialized())
+        {
+        m_csError = GEOCOORDERR_GeoCoordNotInitialized;
+        return m_csError;
+        }
+
+    SetModified(true);
+
     if (NULL != warning)
         *warning = SUCCESS;
 
@@ -5473,6 +5645,7 @@ int                     epsgCode
         {
         // since we looked it up, we put COORDSYS_KEYNM as the coordsys in the type 66 element.
         m_coordSysId = COORDSYS_KEYNM;
+        SetModified(false);
         return SUCCESS;
         }
 
@@ -5494,10 +5667,11 @@ int                     epsgCode
         if (NULL != (m_csParameters = LibraryManager::Instance()->GetCS (m_sourceLibrary, WString(coordSysName,false).c_str())))
             {
             m_coordSysId = COORDSYS_KEYNM;
+            SetModified(false);
             return SUCCESS;
             }
         }
-
+    SetModified(false);
     return m_csError;
     }
 
@@ -5507,9 +5681,25 @@ int                     epsgCode
 StatusInt       BaseGCS::GetWellKnownText
 (
 WStringR            wellKnownText,      // The WKT.
-WktFlavor           wktFlavor           // The WKT Flavor.
+WktFlavor           wktFlavor,          // The WKT Flavor.
+bool                originalIfPresent   // true indicates that if the BaseGCS originates from a WKT fragment then this WKT should be returned
 ) const
     {
+    // Given the library is NOT initialized ...
+    if (!IsLibraryInitialized())
+        {
+        m_csError = GEOCOORDERR_GeoCoordNotInitialized;
+        return m_csError;
+        }
+
+    if (originalIfPresent && m_originalWKT != nullptr && !m_originalWKT->empty())
+        {
+        // NOTE: Even if the original WKT was a COMPD_CS we return it as it is
+        // regardless the method usually returns non-COMPD_CS
+        wellKnownText = *m_originalWKT;
+        return SUCCESS;
+
+        }
     char        stringBuf[10240];
     StatusInt   status;
     wellKnownText.clear();
@@ -5525,110 +5715,137 @@ WktFlavor           wktFlavor           // The WKT Flavor.
 StatusInt       BaseGCS::GetCompoundCSWellKnownText
 (
 WStringR            wellKnownText,      // The WKT.
-WktFlavor           wktFlavor           // The WKT Flavor.
+WktFlavor           wktFlavor,           // The WKT Flavor.
+bool                originalIfPresent   // true indicates that if the BaseGCS originates from a WKT fragment then this WKT should be returned
 ) const
     {
+    // Given the library is NOT initialized ...
+    if (!IsLibraryInitialized())
+        {
+        m_csError = GEOCOORDERR_GeoCoordNotInitialized;
+        return m_csError;
+        }
+
     // Obtain the GCS well known text
     WString temp;
-    StatusInt status;
+    StatusInt status = SUCCESS;
 
-    if (SUCCESS == (status = GetWellKnownText(temp, wktFlavor)))
+    // If original WKT is requested and present we copy it otherwise we generate the WKT
+    if (originalIfPresent && m_originalWKT != nullptr && !m_originalWKT->empty())
+        temp = *m_originalWKT;
+    else
+        status = GetWellKnownText(temp, wktFlavor, false);
+
+    if (SUCCESS == status)
         {
-        wellKnownText = L"COMPD_CS[\"" + WString(GetName()) + L"\",";
-        wellKnownText += temp;            // Add plain WKT PROJCS or GEOCS section
-
-       // We complete with Vertical Datum section
-        // First determine the texts to be added for various items.
-        // WKT texts are not usually meant to be translatable so we use English names when applicable
-        VertDatumCode verticalCode = GetVerticalDatumCode();
-        WString verticalCSName;
-        WString verticalDatumWKTCode;
-        WString verticalCSAuthorityName = L"EPSG"; // We only support EPSG authority name at the moment
-        WString verticalCSAuthorityCode;
-        WString verticalDatumName;
-        WString verticalDatumAuthorityName = L"EPSG"; // We only support EPSG authority name at the moment
-        WString verticalDatumAuthorityCode;
-        
-        if (vdcFromDatum == verticalCode)
-            {
-            verticalCSName = L"Ellipsoid Height";
-            verticalDatumWKTCode = L"2002";
-            verticalDatumName = L"Ellipsoid";
-            // EPSG database defines no code for ellipsoidal height since it is not really a vertical datum
-            }
-        else if (vdcNGVD29 == verticalCode)
-            {
-            verticalCSName = L"NGVD29";
-            verticalDatumWKTCode = L"2005";  // Although we use it differently NGVD29 is a geoid vertical CS
-            verticalDatumName = L"NGVD29";
-            verticalCSAuthorityCode = L"5702";
-            verticalDatumAuthorityCode = L"5102";
-            }
-        else if (vdcNAVD88 == verticalCode)
-            {
-            verticalCSName = L"NAVD88";
-            verticalDatumWKTCode = L"2005";  // Although we use it differently NAVD88 is a geoid vertical CS
-            verticalDatumName = L"NAVD88";
-            verticalCSAuthorityCode = L"5703";
-            verticalDatumAuthorityCode = L"5103";
-            }
-        else if (vdcGeoid == verticalCode)
-            {
-            verticalCSName = L"Generic Geoid";
-            verticalDatumWKTCode = L"2005";
-            verticalDatumName = L"Generic Vertical Datum";
-            // Since we are dealing with a generic Geoid there is no authority code defined
-            }
+        // If the WKT comes from the original WKT it may already contain a COMPD clause 
+        // in this case we do not add one.
+        if (temp.substr(0, 8) == L"COMPD_CS")
+            wellKnownText = temp;
         else
             {
-            // This section is only useful in case future version data that uses new datum code unknown to present
-            // still results in a valid compound WKT though vertical cs identifiers can then only be guesses.
-            verticalCSName = L"Unknown Vertical CS";
-            verticalDatumName = L"Unknown Vertical Datum";
-            verticalDatumWKTCode = L"2000";  // We use the code for 'other' vertical cs
+            // No COMPD_CS clause ... we add one and add VERT_CS clause at end
+            wellKnownText = L"COMPD_CS[\"" + WString(GetName()) + L"\",";
+            wellKnownText += temp;            // Add plain WKT PROJCS or GEOCS section
+ 
+            // We complete with Vertical Datum section
+            // First determine the texts to be added for various items.
+            // WKT texts are not usually meant to be translatable so we use English names when applicable
+            VertDatumCode verticalCode = GetVerticalDatumCode();
+            WString verticalCSName;
+            WString verticalDatumWKTCode;
+            WString verticalCSAuthorityName = L"EPSG"; // We only support EPSG authority name at the moment
+            WString verticalCSAuthorityCode;
+            WString verticalDatumName;
+            WString verticalDatumAuthorityName = L"EPSG"; // We only support EPSG authority name at the moment
+            WString verticalDatumAuthorityCode;
+            
+            if (vdcFromDatum == verticalCode)
+                {
+                verticalCSName = L"Ellipsoid Height";
+                verticalDatumWKTCode = L"2002";
+                verticalDatumName = L"Ellipsoid";
+                // EPSG database defines no code for ellipsoidal height since it is not really a vertical datum
+                }
+            else if (vdcNGVD29 == verticalCode)
+                {
+                verticalCSName = L"NGVD29";
+             
+                verticalDatumWKTCode = L"2005";  // Although we use it differently NGVD29 is a geoid vertical CS
+                verticalDatumName = L"NGVD29";
+                verticalCSAuthorityCode = L"5702";
+                verticalDatumAuthorityCode = L"5102";
+                }
+            else if (vdcNAVD88 == verticalCode)
+                {
+                verticalCSName = L"NAVD88";
+                verticalDatumWKTCode = L"2005";  // Although we use it differently NAVD88 is a geoid vertical CS
+                verticalDatumName = L"NAVD88";
+                verticalCSAuthorityCode = L"5703";
+                verticalDatumAuthorityCode = L"5103";
+                }
+            else if (vdcGeoid == verticalCode)
+                {
+                verticalCSName = L"Generic Geoid";
+                verticalDatumWKTCode = L"2005";
+                verticalDatumName = L"Generic Vertical Datum";
+                // Since we are dealing with a generic Geoid there is no authority code defined
+                }
+            else
+                {
+                // This section is only useful in case future version data that uses new datum code unknown to present
+                // still results in a valid compound WKT though vertical cs identifiers can then only be guesses.
+                verticalCSName = L"Unknown Vertical CS";
+                verticalDatumName = L"Unknown Vertical Datum";
+                verticalDatumWKTCode = L"2000";  // We use the code for 'other' vertical cs
+                }
+           
+            wellKnownText += L",VERT_CS[\"" + verticalCSName + L"\",VERT_DATUM[\"" + verticalDatumName + L"\"," + verticalDatumWKTCode;
+ 
+            // We only add authority names and code for the OGC flavor
+            if ((wktFlavorOGC == wktFlavor) && (verticalDatumAuthorityCode != L""))
+                {
+                wellKnownText += L",AUTHORITY[\"" + verticalDatumAuthorityName + L"\",\"" + verticalDatumAuthorityCode + L"\"]";
+                }
+ 
+            // Close VERT_DATUM section
+            wellKnownText += L"]";
+ 
+            // UNIT Section
+            wellKnownText += L",UNIT[\"";
+            wchar_t conversionFactor[20];
+            swprintf(conversionFactor, 20, L"%lf", UnitsFromMeters());
+            WString unitName;
+            GetUnits(unitName);
+            // NOTE: When we have a lat/long coordinate system then vertical units are 'meters' assumed.
+            if (GetProjectionCode() ==  BaseGCS::pcvUnity)
+                unitName = L"Meters";
+
+            wellKnownText +=  unitName + L"\"," + conversionFactor;
+ 
+            // We only add authority names and code for the OGC flavor
+            if ((wktFlavorOGC == wktFlavor) && GetEPSGUnitCode() != 0)
+                {
+                wchar_t unitCode[10];
+                BeStringUtilities::Itow(unitCode, GetEPSGUnitCode(), 10, 10);
+                wellKnownText += L",AUTHORITY[\"EPSG\",\"" + WString(unitCode) + L"\"]";
+                }
+ 
+            wellKnownText += L"]";
+ 
+            // We only add AXIS section for the OGC flavor
+            if (wktFlavorOGC == wktFlavor)
+                wellKnownText += L",AXIS[\"Up\", UP]"; // We only support the UP axis direction
+            
+            // We only add authority names and code for the OGC flavor
+            if ((wktFlavorOGC == wktFlavor) && (verticalCSAuthorityCode != L""))
+                {
+                wellKnownText += L",AUTHORITY[\"" + verticalCSAuthorityName + L"\",\"" + verticalCSAuthorityCode + L"\"]";
+                }
+ 
+            // Close both VERT_CS section and COMPD_CS section     
+            wellKnownText += L"]]";
             }
-        
-        wellKnownText += L",VERT_CS[\"" + verticalCSName + L"\",VERT_DATUM[\"" + verticalDatumName + L"\"," + verticalDatumWKTCode;
-
-        // We only add authority names and code for the OGC flavor
-        if ((wktFlavorOGC == wktFlavor) && (verticalDatumAuthorityCode != L""))
-            {
-            wellKnownText += L",AUTHORITY[\"" + verticalDatumAuthorityName + L"\",\"" + verticalDatumAuthorityCode + L"\"]";
-            }
-
-        // Close VERT_DATUM section
-        wellKnownText += L"]";
-
-        // UNIT Section
-        wellKnownText += L",UNIT[\"";
-        wchar_t conversionFactor[20];
-        swprintf(conversionFactor, 20, L"%lf", UnitsFromMeters());
-        WString unitName;
-        GetUnits(unitName);
-        wellKnownText +=  unitName + L"\"," + conversionFactor;
-
-        // We only add authority names and code for the OGC flavor
-        if ((wktFlavorOGC == wktFlavor) && GetEPSGUnitCode() != 0)
-            {
-            wchar_t unitCode[10];
-            BeStringUtilities::Itow(unitCode, GetEPSGUnitCode(), 10, 10);
-            wellKnownText += L",AUTHORITY[\"EPSG\",\"" + WString(unitCode) + L"\"]";
-            }
-
-        wellKnownText += L"]";
-
-        // We only add AXIS section for the OGC flavor
-        if (wktFlavorOGC == wktFlavor)
-            wellKnownText += L",AXIS[\"Up\", UP]"; // We only support the UP axis direction
-        
-        // We only add authority names and code for the OGC flavor
-        if ((wktFlavorOGC == wktFlavor) && (verticalCSAuthorityCode != L""))
-            {
-            wellKnownText += L",AUTHORITY[\"" + verticalCSAuthorityName + L"\",\"" + verticalCSAuthorityCode + L"\"]";
-            }
-
-        // Close both VERT_CS section and COMPD_CS section     
-        wellKnownText += L"]]";
         }
     
     return status;
@@ -5640,29 +5857,70 @@ StatusInt       BaseGCS::InitFromGeoTiffKeys
 (
 StatusInt*              warning,            // Warning. Function returns SUCCESS, but some warning desribed in ERRMSG and warning, passed back.
 WStringP                warningOrErrorMsg,  // Error message.
-IGeoTiffKeysList const* geoTiffKeys         // The GeoTiff key list
+IGeoTiffKeysList const* geoTiffKeys,         // The GeoTiff key list
+bool                    allowUnitsOverride   // Indicates if the presence of a unit can override GCS units.
 )
     {
+    // Given the library is NOT initialized ...
+    if (!IsLibraryInitialized())
+        {
+        m_csError = GEOCOORDERR_GeoCoordNotInitialized;
+        return m_csError;
+        }
+
+    SetModified(true);
+
+    StatusInt status;
     // The GeoTiffKeyInterpreter maintains state while parsing the geoTiffKeys, and we can have private methods without having to put then on BaseGCS.
     if (NULL == geoTiffKeys)
         return GEOCOORDERR_BadArg;
 
     GeoTiffKeyInterpreter   interpreter;
-    return interpreter.Process (*this, warning, warningOrErrorMsg, *geoTiffKeys);
+    status = interpreter.Process (*this, warning, warningOrErrorMsg, *geoTiffKeys, allowUnitsOverride);
+    if (SUCCESS == status)
+        {
+        // We keep a copy of the geotiff keys to be able to give it back if the BaseGCS owner wants it.
+        bool                                gotKey;
+        IGeoTiffKeysList::GeoKeyItem        geoKey;
+
+        for (gotKey = geoTiffKeys->GetFirstKey (&geoKey); gotKey ; gotKey = geoTiffKeys->GetNextKey (&geoKey))
+            m_originalGeoKeys.push_back(geoKey);
+        }
+
+    SetModified(false);
+
+    return status;
     }
 
 /*---------------------------------------------------------------------------------**//**
 *   @bsimethod                                                    Barry.Bentley   06/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt       BaseGCS::SetGeoTiffKeys
+StatusInt       BaseGCS::GetGeoTiffKeys
 (
-IGeoTiffKeysList*       geoTiffKeys         // The GeoTiff key list
+IGeoTiffKeysList*       geoTiffKeys,         // The GeoTiff key list to add geokeys to
+bool                    originalsIfPresent   // true indicates the original geokeys should be returned
 ) const
     {
+    // Given the library is NOT initialized ...
+    if (!IsLibraryInitialized())
+        {
+        m_csError = GEOCOORDERR_GeoCoordNotInitialized;
+        return m_csError;
+        }
+
     // The GeoTiffKeyInterpreter maintains state while parsing the geoTiffKeys, and we can have private methods without having to put then on BaseGCS.
     if (NULL == geoTiffKeys)
         return GEOCOORDERR_BadArg;
 
+    if (originalsIfPresent && m_originalGeoKeys.size() > 0)
+        {
+        for (size_t idx = 0 ; idx < m_originalGeoKeys.size() ; idx++)
+            geoTiffKeys->AddKey(m_originalGeoKeys[idx]);
+
+        return SUCCESS;
+        }
+
+    // Original geo keys not present or not requested ... we build a new set
     GeoTiffKeyCreator   creator (*this, *geoTiffKeys);
     return creator.SaveGCS ();
     }
@@ -5672,6 +5930,13 @@ IGeoTiffKeysList*       geoTiffKeys         // The GeoTiff key list
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool            BaseGCS::CanSaveDatumToGeoTiffKeys () const
     {
+    // Given the library is NOT initialized ...
+    if (!IsLibraryInitialized())
+        {
+        m_csError = GEOCOORDERR_GeoCoordNotInitialized;
+        return false;
+        }
+
     if (0 != m_csParameters->datum.key_nm[0])
         return (0 != GetEPSGDatumCode());
     else if (0 != m_csParameters->datum.ell_knm[0])
@@ -5685,6 +5950,13 @@ bool            BaseGCS::CanSaveDatumToGeoTiffKeys () const
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool            BaseGCS::CanSaveToGeoTiffKeys () const
     {
+    // Given the library is NOT initialized ...
+    if (!IsLibraryInitialized())
+        {
+        m_csError = GEOCOORDERR_GeoCoordNotInitialized;
+        return false;
+        }
+
     bool isGeographic = (cs_PRJCOD_UNITY == m_csParameters->prj_code);
     int  epsgCode;
 
@@ -5778,6 +6050,11 @@ BaseGCS::~BaseGCS
     DELETE_AND_CLEAR (m_datumDescriptionString);
     DELETE_AND_CLEAR (m_ellipsoidNameString);
     DELETE_AND_CLEAR (m_ellipsoidDescriptionString);
+
+    DELETE_AND_CLEAR (m_originalWKT);
+
+    m_originalGeoKeys.clear();
+        
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -5807,6 +6084,13 @@ int                  numUpperCase,
 bool                 anyWord
 ) const
     {
+    // Given the library is NOT initialized ...
+    if (!IsLibraryInitialized())
+        {
+        m_csError = GEOCOORDERR_GeoCoordNotInitialized;
+        return 0;
+        }
+
     if ( (NULL == m_csParameters) || (numMixedCase <= 0) )
         return 0;
 
@@ -5889,6 +6173,13 @@ bool            BaseGCS::Validate
 T_WStringVector&    errorList
 ) const
     {
+    // Given the library is NOT initialized ...
+    if (!IsLibraryInitialized())
+        {
+        m_csError = GEOCOORDERR_GeoCoordNotInitialized;
+        return false;
+        }
+
     int csMapErrors[128];
     int errorCount;
 
@@ -5935,6 +6226,13 @@ bool            BaseGCS::IsValid () const
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool            BaseGCS::IsStandard () const
     {
+    // Given the library is NOT initialized ...
+    if (!IsLibraryInitialized())
+        {
+        m_csError = GEOCOORDERR_GeoCoordNotInitialized;
+        return false;
+        }
+
     return  COORDSYS_KEYNM == m_coordSysId;
     }
 
@@ -6067,6 +6365,8 @@ StatusInt   BaseGCS::SetName (WCharCP name)
     if (NULL == m_csParameters)
         return GEOCOORDERR_InvalidCoordSys;
 
+    SetModified(true);
+	
     CS_stncp (m_csParameters->csdef.key_nm, AString(name).c_str(), sizeof (m_csParameters->csdef.key_nm));
 
     if (NULL != m_nameString)
@@ -6096,6 +6396,8 @@ StatusInt   BaseGCS::SetDescription (WCharCP description)
     {
     if (NULL == m_csParameters)
         return GEOCOORDERR_InvalidCoordSys;
+		
+    SetModified(true);
 
     CS_stncp (m_csParameters->csdef.desc_nm, AString(description).c_str(), sizeof (m_csParameters->csdef.desc_nm));
 
@@ -6140,6 +6442,8 @@ BaseGCS::ProjectionCodeValue  value
     {
     if (NULL == m_csParameters)
         return GEOCOORDERR_InvalidCoordSys;
+		
+    SetModified(true);		
 
     int     oldCode = m_csParameters->prj_code;
 
@@ -6248,6 +6552,8 @@ StatusInt  BaseGCS::SetGroup (WCharCP group)
     {
     if (NULL == m_csParameters)
         return GEOCOORDERR_InvalidCoordSys;
+		
+    SetModified(true);		
 
     // We cannot set an arbitrary name ... it must be an existing group
     GroupEnumerator* theGroupEnumerator = Group::GetGroupEnumerator();
@@ -6299,6 +6605,8 @@ StatusInt   BaseGCS::SetSource (WCharCP source)
     {
     if (NULL == m_csParameters)
         return GEOCOORDERR_InvalidCoordSys;
+		
+    SetModified(true);		
 
     CSMap::CS_stncp (m_csParameters->csdef.source, AString(source).c_str(), DIM(m_csParameters->csdef.source));
 
@@ -6361,6 +6669,9 @@ int     code
     {
     if (NULL == m_csParameters)
         return GEOCOORDERR_InvalidCoordSys;
+		
+    SetModified(true);
+
 
     const struct cs_Unittab_   *pUnit;
     int                         index;
@@ -6417,6 +6728,9 @@ StatusInt   BaseGCS::SetOriginLatitude (double value)
     {
     if (NULL == m_csParameters)
         return GEOCOORDERR_InvalidCoordSys;
+		
+    SetModified(true);
+
 
     m_csParameters->csdef.org_lat = value;
     return SUCCESS;
@@ -6440,6 +6754,9 @@ StatusInt   BaseGCS::SetOriginLongitude (double value)
     {
     if (NULL == m_csParameters)
         return GEOCOORDERR_InvalidCoordSys;
+
+    SetModified(true);
+
 
     m_csParameters->csdef.org_lng = value;
     return SUCCESS;
@@ -6490,6 +6807,8 @@ StatusInt   BaseGCS::SetStandardParallel1 (double value)
     {
     if (NULL == m_csParameters)
         return GEOCOORDERR_InvalidCoordSys;
+
+    SetModified(true);
 
     switch (m_csParameters->prj_code)
         {
@@ -6559,6 +6878,8 @@ StatusInt   BaseGCS::SetStandardParallel2 (double value)
     if (NULL == m_csParameters)
         return GEOCOORDERR_InvalidCoordSys;
 
+    SetModified(true);
+
     switch (m_csParameters->prj_code)
         {
         case cs_PRJCOD_ALBER:
@@ -6595,8 +6916,11 @@ double BaseGCS::GetFalseEasting () const
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt   BaseGCS::SetFalseEasting (double value)
     {
+
     if (NULL == m_csParameters)
         return GEOCOORDERR_InvalidCoordSys;
+
+    SetModified(true);
 
     m_csParameters->csdef.x_off = value;
     return SUCCESS;
@@ -6621,6 +6945,8 @@ StatusInt   BaseGCS::SetFalseNorthing (double value)
     if (NULL == m_csParameters)
         return GEOCOORDERR_InvalidCoordSys;
 
+    SetModified(true);
+
     m_csParameters->csdef.y_off = value;
     return SUCCESS;
     }
@@ -6643,6 +6969,8 @@ StatusInt   BaseGCS::SetScaleReduction (double value)
     {
     if (NULL == m_csParameters)
         return GEOCOORDERR_InvalidCoordSys;
+
+    SetModified(true);
 
     m_csParameters->csdef.scl_red = value;
     return SUCCESS;
@@ -6667,8 +6995,11 @@ double BaseGCS::GetMinimumLongitude () const
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt   BaseGCS::SetMinimumLongitude (double value)
     {
+
     if (NULL == m_csParameters)
         return GEOCOORDERR_InvalidCoordSys;
+
+    SetModified(true);
 
     if (cs_PRJCOD_UNITY == m_csParameters->prj_code)
         m_csParameters->csdef.prj_prm1 = value;
@@ -6700,6 +7031,8 @@ StatusInt   BaseGCS::SetMaximumLongitude (double value)
     if (NULL == m_csParameters)
         return GEOCOORDERR_InvalidCoordSys;
 
+    SetModified(true);
+
     if (cs_PRJCOD_UNITY == m_csParameters->prj_code)
         m_csParameters->csdef.prj_prm2 = value;
     else
@@ -6730,6 +7063,8 @@ StatusInt   BaseGCS::SetMinimumLatitude (double value)
     if (NULL == m_csParameters)
         return GEOCOORDERR_InvalidCoordSys;
 
+    SetModified(true);
+
     m_csParameters->csdef.ll_min[1] = value;
 
     return SUCCESS;
@@ -6756,6 +7091,8 @@ StatusInt   BaseGCS::SetMaximumLatitude (double value)
     {
     if (NULL == m_csParameters)
         return GEOCOORDERR_InvalidCoordSys;
+
+    SetModified(true);
 
     m_csParameters->csdef.ll_max[1] = value;
 
@@ -6861,6 +7198,8 @@ StatusInt   BaseGCS::SetCentralMeridian (double value)
     if (NULL == m_csParameters)
         return GEOCOORDERR_InvalidCoordSys;
 
+    SetModified(true);
+
     switch (m_csParameters->prj_code)
         {
         case cs_PRJCOD_TRMER:
@@ -6917,6 +7256,8 @@ StatusInt   BaseGCS::SetEasternMeridian (double value)
     if (NULL == m_csParameters)
         return GEOCOORDERR_InvalidCoordSys;
 
+    SetModified(true);
+
     int prjCode = m_csParameters->prj_code;
     if (cs_PRJCOD_MODPC == prjCode)
         {
@@ -6954,6 +7295,8 @@ StatusInt   BaseGCS::SetCentralPointLongitude (double value)
     {
     if (NULL == m_csParameters)
         return GEOCOORDERR_InvalidCoordSys;
+
+    SetModified(true);
 
     switch (m_csParameters->prj_code)
         {
@@ -6999,6 +7342,8 @@ StatusInt   BaseGCS::SetCentralPointLatitude (double value)
     if (NULL == m_csParameters)
         return GEOCOORDERR_InvalidCoordSys;
 
+    SetModified(true);
+
     switch (m_csParameters->prj_code)
         {
         case cs_PRJCOD_HOM1UV:
@@ -7043,6 +7388,8 @@ StatusInt   BaseGCS::SetPoint1Longitude (double value)
     if (NULL == m_csParameters)
         return GEOCOORDERR_InvalidCoordSys;
 
+    SetModified(true);
+
     switch (m_csParameters->prj_code)
         {
         case cs_PRJCOD_HOM2UV:
@@ -7067,7 +7414,6 @@ double BaseGCS::GetPoint1Latitude () const
     if (NULL == m_csParameters)
         return 0.0;
 
-
     switch (m_csParameters->prj_code)
         {
         case cs_PRJCOD_HOM2UV:
@@ -7088,6 +7434,8 @@ StatusInt   BaseGCS::SetPoint1Latitude (double value)
     {
     if (NULL == m_csParameters)
         return GEOCOORDERR_InvalidCoordSys;
+
+    SetModified(true);
 
     switch (m_csParameters->prj_code)
         {
@@ -7130,6 +7478,8 @@ StatusInt   BaseGCS::SetPoint2Longitude (double value)
     if (NULL == m_csParameters)
         return GEOCOORDERR_InvalidCoordSys;
 
+    SetModified(true);
+
     switch (m_csParameters->prj_code)
         {
         case cs_PRJCOD_HOM2UV:
@@ -7166,6 +7516,8 @@ StatusInt   BaseGCS::SetPoint2Latitude (double value)
     {
     if (NULL == m_csParameters)
         return GEOCOORDERR_InvalidCoordSys;
+
+    SetModified(true);
 
     switch (m_csParameters->prj_code)
         {
@@ -7213,6 +7565,8 @@ StatusInt   BaseGCS::SetAzimuth (double value)
     {
     if (NULL == m_csParameters)
         return GEOCOORDERR_InvalidCoordSys;
+
+    SetModified(true);
 
     switch (m_csParameters->prj_code)
         {
@@ -7262,6 +7616,8 @@ StatusInt   BaseGCS::SetGeoidSeparation (double value)
     if (NULL == m_csParameters)
         return GEOCOORDERR_InvalidCoordSys;
 
+    SetModified(true);
+
     switch (m_csParameters->prj_code)
         {
         case cs_PRJCOD_WCCST:
@@ -7307,6 +7663,8 @@ StatusInt   BaseGCS::SetElevationAboveGeoid (double value)
     {
     if (NULL == m_csParameters)
         return GEOCOORDERR_InvalidCoordSys;
+
+    SetModified(true);
 
     switch (m_csParameters->prj_code)
         {
@@ -7356,6 +7714,8 @@ StatusInt   BaseGCS::SetUTMZone (int value)
     if (NULL == m_csParameters)
         return GEOCOORDERR_InvalidCoordSys;
 
+    SetModified(true);
+
     int prjCode = m_csParameters->prj_code;
 #if defined(TOTAL_SPECIAL)
     if ((cs_PRJCOD_UTM == prjCode) || (cs_PRJCOD_UTMZNBF == prjCode))
@@ -7396,6 +7756,8 @@ StatusInt   BaseGCS::SetHemisphere (int value)
     {
     if (NULL == m_csParameters)
         return GEOCOORDERR_InvalidCoordSys;
+
+    SetModified(true);
 
     int prjCode = m_csParameters->prj_code;
 #if defined(TOTAL_SPECIAL)
@@ -7446,6 +7808,8 @@ StatusInt   BaseGCS::SetQuadrant (short value)
     {
     if (NULL == m_csParameters)
         return GEOCOORDERR_InvalidCoordSys;
+
+    SetModified(true);
 
     // south oriented transverse mercator needs to be inverted, account for that. See cs_QuadMap and cs_QuadMapSO in csdata.c
     if (cs_PRJCOD_SOTRM == m_csParameters->prj_code)
@@ -7499,6 +7863,8 @@ StatusInt   BaseGCS::SetDanishSys34Region (int value)
     if (NULL == m_csParameters)
         return GEOCOORDERR_InvalidCoordSys;
 
+    SetModified(true);
+
     switch (m_csParameters->prj_code)
         {
         case cs_PRJCOD_SYS34:
@@ -7538,6 +7904,8 @@ StatusInt   BaseGCS::SetAffineA0 (double value)
     {
     if (NULL == m_csParameters)
         return GEOCOORDERR_InvalidCoordSys;
+
+    SetModified(true);
 
     switch (m_csParameters->prj_code)
         {
@@ -7581,6 +7949,8 @@ StatusInt   BaseGCS::SetAffineA1 (double value)
     if (NULL == m_csParameters)
         return GEOCOORDERR_InvalidCoordSys;
 
+    SetModified(true);
+
     switch (m_csParameters->prj_code)
         {
         case cs_PRJCOD_TRMERAF:
@@ -7622,6 +7992,8 @@ StatusInt   BaseGCS::SetAffineA2 (double value)
     {
     if (NULL == m_csParameters)
         return GEOCOORDERR_InvalidCoordSys;
+
+    SetModified(true);
 
     switch (m_csParameters->prj_code)
         {
@@ -7665,6 +8037,8 @@ StatusInt   BaseGCS::SetAffineB0 (double value)
     if (NULL == m_csParameters)
         return GEOCOORDERR_InvalidCoordSys;
 
+    SetModified(true);
+
     switch (m_csParameters->prj_code)
         {
         case cs_PRJCOD_TRMERAF:
@@ -7707,6 +8081,8 @@ StatusInt   BaseGCS::SetAffineB1 (double value)
     if (NULL == m_csParameters)
         return GEOCOORDERR_InvalidCoordSys;
 
+    SetModified(true);
+
     switch (m_csParameters->prj_code)
         {
         case cs_PRJCOD_TRMERAF:
@@ -7748,6 +8124,8 @@ StatusInt   BaseGCS::SetAffineB2 (double value)
     {
     if (NULL == m_csParameters)
         return GEOCOORDERR_InvalidCoordSys;
+
+    SetModified(true);
 
     switch (m_csParameters->prj_code)
         {
@@ -7817,6 +8195,8 @@ StatusInt BaseGCS::SetAffineParameters (double A0, double A1, double A2, double 
     if (NULL == m_csParameters)
         return GEOCOORDERR_InvalidCoordSys;
 
+    SetModified(true);
+
     double  determinant = (A1 * B2) - (A2 * B1);
     // The exact floating point compare operation is intentional ... the purpose is to check that
     // no two members of same line or column of matrix are exactly equal to 0.0 which would result
@@ -7854,6 +8234,10 @@ StatusInt BaseGCS::SetAffineParameters (double A0, double A1, double A2, double 
 StatusInt BaseGCS::DefinitionComplete ()
     {
     CSParameters*   newParams;
+
+    if (NULL == m_csParameters)
+        return GEOCOORDERR_InvalidCoordSys;
+
     if (NULL == (newParams = CSMap::CScsloc1 (&m_csParameters->csdef)))
         {
         // An error was returned likely because the datum used is unknown in the system dictionary.
@@ -7913,6 +8297,8 @@ StatusInt BaseGCS::DefinitionComplete ()
         m_datumConverter->Destroy();
         m_datumConverter = NULL;
         }
+
+    SetModified(false);
     
     return SUCCESS;
     }
@@ -7977,6 +8363,8 @@ StatusInt       BaseGCS::SetDatumCode (int datumCode)
     {
     if (NULL == m_csParameters)
         return GEOCOORDERR_InvalidCoordSys;
+
+    SetModified(true);
 
     // -1 means no datum, ellipse only.
     if (-1 == datumCode)
@@ -8138,8 +8526,13 @@ double      BaseGCS::GetDatumScale () const
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool        BaseGCS::DatumParametersValid (bool& deltaValid, bool& rotationValid, bool& scaleValid) const
     {
+
     // initialize to defaults.
     deltaValid = rotationValid = scaleValid = false;
+
+    if (NULL == m_csParameters)
+        return false;
+
     switch (GetDatumConvertMethod())
         {
         case ConvertType_MOLO:
@@ -8247,6 +8640,8 @@ VertDatumCode   verticalDatumCode
     if (NULL == m_csParameters)
         return GEOCOORDERR_InvalidCoordSys;
 
+    SetModified(true);
+
     // There are limitations to using NGVD29 and NAVD88 (Others are worldwide)
     if ((vdcNGVD29 == verticalDatumCode && !this->IsNAD27()) ||
         (vdcNAVD88 == verticalDatumCode && !this->IsNAD83()))
@@ -8327,6 +8722,8 @@ int     ellipsoidCode
     {
     if (NULL == m_csParameters)
         return GEOCOORDERR_InvalidCoordSys;
+
+    SetModified(true);
 
     if (-1 != GetDatumCode())
         return GEOCOORDERR_CantSetEllipsoid;
@@ -8523,6 +8920,9 @@ GeoPointCR  startPoint,
 GeoPointCR  endPoint
 ) const
     {
+    if (NULL == m_csParameters)
+        return GEOCOORDERR_InvalidCoordSys;
+
     double  tempDistance;
     double  tempAzimuth;
     if (NULL == distance)
@@ -8546,6 +8946,9 @@ StatusInt       BaseGCS::GetCenterPoint
 GeoPointR       centerPoint
 ) const
     {
+    if (NULL == m_csParameters)
+        return GEOCOORDERR_InvalidCoordSys;
+
     if (0 != m_csError)
         {
         centerPoint.Init (0.0, 0.0, 0.0);
@@ -8608,6 +9011,9 @@ bool            BaseGCS::Compare (BaseGCSCR compareTo, bool& datumDifferent, boo
     csDifferent             = false;
     verticalDatumDifferent  = false;
     localTransformDifferent = false;
+
+    if (NULL == m_csParameters)
+        return false;
 
     // compare the easiest ones first.
 
@@ -9117,67 +9523,67 @@ bvector<GeoPoint>&    shape
 
             if (1 == region)
                 {
-		point.Init(8.2930, 54.7757, 0.0);
-		shape.push_back(point);
-		point.Init(7.9743, 55.0112, 0.0);
-		shape.push_back(point);
-		point.Init(7.5544, 56.4801, 0.0);
-		shape.push_back(point);
-		point.Init(8.0280, 57.1564, 0.0);
-		shape.push_back(point);
-		point.Init(10.4167, 58.0417, 0.0);
-		shape.push_back(point);
-		point.Init(10.9897, 57.7786, 0.0);
-		shape.push_back(point);
-		point.Init(11.5395, 57.1551, 0.0);
-		shape.push_back(point);
-		point.Init(12.0059, 56.5088, 0.0);
-		shape.push_back(point);
-		point.Init(11.7200, 54.9853, 0.0);
-		shape.push_back(point);
-		point.Init(10.5938, 54.5951, 0.0);
-		shape.push_back(point);
-		point.Init(8.2930, 54.7757, 0.0);
-		shape.push_back(point);
+		        point.Init(8.2930, 54.7757, 0.0);
+		        shape.push_back(point);
+		        point.Init(7.9743, 55.0112, 0.0);
+		        shape.push_back(point);
+		        point.Init(7.5544, 56.4801, 0.0);
+		        shape.push_back(point);
+		        point.Init(8.0280, 57.1564, 0.0);
+		        shape.push_back(point);
+		        point.Init(10.4167, 58.0417, 0.0);
+		        shape.push_back(point);
+		        point.Init(10.9897, 57.7786, 0.0);
+		        shape.push_back(point);
+		        point.Init(11.5395, 57.1551, 0.0);
+		        shape.push_back(point);
+		        point.Init(12.0059, 56.5088, 0.0);
+		        shape.push_back(point);
+		        point.Init(11.7200, 54.9853, 0.0);
+		        shape.push_back(point);
+		        point.Init(10.5938, 54.5951, 0.0);
+		        shape.push_back(point);
+		        point.Init(8.2930, 54.7757, 0.0);
+		        shape.push_back(point);
                 }
             else if (2 == region)
                 {
-		point.Init(11.5108, 54.4367, 0.0);
-		shape.push_back(point);
-		point.Init(10.2526, 54.6795, 0.0);
-		shape.push_back(point);
-		point.Init(9.6333, 55.0286, 0.0);
-		shape.push_back(point);
-		point.Init(9.6157, 55.3831, 0.0);
-		shape.push_back(point);
-		point.Init(10.0748, 56.0823, 0.0);
-		shape.push_back(point);
-		point.Init(11.5664, 56.9520, 0.0);
-		shape.push_back(point);
-		point.Init(13.2099, 56.5104, 0.0);
-		shape.push_back(point);
-		point.Init(13.2097, 54.8276, 0.0);
-		shape.push_back(point);
-		point.Init(12.8531, 54.6593, 0.0);
-		shape.push_back(point);
-		point.Init(12.1009, 54.5007, 0.0);
-		shape.push_back(point);
-		point.Init(11.5108, 54.4367, 0.0);
-		shape.push_back(point);
+		        point.Init(11.5108, 54.4367, 0.0);
+		        shape.push_back(point);
+		        point.Init(10.2526, 54.6795, 0.0);
+		        shape.push_back(point);
+		        point.Init(9.6333, 55.0286, 0.0);
+		        shape.push_back(point);
+		        point.Init(9.6157, 55.3831, 0.0);
+		        shape.push_back(point);
+		        point.Init(10.0748, 56.0823, 0.0);
+		        shape.push_back(point);
+		        point.Init(11.5664, 56.9520, 0.0);
+		        shape.push_back(point);
+		        point.Init(13.2099, 56.5104, 0.0);
+		        shape.push_back(point);
+		        point.Init(13.2097, 54.8276, 0.0);
+		        shape.push_back(point);
+		        point.Init(12.8531, 54.6593, 0.0);
+		        shape.push_back(point);
+		        point.Init(12.1009, 54.5007, 0.0);
+		        shape.push_back(point);
+		        point.Init(11.5108, 54.4367, 0.0);
+		        shape.push_back(point);
                 }
             else 
                 {
                 assert (3 == region);
-		point.Init(14.510, 54.942, 0.0);
-		shape.push_back(point);
-		point.Init(14.510, 55.431, 0.0);
-		shape.push_back(point);
-		point.Init(15.300, 55.431, 0.0);
-		shape.push_back(point);
-		point.Init(15.300, 54.942, 0.0);
-		shape.push_back(point);
-		point.Init(14.510, 54.942, 0.0);
-		shape.push_back(point);
+		        point.Init(14.510, 54.942, 0.0);
+		        shape.push_back(point);
+		        point.Init(14.510, 55.431, 0.0);
+		        shape.push_back(point);
+		        point.Init(15.300, 55.431, 0.0);
+		        shape.push_back(point);
+		        point.Init(15.300, 54.942, 0.0);
+		        shape.push_back(point);
+		        point.Init(14.510, 54.942, 0.0);
+		        shape.push_back(point);
                 }
 
 
@@ -9190,11 +9596,11 @@ bvector<GeoPoint>&    shape
             // For conics we can extent 90 degrees east and west amd from xx degrees up or down from lowest/upper standard parallels
             return BaseGCSUtilGetRangeAboutMeridianAndBoundParallel(shape,
                                                          GetCentralMeridian(), 
-							 89.999999,
+							                             89.999999,
                                                          GetOriginLatitude(), 
-							 30.0,
+							                             30.0,
                                                          -89.9, 
-							 89.9);
+							                             89.9);
                                                                   
         case pcvLambertTangential :
         case pcvLambertConformalConicOneParallel :
@@ -9202,20 +9608,20 @@ bvector<GeoPoint>&    shape
             // For conics we can extent 90 degrees east and west amd from xx degrees up or down from lowest/upper standard parallels
             return BaseGCSUtilGetRangeAboutMeridianAndBoundParallel(shape, 
                                                          GetOriginLongitude(), 
-							 89.999999,
+							                             89.999999,
                                                          GetOriginLatitude(), 
-							 30.0,
+							                             30.0,
                                                          -89.9, 
-							 89.9);
+							                             89.9);
 
         case pcvBonne :
             return BaseGCSUtilGetRangeAboutMeridianAndBoundParallel(shape, 
                                                          GetOriginLongitude(), 
-							 170.999999,
+							                             170.999999,
                                                          GetOriginLatitude(), 
-							 60.0,
+							                             60.0,
                                                          -89.9, 
-							 89.9);
+							                             89.9);
 
         case pcvEquidistantConic :
         case pcvAlbersEqualArea :
@@ -9227,12 +9633,12 @@ bvector<GeoPoint>&    shape
             // For conics we can extent 90 degrees east and west amd from xx degrees up or down from lowest/upper standard parallels
             return BaseGCSUtilGetRangeAboutMeridianAndTwoStandardBoundParallel(shape, 
                                                                     GetOriginLongitude(), 
-								    89.9999,
+								                                    89.9999,
                                                                     GetStandardParallel1(), 
-								    GetStandardParallel2(), 
-								    30.0,
+								                                    GetStandardParallel2(), 
+								                                    30.0,
                                                                     -80.0, 
-								    80.0);
+								                                    80.0);
 
         case pcvObliqueCylindricalSwiss :
             // This projection is usually only used in Switzerland but can also be used in Hungary
@@ -9251,43 +9657,40 @@ bvector<GeoPoint>&    shape
         case pcvHotineObliqueMercator1XY :
         case pcvHotineObliqueMercator2UV :
         case pcvHotineObliqueMercator2XY :
-	    {
-	    // We have not yet determined the mathematical extent of these.
-	    // This should cause little problems as all are rarely used
-	    double minLongitude = GetMinimumUsefulLongitude();
-	    double maxLongitude = GetMaximumUsefulLongitude();
-	    double minLatitude = GetMinimumUsefulLatitude();
-	    double maxLatitude = GetMaximumUsefulLatitude();
-	    if ((minLongitude != maxLongitude) && (minLatitude != minLongitude))
-		{
-		return BaseGCSUtilGetRangeSpecified(shape, minLongitude, maxLongitude, minLatitude, maxLatitude);
-		}
+	        {
+	        // We have not yet determined the mathematical extent of these.
+	        // This should cause little problems as all are rarely used
+	        double minLongitude = GetMinimumUsefulLongitude();
+	        double maxLongitude = GetMaximumUsefulLongitude();
+	        double minLatitude = GetMinimumUsefulLatitude();
+	        double maxLatitude = GetMaximumUsefulLatitude();
+
+	        if ((minLongitude != maxLongitude) && (minLatitude != minLongitude))
+    	    	return BaseGCSUtilGetRangeSpecified(shape, minLongitude, maxLongitude, minLatitude, maxLatitude);
 
             // Even though it cannot be computed, the domain must be set as the caller may not check the return status.
             BaseGCSUtilGetRangeAboutPrimeMeridianAndEquator (shape, 180.0, 89.9);
             return BSIERROR; // return not implemented;
-    
-	    }
+ 	        }
 
         case pcvObliqueMercatorMinnesota :
         case pcvNewZealandNationalGrid :
-	    {
-	    // These are local grids. Eventually we will study more attentively how to
-	    // Compute the mathematical extent but for the moment we will limit to the
+    	    {
+	        // These are local grids. Eventually we will study more attentively how to
+	        // Compute the mathematical extent but for the moment we will limit to the
             // user extent
-	    double minLongitude = GetMinimumUsefulLongitude();
-	    double maxLongitude = GetMaximumUsefulLongitude();
-	    double minLatitude = GetMinimumUsefulLatitude();
-	    double maxLatitude = GetMaximumUsefulLatitude();
-	    if ((minLongitude != maxLongitude) && (minLatitude != minLongitude))
-		{
-		return BaseGCSUtilGetRangeSpecified(shape, minLongitude, maxLongitude, minLatitude, maxLatitude);
-		}
-	    // User domain not set ... we will use the default
+	        double minLongitude = GetMinimumUsefulLongitude();
+	        double maxLongitude = GetMaximumUsefulLongitude();
+	        double minLatitude = GetMinimumUsefulLatitude();
+	        double maxLatitude = GetMaximumUsefulLatitude();
+	        if ((minLongitude != maxLongitude) && (minLatitude != minLongitude))
+        		return BaseGCSUtilGetRangeSpecified(shape, minLongitude, maxLongitude, minLatitude, maxLatitude);
+		    
+	        // User domain not set ... we will use the default
             // Even though it cannot be computed, the domain must be set as the caller may not check the return status.
             BaseGCSUtilGetRangeAboutPrimeMeridianAndEquator (shape, 180.0, 89.9);
             return BSIERROR; // return not implemented;
-	    }
+	        }
         // Other
         case pcvNonEarth :
         case pcvNonEarthScaleRotation :
@@ -9299,9 +9702,9 @@ bvector<GeoPoint>&    shape
             return BaseGCSUtilGetRangeAboutMeridianAndEquator(shape, BaseGCSUtilGetUTMZoneCenterMeridian(GetUTMZone()), 15.0, 89.9);
 
 #if defined (TOTAL_SPECIAL)
-	// This version of transverse mercator allow going further out of the zone center 
+	    // This version of transverse mercator allow going further out of the zone center 
         case pcvTotalUniversalTransverseMercator :
-	  return BaseGCSUtilGetRangeAboutMeridianAndEquator(shape, BaseGCSUtilGetUTMZoneCenterMeridian(GetUTMZone()), 30.0, 89.9);
+	        return BaseGCSUtilGetRangeAboutMeridianAndEquator(shape, BaseGCSUtilGetUTMZoneCenterMeridian(GetUTMZone()), 30.0, 89.9);
 
 #endif //TOTAL_SPECIAL
         default:
@@ -10513,6 +10916,9 @@ CSDatum&    datum1,
 CSDatum&    datum2
 )
     {
+    if (!BaseGCS::IsLibraryInitialized())
+        return false;
+
     // if keynames are the same we can skip this.
     if ( (0 != datum1.key_nm[0]) && (0 != datum2.key_nm[0]) && (0 == strcmp (datum1.key_nm, datum2.key_nm)) )
         return true;
@@ -10734,6 +11140,9 @@ CharCP    epsgName
 +---------------+---------------+---------------+---------------+---------------+------*/
 int             BaseGCS::GetEPSGCode (bool noSearch) const
     {
+    if (NULL == m_csParameters)
+        return 0;
+
     // if the epsgNbr is in the CS, use that.
     if (0 != m_csParameters->csdef.epsgNbr)
         return m_csParameters->csdef.epsgNbr;
@@ -10792,6 +11201,9 @@ int             BaseGCS::GetEPSGDatumCode
 bool    noSearch
 ) const
     {
+    if (NULL == m_csParameters)
+        return 0;
+
     int     epsgNum;
     if (0 != (epsgNum = EPSGCodeFromName (m_csParameters->datum.key_nm)))
         return epsgNum;
@@ -10863,6 +11275,9 @@ int             BaseGCS::GetEPSGEllipsoidCode
 bool    noSearch
 ) const
     {
+    if (NULL == m_csParameters)
+        return 0;
+
     int     epsgNum;
     if (0 != (epsgNum = EPSGCodeFromName (m_csParameters->datum.ell_knm)))
         return epsgNum;
@@ -11243,6 +11658,9 @@ GeoPointR       outLatLong,         // <= latitude longitude
 DPoint3dCR      inCartesian         // => cartesian, in GCS's units.
 ) const
     {
+    if (NULL == m_csParameters)
+        return (ReprojectStatus)GEOCOORDERR_InvalidCoordSys;
+
     DPoint3d    internalCartesian;
     InternalCartesianFromCartesian (internalCartesian, inCartesian);
     return (ReprojectStatus) CSMap::CS_cs3ll (m_csParameters, &outLatLong, &internalCartesian);
@@ -11257,6 +11675,9 @@ GeoPoint2dR     outLatLong,         // <= latitude longitude
 DPoint2dCR      inCartesian         // => cartesian, in GCS's units.
 ) const
     {
+    if (NULL == m_csParameters)
+        return (ReprojectStatus)GEOCOORDERR_InvalidCoordSys;
+
     DPoint2d    internalCartesian;
     InternalCartesianFromCartesian2D (internalCartesian, inCartesian);
 
@@ -11278,6 +11699,9 @@ DPoint3dR       outCartesian,       // <= cartesian, in GCS's units.
 GeoPointCR      inLatLong           // => latitude longitude
 ) const
     {
+    if (NULL == m_csParameters)
+        return (ReprojectStatus)GEOCOORDERR_InvalidCoordSys;
+
     ReprojectStatus     status;
     DPoint3d    internalCartesian;
 
@@ -11301,6 +11725,9 @@ DPoint2dR       outCartesian,       // <= cartesian, in GCS's units.
 GeoPoint2dCR    inLatLong           // => latitude longitude
 ) const
     {
+    if (NULL == m_csParameters)
+        return (ReprojectStatus)GEOCOORDERR_InvalidCoordSys;
+
     StatusInt   status;
 
     GeoPoint    inLatLong3d;
@@ -11329,6 +11756,9 @@ double          BaseGCS::UnitsFromMeters
 (
 ) const
     {
+    if (NULL == m_csParameters)
+        return 1.0; // We return 1 in case someone tries to invert without checking against zero
+
     return m_csParameters->csdef.scale;
     }
 
@@ -11370,6 +11800,9 @@ DgnProjectionTypes     BaseGCS::DgnProjectionTypeFromCSDefName
 CharCP        projectionKeyName
 )
     {
+    if (!BaseGCS::IsLibraryInitialized())
+        return COORDSYS_NONE;
+
     int             iCoordSys;
     CoordSysData*   coordSys;
 
@@ -11389,6 +11822,9 @@ DgnProjectionTypes     BaseGCS::DgnProjectionTypeFromCSMapProjectionCode
 BaseGCS::ProjectionCodeValue projectionCode
 )
     {
+    if (!BaseGCS::IsLibraryInitialized())
+        return COORDSYS_NONE;
+
     int             iCoordSys;
     CoordSysData*   coordSys;
 
@@ -11497,6 +11933,23 @@ void BaseGCS::UnRegisterIsADestinationOf(BaseGCSCR baseGCSThatUsesCurrentAsADest
 			break;
 			}
         }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+
+* @bsimethod                                    Alain.Robert                   11/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+void BaseGCS::SetModified(bool modified)
+    {
+    if (modified)
+        {
+        // Clear original settings
+        m_originalGeoKeys.clear();
+        if (nullptr != m_originalWKT)
+            m_originalWKT->clear();
+        }
+
+    m_modified = modified;
     }
     
 
@@ -11623,6 +12076,12 @@ UnitCallback    callback,
 void*           callbackArg
 )
     {
+    if (!BaseGCS::IsLibraryInitialized())
+        {
+        m_csError = GEOCOORDERR_GeoCoordNotInitialized;
+        return;
+        }
+
     const struct cs_Unittab_   *pUnit;
     int                         index;
     for (index = 0, pUnit = cs_Unittab; cs_UTYP_END != pUnit->type; pUnit++)
@@ -11643,6 +12102,12 @@ UnitCallback    callback,
 void*           callbackArg
 )
     {
+    if (!BaseGCS::IsLibraryInitialized())
+        {
+        m_csError = GEOCOORDERR_GeoCoordNotInitialized;
+        return;
+        }
+
     const struct cs_Unittab_   *pUnit;
     int                         index;
     for (index = 0, pUnit = cs_Unittab; cs_UTYP_END != pUnit->type; pUnit++)
@@ -11661,6 +12126,9 @@ T_WStringVector*   BaseGCS::GetLinearUnitNames
 )
     {
     T_WStringVector*    unitNames = new T_WStringVector();
+
+    if (!BaseGCS::IsLibraryInitialized())
+        return unitNames;
 
     const struct cs_Unittab_   *pUnit;
     for (pUnit = cs_Unittab; cs_UTYP_END != pUnit->type; pUnit++)
@@ -11683,6 +12151,9 @@ T_WStringVector*   BaseGCS::GetUnitNames
     {
     T_WStringVector*    unitNames = new T_WStringVector();
 
+    if (!BaseGCS::IsLibraryInitialized())
+        return unitNames;
+
     const struct cs_Unittab_   *pUnit;
     for (pUnit = cs_Unittab; cs_UTYP_END != pUnit->type; pUnit++)
         {
@@ -11700,6 +12171,9 @@ T_WStringVector*   BaseGCS::GetDatumNames
 )
     {
     T_WStringVector*    datumNames = new T_WStringVector();
+
+    if (!BaseGCS::IsLibraryInitialized())
+        return datumNames;
 
     int     index;
     char    dtKeyName[128];
@@ -11719,6 +12193,9 @@ T_WStringVector*   BaseGCS::GetEllipsoidNames
 )
     {
     T_WStringVector*    ellipsoidNames = new T_WStringVector();
+
+    if (!BaseGCS::IsLibraryInitialized())
+        return ellipsoidNames;
 
     int     index;
     char    elKeyName[128];
@@ -11762,6 +12239,9 @@ VerticalDatumConverter (bool inputIsInNAD27, VertDatumCode inputVdc, VertDatumCo
 +---------------+---------------+---------------+---------------+---------------+------*/
 ~VerticalDatumConverter ()
     {
+    if (!BaseGCS::IsLibraryInitialized())
+        return;
+
     CSvrtconCls();
     CS_geoidCls();
     }
@@ -11776,6 +12256,9 @@ GeoPointR   outLatLong,
 GeoPointCR  inLatLong
 )
     {
+    if (!BaseGCS::IsLibraryInitialized())
+        return GEOCOORDERR_GeoCoordNotInitialized;
+
     // The process of datum conversion can be complex here depending on the set of in/out
     // vertical datums. Note that the vdcFromDatum value indicates that the ellipsoidal height is
     // used. This height is related to the horizontal datum and conversion may be necessary
@@ -11855,6 +12338,10 @@ CSDatumConvert*         datumConvert,
 VerticalDatumConverter* verticalDatumConverter
 )
     {
+    if (!BaseGCS::IsLibraryInitialized())
+        return;
+
+
     m_datumConvert              = datumConvert;
     m_verticalDatumConverter    = verticalDatumConverter;
 
@@ -11896,6 +12383,12 @@ BaseGCSCR       from,
 BaseGCSCR       to
 )
     {
+    if (!BaseGCS::IsLibraryInitialized())
+        return NULL;
+
+    if (!from.IsValid() || !to.IsValid())
+        return NULL;
+
     // Handled by CS-Map? CS-Map will handle ellipsoidal height (vdcFromDatum) conversion given 3D transformations
     // are requested. 
     if ( (vdcFromDatum == from.GetVerticalDatumCode()) && (vdcFromDatum == to.GetVerticalDatumCode()) )
@@ -11937,6 +12430,12 @@ BaseGCSCR       from,
 BaseGCSCR       to
 )
     {
+    if (!BaseGCS::IsLibraryInitialized())
+        return NULL;
+
+    if (!from.IsValid() || !to.IsValid())
+        return NULL;
+
     VerticalDatumConverter* verticalDatumConverter  = GetVerticalDatumConverter (from, to);
 
     CSDatumConvert  *datumConvert = CSMap::CS_dtcsu (from.GetCSParameters(), to.GetCSParameters());
@@ -11956,6 +12455,12 @@ DatumCR     from,
 DatumCR     to
 )
     {
+    if (!BaseGCS::IsLibraryInitialized())
+        return NULL;
+
+    if (!from.IsValid() || !to.IsValid())
+        return NULL;
+
     CSDatum* srcCSDatum = from.GetCSDatum();
     CSDatum* dstCSDatum = to.GetCSDatum();
     if ( (NULL == srcCSDatum) || (NULL == dstCSDatum) )
@@ -11976,6 +12481,9 @@ DatumConverter::~DatumConverter
 (
 )
     {
+    if (!BaseGCS::IsLibraryInitialized())
+        return ;
+
     if (NULL != m_datumConvert)
         {
         CSMap::CS_dtcls (m_datumConvert);
@@ -12127,6 +12635,9 @@ GroupEnumerator::GroupEnumerator () {m_currentIndex = -1; m_currentGroup = NULL;
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool            GroupEnumerator::MoveNext()
     {
+    if (!BaseGCS::IsLibraryInitialized())
+        return false;
+
     m_currentIndex++;
 
     if (NULL != m_currentGroup)
@@ -12148,7 +12659,10 @@ bool            GroupEnumerator::MoveNext()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Barry.Bentley   11/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-Group*          GroupEnumerator::GetCurrent() { return m_currentGroup; }
+Group*          GroupEnumerator::GetCurrent() 
+    { 
+    return m_currentGroup; 
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Barry.Bentley   11/07
@@ -12192,6 +12706,9 @@ void            MemberEnumerator::Destroy () const { delete this; }
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool            MemberEnumerator::MoveNext()
     {
+    if (!BaseGCS::IsLibraryInitialized())
+        return false;
+
     m_currentIndex++;
     CSGroupList         csGroupList;
     AString             groupName (m_groupName.c_str());
@@ -12226,6 +12743,9 @@ WCharCP         MemberEnumerator::GetCurrentGCSDescription() { return m_currentG
 +---------------+---------------+---------------+---------------+---------------+------*/
 UnitCP          Unit::FindUnit (WCharCP unitName)
     {
+    if (!BaseGCS::IsLibraryInitialized())
+        return NULL;
+
     const struct cs_Unittab_   *pUnit;
     int                         index;
     AString                     searchString (unitName);
@@ -12243,7 +12763,11 @@ UnitCP          Unit::FindUnit (WCharCP unitName)
 +---------------+---------------+---------------+---------------+---------------+------*/
 Unit::Unit (int index)
     {
-    m_csUnit                = &cs_Unittab[index];
+    if (!BaseGCS::IsLibraryInitialized())
+        m_csUnit = NULL;
+    else
+        m_csUnit = &cs_Unittab[index];
+
     m_nameString            = NULL;
     m_pluralNameString      = NULL;
     m_abbreviationString    = NULL;
@@ -12254,6 +12778,9 @@ Unit::Unit (int index)
 +---------------+---------------+---------------+---------------+---------------+------*/
 WCharCP             Unit::GetName() const           
     { 
+    if (NULL == m_csUnit)
+        return NULL;
+
     if (NULL == m_nameString)
         m_nameString = new WString (m_csUnit->name,false); 
     return m_nameString->c_str();
@@ -12264,6 +12791,9 @@ WCharCP             Unit::GetName() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 WCharCP             Unit::GetPluralName() const
     {
+    if (NULL == m_csUnit)
+        return NULL;
+
     if (NULL == m_pluralNameString)
         m_pluralNameString = new WString (m_csUnit->pluralName,false); 
     return m_pluralNameString->c_str();
@@ -12274,6 +12804,9 @@ WCharCP             Unit::GetPluralName() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 WCharCP             Unit::GetAbbreviation() const
     {
+    if (NULL == m_csUnit)
+        return NULL;
+
     if (NULL == m_abbreviationString)
         m_abbreviationString = new WString (m_csUnit->abrv,false); 
     return m_abbreviationString->c_str();
@@ -12284,6 +12817,9 @@ WCharCP             Unit::GetAbbreviation() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 GeoUnitSystem       Unit::GetSystem() const
     {
+    if (NULL == m_csUnit)
+        return GeoUnitSystem::None;
+
     // make this line up with MicroStation's definitions.
     if (cs_USYS_Metric == m_csUnit->system)
         return GeoUnitSystem::Metric;
@@ -12297,6 +12833,9 @@ GeoUnitSystem       Unit::GetSystem() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 GeoUnitBase     Unit::GetBase() const
     {
+    if (NULL == m_csUnit)
+        return GeoUnitBase::None;
+
     if (cs_UTYP_LEN == m_csUnit->type)
         return GeoUnitBase::Meter;
     else if (cs_UTYP_ANG == m_csUnit->type)
@@ -12307,13 +12846,25 @@ GeoUnitBase     Unit::GetBase() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   02/08
 +---------------+---------------+---------------+---------------+---------------+------*/
-int                 Unit::GetEPSGCode() const       { return m_csUnit->epsgCode; }
+int   Unit::GetEPSGCode() const       
+    { 
+    if (NULL == m_csUnit)
+        return 0;
+
+    return m_csUnit->epsgCode; 
+    }
 
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   02/08
 +---------------+---------------+---------------+---------------+---------------+------*/
-double              Unit::GetConversionFactor() const  { return m_csUnit->factor; }
+double              Unit::GetConversionFactor() const  
+    { 
+    if (NULL == m_csUnit)
+        return 1.0; // Return 1 instead of 0 in case invert is performed without checking
+
+    return m_csUnit->factor; 
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   02/08
@@ -12343,6 +12894,9 @@ UnitEnumerator::UnitEnumerator () {m_currentIndex = -1;}
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool                UnitEnumerator::MoveNext ()
     {
+    if (!BaseGCS::IsLibraryInitialized())
+        return false;
+
     if (m_currentIndex < -1)
         return false;
 
@@ -12360,6 +12914,9 @@ bool                UnitEnumerator::MoveNext ()
 +---------------+---------------+---------------+---------------+---------------+------*/
 UnitCP              UnitEnumerator::GetCurrent()
     {
+    if (!BaseGCS::IsLibraryInitialized())
+        return NULL;
+
     if (m_currentIndex < 0)
         return NULL;
 
@@ -12392,6 +12949,9 @@ m_currentIndex              = -1;
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool                EllipsoidEnumerator::MoveNext ()
     {
+    if (!BaseGCS::IsLibraryInitialized())
+        return false;
+
     if (m_currentIndex < -1)
         return false;
 
@@ -12415,6 +12975,9 @@ bool                EllipsoidEnumerator::MoveNext ()
 +---------------+---------------+---------------+---------------+---------------+------*/
 EllipsoidCP         EllipsoidEnumerator::GetCurrent()
     {
+    if (!BaseGCS::IsLibraryInitialized())
+        return NULL;
+
     if (m_currentIndex < 0)
         return NULL;
 
@@ -12481,6 +13044,15 @@ EllipsoidCP           Ellipsoid::CreateEllipsoid (const CSEllipsoidDef& ellipsoi
 Ellipsoid::Ellipsoid (WCharCP keyName, LibraryP sourceLibrary)
     {
     m_ellipsoidDef = NULL;
+    m_nameString        = NULL;
+    m_descriptionString = NULL;
+	m_sourceLibrary     = NULL;
+
+    if (!BaseGCS::IsLibraryInitialized())
+        {
+        m_csError = GEOCOORDERR_GeoCoordNotInitialized;
+        return;
+        }
 
     // if there's a source library, we need to look in it first.
     if (NULL != sourceLibrary)
@@ -12500,8 +13072,6 @@ Ellipsoid::Ellipsoid (WCharCP keyName, LibraryP sourceLibrary)
 
     m_csError = (NULL != m_ellipsoidDef) ? 0 : cs_Error;
 
-    m_nameString        = NULL;
-    m_descriptionString = NULL;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -12509,6 +13079,17 @@ Ellipsoid::Ellipsoid (WCharCP keyName, LibraryP sourceLibrary)
 +---------------+---------------+---------------+---------------+---------------+------*/
 Ellipsoid::Ellipsoid (EllipsoidCR source)
     {
+    m_ellipsoidDef      = NULL;
+    m_sourceLibrary     = NULL;
+    m_nameString        = NULL;
+    m_descriptionString = NULL;
+
+    if (!BaseGCS::IsLibraryInitialized())
+        {
+        m_csError = GEOCOORDERR_GeoCoordNotInitialized;
+        return;
+        }
+
     if (NULL == source.m_ellipsoidDef)
         {
         m_ellipsoidDef = NULL;
@@ -12522,8 +13103,7 @@ Ellipsoid::Ellipsoid (EllipsoidCR source)
         m_sourceLibrary = source.m_sourceLibrary;
         m_csError = source.m_csError;
         }
-    m_nameString        = NULL;
-    m_descriptionString = NULL;
+
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -12572,6 +13152,9 @@ int                 Ellipsoid::GetError () const
 +---------------+---------------+---------------+---------------+---------------+------*/
 WCharCP             Ellipsoid::GetErrorMessage (WStringR errorMsg) const
     {
+    if (!BaseGCS::IsLibraryInitialized())
+        return errorMsg.c_str();
+
     char    csErrorMsg[512];
     CSMap::CS_errmsg (csErrorMsg, DIM(csErrorMsg));
     errorMsg.AssignA (csErrorMsg);
@@ -12597,6 +13180,9 @@ WCharCP             Ellipsoid::GetName() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt           Ellipsoid::SetName (WCharCP value)
     {
+    if (NULL == m_ellipsoidDef)
+        return GEOCOORDERR_InvalidEllipsoid;
+
     AString mbName (value);
     if (mbName.length() >= _countof (m_ellipsoidDef->key_nm))
         return GEOCOORDERR_StringTooLong;
@@ -12633,6 +13219,9 @@ WCharCP             Ellipsoid::GetDescription() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt           Ellipsoid::SetDescription (WCharCP value)
     {
+    if (NULL == m_ellipsoidDef)
+        return GEOCOORDERR_InvalidEllipsoid;
+
     AString mbDescription (value);
 
     if (mbDescription.length() >= _countof (m_ellipsoidDef->name))
@@ -12662,6 +13251,9 @@ WCharCP             Ellipsoid::GetSource (WStringR source) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt           Ellipsoid::SetSource (WCharCP value)
     {
+    if (NULL == m_ellipsoidDef)
+        return GEOCOORDERR_InvalidEllipsoid;
+
     AString mbSource (value);
     if (mbSource.length() >= _countof (m_ellipsoidDef->source))
         return GEOCOORDERR_StringTooLong;
@@ -12773,7 +13365,7 @@ StatusInt           Ellipsoid::AddToLibrary() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt           Ellipsoid::ReplaceInLibrary (EllipsoidP replacement) const
     {
-    if (NULL == replacement->m_ellipsoidDef)
+    if (NULL == replacement || NULL == replacement->m_ellipsoidDef)
         return GEOCOORDERR_InvalidEllipsoid;
 
     if (NULL == m_ellipsoidDef)
@@ -12825,6 +13417,9 @@ StatusInt Ellipsoid::OutputAsASC
 WStringR            EllipsoidAsASC      // The ASC Text
 ) const
     {
+    if (NULL == m_ellipsoidDef)
+        return GEOCOORDERR_InvalidEllipsoid;
+
     StatusInt       status = SUCCESS;
 
     std::ostringstream EllipsoidAsASCStream(EllipsoidAsASC);
@@ -12863,6 +13458,9 @@ m_currentIndex  = -1;
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool                DatumEnumerator::MoveNext ()
     {
+    if (!BaseGCS::IsLibraryInitialized())
+        return false;
+
     if (m_currentIndex < -1)
         return false;
 
@@ -12886,6 +13484,9 @@ bool                DatumEnumerator::MoveNext ()
 +---------------+---------------+---------------+---------------+---------------+------*/
 DatumCP             DatumEnumerator::GetCurrent()
     {
+    if (!BaseGCS::IsLibraryInitialized())
+        return NULL;
+
     for (;;)
         {
         if (m_currentIndex < 0)
@@ -12937,8 +13538,17 @@ DatumCP             Datum::CreateDatum (WCharCP keyName)
 +---------------+---------------+---------------+---------------+---------------+------*/
 Datum::Datum (WCharCP keyName)
     {
-    m_datumDef                   = CSMap::CS_dtdef (AString (keyName).c_str());
-    m_csError                    = (NULL != m_datumDef) ? 0 : cs_Error;
+    if (!BaseGCS::IsLibraryInitialized())
+        {
+        m_datumDef = NULL;
+        m_csError = GEOCOORDERR_GeoCoordNotInitialized;
+        }
+    else
+        {
+        m_datumDef         = CSMap::CS_dtdef (AString (keyName).c_str());
+        m_csError          = (NULL != m_datumDef) ? 0 : cs_Error;
+        }
+
     m_csDatum                    = NULL;
     m_ellipsoid                  = NULL;
     m_sourceLibrary              = NULL;
@@ -12961,9 +13571,19 @@ DatumCP             Datum::CreateDatum (CSDatumDef const& datumDef, LibraryP sou
 +---------------+---------------+---------------+---------------+---------------+------*/
 Datum::Datum (CSDatumDef const& datumDef, LibraryP sourceLibrary)
     {
-    m_datumDef                   = (CSDatumDef*) CS_malc (sizeof (CSDatumDef));
-    memcpy (m_datumDef, &datumDef, sizeof(CSDatumDef));
-    m_csError                    = 0;
+    if (!BaseGCS::IsLibraryInitialized())
+        {
+        m_datumDef = NULL;
+        m_csError = GEOCOORDERR_GeoCoordNotInitialized;
+        }
+    else
+        {
+        m_datumDef                   = (CSDatumDef*) CS_malc (sizeof (CSDatumDef));
+        memcpy (m_datumDef, &datumDef, sizeof(CSDatumDef));
+        m_csError                    = 0;
+        }
+
+
     m_csDatum                    = NULL;
     m_ellipsoid                  = NULL;
     m_sourceLibrary              = sourceLibrary;
@@ -13005,6 +13625,9 @@ int                 Datum::GetError () const
 +---------------+---------------+---------------+---------------+---------------+------*/
 WCharCP             Datum::GetErrorMessage (WStringR errorMsg) const
     {
+    if (!BaseGCS::IsLibraryInitialized())
+        return errorMsg.c_str();
+
     char    csErrorMsg[512];
     CSMap::CS_errmsg (csErrorMsg, DIM(csErrorMsg));
     errorMsg.AssignA (csErrorMsg);
@@ -13018,6 +13641,7 @@ WCharCP             Datum::GetName() const
     {
     if (NULL == m_datumDef)
         return NULL;
+
     if (NULL == m_nameString)
         m_nameString = new WString (m_datumDef->key_nm,false);
 
@@ -13029,6 +13653,9 @@ WCharCP             Datum::GetName() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt           Datum::SetName (WCharCP value)
     {
+    if (NULL == m_datumDef)
+        return GEOCOORDERR_InvalidDatum;
+
     AString mbName (value);
     if (mbName.length() >= _countof (m_datumDef->key_nm))
         return GEOCOORDERR_StringTooLong;
@@ -13066,6 +13693,9 @@ WCharCP             Datum::GetDescription() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt           Datum::SetDescription (WCharCP value)
     {
+    if (NULL == m_datumDef)
+        return GEOCOORDERR_InvalidDatum;
+
     AString mbDescription (value);
     if (mbDescription.length() >= _countof (m_datumDef->name))
         return GEOCOORDERR_StringTooLong;
@@ -13096,6 +13726,9 @@ WCharCP             Datum::GetSource (WStringR source) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt           Datum::SetSource (WCharCP value)
     {
+    if (NULL == m_datumDef)
+        return GEOCOORDERR_InvalidDatum;
+
     AString mbSource (value);
     if (mbSource.length() >= _countof (m_datumDef->source))
         return GEOCOORDERR_StringTooLong;
@@ -13131,6 +13764,9 @@ StatusInt           Datum::SetConvertToWGS84MethodCode (WGS84ConvertCode value)
     if ( (intValue < 0) || (intValue > ConvertType_MAXVALUE) )
         return GEOCOORDERR_BadArg;
 
+    if (NULL == m_datumDef)
+        return GEOCOORDERR_InvalidDatum;
+
     m_datumDef->to84_via = static_cast<short>(intValue); // NEEDSWORK - is cast correct?  Can intValue be a short?
     CSMAP_FREE_AND_CLEAR (m_csDatum);
     return BSISUCCESS;;
@@ -13141,11 +13777,14 @@ StatusInt           Datum::SetConvertToWGS84MethodCode (WGS84ConvertCode value)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void                Datum::GetDelta (DPoint3dR delta) const
     {
+    delta.x = delta.y = delta.z = 0.0;
+
+    if (NULL == m_datumDef)
+        return;
+
     bool             deltaValid, rotationValid, scaleValid;
     ParametersValid (deltaValid, rotationValid, scaleValid);
-    if (!deltaValid)
-        delta.x = delta.y = delta.z = 0.0;
-    else
+    if (deltaValid)
         {
         delta.x = m_datumDef->delta_X;
         delta.y = m_datumDef->delta_Y;
@@ -13157,6 +13796,9 @@ void                Datum::GetDelta (DPoint3dR delta) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt           Datum::SetDelta (DPoint3dCR delta)
     {
+    if (NULL == m_datumDef)
+        return GEOCOORDERR_InvalidDatum;
+
     bool             deltaValid, rotationValid, scaleValid;
     ParametersValid (deltaValid, rotationValid, scaleValid);
     if (deltaValid)
@@ -13175,11 +13817,14 @@ StatusInt           Datum::SetDelta (DPoint3dCR delta)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void                Datum::GetRotation (DPoint3dR rotation) const
     {
+    rotation.x = rotation.y = rotation.z = 0.0;
+
+    if (NULL == m_datumDef)
+        return;
+
     bool             deltaValid, rotationValid, scaleValid;
     ParametersValid (deltaValid, rotationValid, scaleValid);
-    if (!rotationValid)
-        rotation.x = rotation.y = rotation.z = 0.0;
-    else
+    if (rotationValid)
         {
         rotation.x = m_datumDef->rot_X;
         rotation.y = m_datumDef->rot_Y;
@@ -13192,6 +13837,9 @@ void                Datum::GetRotation (DPoint3dR rotation) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt           Datum::SetRotation (DPoint3dCR rotation)
     {
+    if (NULL == m_datumDef)
+        return GEOCOORDERR_InvalidDatum;
+
     bool             deltaValid, rotationValid, scaleValid;
     ParametersValid (deltaValid, rotationValid, scaleValid);
     if (rotationValid)
@@ -13210,6 +13858,9 @@ StatusInt           Datum::SetRotation (DPoint3dCR rotation)
 +---------------+---------------+---------------+---------------+---------------+------*/
 double              Datum::GetScale () const
     {
+    if (NULL == m_datumDef)
+        return 0.0;
+
     bool             deltaValid, rotationValid, scaleValid;
     ParametersValid (deltaValid, rotationValid, scaleValid);
     return (scaleValid) ? m_datumDef->bwscale : 0.0;
@@ -13220,6 +13871,9 @@ double              Datum::GetScale () const
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt           Datum::SetScale (double value)
     {
+    if (NULL == m_datumDef)
+        return GEOCOORDERR_InvalidDatum;
+
     bool             deltaValid, rotationValid, scaleValid;
     ParametersValid (deltaValid, rotationValid, scaleValid);
     if (scaleValid)
@@ -13501,7 +14155,7 @@ StatusInt           Datum::AddToLibrary() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt           Datum::ReplaceInLibrary (DatumP replacement) const
     {
-    if (NULL == replacement->m_datumDef)
+    if (NULL == replacement || NULL == replacement->m_datumDef)
         return GEOCOORDERR_InvalidDatum;
 
     if (NULL == m_datumDef)
@@ -13580,6 +14234,9 @@ StatusInt Datum::OutputAsASC
 WStringR       DatumAsASC
 ) const
 {
+    if (NULL == m_datumDef)
+        return GEOCOORDERR_InvalidDatum;
+
     StatusInt       status = SUCCESS;
 
     std::ostringstream DatumAsAscStream(DatumAsASC);
@@ -13814,6 +14471,12 @@ MilitaryGridConverter::MilitaryGridConverter (BaseGCSR baseGCS, bool useBessel, 
     // can't have both useBessel and useWGS84Datum.
     assert (!useBessel || !useWGS84Datum);
 
+    if (!baseGCS.IsValid())
+        {
+        m_csMgrs = NULL;
+        return;
+        }
+
     if (useBessel)
         {
         // we use the GCS only to get the ellipsoid information.
@@ -13903,13 +14566,13 @@ MilitaryGridConverterPtr   MilitaryGridConverter::CreateConverter (BaseGCSR base
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt   MilitaryGridConverter::LatLongFromMilitaryGrid (GeoPoint2dR outLatLong, WCharCP mgString)
     {
-    StatusInt status;
+    StatusInt status = SUCCESS;
     
     GeoPoint2d  tmpLatLong;
 
     AString mbMGString (mgString);
 
-    if (0 == (status = CSMap::CScalcLlFromMgrs (m_csMgrs, &tmpLatLong, mbMGString.c_str())))
+    if ((NULL != m_csMgrs) && (0 == (status = CSMap::CScalcLlFromMgrs (m_csMgrs, &tmpLatLong, mbMGString.c_str()))))
         {
         if (NULL != m_fromWGS84Converter)
             m_fromWGS84Converter->ConvertLatLong2D (outLatLong, tmpLatLong);
@@ -13920,6 +14583,7 @@ StatusInt   MilitaryGridConverter::LatLongFromMilitaryGrid (GeoPoint2dR outLatLo
         {
         outLatLong.latitude = 0.0;
         outLatLong.longitude = 0.0;
+        status = ERROR;
         }
     return status;
     }
@@ -13937,11 +14601,14 @@ StatusInt   MilitaryGridConverter::MilitaryGridFromLatLong (WString& mgString, G
         m_toWGS84Converter->ConvertLatLong2D (outLatLong, inLatLong);
 
     // 5 is the maximum precision.
-    StatusInt     status;
-    if (0 == (status = CSMap::CScalcMgrsFromLl (m_csMgrs, mgChar, _countof (mgChar), &outLatLong, precision)))
+    StatusInt     status = SUCCESS;
+    if ((NULL != m_csMgrs) && (0 == (status = CSMap::CScalcMgrsFromLl (m_csMgrs, mgChar, _countof (mgChar), &outLatLong, precision))))
         mgString.AssignA (mgChar);
     else
+        {
         mgString.assign (L"");
+        status = ERROR;
+        }
 
     return status;
     }
@@ -14165,7 +14832,7 @@ IGeoTiffKeysList*                 geoTiffKeys,        // The GeoTiff key list
 GeoCoordinates::BaseGCS* pBaseGcs
 )
     {
-    return pBaseGcs->InitFromGeoTiffKeys(warning, warningOrErrorMsg, geoTiffKeys);
+    return pBaseGcs->InitFromGeoTiffKeys(warning, warningOrErrorMsg, geoTiffKeys, true);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -14297,7 +14964,7 @@ IGeoTiffKeysList* pList,
 GeoCoordinates::BaseGCS* pBaseGcs
 )
     {
-    return pBaseGcs->SetGeoTiffKeys(pList);
+    return pBaseGcs->GetGeoTiffKeys(pList, false);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -14310,7 +14977,7 @@ int32_t                             wktFlavor,          // The WKT Flavor.
 GeoCoordinates::BaseGCS*   pBaseGcs
 )
     {
-    return pBaseGcs->GetWellKnownText(wellKnownText, (GeoCoordinates::BaseGCS::WktFlavor)wktFlavor);
+    return pBaseGcs->GetWellKnownText(wellKnownText, (GeoCoordinates::BaseGCS::WktFlavor)wktFlavor, false);
     }
 
 /*---------------------------------------------------------------------------------**//**

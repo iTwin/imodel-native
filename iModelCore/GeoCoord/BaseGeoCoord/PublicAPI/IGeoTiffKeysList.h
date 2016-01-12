@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: BaseGeoCoord/PublicAPI/IGeoTiffKeysList.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 #pragma once
@@ -77,5 +77,13 @@ struct GeoKeyItem
 virtual void            AddKey (unsigned short pi_KeyID, uint32_t pi_value)=0;
 virtual void            AddKey (unsigned short pi_KeyID, double pi_value)=0;
 virtual void            AddKey (unsigned short pi_KeyID, const std::string& pi_value)=0;
+
+/*---------------------------------------------------------------------------------**//**
+* Adds a GeoKeyItem to the list. The GeoKeyItem is copied before addition to the list.
+* @param    key    IN  The key to add.
+* @bsimethod                                                    Alain.Robert   11/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+virtual void            AddKey (const GeoKeyItem& key)=0;
+
 };
 

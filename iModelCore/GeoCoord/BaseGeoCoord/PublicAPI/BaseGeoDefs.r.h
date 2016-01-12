@@ -2,7 +2,7 @@
 |
 |     $Source: BaseGeoCoord/PublicAPI/BaseGeoDefs.r.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -239,6 +239,8 @@ enum  BaseGeoCoordErrors
     GEOCOORDERR_EllipsoidInUse                  = (GeoCoordErrorBase  - 43),
     GEOCOORDERR_MaxUserLibraryEllipsoids        = (GeoCoordErrorBase  - 44),
     GEOCOORDERR_InvalidEllipsoid                = (GeoCoordErrorBase  - 45),
+
+    GEOCOORDERR_GeoCoordNotInitialized          = (GeoCoordErrorBase  - 46),
 
     // GeoTiff read errors:
     GEOCOORDERR_GeocentricNotSupported          = (GeoCoordErrorTiffBase - 1),
