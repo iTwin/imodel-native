@@ -425,7 +425,7 @@ AsyncTaskPtr<DgnDbFileNameResult> DgnDbClient::AquireBriefcase(Utf8StringCR repo
                     if (filePath.IsDirectory())
                         {
                         Utf8String dirName;
-                        dirName.Sprintf("%s%d", repository->GetId(), briefcaseId);
+                        dirName.Sprintf("%s%d", repository->GetId().c_str(), briefcaseId);
                         filePath.AppendToPath(BeFileName(dirName));
                         filePath.AppendToPath(BeFileName(properties[ServerSchema::Property::FileName].asString()));
                         BeFileName::CreateNewDirectory(filePath.GetDirectoryName());
