@@ -1179,20 +1179,52 @@ struct ComponentDef : RefCountedBase
     DGNPLATFORM_EXPORT static DgnElementCPtr MakeUniqueInstance(DgnDbStatus* stat, DgnModelR targetModel, ECN::IECInstanceCR parameters, DgnElement::Code const& code = DgnElement::Code());
 };
 
+//========================================================================================
+//! A component definition parameter 
+//! Defines the standard JSON format for a parameter
+//========================================================================================
+struct TsComponentParameter
+    {
+    ComponentDef::ParameterVariesPer m_variesPer;
+    ECN::ECValue m_value;
+
+    TsComponentParameter() : m_variesPer(ComponentDef::ParameterVariesPer::Instance) {;}
+    //! Construct a new Parameter
+    TsComponentParameter(ComponentDef::ParameterVariesPer s, ECN::ECValueCR v) : m_variesPer(s), m_value(v) {;}
+    //! From JSON
+    DGNPLATFORM_EXPORT explicit TsComponentParameter(Json::Value const&);
+    //! To JSON
+    DGNPLATFORM_EXPORT Json::Value ToJson() const;
+    //! Get the scope of this parameter
+    ComponentDef::ParameterVariesPer GetScope() const {return m_variesPer;}
+    //! Get the value of this parameter
+    ECN::ECValueCR GetValue() const {return m_value;}
+    //! Set the value of this parameter
+    DgnDbStatus SetValue(ECN::ECValueCR newValue);
+
+    bool EqualValues(TsComponentParameter const& rhs) {return m_value.Equals(rhs.m_value);}
+    bool operator==(TsComponentParameter const& rhs) const {return m_variesPer == rhs.m_variesPer && m_value.Equals(rhs.m_value);}
+    };
+    
+//========================================================================================
+//! A collection of named component definition parameters
+//! Defines the standard JSON format for a parameter set
+//========================================================================================
+struct TsComponentParameterSet : bmap<Utf8String,TsComponentParameter>
+    {
+    TsComponentParameterSet() {}
+    DGNPLATFORM_EXPORT TsComponentParameterSet(ComponentDefR, ECN::IECInstanceCR);
+    DGNPLATFORM_EXPORT TsComponentParameterSet(Json::Value const& v);
+
+    DGNPLATFORM_EXPORT Json::Value ToJson() const;
+    DGNPLATFORM_EXPORT void ToECProperties(ECN::IECInstanceR) const;
+    };
+
 //=======================================================================================
 //! A helper class that makes it easier to create a ComponentDefinition ECClass
 //=======================================================================================
 struct ComponentDefCreator
 {
-public:
-    struct PropertySpec
-        {
-        Utf8String m_name;
-        ECN::PrimitiveType m_type;
-        ComponentDef::ParameterVariesPer m_variesPer;
-        PropertySpec(Utf8StringCR n, ECN::PrimitiveType pt, ComponentDef::ParameterVariesPer vp) : m_name(n), m_type(pt), m_variesPer(vp) {;} 
-        };
-
 private:
     DgnDbR m_db;
     ECN::ECSchemaR m_schema;
@@ -1203,7 +1235,7 @@ private:
     Utf8String m_codeAuthorityName;
     Utf8String m_modelName;
     Utf8String m_inputs;
-    bvector<PropertySpec> m_propSpecs;
+    TsComponentParameterSet m_params;
     
     ECN::IECInstancePtr CreatePropSpecCA();
     ECN::IECInstancePtr CreateSpecCA();
@@ -1214,15 +1246,15 @@ public:
 
     DGNPLATFORM_EXPORT static ECN::ECSchemaCP ImportSchema(DgnDbR db, ECN::ECSchemaCR schemaIn, bool updateExistingSchemas);
   
-    ComponentDefCreator(DgnDbR db, ECN::ECSchemaR schema, Utf8StringCR name, ECN::ECClassCR baseClass, Utf8StringCR geomgen, Utf8StringCR cat, Utf8StringCR codeauth)
-        :m_db(db), m_schema(schema), m_baseClass(baseClass), m_name(name), m_scriptName(geomgen), m_categoryName(cat), m_codeAuthorityName(codeauth)
+    ComponentDefCreator(DgnDbR db, ECN::ECSchemaR schema, Utf8StringCR name, ECN::ECClassCR baseClass, Utf8StringCR geomgen, Utf8StringCR cat, Utf8StringCR codeauth, TsComponentParameterSet const& params = TsComponentParameterSet())
+        :m_db(db), m_schema(schema), m_baseClass(baseClass), m_name(name), m_scriptName(geomgen), m_categoryName(cat), m_codeAuthorityName(codeauth), m_params(params)
         {
         }
 
     //! Set the model name. The default is no model name, indicating that the component should use a temporary "sandbox" model.
     void SetModelName(Utf8StringCR n) {m_modelName=n;}
 
-    void AddPropertySpec(PropertySpec const& s) {m_propSpecs.push_back(s); AddInput(s.m_name);}
+    TsComponentParameterSet& GetTsComponentParameterSetR() {return m_params;}
 
     DGNPLATFORM_EXPORT void AddInput(Utf8StringCR inp); //!< You can call this directly to mark existing (subclass) properties as inputs
 

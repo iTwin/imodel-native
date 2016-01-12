@@ -267,17 +267,17 @@ void ComponentModelTest::Developer_DefineSchema()
         {
         Developer_CreateCategory("WidgetCategory", ColorDef(0xff0000FF));
 
-        ComponentDefCreator creator(*m_componentDb, *testSchema, TEST_WIDGET_COMPONENT_NAME, *baseClass, TEST_JS_NAMESPACE "." TEST_WIDGET_COMPONENT_NAME, "WidgetCategory", "");
-        creator.AddPropertySpec(ComponentDefCreator::PropertySpec("X", ECN::PrimitiveType::PRIMITIVETYPE_Double, ComponentDef::ParameterVariesPer::Instance));
-        creator.AddPropertySpec(ComponentDefCreator::PropertySpec("Y", ECN::PrimitiveType::PRIMITIVETYPE_Double, ComponentDef::ParameterVariesPer::Instance));
-        creator.AddPropertySpec(ComponentDefCreator::PropertySpec("Z", ECN::PrimitiveType::PRIMITIVETYPE_Double, ComponentDef::ParameterVariesPer::Instance));
+        TsComponentParameterSet params;
+        params["X"] = TsComponentParameter(ComponentDef::ParameterVariesPer::Instance, ECN::ECValue(1.0));
+        params["Y"] = TsComponentParameter(ComponentDef::ParameterVariesPer::Instance, ECN::ECValue(1.0));
+        params["Z"] = TsComponentParameter(ComponentDef::ParameterVariesPer::Instance, ECN::ECValue(1.0));
+
+        ComponentDefCreator creator(*m_componentDb, *testSchema, TEST_WIDGET_COMPONENT_NAME, *baseClass, TEST_JS_NAMESPACE "." TEST_WIDGET_COMPONENT_NAME, "WidgetCategory", "", params);
         ECN::ECClassCP ecClass = creator.GenerateECClass();
         ASSERT_TRUE(nullptr != ecClass);
 
         m_wsln1 = VariationSpec(TEST_WIDGET_COMPONENT_NAME, "wsln1");
-        m_wsln1.m_params["X"] = TsComponentParameter(ComponentDef::ParameterVariesPer::Instance, ECN::ECValue(10.0));
-        m_wsln1.m_params["Y"] = TsComponentParameter(ComponentDef::ParameterVariesPer::Instance, ECN::ECValue(11.0));
-        m_wsln1.m_params["Z"] = TsComponentParameter(ComponentDef::ParameterVariesPer::Instance, ECN::ECValue(12.0));
+        m_wsln1.m_params = params;
         m_wsln1.m_slabDimensions.push_back("X");
         m_wsln1.m_slabDimensions.push_back("Y");
         m_wsln1.m_slabDimensions.push_back("Z");
@@ -302,19 +302,18 @@ void ComponentModelTest::Developer_DefineSchema()
         {
         Developer_CreateCategory("GadgetCategory", ColorDef(0x00ff00FF));
 
-        ComponentDefCreator creator(*m_componentDb, *testSchema, TEST_GADGET_COMPONENT_NAME, *baseClass, TEST_JS_NAMESPACE "." TEST_GADGET_COMPONENT_NAME, "GadgetCategory", "");
-        creator.AddPropertySpec(ComponentDefCreator::PropertySpec("Q", ECN::PrimitiveType::PRIMITIVETYPE_Double, ComponentDef::ParameterVariesPer::Instance));
-        creator.AddPropertySpec(ComponentDefCreator::PropertySpec("W", ECN::PrimitiveType::PRIMITIVETYPE_Double, ComponentDef::ParameterVariesPer::Instance));
-        creator.AddPropertySpec(ComponentDefCreator::PropertySpec("R", ECN::PrimitiveType::PRIMITIVETYPE_Double, ComponentDef::ParameterVariesPer::Instance));
-        creator.AddPropertySpec(ComponentDefCreator::PropertySpec("T", ECN::PrimitiveType::PRIMITIVETYPE_String, ComponentDef::ParameterVariesPer::Instance));
+        TsComponentParameterSet params;
+        params["Q"] = TsComponentParameter(ComponentDef::ParameterVariesPer::Instance, ECN::ECValue(1.0));
+        params["W"] = TsComponentParameter(ComponentDef::ParameterVariesPer::Instance, ECN::ECValue(1.0));
+        params["R"] = TsComponentParameter(ComponentDef::ParameterVariesPer::Instance, ECN::ECValue(1.0));
+        params["T"] = TsComponentParameter(ComponentDef::ParameterVariesPer::Instance, ECN::ECValue("text"));
+
+        ComponentDefCreator creator(*m_componentDb, *testSchema, TEST_GADGET_COMPONENT_NAME, *baseClass, TEST_JS_NAMESPACE "." TEST_GADGET_COMPONENT_NAME, "GadgetCategory", "", params);
         ECN::ECClassCP ecClass = creator.GenerateECClass();
         ASSERT_TRUE(nullptr != ecClass);
 
         m_gsln1 = VariationSpec(TEST_GADGET_COMPONENT_NAME, "gsln1");
-        m_gsln1.m_params["Q"] = TsComponentParameter(ComponentDef::ParameterVariesPer::Instance, ECN::ECValue(3.0));
-        m_gsln1.m_params["W"] = TsComponentParameter(ComponentDef::ParameterVariesPer::Instance, ECN::ECValue(2.0));
-        m_gsln1.m_params["R"] = TsComponentParameter(ComponentDef::ParameterVariesPer::Instance, ECN::ECValue(1.0));
-        m_gsln1.m_params["T"] = TsComponentParameter(ComponentDef::ParameterVariesPer::Instance, ECN::ECValue("text"));
+        m_gsln1.m_params = params;
         m_gsln1.m_slabDimensions.push_back("Q");
         m_gsln1.m_slabDimensions.push_back("W");
         m_gsln1.m_slabDimensions.push_back("R");
@@ -324,17 +323,17 @@ void ComponentModelTest::Developer_DefineSchema()
         {
         Developer_CreateCategory("ThingCategory", ColorDef(0x0000ffFF));
 
-        ComponentDefCreator creator(*m_componentDb, *testSchema, TEST_THING_COMPONENT_NAME, *baseClass, TEST_JS_NAMESPACE "." TEST_THING_COMPONENT_NAME, "ThingCategory", "");
-        creator.AddPropertySpec(ComponentDefCreator::PropertySpec("A", ECN::PrimitiveType::PRIMITIVETYPE_Double, ComponentDef::ParameterVariesPer::Instance));
-        creator.AddPropertySpec(ComponentDefCreator::PropertySpec("B", ECN::PrimitiveType::PRIMITIVETYPE_Double, ComponentDef::ParameterVariesPer::Instance));
-        creator.AddPropertySpec(ComponentDefCreator::PropertySpec("C", ECN::PrimitiveType::PRIMITIVETYPE_Double, ComponentDef::ParameterVariesPer::Instance));
+        TsComponentParameterSet params;
+        params["A"] = TsComponentParameter(ComponentDef::ParameterVariesPer::Instance, ECN::ECValue(1.0));
+        params["B"] = TsComponentParameter(ComponentDef::ParameterVariesPer::Instance, ECN::ECValue(1.0));
+        params["C"] = TsComponentParameter(ComponentDef::ParameterVariesPer::Instance, ECN::ECValue(1.0));
+
+        ComponentDefCreator creator(*m_componentDb, *testSchema, TEST_THING_COMPONENT_NAME, *baseClass, TEST_JS_NAMESPACE "." TEST_THING_COMPONENT_NAME, "ThingCategory", "", params);
         ECN::ECClassCP ecClass = creator.GenerateECClass();
         ASSERT_TRUE(nullptr != ecClass);
 
         m_nsln1 = VariationSpec(TEST_THING_COMPONENT_NAME, "nsln1");
-        m_nsln1.m_params["A"] = TsComponentParameter(ComponentDef::ParameterVariesPer::Instance, ECN::ECValue(1.0));
-        m_nsln1.m_params["B"] = TsComponentParameter(ComponentDef::ParameterVariesPer::Instance, ECN::ECValue(1.0));
-        m_nsln1.m_params["C"] = TsComponentParameter(ComponentDef::ParameterVariesPer::Instance, ECN::ECValue(1.0));
+        m_nsln1.m_params = params;
         m_nsln1.m_slabDimensions.push_back("A");
         m_nsln1.m_slabDimensions.push_back("B");
         m_nsln1.m_slabDimensions.push_back("C");

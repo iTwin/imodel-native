@@ -13,47 +13,6 @@
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
-//========================================================================================
-//! A component definition parameter 
-//! Defines the standard JSON format for a parameter
-//========================================================================================
-struct TsComponentParameter
-    {
-    ComponentDef::ParameterVariesPer m_variesPer;
-    ECN::ECValue m_value;
-
-    TsComponentParameter() : m_variesPer(ComponentDef::ParameterVariesPer::Instance) {;}
-    //! Construct a new Parameter
-    TsComponentParameter(ComponentDef::ParameterVariesPer s, ECN::ECValueCR v) : m_variesPer(s), m_value(v) {;}
-    //! From JSON
-    DGNPLATFORM_EXPORT explicit TsComponentParameter(Json::Value const&);
-    //! To JSON
-    DGNPLATFORM_EXPORT Json::Value ToJson() const;
-    //! Get the scope of this parameter
-    ComponentDef::ParameterVariesPer GetScope() const {return m_variesPer;}
-    //! Get the value of this parameter
-    ECN::ECValueCR GetValue() const {return m_value;}
-    //! Set the value of this parameter
-    DgnDbStatus SetValue(ECN::ECValueCR newValue);
-
-    bool EqualValues(TsComponentParameter const& rhs) {return m_value.Equals(rhs.m_value);}
-    bool operator==(TsComponentParameter const& rhs) const {return m_variesPer == rhs.m_variesPer && m_value.Equals(rhs.m_value);}
-    };
-    
-//========================================================================================
-//! A collection of named component definition parameters
-//! Defines the standard JSON format for a parameter set
-//========================================================================================
-struct TsComponentParameterSet : bmap<Utf8String,TsComponentParameter>
-    {
-    TsComponentParameterSet() {}
-    DGNPLATFORM_EXPORT TsComponentParameterSet(ComponentDefR, ECN::IECInstanceCR);
-    DGNPLATFORM_EXPORT TsComponentParameterSet(Json::Value const& v);
-
-    DGNPLATFORM_EXPORT Json::Value ToJson() const;
-    DGNPLATFORM_EXPORT void ToECProperties(ECN::IECInstanceR) const;
-    };
-
 //=======================================================================================
 //! Enables JavaScript programs to access the DgnPlatform API.
 //! DgnScript creates a set of JavaScript types and functions that expose native Dgn and BentleyApi types to JavaScript functions. These types and functions are collectively known as the DgnPlatform API for JavaScript.

@@ -1436,14 +1436,14 @@ ECN::ECClassCP ComponentDefCreator::GenerateECClass()
 
     AddSpecCA(*ecclass);
 
-    for (auto const& propSpec: m_propSpecs)
+    for (auto const& propSpec: m_params)
         {
         ECN::PrimitiveECPropertyP ecprop;
-        ECSUCCESS(ecclass->CreatePrimitiveProperty(ecprop, propSpec.m_name));
+        ECSUCCESS(ecclass->CreatePrimitiveProperty(ecprop, propSpec.first));
         
-        ecprop->SetType(propSpec.m_type);
+        ecprop->SetType(propSpec.second.m_value.GetPrimitiveType());
 
-        if (propSpec.m_variesPer != ComponentDef::ParameterVariesPer::Instance)
+        if (propSpec.second.m_variesPer != ComponentDef::ParameterVariesPer::Instance)
             {
             auto ca = CreatePropSpecCA();
             ca->SetValue("ParameterVariesPer", ECN::ECValue("Variation"));
