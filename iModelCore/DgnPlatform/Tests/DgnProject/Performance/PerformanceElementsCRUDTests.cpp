@@ -90,6 +90,7 @@ int64_t PerformanceElementsCRUDTestFixture::s_elementId = INT64_C(2000000);
 Utf8CP const PerformanceElementsCRUDTestFixture::s_testSchemaXml =
     "<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
         "  <ECSchemaReference name = 'dgn' version = '02.00' prefix = 'dgn' />"
+        "  <ECSchemaReference name = 'ECDbMap' version = '01.00' prefix = 'ecdbmap' />"
         "  <ECClass typeName='Element1' >"
         "    <ECCustomAttributes>"
         "       <ClassHasHandler xmlns=\"dgn.02.00\" />"
@@ -138,9 +139,38 @@ Utf8CP const PerformanceElementsCRUDTestFixture::s_testSchemaXml =
         "  </ECClass>"
         "  <ECClass typeName='TestMultiAspect' isDomainClass='True'>"
         "    <BaseClass>dgn:ElementMultiAspect</BaseClass>"
+        "    <ECCustomAttributes>"
+        "       <ClassMap xmlns = 'ECDbMap.01.00'>"
+        "           <Indexes>"
+        "               <DbIndex>"
+        "                   <Name>IDX_TMAspect</Name>"
+        "                   <IsUnique>False</IsUnique>"
+        "                   <Properties>"
+        "                       <string>ElementId</string>"
+        "                   </Properties>"
+        "               </DbIndex>"
+        "           </Indexes>"
+        "       </ClassMap>"
+        "    </ECCustomAttributes>"
         "    <ECProperty propertyName='TestMultiAspectProperty' typeName='string' />"
-        "    <ECProperty propertyName='Length' typeName='double' />"
         "  </ECClass>"
+        "  <ECRelationshipClass typeName = 'ElementOwnsTestMultiAspect' strength = 'embedding'>"
+        "    <ECCustomAttributes>"
+        "      <ForeignKeyRelationshipMap xmlns='ECDbMap.01.00'>"
+        "        <OnDeleteAction>Cascade</OnDeleteAction>"
+        "      </ForeignKeyRelationshipMap>"
+        "    </ECCustomAttributes>"
+        "    <Source cardinality = '(1,1)' polymorphic = 'true'>"
+        "      <Class class = 'Element1' />"
+        "    </Source>"
+        "    <Target cardinality = '(0,N)' polymorphic = 'true'>"
+        "      <Class class = 'TestMultiAspect'>"
+        "        <Key>"
+        "          <Property name = 'ElementId' />"
+        "        </Key>"
+        "      </Class>"
+        "    </Target>"
+        "  </ECRelationshipClass>"
         "</ECSchema>";
 
 //---------------------------------------------------------------------------------------
@@ -210,9 +240,9 @@ DgnDbStatus PerformanceElement1::_BindUpdateParams (BeSQLite::EC::ECSqlStatement
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            08/2015
 //---------------+---------------+---------------+---------------+---------------+-------
-PerformanceElement1Ptr PerformanceElement1::Create (Dgn::DgnDbR db, Dgn::DgnModelId modelId, Dgn::DgnClassId classId, Dgn::DgnCategoryId category, bool specifyProperyValues)
+PerformanceElement1Ptr PerformanceElement1::Create (Dgn::DgnDbR db, Dgn::DgnModelId modelId, Dgn::DgnClassId classId, Dgn::DgnCategoryId category, bool specifyPropertyValues)
     {
-    if (specifyProperyValues)
+    if (specifyPropertyValues)
         return new PerformanceElement1 (PhysicalElement::CreateParams (db, modelId, classId, category), "Element1 - InitValue", 10000000LL, -3.1415);
     else
         return new PerformanceElement1 (PhysicalElement::CreateParams (db, modelId, classId, category));
@@ -248,13 +278,46 @@ static bool appendEllipse3d(ElementGeometryBuilder& builder, double cx, double c
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                   Majd.Uddin            01/2016
+//---------------+---------------+---------------+---------------+---------------+-------
+static bool appendSolidPrimitive(ElementGeometryBuilder& builder, double dz, double radius)
+{
+    DgnConeDetail cylinderDetail(DPoint3d::From(0, 0, 0), DPoint3d::From(0, 0, dz), radius, radius, true);
+    ISolidPrimitivePtr solidPrimitive = ISolidPrimitive::CreateDgnCone(cylinderDetail);
+    ElementGeometryPtr elmGeom3 = ElementGeometry::Create(*solidPrimitive);
+    EXPECT_TRUE(elmGeom3.IsValid());
+    EXPECT_TRUE(ElementGeometry::GeometryType::SolidPrimitive == elmGeom3->GetGeometryType());
+    ISolidPrimitivePtr getAsSolid = elmGeom3->GetAsISolidPrimitive();
+    EXPECT_TRUE(getAsSolid.IsValid());
+    
+    return builder.Append(*getAsSolid);
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson      06/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus TestMultiAspect::_LoadProperties(DgnElementCR el)
+{
+    CachedECSqlStatementPtr stmt = el.GetDgnDb().GetPreparedECSqlStatement(Utf8PrintfString("SELECT TestMultiAspectProperty FROM %s WHERE(ECInstanceId=?)", GetFullEcSqlClassName().c_str()));
+    stmt->BindId(1, GetAspectInstanceId());
+    if (BE_SQLITE_ROW != stmt->Step())
+        return DgnDbStatus::ReadError;
+    m_testMultiAspectProperty = stmt->GetValueText(0);
+    return DgnDbStatus::Success;
+}
+
+static bool useEllipse = true;
+//---------------------------------------------------------------------------------------
 // @bsimethod                                   Majd.Uddin            12/2015
 //---------------+---------------+---------------+---------------+---------------+-------
 void PerformanceElement1::AddGeomtry()
 {
     GeometrySourceP geomElem = this->ToGeometrySourceP();
     ElementGeometryBuilderPtr builder = ElementGeometryBuilder::Create(*this->GetModel(), this->GetCategoryId(), DPoint3d::From(0.0, 0.0, 0.0));
-    ASSERT_TRUE(appendEllipse3d(*builder, 1, 2, 3));
+    if (useEllipse)
+        ASSERT_TRUE(appendEllipse3d(*builder, 1, 2, 3));
+    else
+        ASSERT_TRUE(appendSolidPrimitive(*builder, 3.0, 1.5));
     ASSERT_EQ(SUCCESS, builder->SetGeomStreamAndPlacement(*geomElem));
 
     ASSERT_TRUE(this->HasGeometry());
@@ -267,12 +330,12 @@ void PerformanceElement1::ExtendGeometry()
     {
     GeometrySourceP geomElem = this->ToGeometrySourceP();
     ElementGeometryBuilderPtr builder = ElementGeometryBuilder::Create(*this->GetModel(), this->GetCategoryId(), DPoint3d::From(0.0, 0.0, 0.0));
-    ASSERT_TRUE(appendEllipse3d(*builder, 0, 0, 0));
-    ASSERT_TRUE(appendEllipse3d(*builder, 1, 2, 3));
-    ASSERT_TRUE(appendEllipse3d(*builder, 3, 2, 1));
+    if (useEllipse)
+        ASSERT_TRUE(appendEllipse3d(*builder, 3, 2, 1));
+    else
+        ASSERT_TRUE(appendSolidPrimitive(*builder, 6.0, 3.0));
 
     ASSERT_EQ(SUCCESS, builder->SetGeomStreamAndPlacement(*geomElem));
-
     ASSERT_TRUE(this->HasGeometry());
     }
 
@@ -343,9 +406,9 @@ DgnDbStatus PerformanceElement2::_BindUpdateParams (BeSQLite::EC::ECSqlStatement
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            09/2015
 //---------------+---------------+---------------+---------------+---------------+-------
-PerformanceElement2Ptr PerformanceElement2::Create (Dgn::DgnDbR db, Dgn::DgnModelId modelId, Dgn::DgnClassId classId, Dgn::DgnCategoryId category, bool specifyProperyValues)
+PerformanceElement2Ptr PerformanceElement2::Create (Dgn::DgnDbR db, Dgn::DgnModelId modelId, Dgn::DgnClassId classId, Dgn::DgnCategoryId category, bool specifyPropertyValues)
     {
-    if (specifyProperyValues)
+    if (specifyPropertyValues)
         return new PerformanceElement2 (PhysicalElement::CreateParams (db, modelId, classId, category), "Element1 - InitValue", 10000000LL, -3.1415, "Element2 - InitValue", 20000000LL, 2.71828);
     else
         return new PerformanceElement2 (PhysicalElement::CreateParams (db, modelId, classId, category));
@@ -434,9 +497,9 @@ DgnDbStatus PerformanceElement3::_BindUpdateParams (BeSQLite::EC::ECSqlStatement
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            09/2015
 //---------------+---------------+---------------+---------------+---------------+-------
-PerformanceElement3Ptr PerformanceElement3::Create (Dgn::DgnDbR db, Dgn::DgnModelId modelId, Dgn::DgnClassId classId, Dgn::DgnCategoryId category, bool specifyProperyValues)
+PerformanceElement3Ptr PerformanceElement3::Create (Dgn::DgnDbR db, Dgn::DgnModelId modelId, Dgn::DgnClassId classId, Dgn::DgnCategoryId category, bool specifyPropertyValues)
     {
-    if (specifyProperyValues)
+    if (specifyPropertyValues)
         return new PerformanceElement3 (PhysicalElement::CreateParams (db, modelId, classId, category), "Element1 - InitValue", 10000000LL, -3.1415, "Element2 - InitValue", 20000000LL, 2.71828, "Element3 - InitValue", 30000000LL, 1.414121);
     else
         return new PerformanceElement3 (PhysicalElement::CreateParams (db, modelId, classId, category));
@@ -525,9 +588,9 @@ DgnDbStatus PerformanceElement4::_BindUpdateParams (BeSQLite::EC::ECSqlStatement
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            09/2015
 //---------------+---------------+---------------+---------------+---------------+-------
-PerformanceElement4Ptr PerformanceElement4::Create (Dgn::DgnDbR db, Dgn::DgnModelId modelId, Dgn::DgnClassId classId, Dgn::DgnCategoryId category, bool specifyProperyValues)
+PerformanceElement4Ptr PerformanceElement4::Create (Dgn::DgnDbR db, Dgn::DgnModelId modelId, Dgn::DgnClassId classId, Dgn::DgnCategoryId category, bool specifyPropertyValues)
     {
-    if (specifyProperyValues)
+    if (specifyPropertyValues)
         return new PerformanceElement4 (PhysicalElement::CreateParams (db, modelId, classId, category), "Element1 - InitValue", 10000000LL, -3.1415, "Element2 - InitValue", 20000000LL, 2.71828, "Element3 - InitValue", 30000000LL, 1.414121, "Element4 - InitValue", 40000000LL, 1.61803398874);
     else
         return new PerformanceElement4 (PhysicalElement::CreateParams (db, modelId, classId, category));
@@ -552,7 +615,7 @@ PerformanceElement4CPtr PerformanceElement4::Update ()
 //---------------------------------------------------------------------------------------
 // @bsiMethod                                      Muhammad Hassan                  10/15
 //+---------------+---------------+---------------+---------------+---------------+------
-void PerformanceElementsCRUDTestFixture::CreateElements (int numInstances, Utf8CP className, bvector<DgnElementPtr>& elements, Utf8String modelCode, bool specifyProperyValues) const
+void PerformanceElementsCRUDTestFixture::CreateElements (int numInstances, Utf8CP className, bvector<DgnElementPtr>& elements, Utf8String modelCode, bool specifyPropertyValues) const
     {
     DgnClassId mclassId = DgnClassId (m_db->Schemas ().GetECClassId (DGN_ECSCHEMA_NAME, DGN_CLASSNAME_SpatialModel));
     SpatialModelPtr targetModel = new SpatialModel (SpatialModel::CreateParams (*m_db, mclassId, DgnModel::CreateModelCode (modelCode)));
@@ -568,7 +631,7 @@ void PerformanceElementsCRUDTestFixture::CreateElements (int numInstances, Utf8C
         {
         for (int i = 0; i < numInstances; i++)
             {
-            PerformanceElement1Ptr element = PerformanceElement1::Create (*m_db, targetModel->GetModelId (), classId, catid, specifyProperyValues);
+            PerformanceElement1Ptr element = PerformanceElement1::Create (*m_db, targetModel->GetModelId (), classId, catid, specifyPropertyValues);
             element->AddGeomtry();
             if (addMultiAspect)
                 DgnElement::MultiAspect::AddAspect(*element, *TestMultiAspect::Create("Initial Value"));
@@ -592,7 +655,7 @@ void PerformanceElementsCRUDTestFixture::CreateElements (int numInstances, Utf8C
         {
         for (int i = 0; i < numInstances; i++)
             {
-            PerformanceElement2Ptr element = PerformanceElement2::Create (*m_db, targetModel->GetModelId (), classId, catid, specifyProperyValues);
+            PerformanceElement2Ptr element = PerformanceElement2::Create (*m_db, targetModel->GetModelId (), classId, catid, specifyPropertyValues);
             element->AddGeomtry();
             if (addMultiAspect)
                 DgnElement::MultiAspect::AddAspect(*element, *TestMultiAspect::Create("Initial Value"));
@@ -616,7 +679,7 @@ void PerformanceElementsCRUDTestFixture::CreateElements (int numInstances, Utf8C
         {
         for (int i = 0; i < numInstances; i++)
             {
-            PerformanceElement3Ptr element = PerformanceElement3::Create (*m_db, targetModel->GetModelId (), classId, catid, specifyProperyValues);
+            PerformanceElement3Ptr element = PerformanceElement3::Create (*m_db, targetModel->GetModelId (), classId, catid, specifyPropertyValues);
             element->AddGeomtry();
             if (addMultiAspect)
                 DgnElement::MultiAspect::AddAspect(*element, *TestMultiAspect::Create("Initial Value"));
@@ -640,7 +703,7 @@ void PerformanceElementsCRUDTestFixture::CreateElements (int numInstances, Utf8C
         {
         for (int i = 0; i < numInstances; i++)
             {
-            PerformanceElement4Ptr element = PerformanceElement4::Create (*m_db, targetModel->GetModelId (), classId, catid, specifyProperyValues);
+            PerformanceElement4Ptr element = PerformanceElement4::Create (*m_db, targetModel->GetModelId (), classId, catid, specifyPropertyValues);
             element->AddGeomtry();
             if (addMultiAspect)
                 DgnElement::MultiAspect::AddAspect(*element, *TestMultiAspect::Create("Initial Value"));
@@ -1509,7 +1572,6 @@ void PerformanceElementsCRUDTestFixture::ApiInsertTime(Utf8CP className, int ini
     for (DgnElementPtr& element : testElements)
         {
         DgnDbStatus stat = DgnDbStatus::Success;
-        //DgnElement::MultiAspect::AddAspect(*element, *TestMultiAspect::Create("Initial Value"));
         element->Insert (&stat);
         ASSERT_EQ (DgnDbStatus::Success, stat);
         }
@@ -1550,7 +1612,8 @@ void PerformanceElementsCRUDTestFixture::ApiUpdateTime(Utf8CP className, int ini
 
     const int elementIdIncrement = DetermineElementIdIncrement(initialInstanceCount, opCount);
 
-    StopWatch timer (true);
+    //First build dgnelements with modified Geomtry
+    bvector<DgnElementPtr> elements;
     for (uint64_t i = 0; i < opCount; i++)
         {
         const DgnElementId id(s_firstElementId + i*elementIdIncrement);
@@ -1558,7 +1621,13 @@ void PerformanceElementsCRUDTestFixture::ApiUpdateTime(Utf8CP className, int ini
         ASSERT_TRUE(element != nullptr);
 
         element->ExtendGeometry();
-
+        elements.push_back(element);
+        }
+    
+    //Now update and record time
+    StopWatch timer (true);
+    for (DgnElementPtr& element : elements)
+        {
         DgnDbStatus stat = DgnDbStatus::Success;
         element->DgnElement::Update (&stat);
         ASSERT_EQ (DgnDbStatus::Success, stat);

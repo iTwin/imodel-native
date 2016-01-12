@@ -56,7 +56,7 @@ struct PerformanceElement1 : Dgn::PhysicalElement
         virtual Dgn::DgnDbStatus _ReadSelectParams (BeSQLite::EC::ECSqlStatement& stmt, ECSqlClassParams const& params) override;
 
     public:
-        static PerformanceElement1Ptr Create (Dgn::DgnDbR db, Dgn::DgnModelId modelId, Dgn::DgnClassId classId, Dgn::DgnCategoryId category, bool specifyProperyValues);
+        static PerformanceElement1Ptr Create (Dgn::DgnDbR db, Dgn::DgnModelId modelId, Dgn::DgnClassId classId, Dgn::DgnCategoryId category, bool specifyPropertyValues);
 
         PerformanceElement1CPtr Insert ();
         PerformanceElement1CPtr Update ();
@@ -94,7 +94,7 @@ struct PerformanceElement2 : PerformanceElement1
         virtual Dgn::DgnDbStatus _ReadSelectParams (BeSQLite::EC::ECSqlStatement& stmt, ECSqlClassParams const& params) override;
 
     public:
-        static PerformanceElement2Ptr Create (Dgn::DgnDbR db, Dgn::DgnModelId modelId, Dgn::DgnClassId classId, Dgn::DgnCategoryId category, bool specifyProperyValues);
+        static PerformanceElement2Ptr Create (Dgn::DgnDbR db, Dgn::DgnModelId modelId, Dgn::DgnClassId classId, Dgn::DgnCategoryId category, bool specifyPropertyValues);
 
         PerformanceElement2CPtr Insert ();
         PerformanceElement2CPtr Update ();
@@ -130,7 +130,7 @@ struct PerformanceElement3 : PerformanceElement2
         virtual Dgn::DgnDbStatus _ReadSelectParams (BeSQLite::EC::ECSqlStatement& stmt, ECSqlClassParams const& params) override;
 
     public:
-        static PerformanceElement3Ptr Create (Dgn::DgnDbR db, Dgn::DgnModelId modelId, Dgn::DgnClassId classId, Dgn::DgnCategoryId category, bool specifyProperyValues);
+        static PerformanceElement3Ptr Create (Dgn::DgnDbR db, Dgn::DgnModelId modelId, Dgn::DgnClassId classId, Dgn::DgnCategoryId category, bool specifyPropertyValues);
 
         PerformanceElement3CPtr Insert ();
         PerformanceElement3CPtr Update ();
@@ -168,7 +168,7 @@ struct PerformanceElement4 : PerformanceElement3
         virtual Dgn::DgnDbStatus _ReadSelectParams (BeSQLite::EC::ECSqlStatement& stmt, ECSqlClassParams const& params) override;
 
     public:
-        static PerformanceElement4Ptr Create (Dgn::DgnDbR db, Dgn::DgnModelId modelId, Dgn::DgnClassId classId, Dgn::DgnCategoryId category, bool specifyProperyValues);
+        static PerformanceElement4Ptr Create (Dgn::DgnDbR db, Dgn::DgnModelId modelId, Dgn::DgnClassId classId, Dgn::DgnCategoryId category, bool specifyPropertyValues);
 
         PerformanceElement4CPtr Insert ();
         PerformanceElement4CPtr Update ();
@@ -190,7 +190,7 @@ private:
     Utf8CP _GetECSchemaName() const override { return ELEMENT_PERFORMANCE_TEST_SCHEMA_NAME; }
     Utf8CP _GetECClassName() const override { return ELEMENT_ASPECT_CLASS; }
     // Dummy implementation
-    Dgn::DgnDbStatus _LoadProperties(Dgn::DgnElementCR el) override { return DgnDbStatus::Success; };
+    Dgn::DgnDbStatus _LoadProperties(Dgn::DgnElementCR el) override ;
     Dgn::DgnDbStatus _UpdateProperties(Dgn::DgnElementCR el) override { return DgnDbStatus::Success; };
 
 public:
@@ -210,7 +210,7 @@ struct TestMultiAspectHandler : Dgn::dgn_AspectHandler::Aspect
     DOMAINHANDLER_DECLARE_MEMBERS(ELEMENT_ASPECT_CLASS, TestMultiAspectHandler, Dgn::dgn_AspectHandler::Aspect, )
         RefCountedPtr<Dgn::DgnElement::Aspect> _CreateInstance() override { return new TestMultiAspect(""); }
 };
-
+typedef RefCountedPtr<TestMultiAspect> TestMultiAspectPtr;
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Carole.MacDonald            08/2015
 //---------------+---------------+---------------+---------------+---------------+-------
@@ -272,7 +272,7 @@ struct PerformanceElementsCRUDTestFixture : public DgnDbTestFixture
 
         void SetUpTestDgnDb(WCharCP destFileName, Utf8CP testClassName, int initialInstanceCount);
 
-        void CreateElements(int numInstances, Utf8CP className, bvector<DgnElementPtr>& elements, Utf8String modelCode, bool specifyProperyValues) const;
+        void CreateElements(int numInstances, Utf8CP className, bvector<DgnElementPtr>& elements, Utf8String modelCode, bool specifyPropertyValues) const;
 
         static int DetermineElementIdIncrement(int initialInstanceCount, int opCount) { return initialInstanceCount / opCount; }
 
