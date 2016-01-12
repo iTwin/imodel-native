@@ -302,7 +302,7 @@ struct PerformanceElementsCRUDTestFixture : public DgnDbTestFixture
         static DgnDbStatus BindElement3PropertyParams(ECSqlStatement& stmt, bool updateParams);
         static DgnDbStatus BindElement4PropertyParams(ECSqlStatement& stmt, bool updateParams);
         static void BindParams(DgnElementPtr& element, ECSqlStatement& stmt, Utf8CP className);
-        static void BindUpdateParams(ECSqlStatement& stmt, Utf8CP className);
+        static void BindUpdateParams(DgnElementPtr& element, ECSqlStatement& stmt, Utf8CP className);
 
         //Methods to verify Business Property Values returned by Sql Statements. 
         static DgnDbStatus ExtractElement1SelectParams(BeSQLite::Statement& stmt);
