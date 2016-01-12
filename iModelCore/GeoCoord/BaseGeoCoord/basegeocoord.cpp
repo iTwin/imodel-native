@@ -9340,7 +9340,7 @@ StatusInt BaseGCSUtilGetRangeAboutBoundMeridianAndBoundParallel   (bvector<GeoPo
 +---------------+---------------+---------------+---------------+---------------+------*/
 inline double BaseGCSUtilGetUTMZoneCenterMeridian(int zoneNumber)
     {
-    return (zoneNumber - 30) * 6;
+    return ((zoneNumber - 30) * 6) - 3;
     }
 
 
