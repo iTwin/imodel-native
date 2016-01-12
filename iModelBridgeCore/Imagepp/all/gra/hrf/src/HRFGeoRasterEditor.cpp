@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFGeoRasterEditor.cpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class HRFGeoRasterEditor
@@ -73,8 +73,7 @@ HRFGeoRasterEditor::~HRFGeoRasterEditor()
 //-----------------------------------------------------------------------------
 HSTATUS HRFGeoRasterEditor::ReadBlock(uint64_t                pi_PosBlockX,
                                       uint64_t                pi_PosBlockY,
-                                      Byte*                   po_pData,
-                                      HFCLockMonitor const*   pi_pSisterFileLock)
+                                      Byte*                   po_pData)
     {
     HPRECONDITION (m_AccessMode.m_HasReadAccess);
     HPRECONDITION (po_pData != 0);
@@ -82,13 +81,6 @@ HSTATUS HRFGeoRasterEditor::ReadBlock(uint64_t                pi_PosBlockX,
 
     HSTATUS Status = H_SUCCESS;
 
-    HFCLockMonitor SisterFileLock;
-    if(pi_pSisterFileLock == 0)
-        {
-        // Will reload directories if necessary
-        AssignRasterFileLock(GetRasterFile(), SisterFileLock, true);
-        pi_pSisterFileLock = &SisterFileLock;
-        }
 
     if (m_pCodec != 0 && !m_pCodec->IsCompatibleWith(HCDCodecIdentity::CLASS_ID))
         {
@@ -155,20 +147,12 @@ HSTATUS HRFGeoRasterEditor::ReadBlock(uint64_t                pi_PosBlockX,
 //-----------------------------------------------------------------------------
 HSTATUS HRFGeoRasterEditor::WriteBlock(uint64_t               pi_PosBlockX,
                                        uint64_t               pi_PosBlockY,
-                                       const Byte*            pi_pData,
-                                       HFCLockMonitor const*  pi_pSisterFileLock)
+                                       const Byte*            pi_pData)
     {
     HPRECONDITION (pi_PosBlockX <= ULONG_MAX && pi_PosBlockY <= ULONG_MAX);
 
     HSTATUS RetValue = H_ERROR;
 
-    HFCLockMonitor SisterFileLock;
-    if(pi_pSisterFileLock == 0)
-        {
-        // Will reload directories if necessary
-        AssignRasterFileLock(GetRasterFile(), SisterFileLock, true);
-        pi_pSisterFileLock = &SisterFileLock;
-        }
 
     if (m_pCodec != 0 && !m_pCodec->IsCompatibleWith(HCDCodecIdentity::CLASS_ID))
         {

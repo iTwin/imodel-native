@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFLRDFile.cpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class HRFLRDFile
@@ -191,9 +191,6 @@ bool HRFLRDCreator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
     bool                   bResult = false;
     HAutoPtr<HFCBinStream>  pFile;
 
-    (const_cast<HRFLRDCreator*>(this))->SharingControlCreate(pi_rpURL);
-    HFCLockMonitor SisterFileLock(GetLockManager());
-
     // Open the LRD File & place file pointer at the start of the file
     pFile = HFCBinStream::Instanciate(pi_rpURL, pi_Offset, HFC_READ_ONLY | HFC_SHARE_READ_WRITE);
 
@@ -207,10 +204,6 @@ bool HRFLRDCreator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
         if (pFile->Read(&MagicString, 5) == 5)
             bResult = !strncmp(MagicString, ".vec", 4);
         }
-    SisterFileLock.ReleaseKey();
-
-    HASSERT(!(const_cast<HRFLRDCreator*>(this))->m_pSharingControl->IsLocked());
-    (const_cast<HRFLRDCreator*>(this))->m_pSharingControl = 0;
 
     return bResult;
     }
@@ -385,9 +378,6 @@ bool HRFLRDFile::Open()
 
     m_IsOpen = true;
 
-    // This creates the sister file for file sharing control if necessary.
-    SharingControlCreate();
-
     return m_IsOpen;
     }
 
@@ -547,9 +537,6 @@ bool HRFLRDFile::Create()
 
     m_IsOpen = true;
 
-    // This creates the sister file for file sharing control if necessary.
-    SharingControlCreate();
-
     return m_IsOpen;
     }
 
@@ -603,9 +590,6 @@ bool HRFLRDFile::CreateFileHeader(HFCPtr<HRFPageDescriptor> pi_pPage)
     // Create an header block
     if (CreateHeaderBlock(pResolutionDescriptor))
         {
-        // Lock the sister file
-        HFCLockMonitor SisterFileLock(GetLockManager());
-
         // Feed the header struct.
         strncpy(m_pLRDHeader->MagicWord, ".vec", 4);
         m_pLRDHeader->VecLevel    = 1;
@@ -666,9 +650,6 @@ bool HRFLRDFile::CreateFileHeader(HFCPtr<HRFPageDescriptor> pi_pPage)
         // Write freshly created header physically into the file...
         m_pLRDFile->Write(m_pLRDHeader, sizeof(LRDHeaderBlock)); // HRF_LRD_BLOCK_SIZE
 
-        // Unlock the sister file
-        SisterFileLock.ReleaseKey();
-
         // Initialise some members and read file header Read
         m_HasHeaderFilled = true;
         InitOpenedFile();
@@ -715,8 +696,6 @@ void HRFLRDFile::InitOpenedFile()
 
     if (!GetAccessMode().m_HasCreateAccess)
         {
-        // Lock the sister file
-        HFCLockMonitor SisterFileLock(GetLockManager());
         m_pLRDHeader = new LRDHeaderBlock;
 
         m_pLRDFile->SeekToBegin();
@@ -724,9 +703,6 @@ void HRFLRDFile::InitOpenedFile()
         // Read and fill the Type1BlockHeader
         m_pLRDFile->Read(m_pLRDHeader, sizeof(LRDHeaderBlock) ); // HRF_LRD_BLOCK_SIZE);
         m_HasHeaderFilled = true;
-
-        // Unlock the sister file.
-        SisterFileLock.ReleaseKey();
         }
 
     if (m_HasHeaderFilled)

@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFTgaCompressImageEditor.cpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class HRFTgaCompressImageEditor
@@ -80,8 +80,7 @@ HRFTgaCompressImageEditor::~HRFTgaCompressImageEditor()
 ------------------------------------------------------------------------------*/
 HSTATUS HRFTgaCompressImageEditor::ReadBlock(uint64_t pi_PosBlockX,
                                              uint64_t pi_PosBlockY,
-                                             Byte*    po_pData,
-                                             HFCLockMonitor const* pi_pSisterFileLock)
+                                             Byte*    po_pData)
     {
     HPRECONDITION(m_AccessMode.m_HasReadAccess);
     HPRECONDITION(pi_PosBlockY == 0);
@@ -98,7 +97,7 @@ HSTATUS HRFTgaCompressImageEditor::ReadBlock(uint64_t pi_PosBlockX,
         HFCPtr<HCDPacket> pCompressed = new HCDPacket;
 
         // Read the data into the compressed packet
-        Status = ReadCompressedImage(pCompressed, pi_pSisterFileLock);
+        Status = ReadCompressedImage(pCompressed);
 
         if (Status == H_SUCCESS)
             {
@@ -157,8 +156,7 @@ HSTATUS HRFTgaCompressImageEditor::ReadBlock(uint64_t pi_PosBlockX,
 
  @return HSTATUS H_SUCCESS if the readint operation went right.
 ------------------------------------------------------------------------------*/
-HSTATUS HRFTgaCompressImageEditor::ReadCompressedImage(HFCPtr<HCDPacket>& po_rpPacket,
-                                                       HFCLockMonitor const* pi_pSisterFileLock)
+HSTATUS HRFTgaCompressImageEditor::ReadCompressedImage(HFCPtr<HCDPacket>& po_rpPacket)
     {
     HPRECONDITION(m_AccessMode.m_HasReadAccess);
     HPRECONDITION(po_rpPacket != 0);
@@ -167,15 +165,6 @@ HSTATUS HRFTgaCompressImageEditor::ReadCompressedImage(HFCPtr<HCDPacket>& po_rpP
 
     uint32_t          NbBytesRead;
     HFCPtr<HRFTgaFile> pTgaFile    = TGA_RASTERFILE;
-
-    // Lock the sister file if needed
-    HFCLockMonitor SisterFileLock;
-    if(pi_pSisterFileLock == 0)
-        {
-        // Get lock and synch.
-        AssignRasterFileLock(GetRasterFile(), SisterFileLock, true);
-        pi_pSisterFileLock = &SisterFileLock;
-        }
 
     // Set the current codec to the Packet.
     po_rpPacket->SetCodec ((HFCPtr<HCDCodec> &) m_pCodec);
@@ -205,21 +194,9 @@ HSTATUS HRFTgaCompressImageEditor::ReadCompressedImage(HFCPtr<HCDPacket>& po_rpP
         po_rpPacket->SetDataSize (NbBytesRead);
         }
 
-    // Unlock the sister file.
-    SisterFileLock.ReleaseKey();
-
     Status = H_SUCCESS;
 
 WRAPUP:
     return Status;
     }
 
-//-----------------------------------------------------------------------------
-// public
-// OnSynchronizedSharingControl
-//-----------------------------------------------------------------------------
-void HRFTgaCompressImageEditor::OnSynchronizedSharingControl()
-    {
-    (TGA_RASTERFILE)->SaveTgaFile(true);
-    (TGA_RASTERFILE)->Open();
-    }

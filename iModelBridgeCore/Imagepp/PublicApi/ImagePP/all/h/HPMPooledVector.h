@@ -118,7 +118,7 @@ template <typename DataType> class HPMMemoryManagedVector
 public:
     typedef DataType value_type;
 
-    template <class T> class iteratorBase : public BentleyApi::ImagePP::RandomAccessIteratorWithAutoReverseConst<iteratorBase<T>, iteratorBase<typename BentleyApi::ImagePP::ReverseConstTrait<T>::type >, T>
+    template <class T> class iteratorBase : public RandomAccessIteratorWithAutoReverseConst<iteratorBase<T>, iteratorBase<typename ReverseConstTrait<T>::type >, T>
         {
     public:
         static const size_t npos = -1;
@@ -454,7 +454,7 @@ private:
 public:
     typedef DataType value_type;
 
-    template <class T> class iteratorBase : public BentleyApi::ImagePP::RandomAccessIteratorWithAutoReverseConst<iteratorBase<T>, iteratorBase<typename BentleyApi::ImagePP::ReverseConstTrait<T>::type >, T>
+    template <class T> class iteratorBase : public RandomAccessIteratorWithAutoReverseConst<iteratorBase<T>, iteratorBase<typename ReverseConstTrait<T>::type >, T>
         {
     public:
         static const size_t npos = -1;

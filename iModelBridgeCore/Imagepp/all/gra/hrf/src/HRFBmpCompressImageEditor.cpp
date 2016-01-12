@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFBmpCompressImageEditor.cpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class HRFBmpCompressImageEditor
@@ -74,8 +74,7 @@ HRFBmpCompressImageEditor::~HRFBmpCompressImageEditor()
 //-----------------------------------------------------------------------------
 HSTATUS HRFBmpCompressImageEditor::ReadBlock(uint64_t            pi_PosBlockX,
                                              uint64_t            pi_PosBlockY,
-                                             HFCPtr<HCDPacket>&  po_rpPacket,
-                                             HFCLockMonitor const* pi_pSisterFileLock)
+                                             HFCPtr<HCDPacket>&  po_rpPacket)
     {
     HPRECONDITION(m_AccessMode.m_HasReadAccess);
     HPRECONDITION(po_rpPacket != 0);
@@ -86,15 +85,6 @@ HSTATUS HRFBmpCompressImageEditor::ReadBlock(uint64_t            pi_PosBlockX,
         {
         Byte* pCompressBuffer = 0;
         uint32_t CompressDateSize = 0;
-
-        // Lock the sister file
-        HFCLockMonitor SisterFileLock;
-        if(pi_pSisterFileLock == 0)
-            {
-            // Lock the file.
-            AssignRasterFileLock(GetRasterFile(), SisterFileLock, true);
-            pi_pSisterFileLock = &SisterFileLock;
-            }
 
         // Read the data from the file.
         if(m_pRasterFile->m_pBmpFile->GetCurrentPos() != m_PosInFile)
@@ -107,9 +97,6 @@ HSTATUS HRFBmpCompressImageEditor::ReadBlock(uint64_t            pi_PosBlockX,
 
         if(m_pRasterFile->m_pBmpFile->Read(pCompressBuffer, CompressDateSize) == CompressDateSize)
             {
-            // Unlock the sister file
-            SisterFileLock.ReleaseKey();
-
             // Set the current codec to the Packet.
             po_rpPacket->SetCodec((HFCPtr<HCDCodec> &) m_pCodec);
 
@@ -143,8 +130,7 @@ HSTATUS HRFBmpCompressImageEditor::ReadBlock(uint64_t            pi_PosBlockX,
 //-----------------------------------------------------------------------------
 HSTATUS  HRFBmpCompressImageEditor::WriteBlock(uint64_t       pi_PosBlockX,
                                                uint64_t       pi_PosBlockY,
-                                               const Byte*    pi_pData,
-                                               HFCLockMonitor const* pi_pSisterFileLock)
+                                               const Byte*    pi_pData)
     {
     HPRECONDITION (m_AccessMode.m_HasWriteAccess || m_AccessMode.m_HasCreateAccess);
     HPRECONDITION (m_pResolutionDescriptor->GetCodec() != 0);
@@ -172,7 +158,7 @@ HSTATUS  HRFBmpCompressImageEditor::WriteBlock(uint64_t       pi_PosBlockX,
 
     Uncompressed.Compress(pCompressed);
 
-    return WriteBlock(pi_PosBlockX, pi_PosBlockY, pCompressed, pi_pSisterFileLock);
+    return WriteBlock(pi_PosBlockX, pi_PosBlockY, pCompressed);
     }
 
 //-----------------------------------------------------------------------------
@@ -182,22 +168,12 @@ HSTATUS  HRFBmpCompressImageEditor::WriteBlock(uint64_t       pi_PosBlockX,
 //-----------------------------------------------------------------------------
 HSTATUS HRFBmpCompressImageEditor::WriteBlock(uint64_t                  pi_PosBlockX,
                                               uint64_t                  pi_PosBlockY,
-                                              const HFCPtr<HCDPacket>&  pi_rpPacket,
-                                              HFCLockMonitor const*     pi_pSisterFileLock)
+                                              const HFCPtr<HCDPacket>&  pi_rpPacket)
     {
     HPRECONDITION(m_AccessMode.m_HasWriteAccess || m_AccessMode.m_HasCreateAccess);
     HPRECONDITION(pi_rpPacket != 0);
 
     HSTATUS Status = H_ERROR;
-
-    // Lock the sister file
-    HFCLockMonitor SisterFileLock;
-    if(pi_pSisterFileLock == 0)
-        {
-        // Lock the file.
-        AssignRasterFileLock(GetRasterFile(), SisterFileLock, false);
-        pi_pSisterFileLock = &SisterFileLock;
-        }
 
     if (pi_PosBlockY == 0)
         m_pRasterFile->m_pBmpFile->SeekToPos(m_pRasterFile->m_BmpFileHeader.m_OffBitsToData);
@@ -207,11 +183,6 @@ HSTATUS HRFBmpCompressImageEditor::WriteBlock(uint64_t                  pi_PosBl
 
     if(m_pRasterFile->m_pBmpFile->Write(pi_rpPacket->GetBufferAddress(), DataSize) == DataSize)
         {
-
-        GetRasterFile()->SharingControlIncrementCount();
-
-        // Unlock the sister file
-        SisterFileLock.ReleaseKey();
         Status = H_SUCCESS;
         }
 

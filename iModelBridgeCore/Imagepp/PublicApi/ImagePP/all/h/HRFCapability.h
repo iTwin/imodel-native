@@ -1480,10 +1480,10 @@ class HRFGeocodingCapability : public HRFCapability
 public:
     IMAGEPP_EXPORT HRFGeocodingCapability(HFCAccessMode pi_AccessMode);
 
-    IMAGEPP_EXPORT void AddSupportedKey 	(BentleyApi::ImagePP::TIFFGeoKey pi_GeoKey);
-    IMAGEPP_EXPORT bool 		IsKeySupported  	(BentleyApi::ImagePP::TIFFGeoKey pi_GeoKey) const;
+    IMAGEPP_EXPORT void AddSupportedKey 	(TIFFGeoKey pi_GeoKey);
+    IMAGEPP_EXPORT bool 		IsKeySupported  	(TIFFGeoKey pi_GeoKey) const;
     IMAGEPP_EXPORT unsigned short GetNbGeotiffKeys	() const;
-    IMAGEPP_EXPORT BentleyApi::ImagePP::TIFFGeoKey   GetGeotiffKey		(unsigned short pi_KeyIndex) const;
+    IMAGEPP_EXPORT TIFFGeoKey   GetGeotiffKey		(unsigned short pi_KeyIndex) const;
 
     virtual bool   IsCompatibleWith(const HFCPtr<HRFCapability>& pi_rpCapability) const {
         return T_Super::IsCompatibleWith(pi_rpCapability);
@@ -1493,7 +1493,7 @@ public:
 private:
     HRFGeocodingCapability();
 
-    typedef vector<BentleyApi::ImagePP::TIFFGeoKey> TIFFGeoKeyVector;
+    typedef vector<TIFFGeoKey> TIFFGeoKeyVector;
 
     TIFFGeoKeyVector m_SupportedGeoKeys;
     };

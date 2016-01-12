@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRFTiffFile.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HRFTiffFile
@@ -182,9 +182,6 @@ public:
 
     virtual void                          Save();
 
-    // Sharing Control Methods
-    virtual void                          SharingControlCreate  ();
-
     // GeoKeys are use presently in Geotiff and Itiff files.
     void                                  ResetGeokeys(uint32_t pi_Page = 0);
 
@@ -328,10 +325,6 @@ struct HRFTiffCreator : public HRFRasterFileCreator
     virtual HFCPtr<HRFRasterFile>     Create(const HFCPtr<HFCURL>& pi_rpURL,
                                              HFCAccessMode         pi_AccessMode = HFC_READ_ONLY,
                                              uint64_t             pi_Offset = 0) const;
-
-    // Sharing control method
-//    virtual void                      SharingControlCreate          (const HFCPtr<HFCURL>& pi_pURL);
-
 
 private:
     friend struct HRFGeoTiffCreator;

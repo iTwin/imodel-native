@@ -138,8 +138,6 @@ MultiCompileDepends=$(_MakeFileSpec)
 
 $(o)HFCBinStream$(oext) : $(ippUtlDir)hfc/src/HFCBinStream.cpp $(ippAllInc)HFCBinStream.h $(ippAllInc)HFCBinStream.h ${MultiCompileDepends}
 
-$(o)HFCBufferedBinStream$(oext) : $(ippUtlDir)hfc/src/HFCBufferedBinStream.cpp $(ippAllInc)HFCBufferedBinStream.h $(ippAllInc)HFCBufferedBinStream.h ${MultiCompileDepends}
-
 $(o)HFCCallbackRegistry$(oext) : $(ippUtlDir)hfc/src/HFCCallbackRegistry.cpp $(ippAllInc)HFCCallbackRegistry.h $(ippAllInc)HFCCallbackRegistry.h ${MultiCompileDepends}
 
 $(o)HFCCallbacks$(oext) : $(ippUtlDir)hfc/src/HFCCallbacks.cpp $(ippAllInc)HFCCallbacks.h $(ippAllInc)HFCCallbacks.h ${MultiCompileDepends}
@@ -176,8 +174,6 @@ $(o)HFCMemoryLineStream$(oext) : $(ippUtlDir)hfc/src/HFCMemoryLineStream.cpp $(i
 
 $(o)HFCEmbedBinStream$(oext) : $(ippUtlDir)hfc/src/HFCEmbedBinStream.cpp $(ippAllInc)HFCEmbedBinStream.h ${MultiCompileDepends}
 
-$(o)HFCMutex$(oext) : $(ippUtlDir)hfc/src/HFCMutex.cpp $(ippAllInc)HFCMutex.h ${MultiCompileDepends}
-
 $(o)HFCNode$(oext) : $(ippUtlDir)hfc/src/HFCNode.cpp $(ippAllInc)HFCNode.h ${MultiCompileDepends}
 
 $(o)HFCNodeIterator$(oext) : $(ippUtlDir)hfc/src/HFCNodeIterator.cpp $(ippAllInc)HFCNodeIterator.h ${MultiCompileDepends}
@@ -188,13 +184,9 @@ $(o)HFCProgressIndicator$(oext) : $(ippUtlDir)hfc/src/HFCProgressIndicator.cpp $
 
 $(o)HFCSemaphore$(oext) : $(ippUtlDir)hfc/src/HFCSemaphore.cpp $(ippAllInc)HFCSemaphore.h ${MultiCompileDepends}
 
-$(o)HFCSocketConnection$(oext) : $(ippUtlDir)hfc/src/HFCSocketConnection.cpp $(ippAllInc)HFCSocketConnection.h ${MultiCompileDepends}
-
 $(o)HFCStat$(oext) : $(ippUtlDir)hfc/src/HFCStat.cpp $(ippAllInc)HFCStat.h ${MultiCompileDepends}
 
 $(o)HFCThread$(oext) : $(ippUtlDir)hfc/src/HFCThread.cpp $(ippAllInc)HFCThread.h ${MultiCompileDepends}
-
-$(o)HFCTimer$(oext) : $(ippUtlDir)hfc/src/HFCTimer.cpp $(ippAllInc)HFCTimer.h ${MultiCompileDepends}
 
 $(o)HFCURL$(oext) : $(ippUtlDir)hfc/src/HFCURL.cpp $(ippAllInc)HFCURL.h ${MultiCompileDepends}
 
@@ -996,8 +988,6 @@ $(o)HRSObjectStore$(oext) : $(ippGraDir)hrs/src/HRSObjectStore.cpp $(ippAllInc)H
 
 $(o)HRFCacheController$(oext) : $(ippGraDir)hrf/src/HRFCacheController.cpp $(ippAllInc)HRFCacheController.h ${MultiCompileDepends}
 
-$(o)HRFCacheFileSharing$(oext) : $(ippGraDir)hrf/src/HRFCacheFileSharing.cpp $(ippAllInc)HRFCacheFileSharing.h ${MultiCompileDepends}
-
 $(o)HRFCapability$(oext) : $(ippGraDir)hrf/src/HRFCapability.cpp $(ippAllInc)HRFCapability.h ${MultiCompileDepends}
 
 $(o)HRFExportOptions$(oext) : $(ippGraDir)hrf/src/HRFExportOptions.cpp $(ippAllInc)HRFExportOptions.h ${MultiCompileDepends}
@@ -1021,10 +1011,6 @@ $(o)HRFRasterFileFactory$(oext) : $(ippGraDir)hrf/src/HRFRasterFileFactory.cpp $
 $(o)HRFResolutionDescriptor$(oext) : $(ippGraDir)hrf/src/HRFResolutionDescriptor.cpp $(ippAllInc)HRFResolutionDescriptor.h ${MultiCompileDepends}
 
 $(o)HRFResolutionEditor$(oext) : $(ippGraDir)hrf/src/HRFResolutionEditor.cpp $(ippAllInc)HRFResolutionEditor.h ${MultiCompileDepends}
-
-$(o)HRFSharingControl$(oext) : $(ippGraDir)hrf/src/HRFSharingControl.cpp $(ippAllInc)HRFSharingControl.h ${MultiCompileDepends}
-
-$(o)HRFSisterFileSharing$(oext) : $(ippGraDir)hrf/src/HRFSisterFileSharing.cpp $(ippAllInc)HRFSisterFileSharing.h ${MultiCompileDepends}
 
 $(o)HRFThumbnail$(oext) : $(ippGraDir)hrf/src/HRFThumbnail.cpp $(ippAllInc)HRFThumbnail.h ${MultiCompileDepends}
 
@@ -1252,9 +1238,9 @@ $(o)HRFUSgsSDTSDEMEditor$(oext) : $(ippGraDir)hrf/src/HRFUSgsSDTSDEMEditor.cpp $
 
 $(o)HRFUSgsSDTSDEMFile$(oext) : $(ippGraDir)hrf/src/HRFUSgsSDTSDEMFile.cpp $(ippAllInc)HRFUSgsSDTSDEMFile.h $(ippAllInc)HRFGdalSupportedFile.h ${MultiCompileDepends}
 
-$(o)HRFVirtualEarthEditor$(oext) : $(ippGraDir)hrf/src/HRFVirtualEarthEditor.cpp $(ippAllInc)HRFVirtualEarthEditor.h ${MultiCompileDepends}
+$(o)HRFVirtualEarthEditor$(oext) : $(ippGraDir)hrf/src/HRFVirtualEarthEditor.cpp $(ippGraDir)hrf/src/HRFVirtualEarthEditor.h ${MultiCompileDepends}
 
-$(o)HRFVirtualEarthFile$(oext) : $(ippGraDir)hrf/src/HRFVirtualEarthFile.cpp $(ippAllInc)HRFVirtualEarthFile.h ${MultiCompileDepends}
+$(o)HRFVirtualEarthFile$(oext) : $(ippGraDir)hrf/src/HRFVirtualEarthFile.cpp $(ippAllInc)HRFVirtualEarthFile.h $(ippGraDir)hrf/src/HRFVirtualEarthEditor.h ${MultiCompileDepends}
 
 $(o)HRFWbmpFile$(oext) : $(ippGraDir)hrf/src/HRFWbmpFile.cpp $(ippAllInc)HRFWbmpFile.h ${MultiCompileDepends}
 
@@ -1419,7 +1405,7 @@ $(o)HRFErMapperSupportedFileEditor$(oext) : $(ippGraDir)hrf/src/HRFErMapperSuppo
 #       Libraries used
 #----------------------------------------------------------------------
 BeLibJpegTurbo                  = $(ContextSubpartsLibs)$(libprefix)BeLibJpegTurbo$(stlibext)
-IppJpegLib12Bits                = $(ippOutPrivateLibs)$(libprefix)IppJpeg12Bits$(stlibext)
+IppJpegLib12Bits                = $(ContextSubpartsLibs)$(libprefix)IppJpeg12Bits$(stlibext)
 IppGdalLib                      = $(ContextSubpartsLibs)$(libprefix)IppGdalLib$(stlibext)
 PdfLibInitializer               = $(libprefix)PdfLibInitializer$(libext)
 PdfLibInitializerExportLib      = $(ContextSubpartsLibs)$(PdfLibInitializer)
@@ -1476,7 +1462,7 @@ LINKER_LIBRARIES =  $(BeLibJpegTurbo) \
                     $(BuildContext)SubParts/Libs/BeSQLite.lib \
                     $(ntPlatformLib)Urlmon.lib \
                     $(IppGdalLib) \
-                    $(ippOutPrivateLibs)$(libprefix)MatrixFromTiePts$(libext) \
+                    $(ContextSubpartsLibs)$(libprefix)MatrixFromTiePts$(libext) \
                     $(BuildContext)SubParts/Libs/$(libprefix)BeXml$(libext) \
                     $(BuildContext)SubParts/Libs/$(libprefix)BentleyGeom$(libext) \
                     $(ContextSubpartsLibs)NCSEcw.lib
@@ -1489,9 +1475,10 @@ LINKER_LIBRARIES =  $(BeLibJpegTurbo) \
 
 %if defined (CREATE_STATIC_LIBRARIES)
     # embed our private external static lib into gralib.
-    DLM_OBJECT_FILES + $(ippOutPrivateLibs)$(libprefix)MatrixFromTiePts$(stlibext) $(IppGdalLib) $(BeLibJpegTurbo) $(IppJpegLib12Bits) $(ContextSubpartsLibs)$(libprefix)BePng$(stlibext) $(ContextSubpartsLibs)$(libprefix)BeZLib$(stlibext)
+    DLM_OBJECT_FILES + $(ContextSubpartsLibs)$(libprefix)MatrixFromTiePts$(stlibext) $(IppGdalLib) $(BeLibJpegTurbo) $(IppJpegLib12Bits) $(ContextSubpartsLibs)$(libprefix)BePng$(stlibext) $(ContextSubpartsLibs)$(libprefix)BeZLib$(stlibext)
 %endif
 
+%if !defined(IPP_OBJ_ONLY)
 %include $(sharedMki)linkLibrary.mki
 
 #----------------------------------------------------------------------
@@ -1509,3 +1496,7 @@ SQLANG_CHeader      = $(ippPublicAPISrc)h/ImagePPExceptionMessages.xliff.h
 SQLANG_Xliff        = $(o)xliffs/ImagePPExceptionMessages_en.xliff
 
 %include $(sharedMki)CHeaderToXliff.mki
+%endif
+
+
+

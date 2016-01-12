@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFWebFile.cpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -249,7 +249,6 @@ HRFWebFile::HRFWebFile
     if (m_pLocalRasterFile != 0)
         {
         m_IsOpen = true;
-        SharingControlCreate();
 
         // set our page descriptor
         for (uint32_t Page = 0; Page < m_pLocalRasterFile->CountPages(); Page++)
@@ -309,18 +308,6 @@ bool HRFWebFile::AddPage(HFCPtr<HRFPageDescriptor> pi_pPage)
     {
     return (false);
     }
-
-
-//-----------------------------------------------------------------------------
-// Public
-// Returns a pointer on the LockManager object of the local file.
-//-----------------------------------------------------------------------------
-HFCBinStreamLockManager* HRFWebFile::GetLockManager()
-    {
-    HPRECONDITION (m_pLocalRasterFile != 0);
-    return m_pLocalRasterFile->GetLockManager();
-    }
-
 
 //-----------------------------------------------------------------------------
 // Public
@@ -486,16 +473,4 @@ const HFCPtr<HRFRasterFile> & HRFWebFile::GetLocalRasterFile() const
 const HFCPtr<HFCURL>& HRFWebFile::GetLocalURL() const
     {
     return m_pLocalURL;
-    }
-
-//-----------------------------------------------------------------------------
-// Public
-// Creates an instance of the HRFSharingControl class.
-//-----------------------------------------------------------------------------
-void HRFWebFile::SharingControlCreate()
-    {
-    HPRECONDITION (GetLocalURL() != 0);
-
-    if (m_pSharingControl == 0)
-        m_pSharingControl = new HRFSisterFileSharing(GetLocalURL(), GetAccessMode());
     }

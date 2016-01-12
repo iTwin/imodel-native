@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFIrasbRSTFile.cpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -179,9 +179,6 @@ bool HRFIrasbRSTCreator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
     int32_t               lock;
     string currLine;
 
-    (const_cast<HRFIrasbRSTCreator*>(this))->SharingControlCreate(pi_rpURL);
-    HFCLockMonitor SisterFileLock (GetLockManager());
-
     pFile = HFCBinStream::Instanciate(pi_rpURL, pi_Offset, HFC_READ_ONLY | HFC_SHARE_READ_WRITE);
 
     if (pFile == 0 || pFile->GetLastException() != 0)
@@ -227,10 +224,6 @@ bool HRFIrasbRSTCreator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
     Result = true;
 
 WRAPUP:
-    SisterFileLock.ReleaseKey();
-    HASSERT(!(const_cast<HRFIrasbRSTCreator*>(this))->m_pSharingControl->IsLocked());
-    (const_cast<HRFIrasbRSTCreator*>(this))->m_pSharingControl = 0;
-
     return Result;
     }
 
@@ -246,8 +239,6 @@ void HRFIrasbRSTCreator::OpenFile(const HFCPtr<HFCURL>& pi_rpURL,
 
     HAutoPtr<HFCBinStream> pFile;
 
-    (const_cast<HRFIrasbRSTCreator*>(this))->SharingControlCreate(pi_rpURL);
-    HFCLockMonitor SisterFileLock (GetLockManager());
 
     try
         {
@@ -255,9 +246,6 @@ void HRFIrasbRSTCreator::OpenFile(const HFCPtr<HFCURL>& pi_rpURL,
         }
     catch (...)
         {
-        SisterFileLock.ReleaseKey();
-        HASSERT(!(const_cast<HRFIrasbRSTCreator*>(this))->m_pSharingControl->IsLocked());
-        (const_cast<HRFIrasbRSTCreator*>(this))->m_pSharingControl = 0;
         throw;  // propagate to caller.
         }
 
@@ -317,10 +305,6 @@ void HRFIrasbRSTCreator::OpenFile(const HFCPtr<HFCURL>& pi_rpURL,
                 break;
             }
         }
-
-    SisterFileLock.ReleaseKey();
-    HASSERT(!(const_cast<HRFIrasbRSTCreator*>(this))->m_pSharingControl->IsLocked());
-    (const_cast<HRFIrasbRSTCreator*>(this))->m_pSharingControl = 0;
     }
 
 /** ---------------------------------------------------------------------------
@@ -454,20 +438,6 @@ uint64_t HRFIrasbRSTFile::GetFileCurrentSize() const
     HASSERT(0);
 
     return 0;
-    /*
-    HFCLockMonitor SisterFileLock (GetLockManager());
-
-    pFile = HFCBinStream::Instanciate(pi_rpURL, pi_Offset, HFC_READ_ONLY | HFC_SHARE_READ_WRITE);
-
-
-
-    HAutoPtr<HFCBinStream> pFile;
-    bool                   Result  = false;
-    HFCLockMonitor           SisterFileLock (GetLockManager());
-
-    pFile = HFCBinStream::Instanciate(pi_rpURL, pi_Offset, HFC_READ_ONLY | HFC_SHARE_READ_WRITE);
-
-    */
     }
 
 //-----------------------------------------------------------------------------

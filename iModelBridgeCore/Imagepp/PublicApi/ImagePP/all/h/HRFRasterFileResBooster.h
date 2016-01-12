@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRFRasterFileResBooster.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HRFRasterFileResBooster
@@ -25,7 +25,7 @@ class HGFResolutionDescriptor;
 class HRFRasterFileResBooster : public HRFRasterFileExtender
     {
     // Class ID for this class.
-    HDECLARE_CLASS_ID(HRFSisterFileSharingId, HRFRasterFileExtender)
+    HDECLARE_CLASS_ID(HRFRasterFileId_ResBooster, HRFRasterFileExtender)
 
 public:
     // This methods allow to know if the specified raster file need a resolution booster.

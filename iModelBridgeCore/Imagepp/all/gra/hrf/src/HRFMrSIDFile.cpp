@@ -290,9 +290,6 @@ bool HRFMrSIDCreator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
 
     const LTFileSpec FileSpec(filenameA.c_str());
 
-    (const_cast<HRFMrSIDCreator*>(this))->SharingControlCreate(pi_rpURL);
-    HFCLockMonitor SisterFileLock (GetLockManager());
-
     MrSIDImageReader* pImageReader(MrSIDImageReader::create());
     sts = pImageReader->initialize(FileSpec);
 
@@ -313,10 +310,6 @@ bool HRFMrSIDCreator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
 
         IsKindOf = LT_SUCCESS(pImageReader->read(scene, bufData)); // true;
         }
-
-    SisterFileLock.ReleaseKey();
-    HASSERT(!(const_cast<HRFMrSIDCreator*>(this))->m_pSharingControl->IsLocked());
-    (const_cast<HRFMrSIDCreator*>(this))->m_pSharingControl = 0;
 
     pImageReader->release();
 
@@ -645,9 +638,6 @@ bool HRFMrSIDFile::Open()
 
         m_pFileSpec = new LTFileSpec(filenameA.c_str());
 
-        // This creates the sister file for file sharing control if necessary.
-        SharingControlCreate();
-
         if ((m_pImageRawReader = MrSIDImageReader::create()) != NULL)
             {
             sts = m_pImageRawReader->initialize(*m_pFileSpec);
@@ -763,9 +753,6 @@ void HRFMrSIDFile::SetLookAhead(uint32_t               pi_Page,
             try
                 {
                 LT_STATUS sts = LT_STS_Uninit;
-
-                // Lock the file.
-                HFCLockMonitor SisterFileLock (GetLockManager());
 
                 delete m_pSceneBuffer;
                 m_pSceneBuffer = new LTISceneBuffer(m_pImageReader->getPixelProps(), Width, Height, 0);

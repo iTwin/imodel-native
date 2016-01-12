@@ -183,12 +183,9 @@ void HRFCacheController::Control(int pi_CacheControlFlags)
             // Move file only if needed
             if(BeStringUtilities::Wcsicmp(fileEntry.m_FileName.c_str(), newFilename.c_str()) != 0)
                 {
-#if defined (_WIN32)
-                MoveFileExW(fileEntry.m_FileName.c_str(), newFilename.c_str(), MOVEFILE_COPY_ALLOWED | MOVEFILE_REPLACE_EXISTING);
-#else
-                BeFileName::BeCopyFile(fileEntry.m_FileName.c_str(), newFilename.c_str(), false);
-                BeFileName::BeDeleteFile(fileEntry.m_FileName.c_str());
-#endif
+                BeFileName::BeDeleteFile(newFilename.c_str()); // Delete old one that may exist in the destination folder.
+                BeFileNameStatus status = BeFileName::BeMoveFile(fileEntry.m_FileName.c_str(), newFilename.c_str());
+                BeAssert(BeFileNameStatus::Success == status);
                 }
             }
         fileEntryList.clear();

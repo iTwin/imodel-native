@@ -274,8 +274,8 @@ void HRAGenericAverageSampler<T, TS>::GetPixels(const double* pi_pPositionsX,
     HPRECONDITION(pi_pPositionsY != 0);
     HPRECONDITION(po_pBuffer != 0);
 
-    HWARNING(HDOUBLE_EQUAL_EPSILON(m_DeltaX, 0.0), L"The X scaling set into the sampler was not used\n");
-    HWARNING(HDOUBLE_EQUAL_EPSILON(m_DeltaY, 0.0), L"The Y scaling set into the sampler was not used\n");
+    HWARNING(HDOUBLE_EQUAL_EPSILON(m_DeltaX, 0.0), "The X scaling set into the sampler was not used\n");
+    HWARNING(HDOUBLE_EQUAL_EPSILON(m_DeltaY, 0.0), "The Y scaling set into the sampler was not used\n");
 
     T* pOut = (T*)po_pBuffer;
 
@@ -918,8 +918,8 @@ void HRAGenericAverageSparseDataSampler<T, TS>::GetPixels(const double* pi_pPosi
     HPRECONDITION(pi_pPositionsY != 0);
     HPRECONDITION(po_pBuffer != 0);
     
-    HWARNING(HDOUBLE_EQUAL_EPSILON(m_DeltaX, 0.0), L"The X scaling set into the sampler was not used\n");
-    HWARNING(HDOUBLE_EQUAL_EPSILON(m_DeltaY, 0.0), L"The Y scaling set into the sampler was not used\n");
+    HWARNING(HDOUBLE_EQUAL_EPSILON(m_DeltaX, 0.0), "The X scaling set into the sampler was not used\n");
+    HWARNING(HDOUBLE_EQUAL_EPSILON(m_DeltaY, 0.0), "The Y scaling set into the sampler was not used\n");
 
     T* pOut = (T*)po_pBuffer;
 

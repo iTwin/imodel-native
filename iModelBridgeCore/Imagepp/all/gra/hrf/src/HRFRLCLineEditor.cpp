@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFRLCLineEditor.cpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class HRFRLCLineEditor
@@ -55,8 +55,7 @@ HRFRLCLineEditor::~HRFRLCLineEditor()
 //-----------------------------------------------------------------------------
 HSTATUS HRFRLCLineEditor::ReadBlock(uint64_t  pi_PosBlockX,
                                     uint64_t  pi_PosBlockY,
-                                    Byte*     po_pData,
-                                    HFCLockMonitor const* pi_pSisterFileLock)
+                                    Byte*     po_pData)
     {
     // We assume that we have check the header file integrity in the
     // constructor for the release version.
@@ -68,15 +67,6 @@ HSTATUS HRFRLCLineEditor::ReadBlock(uint64_t  pi_PosBlockX,
 
 
     HSTATUS Status = H_SUCCESS;
-
-    // Lock the sister file if needed
-    HFCLockMonitor SisterFileLock;
-    if(pi_pSisterFileLock == 0)
-        {
-        // Get lock and synch.
-        AssignRasterFileLock(GetRasterFile(), SisterFileLock, true);
-        pi_pSisterFileLock = &SisterFileLock;
-        }
 
     unsigned short NbRuns;
     if (pi_PosBlockY < m_CurrentLine || m_CurrentLine == 0)
@@ -175,8 +165,7 @@ HSTATUS HRFRLCLineEditor::ReadBlock(uint64_t  pi_PosBlockX,
 //-----------------------------------------------------------------------------
 HSTATUS HRFRLCLineEditor::WriteBlock(uint64_t     pi_PosBlockX,
                                      uint64_t     pi_PosBlocY,
-                                     const Byte*  pi_pData,
-                                     HFCLockMonitor const* pi_pSisterFileLock)
+                                     const Byte*  pi_pData)
     {
     // not support write access
     HASSERT(0);

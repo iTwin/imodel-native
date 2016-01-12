@@ -797,7 +797,7 @@ HFCPtr<HGF2DTransfoModel> HCPGeoTiffKeys::CreateTransfoModelFromGeoTiff(
         {
         // We do not support both tie point and matrix to be present
         // This is Case 6, so we ignore the matrix.
-        HWARNING((pi_MatSize == 0), L"HRFGeoTiff: TiePoints are used, Matrix ignored...");
+        HWARNING((pi_MatSize == 0), "HRFGeoTiff: TiePoints are used, Matrix ignored...");
 
         double OffsetX = pi_pTiePoints[3] - pi_pTiePoints[0];
         double OffsetY = pi_pTiePoints[4] + pi_pTiePoints[1];
@@ -813,7 +813,7 @@ HFCPtr<HGF2DTransfoModel> HCPGeoTiffKeys::CreateTransfoModelFromGeoTiff(
         {
         // We do not support both tie point and matrix to be present
         // This is Case 6, so we ignore the matrix.
-        HWARNING((pi_MatSize == 0), L"HRFGeoTiff: TiePoints are used, Matrix ignored...");
+        HWARNING((pi_MatSize == 0), "HRFGeoTiff: TiePoints are used, Matrix ignored...");
 
         double OffsetX = pi_pTiePoints[3] - (pi_pTiePoints[0] * pi_pPixelScale[0]);
         double OffsetY = pi_pTiePoints[4] + (pi_pTiePoints[1] * pi_pPixelScale[1]);
@@ -866,10 +866,10 @@ HFCPtr<HGF2DTransfoModel> HCPGeoTiffKeys::CreateTransfoModelFromGeoTiff(
         {
         // We do not support both, more than one ties points and matrix to be present
         // This is Case 6, so we ignore the matrix.
-        HWARNING((pi_MatSize == 0), L"HRFGeoTiff: TiePoints are used, Matrix ignored...");
+        HWARNING((pi_MatSize == 0), "HRFGeoTiff: TiePoints are used, Matrix ignored...");
         // We do not support both, more than one ties points and pixelscale to be present
         // This is Case 6, so we ignore the pixelscale.
-        HWARNING((pi_NbPixelScale == 0), L"HRFGeoTiff: TiePoints are used, Pixelscale ignored...");
+        HWARNING((pi_NbPixelScale == 0), "HRFGeoTiff: TiePoints are used, Pixelscale ignored...");
 
         double pMatrix[4][4];
 
@@ -903,10 +903,10 @@ HFCPtr<HGF2DTransfoModel> HCPGeoTiffKeys::CreateTransfoModelFromGeoTiff(
         {
         // We do not support both, more than one ties points and matrix to be present
         // This is Case 6, so we ignore the matrix.
-        HWARNING((pi_MatSize == 0), L"HRFGeoTiff: TiePoints are used, Matrix ignored...");
+        HWARNING((pi_MatSize == 0), "HRFGeoTiff: TiePoints are used, Matrix ignored...");
         // We do not support both, more than one ties points and pixelscale to be present
         // This is Case 6, so we ignore the pixelscale.
-        HWARNING((pi_NbPixelScale == 0), L"HRFGeoTiff: TiePoints are used, Pixelscale ignored...");
+        HWARNING((pi_NbPixelScale == 0), "HRFGeoTiff: TiePoints are used, Pixelscale ignored...");
 
         double pMatrix[4][4];
 

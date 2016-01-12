@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hgf/src/HGF2DShape.cpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Methods for class HGF2DShape
@@ -424,7 +424,9 @@ HGF2DShape::SpatialPosition HGF2DShape::CalculateSpatialPositionOfNonCrossingLin
             // Check if the basic linear is not NULL
             // This condition is very important, since the present may be called recursively
             // in the case of multiple flirting points (see below)
-            if (!pi_rLinear.IsNull())
+            if (pi_rLinear.IsNull())
+                ThePosition = HGF2DShape::S_ON; // Since linear is null and both points are on the shape then the result is ON
+            else
                 {
                 // We determine if the linear is contiguous
                 if (AreContiguous(pi_rLinear))
@@ -433,111 +435,71 @@ HGF2DShape::SpatialPosition HGF2DShape::CalculateSpatialPositionOfNonCrossingLin
                     // We ask for extended contiguousness points.
                     HGF2DPositionCollection     MyListOfPoints;
 
-                    if (pi_rLinear.ObtainContiguousnessPoints(*this, &MyListOfPoints))
+                    if (ObtainContiguousnessPoints(pi_rLinear, &MyListOfPoints))
                         {
+                    
                         // There are an even number of contiguousness points
                         HASSERT(MyListOfPoints.size() % 2 == 0);
 
-                        // There are some contiguousness points.
-                        // Here we will locate sections of the linear out of the contiguousness region
-                        // And check their position. Normally there should be a single region
-                        // but there can be many.
-
-                        // Important note: At the moment we know that both the start and end points are on
-                        // the shape yet this does not imply that both are located in the same contiguousness region
-                        // or that they are even both in a contiguousness region. One of the start or end point may be in 
-                        // fact only flirting
-
-                        // We first check if there is only a single region
-                        if (MyListOfPoints.size() == 2)
+                        if (MyListOfPoints.size() == 0)
                             {
-                            // There is a single region ... two possibilities exist:
-                            // A - The contiguousness region is the whole length of the linear then the linear is ON
-                            // B - The contiguousness region goes from start point to intemediate point and
-                            //     end point connects within this region (typically closes on the start point)
-                            //     or the same geometry but with end point par of the region and start point connecting.
-                            if (pi_rLinear.GetStartPoint().IsEqualTo(MyListOfPoints[0], Tolerance))
+                            // This can only occur if the linear goes fully around one of the shape component it is therefore ON
+                            ThePosition = HGF2DShape::S_ON;
+                            }
+                        else 
+                            {
+                            // There are some contiguousness points; the linear is either unclosed or is partially out or in
+                            // but we do not know which one yet.
+
+                            // We do not know either the order of the contiguousness points obtained relative to linear.
+                            // Note that if the linear autocloses then the start/end point will may not be included in the 
+                            // list of contiguousness points even if the point is part of the contiguoussness region.
+
+                            // What we will do is sort contiguousness points according to relative position
+                            HGF2DPositionCollection OrderedListOfPoints;
+                            OrderedListOfPoints.push_back(pi_rLinear.GetStartPoint());
+                            
+                            double relativePosition = -1.0;
+                            HGF2DPositionCollection::iterator selectedPtIndex;
+                            HGF2DPositionCollection::iterator ptIndex = MyListOfPoints.begin();
+                            while(MyListOfPoints.size() > 0)
                                 {
-                                // Start point is at start of contiguousness region ... check if end point is at end
-                                if (pi_rLinear.GetEndPoint().IsEqualTo(MyListOfPoints[1]))
-                                    ThePosition = HGF2DShape::S_ON;
-                                else
+                                double currentRelativePosition = pi_rLinear.CalculateRelativePosition(*ptIndex);
+                                if (relativePosition < 0.0 || currentRelativePosition < relativePosition)
                                     {
-                                    // The end point connects ... we must obtain the remained of the linear
-                                    // We obtain a copy of the linear
-                                    HAutoPtr<HGF2DLinear> pMyLinearCopy((HGF2DLinear*)pi_rLinear.Clone());
-
-                                    // We shorten it to second point
-                                    pMyLinearCopy->ShortenFrom(MyListOfPoints[1]);
-
-                                    // We obtain the mid point of result linear
-                                    HGF2DPosition MyPoint = pMyLinearCopy->CalculateRelativePoint(0.5);
-
-                                    // Check the spatial position of point
-                                    if (!IsPointOn(MyPoint, INCLUDE_EXTREMITIES, Tolerance))
-                                        {
-                                        // The point is either IN or OUT as the rest of the linear
-                                        ThePosition = (IsPointIn(MyPoint, Tolerance) ?
-                                                       HGF2DShape::S_IN : HGF2DShape::S_OUT);
-                                        }
-                                    else
-                                        {
-                                        // highly improbable ... requires that the point selected at random is on (flirts)
-                                        // we will leave with the possibility of having a false result.
-                                        ThePosition = HGF2DShape::S_ON;
-                                        }
+                                    relativePosition = currentRelativePosition;
+                                    selectedPtIndex = ptIndex;
+                                    }
+                                ptIndex++;
+                                if (ptIndex == MyListOfPoints.end())
+                                    {
+                                    OrderedListOfPoints.push_back(*selectedPtIndex);
+                                    MyListOfPoints.erase(selectedPtIndex);
+                                    relativePosition = -1.0;
+                                    ptIndex = MyListOfPoints.begin();
                                     }
                                 }
-                            else
+
+                            // We add the last point as relativePosition of last point + half to 1.0
+                            // The purpose being that if the linear is self close we have no problem with relative position of last point
+                            // that would happen to be the first point at the same time.
+                            OrderedListOfPoints.push_back(pi_rLinear.CalculateRelativePoint((pi_rLinear.CalculateRelativePosition(OrderedListOfPoints[OrderedListOfPoints.size() - 1]) + 1.0)/2.0));
+
+
+                            ThePosition = HGF2DShape::S_ON;
+
+                            for (size_t indexCurrentPoint = 0 ; (HGF2DShape::S_ON == ThePosition) && (indexCurrentPoint < OrderedListOfPoints.size() - 1); indexCurrentPoint++)
                                 {
-                                // Start point is not part of region ...
                                 HAutoPtr<HGF2DLinear> pMyLinearCopy((HGF2DLinear*)pi_rLinear.Clone());
 
-                                // We shorten it to FIRST point
-                                pMyLinearCopy->ShortenTo(MyListOfPoints[0]);
-
-                                // We obtain the mid point of result linear
-                                HGF2DPosition MyPoint = pMyLinearCopy->CalculateRelativePoint(0.5);
-
-                                // Check the spatial position of point
-                                if (!IsPointOn(MyPoint, INCLUDE_EXTREMITIES, Tolerance))
+                                if (!OrderedListOfPoints[indexCurrentPoint].IsEqualTo(OrderedListOfPoints[indexCurrentPoint+1], Tolerance))
                                     {
-                                    // The point is either IN or OUT as the rest of the linear
-                                    ThePosition = (IsPointIn(MyPoint, Tolerance) ?
-                                                   HGF2DShape::S_IN : HGF2DShape::S_OUT);
+                                    // We shorten it to point
+                                    pMyLinearCopy->Shorten(OrderedListOfPoints[indexCurrentPoint], OrderedListOfPoints[indexCurrentPoint + 1]);
+
+                                    // Obtain the point located halfway on the portion of linear
+                                    ThePosition = CalculateSpatialPositionOf(pMyLinearCopy->CalculateRelativePoint(0.5));
                                     }
-                                else
-                                    {
-                                    // highly improbable ... requires that the point selected at random is on (flirts)
-                                    // we will leave with the possibility of having a false result.
-                                    ThePosition = HGF2DShape::S_ON;
-                                    }
-                                }
-                            }
-                        else
-                            {
-                            // There are more than two contiguousness regions ... we take a point intermediate in between regions and test
-                            // Start point is not part of region ...
-                            HAutoPtr<HGF2DLinear> pMyLinearCopy((HGF2DLinear*)pi_rLinear.Clone());
-
-                            // We shorten it from second point to third
-                            pMyLinearCopy->Shorten(MyListOfPoints[1], MyListOfPoints[2]);
-
-                            // We obtain the mid point of result linear
-                            HGF2DPosition MyPoint = pMyLinearCopy->CalculateRelativePoint(0.5);
-
-                            // Check the spatial position of point
-                            if (!IsPointOn(MyPoint, INCLUDE_EXTREMITIES, Tolerance))
-                                {
-                                // The point is either IN or OUT as the rest of the linear
-                                ThePosition = (IsPointIn(MyPoint, Tolerance) ?
-                                               HGF2DShape::S_IN : HGF2DShape::S_OUT);
-                                }
-                            else
-                                {
-                                // highly improbable ... requires that the point selected at random is on (flirts)
-                                // we will leave with the possibility of having a false result.
-                                ThePosition = HGF2DShape::S_ON;
                                 }
                             }
                         }
@@ -585,7 +547,7 @@ HGF2DShape::SpatialPosition HGF2DShape::CalculateSpatialPositionOfNonCrossingLin
 
                             // The result position is the best that could be found, but note that
                             // if S_ON, there should have been a contiguousness reported !
-                            // This may occur in rare cases where the tolerance is too small and
+                            // This may occur in rare cases where the tolerance is two small and
                             // mathematical errors upon contiguousness computations indicate false while true would be more
                             // adequate. In all case the result is ON
                             // HASSERT(ThePosition != HGF2DShape::S_ON);

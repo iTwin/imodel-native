@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFUSgsFastL7ALineEditor.cpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 #include <ImagePPInternal/hstdcpp.h>
@@ -42,14 +42,11 @@ HRFUSgsFastL7ALineEditor::~HRFUSgsFastL7ALineEditor()
 //-----------------------------------------------------------------------------
 HSTATUS HRFUSgsFastL7ALineEditor::ReadBlock(uint64_t pi_PosBlockX,
                                             uint64_t pi_PosBlockY,
-                                            Byte*  po_pData,
-                                            HFCLockMonitor const* pi_pSisterFileLock)
+                                            Byte*  po_pData)
     {
     HPRECONDITION (po_pData != 0);
     HPRECONDITION (pi_PosBlockY >= 0);
     HPRECONDITION (m_AccessMode.m_HasReadAccess);
-
-    HFCLockMonitor SisterFileLock;
 
     if (GetRasterFile()->GetAccessMode().m_HasCreateAccess)
         {
@@ -62,15 +59,6 @@ HSTATUS HRFUSgsFastL7ALineEditor::ReadBlock(uint64_t pi_PosBlockX,
 
     uint64_t Offset = GetRasterFile()->GetOffset() + (pi_PosBlockY * BufferPixelLength);
 
-
-    // Lock the sister file if needed
-    if(pi_pSisterFileLock == 0)
-        {
-        // Get lock and synch.
-        AssignRasterFileLock(GetRasterFile(), SisterFileLock, true);
-        pi_pSisterFileLock = &SisterFileLock;
-        }
-
     if(pFastL7AFile->m_HeaderInfo.m_NumberOfBands < 3)
         {
         if (pFastL7AFile->m_pRedFile->GetCurrentPos() != Offset)
@@ -79,9 +67,6 @@ HSTATUS HRFUSgsFastL7ALineEditor::ReadBlock(uint64_t pi_PosBlockX,
         // Create Grayscale image
         if(pFastL7AFile->m_pRedFile->Read(po_pData, BufferPixelLength) != BufferPixelLength)
             return H_ERROR;
-
-        // Unlock the sister file
-        SisterFileLock.ReleaseKey();
         }
     else
         {
@@ -101,9 +86,6 @@ HSTATUS HRFUSgsFastL7ALineEditor::ReadBlock(uint64_t pi_PosBlockX,
             pFastL7AFile->m_pGreenFile->Read(pBuffGreen, BufferPixelLength) != BufferPixelLength ||
             pFastL7AFile->m_pBlueFile->Read(pBuffBlue,   BufferPixelLength) != BufferPixelLength)
             return H_ERROR;
-
-        // Unlock the sister file
-        SisterFileLock.ReleaseKey();
 
         // Create RGB image
         for (uint32_t pos=0, bufPos=0; pos<BufferPixelLength; pos++, bufPos+=3)

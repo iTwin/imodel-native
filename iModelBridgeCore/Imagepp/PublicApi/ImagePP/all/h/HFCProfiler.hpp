@@ -62,7 +62,7 @@ __forceinline void HFCProfiler::Stop(int pi_CounterID, LARGE_INTEGER pi_Start)
     int OverheadCount = 0;
     if (s_pFunctionStack->empty())
         {
-        OutputDebugStringW("STOP without matching START!\n");
+        HDEBUGTEXT("STOP without matching START!\n");
         if (m_BreakOnError)
             DebugBreak();
         }
@@ -72,7 +72,7 @@ __forceinline void HFCProfiler::Stop(int pi_CounterID, LARGE_INTEGER pi_Start)
             {
             WChar Message[512];
             swprintf(Message, L"Missing STOP call in %s\n", m_Counters[s_pFunctionStack->back()].m_Name.c_str());
-            OutputDebugStringW(Message);
+            HDEBUGTEXT(Utf8String(Message));
             if (m_BreakOnError)
                 DebugBreak();
             }

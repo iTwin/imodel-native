@@ -299,9 +299,6 @@ bool HRFUSgsNDFCreator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
 
     HFCPtr<HFCURLFile>& rpURL((HFCPtr<HFCURLFile>&)pi_rpURL);
 
-    (const_cast<HRFUSgsNDFCreator*>(this))->SharingControlCreate(pi_rpURL);
-    HFCLockMonitor SisterFileLock(GetLockManager());
-
     if (BeStringUtilities::Wcsicmp(rpURL->GetExtension().c_str(), L"usgs") == 0)
         {
         uint32_t ChannelCount = 0;
@@ -395,10 +392,6 @@ bool HRFUSgsNDFCreator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
         }
 
 WRAPUP:
-    SisterFileLock.ReleaseKey();
-    HASSERT(!(const_cast<HRFUSgsNDFCreator*>(this))->m_pSharingControl->IsLocked());
-    (const_cast<HRFUSgsNDFCreator*>(this))->m_pSharingControl = 0;
-
     return Result;
     }
 
@@ -479,12 +472,6 @@ bool HRFUSgsNDFFile::Open()
 
     if (!m_IsOpen)
         {
-        // This creates the sister file for file sharing control if necessary.
-        SharingControlCreate();
-
-        // Lock the sister file.
-        HFCLockMonitor SisterFileLock (GetLockManager());
-
         HFCPtr<HFCURLFile>& rpURL((HFCPtr<HFCURLFile>&)GetURL());
 
         if (BeStringUtilities::Wcsicmp(rpURL->GetExtension().c_str(), L"usgs") == 0)
@@ -590,9 +577,6 @@ bool HRFUSgsNDFFile::Open()
             }
         else
             throw HFCFileNotSupportedException(rpURL->GetURL());
-
-        // Unlock the sister file
-        SisterFileLock.ReleaseKey();
         }
 
     return m_IsOpen;

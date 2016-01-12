@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PrivateApi/ImagePPInternal/hstdcpp.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //*****************************************************************************
@@ -52,10 +52,15 @@
 #   error Unknown compiler - No STL inclusion Standard defined
 #endif
 
+// C++ 11 std headers
+#include <thread>
+#include <mutex>
+#include <condition_variable>
 
 #include <Geom/GeomApi.h>
 #include <BeXml/BeXml.h>
 #include <GeoCoord/BaseGeoCoord.h>
+#include <Bentley/BeThread.h>
 
 #include <ImagePP/all/h/HFCMemoryLineStream.h>
 
@@ -77,7 +82,6 @@
 #include <ImagePP/all/h/HPMAttribute.h>
 #include <ImagePP/all/h/HRFRasterFile.h>
 #include <ImagePP/all/h/HRFcTiffFile.h>
-#include <ImagePP/all/h/HRFWMSFile.h>
 
 #include <ImagePP/all/h/HRAStoredRaster.h>
 #include <ImagePP/all/h/HRABitmap.h>
@@ -89,6 +93,8 @@
 #include <ImagePP/all/h/HIMOnDemandMosaic.h>
 
 #include <ImagePP/all/h/HGSMemorySurfaceDescriptor.h>
+
+#include <ImagePP/all/h/HFCLocalBinStream.h>
 
 #include <ImagePPInternal/gra/ImageCommon.h>
 #include <ImagePPInternal/gra/HRAImageSampler.h>

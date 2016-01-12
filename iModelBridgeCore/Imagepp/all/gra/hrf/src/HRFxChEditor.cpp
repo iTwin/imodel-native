@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFxChEditor.cpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -57,8 +57,7 @@ HRFxChEditor::~HRFxChEditor()
  */
 HSTATUS HRFxChEditor::ReadBlock(uint64_t pi_PosBlockX,
                                 uint64_t pi_PosBlockY,
-                                Byte*  po_pData,
-                                HFCLockMonitor const* pi_pSisterFileLock)
+                                Byte*  po_pData)
     {
     HPRECONDITION (po_pData != 0);
     HPRECONDITION (m_AccessMode.m_HasReadAccess);
@@ -82,16 +81,6 @@ HSTATUS HRFxChEditor::ReadBlock(uint64_t pi_PosBlockX,
         if (RASTER_FILE->m_ChannelCount == 4)
             pBuffAlpha  = &(pBuffRed[BufferPixelLength*3]);
 
-        // Lock the sister file if needed
-        HFCLockMonitor SisterFileLock;
-        if(pi_pSisterFileLock == 0)
-            {
-            // Get lock and synch.
-            AssignRasterFileLock(GetRasterFile(), SisterFileLock, true);
-            pi_pSisterFileLock = &SisterFileLock;
-            }
-
-        // We can't use pi_pSisterFileLock here because each editor has its own file.
         //:> Read each channel
         if ((Status = RASTER_FILE->m_RedFileResolutionEditor[m_Resolution]->ReadBlock(pi_PosBlockX, pi_PosBlockY, pBuffRed)) != H_SUCCESS ||
             (Status = RASTER_FILE->m_GreenFileResolutionEditor[m_Resolution]->ReadBlock(pi_PosBlockX, pi_PosBlockY, pBuffGreen)) != H_SUCCESS ||
@@ -101,9 +90,6 @@ HSTATUS HRFxChEditor::ReadBlock(uint64_t pi_PosBlockX,
         if (RASTER_FILE->m_ChannelCount == 4)
             if ((Status = RASTER_FILE->m_AlphaFileResolutionEditor[m_Resolution]->ReadBlock(pi_PosBlockX, pi_PosBlockY, pBuffAlpha)) != H_SUCCESS)
                 goto WRAPUP;
-
-        //:> Unlock the sister file
-        SisterFileLock.ReleaseKey();
 
         //:> Fill client buffer ...
 

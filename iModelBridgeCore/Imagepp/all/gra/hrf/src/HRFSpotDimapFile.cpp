@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFSpotDimapFile.cpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class HRFSpotDimapFile
@@ -572,9 +572,6 @@ bool HRFSpotDimapCreator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
     XMLFileName += L"\\";
     XMLFileName += ((HFCPtr<HFCURLFile>&)pi_rpURL)->GetPath();
 
-    (const_cast<HRFSpotDimapCreator*>(this))->SharingControlCreate(pi_rpURL);
-    HFCLockMonitor SisterFileLock(GetLockManager()); // will unlock implicitly at the end of method
-
     // Open XML file
     BeXmlStatus xmlStatus;
     BeXmlDomPtr pXmlDom = BeXmlDom::CreateAndReadFromFile(xmlStatus, XMLFileName.c_str());
@@ -595,9 +592,6 @@ bool HRFSpotDimapCreator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
     if(BEXML_Success != pMetatDataNode->GetContent(format) || BeStringUtilities::Wcsicmp (format.c_str(), L"DIMAP") != 0)
        return false;
 
-    SisterFileLock.ReleaseKey();
-    HASSERT(!(const_cast<HRFSpotDimapCreator*>(this))->m_pSharingControl->IsLocked());
-    (const_cast<HRFSpotDimapCreator*>(this))->m_pSharingControl = 0;
 
     return true;
     }

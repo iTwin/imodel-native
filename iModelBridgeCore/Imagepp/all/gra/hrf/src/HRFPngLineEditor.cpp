@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFPngLineEditor.cpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class HRFPngLineEditor
@@ -53,8 +53,7 @@ HRFPngLineEditor::~HRFPngLineEditor()
 //-----------------------------------------------------------------------------
 HSTATUS HRFPngLineEditor::ReadBlock(uint64_t pi_PosBlockX,
                                     uint64_t pi_PosBlockY,
-                                    Byte*  po_pData,
-                                    HFCLockMonitor const* pi_pSisterFileLock)
+                                    Byte*  po_pData)
     {
     HPRECONDITION(po_pData != 0);
     HPRECONDITION(m_AccessMode.m_HasReadAccess);
@@ -64,15 +63,6 @@ HSTATUS HRFPngLineEditor::ReadBlock(uint64_t pi_PosBlockX,
     // Temporary need for virtual ptr.
     if (!GetRasterFile()->GetAccessMode().m_HasCreateAccess)
         {
-        // Lock the sister file
-        HFCLockMonitor SisterFileLock;
-        if(pi_pSisterFileLock == 0)
-            {
-            // Lock the file.
-            AssignRasterFileLock(GetRasterFile(), SisterFileLock, true);
-            pi_pSisterFileLock = &SisterFileLock;
-            }
-
         // Restart the file at the begining when the ask for a before block
         if (PNG_RASTERFILE->m_pPngFileStruct->row_number > pi_PosBlockY)
             {
@@ -95,9 +85,6 @@ HSTATUS HRFPngLineEditor::ReadBlock(uint64_t pi_PosBlockX,
             else
                 Status = H_ERROR;
             }
-
-        // Unlock the sister file.
-        SisterFileLock.ReleaseKey();
         }
     else
         Status = H_NOT_FOUND;
@@ -113,8 +100,7 @@ HSTATUS HRFPngLineEditor::ReadBlock(uint64_t pi_PosBlockX,
 //-----------------------------------------------------------------------------
 HSTATUS HRFPngLineEditor::WriteBlock(uint64_t     pi_PosBlockX,
                                      uint64_t     pi_PosBlockY,
-                                     const Byte*  pi_pData,
-                                     HFCLockMonitor const* pi_pSisterFileLock)
+                                     const Byte*  pi_pData)
     {
     HPRECONDITION(m_AccessMode.m_HasWriteAccess || m_AccessMode.m_HasCreateAccess);
     HPRECONDITION(pi_pData != 0);
@@ -127,15 +113,6 @@ HSTATUS HRFPngLineEditor::WriteBlock(uint64_t     pi_PosBlockX,
         {
         PNG_RASTERFILE->AssignStructTo(PNG_RASTERFILE->GetPageDescriptor(0));
         m_FirstWriteInCreateMode = false;
-        }
-
-    // Lock the sister file
-    HFCLockMonitor SisterFileLock;
-    if(pi_pSisterFileLock == 0)
-        {
-        // Lock the file.
-        AssignRasterFileLock(GetRasterFile(), SisterFileLock, false);
-        pi_pSisterFileLock = &SisterFileLock;
         }
 
     // Restart the file at the beginning when the ask for a before block
@@ -202,12 +179,6 @@ HSTATUS HRFPngLineEditor::WriteBlock(uint64_t     pi_PosBlockX,
         Status = H_ERROR;
         }
 
-    // Increment the counters
-    GetRasterFile()->SharingControlIncrementCount();
-
-    // Unlock the sister file.
-    SisterFileLock.ReleaseKey();
-
     return Status;
     }
 
@@ -218,8 +189,7 @@ HSTATUS HRFPngLineEditor::WriteBlock(uint64_t     pi_PosBlockX,
 //-----------------------------------------------------------------------------
 HSTATUS HRFPngLineEditor::ReadBlock(uint64_t           pi_PosBlockX,
                                     uint64_t           pi_PosBlockY,
-                                    HFCPtr<HCDPacket>& po_rpPacket,
-                                    HFCLockMonitor const* pi_pSisterFileLock)
+                                    HFCPtr<HCDPacket>& po_rpPacket)
     {
     HPRECONDITION (m_AccessMode.m_HasReadAccess);
 
@@ -235,7 +205,7 @@ HSTATUS HRFPngLineEditor::ReadBlock(uint64_t           pi_PosBlockX,
     po_rpPacket->SetDataSize(m_pResolutionDescriptor->GetBlockSizeInBytes());
     po_rpPacket->SetCodec(new HCDCodecIdentity(m_pResolutionDescriptor->GetBlockSizeInBytes()));
 
-    return ReadBlock(pi_PosBlockX, pi_PosBlockY, po_rpPacket->GetBufferAddress(), pi_pSisterFileLock);
+    return ReadBlock(pi_PosBlockX, pi_PosBlockY, po_rpPacket->GetBufferAddress());
     }
 
 //-----------------------------------------------------------------------------
@@ -245,8 +215,7 @@ HSTATUS HRFPngLineEditor::ReadBlock(uint64_t           pi_PosBlockX,
 //-----------------------------------------------------------------------------
 HSTATUS HRFPngLineEditor::WriteBlock(uint64_t                 pi_PosBlockX,
                                      uint64_t                 pi_PosBlockY,
-                                     const HFCPtr<HCDPacket>& pi_rpPacket,
-                                     HFCLockMonitor const* pi_pSisterFileLock)
+                                     const HFCPtr<HCDPacket>& pi_rpPacket)
     {
     HPRECONDITION (m_AccessMode.m_HasWriteAccess || m_AccessMode.m_HasCreateAccess);
     HSTATUS Status = H_SUCCESS;
@@ -258,19 +227,7 @@ HSTATUS HRFPngLineEditor::WriteBlock(uint64_t                 pi_PosBlockX,
 
     pi_rpPacket->Decompress(&Uncompressed);
 
-    WriteBlock(pi_PosBlockX, pi_PosBlockY, Uncompressed.GetBufferAddress(), pi_pSisterFileLock);
+    WriteBlock(pi_PosBlockX, pi_PosBlockY, Uncompressed.GetBufferAddress());
 
     return Status;
-    }
-
-//-----------------------------------------------------------------------------
-// public
-// OnSynchronizedSharingControl
-//-----------------------------------------------------------------------------
-void HRFPngLineEditor::OnSynchronizedSharingControl()
-    {
-    // The close-open sequence will reload the info of the file. This way, we
-    // are sure that the information that will be read will be up to date.
-    PNG_RASTERFILE->SavePngFile(true);
-    PNG_RASTERFILE->Open();
     }

@@ -530,7 +530,7 @@ void HRFRasterFile::SetLookAhead(uint32_t              pi_Page,
             // Cancel the current LookAhead
             CancelLookAhead(pi_Page);
 
-            HDEBUGTEXT(L"Resetting after cancel\r\n");
+            HDEBUGTEXT("Resetting after cancel\r\n");
 
             // Reset the look Ahead for everybody
             Monitor.ReleaseKey();

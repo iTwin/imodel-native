@@ -184,9 +184,6 @@ void HRFGdalSupportedFile::Save()
 
         HFCPtr<HRFPageDescriptor> pPageDescriptor = GetPageDescriptor(0);
 
-        // Lock the sister file for the SetPalette operation
-        HFCLockMonitor SisterFileLock(GetLockManager());
-
         if (m_DisplayRep == PALETTE && pPageDescriptor->GetResolutionDescriptor(0)->PaletteHasChanged())
             {
             WriteColorTable();
@@ -211,9 +208,6 @@ void HRFGdalSupportedFile::Save()
             }
 
         pPageDescriptor->Saved();
-
-        // Unlock the sister file.
-        SisterFileLock.ReleaseKey();
         }
     }
 
@@ -324,12 +318,7 @@ bool HRFGdalSupportedFile::Open()
     
     if (m_IsOpen)
         return m_IsOpen;
-      
-    // This creates the sister file for file sharing control if necessary.
-    SharingControlCreate();
 
-    // Lock the sister file for the getFileHeaderFromFile method
-    HFCLockMonitor SisterFileLock(GetLockManager());
     GDALAccess     GdalAccess;
 
     if ((GetAccessMode().m_HasWriteAccess) || (GetAccessMode().m_HasCreateAccess))
@@ -376,9 +365,6 @@ bool HRFGdalSupportedFile::Open()
         else
             throw;
         }
-
-    // Unlock the sister file
-    SisterFileLock.ReleaseKey();
 
     return m_IsOpen;
     }

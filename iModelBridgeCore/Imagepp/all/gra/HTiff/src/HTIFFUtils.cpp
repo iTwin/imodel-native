@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/HTiff/src/HTIFFUtils.cpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -344,26 +344,6 @@ HTIFFStream::~HTIFFStream()
 HFCPtr<HFCURL> HTIFFStream::GetURL() const
     {
     return m_pStream->GetURL();
-    }
-
-//-----------------------------------------------------------------------------
-//
-//-----------------------------------------------------------------------------
-
-void HTIFFStream::Lock(uint64_t pi_Pos, uint64_t pi_Size, bool pi_Share)
-    {
-    HASSERT(m_pStream != 0);
-    m_pStream->Lock(pi_Pos, pi_Size, pi_Share);
-    }
-
-//-----------------------------------------------------------------------------
-//
-//-----------------------------------------------------------------------------
-
-void HTIFFStream::Unlock(uint64_t pi_Pos, uint64_t pi_Size)
-    {
-    HASSERT(m_pStream != 0);
-    m_pStream->Unlock(pi_Pos, pi_Size);
     }
 
 //-----------------------------------------------------------------------------
@@ -819,13 +799,11 @@ size_t HTIFFStream::Write(const void* pi_pBuffer, size_t pi_Size, size_t pi_Coun
     // Stream write error
     if ((pi_Count != result) || (m_pStream->GetLastException() != 0))
         {
-#ifdef _WIN32
         // Some error must have occured
-        int32_t lastError = GetLastError();
-
-        HASSERT ((lastError == ERROR_DISK_FULL) ||
-            (m_pStream->GetLastException() != 0));
-#endif
+// Do not rely on windows and assert all the times.  Moreover, the stream may not be related to a Windows api and thus won't set GetLastError().
+//         int32_t lastError = GetLastError();
+//         HASSERT ((lastError == ERROR_DISK_FULL) || (m_pStream->GetLastException() != 0));
+        HASSERT(!"HTIFFStream::Write ERROR");
 
         // Notes on possible error
         // Since we are using huge files, it may happen that the stream WriteFile call will result in error 665

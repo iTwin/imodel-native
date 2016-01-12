@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRFSpotCAPFile.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -122,42 +122,6 @@ public:
 
     virtual void                            Save();
 
-
-    //--------------------------------------
-    // Sharing control methods for other header files
-    //--------------------------------------
-
-    // Imag
-    HFCBinStreamLockManager*      GetImagLockManager                ();
-    void                          ImagSharingControlCreate          (HFCURL* pi_pImagUrl);
-    bool                         ImagSharingControlNeedSynchronization();
-    void                          ImagSharingControlSynchronize     ();
-    void                          ImagSharingControlIncrementCount  ();
-    bool                         ImagSharingControlIsLocked        ();
-
-    HRFSharingControl*            GetImagSharingControl             ();
-
-    // Lead
-    HFCBinStreamLockManager*      GetLeadLockManager                ();
-    void                          LeadSharingControlCreate          (HFCURL* pi_pLeadUrl);
-    bool                         LeadSharingControlNeedSynchronization();
-    void                          LeadSharingControlSynchronize     ();
-    void                          LeadSharingControlIncrementCount  ();
-    bool                         LeadSharingControlIsLocked        ();
-
-    HRFSharingControl*            GetLeadSharingControl             ();
-
-    // Vold
-    HFCBinStreamLockManager*      GetVoldLockManager                ();
-    void                          VoldSharingControlCreate          (HFCURL* pi_pVoldUrl);
-    bool                         VoldSharingControlNeedSynchronization();
-    void                          VoldSharingControlSynchronize     ();
-    void                          VoldSharingControlIncrementCount  ();
-    bool                         VoldSharingControlIsLocked        ();
-
-    HRFSharingControl*            GetVoldSharingControl             ();
-
-
 protected:
     // Methods
     // Constructor use only to create a child
@@ -194,13 +158,6 @@ private:
     bool                               m_IsFilHeader;
     GeoRefInfo                          m_GeoRefInfo;
     HArrayAutoPtr<double>              m_pTiePoints;
-
-
-
-    HAutoPtr<HRFSharingControl>  m_pImagSharingControl;
-    HAutoPtr<HRFSharingControl>  m_pLeadSharingControl;
-    HAutoPtr<HRFSharingControl>  m_pVoldSharingControl;
-
 
     // Methods Disabled
     HRFSpotCAPFile(const HRFSpotCAPFile& pi_rObj);
@@ -258,15 +215,6 @@ struct HRFSpotCAPCreator : public HRFRasterFileCreator
     virtual HFCPtr<HRFRasterFile>           Create(const HFCPtr<HFCURL>& pi_rpURL,
                                                    HFCAccessMode         pi_AccessMode = HFC_READ_ONLY,
                                                    uint64_t             pi_Offset = 0) const;
-
-    void                                    ImagSharingControlCreate    (const HFCPtr<HFCURL>& pi_pURL);
-    HRFSharingControl*                      GetImagSharingControl       () const;
-    HFCBinStreamLockManager*                GetImagLockManager          () const;
-
-
-protected:
-
-    HAutoPtr<HRFSharingControl>  m_pImagSharingControl;
 
 private:
     HFC_DECLARE_SINGLETON_DLL(IMAGEPP_EXPORT, HRFSpotCAPCreator)

@@ -1797,7 +1797,7 @@ void HRATiledRaster::_Draw(HGFMappedSurface& pio_destSurface, HRADrawOptions con
                     // separate tiles case.
                     pTempBitmap = 0;
 
-                    HWARNING(0, L"HRATiledRaster::Draw out of memory. Drawing tiles separately");
+                    HWARNING(0, "HRATiledRaster::Draw out of memory. Drawing tiles separately");
 
                     uint64_t Index = TileIterator.GetFirstTileIndex();
                     HFCPtr<HRATiledRaster::HRATile> pTile;

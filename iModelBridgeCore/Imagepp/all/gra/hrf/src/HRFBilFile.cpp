@@ -214,19 +214,11 @@ bool HRFBilCreator::IsKindOfFileWithExternalHeader(const HFCPtr<HFCURL>& pi_rpUR
         HFCStat HDRFileFileStat(HdrUrl);
         if (HDRFileFileStat.IsExistent())
             {
-            // This creates the sister file for file sharing control if necessary.
-            (const_cast<HRFBilCreator*>(this))->HdrSharingControlCreate(HdrUrl);
-            HFCLockMonitor SisterFileLock(GetHdrLockManager());
-
             // Open the hdr file.
             pHdrFile = HFCBinStream::Instanciate(HdrUrl, HFC_READ_ONLY | HFC_SHARE_READ_WRITE);
 
             if ((pHdrFile == 0) || (pHdrFile->GetLastException() != 0))
                 {
-                SisterFileLock.ReleaseKey();
-                HASSERT(!(const_cast<HRFBilCreator*>(this))->m_pHdrSharingControl->IsLocked());
-                (const_cast<HRFBilCreator*>(this))->m_pHdrSharingControl = 0;
-
                 return false;
                 }
 
@@ -242,12 +234,6 @@ bool HRFBilCreator::IsKindOfFileWithExternalHeader(const HFCPtr<HFCURL>& pi_rpUR
             Header[HeaderLength] = '\0';
             pHdrFile->SeekToBegin();
             pHdrFile->Read(Header, HeaderLength);
-
-            // Unlock the sister file
-            SisterFileLock.ReleaseKey();
-
-            HASSERT(!(const_cast<HRFBilCreator*>(this))->m_pHdrSharingControl->IsLocked());
-            (const_cast<HRFBilCreator*>(this))->m_pHdrSharingControl = 0;
 
             HdrUrl = 0;
             pHdrFile = 0;
@@ -275,9 +261,6 @@ bool HRFBilCreator::IsKindOfFileWithExternalHeader(const HFCPtr<HFCURL>& pi_rpUR
                         uint32_t MinSizeBILFile = GetULongValueFromHeader(Header,"NROWS", pi_rpURL) *
                                                 GetULongValueFromHeader(Header, "NCOLS", pi_rpURL);
 
-                        (const_cast<HRFBilCreator*>(this))->SharingControlCreate(pi_rpURL);
-                        HFCLockMonitor SisterFileLock(GetLockManager());
-
                         // Open the Bil File & place file pointer at the start of the file
                         pFile = HFCBinStream::Instanciate(pi_rpURL, HFC_READ_ONLY | HFC_SHARE_READ_WRITE);
 
@@ -288,10 +271,6 @@ bool HRFBilCreator::IsKindOfFileWithExternalHeader(const HFCPtr<HFCURL>& pi_rpUR
                             if(SizeOfFile >= MinSizeBILFile )
                                 bResult = true;
                             }
-
-                        SisterFileLock.ReleaseKey();
-                        HASSERT(!(const_cast<HRFBilCreator*>(this))->m_pSharingControl->IsLocked());
-                        (const_cast<HRFBilCreator*>(this))->m_pSharingControl = 0;
 
                         pFile = 0;
                         }
@@ -316,9 +295,6 @@ bool HRFBilCreator::IsKindOfFileWithExternalHeader(const HFCPtr<HFCURL>& pi_rpUR
                     uint32_t MinSizeBILFile = GetULongValueFromHeader(Header, "NROWS", pi_rpURL) *
                                             GetULongValueFromHeader(Header, "NCOLS", pi_rpURL);
 
-                    (const_cast<HRFBilCreator*>(this))->SharingControlCreate(pi_rpURL);
-                    HFCLockMonitor SisterFileLock(GetLockManager());
-
                     // Open the Bil File & place file pointer at the start of the file
                     pFile = HFCBinStream::Instanciate(pi_rpURL, HFC_READ_ONLY | HFC_SHARE_READ_WRITE);
 
@@ -329,10 +305,6 @@ bool HRFBilCreator::IsKindOfFileWithExternalHeader(const HFCPtr<HFCURL>& pi_rpUR
                         if(SizeOfFile >= MinSizeBILFile )
                             bResult = true;
                         }
-
-                    SisterFileLock.ReleaseKey();
-                    HASSERT(!(const_cast<HRFBilCreator*>(this))->m_pSharingControl->IsLocked());
-                    (const_cast<HRFBilCreator*>(this))->m_pSharingControl = 0;
 
                     pFile = 0;
                     }
@@ -355,9 +327,6 @@ bool HRFBilCreator::IsKindOfFileWithInternalHeader(const HFCPtr<HFCURL>& pi_rpUR
     bool                   bResult = false;
     RawPixelFileHeader      FileHeader;
     HAutoPtr<HFCBinStream>  pFile;
-
-    (const_cast<HRFBilCreator*>(this))->SharingControlCreate(pi_rpURL);
-    HFCLockMonitor SisterFileLock(GetLockManager());
 
     // Open the BMP File & place file pointer at the start of the file
     pFile = HFCBinStream::Instanciate(pi_rpURL, HFC_READ_ONLY | HFC_SHARE_READ_WRITE);
@@ -393,10 +362,6 @@ bool HRFBilCreator::IsKindOfFileWithInternalHeader(const HFCPtr<HFCURL>& pi_rpUR
 
         }
 
-    SisterFileLock.ReleaseKey();
-    HASSERT(!(const_cast<HRFBilCreator*>(this))->m_pSharingControl->IsLocked());
-    (const_cast<HRFBilCreator*>(this))->m_pSharingControl = 0;
-
     return bResult;
     }
 
@@ -418,19 +383,11 @@ bool HRFBilCreator::IsKindOfFileOpenFromExternalHeader(const HFCPtr<HFCURL>& pi_
     bool                   bResult = false;
     HAutoPtr<HFCBinStream>  pFile;
 
-    // This creates the sister file for file sharing control if necessary.
-    (const_cast<HRFBilCreator*>(this))->HdrSharingControlCreate(pi_rpURL);
-    HFCLockMonitor SisterFileLock(GetHdrLockManager());
-
     // Open the hdr file.
     pHdrFile = HFCBinStream::Instanciate(pi_rpURL, HFC_READ_ONLY | HFC_SHARE_READ_WRITE);
 
     if ((pHdrFile == 0) || (pHdrFile->GetLastException() != 0))
         {
-        SisterFileLock.ReleaseKey();
-        HASSERT(!(const_cast<HRFBilCreator*>(this))->m_pHdrSharingControl->IsLocked());
-        (const_cast<HRFBilCreator*>(this))->m_pHdrSharingControl = 0;
-
         return false;
         }
 
@@ -441,10 +398,6 @@ bool HRFBilCreator::IsKindOfFileOpenFromExternalHeader(const HFCPtr<HFCURL>& pi_
     // TR 179480
     if (HeaderLength > 2048)
         {
-        SisterFileLock.ReleaseKey();
-        HASSERT(!(const_cast<HRFBilCreator*>(this))->m_pHdrSharingControl->IsLocked());
-        (const_cast<HRFBilCreator*>(this))->m_pHdrSharingControl = 0;
-
         return false;
         }
 
@@ -452,12 +405,6 @@ bool HRFBilCreator::IsKindOfFileOpenFromExternalHeader(const HFCPtr<HFCURL>& pi_
     Header[HeaderLength] = '\0';
     pHdrFile->SeekToBegin();
     pHdrFile->Read(Header, HeaderLength);
-
-    // Unlock the sister file
-    SisterFileLock.ReleaseKey();
-
-    HASSERT(!(const_cast<HRFBilCreator*>(this))->m_pHdrSharingControl->IsLocked());
-    (const_cast<HRFBilCreator*>(this))->m_pHdrSharingControl = 0;
 
     pHdrFile = 0;
 
@@ -483,19 +430,12 @@ bool HRFBilCreator::IsKindOfFileOpenFromExternalHeader(const HFCPtr<HFCURL>& pi_
                 UrlString.replace(UrlString.rfind(L'.') + 1, wcslen(L"bil"), L"bil");
                 BILUrl = HFCURL::Instanciate(UrlString);
 
-                (const_cast<HRFBilCreator*>(this))->SharingControlCreate(BILUrl);
-                HFCLockMonitor SisterFileLock(GetLockManager());
 
                 // Open the BMP File & place file pointer at the start of the file
                 pFile = HFCBinStream::Instanciate(BILUrl, pi_Offset, HFC_READ_ONLY | HFC_SHARE_READ_WRITE);
 
                 if ((pFile != 0) && (pFile->GetLastException() == 0))
                     bResult = true;
-
-                SisterFileLock.ReleaseKey();
-                HASSERT(!(const_cast<HRFBilCreator*>(this))->m_pSharingControl->IsLocked());
-                (const_cast<HRFBilCreator*>(this))->m_pSharingControl = 0;
-
                 pFile = 0;
                 }
             }
@@ -518,18 +458,11 @@ bool HRFBilCreator::IsKindOfFileOpenFromExternalHeader(const HFCPtr<HFCURL>& pi_
             UrlString.replace(UrlString.rfind(L'.') + 1, wcslen(L"bil"), L"bil");
             BILUrl = HFCURL::Instanciate(UrlString);
 
-            (const_cast<HRFBilCreator*>(this))->SharingControlCreate(BILUrl);
-            HFCLockMonitor SisterFileLock(GetLockManager());
-
             // Open the BMP File & place file pointer at the start of the file
             pFile = HFCBinStream::Instanciate(BILUrl, pi_Offset, HFC_READ_ONLY | HFC_SHARE_READ_WRITE);
 
             if ((pFile != 0) && (pFile->GetLastException() == 0))
                 bResult = true;
-
-            SisterFileLock.ReleaseKey();
-            HASSERT(!(const_cast<HRFBilCreator*>(this))->m_pSharingControl->IsLocked());
-            (const_cast<HRFBilCreator*>(this))->m_pSharingControl = 0;
 
             pFile = 0;
             }
@@ -926,30 +859,13 @@ bool HRFBilFile::AddPage(HFCPtr<HRFPageDescriptor> pi_pPage)
             m_bilFileInfo.NbBytesPerBand,
             m_bilFileInfo.NbBytesPerRow);
 
-    // Lock the header file.
-    HFCLockMonitor HdrFileLock(GetHdrLockManager());
-
     m_pHdrFile->Write(Header, strlen((char*)Header));
-
-    HdrSharingControlIncrementCount();
-
-    // Unlock the header file.
-    HdrFileLock.ReleaseKey();
-
+    
     // Create the ".bnd" file.
     sprintf(Header, "RED          %i\r\nGREEN        %i\r\nBLUE         %i",
             m_bilFileHeader.rchannel,
             m_bilFileHeader.gchannel,
             m_bilFileHeader.bchannel);
-
-    // Lock the band file.
-    HFCLockMonitor BndFileLock(GetBndLockManager());
-
-    m_pBndFile->Write(Header, strlen((char*)Header));
-    BndSharingControlIncrementCount();
-
-    // Unlock the band file.
-    BndFileLock.ReleaseKey();
 
     return true;
     }
@@ -1066,13 +982,7 @@ bool HRFBilFile::Open()
 
         // Open the actual bil file.
         m_pBilFile = HFCBinStream::Instanciate(BILUrl, m_Offset, GetPhysicalAccessMode() , 0, true);
-
-        // This creates the sister file for file sharing control if necessary.
-        SharingControlCreate();
-
-        // Initialisation of file struct.
-        HFCLockMonitor SisterFileLock(GetLockManager());
-
+        
         if(!ReadHdrHeader())
             {
             m_pBilFile->Read(&m_bilFileHeader, sizeof m_bilFileHeader);
@@ -1084,9 +994,6 @@ bool HRFBilFile::Open()
             }
 
         GetBandsStatsFromFile();
-
-        // Unlock the sister file
-        SisterFileLock.ReleaseKey();
 
         m_IsOpen = true;
         }
@@ -1119,21 +1026,12 @@ bool HRFBilFile::ReadHdrHeader()
     if ((m_pHdrFile == 0) || (m_pHdrFile->GetLastException() != 0))
         return false;
 
-    // This creates the sister file for file sharing control if necessary.
-    HdrSharingControlCreate(HdrUrl);
-
-    // Initialisation of file struct.
-    HFCLockMonitor SisterFileLock(GetHdrLockManager());
-
     m_pHdrFile->SeekToBegin();
     while(!m_pHdrFile->EndOfFile())
         {
         ReadLine(&HeaderLine, m_pHdrFile, false, true);
         Header += HeaderLine;
         }
-
-    // Unlock the sister file
-    SisterFileLock.ReleaseKey();
 
     // Get the information
     m_bilFileHeader.comptype = RPIX_COMPRESSION_NONE;
@@ -1191,12 +1089,6 @@ void HRFBilFile::ModifyHdrHeader()
     string                      Header;
     string                      HeaderLine;
 
-    // Initialisation of file struct.
-    HFCLockMonitor SisterFileLock(GetHdrLockManager());
-
-    if (HdrSharingControlNeedSynchronization())
-        HdrSharingControlSynchronize();
-
     m_pHdrFile->SeekToBegin();
 
     // For each line of the header, check for keywords related the georeference
@@ -1235,11 +1127,6 @@ void HRFBilFile::ModifyHdrHeader()
         if (NewSize > 0)
             m_pHdrFile->Write(aBuffer, NewSize);
         }
-
-    HdrSharingControlIncrementCount();
-
-    // Unlock the sister file
-    SisterFileLock.ReleaseKey();
     }
 
 //-----------------------------------------------------------------------------
@@ -1320,22 +1207,12 @@ void HRFBilFile::GetBandsFromFile()
             {
             m_pBndFile = HFCBinStream::Instanciate(BndUrl, GetPhysicalAccessMode(), 0, true);
 
-
-            // This creates the sister file for file sharing control if necessary.
-            BndSharingControlCreate(BndUrl);
-
-            // Initialisation of file struct.
-            HFCLockMonitor SisterFileLock(GetBndLockManager());
-
             m_pBndFile->SeekToEnd();
             BandFileLength = (uint32_t)m_pBndFile->GetCurrentPos();
             BandFileContent = new char[BandFileLength + 1];
             BandFileContent[BandFileLength] = '\0';
             m_pBndFile->SeekToBegin();
             m_pBndFile->Read(BandFileContent, BandFileLength);
-
-            // Unlock the sister file
-            SisterFileLock.ReleaseKey();
 
             BndUrl = 0;
 
@@ -1396,21 +1273,12 @@ void HRFBilFile::GetBandsStatsFromFile()
 
             m_pStxFile = HFCBinStream::Instanciate(StxUrl, GetPhysicalAccessMode(), 0, true);
 
-            // This creates the sister file for file sharing control if necessary.
-            StxSharingControlCreate(StxUrl);
-
-            // Initialisation of file struct.
-            HFCLockMonitor SisterFileLock(GetStxLockManager());
-
             m_pStxFile->SeekToEnd();
             StatsLength = (uint32_t)m_pStxFile->GetCurrentPos();
             Stats = new char[StatsLength + 1];
             Stats[StatsLength] = '\0';
             m_pStxFile->SeekToBegin();
             m_pStxFile->Read(Stats, StatsLength);
-
-            // Unlock the sister file
-            SisterFileLock.ReleaseKey();
 
             m_bilFileInfo.HaveRedStats = GetBandStdDeviation(Stats,
                                                              m_bilFileHeader.rchannel,
@@ -2042,282 +1910,6 @@ bool ConvertStringToULong(const string& pi_rString, uint32_t* po_pLong)
             ('\t' == *pStopPtr)|| ('\0' == *pStopPtr));
     }
 
-//-----------------------------------------------------------------------------
-// Public
-// Returns a pointer on the LockManager object
-//-----------------------------------------------------------------------------
-HFCBinStreamLockManager* HRFBilFile::GetHdrLockManager()
-    {
-    HPRECONDITION (m_pHdrSharingControl != 0);
-    return m_pHdrSharingControl->GetLockManager();
-    }
-
-
-//-----------------------------------------------------------------------------
-// Public
-// Creates an instance of the HRFSharingControl class.
-//-----------------------------------------------------------------------------
-void HRFBilFile::HdrSharingControlCreate(HFCURL* pi_pHdrUrl)
-    {
-    HPRECONDITION (pi_pHdrUrl != 0);
-
-    if (m_pHdrSharingControl == 0)
-        m_pHdrSharingControl = new HRFSisterFileSharing(pi_pHdrUrl, GetAccessMode());
-    }
-
-//-----------------------------------------------------------------------------
-// Public
-// Returns true if the logical counter is desynchronized with the physical one.
-//-----------------------------------------------------------------------------
-bool HRFBilFile::HdrSharingControlNeedSynchronization()
-    {
-    HPRECONDITION (m_pHdrSharingControl != 0);
-
-    return m_pHdrSharingControl->NeedSynchronization();
-    }
-
-//-----------------------------------------------------------------------------
-// Public
-// Synchronizes the logical and physical counters.
-//-----------------------------------------------------------------------------
-void HRFBilFile::HdrSharingControlSynchronize()
-    {
-    HPRECONDITION (m_pHdrSharingControl != 0);
-
-    m_pHdrSharingControl->Synchronize();
-    }
-
-//-----------------------------------------------------------------------------
-// Public
-// Increment the physical and logical counters.
-//-----------------------------------------------------------------------------
-void HRFBilFile::HdrSharingControlIncrementCount()
-    {
-    HPRECONDITION (m_pHdrSharingControl != 0);
-
-    m_pHdrSharingControl->IncrementCurrentModifCount();
-    }
-
-//-----------------------------------------------------------------------------
-// Public
-// Return a pointer on the HRFSharingControl instance.
-//-----------------------------------------------------------------------------
-HRFSharingControl* HRFBilFile::GetHdrSharingControl()
-    {
-    HPRECONDITION (m_pHdrSharingControl != 0);
-
-    return (m_pHdrSharingControl);
-    }
-
-//-----------------------------------------------------------------------------
-// Public
-// Return true if the sharing control file has been locked.
-//-----------------------------------------------------------------------------
-bool HRFBilFile::HdrSharingControlIsLocked()
-    {
-    HPRECONDITION (m_pHdrSharingControl != 0);
-
-    return m_pHdrSharingControl->IsLocked();
-    }
-
-//-----------------------------------------------------------------------------
-// Public
-// Returns a pointer on the LockManager object
-//-----------------------------------------------------------------------------
-HFCBinStreamLockManager* HRFBilFile::GetBndLockManager()
-    {
-    HPRECONDITION (m_pBndSharingControl != 0);
-    return m_pBndSharingControl->GetLockManager();
-    }
-
-
-//-----------------------------------------------------------------------------
-// Public
-// Creates an instance of the HRFSharingControl class.
-//-----------------------------------------------------------------------------
-void HRFBilFile::BndSharingControlCreate(HFCURL* pi_pBndUrl)
-    {
-    HPRECONDITION (pi_pBndUrl != 0);
-
-    if (m_pBndSharingControl == 0)
-        m_pBndSharingControl = new HRFSisterFileSharing(pi_pBndUrl, GetAccessMode());
-    }
-
-//-----------------------------------------------------------------------------
-// Public
-// Returns true if the logical counter is desynchronized with the physical one.
-//-----------------------------------------------------------------------------
-bool HRFBilFile::BndSharingControlNeedSynchronization()
-    {
-    HPRECONDITION (m_pBndSharingControl != 0);
-
-    return m_pBndSharingControl->NeedSynchronization();
-    }
-
-//-----------------------------------------------------------------------------
-// Public
-// Synchronizes the logical and physical counters.
-//-----------------------------------------------------------------------------
-void HRFBilFile::BndSharingControlSynchronize()
-    {
-    HPRECONDITION (m_pBndSharingControl != 0);
-
-    m_pBndSharingControl->Synchronize();
-    }
-
-//-----------------------------------------------------------------------------
-// Public
-// Increment the physical and logical counters.
-//-----------------------------------------------------------------------------
-void HRFBilFile::BndSharingControlIncrementCount()
-    {
-    HPRECONDITION (m_pBndSharingControl != 0);
-
-    m_pBndSharingControl->IncrementCurrentModifCount();
-    }
-
-//-----------------------------------------------------------------------------
-// Public
-// Return a pointer on the HRFSharingControl instance.
-//-----------------------------------------------------------------------------
-HRFSharingControl* HRFBilFile::GetBndSharingControl()
-    {
-    HPRECONDITION (m_pBndSharingControl != 0);
-
-    return (m_pBndSharingControl);
-    }
-
-//-----------------------------------------------------------------------------
-// Public
-// Return true if the sharing control file has been locked.
-//-----------------------------------------------------------------------------
-bool HRFBilFile::BndSharingControlIsLocked()
-    {
-    HPRECONDITION (m_pBndSharingControl != 0);
-
-    return m_pBndSharingControl->IsLocked();
-    }
-
-//-----------------------------------------------------------------------------
-// Public
-// Returns a pointer on the LockManager object
-//-----------------------------------------------------------------------------
-HFCBinStreamLockManager* HRFBilFile::GetStxLockManager()
-    {
-    HPRECONDITION (m_pStxSharingControl != 0);
-    return m_pStxSharingControl->GetLockManager();
-    }
-
-
-//-----------------------------------------------------------------------------
-// Public
-// Creates an instance of the HRFSharingControl class.
-//-----------------------------------------------------------------------------
-void HRFBilFile::StxSharingControlCreate(HFCURL* pi_pStxUrl)
-    {
-    HPRECONDITION (pi_pStxUrl != 0);
-
-    if (m_pStxSharingControl == 0)
-        m_pStxSharingControl = new HRFSisterFileSharing(pi_pStxUrl, GetAccessMode());
-    }
-
-//-----------------------------------------------------------------------------
-// Public
-// Returns true if the logical counter is desynchronized with the physical one.
-//-----------------------------------------------------------------------------
-bool HRFBilFile::StxSharingControlNeedSynchronization()
-    {
-    HPRECONDITION (m_pStxSharingControl != 0);
-
-    return m_pStxSharingControl->NeedSynchronization();
-    }
-
-//-----------------------------------------------------------------------------
-// Public
-// Synchronizes the logical and physical counters.
-//-----------------------------------------------------------------------------
-void HRFBilFile::StxSharingControlSynchronize()
-    {
-    HPRECONDITION (m_pStxSharingControl != 0);
-
-    m_pStxSharingControl->Synchronize();
-    }
-
-//-----------------------------------------------------------------------------
-// Public
-// Increment the physical and logical counters.
-//-----------------------------------------------------------------------------
-void HRFBilFile::StxSharingControlIncrementCount()
-    {
-    HPRECONDITION (m_pStxSharingControl != 0);
-
-    m_pStxSharingControl->IncrementCurrentModifCount();
-    }
-
-//-----------------------------------------------------------------------------
-// Public
-// Return a pointer on the HRFSharingControl instance.
-//-----------------------------------------------------------------------------
-HRFSharingControl* HRFBilFile::GetStxSharingControl()
-    {
-    HPRECONDITION (m_pStxSharingControl != 0);
-
-    return (m_pStxSharingControl);
-    }
-
-//-----------------------------------------------------------------------------
-// Public
-// Return true if the sharing control file has been locked.
-//-----------------------------------------------------------------------------
-bool HRFBilFile::StxSharingControlIsLocked()
-    {
-    HPRECONDITION (m_pStxSharingControl != 0);
-
-    return m_pStxSharingControl->IsLocked();
-    }
-
-
-//-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
-// The rest of this file is the implentation of the sharing control for the
-// Creator struct.
-//-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
-
-
-//-----------------------------------------------------------------------------
-// Public
-// Creates an instance of the HRFSharingControl class.
-//-----------------------------------------------------------------------------
-void HRFBilCreator::HdrSharingControlCreate(const HFCPtr<HFCURL>& pi_pURL)
-    {
-    HPRECONDITION (pi_pURL != 0);
-
-    if (m_pHdrSharingControl == 0)
-        m_pHdrSharingControl = new HRFSisterFileSharing(pi_pURL, HFC_READ_ONLY | HFC_SHARE_READ_WRITE);
-    }
-
-//-----------------------------------------------------------------------------
-// Public
-// Return a pointer on the HRFSharingControl instance.
-//-----------------------------------------------------------------------------
-HRFSharingControl* HRFBilCreator::GetHdrSharingControl() const
-    {
-    HPRECONDITION (m_pHdrSharingControl != 0);
-
-    return (m_pHdrSharingControl);
-    }
-
-//-----------------------------------------------------------------------------
-// Public
-// Return a pointer on the HFCBinStreamLockManager instance.
-//-----------------------------------------------------------------------------
-HFCBinStreamLockManager* HRFBilCreator::GetHdrLockManager() const
-    {
-    HPRECONDITION (m_pHdrSharingControl != 0);
-
-    return m_pHdrSharingControl->GetLockManager();
-    }
 
 //-----------------------------------------------------------------------------
 //

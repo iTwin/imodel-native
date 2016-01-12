@@ -281,9 +281,6 @@ bool HRFUSgsFastL7ACreator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
 
     HFCPtr<HFCURLFile>& rpURL((HFCPtr<HFCURLFile>&)pi_rpURL);
 
-    (const_cast<HRFUSgsFastL7ACreator*>(this))->SharingControlCreate(pi_rpURL);
-    HFCLockMonitor SisterFileLock(GetLockManager());
-
     if (BeStringUtilities::Wcsicmp(rpURL->GetExtension().c_str(), L"usgs") == 0)
         {
         WString USGSFileName;
@@ -372,10 +369,6 @@ bool HRFUSgsFastL7ACreator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
         }
 
 WRAPUP:
-    SisterFileLock.ReleaseKey();
-    HASSERT(!(const_cast<HRFUSgsFastL7ACreator*>(this))->m_pSharingControl->IsLocked());
-    (const_cast<HRFUSgsFastL7ACreator*>(this))->m_pSharingControl = 0;
-
     return Result;
     }
 
@@ -455,12 +448,6 @@ bool HRFUSgsFastL7AFile::Open()
 
     if (!m_IsOpen)
         {
-        // This creates the sister file for file sharing control if necessary.
-        SharingControlCreate();
-
-        // Lock the sister file.
-        HFCLockMonitor SisterFileLock (GetLockManager());
-
         HFCPtr<HFCURLFile>& rpURL((HFCPtr<HFCURLFile>&)GetURL());
 
         if (BeStringUtilities::Wcsicmp(rpURL->GetExtension().c_str(), L"usgs") == 0)
@@ -557,9 +544,6 @@ bool HRFUSgsFastL7AFile::Open()
             }
         else
             throw(HFCFileNotSupportedException(rpURL->GetURL()));
-
-        // Unlock the sister file
-        SisterFileLock.ReleaseKey();
         }
 
     return m_IsOpen;

@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFArcInfoGridFile.cpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HRFArcInfoGridFile
@@ -239,9 +239,6 @@ bool HRFArcInfoGridCreator::IsKindOfFile  (const HFCPtr<HFCURL>&    pi_rpURL,
     HFCPtr<HFCURL> pHeaderURL(new HFCURLFile(pi_rpURL->GetURL()));
     (static_cast<HFCURLFile*>(pHeaderURL.GetPtr()))->SetFileName(WString(L"hdr.adf"));
 
-    (const_cast<HRFArcInfoGridCreator*>(this))->SharingControlCreate(pHeaderURL);
-    HFCLockMonitor SisterFileLock (GetLockManager());
-
     HAutoPtr<HFCBinStream> pHeaderFile(HFCBinStream::Instanciate(pHeaderURL, HFC_READ_ONLY | HFC_SHARE_READ_WRITE));
 
     if (pHeaderFile != 0 && pHeaderFile->GetLastException() == NULL)
@@ -262,10 +259,6 @@ bool HRFArcInfoGridCreator::IsKindOfFile  (const HFCPtr<HFCURL>&    pi_rpURL,
                 }
             }
         }
-
-    SisterFileLock.ReleaseKey();
-    HASSERT(!(const_cast<HRFArcInfoGridCreator*>(this))->m_pSharingControl->IsLocked());
-    (const_cast<HRFArcInfoGridCreator*>(this))->m_pSharingControl = 0;
 
     return Success;
     }

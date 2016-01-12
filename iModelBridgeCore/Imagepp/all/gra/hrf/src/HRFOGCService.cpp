@@ -16,7 +16,6 @@
 
 #include <Imagepp/all/h/HFCException.h>
 #include <Imagepp/all/h/HFCHTTPConnection.h>
-#include <Imagepp/all/h/HFCSocketConnection.h>
 
 #include <Imagepp/all/h/HGF2DStretch.h>
 #include <Imagepp/all/h/HGF2DIdentity.h>

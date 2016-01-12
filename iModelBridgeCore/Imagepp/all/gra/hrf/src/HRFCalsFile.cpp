@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFCalsFile.cpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class HRFCalsFile
@@ -199,9 +199,6 @@ bool HRFCalsCreator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
     HAutoPtr<HFCBinStream>  pFile;
     char                   Marker[20];
 
-    (const_cast<HRFCalsCreator*>(this))->SharingControlCreate(pi_rpURL);
-    HFCLockMonitor SisterFileLock(GetLockManager());
-
     // Open the Cals File & place file pointer at the start of the file
     pFile = HFCBinStream::Instanciate(pi_rpURL, pi_Offset, HFC_READ_ONLY | HFC_SHARE_READ_WRITE);
     if (pFile == 0 || pFile->GetLastException() != 0)
@@ -299,11 +296,6 @@ bool HRFCalsCreator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
 
 
 WRAPUP:
-    SisterFileLock.ReleaseKey();
-
-    HASSERT(!(const_cast<HRFCalsCreator*>(this))->m_pSharingControl->IsLocked());
-    (const_cast<HRFCalsCreator*>(this))->m_pSharingControl = 0;
-
     return bResult;
     }
 
@@ -480,9 +472,6 @@ bool HRFCalsFile::Open()
 
     m_IsOpen = true;
 
-    // This creates the sister file for file sharing control if necessary.
-    SharingControlCreate();
-
     return m_IsOpen;
     }
 
@@ -591,9 +580,6 @@ bool HRFCalsFile::Create()
     m_pCalsFile = HFCBinStream::Instanciate(GetURL(), m_Offset, GetAccessMode(), 0, true);
 
     m_IsOpen = true;
-
-    // This creates the sister file for file sharing control if necessary.
-    SharingControlCreate();
 
     return m_IsOpen;
     }
@@ -771,14 +757,8 @@ bool HRFCalsFile::CreateFileHeader(HFCPtr<HRFPageDescriptor> pi_pPage)
     // Create an header block
     if (CreateHeaderBlock(pResolutionDescriptor))
         {
-        // Lock the sister file
-        HFCLockMonitor SisterFileLock(GetLockManager());
-
         // Write freshly created header physically into the file...
         m_pCalsFile->Write(m_pCalsHeader, HRF_CALS_TYPE1_BLOCK_SIZE);
-
-        // Unlock the sister file
-        SisterFileLock.ReleaseKey();
 
         // Initialise some members and read file header Read
         m_HasHeaderFilled = true;
@@ -867,9 +847,6 @@ void HRFCalsFile::InitOpenedFile()
 
     if (!GetAccessMode().m_HasCreateAccess)
         {
-        // Lock the sister file
-        HFCLockMonitor SisterFileLock(GetLockManager());
-
         m_CalsType = GetCalsType();
         HASSERT(m_CalsType != UNKNOWN);
 
@@ -884,9 +861,6 @@ void HRFCalsFile::InitOpenedFile()
         // Read and fill the Type1BlockHeader
         m_pCalsFile->Read(m_pCalsHeader, HRF_CALS_TYPICAL_READ_BUFFER_SIZE);
         m_HasHeaderFilled = true;
-
-        // Unlock the sister file.
-        SisterFileLock.ReleaseKey();
         }
 
     if (m_HasHeaderFilled)
@@ -923,8 +897,6 @@ HRFCalsFile::CALS_TYPE HRFCalsFile::GetCalsType()
 
     char Marker[20];
     CALS_TYPE CurrentFileType = UNKNOWN;
-
-    HFCLockMonitor SisterFileLock(GetLockManager());
 
     // Open the Cals File & place file pointer at the start of the file
     if (m_pCalsFile != 0)
@@ -1002,7 +974,6 @@ HRFCalsFile::CALS_TYPE HRFCalsFile::GetCalsType()
         // Reset file cursor position.
         m_pCalsFile->SeekToPos(CurrentCursorPos);
         }
-    SisterFileLock.ReleaseKey();
 
     return CurrentFileType;
     }

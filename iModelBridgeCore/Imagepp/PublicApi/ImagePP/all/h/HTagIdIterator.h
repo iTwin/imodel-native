@@ -16,7 +16,7 @@ class HTIFFTagEntry;
 * @description
 * @bsiclass                                                  Raymond.Gauthier   03/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-class HTagIdIter : public BentleyApi::ImagePP::ForwardIterator<HTagIdIter, uint32_t>
+class HTagIdIter : public ForwardIterator<HTagIdIter, uint32_t>
     {
 public:
     IMAGEPP_EXPORT explicit         HTagIdIter                   ();

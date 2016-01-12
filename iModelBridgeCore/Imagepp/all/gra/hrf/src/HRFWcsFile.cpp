@@ -157,9 +157,6 @@ bool HRFWCSCreator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
             XMLFileName += L"\\";
             XMLFileName += ((HFCPtr<HFCURLFile>&)pi_rpURL)->GetPath();
 
-            (const_cast<HRFWCSCreator*>(this))->SharingControlCreate(pi_rpURL);
-            HFCLockMonitor SisterFileLock(GetLockManager());
-
             // Open XML file
             BeXmlStatus xmlStatus;
             BeXmlDomPtr pXmlDom = BeXmlDom::CreateAndReadFromFile(xmlStatus, XMLFileName.c_str());
@@ -170,11 +167,6 @@ bool HRFWCSCreator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
                 if (NULL != pMainNode && BeStringUtilities::Stricmp (pMainNode->GetName(), "BentleyWCSFile") == 0)
                     bResult = true;
                 }
-
-            SisterFileLock.ReleaseKey();
-
-            HASSERT(!(const_cast<HRFWCSCreator*>(this))->m_pSharingControl->IsLocked());
-            (const_cast<HRFWCSCreator*>(this))->m_pSharingControl = 0;
             }
         }
 
@@ -219,8 +211,6 @@ HRFWCSFile::HRFWCSFile(const HFCPtr<HFCURL>& pi_rpURL,
         //this is a read-only format
         throw HFCFileReadOnlyException(pi_rpURL->GetURL());
         }
-
-    SharingControlCreate();
 
     WString XMLFileName;
     XMLFileName = ((HFCPtr<HFCURLFile>&)pi_rpURL)->GetHost();

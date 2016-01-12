@@ -21,6 +21,7 @@ jpegSrcDir  = $(_MakeFilePath)
 %else
     appName = IppJpegLib
 %endif
+CCompPDBName    = $(appName)
 
 #----------------------------------------------------------------------
 #       Create output directories
@@ -159,12 +160,8 @@ DLMLINK_WARNINGS_AS_ERRORS          = 1
 LIB_NAME  = $(appName)
 LIB_DEST  = $(o)
 LIB_OBJS  = $(MultiCompileObjectList)
+LIB_CONTEXT_LOCATION    = $(BuildContext)Delivery/
 
-
-# if building 12bit library, put it in private location.
-%if defined(JPEGLIB_SUPPORT_12BITS)
-    LIB_CONTEXT_LOCATION    = $(ippOutPrivateLibs)
-%endif
 
 %include creatlib.mki
 

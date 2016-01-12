@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFImgRGBFile.cpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -188,9 +188,6 @@ bool HRFImgRGBCreator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
     HFCPtr<HFCURL>         pGreenFileURL;
     HFCPtr<HFCURL>         pBlueFileURL;
 
-    (const_cast<HRFImgRGBCreator*>(this))->SharingControlCreate(pi_rpURL);
-    HFCLockMonitor SisterFileLock (GetLockManager());
-
     // Check if the file is ImgRGB or not.
     // Read 4 bytes 2 times and read 4 bytes again (blank). Header must be 12 bytes long.
     pFile = HFCBinStream::Instanciate(pi_rpURL, pi_Offset, HFC_READ_ONLY | HFC_SHARE_READ_WRITE);
@@ -250,9 +247,6 @@ bool HRFImgRGBCreator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
     Result = true;
 
 WRAPUP:
-    SisterFileLock.ReleaseKey();
-    HASSERT(!(const_cast<HRFImgRGBCreator*>(this))->m_pSharingControl->IsLocked());
-    (const_cast<HRFImgRGBCreator*>(this))->m_pSharingControl = 0;
 
     return Result;
     }
@@ -475,14 +469,8 @@ bool HRFImgRGBFile::AddPage(HFCPtr<HRFPageDescriptor> pi_pPage)
             // Set the image file information
             m_FileHeader.m_Width  = (uint32_t)pResolutionDescriptor->GetWidth();
             m_FileHeader.m_Height = (uint32_t)pResolutionDescriptor->GetHeight();
-
-            // Lock the sister file.
-            HFCLockMonitor SisterFileLock (GetLockManager());
-
+            
             SetFileHeaderToFile();
-
-            // Unlock the sister file.
-            SisterFileLock.ReleaseKey();
             }
         else
             Result = false;
@@ -530,17 +518,8 @@ bool HRFImgRGBFile::Open()
             throw; // propagate exception to caller.
             }
 
-        // This creates the sister file for file sharing control if necessary.
-        SharingControlCreate();
-
-        // Lock the sister file.
-        HFCLockMonitor SisterFileLock (GetLockManager());
-
         // Get width and height
         GetFileHeaderFromFile();
-
-        // Unlock the sister file.
-        SisterFileLock.ReleaseKey();
 
         m_IsOpen = true;
         }
@@ -655,18 +634,12 @@ void HRFImgRGBFile::SaveImgRGBFile(bool pi_CloseFile)
         // if Create mode or the header is changed
         if (GetAccessMode().m_HasCreateAccess)
             {
-            // Lock the sister file
-            HFCLockMonitor SisterFileLock(GetLockManager());
-
             SetFileHeaderToFile();
 
             m_pImgRGBFile->Flush();
             m_pRedFile->Flush();
             m_pGreenFile->Flush();
             m_pBlueFile->Flush();
-
-            // Unlock the sister file.
-            SisterFileLock.ReleaseKey();
             }
 
         if(pi_CloseFile)
@@ -702,9 +675,6 @@ bool HRFImgRGBFile::Create()
         throw; // propagate exception to caller.
         }
 
-    // This creates the sister file for file sharing control if necessary.
-    SharingControlCreate();
-
     m_IsOpen = true;
 
     return true;
@@ -717,7 +687,6 @@ bool HRFImgRGBFile::Create()
 void HRFImgRGBFile::GetFileHeaderFromFile()
     {
     HPRECONDITION(m_pImgRGBFile != 0);
-    HPRECONDITION(SharingControlIsLocked());
 
     char aBuffer[5];
     aBuffer[4] = 0; // put a null terminate string
@@ -743,7 +712,6 @@ void HRFImgRGBFile::GetFileHeaderFromFile()
 void HRFImgRGBFile::SetFileHeaderToFile()
     {
     HPRECONDITION(m_pImgRGBFile != 0);
-    HPRECONDITION(SharingControlIsLocked());
 
     char aBuffer[12];
     memset(aBuffer, ' ', 12);

@@ -524,13 +524,10 @@ bool HRFEcwCreator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
         HRFErMapperSupportedFile::InitErMapperLibrary();
 
         uint32_t UrlOffset = 0;
-        HFCLockMonitor* pSisterFileLock = 0;
 
         if (pi_rpURL->IsCompatibleWith(HFCURLFile::CLASS_ID))
             {
             UrlOffset = 7; //Ignore the file:// placed at the front of the url
-            (const_cast<HRFEcwCreator*>(this))->SharingControlCreate(pi_rpURL);
-            pSisterFileLock = new HFCLockMonitor(GetLockManager());
             } 
 
         NCSError error = NCScbmOpenFileViewW(pi_rpURL->GetURL().substr(UrlOffset).c_str(), &pView, 0);
@@ -544,14 +541,6 @@ bool HRFEcwCreator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
                 }
             }
         NCScbmCloseFileViewEx(pView, true);
-
-        if (pi_rpURL->IsCompatibleWith(HFCURLFile::CLASS_ID))
-            {
-            pSisterFileLock->ReleaseKey();
-            delete pSisterFileLock;
-            HASSERT(!(const_cast<HRFEcwCreator*>(this))->m_pSharingControl->IsLocked());
-            (const_cast<HRFEcwCreator*>(this))->m_pSharingControl = 0;
-            }
         }
 
     return IsKindOf;
@@ -767,9 +756,6 @@ bool HRFJpeg2000Creator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
     // Try to create file view
     NCSFileView* pView = 0;
 
-    (const_cast<HRFJpeg2000Creator*>(this))->SharingControlCreate(pi_rpURL);
-    HFCLockMonitor SisterFileLock (GetLockManager());
-
     HRFErMapperSupportedFile::InitErMapperLibrary();
 
     NCSError error = NCScbmOpenFileViewW(static_cast<HFCURLFile*>(pi_rpURL.GetPtr())->GetAbsoluteFileName().c_str(), &pView, 0);
@@ -782,10 +768,6 @@ bool HRFJpeg2000Creator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
             }
         }
     NCScbmCloseFileViewEx((NCSFileView*)pView, true);
-
-    SisterFileLock.ReleaseKey();
-    HASSERT(!(const_cast<HRFJpeg2000Creator*>(this))->m_pSharingControl->IsLocked());
-    (const_cast<HRFJpeg2000Creator*>(this))->m_pSharingControl = 0;
 
     return IsKindOf;
     }
@@ -983,8 +965,6 @@ bool HRFErMapperSupportedFile::Open()
 
         if (m_pURL->IsCompatibleWith(HFCURLFile::CLASS_ID))
             {
-            // This method creates the sharing control sister file
-            SharingControlCreate();
             UrlOffset = 7; //Ignore the file:// placed at the front of the url
             }
 
@@ -1118,13 +1098,6 @@ void HRFErMapperSupportedFile::SetLookAhead(uint32_t        pi_Page,
             {
             try
                 {
-                HFCLockMonitor SisterFileLock;
-                // Lock the file.
-                if (m_IsECWP == false)
-                    {
-                    SisterFileLock.Assign(GetLockManager());
-                    }
-
                 const HRFResolutionEditor* pResEditor(GetResolutionEditor(pi_Resolution));
 
                 HASSERT(pResEditor != 0);
@@ -1134,7 +1107,7 @@ void HRFErMapperSupportedFile::SetLookAhead(uint32_t        pi_Page,
                 Status = ((HRFErMapperSupportedFileEditor*)pResEditor)->
                          ReadBlock(MinX, MinY,
                                    Width, Height,
-                                   pData, &SisterFileLock);
+                                   pData);
 
                 if (Status == H_SUCCESS)
                     {
@@ -1201,9 +1174,6 @@ void HRFErMapperSupportedFile::SetLookAhead(uint32_t               pi_Page,
 //-----------------------------------------------------------------------------
 bool HRFErMapperSupportedFile::Create()
     {
-    // This creates the sister file for file sharing control if necessary.
-    SharingControlCreate();
-
     return true;
     }
 

@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFCalsLineEditor.cpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class HRFCalsLineEditor
@@ -42,9 +42,6 @@ HRFCalsLineEditor::HRFCalsLineEditor(HFCPtr<HRFRasterFile> pi_rpRasterFile,
 
     m_RasterOffset    = HRF_CALS_TYPE1_BLOCK_SIZE;
 
-    // Lock the sister file before accessing the physical file..
-    HFCLockMonitor SisterFileLock(GetRasterFile()->GetLockManager());
-
     m_ResSizeInBytes  = (uint32_t)(m_pCalsFile->GetSize() - m_RasterOffset);
     }
 
@@ -65,8 +62,7 @@ HRFCalsLineEditor::~HRFCalsLineEditor()
 
 HSTATUS HRFCalsLineEditor::ReadBlock(uint64_t pi_PosBlockX,
                                      uint64_t pi_PosBlockY,
-                                     Byte*   po_pData,
-                                     HFCLockMonitor const* pi_pSisterFileLock)
+                                     Byte*   po_pData)
     {
     // We assume that we have check the header file integrity in the
     // constructor for the release version.
@@ -111,15 +107,6 @@ HSTATUS HRFCalsLineEditor::ReadBlock(uint64_t pi_PosBlockX,
             else
                 m_pCodec->SetLinePaddingBits(0);
 
-            // Lock the sister file
-            HFCLockMonitor SisterFileLock;
-            if(pi_pSisterFileLock == 0)
-                {
-                // Lock the file.
-                AssignRasterFileLock(GetRasterFile(), SisterFileLock, true);
-                pi_pSisterFileLock = &SisterFileLock;
-                }
-
             // this is the first line we move to the begin of image data
             m_pCalsFile->SeekToPos(m_RasterOffset);
 
@@ -128,9 +115,6 @@ HSTATUS HRFCalsLineEditor::ReadBlock(uint64_t pi_PosBlockX,
 
             if(m_pCalsFile->Read(pCompressedData, m_ResSizeInBytes) != m_ResSizeInBytes)
                 goto WRAPUP;
-
-            // Unlock the sister file
-            SisterFileLock.ReleaseKey();
 
             m_CompressPacket.SetBuffer(pCompressedData, m_ResSizeInBytes);
             m_CompressPacket.SetBufferOwnership(true);
@@ -170,8 +154,7 @@ WRAPUP:
 //-----------------------------------------------------------------------------
 HSTATUS HRFCalsLineEditor::ReadBlockRLE(uint64_t              pi_PosBlockX,
                                         uint64_t              pi_PosBlockY,
-                                        HFCPtr<HCDPacketRLE>& pio_rpPacketRLE,
-                                        HFCLockMonitor const* pi_pSisterFileLock)
+                                        HFCPtr<HCDPacketRLE>& pio_rpPacketRLE)
     {
     // We assume that we have check the header file integrity in the
     // constructor for the release version.
@@ -189,7 +172,7 @@ HSTATUS HRFCalsLineEditor::ReadBlockRLE(uint64_t              pi_PosBlockX,
     HPRECONDITION(m_pCodec->GetRLEInterface() != 0);    // CCITTFax4 should have RLEInterface
 
     if(m_pCodec->GetRLEInterface() == 0)
-        return HRFResolutionEditor::ReadBlockRLE(pi_PosBlockX, pi_PosBlockY, pio_rpPacketRLE, pi_pSisterFileLock);
+        return HRFResolutionEditor::ReadBlockRLE(pi_PosBlockX, pi_PosBlockY, pio_rpPacketRLE);
 
     HSTATUS Status = H_ERROR;
 
@@ -223,15 +206,6 @@ HSTATUS HRFCalsLineEditor::ReadBlockRLE(uint64_t              pi_PosBlockX,
         else
             m_pCodec->SetLinePaddingBits(0);
 
-        // Lock the sister file
-        HFCLockMonitor SisterFileLock;
-        if(pi_pSisterFileLock == 0)
-            {
-            // Lock the file.
-            AssignRasterFileLock(GetRasterFile(), SisterFileLock, true);
-            pi_pSisterFileLock = &SisterFileLock;
-            }
-
         // this is the first line we move to the begin of image data
         m_pCalsFile->SeekToPos(m_RasterOffset);
 
@@ -240,9 +214,6 @@ HSTATUS HRFCalsLineEditor::ReadBlockRLE(uint64_t              pi_PosBlockX,
 
         if(m_pCalsFile->Read(pCompressedData, m_ResSizeInBytes) != m_ResSizeInBytes)
             goto WRAPUP;    // H_ERROR;
-
-        // Unlock the sister file
-        SisterFileLock.ReleaseKey();
 
         m_CompressPacket.SetBuffer(pCompressedData, m_ResSizeInBytes);
         m_CompressPacket.SetBufferOwnership(true);
@@ -283,8 +254,7 @@ WRAPUP:
 
 HSTATUS HRFCalsLineEditor::WriteBlock(uint64_t                pi_PosBlockX,
                                       uint64_t                pi_PosBlockY,
-                                      const Byte*             pi_pData,
-                                      HFCLockMonitor const*   pi_pSisterFileLock)
+                                      const Byte*             pi_pData)
     {
     HPRECONDITION((pi_PosBlockY == m_CurrentReadLine + 1) || (pi_PosBlockY == 0));
     HPRECONDITION (m_AccessMode.m_HasWriteAccess || m_AccessMode.m_HasCreateAccess);
@@ -305,19 +275,7 @@ HSTATUS HRFCalsLineEditor::WriteBlock(uint64_t                pi_PosBlockX,
         RasterOffset = HRF_CALS_TYPE1_BLOCK_SIZE;
         m_CurrentReadLine = 0;
 
-        // Lock the sister file
-        HFCLockMonitor SisterFileLock;
-        if(pi_pSisterFileLock == 0)
-            {
-            // Lock the file.
-            AssignRasterFileLock(GetRasterFile(), SisterFileLock, false);
-            pi_pSisterFileLock = &SisterFileLock;
-            }
-
         m_pCalsFile->SeekToPos(RasterOffset);
-
-        // Unlock the sister file.
-        SisterFileLock.ReleaseKey();
 
         // Reset all codec value to ensure correct writing startup.
         m_pCodec->Reset();
@@ -356,23 +314,8 @@ HSTATUS HRFCalsLineEditor::WriteBlock(uint64_t                pi_PosBlockX,
         // Write the line need into the file...
         if (CompressedSize)
             {
-            // Lock the sister file
-            HFCLockMonitor SisterFileLock;
-            if(pi_pSisterFileLock == 0)
-                {
-                // Lock the file.
-                AssignRasterFileLock(GetRasterFile(), SisterFileLock, false);
-                pi_pSisterFileLock = &SisterFileLock;
-                }
-
             if (m_pCalsFile->Write(Compress.GetBufferAddress(), sizeof(Byte) * CompressedSize) != (sizeof(Byte) * CompressedSize))
                 goto WRAPUP;    // H_ERROR
-
-            // Increment the counter of the sister file.
-            GetRasterFile()->SharingControlIncrementCount();
-
-            // Unlock the sister file.
-            SisterFileLock.ReleaseKey();
             }
 
         // Remember what's the last line write into the file
@@ -392,8 +335,7 @@ WRAPUP:
 //-----------------------------------------------------------------------------
 HSTATUS HRFCalsLineEditor::WriteBlockRLE(uint64_t                pi_PosBlockX,
                                          uint64_t                pi_PosBlockY,
-                                         HFCPtr<HCDPacketRLE>&   pi_rpPacketRLE,
-                                         HFCLockMonitor const*   pi_pSisterFileLock)
+                                         HFCPtr<HCDPacketRLE>&   pi_rpPacketRLE)
     {
     HPRECONDITION((pi_PosBlockY == m_CurrentReadLine + 1) || (pi_PosBlockY == 0));
     HPRECONDITION (m_AccessMode.m_HasWriteAccess || m_AccessMode.m_HasCreateAccess);
@@ -403,7 +345,7 @@ HSTATUS HRFCalsLineEditor::WriteBlockRLE(uint64_t                pi_PosBlockX,
     HPRECONDITION(m_pCodec->GetRLEInterface() != 0);    // CCITTFax4 should have RLEInterface
 
     if(m_pCodec->GetRLEInterface() == 0)
-        return HRFResolutionEditor::WriteBlockRLE(pi_PosBlockX, pi_PosBlockY, pi_rpPacketRLE, pi_pSisterFileLock);
+        return HRFResolutionEditor::WriteBlockRLE(pi_PosBlockX, pi_PosBlockY, pi_rpPacketRLE);
 
     HSTATUS Status = H_ERROR;
 
@@ -414,19 +356,7 @@ HSTATUS HRFCalsLineEditor::WriteBlockRLE(uint64_t                pi_PosBlockX,
         {
         m_CurrentReadLine = 0;
 
-        // Lock the sister file
-        HFCLockMonitor SisterFileLock;
-        if(pi_pSisterFileLock == 0)
-            {
-            // Lock the file.
-            AssignRasterFileLock(GetRasterFile(), SisterFileLock, false);
-            pi_pSisterFileLock = &SisterFileLock;
-            }
-
         m_pCalsFile->SeekToPos(HRF_CALS_TYPE1_BLOCK_SIZE);
-
-        // Unlock the sister file.
-        SisterFileLock.ReleaseKey();
 
         // Reset all codec value to ensure correct writing startup.
         m_pCodec->Reset();
@@ -457,23 +387,8 @@ HSTATUS HRFCalsLineEditor::WriteBlockRLE(uint64_t                pi_PosBlockX,
         // Write the line need into the file...
         if (CompressedSize)
             {
-            // Lock the sister file
-            HFCLockMonitor SisterFileLock;
-            if(pi_pSisterFileLock == 0)
-                {
-                // Lock the file.
-                AssignRasterFileLock(GetRasterFile(), SisterFileLock, false);
-                pi_pSisterFileLock = &SisterFileLock;
-                }
-
             if (m_pCalsFile->Write(pRasterData, CompressedSize) != CompressedSize)
                 goto WRAPUP;    // H_ERROR
-
-            // Increment the counter of the sister file.
-            GetRasterFile()->SharingControlIncrementCount();
-
-            // Unlock the sister file.
-            SisterFileLock.ReleaseKey();
             }
 
         // Remember what's the last line write into the file

@@ -70,16 +70,33 @@
         </Bindings>
     </Part-->
 
-    <Part Name="Jpeg12BitsLib" BentleyBuildMakeFile="ext/jpeg/jpeg.mke" BMakeOptions="+dJPEGLIB_SUPPORT_12BITS"> </Part>
+    <Part Name="Jpeg12BitsLib" BentleyBuildMakeFile="ext/jpeg/jpeg.mke" BMakeOptions="+dJPEGLIB_SUPPORT_12BITS"> 
+        <Bindings>
+            <Libs ProductDirectoryName="IppPrivateLibs" Required="false">Delivery/$(stlibprefix)IppJpeg12Bits$(stlibext)</Libs>
+            <Libs ProductDirectoryName="IppPrivateLibs" Required="false">Delivery/$(stlibprefix)IppJpeg12Bits$(stlibdebugext)</Libs>
+        </Bindings>
+    </Part>
     
     <Part Name="MatrixFromTiePtsLib" BentleyBuildMakeFile="ext/MatrixFromTiePts/MatrixFromTiePts.mke"> 
         <SubPart PartName="PublicApi" />
         <SubPart PartName="BentleyDll"                      PartFile="Bentley"              Repository="Bentley" />
+        <Bindings>
+            <Libs ProductDirectoryName="IppPrivateLibs" Required="false">Delivery/$(stlibprefix)MatrixFromTiePts$(stlibext)</Libs>
+            <Libs ProductDirectoryName="IppPrivateLibs" Required="false">Delivery/$(stlibprefix)MatrixFromTiePts$(stlibdebugext)</Libs>
+        </Bindings>
     </Part>
-   
-    <!-- //////////////////////////////  Imagepp Part ////////////////////////////////////// -->
-    <!-- NOTE: Graphite uses "G" as an ApiNumber (library suffix) to disambiguate from Vancouver libraries -->
-    <Part Name="ImagePPDll" BentleyBuildMakeFile="All/ImagePP.mke" ApiNumber="G">
+    
+         
+    <Part Name="ImagePPThirdPartsDll" OnlyPlatforms="x86,x64">
+        <SubPart PartName="MrSid"                   PartFile="${SrcRoot}bsicommon/CvsPartfiles/mrsid"        Repository="Bin-MrSid" />
+        <SubPart PartName="ErdasEcwJpeg2000"        PartFile="${SrcRoot}bsicommon/CvsPartfiles/ErdasEcwJpeg2000"     Repository="Bin-ErdasEcwJpeg2000" />
+        <!--SubPart PartName="OracleSDK12.1"           PartFile="${SrcRoot}bsicommon/CvsPartfiles/oracle"       Repository="bin-oracle" />
+        <SubPart PartName="PdfLibInitializer"       PartFile="PdfLibInitializer"                        Repository="PdfLibInterface"/>
+        <SubPart PartName="Adobe11.0"               PartFile="${SrcRoot}bsicommon/CvsPartfiles/adobe"        Repository="bin-adobe11.0"/-->
+    </Part>
+
+    <!-- shared between ImagePPDll and ImagePPDllObjsOnly-->
+    <Part Name ="ImageppDLLSubParts">
         <SubPart PartName="PublicApi" />
         <SubPart PartName="ImagePPThirdPartsDll" />
         <SubPart PartName="BeXmlDll"                        PartFile="BeLibxml2"            Repository="libsrc-libxml2" />
@@ -94,6 +111,11 @@
         <SubPart PartName="GdalLib" />
         <SubPart PartName="GdalData" />
         <SubPart PartName="MatrixFromTiePtsLib" />
+    </Part>
+    
+    <!-- NOTE: Graphite uses "G" as an ApiNumber (library suffix) to disambiguate from Vancouver libraries -->
+    <Part Name="ImagePPDll" BentleyBuildMakeFile="All/ImagePP.mke" ApiNumber="G">
+        <SubPart PartName="ImageppDLLSubParts" />
         <Bindings>
             <Libs>Delivery/$(shlibprefix)Imagepp$(libext)</Libs>
             <Assemblies ProductDirectoryName="ImagePPAssemblies">Delivery/$(shlibprefix)Imagepp$(ApiNumber)$(shlibext)
@@ -105,15 +127,14 @@
             </Files>
         </Bindings>
     </Part>
-    
-    <Part Name="ImagePPThirdPartsDll" OnlyPlatforms="x86,x64">
-        <SubPart PartName="MrSid"                   PartFile="${SrcRoot}bsicommon/CvsPartfiles/mrsid"        Repository="Bin-MrSid" />
-        <SubPart PartName="ErdasEcwJpeg2000"        PartFile="${SrcRoot}bsicommon/CvsPartfiles/ErdasEcwJpeg2000"     Repository="Bin-ErdasEcwJpeg2000" />
-        <!--SubPart PartName="OracleSDK12.1"           PartFile="${SrcRoot}bsicommon/CvsPartfiles/oracle"       Repository="bin-oracle" />
-        <SubPart PartName="PdfLibInitializer"       PartFile="PdfLibInitializer"                        Repository="PdfLibInterface"/>
-        <SubPart PartName="Adobe11.0"               PartFile="${SrcRoot}bsicommon/CvsPartfiles/adobe"        Repository="bin-adobe11.0"/-->
-    </Part>
 
+    <!-- ImagePP tests use a lot of private/internal stuff that we do not want to export. So we had 2 choices:
+        1) Use a static version. That gives all sort of conflict between dynamic and static part when linking the test. 
+           And we also have to build the library twice.
+        2) Hijack ImagePPDll objs and add them to the test obj list. We save the second build and avoid to export everything -->
+    <Part Name="ImagePPDllObjsOnly" BentleyBuildMakeFile="All/ImagePP.mke" BMakeOptions="+dIPP_OBJ_ONLY">
+        <SubPart PartName="ImageppDLLSubParts" />
+    </Part>
    
     <!-- NOTE: Graphite uses "G" as an ApiNumber (library suffix) to disambiguate from Vancouver libraries -->
     <Part Name="IppImagingDll" BentleyBuildMakeFile="IppImaging/IppImaging.mke" ApiNumber="G" OnlyPlatforms="x86,x64">
@@ -132,57 +153,12 @@
 
     <Part Name="ImagePP-Android">
         <SubPart PartName="ImagePPDll" LibType="Static"/>
-        <SubPart PartName="IppImagingDll" LibType="Static"/>-->
+        <SubPart PartName="IppImagingDll" LibType="Static"/>
     </Part>    
-    
-    <!-- ********************************************************************************************** -->
-    <!-- Define the collection of all unit tests for the ImagePP repository itself. -->
-    <!-- ********************************************************************************************** -->
-    
-    <!--  <Part Name="ImagePPUnitTests" BentleyBuildMakeFile="${SrcRoot}bsicommon//sharedmki/BuildUnitTests.mke" BMakeOptions="-dBEGTEST_INPUT=$(SrcRoot)Imagepp/Tests/ -dBEGTEST_NAME=ImagePP -dBEGTEST_DEPENDENCIES=$(SrcRoot)Imagepp/Tests/dependencies.mki">  -->
-     <!--   <SubPart PartName="google_gtest_lib"    PartFile="gtest"        Repository="util-gtest" /> --> -->
-     <!--    <SubPart PartName="ImagePP"             PartFile="ImagePP"      Repository="ImagePP" LibType="Static"/> -->
-    <!-- </Part> -->
-    
-    <Part Name="Tests">
-        <!-- <subPart PartName="ImagePPUnitTests" /> -->
-        <subPart PartName="ImagePPUnitTests" PartFile="ImagePPTest" Repository="ImagePP" />
-    </Part>
-    
-    <Product Name="ImagePP-Tests">
-        <SubPart Repository="BeGTest" PartFile="BeGTest" PartName="Base" />
-        <SubPart PartName="Tests"/>
-        <Directories DirectoryListName="CollectionProduct" Repository="BeGTest"  PartFile="BeGTest"/>
-        <Directories DirectoryListName="ImagePPTestsDir"/>
         
-    </Product>    
-    
-    <!-- Define a gtest program to run the tests -->
-    <Part Name="Gtest" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/buildGTest.mke" BentleyBuildMakeOptions="-dTEST_NAME=ImagePPTest -dTEST_COLLECTION_PRODUCT=ImagePP-Tests" OnlyPlatforms="x86,x64,Linux*,MacOS*">
-         <SubProduct ProductName="ImagePP-Tests"/>
-         <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
-        <Bindings>
-            <Files ProductDirectoryName="Gtest-NativeAssemblies">Delivery/Gtest/ImagePPTest/Assemblies/*</Files>
-           <!-- <Directory ProductDirectoryName="Gtest-Assets" SourceName="Delivery/Gtest/ImagePPTest/Assets" /> -->
-        </Bindings>
-    </Part>    
-    
-    
-    
-    <Product Name="ImagePP-GTest">
-        <SubPart PartName="GTest"/>
-        <Directories DirectoryListName="GtestProduct" Repository="BeGTest" PartFile="BeGTest"/>
-    </Product>    
-
-    <Part Name="RunGtest" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/RunGTest.mke" BentleyBuildMakeOptions="-dGTEST_EXE=$(OutputRootDir)Product/ImagePP-GTest/ImagePPTest -dGTEST_OUTPUT_DIR=$(OutputRootDir)build/ImagePP -dGTEST_SHOW_PROGRESS" OnlyPlatforms="x86,x64,MacOs*,Linux*">
-        <SubProduct ProductName="ImagePP-GTest" />
-        <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
-    </Part>    
-    
     <Part Name="ImagePP-Tested" OnlyPlatforms="x86,x64">
-        <SubPart PartName="RunGTest"/>
+        <SubPart PartName="RunGtest"/>
     </Part>
-
     
     <Part Name="ImagePP-Dev" OnlyPlatforms="x86,x64">
         <SubPart PartName= "ImagePP" />
@@ -201,8 +177,53 @@
         <!--SubProduct ProductName="PlatformProducts"      PartFile="PlatformProducts"     Repository="MstnPlatform" /-->
     </Part>
     
-    <ProductDirectoryList ListName="ImagePPTestsDir" >
+    <!-- ******************************** Unit Tests ************************************** -->
+    
+    <Part Name="UnitTests-NonPublished" BentleyBuildMakeFile="Tests/BuildTests.mke" BMakeOptions="-dTestDir=NonPublished">
+        <SubPart PartName="ImagePPDllObjsOnly"             PartFile="ImagePP"      Repository="ImagePP"/>
+        <Bindings>
+            <Directory ProductDirectoryName="UnitTests-Objects" ProductSubDirectory="ImagePP/NonPublished" SourceName="Delivery/UnitTests/Objects/NonPublished"/>
+            <Files ProductDirectoryName="UnitTests-IgnoreList" ProductSubDirectory="ImagePP/NonPublished" SubPartDirectory="UnitTests/ImagePP">Delivery/UnitTests/ignore_list.txt</Files>
+        </Bindings>
+    </Part>
+    
+    <Part Name="Tests">
+         <SubPart PartName="UnitTests-NonPublished"/>
+        <!-- Not yet SubPart PartName="UnitTests-Published"/-->
+    </Part>
+    
+    <Product Name="ImagePP-Tests">
+        <SubPart Repository="BeGTest" PartFile="BeGTest" PartName="Base"/>
+        <SubPart PartName="Tests"/>
+        <Directories DirectoryListName="CollectionProduct" Repository="BeGTest"  PartFile="BeGTest"/>
+        <Directories DirectoryListName="ImagePPGTestsDir"/>
+    </Product>    
+    
+    <!-- Define a gtest program to run the tests Urlmon.lib -dGUNITTEST_LIBS="wininet.lib Urlmon.lib"' -->
+    <Part Name="Gtest" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/buildGTest.mke" BentleyBuildMakeOptions="-dTEST_NAME=ImagePPTest -dTEST_COLLECTION_PRODUCT=ImagePP-Tests -dGUNITTEST_NTLIBS=Urlmon.lib -dGUNITTEST_LIBS=wininet.lib" OnlyPlatforms="x86,x64,Linux*,MacOS*">
+         <SubProduct ProductName="ImagePP-Tests"/>
+         <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
+        <Bindings>
+            <Files ProductDirectoryName="Gtest-NativeAssemblies">Delivery/Gtest/ImagePPTest/Assemblies/*</Files>
+            <Directory ProductDirectoryName="Gtest-Assets" SourceName="Delivery/Gtest/ImagePPTest/Assets" />
+        </Bindings>
+    </Part>   
+    
+    <Product Name="ImagePP-Gtest">
+        <SubPart PartName="Gtest"/>
+        <Directories DirectoryListName="GtestProduct" Repository="BeGTest" PartFile="BeGTest"/>
+        <Directories DirectoryListName="ImagePPGTestsDir"/>
+    </Product>    
 
+    <Part Name="RunGtest" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/RunGTest.mke" BentleyBuildMakeOptions="-dGTEST_EXE=$(OutputRootDir)Product/ImagePP-GTest/ImagePPTest -dGTEST_OUTPUT_DIR=$(OutputRootDir)build/ImagePP -dGTEST_SHOW_PROGRESS" OnlyPlatforms="x86,x64,MacOs*,Linux*">
+        <SubProduct ProductName="ImagePP-GTest"/>
+        <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
+    </Part>
+  
+    <ProductDirectoryList ListName="ImagePPGTestsDir" >
+        <ProductDirectory Name="MrSidAssemblies"                Deliver="false" />
+        <ProductDirectory Name="ErdasEcwJpeg2000Assemblies"     Deliver="false" />
+        <ProductDirectory Name="GDalData"                       Deliver="false"/>
     </ProductDirectoryList>
 
 </BuildContext>

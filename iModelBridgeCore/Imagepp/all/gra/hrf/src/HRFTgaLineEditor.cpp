@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFTgaLineEditor.cpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class HRFTgaLineEditor
@@ -72,8 +72,7 @@ HRFTgaLineEditor::~HRFTgaLineEditor()
 ------------------------------------------------------------------------------*/
 HSTATUS HRFTgaLineEditor::ReadBlock(uint64_t pi_PosBlockX,
                                     uint64_t pi_PosBlockY,
-                                    Byte*  po_pData,
-                                    HFCLockMonitor const* pi_pSisterFileLock)
+                                    Byte*  po_pData)
     {
     HPRECONDITION (po_pData != 0);
     HPRECONDITION (pi_PosBlockX == 0);
@@ -88,7 +87,6 @@ HSTATUS HRFTgaLineEditor::ReadBlock(uint64_t pi_PosBlockX,
     uint64_t            Line;
     uint32_t           i;
     uint32_t           j;
-    HFCLockMonitor      SisterFileLock;
 
     if (pTgaFile->GetAccessMode().m_HasCreateAccess)
         {
@@ -105,14 +103,6 @@ HSTATUS HRFTgaLineEditor::ReadBlock(uint64_t pi_PosBlockX,
 
     // Caculate the offset of the first pixel of the line.
     Offset  = m_RasterDataOffset + (Line * m_BytesPerLine);
-
-    // Lock the sister file if needed
-    if(pi_pSisterFileLock == 0)
-        {
-        // Get lock and synch.
-        AssignRasterFileLock(GetRasterFile(), SisterFileLock, true);
-        pi_pSisterFileLock = &SisterFileLock;
-        }
 
     if (pTgaFile->m_pTgaFile->GetCurrentPos() != Offset)
         pTgaFile->m_pTgaFile->SeekToPos(Offset);
@@ -166,9 +156,6 @@ HSTATUS HRFTgaLineEditor::ReadBlock(uint64_t pi_PosBlockX,
             break;
         }
 
-    // Unlock the sister file.
-    SisterFileLock.ReleaseKey();
-
     Status = H_SUCCESS;
 
 WRAPUP:
@@ -190,8 +177,7 @@ WRAPUP:
 ------------------------------------------------------------------------------*/
 HSTATUS HRFTgaLineEditor::WriteBlock(uint64_t     pi_PosBlockX,
                                      uint64_t     pi_PosBlockY,
-                                     const Byte*  pi_pData,
-                                     HFCLockMonitor const* pi_pSisterFileLock)
+                                     const Byte*  pi_pData)
     {
     HPRECONDITION (m_AccessMode.m_HasWriteAccess || m_AccessMode.m_HasCreateAccess);
     HPRECONDITION (pi_pData != 0);
@@ -214,15 +200,6 @@ HSTATUS HRFTgaLineEditor::WriteBlock(uint64_t     pi_PosBlockX,
 
         // Caculate the offset of the first pixel of the line.
         Offset  = m_RasterDataOffset + (Line * m_BytesPerLine);
-
-        // Lock the sister file if needed
-        HFCLockMonitor SisterFileLock;
-        if(pi_pSisterFileLock == 0)
-            {
-            // Get lock and synch.
-            AssignRasterFileLock(GetRasterFile(), SisterFileLock, false);
-            pi_pSisterFileLock = &SisterFileLock;
-            }
 
         if (pTgaFile->m_pTgaFile->GetCurrentPos() != Offset)
             pTgaFile->m_pTgaFile->SeekToPos(Offset);
@@ -280,12 +257,6 @@ HSTATUS HRFTgaLineEditor::WriteBlock(uint64_t     pi_PosBlockX,
                     goto WRAPUP;    // H_ERROR
                 break;
             }
-
-        // Increment the counters
-        GetRasterFile()->SharingControlIncrementCount();
-
-        // Unlock the sister file.
-        SisterFileLock.ReleaseKey();
         }
 
     Status = H_SUCCESS;

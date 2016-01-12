@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFCacheSequentialBlockEditor.cpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -59,8 +59,7 @@ HRFCacheSequentialBlockEditor::~HRFCacheSequentialBlockEditor()
 //-----------------------------------------------------------------------------
 HSTATUS HRFCacheSequentialBlockEditor::ReadBlock(uint64_t                pi_PosBlockX,
                                                  uint64_t                pi_PosBlockY,
-                                                 Byte*                   po_pData,
-                                                 HFCLockMonitor const*   pi_pSisterFileLock)
+                                                 Byte*                   po_pData)
     {
     HPRECONDITION (m_AccessMode.m_HasReadAccess);
     HPRECONDITION (po_pData != 0);
@@ -155,8 +154,7 @@ HSTATUS HRFCacheSequentialBlockEditor::ReadBlock(uint64_t                pi_PosB
 //-----------------------------------------------------------------------------
 HSTATUS HRFCacheSequentialBlockEditor::ReadBlock(uint64_t                pi_PosBlockX,
                                                  uint64_t                pi_PosBlockY,
-                                                 HFCPtr<HCDPacket>&      po_rpPacket,
-                                                 HFCLockMonitor const*   pi_pSisterFileLock)
+                                                 HFCPtr<HCDPacket>&      po_rpPacket)
     {
     HPRECONDITION (m_AccessMode.m_HasReadAccess);
     HPRECONDITION (po_rpPacket != 0);
@@ -251,8 +249,7 @@ HSTATUS HRFCacheSequentialBlockEditor::ReadBlock(uint64_t                pi_PosB
 //-----------------------------------------------------------------------------
 HSTATUS HRFCacheSequentialBlockEditor::WriteBlock(uint64_t                pi_PosBlockX,
                                                   uint64_t                pi_PosBlockY,
-                                                  const Byte*             pi_pData,
-                                                  HFCLockMonitor const*   pi_pSisterFileLock)
+                                                  const Byte*             pi_pData)
     {
     HPRECONDITION(m_AccessMode.m_HasWriteAccess || m_AccessMode.m_HasCreateAccess);
     HPRECONDITION(pi_pData != 0);
@@ -282,8 +279,7 @@ HSTATUS HRFCacheSequentialBlockEditor::WriteBlock(uint64_t                pi_Pos
 //-----------------------------------------------------------------------------
 HSTATUS HRFCacheSequentialBlockEditor::WriteBlock(uint64_t                 pi_PosBlockX,
                                                   uint64_t                 pi_PosBlockY,
-                                                  const HFCPtr<HCDPacket>& pi_rpPacket,
-                                                  HFCLockMonitor const*    pi_pSisterFileLock)
+                                                  const HFCPtr<HCDPacket>& pi_rpPacket)
     {
     HPRECONDITION (m_AccessMode.m_HasWriteAccess || m_AccessMode.m_HasCreateAccess);
     HPRECONDITION(pi_rpPacket != 0);

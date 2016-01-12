@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFIntergraphTileEditor.cpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class HRFIntergraphTileEditor
@@ -107,8 +107,7 @@ HRFIntergraphTileEditor::~HRFIntergraphTileEditor()
 
 HSTATUS HRFIntergraphTileEditor::ReadBlock(uint64_t pi_PosBlockX,
                                            uint64_t pi_PosBlockY,
-                                           Byte* po_pData,
-                                           HFCLockMonitor const* pi_pSisterFileLock)
+                                           Byte* po_pData)
     {
     HPRECONDITION(m_AccessMode.m_HasReadAccess);
     HPRECONDITION(po_pData != 0);
@@ -132,20 +131,10 @@ HSTATUS HRFIntergraphTileEditor::ReadBlock(uint64_t pi_PosBlockX,
 
     HRFIntergraphFile::TileEntry* TileEntryInformation;
 
-    HFCLockMonitor SisterFileLock;
-
     if (GetRasterFile()->GetAccessMode().m_HasCreateAccess)
         {
         Status = H_NOT_FOUND;
         goto WRAPUP;
-        }
-
-    // Lock the sister file if needed
-    if(pi_pSisterFileLock == 0)
-        {
-        // Get lock and synch.
-        AssignRasterFileLock(GetRasterFile(), SisterFileLock, true);
-        pi_pSisterFileLock = &SisterFileLock;
         }
 
     // Be sure to have the right to be there !
@@ -288,9 +277,6 @@ HSTATUS HRFIntergraphTileEditor::ReadBlock(uint64_t pi_PosBlockX,
             }
         }
 
-    // Unlock the sister file
-    SisterFileLock.ReleaseKey();
-
     if (static_cast<HRFIntergraphFile*>(GetRasterFile().GetPtr())->HasLUTColorCorrection())
         {
         ApplyLUTColorCorrection(po_pData, m_pResolutionDescriptor->GetBlockWidth() * m_TileHeight);
@@ -309,8 +295,7 @@ WRAPUP:
 
 HSTATUS HRFIntergraphTileEditor::ReadBlock(uint64_t           pi_PosBlockX,
                                            uint64_t           pi_PosBlockY,
-                                           HFCPtr<HCDPacket>& po_rpPacket,
-                                           HFCLockMonitor const* pi_pSisterFileLock)
+                                           HFCPtr<HCDPacket>& po_rpPacket)
     {
     HPRECONDITION (m_AccessMode.m_HasReadAccess);
     HPRECONDITION (po_rpPacket != 0);
@@ -329,7 +314,7 @@ HSTATUS HRFIntergraphTileEditor::ReadBlock(uint64_t           pi_PosBlockX,
             po_rpPacket->SetBufferOwnership(true);
             }
         // Read the tile
-        Status = ReadBlock(pi_PosBlockX, pi_PosBlockY, po_rpPacket->GetBufferAddress(), pi_pSisterFileLock);
+        Status = ReadBlock(pi_PosBlockX, pi_PosBlockY, po_rpPacket->GetBufferAddress());
         if (Status == H_SUCCESS)
             {
             po_rpPacket->SetDataSize(m_TileSizeInByte);
@@ -345,8 +330,7 @@ HSTATUS HRFIntergraphTileEditor::ReadBlock(uint64_t           pi_PosBlockX,
 //-----------------------------------------------------------------------------
 HSTATUS HRFIntergraphTileEditor::WriteBlock(uint64_t     pi_PosBlockX,
                                             uint64_t     pi_PosBlockY,
-                                            const Byte*  pi_pData,
-                                            HFCLockMonitor const* pi_pSisterFileLock)
+                                            const Byte*  pi_pData)
     {
     HPRECONDITION (m_AccessMode.m_HasWriteAccess || m_AccessMode.m_HasCreateAccess);
     HPRECONDITION (m_pResolutionDescriptor->GetBlockType() == HRFBlockType::TILE);
@@ -366,15 +350,6 @@ HSTATUS HRFIntergraphTileEditor::WriteBlock(uint64_t     pi_PosBlockX,
     uint32_t IncompleteTileHeight;
 
     HArrayAutoPtr<Byte> pTempRasterBuffer;
-
-    // Lock the sister file if needed
-    HFCLockMonitor SisterFileLock;
-    if(pi_pSisterFileLock == 0)
-        {
-        // Get lock and synch.
-        AssignRasterFileLock(GetRasterFile(), SisterFileLock, false);
-        pi_pSisterFileLock = &SisterFileLock;
-        }
 
     // Retrieve the right tile entry info
     HASSERT_X64(m_pTileIdDescriptor->ComputeIndex(pi_PosBlockX, pi_PosBlockY) <= ULONG_MAX);
@@ -599,12 +574,6 @@ HSTATUS HRFIntergraphTileEditor::WriteBlock(uint64_t     pi_PosBlockX,
         static_cast<HRFIntergraphFile*>(GetRasterFile().GetPtr())->UpdatePacketOverview(m_IntergraphResolutionDescriptor.pOverviewEntry->S,
                                                                              m_Resolution);
         }
-
-    // Increment the counters
-    GetRasterFile()->SharingControlIncrementCount();
-
-    // Unlock the sister file
-    SisterFileLock.ReleaseKey();
 
     // Verify Tile structure integrity
     // HASSERT(VerrifyBlockOverlap());
@@ -1499,7 +1468,7 @@ bool HRFIntergraphTileEditor::VerrifyBlockOverlap()
                 if (pTileEntryInformation->S + pTileEntryInformation->A > pOverlappedTileEntryInformation->S)
                     {
                     BlockAreNotOverlapped = false;
-                    HDEBUGTEXT(L" ************ HRFIntergraphTileEditor::VerrifyBlockOverlap : Tile overlapped case 1 ************ \r\n");
+                    HDEBUGTEXT(" ************ HRFIntergraphTileEditor::VerrifyBlockOverlap : Tile overlapped case 1 ************ \r\n");
                     }
                 }
             else
@@ -1507,7 +1476,7 @@ bool HRFIntergraphTileEditor::VerrifyBlockOverlap()
                 if (pOverlappedTileEntryInformation->S + pOverlappedTileEntryInformation->A > pTileEntryInformation->S)
                     {
                     BlockAreNotOverlapped = false;
-                    HDEBUGTEXT(L" ************ HRFIntergraphTileEditor::VerrifyBlockOverlap : Tile overlapped case 2 ************ \r\n");
+                    HDEBUGTEXT(" ************ HRFIntergraphTileEditor::VerrifyBlockOverlap : Tile overlapped case 2 ************ \r\n");
                     }
                 }
             }
@@ -1517,7 +1486,7 @@ bool HRFIntergraphTileEditor::VerrifyBlockOverlap()
 
 //-----------------------------------------------------------------------------
 // public
-// OnSynchronizedSharingControl
+// ApplyLUTColorCorrection
 //-----------------------------------------------------------------------------
 
 void HRFIntergraphTileEditor::ApplyLUTColorCorrection(Byte* pio_pData, uint32_t pi_pixelCount)

@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFAdaptStripToImage.cpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -130,21 +130,11 @@ HRFAdaptStripToImage::~HRFAdaptStripToImage()
 //-----------------------------------------------------------------------------
 HSTATUS HRFAdaptStripToImage::ReadBlock(uint64_t pi_PosBlockX,
                                         uint64_t pi_PosBlockY,
-                                        Byte*  po_pData,
-                                        HFCLockMonitor const* pi_pSisterFileLock)
+                                        Byte*  po_pData)
     {
     HPRECONDITION (m_AccessMode.m_HasReadAccess);
     HPRECONDITION (m_NumberOfStripByImageHeight > 0);
     HSTATUS Status = H_SUCCESS;
-
-    // Lock the sister file
-    HFCLockMonitor SisterFileLock;
-    if(pi_pSisterFileLock == 0)
-        {
-        // Lock the file.
-        AssignRasterFileLock(m_pTheTrueOriginalFile, SisterFileLock, true);
-        pi_pSisterFileLock = &SisterFileLock;
-        }
 
     if (m_NumberOfStripByImageHeight > 1)
         {
@@ -153,7 +143,7 @@ HSTATUS HRFAdaptStripToImage::ReadBlock(uint64_t pi_PosBlockX,
 
         // Read these strip from file and copy their data to the output buffer
         for (uint32_t NoStrip=0; NoStrip < m_NumberOfStripByImageHeight - 1 && (Status == H_SUCCESS); NoStrip++)
-            Status = m_pAdaptedResolutionEditor->ReadBlock(0, NoStrip * m_StripHeight, po_pData+(NoStrip * m_ExactBytesPerStrip), pi_pSisterFileLock);
+            Status = m_pAdaptedResolutionEditor->ReadBlock(0, NoStrip * m_StripHeight, po_pData+(NoStrip * m_ExactBytesPerStrip));
 
         if (Status == H_SUCCESS)
             {
@@ -161,7 +151,7 @@ HSTATUS HRFAdaptStripToImage::ReadBlock(uint64_t pi_PosBlockX,
 
             // If the strip intersect with the image extent we clip the height of the strip
             uint32_t NumberOfLineToCopy = m_ImageHeight - (LastStripNumber * m_StripHeight);
-            Status = m_pAdaptedResolutionEditor->ReadBlock(0, LastStripNumber * m_StripHeight, m_pStripsData, pi_pSisterFileLock);
+            Status = m_pAdaptedResolutionEditor->ReadBlock(0, LastStripNumber * m_StripHeight, m_pStripsData);
 
             if (Status == H_SUCCESS)
                 // Copy a part from last strip
@@ -178,7 +168,7 @@ HSTATUS HRFAdaptStripToImage::ReadBlock(uint64_t pi_PosBlockX,
             m_pStripsData = new Byte[m_ExactBytesPerStrip];
 
             // Read these strip from file and copy their data to the output buffer
-            Status = m_pAdaptedResolutionEditor->ReadBlock((uint32_t)0, (uint32_t)0, m_pStripsData, pi_pSisterFileLock);
+            Status = m_pAdaptedResolutionEditor->ReadBlock((uint32_t)0, (uint32_t)0, m_pStripsData);
             if (Status == H_SUCCESS)
                 {
                 HASSERT(m_pResolutionDescriptor->GetSizeInBytes() <= ULONG_MAX);
@@ -187,10 +177,8 @@ HSTATUS HRFAdaptStripToImage::ReadBlock(uint64_t pi_PosBlockX,
             }
         else
             // Read these strip from file and copy their data to the output buffer
-            Status = m_pAdaptedResolutionEditor->ReadBlock((uint32_t)0, (uint32_t)0, po_pData, pi_pSisterFileLock);
+            Status = m_pAdaptedResolutionEditor->ReadBlock((uint32_t)0, (uint32_t)0, po_pData);
         }
-    // Unlock the sister file.
-    SisterFileLock.ReleaseKey();
 
     // Free working buffer
     m_pStripsData = 0;
@@ -205,10 +193,9 @@ HSTATUS HRFAdaptStripToImage::ReadBlock(uint64_t pi_PosBlockX,
 //-----------------------------------------------------------------------------
 HSTATUS HRFAdaptStripToImage::ReadBlock(uint64_t            pi_PosBlockX,
                                         uint64_t            pi_PosBlockY,
-                                        HFCPtr<HCDPacket>&  po_rpPacket,
-                                        HFCLockMonitor const* pi_pSisterFileLock)
+                                        HFCPtr<HCDPacket>&  po_rpPacket)
     {
-    return T_Super::ReadBlock(pi_PosBlockX,pi_PosBlockY,po_rpPacket,pi_pSisterFileLock);
+    return T_Super::ReadBlock(pi_PosBlockX,pi_PosBlockY,po_rpPacket);
     }
 
 //-----------------------------------------------------------------------------
@@ -218,20 +205,10 @@ HSTATUS HRFAdaptStripToImage::ReadBlock(uint64_t            pi_PosBlockX,
 //-----------------------------------------------------------------------------
 HSTATUS HRFAdaptStripToImage::WriteBlock(uint64_t     pi_PosBlockX,
                                          uint64_t     pi_PosBlockY,
-                                         const Byte*  pi_pData,
-                                         HFCLockMonitor const* pi_pSisterFileLock)
+                                         const Byte*  pi_pData)
     {
     HPRECONDITION (m_AccessMode.m_HasWriteAccess || m_AccessMode.m_HasCreateAccess);
     HSTATUS Status      = H_SUCCESS;
-
-    // Lock the sister file
-    HFCLockMonitor SisterFileLock;
-    if(pi_pSisterFileLock == 0)
-        {
-        // Lock the file.
-        AssignRasterFileLock(m_pTheTrueOriginalFile, SisterFileLock, false);
-        pi_pSisterFileLock = &SisterFileLock;
-        }
 
     if (m_NumberOfStripByImageHeight > 1)
         {
@@ -240,7 +217,7 @@ HSTATUS HRFAdaptStripToImage::WriteBlock(uint64_t     pi_PosBlockX,
 
         // Read these strip from file and copy their data to the output buffer
         for (uint32_t NoStrip=0; NoStrip < m_NumberOfStripByImageHeight - 1 && (Status == H_SUCCESS); NoStrip++)
-            Status = m_pAdaptedResolutionEditor->WriteBlock(0, NoStrip * m_StripHeight, pi_pData+(NoStrip * m_ExactBytesPerStrip), pi_pSisterFileLock);
+            Status = m_pAdaptedResolutionEditor->WriteBlock(0, NoStrip * m_StripHeight, pi_pData+(NoStrip * m_ExactBytesPerStrip));
 
         if (Status == H_SUCCESS)
             {
@@ -255,7 +232,7 @@ HSTATUS HRFAdaptStripToImage::WriteBlock(uint64_t     pi_PosBlockX,
                        pi_pData+(LastStripNumber * m_ExactBytesPerStrip)+(NoLine * m_ExactBytesPerImageWidth),
                        m_ExactBytesPerImageWidth);
 
-            Status = m_pAdaptedResolutionEditor->WriteBlock(0, LastStripNumber * m_StripHeight, m_pStripsData, pi_pSisterFileLock);
+            Status = m_pAdaptedResolutionEditor->WriteBlock(0, LastStripNumber * m_StripHeight, m_pStripsData);
             }
         }
     else
@@ -270,17 +247,12 @@ HSTATUS HRFAdaptStripToImage::WriteBlock(uint64_t     pi_PosBlockX,
             HASSERT(m_pResolutionDescriptor->GetSizeInBytes() <= ULONG_MAX);
             memcpy(m_pStripsData, pi_pData, (uint32_t)m_pResolutionDescriptor->GetSizeInBytes());
             // Read these strip from file and copy their data to the output buffer
-            Status = m_pAdaptedResolutionEditor->WriteBlock(0, 0, m_pStripsData, pi_pSisterFileLock);
+            Status = m_pAdaptedResolutionEditor->WriteBlock(0, 0, m_pStripsData);
             }
         else
             // Read these strip from file and copy their data to the output buffer
-            Status = m_pAdaptedResolutionEditor->WriteBlock(0, 0, pi_pData, pi_pSisterFileLock);
+            Status = m_pAdaptedResolutionEditor->WriteBlock(0, 0, pi_pData);
         }
-
-    m_pTheTrueOriginalFile->SharingControlIncrementCount();
-
-    // Unlock the sister file.
-    SisterFileLock.ReleaseKey();
 
     // Free working buffer
     m_pStripsData = 0;
@@ -295,8 +267,7 @@ HSTATUS HRFAdaptStripToImage::WriteBlock(uint64_t     pi_PosBlockX,
 //-----------------------------------------------------------------------------
 HSTATUS HRFAdaptStripToImage::WriteBlock(uint64_t                 pi_PosBlockX,
                                          uint64_t                 pi_PosBlockY,
-                                         const HFCPtr<HCDPacket>& pi_rpPacket,
-                                         HFCLockMonitor const* pi_pSisterFileLock)
+                                         const HFCPtr<HCDPacket>& pi_rpPacket)
     {
     HPRECONDITION (m_AccessMode.m_HasWriteAccess || m_AccessMode.m_HasCreateAccess);
     HSTATUS Status = H_ERROR;
@@ -310,23 +281,13 @@ HSTATUS HRFAdaptStripToImage::WriteBlock(uint64_t                 pi_PosBlockX,
 //-----------------------------------------------------------------------------
 HSTATUS HRFAdaptStripToImage::WriteBlockRLE(uint64_t              pi_PosBlockX,
                                             uint64_t              pi_PosBlockY,
-                                            HFCPtr<HCDPacketRLE>& pi_rpPacketRLE,
-                                            HFCLockMonitor const* pi_pSisterFileLock)
+                                            HFCPtr<HCDPacketRLE>& pi_rpPacketRLE)
     {
     HPRECONDITION (m_AccessMode.m_HasWriteAccess || m_AccessMode.m_HasCreateAccess);
     HPRECONDITION (pi_rpPacketRLE != 0);
     HPRECONDITION (pi_rpPacketRLE->GetCodec()->GetHeight() == GetResolutionDescriptor()->GetHeight());
     HPRECONDITION (pi_rpPacketRLE->GetCodec()->GetWidth() == GetResolutionDescriptor()->GetWidth());
     HSTATUS Status      = H_SUCCESS;
-
-    // Lock the sister file
-    HFCLockMonitor SisterFileLock;
-    if(pi_pSisterFileLock == 0)
-        {
-        // Lock the file.
-        AssignRasterFileLock(m_pTheTrueOriginalFile, SisterFileLock, false);
-        pi_pSisterFileLock = &SisterFileLock;
-        }
 
     // Read these strips from file and copy their data to the output packet
     for (uint32_t NoStrip=0; NoStrip < m_NumberOfStripByImageHeight; ++NoStrip)
@@ -347,14 +308,9 @@ HSTATUS HRFAdaptStripToImage::WriteBlockRLE(uint64_t              pi_PosBlockX,
                                               pi_rpPacketRLE->GetLineBufferSize(CurrentStripStartPos+NoLine),
                                               pi_rpPacketRLE->GetLineDataSize(CurrentStripStartPos+NoLine));
 
-        if(H_SUCCESS != (Status = m_pAdaptedResolutionEditor->WriteBlockRLE(0, CurrentStripStartPos, pOneStripPacketRLE, pi_pSisterFileLock)))
+        if(H_SUCCESS != (Status = m_pAdaptedResolutionEditor->WriteBlockRLE(0, CurrentStripStartPos, pOneStripPacketRLE)))
             break;  // We failed stop now!
         }
-
-    m_pTheTrueOriginalFile->SharingControlIncrementCount();
-
-    // Unlock the sister file.
-    SisterFileLock.ReleaseKey();
 
     return Status;
     }
@@ -366,8 +322,7 @@ HSTATUS HRFAdaptStripToImage::WriteBlockRLE(uint64_t              pi_PosBlockX,
 //-----------------------------------------------------------------------------
 HSTATUS HRFAdaptStripToImage::ReadBlockRLE(uint64_t                 pi_PosBlockX,
                                            uint64_t                 pi_PosBlockY,
-                                           HFCPtr<HCDPacketRLE>&    po_rpPacketRLE,
-                                           HFCLockMonitor const*    pi_pSisterFileLock)
+                                           HFCPtr<HCDPacketRLE>&    po_rpPacketRLE)
     {
     HPRECONDITION(m_AccessMode.m_HasReadAccess);
     HPRECONDITION(po_rpPacketRLE->HasBufferOwnership());    // Must be owner of buffers.
@@ -383,15 +338,6 @@ HSTATUS HRFAdaptStripToImage::ReadBlockRLE(uint64_t                 pi_PosBlockX
     HFCPtr<HCDPacketRLE> pWorkPacket(new HCDPacketRLE((uint32_t)GetResolutionDescriptor()->GetWidth(), m_StripHeight));
     pWorkPacket->SetBufferOwnership(true);  // Owns empty buffers.
 
-    // Lock the sister file
-    HFCLockMonitor SisterFileLock;
-    if(pi_pSisterFileLock == 0)
-        {
-        // Lock the file.
-        AssignRasterFileLock(m_pTheTrueOriginalFile, SisterFileLock, true);
-        pi_pSisterFileLock = &SisterFileLock;
-        }
-
     // Read these strips from file and copy their data to the output packet
     for (uint32_t NoStrip=0; NoStrip < m_NumberOfStripByImageHeight; ++NoStrip)
         {
@@ -402,7 +348,7 @@ HSTATUS HRFAdaptStripToImage::ReadBlockRLE(uint64_t                 pi_PosBlockX
         if(NoStrip == (m_NumberOfStripByImageHeight - 1))
             NumberOfLineInStrip = (uint32_t)GetResolutionDescriptor()->GetHeight() - CurrentStripStartPos;
 
-        if(H_SUCCESS != (Status = m_pAdaptedResolutionEditor->ReadBlockRLE(0, CurrentStripStartPos, pWorkPacket, pi_pSisterFileLock)))
+        if(H_SUCCESS != (Status = m_pAdaptedResolutionEditor->ReadBlockRLE(0, CurrentStripStartPos, pWorkPacket)))
             break;  // We failed stop now!
 
         // Recopy lines buffer pointers to the output packet, it will take ownership of the line buffers.
@@ -413,8 +359,6 @@ HSTATUS HRFAdaptStripToImage::ReadBlockRLE(uint64_t                 pi_PosBlockX
             pWorkPacket->SetLineBuffer(NoLine,0,0,0);   // Reset this line since po_rpPacketRLE took ownership of this buffer.
             }
         }
-
-    SisterFileLock.ReleaseKey();
 
     return Status;
     }

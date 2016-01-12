@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFxChFile.cpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class HRFxChFile
@@ -425,9 +425,6 @@ bool HRFxChCreator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
             XMLFileName += L"\\";
             XMLFileName += ((HFCPtr<HFCURLFile>&)pi_rpURL)->GetPath();
 
-            (const_cast<HRFxChCreator*>(this))->SharingControlCreate(pi_rpURL);
-            HFCLockMonitor SisterFileLock(GetLockManager()); // will unlock implicitly at the end of method
-
             // Open XML file
             BeXmlStatus xmlStatus;
             BeXmlDomPtr pDom = BeXmlDom::CreateAndReadFromFile (xmlStatus, XMLFileName.c_str ());
@@ -489,10 +486,6 @@ bool HRFxChCreator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
                         }
                     }
                 }
-
-            SisterFileLock.ReleaseKey();
-            HASSERT(!(const_cast<HRFxChCreator*>(this))->m_pSharingControl->IsLocked());
-            (const_cast<HRFxChCreator*>(this))->m_pSharingControl = 0;
             }
         }
 
@@ -523,9 +516,6 @@ bool HRFxChCreator::GetRelatedURLs(const HFCPtr<HFCURL>& pi_rpURL,
     HFCPtr<HFCURL> pGreenFileURL = 0;
     HFCPtr<HFCURL> pBlueFileURL  = 0;
     HFCPtr<HFCURL> pAlphaFileURL = 0;
-
-    (const_cast<HRFxChCreator*>(this))->SharingControlCreate(pi_rpURL);
-    HFCLockMonitor SisterFileLock(GetLockManager()); // will unlock implicitly at the end of method
 
     // Extract the standard file name from the main URL
     XMLFileName = ((HFCPtr<HFCURLFile>&)pi_rpURL)->GetHost();
@@ -697,12 +687,6 @@ HRFxChFile::HRFxChFile(const HFCPtr<HFCURL>& pi_rpRedFileURL,
         m_ListOfRelatedURLs.push_back(pi_rpAlphaFileURL);
         }
 
-    // This creates the sister file for file sharing control
-    SharingControlCreate();
-
-    // Lock the sister file
-    HFCLockMonitor SisterFileLock (GetLockManager());
-
     // Open files read-only
     m_pRedFile   = HRFRasterFileFactory::GetInstance()->OpenFile(pi_rpRedFileURL, true);
     m_pGreenFile = HRFRasterFileFactory::GetInstance()->OpenFile(pi_rpGreenFileURL, true);
@@ -731,9 +715,6 @@ HRFxChFile::HRFxChFile(const HFCPtr<HFCURL>& pi_rpRedFileURL,
 
     // Validate channel files
     ValidateChannelFiles(m_pRedFile, m_pGreenFile, m_pBlueFile, m_pAlphaFile);
-
-    // Unlock the sister file.
-    SisterFileLock.ReleaseKey();
 
     m_IsOpen = true;
 
@@ -1010,12 +991,6 @@ bool HRFxChFile::Open()
         HFCPtr<HFCURL> pBlueFileURL  = 0;
         HFCPtr<HFCURL> pAlphaFileURL = 0;
 
-        // This creates the sister file for file sharing control
-        SharingControlCreate();
-
-        // Lock the sister file.
-        HFCLockMonitor SisterFileLock (GetLockManager());
-
         // Extract the standard file name from the main URL
         XMLFileName = ((HFCPtr<HFCURLFile>&)GetURL())->GetHost();
         XMLFileName += L"\\";
@@ -1142,9 +1117,6 @@ bool HRFxChFile::Open()
 
         // Validate channel files
         ValidateChannelFiles(m_pRedFile, m_pGreenFile, m_pBlueFile, m_pAlphaFile);
-
-        // Unlock the sister file.
-        SisterFileLock.ReleaseKey();
 
         m_IsOpen = true;
         }

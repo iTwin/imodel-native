@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFHMRFile.cpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -268,9 +268,6 @@ bool HRFHMRCreator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
     // it is not a TIFF, so set the result to false
     HTIFFError* pErr;
 
-    (const_cast<HRFHMRCreator*>(this))->SharingControlCreate(pi_rpURL);
-    HFCLockMonitor SisterFileLock (GetLockManager());
-
     pTiff = new HTIFFFile (pi_rpURL, pi_Offset, HFC_READ_ONLY | HFC_SHARE_READ_WRITE);
     if ((pTiff->IsValid(&pErr) || ((pErr != 0) && !pErr->IsFatal())) && (pTiff->IsTiff64() == false))
         {
@@ -319,10 +316,6 @@ bool HRFHMRCreator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
         }
     else
         bResult = false;
-
-    SisterFileLock.ReleaseKey();
-    HASSERT(!(const_cast<HRFHMRCreator*>(this))->m_pSharingControl->IsLocked());
-    (const_cast<HRFHMRCreator*>(this))->m_pSharingControl = 0;
 
     return bResult;
     }

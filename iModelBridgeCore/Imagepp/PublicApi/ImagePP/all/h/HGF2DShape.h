@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HGF2DShape.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HGF2DShape
@@ -367,6 +367,7 @@ public:
     IMAGEPP_EXPORT virtual SpatialPosition   CalculateSpatialPositionOf(const HGF2DVector& pi_rVector) const;
     IMAGEPP_EXPORT virtual SpatialPosition   CalculateSpatialPositionOfNonCrossingLinear(const HGF2DLinear& pi_rLinear) const;
     IMAGEPP_EXPORT virtual SpatialPosition   CalculateSpatialPositionOf(const HGF2DPosition& pi_rPosition) const;
+
 
     /** -----------------------------------------------------------------------------
         This method checks if the given point is located inside the area defined

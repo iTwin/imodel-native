@@ -388,7 +388,7 @@ void HIMBufferedImage::SetRatios(double pi_XRatio,
                 {
                 ParametersAreValid = false;
 
-                HDEBUGTEXT(L"Overflow: The specified ratios makes the BufferedImage too big!");
+                HDEBUGTEXT("Overflow: The specified ratios makes the BufferedImage too big!");
                 HASSERT(0);
                 }
 
@@ -406,7 +406,7 @@ void HIMBufferedImage::SetRatios(double pi_XRatio,
                 {
                 ParametersAreValid = false;
 
-                HDEBUGTEXT(L"Overflow: The specified ratios makes the BufferedImage too big!");
+                HDEBUGTEXT("Overflow: The specified ratios makes the BufferedImage too big!");
                 HASSERT(0);
                 }
             }

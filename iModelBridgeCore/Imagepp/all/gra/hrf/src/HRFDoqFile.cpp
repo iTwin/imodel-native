@@ -240,9 +240,6 @@ bool HRFDoqCreator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
     HAutoPtr<HFCBinStream>      pFile;
     HArrayAutoPtr<char>        pLine(new char[DOQ_HEADER_LINE_LENGTH]);
 
-    (const_cast<HRFDoqCreator*>(this))->SharingControlCreate(pi_rpURL);
-    HFCLockMonitor SisterFileLock (GetLockManager());
-
     // Open the Doq File & place file pointer at the start of the file
     pFile = HFCBinStream::Instanciate(pi_rpURL, pi_Offset, HFC_READ_ONLY | HFC_SHARE_READ_WRITE);
 
@@ -255,10 +252,6 @@ bool HRFDoqCreator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
             Result = true;
             }
         }
-
-    SisterFileLock.ReleaseKey();
-    HASSERT(!(const_cast<HRFDoqCreator*>(this))->m_pSharingControl->IsLocked());
-    (const_cast<HRFDoqCreator*>(this))->m_pSharingControl = 0;
 
     return Result;
     }
@@ -328,14 +321,9 @@ uint64_t HRFDoqFile::GetFileCurrentSize() const
 //-----------------------------------------------------------------------------
 bool HRFDoqFile::Open()
     {
-
-
     if (!m_IsOpen)
         {
         m_pDoqFile = HFCBinStream::Instanciate(GetURL(), m_Offset, GetAccessMode(), 0, true);
-
-        // This creates the sister file for file sharing control if necessary.
-        SharingControlCreate();
 
         //Put the header in a buffer
         //TODO : GetHeader();
@@ -343,18 +331,12 @@ bool HRFDoqFile::Open()
         //Read Header
         ReadHeader();
 
-
         CreatePixelType();
-
-
-
+       
         m_IsOpen = true;
         }
 
-
     return true;
-
-
     }
 
 //-----------------------------------------------------------------------------
@@ -1239,17 +1221,11 @@ bool HRFDoqFile::AddPage(HFCPtr<HRFPageDescriptor> pi_pPage)
         {
         HArrayAutoPtr<Byte> pTampon(new Byte[(size_t)m_Offset]);
         memset(pTampon,0x00, (size_t)m_Offset);
-
-        // Lock the sister file.
-        HFCLockMonitor SisterFileLock (GetLockManager());
-
+        
         m_pDoqFile->SeekToBegin();
         m_pDoqFile->Write(pTampon, (size_t)m_Offset);
-
-        // Unlock the sister file.
-        SisterFileLock.ReleaseKey();
-
         }
+
     return true;
     }
 
