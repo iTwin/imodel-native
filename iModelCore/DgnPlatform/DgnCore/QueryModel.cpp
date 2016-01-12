@@ -351,6 +351,8 @@ void QueryModel::Queue::qt_WaitForWork()
         if (m_active.IsValid())
             {
             auto& model = m_active->GetModel();
+            static int s_queryNumber;
+            printf ("QMQ: (%d) starting query\n", ++s_queryNumber);
             timer.Start();
             if (m_active->Query())
                 {
@@ -360,7 +362,7 @@ void QueryModel::Queue::qt_WaitForWork()
                 auto updatedResults = m_active->GetResults();
                 BeAssert(nullptr != updatedResults);
 
-#if defined TRACE_QUERY_LOGIC
+#if 1 || defined TRACE_QUERY_LOGIC
                 printf("QMQ: Elapsed query time %.8f\n", timer.GetCurrentSeconds());
 #endif
                 updatedResults->m_elapsedSeconds = timer.GetCurrentSeconds();
@@ -368,7 +370,7 @@ void QueryModel::Queue::qt_WaitForWork()
                 
                 m_active->OnCompleted();
                 }
-#if defined TRACE_QUERY_LOGIC
+#if 1 || defined TRACE_QUERY_LOGIC
             else
                 printf("QMQ: Processing aborted\n");
 #endif

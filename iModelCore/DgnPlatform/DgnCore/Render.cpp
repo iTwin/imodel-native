@@ -14,7 +14,7 @@
 
 #define RENDER_LOGGING 1
 
-// #undef RENDER_LOGGING
+#undef RENDER_LOGGING
 
 #undef LOG
 #if defined (RENDER_LOGGING)
@@ -52,7 +52,7 @@ void Render::Target::RecordFrameTime(GraphicList& scene, double seconds)
         seconds = .001;
 
     uint32_t gps = (uint32_t) ((double) count / seconds);
-    printf("GPS=%d\n", gps);
+    //  printf("GPS=%d\n", gps);
     m_graphicsPerSecond.store(gps);
     }
 
