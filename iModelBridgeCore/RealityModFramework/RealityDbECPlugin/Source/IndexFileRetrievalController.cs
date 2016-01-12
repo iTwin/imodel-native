@@ -35,41 +35,6 @@ namespace IndexECPlugin.Source
 
         public override void DoRetrieveFile (bool transferFile)
             {
-            ////***We need to retrieve the thumbnail location. We call our API to ask for the location of the bentleyFile of known ID***
-            //string URL = ResourceManager.Connection.RepositoryIdentifier.Location + "GetJSonOfAllFilesInQuery";
-            //Object content = new
-            //{
-            //    polygonPoints = "",
-            //    whereClause = String.Format("ID={0}", Instance.InstanceId),
-            //    itemsByPage = 2,
-            //    pageNumber = 1
-            //};
-
-            //var serializedContent = JsonConvert.SerializeObject(content);
-            //HttpContent httpContent = new StringContent(serializedContent, Encoding.UTF8, "application/json");
-
-            //string location;
-
-            //using (var client = new HttpClient())
-            //{
-            //    ServicePointManager.ServerCertificateValidationCallback += (sender, cert, chain, sslPolicyErrors) => true; //This is necessary if the ssl certificate of the API is not valid...
-            //    var response = client.PostAsync(URL, httpContent).Result;
-            //    ServicePointManager.ServerCertificateValidationCallback -= (sender, cert, chain, sslPolicyErrors) => true;
-
-            //    response.EnsureSuccessStatusCode();
-
-            //    //if (response.IsSuccessStatusCode)
-            //    //{
-            //    string resultContent = response.Content.ReadAsStringAsync().Result;
-            //    JsonResults summary = JsonConvert.DeserializeObject<JsonResults>(resultContent);
-            //    location = summary.Results.First().ThumbnailLocation;
-            //    //}
-            //    //else
-            //    //{
-            //    //    throw new UserFriendlyException(response.Headers.);
-            //    //}
-            //}
-
             //We need to ask the database about the location of the file. 
 
             IECClass instanceClass = Instance.ClassDefinition;

@@ -106,30 +106,6 @@ namespace IndexECPlugin.Source
             dataReadingHelper = m_dataReadingHelper;
 
             return outerSelect + outerFrom + outerWhere;
-
-            //string completeRequest = "";
-
-            //int upperBound = m_itemsByPage * m_pageNumber;
-            //int lowerBound = upperBound - m_itemsByPage + 1;
-
-            //foreach (string alias in m_aliasList)
-            //{
-            //    if (completeRequest == "")
-            //    {
-            //        completeRequest = "SELECT ";
-            //    }
-            //    else
-            //    {
-            //        completeRequest += ", ";
-            //    }
-
-            //    completeRequest += innerRequestAlias + "." + alias + " ";
-            //}
-            //completeRequest += "FROM ( " + innerRequest + " ) AS " + innerRequestAlias
-            //                + String.Format(" WHERE RowNum >= {0} AND RowNum <= {1}", lowerBound, upperBound)
-            //                + " ORDER BY RowNum";
-
-            //return completeRequest;
             }
 
         //Generates a new unique nolumn
