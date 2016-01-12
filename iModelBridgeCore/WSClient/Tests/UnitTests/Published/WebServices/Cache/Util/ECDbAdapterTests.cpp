@@ -608,6 +608,19 @@ TEST_F(ECDbAdapterTests, RelateInstances_RelationshipAlreadyExists_ReturnsSameRe
     EXPECT_EQ(relationshipKey2, relationshipKey1);
     }
 
+TEST_F(ECDbAdapterTests, DeleteInstances_InvalidKey_Error)
+    {
+    auto db = CreateTestDb(StubSchema());
+    ECDbAdapter adapter(*db);
+
+    CREATE_MockECDbAdapterDeleteListener(listener);
+    adapter.RegisterDeleteListener(&listener);
+
+    BeTest::SetFailOnAssert(false);
+    EXPECT_EQ(ERROR, adapter.DeleteInstances(StubECInstanceKeyMultiMap({ECInstanceKey()})));
+    BeTest::SetFailOnAssert(true);
+    }
+
 TEST_F(ECDbAdapterTests, DeleteInstances_NotExistingInstance_NotifiesBeforeDeletionAndDoesNothing)
     {
     auto db = CreateTestDb(StubSchema());
@@ -1181,7 +1194,7 @@ TEST_F(ECDbAdapterTests, DeleteInstances_OnBeforeDeleteReturnsAdditionalToDelete
     EXPECT_EQ(0, notDeletedInstances.size());
     }
 
-TEST_F(ECDbAdapterTests, DeleteRelationship_NoRelationship_DoesNothingAndError)
+TEST_F(ECDbAdapterTests, DeleteRelationship_NotExistingRelationship_DoesNothingAndSuccess)
     {
     auto db = CreateTestDb(GetTestRelSchema());
     ECDbAdapter adapter(*db);
@@ -1193,7 +1206,7 @@ TEST_F(ECDbAdapterTests, DeleteRelationship_NoRelationship_DoesNothingAndError)
     INSERT_INSTANCE(*db, ecClass, a);
     INSERT_INSTANCE(*db, ecClass, b);
 
-    EXPECT_EQ(ERROR, adapter.DeleteRelationship(relClass, a, b));
+    EXPECT_EQ(SUCCESS, adapter.DeleteRelationship(relClass, a, b));
 
     EXPECT_EQ(2, adapter.FindInstances(ecClass).size());
     }
