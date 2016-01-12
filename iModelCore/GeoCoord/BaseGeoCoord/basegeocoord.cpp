@@ -2,7 +2,7 @@
 |
 |   $Source: BaseGeoCoord/basegeocoord.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +----------------------------------------------------------------------*/
 #ifdef _MSC_VER
@@ -8935,7 +8935,7 @@ StatusInt BaseGCSUtilGetRangeAboutBoundMeridianAndBoundParallel   (bvector<GeoPo
 +---------------+---------------+---------------+---------------+---------------+------*/
 inline double BaseGCSUtilGetUTMZoneCenterMeridian(int zoneNumber)
     {
-    return (zoneNumber - 30) * 6;
+    return ((zoneNumber - 30) * 6) - 3;
     }
 
 
