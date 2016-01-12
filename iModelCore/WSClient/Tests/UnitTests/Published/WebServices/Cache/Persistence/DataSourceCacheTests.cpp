@@ -1666,13 +1666,10 @@ TEST_F(DataSourceCacheTests, CacheResponse_NewResultIsEmptyWhenCachedWithRelatio
 
     StubInstances instances;
     instances.Add({"TestSchema.TestClass", "A"}).AddRelated({"TestSchema.TestRelationshipClass", "AB"}, {"TestSchema.TestClass", "B"});
-
-    cache->CacheResponse(responseKey, instances.ToWSObjectsResponse());
+    EXPECT_EQ(SUCCESS, cache->CacheResponse(responseKey, instances.ToWSObjectsResponse()));
 
     instances.Clear();
-    auto status = cache->CacheResponse(responseKey, instances.ToWSObjectsResponse());
-
-    EXPECT_EQ(SUCCESS, status);
+    EXPECT_EQ(SUCCESS, cache->CacheResponse(responseKey, instances.ToWSObjectsResponse()));
     EXPECT_FALSE(cache->GetCachedObjectInfo({"TestSchema.TestClass", "A"}).IsInCache());
     EXPECT_FALSE(cache->GetCachedObjectInfo({"TestSchema.TestClass", "B"}).IsInCache());
     }
