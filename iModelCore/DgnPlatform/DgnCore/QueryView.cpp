@@ -7,7 +7,6 @@
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
 #include <DgnPlatform/QueryView.h>
-#include <Bentley/BeSystemInfo.h>
 
 #include "UpdateLogging.h"
 
@@ -35,6 +34,7 @@ QueryViewController::~QueryViewController()
     delete &m_queryModel;
     }
 
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
 // On iOS we draw less in a frame that occurs while the query is running.
 // Holding back some leads to fewer flashing frames.
 static double s_dynamicLoadFrequency4Cpus = 0.1;
@@ -66,6 +66,7 @@ bool QueryViewController::_WantElementLoadStart(DgnViewportR vp, double currentT
 
     return true;
     }
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   05/12
@@ -73,8 +74,7 @@ bool QueryViewController::_WantElementLoadStart(DgnViewportR vp, double currentT
 void QueryViewController::_OnDynamicUpdate(DgnViewportR vp, UpdatePlan const& plan)
     {
     PickUpResults();
-    if (_WantElementLoadStart(vp, BeTimeUtilities::QuerySecondsCounter(), m_lastQueryTime))
-        StartSelectProcessing(vp, plan);
+    StartSelectProcessing(vp, plan);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -130,7 +130,6 @@ void QueryViewController::PickUpResults()
         return;
 
     m_queryModel.SaveQueryResults();
-    m_lastQueryTime = BeTimeUtilities::QuerySecondsCounter();
 
     DgnElements& pool = m_queryModel.GetDgnDb().Elements();
     pool.ResetStatistics();
@@ -164,7 +163,6 @@ void QueryViewController::SaveSelectResults()
 #endif
 
     m_queryModel.SaveQueryResults();
-    m_lastQueryTime = BeTimeUtilities::QuerySecondsCounter();
 
     DgnElements& pool = m_queryModel.GetDgnDb().Elements();
 

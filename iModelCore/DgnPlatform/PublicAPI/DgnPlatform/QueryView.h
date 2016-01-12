@@ -33,8 +33,6 @@ protected:
     bool        m_forceNewQuery;    //!< If true, before doing the next view update, repopulate the QueryModel with the result of the query 
     bool        m_noQuery;          //!< If true, *only* draw the "always drawn" list - do not query for other elements
     bool        m_selectProcessingActive;
-    double      m_lastQueryTime;
-    double      m_fps;
     DrawPurpose m_lastUpdateType;
     DRange3d    m_secondaryVolume;  //  ignored unless m_secondaryHitLimit > 0
     uint32_t    m_secondaryHitLimit;
@@ -77,15 +75,6 @@ protected:
     //! @remarks  Although an application can override this method, the decision on whether or not to repopulate the QueryModel in a dynamic update is typically left to
     //! QueryViewController::_OnDynamicUpdate. It in turn defers the decision to _WantElementLoadStart.
     DGNPLATFORM_EXPORT virtual void _OnDynamicUpdate(DgnViewportR viewport, UpdatePlan const& plan) override;
-
-    //! QueryViewController uses this to determine if it should start another background query to repopulate the query model.
-    //! QueryViewController calls this from _OnDynamicUpdate and when it detects that the background element query processing is idle during a dynamic update.
-    //! @param[in] viewport    The viewport that will display the graphics
-    //! @param[in] currentTime The current time in seconds.
-    //! @param[in] lastQueryTime The time the last query was started.
-    //! @returns  Return true to start query
-    //! @remarks It is very rare than an application needs to override this method.
-    DGNPLATFORM_EXPORT virtual bool _WantElementLoadStart(DgnViewportR viewport, double currentTime, double lastQueryTime);
 
     //! Called when the visibility of a category is changed.
     DGNPLATFORM_EXPORT virtual void _OnCategoryChange(bool singleEnabled) override;
@@ -137,15 +126,6 @@ __PUBLISH_INSERT_FILE__  QueryView_GetRTreeMatchSql.sampleCode
     //! @return \a true if the returned \a range is complete. Otherwise the caller will compute the tightest fit for all loaded elements.
     DGNPLATFORM_EXPORT virtual FitComplete _ComputeFitRange(DRange3dR range, DgnViewportR viewport, FitViewParamsR params) override;
 
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    //! Return a value in the range -100 (fewest) to 100 (most) to determine the maximum number of elements loaded by the query.
-    //! 0 means the "default" number of elements.
-    DGNPLATFORM_EXPORT virtual int32_t _GetMaxElementFactor(DgnViewportCR vp);
-
-    //! Return the size in pixels of the smallest element that should be displayed.
-    virtual double _GetMinimumSizePixels(DrawPurpose updateType) {return 0.1;}
-#endif
-
     //! Return the maximum number of bytes of memory that should be used to hold loaded element data. Element data may exceed this limit at times and is trimmed back at intervals.
     //! It is recommended that applications use this default implementation and instead control memory usage by overriding _GetMaxElementFactor
     virtual uint64_t _GetMaxElementMemory(DgnViewportCR vp) {return ComputeMaxElementMemory(vp);}
@@ -166,11 +146,6 @@ public:
 
     //! Returns the value computed on the last call to ComputeMaxElementMemory;
     DGNPLATFORM_EXPORT uint64_t GetMaxElementMemory();
-
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    //! Return the maximum number of elements to hold in the associated QueryModel.
-    DGNPLATFORM_EXPORT uint32_t GetMaxElementsToLoad(DgnViewportCR vp);
-#endif
 
     //! Get the list of elements that are always drawn
     DgnElementIdSet const& GetAlwaysDrawn() {return m_alwaysDrawn;}
@@ -196,12 +171,6 @@ public:
 
     //! Disables secondary range query.
     void DisableSecondaryQueryRange(){m_secondaryHitLimit=0;}
-
-    //! Return a counter that indicates when the last query was run. This counter is relative to some unspecified start time, 
-    //! but can conceptually be thought of as the number of seconds since the process started.
-    //! @see BeTimeUtilities::QuerySecondsCounter
-    //! @note this method can be used to determine if related caches need to be updated
-    double GetLastQueryCounter() {return m_lastQueryTime;}
 };
 
 

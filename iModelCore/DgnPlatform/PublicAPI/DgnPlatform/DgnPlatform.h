@@ -752,7 +752,7 @@ struct StopEvents
 // @bsiclass                                                    Keith.Bentley   01/12
 //=======================================================================================
 struct UpdatePlan
-    {
+{
     friend struct ViewSet;
 
     struct Query
@@ -772,7 +772,7 @@ struct UpdatePlan
         bool        m_wait = false;
         uint32_t    m_minElements = 500;
         uint32_t    m_maxElements = 50000;
-        mutable uint32_t    m_targetNumElements;
+        mutable uint32_t   m_targetNumElements;
         mutable CheckStop* m_checkStop = nullptr;
 
         uint32_t GetMinElements() const {return m_minElements;}
@@ -817,14 +817,14 @@ struct UpdatePlan
         StopEvents  m_stopEvents = StopEvents::ForFullUpdate;
         mutable Motion m_motion;
 
-    void SetTouchCheckStopLimit(bool enabled, uint32_t pixels, uint32_t numberTouches, Point2dCP touches);
-    void SetStopEvents(StopEvents stopEvents) {m_stopEvents = stopEvents;}
-    StopEvents GetStopEvents() const {return m_stopEvents;}
-    Motion& GetMotion() const {return m_motion;}
-    bool WantMotionAbort() const {return 0 != m_motion.GetTolerance();}
+        void SetTouchCheckStopLimit(bool enabled, uint32_t pixels, uint32_t numberTouches, Point2dCP touches);
+        void SetStopEvents(StopEvents stopEvents) {m_stopEvents = stopEvents;}
+        StopEvents GetStopEvents() const {return m_stopEvents;}
+        Motion& GetMotion() const {return m_motion;}
+        bool WantMotionAbort() const {return 0 != m_motion.GetTolerance();}
     };
 
-    double      m_targetFPS = 20.0; // Frames Per second
+    double      m_targetFPS = 10.0; // Frames Per second
     Query       m_query;
     Scene       m_scene;
     AbortFlags  m_abortFlags;
@@ -838,7 +838,7 @@ public:
     Scene const& GetScene() const {return m_scene;}
     AbortFlags const& GetAbortFlags() const {return m_abortFlags;}
     AbortFlags& GetAbortFlagsR() {return m_abortFlags;}
-    };
+};
 
 //=======================================================================================
 // @bsiclass                                                    Keith.Bentley   01/12

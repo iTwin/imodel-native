@@ -9,12 +9,11 @@
 //__PUBLISH_SECTION_START__
 
 #include "DgnModel.h"
+#include <Bentley/BeTimeUtilities.h>
 #include <Bentley/BeThread.h>
 #include <BeSQLite/RTreeMatch.h>
 
 BEGIN_BENTLEY_DGN_NAMESPACE
-
-struct QueryModelFilter;
 
 //=======================================================================================
 // @bsiclass                                                    Keith.Bentley   12/11
@@ -223,7 +222,7 @@ struct QueryModel : SpatialModel
     protected:
         Params              m_params;
         ResultsPtr          m_results;
-        BeSQLite::DbResult  m_dbStatus;
+        BeSQLite::DbResult  m_dbStatus = BeSQLite::BE_SQLITE_ERROR;
 
         void ProcessRequest();
         void SearchIdSet(DgnElementIdSet& idList, Filter& filter);
@@ -232,14 +231,10 @@ struct QueryModel : SpatialModel
         void BindModelAndCategory(BeSQLite::CachedStatement& rangeStmt);
 
     public:
-        Processor(Params const& params);
-        bool Query();
-        
+        Processor(Params const& params) : m_params(params) {}
+        bool Query(StopWatch&);
         QueryModelR GetModel() const {return m_params.m_model;}
-        bool IsForModel(QueryModelCR model) const {return &GetModel() == &model;}
-        Results* GetResults() {return m_results.get();}
-
-        void OnCompleted() const;
+        bool IsForModel(QueryModelCR model) const {return &m_params.m_model == &model;}
     };
 
     typedef RefCountedPtr<Processor> ProcessorPtr;
@@ -257,9 +252,9 @@ struct QueryModel : SpatialModel
         ProcessorPtr           m_active;
         State                  m_state;
 
-        void qt_WaitForWork();
-
-        THREAD_MAIN_DECL qt_Main(void* arg);
+        bool WaitForWork();
+        void Process();
+        THREAD_MAIN_DECL Main(void* arg);
 
         virtual bool _TestCondition(BeConditionVariable&) override;
     public:
