@@ -1200,11 +1200,17 @@ bset<ECInstanceKey>& allInstancesBeingDeletedOut
 
     ECInstanceFinder& finder = GetECInstanceFinder();
 
-    ECInstanceKeyMultiMap embeddedChildren, heldChildren;
+    ECInstanceKeyMultiMap embeddedChildren, heldChildren, relationships;
     if (SUCCESS != finder.FindRelatedInstances(&embeddedChildren, nullptr, instanceToDelete, ECInstanceFinder::RelatedDirection_EmbeddedChildren) ||
-        SUCCESS != finder.FindRelatedInstances(&heldChildren, nullptr, instanceToDelete, ECInstanceFinder::RelatedDirection_HeldChildren))
+        SUCCESS != finder.FindRelatedInstances(&heldChildren, nullptr, instanceToDelete, ECInstanceFinder::RelatedDirection_HeldChildren) ||
+        SUCCESS != finder.FindRelatedInstances(nullptr, &relationships, instanceToDelete, ECInstanceFinder::RelatedDirection_All))
         {
         return ERROR;
+        }
+
+    for (auto& pair : relationships)
+        {
+        allInstancesBeingDeletedOut.insert(ECInstanceKey(pair.first, pair.second));
         }
 
     if (SUCCESS != FindInstancesBeingDeleted(embeddedChildren, allInstancesBeingDeletedOut))

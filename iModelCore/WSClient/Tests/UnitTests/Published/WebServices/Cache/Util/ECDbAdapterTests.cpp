@@ -20,8 +20,8 @@ USING_NAMESPACE_BENTLEY_WEBSERVICES
 #define INSERT_INSTANCE(db, ecClassCP, keyOut) \
     ASSERT_EQ(SUCCESS, JsonInserter(db, *ecClassCP).Insert(keyOut, Json::Value()));
 
-#define INSERT_RELATIONSHIP(db, ecRelClassCP, source, target) \
-    ASSERT_TRUE(ECDbAdapter(db).RelateInstances(ecRelClassCP, source, target).IsValid());
+#define INSERT_RELATIONSHIP(db, ecRelClassCP, source, target, rel) \
+    ASSERT_TRUE((rel = ECDbAdapter(db).RelateInstances(ecRelClassCP, source, target)).IsValid());
 
 #define CREATE_MockECDbAdapterDeleteListener(listener) \
     StrictMock<MockECDbAdapterDeleteListener> listener; \
@@ -683,14 +683,15 @@ TEST_F(ECDbAdapterTests, DeleteInstances_DeletingParentThatHoldsChild_DeletesPar
     auto ecClass = adapter.GetECClass("TestSchema.TestClass");
     auto holdingRelClass = adapter.GetECRelationshipClass("TestSchema.HoldingRel");
 
-    ECInstanceKey parent, child;
+    ECInstanceKey parent, child, rel;
     INSERT_INSTANCE(*db, ecClass, parent);
     INSERT_INSTANCE(*db, ecClass, child);
-    INSERT_RELATIONSHIP(*db, holdingRelClass, parent, child);
+    INSERT_RELATIONSHIP(*db, holdingRelClass, parent, child, rel);
 
     CREATE_MockECDbAdapterDeleteListener(listener);
     EXPECT_CALL_OnBeforeDelete(listener, db, parent);
     EXPECT_CALL_OnBeforeDelete(listener, db, child);
+    EXPECT_CALL_OnBeforeDelete(listener, db, rel);
     adapter.RegisterDeleteListener(&listener);
 
     EXPECT_EQ(SUCCESS, adapter.DeleteInstances(StubECInstanceKeyMultiMap({parent})));
@@ -706,14 +707,15 @@ TEST_F(ECDbAdapterTests, DeleteInstances_DeletingParentThatEmbedsChild_DeletesPa
     auto ecClass = adapter.GetECClass("TestSchema.TestClass");
     auto embeddingRelClass = adapter.GetECRelationshipClass("TestSchema.EmbeddingRel");
 
-    ECInstanceKey parent, child;
+    ECInstanceKey parent, child, rel;
     INSERT_INSTANCE(*db, ecClass, parent);
     INSERT_INSTANCE(*db, ecClass, child);
-    INSERT_RELATIONSHIP(*db, embeddingRelClass, parent, child);
+    INSERT_RELATIONSHIP(*db, embeddingRelClass, parent, child, rel);
 
     CREATE_MockECDbAdapterDeleteListener(listener);
     EXPECT_CALL_OnBeforeDelete(listener, db, parent);
     EXPECT_CALL_OnBeforeDelete(listener, db, child);
+    EXPECT_CALL_OnBeforeDelete(listener, db, rel);
     adapter.RegisterDeleteListener(&listener);
 
     EXPECT_EQ(SUCCESS, adapter.DeleteInstances(StubECInstanceKeyMultiMap({parent})));
@@ -729,15 +731,16 @@ TEST_F(ECDbAdapterTests, DeleteInstances_DeletingParentThatHoldsChildThatHasOthe
     auto ecClass = adapter.GetECClass("TestSchema.TestClass");
     auto holdingRelClass = adapter.GetECRelationshipClass("TestSchema.HoldingRel");
 
-    ECInstanceKey parent, child, otherParent;
+    ECInstanceKey parent, child, otherParent, rel1, rel2;
     INSERT_INSTANCE(*db, ecClass, parent);
     INSERT_INSTANCE(*db, ecClass, child);
     INSERT_INSTANCE(*db, ecClass, otherParent);
-    INSERT_RELATIONSHIP(*db, holdingRelClass, parent, child);
-    INSERT_RELATIONSHIP(*db, holdingRelClass, otherParent, child);
+    INSERT_RELATIONSHIP(*db, holdingRelClass, parent, child, rel1);
+    INSERT_RELATIONSHIP(*db, holdingRelClass, otherParent, child, rel2);
 
     CREATE_MockECDbAdapterDeleteListener(listener);
     EXPECT_CALL_OnBeforeDelete(listener, db, parent);
+    EXPECT_CALL_OnBeforeDelete(listener, db, rel1);
     adapter.RegisterDeleteListener(&listener);
 
     EXPECT_EQ(SUCCESS, adapter.DeleteInstances(StubECInstanceKeyMultiMap({parent})));
@@ -757,16 +760,18 @@ TEST_F(ECDbAdapterTests, DeleteInstances_DeletingParentThatEmbedsChildThatHasOth
     auto embeddingRelClass = adapter.GetECRelationshipClass("TestSchema.EmbeddingRel");
     auto holdingRelClass = adapter.GetECRelationshipClass("TestSchema.HoldingRel");
 
-    ECInstanceKey parent, child, otherParent;
+    ECInstanceKey parent, child, otherParent, rel1, rel2;
     INSERT_INSTANCE(*db, ecClass, parent);
     INSERT_INSTANCE(*db, ecClass, child);
     INSERT_INSTANCE(*db, ecClass, otherParent);
-    INSERT_RELATIONSHIP(*db, embeddingRelClass, parent, child);
-    INSERT_RELATIONSHIP(*db, holdingRelClass, otherParent, child);
+    INSERT_RELATIONSHIP(*db, embeddingRelClass, parent, child, rel1);
+    INSERT_RELATIONSHIP(*db, holdingRelClass, otherParent, child, rel2);
 
     CREATE_MockECDbAdapterDeleteListener(listener);
     EXPECT_CALL_OnBeforeDelete(listener, db, parent);
     EXPECT_CALL_OnBeforeDelete(listener, db, child);
+    EXPECT_CALL_OnBeforeDelete(listener, db, rel1);
+    EXPECT_CALL_OnBeforeDelete(listener, db, rel2);
     adapter.RegisterDeleteListener(&listener);
 
     EXPECT_EQ(SUCCESS, adapter.DeleteInstances(StubECInstanceKeyMultiMap({parent})));
@@ -783,18 +788,20 @@ TEST_F(ECDbAdapterTests, DeleteInstances_DeletingParentThatHoldsChildThatHoldsSu
     auto ecClass = adapter.GetECClass("TestSchema.TestClass");
     auto holdingRelClass = adapter.GetECRelationshipClass("TestSchema.HoldingRel");
 
-    ECInstanceKey parent, child, subChild, otherParent;
+    ECInstanceKey parent, child, subChild, otherParent, rel1, rel2, rel3;
     INSERT_INSTANCE(*db, ecClass, parent);
     INSERT_INSTANCE(*db, ecClass, child);
     INSERT_INSTANCE(*db, ecClass, subChild);
     INSERT_INSTANCE(*db, ecClass, otherParent);
-    INSERT_RELATIONSHIP(*db, holdingRelClass, parent, child);
-    INSERT_RELATIONSHIP(*db, holdingRelClass, child, subChild);
-    INSERT_RELATIONSHIP(*db, holdingRelClass, otherParent, subChild);
+    INSERT_RELATIONSHIP(*db, holdingRelClass, parent, child, rel1);
+    INSERT_RELATIONSHIP(*db, holdingRelClass, child, subChild, rel2);
+    INSERT_RELATIONSHIP(*db, holdingRelClass, otherParent, subChild, rel3);
 
     CREATE_MockECDbAdapterDeleteListener(listener);
     EXPECT_CALL_OnBeforeDelete(listener, db, parent);
     EXPECT_CALL_OnBeforeDelete(listener, db, child);
+    EXPECT_CALL_OnBeforeDelete(listener, db, rel1);
+    EXPECT_CALL_OnBeforeDelete(listener, db, rel2);
     adapter.RegisterDeleteListener(&listener);
 
     EXPECT_EQ(SUCCESS, adapter.DeleteInstances(StubECInstanceKeyMultiMap({parent})));
@@ -817,16 +824,18 @@ TEST_F(ECDbAdapterTests, DeleteInstances_DeletingParentThatHoldsChildThatHasOthe
     auto embeddingRelClass = adapter.GetECRelationshipClass("TestSchema.EmbeddingRel");
     auto holdingRelClass = adapter.GetECRelationshipClass("TestSchema.HoldingRel");
 
-    ECInstanceKey parent, child, otherParent;
+    ECInstanceKey parent, child, otherParent, rel1, rel2;
     INSERT_INSTANCE(*db, ecClass, parent);
     INSERT_INSTANCE(*db, ecClass, child);
     INSERT_INSTANCE(*db, ecClass, otherParent);
-    INSERT_RELATIONSHIP(*db, holdingRelClass, parent, child);
-    INSERT_RELATIONSHIP(*db, embeddingRelClass, otherParent, child);
+    INSERT_RELATIONSHIP(*db, holdingRelClass, parent, child, rel1);
+    INSERT_RELATIONSHIP(*db, embeddingRelClass, otherParent, child, rel2);
 
     CREATE_MockECDbAdapterDeleteListener(listener);
     EXPECT_CALL_OnBeforeDelete(listener, db, parent);
     EXPECT_CALL_OnBeforeDelete(listener, db, child);
+    EXPECT_CALL_OnBeforeDelete(listener, db, rel1);
+    EXPECT_CALL_OnBeforeDelete(listener, db, rel2);
     adapter.RegisterDeleteListener(&listener);
 
     EXPECT_EQ(SUCCESS, adapter.DeleteInstances(StubECInstanceKeyMultiMap({parent})));
@@ -846,16 +855,18 @@ TEST_F(ECDbAdapterTests, DeleteInstances_DeletingParentThatEmbedsChildThatHasOth
     auto embeddingRelClass = adapter.GetECRelationshipClass("TestSchema.EmbeddingRel");
     auto holdingRelClass = adapter.GetECRelationshipClass("TestSchema.HoldingRel");
 
-    ECInstanceKey parent, child, otherParent;
+    ECInstanceKey parent, child, otherParent, rel1, rel2;
     INSERT_INSTANCE(*db, ecClass, parent);
     INSERT_INSTANCE(*db, ecClass, child);
     INSERT_INSTANCE(*db, ecClass, otherParent);
-    INSERT_RELATIONSHIP(*db, embeddingRelClass, parent, child);
-    INSERT_RELATIONSHIP(*db, holdingRelClass, otherParent, child);
+    INSERT_RELATIONSHIP(*db, embeddingRelClass, parent, child, rel1);
+    INSERT_RELATIONSHIP(*db, holdingRelClass, otherParent, child, rel2);
 
     CREATE_MockECDbAdapterDeleteListener(listener);
     EXPECT_CALL_OnBeforeDelete(listener, db, parent);
     EXPECT_CALL_OnBeforeDelete(listener, db, child);
+    EXPECT_CALL_OnBeforeDelete(listener, db, rel1);
+    EXPECT_CALL_OnBeforeDelete(listener, db, rel2);
     adapter.RegisterDeleteListener(&listener);
 
     EXPECT_EQ(SUCCESS, adapter.DeleteInstances(StubECInstanceKeyMultiMap({parent})));
@@ -875,16 +886,18 @@ TEST_F(ECDbAdapterTests, DeleteInstances_DeletingParentThatHoldsChildThatHasRefe
     auto holdingRelClass = adapter.GetECRelationshipClass("TestSchema.HoldingRel");
     auto referencingRelClass = adapter.GetECRelationshipClass("TestSchema.ReferencingRel");
 
-    ECInstanceKey parent, child, other;
+    ECInstanceKey parent, child, other, rel1, rel2;
     INSERT_INSTANCE(*db, ecClass, parent);
     INSERT_INSTANCE(*db, ecClass, child);
     INSERT_INSTANCE(*db, ecClass, other);
-    INSERT_RELATIONSHIP(*db, holdingRelClass, parent, child);
-    INSERT_RELATIONSHIP(*db, referencingRelClass, other, child);
+    INSERT_RELATIONSHIP(*db, holdingRelClass, parent, child, rel1);
+    INSERT_RELATIONSHIP(*db, referencingRelClass, other, child, rel2);
 
     CREATE_MockECDbAdapterDeleteListener(listener);
     EXPECT_CALL_OnBeforeDelete(listener, db, parent);
     EXPECT_CALL_OnBeforeDelete(listener, db, child);
+    EXPECT_CALL_OnBeforeDelete(listener, db, rel1);
+    EXPECT_CALL_OnBeforeDelete(listener, db, rel2);
     adapter.RegisterDeleteListener(&listener);
 
     EXPECT_EQ(SUCCESS, adapter.DeleteInstances(StubECInstanceKeyMultiMap({parent})));
@@ -903,21 +916,25 @@ TEST_F(ECDbAdapterTests, DeleteInstances_DeletingParentThatHoldsTwoChildrenThatH
     auto ecClass = adapter.GetECClass("TestSchema.TestClass");
     auto holdingRelClass = adapter.GetECRelationshipClass("TestSchema.HoldingRel");
 
-    ECInstanceKey parent, child1, child2, subChild;
+    ECInstanceKey parent, child1, child2, subChild, rel1, rel2, rel3, rel4;
     INSERT_INSTANCE(*db, ecClass, parent);
     INSERT_INSTANCE(*db, ecClass, child1);
     INSERT_INSTANCE(*db, ecClass, child2);
     INSERT_INSTANCE(*db, ecClass, subChild);
-    INSERT_RELATIONSHIP(*db, holdingRelClass, parent, child1);
-    INSERT_RELATIONSHIP(*db, holdingRelClass, parent, child2);
-    INSERT_RELATIONSHIP(*db, holdingRelClass, child1, subChild);
-    INSERT_RELATIONSHIP(*db, holdingRelClass, child2, subChild);
+    INSERT_RELATIONSHIP(*db, holdingRelClass, parent, child1, rel1);
+    INSERT_RELATIONSHIP(*db, holdingRelClass, parent, child2, rel2);
+    INSERT_RELATIONSHIP(*db, holdingRelClass, child1, subChild, rel3);
+    INSERT_RELATIONSHIP(*db, holdingRelClass, child2, subChild, rel4);
 
     CREATE_MockECDbAdapterDeleteListener(listener);
     EXPECT_CALL_OnBeforeDelete(listener, db, parent);
     EXPECT_CALL_OnBeforeDelete(listener, db, child1);
     EXPECT_CALL_OnBeforeDelete(listener, db, child2);
     EXPECT_CALL_OnBeforeDelete(listener, db, subChild);
+    EXPECT_CALL_OnBeforeDelete(listener, db, rel1);
+    EXPECT_CALL_OnBeforeDelete(listener, db, rel2);
+    EXPECT_CALL_OnBeforeDelete(listener, db, rel3);
+    EXPECT_CALL_OnBeforeDelete(listener, db, rel4);
     adapter.RegisterDeleteListener(&listener);
 
     EXPECT_EQ(SUCCESS, adapter.DeleteInstances(StubECInstanceKeyMultiMap({parent})));
@@ -935,18 +952,19 @@ TEST_F(ECDbAdapterTests, DeleteInstances_DeletingParentWithChildWithHoldingCircu
     auto ecClass = adapter.GetECClass("TestSchema.TestClass");
     auto holdingRelClass = adapter.GetECRelationshipClass("TestSchema.HoldingRel");
 
-    ECInstanceKey parent, a, b, c;
+    ECInstanceKey parent, a, b, c, rel1, rel2, rel3, rel4;
     INSERT_INSTANCE(*db, ecClass, parent);
     INSERT_INSTANCE(*db, ecClass, a);
     INSERT_INSTANCE(*db, ecClass, b);
     INSERT_INSTANCE(*db, ecClass, c);
-    INSERT_RELATIONSHIP(*db, holdingRelClass, parent, a);
-    INSERT_RELATIONSHIP(*db, holdingRelClass, a, b);
-    INSERT_RELATIONSHIP(*db, holdingRelClass, b, c);
-    INSERT_RELATIONSHIP(*db, holdingRelClass, c, a);
+    INSERT_RELATIONSHIP(*db, holdingRelClass, parent, a, rel1);
+    INSERT_RELATIONSHIP(*db, holdingRelClass, a, b, rel2);
+    INSERT_RELATIONSHIP(*db, holdingRelClass, b, c, rel3);
+    INSERT_RELATIONSHIP(*db, holdingRelClass, c, a, rel4);
 
     CREATE_MockECDbAdapterDeleteListener(listener);
     EXPECT_CALL_OnBeforeDelete(listener, db, parent);
+    EXPECT_CALL_OnBeforeDelete(listener, db, rel1);
     adapter.RegisterDeleteListener(&listener);
 
     EXPECT_EQ(SUCCESS, adapter.DeleteInstances(StubECInstanceKeyMultiMap({parent})));
@@ -967,18 +985,21 @@ TEST_F(ECDbAdapterTests, DeleteInstances_DeletedInstanceIsInHoldingCircularRelat
     auto ecClass = adapter.GetECClass("TestSchema.TestClass");
     auto holdingRelClass = adapter.GetECRelationshipClass("TestSchema.HoldingRel");
 
-    ECInstanceKey a, b, c;
+    ECInstanceKey a, b, c, rel1, rel2, rel3;
     INSERT_INSTANCE(*db, ecClass, a);
     INSERT_INSTANCE(*db, ecClass, b);
     INSERT_INSTANCE(*db, ecClass, c);
-    INSERT_RELATIONSHIP(*db, holdingRelClass, a, b);
-    INSERT_RELATIONSHIP(*db, holdingRelClass, b, c);
-    INSERT_RELATIONSHIP(*db, holdingRelClass, c, a);
+    INSERT_RELATIONSHIP(*db, holdingRelClass, a, b, rel1);
+    INSERT_RELATIONSHIP(*db, holdingRelClass, b, c, rel2);
+    INSERT_RELATIONSHIP(*db, holdingRelClass, c, a, rel3);
 
     CREATE_MockECDbAdapterDeleteListener(listener);
     EXPECT_CALL_OnBeforeDelete(listener, db, a);
     EXPECT_CALL_OnBeforeDelete(listener, db, b);
     EXPECT_CALL_OnBeforeDelete(listener, db, c);
+    EXPECT_CALL_OnBeforeDelete(listener, db, rel1);
+    EXPECT_CALL_OnBeforeDelete(listener, db, rel2);
+    EXPECT_CALL_OnBeforeDelete(listener, db, rel3);
     adapter.RegisterDeleteListener(&listener);
 
     EXPECT_EQ(SUCCESS, adapter.DeleteInstances(StubECInstanceKeyMultiMap({a})));
@@ -996,7 +1017,7 @@ TEST_F(ECDbAdapterTests, DeleteInstances_RelatedInstances_NotifiesEachChildInsta
     auto holdingRelClass = adapter.GetECRelationshipClass("TestSchema.HoldingRel");
     auto embeddingRelClass = adapter.GetECRelationshipClass("TestSchema.EmbeddingRel");
 
-    ECInstanceKey parent, a, b, c, d, e, f;
+    ECInstanceKey parent, a, b, c, d, e, f, rel1, rel2, rel3, rel4, rel5, rel6;
     INSERT_INSTANCE(*db, ecClass, parent);
     INSERT_INSTANCE(*db, ecClass, a);
     INSERT_INSTANCE(*db, ecClass, b);
@@ -1004,17 +1025,23 @@ TEST_F(ECDbAdapterTests, DeleteInstances_RelatedInstances_NotifiesEachChildInsta
     INSERT_INSTANCE(*db, ecClass, d);
     INSERT_INSTANCE(*db, ecClass, e);
     INSERT_INSTANCE(*db, ecClass, f);
-    INSERT_RELATIONSHIP(*db, referencingRelClass, parent, a);
-    INSERT_RELATIONSHIP(*db, referencingRelClass, d, parent);
-    INSERT_RELATIONSHIP(*db, holdingRelClass, parent, b);
-    INSERT_RELATIONSHIP(*db, holdingRelClass, e, parent);
-    INSERT_RELATIONSHIP(*db, embeddingRelClass, parent, c);
-    INSERT_RELATIONSHIP(*db, embeddingRelClass, f, parent);
+    INSERT_RELATIONSHIP(*db, referencingRelClass, parent, a, rel1);
+    INSERT_RELATIONSHIP(*db, referencingRelClass, d, parent, rel2);
+    INSERT_RELATIONSHIP(*db, holdingRelClass, parent, b, rel3);
+    INSERT_RELATIONSHIP(*db, holdingRelClass, e, parent, rel4);
+    INSERT_RELATIONSHIP(*db, embeddingRelClass, parent, c, rel5);
+    INSERT_RELATIONSHIP(*db, embeddingRelClass, f, parent, rel6);
 
     CREATE_MockECDbAdapterDeleteListener(listener);
     EXPECT_CALL_OnBeforeDelete(listener, db, parent);
     EXPECT_CALL_OnBeforeDelete(listener, db, b);
     EXPECT_CALL_OnBeforeDelete(listener, db, c);
+    EXPECT_CALL_OnBeforeDelete(listener, db, rel1);
+    EXPECT_CALL_OnBeforeDelete(listener, db, rel2);
+    EXPECT_CALL_OnBeforeDelete(listener, db, rel3);
+    EXPECT_CALL_OnBeforeDelete(listener, db, rel4);
+    EXPECT_CALL_OnBeforeDelete(listener, db, rel5);
+    EXPECT_CALL_OnBeforeDelete(listener, db, rel6);
     adapter.RegisterDeleteListener(&listener);
 
     EXPECT_EQ(SUCCESS, adapter.DeleteInstances(StubECInstanceKeyMultiMap({parent})));
@@ -1039,7 +1066,7 @@ TEST_F(ECDbAdapterTests, DeleteInstances_RelatedChildChildrenInstances_NotifiesE
     auto holdingRelClass = adapter.GetECRelationshipClass("TestSchema.HoldingRel");
     auto embeddingRelClass = adapter.GetECRelationshipClass("TestSchema.EmbeddingRel");
 
-    ECInstanceKey parent, a, aa, b, bb, c, cc;
+    ECInstanceKey parent, a, aa, b, bb, c, cc, rel1, rel2, rel3, rel4, rel5, rel6;
     INSERT_INSTANCE(*db, ecClass, parent);
     INSERT_INSTANCE(*db, ecClass, a);
     INSERT_INSTANCE(*db, ecClass, b);
@@ -1047,12 +1074,12 @@ TEST_F(ECDbAdapterTests, DeleteInstances_RelatedChildChildrenInstances_NotifiesE
     INSERT_INSTANCE(*db, ecClass, aa);
     INSERT_INSTANCE(*db, ecClass, bb);
     INSERT_INSTANCE(*db, ecClass, cc);
-    INSERT_RELATIONSHIP(*db, referencingRelClass, parent, a);
-    INSERT_RELATIONSHIP(*db, holdingRelClass, parent, b);
-    INSERT_RELATIONSHIP(*db, embeddingRelClass, parent, c);
-    INSERT_RELATIONSHIP(*db, referencingRelClass, parent, aa);
-    INSERT_RELATIONSHIP(*db, holdingRelClass, parent, bb);
-    INSERT_RELATIONSHIP(*db, embeddingRelClass, parent, cc);
+    INSERT_RELATIONSHIP(*db, referencingRelClass, parent, a, rel1);
+    INSERT_RELATIONSHIP(*db, holdingRelClass, parent, b, rel2);
+    INSERT_RELATIONSHIP(*db, embeddingRelClass, parent, c, rel3);
+    INSERT_RELATIONSHIP(*db, referencingRelClass, parent, aa, rel4);
+    INSERT_RELATIONSHIP(*db, holdingRelClass, parent, bb, rel5);
+    INSERT_RELATIONSHIP(*db, embeddingRelClass, parent, cc, rel6);
 
     CREATE_MockECDbAdapterDeleteListener(listener);
     EXPECT_CALL_OnBeforeDelete(listener, db, parent);
@@ -1060,6 +1087,12 @@ TEST_F(ECDbAdapterTests, DeleteInstances_RelatedChildChildrenInstances_NotifiesE
     EXPECT_CALL_OnBeforeDelete(listener, db, c);
     EXPECT_CALL_OnBeforeDelete(listener, db, bb);
     EXPECT_CALL_OnBeforeDelete(listener, db, cc);
+    EXPECT_CALL_OnBeforeDelete(listener, db, rel1);
+    EXPECT_CALL_OnBeforeDelete(listener, db, rel2);
+    EXPECT_CALL_OnBeforeDelete(listener, db, rel3);
+    EXPECT_CALL_OnBeforeDelete(listener, db, rel4);
+    EXPECT_CALL_OnBeforeDelete(listener, db, rel5);
+    EXPECT_CALL_OnBeforeDelete(listener, db, rel6);
     adapter.RegisterDeleteListener(&listener);
 
     EXPECT_EQ(SUCCESS, adapter.DeleteInstances(StubECInstanceKeyMultiMap({parent})));
@@ -1112,14 +1145,14 @@ TEST_F(ECDbAdapterTests, DeleteInstances_OnBeforeDeleteReturnsAdditionalToDelete
     auto ecClass = adapter.GetECClass("TestSchema.TestClass");
     auto holdingRelClass = adapter.GetECRelationshipClass("TestSchema.HoldingRel");
 
-    ECInstanceKey a, b, c, bchild, cchild;
+    ECInstanceKey a, b, c, bchild, cchild, rel1, rel2;
     INSERT_INSTANCE(*db, ecClass, a);
     INSERT_INSTANCE(*db, ecClass, b);
     INSERT_INSTANCE(*db, ecClass, c);
     INSERT_INSTANCE(*db, ecClass, bchild);
     INSERT_INSTANCE(*db, ecClass, cchild);
-    INSERT_RELATIONSHIP(*db, holdingRelClass, b, bchild);
-    INSERT_RELATIONSHIP(*db, holdingRelClass, c, cchild);
+    INSERT_RELATIONSHIP(*db, holdingRelClass, b, bchild, rel1);
+    INSERT_RELATIONSHIP(*db, holdingRelClass, c, cchild, rel2);
 
     CREATE_MockECDbAdapterDeleteListener(listener);
     EXPECT_CALL(listener, OnBeforeDelete(Ref(*ecClass), a.GetECInstanceId(), _))
@@ -1137,8 +1170,10 @@ TEST_F(ECDbAdapterTests, DeleteInstances_OnBeforeDeleteReturnsAdditionalToDelete
         return SUCCESS;
         }));
     EXPECT_CALL_OnBeforeDelete(listener, db, bchild);
+    EXPECT_CALL_OnBeforeDelete(listener, db, rel1);
     EXPECT_CALL_OnBeforeDelete(listener, db, c);
     EXPECT_CALL_OnBeforeDelete(listener, db, cchild);
+    EXPECT_CALL_OnBeforeDelete(listener, db, rel2);
     adapter.RegisterDeleteListener(&listener);
 
     EXPECT_EQ(SUCCESS, adapter.DeleteInstances(StubECInstanceKeyMultiMap({a})));
@@ -1171,10 +1206,10 @@ TEST_F(ECDbAdapterTests, DeleteRelationship_ReferencingRelationship_DeletesRelat
     auto ecClass = adapter.GetECClass("TestSchema.TestClass");
     auto relClass = adapter.GetECRelationshipClass("TestSchema.ReferencingRel");
 
-    ECInstanceKey a, b;
+    ECInstanceKey a, b, rel;
     INSERT_INSTANCE(*db, ecClass, a);
     INSERT_INSTANCE(*db, ecClass, b);
-    INSERT_RELATIONSHIP(*db, relClass, a, b);
+    INSERT_RELATIONSHIP(*db, relClass, a, b, rel);
     EXPECT_EQ(1, adapter.FindInstances(relClass).size());
 
     EXPECT_EQ(SUCCESS, adapter.DeleteRelationship(relClass, a, b));
@@ -1191,10 +1226,10 @@ TEST_F(ECDbAdapterTests, DeleteRelationship_HoldingRelationship_DeletesRelations
     auto ecClass = adapter.GetECClass("TestSchema.TestClass");
     auto relClass = adapter.GetECRelationshipClass("TestSchema.HoldingRel");
 
-    ECInstanceKey a, b;
+    ECInstanceKey a, b, rel;
     INSERT_INSTANCE(*db, ecClass, a);
     INSERT_INSTANCE(*db, ecClass, b);
-    INSERT_RELATIONSHIP(*db, relClass, a, b);
+    INSERT_RELATIONSHIP(*db, relClass, a, b, rel);
     EXPECT_EQ(1, adapter.FindInstances(relClass).size());
 
     EXPECT_EQ(SUCCESS, adapter.DeleteRelationship(relClass, a, b));
@@ -1213,10 +1248,10 @@ TEST_F(ECDbAdapterTests, DeleteRelationship_EmbeddingRelationship_DeletesRelatio
     auto ecClass = adapter.GetECClass("TestSchema.TestClass");
     auto relClass = adapter.GetECRelationshipClass("TestSchema.EmbeddingRel");
 
-    ECInstanceKey a, b;
+    ECInstanceKey a, b, rel;
     INSERT_INSTANCE(*db, ecClass, a);
     INSERT_INSTANCE(*db, ecClass, b);
-    INSERT_RELATIONSHIP(*db, relClass, a, b);
+    INSERT_RELATIONSHIP(*db, relClass, a, b, rel);
     EXPECT_EQ(1, adapter.FindInstances(relClass).size());
 
     EXPECT_EQ(SUCCESS, adapter.DeleteRelationship(relClass, a, b));
@@ -1235,12 +1270,12 @@ TEST_F(ECDbAdapterTests, DeleteRelationship_HoldingRelationshipWithChildWithMult
     auto ecClass = adapter.GetECClass("TestSchema.TestClass");
     auto relClass = adapter.GetECRelationshipClass("TestSchema.HoldingRel");
 
-    ECInstanceKey parent, child, otherParent;
+    ECInstanceKey parent, child, otherParent, rel1, rel2;
     INSERT_INSTANCE(*db, ecClass, parent);
     INSERT_INSTANCE(*db, ecClass, child);
     INSERT_INSTANCE(*db, ecClass, otherParent);
-    INSERT_RELATIONSHIP(*db, relClass, parent, child);
-    INSERT_RELATIONSHIP(*db, relClass, otherParent, child);
+    INSERT_RELATIONSHIP(*db, relClass, parent, child, rel1);
+    INSERT_RELATIONSHIP(*db, relClass, otherParent, child, rel2);
     EXPECT_EQ(2, adapter.FindInstances(relClass).size());
 
     EXPECT_EQ(SUCCESS, adapter.DeleteRelationship(relClass, parent, child));
@@ -1263,12 +1298,12 @@ TEST_F(ECDbAdapterTests, DeleteRelationship_EmbeddingRelationshipWithChildWithMu
     auto ecClass = adapter.GetECClass("TestSchema.TestClass");
     auto relClass = adapter.GetECRelationshipClass("TestSchema.EmbeddingRel");
 
-    ECInstanceKey parent, child, otherParent;
+    ECInstanceKey parent, child, otherParent, rel1, rel2;
     INSERT_INSTANCE(*db, ecClass, parent);
     INSERT_INSTANCE(*db, ecClass, child);
     INSERT_INSTANCE(*db, ecClass, otherParent);
-    INSERT_RELATIONSHIP(*db, relClass, parent, child);
-    INSERT_RELATIONSHIP(*db, relClass, otherParent, child);
+    INSERT_RELATIONSHIP(*db, relClass, parent, child, rel1);
+    INSERT_RELATIONSHIP(*db, relClass, otherParent, child, rel2);
     EXPECT_EQ(2, adapter.FindInstances(relClass).size());
 
     EXPECT_EQ(SUCCESS, adapter.DeleteRelationship(relClass, parent, child));
@@ -1303,11 +1338,10 @@ TEST_F(ECDbAdapterTests, ECDbBrokenCardinality)
     auto db = CreateTestDb(schema);
     ECDbAdapter adapter(*db);
 
-    ECInstanceKey a, b;
+    ECInstanceKey a, b, rel;
     INSERT_INSTANCE(*db, adapter.GetECClass("TestSchema.A"), a);
     INSERT_INSTANCE(*db, adapter.GetECClass("TestSchema.B"), b);
-
-    INSERT_RELATIONSHIP(*db, adapter.GetECRelationshipClass("TestSchema.Rel"), a, b);
+    INSERT_RELATIONSHIP(*db, adapter.GetECRelationshipClass("TestSchema.Rel"), a, b, rel);
     db->SaveChanges();
 
     ECInstanceFinder finder(*db);
