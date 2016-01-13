@@ -549,7 +549,12 @@ struct SplitConsoleProvider : ILogProvider
         Coord GetTopLeft() const { return Coord(Left, Top); }
     };
 
-    struct Pane
+    struct Component
+    {
+        virtual void Log(WCharCP msg, SEVERITY sev, WCharCP nameSpace) = 0;
+    };
+
+    struct Pane : Component
     {
         WString                 m_name;
         Rect                    m_rect; // writable area
@@ -560,9 +565,23 @@ struct SplitConsoleProvider : ILogProvider
         Pane(WStringCR name, SplitConsoleProvider& provider) : m_name(name), m_rect(0,0,20,10), m_provider(&provider) { }
         Pane() : m_rect(0,0,10,10), m_provider(nullptr) { }
 
-        void Log(WCharCP msg, SEVERITY sev, WCharCP nameSpace);
+        virtual void Log(WCharCP msg, SEVERITY sev, WCharCP nameSpace) override;
         dim_t PrepareMessage(WCharCP msg, SEVERITY sev, WCharCP nameSpace);
         static WORD GetAttributesForSeverity(SEVERITY sev);
+    };
+
+    struct Title : Component
+    {
+        WString m_name;
+
+        Title() : m_name(getenv("BENTLEY_SPLIT_CONSOLE_LOG_TITLE"), BentleyCharEncoding::Utf8) { }
+
+        bool Matches(WCharCP name) const { return !m_name.empty() && nullptr != name && m_name.Equals(name); }
+
+        virtual void Log(WCharCP msg, SEVERITY, WCharCP) override
+            {
+            SetConsoleTitleW(msg);
+            }
     };
 
     struct CharInfo : CHAR_INFO
@@ -579,6 +598,7 @@ private:
     dim_t           m_screenBufferWidth;
     dim_t           m_screenBufferHeight;
     CHAR_INFO       m_charBuffer[s_charBufferSize];
+    Title           m_title;
     
     static WCharCP GetNameSpace(ILogProviderContext* pContext)
         {
@@ -586,8 +606,11 @@ private:
         return nullptr != pWString ? pWString->c_str() : nullptr;
         }
 
-    Pane* GetPane(WCharCP name)
+    Component* GetComponent(WCharCP name)
         {
+        if (m_title.Matches(name))
+            return &m_title;
+
         auto found = std::find_if(m_panes.begin(), m_panes.end(), [&](Pane const& arg) { return arg.m_name.Equals(name); });
         return m_panes.end() != found ? &(*found) : m_defaultPane;
         }
@@ -816,7 +839,7 @@ int STDCALL_ATTRIBUTE SplitConsoleProvider::Uninitialize()
 +---------------+---------------+---------------+---------------+---------------+------*/
 int STDCALL_ATTRIBUTE SplitConsoleProvider::CreateLogger(WCharCP nameSpace, ILogProviderContext** ppContext)
     {
-    if (nullptr == ppContext || nullptr == nameSpace || nullptr == GetPane(nameSpace))
+    if (nullptr == ppContext || nullptr == nameSpace || nullptr == GetComponent(nameSpace))
         return ERROR;
 
     *ppContext = reinterpret_cast<ILogProviderContext*>(new WString(nameSpace));
@@ -842,9 +865,9 @@ int STDCALL_ATTRIBUTE SplitConsoleProvider::DestroyLogger(ILogProviderContext* p
 void STDCALL_ATTRIBUTE SplitConsoleProvider::LogMessage(ILogProviderContext* pContext, SEVERITY sev, WCharCP msg)
     {
     WCharCP nameSpace = GetNameSpace(pContext);
-    auto pane = GetPane(nameSpace);
-    if (nullptr != pane)
-        pane->Log(msg, sev, nameSpace);
+    auto log = GetComponent(nameSpace);
+    if (nullptr != log)
+        log->Log(msg, sev, nameSpace);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -861,7 +884,7 @@ void STDCALL_ATTRIBUTE SplitConsoleProvider::LogMessage(ILogProviderContext* pCo
 +---------------+---------------+---------------+---------------+---------------+------*/
 int STDCALL_ATTRIBUTE SplitConsoleProvider::SetOption(WCharCP name, WCharCP value)
     {
-    if (0 == wcscmp(name, CONFIG_OPTION_DEFAULT_SEVERITY) && nullptr != GetPane(name))
+    if (0 == wcscmp(name, CONFIG_OPTION_DEFAULT_SEVERITY) && nullptr != GetComponent(name))
         {
         m_severity.SetDefaultSeverity(GetSeverityFromText(value));
         return SUCCESS;
@@ -875,7 +898,7 @@ int STDCALL_ATTRIBUTE SplitConsoleProvider::SetOption(WCharCP name, WCharCP valu
 +---------------+---------------+---------------+---------------+---------------+------*/
 int STDCALL_ATTRIBUTE SplitConsoleProvider::GetOption(WCharCP name, WCharP value, uint32_t size)
     {
-    if (0 == wcscmp(name, CONFIG_OPTION_DEFAULT_SEVERITY) && nullptr != GetPane(name))
+    if (0 == wcscmp(name, CONFIG_OPTION_DEFAULT_SEVERITY) && nullptr != GetComponent(name))
         {
         BeStringUtilities::Wcsncpy(value, size, GetSeverityText(m_severity.GetDefaultSeverity()));
         return SUCCESS;
@@ -889,7 +912,7 @@ int STDCALL_ATTRIBUTE SplitConsoleProvider::GetOption(WCharCP name, WCharP value
 +---------------+---------------+---------------+---------------+---------------+------*/
 int STDCALL_ATTRIBUTE SplitConsoleProvider::SetSeverity(WCharCP nameSpace, SEVERITY sev)
     {
-    return nullptr != GetPane(nameSpace) ? m_severity.SetSeverity(nameSpace, sev) : ERROR;
+    return nullptr != GetComponent(nameSpace) ? m_severity.SetSeverity(nameSpace, sev) : ERROR;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -898,7 +921,7 @@ int STDCALL_ATTRIBUTE SplitConsoleProvider::SetSeverity(WCharCP nameSpace, SEVER
 bool STDCALL_ATTRIBUTE SplitConsoleProvider::IsSeverityEnabled(ILogProviderContext* pContext, SEVERITY sev)
     {
     auto nameSpace = GetNameSpace(pContext);
-    return nullptr != nameSpace && nullptr != GetPane(nameSpace) && m_severity.IsSeverityEnabled(nameSpace, sev);
+    return nullptr != nameSpace && nullptr != GetComponent(nameSpace) && m_severity.IsSeverityEnabled(nameSpace, sev);
     }
 
 /*---------------------------------------------------------------------------------**//**
