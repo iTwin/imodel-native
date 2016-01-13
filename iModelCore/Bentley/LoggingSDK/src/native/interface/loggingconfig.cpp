@@ -2,7 +2,7 @@
 |
 |     $Source: LoggingSDK/src/native/interface/loggingconfig.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "bsilogprivate.h"
@@ -95,6 +95,10 @@ uint32_t MaxMessageSize::Get ()
     return m_maxMessageSize.load();
     }
 
+#if defined (BENTLEY_WIN32)
+extern Provider::ILogProvider* createConsoleLogger();
+#endif
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    TonyCleveland   04/10
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -120,16 +124,21 @@ LoggingProviderType type
             pProvider = LoggingConfig::LoadProvider ( L"Bentley.logging.interop-2.0.dll" );
             break;
             }
+        case ( CONSOLE_LOGGING_PROVIDER ):
+            {
+            pProvider = createConsoleLogger();
+            break;
+            }
 #else
         // use console logging if a Windows-specific provider is requested on a non-Windows platform
         case ( LOG4CXX_LOGGING_PROVIDER ):
         case ( MANAGED_LOGGING_PROVIDER ):
-#endif
         case ( CONSOLE_LOGGING_PROVIDER ):
             {
             pProvider = new Provider::ConsoleProvider();
             break;
             }
+#endif
         case ( SIMPLEFILE_LOGGING_PROVIDER ):
             {
             pProvider = new Provider::SimpleFileProvider();
