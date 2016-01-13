@@ -20,24 +20,112 @@ ECDbSchemaReaderPtr ECDbSchemaReader::Create(ECDbCR db)
     }
 
 /*---------------------------------------------------------------------------------------
+* @bsimethod                                                    Affan.Khan        06/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+ECSchemaCP ECDbSchemaReader::GetECSchema(ECSchemaId ecSchemaId, bool ensureAllClassesLoaded) const
+    {
+    ECDbSchemaReader::Context ctx;
+    ECSchemaCP schema = GetECSchema(ctx, ecSchemaId, ensureAllClassesLoaded);
+    if (schema == nullptr)
+        return nullptr;
+
+    if (SUCCESS != ctx.Postprocess())
+        return nullptr;
+
+    return schema;
+    }
+
+/*---------------------------------------------------------------------------------------
+* @bsimethod                                                    Affan.Khan        06/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+ECSchemaCP ECDbSchemaReader::GetECSchema(Context& ctx, ECSchemaId ecSchemaId, bool ensureAllClassesLoaded) const
+    {
+    DbECSchemaEntry* outECSchemaKey = nullptr;
+    if (SUCCESS != ReadECSchema(outECSchemaKey, ctx, ecSchemaId, ensureAllClassesLoaded))
+        return nullptr;
+
+    return outECSchemaKey->m_cachedECSchema.get();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Krischan.Eberle    12/2015
+//+---------------+---------------+---------------+---------------+---------------+------
+ECEnumerationCP ECDbSchemaReader::GetECEnumeration(Utf8CP schemaName, Utf8CP enumName) const
+    {
+    ECDbSchemaReader::Context ctx;
+    ECEnumerationCP ecenum = GetECEnumeration(ctx, schemaName, enumName);
+    if (ecenum == nullptr)
+        return nullptr;
+
+    if (SUCCESS != ctx.Postprocess())
+        return nullptr;
+
+    return ecenum;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    affan.khan      03/2013
+//---------------------------------------------------------------------------------------
+BentleyStatus ECDbSchemaReader::EnsureDerivedClassesExist(ECClassId baseClassId) const
+    {
+    ECDbSchemaReader::Context ctx;
+    if (SUCCESS != EnsureDerivedClassesExist(ctx, baseClassId))
+        return ERROR;
+
+    return ctx.Postprocess();
+    }
+
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    affan.khan      03/2013
+//---------------------------------------------------------------------------------------
+BentleyStatus ECDbSchemaReader::EnsureDerivedClassesExist(Context& ctx, ECClassId baseClassId) const
+    {
+    CachedStatementPtr stmt = nullptr;
+    if (BE_SQLITE_OK != m_db.GetCachedStatement(stmt, "SELECT ClassId FROM ec_BaseClass WHERE BaseClassId = ?"))
+        return ERROR;
+
+    if (BE_SQLITE_OK != stmt->BindInt64(1, baseClassId))
+        return ERROR;
+
+    while (stmt->Step() == BE_SQLITE_ROW)
+        {
+        if (GetECClass(ctx, (ECClassId) stmt->GetValueInt64(0)) == nullptr)
+            return ERROR;
+        }
+
+    return SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        05/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ECDbSchemaReader::ReadECClass(ECClassP& ecClass, ECClassId ecClassId) const
+ECClassCP ECDbSchemaReader::GetECClass(ECClassId ecClassId) const
+    {
+    ECDbSchemaReader::Context ctx;
+    ECClassCP ecclass = GetECClass(ctx, ecClassId);
+    if (ecclass == nullptr)
+        return nullptr;
+
+    if (SUCCESS != ctx.Postprocess())
+        return nullptr;
+
+    return ecclass;
+    }
+
+/*---------------------------------------------------------------------------------------
+* @bsimethod                                                    Affan.Khan        05/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+ECClassP ECDbSchemaReader::GetECClass(Context& ctx, ECClassId ecClassId) const
     {
     if (ecClassId == ECClass::UNSET_ECCLASSID)
-        {
-        ecClass = nullptr;
-        return ERROR;
-        }
+        return nullptr;
 
     BeMutexHolder lock (m_criticalSection);
 
     DbECClassEntryMap::const_iterator classKeyIterator = m_ecClassCache.find (ecClassId);
     if (classKeyIterator != m_ecClassCache.end())
-        {
-        ecClass = classKeyIterator->second->m_cachedECClass;
-        return SUCCESS;
-        }
+        return classKeyIterator->second->m_cachedECClass;
 
     const int schemaIdColIx = 0;
     const int nameColIx = 1;
@@ -50,13 +138,13 @@ BentleyStatus ECDbSchemaReader::ReadECClass(ECClassP& ecClass, ECClassId ecClass
 
     BeSQLite::CachedStatementPtr stmt = m_db.GetCachedStatement("SELECT SchemaId,Name,DisplayLabel,Description,Type,Modifier,RelationStrength,RelationStrengthDirection FROM ec_Class WHERE Id=?");
     if (stmt == nullptr)
-        return ERROR;
+        return nullptr;
 
     if (BE_SQLITE_OK != stmt->BindInt64(1, ecClassId))
-        return ERROR;
+        return nullptr;
 
     if (BE_SQLITE_ROW != stmt->Step())
-        return ERROR;
+        return nullptr;
 
     ECSchemaId schemaId = stmt->GetValueInt64(schemaIdColIx);
     Utf8CP className = stmt->GetValueText(nameColIx);
@@ -66,17 +154,18 @@ BentleyStatus ECDbSchemaReader::ReadECClass(ECClassP& ecClass, ECClassId ecClass
     ECClassModifier classModifier = Enum::FromInt<ECClassModifier>(stmt->GetValueInt(modifierColIx));
 
     DbECSchemaEntry* schemaKey = nullptr;
-    if (SUCCESS != ReadECSchema(schemaKey, schemaId, false))
-        return ERROR;
+    if (SUCCESS != ReadECSchema(schemaKey, ctx, schemaId, false))
+        return nullptr;
 
     ECSchemaR schema = *schemaKey->m_cachedECSchema;
+    ECClassP ecClass = nullptr;
     switch (classType)
         {
             case ECClassType::CustomAttribute:
             {
             ECCustomAttributeClassP newClass = nullptr;
             if (schema.CreateCustomAttributeClass(newClass, className) != ECObjectsStatus::Success)
-                return ERROR;
+                return nullptr;
 
             ecClass = newClass;
             break;
@@ -86,7 +175,7 @@ BentleyStatus ECDbSchemaReader::ReadECClass(ECClassP& ecClass, ECClassId ecClass
             {
             ECEntityClassP newClass = nullptr;
             if (schema.CreateEntityClass(newClass, className) != ECObjectsStatus::Success)
-                return ERROR;
+                return nullptr;
 
             ecClass = newClass;
             break;
@@ -96,7 +185,7 @@ BentleyStatus ECDbSchemaReader::ReadECClass(ECClassP& ecClass, ECClassId ecClass
             {
             ECStructClassP newClass = nullptr;
             if (schema.CreateStructClass(newClass, className) != ECObjectsStatus::Success)
-                return ERROR;
+                return nullptr;
 
             ecClass = newClass;
             break;
@@ -106,7 +195,7 @@ BentleyStatus ECDbSchemaReader::ReadECClass(ECClassP& ecClass, ECClassId ecClass
             {
             ECRelationshipClassP newClass = nullptr;
             if (schema.CreateRelationshipClass(newClass, className) != ECObjectsStatus::Success)
-                return ERROR;
+                return nullptr;
 
             BeAssert(!stmt->IsColumnNull(relStrengthColIx) && !stmt->IsColumnNull(relStrengthDirColIx));
             newClass->SetStrength(Enum::FromInt<StrengthType>(stmt->GetValueInt(relStrengthColIx)));
@@ -117,7 +206,7 @@ BentleyStatus ECDbSchemaReader::ReadECClass(ECClassP& ecClass, ECClassId ecClass
 
             default:
                 BeAssert(false);
-                return ERROR;
+                return nullptr;
         }
 
     ecClass->SetId(ecClassId);
@@ -136,32 +225,48 @@ BentleyStatus ECDbSchemaReader::ReadECClass(ECClassP& ecClass, ECClassId ecClass
     schemaKey->m_loadedTypeCount++;
     m_ecClassCache[ecClassId] = unique_ptr<DbECClassEntry>(new DbECClassEntry(*ecClass));
 
-    if (SUCCESS != LoadBaseClassesFromDb(ecClass, ecClassId))
-        return ERROR;
+    if (SUCCESS != LoadBaseClassesFromDb(ecClass, ctx, ecClassId))
+        return nullptr;
 
-    if (SUCCESS != LoadECPropertiesFromDb(ecClass, ecClassId))
-        return ERROR;
+    if (SUCCESS != LoadECPropertiesFromDb(ecClass, ctx, ecClassId))
+        return nullptr;
 
-    if (SUCCESS != LoadCAFromDb(*ecClass, ecClassId, ECContainerType::Class))
-        return ERROR;
+    if (SUCCESS != LoadCAFromDb(*ecClass, ctx, ecClassId, ECContainerType::Class))
+        return nullptr;
 
     ECRelationshipClassP relClass = ecClass->GetRelationshipClassP();
     if (relClass != nullptr)
         {
-        if (SUCCESS != LoadECRelationshipConstraintFromDb(relClass, ecClassId, ECRelationshipEnd_Source))
-            return ERROR;
+        if (SUCCESS != LoadECRelationshipConstraintFromDb(relClass, ctx, ecClassId, ECRelationshipEnd_Source))
+            return nullptr;
 
-        if (SUCCESS != LoadECRelationshipConstraintFromDb(relClass, ecClassId, ECRelationshipEnd_Target))
-            return ERROR;
+        if (SUCCESS != LoadECRelationshipConstraintFromDb(relClass, ctx, ecClassId, ECRelationshipEnd_Target))
+            return nullptr;
         }
 
-    return SUCCESS;
+    return ecClass;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Krischan.Eberle    12/2015
+//+---------------+---------------+---------------+---------------+---------------+------
+ECEnumerationCP ECDbSchemaReader::GetECEnumeration(Context& ctx, Utf8CP schemaName, Utf8CP enumName) const
+    {
+    uint64_t enumId = ECDbSchemaPersistenceHelper::GetECEnumerationId(m_db, schemaName, enumName);
+    if (enumId == INT64_C(0))
+        return nullptr;
+
+    ECEnumerationP ecEnum = nullptr;
+    if (SUCCESS != ReadECEnumeration(ecEnum, ctx, enumId))
+        return nullptr;
+
+    return ecEnum;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle    12/2015
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECDbSchemaReader::ReadECEnumeration(ECEnumerationP& ecEnum, uint64_t enumId) const
+BentleyStatus ECDbSchemaReader::ReadECEnumeration(ECEnumerationP& ecEnum, Context& ctx, uint64_t enumId) const
     {
     BeMutexHolder lock(m_criticalSection);
 
@@ -192,7 +297,7 @@ BentleyStatus ECDbSchemaReader::ReadECEnumeration(ECEnumerationP& ecEnum, uint64
 
     const ECSchemaId schemaId = stmt->GetValueInt64(schemaIdIx);
     DbECSchemaEntry* schemaKey = nullptr;
-    if (SUCCESS != ReadECSchema(schemaKey, schemaId, false))
+    if (SUCCESS != ReadECSchema(schemaKey, ctx, schemaId, false))
         return ERROR;
 
     Utf8CP enumName = stmt->GetValueText(nameIx);
@@ -272,7 +377,7 @@ BentleyStatus ECDbSchemaReader::LoadECSchemaDefinition(DbECSchemaEntry*& schemaE
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        06/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ECDbSchemaReader::ReadECSchema(DbECSchemaEntry*& outECSchemaKey, ECSchemaId ctxECSchemaId, bool ensureAllClassesLoaded) const
+BentleyStatus ECDbSchemaReader::ReadECSchema(DbECSchemaEntry*& outECSchemaKey, Context& ctx, ECSchemaId ctxECSchemaId, bool ensureAllClassesLoaded) const
     {
     BeMutexHolder lock (m_criticalSection);
     bvector<DbECSchemaEntry*> newlyLoadedSchemas;
@@ -282,14 +387,14 @@ BentleyStatus ECDbSchemaReader::ReadECSchema(DbECSchemaEntry*& outECSchemaKey, E
     for (DbECSchemaEntry* newlyLoadedSchema : newlyLoadedSchemas)
         {
         ECSchemaR schema = *newlyLoadedSchema->m_cachedECSchema;
-        if (SUCCESS != LoadCAFromDb(schema, schema.GetId(), ECContainerType::Schema))
+        if (SUCCESS != LoadCAFromDb(schema, ctx, schema.GetId(), ECContainerType::Schema))
             return ERROR;
         }
 
     if (ensureAllClassesLoaded && !outECSchemaKey->IsFullyLoaded())
         {
         std::set<DbECSchemaEntry*> fullyLoadedSchemas;
-        if (SUCCESS != LoadClassesAndEnumsFromDb(outECSchemaKey, fullyLoadedSchemas))
+        if (SUCCESS != LoadClassesAndEnumsFromDb(outECSchemaKey, ctx, fullyLoadedSchemas))
             return ERROR;
         
         }
@@ -297,22 +402,9 @@ BentleyStatus ECDbSchemaReader::ReadECSchema(DbECSchemaEntry*& outECSchemaKey, E
     }
 
 /*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Affan.Khan        06/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ECDbSchemaReader::GetECSchema(ECSchemaP& ecSchemaOut, ECSchemaId ecSchemaId, bool ensureAllClassesLoaded) const
-    {
-    DbECSchemaEntry* outECSchemaKey;
-    if (SUCCESS != ReadECSchema(outECSchemaKey, ecSchemaId, ensureAllClassesLoaded))
-        return ERROR;
-
-    ecSchemaOut = outECSchemaKey->m_cachedECSchema.get();
-    return SUCCESS;
-    }
-
-/*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        05/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ECDbSchemaReader::LoadClassesAndEnumsFromDb(DbECSchemaEntry* ecSchemaKey, std::set<DbECSchemaEntry*>& fullyLoadedSchemas) const
+BentleyStatus ECDbSchemaReader::LoadClassesAndEnumsFromDb(DbECSchemaEntry* ecSchemaKey, Context& ctx, std::set<DbECSchemaEntry*>& fullyLoadedSchemas) const
     {
     BeAssert(ecSchemaKey != nullptr);
     if (!ecSchemaKey)
@@ -330,7 +422,7 @@ BentleyStatus ECDbSchemaReader::LoadClassesAndEnumsFromDb(DbECSchemaEntry* ecSch
         if (schemaIterator != m_ecSchemaCache.end())
             key = schemaIterator->second.get();
 
-        if (SUCCESS != LoadClassesAndEnumsFromDb(key, fullyLoadedSchemas))
+        if (SUCCESS != LoadClassesAndEnumsFromDb(key, ctx, fullyLoadedSchemas))
             return ERROR;
         }
 
@@ -348,8 +440,7 @@ BentleyStatus ECDbSchemaReader::LoadClassesAndEnumsFromDb(DbECSchemaEntry* ecSch
 
     while (BE_SQLITE_ROW == stmt->Step())
         {
-        ECClassP ecClass = nullptr;
-        if (SUCCESS != ReadECClass(ecClass, (ECClassId) stmt->GetValueInt64(0)))
+        if (nullptr == GetECClass(ctx, (ECClassId) stmt->GetValueInt64(0)))
             return ERROR;
 
         if (ecSchemaKey->IsFullyLoaded())
@@ -367,7 +458,7 @@ BentleyStatus ECDbSchemaReader::LoadClassesAndEnumsFromDb(DbECSchemaEntry* ecSch
     while (BE_SQLITE_ROW == stmt->Step())
         {
         ECEnumerationP ecEnum = nullptr;
-        if (SUCCESS != ReadECEnumeration(ecEnum, (uint64_t) stmt->GetValueInt64(0)))
+        if (SUCCESS != ReadECEnumeration(ecEnum, ctx, (uint64_t) stmt->GetValueInt64(0)))
             return ERROR;
 
         if (ecSchemaKey->IsFullyLoaded())
@@ -428,7 +519,7 @@ BentleyStatus ECDbSchemaReader::LoadECSchemaFromDb(DbECSchemaEntry*& schemaEntry
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        05/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ECDbSchemaReader::LoadECPropertiesFromDb(ECClassP& ecClass, ECClassId ecClassId) const
+BentleyStatus ECDbSchemaReader::LoadECPropertiesFromDb(ECClassP& ecClass, Context& ctx, ECClassId ecClassId) const
     {
     const int kindIx = 0;
     const int idIx = 1;
@@ -461,7 +552,7 @@ BentleyStatus ECDbSchemaReader::LoadECPropertiesFromDb(ECClassP& ecClass, ECClas
             return SUCCESS;
             }
 
-        static BentleyStatus TryReadNonPrimitiveType(ECClassP& nonPrimType, ECDbSchemaReader const& schemaReader, CachedStatement& stmt)
+        static BentleyStatus TryReadNonPrimitiveType(ECClassP& nonPrimType, ECDbSchemaReader const& schemaReader, Context& ctx, CachedStatement& stmt)
             {
             const int nonPrimTypeIx = 7;
             if (stmt.IsColumnNull(nonPrimTypeIx))
@@ -469,10 +560,11 @@ BentleyStatus ECDbSchemaReader::LoadECPropertiesFromDb(ECClassP& ecClass, ECClas
 
             const ECClassId nonPrimTypeId = (ECClassId) stmt.GetValueInt64(nonPrimTypeIx);
             BeAssert(nonPrimTypeId != ECClass::UNSET_ECCLASSID);
-            return schemaReader.ReadECClass(nonPrimType, nonPrimTypeId);
+            nonPrimType = schemaReader.GetECClass(ctx, nonPrimTypeId);
+            return nonPrimType != nullptr ? SUCCESS : ERROR;
             }
 
-        static BentleyStatus TryReadEnumeration(ECEnumerationP& enumeration, ECDbSchemaReader const& schemaReader, CachedStatement& stmt)
+        static BentleyStatus TryReadEnumeration(ECEnumerationP& enumeration, ECDbSchemaReader const& schemaReader, Context& ctx, CachedStatement& stmt)
             {
             const int ix = 8;
             if (stmt.IsColumnNull(ix))
@@ -480,7 +572,7 @@ BentleyStatus ECDbSchemaReader::LoadECPropertiesFromDb(ECClassP& ecClass, ECClas
 
             const int64_t enumTypeId = stmt.GetValueInt64(ix);
             BeAssert(enumTypeId > 0);
-            return schemaReader.ReadECEnumeration(enumeration, enumTypeId);;
+            return schemaReader.ReadECEnumeration(enumeration, ctx, enumTypeId);;
             }
 
         static BentleyStatus TryReadArrayConstraints(uint32_t& minOccurs, uint32_t& maxOccurs, CachedStatement& stmt)
@@ -534,7 +626,7 @@ BentleyStatus ECDbSchemaReader::LoadECPropertiesFromDb(ECClassP& ecClass, ECClas
                 case ECPropertyKind::Enumeration:
                 {
                 ECEnumerationP ecenum = nullptr;
-                if (SUCCESS != PropReaderHelper::TryReadEnumeration(ecenum, *this, *stmt))
+                if (SUCCESS != PropReaderHelper::TryReadEnumeration(ecenum, *this, ctx, *stmt))
                     {
                     BeAssert(false && "Enumeration column is not expected to be NULL for property using an ECEnumeration");
                     return ERROR;
@@ -551,7 +643,7 @@ BentleyStatus ECDbSchemaReader::LoadECPropertiesFromDb(ECClassP& ecClass, ECClas
                 case ECPropertyKind::Struct:
                 {
                 ECClassP structClassRaw = nullptr;
-                if (SUCCESS != PropReaderHelper::TryReadNonPrimitiveType(structClassRaw, *this, *stmt))
+                if (SUCCESS != PropReaderHelper::TryReadNonPrimitiveType(structClassRaw, *this, ctx, *stmt))
                     {
                     BeAssert(false && "NonPrimitiveType column is not expected to be NULL for struct property");
                     return ERROR;
@@ -602,7 +694,7 @@ BentleyStatus ECDbSchemaReader::LoadECPropertiesFromDb(ECClassP& ecClass, ECClas
                 case ECPropertyKind::StructArray:
                 {
                 ECClassP structClassRaw = nullptr;
-                if (SUCCESS != PropReaderHelper::TryReadNonPrimitiveType(structClassRaw, *this, *stmt))
+                if (SUCCESS != PropReaderHelper::TryReadNonPrimitiveType(structClassRaw, *this, ctx, *stmt))
                     {
                     BeAssert(false && "NonPrimitiveType column is not expected to be NULL for struct array property");
                     return ERROR;
@@ -638,7 +730,7 @@ BentleyStatus ECDbSchemaReader::LoadECPropertiesFromDb(ECClassP& ecClass, ECClas
                 BeAssert(ecClass->IsEntityClass());
 
                 ECClassP relClassRaw = nullptr;
-                if (SUCCESS != PropReaderHelper::TryReadNonPrimitiveType(relClassRaw, *this, *stmt))
+                if (SUCCESS != PropReaderHelper::TryReadNonPrimitiveType(relClassRaw, *this, ctx, *stmt))
                     {
                     BeAssert(false && "NonPrimitiveType column is not expected to be NULL for navigation property");
                     return ERROR;
@@ -649,6 +741,11 @@ BentleyStatus ECDbSchemaReader::LoadECPropertiesFromDb(ECClassP& ecClass, ECClas
                 NavigationECPropertyP navProp = nullptr;
                 if (ECObjectsStatus::Success != ecClass->GetEntityClassP()->CreateNavigationProperty(navProp, propName, *relClassRaw->GetRelationshipClassCP(), direction))
                     return ERROR;
+
+                //keep track of nav prop as we need to validate them when everything else is loaded
+                ctx.AddNavigationProperty(*navProp);
+                prop = navProp;
+                break;
                 }
 
                 default:
@@ -663,7 +760,7 @@ BentleyStatus ECDbSchemaReader::LoadECPropertiesFromDb(ECClassP& ecClass, ECClas
         if (displayLabel != nullptr)
             prop->SetDisplayLabel(displayLabel);
 
-        if (SUCCESS != LoadCAFromDb(*prop, id, ECContainerType::Property))
+        if (SUCCESS != LoadCAFromDb(*prop, ctx, id, ECContainerType::Property))
             return ERROR;
         }
 
@@ -672,7 +769,7 @@ BentleyStatus ECDbSchemaReader::LoadECPropertiesFromDb(ECClassP& ecClass, ECClas
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        05/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ECDbSchemaReader::LoadBaseClassesFromDb(ECClassP& ecClass, ECClassId ecClassId) const
+BentleyStatus ECDbSchemaReader::LoadBaseClassesFromDb(ECClassP& ecClass, Context& ctx, ECClassId ecClassId) const
     {
     CachedStatementPtr stmt = nullptr;
     if (BE_SQLITE_OK != m_db.GetCachedStatement(stmt, "SELECT BaseClassId FROM ec_BaseClass WHERE ClassId=? ORDER BY Ordinal"))
@@ -684,8 +781,8 @@ BentleyStatus ECDbSchemaReader::LoadBaseClassesFromDb(ECClassP& ecClass, ECClass
     while (stmt->Step() == BE_SQLITE_ROW)
         {
         ECClassId baseClassId = stmt->GetValueInt64(0);
-        ECClassP baseClass = nullptr;
-        if (SUCCESS != ReadECClass(baseClass, baseClassId))
+        ECClassCP baseClass = GetECClass(ctx, baseClassId);
+        if (baseClass == nullptr)
             return ERROR;
 
         if (ECObjectsStatus::Success != ecClass->AddBaseClass(*baseClass))
@@ -698,7 +795,7 @@ BentleyStatus ECDbSchemaReader::LoadBaseClassesFromDb(ECClassP& ecClass, ECClass
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        05/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ECDbSchemaReader::LoadCAFromDb(ECN::IECCustomAttributeContainerR  caConstainer, ECContainerId containerId, ECContainerType containerType) const
+BentleyStatus ECDbSchemaReader::LoadCAFromDb(ECN::IECCustomAttributeContainerR  caConstainer, Context& ctx, ECContainerId containerId, ECContainerType containerType) const
     {
     CachedStatementPtr stmt = nullptr;
     if (BE_SQLITE_OK != m_db.GetCachedStatement(stmt, "SELECT ClassId,Instance FROM ec_CustomAttribute WHERE ContainerId=? AND ContainerType=? ORDER BY Ordinal"))
@@ -713,8 +810,8 @@ BentleyStatus ECDbSchemaReader::LoadCAFromDb(ECN::IECCustomAttributeContainerR  
     while (stmt->Step() == BE_SQLITE_ROW)
         {
         ECClassId caClassId = stmt->GetValueInt64(0);
-        ECClassP caClass = nullptr;
-        if (SUCCESS != ReadECClass(caClass, caClassId))
+        ECClassCP caClass = GetECClass(ctx, caClassId);
+        if (caClass == nullptr)
             return ERROR;
 
         Utf8CP caXml = stmt->GetValueText(1);
@@ -732,7 +829,7 @@ BentleyStatus ECDbSchemaReader::LoadCAFromDb(ECN::IECCustomAttributeContainerR  
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        05/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ECDbSchemaReader::LoadECRelationshipConstraintFromDb(ECRelationshipClassP& ecRelationship, ECClassId relationshipClassId, ECRelationshipEnd relationshipEnd) const
+BentleyStatus ECDbSchemaReader::LoadECRelationshipConstraintFromDb(ECRelationshipClassP& ecRelationship, Context& ctx, ECClassId relationshipClassId, ECRelationshipEnd relationshipEnd) const
     {
     CachedStatementPtr stmt = nullptr;
     if (BE_SQLITE_OK != m_db.GetCachedStatement(stmt, "SELECT MultiplicityLowerLimit,MultiplicityUpperLimit,IsPolymorphic,RoleLabel FROM ec_RelationshipConstraint WHERE RelationshipClassId=? AND RelationshipEnd=?"))
@@ -755,19 +852,19 @@ BentleyStatus ECDbSchemaReader::LoadECRelationshipConstraintFromDb(ECRelationshi
     if (!stmt->IsColumnNull(3))
         constraint.SetRoleLabel(stmt->GetValueText(3));
 
-    if (SUCCESS != LoadECRelationshipConstraintClassesFromDb(constraint, relationshipClassId, relationshipEnd))
+    if (SUCCESS != LoadECRelationshipConstraintClassesFromDb(constraint, ctx, relationshipClassId, relationshipEnd))
         return ERROR;
 
     ECContainerType containerType = 
         relationshipEnd == ECRelationshipEnd_Target ? ECContainerType::RelationshipConstraintTarget : ECContainerType::RelationshipConstraintSource;
 
-    return LoadCAFromDb(constraint, relationshipClassId, containerType);
+    return LoadCAFromDb(constraint, ctx, relationshipClassId, containerType);
     }
 
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        05/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ECDbSchemaReader::LoadECRelationshipConstraintClassesFromDb(ECRelationshipConstraintR constraint, ECClassId relationshipClassId, ECRelationshipEnd relationshipEnd) const
+BentleyStatus ECDbSchemaReader::LoadECRelationshipConstraintClassesFromDb(ECRelationshipConstraintR constraint, Context& ctx, ECClassId relationshipClassId, ECRelationshipEnd relationshipEnd) const
     {
     CachedStatementPtr statement = nullptr;
     if (BE_SQLITE_OK != m_db.GetCachedStatement(statement, "SELECT ClassId, KeyProperties FROM ec_RelationshipConstraintClass WHERE RelationshipClassId=? AND RelationshipEnd=?"))
@@ -784,11 +881,11 @@ BentleyStatus ECDbSchemaReader::LoadECRelationshipConstraintClassesFromDb(ECRela
         const ECClassId constraintClassId = statement->GetValueInt64(0);
         Utf8CP keyProperties = statement->IsColumnNull(1) ? nullptr : statement->GetValueText(1);
 
-        ECClassP constraintClass = nullptr;
-        if (SUCCESS != ReadECClass(constraintClass, constraintClassId))
+        ECClassCP constraintClass = GetECClass(ctx, constraintClassId);
+        if (constraintClass == nullptr)
             return ERROR;
 
-        ECEntityClassP constraintAsEntity = constraintClass->GetEntityClassP();
+        ECEntityClassCP constraintAsEntity = constraintClass->GetEntityClassCP();
         if (nullptr == constraintAsEntity)
             {
             BeAssert(false && "Relationship constraint classes are expected to be entity classes.");
@@ -810,18 +907,6 @@ BentleyStatus ECDbSchemaReader::LoadECRelationshipConstraintClassesFromDb(ECRela
     }
 
 /*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Affan.Khan        05/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECClassP ECDbSchemaReader::GetECClass(ECClassId ecClassId) const
-    {
-    ECClassP ecClass;
-    if (ReadECClass (ecClass, ecClassId) == SUCCESS)
-        return ecClass;
-
-    return nullptr;
-    }
-
-/*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        06/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ECDbSchemaReader::TryGetECClassId(ECClassId& id, Utf8CP schemaName, Utf8CP className, ResolveSchema resolveSchema) const
@@ -834,42 +919,6 @@ bool ECDbSchemaReader::TryGetECClassId(ECClassId& id, Utf8CP schemaName, Utf8CP 
     return true;
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Krischan.Eberle    12/2015
-//+---------------+---------------+---------------+---------------+---------------+------
-ECEnumerationCP ECDbSchemaReader::GetECEnumeration(Utf8CP schemaName, Utf8CP enumName) const
-    {
-    uint64_t enumId = ECDbSchemaPersistenceHelper::GetECEnumerationId(m_db, schemaName, enumName);
-    if (enumId == INT64_C(0))
-        return nullptr;
-
-    ECEnumerationP ecEnum = nullptr;
-    if (SUCCESS != ReadECEnumeration(ecEnum, enumId))
-        return nullptr;
-
-    return ecEnum;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    affan.khan      03/2013
-//---------------------------------------------------------------------------------------
-BentleyStatus ECDbSchemaReader::EnsureDerivedClassesExist(ECClassId baseClassId) const
-    {
-    CachedStatementPtr stmt = nullptr;
-    if (BE_SQLITE_OK != m_db.GetCachedStatement(stmt, "SELECT ClassId FROM ec_BaseClass WHERE BaseClassId = ?"))
-        return ERROR;
-
-    if (BE_SQLITE_OK != stmt->BindInt64(1, baseClassId))
-        return ERROR;
-
-    while (stmt->Step() == BE_SQLITE_ROW)
-        {
-        if (GetECClass((ECClassId) stmt->GetValueInt64(0)) == nullptr)
-            return ERROR;
-        }
-
-    return SUCCESS;
-    }
 
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        06/2012

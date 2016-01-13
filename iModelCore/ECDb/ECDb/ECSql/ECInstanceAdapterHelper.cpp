@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/ECInstanceAdapterHelper.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -34,11 +34,17 @@ std::unique_ptr<ECValueBindingInfo> ECValueBindingInfoFactory::CreateBindingInfo
 
     if (ecProperty.GetIsPrimitive ())
         return PrimitiveECValueBindingInfo::Create (propIndex, ecsqlParameterIndex);
-    else
-        {
-        BeAssert (ecProperty.GetIsArray ());
+    else if(ecProperty.GetIsArray())
         return ArrayECValueBindingInfo::Create (ecProperty, propIndex, ecsqlParameterIndex);
+    else if (ecProperty.GetIsNavigation())
+        {
+        //WIP_NAVPROP Not implemented yet
+        BeAssert(false && "ECInstanceAdpaters don't support nav props yet.");
+        return nullptr;
         }
+
+    BeAssert(false && "Unhandled ECProperty type. Adjust the code for this new ECProperty type");
+    return nullptr;
     }
 
 //---------------------------------------------------------------------------------------
@@ -591,32 +597,32 @@ BentleyStatus ECInstanceAdapterHelper::BindECSqlSystemPropertyValue (IECSqlBinde
 // @bsimethod                                   Krischan.Eberle                   07/14
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-bool ECInstanceAdapterHelper::IsOrContainsCalculatedProperty (ECN::ECPropertyCR prop)
+bool ECInstanceAdapterHelper::IsOrContainsCalculatedProperty(ECN::ECPropertyCR prop)
     {
     ECClassCP structType = nullptr;
-    if (prop.GetIsPrimitive ())
+    if (prop.GetIsPrimitive())
         {
-        return prop.IsCalculated ();
+        return prop.IsCalculated();
         }
-    else if (prop.GetIsArray ())
+    else if (prop.GetIsArray())
         {
-        auto arrayProp = prop.GetAsArrayProperty ();
-        if (arrayProp->GetKind () == ARRAYKIND_Primitive)
-            return arrayProp->IsCalculated ();
+        auto arrayProp = prop.GetAsArrayProperty();
+        if (arrayProp->GetKind() == ARRAYKIND_Primitive)
+            return arrayProp->IsCalculated();
 
         auto structArrayProp = prop.GetAsStructArrayProperty();
         if (nullptr == structArrayProp)
             return false;
-        structType = structArrayProp->GetStructElementType ();
+        structType = structArrayProp->GetStructElementType();
         }
-    else
-        structType = &prop.GetAsStructProperty ()->GetType ();
+    else if (prop.GetIsStruct())
+        structType = &prop.GetAsStructProperty()->GetType();
 
     if (structType != nullptr)
         {
-        for (auto structMemberProp : structType->GetProperties (true))
+        for (auto structMemberProp : structType->GetProperties(true))
             {
-            if (IsOrContainsCalculatedProperty (*structMemberProp))
+            if (IsOrContainsCalculatedProperty(*structMemberProp))
                 return true;
             }
         }

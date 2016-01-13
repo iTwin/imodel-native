@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/docs/source/ECSQL.overviewPage $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -149,10 +149,10 @@
     -----|-----------
     <c>SELECT h.AssetID FROM stco.Hardware h<br>JOIN stco.Employee e USING stco.HardwareUsedByEmployee<br>WHERE e.FirstName = 'John' AND e.Lastname = 'Smith'</c>|Determines all hardware items that employee John Smith uses
     <c>SELECT manager.FirstName FROM stco.Employee manager<br>JOIN stco.Employee report USING stco.ManagerReports <b>FORWARD</b><br>WHERE report.FirstName = ? AND report.LastName = ?</c>|Determines the manager for a given employee
-    <c>SELECT report.FirstName FROM stco.Employee report<br>JOIN stco.Employee manager USING stco.ManagerReports <b>REVERSE</b><br>WHERE manager.FirstName = ? AND manager.LastName = ?</c>|Determines all direct reports for a given manager
+    <c>SELECT report.FirstName FROM stco.Employee report<br>JOIN stco.Employee manager USING stco.ManagerReports <b>BACKWARD</b><br>WHERE manager.FirstName = ? AND manager.LastName = ?</c>|Determines all direct reports for a given manager
     <c>DELETE FROM myschema.Document WHERE ECInstanceId IN (SELECT ECInstanceId FROM myschema.Document JOIN myschema.Folder USING myschema.FolderHasDocuments WHERE folder.ECInstanceId = 42)</c>|Delete all documents in the folder with ECInstanceId 42
 
-    @note The examples show how to use the ECSQL keywords @c @b FORWARD and @c @b REVERSE for cases where it is ambiguous
+    @note The examples show how to use the ECSQL keywords @c @b FORWARD and @c @b BACKWARD for cases where it is ambiguous
     whether the FROM or JOIN class is the source or target end of an @ref BentleyApi::ECN::ECRelationshipClass "ECRelationshipClass". 
     In that example the manager is the source and the report the target constraint of the relationship @c ManagerReports
     (see <a href="files/ecdb/StartupCompany.01.00.ecschema.xml" target="_blank">StartupCompany.01.00.ecschema.xml</a>).

@@ -4,8 +4,6 @@
 
     <ECEntityClass typeName="DgnModel">
         <ECProperty propertyName="Name" typeName="string"/>
-        <ECNavigationProperty propertyName="Elements" relationshipName="ParentHasChildren" direction="Forward"/>
-        <ECNavigationProperty propertyName="ElementsViaLinkTable" relationshipName="ParentHasChildrenLinkTable" direction="Forward"/>
     </ECEntityClass>
 
     <ECEntityClass typeName="DgnElement">

@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/JoinExp.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -254,7 +254,7 @@ BentleyStatus RelationshipJoinExp::ResolveRelationshipEnds (ECSqlParseContext& c
         //Rule: In self-join direction must be provided
         if (GetDirection() == JoinDirection::Implied)
             {
-            ctx.GetIssueReporter().Report(ECDbIssueSeverity::Error, "FORWARD or REVERSE must be specified for joins where source and target cannot be identified unambiguously, e.g. joins between the same class.");
+            ctx.GetIssueReporter().Report(ECDbIssueSeverity::Error, "FORWARD or BACKWARD must be specified for joins where source and target cannot be identified unambiguously, e.g. joins between the same class.");
             return ERROR;
             }
         }

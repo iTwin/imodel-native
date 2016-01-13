@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ViewGenerator.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -213,6 +213,10 @@ BentleyStatus ViewGenerator::GetPropertyMapsOfDerivedClassCastAsBaseClass(std::v
             baseClassPropertyMap->GetAsPropertyMapStructArray())
             continue;
 
+        NavigationPropertyMap const* navPropMap = baseClassPropertyMap->GetAsNavigationPropertyMap();
+        if (navPropMap != nullptr && !navPropMap->IsSupportedInECSql())
+            continue;
+
         PropertyMap const* childClassCounterpartPropMap = childMap.GetPropertyMap(baseClassPropertyMap->GetPropertyAccessString());
         if (childClassCounterpartPropMap == nullptr)
             return ERROR;
@@ -243,7 +247,6 @@ BentleyStatus ViewGenerator::AppendViewPropMapsToQuery(NativeSqlBuilder& viewQue
             continue;
 
         auto aliasSqlSnippets = basePropMap->ToNativeSql(nullptr, ECSqlType::Select, false);
-        //bool isInstanceId = actualPropMap->GetFirstColumn()->GetKind() == ColumnKind::ECInstanceId;
         auto colSqlSnippets = actualPropMap->ToNativeSql(actualPropMap->GetTable()->GetName().c_str(), ECSqlType::Select, false);
         auto colSqlSnippetsWithoutTableNames = actualPropMap->ToNativeSql(nullptr, ECSqlType::Select, false);
 
@@ -783,14 +786,16 @@ BentleyStatus ViewGenerator::AppendConstraintClassIdPropMap(NativeSqlBuilder& vi
     {
     if (propMap.IsVirtual())
         {
-        bset<IClassMap const*> classMaps;
-        ecdbMap.GetClassMapsFromRelationshipEnd(classMaps, constraint, true);
+        bool hasAnyClass = false;
+        std::set<ClassMap const*> classMaps = ecdbMap.GetClassMapsFromRelationshipEnd(constraint,&hasAnyClass);
+        BeAssert(!hasAnyClass);
         if (classMaps.size() != 1)
             {
             BeAssert(false && "Expecting exactly one ClassMap at end");
             return BentleyStatus::ERROR;
             }
-        IClassMap const* classMap = *classMaps.begin();
+
+        ClassMap const* classMap = *classMaps.begin();
         BeAssert(classMap != nullptr);
         const ECClassId endClassId = classMap->GetClass().GetId();
 

@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/ECSqlBinderFactory.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -47,20 +47,20 @@ bool enforceConstraints
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      08/2013
 //---------------------------------------------------------------------------------------
-unique_ptr<ECSqlBinder> ECSqlBinderFactory::CreateBinder 
+unique_ptr<ECSqlBinder> ECSqlBinderFactory::CreateBinder
 (
-ECSqlStatementBase& ecsqlStatement, 
-ECSqlTypeInfo const& typeInfo
-)
+    ECSqlStatementBase& ecsqlStatement,
+    ECSqlTypeInfo const& typeInfo
+    )
     {
-    auto typeKind = typeInfo.GetKind ();
-    BeAssert (typeKind != ECSqlTypeInfo::Kind::Unset);
+    auto typeKind = typeInfo.GetKind();
+    BeAssert(typeKind != ECSqlTypeInfo::Kind::Unset);
 
     switch (typeKind)
         {
-        case ECSqlTypeInfo::Kind::Primitive:
+            case ECSqlTypeInfo::Kind::Primitive:
             {
-            switch (typeInfo.GetPrimitiveType ())
+            switch (typeInfo.GetPrimitiveType())
                 {
                     case ECN::PRIMITIVETYPE_Binary:
                     case ECN::PRIMITIVETYPE_Boolean:
@@ -70,34 +70,34 @@ ECSqlTypeInfo const& typeInfo
                     case ECN::PRIMITIVETYPE_Integer:
                     case ECN::PRIMITIVETYPE_Long:
                     case ECN::PRIMITIVETYPE_String:
-                        return unique_ptr<ECSqlBinder> (new PrimitiveToSingleColumnECSqlBinder (ecsqlStatement, typeInfo));
+                        return unique_ptr<ECSqlBinder>(new PrimitiveToSingleColumnECSqlBinder(ecsqlStatement, typeInfo));
 
                     case ECN::PRIMITIVETYPE_Point2D:
-                        return unique_ptr<ECSqlBinder> (new PointToColumnsECSqlBinder (ecsqlStatement, typeInfo, false));
+                        return unique_ptr<ECSqlBinder>(new PointToColumnsECSqlBinder(ecsqlStatement, typeInfo, false));
 
                     case ECN::PRIMITIVETYPE_Point3D:
-                        return unique_ptr<ECSqlBinder> (new PointToColumnsECSqlBinder (ecsqlStatement, typeInfo, true));
+                        return unique_ptr<ECSqlBinder>(new PointToColumnsECSqlBinder(ecsqlStatement, typeInfo, true));
 
                     default:
-                        BeAssert (false && "Could not create parameter mapping for the given parameter exp.");
+                        BeAssert(false && "Could not create parameter mapping for the given parameter exp.");
                         return nullptr;
                 }
             break;
             }
-        //the rare case of expressions like this: NULL IS ?
-        case ECSqlTypeInfo::Kind::Null:
-            return unique_ptr<ECSqlBinder> (new PrimitiveToSingleColumnECSqlBinder (ecsqlStatement, typeInfo));
+            //the rare case of expressions like this: NULL IS ?
+            case ECSqlTypeInfo::Kind::Null:
+                return unique_ptr<ECSqlBinder>(new PrimitiveToSingleColumnECSqlBinder(ecsqlStatement, typeInfo));
 
-        case ECSqlTypeInfo::Kind::Struct:
-            return unique_ptr<ECSqlBinder> (new StructToColumnsECSqlBinder (ecsqlStatement, typeInfo));
-        case ECSqlTypeInfo::Kind::PrimitiveArray:
-            return unique_ptr<ECSqlBinder> (new PrimitiveArrayToColumnECSqlBinder (ecsqlStatement, typeInfo));
-        case ECSqlTypeInfo::Kind::StructArray:
-            return unique_ptr<ECSqlBinder> (new StructArrayToSecondaryTableECSqlBinder (ecsqlStatement, typeInfo));
+            case ECSqlTypeInfo::Kind::Struct:
+                return unique_ptr<ECSqlBinder>(new StructToColumnsECSqlBinder(ecsqlStatement, typeInfo));
+            case ECSqlTypeInfo::Kind::PrimitiveArray:
+                return unique_ptr<ECSqlBinder>(new PrimitiveArrayToColumnECSqlBinder(ecsqlStatement, typeInfo));
+            case ECSqlTypeInfo::Kind::StructArray:
+                return unique_ptr<ECSqlBinder>(new StructArrayToSecondaryTableECSqlBinder(ecsqlStatement, typeInfo));
 
-        default:
-            BeAssert (false && "ECSqlBinderFactory::CreateBinder> Unhandled ECSqlTypeInfo::Kind value.");
-            return nullptr;
+            default:
+                BeAssert(false && "ECSqlBinderFactory::CreateBinder> Unhandled ECSqlTypeInfo::Kind value.");
+                return nullptr;
         }
     }
 

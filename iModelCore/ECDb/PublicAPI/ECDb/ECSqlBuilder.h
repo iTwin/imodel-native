@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/ECDb/ECSqlBuilder.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -18,7 +18,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //! the joined class refers to.
 //! The metaphor of a direction is used to express this. The forward direction means that 
 //! the JOIN expression in the ECSQL statement goes from the ECRelationship's source constraint
-//! to the target constraint, whereas the reverse direction goes from target to source constraint.
+//! to the target constraint, whereas the backward direction goes from target to source constraint.
 //! 
 //! @remarks In most cases the direction can be implied from the ECSQL 
 //! statement directly. But there are case where this is ambiguous, e.g. for joins between 
@@ -31,7 +31,7 @@ enum class JoinDirection
     {
     Implied = 0, //!< The direction can be implied from the ECSQL statement.
     Forward = 1, //!< JOIN expression goes from source to target constraint of the ECN::ECRelationshipClass.
-    Reverse = 2 //!< JOIN expression goes from target to source constraint of the ECN::ECRelationshipClass.
+    Backward = 2 //!< JOIN expression goes from target to source constraint of the ECN::ECRelationshipClass.
     };
 
 //**************** ClassClause **************************************************

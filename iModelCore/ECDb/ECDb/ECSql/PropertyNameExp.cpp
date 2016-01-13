@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/PropertyNameExp.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -66,7 +66,6 @@ Exp::FinalizeParseStatus PropertyNameExp::_FinalizeParsing(ECSqlParseContext& ct
     if (!IsPropertyRef() && !m_propertyPath.IsResolved ())
         {
         BeAssert (false && "PropertyNameExp property path is expected to be resolved at end of parsing.");
-        ctx.GetIssueReporter().Report(ECDbIssueSeverity::Error, "PropertyNameExp property path is expected to be resolved at end of parsing.");
         return FinalizeParseStatus::Error;
         }
 
@@ -74,13 +73,9 @@ Exp::FinalizeParseStatus PropertyNameExp::_FinalizeParsing(ECSqlParseContext& ct
         {
         auto& derivedProperty = GetPropertyRefP ()->LinkedTo();
         if (derivedProperty.GetNestedAlias().empty())
-            {            
             const_cast<DerivedPropertyExp&>(derivedProperty).SetNestedAlias (ctx.GenerateAlias ().c_str ());
-            }
-
       
-        auto stat = const_cast<DerivedPropertyExp&>(derivedProperty).FinalizeParsing (ctx);
-        if (stat != SUCCESS)
+        if (SUCCESS != const_cast<DerivedPropertyExp&>(derivedProperty).FinalizeParsing (ctx))
             return FinalizeParseStatus::Error;
 
         SetTypeInfo (derivedProperty.GetExpression()->GetTypeInfo ());

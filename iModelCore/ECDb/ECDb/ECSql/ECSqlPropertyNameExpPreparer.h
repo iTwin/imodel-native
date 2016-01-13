@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/ECSqlPropertyNameExpPreparer.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -26,9 +26,10 @@ private:
     //! Checks whether the property name exp needs to be translated to native SQL or not.
     //! E.g. if the property name exp refers to a property which is mapped to a virtual column
     //! the exp can be ignored under certain cirumstances.
-    static bool NeedsPreparation (ECSqlPrepareContext::ExpScope const& currentScope, PropertyMapCR propertyMap);
+    static bool NeedsPreparation (ECSqlPrepareContext::ExpScope const&, PropertyMapCR);
 
-    static ECSqlStatus PrepareInSubqueryRef (NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, PropertyNameExp const& exp);
+    static ECSqlStatus PrepareInSubqueryRef (NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext&, PropertyNameExp const&);
+    static ECSqlStatus ValidateNavigationPropertyExp(NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext&, PropertyNameExp const&, NavigationPropertyMap const&, ECSqlPrepareContext::ExpScope const&);
 
 public:
     //! Prepares the given property name expression.
@@ -38,7 +39,7 @@ public:
     //! @param[in, out] ctx Prepare context
     //! @param[in] exp Property name expression to convert
     //! @return ECSqlStatus::Success in case of success. Error code otherwise
-    static ECSqlStatus Prepare (NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, PropertyNameExp const* exp);
+    static ECSqlStatus Prepare (NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext&, PropertyNameExp const*);
     };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

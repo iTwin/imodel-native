@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/ECInstanceUpdater.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -271,6 +271,12 @@ void ClassUpdaterImpl::Initialize(bvector<uint32_t>& propertiesToBind)
 
         if (ecProperty->GetIsStruct())
             continue;
+
+        if (ecProperty->GetIsNavigation())
+            {
+            //WIP_NAVPROP Not implemented yet
+            continue;
+            }
 
 
         if (!m_needsCalculatedPropertyEvaluation)

@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/Exp.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -452,7 +452,7 @@ BentleyStatus PropertyPath::Resolve(IClassMap const& classMap, Utf8String* error
 
         element.SetProperty(*property);
 
-        if (property->GetIsPrimitive())
+        if (property->GetIsPrimitive() || property->GetIsNavigation())
             {
             if (!isLeafEntry || element.HasArrayIndex())
                 {

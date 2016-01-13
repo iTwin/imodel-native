@@ -340,8 +340,6 @@ $(o)SystemPropertyECSqlBinder$(oext):                       $(baseDir)ECSql/Syst
 
 $(o)ECSqlParseTreeFormatter$(oext):                         $(baseDir)ECSql/ECSqlParseTreeFormatter.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
-#Fields
-
 $(o)ECSqlField$(oext):                                      $(baseDir)ECSql/ECSqlField.cpp              $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)ECSqlFieldFactory$(oext):                               $(baseDir)ECSql/ECSqlFieldFactory.cpp      $(ECDbAllHeaders) ${MultiCompileDepends}

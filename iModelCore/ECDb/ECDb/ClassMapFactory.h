@@ -24,7 +24,7 @@ private:
     ~ClassMapFactory ();
 
 public:
-    static ClassMapPtr Load (MapStatus&, ECN::ECClassCR, ECDbMapCR);
+    static ClassMapPtr Load (MapStatus&, ClassMapLoadContext& ctx, ECN::ECClassCR, ECDbMapCR);
     static ClassMapPtr Create (MapStatus&, SchemaImportContext&, ECN::ECClassCR, ECDbMapCR );
     };
 

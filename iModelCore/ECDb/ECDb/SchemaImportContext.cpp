@@ -329,7 +329,7 @@ BentleyStatus SchemaImportECDbMapDb::GenerateIndexWhereClause(NativeSqlBuilder& 
         return ERROR;
         }
 
-    ClassMapCP classMap = ecdb.GetECDbImplR().GetECDbMap().GetClassMapCP(*ecclass);
+    ClassMapCP classMap = ecdb.GetECDbImplR().GetECDbMap().GetClassMap(*ecclass);
     if (classMap == nullptr)
         {
         BeAssert(false);

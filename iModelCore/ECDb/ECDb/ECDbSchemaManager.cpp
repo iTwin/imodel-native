@@ -357,11 +357,7 @@ ECSchemaCP ECDbSchemaManager::GetECSchema (Utf8CP schemaName, bool ensureAllClas
     if (0 == schemaId)
         return nullptr;
 
-    ECSchemaP schema = nullptr;
-    if (m_ecReader->GetECSchema(schema, schemaId, ensureAllClassesLoaded) == SUCCESS)
-        return schema;
-    else
-        return nullptr;
+    return GetECSchema(schemaId, ensureAllClassesLoaded);
     }
 
 /*---------------------------------------------------------------------------------------
@@ -369,11 +365,7 @@ ECSchemaCP ECDbSchemaManager::GetECSchema (Utf8CP schemaName, bool ensureAllClas
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECSchemaCP ECDbSchemaManager::GetECSchema (ECSchemaId schemaId, bool ensureAllClassesLoaded) const
     {
-    ECSchemaP schema = nullptr;
-    if (m_ecReader->GetECSchema(schema, schemaId, ensureAllClassesLoaded) == SUCCESS)
-        return schema;
-    else
-        return nullptr;
+    return m_ecReader->GetECSchema(schemaId, ensureAllClassesLoaded);
     }
 
 /*---------------------------------------------------------------------------------------
@@ -480,14 +472,15 @@ ECSchemaPtr ECDbSchemaManager::_LocateSchema (SchemaKeyR key, SchemaMatchType ma
     if (0 == schemaId)
         return nullptr;
 
-    ECSchemaP schema = nullptr;
-    if (m_ecReader->GetECSchema(schema, schemaId, true) != SUCCESS)
+    ECSchemaCP schema = m_ecReader->GetECSchema(schemaId, true);
+    if (schema == nullptr)
         return nullptr;
 
     if (schema->GetSchemaKey ().Matches (key, matchType))
         {
-        schemaContext.GetCache ().AddSchema (*schema);
-        return schema;
+        ECSchemaP schemaP = const_cast<ECSchemaP> (schema);
+        schemaContext.GetCache ().AddSchema (*schemaP);
+        return schemaP;
         }
 
     return nullptr;

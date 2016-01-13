@@ -17,18 +17,12 @@ enum class DataIntegrityEnforcementMethod
     ForeignKey,
     Trigger
     };
-/*=================================================================================**//**
-* @bsiclass                                                 Ramanujam.Raman      06/2012
-+===============+===============+===============+===============+===============+======*/
-struct RelationshipClassMap : ClassMap
-{
 
-protected:
-    //=======================================================================================
-    // @bsiclass                                                 Krischan.Eberle      07/2014
-    //+===============+===============+===============+===============+===============+======
-    struct ConstraintMap : NonCopyableClass
-        {
+//=======================================================================================
+// @bsiclass                                                 Krischan.Eberle      07/2014
+//+===============+===============+===============+===============+===============+======
+struct RelationshipConstraintMap : NonCopyableClass
+    {
     private:
         ECDbSchemaManager const& m_schemaManager;
         ECN::ECRelationshipConstraintCR m_constraint;
@@ -38,41 +32,44 @@ protected:
         mutable bool m_isCacheSetup;
         mutable std::set<ECN::ECClassId> m_ecClassIdCache;
 
-        void CacheClassIds () const;
-        void CacheClassIds (ECN::ECConstraintClassesList const& constraintClassList, bool constraintIsPolymorphic) const;
+        void CacheClassIds() const;
+        void CacheClassIds(ECN::ECConstraintClassesList const& constraintClassList, bool constraintIsPolymorphic) const;
 
-        void CacheClassId (ECN::ECClassId classId) const;
-        void SetAnyClassMatches () const;
+        void CacheClassId(ECN::ECClassId classId) const;
+        void SetAnyClassMatches() const;
 
     public:
-        ConstraintMap (ECDbSchemaManager const& schemaManager, ECN::ECRelationshipConstraintCR constraint)
-            : m_schemaManager (schemaManager), m_constraint (constraint), m_ecInstanceIdPropMap (nullptr), m_ecClassIdPropMap (nullptr), m_anyClassMatches (false), m_isCacheSetup (false)
+        RelationshipConstraintMap(ECDbSchemaManager const& schemaManager, ECN::ECRelationshipConstraintCR constraint)
+            : m_schemaManager(schemaManager), m_constraint(constraint), m_ecInstanceIdPropMap(nullptr), m_ecClassIdPropMap(nullptr), m_anyClassMatches(false), m_isCacheSetup(false)
             {}
 
-        PropertyMapCP GetECInstanceIdPropMap () const { return m_ecInstanceIdPropMap; }
-        void SetECInstanceIdPropMap (PropertyMapCP ecinstanceIdPropMap) { m_ecInstanceIdPropMap = ecinstanceIdPropMap; }
-        PropertyMapCP GetECClassIdPropMap () const { return m_ecClassIdPropMap; }
-        void SetECClassIdPropMap (PropertyMapCP ecClassIdPropMap) { m_ecClassIdPropMap = ecClassIdPropMap; }
+        PropertyMapCP GetECInstanceIdPropMap() const { return m_ecInstanceIdPropMap; }
+        void SetECInstanceIdPropMap(PropertyMapCP ecinstanceIdPropMap) { m_ecInstanceIdPropMap = ecinstanceIdPropMap; }
+        PropertyMapCP GetECClassIdPropMap() const { return m_ecClassIdPropMap; }
+        void SetECClassIdPropMap(PropertyMapCP ecClassIdPropMap) { m_ecClassIdPropMap = ecClassIdPropMap; }
 
-        bool ClassIdMatchesConstraint (ECN::ECClassId candidateClassId) const;
-        bool TryGetSingleClassIdFromConstraint (ECN::ECClassId& classId) const;
+        bool ClassIdMatchesConstraint(ECN::ECClassId candidateClassId) const;
+        bool TryGetSingleClassIdFromConstraint(ECN::ECClassId& classId) const;
         ECN::ECRelationshipConstraintCR GetRelationshipConstraint()const;
-        bool IsSingleAbstractClass() const
-            {
-            return m_constraint.GetClasses().size() == 1 && m_constraint.GetClasses().front()->GetClassModifier() == ECN::ECClassModifier::Abstract;
-            }
-        };
+        bool IsSingleAbstractClass() const { return m_constraint.GetClasses().size() == 1 && m_constraint.GetClasses().front()->GetClassModifier() == ECN::ECClassModifier::Abstract; }
+    };
 
+/*=================================================================================**//**
+* @bsiclass                                                 Ramanujam.Raman      06/2012
++===============+===============+===============+===============+===============+======*/
+struct RelationshipClassMap : ClassMap
+{
+protected:
     static Utf8CP const DEFAULT_SOURCEECINSTANCEID_COLUMNNAME;
     static Utf8CP const DEFAULT_SOURCEECCLASSID_COLUMNNAME;
     static Utf8CP const DEFAULT_TARGETECINSTANCEID_COLUMNNAME;
     static Utf8CP const DEFAULT_TARGETECCLASSID_COLUMNNAME;
 
-    ConstraintMap m_sourceConstraintMap;
-    ConstraintMap m_targetConstraintMap;
+    RelationshipConstraintMap m_sourceConstraintMap;
+    RelationshipConstraintMap m_targetConstraintMap;
 
     RelationshipClassMap (ECN::ECRelationshipClassCR ecRelClass, ECDbMapCR ecDbMap, ECDbMapStrategy mapStrategy, bool setIsDirty);
-    ECDbSqlColumn* CreateConstraintColumn (SchemaImportContext*, Utf8CP columnName, ColumnKind columnId, bool addToTable = false );
+    ECDbSqlColumn* CreateConstraintColumn (Utf8CP columnName, ColumnKind columnId, bool addToTable = false );
     std::unique_ptr<ClassDbView> CreateClassDbView ();
 
     void DetermineConstraintClassIdColumnHandling (bool& addConstraintClassIdColumnNeeded, ECN::ECClassId& defaultConstraintClassId, ECN::ECRelationshipConstraintCR constraint) const;
@@ -84,7 +81,7 @@ public:
 
     ECN::ECRelationshipClassCR GetRelationshipClass () const { return *(GetClass ().GetRelationshipClassCP ()); }
 
-    ConstraintMap const& GetConstraintMap (ECN::ECRelationshipEnd constraintEnd) const;
+    RelationshipConstraintMap const& GetConstraintMap (ECN::ECRelationshipEnd constraintEnd) const;
 
     PropertyMapCP GetConstraintECInstanceIdPropMap (ECN::ECRelationshipEnd constraintEnd) const;
     PropertyMapCP GetConstraintECClassIdPropMap (ECN::ECRelationshipEnd constraintEnd) const;
@@ -125,12 +122,12 @@ private:
     //! than one class or more than one key properties.
     BentleyStatus TryGetKeyPropertyColumn(std::set<ECDbSqlColumn const*>& keyPropertyColumns, ECN::ECRelationshipConstraintCR, ECN::ECRelationshipClassCR, ECN::ECRelationshipEnd constraintEnd) const;
 
-    MapStatus CreateConstraintColumns(ECDbSqlColumn*& foreignKeyIdColumn, SchemaImportContext*, RelationshipMapInfo const&, ECN::ECRelationshipEnd constraintEnd, ECN::ECRelationshipConstraintCR);
-    MapStatus CreateConstraintPropMaps (SchemaImportContext*, ECN::ECRelationshipEnd thisEnd, ECN::ECClassId defaultThisEndClassId, ECDbSqlColumn* const& otherEndECInstanceIdColumn, ECDbSqlColumn* const& otherEndECClassIdColumn, ECN::ECClassId defaultOtherEndClassId);
-    ECDbSqlColumn* ConfigureForeignECClassIdKey(SchemaImportContext*, RelationshipMapInfo const&, ECN::ECRelationshipConstraintCR otherEndConstraint, ECDbSqlTable const& otheEndTable, size_t otherEndTableCount);
+    MapStatus CreateConstraintColumns(ECDbSqlColumn*& foreignKeyIdColumn, RelationshipMapInfo const&, ECN::ECRelationshipEnd constraintEnd, ECN::ECRelationshipConstraintCR);
+    MapStatus CreateConstraintPropMaps (ECN::ECRelationshipEnd thisEnd, ECN::ECClassId defaultThisEndClassId, ECDbSqlColumn* const& otherEndECInstanceIdColumn, ECDbSqlColumn* const& otherEndECClassIdColumn, ECN::ECClassId defaultOtherEndClassId);
+    ECDbSqlColumn* ConfigureForeignECClassIdKey(RelationshipMapInfo const&, ECN::ECRelationshipConstraintCR otherEndConstraint, ECDbSqlTable const& otheEndTable, size_t otherEndTableCount);
     ECN::ECRelationshipEnd GetOtherEnd () const;
 
-    virtual BentleyStatus _Load (std::set<ClassMap const*>& loadGraph, ECDbClassMapInfo const& mapInfo, IClassMap const* parentClassMap) override;
+    virtual BentleyStatus _Load (std::set<ClassMap const*>& loadGraph, ClassMapLoadContext&, ECDbClassMapInfo const&, IClassMap const* parentClassMap) override;
 
 public:
     ~RelationshipClassEndTableMap () {}
@@ -168,15 +165,15 @@ private:
     virtual MapStatus   _MapPart1 (SchemaImportContext&, ClassMapInfo const& classMapInfo, IClassMap const* parentClassMap) override;
     virtual MapStatus   _MapPart2 (SchemaImportContext&, ClassMapInfo const& classMapInfo, IClassMap const* parentClassMap) override;
 
-    MapStatus           CreateConstraintPropMaps (SchemaImportContext*, RelationshipMapInfo const&, bool addSourceECClassIdColumnToTable, ECN::ECClassId defaultSourceECClassid, bool addTargetECClassIdColumnToTable, ECN::ECClassId defaultTargetECClassId);
+    MapStatus           CreateConstraintPropMaps (RelationshipMapInfo const&, bool addSourceECClassIdColumnToTable, ECN::ECClassId defaultSourceECClassid, bool addTargetECClassIdColumnToTable, ECN::ECClassId defaultTargetECClassId);
 
     void                AddIndices (SchemaImportContext&, ClassMapInfo const&);
     void                AddIndex(SchemaImportContext&, RelationshipIndexSpec, bool addUniqueIndex);
     static void         GenerateIndexColumnList(std::vector<ECDbSqlColumn const*>&, ECDbSqlColumn const* col1, ECDbSqlColumn const* col2, ECDbSqlColumn const* col3, ECDbSqlColumn const* col4);
 
     bool                GetConstraintECInstanceIdColumnName (Utf8StringR columnName, ECN::ECRelationshipEnd relationshipEnd, ECDbSqlTable const& table) const;
-    virtual BentleyStatus _Load (std::set<ClassMap const*>& loadGraph, ECDbClassMapInfo const&, IClassMap const* parentClassMap) override;
-    ECDbSqlColumn*      ConfigureForeignECClassIdKey(SchemaImportContext*, RelationshipMapInfo const&, ECN::ECRelationshipEnd relationshipEnd);
+    virtual BentleyStatus _Load (std::set<ClassMap const*>& loadGraph, ClassMapLoadContext&, ECDbClassMapInfo const&, IClassMap const* parentClassMap) override;
+    ECDbSqlColumn*      ConfigureForeignECClassIdKey(RelationshipMapInfo const&, ECN::ECRelationshipEnd relationshipEnd);
 
     static bool HasKeyProperties(ECN::ECRelationshipConstraint const&);
 public:
