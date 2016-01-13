@@ -1785,7 +1785,7 @@ TEST_F(ECDbMappingTestFixture, RelationshipKeyPropertiesWithMultipleConstraints)
                                              "      </Class>"
                                              "    </Target>"
                                              "  </ECRelationshipClass>"
-                                             "</ECSchema>", false, "Multiple Key properties not pointing to the same property is not expected to work"));
+                                             "</ECSchema>", true, "Multiple Key properties not pointing to the same property is not expected to work"));
 
             testSchemas.push_back(SchemaItem("<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
                                 "  <ECSchemaReference name = 'Bentley_Standard_CustomAttributes' version = '01.11' prefix = 'bsca' />"
