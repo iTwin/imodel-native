@@ -233,6 +233,7 @@ struct QueryModel : SpatialModel
     public:
         Processor(Params const& params) : m_params(params) {}
         bool Query(StopWatch&);
+        uint32_t GetDelayAfter() {return m_params.m_plan.GetDelayAfter();}
         QueryModelR GetModel() const {return m_params.m_model;}
         bool IsForModel(QueryModelCR model) const {return &m_params.m_model == &model;}
     };
@@ -241,7 +242,7 @@ struct QueryModel : SpatialModel
 
     //! Each DgnDb has an associated QueryModel::Queue upon which requests for processing QueryModels can be enqueued.
     //! The requests execute on a separate thread.
-    struct Queue : IConditionVariablePredicate
+    struct Queue
     {
     private:
         enum class State { Active, TerminateRequested, Terminated };
@@ -256,37 +257,26 @@ struct QueryModel : SpatialModel
         void Process();
         THREAD_MAIN_DECL Main(void* arg);
 
-        virtual bool _TestCondition(BeConditionVariable&) override;
     public:
         Queue(DgnDbR db);
 
         void Terminate();
 
         //! Enqueue a request to execute the query for a QueryModel
-        DGNPLATFORM_EXPORT void RequestProcessing(Processor::Params const& params);
+        DGNPLATFORM_EXPORT void Add(Processor::Params const& params);
 
-        //! Cancel any active or pending requests to process the specified model.
-        //! @param[in]      model             The model whose processing is to be canceled
-        //! @param[in]      waitUntilFinished If true, this function does not return until the model is in the idle state
-        DGNPLATFORM_EXPORT void RequestAbort(QueryModelR model, bool waitUntilFinished);
+        //! Cancel any pending requests to process the specified model.
+        //! @param[in] model The model whose processing is to be canceled
+        DGNPLATFORM_EXPORT void RemovePending(QueryModelR model);
 
         //! Suspends the calling thread until the specified model is in the idle state
-        DGNPLATFORM_EXPORT void WaitUntilFinished(QueryModelR model, CheckStop* checkStop);
+        DGNPLATFORM_EXPORT void WaitForIdle();
 
-        bool IsIdle() const {return m_pending.empty() && !m_active.IsValid();}
-    };
-
-    //! The possible states of a QueryModel
-    enum class State
-    {
-        Idle,           //!< No processing
-        Pending,        //!< Has been enqueued for processing
-        Processing,     //!< Is currently processing
-        AbortRequested, //!< A request to cancel processing has been made
+        DGNPLATFORM_EXPORT bool IsIdle() const;
     };
 
 private:
-    State       m_state;
+    bool        m_abortQuery;
     ResultsPtr  m_updatedResults;
     ResultsPtr  m_currQueryResults;
 
@@ -295,8 +285,8 @@ private:
     virtual void _FillModel() override {} // QueryModels are never filled.
 
 public:
-    State GetState() const { return m_state; } //!< @private
-    void SetState(State newState); //!< @private
+    bool AbortRequested() const { return m_abortQuery; } //!< @private
+    void SetAbortQuery(bool val) {m_abortQuery=val;} //!< @private
     void SetUpdatedResults(Results* results); //!< @private
     Results* GetCurrentResults() {return m_currQueryResults.get();} //!< @private
     void SaveQueryResults(); //!< @private
@@ -307,8 +297,6 @@ public:
     uint32_t GetElementCount() const; //!< @private
     double GetLastQueryElapsedSeconds() const; //!< @private
     bool HasSelectResults() const { return m_updatedResults.IsValid(); } //!< @private
-    bool IsIdle() const { return State::Idle == GetState(); } //!< @private
-    bool IsActive() const { return !IsIdle(); } //!< @private
 
     //! Requests that any active or pending processing of the model be canceled, optionally not returning until the request is satisfied
     void RequestAbort(bool waitUntilFinished);
