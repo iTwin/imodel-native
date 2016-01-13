@@ -608,6 +608,24 @@ TEST_F(ECDbAdapterTests, RelateInstances_RelationshipAlreadyExists_ReturnsSameRe
     EXPECT_EQ(relationshipKey2, relationshipKey1);
     }
 
+TEST_F(ECDbAdapterTests, CountClassInstances_ValidAndInvalidECClasses_Counts)
+    {
+    auto db = CreateTestDb(GetTestRelSchema());
+    ECDbAdapter adapter(*db);
+
+    auto ecClass = adapter.GetECClass("TestSchema.TestClass");
+    auto relClass = adapter.GetECRelationshipClass("TestSchema.ReferencingRel");
+
+    ECInstanceKey a, b, c;
+    INSERT_INSTANCE(*db, ecClass, a);
+    INSERT_INSTANCE(*db, ecClass, b);
+    INSERT_RELATIONSHIP(*db, relClass, a, b, c);
+
+    EXPECT_EQ(0, adapter.CountClassInstances(nullptr));
+    EXPECT_EQ(2, adapter.CountClassInstances(ecClass));
+    EXPECT_EQ(1, adapter.CountClassInstances(relClass));
+    }
+
 TEST_F(ECDbAdapterTests, DeleteInstances_InvalidKey_Error)
     {
     auto db = CreateTestDb(StubSchema());
