@@ -7,6 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 #include <DgnDbServer/DgnDbServerCommon.h>
+#include <DgnDbServer/Client/DgnDbServerError.h>
 
 BEGIN_BENTLEY_DGNDBSERVER_NAMESPACE
 USING_NAMESPACE_BENTLEY_DGNPLATFORM

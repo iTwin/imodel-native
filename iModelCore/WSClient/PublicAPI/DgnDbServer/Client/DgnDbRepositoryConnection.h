@@ -8,6 +8,7 @@
 #pragma once
 //__PUBLISH_SECTION_START__
 #include <WebServices/Client/WSRepositoryClient.h>
+#include <DgnDbServer/Client/DgnDbServerError.h>
 #include <DgnDbServer/DgnDbServerCommon.h>
 #include <DgnDbServer/Client/RepositoryInfo.h>
 #include <DgnDbServer/Client/DgnDbServerRevision.h>
