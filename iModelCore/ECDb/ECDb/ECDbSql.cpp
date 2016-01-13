@@ -1174,7 +1174,22 @@ BentleyStatus DDLGenerator::AddColumns(ECDbR ecdb, ECDbSqlTable const& table, st
             return ERROR;
             }
 
-        alterDDL.append (GetColumnDDL (*column));
+        alterDDL.append(GetColumnDDL(*column));
+        for (ECDbSqlConstraint const* constraint : table.GetConstraints())
+            {
+            if (constraint->GetType() == ECDbSqlConstraint::Type::ForeignKey)
+                {
+                auto fk = static_cast<ECDbSqlForeignKeyConstraint const*> (constraint);
+                if (fk->ContainsInSource(newColumn) && fk->GetSourceColumns().size() == 1 && fk->GetTargetColumns().size() == 1)
+                    {
+                    Utf8String fkDefinition;
+                    fkDefinition.Sprintf(" REFERENCES %s (%s)", fk->GetTargetTable().GetName().c_str(), fk->GetTargetColumns().front()->GetName().c_str());
+                    alterDDL.append(fkDefinition);
+                    break;
+                    }
+                }
+            }
+  
         DbResult r = ecdb.ExecuteSql (alterDDL.c_str ());
         if (r != BE_SQLITE_OK)
             {
