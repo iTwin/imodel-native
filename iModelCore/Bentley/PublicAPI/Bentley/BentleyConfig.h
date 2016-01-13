@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/Bentley/BentleyConfig.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -30,6 +30,7 @@
     #else
         #define BENTLEYCONFIG_OS_APPLE_MACOS
         #define BENTLEYCONFIG_GRAPHICS_OPENGL
+        #define BENTLEYCONFIG_VIRTUAL_MEMORY   //  Assume the OS swapping is better than anything we would do
     #endif
 
     #define BENTLEYCONFIG_DISPLAY_APPLE
@@ -53,6 +54,8 @@
     //  and DgnView is known to support the mouse properly on the system.
     #define BENTLEYCONFIG_SUPPORTS_SYSTEM_MOUSE
 
+    #define BENTLEYCONFIG_VIRTUAL_MEMORY
+    
     #if defined (BENTLEY_WINRT)
         // BENTLEYCONFIG_OS_WINRT will only be set for WinRTx86 and WinRTx64 (Store/Metro apps)
         #define BENTLEYCONFIG_OS_WINRT
