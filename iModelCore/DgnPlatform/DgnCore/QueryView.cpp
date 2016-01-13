@@ -8,8 +8,8 @@
 #include <DgnPlatformInternal.h>
 #include <DgnPlatform/QueryView.h>
 
-#if !defined (BENTLEY_WIN32) && !defined (BENTLEY_WINRT)
-#include <Bentley/BeSystemInfo.h>
+#if !defined(BENTLEYCONFIG_VIRTUAL_MEMORY)
+    #include <Bentley/BeSystemInfo.h>
 #endif
 
 #include "UpdateLogging.h"
@@ -503,7 +503,7 @@ uint64_t QueryViewController::ComputeMaxElementMemory(DgnViewportCR vp)
 uint64_t QueryViewController::ComputeMaxElementMemory(DgnViewportCR vp)
     {
     uint64_t oneMeg = 1024 * 1024;
-#if defined (BENTLEY_WIN32) || defined (BENTLEY_WINRT)
+#if defined (BENTLEYCONFIG_VIRTUAL_MEMORY)
     uint64_t baseValue = 2000;
 #else
     uint64_t baseValue = BeSystemInfo::GetAmountOfPhysicalMemory() > (600 * oneMeg) ? 50 : 30;

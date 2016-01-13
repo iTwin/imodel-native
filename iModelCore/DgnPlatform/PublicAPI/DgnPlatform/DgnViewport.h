@@ -169,7 +169,7 @@ protected:
     DGNPLATFORM_EXPORT static void StartRenderThread();
     DMap4d CalcNpcToView();
     void QueueDrawFrame(Render::Plan::PaintScene);
-    void CalcTargetNumElements(UpdatePlan const& plan);
+    void CalcTargetNumElements(UpdatePlan const& plan, bool isForProgressive);
 
 public:
     DgnViewport(Render::TargetP target) : m_renderTarget(target) {}
@@ -227,7 +227,7 @@ public:
     bool GetNeedsHeal() {return m_needsHeal;}
     DGNVIEW_EXPORT void ForceHealImmediate(uint32_t timeout=500); // default 1/2 second
     DGNVIEW_EXPORT void SuspendForBackground();
-    DGNVIEW_EXPORT void ResumeFromBackground();
+    DGNVIEW_EXPORT void ResumeFromBackground(Render::Target* target);
 
     void SetUndoActive(bool val, int numsteps=20) {m_undoActive=val; m_maxUndoSteps=numsteps; CheckForChanges();}
     bool IsUndoActive() {return m_undoActive;}
