@@ -33,6 +33,7 @@ struct DgnScriptContext : BeJsContext
     void Initialize()
         {
         EvaluateScript(dgnScriptContext_GetBootstrappingSource(), "file:///DgnJsApi.js");
+        EvaluateScript(GetBabelPolyfillRuntimeJsSource(), "file://BabelPolyfillRuntime.js");
         
         m_egaRegistry = EvaluateScript("Bentley.Dgn.GetEgaRegistry()");
         m_modelSolverRegistry = EvaluateScript("Bentley.Dgn.GetModelSolverRegistry()");
