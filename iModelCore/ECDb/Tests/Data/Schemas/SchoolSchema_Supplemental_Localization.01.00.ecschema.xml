@@ -1,9 +1,9 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
-<ECSchema schemaName="SchoolSchema_Supplemental_Localization" nameSpacePrefix="SSS" version="1.0" displayLabel="School Supplemental" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
-    <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="01.00" prefix="bsca" />
-    <ECSchemaReference name="Unit_Attributes" version="01.00" prefix="units_attribs" />
+<?xml version="1.0" encoding="UTF-8"?>
+<ECSchema schemaName="SchoolSchema_Supplemental_Localization" nameSpacePrefix="SSS" version="01.00" displayLabel="School Supplemental" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.0">
+    <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="01.12" prefix="bsca"/>
+    <ECSchemaReference name="Unit_Attributes" version="01.00" prefix="units_attribs"/>
     <ECCustomAttributes>
-        <SupplementalSchemaMetaData xmlns="Bentley_Standard_CustomAttributes.01.00">
+        <SupplementalSchemaMetaData xmlns="Bentley_Standard_CustomAttributes.01.12">
             <PrimarySchemaName>SchoolSchema</PrimarySchemaName>
             <PrimarySchemaMajorVersion>1</PrimarySchemaMajorVersion>
             <PrimarySchemaMinorVersion>0</PrimarySchemaMinorVersion>
@@ -11,22 +11,21 @@
             <Purpose>Localization</Purpose>
             <IsUserSpecific>False</IsUserSpecific>
         </SupplementalSchemaMetaData>
-        <SchemaChangeTrackingState xmlns="Bentley_Standard_CustomAttributes.01.00">
-            <FinalizationHistory />
+        <SchemaChangeTrackingState xmlns="Bentley_Standard_CustomAttributes.01.12">
             <SchemaFullNameAtEditingStart>SchoolSchema_Supplemental_Localization.01.00</SchemaFullNameAtEditingStart>
         </SchemaChangeTrackingState>
     </ECCustomAttributes>
-    <ECClass typeName="Course" isDomainClass="True">
+    <ECEntityClass typeName="Course" modifier="None">
         <ECCustomAttributes>
-            <TreeColorCustomAttributes xmlns="Bentley_Standard_CustomAttributes.01.00">
+            <TreeColorCustomAttributes xmlns="Bentley_Standard_CustomAttributes.01.12">
                 <NodeBackColor>GrayText</NodeBackColor>
                 <NodeForeColor>Info</NodeForeColor>
             </TreeColorCustomAttributes>
-            <AllowDuplicateLocalizedValues xmlns="Bentley_Standard_CustomAttributes.01.00" />
+            <AllowDuplicateLocalizedValues xmlns="Bentley_Standard_CustomAttributes.01.12"/>
         </ECCustomAttributes>
-    </ECClass>
-    <ECClass typeName="Department" isDomainClass="True" />
-    <ECClass typeName="School" isDomainClass="True">
+    </ECEntityClass>
+    <ECEntityClass typeName="Department" modifier="None"/>
+    <ECEntityClass typeName="School" modifier="None">
         <ECCustomAttributes>
             <Unit_Attributes xmlns="Unit_Attributes.01.00">
                 <Dimension>not specified</Dimension>
@@ -39,22 +38,21 @@
                 <ConversionOffset>12</ConversionOffset>
             </Unit_Attributes>
         </ECCustomAttributes>
-        <ECProperty propertyName="campus" typeName="string" />
-        <ECProperty propertyName="code" typeName="string" />
-        <ECProperty propertyName="name" typeName="string" />
-    </ECClass>
-    <ECRelationshipClass typeName="SchoolDepartmentRelation" isDomainClass="False" strength="referencing" strengthDirection="forward">
+        <ECProperty propertyName="campus" typeName="string" readOnly="false"/>
+        <ECProperty propertyName="code" typeName="string" readOnly="false"/>
+        <ECProperty propertyName="name" typeName="string" readOnly="false"/>
+    </ECEntityClass>
+    <ECRelationshipClass typeName="SchoolDepartmentRelation" modifier="Abstract" strength="referencing" strengthDirection="forward">
         <ECCustomAttributes>
-            <CalculatedECPropertySpecification xmlns="Bentley_Standard_CustomAttributes.01.00">
-                <RequiredSymbolSets />
+            <CalculatedECPropertySpecification xmlns="Bentley_Standard_CustomAttributes.01.12">
                 <ECExpression>Nil</ECExpression>
                 <FailureValue>Nil</FailureValue>
                 <IsDefaultValueOnly>True</IsDefaultValueOnly>
                 <UseLastValidValueOnFailure>True</UseLastValidValueOnFailure>
-<DoNotUseECMAScript xmlns="Bentley_Standard_CustomAttributes.01.02">True</DoNotUseECMAScript>
-</CalculatedECPropertySpecification>
+                <DoNotUseECMAScript>True</DoNotUseECMAScript>
+            </CalculatedECPropertySpecification>
         </ECCustomAttributes>
-        <Source cardinality="(0,1)" polymorphic="True" />
-        <Target cardinality="(0,N)" polymorphic="True" />
+        <Source cardinality="(0,1)" polymorphic="true"/>
+        <Target cardinality="(0,1)" polymorphic="true"/>
     </ECRelationshipClass>
 </ECSchema>

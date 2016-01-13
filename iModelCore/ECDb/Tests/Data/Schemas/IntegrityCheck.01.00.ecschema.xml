@@ -1,8 +1,8 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
-<ECSchema schemaName="IntegrityCheck" nameSpacePrefix="ic" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
-    <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="01.10" prefix="bsca" />
-    <ECSchemaReference name="ECDbMap" version="01.00" prefix="ecdbmap" />
-    <ECClass typeName="SourceBase" isDomainClass="True">
+<?xml version="1.0" encoding="UTF-8"?>
+<ECSchema schemaName="IntegrityCheck" nameSpacePrefix="ic" version="01.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.0">
+    <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="01.12" prefix="bsca"/>
+    <ECSchemaReference name="ECDbMap" version="01.00" prefix="ecdbmap"/>
+    <ECEntityClass typeName="SourceBase" modifier="None">
         <ECCustomAttributes>
             <ClassMap xmlns="ECDbMap.01.00">
                 <MapStrategy>
@@ -11,18 +11,18 @@
                 </MapStrategy>
             </ClassMap>
         </ECCustomAttributes>
-        <ECProperty propertyName="S" typeName="string" />
-        <ECProperty propertyName="I" typeName="int" />
-    </ECClass>
-    <ECClass typeName="SourceDerived1" isDomainClass="True">
+        <ECProperty propertyName="S" typeName="string" readOnly="false"/>
+        <ECProperty propertyName="I" typeName="int" readOnly="false"/>
+    </ECEntityClass>
+    <ECEntityClass typeName="SourceDerived1" modifier="None">
         <BaseClass>SourceBase</BaseClass>
-        <ECProperty propertyName="D" typeName="string" />
-    </ECClass>
-    <ECClass typeName="SourceDerived2" isDomainClass="True">
+        <ECProperty propertyName="D" typeName="string" readOnly="false"/>
+    </ECEntityClass>
+    <ECEntityClass typeName="SourceDerived2" modifier="None">
         <BaseClass>SourceBase</BaseClass>
-        <ECProperty propertyName="L" typeName="long" />
-    </ECClass>
-    <ECClass typeName="TargetBase" isDomainClass="True">
+        <ECProperty propertyName="L" typeName="long" readOnly="false"/>
+    </ECEntityClass>
+    <ECEntityClass typeName="TargetBase" modifier="None">
         <ECCustomAttributes>
             <ClassMap xmlns="ECDbMap.01.00">
                 <MapStrategy>
@@ -31,23 +31,23 @@
                 </MapStrategy>
             </ClassMap>
         </ECCustomAttributes>
-        <ECProperty propertyName="I" typeName="int" />
-        <ECProperty propertyName="S" typeName="string" />
-    </ECClass>
-    <ECRelationshipClass typeName="SourceToTarget_Embedding" isDomainClass="True" strength="embedding" strengthDirection="forward">
+        <ECProperty propertyName="I" typeName="int" readOnly="false"/>
+        <ECProperty propertyName="S" typeName="string" readOnly="false"/>
+    </ECEntityClass>
+    <ECRelationshipClass typeName="SourceToTarget_Embedding" modifier="None" strength="embedding" strengthDirection="forward">
         <ECCustomAttributes>
             <ForeignKeyRelationshipMap xmlns="ECDbMap.01.00">
-                <ForeignKeyColumn>SourceECInstanceId</ForeignKeyColumn>
-                <ForeignKeyClassIdColumn>SourceEClassId</ForeignKeyClassIdColumn>
                 <OnDeleteAction>Cascade</OnDeleteAction>
                 <OnUpdateAction>NoAction</OnUpdateAction>
+                <ForeignKeyColumn>SourceECInstanceId</ForeignKeyColumn>
+                <ForeignKeyClassIdColumn>SourceEClassId</ForeignKeyClassIdColumn>
             </ForeignKeyRelationshipMap>
         </ECCustomAttributes>
-        <Source cardinality="(1,1)" polymorphic="True">
-            <Class class="SourceBase" />
+        <Source cardinality="(1,1)" polymorphic="true">
+            <Class class="SourceBase"/>
         </Source>
-        <Target cardinality="(1,N)" polymorphic="True">
-            <Class class="TargetBase" />
+        <Target cardinality="(1,N)" polymorphic="true">
+            <Class class="TargetBase"/>
         </Target>
     </ECRelationshipClass>
 </ECSchema>

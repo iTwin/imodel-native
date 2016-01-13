@@ -1,16 +1,15 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
-<ECSchema schemaName="DiegoSchema2" nameSpacePrefix="ds2" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
-    <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="01.00" prefix="bsca" />
-    <ECSchemaReference name="DiegoSchema1" version="01.00" prefix="ds1" />
+<?xml version="1.0" encoding="UTF-8"?>
+<ECSchema schemaName="DiegoSchema2" nameSpacePrefix="ds2" version="01.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.0">
+    <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="01.12" prefix="bsca"/>
+    <ECSchemaReference name="DiegoSchema1" version="01.00" prefix="ds1"/>
     <ECCustomAttributes>
-        <SchemaChangeTrackingState xmlns="Bentley_Standard_CustomAttributes.01.00">
-            <FinalizationHistory />
-            <TrackingEnabled>True</TrackingEnabled>
+        <SchemaChangeTrackingState xmlns="Bentley_Standard_CustomAttributes.01.12">
             <SchemaFullNameAtEditingStart>DiagoSchema2.01.00</SchemaFullNameAtEditingStart>
+            <TrackingEnabled>True</TrackingEnabled>
         </SchemaChangeTrackingState>
     </ECCustomAttributes>
-    <ECClass typeName="GeometricModel" isDomainClass="True">
+    <ECEntityClass typeName="GeometricModel" modifier="None">
         <BaseClass>ds1:DataSetModel</BaseClass>
-        <ECProperty propertyName="Name" typeName="string" />
-    </ECClass>
+        <ECProperty propertyName="Name" typeName="string" readOnly="false"/>
+    </ECEntityClass>
 </ECSchema>
