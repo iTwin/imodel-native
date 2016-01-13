@@ -898,7 +898,7 @@ BentleyStatus RelationshipClassEndTableMap::TryGetKeyPropertyColumn(std::set<ECD
     if (constraintClasses.size() == 0)
         return SUCCESS;
 
-    std::set<IClassMap const*> constraintMaps = GetECDbMap().GetClassMapsFromRelationshipEnd(constraint);
+    std::set<ClassMap const*> constraintMaps = GetECDbMap().GetClassMapsFromRelationshipEnd(constraint, nullptr);
  
     Utf8String keyPropertyName;
     for (ECRelationshipConstraintClassCP constraintClass : constraintClasses)
