@@ -52,11 +52,16 @@ struct UserSettingsGroup : public PresentationKey
         ECOBJECTS_EXPORT Utf8StringCR                GetCategoryLabel (void) const;
 
         //! Returns a list of UserSettingsItems.
-        ECOBJECTS_EXPORT UserSettingsItemList&       GetSettingsItems (void);
+        ECOBJECTS_EXPORT UserSettingsItemList&       GetSettingsItemsR (void);
+        
+        //! Returns a list of UserSettingsItems.
+        ECOBJECTS_EXPORT UserSettingsItemList const& GetSettingsItems (void) const;
 
         //! Returns a list of nested UserSettingsGroup. This allows to create sub-categories.
-        ECOBJECTS_EXPORT UserSettingsGroupList&      GetNestedSettings (void);
-
+        ECOBJECTS_EXPORT UserSettingsGroupList&      GetNestedSettingsR (void);
+        
+        //! Returns a list of nested UserSettingsGroup. This allows to create sub-categories.
+        ECOBJECTS_EXPORT UserSettingsGroupList const& GetNestedSettings (void) const;
     };
 
 /*---------------------------------------------------------------------------------**//**
