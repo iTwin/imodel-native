@@ -2,14 +2,14 @@
 |
 |     $Source: Cache/Persistence/Core/ECDbFileInfoSchema.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
 #pragma once
 
 //--------------------------------------------------------------------------------------+
-// Schema definitions for ECDb_FileInfo.01.00.ecschema.xml
+// Schema definitions for ECDb_FileInfo.02.00.ecschema.xml
 //--------------------------------------------------------------------------------------+
 
 BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
@@ -26,12 +26,12 @@ BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 #define CLASS_ExternalFileInfo_PROPERTY_RootFolder          "RootFolder"
 #define CLASS_ExternalFileInfo_PROPERTY_RelativePath        "RelativePath"
 
-#define CLASS_InstanceHasFileInfo                           "InstanceHasFileInfo"
+#define CLASS_FileInfoOwnership                             "FileInfoOwnership"
 
-#define ECSql_ExternalFileInfoClass                         "[ecdbf].[ExternalFileInfo]"
-#define ECSql_InstanceHasFileInfoClass                      "[ecdbf].[InstanceHasFileInfo]"
+#define ECSql_ExternalFileInfoClass                         "[ecdbf].[" CLASS_ExternalFileInfo "]"
+#define ECSql_FileInfoOwnership                             "[ecdbf].[" CLASS_FileInfoOwnership "]"
 
-enum class ExternalFileInfoRootFolder
+enum class StandardRootFolderType
     {
     DocumentsFolder = 0,
     TemporaryFolder = 1,

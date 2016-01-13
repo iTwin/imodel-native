@@ -2,7 +2,7 @@
 |
 |     $Source: Cache/Persistence/Core/CacheSchema.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -78,8 +78,10 @@ BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 #define CLASS_ResponseToResponsePage                                "ResponseToResponsePage"
 #define CLASS_ResponsePageToResult                                  "ResponsePageToResult"
 #define CLASS_ResponsePageToResultWeak                              "ResponsePageToResultWeak"
-#define CLASS_ObjectInfoToFileInfo                                  "ObjectInfoToFileInfo"
 #define CLASS_ChangeInfoToInstanceBackup                            "ChangeInfoToInstanceBackup"
+#define CLASS_ObjectInfoToCachedFileInfo                            "ObjectInfoToCachedFileInfo"
+#define CLASS_CachedFileInfoToFileInfo                              "CachedFileInfoToFileInfo"
+#define CLASS_CachedFileInfoToFileInfoOwnership                     "CachedFileInfoToFileInfoOwnership"
 
 #define ECSql_Root                                                  "[WSC].[" CLASS_Root "]"
 #define ECSql_NavigationBase                                        "[WSC].[" CLASS_NavigationBase "]"
@@ -97,8 +99,10 @@ BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 #define ECSql_ResponseToResponsePage                                "[WSC].[" CLASS_ResponseToResponsePage "]"
 #define ECSql_ResponsePageToResult                                  "[WSC].[" CLASS_ResponsePageToResult "]"
 #define ECSql_ResponsePageToResultWeak                              "[WSC].[" CLASS_ResponsePageToResultWeak "]"
-#define ECSql_ObjectInfoToFileInfo                                  "[WSC].[" CLASS_ObjectInfoToFileInfo "]"
 #define ECSql_ChangeInfoToInstanceBackup                            "[WSC].[" CLASS_ChangeInfoToInstanceBackup "]"
+#define ECSql_ObjectInfoToCachedFileInfo                            "[WSC].[" CLASS_ObjectInfoToCachedFileInfo "]"
+#define ECSql_CachedFileInfoToFileInfo                              "[WSC].[" CLASS_CachedFileInfoToFileInfo "]"
+#define ECSql_ObjectInfoToCachedFileInfoOwnership                   "[WSC].[" CLASS_CachedFileInfoToFileInfoOwnership "]"
 
 #define SCHEMA_CacheLegacySupportSchema                             "DSCacheLegacySupportSchema"
 #define SCHEMA_CacheLegacySupportSchema_LegacyParentRelationship    "LegacyParentRelationship"

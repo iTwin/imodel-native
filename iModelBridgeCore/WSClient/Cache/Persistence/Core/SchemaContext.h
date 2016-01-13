@@ -2,7 +2,7 @@
  |
  |     $Source: Cache/Persistence/Core/SchemaContext.h $
  |
- |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 
@@ -26,6 +26,7 @@ struct SchemaContext
     {
     public:
         static BeFileName GetCacheSchemasDir();
+        static BeFileName GetECDbSchemasDir();
         static ECSchemaReadContextPtr CreateReadContext();
     };
 

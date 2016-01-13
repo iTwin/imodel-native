@@ -32,19 +32,25 @@ struct FileInfoManager : public IECDbAdapter::DeleteListener, public FileInfo::I
         HierarchyManager&       m_hierarchyManager;
         ObjectInfoManager&      m_objectInfoManager;
 
-        ECClassCP               m_infoClass;
-        ECRelationshipClassCP   m_infoRelationshipClass;
-        ECClassCP               m_externalFileInfoClass;
-        ECRelationshipClassCP   m_externalFileInfoRelationshipClass;
+        ECClassCP               m_cachedFileInfoClass;
+        ECRelationshipClassCP   m_objectInfoToCachedFileInfoClass;
 
-        ECSqlAdapterLoader<JsonInserter>    m_cachedInfoInserter;
-        ECSqlAdapterLoader<JsonUpdater>     m_cachedInfoUpdater;
-        ECSqlAdapterLoader<JsonInserter>    m_externalInfoInserter;
-        ECSqlAdapterLoader<JsonUpdater>     m_externalInfoUpdater;
+        ECRelationshipClassCP   m_cachedFileInfoToFileInfoClass;
+        ECRelationshipClassCP   m_cachedFileInfoToFileInfoOwnershipClass;
+
+        ECClassCP               m_externalFileInfoClass;
+        ECClassCP               m_externalFileInfoOwnershipClass;
+
+        ECSqlAdapterLoader<JsonInserter>    m_cachedFileInfoInserter;
+        ECSqlAdapterLoader<JsonUpdater>     m_cachedFileInfoUpdater;
+        ECSqlAdapterLoader<JsonInserter>    m_externalFileInfoInserter;
+        ECSqlAdapterLoader<JsonUpdater>     m_externalFileInfoUpdater;
 
     private:
-        Json::Value ReadExternalFileInfo(CachedInstanceKeyCR cachedKey);
         Json::Value ReadCachedInfoJson(CachedInstanceKeyCR cachedKey);
+
+        Json::Value ReadExternalFileInfo(CachedInstanceKeyCR cachedKey);
+        ECInstanceKey InsertFileInfoOwnership(ECInstanceKeyCR ownerKey, ECInstanceKeyCR fileInfoKey);
 
     public:
         FileInfoManager
@@ -66,8 +72,10 @@ struct FileInfoManager : public IECDbAdapter::DeleteListener, public FileInfo::I
 
         BentleyStatus DeleteFilesNotHeldByNodes(const ECInstanceKeyMultiMap& holdingNodes);
 
+        BeFileName ReadFilePath(CachedInstanceKeyCR cachedKey);
+
+        // FileInfo::IAbsolutePathProvider
         BeFileName GetAbsoluteFilePath(bool isPersistent, BeFileNameCR relativePath) const override;
-        BeFileName ReadFilePath(CachedInstanceKeyCR infoKey);
 
         //! IECDbAdapter::DeleteListener
         BentleyStatus OnBeforeDelete(ECClassCR ecClass, ECInstanceId ecInstanceId, bset<ECInstanceKey>& additionalInstancesOut) override;

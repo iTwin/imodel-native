@@ -1,6 +1,7 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <ECSchema schemaName="WSCache" nameSpacePrefix="WSC" version="02.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
     <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="01.10" prefix="bsca" />
+    <ECSchemaReference name="ECDb_FileInfo" version="02.00" prefix="ecdbf" />
 
     <ECClass typeName="Root" isDomainClass="True">
         <ECCustomAttributes>
@@ -238,15 +239,6 @@
         </Target>
     </ECRelationshipClass>
 
-    <ECRelationshipClass typeName="ObjectInfoToFileInfo" isDomainClass="True" strength="embedding" strengthDirection="forward">
-        <Source cardinality="(1,1)" polymorphic="False">
-            <Class class="CachedObjectInfo" />
-        </Source>
-        <Target cardinality="(0,1)" polymorphic="False">
-            <Class class="CachedFileInfo" />
-        </Target>
-    </ECRelationshipClass>
-
     <ECRelationshipClass typeName="ChangeInfoToInstanceBackup" isDomainClass="True" strength="holding" strengthDirection="forward">
         <Source cardinality="(1,1)" polymorphic="True">
             <Class class="ChangeInfo" />
@@ -255,4 +247,32 @@
             <Class class="InstanceBackup" />
         </Target>
     </ECRelationshipClass>
+
+    <ECRelationshipClass typeName="ObjectInfoToCachedFileInfo" isDomainClass="True" strength="holding" strengthDirection="forward">
+        <Source cardinality="(1,1)" polymorphic="False">
+            <Class class="CachedObjectInfo" />
+        </Source>
+        <Target cardinality="(0,1)" polymorphic="False">
+            <Class class="CachedFileInfo" />
+        </Target>
+    </ECRelationshipClass>
+
+    <ECRelationshipClass typeName="CachedFileInfoToFileInfo" isDomainClass="True" strength="holding" strengthDirection="forward">
+        <Source cardinality="(1,1)" polymorphic="False">
+            <Class class="CachedFileInfo" />
+        </Source>
+        <Target cardinality="(0,1)" polymorphic="True">
+            <Class class="ecdbf:FileInfo" />
+        </Target>
+    </ECRelationshipClass>
+
+    <ECRelationshipClass typeName="CachedFileInfoToFileInfoOwnership" isDomainClass="True" strength="holding" strengthDirection="forward">
+        <Source cardinality="(1,1)" polymorphic="False">
+            <Class class="CachedFileInfo" />
+        </Source>
+        <Target cardinality="(0,1)" polymorphic="False">
+            <Class class="ecdbf:FileInfoOwnership" />
+        </Target>
+    </ECRelationshipClass>
+
 </ECSchema>
