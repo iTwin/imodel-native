@@ -18,7 +18,7 @@
 #include <ImagePP/all/h/HUTDEMRasterXYZPointsExtractor.h>
 #include <ImagePP/all/h/HRFRasterFileFactory.h>
 #include <ImagePP/all/h/HFCException.h>
-
+#include <ImagePP/all/h/HFCException.h>
 
 using namespace BENTLEY_NAMESPACE_NAME::GeoCoordinates;
 USING_NAMESPACE_IMAGEPP

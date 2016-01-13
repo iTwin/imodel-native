@@ -120,11 +120,12 @@ struct DTMFeatureEnumerator : RefCountedBase
         m_readSourceFeatures = value;
         }
 
-    public: void ClearFilterByUserTag ()
+    public: void ClearFilterByUserTag()
         {
-        m_userTagLow = 0xffffffffffffffff;
+        m_userTagLow = 1;
         m_userTagHigh = 0;
         }
+
     public: bool GetUserTagFilterRange (DTMUserTag& low, DTMUserTag& high) const
         {
         low = m_userTagLow;
@@ -235,7 +236,7 @@ struct DTMMeshEnumerator : RefCountedBase
     private: long vectorOption;        /* ==> Vector Option <1=Surface Derivatives,2=Averaged Triangle Surface Normals> */
     private: double zAxisFactor;       /* ==> Factor To Exaggerate The z Axis default value 1.0  */
     private: DTMFenceParams m_fence;
-
+    private: mutable bool m_useFence;
     private: mutable long m_pointMark;
     private: mutable bool voidsInDtm;
     private: mutable long startPnt, lastPnt, leftMostPnt;
@@ -248,6 +249,7 @@ struct DTMMeshEnumerator : RefCountedBase
     private: mutable DRange3d m_range;
     private: mutable bool m_calcRange = false;
     private: bool m_tilingMode;
+    private: bool m_useRealPointIndexes = false;
     private: RegionMode m_regionMode = RegionMode::Normal;
     private: DTMUserTag m_regionUserTag;
     private: DTMFeatureId m_regionFeatureId;
@@ -255,7 +257,12 @@ struct DTMMeshEnumerator : RefCountedBase
     private: DTMStatusInt Initialize () const;
     private: bool MoveNext (long& pnt1, long& pnt2) const;
     private: void ScanAndMarkRegions () const;
-    private: void ScanAndMarkRegion (long featureId) const;
+    private: void ScanAndMarkRegion(long featureId,long& minPnt, long& maxPnt) const;
+    private: int bcdtmList_testForRegionLineDtmObject(BC_DTM_OBJ *dtmP, long P1, long P2, long featureNum = -1) const;
+    private: int bcdtmList_testTriangleInsideRegionDtmObject(BC_DTM_OBJ *dtmP, long P1, long P2, long P3) const;
+    private: bool bcdtmList_testForRegionTriangleDtmObject(BC_DTM_OBJ *dtmP, std::vector<bool>& pointMask, long P1, long P2, long P3) const;
+    private: int bcdtmList_isPtInsideFeature(BC_DTM_OBJ *dtmP, long P1, long testPnt, long featureNum) const;
+
 
     protected: BENTLEYDTM_EXPORT DTMMeshEnumerator (BcDTMR dtm);
     public: BENTLEYDTM_EXPORT static DTMMeshEnumeratorPtr Create (BcDTMR dtm);
@@ -265,10 +272,21 @@ struct DTMMeshEnumerator : RefCountedBase
     public: BENTLEYDTM_EXPORT iterator end () const;
     public: BENTLEYDTM_EXPORT DRange3d DTMMeshEnumerator::GetRange () const;
 
+
+    public: void SetUseRealPointIndexes(bool value)
+        {
+        m_useRealPointIndexes = value;
+        Reset();
+        }
+    public: bool GetUseRealPointIndexes() const
+        {
+        return m_useRealPointIndexes;
+        }
     public: void SetFilterRegionByUserTag (DTMUserTag value)
         {
         m_regionMode = RegionMode::RegionUserTag;
         m_regionUserTag = value;
+        Reset();
         }
 
     public: DTMUserTag GetFilterRegionByUserTag () const
@@ -278,8 +296,9 @@ struct DTMMeshEnumerator : RefCountedBase
 
     public: void SetFilterRegionByFeatureId (DTMFeatureId value)
         {
-        m_regionMode = RegionMode::RegionUserTag;
+        m_regionMode = RegionMode::RegionFeatureId;
         m_regionFeatureId = value;
+        Reset();
         }
 
     public: DTMFeatureId  GetFilterRegionByFeatureId () const
@@ -290,6 +309,7 @@ struct DTMMeshEnumerator : RefCountedBase
     public: void SetExcludeAllRegions ()
         {
         m_regionMode = RegionMode::NonRegion;
+        Reset();
         }
 
     public: bool GetExcludeAllRegions ()
@@ -305,14 +325,17 @@ struct DTMMeshEnumerator : RefCountedBase
     public: void SetFence (DTMFenceParams& fence)
         {
         m_fence = DTMFenceParams (fence.fenceType, fence.fenceOption, fence.points, fence.numPoints);
+        Reset();
         }
     public: void SetMaxTriangles (int value)
         {
         maxTriangles = value;
+        Reset();
         }
     public: void SetTilingMode (bool value)
         {
         m_tilingMode = value;
+        Reset();
         }
 
     };

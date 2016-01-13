@@ -11,6 +11,7 @@
 #include <bcdtminlines.h>
 #include <TerrainModel/Core/DTMIterators.h>
 #include <TerrainModel/Core/TMTransformHelper.h>
+#include <algorithm>
 
 USING_NAMESPACE_BENTLEY_TERRAINMODEL
 
@@ -209,9 +210,9 @@ bool DTMFeatureEnumerator::MoveNext (long& m_index, size_t& m_nextSourceFeatureI
         if (m_filterByFeatureId && m_featureIdFilter != dtmFeatureP->dtmFeatureId)
             continue;
 
-        if ((m_userTagLow < m_userTagHigh) && (
-            m_userTagLow >= dtmFeatureP->dtmUserTag &&
-            m_userTagHigh <= dtmFeatureP->dtmUserTag))
+        if ((m_userTagLow <= m_userTagHigh) && (
+            m_userTagLow > dtmFeatureP->dtmUserTag ||
+            m_userTagHigh < dtmFeatureP->dtmUserTag))
             continue;
 
         if (m_filterByFeatureType)
@@ -756,6 +757,7 @@ DTMStatusInt DTMMeshEnumerator::Initialize () const
     ** Allocate Memory For Mesh Faces
     */
     meshFaces.resize (maxTriangles * 3);
+    m_useFence = useFence;
     return DTM_SUCCESS;
 errexit:
     if (m_dtmP->dtmState == DTMState::Tin)
@@ -767,24 +769,41 @@ errexit:
     }
 
 void DTMMeshEnumerator::ScanAndMarkRegions () const
-    {
+    {  
     m_regionPointMask.resize (m_dtmP->numPoints);
     DTMFeatureEnumeratorPtr regionEnumerator = DTMFeatureEnumerator::Create (*m_dtm.get ());
     regionEnumerator->ExcludeAllFeatures ();
     regionEnumerator->IncludeFeature (DTMFeatureType::Region);
     regionEnumerator->SetReadSourceFeatures (false);
-
+      
     if (m_regionMode == RegionMode::RegionFeatureId)
         regionEnumerator->SetFeatureIdFilter (m_regionFeatureId);
     else if (m_regionMode == RegionMode::RegionUserTag)
         regionEnumerator->SetUserTagFilter (m_regionUserTag);
 
+    long  minPnt = m_dtmP->numPoints + 1, maxPnt = -1;
     for (DTMFeatureInfo info : *regionEnumerator)
-        ScanAndMarkRegion (info.FeatureIndex ());
+        {
+        long  tmpMinPnt = 0, tmpMaxPnt = 0;
+
+        ScanAndMarkRegion(info.FeatureIndex(), tmpMinPnt, tmpMaxPnt);
+        if (minPnt > tmpMinPnt)
+            minPnt = tmpMinPnt;
+        if (maxPnt < tmpMaxPnt)
+            maxPnt = tmpMaxPnt;
+        }
     bcdtmList_nullTptrValuesDtmObject (m_dtmP);
+
+    if (m_regionMode != RegionMode::NonRegion)
+        {
+        if (leftMostPnt < minPnt)
+            leftMostPnt = minPnt;
+        if (lastPnt > maxPnt)
+            lastPnt = maxPnt;
+        }
     }
 
-void DTMMeshEnumerator::ScanAndMarkRegion (long featureIndex) const
+void DTMMeshEnumerator::ScanAndMarkRegion (long featureIndex, long& minPnt, long& maxPnt) const
     {
     bool markValue = true;
     long startPnt;
@@ -793,7 +812,6 @@ void DTMMeshEnumerator::ScanAndMarkRegion (long featureIndex) const
         {
         BC_DTM_OBJ* dtmP = m_dtmP;
         long numMarked;
-        long  minPnt, maxPnt;
         long* minPntP = &minPnt;
         long* maxPntP = &maxPnt;
         long* numMarkedP = &numMarked;
@@ -824,7 +842,9 @@ void DTMMeshEnumerator::ScanAndMarkRegion (long featureIndex) const
         scanPnt = nodeAddrP (dtmP, startPnt)->tPtr;
         do
             {
-            antPnt = nextPnt = nodeAddrP (dtmP, scanPnt)->tPtr;
+            if (scanPnt < *minPntP) *minPntP = scanPnt;
+            if (scanPnt > *maxPntP) *maxPntP = scanPnt;
+            antPnt = nextPnt = nodeAddrP(dtmP, scanPnt)->tPtr;
             if ((antPnt = bcdtmList_nextAntDtmObject (dtmP, scanPnt, antPnt)) < 0)
                 return;// ToDo....
             while (antPnt != priorPnt)
@@ -950,7 +970,7 @@ void DTMMeshEnumerator::Reset ()
             {
             long dbg = DTM_TRACE_VALUE (0);
             DTMFenceType fenceType = m_fence.fenceType;
-            bool useFence = fenceType != DTMFenceType::None;
+            bool useFence = m_useFence;
 
             m_initialized = false;
             if (m_dtmP->dtmState == DTMState::Tin) bcdtmList_nullTptrValuesDtmObject (m_dtmP);
@@ -959,7 +979,104 @@ void DTMMeshEnumerator::Reset ()
         }
 
 
-int bcdtmList_testForRegionLineDtmObject (BC_DTM_OBJ *dtmP, long P1, long P2)
+int DTMMeshEnumerator::bcdtmList_isPtInsideFeature(BC_DTM_OBJ *dtmP, long P1, long testPnt, long featureNum) const
+    {
+    int numFound = 0;
+    enum
+        {
+        unknown, inside, outside
+        } state = unknown;
+    bool foundPt = false;
+    long clPtr;
+    /*
+    ** Test For Void Hull Line
+    */
+    clPtr = nodeAddrP(dtmP, P1)->cPtr;
+    while (clPtr != dtmP->nullPtr)
+        {
+        long P2 = clistAddrP(dtmP, clPtr)->pntNum;
+
+        if (testPnt == P2)
+            {
+            foundPt = true;
+            if (state != unknown)
+                return state == inside;
+            }
+        else
+            {
+            if (bcdtmList_testForRegionLineDtmObject(dtmP, P2, P1, featureNum))
+                {
+                state = inside;
+                if (foundPt)
+                    return false;
+                }
+            else if (bcdtmList_testForRegionLineDtmObject(dtmP, P1, P2, featureNum))
+                {
+                state = outside;
+                if (foundPt)
+                    return true;
+                }
+            }
+        clPtr = clistAddrP(dtmP, clPtr)->nextPtr;
+        }
+    BeAssert(foundPt);
+    /*
+    ** Job Completed
+    */
+    return false;
+
+    }
+
+// This is a simple test as most cases they will only be one region scanned.
+int DTMMeshEnumerator::bcdtmList_testTriangleInsideRegionDtmObject(BC_DTM_OBJ *dtmP, long P1, long P2, long P3) const
+/*
+** This Function Tests If The Line P1-P2 is A Void Or Hole Hull Line
+*/
+    {
+    long clPtr;
+    /*
+    ** Test For Void Hull Line
+    */
+    clPtr = nodeAddrP(dtmP, P1)->fPtr;
+    while (clPtr != dtmP->nullPtr)
+        {
+        long dtmFeature = flistAddrP(dtmP, clPtr)->dtmFeature;
+
+        if (ftableAddrP(dtmP, dtmFeature)->dtmFeatureType == DTMFeatureType::Region)
+            {
+            bool addRegion = false;
+            if (m_regionMode == RegionMode::RegionUserTag)
+                {
+                if (ftableAddrP(dtmP, flistAddrP(dtmP, clPtr)->dtmFeature)->dtmUserTag == m_regionUserTag)
+                    addRegion = true;
+                }
+            else if (m_regionMode == RegionMode::RegionFeatureId)
+                {
+                if (ftableAddrP(dtmP, flistAddrP(dtmP, clPtr)->dtmFeature)->dtmFeatureId == m_regionFeatureId)
+                    addRegion = true;
+                }
+            else
+                addRegion = true;
+
+            if (addRegion)
+                {
+                long testPnt = P2;
+                if (bcdtmList_testForRegionLineDtmObject(dtmP, P1, P2, dtmFeature))
+                    testPnt = P3;
+                if (bcdtmList_isPtInsideFeature(dtmP, P1, testPnt, dtmFeature))
+                    return true;
+                }
+
+            }
+        clPtr = flistAddrP(dtmP, clPtr)->nextPtr;
+        }
+    /*
+    ** Job Completed
+    */
+    return false;
+    }
+
+int DTMMeshEnumerator::bcdtmList_testForRegionLineDtmObject(BC_DTM_OBJ *dtmP, long P1, long P2, long featureNum) const
 /*
 ** This Function Tests If The Line P1-P2 is A Void Or Hole Hull Line
 */
@@ -973,7 +1090,29 @@ int bcdtmList_testForRegionLineDtmObject (BC_DTM_OBJ *dtmP, long P1, long P2)
         {
         if (flistAddrP (dtmP, clPtr)->nextPnt == P2)
             {
-            if (ftableAddrP (dtmP, flistAddrP (dtmP, clPtr)->dtmFeature)->dtmFeatureType == DTMFeatureType::Region)  return(1);
+            if (featureNum == -1)
+                {
+                if (ftableAddrP(dtmP, flistAddrP(dtmP, clPtr)->dtmFeature)->dtmFeatureType == DTMFeatureType::Region)
+                    {
+                    if (m_regionMode == RegionMode::RegionUserTag)
+                        {
+                        if (ftableAddrP(dtmP, flistAddrP(dtmP, clPtr)->dtmFeature)->dtmUserTag == m_regionUserTag)
+                            return 1;
+                        }
+                    else if (m_regionMode == RegionMode::RegionFeatureId)
+                        {
+                        if (ftableAddrP(dtmP, flistAddrP(dtmP, clPtr)->dtmFeature)->dtmFeatureId == m_regionFeatureId)
+                            return 1;
+                        }
+                    else
+                        return(1);
+                    }
+                }
+                else
+                {
+                if (featureNum == flistAddrP(dtmP, clPtr)->dtmFeature)
+                    return 1;
+                }
             }
         clPtr = flistAddrP (dtmP, clPtr)->nextPtr;
         }
@@ -983,7 +1122,7 @@ int bcdtmList_testForRegionLineDtmObject (BC_DTM_OBJ *dtmP, long P1, long P2)
     return(0);
     }
 
-bool bcdtmList_testForRegionTriangleDtmObject (BC_DTM_OBJ *dtmP, std::vector<bool>& pointMask, long P1, long P2, long P3)
+bool DTMMeshEnumerator::bcdtmList_testForRegionTriangleDtmObject(BC_DTM_OBJ *dtmP, std::vector<bool>& pointMask, long P1, long P2, long P3) const
 /*
 ** This Function Tests For A Void Triangle
 */
@@ -999,11 +1138,16 @@ bool bcdtmList_testForRegionTriangleDtmObject (BC_DTM_OBJ *dtmP, std::vector<boo
     if (bcdtmList_testForRegionLineDtmObject (dtmP, P2, P1)) return true;
     if (bcdtmList_testForRegionLineDtmObject (dtmP, P3, P2)) return true;
     if (bcdtmList_testForRegionLineDtmObject (dtmP, P1, P3)) return true;
+
+    if (bcdtmList_testTriangleInsideRegionDtmObject(dtmP, P1, P2, P3)) return true;
+
     return false;
     }
 
     bool DTMMeshEnumerator::MoveNext (long& pnt1, long& pnt2) const
         {
+        if (!m_initialized) Initialize ();
+
         long dbg = DTM_TRACE_VALUE (0), tdbg = DTM_TIME_VALUE (0);
         long  pnt3, clPtr, numTriangles = 0;
         bool voidTriangle;
@@ -1011,9 +1155,8 @@ bool bcdtmList_testForRegionTriangleDtmObject (BC_DTM_OBJ *dtmP, std::vector<boo
         DTM_CIR_LIST  *clistP;
         DTM_TIN_NODE  *node1P, *node2P, *node3P;
         DTMFenceType fenceType = m_fence.fenceType;
-        bool useFence = fenceType != DTMFenceType::None;
         bool usePnt2 = pnt1 != -1;
-        if (!m_initialized) Initialize ();
+        bool useFence = m_useFence;
 
         if (m_dtmP->dtmState != DTMState::Tin)
             return false;
@@ -1158,64 +1301,82 @@ PolyfaceQueryP DTMMeshEnumerator::iterator::operator* () const
     */
     minTptrPnt = m_dtmP->numPoints;
     maxTptrPnt = -1;
-
-    numMeshPts = 0;
-    for (long face : m_p_vec->meshFaces)
-        {
-        nodeP = nodeAddrP (m_dtmP, face);
-        if (nodeP->tPtr == nullPnt)
-            {
-            if (face < minTptrPnt) minTptrPnt = face;
-            else if (face > maxTptrPnt) maxTptrPnt = face;
-            nodeP->tPtr = ++numMeshPts;
-            }
-        }
-    if (dbg) bcdtmWrite_message (0, 0, 0, "minTptrPoint = %8ld maxTptrPoint = %8ld", minTptrPnt, maxTptrPnt);
-
-    if (maxTptrPnt == -1) maxTptrPnt = minTptrPnt;
-    /*
-    **                       Allocate Memory For Mesh Points
-    */
-    if (dbg) bcdtmWrite_message (0, 0, 0, "Populating Mesh Points ** numMeshPts = %8ld", numMeshPts);
     BlockedVectorDPoint3dR points = m_p_vec->meshPoints;
     BlockedVectorDVec3dR normals = m_p_vec->meshNormals;
-    points.resize (numMeshPts);
-    normals.resize (numMeshPts);
-    /*
-    **                       Populate Mesh Points Array And Mesh Vectors Array
-    */
-    for (node = minTptrPnt; node <= maxTptrPnt; ++node)
+
+    if (!m_p_vec->m_useRealPointIndexes)
         {
-        nodeP = nodeAddrP (m_dtmP, node);
-        if (nodeP->tPtr > 0 && nodeP->tPtr < m_dtmP->nullPnt)
+        numMeshPts = 0;
+        for (long face : m_p_vec->meshFaces)
             {
-            p3dP = points.GetPtr () + (nodeP->tPtr - 1);
-            normP = normals.GetPtr () + (nodeP->tPtr -1);
-            pntP = pointAddrP (m_dtmP, node);
-            p3dP->x = pntP->x;
-            p3dP->y = pntP->y;
-            if (m_p_vec->zAxisFactor != 1)
+            nodeP = nodeAddrP(m_dtmP, face);
+            if (nodeP->tPtr == nullPnt)
                 {
-                dz = (pntP->z - m_dtmP->zMin) * m_p_vec->zAxisFactor;
-                p3dP->z = m_dtmP->zMin + dz;
+                if (face < minTptrPnt) minTptrPnt = face;
+                else if (face > maxTptrPnt) maxTptrPnt = face;
+                nodeP->tPtr = ++numMeshPts;
                 }
-            else
-                p3dP->z = pntP->z;
-
-            // Convert Point.
-//            p3dP++;
-
-            bcdtmLoad_calculateNormalVectorForTriangleVertexDtmObject (m_dtmP, node, 2, m_p_vec->zAxisFactor, normP);
-            // Rotate normal....
-//            ++normP;
             }
-        }
-    /*
-    **                       Reset Point Indexes In Mesh Faces
-    */   
-    for (int& ptIndex : m_p_vec->meshFaces)
-        ptIndex = nodeAddrP (m_dtmP, ptIndex)->tPtr;
+        if (dbg) bcdtmWrite_message(0, 0, 0, "minTptrPoint = %8ld maxTptrPoint = %8ld", minTptrPnt, maxTptrPnt);
 
+        if (maxTptrPnt == -1) maxTptrPnt = minTptrPnt;
+        /*
+        **                       Allocate Memory For Mesh Points
+        */
+        if (dbg) bcdtmWrite_message(0, 0, 0, "Populating Mesh Points ** numMeshPts = %8ld", numMeshPts);
+        points.resize(numMeshPts);
+        normals.resize(numMeshPts);
+        /*
+        **                       Populate Mesh Points Array And Mesh Vectors Array
+        */
+        for (node = minTptrPnt; node <= maxTptrPnt; ++node)
+            {
+            nodeP = nodeAddrP(m_dtmP, node);
+            if (nodeP->tPtr > 0 && nodeP->tPtr < m_dtmP->nullPnt)
+                {
+                p3dP = points.GetPtr() + (nodeP->tPtr - 1);
+                normP = normals.GetPtr() + (nodeP->tPtr - 1);
+                pntP = pointAddrP(m_dtmP, node);
+                p3dP->x = pntP->x;
+                p3dP->y = pntP->y;
+                if (m_p_vec->zAxisFactor != 1)
+                    {
+                    dz = (pntP->z - m_dtmP->zMin) * m_p_vec->zAxisFactor;
+                    p3dP->z = m_dtmP->zMin + dz;
+                    }
+                else
+                    p3dP->z = pntP->z;
+
+                // Convert Point.
+                //            p3dP++;
+
+                bcdtmLoad_calculateNormalVectorForTriangleVertexDtmObject(m_dtmP, node, 2, m_p_vec->zAxisFactor, normP);
+                // Rotate normal....
+                //            ++normP;
+                }
+            }
+        /*
+        **                       Reset Point Indexes In Mesh Faces
+        */
+        for (int& ptIndex : m_p_vec->meshFaces)
+            ptIndex = nodeAddrP(m_dtmP, ptIndex)->tPtr;
+        }
+    else
+        {
+        numMeshPts = 0;
+        for (long face : m_p_vec->meshFaces)
+            {
+            nodeP = nodeAddrP(m_dtmP, face);
+            if (nodeP->tPtr == nullPnt)
+                {
+                if (face < minTptrPnt) minTptrPnt = face;
+                else if (face > maxTptrPnt) maxTptrPnt = face;
+                }
+            }
+        if (dbg) bcdtmWrite_message(0, 0, 0, "minTptrPoint = %8ld maxTptrPoint = %8ld", minTptrPnt, maxTptrPnt);
+
+        if (maxTptrPnt == -1) maxTptrPnt = minTptrPnt;
+        }
     /*
     **                       Null Tptr Values
     */
