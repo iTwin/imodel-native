@@ -1051,7 +1051,6 @@ public:
     //! @return a reference to the Host object. WARNING: Do not call this function unless you know that there is a Host.
     DGNPLATFORM_EXPORT static Host& GetHost();
 
-    DGNPLATFORM_EXPORT static WCharCP GetThreadIdName();     //!< For debugging purposes, get the current ThreadId as a string
     //! Used by DgnDbFileIO to initialize logging for Graphite code.
     //! @param configFileName Optional. The name of the logging configuration file to parse. Pass nullptr for logging to the console with default severities.
     //! If configFileName is specified, then the log4cxx provider will be used. Note that this provider comes from log4cxx.dll, and both the Graphite and Vancouver

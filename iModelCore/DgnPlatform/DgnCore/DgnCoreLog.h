@@ -10,4 +10,4 @@
 
 #include <Logging/bentleylogging.h>
 #define LOG (*NativeLogging::LoggingManager::GetLogger (L"DgnCore"))
-#define THREADLOG (*NativeLogging::LoggingManager::GetLogger (DgnPlatformLib::GetThreadIdName()))
+#define THREADLOG (*NativeLogging::LoggingManager::GetLogger (DgnDb::GetThreadIdName()))

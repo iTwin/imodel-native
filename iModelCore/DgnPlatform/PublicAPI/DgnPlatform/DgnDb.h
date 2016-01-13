@@ -220,6 +220,7 @@ public:
     enum class ThreadId {Unknown=0, Client=100, Render=101, Query=102,};
 
     DGNPLATFORM_EXPORT static ThreadId GetThreadId();        //!< Get the ThreadId for the current thread
+    DGNPLATFORM_EXPORT static WCharCP GetThreadIdName();     //!< For debugging purposes, get the current ThreadId as a string
     static void SetThreadId(ThreadId);    //!< Set the ThreadId for the current thread
     static void VerifyThread(ThreadId id) {BeAssert(id==GetThreadId());}   //!< assert that this is a specific thread
     static void VerifyClientThread() {VerifyThread(ThreadId::Client);}     //!< assert that this is the Client thread

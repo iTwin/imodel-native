@@ -40,7 +40,7 @@ void DgnDb::_VerifyQuerySequence() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-WCharCP DgnPlatformLib::GetThreadIdName()
+WCharCP DgnDb::GetThreadIdName()
     {
     switch (GetThreadId())
         {
