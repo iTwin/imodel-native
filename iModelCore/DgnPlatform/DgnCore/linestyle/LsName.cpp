@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/linestyle/LsName.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include    <DgnPlatformInternal.h>
@@ -624,7 +624,7 @@ BentleyStatus       LsCache::Load ()
         return SUCCESS;
 
     //  Signal that this should abort a query and should not trigger an assertion failure in GraphicsAndQuerySequencer::CheckSQLiteOperationAllowed
-    wt_OperationForGraphics  opForGraphics;
+    DgnDb::SQLRequest::Client opForGraphics;
     TreeLoaded ();
 
     for (auto const& ls : LineStyleElement::MakeIterator(m_dgnDb))

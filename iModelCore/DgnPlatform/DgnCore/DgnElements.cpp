@@ -1000,6 +1000,8 @@ DgnElementCP DgnElements::FindElement(DgnElementId id) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 CachedStatementPtr DgnElements::GetStatement(Utf8CP sql) const
     {
+    m_dgndb._VerifyQuerySequence();
+
     CachedStatementPtr stmt;
     m_stmts.GetPreparedStatement(stmt, *m_dgndb.GetDbFile(), sql);
     return stmt;
@@ -1146,7 +1148,7 @@ DgnElementCPtr DgnElements::LoadElement(DgnElementId elementId, bool makePersist
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   09/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElementCPtr DgnElements::GetElement(DgnElementId elementId) const
+DgnElementCPtr DgnElements::FindOrLoadElement(DgnElementId elementId) const
     {
     if (!elementId.IsValid())
         return nullptr;
@@ -1156,6 +1158,15 @@ DgnElementCPtr DgnElements::GetElement(DgnElementId elementId) const
     BeDbMutexHolder _v(m_mutex);
     DgnElementCP element = FindElement(elementId);
     return (nullptr != element) ? element : LoadElement(elementId, true);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   01/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnElementCPtr DgnElements::GetElement(DgnElementId id) const 
+    {
+    DgnDb::SQLRequest::Client _v; 
+    return FindOrLoadElement(id);
     }
 
 /*---------------------------------------------------------------------------------**//**

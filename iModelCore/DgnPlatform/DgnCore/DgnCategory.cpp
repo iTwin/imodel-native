@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/DgnCategory.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -237,6 +237,7 @@ DgnCategoryIdList DgnCategory::QueryOrderedCategories(DgnDbR db)
 +---------------+---------------+---------------+---------------+---------------+------*/
 size_t DgnCategory::QueryCount(DgnDbR db)
     {
+    DgnDb::SQLRequest::Client _v_v;
     CachedECSqlStatementPtr stmt = db.GetPreparedECSqlStatement("SELECT count(*) FROM " DGN_SCHEMA(DGN_CLASSNAME_Category));
     return stmt.IsValid() && BE_SQLITE_ROW == stmt->Step() ? stmt->GetValueInt(0) : 0;
     }
@@ -404,7 +405,7 @@ DgnCategoryId DgnSubCategory::QueryCategoryId(DgnSubCategoryId subCatId, DgnDbR 
     if (!subCatId.IsValid())
         return DgnCategoryId();
 
-    BeSQLite::wt_OperationForGraphics highPriorityOperationBlock; // See comments on wt_OperationForGraphics
+    DgnDb::SQLRequest::Client _v_v;
 
     CachedECSqlStatementPtr stmt = db.GetPreparedECSqlStatement("SELECT ParentId FROM " DGN_SCHEMA(DGN_CLASSNAME_SubCategory) " WHERE ECInstanceId=? LIMIT 1");
     if (stmt.IsValid())
@@ -429,6 +430,7 @@ DgnSubCategoryIdSet DgnSubCategory::QuerySubCategories(DgnDbR db, DgnCategoryId 
     if (catId.IsValid())
         ecsql.append(" WHERE [ParentId]=?");
 
+    DgnDb::SQLRequest::Client _v_v;
     CachedECSqlStatementPtr stmt = db.GetPreparedECSqlStatement(ecsql.c_str());
     if (stmt.IsValid())
         {
@@ -452,6 +454,7 @@ size_t DgnSubCategory::QueryCount(DgnDbR db, DgnCategoryId catId)
     if (catId.IsValid())
         ecsql.append (" WHERE [ParentId]=?");
 
+    DgnDb::SQLRequest::Client _v_v;
     CachedECSqlStatementPtr stmt = db.GetPreparedECSqlStatement(ecsql.c_str());
     if (stmt.IsValid())
         {

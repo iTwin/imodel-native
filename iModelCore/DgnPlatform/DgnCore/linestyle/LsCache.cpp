@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/linestyle/LsCache.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include    <DgnPlatformInternal.h>
@@ -990,7 +990,7 @@ BentleyStatus       LsComponentReader::_LoadDefinition ()
     if (m_jsonSource.size() > 0)
         return SUCCESS;
 
-    wt_OperationForGraphics highPriority; // see comments in BeSQLite.h
+    DgnDb::SQLRequest::Client highPriority;
 
     BeSQLite::PropertySpec spec = LineStyleProperty::Compound();
 
