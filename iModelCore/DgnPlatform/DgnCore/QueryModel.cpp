@@ -353,7 +353,7 @@ bool QueryModel::Processor::Query(StopWatch& watch)
     else
         {
         SearchRangeTree(filter);
-        m_results->m_reachedMaxElements = (filter.m_occlusionScores.size() >= m_params.m_plan.m_targetNumElements);
+        m_results->m_reachedMaxElements = ((uint32_t)filter.m_occlusionScores.size() >= m_params.m_plan.m_targetNumElements);
         }
 
     if (m_dbStatus != BE_SQLITE_ROW)
