@@ -14,7 +14,7 @@
 
 #define RENDER_LOGGING 1
 
-#undef RENDER_LOGGING
+// #undef RENDER_LOGGING
 
 #undef LOG
 #if defined (RENDER_LOGGING)
@@ -42,9 +42,9 @@ void Render::Target::VerifyRenderThread() {DgnPlatformLib::VerifyRenderThread();
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void Render::Target::RecordFrameTime(double seconds) 
+void Render::Target::RecordFrameTime(GraphicList& scene, double seconds) 
     {
-    uint32_t count = m_currentScene->GetCount();
+    uint32_t count = scene.GetCount();
     if (0 == count)
         return;
 
@@ -52,7 +52,7 @@ void Render::Target::RecordFrameTime(double seconds)
         seconds = .001;
 
     uint32_t gps = (uint32_t) ((double) count / seconds);
-    //  printf("GPS=%d\n", gps);
+    printf("GPS=%d\n", gps);
     m_graphicsPerSecond.store(gps);
     }
 
@@ -63,7 +63,7 @@ void Render::Queue::AddTask(Task& task)
     {
     DgnPlatformLib::VerifyClientThread();
 
-    BeMutexHolder lock(m_cv.GetMutex());
+    BeMutexHolder mux(m_cv.GetMutex());
 
     // see whether the new task should replace any existing tasks
     for (auto entry=m_tasks.begin(); entry != m_tasks.end();)
@@ -78,7 +78,8 @@ void Render::Queue::AddTask(Task& task)
         }
 
     m_tasks.push_back(&task);
-    m_cv.notify_all();
+    mux.unlock();      // release lock before notify so other thread will start immediately vs. "hurry up and wait" problem
+    m_cv.notify_all(); 
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -130,7 +131,12 @@ void Render::Queue::Process()
         {
         WaitForWork();
         m_currTask->Perform(timer);
-        m_currTask = nullptr;
+
+        {
+        BeMutexHolder holder(m_cv.GetMutex());
+        m_currTask = nullptr; // change with mutex held
+        }
+
         m_cv.notify_all();
         }
     }

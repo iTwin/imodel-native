@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/ScanCriteria.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -13,7 +13,7 @@
 #include "DgnRangeTree.h"
 
 DGNPLATFORM_TYPEDEFS (DgnRangeTree)
-DGNPLATFORM_TYPEDEFS (IRangeNodeCheck)
+DGNPLATFORM_TYPEDEFS (RangeNodeCheck)
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 
@@ -44,7 +44,7 @@ private:
     PFScanElementCallback   m_callbackFunc;
     void*                   m_callbackArg;
     DgnCategoryIdSet const* m_categories;
-    IRangeNodeCheckP        m_appRangeNodeCheck;
+    RangeNodeCheckP         m_appRangeNodeCheck;
     int                     m_lastMember;
 
     bool UseRangeTree(DgnRangeTree&);
@@ -60,7 +60,7 @@ public:
     DPoint3dCR GetSkewVector() const {return m_skewVector;}
     DgnModelP GetDgnModelP() {return m_model;}
     PFScanElementCallback GetCallbackFunc() {return m_callbackFunc;}
-    void SetRangeNodeCheck (IRangeNodeCheckP checker) {m_appRangeNodeCheck = checker;}
+    void SetRangeNodeCheck(RangeNodeCheckP checker) {m_appRangeNodeCheck = checker;}
     DgnCategoryIdSet const* GetCategories() const {return m_categories;}
 
     DGNPLATFORM_EXPORT Result CheckRange(DRange3dCR elemRange, bool isElem3d) const;

@@ -11,7 +11,6 @@
 #include "DgnDb.h"
 #include "ColorUtil.h"
 #include "ViewController.h"
-#include <BeSQLite/RTreeMatch.h>
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 
@@ -54,160 +53,6 @@ struct FitViewParams
         }
 };
 
-//=======================================================================================
-// @bsiclass                                                    Keith.Bentley   12/11
-//=======================================================================================
-struct OcclusionScorer
-{
-    DMatrix4d   m_localToNpc;
-    DPoint3d    m_cameraPosition;
-    double      m_lodFilterNPCArea;
-    uint32_t    m_orthogonalProjectionIndex;
-    bool        m_cameraOn;
-    bool        m_testLOD;
-    void SetTestLOD(bool val) {m_testLOD=val;}
-    void InitForViewport(DgnViewportCR viewport, double minimumSizePixels);
-    bool ComputeEyeSpanningRangeOcclusionScore(double* score, DPoint3dCP rangeCorners, bool doFrustumCull);
-    bool ComputeNPC(DPoint3dR npcOut, DPoint3dCR localIn);
-    bool ComputeOcclusionScore(double* score, bool& overlap, bool& spansEyePlane, DPoint3dCP localCorners, bool doFrustumCull);
-};
-
-//=======================================================================================
-// @bsiclass                                                    John.Gooding    10/13
-//=======================================================================================
-struct OverlapScorer
-{
-    BeSQLite::RTree3dVal m_boundingRange;
-    void Initialize(DRange3dCR boundingRange);
-    bool ComputeScore(double* score, BeSQLite::RTree3dValCR range);
-};
-
-//=======================================================================================
-// @bsiclass                                                    Keith.Bentley   04/14
-//=======================================================================================
-struct ProgressiveDisplay : RefCounted<NonCopyableClass>
-{
-    enum class Completion {Finished=0, Aborted=1, Failed=2};
-    virtual Completion _Process(ViewContextR) = 0;  // if this returns Finished, it is removed from the viewport
-};
-
-//=======================================================================================
-// @bsiclass                                                    Keith.Bentley   04/14
-//=======================================================================================
-struct RtreeViewFilter : BeSQLite::RTreeAcceptFunction::Tester
-    {
-    bool                    m_doSkewtest;
-    Frustum                 m_frustum;
-    double                  m_minimumSizePixels;
-    BeSQLite::RTree3dVal    m_boundingRange;    // only return entries whose range intersects this cube.
-    BeSQLite::RTree3dVal    m_frontFaceRange;
-    OcclusionScorer         m_scorer;
-    uint32_t                m_nCalls;
-    uint32_t                m_nScores;
-    uint32_t                m_nSkipped;
-    DVec3d                  m_viewVec;  // vector from front face to back face
-    ClipVectorPtr           m_clips;
-    DgnElementIdSet const*  m_exclude;
-
-    bool AllPointsClippedByOnePlane(ConvexClipPlaneSetCR cps, size_t nPoints, DPoint3dCP points) const;
-    void SetClipVector(ClipVectorR clip) {m_clips = &clip;}
-    bool SkewTest(BeSQLite::RTree3dValCP);
-    DGNPLATFORM_EXPORT RtreeViewFilter(DgnViewportCR, BeSQLite::DbR db, double minimumSizeScreenPixels, DgnElementIdSet const* exclude);
-    };
-
-enum {PROGRESSIVE_VIEW_BATCH_SIZE = 30000};
-//=======================================================================================
-// @bsiclass                                                    Keith.Bentley   04/14
-//=======================================================================================
-struct ProgressiveViewFilter : ProgressiveDisplay, RtreeViewFilter
-{
-    friend struct QueryViewController;
-
-    ViewContextP   m_context;
-    QueryModelR    m_queryModel;
-    DgnDbR         m_dgndb;
-    uint32_t       m_nThisPass;
-    uint32_t       m_nLastPass;
-    uint32_t       m_thisBatch;
-    uint32_t       m_maxInBatch;
-    uint64_t       m_elementReleaseTrigger;
-    uint64_t       m_purgeTrigger;
-    bool           m_setTimeout;
-    BeSQLite::CachedStatementPtr m_rangeStmt;
-    ProgressiveViewFilter(DgnViewportCR vp, DgnDbR dgndb, QueryModelR queryModel, DgnElementIdSet const* exclude, uint64_t maxMemory, BeSQLite::CachedStatement* stmt)
-         : RtreeViewFilter(vp, dgndb, 0.0, exclude), m_dgndb(dgndb), m_queryModel(queryModel), m_elementReleaseTrigger(maxMemory), m_purgeTrigger(maxMemory), m_rangeStmt(stmt) 
-        {
-        m_nThisPass = m_nLastPass = m_thisBatch = 0;
-        m_maxInBatch = PROGRESSIVE_VIEW_BATCH_SIZE;
-        m_setTimeout = false;
-        m_context = nullptr;
-        }  
-    ~ProgressiveViewFilter();
-
-    virtual int _TestRange(QueryInfo const&) override;
-    virtual void _StepRange(BeSQLite::DbFunction::Context&, int nArgs, BeSQLite::DbValue* args) override;
-    virtual Completion _Process(ViewContextR context) override;
-};
-
-//=======================================================================================
-// @bsiclass                                                    Keith.Bentley   12/11
-//=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE DgnDbRTree3dViewFilter : RtreeViewFilter
-    {
-    typedef bmultimap<double, uint64_t> T_OcclusionScoreMap;
-
-    struct SecondaryFilter
-        {
-        OverlapScorer       m_scorer;
-        uint32_t            m_hitLimit;
-        uint32_t            m_occlusionMapCount;
-        double              m_occlusionMapMinimum;
-        T_OcclusionScoreMap m_occlusionScoreMap;
-        double              m_lastScore;
-        };
-
-    bool                    m_passedPrimaryTest;
-    bool                    m_passedSecondaryTest;
-    bool                    m_useSecondary;
-    uint32_t                m_hitLimit;
-    uint32_t                m_occlusionMapCount;
-    uint64_t                m_lastId;
-    T_OcclusionScoreMap     m_occlusionScoreMap;
-    double                  m_occlusionMapMinimum;
-    double                  m_lastScore;
-    SecondaryFilter         m_secondaryFilter;
-    ICheckStopP             m_checkStop;
-    DgnElementIdSet const*  m_alwaysDraw;
-
-    virtual int _TestRange(QueryInfo const&) override;
-    virtual void _StepRange(BeSQLite::DbFunction::Context&, int nArgs, BeSQLite::DbValue* args) override {RangeAccept(args[0].GetValueInt64());}
-    void RangeAccept(uint64_t elementId) ;
-    double MaxOcclusionScore();
-
-public:
-    DGNPLATFORM_EXPORT DgnDbRTree3dViewFilter(DgnViewportCR, ICheckStopP, BeSQLite::DbR db, uint32_t hitLimit, double minimumSizeScreenPixels, DgnElementIdSet const* alwaysDraw, DgnElementIdSet const* neverDraw);
-    void SetChceckStop(ICheckStopP checkStop) {m_checkStop = checkStop;}
-    void InitializeSecondaryTest(DRange3dCR volume, uint32_t hitLimit);
-    void GetStats(uint32_t& nAcceptCalls, uint32_t&nScores) { nAcceptCalls = m_nCalls; nScores = m_nScores; }
-    };
-
-//=======================================================================================
-// @bsiclass                                                    Keith.Bentley   12/11
-//=======================================================================================
-struct DgnDbRTreeFitFilter : BeSQLite::RTreeAcceptFunction::Tester
-    {
-    DRange3d m_fitRange;
-    DRange3d m_lastRange;
-
-    DGNPLATFORM_EXPORT virtual int _TestRange(QueryInfo const&) override;
-    virtual void _StepRange(BeSQLite::DbFunction::Context&, int nArgs, BeSQLite::DbValue* args) override {m_fitRange.Extend(m_lastRange);}
-
-public:
-    DgnDbRTreeFitFilter(BeSQLite::DbR db) : Tester(db) {m_fitRange = DRange3d::NullRange();}
-    DRange3dCR GetRange() const {return m_fitRange;}
-    };
-
-
 /*=================================================================================**//**
 * @bsiclass
 +===============+===============+===============+===============+===============+======*/
@@ -219,177 +64,6 @@ enum class ViewportResizeMode
     Size             = 3, //!< The viewport is resized to match the exact size 
     };
 
-
-/*=================================================================================**//**
-* @bsiclass                                                     Keith.Bentley   02/04
-+===============+===============+===============+===============+===============+======*/
-struct StopEvents
-    {
-    bool    m_keystrokes;
-    bool    m_wheel;
-    bool    m_button;
-    bool    m_buttonUp;
-    bool    m_paint;
-    bool    m_focus;
-    bool    m_modifierKeyTransition;
-    bool    m_sensor;
-    bool    m_abortUpdateRequest;
-    bool    m_touchMotion;          //  Ignored unless the motion exceeds range.
-    bool    m_anyEvent;
-    uint32_t m_touchLimit;
-    uint32_t m_numTouches;
-    BentleyApi::Point2d m_touches[3];
-
-    enum StopMask
-        {
-        None        = 0,
-        OnKeystrokes  = 1<<0,
-        OnWheel       = 1<<2,
-        OnButton      = 1<<3,
-        OnPaint       = 1<<4,
-        OnFocus       = 1<<5,
-        OnModifierKey = 1<<6,
-        OnTouch       = 1<<7,
-        OnAbortUpdate = 1<<8,
-        OnSensor      = 1<<9,   //  GPS, Gyro
-        OnButtonUp    = 1<<10,
-        AnyEvent      = 1<<11,   //  includes all of the other events plus unknown events
-
-        ForFullUpdate  = OnWheel | OnAbortUpdate,             // doesn't stop on keystrokes, buttons, or touch
-        ForQuickUpdate = ForFullUpdate | OnKeystrokes | OnButton | OnTouch,
-        };
-
-    void Clear()
-        {
-        m_keystrokes = m_wheel = m_button = m_paint = m_focus = m_modifierKeyTransition = m_abortUpdateRequest = m_touchMotion = m_anyEvent = false;
-        m_touchLimit = 0;
-        }
-
-    StopEvents(int mask)
-        {
-        if (mask & AnyEvent)
-            mask = -1;
-
-        m_keystrokes = TO_BOOL(mask & OnKeystrokes);
-        m_wheel      = TO_BOOL(mask & OnWheel);
-        m_button     = TO_BOOL(mask & OnButton);
-        m_buttonUp   = TO_BOOL(mask & OnButtonUp);
-        m_paint      = TO_BOOL(mask & OnPaint);
-        m_focus      = TO_BOOL(mask & OnFocus);
-        m_sensor     = TO_BOOL(mask & OnSensor);
-        m_modifierKeyTransition = TO_BOOL(mask & OnModifierKey);
-        m_touchMotion = TO_BOOL(mask & OnTouch);
-        m_abortUpdateRequest = TO_BOOL(mask & OnAbortUpdate);
-        m_anyEvent   = TO_BOOL(mask & AnyEvent);
-        m_touchLimit = 0;
-        }
-
-    void SetTouchLimit(uint32_t limit, uint32_t numTouches, Point2dCP touches);
-
-    // Stop when the ctrl or shift key is pressed or released.
-    void SetStopOnModifierKey(bool stop) {m_modifierKeyTransition = stop;}
-    };
-
-//=======================================================================================
-// @bsiclass                                                    Keith.Bentley   01/12
-//=======================================================================================
-struct UpdatePlan
-    {
-    friend struct ViewSet;
-
-    struct Query
-    {
-        struct Minimum
-        {
-            bool      m_enable = false;
-            double    m_time = 1.;        // check for minimum number of elements after this time during query (seconds)
-            uint32_t  m_count = 1000;
-            void Enable(bool val) {m_enable=val;}
-            void SetTime(double seconds) {m_time=seconds;}
-            void SetCount(uint32_t count) {m_count=count;}
-        };
-
-        Minimum     m_minimum;
-        double      m_maxTime = 10.;    // maximum time query should run (seconds)
-        double      m_minPixelSize = .1;
-        bool        m_wait = false;
-        uint32_t    m_minElements = 500;
-        uint32_t    m_maxElements = 50000;
-        mutable uint32_t    m_targetNumElements;
-        mutable ICheckStop* m_checkStop = nullptr;
-
-        uint32_t GetMinElements() const {return m_minElements;}
-        uint32_t GetMaxElements() const {return m_maxElements;}
-        void SetMinElements(uint32_t val) {m_minElements = val;}
-        void SetMaxElements(uint32_t val) {m_maxElements = val;}
-        double GetMinimumSizePixels() const {return m_minPixelSize;}
-        void SetMinimumSizePixels(double val) {m_minPixelSize=val;}
-        void SetTargetNumElements(uint32_t val) const {m_targetNumElements=val;}
-        uint32_t GetTargetNumElements() const {return m_targetNumElements;}
-        void SetWait(bool val) {m_wait=val;}
-        bool WantWait() const {return m_wait;}
-        ICheckStop* GetCheckStop() const {return m_checkStop;}
-        void SetCheckStop(ICheckStop* checkStop) const {m_checkStop=checkStop;}
-        Minimum& GetMinimum() {return m_minimum;}
-    };
-
-    struct Scene
-    {   
-        double m_timeout = 0.0; // abort create scene after this time. If 0, no timeout
-        double GetTimeout() const {return m_timeout;}
-        void SetTimeout(double seconds) {m_timeout=seconds;}
-    };
-
-    struct AbortFlags
-    {
-        struct Motion
-        {
-            int     m_tolerance = 0;
-            int     m_total = 0;
-            Point2d m_cursorPos;
-            void Clear() {m_total=0; m_cursorPos.x = m_cursorPos.y = 0;}
-
-            void AddMotion(int val) {m_total += val;}
-            int GetTotalMotion() {return m_total;}
-            void SetCursorPos(Point2d pt) {m_cursorPos=pt;}
-            void SetTolerance(int val) {m_tolerance=val;}
-            int GetTolerance() {return m_tolerance;}
-            Point2d GetCursorPos() {return m_cursorPos;}
-        };
-
-        StopEvents  m_stopEvents = StopEvents::ForFullUpdate;
-        mutable Motion m_motion;
-
-    void SetTouchCheckStopLimit(bool enabled, uint32_t pixels, uint32_t numberTouches, Point2dCP touches);
-    void SetStopEvents(StopEvents stopEvents) {m_stopEvents = stopEvents;}
-    StopEvents GetStopEvents() const {return m_stopEvents;}
-    Motion& GetMotion() const {return m_motion;}
-    bool WantMotionAbort() const {return 0 != m_motion.GetTolerance();}
-    };
-
-    double      m_targetFPS = 20.0; // Frames Per second
-    Query       m_query;
-    Scene       m_scene;
-    AbortFlags  m_abortFlags;
-
-public:
-    double GetTargetFramesPerSecond() const {return m_targetFPS;}
-    void SetTargetFramesPerSecond(double fps) {m_targetFPS = fps;}
-    Query& GetQueryR() {return m_query;}
-    Query const& GetQuery() const {return m_query;}
-    Scene& GetSceneR() {return m_scene;}
-    Scene const& GetScene() const {return m_scene;}
-    AbortFlags const& GetAbortFlags() const {return m_abortFlags;}
-    AbortFlags& GetAbortFlagsR() {return m_abortFlags;}
-    };
-
-//=======================================================================================
-// @bsiclass                                                    Keith.Bentley   01/12
-//=======================================================================================
-struct DynamicUpdatePlan : UpdatePlan
-    {
-    DynamicUpdatePlan() {m_abortFlags.SetStopEvents(StopEvents::ForQuickUpdate);}
-    };
 
 /*=================================================================================**//**
 * @bsiclass
@@ -450,8 +124,8 @@ protected:
     bool            m_isCameraOn = false;       // view is 3d and the camera is turned on.
     bool            m_frustumValid = false;
     bool            m_needSynchWithViewController = true;
-    bool            m_needsHeal = true;
-    bool            m_needsRefresh = true;
+    mutable bool    m_needsHeal = true;
+    mutable bool    m_needsRefresh = true;
     bool            m_targetCenterValid = false;
     bool            m_undoActive = false;
     Byte            m_dynamicsTransparency = 64;
@@ -533,8 +207,8 @@ public:
     void Destroy() {_Destroy();}
     DGNPLATFORM_EXPORT StatusInt ComputeVisibleDepthRange (double& minDepth, double& maxDepth, bool ignoreViewExtent = false);
     DGNPLATFORM_EXPORT StatusInt ComputeViewRange(DRange3dR, FitViewParams& params) ;
-    void SetNeedsRefresh() {m_needsRefresh=true;}
-    void SetNeedsHeal() {m_needsHeal = true; SetNeedsRefresh();}
+    void SetNeedsRefresh() const {m_needsRefresh=true;}
+    void SetNeedsHeal() const {m_needsHeal = true; SetNeedsRefresh();}
     DGNPLATFORM_EXPORT bool UseClipVolume(DgnModelCP) const;
     DGNPLATFORM_EXPORT static int GetDefaultIndexedLineWidth(int index);
     DGNPLATFORM_EXPORT static void OutputFrustumErrorMessage(ViewportStatus errorStatus);

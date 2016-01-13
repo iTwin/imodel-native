@@ -2865,7 +2865,7 @@ void ElementGeom2d::AddClassParams(ECSqlClassParams& params)
     {
     AddBaseClassParams(params);
 
-    params.Add(GEOM2_Rotation, ECSqlClassParams::StatementType::Select);
+    params.Add(GEOM2_Rotation);
     }
 
 /*---------------------------------------------------------------------------------**//**

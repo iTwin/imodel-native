@@ -1,6 +1,6 @@
 //-------------------------------------------------------------------------------------- 
 //     $Source: DgnCore/AnnotationTable.cpp $
-//  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //-------------------------------------------------------------------------------------- 
 
 #include <DgnPlatformInternal.h> 
@@ -1922,8 +1922,9 @@ void TextBlockHolder::_AppendGeometry (DPoint2dCR origin, DVec2dCR direction, Ta
 
     TextAnnotation textAnnotation (textBlock->GetDocument().GetDbR());
     textAnnotation.SetText (&textBlock->GetDocument());
+    textAnnotation.SetDocumentTransform(transform);
 
-    builder.Append (textAnnotation, transform);
+    builder.Append(textAnnotation);
     }
 
 /*---------------------------------------------------------------------------------**//**
