@@ -72,7 +72,7 @@ void ChangeSummaryTestFixture::DeleteElement(DgnElementId elementId)
 //---------------------------------------------------------------------------------------
 void ChangeSummaryTestFixture::DumpChangeSummary(ChangeSummary const& changeSummary, Utf8CP label)
     {
-#if 1 //DUMP_CHANGE_SUMMARY
+#ifdef DUMP_CHANGE_SUMMARY
     printf("\t%s:\n", label);
     changeSummary.Dump();
 #endif
