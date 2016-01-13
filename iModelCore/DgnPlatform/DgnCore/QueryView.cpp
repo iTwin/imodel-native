@@ -8,6 +8,10 @@
 #include <DgnPlatformInternal.h>
 #include <DgnPlatform/QueryView.h>
 
+#if !defined (BENTLEY_WIN32) && !defined (BENTLEY_WINRT)
+#include <Bentley/BeSystemInfo.h>
+#endif
+
 #include "UpdateLogging.h"
 
 //#define TRACE_QUERY_LOGIC 1
