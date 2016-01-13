@@ -2,7 +2,7 @@
 |
 |     $Source: formats/bcdtmLidar.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "TerrainModel/Formats/Formats.h"
@@ -401,6 +401,10 @@ struct GeoTiffKeysList : IGeoTiffKeysList
     virtual void            AddKey (unsigned short pi_KeyID, uint32_t pi_value) {}
     virtual void            AddKey (unsigned short pi_KeyID, double pi_value) {}
     virtual void            AddKey (unsigned short pi_KeyID, const std::string& pi_value) {}
+
+    // Apparently this implementation of IGeoTiffKeyList does not support addition of keys so none can be
+    // extracted from a BaseGCS using SetGeoKeys
+    virtual void            AddKey (const GeoKeyItem& key) {};
     };
 
 DTMStatusInt bcdtmFormatLidar_getCoordinateSystem (BeFile& lasFile, BCCIVIL_LASPublicHeaderBlock& pPHB, BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSPtr& gcs)
@@ -469,7 +473,7 @@ DTMStatusInt bcdtmFormatLidar_getCoordinateSystem (BeFile& lasFile, BCCIVIL_LASP
         GeoTiffKeysList geoTiffKeys (vlrs[geoKeyRecordIndex].data, geoDoubleParamsTagIndex != -1 ? vlrs[geoDoubleParamsTagIndex].data : nullptr, geoAsciiParamsTagIndex != -1 ? vlrs[geoAsciiParamsTagIndex].data : nullptr);
         WString msg;
         StatusInt warning;
-        if (gcs->InitFromGeoTiffKeys (&warning, &msg, &geoTiffKeys) != SUCCESS)
+        if (gcs->InitFromGeoTiffKeys (&warning, &msg, &geoTiffKeys, true) != SUCCESS)
             gcs = nullptr;
         }
 

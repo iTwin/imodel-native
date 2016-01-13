@@ -6,7 +6,7 @@
 |       $Date: 2011/12/01 18:51:29 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ScalableTerrainModelPCH.h>
@@ -503,7 +503,7 @@ inline GCS::Status GCS::Impl::GetNullCSWKT (WString& wkt) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 GCS::Status GCS::Impl::GetBaseCSWKT (WString& wkt) const
     {            
-    if (BSISUCCESS != m_geoRef.GetBase().GetWellKnownText(wkt, BaseGCS::wktFlavorAutodesk))
+    if (BSISUCCESS != m_geoRef.GetBase().GetWellKnownText(wkt, BaseGCS::wktFlavorAutodesk, false))
         return S_ERROR;  
      
     return S_SUCCESS;
@@ -847,38 +847,38 @@ struct GCSFactory::Impl : public ShareableObjectTypeTrait<Impl>::type
         }
 
 
-    GCS                             CreateFromBaseCS                   (const WChar*                     wkt,
+    GCS                             CreateFromBaseCS                   (const WChar*                    wkt,
                                                                         BaseGCS::WktFlavor              wktFlavor,
                                                                         const LocalTransform*           localTransformP,
                                                                         Status&                         status) const;    
 
-    GCS                             CreateFromLocalCS                  (const WChar*                     wktBegin,
-                                                                        const WChar*                     wktEnd,
+    GCS                             CreateFromLocalCS                  (const WChar*                    wktBegin,
+                                                                        const WChar*                    wktEnd,
                                                                         BaseGCS::WktFlavor              wktFlavor,
                                                                         const LocalTransform*           localTransformP,
                                                                         Status&                         status) const;
 
-    GCS                             CreateFromFittedCS                 (const WChar*                     wktBegin,
-                                                                        const WChar*                     wktEnd,
-                                                                        BaseGCS::WktFlavor              wktFlavor,
-                                                                        const LocalTransform*           localTransformP,
-                                                                        Status&                         status) const;
-
-
-    GCS                             CreateFromComposedCS               (const WChar*                     wktBegin,
-                                                                        const WChar*                     wktEnd,
+    GCS                             CreateFromFittedCS                 (const WChar*                    wktBegin,
+                                                                        const WChar*                    wktEnd,
                                                                         BaseGCS::WktFlavor              wktFlavor,
                                                                         const LocalTransform*           localTransformP,
                                                                         Status&                         status) const;
 
 
-    GCS                             Create                             (const WChar*                     wktBegin,
-                                                                        const WChar*                     wktEnd,
+    GCS                             CreateFromComposedCS               (const WChar*                    wktBegin,
+                                                                        const WChar*                    wktEnd,
                                                                         BaseGCS::WktFlavor              wktFlavor,
                                                                         const LocalTransform*           localTransformP,
                                                                         Status&                         status) const;
 
-    GCS                             Create                             (const WChar*                     wkt,
+
+    GCS                             Create                             (const WChar*                    wktBegin,
+                                                                        const WChar*                    wktEnd,
+                                                                        BaseGCS::WktFlavor              wktFlavor,
+                                                                        const LocalTransform*           localTransformP,
+                                                                        Status&                         status) const;
+
+    GCS                             Create                             (const WChar*                    wkt,
                                                                         BaseGCS::WktFlavor              wktFlavor,
                                                                         const LocalTransform*           localTransformP,
                                                                         Status&                         status) const;
