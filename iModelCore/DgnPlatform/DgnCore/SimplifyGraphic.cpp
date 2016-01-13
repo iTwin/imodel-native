@@ -500,7 +500,7 @@ bool SimplifyGraphic::ArePointsTotallyOutsideClip(DPoint3dCP points, int nPoints
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SimplifyGraphic::ProcessAsLinearSegments(CurveVectorCR geom, bool filled) const
+void SimplifyGraphic::ProcessAsLinearSegments(CurveVectorCR geom, bool filled)
     {
     bvector<DPoint3d> points;
 
@@ -511,7 +511,7 @@ void SimplifyGraphic::ProcessAsLinearSegments(CurveVectorCR geom, bool filled) c
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  08/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void processCurvePrimitives(IGeometryProcessorR processor, CurveVectorCR curves, bool filled, SimplifyGraphic const& graphic)
+static void processCurvePrimitives(IGeometryProcessorR processor, CurveVectorCR curves, bool filled, SimplifyGraphic& graphic)
     {
     if (curves.IsUnionRegion() || curves.IsParityRegion())
         {
@@ -554,7 +554,7 @@ static void processCurvePrimitives(IGeometryProcessorR processor, CurveVectorCR 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SimplifyGraphic::ProcessAsCurvePrimitives(CurveVectorCR geom, bool filled) const
+void SimplifyGraphic::ProcessAsCurvePrimitives(CurveVectorCR geom, bool filled)
     {
     processCurvePrimitives(m_processor, geom, filled, *this);
     }
@@ -562,7 +562,7 @@ void SimplifyGraphic::ProcessAsCurvePrimitives(CurveVectorCR geom, bool filled) 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  03/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SimplifyGraphic::ClipAndProcessCurveVector(CurveVectorCR geom, bool filled) const
+void SimplifyGraphic::ClipAndProcessCurveVector(CurveVectorCR geom, bool filled)
     {
     bool doClipping = (nullptr != GetCurrentClip() && m_processor._DoClipping());
 
@@ -693,7 +693,7 @@ void SimplifyGraphic::ClipAndProcessCurveVector(CurveVectorCR geom, bool filled)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SimplifyGraphic::ClipAndProcessSolidPrimitive(ISolidPrimitiveCR geom) const
+void SimplifyGraphic::ClipAndProcessSolidPrimitive(ISolidPrimitiveCR geom)
     {
     bool doClipping = (nullptr != GetCurrentClip() && m_processor._DoClipping());
 
@@ -808,7 +808,7 @@ void SimplifyGraphic::ClipAndProcessSolidPrimitive(ISolidPrimitiveCR geom) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  06/05
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SimplifyGraphic::ClipAndProcessSurface(MSBsplineSurfaceCR geom) const
+void SimplifyGraphic::ClipAndProcessSurface(MSBsplineSurfaceCR geom)
     {
     bool doClipping = (nullptr != GetCurrentClip() && m_processor._DoClipping());
 
@@ -923,7 +923,7 @@ void SimplifyGraphic::ClipAndProcessSurface(MSBsplineSurfaceCR geom) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  12/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SimplifyGraphic::ClipAndProcessPolyface(PolyfaceQueryCR geom, bool filled) const
+void SimplifyGraphic::ClipAndProcessPolyface(PolyfaceQueryCR geom, bool filled)
     {
     bool doClipping = (nullptr != GetCurrentClip() && m_processor._DoClipping());
 
@@ -1001,7 +1001,7 @@ void SimplifyGraphic::ClipAndProcessPolyface(PolyfaceQueryCR geom, bool filled) 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  03/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SimplifyGraphic::ClipAndProcessPolyfaceAsCurves(PolyfaceQueryCR geom) const
+void SimplifyGraphic::ClipAndProcessPolyfaceAsCurves(PolyfaceQueryCR geom)
     {
     int const*  vertIndex = geom.GetPointIndexCP();
     size_t      numIndices = geom.GetPointIndexCount();
@@ -1105,7 +1105,7 @@ void SimplifyGraphic::ClipAndProcessPolyfaceAsCurves(PolyfaceQueryCR geom) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley   10/04
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SimplifyGraphic::ClipAndProcessBody(ISolidKernelEntityCR geom) const
+void SimplifyGraphic::ClipAndProcessBody(ISolidKernelEntityCR geom)
     {
     bool doClipping = (nullptr != GetCurrentClip() && m_processor._DoClipping());
 
@@ -1182,7 +1182,7 @@ void SimplifyGraphic::ClipAndProcessBody(ISolidKernelEntityCR geom) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  01/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SimplifyGraphic::ClipAndProcessBodyAsPolyface(ISolidKernelEntityCR geom) const
+void SimplifyGraphic::ClipAndProcessBodyAsPolyface(ISolidKernelEntityCR geom)
     {
     IFacetTopologyTablePtr  facetsPtr;
 
@@ -1234,11 +1234,11 @@ void SimplifyGraphic::ClipAndProcessBodyAsPolyface(ISolidKernelEntityCR geom) co
                 if (0 != clippedPolyface.size())
                     {
                     for (PolyfaceHeaderPtr meshOut : clippedPolyface)
-                        m_processor._ProcessPolyface(*meshOut, false, static_cast<SimplifyGraphic const&> (*graphic));
+                        m_processor._ProcessPolyface(*meshOut, false, static_cast<SimplifyGraphic&> (*graphic));
                     }
                 else
                     {
-                    m_processor._ProcessPolyface(*polyfaces[i], false, static_cast<SimplifyGraphic const&> (*graphic));
+                    m_processor._ProcessPolyface(*polyfaces[i], false, static_cast<SimplifyGraphic&> (*graphic));
                     }
                 }
             }
@@ -1260,18 +1260,18 @@ void SimplifyGraphic::ClipAndProcessBodyAsPolyface(ISolidKernelEntityCR geom) co
     if (0 != clippedPolyface.size())
         {
         for (PolyfaceHeaderPtr meshOut : clippedPolyface)
-            m_processor._ProcessPolyface(*meshOut, false, static_cast<SimplifyGraphic const&> (*graphic));
+            m_processor._ProcessPolyface(*meshOut, false, static_cast<SimplifyGraphic&> (*graphic));
         }
     else
         {
-        m_processor._ProcessPolyface(*polyface, false, static_cast<SimplifyGraphic const&> (*graphic));
+        m_processor._ProcessPolyface(*polyface, false, static_cast<SimplifyGraphic&> (*graphic));
         }
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  06/05
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SimplifyGraphic::ClipAndProcessText(TextStringCR text) const
+void SimplifyGraphic::ClipAndProcessText(TextStringCR text)
     {
     bool doClipping = (nullptr != GetCurrentClip() && m_processor._DoClipping());
 
@@ -1389,7 +1389,7 @@ static bool isPhysicallyClosed(ICurvePrimitiveCR primitive)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  09/05
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SimplifyGraphic::ClipAndProcessGlyph(DgnFontCR font, DgnGlyphCR glyph, DPoint3dCR glyphOffset) const
+void SimplifyGraphic::ClipAndProcessGlyph(DgnFontCR font, DgnGlyphCR glyph, DPoint3dCR glyphOffset)
     {
     GPArraySmartP  gpaText;
 

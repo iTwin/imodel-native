@@ -15,12 +15,27 @@ BeThreadLocalStorage g_hostForThread;
 BeThreadLocalStorage g_threadId;
 
 double const fc_hugeVal = 1e37;
+int DgnDb::SQLRequest::Client::s_nPending;
+int DgnDb::SQLRequest::Query::s_nPending;
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnPlatformLib::ThreadId DgnPlatformLib::GetThreadId() {return (ThreadId) g_threadId.GetValueAsInteger();}
-void DgnPlatformLib::SetThreadId(ThreadId id) {g_threadId.SetValueAsInteger((int) id);}
+DgnDb::ThreadId DgnDb::GetThreadId() {return (ThreadId) g_threadId.GetValueAsInteger();}
+void DgnDb::SetThreadId(ThreadId id) {g_threadId.SetValueAsInteger((int) id);}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   01/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnDb::_VerifyQuerySequence() const
+    {
+#if !defined(NDEBUG)
+    if (SQLRequest::Query::IsActive() && !SQLRequest::Client::IsActive() && GetThreadId() != ThreadId::Query)
+        {
+        BeAssert(false);
+        }
+#endif
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   01/16
@@ -292,7 +307,7 @@ NotificationManager::MessageBoxValue NotificationManager::OpenMessageBox(Message
 void DgnPlatformLib::AdoptHost(DgnPlatformLib::Host& host)
     {
     g_hostForThread.SetValueAsPointer(&host);
-    SetThreadId(ThreadId::Client);
+    DgnDb::SetThreadId(DgnDb::ThreadId::Client);
     }
 
 /*---------------------------------------------------------------------------------**//**

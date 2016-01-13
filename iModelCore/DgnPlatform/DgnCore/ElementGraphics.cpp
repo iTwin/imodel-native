@@ -917,7 +917,7 @@ virtual ~RuleCollector() {}
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   03/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual bool _ProcessCurveVector(CurveVectorCR curves, bool isFilled, SimplifyGraphic const& graphic) override
+virtual bool _ProcessCurveVector(CurveVectorCR curves, bool isFilled, SimplifyGraphic& graphic) override
     {
     if (m_curves.IsNull())
         m_curves = CurveVector::Create(CurveVector::BOUNDARY_TYPE_None);
@@ -937,7 +937,7 @@ virtual bool _ProcessCurveVector(CurveVectorCR curves, bool isFilled, SimplifyGr
 +---------------+---------------+---------------+---------------+---------------+------*/
 virtual void _OutputGraphics(ViewContextR context) override
     {
-    Render::GraphicPtr graphic = context.CreateGraphic(Graphic::CreateParams(context.GetViewport(), m_entity ? m_entity->GetEntityTransform() : Transform::FromIdentity()));
+    Render::GraphicPtr graphic = context.CreateGraphic(Graphic::CreateParams(context.GetViewport()));
 
     if (m_surface)
         WireframeGeomUtil::Draw(*graphic, *m_surface, context, m_includeEdges, m_includeFaceIso);
@@ -1040,7 +1040,7 @@ virtual UnhandledPreference _GetUnhandledPreference(ISolidKernelEntityCR) const 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual bool _ProcessCurveVector(CurveVectorCR curves, bool isFilled, SimplifyGraphic const& graphic) override
+virtual bool _ProcessCurveVector(CurveVectorCR curves, bool isFilled, SimplifyGraphic& graphic) override
     {
     bmap<FaceAttachment, CurveVectorP>::iterator found = m_uniqueAttachments.find(graphic.GetCurrentGeometryParams());
 
@@ -1075,7 +1075,7 @@ virtual void _OutputGraphics(ViewContextR context) override
         m_uniqueAttachments[attachment] = curve.get();
         }
 
-    Render::GraphicPtr graphic = context.CreateGraphic(Graphic::CreateParams(context.GetViewport(), m_entity.GetEntityTransform()));
+    Render::GraphicPtr graphic = context.CreateGraphic(Graphic::CreateParams(context.GetViewport()));
 
     WireframeGeomUtil::Draw(*graphic, m_entity, context, m_includeEdges, m_includeFaceIso);
     graphic->Close();

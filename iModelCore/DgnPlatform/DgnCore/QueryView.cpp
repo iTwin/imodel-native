@@ -8,6 +8,10 @@
 #include <DgnPlatformInternal.h>
 #include <DgnPlatform/QueryView.h>
 
+#if !defined (BENTLEY_WIN32) && !defined (BENTLEY_WINRT)
+#include <Bentley/BeSystemInfo.h>
+#endif
+
 #include "UpdateLogging.h"
 
 #define TRACE_QUERY_LOGIC 1
@@ -441,7 +445,7 @@ void QueryViewController::_DrawView(ViewContextR context)
     //  We count on progressive display to draw zero length strings and points that are excluded by LOD filtering in the occlusion step.
     if ((DrawPurpose::CreateScene == context.GetDrawPurpose()) && (results->m_reachedMaxElements) && !m_noQuery)
         {
-        wt_OperationForGraphics highPriority;  //  see comments in BeSQLite.h
+        DgnDb::SQLRequest::Client highPriority;
         DgnViewportP vp = context.GetViewport();
         CachedStatementPtr rangeStmt;
         m_queryModel.GetDgnDb().GetCachedStatement(rangeStmt, _GetRTreeMatchSql(*context.GetViewport()).c_str());

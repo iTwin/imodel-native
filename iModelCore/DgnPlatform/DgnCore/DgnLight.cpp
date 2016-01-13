@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/DgnLight.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -60,7 +60,8 @@ DgnDbStatus LightDefinition::_ReadSelectParams(ECSqlStatement& stmt, ECSqlClassP
     {
     auto status = T_Super::_ReadSelectParams(stmt, params);
     if (DgnDbStatus::Success == status)
-    BeSQLite::wt_OperationForGraphics wt_OperationForGraphics;
+
+    DgnDb::SQLRequest::Client forGraphics;
         {
         Utf8String descr = stmt.GetValueText(params.GetSelectIndex(PROPNAME_Descr)),
                    value = stmt.GetValueText(params.GetSelectIndex(PROPNAME_Value));

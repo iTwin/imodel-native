@@ -534,7 +534,7 @@ public:
             virtual BentleyStatus _FacetBody(IFacetTopologyTablePtr& out, ISolidKernelEntityCR in, IFacetOptionsR options) const {return _FacetBody(out, in, 0.0);}
 
             //! Output a ISolidKernelEntity as one or more closed planar shapes (may have holes) and surfaces to the supplied view context.
-            //! @param[out] graphic The graphic to append the surface geometry to.
+            //! @param[in,out] graphic The graphic to append the surface geometry to.
             //! @param[in] in The solid kernel entity to draw.
             //! @param[in] context The context to output the body to.
             //! @param[in] simplify if true faces are output as simple types (CurveVector, SolidPrimitive, and MSBSplineSurface) instead of sheet bodies.
@@ -542,7 +542,7 @@ public:
             virtual BentleyStatus _OutputBodyAsSurfaces(Render::GraphicR graphic, ISolidKernelEntityCR in, ViewContextR context, bool simplify = true) const {return ERROR;}
 
             //! Output a ISolidKernelEntity as a wireframe representation.
-            //! @param[out] graphic The graphic to append the edge and face hatch curve geometry to.
+            //! @param[in,out] graphic The graphic to append the edge and face hatch curve geometry to.
             //! @param[in] in The solid kernel entity.
             //! @param[in] context The context to output the body to.
             //! @param[in] includeEdges Include wire geometry for body edges.
@@ -561,6 +561,7 @@ public:
             virtual CurveVectorPtr _WireBodyToCurveVector(ISolidKernelEntityCR in) const {return nullptr;}
 
             //! Output a cut section through an ISolidKernelEntity to the supplied view context.
+            //! @param[in,out] graphic The graphic to append the cut geometry to.
             //! @param[in] in The solid kernel entity to display a section cut through.
             //! @param[in] transform The local (UOR) transform (not entity transform).
             //! @param[in] context The context to output the cut section to.
@@ -570,7 +571,7 @@ public:
             //! @param[in] clipMask mask detailing which directions are being clipped.
             //! @param[in] compoundDrawState - used for generating CurvePrimitiveId - cannot be extracted from context as this is only for output (not context for this cut).
             //! @return SUCCESS if operation was handled.
-            virtual BentleyStatus _OutputBodyCut(ISolidKernelEntityCR in, TransformCP transform, ViewContextR context, DPlane3dCR plane, DRange2dCR clipRange, RotMatrixCR clipMatrix, ClipMask clipMask, CompoundDrawState* compoundDrawState) const {return ERROR;}
+            virtual BentleyStatus _OutputBodyCut(Render::GraphicR graphic, ISolidKernelEntityCR in, TransformCP transform, ViewContextR context, DPlane3dCR plane, DRange2dCR clipRange, RotMatrixCR clipMatrix, ClipMask clipMask, CompoundDrawState* compoundDrawState) const {return ERROR;}
 
             //! Stretch faces/edges of a solid/surface kernel entity.
             //! @param[in] in The solid kernel entity to strecth.
@@ -746,11 +747,12 @@ public:
             virtual bool _ClosestPoint(ISolidKernelEntityCR entity, DPoint3dCR testPt, ISubEntityPtr& subEntity, DPoint3dR point, DPoint2dR param, bool preferFace = false) const {return false;}
 
             //! Output the geometry for the supplied sub-entity to the specified context.
+            //! @param[in,out] graphic The graphic to add the sub-entity geometry to.
             //! @param[in] subEntity The solid kernel sub-entity to draw.
             //! @param[in] context The context to output the sub-entity to.
             //! @return SUCCESS if a valid solid kernel sub-entity was specified.
             //! @note Can be used for selection dynamics as well as to collect sub-entity geometry as a CurveVector or SolidPrimitive using an IGeometryProcessor.
-            virtual BentleyStatus _Draw(ISubEntityCR subEntity, ViewContextR context) const {return ERROR;}
+            virtual BentleyStatus _Draw(Render::GraphicR graphic, ISubEntityCR subEntity, ViewContextR context) const {return ERROR;}
 
             //! Evaluate a uv parameter on a face sub-entity.
             //! @param[in] subEntity The solid kernel sub-entity to query.
@@ -1049,17 +1051,7 @@ public:
     //! @return a reference to the Host object. WARNING: Do not call this function unless you know that there is a Host.
     DGNPLATFORM_EXPORT static Host& GetHost();
 
-    //! Ids for DgnPlatform threads
-    enum class ThreadId {Unknown=0, Client=100, Render=101, Query=102,};
-
-    DGNPLATFORM_EXPORT static ThreadId GetThreadId();        //!< Get the ThreadId for the current thread
     DGNPLATFORM_EXPORT static WCharCP GetThreadIdName();     //!< For debugging purposes, get the current ThreadId as a string
-    static void SetThreadId(ThreadId);    //!< Set the ThreadId for the current thread
-    static void VerifyThread(ThreadId id) {BeAssert(id==GetThreadId());}   //!< Ensure that this is a specific DgnPlatform thread
-    static void VerifyClientThread() {VerifyThread(ThreadId::Client);}     //!< Ensure that this is the Client thread
-    static void VerifyRenderThread() {VerifyThread(ThreadId::Render);}     //!< Ensure that this is the Render thread
-    static void VerifyQueryThread()  {VerifyThread(ThreadId::Query);}      //!< Ensure that this is the Query thread
-
     //! Used by DgnDbFileIO to initialize logging for Graphite code.
     //! @param configFileName Optional. The name of the logging configuration file to parse. Pass nullptr for logging to the console with default severities.
     //! If configFileName is specified, then the log4cxx provider will be used. Note that this provider comes from log4cxx.dll, and both the Graphite and Vancouver

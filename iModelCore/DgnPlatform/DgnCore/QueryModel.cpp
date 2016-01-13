@@ -67,7 +67,7 @@ void QueryModel::RequestAbort(bool wait)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void QueryModel::SaveQueryResults()
     {
-    DgnPlatformLib::VerifyClientThread();
+    DgnDb::VerifyClientThread();
 
     if (m_updatedResults.IsNull())
         {
@@ -117,7 +117,7 @@ QueryModel::QueryModel(DgnDbR dgndb) : SpatialModel(SpatialModel::CreateParams(d
 THREAD_MAIN_IMPL QueryModel::Queue::Main(void* arg)
     {
     BeThreadUtilities::SetCurrentThreadName("QueryModel");
-    DgnPlatformLib::SetThreadId(DgnPlatformLib::ThreadId::Query);
+    DgnDb::SetThreadId(DgnDb::ThreadId::Query);
 
     ((Queue*)arg)->Process();
 
@@ -130,7 +130,7 @@ THREAD_MAIN_IMPL QueryModel::Queue::Main(void* arg)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void QueryModel::Queue::Terminate()
     {
-    DgnPlatformLib::VerifyClientThread();
+    DgnDb::VerifyClientThread();
 
     BeMutexHolder lock(m_cv.GetMutex());
     if (State::Active != m_state)
@@ -155,7 +155,7 @@ bool QueryModel::Filter::CheckAbort()
         return true;
         }
 
-    if (GraphicsAndQuerySequencer::qt_isOperationRequiredForGraphicsPending())
+    if (DgnDb::SQLRequest::Client::IsActive())
         {
         DEBUG_PRINTF("Query Filter interrupted");
         m_restartRangeQuery = true;
@@ -170,7 +170,7 @@ bool QueryModel::Filter::CheckAbort()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void QueryModel::Queue::RemovePending(QueryModelR model)
     {
-    DgnPlatformLib::VerifyClientThread();
+    DgnDb::VerifyClientThread();
 
     // We may currently be processing a query for this model. If so, let it complete and queue up another one.
     // But remove any other previously-queued processing requests for this model.
@@ -190,7 +190,7 @@ void QueryModel::Queue::RemovePending(QueryModelR model)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void QueryModel::Queue::Add(Processor::Params const& params)
     {
-    DgnPlatformLib::VerifyClientThread();
+    DgnDb::VerifyClientThread();
 
     QueryModelR model = params.m_model;
     if (&model.GetDgnDb() != &m_db)
@@ -213,7 +213,7 @@ void QueryModel::Queue::Add(Processor::Params const& params)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void QueryModel::Queue::WaitForIdle()
     {
-    DgnPlatformLib::VerifyClientThread();
+    DgnDb::VerifyClientThread();
 
     BeMutexHolder holder(m_cv.GetMutex());
     while (m_active.IsValid() || !m_pending.empty())
@@ -277,7 +277,7 @@ bool QueryModel::Queue::WaitForWork()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void QueryModel::Queue::Process()
     {
-    DgnPlatformLib::VerifyQueryThread();
+    DgnDb::VerifyQueryThread();
 
     StopWatch timer(false);
 
@@ -319,7 +319,7 @@ bool QueryModel::Processor::LoadElements(OcclusionScores& scores, bvector<DgnEle
 
         bool hitLimit = pool.GetTotalAllocated() > (int64_t) (2 * m_params.m_maxMemory);
         DgnElementId elId(curr->second);
-        DgnElementCPtr el = !hitLimit ? pool.GetElement(elId) : pool.FindElement(elId);
+        DgnElementCPtr el = !hitLimit ? pool.FindOrLoadElement(elId) : pool.FindElement(elId);
 
         if (el.IsValid())
             elements.push_back(el);
@@ -333,15 +333,14 @@ bool QueryModel::Processor::LoadElements(OcclusionScores& scores, bvector<DgnEle
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool QueryModel::Processor::Query(StopWatch& watch)
     {
-    DgnPlatformLib::VerifyQueryThread();
+    DgnDb::VerifyQueryThread();
 
     watch.Start();
     GetModel().SetAbortQuery(false);
 
     //  Notify GraphicsAndQuerySequencer that this thread is running 
     //  a range tree operation and is therefore exempt from checks for high priority required.
-    DgnDbR db = GetModel().GetDgnDb();
-    qt_RangeTreeOperationBlock qt_RangeTreeOperationBlock(db);
+    DgnDb::SQLRequest::Query rangeTreeOperationBlock;
 
     Filter filter(m_params.m_vp, GetModel(), m_params.m_plan.m_targetNumElements, m_params.m_plan.m_minPixelSize, m_params.m_highPriorityOnly ? nullptr : m_params.m_highPriority, m_params.m_neverDraw);
     if (m_params.m_clipVector.IsValid())
@@ -359,7 +358,7 @@ bool QueryModel::Processor::Query(StopWatch& watch)
     else
         {
         SearchRangeTree(filter);
-        m_results->m_reachedMaxElements = (filter.m_occlusionScores.size() >= m_params.m_plan.m_targetNumElements);
+        m_results->m_reachedMaxElements = ((uint32_t)filter.m_occlusionScores.size() >= m_params.m_plan.m_targetNumElements);
         }
 
     if (m_dbStatus != BE_SQLITE_ROW)
@@ -425,7 +424,7 @@ void QueryModel::Processor::SearchRangeTree(Filter& filter)
     {
     do
         {
-        if (GraphicsAndQuerySequencer::qt_isOperationRequiredForGraphicsPending())
+        if (DgnDb::SQLRequest::Client::IsActive())
             {
             for (unsigned i = 0; i < 10 && !filter.CheckAbort(); ++i)
                 BeThreadUtilities::BeSleep(2); // Let it run for awhile. If there was one call to SQLite, there will probably be more.
@@ -693,7 +692,7 @@ int QueryModel::ProgressiveFilter::_TestRange(QueryInfo const& info)
 +---------------+---------------+---------------+---------------+---------------+------*/
 ProgressiveDisplay::Completion QueryModel::ProgressiveFilter::_Process(ViewContextR context, uint32_t batchSize)
     {
-    DgnPlatformLib::VerifyClientThread();
+    DgnDb::VerifyClientThread();
 
     // Progressive display happens on the client thread. It uses SQLite, and therefore cannot run at the same time 
     // as the query thread (that causes deadlocks, race conditions, crashes, etc.). This test is the only necessary 
@@ -727,6 +726,7 @@ ProgressiveDisplay::Completion QueryModel::ProgressiveFilter::_Process(ViewConte
 +---------------+---------------+---------------+---------------+---------------+------*/
 QueryModel::ProgressiveFilter::~ProgressiveFilter()
     {
+    DgnDb::SQLRequest::Client _v_v;
     m_rangeStmt = nullptr;
     }
 
