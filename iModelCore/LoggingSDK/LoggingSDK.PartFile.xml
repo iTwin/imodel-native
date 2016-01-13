@@ -39,6 +39,7 @@
     </Part>
 
     <Part Name="LoggingManagedConsole" BMakeFile="src\managed\console\console.mke" ExcludeLibType="Static">
+        <SubPart PartName="LoggingManagedLog4net"/>
         <Bindings>
             <Assemblies ProductDirectoryName="LoggingManagedAssemblies">Delivery\Bentley.Logging.console-2.0$(shlibext)</Assemblies>
         </Bindings>
@@ -46,12 +47,14 @@
 
     <Part Name="LoggingManagedLog4net" BMakeFile="src\managed\log4net\log4net.mke" ExcludeLibType="Static">
         <RequiredRepository>libsrc-Log4net</RequiredRepository>
+        <SubPart PartName="LoggingManagedInterface"/>
         <Bindings>
             <Assemblies ProductDirectoryName="LoggingManagedAssemblies">Delivery\Bentley.Logging.log4net-2.0$(shlibext)</Assemblies>
         </Bindings>
     </Part>
 
     <Part Name="LoggingManagedInterop" BMakeFile="src\managed\interop\interop.mke" ExcludeLibType="Static">
+        <SubPart PartName="BentleyDll"              PartFile="Bentley"    Repository="Bentley" />
         <Bindings>
           <Libs>Delivery\Bentley.Logging.interop-2.0$(libext)</Libs>
           <Assemblies ProductDirectoryName="LoggingManagedAssemblies">Delivery\Bentley.Logging.interop-2.0$(shlibext)</Assemblies>
@@ -67,8 +70,8 @@
 
     <Part Name="LoggingManaged">
         <SubPart PartName="LoggingManagedInterface" />
-        <SubPart PartName="LoggingManagedConsole" />
         <SubPart PartName="LoggingManagedLog4net" />
+        <SubPart PartName="LoggingManagedConsole" />
     </Part>
 
 

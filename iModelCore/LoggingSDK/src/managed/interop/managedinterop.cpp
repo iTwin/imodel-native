@@ -2,7 +2,7 @@
 |
 |     $Source: src/managed/interop/managedinterop.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -18,7 +18,6 @@ namespace ManagedApi = ::Bentley::Logging;
 #include <locale.h>
 #include <cwchar>
 #include <vcclr.h>
-#include <bentley/bentley.h>
 #include "exception"
 #include "assert.h"
 #include "bentleyloginterop.h"
