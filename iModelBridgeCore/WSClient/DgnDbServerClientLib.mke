@@ -2,7 +2,7 @@
 #
 #     $Source: DgnDbServerClientLib.mke $
 #
-#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
 # affects WinRT build only.
@@ -70,6 +70,7 @@ DLM_CREATE_LIB_CONTEXT_LINK = 1
 
 # DgnClientFx library name
 %if $(TARGET_PLATFORM)=="WinRT"
+    %include $(SrcRoot)Bentley/PublicMki/BentleyApi.mki
     _dgnclientfxLibraryName = Bentley$(BENTLEY_API_NAME).DgnClientFx.Win8$(stlibext)
 %elif $(TARGET_PLATFORM)=="Android"
     _dgnclientfxLibraryName = $(libprefix)DgnClientFx$(shlibext)

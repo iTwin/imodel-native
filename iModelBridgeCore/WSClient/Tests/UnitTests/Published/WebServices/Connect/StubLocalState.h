@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/WebServices/Connect/StubLocalState.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -26,7 +26,7 @@ struct StubLocalState : public ILocalState
             return m_map;
             }
 
-        void SaveValue (Utf8CP nameSpace, Utf8CP key, JsonValueCR value) override
+        void _SaveValue (Utf8CP nameSpace, Utf8CP key, JsonValueCR value) override
             {
             Utf8PrintfString identifier ("%s/%s", nameSpace, key);
 
@@ -40,7 +40,7 @@ struct StubLocalState : public ILocalState
                 }
             };
 
-        Json::Value GetValue (Utf8CP nameSpace, Utf8CP key) const override
+        Json::Value _GetValue (Utf8CP nameSpace, Utf8CP key) const override
             {
             Utf8PrintfString identifier ("%s/%s", nameSpace, key);
             return m_map[identifier];
