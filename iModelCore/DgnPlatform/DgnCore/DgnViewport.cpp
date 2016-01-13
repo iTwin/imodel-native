@@ -1284,7 +1284,7 @@ void DgnViewport::CheckForChanges()
     if (curr.Equals(m_currentBaseline))
         return; // nothing changed
 
-    if (m_backStack.size() >= m_maxUndoSteps)
+    if ((int)m_backStack.size() >= m_maxUndoSteps)
         m_backStack.pop_front();
 
     m_backStack.push_back(m_currentBaseline);

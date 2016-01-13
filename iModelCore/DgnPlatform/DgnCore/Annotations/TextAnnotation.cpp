@@ -1,6 +1,6 @@
 //-------------------------------------------------------------------------------------- 
 //     $Source: DgnCore/Annotations/TextAnnotation.cpp $ 
-//  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $ 
+//  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $ 
 //-------------------------------------------------------------------------------------- 
  
 #include <DgnPlatformInternal.h> 
@@ -26,8 +26,8 @@ TextAnnotation::TextAnnotation(DgnDbR project) :
     T_Super()
     {
     // Making additions or changes? Please check TextAnnotation::Reset.
-
     m_dgndb = &project;
+    m_documentTransform.InitIdentity();
     }
 
 //---------------------------------------------------------------------------------------
@@ -55,6 +55,8 @@ void TextAnnotation::CopyFrom(TextAnnotationCR rhs)
     m_leaders.reserve(rhs.m_leaders.size());
     for (auto const& rhsLeader : rhs.m_leaders)
         m_leaders.push_back(rhsLeader->Clone());
+
+    m_documentTransform = rhs.m_documentTransform;
     }
 
 //---------------------------------------------------------------------------------------
@@ -66,6 +68,7 @@ void TextAnnotation::Reset()
     m_text = NULL;
     m_frame = NULL;
     m_leaders.clear();
+    m_documentTransform.InitIdentity();
     }
 
 //---------------------------------------------------------------------------------------

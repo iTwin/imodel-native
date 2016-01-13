@@ -1,6 +1,6 @@
 //-------------------------------------------------------------------------------------- 
 //     $Source: PublicAPI/DgnPlatform/Annotations/TextAnnotation.h $ 
-//  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $ 
+//  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $ 
 //-------------------------------------------------------------------------------------- 
 #pragma once
 
@@ -39,6 +39,7 @@ private:
     AnnotationTextBlockPtr m_text;
     AnnotationFramePtr m_frame;
     AnnotationLeaderCollection m_leaders;
+    Transform m_documentTransform;
 
     DGNPLATFORM_EXPORT void CopyFrom(TextAnnotationCR);
     void Reset();
@@ -50,6 +51,8 @@ public:
     static TextAnnotationPtr Create(DgnDbR project) { return new TextAnnotation(project); }
     DGNPLATFORM_EXPORT static TextAnnotationPtr Create(DgnDbR, DgnElementId);
     TextAnnotationPtr Clone() const { return new TextAnnotation(*this); }
+    TransformCR GetDocumentTransform() const { return m_documentTransform; }
+    void SetDocumentTransform(TransformCR value) { m_documentTransform = value; }
 
     DgnDbR GetDbR() const { return *m_dgndb; }                      
     AnnotationTextBlockCP GetTextCP() const { return m_text.get(); }

@@ -2,10 +2,11 @@
 |
 |     $Source: DgnCore/DgnUnits.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
+#include <BeSQLite/RTreeMatch.h>
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   09/13

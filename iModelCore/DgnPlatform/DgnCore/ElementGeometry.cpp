@@ -4226,10 +4226,9 @@ struct TextAnnotationDrawToGeometricPrimitive : IGeometryProcessor
 private:
     GeometryBuilderR    m_builder;
     TextAnnotationCR    m_text;
-    Transform           m_geomToElem;
 
 public:
-    TextAnnotationDrawToGeometricPrimitive(TextAnnotationCR text, TransformCR geomToElem, GeometryBuilderR builder) : m_text(text), m_geomToElem(geomToElem), m_builder(builder) {}
+    TextAnnotationDrawToGeometricPrimitive(TextAnnotationCR text, GeometryBuilderR builder) : m_text(text), m_builder(builder) {}
 
     virtual bool _ProcessTextString(TextStringCR, SimplifyGraphic const&) override;
     virtual bool _ProcessCurveVector(CurveVectorCR, bool isFilled, SimplifyGraphic const&) override;
@@ -4286,12 +4285,11 @@ bool TextAnnotationDrawToGeometricPrimitive::_ProcessCurveVector(CurveVectorCR c
 void TextAnnotationDrawToGeometricPrimitive::_OutputGraphics(ViewContextR context)
     {
     TextAnnotationDraw annotationDraw(m_text);
-
-    annotationDraw.SetDocumentTransform(m_geomToElem);
-
     Render::GeometryParams geomParams(m_builder.GetGeometryParams());
+    Render::GraphicPtr graphic = context.CreateGraphic(Graphic::CreateParams(context.GetViewport()));
 
-    Render::GraphicPtr graphic = annotationDraw.Draw(context, geomParams);
+    annotationDraw.Draw(*graphic, context, geomParams);
+    graphic->Close();
     }
 
 END_UNNAMED_NAMESPACE
@@ -4299,9 +4297,9 @@ END_UNNAMED_NAMESPACE
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool GeometryBuilder::Append(TextAnnotationCR text, TransformCR transform)
+bool GeometryBuilder::Append(TextAnnotationCR text)
     {
-    TextAnnotationDrawToGeometricPrimitive annotationDraw(text, transform, *this);
+    TextAnnotationDrawToGeometricPrimitive annotationDraw(text, *this);
 
     GeometryProcessor::Process(annotationDraw, m_dgnDb);
 

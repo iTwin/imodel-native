@@ -7,7 +7,6 @@
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
 #include <DgnPlatform/QueryView.h>
-#include <Bentley/BeSystemInfo.h>
 
 #include "UpdateLogging.h"
 
@@ -31,40 +30,7 @@ QueryViewController::QueryViewController(DgnDbR dgndb, DgnViewId id) : CameraVie
 QueryViewController::~QueryViewController()
     {
     m_queryModel.RequestAbort(true);
-    BeAssert(m_queryModel.IsIdle());
     delete &m_queryModel;
-    }
-
-// On iOS we draw less in a frame that occurs while the query is running.
-// Holding back some leads to fewer flashing frames.
-static double s_dynamicLoadFrequency4Cpus = 0.1;
-static double s_dynamicLoadFrequency2Cpus = 0.75;
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   John.Gooding    09/2012
-//--------------+------------------------------------------------------------------------
-bool QueryViewController::_WantElementLoadStart(DgnViewportR vp, double currentTime, double lastQueryTime)
-    {
-    static uint32_t s_numberOfCpus;
-    if (0 == s_numberOfCpus)
-        s_numberOfCpus = BeSystemInfo::GetNumberOfCpus();
-
-    //  Try to avoid contention between query and update. If 2 CPUs there is contention for CPU time.
-    //  If 4 or more CPU's there may be contention over SQLite mutex.
-    double dynamicLoadFrequency = s_numberOfCpus < 4 ? s_dynamicLoadFrequency2Cpus : s_dynamicLoadFrequency4Cpus;
-    if ((currentTime - lastQueryTime) < dynamicLoadFrequency)
-        {
-#if defined (TRACE_QUERY_LOGIC)
-        printf("_WantElementLoadStart : FAILED time test = %g\n", currentTime - lastQueryTime);
-#endif
-        return false;
-        }
-
-#if defined (TRACE_QUERY_LOGIC)
-    printf("_WantElementLoadStart : passed time test = %g\n", currentTime - lastQueryTime);
-#endif
-
-    return true;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -73,8 +39,7 @@ bool QueryViewController::_WantElementLoadStart(DgnViewportR vp, double currentT
 void QueryViewController::_OnDynamicUpdate(DgnViewportR vp, UpdatePlan const& plan)
     {
     PickUpResults();
-    if (_WantElementLoadStart(vp, BeTimeUtilities::QuerySecondsCounter(), m_lastQueryTime))
-        StartSelectProcessing(vp, plan);
+    QueueQuery(vp, plan);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -83,10 +48,10 @@ void QueryViewController::_OnDynamicUpdate(DgnViewportR vp, UpdatePlan const& pl
 void QueryViewController::_OnFullUpdate(DgnViewportR vp, UpdatePlan const& plan)
     {
     if (m_forceNewQuery || FrustumChanged(vp))
-        StartSelectProcessing(vp, plan);
+        QueueQuery(vp, plan);
 
-    if (nullptr != plan.GetQuery().GetCheckStop())
-        m_queryModel.WaitUntilFinished(plan.GetQuery().GetCheckStop());
+    if (plan.GetQuery().WantWait())
+        m_queryModel.GetDgnDb().QueryQueue().WaitForIdle();
 
     PickUpResults();
     }
@@ -103,25 +68,18 @@ bool QueryViewController::FrustumChanged(DgnViewportCR vp) const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    06/2013
 //---------------------------------------------------------------------------------------
-void QueryViewController::StartSelectProcessing(DgnViewportR viewport, UpdatePlan const& plan)
+void QueryViewController::QueueQuery(DgnViewportR viewport, UpdatePlan const& plan)
     {
-    uint32_t hitLimit = plan.GetQuery().GetTargetNumElements();
-    double minimumPixels = plan.GetQuery().GetMinimumSizePixels();
-
-    size_t lastSize = 0;
-    QueryModel::Results* results = m_queryModel.GetCurrentResults();
-    if (nullptr != results)
-        lastSize = results->m_elements.size();
-
     m_startQueryFrustum = viewport.GetFrustum(DgnCoordSystem::World, true);
     m_saveQueryFrustum.Invalidate();
 
     m_forceNewQuery = false;
 
-    m_queryModel.GetDgnDb().QueryModels().RequestProcessing(
-        QueryModel::Processor::Params(m_queryModel, viewport, _GetRTreeMatchSql(viewport), hitLimit, ComputeMaxElementMemory(viewport), minimumPixels,
+    QueryModel::Processor::Params params(m_queryModel, viewport, _GetRTreeMatchSql(viewport), plan.GetQuery(), ComputeMaxElementMemory(viewport), 
             m_alwaysDrawn.empty() ? nullptr : &m_alwaysDrawn, m_neverDrawn.empty() ? nullptr : &m_neverDrawn, m_noQuery,
-            GetClipVector().get(), m_secondaryHitLimit, m_secondaryVolume));
+            GetClipVector().get(), m_secondaryHitLimit, m_secondaryVolume);
+
+    m_queryModel.GetDgnDb().QueryQueue().Add(params);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -133,7 +91,6 @@ void QueryViewController::PickUpResults()
         return;
 
     m_queryModel.SaveQueryResults();
-    m_lastQueryTime = BeTimeUtilities::QuerySecondsCounter();
 
     DgnElements& pool = m_queryModel.GetDgnDb().Elements();
     pool.ResetStatistics();
@@ -150,7 +107,7 @@ void QueryViewController::SaveSelectResults()
     {
     if (!m_queryModel.HasSelectResults())
         {
-        if (!m_queryModel.IsActive() || QueryModel::State::AbortRequested == m_queryModel.GetState())
+        if (m_queryModel.AbortRequested())
             {
             m_startQueryFrustum.Invalidate(); // Must be abort or error. Either way the startQueryFrustum is meaningless.
             m_saveQueryFrustum.Invalidate();
@@ -167,7 +124,6 @@ void QueryViewController::SaveSelectResults()
 #endif
 
     m_queryModel.SaveQueryResults();
-    m_lastQueryTime = BeTimeUtilities::QuerySecondsCounter();
 
     DgnElements& pool = m_queryModel.GetDgnDb().Elements();
 
@@ -403,14 +359,13 @@ void QueryViewController::_DrawView(ViewContextR context)
         return;
         }
 
-    printf("clear progressiv _DrawView\n");
+    printf("clear progressive _DrawView\n");
     context.GetViewport()->ClearProgressiveDisplay();
 
     const uint64_t maxMem = GetMaxElementMemory();
     UNUSED_VARIABLE(maxMem);
-#if !defined (_X64_)
     const int64_t purgeTrigger = static_cast <int64_t> (1.5 * static_cast <double> (maxMem));
-#endif
+
     // this vector is sorted by occlusion score, so we use it to determine the order to draw the view
     uint32_t numDrawn = 0;
     for (auto& thisElement : results->m_elements)
@@ -426,16 +381,14 @@ void QueryViewController::_DrawView(ViewContextR context)
         if (context.WasAborted())
             break;
 
-#if !defined (_X64_)
         DgnElements& pool = m_queryModel.GetDgnDb().Elements();
         if (numDrawn > results->m_drawnBeforePurge && pool.GetTotalAllocated() > purgeTrigger)
             {
-            // Testing for QueryModel::IsActive prevents race conditions between the work thread and the 
-            // query thread. Testing for HasSelectResults prevents this logic from purging elements that
+            // Testing for HasSelectResults prevents this logic from purging elements that
             // are in the selected-elements list. Adding elements to that list does not increment the reference 
             // count. DgnElements use reference counting that is not thread safe so all reference counting is done
             // in the work thread.
-            if (!m_queryModel.IsActive() && !m_queryModel.HasSelectResults())
+            if (!m_queryModel.HasSelectResults())
                 {
                 results->m_drawnBeforePurge = numDrawn;
                 pool.Purge(maxMem);  //  the pool may contain unused elements
@@ -467,7 +420,6 @@ void QueryViewController::_DrawView(ViewContextR context)
                     break;   //  Unable to get low enough
                 }
             }
-#endif
         }
 
     UpdateLogging::RecordDoneUpdate(numDrawn, context.GetDrawPurpose());
@@ -489,13 +441,11 @@ void QueryViewController::_DrawView(ViewContextR context)
         {
         wt_OperationForGraphics highPriority;  //  see comments in BeSQLite.h
         DgnViewportP vp = context.GetViewport();
-        DgnDbR project = m_queryModel.GetDgnDb();
         CachedStatementPtr rangeStmt;
-        project.GetCachedStatement(rangeStmt, _GetRTreeMatchSql(*context.GetViewport()).c_str());
+        m_queryModel.GetDgnDb().GetCachedStatement(rangeStmt, _GetRTreeMatchSql(*context.GetViewport()).c_str());
         BindModelAndCategory(*rangeStmt);
 
-        ProgressiveViewFilter* pvFilter = new ProgressiveViewFilter(*vp, project, m_queryModel,
-                                                m_neverDrawn.empty() ? nullptr : &m_neverDrawn, maxMem, rangeStmt.get());
+        QueryModel::ProgressiveFilter* pvFilter = new QueryModel::ProgressiveFilter(*vp, m_queryModel, m_neverDrawn.empty() ? nullptr : &m_neverDrawn, maxMem, rangeStmt.get());
         if (GetClipVector().IsValid())
             pvFilter->SetClipVector(*GetClipVector());
 
@@ -512,13 +462,12 @@ void QueryViewController::_VisitAllElements(ViewContextR context)
     context.VisitDgnModel(&m_queryModel);
 
     // And step through the rest of the elements that were not loaded (but would be displayed by progressive display).
-    DgnDbR project = m_queryModel.GetDgnDb();
     CachedStatementPtr rangeStmt;
-    project.GetCachedStatement(rangeStmt, _GetRTreeMatchSql(*context.GetViewport()).c_str());
+    m_queryModel.GetDgnDb().GetCachedStatement(rangeStmt, _GetRTreeMatchSql(*context.GetViewport()).c_str());
     BindModelAndCategory(*rangeStmt);
-    ProgressiveViewFilter pvFilter (*context.GetViewport(), project, m_queryModel, m_neverDrawn.empty() ? nullptr : &m_neverDrawn, GetMaxElementMemory(), rangeStmt.get());
+    QueryModel::ProgressiveFilter pvFilter (*context.GetViewport(), m_queryModel, m_neverDrawn.empty() ? nullptr : &m_neverDrawn, GetMaxElementMemory(), rangeStmt.get());
 
-    while (pvFilter._Process(context) != ProgressiveDisplay::Completion::Finished)
+    while (pvFilter._Process(context, 0) != ProgressiveDisplay::Completion::Finished)
         ;
     }
 
@@ -555,7 +504,7 @@ uint64_t QueryViewController::ComputeMaxElementMemory(DgnViewportCR vp)
 #endif
     baseValue *= oneMeg;
 
-    int32_t inputFactor = _GetMaxElementFactor(vp);
+    int32_t inputFactor = 0; // NEEDS_WORK_CONTINUOUS_RENDER  _GetMaxElementFactor(vp);
     bool decrease = false;
     if (inputFactor < 0)
         {

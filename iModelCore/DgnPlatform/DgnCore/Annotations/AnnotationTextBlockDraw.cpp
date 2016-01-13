@@ -18,6 +18,7 @@ AnnotationTextBlockDraw::AnnotationTextBlockDraw(AnnotationTextBlockLayoutCR lay
     T_Super()
     {
     m_layout = &layout;
+    m_documentTransform.InitIdentity();
     }
 
 //---------------------------------------------------------------------------------------
@@ -26,6 +27,7 @@ AnnotationTextBlockDraw::AnnotationTextBlockDraw(AnnotationTextBlockLayoutCR lay
 void AnnotationTextBlockDraw::CopyFrom(AnnotationTextBlockDrawCR rhs)
     {
     m_layout = rhs.m_layout;
+    m_documentTransform = rhs.m_documentTransform;
     }
 
 //---------------------------------------------------------------------------------------
@@ -194,17 +196,12 @@ BentleyStatus AnnotationTextBlockDraw::Draw(Render::GraphicR graphic, ViewContex
 
     for (auto const& line : m_layout->GetLines())
         {
-        Transform lineTrans;
-        lineTrans.InitIdentity();
-        lineTrans.SetTranslation(line->GetOffsetFromDocument());
+        Transform lineTrans = Transform::From(DPoint3d::From(line->GetOffsetFromDocument()));
 
         for (auto const& run : line->GetRuns())
             {
-            Transform runTrans;
-            runTrans.InitIdentity();
-            runTrans.SetTranslation(run->GetOffsetFromLine());
-
-            Transform compoundTrans = Transform::FromProduct(runTrans, lineTrans);
+            Transform runTrans = Transform::From(DPoint3d::From(run->GetOffsetFromLine()));
+            Transform compoundTrans = Transform::FromProduct(m_documentTransform, runTrans, lineTrans);
             
             BentleyStatus runStatus = SUCCESS;
 

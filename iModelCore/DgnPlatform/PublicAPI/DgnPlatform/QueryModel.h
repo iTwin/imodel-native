@@ -9,14 +9,80 @@
 //__PUBLISH_SECTION_START__
 
 #include "DgnModel.h"
+#include <Bentley/BeTimeUtilities.h>
 #include <Bentley/BeThread.h>
-#include <deque>
+#include <BeSQLite/RTreeMatch.h>
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 
-struct DgnDbRTree3dViewFilter;
-struct ICheckStop;
-                                                                                                                    
+//=======================================================================================
+// @bsiclass                                                    Keith.Bentley   12/11
+//=======================================================================================
+struct OcclusionScorer
+{
+    DMatrix4d   m_localToNpc;
+    DPoint3d    m_cameraPosition;
+    double      m_lodFilterNPCArea;
+    uint32_t    m_orthogonalProjectionIndex;
+    bool        m_cameraOn;
+    bool        m_testLOD;
+    void SetTestLOD(bool val) {m_testLOD=val;}
+    void InitForViewport(DgnViewportCR viewport, double minimumSizePixels);
+    bool ComputeEyeSpanningRangeOcclusionScore(double* score, DPoint3dCP rangeCorners, bool doFrustumCull);
+    bool ComputeNPC(DPoint3dR npcOut, DPoint3dCR localIn);
+    bool ComputeOcclusionScore(double* score, bool& overlap, bool& spansEyePlane, DPoint3dCP localCorners, bool doFrustumCull);
+};
+
+//=======================================================================================
+// @bsiclass                                                    John.Gooding    10/13
+//=======================================================================================
+struct OverlapScorer
+{
+    BeSQLite::RTree3dVal m_boundingRange;
+    void Initialize(DRange3dCR boundingRange);
+    bool ComputeScore(double* score, BeSQLite::RTree3dValCR range);
+};
+
+//=======================================================================================
+// @bsiclass                                                    Keith.Bentley   04/14
+//=======================================================================================
+struct RTreeFilter : BeSQLite::RTreeAcceptFunction::Tester
+    {
+    bool                    m_doSkewtest;
+    Frustum                 m_frustum;
+    double                  m_minimumSizePixels;
+    BeSQLite::RTree3dVal    m_boundingRange;    // only return entries whose range intersects this cube.
+    BeSQLite::RTree3dVal    m_frontFaceRange;
+    OcclusionScorer         m_scorer;
+    uint32_t                m_nCalls;
+    uint32_t                m_nScores;
+    uint32_t                m_nSkipped;
+    DVec3d                  m_viewVec;  // vector from front face to back face
+    ClipVectorPtr           m_clips;
+    DgnElementIdSet const*  m_exclude;
+
+    bool AllPointsClippedByOnePlane(ConvexClipPlaneSetCR cps, size_t nPoints, DPoint3dCP points) const;
+    void SetClipVector(ClipVectorR clip) {m_clips = &clip;}
+    bool SkewTest(BeSQLite::RTree3dValCP);
+    RTreeFilter(DgnViewportCR, DgnDbR db, double minimumSizeScreenPixels, DgnElementIdSet const* exclude);
+    };
+
+//=======================================================================================
+// @bsiclass                                                    Keith.Bentley   12/11
+//=======================================================================================
+struct DgnDbRTreeFitFilter : BeSQLite::RTreeAcceptFunction::Tester
+    {
+    DRange3d m_fitRange;
+    DRange3d m_lastRange;
+
+    DGNPLATFORM_EXPORT virtual int _TestRange(QueryInfo const&) override;
+    virtual void _StepRange(BeSQLite::DbFunction::Context&, int nArgs, BeSQLite::DbValue* args) override {m_fitRange.Extend(m_lastRange);}
+
+public:
+    DgnDbRTreeFitFilter(BeSQLite::DbR db) : Tester(db) {m_fitRange = DRange3d::NullRange();}
+    DRange3dCR GetRange() const {return m_fitRange;}
+    };
+
 //=======================================================================================
 /**
 A QueryModel is a virtual DgnModel that holds @ref DgnElementGroup loaded from the database according to a custom query criteria.
@@ -34,24 +100,97 @@ QueryModels are associated with a QueryViewController by passing a QueryModel to
 struct QueryModel : SpatialModel
 {
     friend struct QueryViewController;
+    typedef bmultimap<double, uint64_t> OcclusionScores;
+    
+    //=======================================================================================
+    // @bsiclass                                                    Keith.Bentley   12/11
+    //=======================================================================================
+    struct Filter : RTreeFilter
+    {
+        struct SecondaryFilter
+            {
+            OverlapScorer       m_scorer;
+            uint32_t            m_hitLimit;
+            uint32_t            m_occlusionMapCount;
+            double              m_occlusionMapMinimum;
+            OcclusionScores     m_occlusionScores;
+            double              m_lastScore;
+            };
 
+        bool                    m_passedPrimaryTest;
+        bool                    m_passedSecondaryTest;
+        bool                    m_useSecondary;
+        bool                    m_restartRangeQuery = false;
+        uint32_t                m_hitLimit;
+        uint32_t                m_occlusionMapCount;
+        uint64_t                m_lastId;
+        OcclusionScores         m_occlusionScores;
+        double                  m_occlusionMapMinimum;
+        double                  m_lastScore;
+        SecondaryFilter         m_secondaryFilter;
+        DgnElementIdSet const*  m_alwaysDraw;
+        QueryModel&             m_model;
+
+        bool CheckAbort();
+        virtual int _TestRange(QueryInfo const&) override;
+        virtual void _StepRange(BeSQLite::DbFunction::Context&, int nArgs, BeSQLite::DbValue* args) override {RangeAccept(args[0].GetValueInt64());}
+        void RangeAccept(uint64_t elementId);
+
+    public:
+        Filter(DgnViewportCR, QueryModelR model, uint32_t hitLimit, double minimumSizeScreenPixels, DgnElementIdSet const* alwaysDraw, DgnElementIdSet const* neverDraw);
+        void InitializeSecondaryTest(DRange3dCR volume, uint32_t hitLimit);
+        void GetStats(uint32_t& nAcceptCalls, uint32_t&nScores) {nAcceptCalls = m_nCalls; nScores = m_nScores;}
+    };
+    
+    //=======================================================================================
+    // @bsiclass                                                    Keith.Bentley   04/14
+    //=======================================================================================
+    struct ProgressiveFilter : ProgressiveDisplay, RTreeFilter
+    {
+        friend struct QueryViewController;
+
+        ViewContextP   m_context;
+        DgnDbR         m_dgndb;
+        QueryModelR    m_queryModel;
+        uint32_t       m_nThisPass;
+        uint32_t       m_nLastPass;
+        uint32_t       m_thisBatch;
+        uint32_t       m_batchSize;
+        uint64_t       m_elementReleaseTrigger;
+        uint64_t       m_purgeTrigger;
+        bool           m_setTimeout;
+        BeSQLite::CachedStatementPtr m_rangeStmt;
+        ProgressiveFilter(DgnViewportCR vp, QueryModelR queryModel, DgnElementIdSet const* exclude, uint64_t maxMemory, BeSQLite::CachedStatement* stmt)
+             : RTreeFilter(vp, queryModel.GetDgnDb(), 0.0, exclude), m_dgndb(queryModel.GetDgnDb()), m_queryModel(queryModel), m_elementReleaseTrigger(maxMemory), m_purgeTrigger(maxMemory), m_rangeStmt(stmt)
+            {
+            m_nThisPass = m_nLastPass = m_thisBatch = 0;
+            m_context = nullptr;
+            }
+        ~ProgressiveFilter();
+
+        virtual int _TestRange(QueryInfo const&) override;
+        virtual void _StepRange(BeSQLite::DbFunction::Context&, int nArgs, BeSQLite::DbValue* args) override;
+        virtual Completion _Process(ViewContextR context, uint32_t batchSize) override;
+    };
+
+    struct Processor;
     //! Holds the results of a QueryModel's query.
     struct Results : RefCountedBase
     {
+        friend struct Processor;
+
     private:
-        Results() : m_reachedMaxElements(false), m_drawnBeforePurge(0), m_lowestOcclusionScore(0.0), m_elapsedSeconds(0.0) { }
+        Results() : m_reachedMaxElements(false), m_drawnBeforePurge(0), m_elapsedSeconds(0.0) { }
+
     public:
         bvector<DgnElementCPtr> m_elements;
         bvector<DgnElementCPtr> m_closeElements;
-        bool   m_reachedMaxElements;
+        bool     m_reachedMaxElements;
         uint32_t m_drawnBeforePurge;
-        double m_lowestOcclusionScore;
         double m_elapsedSeconds;
 
         uint32_t GetCount() const {return (uint32_t) m_elements.size();}
         double GetElapsedSeconds() const {return m_elapsedSeconds;}
-
-        static RefCountedPtr<Results> Create() { return new Results(); }
     };
 
     typedef RefCountedPtr<Results> ResultsPtr;
@@ -59,15 +198,14 @@ struct QueryModel : SpatialModel
     //! Executes a query on a separate thread to load elements for a QueryModel
     struct Processor : RefCounted<NonCopyableClass>
     {
-        //! Parameters specifying how the processor should execute its query
+        //! Parameters specifying how the processor    should execute its query
         struct Params
         {
             QueryModelR         m_model;
             DgnViewportCR       m_vp;
             Utf8String          m_searchSql;
-            uint32_t            m_maxElements;
+            UpdatePlan::Query   m_plan;
             uint64_t            m_maxMemory;
-            double              m_minPixels;
             DgnElementIdSet*    m_highPriority;
             DgnElementIdSet*    m_neverDraw;
             bool                m_highPriorityOnly;
@@ -75,84 +213,70 @@ struct QueryModel : SpatialModel
             uint32_t            m_secondaryHitLimit;
             DRange3d            m_secondaryVolume;
 
-            Params(QueryModelR model, DgnViewportCR vp, Utf8StringCR sql, uint32_t maxElements, uint64_t maxMem, double minPixels, DgnElementIdSet* highPriority,
+            Params(QueryModelR model, DgnViewportCR vp, Utf8StringCR sql, UpdatePlan::Query const& plan, uint64_t maxMem, DgnElementIdSet* highPriority,
                     DgnElementIdSet* neverDraw, bool highPriorityOnly, ClipVectorP clipVector, uint32_t secondaryHitLimit, DRange3dCR secondaryRange)
-                : m_model(model), m_vp(vp), m_searchSql(sql), m_maxElements(maxElements), m_maxMemory(maxMem), m_minPixels(minPixels), m_highPriority(highPriority),
+                : m_model(model), m_vp(vp), m_searchSql(sql), m_plan(plan), m_maxMemory(maxMem), m_highPriority(highPriority),
                     m_neverDraw(neverDraw), m_highPriorityOnly(highPriorityOnly), m_clipVector(clipVector), m_secondaryHitLimit(secondaryHitLimit), m_secondaryVolume(secondaryRange) { }
         };
 
     protected:
         Params              m_params;
         ResultsPtr          m_results;
-        bool                m_restartRangeQuery;
-        bool                m_inRangeSelectionStep;
-        BeSQLite::DbResult  m_dbStatus;
+        BeSQLite::DbResult  m_dbStatus = BeSQLite::BE_SQLITE_ERROR;
 
-        Processor(Params const& params);
-
-        virtual bool _Process() = 0;
-
+        void ProcessRequest();
+        void SearchIdSet(DgnElementIdSet& idList, Filter& filter);
+        void SearchRangeTree(Filter& filter);
+        bool LoadElements(OcclusionScores& scores, bvector<DgnElementCPtr>& elements); // return false if we halted before finishing iteration
         void BindModelAndCategory(BeSQLite::CachedStatement& rangeStmt);
-    public:
-        bool Process() { return _Process(); }
-        
-        QueryModelR GetModel() const { return m_params.m_model; }
-        bool IsForModel(QueryModelCR model) const { return &GetModel() == &model; }
-        Results* GetResults() { return m_results.get(); }
 
-        void OnCompleted() const;
+    public:
+        Processor(Params const& params) : m_params(params) {}
+        bool Query(StopWatch&);
+        uint32_t GetDelayAfter() {return m_params.m_plan.GetDelayAfter();}
+        QueryModelR GetModel() const {return m_params.m_model;}
+        bool IsForModel(QueryModelCR model) const {return &m_params.m_model == &model;}
     };
 
     typedef RefCountedPtr<Processor> ProcessorPtr;
 
     //! Each DgnDb has an associated QueryModel::Queue upon which requests for processing QueryModels can be enqueued.
     //! The requests execute on a separate thread.
-    struct Queue : IConditionVariablePredicate
+    struct Queue
     {
     private:
         enum class State { Active, TerminateRequested, Terminated };
 
-        DgnDbR                      m_db;
-        BeConditionVariable         m_cv;
-        std::deque<ProcessorPtr>    m_pending;
-        ProcessorPtr                m_active;
-        State                       m_state;
+        DgnDbR                 m_db;
+        BeConditionVariable    m_cv;
+        std::deque<ProcessorPtr>  m_pending;
+        ProcessorPtr           m_active;
+        State                  m_state;
 
-        void qt_WaitForWork();
+        bool WaitForWork();
+        void Process();
+        THREAD_MAIN_DECL Main(void* arg);
 
-        THREAD_MAIN_DECL qt_Main(void* arg);
-
-        virtual bool _TestCondition(BeConditionVariable&) override;
     public:
         Queue(DgnDbR db);
 
         void Terminate();
 
         //! Enqueue a request to execute the query for a QueryModel
-        DGNPLATFORM_EXPORT void RequestProcessing(Processor::Params const& params);
+        DGNPLATFORM_EXPORT void Add(Processor::Params const& params);
 
-        //! Cancel any active or pending requests to process the specified model.
-        //! @param[in]      model             The model whose processing is to be canceled
-        //! @param[in]      waitUntilFinished If true, this function does not return until the model is in the idle state
-        DGNPLATFORM_EXPORT void RequestAbort(QueryModelR model, bool waitUntilFinished);
+        //! Cancel any pending requests to process the specified model.
+        //! @param[in] model The model whose processing is to be canceled
+        DGNPLATFORM_EXPORT void RemovePending(QueryModelR model);
 
         //! Suspends the calling thread until the specified model is in the idle state
-        DGNPLATFORM_EXPORT void WaitUntilFinished(QueryModelR model, ICheckStop* checkStop);
+        DGNPLATFORM_EXPORT void WaitForIdle();
 
-        bool IsIdle() const {return m_pending.empty() && !m_active.IsValid();}
-    };
-
-    //! The possible states of a QueryModel
-    enum class State
-    {
-        Idle,           //!< No processing
-        Pending,        //!< Has been enqueued for processing
-        Processing,     //!< Is currently processing
-        AbortRequested, //!< A request to cancel processing has been made
+        DGNPLATFORM_EXPORT bool IsIdle() const;
     };
 
 private:
-    State       m_state;
+    bool        m_abortQuery;
     ResultsPtr  m_updatedResults;
     ResultsPtr  m_currQueryResults;
 
@@ -161,8 +285,8 @@ private:
     virtual void _FillModel() override {} // QueryModels are never filled.
 
 public:
-    State GetState() const { return m_state; } //!< @private
-    void SetState(State newState); //!< @private
+    bool AbortRequested() const { return m_abortQuery; } //!< @private
+    void SetAbortQuery(bool val) {m_abortQuery=val;} //!< @private
     void SetUpdatedResults(Results* results); //!< @private
     Results* GetCurrentResults() {return m_currQueryResults.get();} //!< @private
     void SaveQueryResults(); //!< @private
@@ -173,13 +297,12 @@ public:
     uint32_t GetElementCount() const; //!< @private
     double GetLastQueryElapsedSeconds() const; //!< @private
     bool HasSelectResults() const { return m_updatedResults.IsValid(); } //!< @private
-    bool IsIdle() const { return State::Idle == GetState(); } //!< @private
-    bool IsActive() const { return !IsIdle(); } //!< @private
 
     //! Requests that any active or pending processing of the model be canceled, optionally not returning until the request is satisfied
     void RequestAbort(bool waitUntilFinished);
 
-    void WaitUntilFinished(ICheckStop* checkStop); //!< @private
+    void WaitUntilFinished(CheckStop* checkStop); //!< @private
 };
+
 
 END_BENTLEY_DGN_NAMESPACE

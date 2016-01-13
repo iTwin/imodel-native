@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/Annotations/TextAnnotationElement.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h> 
@@ -106,7 +106,7 @@ void TextAnnotationData::GenerateGeometricPrimitive(GeometrySourceR source, Gene
 
     GeometryBuilderPtr builder = GeometryBuilder::Create(source);
     
-    builder->Append(*m_annotation, Transform::FromIdentity());
+    builder->Append(*m_annotation);
     builder->SetGeometryStreamAndPlacement(source);
     }
 
