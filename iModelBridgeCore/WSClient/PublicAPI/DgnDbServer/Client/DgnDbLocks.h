@@ -35,8 +35,8 @@ protected:
     virtual LockStatus _QueryLockLevel(LockLevel& level, LockableId lockId, DgnDbR db) override;
     virtual LockStatus _QueryLocks(DgnLockSet& locks, DgnDbR db) override;
     virtual LockStatus _QueryOwnership(DgnLockOwnershipR ownership, LockableId lockId) override;
-    virtual LockStatus _QueryRevisionId(WStringR, LockableId) override { BeAssert(false && "Unimplemented"); return LockStatus::Success; }
-    virtual LockStatus _SetRevisionId(LockableIdSet const&, WCharCP) override { BeAssert(false && "Unimplemented"); return LockStatus::Success; }
+    virtual LockStatus _QueryRevisionId(WStringR, LockableId) override;
+    virtual LockStatus _SetRevisionId(LockableIdSet const&, WCharCP) override;
 
     DgnDbLocks(WebServices::ClientInfoPtr clientInfo);
 public:

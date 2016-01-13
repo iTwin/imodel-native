@@ -19,6 +19,7 @@ DgnDbServerClientMkiHeaders =	$(DgnDbServerClientMkiPublicApiDir)DgnDbServerComm
 								$(DgnDbServerClientMkiPublicApiDir)Client/DgnDbLocks.h                      \
 								$(DgnDbServerClientMkiPublicApiDir)Client/DgnDbRepositoryConnection.h       \
 								$(DgnDbServerClientMkiPublicApiDir)Client/DgnDbServerRevision.h             \
+								$(DgnDbServerClientMkiPublicApiDir)Client/DgnDbServerError.h                \
 		                        $(DgnDbServerClientMkiSourceDir)DgnDbServerUtils.h							\
 		                        $(DgnDbServerClientMkiPublicApiDir)Client/RepositoryInfo.h
 

@@ -182,6 +182,20 @@ LockStatus DgnDbLocks::_QueryOwnership(DgnLockOwnershipR ownership, Dgn::Lockabl
         return LockStatus::ServerUnavailable;
     }
 
+
+LockStatus DgnDbLocks::_QueryRevisionId(WStringR, LockableId)
+    {
+    BeAssert(false && "Unimplemented");
+    return LockStatus::Success;
+    }
+
+LockStatus DgnDbLocks::_SetRevisionId(LockableIdSet const&, WCharCP)
+    {
+    BeAssert(false && "Unimplemented");
+    return LockStatus::Success;
+    }
+
+
 DgnDbLocks::DgnDbLocks(WebServices::ClientInfoPtr clientInfo)
     {
     m_clientInfo = clientInfo;

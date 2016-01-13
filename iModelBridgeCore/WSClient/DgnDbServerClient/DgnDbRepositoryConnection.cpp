@@ -134,7 +134,7 @@ AsyncTaskPtr<DgnDbResult> DgnDbRepositoryConnection::DownloadBriefcaseFile(BeFil
     if (url.empty())
         {
         Utf8String instanceId;
-        instanceId.Sprintf("%d", briefcaseId.GetValue());
+        instanceId.Sprintf("%u", briefcaseId.GetValue());
         ObjectId fileObject(ServerSchema::Schema::Repository, ServerSchema::Class::Briefcase, instanceId);
         return m_wsRepositoryClient->SendGetFileRequest(fileObject, localFile, nullptr, callback, cancellationToken)
             ->Then<DgnDbResult>([=] (const WSFileResult& fileResult)
@@ -210,7 +210,7 @@ Json::Value CreateLockInstanceJson(bvector<uint64_t> const& ids, const BeBriefca
     for (auto const& id : ids)
         {
         Utf8String idStr;
-        idStr.Sprintf("%ull", id);
+        idStr.Sprintf("%llu", id);
         properties[ServerSchema::Property::ObjectIds][i++] = idStr;
         }
 
@@ -225,7 +225,7 @@ void AddToInstance(std::shared_ptr<WSChangeset> changeset, WSChangeset::ChangeSt
     {
     if (ids.empty())
         return;
-    ObjectId lockObject(ServerSchema::Schema::Repository, ServerSchema::Class::Lock, "");
+    ObjectId lockObject(ServerSchema::Schema::Repository, ServerSchema::Class::MultiLock, "");
     changeset->AddInstance(lockObject, changeState, std::make_shared<Json::Value>(CreateLockInstanceJson(ids, briefcaseId, description, releasedWithRevisionId, type, level)));
     }
 
@@ -239,10 +239,10 @@ std::shared_ptr<WSChangeset> LockJsonRequest(JsonValueCR locks, const BeBriefcas
     for (auto& lock : locks[Locks::Locks])
         {
         LockableType type;
-        DgnLocksJson::LockableTypeFromJson(type, lock[Locks::ObjectId][Locks::Object::Type]);
+        DgnLocksJson::LockableTypeFromJson(type, lock[Locks::LockableId][Locks::Lockable::Type]);
         LockLevel level;
         DgnLocksJson::LockLevelFromJson(level, lock[Locks::Level]);
-        uint64_t id = lock[Locks::ObjectId][Locks::Object::Id].asUInt64();
+        uint64_t id = lock[Locks::LockableId][Locks::Lockable::Id].asUInt64();
         int index = static_cast<int32_t>(type) * 2 + static_cast<int32_t>(level) - 1;
         if (index >= 0 && index <= 6)
             objects[index].push_back(id);
@@ -388,7 +388,7 @@ AsyncTaskPtr<DgnDbOwnershipResult> DgnDbRepositoryConnection::QueryOwnership(Loc
     {
     WSQuery query(ServerSchema::Schema::Repository, ServerSchema::Class::Lock);
     Utf8String id, briefcase;
-    id.Sprintf("%s+eq+%llu", ServerSchema::Property::ObjectId, lockId.GetId().GetValue());
+    id.Sprintf("%s+eq+%d+and+%s+eq+%llu", ServerSchema::Property::LockType, static_cast<int32_t>(lockId.GetType()), ServerSchema::Property::ObjectId, lockId.GetId().GetValue());
     query.SetFilter(id);
     return m_wsRepositoryClient->SendQueryRequest(query, nullptr, nullptr, cancellationToken)->Then<DgnDbOwnershipResult>
         ([=] (const WSObjectsResult& result)
@@ -424,10 +424,9 @@ AsyncTaskPtr<DgnDbLockLevelResult> DgnDbRepositoryConnection::QueryLockLevel(Dgn
     {
     WSQuery query(ServerSchema::Schema::Repository, ServerSchema::Class::Lock);
     Utf8String id, briefcase;
-    id.Sprintf("%s+eq+%llu", ServerSchema::Property::ObjectId, lockId.GetId().GetValue());
-    briefcase.Sprintf("%s+eq+%lu", ServerSchema::Property::BriefcaseId, briefcaseId.GetValue());
+    id.Sprintf("%s+eq+%d+and+%s+eq+%llu+and+%s+eq+%u", ServerSchema::Property::LockType, static_cast<int32_t>(lockId.GetType()), ServerSchema::Property::ObjectId,
+               lockId.GetId().GetValue(), ServerSchema::Property::BriefcaseId, briefcaseId.GetValue());
     query.SetFilter(id);
-    query.SetFilter(briefcase);
     return m_wsRepositoryClient->SendQueryRequest(query, nullptr, nullptr, cancellationToken)->Then<DgnDbLockLevelResult>
         ([=] (const WSObjectsResult& result)
         {
@@ -455,7 +454,7 @@ AsyncTaskPtr<DgnDbLockSetResult> DgnDbRepositoryConnection::QueryLocks(const BeB
     {
     WSQuery query(ServerSchema::Schema::Repository, ServerSchema::Class::Lock);
     Utf8String briefcase;
-    briefcase.Sprintf("%s+eq+%lu", ServerSchema::Property::BriefcaseId, briefcaseId.GetValue());
+    briefcase.Sprintf("%s+eq+%u", ServerSchema::Property::BriefcaseId, briefcaseId.GetValue());
     query.SetFilter(briefcase);
     return m_wsRepositoryClient->SendQueryRequest(query, nullptr, nullptr, cancellationToken)->Then<DgnDbLockSetResult>
         ([=] (const WSObjectsResult& result)
@@ -468,12 +467,15 @@ AsyncTaskPtr<DgnDbLockSetResult> DgnDbRepositoryConnection::QueryLocks(const BeB
                 DgnLock lock;
                 Json::Value lockJson;
                 JsonValueCR properties = value[ServerSchema::Properties];
-                lockJson[Locks::Level] = properties[ServerSchema::Property::LockLevel];
-                lockJson[Locks::ObjectId] = Json::objectValue;
-                lockJson[Locks::ObjectId][Locks::Object::Id] = properties[ServerSchema::Property::ObjectId];
-                lockJson[Locks::ObjectId][Locks::Object::Type] = properties[ServerSchema::Property::LockType];
+                lockJson[Locks::Level] = properties[ServerSchema::Property::LockLevel].asInt();
+                lockJson[Locks::LockableId] = Json::objectValue;
+                uint64_t lockableId;
+                BeStringUtilities::ParseUInt64(lockableId, properties[ServerSchema::Property::ObjectId].asCString());
+                lockJson[Locks::LockableId][Locks::Lockable::Id] = lockableId;
+                lockJson[Locks::LockableId][Locks::Lockable::Type] = properties[ServerSchema::Property::LockType].asInt();
                 lock.FromJson(lockJson);
-                lockSet.insert(lock);
+                if (lock.GetLevel() != LockLevel::None)
+                    lockSet.insert(lock);
                 }
             return DgnDbLockSetResult::Success(lockSet);
             }
@@ -607,7 +609,7 @@ AsyncTaskPtr<DgnDbServerRevisionsResult> DgnDbRepositoryConnection::GetRevisions
             {
             WSQuery query(ServerSchema::Schema::Repository, ServerSchema::Class::Revision);
             Utf8String queryFilter;
-            queryFilter.Sprintf("%s%lld", "Index+ge+", indexResult.GetValue());
+            queryFilter.Sprintf("Index+ge+%llu", indexResult.GetValue());
             query.SetFilter(queryFilter);
             RevisionsFromQuery(query, cancellationToken)->Then([=] (const DgnDbServerRevisionsResult& revisionsResult)
                 {
