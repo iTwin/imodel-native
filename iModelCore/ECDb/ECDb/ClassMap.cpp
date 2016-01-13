@@ -680,6 +680,9 @@ BentleyStatus ClassMap::ProcessStandardKeySpecifications(SchemaImportContext& sc
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus ClassMap::CreateUserProvidedIndices(SchemaImportContext& schemaImportContext, ClassMapInfo const& classMapInfo) const
     {
+    if (GetPrimaryTable().GetPersistenceType() == PersistenceType::Virtual)
+        return SUCCESS;
+
     int i = 0;
     IssueReporter const& issues = m_ecDbMap.GetECDbR().GetECDbImplR().GetIssueReporter();
     for (ClassIndexInfoPtr indexInfo : classMapInfo.GetIndexInfo())

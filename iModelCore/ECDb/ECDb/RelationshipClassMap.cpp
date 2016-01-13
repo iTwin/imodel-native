@@ -347,7 +347,10 @@ MapStatus RelationshipClassEndTableMap::_MapPart1 (SchemaImportContext& schemaIm
     //    BeAssert(thisEndTableCount == 1 && "ForeignKey end of relationship has more than one tables or has no table at all");
     //    return MapStatus::Error;
     //    }
-
+    if (GetRelationshipClass().GetName() == "GeometrySourceIsInCategory")
+        {
+        printf("");
+        }
     auto otherEndClass = otherEndConstraint.GetClasses ()[0];
    // auto otheEndClassMap = GetECDbMap ().GetClassMapCP (*otherEndClass, true);
     size_t otherEndTableCount = GetECDbMap().GetTableCountOnRelationshipEnd(otherEndConstraint);
@@ -357,17 +360,17 @@ MapStatus RelationshipClassEndTableMap::_MapPart1 (SchemaImportContext& schemaIm
     //SetTable for EndTable case.
     if (thisEndClassMap->HasJoinedTable())
         {
-        ECDbSqlColumn const* thisKeyPropCol = nullptr;
-        if (SUCCESS != TryGetKeyPropertyColumn(thisKeyPropCol, thisEndConstraint, *relationshipClassMapInfo.GetECClass().GetRelationshipClassCP(), thisEnd))
+        std::set<ECDbSqlColumn const*> thisKeyPropCols, otherKeyPropCols;
+
+        if (SUCCESS != TryGetKeyPropertyColumn(thisKeyPropCols, thisEndConstraint, *relationshipClassMapInfo.GetECClass().GetRelationshipClassCP(), thisEnd))
             return MapStatus::Error;
 
-        ECDbSqlColumn const* otherKeyPropCol = nullptr;
-        if (SUCCESS != TryGetKeyPropertyColumn(otherKeyPropCol, otherEndConstraint, *relationshipClassMapInfo.GetECClass().GetRelationshipClassCP(), otherEnd))
+        if (SUCCESS != TryGetKeyPropertyColumn(otherKeyPropCols, otherEndConstraint, *relationshipClassMapInfo.GetECClass().GetRelationshipClassCP(), otherEnd))
             return MapStatus::Error;
 
-        if (otherKeyPropCol != nullptr)
+        if (!otherKeyPropCols.empty() )
             {
-            if (otherKeyPropCol->GetKind() != ColumnKind::ECInstanceId)
+            if ((*otherKeyPropCols.begin())->GetKind() != ColumnKind::ECInstanceId)
                 {
                 GetECDbMap().GetECDbR().GetECDbImplR().GetIssueReporter().Report(
                     ECDbIssueSeverity::Error,
@@ -386,7 +389,7 @@ MapStatus RelationshipClassEndTableMap::_MapPart1 (SchemaImportContext& schemaIm
         3. If relationship is on childClass then it should be childClass where it should be stored.
         4. For keyProperty it should be stored in table that has key property.
         */
-        if (thisKeyPropCol == nullptr)
+        if (thisKeyPropCols.empty())
             {
             SetTable(*thisEndTable);
             }
@@ -394,8 +397,8 @@ MapStatus RelationshipClassEndTableMap::_MapPart1 (SchemaImportContext& schemaIm
             {
             //KeypropCol is either base or child table of joined table case.
             //Check to make sure its once of the table.
-            BeAssert(thisEndClassMap->IsMappedTo(thisKeyPropCol->GetTable()));
-            SetTable(const_cast<ECDbSqlColumn*>(thisKeyPropCol)->GetTableR());
+            BeAssert(thisEndClassMap->IsMappedTo((*thisKeyPropCols.begin())->GetTable()));
+            SetTable(const_cast<ECDbSqlColumn*>((*thisKeyPropCols.begin()))->GetTableR());
             }
         }
     else  //Normal case.
@@ -594,16 +597,17 @@ MapStatus RelationshipClassEndTableMap::CreateConstraintColumns(ECDbSqlColumn*& 
     {
     fkIdColumn = nullptr;
 
-    ECDbSqlColumn const* keyPropCol = nullptr;
-    if (SUCCESS != TryGetKeyPropertyColumn(keyPropCol, constraint, *mapInfo.GetECClass().GetRelationshipClassCP(), constraintEnd))
+    std::set<ECDbSqlColumn const*> keyPropertyColumns;
+
+    if (SUCCESS != TryGetKeyPropertyColumn(keyPropertyColumns, constraint, *mapInfo.GetECClass().GetRelationshipClassCP(), constraintEnd))
         return MapStatus::Error;
 
     const ColumnKind fkColumnId = GetThisEnd() == ECRelationshipEnd::ECRelationshipEnd_Source ? ColumnKind::TargetECInstanceId : ColumnKind::SourceECInstanceId;
 
     m_autogenerateForeignKeyColumns = false;
 
-    if (keyPropCol != nullptr)
-        fkIdColumn = const_cast<ECDbSqlColumn*>(keyPropCol);
+    if (!keyPropertyColumns.empty())
+        fkIdColumn = const_cast<ECDbSqlColumn*>((*keyPropertyColumns.begin()));
     else
         {
         RelationshipEndColumns const& constraintColumnMapping = GetEndColumnsMapping(mapInfo);
@@ -906,44 +910,61 @@ void LogKeyPropertyRetrievalError(IssueReporter const& issueReporter, Utf8CP err
 //---------------------------------------------------------------------------------------
 // @bsimethod                      Krischan.Eberle                          06/2015
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus RelationshipClassEndTableMap::TryGetKeyPropertyColumn(ECDbSqlColumn const*& keyPropertyColumn, ECRelationshipConstraintCR constraint, ECRelationshipClassCR relClass, ECRelationshipEnd constraintEnd) const
+BentleyStatus RelationshipClassEndTableMap::TryGetKeyPropertyColumn(std::set<ECDbSqlColumn const*>& keyPropertyColumns, ECRelationshipConstraintCR constraint, ECRelationshipClassCR relClass, ECRelationshipEnd constraintEnd) const
     {
-    keyPropertyColumn = nullptr;
+    keyPropertyColumns.clear();
     ECRelationshipConstraintClassList const& constraintClasses = constraint.GetConstraintClasses();
     if (constraintClasses.size() == 0)
         return SUCCESS;
 
-    ECDbSqlColumn const* keyPropCol = nullptr;
+    std::set<IClassMap const*> constraintMaps = GetECDbMap().GetClassMapsFromRelationshipEnd(constraint);
+ 
+    Utf8String keyPropertyName;
     for (ECRelationshipConstraintClassCP constraintClass : constraintClasses)
         {
         bvector<Utf8String> const& keys = constraintClass->GetKeys();
         const size_t keyCount = keys.size();
+
         if (keyCount == 0)
             {
-            if (keyPropCol == nullptr)
+            if (keyPropertyName.empty())
                 continue;
-            
+
             LogKeyPropertyRetrievalError(GetECDbMap().GetECDbR().GetECDbImplR().GetIssueReporter(), "ECRelationshipConstraint Key properties must be specified on all classes of the constraint or on none.",
-                                         relClass, constraintEnd);
-            return ERROR;
-            }
-            
-        if (keyCount > 1 || keys[0].empty())
-            {
-            LogKeyPropertyRetrievalError(GetECDbMap().GetECDbR().GetECDbImplR().GetIssueReporter(), "ECDb does not support ECRelationshipConstraint Keys that are empty or made up of multiple properties.",
-                                         relClass, constraintEnd);
-            return ERROR;
-            }
-      
-        IClassMap const* classMap = GetECDbMap().GetClassMap(constraintClass->GetClass());
-        if (classMap == nullptr || classMap->GetMapStrategy().IsNotMapped())
-            {
-            BeAssert(false && "Class on relationship end is not mapped. This should have been caught before.");
+                relClass, constraintEnd);
             return ERROR;
             }
 
-        Utf8CP keyPropAccessString = keys[0].c_str();
-        PropertyMap const* keyPropertyMap = classMap->GetPropertyMap(keyPropAccessString);
+        if (keyCount > 1 || keys[0].empty())
+            {
+            LogKeyPropertyRetrievalError(GetECDbMap().GetECDbR().GetECDbImplR().GetIssueReporter(), "ECDb does not support ECRelationshipConstraint Keys that are empty or made up of multiple properties.",
+                relClass, constraintEnd);
+            return ERROR;
+            }
+
+        if (keyPropertyName.empty())
+            keyPropertyName = keys.front().c_str();
+        else
+            {
+            if (keyPropertyName != keys.front())
+                {
+                LogKeyPropertyRetrievalError(GetECDbMap().GetECDbR().GetECDbImplR().GetIssueReporter(), "ECDb does not support ECRelationshipConstraint Keys with different accessStrings. All Key properties in constraint must have same name",
+                    relClass, constraintEnd);
+
+                }
+            }                      
+        }
+
+    if (keyPropertyName.empty())
+        return SUCCESS;
+
+    for (auto constraintMap : constraintMaps)
+        {
+        if (constraintMap->GetPrimaryTable().GetPersistenceType() == PersistenceType::Virtual)
+            continue;
+
+        Utf8CP keyPropAccessString = keyPropertyName.c_str();
+        PropertyMap const* keyPropertyMap = constraintMap->GetPropertyMap(keyPropAccessString);
         if (keyPropertyMap == nullptr || keyPropertyMap->IsUnmapped() || keyPropertyMap->IsVirtual())
             {
             Utf8String error;
@@ -969,17 +990,9 @@ BentleyStatus RelationshipClassEndTableMap::TryGetKeyPropertyColumn(ECDbSqlColum
             return ERROR;
             }
 
-        if (keyPropCol == nullptr)
-            keyPropCol = columns[0];
-        else if (keyPropCol != columns[0])
-            {
-            LogKeyPropertyRetrievalError(GetECDbMap().GetECDbR().GetECDbImplR().GetIssueReporter(), "All ECRelationshipConstraint Keys must point to the same property for a given constraint.",
-                                         relClass, constraintEnd);
-            return ERROR;
-            }
+        keyPropertyColumns.insert(columns[0]);
         }
 
-    keyPropertyColumn = keyPropCol;
     return SUCCESS;
     }
 
@@ -1125,6 +1138,7 @@ MapStatus RelationshipClassLinkTableMap::_MapPart2 (SchemaImportContext& context
         sourceFK->SetOnDeleteAction(ForeignKeyActionType::Cascade);
         sourceFK->RemoveIfDuplicate();
         sourceFK = nullptr;
+
 
         //Create FK from Target-Primary to LinkTable
         ECDbSqlTable * targetTable = const_cast<ECDbSqlTable*>(*targetTables.begin());
