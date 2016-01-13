@@ -576,7 +576,8 @@ private:
     SeverityMap     m_severity;
     HANDLE          m_screenBuffer;
     Pane*           m_defaultPane;
-    Coord           m_screenBufferSize;
+    dim_t           m_screenBufferWidth;
+    dim_t           m_screenBufferHeight;
     CHAR_INFO       m_charBuffer[s_charBufferSize];
     
     static WCharCP GetNameSpace(ILogProviderContext* pContext)
@@ -613,8 +614,8 @@ public:
     virtual ~SplitConsoleProvider(void) { }
 
     HANDLE GetScreenBuffer() { return m_screenBuffer; }
-    dim_t GetBufferHeight() const { return m_screenBufferSize.Y; }
-    dim_t GetBufferWidth() const { return m_screenBufferSize.X; }
+    dim_t GetBufferHeight() const { return m_screenBufferHeight; }
+    dim_t GetBufferWidth() const { return m_screenBufferWidth; }
 };
 
 /*---------------------------------------------------------------------------------**//**
@@ -625,9 +626,16 @@ void SplitConsoleProvider::Pane::Log(WCharCP msg, SEVERITY sev, WCharCP nameSpac
     dim_t nRows = PrepareMessage(msg, sev, nameSpace);
     if (0 < nRows)
         {
-        // ###TODO: Scroll, etc...
-        Rect rect = m_rect;
-        WriteConsoleOutput(m_provider->GetScreenBuffer(), m_buffer, Coord(rect.GetWidth(), nRows), Coord(0,0), &rect);
+        // Scroll existing text to make room
+        static const CharInfo s_fillChar(' ', 0);
+        Rect scrollRect = m_rect;
+        scrollRect.Top += nRows;
+        ScrollConsoleScreenBuffer(m_provider->GetScreenBuffer(), &scrollRect, &m_rect, m_rect.GetTopLeft(), &s_fillChar);
+        
+        // Write new text at bottom
+        Rect writeRect = m_rect;
+        writeRect.Top = writeRect.Bottom - nRows;
+        WriteConsoleOutput(m_provider->GetScreenBuffer(), m_buffer, Coord(writeRect.GetWidth(), nRows), Coord(0,0), &writeRect);
         }
     }
 
@@ -726,20 +734,36 @@ int STDCALL_ATTRIBUTE SplitConsoleProvider::Initialize()
 
     // Set the size of the window
     COORD maxWindowSize = GetLargestConsoleWindowSize(m_screenBuffer);
-    m_screenBufferSize = Coord(s_charBufferSize, maxWindowSize.Y);  // scroll window up to see history...
-    if (!SetConsoleScreenBufferSize(m_screenBuffer, m_screenBufferSize))
+    dim_t maxWindowWidth = maxWindowSize.X; // msdn documentation lies about the meaning of X and Y here...
+    m_screenBufferHeight = s_charBufferSize;    // so we can scroll window up to see history...
+    m_screenBufferWidth = maxWindowWidth;
+
+    if (!SetConsoleScreenBufferSize(m_screenBuffer, Coord(m_screenBufferWidth, m_screenBufferHeight)))
         return ERROR;
 
 #ifdef SET_WINDOW_SIZE
-    Rect windowRect(0, 0, maxWindowSize.Y - 1, maxWindowSize.X - 1);
-    if (!SetConsoleWindowInfo(m_screenBuffer, TRUE, &windowRect))
+    CONSOLE_SCREEN_BUFFER_INFO screenBufferInfo;
+    if (!GetConsoleScreenBufferInfo(m_screenBuffer, &screenBufferInfo))
+        return ERROR;
+
+    screenBufferInfo.dwSize = maxWindowSize;
+    auto srWindow = screenBufferInfo.srWindow;
+    dim_t windowHeight = srWindow.Bottom - srWindow.Top;
+    screenBufferInfo.srWindow.Bottom = m_screenBufferHeight;
+    screenBufferInfo.srWindow.Top = m_screenBufferHeight - windowHeight;
+
+    if (!SetConsoleWindowInfo(m_screenBuffer, TRUE, &srWindow))
+        return ERROR;
+#else
+    // the above returns TRUE but has no effect. Setting the cursor pos instead has the desired result of focusing window on bottom of screen buffer.
+    if (!SetConsoleCursorPosition(m_screenBuffer, Coord(0, m_screenBufferHeight-1)))
         return ERROR;
 #endif
 
     // Set up the dimensions of each pane
     dim_t nPanes = static_cast<dim_t>(m_panes.size());
     dim_t nVerticalBars = nPanes - 1;   // vertical bar between each pane
-    dim_t paneWidthsTotal = maxWindowSize.Y - nVerticalBars;
+    dim_t paneWidthsTotal = m_screenBufferWidth - nVerticalBars;
     dim_t minPaneWidth = paneWidthsTotal / nPanes;
     dim_t maxPaneWidth = minPaneWidth + (paneWidthsTotal % nPanes); // right-most pane gets any extra space
 
@@ -747,7 +771,7 @@ int STDCALL_ATTRIBUTE SplitConsoleProvider::Initialize()
         {
         dim_t left = i * (minPaneWidth + 1);    // + 1 = include vertical bars
         dim_t width = (nPanes-1 == i) ? maxPaneWidth : minPaneWidth;
-        m_panes[i].m_rect = Rect(left, 0, left+width-1, GetBufferHeight()-2); // -2: bottom row reserved for pane names
+        m_panes[i].m_rect = Rect(left, 0, left+width-1, GetBufferHeight()-2); // -1: bottom row reserved for pane names
         }
 
     // Draw the static content
@@ -761,7 +785,7 @@ int STDCALL_ATTRIBUTE SplitConsoleProvider::Initialize()
     for (dim_t i = 0; i < nPanes-1; i++)
         {
         Rect rect = m_panes[i].m_rect;
-        Rect barRect(rect.Right+1, 0, rect.Right+2, GetBufferHeight()-1);
+        Rect barRect(rect.Right+1, 0, rect.Right+2, bufHeight-1);
         WriteConsoleOutput(GetScreenBuffer(), m_charBuffer, Coord(1, bufHeight), Coord(0,0), &barRect);
         }
 
@@ -772,7 +796,7 @@ int STDCALL_ATTRIBUTE SplitConsoleProvider::Initialize()
         for (dim_t i = 0; i < pane.m_rect.GetWidth(); i++)
             m_charBuffer[i] = CharInfo(i < nameLen ? pane.m_name[i] : ' ', BACKGROUND_WHITE);
 
-        Rect rect(pane.m_rect.Left, bufHeight-2, pane.m_rect.Right, bufHeight-1);
+        Rect rect(pane.m_rect.Left, bufHeight-1, pane.m_rect.Right, bufHeight);
         WriteConsoleOutput(GetScreenBuffer(), m_charBuffer, Coord(rect.GetWidth(), 1), Coord(0,0), &rect);
         }
 
