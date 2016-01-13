@@ -2,7 +2,7 @@
 |
 |     $Source: src/ECClass.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -1265,9 +1265,9 @@ SchemaReadStatus ECClass::_ReadXmlAttributes (BeXmlNodeR classNode)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaReadStatus ECClass::_ReadXmlContents (BeXmlNodeR classNode, ECSchemaReadContextR context, int ecXmlVersionMajor)
-    {            
-	bool isSchemaSupplemental = Utf8String::npos != GetSchema().GetName().find("_Supplemental_");
+SchemaReadStatus ECClass::_ReadXmlContents (BeXmlNodeR classNode, ECSchemaReadContextR context, int ecXmlVersionMajor, bvector<NavigationECPropertyP>& navigationProperties)
+    {
+    bool isSchemaSupplemental = Utf8String::npos != GetSchema().GetName().find("_Supplemental_");
     // Get the BaseClass child nodes.
     for (BeXmlNodeP childNode = classNode.GetFirstChild (); NULL != childNode; childNode = childNode->GetNextSibling ())
         {
@@ -1329,10 +1329,11 @@ SchemaReadStatus ECClass::_ReadXmlContents (BeXmlNodeR classNode, ECSchemaReadCo
             }
         else if (0 == strcmp(childNodeName, EC_NAVIGATIONPROPERTY_ELEMENT)) // also EC3.0 only
             {
-            ECPropertyP ecProperty = new NavigationECProperty(*this);
+            NavigationECPropertyP ecProperty = new NavigationECProperty(*this);
             SchemaReadStatus status = _ReadPropertyFromXmlAndAddToClass(ecProperty, childNode, context, childNodeName);
             if (SchemaReadStatus::Success != status)
                 return status;
+            navigationProperties.push_back(ecProperty);
             }
         }
     
@@ -1635,10 +1636,10 @@ SchemaWriteStatus ECEntityClass::_WriteXml(BeXmlWriterR xmlWriter, int ecXmlVers
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Colin.Kerr                  12/2015
 //---------------+---------------+---------------+---------------+---------------+-------
-ECObjectsStatus ECEntityClass::CreateNavigationProperty(NavigationECPropertyP& ecProperty, Utf8StringCR name, ECRelationshipClassCR relationshipClass, ECRelatedInstanceDirection direction)
+ECObjectsStatus ECEntityClass::CreateNavigationProperty(NavigationECPropertyP& ecProperty, Utf8StringCR name, ECRelationshipClassCR relationshipClass, ECRelatedInstanceDirection direction, bool verify)
     {
     ecProperty = new NavigationECProperty(*this);
-    ECObjectsStatus status = ecProperty->SetRelationshipClass(relationshipClass, direction);
+    ECObjectsStatus status = ecProperty->SetRelationshipClass(relationshipClass, direction, verify);
     if (ECObjectsStatus::Success == status)
         status = AddProperty(ecProperty, name);
 
@@ -2565,9 +2566,9 @@ SchemaReadStatus ECRelationshipClass::_ReadXmlAttributes (BeXmlNodeR classNode)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                02/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaReadStatus ECRelationshipClass::_ReadXmlContents (BeXmlNodeR classNode, ECSchemaReadContextR context, int ecXmlVersionMajor)
+SchemaReadStatus ECRelationshipClass::_ReadXmlContents (BeXmlNodeR classNode, ECSchemaReadContextR context, int ecXmlVersionMajor, bvector<NavigationECPropertyP>& navigationProperties)
     {
-    SchemaReadStatus status = T_Super::_ReadXmlContents (classNode, context, ecXmlVersionMajor);
+    SchemaReadStatus status = T_Super::_ReadXmlContents (classNode, context, ecXmlVersionMajor, navigationProperties);
     if (status != SchemaReadStatus::Success)
         return status;
 

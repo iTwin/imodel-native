@@ -158,6 +158,11 @@ public:
     //! Creates a TypeDescriptor for a struct
     ECOBJECTS_EXPORT static ECTypeDescriptor   CreateStructTypeDescriptor ();
 
+    //! Creates a TypeDescriptor for a navigation property.  The type descriptor will be of the primitive type specified by NavigationECProperty::GetIdType and can be changed using NavigationECProperty::SetIdType.
+    //! @param[in] isMultiple   True if the navigation property points to a relationship endpoint which allows more than one related instance.  Can use the result of the NavigationECProperty::IsMultiple method as input.
+    //! @returns an ECTypeDescriptor describing a navigation property.
+    ECOBJECTS_EXPORT static ECTypeDescriptor   CreateNavigationTypeDescriptor (bool isMultiple);
+
     //! Constructor that takes a PrimitiveType
     ECTypeDescriptor (PrimitiveType primitiveType) : m_typeKind (VALUEKIND_Primitive), m_primitiveType (primitiveType) { };
 
@@ -952,17 +957,19 @@ DEFINE_T_SUPER(ECProperty)
 friend struct ECEntityClass;
 friend struct ECClass;
 private:
+    static PrimitiveType        s_idType;
+
     ECRelationshipClassCP       m_relationshipClass;
     ECRelatedInstanceDirection  m_direction;
+    ValueKind                   m_valueKind;
 
 protected:
     NavigationECProperty(ECClassCR ecClass)
-        : ECProperty(ecClass), m_relationshipClass(nullptr), m_direction(ECRelatedInstanceDirection::Forward) {};
+        : ECProperty(ecClass), m_relationshipClass(nullptr), m_direction(ECRelatedInstanceDirection::Forward), m_valueKind(ValueKind::VALUEKIND_Uninitialized) {};
 
     ECObjectsStatus                 SetRelationshipClassName(Utf8CP relationshipName);
     ECObjectsStatus                 SetDirection(Utf8CP directionString);
     Utf8String                      GetRelationshipClassName() const;
-    bool                            VerifyRelationshipAndDirection(ECRelationshipClassCR relationshipClass, ECRelatedInstanceDirection direction) const;
 
 protected:
     virtual SchemaReadStatus        _ReadXml(BeXmlNodeR propertyNode, ECSchemaReadContextR schemaContext) override;
@@ -979,13 +986,28 @@ protected:
 
 public:
     // !Gets the relationship class used to determine what related instance this navigation property points to
-    ECRelationshipClassCP      GetRelationshipClass() const { return m_relationshipClass; }
+    ECRelationshipClassCP       GetRelationshipClass() const { return m_relationshipClass; }
     // !Gets the direction used to determine what related instance this navigation property points to
-    ECRelatedInstanceDirection GetDirection() const { return m_direction; }
+    ECRelatedInstanceDirection  GetDirection() const { return m_direction; }
     // !Sets the relationship and direction used by the navigation property
     // @param[in]   relClass    The relationship this navigation property will represent
     // @param[in]   direction   The direction the relationship will be traversed.  Forward if the class containing this property is a source constraint, Backward if the class is a target constraint
-    ECOBJECTS_EXPORT ECObjectsStatus            SetRelationshipClass(ECRelationshipClassCR relClass, ECRelatedInstanceDirection direction);
+    // @param[in]   verify      If true the relationshipClass an direction will be verified to ensure the navigation property fits within the relationship constraints.  Default is true.  If not verified at creation the Verify method must be called before the navigation property is used or it's type descriptor will not be valid.
+    // @returns     Returns Success if validation successful or not performed, SchemaNotFound if the schema containing the relationship class is not referenced and RelationshipConstraintsNotCompatible if validation
+    //              is performed but not successfull
+    ECOBJECTS_EXPORT ECObjectsStatus            SetRelationshipClass(ECRelationshipClassCR relClass, ECRelatedInstanceDirection direction, bool verify = true);
+    
+    // !Verifies that the relationship class and direction is valid.  
+    bool                        Verify();
+    // !Returns true if the Verify method has been called on this Navigation Property, false if it has not.
+    bool                        IsVerified() { return ValueKind::VALUEKIND_Uninitialized != m_valueKind; }
+    // !Returns true if the navigation property points to an endpoint which can have more than one related instance
+    bool                        IsMultiple() { return ValueKind::VALUEKIND_Array == m_valueKind; }
+    
+    // !Gets the PrimitiveType used for Navigation properties.  Default is string.
+    ECOBJECTS_EXPORT static PrimitiveType        GetIdType() { return s_idType; }
+    // !Sets the PrimitiveType used for Navigation properties.
+    ECOBJECTS_EXPORT static void                 SetIdType(PrimitiveType idType) { s_idType = idType; }
     };
 
 //=======================================================================================
@@ -1152,8 +1174,9 @@ protected:
     //! @param[in]  classNode       The XML DOM node to read
     //! @param[in]  context         The read context that contains information about schemas used for deserialization
     //! @param[in]  ecXmlVersionMajor The major version of the ECXml spec used for serializing this ECClass
+    //! @param[out] navigationProperties A running list of all naviagtion properties in the schema.  This list is used for validation, which may only happen after all classes are loaded
     //! @return   Status code
-    virtual SchemaReadStatus            _ReadXmlContents (BeXmlNodeR classNode, ECSchemaReadContextR context, int ecXmlVersionMajor);
+    virtual SchemaReadStatus            _ReadXmlContents (BeXmlNodeR classNode, ECSchemaReadContextR context, int ecXmlVersionMajor, bvector<NavigationECPropertyP>& navigationProperties);
 
     SchemaReadStatus                    _ReadBaseClassFromXml (BeXmlNodeP childNode, ECSchemaReadContextR context);
     SchemaReadStatus                    _ReadPropertyFromXmlAndAddToClass( ECPropertyP ecProperty, BeXmlNodeP& childNode, ECSchemaReadContextR context, Utf8CP childNodeName );
@@ -1592,9 +1615,10 @@ public:
     //! Creates a navigation property object using the relationship class and direction.  To succeed the relationship class, direction and name must all be valid.
     // @param[out]  ecProperty          Outputs the property if successfully created
     // @param[in]   name                The name for the navigation property.  Must be a valid ECName
-    // @param[in]   relationshipClass   The relationship class this navigation property will traverse.  Must list this class as an endpoint constraint and the other endpoint must have a upper cardinality of 1.
+    // @param[in]   relationshipClass   The relationship class this navigation property will traverse.  Must list this class as an endpoint constraint.  The cardinality of the other constraint determiness if the nav prop is a primitive or an array.
     // @param[in]   direction           The direction the relationship will be traversed.  Forward indicates that this class is a source constraint, Backward indicates that this class is a target constraint.
-    ECOBJECTS_EXPORT ECObjectsStatus CreateNavigationProperty(NavigationECPropertyP& ecProperty, Utf8StringCR name, ECRelationshipClassCR relationshipClass, ECRelatedInstanceDirection direction);
+    // @param[in]   verify              If true the relationshipClass an direction will be verified to ensure the navigation property fits within the relationship constraints.  Default is true.  If not verified at creation the Verify method must be called before the navigation property is used or it's type descriptor will not be valid.
+    ECOBJECTS_EXPORT ECObjectsStatus CreateNavigationProperty(NavigationECPropertyP& ecProperty, Utf8StringCR name, ECRelationshipClassCR relationshipClass, ECRelatedInstanceDirection direction, bool verify = true);
 };
 
 //---------------------------------------------------------------------------------------
@@ -1958,7 +1982,7 @@ protected:
     virtual SchemaWriteStatus           _WriteXml (BeXmlWriterR xmlWriter, int ecXmlVersionMajor, int ecXmlVersionMinor) const override;
 
     virtual SchemaReadStatus            _ReadXmlAttributes (BeXmlNodeR classNode) override;
-    virtual SchemaReadStatus            _ReadXmlContents (BeXmlNodeR classNode, ECSchemaReadContextR context, int ecXmlVersionMajor) override;
+    virtual SchemaReadStatus            _ReadXmlContents (BeXmlNodeR classNode, ECSchemaReadContextR context, int ecXmlVersionMajor, bvector<NavigationECPropertyP>& navigationProperties) override;
     virtual ECRelationshipClassCP       _GetRelationshipClassCP () const override {return this;};
     virtual ECRelationshipClassP        _GetRelationshipClassP ()  override {return this;};
     virtual ECClassType _GetClassType() const override { return ECClassType::Relationship; }

@@ -1192,6 +1192,11 @@ ECObjectsStatus StructArrayECProperty::SetStructElementType (ECStructClassCP str
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                   Colin.Kerr                  01/2016
+//---------------+---------------+---------------+---------------+---------------+-------
+PrimitiveType NavigationECProperty::s_idType = PrimitiveType::PRIMITIVETYPE_String;
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                   Colin.Kerr                  12/2015
 //---------------+---------------+---------------+---------------+---------------+-------
 ECObjectsStatus NavigationECProperty::SetRelationshipClassName(Utf8CP relationshipName)
@@ -1231,6 +1236,8 @@ ECObjectsStatus NavigationECProperty::SetRelationshipClassName(Utf8CP relationsh
         return ECObjectsStatus::ECClassNotSupported;
         }
     
+    m_valueKind = ValueKind::VALUEKIND_Uninitialized;
+
     return ECObjectsStatus::Success;
     }
 
@@ -1244,6 +1251,8 @@ ECObjectsStatus NavigationECProperty::SetDirection(Utf8CP direction)
     ECObjectsStatus status = ECXml::ParseDirectionString(m_direction, direction);
     if (ECObjectsStatus::Success != status)
         LOG.errorv("Failed to parse the ECRelatedInstanceDirection string '%s' for NavigationECProperty '%s'.", direction, GetName().c_str());
+
+    m_valueKind = ValueKind::VALUEKIND_Uninitialized;
 
     return status;
     }
@@ -1261,26 +1270,40 @@ Utf8String NavigationECProperty::GetRelationshipClassName() const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Colin.Kerr                  12/2015
 //---------------+---------------+---------------+---------------+---------------+-------
-bool NavigationECProperty::VerifyRelationshipAndDirection(ECRelationshipClassCR relationshipClass, ECRelatedInstanceDirection direction) const
+bool NavigationECProperty::Verify()
     {
+    if (IsVerified())
+        return true;
+
+    if (nullptr == m_relationshipClass)
+        return false;
+
     ECRelationshipConstraintCP thisConstraint;
     ECRelationshipConstraintCP thatConstraint;
-    if (ECRelatedInstanceDirection::Forward == direction)
+    if (ECRelatedInstanceDirection::Forward == m_direction)
         {
-        thisConstraint = &relationshipClass.GetSource();
-        thatConstraint = &relationshipClass.GetTarget();
+        thisConstraint = &m_relationshipClass->GetSource();
+        thatConstraint = &m_relationshipClass->GetTarget();
         }
     else
         {
-        thisConstraint = &relationshipClass.GetTarget();
-        thatConstraint = &relationshipClass.GetSource();
+        thisConstraint = &m_relationshipClass->GetTarget();
+        thatConstraint = &m_relationshipClass->GetSource();
         }
 
     bool supportsClass = thisConstraint->SupportsClass(GetClass());
     if (!supportsClass)
+        {
+        m_valueKind = ValueKind::VALUEKIND_Uninitialized;
         return false;
+        }
 
-    return 1 == thatConstraint->GetCardinality().GetUpperLimit();
+    if (1 == thatConstraint->GetCardinality().GetUpperLimit())
+        m_valueKind = ValueKind::VALUEKIND_Primitive;
+    else
+        m_valueKind = ValueKind::VALUEKIND_Array;
+
+    return true;
     }
 
 //---------------------------------------------------------------------------------------
@@ -1297,16 +1320,6 @@ SchemaReadStatus NavigationECProperty::_ReadXml(BeXmlNodeR propertyNode, ECSchem
     READ_REQUIRED_XML_ATTRIBUTE (propertyNode, RELATIONSHIP_NAME_ATTRIBUTE, this, RelationshipClassName, propertyNode.GetName())
 
     READ_REQUIRED_XML_ATTRIBUTE (propertyNode, DIRECTION_ATTRIBUTE, this, Direction, propertyNode.GetName())
-
-    // TODO/NEEDSWORK - Validation will always fail because Rel class must have constraints loaded and nav prop must have rel loaded.
-    //if (!VerifyRelationshipAndDirection(*m_relationshipClass, m_direction))
-    //    {
-    //    LOG.errorv("Unable to load NavigationECProperty '%s:%s.%s' because the relationship '%s' does not support this class as a constraint when traversed in the '%s' direction or max cardinality is greater than 1.",
-    //               GetClass().GetSchema().GetName().c_str(), GetClass().GetName().c_str(), GetName().c_str(),
-    //               GetRelationshipClassName().c_str(), ECXml::DirectionToString(m_direction));
-    //    
-    //    return SchemaReadStatus::InvalidECSchemaXml;
-    //    }
 
     return SchemaReadStatus::Success;
     }
@@ -1329,7 +1342,7 @@ SchemaWriteStatus NavigationECProperty::_WriteXml(BeXmlWriterR xmlWriter, int ec
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Colin.Kerr                  12/2015
 //---------------+---------------+---------------+---------------+---------------+-------
-Utf8String NavigationECProperty::_GetTypeName() const { return ECXml::GetPrimitiveTypeName(PRIMITIVETYPE_String); }
+Utf8String NavigationECProperty::_GetTypeName() const { return ECXml::GetPrimitiveTypeName(NavigationECProperty::s_idType); }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Colin.Kerr                  12/2015
@@ -1356,11 +1369,8 @@ bool NavigationECProperty::_CanOverride(ECPropertyCR baseProperty) const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Colin.Kerr                  12/2015
 //---------------+---------------+---------------+---------------+---------------+-------
-ECObjectsStatus NavigationECProperty::SetRelationshipClass(ECRelationshipClassCR relClass, ECRelatedInstanceDirection direction)
+ECObjectsStatus NavigationECProperty::SetRelationshipClass(ECRelationshipClassCR relClass, ECRelatedInstanceDirection direction, bool verify)
     {
-    if (!VerifyRelationshipAndDirection(relClass, direction))
-        return ECObjectsStatus::RelationshipConstraintsNotCompatible;
-
     if (&(relClass.GetSchema()) != &(this->GetClass().GetSchema()))
         {
         if (!ECSchema::IsSchemaReferenced(this->GetClass().GetSchema(), relClass.GetSchema()))
@@ -1369,6 +1379,8 @@ ECObjectsStatus NavigationECProperty::SetRelationshipClass(ECRelationshipClassCR
 
     m_relationshipClass = &relClass;
     m_direction = direction;
+    if (verify && !Verify())
+        return ECObjectsStatus::RelationshipConstraintsNotCompatible;
 
     SetCachedTypeAdapter(nullptr);
     InvalidateClassLayout();

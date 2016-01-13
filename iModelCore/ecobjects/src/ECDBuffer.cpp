@@ -2,7 +2,7 @@
 |
 |     $Source: src/ECDBuffer.cpp $
 |
-|   $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include    "ECObjectsPch.h"
@@ -872,8 +872,22 @@ void            ClassLayout::Factory::AddProperties (ECClassCR ecClass, Utf8CP n
             }
         else if (property->GetIsNavigation())
             {
-            if (!addingFixedSizeProps)
-                AddVariableSizeProperty(propName.c_str(), PrimitiveType::PRIMITIVETYPE_String, false, false);
+            PrimitiveType navPropType = NavigationECProperty::GetIdType();
+            NavigationECPropertyP navProp = property->GetAsNavigationPropertyP();
+            bool isMultiple = navProp->IsMultiple();
+
+            if (!isMultiple && PrimitiveTypeIsFixedSize(navPropType))
+                {
+                if (addingFixedSizeProps)
+                    AddFixedSizeProperty(propName.c_str(), navPropType, navProp->GetIsReadOnly(), navProp->IsCalculated());
+                }
+            else if (!addingFixedSizeProps)
+                {
+                if (isMultiple)
+                    AddVariableSizeProperty(propName.c_str(), ECTypeDescriptor::CreatePrimitiveArrayTypeDescriptor(navPropType), navProp->GetIsReadOnly(), navProp->IsCalculated());
+                else
+                    AddVariableSizeProperty(propName.c_str(), navPropType, navProp->GetIsReadOnly(), navProp->IsCalculated());
+                }
             }
         }
     }

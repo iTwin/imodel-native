@@ -272,6 +272,7 @@ SchemaReadStatus SchemaXmlReaderImpl::_ReadClassContentsFromXml(ECSchemaPtr& sch
     {
     SchemaReadStatus status = SchemaReadStatus::Success;
 
+    bvector<NavigationECPropertyP> navigationProperties;
     ClassDeserializationVector::const_iterator  classesStart, classesEnd, classesIterator;
     ECClassP    ecClass;
     BeXmlNodeP  classNode;
@@ -279,10 +280,20 @@ SchemaReadStatus SchemaXmlReaderImpl::_ReadClassContentsFromXml(ECSchemaPtr& sch
         {
         ecClass = classesIterator->first;
         classNode = classesIterator->second;
-        status = ecClass->_ReadXmlContents(*classNode, m_schemaContext, ecXmlVersionMajor);
+        status = ecClass->_ReadXmlContents(*classNode, m_schemaContext, ecXmlVersionMajor, navigationProperties);
         if (SchemaReadStatus::Success != status)
             return status;
         }
+
+    for (auto const& navProp : navigationProperties)
+        if (!navProp->Verify())
+            {
+            LOG.errorv("Unable to load NavigationECProperty '%s:%s.%s' because the relationship '%s' does not support this class as a constraint when traversed in the '%s' direction or max cardinality is greater than 1.",
+                        navProp->GetClass().GetSchema().GetName().c_str(), navProp->GetClass().GetName().c_str(), navProp->GetName().c_str(),
+                        navProp->GetRelationshipClass()->GetName().c_str(), ECXml::DirectionToString(navProp->GetDirection()));
+                
+            return SchemaReadStatus::InvalidECSchemaXml;
+            }
 
     return status;
     }
