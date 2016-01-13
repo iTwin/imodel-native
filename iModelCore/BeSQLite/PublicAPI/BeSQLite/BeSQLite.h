@@ -2257,6 +2257,8 @@ private:
     DbResult DeleteBriefcaseLocalValues();
 
 public:
+    virtual void _VerifyQuerySequence() const {}
+
     BE_SQLITE_EXPORT Db();
     BE_SQLITE_EXPORT virtual ~Db();
 
@@ -2641,6 +2643,7 @@ public:
 
     BE_SQLITE_EXPORT bool IsSettingProperty(Utf8CP space, Utf8CP name, uint64_t id, uint64_t subId) const;
     Savepoint* GetDefaultTransaction() const {return (m_dbFile != nullptr) ? &m_dbFile->m_defaultTxn : nullptr;}
+
     //! Checks a file's profile compatibility to be opened with the current version of the profile's API.
     //!
     //! @see Db::OpenBeSQLiteDb for the compatibility contract for Bentley SQLite profiles.
@@ -2685,82 +2688,6 @@ public:
     //! @return BE_SQLITE_OK if property was successfully saved, or a non-zero error status if the expiration date is invalid, is not UTC, or could not be saved to the database.
     //! @see QueryExpirationDate, IsExpired
     BE_SQLITE_EXPORT DbResult SaveExpirationDate(DateTime const& expirationDate);
-};
-
-//=======================================================================================
-//! Creating an instance of wt_OperationForGraphics notifies GraphicsAndQuerySequencer
-//! that the subsequent operations are high priority and should be allowed even if
-//! the query thread is running a query. It also notifies the range tree operation that it should
-//! abort the current range tree query to let work thread operation continue.
-//!
-//! It is important to avoid restarting the query in the query thread, so any query that 
-//! uses wt_OperationForGraphics should cache the results of the work thread query so it can avoid
-//! repeating the work thread query.
-// @bsiclass                                                    John.Gooding    01/2013
-//=======================================================================================
-struct wt_OperationForGraphics
-    {
-    BE_SQLITE_EXPORT wt_OperationForGraphics();
-    BE_SQLITE_EXPORT ~wt_OperationForGraphics();
-    };
-
-//=======================================================================================
-//! Creating an instance of qt_RangeTreeOperationBlock notifies the GraphicsAndQuerySequencer
-//! that the current thread (should be the query thread) is doing a range tree operation.  
-//! The operations in this thread are allowed without checking for wt_OperationForGraphics. 
-//! Code that executes within the scope of a qt_RangeTreeOperationBlock must check for 
-//! qt_isOperationRequiredForGraphicsPending and, if it is, must respond appropriately.
-// @bsiclass                                                    John.Gooding    01/2013
-//=======================================================================================
-struct qt_RangeTreeOperationBlock
-    {
-    BE_SQLITE_EXPORT qt_RangeTreeOperationBlock(BeSQLite::Db const& sqlDb);
-    BE_SQLITE_EXPORT ~qt_RangeTreeOperationBlock();
-    };
-
-//=======================================================================================
-//! Creating an instance of wt_GraphicsAndQuerySequencerDiagnosticsEnabler notifies the GraphicsAndQuerySequencer
-//! that the current thread is doing an operation that prohibits any operation that is not
-//! required for the current update to continue.
-//!
-//! In a release build this has no affect. In a debug build it allows CheckSQLiteOperationAllowed
-//! to assert if it detects a BeSQLite operation on the query DB outside of the query thread
-//! when there is no active wt_OperationForGraphics object.
-// @bsiclass                                                    John.Gooding    01/2013
-//=======================================================================================
-struct wt_GraphicsAndQuerySequencerDiagnosticsEnabler
-    {
-    BE_SQLITE_EXPORT wt_GraphicsAndQuerySequencerDiagnosticsEnabler();
-    BE_SQLITE_EXPORT ~wt_GraphicsAndQuerySequencerDiagnosticsEnabler();
-    };
-
-//=======================================================================================
-// @bsiclass                                                    John.Gooding    01/2013
-//=======================================================================================
-struct GraphicsAndQuerySequencer
-{
-friend struct wt_OperationForGraphics;
-friend struct qt_RangeTreeOperationBlock;
-friend struct wt_GraphicsAndQuerySequencerDiagnosticsEnabler;
-
-private:
-    static bool s_areSequencerDiagnosticsEnabled;
-    static int  s_nPendingGraphicsPriorityRequests;
-    static intptr_t s_rangeTreeThreadId;
-    static SqlDbP s_queryThreadDb;
-
-    static void qt_StartRangeTreeOperation(BeSQLite::Db const& queryDb);
-    static void qt_EndRangeTreeOperation();
-    static void wt_StartOperationRequiredForGraphics();
-    static void wt_EndOperationRequiredForGraphics();
-    static void wt_BeginDiagnostics();
-    static void wt_EndDiagnostics();
-
-public:
-    //! This is called at the start of an update that must not block.  Calls to this should
-    //! never be nested.
-    BE_SQLITE_EXPORT static bool qt_isOperationRequiredForGraphicsPending();
-    static void CheckSQLiteOperationAllowed(SqlDbP queryDb);
 };
 
 //=======================================================================================

@@ -46,11 +46,6 @@ static Utf8CP loadSnappyVfs();
 extern "C" int checkNoActiveStatements(SqlDbP db);
 #endif
 
-#if defined (NDEBUG)
-    #define HPOS_CheckSQLiteOperationAllowed(queryDb)
-#else
-    #define HPOS_CheckSQLiteOperationAllowed(queryDb) GraphicsAndQuerySequencer::CheckSQLiteOperationAllowed(queryDb)
-#endif
 
 BEGIN_BENTLEY_SQLITE_NAMESPACE
 //=======================================================================================
@@ -406,7 +401,7 @@ DbResult Statement::TryPrepare(DbCR db, Utf8CP sql)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   03/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult Statement::Prepare(DbCR db, Utf8CP sql) { return Prepare(*db.m_dbFile, sql);  }
+DbResult Statement::Prepare(DbCR db, Utf8CP sql) { db._VerifyQuerySequence(); return Prepare(*db.m_dbFile, sql);  }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   03/11
@@ -437,7 +432,6 @@ DbResult Statement::Prepare(DbFileCR dbFile, Utf8CP sql, bool suppressDiagnostic
 DbResult Statement::DoPrepare(DbFileCR dbFile, Utf8CP sql)
     {
     SqlDbP dbHdl = dbFile.GetSqlDb();
-    HPOS_CheckSQLiteOperationAllowed(dbHdl);
     return (nullptr != m_stmt) ? BE_SQLITE_MISUSE : (DbResult) sqlite3_prepare_v2(dbHdl, sql, -1, &m_stmt, 0);
     }
 
@@ -2526,6 +2520,7 @@ Utf8CP Db::InterpretDbResult(DbResult result)
     return "<unkown result code>";
     }
 
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
 bool GraphicsAndQuerySequencer::s_areSequencerDiagnosticsEnabled;
 int GraphicsAndQuerySequencer::s_nPendingGraphicsPriorityRequests;
 intptr_t GraphicsAndQuerySequencer::s_rangeTreeThreadId;
@@ -2619,6 +2614,7 @@ qt_RangeTreeOperationBlock::qt_RangeTreeOperationBlock(BeSQLite::Db const&queryD
 qt_RangeTreeOperationBlock::~qt_RangeTreeOperationBlock() { GraphicsAndQuerySequencer::qt_EndRangeTreeOperation(); }
 wt_GraphicsAndQuerySequencerDiagnosticsEnabler::wt_GraphicsAndQuerySequencerDiagnosticsEnabler() { GraphicsAndQuerySequencer::wt_BeginDiagnostics(); }
 wt_GraphicsAndQuerySequencerDiagnosticsEnabler::~wt_GraphicsAndQuerySequencerDiagnosticsEnabler() { GraphicsAndQuerySequencer::wt_EndDiagnostics(); }
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   06/11
@@ -3121,11 +3117,7 @@ DbResult StatementCache::GetPreparedStatement(CachedStatementPtr& stmt, DbFile c
 
     stmt = FindStatement(sqlString);
     if (stmt.IsValid())
-        {
-        //  We normally test for this in DoPrepare, but cached statements bypass that.
-        HPOS_CheckSQLiteOperationAllowed(dbFile.GetSqlDb());
         return  BE_SQLITE_OK;
-        }
 
     stmt = &AddStatement(sqlString);
     return stmt->Prepare(dbFile, sqlString);
@@ -3158,6 +3150,7 @@ StatementCache& Db::GetStatementCache() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 DbResult Db::GetCachedStatement(CachedStatementPtr& stmt, Utf8CP sqlString) const
     {
+    _VerifyQuerySequence();
     return GetStatementCache().GetPreparedStatement(stmt, *m_dbFile, sqlString);
     }
 
