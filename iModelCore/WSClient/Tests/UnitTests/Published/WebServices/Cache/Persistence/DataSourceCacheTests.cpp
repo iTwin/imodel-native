@@ -743,22 +743,6 @@ TEST_F(DataSourceCacheTests, RemoveRoot_InstanceLinkedToSeveralRoots_InstanceNot
     EXPECT_TRUE(cache->FindInstance({"TestSchema.TestClass", "Foo"}).IsValid());
     }
 
-TEST_F(DataSourceCacheTests, RemoveRoot_RootContainsCachedQueryWithCyclicRelationshipToItsParent_QueryResultsAndParentDeleted)
-    {
-    auto cache = GetTestCache();
-
-    ASSERT_EQ(SUCCESS, cache->LinkInstanceToRoot("Root", {"TestSchema.TestClass", "CyclicParent"}));
-    auto parent = cache->FindInstance({"TestSchema.TestClass", "CyclicParent"});
-    CachedResponseKey key(parent, "Foo");
-
-    StubInstances instances;
-    instances.Add({"TestSchema.TestClass", "CyclicParent"});
-    ASSERT_EQ(SUCCESS, cache->CacheResponse(key, instances.ToWSObjectsResponse()));
-
-    ASSERT_EQ(SUCCESS, cache->RemoveRoot("Root"));
-    EXPECT_FALSE(cache->GetCachedObjectInfo({"TestSchema.TestClass", "CyclicParent"}).IsInCache());
-    }
-
 TEST_F(DataSourceCacheTests, RemoveRootsByPrefix_NoSuchRoots_ReturnsSuccess)
     {
     auto cache = GetTestCache();
@@ -1682,13 +1666,10 @@ TEST_F(DataSourceCacheTests, CacheResponse_NewResultIsEmptyWhenCachedWithRelatio
 
     StubInstances instances;
     instances.Add({"TestSchema.TestClass", "A"}).AddRelated({"TestSchema.TestRelationshipClass", "AB"}, {"TestSchema.TestClass", "B"});
-
-    cache->CacheResponse(responseKey, instances.ToWSObjectsResponse());
+    EXPECT_EQ(SUCCESS, cache->CacheResponse(responseKey, instances.ToWSObjectsResponse()));
 
     instances.Clear();
-    auto status = cache->CacheResponse(responseKey, instances.ToWSObjectsResponse());
-
-    EXPECT_EQ(SUCCESS, status);
+    EXPECT_EQ(SUCCESS, cache->CacheResponse(responseKey, instances.ToWSObjectsResponse()));
     EXPECT_FALSE(cache->GetCachedObjectInfo({"TestSchema.TestClass", "A"}).IsInCache());
     EXPECT_FALSE(cache->GetCachedObjectInfo({"TestSchema.TestClass", "B"}).IsInCache());
     }
@@ -2511,8 +2492,46 @@ TEST_F(DataSourceCacheTests, CacheResponse_KeyHasDifferentHolderAndThenParentIsR
     EXPECT_THAT(rejected, IsEmpty());
 
     ASSERT_EQ(SUCCESS, cache->RemoveRoot("Parent"));
-    EXPECT_THAT(cache->FindInstance({"TestSchema.TestClass", "Foo"}).IsValid(), false);
-    EXPECT_THAT(cache->IsResponseCached(key), false);
+    EXPECT_FALSE(cache->IsResponseCached(key));
+    EXPECT_FALSE(cache->FindInstance({"TestSchema.TestClass", "Foo"}).IsValid());
+    }
+
+TEST_F(DataSourceCacheTests, CacheResponse_ResponseContainsItsParentInstanceAndParentRootRemoved_QueryResultsAndParentDeleted)
+    {
+    auto cache = GetTestCache();
+
+    ASSERT_EQ(SUCCESS, cache->LinkInstanceToRoot("Root", {"TestSchema.TestClass", "Parent"}));
+    auto parent = cache->FindInstance({"TestSchema.TestClass", "Parent"});
+
+    CachedResponseKey key(parent, "Foo");
+
+    StubInstances instances;
+    instances.Add({"TestSchema.TestClass", "Parent"});
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(key, instances.ToWSObjectsResponse()));
+
+    ASSERT_EQ(SUCCESS, cache->RemoveRoot("Root"));
+    EXPECT_FALSE(cache->IsResponseCached(key));
+    EXPECT_FALSE(cache->GetCachedObjectInfo({"TestSchema.TestClass", "Parent"}).IsInCache());
+    }
+
+TEST_F(DataSourceCacheTests, CacheResponse_ResponseContainsItsHolderInstanceAndHolderRootIsRemoved_QueryResultsAndHolderDeleted)
+    {
+    auto cache = GetTestCache();
+
+    ASSERT_EQ(SUCCESS, cache->LinkInstanceToRoot("RootParent", {"TestSchema.TestClass", "Parent"}));
+    ASSERT_EQ(SUCCESS, cache->LinkInstanceToRoot("RootHolder", {"TestSchema.TestClass", "Holder"}));
+    auto parent = cache->FindInstance({"TestSchema.TestClass", "Parent"});
+    auto holder = cache->FindInstance({"TestSchema.TestClass", "Holder"});
+
+    CachedResponseKey key(parent, "Foo", holder);
+
+    StubInstances instances;
+    instances.Add({"TestSchema.TestClass", "Holder"});
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(key, instances.ToWSObjectsResponse()));
+
+    ASSERT_EQ(SUCCESS, cache->RemoveRoot("RootHolder"));
+    EXPECT_FALSE(cache->IsResponseCached(key));
+    EXPECT_FALSE(cache->GetCachedObjectInfo({"TestSchema.TestClass", "Holder"}).IsInCache());
     }
 
 TEST_F(DataSourceCacheTests, CacheResponse_MultipleNestedResponsesWithHolderAndHolderIsRemoved_RemovesResults)
@@ -3570,7 +3589,7 @@ TEST_F(DataSourceCacheTests, ReadResponseObjectIds_CachedWithKeyWithSeperateHold
     EXPECT_CONTAINS(objectIds, ObjectId("TestSchema.TestClass", "A"));
     }
 
-TEST_F(DataSourceCacheTests, RemoveResponses_NonExistingQuery_ReturnsSuccess)
+TEST_F(DataSourceCacheTests, RemoveResponse_NonExistingQuery_ReturnsSuccess)
     {
     auto cache = GetTestCache();
     ECInstanceKey root = cache->FindOrCreateRoot(nullptr);
@@ -3580,12 +3599,12 @@ TEST_F(DataSourceCacheTests, RemoveResponses_NonExistingQuery_ReturnsSuccess)
     EXPECT_EQ(SUCCESS, status);
     }
 
-TEST_F(DataSourceCacheTests, RemoveResponses_QuerySharesRelationshipWithOtherQuery_LeavesRelationship)
+TEST_F(DataSourceCacheTests, RemoveResponse_ResponseSharesRelationshipWithOtherResponse_LeavesRelationship)
     {
     auto cache = GetTestCache();
 
-    CachedResponseKey responseKey1(cache->FindOrCreateRoot(nullptr), "TestQuery1");
-    CachedResponseKey responseKey2(cache->FindOrCreateRoot(nullptr), "TestQuery2");
+    CachedResponseKey responseKey1(cache->FindOrCreateRoot(nullptr), "TestResponse1");
+    CachedResponseKey responseKey2(cache->FindOrCreateRoot(nullptr), "TestResponse2");
 
     StubInstances instances;
     instances.Add({"TestSchema.TestClass", "A"}).AddRelated({"TestSchema.TestRelationshipClass", "AB"}, {"TestSchema.TestClass", "B"});
@@ -3593,7 +3612,7 @@ TEST_F(DataSourceCacheTests, RemoveResponses_QuerySharesRelationshipWithOtherQue
     cache->CacheResponse(responseKey1, instances.ToWSObjectsResponse());
     cache->CacheResponse(responseKey2, instances.ToWSObjectsResponse());
 
-    cache->RemoveResponse(responseKey1);
+    EXPECT_EQ(SUCCESS, cache->RemoveResponse(responseKey1));
 
     auto testRelClass = cache->GetAdapter().GetECRelationshipClass("TestSchema.TestRelationshipClass");
     auto instanceA = cache->FindInstance({"TestSchema.TestClass", "A"});
@@ -3604,25 +3623,23 @@ TEST_F(DataSourceCacheTests, RemoveResponses_QuerySharesRelationshipWithOtherQue
     EXPECT_TRUE(VerifyHasRelationship(cache, testRelClass, instanceA, instanceB));
     }
 
-TEST_F(DataSourceCacheTests, RemoveCachedQueryResults_QueryWithRelationshipWhenOtherQueryHoldsOnlyInstances_DeletesRelationship)
+TEST_F(DataSourceCacheTests, RemoveResponse_ResponseWithRelationshipWhenOtherResponseHoldsOnlyInstances_DeletesRelationship)
     {
     auto cache = GetTestCache();
 
-    CachedResponseKey responseKey1(cache->FindOrCreateRoot(nullptr), "TestQuery1");
-    CachedResponseKey responseKey2(cache->FindOrCreateRoot(nullptr), "TestQuery2");
+    CachedResponseKey responseKey1(cache->FindOrCreateRoot(nullptr), "TestResponse1");
+    CachedResponseKey responseKey2(cache->FindOrCreateRoot(nullptr), "TestResponse2");
 
     StubInstances instances;
     instances.Add({"TestSchema.TestClass", "A"});
     instances.Add({"TestSchema.TestClass", "B"});
-
     cache->CacheResponse(responseKey1, instances.ToWSObjectsResponse());
 
     instances.Clear();
     instances.Add({"TestSchema.TestClass", "A"}).AddRelated({"TestSchema.TestRelationshipClass", "AB"}, {"TestSchema.TestClass", "B"});
-
     cache->CacheResponse(responseKey2, instances.ToWSObjectsResponse());
 
-    cache->RemoveResponse(responseKey2);
+    EXPECT_EQ(SUCCESS, cache->RemoveResponse(responseKey2));
 
     auto testRelClass = cache->GetAdapter().GetECRelationshipClass("TestSchema.TestRelationshipClass");
     auto instanceA = cache->FindInstance({"TestSchema.TestClass", "A"});

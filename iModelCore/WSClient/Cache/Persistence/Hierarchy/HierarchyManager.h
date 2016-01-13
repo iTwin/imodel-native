@@ -29,8 +29,6 @@ struct HierarchyManager
     private:
         ECDbAdapter&            m_dbAdapter;
         ECSqlStatementCache&    m_statementCache;
-        ObjectInfoManager&      m_objectInfoManager;
-        ChangeInfoManager&      m_changeInfoManager;
 
     private:
         BentleyStatus DeleteRelationships(ECInstanceKeyCR source, const bvector<ECInstanceKey>& targets, ECRelationshipClassCP relationshipClass);
@@ -39,9 +37,7 @@ struct HierarchyManager
         HierarchyManager
             (
             ECDbAdapterR ecdbAdapter,
-            ECSqlStatementCache& statementCache,
-            ObjectInfoManager& objectInfoManager,
-            ChangeInfoManager& changeInfoManager
+            ECSqlStatementCache& statementCache
             );
         ~HierarchyManager();
 
