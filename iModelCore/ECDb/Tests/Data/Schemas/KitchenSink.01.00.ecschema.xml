@@ -160,7 +160,6 @@
                 </MemberExtendedType>
             </ECCustomAttributes>
         </ECArrayProperty>
-        <ECProperty propertyName="ColorStructMember" typeName="ColorStruct" readOnly="false"/>
         <ECStructProperty propertyName="FormattedStruct" typeName="Struct3" readOnly="false">
             <ECCustomAttributes>
                 <ExtendType xmlns="EditorCustomAttributes.01.02">
