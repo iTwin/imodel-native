@@ -1078,7 +1078,7 @@ void ViewContext::ContextMark::Pop()
     if (nullptr == m_context)
         return;
 
-    while (m_context->GetTransClipDepth() > m_transClipMark)
+    while (m_context->GetTransClipDepth() > (int)m_transClipMark)
         m_context->GetTransformClipStack().Pop(*m_context);
     }
 
