@@ -23,6 +23,20 @@ DgnPlatformLib::ThreadId DgnPlatformLib::GetThreadId() {return (ThreadId) g_thre
 void DgnPlatformLib::SetThreadId(ThreadId id) {g_threadId.SetValueAsInteger((int) id);}
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/16
++---------------+---------------+---------------+---------------+---------------+------*/
+WCharCP DgnPlatformLib::GetThreadIdName()
+    {
+    switch (GetThreadId())
+        {
+        case ThreadId::Client:      return L"ClientThread";
+        case ThreadId::Render:      return L"RenderThread";
+        case ThreadId::Query:       return L"QueryThread";
+        default:                    return L"UnknownThread";
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/14
 +---------------+---------------+---------------+---------------+---------------+------*/
 void BeBriefcaseBasedIdSet::FromJson(Json::Value const& in)

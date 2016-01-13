@@ -7,29 +7,6 @@
 +--------------------------------------------------------------------------------------*/
 #include "DgnPlatformInternal.h"
 
-#if !defined (NDEBUG)
-#   define DEBUG_THREADS 1
-#   define RENDER_LOGGING 1
-#endif
-
-#define RENDER_LOGGING 1
-
-// #undef RENDER_LOGGING
-
-#undef LOG
-#if defined (RENDER_LOGGING)
-#   define LOG (*NativeLogging::LoggingManager::GetLogger(L"Render"))
-//#   define LOG_STRING(msg) LOG.debug(msg.c_str())
-//#   define LOG_PRINTF(fmt, ...) LOG_STRING(Utf8PrintfString(fmt,__VA_ARGS__))
-#   define LOG_STRING(msg) printf(msg.c_str())
-//  Using the variadic macro here produces a compilation error when compiling for iOS.
-#   define LOG_PRINTF printf
-#else
-#   define LOG
-#   define LOG_STRING(msg)
-#   define LOG_PRINTF(fmt, ...)
-#endif
-
 BEGIN_UNNAMED_NAMESPACE
     static Render::Queue* s_renderQueue = nullptr;
 END_UNNAMED_NAMESPACE
@@ -52,7 +29,7 @@ void Render::Target::RecordFrameTime(GraphicList& scene, double seconds)
         seconds = .001;
 
     uint32_t gps = (uint32_t) ((double) count / seconds);
-    printf("GPS=%d\n", gps);
+    NativeLogging::LoggingManager::GetLogger("GPS")->debugv("GPS=%d", gps);
     m_graphicsPerSecond.store(gps);
     }
 
@@ -116,7 +93,7 @@ void Render::Task::Perform(StopWatch& timer)
     timer.Start();
     m_outcome = _Process(timer);
     m_elapsedTime = timer.GetCurrentSeconds();
-    LOG_PRINTF ("task=%s, elapsed=%lf\n", _GetName(), m_elapsedTime);
+    THREADLOG.debugv ("task=%s, elapsed=%lf", _GetName(), m_elapsedTime);
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -10,7 +10,13 @@
 
 #include "UpdateLogging.h"
 
-//#define TRACE_QUERY_LOGIC 1
+#define TRACE_QUERY_LOGIC 1
+#ifdef TRACE_QUERY_LOGIC
+#   define DEBUG_PRINTF THREADLOG.debugv
+#else
+#   define DEBUG_PRINTF(fmt, ...)
+#endif
+
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   07/12
@@ -113,15 +119,11 @@ void QueryViewController::SaveSelectResults()
             m_saveQueryFrustum.Invalidate();
             }
 
-#if defined (TRACE_QUERY_LOGIC)
-        printf("QVC: SaveSelectResults: results not ready\n");
-#endif
+        DEBUG_PRINTF("QVC: SaveSelectResults: results not ready");
         return;
         }
 
-#if defined (TRACE_QUERY_LOGIC)
-    printf("QVC: SaveSelectResults: saving results\n");
-#endif
+    DEBUG_PRINTF("QVC: SaveSelectResults: saving results");
 
     m_queryModel.SaveQueryResults();
 
@@ -359,7 +361,7 @@ void QueryViewController::_DrawView(ViewContextR context)
         return;
         }
 
-    printf("clear progressive _DrawView\n");
+    DEBUG_PRINTF("clear progressive _DrawView");
     context.GetViewport()->ClearProgressiveDisplay();
 
     const uint64_t maxMem = GetMaxElementMemory();

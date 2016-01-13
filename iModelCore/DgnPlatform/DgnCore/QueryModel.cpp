@@ -12,10 +12,12 @@
 #include <Bentley/BeSystemInfo.h>
 #include "UpdateLogging.h"
 
-//#define TRACE_QUERY_LOGIC 1
-#define DEBUG_PRINTF(arg) 
-
-// #define DEBUG_SPLIT_LOGGER 1
+#define TRACE_QUERY_LOGIC 1
+#ifdef TRACE_QUERY_LOGIC
+#   define DEBUG_PRINTF THREADLOG.debugv
+#else
+#   define DEBUG_PRINTF(fmt, ...)
+#endif
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    09/2012
@@ -65,12 +67,6 @@ void QueryModel::RequestAbort(bool wait)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void QueryModel::SaveQueryResults()
     {
-#ifdef DEBUG_SPLIT_LOGGER
-    static uint32_t s_logCounter = 0;
-    NativeLogging::LoggingManager::GetLogger(L"Stuff")->errorv("SaveQueryResults %d", s_logCounter++);
-    NativeLogging::LoggingManager::GetLogger(L"DgnCore")->debugv("SaveQueryResults %d SaveQueryResults %d SaveQueryResults %d SaveQueryResults %d", s_logCounter, s_logCounter, s_logCounter, s_logCounter);
-    NativeLogging::LoggingManager::GetLogger(L"DefaultLog")->warningv("SaveQueryResults %d", s_logCounter++);
-#endif
     DgnPlatformLib::VerifyClientThread();
 
     if (m_updatedResults.IsNull())
@@ -98,6 +94,7 @@ void QueryModel::SaveQueryResults()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void QueryModel::SetUpdatedResults(Results* results)
     {
+    DEBUG_PRINTF("Query completed");
     m_updatedResults = results;
     }
 
@@ -154,13 +151,13 @@ bool QueryModel::Filter::CheckAbort()
     {
     if (m_model.AbortRequested())
         {
-        printf("Query Filter aborted\n");
+        DEBUG_PRINTF("Query Filter aborted");
         return true;
         }
 
     if (GraphicsAndQuerySequencer::qt_isOperationRequiredForGraphicsPending())
         {
-        printf("Query Filter interrupted\n");
+        DEBUG_PRINTF("Query Filter interrupted");
         m_restartRangeQuery = true;
         return true;
         }
@@ -316,7 +313,7 @@ bool QueryModel::Processor::LoadElements(OcclusionScores& scores, bvector<DgnEle
         {
         if (GetModel().AbortRequested())
             {
-            printf("Load elements aborted\n");
+            DEBUG_PRINTF("Load elements aborted");
             return false;   // did not finish
             }
 
@@ -713,14 +710,14 @@ ProgressiveDisplay::Completion QueryModel::ProgressiveFilter::_Process(ViewConte
     m_batchSize = batchSize;
     m_setTimeout = false;
 
-    DEBUG_PRINTF("start progressive display\n");
+    DEBUG_PRINTF("start progressive display");
     if (BE_SQLITE_ROW != StepRTree(*m_rangeStmt))
         {
         m_rangeStmt->Reset();
-        DEBUG_PRINTF("aborted progressive display\n");
+        DEBUG_PRINTF("aborted progressive display");
         return Completion::Aborted;
         }
-    DEBUG_PRINTF("finished progressive display\n");
+    DEBUG_PRINTF("finished progressive display");
 
     return Completion::Finished;
     }
