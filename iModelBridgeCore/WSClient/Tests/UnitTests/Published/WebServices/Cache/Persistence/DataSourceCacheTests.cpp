@@ -221,6 +221,18 @@ TEST_F(DataSourceCacheTests, UpdateSchemas_CalledOnOtherConnection_CallsListener
     ASSERT_EQ(BE_SQLITE_OK, sp2.Commit());
     }
 
+TEST_F(DataSourceCacheTests, UpdateSchemas_DefaultUsedSchemasPassed_Success)
+    {
+    DataSourceCache cache;
+    cache.Create(BeFileName(":memory:"), CacheEnvironment());
+
+    auto path = GetTestsAssetsDir().AppendToPath(L"ECSchemas/WSClient/Cache/MetaSchema.02.00.ecschema.xml");
+
+    ASSERT_EQ(SUCCESS, cache.UpdateSchemas(std::vector<BeFileName> {path}));
+
+    EXPECT_TRUE(nullptr != cache.GetAdapter().GetECSchema("MetaSchema"));
+    }
+
 TEST_F(DataSourceCacheTests, GetInstance_NotCached_ReturnsDataNotCachedAndNullInstance)
     {
     auto cache = GetTestCache();
