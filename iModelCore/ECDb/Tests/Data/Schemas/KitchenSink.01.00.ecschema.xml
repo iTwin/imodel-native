@@ -1,78 +1,28 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
-<ECSchema schemaName="KitchenSink" version="01.00" nameSpacePrefix="ks" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0" xmlns:ec="http://www.bentley.com/schemas/Bentley.ECXML.2.0" xmlns:ods="Bentley_ODS.01.02">
-    <ECSchemaReference name="EditorCustomAttributes" version="01.00" prefix="beca" />
-    <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="01.08" prefix="bsca" />
-    <ECSchemaReference name="ECDbMap" version="01.00" prefix="ecdbmap" />
-
+<?xml version="1.0" encoding="UTF-8"?>
+<ECSchema schemaName="KitchenSink" nameSpacePrefix="ks" version="01.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.0">
+    <ECSchemaReference name="EditorCustomAttributes" version="01.02" prefix="beca"/>
+    <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="01.12" prefix="bsca"/>
+    <ECSchemaReference name="ECDbMap" version="01.00" prefix="ecdbmap"/>
     <ECCustomAttributes>
-        <IdentificationOfStandardClasses xmlns="Bentley_Standard_CustomAttributes.01.08">
-            <DocumentBaseClass>Document</DocumentBaseClass>
+        <IdentificationOfStandardClasses xmlns="Bentley_Standard_CustomAttributes.01.12">
             <FolderBaseClass>Folder</FolderBaseClass>
+            <DocumentBaseClass>Document</DocumentBaseClass>
             <FolderParentRelationshipClass>FolderHasSubFolders</FolderParentRelationshipClass>
             <DocumentParentRelationshipClass>FolderHasDocuments</DocumentParentRelationshipClass>
         </IdentificationOfStandardClasses>
     </ECCustomAttributes>
-
-    <ECClass typeName="ecProject" description="Project Class" displayLabel="Project" isDomainClass="True">
-      <ECProperty propertyName="Name" typeName="string" displayLabel="Project Name" />
-   </ECClass>
-
-    <ECClass typeName="ecWidget" description="Widget" displayLabel="Widget" isDomainClass="True">
+    <ECCustomAttributeClass typeName="AccessCustomAttributes" modifier="None" appliesTo="Any">
+        <ECProperty propertyName="AccessLevel" typeName="int" readOnly="false"/>
+        <ECProperty propertyName="Writeable" typeName="boolean" readOnly="false"/>
+    </ECCustomAttributeClass>
+    <ECEntityClass typeName="BaseClass" modifier="None">
         <ECCustomAttributes>
-            <Category xmlns="EditorCustomAttributes.01.00">
-                <Name/>
-                <!--Intentionally empty to see if .NET and native C++ handle them identically -->
-            </Category>
-        </ECCustomAttributes>
-        <ECProperty propertyName="EC_InstanceID" typeName="int" description="Unique identifier for instances of your business class">
-            <ECCustomAttributes>
-            </ECCustomAttributes>
-        </ECProperty>
-        <ECProperty propertyName="ecstringattr" typeName="string" displayLabel="stringattr">
-            <ECCustomAttributes>
-            </ECCustomAttributes>
-        </ECProperty>
-        <ECProperty propertyName="eclongattr" typeName="int" displayLabel="longattr">
-            <ECCustomAttributes>
-            </ECCustomAttributes>
-        </ECProperty>
-    </ECClass>
-
-    <ECRelationshipClass typeName="ProjectHasWidget" strength="referencing">
-        <Source cardinality="(1,1)" roleLabel="" polymorphic="False">
-            <Class class="ecProject" />
-        </Source>
-        <Target cardinality="(0,N)" roleLabel="" polymorphic="False">
-            <Class class="ecWidget" />
-        </Target>
-    </ECRelationshipClass>
-
-    <ECRelationshipClass typeName="WidgetBelongsToProject" strength="referencing">
-        <Source cardinality="(1,1)" roleLabel="" polymorphic="False">
-            <Class class="ecWidget" />
-        </Source>
-        <Target cardinality="(1,1)" roleLabel="" polymorphic="False">
-            <Class class="ecProject" />
-        </Target>
-    </ECRelationshipClass>
-
-    <ECClass typeName="AccessCustomAttributes" isCustomAttributeClass="True">
-        <ECProperty propertyName="AccessLevel" typeName="int" />
-        <ECProperty propertyName="Writeable" typeName="boolean" />
-    </ECClass>
-    
-    <ECClass typeName="BaseClass" isDomainClass="True">
-        <ECCustomAttributes>
-            <Category xmlns="EditorCustomAttributes.01.00">
+            <Category xmlns="EditorCustomAttributes.01.02">
                 <Name>DefaultCategory</Name>
                 <DisplayLabel>Default Category</DisplayLabel>
                 <Description>The default category</Description>
                 <Priority>100000</Priority>
             </Category>
-      <!-- **************************************************************************************************
-        AffanK: Added SharedTable strategy to avoid schema
-        import failure that occure in ImplicitRelationshipClass relationship as it end up with more then one table on one side 
-      **************************************************************************************************  -->
             <ClassMap xmlns="ECDbMap.01.00">
                 <MapStrategy>
                     <Strategy>SharedTable</Strategy>
@@ -80,437 +30,446 @@
                 </MapStrategy>
             </ClassMap>
         </ECCustomAttributes>
-        <ECProperty propertyName="BaseClassMember" typeName="int" />
-    </ECClass>
-    
-    <ECClass typeName="Struct1" isStruct="True">
-        <ECProperty propertyName="Struct1BoolMember" typeName="boolean" />
-        <ECProperty propertyName="Struct1IntMember" typeName="int" />
-    </ECClass>
-    
-    <ECClass typeName="Struct2" isStruct="True">
-        <ECProperty propertyName="Struct2StringMember" typeName="string" />
-        <ECProperty propertyName="Struct2DoubleMember" typeName="double" />
-        <ECArrayProperty propertyName="NestedArray" typeName="Struct1" minOccurs="0" maxOccurs="unbounded" isStruct="True" />
-    </ECClass>
-    
-    <ECRelationshipClass typeName="BaseRelationshipClass" strength="referencing" isDomainClass="False">
-        <ECProperty propertyName="MyIntegerMember" typeName="int" />
-        <ECProperty propertyName="MyLongMember" typeName="long" />
+        <ECProperty propertyName="BaseClassMember" typeName="int" readOnly="false"/>
+    </ECEntityClass>
+    <ECRelationshipClass typeName="BaseRelationshipClass" modifier="Abstract" strength="referencing" strengthDirection="forward">
+        <ECProperty propertyName="MyIntegerMember" typeName="int" readOnly="false"/>
+        <ECProperty propertyName="MyLongMember" typeName="long" readOnly="false"/>
+        <Source cardinality="(0,1)" polymorphic="true"/>
+        <Target cardinality="(0,1)" polymorphic="true"/>
     </ECRelationshipClass>
-    
-    <ECClass typeName="Struct3" isStruct="True">
-        <ECProperty propertyName="Struct3DoubleMember" typeName="double" />
-        <ECProperty propertyName="Struct3IntMember" typeName="int" />
-        <ECProperty propertyName="Struct3BoolMember" typeName="boolean" />
-    </ECClass>
-
-    <ECClass typeName="PrimitiveClass" isDomainClass="True">
-        <BaseClass>BaseClass</BaseClass>
-        <ECProperty propertyName="IntegerMember" typeName="int">
-            <ECCustomAttributes>
-                <StandardValues xmlns="EditorCustomAttributes.01.00">
-                    <ValueMap>
-                        <ValueMap>
-                            <Value>8</Value>
-                            <DisplayString>Always</DisplayString>
-                        </ValueMap>
-                        <ValueMap>
-                            <Value>12</Value>
-                            <DisplayString>Sometimes</DisplayString>
-                        </ValueMap>
-                        <ValueMap>
-                            <Value>14</Value>
-                            <DisplayString>Never</DisplayString>
-                        </ValueMap>
-                    </ValueMap>
-                </StandardValues>
-            </ECCustomAttributes>
-        </ECProperty>
-        <ECProperty propertyName="NegativeMember" typeName="int" />
-        <ECProperty propertyName="CustomFormatInt" typeName="int">
-            <ECCustomAttributes>
-                <ExtendType xmlns="EditorCustomAttributes.01.00">
-                    <Name>CustomType</Name>
-                </ExtendType>
-                <Category xmlns="EditorCustomAttributes.01.00">
-                    <Standard>1</Standard>
-                </Category>
-                <PropertyPriority xmlns="EditorCustomAttributes.01.00">
-                    <Priority>301100</Priority>
-                </PropertyPriority>
-            </ECCustomAttributes>
-        </ECProperty>
-        <ECProperty propertyName="LongMember" typeName="long">
-            <ECCustomAttributes>
-                <Category xmlns="EditorCustomAttributes.01.00">
-                    <Standard>1</Standard>
-                </Category>
-                <PropertyPriority xmlns="EditorCustomAttributes.01.00">
-                    <Priority>201000</Priority>
-                </PropertyPriority>
-            </ECCustomAttributes>
-        </ECProperty>
-        <ECProperty propertyName="BooleanMember" typeName="boolean" />
-        <ECProperty propertyName="DoubleMember" typeName="double" readOnly="True" />
-        <ECProperty propertyName="DateTimeMember" typeName="dateTime" />
-        <ECProperty propertyName="StringMember" typeName="string" description="This is the string property description" displayLabel="StringDisplayLabel">
-            <ECCustomAttributes>
-                <Category xmlns="EditorCustomAttributes.01.00">
-                    <Standard>1</Standard>
-                </Category>
-                <PropertyPriority xmlns="EditorCustomAttributes.01.00">
-                    <Priority>301000</Priority>
-                </PropertyPriority>
-            </ECCustomAttributes>
-        </ECProperty>
-        <ECProperty propertyName="StartPoint" typeName="point3d" description="This is the start point property description" displayLabel="Start Point Label" />
-        <ECProperty propertyName="EndPoint" typeName="point3d" />
-    </ECClass>
-
-    <ECRelationshipClass typeName="ProjectHasPrimitive" strength="referencing">
-        <Source cardinality="(1,1)" roleLabel="" polymorphic="False">
-            <Class class="ecProject" />
-        </Source>
-        <Target cardinality="(1,1)" roleLabel="" polymorphic="False">
-            <Class class="PrimitiveClass" />
-        </Target>
-    </ECRelationshipClass>
-
-    <ECClass typeName="TestClass" isDomainClass="True">
+    <ECStructClass typeName="Struct1" modifier="None">
+        <ECProperty propertyName="Struct1BoolMember" typeName="boolean" readOnly="false"/>
+        <ECProperty propertyName="Struct1IntMember" typeName="int" readOnly="false"/>
+    </ECStructClass>
+    <ECStructClass typeName="Struct2" modifier="None">
+        <ECProperty propertyName="Struct2StringMember" typeName="string" readOnly="false"/>
+        <ECProperty propertyName="Struct2DoubleMember" typeName="double" readOnly="false"/>
+        <ECStructArrayProperty propertyName="NestedArray" typeName="Struct1" readOnly="false" minOccurs="0" maxOccurs="unbounded"/>
+    </ECStructClass>
+    <ECStructClass typeName="Struct3" modifier="None">
+        <ECProperty propertyName="Struct3DoubleMember" typeName="double" readOnly="false"/>
+        <ECProperty propertyName="Struct3IntMember" typeName="int" readOnly="false"/>
+        <ECProperty propertyName="Struct3BoolMember" typeName="boolean" readOnly="false"/>
+    </ECStructClass>
+    <ECEntityClass typeName="TestClass" modifier="None">
         <BaseClass>BaseClass</BaseClass>
         <ECCustomAttributes>
-            <AccessCustomAttributes xmlns="SimpleTest_FirstSchema.01.00">
+            <AccessCustomAttributes xmlns="KitchenSink.01.00">
                 <AccessLevel>4</AccessLevel>
                 <Writeable>False</Writeable>
             </AccessCustomAttributes>
         </ECCustomAttributes>
-        <ECProperty propertyName="IntegerMember" typeName="int">
+        <ECProperty propertyName="IntegerMember" typeName="int" readOnly="false">
             <ECCustomAttributes>
-                <StandardValues xmlns="EditorCustomAttributes.01.00">
+                <StandardValues xmlns="EditorCustomAttributes.01.02">
                     <ValueMap>
                         <ValueMap>
-                            <Value>8</Value>
                             <DisplayString>Always</DisplayString>
+                            <Value>8</Value>
                         </ValueMap>
                         <ValueMap>
-                            <Value>12</Value>
                             <DisplayString>Sometimes</DisplayString>
+                            <Value>12</Value>
                         </ValueMap>
                         <ValueMap>
-                            <Value>14</Value>
                             <DisplayString>Never</DisplayString>
+                            <Value>14</Value>
                         </ValueMap>
                     </ValueMap>
                 </StandardValues>
             </ECCustomAttributes>
         </ECProperty>
-        <ECProperty propertyName="NegativeMember" typeName="int" />
-        <ECProperty propertyName="CustomFormatInt" typeName="int">
+        <ECProperty propertyName="NegativeMember" typeName="int" readOnly="false"/>
+        <ECProperty propertyName="CustomFormatInt" typeName="int" readOnly="false">
             <ECCustomAttributes>
-                <ExtendType xmlns="EditorCustomAttributes.01.00">
+                <ExtendType xmlns="EditorCustomAttributes.01.02">
                     <Name>CustomType</Name>
                 </ExtendType>
-                <Category xmlns="EditorCustomAttributes.01.00">
+                <Category xmlns="EditorCustomAttributes.01.02">
                     <Standard>1</Standard>
                 </Category>
-                <PropertyPriority xmlns="EditorCustomAttributes.01.00">
+                <PropertyPriority xmlns="EditorCustomAttributes.01.02">
                     <Priority>301100</Priority>
                 </PropertyPriority>
             </ECCustomAttributes>
         </ECProperty>
-        <ECProperty propertyName="LongMember" typeName="long">
+        <ECProperty propertyName="LongMember" typeName="long" readOnly="false">
             <ECCustomAttributes>
-                <Category xmlns="EditorCustomAttributes.01.00">
+                <Category xmlns="EditorCustomAttributes.01.02">
                     <Standard>1</Standard>
                 </Category>
-                <PropertyPriority xmlns="EditorCustomAttributes.01.00">
+                <PropertyPriority xmlns="EditorCustomAttributes.01.02">
                     <Priority>201000</Priority>
                 </PropertyPriority>
             </ECCustomAttributes>
         </ECProperty>
-        <ECProperty propertyName="BooleanMember" typeName="boolean" />
-        <ECProperty propertyName="DoubleMember" typeName="double" readOnly="True" />
-        <ECProperty propertyName="DateTimeMember" typeName="dateTime" />
-        <ECProperty propertyName="StringMember" typeName="string" description="This is the string property description" displayLabel="StringDisplayLabel">
+        <ECProperty propertyName="BooleanMember" typeName="boolean" readOnly="false"/>
+        <ECProperty propertyName="DoubleMember" typeName="double" readOnly="true"/>
+        <ECProperty propertyName="DateTimeMember" typeName="dateTime" readOnly="false"/>
+        <ECProperty propertyName="StringMember" typeName="string" description="This is the string property description" displayLabel="StringDisplayLabel" readOnly="false">
             <ECCustomAttributes>
-                <Category xmlns="EditorCustomAttributes.01.00">
+                <Category xmlns="EditorCustomAttributes.01.02">
                     <Standard>1</Standard>
                 </Category>
-                <PropertyPriority xmlns="EditorCustomAttributes.01.00">
+                <PropertyPriority xmlns="EditorCustomAttributes.01.02">
                     <Priority>301000</Priority>
                 </PropertyPriority>
             </ECCustomAttributes>
         </ECProperty>
-        <ECProperty propertyName="StartPoint" typeName="point3d" description="This is the start point property description" displayLabel="Start Point Label" />
-        <ECProperty propertyName="EndPoint" typeName="point3d" />
-        <ECStructProperty propertyName="EmbeddedStruct" typeName="Struct1">
+        <ECProperty propertyName="StartPoint" typeName="point3d" description="This is the start point property description" displayLabel="Start Point Label" readOnly="false"/>
+        <ECProperty propertyName="EndPoint" typeName="point3d" readOnly="false"/>
+        <ECStructProperty propertyName="EmbeddedStruct" typeName="Struct1" readOnly="false">
             <ECCustomAttributes>
-                <HideMembers xmlns="EditorCustomAttributes.01.00">
+                <HideMembers xmlns="EditorCustomAttributes.01.02">
                     <ArrayMembers>True</ArrayMembers>
                     <If2D>True</If2D>
                     <If3D>False</If3D>
                 </HideMembers>
-                <ExtendType xmlns="EditorCustomAttributes.01.00">
+                <ExtendType xmlns="EditorCustomAttributes.01.02">
                     <Name>StructType</Name>
                 </ExtendType>
             </ECCustomAttributes>
         </ECStructProperty>
-        <ECStructProperty propertyName="SecondEmbeddedStruct" typeName="Struct1" />
-        <ECArrayProperty propertyName="IntArray" typeName="int" minOccurs="0" maxOccurs="unbounded">
+        <ECStructProperty propertyName="SecondEmbeddedStruct" typeName="Struct1" readOnly="false"/>
+        <ECArrayProperty propertyName="IntArray" typeName="int" readOnly="false" minOccurs="0" maxOccurs="unbounded">
             <ECCustomAttributes>
-                <ExtendType xmlns="EditorCustomAttributes.01.00">
+                <ExtendType xmlns="EditorCustomAttributes.01.02">
                     <Standard>12</Standard>
                 </ExtendType>
-                <MemberExtendedType xmlns="EditorCustomAttributes.01.00">
+                <MemberExtendedType xmlns="EditorCustomAttributes.01.02">
                     <Name>CustomType</Name>
                 </MemberExtendedType>
             </ECCustomAttributes>
         </ECArrayProperty>
-        <ECArrayProperty propertyName="SmallIntArray" typeName="int" minOccurs="0" maxOccurs="unbounded" />
-        <ECArrayProperty propertyName="StringArray" typeName="string" minOccurs="0" maxOccurs="unbounded" />
-        <ECArrayProperty propertyName="DateArray" typeName="dateTime" minOccurs="0" maxOccurs="unbounded" />
-        <ECArrayProperty propertyName="StructArray" typeName="Struct2" minOccurs="0" maxOccurs="unbounded" isStruct="True">
+        <ECArrayProperty propertyName="SmallIntArray" typeName="int" readOnly="false" minOccurs="0" maxOccurs="unbounded"/>
+        <ECArrayProperty propertyName="StringArray" typeName="string" readOnly="false" minOccurs="0" maxOccurs="unbounded"/>
+        <ECArrayProperty propertyName="DateArray" typeName="dateTime" readOnly="false" minOccurs="0" maxOccurs="unbounded"/>
+        <ECStructArrayProperty propertyName="StructArray" typeName="Struct2" readOnly="false" minOccurs="0" maxOccurs="unbounded">
             <ECCustomAttributes>
-                <MemberExtendedType xmlns="EditorCustomAttributes.01.00">
+                <MemberExtendedType xmlns="EditorCustomAttributes.01.02">
                     <Name>StructType</Name>
                 </MemberExtendedType>
             </ECCustomAttributes>
-        </ECArrayProperty>
-        <ECArrayProperty propertyName="EmptyIntArray" typeName="int" minOccurs="0" maxOccurs="unbounded" />
-        <ECArrayProperty propertyName="OneMemberIntArray" typeName="int" minOccurs="0" maxOccurs="unbounded">
+        </ECStructArrayProperty>
+        <ECArrayProperty propertyName="EmptyIntArray" typeName="int" readOnly="false" minOccurs="0" maxOccurs="unbounded"/>
+        <ECArrayProperty propertyName="OneMemberIntArray" typeName="int" readOnly="false" minOccurs="0" maxOccurs="unbounded">
             <ECCustomAttributes>
-                <MemberExtendedType xmlns="EditorCustomAttributes.01.00">
+                <MemberExtendedType xmlns="EditorCustomAttributes.01.02">
                     <Name>CustomType</Name>
                 </MemberExtendedType>
             </ECCustomAttributes>
         </ECArrayProperty>
-        <ECProperty propertyName="ColorStructMember" typeName="ColorStruct" />
-        <ECStructProperty propertyName="FormattedStruct" typeName="Struct3">
+        <ECProperty propertyName="ColorStructMember" typeName="ColorStruct" readOnly="false"/>
+        <ECStructProperty propertyName="FormattedStruct" typeName="Struct3" readOnly="false">
             <ECCustomAttributes>
-                <ExtendType xmlns="EditorCustomAttributes.01.00">
+                <ExtendType xmlns="EditorCustomAttributes.01.02">
                     <Name>FormattedStruct</Name>
                 </ExtendType>
             </ECCustomAttributes>
         </ECStructProperty>
-        <ECArrayProperty propertyName="FormattedArray" typeName="int" minOccurs="0" maxOccurs="unbounded">
+        <ECArrayProperty propertyName="FormattedArray" typeName="int" readOnly="false" minOccurs="0" maxOccurs="unbounded">
             <ECCustomAttributes>
-                <ExtendType xmlns="EditorCustomAttributes.01.00">
+                <ExtendType xmlns="EditorCustomAttributes.01.02">
                     <Name>FormattedArray</Name>
                 </ExtendType>
             </ECCustomAttributes>
         </ECArrayProperty>
-        <ECArrayProperty propertyName="PointArray" typeName="point3d" minOccurs="0" maxOccurs="unbounded">
+        <ECArrayProperty propertyName="PointArray" typeName="point3d" readOnly="false" minOccurs="0" maxOccurs="unbounded">
             <ECCustomAttributes>
-                <IgnoreZ xmlns="EditorCustomAttributes.01.00" />
-                <ExtendType xmlns="EditorCustomAttributes.01.00">
+                <IgnoreZ xmlns="EditorCustomAttributes.01.02"/>
+                <ExtendType xmlns="EditorCustomAttributes.01.02">
                     <Standard>12</Standard>
                 </ExtendType>
             </ECCustomAttributes>
         </ECArrayProperty>
-    </ECClass>
-    <ECClass typeName="Test2Class" isDomainClass="True">
-        <ECProperty propertyName="Test2StringMember" typeName="string" />
-    </ECClass>
-    <ECRelationshipClass typeName="ClonedRelationshipClass" strength="referencing">
+    </ECEntityClass>
+    <ECEntityClass typeName="Test2Class" modifier="None">
+        <ECProperty propertyName="Test2StringMember" typeName="string" readOnly="false"/>
+    </ECEntityClass>
+    <ECRelationshipClass typeName="ClonedRelationshipClass" modifier="None" strength="referencing" strengthDirection="forward">
         <BaseClass>BaseRelationshipClass</BaseClass>
-        <Source cardinality="(1,1)" roleLabel="source constraint2" polymorphic="True">
-            <Class class="TestClass" />
+        <Source cardinality="(1,1)" roleLabel="source constraint2" polymorphic="true">
+            <Class class="TestClass"/>
         </Source>
-        <Target cardinality="(1,1)" roleLabel="target constraint2" polymorphic="True">
-            <Class class="Test2Class" />
+        <Target cardinality="(1,1)" roleLabel="target constraint2" polymorphic="true">
+            <Class class="Test2Class"/>
         </Target>
     </ECRelationshipClass>
-    <ECRelationshipClass typeName="ExplicitRelationshipClass" strength="referencing">
-        <BaseClass>BaseRelationshipClass</BaseClass>
-        <Source cardinality="(1,1)" roleLabel="source constraint2" polymorphic="True">
-            <Class class="TestClass" />
-        </Source>
-        <Target cardinality="(1,1)" roleLabel="target constraint2" polymorphic="True">
-            <Class class="Test2Class" />
-        </Target>
-    </ECRelationshipClass>
-    <ECRelationshipClass typeName="ImplicitRelationshipClass" strength="referencing">
+    <ECEntityClass typeName="Document" modifier="None">
         <ECCustomAttributes>
-            <AccessCustomAttributes xmlns="SimpleTest_FirstSchema.01.00">
+            <FileDependentProperties xmlns="Bentley_Standard_CustomAttributes.01.12">
+                <FileName>FileName</FileName>
+                <FileSize>Size</FileSize>
+                <DateModified>UpdateTime</DateModified>
+            </FileDependentProperties>
+        </ECCustomAttributes>
+        <ECProperty propertyName="Name" typeName="string" readOnly="false"/>
+        <ECProperty propertyName="DifferentNumber" typeName="int" readOnly="false"/>
+        <ECProperty propertyName="FileName" typeName="string" readOnly="false"/>
+        <ECProperty propertyName="Size" typeName="long" readOnly="false"/>
+        <ECProperty propertyName="UpdateTime" typeName="dateTime" readOnly="false"/>
+    </ECEntityClass>
+    <ECEntityClass typeName="User" modifier="None">
+        <ECProperty propertyName="Name" typeName="string" readOnly="false"/>
+    </ECEntityClass>
+    <ECRelationshipClass typeName="DocumentHasOwner" description="FolderHasDocuments" modifier="None" strength="referencing" strengthDirection="forward">
+        <Source cardinality="(1,1)" roleLabel="has Owner" polymorphic="true">
+            <Class class="Document"/>
+        </Source>
+        <Target cardinality="(1,1)" roleLabel="owns a Document" polymorphic="true">
+            <Class class="User"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="ExplicitRelationshipClass" modifier="None" strength="referencing" strengthDirection="forward">
+        <BaseClass>BaseRelationshipClass</BaseClass>
+        <Source cardinality="(1,1)" roleLabel="source constraint2" polymorphic="true">
+            <Class class="TestClass"/>
+        </Source>
+        <Target cardinality="(1,1)" roleLabel="target constraint2" polymorphic="true">
+            <Class class="Test2Class"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECEntityClass typeName="FM_Equipment" displayLabel="Equipment" modifier="Abstract">
+        <ECCustomAttributes>
+            <ClassMap xmlns="ECDbMap.01.00">
+                <MapStrategy>
+                    <Strategy>SharedTable</Strategy>
+                    <AppliesToSubclasses>True</AppliesToSubclasses>
+                </MapStrategy>
+            </ClassMap>
+        </ECCustomAttributes>
+    </ECEntityClass>
+    <ECEntityClass typeName="FM_Chair" displayLabel="Chair" modifier="None">
+        <BaseClass>FM_Equipment</BaseClass>
+        <ECProperty propertyName="FM_Type" typeName="string" readOnly="false"/>
+        <ECProperty propertyName="FM_Cost" typeName="int" readOnly="false"/>
+        <ECProperty propertyName="FM_Room" typeName="int" readOnly="false"/>
+        <ECProperty propertyName="FM_Owner" typeName="string" readOnly="false"/>
+        <ECProperty propertyName="FM_Color" typeName="string" readOnly="false"/>
+    </ECEntityClass>
+    <ECEntityClass typeName="FM_Computer" displayLabel="Computer" modifier="None">
+        <BaseClass>FM_Equipment</BaseClass>
+        <ECProperty propertyName="FM_Vendor" typeName="string" readOnly="false"/>
+        <ECProperty propertyName="FM_Make" typeName="string" readOnly="false"/>
+        <ECProperty propertyName="FM_Model" typeName="string" readOnly="false"/>
+        <ECProperty propertyName="FM_Room" typeName="int" readOnly="false"/>
+        <ECProperty propertyName="FM_Owner" typeName="string" readOnly="false"/>
+    </ECEntityClass>
+    <ECEntityClass typeName="FM_Desk" displayLabel="Desk" modifier="None">
+        <BaseClass>FM_Equipment</BaseClass>
+        <ECProperty propertyName="FM_Type" typeName="string" readOnly="false"/>
+        <ECProperty propertyName="FM_Cost" typeName="int" readOnly="false"/>
+        <ECProperty propertyName="FM_Room" typeName="int" readOnly="false"/>
+        <ECProperty propertyName="FM_Owner" typeName="string" readOnly="false"/>
+        <ECProperty propertyName="FM_Size" typeName="string" readOnly="false"/>
+    </ECEntityClass>
+    <ECEntityClass typeName="FM_Employee" displayLabel="Employee" modifier="None">
+        <ECProperty propertyName="FM_FirstName" typeName="string" displayLabel="First Name" readOnly="false"/>
+        <ECProperty propertyName="FM_LastName" typeName="string" displayLabel="Last Name" readOnly="false"/>
+        <ECProperty propertyName="FM_ID" typeName="int" readOnly="false"/>
+        <ECProperty propertyName="FM_SSN" typeName="int" readOnly="false"/>
+        <ECProperty propertyName="FM_Room" typeName="int" readOnly="false"/>
+    </ECEntityClass>
+    <ECRelationshipClass typeName="FM_Furniture" modifier="None" strength="referencing" strengthDirection="forward">
+        <Source cardinality="(0,N)" roleLabel="Owned by employee" polymorphic="true">
+            <Class class="FM_Employee"/>
+        </Source>
+        <Target cardinality="(1,1)" roleLabel="that owns furniture" polymorphic="true">
+            <Class class="FM_Chair"/>
+            <Class class="FM_Desk"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECEntityClass typeName="FM_Monitor" displayLabel="Monitor" modifier="None">
+        <BaseClass>FM_Equipment</BaseClass>
+        <ECProperty propertyName="FM_Vendor" typeName="string" readOnly="false"/>
+        <ECProperty propertyName="FM_Make" typeName="string" readOnly="false"/>
+        <ECProperty propertyName="FM_Model" typeName="string" readOnly="false"/>
+        <ECProperty propertyName="FM_Owner" typeName="string" readOnly="false"/>
+        <ECProperty propertyName="FM_Room" typeName="int" readOnly="false"/>
+        <ECProperty propertyName="FM_Size" typeName="int" readOnly="false"/>
+    </ECEntityClass>
+    <ECEntityClass typeName="FM_Phone" displayLabel="Phone" modifier="None">
+        <BaseClass>FM_Equipment</BaseClass>
+        <ECProperty propertyName="FM_Number" typeName="int" readOnly="false"/>
+        <ECProperty propertyName="FM_Room" typeName="int" readOnly="false"/>
+        <ECProperty propertyName="FM_Owner" typeName="string" readOnly="false"/>
+    </ECEntityClass>
+    <ECEntityClass typeName="Folder" modifier="None">
+        <ECCustomAttributes>
+            <FolderDependentProperties xmlns="Bentley_Standard_CustomAttributes.01.12">
+                <FolderName>Name</FolderName>
+                <DateModified>UpdateTime</DateModified>
+            </FolderDependentProperties>
+        </ECCustomAttributes>
+        <ECProperty propertyName="Name" typeName="string" readOnly="false"/>
+        <ECProperty propertyName="SomeNumber" typeName="int" readOnly="false"/>
+        <ECProperty propertyName="UpdateTime" typeName="dateTime" readOnly="false"/>
+    </ECEntityClass>
+    <ECRelationshipClass typeName="FolderHasDocuments" description="FolderHasDocuments" modifier="None" strength="referencing" strengthDirection="forward">
+        <Source cardinality="(1,1)" roleLabel="has Documents" polymorphic="true">
+            <Class class="Folder"/>
+        </Source>
+        <Target cardinality="(0,N)" roleLabel="are held by Folder" polymorphic="true">
+            <Class class="Document"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="FolderHasSubFolders" description="FolderHasSubFolders" modifier="None" strength="referencing" strengthDirection="forward">
+        <Source cardinality="(1,1)" roleLabel="has sub folders" polymorphic="true">
+            <Class class="Folder"/>
+        </Source>
+        <Target cardinality="(0,N)" roleLabel="are held by Folder" polymorphic="true">
+            <Class class="Folder"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="ImplicitRelationshipClass" modifier="None" strength="referencing" strengthDirection="forward">
+        <ECCustomAttributes>
+            <AccessCustomAttributes xmlns="KitchenSink.01.00">
                 <AccessLevel>5</AccessLevel>
                 <Writeable>False</Writeable>
             </AccessCustomAttributes>
         </ECCustomAttributes>
-        <Source cardinality="(1,1)" roleLabel="source constraint" polymorphic="True">
+        <Source cardinality="(1,1)" roleLabel="source constraint" polymorphic="true">
             <ECCustomAttributes>
-                <AccessCustomAttributes xmlns="SimpleTest_FirstSchema.01.00">
+                <AccessCustomAttributes xmlns="KitchenSink.01.00">
                     <AccessLevel>6</AccessLevel>
                     <Writeable>True</Writeable>
                 </AccessCustomAttributes>
             </ECCustomAttributes>
             <Class class="TestClass">
                 <Key>
-                    <Property name="StringMember" />
+                    <Property name="StringMember"/>
                 </Key>
             </Class>
         </Source>
-        <Target cardinality="(0,n)" roleLabel="target constraint" polymorphic="True">
+        <Target cardinality="(0,N)" roleLabel="target constraint" polymorphic="true">
             <ECCustomAttributes>
-                <AccessCustomAttributes xmlns="SimpleTest_FirstSchema.01.00">
+                <AccessCustomAttributes xmlns="KitchenSink.01.00">
                     <AccessLevel>7</AccessLevel>
                     <Writeable>False</Writeable>
                 </AccessCustomAttributes>
             </ECCustomAttributes>
             <Class class="Test2Class">
                 <Key>
-                    <Property name="Test2StringMember" />
+                    <Property name="Test2StringMember"/>
                 </Key>
             </Class>
         </Target>
     </ECRelationshipClass>
-
-    <ECClass typeName="FM_Equipment" displayLabel="Equipment" isDomainClass="False">
-        <!-- **************************************************************************************************
-        AffanK: Added FM_Equipment abstract base class with SharedTable strategy to avoid schema
-        import failure that occure in FM_Furniture relationship as it end up with more then one table on one side 
-      **************************************************************************************************  -->
-        <ECCustomAttributes>
-            <ClassMap xmlns="ECDbMap.01.00">
-                <MapStrategy>
-                    <Strategy>SharedTable</Strategy>
-                    <AppliesToSubclasses>True</AppliesToSubclasses>
-                </MapStrategy>
-            </ClassMap>
-        </ECCustomAttributes>
-    </ECClass>
-    <ECClass typeName="FM_Chair" displayLabel="Chair" isDomainClass="True">
-        <BaseClass>FM_Equipment</BaseClass>
-        <ECProperty propertyName="FM_Type" typeName="string" />
-        <ECProperty propertyName="FM_Cost" typeName="int" />
-        <ECProperty propertyName="FM_Room" typeName="int" />
-        <ECProperty propertyName="FM_Owner" typeName="string" />
-        <ECProperty propertyName="FM_Color" typeName="string" />
-    </ECClass>
-    <ECClass typeName="FM_Desk" displayLabel="Desk" isDomainClass="True">
-        <BaseClass>FM_Equipment</BaseClass>
-        <ECProperty propertyName="FM_Type" typeName="string" />
-        <ECProperty propertyName="FM_Cost" typeName="int" />
-        <ECProperty propertyName="FM_Room" typeName="int" />
-        <ECProperty propertyName="FM_Owner" typeName="string" />
-        <ECProperty propertyName="FM_Size" typeName="string" />
-    </ECClass>
-    <ECClass typeName="FM_Phone" displayLabel="Phone" isDomainClass="True">
-        <BaseClass>FM_Equipment</BaseClass>
-        <ECProperty propertyName="FM_Number" typeName="int" />
-        <ECProperty propertyName="FM_Room" typeName="int" />
-        <ECProperty propertyName="FM_Owner" typeName="string" />
-    </ECClass>
-    <ECClass typeName="FM_Computer" displayLabel="Computer" isDomainClass="True">
-        <BaseClass>FM_Equipment</BaseClass>
-        <ECProperty propertyName="FM_Vendor" typeName="string" />
-        <ECProperty propertyName="FM_Make" typeName="string" />
-        <ECProperty propertyName="FM_Model" typeName="string" />
-        <ECProperty propertyName="FM_Room" typeName="int" />
-        <ECProperty propertyName="FM_Owner" typeName="string" />
-    </ECClass>
-    <ECClass typeName="FM_Monitor" displayLabel="Monitor" isDomainClass="True">
-        <BaseClass>FM_Equipment</BaseClass>
-        <ECProperty propertyName="FM_Vendor" typeName="string" />
-        <ECProperty propertyName="FM_Make" typeName="string" />
-        <ECProperty propertyName="FM_Model" typeName="string" />
-        <ECProperty propertyName="FM_Owner" typeName="string" />
-        <ECProperty propertyName="FM_Room" typeName="int" />
-        <ECProperty propertyName="FM_Size" typeName="int" />
-    </ECClass>
-    <ECClass typeName="FM_Employee" displayLabel="Employee" isDomainClass="True">
-        <ECProperty propertyName="FM_FirstName" displayLabel="First Name" typeName="string" />
-        <ECProperty propertyName="FM_LastName" displayLabel="Last Name" typeName="string" />
-        <ECProperty propertyName="FM_ID" typeName="int" />
-        <ECProperty propertyName="FM_SSN" typeName="int" />
-        <ECProperty propertyName="FM_Room" typeName="int" />
-    </ECClass>
-    
-    <ECRelationshipClass typeName="FM_Furniture" strength="referencing">
-        <Source cardinality="(0,n)" roleLabel="Owned by employee" polymorphic="True">
-            <Class class="FM_Employee" />
-        </Source>
-        <Target cardinality="(1,1)" roleLabel="that owns furniture" polymorphic="True">
-            <Class class="FM_Chair" />
-            <Class class="FM_Desk" />
-        </Target>
-    </ECRelationshipClass>
-
-    <ECClass typeName="IsmPropertyHolder" isDomainClass="True" />
-    <ECClass typeName="IsmObject" isDomainClass="True">
-        <BaseClass>IsmPropertyHolder</BaseClass>
-        <ECProperty propertyName="Id" typeName="string" description="ISM GUID" />
-        <ECProperty propertyName="Name" typeName="string" />
-    </ECClass>
-    <ECClass typeName="IsmClassInfo" isCustomAttributeClass="True">
-        <ECProperty propertyName="IsmTypeName" typeName="string" />
-    </ECClass>
-    <ECClass typeName="IsmConnectionPoint" isDomainClass="True">
-        <BaseClass>IsmObject</BaseClass>
-        <ECProperty propertyName="Location" typeName="Bentley.Geometry.Common.ICoordinate" />
-    </ECClass>
-
-    <ECClass typeName="IsCGPoint" isDomainClass="True" description="Has one CG Point">
+    <ECEntityClass typeName="IsCGPoint" description="Has one CG Point" modifier="None">
         <BaseClass>TestClass</BaseClass>
-        <ECProperty propertyName="MyPoint3d" typeName="point3d" />
-    </ECClass>
-
-    <ECClass typeName="Folder" isDomainClass="True">
+        <ECProperty propertyName="MyPoint3d" typeName="point3d" readOnly="false"/>
+    </ECEntityClass>
+    <ECCustomAttributeClass typeName="IsmClassInfo" modifier="None" appliesTo="Any">
+        <ECProperty propertyName="IsmTypeName" typeName="string" readOnly="false"/>
+    </ECCustomAttributeClass>
+    <ECEntityClass typeName="IsmPropertyHolder" modifier="None"/>
+    <ECEntityClass typeName="IsmObject" modifier="None">
+        <BaseClass>IsmPropertyHolder</BaseClass>
+        <ECProperty propertyName="Id" typeName="string" description="ISM GUID" readOnly="false"/>
+        <ECProperty propertyName="Name" typeName="string" readOnly="false"/>
+    </ECEntityClass>
+    <ECEntityClass typeName="IsmConnectionPoint" modifier="None">
+        <BaseClass>IsmObject</BaseClass>
+        <ECProperty propertyName="Location" typeName="Bentley.Geometry.Common.ICoordinate" readOnly="false"/>
+    </ECEntityClass>
+    <ECEntityClass typeName="PrimitiveClass" modifier="None">
+        <BaseClass>BaseClass</BaseClass>
+        <ECProperty propertyName="IntegerMember" typeName="int" readOnly="false">
+            <ECCustomAttributes>
+                <StandardValues xmlns="EditorCustomAttributes.01.02">
+                    <ValueMap>
+                        <ValueMap>
+                            <DisplayString>Always</DisplayString>
+                            <Value>8</Value>
+                        </ValueMap>
+                        <ValueMap>
+                            <DisplayString>Sometimes</DisplayString>
+                            <Value>12</Value>
+                        </ValueMap>
+                        <ValueMap>
+                            <DisplayString>Never</DisplayString>
+                            <Value>14</Value>
+                        </ValueMap>
+                    </ValueMap>
+                </StandardValues>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="NegativeMember" typeName="int" readOnly="false"/>
+        <ECProperty propertyName="CustomFormatInt" typeName="int" readOnly="false">
+            <ECCustomAttributes>
+                <ExtendType xmlns="EditorCustomAttributes.01.02">
+                    <Name>CustomType</Name>
+                </ExtendType>
+                <Category xmlns="EditorCustomAttributes.01.02">
+                    <Standard>1</Standard>
+                </Category>
+                <PropertyPriority xmlns="EditorCustomAttributes.01.02">
+                    <Priority>301100</Priority>
+                </PropertyPriority>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="LongMember" typeName="long" readOnly="false">
+            <ECCustomAttributes>
+                <Category xmlns="EditorCustomAttributes.01.02">
+                    <Standard>1</Standard>
+                </Category>
+                <PropertyPriority xmlns="EditorCustomAttributes.01.02">
+                    <Priority>201000</Priority>
+                </PropertyPriority>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="BooleanMember" typeName="boolean" readOnly="false"/>
+        <ECProperty propertyName="DoubleMember" typeName="double" readOnly="true"/>
+        <ECProperty propertyName="DateTimeMember" typeName="dateTime" readOnly="false"/>
+        <ECProperty propertyName="StringMember" typeName="string" description="This is the string property description" displayLabel="StringDisplayLabel" readOnly="false">
+            <ECCustomAttributes>
+                <Category xmlns="EditorCustomAttributes.01.02">
+                    <Standard>1</Standard>
+                </Category>
+                <PropertyPriority xmlns="EditorCustomAttributes.01.02">
+                    <Priority>301000</Priority>
+                </PropertyPriority>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="StartPoint" typeName="point3d" description="This is the start point property description" displayLabel="Start Point Label" readOnly="false"/>
+        <ECProperty propertyName="EndPoint" typeName="point3d" readOnly="false"/>
+    </ECEntityClass>
+    <ECEntityClass typeName="ecProject" description="Project Class" displayLabel="Project" modifier="None">
+        <ECProperty propertyName="Name" typeName="string" displayLabel="Project Name" readOnly="false"/>
+    </ECEntityClass>
+    <ECRelationshipClass typeName="ProjectHasPrimitive" modifier="None" strength="referencing" strengthDirection="forward">
+        <Source cardinality="(1,1)" polymorphic="false">
+            <Class class="ecProject"/>
+        </Source>
+        <Target cardinality="(1,1)" polymorphic="false">
+            <Class class="PrimitiveClass"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECEntityClass typeName="ecWidget" description="Widget" displayLabel="Widget" modifier="None">
         <ECCustomAttributes>
-            <FolderDependentProperties xmlns="Bentley_Standard_CustomAttributes.01.08">
-                <FolderName>Name</FolderName>
-                <DateModified>UpdateTime</DateModified>
-            </FolderDependentProperties>
+            <Category xmlns="EditorCustomAttributes.01.02">
+                <Name/>
+            </Category>
         </ECCustomAttributes>
-        <ECProperty propertyName="Name" typeName="string" />
-        <ECProperty propertyName="SomeNumber" typeName="int" />
-        <ECProperty propertyName="UpdateTime" typeName="dateTime" />
-    </ECClass>
-
-    <ECClass typeName="Document" isDomainClass="True">
-        <ECCustomAttributes>
-            <FileDependentProperties xmlns="Bentley_Standard_CustomAttributes.01.08">
-                <FileName>FileName</FileName>
-                <FileSize>Size</FileSize>
-                <DateModified>UpdateTime</DateModified>
-            </FileDependentProperties>
-        </ECCustomAttributes>
-        <ECProperty propertyName="Name" typeName="string" />
-        <ECProperty propertyName="DifferentNumber" typeName="int" />
-        <ECProperty propertyName="FileName" typeName="string" />
-        <ECProperty propertyName="Size" typeName="long" />
-        <ECProperty propertyName="UpdateTime" typeName="dateTime" />
-    </ECClass>
-
-    <ECClass typeName="User" isDomainClass="True">
-        <ECProperty propertyName="Name" typeName="string" />
-    </ECClass>
-
-    <ECRelationshipClass typeName="FolderHasDocuments" description="FolderHasDocuments" isDomainClass="True" strength="referencing" strengthDirection="forward">
-        <Source cardinality="(1,1)" roleLabel="has Documents" polymorphic="True">
-            <Class class="Folder" />
+        <ECProperty propertyName="EC_InstanceID" typeName="int" description="Unique identifier for instances of your business class" readOnly="false"/>
+        <ECProperty propertyName="ecstringattr" typeName="string" displayLabel="stringattr" readOnly="false"/>
+        <ECProperty propertyName="eclongattr" typeName="int" displayLabel="longattr" readOnly="false"/>
+    </ECEntityClass>
+    <ECRelationshipClass typeName="ProjectHasWidget" modifier="None" strength="referencing" strengthDirection="forward">
+        <Source cardinality="(1,1)" polymorphic="false">
+            <Class class="ecProject"/>
         </Source>
-        <Target cardinality="(0,N)" roleLabel="are held by Folder" polymorphic="True">
-            <Class class="Document" />
+        <Target cardinality="(0,N)" polymorphic="false">
+            <Class class="ecWidget"/>
         </Target>
     </ECRelationshipClass>
-
-    <ECRelationshipClass typeName="FolderHasSubFolders" description="FolderHasSubFolders" isDomainClass="True" strength="referencing" strengthDirection="forward">
-        <Source cardinality="(1,1)" roleLabel="has sub folders" polymorphic="True">
-            <Class class="Folder" />
+    <ECRelationshipClass typeName="WidgetBelongsToProject" modifier="None" strength="referencing" strengthDirection="forward">
+        <Source cardinality="(1,1)" polymorphic="false">
+            <Class class="ecWidget"/>
         </Source>
-        <Target cardinality="(0,N)" roleLabel="are held by Folder" polymorphic="True">
-            <Class class="Folder" />
+        <Target cardinality="(1,1)" polymorphic="false">
+            <Class class="ecProject"/>
         </Target>
     </ECRelationshipClass>
-
-    <ECRelationshipClass typeName="DocumentHasOwner" description="FolderHasDocuments" isDomainClass="True" strength="referencing" strengthDirection="forward">
-        <Source cardinality="(1,1)" roleLabel="has Owner" polymorphic="True">
-            <Class class="Document" />
-        </Source>
-        <Target cardinality="(1,1)" roleLabel="owns a Document" polymorphic="True">
-            <Class class="User" />
-        </Target>
-    </ECRelationshipClass>
-
 </ECSchema>
