@@ -61,6 +61,7 @@ namespace ServerSchema
         static Utf8CP LockLevel = "LockLevel";
         static Utf8CP URL = "URL";
         static Utf8CP IsUploaded = "IsUploaded";
+        static Utf8CP ReleasedWithRevision = "ReleasedWithRevision";
         }
     static Utf8CP DeleteAllLocks = "DeleteAll";
     }

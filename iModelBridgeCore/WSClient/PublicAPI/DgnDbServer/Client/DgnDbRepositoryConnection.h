@@ -89,10 +89,10 @@ private:
 
     //! Aquire the requested set of locks.
     AsyncTaskPtr<DgnLockResponseResult> AcquireLocks(JsonValueCR locksRequest, const BeSQLite::BeBriefcaseId& briefcaseId,
-    ICancellationTokenPtr cancellationToken = nullptr);
+    Utf8String lastRevisionId, ICancellationTokenPtr cancellationToken = nullptr);
 
     //! Delete all currently held locks by specific briefcase.
-    AsyncTaskPtr<DgnDbResult> RelinquishLocks(const BeSQLite::BeBriefcaseId& briefcaseId, ICancellationTokenPtr cancellationToken = nullptr);
+    AsyncTaskPtr<DgnDbResult> RelinquishLocks(const BeSQLite::BeBriefcaseId& briefcaseId, Utf8String releasedWithRevisionId, ICancellationTokenPtr cancellationToken = nullptr);
 
     //! Query ownership information of a specific lock.
     AsyncTaskPtr<DgnDbOwnershipResult> QueryOwnership(LockableId lockId, ICancellationTokenPtr cancellationToken = nullptr);
@@ -102,7 +102,8 @@ private:
 
     AsyncTaskPtr<DgnDbLockSetResult> QueryLocks(const BeSQLite::BeBriefcaseId& briefcaseId, ICancellationTokenPtr cancellationToken = nullptr);
 
-    AsyncTaskPtr<DgnDbResult> ReleaseLocks(JsonValueCR locksRequest, const BeSQLite::BeBriefcaseId& briefcaseId, ICancellationTokenPtr cancellationToken = nullptr);
+    AsyncTaskPtr<DgnDbResult> ReleaseLocks(JsonValueCR locksRequest, const BeSQLite::BeBriefcaseId& briefcaseId, Utf8String releasedWithRevisionId,
+    ICancellationTokenPtr cancellationToken = nullptr);
 
     DgnDbRepositoryConnection(RepositoryInfoPtr repository, WebServices::CredentialsCR credentials, WebServices::ClientInfoPtr clientInfo);
 

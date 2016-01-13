@@ -57,10 +57,13 @@ LockRequest::Response DgnDbLocks::_AcquireLocks(LockRequestCR locks, DgnDbR db)
     {
     if (m_connection)
         {
+        Utf8String lastRevisionId;
+        db.QueryBriefcaseLocalValue (Db::Local::LastRevision, lastRevisionId);
+
         Json::Value locksRequest;
         locks.ToJson(locksRequest);
         locksRequest[Locks::Description] = "";
-        auto result = m_connection->AcquireLocks(locksRequest, db.GetBriefcaseId(), m_cancellationToken)->GetResult();
+        auto result = m_connection->AcquireLocks (locksRequest, db.GetBriefcaseId (), lastRevisionId, m_cancellationToken)->GetResult ();
         if (result.IsSuccess())
             {
             return result.GetValue();
@@ -78,13 +81,16 @@ Dgn::LockStatus DgnDbLocks::_ReleaseLocks(Dgn::DgnLockSet const& locks, Dgn::Dgn
     {
     if (m_connection)
         {
+        Utf8String lastRevisionId;
+        db.QueryBriefcaseLocalValue (Db::Local::LastRevision, lastRevisionId);
+
         Json::Value locksRequest;
         locksRequest[Locks::Locks] = Json::arrayValue;
         int i = 0;
         for (auto& lock : locks)
             lock.ToJson(locksRequest[Locks::Locks][i++]);
         locksRequest[Locks::Description] = "";
-        auto result = m_connection->ReleaseLocks(locksRequest, db.GetBriefcaseId(), m_cancellationToken)->GetResult();
+        auto result = m_connection->ReleaseLocks(locksRequest, db.GetBriefcaseId(), lastRevisionId, m_cancellationToken)->GetResult();
         if (result.IsSuccess())
             {
             return LockStatus::Success;
@@ -102,7 +108,10 @@ LockStatus DgnDbLocks::_RelinquishLocks(DgnDbR db)
     {
     if (m_connection)
         {
-        auto result = m_connection->RelinquishLocks(db.GetBriefcaseId(), m_cancellationToken)->GetResult();
+        Utf8String lastRevisionId;
+        db.QueryBriefcaseLocalValue (Db::Local::LastRevision, lastRevisionId);
+
+        auto result = m_connection->RelinquishLocks(db.GetBriefcaseId(), lastRevisionId, m_cancellationToken)->GetResult();
         if (result.IsSuccess())
             {
             return LockStatus::Success;//NEEDSWORK: Can delete locks partially

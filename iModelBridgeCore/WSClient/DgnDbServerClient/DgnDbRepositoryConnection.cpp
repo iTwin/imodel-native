@@ -195,12 +195,13 @@ AsyncTaskPtr<DgnDbResult> DgnDbRepositoryConnection::DownloadRevisionFile(DgnDbS
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             12/2015
 //---------------------------------------------------------------------------------------
-Json::Value CreateLockInstanceJson(bvector<uint64_t> const& ids, const BeBriefcaseId& briefcaseId, Utf8StringCR description, LockableType type, LockLevel level)
+Json::Value CreateLockInstanceJson(bvector<uint64_t> const& ids, const BeBriefcaseId& briefcaseId, Utf8StringCR description, Utf8String releasedWithRevisionId, LockableType type, LockLevel level)
     {
     Json::Value properties;
 
-    properties[ServerSchema::Property::Description] = description;
-    properties[ServerSchema::Property::BriefcaseId] = briefcaseId.GetValue();
+    properties[ServerSchema::Property::Description]          = description;
+    properties[ServerSchema::Property::BriefcaseId]          = briefcaseId.GetValue();
+    properties[ServerSchema::Property::ReleasedWithRevision] = releasedWithRevisionId;
     DgnLocksJson::LockableTypeToJson(properties[ServerSchema::Property::LockType], type);
     DgnLocksJson::LockLevelToJson(properties[ServerSchema::Property::LockLevel], level);
 
@@ -220,18 +221,18 @@ Json::Value CreateLockInstanceJson(bvector<uint64_t> const& ids, const BeBriefca
 //@bsimethod                                     Karolis.Dziedzelis             12/2015
 //---------------------------------------------------------------------------------------
 void AddToInstance(std::shared_ptr<WSChangeset> changeset, WSChangeset::ChangeState const& changeState, bvector<uint64_t> const& ids,
-                   const BeBriefcaseId& briefcaseId, Utf8StringCR description, LockableType type, LockLevel level)
+                   const BeBriefcaseId& briefcaseId, Utf8StringCR description, Utf8String releasedWithRevisionId, LockableType type, LockLevel level)
     {
     if (ids.empty())
         return;
     ObjectId lockObject(ServerSchema::Schema::Repository, ServerSchema::Class::Lock, "");
-    changeset->AddInstance(lockObject, changeState, std::make_shared<Json::Value>(CreateLockInstanceJson(ids, briefcaseId, description, type, level)));
+    changeset->AddInstance(lockObject, changeState, std::make_shared<Json::Value>(CreateLockInstanceJson(ids, briefcaseId, description, releasedWithRevisionId, type, level)));
     }
 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             12/2015
 //---------------------------------------------------------------------------------------
-std::shared_ptr<WSChangeset> LockJsonRequest(JsonValueCR locks, const BeBriefcaseId& briefcaseId, const WSChangeset::ChangeState& changeState)
+std::shared_ptr<WSChangeset> LockJsonRequest(JsonValueCR locks, const BeBriefcaseId& briefcaseId, Utf8String releasedWithRevisionId, const WSChangeset::ChangeState& changeState)
     {
     bvector<uint64_t> objects[6];
 
@@ -249,12 +250,12 @@ std::shared_ptr<WSChangeset> LockJsonRequest(JsonValueCR locks, const BeBriefcas
 
     std::shared_ptr<WSChangeset> changeset(new WSChangeset());
     Utf8String description = locks[Locks::Description].asString();
-    AddToInstance(changeset, changeState, objects[0], briefcaseId, description, LockableType::Db, LockLevel::Shared);
-    AddToInstance(changeset, changeState, objects[1], briefcaseId, description, LockableType::Db, LockLevel::Exclusive);
-    AddToInstance(changeset, changeState, objects[2], briefcaseId, description, LockableType::Model, LockLevel::Shared);
-    AddToInstance(changeset, changeState, objects[3], briefcaseId, description, LockableType::Model, LockLevel::Exclusive);
-    AddToInstance(changeset, changeState, objects[4], briefcaseId, description, LockableType::Element, LockLevel::Shared);
-    AddToInstance(changeset, changeState, objects[5], briefcaseId, description, LockableType::Element, LockLevel::Exclusive);
+    AddToInstance(changeset, changeState, objects[0], briefcaseId, description, releasedWithRevisionId, LockableType::Db,      LockLevel::Shared);
+    AddToInstance(changeset, changeState, objects[1], briefcaseId, description, releasedWithRevisionId, LockableType::Db,      LockLevel::Exclusive);
+    AddToInstance(changeset, changeState, objects[2], briefcaseId, description, releasedWithRevisionId, LockableType::Model,   LockLevel::Shared);
+    AddToInstance(changeset, changeState, objects[3], briefcaseId, description, releasedWithRevisionId, LockableType::Model,   LockLevel::Exclusive);
+    AddToInstance(changeset, changeState, objects[4], briefcaseId, description, releasedWithRevisionId, LockableType::Element, LockLevel::Shared);
+    AddToInstance(changeset, changeState, objects[5], briefcaseId, description, releasedWithRevisionId, LockableType::Element, LockLevel::Exclusive);
 
     return changeset;
     }
@@ -290,10 +291,10 @@ AsyncTaskPtr<DgnDbResult> DgnDbRepositoryConnection::QueryLocksHeld(bool& held, 
 //@bsimethod                                     Karolis.Dziedzelis             12/2015
 //---------------------------------------------------------------------------------------
 AsyncTaskPtr<DgnLockResponseResult> DgnDbRepositoryConnection::AcquireLocks(JsonValueCR locksRequest, const BeBriefcaseId& briefcaseId,
-    ICancellationTokenPtr cancellationToken)
+    Utf8String lastRevisionId, ICancellationTokenPtr cancellationToken)
     {
     //How to set description here?
-    auto changeset = LockJsonRequest(locksRequest, briefcaseId, WSChangeset::ChangeState::Created);
+    auto changeset = LockJsonRequest(locksRequest, briefcaseId, lastRevisionId, WSChangeset::ChangeState::Created);
     Json::Value requestJson;
     changeset->ToRequestJson(requestJson);
     HttpStringBodyPtr request = HttpStringBody::Create(requestJson.toStyledString());
@@ -319,10 +320,10 @@ AsyncTaskPtr<DgnLockResponseResult> DgnDbRepositoryConnection::AcquireLocks(Json
 //@bsimethod                                     Karolis.Dziedzelis             12/2015
 //---------------------------------------------------------------------------------------
 AsyncTaskPtr<DgnDbResult> DgnDbRepositoryConnection::ReleaseLocks(JsonValueCR locksRequest, const BeBriefcaseId& briefcaseId,
-    ICancellationTokenPtr cancellationToken)
+    Utf8String releasedWithRevisionId, ICancellationTokenPtr cancellationToken)
     {
     //How to set description here?
-    auto changeset = LockJsonRequest(locksRequest, briefcaseId, WSChangeset::ChangeState::Deleted);
+    auto changeset = LockJsonRequest(locksRequest, briefcaseId, releasedWithRevisionId, WSChangeset::ChangeState::Deleted);
     Json::Value requestJson;
     changeset->ToRequestJson(requestJson);
     HttpStringBodyPtr request = HttpStringBody::Create(requestJson.toStyledString());
@@ -342,7 +343,7 @@ AsyncTaskPtr<DgnDbResult> DgnDbRepositoryConnection::ReleaseLocks(JsonValueCR lo
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             12/2015
 //---------------------------------------------------------------------------------------
-AsyncTaskPtr<DgnDbResult> DgnDbRepositoryConnection::RelinquishLocks(const BeBriefcaseId& briefcaseId, ICancellationTokenPtr cancellationToken)
+AsyncTaskPtr<DgnDbResult> DgnDbRepositoryConnection::RelinquishLocks(const BeBriefcaseId& briefcaseId, Utf8String releasedWithRevisionId, ICancellationTokenPtr cancellationToken)
     {
     Utf8String id;
     id.Sprintf("%s-%d", ServerSchema::DeleteAllLocks, briefcaseId.GetValue());
