@@ -169,7 +169,7 @@ protected:
     DGNPLATFORM_EXPORT static void StartRenderThread();
     DMap4d CalcNpcToView();
     void QueueDrawFrame(Render::Plan::PaintScene);
-    void CalcTargetNumElements(UpdatePlan const& plan);
+    void CalcTargetNumElements(UpdatePlan const& plan, bool isForProgressive);
 
 public:
     DgnViewport(Render::TargetP target) : m_renderTarget(target) {}

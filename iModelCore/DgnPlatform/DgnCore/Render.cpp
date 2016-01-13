@@ -42,7 +42,7 @@ void Render::Target::VerifyRenderThread() {DgnPlatformLib::VerifyRenderThread();
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void Render::Target::RecordFrameTime(GraphicList& scene, double seconds) 
+void Render::Target::RecordFrameTime(GraphicList& scene, double seconds, bool isFromProgressiveDisplay) 
     {
     uint32_t count = scene.GetCount();
     if (0 == count)
@@ -53,7 +53,10 @@ void Render::Target::RecordFrameTime(GraphicList& scene, double seconds)
 
     uint32_t gps = (uint32_t) ((double) count / seconds);
     printf("GPS=%d\n", gps);
-    m_graphicsPerSecond.store(gps);
+    if (isFromProgressiveDisplay)
+        m_graphicsPerSecondProgressiveDisplay.store(gps);
+    else
+        m_graphicsPerSecond.store(gps);
     }
 
 /*---------------------------------------------------------------------------------**//**

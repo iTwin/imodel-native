@@ -1149,6 +1149,7 @@ protected:
     GraphicListPtr     m_currentScene;
     GraphicListPtr     m_dynamics;        // drawn with zbuffer, with scene lighting
     Decorations        m_decorations;
+    BeAtomic<uint32_t> m_graphicsPerSecondProgressiveDisplay;
     BeAtomic<uint32_t> m_graphicsPerSecond;
 
     virtual GraphicPtr _CreateGraphic(Graphic::CreateParams const& params) = 0;
@@ -1191,7 +1192,8 @@ public:
     TexturePtr CreateTileSection(Image* image, bool enableAlpha) const {return _CreateTileSection(image, enableAlpha);}
 
     uint32_t GetGraphicsPerSecond() const {return m_graphicsPerSecond.load();}
-    DGNPLATFORM_EXPORT void RecordFrameTime(GraphicList&, double seconds);
+    uint32_t GetProgressiveDisplayGraphicsPerSecond() const {return m_graphicsPerSecondProgressiveDisplay.load();}
+    DGNPLATFORM_EXPORT void RecordFrameTime(GraphicList&, double seconds, bool isFromProgressiveDisplay);
 };
 
 END_BENTLEY_RENDER_NAMESPACE
