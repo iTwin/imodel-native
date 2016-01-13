@@ -130,6 +130,8 @@ MultiCompileDepends=$(_MakeFileSpec)
 #   Utl
 #----------------------------------------------------------------------
 
+$(o)HttpConnection$(oext) : $(ippUtlDir)hfc/src/HttpConnection.cpp $(ippPrivateAPISrc)ImagePPInternal/HttpConnection.h ${MultiCompileDepends}
+
 $(o)HFCBinStream$(oext) : $(ippUtlDir)hfc/src/HFCBinStream.cpp $(ippAllInc)HFCBinStream.h $(ippAllInc)HFCBinStream.h ${MultiCompileDepends}
 
 $(o)HFCCallbackRegistry$(oext) : $(ippUtlDir)hfc/src/HFCCallbackRegistry.cpp $(ippAllInc)HFCCallbackRegistry.h $(ippAllInc)HFCCallbackRegistry.h ${MultiCompileDepends}
@@ -1451,14 +1453,15 @@ LINKER_LIBRARIES_DELAYLOADED   + $(ContextSubpartsLibs)lti_dsdk.lib $(ContextSub
 
 LINKER_LIBRARIES =  $(BeLibJpegTurbo) \
                     $(IppJpegLib12Bits) \
-                    $(BuildContext)SubParts/Libs/BePng.lib \
-                    $(BuildContext)SubParts/Libs/BeZLib.lib \
-                    $(BuildContext)SubParts/Libs/BeSQLite.lib \
-                    $(ntPlatformLib)Urlmon.lib \
+                    $(ContextSubpartsLibs)$(libprefix)BePng$(stlibext) \
+                    $(ContextSubpartsLibs)$(libprefix)BeZLib$(libext) \
+                    $(ContextSubpartsLibs)$(libprefix)BeSQLite$(libext) \
                     $(IppGdalLib) \
-                    $(ContextSubpartsLibs)$(libprefix)MatrixFromTiePts$(libext) \
-                    $(BuildContext)SubParts/Libs/$(libprefix)BeXml$(libext) \
-                    $(BuildContext)SubParts/Libs/$(libprefix)BentleyGeom$(libext) \
+                    $(ContextSubpartsLibs)$(libprefix)MatrixFromTiePts$(stlibext) \
+                    $(ContextSubpartsLibs)$(libprefix)BeXml$(libext) \
+                    $(ContextSubpartsLibs)$(libprefix)BentleyGeom$(libext) \
+                    $(ContextSubpartsLibs)$(libprefix)BeCurl$(libext) \
+                    $(ntPlatformLib)Urlmon.lib \
                     $(ContextSubpartsLibs)NCSEcw.lib
 
                     # Delaying the load of NCSEcw.lib creates a linker error 

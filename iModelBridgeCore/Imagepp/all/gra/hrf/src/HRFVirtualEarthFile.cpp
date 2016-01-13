@@ -30,6 +30,7 @@
 #include <BeXml/BeXml.h>
 
 #include <ImagePPInternal/gra/Task.h>
+#include <ImagePPInternal/HttpConnection.h>
 
 // Do not change this number without validating resolution descriptor creation.
 #define NB_BLOCK_READER_THREAD 10
@@ -183,14 +184,15 @@ void HRFVirtualEarthFile::QueryImageURI(WStringCR bingMapKey)
     ReplaceTagInString(urlRequest, IMAGERYSET_TAG, imagerySetLabel);
     ReplaceTagInString(urlRequest, BINGMAPSKEY_TAG, bingMapKey);
 
-    HFCPtr<HFCBuffer> pResponse = SendAndReceiveRequest(urlRequest);
-
-    if(pResponse == NULL ||  pResponse->GetDataSize() == 0)
+    HttpSession session;
+    HttpRequest request(Utf8String(urlRequest).c_str());
+    HttpResponsePtr response;
+    if(HttpRequestStatus::Success != session.Request(response, request) || response.IsNull() || response->GetBody().empty())
         throw HFCCannotOpenFileException(GetURL()->GetURL());
 
-    // Analyse response
+    // Analyze response
     BeXmlStatus xmlStatus;
-    BeXmlDomPtr pXmlDom = BeXmlDom::CreateAndReadFromMemory (xmlStatus, pResponse->GetData(), pResponse->GetDataSize());
+    BeXmlDomPtr pXmlDom = BeXmlDom::CreateAndReadFromMemory (xmlStatus, response->GetBody().data(), response->GetBody().size());
 
     //Validate pDom
     if (pXmlDom.IsNull() || (BEXML_Success != xmlStatus))
@@ -254,51 +256,6 @@ void HRFVirtualEarthFile::QueryImageURI(WStringCR bingMapKey)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                   Mathieu.Marchand  07/2011
-+---------------+---------------+---------------+---------------+---------------+------*/
-HFCPtr<HFCBuffer> HRFVirtualEarthFile::SendAndReceiveRequest(WStringCR URLRequest) const
-    {
-    WString::size_type requestPos = URLRequest.find('?');
-    if(requestPos == WString::npos)
-        return NULL;
-
-    WString serverURL  = URLRequest.substr(0, requestPos);
-    WString request    = URLRequest.substr(requestPos + 1);
-
-    HFCPtr<HRFVirtualEarthConnection> pConnection = new HRFVirtualEarthConnection(serverURL);
-
-    if (pConnection->Connect(pConnection->GetUserName(), pConnection->GetPassword()))
-        {
-        LangCodePage codePage;
-        BeStringUtilities::GetCurrentCodePage (codePage);
-
-        AString requestA;
-        BeStringUtilities::WCharToLocaleChar (requestA, codePage, request.c_str());
-
-        //&&Backlog should have a unicode version of pConnection->Send
-        pConnection->Send((Byte const*)requestA.c_str(), requestA.size());
-
-        HFCPtr<HFCBuffer> pResponse = new HFCBuffer(1,1);
-        while (!pConnection->RequestEnded())
-            {
-            size_t DataAvailable;
-
-            // Wait for data to arrive
-            if ((DataAvailable = pConnection->WaitDataAvailable(pConnection->GetTimeOut())) > 0)
-                {
-                // read it
-                pConnection->Receive(pResponse->PrepareForNewData(DataAvailable), DataAvailable);
-                pResponse->SetNewDataSize(DataAvailable);
-                }
-            }
-
-        return pResponse;
-        }
-
-    return NULL;    // ERROR.
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   Mathieu.Marchand  03/2009
 +---------------+---------------+---------------+---------------+---------------+------*/
 WString HRFVirtualEarthFile::GetTileURI(unsigned int pixelX, unsigned int pixelY, int levelOfDetail) const
@@ -313,35 +270,6 @@ WString HRFVirtualEarthFile::GetTileURI(unsigned int pixelX, unsigned int pixelY
 
     return imageURI;
     }
-
-//-----------------------------------------------------------------------------
-// class VEAuthenticationError
-//
-// Authentication error type specific to Virtual Earth files.
-//-----------------------------------------------------------------------------
-class VEAuthenticationError : public HFCAuthenticationError
-    {
-public:
-    explicit VEAuthenticationError(WStringCR url)
-        :  HFCAuthenticationError(),
-           m_URL(url)
-        {
-        }
-
-private:
-    WString _ToString() const
-        {
-        return HRFAuthenticationInvalidLoginException(m_URL).GetExceptionMessage();
-        }
-
-    void _Throw() const
-        {
-        throw HRFAuthenticationInvalidLoginException(m_URL);
-        }
-
-    WString m_URL;
-    };
-
 
 //-----------------------------------------------------------------------------
 // HRFVirtualEarthBlockCapabilities
@@ -564,73 +492,6 @@ const HFCPtr<HRFRasterFileCapabilities>& HRFVirtualEarthCreator::GetCapabilities
 
     return m_pCapabilities;
     }
-
-//-----------------------------------------------------------------------------//
-//                      HRFVirtualEarthConnection                              //
-//-----------------------------------------------------------------------------//
-//-----------------------------------------------------------------------------
-// Constructor
-//-----------------------------------------------------------------------------
-HRFVirtualEarthConnection::HRFVirtualEarthConnection(const WString& pi_rServer,
-                                                     const WString& pi_rUsr,
-                                                     const WString& pi_rPwd)
-    : HFCHTTPConnection(pi_rServer, pi_rUsr, pi_rPwd)
-    {
-    }
-
-//-----------------------------------------------------------------------------
-// Copy constructor
-//-----------------------------------------------------------------------------
-HRFVirtualEarthConnection::HRFVirtualEarthConnection(const HRFVirtualEarthConnection& pi_rObj)
-    : HFCHTTPConnection(const_cast<HRFVirtualEarthConnection&>(pi_rObj).GetServer(),
-                        const_cast<HRFVirtualEarthConnection&>(pi_rObj).GetUserName(),
-                        const_cast<HRFVirtualEarthConnection&>(pi_rObj).GetPassword())
-    {
-    SetTimeOut(pi_rObj.GetTimeOut());
-    SetExtention(pi_rObj.GetExtention());
-    SetSearchBase(pi_rObj.GetSearchBase());
-    }
-
-//-----------------------------------------------------------------------------
-// Destructor
-//-----------------------------------------------------------------------------
-HRFVirtualEarthConnection::~HRFVirtualEarthConnection()
-    {
-    }
-
-//-----------------------------------------------------------------------------
-// New request
-//-----------------------------------------------------------------------------
-void HRFVirtualEarthConnection::NewRequest()
-    {
-    m_RequestEnded = false;
-    }
-
-//-----------------------------------------------------------------------------
-// End current request
-//-----------------------------------------------------------------------------
-bool HRFVirtualEarthConnection::RequestEnded() const
-    {
-    bool Result = false;
-
-    if (m_RequestEnded)
-        {
-        HFCMonitor BufferMonitor(m_BufferKey);
-        Result = (m_Buffer.GetDataSize() == 0);
-        }
-
-    return Result;
-    }
-
-//-----------------------------------------------------------------------------
-// Protected
-// Verify if the request has ended
-//-----------------------------------------------------------------------------
-void HRFVirtualEarthConnection::RequestHasEnded(bool pi_Success)
-    {
-    m_RequestEnded = true;
-    }
-
 
 //-----------------------------------------------------------------------------//
 //                         HRFVirtualEarthFile                                 //

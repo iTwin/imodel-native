@@ -99,8 +99,9 @@
     <Part Name ="ImageppDLLSubParts">
         <SubPart PartName="PublicApi" />
         <SubPart PartName="ImagePPThirdPartsDll" />
-        <SubPart PartName="BeXmlDll"                        PartFile="BeLibxml2"            Repository="libsrc-libxml2" />
         <SubPart PartName="BentleyDll"                      PartFile="Bentley"              Repository="Bentley" />
+        <SubPart PartName="BeXmlDll"                        PartFile="BeLibxml2"            Repository="libsrc-libxml2" />        
+        <SubPart PartName="BeCurl"                          PartFile="BeCurl"               Repository="Libsrc-Curl"/>
         <SubPart PartName="GeoCoordData"                    PartFile="csmap"                Repository="libsrc-csmap" />
         <SubPart PartName="GeoCoord"                        PartFile="GeoCoord"             Repository="GeoCoord" />
         <SubPart PartName="BeSQLite"                        PartFile="BeSQLite"             Repository="BeSQLite" />

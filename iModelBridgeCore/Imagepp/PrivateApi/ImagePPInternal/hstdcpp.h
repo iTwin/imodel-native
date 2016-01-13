@@ -71,6 +71,8 @@
 #include <ImagePP/all/h/HRPConvFilter.h>
 #include <ImagePP/all/h/HRPFunctionFilters.h>
 #include <ImagePP/all/h/HRPPixelTypeI1R8G8B8.h>
+#include <ImagePP/all/h/HRPPixelTypeV24R8G8B8.h>
+#include <ImagePP/all/h/HRPPixelTypeV32R8G8B8A8.h>
 
 #include <ImagePP/all/h/HGF2DPolygonOfSegments.h>
 #include <ImagePP/all/h/HGF2DComplexShape.h>

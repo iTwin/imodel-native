@@ -17,41 +17,25 @@
 BEGIN_IMAGEPP_NAMESPACE
 class HRFVirtualEarthConnection;
 class HRFVirtualEarthFile;
-
-//-----------------------------------------------------------------------------
-// HRFVirtualEarthTileRequest struct
-//-----------------------------------------------------------------------------
-struct HRFVirtualEarthTileRequest
-{
-    uint64_t                m_TileID;
-    uint64_t                m_PosX;
-    uint64_t                m_PosY;
-    int                     m_LevelOfDetail;
-    uint32_t                m_BlockWidth;
-    uint32_t                m_BlockHeight;
-    size_t                  m_BlockSizeInBytes;
-    size_t                  m_BytesPerBlockWidth;
-    uint32_t                m_Page;
-    HFCPtr<HRPPixelType>    m_PixelType;
-};
+class HRFVirtualEarthEditor;
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  1/2016
 //----------------------------------------------------------------------------------------
 struct VirtualEarthTileQuery : public WorkerPool::Task
 {
-    VirtualEarthTileQuery(HRFVirtualEarthTileRequest& tileRequest, HRFVirtualEarthFile& rasterFile) 
-    :m_tileRequest(tileRequest),m_rasterFile(rasterFile), m_dataSize(0)
+    VirtualEarthTileQuery(uint64_t tileId, Utf8StringCR tileUri, HRFVirtualEarthFile& rasterFile) 
+    :m_tileId(tileId), m_tileUri(tileUri), m_rasterFile(rasterFile) 
         {}
 
     virtual ~VirtualEarthTileQuery(){};
     
     virtual void _Run() override;
 
-    std::unique_ptr<Byte[]>     m_data;
-    size_t                      m_dataSize;
-    HRFVirtualEarthTileRequest  m_tileRequest;
-    HRFVirtualEarthFile&        m_rasterFile;
+    uint64_t                    m_tileId;
+    Utf8String                  m_tileUri;
+    bvector<Byte>               m_tileData;
+    HRFVirtualEarthFile&        m_rasterFile;  // Do not hold a HRFVirtualEarthEditor since it might be destroyed while query are still running. 
 };
 
 //-----------------------------------------------------------------------------
@@ -89,17 +73,17 @@ public:
 
     int GetLevelOfDetail() const;
 
+    Utf8String BuildTileUri(uint64_t tileId);
+
 protected:
 
     //Constructor
     HRFVirtualEarthEditor    (HFCPtr<HRFRasterFile> pi_rpRasterFile, uint32_t pi_Page, unsigned short pi_Resolution, HFCAccessMode pi_AccessMode);
 
     //Request look ahead
-        virtual void                    RequestLookAhead(const HGFTileIDList& pi_rTileIDList);       
-        virtual void                    InitTileRequest(uint64_t TileId, HRFVirtualEarthTileRequest& Request);
+    virtual void                    RequestLookAhead(const HGFTileIDList& pi_rTileIDList);       
 
 private:
-
     HGFTileIDDescriptor m_TileIDDescriptor;
 
 //-----------------------------------------------------------------------------//

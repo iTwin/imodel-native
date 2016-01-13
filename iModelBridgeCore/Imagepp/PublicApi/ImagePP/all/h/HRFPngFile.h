@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRFPngFile.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -64,6 +64,9 @@ public:
     virtual void                          Save();
 
     virtual const HFCMemoryBinStream*     GetMemoryFilePtr() const;
+
+    //! Read png data and extract image to a byte stream. Thread-safe and without HRF overhead.
+    static BentleyStatus ReadToBuffer(bvector<Byte>& outPixels, uint32_t& width, uint32_t& height, bool& isRGBA, Byte const* pPngData, size_t pngDataSize);
 
 protected:
 
