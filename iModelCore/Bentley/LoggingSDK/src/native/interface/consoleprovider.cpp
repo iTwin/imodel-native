@@ -574,7 +574,7 @@ struct SplitConsoleProvider : ILogProvider
     {
         WString m_name;
 
-        Title() : m_name(getenv("BENTLEY_SPLIT_CONSOLE_LOG_TITLE"), BentleyCharEncoding::Utf8) { }
+        Title() : m_name(getenv("BENTLEY_SPLIT_CONSOLE_TITLE"), BentleyCharEncoding::Utf8) { }
 
         bool Matches(WCharCP name) const { return !m_name.empty() && nullptr != name && m_name.Equals(name); }
 
@@ -604,6 +604,19 @@ private:
         {
         auto pWString = reinterpret_cast<WString*>(pContext);
         return nullptr != pWString ? pWString->c_str() : nullptr;
+        }
+
+    static bool GetMaxPaneWidth(dim_t& maxWidth)
+        {
+        int value;
+        WString envVar(getenv("BENTLEY_SPLIT_CONSOLE_MAX_WIDTH"), BentleyCharEncoding::Utf8);
+        if (!envVar.empty() && 1 == BE_STRING_UTILITIES_SWSCANF(envVar.c_str(), L"%d", &value) && value > 0 && value <= maxWidth)
+            {
+            maxWidth = static_cast<dim_t>(value);
+            return true;
+            }
+
+        return false;
         }
 
     Component* GetComponent(WCharCP name)
@@ -788,7 +801,8 @@ int STDCALL_ATTRIBUTE SplitConsoleProvider::Initialize()
     dim_t nVerticalBars = nPanes - 1;   // vertical bar between each pane
     dim_t paneWidthsTotal = m_screenBufferWidth - nVerticalBars;
     dim_t minPaneWidth = paneWidthsTotal / nPanes;
-    dim_t maxPaneWidth = minPaneWidth + (paneWidthsTotal % nPanes); // right-most pane gets any extra space
+    bool limitWidths = GetMaxPaneWidth(minPaneWidth);
+    dim_t maxPaneWidth = limitWidths ? minPaneWidth : minPaneWidth + (paneWidthsTotal % nPanes); // right-most pane gets any extra space
 
     for (dim_t i = 0; i < nPanes; i++)
         {
