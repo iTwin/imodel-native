@@ -1323,59 +1323,61 @@ BentleyStatus ECDbMapAnalyser::BuildPolymorphicUpdateTrigger (Class& nclass)
     auto p = nclass.GetStorage ().GetTable ().GetFilteredColumnFirst (ColumnKind::ECInstanceId);
     auto c = nclass.GetStorage ().GetTable ().GetFilteredColumnFirst (ColumnKind::ECClassId);
 
-    for (auto & i : nclass.GetPartitionsR ())
+    for (auto & i : nclass.GetPartitionsR())
         {
         auto storage = i.first;
-        if (storage->IsVirtual ())
+        if (storage->IsVirtual())
             continue;
 
-        SqlTriggerBuilder& builder = viewInfo->GetTriggersR ().Create (SqlTriggerBuilder::Type::Update, SqlTriggerBuilder::Condition::InsteadOf, false);
-        builder.GetOnBuilder ().Append (viewInfo->GetViewR ().GetName ());
-        builder.GetNameBuilder ().Append(nclass.GetSqlName()).Append("_").Append (storage->GetTable().GetName().c_str()).Append ("_").Append ("Update");
-        NativeSqlBuilder classFilter = GetClassFilter (i);
-        if (!classFilter.IsEmpty ())
+        SqlTriggerBuilder& builder = viewInfo->GetTriggersR().Create(SqlTriggerBuilder::Type::Update, SqlTriggerBuilder::Condition::InsteadOf, false);
+        builder.GetOnBuilder().Append(viewInfo->GetViewR().GetName());
+        builder.GetNameBuilder().Append(nclass.GetSqlName()).Append("_").Append(storage->GetTable().GetName().c_str()).Append("_").Append("Update");
+        NativeSqlBuilder classFilter = GetClassFilter(i);
+        if (!classFilter.IsEmpty())
             {
             if (c == nullptr)
-                builder.GetWhenBuilder ().Append ("OLD.").Append ("ECClassId ").Append (classFilter);
+                builder.GetWhenBuilder().Append("OLD.").Append("ECClassId ").Append(classFilter);
             else
-                builder.GetWhenBuilder ().Append ("OLD.").Append (c->GetName ().c_str ()).AppendSpace ().Append (classFilter);
+                builder.GetWhenBuilder().Append("OLD.").Append(c->GetName().c_str()).AppendSpace().Append(classFilter);
             }
 
-        auto& body = builder.GetBodyBuilder ();
-        auto& firstClass = **(i.second.begin ());
-        auto f = storage->GetTable ().GetFilteredColumnFirst (ColumnKind::ECInstanceId);
-        auto childPMS = PropertyMapSet::Create (firstClass.GetClassMap ());
-        body.Append ("UPDATE ").AppendEscaped (storage->GetTable ().GetName ().c_str ());
-        body.Append ("SET ");
+        auto& body = builder.GetBodyBuilder();
+        auto& firstClass = **(i.second.begin());
+        auto f = storage->GetTable().GetFilteredColumnFirst(ColumnKind::ECInstanceId);
+        auto childPMS = PropertyMapSet::Create(firstClass.GetClassMap());
+        body.Append("UPDATE ").AppendEscaped(storage->GetTable().GetName().c_str());
+        body.Append(" SET ");
         int nColumns = 0;
 
-        for (auto const rootE : rootEndPoints)
+        bool isFirstSetExpr = true;
+        for (PropertyMapSet::EndPoint const* rootE : rootEndPoints)
             {
-            auto childE = childPMS->GetEndPointByAccessString (rootE->GetAccessString ().c_str ());
-            if (rootE->GetColumnKind () != ColumnKind::DataColumn)
+            PropertyMapSet::EndPoint const* childE = childPMS->GetEndPointByAccessString(rootE->GetAccessString().c_str());
+            if (rootE->GetColumnKind() != ColumnKind::DataColumn)
                 continue;
 
-            if (childE->GetValue ().IsNull ())
-                {
-                body.AppendFormatted ("[%s] = NEW.[%s]", childE->GetColumn ()->GetName ().c_str (), rootE->GetColumn ()->GetName ().c_str ());
-                }
+            if (!isFirstSetExpr)
+                body.AppendComma(false);
 
-            if (rootE != rootEndPoints.back ())
-                body.Append (", ");
+            if (childE->GetValue().IsNull())
+                {
+                body.AppendFormatted("[%s] = NEW.[%s]", childE->GetColumn()->GetName().c_str(), rootE->GetColumn()->GetName().c_str());
+                isFirstSetExpr = false;
+                }
 
             nColumns++;
             }
 
         if (nColumns == 0)
             {
-            viewInfo->GetTriggersR ().Delete (builder);
+            viewInfo->GetTriggersR().Delete(builder);
             return BentleyStatus::SUCCESS;
             }
 
-        body.AppendFormatted (" WHERE OLD.[%s] = [%s]", p->GetName ().c_str (), f->GetName ().c_str ());
-        body.Append (";").AppendEOL ();
+        body.AppendFormatted(" WHERE OLD.[%s] = [%s];", p->GetName().c_str(), f->GetName().c_str());
         }
-    return BentleyStatus::SUCCESS;
+
+    return SUCCESS;
     }
 
 //---------------------------------------------------------------------------------------
