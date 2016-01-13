@@ -1140,7 +1140,8 @@ ECSqlTestDataset ECSqlInsertTestDataset::RelationshipLinkTableMappingTests (ECDb
     //    135
     //    139
     //    143
-    //    147
+    //    147
+
     ECInstanceId psa1 = ECInstanceId(111);
     ECInstanceId psa2 = ECInstanceId(115);
     ECInstanceId thbase1 = ECInstanceId(391);

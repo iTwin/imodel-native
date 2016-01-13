@@ -376,53 +376,100 @@ BentleyStatus ClassMapInfo::InitializeFromClassHasCurrentTimeStampProperty()
 BentleyStatus ClassMapInfo::InitializeFromClassMapCA()
     {
     ECDbClassMap customClassMap;
-    if (!ECDbMapCustomAttributeHelper::TryGetClassMap(customClassMap, m_ecClass))
+    if (ECDbMapCustomAttributeHelper::TryGetClassMap(customClassMap, m_ecClass))
+        {
+
+        UserECDbMapStrategy const* userStrategy = m_ecdbMap.GetSchemaImportContext()->GetUserStrategy(m_ecClass, &customClassMap);
+        if (userStrategy == nullptr || !userStrategy->IsValid())
+            return ERROR;
+
+        ECObjectsStatus ecstat = customClassMap.TryGetTableName(m_tableName);
+        if (ECObjectsStatus::Success != ecstat)
+            return ERROR;
+
+        if ((userStrategy->GetStrategy() == UserECDbMapStrategy::Strategy::ExistingTable ||
+            (userStrategy->GetStrategy() == UserECDbMapStrategy::Strategy::SharedTable && !userStrategy->AppliesToSubclasses())))
+            {
+            if (m_tableName.empty())
+                {
+                LOG.errorv("TableName must not be empty in ClassMap custom attribute on ECClass %s if MapStrategy is 'SharedTable (AppliesToSubclasses)' or if MapStrategy is 'ExistingTable'.",
+                    m_ecClass.GetFullName());
+                return ERROR;
+                }
+            }
+        else
+            {
+            if (!m_tableName.empty())
+                {
+                LOG.errorv("TableName must only be set in ClassMap custom attribute on ECClass %s if MapStrategy is 'SharedTable (AppliesToSubclasses)' or 'ExistingTable'.",
+                    m_ecClass.GetFullName());
+                return ERROR;
+                }
+            }
+
+        ecstat = customClassMap.TryGetECInstanceIdColumn(m_ecInstanceIdColumnName);
+        if (ECObjectsStatus::Success != ecstat)
+            return ERROR;
+        }
+    //bvector<ECDbClassMap::DbIndex> indices;
+    //ecstat = customClassMap.TryGetIndexes(indices);
+    //if (ECObjectsStatus::Success != ecstat)
+    //    return ERROR;
+
+    //for (ECDbClassMap::DbIndex const& index : indices)
+    //    {
+    //    ClassIndexInfoPtr indexInfo = ClassIndexInfo::Create(index);
+    //    if (indexInfo == nullptr)
+    //        return ERROR;
+
+    //    m_dbIndexes.push_back(indexInfo);
+    //    }
+
+    if (GetECClass().GetName() == "SpatialElement")
+        printf("");
+
+    auto tryGetBaseClassList = [&] (std::vector<ECDbClassMap>& classMapList)
+        {
+        std::deque<ECClassCP> classes;
+        std::set<ECClassCP> doneList;
+        classes.push_back(&GetECClass());
+
+        while (!classes.empty())
+            {
+            auto head = classes.front();
+            classMapList.push_back(ECDbClassMap());
+            if (!ECDbMapCustomAttributeHelper::TryGetClassMap(classMapList.back(), *head))
+                classMapList.pop_back();
+
+            classes.pop_front();
+            doneList.insert(head);
+            for (auto baseClass : head->GetBaseClasses())
+                {
+                if (doneList.find(baseClass) == doneList.end())
+                    classes.push_back(baseClass);
+                }
+            }
         return SUCCESS;
+        };
 
-    UserECDbMapStrategy const* userStrategy = m_ecdbMap.GetSchemaImportContext()->GetUserStrategy(m_ecClass, &customClassMap);
-    if (userStrategy == nullptr || !userStrategy->IsValid())
-        return ERROR;
+    std::vector<ECDbClassMap> classMapList;
+    tryGetBaseClassList(classMapList);
 
-    ECObjectsStatus ecstat = customClassMap.TryGetTableName(m_tableName);
-    if (ECObjectsStatus::Success != ecstat)
-        return ERROR;
-
-    if ((userStrategy->GetStrategy() == UserECDbMapStrategy::Strategy::ExistingTable ||
-        (userStrategy->GetStrategy() == UserECDbMapStrategy::Strategy::SharedTable && !userStrategy->AppliesToSubclasses())))
+    for (ECDbClassMap const& classMap : classMapList)
         {
-        if (m_tableName.empty())
+        bvector<ECDbClassMap::DbIndex> indices;
+        auto ecstat = classMap.TryGetIndexes(indices);
+        if (ECObjectsStatus::Success != ecstat)
+            return ERROR;
+
+        for (ECDbClassMap::DbIndex const& index : indices)
             {
-            LOG.errorv("TableName must not be empty in ClassMap custom attribute on ECClass %s if MapStrategy is 'SharedTable (AppliesToSubclasses)' or if MapStrategy is 'ExistingTable'.",
-                       m_ecClass.GetFullName());
-            return ERROR;
+            ClassIndexInfoPtr indexInfo = ClassIndexInfo::Create(index);
+            if (indexInfo == nullptr)
+                return ERROR;
+
+            m_dbIndexes.push_back(indexInfo);
             }
-        }
-    else
-        {
-        if (!m_tableName.empty())
-            {
-            LOG.errorv("TableName must only be set in ClassMap custom attribute on ECClass %s if MapStrategy is 'SharedTable (AppliesToSubclasses)' or 'ExistingTable'.",
-                       m_ecClass.GetFullName());
-            return ERROR;
-            }
-        }
-
-    ecstat = customClassMap.TryGetECInstanceIdColumn(m_ecInstanceIdColumnName);
-    if (ECObjectsStatus::Success != ecstat)
-        return ERROR;
-
-    bvector<ECDbClassMap::DbIndex> indices;
-    ecstat = customClassMap.TryGetIndexes(indices);
-    if (ECObjectsStatus::Success != ecstat)
-        return ERROR;
-
-    for (ECDbClassMap::DbIndex const& index : indices)
-        {
-        ClassIndexInfoPtr indexInfo = ClassIndexInfo::Create(index);
-        if (indexInfo == nullptr)
-            return ERROR;
-
-        m_dbIndexes.push_back(indexInfo);
         }
 
     return SUCCESS;
@@ -827,19 +874,19 @@ MapStatus RelationshipMapInfo::_EvaluateMapStrategy()
                                GetECClass().GetFullName());
                     return MapStatus::Error;
                     }
+                //If relationship have abstract end with multiple tables
+                //if (sourceTableCount > 1)
+                //    {
+                //    if (userStrategyIsForeignKeyMapping)
+                //        {
+                //        LOG.errorv("ECRelationshipClass %s implies a link table relationship as the source constraint is mapped to more than one end table.. Therefore it must not have a ForeignKeyRelationshipMap custom attribute.",
+                //                   GetECClass().GetFullName());
+                //        return MapStatus::Error;
+                //        }
 
-                if (sourceTableCount > 1)
-                    {
-                    if (userStrategyIsForeignKeyMapping)
-                        {
-                        LOG.errorv("ECRelationshipClass %s implies a link table relationship as the source constraint is mapped to more than one end table.. Therefore it must not have a ForeignKeyRelationshipMap custom attribute.",
-                                   GetECClass().GetFullName());
-                        return MapStatus::Error;
-                        }
-
-                    resolvedStrategy = ECDbMapStrategy::Strategy::OwnTable;
-                    }
-                else
+                //    resolvedStrategy = ECDbMapStrategy::Strategy::OwnTable;
+                //    }
+                //else
                     resolvedStrategy = ECDbMapStrategy::Strategy::ForeignKeyRelationshipInSourceTable;
 
                 break;
