@@ -44,8 +44,16 @@ void QueryModel::ResizeElementList(uint32_t newCount)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void QueryModel::RequestAbort(bool waitUntilFinished) {GetDgnDb().QueryModels().RequestAbort(*this, waitUntilFinished);}
-void QueryModel::WaitUntilFinished(CheckStop* checkStop) {GetDgnDb().QueryModels().WaitUntilFinished(*this, checkStop);}
+void QueryModel::RequestAbort(bool wait) 
+    {
+    SetAbortQuery(true);
+
+    auto& queue = GetDgnDb().QueryQueue();
+    queue.RemovePending(*this);
+
+    if (wait)
+        queue.WaitForIdle();
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * Move the QueryResults object from the Processor (where it is created on the other thread) to the QueryModel object
@@ -77,14 +85,6 @@ void QueryModel::SaveQueryResults()
         _OnLoadedElement(*result);
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   John.Gooding    05/2012
-//--------------+------------------------------------------------------------------------
-void QueryModel::SetState(State newState)
-    {
-    m_state = newState;
-    }
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -102,7 +102,7 @@ double QueryModel::GetLastQueryElapsedSeconds() const {return m_currQueryResults
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   08/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-QueryModel::QueryModel(DgnDbR dgndb) : SpatialModel(SpatialModel::CreateParams(dgndb, DgnClassId(), CreateModelCode("Query"))), m_state(State::Idle)
+QueryModel::QueryModel(DgnDbR dgndb) : SpatialModel(SpatialModel::CreateParams(dgndb, DgnClassId(), CreateModelCode("Query"))), m_abortQuery(false)
     {
     } 
 
@@ -123,27 +123,19 @@ THREAD_MAIN_IMPL QueryModel::Queue::Main(void* arg)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool QueryModel::Queue::_TestCondition(BeConditionVariable& cv)
-    {
-    return State::Terminated == m_state;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   12/15
-+---------------+---------------+---------------+---------------+---------------+------*/
 void QueryModel::Queue::Terminate()
     {
     DgnPlatformLib::VerifyClientThread();
 
     BeMutexHolder lock(m_cv.GetMutex());
-    if (State::Terminated != m_state)
+    if (State::Active != m_state)
+        return;
+
+    m_state = State::TerminateRequested;
+    while (State::TerminateRequested == m_state)
         {
-        m_state = State::TerminateRequested;
-        while (State::TerminateRequested == m_state)
-            {
-            m_cv.notify_all();
-            m_cv.ProtectedWaitOnCondition(lock, this, 100);
-            }
+        m_cv.notify_all();
+        m_cv.RelativeWait(lock, 1000);
         }
     }
 
@@ -152,7 +144,7 @@ void QueryModel::Queue::Terminate()
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool QueryModel::Filter::CheckAbort() 
     {
-    if (QueryModel::State::AbortRequested == m_model.GetState())
+    if (m_model.AbortRequested())
         {
         printf("Query Filter aborted\n");
         return true;
@@ -169,22 +161,15 @@ bool QueryModel::Filter::CheckAbort()
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   12/15
+* @bsimethod                                    Keith.Bentley                   01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void QueryModel::Queue::RequestProcessing(Processor::Params const& params)
+void QueryModel::Queue::RemovePending(QueryModelR model)
     {
     DgnPlatformLib::VerifyClientThread();
-
-    QueryModelR model = params.m_model;
-    BeAssert(&model.GetDgnDb() == &m_db);
 
     // We may currently be processing a query for this model. If so, let it complete and queue up another one.
     // But remove any other previously-queued processing requests for this model.
     BeMutexHolder lock(m_cv.GetMutex());
-
-#if defined TRACE_QUERY_LOGIC
-    auto initialPending = static_cast<int32_t>(m_pending.size());
-#endif
 
     for (auto iter = m_pending.begin(); iter != m_pending.end(); /*...*/)
         {
@@ -193,99 +178,41 @@ void QueryModel::Queue::RequestProcessing(Processor::Params const& params)
         else
             ++iter;
         }
-#if defined TRACE_QUERY_LOGIC
-    printf("QMQ: RequestProcessing: %d initially pending, %d currently pending\n", initialPending, static_cast<int32_t>(m_pending.size()));
-#endif
+    }
 
-    ProcessorPtr proc = new QueryModel::Processor(params);
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void QueryModel::Queue::Add(Processor::Params const& params)
+    {
+    DgnPlatformLib::VerifyClientThread();
 
-    //  NEEDSWORK_CONTINUOUS_RENDERING -- the query thread might be in the processing state. If so, changing it to Pending is invalid.
-    model.SetState(QueryModel::State::Pending);
-    m_pending.push_back(proc);
+    QueryModelR model = params.m_model;
+    if (&model.GetDgnDb() != &m_db)
+        {
+        BeAssert(false);
+        return;
+        }
 
+    BeMutexHolder mux(m_cv.GetMutex());
+
+    RemovePending(model);
+    m_pending.push_back(new QueryModel::Processor(params));
+
+    mux.unlock(); // release lock before notify so other thread will start immediately vs. "hurry up and wait" problem
     m_cv.notify_all();
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsistruct                                                    Paul.Connelly   12/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-struct WaitUntilIdlePredicate : IConditionVariablePredicate
-{
-private:
-    QueryModelR m_model;
-
-    virtual bool _TestCondition(BeConditionVariable& cv) override { return QueryModel::State::Idle == m_model.GetState(); }
-public:
-    WaitUntilIdlePredicate(QueryModelR model) : m_model(model) { }
-};
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void QueryModel::Queue::RequestAbort(QueryModelR model, bool waitUntilFinished)
-    {
-    DgnPlatformLib::VerifyClientThread();
-    BeAssert(&model.GetDgnDb() == &m_db);
-
-    if (true) // hold lock while we test/set state
-        {
-        BeMutexHolder lock(m_cv.GetMutex());
-
-        switch (model.GetState())
-            {
-            case QueryModel::State::Idle:
-                return;
-            case QueryModel::State::Pending:
-                for (auto entry = m_pending.begin(); entry != m_pending.end(); /*...*/)
-                    {
-                    if ((*entry)->IsForModel(model))
-                        entry = m_pending.erase(entry);
-                    else
-                        ++entry;
-                    }
-
-                model.SetState(QueryModel::State::Idle);
-                break;
-            case QueryModel::State::Processing:
-                model.SetState(QueryModel::State::AbortRequested);
-                // fall-through...
-            default:
-                BeAssert(QueryModel::State::AbortRequested == model.GetState());
-                break;
-            }
-        }
-
-    if (waitUntilFinished)
-        {
-#if defined TRACE_QUERY_LOGIC
-        StopWatch timer(nullptr, true);
-#endif
-        model.WaitUntilFinished(nullptr);
-#if defined TRACE_QUERY_LOGIC
-        timer.Stop();
-        printf("QMQ: RequestAbort: %.8f elapsed\n", timer.GetElapsedSeconds());
-#endif
-        }
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   12/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-void QueryModel::Queue::WaitUntilFinished(QueryModelR model, CheckStop* checkStop)
+void QueryModel::Queue::WaitForIdle()
     {
     DgnPlatformLib::VerifyClientThread();
 
-    WaitUntilIdlePredicate predicate(model);
-    while (QueryModel::State::Idle != model.GetState())
-        {
-        if (nullptr != checkStop && checkStop->_CheckStop())
-            {
-            RequestAbort(model, true);
-            break;
-            }
-
-        m_cv.WaitOnCondition(&predicate, 1);
-        }
+    BeMutexHolder holder(m_cv.GetMutex());
+    while (m_active.IsValid() || !m_pending.empty())
+        m_cv.InfiniteWait(holder);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -296,18 +223,7 @@ QueryModel::Queue::Queue(DgnDbR db) : m_db(db), m_state(State::Active)
     BeThreadUtilities::StartNewThread(50*1024, Main, this);
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   12/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-struct GenericPredicate : IConditionVariablePredicate
-{
-    std::function<bool()> m_predicate;
-
-    GenericPredicate(std::function<bool()> predicate) : m_predicate(predicate) { }
-
-    virtual bool _TestCondition(BeConditionVariable& cv) override { return m_predicate(); }
-};
-
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    09/2012
 //--------------+------------------------------------------------------------------------
@@ -322,6 +238,16 @@ static uint32_t getQueryDelay()
 
     return s_numberOfCpus < 4 ? s_dynamicLoadFrequency2Cpus : s_dynamicLoadFrequency4Cpus;
     }
+#endif
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   01/16
++---------------+---------------+---------------+---------------+---------------+------*/
+bool QueryModel::Queue::IsIdle() const
+    {
+    BeMutexHolder holder(m_cv.GetMutex());
+    return m_pending.empty() && !m_active.IsValid();
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   01/16
@@ -329,18 +255,14 @@ static uint32_t getQueryDelay()
 bool QueryModel::Queue::WaitForWork()
     {
     BeMutexHolder holder(m_cv.GetMutex());
-    while (m_pending.empty())
-        {
+    while (m_pending.empty() && State::Active == m_state)
         m_cv.InfiniteWait(holder);
 
-        if (State::TerminateRequested == m_state)
-            return false;
-        }
+    if (State::Active != m_state)
+        return false;
 
     m_active = m_pending.front();
     m_pending.pop_front();
-    if (m_active->GetModel().GetState() == QueryModel::State::Pending)
-        m_active->GetModel().SetState(QueryModel::State::Processing);
 
     return true;
     }
@@ -360,21 +282,17 @@ void QueryModel::Queue::Process()
             continue;
 
         m_active->Query(timer);
+        uint32_t delay = m_active->GetDelayAfter();
 
-        if (true)
-            {
-            BeMutexHolder lock(m_cv.GetMutex());
-            if (QueryModel::State::Pending != m_active->GetModel().GetState())
-                m_active->GetModel().SetState(QueryModel::State::Idle);
-
-            m_active = nullptr;
-            }
-
-        m_cv.notify_all();
-        BeThreadUtilities::BeSleep(getQueryDelay());
+        {
+        BeMutexHolder holder(m_cv.GetMutex());
+        m_active = nullptr;
         }
 
-    BeMutexHolder lock(m_cv.GetMutex());
+        m_cv.notify_all();
+        BeThreadUtilities::BeSleep(delay);
+        }
+
     m_state = State::Terminated;
     m_cv.notify_all();
     }
@@ -388,7 +306,7 @@ bool QueryModel::Processor::LoadElements(OcclusionScores& scores, bvector<DgnEle
 
     for (auto curr = scores.rbegin(); curr != scores.rend(); ++curr)
         {
-        if (QueryModel::State::AbortRequested == GetModel().GetState())
+        if (GetModel().AbortRequested())
             {
             printf("Load elements aborted\n");
             return false;   // did not finish
@@ -413,6 +331,7 @@ bool QueryModel::Processor::Query(StopWatch& watch)
     DgnPlatformLib::VerifyQueryThread();
 
     watch.Start();
+    GetModel().SetAbortQuery(false);
 
     //  Notify GraphicsAndQuerySequencer that this thread is running 
     //  a range tree operation and is therefore exempt from checks for high priority required.
@@ -462,7 +381,7 @@ void QueryModel::Processor::SearchIdSet(DgnElementIdSet& idList, Filter& filter)
     DgnElements& pool = GetModel().GetDgnDb().Elements();
     for (auto const& curr : idList)
         {
-        if (QueryModel::State::AbortRequested == GetModel().GetState())
+        if (GetModel().AbortRequested())
             break;
 
         DgnElementCPtr el = pool.GetElement(curr);
@@ -778,10 +697,8 @@ ProgressiveDisplay::Completion QueryModel::ProgressiveFilter::_Process(ViewConte
     // query queue is empty and inactive, it can't be restarted during this call because only this thread can add entries to it.
     // NOTE: this test is purposely for whether the query thread has work for ANY QueryModel, not just the one we're 
     // attempting to display - that's necessary.  KAB
-    if (!m_dgndb.QueryModels().IsIdle())
-        {
+    if (!m_dgndb.QueryQueue().IsIdle())
         return Completion::Aborted;
-        }
 
     m_context = &context;
     m_nThisPass = m_thisBatch = 0; // restart every pass

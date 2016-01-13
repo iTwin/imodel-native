@@ -51,7 +51,7 @@ protected:
     void SaveSelectResults();
     void PickUpResults();
     bool FrustumChanged(DgnViewportCR vp) const;
-    void StartSelectProcessing(DgnViewportR, UpdatePlan const&);
+    void QueueQuery(DgnViewportR, UpdatePlan const&);
     DGNPLATFORM_EXPORT virtual bool _IsInSet(int nVal, BeSQLite::DbValue const*) const override;
     virtual void _FillModels() override {} // query models do not load elements in advance
     DGNPLATFORM_EXPORT virtual void _OnAttachedToViewport(DgnViewportR) override;
