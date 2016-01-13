@@ -667,7 +667,7 @@ PropertyMapCP ECDbMapAnalyser::Relationship::EndPoint::GetInstanceId () const { 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Affan.Khan                         09/2015
 //---------------------------------------------------------------------------------------
-PropertyMapCP ECDbMapAnalyser::Relationship::EndPoint::GetClassId () const { return m_classId; }
+PropertyMapRelationshipConstraintClassId const* ECDbMapAnalyser::Relationship::EndPoint::GetClassId () const { return m_classId; }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Affan.Khan                         09/2015
@@ -1864,9 +1864,9 @@ void ECDbMapAnalyser::ProcessEndTableRelationships ()
                         .AppendEscaped (relationship->To ().GetInstanceId ()->GetFirstColumn ()->GetName ().c_str ())
                         .Append (" = NULL");
 
-                    if (!relationship->To().GetClassId()->IsVirtual()
-                        && relationship->To().GetClassId()->IsMappedToPrimaryTable()
-                        && relationship->To().GetClassId()->GetFirstColumn()->GetKind() != ColumnKind::ECClassId)
+                    if (!relationship->To().GetClassId()->IsVirtual() && 
+                        relationship->To().GetClassId()->IsMappedToClassMapTables() && 
+                        relationship->To().GetClassId()->GetFirstColumn()->GetKind() != ColumnKind::ECClassId)
                         {
                         body.Append(", ")
                             .AppendEscaped(relationship->To().GetClassId()->GetFirstColumn()->GetName().c_str())
@@ -1883,40 +1883,40 @@ void ECDbMapAnalyser::ProcessEndTableRelationships ()
             }
         else if (isSelfRelationship)
             {
-            for (auto foreignEnd : relationship->ForeignEnd ().GetStorages ())
+            for (auto foreignEnd : relationship->ForeignEnd().GetStorages())
                 {
-                auto& builder = const_cast<Storage*>(foreignEnd)->GetTriggerListR ().Create (SqlTriggerBuilder::Type::Delete, SqlTriggerBuilder::Condition::After, false);
-                builder.GetNameBuilder ()
-                    .Append (foreignEnd->GetTable ().GetName ().c_str ())
-                    .Append ("_")
-                    .Append (relationship->GetSqlName ())
-                    .Append ("_Self_Delete");
+                auto& builder = const_cast<Storage*>(foreignEnd)->GetTriggerListR().Create(SqlTriggerBuilder::Type::Delete, SqlTriggerBuilder::Condition::After, false);
+                builder.GetNameBuilder()
+                    .Append(foreignEnd->GetTable().GetName().c_str())
+                    .Append("_")
+                    .Append(relationship->GetSqlName())
+                    .Append("_Self_Delete");
 
-                builder.GetOnBuilder ().Append (foreignEnd->GetTable ().GetName ().c_str ());
-                auto& body = builder.GetBodyBuilder ();
-                body.Append ("--11").Append (relationship->GetRelationshipClassMap ().GetRelationshipClass ().GetFullName ()).AppendEOL ();
-                for (auto primaryEnd : relationship->PrimaryEnd ().GetStorages ())
+                builder.GetOnBuilder().Append(foreignEnd->GetTable().GetName().c_str());
+                auto& body = builder.GetBodyBuilder();
+                body.Append("--11").Append(relationship->GetRelationshipClassMap().GetRelationshipClass().GetFullName()).AppendEOL();
+                for (auto primaryEnd : relationship->PrimaryEnd().GetStorages())
                     {
-                    body.Append ("UPDATE ")
-                        .AppendEscaped (primaryEnd->GetTable ().GetName ().c_str ())
-                        .Append (" SET ")
-                        .AppendEscaped (relationship->PrimaryEnd ().GetInstanceId ()->GetFirstColumn ()->GetName ().c_str ())
-                        .Append (" = NULL");
+                    body.Append("UPDATE ")
+                        .AppendEscaped(primaryEnd->GetTable().GetName().c_str())
+                        .Append(" SET ")
+                        .AppendEscaped(relationship->PrimaryEnd().GetInstanceId()->GetFirstColumn()->GetName().c_str())
+                        .Append(" = NULL");
 
-                    if (!relationship->To ().GetClassId ()->IsVirtual ()
-                        && relationship->To ().GetClassId ()->IsMappedToPrimaryTable ()
+                    if (!relationship->To().GetClassId()->IsVirtual()
+                        && relationship->To().GetClassId()->IsMappedToClassMapTables()
                         && relationship->To().GetClassId()->GetFirstColumn()->GetKind() != ColumnKind::ECClassId)
                         {
-                        body.Append (", ")
-                            .AppendEscaped (relationship->PrimaryEnd ().GetClassId ()->GetFirstColumn ()->GetName ().c_str ())
-                            .Append (" = NULL");
+                        body.Append(", ")
+                            .AppendEscaped(relationship->PrimaryEnd().GetClassId()->GetFirstColumn()->GetName().c_str())
+                            .Append(" = NULL");
                         }
 
-                    body.Append (" WHERE OLD.")
-                        .AppendEscaped (relationship->ForeignEnd ().GetInstanceId ()->GetFirstColumn ()->GetName ().c_str ())
-                        .Append (" = ")
-                        .AppendEscaped (relationship->PrimaryEnd ().GetInstanceId ()->GetFirstColumn ()->GetName ().c_str ());
-                    body.Append (";").AppendEOL ();
+                    body.Append(" WHERE OLD.")
+                        .AppendEscaped(relationship->ForeignEnd().GetInstanceId()->GetFirstColumn()->GetName().c_str())
+                        .Append(" = ")
+                        .AppendEscaped(relationship->PrimaryEnd().GetInstanceId()->GetFirstColumn()->GetName().c_str());
+                    body.Append(";").AppendEOL();
                     }
                 }
             }
@@ -2150,13 +2150,13 @@ BentleyStatus ECClassViewGenerator::BuildClassView(SqlViewBuilder& viewBuilder, 
 //---------------------------------------------------------------------------------------
 BentleyStatus ECClassViewGenerator::BuildRelationshipJoinIfAny(NativeSqlBuilder& sqlBuilder, RelationshipClassMapCR classMap, ECN::ECRelationshipEnd endPoint, bool topLevel)
     {
-    auto ecclassIdPropertyMap = static_cast<PropertyMapRelationshipConstraintClassId const*>(endPoint == ECRelationshipEnd::ECRelationshipEnd_Source ? classMap.GetSourceECClassIdPropMap() : classMap.GetTargetECClassIdPropMap());
-    if (!ecclassIdPropertyMap->IsMappedToPrimaryTable())
+    PropertyMapRelationshipConstraintClassId const* ecclassIdPropertyMap = endPoint == ECRelationshipEnd::ECRelationshipEnd_Source ? classMap.GetSourceECClassIdPropMap() : classMap.GetTargetECClassIdPropMap();
+    if (!ecclassIdPropertyMap->IsMappedToClassMapTables())
         {
-        auto ecInstanceIdPropertyMap = static_cast<PropertyMapRelationshipConstraintECInstanceId const*>(endPoint == ECRelationshipEnd::ECRelationshipEnd_Source ? classMap.GetSourceECInstanceIdPropMap() : classMap.GetTargetECInstanceIdPropMap());
+        PropertyMapRelationshipConstraintECInstanceId const* ecInstanceIdPropertyMap = static_cast<PropertyMapRelationshipConstraintECInstanceId const*>(endPoint == ECRelationshipEnd::ECRelationshipEnd_Source ? classMap.GetSourceECInstanceIdPropMap() : classMap.GetTargetECInstanceIdPropMap());
         ECDbMapCR ecdbMap = classMap.GetECDbMap();
         size_t tableCount = ecdbMap.GetTableCountOnRelationshipEnd(endPoint == ECRelationshipEnd::ECRelationshipEnd_Source ? classMap.GetRelationshipClass().GetSource() : classMap.GetRelationshipClass().GetTarget());
-        ECDbSqlTable const* targetTable = &ecclassIdPropertyMap->GetFirstColumn()->GetTable();
+        ECDbSqlTable const* targetTable = ecclassIdPropertyMap->GetTable();
         if (tableCount > 1
             /*In this case we expecting we have relationship with one end abstract we only support it in case joinedTable*/)
             {
@@ -2164,7 +2164,7 @@ BentleyStatus ECClassViewGenerator::BuildRelationshipJoinIfAny(NativeSqlBuilder&
             if (targetTable->GetTableType() != TableType::Joined)
                 return ERROR;
 
-            targetTable = ecdbMap.GetPrimaryTable(ecclassIdPropertyMap->GetFirstColumn()->GetTable());
+            targetTable = ecdbMap.GetPrimaryTable(*ecclassIdPropertyMap->GetTable());
             if (!targetTable)
                 return ERROR;
             }
@@ -2311,28 +2311,25 @@ BentleyStatus ECClassViewGenerator::BuildSelectionClause(NativeSqlBuilder& viewS
 BentleyStatus ECClassViewGenerator::BuildPropertyExpression(NativeSqlBuilder& viewSql, PropertyMapCR propertyMap, Utf8CP tablePrefix, bool addECPropertyPathAlias, bool nullValue)
     {
     if (auto o = dynamic_cast<PropertyMapSingleColumn const*>(&propertyMap))
-        {
         return BuildPrimitivePropertyExpression(viewSql, *o, tablePrefix, addECPropertyPathAlias, nullValue);
-        }
     if (auto o = dynamic_cast<PropertyMapPoint const*>(&propertyMap))
-        {
         return BuildPointPropertyExpression(viewSql, *o, tablePrefix, addECPropertyPathAlias, nullValue);
-        }
     else if (auto o = dynamic_cast<PropertyMapStruct const*>(&propertyMap))
-        {
         return BuildStructPropertyExpression(viewSql, *o, tablePrefix, addECPropertyPathAlias, nullValue);
-        }
-    else if (dynamic_cast<PropertyMapStructArray const*>(&propertyMap))
+    else if (propertyMap.GetAsPropertyMapStructArray() != nullptr)
+        return SUCCESS;
+    else if (auto o = propertyMap.GetAsNavigationPropertyMap())
         {
-        return BentleyStatus::SUCCESS;
+        if (o->IsSupportedInECSql())
+            return BuildPrimitivePropertyExpression(viewSql, *o, tablePrefix, addECPropertyPathAlias, nullValue);
+
+        return SUCCESS;
         }
-    else if (dynamic_cast<PropertyMapSystem const*>(&propertyMap))
-        {
-        return BentleyStatus::SUCCESS;
-        }
+    else if (propertyMap.IsSystemPropertyMap())
+        return SUCCESS;
 
     BeAssert(false && "Case not handled");
-    return BentleyStatus::ERROR;
+    return ERROR;
     }
 
 //---------------------------------------------------------------------------------------
@@ -2405,9 +2402,7 @@ BentleyStatus ECClassViewGenerator::BuildColumnExpression(NativeSqlBuilder::List
         if (escapeColumName)
             {
             if (tablePrefix)
-                {
                 sqlBuilder.AppendEscaped(tablePrefix).AppendDot();
-                }
 
             sqlBuilder.AppendEscaped(columnName);
             }
@@ -2434,24 +2429,23 @@ BentleyStatus ECClassViewGenerator::BuildColumnExpression(NativeSqlBuilder::List
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Affan.Khan                         06/2015
 //---------------------------------------------------------------------------------------
-BentleyStatus ECClassViewGenerator::BuildPrimitivePropertyExpression(NativeSqlBuilder& viewSql, PropertyMapSingleColumn const& propertyMap, Utf8CP tablePrefix, bool addECPropertyPathAlias, bool nullValue)
+BentleyStatus ECClassViewGenerator::BuildPrimitivePropertyExpression(NativeSqlBuilder& viewSql, PropertyMap const& propertyMap, Utf8CP tablePrefix, bool addECPropertyPathAlias, bool nullValue)
     {
-    auto accessString = Utf8String(propertyMap.GetPropertyAccessString());
     NativeSqlBuilder::List fragments;
     std::vector<ECDbSqlColumn const*> columns;
     propertyMap.GetColumns(columns);
 
-    if (columns.size() != 1LL)
+    if (columns.size() != 1)
         {
-        BeAssert(columns.size() == 1LL);
-        return BentleyStatus::ERROR;
+        BeAssert(columns.size() == 1);
+        return ERROR;
         }
 
-    if (BuildColumnExpression(fragments, columns[0]->GetTable().GetName().c_str(), columns[0]->GetName().c_str(), accessString.c_str(), addECPropertyPathAlias, nullValue) != BentleyStatus::SUCCESS)
-        return BentleyStatus::ERROR;
+    if (BuildColumnExpression(fragments, columns[0]->GetTable().GetName().c_str(), columns[0]->GetName().c_str(), propertyMap.GetPropertyAccessString(), addECPropertyPathAlias, nullValue) != BentleyStatus::SUCCESS)
+        return ERROR;
 
     viewSql.Append(fragments.front());
-    return BentleyStatus::SUCCESS;
+    return SUCCESS;
     }
 
 //---------------------------------------------------------------------------------------
@@ -2555,18 +2549,18 @@ BentleyStatus ECClassViewGenerator::BuildECInstanceIdConstraintExpression(Native
 //---------------------------------------------------------------------------------------
 BentleyStatus ECClassViewGenerator::BuildECClassIdConstraintExpression(NativeSqlBuilder::List& fragments, RelationshipClassMapCR classMap, ECN::ECRelationshipEnd endPoint, Utf8CP tablePrefix, bool addECPropertyPathAlias, bool nullValue)
     {
-    auto propertyMap = static_cast<PropertyMapRelationshipConstraintClassId const*>(endPoint == ECRelationshipEnd::ECRelationshipEnd_Source ? classMap.GetSourceECClassIdPropMap() : classMap.GetTargetECClassIdPropMap());
+    PropertyMapRelationshipConstraintClassId const* propertyMap = endPoint == ECRelationshipEnd::ECRelationshipEnd_Source ? classMap.GetSourceECClassIdPropMap() : classMap.GetTargetECClassIdPropMap();
     auto& constraint = endPoint == ECRelationshipEnd::ECRelationshipEnd_Source ? classMap.GetClass().GetRelationshipClassCP()->GetSource() : classMap.GetClass().GetRelationshipClassCP()->GetTarget();
     auto column = propertyMap->GetFirstColumn();
     Utf8CP accessString = propertyMap->GetPropertyAccessString();
-    auto tableAlias = GetECClassIdPrimaryTableAlias(endPoint);
+    Utf8CP tableAlias = GetECClassIdPrimaryTableAlias(endPoint);
 
     if (column->GetPersistenceType() == PersistenceType::Persisted)
         {
-        if (propertyMap->IsMappedToPrimaryTable())
+        if (propertyMap->IsMappedToClassMapTables())
             {
             if (BuildColumnExpression(fragments, column->GetTable().GetName().c_str(), column->GetName().c_str(), accessString, addECPropertyPathAlias, nullValue) != BentleyStatus::SUCCESS)
-                return BentleyStatus::ERROR;
+                return ERROR;
             }
         else
             {
@@ -2575,7 +2569,7 @@ BentleyStatus ECClassViewGenerator::BuildECClassIdConstraintExpression(NativeSql
             columnQualifiedName.append(".");
             columnQualifiedName.append(column->GetName());
             if (BuildColumnExpression(fragments, nullptr, columnQualifiedName.c_str(), accessString, addECPropertyPathAlias, nullValue, false) != BentleyStatus::SUCCESS)
-                return BentleyStatus::ERROR;
+                return ERROR;
             }
         }
     else
@@ -2585,10 +2579,10 @@ BentleyStatus ECClassViewGenerator::BuildECClassIdConstraintExpression(NativeSql
         columnValueExpr.Sprintf("%lld", eclassId);
 
         if (BuildColumnExpression(fragments, nullptr, columnValueExpr.c_str(), accessString, addECPropertyPathAlias, nullValue, false) != BentleyStatus::SUCCESS)
-            return BentleyStatus::ERROR;
+            return ERROR;
         }
 
-    return BentleyStatus::SUCCESS;
+    return SUCCESS;
     }
 
 //---------------------------------------------------------------------------------------

@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/SystemPropertyMap.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -21,13 +21,12 @@ private:
     ECSqlSystemProperty m_kind;
     std::weak_ptr<ECDbSqlColumn> m_column;
 
-    virtual bool _IsVirtual () const override;
-    virtual bool _IsECInstanceIdPropertyMap () const override;
-    virtual bool _IsSystemPropertyMap () const override;
+    virtual bool _IsVirtual () const override { return !m_column.expired() && m_column.lock()->GetPersistenceType() == PersistenceType::Virtual; }
+    virtual bool _IsSystemPropertyMap() const override { return true; }
     virtual void _GetColumns (std::vector<ECDbSqlColumn const*>& columns) const override;
 
 protected:
-    PropertyMapSystem (ECN::ECPropertyCR property, std::weak_ptr<ECDbSqlColumn> column, ECSqlSystemProperty kind, ECDbSqlTable const* primaryTable);
+    PropertyMapSystem (ECN::ECPropertyCR property, std::weak_ptr<ECDbSqlColumn> column, ECSqlSystemProperty kind);
 
     ECDbSqlColumn const& GetColumn () const;
 
@@ -48,14 +47,14 @@ public:
     static Utf8CP const PROPERTYACCESSSTRING;
 
 private:
-    PropertyMapECInstanceId (ECN::ECPropertyCR ecInstanceIdProperty, ECDbSqlColumn* column);
+    PropertyMapECInstanceId (ECN::ECPropertyCR ecInstanceIdProperty, ECDbSqlColumn*);
 
-    virtual bool _IsECInstanceIdPropertyMap () const override;
+    virtual bool _IsECInstanceIdPropertyMap() const override { return true; }
     virtual Utf8String _ToString () const override;
 
 public:
     ~PropertyMapECInstanceId () {}
-    static PropertyMapPtr Create (ECDbSchemaManagerCR schemaManager, IClassMap const& classMap);
+    static PropertyMapPtr Create (ECDbSchemaManagerCR, ClassMap const&);
     };
 
 
@@ -67,13 +66,13 @@ public:
 struct PropertyMapStructArrayTableKey : PropertyMapSystem
     {
 private:
-    explicit PropertyMapStructArrayTableKey (ECN::ECPropertyCR systemProperty, ECDbSqlColumn* column, ECSqlSystemProperty kind);
+    explicit PropertyMapStructArrayTableKey (ECN::ECPropertyCR systemProperty, ECDbSqlColumn*, ECSqlSystemProperty);
 
     virtual Utf8String _ToString () const override;
 
 public:
     ~PropertyMapStructArrayTableKey () {}
-    static PropertyMapPtr Create (ECDbSchemaManagerCR schemaManager, ECSqlSystemProperty kind, IClassMap const& classMap);
+    static PropertyMapPtr Create (ECDbSchemaManagerCR, ECSqlSystemProperty, IClassMap const&);
     };
 
 //=======================================================================================
@@ -85,7 +84,7 @@ private:
     Utf8String m_viewColumnAlias;
 
 protected:
-    PropertyMapRelationshipConstraint (ECN::ECPropertyCR constraintProperty, ECDbSqlColumn* column, ECSqlSystemProperty kind, ECDbSqlTable const* primaryTable, Utf8CP columnAliasInView);
+    PropertyMapRelationshipConstraint (ECN::ECPropertyCR constraintProperty, ECDbSqlColumn*, ECSqlSystemProperty, Utf8CP columnAliasInView);
 
     bool HasViewColumnAlias () const { return !m_viewColumnAlias.empty (); }
     //! In the view generated for select statements, the constraint columns cannot be used directly for end-table mappings
@@ -109,16 +108,15 @@ public:
 struct PropertyMapRelationshipConstraintECInstanceId : PropertyMapRelationshipConstraint
     {
 private:
-    PropertyMapRelationshipConstraintECInstanceId (ECN::ECPropertyCR constraintProperty, ECDbSqlColumn* column, ECSqlSystemProperty kind, Utf8CP columnAliasInView);
+    PropertyMapRelationshipConstraintECInstanceId(ECN::ECPropertyCR constraintProperty, ECDbSqlColumn*, ECSqlSystemProperty, Utf8CP columnAliasInView);
 
-    virtual NativeSqlBuilder::List _ToNativeSql(Utf8CP classIdentifier, ECSqlType ecsqlType, bool wrapInParentheses) const override;
-
-    virtual Utf8String _ToString () const override;
+    virtual NativeSqlBuilder::List _ToNativeSql(Utf8CP classIdentifier, ECSqlType, bool wrapInParentheses) const override;
+    virtual Utf8String _ToString() const override;
 
 public:
-    ~PropertyMapRelationshipConstraintECInstanceId () {}
+    ~PropertyMapRelationshipConstraintECInstanceId() {}
 
-    static PropertyMapPtr Create (ECN::ECRelationshipEnd constraintEnd, ECDbSchemaManagerCR schemaManager, ECDbSqlColumn* column, IClassMap const& classMap, Utf8CP viewColumnAlias = nullptr);
+    static PropertyMapPtr Create(ECN::ECRelationshipEnd, ECDbSchemaManagerCR, ECDbSqlColumn*, Utf8CP viewColumnAlias = nullptr);
     };
 
 //=======================================================================================
@@ -128,18 +126,24 @@ struct PropertyMapRelationshipConstraintClassId : PropertyMapRelationshipConstra
     {
 private:
     ECN::ECClassId m_defaultConstraintClassId;
+    bool m_isMappedToClassMapTables;
 
-    PropertyMapRelationshipConstraintClassId (ECN::ECPropertyCR constraintProperty, ECDbSqlColumn* column, ECSqlSystemProperty kind, ECN::ECClassId defaultClassId, ECDbSqlTable const* primaryTable, Utf8CP columnAliasInView, ECDbSqlTable* table);
+    PropertyMapRelationshipConstraintClassId (ECN::ECPropertyCR constraintProperty, ECDbSqlColumn*, ECSqlSystemProperty, ECN::ECClassId defaultClassId, ClassMap const&, Utf8CP columnAliasInView, bool colIsDelayGenerated);
 
-    virtual NativeSqlBuilder::List _ToNativeSql(Utf8CP classIdentifier, ECSqlType ecsqlType, bool wrapInParentheses) const override;
-
+    virtual PropertyMapRelationshipConstraintClassId const* _GetAsPropertyMapRelationshipConstraintClassId() const override { return this; }
+    virtual NativeSqlBuilder::List _ToNativeSql(Utf8CP classIdentifier, ECSqlType, bool wrapInParentheses) const override;
     virtual Utf8String _ToString () const override;
 
 public:
     ~PropertyMapRelationshipConstraintClassId () {}
 
     ECN::ECClassId GetDefaultConstraintECClassId () const { return m_defaultConstraintClassId; }
-    static PropertyMapPtr Create (ECN::ECRelationshipEnd constraintEnd, ECDbSchemaManagerCR schemaManager, ECDbSqlColumn* column, ECN::ECClassId defaultSourceECClassId, IClassMap const& classMap, Utf8CP viewColumnAlias = nullptr, ECDbSqlTable* table = nullptr);
+    static RefCountedPtr<PropertyMapRelationshipConstraintClassId> Create (ECN::ECRelationshipEnd, ECDbSchemaManagerCR, ECDbSqlColumn*, ECN::ECClassId defaultSourceECClassId, ClassMap const&, Utf8CP viewColumnAlias = nullptr, bool colIsDelayGenerated = false);
+
+    //!ConstraintClassId columns are not always created in the table to which the relationship is mapped to. 
+    //!If this method returns false, the relationship table doesn't have a constraint class id column, but the class id
+    //!column resides elsewhere.
+    bool IsMappedToClassMapTables() const { return m_isMappedToClassMapTables; }
     };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

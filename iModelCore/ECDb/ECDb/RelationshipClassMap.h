@@ -27,7 +27,7 @@ struct RelationshipConstraintMap : NonCopyableClass
         ECDbSchemaManager const& m_schemaManager;
         ECN::ECRelationshipConstraintCR m_constraint;
         PropertyMapCP m_ecInstanceIdPropMap;
-        PropertyMapCP m_ecClassIdPropMap;
+        PropertyMapRelationshipConstraintClassId const* m_ecClassIdPropMap;
         mutable bool m_anyClassMatches;
         mutable bool m_isCacheSetup;
         mutable std::set<ECN::ECClassId> m_ecClassIdCache;
@@ -45,8 +45,8 @@ struct RelationshipConstraintMap : NonCopyableClass
 
         PropertyMapCP GetECInstanceIdPropMap() const { return m_ecInstanceIdPropMap; }
         void SetECInstanceIdPropMap(PropertyMapCP ecinstanceIdPropMap) { m_ecInstanceIdPropMap = ecinstanceIdPropMap; }
-        PropertyMapCP GetECClassIdPropMap() const { return m_ecClassIdPropMap; }
-        void SetECClassIdPropMap(PropertyMapCP ecClassIdPropMap) { m_ecClassIdPropMap = ecClassIdPropMap; }
+        PropertyMapRelationshipConstraintClassId const* GetECClassIdPropMap() const { return m_ecClassIdPropMap; }
+        void SetECClassIdPropMap(PropertyMapRelationshipConstraintClassId const* ecClassIdPropMap) { m_ecClassIdPropMap = ecClassIdPropMap; }
 
         bool ClassIdMatchesConstraint(ECN::ECClassId candidateClassId) const;
         bool TryGetSingleClassIdFromConstraint(ECN::ECClassId& classId) const;
@@ -69,7 +69,7 @@ protected:
     RelationshipConstraintMap m_targetConstraintMap;
 
     RelationshipClassMap (ECN::ECRelationshipClassCR ecRelClass, ECDbMapCR ecDbMap, ECDbMapStrategy mapStrategy, bool setIsDirty);
-    ECDbSqlColumn* CreateConstraintColumn (Utf8CP columnName, ColumnKind columnId, bool addToTable = false );
+    ECDbSqlColumn* CreateConstraintColumn (Utf8CP columnName, ColumnKind columnId, PersistenceType);
     std::unique_ptr<ClassDbView> CreateClassDbView ();
 
     void DetermineConstraintClassIdColumnHandling (bool& addConstraintClassIdColumnNeeded, ECN::ECClassId& defaultConstraintClassId, ECN::ECRelationshipConstraintCR constraint) const;
@@ -84,12 +84,12 @@ public:
     RelationshipConstraintMap const& GetConstraintMap (ECN::ECRelationshipEnd constraintEnd) const;
 
     PropertyMapCP GetConstraintECInstanceIdPropMap (ECN::ECRelationshipEnd constraintEnd) const;
-    PropertyMapCP GetConstraintECClassIdPropMap (ECN::ECRelationshipEnd constraintEnd) const;
+    PropertyMapRelationshipConstraintClassId const* GetConstraintECClassIdPropMap (ECN::ECRelationshipEnd constraintEnd) const;
 
     PropertyMapCP GetSourceECInstanceIdPropMap () const { return m_sourceConstraintMap.GetECInstanceIdPropMap (); }
-    PropertyMapCP GetSourceECClassIdPropMap () const { return m_sourceConstraintMap.GetECClassIdPropMap (); }
+    PropertyMapRelationshipConstraintClassId const* GetSourceECClassIdPropMap () const { return m_sourceConstraintMap.GetECClassIdPropMap (); }
     PropertyMapCP GetTargetECInstanceIdPropMap () const { return m_targetConstraintMap.GetECInstanceIdPropMap (); }
-    PropertyMapCP GetTargetECClassIdPropMap () const { return m_targetConstraintMap.GetECClassIdPropMap (); }
+    PropertyMapRelationshipConstraintClassId const* GetTargetECClassIdPropMap () const { return m_targetConstraintMap.GetECClassIdPropMap (); }
     virtual DataIntegrityEnforcementMethod GetDataIntegrityEnforcementMethod() const =0;
     };
 
@@ -135,9 +135,9 @@ public:
     ECN::ECRelationshipEnd GetThisEnd () const;
 
     PropertyMapCP GetThisEndECInstanceIdPropMap () const;
-    PropertyMapCP GetThisEndECClassIdPropMap () const;
+    PropertyMapRelationshipConstraintClassId const* GetThisEndECClassIdPropMap () const;
     PropertyMapCP GetOtherEndECInstanceIdPropMap () const;
-    PropertyMapCP GetOtherEndECClassIdPropMap () const;
+    PropertyMapRelationshipConstraintClassId const* GetOtherEndECClassIdPropMap () const;
 
     bool GetOtherEndECClassIdColumnName (Utf8StringR columnName, ECDbSqlTable const& table) const { return GetOtherEndECClassIdColumnName (columnName, table, false);}
     static ClassMapPtr Create (ECN::ECRelationshipClassCR ecRelClass, ECDbMapCR ecDbMap, ECDbMapStrategy mapStrategy, bool setIsDirty) { return new RelationshipClassEndTableMap (ecRelClass, ecDbMap, mapStrategy, setIsDirty); }

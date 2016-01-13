@@ -210,6 +210,7 @@ BentleyStatus ViewGenerator::GetPropertyMapsOfDerivedClassCastAsBaseClass(std::v
     for (PropertyMap const* baseClassPropertyMap : parentMap.GetPropertyMaps())
         {
         if ((skipSystemProperties && baseClassPropertyMap->IsSystemPropertyMap()) ||
+            !prepareContext.GetSelectionOptions().IsSelected(baseClassPropertyMap->GetPropertyAccessString()) ||
             baseClassPropertyMap->GetAsPropertyMapStructArray())
             continue;
 
@@ -241,12 +242,13 @@ BentleyStatus ViewGenerator::AppendViewPropMapsToQuery(NativeSqlBuilder& viewQue
     {    
     for (auto const& propMapPair : viewPropMaps)
         {
-        auto basePropMap = propMapPair.first;
-        auto actualPropMap = propMapPair.second;
+        PropertyMapCP basePropMap = propMapPair.first;
+        PropertyMapCP actualPropMap = propMapPair.second;
         if (!prepareContext.GetSelectionOptions().IsSelected(actualPropMap->GetPropertyAccessString()))
             continue;
 
         auto aliasSqlSnippets = basePropMap->ToNativeSql(nullptr, ECSqlType::Select, false);
+        BeAssert(actualPropMap->GetTable() != nullptr);
         auto colSqlSnippets = actualPropMap->ToNativeSql(actualPropMap->GetTable()->GetName().c_str(), ECSqlType::Select, false);
         auto colSqlSnippetsWithoutTableNames = actualPropMap->ToNativeSql(nullptr, ECSqlType::Select, false);
 
@@ -314,8 +316,8 @@ BentleyStatus ViewGenerator::GetViewQueryForChild(NativeSqlBuilder& viewSql, ECD
         {
         auto actualPropMap = propMapPair.second;
         if (!prepareContext.GetSelectionOptions().IsSelected(actualPropMap->GetPropertyAccessString()))
-            continue
-            ;
+            continue;
+
         tableToJoinOn.insert(actualPropMap->GetTable());
         }
 
@@ -471,8 +473,8 @@ BentleyStatus ViewGenerator::CreateViewForRelationshipClassEndTableMap (NativeSq
 //+---------------+---------------+---------------+---------------+---------------+-------
 BentleyStatus ViewGenerator::BuildRelationshipJoinIfAny (NativeSqlBuilder& sqlBuilder, RelationshipClassMapCR classMap, ECN::ECRelationshipEnd endPoint)
     {
-    PropertyMapRelationshipConstraintClassId const* ecclassIdPropertyMap = static_cast<PropertyMapRelationshipConstraintClassId const*>(endPoint == ECRelationshipEnd::ECRelationshipEnd_Source ? classMap.GetSourceECClassIdPropMap () : classMap.GetTargetECClassIdPropMap ());
-    if (!ecclassIdPropertyMap->IsMappedToPrimaryTable())
+    PropertyMapRelationshipConstraintClassId const* ecclassIdPropertyMap = endPoint == ECRelationshipEnd::ECRelationshipEnd_Source ? classMap.GetSourceECClassIdPropMap () : classMap.GetTargetECClassIdPropMap ();
+    if (!ecclassIdPropertyMap->IsMappedToClassMapTables())
         {
         ECDbMapCR ecdbMap = classMap.GetECDbMap();
         PropertyMapRelationshipConstraintECInstanceId const* ecInstanceIdPropertyMap = static_cast<PropertyMapRelationshipConstraintECInstanceId const*>(endPoint == ECRelationshipEnd::ECRelationshipEnd_Source ? classMap.GetSourceECInstanceIdPropMap() : classMap.GetTargetECInstanceIdPropMap());
@@ -686,49 +688,44 @@ BentleyStatus ViewGenerator::AppendSystemPropMaps (NativeSqlBuilder& viewSql, EC
     viewSql.Append (relationMap.GetClass ().GetId ()).AppendSpace ().Append (ECDB_COL_ECClassId).AppendComma (true);
 
     //Source
-    BeAssert (dynamic_cast<PropertyMapRelationshipConstraint const*> (relationMap.GetSourceECInstanceIdPropMap ()) != nullptr);
-    PropertyMapRelationshipConstraint const* propMap = static_cast<PropertyMapRelationshipConstraint const*> (relationMap.GetSourceECInstanceIdPropMap ());
-    if (!propMap->IsVirtual ())
-        {
-        viewSql.AppendEscaped (propMap->GetFirstColumn ()->GetTable ().GetName ().c_str ()).AppendDot ();
-        }
+    PropertyMapRelationshipConstraint const* idPropMap = static_cast<PropertyMapRelationshipConstraint const*> (relationMap.GetSourceECInstanceIdPropMap ());
+    if (!idPropMap->IsVirtual ())
+        viewSql.AppendEscaped (idPropMap->GetTable ()->GetName ().c_str ()).AppendDot ();
 
-    propMap->AppendSelectClauseSqlSnippetForView (viewSql);
+    idPropMap->AppendSelectClauseSqlSnippetForView (viewSql);
     viewSql.AppendComma (true);
 
-    BeAssert (dynamic_cast<PropertyMapRelationshipConstraint const*> (relationMap.GetSourceECClassIdPropMap ()) != nullptr);
-    propMap = static_cast<PropertyMapRelationshipConstraint const*> (relationMap.GetSourceECClassIdPropMap ());
-    if (!propMap->IsVirtual ())
+    PropertyMapRelationshipConstraintClassId const* classIdPropMap = relationMap.GetSourceECClassIdPropMap();
+    if (!classIdPropMap->IsVirtual())
         {
-        if (!propMap->IsMappedToPrimaryTable ())
-            viewSql.AppendEscaped (GetECClassIdPrimaryTableAlias (ECRelationshipEnd::ECRelationshipEnd_Source)).AppendDot ();
+        if (!classIdPropMap->IsMappedToClassMapTables())
+            viewSql.AppendEscaped(GetECClassIdPrimaryTableAlias(ECRelationshipEnd::ECRelationshipEnd_Source)).AppendDot();
         else
-            viewSql.AppendEscaped (propMap->GetFirstColumn ()->GetTable ().GetName ().c_str ()).AppendDot ();
+            viewSql.AppendEscaped(classIdPropMap->GetTable()->GetName().c_str()).AppendDot();
         }
 
-    AppendConstraintClassIdPropMap (viewSql, prepareContext, *propMap, ecdbMap, relationMap, relationMap.GetRelationshipClass ().GetSource ());
+    AppendConstraintClassIdPropMap (viewSql, prepareContext, *classIdPropMap, ecdbMap, relationMap, relationMap.GetRelationshipClass ().GetSource ());
     viewSql.AppendComma (true);
 
     //Target
     BeAssert (dynamic_cast<PropertyMapRelationshipConstraint const*> (relationMap.GetTargetECInstanceIdPropMap ()) != nullptr);
-    propMap = static_cast<PropertyMapRelationshipConstraint const*> (relationMap.GetTargetECInstanceIdPropMap ());
-    if (!propMap->IsVirtual ())
-        viewSql.AppendEscaped (propMap->GetFirstColumn ()->GetTable ().GetName ().c_str ()).AppendDot ();
+    idPropMap = static_cast<PropertyMapRelationshipConstraint const*> (relationMap.GetTargetECInstanceIdPropMap ());
+    if (!idPropMap->IsVirtual())
+        viewSql.AppendEscaped(idPropMap->GetTable()->GetName().c_str()).AppendDot();
 
-    propMap->AppendSelectClauseSqlSnippetForView (viewSql);
+    idPropMap->AppendSelectClauseSqlSnippetForView (viewSql);
     viewSql.AppendComma (true);
 
-    BeAssert (dynamic_cast<PropertyMapRelationshipConstraint const*> (relationMap.GetTargetECClassIdPropMap ()) != nullptr);
-    propMap = static_cast<PropertyMapRelationshipConstraint const*> (relationMap.GetTargetECClassIdPropMap ());
-    if (!propMap->IsVirtual ())
+    classIdPropMap = relationMap.GetTargetECClassIdPropMap ();
+    if (!classIdPropMap->IsVirtual ())
         {
-        if (!propMap->IsMappedToPrimaryTable ())
+        if (!classIdPropMap->IsMappedToClassMapTables())
             viewSql.AppendEscaped (GetECClassIdPrimaryTableAlias (ECRelationshipEnd::ECRelationshipEnd_Target)).AppendDot ();
         else
-            viewSql.AppendEscaped (propMap->GetFirstColumn ()->GetTable ().GetName ().c_str ()).AppendDot ();
+            viewSql.AppendEscaped (classIdPropMap->GetFirstColumn ()->GetTable ().GetName ().c_str ()).AppendDot ();
         }
 
-    AppendConstraintClassIdPropMap (viewSql, prepareContext, *propMap, ecdbMap, relationMap, relationMap.GetRelationshipClass ().GetTarget ());
+    AppendConstraintClassIdPropMap (viewSql, prepareContext, *classIdPropMap, ecdbMap, relationMap, relationMap.GetRelationshipClass ().GetTarget ());
     return SUCCESS;
     }
 
@@ -736,44 +733,44 @@ BentleyStatus ViewGenerator::AppendSystemPropMaps (NativeSqlBuilder& viewSql, EC
 // @bsimethod                                 Krischan.Eberle                    12/2013
 //---------------------------------------------------------------------------------------
 //static
-BentleyStatus ViewGenerator::AppendSystemPropMapsToNullView (NativeSqlBuilder& viewSql, ECSqlPrepareContext const& prepareContext, RelationshipClassMapCR relationMap, bool endWithComma)
+BentleyStatus ViewGenerator::AppendSystemPropMapsToNullView(NativeSqlBuilder& viewSql, ECSqlPrepareContext const& prepareContext, RelationshipClassMapCR relationMap, bool endWithComma)
     {
     //ECInstanceId and ECClassId
-    auto sqlSnippets = relationMap.GetECInstanceIdPropertyMap ()->ToNativeSql (nullptr, ECSqlType::Select, false);
-    if (sqlSnippets.size () != 1)
+    auto sqlSnippets = relationMap.GetECInstanceIdPropertyMap()->ToNativeSql(nullptr, ECSqlType::Select, false);
+    if (sqlSnippets.size() != 1)
         return ERROR;
 
-    viewSql.Append ("SELECT NULL ").Append (sqlSnippets).AppendComma (true);
-    viewSql.Append ("NULL ").Append (ECDB_COL_ECClassId).AppendComma (true);
+    viewSql.Append("SELECT NULL ").Append(sqlSnippets).AppendComma(true);
+    viewSql.Append("NULL ").Append(ECDB_COL_ECClassId).AppendComma(true);
 
     //Source constraint
-    sqlSnippets = relationMap.GetSourceECInstanceIdPropMap ()->ToNativeSql (nullptr, ECSqlType::Select, false);
-    if (sqlSnippets.size () != 1)
+    sqlSnippets = relationMap.GetSourceECInstanceIdPropMap()->ToNativeSql(nullptr, ECSqlType::Select, false);
+    if (sqlSnippets.size() != 1)
         return ERROR;
-    
-    viewSql.Append ("NULL ").Append (sqlSnippets).AppendComma (true);
 
-    sqlSnippets = relationMap.GetSourceECClassIdPropMap ()->ToNativeSql (nullptr, ECSqlType::Select, false);
-    if (sqlSnippets.size () != 1)
+    viewSql.Append("NULL ").Append(sqlSnippets).AppendComma(true);
+
+    sqlSnippets = relationMap.GetSourceECClassIdPropMap()->ToNativeSql(nullptr, ECSqlType::Select, false);
+    if (sqlSnippets.size() != 1)
         return ERROR;
-    
-    viewSql.Append ("NULL ").Append (sqlSnippets).AppendComma (true);
+
+    viewSql.Append("NULL ").Append(sqlSnippets).AppendComma(true);
 
     //Target constraint
-    sqlSnippets = relationMap.GetTargetECInstanceIdPropMap ()->ToNativeSql (nullptr, ECSqlType::Select, false);
-    if (sqlSnippets.size () != 1)
-        return ERROR;
-    
-    viewSql.Append ("NULL ").Append (sqlSnippets).AppendComma (true);
-
-    sqlSnippets = relationMap.GetTargetECClassIdPropMap ()->ToNativeSql (nullptr, ECSqlType::Select, false);
-    if (sqlSnippets.size () != 1)
+    sqlSnippets = relationMap.GetTargetECInstanceIdPropMap()->ToNativeSql(nullptr, ECSqlType::Select, false);
+    if (sqlSnippets.size() != 1)
         return ERROR;
 
-    viewSql.Append ("NULL ").Append (sqlSnippets);
+    viewSql.Append("NULL ").Append(sqlSnippets).AppendComma(true);
+
+    sqlSnippets = relationMap.GetTargetECClassIdPropMap()->ToNativeSql(nullptr, ECSqlType::Select, false);
+    if (sqlSnippets.size() != 1)
+        return ERROR;
+
+    viewSql.Append("NULL ").Append(sqlSnippets);
 
     if (endWithComma)
-        viewSql.AppendComma (true);
+        viewSql.AppendComma(true);
 
     return SUCCESS;
     }

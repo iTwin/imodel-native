@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/ECSqlInsertPreparer.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -48,9 +48,9 @@ private:
     static ECSqlStatus PrepareInsertIntoLinkTableRelationship (ECSqlPrepareContext& ctx, NativeSqlSnippets& nativeSqlSnippets, RelationshipClassMapCR relationshipClassMap, ECN::ECClassId sourceECClassId, ECN::ECClassId targetECClassId);
     static ECSqlStatus PrepareInsertIntoEndTableRelationship (ECSqlPrepareContext& ctx, NativeSqlSnippets& nativeSqlSnippets, InsertStatementExp const& exp, RelationshipClassMapCR relationshipClassMap, ECN::ECClassId sourceECClassId, ECN::ECClassId targetECClassId);
 
-    static ECSqlStatus GenerateNativeSqlSnippets (NativeSqlSnippets& insertNativeSqlSnippets, ECSqlPrepareContext& ctx, InsertStatementExp const& exp, IClassMap const& classMap);
-    static void PreparePrimaryKey (ECSqlPrepareContext& ctx, NativeSqlSnippets& nativeSqlSnippets, IClassMap const& classMap);
-    static ECSqlStatus PrepareConstraintClassId (NativeSqlSnippets& insertNativeSqlSnippets, ECSqlPrepareContext& ctx, PropertyMapCR constraintClassIdPropMap, ECN::ECClassId constraintClassId);
+    static ECSqlStatus GenerateNativeSqlSnippets (NativeSqlSnippets& insertNativeSqlSnippets, ECSqlPrepareContext& ctx, InsertStatementExp const&, IClassMap const&);
+    static void PreparePrimaryKey (ECSqlPrepareContext& ctx, NativeSqlSnippets& nativeSqlSnippets, IClassMap const&);
+    static ECSqlStatus PrepareConstraintClassId (NativeSqlSnippets& insertNativeSqlSnippets, ECSqlPrepareContext&, PropertyMapRelationshipConstraintClassId const&, ECN::ECClassId constraintClassId);
 
     //! Checks whether for the given constraint a class id is necessary and if yes whether the one specified in the ECSQL is valid or not.
     //! If validation was successful, the class id is returned.

@@ -45,7 +45,7 @@ private:
 
     std::unique_ptr<EmbeddedTypeClassMap> m_embeddedTypeClassView;
 
-    StructClassMap (ECN::ECClassCR ecClass, ECDbMapCR ecDbMap, ECDbMapStrategy mapStrategy, bool setIsDirty);
+    StructClassMap (ECN::ECClassCR, ECDbMapCR, ECDbMapStrategy, bool setIsDirty);
 
     virtual MapStatus _OnInitialized () override;
     virtual Type _GetClassMapType () const override;

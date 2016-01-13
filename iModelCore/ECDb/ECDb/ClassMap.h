@@ -341,11 +341,11 @@ struct ClassMap : public IClassMap, RefCountedBase
         virtual Type _GetClassMapType() const override;
 
     protected:
-        ClassMap(ECN::ECClassCR ecClass, ECDbMapCR ecDbMap, ECDbMapStrategy mapStrategy, bool setIsDirty);
+        ClassMap(ECN::ECClassCR, ECDbMapCR, ECDbMapStrategy, bool setIsDirty);
 
-        virtual MapStatus _MapPart1(SchemaImportContext&, ClassMapInfo const& classMapInfo, IClassMap const* parentClassMap);
-        virtual MapStatus _MapPart2(SchemaImportContext&, ClassMapInfo const& classMapInfo, IClassMap const* parentClassMap);
-        virtual BentleyStatus _Load(std::set<ClassMap const*>& loadGraph, ClassMapLoadContext&, ECDbClassMapInfo const& mapInfo, IClassMap const* parentClassMap);
+        virtual MapStatus _MapPart1(SchemaImportContext&, ClassMapInfo const&, IClassMap const* parentClassMap);
+        virtual MapStatus _MapPart2(SchemaImportContext&, ClassMapInfo const&, IClassMap const* parentClassMap);
+        virtual BentleyStatus _Load(std::set<ClassMap const*>& loadGraph, ClassMapLoadContext&, ECDbClassMapInfo const&, IClassMap const* parentClassMap);
         virtual BentleyStatus _Save(std::set<ClassMap const*>& savedGraph); 
         
 

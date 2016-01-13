@@ -588,7 +588,7 @@ MapStatus ClassMap::AddPropertyMaps(ClassMapLoadContext& ctx, IClassMap const* p
             if (!isJoinedTable)
                 GetPropertyMapsR().AddPropertyMap(propMap);
             else
-                GetPropertyMapsR().AddPropertyMap(PropertyMap::Clone(m_ecDbMap, *propMap, &GetJoinedTable(), nullptr));
+                GetPropertyMapsR().AddPropertyMap(PropertyMap::Clone(m_ecDbMap, *propMap, nullptr));
             }
         }
 
@@ -598,7 +598,7 @@ MapStatus ClassMap::AddPropertyMaps(ClassMapLoadContext& ctx, IClassMap const* p
     for (ECPropertyCP property : propertiesToMap)
         {
         Utf8CP propertyAccessString = property->GetName().c_str();
-        propMap = PropertyMap::CreateAndEvaluateMapping(ctx, m_ecDbMap.GetECDb(), *property, m_ecClass, propertyAccessString, &GetJoinedTable(), nullptr);
+        propMap = PropertyMap::CreateAndEvaluateMapping(ctx, m_ecDbMap.GetECDb(), *property, m_ecClass, propertyAccessString, nullptr);
         if (propMap == nullptr)
             return MapStatus::Error;
 
