@@ -609,28 +609,15 @@ ECN::IECInstancePtr ComponentDef::MakeVariationSpec()
     {
     ECN::IECInstancePtr instance = m_class.GetDefaultStandaloneEnabler()->CreateInstance();
 
+    //  Get the specification of the component's script-only parameters
     auto ca = getComponentSpecCA(m_db, GetECClass());
     ECN::ECValue adhocsJsonStr;
     ca->GetValue(adhocsJsonStr, "ScriptOnlyParameters");
     Json::Value adhocsJson;
     Json::Reader::Parse(adhocsJsonStr.ToString(), adhocsJson);
     TsComponentParameterSet adhocParams(adhocsJson);
-
-    ECN::AdhocPropertyEdit adHocPropsEditor(*instance, "ScriptOnlyParameters");
-    for (auto const& entry: adhocParams)
-        {
-        Utf8StringCR paramName = entry.first;
-        TsComponentParameter const& param = entry.second;
-        adHocPropsEditor.Add(paramName.c_str(), param.m_value, "");
-
-        #ifndef NDEBUG
-        uint32_t idx;
-        adHocPropsEditor.GetPropertyIndex(idx, paramName.c_str());
-        ECN::ECValue v;
-        adHocPropsEditor.GetValue(v, idx);
-        BeAssert(v.Equals(param.m_value));
-        #endif
-        }
+    //  Add the script-only parameters to the ad hoc properties of the instance
+    adhocParams.ToECProperties(*instance);
 
     return instance;
     }
