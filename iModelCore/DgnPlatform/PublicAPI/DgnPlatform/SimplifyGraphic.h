@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/SimplifyGraphic.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -103,22 +103,22 @@ public:
     DGNPLATFORM_EXPORT void ViewToLocal(DPoint3dP localPts, DPoint3dCP viewPts, int nPts) const;
 
     //! Call to stroke a CurveVector and process using IGeometryProcessor::_ProcessAsLinearSegment.
-    DGNPLATFORM_EXPORT void ProcessAsLinearSegments(CurveVectorCR, bool filled) const;
+    DGNPLATFORM_EXPORT void ProcessAsLinearSegments(CurveVectorCR, bool filled);
 
     //! Call to output a CurveVector as individual ICurvePrimitives using IGeometryProcessor::_ProcessCurvePrimitive.
-    DGNPLATFORM_EXPORT void ProcessAsCurvePrimitives(CurveVectorCR, bool filled) const;
+    DGNPLATFORM_EXPORT void ProcessAsCurvePrimitives(CurveVectorCR, bool filled);
 
     DGNPLATFORM_EXPORT ClipVectorCP GetCurrentClip() const;
 
-    DGNPLATFORM_EXPORT void ClipAndProcessCurveVector(CurveVectorCR, bool filled) const;
-    DGNPLATFORM_EXPORT void ClipAndProcessSolidPrimitive(ISolidPrimitiveCR) const;
-    DGNPLATFORM_EXPORT void ClipAndProcessSurface(MSBsplineSurfaceCR) const;
-    DGNPLATFORM_EXPORT void ClipAndProcessPolyface(PolyfaceQueryCR, bool filled) const;
-    DGNPLATFORM_EXPORT void ClipAndProcessPolyfaceAsCurves(PolyfaceQueryCR) const;
-    DGNPLATFORM_EXPORT void ClipAndProcessBody(ISolidKernelEntityCR) const;
-    DGNPLATFORM_EXPORT void ClipAndProcessBodyAsPolyface(ISolidKernelEntityCR) const;
-    DGNPLATFORM_EXPORT void ClipAndProcessText(TextStringCR) const;
-    DGNPLATFORM_EXPORT void ClipAndProcessGlyph(DgnFontCR, DgnGlyphCR, DPoint3dCR glyphOffset) const;
+    DGNPLATFORM_EXPORT void ClipAndProcessCurveVector(CurveVectorCR, bool filled);
+    DGNPLATFORM_EXPORT void ClipAndProcessSolidPrimitive(ISolidPrimitiveCR);
+    DGNPLATFORM_EXPORT void ClipAndProcessSurface(MSBsplineSurfaceCR);
+    DGNPLATFORM_EXPORT void ClipAndProcessPolyface(PolyfaceQueryCR, bool filled);
+    DGNPLATFORM_EXPORT void ClipAndProcessPolyfaceAsCurves(PolyfaceQueryCR);
+    DGNPLATFORM_EXPORT void ClipAndProcessBody(ISolidKernelEntityCR);
+    DGNPLATFORM_EXPORT void ClipAndProcessBodyAsPolyface(ISolidKernelEntityCR);
+    DGNPLATFORM_EXPORT void ClipAndProcessText(TextStringCR);
+    DGNPLATFORM_EXPORT void ClipAndProcessGlyph(DgnFontCR, DgnGlyphCR, DPoint3dCR glyphOffset);
 
     DGNPLATFORM_EXPORT void GetEffectiveGraphicParams(Render::GraphicParamsR graphicParams) const; // Get GraphicParams adjusted for overrides...
     Render::GraphicParamsCR GetCurrentGraphicParams() const {return m_currGraphicParams;}
@@ -186,28 +186,28 @@ virtual UnhandledPreference _GetUnhandledPreference(ISolidKernelEntityCR) const 
 virtual UnhandledPreference _GetUnhandledPreference(TextStringCR) const {return UnhandledPreference::Ignore;}
 
 //! Call SimplifyGraphic::ProcessAsLinearSegments to output a CurveVector as strokes calling this method.
-virtual bool _ProcessLinearSegments(DPoint3dCP points, size_t numPoints, bool closed, bool filled, SimplifyGraphic const&) {return false;}
+virtual bool _ProcessLinearSegments(DPoint3dCP points, size_t numPoints, bool closed, bool filled, SimplifyGraphic&) {return false;}
 
 //! Call SimplifyGraphic::ProcessAsCurvePrimitives to output a CurveVector's ICurvePrimitives calling this method.
-virtual bool _ProcessCurvePrimitive(ICurvePrimitiveCR, bool closed, bool filled, SimplifyGraphic const&) {return false;}
+virtual bool _ProcessCurvePrimitive(ICurvePrimitiveCR, bool closed, bool filled, SimplifyGraphic&) {return false;}
 
 //! Called by SimplifyGraphic when not clipping (or no clips present).
 //! @return true if handled or false to process according to _GetUnhandledPreference.
-virtual bool _ProcessCurveVector(CurveVectorCR, bool filled, SimplifyGraphic const&) {return false;}
-virtual bool _ProcessSolidPrimitive(ISolidPrimitiveCR, SimplifyGraphic const&) {return false;}
-virtual bool _ProcessSurface(MSBsplineSurfaceCR, SimplifyGraphic const&) {return false;}
-virtual bool _ProcessPolyface(PolyfaceQueryCR, bool filled, SimplifyGraphic const&) {return false;}
-virtual bool _ProcessBody(ISolidKernelEntityCR, SimplifyGraphic const&) {return false;}
-virtual bool _ProcessTextString(TextStringCR, SimplifyGraphic const&) {return false;}
+virtual bool _ProcessCurveVector(CurveVectorCR, bool filled, SimplifyGraphic&) {return false;}
+virtual bool _ProcessSolidPrimitive(ISolidPrimitiveCR, SimplifyGraphic&) {return false;}
+virtual bool _ProcessSurface(MSBsplineSurfaceCR, SimplifyGraphic&) {return false;}
+virtual bool _ProcessPolyface(PolyfaceQueryCR, bool filled, SimplifyGraphic&) {return false;}
+virtual bool _ProcessBody(ISolidKernelEntityCR, SimplifyGraphic&) {return false;}
+virtual bool _ProcessTextString(TextStringCR, SimplifyGraphic&) {return false;}
 
 //! Called by SimplifyGraphic when clipping (and clips are present).
 //! @return true if handled or false to process according to _GetUnhandledPreference.
-virtual bool _ProcessCurveVectorClipped(CurveVectorCR, bool filled, SimplifyGraphic const&, ClipVectorCR) {return false;}
-virtual bool _ProcessSolidPrimitiveClipped(ISolidPrimitiveCR, SimplifyGraphic const&, ClipVectorCR) {return false;}
-virtual bool _ProcessSurfaceClipped(MSBsplineSurfaceCR, SimplifyGraphic const&, ClipVectorCR) {return false;}
-virtual bool _ProcessPolyfaceClipped(PolyfaceQueryCR, bool filled, SimplifyGraphic const&, ClipVectorCR) {return false;}
-virtual bool _ProcessBodyClipped(ISolidKernelEntityCR, SimplifyGraphic const&, ClipVectorCR) {return false;}
-virtual bool _ProcessTextStringClipped(TextStringCR, SimplifyGraphic const&, ClipVectorCR) {return false;}
+virtual bool _ProcessCurveVectorClipped(CurveVectorCR, bool filled, SimplifyGraphic&, ClipVectorCR) {return false;}
+virtual bool _ProcessSolidPrimitiveClipped(ISolidPrimitiveCR, SimplifyGraphic&, ClipVectorCR) {return false;}
+virtual bool _ProcessSurfaceClipped(MSBsplineSurfaceCR, SimplifyGraphic&, ClipVectorCR) {return false;}
+virtual bool _ProcessPolyfaceClipped(PolyfaceQueryCR, bool filled, SimplifyGraphic&, ClipVectorCR) {return false;}
+virtual bool _ProcessBodyClipped(ISolidKernelEntityCR, SimplifyGraphic&, ClipVectorCR) {return false;}
+virtual bool _ProcessTextStringClipped(TextStringCR, SimplifyGraphic&, ClipVectorCR) {return false;}
 
 //! Allow processor to output graphics to it's own process methods.
 //! @param[in] context The current view context.

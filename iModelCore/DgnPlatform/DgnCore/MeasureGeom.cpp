@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/MeasureGeom.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -197,7 +197,7 @@ void MeasureGeomCollector::AccumulateLengthSums (DMatrix4dCR products)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   01/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool MeasureGeomCollector::DoAccumulateLengths (CurveVectorCR curves, SimplifyGraphic const& graphic)
+bool MeasureGeomCollector::DoAccumulateLengths (CurveVectorCR curves, SimplifyGraphic& graphic)
     {
     Transform   flattenTransform;
 
@@ -231,7 +231,7 @@ bool MeasureGeomCollector::DoAccumulateLengths (CurveVectorCR curves, SimplifyGr
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   01/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool MeasureGeomCollector::DoAccumulateAreas (CurveVectorCR curves, SimplifyGraphic const& graphic)
+bool MeasureGeomCollector::DoAccumulateAreas (CurveVectorCR curves, SimplifyGraphic& graphic)
     {
     Transform   flattenTransform;
 
@@ -274,7 +274,7 @@ bool MeasureGeomCollector::DoAccumulateAreas (CurveVectorCR curves, SimplifyGrap
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   12/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool MeasureGeomCollector::_ProcessCurveVector (CurveVectorCR curves, bool isFilled, SimplifyGraphic const& graphic)
+bool MeasureGeomCollector::_ProcessCurveVector (CurveVectorCR curves, bool isFilled, SimplifyGraphic& graphic)
     {
     switch (m_opType)
         {
@@ -301,7 +301,7 @@ bool MeasureGeomCollector::_ProcessCurveVector (CurveVectorCR curves, bool isFil
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   01/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool MeasureGeomCollector::DoAccumulateAreas (ISolidPrimitiveCR primitive, SimplifyGraphic const& graphic)
+bool MeasureGeomCollector::DoAccumulateAreas (ISolidPrimitiveCR primitive, SimplifyGraphic& graphic)
     {
 #if defined (DGNPLATFORM_WIP_MEASURE)
     Transform   flattenTransform;
@@ -356,7 +356,7 @@ bool MeasureGeomCollector::DoAccumulateAreas (ISolidPrimitiveCR primitive, Simpl
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   01/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool MeasureGeomCollector::DoAccumulateVolumes (ISolidPrimitiveCR primitive, SimplifyGraphic const& graphic)
+bool MeasureGeomCollector::DoAccumulateVolumes (ISolidPrimitiveCR primitive, SimplifyGraphic& graphic)
     {
     bool        myStat = false;
     double      amount = 0.0, area = 0.0;
@@ -394,7 +394,7 @@ bool MeasureGeomCollector::DoAccumulateVolumes (ISolidPrimitiveCR primitive, Sim
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   12/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool MeasureGeomCollector::_ProcessSolidPrimitive (ISolidPrimitiveCR primitive, SimplifyGraphic const& graphic)
+bool MeasureGeomCollector::_ProcessSolidPrimitive (ISolidPrimitiveCR primitive, SimplifyGraphic& graphic)
     {
     switch (m_opType)
         {
@@ -449,7 +449,7 @@ MeasureEdgeGeomProvider (MSBsplineSurfaceCR surface) {m_surface = &surface;}
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   01/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool MeasureGeomCollector::DoAccumulateAreas (MSBsplineSurfaceCR surface, SimplifyGraphic const& graphic)
+bool MeasureGeomCollector::DoAccumulateAreas (MSBsplineSurfaceCR surface, SimplifyGraphic& graphic)
     {
     Transform   flattenTransform;
 
@@ -522,7 +522,7 @@ bool MeasureGeomCollector::DoAccumulateAreas (MSBsplineSurfaceCR surface, Simpli
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   12/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool MeasureGeomCollector::_ProcessSurface (MSBsplineSurfaceCR surface, SimplifyGraphic const& graphic)
+bool MeasureGeomCollector::_ProcessSurface (MSBsplineSurfaceCR surface, SimplifyGraphic& graphic)
     {
     switch (m_opType)
         {
@@ -542,7 +542,7 @@ bool MeasureGeomCollector::_ProcessSurface (MSBsplineSurfaceCR surface, Simplify
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   01/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool MeasureGeomCollector::DoAccumulateAreas (PolyfaceQueryCR meshQuery, SimplifyGraphic const& graphic)
+bool MeasureGeomCollector::DoAccumulateAreas (PolyfaceQueryCR meshQuery, SimplifyGraphic& graphic)
     {
     Transform   flattenTransform;
 
@@ -588,7 +588,7 @@ bool MeasureGeomCollector::DoAccumulateAreas (PolyfaceQueryCR meshQuery, Simplif
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   01/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool MeasureGeomCollector::DoAccumulateVolumes (PolyfaceQueryCR meshQuery, SimplifyGraphic const& graphic)
+bool MeasureGeomCollector::DoAccumulateVolumes (PolyfaceQueryCR meshQuery, SimplifyGraphic& graphic)
     {
     Transform   outputTransform;
     bool useRaggedMeshLogic = false;
@@ -643,7 +643,7 @@ bool MeasureGeomCollector::DoAccumulateVolumes (PolyfaceQueryCR meshQuery, Simpl
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   12/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool MeasureGeomCollector::_ProcessPolyface (PolyfaceQueryCR meshQuery, bool isFilled, SimplifyGraphic const& graphic)
+bool MeasureGeomCollector::_ProcessPolyface (PolyfaceQueryCR meshQuery, bool isFilled, SimplifyGraphic& graphic)
     {
     switch (m_opType)
         {
@@ -736,16 +736,14 @@ static void getBRepMoments (DPoint3dR moments, double& iXY, double& iXZ, double&
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   01/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool MeasureGeomCollector::DoAccumulateLengths (ISolidKernelEntityCR entity, SimplifyGraphic const& graphic)
+bool MeasureGeomCollector::DoAccumulateLengths (ISolidKernelEntityCR entity, SimplifyGraphic& graphic)
     {
     Transform   flattenTransform;
 
     if (GetPreFlattenTransform (flattenTransform, graphic))
         {
-        Render::GraphicPtr tmpGraphic = graphic.CreateSubGraphic(entity.GetEntityTransform());
-
         // Output edge geometry as CurveVector...
-        T_HOST.GetSolidsKernelAdmin ()._OutputBodyAsWireframe (*tmpGraphic, entity, graphic.GetViewContext(), true, false);
+        T_HOST.GetSolidsKernelAdmin ()._OutputBodyAsWireframe (graphic, entity, graphic.GetViewContext(), true, false);
 
         return true;
         }
@@ -780,16 +778,14 @@ bool MeasureGeomCollector::DoAccumulateLengths (ISolidKernelEntityCR entity, Sim
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   01/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool MeasureGeomCollector::DoAccumulateAreas (ISolidKernelEntityCR entity, SimplifyGraphic const& graphic)
+bool MeasureGeomCollector::DoAccumulateAreas (ISolidKernelEntityCR entity, SimplifyGraphic& graphic)
     {
     Transform   flattenTransform;
 
     if (GetPreFlattenTransform (flattenTransform, graphic))
         {
-        Render::GraphicPtr tmpGraphic = graphic.CreateSubGraphic(entity.GetEntityTransform());
-
         // Output face geometry as ISolidPrimitive/MSBSplineSurface/CurveVector...
-        T_HOST.GetSolidsKernelAdmin ()._OutputBodyAsSurfaces (*tmpGraphic, entity, graphic.GetViewContext(), true);
+        T_HOST.GetSolidsKernelAdmin ()._OutputBodyAsSurfaces (graphic, entity, graphic.GetViewContext(), true);
 
         return true;
         }
@@ -824,7 +820,7 @@ bool MeasureGeomCollector::DoAccumulateAreas (ISolidKernelEntityCR entity, Simpl
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   01/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool MeasureGeomCollector::DoAccumulateVolumes (ISolidKernelEntityCR entity, SimplifyGraphic const& graphic)
+bool MeasureGeomCollector::DoAccumulateVolumes (ISolidKernelEntityCR entity, SimplifyGraphic& graphic)
     {
     ISolidKernelEntityPtr entityPtr;
 
@@ -856,7 +852,7 @@ bool MeasureGeomCollector::DoAccumulateVolumes (ISolidKernelEntityCR entity, Sim
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   06/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool MeasureGeomCollector::_ProcessBody (ISolidKernelEntityCR entity, SimplifyGraphic const& graphic)
+bool MeasureGeomCollector::_ProcessBody (ISolidKernelEntityCR entity, SimplifyGraphic& graphic)
     {
     switch (m_opType)
         {
@@ -871,10 +867,8 @@ bool MeasureGeomCollector::_ProcessBody (ISolidKernelEntityCR entity, SimplifyGr
                 if (!T_HOST.GetSolidsKernelAdmin()._QueryEntityData (entity, DgnPlatformLib::Host::SolidsKernelAdmin::EntityQuery_HasOnlyPlanarFaces))
                     return true; // Not valid type for operation...
 
-                Render::GraphicPtr tmpGraphic = graphic.CreateSubGraphic(entity.GetEntityTransform());
-
                 // Output curve vector for each face of sheet...(further limit this to a set of coplanar faces?!?)
-                T_HOST.GetSolidsKernelAdmin ()._OutputBodyAsSurfaces (*tmpGraphic, entity, graphic.GetViewContext(), true);
+                T_HOST.GetSolidsKernelAdmin ()._OutputBodyAsSurfaces (graphic, entity, graphic.GetViewContext(), true);
 
                 return true;
                 }
@@ -898,10 +892,8 @@ bool MeasureGeomCollector::_ProcessBody (ISolidKernelEntityCR entity, SimplifyGr
                 }
             else if (ISolidKernelEntity::EntityType_Solid == entity.GetEntityType ())
                 {
-                Render::GraphicPtr tmpGraphic = graphic.CreateSubGraphic(entity.GetEntityTransform());
-
                 // Output sheet body for each face of solid...
-                T_HOST.GetSolidsKernelAdmin ()._OutputBodyAsSurfaces (*tmpGraphic, entity, graphic.GetViewContext(), false);
+                T_HOST.GetSolidsKernelAdmin ()._OutputBodyAsSurfaces (graphic, entity, graphic.GetViewContext(), false);
 
                 return true;
                 }

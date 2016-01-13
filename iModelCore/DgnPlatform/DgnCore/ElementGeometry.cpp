@@ -4230,15 +4230,15 @@ private:
 public:
     TextAnnotationDrawToGeometricPrimitive(TextAnnotationCR text, GeometryBuilderR builder) : m_text(text), m_builder(builder) {}
 
-    virtual bool _ProcessTextString(TextStringCR, SimplifyGraphic const&) override;
-    virtual bool _ProcessCurveVector(CurveVectorCR, bool isFilled, SimplifyGraphic const&) override;
+    virtual bool _ProcessTextString(TextStringCR, SimplifyGraphic&) override;
+    virtual bool _ProcessCurveVector(CurveVectorCR, bool isFilled, SimplifyGraphic&) override;
     virtual void _OutputGraphics(ViewContextR) override;
 };
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     09/2015
 //---------------------------------------------------------------------------------------
-bool TextAnnotationDrawToGeometricPrimitive::_ProcessTextString(TextStringCR text, SimplifyGraphic const& graphic)
+bool TextAnnotationDrawToGeometricPrimitive::_ProcessTextString(TextStringCR text, SimplifyGraphic& graphic)
     {
     m_builder.Append(graphic.GetCurrentGeometryParams()); // NOTE: Actual append happens when geometric primitive is added only if changed...
 
@@ -4260,7 +4260,7 @@ bool TextAnnotationDrawToGeometricPrimitive::_ProcessTextString(TextStringCR tex
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     09/2015
 //---------------------------------------------------------------------------------------
-bool TextAnnotationDrawToGeometricPrimitive::_ProcessCurveVector(CurveVectorCR curves, bool isFilled, SimplifyGraphic const& graphic)
+bool TextAnnotationDrawToGeometricPrimitive::_ProcessCurveVector(CurveVectorCR curves, bool isFilled, SimplifyGraphic& graphic)
     {
     m_builder.Append(graphic.GetCurrentGeometryParams()); // NOTE: Actual append happens when geometric primitive is added only if changed...
 
