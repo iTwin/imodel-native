@@ -30,9 +30,16 @@ void Render::Target::RecordFrameTime(GraphicList& scene, double seconds, bool is
 
     uint32_t gps = (uint32_t) ((double) count / seconds);
     NativeLogging::LoggingManager::GetLogger("GPS")->debugv("GPS=%d", gps);
-    if (isFromProgressiveDisplay)
-        m_graphicsPerSecondProgressiveDisplay.store(gps);
-    else
+
+    //  Typically GPS increases as progressive display 
+    //  continues.  We cannot let CreateScene graphics
+    //  be affected by the progressive display rate.  
+    //
+    //  The GPS from the beginning of progressive is likely to be less
+    //  than the GPS from the end of progressive display.  Therefore,
+    //  we reset the progressive display value by saving the create scene value.
+    m_graphicsPerSecondProgressiveDisplay.store(gps);
+    if (!isFromProgressiveDisplay)
         m_graphicsPerSecond.store(gps);
     }
 
