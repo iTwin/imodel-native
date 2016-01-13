@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/DgnFont.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -536,6 +536,8 @@ BentleyStatus DgnFonts::DbFaceDataDirect::QueryById(bvector<Byte>& fontData, Dat
 //---------------------------------------------------------------------------------------
 BentleyStatus DgnFonts::DbFaceDataDirect::QueryByFace(bvector<Byte>& data, FaceSubId& subId, FaceKeyCR key)
     {
+    DgnDb::SQLRequest::Client _v;
+
     EmbeddedFaceDataIterator allFaceData(m_dbFonts.m_db);
     for (EmbeddedFaceDataIterator::Entry const& faceDataEntry : allFaceData)
         {
