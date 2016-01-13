@@ -22,7 +22,6 @@
 #include "MapStrategy.h"
 #include "ECDbMap.h"
 #include "ClassMap.h"
-#include "ClassMapFactory.h"
 #include "ClassMapSubclasses.h"
 #include "RelationshipClassMap.h"
 #include "ClassMapInfo.h"

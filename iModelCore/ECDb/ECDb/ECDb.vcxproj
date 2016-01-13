@@ -13,7 +13,6 @@
   <ItemGroup>
     <ClCompile Include="ChangeSummary.cpp" />
     <ClCompile Include="ClassMap.cpp" />
-    <ClCompile Include="ClassMapFactory.cpp" />
     <ClCompile Include="ClassMapInfo.cpp" />
     <ClCompile Include="ClassMapSubclasses.cpp" />
     <ClCompile Include="ColumnInfo.cpp" />
@@ -142,7 +141,6 @@
     <ClInclude Include="..\PublicAPI\ECDb\JsonAdapter.h" />
     <ClInclude Include="BeBriefcaseBasedIdSequence.h" />
     <ClInclude Include="ClassMap.h" />
-    <ClInclude Include="ClassMapFactory.h" />
     <ClInclude Include="ClassMapInfo.h" />
     <ClInclude Include="ClassMapSubclasses.h" />
     <ClInclude Include="ColumnInfo.h" />

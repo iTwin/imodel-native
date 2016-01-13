@@ -107,18 +107,20 @@ private:
     LightweightCache            m_lightweightCache;
     ECDbR                       m_ecdb;
     ECDbSQLManager              m_ecdbSqlManager;
-    ClassMapDictionary          m_classMapDictionary;
+    mutable ClassMapDictionary  m_classMapDictionary;
     mutable bvector<ECN::ECClassCP> m_classMapLoadTable;
     mutable int                 m_classMapLoadAccessCounter;
     SchemaImportContext*        m_schemaImportContext;
 
     bool                        TryGetClassMap(ClassMapPtr&, ClassMapLoadContext&, ECN::ECClassCR) const;
     ClassMapPtr                 DoGetClassMap(ECN::ECClassCR) const;
-    ClassMapPtr                 LoadAddClassMap(ClassMapLoadContext&, ECN::ECClassCR);
+
+    ClassMapPtr                 LoadClassMap(ClassMapLoadContext& ctx, ECN::ECClassCR) const;
+
     MapStatus                   DoMapSchemas(bvector<ECN::ECSchemaCP> const& mapSchemas, bool forceMapStrategyReevaluation);
     
     MapStatus                   MapClass(ECN::ECClassCR, bool forceRevaluationOfMapStrategy);
-    MapStatus                   AddClassMap(ClassMapPtr&);
+    MapStatus                   AddClassMap(ClassMapPtr&) const;
     void                        RemoveClassMap(IClassMap const&);
     BentleyStatus               FinishTableDefinition() const;
     BentleyStatus               Save();
@@ -142,7 +144,6 @@ public:
     ECDbSqlTable const* GetFirstTableFromRelationshipEnd(ECN::ECRelationshipConstraintCR) const;
 
     ECDbSQLManager const& GetSQLManager() const { return m_ecdbSqlManager; }
-    ECDbSQLManager& GetSQLManagerR() { return m_ecdbSqlManager; }
 
     MapStatus MapSchemas(SchemaImportContext&, bvector<ECN::ECSchemaCP> const&, bool forceMapStrategyReevaluation);
 

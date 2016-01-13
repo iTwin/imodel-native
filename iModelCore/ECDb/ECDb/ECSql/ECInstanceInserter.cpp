@@ -123,10 +123,6 @@ void ECInstanceInserter::Impl::Initialize ()
         if (hasCurrentTimeStampProp && ecProperty == currentTimeStampProp)
             continue;
 
-        //WIP_NAVPROP Not implemented yet
-        if (ecProperty->GetIsNavigation())
-            continue;
-
         if (!m_needsCalculatedPropertyEvaluation)
             m_needsCalculatedPropertyEvaluation = ECInstanceAdapterHelper::IsOrContainsCalculatedProperty (*ecProperty);
 

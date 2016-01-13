@@ -32,16 +32,10 @@ std::unique_ptr<ECValueBindingInfo> ECValueBindingInfoFactory::CreateBindingInfo
     if (ecStat != ECObjectsStatus::Success)
         return nullptr;
 
-    if (ecProperty.GetIsPrimitive ())
+    if (ecProperty.GetIsPrimitive () || ecProperty.GetIsNavigation())
         return PrimitiveECValueBindingInfo::Create (propIndex, ecsqlParameterIndex);
     else if(ecProperty.GetIsArray())
         return ArrayECValueBindingInfo::Create (ecProperty, propIndex, ecsqlParameterIndex);
-    else if (ecProperty.GetIsNavigation())
-        {
-        //WIP_NAVPROP Not implemented yet
-        BeAssert(false && "ECInstanceAdpaters don't support nav props yet.");
-        return nullptr;
-        }
 
     BeAssert(false && "Unhandled ECProperty type. Adjust the code for this new ECProperty type");
     return nullptr;

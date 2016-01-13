@@ -662,7 +662,7 @@ PropertyMapStructArray::PropertyMapStructArray (ECPropertyCR ecProperty, ECClass
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus PropertyMapStructArray::_Save (ECDbClassMapInfo & classMapInfo) const
     {
-    auto& manager = classMapInfo.GetMapStorageR ();
+    ECDbMapStorage const& manager = classMapInfo.GetMapStorage ();
     auto propertyId = GetRoot ().GetProperty ().GetId ();
     auto accessString = GetPropertyAccessString ();
     ECDbPropertyPath const* propertyPath = manager.FindPropertyPath (propertyId, accessString);
@@ -684,10 +684,9 @@ BentleyStatus PropertyMapStructArray::_Save (ECDbClassMapInfo & classMapInfo) co
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus PropertyMapStructArray::_Load(ECDbClassMapInfo const& classMapInfo)
     {
-    auto& manager = classMapInfo.GetMapStorage ();
     auto propertyId = GetRoot ().GetProperty ().GetId ();
     auto accessString = GetPropertyAccessString ();
-    ECDbPropertyPath const* propertyPath = manager.FindPropertyPath (propertyId, accessString);
+    ECDbPropertyPath const* propertyPath = classMapInfo.GetMapStorage().FindPropertyPath (propertyId, accessString);
     if (propertyPath == nullptr)
         {
         BeAssert (false && "Failed to find propertyPath");
