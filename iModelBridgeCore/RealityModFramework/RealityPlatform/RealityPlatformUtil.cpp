@@ -2,7 +2,7 @@
 |
 |     $Source: RealityPlatform/RealityPlatformUtil.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -343,7 +343,7 @@ bool RasterFacility::CreateSisterFile(Utf8CP fileName, Utf8CP coordinateSystemKe
         return true;
 
     WString wellKnownText;
-    pDestGeoCoding->GetWellKnownText(wellKnownText, GeoCoordinates::BaseGCS::WktFlavor::wktFlavorUnknown);
+    pDestGeoCoding->GetWellKnownText(wellKnownText, GeoCoordinates::BaseGCS::WktFlavor::wktFlavorUnknown, false);
 
     Utf8String wellKnownTextUtf8;
     BeStringUtilities::WCharToUtf8(wellKnownTextUtf8, wellKnownText.c_str());
