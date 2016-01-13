@@ -90,6 +90,8 @@ struct ECNameValidation
 private:
 /*__PUBLISH_SECTION_END__*/
     static void AppendEncodedCharacter (WStringR encoded, WChar c);
+public:
+    ECOBJECTS_EXPORT static Utf8String             EncodeToValidName(Utf8StringCR name);
 /*__PUBLISH_SECTION_START__*/
 public:
 
@@ -214,12 +216,15 @@ private:
     ECCustomAttributeCollection         m_supplementedCustomAttributes;
     SchemaWriteStatus                   AddCustomAttributeProperties (BeXmlNodeR oldNode, BeXmlNodeR newNode) const;
 
-    IECInstancePtr                      GetCustomAttributeInternal(Utf8StringCR className, bool includeBaseClasses, bool includeSupplementalAttributes) const;
+    IECInstancePtr                      GetCustomAttributeInternal(Utf8StringCR schemaName, Utf8StringCR className, bool includeBaseClasses, bool includeSupplementalAttributes) const;
     IECInstancePtr                      GetCustomAttributeInternal(ECClassCR ecClass, bool includeBaseClasses, bool includeSupplementalAttributes) const;
 
     ECObjectsStatus                     SetCustomAttributeInternal(ECCustomAttributeCollection& customAttributeCollection, IECInstanceR customAttributeInstance, bool requireSchemaReference = false);
     //! Does not check if the container's ECSchema references the requisite ECSchema(s). @see SupplementedSchemaBuilder::SetMergedCustomAttribute
     ECObjectsStatus                     SetPrimaryCustomAttribute(IECInstanceR customAttributeInstance);
+
+    //! LEGECY METHOD
+    IECInstancePtr                      GetCustomAttributeInternal(Utf8StringCR className, bool includeBaseClasses, bool includeSupplementalAttributes) const;
 
 protected:
     //! Does not check if the container's ECSchema references the requisite ECSchema(s). @see SupplementedSchemaBuilder::SetMergedCustomAttribute
@@ -242,21 +247,25 @@ public:
     ECSchemaP                           GetContainerSchema();
     //! Retrieves the local custom attribute matching the class name.  If the attribute is not 
     //! a supplemented attribute it will be copied and added to the supplemented list before it is returned.
+    IECInstancePtr                      GetLocalAttributeAsSupplemented(Utf8StringCR schemaName, Utf8StringCR className);
+
+    //! LEGECY METHOD
     IECInstancePtr                      GetLocalAttributeAsSupplemented(Utf8StringCR className);
 
 //__PUBLISH_SECTION_START__
 public:
     //! Returns true if the container has a custom attribute of a class of the specified name
-    ECOBJECTS_EXPORT bool               IsDefined (Utf8StringCR className) const;
+    ECOBJECTS_EXPORT bool               IsDefined (Utf8StringCR schemaName, Utf8StringCR className) const;
     //! Returns true if the container has a custom attribute of a class of the specified class definition
     ECOBJECTS_EXPORT bool               IsDefined (ECClassCR classDefinition) const;
 
     //! Retrieves the custom attribute matching the class name.  Includes supplemental custom attributes
     //! and custom attributes from the base containers
+    //! @param[in]  schemaName  The name of the schema the CustomAttribute is defined in
     //! @param[in]  className   The name of the CustomAttribute Class to look for an instance of
     //! @returns An IECInstancePtr.  If IsValid(), will be the matching custom attribute.  Otherwise, no instance of
     //! the custom attribute was found on the container.
-    ECOBJECTS_EXPORT IECInstancePtr     GetCustomAttribute(Utf8StringCR className) const;
+    ECOBJECTS_EXPORT IECInstancePtr     GetCustomAttribute(Utf8StringCR schemaName, Utf8StringCR className) const;
 
     //! Retrieves the custom attribute matching the class definition.  Includes supplemental custom attributes
     //! and custom attributes from the base containers
@@ -267,10 +276,11 @@ public:
 
     //! Retrieves the custom attribute matching the class name.  Includes supplemental custom attributes
     //! but not base containers
+    //! @param[in]  schemaName  The name of the schema the CustomAttribute is defined in
     //! @param[in]  className   The name of the CustomAttribute Class to look for an instance of
     //! @returns An IECInstancePtr.  If IsValid(), will be the matching custom attribute.  Otherwise, no instance of
     //! the custom attribute was found on the container.
-    ECOBJECTS_EXPORT IECInstancePtr     GetCustomAttributeLocal(Utf8StringCR className) const;
+    ECOBJECTS_EXPORT IECInstancePtr     GetCustomAttributeLocal(Utf8StringCR schemaName, Utf8StringCR className) const;
 
     //! Retrieves the custom attribute matching the class definition.  Includes supplemental custom attributes
     //! but not base containers
@@ -281,10 +291,11 @@ public:
 
     //! Retrieves the custom attribute matching the class name.  Includes custom attributes from base containers
     //! but not supplemental custom attributes
+    //! @param[in]  schemaName  The name of the schema the CustomAttribute is defined in
     //! @param[in]  className   The name of the CustomAttribute Class to look for an instance of
     //! @returns An IECInstancePtr.  If IsValid(), will be the matching custom attribute.  Otherwise, no instance of
     //! the custom attribute was found on the container.
-    ECOBJECTS_EXPORT IECInstancePtr     GetPrimaryCustomAttribute(Utf8StringCR className) const;
+    ECOBJECTS_EXPORT IECInstancePtr     GetPrimaryCustomAttribute(Utf8StringCR schemaName, Utf8StringCR className) const;
 
     //! Retrieves the custom attribute matching the class definition.  Includes custom attributes from base containers
     //! but not supplemental custom attributes
@@ -305,8 +316,9 @@ public:
     ECOBJECTS_EXPORT ECObjectsStatus    SetCustomAttribute(IECInstanceR customAttributeInstance);
 
     //! Removes a custom attribute from the container
+    //! @param[in]  schemaName  The name of the schema the CustomAttribute is defined in
     //! @param[in]  className   Name of the class of the custom attribute to remove
-    ECOBJECTS_EXPORT bool               RemoveCustomAttribute(Utf8StringCR className);
+    ECOBJECTS_EXPORT bool               RemoveCustomAttribute(Utf8StringCR schemaName, Utf8StringCR className);
 
     //! Removes a custom attribute from the container
     //! @param[in]  classDefinition ECClass of the custom attribute to remove
@@ -316,6 +328,12 @@ public:
     //! @param[in]  classDefinition ECClass of the custom attribute to remove
     ECOBJECTS_EXPORT bool               RemoveSupplementedCustomAttribute(ECClassCR classDefinition);
 
+    //! LEGECY METHODS
+    ECOBJECTS_EXPORT bool               IsDefined(Utf8StringCR className) const;
+    ECOBJECTS_EXPORT IECInstancePtr     GetCustomAttribute(Utf8StringCR className) const;
+    ECOBJECTS_EXPORT IECInstancePtr     GetCustomAttributeLocal(Utf8StringCR className) const;
+    ECOBJECTS_EXPORT IECInstancePtr     GetPrimaryCustomAttribute(Utf8StringCR className) const;
+    ECOBJECTS_EXPORT bool               RemoveCustomAttribute(Utf8StringCR className);
 };
 
 //=======================================================================================
@@ -1276,7 +1294,7 @@ public:
     //! Adds a base class
     //! You cannot add a base class if it creates a cycle. For example, if A is a base class
     //! of B, and B is a base class of C, you cannot make C a base class of A. Attempting to do
-    //! so will return an error.
+    //! so will return an error. You also can't add a base class to final classes
     //! Note: baseClass must be of same derived class type
     //! @param[in] baseClass The class to derive from
     ECOBJECTS_EXPORT ECObjectsStatus AddBaseClass(ECClassCR baseClass);
@@ -2253,6 +2271,10 @@ public:
     ECOBJECTS_EXPORT bool       FromAccessString (ECN::ECEnablerCR rootEnabler, Utf8CP accessString);
 //__PUBLISH_SECTION_END__
     ECOBJECTS_EXPORT bool       Remap (ECSchemaCR pre, ECSchemaCR post, IECSchemaRemapperCR remapper);
+
+    Utf8StringR                    GetSchemaNameR()    { return m_schemaName; }
+    Utf8StringR                    GetClassNameR()     { return m_className; }
+    Utf8StringR                    GetAccessStringR()  { return m_accessString; }
 //__PUBLISH_SECTION_START__
     };
 

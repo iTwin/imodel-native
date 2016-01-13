@@ -2,7 +2,7 @@
 |
 |     $Source: test/NonPublished/ECExpressionTests.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "../ECObjectsTestPCH.h"
@@ -378,20 +378,20 @@ TEST_F (LiteralExpressionTests, StringSymbols)
     bvector<Utf8String> requiredSymbolSets;  
     
     // native ECExpression processing ignores the list of requiredSymbolSets and publishes all symbols from all symbol providers.
-    TestExpressionEquals (requiredSymbolSets, "System.String.ToUpper(\"loweR\")", ECValue(L"LOWER"));
-    TestExpressionEquals (requiredSymbolSets, "System.String.ToLower(\"LOwEr\")", ECValue(L"lower"));
+    TestExpressionEquals (requiredSymbolSets, "System.String.ToUpper(\"loweR\")", ECValue("LOWER"));
+    TestExpressionEquals (requiredSymbolSets, "System.String.ToLower(\"LOwEr\")", ECValue("lower"));
     TestExpressionEquals (requiredSymbolSets, "System.String.IndexOf(\"squid SQUID SQUID squid\", \"QUID\")", ECValue(7));
     TestExpressionEquals (requiredSymbolSets, "System.String.LastIndexOf(\"squid SQUID SQUID squid\", \"QUID\")", ECValue(13));
     TestExpressionEquals (requiredSymbolSets, "System.String.Length(\"12345678\")", ECValue(8));
-    TestExpressionEquals (requiredSymbolSets, "System.String.SubString(\"dogCATdog\", 3, 3)", ECValue(L"CAT"));
-    TestExpressionEquals (requiredSymbolSets, "System.String.Trim(\"  is \t trimmed\t\t\n\")", ECValue(L"is \t trimmed"));
-    TestExpressionEquals (requiredSymbolSets, "IIf(System.String.Contains(\"thing\", \"in\"), \"true\", \"false\")", ECValue(L"true"));
-    TestExpressionEquals (requiredSymbolSets, "IIf(System.String.Contains(\"thing\", \"In\"), \"true\", \"false\")", ECValue(L"false"));
+    TestExpressionEquals (requiredSymbolSets, "System.String.SubString(\"dogCATdog\", 3, 3)", ECValue("CAT"));
+    TestExpressionEquals (requiredSymbolSets, "System.String.Trim(\"  is \t trimmed\t\t\n\")", ECValue("is \t trimmed"));
+    TestExpressionEquals (requiredSymbolSets, "IIf(System.String.Contains(\"thing\", \"in\"), \"true\", \"false\")", ECValue("true"));
+    TestExpressionEquals (requiredSymbolSets, "IIf(System.String.Contains(\"thing\", \"In\"), \"true\", \"false\")", ECValue("false"));
 
-    TestExpressionEquals (requiredSymbolSets, "IIf(System.String.ContainsI(\"thing\",\"In\"),\"true\",\"false\")",   ECValue(L"true"));
-    TestExpressionEquals (requiredSymbolSets, "IIf(System.String.Compare(\"thing\",\"thing\"),\"true\",\"false\")",  ECValue(L"true"));
-    TestExpressionEquals (requiredSymbolSets, "IIf(System.String.Compare(\"thing\",\"THING\"),\"true\",\"false\")",  ECValue(L"false"));
-    TestExpressionEquals (requiredSymbolSets, "IIf(System.String.CompareI(\"thing\",\"THING\"),\"true\",\"false\")", ECValue(L"true"));
+    TestExpressionEquals (requiredSymbolSets, "IIf(System.String.ContainsI(\"thing\",\"In\"),\"true\",\"false\")",   ECValue("true"));
+    TestExpressionEquals (requiredSymbolSets, "IIf(System.String.Compare(\"thing\",\"thing\"),\"true\",\"false\")",  ECValue("true"));
+    TestExpressionEquals (requiredSymbolSets, "IIf(System.String.Compare(\"thing\",\"THING\"),\"true\",\"false\")",  ECValue("false"));
+    TestExpressionEquals (requiredSymbolSets, "IIf(System.String.CompareI(\"thing\",\"THING\"),\"true\",\"false\")", ECValue("true"));
     }
 
  /*---------------------------------------------------------------------------------**//**
@@ -884,6 +884,130 @@ TEST_F (MethodsReturningInstancesTests, InstanceMethods)
     EXPECT_EQ (result.GetECValue()->GetInteger(), 2);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsistruct                                                    Paul.Connelly   08/15
++---------------+---------------+---------------+---------------+---------------+------*/
+struct ExpressionRemappingTest : ECTestFixture, IECSchemaRemapper
+    {
+private:
+    ECSchemaPtr     m_preSchema;
+    ECSchemaPtr     m_postSchema;
+
+    ECSchemaPtr     CreateSchema (bool rename);
+
+    Utf8String         GetName (Utf8CP name, bool rename) const
+        {
+        Utf8String newName (name);
+        if (rename)
+            newName.ToUpper();
+
+        return newName;
+        }
+
+    Utf8String         GetOldName (Utf8CP name) const
+        {
+        Utf8String oldName (name);
+        oldName.ToLower();
+        return oldName;
+        }
+
+    virtual bool    _ResolveClassName (Utf8StringR className, ECSchemaCR schema) const override
+        {
+        if (&schema != m_postSchema.get() || nullptr == m_preSchema->GetClassCP (GetOldName (className.c_str()).c_str()))
+            return false;
+
+        className.ToUpper();
+        return true;
+        }
+    virtual bool    _ResolvePropertyName (Utf8StringR propName, ECClassCR ecClass) const override
+        {
+        if (&ecClass.GetSchema() == m_postSchema.get())
+            {
+            ECClassCP oldClass = m_preSchema->GetClassCP (GetOldName (ecClass.GetName().c_str()).c_str());
+            if (nullptr != oldClass && nullptr != oldClass->GetPropertyP (propName.c_str()))
+                {
+                propName.ToUpper();
+                return true;
+                }
+            }
+
+        return false;
+        }
+
+public:
+    ExpressionRemappingTest() : m_preSchema (CreateSchema (false)), m_postSchema (CreateSchema (true)) { }
+
+    void            Expect (Utf8CP input, Utf8CP output)
+        {
+        NodePtr expr = ECEvaluator::ParseValueExpressionAndCreateTree (input);
+        EXPECT_NOT_NULL (expr.get());
+
+        Utf8String str = expr->ToExpressionString();
+        EXPECT_TRUE (str.Equals (input)) << "Input: " << input << " Round-tripped: " << str.c_str();
+
+        bool anyRemapped = expr->Remap (*m_preSchema, *m_postSchema, *this);
+        EXPECT_EQ (anyRemapped, 0 != strcmp (input, output));
+
+        str = expr->ToExpressionString();
+        EXPECT_TRUE (str.Equals (output)) << "Expected: " << output << " Actual: " << str.c_str() << " Input: " << input;
+        }
+    };
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   08/15
++---------------+---------------+---------------+---------------+---------------+------*/
+ECSchemaPtr ExpressionRemappingTest::CreateSchema (bool rename)
+    {
+    ECSchemaPtr schema;
+    ECSchema::CreateSchema (schema, GetName ("schema", rename), 1, 0);
+
+    ECStructClassP structClass;
+    schema->CreateStructClass (structClass, GetName ("struct", rename));
+
+    ECStructClassP subStructClass;
+    schema->CreateStructClass(subStructClass, GetName ("substruct", rename));
+
+    PrimitiveECPropertyP primProp;
+    subStructClass->CreatePrimitiveProperty (primProp, GetName ("bool", rename), PRIMITIVETYPE_Boolean);
+
+    StructECPropertyP structProp;
+    structClass->CreateStructProperty (structProp, GetName ("substruct", rename), *subStructClass);
+    structClass->CreatePrimitiveProperty (primProp, GetName ("int", rename), PRIMITIVETYPE_Integer);
+
+    ECEntityClassP ecClass;
+    schema->CreateEntityClass (ecClass, GetName ("class", rename));
+
+    ecClass->CreatePrimitiveProperty (primProp, GetName ("string", rename), PRIMITIVETYPE_String);
+
+    ArrayECPropertyP arrayProp;
+    ecClass->CreateArrayProperty (arrayProp, GetName ("doubles", rename), PRIMITIVETYPE_Double);
+    
+    StructArrayECPropertyP structArrayProp;
+    ecClass->CreateStructArrayProperty (structArrayProp, GetName ("structs", rename), structClass);
+    ecClass->CreateStructProperty (structProp, GetName ("struct", rename), *structClass);
+
+    return schema;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   08/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (ExpressionRemappingTest, Remap)
+    {
+    static Utf8CP s_expressions[][2] =
+        {
+            { "this.schema::class::string", "this.SCHEMA::CLASS::STRING" },
+            { "this.schema::class::doubles[0]", "this.SCHEMA::CLASS::DOUBLES[0]" },
+            { "this.schema::class::struct.int", "this.SCHEMA::CLASS::STRUCT.INT" },
+            { "this.schema::class::struct.substruct.bool", "this.SCHEMA::CLASS::STRUCT.SUBSTRUCT.BOOL" },
+            { "this.schema::class::structs[0].int", "this.SCHEMA::CLASS::STRUCTS[0].INT" },
+            { "this.schema::class::structs[0].substruct.bool", "this.SCHEMA::CLASS::STRUCTS[0].SUBSTRUCT.BOOL" },
+            { "System.String.CompareI(this.DgnCustomItemTypes_Schema::Class::Struct.Prop,\"abc\")", "System.String.CompareI(this.DgnCustomItemTypes_Schema::Class::Struct.Prop,\"abc\")" },
+        };
+
+    for (auto const& pair : s_expressions)
+        Expect (pair[0], pair[1]);
+    }
 
 END_BENTLEY_ECN_TEST_NAMESPACE
 

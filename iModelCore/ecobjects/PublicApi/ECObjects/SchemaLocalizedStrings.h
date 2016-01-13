@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/ECObjects/SchemaLocalizedStrings.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -28,7 +28,7 @@ private:
 
     static bool TryGetStringValue(IECInstanceCR instance, Utf8StringR value, Utf8CP accessString);
     static bool TryGetBoolValue(IECInstanceCR instance, bool & value, Utf8CP accessString);
-    static ECObjectsStatus ParseCaKeyString(Utf8StringR containerAccessor, Utf8StringR caClassName, Utf8StringR propertyAccessor, Utf8StringCR keyString, size_t prefixLength, size_t atIndex);
+    static ECObjectsStatus ParseCaKeyString(Utf8StringR containerAccessor, Utf8StringR caSchemaName, Utf8StringR caClassName, Utf8StringR propertyAccessor, Utf8StringCR keyString, size_t prefixLength, size_t atIndex);
     static ECObjectsStatus ParseContainerAccessor(Utf8StringR className, Utf8StringR relEndPoint, Utf8StringR propertyName, Utf8StringCR containerAccessor);
     static IECCustomAttributeContainerP GetContainer(Utf8StringCR containerAccessor, ECSchemaR primarySchema);
     static IECCustomAttributeContainerP GetClassContainer(Utf8StringCR className, Utf8StringCR relEndPoint, ECSchemaR primarySchema);

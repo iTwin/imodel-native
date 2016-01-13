@@ -2,7 +2,7 @@
 |
 |     $Source: src/SupplementalSchema.cpp $
 |
-|   $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -32,6 +32,7 @@ bool isUserSpecific
     }
 
 Utf8CP SupplementalSchemaMetaData::s_customAttributeAccessor = "SupplementalSchemaMetaData";
+Utf8CP SupplementalSchemaMetaData::s_customAttributeSchemaName = "Bentley_Standard_CustomAttributes";
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                03/2012
@@ -93,6 +94,14 @@ SupplementalSchemaMetaDataPtr SupplementalSchemaMetaData::Create(IECInstanceCR s
 Utf8CP SupplementalSchemaMetaData::GetCustomAttributeAccessor()
     {
     return s_customAttributeAccessor;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Stefan.Apfel                    09/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8CP SupplementalSchemaMetaData::GetCustomAttributeSchemaName()
+    {
+    return s_customAttributeSchemaName;
     }
 
 static Utf8CP s_primarySchemaNameAccessor = "PrimarySchemaName";
@@ -158,7 +167,7 @@ SupplementalSchemaMetaDataPtr& supplementalSchemaMetadata,
 ECSchemaCR supplementalSchema
 )
     {
-    IECInstancePtr supplementalSchemaMetaDataCustomAttribute = supplementalSchema.GetCustomAttribute(GetCustomAttributeAccessor());
+    IECInstancePtr supplementalSchemaMetaDataCustomAttribute = supplementalSchema.GetCustomAttribute(GetCustomAttributeSchemaName(), GetCustomAttributeAccessor());
     if (!supplementalSchemaMetaDataCustomAttribute.IsValid())
         return false;
 
@@ -190,7 +199,7 @@ ECSchemaP supplementalSchema
     if (NULL == supplementalSchema)
         return false;
 
-    return supplementalSchema->IsDefined(GetCustomAttributeAccessor());
+    return supplementalSchema->IsDefined(GetCustomAttributeSchemaName(), GetCustomAttributeAccessor());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1103,6 +1112,7 @@ SchemaPrecedence precedence
     }
 
 Utf8CP SupplementalSchemaInfo::s_customAttributeAccessor = "SupplementalProvenance";
+Utf8CP SupplementalSchemaInfo::s_customAttributeSchemaName = "Bentley_Standard_CustomAttributes";
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                05/2012
@@ -1245,6 +1255,14 @@ Utf8StringCR purpose
 Utf8CP SupplementalSchemaInfo::GetCustomAttributeAccessor()
     {
     return s_customAttributeAccessor;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Stefan.Apfel                    09/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8CP SupplementalSchemaInfo::GetCustomAttributeSchemaName()
+    {
+    return s_customAttributeSchemaName;
     }
 
 /*---------------------------------------------------------------------------------**//**

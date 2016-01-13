@@ -2,7 +2,7 @@
 |
 |     $Source: test/Published/SupplementalSchemaTests.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "../ECObjectsTestPCH.h"
@@ -641,7 +641,7 @@ struct SupplementedSchemaBuilderTests : SchemaHolderTestFixture
 
         void ValidateSystemInfoCustomAttribute(IECCustomAttributeContainerP consolidatedContainer, Utf8CP expectedValue1, Utf8CP expectedValue2)
             {
-            IECInstancePtr customAttribute = consolidatedContainer->GetCustomAttribute("SystemInfo");
+            IECInstancePtr customAttribute = consolidatedContainer->GetCustomAttribute("Test_Custom_Attributes", "SystemInfo");
             EXPECT_TRUE(customAttribute.IsValid());
             ECValue ecValue;
             customAttribute->GetValue(ecValue, "Data1");
@@ -653,7 +653,7 @@ struct SupplementedSchemaBuilderTests : SchemaHolderTestFixture
 
         void ValidateUselessInfoCustomAttribute(IECCustomAttributeContainerP consolidatedContainer, Utf8CP expectedValue1, Utf8CP expectedValue2)
             {
-            IECInstancePtr customAttribute = consolidatedContainer->GetCustomAttribute("UselessInfo");
+            IECInstancePtr customAttribute = consolidatedContainer->GetCustomAttribute("Test_Custom_Attributes", "UselessInfo");
             EXPECT_TRUE(customAttribute.IsValid());
             ECValue ecValue;
             customAttribute->GetValue(ecValue, "NothingImportant");

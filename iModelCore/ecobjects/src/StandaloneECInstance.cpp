@@ -2,7 +2,7 @@
 |
 |     $Source: src/StandaloneECInstance.cpp $
 |
-|   $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
@@ -48,7 +48,7 @@ MemoryECInstanceBase::MemoryECInstanceBase (ClassLayoutCR classLayout, uint32_t 
     m_data = (Byte*)malloc (size);
     m_bytesAllocated = size;
 
-    InitializeMemory (classLayout, m_data, m_bytesAllocated, ecClass.IsDefined ("PersistStringsAsUtf8"));
+    InitializeMemory (classLayout, m_data, m_bytesAllocated, ecClass.IsDefined ("Bentley_Standard_CustomAttributes", "PersistStringsAsUtf8"));
     
     InitializePerPropertyFlags (classLayout, DEFAULT_NUMBITSPERPROPERTY);
     }

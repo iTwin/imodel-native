@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/ECObjects/StandardCustomAttributeHelper.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -14,6 +14,11 @@
 #include <ECObjects/ECInstance.h>
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
+//! @addtogroup ECObjectsGroup
+//! @beginGroup
+
+
+
 //=======================================================================================    
 //! DateTimeInfo contains the meta data held by the custom attribute \b %DateTimeInfo on an 
 //! ECProperty of type DgnPlatform::PRIMITIVETYPE_DateTime.
@@ -22,8 +27,6 @@ BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 //! contain metadata about the actual date time value (see DateTime::Info). 
 //! In order to preserve the metadata when persisting a DateTime, clients can decorate the respective
 //! ECProperty with the \b %DateTimeInfo custom attribute from the standard ECSchema \b Bentley_Standard_CustomAttributes.
-//! @addtogroup ECObjectsGroup
-//! @beginGroup
 //! @bsiclass
 //=======================================================================================    
 struct DateTimeInfo
@@ -117,6 +120,7 @@ struct StandardCustomAttributeHelper : NonCopyableClass
 private:
     static Utf8CP const SYSTEMSCHEMA_CA_NAME;
     static Utf8CP const DYNAMICSCHEMA_CA_NAME;
+	static Utf8CP const SYSTEMSCHEMA_CA_SCHEMA;
 
     //static class
     StandardCustomAttributeHelper ();

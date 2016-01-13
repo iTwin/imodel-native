@@ -2,7 +2,7 @@
 |
 |     $Source: src/ECInstance.cpp $
 |
-|   $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
@@ -78,7 +78,7 @@ ICustomECStructSerializerP                      CustomStructSerializerManager::G
         return NULL;
 
     // see if the struct has a custom attribute to custom serialize itself
-    IECInstancePtr caInstance = structProperty->GetType().GetCustomAttribute("CustomStructSerializer");
+    IECInstancePtr caInstance = structProperty->GetType().GetCustomAttribute("Bentley_Standard_CustomAttributes", "CustomStructSerializer");
     if (caInstance.IsValid())
         {
         ECValue value;
@@ -1905,7 +1905,7 @@ bool  ECInstanceInteropHelper::IsCalculatedECProperty  (IECInstanceCR instance, 
     if (NULL == ecProperty)
         return false;
 
-    return ecProperty->IsDefined ("CalculatedECPropertySpecification");
+    return ecProperty->IsDefined ("Bentley_Standard_CustomAttributes", "CalculatedECPropertySpecification");
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2116,7 +2116,7 @@ Utf8String                         IECInstance::ToString (Utf8CP indent) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 static bool getInstanceLabelPropertyNameFromClass (Utf8StringR propertyName, ECClassCR ecClass, bool& alwaysUseClassLabel)
     {
-    IECInstancePtr caInstance = ecClass.GetCustomAttribute ("InstanceLabelSpecification");
+    IECInstancePtr caInstance = ecClass.GetCustomAttribute ("Bentley_Standard_CustomAttributes", "InstanceLabelSpecification");
     if (caInstance.IsValid())
         {
         ECValue value;
@@ -2127,7 +2127,7 @@ static bool getInstanceLabelPropertyNameFromClass (Utf8StringR propertyName, ECC
             }
         }
 
-    if (ecClass.GetCustomAttribute ("ClassLabelIsInstanceLabel").IsValid())
+    if (ecClass.GetCustomAttribute ("Bentley_Standard_CustomAttributes", "ClassLabelIsInstanceLabel").IsValid())
         {
         alwaysUseClassLabel = true;
         return false;

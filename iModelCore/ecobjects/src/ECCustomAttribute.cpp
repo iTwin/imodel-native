@@ -2,7 +2,7 @@
 |
 |     $Source: src/ECCustomAttribute.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -102,16 +102,15 @@ ECCustomAttributeCollection& returnList
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                06/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool IECCustomAttributeContainer::IsDefined
-(
-Utf8StringCR className
-) const
+bool IECCustomAttributeContainer::IsDefined (Utf8StringCR schemaName, Utf8StringCR className) const
     {
     ECCustomAttributeCollection::const_iterator iter;
     for (iter = m_primaryCustomAttributes.begin(); iter != m_primaryCustomAttributes.end(); iter++)
         {
         ECClassCR currentClass = (*iter)->GetClass();
-        if (0 == className.compare(currentClass.GetName()))
+        ECSchemaCR classSchema = currentClass.GetSchema();
+        if (0 == className.compare(currentClass.GetName()) &&
+            0 == schemaName.compare(classSchema.GetName()))
             return true;
         }
 
@@ -120,7 +119,7 @@ Utf8StringCR className
     _GetBaseContainers(baseContainers);
     for (IECCustomAttributeContainerP container: baseContainers)
         {
-        if (container->IsDefined(className))
+        if (container->IsDefined(schemaName, className))
             return true;
         }
     return false;
@@ -157,6 +156,7 @@ ECClassCR classDefinition
 +---------------+---------------+---------------+---------------+---------------+------*/
 IECInstancePtr IECCustomAttributeContainer::GetCustomAttributeInternal
 (
+Utf8StringCR schemaName,
 Utf8StringCR className,
 bool      includeBaseClasses,
 bool      includeSupplementalAttributes
@@ -170,7 +170,10 @@ bool      includeSupplementalAttributes
         for (iter = m_supplementedCustomAttributes.begin(); iter != m_supplementedCustomAttributes.end(); iter++)
             {
             ECClassCR currentClass = (*iter)->GetClass();
-            if (0 == className.compare(currentClass.GetName()))
+            ECSchemaCR classSchema = currentClass.GetSchema();
+
+            if (0 == className.compare(currentClass.GetName()) &&
+                0 == schemaName.compare(classSchema.GetName()))
                 {
                 return *iter;
                 }
@@ -180,7 +183,10 @@ bool      includeSupplementalAttributes
     for (iter = m_primaryCustomAttributes.begin(); iter != m_primaryCustomAttributes.end(); iter++)
         {
         ECClassCR currentClass = (*iter)->GetClass();
-        if (0 == className.compare(currentClass.GetName()))
+        ECSchemaCR classSchema = currentClass.GetSchema();
+
+        if (0 == className.compare(currentClass.GetName()) &&
+            0 == schemaName.compare(classSchema.GetName()))
             {
             return *iter;
             }
@@ -192,7 +198,7 @@ bool      includeSupplementalAttributes
     _GetBaseContainers(baseContainers);
     for (IECCustomAttributeContainerP container: baseContainers)
         {
-        result = container->GetCustomAttribute(className);
+        result = container->GetCustomAttribute(schemaName, className);
         if (result.IsValid())
             return result;
         }
@@ -202,12 +208,15 @@ bool      includeSupplementalAttributes
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Colin.Kerr                      05/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-IECInstancePtr IECCustomAttributeContainer::GetLocalAttributeAsSupplemented(Utf8StringCR className)
+IECInstancePtr IECCustomAttributeContainer::GetLocalAttributeAsSupplemented(Utf8StringCR schemaName, Utf8StringCR className)
     {
     for(auto const& caIter : m_supplementedCustomAttributes)
         {
         ECClassCR caClass = caIter->GetClass();
-        if (0 == className.compare(caClass.GetName()))
+        ECSchemaCR caSchema = caClass.GetSchema();
+
+        if (0 == className.compare(caClass.GetName()) &&
+            0 == schemaName.compare(caSchema.GetName()))
             return caIter;
         }
     
@@ -215,7 +224,10 @@ IECInstancePtr IECCustomAttributeContainer::GetLocalAttributeAsSupplemented(Utf8
     for(auto const& caIter : m_primaryCustomAttributes)
         {
         ECClassCR caClass = caIter->GetClass();
-        if(0 == className.compare(caClass.GetName()))
+        ECSchemaCR caSchema = caClass.GetSchema();
+
+        if(0 == className.compare(caClass.GetName()) &&
+           0 == schemaName.compare(caSchema.GetName()))
             {
             customAttribute = caIter;
             break;
@@ -235,10 +247,11 @@ IECInstancePtr IECCustomAttributeContainer::GetLocalAttributeAsSupplemented(Utf8
 +---------------+---------------+---------------+---------------+---------------+------*/
 IECInstancePtr IECCustomAttributeContainer::GetCustomAttribute
 (
+Utf8StringCR schemaName,
 Utf8StringCR className
 ) const
     {
-    return GetCustomAttributeInternal (className, true, true);
+    return GetCustomAttributeInternal (schemaName, className, true, true);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -246,10 +259,11 @@ Utf8StringCR className
 +---------------+---------------+---------------+---------------+---------------+------*/
 IECInstancePtr IECCustomAttributeContainer::GetPrimaryCustomAttribute
 (
+Utf8StringCR schemaName,
 Utf8StringCR className
 ) const
     {
-    return GetCustomAttributeInternal (className, true, false);
+    return GetCustomAttributeInternal (schemaName, className, true, false);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -257,10 +271,11 @@ Utf8StringCR className
 +---------------+---------------+---------------+---------------+---------------+------*/
 IECInstancePtr IECCustomAttributeContainer::GetCustomAttributeLocal
 (
+Utf8StringCR schemaName,
 Utf8StringCR className
 ) const
     {
-    return GetCustomAttributeInternal(className, false, true);
+    return GetCustomAttributeInternal(schemaName, className, false, true);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -471,6 +486,7 @@ IECInstanceR customAttributeInstance
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool IECCustomAttributeContainer::RemoveCustomAttribute
 (
+Utf8StringCR schemaName,
 Utf8StringCR className
 )
     {
@@ -478,7 +494,10 @@ Utf8StringCR className
     for (iter = m_primaryCustomAttributes.begin(); iter != m_primaryCustomAttributes.end(); iter++)
         {
         ECClassCR currentClass = (*iter)->GetClass();
-        if (0 == className.compare(currentClass.GetName()))
+        ECSchemaCR classSchema = currentClass.GetSchema();
+
+        if (0 == className.compare(currentClass.GetName()) &&
+            0 == schemaName.compare(classSchema.GetName()))
             {
             m_primaryCustomAttributes.erase(iter);
             return true;
@@ -581,8 +600,6 @@ BeXmlWriterR xmlWriter
         return SchemaWriteStatus::Success;
 
     SchemaWriteStatus   status = SchemaWriteStatus::Success;
-    WString             customAttributeXml;
-
     ECCustomAttributeCollection::const_iterator iter;
     if (m_primaryCustomAttributes.begin() == m_primaryCustomAttributes.end())
         return status;
@@ -745,5 +762,165 @@ bool includeSupplementalAttributes
 ECCustomAttributeInstanceIterable::IteratorState::~IteratorState()
     {
     delete m_customAttributes;
+    }
+			
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                06/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+bool IECCustomAttributeContainer::IsDefined (Utf8StringCR className) const
+    {
+    ECCustomAttributeCollection::const_iterator iter;
+    for (iter = m_primaryCustomAttributes.begin(); iter != m_primaryCustomAttributes.end(); iter++)
+        {
+        ECClassCR currentClass = (*iter)->GetClass();
+        if (0 == className.compare(currentClass.GetName()))
+            return true;
+        }
+
+    // check base containers
+    bvector<IECCustomAttributeContainerP> baseContainers;
+    _GetBaseContainers(baseContainers);
+    for (IECCustomAttributeContainerP container: baseContainers)
+        {
+        if (container->IsDefined(className))
+            return true;
+        }
+    return false;
+    }
+		
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                06/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+IECInstancePtr IECCustomAttributeContainer::GetCustomAttributeInternal
+(
+Utf8StringCR className,
+bool      includeBaseClasses,
+bool      includeSupplementalAttributes
+) const
+    {
+    IECInstancePtr result;
+    ECCustomAttributeCollection::const_iterator iter;
+
+    if (includeSupplementalAttributes)
+        {
+        for (iter = m_supplementedCustomAttributes.begin(); iter != m_supplementedCustomAttributes.end(); iter++)
+            {
+            ECClassCR currentClass = (*iter)->GetClass();
+            if (0 == className.compare(currentClass.GetName()))
+                {
+                return *iter;
+                }
+            }
+        }
+
+    for (iter = m_primaryCustomAttributes.begin(); iter != m_primaryCustomAttributes.end(); iter++)
+        {
+        ECClassCR currentClass = (*iter)->GetClass();
+        if (0 == className.compare(currentClass.GetName()))
+            {
+            return *iter;
+            }
+        }
+
+    if (!includeBaseClasses)
+        return NULL;
+    bvector<IECCustomAttributeContainerP> baseContainers;
+    _GetBaseContainers(baseContainers);
+    for (IECCustomAttributeContainerP container: baseContainers)
+        {
+        result = container->GetCustomAttribute(className);
+        if (result.IsValid())
+            return result;
+        }
+    return result;
+    }
+		
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Colin.Kerr                      05/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+IECInstancePtr IECCustomAttributeContainer::GetLocalAttributeAsSupplemented
+(
+Utf8StringCR className
+)
+    {
+    for(auto const& caIter : m_supplementedCustomAttributes)
+        {
+        ECClassCR caClass = caIter->GetClass();
+        if (0 == className.compare(caClass.GetName()))
+            return caIter;
+        }
+    
+    IECInstancePtr customAttribute;
+    for(auto const& caIter : m_primaryCustomAttributes)
+        {
+        ECClassCR caClass = caIter->GetClass();
+        if(0 == className.compare(caClass.GetName()))
+            {
+            customAttribute = caIter;
+            break;
+            }
+        }
+
+    if (!customAttribute.IsValid())
+        return customAttribute;
+
+    IECInstancePtr caCopy = customAttribute->CreateCopyThroughSerialization();
+    SetSupplementedCustomAttribute(*caCopy);
+    return caCopy;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                06/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+IECInstancePtr IECCustomAttributeContainer::GetCustomAttribute
+(
+Utf8StringCR className
+) const
+    {
+    return GetCustomAttributeInternal (className, true, true);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                05/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+IECInstancePtr IECCustomAttributeContainer::GetPrimaryCustomAttribute
+(
+Utf8StringCR className
+) const
+    {
+    return GetCustomAttributeInternal (className, true, false);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Casey.Mullen      11/2011
++---------------+---------------+---------------+---------------+---------------+------*/
+IECInstancePtr IECCustomAttributeContainer::GetCustomAttributeLocal
+(
+Utf8StringCR className
+) const
+    {
+    return GetCustomAttributeInternal(className, false, true);
+    }
+		
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                06/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+bool IECCustomAttributeContainer::RemoveCustomAttribute
+(
+Utf8StringCR className
+)
+    {
+    ECCustomAttributeCollection::iterator iter;
+    for (iter = m_primaryCustomAttributes.begin(); iter != m_primaryCustomAttributes.end(); iter++)
+        {
+        ECClassCR currentClass = (*iter)->GetClass();
+        if (0 == className.compare(currentClass.GetName()))
+            {
+            m_primaryCustomAttributes.erase(iter);
+            return true;
+            }
+        }
+
+    return false;
     }
 END_BENTLEY_ECOBJECT_NAMESPACE

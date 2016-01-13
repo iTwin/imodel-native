@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/ECObjects/SupplementalSchema.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -18,9 +18,11 @@ struct SupplementalSchemaMetaData;
 typedef RefCountedPtr<SupplementalSchemaMetaData> SupplementalSchemaMetaDataPtr;
 typedef bmap<Utf8String, Utf8String> SchemaNamePurposeMap;
 
-//=======================================================================================
 //! @addtogroup ECObjectsGroup
 //! @beginGroup
+
+
+//=======================================================================================
 //! Used to store the information from the SupplementalSchemaMetaData custom attribute.
 //! An example of the custom attribute:
 //! \code
@@ -47,6 +49,7 @@ private:
     bool   m_isUserSpecific;
 
     static Utf8CP s_customAttributeAccessor;
+	static Utf8CP s_customAttributeSchemaName;
 
 public:
     //! Constructor for SupplementalSchemaMetaData
@@ -132,6 +135,9 @@ public:
 // Statics
     //! Returns the string used to get the SupplementalSchemaMetaData custom attribute.
     ECOBJECTS_EXPORT static Utf8CP GetCustomAttributeAccessor();
+
+	//! Returns the string used to get the SupplementalSchemaMetaData custom attribute schema name.
+    ECOBJECTS_EXPORT static Utf8CP GetCustomAttributeSchemaName();
 
     //! Returns the string used to access the PrimarySchemaName property on the
     //! SupplementalSchemaMetaData custom attribute.
@@ -385,6 +391,7 @@ private:
     Utf8String     m_supplementedKey;
     SchemaNamePurposeMap  m_supplementalSchemaNamesAndPurpose;
     static Utf8CP s_customAttributeAccessor;
+	static Utf8CP s_customAttributeSchemaName;
 
 public:
     //! Constructs an instance of the SupplementalSchemaInfo class
@@ -427,6 +434,8 @@ public:
 
     //! Returns the string used to get the SupplementalSchemaMetaData custom attribute.
     static Utf8CP GetCustomAttributeAccessor();
+	//! Returns the string used to get the SupplementalSchemaMetaData custom attribute schema.
+	static Utf8CP GetCustomAttributeSchemaName();
     //__PUBLISH_SECTION_START__
 
     };

@@ -197,6 +197,15 @@
         </Bindings>
     </Part>
 
+    <!-- NuGet automatic packages generation -->
+    <Part Name="ECObjectsPackage" BMakeFile="install\NuGetPacking.mke" >
+        <SubPart PartName="ECObjectsNative" />
+        <RequiredRepository>bsitools-nuget</RequiredRepository>
+        <Bindings>
+            <Files ProductDirectoryName="ECObjectsNuGet">Install\ecobjects.nupkg</Files>
+        </Bindings>
+    </Part>
+
     <Product Name="ECObjects-PerformanceGtest" >
         <SubPart PartName="PerformanceGtest"/>
         <Directories DirectoryListName="GtestProduct" Repository="BeGTest" PartFile="BeGTest"/>

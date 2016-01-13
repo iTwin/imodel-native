@@ -100,6 +100,9 @@ ECPropertyId ECProperty::GetId () const
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ECProperty::SetName (Utf8StringCR name)
     {        
+    if (!ECNameValidation::IsValidName (name.c_str()))
+        return ECObjectsStatus::InvalidName;
+
     m_validatedName.SetName (name.c_str());
     return ECObjectsStatus::Success;
     }
@@ -627,7 +630,7 @@ ECObjectsStatus PrimitiveECProperty::SetType (ECEnumerationCR enumerationType)
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool PrimitiveECProperty::_IsCalculated() const
     {
-    return m_calculatedSpec.IsValid() || GetCustomAttribute ("CalculatedECPropertySpecification").IsValid();
+    return m_calculatedSpec.IsValid() || GetCustomAttribute ("Bentley_Standard_CustomAttributes", "CalculatedECPropertySpecification").IsValid();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -649,7 +652,7 @@ CalculatedPropertySpecificationCP PrimitiveECProperty::_GetCalculatedPropertySpe
 bool ArrayECProperty::_IsCalculated() const
     {
     if (ARRAYKIND_Primitive == GetKind())
-        return m_calculatedSpec.IsValid() || GetCustomAttribute ("CalculatedECPropertySpecification").IsValid();
+        return m_calculatedSpec.IsValid() || GetCustomAttribute ("Bentley_Standard_CustomAttributes", "CalculatedECPropertySpecification").IsValid();
     else
         return false;
     }
@@ -666,7 +669,7 @@ static bool setCalculatedPropertySpecification (CalculatedPropertySpecificationP
         }
     else
         {
-        IECInstancePtr oldAttr = ecprop.GetCustomAttribute ("CalculatedECPropertySpecification");
+        IECInstancePtr oldAttr = ecprop.GetCustomAttribute ("Bentley_Standard_CustomAttributes", "CalculatedECPropertySpecification");
         ecprop.SetCustomAttribute (*attr);
         CalculatedPropertySpecificationPtr newSpec = CalculatedPropertySpecification::Create (ecprop, primitiveType);
         if (newSpec.IsValid())
@@ -680,7 +683,7 @@ static bool setCalculatedPropertySpecification (CalculatedPropertySpecificationP
             if (oldAttr.IsValid())
                 ecprop.SetCustomAttribute (*oldAttr);
             else
-                ecprop.RemoveCustomAttribute ("CalculatedECPropertySpecification");
+                ecprop.RemoveCustomAttribute ("Bentley_Standard_CustomAttributes", "CalculatedECPropertySpecification");
 
             return false;
             }

@@ -188,6 +188,16 @@ bool ECNameValidation::EncodeToValidName (Utf8StringR output, Utf8StringCR input
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   08/15
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String ECNameValidation::EncodeToValidName (Utf8StringCR name)
+    {
+    Utf8String encoded;
+    EncodeToValidName (encoded, name);
+    return encoded;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/12
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8StringCR ECValidatedName::GetDisplayLabel() const
@@ -341,11 +351,14 @@ Utf8StringCR ECSchema::GetName () const
     }
 
 /*---------------------------------------------------------------------------------**//**
- @bsimethod
+ @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ECSchema::SetName (Utf8StringCR name)
-    {
-    if (m_immutable) return ECObjectsStatus::SchemaIsImmutable;
+    {        
+    if (m_immutable)
+        return ECObjectsStatus::SchemaIsImmutable;
+    else if (!ECNameValidation::IsValidName (name.c_str()))
+        return ECObjectsStatus::InvalidName;
 
     ECNameValidation::EncodeToValidName (m_key.m_schemaName, name);
     if (!m_hasExplicitDisplayLabel)
@@ -1462,7 +1475,8 @@ void ECSchema::SetSupplementalSchemaInfo(SupplementalSchemaInfo* info)
     {
     m_supplementalSchemaInfo = info;
     if (NULL == info)
-        this->RemoveCustomAttribute(SupplementalSchemaInfo::GetCustomAttributeAccessor());
+        this->RemoveCustomAttribute(SupplementalSchemaInfo::GetCustomAttributeSchemaName(), 
+		                            SupplementalSchemaInfo::GetCustomAttributeAccessor());
     else
         {
         IECInstancePtr attribute = info->CreateCustomAttribute();

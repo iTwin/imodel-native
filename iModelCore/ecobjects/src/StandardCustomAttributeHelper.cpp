@@ -2,7 +2,7 @@
 |
 |     $Source: src/StandardCustomAttributeHelper.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
@@ -296,6 +296,8 @@ IECInstancePtr StandardCustomAttributesSchemaHolder::CreateCustomAttributeInstan
 Utf8CP const StandardCustomAttributeHelper::SYSTEMSCHEMA_CA_NAME = "SystemSchema";
 //static
 Utf8CP const StandardCustomAttributeHelper::DYNAMICSCHEMA_CA_NAME = "DynamicSchema";
+//static
+Utf8CP const StandardCustomAttributeHelper::SYSTEMSCHEMA_CA_SCHEMA = "Bentley_Standard_CustomAttributes";
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                 02/2013
@@ -313,7 +315,7 @@ ECObjectsStatus StandardCustomAttributeHelper::GetDateTimeInfo (DateTimeInfoR da
 //static
 bool StandardCustomAttributeHelper::IsSystemSchema (ECSchemaCR schema)
     {
-    return schema.IsDefined (SYSTEMSCHEMA_CA_NAME);
+    return schema.IsDefined (SYSTEMSCHEMA_CA_SCHEMA, SYSTEMSCHEMA_CA_NAME);
     }
 
 //---------------------------------------------------------------------------------------
@@ -322,7 +324,7 @@ bool StandardCustomAttributeHelper::IsSystemSchema (ECSchemaCR schema)
 //static
 bool StandardCustomAttributeHelper::IsDynamicSchema (ECSchemaCR schema)
     {
-    return schema.IsDefined (DYNAMICSCHEMA_CA_NAME);
+    return schema.IsDefined (SYSTEMSCHEMA_CA_SCHEMA, DYNAMICSCHEMA_CA_NAME);
     }
 
 //---------------------------------------------------------------------------------------
@@ -350,7 +352,7 @@ ECObjectsStatus StandardCustomAttributeHelper::SetIsDynamicSchema (ECSchemaR sch
     if (!isDynamicExistingValue)
         return ECObjectsStatus::Success;
 
-    if (schema.RemoveCustomAttribute (DYNAMICSCHEMA_CA_NAME))
+    if (schema.RemoveCustomAttribute (SYSTEMSCHEMA_CA_SCHEMA, DYNAMICSCHEMA_CA_NAME))
         return ECObjectsStatus::Success;
 
     return ECObjectsStatus::Error;

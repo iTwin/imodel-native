@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/ECObjects/ECInstanceIterable.h $
 |
-|   $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -12,8 +12,10 @@
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
-//@addtogroup ECObjectsGroup
-//@beginGroup
+//! @addtogroup ECObjectsGroup
+//! @beginGroup
+
+
 /*---------------------------------------------------------------------------------**//**
 This is the iterator that is exposed using VirtualCollectionIterator. These virtual member
 functions delegate the iteration to the appropriate implementations of it based on the container

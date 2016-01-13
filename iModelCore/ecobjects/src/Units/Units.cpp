@@ -2,7 +2,7 @@
 |
 |     $Source: src/Units/Units.cpp $
 |
-|   $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
@@ -147,7 +147,7 @@ UnitLocater::UnitLocater (ECPropertyCR ecprop, bool createIfNonStandard, IECClas
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool UnitLocater::LocateUnit (UnitR unit) const
     {
-    IECInstancePtr unitSpecAttr = m_ecprop.GetCustomAttribute (UNIT_SPECIFICATION);
+    IECInstancePtr unitSpecAttr = m_ecprop.GetCustomAttribute (UNIT_ATTRIBUTES, UNIT_SPECIFICATION);
     if (unitSpecAttr.IsNull())
         return false;
 
@@ -178,7 +178,7 @@ bool UnitLocater::LocateUnitByName (UnitR unit, Utf8CP unitName) const
     ECClassCP unitClass = m_ecUnitsClassLocater.LocateClass (UNITS_SCHEMA, unitName);
 
     IECInstancePtr unitAttr;
-    if (NULL != unitClass && (unitAttr = unitClass->GetCustomAttribute (UNIT_ATTRIBUTES)).IsValid())
+    if (NULL != unitClass && (unitAttr = unitClass->GetCustomAttribute (UNIT_ATTRIBUTES, UNIT_ATTRIBUTES)).IsValid())
         return GetUnitFromAttribute (unit, *unitAttr, unitName);
     else if (m_createIfNonStandard)
         {
@@ -242,7 +242,7 @@ bool UnitLocater::GetUnitFromAttribute (UnitR unit, IECInstanceCR attr, Utf8CP u
 bool UnitLocater::LocateUnitBySpecification (UnitR unit, Utf8CP propName, Utf8CP propValue) const
     {
     ECSchemaCR schema = m_ecprop.GetClass().GetSchema();
-    IECInstancePtr specsAttr = schema.GetCustomAttribute (UNIT_SPECIFICATIONS);
+    IECInstancePtr specsAttr = schema.GetCustomAttribute (UNIT_ATTRIBUTES, UNIT_SPECIFICATIONS);
     if (specsAttr.IsValid() && GetUnitFromSpecifications (unit, propName, propValue, *specsAttr))
         return true;
     
@@ -251,7 +251,8 @@ bool UnitLocater::LocateUnitBySpecification (UnitR unit, Utf8CP propName, Utf8CP
     for (ECSchemaReferenceList::value_type const& refSchemaEntry: schema.GetReferencedSchemas())
         {
         ECSchemaPtr refSchema = refSchemaEntry.second;
-        if (refSchema->GetCustomAttribute (IS_UNIT_SYSTEM_SCHEMA).IsValid() && (specsAttr = refSchema->GetCustomAttribute (UNIT_SPECIFICATIONS)).IsValid())
+        if (refSchema->GetCustomAttribute (UNIT_ATTRIBUTES, IS_UNIT_SYSTEM_SCHEMA).IsValid() && 
+		   (specsAttr = refSchema->GetCustomAttribute (UNIT_ATTRIBUTES,UNIT_SPECIFICATIONS)).IsValid())
             return GetUnitFromSpecifications (unit, propName, propValue, *specsAttr);
         }
 
@@ -311,7 +312,7 @@ bool UnitLocater::LocateUnitByKOQ (UnitR unit, Utf8CP koqName) const
             {
             // check Dimension of the base KOQ
             ECValue v;
-            IECInstancePtr koqAttr = koqClass->GetCustomAttribute (KOQ_ATTRIBUTES);
+            IECInstancePtr koqAttr = koqClass->GetCustomAttribute (UNIT_ATTRIBUTES, KOQ_ATTRIBUTES);
             if (koqAttr.IsValid() && ECObjectsStatus::Success == koqAttr->GetValue (v, DIMENSION) && !v.IsNull())
                 return LocateUnitBySpecification (unit, DIMENSION_NAME, v.GetUtf8CP());
             }
@@ -371,7 +372,7 @@ bool Unit::GetDisplayUnitAndFormatForECProperty (UnitR displayUnit, Utf8StringR 
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool Unit::GetDisplayUnitAndFormatForECProperty (UnitR displayUnit, Utf8StringR displayFormat, UnitCR storedUnit, ECPropertyCR ecprop, IECClassLocaterR unitsECClassLocater)
     {
-    IECInstancePtr attr = ecprop.GetCustomAttribute (DISPLAY_UNIT_SPECIFICATION);
+    IECInstancePtr attr = ecprop.GetCustomAttribute (UNIT_ATTRIBUTES, DISPLAY_UNIT_SPECIFICATION);
     if (attr.IsValid())
         {
         ECValue v;

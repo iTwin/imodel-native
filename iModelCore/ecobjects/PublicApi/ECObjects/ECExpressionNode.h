@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/ECObjects/ECExpressionNode.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -403,6 +403,7 @@ protected:
 public:
     void                    PushQualifier(Utf8CP rightName);
     bvector<Utf8String> const& GetQualifiers() const { return m_qualifiers; }
+    bvector<Utf8String>&       GetQualifiers() { return m_qualifiers; }
     Utf8CP                  GetName() const { return m_value.c_str(); }
     void                    SetName (Utf8CP name) { m_value = name; }
     static IdentNodePtr     Create(Utf8CP name) { return new IdentNode(name); }
@@ -418,29 +419,20 @@ public:
 struct          DotNode : IdentNode
 {
 private:
-    Utf8String                 m_memberName;
-
     virtual bool        _Traverse(NodeVisitorR visitor) const
         {
         return visitor.ProcessNode(*this); 
         }
 
 protected:
-    virtual Utf8String     _ToString() const override 
-        {
-        return "." + m_memberName;
-        }
+    virtual Utf8String     _ToString() const override;
 
     //  May want to distinguish between compiled category and resolved category
     virtual ExpressionToken _GetOperation () const override { return TOKEN_Dot; }
-
     virtual bool            _HasError () override { return false; }
-
 public:
+    DotNode (Utf8CP memberName) : IdentNode(memberName) { }
 
-    Utf8CP GetMemberName() const { return m_memberName.c_str(); }
-
-    DotNode (Utf8CP memberName) : IdentNode(memberName), m_memberName(memberName) {}
     static DotNodePtr Create(Utf8CP memberName) { return new DotNode(memberName); }
 
 }; //  End of DotNode
@@ -870,6 +862,7 @@ public:
     NodeCP      GetArgument (size_t i) const { return i < m_arguments.size() ? m_arguments[i].get() : NULL; }
     void        PushArgument(NodeR node) { m_arguments.push_back(&node); }
     ECOBJECTS_EXPORT ExpressionStatus EvaluateArguments(EvaluationResultVector& results, ExpressionContextR context) const;
+    NodePtrVector&  GetArguments() { return m_arguments; }
 };  //  End of struct ArgumentTreeNode
 
 /*=================================================================================**//**
