@@ -37,7 +37,7 @@ END_UNNAMED_NAMESPACE
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void Render::Target::VerifyRenderThread() {DgnPlatformLib::VerifyRenderThread();}
+void Render::Target::VerifyRenderThread() {DgnDb::VerifyRenderThread();}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   01/16
@@ -64,7 +64,7 @@ void Render::Target::RecordFrameTime(GraphicList& scene, double seconds, bool is
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Render::Queue::AddTask(Task& task)
     {
-    DgnPlatformLib::VerifyClientThread();
+    DgnDb::VerifyClientThread();
 
     BeMutexHolder mux(m_cv.GetMutex());
 
@@ -90,7 +90,7 @@ void Render::Queue::AddTask(Task& task)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Render::Queue::WaitForIdle()
     {
-    DgnPlatformLib::VerifyClientThread();
+    DgnDb::VerifyClientThread();
 
     BeMutexHolder holder(m_cv.GetMutex());
     while (m_currTask.IsValid() || !m_tasks.empty())
@@ -119,7 +119,7 @@ void Render::Task::Perform(StopWatch& timer)
     timer.Start();
     m_outcome = _Process(timer);
     m_elapsedTime = timer.GetCurrentSeconds();
-    LOG_PRINTF ("task=%s, elapsed=%lf\n", _GetName(), m_elapsedTime);
+    LOG_PRINTF("task=%s, elapsed=%lf\n", _GetName(), m_elapsedTime);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -135,11 +135,9 @@ void Render::Queue::Process()
         WaitForWork();
         m_currTask->Perform(timer);
 
-        {
         BeMutexHolder holder(m_cv.GetMutex());
         m_currTask = nullptr; // change with mutex held
-        }
-
+        holder.unlock();      // release lock before notify so other thread will start immediately vs. "hurry up and wait" problem
         m_cv.notify_all();
         }
     }
@@ -150,7 +148,7 @@ void Render::Queue::Process()
 THREAD_MAIN_IMPL Render::Queue::Main(void* arg)
     {
     BeThreadUtilities::SetCurrentThreadName("Render"); // for debugging only
-    DgnPlatformLib::SetThreadId(DgnPlatformLib::ThreadId::Render);
+    DgnDb::SetThreadId(DgnDb::ThreadId::Render);
 
     ((Render::Queue*)arg)->Process(); // this never returns
     return 0;

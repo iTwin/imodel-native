@@ -228,7 +228,7 @@ DgnGeomPartPtr DgnGeomParts::LoadGeomPart(DgnGeomPartId geomPartId)
     if (!geomPartId.IsValid())
         return nullptr;
 
-    wt_OperationForGraphics hpo;
+    DgnDb::SQLRequest::Client hpo;
    
     auto& elements = m_dgndb.Elements();
 

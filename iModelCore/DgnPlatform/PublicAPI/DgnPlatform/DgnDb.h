@@ -215,6 +215,38 @@ public:
     bool IsBriefcase() const {return !IsMasterCopy();}
 
     DGNPLATFORM_EXPORT DictionaryModelR GetDictionaryModel(); //!< Return the dictionary model for this DgnDb.
+
+    //! Ids for DgnPlatform threads
+    enum class ThreadId {Unknown=0, Client=100, Render=101, Query=102,};
+
+    DGNPLATFORM_EXPORT static ThreadId GetThreadId();        //!< Get the ThreadId for the current thread
+    static void SetThreadId(ThreadId);    //!< Set the ThreadId for the current thread
+    static void VerifyThread(ThreadId id) {BeAssert(id==GetThreadId());}   //!< assert that this is a specific thread
+    static void VerifyClientThread() {VerifyThread(ThreadId::Client);}     //!< assert that this is the Client thread
+    static void VerifyRenderThread() {VerifyThread(ThreadId::Render);}     //!< assert that this is the Render thread
+    static void VerifyQueryThread()  {VerifyThread(ThreadId::Query);}      //!< assert that this is the Query thread
+    DGNPLATFORM_EXPORT virtual void _VerifyQuerySequence() const override;
+
+    //=======================================================================================
+    // @bsiclass                                                    John.Gooding    01/2013
+    //=======================================================================================
+    struct SQLRequest
+    {
+        struct Client
+        {
+            static int s_nPending;
+            Client() {VerifyClientThread(); ++s_nPending;}
+            ~Client() {--s_nPending;}
+            static int IsActive() {return s_nPending>0;}
+        };
+        struct Query
+        {
+            static int s_nPending;
+            Query() {VerifyQueryThread(); ++s_nPending;}
+            ~Query() {--s_nPending;}
+            static int IsActive() {return s_nPending>0;}
+        };
+    };
 };
 
 END_BENTLEY_DGN_NAMESPACE
