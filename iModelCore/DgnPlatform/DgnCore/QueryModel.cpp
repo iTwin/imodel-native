@@ -14,6 +14,8 @@
 //#define TRACE_QUERY_LOGIC 1
 //#define DEBUG_CALLS 1
 
+// #define DEBUG_SPLIT_LOGGER 1
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    09/2012
 //--------------+------------------------------------------------------------------------
@@ -54,6 +56,12 @@ void QueryModel::WaitUntilFinished(ICheckStop* checkStop) { GetDgnDb().QueryMode
 +---------------+---------------+---------------+---------------+---------------+------*/
 void QueryModel::SaveQueryResults()
     {
+#ifdef DEBUG_SPLIT_LOGGER
+    static uint32_t s_logCounter = 0;
+    NativeLogging::LoggingManager::GetLogger(L"Stuff")->errorv("SaveQueryResults %d", s_logCounter++);
+    NativeLogging::LoggingManager::GetLogger(L"DgnCore")->debugv("SaveQueryResults %d SaveQueryResults %d SaveQueryResults %d SaveQueryResults %d", s_logCounter, s_logCounter, s_logCounter, s_logCounter);
+    NativeLogging::LoggingManager::GetLogger(L"DefaultLog")->warningv("SaveQueryResults %d", s_logCounter++);
+#endif
     DgnPlatformLib::VerifyClientThread();
 
     if (m_updatedResults.IsNull())
