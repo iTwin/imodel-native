@@ -69,7 +69,7 @@ FileInfo FileInfoManager::ReadInfo(ObjectIdCR objectId)
 +---------------+---------------+---------------+---------------+---------------+------*/
 FileInfo FileInfoManager::ReadInfo(CachedInstanceKeyCR cachedKey)
     {
-    Json::Value cachedFileInfoJson = ReadCachedInfoJson(cachedKey);
+    Json::Value cachedFileInfoJson = ReadCachedFileInfo(cachedKey);
     Json::Value externalFileInfoJson = ReadExternalFileInfo(cachedKey);
     return FileInfo(cachedFileInfoJson, externalFileInfoJson, cachedKey, this);
     }
@@ -148,57 +148,38 @@ BeFileName FileInfoManager::GetAbsoluteFilePath(bool isPersistent, BeFileNameCR 
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus FileInfoManager::DeleteFilesNotHeldByNodes(const ECInstanceKeyMultiMap& holdingNodes)
     {
-    // WIP06
-    //ECInstanceKeyMultiMap holdingInstances;
-    //if (SUCCESS != m_objectInfoManager.ReadCachedInstanceKeys(holdingNodes, holdingInstances))
-    //    {
-    //    return ERROR;
-    //    }
+    auto statement = m_statementCache.GetPreparedStatement("FileInfoManager::DeleteFilesNotHeldByNodes", [&]
+        {
+        return
+            "SELECT cfi.[" CLASS_ChangeInfo_PROPERTY_ChangeNumber "], efi.ECInstanceId, efi.* "
+            "FROM ONLY " ECSql_ExternalFileInfoClass " efi "
+            "JOIN ONLY " ECSql_CachedFileInfo " cfi USING " ECSql_CachedFileInfoToFileInfo " ";
+        });
 
-    //auto statement = m_statementCache.GetPreparedStatement("FileInfoManager::DeleteFilesNotHeldByNodes", [&]
-    //    {
-    //    return
-    //        "SELECT efiRel.SourceECClassId, efiRel.SourceECInstanceId, efi.*, cfi.* "
-    //        "FROM ONLY " ECSql_ExternalFileInfoClass " efi "
-    //        "LEFT JOIN ONLY " ECSql_InstanceHasFileInfoClass " efiRel ON efiRel.TargetECInstanceId = efi.ECInstanceId ";
-    //    });
+    JsonECSqlSelectAdapter adapter(*statement, JsonECSqlSelectAdapter::FormatOptions(ECValueFormat::RawNativeValues));
 
-    //JsonECSqlSelectAdapter adapter(*statement, JsonECSqlSelectAdapter::FormatOptions(ECValueFormat::RawNativeValues));
+    while (BE_SQLITE_ROW == statement->Step())
+        {
+        auto changeStatus = static_cast<IChangeManager::ChangeStatus>(statement->GetValueInt(0));
+        if (IChangeManager::ChangeStatus::NoChange != changeStatus)
+            {
+            continue;
+            }
 
-    //while (BE_SQLITE_ROW == statement->Step())
-    //    {
-    //    Json::Value cachedFileInfoJson;
-    //    Json::Value externalFileInfoJson;
+        ECInstanceKey externalFileInfoKey(m_externalFileInfoClass->GetId(),statement->GetValueId<ECInstanceId>(1));
+        if (ECDbHelper::IsInstanceInMultiMap(externalFileInfoKey, holdingNodes))
+            {
+            continue;
+            }
 
-    //    if (!adapter.GetRowInstance(cachedFileInfoJson, m_infoClass->GetId()))
-    //        {
-    //        return ERROR;
-    //        }
-    //    if (!adapter.GetRowInstance(externalFileInfoJson, m_externalFileInfoClass->GetId()))
-    //        {
-    //        return ERROR;
-    //        }
-
-    //    ECInstanceKey instanceKey(statement->GetValueInt64(0), statement->GetValueId<ECInstanceId>(1));
-    //    FileInfo fileInfo(cachedFileInfoJson, externalFileInfoJson, instanceKey, this);
-
-    //    if (ECDbHelper::IsInstanceInMultiMap(instanceKey, holdingInstances))
-    //        {
-    //        continue;
-    //        }
-
-    //    if (IChangeManager::ChangeStatus::NoChange != fileInfo.GetChangeStatus())
-    //        {
-    //        continue;
-    //        }
-
-    //    if (SUCCESS != m_fileStorage.CleanupCachedFile(fileInfo.GetFilePath()))
-    //        {
-    //        return ERROR;
-    //        }
-    //    }
-    //return SUCCESS;
-    return ERROR;
+        Json::Value externalFileInfoJson;
+        if (!adapter.GetRowInstance(externalFileInfoJson, m_externalFileInfoClass->GetId()) ||
+            SUCCESS != CleanupExternalFile(externalFileInfoJson))
+            {
+            return ERROR;
+            }
+        }
+    return SUCCESS;
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -233,12 +214,10 @@ BentleyStatus FileInfoManager::OnBeforeDelete(ECClassCR ecClass, ECInstanceId ec
         return SUCCESS;
         }
 
-    Json::Value infoJson;
-    JsonReader reader(m_dbAdapter.GetECDb(), ecClass.GetId());
-    reader.ReadInstance(infoJson, ecInstanceId, ECValueFormat::RawNativeValues);
-    FileInfo info(Json::nullValue, infoJson, CachedInstanceKey(), this);
+    Json::Value externalFileInfoJson;
+    m_dbAdapter.GetJsonInstance(externalFileInfoJson, {ecClass.GetId(), ecInstanceId});
 
-    m_fileStorage.CleanupCachedFile(info.GetFilePath());
+    CleanupExternalFile(externalFileInfoJson);
 
     return SUCCESS;
     }
@@ -246,7 +225,7 @@ BentleyStatus FileInfoManager::OnBeforeDelete(ECClassCR ecClass, ECInstanceId ec
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    01/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-Json::Value FileInfoManager::ReadCachedInfoJson(CachedInstanceKeyCR cachedKey)
+Json::Value FileInfoManager::ReadCachedFileInfo(CachedInstanceKeyCR cachedKey)
     {
     Json::Value infoJson;
 
@@ -256,7 +235,7 @@ Json::Value FileInfoManager::ReadCachedInfoJson(CachedInstanceKeyCR cachedKey)
         return infoJson;
         }
 
-    auto statement = m_statementCache.GetPreparedStatement("FileInfoManager::ReadCachedInfoJson", [&]
+    auto statement = m_statementCache.GetPreparedStatement("FileInfoManager::ReadCachedFileInfo", [&]
         {
         return
             "SELECT info.* "
@@ -342,4 +321,13 @@ ECInstanceKey FileInfoManager::InsertFileInfoOwnership(ECInstanceKeyCR ownerKey,
         }
 
     return ownershipKey;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus FileInfoManager::CleanupExternalFile(JsonValueCR externalFileInfoJson)
+    {
+    FileInfo info(Json::nullValue, externalFileInfoJson, CachedInstanceKey(), this);
+    return m_fileStorage.CleanupCachedFile(info.GetFilePath());
     }

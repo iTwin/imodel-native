@@ -47,10 +47,10 @@ struct FileInfoManager : public IECDbAdapter::DeleteListener, public FileInfo::I
         ECSqlAdapterLoader<JsonUpdater>     m_externalFileInfoUpdater;
 
     private:
-        Json::Value ReadCachedInfoJson(CachedInstanceKeyCR cachedKey);
-
+        Json::Value ReadCachedFileInfo(CachedInstanceKeyCR cachedKey);
         Json::Value ReadExternalFileInfo(CachedInstanceKeyCR cachedKey);
         ECInstanceKey InsertFileInfoOwnership(ECInstanceKeyCR ownerKey, ECInstanceKeyCR fileInfoKey);
+        BentleyStatus CleanupExternalFile(JsonValueCR externalFileInfoJson);
 
     public:
         FileInfoManager
