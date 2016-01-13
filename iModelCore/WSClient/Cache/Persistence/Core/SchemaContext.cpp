@@ -2,7 +2,7 @@
 |
 |     $Source: Cache/Persistence/Core/SchemaContext.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -18,10 +18,21 @@ USING_NAMESPACE_BENTLEY_WEBSERVICES
 +---------------+---------------+---------------+---------------+---------------+------*/
 BeFileName SchemaContext::GetCacheSchemasDir()
     {
-    BeFileName path = DgnClientFxCommon::GetApplicationPaths().GetDgnPlatformAssetsDirectory(); // on iOS schemas are in DgnClientFxAssets.bundle
+    BeFileName path = DgnClientFxCommon::GetApplicationPaths().GetDgnPlatformAssetsDirectory();
     path.AppendToPath(L"ECSchemas");
     path.AppendToPath(L"WSClient");
     path.AppendToPath(L"Cache");
+    return path;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+BeFileName SchemaContext::GetECDbSchemasDir()
+    {
+    BeFileName path = DgnClientFxCommon::GetApplicationPaths().GetDgnPlatformAssetsDirectory();
+    path.AppendToPath(L"ECSchemas");
+    path.AppendToPath(L"ECDb");
     return path;
     }
 
@@ -32,5 +43,6 @@ ECSchemaReadContextPtr SchemaContext::CreateReadContext()
     {
     ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
     context->AddSchemaPath(GetCacheSchemasDir());
+    context->AddSchemaPath(GetECDbSchemasDir());
     return context;
     }
