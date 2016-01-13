@@ -14,6 +14,7 @@
 #define CDEF_CA_CATEGORY "Category"
 #define CDEF_CA_CODE_AUTHORITY "CodeAuthority"
 #define CDEF_CA_INPUTS "Inputs"
+#define CDEF_CA_ScriptOnlyParameters "ScriptOnlyParameters"
 
 #define ECSUCCESS(STMT) if (ECN::ECObjectsStatus::Success != (ecstatus = STMT)) {BeAssert(false); return nullptr;}
 
@@ -606,7 +607,32 @@ bool ComponentDef::UsesTemporaryModel() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECN::IECInstancePtr ComponentDef::MakeVariationSpec()
     {
-    return m_class.GetDefaultStandaloneEnabler()->CreateInstance();
+    ECN::IECInstancePtr instance = m_class.GetDefaultStandaloneEnabler()->CreateInstance();
+
+    auto ca = getComponentSpecCA(m_db, GetECClass());
+    ECN::ECValue adhocsJsonStr;
+    ca->GetValue(adhocsJsonStr, "ScriptOnlyParameters");
+    Json::Value adhocsJson;
+    Json::Reader::Parse(adhocsJsonStr.ToString(), adhocsJson);
+    TsComponentParameterSet adhocParams(adhocsJson);
+
+    ECN::AdhocPropertyEdit adHocPropsEditor(*instance, "ScriptOnlyParameters");
+    for (auto const& entry: adhocParams)
+        {
+        Utf8StringCR paramName = entry.first;
+        TsComponentParameter const& param = entry.second;
+        adHocPropsEditor.Add(paramName.c_str(), param.m_value, "");
+
+        #ifndef NDEBUG
+        uint32_t idx;
+        adHocPropsEditor.GetPropertyIndex(idx, paramName.c_str());
+        ECN::ECValue v;
+        adHocPropsEditor.GetValue(v, idx);
+        BeAssert(v.Equals(param.m_value));
+        #endif
+        }
+
+    return instance;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -652,7 +678,7 @@ bvector<Utf8String> ComponentDef::GetInputs() const
         {
         // There are no declared inputs. Assume that all properties are inputs ...
         //  ... excluding the properties of dgn.Element, SpatialElement, and PhysicalElement, as they are very unlikely to be
-        //      parametric model inputs.
+        //      parametric model inputs, and excluding all non-primitive properties.
         ECN::ECClassCP physEle = GetDgnDb().Schemas().GetECClass(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_PhysicalElement);
         bset<Utf8String> physEleProps;
         for (auto prop : physEle->GetProperties())
@@ -660,8 +686,12 @@ bvector<Utf8String> ComponentDef::GetInputs() const
 
         for (auto ecprop : m_class.GetProperties())
             {
-            if (physEleProps.find(ecprop->GetName()) == physEleProps.end())
-                inputs.push_back(ecprop->GetName());
+            if (!ecprop->GetIsPrimitive())
+                continue;
+            if (physEleProps.find(ecprop->GetName()) != physEleProps.end())
+                continue;
+
+            inputs.push_back(ecprop->GetName());
             }
         }
 
@@ -892,7 +922,7 @@ ECN::IECInstancePtr ComponentDef::GetParameters(DgnElementCR el)
     if (!cdef.IsValid())
         return nullptr;
 
-    Utf8PrintfString sql("SELECT %s FROM %s WHERE ECInstanceId=?", cdef->GetInputsForSelect().c_str(), GetClassECSqlName(*el.GetElementClass()).c_str());
+    Utf8PrintfString sql("SELECT %s ScriptOnlyParameters FROM %s WHERE ECInstanceId=?", cdef->GetInputsForSelect().c_str(), GetClassECSqlName(*el.GetElementClass()).c_str());
     auto ecsql = el.GetDgnDb().GetPreparedECSqlStatement(sql);
     ecsql->BindId(1, el.GetElementId());
     ECInstanceECSqlSelectAdapter selector(*ecsql);
@@ -1337,6 +1367,29 @@ ECN::IECInstancePtr ComponentDef::GetPropSpecCA(ECN::ECPropertyCR prop)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
+static ECN::ECSchemaCP getStdCaSchema(DgnDbR db)
+    {
+    return db.Schemas().GetECSchema("Bentley_Standard_CustomAttributes");
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      07/15
++---------------+---------------+---------------+---------------+---------------+------*/
+static ECN::IECInstancePtr createAdHocPropSpecCA(DgnDbR db)
+    {
+    ECN::ECSchemaCP cashema = getStdCaSchema(db);
+    if (nullptr == cashema)
+        return nullptr;
+
+    ECN::ECClassCP caClass = cashema->GetClassCP("AdhocPropertySpecification");
+    if (nullptr == caClass)
+        return nullptr;
+    return caClass->GetDefaultStandaloneEnabler ()->CreateInstance ();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 ECN::IECInstancePtr ComponentDefCreator::CreateSpecCA()
     {
     ECN::ECClassCP caClass = m_db.Schemas().GetECClass(DGN_ECSCHEMA_NAME, "ComponentSpecification");
@@ -1371,6 +1424,12 @@ ECN::IECInstancePtr ComponentDefCreator::AddSpecCA(ECN::ECClassR ecclass)
     if (!m_inputs.empty())
         {
         ECSUCCESS(componentSpec->SetValue(CDEF_CA_INPUTS, ECN::ECValue(m_inputs.c_str())));
+        }
+    if (!m_adhocParams.empty())
+        {
+        Json::Value adhocsJson = m_adhocParams.ToJson();
+        Utf8String adhocsJsonStr = Json::FastWriter::ToString(adhocsJson);
+        ECSUCCESS(componentSpec->SetValue(CDEF_CA_ScriptOnlyParameters, ECN::ECValue(adhocsJsonStr.c_str())));
         }
 
     ECSUCCESS(ecclass.SetCustomAttribute(*componentSpec));
@@ -1409,6 +1468,27 @@ void ComponentDefCreator::AddInput(Utf8StringCR inp)
     m_inputs.append(inp);
     }
 
+/*
+    ECN::IECInstancePtr adHocPropsHolder = adHocPropsHolderClass->GetDefaultStandaloneEnabler()->CreateInstance();
+    ECN::AdhocPropertyEdit adHocPropsEditor(*adHocPropsHolder, "ScriptOnlyParameters");
+
+    for (auto const& entry: m_params)
+        {
+        Utf8StringCR paramName = entry.first;
+        TsComponentParameter const& param = entry.second;
+        if (param.m_isForScriptOnly)
+            {
+            adHocPropsEditor.Add(paramName.c_str(), param.m_value, "");
+            // *** TBD: Set some other 
+            uint32_t idx;
+            adHocPropsEditor.GetPropertyIndex(idx, paramName.c_str());
+            ECN::ECValue v;
+            adHocPropsEditor.GetValue(v, idx);
+            BeAssert(v.IsString());
+            }
+
+*/
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1417,6 +1497,7 @@ ECN::ECClassCP ComponentDefCreator::GenerateECClass()
     ECN::ECObjectsStatus ecstatus;
     
     m_schema.AddReferencedSchema(const_cast<ECN::ECSchemaR>(m_baseClass.GetSchema()));
+    m_schema.AddReferencedSchema(const_cast<ECN::ECSchemaR>(*getStdCaSchema(m_db)));
 
     if (true)
         {
@@ -1434,22 +1515,41 @@ ECN::ECClassCP ComponentDefCreator::GenerateECClass()
 
     ECSUCCESS(ecclass->AddBaseClass(m_baseClass));
 
-    AddSpecCA(*ecclass);
+    auto adhocspecCa = createAdHocPropSpecCA(m_db);
+    adhocspecCa->SetValue("AdhocPropertyContainer", ECN::ECValue("ComponentSpecificationAdhocHolder"));
+    ECSUCCESS(ecclass->SetCustomAttribute(*adhocspecCa));
 
-    for (auto const& propSpec: m_params)
+    ECN::ECClassCP adHocPropsHolderClass0 = m_db.Schemas().GetECClass(DGN_ECSCHEMA_NAME, "ComponentSpecificationAdhocHolder");
+    ECN::ECStructClassCP adHocPropsHolderClass = dynamic_cast<ECN::ECStructClassCP>(adHocPropsHolderClass0);
+
+    ECN::StructArrayECPropertyP adhocsArrayProp;
+    ECSUCCESS(ecclass->CreateStructArrayProperty(adhocsArrayProp, "ScriptOnlyParameters", adHocPropsHolderClass));
+
+    for (auto const& entry: m_params)
         {
-        ECN::PrimitiveECPropertyP ecprop;
-        ECSUCCESS(ecclass->CreatePrimitiveProperty(ecprop, propSpec.first));
-        
-        ecprop->SetType(propSpec.second.m_value.GetPrimitiveType());
+        if (entry.second.m_isForScriptOnly)
+            m_adhocParams[entry.first] = entry.second;
+        else
+            m_firstClassParams[entry.first] = entry.second;
+        }
 
-        if (propSpec.second.m_variesPer != ComponentDef::ParameterVariesPer::Instance)
+    for (auto const& entry: m_firstClassParams)
+        {
+        Utf8StringCR paramName = entry.first;
+        TsComponentParameter const& param = entry.second;
+        ECN::PrimitiveECPropertyP ecprop;
+        ECSUCCESS(ecclass->CreatePrimitiveProperty(ecprop, paramName));
+        ecprop->SetType(param.m_value.GetPrimitiveType());
+
+        if (param.m_variesPer != ComponentDef::ParameterVariesPer::Instance)
             {
             auto ca = CreatePropSpecCA();
             ca->SetValue("ParameterVariesPer", ECN::ECValue("Variation"));
             ecprop->SetCustomAttribute(*ca);
             }
         }
+
+    AddSpecCA(*ecclass);
 
     return ecclass;
     }
@@ -1499,6 +1599,19 @@ Json::Value TsComponentParameterSet::ToJson() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 TsComponentParameterSet::TsComponentParameterSet(ComponentDef& cdef, ECN::IECInstanceCR inst)
     {
+    AdhocPropertyQuery adhocs(inst, "ScriptOnlyParameters");
+    for (uint32_t i = 0; i < adhocs.GetCount(); ++i)
+        {
+        Utf8String name;
+        ECN::ECValue value;
+        adhocs.GetName(name, i);
+        adhocs.GetValue(value, i);
+        
+        // *** WIP_COMPONENT - store VariesPer as part of adhoc property value
+        TsComponentParameter tsparam (ComponentDef::ParameterVariesPer::Instance, value);
+        (*this)[name] = tsparam;
+        }
+
     for (auto const& paramName : cdef.GetInputs())
         {
         ECN::ECPropertyP prop = cdef.GetECClass().GetPropertyP(paramName.c_str());
@@ -1516,9 +1629,25 @@ TsComponentParameterSet::TsComponentParameterSet(ComponentDef& cdef, ECN::IECIns
 +---------------+---------------+---------------+---------------+---------------+------*/
 void TsComponentParameterSet::ToECProperties(ECN::IECInstanceR props) const
     {
+    ECN::AdhocPropertyEdit adHocPropsEditor(props, "ScriptOnlyParameters");
     for (auto const& entry : *this)
         {
-        props.SetValue(entry.first.c_str(), entry.second.GetValue());
+        Utf8StringCR paramName = entry.first;
+        TsComponentParameter const& param = entry.second;
+        if (!param.m_isForScriptOnly)
+            props.SetValue(paramName.c_str(), param.m_value);
+        else
+            {
+            adHocPropsEditor.Add(paramName.c_str(), param.m_value, "");
+
+            #ifndef NDEBUG
+            uint32_t idx;
+            adHocPropsEditor.GetPropertyIndex(idx, paramName.c_str());
+            ECN::ECValue v;
+            adHocPropsEditor.GetValue(v, idx);
+            BeAssert(v.Equals(param.m_value));
+            #endif
+            }
         }
     }
 
@@ -1549,6 +1678,7 @@ Json::Value TsComponentParameter::ToJson() const
     // *** Keep this consistent with ComponentParametersPane.ts! ***
     Json::Value v;
     v["VariesPer"] = (ComponentDef::ParameterVariesPer::Variation == m_variesPer)? PARARMETER_VARIES_PER_VARIATION: PARARMETER_VARIES_PER_INSTANCE;
+    v["IsForScriptOnly"] = m_isForScriptOnly;
     ECUtils::StoreECValueAsJson(v["Value"], m_value);
     return v;
     }
@@ -1561,5 +1691,6 @@ TsComponentParameter::TsComponentParameter(Json::Value const& json)
     // *** Keep this consistent with ComponentParametersPane.ts! ***
     auto s = json["VariesPer"].asInt();
     m_variesPer = (PARARMETER_VARIES_PER_VARIATION == s)? ComponentDef::ParameterVariesPer::Variation: ComponentDef::ParameterVariesPer::Instance;
+    m_isForScriptOnly = json["IsForScriptOnly"].asBool();
     ECUtils::LoadECValueFromJson(m_value, json["Value"]);
     }

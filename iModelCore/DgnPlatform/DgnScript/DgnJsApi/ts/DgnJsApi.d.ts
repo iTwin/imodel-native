@@ -359,6 +359,29 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
 
     type ECInstanceP = cxx_pointer<ECInstance>;
 
+    //! Provides read-only access to ad-hoc properties defined on an IECInstance.
+    //! Adhoc properties are name-value pairs stored on an ECInstance.
+    class AdhocPropertyQuery implements IDisposable, BeJsProjection_RefCounted, BeJsProjection_SuppressConstructor
+    {
+        /*** NATIVE_TYPE_NAME = JsAdhocPropertyQuery ***/
+        constructor(instance: ECInstanceP, accessString: Bentley_Utf8String);
+        Host: ECInstanceP;
+
+        GetPropertyIndex(accessString: Bentley_Utf8String): cxx_uint32_t;
+        Count: cxx_uint32_t;
+        
+        GetName(index: cxx_uint32_t): Bentley_Utf8String;
+        GetDisplayLabel(index: cxx_uint32_t): Bentley_Utf8String;
+        GetValue(index: cxx_uint32_t) : ECValueP;
+        GetPrimitiveType(index: cxx_uint32_t): cxx_enum_class_uint32_t<ECPropertyPrimitiveType>;
+        GetUnitName(index: cxx_uint32_t): Bentley_Utf8String;
+        IsReadOnly(index: cxx_uint32_t): cxx_bool;
+        IsHidden(index: cxx_uint32_t): cxx_bool;
+
+        OnDispose(): void;
+        Dispose(): void;
+    }
+
     class ECValue implements IDisposable, BeJsProjection_RefCounted, BeJsProjection_SuppressConstructor
     {
         /*** NATIVE_TYPE_NAME = JsECValue ***/
