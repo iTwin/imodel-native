@@ -2,7 +2,7 @@
 |
 |     $Source: Cache/Persistence/ChangeManager.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -94,13 +94,16 @@ BentleyStatus ChangeManager::SetupNewRevision(struct ChangeInfo& info)
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECInstanceKey ChangeManager::LegacyCreateObject(ECClassCR ecClass, JsonValueCR properties, ECInstanceKeyCR parentKey, SyncStatus syncStatus)
     {
-    ECInstanceKey newInstanceKey = CreateObject(ecClass, properties, syncStatus);
-    if (!newInstanceKey.IsValid())
+    auto relClass = GetLegacyParentRelationshipClass();
+    if (nullptr == relClass)
         {
         return ECInstanceKey();
         }
 
-    if (!CreateRelationship(*GetLegacyParentRelationshipClass(), parentKey, newInstanceKey).IsValid())
+    ECInstanceKey newInstanceKey = CreateObject(ecClass, properties, syncStatus);
+
+    if (!newInstanceKey.IsValid() ||
+        !CreateRelationship(*relClass, parentKey, newInstanceKey).IsValid())
         {
         return ECInstanceKey();
         }
