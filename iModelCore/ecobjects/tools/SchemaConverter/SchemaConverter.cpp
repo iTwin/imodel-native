@@ -28,11 +28,12 @@ BentleyApi::NativeLogging::ILogger* s_logger = BentleyApi::NativeLogging::Loggin
 //---------------------------------------------------------------------------------------
 static void ShowUsage(char* str)
     {
-    fprintf(stderr, "\n%s -i <inputSchemaPath> -o <outputDirectory> [-x exmlVersion] [-r directories] [-c directory] [-a] [-s] [-v version]\n\n%s\n\n%s\n\n%s\t\t%s\n%s\t\t%s\n%s\t%s\n%s\t\t%s\n%s\t\t%s\n%s\t\t%s\n\n",
+    fprintf(stderr, "\n%s -i <inputSchemaPath> -o <outputDirectory> [-x exmlVersion] [-r directories] [-c directory] [-a] [-s] [-u] [-v version]\n\n%s\n\n%s\n\n%s\t\t%s\n%s\t%s\n%s\t%s\n%s\t\t%s\n%s\t\t%s\n%s\t\t%s\n%s\t\t%s\n\n",
         str, "Tool to convert ECSchemas between different versions of ECXml", "options:",
         " -x --xml 2|3", "convert to the specified exmlversion",
         " -r --ref DIR0 [DIR1 ... DIRN]", "other directories for reference schemas",
         " -c --conversion DIR", "looks for the conversion schema file in this directory",
+        " -u --include", "include the standard schemas in the converted schemas",
         " -a --all", "convert the entire schema graph",
         " -s --sup", "convert all the supplemental schemas",
         " -v --ver XX.XX", "specify the schema version");
@@ -52,6 +53,7 @@ struct ConversionOptions
 
     bool                IncludeSupplementals = false;
     bool                IncludeAll = false;
+    bool                IncludeStandards = false;
 
     bool                ChangeVersion = false;
     uint32_t            MajorVersion;
@@ -128,7 +130,7 @@ static int ConvertLoadedSchema(ECSchemaReadContextPtr context, ECSchemaR schema,
         {
         for (auto const& refSchema : schema.GetReferencedSchemas())
             {
-            if (refSchema.second->IsStandardSchema())
+            if (refSchema.second->IsStandardSchema() && !options.IncludeStandards)
                 continue;
             s_logger->infov(L"Saving the reference schema '%ls' in '%ls'", refSchema.second->GetFullSchemaName(), options.OutputDirectory.GetName());
             if (0 != ConvertLoadedSchema(context, *refSchema.second, options))
@@ -233,6 +235,8 @@ static bool TryParseInput(int argc, char** argv, ConversionOptions& options)
             options.IncludeAll = true;
         else if (0 == strcmp(argv[i], "-s") || 0 == strcmp(argv[i], "--sup"))
             options.IncludeSupplementals = true;
+        else if (0 == strcmp(argv[i], "-u") || 0 == strcmp(argv[i], "--include"))
+            options.IncludeStandards = true;
         else if (0 == strcmp(argv[i], "-c") || 0 == strcmp(argv[i], "--conversion"))
             {
             if (NoParameterNext(argc, argv, i))
