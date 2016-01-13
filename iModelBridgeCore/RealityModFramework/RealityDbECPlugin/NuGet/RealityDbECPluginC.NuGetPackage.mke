@@ -1,0 +1,29 @@
+#--------------------------------------------------------------------------------------
+#      $Source: RealityDbECPlugin/NuGet/RealityDbECPluginC.NuGetPackage.mke $
+#   $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+#--------------------------------------------------------------------------------------
+
+%include  mdl.mki
+
+AssemblyVersion = 1.0.0.0
+appName     = RealityDbECPluginNuGetPackages
+PackageName = Bentley.RealityDbECPluginC.$(AssemblyVersion).nupkg
+ContextDeliveryDir = $(BuildContext)Delivery/
+PackageOutputDir = $(OutputRootDir)build/RealityModFramework/RealityDbECPlugin/
+
+
+%include $(SrcRoot)RealityModFramework/mki/RealityModFrameworkCommon.mki
+
+#NuGetBaseName=RealityDbECPluginC
+
+#%include $(sharedMki)nuspecCreate.mki
+
+always:
+    CreateSymLinks.py   -m"$(BuildContext)Subparts/Files=$(SrcRoot)RealityModFramework/RealityDbECPlugin/NuGet/Bentley.RealityDbECPluginC.targets"
+
+always:
+    ~task Exec -i:Command="$(SrcRoot)bsitools/nuget/nuget pack $(SrcRoot)RealityModFramework/RealityDbECPlugin/NuGet/RealityDbECPluginC.nuspec -BasePath $(BuildContext)Subparts -OutputDirectory $(PackageOutputDir) -Version $(AssemblyVersion) -verbosity quiet" 
+    
+    
+$(ContextDeliveryDir)$(PackageName) : $(PackageOutputDir)$(PackageName)
+        $(LinkFirstDepToFirstTarget)

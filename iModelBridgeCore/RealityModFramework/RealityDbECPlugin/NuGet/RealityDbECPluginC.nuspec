@@ -1,0 +1,38 @@
+<package>
+  <metadata>
+    <id>Bentley.RealityDbECPluginC</id>
+    <version>1.0.0.0</version>
+    <title>Bentley RealityDbECPlugin</title>
+    <authors>Bentley Systems, Incorporated</authors>
+    <owners>Bentley Systems, Incorporated</owners>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <description>RealityDbECPlugin assemblies</description>
+    <copyright>(c) Bentley Systems, Incorporated. All rights reserved.</copyright>
+    <language>en-US</language>
+    <dependencies>
+        <dependency id="Newtonsoft.Json" version="6.0.6" />
+        <dependency id="Bentley.ECF" version="9.5.2.32" />
+        <dependency id="Bentley.Logging" version="9.5.2.38" />
+        <dependency id="Bentley.PlatformTech" version="9.5.2.38" />
+    </dependencies>
+  </metadata>
+  <files>
+    <file src="Assemblies\BaseGeoCoordG.dll" target="build" />
+    <file src="Assemblies\BeCurlG.dll" target="build" />
+    <file src="Assemblies\BeIcu4cG.dll" target="build" />
+    <file src="Assemblies\BeLibxml2G.dll" target="build" />
+    <file src="Assemblies\BentleyAllocator.dll" target="build" />
+    <file src="Assemblies\BentleyG.dll" target="build" />
+    <file src="Assemblies\BentleyGeomG.dll" target="build" />
+    <file src="Assemblies\BeOpenSSLG.dll" target="build" />
+    <file src="Assemblies\BeSQLiteG.dll" target="build" />
+    <file src="Assemblies\BeXmlG.dll" target="build" />
+    <file src="Assemblies\ImageppG.dll" target="build" />
+    <file src="Assemblies\NCSEcw.dll" target="build" />
+    <file src="Assemblies\RealityPackage.dll" target="build" />
+    <file src="Assemblies\RealityPlatform.dll" target="build" />
+    <file src="Files\Bentley.RealityDbECPluginC.targets" target="build" />
+    <file src="Assemblies\Bentley.RealityDbECPluginC.dll" target="lib\Bentley.RealityDbECPluginC.dll" />
+    <file src="Assemblies\BentleyWMSPackageNet.dll" target="lib\BentleyWMSPackageNet.dll" />
+  </files>
+</package>

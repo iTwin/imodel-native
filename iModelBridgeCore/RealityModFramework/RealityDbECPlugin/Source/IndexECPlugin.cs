@@ -2,7 +2,7 @@
 |
 |     $Source: RealityDbECPlugin/Source/IndexECPlugin.cs $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +-------------------------------------------------------------------------------------*/
 
@@ -147,14 +147,6 @@ namespace IndexECPlugin.Source
                 return knownRepository;
                 }
 
-
-
-            //////we did not find an existing identifier, check if the directory on the location exists
-            //if (!File.Exists(location))
-            //{
-            //    throw new LocationNotFoundException("The location given was not a valid location file");
-            //}
-
             //ParseConfigFile(location);
 
             m_connectionString = ConfigurationRoot.GetAppSetting("RECPConnectionString");
@@ -252,48 +244,6 @@ namespace IndexECPlugin.Source
                             //Log.Logger.error(String.Format("Query {0} aborted. The source chosen ({1}) is invalid", query.ID, source));
                             throw new UserFriendlyException("The source \"" + source + "\" does not exist. Choose between \"index\", \"usgsapi\" or \"all\"");
                         }
-
-
-
-                    ////SqlCommand cmd = helper.;
-
-
-                    ////***************************FOR NOW, WE ONLY TAKE THE ADDRESS OF THE API**************************
-                    ////We suppose that the location will be of the form : "Adress_Of_The_API,Location_Of_The_Repository"
-                    ////string baseURL = connection.RepositoryIdentifier.Location.Split(',')[0];
-                    //////string baseURL = "https://localhost/upload/Api/BentleyFiles/";
-                    ////*************************************************************************************************
-                    //string baseURL = connection.RepositoryIdentifier.Location;
-                    //string apiMethodURL = "GetJSonOfAllFilesInQuery";
-                    //int pageSize = -1;
-                    //if (query.ExtendedData.ContainsKey("pagesize"))
-                    //{
-                    //    if (int.TryParse(query.ExtendedData["pagesize"].ToString(), out pageSize))
-                    //    {
-                    //        throw new UserFriendlyException("Please enter a valid number for the pagesize parameter");
-                    //    }
-                    //}
-
-                    //int page = 1;
-                    //if (query.ExtendedData.ContainsKey("page"))
-                    //{
-                    //    if (int.TryParse(query.ExtendedData["page"].ToString(), out page))
-                    //    {
-                    //        throw new UserFriendlyException("Please enter a valid number for the page parameter");
-                    //    }
-                    //}
-
-                    //if (!query.ExtendedData.ContainsKey("polygon"))
-                    //{
-                    //    throw new UserFriendlyException("Please specify a polygon parameter for this query");
-                    //}
-                    //string polygonPointsVar = query.ExtendedData["polygon"].ToString();
-
-                    //string whereClauseString = query.WhereClause.ToString();
-                    //whereClauseString = whereClauseString.Replace("(", "").Replace(")", "");
-
-                    //return ReadInstancesFromAPI(bentleyFileClass, baseURL + apiMethodURL, polygonPointsVar, whereClauseString, pageSize, page, testToErase, testToErase2);
-
                     }
                 }
             catch ( System.Data.Common.DbException )
@@ -309,74 +259,6 @@ namespace IndexECPlugin.Source
                 throw;
                 }
             }
-
-
-
-
-
-        //private static IEnumerable<IECInstance> ReadInstancesFromAPI(IECClass bentleyFileClass, string URL, string polygonPointsVar, string whereClauseString, int pageSize, int page, IECClass testToErase, IECRelationshipClass testToErase2)
-        //{
-
-        //    using (var client = new HttpClient())
-        //    {
-        //        //try
-        //        //{
-
-        //        Object content = new
-        //        {
-        //            polygonPoints = polygonPointsVar,
-        //            whereClause = whereClauseString,
-        //            itemsByPage = pageSize,
-        //            pageNumber = page
-        //        };
-
-        //        var serializedContent = JsonConvert.SerializeObject(content);
-        //        HttpContent httpContent = new StringContent(serializedContent, Encoding.UTF8, "application/json");
-
-        //        var relatedInstanceTest = testToErase.CreateInstance();
-        //        relatedInstanceTest.InstanceId = "testing";
-        //        relatedInstanceTest["Name"].StringValue = "testing";
-
-        //            ServicePointManager.ServerCertificateValidationCallback += (sender, cert, chain, sslPolicyErrors) => true; //This is necessary if the ssl certificate of the API is not valid...
-        //            var response = client.PostAsync(URL, httpContent).Result;
-        //            ServicePointManager.ServerCertificateValidationCallback -= (sender, cert, chain, sslPolicyErrors) => true;
-        //            if (response.IsSuccessStatusCode)
-        //            {
-        //                string resultContent = response.Content.ReadAsStringAsync().Result;
-        //                JsonResults summary = JsonConvert.DeserializeObject<JsonResults>(resultContent);
-        //                return summary.Results.Select((model) =>
-        //                {
-
-        //                    var instance = bentleyFileClass.CreateInstance();
-        //                    instance.InstanceId = model.ID.ToString();
-        //                    instance["Name"].StringValue = model.Name;
-        //                    instance["ID"].IntValue = model.ID;
-        //                    instance["ThumbnailLocation"].StringValue = model.ThumbnailLocation;
-
-        //                    var relationInstance = testToErase2.CreateInstance() as ECRelationshipInstance;
-        //                    if(relationInstance == null)
-        //                    {
-        //                        throw new UserFriendlyException("Your test failed!!!");
-        //                    }
-        //                    relationInstance.Target = instance;
-        //                    relationInstance.Source = relatedInstanceTest;
-        //                    relationInstance.InstanceId = "testRelationship";
-
-        //                    instance.GetRelationshipInstances().Add(relationInstance);
-        //                    return instance;
-        //                });
-        //            }
-        //            else
-        //            {
-        //                throw new UserFriendlyException("There was a problem with the request.");
-        //            }
-        //        //}
-        //        //catch(Exception)
-        //        //{
-        //        //    return null;
-        //        //}
-        //    }
-        //}
 
         private void FileRetrievalOperation
             (OperationModule sender,
@@ -481,72 +363,6 @@ namespace IndexECPlugin.Source
                 }
 
             }
-
-        //private string InsertAutomaticRequest(OperationModule sender, RepositoryConnection connection, IECInstance instance, QueryModule queryModule)
-        //{
-        //    if((instance.GetPropertyValue("Polygon") == null) ||
-        //       (instance.GetPropertyValue("MostRecent") == null) ||
-        //       (instance.GetPropertyValue("BestResolution") == null) ||
-        //       (instance.GetPropertyValue("Classification") == null) ||
-        //       (instance.GetPropertyValue("OSM") == null))
-        //    {
-        //        throw new UserFriendlyException("There are missing properties in the request.");
-        //    }
-
-        //    string selectedRegionStr = instance.GetPropertyValue("Polygon").StringValue;
-        //    string mostRecent = instance.GetPropertyValue("MostRecent").StringValue;
-        //    string bestResolution = instance.GetPropertyValue("BestResolution").StringValue;
-
-
-
-        //    IECClass SEWDVClass = sender.ParentECPlugin.SchemaModule.FindECClass(connection, "RealityModeling", "SpatialEntityWithDetailsView");
-
-        //    //Since the request expects from us to find all the entries by ourselves, we query their ids here.
-        //    ECQuery query = new ECQuery(SEWDVClass);
-        //    query.SelectClause.SelectAllProperties = false;
-        //    query.SelectClause.SelectedProperties = new List<IECProperty>();
-        //    query.SelectClause.SelectedProperties.Add(SEWDVClass.First(prop => prop.Name == "Id"));
-
-        //    query.WhereClause = new WhereCriteria(new PropertyExpression(RelationalOperator.IN, SEWDVClass.Properties(false).First(p => p.Name == "Classification"), instance.GetPropertyValue("Classification").StringValue));
-        //    // We add a special clause for OSM. OSM is to exclude, since it is already added in InsertPackageRequest
-        //    query.WhereClause.Add(new PropertyExpression(RelationalOperator.NE, SEWDVClass.Properties(false).First(p => p.Name == "DataSourceTypesAvailable"), "OSM"));
-        //    query.ExtendedDataValueSetter.Add(new KeyValuePair<string, object>("Polygon", "{points:" + selectedRegionStr + ",coordinate_system:\'4326\'}"));
-        //    query.ExtendedDataValueSetter.Add(new KeyValuePair<string, object>("MostRecent", mostRecent));
-        //    query.ExtendedDataValueSetter.Add(new KeyValuePair<string, object>("BestResolution", bestResolution));
-
-        //    var queriedEntities = ExecuteQuery(queryModule, connection, query, null);
-
-        //    IECClass packageRequestClass = sender.ParentECPlugin.SchemaModule.FindECClass(connection, "RealityModeling", "PackageRequest");
-        //    //IECClass requestedEntityClass = sender.ParentECPlugin.SchemaModule.FindECClass(connection, "RealityModeling", "RequestedEntity");
-
-
-        //    //We create the PackageRequest instance needed to launch the InsertPackageRequest method
-        //    IECInstance packageRequestInstance = packageRequestClass.CreateInstance();
-
-        //    IECArrayValue requestedEntitiesECArray;
-        //    if (null == (requestedEntitiesECArray = packageRequestInstance["RequestedEntities"] as IECArrayValue))
-        //    {
-        //        throw new Bentley.EC.Persistence.Operations.OperationFailedException("The server is unable to complete the requested order");
-        //    }
-        //    int i = 0;
-        //    foreach(var entity in queriedEntities)
-        //    {
-        //        IECStructValue requestedEntity = requestedEntitiesECArray[i] as IECStructValue;
-        //        requestedEntity["ID"].StringValue = entity.InstanceId;
-        //        requestedEntity["SelectedFormat"].StringValue = "image/png";
-        //        requestedEntity["SelectedStyle"].StringValue = "default";
-        //    }
-
-        //    packageRequestInstance["Polygon"].StringValue = selectedRegionStr;
-        //    packageRequestInstance["CoordinateSystem"].StringValue = "EPSG:4326";
-        //    packageRequestInstance["OSM"].NativeValue = instance.GetPropertyValue("OSM").NativeValue;
-
-
-        //    instance.InstanceId = InsertPackageRequest(sender, connection, packageRequestInstance, queryModule);
-
-        //    return instance.InstanceId;
-
-        //}
 
         private string InsertPackageRequest (OperationModule sender, RepositoryConnection connection, IECInstance instance, QueryModule queryModule)
             {
@@ -1149,10 +965,6 @@ namespace IndexECPlugin.Source
                 {
                 //new ConnectionFormatFieldInfo() {ID = "User", DisplayName = "username", IsRequired = true },    
                 //new ConnectionFormatFieldInfo() {ID = "Password", DisplayName = "Password", IsRequired = true, Masked = true },
-            //    //new ConnectionFormatFieldInfo() {ID = eBECPluginConstants.DomainsKey, DisplayName = "Domain", IsRequired = false, IsAdvanced = true }, unused
-            //    new ConnectionFormatFieldInfo() {ID = eBECPluginConstants.DefaultScopeKey, DisplayName = "DefaultScope", IsRequired = false, IsAdvanced = false },
-            //    new ConnectionFormatFieldInfo() {ID = eBECPluginConstants.ActiveScopesKey, DisplayName = "ActiveScopes", IsRequired = false, IsAdvanced = false },
-            //    //new ConnectionFormatFieldInfo() {ID = eBECPluginConstants.ImsRelyingPartyServiceUrlKey, DisplayName = "ImsRelyingPartyServiceUrl", IsRequired = false, IsAdvanced = true } unused
 #if !IMSOFF
                 new ConnectionFormatFieldInfo() {ID = "Token", DisplayName = "Token", IsRequired = true, IsAdvanced = true, IsCredential = true }
 #endif
@@ -1164,11 +976,6 @@ namespace IndexECPlugin.Source
                                     RepositoryConnection connection,
                                     IExtendedParameters extendedParameters)
             {
-            //Here, we could use the connectionInfo to open a connection
-            //Example :
-            //string username = connection.ConnectionInfo.GetField("User").Value;
-            //string password = connection.ConnectionInfo.GetField("Password").Value;
-            //... Whatever you need to do with username and password ...
 
             string token = connection.ConnectionInfo.GetField("Token").Value;
 
