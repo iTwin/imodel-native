@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/WebServices/Configuration/UrlProviderTests.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "UrlProviderTests.h"
@@ -120,21 +120,21 @@ TEST_F(UrlProviderTests, GetPunchlistWsgUrl_LocalStateHasOldUrlStoredAsString_Ig
     {
     auto client = std::make_shared<MockBuddiClient>();
     MockLocalState localState;
-    ON_CALL(localState, GetValue(_, _)).WillByDefault(Return(Json::Value::null));
-    ON_CALL(localState, SaveValue(_, _, _)).WillByDefault(Return());
+    ON_CALL(localState, _GetValue(_, _)).WillByDefault(Return(Json::Value::null));
+    ON_CALL(localState, _SaveValue(_, _, _)).WillByDefault(Return());
     ON_CALL(*client, GetUrl(_, _)).WillByDefault(Return(CreateCompletedAsyncTask(BuddiUrlResult())));
 
     UrlProvider::Initialize(UrlProvider::Environment::Dev, UrlProvider::DefaultTimeout, &localState, client);
 
     Json::Value newValue;
 
-    EXPECT_CALL(localState, GetValue(_, _)).WillOnce(Return("OldUrl"));
-    EXPECT_CALL(localState, SaveValue(_, _, _)).WillOnce(SaveArg<2>(&newValue));
+    EXPECT_CALL(localState, _GetValue(_, _)).WillOnce(Return("OldUrl"));
+    EXPECT_CALL(localState, _SaveValue(_, _, _)).WillOnce(SaveArg<2>(&newValue));
 
     EXPECT_CALL(*client, GetUrl(_, _)).WillOnce(Return(CreateCompletedAsyncTask(BuddiUrlResult::Success("NewUrl"))));
     EXPECT_EQ("NewUrl", UrlProvider::Urls::ConnectWsgPunchList.Get());
 
-    EXPECT_CALL(localState, GetValue(_, _)).WillOnce(Return(newValue));
+    EXPECT_CALL(localState, _GetValue(_, _)).WillOnce(Return(newValue));
     EXPECT_EQ("NewUrl", UrlProvider::Urls::ConnectWsgPunchList.Get());
     }
 
@@ -142,12 +142,12 @@ TEST_F(UrlProviderTests, GetPunchlistWsgUrl_LocalStateHasOldUrlStoredAsStringAnd
     {
     auto client = std::make_shared<MockBuddiClient>();
     MockLocalState localState;
-    ON_CALL(localState, GetValue(_, _)).WillByDefault(Return(Json::Value::null));
-    ON_CALL(localState, SaveValue(_, _, _)).WillByDefault(Return());
+    ON_CALL(localState, _GetValue(_, _)).WillByDefault(Return(Json::Value::null));
+    ON_CALL(localState, _SaveValue(_, _, _)).WillByDefault(Return());
 
     UrlProvider::Initialize(UrlProvider::Environment::Dev, UrlProvider::DefaultTimeout, &localState, client);
 
-    EXPECT_CALL(localState, GetValue(_, _)).WillOnce(Return("OldUrl"));
+    EXPECT_CALL(localState, _GetValue(_, _)).WillOnce(Return("OldUrl"));
 
     EXPECT_CALL(*client, GetUrl(_, _)).WillOnce(Return(CreateCompletedAsyncTask(BuddiUrlResult::Error(BuddiError::Status::ConnectionError))));
     EXPECT_EQ("OldUrl", UrlProvider::Urls::ConnectWsgPunchList.Get());

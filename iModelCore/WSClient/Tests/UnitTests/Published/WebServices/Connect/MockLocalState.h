@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/WebServices/Connect/MockLocalState.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -20,8 +20,8 @@ BEGIN_BENTLEY_DGNCLIENTFX_NAMESPACE
 struct MockLocalState : public ILocalState
     {
     public:
-        MOCK_METHOD3 (SaveValue, void (Utf8CP nameSpace, Utf8CP key, JsonValueCR value));
-        MOCK_CONST_METHOD2 (GetValue, Json::Value (Utf8CP nameSpace, Utf8CP key));
+        MOCK_METHOD3 (_SaveValue, void (Utf8CP nameSpace, Utf8CP key, JsonValueCR value));
+        MOCK_CONST_METHOD2 (_GetValue, Json::Value (Utf8CP nameSpace, Utf8CP key));
     };
 #endif
 
