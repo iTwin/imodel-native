@@ -2,7 +2,7 @@
 |
 |     $Source: RasterSchema/RasterQuadTree.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "RasterSchemaInternal.h"
@@ -228,7 +228,7 @@ ReprojectStatus RasterTile::ReprojectCorners(DPoint3dP outUors, DPoint3dCP srcCa
 
     DgnGCSP pDgnGcs = tree.GetDgnDb().Units().GetDgnGCS();
 
-    if(NULL == pSourceGcs || NULL == pDgnGcs)
+    if(NULL == pSourceGcs || NULL == pDgnGcs || !pSourceGcs->IsValid() || !pDgnGcs->IsValid())
         {
         // Assume raster to be coincident.
         memcpy(outUors, srcCartesian, sizeof(DPoint3d)*4);

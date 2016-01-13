@@ -2,7 +2,7 @@
 |
 |     $Source: RasterSchema/RasterFileHandler.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <RasterSchemaInternal.h>
@@ -156,7 +156,7 @@ ReprojectStatus RasterFileModelHandler::GetRasterExtentInUors(DRange2d &range, R
 
     ReprojectStatus status = REPROJECT_Success;
     DPoint3d dgnCornersUors[4];
-    if(NULL == sourceGcsPtr.get() || NULL == pDgnGcs)
+    if(NULL == sourceGcsPtr.get() || NULL == pDgnGcs || !sourceGcsPtr->IsValid() || !pDgnGcs->IsValid())
         {
         // Assume raster to be coincident.
         memcpy(dgnCornersUors, srcCornersCartesian, sizeof(DPoint3d)*4);
