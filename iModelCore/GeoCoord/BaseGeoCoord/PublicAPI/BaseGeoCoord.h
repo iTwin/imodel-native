@@ -10,9 +10,9 @@
 /*__PUBLISH_SECTION_START__*/
 #include <Geom/GeomApi.h>
 #include "BaseGeoDefs.r.h"
-
+/*__PUBLISH_SECTION_END__*/
 #include    <GeoCoord/IGeoTiffKeysList.h>
-
+/*__PUBLISH_SECTION_START__*/
 typedef struct cs_Csprm_    CSParameters;
 
 #include "ExportMacros.h"
@@ -22,7 +22,6 @@ typedef struct cs_Csprm_    CSParameters;
 #include <Bentley/RefCounted.h>
 #include <Bentley/bvector.h>
 
-struct IGeoTiffKeysList;
 
 /** @namespace BentleyApi::GeoCoordinates Geographic Coordinate System classes @see GeoCoordinate */
 BEGIN_BENTLEY_NAMESPACE
@@ -499,7 +498,7 @@ WStringR                wellKnownText,
 WktFlavor               wktFlavor,
 bool                    originalIfPresent
 ) const;
-
+/*__PUBLISH_SECTION_END__*/
 /*---------------------------------------------------------------------------------**//**
 * Used in conjunction with the CreateGCS factory method to set the BaseGCS from a
 * set of GeoTiff Keys. Note that the original list of geotiff keys will be preserved
@@ -523,14 +522,14 @@ WStringP                    warningErrorMsg,
 bool                        allowUnitsOverride
 );
 
-/*__PUBLISH_SECTION_END__*/
+
 /*---------------------------------------------------------------------------------**//**
 * High performance way of changing the BaseGCS to represent a different named coordinate system.
 * @param    coordinateSystemKeyName IN      cs name.
 * @bsimethod                                                    Barry.Bentley   10/06
 +---------------+---------------+---------------+---------------+---------------+------*/
 BASEGEOCOORD_EXPORTED StatusInt         SetFromCSName (WCharCP coordinateSystemKeyName);
-/*__PUBLISH_SECTION_START__*/
+
 
 /*---------------------------------------------------------------------------------**//**
 * Saves the coordinate system to GeoTiffKeys, if possible.
@@ -556,8 +555,6 @@ bool                    originalsIfPresent   // true indicates the original geok
 +---------------+---------------+---------------+---------------+---------------+------*/
 BASEGEOCOORD_EXPORTED bool              CanSaveToGeoTiffKeys () const;
 
-
-/*__PUBLISH_SECTION_END__*/
 /*---------------------------------------------------------------------------------**//**
 * Reveals whether the datum can be saved to GeoTiffKeys.
 * @return   true if the datum for the coordinate system can be saved to GeoTiffKeys, false if not.
