@@ -1184,8 +1184,9 @@ struct TsComponentParameter
     {
     ComponentDef::ParameterVariesPer m_variesPer;
     ECN::ECValue m_value;
+    bool m_isForScriptOnly;
 
-    TsComponentParameter() : m_variesPer(ComponentDef::ParameterVariesPer::Instance) {;}
+    TsComponentParameter() : m_variesPer(ComponentDef::ParameterVariesPer::Instance), m_isForScriptOnly(true) {;}
     //! Construct a new Parameter
     TsComponentParameter(ComponentDef::ParameterVariesPer s, ECN::ECValueCR v) : m_variesPer(s), m_value(v) {;}
     //! From JSON
@@ -1193,9 +1194,9 @@ struct TsComponentParameter
     //! To JSON
     DGNPLATFORM_EXPORT Json::Value ToJson() const;
     //! Get the scope of this parameter
-    ComponentDef::ParameterVariesPer GetScope() const {return m_variesPer;}
+    //ComponentDef::ParameterVariesPer GetScope() const {return m_variesPer;}
     //! Get the value of this parameter
-    ECN::ECValueCR GetValue() const {return m_value;}
+    //ECN::ECValueCR GetValue() const {return m_value;}
     //! Set the value of this parameter
     DgnDbStatus SetValue(ECN::ECValueCR newValue);
 
@@ -1233,6 +1234,8 @@ private:
     Utf8String m_modelName;
     Utf8String m_inputs;
     TsComponentParameterSet m_params;
+    TsComponentParameterSet m_firstClassParams;
+    TsComponentParameterSet m_adhocParams;
     
     ECN::IECInstancePtr CreatePropSpecCA();
     ECN::IECInstancePtr CreateSpecCA();

@@ -1297,11 +1297,48 @@
         <ECProperty propertyName="ElementGenerator" typeName="string" description="The name of the script to execute in order to create a variation of the component. May be null if the component is based on persistent geometry. In that case, Model must not be null."/>
         <ECProperty propertyName="Model" typeName="string" description="The name of the model that the component definition uses to hold the persistent geometry and other data such as constraints. May be null for components that generate their geometry from scratch."/>
         <ECProperty propertyName="Inputs" typeName="string" description="The names of the properties that are the main inputs to the component's element generator script."/>
+        <ECProperty propertyName="ScriptOnlyParameters" typeName="string" description="The definition and default values for all of the ScriptOnlyParameters ad hoc properties that each instance must have."/>
     </ECCustomAttributeClass>
 
     <ECCustomAttributeClass typeName="ComponentParameterSpecification" description="Provides information about a property that plays the role of a parameter to a component's solver." displayLabel="Component Parameter Specification" appliesTo="Any">
         <ECProperty propertyName="VariesPer" typeName="string" description="Indicates if the parameter may be varied for individual instances or if it is fixed for all instances of a particular variation. Possible values: Variation or Instance."/>
     </ECCustomAttributeClass>
+
+    <ECStructClass typeName="ComponentSpecificationAdhocHolder">
+        <ECCustomAttributes>
+            <AdhocPropertyContainerDefinition xmlns="Bentley_Standard_CustomAttributes.01.10">
+                <NameProperty>Name</NameProperty>
+                <DisplayLabelProperty>Label</DisplayLabelProperty>
+                <ValueProperty>Value</ValueProperty>
+                <TypeProperty>Type</TypeProperty>
+                <UnitProperty>Unit</UnitProperty>
+                <!-- do we need the following properties? -->
+                <ExtendTypeProperty>ExtendType</ExtendTypeProperty>
+                <IsReadOnlyProperty>IsReadOnly</IsReadOnlyProperty>
+            </AdhocPropertyContainerDefinition>
+        </ECCustomAttributes>
+
+        <ECProperty propertyName="Name" typeName="string" />
+        <ECProperty propertyName="Label" typeName="string" />
+        <ECProperty propertyName="Value" typeName="string" />
+        <ECProperty propertyName="Type" typeName="int" />
+        <ECProperty propertyName="Unit" typeName="string" />
+        <!-- do we need the following properties? -->
+        <ECProperty propertyName="ExtendType" typeName="string" />
+        <ECProperty propertyName="IsReadOnly" typeName="boolean" />
+    </ECStructClass>
+    
+    <!-- Example of how to use ComponentSpecificationAdhocHolder to define an adhoc properties container on a class
+    <ECEntityClass typeName="AcmeDoor" isStruct="False">
+        <ECCustomAttributes>
+            <AdhocPropertySpecification xmlns="Bentley_Standard_CustomAttributes.01.10">
+                <AdhocPropertyContainer>ComponentSpecificationAdhocHolder</AdhocPropertyContainer>
+            </AdhocPropertySpecification>
+        </ECCustomAttributes>
+        <ECArrayProperty propertyName="ScriptOnlyParameters" typeName="ComponentSpecificationAdhocHolder" isStruct="True" />
+        
+    </ECEntityClass>
+    -->
 
     <!-- ////////////////////////////////////////////////////////////////////////////// -->
     <!-- // Deprecated classes -->

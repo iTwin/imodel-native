@@ -2,7 +2,7 @@
 #
 #     $Source: DgnScript/GeomJsApi/GenerateTypeScript.mki $
 #
-#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
 %ifdef BENTLEYCONFIG_NO_JAVASCRIPT
@@ -67,6 +67,7 @@ $(dgnScriptGen)GeomJsApiCallbacks.cpp : $(geomJsApiTsDir)GeomJsApi.d.ts\
         --projectionTypeName "BentleyApi::Dgn::GeomJsApiProjection" \
         --refCountedBaseType "BentleyApi::Dgn::RefCountedBaseWithCreate" \
         --platformTsLibPath "$(BuildContext)SubParts/BeJavaScriptJs/BeJavaScriptTypes.ts" \
+        --exportMacroName "DGNPLATFORM_EXPORT" \
         --forceBuiltInTsTypes \
         --suppressTypeAliases \
         --tscCommand "$(TypeScriptCompile)"

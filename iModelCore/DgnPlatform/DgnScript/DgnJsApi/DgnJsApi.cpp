@@ -157,6 +157,16 @@ JsDgnElementP JsComponentDef::MakeUniqueInstance(JsDgnModelP targetModel, JsECIn
     return new JsDgnElement(*inst->CopyForEdit());
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Sam.Wilson                      12/15
+//---------------------------------------------------------------------------------------
+JsECInstanceP JsComponentDef::MakeParameters()
+    {
+    if (!m_cdef.IsValid())
+        return nullptr;
+    return new JsECInstance(*m_cdef->MakeVariationSpec());
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      12/15
 +---------------+---------------+---------------+---------------+---------------+------*/

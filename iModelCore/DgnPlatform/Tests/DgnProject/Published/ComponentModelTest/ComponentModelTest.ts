@@ -121,7 +121,7 @@ module ComponentModelTest
             element.Insert();
 
             var gadgetComponentDef = be.ComponentDef.FindByName(db, TEST_JS_NAMESPACE + '.' + TEST_GADGET_COMPONENT_NAME);
-            var gparams = gadgetComponentDef.ComponentECClass.MakeInstance();
+            var gparams = gadgetComponentDef.MakeParameters();
             gparams.SetValue('Q', be.ECValue.FromDouble(A + 1));
             gparams.SetValue('W', be.ECValue.FromDouble(B + 1));
             gparams.SetValue('R', be.ECValue.FromDouble(C + 1));
