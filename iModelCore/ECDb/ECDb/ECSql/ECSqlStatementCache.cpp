@@ -142,8 +142,6 @@ ECSqlStatementCache::ECSqlStatementCache(size_t maxSize, Utf8CP name)
 //---------------------------------------------------------------------------------------
 CachedECSqlStatementPtr ECSqlStatementCache::GetPreparedStatement(ECDbCR ecdb, Utf8CP ecsql) const
     {
-    ecdb._VerifyQuerySequence();
-
     BeDbMutexHolder _v_v(m_mutex);
     CachedECSqlStatement* stmt = FindEntry(ecsql);
     if (stmt != nullptr)
