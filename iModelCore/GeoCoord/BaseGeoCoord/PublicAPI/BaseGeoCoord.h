@@ -10,9 +10,9 @@
 /*__PUBLISH_SECTION_START__*/
 #include <Geom/GeomApi.h>
 #include "BaseGeoDefs.r.h"
-/*__PUBLISH_SECTION_END__*/
+
 #include    <GeoCoord/IGeoTiffKeysList.h>
-/*__PUBLISH_SECTION_START__*/
+
 typedef struct cs_Csprm_    CSParameters;
 
 #include "ExportMacros.h"
