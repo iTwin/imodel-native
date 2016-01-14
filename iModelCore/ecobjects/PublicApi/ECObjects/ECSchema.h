@@ -998,11 +998,11 @@ public:
     ECOBJECTS_EXPORT ECObjectsStatus            SetRelationshipClass(ECRelationshipClassCR relClass, ECRelatedInstanceDirection direction, bool verify = true);
     
     // !Verifies that the relationship class and direction is valid.  
-    bool                        Verify();
+    ECOBJECTS_EXPORT bool       Verify();
     // !Returns true if the Verify method has been called on this Navigation Property, false if it has not.
-    bool                        IsVerified() { return ValueKind::VALUEKIND_Uninitialized != m_valueKind; }
+    bool                        IsVerified() const { return ValueKind::VALUEKIND_Uninitialized != m_valueKind; }
     // !Returns true if the navigation property points to an endpoint which can have more than one related instance
-    bool                        IsMultiple() { return ValueKind::VALUEKIND_Array == m_valueKind; }
+    bool                        IsMultiple() const { return ValueKind::VALUEKIND_Array == m_valueKind; }
     
     // !Gets the PrimitiveType used for Navigation properties.  Default is string.
     ECOBJECTS_EXPORT static PrimitiveType        GetIdType() { return s_idType; }
