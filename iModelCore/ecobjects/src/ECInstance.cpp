@@ -2797,11 +2797,62 @@ InstanceReadStatus  ReadSimplePropertyValue(Utf8StringCR propertyName, Primitive
     }
 
 //--------------------------------------------------------------------------------------
+// @bsimethod                                    Colin.Kerr                     01/16
+//---------------+---------------+---------------+---------------+---------------+------
+InstanceReadStatus ReadPrimitiveArrayValues(IECInstanceP ecInstance, Utf8StringCR accessString, PrimitiveType memberType, PrimitiveType serializedMemberType, bool isFixedSizeArray, BeXmlNodeR propertyValueNode)
+    {
+    // start the address out as zero.
+    uint32_t    index = 0;
+
+    // step through the nodes. Each should be a primitive value type like <int>value</int>
+    for (BeXmlNodeP arrayValueNode = propertyValueNode.GetFirstChild(BEXMLNODE_Element); NULL != arrayValueNode; arrayValueNode = arrayValueNode->GetNextSibling(BEXMLNODE_Element))
+        {
+        if (memberType == serializedMemberType && !ValidateArrayPrimitiveType(arrayValueNode->GetName(), memberType))
+            {
+            LOG.warningv("Incorrectly formatted array element found in array %s.  Expected: %s  Found: %s",
+                         accessString.c_str(), GetPrimitiveTypeString(memberType), arrayValueNode->GetName());
+            continue;
+            }
+
+        if (!isFixedSizeArray)
+            ecInstance->AddArrayElements(accessString.c_str(), 1);
+
+        // read it, populating the ECInstance using accessString and arrayIndex.
+        InstanceReadStatus      ixrStatus;
+        ECValue                 ecValue;
+        if (InstanceReadStatus::Success == (ixrStatus = ReadPrimitiveValue(ecValue, memberType, *arrayValueNode, serializedMemberType)))
+            {
+            // If we failed to read the value above, the array member will have been allocated but left null.
+            // This allows any default value to be applied to it via CalculatedECPropertySpecification, 
+            // and is less surprising than the old behavior which would have omitted the member entirely.
+            ECObjectsStatus   setStatus = ecInstance->SetInternalValue(accessString.c_str(), ecValue, index);
+            if (ECObjectsStatus::Success != setStatus && ECObjectsStatus::PropertyValueMatchesNoChange != setStatus)
+                {
+                BeAssert(false);
+                return InstanceReadStatus::CantSetValue;
+                }
+            }
+
+        // increment the array index.
+        index++;
+        }
+    return InstanceReadStatus::Success;
+    }
+
+//--------------------------------------------------------------------------------------
 // @bsimethod                                    Colin.Kerr                     12/15
 //---------------+---------------+---------------+---------------+---------------+------
 InstanceReadStatus  ReadNavigationPropertyValue(NavigationECPropertyP navigationProperty, IECInstanceP ecInstance, Utf8StringP baseAccessString, BeXmlNodeR propertyValueNode)
     {
-    return ReadSimplePropertyValue(navigationProperty->GetName(), PrimitiveType::PRIMITIVETYPE_String, baseAccessString, ecInstance, propertyValueNode, PrimitiveType::PRIMITIVETYPE_String);
+    // We always input string as the serialized type to handle the case where the instance is loaded in an environment where the type is different than when serialized
+    if (navigationProperty->IsMultiple())
+        {
+        Utf8String accessString;
+        CreateAccessString(accessString, baseAccessString, navigationProperty->GetName());
+        return ReadPrimitiveArrayValues(ecInstance, accessString, NavigationECProperty::GetIdType(), PrimitiveType::PRIMITIVETYPE_String, false, propertyValueNode);
+        }
+    else
+        return ReadSimplePropertyValue(navigationProperty->GetName(), NavigationECProperty::GetIdType(), baseAccessString, ecInstance, propertyValueNode, PrimitiveType::PRIMITIVETYPE_String);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2811,7 +2862,6 @@ InstanceReadStatus   ReadPrimitivePropertyValue (PrimitiveECPropertyP primitiveP
     {
     return ReadSimplePropertyValue(primitiveProperty->GetName(), primitiveProperty->GetType(), baseAccessString, ecInstance, propertyValueNode, m_context.GetSerializedPrimitiveType(*primitiveProperty));
     }
-
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   10/2011
@@ -2830,45 +2880,16 @@ InstanceReadStatus   ReadArrayPropertyValue (ArrayECPropertyP arrayProperty, IEC
     if (ARRAYKIND_Primitive == arrayKind)
         {
         PrimitiveType   memberType = arrayProperty->GetPrimitiveElementType();
+        PrimitiveType serializedMemberType = m_context.GetSerializedPrimitiveArrayType(*arrayProperty);
 
         bool            isFixedSizeArray = false;
 
         if (arrayProperty->GetMinOccurs() == arrayProperty->GetMaxOccurs())
-            isFixedSizeArray = true; //PrimitiveTypeIsFixedSize (memberType);
+            isFixedSizeArray = true;
 
-        // step through the nodes. Each should be a primitive value type like <int>value</int>
-        for (BeXmlNodeP arrayValueNode = propertyValueNode.GetFirstChild (BEXMLNODE_Element); NULL != arrayValueNode; arrayValueNode = arrayValueNode->GetNextSibling(BEXMLNODE_Element))
-            {
-            PrimitiveType serializedMemberType = m_context.GetSerializedPrimitiveArrayType (*arrayProperty);
-            if (memberType == serializedMemberType && !ValidateArrayPrimitiveType (arrayValueNode->GetName(), memberType))
-                {
-                LOG.warningv("Incorrectly formatted array element found in array %s.  Expected: %s  Found: %s", 
-                             accessString.c_str(), GetPrimitiveTypeString (memberType), arrayValueNode->GetName());
-                continue;
-                }
-
-            if ( !isFixedSizeArray)
-                ecInstance->AddArrayElements (accessString.c_str(), 1);
-
-            // read it, populating the ECInstance using accessString and arrayIndex.
-            InstanceReadStatus      ixrStatus;
-            ECValue                 ecValue;
-            if (InstanceReadStatus::Success == (ixrStatus = ReadPrimitiveValue (ecValue, memberType, *arrayValueNode, serializedMemberType)))
-                {
-                // If we failed to read the value above, the array member will have been allocated but left null.
-                // This allows any default value to be applied to it via CalculatedECPropertySpecification, 
-                // and is less surprising than the old behavior which would have omitted the member entirely.
-                ECObjectsStatus   setStatus = ecInstance->SetInternalValue (accessString.c_str(), ecValue, index);
-                if (ECObjectsStatus::Success != setStatus && ECObjectsStatus::PropertyValueMatchesNoChange != setStatus)   
-                    {
-                    BeAssert (false);
-                    return InstanceReadStatus::CantSetValue;
-                    }
-                }
-
-            // increment the array index.
-            index++;
-            }
+        InstanceReadStatus status = ReadPrimitiveArrayValues(ecInstance, accessString, memberType, serializedMemberType, isFixedSizeArray, propertyValueNode);
+        if (InstanceReadStatus::Success != status)
+            return status;
         }
 
     else if (ARRAYKIND_Struct == arrayKind)
@@ -2895,7 +2916,6 @@ InstanceReadStatus   ReadArrayPropertyValue (ArrayECPropertyP arrayProperty, IEC
 
             // increment the array index.
             index++;
-
             }
         }
     
@@ -3540,6 +3560,30 @@ InstanceWriteStatus     WritePropertyValuesOfClassOrStructArrayMember (ECClassCR
      return InstanceWriteStatus::Success;
      }
 
+InstanceWriteStatus  WritePrimitiveArray(IECInstanceCR ecInstance, Utf8StringCR accessString, uint32_t nElements, PrimitiveType memberType)
+    {
+    ECValue         ecValue;
+    InstanceWriteStatus     status;
+    Utf8CP          typeString = GetPrimitiveTypeString(memberType);
+    for (uint32_t index = 0; index < nElements; index++)
+        {
+        if (ECObjectsStatus::Success != ecInstance.GetValue(ecValue, accessString.c_str(), index))
+            break;
+
+        if (BEXML_Success != m_xmlWriter->WriteElementStart(typeString))
+            return InstanceWriteStatus::XmlWriteError;
+
+        // write the primitive value
+        if (InstanceWriteStatus::Success != (status = WritePrimitiveValue(ecValue, memberType)))
+            {
+            BeAssert(false);
+            return status;
+            }
+        m_xmlWriter->WriteElementEnd();
+        }
+    return InstanceWriteStatus::Success;
+    }
+
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Colin.Kerr                     12/15
 //---------------+---------------+---------------+---------------+---------------+------
@@ -3556,9 +3600,24 @@ InstanceWriteStatus     WriteNavigationPropertyValue(NavigationECPropertyR navig
     if ((ECObjectsStatus::Success != getStatus) || ecValue.IsNull())
         return InstanceWriteStatus::Success;
 
-    m_xmlWriter->WriteElementStart(propertyName.c_str());
-    m_xmlWriter->WriteText(ecValue.GetUtf8CP());
-    m_xmlWriter->WriteElementEnd();
+    if (navigationProperty.IsMultiple())
+        {
+        // No members, don't write anything
+        uint32_t nElements = ecValue.GetArrayInfo().GetCount();
+        if (0 == nElements)
+            return InstanceWriteStatus::Success;
+        
+        m_xmlWriter->WriteElementStart(propertyName.c_str());
+        WritePrimitiveArray(ecInstance, accessString, nElements, navigationProperty.GetIdType());
+        m_xmlWriter->WriteElementEnd();
+        }
+    else
+        {
+        m_xmlWriter->WriteElementStart(propertyName.c_str());
+        WritePrimitiveValue(ecValue, navigationProperty.GetIdType());
+        m_xmlWriter->WriteElementEnd();
+        }
+
     return InstanceWriteStatus::Success;
     }
 
@@ -3699,6 +3758,7 @@ InstanceWriteStatus     WriteArrayPropertyValue (ArrayECPropertyR arrayProperty,
     Utf8String    accessString;
     CreateAccessString(accessString, baseAccessString, arrayProperty.GetName());
 
+
     // no members, don't write anything.
     ECValue         ecValue;
     if (ECObjectsStatus::Success != ecInstance.GetValue (ecValue, accessString.c_str()) || ecValue.IsNull() || ecValue.GetArrayInfo().GetCount() == 0)
@@ -3709,27 +3769,11 @@ InstanceWriteStatus     WriteArrayPropertyValue (ArrayECPropertyR arrayProperty,
     if (BEXML_Success != m_xmlWriter->WriteElementStart(arrayProperty.GetName().c_str()))
         return InstanceWriteStatus::XmlWriteError;
 
-    InstanceWriteStatus     ixwStatus;
     if (ARRAYKIND_Primitive == arrayKind)
         {
-        PrimitiveType   memberType  = arrayProperty.GetPrimitiveElementType();
-        Utf8CP          typeString  = GetPrimitiveTypeString (memberType);
-        for (uint32_t index=0; index < nElements ; index++)
-            {
-            if (ECObjectsStatus::Success != ecInstance.GetValue (ecValue, accessString.c_str(), index))
-                break;
-
-            if (BEXML_Success != m_xmlWriter->WriteElementStart(typeString))
-                return InstanceWriteStatus::XmlWriteError;
-
-            // write the primitive value
-            if (InstanceWriteStatus::Success != (ixwStatus = WritePrimitiveValue (ecValue, memberType)))
-                {
-                BeAssert (false);
-                return ixwStatus;
-                }
-            m_xmlWriter->WriteElementEnd();
-            }
+        InstanceWriteStatus status = WritePrimitiveArray(ecInstance, accessString, nElements, arrayProperty.GetPrimitiveElementType());
+        if (InstanceWriteStatus::Success != status)
+            return status;
         }
     else if (ARRAYKIND_Struct == arrayKind)
         {

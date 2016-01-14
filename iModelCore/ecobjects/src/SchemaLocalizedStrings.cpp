@@ -118,6 +118,26 @@ Utf8StringCR SchemaLocalizedStrings::GetClassDisplayLabel(ECClassCP ecClass, Utf
     }
 
 //--------------------------------------------------------------------------------------
+// @bsimethod                                    Robert.Schili                      01/2016
+//--------------------------------------------------------------------------------------
+Utf8StringCR SchemaLocalizedStrings::GetEnumerationDisplayLabel(ECEnumerationCR ecEnumeration, Utf8StringCR invariantDisplayLabel) const
+    {
+    if (m_empty)
+        return invariantDisplayLabel;
+    // Standard:Schema.04.02:Enumeration.DisplayLabel:[Hash]
+    Utf8String labelKey(STANDARD);
+    labelKey.append(COLON);
+    labelKey.append(ecEnumeration.GetSchema().GetFullSchemaName());
+    labelKey.append(COLON);
+    labelKey.append(ecEnumeration.GetName());
+    labelKey.append(DOT);
+    labelKey.append(DISPLAYLABEL);
+    labelKey.append(COLON);
+    labelKey.append(ComputeHash(invariantDisplayLabel));
+    return GetLocalizedString(labelKey.c_str(), invariantDisplayLabel);
+    }
+
+//--------------------------------------------------------------------------------------
 // @bsimethod                                    Colin.Kerr                      04/2015
 //--------------------------------------------------------------------------------------
 Utf8StringCR SchemaLocalizedStrings::GetClassDescription(ECClassCP ecClass, Utf8StringCR invariantDescription) const
@@ -130,6 +150,27 @@ Utf8StringCR SchemaLocalizedStrings::GetClassDescription(ECClassCP ecClass, Utf8
     descriptionKey.append(ecClass->GetSchema().GetFullSchemaName());
     descriptionKey.append(COLON);
     descriptionKey.append(ecClass->GetName());
+    descriptionKey.append(DOT);
+    descriptionKey.append(DESCRIPTION);
+    descriptionKey.append(COLON);
+    descriptionKey.append(ComputeHash(invariantDescription));
+
+    return GetLocalizedString(descriptionKey.c_str(), invariantDescription);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Robert.Schili                      01/2016
+//--------------------------------------------------------------------------------------
+Utf8StringCR SchemaLocalizedStrings::GetEnumerationDescription(ECEnumerationCR ecEnumeration, Utf8StringCR invariantDescription) const
+    {
+    if (m_empty)
+        return invariantDescription;
+    // Standard:Schema.04.02:Class.Description:[Hash]
+    Utf8String descriptionKey(STANDARD);
+    descriptionKey.append(COLON);
+    descriptionKey.append(ecEnumeration.GetSchema().GetFullSchemaName());
+    descriptionKey.append(COLON);
+    descriptionKey.append(ecEnumeration.GetName());
     descriptionKey.append(DOT);
     descriptionKey.append(DESCRIPTION);
     descriptionKey.append(COLON);
@@ -182,6 +223,37 @@ Utf8StringCR SchemaLocalizedStrings::GetPropertyDescription(ECPropertyCP ecPrope
     descriptionKey.append(ComputeHash(invariantDescription));
 
     return GetLocalizedString(descriptionKey.c_str(), invariantDescription);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Colin.Kerr                      04/2015
+//--------------------------------------------------------------------------------------
+Utf8StringCR SchemaLocalizedStrings::GetEnumeratorDisplayLabel(ECEnumeratorCR ecEnumerator, Utf8StringCR invariantDisplayLabel) const
+    {
+    if (m_empty)
+        return invariantDisplayLabel;
+    // Standard:Schema.04.02:Class:Property.DisplayLabel:[Hash]
+    Utf8String labelKey(STANDARD);
+    labelKey.append(COLON);
+    ECEnumerationCR e = ecEnumerator.GetEnumeration();
+    labelKey.append(e.GetSchema().GetFullSchemaName());
+    labelKey.append(COLON);
+    labelKey.append(e.GetName());
+    labelKey.append(COLON);
+
+    Utf8String enumeratorName;
+    if (ecEnumerator.IsInteger())
+        enumeratorName.Sprintf("%d", ecEnumerator.GetInteger());
+    else
+        enumeratorName = ecEnumerator.GetString();
+
+    labelKey.append(enumeratorName);
+    labelKey.append(DOT);
+    labelKey.append(DISPLAYLABEL);
+    labelKey.append(COLON);
+    labelKey.append(ComputeHash(invariantDisplayLabel));
+
+    return GetLocalizedString(labelKey.c_str(), invariantDisplayLabel);
     }
 
 //--------------------------------------------------------------------------------------

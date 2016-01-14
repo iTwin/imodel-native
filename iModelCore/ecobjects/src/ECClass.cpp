@@ -1268,9 +1268,9 @@ SchemaReadStatus ECClass::_ReadXmlAttributes (BeXmlNodeR classNode)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaReadStatus ECClass::_ReadXmlContents (BeXmlNodeR classNode, ECSchemaReadContextR context, int ecXmlVersionMajor)
-    {            
-	bool isSchemaSupplemental = Utf8String::npos != GetSchema().GetName().find("_Supplemental_");
+SchemaReadStatus ECClass::_ReadXmlContents (BeXmlNodeR classNode, ECSchemaReadContextR context, int ecXmlVersionMajor, bvector<NavigationECPropertyP>& navigationProperties)
+    {
+    bool isSchemaSupplemental = Utf8String::npos != GetSchema().GetName().find("_Supplemental_");
     // Get the BaseClass child nodes.
     for (BeXmlNodeP childNode = classNode.GetFirstChild (); NULL != childNode; childNode = childNode->GetNextSibling ())
         {
@@ -1332,10 +1332,11 @@ SchemaReadStatus ECClass::_ReadXmlContents (BeXmlNodeR classNode, ECSchemaReadCo
             }
         else if (0 == strcmp(childNodeName, EC_NAVIGATIONPROPERTY_ELEMENT)) // also EC3.0 only
             {
-            ECPropertyP ecProperty = new NavigationECProperty(*this);
+            NavigationECPropertyP ecProperty = new NavigationECProperty(*this);
             SchemaReadStatus status = _ReadPropertyFromXmlAndAddToClass(ecProperty, childNode, context, childNodeName);
             if (SchemaReadStatus::Success != status)
                 return status;
+            navigationProperties.push_back(ecProperty);
             }
         }
     
@@ -1435,8 +1436,10 @@ SchemaWriteStatus ECClass::_WriteXml (BeXmlWriterR xmlWriter, int ecXmlVersionMa
         bool isConcrete = this->GetClassModifier() != ECClassModifier::Abstract;
         xmlWriter.WriteAttribute(IS_DOMAINCLASS_ATTRIBUTE, isConcrete && !(IsStructClass() || IsCustomAttributeClass()));
         }
-    else
+    else if (m_modifier != ECClassModifier::None)
+        {
         xmlWriter.WriteAttribute(MODIFIER_ATTRIBUTE, ECXml::ModifierToString(m_modifier));
+        }
 
     if (nullptr != additionalAttributes)
         {
@@ -1638,10 +1641,10 @@ SchemaWriteStatus ECEntityClass::_WriteXml(BeXmlWriterR xmlWriter, int ecXmlVers
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Colin.Kerr                  12/2015
 //---------------+---------------+---------------+---------------+---------------+-------
-ECObjectsStatus ECEntityClass::CreateNavigationProperty(NavigationECPropertyP& ecProperty, Utf8StringCR name, ECRelationshipClassCR relationshipClass, ECRelatedInstanceDirection direction)
+ECObjectsStatus ECEntityClass::CreateNavigationProperty(NavigationECPropertyP& ecProperty, Utf8StringCR name, ECRelationshipClassCR relationshipClass, ECRelatedInstanceDirection direction, bool verify)
     {
     ecProperty = new NavigationECProperty(*this);
-    ECObjectsStatus status = ecProperty->SetRelationshipClass(relationshipClass, direction);
+    ECObjectsStatus status = ecProperty->SetRelationshipClass(relationshipClass, direction, verify);
     if (ECObjectsStatus::Success == status)
         status = AddProperty(ecProperty, name);
 
@@ -2531,7 +2534,11 @@ SchemaWriteStatus ECRelationshipClass::_WriteXml (BeXmlWriterR xmlWriter, int ec
     SchemaWriteStatus   status;
     bmap<Utf8CP, Utf8CP> additionalAttributes;
     additionalAttributes[STRENGTH_ATTRIBUTE] = ECXml::StrengthToString(m_strength);
-    additionalAttributes[STRENGTHDIRECTION_ATTRIBUTE] = ECXml::DirectionToString(m_strengthDirection);
+    if (m_strengthDirection != ECRelatedInstanceDirection::Forward)
+        { //skip the attribute for "forward" as it is the default value.
+        additionalAttributes[STRENGTHDIRECTION_ATTRIBUTE] = ECXml::DirectionToString(m_strengthDirection);
+        }
+
     if (SchemaWriteStatus::Success != (status = ECClass::_WriteXml (xmlWriter, ecXmlVersionMajor, ecXmlVersionMinor, EC_RELATIONSHIP_CLASS_ELEMENT, &additionalAttributes, false)))
         return status;
         
@@ -2568,9 +2575,9 @@ SchemaReadStatus ECRelationshipClass::_ReadXmlAttributes (BeXmlNodeR classNode)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                02/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaReadStatus ECRelationshipClass::_ReadXmlContents (BeXmlNodeR classNode, ECSchemaReadContextR context, int ecXmlVersionMajor)
+SchemaReadStatus ECRelationshipClass::_ReadXmlContents (BeXmlNodeR classNode, ECSchemaReadContextR context, int ecXmlVersionMajor, bvector<NavigationECPropertyP>& navigationProperties)
     {
-    SchemaReadStatus status = T_Super::_ReadXmlContents (classNode, context, ecXmlVersionMajor);
+    SchemaReadStatus status = T_Super::_ReadXmlContents (classNode, context, ecXmlVersionMajor, navigationProperties);
     if (status != SchemaReadStatus::Success)
         return status;
 

@@ -2,7 +2,7 @@
 |
 |     $Source: src/ECEnumeration.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -185,7 +185,7 @@ bool ECEnumeration::GetIsDisplayLabelDefined () const
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8StringCR ECEnumeration::GetDisplayLabel () const
     {
-    return GetInvariantDisplayLabel(); //TODO: Support Localization
+    return GetSchema().GetLocalizedStrings().GetEnumerationDisplayLabel(*this, GetInvariantDisplayLabel());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -209,7 +209,7 @@ void ECEnumeration::SetDisplayLabel (Utf8CP displayLabel)
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8StringCR ECEnumeration::GetDescription () const
     {
-    return GetInvariantDescription(); //TODO: Support Localization
+    return GetSchema().GetLocalizedStrings().GetEnumerationDescription(*this, GetInvariantDescription());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -495,7 +495,7 @@ void ECEnumerator::SetDisplayLabel(Utf8CP value)
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8StringCR ECEnumerator::GetDisplayLabel() const
     {
-    return GetInvariantDisplayLabel(); //TODO: localization support.
+    return GetEnumeration().GetSchema().GetLocalizedStrings().GetEnumeratorDisplayLabel(*this, GetInvariantDisplayLabel());
     }
 
 /*--------------------------------------------------------------------------------------/
