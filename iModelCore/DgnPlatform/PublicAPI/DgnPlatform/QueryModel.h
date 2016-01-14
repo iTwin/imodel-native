@@ -43,10 +43,18 @@ struct OverlapScorer
     bool ComputeScore(double* score, BeSQLite::RTree3dValCR range);
 };
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   01/16
++---------------+---------------+---------------+---------------+---------------+------*/
+struct RTreeTester
+{
+    virtual int _TestRTree(BeSQLite::RTreeMatchFunction::QueryInfo const&) = 0;
+};
+
 //=======================================================================================
 // @bsiclass                                                    Keith.Bentley   04/14
 //=======================================================================================
-struct RTreeFilter : BeSQLite::RTreeAcceptFunction::Tester
+struct RTreeFilter : RTreeTester
     {
     bool                    m_doSkewtest;
     Frustum                 m_frustum;
@@ -70,16 +78,15 @@ struct RTreeFilter : BeSQLite::RTreeAcceptFunction::Tester
 //=======================================================================================
 // @bsiclass                                                    Keith.Bentley   12/11
 //=======================================================================================
-struct DgnDbRTreeFitFilter : BeSQLite::RTreeAcceptFunction::Tester
+struct DgnDbRTreeFitFilter : RTreeTester
     {
     DRange3d m_fitRange;
     DRange3d m_lastRange;
 
-    DGNPLATFORM_EXPORT virtual int _TestRange(QueryInfo const&) override;
-    virtual void _StepRange(BeSQLite::DbFunction::Context&, int nArgs, BeSQLite::DbValue* args) override {m_fitRange.Extend(m_lastRange);}
+    DGNPLATFORM_EXPORT virtual int _TestRTree(BeSQLite::RTreeMatchFunction::QueryInfo const&) override;
 
 public:
-    DgnDbRTreeFitFilter(BeSQLite::DbR db) : Tester(db) {m_fitRange = DRange3d::NullRange();}
+    DgnDbRTreeFitFilter() {m_fitRange = DRange3d::NullRange();}
     DRange3dCR GetRange() const {return m_fitRange;}
     };
 
@@ -120,7 +127,6 @@ struct QueryModel : SpatialModel
         bool                    m_passedPrimaryTest;
         bool                    m_passedSecondaryTest;
         bool                    m_useSecondary;
-        bool                    m_restartRangeQuery = false;
         uint32_t                m_hitLimit;
         uint32_t                m_occlusionMapCount;
         uint64_t                m_lastId;
@@ -132,8 +138,7 @@ struct QueryModel : SpatialModel
         QueryModel&             m_model;
 
         bool CheckAbort();
-        virtual int _TestRange(QueryInfo const&) override;
-        virtual void _StepRange(BeSQLite::DbFunction::Context&, int nArgs, BeSQLite::DbValue* args) override {RangeAccept(args[0].GetValueInt64());}
+        virtual int _TestRTree(BeSQLite::RTreeMatchFunction::QueryInfo const&) override;
         void RangeAccept(uint64_t elementId);
 
     public:
@@ -152,8 +157,6 @@ struct QueryModel : SpatialModel
         ViewContextP   m_context;
         DgnDbR         m_dgndb;
         QueryModelR    m_queryModel;
-        uint32_t       m_nThisPass;
-        uint32_t       m_nLastPass;
         uint32_t       m_thisBatch;
         uint32_t       m_batchSize;
         uint64_t       m_elementReleaseTrigger;
@@ -163,13 +166,13 @@ struct QueryModel : SpatialModel
         ProgressiveFilter(DgnViewportCR vp, QueryModelR queryModel, DgnElementIdSet const* exclude, uint64_t maxMemory, BeSQLite::CachedStatement* stmt)
              : RTreeFilter(vp, queryModel.GetDgnDb(), 0.0, exclude), m_dgndb(queryModel.GetDgnDb()), m_queryModel(queryModel), m_elementReleaseTrigger(maxMemory), m_purgeTrigger(maxMemory), m_rangeStmt(stmt)
             {
-            m_nThisPass = m_nLastPass = m_thisBatch = 0;
+            m_thisBatch = 0;
             m_context = nullptr;
             }
         ~ProgressiveFilter();
 
-        virtual int _TestRange(QueryInfo const&) override;
-        virtual void _StepRange(BeSQLite::DbFunction::Context&, int nArgs, BeSQLite::DbValue* args) override;
+        void RangeAccept(uint64_t elementId);
+        virtual int _TestRTree(BeSQLite::RTreeMatchFunction::QueryInfo const&) override;
         virtual Completion _Process(ViewContextR context, uint32_t batchSize) override;
     };
 
@@ -229,7 +232,6 @@ struct QueryModel : SpatialModel
         void SearchIdSet(DgnElementIdSet& idList, Filter& filter);
         void SearchRangeTree(Filter& filter);
         bool LoadElements(OcclusionScores& scores, bvector<DgnElementCPtr>& elements); // return false if we halted before finishing iteration
-        void BindModelAndCategory(BeSQLite::CachedStatement& rangeStmt);
 
     public:
         Processor(Params const& params) : m_params(params) {}
@@ -303,6 +305,5 @@ public:
 
     void WaitUntilFinished(CheckStop* checkStop); //!< @private
 };
-
 
 END_BENTLEY_DGN_NAMESPACE

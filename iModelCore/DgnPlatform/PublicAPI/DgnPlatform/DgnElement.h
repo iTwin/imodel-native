@@ -1992,8 +1992,6 @@ private:
     virtual int64_t _Purge(int64_t memTarget) override;
 
 public:
-    DgnElementCPtr FindOrLoadElement(DgnElementId id) const; //!< @private
-
     BeSQLite::SnappyFromMemory& GetSnappyFrom() {return m_snappyFrom;} // NB: Not to be used during loading of a geometric element!
     BeSQLite::SnappyToBlob& GetSnappyTo() {return m_snappyTo;} // NB: Not to be used during insert or update of a geometric element!
     DGNPLATFORM_EXPORT BeSQLite::CachedStatementPtr GetStatement(Utf8CP sql) const;

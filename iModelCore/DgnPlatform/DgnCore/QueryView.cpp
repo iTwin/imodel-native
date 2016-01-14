@@ -257,15 +257,14 @@ void QueryViewController::_OnCategoryChange(bool singleEnabled)
 void QueryViewController::QueryModelExtents(DRange3dR range, DgnViewportR vp)
     {
     // make sure this is local variable so it is removed before the call to LoadElementsForUpdate below.
-    DgnDbRTreeFitFilter filter(m_dgndb);
+    DgnDbRTreeFitFilter filter;
 
     Statement getRange;
-    DbResult rc = getRange.Prepare(m_dgndb, _GetRTreeMatchSql(vp).c_str());
-    BindModelAndCategory(getRange);
+    getRange.Prepare(m_dgndb, _GetRTreeMatchSql(vp).c_str());
+    BindModelAndCategory(getRange, filter);
 
-    rc = filter.StepRTree(getRange);
-    BeAssert(rc == BE_SQLITE_ROW);
-    range = filter.GetRange();
+    while (BE_SQLITE_ROW == getRange.Step())
+        range.Extend(filter.m_lastRange);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -287,10 +286,16 @@ ViewController::FitComplete QueryViewController::_ComputeFitRange(DRange3dR rang
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String QueryViewController::_GetRTreeMatchSql(DgnViewportR) 
     {
+    return Utf8String("SELECT r.ElementId FROM "
+           DGN_VTABLE_RTree3d " AS r, " DGN_TABLE(DGN_CLASSNAME_Element) " AS e, " DGN_TABLE(DGN_CLASSNAME_SpatialElement) " AS g "
+           "WHERE r.ElementId MATCH DGN_rTree(@matcher) AND e.Id=r.ElementId AND g.Id=r.ElementId"
+           " AND InVirtualSet(@vSet,e.ModelId,g.CategoryId)");
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     return Utf8String("SELECT rTreeAccept(r.ElementId) FROM "
            DGN_VTABLE_RTree3d " AS r, " DGN_TABLE(DGN_CLASSNAME_Element) " AS e, " DGN_TABLE(DGN_CLASSNAME_SpatialElement) " AS g "
            "WHERE r.ElementId MATCH rTreeMatch(1) AND e.Id=r.ElementId AND g.Id=r.ElementId"
            " AND InVirtualSet(@vSet,e.ModelId,g.CategoryId)");
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -315,8 +320,12 @@ void QueryViewController::_OnAttachedToViewport(DgnViewportR)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-void QueryViewController::BindModelAndCategory(StatementR stmt) const
+void QueryViewController::BindModelAndCategory(StatementR stmt, RTreeTester& matcher) const
     {
+    int matcherIdx = stmt.GetParameterIndex("@matcher");
+    BeAssert(0 != matcherIdx);
+    stmt.BindInt64(matcherIdx, (int64_t) &matcher);
+
     int vSetIdx = stmt.GetParameterIndex("@vSet");
     if (0 == vSetIdx)
         return;
@@ -440,13 +449,15 @@ void QueryViewController::_DrawView(ViewContextR context)
     //  We count on progressive display to draw zero length strings and points that are excluded by LOD filtering in the occlusion step.
     if ((DrawPurpose::CreateScene == context.GetDrawPurpose()) && (results->m_reachedMaxElements) && !m_noQuery)
         {
-        DgnDb::SQLRequest::Client highPriority;
         DgnViewportP vp = context.GetViewport();
         CachedStatementPtr rangeStmt;
         m_queryModel.GetDgnDb().GetCachedStatement(rangeStmt, _GetRTreeMatchSql(*context.GetViewport()).c_str());
-        BindModelAndCategory(*rangeStmt);
 
+        DEBUG_PRINTF("start progressive display");
         QueryModel::ProgressiveFilter* pvFilter = new QueryModel::ProgressiveFilter(*vp, m_queryModel, m_neverDrawn.empty() ? nullptr : &m_neverDrawn, maxMem, rangeStmt.get());
+
+        BindModelAndCategory(*rangeStmt, *pvFilter);
+
         if (GetClipVector().IsValid())
             pvFilter->SetClipVector(*GetClipVector());
 
@@ -465,8 +476,8 @@ void QueryViewController::_VisitAllElements(ViewContextR context)
     // And step through the rest of the elements that were not loaded (but would be displayed by progressive display).
     CachedStatementPtr rangeStmt;
     m_queryModel.GetDgnDb().GetCachedStatement(rangeStmt, _GetRTreeMatchSql(*context.GetViewport()).c_str());
-    BindModelAndCategory(*rangeStmt);
     QueryModel::ProgressiveFilter pvFilter (*context.GetViewport(), m_queryModel, m_neverDrawn.empty() ? nullptr : &m_neverDrawn, GetMaxElementMemory(), rangeStmt.get());
+    BindModelAndCategory(*rangeStmt, pvFilter);
 
     while (pvFilter._Process(context, 0) != ProgressiveDisplay::Completion::Finished)
         ;

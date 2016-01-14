@@ -226,25 +226,6 @@ public:
     static void VerifyClientThread() {VerifyThread(ThreadId::Client);}     //!< assert that this is the Client thread
     static void VerifyRenderThread() {VerifyThread(ThreadId::Render);}     //!< assert that this is the Render thread
     static void VerifyQueryThread()  {VerifyThread(ThreadId::Query);}      //!< assert that this is the Query thread
-    DGNPLATFORM_EXPORT virtual void _VerifyQuerySequence() const override;
-
-    struct SQLRequest
-    {
-        struct Client
-        {
-            static int s_nPending;
-            Client() {VerifyClientThread(); ++s_nPending;}
-            ~Client() {--s_nPending;}
-            static int IsActive() {return s_nPending>0;}
-        };
-        struct Query
-        {
-            static int s_nPending;
-            Query() {VerifyQueryThread(); ++s_nPending;}
-            ~Query() {--s_nPending;}
-            static int IsActive() {return s_nPending>0;}
-        };
-    };
 };
 
 END_BENTLEY_DGN_NAMESPACE

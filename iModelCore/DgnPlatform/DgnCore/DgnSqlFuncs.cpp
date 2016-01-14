@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/DgnSqlFuncs.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "DgnPlatformInternal.h"
@@ -856,6 +856,20 @@ struct DGN_rtree_overlap_aabb : RTreeMatchFunction
     DGN_rtree_overlap_aabb() : RTreeMatchFunction("DGN_rtree_overlap_aabb", 1) {}
 };
 
+//=======================================================================================
+// @bsiclass                                                    Keith.Bentley   01/16
+//=======================================================================================
+struct DGN_rtree : RTreeMatchFunction
+{
+    int _TestRange(QueryInfo const& info) override
+        {
+        RTreeTester* matcher = (RTreeTester*) info.m_args[0].GetValueInt64();
+        return matcher->_TestRTree(info);
+        }
+    DGN_rtree() : RTreeMatchFunction("DGN_rtree", 1) {}
+};
+
+
 END_UNNAMED_NAMESPACE
 
 /*---------------------------------------------------------------------------------**//**
@@ -893,6 +907,7 @@ void DgnBaseDomain::_OnDgnDbOpened(DgnDbR db) const
 
     static RTreeMatchFunction* s_matchFuncs[] = 
                          {
+                         new DGN_rtree,
                          new DGN_rtree_overlap_aabb
                          };
 
