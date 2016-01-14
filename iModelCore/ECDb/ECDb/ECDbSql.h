@@ -709,19 +709,17 @@ struct ECDbClassMapInfo : NonCopyableClass
         ECDbMapStrategy m_mapStrategy;
         std::vector<std::unique_ptr<ECDbPropertyMapInfo>> m_localPropertyMaps;
         std::vector<ECDbClassMapInfo*> m_childClassMaps;
-        ECDbMapStorage& m_map;
+        ECDbMapStorage const& m_map;
 
     protected:
         const std::map<Utf8CP, ECDbPropertyMapInfo const*, CompareIUtf8> GetPropertyMapByColumnName (bool onlyLocal) const;
         void GetPropertyMaps (std::vector<ECDbPropertyMapInfo const*>& propertyMaps, bool onlyLocal) const;
 
     public:
-        ECDbClassMapInfo (ECDbMapStorage& map, ECDbClassMapId id, ECN::ECClassId classId, ECDbMapStrategy mapStrategy, ECDbClassMapId baseClassMap = 0LL)
+        ECDbClassMapInfo (ECDbMapStorage const& map, ECDbClassMapId id, ECN::ECClassId classId, ECDbMapStrategy mapStrategy, ECDbClassMapId baseClassMap = 0LL)
             :m_map (map), m_id (id), m_ecClassId (classId), m_mapStrategy (mapStrategy), m_ecBaseClassMap (nullptr), m_ecBaseClassMapId (baseClassMap)
-            {
-            }
+            {}
 
-        ECDbMapStorage& GetMapStorageR () { return m_map; }
         ECDbMapStorage const& GetMapStorage () const{ return m_map; }
         ECDbClassMapId GetId () const { return m_id; }
         ECN::ECClassId GetClassId () const { return m_ecClassId; }
@@ -763,24 +761,24 @@ struct ECDbMapStorage
 
 
         std::map<StatementType, std::unique_ptr<Statement>>  m_statementCache;
-        std::map<ECDbPropertyPathId, std::unique_ptr<ECDbPropertyPath>> m_propertyPaths;
-        std::map<ECN::ECPropertyId, std::map<Utf8CP, ECDbPropertyPath*, CompareUtf8>> m_propertyPathByPropertyId;
-        std::map<ECDbClassMapId, std::unique_ptr<ECDbClassMapInfo>> m_classMaps;
-        std::map<ECN::ECClassId, std::vector<ECDbClassMapInfo const*>> m_classMapByClassId;
+        mutable std::map<ECDbPropertyPathId, std::unique_ptr<ECDbPropertyPath>> m_propertyPaths;
+        mutable std::map<ECN::ECPropertyId, std::map<Utf8CP, ECDbPropertyPath*, CompareUtf8>> m_propertyPathByPropertyId;
+        mutable std::map<ECDbClassMapId, std::unique_ptr<ECDbClassMapInfo>> m_classMaps;
+        mutable std::map<ECN::ECClassId, std::vector<ECDbClassMapInfo const*>> m_classMapByClassId;
 
         ECDbSQLManager& m_manager;
     private:
-        ECDbPropertyPath* Set (std::unique_ptr<ECDbPropertyPath> propertyPath);
-        ECDbClassMapInfo* Set (std::unique_ptr<ECDbClassMapInfo> classMap);
-        CachedStatementPtr GetStatement (StatementType type);
-        DbResult InsertOrReplace ();
-        DbResult InsertPropertyMap (ECDbPropertyMapInfo const& o);
-        DbResult InsertClassMap (ECDbClassMapInfo const& o);
-        DbResult InsertPropertyPath (ECDbPropertyPath const& o);
-        DbResult Read ();
-        DbResult ReadPropertyMap (ECDbClassMapInfo& o);
-        DbResult ReadClassMaps ();
-        DbResult ReadPropertyPaths ();
+        ECDbPropertyPath* Set (std::unique_ptr<ECDbPropertyPath> propertyPath) const;
+        ECDbClassMapInfo* Set (std::unique_ptr<ECDbClassMapInfo> classMap) const;
+        CachedStatementPtr GetStatement (StatementType type) const;
+        DbResult InsertOrReplace () const;
+        DbResult InsertPropertyMap (ECDbPropertyMapInfo const& o) const;
+        DbResult InsertClassMap (ECDbClassMapInfo const& o) const;
+        DbResult InsertPropertyPath (ECDbPropertyPath const& o) const;
+        DbResult Read () const;
+        DbResult ReadPropertyMap (ECDbClassMapInfo&) const;
+        DbResult ReadClassMaps () const;
+        DbResult ReadPropertyPaths () const;
 
     public:
         ECDbMapStorage (ECDbSQLManager& manager) :m_manager (manager) {}
@@ -789,12 +787,12 @@ struct ECDbMapStorage
         ECDbClassMapInfo const* FindClassMap (ECDbClassMapId id) const;
         std::vector<ECDbClassMapInfo const*> const* FindClassMapsByClassId (ECN::ECClassId id) const;
 
-        ECDbPropertyPath* CreatePropertyPath (ECN::ECPropertyId rootPropertyId, Utf8CP accessString);
-        ECDbClassMapInfo* CreateClassMap (ECN::ECClassId classId, ECDbMapStrategy const& mapStrategy, ECDbClassMapId baseClassMapId = 0LL);
+        ECDbPropertyPath* CreatePropertyPath (ECN::ECPropertyId rootPropertyId, Utf8CP accessString) const;
+        ECDbClassMapInfo* CreateClassMap (ECN::ECClassId classId, ECDbMapStrategy const& mapStrategy, ECDbClassMapId baseClassMapId = 0LL) const;
 
-        BentleyStatus Load () { return Read () != BE_SQLITE_OK ? ERROR : SUCCESS; }
-        BentleyStatus Save () { return InsertOrReplace () != BE_SQLITE_OK ? ERROR : SUCCESS; }
-        void Reset ()
+        BentleyStatus Load () const { return Read () != BE_SQLITE_OK ? ERROR : SUCCESS; }
+        BentleyStatus Save () const { return InsertOrReplace () != BE_SQLITE_OK ? ERROR : SUCCESS; }
+        void Reset () const
             {
             m_propertyPaths.clear ();
             m_propertyPathByPropertyId.clear ();
@@ -855,23 +853,23 @@ struct ECDbSqlPersistence : NonCopyableClass
 
     private:
 
-        DbResult ReadTables (ECDbMapDb&);
-        DbResult ReadTable (Statement&, ECDbMapDb&);
-        DbResult ReadColumns (ECDbSqlTable&);
-        DbResult ReadForeignKeys (ECDbMapDb&);
-        DbResult ReadColumn (Statement&, ECDbSqlTable&, std::map<size_t, ECDbSqlColumn const*>& primaryKeys);
-        DbResult ReadForeignKeys (ECDbSqlTable&);
-        DbResult ReadForeignKey (Statement&, ECDbSqlTable&);
-        DbResult InsertTable (ECDbSqlTable const&);
-        DbResult InsertColumn (ECDbSqlColumn const&, int primaryKeyOrdianal);
-        DbResult InsertConstraint (ECDbSqlConstraint const&);
-        DbResult InsertForeignKey (ECDbSqlForeignKeyConstraint const&);
+        DbResult ReadTables (ECDbMapDb&) const;
+        DbResult ReadTable (Statement&, ECDbMapDb&) const;
+        DbResult ReadColumns (ECDbSqlTable&) const;
+        DbResult ReadForeignKeys (ECDbMapDb&) const;
+        DbResult ReadColumn (Statement&, ECDbSqlTable&, std::map<size_t, ECDbSqlColumn const*>& primaryKeys) const;
+        DbResult ReadForeignKeys (ECDbSqlTable&) const;
+        DbResult ReadForeignKey (Statement&, ECDbSqlTable&) const;
+        DbResult InsertTable (ECDbSqlTable const&) const;
+        DbResult InsertColumn (ECDbSqlColumn const&, int primaryKeyOrdianal) const;
+        DbResult InsertConstraint (ECDbSqlConstraint const&) const;
+        DbResult InsertForeignKey (ECDbSqlForeignKeyConstraint const&) const;
 
     public:
         explicit ECDbSqlPersistence (ECDbR ecdb):m_ecdb (ecdb) {}
         ~ECDbSqlPersistence (){};
-        DbResult Read (ECDbMapDb&);
-        DbResult Insert (ECDbMapDb const&);
+        DbResult Read (ECDbMapDb&) const;
+        DbResult Insert (ECDbMapDb const&) const;
 
         CachedStatementPtr GetStatement(StatementType) const;
     };
@@ -882,37 +880,32 @@ struct ECDbSqlPersistence : NonCopyableClass
 struct ECDbSQLManager : public NonCopyableClass
     {
     private:
-        ECDbMapDb m_defaultDb;
+        mutable ECDbMapDb m_defaultDb;
         ECDbR m_ecdb;
         mutable ECDbSqlTable* m_nullTable;
         ECDbSqlPersistence m_persistence;
         ECDbBriefcaseBasedId m_idGenerator;
         ECDbMapStorage m_mapStorage;
-        bool m_loaded;
-    private:
+        mutable bool m_loaded;
+
         void SetupNullTable ();
     public:
-
-        ECDbSQLManager (ECDbR ecdb);
+        explicit ECDbSQLManager (ECDbR ecdb);
         ~ECDbSQLManager (){}
         ECDbR GetECDbR () { return m_ecdb; }
         ECDbCR GetECDb () const{ return m_ecdb; }
-        ECDbMapDb& GetDbSchemaR () { return m_defaultDb; }
         ECDbMapDb const& GetDbSchema () const { return m_defaultDb; }
-        BentleyStatus Load ();
-        BentleyStatus Save ();
+        ECDbMapDb& GetDbSchemaR() const { return m_defaultDb; }
+        BentleyStatus Load () const;
+        BentleyStatus Save () const;
         ECDbSqlTable const* GetNullTable () const;
         bool IsNullTable (ECDbSqlTable const& table) const { return &table == GetNullTable (); }
         bool IsTableChanged (ECDbSqlTable const& table) const;
         ECDbSqlPersistence const& GetPersistence() const { return m_persistence; }
-        ECDbMapStorage& GetMapStorageR () { return m_mapStorage; }
         ECDbMapStorage const& GetMapStorage () const { return m_mapStorage; }
-        void Reset ();
+        void Reset () const;
         bool IsLoaded () const { return m_loaded; }
-        IIdGenerator& GetIdGenerator ()
-            {
-            return m_idGenerator;
-            }
+        IIdGenerator& GetIdGenerator () {return m_idGenerator;}
     };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

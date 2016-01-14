@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/ECSqlPrepareContext.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -243,24 +243,28 @@ bool ECSqlPrepareContext::FindLastParameterIndexBeforeWhereClause (int& index, E
 ECSqlPrepareContext::JoinTableInfo::Ptr ECSqlPrepareContext::JoinTableInfo::TrySetupJoinTableContextForInsert(ECSqlPrepareContext& ctx, InsertStatementExp const& exp)
     {
     Ptr ptr = Ptr(new JoinTableInfo());
-    auto const& classMap = exp.GetClassNameExp()->GetInfo().GetMap();
+    IClassMap const& classMap = exp.GetClassNameExp()->GetInfo().GetMap();
     if (!classMap.HasJoinedTable())
         return nullptr;
 
     NativeSqlBuilder parentOfJoinedTableECSQL;
     NativeSqlBuilder joinedTableECSQL;
-    auto rootClassMap = classMap.FindClassMapOfParentOfJoinedTable();
-    BeAssert(rootClassMap != nullptr && "Root class for joined tabel must exist.");
-    if (rootClassMap == nullptr)
+    IClassMap const* parentOfJoinedTableClassMap = classMap.FindClassMapOfParentOfJoinedTable();
+    if (parentOfJoinedTableClassMap == nullptr)
+        {
+        BeAssert(parentOfJoinedTableClassMap != nullptr && "Root class for joined tabel must exist.");
         return nullptr;
+        }
 
     ptr->m_class = &classMap.GetClass();
-    ptr->m_parentClass = &rootClassMap->GetClass();
+    ptr->m_parentClass = &parentOfJoinedTableClassMap->GetClass();
 
+    ECDbSqlTable const& primaryTable = classMap.GetPrimaryTable();
+    ECDbSqlTable const& joinedTable = classMap.GetJoinedTable();
     auto tables = exp.GetReferencedTables();
     if (tables.size() < 2)
         {
-        auto isTableSame = (&classMap.GetJoinedTable() == &rootClassMap->GetJoinedTable());
+        auto isTableSame = (&classMap.GetJoinedTable() == &parentOfJoinedTableClassMap->GetJoinedTable());
         if (isTableSame)
             return nullptr;
         }
@@ -271,7 +275,7 @@ ECSqlPrepareContext::JoinTableInfo::Ptr ECSqlPrepareContext::JoinTableInfo::TryS
     NativeSqlBuilder::List parentOfJoinedTableProperties;
 
     joinedTableECSQL.Append("INSERT INTO ").Append(classMap.GetClass().GetECSqlName().c_str());
-    parentOfJoinedTableECSQL.Append("INSERT INTO ").Append(rootClassMap->GetClass().GetECSqlName().c_str());
+    parentOfJoinedTableECSQL.Append("INSERT INTO ").Append(parentOfJoinedTableClassMap->GetClass().GetECSqlName().c_str());
 
     auto propertyList = exp.GetPropertyNameListExp();
     auto valueList = exp.GetValuesExp();
@@ -317,7 +321,7 @@ ECSqlPrepareContext::JoinTableInfo::Ptr ECSqlPrepareContext::JoinTableInfo::TryS
                     }
                 }
             }
-        else if (property->GetPropertyMap().IsMappedToPrimaryTable())
+        else if (property->GetPropertyMap().MapsToTable(joinedTable))
             {
             joinedTableProperties.push_back(NativeSqlBuilder(property->ToECSql().c_str()));
             joinedTableValues.push_back(NativeSqlBuilder(value->ToECSql().c_str()));
@@ -325,6 +329,7 @@ ECSqlPrepareContext::JoinTableInfo::Ptr ECSqlPrepareContext::JoinTableInfo::TryS
             }
         else
             {
+            BeAssert(property->GetPropertyMap().MapsToTable(primaryTable));
             parentOfJoinedTableProperties.push_back(NativeSqlBuilder(property->ToECSql().c_str()));
             parentOfJoinedTableValues.push_back(NativeSqlBuilder(value->ToECSql().c_str()));
             ptr->m_parameterMap.GetPrimaryR().Add(thisValueParams);
@@ -367,6 +372,8 @@ ECSqlPrepareContext::JoinTableInfo::Ptr ECSqlPrepareContext::JoinTableInfo::TryS
     ptr->m_class = &classMap.GetClass();
     ptr->m_parentClass = &rootClassMap->GetClass();
 
+    ECDbSqlTable const& primaryTable = classMap.GetPrimaryTable();
+    ECDbSqlTable const& joinedTable = classMap.GetJoinedTable();
     auto tables = exp.GetReferencedTables();
     if (tables.size() <= 2)
         {
@@ -409,7 +416,7 @@ ECSqlPrepareContext::JoinTableInfo::Ptr ECSqlPrepareContext::JoinTableInfo::TryS
             BeAssert(false && "Updating system properties are not supported");
             return nullptr;
             }
-        else if (property->GetPropertyMap().IsMappedToPrimaryTable())
+        else if (property->GetPropertyMap().MapsToTable(joinedTable))
             {
             joinedTableProperties.push_back(NativeSqlBuilder(property->ToECSql().c_str()));
             joinedTableValues.push_back(NativeSqlBuilder(value->ToECSql().c_str()));
@@ -417,6 +424,7 @@ ECSqlPrepareContext::JoinTableInfo::Ptr ECSqlPrepareContext::JoinTableInfo::TryS
             }
         else
             {
+            BeAssert(property->GetPropertyMap().MapsToTable(primaryTable));
             parentOfJoinedTableProperties.push_back(NativeSqlBuilder(property->ToECSql().c_str()));
             parentOfJoinedTableValues.push_back(NativeSqlBuilder(value->ToECSql().c_str()));
             ptr->m_parameterMap.GetPrimaryR().Add(thisValueParams);

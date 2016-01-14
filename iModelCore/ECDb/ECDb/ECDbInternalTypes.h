@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECDbInternalTypes.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -137,9 +137,8 @@ typedef int64_t ECContainerId;
 
 enum class MapStatus 
     {
-    Success                         = SUCCESS,
-    AlreadyMapped                   = 1,
-    BaseClassesNotMapped            = 2,    // We have temporarily stopped mapping a given branch of the class hierarchy because
+    Success                         = 0,
+    BaseClassesNotMapped            = 1,    // We have temporarily stopped mapping a given branch of the class hierarchy because
                                                 // we haven't mapped one or more of its base classes. This can happen in the case 
                                                 // of multiple inheritance, where we attempt to map a child class for which 
                                                 // not all parent classes have been mapped

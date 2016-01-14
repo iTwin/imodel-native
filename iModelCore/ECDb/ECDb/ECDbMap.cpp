@@ -250,44 +250,100 @@ MapStatus ECDbMap::DoMapSchemas(bvector<ECSchemaCP> const& mapSchemas, bool forc
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                                 Casey.Mullen        11/2011
-//+---------------+---------------+---------------+---------------+---------------+------
-ClassMapPtr ECDbMap::LoadAddClassMap(ClassMapLoadContext& ctx, ECClassCR ecClass)
+//* @bsimethod                                 Affan.Khan                           07 / 2012
+//---------------------------------------------------------------------------------------
+ClassMapPtr ECDbMap::LoadClassMap(ClassMapLoadContext& ctx, ECN::ECClassCR ecClass) const
     {
     BeMutexHolder lock(m_criticalSection);
-    if (!GetSQLManagerR().IsLoaded())
+    if (!GetSQLManager().IsLoaded())
         {
-        if (GetSQLManagerR().Load() != SUCCESS)
+        if (GetSQLManager().Load() != SUCCESS)
             {
             BeAssert(false && "Failed to map information");
             return nullptr;
             }
         }
 
-    MapStatus mapStatus;
-    ClassMapPtr classMapPtr = ClassMapFactory::Load(mapStatus, ctx, ecClass, *this);
-    if (classMapPtr != nullptr)
-        {
-        if (MapStatus::Error == AddClassMap(classMapPtr))
-            {
-            LOG.errorv("Failed to add map for class %s", ecClass.GetFullName());
-            return nullptr;
-            }
+    ECDbSchemaManager const& schemaManager = GetECDbR().Schemas();
+    std::vector<ECDbClassMapInfo const*> const* classMaps = GetSQLManager().GetMapStorage().FindClassMapsByClassId(ecClass.GetId());
+    if (classMaps == nullptr)
+        return nullptr;
 
-        m_classMapLoadTable.push_back(&ecClass);
-        return classMapPtr;
+    if (classMaps->empty())
+        {
+        BeAssert(false && "Failed to find classMap info for give ECClass");
+        return nullptr;
         }
 
-    return nullptr;
-    }
+    if (classMaps->size() > 1)
+        {
+        BeAssert(false && "Feature of nested class map not implemented");
+        return nullptr;
+        }
 
+    ECDbClassMapInfo const& classMapInfo = *classMaps->front();
+    ECDbClassMapInfo const* baseClassMapInfo = classMapInfo.GetBaseClassMap();
+    ECClassCP baseClass = baseClassMapInfo == nullptr ? nullptr : schemaManager.GetECClass(baseClassMapInfo->GetClassId());
+    ClassMap const* baseClassMap = baseClass == nullptr ? nullptr : GetClassMap(*baseClass);
+
+    bool setIsDirty = false;
+    ECDbMapStrategy const& mapStrategy = classMapInfo.GetMapStrategy();
+    ClassMapPtr classMap = nullptr;
+    if (mapStrategy.IsNotMapped())
+        classMap = UnmappedClassMap::Create(ecClass, *this, mapStrategy, setIsDirty);
+    else
+        {
+        ECRelationshipClassCP ecRelationshipClass = ecClass.GetRelationshipClassCP();
+        if (ecRelationshipClass != nullptr)
+            {
+            if (mapStrategy.IsForeignKeyMapping())
+                classMap = RelationshipClassEndTableMap::Create(*ecRelationshipClass, *this, mapStrategy, setIsDirty);
+            else
+                classMap = RelationshipClassLinkTableMap::Create(*ecRelationshipClass, *this, mapStrategy, setIsDirty);
+            }
+        else if (IClassMap::MapsToStructArrayTable(ecClass))
+            classMap = StructClassMap::Create(ecClass, *this, mapStrategy, setIsDirty);
+        else
+            classMap = ClassMap::Create(ecClass, *this, mapStrategy, setIsDirty);
+        }
+    classMap->SetId(classMapInfo.GetId());
+
+    if (MapStatus::Error == AddClassMap(classMap))
+        {
+        LOG.errorv("Failed to add map for class %s", ecClass.GetFullName());
+        return nullptr;
+        }
+
+    std::set<ClassMap const*> loadGraph;
+    if (SUCCESS != classMap->Load(loadGraph, ctx, classMapInfo, baseClassMap))
+        return nullptr;
+
+    m_classMapLoadTable.push_back(&ecClass);
+
+    ECRelationshipClassCP ecRelationshipClass = ecClass.GetRelationshipClassCP();
+    // Construct and initialize the class map
+    if (ecRelationshipClass != nullptr)
+        {
+        for (ECClassCP endECClassToLoad : GetClassesFromRelationshipEnd(ecRelationshipClass->GetSource()))
+            {
+            ctx.AddConstraintClass(*endECClassToLoad);
+            }
+
+        for (ECClassCP endECClassToLoad : GetClassesFromRelationshipEnd(ecRelationshipClass->GetTarget()))
+            {
+            ctx.AddConstraintClass(*endECClassToLoad);
+            }
+        }
+
+    return classMap;
+    }
 
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                   Ramanujam.Raman                   06/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-MapStatus ECDbMap::MapClass (ECClassCR ecClass, bool forceRevaluationOfMapStrategy)
+MapStatus ECDbMap::MapClass(ECClassCR ecClass, bool forceRevaluationOfMapStrategy)
     {
-    if (AssertIfIsNotImportingSchema ())
+    if (AssertIfIsNotImportingSchema())
         return MapStatus::Error;
 
     if (!ecClass.HasId())
@@ -304,37 +360,60 @@ MapStatus ECDbMap::MapClass (ECClassCR ecClass, bool forceRevaluationOfMapStrate
      * Note: forceRevaluationOfMapStrategy is normally set to TRUE for the case the schemas
      * are getting upgraded. If classes have new properties, loading the previous class map
      * updates the class map with new property maps. If the schema has new classes, the fall
-     * through the code below creates the new class maps 
+     * through the code below creates the new class maps
      */
-    ClassMap const* classMap = GetClassMap (ecClass);
-    bool revaluateMapStrategy = (classMap != nullptr && forceRevaluationOfMapStrategy);
+    const bool classMapExists = GetClassMap(ecClass) != nullptr;
+    const bool revaluateMapStrategy = classMapExists && forceRevaluationOfMapStrategy;
 
-    MapStatus status = classMap == nullptr ? MapStatus::Success : MapStatus::AlreadyMapped;
-    if (status != MapStatus::AlreadyMapped)
+    if (!classMapExists)
         {
-        ClassMapPtr newClassMap = ClassMapFactory::Create (status, *GetSchemaImportContext(), ecClass, *this);
-
+        MapStatus status = MapStatus::Success;
+        std::unique_ptr<ClassMapInfo> classMapInfo = ClassMapInfoFactory::Create(status, *GetSchemaImportContext(), ecClass, *this);
         //error (and no reevaluation)
         if ((status == MapStatus::BaseClassesNotMapped || status == MapStatus::Error) && !revaluateMapStrategy)
             return status;
 
-        if (newClassMap == nullptr)
+        BeAssert(classMapInfo != nullptr);
+
+        ECDbMapStrategy const& mapStrategy = classMapInfo->GetMapStrategy();
+
+        ClassMapPtr classMap = nullptr;
+        if (mapStrategy.IsNotMapped())
+            classMap = UnmappedClassMap::Create(ecClass, *this, mapStrategy, true);
+        else
             {
-            BeAssert(false && "ClassMapPtr is not expected to be nullptr at this point.");
-            return MapStatus::Error; // this can happen if the ECDbMap custom attributes had invalid values
+            auto ecRelationshipClass = ecClass.GetRelationshipClassCP();
+            if (ecRelationshipClass != nullptr)
+                {
+                if (mapStrategy.IsForeignKeyMapping())
+                    classMap = RelationshipClassEndTableMap::Create(*ecRelationshipClass, *this, mapStrategy, true);
+                else
+                    classMap = RelationshipClassLinkTableMap::Create(*ecRelationshipClass, *this, mapStrategy, true);
+                }
+            else if (IClassMap::MapsToStructArrayTable(ecClass))
+                classMap = StructClassMap::Create(ecClass, *this, mapStrategy, true);
+            else
+                classMap = ClassMap::Create(ecClass, *this, mapStrategy, true);
             }
 
-        status = AddClassMap (newClassMap);
+        status = AddClassMap(classMap);
         if (status == MapStatus::Error)
+            return status;
+
+        status = classMap->Map(*GetSchemaImportContext(), *classMapInfo);
+        GetSchemaImportContext()->CacheClassMapInfo(*classMap, classMapInfo);
+
+        //error (and no reevaluation)
+        if ((status == MapStatus::BaseClassesNotMapped || status == MapStatus::Error) && !revaluateMapStrategy)
             return status;
         }
 
     for (ECClassP childClass : ecClass.GetDerivedClasses())
         {
-        status = MapClass (*childClass, forceRevaluationOfMapStrategy);
+        MapStatus status = MapClass(*childClass, forceRevaluationOfMapStrategy);
         if (status == MapStatus::Error)
             return status;
-        } 
+        }
 
     return MapStatus::Success;
     }
@@ -342,7 +421,7 @@ MapStatus ECDbMap::MapClass (ECClassCR ecClass, bool forceRevaluationOfMapStrate
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    casey.mullen      11/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-MapStatus ECDbMap::AddClassMap (ClassMapPtr& classMap)
+MapStatus ECDbMap::AddClassMap (ClassMapPtr& classMap) const
     {
     BeMutexHolder lock (m_criticalSection);
     ECClassCR ecClass = classMap->GetClass();
@@ -414,7 +493,7 @@ bool ECDbMap::TryGetClassMap (ClassMapPtr& classMap, ClassMapLoadContext& ctx, E
 
     //lazy loading the class map implemented with const-casting the actual loading so that the 
     //get method itself can remain const (logically const)
-    classMap = const_cast<ECDbMap*> (this)->LoadAddClassMap (ctx, ecClass);
+    classMap = LoadClassMap (ctx, ecClass);
     return classMap != nullptr;
     }
 
@@ -440,7 +519,7 @@ ECDbSqlTable* ECDbMap::FindOrCreateTable (SchemaImportContext* schemaImportConte
         return nullptr;
 
     BeMutexHolder lock (m_criticalSection);
-    ECDbSqlTable* table = GetSQLManagerR ().GetDbSchemaR ().FindTableP (tableName);
+    ECDbSqlTable* table = GetSQLManager ().GetDbSchema ().FindTableP (tableName);
     if (table != nullptr)
         {
         if (table->GetTableType() != tableType)
@@ -458,7 +537,7 @@ ECDbSqlTable* ECDbMap::FindOrCreateTable (SchemaImportContext* schemaImportConte
 
     if (tableType != TableType::Existing)
         {
-        table = GetSQLManagerR ().GetDbSchemaR ().CreateTable (tableName, tableType, isVirtual ? PersistenceType::Virtual : PersistenceType::Persisted, baseTable);
+        table = GetSQLManager().GetDbSchemaR().CreateTable(tableName, tableType, isVirtual ? PersistenceType::Virtual : PersistenceType::Persisted, baseTable);
         if (Utf8String::IsNullOrEmpty (primaryKeyColumnName))
             primaryKeyColumnName = ECDB_COL_ECInstanceId;
 
@@ -500,7 +579,7 @@ ECDbSqlTable* ECDbMap::FindOrCreateTable (SchemaImportContext* schemaImportConte
         }
     else
         {
-        table = GetSQLManagerR ().GetDbSchemaR ().CreateTableForExistingTableMapStrategy (GetECDbR (), tableName);
+        table = GetSQLManager().GetDbSchemaR().CreateTableForExistingTableMapStrategy(GetECDbR(), tableName);
         if (table == nullptr)
             return nullptr;
 
@@ -869,7 +948,7 @@ void ECDbMap::ClearCache()
     {
     BeMutexHolder lock(m_criticalSection);
     m_classMapDictionary.clear();
-    GetSQLManagerR().Reset();
+    GetSQLManager().Reset();
     m_lightweightCache.Reset();
     }
 
@@ -899,7 +978,7 @@ BentleyStatus ECDbMap::Save()
         }
 
     stopWatch.Stop();
-    if (SUCCESS != GetSQLManagerR().Save())
+    if (SUCCESS != GetSQLManager().Save())
         return ERROR;
 
     if (LOG.isSeverityEnabled(NativeLogging::LOG_DEBUG))

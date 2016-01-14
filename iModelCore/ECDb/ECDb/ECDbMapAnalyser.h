@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECDbMapAnalyser.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -250,7 +250,7 @@ struct ECDbMapAnalyser
             private:
                 std::set<Class*> m_classes;
                 PropertyMapCP m_ecid;
-                PropertyMapCP m_classId;
+                PropertyMapRelationshipConstraintClassId const* m_classId;
                 EndType m_type;
                 Relationship const& m_parent;
             public:
@@ -258,7 +258,7 @@ struct ECDbMapAnalyser
                 std::set<Class*>& GetClassesR();
                 std::set<Storage const*> GetStorages() const;
                 PropertyMapCP GetInstanceId() const;
-                PropertyMapCP GetClassId() const;
+                PropertyMapRelationshipConstraintClassId const* GetClassId() const;
                 EndType GetEnd() const;
                 bool Contains(Class const& constraintClass) const;
                 EndInfo GetResolvedInstanceId(Storage const& forStorage) const;
@@ -413,7 +413,7 @@ struct ECClassViewGenerator
         BentleyStatus BuildPropertyExpression(NativeSqlBuilder& viewSql, PropertyMapCR propertyMap, Utf8CP tablePrefix, bool addECPropertyPathAlias, bool nullValue);
         BentleyStatus BuildColumnExpression(NativeSqlBuilder::List& viewSql, Utf8CP tablePrefix, Utf8CP columnName, Utf8CP accessString, bool addECPropertyPathAlias, bool nullValue, bool escapeColumName = true);
         BentleyStatus BuildPointPropertyExpression(NativeSqlBuilder& viewSql, PropertyMapPoint const& propertyMap, Utf8CP tablePrefix, bool addECPropertyPathAlias, bool nullValue);
-        BentleyStatus BuildPrimitivePropertyExpression(NativeSqlBuilder& viewSql, PropertyMapSingleColumn const& propertyMap, Utf8CP tablePrefix, bool addECPropertyPathAlias, bool nullValue);
+        BentleyStatus BuildPrimitivePropertyExpression(NativeSqlBuilder& viewSql, PropertyMap const&, Utf8CP tablePrefix, bool addECPropertyPathAlias, bool nullValue);
         BentleyStatus BuildStructPropertyExpression(NativeSqlBuilder& viewSql, PropertyMapStruct const& propertyMap, Utf8CP tablePrefix, bool addECPropertyPathAlias, bool nullValue);
         BentleyStatus BuildSystemSelectionClause(NativeSqlBuilder::List& fragments, ClassMapCR baseClassMap, ClassMapCR classMap, Utf8CP tablePrefix, bool addECPropertyPathAlias, bool nullValue);
         BentleyStatus BuildSelectionClause(NativeSqlBuilder& viewSql, ClassMapCR baseClassMap, ClassMapCR classMap, Utf8CP tablePrefix, bool addECPropertyPathAlias, bool nullValue);

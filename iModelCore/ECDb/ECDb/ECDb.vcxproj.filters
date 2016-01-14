@@ -378,9 +378,6 @@
     <ClInclude Include="ClassMap.h">
       <Filter>ECDbMap</Filter>
     </ClInclude>
-    <ClInclude Include="ClassMapFactory.h">
-      <Filter>ECDbMap</Filter>
-    </ClInclude>
     <ClInclude Include="ClassMapInfo.h">
       <Filter>ECDbMap</Filter>
     </ClInclude>
@@ -729,9 +726,6 @@
       <Filter>ECSql</Filter>
     </ClCompile>
     <ClCompile Include="ClassMap.cpp">
-      <Filter>ECDbMap</Filter>
-    </ClCompile>
-    <ClCompile Include="ClassMapFactory.cpp">
       <Filter>ECDbMap</Filter>
     </ClCompile>
     <ClCompile Include="ClassMapInfo.cpp">
