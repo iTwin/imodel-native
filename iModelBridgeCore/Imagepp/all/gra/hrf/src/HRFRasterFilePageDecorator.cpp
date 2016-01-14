@@ -545,7 +545,11 @@ void HRFRasterFilePageDecorator::CreateDescriptors ()
                 }
 
             GeoCoordinates::BaseGCSPtr pBaseGCS;
-            if(pOriginalPageDescriptor->GetGeocodingCP() != nullptr)
+            if (pPageFileDescriptor->GetGeocodingCP() != nullptr)
+                {
+                pBaseGCS = GeoCoordinates::BaseGCS::CreateGCS(*pPageFileDescriptor->GetGeocodingCP());
+                }
+            else if (pOriginalPageDescriptor->GetGeocodingCP() != nullptr)
                 {
                 pBaseGCS = GeoCoordinates::BaseGCS::CreateGCS(*pOriginalPageDescriptor->GetGeocodingCP());
                 }
