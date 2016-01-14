@@ -462,8 +462,9 @@ SQLITE_PRIVATE Expr *sqlite3ExprAlloc(
       assert( iValue>=0 );
     }
   }
-  pNew = sqlite3DbMallocZero(db, sizeof(Expr)+nExtra);
+  pNew = sqlite3DbMallocRaw(db, sizeof(Expr)+nExtra);
   if( pNew ){
+    memset(pNew, 0, sizeof(Expr));
     pNew->op = (u8)op;
     pNew->iAgg = -1;
     if( pToken ){
@@ -7858,15 +7859,6 @@ SQLITE_PRIVATE void sqlite3AuthContextPop(AuthContext *pContext){
 */
 /* #include "sqliteInt.h" */
 
-/*
-** This routine is called when a new SQL statement is beginning to
-** be parsed.  Initialize the pParse structure as needed.
-*/
-SQLITE_PRIVATE void sqlite3BeginParse(Parse *pParse, int explainFlag){
-  pParse->explain = (u8)explainFlag;
-  pParse->nVar = 0;
-}
-
 #ifndef SQLITE_OMIT_SHARED_CACHE
 /*
 ** The TableLock structure is only used by the sqlite3TableLock() and
@@ -14215,10 +14207,10 @@ static void total_changes(
 ** A structure defining how to do GLOB-style comparisons.
 */
 struct compareInfo {
-  u8 matchAll;
-  u8 matchOne;
-  u8 matchSet;
-  u8 noCase;
+  u8 matchAll;          /* "*" or "%" */
+  u8 matchOne;          /* "?" or "_" */
+  u8 matchSet;          /* "[" or 0 */
+  u8 noCase;            /* true to ignore case differences */
 };
 
 /*
@@ -14281,22 +14273,14 @@ static int patternCompare(
   const u8 *zPattern,              /* The glob pattern */
   const u8 *zString,               /* The string to compare against the glob */
   const struct compareInfo *pInfo, /* Information about how to do the compare */
-  u32 esc                          /* The escape character */
+  u32 matchOther                   /* The escape char (LIKE) or '[' (GLOB) */
 ){
   u32 c, c2;                       /* Next pattern and input string chars */
   u32 matchOne = pInfo->matchOne;  /* "?" or "_" */
   u32 matchAll = pInfo->matchAll;  /* "*" or "%" */
-  u32 matchOther;                  /* "[" or the escape character */
   u8 noCase = pInfo->noCase;       /* True if uppercase==lowercase */
   const u8 *zEscaped = 0;          /* One past the last escaped input char */
   
-  /* The GLOB operator does not have an ESCAPE clause.  And LIKE does not
-  ** have the matchSet operator.  So we either have to look for one or
-  ** the other, never both.  Hence the single variable matchOther is used
-  ** to store the one we have to look for.
-  */
-  matchOther = esc ? esc : pInfo->matchSet;
-
   while( (c = Utf8Read(zPattern))!=0 ){
     if( c==matchAll ){  /* Match "*" */
       /* Skip over multiple "*" characters in the pattern.  If there
@@ -14310,7 +14294,7 @@ static int patternCompare(
       if( c==0 ){
         return 1;   /* "*" at the end of the pattern matches */
       }else if( c==matchOther ){
-        if( esc ){
+        if( pInfo->matchSet==0 ){
           c = sqlite3Utf8Read(&zPattern);
           if( c==0 ) return 0;
         }else{
@@ -14318,7 +14302,7 @@ static int patternCompare(
           ** recursive search in this case, but it is an unusual case. */
           assert( matchOther<0x80 );  /* '[' is a single-byte character */
           while( *zString
-                 && patternCompare(&zPattern[-1],zString,pInfo,esc)==0 ){
+                 && patternCompare(&zPattern[-1],zString,pInfo,matchOther)==0 ){
             SQLITE_SKIP_UTF8(zString);
           }
           return *zString!=0;
@@ -14344,18 +14328,18 @@ static int patternCompare(
         }
         while( (c2 = *(zString++))!=0 ){
           if( c2!=c && c2!=cx ) continue;
-          if( patternCompare(zPattern,zString,pInfo,esc) ) return 1;
+          if( patternCompare(zPattern,zString,pInfo,matchOther) ) return 1;
         }
       }else{
         while( (c2 = Utf8Read(zString))!=0 ){
           if( c2!=c ) continue;
-          if( patternCompare(zPattern,zString,pInfo,esc) ) return 1;
+          if( patternCompare(zPattern,zString,pInfo,matchOther) ) return 1;
         }
       }
       return 0;
     }
     if( c==matchOther ){
-      if( esc ){
+      if( pInfo->matchSet==0 ){
         c = sqlite3Utf8Read(&zPattern);
         if( c==0 ) return 0;
         zEscaped = zPattern;
@@ -14408,7 +14392,7 @@ static int patternCompare(
 ** The sqlite3_strglob() interface.
 */
 SQLITE_API int SQLITE_STDCALL sqlite3_strglob(const char *zGlobPattern, const char *zString){
-  return patternCompare((u8*)zGlobPattern, (u8*)zString, &globInfo, 0)==0;
+  return patternCompare((u8*)zGlobPattern, (u8*)zString, &globInfo, '[')==0;
 }
 
 /*
@@ -14446,9 +14430,10 @@ static void likeFunc(
   sqlite3_value **argv
 ){
   const unsigned char *zA, *zB;
-  u32 escape = 0;
+  u32 escape;
   int nPat;
   sqlite3 *db = sqlite3_context_db_handle(context);
+  struct compareInfo *pInfo = sqlite3_user_data(context);
 
 #ifdef SQLITE_LIKE_DOESNT_MATCH_BLOBS
   if( sqlite3_value_type(argv[0])==SQLITE_BLOB
@@ -14488,13 +14473,13 @@ static void likeFunc(
       return;
     }
     escape = sqlite3Utf8Read(&zEsc);
+  }else{
+    escape = pInfo->matchSet;
   }
   if( zA && zB ){
-    struct compareInfo *pInfo = sqlite3_user_data(context);
 #ifdef SQLITE_TEST
     sqlite3_like_count++;
 #endif
-    
     sqlite3_result_int(context, patternCompare(zB, zA, pInfo, escape));
   }
 }
@@ -23840,6 +23825,7 @@ struct SortCtx {
   int regReturn;        /* Register holding block-output return address */
   int labelBkOut;       /* Start label for the block-output subroutine */
   int addrSortIndex;    /* Address of the OP_SorterOpen or OP_OpenEphemeral */
+  int labelDone;        /* Jump here when done, ex: LIMIT reached */
   u8 sortFlags;         /* Zero or more SORTFLAG_* bits */
 };
 #define SORTFLAG_UseSorter  0x01   /* Use SorterOpen instead of OpenEphemeral */
@@ -23897,29 +23883,37 @@ SQLITE_PRIVATE Select *sqlite3SelectNew(
   Select *pNew;
   Select standin;
   sqlite3 *db = pParse->db;
-  pNew = sqlite3DbMallocZero(db, sizeof(*pNew) );
+  pNew = sqlite3DbMallocRaw(db, sizeof(*pNew) );
   if( pNew==0 ){
     assert( db->mallocFailed );
     pNew = &standin;
-    memset(pNew, 0, sizeof(*pNew));
   }
   if( pEList==0 ){
     pEList = sqlite3ExprListAppend(pParse, 0, sqlite3Expr(db,TK_ASTERISK,0));
   }
   pNew->pEList = pEList;
+  pNew->op = TK_SELECT;
+  pNew->selFlags = selFlags;
+  pNew->iLimit = 0;
+  pNew->iOffset = 0;
+#if SELECTTRACE_ENABLED
+  pNew->zSelName[0] = 0;
+#endif
+  pNew->addrOpenEphm[0] = -1;
+  pNew->addrOpenEphm[1] = -1;
+  pNew->nSelectRow = 0;
   if( pSrc==0 ) pSrc = sqlite3DbMallocZero(db, sizeof(*pSrc));
   pNew->pSrc = pSrc;
   pNew->pWhere = pWhere;
   pNew->pGroupBy = pGroupBy;
   pNew->pHaving = pHaving;
   pNew->pOrderBy = pOrderBy;
-  pNew->selFlags = selFlags;
-  pNew->op = TK_SELECT;
+  pNew->pPrior = 0;
+  pNew->pNext = 0;
   pNew->pLimit = pLimit;
   pNew->pOffset = pOffset;
+  pNew->pWith = 0;
   assert( pOffset==0 || pLimit!=0 || pParse->nErr>0 || db->mallocFailed!=0 );
-  pNew->addrOpenEphm[0] = -1;
-  pNew->addrOpenEphm[1] = -1;
   if( db->mallocFailed ) {
     clearSelect(db, pNew, pNew!=&standin);
     pNew = 0;
@@ -24294,6 +24288,7 @@ static void pushOntoSorter(
   int regRecord = ++pParse->nMem;                  /* Assembled sorter record */
   int nOBSat = pSort->nOBSat;                      /* ORDER BY terms to skip */
   int op;                            /* Opcode to add sorter record to sorter */
+  int iLimit;                        /* LIMIT counter */
 
   assert( bSeq==0 || bSeq==1 );
   assert( nData==1 || regData==regOrigData );
@@ -24304,6 +24299,9 @@ static void pushOntoSorter(
     regBase = pParse->nMem + 1;
     pParse->nMem += nBase;
   }
+  assert( pSelect->iOffset==0 || pSelect->iLimit!=0 );
+  iLimit = pSelect->iOffset ? pSelect->iOffset+1 : pSelect->iLimit;
+  pSort->labelDone = sqlite3VdbeMakeLabel(v);
   sqlite3ExprCodeExprList(pParse, pSort->pOrderBy, regBase, regOrigData,
                           SQLITE_ECEL_DUP|SQLITE_ECEL_REF);
   if( bSeq ){
@@ -24312,7 +24310,6 @@ static void pushOntoSorter(
   if( nPrefixReg==0 ){
     sqlite3ExprCodeMove(pParse, regData, regBase+nExpr+bSeq, nData);
   }
-
   sqlite3VdbeAddOp3(v, OP_MakeRecord, regBase+nOBSat, nBase-nOBSat, regRecord);
   if( nOBSat>0 ){
     int regPrevKey;   /* The first nOBSat columns of the previous row */
@@ -24347,6 +24344,10 @@ static void pushOntoSorter(
     pSort->regReturn = ++pParse->nMem;
     sqlite3VdbeAddOp2(v, OP_Gosub, pSort->regReturn, pSort->labelBkOut);
     sqlite3VdbeAddOp1(v, OP_ResetSorter, pSort->iECursor);
+    if( iLimit ){
+      sqlite3VdbeAddOp2(v, OP_IfNot, iLimit, pSort->labelDone);
+      VdbeCoverage(v);
+    }
     sqlite3VdbeJumpHere(v, addrFirst);
     sqlite3ExprCodeMove(pParse, regBase, regPrevKey, pSort->nOBSat);
     sqlite3VdbeJumpHere(v, addrJmp);
@@ -24357,14 +24358,8 @@ static void pushOntoSorter(
     op = OP_IdxInsert;
   }
   sqlite3VdbeAddOp2(v, op, pSort->iECursor, regRecord);
-  if( pSelect->iLimit ){
+  if( iLimit ){
     int addr;
-    int iLimit;
-    if( pSelect->iOffset ){
-      iLimit = pSelect->iOffset+1;
-    }else{
-      iLimit = pSelect->iLimit;
-    }
     addr = sqlite3VdbeAddOp3(v, OP_IfNotZero, iLimit, 0, 1); VdbeCoverage(v);
     sqlite3VdbeAddOp1(v, OP_Last, pSort->iECursor);
     sqlite3VdbeAddOp1(v, OP_Delete, pSort->iECursor);
@@ -24968,7 +24963,7 @@ static void generateSortTail(
   SelectDest *pDest /* Write the sorted results here */
 ){
   Vdbe *v = pParse->pVdbe;                     /* The prepared statement */
-  int addrBreak = sqlite3VdbeMakeLabel(v);     /* Jump here to exit loop */
+  int addrBreak = pSort->labelDone;            /* Jump here to exit loop */
   int addrContinue = sqlite3VdbeMakeLabel(v);  /* Jump here for next cycle */
   int addr;
   int addrOnce = 0;
@@ -24987,6 +24982,7 @@ static void generateSortTail(
   struct ExprList_item *aOutEx = p->pEList->a;
 #endif
 
+  assert( addrBreak<0 );
   if( pSort->labelBkOut ){
     sqlite3VdbeAddOp2(v, OP_Gosub, pSort->regReturn, pSort->labelBkOut);
     sqlite3VdbeGoto(v, addrBreak);

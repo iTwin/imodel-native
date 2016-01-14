@@ -9112,8 +9112,7 @@ SQLITE_PRIVATE WhereInfo *sqlite3WhereBegin(
         Bitmask b = pTabItem->colUsed;
         int n = 0;
         for(; b; b=b>>1, n++){}
-        sqlite3VdbeChangeP4(v, sqlite3VdbeCurrentAddr(v)-1, 
-                            SQLITE_INT_TO_PTR(n), P4_INT32);
+        sqlite3VdbeChangeP4(v, -1, SQLITE_INT_TO_PTR(n), P4_INT32);
         assert( n<=pTab->nCol );
       }
 #ifdef SQLITE_ENABLE_CURSOR_HINTS
@@ -11580,14 +11579,11 @@ static void yy_reduce(
   **     break;
   */
 /********** Begin reduce actions **********************************************/
-      case 5: /* explain ::= */
-{ sqlite3BeginParse(pParse, 0); }
-        break;
       case 6: /* explain ::= EXPLAIN */
-{ sqlite3BeginParse(pParse, 1); }
+{ pParse->explain = 1; }
         break;
       case 7: /* explain ::= EXPLAIN QUERY PLAN */
-{ sqlite3BeginParse(pParse, 2); }
+{ pParse->explain = 2; }
         break;
       case 8: /* cmdx ::= cmd */
 { sqlite3FinishCoding(pParse); }
@@ -12762,6 +12758,7 @@ static void yy_reduce(
       /* (2) cmdlist ::= ecmd */ yytestcase(yyruleno==2);
       /* (3) ecmd ::= SEMI */ yytestcase(yyruleno==3);
       /* (4) ecmd ::= explain cmdx SEMI */ yytestcase(yyruleno==4);
+      /* (5) explain ::= */ yytestcase(yyruleno==5);
       /* (10) trans_opt ::= */ yytestcase(yyruleno==10);
       /* (11) trans_opt ::= TRANSACTION */ yytestcase(yyruleno==11);
       /* (12) trans_opt ::= TRANSACTION nm */ yytestcase(yyruleno==12);
@@ -17707,6 +17704,9 @@ SQLITE_API int SQLITE_STDCALL sqlite3_file_control(sqlite3 *db, const char *zDbN
       rc = SQLITE_OK;
     }else if( op==SQLITE_FCNTL_VFS_POINTER ){
       *(sqlite3_vfs**)pArg = sqlite3PagerVfs(pPager);
+      rc = SQLITE_OK;
+    }else if( op==SQLITE_FCNTL_JOURNAL_POINTER ){
+      *(sqlite3_file**)pArg = sqlite3PagerJrnlFile(pPager);
       rc = SQLITE_OK;
     }else if( fd->pMethods ){
       rc = sqlite3OsFileControl(fd, op, pArg);

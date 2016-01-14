@@ -629,33 +629,51 @@ static struct unix_syscall {
   { "rmdir",        (sqlite3_syscall_ptr)rmdir,           0 },
 #define osRmdir     ((int(*)(const char*))aSyscall[19].pCurrent)
 
+#if defined(HAVE_FCHOWN)
   { "fchown",       (sqlite3_syscall_ptr)fchown,          0 },
+#else
+  { "fchown",       (sqlite3_syscall_ptr)0,               0 },
+#endif
 #define osFchown    ((int(*)(int,uid_t,gid_t))aSyscall[20].pCurrent)
 
   { "geteuid",      (sqlite3_syscall_ptr)geteuid,         0 },
 #define osGeteuid   ((uid_t(*)(void))aSyscall[21].pCurrent)
 
 #if !defined(SQLITE_OMIT_WAL) || SQLITE_MAX_MMAP_SIZE>0
-  { "mmap",       (sqlite3_syscall_ptr)mmap,     0 },
+  { "mmap",         (sqlite3_syscall_ptr)mmap,            0 },
+#else
+  { "mmap",         (sqlite3_syscall_ptr)0,               0 },
+#endif
 #define osMmap ((void*(*)(void*,size_t,int,int,int,off_t))aSyscall[22].pCurrent)
 
+#if !defined(SQLITE_OMIT_WAL) || SQLITE_MAX_MMAP_SIZE>0
   { "munmap",       (sqlite3_syscall_ptr)munmap,          0 },
+#else
+  { "munmap",       (sqlite3_syscall_ptr)0,               0 },
+#endif
 #define osMunmap ((void*(*)(void*,size_t))aSyscall[23].pCurrent)
 
-#if HAVE_MREMAP
+#if HAVE_MREMAP && (!defined(SQLITE_OMIT_WAL) || SQLITE_MAX_MMAP_SIZE>0)
   { "mremap",       (sqlite3_syscall_ptr)mremap,          0 },
 #else
   { "mremap",       (sqlite3_syscall_ptr)0,               0 },
 #endif
 #define osMremap ((void*(*)(void*,size_t,size_t,int,...))aSyscall[24].pCurrent)
 
+#if !defined(SQLITE_OMIT_WAL) || SQLITE_MAX_MMAP_SIZE>0
   { "getpagesize",  (sqlite3_syscall_ptr)unixGetpagesize, 0 },
+#else
+  { "getpagesize",  (sqlite3_syscall_ptr)0,               0 },
+#endif
 #define osGetpagesize ((int(*)(void))aSyscall[25].pCurrent)
 
+#if defined(HAVE_READLINK)
   { "readlink",     (sqlite3_syscall_ptr)readlink,        0 },
+#else
+  { "readlink",     (sqlite3_syscall_ptr)0,               0 },
+#endif
 #define osReadlink ((ssize_t(*)(const char*,char*,size_t))aSyscall[26].pCurrent)
 
-#endif
 
 }; /* End of the overrideable system calls */
 
@@ -666,10 +684,10 @@ static struct unix_syscall {
 ** we are not running as root.
 */
 static int robustFchown(int fd, uid_t uid, gid_t gid){
-#if OS_VXWORKS
-  return 0;
-#else
+#if defined(HAVE_FCHOWN)
   return osGeteuid() ? 0 : osFchown(fd,uid,gid);
+#else
+  return 0;
 #endif
 }
 
@@ -6136,6 +6154,7 @@ static int unixFullPathname(
   assert( pVfs->mxPathname==MAX_PATHNAME );
   UNUSED_PARAMETER(pVfs);
 
+#if defined(HAVE_READLINK)
   /* Attempt to resolve the path as if it were a symbolic link. If it is
   ** a symbolic link, the resolved path is stored in buffer zOut[]. Or, if
   ** the identified file is not a symbolic link or does not exist, then
@@ -6151,6 +6170,7 @@ static int unixFullPathname(
   }else{
     zOut[nByte] = '\0';
   }
+#endif
 
   /* If buffer zOut[] now contains an absolute path there is nothing more
   ** to do. If it contains a relative path, do the following:
@@ -16477,6 +16497,7 @@ SQLITE_PRIVATE int sqlite3RowSetTest(RowSet *pRowSet, int iBatch, sqlite3_int64 
 # define sqlite3WalHeapMemory(z)                 0
 # define sqlite3WalFramesize(z)                  0
 # define sqlite3WalFindFrame(x,y,z)              0
+# define sqlite3WalFile(x)                       0
 #else
 
 #define WAL_SAVEPOINT_NDATA 4
@@ -16570,6 +16591,9 @@ SQLITE_PRIVATE void sqlite3WalSnapshotOpen(Wal *pWal, sqlite3_snapshot *pSnapsho
 */
 SQLITE_PRIVATE int sqlite3WalFramesize(Wal *pWal);
 #endif
+
+/* Return the sqlite3_file object for the WAL file */
+SQLITE_PRIVATE sqlite3_file *sqlite3WalFile(Wal *pWal);
 
 #endif /* ifndef SQLITE_OMIT_WAL */
 #endif /* _WAL_H_ */
@@ -22182,7 +22206,7 @@ SQLITE_PRIVATE int sqlite3PagerBegin(Pager *pPager, int exFlag, int subjInMemory
         if( rc!=SQLITE_OK ){
           return rc;
         }
-        sqlite3WalExclusiveMode(pPager->pWal, 1);
+        (void)sqlite3WalExclusiveMode(pPager->pWal, 1);
       }
 
       /* Grab the write lock on the log file. If successful, upgrade to
@@ -23245,6 +23269,18 @@ SQLITE_PRIVATE sqlite3_vfs *sqlite3PagerVfs(Pager *pPager){
 */
 SQLITE_PRIVATE sqlite3_file *sqlite3PagerFile(Pager *pPager){
   return pPager->fd;
+}
+
+/*
+** Return the file handle for the journal file (if it exists).
+** This will be either the rollback journal or the WAL file.
+*/
+SQLITE_PRIVATE sqlite3_file *sqlite3PagerJrnlFile(Pager *pPager){
+#if SQLITE_OMIT_WAL
+  return pPager->jfd;
+#else
+  return pPager->pWal ? sqlite3WalFile(pPager->pWal) : pPager->jfd;
+#endif
 }
 
 /*
@@ -24352,6 +24388,7 @@ struct Wal {
   u8 padToSectorBoundary;    /* Pad transactions out to the next sector */
   WalIndexHdr hdr;           /* Wal-index header for current transaction */
   u32 minFrame;              /* Ignore wal frames before this one */
+  u32 iReCksum;              /* On commit, recalculate checksums from here */
   const char *zWalName;      /* Name of WAL file */
   u32 nCkpt;                 /* Checkpoint sequence counter in the wal-header */
 #ifdef SQLITE_DEBUG
@@ -24605,14 +24642,18 @@ static void walEncodeFrame(
   assert( WAL_FRAME_HDRSIZE==24 );
   sqlite3Put4byte(&aFrame[0], iPage);
   sqlite3Put4byte(&aFrame[4], nTruncate);
-  memcpy(&aFrame[8], pWal->hdr.aSalt, 8);
+  if( pWal->iReCksum==0 ){
+    memcpy(&aFrame[8], pWal->hdr.aSalt, 8);
 
-  nativeCksum = (pWal->hdr.bigEndCksum==SQLITE_BIGENDIAN);
-  walChecksumBytes(nativeCksum, aFrame, 8, aCksum, aCksum);
-  walChecksumBytes(nativeCksum, aData, pWal->szPage, aCksum, aCksum);
+    nativeCksum = (pWal->hdr.bigEndCksum==SQLITE_BIGENDIAN);
+    walChecksumBytes(nativeCksum, aFrame, 8, aCksum, aCksum);
+    walChecksumBytes(nativeCksum, aData, pWal->szPage, aCksum, aCksum);
 
-  sqlite3Put4byte(&aFrame[16], aCksum[0]);
-  sqlite3Put4byte(&aFrame[20], aCksum[1]);
+    sqlite3Put4byte(&aFrame[16], aCksum[0]);
+    sqlite3Put4byte(&aFrame[20], aCksum[1]);
+  }else{
+    memset(&aFrame[8], 0, 16);
+  }
 }
 
 /*
@@ -26539,6 +26580,7 @@ SQLITE_PRIVATE int sqlite3WalBeginWriteTransaction(Wal *pWal){
   /* Cannot start a write transaction without first holding a read
   ** transaction. */
   assert( pWal->readLock>=0 );
+  assert( pWal->writeLock==0 && pWal->iReCksum==0 );
 
   if( pWal->readOnly ){
     return SQLITE_READONLY;
@@ -26574,6 +26616,7 @@ SQLITE_PRIVATE int sqlite3WalEndWriteTransaction(Wal *pWal){
   if( pWal->writeLock ){
     walUnlockExclusive(pWal, WAL_WRITE_LOCK, 1);
     pWal->writeLock = 0;
+    pWal->iReCksum = 0;
     pWal->truncateOnCommit = 0;
   }
   return SQLITE_OK;
@@ -26792,6 +26835,59 @@ static int walWriteOneFrame(
   return rc;
 }
 
+/*
+** This function is called as part of committing a transaction within which
+** one or more frames have been overwritten. It updates the checksums for
+** all frames written to the wal file by the current transaction starting
+** with the earliest to have been overwritten.
+**
+** SQLITE_OK is returned if successful, or an SQLite error code otherwise.
+*/
+static int walRewriteChecksums(Wal *pWal, u32 iLast){
+  const int szPage = pWal->szPage;/* Database page size */
+  int rc = SQLITE_OK;             /* Return code */
+  u8 *aBuf;                       /* Buffer to load data from wal file into */
+  u8 aFrame[WAL_FRAME_HDRSIZE];   /* Buffer to assemble frame-headers in */
+  u32 iRead;                      /* Next frame to read from wal file */
+  i64 iCksumOff;
+
+  aBuf = sqlite3_malloc(szPage + WAL_FRAME_HDRSIZE);
+  if( aBuf==0 ) return SQLITE_NOMEM;
+
+  /* Find the checksum values to use as input for the recalculating the
+  ** first checksum. If the first frame is frame 1 (implying that the current
+  ** transaction restarted the wal file), these values must be read from the
+  ** wal-file header. Otherwise, read them from the frame header of the
+  ** previous frame.  */
+  assert( pWal->iReCksum>0 );
+  if( pWal->iReCksum==1 ){
+    iCksumOff = 24;
+  }else{
+    iCksumOff = walFrameOffset(pWal->iReCksum-1, szPage) + 16;
+  }
+  rc = sqlite3OsRead(pWal->pWalFd, aBuf, sizeof(u32)*2, iCksumOff);
+  pWal->hdr.aFrameCksum[0] = sqlite3Get4byte(aBuf);
+  pWal->hdr.aFrameCksum[1] = sqlite3Get4byte(&aBuf[sizeof(u32)]);
+
+  iRead = pWal->iReCksum;
+  pWal->iReCksum = 0;
+  for(; rc==SQLITE_OK && iRead<=iLast; iRead++){
+    i64 iOff = walFrameOffset(iRead, szPage);
+    rc = sqlite3OsRead(pWal->pWalFd, aBuf, szPage+WAL_FRAME_HDRSIZE, iOff);
+    if( rc==SQLITE_OK ){
+      u32 iPgno, nDbSize;
+      iPgno = sqlite3Get4byte(aBuf);
+      nDbSize = sqlite3Get4byte(&aBuf[4]);
+
+      walEncodeFrame(pWal, iPgno, nDbSize, &aBuf[WAL_FRAME_HDRSIZE], aFrame);
+      rc = sqlite3OsWrite(pWal->pWalFd, aFrame, sizeof(aFrame), iOff);
+    }
+  }
+
+  sqlite3_free(aBuf);
+  return rc;
+}
+
 /* 
 ** Write a set of frames to the log. The caller must hold the write-lock
 ** on the log file (obtained using sqlite3WalBeginWriteTransaction()).
@@ -26812,6 +26908,8 @@ SQLITE_PRIVATE int sqlite3WalFrames(
   int szFrame;                    /* The size of a single frame */
   i64 iOffset;                    /* Next byte to write in WAL file */
   WalWriter w;                    /* The writer */
+  u32 iFirst = 0;                 /* First frame that may be overwritten */
+  WalIndexHdr *pLive;             /* Pointer to shared header */
 
   assert( pList );
   assert( pWal->writeLock );
@@ -26826,6 +26924,11 @@ SQLITE_PRIVATE int sqlite3WalFrames(
               pWal, cnt, pWal->hdr.mxFrame, isCommit ? "Commit" : "Spill"));
   }
 #endif
+
+  pLive = (WalIndexHdr*)walIndexHdr(pWal);
+  if( memcmp(&pWal->hdr, (void *)pLive, sizeof(WalIndexHdr))!=0 ){
+    iFirst = pLive->mxFrame+1;
+  }
 
   /* See if it is possible to write these frames into the start of the
   ** log file, instead of appending to it at pWal->hdr.mxFrame.
@@ -26891,6 +26994,27 @@ SQLITE_PRIVATE int sqlite3WalFrames(
   /* Write all frames into the log file exactly once */
   for(p=pList; p; p=p->pDirty){
     int nDbSize;   /* 0 normally.  Positive == commit flag */
+
+    /* Check if this page has already been written into the wal file by
+    ** the current transaction. If so, overwrite the existing frame and
+    ** set Wal.writeLock to WAL_WRITELOCK_RECKSUM - indicating that 
+    ** checksums must be recomputed when the transaction is committed.  */
+    if( iFirst && (p->pDirty || isCommit==0) ){
+      u32 iWrite = 0;
+      VVA_ONLY(rc =) sqlite3WalFindFrame(pWal, p->pgno, &iWrite);
+      assert( rc==SQLITE_OK || iWrite==0 );
+      if( iWrite>=iFirst ){
+        i64 iOff = walFrameOffset(iWrite, szPage) + WAL_FRAME_HDRSIZE;
+        if( pWal->iReCksum==0 || iWrite<pWal->iReCksum ){
+          pWal->iReCksum = iWrite;
+        }
+        rc = sqlite3OsWrite(pWal->pWalFd, p->pData, szPage, iOff);
+        if( rc ) return rc;
+        p->flags &= ~PGHDR_WAL_APPEND;
+        continue;
+      }
+    }
+
     iFrame++;
     assert( iOffset==walFrameOffset(iFrame, szPage) );
     nDbSize = (isCommit && p->pDirty==0) ? nTruncate : 0;
@@ -26898,6 +27022,13 @@ SQLITE_PRIVATE int sqlite3WalFrames(
     if( rc ) return rc;
     pLast = p;
     iOffset += szFrame;
+    p->flags |= PGHDR_WAL_APPEND;
+  }
+
+  /* Recalculate checksums within the wal file if required. */
+  if( isCommit && pWal->iReCksum ){
+    rc = walRewriteChecksums(pWal, iFrame);
+    if( rc ) return rc;
   }
 
   /* If this is the end of a transaction, then we might need to pad
@@ -26949,6 +27080,7 @@ SQLITE_PRIVATE int sqlite3WalFrames(
   */
   iFrame = pWal->hdr.mxFrame;
   for(p=pList; p && rc==SQLITE_OK; p=p->pDirty){
+    if( (p->flags & PGHDR_WAL_APPEND)==0 ) continue;
     iFrame++;
     rc = walIndexAppend(pWal, iFrame, p->pgno);
   }
@@ -27061,6 +27193,7 @@ SQLITE_PRIVATE int sqlite3WalCheckpoint(
 
   /* Copy data from the log to the database file. */
   if( rc==SQLITE_OK ){
+
     if( pWal->hdr.mxFrame && walPagesize(pWal)!=nBuf ){
       rc = SQLITE_CORRUPT_BKPT;
     }else{
@@ -27216,6 +27349,12 @@ SQLITE_PRIVATE int sqlite3WalFramesize(Wal *pWal){
   return (pWal ? pWal->szPage : 0);
 }
 #endif
+
+/* Return the sqlite3_file object for the WAL file
+*/
+SQLITE_PRIVATE sqlite3_file *sqlite3WalFile(Wal *pWal){
+  return pWal->pWalFd;
+}
 
 #endif /* #ifndef SQLITE_OMIT_WAL */
 
@@ -27518,7 +27657,6 @@ struct MemPage {
   u8 nOverflow;        /* Number of overflow cell bodies in aCell[] */
   u8 intKey;           /* True if table b-trees.  False for index b-trees */
   u8 intKeyLeaf;       /* True if the leaf of an intKey table */
-  u8 noPayload;        /* True if internal intKey page (thus w/o data) */
   u8 leaf;             /* True if a leaf page */
   u8 hdrOffset;        /* 100 for page 1.  0 otherwise */
   u8 childPtrSize;     /* 0 if leaf==1.  4 if leaf==0 */
@@ -28106,21 +28244,6 @@ SQLITE_PRIVATE int sqlite3BtreeHoldsMutex(Btree *p){
 #endif
 
 
-#ifndef SQLITE_OMIT_INCRBLOB
-/*
-** Enter and leave a mutex on a Btree given a cursor owned by that
-** Btree.  These entry points are used by incremental I/O and can be
-** omitted if that module is not used.
-*/
-SQLITE_PRIVATE void sqlite3BtreeEnterCursor(BtCursor *pCur){
-  sqlite3BtreeEnter(pCur->pBtree);
-}
-SQLITE_PRIVATE void sqlite3BtreeLeaveCursor(BtCursor *pCur){
-  sqlite3BtreeLeave(pCur->pBtree);
-}
-#endif /* SQLITE_OMIT_INCRBLOB */
-
-
 /*
 ** Enter the mutex on every Btree associated with a database
 ** connection.  This is needed (for example) prior to parsing
@@ -28152,14 +28275,6 @@ SQLITE_PRIVATE void sqlite3BtreeLeaveAll(sqlite3 *db){
     p = db->aDb[i].pBt;
     if( p ) sqlite3BtreeLeave(p);
   }
-}
-
-/*
-** Return true if a particular Btree requires a lock.  Return FALSE if
-** no lock is ever required since it is not sharable.
-*/
-SQLITE_PRIVATE int sqlite3BtreeSharable(Btree *p){
-  return p->sharable;
 }
 
 #ifndef NDEBUG
@@ -28235,6 +28350,25 @@ SQLITE_PRIVATE void sqlite3BtreeEnterAll(sqlite3 *db){
   }
 }
 #endif /* if SQLITE_THREADSAFE */
+
+#ifndef SQLITE_OMIT_INCRBLOB
+/*
+** Enter a mutex on a Btree given a cursor owned by that Btree. 
+**
+** These entry points are used by incremental I/O only. Enter() is required 
+** any time OMIT_SHARED_CACHE is not defined, regardless of whether or not 
+** the build is threadsafe. Leave() is only required by threadsafe builds.
+*/
+SQLITE_PRIVATE void sqlite3BtreeEnterCursor(BtCursor *pCur){
+  sqlite3BtreeEnter(pCur->pBtree);
+}
+# if SQLITE_THREADSAFE
+SQLITE_PRIVATE void sqlite3BtreeLeaveCursor(BtCursor *pCur){
+  sqlite3BtreeLeave(pCur->pBtree);
+}
+# endif
+#endif /* ifndef SQLITE_OMIT_INCRBLOB */
+
 #endif /* ifndef SQLITE_OMIT_SHARED_CACHE */
 
 /************** End of btmutex.c *********************************************/
