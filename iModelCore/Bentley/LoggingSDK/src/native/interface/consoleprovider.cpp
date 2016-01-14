@@ -566,7 +566,7 @@ struct SplitConsoleProvider : ILogProvider
         Pane() : m_rect(0,0,10,10), m_provider(nullptr) { }
 
         virtual void Log(WCharCP msg, SEVERITY sev, WCharCP nameSpace) override;
-        dim_t PrepareMessage(WCharCP msg, SEVERITY sev, WCharCP nameSpace);
+        dim_t PrepareMessage(WCharCP msg, SEVERITY sev, WCharCP nameSpace, WCharCP& nextSegment);
         static WORD GetAttributesForSeverity(SEVERITY sev);
     };
 
@@ -659,8 +659,9 @@ public:
 +---------------+---------------+---------------+---------------+---------------+------*/
 void SplitConsoleProvider::Pane::Log(WCharCP msg, SEVERITY sev, WCharCP nameSpace)
     {
-    dim_t nRows = PrepareMessage(msg, sev, nameSpace);
-    if (0 < nRows)
+    WCharCP nextSegment = msg;
+    dim_t nRows;
+    while (nullptr != msg && 0 < (nRows = PrepareMessage(msg, sev, nameSpace, nextSegment)))
         {
         // Scroll existing text to make room
         static const CharInfo s_fillChar(' ', 0);
@@ -672,23 +673,33 @@ void SplitConsoleProvider::Pane::Log(WCharCP msg, SEVERITY sev, WCharCP nameSpac
         Rect writeRect = m_rect;
         writeRect.Top = writeRect.Bottom - nRows;
         WriteConsoleOutput(m_provider->GetScreenBuffer(), m_buffer, Coord(writeRect.GetWidth(), nRows), Coord(0,0), &writeRect);
+
+        // If the message included a new line...
+        msg = nextSegment;
         }
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-SplitConsoleProvider::dim_t SplitConsoleProvider::Pane::PrepareMessage(WCharCP rawMsg, SEVERITY sev, WCharCP nameSpace)
+SplitConsoleProvider::dim_t SplitConsoleProvider::Pane::PrepareMessage(WCharCP rawMsg, SEVERITY sev, WCharCP nameSpace, WCharCP& nextSegment)
     {
+    nextSegment = nullptr;
     WCharCP msg = rawMsg;
+    size_t nPrefixChars = 0;
+#ifdef ADD_PREFIX_FOR_DEFAULT
     WString decoratedMsg;
     if (m_isDefault)
         {
         decoratedMsg.AssignOrClear(nameSpace);
         decoratedMsg.append(1, ':');
+        nPrefixChars = decoratedMsg.length();
         decoratedMsg.append(rawMsg);
         msg = decoratedMsg.c_str();
         }
+#else
+    UNUSED_VARIABLE(nameSpace);
+#endif
 
     WORD attributes = GetAttributesForSeverity(sev);
     CHAR_INFO* pBuf = m_buffer;
@@ -702,10 +713,12 @@ SplitConsoleProvider::dim_t SplitConsoleProvider::Pane::PrepareMessage(WCharCP r
     bool done = false;
     while (!done)
         {
-        // If the last row contains more characters than we have room for in our buffer, truncate the message.
+        // If the last row contains more characters than we have room for in our buffer, caller needs to call us again to print the remainder
         if ((pEnd - pBuf) < width)
             {
             done = true;
+            size_t dist = pChar - msg + nPrefixChars;
+            nextSegment = rawMsg + dist;
             break;
             }
 
@@ -713,9 +726,16 @@ SplitConsoleProvider::dim_t SplitConsoleProvider::Pane::PrepareMessage(WCharCP r
         for (dim_t pos = 0; pos < width; pos++)
             {
             CHAR_INFO& buf = *pBuf++;
-            buf.Char.UnicodeChar = done ? '\0' : *pChar++;
+            if (!done && '\n' == *pChar)
+                {
+                done = true;
+                size_t dist = pChar+1 - msg + nPrefixChars;
+                nextSegment = rawMsg + dist;
+                }
+                
+            buf.Char.UnicodeChar = done ? ' ' : *pChar++;
             buf.Attributes = attributes;
-            done = '\0' == *pChar || (++nChars > s_maxMessageLength);
+            done = done || '\0' == *pChar || (++nChars > s_maxMessageLength);
             }
 
         ++nRows;
