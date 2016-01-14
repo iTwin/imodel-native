@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnDbServer/DgnDbServerCommon.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -22,21 +22,58 @@ USING_NAMESPACE_BENTLEY_DGNCLIENTFX_UTILS
 struct DgnDbServerError : public AsyncError
     {
 public:
-    DgnDbServerError() {}
-    DgnDbServerError(Utf8CP message)
+    enum class Id
         {
-        m_message = message;
-        }
+        Unknown,
+        //DgnDbServer Errors
+        MissingRequiredProperties,
+        InvalidBriefcase,
+        AnotherUserPushing,
+        RevisionAlreadyExists,
+        RevisionDoesNotExist,
+        FileIsNotUploaded,
+        RevisionExistsButNoBackingFile,
+        RepositoryIsNotInitialized,
+        RevisionPointsToBadDgnDb,
+        DgnDbServerOperationFailed,
+        PullIsRequired,
+        MaximumNumberOfBriefcasesPerUser,
+        MaximumNumberOfBriefcasesPerUserPerMinute,
+        DatabaseTemporarilyLocked,
+        RepositoryAlreadyExists,
+        RepositoryDoesNotExist,
+        LockDoesNotExist,
+        LockOwnedByAnotherBriefcase,
 
-    DgnDbServerError(WebServices::WSErrorCR error)
-        {
-        m_message = error.GetMessage();
-        m_description = error.GetDescription();
-        }
+        //WebServices Errors
+        LoginFailed,
+        SslRequired,
+        NotEnoughRights,
+        NoServerLicense,
+        NoClientLicense,
+        TooManyBadLoginAttempts,
+        InternalServerError,
+        WebServicesError,
+        ConnectionError,
+        Canceled,
 
-    DgnDbServerError(Dgn::RevisionStatus const& status)
-        {
-        }
+        //Revision Manager Errors
+        MergeError,
+        RevisionManagerError
+        };
+
+private:
+    Id m_id;
+    Id ErrorIdFromString(Utf8StringCR errorIdString);
+    Id ErrorIdFromWSError(WebServices::WSErrorCR error);
+
+public:
+    DgnDbServerError();
+    DgnDbServerError(Utf8CP message, Utf8CP description = nullptr);
+    DgnDbServerError(WebServices::WSErrorCR error);
+    DgnDbServerError(Dgn::RevisionStatus const& status);
+
+    Id GetId();
     };
 END_BENTLEY_DGNDBSERVER_NAMESPACE
 

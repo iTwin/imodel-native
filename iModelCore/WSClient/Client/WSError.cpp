@@ -2,7 +2,7 @@
 |
 |     $Source: Client/WSError.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ClientInternal.h"
@@ -160,7 +160,8 @@ BentleyStatus WSError::ParseJsonError(HttpResponseCR httpResponse)
         return ERROR;
         }
 
-    WSError::Id errorId = ErrorIdFromString(jsonError[JSON_ErrorId].asString());
+    m_customId = jsonError[JSON_ErrorId].asString();
+    WSError::Id errorId = ErrorIdFromString(m_customId);
     Utf8String errorMessage = jsonError[JSON_ErrorMessage].asString();
     Utf8String errorDescription = jsonError[JSON_ErrorDescription].asString();
 
@@ -378,6 +379,15 @@ WSError::Id WSError::GetId() const
     {
     return m_id;
     }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Andrius.Zonys   01/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8StringCR WSError::GetCustomId() const
+    {
+    return m_customId;
+    }
+
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    05/2014

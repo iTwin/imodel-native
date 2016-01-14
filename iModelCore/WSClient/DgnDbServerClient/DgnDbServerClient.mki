@@ -2,7 +2,7 @@
 #
 #     $Source: DgnDbServerClient/DgnDbServerClient.mki $
 #
-#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 #
 #----------------------------------------------------------------------------------------
 
@@ -26,6 +26,8 @@ DgnDbServerClientMkiHeaders =	$(DgnDbServerClientMkiPublicApiDir)DgnDbServerComm
 #   Compile
 #----------------------------------------------------------------------------------------
 
+$(o)DgnDbServerError$(oext)                : $(DgnDbServerClientMkiSourceDir)DgnDbServerError.cpp $(DgnDbServerClientMkiHeaders) ${MultiCompileDepends}
+
 $(o)DgnDbServerUtils$(oext)                : $(DgnDbServerClientMkiSourceDir)DgnDbServerUtils.cpp $(DgnDbServerClientMkiHeaders) ${MultiCompileDepends}
 
 $(o)DgnDbServerRevision$(oext)             : $(DgnDbServerClientMkiSourceDir)DgnDbServerRevision.cpp $(DgnDbServerClientMkiHeaders) ${MultiCompileDepends}
@@ -39,4 +41,5 @@ $(o)DgnDbBriefcase$(oext)                  : $(DgnDbServerClientMkiSourceDir)Dgn
 $(o)DgnDbLocks$(oext)                      : $(DgnDbServerClientMkiSourceDir)DgnDbLocks.cpp $(DgnDbServerClientMkiHeaders) ${MultiCompileDepends}
 
 $(o)DgnDbClient$(oext)                     : $(DgnDbServerClientMkiSourceDir)DgnDbClient.cpp $(DgnDbServerClientMkiHeaders) ${MultiCompileDepends}
+
 
