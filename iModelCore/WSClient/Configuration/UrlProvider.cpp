@@ -2,7 +2,7 @@
 |
 |     $Source: Configuration/UrlProvider.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ClientInternal.h"
@@ -101,9 +101,25 @@ const UrlProvider::UrlDescriptor UrlProvider::Urls::ConnectWsgSharedContent(
 
 const UrlProvider::UrlDescriptor UrlProvider::Urls::ImsStsAuth(
     "Mobile.ImsStsAuth",
-    "https://ims-testing.bentley.com/rest/ActiveSTSService/json/IssueEx",
-    "https://ims-testing.bentley.com/rest/ActiveSTSService/json/IssueEx",
+    "https://qa-ims.bentley.com/rest/ActiveSTSService/json/IssueEx",
+    "https://qa-ims.bentley.com/rest/ActiveSTSService/json/IssueEx",
     "https://ims.bentley.com/rest/ActiveSTSService/json/IssueEx",
+    &s_urlRegistry
+    );
+
+const UrlProvider::UrlDescriptor UrlProvider::Urls::ImsActiveStsDelegationService(
+    "ActiveSTSDelegationServiceUrl",
+    "https://qa-ims.bentley.com/rest/DelegationSTSService",
+    "https://qa-ims.bentley.com/rest/DelegationSTSService",
+    "https://ims.bentley.com/rest/DelegationSTSService",
+    &s_urlRegistry
+    );
+
+const UrlProvider::UrlDescriptor UrlProvider::Urls::ImsFederatedAuth(
+    "IMS.FederatedAuth.Url",
+    "https://qa-ims.bentley.com/",
+    "https://qa-ims.bentley.com/",
+    "https://ims.bentley.com/",
     &s_urlRegistry
     );
 
