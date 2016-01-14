@@ -2,7 +2,7 @@
 ////:>
 ////:>     $Source: Tests/NonPublished/IppGraLibs/HVE2DPolygonOfSegmentsTester.cpp $
 ////:>
-////:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+////:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 ////:>
 ////:>+--------------------------------------------------------------------------------------
 
@@ -3521,24 +3521,24 @@ TEST_F(HVE2DPolygonOfSegmentsTester,  IntersectShapeTestWithPointerWhoFailed)
     ASSERT_EQ(4, AComp.GetNumberOfLinears());
 
     ASSERT_NEAR(0.0, AComp.GetLinear(0).GetStartPoint().GetX(), MYEPSILON);
-    ASSERT_DOUBLE_EQ(256.0, AComp.GetLinear(0).GetStartPoint().GetY());
-    ASSERT_DOUBLE_EQ(83.00, AComp.GetLinear(0).GetEndPoint().GetX());
+    ASSERT_DOUBLE_EQ(0.0, AComp.GetLinear(0).GetStartPoint().GetY());
+    ASSERT_DOUBLE_EQ(0.0, AComp.GetLinear(0).GetEndPoint().GetX());
     ASSERT_DOUBLE_EQ(256.0, AComp.GetLinear(0).GetEndPoint().GetY());
     
-    ASSERT_DOUBLE_EQ(83.00, AComp.GetLinear(1).GetStartPoint().GetX());
+    ASSERT_DOUBLE_EQ(0.0, AComp.GetLinear(1).GetStartPoint().GetX());
     ASSERT_DOUBLE_EQ(256.0, AComp.GetLinear(1).GetStartPoint().GetY());
     ASSERT_DOUBLE_EQ(83.00, AComp.GetLinear(1).GetEndPoint().GetX());
-    ASSERT_NEAR(0.0, AComp.GetLinear(1).GetEndPoint().GetY(), MYEPSILON);
+    ASSERT_NEAR(256.0, AComp.GetLinear(1).GetEndPoint().GetY(), MYEPSILON);
 
     ASSERT_DOUBLE_EQ(83.0, AComp.GetLinear(2).GetStartPoint().GetX());
-    ASSERT_NEAR(0.0, AComp.GetLinear(2).GetStartPoint().GetY(), MYEPSILON);
-    ASSERT_NEAR(0.0, AComp.GetLinear(2).GetEndPoint().GetX(), MYEPSILON);
+    ASSERT_NEAR(256.0, AComp.GetLinear(2).GetStartPoint().GetY(), MYEPSILON);
+    ASSERT_NEAR(83.0, AComp.GetLinear(2).GetEndPoint().GetX(), MYEPSILON);
     ASSERT_NEAR(0.0, AComp.GetLinear(2).GetEndPoint().GetY(), MYEPSILON);
 
-    ASSERT_NEAR(0.0, AComp.GetLinear(3).GetStartPoint().GetX(), MYEPSILON);
+    ASSERT_NEAR(83.0, AComp.GetLinear(3).GetStartPoint().GetX(), MYEPSILON);
     ASSERT_NEAR(0.0, AComp.GetLinear(3).GetStartPoint().GetY(), MYEPSILON);
     ASSERT_NEAR(0.0, AComp.GetLinear(3).GetEndPoint().GetX(), MYEPSILON);
-    ASSERT_DOUBLE_EQ(256.0, AComp.GetLinear(3).GetEndPoint().GetY());
+    ASSERT_DOUBLE_EQ(0.0, AComp.GetLinear(3).GetEndPoint().GetY());
 
     }
 
@@ -4143,7 +4143,7 @@ TEST_F(HVE2DPolygonOfSegmentsTester,  ModifyShapeWithPointerWhoFailed5)
     HFCPtr<HVE2DShape> pShape2 = new HVE2DPolygonOfSegments(TheLinear2);
 
     HFCPtr<HVE2DShape> pResult = pShape1->IntersectShape(*pShape2);
-    ASSERT_DOUBLE_EQ(62464.0024044066740, pResult->CalculateArea());
+    ASSERT_NEAR(62464.0024044066740, pResult->CalculateArea(), sqrt(MYEPSILON));
     
     pResult = pShape1->UnifyShape(*pShape2);
     ASSERT_DOUBLE_EQ(65536.0025806352787, pResult->CalculateArea());
@@ -4388,7 +4388,7 @@ TEST_F(HVE2DPolygonOfSegmentsTester,  ModifyShapeWithPointerWhoFailed9)
 
     // Resumate of problem
     HFCPtr<HVE2DShape> pResult = pShape1->IntersectShape(*pShape2);
-    ASSERT_DOUBLE_EQ(4536.00173557470679, pResult->CalculateArea());
+    ASSERT_NEAR(4536.00173557470679, pResult->CalculateArea(), sqrt(MYEPSILON));
     
     pResult = pShape1->UnifyShape(*pShape2);
     ASSERT_DOUBLE_EQ(65536.0012903176248, pResult->CalculateArea());
@@ -4436,7 +4436,7 @@ TEST_F(HVE2DPolygonOfSegmentsTester,  ModifyShapeWithPointerWhoFailed10)
     HFCPtr<HVE2DShape> pShape2 = new HVE2DPolygonOfSegments(TheLinear2);
 
     HFCPtr<HVE2DShape> pResult = pShape1->IntersectShape(*pShape2);
-    ASSERT_DOUBLE_EQ(8615.0493413454733, pResult->CalculateArea());
+    ASSERT_NEAR(8615.0493413454733, pResult->CalculateArea(), sqrt(MYEPSILON));
     
     pResult = pShape1->UnifyShape(*pShape2);
     ASSERT_DOUBLE_EQ(122208.33332679553, pResult->CalculateArea());   
@@ -4588,7 +4588,7 @@ TEST_F(HVE2DPolygonOfSegmentsTester,  ModifyShapeWithPointerWhoFailed13)
     HFCPtr<HVE2DShape> pShape2 = new HVE2DPolygonOfSegments(TheLinear2);
 
     HFCPtr<HVE2DShape> pResult = pShape1->IntersectShape(*pShape2);
-    ASSERT_DOUBLE_EQ(62464.004123923172, pResult->CalculateArea());
+    ASSERT_NEAR(62464.004123923172, pResult->CalculateArea(), sqrt(MYEPSILON));
     
     pResult = pShape1->UnifyShape(*pShape2);
     ASSERT_DOUBLE_EQ(262144.00344084483, pResult->CalculateArea());
@@ -4636,7 +4636,7 @@ TEST_F(HVE2DPolygonOfSegmentsTester,  ModifyShapeWithPointerWhoFailed14)
     HFCPtr<HVE2DShape> pShape2 = new HVE2DPolygonOfSegments(TheLinear2);
 
     HFCPtr<HVE2DShape> pResult = pShape1->IntersectShape(*pShape2);
-    ASSERT_DOUBLE_EQ(60512.002365251079, pResult->CalculateArea());
+    ASSERT_NEAR(60512.002365251079, pResult->CalculateArea(), sqrt(MYEPSILON));
     
     pResult = pShape1->UnifyShape(*pShape2);
     ASSERT_DOUBLE_EQ(65536.002580635250, pResult->CalculateArea());    
@@ -4684,7 +4684,7 @@ TEST_F(HVE2DPolygonOfSegmentsTester,  ModifyShapeWithPointerWhoFailed15)
     HFCPtr<HVE2DShape> pShape2 = new HVE2DPolygonOfSegments(TheLinear2);
 
     HFCPtr<HVE2DShape> pResult = pShape1->IntersectShape(*pShape2);
-    ASSERT_DOUBLE_EQ(12862.3138841326217, pResult->CalculateArea());
+    ASSERT_NEAR(12862.3138841326217, pResult->CalculateArea(), sqrt(MYEPSILON));
     
     pResult = pShape1->UnifyShape(*pShape2);
     ASSERT_DOUBLE_EQ(65536.0000000000000, pResult->CalculateArea());    

@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HGF2DPolySegment.hpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 BEGIN_IMAGEPP_NAMESPACE
@@ -162,7 +162,7 @@ inline bool HGF2DPolySegment::IsNull() const
     {
     HINVARIANTS;
 
-    return(m_Points.size() == 0);
+    return ((m_Points.size() < 2) || (CalculateLength() == 0.0));
     }
 
 END_IMAGEPP_NAMESPACE

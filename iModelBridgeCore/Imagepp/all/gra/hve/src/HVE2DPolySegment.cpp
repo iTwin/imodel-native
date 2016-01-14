@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hve/src/HVE2DPolySegment.cpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Methods for class HVE2DPolySegment
@@ -2118,7 +2118,7 @@ size_t HVE2DPolySegment::ObtainContiguousnessPoints(const HVE2DVector&       pi_
 
             // We check if they are in the proper order by checking relative position
             // of first and last points found
-            if (CalculateRelativePosition(*(TempPoints.begin())) < CalculateRelativePosition(*(TempPoints.rbegin())))
+            if ((CalculateRelativePosition(*(TempPoints.begin())) < CalculateRelativePosition(*(TempPoints.rbegin()))) || (TempPoints.rbegin()->IsEqualTo(GetEndPoint(), GetTolerance())))
                 {
                 // The points are in the proper order ... we copy
                 HGF2DLocationCollection::iterator MyIterator(TempPoints.begin());
@@ -2446,10 +2446,10 @@ HGF2DLocation HVE2DPolySegment::CalculateRelativePoint(double pi_RelativePos) co
 //    HPRECONDITION(CalculateLength() > 0.0);
 
     // Declare result variable
-    HGF2DLocation   ResultPoint(GetCoordSys());
+    HGF2DLocation   ResultPoint(m_StartPoint);
 
     // Check if poly segment is not empty
-    if (m_Points.size() >= 2)
+    if ((m_Points.size() >= 2)&& !(CalculateLength() == 0.0))
         {
 
         // Check for extremity relative position

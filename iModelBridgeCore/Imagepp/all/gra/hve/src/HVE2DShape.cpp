@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hve/src/HVE2DShape.cpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Methods for class HVE2DShape
@@ -627,7 +627,9 @@ HVE2DShape::SpatialPosition HVE2DShape::CalculateSpatialPositionOfNonCrossingLin
                 // Check if the basic linear is not NULL
                 // This condition is very important, since the present may be called recursively
                 // in the case of multiple flirting points (see below)
-                if (!pi_rLinear.IsNull())
+                if (pi_rLinear.IsNull())
+                    ThePosition = HVE2DShape::S_ON; // Since linear is null and both points are on the shape then the result is ON
+                else
                     {
                     // We determine if the linear is contiguous
                     if (AreContiguous(pi_rLinear))
@@ -636,54 +638,73 @@ HVE2DShape::SpatialPosition HVE2DShape::CalculateSpatialPositionOfNonCrossingLin
                         // We ask for extended contiguousness points.
                         HGF2DLocationCollection     MyListOfPoints;
 
-                        if (pi_rLinear.ObtainContiguousnessPoints(*this, &MyListOfPoints))
+                        if (ObtainContiguousnessPoints(pi_rLinear, &MyListOfPoints))
                             {
+                        
                             // There are an even number of contiguousness points
                             HASSERT(MyListOfPoints.size() % 2 == 0);
 
-                            // There are some contiguousness points
-
-                            ThePosition = HVE2DShape::S_ON;
-
-                            HGF2DLocation CurrentPoint = pi_rLinear.GetStartPoint();
-
-                            // For every point until resolved
-                            HGF2DLocationCollection::iterator     Itr;
-
-                            for (Itr = MyListOfPoints.begin() ;
-                                 Itr != MyListOfPoints.end() &&
-                                 ThePosition == HVE2DShape::S_ON ; Itr++)
+                            if (MyListOfPoints.size() == 0)
                                 {
-                                // No need to test if contiguous point is equal to extremity
-                                if (!CurrentPoint.IsEqualTo(*Itr, Tolerance))
+                                // This can only occur if the linear goes fully around one of the shape component it is therefore ON
+                                ThePosition = HVE2DShape::S_ON;
+                                }
+                            else 
+                                {
+                                // There are some contiguousness points; the linear is either unclosed or is partially out or in
+                                // but we do not know which one yet.
+
+                                // We do not know either the order of the contiguousness points obtained relative to linear.
+                                // Note that if the linear autocloses then the start/end point will may not be included in the 
+                                // list of contiguousness points even if the point is part of the contiguoussness region.
+
+                                // What we will do is sort contiguousness points according to relative position
+                                HGF2DLocationCollection OrderedListOfPoints;
+                                OrderedListOfPoints.push_back(pi_rLinear.GetStartPoint());
+                                
+                                double relativePosition = -1.0;
+                                HGF2DLocationCollection::iterator selectedPtIndex;
+                                HGF2DLocationCollection::iterator ptIndex = MyListOfPoints.begin();
+                                while(MyListOfPoints.size() > 0)
                                     {
-                                    // We obtain a copy of the linear
-                                    HAutoPtr<HVE2DLinear> pMyLinearCopy((HVE2DLinear*)pi_rLinear.Clone());
-
-                                    // We shorten it to point
-                                    pMyLinearCopy->Shorten(CurrentPoint, *Itr);
-
-                                    // We obtain the mid point of result linear
-                                    HGF2DLocation MyPoint = pMyLinearCopy->CalculateRelativePoint(0.5);
-
-                                    // Check the spatial position of point
-                                    if (!IsPointOn(MyPoint, INCLUDE_EXTREMITIES, Tolerance))
+                                    double currentRelativePosition = pi_rLinear.CalculateRelativePosition(*ptIndex);
+                                    if (relativePosition < 0.0 || currentRelativePosition < relativePosition)
                                         {
-                                        // The point is either IN or OUT as the rest of the linear
-                                        ThePosition = (IsPointIn(MyPoint, Tolerance) ?
-                                                       HVE2DShape::S_IN : HVE2DShape::S_OUT);
+                                        relativePosition = currentRelativePosition;
+                                        selectedPtIndex = ptIndex;
+                                        }
+                                    ptIndex++;
+                                    if (ptIndex == MyListOfPoints.end())
+                                        {
+                                        OrderedListOfPoints.push_back(*selectedPtIndex);
+                                        MyListOfPoints.erase(selectedPtIndex);
+                                        relativePosition = -1.0;
+                                        ptIndex = MyListOfPoints.begin();
                                         }
                                     }
 
-                                // Change current point
-                                ++Itr;
+                                // We add the last point as relativePosition of last point + half to 1.0
+                                // The purpose being that if the linear is self close we have no problem with relative position of last point
+                                // that would happen to be the first point at the same time.
+                                OrderedListOfPoints.push_back(pi_rLinear.CalculateRelativePoint((pi_rLinear.CalculateRelativePosition(OrderedListOfPoints[OrderedListOfPoints.size() - 1]) + 1.0)/2.0));
 
-                                // Since there are an even number of points :)
-                                HASSERT(Itr != MyListOfPoints.end());
 
-                                CurrentPoint = *Itr;
-                                }
+                                ThePosition = HVE2DShape::S_ON;
 
+                                for (size_t indexCurrentPoint = 0 ; (HVE2DShape::S_ON == ThePosition) && (indexCurrentPoint < OrderedListOfPoints.size() - 1); indexCurrentPoint++)
+                                    {
+                                    HAutoPtr<HVE2DLinear> pMyLinearCopy((HVE2DLinear*)pi_rLinear.Clone());
+
+                                    if (!OrderedListOfPoints[indexCurrentPoint].IsEqualTo(OrderedListOfPoints[indexCurrentPoint+1], Tolerance))
+                                        {
+                                        // We shorten it to point
+                                        pMyLinearCopy->Shorten(OrderedListOfPoints[indexCurrentPoint], OrderedListOfPoints[indexCurrentPoint + 1]);
+
+                                        // Obtain the point located halfway on the portion of linear
+                                        ThePosition = CalculateSpatialPositionOf(pMyLinearCopy->CalculateRelativePoint(0.5));
+                                        }
+                                    }
+								}
                             }
                         else
                             {
@@ -692,6 +713,7 @@ HVE2DShape::SpatialPosition HVE2DShape::CalculateSpatialPositionOfNonCrossingLin
                             // located completely on shape
                             ThePosition = HVE2DShape::S_ON;
                             }
+							
                         }
                     else
                         {
@@ -729,7 +751,7 @@ HVE2DShape::SpatialPosition HVE2DShape::CalculateSpatialPositionOfNonCrossingLin
 
                                 // The result position is the best that could be found, but note that
                                 // if S_ON, there should have been a contiguousness reported !
-                                // This may occur in rare cases where the tolerance is two small and
+                                // This may occur in rare cases where the tolerance is too small and
                                 // mathematical errors upon contiguousness computations indicate false while true would be more
                                 // adequate. In all case the result is ON
                                 // HASSERT(ThePosition != HVE2DShape::S_ON);

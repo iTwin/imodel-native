@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hgf/src/HGF2DPolySegment.cpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Methods for class HGF2DPolySegment
@@ -2030,7 +2030,7 @@ size_t HGF2DPolySegment::ObtainContiguousnessPoints(const HGF2DVector&       pi_
 
             // We check if they are in the proper order by checking relative position
             // of first and last points found
-            if ((CalculateRelativePosition(*(TempPoints.begin())) < CalculateRelativePosition(*(TempPoints.rbegin()))) || (TempPoints.rbegin()->IsEqualTo(GetEndPoint(), GetTolerance())))
+            if (CalculateRelativePosition(*(TempPoints.begin())) < CalculateRelativePosition(*(TempPoints.rbegin())))
                 {
                 // The points are in the proper order ... we copy
                 HGF2DPositionCollection::iterator MyIterator(TempPoints.begin());
@@ -2261,10 +2261,11 @@ HGF2DPosition HGF2DPolySegment::CalculateRelativePoint(double pi_RelativePos) co
 //    HPRECONDITION(CalculateLength() > 0.0);
 
     // Declare result variable
-    HGF2DPosition   ResultPoint;
+    HGF2DPosition   ResultPoint = m_StartPoint;
 
-    // Check if poly segment is not empty
-    if (m_Points.size() >= 2)
+    // Check if poly segment is not empty or null (note ... a polysegment with one point is invalid while a null length polysegment is not
+    // In both case we will return the start point.
+    if ((m_Points.size() >= 2) && !(CalculateLength() == 0.0))
         {
 
         // Check for extremity relative position

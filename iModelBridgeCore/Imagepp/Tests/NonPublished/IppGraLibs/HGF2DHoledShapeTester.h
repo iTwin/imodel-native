@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: Tests/NonPublished/IppGraLibs/HGF2DHoledShapeTester.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HGF2DHoledShapeTester
@@ -50,6 +50,13 @@ protected:
     HGF2DSegment    Segment3F;
     HGF2DSegment    Segment4F;
     HGF2DPolySegment  MyLinear6;
+
+
+    HGF2DSegment    Segment1G;
+    HGF2DSegment    Segment2G;
+    HGF2DSegment    Segment3G;
+    HGF2DSegment    Segment4G;
+    HGF2DPolySegment  MyLinear7;
 
     //Points
     HGF2DPosition Poly1Point0d0;

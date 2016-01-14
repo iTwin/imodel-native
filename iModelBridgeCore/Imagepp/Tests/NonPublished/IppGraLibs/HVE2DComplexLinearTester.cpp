@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: Tests/NonPublished/IppGraLibs/HVE2DComplexLinearTester.cpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -666,7 +666,7 @@ TEST_F (HVE2DComplexLinearTester, CalculateRelativePositionTest1)
     // Test with linear2
     ASSERT_NEAR(0.0, Linear2.CalculateRelativePosition(Linear2Point1d0), MYEPSILON);
     ASSERT_DOUBLE_EQ(0.099999999999999381, Linear2.CalculateRelativePosition(Linear2Point0d1));
-    ASSERT_DOUBLE_EQ(0.50000000000000167, Linear2.CalculateRelativePosition(Linear2Point0d5));
+    ASSERT_NEAR(0.50000000000000167, Linear2.CalculateRelativePosition(Linear2Point0d5), MYEPSILON);
     ASSERT_NEAR(0.0, Linear2.CalculateRelativePosition(Linear2Point1d0), MYEPSILON);
 
     // Test with linear3 (epsilon sized container)
@@ -1809,13 +1809,13 @@ TEST_F (HVE2DComplexLinearTester,  CalculateRelativePositionTest2)
 
     // Test with ComplexLinears way into positive regions
     ASSERT_NEAR(0.0, PositiveComplexLinear1.CalculateRelativePosition(PositivePoint0d0), MYEPSILON);
-    ASSERT_DOUBLE_EQ(0.1, PositiveComplexLinear1.CalculateRelativePosition(PositivePoint0d1));
+    ASSERT_NEAR(0.1, PositiveComplexLinear1.CalculateRelativePosition(PositivePoint0d1), MYEPSILON);
     ASSERT_DOUBLE_EQ(0.5, PositiveComplexLinear1.CalculateRelativePosition(PositivePoint0d5));
     ASSERT_DOUBLE_EQ(1.0, PositiveComplexLinear1.CalculateRelativePosition(PositivePoint1d0));
 
     // Test with ComplexLinears way into negative regions
     ASSERT_NEAR(0.0, NegativeComplexLinear1.CalculateRelativePosition(NegativePoint0d0), MYEPSILON);
-    ASSERT_DOUBLE_EQ(0.1, NegativeComplexLinear1.CalculateRelativePosition(NegativePoint0d1));
+    ASSERT_NEAR(0.1, NegativeComplexLinear1.CalculateRelativePosition(NegativePoint0d1), MYEPSILON);
     ASSERT_DOUBLE_EQ(0.5, NegativeComplexLinear1.CalculateRelativePosition(NegativePoint0d5));
     ASSERT_DOUBLE_EQ(1.0, NegativeComplexLinear1.CalculateRelativePosition(NegativePoint1d0));
 
@@ -2877,8 +2877,8 @@ TEST_F (HVE2DComplexLinearTester,  ShorteningTest2)
 
     ComplexLinear1 = MiscComplexLinear3;
     ComplexLinear1.ShortenFrom(MiscMidPoint3);
-    ASSERT_DOUBLE_EQ(0.10000000955848998, ComplexLinear1.GetStartPoint().GetX());
-    ASSERT_DOUBLE_EQ(0.10000004311556202, ComplexLinear1.GetStartPoint().GetY());
+    ASSERT_DOUBLE_EQ(0.10000001082198071, ComplexLinear1.GetStartPoint().GetX());
+    ASSERT_DOUBLE_EQ(0.10000004881480036, ComplexLinear1.GetStartPoint().GetY());
     ASSERT_DOUBLE_EQ(0.10000002164396139, ComplexLinear1.GetEndPoint().GetX());
     ASSERT_DOUBLE_EQ(0.10000009762960071, ComplexLinear1.GetEndPoint().GetY());
 
@@ -2900,8 +2900,8 @@ TEST_F (HVE2DComplexLinearTester,  ShorteningTest2)
     ComplexLinear1.ShortenTo(MiscMidPoint3);
     ASSERT_DOUBLE_EQ(0.10000000000000000, ComplexLinear1.GetStartPoint().GetX());
     ASSERT_DOUBLE_EQ(0.10000000000000000, ComplexLinear1.GetStartPoint().GetY());
-    ASSERT_DOUBLE_EQ(0.10000000955848998, ComplexLinear1.GetEndPoint().GetX());
-    ASSERT_DOUBLE_EQ(0.10000004311556202, ComplexLinear1.GetEndPoint().GetY());
+    ASSERT_DOUBLE_EQ(0.10000001082198071, ComplexLinear1.GetEndPoint().GetX());
+    ASSERT_DOUBLE_EQ(0.10000004881480036, ComplexLinear1.GetEndPoint().GetY());
 
     ComplexLinear1 = MiscComplexLinear3;
     ComplexLinear1.ShortenTo(ComplexLinear1.GetStartPoint());
@@ -2921,13 +2921,13 @@ TEST_F (HVE2DComplexLinearTester,  ShorteningTest2)
     ComplexLinear1.Shorten(ComplexLinear1.GetStartPoint(), MiscMidPoint3);
     ASSERT_DOUBLE_EQ(0.10000000000000000, ComplexLinear1.GetStartPoint().GetX());
     ASSERT_DOUBLE_EQ(0.10000000000000000, ComplexLinear1.GetStartPoint().GetY());
-    ASSERT_DOUBLE_EQ(0.10000000955848998, ComplexLinear1.GetEndPoint().GetX());
-    ASSERT_DOUBLE_EQ(0.10000004311556202, ComplexLinear1.GetEndPoint().GetY());
+    ASSERT_DOUBLE_EQ(0.10000001082198071, ComplexLinear1.GetEndPoint().GetX());
+    ASSERT_DOUBLE_EQ(0.10000004881480036, ComplexLinear1.GetEndPoint().GetY());
 
     ComplexLinear1 = MiscComplexLinear3;
     ComplexLinear1.Shorten(MiscMidPoint3, ComplexLinear1.GetEndPoint());
-    ASSERT_DOUBLE_EQ(0.10000000955848998, ComplexLinear1.GetStartPoint().GetX());
-    ASSERT_DOUBLE_EQ(0.10000004311556202, ComplexLinear1.GetStartPoint().GetY());
+    ASSERT_DOUBLE_EQ(0.10000001082198071, ComplexLinear1.GetStartPoint().GetX());
+    ASSERT_DOUBLE_EQ(0.10000004881480036, ComplexLinear1.GetStartPoint().GetY());
     ASSERT_DOUBLE_EQ(0.10000002164396139, ComplexLinear1.GetEndPoint().GetX());
     ASSERT_DOUBLE_EQ(0.10000009762960071, ComplexLinear1.GetEndPoint().GetY());
 
@@ -4056,9 +4056,9 @@ TEST_F (HVE2DComplexLinearTester,  InteractionTest2)
     ASSERT_FALSE(MiscComplexLinear3.IsPointOn(HGF2DLocation(10, 10, pWorld)));
     ASSERT_FALSE(MiscComplexLinear3.IsPointOn(HGF2DLocation(0.1, 0.1-1.1*MYEPSILON, pWorld)));
     ASSERT_FALSE(MiscComplexLinear3.IsPointOn(MiscMidPoint3-HGF2DDisplacement(1.1*MYEPSILON, -1.1*MYEPSILON)));
-    ASSERT_FALSE(MiscComplexLinear3.IsPointOn(MiscMidPoint3-HGF2DDisplacement(1.1*MYEPSILON, 1.1*MYEPSILON)));
-    ASSERT_TRUE(MiscComplexLinear3.IsPointOn(MiscMidPoint3-HGF2DDisplacement(-0.9*MYEPSILON, 0.9*MYEPSILON)));
+    ASSERT_FALSE(MiscComplexLinear3.IsPointOn(MiscMidPoint3-HGF2DDisplacement(-1.1*MYEPSILON, 1.1*MYEPSILON)));
     ASSERT_TRUE(MiscComplexLinear3.IsPointOn(MiscMidPoint3-HGF2DDisplacement(-0.9*MYEPSILON, -0.9*MYEPSILON)));
+    ASSERT_TRUE(MiscComplexLinear3.IsPointOn(MiscMidPoint3-HGF2DDisplacement(0.9*MYEPSILON, 0.9*MYEPSILON)));
     ASSERT_TRUE(MiscComplexLinear3.IsPointOn(MiscComplexLinear3.GetStartPoint()));
     ASSERT_TRUE(MiscComplexLinear3.IsPointOn(MiscComplexLinear3.GetEndPoint()));
     ASSERT_TRUE(MiscComplexLinear3.IsPointOn(MiscMidPoint3));
@@ -5089,7 +5089,7 @@ TEST_F (HVE2DComplexLinearTester, CalculateRelativePositionTest3)
     // Test with ComplexLinear2
     ASSERT_NEAR(0.0, ComplexLinear2.CalculateRelativePosition(ComplexLinear2Point0d0), MYEPSILON);
     ASSERT_DOUBLE_EQ(0.099999999999999381, ComplexLinear2.CalculateRelativePosition(ComplexLinear2Point0d1));
-    ASSERT_DOUBLE_EQ(0.50000000000000167, ComplexLinear2.CalculateRelativePosition(ComplexLinear2Point0d5));
+    ASSERT_NEAR(0.50000000000000167, ComplexLinear2.CalculateRelativePosition(ComplexLinear2Point0d5), MYEPSILON);
 
     // NORMAL Strange behavior provoqued by auto-clossing condition
     ASSERT_NEAR(0.0, ComplexLinear2.CalculateRelativePosition(ComplexLinear2Point1d0), MYEPSILON);

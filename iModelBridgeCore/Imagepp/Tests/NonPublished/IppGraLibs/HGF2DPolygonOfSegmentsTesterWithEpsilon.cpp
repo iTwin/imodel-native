@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: Tests/NonPublished/IppGraLibs/HGF2DPolygonOfSegmentsTesterWithEpsilon.cpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -55,7 +55,7 @@ TEST_F(HGF2DPolygonOfSegmentsTester,  IntersectShapeTestWithPointer)
     HFCPtr<HGF2DLinear> theLinear = pResult1A->GetLinear(HGF2DSimpleShape::CW);
     HFCPtr<HGF2DPolySegment> thePolySegment = static_cast<HGF2DPolySegment*>(&*theLinear);
     AComp1A = *thePolySegment;      
-    ASSERT_EQ(4, AComp1A.GetSize());
+    ASSERT_EQ(5, AComp1A.GetSize());
     ASSERT_DOUBLE_EQ(161049.202116080094, pResult1A->CalculateArea());
 
     ASSERT_NEAR(0.0, AComp1A.GetPoint(0).GetX(), MYEPSILON);
@@ -96,7 +96,7 @@ TEST_F(HGF2DPolygonOfSegmentsTester,  IntersectShapeTestWithPointer2)
 
     HFCPtr<HGF2DShape> pResult = pShape1->IntersectShape(*pShape2);
     ASSERT_DOUBLE_EQ(21248.0, pResult->CalculateArea());
-    ASSERT_NE(static_cast<HGF2DShapeTypeId>(HGF2DRectangle::CLASS_ID), pResult->GetShapeType());
+    ASSERT_EQ(static_cast<HGF2DShapeTypeId>(HGF2DRectangle::CLASS_ID), pResult->GetShapeType());
       
     }
 
@@ -183,7 +183,7 @@ TEST_F(HGF2DPolygonOfSegmentsTester,  IntersectShapeTestWithPointer3)
     HFCPtr<HGF2DLinear> theLinear = pResult->GetLinear(HGF2DSimpleShape::CW);
     HFCPtr<HGF2DPolySegment> thePolySegment = static_cast<HGF2DPolySegment*>(&*theLinear);
     AComp = *thePolySegment;
-    ASSERT_EQ(4, AComp.GetSize());
+    ASSERT_EQ(5, AComp.GetSize());
 
     ASSERT_DOUBLE_EQ(27527.5828776401322, pResult->CalculateArea());
 
@@ -224,7 +224,7 @@ TEST_F(HGF2DPolygonOfSegmentsTester,  IntersectShapeTestWithPointer4)
     HFCPtr<HGF2DPolySegment> thePolySegment = static_cast<HGF2DPolySegment*>(&*theLinear);
     AComp = *thePolySegment;
        
-    ASSERT_EQ(4, AComp.GetSize());
+    ASSERT_EQ(5, AComp.GetSize());
 
     ASSERT_DOUBLE_EQ(34956.6274951873056, pResult->CalculateArea());
 
@@ -264,7 +264,7 @@ TEST_F(HGF2DPolygonOfSegmentsTester,  IntersectShapeTestWithPointer5)
     HFCPtr<HGF2DPolySegment> thePolySegment = static_cast<HGF2DPolySegment*>(&*theLinear);
     AComp = *thePolySegment;
        
-    ASSERT_EQ(3, AComp.GetSize());
+    ASSERT_EQ(4, AComp.GetSize());
     ASSERT_DOUBLE_EQ(586.451198423784262, pResult->CalculateArea());
 
     }
@@ -691,6 +691,7 @@ TEST_F(HGF2DPolygonOfSegmentsTester,  ModifyShapeTest9)
     TheLinear2.AppendPoint(HGF2DPosition(256.00002520151610 , -337.99994959696780));
     TheLinear2.AppendPoint(HGF2DPosition(512.00005040303220 , -337.99994959696780));
     TheLinear2.AppendPoint(HGF2DPosition(512.00005040303220 , -593.99997479848390));
+    TheLinear2.AppendPoint(HGF2DPosition(256.00002520151610 , -593.99997479848390));
 
     HFCPtr<HGF2DShape> pShape1 = new HGF2DPolygonOfSegments(TheLinear1);
     HFCPtr<HGF2DShape> pShape2 = new HGF2DPolygonOfSegments(TheLinear2);

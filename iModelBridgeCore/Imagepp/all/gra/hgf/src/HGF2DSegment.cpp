@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hgf/src/HGF2DSegment.cpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Methods for class HGF2DSegment
@@ -537,14 +537,25 @@ HGF2DSegment::CrossState HGF2DSegment::IntersectSegment(const HGF2DSegment& pi_r
     // Create return object set initialy to no crosses
     HGF2DSegment::CrossState    Status = HGF2DSegment::NO_CROSS;
 
-    bool IntersectsAtExtremity = false;
+    // Get intersection point between the lines the segments belong to
+    HGF2DLiteLine::CrossState LineStatus = HGF2DLiteLine(m_StartPoint, m_EndPoint).IntersectLine(HGF2DLiteLine(pi_rSegment.m_StartPoint, pi_rSegment.m_EndPoint), po_pPoint);
 
-    Status = IntersectSegmentExtremityIncluded(pi_rSegment, po_pPoint, &IntersectsAtExtremity);
-
-    if ((HGF2DSegment::CROSS_FOUND == Status) && IntersectsAtExtremity)
+    // Check if the lines did cross
+    if (LineStatus == HGF2DLiteLine::CROSS_FOUND)
         {
-        Status = HGF2DSegment::NO_CROSS;
+
+        bool IntersectsAtExtremity = false;
+
+        Status = IntersectSegmentExtremityIncluded(pi_rSegment, po_pPoint, &IntersectsAtExtremity);
+
+        if ((HGF2DSegment::CROSS_FOUND == Status) && IntersectsAtExtremity)
+            {
+            Status = HGF2DSegment::NO_CROSS;
+            }
         }
+    else if (LineStatus == HGF2DLiteLine::PARALLEL)
+        // The segments are parallel to each other
+        Status = HGF2DSegment::PARALLEL;
 
     return (Status);
     }

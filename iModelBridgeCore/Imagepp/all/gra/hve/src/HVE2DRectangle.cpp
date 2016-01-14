@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hve/src/HVE2DRectangle.cpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Methods for class HVE2DRectangle
@@ -1527,7 +1527,7 @@ HVE2DShape* HVE2DRectangle::UnifyShapeSCS(const HVE2DShape& pi_rShape) const
     HAutoPtr<HVE2DShape> pResultShape;
 
     // Check if given is completely inside rectangle
-    if (GetExtent().Contains(pi_rShape.GetExtent()))
+    if (pi_rShape.IsNull() || GetExtent().Contains(pi_rShape.GetExtent()))
         {
         // The given completely inside rectangle
         // The result will therefore be the rectangle itself

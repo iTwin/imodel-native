@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HGF2DRectangle.hpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 BEGIN_IMAGEPP_NAMESPACE
@@ -334,8 +334,7 @@ inline HGF2DVector* HGF2DRectangle::Clone() const
 inline HGF2DLiteExtent HGF2DRectangle::GetExtent() const
     {
     // Return correct extent depending on emptyness
-    return((IsEmpty() ? HGF2DLiteExtent() :
-            HGF2DLiteExtent(m_XMin, m_YMin, m_XMax, m_YMax)));
+    return HGF2DLiteExtent(m_XMin, m_YMin, m_XMax, m_YMax);
     }
 
 //-----------------------------------------------------------------------------

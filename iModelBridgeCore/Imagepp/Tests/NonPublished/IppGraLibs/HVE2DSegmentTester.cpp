@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: Tests/NonPublished/IppGraLibs/HVE2DSegmentTester.cpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -886,13 +886,13 @@ TEST_F (HVE2DSegmentTester, CalculateRelativePositionTest)
 
     // Test with segments way into positive regions
     ASSERT_NEAR(0.0, PositiveSegment1.CalculateRelativePosition(PositivePoint0d0), MYEPSILON);
-    ASSERT_DOUBLE_EQ(0.1, PositiveSegment1.CalculateRelativePosition(PositivePoint0d1));
+    ASSERT_NEAR(0.1, PositiveSegment1.CalculateRelativePosition(PositivePoint0d1), MYEPSILON);
     ASSERT_DOUBLE_EQ(0.5, PositiveSegment1.CalculateRelativePosition(PositivePoint0d5));
     ASSERT_DOUBLE_EQ(1.0, PositiveSegment1.CalculateRelativePosition(PositivePoint1d0));
 
     // Test with segments way into negative regions
     ASSERT_NEAR(0.0, NegativeSegment1.CalculateRelativePosition(NegativePoint0d0), MYEPSILON);
-    ASSERT_DOUBLE_EQ(0.1, NegativeSegment1.CalculateRelativePosition(NegativePoint0d1));
+    ASSERT_NEAR(0.1, NegativeSegment1.CalculateRelativePosition(NegativePoint0d1), MYEPSILON);
     ASSERT_DOUBLE_EQ(0.5, NegativeSegment1.CalculateRelativePosition(NegativePoint0d5));
     ASSERT_DOUBLE_EQ(1.0, NegativeSegment1.CalculateRelativePosition(NegativePoint1d0));
 
@@ -1975,8 +1975,8 @@ TEST_F (HVE2DSegmentTester,ShorteningTest)
 
     Segment1 = MiscSegment3;
     Segment1.ShortenFrom(MiscMidPoint3);
-    ASSERT_DOUBLE_EQ(0.099999974681068096, Segment1.GetStartPoint().GetX());
-    ASSERT_DOUBLE_EQ(0.10000004311556202, Segment1.GetStartPoint().GetY());
+    ASSERT_DOUBLE_EQ(0.10000001082198071, Segment1.GetStartPoint().GetX());
+    ASSERT_DOUBLE_EQ(0.10000004881480036, Segment1.GetStartPoint().GetY());
     ASSERT_DOUBLE_EQ(0.10000002164396139, Segment1.GetEndPoint().GetX());
     ASSERT_DOUBLE_EQ(0.10000009762960071, Segment1.GetEndPoint().GetY());
 
@@ -1998,8 +1998,8 @@ TEST_F (HVE2DSegmentTester,ShorteningTest)
     Segment1.ShortenTo(MiscMidPoint3);
     ASSERT_DOUBLE_EQ(0.100000000000000000, Segment1.GetStartPoint().GetX());
     ASSERT_DOUBLE_EQ(0.100000000000000000, Segment1.GetStartPoint().GetY());
-    ASSERT_DOUBLE_EQ(0.099999974681068096, Segment1.GetEndPoint().GetX());
-    ASSERT_DOUBLE_EQ(0.10000004311556202, Segment1.GetEndPoint().GetY());
+    ASSERT_DOUBLE_EQ(0.10000001082198071, Segment1.GetEndPoint().GetX());
+    ASSERT_DOUBLE_EQ(0.10000004881480036, Segment1.GetEndPoint().GetY());
 
     Segment1 = MiscSegment3;
     Segment1.ShortenTo(Segment1.GetStartPoint());
@@ -2019,13 +2019,13 @@ TEST_F (HVE2DSegmentTester,ShorteningTest)
     Segment1.Shorten(Segment1.GetStartPoint(), MiscMidPoint3);
     ASSERT_DOUBLE_EQ(0.100000000000000000, Segment1.GetStartPoint().GetX());
     ASSERT_DOUBLE_EQ(0.100000000000000000, Segment1.GetStartPoint().GetY());
-    ASSERT_DOUBLE_EQ(0.099999974681068096, Segment1.GetEndPoint().GetX());
-    ASSERT_DOUBLE_EQ(0.100000043115562020, Segment1.GetEndPoint().GetY());
+    ASSERT_DOUBLE_EQ(0.10000001082198071, Segment1.GetEndPoint().GetX());
+    ASSERT_DOUBLE_EQ(0.10000004881480036, Segment1.GetEndPoint().GetY());
 
     Segment1 = MiscSegment3;
     Segment1.Shorten(MiscMidPoint3, Segment1.GetEndPoint());
-    ASSERT_DOUBLE_EQ(0.099999974681068096, Segment1.GetStartPoint().GetX());
-    ASSERT_DOUBLE_EQ(0.100000043115562020, Segment1.GetStartPoint().GetY());
+    ASSERT_DOUBLE_EQ(0.10000001082198071, Segment1.GetStartPoint().GetX());
+    ASSERT_DOUBLE_EQ(0.10000004881480036, Segment1.GetStartPoint().GetY());
     ASSERT_DOUBLE_EQ(0.10000002164396139, Segment1.GetEndPoint().GetX());
     ASSERT_DOUBLE_EQ(0.10000009762960071, Segment1.GetEndPoint().GetY());
 
@@ -3208,8 +3208,8 @@ TEST_F (HVE2DSegmentTester, InteractionTest)
     ASSERT_FALSE(MiscSegment3.IsPointOn(HGF2DLocation(10, 10, pWorld)));
     ASSERT_FALSE(MiscSegment3.IsPointOn(HGF2DLocation(0.1, 0.1-1.1*MYEPSILON, pWorld)));
     ASSERT_FALSE(MiscSegment3.IsPointOn(MiscMidPoint3-HGF2DDisplacement(1.1*MYEPSILON, -1.1*MYEPSILON)));
-    ASSERT_FALSE(MiscSegment3.IsPointOn(MiscMidPoint3-HGF2DDisplacement(1.1*MYEPSILON, -1.1*MYEPSILON)));
-    ASSERT_TRUE(MiscSegment3.IsPointOn(MiscMidPoint3-HGF2DDisplacement(-0.9*MYEPSILON, 0.9*MYEPSILON)));
+    ASSERT_FALSE(MiscSegment3.IsPointOn(MiscMidPoint3-HGF2DDisplacement(-1.1*MYEPSILON, 1.1*MYEPSILON)));
+    ASSERT_TRUE(MiscSegment3.IsPointOn(MiscMidPoint3-HGF2DDisplacement(0.9*MYEPSILON, 0.9*MYEPSILON)));
     ASSERT_TRUE(MiscSegment3.IsPointOn(MiscMidPoint3-HGF2DDisplacement(-0.9*MYEPSILON, -0.9*MYEPSILON)));
     ASSERT_TRUE(MiscSegment3.IsPointOn(MiscSegment3.GetStartPoint()));
     ASSERT_TRUE(MiscSegment3.IsPointOn(MiscSegment3.GetEndPoint()));

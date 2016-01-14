@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hve/src/HVE2DPolygonOfSegments.cpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Methods for class HVE2DPolygonOfSegments
@@ -2519,7 +2519,10 @@ HVE2DShape* HVE2DPolygonOfSegments::IntersectPolygonSCS(const HVE2DPolygonOfSegm
                     // Self cannot be PARTIALY_IN nor ON the given
                     // (since the given is not PARTIALY_IN nor ON self), then
                     // Self is located IN the given ... the result is therefore self
-                    pMyResultShape = (HVE2DShape*)Clone();
+                    if (RepresentsARectangle())
+                        pMyResultShape = (HVE2DShape*)GenerateCorrespondingRectangle();
+                    else
+                        pMyResultShape = (HVE2DShape*)Clone();
                     }
                 else
                     {

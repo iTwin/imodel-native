@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: Tests/NonPublished/IppGraLibs/HGF2DComplexShapeTester.cpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -624,6 +624,7 @@ TEST_F (HGF2DComplexShapeTester, CloningTest)
     // Test with a translation between systems
     Translation = HGF2DDisplacement (10.0, 10.0);
     HGF2DTranslation myTranslation(Translation);
+    myTranslation.Reverse();
     
     HFCPtr<HGF2DComplexShape> pClone5 = (HGF2DComplexShape*) (&*(CSRect1.AllocTransformDirect(myTranslation)));
     ASSERT_FALSE(pClone5->IsEmpty());
@@ -639,6 +640,7 @@ TEST_F (HGF2DComplexShapeTester, CloningTest)
     myStretch.SetTranslation(Translation);
     myStretch.SetXScaling(0.5);
     myStretch.SetYScaling(0.5);
+    myStretch.Reverse();
     
     HFCPtr<HGF2DComplexShape> pClone6 = (HGF2DComplexShape*) (&*(CSRect1.AllocTransformDirect(myStretch)));
     ASSERT_FALSE(pClone6->IsEmpty());
@@ -653,6 +655,7 @@ TEST_F (HGF2DComplexShapeTester, CloningTest)
     HGF2DStretch myStretch2;
     myStretch2.SetXScaling(0.5);
     myStretch2.SetYScaling(0.5);
+    myStretch2.Reverse();
   
     HFCPtr<HGF2DComplexShape> pClone10 = (HGF2DComplexShape*) (&*(CSRect1.AllocTransformDirect(myStretch2)));
     ASSERT_FALSE(pClone10->IsEmpty());
@@ -667,6 +670,7 @@ TEST_F (HGF2DComplexShapeTester, CloningTest)
     HGF2DSimilitude mySimilitude;
     mySimilitude.SetRotation(PI);
     mySimilitude.SetScaling(0.5);
+    mySimilitude.Reverse();
   
     HFCPtr<HGF2DComplexShape> pClone7 = (HGF2DComplexShape*) (&*(CSRect1.AllocTransformDirect(mySimilitude)));
     ASSERT_FALSE(pClone7->IsEmpty());
@@ -683,6 +687,7 @@ TEST_F (HGF2DComplexShapeTester, CloningTest)
     myAffine.SetRotation(PI);
     myAffine.SetXScaling(0.5);
     myAffine.SetYScaling(0.5);
+    myAffine.Reverse();
    
     HFCPtr<HGF2DComplexShape> pClone8 = (HGF2DComplexShape*) (&*(CSRect1.AllocTransformDirect(myAffine)));
     ASSERT_FALSE(pClone8->IsEmpty());
@@ -1136,7 +1141,7 @@ TEST_F (HGF2DComplexShapeTester, DifferentiateShapeTest)
     HGF2DComplexShape CSRect1(Rect1A);
 
     // NorthContiguousRect only touch CSRect1
-    HFCPtr<HGF2DComplexShape>     pResultShape1 = (HGF2DComplexShape*) CSRect1.DifferentiateShape(NorthContiguousRectA);
+    HFCPtr<HGF2DShape>     pResultShape1 = (HGF2DShape*) CSRect1.DifferentiateShape(NorthContiguousRectA);
    
     ASSERT_EQ(HGF2DRectangle::CLASS_ID, pResultShape1->GetShapeType());
 
@@ -1146,7 +1151,7 @@ TEST_F (HGF2DComplexShapeTester, DifferentiateShapeTest)
     ASSERT_TRUE(pResultShape1->IsPointOn(HGF2DPosition(20.0, 20.0)));
 
     // VerticalFitRect is partially in CSRect1
-    HFCPtr<HGF2DComplexShape>     pResultShape2 = (HGF2DComplexShape*) CSRect1.DifferentiateShape(VerticalFitRectA);
+    HFCPtr<HGF2DShape>     pResultShape2 = (HGF2DShape*) CSRect1.DifferentiateShape(VerticalFitRectA);
   
     ASSERT_EQ(HGF2DRectangle::CLASS_ID, pResultShape2->GetShapeType());
 
@@ -1156,7 +1161,7 @@ TEST_F (HGF2DComplexShapeTester, DifferentiateShapeTest)
     ASSERT_TRUE(pResultShape2->IsPointOn(HGF2DPosition(15.0, 20.0)));
 
     // DisjointRect doesn't touch CSRect1
-    HFCPtr<HGF2DComplexShape>     pResultShape3 = (HGF2DComplexShape*) CSRect1.DifferentiateShape(DisjointRectA);
+    HFCPtr<HGF2DShape>     pResultShape3 = (HGF2DShape*) CSRect1.DifferentiateShape(DisjointRectA);
     
     ASSERT_EQ(HGF2DRectangle::CLASS_ID, pResultShape3->GetShapeType());
 
@@ -1166,7 +1171,7 @@ TEST_F (HGF2DComplexShapeTester, DifferentiateShapeTest)
     ASSERT_TRUE(pResultShape3->IsPointOn(HGF2DPosition(20.0, 20.0)));
 
     // EnglobRect1 contains CSRect1
-    HFCPtr<HGF2DComplexShape>     pResultShape4 = (HGF2DComplexShape*) CSRect1.DifferentiateShape(EnglobRect1A);
+    HFCPtr<HGF2DShape>     pResultShape4 = (HGF2DShape*) CSRect1.DifferentiateShape(EnglobRect1A);
     
     ASSERT_EQ(HGF2DVoidShape::CLASS_ID, pResultShape4->GetShapeType());
     ASSERT_TRUE(pResultShape4->IsEmpty());
@@ -1184,8 +1189,8 @@ TEST_F (HGF2DComplexShapeTester, DifferentiateShapeTest)
     ASSERT_TRUE(pResultShape5->IsPointOn(HGF2DPosition(15.0, 15.0)));
 
     // IncludedRect2 is completly inside CSRect1
-    HGF2DRectangle IncludedRect2(11.0, 11.0, 19.0, 19.0);
-    HFCPtr<HGF2DComplexShape>  pResultShape6 = (HGF2DComplexShape*) CSRect1.DifferentiateShape(IncludedRect2A);
+    HGF2DRectangle IncludedRect2A(11.0, 11.0, 19.0, 19.0);
+    HFCPtr<HGF2DShape>  pResultShape6 = (HGF2DShape*) CSRect1.DifferentiateShape(IncludedRect2A);
 
     ASSERT_EQ(HGF2DHoledShape::CLASS_ID, pResultShape6->GetShapeType());
 
@@ -1199,8 +1204,8 @@ TEST_F (HGF2DComplexShapeTester, DifferentiateShapeTest)
     ASSERT_TRUE(pResultShape6->IsPointOn(HGF2DPosition(19.0, 19.0)));
 
     // IncludedRect3 is completly inside CSRect1 and IncludedRect2
-    HGF2DRectangle IncludedRect3(13.0, 13.0, 17.0, 17.0);
-    HFCPtr<HGF2DComplexShape>  pResultShape7 = (HGF2DComplexShape*) pResultShape6->DifferentiateShape(IncludedRect3A);
+    HGF2DRectangle IncludedRect3A(13.0, 13.0, 17.0, 17.0);
+    HFCPtr<HGF2DShape>  pResultShape7 = (HGF2DShape*) pResultShape6->DifferentiateShape(IncludedRect3A);
 
     ASSERT_TRUE(pResultShape7->IsPointOn(HGF2DPosition(10.0, 10.0)));
     ASSERT_TRUE(pResultShape7->IsPointOn(HGF2DPosition(20.0, 10.0)));
@@ -1270,7 +1275,7 @@ TEST_F (HGF2DComplexShapeTester, DifferentiateFromShapeTest)
     ASSERT_TRUE(pResultShape5->IsPointOn(HGF2DPosition(15.0, 15.0)));
 
     // IncludedRect2 is completly inside CSRect1
-    HGF2DRectangle IncludedRect2(11.0, 11.0, 19.0, 19.0);
+    HGF2DRectangle IncludedRect2A(11.0, 11.0, 19.0, 19.0);
     HFCPtr<HGF2DComplexShape>  pResultShape6 = (HGF2DComplexShape*) IncludedRect2A.DifferentiateFromShape(CSRect1);
 
     ASSERT_EQ(HGF2DHoledShape::CLASS_ID, pResultShape6->GetShapeType());
@@ -1337,7 +1342,7 @@ TEST_F (HGF2DComplexShapeTester, IntersectShapeTest)
     ASSERT_TRUE(pResultShape5->IsPointOn(HGF2DPosition(15.0, 15.0)));
 
     // IncludedRect2 is completly inside CSRect1
-    HGF2DRectangle IncludedRect2(11.0, 11.0, 19.0, 19.0);
+    HGF2DRectangle IncludedRect2A(11.0, 11.0, 19.0, 19.0);
     HFCPtr<HGF2DComplexShape>  pResultShape6 = (HGF2DComplexShape*) IncludedRect2A.IntersectShape(CSRect1);
 
     ASSERT_EQ(HGF2DRectangle::CLASS_ID, pResultShape6->GetShapeType());

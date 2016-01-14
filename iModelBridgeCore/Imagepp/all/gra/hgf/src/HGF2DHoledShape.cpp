@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hgf/src/HGF2DHoledShape.cpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Methods for class HGF2DHoledShape
@@ -1631,7 +1631,7 @@ HGF2DShape* HGF2DHoledShape::DifferentiateSimpleShape(
             }
 
         // Finaly we add as hole the final shape if it is simple
-        if (pShape->IsSimple())
+        if (pShape->IsSimple() && !pResultHoled->AreContiguous(*pShape))
             {
             pResultHoled->AddHole(*(static_cast<HGF2DSimpleShape*>(&(*pShape))));
 
@@ -2027,8 +2027,10 @@ HFCPtr<HGF2DShape> HGF2DHoledShape::AllocTransformDirect(const HGF2DTransfoModel
             // There are some holes ... we generate a complex shape from those holes
             HGF2DComplexShape    HoleComplexShape(m_HoleList);
 
+            HFCPtr<HGF2DShape> pTransformedComplex = HoleComplexShape.AllocTransformDirect(pi_rModel);
+
             // We differentiate this complex shape from new outter shape
-            pResultShape = pNewOutterShape->DifferentiateShape(HoleComplexShape);
+            pResultShape = pNewOutterShape->DifferentiateShape(*pTransformedComplex);
             }
         else
             {
