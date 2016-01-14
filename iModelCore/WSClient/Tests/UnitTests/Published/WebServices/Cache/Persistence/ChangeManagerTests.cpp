@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/WebServices/Cache/Persistence/ChangeManagerTests.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -2469,12 +2469,12 @@ TEST_F(ChangeManagerTests, ModifyObject_InstanceIsRemoved_BackupInstanceIsRemove
     auto cache = GetTestCache();
     auto instance = StubInstanceInCache(*cache, {"TestSchema.TestClass", "Foo"});
 
-    ASSERT_EQ(0, CountClassInstances(*cache, "DSCacheSchema.InstanceBackup"));
+    ASSERT_EQ(0, CountClassInstances(*cache, "WSCache.InstanceBackup"));
     ASSERT_EQ(SUCCESS, cache->GetChangeManager().ModifyObject(instance, Json::objectValue));
-    EXPECT_EQ(1, CountClassInstances(*cache, "DSCacheSchema.InstanceBackup"));
+    EXPECT_EQ(1, CountClassInstances(*cache, "WSCache.InstanceBackup"));
 
     ASSERT_EQ(CacheStatus::OK, cache->RemoveInstance({"TestSchema.TestClass", "Foo"}));
-    EXPECT_EQ(0, CountClassInstances(*cache, "DSCacheSchema.InstanceBackup"));
+    EXPECT_EQ(0, CountClassInstances(*cache, "WSCache.InstanceBackup"));
     EXPECT_FALSE(cache->GetCachedObjectInfo({"TestSchema.TestClass", "Foo"}).IsInCache());
     }
 
@@ -2483,13 +2483,13 @@ TEST_F(ChangeManagerTests, CommitInstanceRevision_ModifiedInstance_BackupInstanc
     auto cache = GetTestCache();
     auto instance = StubInstanceInCache(*cache, {"TestSchema.TestClass", "Foo"});
 
-    ASSERT_EQ(0, CountClassInstances(*cache, "DSCacheSchema.InstanceBackup"));
+    ASSERT_EQ(0, CountClassInstances(*cache, "WSCache.InstanceBackup"));
     ASSERT_EQ(SUCCESS, cache->GetChangeManager().ModifyObject(instance, Json::objectValue));
-    EXPECT_EQ(1, CountClassInstances(*cache, "DSCacheSchema.InstanceBackup"));
+    EXPECT_EQ(1, CountClassInstances(*cache, "WSCache.InstanceBackup"));
 
     auto revision = cache->GetChangeManager().ReadInstanceRevision(instance);
     ASSERT_EQ(SUCCESS, cache->GetChangeManager().CommitInstanceRevision(*revision));
-    EXPECT_EQ(0, CountClassInstances(*cache, "DSCacheSchema.InstanceBackup"));
+    EXPECT_EQ(0, CountClassInstances(*cache, "WSCache.InstanceBackup"));
 
     EXPECT_TRUE(cache->GetCachedObjectInfo({"TestSchema.TestClass", "Foo"}).IsInCache());
     }
