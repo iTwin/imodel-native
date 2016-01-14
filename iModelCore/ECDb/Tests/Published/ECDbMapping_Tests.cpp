@@ -1646,7 +1646,7 @@ TEST_F(ECDbMappingTestFixture, RelationshipKeyPropertiesWithMultipleConstraints)
                                 "</ECSchema>");
 
             ECDb ecdb;
-            bool asserted = false;
+            bool asserted = true;
             AssertSchemaImport(ecdb, asserted, testItem, "ecrelationshipkeyproperties.ecdb");
             ASSERT_FALSE(asserted);
 
