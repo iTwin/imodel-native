@@ -6,13 +6,14 @@
 //:>
 //:>+--------------------------------------------------------------------------------------
 #pragma once
-
+/*__PUBLISH_SECTION_START__*/
 
 /*=================================================================================**//**
 * @bsiclass
 +===============+===============+===============+===============+===============+======*/
 struct IGeoTiffKeysList
 {
+/*__PUBLISH_SECTION_END__*/
 // These values are compatible with the Tiff specification.
 enum DataType
     {
@@ -21,8 +22,10 @@ enum DataType
     DOUBLE  = 12,       // 64-bit IEEE floating point
     };
 
+/*__PUBLISH_SECTION_START__*/
 struct GeoKeyItem
     {
+/*__PUBLISH_SECTION_END__*/
     public :
 
     unsigned short  KeyID;
@@ -69,7 +72,9 @@ struct GeoKeyItem
             KeyValue = pi_rObj.KeyValue;
             }
         }
+/*__PUBLISH_SECTION_START__*/
     };
+/*__PUBLISH_SECTION_END__*/
 
     virtual bool            GetFirstKey(GeoKeyItem* po_Key) const=0;
     virtual bool            GetNextKey(GeoKeyItem* po_Key) const=0;
@@ -85,5 +90,5 @@ virtual void            AddKey (unsigned short pi_KeyID, const std::string& pi_v
 +---------------+---------------+---------------+---------------+---------------+------*/
 virtual void            AddKey (const GeoKeyItem& key)=0;
 
+/*__PUBLISH_SECTION_START__*/
 };
-
