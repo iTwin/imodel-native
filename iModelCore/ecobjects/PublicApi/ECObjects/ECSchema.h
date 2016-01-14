@@ -964,7 +964,7 @@ private:
     ValueKind                   m_valueKind;
 
 protected:
-    NavigationECProperty(ECClassCR ecClass)
+    explicit NavigationECProperty(ECClassCR ecClass)
         : ECProperty(ecClass), m_relationshipClass(nullptr), m_direction(ECRelatedInstanceDirection::Forward), m_valueKind(ValueKind::VALUEKIND_Uninitialized) {};
 
     ECObjectsStatus                 SetRelationshipClassName(Utf8CP relationshipName);
