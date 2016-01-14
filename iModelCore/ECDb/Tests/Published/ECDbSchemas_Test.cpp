@@ -7,13 +7,12 @@
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPublishedTests.h"
 #include "../BackDoor/PublicAPI/BackDoor/ECDb/ECDbTestProject.h"
-#include <initializer_list>
+
 USING_NAMESPACE_BENTLEY_EC
 USING_NAMESPACE_BENTLEY_SQLITE_EC
 
 BEGIN_ECDBUNITTESTS_NAMESPACE
 
-   
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                   Affan.Khan                        03/12
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -23,7 +22,7 @@ static int GetColumnCount(DbR db, Utf8CP table)
     stmt.Prepare(db, SqlPrintfString("SELECT * FROM %s LIMIT 1", table));
     return stmt.GetColumnCount();
     }
-    
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                   Affan.Khan                        03/12
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -46,7 +45,6 @@ void WriteECSchemaDiffToLog (ECDiffR diff, NativeLogging::SEVERITY severity = Na
         }
     LOG.message (severity, "=====================================[ECDiff End]=====================================");
     }
-
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Affan.Khan                          04/12
@@ -223,6 +221,7 @@ TEST (ECDbSchemas, OrderOfPropertyIsPreservedInTableColumns)
 
     ASSERT_TRUE (order_OrderedStruct == "ECInstanceId ParentECInstanceId ECPropertyPathId ECArrayIndex a g c z_X z_Y z_Z y_X y_Y t u k r "); 
     }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                   Affan.Khan                         05/13
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -253,9 +252,6 @@ TEST (ECDbSchemas, DWGRTest)
 
     ASSERT_TRUE (dwgr19_l0_xml.find (L"Category") != WString::npos);
     ASSERT_TRUE (dwgr19_l1_xml.find (L"Category") != WString::npos);
-
-
-
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -494,7 +490,6 @@ TEST (ECDbSchemas, UpdatingSchemaShouldNotDeleteExistingRelationshipsOrIndexes)
     auto stepStatus = stmt.Step ();
     ASSERT_TRUE (stepStatus == BE_SQLITE_ROW);
 }
-
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                   Ramanujam.Raman                   03/12
@@ -981,8 +976,7 @@ TEST(ECDbSchemas, VerifyDatabaseSchemaAfterImport)
     EXPECT_TRUE (db.ColumnExists(tblBuildingFloor, "RecordKey")); 
     //relation
     EXPECT_TRUE (db.ColumnExists(tblBuildingFloor, "Building__src_11_Id")); 
-    
-    
+
 //========================[sc_Cubicle]=================================================
     Utf8CP tblCubicle = "sc_Cubicle"; 
     EXPECT_TRUE (db.TableExists(tblCubicle));
@@ -1195,8 +1189,8 @@ TEST(ECDbSchemas, CreateCloseOpenImport)
 
     ECDbTestUtility::ReadECSchemaFromDisk (ecSchema, schemaContext, L"StartupCompany.02.00.ecschema.xml");
     ASSERT_EQ (SUCCESS, db. Schemas ().ImportECSchemas (schemaContext->GetCache (), ECDbSchemaManager::ImportOptions (false, false))) << "ImportECSchema should have imported successfully after closing and re-opening the database.";
-
     }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                   04/13
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -1244,7 +1238,6 @@ TEST(ECDbSchemas, ImportSchemaAgainstExistingTableWithECInstanceIdColumn)
     EXPECT_TRUE (ecdb.ColumnExists ("t_Foo", "ECInstanceId")) << "Existing column is expected to still be in the table after ImportECSchemas.";
     }
 
-
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Affan.Khan                       08/14
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -1261,11 +1254,9 @@ TEST (ECDbSchemas, DiegoRelationshipTest)
     ECDbTestUtility::ReadECSchemaFromDisk (s2, ctx, L"DiegoSchema2.01.00.ecschema.xml", nullptr);
     ASSERT_TRUE (s2.IsValid ());
 
-
     //now import test schema where the table already exists for the ECClass
     ASSERT_EQ (SUCCESS, ecdb. Schemas ().ImportECSchemas (ctx->GetCache(),
         ECDbSchemaManager::ImportOptions (false, false))) << "ImportECSchema is expected to return success for schemas with classes that map to an existing table.";
-
 
     auto aCivilModel = ecdb. Schemas ().GetECClass ("DiegoSchema1", "CivilModel");
     auto aDatasetModel = ecdb. Schemas ().GetECClass ("DiegoSchema1", "DataSetModel");
@@ -1333,11 +1324,7 @@ TEST(ECDbSchemas, ImportSchemaWithRelationshipAgainstExistingTable)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                   11/12
 //+---------------+---------------+---------------+---------------+---------------+------
-void CreateCustomAttributeTestSchema
-(
-ECSchemaPtr& testSchema,
-ECSchemaCachePtr& testSchemaCache
-)
+void CreateCustomAttributeTestSchema (ECSchemaPtr& testSchema, ECSchemaCachePtr& testSchemaCache)
     {
     ECSchemaPtr schema = nullptr;
     ECObjectsStatus stat = ECSchema::CreateSchema (schema, "foo", 1, 0);
@@ -1378,15 +1365,7 @@ ECSchemaCachePtr& testSchemaCache
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                   11/12
 //+---------------+---------------+---------------+---------------+---------------+------
-void AssignCustomAttribute
-(
-IECInstancePtr& caInstance,
-ECSchemaPtr schema,
-Utf8CP containerClassName,
-Utf8CP caClassName,
-Utf8CP instanceId,
-bmap<Utf8String, ECValue> const& caPropValues
-)
+void AssignCustomAttribute (IECInstancePtr& caInstance, ECSchemaPtr schema, Utf8CP containerClassName, Utf8CP caClassName, Utf8CP instanceId, bmap<Utf8String, ECValue> const& caPropValues)
     {
     ECClassP caClass = schema->GetClassP (caClassName);
     IECInstancePtr ca = caClass->GetDefaultStandaloneEnabler ()->CreateInstance ();
@@ -1417,10 +1396,7 @@ bmap<Utf8String, ECValue> const& caPropValues
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                   11/12
 //+---------------+---------------+---------------+---------------+---------------+------
-IECInstancePtr CreateAndAssignRandomCAInstance
-(
-ECSchemaPtr testSchema
-)
+IECInstancePtr CreateAndAssignRandomCAInstance (ECSchemaPtr testSchema)
     {
     //assign CA with instance id and all props populated
     bmap<Utf8String, ECValue> propValueMap;
@@ -1438,7 +1414,6 @@ ECSchemaPtr testSchema
 
     return ca;
     }
-
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                   11/12
@@ -1959,191 +1934,176 @@ TEST(ECDbSchemas, PFLModulePPCS_ECDiffTest)
 /*---------------------------------------------------------------------------------**//**
  * @bsimethod                                   Adeel.Shoukat                        05/3
  +---------------+---------------+---------------+---------------+---------------+------*/
-TEST(ECDbSchemas, ClassDiff)
+TEST (ECDbSchemas, ClassDiff)
     {
     BeFileName outputRoot, applicationDir;
-    BeTest::GetHost().GetOutputRoot (outputRoot);
-    BeTest::GetHost().GetDgnPlatformAssetsDirectory (applicationDir);
+    BeTest::GetHost ().GetOutputRoot (outputRoot);
+    BeTest::GetHost ().GetDgnPlatformAssetsDirectory (applicationDir);
     BeFileName temporaryDir;
     BeTest::GetHost ().GetOutputRoot (temporaryDir);
     ECDb::Initialize (temporaryDir, &applicationDir);
 
     ECSchemaReadContextPtr leftSchemaContext = nullptr;
     ECSchemaReadContextPtr rightSchemaContext = nullptr;
-    ECSchemaPtr leftSchema, rightSchema;   
+    ECSchemaPtr leftSchema, rightSchema;
     ECDbTestUtility::ReadECSchemaFromDisk (leftSchema, leftSchemaContext, L"LeftSchema.01.00.ecschema.xml");
     ECDbTestUtility::ReadECSchemaFromDisk (rightSchema, rightSchemaContext, L"RightSchema.01.00.ecschema.xml");
-    ECDiffPtr diff = ECDiff::Diff(*leftSchema, *rightSchema);
-    ASSERT_TRUE ( diff.IsValid());
-    bmap<Utf8String,DiffNodeState> unitStates;
+    ECDiffPtr diff = ECDiff::Diff (*leftSchema, *rightSchema);
+    ASSERT_TRUE (diff.IsValid ());
+    bmap<Utf8String, DiffNodeState> unitStates;
     diff->GetNodesState (unitStates, "*.CustomAttributes.Unit_Attributes:UnitSpecificationAttr");
     diff->GetNodesState (unitStates, "*.CustomAttributes.Unit_Attributes:UnitSpecifications");
-    ASSERT_EQ(unitStates.size(), 2);
+    ASSERT_EQ (unitStates.size (), 2);
+
     WriteECSchemaDiffToLog (*diff);
     ECSchemaPtr mergedSchema;
     MergeStatus status = diff->Merge (mergedSchema, CONFLICTRULE_TakeLeft);
-    ASSERT_EQ(status , MergeStatus::Success);   
-    ASSERT_TRUE(mergedSchema.IsValid());
-    ECClassP classPtr=mergedSchema->GetClassP("Employee");
-    uint32_t classCount=mergedSchema->GetClassCount();
-    EXPECT_EQ(classCount,8);
-    bool bclassDisplayLabel=classPtr->GetIsDisplayLabelDefined();
-    Utf8String className=classPtr->GetName();
-    EXPECT_STREQ(className.c_str(),"Employee");
-    EXPECT_TRUE(bclassDisplayLabel);
-    classPtr=mergedSchema->GetClassP("RightFoo");
-    className=classPtr->GetName();
-    EXPECT_STREQ(className.c_str(),"RightFoo");
-    classPtr=mergedSchema->GetClassP("StableClass");
-    className=classPtr->GetName();
-    EXPECT_STREQ(className.c_str(),"StableClass");
-    classPtr=mergedSchema->GetClassP("TestR");
-    className=classPtr->GetName();
-    EXPECT_STREQ(className.c_str(),"TestR");
-    classPtr=mergedSchema->GetClassP("UnitConflictClass");
-    className=classPtr->GetName();
-    ECSchemaCR SchemaToCheck=classPtr->GetSchema();
-    Utf8String SchemaName=SchemaToCheck.GetFullSchemaName();
-    EXPECT_STREQ(SchemaName.c_str(),"LeftSchema.01.00");
-    EXPECT_STREQ(className.c_str(),"UnitConflictClass");
-    classPtr=mergedSchema->GetClassP("Employee");
-    className=classPtr->GetName();
-    EXPECT_STREQ(className.c_str(),"Employee");
-    Utf8String classDisplayLabel =classPtr->GetDisplayLabel();
-    EXPECT_STREQ(classDisplayLabel.c_str(),"Employee Left");
-    classPtr=mergedSchema->GetClassP("LeftFoo");
-    className=classPtr->GetName();
-    EXPECT_STREQ(className.c_str(),"LeftFoo");
-    classPtr=mergedSchema->GetClassP("StableClass");
-    className=classPtr->GetName();
-    EXPECT_STREQ(className.c_str(),"StableClass");
-    classPtr=mergedSchema->GetClassP("StableClass");
-    className=classPtr->GetName();
-    EXPECT_STREQ(className.c_str(),"StableClass");
+    ASSERT_EQ (status, MergeStatus::Success);
+    ASSERT_TRUE (mergedSchema.IsValid ());
+
+    //Validate Classes in merged Schema
+    uint32_t classCount = mergedSchema->GetClassCount ();
+    EXPECT_EQ (classCount, 8);
+
+    ECClassP classPtr = mergedSchema->GetClassP ("Employee");
+    bool bclassDisplayLabel = classPtr->GetIsDisplayLabelDefined ();
+    EXPECT_TRUE (bclassDisplayLabel);
+    EXPECT_STREQ (classPtr->GetName ().c_str (), "Employee");
+    Utf8String classDisplayLabel = classPtr->GetDisplayLabel ();
+    EXPECT_STREQ (classDisplayLabel.c_str (), "Employee Left");
+    EXPECT_STREQ (classPtr->GetSchema ().GetFullSchemaName ().c_str (), "LeftSchema.01.00");
+
+    EXPECT_STREQ (mergedSchema->GetClassP ("RightFoo")->GetName ().c_str (), "RightFoo");
+    EXPECT_STREQ (mergedSchema->GetClassP ("StableClass")->GetName ().c_str (), "StableClass");
+    EXPECT_STREQ (mergedSchema->GetClassP ("TestR")->GetName ().c_str (), "TestR");
+    EXPECT_STREQ (mergedSchema->GetClassP ("UnitConflictClass")->GetName ().c_str (), "UnitConflictClass");
+    EXPECT_STREQ (mergedSchema->GetClassP ("LeftFoo")->GetName ().c_str (), "LeftFoo");
+    EXPECT_STREQ (mergedSchema->GetClassP ("StableClass")->GetName ().c_str (), "StableClass");
+    EXPECT_STREQ (mergedSchema->GetClassP ("StableClass")->GetName ().c_str (), "StableClass");
     }
 
 /*---------------------------------------------------------------------------------**//**
  * @bsimethod                                   Adeel.Shoukat                        05/3
  +---------------+---------------+---------------+---------------+---------------+------*/
-TEST(ECDbSchemas, RelationshiClassDiff)
+TEST (ECDbSchemas, RelationshiClassDiff)
     {
     BeFileName outputRoot, applicationDir;
-    BeTest::GetHost().GetOutputRoot (outputRoot);
-    BeTest::GetHost().GetDgnPlatformAssetsDirectory (applicationDir);
+    BeTest::GetHost ().GetOutputRoot (outputRoot);
+    BeTest::GetHost ().GetDgnPlatformAssetsDirectory (applicationDir);
     BeFileName temporaryDir;
     BeTest::GetHost ().GetOutputRoot (temporaryDir);
     ECDb::Initialize (temporaryDir, &applicationDir);
 
     ECSchemaReadContextPtr leftSchemaContext = nullptr;
     ECSchemaReadContextPtr rightSchemaContext = nullptr;
-    ECSchemaPtr leftSchema, rightSchema;   
+    ECSchemaPtr leftSchema, rightSchema;
     ECDbTestUtility::ReadECSchemaFromDisk (leftSchema, leftSchemaContext, L"LeftSchema.01.00.ecschema.xml");
     ECDbTestUtility::ReadECSchemaFromDisk (rightSchema, rightSchemaContext, L"RightSchema.01.00.ecschema.xml");
-    ECDiffPtr diff = ECDiff::Diff(*leftSchema, *rightSchema);
-    ASSERT_TRUE ( diff.IsValid());
-    bmap<Utf8String,DiffNodeState> unitStates;
+    ECDiffPtr diff = ECDiff::Diff (*leftSchema, *rightSchema);
+    ASSERT_TRUE (diff.IsValid ());
+    bmap<Utf8String, DiffNodeState> unitStates;
     diff->GetNodesState (unitStates, "*.CustomAttributes.Unit_Attributes:UnitSpecificationAttr");
     diff->GetNodesState (unitStates, "*.CustomAttributes.Unit_Attributes:UnitSpecifications");
-    ASSERT_EQ(unitStates.size(), 2);
+    ASSERT_EQ (unitStates.size (), 2);
+
     WriteECSchemaDiffToLog (*diff);
     ECSchemaPtr mergedSchema;
     MergeStatus status = diff->Merge (mergedSchema, CONFLICTRULE_TakeLeft);
-    ASSERT_EQ(status , MergeStatus::Success);   
-    ASSERT_TRUE(mergedSchema.IsValid());
-    ECRelationshipClassCP relationshipClassPtr = mergedSchema->GetClassP("RightRelationshipClass")->GetRelationshipClassP();
-    Utf8String relationshipClassName=relationshipClassPtr->GetName();
-    EXPECT_STREQ(relationshipClassName.c_str(), "RightRelationshipClass");
-    relationshipClassPtr=mergedSchema->GetClassP("TestRelationshipClass")->GetRelationshipClassP();
-    relationshipClassName=relationshipClassPtr->GetName();
-    EXPECT_STREQ(relationshipClassName.c_str(), "TestRelationshipClass");
-    relationshipClassPtr=mergedSchema->GetClassP("TestR")->GetRelationshipClassP();
-    relationshipClassName=relationshipClassPtr->GetName();
-    EXPECT_STREQ(relationshipClassName.c_str(), "TestR");
+    ASSERT_EQ (status, MergeStatus::Success);
+    ASSERT_TRUE (mergedSchema.IsValid ());
+
+    //Validate Relationships
+    EXPECT_STREQ (mergedSchema->GetClassP ("RightRelationshipClass")->GetRelationshipClassP ()->GetName ().c_str (), "RightRelationshipClass");
+    EXPECT_STREQ (mergedSchema->GetClassP ("TestRelationshipClass")->GetRelationshipClassP ()->GetName ().c_str (), "TestRelationshipClass");
+    EXPECT_STREQ (mergedSchema->GetClassP ("TestR")->GetRelationshipClassP ()->GetName ().c_str (), "TestR");
     }
 
 /*---------------------------------------------------------------------------------**//**
  * @bsimethod                                   Adeel.Shoukat                        05/3
  +---------------+---------------+---------------+---------------+---------------+------*/
-TEST(ECDbSchemas, PropertiesDiff)
+TEST (ECDbSchemas, PropertiesDiff)
     {
     BeFileName outputRoot, applicationDir;
-    BeTest::GetHost().GetOutputRoot (outputRoot);
-    BeTest::GetHost().GetDgnPlatformAssetsDirectory (applicationDir);
+    BeTest::GetHost ().GetOutputRoot (outputRoot);
+    BeTest::GetHost ().GetDgnPlatformAssetsDirectory (applicationDir);
     BeFileName temporaryDir;
     BeTest::GetHost ().GetOutputRoot (temporaryDir);
     ECDb::Initialize (temporaryDir, &applicationDir);
 
     ECSchemaReadContextPtr leftSchemaContext = nullptr;
     ECSchemaReadContextPtr rightSchemaContext = nullptr;
-    ECSchemaPtr leftSchema, rightSchema;   
+    ECSchemaPtr leftSchema, rightSchema;
     ECDbTestUtility::ReadECSchemaFromDisk (leftSchema, leftSchemaContext, L"LeftSchema.01.00.ecschema.xml");
     ECDbTestUtility::ReadECSchemaFromDisk (rightSchema, rightSchemaContext, L"RightSchema.01.00.ecschema.xml");
-    ECDiffPtr diff = ECDiff::Diff(*leftSchema, *rightSchema);
-    ASSERT_TRUE ( diff.IsValid());
-    bmap<Utf8String,DiffNodeState> unitStates;
+    ECDiffPtr diff = ECDiff::Diff (*leftSchema, *rightSchema);
+    ASSERT_TRUE (diff.IsValid ());
+
+    bmap<Utf8String, DiffNodeState> unitStates;
     diff->GetNodesState (unitStates, "*.CustomAttributes.Unit_Attributes:UnitSpecificationAttr");
     diff->GetNodesState (unitStates, "*.CustomAttributes.Unit_Attributes:UnitSpecifications");
-    ASSERT_EQ(unitStates.size(), 2);
+    ASSERT_EQ (unitStates.size (), 2);
     WriteECSchemaDiffToLog (*diff);
+
     ECSchemaPtr mergedSchema;
     MergeStatus status = diff->Merge (mergedSchema, CONFLICTRULE_TakeLeft);
-    ASSERT_EQ(status , MergeStatus::Success);   
-    ASSERT_TRUE(mergedSchema.IsValid());
-    ECClassP ecClassPtr = mergedSchema->GetClassP("Employee");
+    ASSERT_EQ (status, MergeStatus::Success);
+    ASSERT_TRUE (mergedSchema.IsValid ());
+
+    //Validate properties in Merged Schema
+    ECClassP ecClassPtr = mergedSchema->GetClassP ("Employee");//Employee Class
     ECPropertyP  ecPropertyPtr=  ecClassPtr->GetPropertyP("Address");
     EXPECT_FALSE(ecPropertyPtr==nullptr);
-    Utf8String ecPropertyName=ecPropertyPtr->GetName();
-    EXPECT_STREQ(ecPropertyName.c_str(), "Address");
-    ecPropertyPtr=  ecClassPtr->GetPropertyP("Department");
-    EXPECT_FALSE(ecPropertyPtr==nullptr);
-    ecPropertyName=ecPropertyPtr->GetName();
-    EXPECT_STREQ(ecPropertyName.c_str(), "Department");
-    ecPropertyPtr=  ecClassPtr->GetPropertyP("EmployeeId");
-    EXPECT_FALSE(ecPropertyPtr==nullptr);
-    ecPropertyName=ecPropertyPtr->GetName();
-    EXPECT_STREQ(ecPropertyName.c_str(), "EmployeeId");
-    ecPropertyPtr=  ecClassPtr->GetPropertyP("LeftAddedThisProperty");
-    EXPECT_FALSE(ecPropertyPtr==nullptr);
-    ecPropertyName=ecPropertyPtr->GetName();
-    EXPECT_STREQ(ecPropertyName.c_str(), "LeftAddedThisProperty");
-    ecPropertyPtr=  ecClassPtr->GetPropertyP("Name");
-    EXPECT_FALSE(ecPropertyPtr==nullptr);
-    ecPropertyName=ecPropertyPtr->GetName();
-    EXPECT_STREQ(ecPropertyName.c_str(), "Name");
-    ecPropertyPtr=  ecClassPtr->GetPropertyP("PhoneNumbers");
-    EXPECT_FALSE(ecPropertyPtr==nullptr);
-    ecPropertyName=ecPropertyPtr->GetName();
-    EXPECT_STREQ(ecPropertyName.c_str(), "PhoneNumbers");
-    ecClassPtr = mergedSchema->GetClassP("UnitConflictClass");
-    ecPropertyPtr=  ecClassPtr->GetPropertyP("UCCProp");
-    EXPECT_FALSE(ecPropertyPtr==nullptr);
-    ecPropertyName=ecPropertyPtr->GetName();
-    EXPECT_STREQ(ecPropertyName.c_str(),"UCCProp");
-    ecClassPtr = mergedSchema->GetClassP("Employee");
-    ecPropertyPtr=  ecClassPtr->GetPropertyP("RightAddedThisProperty");
-    EXPECT_FALSE(ecPropertyPtr==nullptr);
-    ecPropertyName=ecPropertyPtr->GetName();
-    EXPECT_STREQ(ecPropertyName.c_str(), "RightAddedThisProperty");
-    ecClassPtr = mergedSchema->GetClassP("StableClass");
-    ecPropertyPtr=  ecClassPtr->GetPropertyP("arrayProperty");
-    EXPECT_FALSE(ecPropertyPtr==nullptr);
-    ecPropertyName=ecPropertyPtr->GetName();
-    EXPECT_STREQ(ecPropertyName.c_str(), "arrayProperty");
-    ecClassPtr = mergedSchema->GetClassP("RightFoo");
-    ecPropertyPtr=  ecClassPtr->GetPropertyP("RightDoubleProperty");
-    EXPECT_FALSE(ecPropertyPtr==nullptr);
-    ecPropertyName=ecPropertyPtr->GetName();
-    EXPECT_STREQ(ecPropertyName.c_str(), "RightDoubleProperty");
-    ECRelationshipClassP  ecRelationshipClassPtr = mergedSchema->GetClassP("RightRelationshipClass")->GetRelationshipClassP();
-    ecPropertyPtr=  ecRelationshipClassPtr->GetPropertyP("Property");
-    EXPECT_FALSE(ecPropertyPtr==nullptr);
-    ecPropertyName=ecPropertyPtr->GetName();
-    EXPECT_STREQ(ecPropertyName.c_str(), "Property");
-    ecRelationshipClassPtr = mergedSchema->GetClassP("TestRelationshipClass")->GetRelationshipClassP();
-    ecPropertyPtr=  ecRelationshipClassPtr->GetPropertyP("PropertyB");
-    EXPECT_FALSE(ecPropertyPtr==nullptr);
-    ecPropertyName=ecPropertyPtr->GetName();
-    EXPECT_STREQ(ecPropertyName.c_str(), "PropertyB");
+    EXPECT_STREQ(ecPropertyPtr->GetName ().c_str(), "Address");
+
+    ecPropertyPtr = ecClassPtr->GetPropertyP ("Department");
+    EXPECT_FALSE (ecPropertyPtr == nullptr);
+    EXPECT_STREQ (ecPropertyPtr->GetName ().c_str (), "Department");
+
+    ecPropertyPtr = ecClassPtr->GetPropertyP ("EmployeeId");
+    EXPECT_FALSE (ecPropertyPtr == nullptr);
+    EXPECT_STREQ (ecPropertyPtr->GetName ().c_str (), "EmployeeId");
+
+    ecPropertyPtr = ecClassPtr->GetPropertyP ("LeftAddedThisProperty");
+    EXPECT_FALSE (ecPropertyPtr == nullptr);
+    EXPECT_STREQ (ecPropertyPtr->GetName ().c_str (), "LeftAddedThisProperty");
+
+    ecPropertyPtr = ecClassPtr->GetPropertyP ("Name");
+    EXPECT_FALSE (ecPropertyPtr == nullptr);
+    EXPECT_STREQ (ecPropertyPtr->GetName ().c_str (), "Name");
+
+    ecPropertyPtr = ecClassPtr->GetPropertyP ("PhoneNumbers");
+    EXPECT_FALSE (ecPropertyPtr == nullptr);
+    EXPECT_STREQ (ecPropertyPtr->GetName ().c_str (), "PhoneNumbers");
+
+    ecPropertyPtr = ecClassPtr->GetPropertyP ("RightAddedThisProperty");
+    EXPECT_FALSE (ecPropertyPtr == nullptr);
+    EXPECT_STREQ (ecPropertyPtr->GetName ().c_str (), "RightAddedThisProperty");
+
+    ecClassPtr = mergedSchema->GetClassP ("UnitConflictClass");//UnitConflictClass
+    ecPropertyPtr = ecClassPtr->GetPropertyP ("UCCProp");
+    EXPECT_FALSE (ecPropertyPtr == nullptr);
+    EXPECT_STREQ (ecPropertyPtr->GetName ().c_str (), "UCCProp");
+
+    ecClassPtr = mergedSchema->GetClassP ("StableClass");//StableClass
+    ecPropertyPtr = ecClassPtr->GetPropertyP ("arrayProperty");
+    EXPECT_FALSE (ecPropertyPtr == nullptr);
+    EXPECT_STREQ (ecPropertyPtr->GetName ().c_str (), "arrayProperty");
+
+    ecClassPtr = mergedSchema->GetClassP ("RightFoo");//RightFoo Class
+    ecPropertyPtr = ecClassPtr->GetPropertyP ("RightDoubleProperty");
+    EXPECT_FALSE (ecPropertyPtr == nullptr);
+    EXPECT_STREQ (ecPropertyPtr->GetName ().c_str (), "RightDoubleProperty");
+
+    //verify Propertyies of relationships
+    ECRelationshipClassP  ecRelationshipClassPtr = mergedSchema->GetClassP ("RightRelationshipClass")->GetRelationshipClassP ();
+    ecPropertyPtr = ecRelationshipClassPtr->GetPropertyP ("Property");
+    EXPECT_FALSE (ecPropertyPtr == nullptr);
+    EXPECT_STREQ (ecPropertyPtr->GetName ().c_str (), "Property");
+
+    ecRelationshipClassPtr = mergedSchema->GetClassP ("TestRelationshipClass")->GetRelationshipClassP ();
+    ecPropertyPtr = ecRelationshipClassPtr->GetPropertyP ("PropertyB");
+    EXPECT_FALSE (ecPropertyPtr == nullptr);
+    EXPECT_STREQ (ecPropertyPtr->GetName ().c_str (), "PropertyB");
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2159,7 +2119,6 @@ struct ECDbSchemaFixture:public::testing::Test
         BeFileName projectFile;
         virtual void SetUp() override;
         void deleteExistingDgnb(WCharCP);
-
     };
 
 /*---------------------------------------------------------------------------------**//**
@@ -2189,7 +2148,6 @@ void ECDbSchemaFixture::deleteExistingDgnb(WCharCP ECDbName)
         BeFileNameStatus fileDeleteStatus = BeFileName::BeDeleteFile (projectFile.GetName());
         ASSERT_TRUE (fileDeleteStatus == BeFileNameStatus::Success)  << "Could not delete preexisting test ecdb file '" << projectFile.GetName () << "'.";
         }
-    
     }
 
 /*---------------------------------------------------------------------------------**//**
