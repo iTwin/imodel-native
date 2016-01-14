@@ -79,12 +79,22 @@ Utf8StringCR UserSettingsGroup::GetCategoryLabel (void) const { return m_categor
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               01/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-UserSettingsItemList& UserSettingsGroup::GetSettingsItems (void) { return m_settingsItems; }
+UserSettingsItemList& UserSettingsGroup::GetSettingsItemsR (void) { return m_settingsItems; }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               01/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-UserSettingsGroupList& UserSettingsGroup::GetNestedSettings (void) { return m_nestedSettings; }
+UserSettingsGroupList& UserSettingsGroup::GetNestedSettingsR (void) { return m_nestedSettings; }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Eligijus.Mauragas               01/2013
++---------------+---------------+---------------+---------------+---------------+------*/
+UserSettingsItemList const& UserSettingsGroup::GetSettingsItems (void) const { return m_settingsItems; }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Eligijus.Mauragas               01/2013
++---------------+---------------+---------------+---------------+---------------+------*/
+UserSettingsGroupList const& UserSettingsGroup::GetNestedSettings (void) const { return m_nestedSettings; }
 
 
 
