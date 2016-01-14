@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/WebServices/Client/WSError.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -72,6 +72,7 @@ struct WSError : public AsyncError
     private:
         Status              m_status;
         Id                  m_id;
+        Utf8String          m_customId;
 
     private:
         static bool IsValidErrorJson(JsonValueCR jsonError);
@@ -96,6 +97,7 @@ struct WSError : public AsyncError
 
         WSCLIENT_EXPORT Status       GetStatus() const;
         WSCLIENT_EXPORT Id           GetId() const;
+        WSCLIENT_EXPORT Utf8StringCR GetCustomId() const;
         WSCLIENT_EXPORT Utf8StringCR GetDisplayMessage() const;
         WSCLIENT_EXPORT Utf8StringCR GetDisplayDescription() const;
     };
