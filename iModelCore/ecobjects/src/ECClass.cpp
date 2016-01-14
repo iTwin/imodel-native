@@ -1433,8 +1433,10 @@ SchemaWriteStatus ECClass::_WriteXml (BeXmlWriterR xmlWriter, int ecXmlVersionMa
         bool isConcrete = this->GetClassModifier() != ECClassModifier::Abstract;
         xmlWriter.WriteAttribute(IS_DOMAINCLASS_ATTRIBUTE, isConcrete && !(IsStructClass() || IsCustomAttributeClass()));
         }
-    else
+    else if (m_modifier != ECClassModifier::None)
+        {
         xmlWriter.WriteAttribute(MODIFIER_ATTRIBUTE, ECXml::ModifierToString(m_modifier));
+        }
 
     if (nullptr != additionalAttributes)
         {
@@ -2529,7 +2531,11 @@ SchemaWriteStatus ECRelationshipClass::_WriteXml (BeXmlWriterR xmlWriter, int ec
     SchemaWriteStatus   status;
     bmap<Utf8CP, Utf8CP> additionalAttributes;
     additionalAttributes[STRENGTH_ATTRIBUTE] = ECXml::StrengthToString(m_strength);
-    additionalAttributes[STRENGTHDIRECTION_ATTRIBUTE] = ECXml::DirectionToString(m_strengthDirection);
+    if (m_strengthDirection != ECRelatedInstanceDirection::Forward)
+        { //skip the attribute for "forward" as it is the default value.
+        additionalAttributes[STRENGTHDIRECTION_ATTRIBUTE] = ECXml::DirectionToString(m_strengthDirection);
+        }
+
     if (SchemaWriteStatus::Success != (status = ECClass::_WriteXml (xmlWriter, ecXmlVersionMajor, ecXmlVersionMinor, EC_RELATIONSHIP_CLASS_ELEMENT, &additionalAttributes, false)))
         return status;
         

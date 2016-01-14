@@ -421,7 +421,8 @@ SchemaWriteStatus ECProperty::_WriteXml (BeXmlWriterR xmlWriter, Utf8CP elementN
     xmlWriter.WriteAttribute(DESCRIPTION_ATTRIBUTE, this->GetInvariantDescription().c_str());
     if (GetIsDisplayLabelDefined())
         xmlWriter.WriteAttribute(DISPLAY_LABEL_ATTRIBUTE, this->GetInvariantDisplayLabel().c_str());
-    xmlWriter.WriteAttribute(READONLY_ATTRIBUTE, this->IsReadOnlyFlagSet());
+    if(IsReadOnlyFlagSet())
+        xmlWriter.WriteAttribute(READONLY_ATTRIBUTE, true);
     if (IsMinimumValueDefined())
         xmlWriter.WriteAttribute(MINIMUM_VALUE_ATTRIBUTE, this->GetMinimumValue().c_str());
     if (IsMaximumValueDefined())
