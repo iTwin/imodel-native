@@ -401,7 +401,7 @@ DbResult Statement::TryPrepare(DbCR db, Utf8CP sql)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   03/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult Statement::Prepare(DbCR db, Utf8CP sql) { db._VerifyQuerySequence(); return Prepare(*db.m_dbFile, sql);  }
+DbResult Statement::Prepare(DbCR db, Utf8CP sql) { return Prepare(*db.m_dbFile, sql);  }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   03/11
@@ -3150,7 +3150,6 @@ StatementCache& Db::GetStatementCache() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 DbResult Db::GetCachedStatement(CachedStatementPtr& stmt, Utf8CP sqlString) const
     {
-    _VerifyQuerySequence();
     return GetStatementCache().GetPreparedStatement(stmt, *m_dbFile, sqlString);
     }
 
@@ -4219,6 +4218,7 @@ size_t DbEmbeddedFileTable::Iterator::QueryCount() const
     return ((BE_SQLITE_ROW != statement.Step()) ? 0 : statement.GetValueInt(0));
     }
 
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   10/11
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -4266,6 +4266,7 @@ DbResult RTreeAcceptFunction::Tester::StepRTree(Statement& stmt)
     m_db.m_dbFile->SetRTreeMatch(nullptr);
     return rc;
     }
+#endif
 
 //=======================================================================================
 // support for zlib-compressed databases

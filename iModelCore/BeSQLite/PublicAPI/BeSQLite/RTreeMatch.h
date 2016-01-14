@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/BeSQLite/RTreeMatch.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -81,15 +81,15 @@ typedef RTree3dVal const& RTree3dValCR;
 typedef RTree3dVal const* RTree3dValCP;
 typedef RTree3dVal*       RTree3dValP;
 
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
 //=======================================================================================
 // @bsiclass                                                    Keith.Bentley   12/11
 //=======================================================================================
-struct RTree3dBoundsTest : RTreeAcceptFunction::Tester
+struct RTree3dBoundsTest : RTreeMatchFunction
 {
     RTree3dVal  m_bounds;
 
-    RTree3dBoundsTest (DbR db) : Tester(db) {}
-    void _StepRange(DbFunction::Context&, int nArgs, DbValue* args) override {}
+    RTree3dBoundsTest (DbR db) : RTreeMatchFunction("DGN_Rtree", 1) {}
     int _TestRange(QueryInfo const& info) override
         {
 //__PUBLISH_SECTION_END__
@@ -106,5 +106,6 @@ struct RTree3dBoundsTest : RTreeAcceptFunction::Tester
         return  BE_SQLITE_OK;
         }
 };
+#endif
 
 END_BENTLEY_SQLITE_NAMESPACE

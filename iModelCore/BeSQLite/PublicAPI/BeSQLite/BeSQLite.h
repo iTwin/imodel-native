@@ -1194,39 +1194,6 @@ struct RTreeMatchFunction : DbFunction
 };
 
 //=======================================================================================
-//! An aggregate function for queries using the range tree.
-// @bsiclass                                                    Keith.Bentley   12/11
-//=======================================================================================
-struct RTreeAcceptFunction : AggregateFunction
-{
-    //! This class becomes the callback for an SQL statement that uses a RTree vtable via the "MATCH rTreeMatch(1)" syntax.
-    //! It's constructor registers itself as the callback object and it's destructor unregisters itself.
-    struct Tester : RTreeMatchFunction
-    {
-    DbR m_db;
-
-    BE_SQLITE_EXPORT Tester(DbR db);
-    virtual void _StepRange(DbFunction::Context&, int nArgs, DbValue* args) = 0;
-
-    //! Perform the RTree search by calling "Step" on the supplied statement. This object becomes the callback function for the "rTreeMatch(1)" sql function
-    //! (e.g. "SELECT id FROM rtree_vtable WHERE id MATCH rTreeMatch(1)"
-    //! @note this method registers the rTreeMatch function with SQLite, so it is not possible to call Step directly.
-    BE_SQLITE_EXPORT DbResult StepRTree(Statement&);
-    };
-
-protected:
-    Tester* m_rangeTest;
-    void _FinishAggregate(DbFunction::Context&) override {}
-    void _StepAggregate(Context& ctx, int nArgs, DbValue* args) override {m_rangeTest->_StepRange(ctx, nArgs, args);}
-
-public:
-    RTreeAcceptFunction() : AggregateFunction("rTreeAccept", 1) {m_rangeTest = nullptr;}
-
-    void SetTester(Tester* tester) {m_rangeTest=tester;}
-    Tester* GetTester() const {return m_rangeTest;}
-};
-
-//=======================================================================================
 //! This interface should be implemented to supply the first argument to the BeSQLite function "InVirtualSet".
 //! It provides a way to use an in-memory "set of values" in an SQL statement, without having to create a temporary table.
 //! For example, to find rows of MyTable that have Owner=1 and Vendor in a list of vendors held in a memory, use the SQL statement:
@@ -1981,7 +1948,6 @@ struct DbFile
     friend struct Db;
     friend struct Statement;
     friend struct Savepoint;
-    friend struct RTreeAcceptFunction::Tester;
 
 private:
     size_t  m_briefcaseIdRlvIndex;
@@ -2007,18 +1973,14 @@ protected:
     typedef DbTxns::iterator DbTxnIter;
     DbTxns          m_txns;
 
-    mutable RTreeAcceptFunction m_rtreeMatch;
     mutable struct
         {
         bool m_readonly:1;
-        bool m_rtreeMatchValid:1;
-        int  m_dummy:30;
+        int  m_dummy:31;
         }  m_flags;
 
     explicit DbFile(SqlDbP sqlDb, BusyRetry* retry, BeSQLiteTxnMode defaultTxnMode);
     ~DbFile();
-    void InitRTreeMatch() const;
-    void SetRTreeMatch(RTreeAcceptFunction::Tester* tester) const;
     DbResult StartSavepoint(Savepoint&, BeSQLiteTxnMode);
     DbResult StopSavepoint(Savepoint&, bool isCommit, Utf8CP operation);
     DbResult CreatePropertyTable(Utf8CP tablename, Utf8CP ddl, bool temp);
@@ -2244,7 +2206,6 @@ protected:
 
     friend struct Statement;
     friend struct Savepoint;
-    friend struct RTreeAcceptFunction::Tester;
     friend struct BeSQLiteProfileManager;
 
 private:
@@ -2257,8 +2218,6 @@ private:
     DbResult DeleteBriefcaseLocalValues();
 
 public:
-    virtual void _VerifyQuerySequence() const {}
-
     BE_SQLITE_EXPORT Db();
     BE_SQLITE_EXPORT virtual ~Db();
 
