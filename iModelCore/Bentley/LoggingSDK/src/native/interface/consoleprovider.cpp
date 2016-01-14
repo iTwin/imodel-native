@@ -526,7 +526,7 @@ struct SplitConsoleProvider : ILogProvider
 {
     typedef SHORT dim_t;
 
-    static const dim_t s_maxMessageLength = 0x100;
+    static const dim_t s_maxMessageLength = 0x300;
 
     struct Coord : COORD
     {
@@ -692,6 +692,8 @@ SplitConsoleProvider::dim_t SplitConsoleProvider::Pane::PrepareMessage(WCharCP r
 
     WORD attributes = GetAttributesForSeverity(sev);
     CHAR_INFO* pBuf = m_buffer;
+    CHAR_INFO* pEnd = m_buffer + _countof(m_buffer);
+
     dim_t width = m_rect.GetWidth();
     dim_t nRows = 0;
     WCharCP pChar = msg;
@@ -700,6 +702,14 @@ SplitConsoleProvider::dim_t SplitConsoleProvider::Pane::PrepareMessage(WCharCP r
     bool done = false;
     while (!done)
         {
+        // If the last row contains more characters than we have room for in our buffer, truncate the message.
+        if ((pEnd - pBuf) < width)
+            {
+            done = true;
+            break;
+            }
+
+        // Fill the entire row, appending blanks if necessary
         for (dim_t pos = 0; pos < width; pos++)
             {
             CHAR_INFO& buf = *pBuf++;
