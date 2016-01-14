@@ -131,6 +131,7 @@ enum class LockStatus : int
     LockUsed, //!< A lock cannot be relinquished because the associated object has been modified
     CannotCreateRevision, //!< An operation required creation of a DgnRevision, which failed
     InvalidRequest, //!< Request to server not understood
+    RevisionRequired, //!< A revision committed to the server must be integrated into the briefcase before the operation can be completed
 };
 
 //! Status codes for the Revision API
