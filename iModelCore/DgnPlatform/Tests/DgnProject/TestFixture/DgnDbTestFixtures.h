@@ -15,6 +15,7 @@
 #include <ECDb/ECDbApi.h>
 #include <UnitTests/BackDoor/DgnPlatform/ScopedDgnHost.h>
 #include <DgnPlatform/DgnPlatformLib.h>
+#include <DgnPlatform/GenericDomain.h>
 
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
 USING_NAMESPACE_BENTLEY_SQLITE

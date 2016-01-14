@@ -724,10 +724,11 @@ private:
     template<class T> void CallAppData(T const& caller) const;
 
 protected:
+    //! @private
     struct Flags
     {
         uint32_t m_persistent:1;
-        uint32_t m_lockHeld:1;
+        uint32_t m_forceElementIdForInsert:1;
         uint32_t m_inSelectionSet:1;
         uint32_t m_hilited:3;
         uint32_t m_undisplayed:1;
@@ -1117,6 +1118,10 @@ public:
 
     //! Get the DgnElementId of this DgnElement
     DgnElementId GetElementId() const {return m_elementId;}
+
+    //! Only valid to be used in very specific synchronization workflows. All other workflows should allow Insert to use next available DgnElementId.
+    //! @private
+    DGNPLATFORM_EXPORT void ForceElementIdForInsert(DgnElementId);
 
     //! Get the DgnClassId of this DgnElement.
     DgnClassId GetElementClassId() const {return m_classId;}

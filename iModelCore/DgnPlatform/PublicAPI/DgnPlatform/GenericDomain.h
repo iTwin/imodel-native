@@ -10,6 +10,12 @@
 
 #include <DgnPlatform/DgnDomain.h>
 
+DGNPLATFORM_TYPEDEFS(GenericPhysicalObject)
+DGNPLATFORM_TYPEDEFS(GenericSpatialLocation)
+
+DGNPLATFORM_REF_COUNTED_PTR(GenericPhysicalObject)
+DGNPLATFORM_REF_COUNTED_PTR(GenericSpatialLocation)
+
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
 #define GENERIC_DOMAIN_ECSCHEMA_PATH L"ECSchemas/Dgn/Generic.01.00.ecschema.xml"
