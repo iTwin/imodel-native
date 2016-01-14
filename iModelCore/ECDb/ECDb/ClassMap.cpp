@@ -574,10 +574,9 @@ MapStatus ClassMap::AddPropertyMaps(ClassMapLoadContext& ctx, IClassMap const* p
         parentClassMap = nullptr;
 
     std::vector<ECPropertyCP> propertiesToMap;
-    PropertyMapPtr propMap = nullptr;
     for (ECPropertyCP property : m_ecClass.GetProperties(true))
         {
-        propMap = nullptr;
+        PropertyMapPtr propMap = nullptr;
         if (&property->GetClass() != &m_ecClass && parentClassMap != nullptr)
             parentClassMap->GetPropertyMaps().TryGetPropertyMap(propMap, property->GetName().c_str());
 
@@ -588,7 +587,7 @@ MapStatus ClassMap::AddPropertyMaps(ClassMapLoadContext& ctx, IClassMap const* p
             if (!isJoinedTable)
                 GetPropertyMapsR().AddPropertyMap(propMap);
             else
-                GetPropertyMapsR().AddPropertyMap(PropertyMap::Clone(m_ecDbMap, *propMap, &GetJoinedTable(), nullptr));
+                GetPropertyMapsR().AddPropertyMap(PropertyMap::Clone(m_ecDbMap, *propMap, nullptr));
             }
         }
 
@@ -598,7 +597,7 @@ MapStatus ClassMap::AddPropertyMaps(ClassMapLoadContext& ctx, IClassMap const* p
     for (ECPropertyCP property : propertiesToMap)
         {
         Utf8CP propertyAccessString = property->GetName().c_str();
-        propMap = PropertyMap::CreateAndEvaluateMapping(ctx, m_ecDbMap.GetECDb(), *property, m_ecClass, propertyAccessString, &GetJoinedTable(), nullptr);
+        PropertyMapPtr propMap = PropertyMap::CreateAndEvaluateMapping(ctx, m_ecDbMap.GetECDb(), *property, m_ecClass, propertyAccessString, nullptr);
         if (propMap == nullptr)
             return MapStatus::Error;
 
@@ -683,6 +682,9 @@ BentleyStatus ClassMap::ProcessStandardKeySpecifications(SchemaImportContext& sc
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus ClassMap::CreateUserProvidedIndices(SchemaImportContext& schemaImportContext, ClassMapInfo const& classMapInfo) const
     {
+    if (GetPrimaryTable().GetPersistenceType() == PersistenceType::Virtual)
+        return SUCCESS;
+
     int i = 0;
     IssueReporter const& issues = m_ecDbMap.GetECDbR().GetECDbImplR().GetIssueReporter();
     for (ClassIndexInfoPtr indexInfo : classMapInfo.GetIndexInfo())
@@ -942,7 +944,6 @@ BentleyStatus ClassMap::_Save(std::set<ClassMap const*>& savedGraph)
         return BentleyStatus::SUCCESS;
 
     savedGraph.insert(this);
-    auto& mapStorage = const_cast<ECDbMapR>(m_ecDbMap).GetSQLManagerR ().GetMapStorageR ();
     std::set<PropertyMapCP> baseProperties;
 
     if (GetId() == 0ULL)
@@ -963,7 +964,7 @@ BentleyStatus ClassMap::_Save(std::set<ClassMap const*>& savedGraph)
             }
 
         
-        auto mapInfo = mapStorage.CreateClassMap(GetClass().GetId(), m_mapStrategy, baseClassMap == nullptr ? ECClass::UNSET_ECCLASSID : baseClassMap->GetId());
+        auto mapInfo = m_ecDbMap.GetSQLManager().GetMapStorage().CreateClassMap(GetClass().GetId(), m_mapStrategy, baseClassMap == nullptr ? ECClass::UNSET_ECCLASSID : baseClassMap->GetId());
         for (auto propertyMap : GetPropertyMaps())
             {
             if (baseProperties.find(propertyMap) != baseProperties.end())
@@ -1187,7 +1188,9 @@ void ColumnFactory::Update()
     m_classMap.GetPropertyMaps().Traverse(
         [&] (TraversalFeedback& feedback, PropertyMapCP propMap)
         {
-        propMap->GetColumns(columnsInUse);
+        if (propMap->GetAsNavigationPropertyMap() == nullptr)
+            propMap->GetColumns(columnsInUse);
+
         feedback = TraversalFeedback::Next;
         }, true);
 
