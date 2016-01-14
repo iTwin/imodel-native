@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/DgnProject/NonPublished/ElementAspect_Test.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "../TestFixture/DgnDbTestFixtures.h"
@@ -18,144 +18,14 @@ USING_NAMESPACE_BENTLEY_DPTEST
 /*=================================================================================**//**
 * @bsiclass                                                     Sam.Wilson      06/15
 +===============+===============+===============+===============+===============+======*/
-struct ElementItemTests : public DgnDbTestFixture
+struct ElementAspectTests : public DgnDbTestFixture
 {
 };
 
-#ifdef WIP_ELEMENT_ITEM // *** pending redesign
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(ElementItemTests, ElementsOwnsItemTest)
-    {
-    SetupProject(L"3dMetricGeneral.idgndb", L"ElementsOwnsItemTest.idgndb", Db::OpenMode::ReadWrite);
-
-    // Define an element with an item
-    TestElementCPtr el;
-    if (true)
-        {
-        TestElementPtr tempEl = TestElement::Create(*m_db, m_defaultModelId, m_defaultCategoryId, "TestElement");
-        DgnElement::Item::SetItem(*tempEl, *TestItem::Create("Line"));
-        el = m_db->Elements().Insert(*tempEl);
-        m_db->SaveChanges();
-        }
-
-    //  Delete the element. 
-    DgnElementId eid = el->GetElementId();
-    m_db->Elements().Delete(*el);
-
-    // Item should have been deleted for me.
-    Statement findItem;
-    findItem.Prepare(*m_db, "SELECT ECClassId FROM " DGN_TABLE(DGN_CLASSNAME_ElementItem) " WHERE(ElementId=?)");
-    findItem.BindId(1, eid);
-    bool itemIsGone = (BE_SQLITE_ROW != findItem.Step());
-    ASSERT_TRUE(itemIsGone);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson      06/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(ElementItemTests, ItemCRUD)
-    {
-    SetupProject(L"3dMetricGeneral.idgndb", L"ItemCRUD.idgndb", Db::OpenMode::ReadWrite);
-
-    TestElementCPtr el;
-    if (true)
-        {
-        //  Insert an element ...
-        TestElementPtr tempEl = TestElement::Create(*m_db, m_defaultModelId, m_defaultCategoryId, "TestElement");
-        ASSERT_EQ( nullptr , DgnElement::Item::GetItem(*tempEl) ) << "element should not yet have an item";
-        //  ... with an item
-        RefCountedPtr<TestItem> newItem = TestItem::Create("Line");
-        BeTest::SetFailOnAssert(false);
-        DgnElement::UniqueAspect::SetAspect(*tempEl, *newItem);  // THIS SHOULD FAIL -- wrong API
-        BeTest::SetFailOnAssert(true);
-        ASSERT_EQ( nullptr , DgnElement::Item::GetItem(*tempEl) ) << "element should not yet have an item";
-        DgnElement::Item::SetItem(*tempEl, *newItem);  // Initial geometry should be a line
-        ASSERT_NE( nullptr , DgnElement::Item::GetItem(*tempEl) ) << "element should have a scheduled item";
-
-        el = m_db->Elements().Insert(*tempEl);
-        }
-
-    ASSERT_TRUE( el.IsValid() );
-
-    if (true)
-        {
-        //  Verify that item was saved in the Db
-        TestItemCP item = DgnElement::Item::Get<TestItem>(*el);
-        ASSERT_NE( nullptr , item ) << "element should have a peristent item";
-        ASSERT_STREQ( "Line" , item->GetTestItemProperty().c_str() );
-    
-        BeTest::SetFailOnAssert(false);
-        void const* wrong = DgnElement::UniqueAspect::Get<TestUniqueAspect>(*el, *item->GetECClass(*m_db));
-        BeTest::SetFailOnAssert(true);
-        ASSERT_EQ( nullptr , wrong ) << "You should only be able to access an item through the item API";
-
-        //  Verify that item generated a line
-        size_t count=0;
-        for (ElementGeometryPtr geom : ElementGeometryCollection (*el))
-            {
-            ICurvePrimitivePtr curve = geom->GetAsICurvePrimitive();
-            ASSERT_TRUE( curve.IsValid() );
-            ASSERT_TRUE( curve->GetLineStringCP() != nullptr );
-            ++count;
-            }
-        ASSERT_EQ( 1 , count );
-        }
-
-    if (true)
-        {
-        //  Update the item
-        TestElementPtr tempEl = el->MakeCopy<TestElement>();
-        TestItemP item = DgnElement::Item::GetP<TestItem>(*tempEl);
-        item->SetTestItemProperty("Circle");
-        TestItemCP originalItem = DgnElement::Item::Get<TestItem>(*el);
-        ASSERT_STREQ( "Line" , originalItem->GetTestItemProperty().c_str() ) << "persistent item should remain unchanged until I call Update on the host element";
-        ASSERT_TRUE( m_db->Elements().Update(*tempEl).IsValid() );
-        }
-
-    ASSERT_TRUE( el.IsValid() );
-    
-    if (true)
-        {
-        //  Verify that persistent item was changed
-        TestItemCP item = DgnElement::Item::Get<TestItem>(*el);
-        ASSERT_NE( nullptr , item ) << "element should have a peristent item";
-        ASSERT_STREQ( "Circle" , item->GetTestItemProperty().c_str() ) << "I should see the changed value of the item now";
-
-        //  Verify that item generated a circle
-        size_t count=0;
-        for (ElementGeometryPtr geom : ElementGeometryCollection (*el))
-            {
-            ICurvePrimitivePtr curve = geom->GetAsICurvePrimitive();
-            ASSERT_TRUE( curve.IsValid() );
-            ASSERT_TRUE( curve->GetArcCP() != nullptr );
-            ++count;
-            }
-        ASSERT_EQ( 1 , count );
-        }
-
-    ASSERT_TRUE( el.IsValid() );
-
-    if (true)
-        {
-        //  Delete the item
-        TestElementPtr tempEl = el->MakeCopy<TestElement>();
-        TestItemP item = DgnElement::Item::GetP<TestItem>(*tempEl);
-        item->Delete();
-        ASSERT_EQ( nullptr , DgnElement::Item::Get<TestItem>(*tempEl) ) << "Item should not be returned when scheduled for drop";
-        ASSERT_TRUE( m_db->Elements().Update(*tempEl).IsValid() );
-        }
-
-    ASSERT_TRUE( el.IsValid() );
-    ASSERT_EQ( nullptr , DgnElement::Item::Get<TestItem>(*el) ) << "Item should now be gone";
-    }
-#endif
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson      06/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(ElementItemTests, UniqueAspect_CRUD)
+TEST_F(ElementAspectTests, UniqueAspect_CRUD)
     {
     SetupProject(L"3dMetricGeneral.idgndb", L"UniqueAspectCRUD.idgndb", Db::OpenMode::ReadWrite);
     ECN::ECClassCR aclass = *TestUniqueAspect::GetECClass(*m_db);
@@ -235,7 +105,7 @@ TEST_F(ElementItemTests, UniqueAspect_CRUD)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(ElementItemTests, MultiAspect_CRUD)
+TEST_F(ElementAspectTests, MultiAspect_CRUD)
     {
     SetupProject(L"3dMetricGeneral.idgndb", L"MultiAspectCRUD.idgndb", Db::OpenMode::ReadWrite);
     ECN::ECClassCR aclass = *TestMultiAspect::GetECClass(*m_db);

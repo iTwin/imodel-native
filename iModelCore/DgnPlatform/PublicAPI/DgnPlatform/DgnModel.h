@@ -937,14 +937,11 @@ public:
 
     //! Create a ComponentModel that can be used by a component definition
     //! @param db The DgnDb that is intended to hold the new model
-    //! @param componentDefClassFullName The full ECSQL name of the component definition ECClass
+    //! @param componentDefClassECSqlName The full ECSQL name of the component definition ECClass
     //! @return a new, non-persistent component model
-    DGNPLATFORM_EXPORT static ComponentModelPtr Create(DgnDbR db, Utf8StringCR componentDefClassFullName);
+    DGNPLATFORM_EXPORT static ComponentModelPtr Create(DgnDbR db, Utf8StringCR componentDefClassECSqlName);
 
     Utf8StringCR GetComponentECClassFullName() const {return m_componentECClass;}
-
-DGNPLATFORM_EXPORT static void OnElementCopied(DgnElementCR outputElement, DgnElementCR sourceElement, DgnCloneContext&); //!< @private
-DGNPLATFORM_EXPORT static void OnElementImported(DgnElementCR outputElement, DgnElementCR sourceElement, DgnImportContext&); //!< @private
 };
 
 //=======================================================================================
@@ -962,7 +959,6 @@ struct ComponentDef : RefCountedBase
     static Utf8String GetCaValueString(ECN::IECInstanceCR, Utf8CP propName);
     ECN::IECInstancePtr GetPropSpecCA(ECN::ECPropertyCR prop);
 
-    Utf8String GetGeneratedName() const;
     DgnCode CreateVariationCode(Utf8StringCR slnId) { return ComponentAuthority::CreateVariationCode(slnId, GetName()); }
 
     //! Test if the specified code is that of a component variation instance element.
@@ -1088,12 +1084,23 @@ struct ComponentDef : RefCountedBase
     //! @returns nullptr if \a instance is an instance of a component
     DGNPLATFORM_EXPORT static ECN::IECInstancePtr GetParameters(DgnElementCR instance);
 
+    //! Controls export/import of ComponentDefs
+    struct ExportOptions
+        {
+        bool m_exportSchema, m_exportCategory, m_embedScript;
+        //! Initialize ExporParams
+        //! @param exportSchema     Export the ECSchema that includes this component definition's ECClass to the destination DgnDb? The export will fail if \a destDb does not contain this component definition's ECClass. Pass false if you expect the schema already to be defined. Pass true to update an existing schema.
+        //! @param exportCategory   Export the Category used by this component definition to the destination DgnDb? The export will fail if \a destDb does not contain this component definition's Category. Pass false if you expect the category already to be defined. If you pass true and if the category already exists, it is \em not updated.
+        //! @param embedScript      Copy and store the script used by this component definition in the destination DgnDb?  Pass false if the script is to be loaded from disk or the network. If true and if the script already exists in the destination DgnDb, it will be updated.
+        ExportOptions(bool exportSchema = true, bool exportCategory = true, bool embedScript = true) : m_exportSchema(exportSchema), m_exportCategory(exportCategory), m_embedScript(embedScript) {;}
+        };
+
     //! Export this component definition to the specified DgnDb. 
     //! @param context The id remapping context to use
-    //! @param exportSchema Export the ECSchema that includes this component definition's ECClass? The export will fail if \a destDb does not contain this component definition's ECClass.
-    //! @param exportCategory Export the Category used by this component definition? The export will fail if \a destDb does not contain this component definition's Category.
-    //! @return non-zero error if the import failed.
-    DGNPLATFORM_EXPORT DgnDbStatus Export(DgnImportContext& context, bool exportSchema = true, bool exportCategory = false);
+    //! @param options Export options
+    //! @return non-zero error if the export/import failed.
+    //! @see ExportVariations
+    DGNPLATFORM_EXPORT DgnDbStatus Export(DgnImportContext& context, ExportOptions const& options = ExportOptions());
 
     //! Export variations of this component definition to the the specified model. 
     //! @param destVariationsModel Write copies of variations to this model.
@@ -1101,6 +1108,7 @@ struct ComponentDef : RefCountedBase
     //! @param context The id remapping context to use
     //! @param variationFilter If specified, the variations to export. If not specified and if \a destVariationsModel is specified, then all variations are exported.
     //! @return non-zero error if the import failed.
+    //! @see Export
     DGNPLATFORM_EXPORT DgnDbStatus ExportVariations(DgnModelR destVariationsModel, DgnModelId sourceVariationsModel, DgnImportContext& context, bvector<DgnElementId> const& variationFilter = bvector<DgnElementId>());
 
     //! Creates a variation of a component, based on the specified parameters.
@@ -1168,20 +1176,52 @@ struct ComponentDef : RefCountedBase
     DGNPLATFORM_EXPORT static DgnElementCPtr MakeUniqueInstance(DgnDbStatus* stat, DgnModelR targetModel, ECN::IECInstanceCR parameters, DgnCode const& code = DgnCode());
 };
 
+//========================================================================================
+//! A component definition parameter 
+//! Defines the standard JSON format for a parameter
+//========================================================================================
+struct TsComponentParameter
+    {
+    ComponentDef::ParameterVariesPer m_variesPer;
+    ECN::ECValue m_value;
+
+    TsComponentParameter() : m_variesPer(ComponentDef::ParameterVariesPer::Instance) {;}
+    //! Construct a new Parameter
+    TsComponentParameter(ComponentDef::ParameterVariesPer s, ECN::ECValueCR v) : m_variesPer(s), m_value(v) {;}
+    //! From JSON
+    DGNPLATFORM_EXPORT explicit TsComponentParameter(Json::Value const&);
+    //! To JSON
+    DGNPLATFORM_EXPORT Json::Value ToJson() const;
+    //! Get the scope of this parameter
+    ComponentDef::ParameterVariesPer GetScope() const {return m_variesPer;}
+    //! Get the value of this parameter
+    ECN::ECValueCR GetValue() const {return m_value;}
+    //! Set the value of this parameter
+    DgnDbStatus SetValue(ECN::ECValueCR newValue);
+
+    bool EqualValues(TsComponentParameter const& rhs) {return m_value.Equals(rhs.m_value);}
+    bool operator==(TsComponentParameter const& rhs) const {return m_variesPer == rhs.m_variesPer && m_value.Equals(rhs.m_value);}
+    };
+    
+//========================================================================================
+//! A collection of named component definition parameters
+//! Defines the standard JSON format for a parameter set
+//========================================================================================
+struct TsComponentParameterSet : bmap<Utf8String,TsComponentParameter>
+    {
+    TsComponentParameterSet() {}
+    DGNPLATFORM_EXPORT TsComponentParameterSet(ComponentDefR, ECN::IECInstanceCR);
+    DGNPLATFORM_EXPORT TsComponentParameterSet(Json::Value const& v);
+
+    DGNPLATFORM_EXPORT Json::Value ToJson() const;
+    DGNPLATFORM_EXPORT void ToECProperties(ECN::IECInstanceR) const;
+    };
+
 //=======================================================================================
 //! A helper class that makes it easier to create a ComponentDefinition ECClass
 //=======================================================================================
 struct ComponentDefCreator
 {
-public:
-    struct PropertySpec
-        {
-        Utf8String m_name;
-        ECN::PrimitiveType m_type;
-        ComponentDef::ParameterVariesPer m_variesPer;
-        PropertySpec(Utf8StringCR n, ECN::PrimitiveType pt, ComponentDef::ParameterVariesPer vp) : m_name(n), m_type(pt), m_variesPer(vp) {;} 
-        };
-
 private:
     DgnDbR m_db;
     ECN::ECSchemaR m_schema;
@@ -1192,7 +1232,7 @@ private:
     Utf8String m_codeAuthorityName;
     Utf8String m_modelName;
     Utf8String m_inputs;
-    bvector<PropertySpec> m_propSpecs;
+    TsComponentParameterSet m_params;
     
     ECN::IECInstancePtr CreatePropSpecCA();
     ECN::IECInstancePtr CreateSpecCA();
@@ -1203,15 +1243,15 @@ public:
 
     DGNPLATFORM_EXPORT static ECN::ECSchemaCP ImportSchema(DgnDbR db, ECN::ECSchemaCR schemaIn, bool updateExistingSchemas);
   
-    ComponentDefCreator(DgnDbR db, ECN::ECSchemaR schema, Utf8StringCR name, ECN::ECClassCR baseClass, Utf8StringCR geomgen, Utf8StringCR cat, Utf8StringCR codeauth)
-        :m_db(db), m_schema(schema), m_baseClass(baseClass), m_name(name), m_scriptName(geomgen), m_categoryName(cat), m_codeAuthorityName(codeauth)
+    ComponentDefCreator(DgnDbR db, ECN::ECSchemaR schema, Utf8StringCR name, ECN::ECClassCR baseClass, Utf8StringCR geomgen, Utf8StringCR cat, Utf8StringCR codeauth, TsComponentParameterSet const& params = TsComponentParameterSet())
+        :m_db(db), m_schema(schema), m_baseClass(baseClass), m_name(name), m_scriptName(geomgen), m_categoryName(cat), m_codeAuthorityName(codeauth), m_params(params)
         {
         }
 
     //! Set the model name. The default is no model name, indicating that the component should use a temporary "sandbox" model.
     void SetModelName(Utf8StringCR n) {m_modelName=n;}
 
-    void AddPropertySpec(PropertySpec const& s) {m_propSpecs.push_back(s); AddInput(s.m_name);}
+    TsComponentParameterSet& GetTsComponentParameterSetR() {return m_params;}
 
     DGNPLATFORM_EXPORT void AddInput(Utf8StringCR inp); //!< You can call this directly to mark existing (subclass) properties as inputs
 

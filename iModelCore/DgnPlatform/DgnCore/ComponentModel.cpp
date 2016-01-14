@@ -546,10 +546,6 @@ ComponentDefPtr ComponentDef::FromECSqlName(DgnDbStatus* statusOut, DgnDbR db, U
 +---------------+---------------+---------------+---------------+---------------+------*/
 ComponentDef::~ComponentDef()
     {
-    //  *** WIP_COMPONENT: Instead of deleting the model, destructor should check the sandbox model back in to the pool.
-
-    if (m_model.IsValid() && UsesTemporaryModel())
-        m_model->Delete();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -611,16 +607,6 @@ bool ComponentDef::UsesTemporaryModel() const
 ECN::IECInstancePtr ComponentDef::MakeVariationSpec()
     {
     return m_class.GetDefaultStandaloneEnabler()->CreateInstance();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      12/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String ComponentDef::GetGeneratedName() const
-    {
-    Utf8String name(m_class.GetFullName());
-    DgnDbTable::ReplaceInvalidCharacters(name, DgnModels::GetIllegalCharacters(), '_');
-    return name;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -700,11 +686,23 @@ ComponentModelR ComponentDef::GetModel()
             return *m_model;
         }
 
-    //  model name not specified, or model does not exist. Generate one.
+    //  model name not specified, or model does not exist. This component will use a sandbox model.
 
-    //  *** WIP_COMPONENT: Instead of creating a new one, check out a model from a pool of pre-allocated anonymous "sandbox" ComponentModels. Destructor would then check the sandbox model back in.
+    Utf8String sandboxModelName = GetClassECSqlName();
+    DgnDbTable::ReplaceInvalidCharacters(sandboxModelName, DgnModels::GetIllegalCharacters(), '_');
 
-    m_model = ComponentModel::Create(m_db, GetECClass().GetFullName());
+    m_model = m_db.Models().Get<ComponentModel>(m_db.Models().QueryModelId(DgnModel::CreateModelCode(sandboxModelName)));
+    if (m_model.IsValid())
+        {
+        //  Sandbox model already exists. Clean it out and re-use it.
+        CachedECSqlStatementPtr delStmt = m_db.GetPreparedECSqlStatement("DELETE FROM " DGN_SCHEMA(DGN_CLASSNAME_Element) " WHERE ModelId=?");
+        delStmt->BindId(1, m_model->GetModelId());
+        delStmt->Step();
+        return *m_model;
+        }
+
+    //  Create a sandbox model.
+    m_model = ComponentModel::Create(m_db, GetClassECSqlName().c_str());
     m_model->Insert();
 
     return *m_model;
@@ -715,6 +713,11 @@ ComponentModelR ComponentDef::GetModel()
 +---------------+---------------+---------------+---------------+---------------+------*/
 ComponentModelPtr ComponentModel::Create(DgnDbR db, Utf8StringCR componentDefClassFullName)
     {
+    if (componentDefClassFullName.find('.') == Utf8String::npos)
+        {
+        BeAssert(false && "requires full schema.class ECSql class name");
+        return nullptr;
+        }
     Utf8String modelName(componentDefClassFullName);
     DgnDbTable::ReplaceInvalidCharacters(modelName, DgnModels::GetIllegalCharacters(), '_');
     modelName = db.Models().GetUniqueModelName(modelName.c_str());
@@ -873,12 +876,9 @@ DgnElementCPtr ComponentDef::MakeInstanceOfVariation(DgnDbStatus* statusOut, Dgn
     DgnCloneContext ctx;
     ElementCopier copier(ctx);
     copier.SetCopyChildren(true);
-    DgnElementCPtr inst = copier.MakeCopy(&status, destModel, variation, icode); // >> OnElementCopied, which creates the instance->solution relationship
+    DgnElementCPtr inst = copier.MakeCopy(&status, destModel, variation, icode);
     if (!inst.IsValid())
         return nullptr;
-
-    // *** WIP_COMPONENT
-    //BeAssert(queryInstantiationOfTemplateTarget(db, inst->GetElementId()) == catalogItem.GetElementId());
 
     return inst;
     }
@@ -967,6 +967,7 @@ void ComponentDef::CopyInstanceParameters(ECN::IECInstanceR target, ECN::IECInst
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
+#ifdef COMMENT_OUT_UNUSED
 static ECN::ECSchemaPtr copyECSchema(ECN::ECSchemaCR schemaIn)
     {
     ECN::ECSchemaPtr cc;
@@ -978,6 +979,7 @@ static ECN::ECSchemaPtr copyECSchema(ECN::ECSchemaCR schemaIn)
         return nullptr;
     return cc;
     }
+#endif
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
@@ -997,10 +999,28 @@ static ECN::ECSchemaCP importECSchema(ECN::ECObjectsStatus& ecstatus, DgnDbR db,
 
     ECDbSchemaManager::ImportOptions options(false, updateExistingSchemas);
 
+    ECN::ECSchemaReadContextPtr contextPtr = ECN::ECSchemaReadContext::CreateContext();
+
+#ifdef NEEDS_WORK_ECDB // *** If schemaIn is a real schema (from another file), then I will get an assertion failure in ECDbMapStorage::InsertOrReplace
+                        // *** That happens, because the base class of new class points to the new class twice.
     ECN::ECSchemaPtr imported = copyECSchema(schemaIn);
 
-    ECN::ECSchemaReadContextPtr contextPtr = ECN::ECSchemaReadContext::CreateContext();
     ECSUCCESS(contextPtr->AddSchema(*imported));
+
+#else
+
+    Utf8String ecschemaXml;
+    schemaIn.WriteToXmlString(ecschemaXml);
+
+    contextPtr->AddSchemaLocater(db.GetSchemaLocater());
+
+    ECSchemaPtr imported;
+    SchemaReadStatus readSchemaStatus = ECSchema::ReadFromXmlString(imported, ecschemaXml.c_str(), *contextPtr);
+    if (SchemaReadStatus::Success != readSchemaStatus)
+        return nullptr;
+
+#endif
+
     if (BentleyStatus::SUCCESS != db.Schemas().ImportECSchemas(contextPtr->GetCache()))
         {
         ecstatus = ECObjectsStatus::Error;
@@ -1033,7 +1053,7 @@ static ECN::ECClassCP getSameClassIn(DgnDbR db, ECN::ECClassCR cls)
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-DgnDbStatus ComponentDef::Export(DgnImportContext& context, bool exportSchema, bool exportCategory)
+DgnDbStatus ComponentDef::Export(DgnImportContext& context, ExportOptions const& options)
     {
     if (&GetDgnDb() != &context.GetSourceDb()) 
         {
@@ -1041,7 +1061,7 @@ DgnDbStatus ComponentDef::Export(DgnImportContext& context, bool exportSchema, b
         return DgnDbStatus::WrongDgnDb;
         }
 
-    if (exportSchema)
+    if (options.m_exportSchema)
         {
         ECN::ECObjectsStatus ecstatus = ECN::ECObjectsStatus::Success;
         importECSchema(ecstatus, context.GetDestinationDb(), GetECClass().GetSchema(), true);
@@ -1049,7 +1069,24 @@ DgnDbStatus ComponentDef::Export(DgnImportContext& context, bool exportSchema, b
             return DgnDbStatus::BadSchema;
         }
 
-    if (exportCategory && !DgnCategory::QueryCategoryId(GetCategoryName(), context.GetDestinationDb()).IsValid()) // *** WIP_COMPONENT - update existing category definition??
+    if (options.m_embedScript && !GetElementGeneratorName().empty())
+        {
+        Utf8String jsProgramName (GetElementGeneratorName());
+        size_t idot = jsProgramName.find('.');
+        if (idot != Utf8String::npos)
+            jsProgramName = jsProgramName.substr(0, idot);
+
+        Utf8String sText;
+        DgnScriptType sType;
+        DateTime lmt;
+        if (DgnDbStatus::Success == T_HOST.GetScriptAdmin()._FetchScript(sText, sType, lmt, context.GetSourceDb(), jsProgramName.c_str(), DgnScriptType::JavaScript))
+            {
+            DgnScriptLibrary slib(context.GetDestinationDb());
+            slib.RegisterScript(jsProgramName.c_str(), sText.c_str(), sType, lmt, true);
+            }
+        }
+
+    if (options.m_exportCategory && !DgnCategory::QueryCategoryId(GetCategoryName(), context.GetDestinationDb()).IsValid()) // *** WIP_COMPONENT - update existing category definition??
         {
         auto sourceCat = DgnCategory::QueryCategory(GetCategoryName(), GetDgnDb());
         if (sourceCat.IsValid())
@@ -1059,8 +1096,12 @@ DgnDbStatus ComponentDef::Export(DgnImportContext& context, bool exportSchema, b
             }
         }
 
-    if (!UsesTemporaryModel() && !context.GetDestinationDb().Models().QueryModelId(DgnModel::CreateModelCode(GetModelName())).IsValid()) 
+    if (!UsesTemporaryModel()) 
         {
+        DgnModelPtr existingModel = context.GetDestinationDb().Models().GetModel(context.GetDestinationDb().Models().QueryModelId(DgnModel::CreateModelCode(GetModelName())));
+        if (existingModel.IsValid())
+            existingModel->Delete();
+
         DgnDbStatus status;
         if (!DgnModel::Import(&status, GetModel(), context).IsValid())
             return status;
@@ -1272,87 +1313,6 @@ DgnDbStatus ComponentModel::_OnDelete()
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      10/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ComponentModel::OnElementCopied(DgnElementCR outputElement, DgnElementCR sourceElement, DgnCloneContext&)
-    {
-#ifdef WIP_COMPONENT
-    DgnDbR db = sourceElement.GetDgnDb();
-    BeAssert(&db == &outputElement.GetDgnDb());
-
-    DgnModelId cmid;
-    ModelSolverDef::ParameterSet prms;
-    if (BE_SQLITE_OK == querySolutionOfComponentTargetAndParameters(cmid, prms, db, sourceElement.GetElementId()))
-        {
-        ComponentModelPtr cm = db.Models().Get<ComponentModel>(cmid);
-        if (!cm.IsValid())
-            return;
-        if (IsCapturedSolutionCode(sourceElement.GetCode()))
-            {
-            //  Copying a non-unique solution means that we are creating an instance
-            createInstanceOfTemplateRelationship(outputElement, sourceElement);
-            return;
-            }
-        // Copying a unique/singleton solution - preserve it as such
-        createSolutionOfComponentRelationship(outputElement, *cm, prms);
-        createInstanceOfTemplateRelationship(outputElement, outputElement);
-        return;
-        }
-
-    DgnElementCPtr solutionElement = sourceElement.GetDgnDb().Elements().GetElement(queryInstantiationOfTemplateTarget(db, sourceElement.GetElementId()));
-    if (solutionElement.IsValid())
-        {
-        //  When we copy an instance, we must connect to the solution from which the original was created. The copy is just another instance.
-        createInstanceOfTemplateRelationship(outputElement, *solutionElement);
-        }
-#endif
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      10/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ComponentModel::OnElementImported(DgnElementCR outputElement, DgnElementCR sourceElement, DgnImportContext& importer)
-    {
-#ifdef WIP_COMPONENT
-    DgnDbR sourceDb = importer.GetSourceDb();
-    DgnDbR destDb = importer.GetDestinationDb();
-
-    //  Solutions must remap to their component models
-    DgnModelId sourceComponentModelId;
-    ModelSolverDef::ParameterSet sourceParameters;
-    querySolutionOfComponentTargetAndParameters(sourceComponentModelId, sourceParameters, sourceDb, sourceElement.GetElementId());
-    ComponentModelPtr sourceComponentModel = sourceDb.Models().Get<ComponentModel>(sourceComponentModelId);
-    bool isSolution = false;
-    if (sourceComponentModel.IsValid())
-        {
-        //  Look up the component in the destination by its name
-        ComponentModelPtr destComponentModel = ComponentModel::FindModelByName(destDb, sourceComponentModel->GetModelName());
-        if (!destComponentModel.IsValid())
-            return; // if the component model hasn't been imported, then this solution element must become an orphan
-        createSolutionOfComponentRelationship(outputElement, *destComponentModel, sourceParameters);     // set up the copy as a solution of the target's copy of the component
-        isSolution = true;
-        }
-
-    //  Instances must remap to their solutions
-    DgnElementCPtr sourceSolutionElement = sourceDb.Elements().GetElement(queryInstantiationOfTemplateTarget(sourceDb, sourceElement.GetElementId()));
-    if (sourceSolutionElement.IsValid())
-        {
-        //  Look up the solution in the destination by its code
-        DgnElementCPtr destSolutionElement;
-        if (isSolution)
-            destSolutionElement = &outputElement;       // this is a unique/singleton instance: it is both an instance and a solution
-        else
-            destSolutionElement = destDb.Elements().GetElement(destDb.Elements().QueryElementIdByCode(sourceSolutionElement->GetCode()));
-
-        if (!destSolutionElement.IsValid())
-            return; // if solution has not been imported, then this instance must become an orphan
-
-        createInstanceOfTemplateRelationship(outputElement, *destSolutionElement);  // set up the copy as an instance of the same solution in the destination db
-        }
-#endif
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECN::IECInstancePtr ComponentDefCreator::CreatePropSpecCA()
@@ -1476,14 +1436,14 @@ ECN::ECClassCP ComponentDefCreator::GenerateECClass()
 
     AddSpecCA(*ecclass);
 
-    for (auto const& propSpec: m_propSpecs)
+    for (auto const& propSpec: m_params)
         {
         ECN::PrimitiveECPropertyP ecprop;
-        ECSUCCESS(ecclass->CreatePrimitiveProperty(ecprop, propSpec.m_name));
+        ECSUCCESS(ecclass->CreatePrimitiveProperty(ecprop, propSpec.first));
         
-        ecprop->SetType(propSpec.m_type);
+        ecprop->SetType(propSpec.second.m_value.GetPrimitiveType());
 
-        if (propSpec.m_variesPer != ComponentDef::ParameterVariesPer::Instance)
+        if (propSpec.second.m_variesPer != ComponentDef::ParameterVariesPer::Instance)
             {
             auto ca = CreatePropSpecCA();
             ca->SetValue("ParameterVariesPer", ECN::ECValue("Variation"));
@@ -1512,4 +1472,94 @@ ECN::ECSchemaPtr ComponentDefCreator::GenerateSchema(DgnDbR db, Utf8StringCR sch
     schema->SetNamespacePrefix(schemaName);
     
     return schema;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      07/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TsComponentParameterSet::TsComponentParameterSet(Json::Value const& json)
+    {
+    for (auto const& pname: json.getMemberNames())
+        (*this)[pname] = TsComponentParameter(json[pname]);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      07/15
++---------------+---------------+---------------+---------------+---------------+------*/
+Json::Value TsComponentParameterSet::ToJson() const
+    {
+    Json::Value parametersJson (Json::objectValue);
+    for (auto const& entry : *this)
+        parametersJson[entry.first] = entry.second.ToJson();
+    return parametersJson;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      07/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TsComponentParameterSet::TsComponentParameterSet(ComponentDef& cdef, ECN::IECInstanceCR inst)
+    {
+    for (auto const& paramName : cdef.GetInputs())
+        {
+        ECN::ECPropertyP prop = cdef.GetECClass().GetPropertyP(paramName.c_str());
+
+        ECValue v;
+        inst.GetValue(v, paramName.c_str());
+        TsComponentParameter tsparam (cdef.GetVariationScope(*prop), v);
+
+        (*this)[paramName] = tsparam;
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      07/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void TsComponentParameterSet::ToECProperties(ECN::IECInstanceR props) const
+    {
+    for (auto const& entry : *this)
+        {
+        props.SetValue(entry.first.c_str(), entry.second.GetValue());
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      07/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus TsComponentParameter::SetValue(ECN::ECValueCR valueIn)
+    {
+    if (!m_value.IsPrimitive())
+        return DgnDbStatus::BadArg;
+        
+    ECN::ECValue value = valueIn;
+    if (!value.ConvertToPrimitiveType(m_value.GetPrimitiveType()))
+        return DgnDbStatus::BadArg;
+
+    m_value = value;
+    return DgnDbStatus::Success;
+    }
+
+#define PARARMETER_VARIES_PER_INSTANCE 0
+#define PARARMETER_VARIES_PER_VARIATION 1
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      07/15
++---------------+---------------+---------------+---------------+---------------+------*/
+Json::Value TsComponentParameter::ToJson() const
+    {
+    // *** Keep this consistent with ComponentParametersPane.ts! ***
+    Json::Value v;
+    v["VariesPer"] = (ComponentDef::ParameterVariesPer::Variation == m_variesPer)? PARARMETER_VARIES_PER_VARIATION: PARARMETER_VARIES_PER_INSTANCE;
+    ECUtils::StoreECValueAsJson(v["Value"], m_value);
+    return v;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      07/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TsComponentParameter::TsComponentParameter(Json::Value const& json)
+    {
+    // *** Keep this consistent with ComponentParametersPane.ts! ***
+    auto s = json["VariesPer"].asInt();
+    m_variesPer = (PARARMETER_VARIES_PER_VARIATION == s)? ComponentDef::ParameterVariesPer::Variation: ComponentDef::ParameterVariesPer::Instance;
+    ECUtils::LoadECValueFromJson(m_value, json["Value"]);
     }

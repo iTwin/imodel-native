@@ -1438,45 +1438,6 @@ DgnDbStatus DgnModel::_ImportElementAspectsFrom(DgnModelCR sourceModel, DgnImpor
     // This base class implementation of _ImportElementAspectsFrom knows only the ElementAspect subclasses that are defined by the
     //  base Dgn schema. 
     
-#ifdef WIP_ELEMENT_ITEM // *** pending redesign
-    
-    // That is, only DgnItem.
-
-
-    // Step through all items in the source model
-    Statement stmt(sourceModel.GetDgnDb(), "SELECT ele.Id FROM " DGN_TABLE(DGN_CLASSNAME_ElementItem) " item JOIN " DGN_TABLE(DGN_CLASSNAME_Element) " ele ON (item.ElementId=ele.Id) WHERE ele.ModelId=?");
-    stmt.BindId(1, sourceModel.GetModelId());
-    while (BE_SQLITE_ROW == stmt.Step())
-        {
-        //  Get a source element and its Item
-        DgnElementCPtr sourceEl = sourceModel.GetDgnDb().Elements().GetElement(stmt.GetValueId<DgnElementId>(0));
-        DgnElement::Item const* sourceitem = DgnElement::Item::GetItem(*sourceEl);
-        if (nullptr == sourceitem)
-            {
-            BeDataAssert(false && "Element has item, but item can't be loaded");
-            continue;
-            }
-
-        //  Get the corresponding element in the destination model
-        DgnElementId ccelid = importer.FindElementId(sourceEl->GetElementId());
-        DgnElementPtr ccel = GetDgnDb().Elements().GetForEdit<DgnElement>(ccelid);
-        if (!ccel.IsValid())
-            continue;       // I guess the source element wasn't copied.
-
-        //  Make a copy of the source item 
-        RefCountedPtr<DgnElement::Item> ccitem = dynamic_cast<DgnElement::Item*>(sourceitem->_CloneForImport(*sourceEl, importer).get());
-        if (!ccitem.IsValid())
-            {
-            // *** TBD: Record failure somehow
-            BeDataAssert(false && "item import failure");
-            continue;
-            }
-
-        // Write the copy of the Item to the destination element
-        DgnElement::Item::SetItem(*ccel, *ccitem);
-        ccel->Update();
-        }
-#endif
     return DgnDbStatus::Success;
     }
 
