@@ -131,6 +131,7 @@
     </Part>
 
     <Part Name="DgnDbServerClient-Bindings-Android" OnlyPlatforms="Android*">
+        <SubPart PartName="DgnDbServerClient-Library" />
         <Bindings>
             <Libs ProductDirectoryName="WSClientLibs" Required="false">Delivery/$(libprefix)DgnDbServerClient.so</Libs>
             <Assemblies ProductDirectoryName="WSClientAssemblies">Delivery/$(libprefix)DgnDbServerClient.so</Assemblies>
