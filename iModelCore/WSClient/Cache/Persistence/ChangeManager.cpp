@@ -910,7 +910,7 @@ BentleyStatus ChangeManager::CommitFileRevision(FileRevisionCR revision)
         return ERROR;
         }
 
-    if (info.GetChangeStatus() != ChangeStatus::Modified || 
+    if (info.GetChangeStatus() != ChangeStatus::Modified ||
         revision.GetChangeStatus() != ChangeStatus::Modified)
         {
         BeAssert(false && "Change status is unsupported for commit");
@@ -984,13 +984,13 @@ bmap<ECInstanceKey, ECInstanceKey>& changedInstanceKeysOut
         return SUCCESS;
         }
 
-    ECInstanceKey oldInstanceKey = oldInfo.GetInstanceKey();
-    ECInstanceKey newInstanceKey = newInfo.GetInstanceKey();
+    CachedInstanceKey oldKey = oldInfo.GetCachedInstanceKey();
+    CachedInstanceKey newKey = newInfo.GetCachedInstanceKey();
 
-    changedInstanceKeysOut[oldInstanceKey] = newInstanceKey;
+    changedInstanceKeysOut[oldKey.GetInstanceKey()] = newKey.GetInstanceKey();
 
     bvector<IChangeManager::RelationshipChange> changes;
-    if (SUCCESS != GetCreatedRelationships(oldInstanceKey, changes))
+    if (SUCCESS != GetCreatedRelationships(oldKey.GetInstanceKey(), changes))
         {
         return ERROR;
         }
@@ -1000,7 +1000,7 @@ bmap<ECInstanceKey, ECInstanceKey>& changedInstanceKeysOut
         return ERROR;
         }
 
-    if (SUCCESS != m_hierarchyManager.DeleteInstance(oldInstanceKey))
+    if (SUCCESS != m_hierarchyManager.DeleteInstance(oldKey))
         {
         return ERROR;
         }
@@ -1009,13 +1009,13 @@ bmap<ECInstanceKey, ECInstanceKey>& changedInstanceKeysOut
         {
         ECInstanceKey relKey;
         auto relClass = m_dbAdapter.GetECRelationshipClass(change.GetInstanceKey());
-        if (change.GetSourceKey() == oldInstanceKey)
+        if (change.GetSourceKey() == oldKey.GetInstanceKey())
             {
-            relKey = CreateRelationship(*relClass, newInstanceKey, change.GetTargetKey(), change.GetSyncStatus(), change.GetChangeNumber());
+            relKey = CreateRelationship(*relClass, newKey.GetInstanceKey(), change.GetTargetKey(), change.GetSyncStatus(), change.GetChangeNumber());
             }
         else
             {
-            relKey = CreateRelationship(*relClass, change.GetSourceKey(), newInstanceKey, change.GetSyncStatus(), change.GetChangeNumber());
+            relKey = CreateRelationship(*relClass, change.GetSourceKey(), newKey.GetInstanceKey(), change.GetSyncStatus(), change.GetChangeNumber());
             }
         if (!relKey.IsValid())
             {
