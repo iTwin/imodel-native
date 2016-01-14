@@ -92,15 +92,6 @@ void QueryModel::SaveQueryResults()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void QueryModel::SetUpdatedResults(Results* results)
-    {
-    DEBUG_PRINTF("Query completed");
-    m_updatedResults = results;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   12/15
-+---------------+---------------+---------------+---------------+---------------+------*/
 uint32_t QueryModel::GetElementCount() const {return m_currQueryResults.IsValid() ? m_currQueryResults->GetCount() : 0;}
 double QueryModel::GetLastQueryElapsedSeconds() const {return m_currQueryResults.IsValid() ? m_currQueryResults->GetElapsedSeconds() : 0.0;}
 
@@ -151,13 +142,13 @@ bool QueryModel::Filter::CheckAbort()
     {
     if (m_model.AbortRequested())
         {
-        DEBUG_PRINTF("Query Filter aborted");
+        DEBUG_PRINTF("Query aborted");
         return true;
         }
 
     if (DgnDb::SQLRequest::Client::IsActive())
         {
-        DEBUG_PRINTF("Query Filter interrupted");
+        DEBUG_PRINTF("Query interrupted");
         m_restartRangeQuery = true;
         return true;
         }
@@ -227,23 +218,6 @@ QueryModel::Queue::Queue(DgnDbR db) : m_db(db), m_state(State::Active)
     {
     BeThreadUtilities::StartNewThread(50*1024, Main, this);
     }
-
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   John.Gooding    09/2012
-//--------------+------------------------------------------------------------------------
-static uint32_t getQueryDelay()
-    {
-    static uint32_t s_dynamicLoadFrequency4Cpus = 100;
-    static uint32_t s_dynamicLoadFrequency2Cpus = 750;
-    static uint32_t s_numberOfCpus = 0;
-
-    if (0 == s_numberOfCpus)
-        s_numberOfCpus = BeSystemInfo::GetNumberOfCpus();
-
-    return s_numberOfCpus < 4 ? s_dynamicLoadFrequency2Cpus : s_dynamicLoadFrequency4Cpus;
-    }
-#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   01/16
@@ -338,10 +312,7 @@ bool QueryModel::Processor::Query(StopWatch& watch)
     watch.Start();
     GetModel().SetAbortQuery(false);
 
-    //  Notify GraphicsAndQuerySequencer that this thread is running 
-    //  a range tree operation and is therefore exempt from checks for high priority required.
-    DgnDb::SQLRequest::Query rangeTreeOperationBlock;
-
+    DEBUG_PRINTF("Query started");
     Filter filter(m_params.m_vp, GetModel(), m_params.m_plan.m_targetNumElements, m_params.m_plan.m_minPixelSize, m_params.m_highPriorityOnly ? nullptr : m_params.m_highPriority, m_params.m_neverDraw);
     if (m_params.m_clipVector.IsValid())
         filter.SetClipVector(*m_params.m_clipVector);
@@ -364,11 +335,14 @@ bool QueryModel::Processor::Query(StopWatch& watch)
     if (m_dbStatus != BE_SQLITE_ROW)
         return false;
 
+    DEBUG_PRINTF("loading elements");
     LoadElements(filter.m_secondaryFilter.m_occlusionScores, m_results->m_closeElements);
     LoadElements(filter.m_occlusionScores, m_results->m_elements);
 
     m_results->m_elapsedSeconds = watch.GetCurrentSeconds();
-    m_params.m_model.SetUpdatedResults(m_results.get());
+
+    m_params.m_model.m_updatedResults = m_results;
+    DEBUG_PRINTF("Query completed, %f seconds", m_results->m_elapsedSeconds);
                 
     // This is not strictly thread-safe. The worst that can happen is that the work thread reads false from it, or sets it to false, while the query thread sets it to true.
     // In that case we skip an update.
@@ -427,7 +401,7 @@ void QueryModel::Processor::SearchRangeTree(Filter& filter)
         if (DgnDb::SQLRequest::Client::IsActive())
             {
             for (unsigned i = 0; i < 10 && !filter.CheckAbort(); ++i)
-                BeThreadUtilities::BeSleep(2); // Let it run for awhile. If there was one call to SQLite, there will probably be more.
+                BeThreadUtilities::BeSleep(200); // Let it run for awhile. If there was one call to SQLite, there will probably be more.
 
             continue;
             }
@@ -441,6 +415,7 @@ void QueryModel::Processor::SearchRangeTree(Filter& filter)
         BindModelAndCategory(*rangeStmt);
         filter.m_restartRangeQuery = false;
 
+        // Notify QuerySequencer that this thread is running 
         m_dbStatus = filter.StepRTree(*rangeStmt);
         } while (filter.m_restartRangeQuery);
     }

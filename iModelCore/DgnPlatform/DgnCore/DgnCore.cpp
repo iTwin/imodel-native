@@ -479,8 +479,7 @@ void DgnPlatformLib::ForwardAssertionFailures(BeAssertFunctions::T_BeAssertHandl
     {
     BeAssertFunctions::SetBeAssertHandler(h);
     }
-// @bsimethod                                                   Jeff.Marker     11/2012
-//---------------------------------------------------------------------------------------
+
 void DgnProgressMeter::AddTasks(uint32_t numTasksToAdd) {_AddTasks(numTasksToAdd);}
 void DgnProgressMeter::AddSteps(uint32_t numSteps) {_AddSteps(numSteps);}
 void DgnProgressMeter::SetCurrentStepName(Utf8CP newName) {_SetCurrentStepName(newName);}

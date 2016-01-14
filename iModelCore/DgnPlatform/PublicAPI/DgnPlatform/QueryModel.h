@@ -174,10 +174,11 @@ struct QueryModel : SpatialModel
     };
 
     struct Processor;
+
     //! Holds the results of a QueryModel's query.
     struct Results : RefCountedBase
     {
-        friend struct Processor;
+       friend struct Processor;
 
     private:
         Results() : m_reachedMaxElements(false), m_drawnBeforePurge(0), m_elapsedSeconds(0.0) { }
@@ -280,14 +281,13 @@ private:
     ResultsPtr  m_updatedResults;
     ResultsPtr  m_currQueryResults;
 
-    void ResetResults(){ ReleaseAllElements(); ClearRangeIndex(); m_filled=true;}
-    DGNPLATFORM_EXPORT explicit QueryModel (DgnDbR);
+    void ResetResults() {ReleaseAllElements(); ClearRangeIndex(); m_filled=true;}
+    DGNPLATFORM_EXPORT explicit QueryModel(DgnDbR);
     virtual void _FillModel() override {} // QueryModels are never filled.
 
 public:
     bool AbortRequested() const { return m_abortQuery; } //!< @private
     void SetAbortQuery(bool val) {m_abortQuery=val;} //!< @private
-    void SetUpdatedResults(Results* results); //!< @private
     Results* GetCurrentResults() {return m_currQueryResults.get();} //!< @private
     void SaveQueryResults(); //!< @private
     void ResizeElementList(uint32_t newCount); //!< @private

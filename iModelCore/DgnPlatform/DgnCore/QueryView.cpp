@@ -287,11 +287,6 @@ ViewController::FitComplete QueryViewController::_ComputeFitRange(DRange3dR rang
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String QueryViewController::_GetRTreeMatchSql(DgnViewportR) 
     {
-    //  The query produces a thread race condition if it calls QueryModelById and 
-    //  the model is not already loaded.
-    for (auto& id : GetViewedModels())
-        m_dgndb.Models().GetModel(id);
-
     return Utf8String("SELECT rTreeAccept(r.ElementId) FROM "
            DGN_VTABLE_RTree3d " AS r, " DGN_TABLE(DGN_CLASSNAME_Element) " AS e, " DGN_TABLE(DGN_CLASSNAME_SpatialElement) " AS g "
            "WHERE r.ElementId MATCH rTreeMatch(1) AND e.Id=r.ElementId AND g.Id=r.ElementId"

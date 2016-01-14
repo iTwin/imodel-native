@@ -228,9 +228,6 @@ public:
     static void VerifyQueryThread()  {VerifyThread(ThreadId::Query);}      //!< assert that this is the Query thread
     DGNPLATFORM_EXPORT virtual void _VerifyQuerySequence() const override;
 
-    //=======================================================================================
-    // @bsiclass                                                    John.Gooding    01/2013
-    //=======================================================================================
     struct SQLRequest
     {
         struct Client
