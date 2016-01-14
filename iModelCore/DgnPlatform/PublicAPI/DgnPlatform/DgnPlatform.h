@@ -770,10 +770,10 @@ struct UpdatePlan
         double      m_maxTime = 10.;    // maximum time query should run (seconds)
         double      m_minPixelSize = .1;
         bool        m_wait = false;
-        uint32_t    m_minElements = 500;
+        uint32_t    m_minElements = 300;
         uint32_t    m_maxElements = 50000;
         mutable uint32_t m_delayAfter = 0;
-        mutable uint32_t   m_targetNumElements;
+        mutable uint32_t m_targetNumElements;
 
         uint32_t GetMinElements() const {return m_minElements;}
         uint32_t GetMaxElements() const {return m_maxElements;}
