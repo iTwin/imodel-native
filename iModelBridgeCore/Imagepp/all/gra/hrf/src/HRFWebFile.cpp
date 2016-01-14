@@ -48,6 +48,8 @@
 #include <ImagePP/all/h/HRFURLInternetImagingHTTP.h>
 #include <ImagePP/all/h/HRFVirtualEarthFile.h>
 #include <ImagePP/all/h/HFCExclusiveKey.h>
+#include <ImagePP/all/h/HRFException.h>
+
 
 //-----------------------------------------------------------------------------
 // Macros

@@ -1729,3 +1729,101 @@ HFCBinStream* HRFPngFile::GetFilePtr  ()
     {
     return (m_pPngFile);
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsiclass                                                     Mathieu.Marchand  07/2013
++---------------+---------------+---------------+---------------+---------------+------*/
+struct PngReadData
+{
+public:
+    PngReadData(Byte const* pPngData, size_t dataSize)
+        :m_pData(pPngData),
+         m_size(dataSize),
+         m_position(0)
+        {}
+
+    static void Read (png_structp png_ptr, png_bytep data, png_size_t length)
+        {
+        PngReadData* pngData = (PngReadData*)(png_ptr->io_ptr);
+
+        if(pngData->m_position + length > pngData->m_size)
+            png_error(png_ptr, "Read Error");   // >>>>  Will long jump and not return.
+
+        memcpy(data, pngData->m_pData+pngData->m_position, length);
+        pngData->m_position+=length;
+        }
+
+private:
+    Byte const* m_pData;
+    size_t      m_size;
+    size_t      m_position;
+};
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   Mathieu.Marchand  1/2016
+//----------------------------------------------------------------------------------------
+BentleyStatus HRFPngFile::ReadToBuffer(bvector<Byte>& outPixels, uint32_t& width, uint32_t& height, bool& isRGBA, Byte const* pData, size_t dataSize)
+    {
+    png_structp png_ptr;
+    png_infop info_ptr;
+    unsigned int sig_read = 0;
+
+    PngReadData reader(pData, dataSize);
+
+    // Create and initialize the png_struct with default error handler functions(setjmp/longjmp).
+    png_ptr = png_create_read_struct(PNG_LIBPNG_VER_STRING, 0, 0, 0);
+    if (png_ptr == NULL)
+        return ERROR;
+
+    // Allocate/initialize the memory for image information.
+    info_ptr = png_create_info_struct(png_ptr);
+    if (info_ptr == NULL)
+        {
+        png_destroy_read_struct(&png_ptr, png_infopp_NULL, png_infopp_NULL);
+        return ERROR;
+        }
+
+    // Set error handling. setjmp/longjmp method (this is the normal method of doing things with libpng)
+    if (setjmp(png_jmpbuf(png_ptr)))
+        {
+        png_destroy_read_struct(&png_ptr, &info_ptr, png_infopp_NULL);
+        return ERROR;   // If we get here, we had a problem reading the file
+        }
+
+    // Register our png data reader.
+    png_set_read_fn(png_ptr, &reader, PngReadData::Read);
+
+    // If we have already read some of the signature */
+    png_set_sig_bytes(png_ptr, sig_read);
+
+    // We assumed that we have enough memory to read the entire image at once.
+    // PNG_TRANSFORM_STRIP_16       >> strip 16 bit/color files down to 8 bits per color.   
+    // PNG_TRANSFORM_PACKING        >> forces 8 bit     
+    // PNG_TRANSFORM_EXPAND         >> forces to expand a palette into RGB   
+    // PNG_TRANSFORM_GRAY_TO_RGB    >> convert grayscale to rgb.
+    png_read_png(png_ptr, info_ptr, PNG_TRANSFORM_STRIP_16 | PNG_TRANSFORM_EXPAND | PNG_TRANSFORM_GRAY_TO_RGB | PNG_TRANSFORM_PACKING, png_voidp_NULL);
+
+    png_bytepp rows_pointers = png_get_rows(png_ptr, info_ptr);
+    size_t bytesPerRow = png_get_rowbytes(png_ptr, info_ptr);
+
+    // We expect RGB or RGBA output
+    if(24 != info_ptr->pixel_depth && 32 != info_ptr->pixel_depth)
+        {
+        png_destroy_read_struct(&png_ptr, &info_ptr, png_infopp_NULL);
+        return ERROR;
+        }
+        
+    // Fill in the outputs.
+    width = info_ptr->width;
+    height = info_ptr->height;
+    isRGBA = (32 == info_ptr->pixel_depth);     // either RGB or RGBA
+    outPixels.resize(height*bytesPerRow);
+
+    for(uint32_t line=0; line < height; ++line)
+        memcpy(outPixels.data() + line*bytesPerRow, rows_pointers[line], bytesPerRow);
+
+    // Clean up after the read, and free any memory allocated 
+    png_destroy_read_struct(&png_ptr, &info_ptr, png_infopp_NULL);
+
+    return SUCCESS;
+    }

@@ -11,9 +11,7 @@
 //-----------------------------------------------------------------------------
 #pragma once
 
-#include <Imagepp/all/h/HFCHTTPConnection.h>
 #include "HFCMacros.h"
-#include "HRFException.h"
 #include "HRFRasterFile.h"
 #include "HRFRasterFileCapabilities.h"
 
@@ -41,38 +39,6 @@ class HRFVirtualEarthCapabilities : public HRFRasterFileCapabilities
 public:
     HRFVirtualEarthCapabilities();
     };
-
-//-----------------------------------------------------------------------------
-// HRFVirtualEarthConnection class
-//-----------------------------------------------------------------------------
-class HRFVirtualEarthConnection : public HFCHTTPConnection
-    {
-public:
-    HRFVirtualEarthConnection(const WString& pi_rServer,
-                              const WString& pi_Usr = L"",
-                              const WString& pi_Pwd = L"");
-
-    HRFVirtualEarthConnection(const HRFVirtualEarthConnection& pi_rObj);
-    virtual ~HRFVirtualEarthConnection();
-
-    void  NewRequest();
-    bool RequestEnded() const;
-
-protected:
-    //--------------------------------------
-    // methods
-    //--------------------------------------
-
-    //Called when a request is finished
-    virtual void RequestHasEnded(bool pi_Success);
-
-private:
-    HFCInterlockedValue<bool> m_RequestEnded;
-
-    //Disable method
-    HRFVirtualEarthConnection& operator=(const HRFVirtualEarthConnection);
-    };
-
 
 //-----------------------------------------------------------------------------
 // HRFVirtualEarthFile class
@@ -156,27 +122,6 @@ protected:
                          uint64_t             pi_Offset,
                          bool                 pi_DontOpenFile);
     virtual void                        CreateDescriptors   ();
-
-    //Use by the File and the Editor
-
-    //Thumbnail interface
-    HFCPtr<HRFThumbnail>                ReadThumbnailFromFile (uint32_t pi_Page);
-    void                                AddThumbnailToFile    (uint32_t pi_Page);
-
-    void                                AddResolutionToFile   (uint32_t pi_Page,
-                                                               unsigned short pi_Resolution);
-
-    void                                WritePixelTypeAndCodecToFile(
-        uint32_t                    pi_Page,
-        const HFCPtr<HRPPixelType>& pi_rpPixelType,
-        const HFCPtr<HCDCodec>&     pi_rpCodec,
-        uint32_t                    pi_BlockWidth,
-        uint32_t                    pi_BlockHeight);
-
-    void                                WritePaletteToFile    (uint32_t                 pi_Page,
-                                                               const HRPPixelPalette&   pi_rPalette);
-
-    HFCPtr<HGF2DTransfoModel>           CreateTransfoModelFromTiffMatrix() const;
     
     //--------------------------------------
     // LookAhead Methods
@@ -201,7 +146,6 @@ private:
     HFCExclusiveKey   m_HRFKey;
 
     void                QueryImageURI(WStringCR bingMapKey);
-    HFCPtr<HFCBuffer>   SendAndReceiveRequest(WStringCR URLRequest) const;
     WString             GetTileURI(unsigned int pixelX, unsigned int pixelY, int levelOfDetail) const;
 
     WString             m_ImageURI;               // ex: "http://{subdomain}.tiles.virtualearth.net/tiles/r{quadkey}.jpeg?g=266&mkt={culture}"
