@@ -256,6 +256,13 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
          */
         static GetParameters(instance: DgnElementP): ECInstanceP;
 
+        /**
+         * Make an ECInstance whose properties are the input parameters to the ComponentDef's script or solver. 
+         * The caller should then assign values to the properties of the instance.
+         * The caller may then pass the parameters instance to a function such as MakeInstanceOfVariation or MakeUniqueInstance.
+         */
+        MakeParameters(): ECInstanceP;
+
         /** Place an instance of a component 
          * If \a variation has instance parameters, then the \a instanceParameters argument may be passed into specific the instance parameter values to use.
          * If the values in \a instanceParameters differs from the instance parameters of \a variation, then a unique instance is created.

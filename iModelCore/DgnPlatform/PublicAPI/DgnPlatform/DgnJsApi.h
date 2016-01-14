@@ -325,6 +325,11 @@ struct JsComponentDef : RefCountedBaseWithCreate
     // static GetParameters(instance: DgnElementP): ECInstanceP;
     static JsECInstanceP GetParameters(JsDgnElementP instance);
 
+    //! Make an ECInstance whose properties are the input parameters to the ComponentDef's script or solver. 
+    //! The caller should then assign values to the properties of the instance.
+    //! The caller may then pass the parameters instance to a function such as MakeInstanceOfVariation or MakeUniqueInstance.
+    JsECInstanceP MakeParameters();
+
     //            MakeInstanceOfVariation(targetModel: DgnModelP, variation: DgnElementP, instanceParameters: ECInstanceP, code: DgnCode): DgnElementP;
     JsDgnElementP MakeInstanceOfVariation(JsDgnModelP targetModel, JsDgnElementP variation, JsECInstanceP instanceParameters, JsAuthorityIssuedCodeP code);
 
