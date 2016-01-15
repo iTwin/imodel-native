@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/DynamicSelectClauseECClass.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -267,7 +267,9 @@ ECSqlStatus DynamicSelectClauseECClass::AddProperty(ECN::ECPropertyCP& generated
         case ECSqlTypeInfo::Kind::Null:
             {
             PrimitiveECPropertyP primProp = nullptr;
-            auto ecstat = GetClassR ().CreatePrimitiveProperty (primProp, propName, typeInfo.GetPrimitiveType ());
+            Utf8String encodedName;
+            ECNameValidation::EncodeToValidName(encodedName, propName);
+            auto ecstat = GetClassR().CreatePrimitiveProperty(primProp, encodedName.c_str(), typeInfo.GetPrimitiveType());            
             if (ecstat != ECObjectsStatus::Success)
                 return ECSqlStatus::Error;
 
