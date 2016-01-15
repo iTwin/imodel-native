@@ -2,7 +2,7 @@
  |
  |     $Source: Cache/Util/FileUtil.cpp $
  |
- |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 
@@ -160,6 +160,27 @@ BentleyStatus FileUtil::TruncateFilePath(BeFileNameR filePath, size_t maxPath)
     filePath = directory;
 
     return SUCCESS;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String FileUtil::SanitizeFileName(Utf8StringCR fileName)
+    {
+    Utf8String newFileName;
+    newFileName.reserve(fileName.size());
+
+    static Utf8String illegalChars = R"(<>:"/\\|?*)";
+    for (auto chr : fileName)
+        {
+        if (illegalChars.find(chr) == Utf8String::npos)
+            {
+            newFileName += chr;
+            }
+        }
+
+    newFileName.Trim();
+    return newFileName;
     }
 
 /*--------------------------------------------------------------------------------------+
