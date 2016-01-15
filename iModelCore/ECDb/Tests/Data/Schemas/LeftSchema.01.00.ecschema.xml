@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="UTF-8"?>
+﻿<?xml version="1.0" encoding="UTF-8"?>
 <ECSchema schemaName="LeftSchema" nameSpacePrefix="ls" version="01.00" description="Use for testing schema diff" displayLabel="Left Schema" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.0">
     <ECSchemaReference name="RightSchema" version="01.00" prefix="rs"/>
     <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="01.12" prefix="bsca"/>
@@ -61,7 +61,7 @@
         <ECProperty propertyName="Name" typeName="string" readOnly="false"/>
         <ECProperty propertyName="LeftAddedThisProperty" typeName="string" displayLabel="Left Added This Property" readOnly="false"/>
         <ECProperty propertyName="EmployeeId" typeName="long" readOnly="false"/>
-        <ECStructArrayProperty propertyName="Address" typeName="bs:Address" readOnly="false" minOccurs="100" maxOccurs="100"/>
+        <ECStructArrayProperty propertyName="Address" typeName="bs:Address" readOnly="false" minOccurs="1" maxOccurs="100"/>
     </ECEntityClass>
     <ECEntityClass typeName="LeftFoo" modifier="None">
         <BaseClass>bs:Foo</BaseClass>
