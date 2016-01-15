@@ -17,7 +17,7 @@ private:
     UnrestrictedCodesManager(DgnDbR db) : IDgnCodesManager(db) { }
 
     virtual Response _ReserveCodes(Request&) override { return Response(CodeStatus::Success); }
-    virtual Response _ReleaseCodes(Request const&) override { return Response(CodeStatus::Success); }
+    virtual CodeStatus _ReleaseCodes(DgnCodeSet const&) override { return Response(CodeStatus::Success); }
     virtual CodeStatus _RelinquishCodes() override { return CodeStatus::Success; }
     virtual CodeStatus _ReserveCode(DgnCodeCR) override { return CodeStatus::Success; }
     virtual CodeStatus _RefreshCodes() override { return CodeStatus::Success; }
@@ -61,7 +61,7 @@ private:
     LocalCodesManager(DgnDbR db) : IDgnCodesManager(db), m_dbState(DbState::New) { }
 
     virtual Response _ReserveCodes(Request&) override;
-    virtual Response _ReleaseCodes(Request const&) override;
+    virtual CodeStatus _ReleaseCodes(DgnCodeSet const&) override;
     virtual CodeStatus _RelinquishCodes() override;
     virtual CodeStatus _QueryCodeStates(DgnCodeInfoSet& states, DgnCodeSet const& codes) override;
     virtual CodeStatus _RefreshCodes() override;
@@ -330,36 +330,36 @@ CodeStatus LocalCodesManager::_RelinquishCodes()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-IDgnCodesManager::Response LocalCodesManager::_ReleaseCodes(Request const& req)
+CodeStatus LocalCodesManager::_ReleaseCodes(DgnCodeSet const& req)
     {
     if (!Validate())
-        return Response(CodeStatus::SyncError);
+        return CodeStatus::SyncError;
 
     IDgnCodesServerP server;
     if (!Validate())
-        return Response(CodeStatus::SyncError);
+        return CodeStatus::SyncError;
     else if (nullptr == (server = GetCodesServer()))
-        return Response(CodeStatus::ServerUnavailable);
+        return CodeStatus::ServerUnavailable;
 
     CodeReleaseContext context(GetDgnDb());
     if (CodeStatus::Success != context.GetStatus())
-        return Response(context.GetStatus());
+        return context.GetStatus();
 
     for (auto const& usedCode : context.GetUsedCodes())
         {
         auto iter = req.find(usedCode);
         if (iter != req.end())
-            return Response(CodeStatus::CodeUsed);
+            return CodeStatus::CodeUsed;
         }
 
-    auto response = server->ReleaseCodes(req, GetDgnDb());
-    if (CodeStatus::Success == response.GetResult())
+    auto status = server->ReleaseCodes(req, GetDgnDb());
+    if (CodeStatus::Success == status)
         {
         Remove(req);
         context.ClearTxns();
         }
 
-    return response;
+    return status;
     }
 
 /*---------------------------------------------------------------------------------**//**
