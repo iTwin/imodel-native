@@ -73,6 +73,7 @@ struct WSError : public AsyncError
         Status              m_status;
         Id                  m_id;
         Utf8String          m_customId;
+        Json::Value         m_customProperties;
 
     private:
         static bool IsValidErrorJson(JsonValueCR jsonError);
@@ -84,7 +85,14 @@ struct WSError : public AsyncError
         BentleyStatus ParseXmlError(HttpResponseCR httpResponse);
 
         void SetStatusServerNotSupported();
-        void SetStatusReceivedError(HttpErrorCR httpError, Id errorId, Utf8StringCR errorMessage, Utf8StringCR errorDescription);
+        void SetStatusReceivedError
+            (
+            HttpErrorCR httpError,
+            Id errorId,
+            Utf8StringCR errorMessage,
+            Utf8StringCR errorDescription,
+            JsonValueCR customProperties = nullptr
+            );
 
     public:
         WSCLIENT_EXPORT WSError();
@@ -98,6 +106,7 @@ struct WSError : public AsyncError
         WSCLIENT_EXPORT Status       GetStatus() const;
         WSCLIENT_EXPORT Id           GetId() const;
         WSCLIENT_EXPORT Utf8StringCR GetCustomId() const;
+        WSCLIENT_EXPORT JsonValueCR  GetCustomProperties() const;
         WSCLIENT_EXPORT Utf8StringCR GetDisplayMessage() const;
         WSCLIENT_EXPORT Utf8StringCR GetDisplayDescription() const;
     };
