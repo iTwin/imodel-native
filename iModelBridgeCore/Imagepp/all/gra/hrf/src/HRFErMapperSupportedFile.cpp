@@ -1306,7 +1306,7 @@ void HRFErMapperSupportedFile::CreateDescriptors ()
                                    0);                          // Duration
 
     // Set geocoding
-    if (pGeocoding->IsValid())
+    if (!pGeocoding.IsNull() && pGeocoding->IsValid())
         pPage->SetGeocoding(pGeocoding.get());
 
     m_ListOfPageDescriptor.push_back(pPage);
