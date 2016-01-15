@@ -161,11 +161,9 @@ protected:
     virtual Render::Plan::AntiAliasPref _WantAntiAliasText() const {return Render::Plan::AntiAliasPref::Detect;}
     virtual void _AdjustFencePts(RotMatrixCR viewRot, DPoint3dCR oldOrg, DPoint3dCR newOrg) const {}
     virtual void _SynchViewTitle() {}
-    virtual void _DrawStandardGrid(DPoint3dR gridOrigin, RotMatrixR rMatrix, DPoint2d spacing, uint32_t gridsPerRef, bool isoGrid, Point2dCP fixedRepetitions) {}
     virtual void _Destroy() {DestroyViewport();}
     DGNPLATFORM_EXPORT virtual void _AdjustAspectRatio(ViewControllerR, bool expandView);
     DGNPLATFORM_EXPORT virtual int _GetIndexedLineWidth(int index) const;
-    virtual GridOrientationType _GetGridOrientationType() const {return GridOrientationType::View;}
     DGNPLATFORM_EXPORT static void StartRenderThread();
     DMap4d CalcNpcToView();
     void QueueDrawFrame(Render::Plan::PaintScene);
@@ -186,12 +184,6 @@ public:
     bool IsVisible() {return _IsVisible();}
     Render::Plan::AntiAliasPref WantAntiAliasLines() const {return _WantAntiAliasLines();}
     Render::Plan::AntiAliasPref WantAntiAliasText() const {return _WantAntiAliasText();}
-    bool GetGridRange(DRange3d* range);
-    DGNPLATFORM_EXPORT double GetGridScaleFactor();
-    DGNPLATFORM_EXPORT void PointToStandardGrid(DPoint3dR point, DPoint3dR gridOrigin, RotMatrixR rMatrix);
-    DGNPLATFORM_EXPORT void GetGridRoundingDistance(DPoint2dR roundingDistance);
-    DGNPLATFORM_EXPORT void GridFix(DPoint3dR point, RotMatrixCR rMatrixRoot, DPoint3dCR originRoot, DPoint2dCR roundingDistanceRoot, bool isoGrid);
-    DGNPLATFORM_EXPORT void DrawStandardGrid(DPoint3dR gridOrigin, RotMatrixR rMatrix, DPoint2d spacing, uint32_t gridsPerRef, bool isoGrid, Point2dCP fixedRepetitions = nullptr);
     void AlignWithRootZ();
     ProgressiveDisplay::Completion DoProgressiveDisplay();
     void ClearProgressiveDisplay() {m_progressiveDisplay.clear();}
@@ -217,10 +209,7 @@ public:
     void DrawToolGraphics(ViewContextR context, bool isPreUpdate);
     void SetViewCmdTargetCenter(DPoint3dCP newCenter);
     DPoint3dCP GetViewCmdTargetCenter() {return m_targetCenterValid ? &m_viewCmdTargetCenter : nullptr;}
-    DGNVIEW_EXPORT void PointToGrid(DPoint3dR pointActive);
-    void DrawGrid();
     Point2d GetScreenOrigin() const {return m_renderTarget->GetScreenOrigin();}
-    DGNVIEW_EXPORT void GetGridOrientation(DPoint3dP origin, RotMatrixP);
     DGNVIEW_EXPORT double PixelsFromInches(double inches) const;
     DGNVIEW_EXPORT void ForceHeal();
     StatusInt HealViewport(UpdatePlan const&);

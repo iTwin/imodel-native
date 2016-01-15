@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/DgnCoreDLLInlines.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -52,13 +52,9 @@ DG_INLINE StatusInt IViewClipObject::GetTransform(TransformR trans) const {retur
 DG_INLINE size_t IViewClipObject::GetPrimaryCutPlaneCount() const {return _GetPrimaryCutPlaneCount();}
 DG_INLINE StatusInt IViewClipObject::ApplyTransform(TransformCR t) {return _ApplyTransform(t);}
 DG_INLINE void IViewClipObject::Draw(ViewContextR c) {return _Draw(c);}
-
-DG_INLINE void DgnViewport::DrawStandardGrid(DPoint3dR origin, RotMatrixR rMatrix, DPoint2d spacing, uint32_t gridsPerRef, bool isoGrid, Point2dCP fixedRepetitions) {_DrawStandardGrid(origin, rMatrix, spacing, gridsPerRef, isoGrid, fixedRepetitions);}
-
 DG_INLINE ClipVectorPtr CameraViewController::_GetClipVector() const {return m_clipVector;}
 
 DG_INLINE IACSManagerR IACSManager::GetManager() {return T_HOST.GetAcsManager();}
-
 DG_INLINE void IAuxCoordSys::DisplayInView(DgnViewportP vp, ACSDisplayOptions options, bool drawName) const {return _DisplayInView(vp, options, drawName);}
 DG_INLINE WString IAuxCoordSys::GetName() const {return _GetName();}
 DG_INLINE WString IAuxCoordSys::GetDescription() const {return _GetDescription();}
@@ -83,8 +79,8 @@ DG_INLINE StatusInt IAuxCoordSys::PointFromString(DPoint3dR outPoint, WStringR e
 DG_INLINE StatusInt IAuxCoordSys::StringFromPoint(WStringR outString, WStringR errorMsg, DPoint3dCR inPoint, bool delta, DPoint3dCP deltaOrigin, DgnModelR modelRef, DistanceFormatterR distanceFormatter, DirectionFormatterR directionFormatter)
                                                         { return _StringFromPoint(outString, errorMsg, inPoint, delta, deltaOrigin, modelRef, distanceFormatter, directionFormatter); }
 DG_INLINE StatusInt IAuxCoordSys::SetFlags(ACSFlags flags) {return _SetFlags(flags);}
-DG_INLINE void IAuxCoordSys::DrawGrid(DgnViewportP viewport) const {return _DrawGrid(viewport);}
-DG_INLINE void IAuxCoordSys::PointToGrid(DgnViewportP viewport, DPoint3dR point) const {_PointToGrid(viewport, point);}
+DG_INLINE void IAuxCoordSys::DrawGrid(DecorateContextR context) const {return _DrawGrid(context);}
+DG_INLINE void IAuxCoordSys::PointToGrid(DgnViewportR viewport, DPoint3dR point) const {_PointToGrid(viewport, point);}
 DG_INLINE StatusInt IAuxCoordSys::CompleteSetupFromViewController(SpatialViewControllerCP info) {return _CompleteSetupFromViewController(info);}
 DG_INLINE bool IAuxCoordSys::Equals(IAuxCoordSysCP other) const {return _Equals(other);}
 DG_INLINE IAuxCoordSysPtr IAuxCoordSys::Clone() const {return _Clone();}

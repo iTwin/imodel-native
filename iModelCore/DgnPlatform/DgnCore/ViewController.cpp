@@ -814,6 +814,7 @@ SpatialViewController::SpatialViewController(DgnDbR dgndb, DgnViewId viewId) : V
     m_origin.Zero();
     m_delta.Zero();
     m_rotation.InitIdentity();
+    m_auxCoordSys = IACSManager::GetManager().CreateACS(); // Should always have an ACS...
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1838,6 +1839,290 @@ void ViewController::_DrawLocateCursor(DecorateContextR context, DPoint3dCR pt, 
 
     if (isLocateCircleOn)
         drawLocateCircle(context, aperture, pt);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    kab             06/86
++---------------+---------------+---------------+---------------+---------------+------*/
+static void roundGrid(double& num, double units)
+    {
+    double sign = ((num * units) < 0.0) ? -1.0 : 1.0;
+
+    num = (num * sign) / units + 0.5;
+    num = units * sign * floor(num);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  01/16
++---------------+---------------+---------------+---------------+---------------+------*/
+static void getGridOrientation(DgnViewportR vp, DPoint3dR origin, RotMatrixR rMatrix, GridOrientationType orientation)
+    {
+    SpatialModelCP model = vp.GetViewController().GetTargetModel()->ToSpatialModel();
+
+    // start with global origin (in world coords) and identity matrix
+    rMatrix.InitIdentity();
+    origin = (nullptr != model ? model->GetDgnDb().Units().GetGlobalOrigin() : DPoint3d::FromZero());
+
+    DVec3d xVec, yVec, zVec;
+
+    switch (orientation)
+        {
+        case GridOrientationType::View:
+            {
+            DPoint3d    viewOrigin;
+            DPoint3d    centerWorld = vp.NpcToWorld(DPoint3d::From(0.5,0.5,0.5));
+
+            rMatrix = vp.GetRotMatrix();
+            rMatrix.Multiply(viewOrigin, *(vp.GetViewOrigin()));
+            rMatrix.Multiply(origin);
+            origin.z = viewOrigin.z + centerWorld.z;
+            rMatrix.MultiplyTranspose(origin, origin);
+            break;
+            }
+
+        case GridOrientationType::WorldXY:
+            {
+            break;
+            }
+
+        case GridOrientationType::WorldYZ:
+            {
+            rMatrix.GetRows(xVec, yVec, zVec);
+            rMatrix.InitFromRowVectors(yVec, zVec, xVec);
+            break;
+            }
+
+        case GridOrientationType::WorldXZ:
+            {
+            rMatrix.GetRows(xVec, yVec, zVec);
+            rMatrix.InitFromRowVectors(xVec, zVec, yVec);
+            break;
+            }
+        }
+
+#ifdef DGNV10FORMAT_CHANGES_WIP
+    double      angle = 0.0;
+    dgnModel_getGridParams(model, NULL, NULL, NULL, NULL, &angle);
+
+    if (0.0 != angle)
+        rMatrix->InitFromPrincipleAxisRotations(*rMatrix, 0.0, 0.0, -angle);
+#endif
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Barry.Bentley                   11/07
++---------------+---------------+---------------+---------------+---------------+------*/
+static void gridFix(DgnViewportR vp, DPoint3dR point, RotMatrixCR rMatrix, DPoint3dCR origin, DPoint2dCR roundingDistance, bool isoGrid)
+    {
+    DVec3d planeNormal, eyeVec;
+
+    rMatrix.GetRow(planeNormal, 2);
+
+    if (vp.IsCameraOn())
+        eyeVec.NormalizedDifference(point, vp.GetCamera().GetEyePoint());
+    else
+        vp.GetRotMatrix().GetRow(eyeVec, 2);
+
+    LegacyMath::Vec::LinePlaneIntersect(&point, &point, &eyeVec, &origin, &planeNormal, false);
+
+    // get origin and point in view coordinate system
+    DPoint3d pointView, originView;
+
+    rMatrix.Multiply(pointView, point);
+    rMatrix.Multiply(originView, origin);
+
+    // see whether we need to adjust the origin for iso-grid
+    if (isoGrid)
+        {
+        long ltmp = (long) (pointView.y / roundingDistance.y);
+
+        if (ltmp & 0x0001)
+            originView.x += (roundingDistance.x / 2.0);
+        }
+
+    // subtract off the origin
+    pointView.y -= originView.y;
+    pointView.x -= originView.x;
+
+    // round off the remainder to the grid distances
+    roundGrid(pointView.y, roundingDistance.y);
+    roundGrid(pointView.x, roundingDistance.x);
+
+    // add the origin back in
+    pointView.x += originView.x;
+    pointView.y += originView.y;
+
+    // go back to root coordinate system
+    rMatrix.MultiplyTranspose(point, pointView);
+    }
+    
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Keith.Bentley   07/04
++---------------+---------------+---------------+---------------+---------------+------*/
+double ViewController::_GetGridScaleFactor(DgnViewportR vp) const
+    {
+    double  scaleFactor = 1.0;
+
+    // Apply ACS scale to grid if ACS Context Lock active...
+#ifdef DGNV10FORMAT_CHANGES_WIP
+    if (TO_BOOL(m_rootModel->GetModelFlag(MODELFLAG_ACS_LOCK)))
+#else
+    if (false)
+#endif
+        {
+        IAuxCoordSysP acs = IACSManager::GetManager().GetActive(vp);
+
+        if (nullptr != acs)
+            scaleFactor *= acs->GetScale();
+        }
+
+    return scaleFactor;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  01/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void ViewController::_GetGridSpacing (DgnViewportR vp, DPoint2dR spacing, uint32_t& gridsPerRef) const
+    {
+#if defined DGNV10FORMAT_CHANGES_WIP
+    DgnModelRefP targetModelRef = GetTargetModel ();
+
+    if (NULL == targetModelRef)
+        return ERROR;
+
+    double      uorPerGrid, gridRatio;
+    double      scaleFactor = GetGridScaleFactor ();
+
+    if (SUCCESS != dgnModel_getGridParams (targetModelRef->GetDgnModelP (), &uorPerGrid, &gridsPerRef, &gridRatio, NULL, NULL) || 0.0 >= uorPerGrid)
+        return ERROR;
+
+    uorPerGrid *= scaleFactor;
+
+    spacing.x = uorPerGrid;
+    spacing.y = spacing.x * gridRatio;
+
+    double      refScale = (0 == gridsPerRef) ? 1.0 : (double) gridsPerRef;
+
+    spacing.scale (&spacing, refScale);
+#else
+    gridsPerRef = 10;
+    spacing.x = spacing.y = 10.0;
+#endif
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Barry.Bentley                   11/07
++---------------+---------------+---------------+---------------+---------------+------*/
+void ViewController::_GetGridRoundingDistance(DgnViewportR vp, DPoint2dR roundingDistance) const
+    {
+#ifdef DGNV10FORMAT_CHANGES_WIP
+    ModelInfoCR modelInfo = m_rootModel->GetModelInfo();
+
+    double uorPerGrid     = modelInfo.GetUorPerGrid();
+    double gridRatio      = modelInfo.GetGridRatio();
+    double roundUnit      = modelInfo.GetRoundoffUnit();
+    double roundUnitRatio = modelInfo.GetRoundoffRatio();
+
+    if (TO_BOOL(m_rootModel->GetModelFlag(MODELFLAG_GRID_LOCK)))
+        roundingDistance.x = uorPerGrid;
+    else
+        roundingDistance.x = roundUnit;
+
+    if (TO_BOOL(m_rootModel->GetModelFlag(MODELFLAG_UNIT_LOCK)))
+        {
+        if (roundUnit > roundingDistance.x)
+            roundingDistance.x = roundUnit;
+
+        if (0.0 != roundUnitRatio)
+            gridRatio = roundUnitRatio;
+        }
+
+    roundingDistance.y = roundingDistance.x * gridRatio;
+    roundingDistance.Scale(roundingDistance, _GetGridScaleFactor());
+#else
+    roundingDistance.Init(1.0, 1.0);
+    roundingDistance.Scale(roundingDistance, _GetGridScaleFactor(vp));
+#endif
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    RayBentley  10/06
++---------------+---------------+---------------+---------------+---------------+------*/
+void ViewController::PointToStandardGrid(DgnViewportR vp, DPoint3dR point, DPoint3dCR gridOrigin, RotMatrixCR gridOrientation) const
+    {
+#if defined DGNV10FORMAT_CHANGES_WIP
+    bool     isoGrid = TO_BOOL(m_rootModel->GetModelFlag(MODELFLAG_ISO_GRID));
+#else
+    bool     isoGrid = false;
+#endif
+    DPoint2d roundingDistance;
+
+    _GetGridRoundingDistance(vp, roundingDistance);
+    gridFix(vp, point, gridOrientation, gridOrigin, roundingDistance, isoGrid);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  01/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void ViewController::PointToGrid(DgnViewportR vp, DPoint3dR point) const
+    {
+    GridOrientationType orientation = _GetGridOrientationType();
+
+    if (GridOrientationType::ACS == orientation)
+        {
+        IAuxCoordSysP acs = IACSManager::GetManager().GetActive(vp);
+
+        if (NULL != acs)
+            acs->PointToGrid(vp, point);
+
+        return;
+        }
+
+    DPoint3d    origin;
+    RotMatrix   rMatrix;
+
+    getGridOrientation(vp, origin, rMatrix, orientation);
+    PointToStandardGrid(vp, point, origin, rMatrix);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  01/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void ViewController::_DrawGrid(DecorateContextR context)
+    {
+    DgnViewportR vp = *context.GetViewport();
+
+    if (!vp.IsGridOn())
+        return;
+
+    GridOrientationType orientation = _GetGridOrientationType();
+
+    if (GridOrientationType::ACS == orientation)
+        {
+        IAuxCoordSysP   acs;
+
+        if (NULL != (acs = IACSManager::GetManager().GetActive(vp)))
+            acs->DrawGrid(context);
+        }
+    else
+        {
+        // if grid units disabled or not set up, give up
+#if defined DGNV10FORMAT_CHANGES_WIP
+        bool     isoGrid = TO_BOOL(m_rootModel->GetModelFlag(MODELFLAG_ISO_GRID));
+#else
+        bool     isoGrid = false;
+#endif
+        uint32_t gridsPerRef;
+        DPoint2d spacing;
+
+        _GetGridSpacing(vp, spacing, gridsPerRef);
+
+        DPoint3d    origin;
+        RotMatrix   rMatrix;
+
+        getGridOrientation(vp, origin, rMatrix, orientation);
+        context.DrawStandardGrid(origin, rMatrix, spacing, gridsPerRef, isoGrid, nullptr);
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**

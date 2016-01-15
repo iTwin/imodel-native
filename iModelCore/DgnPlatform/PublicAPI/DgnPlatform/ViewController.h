@@ -110,6 +110,7 @@ protected:
     friend struct ViewManager;
     friend struct SpatialRedlineViewController;
     friend struct IACSManager;
+    friend struct IAuxCoordSys;
     friend struct ToolAdmin;
     friend struct ViewDefinition;
 
@@ -175,6 +176,15 @@ protected:
 
     //! Display locate circle and information about the current AccuSnap/auto-locate HitDetail.
     DGNPLATFORM_EXPORT virtual void _DrawLocateCursor(DecorateContextR, DPoint3dCR, double aperture, bool isLocateCircleOn, HitDetailCP hit=nullptr);
+
+    //! Grid display and point adjustment.
+    virtual GridOrientationType _GetGridOrientationType() const {return GridOrientationType::View;}
+    DGNPLATFORM_EXPORT virtual double _GetGridScaleFactor(DgnViewportR) const;
+    DGNPLATFORM_EXPORT virtual void _GetGridSpacing(DgnViewportR, DPoint2dR, uint32_t& gridsPerRef) const;
+    DGNPLATFORM_EXPORT virtual void _GetGridRoundingDistance(DgnViewportR, DPoint2dR roundingDistance) const;
+
+    //! Display grid for this view.
+    DGNPLATFORM_EXPORT virtual void _DrawGrid(DecorateContextR);
 
     //! Display view controller specific view decorations.
     virtual void _DrawDecorations(DecorateContextR) {}
@@ -422,6 +432,8 @@ public:
     DGNPLATFORM_EXPORT void ResetDeviceOrientation();
     DGNPLATFORM_EXPORT void OverrideSubCategory(DgnSubCategoryId, DgnSubCategory::Override const&);
     DGNPLATFORM_EXPORT void DropSubCategoryOverride(DgnSubCategoryId);
+    DGNPLATFORM_EXPORT void PointToStandardGrid(DgnViewportR, DPoint3dR point, DPoint3dCR gridOrigin, RotMatrixCR gridOrientation) const;
+    DGNPLATFORM_EXPORT void PointToGrid(DgnViewportR, DPoint3dR point) const;
 //__PUBLISH_SECTION_START__
 
     //! Get the set of currently displayed DgnModels for this ViewController
@@ -532,6 +544,7 @@ protected:
     virtual void _SetDelta(DVec3dCR delta) override {m_delta = delta;}
     virtual void _SetRotation(RotMatrixCR rot) override {m_rotation = rot;}
     virtual bool _Allow3dManipulations() const override {return true;}
+    virtual GridOrientationType _GetGridOrientationType() const override {return GridOrientationType::ACS;}
     DGNPLATFORM_EXPORT virtual bool _OnGeoLocationEvent(GeoLocationEventStatus& status, GeoPointCR point) override;
     DGNPLATFORM_EXPORT virtual bool _OnOrientationEvent(RotMatrixCR matrix, OrientationMode mode, UiOrientation ui) override;
     DGNPLATFORM_EXPORT virtual void _OnTransform(TransformCR);

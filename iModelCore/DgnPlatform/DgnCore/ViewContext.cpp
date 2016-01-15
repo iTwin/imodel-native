@@ -1537,3 +1537,387 @@ void DecorateContext::AddSprite(ISprite& sprite, DPoint3dCR location, DPoint3dCR
     AddViewOverlay(*m_target.CreateSprite(sprite, location, xVec, transparency), nullptr);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+enum
+    {
+    MAX_GridDotsInRow       = 500,
+    GRID_DOT_Transparency   = 110,
+    GRID_LINE_Transparency  = 190,
+    GRID_PLANE_Transparency = 225,
+    MAX_GridPoints          = 90,
+    MAX_GridRefs            = 40,
+    };
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    RayBentley      05/04
++---------------+---------------+---------------+---------------+---------------+------*/
+static int getGridPlaneViewIntersections(DPoint3dP intersections, DPoint3dCP planePoint, DPoint3dCP planeNormal, double spacing, DgnViewportCR vp)
+    {
+    static int const index[12][2] = {
+                        {NPC_000, NPC_001},     // lines connecting front to back
+                        {NPC_100, NPC_101},
+                        {NPC_010, NPC_011},
+                        {NPC_110, NPC_111},
+
+                        {NPC_000, NPC_100},     // around front face
+                        {NPC_100, NPC_110},
+                        {NPC_110, NPC_010},
+                        {NPC_010, NPC_000},
+
+                        {NPC_001, NPC_101},     // around back face.
+                        {NPC_101, NPC_111},
+                        {NPC_111, NPC_011},
+                        {NPC_011, NPC_001}
+                        };
+
+    Frustum frust = vp.GetFrustum(DgnCoordSystem::World, true);
+    int     nIntersections = 0;
+
+    for (int i=0; i<12; i++)
+        {
+        double  param;
+
+        if (bsiGeom_linePlaneIntersection(&param, intersections+nIntersections, &frust.GetCorner(index[i][0]), &frust.GetCorner(index[i][1]), planePoint, planeNormal) && param >= 0.0 && param <= 1.0)
+            ++nIntersections;
+        }
+
+    return nIntersections;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    RayBentley      05/04
++---------------+---------------+---------------+---------------+---------------+------*/
+static bool getGridDimension(int& nRepetitions, double& min, DPoint3dCR org, DVec3dCR dir, double gridSize, DPoint3dCP points, int nPoints)
+    {
+    // initialized only to avoid warning.
+    double distLow=0.0, distHigh=0.0;
+
+    for (int i=0; i<nPoints; i++)
+        {
+        double  distance = points[i].DotDifference(org, dir);
+
+        if (i)
+            {
+            if (distance < distLow)
+                distLow = distance;
+
+            if (distance > distHigh)
+                distHigh = distance;
+            }
+        else
+            {
+            distLow = distHigh = distance;
+            }
+        }
+
+    if (distHigh <= distLow)
+        return false;
+
+    min = floor(distLow / gridSize);
+    double max = ceil(distHigh / gridSize);
+    nRepetitions = (int)(max - min);
+    min *= gridSize;
+
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    RayBentley      05/04
++---------------+---------------+---------------+---------------+---------------+------*/
+static void drawGridRefs(Render::GraphicR graphic, DPoint3dCR org, DVec3dCR rowVec, DVec3dCR colVec, int rowRepetitions, int colRepetitions)
+    {
+    DPoint3d gridEnd;
+
+    gridEnd.SumOf(org,colVec, colRepetitions);
+
+    for (double d=0.0; d <= rowRepetitions; d += 1.0)
+        {
+        DPoint3d linePoints[2];
+
+        linePoints[0].SumOf(org,rowVec, d);
+        linePoints[1].SumOf(gridEnd,rowVec, d);
+        graphic.AddLineString(2, linePoints, nullptr);
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    RayBentley      05/04
++---------------+---------------+---------------+---------------+---------------+------*/
+static bool getClipPlaneIntersection(double& pMin, double& pMax, DPoint3dCR origin, DPoint3dCR direction, ClipPlane const* pPlane)
+    {
+    pMin = -FLT_MAX;
+    pMax =  FLT_MAX;
+
+    for (int i=0; i<6; i++, pPlane++)
+        {
+        double vD = pPlane->DotProduct(direction);
+        double vN = pPlane->EvaluatePoint(origin);
+        double testValue;
+
+        if (vD > 0.0)
+            {
+            if ((testValue = -vN/vD) > pMin)
+                pMin = testValue;
+            }
+        else if (vD < 0.0)
+            {
+            if ((testValue = -vN/vD) < pMax)
+                pMax = testValue;
+            }
+        }
+
+    return pMin < pMax;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    RayBentley      05/04
++---------------+---------------+---------------+---------------+---------------+------*/
+static void drawGridDots(Render::GraphicR graphic, bool doIsoGrid, DPoint3dCR origin, DVec3d const& rowVec, int rowRepetitions, DVec3d const& colVec, int colRepetitions, int refSpacing)
+    {
+    static double s_maxHorizonGrids = 800.0;
+    DgnViewportCR vp = *graphic.GetViewport();
+    DVec3d colNormal, rowNormal;
+    double colSpacing = colNormal.Normalize(colVec);
+    rowNormal.Normalize(rowVec);
+
+    DPoint3d points[MAX_GridDotsInRow];
+    bool     cameraOn = vp.IsCameraOn();
+    double   zCamera = 0.0, zCameraLimit = 0.0;
+    DVec3d   viewZ;
+
+    if (cameraOn)
+        {
+        CameraInfo const& camera = vp.GetCamera();
+        double sizeLimit = (s_maxHorizonGrids * colSpacing) / vp.GetViewDelta()->x;
+
+        vp.GetRotMatrix().GetRow(viewZ, 2);
+        zCamera = viewZ.DotProduct(*((DVec3d *) &camera.GetEyePoint()));
+        zCameraLimit = zCamera - camera.GetFocusDistance() * sizeLimit;
+        }
+
+    Frustum corners = vp.GetFrustum(DgnCoordSystem::World, true);
+    ClipPlane clipPlanes[6];
+    ClipUtil::RangePlanesFromPolyhedra(clipPlanes, corners.GetPts(), true, true, false);
+
+    double minClipDistance, maxClipDistance;
+    for (int i=0; i<rowRepetitions; i++)
+        {
+        if (0 != refSpacing && 0 == (i % refSpacing))
+            continue;
+
+        DPoint3d dotOrigin;
+        dotOrigin.SumOf(origin,rowVec, (double) i);
+
+        if (getClipPlaneIntersection(minClipDistance, maxClipDistance, dotOrigin, colNormal, clipPlanes))
+            {
+            if (cameraOn)
+                {
+                DPoint3d        startPoint, endPoint;
+
+                startPoint.SumOf(dotOrigin,colNormal, minClipDistance);
+                endPoint.SumOf(dotOrigin,colNormal, maxClipDistance);
+                if (viewZ.DotProduct(startPoint) < zCameraLimit && viewZ.DotProduct(endPoint) < zCameraLimit)
+                    continue;
+                }
+
+            int nToDisplay = 0;
+            int jMin = (int) floor(minClipDistance/ colSpacing);
+            int jMax = (int) ceil(maxClipDistance / colSpacing);
+
+            // Choose values that result in the least amount of dots between jMin-jMax and 0-colRepetitions...
+            jMin = (jMin < 0 ? 0 : jMin);
+            jMax = (jMax > colRepetitions ? colRepetitions : jMax);
+
+            double isoOffset = (doIsoGrid && (i&1)) ?  0.5 : 0.0;
+            for (int j=jMin; j <= jMax && nToDisplay < MAX_GridDotsInRow; j++)
+                {
+                if (0 != refSpacing && 0 == (j % refSpacing))
+                    continue;
+
+                DPoint3d point;
+                point.SumOf(dotOrigin,colVec, (double) j + isoOffset);
+
+                if (cameraOn)
+                    {
+                    double pointZ = viewZ.DotProduct(point);
+
+                    if (pointZ < zCamera && pointZ >zCameraLimit)
+                        points[nToDisplay++] = point;
+                    }
+                else
+                    {
+                    points[nToDisplay++] = point;
+                    }
+                }
+
+            if (0 != nToDisplay)
+                graphic.AddPointString(nToDisplay, points, nullptr);
+            }
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   03/05
++---------------+---------------+---------------+---------------+---------------+------*/
+static void drawGridPlane(Render::GraphicR graphic, DPoint3dCR gridOrigin, DVec3dCR xVec, DVec3dCR yVec, Point2dCR repetitions)
+    {
+    DgnViewportCR vp = *graphic.GetViewport();
+    DVec3d viewZ;
+    vp.GetRotMatrix().GetRow(viewZ, 2);
+
+    // don't draw grid plane if perpendicular to view
+    if (viewZ.IsPerpendicularTo(xVec))
+        return;
+
+    // grid refs or points will give visual indication or grid plane...
+    DPoint3d shapePoints[5];
+
+    shapePoints[0] = shapePoints[4] = gridOrigin;
+    shapePoints[1].SumOf(gridOrigin,xVec, repetitions.x);
+    shapePoints[2].SumOf(gridOrigin,xVec, repetitions.x, yVec, repetitions.y);
+    shapePoints[3].SumOf(gridOrigin,yVec, repetitions.y);
+
+    graphic.AddShape(5, shapePoints, true, nullptr);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    RayBentley      05/04
++---------------+---------------+---------------+---------------+---------------+------*/
+static void drawGrid(Render::GraphicR graphic, bool doIsoGrid, bool drawDots, DPoint3dCR gridOrigin, DVec3dCR xVec, DVec3dCR yVec, uint32_t gridsPerRef, Point2d const& repetitions)
+    {
+    DgnViewportCR vp = *graphic.GetViewport();
+    ColorDef color = vp.GetContrastToBackgroundColor();
+    ColorDef lineColor = vp.MakeColorTransparency(color, GRID_LINE_Transparency);
+    ColorDef dotColor = vp.MakeColorTransparency(color, GRID_DOT_Transparency);
+    ColorDef planeColor = vp.MakeColorTransparency(color, GRID_PLANE_Transparency);
+    GraphicParams::LinePixels linePat = GraphicParams::LinePixels::Solid;
+    DVec3d zVec, viewZ;
+
+    zVec.NormalizedCrossProduct(xVec, yVec);
+    vp.GetRotMatrix().GetRow(viewZ, 2);
+
+    if (viewZ.DotProduct(zVec) < 0.0) // Provide visual indication that grid is being viewed from the back (grid z not towards eye)...
+        {
+        planeColor = vp.MakeColorTransparency(ColorDef::Red(), GRID_PLANE_Transparency);
+        linePat = GraphicParams::LinePixels::Code2;
+        }
+
+    int    gpr = (gridsPerRef>0) ? gridsPerRef : 1;
+    double rpg = (1.0 / gpr);
+
+    if (doIsoGrid)
+        gridsPerRef = 0; // turn off reference grid for iso
+
+    if (drawDots)
+        {
+        DVec3d  dotXVec = xVec;
+        DVec3d  dotYVec = yVec;
+
+        dotXVec.Scale(rpg);
+        dotYVec.Scale(rpg);
+
+        graphic.SetSymbology(dotColor, planeColor, 1);
+        drawGridDots(graphic, doIsoGrid, gridOrigin, dotYVec, repetitions.y*gpr, dotXVec, repetitions.x*gpr, gridsPerRef);
+        }
+
+    if (0 < gridsPerRef)
+        {
+        graphic.SetSymbology(lineColor, planeColor, 1, linePat);
+        drawGridRefs(graphic, gridOrigin, xVec, yVec, repetitions.x, repetitions.y);
+        drawGridRefs(graphic, gridOrigin, yVec, xVec, repetitions.y, repetitions.x);
+        }
+
+    if (RenderMode::Wireframe == vp.GetViewFlags().GetRenderMode())
+        return;
+
+    GraphicParams graphicParams;
+
+    graphicParams.SetFillColor(planeColor);
+    graphicParams.SetIsBlankingRegion(true);
+    graphic.ActivateGraphicParams(graphicParams);
+    drawGridPlane(graphic, gridOrigin, xVec, yVec, repetitions);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  01/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void DecorateContext::DrawStandardGrid(DPoint3dR gridOrigin, RotMatrixR rMatrix, DPoint2d spacing, uint32_t gridsPerRef, bool isoGrid, Point2dCP fixedRepetitions)
+    {
+    DgnViewportCR vp = *GetViewport();
+    DVec3d xVec, yVec, zVec, viewZ;
+
+    rMatrix.GetRows(xVec, yVec, zVec);
+    vp.GetRotMatrix().GetRow(viewZ, 2);
+
+    if (!vp.IsCameraOn())
+        {
+        static const double s_minDotProduct = .005;
+
+        if (fabs(viewZ.DotProduct(zVec)) < s_minDotProduct) // Is grid parallel to view?
+            return;
+        }
+
+    double   refScale = (0 == gridsPerRef) ? 1.0 : (double) gridsPerRef;
+    Point2d  repetitions;
+    DPoint3d gridOrg;
+
+    if (NULL == fixedRepetitions) // Compute grid origin and visible repetitions when not drawing a fixed sized grid...
+        {
+        DPoint3d intersections[12];
+        int nIntersections = getGridPlaneViewIntersections(intersections, &gridOrigin, &zVec, spacing.x, vp);
+
+        if (nIntersections < 3)
+            return;
+
+        DPoint3d min;
+
+        if (!getGridDimension(repetitions.x, min.x, gridOrigin, xVec, spacing.x, intersections, nIntersections) ||
+            !getGridDimension(repetitions.y, min.y, gridOrigin, yVec, spacing.y, intersections, nIntersections))
+            return;
+
+        gridOrg.SumOf(gridOrigin,xVec, min.x, yVec, min.y);
+        }
+    else
+        {
+        gridOrg = gridOrigin;
+        repetitions = *fixedRepetitions;
+        }
+
+    DVec3d gridX, gridY;
+    gridX.Scale(xVec, spacing.x);
+    gridY.Scale(yVec, spacing.y);
+
+    DPoint3d testPt;
+    testPt.SumOf(gridOrg,gridX, repetitions.x/2.0, gridY, repetitions.y/2.0);
+
+    int maxGridPts  = MAX_GridPoints;
+    int maxGridRefs = MAX_GridRefs;
+
+    if (maxGridPts < 10)
+        maxGridPts = 10;
+    if (maxGridRefs < 10)
+        maxGridRefs = 10;
+
+    // values are "per 1000 pixels"
+    double minGridSeperationPixels = 1000. / maxGridPts;
+    double minRefSeperation = 1000. / maxGridRefs;
+    double uorPerPixel = vp.GetPixelSizeAtPoint(&testPt); // center of view
+
+    if ((spacing.x/uorPerPixel) < minRefSeperation || (spacing.y/uorPerPixel) < minRefSeperation)
+        gridsPerRef = 0;
+
+    // Avoid z fighting with coincident geometry...let the wookie win...
+    gridOrg.SumOf(gridOrg, viewZ, uorPerPixel);
+    uorPerPixel *= refScale;
+
+    bool drawDots = ((spacing.x/uorPerPixel) > minGridSeperationPixels) &&((spacing.y/uorPerPixel) > minGridSeperationPixels);
+    Render::GraphicPtr graphic = CreateGraphic(Graphic::CreateParams(&vp));
+
+    drawGrid(*graphic, isoGrid, drawDots, gridOrg, gridX, gridY, gridsPerRef, repetitions);
+    AddWorldDecoration(*graphic);
+    }
+
+
+

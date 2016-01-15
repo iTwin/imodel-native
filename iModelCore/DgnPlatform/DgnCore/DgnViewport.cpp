@@ -1117,128 +1117,6 @@ void DgnViewport::SynchWithViewController(bool saveInUndo)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Keith.Bentley   07/04
-+---------------+---------------+---------------+---------------+---------------+------*/
-double DgnViewport::GetGridScaleFactor()
-    {
-    double  scaleFactor = 1.0;
-
-#ifdef DGNV10FORMAT_CHANGES_WIP
-    // Apply ACS scale to grid if ACS Context Lock active...
-    if (TO_BOOL(m_rootModel->GetModelFlag(MODELFLAG_ACS_LOCK)))
-        {
-        IAuxCoordSysP acs = IACSManager::GetManager().GetActive(*this);
-        if (nullptr != acs)
-            scaleFactor *= acs->GetScale();
-        }
-#endif
-
-    return scaleFactor;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Barry.Bentley                   11/07
-+---------------+---------------+---------------+---------------+---------------+------*/
-void DgnViewport::GetGridRoundingDistance(DPoint2dR roundingDistance)
-    {
-#ifdef DGNV10FORMAT_CHANGES_WIP
-    ModelInfoCR modelInfo = m_rootModel->GetModelInfo();
-
-    double uorPerGrid     = modelInfo.GetUorPerGrid();
-    double gridRatio      = modelInfo.GetGridRatio();
-    double roundUnit      = modelInfo.GetRoundoffUnit();
-    double roundUnitRatio = modelInfo.GetRoundoffRatio();
-
-    if (TO_BOOL(m_rootModel->GetModelFlag(MODELFLAG_GRID_LOCK)))
-        roundingDistance.x = uorPerGrid;
-    else
-        roundingDistance.x = roundUnit;
-
-    if (TO_BOOL(m_rootModel->GetModelFlag(MODELFLAG_UNIT_LOCK)))
-        {
-        if (roundUnit > roundingDistance.x)
-            roundingDistance.x = roundUnit;
-
-        if (0.0 != roundUnitRatio)
-            gridRatio = roundUnitRatio;
-        }
-
-    roundingDistance.y = roundingDistance.x * gridRatio;
-    roundingDistance.Scale(roundingDistance, GetGridScaleFactor());
-#endif
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    kab             06/86
-+---------------+---------------+---------------+---------------+---------------+------*/
-static void roundGrid(double& num, double units)
-    {
-    double  sign = ((num * units) < 0.0) ? -1.0 : 1.0;
-
-    num = (num * sign) / units + 0.5;
-    num = units * sign * floor(num);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Barry.Bentley                   11/07
-+---------------+---------------+---------------+---------------+---------------+------*/
-void DgnViewport::GridFix(DPoint3dR pointRoot, RotMatrixCR rMatrixRoot, DPoint3dCR originRoot, DPoint2dCR roundingDistanceRoot, bool isoGrid)
-    {
-    DVec3d planeNormal;
-    rMatrixRoot.GetRow(planeNormal, 2);
-
-    DVec3d eyeVec;
-    if (m_isCameraOn)
-        eyeVec.NormalizedDifference(pointRoot, m_camera.GetEyePoint());
-    else
-        m_rotMatrix.GetRow(eyeVec, 2);
-
-    LegacyMath::Vec::LinePlaneIntersect(&pointRoot, &pointRoot, &eyeVec, &originRoot, &planeNormal, false);
-
-    // get origin and point in view coordinate system
-    DPoint3d    pointRootView, originRootView;
-    rMatrixRoot.Multiply(pointRootView, pointRoot);
-    rMatrixRoot.Multiply(originRootView, originRoot);
-
-    // see whether we need to adjust the origin for iso-grid
-    if (isoGrid)
-        {
-        long ltmp = (long) (pointRootView.y / roundingDistanceRoot.y);
-
-        if (ltmp & 0x0001)
-            originRootView.x += (roundingDistanceRoot.x / 2.0);
-        }
-
-    // subtract off the origin
-    pointRootView.y -= originRootView.y;
-    pointRootView.x -= originRootView.x;
-
-    // round off the remainder to the grid distances
-    roundGrid(pointRootView.y, roundingDistanceRoot.y);
-    roundGrid(pointRootView.x, roundingDistanceRoot.x);
-
-    // add the origin back in
-    pointRootView.x += originRootView.x;
-    pointRootView.y += originRootView.y;
-
-    // go back to root coordinate system
-    rMatrixRoot.MultiplyTranspose(pointRoot,pointRootView);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Barry.Bentley                   11/07
-+---------------+---------------+---------------+---------------+---------------+------*/
-void DgnViewport::PointToStandardGrid(DPoint3dR point, DPoint3dR gridOrigin, RotMatrixR rMatrix)
-    {
-#ifdef DGNV10FORMAT_CHANGES_WIP
-    DPoint2d roundingDistanceRoot;
-    GetGridRoundingDistance(roundingDistanceRoot);
-
-    GridFix(point, rMatrix, gridOrigin, roundingDistanceRoot, TO_BOOL(m_rootModel->GetModelFlag(MODELFLAG_ISO_GRID)));
-#endif
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   06/05
 +---------------+---------------+---------------+---------------+---------------+------*/
 ColorDef DgnViewport::GetBackgroundColor() const
@@ -1300,9 +1178,7 @@ void DgnViewport::CheckForChanges()
 void DgnViewport::_CallDecorators(DecorateContextR context)
     {
     m_viewController->_DrawDecorations(context);
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    DrawGrid();
-#endif
+    m_viewController->_DrawGrid(context);
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/IAuxCoordSys.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -197,33 +197,33 @@ struct IAuxCoordSys : RefCountedBase
 //__PUBLISH_SECTION_END__
 protected:
 
-virtual IAuxCoordSysPtr             _Clone                      () const = 0;
-virtual bool                        _Equals                     (IAuxCoordSysCP other) const = 0;
-virtual WString                     _GetName                    () const = 0;
-virtual WString                     _GetDescription             () const = 0;
-virtual ACSType                     _GetType                    () const = 0;
-virtual WString                     _GetTypeName                () const = 0;
-virtual double                      _GetScale                   () const = 0;
-virtual DPoint3dR                   _GetOrigin                  (DPoint3dR pOrigin) const = 0;
-virtual RotMatrixR                  _GetRotation                (RotMatrixR pRot) const = 0;
-virtual RotMatrixR                  _GetRotation                (RotMatrixR pRot, DPoint3dR pPosition) const = 0;
-virtual bool                        _GetIsReadOnly              () const = 0;
-virtual ACSFlags                    _GetFlags                   () const = 0;
-virtual StatusInt                   _SetName                    (WCharCP name) = 0;
-virtual StatusInt                   _SetDescription             (WCharCP descr) = 0;
-virtual StatusInt                   _SetType                    (ACSType type) = 0;
-virtual StatusInt                   _SetScale                   (double scale) = 0;
-virtual StatusInt                   _SetOrigin                  (DPoint3dCR pOrigin) = 0;
-virtual StatusInt                   _SetRotation                (RotMatrixCR pRot) = 0;
-virtual StatusInt                   _PointFromString            (DPoint3dR outPoint, WStringR errorMsg, WCharCP inString, bool relative, DPoint3dCP lastPoint, DgnModelR modelRef) = 0;
-virtual StatusInt                   _StringFromPoint            (WStringR outString, WStringR errorMsg, DPoint3dCR inPoint, bool delta, DPoint3dCP deltaOrigin, DgnModelR modelRef, DistanceFormatterR distanceFormatter, DirectionFormatterR directionFormatter) = 0;
-virtual StatusInt                   _SetFlags                   (ACSFlags flags) = 0;
-virtual uint32_t   _GetExtenderId () const = 0;
-virtual uint32_t   _GetSerializedSize () const = 0;
-virtual StatusInt  _Serialize (void *data, uint32_t maxSize) const = 0;
-virtual StatusInt                   _CompleteSetupFromViewController(SpatialViewControllerCP info) = 0;
-virtual void                        _DrawGrid                   (DgnViewportP vp) const = 0;
-virtual void                        _PointToGrid                (DgnViewportP vp, DPoint3dR point) const = 0;
+virtual IAuxCoordSysPtr _Clone() const = 0;
+virtual bool _Equals(IAuxCoordSysCP other) const = 0;
+virtual WString _GetName() const = 0;
+virtual WString _GetDescription() const = 0;
+virtual ACSType _GetType() const = 0;
+virtual WString _GetTypeName() const = 0;
+virtual double _GetScale() const = 0;
+virtual DPoint3dR _GetOrigin(DPoint3dR pOrigin) const = 0;
+virtual RotMatrixR _GetRotation(RotMatrixR pRot) const = 0;
+virtual RotMatrixR _GetRotation(RotMatrixR pRot, DPoint3dR pPosition) const = 0;
+virtual bool _GetIsReadOnly() const = 0;
+virtual ACSFlags _GetFlags() const = 0;
+virtual StatusInt _SetName(WCharCP name) = 0;
+virtual StatusInt _SetDescription(WCharCP descr) = 0;
+virtual StatusInt _SetType(ACSType type) = 0;
+virtual StatusInt _SetScale(double scale) = 0;
+virtual StatusInt _SetOrigin(DPoint3dCR pOrigin) = 0;
+virtual StatusInt _SetRotation(RotMatrixCR pRot) = 0;
+virtual StatusInt _PointFromString(DPoint3dR outPoint, WStringR errorMsg, WCharCP inString, bool relative, DPoint3dCP lastPoint, DgnModelR modelRef) = 0;
+virtual StatusInt _StringFromPoint(WStringR outString, WStringR errorMsg, DPoint3dCR inPoint, bool delta, DPoint3dCP deltaOrigin, DgnModelR modelRef, DistanceFormatterR distanceFormatter, DirectionFormatterR directionFormatter) = 0;
+virtual StatusInt _SetFlags(ACSFlags flags) = 0;
+virtual uint32_t _GetExtenderId() const = 0;
+virtual uint32_t _GetSerializedSize() const = 0;
+virtual StatusInt _Serialize(void *data, uint32_t maxSize) const = 0;
+virtual StatusInt _CompleteSetupFromViewController(SpatialViewControllerCP info) = 0;
+virtual void _DrawGrid(DecorateContextR context) const = 0;
+virtual void _PointToGrid(DgnViewportR vp, DPoint3dR point) const = 0;
 
 virtual StatusInt _GetStandardGridParams (Point2dR gridReps, Point2dR gridOffset, double& uorPerGrid, double& gridRatio, uint32_t& gridPerRef) const {return ERROR;}
 virtual StatusInt _SetStandardGridParams (Point2dCR gridReps, Point2dCR gridOffset, double uorPerGrid, double gridRatio, uint32_t gridPerRef) {return ERROR;}
@@ -241,7 +241,7 @@ DGNPLATFORM_EXPORT virtual WCharCP _GetAxisLabel (uint32_t axis, WCharP axisLabe
 public:
 
 // Only for ACS's of type ACS_TYPE_GeoCoordinate is the rotation matrix position dependent, don't publish this yet.
-DGNPLATFORM_EXPORT RotMatrixR           GetRotation                 (RotMatrixR pRot, DPoint3dR pPosition) const;
+DGNPLATFORM_EXPORT RotMatrixR GetRotation (RotMatrixR pRot, DPoint3dR pPosition) const;
 
 // Standard grid settings don't apply to type ACS_TYPE_GeoCoordinate...
 double GetGridScaleFactor (DgnViewportR vp) const;
@@ -334,11 +334,11 @@ DGNPLATFORM_EXPORT uint32_t GetSerializedSize () const;
 //! Get the buffer size, in bytes, required to serialize the ACS.
 DGNPLATFORM_EXPORT StatusInt Serialize (void *buffer, uint32_t maxSize) const;
 
-//! Draw the grid to the specified DgnViewport.
-DGNPLATFORM_EXPORT void DrawGrid (DgnViewportP viewPort) const;
+//! Draw the grid to the specified context.
+DGNPLATFORM_EXPORT void DrawGrid (DecorateContextR context) const;
 
 //! Fix the point to the ACS's grid
-DGNPLATFORM_EXPORT void PointToGrid (DgnViewportP viewPort, DPoint3dR point) const;
+DGNPLATFORM_EXPORT void PointToGrid (DgnViewportR viewport, DPoint3dR point) const;
 
 //__PUBLISH_SECTION_START__
 };
