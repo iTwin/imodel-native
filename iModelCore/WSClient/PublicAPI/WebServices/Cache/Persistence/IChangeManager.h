@@ -121,7 +121,6 @@ struct EXPORT_VTABLE_ATTRIBUTE IChangeManager
         //! Modify name for existing modified file on disk. Does not modify any properties in ECInstance.
         //! @param[in] instanceKey
         //! @param[in] newFileName - new name for file. Invalid characters that are not supported by file system will be normalized
-        //! @param[in] syncStatus
         virtual BentleyStatus ModifyFileName(ECInstanceKeyCR instanceKey, Utf8StringCR newFileName) = 0;
 
         //! Change whether or not an object is ready to be synced to the server

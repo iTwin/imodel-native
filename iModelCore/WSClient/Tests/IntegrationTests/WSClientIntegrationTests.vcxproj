@@ -38,9 +38,9 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <NMakeOutput>$(OutRoot)Winx64\build\WSClientIntegrationTests\WSClientIntegrationTests.exe</NMakeOutput>
     <NMakePreprocessorDefinitions>USE_GTEST;BENTLEY_WIN32</NMakePreprocessorDefinitions>
-    <NMakeBuildCommandLine>bb -v4 -ax64 -r WSClient -f WSClient -p WSClientIntegrationTests re  WebServicesClient* WebServicesCache* WSClient-PublishedAPI WSClientIntegrationTests</NMakeBuildCommandLine>
+    <NMakeBuildCommandLine>bb $(BB2N0) -v4 -ax64 -r WSClient -f WSClient -p WSClientIntegrationTests re  WebServicesClient* WebServicesCache* WSClient-PublishedAPI WSClientIntegrationTests</NMakeBuildCommandLine>
     <NMakeReBuildCommandLine>bb -v4 -ax64 -r WSClient -f WSClient -p WSClientIntegrationTests b</NMakeReBuildCommandLine>
-    <NMakeCleanCommandLine>bb -v4 -ax64 -r WSClient -f WSClient -p WSClientIntegrationTests re  WebServicesClient* WebServicesCache* WSClient-PublishedAPI WSClientIntegrationTests -c</NMakeCleanCommandLine>
+    <NMakeCleanCommandLine>bb $(BB2N0) -v4 -ax64 -r WSClient -f WSClient -p WSClientIntegrationTests re  WebServicesClient* WebServicesCache* WSClient-PublishedAPI WSClientIntegrationTests -c</NMakeCleanCommandLine>
     <NMakeIncludeSearchPath>$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
     <IncludePath>$(SrcRoot)util\gtest\include;$(SrcRoot)util\gmock\include;$(OutRoot)Winx64\Product\DgnClientSdk-Winx64\include;$(SrcRoot)WSClient\Tests\UnitTests\Published\Utils;$(IncludePath)</IncludePath>
     <OutDir>$(OutRoot)VSOut\$(MSBuildProjectName)\$(Platform)\$(Configuration)\</OutDir>
@@ -69,6 +69,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Cache\CachingDataSourceTests.cpp" />
+    <ClCompile Include="Cache\ECDbAdapterTests.cpp" />
     <ClCompile Include="Configuration\BuddiClientTests.cpp" />
     <ClCompile Include="Repository\Extensions\HierarchicalSearchTests.cpp" />
     <ClCompile Include="Repository\Extensions\NavigationTests.cpp" />
@@ -85,6 +86,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Cache\CachingDataSourceTests.h" />
+    <ClInclude Include="Cache\ECDbAdapterTests.h" />
     <ClInclude Include="Configuration\BuddiClientTests.h" />
     <ClInclude Include="Repository\Extensions\HierarchicalSearchTests.h" />
     <ClInclude Include="Repository\Extensions\NavigationTests.h" />
