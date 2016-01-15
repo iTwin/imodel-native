@@ -7,7 +7,6 @@
 +--------------------------------------------------------------------------------------*/
 
 #include "ECObjectsPch.h"
-#include <apr_sha1.h>
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
@@ -46,19 +45,14 @@ Utf8StringCR SchemaLocalizedStrings::GetLocalizedString(Utf8CP labelKey, Utf8Str
 //--------------------------------------------------------------------------------------
 Utf8String SchemaLocalizedStrings::ComputeHash(Utf8StringCR invariantString) const
     {
-
-    //copied part of apr_sha1_base64(const char *clear, int len, char *out)
-    //does the sha1 hash without encoding it in base64
-    apr_sha1_ctx_t context;
-    unsigned char digest[APR_SHA1_DIGESTSIZE];
-
-    apr_sha1_init(&context);
-    apr_sha1_update(&context, invariantString.c_str(), (int)invariantString.length());
-    apr_sha1_final(digest, &context);
-
-    //converting the first 4 characters of the sha1 hash to hex
-    Utf8PrintfString locHashCharInHexFormat("%02x%02x%02x%02x", (Byte)digest[0], (Byte)digest[1] , (Byte)digest[2], (Byte)digest[3]);
-    return locHashCharInHexFormat;
+    return "";
+    //Utf8String convertedString = Utf8String(invariantString);
+    //
+    //CharP shaHash;
+    //apr_sha1_base64(convertedString.c_str(), invariantString.length(), shaHash);
+    //wchar_t locHash[8];
+    //wprintf(locHash, L"%02x%02x%02x%02x", shaHash[5], shaHash[6], shaHash[7], shaHash[8]);
+    //return locHash;
     }
 
 //--------------------------------------------------------------------------------------
@@ -422,6 +416,13 @@ bool SchemaLocalizedStrings::TryConstructStringMaps(bmap<Utf8String, bpair<size_
             bool isGUID;
             if (!TryGetBoolValue(*resourceEntry, isGUID, IS_GUID))
                 isGUID = false;
+
+            // Strip off hash ... TODO stop doing this once we can generate hash correctly
+            if (!key.StartsWithI(GUID))
+                {
+                size_t lastColon = key.rfind(COLON);
+                key = key.substr(0, lastColon + 1);
+                }
 
             size_t atIndex = key.find(AT);
 
