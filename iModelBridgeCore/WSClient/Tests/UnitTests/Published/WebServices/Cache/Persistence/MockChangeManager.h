@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/WebServices/Cache/Persistence/MockChangeManager.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -46,7 +46,9 @@ struct MockChangeManager : public IChangeManager
         MOCK_METHOD2 (DeleteRelationship,
             BentleyStatus (ECInstanceKeyCR, SyncStatus));
         MOCK_METHOD4 (ModifyFile,
-            BentleyStatus (ECInstanceKeyCR, BeFileNameCR, bool, SyncStatus));
+            BentleyStatus(ECInstanceKeyCR, BeFileNameCR, bool, SyncStatus));
+        MOCK_METHOD2(ModifyFileName,
+            BentleyStatus(ECInstanceKeyCR, Utf8StringCR));
         MOCK_METHOD2 (SetSyncStatus,
             BentleyStatus (ECInstanceKeyCR, SyncStatus));
         MOCK_METHOD0 (HasChanges,
