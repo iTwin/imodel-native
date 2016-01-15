@@ -2,7 +2,7 @@
  |
  |     $Source: PublicAPI/WebServices/Configuration/UrlProvider.h $
  |
- |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -98,6 +98,8 @@ struct UrlProvider
             WSCLIENT_EXPORT static const UrlDescriptor ConnectWsgClashIssues;
             WSCLIENT_EXPORT static const UrlDescriptor ConnectWsgSharedContent;
             WSCLIENT_EXPORT static const UrlDescriptor ImsStsAuth;
+            WSCLIENT_EXPORT static const UrlDescriptor ImsActiveStsDelegationService;
+            WSCLIENT_EXPORT static const UrlDescriptor ImsFederatedAuth;
             WSCLIENT_EXPORT static const UrlDescriptor Passport;
             WSCLIENT_EXPORT static const UrlDescriptor UsageTracking;
             };
