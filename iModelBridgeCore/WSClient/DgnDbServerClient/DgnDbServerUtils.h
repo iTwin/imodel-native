@@ -23,13 +23,13 @@ namespace ServerSchema
     static Utf8CP ClassName = "className";
     namespace Schema
         {
-        static Utf8CP Repository = "DgnDbServerSchema";
-        static Utf8CP Admin = "DgnDbServerAdminSchema";
+        static Utf8CP Repository = "DgnDbServer";
+        static Utf8CP Admin = "DgnDbServerAdmin";
         }
     namespace Plugin
         {
-        static Utf8CP Repository = "Bentley.DgnDbServerECPlugin";
-        static Utf8CP Admin = "Bentley.DgnDbServerAdminECPlugin";
+        static Utf8CP Repository = "DgnDbServer";
+        static Utf8CP Admin = "DgnDbServerAdmin";
         }
     namespace Class
         {
