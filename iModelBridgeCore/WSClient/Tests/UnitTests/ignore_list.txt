@@ -6,17 +6,15 @@
 # Unknown issues - need to investigate
 #----------------------------------------------------------------------------------------
 
-CachingDataSourceTests.GetFile_ClassDoesNotHaveFileDependentPropertiesCA_ProgressIsCalledWithNoNameAndNoSizeAndFileHasDefaultName
-DataSourceCacheUpgradeTests.*
-*DataSourceCache*
-ECDbAdapterTests.*
-
 #----------------------------------------------------------------------------------------
 # Known issues
 #----------------------------------------------------------------------------------------
 
-# GetResult() race condition makes test fail randomly
+# AsyncTask::GetResult() makes test fail randomly
 CachingDataSourceTests.OpenOrCreate_CalledSecondTimeAfterCacheWasCreated_OpensAndSucceeds
+
+# Fails on WinX86. (onProgressCalled actual 0; expected 1)
+CachingDataSourceTests.GetFile_ClassDoesNotHaveFileDependentPropertiesCA_ProgressIsCalledWithNoNameAndNoSizeAndFileHasDefaultName
 
 #Fails on iOS; Vincas said to ignore
 ECDbAdapterTests.*
@@ -30,32 +28,32 @@ FileUtilTests.TruncateFilePath_MaxPathSoSmallThatExtensionWouldBeChanged_Error
 FileUtilTests.TruncateFilePath_MaxPathSoSmallThatFileNameWouldBeEmpty_Error
 FileUtilTests.TruncateFilePath_PathIsFolder_Error
 
-# TODO: enable when Device::GetDeviceId() is implemented for Windows
-*Create_PassedMandatoryValues_SetsValues*
-
 # Hangs regularly on firebug; have notified Vincas
 BeSQLiteDbTransactionHandlerTests.StartTransaction_TwoConnections_SecondConnectionIsBlockedUntilFirstFinishesTransaction
 
-# Notified Vincas
-ChangeManagerTests.IsSyncActive_SyncSetActiveToTrue_True
-CachingDataSourceTests.*
-ChangeManagerTests.*
-DataSourceCacheTests.*
-
 #----------------------------------------------------------------------------------------
-# Fail due to changes in DgnDb06
+# Fail due to DgnDb06 changes 
 #----------------------------------------------------------------------------------------
 
 # MetaSchema import issues in ECDb/EC3
-*CachingDataSourceTests*
+CachingDataSourceTests*
+DataSourceCacheTests.UpdateSchemas_DefaultUsedSchemasPassed_Success
 
-# EDDb upgrade is not yet supported or will not be. Waiting for requirements for any upgrades needed to be implemented.
-*DataSourceCacheUpgradeTests*
+# Issue with holding relationship deletion that removes held instances
+DataSourceCacheTests.CacheResponse_InstanceWithCachedFileRemovedInNewResults_RemovesCachedFile
 
-# ECDb ECSchema update is not yet supported
-*UpdateSchemas_SchemasWithDeletedPropertyPassedToDataSourceCacheWithCachedStatements_SuccessAndSchemasAccessable*
+# Graphite05x EDDb upgrade is not yet supported or will not be. Waiting for requirements for any upgrades needed to be implemented.
+DataSourceCacheUpgradeTests*
 
-# Fail because data source schema uses AnyClass
+# ECSchema update in ECDb is not yet supported
+DataSourceCacheTests.UpdateSchemas_SchemasWithDeletedPropertyPassedToDataSourceCacheWithCachedStatements_SuccessAndSchemasAccessable
+
+# Fail because data source schema uses AnyClass. Need to redesign ExtendedData code
 ExtendedDataAdapterTests.UpdateData_InstanceExistsAndFirstTime_SavesData
 ExtendedDataAdapterTests.GetData_InstanceDeleted_DataReturnedIsEmpty
+DataSourceCacheTests.GetExtendedData_UpdatedData_WorksFine
 
+# AnyClass is no longer supported. Need to redesign ChangeManager and CachingDataSource::SyncLocalChanges() code
+ChangeManagerTests.GetLegacyParentRelationshipClass_Default_NonNull
+ChangeManagerTests.LegacyCreateObject_RemoteIdIsEmpty_SetsRemoteId
+ChangeManagerTests.LegacyCreateObject_ParentPassed_CreatedInstanceAndRelatesWithLegacyRelationship
