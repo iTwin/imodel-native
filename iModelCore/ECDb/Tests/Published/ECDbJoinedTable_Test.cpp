@@ -1556,7 +1556,7 @@ TEST_F (JoinedTableECDbMapStrategyTests, RelationshipsWithKeyProp)
 
     //Insert Instances for Constraint classes of Relationships
     {
-    fooInstanceId1 = InsertTestInstance (db, "INSERT INTO dgn.Foo (A, B) VALUES(100001, 'Class Foo Instance 1')");
+    fooInstanceId1 = InsertTestInstance (db, "INSERT INTO dgn.Foo (B) VALUES('Class Foo Instance 1')");
     gooInstanceId1 = InsertTestInstance (db, "INSERT INTO dgn.Goo (C, D) VALUES(200001, 'Class Goo Instance 1')");
     gooInstanceId2 = InsertTestInstance (db, "INSERT INTO dgn.Goo (C, D) VALUES(200002, 'Class Goo Instance 2')");
 
@@ -1574,6 +1574,7 @@ TEST_F (JoinedTableECDbMapStrategyTests, RelationshipsWithKeyProp)
     fooHasGooInstanceId1 = InsertTestInstance (db, ecsql.c_str ());
 
     savePoint.Commit ();
+    db.SaveChanges();
 
     ecsql.Sprintf (ToSelectECSql (db, "FooHasGooWithKeyProp"), fooHasGooInstanceId1.GetValue ());
     VerifyInsertedInstance (db, ecsql.c_str (), fooInstanceId1, gooInstanceId1, fooClassId, gooClassId);
@@ -1593,6 +1594,7 @@ TEST_F (JoinedTableECDbMapStrategyTests, RelationshipsWithKeyProp)
     fooHasManyGooInstanceId2 = InsertTestInstance (db, ecsql.c_str ());
 
     savePoint.Commit ();
+    db.SaveChanges();
 
     ecsql.Sprintf (ToSelectECSql (db, "FooHasManyGooWithKeyProp"), fooHasManyGooInstanceId1.GetValue ());
     VerifyInsertedInstance (db, ecsql.c_str (), fooInstanceId1, gooInstanceId1, fooClassId, gooClassId);
