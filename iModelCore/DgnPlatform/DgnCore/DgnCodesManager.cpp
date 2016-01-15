@@ -158,6 +158,12 @@ void LocalCodesManager::Insert(DgnCodeSet const& codes)
     CachedStatementPtr stmt = GetLocalDb().GetCachedStatement(STMT_Insert);
     for (auto const& code : codes)
         {
+        if (code.IsEmpty())
+            {
+            BeAssert(false);
+            continue;
+            }
+
         stmt->BindId(Column::AuthorityId+1, code.GetAuthority());
         stmt->BindText(Column::NameSpace+1, code.GetNamespace(), Statement::MakeCopy::No);
         stmt->BindText(Column::Value+1, code.GetValue(), Statement::MakeCopy::No);
@@ -192,6 +198,7 @@ struct VirtualCodeSet : VirtualSet
 +---------------+---------------+---------------+---------------+---------------+------*/
 void LocalCodesManager::Cull(DgnCodeSet& codes)
     {
+    // Don't bother asking server to reserve codes which we've already reserved...
     VirtualCodeSet vset(codes);
     CachedStatementPtr stmt = GetLocalDb().GetCachedStatement(STMT_SelectInSet);
     stmt->BindVirtualSet(1, vset);
@@ -199,6 +206,16 @@ void LocalCodesManager::Cull(DgnCodeSet& codes)
         {
         DgnCode code(stmt->GetValueId<DgnAuthorityId>(Column::AuthorityId), stmt->GetValueText(Column::NameSpace), stmt->GetValueText(Column::Value));
         codes.erase(code);
+        }
+
+    // Don't bother asking server to reserve empty codes...
+    for (auto iter = codes.begin(); iter != codes.end(); /* */)
+        {
+        BeAssert(!iter->IsEmpty());
+        if (iter->IsEmpty())
+            iter = codes.erase(iter);
+        else
+            ++iter;
         }
     }
 
@@ -415,6 +432,9 @@ IDgnCodesServerP IDgnCodesManager::GetCodesServer() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 CodeStatus IDgnCodesManager::_ReserveCode(DgnCodeCR code)
     {
+    if (code.IsEmpty())
+        return CodeStatus::Success;
+
     Request req;
     req.insert(code);
     return _ReserveCodes(req).GetResult();
@@ -425,6 +445,12 @@ CodeStatus IDgnCodesManager::_ReserveCode(DgnCodeCR code)
 +---------------+---------------+---------------+---------------+---------------+------*/
 CodeStatus IDgnCodesManager::QueryCodeState(DgnCodeStateR state, DgnCodeCR code)
     {
+    if (code.IsEmpty())
+        {
+        state.SetAvailable();
+        return CodeStatus::Success;
+        }
+
     DgnCodeSet codes;
     codes.insert(code);
     DgnCodeInfoSet states;
@@ -444,6 +470,12 @@ CodeStatus IDgnCodesManager::QueryCodeState(DgnCodeStateR state, DgnCodeCR code)
 +---------------+---------------+---------------+---------------+---------------+------*/
 CodeStatus IDgnCodesServer::QueryCodeState(DgnCodeStateR state, DgnCodeCR code)
     {
+    if (code.IsEmpty())
+        {
+        state.SetAvailable();
+        return CodeStatus::Success;
+        }
+
     DgnCodeSet codes;
     codes.insert(code);
     DgnCodeInfoSet states;

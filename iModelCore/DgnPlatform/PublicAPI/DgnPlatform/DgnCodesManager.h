@@ -19,10 +19,29 @@ BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 //=======================================================================================
 //! The possible states in which an authority-issued code can exist.
 //! The server is the ultimate authority on every code's state.
+//!
+//! A code can be in exactly one of four possible states:
+//!     - Available: Any briefcase can reserve the code.
+//!     - Reserved: a briefcase has reserved the code for use. No other briefcase may reserve or use it.
+//!     - Used: A revision has been committed in which the code was assigned to an object. No briefcase may reserve or use it.
+//!     - Discarded: A revision has been committed in which a previously-used code became disused.
+//!       Any briefcase can reserve it, provided they have pulled the revision in which it became discarded.
+//!
+//! Possible transitions of code state:
+//!     Available => Reserved: A code which has never previously been used becomes reserved by a briefcase.
+//!     Reserved => Available: A reserved code which was never used is relinquished by the briefcase which reserved it.
+//!     Reserved => Used: A briefcase committed a revision in which it assigned a reserved code to an obejct.
+//!     Used => Discarded: A briefcase committed a revision in which the code became disused.
+//!     Discarded => Reserved: A previously-used code was reserved for use by a briefcase.
+//! Once a code is used, it remains tracked for the lifetime of a repository; therefore its state never returns to Available.
+//!
+//! In order to assign a code to an object, a briefcase must first reserve the code. This is verified when inserting and updating coded objects into the DgnDb.
+//! If this verification fails, the operation will return DgnDbStatus::CodeNotReserved.
 // @bsistruct                                                    Paul.Connelly   01/16
 //=======================================================================================
 struct DgnCodeState
 {
+private:
     enum Type : uint8_t
     {
         Available,  //!< The Code can be reserved for use by any briefcase
@@ -30,7 +49,7 @@ struct DgnCodeState
         Used,       //!< A revision has been committed to the server in which the Code was used by an object.
         Discarded,  //!< A revision has been committed to the server in which the Code became discarded by the object by which it was previously used.
     };
-private:
+
     Type                    m_type;
     Utf8String              m_revisionId;
     BeSQLite::BeBriefcaseId m_reservedBy;
@@ -44,10 +63,10 @@ protected:
 public:
     DgnCodeState() { SetAvailable(); } //!< Constructs a DgnCodeState for an available code
 
-    bool IsAvailable() const { return Available == GetState(); }
-    bool IsReserved() const { return Reserved == GetState(); }
-    bool IsUsed() const { return Used == GetState(); }
-    bool IsDiscarded() const { return Discarded == GetState(); }
+    bool IsAvailable() const { return Available == m_type; }
+    bool IsReserved() const { return Reserved == m_type; }
+    bool IsUsed() const { return Used == m_type; }
+    bool IsDiscarded() const { return Discarded == m_type; }
 
     void SetAvailable() { Init(Available); }
     void SetReserved(BeSQLite::BeBriefcaseId reservedBy) { Init(Reserved, "", reservedBy); }
@@ -59,8 +78,6 @@ public:
 
     //! Returns the ID of the briefcase which has reserved the code, or an invalid ID.
     BeSQLite::BeBriefcaseId GetReservedBy() const { return m_reservedBy; }
-
-    Type GetState() const { return m_type; }
 };
 
 //=======================================================================================
