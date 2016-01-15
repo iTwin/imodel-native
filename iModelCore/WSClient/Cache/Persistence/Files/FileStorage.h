@@ -2,7 +2,7 @@
  |
  |     $Source: Cache/Persistence/Files/FileStorage.h $
  |
- |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 
@@ -26,6 +26,7 @@ struct FileStorage
 
     private:
         BeFileName CreateNewRelativeCachedFilePath(BeFileNameCR currentFilePath, bool isPersistent);
+        static BeFileName CreateNewFilePath(BeFileNameCR oldFilePath, Utf8String newFileName);
 
         static BentleyStatus CreateNewCachedFileFolderName(Utf8StringR folderNameOut);
         static BentleyStatus RollbackFile(BeFileNameCR backupPath, BeFileNameCR originalPath);
@@ -57,6 +58,7 @@ struct FileStorage
         BeFileName GetAbsoluteFilePath(bool isPersistent, BeFileNameCR relativePath);
         BentleyStatus RemoveContainingFolder(BeFileNameCR filePath);
         BentleyStatus CleanupCachedFile(BeFileNameCR filePath);
+        BentleyStatus RenameCachedFile(FileInfoR info, Utf8StringCR newFileName);
     };
 
 END_BENTLEY_WEBSERVICES_NAMESPACE

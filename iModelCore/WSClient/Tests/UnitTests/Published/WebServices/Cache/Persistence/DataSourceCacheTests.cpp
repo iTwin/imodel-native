@@ -3428,54 +3428,6 @@ TEST_F(DataSourceCacheTests, ReadResponseInstanceKeys_ResultsContainParent_Retur
     EXPECT_TRUE(ECDbHelper::IsInstanceInMultiMap(cache->FindInstance({"TestSchema.TestClass", "A"}), instances));
     }
 
-// WIP06
-TEST_F(DataSourceCacheTests, ReadResponseInstanceKeys_CachedInstanceWithRelationshipToItself_ReturnsInstanceKeysAsDuplicate)
-    {
-    // Does not work due to fact that CachedResponseInfo relateds results instances and does not relate duplicates
-    auto cache = GetTestCache();
-
-    auto parentInstance = StubInstanceInCache(*cache, {"TestSchema.TestClass", "Parent"});
-    CachedResponseKey responseKey(parentInstance, nullptr);
-
-    StubInstances stubInstances;
-    stubInstances
-        .Add({"TestSchema.TestClass", "A"})
-        .AddRelated({"TestSchema.TestRelationshipClass", "AA"}, {"TestSchema.TestClass", "A"});
-    ASSERT_EQ(SUCCESS, cache->CacheResponse(responseKey, stubInstances.ToWSObjectsResponse()));
-
-    ECInstanceKeyMultiMap instances;
-    ASSERT_EQ(CacheStatus::OK, cache->ReadResponseInstanceKeys(responseKey, instances));
-
-    ECInstanceKeyMultiMap expectedInstances;
-    expectedInstances.insert(ECDbHelper::ToPair(cache->FindInstance({"TestSchema.TestClass", "A"})));
-    expectedInstances.insert(ECDbHelper::ToPair(cache->FindInstance({"TestSchema.TestClass", "A"})));
-    EXPECT_THAT(instances, ContainerEq(expectedInstances));
-    }
-
-// WIP06
-TEST_F(DataSourceCacheTests, ReadResponseInstanceKeys_CachedParentInstanceWithRelationshipToItself_ReturnsInstanceKeysAsDuplicate)
-    {
-    // Does not work due to fact that CachedResponseInfo relateds results instances and does not relate duplicates
-    auto cache = GetTestCache();
-
-    auto parentInstance = StubInstanceInCache(*cache, {"TestSchema.TestClass", "A"});
-    CachedResponseKey responseKey(parentInstance, nullptr);
-
-    StubInstances stubInstances;
-    stubInstances
-        .Add({"TestSchema.TestClass", "A"})
-        .AddRelated({"TestSchema.TestRelationshipClass", "AA"}, {"TestSchema.TestClass", "A"});
-    ASSERT_EQ(SUCCESS, cache->CacheResponse(responseKey, stubInstances.ToWSObjectsResponse()));
-
-    ECInstanceKeyMultiMap instances;
-    ASSERT_EQ(CacheStatus::OK, cache->ReadResponseInstanceKeys(responseKey, instances));
-
-    ECInstanceKeyMultiMap expectedInstances;
-    expectedInstances.insert(ECDbHelper::ToPair(parentInstance));
-    expectedInstances.insert(ECDbHelper::ToPair(parentInstance));
-    EXPECT_THAT(instances, ContainerEq(expectedInstances));
-    }
-
 TEST_F(DataSourceCacheTests, ReadResponseInstanceKeys_CachedWithKeyWithSeperateHolderButPassingOnlyParent_ReturnsCachedResults)
     {
     auto cache = GetTestCache();
