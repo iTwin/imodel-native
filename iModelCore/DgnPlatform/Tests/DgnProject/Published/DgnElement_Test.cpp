@@ -231,10 +231,10 @@ TEST_F(DgnElementTests, DgnElementTransformer)
         DgnElementPtr ec11 = all.FindElementById(c11->GetElementId());
         Placement3d eparentplacement = eparent1->ToGeometrySource3dP()->GetPlacement();
         Placement3d ec11placement = ec11->ToGeometrySource3dP()->GetPlacement();
-        ASSERT_EQ(45, eparentplacement.GetAngles().GetYaw().Degrees());
-        ASSERT_EQ(45, ec11placement.GetAngles().GetYaw().Degrees());
-        ASSERT_EQ( 0, ec11placement.GetAngles().GetPitch().Degrees()) << "pitch should have been unaffected";
-        ASSERT_EQ( 0, ec11placement.GetAngles().GetRoll().Degrees()) << "roll should have been unaffected";
+        EXPECT_DOUBLE_EQ(45, eparentplacement.GetAngles().GetYaw().Degrees());
+        EXPECT_DOUBLE_EQ(45, ec11placement.GetAngles().GetYaw().Degrees());
+        EXPECT_DOUBLE_EQ( 0, ec11placement.GetAngles().GetPitch().Degrees()) << "pitch should have been unaffected";
+        EXPECT_DOUBLE_EQ( 0, ec11placement.GetAngles().GetRoll().Degrees()) << "roll should have been unaffected";
         ASSERT_TRUE(eparentplacement.GetOrigin().AlmostEqual(DPoint3d::FromZero()));
         ASSERT_TRUE(ec11placement.GetOrigin().AlmostEqual(DPoint3d::From(0,sqrt(2),0)));
         }
