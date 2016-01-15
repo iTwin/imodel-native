@@ -74,7 +74,6 @@ private:
 
     // Not much to test with these...
     virtual LockStatus _QueryRevisionId(WStringR revId, LockableId lockId) override { revId.clear(); return LockStatus::Success; }
-    virtual LockStatus _SetRevisionId(LockableIdSet const& locks, WCharCP revId) override { return LockStatus::Success; }
 
     bool AreLocksAvailable(LockRequestCR reqs, BeBriefcaseId requestor);
     void GetDeniedLocks(DgnLockSet& locks, LockRequestCR reqs, BeBriefcaseId bcId);

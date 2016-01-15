@@ -96,6 +96,7 @@ enum class DgnDbStatus : int
     InDynamicTransaction,
     NoMultiTxnOperation,
     InvalidCodeAuthority,
+    CodeNotReserved,
     };
 
 //! Status Values for DgnViewport methods

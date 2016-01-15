@@ -416,7 +416,6 @@ protected:
     virtual LockStatus _QueryLocks(DgnLockSet& locks, DgnDbR db) = 0;
     virtual LockStatus _QueryOwnership(DgnLockOwnershipR ownership, LockableId lockId) = 0;
     virtual LockStatus _QueryRevisionId(WStringR revisionid, LockableId lockId) = 0;
-    virtual LockStatus _SetRevisionId(LockableIdSet const& locks, WCharCP revisionId) = 0;
 public:
     //! Query whether all specified locks are held at or above the specified levels by the specified briefcase
     LockStatus QueryLocksHeld(bool& held, LockRequestCR locks, DgnDbR db) { return _QueryLocksHeld(held, locks, db); }
@@ -444,9 +443,6 @@ public:
     //! @param[in]      lockId     The ID of the lockable object
     //! @return Success if the query succeeded, or else an error code
     LockStatus QueryRevisionId(WStringR revisionId, LockableId lockId) { return _QueryRevisionId(revisionId, lockId); }
-
-    //! Updates the revision ID in which the specified lockable objects were most recently modified
-    LockStatus SetRevisionId(LockableIdSet const& locks, WCharCP revisionId) { return _SetRevisionId(locks, revisionId); }
 };
 
 //=======================================================================================
