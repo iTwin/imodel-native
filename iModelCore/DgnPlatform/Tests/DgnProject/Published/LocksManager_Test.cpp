@@ -1387,7 +1387,7 @@ struct ExtractLocksTest : SingleBriefcaseLocksTest
             return DgnDbStatus::WriteError;
 
         RevisionStatus revStat;
-        DgnRevisionPtr rev = m_db->Revisions().StartCreateRevision(&revStat);
+        DgnRevisionPtr rev = m_db->Revisions().StartCreateRevision(&revStat, DgnRevision::Include::Locks);
         if (rev.IsNull())
             {
             if (RevisionStatus::NoTransactions == revStat)
@@ -1401,12 +1401,9 @@ struct ExtractLocksTest : SingleBriefcaseLocksTest
                 }
             }
 
-        ChangeStreamFileReader stream(rev->GetChangeStreamFile());
-        DgnDbStatus status = req.FromChangeSet(stream, *m_db);
-
+        req.FromRevision(*rev);
         m_db->Revisions().AbandonCreateRevision();
-
-        return status;
+        return DgnDbStatus::Success;
         }
 };
 

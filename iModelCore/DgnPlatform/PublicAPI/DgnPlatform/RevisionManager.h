@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/RevisionManager.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -19,6 +19,16 @@ BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 //=======================================================================================
 struct DgnRevision : RefCountedBase
 {
+    //! Options for additional information to include in a DgnRevision
+    enum class Include
+    {
+        None = 0, //!< Include no additional data
+        Locks = 1 << 0, //!< Include any locks required for the changes within a revision
+        Codes = 1 << 1, //!< Include any DgnCodes which were assigned or discarded within a revision
+        CodesAndLocks = Codes | Locks, //!< Include both locks and codes
+        All = CodesAndLocks, //!< Include all additional information
+    };
+
 private:
     Utf8String m_id;
     Utf8String m_parentId;
@@ -30,6 +40,10 @@ private:
     Utf8String m_userName;
     DateTime m_dateTime;
     Utf8String m_summary;
+
+    DgnCodeSet  m_assignedCodes;
+    DgnCodeSet  m_discardedCodes;
+    DgnLockSet  m_usedLocks;
 
     void SetChangeStreamFile(BeFileNameCR changeStreamFile) { m_changeStreamFile = changeStreamFile; }
     static BeFileName BuildChangeStreamPathname(Utf8String revisionId);
@@ -86,7 +100,19 @@ public:
 
     //! Dump to stdout for debugging purposes.
     DGNPLATFORM_EXPORT void Dump(DgnDbCR dgndb) const;
+
+    //! Get the set of locks which are required for this revision's changes, if Include::Locks was specified
+    DgnLockSet const& GetLocks() const { return m_usedLocks; }
+    //! Get the set of codes which were assigned to objects within this revision's changes, if Include::Codes was specified
+    DgnCodeSet const& GetAssignedCodes() const { return m_assignedCodes; }
+    //! Get the set of codes which became discarded within this revision's changes, if Include::Codes was specified
+    DgnCodeSet const& GetDiscardedCodes() const { return m_discardedCodes; }
+
+    void IncludeChangeGroupData(BeSQLite::ChangeGroup& changeGroup, Include include, DgnDbR db); //!< @private
+    void ExtractUsedLocks(DgnLockSet& locks); //!< @private
 };
+
+ENUM_IS_FLAGS(DgnRevision::Include);
 
 //=======================================================================================
 //! Streams the contents of multiple files containing serialized change streams
@@ -138,7 +164,7 @@ private:
     RevisionStatus UpdateInitialParentRevisionId();
 
     RevisionStatus GroupChanges(BeSQLite::ChangeGroup& changeGroup) const;
-    DgnRevisionPtr CreateRevisionObject(RevisionStatus* outStatus, BeSQLite::ChangeGroup& changeGroup);
+    DgnRevisionPtr CreateRevisionObject(RevisionStatus* outStatus, BeSQLite::ChangeGroup& changeGroup, DgnRevision::Include include);
     static RevisionStatus WriteChangesToFile(BeFileNameCR pathname, BeSQLite::ChangeGroup& changeGroup);
 
 public:
@@ -176,7 +202,7 @@ public:
     //! @param[out] status Optional (can pass null). Set to RevisionStatus::Success if the revision was successfully 
     //! finished or some error status otherwise.
     //! @see FinishCreateRevision, AbandonCreateRevision
-    DGNPLATFORM_EXPORT DgnRevisionPtr StartCreateRevision(RevisionStatus* status = nullptr);
+    DGNPLATFORM_EXPORT DgnRevisionPtr StartCreateRevision(RevisionStatus* status = nullptr, DgnRevision::Include = DgnRevision::Include::All);
     
     //! Return true if in the process of creating a revision
     bool IsCreatingRevision() const { return m_currentRevision.IsValid(); }

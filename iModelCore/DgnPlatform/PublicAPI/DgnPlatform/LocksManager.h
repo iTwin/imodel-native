@@ -276,9 +276,6 @@ public:
     //! @param[in]      id 
     DGNPLATFORM_EXPORT void Remove(LockableId id);
 
-    //! Populate a LockRequest object from the set of changes in a DgnDb, containing all locks required for the actual changes made.
-    DGNPLATFORM_EXPORT DgnDbStatus FromChangeSet(BeSQLite::IChangeSet& changes, DgnDbR db);
-
     DGNPLATFORM_EXPORT void ToJson(JsonValueR value) const; //!< Convert to JSON representation
     DGNPLATFORM_EXPORT bool FromJson(JsonValueCR value); //!< Attempt to initialize from JSON representation
 
@@ -303,8 +300,9 @@ public:
         DGNPLATFORM_EXPORT bool FromJson(JsonValueCR value); //!< Attempt to initialize from JSON representation
     };
 
-    DgnDbStatus FromChangeSet(BeSQLite::IChangeSet& changes, DgnDbR db, bool stopOnFirst); //!< @private
     void FromChangeSummary(DgnChangeSummary const& changes, bool stopOnFirst=false); //!< @private
+    void ExtractLockSet(DgnLockSet& locks); //!< @private
+    DGNPLATFORM_EXPORT void FromRevision(DgnRevision& revision); //!< @private
 };
 
 ENUM_IS_FLAGS(LockRequest::ResponseOptions);
