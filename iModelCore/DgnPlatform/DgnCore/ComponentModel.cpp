@@ -538,8 +538,12 @@ ComponentDefPtr ComponentDef::FromECSqlName(DgnDbStatus* statusOut, DgnDbR db, U
     {
     auto cdefclass = getECClassByFullName(db, ecsqlClassName);
     if (nullptr == cdefclass)
+        {
+        if (nullptr != statusOut)
+            *statusOut = DgnDbStatus::NotFound;
         return nullptr;
-    return FromECClass(nullptr, db, *cdefclass);
+        }
+    return FromECClass(statusOut, db, *cdefclass);
     }
 
 /*---------------------------------------------------------------------------------**//**

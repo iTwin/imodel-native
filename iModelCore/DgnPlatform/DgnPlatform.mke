@@ -618,16 +618,16 @@ LINKER_LIBRARIES        =   $(ContextSubpartsLibs)$(libprefix)BeSQLiteEC$(libext
     LINKER_LIBRARIES +    $(ContextSubpartsLibs)$(libprefix)BeJavaScript$(stlibext)
     %if $(TARGET_PLATFORM) == "Windows"
         %ifndef NDEBUG
-            LINKER_LIBRARIES + jsrt.lib
+            %if (" " != $[@findstring "[Version 10.", $[@readstdout ver]])
+                LINKER_LIBRARIES + chakrart.lib
+            %else
+                LINKER_LIBRARIES + jsrt.lib
+            %endif
         %else
             LINKER_LIBRARIES + $(ContextSubpartsLibs)libv8.lib
         %endif
     %elif $(TARGET_PLATFORM) == "WinRT"
-        %if $(MSVC_VERSION) >= 1900
-            LINKER_LIBRARIES + chakrart.lib
-        %else
-            LINKER_LIBRARIES + jsrt.lib
-        %endif
+        LINKER_LIBRARIES + chakrart.lib
     %elif $(TARGET_PLATFORM) == "Android"
         LINKER_LIBRARIES + $(ContextLibPrefix)v8_base.arm.a
         LINKER_LIBRARIES + $(ContextLibPrefix)v8_snapshot.a
