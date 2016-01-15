@@ -36,6 +36,19 @@
         <ECProperty propertyName="CategoryId" typeName="long"/><!-- should be non-nullable but shared table... -->
         <ECProperty propertyName="Geometry" typeName="binary"/>
     </ECEntityClass>
+    <ECRelationshipClass typeName="GeometrySourceIsInCategory" description="Element is in Category" strength="referencing">
+        <!-- WIP: want ON DELETE RESTRICT? -->
+        <Source cardinality="(0,N)" roleLabel="is in category" polymorphic="true">
+            <Class class="GeometrySource">
+                <Key>
+                    <Property name="CategoryId"/>
+                </Key>
+            </Class>
+        </Source>
+        <Target cardinality="(1,1)" roleLabel="contains elements" polymorphic="false">
+            <Class class="Category"/>
+        </Target>
+    </ECRelationshipClass>
     <ECEntityClass typeName="GeometrySource2d" modifier="Abstract">
         <BaseClass>GeometrySource</BaseClass>
         <ECProperty propertyName="Origin" typeName="point2d" />
@@ -403,6 +416,12 @@
     </ECEntityClass>
 
     <ECEntityClass typeName="DefinitionElement" modifier="Abstract">
+        <ECCustomAttributes>
+            <ClassMap xmlns="ECDbMap.01.00">
+                <!-- WIP: This rename didn't work. Should be applied to this and all other dgn_Element join tables. -->
+                <ECInstanceIdColumn>ElementId</ECInstanceIdColumn>
+            </ClassMap>
+        </ECCustomAttributes>
         <BaseClass>Element</BaseClass>
     </ECEntityClass>
     <ECEntityClass typeName="DictionaryElement" modifier="Abstract">
@@ -1197,6 +1216,7 @@
     </ECEntityClass>
     <ECRelationshipClass typeName="ElementUsesGeomParts" strength="referencing">
         <!-- Used to indicate that an Element uses a GeomPart.  This is useful for "garbage collecting" or finding Elements that would be affected by a change to a GeomPart. -->
+        <!-- WIP: want ON DELETE RESTRICT? -->
         <ECCustomAttributes>
             <ClassMap xmlns="ECDbMap.01.00">
                 <ECInstanceIdColumn>Id</ECInstanceIdColumn>
@@ -1211,73 +1231,6 @@
         </Source>
         <Target cardinality="(0,N)" polymorphic="false">
             <Class class="GeomPart"/>
-        </Target>
-    </ECRelationshipClass>
-    <ECRelationshipClass typeName="GeometrySourceIsInCategory" description="Element is in Category" strength="referencing">
-        <Source cardinality="(0,N)" roleLabel="is in category" polymorphic="false">
-            <Class class="GeometrySource">
-                <Key>
-                    <Property name="CategoryId"/>
-                </Key>
-            </Class>
-        </Source>
-        <Target cardinality="(1,1)" roleLabel="contains elements" polymorphic="true">
-            <Class class="Category"/>
-        </Target>
-    </ECRelationshipClass>
-    <!-- NEEDSWORK ECRelationships don't support abstract endpoints.
-         ECRelationship is required in order to generate foreign key constraint.
-         Therefore we must define an ECRelationship for each concrete subclass of GeometrySource to get a foreign key constraint on CategoryId -->
-    <ECRelationshipClass typeName="SpatialElementIsInCategory" description="Element is in Category" strength="referencing">
-        <!-- WIP: want ON DELETE RESTRICT? -->
-        <Source cardinality="(0,N)" roleLabel="is in category" polymorphic="true">
-            <Class class="SpatialElement">
-                <Key>
-                    <Property name="CategoryId"/>
-                </Key>
-            </Class>
-        </Source>
-        <Target cardinality="(1,1)" roleLabel="contains elements" polymorphic="false">
-            <Class class="Category"/>
-        </Target>
-    </ECRelationshipClass>
-    <ECRelationshipClass typeName="AnnotationElementIsInCategory" description="Element is in Category" strength="referencing">
-        <!-- WIP: want ON DELETE RESTRICT? -->
-        <Source cardinality="(0,N)" roleLabel="is in category" polymorphic="true">
-            <Class class="AnnotationElement">
-                <Key>
-                    <Property name="CategoryId"/>
-                </Key>
-            </Class>
-        </Source>
-        <Target cardinality="(1,1)" roleLabel="contains elements" polymorphic="false">
-            <Class class="Category"/>
-        </Target>
-    </ECRelationshipClass>
-    <ECRelationshipClass typeName="DrawingElementIsInCategory" description="Element is in Category" strength="referencing">
-        <!-- WIP: want ON DELETE RESTRICT? -->
-        <Source cardinality="(0,N)" roleLabel="is in category" polymorphic="true">
-            <Class class="DrawingElement">
-                <Key>
-                    <Property name="CategoryId"/>
-                </Key>
-            </Class>
-        </Source>
-        <Target cardinality="(1,1)" roleLabel="contains elements" polymorphic="false">
-            <Class class="Category"/>
-        </Target>
-    </ECRelationshipClass>
-    <ECRelationshipClass typeName="SheetElementIsInCategory" description="Element is in Category" strength="referencing">
-        <!-- WIP: want ON DELETE RESTRICT? -->
-        <Source cardinality="(0,N)" roleLabel="is in category" polymorphic="true">
-            <Class class="SheetElement">
-                <Key>
-                    <Property name="CategoryId"/>
-                </Key>
-            </Class>
-        </Source>
-        <Target cardinality="(1,1)" roleLabel="contains elements" polymorphic="false">
-            <Class class="Category"/>
         </Target>
     </ECRelationshipClass>
     
