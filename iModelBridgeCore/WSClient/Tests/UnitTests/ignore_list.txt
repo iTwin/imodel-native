@@ -28,8 +28,8 @@ FileUtilTests.TruncateFilePath_MaxPathSoSmallThatExtensionWouldBeChanged_Error
 FileUtilTests.TruncateFilePath_MaxPathSoSmallThatFileNameWouldBeEmpty_Error
 FileUtilTests.TruncateFilePath_PathIsFolder_Error
 
-# Hangs regularly on firebug; have notified Vincas
-BeSQLiteDbTransactionHandlerTests.StartTransaction_TwoConnections_SecondConnectionIsBlockedUntilFirstFinishesTransaction
+# Hangs regularly on firebug; Does not reproduce locally on DgnDb06Dev. Enabling to to check on firebug.
+#BeSQLiteDbTransactionHandlerTests.StartTransaction_TwoConnections_SecondConnectionIsBlockedUntilFirstFinishesTransaction
 
 #----------------------------------------------------------------------------------------
 # Fail due to DgnDb06 changes 
