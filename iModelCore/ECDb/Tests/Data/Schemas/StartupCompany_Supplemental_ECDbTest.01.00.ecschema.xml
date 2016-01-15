@@ -1,11 +1,11 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
-<ECSchema schemaName="StartupCompany_Supplemental_ECDbTest" nameSpacePrefix="sbc" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
-    <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="01.00" prefix="bsca" />
-    <ECSchemaReference name="Unit_Attributes" version="01.00" prefix="units_attribs" />
-    <ECSchemaReference name="EditorCustomAttributes" version="01.00" prefix="beca" />
-    <ECSchemaReference name="StartupCompany" version="02.00" prefix="stco" />
+<?xml version="1.0" encoding="UTF-8"?>
+<ECSchema schemaName="StartupCompany_Supplemental_ECDbTest" nameSpacePrefix="sbc" version="01.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.0">
+    <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="01.12" prefix="bsca"/>
+    <ECSchemaReference name="EditorCustomAttributes" version="01.02" prefix="beca"/>
+    <ECSchemaReference name="StartupCompany" version="02.00" prefix="stco"/>
+    <ECSchemaReference name="Unit_Attributes" version="01.00" prefix="units_attribs"/>
     <ECCustomAttributes>
-        <SupplementalSchemaMetaData xmlns="Bentley_Standard_CustomAttributes.01.00">
+        <SupplementalSchemaMetaData xmlns="Bentley_Standard_CustomAttributes.01.12">
             <PrimarySchemaName>StartupCompany</PrimarySchemaName>
             <PrimarySchemaMajorVersion>2</PrimarySchemaMajorVersion>
             <PrimarySchemaMinorVersion>0</PrimarySchemaMinorVersion>
@@ -13,37 +13,36 @@
             <Purpose>ECDbTest</Purpose>
             <IsUserSpecific>False</IsUserSpecific>
         </SupplementalSchemaMetaData>
-        <TreeColorCustomAttributes xmlns="Bentley_Standard_CustomAttributes.01.00">
+        <TreeColorCustomAttributes xmlns="Bentley_Standard_CustomAttributes.01.12">
             <NodeBackColor>Yellow</NodeBackColor>
             <NodeForeColor>Green</NodeForeColor>
         </TreeColorCustomAttributes>
         <UnitSpecifications xmlns="Unit_Attributes.01.00">
             <UnitSpecificationList>
                 <UnitSpecification>
-                    <KindOfQuantityName>MOLAR_THERMODYNAMIC_ENERGY</KindOfQuantityName>
                     <DimensionName>M_L2_PER_T2_MOL</DimensionName>
-                    <UnitName />
-                    <AllowableUnits />
+                    <KindOfQuantityName>MOLAR_THERMODYNAMIC_ENERGY</KindOfQuantityName>
+                    <UnitName/>
                 </UnitSpecification>
                 <UnitSpecification>
-                    <KindOfQuantityName>MOBILITY</KindOfQuantityName>
                     <DimensionName>T2_EC_PER_M</DimensionName>
-                    <UnitName />
-                    <AllowableUnits />
+                    <KindOfQuantityName>MOBILITY</KindOfQuantityName>
+                    <UnitName/>
                 </UnitSpecification>
             </UnitSpecificationList>
         </UnitSpecifications>
     </ECCustomAttributes>
-    <ECClass typeName="AAA" isDomainClass="True">
+    <ECEntityClass typeName="AAA" modifier="None">
         <ECCustomAttributes>
-            <Category xmlns="EditorCustomAttributes.01.00">
+            <Category xmlns="EditorCustomAttributes.01.02">
                 <Name>TestClass</Name>
             </Category>
         </ECCustomAttributes>
-    </ECClass>
-    <ECClass typeName="AAFoo" isDomainClass="True">
+    </ECEntityClass>
+    <ECEntityClass typeName="AAFoo" modifier="None">
         <ECCustomAttributes>
-            <StandardValues xmlns="EditorCustomAttributes.01.00">
+            <StandardValues xmlns="EditorCustomAttributes.01.02">
+                <MustBeFromList>False</MustBeFromList>
                 <ValueMap>
                     <ValueMap>
                         <DisplayString>X</DisplayString>
@@ -54,86 +53,76 @@
                         <Value>2</Value>
                     </ValueMap>
                 </ValueMap>
-                <MustBeFromList>False</MustBeFromList>
             </StandardValues>
         </ECCustomAttributes>
-    </ECClass>
-    <ECClass typeName="AFooChild" isDomainClass="True">
-        <ECStructProperty propertyName="anglesAAFoo" typeName="stco:AnglesStruct">
+    </ECEntityClass>
+    <ECEntityClass typeName="AFooChild" modifier="None">
+        <ECStructProperty propertyName="anglesAAFoo" typeName="stco:AnglesStruct" readOnly="false">
             <ECCustomAttributes>
-                <AlwaysExpand xmlns="EditorCustomAttributes.01.00">
+                <AlwaysExpand xmlns="EditorCustomAttributes.01.02">
                     <ArrayMembers>True</ArrayMembers>
                 </AlwaysExpand>
             </ECCustomAttributes>
         </ECStructProperty>
-    </ECClass>
-    <ECRelationshipClass typeName="AssetRelationshipsBase" displayLabel="Asset Relationships Base" isDomainClass="False" strength="referencing" strengthDirection="forward">
+    </ECEntityClass>
+    <ECRelationshipClass typeName="AssetRelationshipsBase" displayLabel="Asset Relationships Base" modifier="Abstract" strength="referencing" strengthDirection="forward">
         <ECCustomAttributes>
-            <TreeColorCustomAttributes xmlns="Bentley_Standard_CustomAttributes.01.00">
+            <TreeColorCustomAttributes xmlns="Bentley_Standard_CustomAttributes.01.12">
                 <NodeBackColor>GrayText</NodeBackColor>
                 <NodeForeColor>Info</NodeForeColor>
             </TreeColorCustomAttributes>
         </ECCustomAttributes>
+        <Source cardinality="(0,1)" polymorphic="true"/>
+        <Target cardinality="(0,1)" polymorphic="true"/>
     </ECRelationshipClass>
-    <ECClass typeName="ClassWithPrimitiveArrayProperties" isDomainClass="True">
+    <ECEntityClass typeName="ClassWithPrimitiveArrayProperties" modifier="None">
         <ECCustomAttributes>
-            <ClassPriority xmlns="EditorCustomAttributes.01.00" />
+            <ClassPriority xmlns="EditorCustomAttributes.01.02"/>
         </ECCustomAttributes>
-    </ECClass>
-    <ECClass typeName="Employee" isDomainClass="True">
-        <ECStructProperty propertyName="Address" typeName="stco:Location">
+    </ECEntityClass>
+    <ECEntityClass typeName="Employee" modifier="None">
+        <ECStructProperty propertyName="Address" typeName="stco:Location" readOnly="false">
             <ECCustomAttributes>
-                <Category xmlns="EditorCustomAttributes.01.00">
+                <Category xmlns="EditorCustomAttributes.01.02">
                     <Name>Test Atribute</Name>
                     <DisplayLabel>Employee Class</DisplayLabel>
                     <Expand>True</Expand>
                 </Category>
             </ECCustomAttributes>
         </ECStructProperty>
-    </ECClass>
-    <ECClass typeName="Furniture" isDomainClass="True">
-        <ECProperty propertyName="AssetID" typeName="string" displayLabel="Asset ID">
+    </ECEntityClass>
+    <ECEntityClass typeName="Furniture" modifier="None">
+        <ECProperty propertyName="AssetID" typeName="string" displayLabel="Asset ID" readOnly="false">
             <ECCustomAttributes>
-                <RequiresRefresh xmlns="EditorCustomAttributes.01.00" />
+                <RequiresRefresh xmlns="EditorCustomAttributes.01.02"/>
             </ECCustomAttributes>
         </ECProperty>
-    </ECClass>
-    <ECClass typeName="LikesToShare2" isDomainClass="True">
-        <ECProperty propertyName="Conflicted" typeName="string">
+    </ECEntityClass>
+    <ECEntityClass typeName="LikesToShare2" modifier="None">
+        <ECProperty propertyName="Conflicted" typeName="string" readOnly="false">
             <ECCustomAttributes>
-                <Category xmlns="EditorCustomAttributes.01.00">
+                <Category xmlns="EditorCustomAttributes.01.02">
                     <Name>Hello</Name>
                 </Category>
             </ECCustomAttributes>
         </ECProperty>
-    </ECClass>
-    <ECClass typeName="Location" isStruct="True">
-        <ECProperty propertyName="Zip" typeName="string" displayLabel="Zip Code">
+    </ECEntityClass>
+    <ECStructClass typeName="Location" modifier="None">
+        <ECProperty propertyName="Zip" typeName="string" displayLabel="Zip Code" readOnly="false">
             <ECCustomAttributes>
-                <Localizable xmlns="EditorCustomAttributes.01.00" />
+                <Localizable xmlns="EditorCustomAttributes.01.02"/>
             </ECCustomAttributes>
         </ECProperty>
-    </ECClass>
-    <ECClass typeName="Project" description="Project" isDomainClass="True">
-        <ECProperty propertyName="InProgress" typeName="boolean" displayLabel="In Progress">
+    </ECStructClass>
+    <ECEntityClass typeName="Project" description="Project" modifier="None">
+        <ECProperty propertyName="InProgress" typeName="boolean" displayLabel="In Progress" readOnly="false">
             <ECCustomAttributes>
-                <BooleanDisplay xmlns="EditorCustomAttributes.01.00">
+                <BooleanDisplay xmlns="EditorCustomAttributes.01.02">
                     <TrueString>Yes</TrueString>
                     <FalseString>No</FalseString>
                 </BooleanDisplay>
             </ECCustomAttributes>
         </ECProperty>
-        <ECProperty propertyName="TeamSize" typeName="int" displayLabel="Team Size">
-            <ECCustomAttributes>
-            <!--
-                <UnitSpecification xmlns="Unit_Attributes.01.00">
-                    <KindOfQuantityName>NEUTRON_SOURCE_DENSITY</KindOfQuantityName>
-                    <DimensionName>ONE_PER_L3_T</DimensionName>
-                    <UnitName />
-                    <AllowableUnits />
-                </UnitSpecification>
-                -->
-            </ECCustomAttributes>
-        </ECProperty>
-    </ECClass>
+        <ECProperty propertyName="TeamSize" typeName="int" displayLabel="Team Size" readOnly="false"/>
+    </ECEntityClass>
 </ECSchema>

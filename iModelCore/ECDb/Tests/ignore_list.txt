@@ -43,3 +43,9 @@ ECSqlStatementTests.MiscTests
 ECSqlDeleteTestFramework.WhereRelationshipWithAdditionalPropsTests
 ECSqlSelectTestFramework.WhereRelationshipWithAdditionalPropsTests
 ECSqlUpdateTestFramework.WhereRelationshipWithAdditionalPropsTests
+
+#TFS357967 (Colin)
+ECDbSchemas.SchemaDiff
+ECDbSchemas.ClassDiff
+ECDbSchemas.RelationshiClassDiff
+ECDbSchemas.PropertiesDiff

@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<ECSchema schemaName="ECSqlTest" nameSpacePrefix="ecsqltestKeys" version="1.0" description="ECSQL test schema" displayLabel="ECSQL test schema" xmlns:ecschema="http://www.bentley.com/schemas/Bentley.ECXML.2.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="ecschema ECSchema.xsd" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+<ECSchema schemaName="ECSqlTestKeys" nameSpacePrefix="ecsqltestKeys" version="1.0" description="ECSQL test schema" displayLabel="ECSQL test schema" xmlns:ecschema="http://www.bentley.com/schemas/Bentley.ECXML.2.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="ecschema ECSchema.xsd" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
     <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="01.11" prefix="bsca" />
     <ECSchemaReference name="Bentley_Standard_Classes" version="01.00" prefix="bsm" />
     <ECClass typeName="P" description="Class with primitive properties (default mappings)" isDomainClass="True">
