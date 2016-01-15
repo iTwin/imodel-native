@@ -91,6 +91,14 @@ public:
     PropertyMapCP GetTargetECInstanceIdPropMap () const { return m_targetConstraintMap.GetECInstanceIdPropMap (); }
     PropertyMapRelationshipConstraintClassId const* GetTargetECClassIdPropMap () const { return m_targetConstraintMap.GetECClassIdPropMap (); }
     virtual DataIntegrityEnforcementMethod GetDataIntegrityEnforcementMethod() const =0;
+    virtual bool RequiresJoin(ECN::ECRelationshipEnd endPoint) const
+        {
+        auto otherEndClassIdPropertyMap = endPoint == ECN::ECRelationshipEnd::ECRelationshipEnd_Source ? GetSourceECClassIdPropMap() : GetTargetECClassIdPropMap();
+        if (!otherEndClassIdPropertyMap->IsVirtual() && !otherEndClassIdPropertyMap->IsMappedToClassMapTables())
+            return true;
+
+        return false;
+        }
     };
 
 /*=================================================================================**//**
@@ -142,7 +150,19 @@ public:
     bool GetOtherEndECClassIdColumnName (Utf8StringR columnName, ECDbSqlTable const& table) const { return GetOtherEndECClassIdColumnName (columnName, table, false);}
     static ClassMapPtr Create (ECN::ECRelationshipClassCR ecRelClass, ECDbMapCR ecDbMap, ECDbMapStrategy mapStrategy, bool setIsDirty) { return new RelationshipClassEndTableMap (ecRelClass, ecDbMap, mapStrategy, setIsDirty); }
     virtual DataIntegrityEnforcementMethod GetDataIntegrityEnforcementMethod() const override;
+    bool RequiresJoin(ECN::ECRelationshipEnd endPoint) const override
+        {
+        //We need to join if ECClassId is both SourceECClassId and TargetECClassId. This case of selfJoin where we must join.
+        if (endPoint == GetThisEnd())
+            return false;
 
+        auto otherEndClassIdPropertyMap = endPoint == ECN::ECRelationshipEnd::ECRelationshipEnd_Source ? GetSourceECClassIdPropMap() : GetTargetECClassIdPropMap();
+        if (!otherEndClassIdPropertyMap->IsVirtual() && !otherEndClassIdPropertyMap->IsMappedToClassMapTables())
+            return true;
+
+        return  GetTargetECClassIdPropMap()->GetFirstColumn() == GetSourceECClassIdPropMap()->GetFirstColumn()
+            && !GetTargetECClassIdPropMap()->IsVirtual() && !GetTargetECClassIdPropMap()->IsVirtual();
+        }
     };
 
 /*==========================================================================
