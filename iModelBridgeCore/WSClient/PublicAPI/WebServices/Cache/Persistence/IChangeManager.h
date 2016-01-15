@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/WebServices/Cache/Persistence/IChangeManager.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -117,6 +117,12 @@ struct EXPORT_VTABLE_ATTRIBUTE IChangeManager
         //! @param[in] copyFile - pass false to move file to cache and true to copy and leave original
         //! @param[in] syncStatus
         virtual BentleyStatus ModifyFile(ECInstanceKeyCR instanceKey, BeFileNameCR filePath, bool copyFile, SyncStatus syncStatus = SyncStatus::Ready) = 0;
+
+        //! Modify name for existing modified file on disk. Does not modify any properties in ECInstance.
+        //! @param[in] instanceKey
+        //! @param[in] newFileName - new name for file. Invalid characters that are not supported by file system will be normalized
+        //! @param[in] syncStatus
+        virtual BentleyStatus ModifyFileName(ECInstanceKeyCR instanceKey, Utf8StringCR newFileName) = 0;
 
         //! Change whether or not an object is ready to be synced to the server
         virtual BentleyStatus SetSyncStatus(ECInstanceKeyCR instanceKey, SyncStatus syncStatus) = 0;

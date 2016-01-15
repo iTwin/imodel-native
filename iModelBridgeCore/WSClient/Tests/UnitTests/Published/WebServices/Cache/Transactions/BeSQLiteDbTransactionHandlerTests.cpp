@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/WebServices/Cache/Transactions/BeSQLiteDbTransactionHandlerTests.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -45,7 +45,6 @@ struct TestBeSQLiteDbTransactionHandler : BeSQLiteDbTransactionHandler
             }
     };
 
-// DISABLED as asserts log to output
 TEST_F(BeSQLiteDbTransactionHandlerTests, CommitTransaction_TransactionNotStarted_Error)
     {
     BeSQLite::Db::CreateParams createParams;

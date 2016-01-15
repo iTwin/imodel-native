@@ -3,17 +3,22 @@
 #----------------------------------------------------------------------------------------
 
 #----------------------------------------------------------------------------------------
-#   Tests that need attention
+# Unknown issues - need to investigate
 #----------------------------------------------------------------------------------------
-*Create_PassedMandatoryValues_SetsValues* # TODO: enable when Device::GetDeviceId() is implemented for Windows
-BeSQLiteDbTransactionHandlerTests.StartTransaction_TwoConnections_SecondConnectionIsBlockedUntilFirstFinishesTransaction # Hangs regularly on firebug; have notified Vincas.
-ChangeManagerTests.IsSyncActive_SyncSetActiveToTrue_True # notified Vincas
-CachingDataSourceTests.* # notified Vincas
-ChangeManagerTests.* # notified Vincas
+
 CachingDataSourceTests.GetFile_ClassDoesNotHaveFileDependentPropertiesCA_ProgressIsCalledWithNoNameAndNoSizeAndFileHasDefaultName
-DataSourceCacheTests.* # notified Vincas
 DataSourceCacheUpgradeTests.*
 *DataSourceCache*
+ECDbAdapterTests.*
+
+#----------------------------------------------------------------------------------------
+# Known issues
+#----------------------------------------------------------------------------------------
+
+# GetResult() race condition makes test fail randomly
+CachingDataSourceTests.OpenOrCreate_CalledSecondTimeAfterCacheWasCreated_OpensAndSucceeds
+
+#Fails on iOS; Vincas said to ignore
 ECDbAdapterTests.*
 
 # Fails on Android. Notified Vincas
@@ -25,16 +30,30 @@ FileUtilTests.TruncateFilePath_MaxPathSoSmallThatExtensionWouldBeChanged_Error
 FileUtilTests.TruncateFilePath_MaxPathSoSmallThatFileNameWouldBeEmpty_Error
 FileUtilTests.TruncateFilePath_PathIsFolder_Error
 
-#Fails on iOS; Vincas said to ignore
-ECDbAdapterTests.*
+# TODO: enable when Device::GetDeviceId() is implemented for Windows
+*Create_PassedMandatoryValues_SetsValues*
 
-CachingDataSourceTests.OpenOrCreate_CalledSecondTimeAfterCacheWasCreated_OpensAndSucceeds # Was DISABLED. Need to investigate
-DataSourceCacheTests.ReadResponseInstanceKeys_CachedInstanceWithRelationshipToItself_ReturnsInstanceKeysAsDuplicate  # Was DISABLED. Need to investigate
-DataSourceCacheTests.ReadResponseInstanceKeys_CachedParentInstanceWithRelationshipToItself_ReturnsInstanceKeysAsDuplicate  # Was DISABLED. Need to investigate
-BeSQLiteDbTransactionHandlerTests.CommitTransaction_TransactionNotStarted_Error  # Was DISABLED. Need to investigate
-BuddiClientTests.GetRegions_Default_ReturnsSomeRegions                           # Was DISABLED. Need to investigate
-BuddiClientTests.GetUrl_ExistingUrlName_ReturnsUrl                               # Was DISABLED. Need to investigate
-BuddiClientTests.GetUrl_NotExistingUrlName_ReturnsUrlNotConfiguredError          # Was DISABLED. Need to investigate
+# Hangs regularly on firebug; have notified Vincas
+BeSQLiteDbTransactionHandlerTests.StartTransaction_TwoConnections_SecondConnectionIsBlockedUntilFirstFinishesTransaction
+
+# Notified Vincas
+ChangeManagerTests.IsSyncActive_SyncSetActiveToTrue_True
+CachingDataSourceTests.*
+ChangeManagerTests.*
+DataSourceCacheTests.*
+
+#----------------------------------------------------------------------------------------
+# Fail due to changes in DgnDb06
+#----------------------------------------------------------------------------------------
+
+# MetaSchema import issues in ECDb/EC3
+*CachingDataSourceTests*
+
+# EDDb upgrade is not yet supported or will not be. Waiting for requirements for any upgrades needed to be implemented.
+*DataSourceCacheUpgradeTests*
+
+# ECDb ECSchema update is not yet supported
+*UpdateSchemas_SchemasWithDeletedPropertyPassedToDataSourceCacheWithCachedStatements_SuccessAndSchemasAccessable*
 
 # Fail because data source schema uses AnyClass
 ExtendedDataAdapterTests.UpdateData_InstanceExistsAndFirstTime_SavesData
