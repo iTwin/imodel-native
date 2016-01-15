@@ -1499,6 +1499,8 @@ ECSqlClassParams const& dgn_ElementHandler::Element::GetECSqlClassParams()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnElements::DropGraphicsForViewport(DgnViewportCR viewport)
     {
+    viewport.GetPartGraphics().clear();
+    
     m_tree->VisitElements([&viewport](DgnElementCR el)
         {
         auto geom = el.ToGeometrySource();
@@ -1506,4 +1508,3 @@ void DgnElements::DropGraphicsForViewport(DgnViewportCR viewport)
             geom->Graphics().DropFor(viewport);
         });
     }
-
