@@ -324,7 +324,13 @@ BentleyStatus ChangeManager::ModifyFile(ECInstanceKeyCR instanceKey, BeFileNameC
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus ChangeManager::ModifyFileName(ECInstanceKeyCR instanceKey, Utf8StringCR newFileName)
     {
-    FileInfo info = m_fileInfoManager->ReadInfo(instanceKey);
+    ObjectInfo objInfo = m_objectInfoManager.ReadInfo(instanceKey);
+    if (!objInfo.IsInCache())
+        {
+        return ERROR;
+        }
+
+    FileInfo info = m_fileInfoManager.ReadInfo(objInfo.GetCachedInstanceKey());
     if (info.GetChangeStatus() != ChangeStatus::Modified)
         {
         BeAssert(false && "Only modified file name changing is allowed");
@@ -337,8 +343,8 @@ BentleyStatus ChangeManager::ModifyFileName(ECInstanceKeyCR instanceKey, Utf8Str
         return ERROR;
         }
 
-    if (SUCCESS != m_fileStorage->RenameCachedFile(info, newFileName) ||
-        SUCCESS != m_fileInfoManager->SaveInfo(info))
+    if (SUCCESS != m_fileStorage.RenameCachedFile(info, newFileName) ||
+        SUCCESS != m_fileInfoManager.SaveInfo(info))
         {
         return ERROR;
         }
