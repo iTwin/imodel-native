@@ -211,7 +211,7 @@ struct SupplementedSchemaBuilder;
 //! @see ECSchema::GetCustomAttributeContainer()
 //! @bsiclass
 //=======================================================================================
-struct IECCustomAttributeContainer
+struct EXPORT_VTABLE_ATTRIBUTE IECCustomAttributeContainer
 {
 private:
     friend struct ECCustomAttributeInstanceIterable;
@@ -607,7 +607,7 @@ public:
 //! The in-memory representation of an ECProperty as defined by ECSchemaXML
 //! @bsiclass
 //=======================================================================================
-struct ECProperty /*abstract*/ : public IECCustomAttributeContainer
+struct EXPORT_VTABLE_ATTRIBUTE ECProperty /*abstract*/ : public IECCustomAttributeContainer
 {
 friend struct ECClass;
 
@@ -968,7 +968,7 @@ public:
 //! The in-memory representation of an ECNavigationProperty as defined by ECSchemaXML
 //! @bsiclass
 //=======================================================================================
-struct NavigationECProperty : public ECProperty
+struct EXPORT_VTABLE_ATTRIBUTE NavigationECProperty : public ECProperty
     {
 DEFINE_T_SUPER(ECProperty)
 
