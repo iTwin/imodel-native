@@ -4103,7 +4103,7 @@ Utf8String ScopedDataAccessor::DumpData (uint8_t breakAt) const
         str.append (1, hexits[hi]);
         str.append (1, hexits[lo]);
 
-        if (-1 != breakAt && 0 == i % breakAt)
+        if (0xff != breakAt && 0 == i % breakAt)
             str.append (1, '\n');
         else
             str.append (1, ' ');

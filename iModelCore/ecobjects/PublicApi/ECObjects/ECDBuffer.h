@@ -801,7 +801,7 @@ public:
     bool            IsValid() const { return NULL != m_buffer; }
     Byte const*     GetData() const { return NULL != m_buffer ? m_buffer->_GetData() : NULL; }
 
-    ECOBJECTS_EXPORT Utf8String    DumpData (uint8_t numBytesPerLine = -1) const;
+    ECOBJECTS_EXPORT Utf8String    DumpData (uint8_t numBytesPerLine = 0xff) const;
     };
 
 /*__PUBLISH_SECTION_START__*/
