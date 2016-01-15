@@ -17,7 +17,7 @@ private:
     UnrestrictedCodesManager(DgnDbR db) : IDgnCodesManager(db) { }
 
     virtual Response _ReserveCodes(Request&) override { return Response(CodeStatus::Success); }
-    virtual CodeStatus _ReleaseCodes(DgnCodeSet const&) override { return Response(CodeStatus::Success); }
+    virtual CodeStatus _ReleaseCodes(DgnCodeSet const&) override { return CodeStatus::Success; }
     virtual CodeStatus _RelinquishCodes() override { return CodeStatus::Success; }
     virtual CodeStatus _ReserveCode(DgnCodeCR) override { return CodeStatus::Success; }
     virtual CodeStatus _RefreshCodes() override { return CodeStatus::Success; }

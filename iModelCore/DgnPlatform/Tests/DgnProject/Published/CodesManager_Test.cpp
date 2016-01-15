@@ -103,18 +103,26 @@ CodesServer::Response CodesServer::_ReserveCodes(Request const& req, DgnDbR db)
             case CodeState::Reserved:
                 {
                 BeBriefcaseId owner(static_cast<uint32_t>(stmt.GetValueInt(5)));
-                if (owner != db.GetBriefcaseId())
+                if (owner.GetValue() != db.GetBriefcaseId().GetValue())
                     {
                     status = CodeStatus::CodeUnavailable;
                     if (wantInfos)
-                        response.GetDetails()[DgnCodeInfo(code)].SetReserved(owner);
+                        {
+                        DgnCodeInfo info(code);
+                        info.SetReserved(owner);
+                        response.GetDetails().insert(info);
+                        }
                     }
                 break;
                 }
             case CodeState::Used:
                 status = CodeStatus::CodeUnavailable;
                 if (wantInfos)
-                    response.GetDetails()[DgnCodeInfo(code)].SetUsed(stmt.GetValueText(4));
+                    {
+                    DgnCodeInfo info(code);
+                    info.SetUsed(stmt.GetValueText(4));
+                    response.GetDetails().insert(info);
+                    }
                 break;
             case CodeState::Discarded:
                 // ###TODO: Check if briefcase has pulled the required revision...
@@ -202,7 +210,7 @@ CodeStatus CodesServer::_QueryCodeStates(DgnCodeInfoSet& infos, DgnCodeSet const
             case CodeState::Available:
             default:
                 BeAssert(false && "This value should never be in the server db!");
-                return CodeStatus::SynError;
+                return CodeStatus::SyncError;
             }
         }
 
@@ -216,8 +224,7 @@ CodeStatus CodesServer::_QueryCodes(DgnCodeSet& codes, DgnDbR db)
     {
     codes.clear();
     Statement stmt;
-    stmt.Prepare(m_db, "SELECT " SERVER_Authority, "," SERVER_NameSpace "," SERVER_Value
-                    "   FROM " SERVER_Table " WHERE " SERVER_Briefcase " =?");
+    stmt.Prepare(m_db, "SELECT " SERVER_Authority "," SERVER_NameSpace "," SERVER_Value "   FROM " SERVER_Table " WHERE " SERVER_Briefcase " =?");
     stmt.BindInt(1, static_cast<int>(db.GetBriefcaseId().GetValue()));
     
     while (BE_SQLITE_ROW == stmt.Step())
