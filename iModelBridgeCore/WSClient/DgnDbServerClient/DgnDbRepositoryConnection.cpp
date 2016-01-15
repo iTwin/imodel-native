@@ -195,7 +195,7 @@ AsyncTaskPtr<DgnDbResult> DgnDbRepositoryConnection::DownloadRevisionFile(DgnDbS
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             12/2015
 //---------------------------------------------------------------------------------------
-Json::Value CreateLockInstanceJson(bvector<uint64_t> const& ids, const BeBriefcaseId& briefcaseId, Utf8StringCR description, Utf8String releasedWithRevisionId, LockableType type, LockLevel level)
+Json::Value CreateLockInstanceJson(bvector<uint64_t> const& ids, const BeBriefcaseId& briefcaseId, Utf8StringCR description, Utf8StringCR releasedWithRevisionId, LockableType type, LockLevel level)
     {
     Json::Value properties;
 
@@ -221,7 +221,7 @@ Json::Value CreateLockInstanceJson(bvector<uint64_t> const& ids, const BeBriefca
 //@bsimethod                                     Karolis.Dziedzelis             12/2015
 //---------------------------------------------------------------------------------------
 void AddToInstance(std::shared_ptr<WSChangeset> changeset, WSChangeset::ChangeState const& changeState, bvector<uint64_t> const& ids,
-                   const BeBriefcaseId& briefcaseId, Utf8StringCR description, Utf8String releasedWithRevisionId, LockableType type, LockLevel level)
+                   const BeBriefcaseId& briefcaseId, Utf8StringCR description, Utf8StringCR releasedWithRevisionId, LockableType type, LockLevel level)
     {
     if (ids.empty())
         return;
@@ -232,7 +232,7 @@ void AddToInstance(std::shared_ptr<WSChangeset> changeset, WSChangeset::ChangeSt
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             12/2015
 //---------------------------------------------------------------------------------------
-std::shared_ptr<WSChangeset> LockJsonRequest(JsonValueCR locks, const BeBriefcaseId& briefcaseId, Utf8String releasedWithRevisionId, const WSChangeset::ChangeState& changeState)
+std::shared_ptr<WSChangeset> LockJsonRequest(JsonValueCR locks, const BeBriefcaseId& briefcaseId, Utf8StringCR releasedWithRevisionId, const WSChangeset::ChangeState& changeState)
     {
     bvector<uint64_t> objects[6];
 
@@ -256,6 +256,25 @@ std::shared_ptr<WSChangeset> LockJsonRequest(JsonValueCR locks, const BeBriefcas
     AddToInstance(changeset, changeState, objects[3], briefcaseId, description, releasedWithRevisionId, LockableType::Model,   LockLevel::Exclusive);
     AddToInstance(changeset, changeState, objects[4], briefcaseId, description, releasedWithRevisionId, LockableType::Element, LockLevel::Shared);
     AddToInstance(changeset, changeState, objects[5], briefcaseId, description, releasedWithRevisionId, LockableType::Element, LockLevel::Exclusive);
+
+    return changeset;
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     Eligijus.Mauragas              01/2016
+//---------------------------------------------------------------------------------------
+std::shared_ptr<WSChangeset> LockDeleteAllJsonRequest (const BeBriefcaseId& briefcaseId, Utf8StringCR releasedWithRevisionId)
+    {
+    Utf8String id;
+    id.Sprintf ("%s-%d", ServerSchema::DeleteAllLocks, briefcaseId.GetValue ());
+
+    ObjectId lockObject (ServerSchema::Schema::Repository, ServerSchema::Class::Lock, id);
+
+    Json::Value properties;
+    properties[ServerSchema::Property::ReleasedWithRevision] = releasedWithRevisionId;
+
+    std::shared_ptr<WSChangeset> changeset (new WSChangeset ());
+    changeset->AddInstance (lockObject, WSChangeset::ChangeState::Deleted, std::make_shared<Json::Value> (properties));
 
     return changeset;
     }
@@ -291,7 +310,7 @@ AsyncTaskPtr<DgnDbResult> DgnDbRepositoryConnection::QueryLocksHeld(bool& held, 
 //@bsimethod                                     Karolis.Dziedzelis             12/2015
 //---------------------------------------------------------------------------------------
 AsyncTaskPtr<DgnLockResponseResult> DgnDbRepositoryConnection::AcquireLocks(JsonValueCR locksRequest, const BeBriefcaseId& briefcaseId,
-    Utf8String lastRevisionId, ICancellationTokenPtr cancellationToken)
+    Utf8StringCR lastRevisionId, ICancellationTokenPtr cancellationToken)
     {
     //How to set description here?
     auto changeset = LockJsonRequest(locksRequest, briefcaseId, lastRevisionId, WSChangeset::ChangeState::Created);
@@ -320,7 +339,7 @@ AsyncTaskPtr<DgnLockResponseResult> DgnDbRepositoryConnection::AcquireLocks(Json
 //@bsimethod                                     Karolis.Dziedzelis             12/2015
 //---------------------------------------------------------------------------------------
 AsyncTaskPtr<DgnDbResult> DgnDbRepositoryConnection::ReleaseLocks(JsonValueCR locksRequest, const BeBriefcaseId& briefcaseId,
-    Utf8String releasedWithRevisionId, ICancellationTokenPtr cancellationToken)
+    Utf8StringCR releasedWithRevisionId, ICancellationTokenPtr cancellationToken)
     {
     //How to set description here?
     auto changeset = LockJsonRequest(locksRequest, briefcaseId, releasedWithRevisionId, WSChangeset::ChangeState::Deleted);
@@ -343,18 +362,22 @@ AsyncTaskPtr<DgnDbResult> DgnDbRepositoryConnection::ReleaseLocks(JsonValueCR lo
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             12/2015
 //---------------------------------------------------------------------------------------
-AsyncTaskPtr<DgnDbResult> DgnDbRepositoryConnection::RelinquishLocks(const BeBriefcaseId& briefcaseId, Utf8String releasedWithRevisionId, ICancellationTokenPtr cancellationToken)
+AsyncTaskPtr<DgnDbResult> DgnDbRepositoryConnection::RelinquishLocks(const BeBriefcaseId& briefcaseId, Utf8StringCR releasedWithRevisionId, ICancellationTokenPtr cancellationToken)
     {
-    Utf8String id;
-    id.Sprintf("%s-%d", ServerSchema::DeleteAllLocks, briefcaseId.GetValue());
-    ObjectId lockObject(ServerSchema::Schema::Repository, ServerSchema::Class::Lock, id);
-    return m_wsRepositoryClient->SendDeleteObjectRequest(lockObject, cancellationToken)->Then<DgnDbResult>
-        ([=] (const AsyncResult<void, WSError>& result)
+    auto changeset = LockDeleteAllJsonRequest (briefcaseId, releasedWithRevisionId);
+    Json::Value requestJson;
+    changeset->ToRequestJson(requestJson);
+    HttpStringBodyPtr request = HttpStringBody::Create(requestJson.toStyledString());
+    return m_wsRepositoryClient->SendChangesetRequest(request, nullptr, cancellationToken)->Then<DgnDbResult>([=] (const WSChangesetResult& result)
         {
         if (result.IsSuccess())
+            {
             return DgnDbResult::Success();
+            }
         else
+            {
             return DgnDbResult::Error(result.GetError());
+            }
         });
     }
 

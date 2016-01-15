@@ -168,3 +168,22 @@ DgnDbRepositoryConnectionPtr DgnDbBriefcase::GetRepositoryConnection()
     {
     return m_repositoryConnection;
     }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     Eligijus.Mauragas              01/2016
+//---------------------------------------------------------------------------------------
+BeBriefcaseId DgnDbBriefcase::GetBriefcaseId ()
+    {
+    return GetDgnDb ().GetBriefcaseId ();
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     Eligijus.Mauragas              01/2016
+//---------------------------------------------------------------------------------------
+Utf8String DgnDbBriefcase::GetLastRevisionPulled ()
+    {
+    Utf8String lastRevisionId;
+    GetDgnDb ().QueryBriefcaseLocalValue (Db::Local::LastRevision, lastRevisionId);
+
+    return lastRevisionId;
+    }
