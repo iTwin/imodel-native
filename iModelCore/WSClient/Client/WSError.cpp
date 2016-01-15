@@ -164,8 +164,10 @@ BentleyStatus WSError::ParseJsonError(HttpResponseCR httpResponse)
     WSError::Id errorId = ErrorIdFromString(m_customId);
     Utf8String errorMessage = jsonError[JSON_ErrorMessage].asString();
     Utf8String errorDescription = jsonError[JSON_ErrorDescription].asString();
-
-    SetStatusReceivedError(HttpError(httpResponse), errorId, errorMessage, errorDescription);
+    jsonError.removeMember(JSON_ErrorId);
+    jsonError.removeMember(JSON_ErrorMessage);
+    jsonError.removeMember(JSON_ErrorDescription);
+    SetStatusReceivedError(HttpError(httpResponse), errorId, errorMessage, errorDescription, jsonError);
     return SUCCESS;
     }
 
@@ -235,7 +237,7 @@ void WSError::SetStatusServerNotSupported()
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    05/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-void WSError::SetStatusReceivedError(HttpErrorCR httpError, Id errorId, Utf8StringCR errorMessage, Utf8StringCR errorDescription)
+void WSError::SetStatusReceivedError(HttpErrorCR httpError, Id errorId, Utf8StringCR errorMessage, Utf8StringCR errorDescription, JsonValueCR customProperties)
     {
     m_status = Status::ReceivedError;
 
@@ -283,6 +285,9 @@ void WSError::SetStatusReceivedError(HttpErrorCR httpError, Id errorId, Utf8Stri
 
     // Set description
     m_description = FormatDescription(errorMessage.c_str(), errorDescription.c_str());
+
+    // Set custom properties
+    m_customProperties = customProperties;
 
     // Fallback to default messages if not enough information received
     if (m_message.empty())
@@ -388,6 +393,13 @@ Utf8StringCR WSError::GetCustomId() const
     return m_customId;
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                               Karolis.Dziedzelis   01/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+JsonValueCR WSError::GetCustomProperties() const
+    {
+    return m_customProperties;
+    }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    05/2014
