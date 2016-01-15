@@ -63,6 +63,7 @@ namespace ServerSchema
         static Utf8CP URL = "URL";
         static Utf8CP IsUploaded = "IsUploaded";
         static Utf8CP ReleasedWithRevision = "ReleasedWithRevision";
+        static Utf8CP ExistingLocks = "ExistingLocks";
         }
     static Utf8CP DeleteAllLocks = "DeleteAll";
     }
@@ -163,4 +164,6 @@ struct DgnDbServerHost : public Dgn::DgnPlatformLib::Host
 
         static bool IsInitialized();
     };
+
+void FormatLockFromServer(JsonValueR lockJson, JsonValueCR serverJson);
 END_BENTLEY_DGNDBSERVER_NAMESPACE

@@ -101,6 +101,7 @@ DgnDbServerError::DgnDbServerError(WSErrorCR error)
         {
         m_id = ErrorIdFromWSError(error.GetId());
         }
+    m_customProperties = error.GetCustomProperties();
     }
 
 DgnDbServerError::DgnDbServerError(RevisionStatus const& status)
@@ -109,6 +110,11 @@ DgnDbServerError::DgnDbServerError(RevisionStatus const& status)
         m_id = Id::MergeError;
     else
         m_id = Id::RevisionManagerError;
+    }
+
+JsonValueCR DgnDbServerError::GetCustomProperties()
+    {
+    return m_customProperties;
     }
 
 DgnDbServerError::Id DgnDbServerError::GetId()

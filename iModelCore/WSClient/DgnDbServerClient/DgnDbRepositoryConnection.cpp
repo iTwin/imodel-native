@@ -466,13 +466,7 @@ AsyncTaskPtr<DgnDbLockSetResult> DgnDbRepositoryConnection::QueryLocks(const BeB
                 {
                 DgnLock lock;
                 Json::Value lockJson;
-                JsonValueCR properties = value[ServerSchema::Properties];
-                lockJson[Locks::Level] = properties[ServerSchema::Property::LockLevel].asInt();
-                lockJson[Locks::LockableId] = Json::objectValue;
-                uint64_t lockableId;
-                BeStringUtilities::ParseUInt64(lockableId, properties[ServerSchema::Property::ObjectId].asCString());
-                lockJson[Locks::LockableId][Locks::Lockable::Id] = lockableId;
-                lockJson[Locks::LockableId][Locks::Lockable::Type] = properties[ServerSchema::Property::LockType].asInt();
+                FormatLockFromServer(lockJson, value[ServerSchema::Properties]);
                 lock.FromJson(lockJson);
                 if (lock.GetLevel() != LockLevel::None)
                     lockSet.insert(lock);

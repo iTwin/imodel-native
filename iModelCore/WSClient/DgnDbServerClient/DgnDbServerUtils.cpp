@@ -165,4 +165,23 @@ DgnPlatformLib::Host::IKnownLocationsAdmin& DgnDbServerHost::_SupplyIKnownLocati
     {
     return *new DgnDbServerLocationsAdmin(s_temp, s_assets);
     }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     Karolis.Dziedzelis             01/2016
+//---------------------------------------------------------------------------------------
+void FormatLockFromServer(JsonValueR lockJson, JsonValueCR serverJson)
+    {
+    lockJson = Json::objectValue;
+    lockJson[Locks::Level] = serverJson[ServerSchema::Property::LockLevel].asInt();
+    lockJson[Locks::LockableId] = Json::objectValue;
+    if (serverJson[ServerSchema::Property::ObjectId].isString())
+        {
+        uint64_t id;
+        BeStringUtilities::ParseUInt64(id, serverJson[ServerSchema::Property::ObjectId].asCString());
+        lockJson[Locks::LockableId][Locks::Lockable::Id] = id;
+        }
+    else
+        lockJson[Locks::LockableId][Locks::Lockable::Id] = serverJson[ServerSchema::Property::ObjectId].asUInt64();
+    lockJson[Locks::LockableId][Locks::Lockable::Type] = serverJson[ServerSchema::Property::LockType].asInt();
+    }
 END_BENTLEY_DGNDBSERVER_NAMESPACE
