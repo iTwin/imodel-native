@@ -453,6 +453,15 @@ void DgnRevision::ExtractUsedLocks(DgnLockSet& locks)
     std::swap(m_usedLocks, locks);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnRevision::ExtractAssignedCodes(DgnCodeSet& codes)
+    {
+    codes.clear();
+    std::swap(m_assignedCodes, codes);
+    }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    10/2015
 //---------------------------------------------------------------------------------------
@@ -721,6 +730,8 @@ RevisionStatus RevisionManager::FinishCreateRevision()
     status = UpdateInitialParentRevisionId();
     if (RevisionStatus::Success != status)
         return status;
+
+    m_dgndb.Codes().OnFinishRevision(*m_currentRevision);
 
     m_currentRevisionEndTxnId = TxnManager::TxnId(); // Invalid id
     m_currentRevision = nullptr;

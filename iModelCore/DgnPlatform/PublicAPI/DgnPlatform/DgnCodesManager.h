@@ -54,8 +54,12 @@ public:
     void SetUsed(Utf8StringCR revisionId) { Init(Used, revisionId); }
     void SetDiscarded(Utf8StringCR revisionId) { Init(Discarded, revisionId); }
 
+    //! Returns the revision ID in which the code became used or discarded, or else an empty string
     Utf8StringCR GetRevisionId() const { return m_revisionId; }
+
+    //! Returns the ID of the briefcase which has reserved the code, or an invalid ID.
     BeSQLite::BeBriefcaseId GetReservedBy() const { return m_reservedBy; }
+
     Type GetState() const { return m_type; }
 };
 
@@ -71,7 +75,7 @@ public:
     explicit DgnCodeInfo(DgnCode const& code) : m_code(code) { }
     DgnCodeInfo() { }
 
-    DgnCode const& GetCode() const { return m_code; }
+    DgnCode const& GetCode() const { return m_code; } //!< The DgnCode whose state is represented by this DgnCodeInfo
 
     // For inclusion in DgnCodeInfoSet...only the DgnCode is significant for ordering.
     bool operator<(DgnCodeInfo const& rhs) const
@@ -88,37 +92,48 @@ typedef bset<DgnCodeInfo> DgnCodeInfoSet;
 //=======================================================================================
 struct IDgnCodesManager : RefCountedBase
 {
+    //! Options specifying what additional information should be included in responses to requests
     enum class ResponseOptions
     {
         None = 0, //!< No special options
         IncludeState = 1 << 0, //!< Include DgnCodeState for any codes for which the request was denied
     };
 
+    //! Represents a request to operate on a set of codes.
+    struct Request : DgnCodeSet
+    {
+    protected:
+        ResponseOptions m_options;
+    public:
+        //! Constructor
+        //! @param[in]      options Specifies what additional data should be included in the response.
+        explicit Request(ResponseOptions options=ResponseOptions::None) : m_options(options) { }
+
+        ResponseOptions GetOptions() const { return m_options; } //!< Set the options specifying additional data to be included in response
+        void SetOptions(ResponseOptions options) { m_options = options; } //!< Get the options specifying additional data to be included in response
+    };
+
+    //! Represents a response to a request. A response always includes a CodeStatus indicating the result. Based on options supplied in
+    //! the request, may also include additional information.
     struct Response
     {
     private:
         DgnCodeInfoSet  m_details;
         CodeStatus      m_result;
     public:
+        //! Construct a response with the specified result
         explicit Response(CodeStatus result=CodeStatus::InvalidResponse) : m_result(result) { }
 
+        //!< Returns the overall result of the operation as a CodeStatus
         CodeStatus GetResult() const { return m_result; }
+
+        //! Provides the state of each code for which the operation did not succeed, if ResponseOptions::IncludeState specified in request
         DgnCodeInfoSet const& GetDetails() const { return m_details; }
+        //! Provides the state of each code for which the operation did not succeed, if ResponseOptions::IncludeState specified in request
         DgnCodeInfoSet& GetDetails() { return m_details; }
 
+        //! Reset the response
         void Invalidate() { m_result = CodeStatus::InvalidResponse; m_details.clear(); }
-    };
-
-    struct Request : DgnCodeSet
-    {
-    protected:
-        ResponseOptions m_options;
-
-    public:
-        explicit Request(ResponseOptions options=ResponseOptions::None) : m_options(options) { }
-
-        ResponseOptions GetOptions() const { return m_options; }
-        void SetOptions(ResponseOptions options) { m_options = options; }
     };
 private:
     DgnDbR      m_dgndb;
@@ -130,22 +145,27 @@ protected:
     virtual CodeStatus _RelinquishCodes() = 0;
     virtual CodeStatus _QueryCodeStates(DgnCodeInfoSet& states, DgnCodeSet const& codes) = 0;
     virtual CodeStatus _RefreshCodes() = 0;
+    virtual CodeStatus _OnFinishRevision(DgnRevision const& rev) = 0;
 
     DGNPLATFORM_EXPORT virtual CodeStatus _ReserveCode(DgnCodeCR code);
 
     DGNPLATFORM_EXPORT IDgnCodesServerP GetCodesServer() const;
 public:
-    DgnDbR GetDgnDb() const { return m_dgndb; }
-    Response ReserveCodes(Request& request) { return _ReserveCodes(request); }
-    Response ReleaseCodes(Request const& request) { return _ReleaseCodes(request); }
-    CodeStatus RelinquishCodes() { return _RelinquishCodes(); }
-    CodeStatus QueryCodeStates(DgnCodeInfoSet& states, DgnCodeSet const& codes) { return _QueryCodeStates(states, codes); }
-    DGNPLATFORM_EXPORT CodeStatus QueryCodeState(DgnCodeStateR state, DgnCodeCR code);
-    CodeStatus RefreshCode() { return _RefreshCodes(); }
+    DgnDbR GetDgnDb() const { return m_dgndb; } //!< The DgnDb for which this object manages DgnCodes
 
-    CodeStatus ReserveCode(DgnCodeCR code) { return _ReserveCode(code); }
+    //! Attempts to reserve a set of codes for this briefcase.
+    //! Note: the request object may be modified by this function
+    Response ReserveCodes(Request& request) { return _ReserveCodes(request); }
+    Response ReleaseCodes(Request const& request) { return _ReleaseCodes(request); } //!< Attempts to release a set of codes reserved by this briefcase
+    CodeStatus RelinquishCodes() { return _RelinquishCodes(); } //!< Attempts to release all codes reserved by this briefcase
+    CodeStatus QueryCodeStates(DgnCodeInfoSet& states, DgnCodeSet const& codes) { return _QueryCodeStates(states, codes); } //!< Queries the state of a set of codes
+    DGNPLATFORM_EXPORT CodeStatus QueryCodeState(DgnCodeStateR state, DgnCodeCR code); //!< Queries the state of a code
+    CodeStatus RefreshCode() { return _RefreshCodes(); } //!< Updates a local cache of codes reserved by this briefcase by querying the server
+
+    CodeStatus ReserveCode(DgnCodeCR code) { return _ReserveCode(code); } //!< Attempts to reserve a code
 //__PUBLISH_SECTION_END__
     DGNPLATFORM_EXPORT static void BackDoor_SetEnabled(bool enable);
+    CodeStatus OnFinishRevision(DgnRevision const& rev) { return _OnFinishRevision(rev); }
 //__PUBLISH_SECTION_START__
 };
 

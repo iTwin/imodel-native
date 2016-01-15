@@ -21,6 +21,7 @@ private:
     virtual CodeStatus _RelinquishCodes() override { return CodeStatus::Success; }
     virtual CodeStatus _ReserveCode(DgnCodeCR) override { return CodeStatus::Success; }
     virtual CodeStatus _RefreshCodes() override { return CodeStatus::Success; }
+    virtual CodeStatus _OnFinishRevision(DgnRevision const& rev) override { return CodeStatus::Success; }
     virtual CodeStatus _QueryCodeStates(DgnCodeInfoSet& states, DgnCodeSet const& codes) override
         {
         states.clear();
@@ -42,6 +43,8 @@ public:
 #define LOCAL_Values "(" LOCAL_Columns ")"
 #define STMT_Insert "INSERT INTO " LOCAL_Table " " LOCAL_Values " Values (?,?,?)"
 #define STMT_SelectInSet "SELECT " LOCAL_Columns " FROM " LOCAL_Table " WHERE InVirtualSet(@vset," LOCAL_Columns ")"
+#define STMT_DeleteInSet "DELETE FROM " LOCAL_Table " WHERE InVirtualSet(@vset," LOCAL_Columns ")"
+enum Column { AuthorityId=0, NameSpace, Value };
 
 /*---------------------------------------------------------------------------------**//**
 * @bsistruct                                                    Paul.Connelly   01/16
@@ -50,7 +53,6 @@ struct LocalCodesManager : IDgnCodesManager
 {
 private:
     enum class DbState { New, Ready, Invalid };
-    enum Column { AuthorityId=0, NameSpace, Value };
 
     DbState m_dbState;
 
@@ -63,12 +65,14 @@ private:
     virtual CodeStatus _RelinquishCodes() override;
     virtual CodeStatus _QueryCodeStates(DgnCodeInfoSet& states, DgnCodeSet const& codes) override;
     virtual CodeStatus _RefreshCodes() override;
+    virtual CodeStatus _OnFinishRevision(DgnRevision const& rev) override;
 
     bool Validate(CodeStatus* status=nullptr);
     void Insert(DgnCodeSet const& codes);
     void Cull(DgnCodeSet& codes);
 
     DbResult Save() { return GetLocalDb().SaveChanges(); }
+    CodeStatus Remove(DgnCodeSet const& codes);
 public:
     static IDgnCodesManagerPtr Create(DgnDbR db) { return new LocalCodesManager(db); }
 };
@@ -164,22 +168,31 @@ void LocalCodesManager::Insert(DgnCodeSet const& codes)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsistruct                                                    Paul.Connelly   01/16
++---------------+---------------+---------------+---------------+---------------+------*/
+struct VirtualCodeSet : VirtualSet
+{
+    DgnCodeSet const& m_codes;
+
+    VirtualCodeSet(DgnCodeSet const& codes) : m_codes(codes) { }
+
+    virtual bool _IsInSet(int nVals, DbValue const* vals) const override
+        {
+        return m_codes.end() != std::find_if(m_codes.begin(), m_codes.end(), [&](DgnCode const& arg)
+            {
+            return arg.GetAuthority().GetValueUnchecked() == vals[Column::AuthorityId].GetValueUInt64()
+                && arg.GetNamespace().Equals(vals[Column::NameSpace].GetValueText())
+                && arg.GetValue().Equals(vals[Column::Value].GetValueText());
+            });
+        }
+};
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 void LocalCodesManager::Cull(DgnCodeSet& codes)
     {
-    struct VSet : VirtualSet
-        {
-        DgnCodeSet const& m_codes;
-        VSet(DgnCodeSet const& codes) : m_codes(codes) { }
-        virtual bool _IsInSet(int nVals, DbValue const* vals) const override
-            {
-            DgnCode code(DgnAuthorityId(vals[Column::AuthorityId].GetValueUInt64()), vals[Column::NameSpace].GetValueText(), vals[Column::Value].GetValueText());
-            return m_codes.end() != m_codes.find(code);
-            }
-        };
-
-    VSet vset(codes);
+    VirtualCodeSet vset(codes);
     CachedStatementPtr stmt = GetLocalDb().GetCachedStatement(STMT_SelectInSet);
     stmt->BindVirtualSet(1, vset);
     while (BE_SQLITE_ROW == stmt->Step())
@@ -213,11 +226,61 @@ IDgnCodesManager::Response LocalCodesManager::_ReserveCodes(Request& req)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsistruct                                                    Paul.Connelly   01/16
++---------------+---------------+---------------+---------------+---------------+------*/
+struct CodeReleaseContext
+{
+private:
+    DgnDbR              m_db;
+    CodeStatus          m_status;
+    DgnCodeSet          m_used;
+    TxnManager::TxnId   m_endTxnId;
+public:
+    explicit CodeReleaseContext(DgnDbR db);
+
+    CodeStatus GetStatus() const { return m_status; }
+    DgnCodeSet const& GetUsedCodes() const { return m_used; }
+
+    CodeStatus ClearTxns();
+};
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-IDgnCodesManager::Response LocalCodesManager::_ReleaseCodes(Request const& req)
+CodeReleaseContext::CodeReleaseContext(DgnDbR db) : m_db(db), m_status(CodeStatus::CannotCreateRevision)
     {
-    return Response(CodeStatus::SyncError); // ###TODO: Verify none used, etc...
+    TxnManager& txns = db.Txns();
+    if (txns.HasChanges() || txns.IsInDynamics())
+        {
+        m_status = CodeStatus::PendingTransactions;
+        return;
+        }
+
+    RevisionStatus revStatus;
+    DgnRevisionPtr rev = db.Revisions().StartCreateRevision(&revStatus, DgnRevision::Include::Codes);
+    if (rev.IsValid())
+        {
+        rev->ExtractAssignedCodes(m_used);
+        m_status = CodeStatus::Success;
+        m_endTxnId = db.Revisions().GetCurrentRevisionEndTxnId();
+
+        db.Revisions().AbandonCreateRevision();
+        }
+    else if (RevisionStatus::NoTransactions == revStatus)
+        {
+        m_status = CodeStatus::Success;
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/16
++---------------+---------------+---------------+---------------+---------------+------*/
+CodeStatus CodeReleaseContext::ClearTxns()
+    {
+    if (CodeStatus::Success == m_status)
+        m_db.Txns().DeleteReversedTxns();
+
+    return m_status;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -225,7 +288,61 @@ IDgnCodesManager::Response LocalCodesManager::_ReleaseCodes(Request const& req)
 +---------------+---------------+---------------+---------------+---------------+------*/
 CodeStatus LocalCodesManager::_RelinquishCodes()
     {
-    return CodeStatus::SyncError; // ###TODO: Verify none used, etc...
+    IDgnCodesServerP server;
+    if (!Validate())
+        return CodeStatus::SyncError;
+    else if (nullptr == (server = GetCodesServer()))
+        return CodeStatus::ServerUnavailable;
+
+    CodeReleaseContext context(GetDgnDb());
+    if (CodeStatus::Success != context.GetStatus())
+        return context.GetStatus();
+    else if (!context.GetUsedCodes().empty())
+        return CodeStatus::CodeUsed;
+
+    if (BE_SQLITE_OK != GetLocalDb().ExecuteSql("DELETE FROM " LOCAL_Table) || BE_SQLITE_OK != Save())
+        return CodeStatus::SyncError;
+
+    auto status = server->RelinquishCodes(GetDgnDb());
+    if (CodeStatus::Success == status)
+        status = context.ClearTxns();
+
+    return status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/16
++---------------+---------------+---------------+---------------+---------------+------*/
+IDgnCodesManager::Response LocalCodesManager::_ReleaseCodes(Request const& req)
+    {
+    if (!Validate())
+        return Response(CodeStatus::SyncError);
+
+    IDgnCodesServerP server;
+    if (!Validate())
+        return Response(CodeStatus::SyncError);
+    else if (nullptr == (server = GetCodesServer()))
+        return Response(CodeStatus::ServerUnavailable);
+
+    CodeReleaseContext context(GetDgnDb());
+    if (CodeStatus::Success != context.GetStatus())
+        return Response(context.GetStatus());
+
+    for (auto const& usedCode : context.GetUsedCodes())
+        {
+        auto iter = req.find(usedCode);
+        if (iter != req.end())
+            return Response(CodeStatus::CodeUsed);
+        }
+
+    auto response = server->ReleaseCodes(req, GetDgnDb());
+    if (CodeStatus::Success == response.GetResult())
+        {
+        Remove(req);
+        context.ClearTxns();
+        }
+
+    return response;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -233,7 +350,39 @@ CodeStatus LocalCodesManager::_RelinquishCodes()
 +---------------+---------------+---------------+---------------+---------------+------*/
 CodeStatus LocalCodesManager::_QueryCodeStates(DgnCodeInfoSet& states, DgnCodeSet const& codes)
     {
-    return CodeStatus::SyncError;   // ###TODO
+    auto server = GetCodesServer();
+    return nullptr != server ? server->QueryCodeStates(states, codes) : CodeStatus::ServerUnavailable;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/16
++---------------+---------------+---------------+---------------+---------------+------*/
+CodeStatus LocalCodesManager::_OnFinishRevision(DgnRevision const& rev)
+    {
+    // Any codes which became Used as a result of these changes must necessarily have been Reserved by this briefcase,
+    // and are now no longer Reserved by any briefcase
+    // (Any codes which became Discarded were necessarily previously Used, therefore no local state needs to be updated for them).
+    if (rev.GetAssignedCodes().empty())
+        return CodeStatus::Success;
+    else if (!Validate())
+        return CodeStatus::SyncError;
+    else
+        return Remove(rev.GetAssignedCodes());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/16
++---------------+---------------+---------------+---------------+---------------+------*/
+CodeStatus LocalCodesManager::Remove(DgnCodeSet const& codes)
+    {
+    VirtualCodeSet vset(codes);
+    CachedStatementPtr stmt = GetLocalDb().GetCachedStatement(STMT_DeleteInSet);
+    stmt->BindVirtualSet(1, vset);
+    if (BE_SQLITE_OK != stmt->Step())
+        return CodeStatus::SyncError;
+
+    Save();
+    return CodeStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**

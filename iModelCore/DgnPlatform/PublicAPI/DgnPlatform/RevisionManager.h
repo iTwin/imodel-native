@@ -110,6 +110,7 @@ public:
 
     void IncludeChangeGroupData(BeSQLite::ChangeGroup& changeGroup, Include include, DgnDbR db); //!< @private
     void ExtractUsedLocks(DgnLockSet& locks); //!< @private
+    void ExtractAssignedCodes(DgnCodeSet& codes); //!< @private
 };
 
 ENUM_IS_FLAGS(DgnRevision::Include);

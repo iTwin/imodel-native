@@ -167,6 +167,7 @@ enum class CodeStatus : int
     CodeUsed, //!< A code cannot be relinquished because it has been used locally
     PendingTransactions, //!< An operation requires local changes to be committed or abandoned
     InvalidRequest, //!< Server did not understand a request
+    CannotCreateRevision, //!< An operation required creation of a DgnRevision, which failed
 };
 
 /** @cond BENTLEY_SDK_Publisher */
