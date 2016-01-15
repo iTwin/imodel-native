@@ -2,7 +2,7 @@
 |
 |     $Source: Cache/Persistence/ChangeManager.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -311,6 +311,33 @@ BentleyStatus ChangeManager::ModifyFile(ECInstanceKeyCR instanceKey, BeFileNameC
         BeAssert(false);
         return ERROR;
         };
+
+    return SUCCESS;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    06/2014
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus ChangeManager::ModifyFileName(ECInstanceKeyCR instanceKey, Utf8StringCR newFileName)
+    {
+    FileInfo info = m_fileInfoManager->ReadInfo(instanceKey);
+    if (info.GetChangeStatus() != ChangeStatus::Modified)
+        {
+        BeAssert(false && "Only modified file name changing is allowed");
+        return ERROR;
+        }
+
+    if (IsSyncActive())
+        {
+        BeAssert(false && "Cannot rename file while syncing");
+        return ERROR;
+        }
+
+    if (SUCCESS != m_fileStorage->RenameCachedFile(info, newFileName) ||
+        SUCCESS != m_fileInfoManager->SaveInfo(info))
+        {
+        return ERROR;
+        }
 
     return SUCCESS;
     }

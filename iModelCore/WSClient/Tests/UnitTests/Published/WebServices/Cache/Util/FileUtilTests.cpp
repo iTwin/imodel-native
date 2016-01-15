@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/WebServices/Cache/Util/FileUtilTests.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -193,6 +193,22 @@ TEST_F(FileUtilTests, TruncateFilePath_MaxPathSmallerThanDirectory_Error)
 
     EXPECT_EQ(ERROR, status);
     EXPECT_STREQ(L"\\Folder\\Bar.txt", path.c_str());
+    }
+
+TEST_F(FileUtilTests, SanitizeFileName_ValidFileName_SameReturned)
+    {
+    EXPECT_STREQ("Bar.txt", FileUtil::SanitizeFileName("Bar.txt").c_str());
+    EXPECT_STREQ(Utf8String(L"\u0444.txt").c_str(), FileUtil::SanitizeFileName(Utf8String(L"\u0444.txt")).c_str());
+    }
+
+TEST_F(FileUtilTests, SanitizeFileName_FileNameIncludesInvalidCharacters_InvalidCharactersRemoved)
+    {
+    EXPECT_STREQ("BarFoo.txt", FileUtil::SanitizeFileName(R"name(Bar<>:"/\\|?*Foo.tx<>:"/\\|?*t)name").c_str());
+    }
+
+TEST_F(FileUtilTests, SanitizeFileName_FileNameHasTrailingWhitespace_WhiteSpaceTrimmed)
+    {
+    EXPECT_STREQ("B\ta r.t xt", FileUtil::SanitizeFileName(" \t B\ta r.t xt  \t\n\r").c_str());
     }
 
 TEST_F(FileUtilTests, CopyFileContent_FilesExist_CopiesContent)
