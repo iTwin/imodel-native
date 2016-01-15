@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnDbServer/Client/DgnDbBriefcase.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -54,5 +54,8 @@ public:
 
     DGNDBSERVERCLIENT_EXPORT Dgn::DgnDbR GetDgnDb(); //!< Briefcase file.
     DGNDBSERVERCLIENT_EXPORT DgnDbRepositoryConnectionPtr GetRepositoryConnection(); //!< Connection to a repository on server.
+    DGNDBSERVERCLIENT_EXPORT BeSQLite::BeBriefcaseId GetBriefcaseId (); //!< Briefcase Id.
+    DGNDBSERVERCLIENT_EXPORT Utf8String GetLastRevisionPulled (); //!< Last revision that was pulled by this briefcase.
+
 };
 END_BENTLEY_DGNDBSERVER_NAMESPACE
