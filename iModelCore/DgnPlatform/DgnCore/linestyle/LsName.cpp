@@ -624,7 +624,6 @@ BentleyStatus       LsCache::Load ()
         return SUCCESS;
 
     //  Signal that this should abort a query and should not trigger an assertion failure in GraphicsAndQuerySequencer::CheckSQLiteOperationAllowed
-    DgnDb::SQLRequest::Client opForGraphics;
     TreeLoaded ();
 
     for (auto const& ls : LineStyleElement::MakeIterator(m_dgnDb))

@@ -57,8 +57,6 @@ TxnManager::UndoChangeSet::ConflictResolution TxnManager::UndoChangeSet::_OnConf
 +---------------+---------------+---------------+---------------+---------------+------*/
 CachedStatementPtr TxnManager::GetTxnStatement(Utf8CP sql) const
     {
-    m_dgndb._VerifyQuerySequence();
-
     CachedStatementPtr ptr;
     m_stmts.GetPreparedStatement(ptr, *m_dgndb.GetDbFile(), sql);
     return ptr;

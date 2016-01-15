@@ -990,8 +990,6 @@ BentleyStatus       LsComponentReader::_LoadDefinition ()
     if (m_jsonSource.size() > 0)
         return SUCCESS;
 
-    DgnDb::SQLRequest::Client highPriority;
-
     BeSQLite::PropertySpec spec = LineStyleProperty::Compound();
 
     switch (m_source->GetComponentType())

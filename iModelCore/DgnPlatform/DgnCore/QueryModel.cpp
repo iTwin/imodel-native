@@ -13,6 +13,7 @@
 #include "UpdateLogging.h"
 
 #define TRACE_QUERY_LOGIC 1
+
 #ifdef TRACE_QUERY_LOGIC
 #   define DEBUG_PRINTF THREADLOG.debugv
 #else
@@ -143,13 +144,6 @@ bool QueryModel::Filter::CheckAbort()
     if (m_model.AbortRequested())
         {
         DEBUG_PRINTF("Query aborted");
-        return true;
-        }
-
-    if (DgnDb::SQLRequest::Client::IsActive())
-        {
-        DEBUG_PRINTF("Query interrupted");
-        m_restartRangeQuery = true;
         return true;
         }
 
@@ -293,7 +287,7 @@ bool QueryModel::Processor::LoadElements(OcclusionScores& scores, bvector<DgnEle
 
         bool hitLimit = pool.GetTotalAllocated() > (int64_t) (2 * m_params.m_maxMemory);
         DgnElementId elId(curr->second);
-        DgnElementCPtr el = !hitLimit ? pool.FindOrLoadElement(elId) : pool.FindElement(elId);
+        DgnElementCPtr el = !hitLimit ? pool.GetElement(elId) : pool.FindElement(elId);
 
         if (el.IsValid())
             elements.push_back(el);
@@ -332,7 +326,7 @@ bool QueryModel::Processor::Query(StopWatch& watch)
         m_results->m_reachedMaxElements = ((uint32_t)filter.m_occlusionScores.size() >= m_params.m_plan.m_targetNumElements);
         }
 
-    if (m_dbStatus != BE_SQLITE_ROW)
+    if (m_dbStatus != BE_SQLITE_DONE)
         return false;
 
     DEBUG_PRINTF("loading elements");
@@ -370,15 +364,15 @@ void QueryModel::Processor::SearchIdSet(DgnElementIdSet& idList, Filter& filter)
         RTree3dVal rtreeRange;
         rtreeRange.FromRange(geom->CalculateRange3d());
 
-        RTreeAcceptFunction::Tester::QueryInfo info;
+        RTreeMatchFunction::QueryInfo info;
         info.m_nCoord = 6;
         info.m_coords = &rtreeRange.m_minx;
-        info.m_parentWithin = info.m_within = RTreeAcceptFunction::Tester::Within::Partly;
+        info.m_parentWithin = info.m_within = RTreeMatchFunction::Within::Partly;
         info.m_parentScore  = info.m_score  = 1.0;
         info.m_rowid = curr.GetValue();
         info.m_level = 0;
-        filter._TestRange(info);
-        if (RTreeAcceptFunction::Tester::Within::Outside != info.m_within)
+        filter._TestRTree(info);
+        if (RTreeMatchFunction::Within::Outside != info.m_within)
             filter.RangeAccept(curr.GetValueUnchecked());
         }
     }
@@ -386,38 +380,24 @@ void QueryModel::Processor::SearchIdSet(DgnElementIdSet& idList, Filter& filter)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void QueryModel::Processor::BindModelAndCategory(CachedStatement& stmt)
-    {
-    static_cast<QueryViewControllerCP>(&m_params.m_vp.GetViewController())->BindModelAndCategory(stmt);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   12/15
-+---------------+---------------+---------------+---------------+---------------+------*/
 void QueryModel::Processor::SearchRangeTree(Filter& filter)
     {
-    do
-        {
-        if (DgnDb::SQLRequest::Client::IsActive())
-            {
-            for (unsigned i = 0; i < 10 && !filter.CheckAbort(); ++i)
-                BeThreadUtilities::BeSleep(200); // Let it run for awhile. If there was one call to SQLite, there will probably be more.
+    CachedStatementPtr rangeStmt;
+    GetModel().GetDgnDb().GetCachedStatement(rangeStmt, m_params.m_searchSql.c_str());
 
-            continue;
+    static_cast<QueryViewControllerCP>(&m_params.m_vp.GetViewController())->BindModelAndCategory(*rangeStmt, filter);
+
+    // Notify QuerySequencer that this thread is running 
+    while(BE_SQLITE_ROW == (m_dbStatus=rangeStmt->Step()))
+        {
+        if (filter.CheckAbort())
+            {
+            DEBUG_PRINTF("Query aborted");
+            return;
             }
 
-        if (filter.CheckAbort())
-            break;
-
-        CachedStatementPtr rangeStmt;
-        GetModel().GetDgnDb().GetCachedStatement(rangeStmt, m_params.m_searchSql.c_str());
-
-        BindModelAndCategory(*rangeStmt);
-        filter.m_restartRangeQuery = false;
-
-        // Notify QuerySequencer that this thread is running 
-        m_dbStatus = filter.StepRTree(*rangeStmt);
-        } while (filter.m_restartRangeQuery);
+        filter.RangeAccept(rangeStmt->GetValueInt64(0));
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -483,16 +463,16 @@ inline static void toLocalCorners(DPoint3dP localCorners, RTree3dValCP pt)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-int QueryModel::Filter::_TestRange(QueryInfo const& info)
+int QueryModel::Filter::_TestRTree(RTreeMatchFunction::QueryInfo const& info)
     {
     BeAssert(6 == info.m_nCoord);
-    info.m_within = Within::Outside;
+    info.m_within = RTreeMatchFunction::Within::Outside;
 
     if (CheckAbort())
         return BE_SQLITE_ERROR;
 
     RTree3dValCP pt = (RTree3dValCP) info.m_coords;
-    m_passedPrimaryTest   = (info.m_parentWithin == Within::Inside) ? true : (m_boundingRange.Intersects(*pt) && SkewTest(pt));
+    m_passedPrimaryTest   = (info.m_parentWithin == RTreeMatchFunction::Within::Inside) ? true : (m_boundingRange.Intersects(*pt) && SkewTest(pt));
     m_passedSecondaryTest = m_useSecondary ? m_secondaryFilter.m_scorer.m_boundingRange.Intersects(*pt) : false;
 
     if (m_passedSecondaryTest)
@@ -507,7 +487,7 @@ int QueryModel::Filter::_TestRange(QueryInfo const& info)
             }
 
         if (m_passedSecondaryTest)
-            info.m_within = Within::Partly;
+            info.m_within = RTreeMatchFunction::Within::Partly;
         }
 
     if (!m_passedPrimaryTest)
@@ -556,13 +536,13 @@ int QueryModel::Filter::_TestRange(QueryInfo const& info)
             {
             // For nodes, return 'level-score' (the "-" is because for occlusion score higher is better. But for rtree priority, lower means better).
             info.m_score = info.m_level - m_lastScore;
-            info.m_within = info.m_parentWithin == Within::Inside ? Within::Inside : m_boundingRange.Contains(*pt) ? Within::Inside : Within::Partly;
+            info.m_within = info.m_parentWithin == RTreeMatchFunction::Within::Inside ? RTreeMatchFunction::Within::Inside : m_boundingRange.Contains(*pt) ? RTreeMatchFunction::Within::Inside : RTreeMatchFunction::Within::Partly;
             }
         else
             {
             // For entries (ilevel==0), we return 0 so they are processed immediately (lowest score has highest priority).
             info.m_score = 0;
-            info.m_within = Within::Partly;
+            info.m_within = RTreeMatchFunction::Within::Partly;
             }
         }
 
@@ -614,16 +594,13 @@ void QueryModel::Filter::RangeAccept(uint64_t elementId)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-int QueryModel::ProgressiveFilter::_TestRange(QueryInfo const& info)
+int QueryModel::ProgressiveFilter::_TestRTree(RTreeMatchFunction::QueryInfo const& info)
     {
     BeAssert(6 == info.m_nCoord);
-    info.m_within = Within::Outside;
-
-    if (m_context->_CheckStop())
-        return BE_SQLITE_ERROR;
+    info.m_within = RTreeMatchFunction::Within::Outside;
 
     RTree3dValCP pt = (RTree3dValCP) info.m_coords;
-    if ((info.m_parentWithin != Within::Inside) && !(m_boundingRange.Intersects(*pt) && SkewTest(pt)))
+    if ((info.m_parentWithin != RTreeMatchFunction::Within::Inside) && !(m_boundingRange.Intersects(*pt) && SkewTest(pt)))
         return BE_SQLITE_OK;
 
     DPoint3d localCorners[8];
@@ -651,13 +628,13 @@ int QueryModel::ProgressiveFilter::_TestRange(QueryInfo const& info)
         if (!m_scorer.ComputeOcclusionScore(&score, overlap, spansEyePlane, localCorners, true))
             return BE_SQLITE_OK;
 
-        info.m_within = info.m_parentWithin == Within::Inside ? Within::Inside : m_boundingRange.Contains(*pt) ? Within::Inside : Within::Partly;
+        info.m_within = info.m_parentWithin == RTreeMatchFunction::Within::Inside ? RTreeMatchFunction::Within::Inside : m_boundingRange.Contains(*pt) ? RTreeMatchFunction::Within::Inside : RTreeMatchFunction::Within::Partly;
         info.m_score = info.m_maxLevel - info.m_level - score;
         }
     else
         {
         info.m_score = 0;
-        info.m_within = Within::Partly;
+        info.m_within = RTreeMatchFunction::Within::Partly;
         }                                                                                                                                  
     return BE_SQLITE_OK;
     }
@@ -680,19 +657,25 @@ ProgressiveDisplay::Completion QueryModel::ProgressiveFilter::_Process(ViewConte
         return Completion::Aborted;
 
     m_context = &context;
-    m_nThisPass = m_thisBatch = 0; // restart every pass
+    m_thisBatch = 0; // restart every pass
     m_batchSize = batchSize;
     m_setTimeout = false;
 
-    DEBUG_PRINTF("start progressive display");
-    if (BE_SQLITE_ROW != StepRTree(*m_rangeStmt))
+    DbResult rc;
+    DEBUG_PRINTF("begin progressive display");
+    while (BE_SQLITE_ROW == (rc=m_rangeStmt->Step()))
         {
-        m_rangeStmt->Reset();
-        DEBUG_PRINTF("aborted progressive display");
-        return Completion::Aborted;
-        }
-    DEBUG_PRINTF("finished progressive display");
+        if (m_context->_CheckStop())
+            {
+            DEBUG_PRINTF("aborted progressive display");
+            return Completion::Aborted;
+            }
 
+        RangeAccept(m_rangeStmt->GetValueInt64(0));
+        }
+
+    BeAssert(rc == BE_SQLITE_DONE);
+    DEBUG_PRINTF("finished progressive display");
     return Completion::Finished;
     }
 
@@ -701,29 +684,19 @@ ProgressiveDisplay::Completion QueryModel::ProgressiveFilter::_Process(ViewConte
 +---------------+---------------+---------------+---------------+---------------+------*/
 QueryModel::ProgressiveFilter::~ProgressiveFilter()
     {
-    DgnDb::SQLRequest::Client _v_v;
     m_rangeStmt = nullptr;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-void QueryModel::ProgressiveFilter::_StepRange(DbFunction::Context&, int nArgs, DbValue* args) 
+void QueryModel::ProgressiveFilter::RangeAccept(uint64_t id)
     {
-    if (m_context->WasAborted())
-        return;
-
-    // for restarts, skip calls up to the point where we finished last pass
-    if (++m_nThisPass < m_nLastPass)
-        return;
-
-    ++m_nLastPass;
-
-    DgnElementId elementId(args->GetValueUInt64());
-    if (nullptr != m_exclude && m_exclude->find(elementId) != m_exclude->end())
-        return;
-
+    DgnElementId elementId(id);
     if (m_queryModel.FindElementById(elementId))
+        return;
+
+    if (nullptr != m_exclude && m_exclude->find(elementId) != m_exclude->end())
         return;
 
     DgnElements& pool = m_dgndb.Elements();
@@ -765,4 +738,3 @@ void QueryModel::ProgressiveFilter::_StepRange(DbFunction::Context&, int nArgs, 
     uint64_t newTotalAllocated = (uint64_t)pool.GetTotalAllocated();
     m_purgeTrigger = (uint64_t)(s_purgeFactor * std::max(newTotalAllocated, m_elementReleaseTrigger));
     }
-

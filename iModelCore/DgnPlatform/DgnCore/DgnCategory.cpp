@@ -237,7 +237,6 @@ DgnCategoryIdList DgnCategory::QueryOrderedCategories(DgnDbR db)
 +---------------+---------------+---------------+---------------+---------------+------*/
 size_t DgnCategory::QueryCount(DgnDbR db)
     {
-    DgnDb::SQLRequest::Client _v_v;
     CachedECSqlStatementPtr stmt = db.GetPreparedECSqlStatement("SELECT count(*) FROM " DGN_SCHEMA(DGN_CLASSNAME_Category));
     return stmt.IsValid() && BE_SQLITE_ROW == stmt->Step() ? stmt->GetValueInt(0) : 0;
     }
@@ -328,10 +327,11 @@ DgnDbStatus DgnSubCategory::BindParams(ECSqlStatement& stmt)
     // default sub-categories don't have a description
     if (!IsDefaultSubCategory() && ECSqlStatus::Success != stmt.BindText(stmt.GetParameterIndex(SUBCAT_PROP_Descr), m_data.m_descr.c_str(), IECSqlBinder::MakeCopy::No))
         return DgnDbStatus::BadArg;
-    else if (ECSqlStatus::Success != stmt.BindText(stmt.GetParameterIndex(SUBCAT_PROP_Props), m_data.m_appearance.ToJson().c_str(), IECSqlBinder::MakeCopy::Yes))
+
+    if (ECSqlStatus::Success != stmt.BindText(stmt.GetParameterIndex(SUBCAT_PROP_Props), m_data.m_appearance.ToJson().c_str(), IECSqlBinder::MakeCopy::Yes))
         return DgnDbStatus::BadArg;
-    else
-        return DgnDbStatus::Success;
+
+    return DgnDbStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -405,8 +405,6 @@ DgnCategoryId DgnSubCategory::QueryCategoryId(DgnSubCategoryId subCatId, DgnDbR 
     if (!subCatId.IsValid())
         return DgnCategoryId();
 
-    DgnDb::SQLRequest::Client _v_v;
-
     CachedECSqlStatementPtr stmt = db.GetPreparedECSqlStatement("SELECT ParentId FROM " DGN_SCHEMA(DGN_CLASSNAME_SubCategory) " WHERE ECInstanceId=? LIMIT 1");
     if (stmt.IsValid())
         {
@@ -430,7 +428,6 @@ DgnSubCategoryIdSet DgnSubCategory::QuerySubCategories(DgnDbR db, DgnCategoryId 
     if (catId.IsValid())
         ecsql.append(" WHERE [ParentId]=?");
 
-    DgnDb::SQLRequest::Client _v_v;
     CachedECSqlStatementPtr stmt = db.GetPreparedECSqlStatement(ecsql.c_str());
     if (stmt.IsValid())
         {
@@ -454,7 +451,6 @@ size_t DgnSubCategory::QueryCount(DgnDbR db, DgnCategoryId catId)
     if (catId.IsValid())
         ecsql.append (" WHERE [ParentId]=?");
 
-    DgnDb::SQLRequest::Client _v_v;
     CachedECSqlStatementPtr stmt = db.GetPreparedECSqlStatement(ecsql.c_str());
     if (stmt.IsValid())
         {

@@ -106,12 +106,14 @@ DbResult DgnUnits::SaveProjectExtents(AxisAlignedBox3dCR newExtents)
 +---------------+---------------+---------------+---------------+---------------+------*/
 AxisAlignedBox3d DgnUnits::ComputeProjectExtents()
     {
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     RTree3dBoundsTest bounds(m_dgndb);
     Statement stmt(m_dgndb, "SELECT 1 FROM " DGN_VTABLE_RTree3d " WHERE ElementId MATCH rTreeMatch(1)");
     bounds.m_bounds.Invalidate();
     auto rc=bounds.StepRTree(stmt);
     BeAssert(rc==BE_SQLITE_DONE);
     bounds.m_bounds.ToRange(m_extent);
+#endif
     return m_extent;
     }
 

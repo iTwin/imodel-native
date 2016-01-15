@@ -1508,7 +1508,7 @@ bool OverlapScorer::ComputeScore(double* score, BeSQLite::RTree3dValCR testRange
 * @bsimethod                                    Keith.Bentley                   04/14
 +---------------+---------------+---------------+---------------+---------------+------*/
 RTreeFilter::RTreeFilter(DgnViewportCR viewport, DgnDbR db, double minimumSizePixels, DgnElementIdSet const* exclude)
-        : Tester(db), m_minimumSizePixels(minimumSizePixels), m_exclude(exclude), m_clips(nullptr)
+        : m_minimumSizePixels(minimumSizePixels), m_exclude(exclude), m_clips(nullptr)
     {
     m_nCalls = m_nScores = m_nSkipped = 0;
     m_scorer.InitForViewport(viewport, m_minimumSizePixels);
@@ -1648,22 +1648,21 @@ bool RTreeFilter::AllPointsClippedByOnePlane(ConvexClipPlaneSetCR cps, size_t nP
     return false;
     }
 
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-int DgnDbRTreeFitFilter::_TestRange(QueryInfo const& info)
+int DgnDbRTreeFitFilter::_TestRTree(RTreeMatchFunction::QueryInfo const& info)
     {
     RTree3dValCP pt = (RTree3dValCP) info.m_coords;
 
     if (m_fitRange.IsContained(pt->m_minx, pt->m_miny, pt->m_minz) &&
         m_fitRange.IsContained(pt->m_maxx, pt->m_maxy, pt->m_maxz))
         {
-        info.m_within = Within::Outside; // If this range is entirely contained there is no reason to continue (it cannot contribute to the fit)
+        info.m_within = RTreeMatchFunction::Within::Outside; // If this range is entirely contained there is no reason to continue (it cannot contribute to the fit)
         }
     else
         {
-        info.m_within = Within::Partly; 
+        info.m_within = RTreeMatchFunction::Within::Partly; 
         info.m_score  = info.m_level; // to get depth-first traversal
         if (info.m_level == 0)
             m_lastRange = DRange3d::From(pt->m_minx, pt->m_miny, pt->m_minz, pt->m_maxx, pt->m_maxy, pt->m_maxz);
