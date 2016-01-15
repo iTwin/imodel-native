@@ -414,8 +414,8 @@ BENTLEYDLL_EXPORT static void Log (Utf8CP category, LogPriority priority, Utf8CP
     #define TEST_NAME ::testing::UnitTest::GetInstance()->current_test_info()->name()
     #define TEST_DETAILS TEST_FIXTURE_NAME, TEST_NAME
 #else
-    #define TEST_FIXTURE_NAME GetTestCaseName()
-    #define TEST_NAME GetTestName()
+    #define TEST_FIXTURE_NAME GetTestCaseNameA()
+    #define TEST_NAME GetTestNameA()
     #define TEST_DETAILS TEST_FIXTURE_NAME, TEST_NAME
 #endif
 
