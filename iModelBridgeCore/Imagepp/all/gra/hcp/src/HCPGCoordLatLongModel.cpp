@@ -591,7 +591,7 @@ StatusInt HCPGCoordLatLongModel::ComputeDomain () const
         m_pBaseGCS->GetMathematicalDomain(gcsGeoDomain);
 
         // Convert geo points to Image++ points
-        for (int idx = 0 ; idx < gcsGeoDomain.size() ; idx++)
+        for (size_t idx = 0 ; idx < gcsGeoDomain.size() ; idx++)
             gcsGeoDomain2.push_back(HGF2DCoord<double>(gcsGeoDomain[idx].longitude, gcsGeoDomain[idx].latitude));
 
         // Create the three coordinate systems required for transformation
