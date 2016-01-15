@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/WebServices/Cache/Persistence/ChangeManager.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -122,6 +122,8 @@ struct ChangeManager : public IChangeManager
             ) override;
 
         WSCACHE_EXPORT BentleyStatus ModifyFile(ECInstanceKeyCR instanceKey, BeFileNameCR filePath, bool copyFile, SyncStatus syncStatus = SyncStatus::Ready) override;
+        WSCACHE_EXPORT BentleyStatus ModifyFileName(ECInstanceKeyCR instanceKey, Utf8StringCR newFileName) override;
+
         WSCACHE_EXPORT BentleyStatus SetSyncStatus(ECInstanceKeyCR instanceKey, SyncStatus syncStatus) override;
 
         // -- Getting changes --

@@ -322,6 +322,39 @@ BentleyStatus ChangeManager::ModifyFile(ECInstanceKeyCR instanceKey, BeFileNameC
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    06/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus ChangeManager::ModifyFileName(ECInstanceKeyCR instanceKey, Utf8StringCR newFileName)
+    {
+    ObjectInfo objInfo = m_objectInfoManager.ReadInfo(instanceKey);
+    if (!objInfo.IsInCache())
+        {
+        return ERROR;
+        }
+
+    FileInfo info = m_fileInfoManager.ReadInfo(objInfo.GetCachedInstanceKey());
+    if (info.GetChangeStatus() != ChangeStatus::Modified)
+        {
+        BeAssert(false && "Only modified file name changing is allowed");
+        return ERROR;
+        }
+
+    if (IsSyncActive())
+        {
+        BeAssert(false && "Cannot rename file while syncing");
+        return ERROR;
+        }
+
+    if (SUCCESS != m_fileStorage.RenameCachedFile(info, newFileName) ||
+        SUCCESS != m_fileInfoManager.SaveInfo(info))
+        {
+        return ERROR;
+        }
+
+    return SUCCESS;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    06/2014
++---------------+---------------+---------------+---------------+---------------+------*/
 ECInstanceKey ChangeManager::CreateRelationship
 (
 ECRelationshipClassCR relationshipClass,
