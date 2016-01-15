@@ -2,7 +2,7 @@
 |
 |     $Source: Cache/Persistence/Files/FileInfo.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -15,8 +15,8 @@
 
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 
-const int FileInfo::PersistentRootFolderId = static_cast<int>(ExternalFileInfoRootFolder::LocalStateFolder);
-const int FileInfo::TemporaryRootFolderId = static_cast<int>(ExternalFileInfoRootFolder::TemporaryFolder);
+const int FileInfo::PersistentRootFolderId = static_cast<int>(StandardRootFolderType::LocalStateFolder);
+const int FileInfo::TemporaryRootFolderId = static_cast<int>(StandardRootFolderType::TemporaryFolder);
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    11/2014

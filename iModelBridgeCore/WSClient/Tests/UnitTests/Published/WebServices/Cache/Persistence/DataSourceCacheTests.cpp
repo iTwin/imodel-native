@@ -221,6 +221,18 @@ TEST_F(DataSourceCacheTests, UpdateSchemas_CalledOnOtherConnection_CallsListener
     ASSERT_EQ(BE_SQLITE_OK, sp2.Commit());
     }
 
+TEST_F(DataSourceCacheTests, UpdateSchemas_DefaultUsedSchemasPassed_Success)
+    {
+    DataSourceCache cache;
+    cache.Create(BeFileName(":memory:"), CacheEnvironment());
+
+    auto path = GetTestsAssetsDir().AppendToPath(L"ECSchemas/WSClient/Cache/MetaSchema.02.00.ecschema.xml");
+
+    ASSERT_EQ(SUCCESS, cache.UpdateSchemas(std::vector<BeFileName> {path}));
+
+    EXPECT_TRUE(nullptr != cache.GetAdapter().GetECSchema("MetaSchema"));
+    }
+
 TEST_F(DataSourceCacheTests, GetInstance_NotCached_ReturnsDataNotCachedAndNullInstance)
     {
     auto cache = GetTestCache();
@@ -461,9 +473,9 @@ TEST_F(DataSourceCacheTests, RemoveInstance_HasCachedFile_FileIsDeleted)
     auto cache = GetTestCache();
     cache->LinkInstanceToRoot("foo_root", {"TestSchema.TestClass", "Foo"});
 
-    cache->CacheFile({"TestSchema.TestClass", "Foo"}, StubWSFileResponse(StubFile()), FileCache::Persistent);
-    BeFileName cachedFilePath = cache->ReadFilePath({"TestSchema.TestClass", "Foo"});
+    ASSERT_EQ(SUCCESS, cache->CacheFile({"TestSchema.TestClass", "Foo"}, StubWSFileResponse(StubFile()), FileCache::Persistent));
 
+    BeFileName cachedFilePath = cache->ReadFilePath({"TestSchema.TestClass", "Foo"});
     EXPECT_TRUE(cachedFilePath.DoesPathExist());
 
     CacheStatus status = cache->RemoveInstance({"TestSchema.TestClass", "Foo"});
@@ -803,7 +815,7 @@ TEST_F(DataSourceCacheTests, ReadInstancesLinkedToRoot_TwoDifferentClassInstance
     EXPECT_THAT(cache->ObjectIdFromJsonInstance(instances[1]), AnyOf(ObjectId("TestSchema.TestClass", "A"), ObjectId("TestSchema.TestClass2", "B")));
     }
 
-TEST_F(DataSourceCacheTests, DeleteFilesInTemporaryPersistence_RootPersistenceSetToFull_LeavesFile)
+TEST_F(DataSourceCacheTests, RemoveFilesInTemporaryPersistence_RootPersistenceSetToFull_LeavesFile)
     {
     auto cache = GetTestCache();
     ASSERT_EQ(SUCCESS, cache->LinkInstanceToRoot("foo_root", {"TestSchema.TestClass", "Foo"}));
@@ -818,7 +830,7 @@ TEST_F(DataSourceCacheTests, DeleteFilesInTemporaryPersistence_RootPersistenceSe
     EXPECT_TRUE(cache->ReadFilePath({"TestSchema.TestClass", "Foo"}).DoesPathExist());
     }
 
-TEST_F(DataSourceCacheTests, DeleteFilesInTemporaryPersistence_RootPersistenceSetToTemporaryAndFileCachedToPersistent_DeletesFile)
+TEST_F(DataSourceCacheTests, RemoveFilesInTemporaryPersistence_RootPersistenceSetToTemporaryAndFileCachedToPersistent_DeletesFile)
     {
     auto cache = GetTestCache();
     ASSERT_EQ(SUCCESS, cache->LinkInstanceToRoot("foo_root", {"TestSchema.TestClass", "Foo"}));
@@ -833,7 +845,7 @@ TEST_F(DataSourceCacheTests, DeleteFilesInTemporaryPersistence_RootPersistenceSe
     EXPECT_FALSE(cache->ReadFilePath({"TestSchema.TestClass", "Foo"}).DoesPathExist());
     }
 
-TEST_F(DataSourceCacheTests, DeleteFilesInTemporaryPersistence_ModifiedFileExists_LeavesModifiedFile)
+TEST_F(DataSourceCacheTests, RemoveFilesInTemporaryPersistence_ModifiedFileExists_LeavesModifiedFile)
     {
     auto cache = GetTestCache();
     cache->LinkInstanceToRoot("foo_root", {"TestSchema.TestClass", "Foo"});
@@ -1453,6 +1465,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_InstanceRemovedInNewResults_RemovesIn
     EXPECT_FALSE(cache->GetCachedObjectInfo({"TestSchema.TestClass", "ChildFoo"}).IsFullyCached());
     }
 
+// WIP06 relationship deletions 
 TEST_F(DataSourceCacheTests, CacheResponse_InstanceWithCachedFileRemovedInNewResults_RemovesCachedFile)
     {
     auto cache = GetTestCache();
@@ -1470,6 +1483,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_InstanceWithCachedFileRemovedInNewRes
     instances.Clear();
     cache->CacheResponse(responseKey, instances.ToWSObjectsResponse());
 
+    ASSERT_FALSE(cache->FindInstance({"TestSchema.TestClass", "Foo"}).IsValid());
     EXPECT_FALSE(cachedFilePath.DoesPathExist());
     }
 
@@ -1633,25 +1647,21 @@ TEST_F(DataSourceCacheTests, CacheResponse_MultipleClassRelationshipsAndNewResul
     auto testRelClass2 = cache->GetAdapter().GetECRelationshipClass("TestSchema.TestRelationshipClass2");
     ASSERT_LT(testRelClass1->GetId(), testRelClass2->GetId()); // Ensure that ids are as expected for regression
 
-    {
     StubInstances instances;
-    auto instance = instances.Add({"TestSchema.TestClass", "A"});
-    instance.AddRelated({"TestSchema.TestRelationshipClass2", "AB"}, {"TestSchema.TestClass", "B"});
-    instance.AddRelated({"TestSchema.TestRelationshipClass2", "AC"}, {"TestSchema.TestClass", "C"});
+    auto instance1 = instances.Add({"TestSchema.TestClass", "A"});
+    instance1.AddRelated({"TestSchema.TestRelationshipClass2", "AB"}, {"TestSchema.TestClass", "B"});
+    instance1.AddRelated({"TestSchema.TestRelationshipClass2", "AC"}, {"TestSchema.TestClass", "C"});
 
     ASSERT_EQ(SUCCESS, cache->CacheResponse(responseKey, instances.ToWSObjectsResponse()));
-    }
 
-    {
-    StubInstances instances;
-    auto instance = instances.Add({"TestSchema.TestClass", "A"});
-    instance.AddRelated({"TestSchema.TestRelationshipClass2", "AB"}, {"TestSchema.TestClass", "B"});
-    instance.AddRelated({"TestSchema.TestRelationshipClass", "A1"}, {"TestSchema.TestClass", "1"});
-    instance.AddRelated({"TestSchema.TestRelationshipClass2", "AC"}, {"TestSchema.TestClass", "C"});
-    instance.AddRelated({"TestSchema.TestRelationshipClass", "A2"}, {"TestSchema.TestClass", "2"});
+    instances.Clear();
+    auto instance2 = instances.Add({"TestSchema.TestClass", "A"});
+    instance2.AddRelated({"TestSchema.TestRelationshipClass2", "AB"}, {"TestSchema.TestClass", "B"});
+    instance2.AddRelated({"TestSchema.TestRelationshipClass", "A1"}, {"TestSchema.TestClass", "1"});
+    instance2.AddRelated({"TestSchema.TestRelationshipClass2", "AC"}, {"TestSchema.TestClass", "C"});
+    instance2.AddRelated({"TestSchema.TestRelationshipClass", "A2"}, {"TestSchema.TestClass", "2"});
 
     ASSERT_EQ(SUCCESS, cache->CacheResponse(responseKey, instances.ToWSObjectsResponse()));
-    }
 
     EXPECT_TRUE(VerifyHasRelationship(cache, testRelClass2, {"TestSchema.TestClass", "A"}, {"TestSchema.TestClass", "B"}));
     EXPECT_TRUE(VerifyHasRelationship(cache, testRelClass2, {"TestSchema.TestClass", "A"}, {"TestSchema.TestClass", "C"}));
@@ -4132,54 +4142,6 @@ TEST_F(DataSourceCacheTests, ReadInstanceCachedDate_InstanceNotCached_ReturnsInv
     ASSERT_THAT(cache->ReadInstanceCachedDate({"TestSchema.TestClass", "NonExisting"}).IsValid(), false);
     }
 
-TEST_F(DataSourceCacheTests, CacheFile_CachingPersistentLocation_ExternalFileInfoIsAssociatedWithInstance)
-    {
-    auto cache = GetTestCache();
-
-    ObjectId fileId {"TestSchema.TestClass", "Foo"};
-    cache->LinkInstanceToRoot("Root", fileId);
-
-    auto status = cache->CacheFile(fileId, WSFileResponse(StubFile("abc", "Test.txt"), HttpStatus::OK, nullptr), FileCache::Persistent);
-    ASSERT_EQ(SUCCESS, status);
-
-    ECRelationshipClassCP instanceHasFileInfoClass = cache->GetAdapter().GetECRelationshipClass("ECDb_FileInfo.InstanceHasFileInfo");
-    ECClassCP fileInfoClass = cache->GetAdapter().GetECClass("ECDb_FileInfo.ExternalFileInfo");
-    auto instanceKey = cache->FindInstance({"TestSchema.TestClass", "Foo"});
-
-    Json::Value externalFileInfos;
-    cache->GetAdapter().GetJsonRelatedTargets(externalFileInfos, instanceHasFileInfoClass, fileInfoClass, instanceKey);
-
-    JsonValueCR externalFileInfo = externalFileInfos[0];
-
-    EXPECT_EQ(CacheEnvironment::GetPersistentRootFolderId(), externalFileInfo["RootFolder"].asInt());
-    EXPECT_NE("", externalFileInfo["RelativePath"].asString());
-    EXPECT_EQ("Test.txt", externalFileInfo["Name"].asString());
-    }
-
-TEST_F(DataSourceCacheTests, CacheFile_CachingTemporaryLocation_ExternalFileInfoIsAssociatedWithInstance)
-    {
-    auto cache = GetTestCache();
-
-    ObjectId fileId {"TestSchema.TestClass", "Foo"};
-    cache->LinkInstanceToRoot("Root", fileId);
-
-    auto status = cache->CacheFile(fileId, WSFileResponse(StubFile("abc", "Test.txt"), HttpStatus::OK, nullptr), FileCache::Temporary);
-    ASSERT_EQ(SUCCESS, status);
-
-    ECRelationshipClassCP instanceHasFileInfoClass = cache->GetAdapter().GetECRelationshipClass("ECDb_FileInfo.InstanceHasFileInfo");
-    ECClassCP fileInfoClass = cache->GetAdapter().GetECClass("ECDb_FileInfo.ExternalFileInfo");
-    auto instanceKey = cache->FindInstance({"TestSchema.TestClass", "Foo"});
-
-    Json::Value externalFileInfos;
-    cache->GetAdapter().GetJsonRelatedTargets(externalFileInfos, instanceHasFileInfoClass, fileInfoClass, instanceKey);
-
-    JsonValueCR externalFileInfo = externalFileInfos[0];
-
-    EXPECT_EQ(CacheEnvironment::GetTemporaryRootFolderId(), externalFileInfo["RootFolder"].asInt());
-    EXPECT_NE("", externalFileInfo["RelativePath"].asString());
-    EXPECT_EQ("Test.txt", externalFileInfo["Name"].asString());
-    }
-
 TEST_F(DataSourceCacheTests, SetFileCacheLocation_MovingCachedFileToTemporary_MovesFileToTemporaryEnvironmentLocation)
     {
     auto cache = GetTestCache();
@@ -4335,6 +4297,83 @@ TEST_F(DataSourceCacheTests, ReadFileCacheTag_CachedFileButIsDeletedFromDisk_Ret
     ASSERT_EQ(BeFileNameStatus::Success, cachedFilePath.BeDeleteFile());
 
     EXPECT_THAT(cache->ReadFileCacheTag(fileId), IsEmpty());
+    }
+
+TEST_F(DataSourceCacheTests, CacheFile_PersistentFileCached_CorrectECDbExternalFileInfoCreated)
+    {
+    auto cache = GetTestCache();
+
+    auto fileId = ObjectId("TestSchema.TestClass", "Foo");
+    auto fileKey = StubInstanceInCache(*cache, fileId);
+
+    ASSERT_EQ(SUCCESS, cache->CacheFile(fileId, StubWSFileResponse(StubFile("", "Test.txt")), FileCache::Persistent));
+    BeFileName cachedFilePath = cache->ReadFilePath(fileId);
+    EXPECT_TRUE(cachedFilePath.DoesPathExist());
+
+    Json::Value externalFileInfos;
+    ASSERT_EQ(SUCCESS, cache->GetAdapter().GetJsonInstances(externalFileInfos, cache->GetAdapter().GetECClass("ECDb_FileInfo.ExternalFileInfo")));
+    ASSERT_EQ(1, externalFileInfos.size());
+
+    auto relativePath = externalFileInfos[0]["RelativePath"].asString();
+    EXPECT_FALSE(relativePath.empty());
+    EXPECT_TRUE(cachedFilePath.EndsWith(BeFileName(relativePath)));
+    EXPECT_EQ(CacheEnvironment::GetPersistentRootFolderId(), externalFileInfos[0]["RootFolder"].asInt());
+    EXPECT_EQ("Test.txt", externalFileInfos[0]["Name"].asString());
+    }
+
+TEST_F(DataSourceCacheTests, CacheFile_TemporaryFileCached_CorrectECDbExternalFileInfoCreated)
+    {
+    auto cache = GetTestCache();
+
+    auto fileId = ObjectId("TestSchema.TestClass", "Foo");
+    auto fileKey = StubInstanceInCache(*cache, fileId);
+
+    ASSERT_EQ(SUCCESS, cache->CacheFile(fileId, StubWSFileResponse(StubFile("", "Test.txt")), FileCache::Temporary));
+    BeFileName cachedFilePath = cache->ReadFilePath(fileId);
+    EXPECT_TRUE(cachedFilePath.DoesPathExist());
+
+    Json::Value externalFileInfos;
+    ASSERT_EQ(SUCCESS, cache->GetAdapter().GetJsonInstances(externalFileInfos, cache->GetAdapter().GetECClass("ECDb_FileInfo.ExternalFileInfo")));
+    ASSERT_EQ(1, externalFileInfos.size());
+
+    auto relativePath = externalFileInfos[0]["RelativePath"].asString();
+    EXPECT_FALSE(relativePath.empty());
+    EXPECT_TRUE(cachedFilePath.EndsWith(BeFileName(relativePath)));
+    EXPECT_EQ(CacheEnvironment::GetTemporaryRootFolderId(), externalFileInfos[0]["RootFolder"].asInt());
+    EXPECT_EQ("Test.txt", externalFileInfos[0]["Name"].asString());
+    }
+
+TEST_F(DataSourceCacheTests, CacheFile_FileCached_CorrectECDbFileInfoStructureCreated)
+    {
+    auto cache = GetTestCache();
+
+    auto fileId = ObjectId("TestSchema.TestClass", "Foo");
+    auto fileKey = StubInstanceInCache(*cache, fileId);
+
+    ASSERT_EQ(SUCCESS, cache->CacheFile(fileId, StubWSFileResponse(StubFile()), FileCache::Persistent));
+    BeFileName cachedFilePath = cache->ReadFilePath(fileId);
+    EXPECT_TRUE(cachedFilePath.DoesPathExist());
+
+    Json::Value fileInfoOwnerships, externalFileInfos;
+    ASSERT_EQ(SUCCESS, cache->GetAdapter().GetJsonInstances(fileInfoOwnerships, cache->GetAdapter().GetECClass("ECDb_FileInfo.FileInfoOwnership")));
+    ASSERT_EQ(SUCCESS, cache->GetAdapter().GetJsonInstances(externalFileInfos, cache->GetAdapter().GetECClass("ECDb_FileInfo.ExternalFileInfo")));
+
+    ASSERT_EQ(1, fileInfoOwnerships.size());
+    ASSERT_EQ(1, externalFileInfos.size());
+
+    auto externalFileInfoKey = cache->GetAdapter().GetInstanceKeyFromJsonInstance(externalFileInfos[0]);
+    ASSERT_TRUE(externalFileInfoKey.IsValid());
+
+    ECInstanceKey ownershipOwnerKey(
+        ECClassId(BeJsonUtilities::Int64FromValue(fileInfoOwnerships[0]["OwnerECClassId"], -42)),
+        ECInstanceId(BeJsonUtilities::Int64FromValue(fileInfoOwnerships[0]["OwnerId"], -42)));
+
+    ECInstanceKey ownershipFileInfoKey(
+        ECClassId(BeJsonUtilities::Int64FromValue(fileInfoOwnerships[0]["FileInfoECClassId"], -42)),
+        ECInstanceId(BeJsonUtilities::Int64FromValue(fileInfoOwnerships[0]["FileInfoId"], -42)));
+
+    EXPECT_EQ(fileKey, ownershipOwnerKey);
+    EXPECT_EQ(externalFileInfoKey, ownershipFileInfoKey);
     }
 
 TEST_F(DataSourceCacheTests, FindInstance_NotExistingObjectIdRemoteId_InvalidKeyButCorrectClass)
