@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/WebServices/Configuration/UrlProviderTests.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "UrlProviderTests.h"
@@ -160,7 +160,7 @@ TEST_F(UrlProviderTests, GetUrl_ValidateAllGetters)
     StubLocalState localState;
 
     bset<Utf8String> urlNames;
-    EXPECT_CALL(*client, GetUrl(_, _)).Times(9).WillRepeatedly(Invoke([&] (Utf8StringCR urlName, int regionId)
+    EXPECT_CALL(*client, GetUrl(_, _)).Times(13).WillRepeatedly(Invoke([&] (Utf8StringCR urlName, int regionId)
         {
         EXPECT_TRUE(urlNames.find(urlName) == urlNames.end());
         urlNames.insert(urlName);
@@ -169,25 +169,33 @@ TEST_F(UrlProviderTests, GetUrl_ValidateAllGetters)
 
     UrlProvider::Initialize(UrlProvider::Environment::Dev, UrlProvider::DefaultTimeout, &localState, client);
 
-    EXPECT_STREQ(url.c_str(), UrlProvider::Urls::ConnectWsgPunchList.Get().c_str());
+    EXPECT_STREQ(url.c_str(), UrlProvider::Urls::ConnectEula.Get().c_str());
+    EXPECT_STREQ(url.c_str(), UrlProvider::Urls::ConnectProjectUrl.Get().c_str());
+    EXPECT_STREQ(url.c_str(), UrlProvider::Urls::ConnectWsgGlobal.Get().c_str());
     EXPECT_STREQ(url.c_str(), UrlProvider::Urls::ConnectWsgPersonalPublishing.Get().c_str());
     EXPECT_STREQ(url.c_str(), UrlProvider::Urls::ConnectWsgProjectContent.Get().c_str());
-    EXPECT_STREQ(url.c_str(), UrlProvider::Urls::ConnectWsgGlobal.Get().c_str());
+    EXPECT_STREQ(url.c_str(), UrlProvider::Urls::ConnectWsgPunchList.Get().c_str());
+    EXPECT_STREQ(url.c_str(), UrlProvider::Urls::ConnectWsgClashIssues.Get().c_str());
     EXPECT_STREQ(url.c_str(), UrlProvider::Urls::ConnectWsgSharedContent.Get().c_str());
-    EXPECT_STREQ(url.c_str(), UrlProvider::Urls::ConnectEula.Get().c_str());
     EXPECT_STREQ(url.c_str(), UrlProvider::Urls::ImsStsAuth.Get().c_str());
-    EXPECT_STREQ(url.c_str(), UrlProvider::Urls::UsageTracking.Get().c_str());
+    EXPECT_STREQ(url.c_str(), UrlProvider::Urls::ImsActiveStsDelegationService.Get().c_str());
+    EXPECT_STREQ(url.c_str(), UrlProvider::Urls::ImsFederatedAuth.Get().c_str());
     EXPECT_STREQ(url.c_str(), UrlProvider::Urls::Passport.Get().c_str());
+    EXPECT_STREQ(url.c_str(), UrlProvider::Urls::UsageTracking.Get().c_str());
 
-    EXPECT_STREQ(url.c_str(), UrlProvider::Urls::ConnectWsgPunchList.Get().c_str());
+    EXPECT_STREQ(url.c_str(), UrlProvider::Urls::ConnectEula.Get().c_str());
+    EXPECT_STREQ(url.c_str(), UrlProvider::Urls::ConnectProjectUrl.Get().c_str());
+    EXPECT_STREQ(url.c_str(), UrlProvider::Urls::ConnectWsgGlobal.Get().c_str());
     EXPECT_STREQ(url.c_str(), UrlProvider::Urls::ConnectWsgPersonalPublishing.Get().c_str());
     EXPECT_STREQ(url.c_str(), UrlProvider::Urls::ConnectWsgProjectContent.Get().c_str());
-    EXPECT_STREQ(url.c_str(), UrlProvider::Urls::ConnectWsgGlobal.Get().c_str());
+    EXPECT_STREQ(url.c_str(), UrlProvider::Urls::ConnectWsgPunchList.Get().c_str());
+    EXPECT_STREQ(url.c_str(), UrlProvider::Urls::ConnectWsgClashIssues.Get().c_str());
     EXPECT_STREQ(url.c_str(), UrlProvider::Urls::ConnectWsgSharedContent.Get().c_str());
-    EXPECT_STREQ(url.c_str(), UrlProvider::Urls::ConnectEula.Get().c_str());
     EXPECT_STREQ(url.c_str(), UrlProvider::Urls::ImsStsAuth.Get().c_str());
-    EXPECT_STREQ(url.c_str(), UrlProvider::Urls::UsageTracking.Get().c_str());
+    EXPECT_STREQ(url.c_str(), UrlProvider::Urls::ImsActiveStsDelegationService.Get().c_str());
+    EXPECT_STREQ(url.c_str(), UrlProvider::Urls::ImsFederatedAuth.Get().c_str());
     EXPECT_STREQ(url.c_str(), UrlProvider::Urls::Passport.Get().c_str());
+    EXPECT_STREQ(url.c_str(), UrlProvider::Urls::UsageTracking.Get().c_str());
 
     UrlProvider::CleanUpUrlCache();
     }
@@ -199,36 +207,44 @@ TEST_F(UrlProviderTests, CleanUpCache_UrlsWereCached_RemovesUrlsFromLocalState)
     StubLocalState localState;
 
     EXPECT_CALL(*client, GetUrl(_, _))
-        .Times(9)
+        .Times(13)
         .WillRepeatedly(Return(CreateCompletedAsyncTask(BuddiUrlResult::Success(url))));
 
     UrlProvider::Initialize(UrlProvider::Environment::Dev, UrlProvider::DefaultTimeout, &localState, client);
 
-    EXPECT_STREQ(url.c_str(), UrlProvider::Urls::ConnectWsgPunchList.Get().c_str());
+    EXPECT_STREQ(url.c_str(), UrlProvider::Urls::ConnectEula.Get().c_str());
+    EXPECT_STREQ(url.c_str(), UrlProvider::Urls::ConnectProjectUrl.Get().c_str());
+    EXPECT_STREQ(url.c_str(), UrlProvider::Urls::ConnectWsgGlobal.Get().c_str());
     EXPECT_STREQ(url.c_str(), UrlProvider::Urls::ConnectWsgPersonalPublishing.Get().c_str());
     EXPECT_STREQ(url.c_str(), UrlProvider::Urls::ConnectWsgProjectContent.Get().c_str());
-    EXPECT_STREQ(url.c_str(), UrlProvider::Urls::ConnectWsgGlobal.Get().c_str());
+    EXPECT_STREQ(url.c_str(), UrlProvider::Urls::ConnectWsgPunchList.Get().c_str());
+    EXPECT_STREQ(url.c_str(), UrlProvider::Urls::ConnectWsgClashIssues.Get().c_str());
     EXPECT_STREQ(url.c_str(), UrlProvider::Urls::ConnectWsgSharedContent.Get().c_str());
-    EXPECT_STREQ(url.c_str(), UrlProvider::Urls::ConnectEula.Get().c_str());
     EXPECT_STREQ(url.c_str(), UrlProvider::Urls::ImsStsAuth.Get().c_str());
-    EXPECT_STREQ(url.c_str(), UrlProvider::Urls::UsageTracking.Get().c_str());
+    EXPECT_STREQ(url.c_str(), UrlProvider::Urls::ImsActiveStsDelegationService.Get().c_str());
+    EXPECT_STREQ(url.c_str(), UrlProvider::Urls::ImsFederatedAuth.Get().c_str());
     EXPECT_STREQ(url.c_str(), UrlProvider::Urls::Passport.Get().c_str());
+    EXPECT_STREQ(url.c_str(), UrlProvider::Urls::UsageTracking.Get().c_str());
 
     UrlProvider::CleanUpUrlCache();
 
     EXPECT_CALL(*client, GetUrl(_, _))
-        .Times(9)
+        .Times(13)
         .WillRepeatedly(Return(CreateCompletedAsyncTask(BuddiUrlResult::Success(url))));
 
-    UrlProvider::Urls::ConnectWsgPunchList.Get().c_str();
+    UrlProvider::Urls::ConnectEula.Get().c_str();
+    UrlProvider::Urls::ConnectProjectUrl.Get().c_str();
+    UrlProvider::Urls::ConnectWsgGlobal.Get().c_str();
     UrlProvider::Urls::ConnectWsgPersonalPublishing.Get().c_str();
     UrlProvider::Urls::ConnectWsgProjectContent.Get().c_str();
-    UrlProvider::Urls::ConnectWsgGlobal.Get().c_str();
+    UrlProvider::Urls::ConnectWsgPunchList.Get().c_str();
+    UrlProvider::Urls::ConnectWsgClashIssues.Get().c_str();
     UrlProvider::Urls::ConnectWsgSharedContent.Get().c_str();
-    UrlProvider::Urls::ConnectEula.Get().c_str();
     UrlProvider::Urls::ImsStsAuth.Get().c_str();
-    UrlProvider::Urls::UsageTracking.Get().c_str();
+    UrlProvider::Urls::ImsActiveStsDelegationService.Get().c_str();
+    UrlProvider::Urls::ImsFederatedAuth.Get().c_str();
     UrlProvider::Urls::Passport.Get().c_str();
+    UrlProvider::Urls::UsageTracking.Get().c_str();
     }
 
 TEST_F(UrlProviderTests, Initialize_CalledSecondTimeWithDifferentEnvironment_CleansUpCache)
