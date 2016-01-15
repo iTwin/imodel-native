@@ -628,6 +628,11 @@ BentleyStatus ECDbAdapter::BindParameters(ECSqlStatement& statement, const bvect
 +---------------+---------------+---------------+---------------+---------------+------*/
 int ECDbAdapter::CountClassInstances(ECClassCP ecClass)
     {
+    if (nullptr == ecClass)
+        {
+        return 0;
+        }
+
     Utf8String ecsql = "SELECT NULL FROM ONLY " + ecClass->GetECSqlName();
 
     ECSqlStatement statement;
