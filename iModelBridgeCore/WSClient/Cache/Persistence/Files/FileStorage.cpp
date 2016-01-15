@@ -2,7 +2,7 @@
  |
  |     $Source: Cache/Persistence/Files/FileStorage.cpp $
  |
- |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 
@@ -431,4 +431,54 @@ BentleyStatus FileStorage::CleanupCachedFile(BeFileNameCR filePath)
             }
         }
     return SUCCESS;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus FileStorage::RenameCachedFile(FileInfoR info, Utf8StringCR newFileName)
+    {
+    BeFileName oldPath = info.GetFilePath();
+    BeFileName newPath = CreateNewFilePath(oldPath, newFileName);
+
+    if (newPath.empty())
+        {
+        return ERROR;
+        }
+
+    if (oldPath == newPath)
+        {
+        return SUCCESS;
+        }
+
+    if (BeFileNameStatus::Success != BeFileName::BeMoveFile(oldPath, newPath))
+        {
+        return ERROR;
+        }
+
+    BeFileName dirPath = newPath.GetDirectoryName();
+    dirPath.PopDir();
+
+    BeFileName newRelativePath(newPath.substr(dirPath.size()));
+
+    info.SetFilePath(info.IsFilePersistent(), newRelativePath);
+    return SUCCESS;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+BeFileName FileStorage::CreateNewFilePath(BeFileNameCR oldFilePath, Utf8String newFileName)
+    {
+    newFileName = FileUtil::SanitizeFileName(newFileName);
+    newFileName = FileUtil::TruncateFileName(newFileName);
+
+    BeFileName newFilePath = oldFilePath.GetDirectoryName();
+    newFilePath.AppendToPath(BeFileName(newFileName));
+    if (SUCCESS != FileUtil::TruncateFilePath(newFilePath))
+        {
+        return BeFileName();
+        }
+
+    return newFilePath;
     }

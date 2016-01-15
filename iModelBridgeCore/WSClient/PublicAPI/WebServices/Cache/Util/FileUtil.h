@@ -2,7 +2,7 @@
  |
  |     $Source: PublicAPI/WebServices/Cache/Util/FileUtil.h $
  |
- |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -41,6 +41,9 @@ struct FileUtil
         //! Trims long file name to platfom specific max path length preserving extension. If triming cannot be done error is returned
         WSCACHE_EXPORT static BentleyStatus TruncateFilePath(BeFileNameR filePath);
         WSCACHE_EXPORT static BentleyStatus TruncateFilePath(BeFileNameR filePath, size_t maxPath);
+
+        //! Removes invalid characters in file name so it can be saved to disk.
+        WSCACHE_EXPORT static Utf8String SanitizeFileName(Utf8StringCR fileName);
 
         //! Copy file content from destanation file to target file to override it.
         WSCACHE_EXPORT static BentleyStatus CopyFileContent(BeFileNameCR source, BeFileNameCR target);

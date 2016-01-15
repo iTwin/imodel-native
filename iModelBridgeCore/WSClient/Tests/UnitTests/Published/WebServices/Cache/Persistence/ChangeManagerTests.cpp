@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/WebServices/Cache/Persistence/ChangeManagerTests.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -552,6 +552,81 @@ TEST_F(ChangeManagerTests, ModifyFile_ExistingFile_ReplacesFileContentAndSetsCha
     EXPECT_EQ(IChangeManager::ChangeStatus::Modified, cache->GetChangeManager().GetFileChange(instance).GetChangeStatus());
     EXPECT_EQ(1, cache->GetChangeManager().GetFileChange(instance).GetChangeNumber());
     EXPECT_EQ("NewContent", SimpleReadFile(cache->ReadFilePath(instance)));
+    }
+
+TEST_F(ChangeManagerTests, ModifyFileName_NotExistingInstance_Error)
+    {
+    auto cache = GetTestCache();
+
+    BeTest::SetFailOnAssert(false);
+    EXPECT_EQ(ERROR, cache->GetChangeManager().ModifyFileName(StubECInstanceKey(), "Foo.txt"));
+    BeTest::SetFailOnAssert(true);
+    }
+
+TEST_F(ChangeManagerTests, ModifyFileName_InstanceWithoutFile_Error)
+    {
+    auto cache = GetTestCache();
+    auto instance = StubInstanceInCache(*cache, {"TestSchema.TestClass", "Foo"});
+
+    BeTest::SetFailOnAssert(false);
+    EXPECT_EQ(ERROR, cache->GetChangeManager().ModifyFileName(instance, "Foo.txt"));
+    BeTest::SetFailOnAssert(true);
+    }
+
+TEST_F(ChangeManagerTests, ModifyFileName_InstanceWithNonModifiedFile_Error)
+    {
+    auto cache = GetTestCache();
+    auto instance = StubInstanceInCache(*cache, {"TestSchema.TestClass", "Foo"});
+    ASSERT_EQ(SUCCESS, cache->CacheFile({"TestSchema.TestClass", "Foo"}, StubWSFileResponse(StubFile()), FileCache::Persistent));
+    BeTest::SetFailOnAssert(false);
+    EXPECT_EQ(ERROR, cache->GetChangeManager().ModifyFileName(instance, "Foo.txt"));
+    BeTest::SetFailOnAssert(true);
+    }
+
+TEST_F(ChangeManagerTests, ModifyFileName_InstanceWithModifiedFile_SuccessAndFileRenamed)
+    {
+    // Arrange
+    auto cache = GetTestCache();
+    auto instance = StubInstanceInCache(*cache, {"TestSchema.TestClass", "Foo"});
+    ASSERT_EQ(SUCCESS, cache->GetChangeManager().ModifyFile(instance, StubFile("TestContent", "OldName.txt"), false));
+    auto oldFilePath = cache->ReadFilePath(instance);
+    ASSERT_TRUE(oldFilePath.DoesPathExist());
+    // Act
+    EXPECT_EQ(SUCCESS, cache->GetChangeManager().ModifyFileName(instance, "NewName.foo"));
+    // Assert
+    auto newFilePath = cache->ReadFilePath(instance);
+    EXPECT_TRUE(newFilePath.DoesPathExist());
+    EXPECT_FALSE(oldFilePath.DoesPathExist());
+    EXPECT_EQ("TestContent", SimpleReadFile(newFilePath));
+    EXPECT_EQ(L"NewName.foo", newFilePath.GetFileNameAndExtension());
+    }
+
+TEST_F(ChangeManagerTests, ModifyFileName_InstanceWithModifiedFileAndNameNotChanged_SuccessAndFilePathNotChanged)
+    {
+    // Arrange
+    auto cache = GetTestCache();
+    auto instance = StubInstanceInCache(*cache, {"TestSchema.TestClass", "Foo"});
+    ASSERT_EQ(SUCCESS, cache->GetChangeManager().ModifyFile(instance, StubFile("TestContent", "OldName.txt"), false));
+    auto oldFilePath = cache->ReadFilePath(instance);
+    // Act
+    EXPECT_EQ(SUCCESS, cache->GetChangeManager().ModifyFileName(instance, "OldName.txt"));
+    // Assert
+    auto newFilePath = cache->ReadFilePath(instance);
+    EXPECT_EQ("TestContent", SimpleReadFile(newFilePath));
+    EXPECT_EQ(oldFilePath, newFilePath);
+    }
+
+TEST_F(ChangeManagerTests, ModifyFileName_InstanceWithModifiedFileAndNewNameContainsInvalidSymbols_RenamesWithValidFileName)
+    {
+    // Arrange
+    auto cache = GetTestCache();
+    auto instance = StubInstanceInCache(*cache, {"TestSchema.TestClass", "Foo"});
+    ASSERT_EQ(SUCCESS, cache->GetChangeManager().ModifyFile(instance, StubFile("TestContent", "OldName.txt"), false));
+    // Act
+    EXPECT_EQ(SUCCESS, cache->GetChangeManager().ModifyFileName(instance, R"(Foo\\/:#Boo.txt)"));
+    // Assert
+    auto newFilePath = cache->ReadFilePath(instance);
+    EXPECT_EQ(L"Foo#Boo.txt", newFilePath.GetFileNameAndExtension());
     }
 
 TEST_F(ChangeManagerTests, ChangesIsEmpty_NoChanges_True)
