@@ -45,6 +45,7 @@ public:
 
     void SetupProject(WCharCP baseProjFile, WCharCP testProjFile, BeSQLite::Db::OpenMode mode = BeSQLite::Db::OpenMode::ReadWrite, bool needBriefcase = false);
     void SetupProject(WCharCP baseProjFile, CharCP testFile, BeSQLite::Db::OpenMode mode = BeSQLite::Db::OpenMode::ReadWrite, bool needBriefcase = false);
+    void SetupSeedProject();
     static BeFileName CopyDb(WCharCP inputFileName, WCharCP outputFileName);
     static void OpenDb(DgnDbPtr& db, BeFileNameCR name, DgnDb::OpenMode mode, bool needBriefcase = false);
     void CloseDb() { m_db->CloseDb(); }

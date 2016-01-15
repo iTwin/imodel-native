@@ -1,4 +1,4 @@
-/*--------------------------------------------------------------------------------------+
+﻿/*--------------------------------------------------------------------------------------+
 |
 |  $Source: Tests/DgnProject/NonPublished/ElementAspect_Test.cpp $
 |
@@ -20,6 +20,18 @@ USING_NAMESPACE_BENTLEY_DPTEST
 +===============+===============+===============+===============+===============+======*/
 struct ElementAspectTests : public DgnDbTestFixture
 {
+    DgnAuthorityPtr Create(Utf8CP name, bool insert = true)
+    {
+        DgnAuthorityPtr auth = NamespaceAuthority::CreateNamespaceAuthority(name, *m_db);
+        if (insert)
+        {
+            EXPECT_EQ(DgnDbStatus::Success, auth->Insert());
+            auto authId = auth->GetAuthorityId();
+            EXPECT_TRUE(authId.IsValid());
+        }
+
+        return auth;
+    }
 };
 
 /*---------------------------------------------------------------------------------**//**
@@ -101,7 +113,40 @@ TEST_F(ElementAspectTests, UniqueAspect_CRUD)
     ASSERT_EQ( nullptr , DgnElement::UniqueAspect::Get<TestUniqueAspect>(*el, aclass) ) << "UniqueAspect should now be gone";
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Majd.Uddin            01/2016
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(ElementAspectTests, UniqueAspect_Uniqueness)
+    {
+    SetupProject(L"3dMetricGeneral.idgndb", L"UniqueAspectUniqueness.idgndb", Db::OpenMode::ReadWrite);
+    ECN::ECClassCR aclass = *TestUniqueAspect::GetECClass(*m_db);
+    TestElementCPtr el;
 
+    //  Insert an element ...
+    TestElementPtr tempEl = TestElement::Create(*m_db, m_defaultModelId, m_defaultCategoryId, "TestElement");
+    ASSERT_EQ(nullptr, DgnElement::UniqueAspect::GetAspect(*tempEl, aclass)) << "element should not yet have an aspect";
+    //  ... with an aspect
+    DgnElement::UniqueAspect::SetAspect(*tempEl, *TestUniqueAspect::Create("Initial Value"));
+    
+    // Set Aspect again and this will replace existing one.
+    DgnElement::UniqueAspect::SetAspect(*tempEl, *TestUniqueAspect::Create("Latest Value"));
+    ASSERT_NE(nullptr, DgnElement::UniqueAspect::GetAspect(*tempEl, aclass)) << "element should have a scheduled aspect";
+    el = m_db->Elements().Insert(*tempEl);
+
+    ASSERT_TRUE(el.IsValid());
+
+    //Verify the latest one is there.
+    TestUniqueAspectCP aspect = DgnElement::UniqueAspect::Get<TestUniqueAspect>(*el, aclass);
+    ASSERT_NE(nullptr, aspect) << "element should have a peristent aspect";
+    ASSERT_STREQ("Latest Value", aspect->GetTestUniqueAspectProperty().c_str());
+    ASSERT_STREQ("TestUniqueAspect", aspect->GetECClassName());
+    ASSERT_EQ(el->GetElementId(), aspect->GetAspectInstanceId(*el));
+
+    BeSQLite::EC::CachedECSqlStatementPtr stmt = m_db->GetPreparedECSqlStatement("SELECT TestUniqueAspectProperty FROM DgnPlatformTest.TestUniqueAspect WHERE (ECInstanceId=?)");
+    stmt->BindId(1, aspect->GetAspectInstanceId(*el));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt->Step());
+    ASSERT_STREQ("Latest Value", stmt->GetValueText(0));
+    }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -195,5 +240,132 @@ TEST_F(ElementAspectTests, MultiAspect_CRUD)
     if (true)
         {
         // Delete an aspect
+        TestElementPtr tempEl = el->MakeCopy<TestElement>();
+        TestMultiAspectP aspect = DgnElement::MultiAspect::GetP<TestMultiAspect>(*tempEl, aclass, a2id);
+        aspect->Delete();
+        ASSERT_TRUE(m_db->Elements().Update(*tempEl).IsValid());
+        m_db->SaveChanges();
+
+        //Verify that it is not in the db now and other one is still there.
+        BeSQLite::EC::CachedECSqlStatementPtr stmt = m_db->GetPreparedECSqlStatement("SELECT TestMultiAspectProperty FROM DgnPlatformTest.TestMultiAspect WHERE (ECInstanceId=?)");
+        stmt->BindId(1, a1id);
+        ASSERT_EQ(BE_SQLITE_ROW, stmt->Step());
+        ASSERT_STREQ("1", stmt->GetValueText(0));
+        stmt->Reset();
+        stmt->ClearBindings();
+        stmt->BindId(1, a2id);
+        ASSERT_EQ(BE_SQLITE_DONE, stmt->Step());
         }
     }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Majd.Uddin            01/2016
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(ElementAspectTests, ExternalKeyAspect_DiffAuthority)
+{
+    SetupSeedProject();
+
+    TestElementCPtr el;
+    TestElementPtr tempEl = TestElement::Create(*m_db, m_defaultModelId, m_defaultCategoryId, "TestElement");
+
+    //Create some authorities
+    DgnAuthorityId auth1Id = Create("Auth1")->GetAuthorityId();
+    DgnAuthorityId auth2Id = Create("Auth2")->GetAuthorityId();
+
+    //Add aspects
+    //static DgnElement::AppData::Key s_appDataKey1;
+    //static DgnElement::AppData::Key s_appDataKey2;
+
+    DgnElement::ExternalKeyAspectPtr extkeyAspect = DgnElement::ExternalKeyAspect::Create(auth1Id, "TestExtKey");
+    ASSERT_TRUE(extkeyAspect.IsValid());
+    tempEl->AddAppData(DgnElement::ExternalKeyAspect::GetAppDataKey(), extkeyAspect.get());
+
+    DgnElement::ExternalKeyAspectPtr extkeyAspect2 = DgnElement::ExternalKeyAspect::Create(auth2Id, "TestExtKey2");
+    ASSERT_TRUE(extkeyAspect2.IsValid());
+    tempEl->AddAppData(DgnElement::ExternalKeyAspect::GetAppDataKey(), extkeyAspect2.get());
+
+    //Insert Element and aspects should be added
+    el = m_db->Elements().Insert(*tempEl);
+    ASSERT_TRUE(el.IsValid());
+
+    //‎Verify that both entires are there and can be get on the basis of AuthorityId
+    Utf8String insertedExternalKey;
+    //This fails and only latest value is there
+    EXPECT_EQ(DgnDbStatus::Success, DgnElement::ExternalKeyAspect::Query(insertedExternalKey, *el, auth1Id));
+    EXPECT_STREQ("TestExtKey", insertedExternalKey.c_str());
+
+    Utf8String insertedExternalKey2;
+    EXPECT_EQ(DgnDbStatus::Success, DgnElement::ExternalKeyAspect::Query(insertedExternalKey2, *el, auth2Id));
+    EXPECT_STREQ("TestExtKey2", insertedExternalKey2.c_str());
+
+}
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Majd.Uddin            01/2016
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(ElementAspectTests, ExternalKeyAspect_MultipleElements)
+{
+    SetupSeedProject();
+
+    TestElementCPtr el1, el2;
+    TestElementPtr tempEl1 = TestElement::Create(*m_db, m_defaultModelId, m_defaultCategoryId, "TestElement1");
+    TestElementPtr tempEl2 = TestElement::Create(*m_db, m_defaultModelId, m_defaultCategoryId, "TestElement2");
+
+    //Create aspect
+    DgnAuthorityId auth1Id = Create("Auth1")->GetAuthorityId();
+    static DgnElement::AppData::Key s_appDataKey1;
+
+    DgnElement::ExternalKeyAspectPtr extkeyAspect = DgnElement::ExternalKeyAspect::Create(auth1Id, "TestExtKey");
+    ASSERT_TRUE(extkeyAspect.IsValid());
+
+    //Add aspect to both elements
+    tempEl1->AddAppData(s_appDataKey1, extkeyAspect.get());
+    tempEl2->AddAppData(s_appDataKey1, extkeyAspect.get());
+
+    //Insert Elements and aspects should be added
+    el1 = m_db->Elements().Insert(*tempEl1);
+    ASSERT_TRUE(el1.IsValid());
+    el2 = m_db->Elements().Insert(*tempEl2);
+    ASSERT_TRUE(el2.IsValid());
+
+
+    //‎Verify that both elements have the aspect
+    Utf8String insertedExternalKey;
+    EXPECT_EQ(DgnDbStatus::Success, DgnElement::ExternalKeyAspect::Query(insertedExternalKey, *el1, auth1Id));
+    EXPECT_STREQ("TestExtKey", insertedExternalKey.c_str());
+
+    EXPECT_EQ(DgnDbStatus::Success, DgnElement::ExternalKeyAspect::Query(insertedExternalKey, *el2, auth1Id));
+    EXPECT_STREQ("TestExtKey", insertedExternalKey.c_str());
+
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Majd.Uddin            01/2016
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(ElementAspectTests, ExternalKeyAspect_WrongAuthorityId)
+{
+    SetupSeedProject();
+
+    TestElementCPtr el;
+    TestElementPtr tempEl = TestElement::Create(*m_db, m_defaultModelId, m_defaultCategoryId, "TestElement1");
+
+    //Create an aspect with Authority that is not in DgnAuthorities
+    DgnAuthorityId authId((uint64_t)1000);
+    DgnAuthorityCPtr invalidAuth = m_db->Authorities().GetAuthority(authId);
+    ASSERT_TRUE(invalidAuth.IsNull());
+
+    //Authority doesn't exist but it lets add it
+    DgnElement::ExternalKeyAspectPtr extkeyAspect = DgnElement::ExternalKeyAspect::Create(authId, "TestExtKey");
+    ASSERT_TRUE(extkeyAspect.IsValid());
+
+    //Add aspect to element and insert it
+    tempEl->AddAppData(DgnElement::ExternalKeyAspect::GetAppDataKey(), extkeyAspect.get());
+    el = m_db->Elements().Insert(*tempEl);
+    ASSERT_TRUE(el.IsValid());
+
+    //It can be accessed also
+    Utf8String insertedExternalKey;
+    EXPECT_EQ(DgnDbStatus::Success, DgnElement::ExternalKeyAspect::Query(insertedExternalKey, *el, authId));
+    EXPECT_STREQ("TestExtKey", insertedExternalKey.c_str());
+
+}
+
