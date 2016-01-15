@@ -56,6 +56,7 @@ struct DgnDbServerError : public DgnClientFx::Utils::AsyncError
 
     private:
         Id m_id;
+        Json::Value m_customProperties;
         Id ErrorIdFromString(Utf8StringCR errorIdString);
         Id ErrorIdFromWSError(WebServices::WSErrorCR error);
 
@@ -65,6 +66,7 @@ struct DgnDbServerError : public DgnClientFx::Utils::AsyncError
         DGNDBSERVERCLIENT_EXPORT DgnDbServerError(WebServices::WSErrorCR error);
         DGNDBSERVERCLIENT_EXPORT DgnDbServerError(Dgn::RevisionStatus const& status);
 
+        JsonValueCR GetCustomProperties();
         DGNDBSERVERCLIENT_EXPORT Id GetId();
     };
 END_BENTLEY_DGNDBSERVER_NAMESPACE
