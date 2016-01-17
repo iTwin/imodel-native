@@ -1075,6 +1075,7 @@ bool OcclusionScorer::ComputeOcclusionScore(double* score, bool& overlap, bool& 
                     npcVertices[i].x = 1.0;
                     }
                 else
+                    outsideMask &= ~OUTSIDE_Right;
                 }
 
             if (npcVertices[i].y < 0.0)
@@ -1252,19 +1253,19 @@ static inline void exchangeAndNegate(double& dbl1, double& dbl2)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool RTreeFilter::SkewTest(RTree3dValCP pt)
+bool RTreeFilter::SkewTest(RTree3dValCP testRange)
     {
-    if (!m_doSkewtest || pt->Intersects(m_frontFaceRange))
+    if (!m_doSkewtest || testRange->Intersects(m_frontFaceRange))
         return true;
 
     DVec3d skVector = m_viewVec;
     DPoint3d dlo;
     DPoint3d dhi;
 
-    dlo.x = pt->m_minx - m_frontFaceRange.m_maxx;
-    dlo.y = pt->m_miny - m_frontFaceRange.m_maxy;
-    dhi.x = pt->m_maxx - m_frontFaceRange.m_minx;
-    dhi.y = pt->m_maxy - m_frontFaceRange.m_miny;
+    dlo.x = testRange->m_minx - m_frontFaceRange.m_maxx;
+    dlo.y = testRange->m_miny - m_frontFaceRange.m_maxy;
+    dhi.x = testRange->m_maxx - m_frontFaceRange.m_minx;
+    dhi.y = testRange->m_maxy - m_frontFaceRange.m_miny;
 
     if (skVector.x < 0.0)
         {
@@ -1291,8 +1292,8 @@ bool RTreeFilter::SkewTest(RTree3dValCP pt)
         return false;
 
     // now we need the Z stuff
-    dlo.z = pt->m_minz - m_frontFaceRange.m_maxz;
-    dhi.z = pt->m_maxz - m_frontFaceRange.m_minz;
+    dlo.z = testRange->m_minz - m_frontFaceRange.m_maxz;
+    dhi.z = testRange->m_maxz - m_frontFaceRange.m_minz;
     if (skVector.z < 0.0)
         {
         skVector.z = - skVector.z;
@@ -1360,10 +1361,10 @@ bool RTreeFilter::AllPointsClippedByOnePlane(ConvexClipPlaneSetCR cps, size_t nP
 +---------------+---------------+---------------+---------------+---------------+------*/
 int DgnDbRTreeFitFilter::_TestRTree(RTreeMatchFunction::QueryInfo const& info)
     {
-    RTree3dValCP pt = (RTree3dValCP) info.m_coords;
+    RTree3dValCP testRange = (RTree3dValCP) info.m_coords;
 
-    if (m_fitRange.IsContained(pt->m_minx, pt->m_miny, pt->m_minz) &&
-        m_fitRange.IsContained(pt->m_maxx, pt->m_maxy, pt->m_maxz))
+    if (m_fitRange.IsContained(testRange->m_minx, testRange->m_miny, testRange->m_minz) &&
+        m_fitRange.IsContained(testRange->m_maxx, testRange->m_maxy, testRange->m_maxz))
         {
         info.m_within = RTreeMatchFunction::Within::Outside; // If this range is entirely contained there is no reason to continue (it cannot contribute to the fit)
         }
@@ -1372,7 +1373,7 @@ int DgnDbRTreeFitFilter::_TestRTree(RTreeMatchFunction::QueryInfo const& info)
         info.m_within = RTreeMatchFunction::Within::Partly; 
         info.m_score  = info.m_level; // to get depth-first traversal
         if (info.m_level == 0)
-            m_lastRange = DRange3d::From(pt->m_minx, pt->m_miny, pt->m_minz, pt->m_maxx, pt->m_maxy, pt->m_maxz);
+            m_lastRange = DRange3d::From(testRange->m_minx, testRange->m_miny, testRange->m_minz, testRange->m_maxx, testRange->m_maxy, testRange->m_maxz);
         }
 
     return  BE_SQLITE_OK;
