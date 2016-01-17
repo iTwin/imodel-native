@@ -1025,7 +1025,7 @@ DgnElement::~DgnElement()
     --GetDgnDb().Elements().m_tree->m_totals.m_extant;
     }
 
-DgnElements::Totals DgnElements::GetTotals() const {return m_tree->m_totals;}
+DgnElements::Totals const& DgnElements::GetTotals() const {return m_tree->m_totals;}
 DgnElements::Statistics DgnElements::GetStatistics() const {return m_tree->m_stats;}
 void DgnElements::ResetStatistics() {m_tree->m_stats.Reset();}
 

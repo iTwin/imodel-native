@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/HitDetail.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -247,8 +247,7 @@ public:
     DGNPLATFORM_EXPORT bool RemoveHitsFrom(DgnModelR modelRef);
     DGNPLATFORM_EXPORT virtual void Dump(WCharCP label) const;
 
-    // Because we use private inheritance, we must re-export every HitDetailArray method that we want to expose.
-    DGNPLATFORM_EXPORT int GetCount() const;
+    int GetCount() const {return (int) size();}
     DGNPLATFORM_EXPORT HitDetailP Get(int i);
     DGNPLATFORM_EXPORT void Set(int i, HitDetailP);
     DGNPLATFORM_EXPORT void Insert(int i, HitDetailP);

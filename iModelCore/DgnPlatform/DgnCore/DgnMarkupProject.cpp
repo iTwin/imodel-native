@@ -257,7 +257,6 @@ void SpatialRedlineViewController::_SaveToSettings(JsonValueR jsonObj) const
 bool SpatialRedlineViewController::_IsInSet (int nVal, BeSQLite::DbValue const* vals) const {return m_subjectView._IsInSet(nVal,vals);}
 
 bool SpatialRedlineViewController::_WantElementLoadStart (ViewportR viewport, double currentTime, double lastQueryTime, uint32_t maxElementsDrawnInDynamicUpdate, Frustum const& queryFrustum) {return m_subjectView._WantElementLoadStart(viewport,currentTime,lastQueryTime,maxElementsDrawnInDynamicUpdate,queryFrustum);}
-uint32_t SpatialRedlineViewController::_GetMaxElementsToLoad () {return m_subjectView._GetMaxElementsToLoad();}
 Utf8String SpatialRedlineViewController::_GetRTreeMatchSql (ViewportR viewport) {return m_subjectView._GetRTreeMatchSql(viewport);}
 int32_t SpatialRedlineViewController::_GetMaxElementFactor() {return m_subjectView._GetMaxElementFactor();}
 double SpatialRedlineViewController::_GetMinimumSizePixels (DrawPurpose updateType) {return m_subjectView._GetMinimumSizePixels (updateType);}

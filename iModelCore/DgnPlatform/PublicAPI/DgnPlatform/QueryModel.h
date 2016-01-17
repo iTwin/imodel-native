@@ -56,23 +56,21 @@ struct RTreeTester
 //=======================================================================================
 struct RTreeFilter : RTreeTester
     {
-    bool                    m_doSkewtest;
-    Frustum                 m_frustum;
-    double                  m_minimumSizePixels;
+    bool                    m_doSkewtest = false;
+    bool                    m_doOcclusionScore = false;
     BeSQLite::RTree3dVal    m_boundingRange;    // only return entries whose range intersects this cube.
     BeSQLite::RTree3dVal    m_frontFaceRange;
     OcclusionScorer         m_scorer;
-    uint32_t                m_nCalls;
-    uint32_t                m_nScores;
-    uint32_t                m_nSkipped;
     DVec3d                  m_viewVec;  // vector from front face to back face
     ClipVectorPtr           m_clips;
     DgnElementIdSet const*  m_exclude;
 
     bool AllPointsClippedByOnePlane(ConvexClipPlaneSetCR cps, size_t nPoints, DPoint3dCP points) const;
     void SetClipVector(ClipVectorR clip) {m_clips = &clip;}
+    void SetFrustum(FrustumCR);
+    void SetViewport(DgnViewportCR, double minimumSizeScreenPixels);
     bool SkewTest(BeSQLite::RTree3dValCP);
-    RTreeFilter(DgnViewportCR, DgnDbR db, double minimumSizeScreenPixels, DgnElementIdSet const* exclude);
+    RTreeFilter(DgnElementIdSet const* exclude) {m_exclude=exclude;}
     };
 
 //=======================================================================================
@@ -139,40 +137,48 @@ struct QueryModel : SpatialModel
 
         bool CheckAbort();
         virtual int _TestRTree(BeSQLite::RTreeMatchFunction::QueryInfo const&) override;
-        void RangeAccept(uint64_t elementId);
+        void AcceptElement(DgnElementId elementId);
 
     public:
-        Filter(DgnViewportCR, QueryModelR model, uint32_t hitLimit, double minimumSizeScreenPixels, DgnElementIdSet const* alwaysDraw, DgnElementIdSet const* neverDraw);
+        Filter(QueryModelR model, uint32_t hitLimit, DgnElementIdSet const* alwaysDraw, DgnElementIdSet const* exclude);
         void InitializeSecondaryTest(DRange3dCR volume, uint32_t hitLimit);
-        void GetStats(uint32_t& nAcceptCalls, uint32_t&nScores) {nAcceptCalls = m_nCalls; nScores = m_nScores;}
     };
     
     //=======================================================================================
-    // @bsiclass                                                    Keith.Bentley   04/14
+    // @bsiclass                                                    Keith.Bentley   01/16
     //=======================================================================================
-    struct ProgressiveFilter : ProgressiveDisplay, RTreeFilter
+    struct AllElementsFilter : RTreeFilter
     {
         friend struct QueryViewController;
 
-        ViewContextP   m_context;
-        DgnDbR         m_dgndb;
-        QueryModelR    m_queryModel;
-        uint32_t       m_thisBatch;
-        uint32_t       m_batchSize;
         uint64_t       m_elementReleaseTrigger;
         uint64_t       m_purgeTrigger;
-        bool           m_setTimeout;
+        DgnDbR         m_dgndb;
+        QueryModelR    m_queryModel;
+        AllElementsFilter(QueryModelR queryModel, DgnElementIdSet const* exclude, uint64_t maxMemory)
+             : RTreeFilter(exclude), m_dgndb(queryModel.GetDgnDb()), m_queryModel(queryModel), m_elementReleaseTrigger(maxMemory), m_purgeTrigger(maxMemory)
+            {
+            }
+                                                                                                            
+        bool AcceptElement(ViewContextR context, DgnElementId elementId);
+        virtual int _TestRTree(BeSQLite::RTreeMatchFunction::QueryInfo const&) override;
+    };
+
+    //=======================================================================================
+    // @bsiclass                                                    Keith.Bentley   04/14
+    //=======================================================================================
+    struct ProgressiveFilter : AllElementsFilter, ProgressiveDisplay
+    {
+        uint32_t       m_thisBatch = 0;
+        uint32_t       m_batchSize = 0;
+        bool           m_setTimeout = false;
         BeSQLite::CachedStatementPtr m_rangeStmt;
         ProgressiveFilter(DgnViewportCR vp, QueryModelR queryModel, DgnElementIdSet const* exclude, uint64_t maxMemory, BeSQLite::CachedStatement* stmt)
-             : RTreeFilter(vp, queryModel.GetDgnDb(), 0.0, exclude), m_dgndb(queryModel.GetDgnDb()), m_queryModel(queryModel), m_elementReleaseTrigger(maxMemory), m_purgeTrigger(maxMemory), m_rangeStmt(stmt)
+            : AllElementsFilter(queryModel, exclude, maxMemory), m_rangeStmt(stmt)
             {
-            m_thisBatch = 0;
-            m_context = nullptr;
+            SetViewport(vp, 60.0);
             }
-        ~ProgressiveFilter();
 
-        void RangeAccept(uint64_t elementId);
-        virtual int _TestRTree(BeSQLite::RTreeMatchFunction::QueryInfo const&) override;
         virtual Completion _Process(ViewContextR context, uint32_t batchSize) override;
     };
 
@@ -184,17 +190,15 @@ struct QueryModel : SpatialModel
        friend struct Processor;
 
     private:
-        Results() : m_reachedMaxElements(false), m_drawnBeforePurge(0), m_elapsedSeconds(0.0) { }
+        Results() : m_reachedMaxElements(false), m_drawnBeforePurge(0) { }
 
     public:
         bvector<DgnElementCPtr> m_elements;
         bvector<DgnElementCPtr> m_closeElements;
         bool     m_reachedMaxElements;
         uint32_t m_drawnBeforePurge;
-        double m_elapsedSeconds;
 
         uint32_t GetCount() const {return (uint32_t) m_elements.size();}
-        double GetElapsedSeconds() const {return m_elapsedSeconds;}
     };
 
     typedef RefCountedPtr<Results> ResultsPtr;
@@ -297,7 +301,6 @@ public:
 
     //! Returns a count of elements held by the QueryModel. This is the count of elements returned by the most recent query.
     uint32_t GetElementCount() const; //!< @private
-    double GetLastQueryElapsedSeconds() const; //!< @private
     bool HasSelectResults() const { return m_updatedResults.IsValid(); } //!< @private
 
     //! Requests that any active or pending processing of the model be canceled, optionally not returning until the request is satisfied

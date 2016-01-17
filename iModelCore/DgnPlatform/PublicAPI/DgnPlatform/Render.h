@@ -163,6 +163,8 @@ public:
     //! @return true if this Task should replace the other pending task.
     virtual bool _Replaces(Task& other) const {return m_operation == other.m_operation;}
 
+    virtual void _OnQueued() const {}
+
     Target* GetTarget() const {return m_target.get();} //!< Get the Target of this Task
     Operation GetOperation() const {return m_operation;} //!< Get the Operation of this Task.
     Outcome GetOutcome() const {return m_outcome;}   //!< The Outcome of the processing of this Task (or Waiting, if it has not been processed yet.)
@@ -1132,6 +1134,7 @@ struct Plan
     bool WantScene() const {return PaintScene::Yes == m_paintScene;}
 };
 
+
 //=======================================================================================
 //! A Render::Target is the renderer-specific factory for creating Render::Graphics.
 //! A Render:Target holds the current "scene", the current set of dynamic Graphics, and the current decorators.
@@ -1145,6 +1148,7 @@ struct Target : RefCounted<NonCopyableClass>
     typedef ImageUtilities::RgbImageInfo CapturedImageInfo;
 
 protected:
+    bool               m_abortProgressive;
     Display::DevicePtr m_device;
     GraphicListPtr     m_currentScene;
     GraphicListPtr     m_dynamics;        // drawn with zbuffer, with scene lighting
@@ -1170,6 +1174,14 @@ protected:
     DGNPLATFORM_EXPORT static void VerifyRenderThread();
 
 public:
+    struct Debug
+    {
+        static void SaveGPS(int);
+        DGNPLATFORM_EXPORT static void SaveSceneTarget(int);
+        DGNPLATFORM_EXPORT static void SaveProgressiveTarget(int);
+        static void Show();
+    };
+
     virtual void _ChangeScene(GraphicListR scene) {VerifyRenderThread(); m_currentScene = &scene;}
     virtual void _ChangeDynamics(GraphicListR dynamics) {VerifyRenderThread(); m_dynamics = &dynamics;}
     virtual void _ChangeDecorations(Decorations& decorations) {VerifyRenderThread(); m_decorations = decorations;}
@@ -1178,6 +1190,7 @@ public:
     virtual double _GetCameraFrustumNearScaleLimit() const = 0;
     virtual bool _WantInvertBlackBackground() {return false;}
 
+    void AbortProgressive() {m_abortProgressive=true;}
     Point2d GetScreenOrigin() const {return _GetScreenOrigin();}
     BSIRect GetViewRect() const {return _GetViewRect();}
     DVec2d GetDpiScale() const {return _GetDpiScale();}

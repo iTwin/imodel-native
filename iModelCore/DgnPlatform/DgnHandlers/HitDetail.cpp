@@ -2,7 +2,7 @@
 |
 |     $Source: DgnHandlers/HitDetail.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include    <DgnPlatformInternal.h>
@@ -790,7 +790,6 @@ HitList::~HitList() {clear();}
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      01/2008
 +---------------+---------------+---------------+---------------+---------------+------*/
-int HitList::GetCount() const {return (int) size();}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      01/2008
@@ -1069,12 +1068,7 @@ int HitList::Compare(HitDetailCP oHit1, HitDetailCP oHit2, bool comparePriority,
 * Add a new hit to the list. Hits are sorted according to their priority and distance.
 * @bsimethod    Locate.Hitlist                                  KeithBentley    12/97
 +---------------+---------------+---------------+---------------+---------------+------*/
-int             HitList::AddHit
-(
-HitDetail*      newHit,
-bool            allowDuplicates,
-bool            comparePriority
-)
+int HitList::AddHit (HitDetail* newHit, bool allowDuplicates, bool comparePriority)
     {
     HitList::iterator currHit = begin();
 

@@ -2017,7 +2017,7 @@ public:
     DGNPLATFORM_EXPORT DgnElementId QueryElementIdByCode(Utf8CP codeAuthorityName, Utf8StringCR codeValue, Utf8StringCR nameSpace="") const;
 
     //! Get the total counts for the current state of the pool.
-    DGNPLATFORM_EXPORT Totals GetTotals() const;
+    DGNPLATFORM_EXPORT Totals const& GetTotals() const;
 
     //! Shortcut to get the Totals.m_allocatedBytes member
     int64_t GetTotalAllocated() const {return GetTotals().m_allocedBytes;}

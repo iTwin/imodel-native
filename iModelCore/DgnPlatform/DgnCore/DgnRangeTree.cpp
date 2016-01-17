@@ -17,293 +17,7 @@ typedef DgnRangeTree::InternalNode* DRTInternalNodeP;
 
 static const double   s_cameraLimit      = 1.0E-5;
 
-/*=================================================================================**//**
-* @bsiclass                                                     RayBentley      10/2009
-+===============+===============+===============+===============+===============+======*/
-struct  DRTPrefs
-{
-    double      m_minimumOcclusionPixelRatio;
-    double      m_maxOcclusionTestArea;
-    double      m_lodFilterFraction;
-    double      m_testLOD;
-    double      m_minLODFilterNPC;
-    uint32_t    m_targetLeafCount;
-    uint32_t    m_nOcclusionBatches;
-    uint32_t    m_minimumOcclusionNodeTest;
-    bool        m_doOcclusionCull;
-    bool        m_doLodFiltering;
-    bool        m_completeStatistics;
-    bool        m_weightScoreByZed;
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    RayBentley      10/2009
-+---------------+---------------+---------------+---------------+---------------+------*/
-DRTPrefs()
-    {
-    m_minimumOcclusionPixelRatio = 500.0;
-    m_maxOcclusionTestArea = .2;
-    m_targetLeafCount = 15000;
-    m_nOcclusionBatches = 10;
-    m_doOcclusionCull = true;
-    m_lodFilterFraction = .25;
-    m_minLODFilterNPC = .0001;
-    m_minimumOcclusionNodeTest = 20;
-    m_doLodFiltering = true;
-    m_weightScoreByZed = true;
-    m_completeStatistics = true;
-    }
-};
-
-static DRTPrefs  s_prefs;
 #define DEBUG_PRINTF(arg) 
-
-//#define DRT_DEBUGGING
-#if defined (DRT_DEBUGGING)
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      12/2005
-+---------------+---------------+---------------+---------------+---------------+------*/
-static inline double timerGetResolution() { return 1.0; }
-static inline double timeGetTime() { return (double)BeTimeUtilities::QuerySecondsCounter(); }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      12/2005
-+---------------+---------------+---------------+---------------+---------------+------*/
-static inline double   timeGetSeconds()
-    {
-    static double  s_timerResolution = timerGetResolution();
-
-    return timeGetTime() / s_timerResolution;
-    }
-
-#define INCLUDE_TIMER(t)            IncludeTimer  includer(t)
-#define EXCLUDE_TIMER(t)            ExcludeTimer  excluder(t)
-#define TIMER_OVERHEAD s_statistics.m_timerOverhead.m_value
-#define BEGIN_DELTA_TIMER(timer)    timer -= (timeGetTime() + TIMER_OVERHEAD); s_statistics.m_traverse.m_timerOverhead += TIMER_OVERHEAD;
-#define END_DELTA_TIMER(timer)      timer += timeGetTime(); s_statistics.m_traverse.m_timerOverhead += TIMER_OVERHEAD;
-#define BEGIN_NET_TIMER(timer)      timer -= (timeGetTime() + TIMER_OVERHEAD); s_statistics.m_traverse.m_timerOverhead += TIMER_OVERHEAD;
-#define END_NET_TIMER(timer)        timer += timeGetTime(); s_statistics.m_traverse.m_timerOverhead += TIMER_OVERHEAD;
-#define PERCENT(n,total)            (0.0 == total ? 0.0 : (100.0 * (double) n / (double) total))
-
-/*=================================================================================**//**
-* @bsiclass                                                     RayBentley      10/2009
-+===============+===============+===============+===============+===============+======*/
-struct DRTStatistics
-{
-    Logging::ILogger* m_myLogger;
-    double   m_deltaTime;
-
-    struct TimerOverhead
-        {
-        double  m_value;
-        void DoTest() {double  time1 = timeGetTime(), time2 = timeGetTime(); m_value = time2 - time1;}
-        } m_timerOverhead;
-
-    struct Create
-        {
-        double  m_createTime;
-        double  m_gatherTime;
-        double  m_treeTime;
-        size_t  m_modelCount;
-        size_t  m_leafNodeBytes;
-        size_t  m_internalNodeBytes;
-        void Clear() { memset(this, 0, sizeof (*this)); }
-        } m_create;
-
-    struct Traversal
-        {
-        double  m_totalTime;
-        double  m_gatherTime;
-        double  m_sortTime;
-        double  m_occlusionTime;
-        double  m_maxOcclusionTime;
-        double  m_scoringTime;
-        double  m_elementTime;
-        double  m_maxElementTime;
-        double  m_timerOverhead;
-        size_t  m_elementVisitCount;
-        size_t  m_elementTargetCount;
-        size_t  m_leafVisitCount;
-        size_t  m_rangeTestCount;
-        size_t  m_leavesGathered;
-        size_t  m_leavesOcclusionTested;
-        size_t  m_leavesOccluded;
-        size_t  m_elementsOcclusionTested;
-        size_t  m_elementsOccluded;
-        size_t  m_occlusionCalls;
-        size_t  m_modelChangeCount;
-        size_t  m_lodFilteredElementCount;
-        size_t  m_lodFilteredNodeCount;
-        double  m_lodArea;
-        void Clear() { memset(this, 0, sizeof (*this)); }
-        } m_traverse;
-
-    void ClearCreate()   { m_create.Clear(); m_timerOverhead.DoTest(); GetLogger();}
-    void ClearTraverse() { m_traverse.Clear(); m_timerOverhead.DoTest(); GetLogger();}
-
-    void GetLogger()
-        {
-        if (nullptr == m_myLogger)
-            m_myLogger = LoggingManager::GetLogger(L"DgnCore.DgnRangeTree");
-        }
-
-    void Log(WCharCP msg, ...)
-        {
-        va_list arglist;
-        va_start(arglist, msg);
-        m_myLogger->messageva(Logging::SEVERITY.LOG_INFO, msg, arglist);
-        va_end(arglist);
-        }
-
-    void Log(WString& string) {Log(string.c_str());}
-    void Log(char* string) {Log(WString(string));}
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    RayBentley   06/07
-+---------------+---------------+---------------+---------------+---------------+------*/
-WString   TimeString(double timer)
-    {
-    double  seconds = timer / timerGetResolution();
-    char    string[1024];
-
-    if (seconds > 60.0)
-        sprintf(string, "%f Minutes", seconds / 60.0);
-    else
-        sprintf(string, "%f Seconds", seconds);
-
-    return WString(string);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    RayBentley      10/2009
-+---------------+---------------+---------------+---------------+---------------+------*/
-double SecondsPer(double timer, size_t count)
-    {
-    if (0 == count)
-        return 0.0;
-
-    return timer / (timerGetResolution() * (double) count);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    RayBentley      10/2009
-+---------------+---------------+---------------+---------------+---------------+------*/
-void DumpTraverse()
-    {
-    Log(L"Total: %ls, Delta: %ls, Visited: Bins: %d (of %d) Elements: %d (of %d)", TimeString(m_traverse.m_totalTime).c_str(), TimeString(m_deltaTime).c_str(), m_traverse.m_leafVisitCount, m_traverse.m_leavesGathered, m_traverse.m_elementVisitCount, m_traverse.m_elementTargetCount);
-    if (s_prefs.m_completeStatistics)
-        {
-        Log(L"Element Seconds: %f (Max: %ls), Model Change Seconds: %f", SecondsPer(m_traverse.m_elementTime, m_traverse.m_elementVisitCount), TimeString(m_traverse.m_maxElementTime).c_str(), SecondsPer(m_traverse.m_newModelTime, m_traverse.m_modelChangeCount));
-        Log(L"LOD Filter Area:    %f, LOD FIlter Count (Node:Element): %d:%d", m_traverse.m_lodArea, m_traverse.m_lodFilteredNodeCount, m_traverse.m_lodFilteredElementCount);
-        Log(L"Gather Time: %ls\t    (%f percent)", TimeString(m_traverse.m_gatherTime).c_str(), PERCENT (m_traverse.m_gatherTime, m_traverse.m_totalTime));
-        Log(L"Sort Time: %ls\t      (%f percent)", TimeString(m_traverse.m_sortTime).c_str(), PERCENT (m_traverse.m_sortTime, m_traverse.m_totalTime));
-        Log(L"Score Time: %ls\t     (%f percent)", TimeString(m_traverse.m_scoringTime).c_str(), PERCENT (m_traverse.m_scoringTime, m_traverse.m_totalTime));
-        Log(L"Process Time: %ls\t   (%f percent)", TimeString(m_traverse.m_elementTime).c_str(), PERCENT (m_traverse.m_elementTime, m_traverse.m_totalTime));
-        Log(L"Occlusion Time: %ls\t (%f percent) Max: %ls", TimeString(m_traverse.m_occlusionTime).c_str(), PERCENT (m_traverse.m_occlusionTime, m_traverse.m_totalTime), TimeString(m_traverse.m_maxOcclusionTime).c_str());
-        Log(L"Accounted Time:      (%f percent)", PERCENT((m_traverse.m_newModelTime + m_traverse.m_scoringTime + m_traverse.m_gatherTime + m_traverse.m_elementTime + m_traverse.m_sortTime + m_traverse.m_occlusionTime + m_traverse.m_timerOverhead), m_traverse.m_totalTime));
-        Log(L"Timer Overhead: %ls\t (%f percent)", TimeString(m_traverse.m_timerOverhead).c_str(), PERCENT (m_traverse.m_timerOverhead, m_traverse.m_totalTime));
-        Log(L"Nodes Occlusion Tested: %d, Nodes Occluded: %d, Elements Occluded: %d, Occlusion Calls: %d", m_traverse.m_leavesOcclusionTested, m_traverse.m_leavesOccluded, m_traverse.m_elementsOccluded, m_traverse.m_occlusionCalls);
-        }
-    Log(L"______________________________________________________________");
-    }
-
-    void DumpCreate(DgnRangeTreeR tree);
-};
-
-DRTStatistics  s_statistics;
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    RayBentley   06/07
-+---------------+---------------+---------------+---------------+---------------+------*/
-static WString memoryString(size_t bytes)
-    {
-    double mb = (1024.0 * 1024.0), gb = (1024.0 * mb);
-    char   string[1024];
-
-    if ((double) bytes > .5 * gb)
-        sprintf(string, "%f Gb.", (double) bytes / gb);
-    else
-        sprintf(string, "%f Mb.", (double) bytes / mb);
-
-    return WString(string);
-    }
-
-
-/*=================================================================================**//**
-* @bsiclass                                                     RayBentley      10/2009
-+===============+===============+===============+===============+===============+======*/
-struct      IncludeTimer
-{
-    double&             m_time;
-    IncludeTimer(double& time) : m_time(time) { m_time -= (timeGetTime() +  TIMER_OVERHEAD); }
-    ~IncludeTimer()                            { m_time += timeGetTime(); }
-};
-
-/*=================================================================================**//**
-* @bsiclass                                                     RayBentley      10/2009
-+===============+===============+===============+===============+===============+======*/
-struct      ExcludeTimer
-{
-    double&             m_time;
-    ExcludeTimer(double& time) : m_time(time) { m_time += timeGetTime(); }
-    ~ExcludeTimer()                            { m_time -= timeGetTime(); }
-};
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    RayBentley      10/2009
-+---------------+---------------+---------------+---------------+---------------+------*/
-void DRTStatistics::DumpCreate(DgnRangeTreeR tree)
-    {
-    if (0 == m_create.m_modelCount)
-        return;
-
-    Log(L"*=======================================================================================================================");
-    Log(L"Create Time:     %ls", TimeString(m_create.m_createTime).c_str());
-    Log(L"Gather Time:     %ls", TimeString(m_create.m_gatherTime).c_str());
-    Log(L"Tree Time:       %ls", TimeString(m_create.m_treeTime).c_str());
-    Log(L"Model Count:     %d", m_create.m_modelCount);
-    Log(L"Max Internal Children: %d, Max Leaf Children: %d", tree.GetInternalNodeSize(), tree.GetLeafNodeSize());
-
-    Log(L"LeafNode Memory:     %ls", memoryString(m_create.m_leafNodeBytes));
-    Log(L"InternalNode Memory: %ls", memoryString(m_create.m_internalNodeBytes));
-    }
-
-#else
-
-#define INCLUDE_TIMER(t)
-#define EXCLUDE_TIMER(t)
-#define BEGIN_DELTA_TIMER(t)
-#define END_DELTA_TIMER(t)
-#define BEGIN_NET_TIMER(t)
-#define END_NET_TIMER(t)
-#endif
-
-/*=================================================================================**//**
-* @bsiclass                                                     RayBentley      10/2009
-+===============+===============+===============+===============+===============+======*/
-struct DRTRangeCorners
-{
-    DPoint3d m_points[8];
-
-    /*---------------------------------------------------------------------------------**//**
-    * @bsimethod                                                    RayBentley      01/07
-    +---------------+---------------+---------------+---------------+---------------+------*/
-    inline void InitFromRange(DRange3dCR range, TransformCP trans)
-        {
-        // Note we don't allow the box to degenerate in any direction as this makes it impossible to extract expansion direction.
-        m_points[0].x = m_points[3].x = m_points[4].x = m_points[7].x = (double) range.low.x;
-        m_points[1].x = m_points[2].x = m_points[5].x = m_points[6].x = (double) ((range.high.x == range.low.x) ? (range.low.x + 1) : range.high.x);
-
-        m_points[0].y = m_points[1].y = m_points[4].y = m_points[5].y = (double) range.low.y;
-        m_points[2].y = m_points[3].y = m_points[6].y = m_points[7].y = (double) ((range.high.y == range.low.y) ? (range.low.y + 1) : range.high.y);
-
-        m_points[0].z = m_points[1].z = m_points[2].z = m_points[3].z = (double) range.low.z;
-        m_points[4].z = m_points[5].z = m_points[6].z = m_points[7].z = (double) ((range.high.z == range.low.z) ? (range.low.z + 1) : range.high.z);
-
-        if (trans)
-            trans->Multiply(m_points, 8);
-    }
-};
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      10/2009
@@ -1040,12 +754,6 @@ void DgnRangeTree::LoadTree(DgnModelCR dgnModel)
         if (nullptr != geom)
             AddElement(Entry(geom->CalculateRange3d(), *geom));
         }
-
-#ifdef DRT_DEBUGGING
-    }
-    s_statistics.m_create.m_leafNodeBytes   += m_leafNodes.GetMemoryAllocated();
-    s_statistics.m_create.m_internalNodeBytes += m_internalNodes.GetMemoryAllocated();
-#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1136,7 +844,7 @@ void OcclusionScorer::InitForViewport(DgnViewportCR viewport, double minimumSize
     m_lodFilterNPCArea = 0;
     m_testLOD = false;
 
-    if (minimumSizePixels > 0)
+    if (minimumSizePixels > 0.0)
         {
         BSIRect  screenRect = viewport.GetViewRect();
         if (screenRect.Width() > 0 && screenRect.Height() > 0)
@@ -1234,7 +942,6 @@ bool OcclusionScorer::ComputeEyeSpanningRangeOcclusionScore(double* score, DPoin
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool OcclusionScorer::ComputeOcclusionScore(double* score, bool& overlap, bool& spansEyePlane, DPoint3dCP localCorners, bool doFrustumCull)
     {
-    INCLUDE_TIMER(s_statistics.m_traverse.m_scoringTime);
     // Note - This routine is VERY time critical - Most of the calls to the geomlib
     // functions have been replaced with inline code as VTune had showed them as bottlenecks.
 
@@ -1430,7 +1137,7 @@ bool OcclusionScorer::ComputeOcclusionScore(double* score, bool& overlap, bool& 
             return false;
         }
 
-    if (0.0 != m_lodFilterNPCArea)
+    if (m_testLOD && 0.0 != m_lodFilterNPCArea)
         {
         //  In the cases where this does exclude the element it would be faster to do the other filtering first.  However, even when we exclude something due
         //  to LOD filtering we want to know if it should be drawn by the progressive display.  We want progressive display to draw zero-length line strings
@@ -1449,13 +1156,8 @@ bool OcclusionScorer::ComputeOcclusionScore(double* score, bool& overlap, bool& 
         DPoint3dR   npcCorner = npcVertices[nVertices/2];
         DPoint2d    extent = { npcCorner.x - npcVertices[0].x, npcCorner.y - npcVertices[0].y};
 
-        if (m_testLOD && (extent.x * extent.x + extent.y * extent.y < m_lodFilterNPCArea))
-            {
-#ifdef DRT_DEBUGGING
-            s_statistics.m_traverse.m_lodFilteredElementCount++;
-#endif
+        if ((extent.x * extent.x + extent.y * extent.y) < m_lodFilterNPCArea)
             return false;
-            }
 
         if (lodFilterOnly)
             return true;
@@ -1505,30 +1207,37 @@ bool OverlapScorer::ComputeScore(double* score, BeSQLite::RTree3dValCR testRange
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   04/14
+* @bsimethod                                    Keith.Bentley                   01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-RTreeFilter::RTreeFilter(DgnViewportCR viewport, DgnDbR db, double minimumSizePixels, DgnElementIdSet const* exclude)
-        : m_minimumSizePixels(minimumSizePixels), m_exclude(exclude), m_clips(nullptr)
+void RTreeFilter::SetFrustum(FrustumCR frustum)
     {
-    m_nCalls = m_nScores = m_nSkipped = 0;
-    m_scorer.InitForViewport(viewport, m_minimumSizePixels);
-    m_frustum  = viewport.GetFrustum(DgnCoordSystem::World, true);
+    DRange3d range = frustum.ToRange();
 
-    DRange3d range = m_frustum.ToRange();
     m_boundingRange.FromRange(range);
 
     // get bounding range of front plane of polyhedron
-    range.InitFrom(m_frustum.GetPts(), 4);
+    range.InitFrom(frustum.GetPts(), 4);
     m_frontFaceRange.FromRange(range);
 
     // get unit bvector from front plane to back plane
-    m_viewVec = DVec3d::FromStartEndNormalize(*(m_frustum.GetPts()+4), *m_frustum.GetPts());
+    m_viewVec = DVec3d::FromStartEndNormalize(*frustum.GetPts(), *(frustum.GetPts()+4));
 
     // check to see if it's worthwhile using skew scan (skew vector not along one of the three major axes)
     int alongAxes = (fabs(m_viewVec.x) < 1e-8);
     alongAxes += (fabs(m_viewVec.y) < 1e-8);
     alongAxes += (fabs(m_viewVec.z) < 1e-8);
     m_doSkewtest = alongAxes<2;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   04/14
++---------------+---------------+---------------+---------------+---------------+------*/
+void RTreeFilter::SetViewport(DgnViewportCR viewport, double minimumSizePixels)
+    {
+    m_doOcclusionScore = true;
+    m_scorer.InitForViewport(viewport, minimumSizePixels);
+    Frustum frust = viewport.GetFrustum(DgnCoordSystem::World, true);
+    SetFrustum(frust);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1547,7 +1256,7 @@ static inline void exchangeAndNegate(double& dbl1, double& dbl2)
 bool RTreeFilter::SkewTest(RTree3dValCP pt)
     {
     if (!m_doSkewtest || pt->Intersects(m_frontFaceRange))
-        return  true;
+        return true;
 
     DVec3d skVector = m_viewVec;
     DPoint3d dlo;
@@ -1585,7 +1294,6 @@ bool RTreeFilter::SkewTest(RTree3dValCP pt)
     // now we need the Z stuff
     dlo.z = pt->m_minz - m_frontFaceRange.m_maxz;
     dhi.z = pt->m_maxz - m_frontFaceRange.m_minz;
-
     if (skVector.z < 0.0)
         {
         skVector.z = - skVector.z;

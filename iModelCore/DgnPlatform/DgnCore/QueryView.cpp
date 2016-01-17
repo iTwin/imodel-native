@@ -28,7 +28,6 @@
 QueryViewController::QueryViewController(DgnDbR dgndb, DgnViewId id) : CameraViewController(dgndb, id), m_queryModel(*new QueryModel(dgndb))
     {
     m_forceNewQuery = true; 
-    m_lastUpdateType = DrawPurpose::NotSpecified;
     m_maxElementMemory = 0;
     m_noQuery = false;
     m_secondaryHitLimit = 0;
@@ -290,12 +289,6 @@ Utf8String QueryViewController::_GetRTreeMatchSql(DgnViewportR)
            DGN_VTABLE_RTree3d " AS r, " DGN_TABLE(DGN_CLASSNAME_Element) " AS e, " DGN_TABLE(DGN_CLASSNAME_SpatialElement) " AS g "
            "WHERE r.ElementId MATCH DGN_rTree(@matcher) AND e.Id=r.ElementId AND g.Id=r.ElementId"
            " AND InVirtualSet(@vSet,e.ModelId,g.CategoryId)");
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    return Utf8String("SELECT rTreeAccept(r.ElementId) FROM "
-           DGN_VTABLE_RTree3d " AS r, " DGN_TABLE(DGN_CLASSNAME_Element) " AS e, " DGN_TABLE(DGN_CLASSNAME_SpatialElement) " AS g "
-           "WHERE r.ElementId MATCH rTreeMatch(1) AND e.Id=r.ElementId AND g.Id=r.ElementId"
-           " AND InVirtualSet(@vSet,e.ModelId,g.CategoryId)");
-#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -333,8 +326,6 @@ void QueryViewController::BindModelAndCategory(StatementR stmt, RTreeTester& mat
     stmt.BindVirtualSet(vSetIdx, *this);
     }
 
-//  #define DUMP_DYNAMIC_UPDATE_STATS 1
-
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    06/2012
 //--------------+------------------------------------------------------------------------
@@ -348,7 +339,7 @@ void QueryViewController::_DrawView(ViewContextR context)
     if (DrawPurpose::Pick == context.GetDrawPurpose() )
         {
         if (!m_queryModel.IsEmpty())    // if we have no elements, nothing to do.
-            context.VisitDgnModel(&m_queryModel);
+            _VisitAllElements(context);
 
         if (context.CheckStop())
             return;
@@ -370,6 +361,7 @@ void QueryViewController::_DrawView(ViewContextR context)
         }
 
     DEBUG_PRINTF("clear progressive _DrawView");
+    m_needProgressiveDisplay = false;
     context.GetViewport()->ClearProgressiveDisplay();
 
     const uint64_t maxMem = GetMaxElementMemory();
@@ -449,19 +441,18 @@ void QueryViewController::_DrawView(ViewContextR context)
     //  We count on progressive display to draw zero length strings and points that are excluded by LOD filtering in the occlusion step.
     if ((DrawPurpose::CreateScene == context.GetDrawPurpose()) && (results->m_reachedMaxElements) && !m_noQuery)
         {
+        m_needProgressiveDisplay = true;
         DgnViewportP vp = context.GetViewport();
         CachedStatementPtr rangeStmt;
         m_queryModel.GetDgnDb().GetCachedStatement(rangeStmt, _GetRTreeMatchSql(*context.GetViewport()).c_str());
 
-        DEBUG_PRINTF("start progressive display");
-        QueryModel::ProgressiveFilter* pvFilter = new QueryModel::ProgressiveFilter(*vp, m_queryModel, m_neverDrawn.empty() ? nullptr : &m_neverDrawn, maxMem, rangeStmt.get());
-
-        BindModelAndCategory(*rangeStmt, *pvFilter);
+        QueryModel::ProgressiveFilter* filter = new QueryModel::ProgressiveFilter(*vp, m_queryModel, m_neverDrawn.empty() ? nullptr : &m_neverDrawn, maxMem, rangeStmt.get());
+        BindModelAndCategory(*rangeStmt, *filter);
 
         if (GetClipVector().IsValid())
-            pvFilter->SetClipVector(*GetClipVector());
+            filter->SetClipVector(*GetClipVector());
 
-        vp->ScheduleProgressiveDisplay(*pvFilter);
+        vp->ScheduleProgressiveDisplay(*filter);
         }
     }
 
@@ -471,16 +462,34 @@ void QueryViewController::_DrawView(ViewContextR context)
 void QueryViewController::_VisitAllElements(ViewContextR context)
     {
     // Visit the elements that were actually loaded
-    context.VisitDgnModel(&m_queryModel);
+    if (SUCCESS != context.VisitDgnModel(&m_queryModel))
+        return;
+
+    if (!m_needProgressiveDisplay || context._CheckStop() || context.AbortProgressiveDisplay())
+        return;
 
     // And step through the rest of the elements that were not loaded (but would be displayed by progressive display).
     CachedStatementPtr rangeStmt;
     m_queryModel.GetDgnDb().GetCachedStatement(rangeStmt, _GetRTreeMatchSql(*context.GetViewport()).c_str());
-    QueryModel::ProgressiveFilter pvFilter (*context.GetViewport(), m_queryModel, m_neverDrawn.empty() ? nullptr : &m_neverDrawn, GetMaxElementMemory(), rangeStmt.get());
-    BindModelAndCategory(*rangeStmt, pvFilter);
 
-    while (pvFilter._Process(context, 0) != ProgressiveDisplay::Completion::Finished)
-        ;
+    QueryModel::AllElementsFilter filter(m_queryModel, m_neverDrawn.empty() ? nullptr : &m_neverDrawn, GetMaxElementMemory());
+    filter.SetFrustum(context.GetFrustum());
+    BindModelAndCategory(*rangeStmt, filter);
+
+    DEBUG_PRINTF("begin progressive pick");
+    int nTest=0;
+    while (BE_SQLITE_ROW == rangeStmt->Step())
+        {
+        ++nTest;
+        filter.AcceptElement(context, rangeStmt->GetValueId<DgnElementId>(0));
+        if (context._CheckStop() || context.AbortProgressiveDisplay())
+            {
+            DEBUG_PRINTF("abort progressive pick");
+            return;
+            }
+        }
+
+    DEBUG_PRINTF("done progressive pick, #=%d", nTest);
     }
 
 //---------------------------------------------------------------------------------------

@@ -191,6 +191,7 @@ protected:
     virtual void _OutputGraphic(Render::GraphicR, GeometrySourceCP) {}
     virtual Render::GraphicP _GetCachedGraphic(GeometrySourceCR, double pixelSize) {return nullptr;}
     virtual void _SaveGraphic(GeometrySourceCR, Render::GraphicR graphic) {}
+    virtual bool _AbortProgressiveDisplay() {return false;}
     DGNPLATFORM_EXPORT virtual bool _WantAreaPatterns();
     DGNPLATFORM_EXPORT virtual void _DrawAreaPattern(ClipStencil& boundary);
     DGNPLATFORM_EXPORT virtual void _DrawStyledLineString2d(int nPts, DPoint2dCP pts, double zDepth, DPoint2dCP range, bool closed = false);
@@ -224,6 +225,7 @@ protected:
     DGNPLATFORM_EXPORT ViewContext();
 
 public:
+    bool AbortProgressiveDisplay() {return _AbortProgressiveDisplay();}
     int GetTransClipDepth() {return (int) m_transformClipStack.GetSize();}
     DMap4dCR GetWorldToView() const {return m_worldToView;}
     DMap4dCR GetWorldToNpc() const {return m_worldToNpc;}
@@ -246,7 +248,7 @@ public:
     TransformClipStackR GetTransformClipStack() {return m_transformClipStack;}
     ScanCriteriaCP GetScanCriteria() const {return &m_scanCriteria;}
     void InitScanRangeAndPolyhedron() {_InitScanRangeAndPolyhedron();}
-    void VisitDgnModel(DgnModelP model){_VisitDgnModel(model);}
+    StatusInt VisitDgnModel(DgnModelP model){return _VisitDgnModel(model);}
     void SetScanReturn() {_SetScanReturn();}
     void EnableStopAfterTimout(uint32_t timeout) {m_endTime = BeTimeUtilities::QueryMillisecondsCounter()+timeout; m_stopAfterTimeout=true;}
 

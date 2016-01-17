@@ -32,8 +32,7 @@ protected:
     bool        m_notifyOnViewUpdated;
     bool        m_forceNewQuery;    //!< If true, before doing the next view update, repopulate the QueryModel with the result of the query 
     bool        m_noQuery;          //!< If true, *only* draw the "always drawn" list - do not query for other elements
-    bool        m_selectProcessingActive;
-    DrawPurpose m_lastUpdateType;
+    bool        m_needProgressiveDisplay;
     DRange3d    m_secondaryVolume;  //  ignored unless m_secondaryHitLimit > 0
     uint32_t    m_secondaryHitLimit;
     uint64_t    m_maxElementMemory;
@@ -92,9 +91,6 @@ protected:
 
     //! Allow the supplied ViewContext to visit every element in the view, not just the best elements in the query model.
     DGNPLATFORM_EXPORT void _VisitAllElements(ViewContextR) override;
-
-    //! Return the default maximum number of elements to load. This is then scaled by the value returned from _GetMaxElementFactor.
-    virtual uint32_t _GetMaxElementsToLoad() {return 5000;}
 #endif
 
 protected:
@@ -172,6 +168,5 @@ public:
     //! Disables secondary range query.
     void DisableSecondaryQueryRange(){m_secondaryHitLimit=0;}
 };
-
 
 END_BENTLEY_DGN_NAMESPACE

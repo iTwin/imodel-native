@@ -596,50 +596,6 @@ bool ViewContext::IsWorldPointVisible(DPoint3dCR worldPoint, bool boresite)
 #endif
     }
 
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    RayBentley      04/07
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool ViewContext::IsLocalPointVisible(DPoint3dCR localPoint, bool boresite)
-    {
-    if (m_transformClipStack.IsEmpty())
-        return true;
-
-    if (!boresite)
-        return m_transformClipStack.TestPoint(localPoint);
-
-    DVec3d      localZVec;
-
-    if (IsCameraOn())
-        {
-        DPoint3d        localCamera;
-        
-        WorldToLocal(&localCamera, &GetViewport()->GetCamera().GetEyePoint(), 1);
-        localZVec.NormalizedDifference(localPoint, localCamera);
-        }
-    else
-        {
-        DPoint3d        zPoints[2];
-        Transform       worldToLocal;
-
-        zPoints[0].Zero();
-        zPoints[1].Init(0.0, 0.0, 1.0);
-
-        NpcToWorld(zPoints, zPoints, 2);
-
-        localZVec.NormalizedDifference(zPoints[1], zPoints[0]);
-
-        if (GetCurrWorldToLocalTrans(worldToLocal))
-            {
-            worldToLocal.MultiplyMatrixOnly(localZVec);
-            localZVec.Normalize();
-            }
-        }
-
-    return  m_transformClipStack.TestRay(localPoint, localZVec);
-    }
-#endif
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      01/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -744,11 +700,7 @@ bool ViewContext::_VisitAllModelElements()
     m_viewport->GetViewControllerR().DrawView(*this);
 
     if (clipVector.IsValid())
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-        PopTransformClip();
-#else
         PopClip();
-#endif
 
     return WasAborted();
     }

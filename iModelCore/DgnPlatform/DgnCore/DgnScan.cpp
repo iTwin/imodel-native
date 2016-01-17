@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/DgnScan.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include    <DgnPlatformInternal.h>
@@ -102,15 +102,13 @@ static ScanCriteria::Result checkSkewRange (DRange3dCP skewRange, DPoint3dCP ske
         exchangeAndNegate (&dlo.y, &dhi.y);
         }
 
-    /* Check the projection of the element's xhigh to the plane where
-       ylow of the element is equal to yhigh of the skewrange */
+    /* Check the projection of the element's xhigh to the plane where ylow of the element is equal to yhigh of the skewrange */
     va1 = dlo.x * skVector.y;
     vb2 = dhi.y * skVector.x;
     if (va1 > vb2)
         return ScanCriteria::Result::Fail;
 
-    /* Check the projection of the element's xlow to the plane where
-       yhigh of the element is equal to ylow of the skewrange */
+    /* Check the projection of the element's xlow to the plane where yhigh of the element is equal to ylow of the skewrange */
     vb1 = dlo.y * skVector.x;
     va2 = dhi.x * skVector.y;
     if (va2 < vb1)

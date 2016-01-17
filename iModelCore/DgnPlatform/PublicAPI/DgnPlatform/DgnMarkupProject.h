@@ -370,7 +370,6 @@ protected:
     // QueryViewController
     virtual bool _IsInSet (int nVal, BeSQLite::DbValue const*) const override;
     virtual bool _WantElementLoadStart (ViewportR viewport, double currentTime, double lastQueryTime, uint32_t maxElementsDrawnInDynamicUpdate, Frustum const& queryFrustum) override;
-    virtual uint32_t _GetMaxElementsToLoad () override;
     virtual Utf8String _GetRTreeMatchSql (ViewportR viewport) override;
     virtual int32_t _GetMaxElementFactor() override;
     virtual double _GetMinimumSizePixels (DrawPurpose updateType) override;

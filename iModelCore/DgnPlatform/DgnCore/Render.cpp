@@ -9,12 +9,22 @@
 
 BEGIN_UNNAMED_NAMESPACE
     static Render::Queue* s_renderQueue = nullptr;
+    static int s_gps;
+    static int s_sceneTarget;
+    static int s_progressiveTarget;
 END_UNNAMED_NAMESPACE
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Render::Target::VerifyRenderThread() {DgnDb::VerifyRenderThread();}
+void Render::Target::Debug::SaveGPS(int gps) {s_gps=gps; Show();}
+void Render::Target::Debug::SaveSceneTarget(int val) {s_sceneTarget=val; Show();}
+void Render::Target::Debug::SaveProgressiveTarget(int val) {s_progressiveTarget=val; Show();}
+void Render::Target::Debug::Show()
+    {
+    NativeLogging::LoggingManager::GetLogger("GPS")->debugv("GPS=%d, Scene=%d, PD=%d", s_gps, s_sceneTarget, s_progressiveTarget);
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   01/16
@@ -29,7 +39,7 @@ void Render::Target::RecordFrameTime(GraphicList& scene, double seconds, bool is
         seconds = .001;
 
     uint32_t gps = (uint32_t) ((double) count / seconds);
-    NativeLogging::LoggingManager::GetLogger("GPS")->debugv("GPS=%d", gps);
+    Render::Target::Debug::SaveGPS(gps);
 
     //  Typically GPS increases as progressive display 
     //  continues.  We cannot let CreateScene graphics
@@ -63,6 +73,8 @@ void Render::Queue::AddTask(Task& task)
         else
             ++entry;
         }
+
+    task._OnQueued();
 
     m_tasks.push_back(&task);
     mux.unlock();      // release lock before notify so other thread will start immediately vs. "hurry up and wait" problem
