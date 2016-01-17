@@ -514,11 +514,24 @@ private:
 
 public:
     StatusInt VisitHit(HitDetailCR hit);
+
+    //! Display world coordinate graphic with flash/hilite treatment.
     DGNPLATFORM_EXPORT void AddFlashed(Render::GraphicR graphic, Render::OvrGraphicParamsCP ovr=nullptr);
+
+    //! Display world coordinate graphic with smooth shading, default lighting, and z testing enabled.
     DGNPLATFORM_EXPORT void AddWorldDecoration(Render::GraphicR graphic, Render::OvrGraphicParamsCP ovr=nullptr);
+
+    //! Display world coordinate graphic with smooth shading, default lighting, and z testing disabled.
     DGNPLATFORM_EXPORT void AddWorldOverlay(Render::GraphicR graphic, Render::OvrGraphicParamsCP ovr=nullptr);
+
+    //! Display view coordinate graphic with smooth shading, default lighting, and z testing disabled.
     DGNPLATFORM_EXPORT void AddViewOverlay(Render::GraphicR graphic, Render::OvrGraphicParamsCP ovr=nullptr);
+
+    //! Display sprite as view overlay graphic.
     DGNPLATFORM_EXPORT void AddSprite(Render::ISprite& sprite, DPoint3dCR location, DPoint3dCR xVec, int transparency);
+
+    //! @private
+    DGNPLATFORM_EXPORT void DrawStandardGrid(DPoint3dR gridOrigin, RotMatrixR rMatrix, DPoint2d spacing, uint32_t gridsPerRef, bool isoGrid=false, Point2dCP fixedRepetitions=nullptr);
 };  
 
 /** @endGroup */
