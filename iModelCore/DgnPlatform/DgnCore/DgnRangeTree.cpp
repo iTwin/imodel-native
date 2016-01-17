@@ -1075,7 +1075,6 @@ bool OcclusionScorer::ComputeOcclusionScore(double* score, bool& overlap, bool& 
                     npcVertices[i].x = 1.0;
                     }
                 else
-                    outsideMask &= ~OUTSIDE_Right;
                 }
 
             if (npcVertices[i].y < 0.0)
