@@ -996,7 +996,8 @@ NavigationPropertyMap::NavigationPropertyMap(ClassMapLoadContext& ctx, ECN::ECPr
 NavigationPropertyMap::NavigationPropertyMap(ClassMapLoadContext& ctx, NavigationPropertyMap const& proto, PropertyMap const* parentPropertyMap) :PropertyMap(proto.GetProperty(), proto.GetPropertyAccessString(), parentPropertyMap), m_navigationProperty(proto.m_navigationProperty), m_relClassMap(proto.m_relClassMap)
     {
     //we need to wait with finishing the nav prop map set up to the end when all relationships have been imported and mapped
-    ctx.AddNavigationPropertyMap(*this);
+    if (proto.m_relClassMap == nullptr)
+        ctx.AddNavigationPropertyMap(*this);
     }
 
 //---------------------------------------------------------------------------------------

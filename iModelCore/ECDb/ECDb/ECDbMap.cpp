@@ -284,7 +284,14 @@ ClassMapPtr ECDbMap::LoadClassMap(ClassMapLoadContext& ctx, ECN::ECClassCR ecCla
     ECDbClassMapInfo const& classMapInfo = *classMaps->front();
     ECDbClassMapInfo const* baseClassMapInfo = classMapInfo.GetBaseClassMap();
     ECClassCP baseClass = baseClassMapInfo == nullptr ? nullptr : schemaManager.GetECClass(baseClassMapInfo->GetClassId());
-    ClassMap const* baseClassMap = baseClass == nullptr ? nullptr : GetClassMap(*baseClass);
+    
+    ClassMap const* baseClassMap = nullptr;
+    if (baseClass != nullptr)
+        {
+        ClassMapPtr baseClassMapPtr = nullptr;
+        if (TryGetClassMap(baseClassMapPtr, ctx, *baseClass))
+            baseClassMap = baseClassMapPtr.get();
+        }
 
     bool setIsDirty = false;
     ECDbMapStrategy const& mapStrategy = classMapInfo.GetMapStrategy();
