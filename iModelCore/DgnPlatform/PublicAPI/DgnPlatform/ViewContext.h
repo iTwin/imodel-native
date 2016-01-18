@@ -225,7 +225,6 @@ protected:
     DGNPLATFORM_EXPORT ViewContext();
 
 public:
-    bool AbortProgressiveDisplay() {return _AbortProgressiveDisplay();}
     int GetTransClipDepth() {return (int) m_transformClipStack.GetSize();}
     DMap4dCR GetWorldToView() const {return m_worldToView;}
     DMap4dCR GetWorldToNpc() const {return m_worldToNpc;}

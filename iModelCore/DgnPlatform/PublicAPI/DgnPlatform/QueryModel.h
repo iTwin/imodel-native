@@ -142,6 +142,7 @@ struct QueryModel : SpatialModel
     public:
         Filter(QueryModelR model, uint32_t hitLimit, DgnElementIdSet const* alwaysDraw, DgnElementIdSet const* exclude);
         void InitializeSecondaryTest(DRange3dCR volume, uint32_t hitLimit);
+        uint32_t GetCount() const {return m_occlusionMapCount;}
     };
     
     //=======================================================================================

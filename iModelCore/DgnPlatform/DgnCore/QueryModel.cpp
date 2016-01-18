@@ -12,8 +12,10 @@
 
 #ifdef TRACE_QUERY_LOGIC
 #   define DEBUG_PRINTF THREADLOG.debugv
+#   define DEBUG_ERRORLOG THREADLOG.errorv
 #else
 #   define DEBUG_PRINTF(fmt, ...)
+#   define DEBUG_ERRORLOG(fmt, ...)
 #endif
 
 //---------------------------------------------------------------------------------------
@@ -381,15 +383,20 @@ void QueryModel::Processor::SearchRangeTree(Filter& filter)
 
     static_cast<QueryViewControllerCP>(&m_params.m_vp.GetViewController())->BindModelAndCategory(*rangeStmt, filter);
 
+    uint64_t endTime = BeTimeUtilities::QueryMillisecondsCounter() + m_params.m_plan.GetTimeout();
     while(BE_SQLITE_ROW == (m_dbStatus=rangeStmt->Step()))
         {
+        filter.AcceptElement(rangeStmt->GetValueId<DgnElementId>(0));
         if (filter.CheckAbort())
+            return;
+
+        if (filter.GetCount() >= m_params.m_plan.GetMinElements() && (BeTimeUtilities::QueryMillisecondsCounter() > endTime))
             {
-            DEBUG_PRINTF("Query aborted");
+            DEBUG_ERRORLOG("Query timeout");
+            m_dbStatus = BE_SQLITE_DONE;
             return;
             }
-
-        filter.AcceptElement(rangeStmt->GetValueId<DgnElementId>(0));
+    
         }
     }
 
@@ -463,7 +470,7 @@ int QueryModel::Filter::_TestRTree(RTreeMatchFunction::QueryInfo const& info)
         return BE_SQLITE_ERROR;
 
     RTree3dValCP pt = (RTree3dValCP) info.m_coords;
-    m_passedPrimaryTest   = (info.m_parentWithin == RTreeMatchFunction::Within::Inside) ? true : (m_boundingRange.Intersects(*pt) && SkewTest(pt));
+    m_passedPrimaryTest   = m_boundingRange.Intersects(*pt) && SkewTest(pt);
     m_passedSecondaryTest = m_useSecondary ? m_secondaryFilter.m_scorer.m_boundingRange.Intersects(*pt) : false;
 
     if (m_passedSecondaryTest)
@@ -526,14 +533,13 @@ int QueryModel::Filter::_TestRTree(RTreeMatchFunction::QueryInfo const& info)
             {
             // For nodes, return 'level-score' (the "-" is because for occlusion score higher is better. But for rtree priority, lower means better).
             info.m_score = info.m_level - m_lastScore;
-            info.m_within = info.m_parentWithin == RTreeMatchFunction::Within::Inside ? RTreeMatchFunction::Within::Inside : m_boundingRange.Contains(*pt) ? RTreeMatchFunction::Within::Inside : RTreeMatchFunction::Within::Partly;
             }
         else
             {
             // For entries (ilevel==0), we return 0 so they are processed immediately (lowest score has highest priority).
             info.m_score = 0;
-            info.m_within = RTreeMatchFunction::Within::Partly;
             }
+        info.m_within = RTreeMatchFunction::Within::Partly;
         }
 
     return BE_SQLITE_OK;
@@ -588,7 +594,7 @@ int QueryModel::AllElementsFilter::_TestRTree(RTreeMatchFunction::QueryInfo cons
     info.m_within = RTreeMatchFunction::Within::Outside;
 
     RTree3dValCP pt = (RTree3dValCP) info.m_coords;
-    if ((info.m_parentWithin != RTreeMatchFunction::Within::Inside) && !(m_boundingRange.Intersects(*pt) && SkewTest(pt)))
+    if (!(m_boundingRange.Intersects(*pt) && SkewTest(pt)))
         return BE_SQLITE_OK;
 
 #if defined (NEEDS_WORK_CLIPPING)
@@ -616,14 +622,13 @@ int QueryModel::AllElementsFilter::_TestRTree(RTreeMatchFunction::QueryInfo cons
         if (m_doOcclusionScore && !m_scorer.ComputeOcclusionScore(&score, overlap, spansEyePlane, localCorners, true))
             return BE_SQLITE_OK;
 
-        info.m_within = info.m_parentWithin == RTreeMatchFunction::Within::Inside ? RTreeMatchFunction::Within::Inside : m_boundingRange.Contains(*pt) ? RTreeMatchFunction::Within::Inside : RTreeMatchFunction::Within::Partly;
         info.m_score = info.m_maxLevel - info.m_level - score;
         }
     else
         {
         info.m_score = 0;
-        info.m_within = RTreeMatchFunction::Within::Partly;
         }                                                                                                                                  
+    info.m_within = RTreeMatchFunction::Within::Partly;
     return BE_SQLITE_OK;
     }
 

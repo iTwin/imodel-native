@@ -465,7 +465,7 @@ void QueryViewController::_VisitAllElements(ViewContextR context)
     if (SUCCESS != context.VisitDgnModel(&m_queryModel))
         return;
 
-    if (!m_needProgressiveDisplay || context._CheckStop() || context.AbortProgressiveDisplay())
+    if (!m_needProgressiveDisplay || context.CheckStop())
         return;
 
     // And step through the rest of the elements that were not loaded (but would be displayed by progressive display).
@@ -476,20 +476,12 @@ void QueryViewController::_VisitAllElements(ViewContextR context)
     filter.SetFrustum(context.GetFrustum());
     BindModelAndCategory(*rangeStmt, filter);
 
-    DEBUG_PRINTF("begin progressive pick");
-    int nTest=0;
     while (BE_SQLITE_ROW == rangeStmt->Step())
         {
-        ++nTest;
         filter.AcceptElement(context, rangeStmt->GetValueId<DgnElementId>(0));
-        if (context._CheckStop() || context.AbortProgressiveDisplay())
-            {
-            DEBUG_PRINTF("abort progressive pick");
+        if (context.CheckStop())
             return;
-            }
         }
-
-    DEBUG_PRINTF("done progressive pick, #=%d", nTest);
     }
 
 //---------------------------------------------------------------------------------------
