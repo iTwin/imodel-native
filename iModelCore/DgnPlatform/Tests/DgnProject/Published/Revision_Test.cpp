@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/DgnProject/Published/Revision_Test.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ChangeTestFixture.h"
@@ -41,21 +41,21 @@ struct RevisionTestFixture : ChangeTestFixture
         void BackupTestFile();
         void RestoreTestFile();
 
-        typedef AuthorityIssuedCodeSet CodeSet;
-        typedef AuthorityIssuedCode Code;
-        void ExtractCodesFromRevision(CodeSet& assigned, CodeSet& discarded);
+        typedef DgnCodeSet CodeSet;
+        typedef DgnCode Code;
+        void ExtractCodesFromRevision(DgnCodeSet& assigned, CodeSet& discarded);
 
-        static Utf8String CodeToString(Code const& code) { return Utf8PrintfString("%s:%s\n", code.GetNamespace().c_str(), code.GetValueCP()); }
-        static void ExpectCode(Code const& code, CodeSet const& codes) { EXPECT_FALSE(codes.end() == codes.find(code)) << CodeToString(code).c_str(); }
-        static void ExpectCodes(CodeSet const& exp, CodeSet const& actual)
+        static Utf8String CodeToString(DgnCode const& code) { return Utf8PrintfString("%s:%s\n", code.GetNamespace().c_str(), code.GetValueCP()); }
+        static void ExpectCode(DgnCode const& code, CodeSet const& codes) { EXPECT_FALSE(codes.end() == codes.find(code)) << CodeToString(code).c_str(); }
+        static void ExpectCodes(DgnCodeSet const& exp, CodeSet const& actual)
             {
             EXPECT_EQ(exp.size(), actual.size());
             for (auto const& code : exp)
                 ExpectCode(code, actual);
             }
 
-        static void DumpCode(Code const& code) { printf("    %s\n", CodeToString(code).c_str()); }
-        static void DumpCodes(CodeSet const& codes, Utf8StringCR msg="Codes:")
+        static void DumpCode(DgnCode const& code) { printf("    %s\n", CodeToString(code).c_str()); }
+        static void DumpCodes(DgnCodeSet const& codes, Utf8StringCR msg="Codes:")
             {
 #ifdef DUMP_CODES
             printf("%s\n", msg.c_str());
@@ -81,7 +81,7 @@ struct RevisionTestFixture : ChangeTestFixture
             return cpStyle;
             }
 
-        DgnElementCPtr InsertPhysicalElement(Code const& code)
+        DgnElementCPtr InsertPhysicalElement(DgnCode const& code)
             {
             DgnClassId classId = m_testDb->Domains().GetClassId(dgn_ElementHandler::Physical::GetHandler());
             PhysicalElement elem(PhysicalElement::CreateParams(*m_testDb, m_testModel->GetModelId(), classId, m_testCategoryId, Placement3d(), code, nullptr, DgnElementId()));
@@ -285,7 +285,7 @@ TEST_F(RevisionTestFixture, ConflictError)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void RevisionTestFixture::ExtractCodesFromRevision(CodeSet& assigned, CodeSet& discarded)
+void RevisionTestFixture::ExtractCodesFromRevision(DgnCodeSet& assigned, CodeSet& discarded)
     {
     m_testDb->SaveChanges();
     DgnRevisionPtr rev = m_testDb->Revisions().StartCreateRevision();
@@ -363,7 +363,7 @@ TEST_F(RevisionTestFixture, Codes)
     ExpectCodes(expectedCodes, createdCodes);
 
     // Create two elements with a code, and one with a default (empty) code. We only care about non-empty codes.
-    auto defaultCode = DgnAuthority::CreateDefaultCode();
+    auto defaultCode = DgnCode::CreateEmpty();
     auto auth = NamespaceAuthority::CreateNamespaceAuthority("MyAuthority", db);
     EXPECT_EQ(DgnDbStatus::Success, auth->Insert());
 

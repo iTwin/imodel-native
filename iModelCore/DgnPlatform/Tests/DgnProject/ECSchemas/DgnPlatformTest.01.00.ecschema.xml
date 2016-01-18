@@ -196,5 +196,8 @@
         <ECProperty propertyName='Prop_point3d' typeName='point3d' />
         <ECStructProperty propertyName="Prop_struct" typeName="TestStruct"/>
     </ECClass>
-    
+
+    <ECClass typeName="TestElementWithNoHandler" isDomainClass="True">
+        <BaseClass>TestElement</BaseClass>
+    </ECClass>
 </ECSchema>

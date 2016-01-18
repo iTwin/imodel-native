@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/DgnChangeSummary.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -70,7 +70,7 @@ public:
     {
     private:
         DGNPLATFORM_EXPORT DgnModelId GetModelId(bool before) const;
-        DGNPLATFORM_EXPORT AuthorityIssuedCode GetCode(bool before) const;
+        DGNPLATFORM_EXPORT DgnCode GetCode(bool before) const;
     public:
         //! Constructor
         explicit ElementEntry(Impl const& impl) : Entry(impl) { }
@@ -79,8 +79,8 @@ public:
         DgnModelId GetOriginalModelId() const { return GetModelId(true); } //!< Get the original model ID before the change (for deletes and updates)
         DgnModelId GetCurrentModelId() const { return GetModelId(false); } //!< Get the current model ID after the change (for inserts and updates)
 
-        AuthorityIssuedCode GetOriginalCode() const { return GetCode(true); } //!< Get the original code before the change (for deletes, and updates in which the code was modified)
-        AuthorityIssuedCode GetCurrentCode() const { return GetCode(false); } //!< Get the current code after the change (for inserts, and updates in which the code was modified)
+        DgnCode GetOriginalCode() const { return GetCode(true); } //!< Get the original code before the change (for deletes, and updates in which the code was modified)
+        DgnCode GetCurrentCode() const { return GetCode(false); } //!< Get the current code after the change (for inserts, and updates in which the code was modified)
     };
 
     //! An iterator over the elements which have changed.
@@ -94,14 +94,14 @@ public:
     struct ModelEntry : Entry<ModelEntry>
     {
     private:
-        DGNPLATFORM_EXPORT AuthorityIssuedCode GetCode(bool before) const;
+        DGNPLATFORM_EXPORT DgnCode GetCode(bool before) const;
     public:
         explicit ModelEntry(Impl const& impl) : Entry(impl) { }
 
         DgnModelId GetModelId() const { return DgnModelId(GetImpl().GetInstanceId().GetValue()); }
 
-        AuthorityIssuedCode GetOriginalCode() const { return GetCode(true); }
-        AuthorityIssuedCode GetCurrentCode() const { return GetCode(false); }
+        DgnCode GetOriginalCode() const { return GetCode(true); }
+        DgnCode GetCurrentCode() const { return GetCode(false); }
     };
 
     struct ModelIterator : Iterator<ModelEntry>
@@ -133,9 +133,9 @@ public:
     DgnDbR GetDgnDb() const { return m_dgndb; }
 
     //! Populate a set of those codes which were newly assigned within these changes, and those which were discarded.
-    //! @param[in]      assigned  Codes which were newly assigned within these changes.
-    //! @param[in]      discarded Codes which were previously assigned, and removed within these changes.
-    DGNPLATFORM_EXPORT void GetCodes(AuthorityIssuedCodeSet& assigned, AuthorityIssuedCodeSet& discarded) const;
+    //! @param[in]      assigned  DgnCodes which were newly assigned within these changes.
+    //! @param[in]      discarded DgnCodes which were previously assigned, and removed within these changes.
+    DGNPLATFORM_EXPORT void GetCodes(DgnCodeSet& assigned, DgnCodeSet& discarded) const;
 
     //! Populate the set of locks required for these changes.
     //! @param[in]      locks The set of locks which are required for these changes.

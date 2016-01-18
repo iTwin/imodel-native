@@ -2,7 +2,7 @@
 |
 |     $Source: DgnPlatformInternal.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #ifndef __DGNCOREINTERNAL_H__
@@ -79,6 +79,7 @@
 #include <DgnPlatform/DgnCategory.h>
 #include <DgnPlatform/DgnTexture.h>
 #include <DgnPlatform/DgnTrueColor.h>
+#include <DgnPlatform/GenericDomain.h>
 // #include <DgnPlatform/SolarUtility.h>
 
 #include "DgnCore/DgnCoreLog.h"

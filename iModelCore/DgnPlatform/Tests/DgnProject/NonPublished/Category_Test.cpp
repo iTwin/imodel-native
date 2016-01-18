@@ -316,7 +316,7 @@ TEST_F (CategoryTests, InsertSubCategory)
 
     //Inserts a subcategory
     EXPECT_TRUE(subcategory.Insert().IsValid());
-    DgnElement::Code code = subcategory.GetCode();
+    DgnCode code = subcategory.GetCode();
 
     //Verifying appearence properties
     DgnSubCategory::Appearance app = subcategory.GetAppearance ();
@@ -416,8 +416,8 @@ TEST_F(CategoryTests, SubCategoryInvariants)
 
     // Code validation
     DgnSubCategoryPtr defaultSubCat1Edit = defaultSubCat1->MakeCopy<DgnSubCategory>();
-    DgnAuthority::Code code;    // invalid code
-    EXPECT_EQ(DgnDbStatus::InvalidName, defaultSubCat1Edit->SetCode(code));
+    DgnCode code;    // invalid code
+    EXPECT_EQ(DgnDbStatus::InvalidCodeAuthority, defaultSubCat1Edit->SetCode(code));
     code = DgnSubCategory::CreateSubCategoryCode(cat2Id, "Cat1"); // wrong category
     EXPECT_EQ(DgnDbStatus::InvalidName, defaultSubCat1Edit->SetCode(code));
     code = DgnSubCategory::CreateSubCategoryCode(cat2Id, "Cat2"); // wrong category
@@ -590,7 +590,7 @@ TEST_F (CategoryTests, QueryByElementId)
     DgnCategoryId categoryId = DgnCategory::QueryCategoryId(name, *m_db);
     EXPECT_TRUE(categoryId.IsValid());
 
-    DgnElementPtr el = TestElement::Create(*m_db, m_defaultModelId, categoryId, DgnElement::Code());
+    DgnElementPtr el = TestElement::Create(*m_db, m_defaultModelId, categoryId, DgnCode());
     GeometrySourceP geomElem = el->ToGeometrySourceP();
     ElementGeometryBuilderPtr builder = ElementGeometryBuilder::Create(*m_defaultModelP, categoryId, DPoint3d::From(0.0, 0.0, 0.0));
     DEllipse3d ellipseData = DEllipse3d::From(1, 2, 3,

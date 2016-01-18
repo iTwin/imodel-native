@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/DgnView.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -72,10 +72,10 @@ public:
     struct CreateParams : T_Super::CreateParams
     {
     protected:
-        CreateParams(DgnDbR db, DgnClassId classId, Code const& code, Data const& data, Utf8CP label=nullptr, DgnElementId parentId=DgnElementId())
+        CreateParams(DgnDbR db, DgnClassId classId, DgnCode const& code, Data const& data, Utf8CP label=nullptr, DgnElementId parentId=DgnElementId())
             : T_Super(db, DgnModel::DictionaryId(), classId, code, label, parentId), m_data(data) {}
 
-        DGNPLATFORM_EXPORT CreateParams(DgnDbR db, Code const& code, DgnClassId classId, Data const& data);
+        DGNPLATFORM_EXPORT CreateParams(DgnDbR db, DgnCode const& code, DgnClassId classId, Data const& data);
     public:
         DEFINE_T_SUPER(ViewDefinition::T_Super::CreateParams);
 
@@ -89,7 +89,7 @@ private:
 
     DgnDbStatus BindParams(BeSQLite::EC::ECSqlStatement& stmt);
     DgnDbStatus DeleteReferences() const;
-    static bool IsValidCode(Code const& code);
+    static bool IsValidCode(DgnCode const& code);
 protected:
     explicit ViewDefinition(CreateParams const& params) : T_Super(params), m_data(params.m_data) { }
 
@@ -97,10 +97,10 @@ protected:
     DGNPLATFORM_EXPORT virtual DgnDbStatus _BindInsertParams(BeSQLite::EC::ECSqlStatement& stmt) override;
     DGNPLATFORM_EXPORT virtual DgnDbStatus _BindUpdateParams(BeSQLite::EC::ECSqlStatement& stmt) override;
     DGNPLATFORM_EXPORT virtual void _CopyFrom(DgnElementCR source) override;
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _SetCode(Code const& code) override;
 
     virtual uint32_t _GetMemSize() const override { return T_Super::_GetMemSize() + m_data.GetMemSize(); }
-    virtual Code _GenerateDefaultCode() override { return Code(); }
+    virtual DgnCode _GenerateDefaultCode() const override { return DgnCode(); }
+    virtual bool _SupportsCodeAuthority(DgnAuthorityCR auth) const override { return ResourceAuthority::IsResourceAuthority(auth); }
 
     DGNPLATFORM_EXPORT virtual DgnDbStatus _OnInsert() override;
     DGNPLATFORM_EXPORT virtual DgnDbStatus _OnUpdate(DgnElementCR) override;
@@ -149,11 +149,11 @@ public:
     //! Instantiate a ViewController for the ViewDefinition with the specified ID in order to render the view
     DGNPLATFORM_EXPORT static ViewControllerPtr LoadViewController(DgnViewId viewId, DgnDbR db, FillModels fillModels=FillModels::No);
 
-    //! Create a Code for a view with the specified name
-    DGNPLATFORM_EXPORT static Code CreateCode(Utf8StringCR name);
+    //! Create a DgnCode for a view with the specified name
+    static DgnCode CreateCode(Utf8StringCR name) { return ResourceAuthority::CreateResourceCode(name, DGN_CLASSNAME_ViewDefinition); }
 
-    //! Look up the ID of the view with the specified Code
-    DGNPLATFORM_EXPORT static DgnViewId QueryViewId(Code const& code, DgnDbR db);
+    //! Look up the ID of the view with the specified DgnCode
+    DGNPLATFORM_EXPORT static DgnViewId QueryViewId(DgnCode const& code, DgnDbR db);
 
     //! Look up the ID of the view with the specified name
     static DgnViewId QueryViewId(Utf8StringCR name, DgnDbR db) { return QueryViewId(CreateCode(name), db); }
@@ -293,7 +293,7 @@ public:
     {
         DEFINE_T_SUPER(SpatialViewDefinition::T_Super::CreateParams);
     protected:
-        CreateParams(DgnDbR db, Code const& code, DgnClassId classId, Data const& data) : T_Super(db, code, classId, data) { }
+        CreateParams(DgnDbR db, DgnCode const& code, DgnClassId classId, Data const& data) : T_Super(db, code, classId, data) { }
     public:
         //! Constructor from base CreateParams. Chiefly for internal use.
         explicit CreateParams(DgnElement::CreateParams const& params, Data const& data=Data()) : T_Super(params, data) { }
@@ -325,7 +325,7 @@ public:
     {
         DEFINE_T_SUPER(CameraViewDefinition::T_Super::CreateParams);
     protected:
-        CreateParams(DgnDbR db, Code const& code, DgnClassId classId, Data const& data) : T_Super(db, code, classId, data) { }
+        CreateParams(DgnDbR db, DgnCode const& code, DgnClassId classId, Data const& data) : T_Super(db, code, classId, data) { }
     public:
         //! Constructor from base CreateParams. Chiefly for internal use.
         explicit CreateParams(DgnElement::CreateParams const& params, Data const& data=Data()) : T_Super(params, data) { }
@@ -364,7 +364,7 @@ public:
     {
         DEFINE_T_SUPER(DrawingViewDefinition::T_Super::CreateParams);
     protected:
-        CreateParams(DgnDbR db, Code const& code, DgnClassId classId, Data const& data) : T_Super(db, code, classId, data) { }
+        CreateParams(DgnDbR db, DgnCode const& code, DgnClassId classId, Data const& data) : T_Super(db, code, classId, data) { }
     public:
         //! Constructor from base params. Chiefly for internal use.
         explicit CreateParams(DgnElement::CreateParams const& params, Data const& data=Data()) : T_Super(params, data) { }
@@ -396,7 +396,7 @@ public:
     {
         DEFINE_T_SUPER(SheetViewDefinition::T_Super::CreateParams);
     protected:
-        CreateParams(DgnDbR db, Code const& code, DgnClassId classId, Data const& data) : T_Super(db, code, classId, data) { }
+        CreateParams(DgnDbR db, DgnCode const& code, DgnClassId classId, Data const& data) : T_Super(db, code, classId, data) { }
     public:
         //! Constructor from base params. Chiefly for internal use.
         explicit CreateParams(DgnElement::CreateParams const& params, Data const& data=Data()) : T_Super(params, data) { }
@@ -428,7 +428,7 @@ public:
     {
         DEFINE_T_SUPER(RedlineViewDefinition::T_Super::CreateParams);
     protected:
-        CreateParams(DgnDbR db, Code const& code, DgnClassId classId, Data const& data) : T_Super(db, code, classId, data) { }
+        CreateParams(DgnDbR db, DgnCode const& code, DgnClassId classId, Data const& data) : T_Super(db, code, classId, data) { }
     public:
         //! Constructor from base params. Chiefly for internal use.
         explicit CreateParams(DgnElement::CreateParams const& params, Data const& data=Data()) : T_Super(params, data) { }

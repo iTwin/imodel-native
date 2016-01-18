@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/DgnProject/Published/DgnModel_Test.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "../TestFixture/DgnDbTestFixtures.h"
@@ -257,7 +257,7 @@ TEST_F(DgnModelTests, SheetModelCRUD)
         ASSERT_EQ( mid , db->Models().QueryModelId(DgnModel::CreateModelCode(s_sheet1NameUPPER)) ) << "Sheet model names should be case-insensitive";
         //                      ... by id
         ASSERT_EQ( sheet1.get() , db->Models().Get<SheetModel>(mid).get() );
-        DgnModel::Code mcode;
+        DgnCode mcode;
         // Look up a sheet's name by id
         db->Models().GetModelCode(mcode, mid);
         ASSERT_STREQ( sheet1->GetCode().GetValueCP() , mcode.GetValueCP());
@@ -411,7 +411,7 @@ TEST_F (DgnModelTests, ModelsIterator)
     DgnModelId m2id = db.Models ().QueryModelId (DgnModel::CreateModelCode("Model2"));
     DgnModelId m3id = db.Models ().QueryModelId (DgnModel::CreateModelCode("Model3"));
 
-    DgnModel::Code m1_code;
+    DgnCode m1_code;
     BentleyStatus ModelName = db.Models ().GetModelCode (m1_code, m1id);
     EXPECT_EQ (0, ModelName);
 

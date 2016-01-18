@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/DgnProject/TestFixture/DgnDbTestFixtures.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -14,7 +14,7 @@ USING_NAMESPACE_BENTLEY_DPTEST
 * Inserts TestElement
 * @bsimethod                                     Majd.Uddin                   06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElementCPtr DgnDbTestFixture::InsertElement(DgnModelId mid, DgnCategoryId categoryId, DgnDbStatus* result, DgnElement::Code elementCode)
+DgnElementCPtr DgnDbTestFixture::InsertElement(DgnModelId mid, DgnCategoryId categoryId, DgnDbStatus* result, DgnCode elementCode)
 {
     if (!mid.IsValid())
         mid = m_defaultModelId;
@@ -30,7 +30,7 @@ DgnElementCPtr DgnDbTestFixture::InsertElement(DgnModelId mid, DgnCategoryId cat
 * Inserts TestElement with Display Properties
 * @bsimethod                                     Majd.Uddin                   06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElementCPtr DgnDbTestFixture::InsertElement(ElemDisplayParamsCR ep, DgnModelId mid, DgnCategoryId categoryId, DgnElement::Code elementCode)
+DgnElementCPtr DgnDbTestFixture::InsertElement(ElemDisplayParamsCR ep, DgnModelId mid, DgnCategoryId categoryId, DgnCode elementCode)
 {
     if (!mid.IsValid())
         mid = m_defaultModelId;
@@ -89,6 +89,18 @@ void DgnDbTestFixture::OpenDb(DgnDbPtr& db, BeFileNameCR name, DgnDb::OpenMode m
     }
 
 /*---------------------------------------------------------------------------------**//**
+* Set up method that creates a copy of 3dMetricGeneral.idgndb at Output
+* Project file name is the name of the test, mode is ReadWrite and it is Briefcase
+* @bsimethod                                     Majd.Uddin                   01/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnDbTestFixture::SetupSeedProject()
+{
+    WString fileName (TEST_NAME, true);
+    fileName.append(L".idgndb");
+    SetupProject(L"3dMetricGeneral.idgndb", fileName.c_str(), Db::OpenMode::ReadWrite);
+}
+
+/*---------------------------------------------------------------------------------**//**
 * Set up method that opens an existing .dgndb project file after copying it to out
 * baseProjFile is the existing file and testProjFile is what we get
 * @bsimethod                                     Majd.Uddin                   06/15
@@ -138,7 +150,7 @@ void DgnDbTestFixture::SetupProject(WCharCP baseProjFile, CharCP testFile, BeSQL
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Umar.Hayat      07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElementId DgnDbTestFixture::InsertElement2d(DgnModelId mid, DgnCategoryId categoryId, DgnElement::Code elementCode)
+DgnElementId DgnDbTestFixture::InsertElement2d(DgnModelId mid, DgnCategoryId categoryId, DgnCode elementCode)
     {
     if (!mid.IsValid())
         mid = m_defaultModelId;
@@ -154,7 +166,7 @@ DgnElementId DgnDbTestFixture::InsertElement2d(DgnModelId mid, DgnCategoryId cat
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Umar.Hayat      07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElementId DgnDbTestFixture::InsertElementUsingGeomPart2d(Utf8CP gpCode, DgnModelId mid, DgnCategoryId categoryId, DgnElement::Code elementCode)
+DgnElementId DgnDbTestFixture::InsertElementUsingGeomPart2d(Utf8CP gpCode, DgnModelId mid, DgnCategoryId categoryId, DgnCode elementCode)
     {
     if (!mid.IsValid())
         mid = m_defaultModelId;
@@ -184,7 +196,7 @@ DgnElementId DgnDbTestFixture::InsertElementUsingGeomPart2d(Utf8CP gpCode, DgnMo
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Umar.Hayat      07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElementId DgnDbTestFixture::InsertElementUsingGeomPart(Utf8CP gpCode, DgnModelId mid, DgnCategoryId categoryId, DgnElement::Code elementCode)
+DgnElementId DgnDbTestFixture::InsertElementUsingGeomPart(Utf8CP gpCode, DgnModelId mid, DgnCategoryId categoryId, DgnCode elementCode)
     {
     if (!mid.IsValid())
         mid = m_defaultModelId;
@@ -213,7 +225,7 @@ DgnElementId DgnDbTestFixture::InsertElementUsingGeomPart(Utf8CP gpCode, DgnMode
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Umar.Hayat      07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElementId DgnDbTestFixture::InsertElementUsingGeomPart(DgnGeomPartId gpId, DgnModelId mid, DgnCategoryId categoryId, DgnElement::Code elementCode)
+DgnElementId DgnDbTestFixture::InsertElementUsingGeomPart(DgnGeomPartId gpId, DgnModelId mid, DgnCategoryId categoryId, DgnCode elementCode)
     {
     if (!mid.IsValid())
         mid = m_defaultModelId;

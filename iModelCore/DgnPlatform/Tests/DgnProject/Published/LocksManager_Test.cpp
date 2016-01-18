@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/DgnProject/Published/LocksManager_Test.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "DgnHandlersTests.h"
@@ -71,6 +71,9 @@ private:
     virtual LockStatus _QueryLockLevel(LockLevel& level, LockableId lockId, DgnDbR db) override;
     virtual LockStatus _QueryLocks(DgnLockSet& locks, DgnDbR db) override;
     virtual LockStatus _QueryOwnership(DgnLockOwnershipR ownership, LockableId lockId) override;
+
+    // Not much to test with these...
+    virtual LockStatus _QueryRevisionId(WStringR revId, LockableId lockId) override { revId.clear(); return LockStatus::Success; }
 
     bool AreLocksAvailable(LockRequestCR reqs, BeBriefcaseId requestor);
     void GetDeniedLocks(DgnLockSet& locks, LockRequestCR reqs, BeBriefcaseId bcId);
@@ -544,7 +547,7 @@ void LocksServer::Dump(Utf8CP descr)
 /*---------------------------------------------------------------------------------**//**
 * @bsistruct                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct LocksManagerTest : public ::testing::Test, DgnPlatformLib::Host::LocksAdmin
+struct LocksManagerTest : public ::testing::Test, DgnPlatformLib::Host::ServerAdmin
 {
     mutable LocksServer m_server;
     ScopedDgnHost m_host;
@@ -553,7 +556,7 @@ struct LocksManagerTest : public ::testing::Test, DgnPlatformLib::Host::LocksAdm
 
     LocksManagerTest()
         {
-        m_host.SetLocksAdmin(this);
+        m_host.SetServerAdmin(this);
         BackDoor::ILocksManager::SetLockingEnabled(true);
         }
 
@@ -660,7 +663,7 @@ struct LocksManagerTest : public ::testing::Test, DgnPlatformLib::Host::LocksAdm
 
         // Test that response matches direct ownership query
         DgnLockOwnership ownership;
-        EXPECT_EQ(LockStatus::Success, T_HOST.GetLocksAdmin()._GetLocksServer(requestor)->QueryOwnership(ownership, lockableId));
+        EXPECT_EQ(LockStatus::Success, T_HOST.GetServerAdmin()._GetLocksServer(requestor)->QueryOwnership(ownership, lockableId));
         EXPECT_EQ(level, ownership.GetLockLevel());
         auto owningBcId = ExtractDgnDb(lockedObj).GetBriefcaseId();
         switch (level)
@@ -1384,7 +1387,7 @@ struct ExtractLocksTest : SingleBriefcaseLocksTest
             return DgnDbStatus::WriteError;
 
         RevisionStatus revStat;
-        DgnRevisionPtr rev = m_db->Revisions().StartCreateRevision(&revStat);
+        DgnRevisionPtr rev = m_db->Revisions().StartCreateRevision(&revStat, DgnRevision::Include::Locks);
         if (rev.IsNull())
             {
             if (RevisionStatus::NoTransactions == revStat)
@@ -1398,12 +1401,9 @@ struct ExtractLocksTest : SingleBriefcaseLocksTest
                 }
             }
 
-        ChangeStreamFileReader stream(rev->GetChangeStreamFile());
-        DgnDbStatus status = req.FromChangeSet(stream, *m_db);
-
+        req.FromRevision(*rev);
         m_db->Revisions().AbandonCreateRevision();
-
-        return status;
+        return DgnDbStatus::Success;
         }
 };
 
@@ -1443,7 +1443,7 @@ TEST_F(ExtractLocksTest, UsedLocks)
         {
         UndoScope V_V_V_Undo(db);
         auto pEl = cpEl->CopyForEdit();
-        DgnElement::Code newCode = DgnCategory::CreateCategoryCode("RenamedCategory");
+        DgnCode newCode = DgnCategory::CreateCategoryCode("RenamedCategory");
         EXPECT_EQ(DgnDbStatus::Success, pEl->SetCode(newCode));
         cpEl = pEl->Update();
         ASSERT_TRUE(cpEl.IsValid());

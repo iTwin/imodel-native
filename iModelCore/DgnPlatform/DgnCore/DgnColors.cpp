@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/DgnColors.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -76,7 +76,7 @@ void DgnTrueColor::_CopyFrom(DgnElementCR src)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnTrueColorId DgnTrueColor::QueryColorId(Code const& code, DgnDbR db)
+DgnTrueColorId DgnTrueColor::QueryColorId(DgnCode const& code, DgnDbR db)
     {
     return DgnTrueColorId(db.Elements().QueryElementIdByCode(code).GetValueUnchecked());
     }
