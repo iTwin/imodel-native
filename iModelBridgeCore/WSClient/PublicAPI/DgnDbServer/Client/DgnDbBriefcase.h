@@ -28,6 +28,16 @@ private:
     DgnDbRepositoryConnectionPtr m_repositoryConnection;
     Dgn::DgnDbPtr m_db;
     DgnDbBriefcase(Dgn::DgnDbPtr db, DgnDbRepositoryConnectionPtr connection);
+
+    static const int s_maxDelayTime = 5000;
+
+    AsyncTaskPtr<DgnDbResult> PullMergeAndPushInternal(HttpRequest::ProgressCallbackCR downloadCallback = nullptr,
+    HttpRequest::ProgressCallbackCR uploadCallback = nullptr, ICancellationTokenPtr cancellationToken = nullptr);
+
+    AsyncTaskPtr<DgnDbResult> PullMergeAndPushRepeated(HttpRequest::ProgressCallbackCR downloadCallback = nullptr,
+    HttpRequest::ProgressCallbackCR uploadCallback = nullptr, ICancellationTokenPtr cancellationToken = nullptr, 
+    int attemptsCount = 1, int attempt = 1, int delay = 0);
+
 //__PUBLISH_SECTION_START__
 public:
     //! Create an instance of a briefcase from previously downloaded briefcase file.
@@ -48,9 +58,10 @@ public:
     //! @param[in] downloadCallback Download progress callback.
     //! @param[in] uploadCallback Upload progress callback.
     //! @param[in] cancellationToken
+    //! @param[in] attemptsCount Maximum count of retries if fail.
     //! @return Asynchronous task that returns success or an error.
     DGNDBSERVERCLIENT_EXPORT AsyncTaskPtr<DgnDbResult> PullMergeAndPush(HttpRequest::ProgressCallbackCR downloadCallback = nullptr,
-    HttpRequest::ProgressCallbackCR uploadCallback = nullptr, ICancellationTokenPtr cancellationToken = nullptr);
+    HttpRequest::ProgressCallbackCR uploadCallback = nullptr, ICancellationTokenPtr cancellationToken = nullptr, int attemptsCount = 1);
 
     DGNDBSERVERCLIENT_EXPORT Dgn::DgnDbR GetDgnDb(); //!< Briefcase file.
     DGNDBSERVERCLIENT_EXPORT DgnDbRepositoryConnectionPtr GetRepositoryConnection(); //!< Connection to a repository on server.

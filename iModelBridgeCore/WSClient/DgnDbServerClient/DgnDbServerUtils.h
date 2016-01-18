@@ -147,8 +147,8 @@ struct DgnDbServerHost : public Dgn::DgnPlatformLib::Host
     private:
         bool m_initialized;
         bool m_terminated;
-        static BeFileName m_temp;
-        static BeFileName m_assets;
+        static BeFileName s_temp;
+        static BeFileName s_assets;
     public:
         DgnDbServerHost();
         ~DgnDbServerHost();

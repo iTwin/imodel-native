@@ -67,8 +67,8 @@ struct DgnDbServerLocationsAdmin : public Dgn::DgnPlatformLib::Host::IKnownLocat
         virtual ~DgnDbServerLocationsAdmin() {}
     };
 
-BeFileName DgnDbServerHost::m_temp(L"");
-BeFileName DgnDbServerHost::m_assets(L"");
+BeFileName DgnDbServerHost::s_temp(L"");
+BeFileName DgnDbServerHost::s_assets(L"");
 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             11/2015
@@ -82,8 +82,8 @@ DgnDbServerHost::DgnDbServerHost() : m_initialized(false), m_terminated(false)
 //---------------------------------------------------------------------------------------
 void DgnDbServerHost::Initialize(BeFileNameCR temp, BeFileNameCR assets)
     {
-    m_temp = temp;
-    m_assets = assets;
+    s_temp = temp;
+    s_assets = assets;
     }
 
 //---------------------------------------------------------------------------------------
@@ -91,7 +91,7 @@ void DgnDbServerHost::Initialize(BeFileNameCR temp, BeFileNameCR assets)
 //---------------------------------------------------------------------------------------
 bool DgnDbServerHost::IsInitialized()
     {
-    return !m_assets.IsEmpty() && !m_temp.IsEmpty();
+    return !s_assets.IsEmpty() && !s_temp.IsEmpty();
     }
 
 //---------------------------------------------------------------------------------------
@@ -163,6 +163,6 @@ DgnDbServerHost::~DgnDbServerHost()
 //---------------------------------------------------------------------------------------
 DgnPlatformLib::Host::IKnownLocationsAdmin& DgnDbServerHost::_SupplyIKnownLocationsAdmin()
     {
-    return *new DgnDbServerLocationsAdmin(m_temp, m_assets);
+    return *new DgnDbServerLocationsAdmin(s_temp, s_assets);
     }
 END_BENTLEY_DGNDBSERVER_NAMESPACE

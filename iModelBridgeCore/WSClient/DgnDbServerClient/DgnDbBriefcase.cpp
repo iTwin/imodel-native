@@ -10,6 +10,9 @@
 #include <DgnPlatform/RevisionManager.h>
 #include "DgnDbServerUtils.h"
 
+#include <thread>
+#include <random>
+
 USING_NAMESPACE_BENTLEY_DGNDBSERVER
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
 USING_NAMESPACE_BENTLEY_DGNCLIENTFX_UTILS
@@ -82,6 +85,80 @@ AsyncTaskPtr<DgnDbResult> DgnDbBriefcase::PullAndMerge(HttpRequest::ProgressCall
 //@bsimethod                                     Karolis.Dziedzelis             10/2015
 //---------------------------------------------------------------------------------------
 AsyncTaskPtr<DgnDbResult> DgnDbBriefcase::PullMergeAndPush(HttpRequest::ProgressCallbackCR downloadCallback,
+    HttpRequest::ProgressCallbackCR uploadCallback, ICancellationTokenPtr cancellationToken, int attemptsCount)
+    {
+    return PullMergeAndPushRepeated(downloadCallback, uploadCallback, cancellationToken, attemptsCount);
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     Andrius.Zonys                  01/2016
+//---------------------------------------------------------------------------------------
+AsyncTaskPtr<DgnDbResult> DgnDbBriefcase::PullMergeAndPushRepeated(HttpRequest::ProgressCallbackCR downloadCallback,
+    HttpRequest::ProgressCallbackCR uploadCallback, ICancellationTokenPtr cancellationToken, int attemptsCount, int attempt, int delay)
+    {
+    std::shared_ptr<DgnDbResult> finalResult = std::make_shared<DgnDbResult>();
+    return PullMergeAndPushInternal(downloadCallback, uploadCallback, cancellationToken)
+        ->Then([=] (DgnDbResult& result)
+        {
+        if (result.IsSuccess())
+            {
+            finalResult->SetSuccess();
+            return;
+            }
+
+        if (attempt >= attemptsCount)
+            {
+            finalResult->SetError(result.GetError());
+            return;
+            }
+
+        DgnDbServerError::Id errorId = result.GetError().GetId();
+        switch (errorId)
+            {
+            case DgnDbServerError::Id::AnotherUserPushing:
+            case DgnDbServerError::Id::PullIsRequired:
+            case DgnDbServerError::Id::DatabaseTemporarilyLocked:
+            case DgnDbServerError::Id::DgnDbServerOperationFailed:
+                break;
+            default:
+                {
+                finalResult->SetError(result.GetError());
+                return;
+                }
+            }
+
+        int currentDelay = delay * attempt;
+        if (currentDelay > s_maxDelayTime)
+            currentDelay = s_maxDelayTime;
+
+        if (1 == attempt)
+            {
+            std::default_random_engine         randomEngine;
+            std::uniform_int_distribution<int> distribution(50, 500);
+            currentDelay = distribution(randomEngine);
+            }
+
+        // Sleep.
+        std::this_thread::sleep_for(std::chrono::milliseconds(currentDelay));
+
+        PullMergeAndPushRepeated(downloadCallback, uploadCallback, cancellationToken, attemptsCount, attempt + 1, delay)
+            ->Then([=] (const DgnDbResult& result)
+            {
+            if (result.IsSuccess())
+                finalResult->SetSuccess();
+            else
+                finalResult->SetError(result.GetError());
+            });
+        })->Then<DgnDbResult>([=]
+            {
+            return *finalResult;
+            });
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     Karolis.Dziedzelis             10/2015
+//---------------------------------------------------------------------------------------
+AsyncTaskPtr<DgnDbResult> DgnDbBriefcase::PullMergeAndPushInternal(HttpRequest::ProgressCallbackCR downloadCallback,
     HttpRequest::ProgressCallbackCR uploadCallback, ICancellationTokenPtr cancellationToken)
     {
     BeAssert(DgnDbServerHost::IsInitialized() && Error::NotInitialized);
