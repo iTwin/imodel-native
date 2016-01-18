@@ -19,6 +19,8 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECDbSchemaManager::ECDbSchemaManager (ECDbR ecdb, ECDbMapR map) :m_ecdb (ecdb), m_map (map)
     {
+    //generally set the ID type of Nav props in ECDb long (instead of string which is ECObjects' default)
+    ECN::NavigationECProperty::SetIdType(ECN::PrimitiveType::PRIMITIVETYPE_Long);
     m_ecReader = ECDbSchemaReader::Create(ecdb);
     }
 

@@ -83,11 +83,11 @@ private:
 
             BentleyStatus Postprocess() const
                 {
-                /*for (ECN::NavigationECProperty* navProp : m_navProps)
-                {
-                if (ECObjectsStatus::Success != navProp->Validate())
-                return ERROR;
-                }*/
+                for (ECN::NavigationECProperty* navProp : m_navProps)
+                    {
+                    if (!navProp->Verify())
+                        return ERROR;
+                    }
                 return SUCCESS;
                 }
         };

@@ -539,10 +539,7 @@ ECTypeDescriptor ECSqlColumnInfo::DetermineDataType (ECPropertyCR ecProperty)
             return ECTypeDescriptor::CreateStructArrayTypeDescriptor ();
         }
     else if (ecProperty.GetIsNavigation())
-        {
-        //WIP_NAVPROP Replace by Create method that takes NavProp directly once available in ECObjects
-        return ECTypeDescriptor::CreatePrimitiveTypeDescriptor(PRIMITIVETYPE_Long);
-        }
+        return ECTypeDescriptor::CreateNavigationTypeDescriptor(ecProperty.GetAsNavigationPropertyCP()->IsMultiple());
 
     BeAssert(false && "Unhandled ECProperty type. Adjust code to new ECProperty type");
     return ECTypeDescriptor();
