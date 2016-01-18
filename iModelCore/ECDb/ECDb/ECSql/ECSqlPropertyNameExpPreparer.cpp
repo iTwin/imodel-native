@@ -52,9 +52,8 @@ ECSqlStatus ECSqlPropertyNameExpPreparer::Prepare(NativeSqlBuilder::List& native
     NavigationPropertyMap const* navPropMap = propMap.GetAsNavigationPropertyMap();
     if (navPropMap != nullptr)
         {
-        ECSqlStatus stat = ValidateNavigationPropertyExp(nativeSqlSnippets, ctx, *exp, *navPropMap, currentScope);
-        if (!stat.IsSuccess())
-            return stat;
+        if (!navPropMap->IsSupportedInECSql(true, &ctx.GetECDb()))
+            return ECSqlStatus::InvalidECSql;
         }
     else
         {
@@ -127,25 +126,6 @@ bool ECSqlPropertyNameExpPreparer::NeedsPreparation(ECSqlPrepareContext::ExpScop
     return true;
     }
 
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle                01/2016
-//+---------------+---------------+---------------+---------------+---------------+--------
-//static
-ECSqlStatus ECSqlPropertyNameExpPreparer::ValidateNavigationPropertyExp(NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, PropertyNameExp const& exp, NavigationPropertyMap const& propMap, ECSqlPrepareContext::ExpScope const& scope)
-    {
-    if (!propMap.IsSupportedInECSql(true, &ctx.GetECDb()))
-        return ECSqlStatus::InvalidECSql;
-
-    if (scope.GetECSqlType() == ECSqlType::Update && scope.GetExp().GetType() == Exp::Type::AssignmentList)
-        {
-        ctx.GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "NavigationProperties cannot be used in the assignment clause of an ECSQL UPDATE statement. Expression: %s",
-                                                               exp.ToECSql().c_str());
-        return ECSqlStatus::InvalidECSql;
-        }
-
-    return ECSqlStatus::Success;
-    }
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                         08/2013
