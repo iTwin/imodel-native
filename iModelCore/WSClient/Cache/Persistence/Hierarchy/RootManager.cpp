@@ -2,7 +2,7 @@
  |
  |     $Source: Cache/Persistence/Hierarchy/RootManager.cpp $
  |
- |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 
@@ -256,7 +256,6 @@ bool holding
         {
         return ERROR;
         }
-
     if (SUCCESS != LinkExistingNodeToRoot(rootKey, info.GetInfoKey(), holding))
         {
         return ERROR;
@@ -280,7 +279,6 @@ bool holding
         {
         return ERROR;
         }
-
     if (SUCCESS != LinkExistingNodeToRoot(rootKey, info.GetInfoKey(), holding))
         {
         return ERROR;
@@ -345,12 +343,10 @@ BentleyStatus RootManager::UnlinkNodeFromRoot(CacheRootKeyCR rootKey, CacheNodeK
         {
         return SUCCESS;
         }
-
     if (SUCCESS != m_hierarchyManager.RemoveChildFromParent(rootKey, nodeKey, m_rootHoldingRelationshipClass))
         {
         return ERROR;
         }
-
     return SUCCESS;
     }
 
@@ -497,7 +493,6 @@ CacheRootKey RootManager::CreateRoot(Utf8StringCR rootName, CacheRootPersistence
 
     if (SUCCESS != m_rootInserter.Get().Insert(newRoot))
         {
-        BeAssert(false && "Inserting cache root");
         return CacheRootKey();
         }
 
@@ -511,11 +506,8 @@ BentleyStatus RootManager::RemoveRoot(ECInstanceId rootId)
     {
     ECInstanceKey root(m_rootClass->GetId(), rootId);
 
-    if (SUCCESS != m_hierarchyManager.RemoveAllChildrenFromParent(root, m_rootWeakRelationshipClass))
-        {
-        return ERROR;
-        }
-    if (SUCCESS != m_hierarchyManager.DeleteInstance(root))
+    if (SUCCESS != m_hierarchyManager.RemoveAllChildrenFromParent(root, m_rootWeakRelationshipClass) ||
+        SUCCESS != m_hierarchyManager.DeleteInstance(root))
         {
         return ERROR;
         }
@@ -528,7 +520,7 @@ BentleyStatus RootManager::RemoveRoot(ECInstanceId rootId)
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus RootManager::RemoveRoot(Utf8StringCR rootName)
     {
-    return RemoveRoots(Utf8PrintfString("[" CLASS_Root_PROPERTY_Name "] = '%s'", rootName.c_str()));
+    return RemoveRoots("[" CLASS_Root_PROPERTY_Name "] = ?", rootName.c_str());
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -536,7 +528,7 @@ BentleyStatus RootManager::RemoveRoot(Utf8StringCR rootName)
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus RootManager::RemoveRootsByPrefix(Utf8StringCR rootPrefix)
     {
-    return RemoveRoots(Utf8PrintfString("[" CLASS_Root_PROPERTY_Name "] LIKE '%s%%'", rootPrefix.c_str()));
+    return RemoveRoots("[" CLASS_Root_PROPERTY_Name "] LIKE ?", (rootPrefix + "%").c_str());
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -550,18 +542,24 @@ BentleyStatus RootManager::RemoveAllRoots()
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    10/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus RootManager::RemoveRoots(Utf8CP whereClause)
+BentleyStatus RootManager::RemoveRoots(Utf8CP whereClause, Utf8CP parameter)
     {
     Utf8String ecsql = "SELECT ECInstanceId FROM ONLY " ECSql_Root " ";
     if (nullptr != whereClause)
         {
-        ecsql += "WHERE " + Utf8String(whereClause);
+        ecsql += "WHERE ";
+        ecsql += whereClause;
         }
 
     ECSqlStatement statement;
     if (SUCCESS != m_dbAdapter.PrepareStatement(statement, ecsql))
         {
         return ERROR;
+        }
+
+    if (nullptr != parameter)
+        {
+        statement.BindText(1, parameter, IECSqlBinder::MakeCopy::No);
         }
 
     DbResult status;

@@ -2,7 +2,7 @@
  |
  |     $Source: Cache/Persistence/Hierarchy/RootManager.h $
  |
- |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 
@@ -61,7 +61,7 @@ struct RootManager
         ECInstanceId FindRootECInstanceId(Utf8StringCR rootName);
         CacheRootKey CreateRoot(Utf8StringCR rootName, CacheRootPersistence persistence = CacheRootPersistence::Default);
         BentleyStatus RemoveRoot(ECInstanceId rootId);
-        BentleyStatus RemoveRoots(Utf8CP whereClause = nullptr);
+        BentleyStatus RemoveRoots(Utf8CP whereClause = nullptr, Utf8CP parameter = nullptr);
         BentleyStatus CacheFloatingInstance(ObjectIdCR objectId, ObjectInfoR info, const rapidjson::Value* instanceJson);
         void ReadRootInstance(Utf8StringCR rootName, JsonValueR rootInstanceJsonOut);
         ECRelationshipClassCP GetRelClass(bool holding);
