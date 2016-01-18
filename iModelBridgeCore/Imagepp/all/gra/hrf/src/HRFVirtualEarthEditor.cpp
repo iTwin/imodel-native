@@ -27,7 +27,7 @@
 //----------------------------------------------------------------------------------------
 void VirtualEarthTileQuery::_Run()
     {
-    HttpSession session;        //&&MM must keep that alive. one per thread.
+    HttpSession& session = m_rasterFile.GetThreadLocalHttpSession();
     HttpRequest request(m_tileUri.c_str());
     HttpResponsePtr response;
     if(HttpRequestStatus::Success != session.Request(response, request) || response.IsNull() || response->GetBody().empty())

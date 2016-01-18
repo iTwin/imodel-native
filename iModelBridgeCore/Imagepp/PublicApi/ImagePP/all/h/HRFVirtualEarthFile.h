@@ -21,6 +21,8 @@ class HRPPixelType;
 struct WorkerPool;
 struct VirtualEarthTileQuery;
 class HRFVirtualEarthFile;
+struct ThreadLocalHttp;
+struct HttpSession;
 
 // The most common ImagerySet that can be used with HRFVirtualEarthFile::ComposeURL. 
 // See Bing Maps REST API(http://msdn.microsoft.com/en-us/library/ff701721.aspx/)
@@ -156,6 +158,9 @@ private:
 
     WorkerPool&         GetWorkerPool();
     std::unique_ptr<WorkerPool> m_pWorkerPool;
+
+    HttpSession&        GetThreadLocalHttpSession();
+    std::unique_ptr<ThreadLocalHttp> m_threadLocalHttp;
 
     std::map<uint64_t, RefCountedPtr<VirtualEarthTileQuery>> m_tileQueryMap;
 
