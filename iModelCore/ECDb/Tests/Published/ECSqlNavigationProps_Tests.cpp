@@ -81,8 +81,8 @@ TEST_F(ECSqlNavigationPropertyTestFixture, ECSqlSupport)
     AssertPrepare("INSERT INTO ts.B (PB,AParent) VALUES(123,?)", true, "NavProp with single related instance is expected to be supported.");
     AssertPrepare("INSERT INTO ts.D (PD,CParent) VALUES(123,?)", false, "NavProp with link table relationship is not supported.");
 
-    AssertPrepare("UPDATE ONLY ts.B SET AParent=?", false, "Updating NavProp is not supported.");
-    AssertPrepare("UPDATE ONLY ts.D SET CParent=?", false, "Updating NavProp is not supported.");
+    AssertPrepare("UPDATE ONLY ts.B SET AParent=?", true, "Updating NavProp with end table rel is supported.");
+    AssertPrepare("UPDATE ONLY ts.D SET CParent=?", false, "Updating NavProp with link table rel is not supported.");
     }
 
 //---------------------------------------------------------------------------------------
