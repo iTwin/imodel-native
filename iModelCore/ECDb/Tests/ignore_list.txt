@@ -41,6 +41,7 @@ ECSqlDeleteTestFramework.WhereRelationshipWithAdditionalPropsTests
 ECSqlSelectTestFramework.WhereRelationshipWithAdditionalPropsTests
 ECSqlUpdateTestFramework.WhereRelationshipWithAdditionalPropsTests
 
+TFS#359449 (Affan)
 ECSqlNavigationPropertyTestFixture.SingleInstanceNavProp_ForeignKeyMappingWithJoinedTable
 
 #TFS357967
