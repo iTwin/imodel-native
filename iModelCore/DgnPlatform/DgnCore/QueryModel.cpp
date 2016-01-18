@@ -313,21 +313,18 @@ bool QueryModel::Processor::Query(StopWatch& watch)
         filter.InitializeSecondaryTest(m_params.m_secondaryVolume, m_params.m_secondaryHitLimit);
 
     m_results = new Results();
-
     if (m_params.m_highPriorityOnly)
         {
         SearchIdSet(*m_params.m_highPriority, filter);
         }
     else
         {
-        SearchRangeTree(filter);
-        m_results->m_reachedMaxElements = ((uint32_t)filter.m_occlusionScores.size() >= m_params.m_plan.m_targetNumElements);
+        if (!SearchRangeTree(filter))
+            return false;
         }
 
-    if (m_dbStatus != BE_SQLITE_DONE)
-        return false;
-
-    DEBUG_PRINTF("loading elements");
+    m_results->m_needsProgressive = filter.m_needsProgressive;
+    DEBUG_PRINTF("loading elements, progressive=%d", m_results->m_needsProgressive);
     LoadElements(filter.m_secondaryFilter.m_occlusionScores, m_results->m_closeElements);
     LoadElements(filter.m_occlusionScores, m_results->m_elements);
 
@@ -376,7 +373,7 @@ void QueryModel::Processor::SearchIdSet(DgnElementIdSet& idList, Filter& filter)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void QueryModel::Processor::SearchRangeTree(Filter& filter)
+bool QueryModel::Processor::SearchRangeTree(Filter& filter)
     {
     CachedStatementPtr rangeStmt;
     GetModel().GetDgnDb().GetCachedStatement(rangeStmt, m_params.m_searchSql.c_str());
@@ -384,20 +381,22 @@ void QueryModel::Processor::SearchRangeTree(Filter& filter)
     static_cast<QueryViewControllerCP>(&m_params.m_vp.GetViewController())->BindModelAndCategory(*rangeStmt, filter);
 
     uint64_t endTime = BeTimeUtilities::QueryMillisecondsCounter() + m_params.m_plan.GetTimeout();
-    while(BE_SQLITE_ROW == (m_dbStatus=rangeStmt->Step()))
-        {
-        filter.AcceptElement(rangeStmt->GetValueId<DgnElementId>(0));
-        if (filter.CheckAbort())
-            return;
 
+    while (BE_SQLITE_ROW == rangeStmt->Step())
+        {
+        if (filter.CheckAbort())
+            return false;
+
+        filter.AcceptElement(rangeStmt->GetValueId<DgnElementId>(0));
         if (filter.GetCount() >= m_params.m_plan.GetMinElements() && (BeTimeUtilities::QueryMillisecondsCounter() > endTime))
             {
             DEBUG_ERRORLOG("Query timeout");
-            m_dbStatus = BE_SQLITE_DONE;
-            return;
+            filter.m_needsProgressive = true;
+            return true;
             }
     
         }
+    return true;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -564,6 +563,7 @@ void QueryModel::Filter::AcceptElement(DgnElementId elementId)
                 {
                 m_scorer.SetTestLOD(true); // now that we've found a minimum number of elements, start skipping small ones
                 m_occlusionScores.erase(m_occlusionScores.begin());
+                m_needsProgressive = true;
                 }
             else
                 m_occlusionMapCount++;

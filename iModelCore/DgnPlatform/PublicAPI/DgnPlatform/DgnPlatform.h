@@ -757,28 +757,16 @@ struct UpdatePlan
 
     struct Query
     {
-        struct Minimum
-        {
-            bool      m_enable = false;
-            double    m_seconds = 1.;        // check for minimum number of elements after this time during query (seconds)
-            uint64_t  m_timeout;
-            void Enable(bool val) {m_enable=val;}
-            void SetSeconds(double seconds) {m_seconds=seconds;}
-        };
-
-        Minimum     m_minimum;
-        uint32_t    m_maxTime = 1000;    // maximum time query should run (seconds)
+        uint32_t    m_maxTime = 2000;    // maximum time query should run (milliseconds)
         double      m_minPixelSize = 40;
         bool        m_wait = false;
-        uint32_t    m_minElements = 300;
         uint32_t    m_maxElements = 50000;
         mutable uint32_t m_delayAfter = 0;
         mutable uint32_t m_targetNumElements;
 
         uint32_t GetTimeout() const {return m_maxTime;}
-        uint32_t GetMinElements() const {return m_minElements;}
+        uint32_t GetMinElements() const {return m_maxElements/2;}
         uint32_t GetMaxElements() const {return m_maxElements;}
-        void SetMinElements(uint32_t val) {m_minElements = val;}
         void SetMaxElements(uint32_t val) {m_maxElements = val;}
         double GetMinimumSizePixels() const {return m_minPixelSize;}
         void SetMinimumSizePixels(double val) {m_minPixelSize=val;}
@@ -788,7 +776,6 @@ struct UpdatePlan
         bool WantWait() const {return m_wait;}
         uint32_t GetDelayAfter() const {return m_delayAfter;}
         void SetDelayAfter (uint32_t val) const {m_delayAfter=val;}
-        Minimum& GetMinimum() {return m_minimum;}
     };
 
     struct Scene

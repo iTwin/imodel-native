@@ -438,8 +438,7 @@ void QueryViewController::_DrawView(ViewContextR context)
             geomModel->AddGraphicsToScene(context);
         }
 
-    //  We count on progressive display to draw zero length strings and points that are excluded by LOD filtering in the occlusion step.
-    if ((DrawPurpose::CreateScene == context.GetDrawPurpose()) && (results->m_reachedMaxElements) && !m_noQuery)
+    if ((DrawPurpose::CreateScene == context.GetDrawPurpose()) && results->m_needsProgressive && !m_noQuery)
         {
         m_needProgressiveDisplay = true;
         DgnViewportP vp = context.GetViewport();

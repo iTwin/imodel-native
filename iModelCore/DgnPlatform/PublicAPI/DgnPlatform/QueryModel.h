@@ -124,6 +124,7 @@ struct QueryModel : SpatialModel
 
         bool                    m_passedPrimaryTest;
         bool                    m_passedSecondaryTest;
+        bool                    m_needsProgressive = false;
         bool                    m_useSecondary;
         uint32_t                m_hitLimit;
         uint32_t                m_occlusionMapCount;
@@ -191,12 +192,12 @@ struct QueryModel : SpatialModel
        friend struct Processor;
 
     private:
-        Results() : m_reachedMaxElements(false), m_drawnBeforePurge(0) { }
+        Results() : m_needsProgressive(false), m_drawnBeforePurge(0) { }
 
     public:
         bvector<DgnElementCPtr> m_elements;
         bvector<DgnElementCPtr> m_closeElements;
-        bool     m_reachedMaxElements;
+        bool     m_needsProgressive;
         uint32_t m_drawnBeforePurge;
 
         uint32_t GetCount() const {return (uint32_t) m_elements.size();}
@@ -229,13 +230,12 @@ struct QueryModel : SpatialModel
         };
 
     protected:
-        Params              m_params;
-        ResultsPtr          m_results;
-        BeSQLite::DbResult  m_dbStatus = BeSQLite::BE_SQLITE_ERROR;
+        Params      m_params;
+        ResultsPtr  m_results;
 
         void ProcessRequest();
         void SearchIdSet(DgnElementIdSet& idList, Filter& filter);
-        void SearchRangeTree(Filter& filter);
+        bool SearchRangeTree(Filter& filter);
         bool LoadElements(OcclusionScores& scores, bvector<DgnElementCPtr>& elements); // return false if we halted before finishing iteration
 
     public:
