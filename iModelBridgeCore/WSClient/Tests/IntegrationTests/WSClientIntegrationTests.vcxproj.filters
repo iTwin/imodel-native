@@ -57,6 +57,9 @@
     <ClCompile Include="Configuration\BuddiClientTests.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Cache\ECDbAdapterTests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Repository\WorkspaceTests.h">
@@ -99,6 +102,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Configuration\BuddiClientTests.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Cache\ECDbAdapterTests.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

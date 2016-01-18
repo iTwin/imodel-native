@@ -189,12 +189,6 @@ LockStatus DgnDbLocks::_QueryRevisionId(WStringR, LockableId)
     return LockStatus::Success;
     }
 
-LockStatus DgnDbLocks::_SetRevisionId(LockableIdSet const&, WCharCP)
-    {
-    BeAssert(false && "Unimplemented");
-    return LockStatus::Success;
-    }
-
 
 DgnDbLocks::DgnDbLocks(WebServices::ClientInfoPtr clientInfo)
     {

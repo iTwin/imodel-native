@@ -1,0 +1,232 @@
+/*--------------------------------------------------------------------------------------+
+|
+|     $Source: Tests/IntegrationTests/Cache/ECDbAdapterTests.cpp $
+|
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|
++--------------------------------------------------------------------------------------*/
+
+#include "ECDbAdapterTests.h"
+
+#include <WebServices/Cache/Util/ECDbAdapter.h>
+
+// StrictMock is not portable
+#if defined (BENTLEY_WIN32)
+
+using namespace ::testing;
+USING_NAMESPACE_BENTLEY_WEBSERVICES
+
+#define INSERT_INSTANCE(db, ecClassCP, keyOut) \
+    ASSERT_EQ(SUCCESS, JsonInserter(db, *ecClassCP).Insert(keyOut, Json::Value()));
+
+#define INSERT_RELATIONSHIP(db, ecRelClassCP, source, target, rel) \
+    ASSERT_TRUE((rel = ECDbAdapter(db).RelateInstances(ecRelClassCP, source, target)).IsValid());
+
+#define CREATE_MockECDbAdapterDeleteListener(listener) \
+    StrictMock<MockECDbAdapterDeleteListener> listener; \
+    ON_CALL(listener, OnBeforeDelete(_, _, _)).WillByDefault(Return(SUCCESS));
+
+#define EXPECT_INSTANCE_EXISTS(db, key) \
+    auto foundInstance = ECDbAdapter(*db).FindInstance( \
+        db->Schemas().GetECClass(key.GetECClassId()), \
+        Utf8PrintfString("ECInstanceId = %llu", key.GetECInstanceId().GetValue())); \
+    EXPECT_TRUE(foundInstance.IsValid()); \
+
+#if 1
+#define EXPECT_CALL_OnBeforeDelete(listener, db, instanceKey) \
+    EXPECT_CALL(listener, OnBeforeDelete(Ref(*ECDbAdapter(*db).GetECClass(instanceKey)), instanceKey.GetECInstanceId(), _)) \
+    .WillOnce(Invoke([&](ECClassCR ecClass, ECInstanceId id, bset<ECInstanceKey>&) \
+    { \
+    /* Check if instance was not deleted yet */ \
+    EXPECT_INSTANCE_EXISTS(db, instanceKey); \
+    return SUCCESS; \
+    }));
+#else
+void EXPECT_CALL_OnBeforeDelete(MockECDbAdapterDeleteListener& listener, std::shared_ptr<ObservableECDb> db, ECInstanceKey instanceKey)
+    {
+    EXPECT_CALL(listener, OnBeforeDelete(Ref(*ECDbAdapter(*db).GetECClass(instanceKey)), instanceKey.GetECInstanceId(), _))
+        .WillOnce(Invoke([&] (ECClassCR ecClass, ECInstanceId id, bset<ECInstanceKey>&)
+        {
+        /* Check if instance was not deleted yet */
+        auto foundInstance = ECDbAdapter(*db).FindInstance(&ecClass, Utf8PrintfString("ECInstanceId = %llu", id.GetValue()));
+        EXPECT_TRUE(foundInstance.IsValid());
+        return SUCCESS;
+        }));
+    }
+#endif
+
+std::shared_ptr<ObservableECDb> ECDbAdapterTests::CreateTestDb(ECSchemaPtr schema)
+    {
+    auto db = std::make_shared<ObservableECDb>();
+
+    BeFileName path;
+    path = StubFilePath("ecdbAdapterTest.ecdb");
+    path = BeFileName(L":memory:");
+    path.BeDeleteFile();
+
+    EXPECT_EQ(BE_SQLITE_OK, db->CreateNewDb(path.GetNameUtf8().c_str()));
+
+    auto cache = ECSchemaCache::Create();
+    cache->AddSchema(*schema);
+    EXPECT_EQ(SUCCESS, db->Schemas().ImportECSchemas(*cache));
+
+    return db;
+    }
+
+TEST_F(ECDbAdapterTests, ECDbBrokenCardinality)
+    {
+    auto schema = ParseSchema(R"xml(
+        <ECSchema schemaName="TestSchema" nameSpacePrefix="TS" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+            <ECClass typeName="A" />
+            <ECClass typeName="B" />
+            <ECClass typeName="C" />
+            <ECRelationshipClass typeName="Rel" isDomainClass="True" strength="holding" >
+                <Source cardinality="(0,N)" polymorphic="False">
+                    <Class class="A" />
+                </Source>
+                <Target cardinality="(1,1)" polymorphic="False">
+                    <Class class="B" />
+                    <Class class="C" />
+                </Target>
+            </ECRelationshipClass>
+        </ECSchema>)xml");
+
+    // Target cardinality (x,N) makes this work fine, (x,1) causes problems
+
+    auto db = CreateTestDb(schema);
+    ECDbAdapter adapter(*db);
+
+    ECInstanceKey a, b, rel;
+    INSERT_INSTANCE(*db, adapter.GetECClass("TestSchema.A"), a);
+    INSERT_INSTANCE(*db, adapter.GetECClass("TestSchema.B"), b);
+    INSERT_RELATIONSHIP(*db, adapter.GetECRelationshipClass("TestSchema.Rel"), a, b, rel);
+    db->SaveChanges();
+
+    ECInstanceFinder finder(*db);
+    ECInstanceFinder::FindOptions options(ECInstanceFinder::RelatedDirection_HeldChildren, UINT8_MAX);
+
+    ECInstanceKeyMultiMap related, seed;
+    seed.Insert(a.GetECClassId(), a.GetECInstanceId());
+
+    EXPECT_EQ(SUCCESS, finder.FindInstances(related, seed, options));
+    EXPECT_EQ(2, related.size());
+    }
+
+TEST_F(ECDbAdapterTests, ECDbDeleteRelationshio_ShouldNotDeleteEnds1)
+    {
+    auto schema = ParseSchema(R"xml(
+        <ECSchema schemaName="TestSchema" nameSpacePrefix="TS" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+            <ECClass typeName="TestClass" />
+            <ECRelationshipClass typeName="HoldingRel" strength="holding">
+                <Source cardinality="(0,N)"><Class class="TestClass" /></Source>
+                <Target cardinality="(0,N)"><Class class="TestClass" /></Target>
+            </ECRelationshipClass>
+        </ECSchema>)xml");
+    auto db = CreateTestDb(schema);
+    ECDbAdapter adapter(*db);
+
+    auto ecClass = adapter.GetECClass("TestSchema.TestClass");
+    auto holdingRelClass = adapter.GetECRelationshipClass("TestSchema.HoldingRel");
+
+    ECInstanceKey parent, parent2, child;
+    INSERT_INSTANCE(*db, ecClass, parent);
+    INSERT_INSTANCE(*db, ecClass, parent2);
+    INSERT_INSTANCE(*db, ecClass, child);
+
+    auto rel = ECDbAdapter(*db).RelateInstances(holdingRelClass, parent, child);
+    ASSERT_TRUE(rel.IsValid());
+    auto rel2 = ECDbAdapter(*db).RelateInstances(holdingRelClass, parent2, child);
+    ASSERT_TRUE(rel.IsValid());
+
+    ECSqlStatement statement;
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(*db, "DELETE FROM ONLY [TestSchema].[HoldingRel] WHERE ECInstanceId = ?"));
+
+    statement.BindId(1, rel.GetECInstanceId());
+    ASSERT_EQ(BE_SQLITE_DONE, statement.Step());
+
+    auto notDeletedInstances = adapter.FindInstances(ecClass);
+    EXPECT_EQ(3, notDeletedInstances.size());
+    EXPECT_CONTAINS(notDeletedInstances, parent.GetECInstanceId());
+    EXPECT_CONTAINS(notDeletedInstances, parent2.GetECInstanceId());
+    EXPECT_CONTAINS(notDeletedInstances, child.GetECInstanceId());
+    notDeletedInstances = adapter.FindInstances(holdingRelClass);
+    EXPECT_EQ(1, notDeletedInstances.size());
+    }
+
+TEST_F(ECDbAdapterTests, ECDbDeleteRelationshio_ShouldNotDeleteEnds2)
+    {
+    auto schema = ParseSchema(R"xml(
+        <ECSchema schemaName="TestSchema" nameSpacePrefix="TS" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+            <ECClass typeName="TestClass" />
+            <ECRelationshipClass typeName="HoldingRel" strength="holding">
+                <Source cardinality="(0,N)"><Class class="TestClass" /></Source>
+                <Target cardinality="(0,2)"><Class class="TestClass" /></Target>
+            </ECRelationshipClass>
+        </ECSchema>)xml");
+    auto db = CreateTestDb(schema);
+    ECDbAdapter adapter(*db);
+
+    auto ecClass = adapter.GetECClass("TestSchema.TestClass");
+    auto holdingRelClass = adapter.GetECRelationshipClass("TestSchema.HoldingRel");
+
+    ECInstanceKey parent, child;
+    INSERT_INSTANCE(*db, ecClass, parent);
+    INSERT_INSTANCE(*db, ecClass, child);
+
+    auto rel = ECDbAdapter(*db).RelateInstances(holdingRelClass, parent, child);
+    ASSERT_TRUE(rel.IsValid());
+
+    ECSqlStatement statement;
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(*db, "DELETE FROM ONLY [TestSchema].[HoldingRel] WHERE ECInstanceId = ?"));
+
+    statement.BindId(1, rel.GetECInstanceId());
+    ASSERT_EQ(BE_SQLITE_DONE, statement.Step());
+
+    auto notDeletedInstances = adapter.FindInstances(ecClass);
+    EXPECT_EQ(2, notDeletedInstances.size());
+    EXPECT_CONTAINS(notDeletedInstances, parent.GetECInstanceId());
+    EXPECT_CONTAINS(notDeletedInstances, child.GetECInstanceId());
+    notDeletedInstances = adapter.FindInstances(holdingRelClass);
+    EXPECT_EQ(0, notDeletedInstances.size());
+    }
+
+TEST_F(ECDbAdapterTests, ECDbDeleteRelationshio_ShouldNotDeleteEnds3)
+    {
+    auto schema = ParseSchema(R"xml(
+        <ECSchema schemaName="TestSchema" nameSpacePrefix="TS" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+            <ECClass typeName="A" />
+            <ECClass typeName="B" />
+            <ECRelationshipClass typeName="HoldingRel" strength="holding">
+                <Source cardinality="(0,N)"><Class class="A" /></Source>
+                <Target cardinality="(0,N)"><Class class="B" /></Target>
+            </ECRelationshipClass>
+        </ECSchema>)xml");
+    auto db = CreateTestDb(schema);
+    ECDbAdapter adapter(*db);
+
+    auto ecClassA = adapter.GetECClass("TestSchema.A");
+    auto ecClassB = adapter.GetECClass("TestSchema.B");
+    auto holdingRelClass = adapter.GetECRelationshipClass("TestSchema.HoldingRel");
+
+    ECInstanceKey parent, child;
+    INSERT_INSTANCE(*db, ecClassA, parent);
+    INSERT_INSTANCE(*db, ecClassB, child);
+
+    auto rel = ECDbAdapter(*db).RelateInstances(holdingRelClass, parent, child);
+    ASSERT_TRUE(rel.IsValid());
+
+    ECSqlStatement statement;
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(*db, "DELETE FROM ONLY [TestSchema].[HoldingRel] WHERE ECInstanceId = ?"));
+
+    statement.BindId(1, rel.GetECInstanceId());
+    ASSERT_EQ(BE_SQLITE_DONE, statement.Step());
+
+    auto notDeletedInstances = adapter.FindInstances(ecClassA);
+    EXPECT_EQ(1, notDeletedInstances.size());
+    notDeletedInstances = adapter.FindInstances(ecClassB);
+    EXPECT_EQ(1, notDeletedInstances.size());
+    notDeletedInstances = adapter.FindInstances(holdingRelClass);
+    EXPECT_EQ(0, notDeletedInstances.size());
+    }
+
+#endif
