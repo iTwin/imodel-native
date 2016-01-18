@@ -92,14 +92,14 @@ DgnDbServerError::DgnDbServerError(WSErrorCR error)
     {
     m_message = error.GetMessage();
     m_description = error.GetDescription();
-    auto wsErrorId = error.GetId();
-    if (WSError::Id::Unknown == wsErrorId)
+    Utf8StringCR customId = error.GetCustomId();
+    if (customId.StartsWith ("DgnDbServer."))
         {
-        m_id = ErrorIdFromString(error.GetCustomId());
+        m_id = ErrorIdFromString(customId);
         }
     else
         {
-        m_id = ErrorIdFromWSError(error);
+        m_id = ErrorIdFromWSError(error.GetId());
         }
     }
 
