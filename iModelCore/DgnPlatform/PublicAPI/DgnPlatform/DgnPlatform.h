@@ -595,6 +595,7 @@ struct Frustum
     void Translate(DVec3dCR offset) {for (auto& pt : m_pts) pt.Add(offset);}
     Frustum TransformBy(TransformCR trans) {Frustum out; trans.Multiply(out.m_pts, m_pts, 8); return out;}
     DRange3d ToRange() const {DRange3d range; range.InitFrom(m_pts, 8); return range;}
+    DGNPLATFORM_EXPORT void ScaleAboutCenter(double scale);
     void Invalidate() {memset(this, 0, sizeof(*this));}
     bool operator==(Frustum const& rhs) const {return 0==memcmp(m_pts, rhs.m_pts, sizeof(*this));}
     bool operator!=(Frustum const& rhs) const {return !(*this == rhs);}
@@ -759,14 +760,17 @@ struct UpdatePlan
     {
         uint32_t    m_maxTime = 2000;    // maximum time query should run (milliseconds)
         double      m_minPixelSize = 40;
+        double      m_frustumScale = 1.25;
         bool        m_wait = false;
+        uint32_t    m_minElements = 300;
         uint32_t    m_maxElements = 50000;
         mutable uint32_t m_delayAfter = 0;
         mutable uint32_t m_targetNumElements;
 
         uint32_t GetTimeout() const {return m_maxTime;}
-        uint32_t GetMinElements() const {return m_maxElements/2;}
+        uint32_t GetMinElements() const {return m_minElements;}
         uint32_t GetMaxElements() const {return m_maxElements;}
+        void SetMinjElements(uint32_t val) {m_minElements = val;}
         void SetMaxElements(uint32_t val) {m_maxElements = val;}
         double GetMinimumSizePixels() const {return m_minPixelSize;}
         void SetMinimumSizePixels(double val) {m_minPixelSize=val;}

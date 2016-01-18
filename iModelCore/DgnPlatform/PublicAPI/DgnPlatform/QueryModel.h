@@ -28,9 +28,9 @@ struct OcclusionScorer
     bool        m_testLOD;
     void SetTestLOD(bool val) {m_testLOD=val;}
     void InitForViewport(DgnViewportCR viewport, double minimumSizePixels);
-    bool ComputeEyeSpanningRangeOcclusionScore(double* score, DPoint3dCP rangeCorners, bool doFrustumCull);
+    bool ComputeEyeSpanningRangeOcclusionScore(double* score, DPoint3dCP rangeCorners);
     bool ComputeNPC(DPoint3dR npcOut, DPoint3dCR localIn);
-    bool ComputeOcclusionScore(double* score, bool& overlap, bool& spansEyePlane, DPoint3dCP localCorners, bool doFrustumCull);
+    bool ComputeOcclusionScore(double* score, bool& overlap, bool& spansEyePlane, DPoint3dCP localCorners);
 };
 
 //=======================================================================================
@@ -68,7 +68,7 @@ struct RTreeFilter : RTreeTester
     bool AllPointsClippedByOnePlane(ConvexClipPlaneSetCR cps, size_t nPoints, DPoint3dCP points) const;
     void SetClipVector(ClipVectorR clip) {m_clips = &clip;}
     void SetFrustum(FrustumCR);
-    void SetViewport(DgnViewportCR, double minimumSizeScreenPixels);
+    void SetViewport(DgnViewportCR, double minimumSizeScreenPixels, double frustumScale);
     bool SkewTest(BeSQLite::RTree3dValCP);
     RTreeFilter(DgnElementIdSet const* exclude) {m_exclude=exclude;}
     };
@@ -175,10 +175,10 @@ struct QueryModel : SpatialModel
         uint32_t       m_batchSize = 0;
         bool           m_setTimeout = false;
         BeSQLite::CachedStatementPtr m_rangeStmt;
-        ProgressiveFilter(DgnViewportCR vp, QueryModelR queryModel, DgnElementIdSet const* exclude, uint64_t maxMemory, BeSQLite::CachedStatement* stmt)
+        ProgressiveFilter(DgnViewportCR vp, QueryModelR queryModel, DgnElementIdSet const* exclude, uint64_t maxMemory, BeSQLite::CachedStatement* stmt, double minPixelSize)
             : AllElementsFilter(queryModel, exclude, maxMemory), m_rangeStmt(stmt)
             {
-            SetViewport(vp, 60.0);
+            SetViewport(vp, minPixelSize, 1.0);
             }
 
         virtual Completion _Process(ViewContextR context, uint32_t batchSize) override;
@@ -237,10 +237,11 @@ struct QueryModel : SpatialModel
         void SearchIdSet(DgnElementIdSet& idList, Filter& filter);
         bool SearchRangeTree(Filter& filter);
         bool LoadElements(OcclusionScores& scores, bvector<DgnElementCPtr>& elements); // return false if we halted before finishing iteration
+        void DoQuery(StopWatch&);
 
     public:
         Processor(Params const& params) : m_params(params) {}
-        bool Query(StopWatch&);
+        void Query(StopWatch&);
         uint32_t GetDelayAfter() {return m_params.m_plan.GetDelayAfter();}
         QueryModelR GetModel() const {return m_params.m_model;}
         bool IsForModel(QueryModelCR model) const {return &m_params.m_model == &model;}

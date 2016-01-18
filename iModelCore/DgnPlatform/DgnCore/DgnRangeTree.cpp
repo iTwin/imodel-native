@@ -880,7 +880,7 @@ void OcclusionScorer::InitForViewport(DgnViewportCR viewport, double minimumSize
 * Compute Occlusion score for a range that crosses the eye plane.
 * @bsimethod                                                    RayBentley      01/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool OcclusionScorer::ComputeEyeSpanningRangeOcclusionScore(double* score, DPoint3dCP rangeCorners, bool doFrustumCull)
+bool OcclusionScorer::ComputeEyeSpanningRangeOcclusionScore(double* score, DPoint3dCP rangeCorners)
     {
     bool    anyInside = false;
     double  s_eyeSpanningCameraLimit = 1.0E-3;
@@ -913,9 +913,6 @@ bool OcclusionScorer::ComputeEyeSpanningRangeOcclusionScore(double* score, DPoin
     if (!anyInside)
         return false;
 
-    if (doFrustumCull && (npcRange.high.x < 0.0 || npcRange.low.x > 1.0 || npcRange.high.y < 0.0 || npcRange.low.y > 1.0))
-         return false;
-
     if (nullptr == score)
         return  true;
 
@@ -940,7 +937,7 @@ bool OcclusionScorer::ComputeEyeSpanningRangeOcclusionScore(double* score, DPoin
 * Algorithm by: Dieter Schmalstieg and Erik Pojar - ACM Transactions on Graphics.
 * @bsimethod                                                    RayBentley      01/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool OcclusionScorer::ComputeOcclusionScore(double* score, bool& overlap, bool& spansEyePlane, DPoint3dCP localCorners, bool doFrustumCull)
+bool OcclusionScorer::ComputeOcclusionScore(double* score, bool& overlap, bool& spansEyePlane, DPoint3dCP localCorners)
     {
     // Note - This routine is VERY time critical - Most of the calls to the geomlib
     // functions have been replaced with inline code as VTune had showed them as bottlenecks.
@@ -1002,9 +999,6 @@ bool OcclusionScorer::ComputeOcclusionScore(double* score, bool& overlap, bool& 
         OUTSIDE_Back   = (0x00001 << 5),
         };
 
-    if (!doFrustumCull && 0.0 == m_lodFilterNPCArea && nullptr == score)
-        return true;
-
     uint32_t npcComputedMask = 0, zComputedMask = 0;
     uint32_t projectionIndex;
 
@@ -1045,9 +1039,6 @@ bool OcclusionScorer::ComputeOcclusionScore(double* score, bool& overlap, bool& 
 
     double  zTotal = 0.0;
 
-    // Note - Don't attempt to cull the front.back plane. - We can't do that as we're only looking at the frontmost vertices.
-    uint32_t outsideMask = OUTSIDE_Left | OUTSIDE_Right | OUTSIDE_Top | OUTSIDE_Bottom;
-
     overlap = false;
     for (uint32_t i=0, mask = 0x0001; i<nVertices; i++, mask <<= 1)
         {
@@ -1055,86 +1046,11 @@ bool OcclusionScorer::ComputeOcclusionScore(double* score, bool& overlap, bool& 
         if (0 == (mask & npcComputedMask) && !ComputeNPC(npcVertices[i], localCorners[cornerIndex]))
             {
             spansEyePlane = overlap = true;
-            return ComputeEyeSpanningRangeOcclusionScore(score, localCorners, doFrustumCull);
-            }
-
-        if (doFrustumCull)
-            {
-            if (npcVertices[i].x < 0.0)
-                {
-                overlap = true;
-                outsideMask &= ~OUTSIDE_Right;
-                npcVertices[i].x = 0.0;
-                }
-            else
-                {
-                outsideMask &= ~OUTSIDE_Left;
-                if (npcVertices[i].x > 1.0)
-                    {
-                    overlap = true;
-                    npcVertices[i].x = 1.0;
-                    }
-                else
-                    outsideMask &= ~OUTSIDE_Right;
-                }
-
-            if (npcVertices[i].y < 0.0)
-                {
-                overlap = true;
-                outsideMask &= ~OUTSIDE_Top;
-                npcVertices[i].y = 0.0;
-                }
-            else
-                {
-                outsideMask &= ~OUTSIDE_Bottom;
-                if (npcVertices[i].y > 1.0)
-                    {
-                    overlap = true;
-                    npcVertices[i].y = 1.0;
-                    }
-                else
-                    outsideMask &= ~OUTSIDE_Top;
-                }
+            return ComputeEyeSpanningRangeOcclusionScore(score, localCorners);
             }
 
         zTotal += (npcZ[cornerIndex] = npcVertices[i].z);
         zComputedMask |= (1 << cornerIndex);
-        }
-
-    if (doFrustumCull)
-        {
-        if (outsideMask)           // If all off in any of the X-Y directions return now.
-            return false;
-
-        // We need to cull front and back seperately as we have only looked at the front most vertices so far and front/back requires checking all 8 corners.
-
-        outsideMask = OUTSIDE_Back | OUTSIDE_Front;
-        for (uint32_t i=0, mask = 0x0001; i<8; i++, mask <<= 1)
-            {
-            if (0 == (zComputedMask & mask))
-                {
-                npcZ[i] = m_localToNpc.coff[2][0] * localCorners[i].x + m_localToNpc.coff[2][1] * localCorners[i].y + m_localToNpc.coff[2][2] * localCorners[i].z + m_localToNpc.coff[2][3];
-
-                if (m_cameraOn)
-                    npcZ[i] /= (m_localToNpc.coff[3][0] * localCorners[i].x + m_localToNpc.coff[3][1] * localCorners[i].y + m_localToNpc.coff[3][2] * localCorners[i].z + m_localToNpc.coff[3][3]);
-                 }
-
-            if (npcZ[i] < 0.0)
-                {
-                overlap = true;
-                outsideMask &= ~OUTSIDE_Back;
-                }
-            else
-                {
-                outsideMask &= ~OUTSIDE_Front;
-                if (npcZ[i] > 1.0)
-                    overlap = true;
-                else
-                    outsideMask &= ~OUTSIDE_Back;
-                }
-            }
-        if (outsideMask)                // Off in front or Back.
-            return false;
         }
 
     if (m_testLOD && 0.0 != m_lodFilterNPCArea)
@@ -1144,13 +1060,12 @@ bool OcclusionScorer::ComputeOcclusionScore(double* score, bool& overlap, bool& 
         //  and points.
         int        diagonalVertex = nVertices/2;
         DPoint3dR  diagonalNPC    = npcVertices[diagonalVertex];
-        bool       lodFilterOnly  = nullptr == score && !doFrustumCull;
 
         if (!ComputeNPC(npcVertices[0], localCorners[s_indexList[projectionIndex][0]]) ||
             !ComputeNPC(diagonalNPC,    localCorners[s_indexList[projectionIndex][diagonalVertex]]))
             {
             spansEyePlane = overlap = true;
-            return lodFilterOnly ? true : ComputeEyeSpanningRangeOcclusionScore(score, localCorners, doFrustumCull);
+            return ComputeEyeSpanningRangeOcclusionScore(score, localCorners);
             }
 
         DPoint3dR   npcCorner = npcVertices[nVertices/2];
@@ -1158,9 +1073,6 @@ bool OcclusionScorer::ComputeOcclusionScore(double* score, bool& overlap, bool& 
 
         if ((extent.x * extent.x + extent.y * extent.y) < m_lodFilterNPCArea)
             return false;
-
-        if (lodFilterOnly)
-            return true;
 
         npcComputedMask |= 1;
         npcComputedMask |= (1 << diagonalVertex);
@@ -1212,7 +1124,6 @@ bool OverlapScorer::ComputeScore(double* score, BeSQLite::RTree3dValCR testRange
 void RTreeFilter::SetFrustum(FrustumCR frustum)
     {
     DRange3d range = frustum.ToRange();
-
     m_boundingRange.FromRange(range);
 
     // get bounding range of front plane of polyhedron
@@ -1232,11 +1143,15 @@ void RTreeFilter::SetFrustum(FrustumCR frustum)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-void RTreeFilter::SetViewport(DgnViewportCR viewport, double minimumSizePixels)
+void RTreeFilter::SetViewport(DgnViewportCR viewport, double minimumSizePixels, double frustumScale)
     {
     m_doOcclusionScore = true;
     m_scorer.InitForViewport(viewport, minimumSizePixels);
     Frustum frust = viewport.GetFrustum(DgnCoordSystem::World, true);
+
+    if (1.0 != frustumScale)
+        frust.ScaleAboutCenter(frustumScale);
+
     SetFrustum(frust);
     }
 

@@ -49,6 +49,7 @@ void QueryModel::ResizeElementList(uint32_t newCount)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void QueryModel::RequestAbort(bool wait) 
     {
+    DgnDb::VerifyClientThread();
     SetAbortQuery(true);
 
     auto& queue = GetDgnDb().QueryQueue();
@@ -296,16 +297,15 @@ bool QueryModel::Processor::LoadElements(OcclusionScores& scores, bvector<DgnEle
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool QueryModel::Processor::Query(StopWatch& watch)
+void QueryModel::Processor::DoQuery(StopWatch& watch)
     {
-    DgnDb::VerifyQueryThread();
-
     watch.Start();
-    GetModel().SetAbortQuery(false);
+
+    GetModel().SetAbortQuery(false); // gets turned on by client thread
 
     DEBUG_PRINTF("Query started");
     Filter filter(GetModel(), m_params.m_plan.m_targetNumElements, m_params.m_highPriorityOnly ? nullptr : m_params.m_highPriority, m_params.m_neverDraw);
-    filter.SetViewport(m_params.m_vp, m_params.m_plan.m_minPixelSize);
+    filter.SetViewport(m_params.m_vp, m_params.m_plan.m_minPixelSize, m_params.m_plan.m_frustumScale);
     if (m_params.m_clipVector.IsValid())
         filter.SetClipVector(*m_params.m_clipVector);
 
@@ -320,7 +320,10 @@ bool QueryModel::Processor::Query(StopWatch& watch)
     else
         {
         if (!SearchRangeTree(filter))
-            return false;
+            {
+            DEBUG_PRINTF("Query aborted");
+            return;
+            }
         }
 
     m_results->m_needsProgressive = filter.m_needsProgressive;
@@ -330,12 +333,20 @@ bool QueryModel::Processor::Query(StopWatch& watch)
 
     m_params.m_model.m_updatedResults = m_results;
     DEBUG_PRINTF("Query completed, %f seconds", watch.GetCurrentSeconds());
-                
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   01/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void QueryModel::Processor::Query(StopWatch& watch)
+    {
+    DgnDb::VerifyQueryThread();
+    DoQuery(watch);
+
     // This is not strictly thread-safe. The worst that can happen is that the work thread reads false from it, or sets it to false, while the query thread sets it to true.
     // In that case we skip an update.
     // Alternative is to go through contortions to queue up a "heal viewport" task on the DgnClientFx work thread.
     m_params.m_vp.SetNeedsHeal();
-    return true;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -514,7 +525,7 @@ int QueryModel::Filter::_TestRTree(RTreeMatchFunction::QueryInfo const& info)
     BeAssert(m_passedPrimaryTest);
     bool overlap, spansEyePlane;
 
-    if (!m_scorer.ComputeOcclusionScore(&m_lastScore, overlap, spansEyePlane, localCorners, true))
+    if (!m_scorer.ComputeOcclusionScore(&m_lastScore, overlap, spansEyePlane, localCorners))
         {
         m_passedPrimaryTest = false;
         }
@@ -619,7 +630,7 @@ int QueryModel::AllElementsFilter::_TestRTree(RTreeMatchFunction::QueryInfo cons
         toLocalCorners(localCorners, pt);
 
         double score = 0.0;
-        if (m_doOcclusionScore && !m_scorer.ComputeOcclusionScore(&score, overlap, spansEyePlane, localCorners, true))
+        if (m_doOcclusionScore && !m_scorer.ComputeOcclusionScore(&score, overlap, spansEyePlane, localCorners))
             return BE_SQLITE_OK;
 
         info.m_score = info.m_maxLevel - info.m_level - score;

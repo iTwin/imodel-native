@@ -445,7 +445,7 @@ void QueryViewController::_DrawView(ViewContextR context)
         CachedStatementPtr rangeStmt;
         m_queryModel.GetDgnDb().GetCachedStatement(rangeStmt, _GetRTreeMatchSql(*context.GetViewport()).c_str());
 
-        QueryModel::ProgressiveFilter* filter = new QueryModel::ProgressiveFilter(*vp, m_queryModel, m_neverDrawn.empty() ? nullptr : &m_neverDrawn, maxMem, rangeStmt.get());
+        QueryModel::ProgressiveFilter* filter = new QueryModel::ProgressiveFilter(*vp, m_queryModel, m_neverDrawn.empty() ? nullptr : &m_neverDrawn, maxMem, rangeStmt.get(), 30.0);
         BindModelAndCategory(*rangeStmt, *filter);
 
         if (GetClipVector().IsValid())

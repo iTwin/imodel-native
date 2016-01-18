@@ -1207,3 +1207,19 @@ void DgnViewport::ChangeViewController(ViewControllerR viewController)
     SetupFromViewController();
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   01/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void Frustum::ScaleAboutCenter(double scale)
+    {
+    Frustum orig = *this;
+    double f = 0.5 * (1.0 + scale);
+    m_pts[NPC_000].Interpolate(orig.GetCorner(NPC_111), f, orig.GetCorner(NPC_000));
+    m_pts[NPC_100].Interpolate(orig.GetCorner(NPC_011), f, orig.GetCorner(NPC_100));
+    m_pts[NPC_010].Interpolate(orig.GetCorner(NPC_101), f, orig.GetCorner(NPC_010));
+    m_pts[NPC_110].Interpolate(orig.GetCorner(NPC_001), f, orig.GetCorner(NPC_110));
+    m_pts[NPC_001].Interpolate(orig.GetCorner(NPC_110), f, orig.GetCorner(NPC_001));
+    m_pts[NPC_101].Interpolate(orig.GetCorner(NPC_010), f, orig.GetCorner(NPC_101));
+    m_pts[NPC_011].Interpolate(orig.GetCorner(NPC_100), f, orig.GetCorner(NPC_011));
+    m_pts[NPC_111].Interpolate(orig.GetCorner(NPC_000), f, orig.GetCorner(NPC_111));
+    }
