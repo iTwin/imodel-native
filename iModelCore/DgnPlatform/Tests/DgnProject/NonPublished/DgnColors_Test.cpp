@@ -2,11 +2,12 @@
 |
 |  $Source: Tests/DgnProject/NonPublished/DgnColors_Test.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "DgnHandlersTests.h"
 #include <DgnPlatform/DgnTrueColor.h>
+#include <DgnPlatform/ColorUtil.h>
 
 /*---------------------------------------------------------------------------------**//**
 * @bsistruct                                                    Umar.Hayat   09/15
@@ -124,3 +125,33 @@ TEST_F(DgnColorTests, TrueColors)
     EXPECT_EQ(DgnDbStatus::WrongElement, updateStat);
     }
 
+#define VERIFY_RGB_HSV(R,G,B ,H,S,V) { \
+    HsvColorDef hsvColor = {H,S,V}; \
+    EXPECT_TRUE(ColorDef(R, G, B) == ColorUtil::FromHSV(hsvColor)); \
+    HsvColorDef toHsv =  ColorUtil::ToHSV(ColorDef(R, G, B)); \
+    EXPECT_TRUE(hsvColor.hue == toHsv.hue); \
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Umar.Hayat                   01/16
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DgnColorTests, HSVRGB_RoundTrip)
+    {
+    // Black
+    VERIFY_RGB_HSV(/*RGB*/0, 0, 0,/*HSV*/0, 0, 0);
+
+    // White
+    VERIFY_RGB_HSV(/*RGB*/255, 255, 255,/*HSV*/0, 0, 100);
+
+    // Red
+    VERIFY_RGB_HSV(/*RGB*/255, 255, 255,/*HSV*/0, 100, 100);
+
+    // Yellow
+    VERIFY_RGB_HSV(/*RGB*/255, 255, 0,/*HSV*/60, 100, 100);
+    
+    // Magenta
+    VERIFY_RGB_HSV(/*RGB*/255, 255, 0,/*HSV*/300, 100, 100);
+
+    // Gray
+    VERIFY_RGB_HSV(/*RGB*/128, 128, 128,/*HSV*/0, 0, 50);
+    }

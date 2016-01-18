@@ -244,6 +244,15 @@
     <ClCompile Include="NonPublished\ConfigurationManager_Test.cpp">
       <Filter>NonPublished</Filter>
     </ClCompile>
+    <ClCompile Include="Published\AnnotationFrame_Test.cpp">
+      <Filter>Published</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\ComponentModelBasicTest.cpp">
+      <Filter>Published</Filter>
+    </ClCompile>
+    <ClCompile Include="Performance\ComponentModel_PerfTest.cpp">
+      <Filter>Performance</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Published\DgnHandlersTests.h">

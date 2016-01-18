@@ -1,6 +1,6 @@
 //-------------------------------------------------------------------------------------- 
 //     $Source: Tests/DgnProject/Published/AnnotationFrameStyle_Test.cpp $
-//  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //-------------------------------------------------------------------------------------- 
 
 #include "DgnHandlersTests.h"
@@ -9,9 +9,9 @@
 // Republish API:           bb re DgnPlatform:PublishedApi
 // Rebuild API:             bb re DgnPlatformDll
 // Republish seed files:    bb re UnitTests_Documents
-// Rebuild test:            bb re DgnProjectUnitTests BeGTestExe
+// Rebuild test:            bb re DgnPlatform:UnitTests-Published
 // All code:                bb re DgnPlatform:PublishedApi DgnPlatformDll DgnProjectUnitTests BeGTestExe
-// Run test:                %SrcRoot%BeGTest\RunTests.py -ax64 --gtest_filter="BasicAnnotationFrameStyleTest.*:AnnotationFrameStyleTest.*"
+// Run test:                %SrcRoot%BeGTest\RunTests.py -ax64 --gtest_filter="AnnotationFrameStyleTest.*"
 
 //=======================================================================================
 // @bsiclass                                                   Umar.Hayat     07/15
@@ -33,7 +33,7 @@ public: AnnotationFrameStyleTest() :
 // Higher level AnnotationFrameStyle tests provide otherwise good coverage for AnnotationFrameStylePropertyBag because styles uses a bag for their underlying storage.
 // @bsimethod                                                   Umar.Hayat     07/15
 //---------------------------------------------------------------------------------------
-TEST(BasicAnnotationFrameStyleTest, PropertyBagTypes)
+TEST_F(AnnotationFrameStyleTest, PropertyBagTypes)
     {
     AnnotationFrameStylePropertyBagPtr data = AnnotationFrameStylePropertyBag::Create();
 
@@ -49,7 +49,7 @@ TEST(BasicAnnotationFrameStyleTest, PropertyBagTypes)
     data->SetIntegerProperty(AnnotationFrameStyleProperty::StrokeWeight, 2);
     data->SetIntegerProperty(AnnotationFrameStyleProperty::Type, (int64_t)AnnotationFrameType::Box);
     data->SetRealProperty(AnnotationFrameStyleProperty::VerticalPadding, 2.0);
-}
+    }
 
 #define DECLARE_AND_SET_DATA_1(STYLE_PTR)\
     Utf8String name = "MyStyle";                                                                STYLE_PTR->SetName(name.c_str());\

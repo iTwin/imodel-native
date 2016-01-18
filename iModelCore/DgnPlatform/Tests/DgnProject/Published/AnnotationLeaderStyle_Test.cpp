@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/DgnProject/Published/AnnotationLeaderStyle_Test.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "DgnHandlersTests.h"
@@ -11,9 +11,9 @@
 // Republish API:           bb re DgnPlatform:PublishedApi
 // Rebuild API:             bb re DgnPlatformDll
 // Republish seed files:    bb re UnitTests_Documents
-// Rebuild test:            bb re DgnProjectUnitTests BeGTestExe
-// All code:                bb re DgnPlatform:PublishedApi DgnPlatformDll DgnProjectUnitTests BeGTestExe
-// Run test:                %SrcRoot%BeGTest\RunTests.py -ax64 --gtest_filter="BasicAnnotationLeaderStyleTest.*:AnnotationLeaderStyleTest.*"
+// Rebuild test:            bb DgnPlatform:UnitTests-Published
+// All code:                bb re DgnPlatform:PublishedApi DgnPlatformDll DgnPlatform:UnitTests-Published
+// Run test:                %SrcRoot%BeGTest\RunTests.py -ax64 --gtest_filter="AnnotationLeaderStyleTest.*"
 
 //=======================================================================================
 // @bsiclass                                                   Umar.Hayat     07/15
@@ -35,7 +35,7 @@ public: AnnotationLeaderStyleTest() :
 // Higher level AnnotationLeaderStyle tests provide otherwise good coverage for AnnotationLeaderStylePropertyBag because styles uses a bag for their underlying storage.
 // @bsimethod                                                   Umar.Hayat     07/15
 //---------------------------------------------------------------------------------------
-TEST(BasicAnnotationLeaderStyleTest, PropertyBagTypes)
+TEST_F(AnnotationLeaderStyleTest, PropertyBagTypes)
     {
     AnnotationLeaderStylePropertyBagPtr data = AnnotationLeaderStylePropertyBag::Create();
 
@@ -46,7 +46,7 @@ TEST(BasicAnnotationLeaderStyleTest, PropertyBagTypes)
     data->SetRealProperty(AnnotationLeaderStyleProperty::TerminatorScaleFactor, 2.0);
     data->SetIntegerProperty(AnnotationLeaderStyleProperty::TerminatorType, (int64_t)AnnotationLeaderTerminatorType::OpenArrow);
     data->SetIntegerProperty(AnnotationLeaderStyleProperty::TerminatorWeight, 1);
-}
+    }
 
 #define DECLARE_AND_SET_DATA_1(STYLE_PTR)\
     Utf8String name = "MyStyle";                                                                STYLE_PTR->SetName(name.c_str());\

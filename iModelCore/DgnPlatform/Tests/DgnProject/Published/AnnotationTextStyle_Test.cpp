@@ -1,6 +1,6 @@
 //-------------------------------------------------------------------------------------- 
 //     $Source: Tests/DgnProject/Published/AnnotationTextStyle_Test.cpp $
-//  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //-------------------------------------------------------------------------------------- 
 
 #include "DgnHandlersTests.h"
@@ -9,8 +9,8 @@
 // Republish API:           bb re DgnPlatform:PublishedApi
 // Rebuild API:             bb re DgnPlatformDll
 // Republish seed files:    bb re UnitTests_Documents
-// Rebuild test:            bb re DgnProjectUnitTests BeGTestExe
-// All code:                bb re DgnPlatform:PublishedApi DgnPlatformDll DgnProjectUnitTests BeGTestExe
+// Rebuild test:            bb re DgnPlatform:UnitTests-Published
+// All code:                bb re DgnPlatform:PublishedApi DgnPlatformDll DgnPlatform:UnitTests-Published
 // Run test:                %SrcRoot%BeGTest\RunTests.py -ax64 --gtest_filter="BasicAnnotationTextStyleTest.*:AnnotationTextStyleTest.*"
 
 //=======================================================================================
