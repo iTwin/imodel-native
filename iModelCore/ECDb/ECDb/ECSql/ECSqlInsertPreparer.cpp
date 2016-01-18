@@ -325,7 +325,7 @@ ECSqlStatus ECSqlInsertPreparer::PrepareInsertIntoEndTableRelationship(ECSqlPrep
     //This end's ecinstanceid is ecinstanceid of relationship instance (by nature of end table mapping)
     int thisEndECInstanceIdIndex = specialTokenExpIndexMap.GetIndex(thisEnd == ECRelationshipEnd_Source ? ECSqlSystemProperty::SourceECInstanceId : ECSqlSystemProperty::TargetECInstanceId);
     int thisEndECClassIdIndex = specialTokenExpIndexMap.GetIndex(thisEnd == ECRelationshipEnd_Source ? ECSqlSystemProperty::SourceECClassId : ECSqlSystemProperty::TargetECClassId);
-
+    int otherEndECClassIdIndex = specialTokenExpIndexMap.GetIndex(thisEnd == ECRelationshipEnd_Target ? ECSqlSystemProperty::SourceECClassId : ECSqlSystemProperty::TargetECClassId);
     auto preparedStatement = ctx.GetECSqlStatementR().GetPreparedStatementP<ECSqlInsertPreparedStatement>();
 
     if (thisEndECInstanceIdIndex >= 0)
@@ -399,11 +399,40 @@ ECSqlStatus ECSqlInsertPreparer::PrepareInsertIntoEndTableRelationship(ECSqlPrep
             }
         }
 
+    if (otherEndECClassIdIndex >= 0)
+        {
+        expIndexSkipList.push_back((size_t)otherEndECClassIdIndex);
+        //if this end was parametrized we must turn the respective binder into a no-op binder
+        //so that clients binding values to it will not try to access a SQLite parameter which does not exist
+        auto parameterExp = exp.GetValuesExp()->TryGetAsParameterExpP(otherEndECClassIdIndex);
+        if (parameterExp != nullptr)
+            {
+            ECSqlBinder* binder = nullptr;
+            preparedStatement->GetParameterMapR().TryGetBinder(binder, parameterExp->GetParameterIndex());
+            BeAssert(dynamic_cast<SystemPropertyECSqlBinder*> (binder) != nullptr);
+            auto systemPropBinder = static_cast<SystemPropertyECSqlBinder*> (binder);
+            systemPropBinder->SetIsNoop();
+            }
+        }
+
     std::sort(expIndexSkipList.begin(), expIndexSkipList.end());
 
     auto otherEndClassId = thisEnd == ECRelationshipEnd_Source ? targetECClassId : sourceECClassId;
     if (otherEndClassId >= ECClass::UNSET_ECCLASSID)
         {
+        if (otherEndECClassIdIndex > 0)
+            {
+            auto& r = nativeSqlSnippets.m_propertyNamesNativeSqlSnippets[otherEndECClassIdIndex];
+            if (!r.empty())
+                {
+                Utf8String column = r.front().ToString();
+                if (column == "[ECClassId]") //Self case where source/target classid is in same table and user provided value for source/target classid
+                    {
+                    expIndexSkipList.push_back((size_t)otherEndECClassIdIndex);
+                    }
+                }
+            }
+
         ECSqlStatus stat = PrepareConstraintClassId(nativeSqlSnippets, ctx, *relationshipEndTableMap.GetOtherEndECClassIdPropMap(), otherEndClassId);
         if (!stat.IsSuccess())
             return stat;

@@ -473,10 +473,10 @@ BentleyStatus ViewGenerator::CreateViewForRelationshipClassEndTableMap (NativeSq
 //+---------------+---------------+---------------+---------------+---------------+-------
 BentleyStatus ViewGenerator::BuildRelationshipJoinIfAny (NativeSqlBuilder& sqlBuilder, RelationshipClassMapCR classMap, ECN::ECRelationshipEnd endPoint)
     {
-    PropertyMapRelationshipConstraintClassId const* ecclassIdPropertyMap = endPoint == ECRelationshipEnd::ECRelationshipEnd_Source ? classMap.GetSourceECClassIdPropMap () : classMap.GetTargetECClassIdPropMap ();
-    if (!ecclassIdPropertyMap->IsMappedToClassMapTables())
+    if (classMap.RequiresJoin(endPoint))
         {
         ECDbMapCR ecdbMap = classMap.GetECDbMap();
+        PropertyMapRelationshipConstraintClassId const* ecclassIdPropertyMap = endPoint == ECRelationshipEnd::ECRelationshipEnd_Source ? classMap.GetSourceECClassIdPropMap() : classMap.GetTargetECClassIdPropMap();
         PropertyMapRelationshipConstraintECInstanceId const* ecInstanceIdPropertyMap = static_cast<PropertyMapRelationshipConstraintECInstanceId const*>(endPoint == ECRelationshipEnd::ECRelationshipEnd_Source ? classMap.GetSourceECInstanceIdPropMap() : classMap.GetTargetECInstanceIdPropMap());
         size_t tableCount = ecdbMap.GetTableCountOnRelationshipEnd(endPoint == ECRelationshipEnd::ECRelationshipEnd_Source ? classMap.GetRelationshipClass().GetSource() : classMap.GetRelationshipClass().GetTarget());
         ECDbSqlTable const* targetTable = &ecclassIdPropertyMap->GetFirstColumn()->GetTable();
@@ -698,7 +698,7 @@ BentleyStatus ViewGenerator::AppendSystemPropMaps (NativeSqlBuilder& viewSql, EC
     PropertyMapRelationshipConstraintClassId const* classIdPropMap = relationMap.GetSourceECClassIdPropMap();
     if (!classIdPropMap->IsVirtual())
         {
-        if (!classIdPropMap->IsMappedToClassMapTables())
+        if (relationMap.RequiresJoin(ECRelationshipEnd::ECRelationshipEnd_Source))
             viewSql.AppendEscaped(GetECClassIdPrimaryTableAlias(ECRelationshipEnd::ECRelationshipEnd_Source)).AppendDot();
         else
             viewSql.AppendEscaped(classIdPropMap->GetTable()->GetName().c_str()).AppendDot();
@@ -719,7 +719,7 @@ BentleyStatus ViewGenerator::AppendSystemPropMaps (NativeSqlBuilder& viewSql, EC
     classIdPropMap = relationMap.GetTargetECClassIdPropMap ();
     if (!classIdPropMap->IsVirtual ())
         {
-        if (!classIdPropMap->IsMappedToClassMapTables())
+        if (relationMap.RequiresJoin(ECRelationshipEnd::ECRelationshipEnd_Target))
             viewSql.AppendEscaped (GetECClassIdPrimaryTableAlias (ECRelationshipEnd::ECRelationshipEnd_Target)).AppendDot ();
         else
             viewSql.AppendEscaped (classIdPropMap->GetFirstColumn ()->GetTable ().GetName ().c_str ()).AppendDot ();

@@ -19,9 +19,6 @@ ECDbSchemas.Verify_TFS_14829_A
 ECDbMappingTestFixture.MismatchDataTypesInExistingTable
 ECDbMappingTestFixture.PropertiesWithoutColumnsInExistingTable
 
-#TFS344205 (Affan)
-JoinedTableECDbMapStrategyTests.RelationshipsWithKeyProp
-
 #TFS353210 will adress this (Raman)
 JsonUpdaterTests.CommonGeometryJsonSerialization
 
