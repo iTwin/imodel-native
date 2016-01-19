@@ -24,6 +24,7 @@ TypeScriptCompile = $(BuildContext)SubParts/NodeJs/node$(toolchainExeext) $(Buil
 always:
     !~@mkdir $(dgnScriptGen)
     !~@mkdir $(dgnScriptGen)DgnPlatform
+    !~@mkdir $(dgnScriptGen)_doc
 
 dgnJsApiTsDir = $(dgnScriptDir)DgnJsApi/ts/
 
@@ -66,6 +67,11 @@ $(dgnScriptGen)DgnJsApi.js : $(tsSourceFiles)
     $(TypeScriptCompile) $(tsSourceFiles) --target ES5 --noImplicitAny --removeComments --declaration $(DEBUG_PARMS) --out $(dgnScriptGen)DgnJsApi.js
     ~time
 
+$(dgnScriptGen)_doc/DgnJsApi_doc.h: $(dgnScriptGen)DgnJsApi.d.ts
+    $(msg)
+    $(_MakeFilePath)generateTypeScriptDoxygenInput.py --input=$< --output=$@ --extractionsPath=$(OutputRootDir)build/DgnPlatform/Extractions/
+    ~time
+
 $(dgnScriptGen)DgnScriptBootstrap.cpp : $(dgnScriptGen)DgnJsApi.js $(dgnJsApiTsDir)DgnJsApiBootstrap.cpp
     $(msg)
     python $(BuildContext)SubParts/BeJavaScriptTools/mergeJsSourceDeliveryFiles.py --jsSourceFiles "__DGNSCRIPTJSSOURCE__=$(dgnScriptGen)DgnJsApi.js" \
@@ -74,6 +80,8 @@ $(dgnScriptGen)DgnScriptBootstrap.cpp : $(dgnScriptGen)DgnJsApi.js $(dgnJsApiTsD
     ~time
 
 
-
 $(BuildContext)Delivery/DgnJsApi.d.ts : $(dgnScriptGen)DgnJsApi.d.ts
     $(LinkFirstDepToFirstTarget)
+
+ $(BuildContext)Delivery/internal-docs/DgnJsApi : $(dgnScriptGen)_doc
+    $(LinkFirstDepToFirstTargetAsDirectory)
