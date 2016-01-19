@@ -327,6 +327,12 @@ ECSqlPrepareContext::JoinTableInfo::Ptr ECSqlPrepareContext::JoinTableInfo::TryS
             joinedTableValues.push_back(NativeSqlBuilder(value->ToECSql().c_str()));
             ptr->m_parameterMap.GetSecondaryR().Add(thisValueParams);
             }
+        else if (auto structArrayPropertyMap = property->GetPropertyMap().GetAsPropertyMapStructArray())
+            {
+            joinedTableProperties.push_back(NativeSqlBuilder(property->ToECSql().c_str()));
+            joinedTableValues.push_back(NativeSqlBuilder(value->ToECSql().c_str()));
+            ptr->m_parameterMap.GetSecondaryR().Add(thisValueParams);
+            }
         else
             {
             BeAssert(property->GetPropertyMap().MapsToTable(primaryTable));
@@ -417,6 +423,12 @@ ECSqlPrepareContext::JoinTableInfo::Ptr ECSqlPrepareContext::JoinTableInfo::TryS
             return nullptr;
             }
         else if (property->GetPropertyMap().MapsToTable(joinedTable))
+            {
+            joinedTableProperties.push_back(NativeSqlBuilder(property->ToECSql().c_str()));
+            joinedTableValues.push_back(NativeSqlBuilder(value->ToECSql().c_str()));
+            ptr->m_parameterMap.GetSecondaryR().Add(thisValueParams);
+            }
+        else if (auto structArrayPropertyMap = property->GetPropertyMap().GetAsPropertyMapStructArray())
             {
             joinedTableProperties.push_back(NativeSqlBuilder(property->ToECSql().c_str()));
             joinedTableValues.push_back(NativeSqlBuilder(value->ToECSql().c_str()));
