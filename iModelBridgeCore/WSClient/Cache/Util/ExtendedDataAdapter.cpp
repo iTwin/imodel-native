@@ -21,11 +21,8 @@ USING_NAMESPACE_BENTLEY_WEBSERVICES
 ExtendedDataAdapter::ExtendedDataAdapter(ObservableECDb& db, IDelegate& edDelegate) :
 m_dbAdapter(db),
 m_statementCache(db),
-m_delegate(edDelegate),
-m_edClass(edDelegate.GetExtendedDataClass()),
-m_edRelClass(edDelegate.GetExtendedDataRelationshipClass())
+m_delegate(edDelegate)
     {
-    BeAssert(nullptr != m_edClass && nullptr != m_edRelClass);
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -33,7 +30,10 @@ m_edRelClass(edDelegate.GetExtendedDataRelationshipClass())
 +---------------+---------------+---------------+---------------+---------------+------*/
 ExtendedData ExtendedDataAdapter::GetData(ECInstanceKeyCR ownerKey)
     {
-    if (nullptr == m_edClass || nullptr == m_edRelClass)
+    auto edClass = m_delegate.GetExtendedDataClass();
+    auto edRelClass = m_delegate.GetExtendedDataRelationshipClass();
+
+    if (nullptr == edClass || nullptr == edRelClass)
         {
         return ExtendedData();
         }
@@ -42,8 +42,8 @@ ExtendedData ExtendedDataAdapter::GetData(ECInstanceKeyCR ownerKey)
         {
         return
             "SELECT data.ECInstanceId, data.[" CLASS_ExtendedData_PROPERTY_Content "] "
-            "FROM " + m_edClass->GetECSqlName() + " data "
-            "JOIN " + m_edRelClass->GetECSqlName() + " relationship ON relationship.TargetECInstanceId = data.ECInstanceId "
+            "FROM " + edClass->GetECSqlName() + " data "
+            "JOIN " + edRelClass->GetECSqlName() + " relationship ON relationship.TargetECInstanceId = data.ECInstanceId "
             "WHERE relationship.SourceECClassId = ? AND relationship.SourceECInstanceId = ? "
             "LIMIT 1 ";
         });
@@ -66,7 +66,7 @@ ExtendedData ExtendedDataAdapter::GetData(ECInstanceKeyCR ownerKey)
     auto extendedDataJson = std::make_shared<Json::Value>(Json::objectValue);
     Json::Reader::Parse(content, *extendedDataJson);
 
-    return ExtendedData(ownerKey, {m_edClass->GetId(), extendedDataId}, extendedDataJson);
+    return ExtendedData(ownerKey, {edClass->GetId(), extendedDataId}, extendedDataJson);
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -74,7 +74,10 @@ ExtendedData ExtendedDataAdapter::GetData(ECInstanceKeyCR ownerKey)
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus ExtendedDataAdapter::UpdateData(ExtendedData& data)
     {
-    if (nullptr == m_edClass || nullptr == m_edRelClass)
+    auto edClass = m_delegate.GetExtendedDataClass();
+    auto edRelClass = m_delegate.GetExtendedDataRelationshipClass();
+
+    if (nullptr == edClass || nullptr == edRelClass)
         {
         return ERROR;
         }
@@ -86,7 +89,7 @@ BentleyStatus ExtendedDataAdapter::UpdateData(ExtendedData& data)
         auto statement = m_statementCache.GetPreparedStatement("UpdateData", [&]
             {
             return
-                "UPDATE ONLY " + m_edClass->GetECSqlName() + " "
+                "UPDATE ONLY " + edClass->GetECSqlName() + " "
                 "SET [" CLASS_ExtendedData_PROPERTY_Content "] = ? "
                 "WHERE ECInstanceId = ? ";
             });
@@ -104,7 +107,7 @@ BentleyStatus ExtendedDataAdapter::UpdateData(ExtendedData& data)
 
     auto statement = m_statementCache.GetPreparedStatement("InsertData", [&]
         {
-        return "INSERT INTO " + m_edClass->GetECSqlName() + " ([" CLASS_ExtendedData_PROPERTY_Content "]) VALUES (?) ";
+        return "INSERT INTO " + edClass->GetECSqlName() + " ([" CLASS_ExtendedData_PROPERTY_Content "]) VALUES (?) ";
         });
 
     statement->BindText(1, content.c_str(), IECSqlBinder::MakeCopy::No);
@@ -116,7 +119,7 @@ BentleyStatus ExtendedDataAdapter::UpdateData(ExtendedData& data)
         }
 
     ECInstanceKey holderKey = m_delegate.GetHolderKey(data.m_ownerKey);
-    if (!m_dbAdapter.RelateInstances(m_edRelClass, holderKey, data.m_extendedDataKey).IsValid())
+    if (!m_dbAdapter.RelateInstances(edRelClass, holderKey, data.m_extendedDataKey).IsValid())
         {
         return ERROR;
         }

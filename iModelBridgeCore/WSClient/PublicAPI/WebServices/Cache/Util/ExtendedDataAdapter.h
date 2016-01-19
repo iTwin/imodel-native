@@ -30,9 +30,6 @@ struct EXPORT_VTABLE_ATTRIBUTE ExtendedDataAdapter : public IExtendedDataAdapter
         ECSqlStatementCache m_statementCache;
         IDelegate& m_delegate;
 
-        ECClassCP m_edClass;
-        ECRelationshipClassCP m_edRelClass;
-
     public:
         //! Create extended data adapter
         WSCACHE_EXPORT ExtendedDataAdapter(ObservableECDb& db, IDelegate& edDelegate);
