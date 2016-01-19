@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/WebServices/Cache/Util/IExtendedDataAdapter.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -21,8 +21,7 @@ USING_NAMESPACE_BENTLEY_SQLITE_EC
 struct EXPORT_VTABLE_ATTRIBUTE IExtendedDataAdapter
     {
     public:
-        virtual ~IExtendedDataAdapter()
-            {};
+        virtual ~IExtendedDataAdapter() {};
         virtual ExtendedData GetData(ECInstanceKeyCR instanceKey) = 0;
         virtual BentleyStatus UpdateData(ExtendedData& data) = 0;
     };

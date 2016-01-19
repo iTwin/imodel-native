@@ -83,6 +83,9 @@ BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 #define CLASS_CachedFileInfoToFileInfo                              "CachedFileInfoToFileInfo"
 #define CLASS_CachedFileInfoToFileInfoOwnership                     "CachedFileInfoToFileInfoOwnership"
 
+#define CLASS_ExtendedData                                          "ExtendedData"
+#define CLASS_NodeToExtendedData                                    "NodeToExtendedData"
+
 #define ECSql_Root                                                  "[WSC].[" CLASS_Root "]"
 #define ECSql_NavigationBase                                        "[WSC].[" CLASS_NavigationBase "]"
 #define ECSql_CachedResponseInfo                                    "[WSC].[" CLASS_CachedResponseInfo "]"

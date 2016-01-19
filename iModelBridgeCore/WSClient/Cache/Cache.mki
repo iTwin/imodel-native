@@ -172,6 +172,8 @@ $(o)FileInfo$(oext)                             : $(CacheMkiSourceDir)Persistenc
 $(o)FileInfoManager$(oext)                      : $(CacheMkiSourceDir)Persistence/Files/FileInfoManager.cpp $(ClientMkiHeaders) ${MultiCompileDepends}
 
 
+$(o)ExtendedDataDelegate$(oext)                 : $(CacheMkiSourceDir)Persistence/Hierarchy/ExtendedDataDelegate.cpp $(ClientMkiHeaders) ${MultiCompileDepends}
+
 $(o)HierarchyManager$(oext)                     : $(CacheMkiSourceDir)Persistence/Hierarchy/HierarchyManager.cpp $(ClientMkiHeaders) ${MultiCompileDepends}
 
 $(o)RootManager$(oext)                          : $(CacheMkiSourceDir)Persistence/Hierarchy/RootManager.cpp $(ClientMkiHeaders) ${MultiCompileDepends}
