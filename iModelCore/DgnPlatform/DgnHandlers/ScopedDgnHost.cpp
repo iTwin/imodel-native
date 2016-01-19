@@ -108,6 +108,14 @@ struct ProxyServerAdmin : Dgn::DgnPlatformLib::Host::ServerAdmin
         {
         return nullptr != m_impl ? m_impl->_GetLocksServer(db) : T_Super::_GetLocksServer(db);
         }
+    virtual IDgnCodesManagerPtr _CreateCodesManager(DgnDbR db) const override
+        {
+        return nullptr != m_impl ? m_impl->_CreateCodesManager(db) : T_Super::_CreateCodesManager(db);
+        }
+    virtual IDgnCodesServerP _GetCodesServer(DgnDbR db) const override
+        {
+        return nullptr != m_impl ? m_impl->_GetCodesServer(db) : T_Super::_GetCodesServer(db);
+        }
 };
 
 /*---------------------------------------------------------------------------------**//**

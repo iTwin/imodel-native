@@ -7,6 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include "DgnHandlersTests.h"
 #include <Bentley/BeTest.h>
+#include <DgnPlatform/DgnMaterial.h>
 
 USING_NAMESPACE_BENTLEY_SQLITE
 
@@ -18,6 +19,9 @@ USING_NAMESPACE_BENTLEY_SQLITE
 #define SERVER_Revision "Revision"
 #define SERVER_Briefcase "Briefcase"
 
+#define EXPECT_STATUS(STAT, EXPR) EXPECT_EQ(CodeStatus:: STAT, (EXPR))
+
+//#define DUMP_SERVER 1
 
 /*---------------------------------------------------------------------------------**//**
 * @bsistruct                                                    Paul.Connelly   01/16
@@ -35,6 +39,8 @@ private:
     virtual CodeStatus _QueryCodes(DgnCodeSet&, DgnDbR) override;
 public:
     CodesServer();
+
+    void Dump(Utf8CP descr=nullptr);
 };
 
 /*---------------------------------------------------------------------------------**//**
@@ -85,8 +91,23 @@ CodesServer::CodesServer()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
+void CodesServer::Dump(Utf8CP descr)
+    {
+#ifdef DUMP_SERVER
+    Statement stmt;
+    stmt.Prepare(m_db, "SELECT * FROM " SERVER_Table);
+    printf(">>>> %s >>>>\n", nullptr != descr ? descr : "Dumping Server");
+    stmt.DumpResults();
+    printf("<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<\n");
+#endif
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/16
++---------------+---------------+---------------+---------------+---------------+------*/
 CodesServer::Response CodesServer::_ReserveCodes(Request const& req, DgnDbR db)
     {
+    Dump("ReserveCodes: before");
     VirtualCodeSet vset(req);
     Statement stmt;
     stmt.Prepare(m_db, "SELECT " SERVER_Authority "," SERVER_NameSpace "," SERVER_Value "," SERVER_State "," SERVER_Revision "," SERVER_Briefcase
@@ -94,6 +115,7 @@ CodesServer::Response CodesServer::_ReserveCodes(Request const& req, DgnDbR db)
 
     CodeStatus status = CodeStatus::Success;
     Response response(status);
+    stmt.BindVirtualSet(1, vset);
     bool wantInfos = ResponseOptions::IncludeState == (req.GetOptions() & ResponseOptions::IncludeState);
     while (BE_SQLITE_ROW == stmt.Step())
         {
@@ -142,7 +164,7 @@ CodesServer::Response CodesServer::_ReserveCodes(Request const& req, DgnDbR db)
         {
         Statement insert;
         insert.Prepare(m_db, "INSERT OR REPLACE INTO " SERVER_Table "(" SERVER_Authority "," SERVER_NameSpace "," SERVER_Value "," SERVER_State "," SERVER_Briefcase
-                            " VALUES (?,?,?,1,?)");
+                            ") VALUES (?,?,?,1,?)");
         insert.BindId(1, code.GetAuthority());
         insert.BindText(2, code.GetNamespace(), Statement::MakeCopy::No);
         insert.BindText(3, code.GetValue(), Statement::MakeCopy::No);
@@ -151,6 +173,7 @@ CodesServer::Response CodesServer::_ReserveCodes(Request const& req, DgnDbR db)
         insert.Step();
         }
 
+    Dump("ReserveCodes: after");
     return response;
     }
 
@@ -159,6 +182,7 @@ CodesServer::Response CodesServer::_ReserveCodes(Request const& req, DgnDbR db)
 +---------------+---------------+---------------+---------------+---------------+------*/
 CodeStatus CodesServer::_ReleaseCodes(DgnCodeSet const& req, DgnDbR db)
     {
+    Dump("ReleaseCodes: before");
     VirtualCodeSet vset(req);
     Statement stmt;
     stmt.Prepare(m_db, "DELETE FROM " SERVER_Table " WHERE " SERVER_Briefcase "=? AND InVirtualSet(@vset, " SERVER_Authority "," SERVER_NameSpace "," SERVER_Value ")");
@@ -166,6 +190,7 @@ CodeStatus CodesServer::_ReleaseCodes(DgnCodeSet const& req, DgnDbR db)
     stmt.BindVirtualSet(2, vset);
     stmt.Step();
 
+    Dump("ReleaseCodes: after");
     return CodeStatus::Success;
     }
 
@@ -174,11 +199,13 @@ CodeStatus CodesServer::_ReleaseCodes(DgnCodeSet const& req, DgnDbR db)
 +---------------+---------------+---------------+---------------+---------------+------*/
 CodeStatus CodesServer::_RelinquishCodes(DgnDbR db)
     {
+    Dump("RelinquishCodes: before");
     Statement stmt;
     stmt.Prepare(m_db, "DELETE FROM " SERVER_Table " WHERE " SERVER_Briefcase " =?");
     stmt.BindInt(1, static_cast<int>(db.GetBriefcaseId().GetValue()));
     stmt.Step();
 
+    Dump("RelinquishCodes: after");
     return CodeStatus::Success;
     }
 
@@ -187,16 +214,19 @@ CodeStatus CodesServer::_RelinquishCodes(DgnDbR db)
 +---------------+---------------+---------------+---------------+---------------+------*/
 CodeStatus CodesServer::_QueryCodeStates(DgnCodeInfoSet& infos, DgnCodeSet const& codes)
     {
+    Dump("QueryCodeStates");
     infos.clear();
 
+    VirtualCodeSet vset(codes);
     Statement stmt;
     stmt.Prepare(m_db, "SELECT " SERVER_Authority "," SERVER_NameSpace "," SERVER_Value "," SERVER_State "," SERVER_Revision "," SERVER_Briefcase
                     "   FROM " SERVER_Table " WHERE InVirtualSet(@vset, " SERVER_Authority "," SERVER_NameSpace "," SERVER_Value ")");
+    stmt.BindVirtualSet(1, vset);
     while (BE_SQLITE_ROW == stmt.Step())
         {
         DgnCode code(stmt.GetValueId<DgnAuthorityId>(0), stmt.GetValueText(2), stmt.GetValueText(1));
         DgnCodeInfo info(code);
-        switch (static_cast<CodeState>(stmt.GetValueInt(4)))
+        switch (static_cast<CodeState>(stmt.GetValueInt(3)))
             {
             case CodeState::Reserved:
                 info.SetReserved(BeBriefcaseId(static_cast<uint32_t>(stmt.GetValueInt(5))));
@@ -212,6 +242,16 @@ CodeStatus CodesServer::_QueryCodeStates(DgnCodeInfoSet& infos, DgnCodeSet const
                 BeAssert(false && "This value should never be in the server db!");
                 return CodeStatus::SyncError;
             }
+
+        infos.insert(info);
+        }
+
+    for (auto const& code : codes)
+        {
+        // Server doesn't keep track of "available" codes...
+        DgnCodeInfo info(code);
+        if (infos.end() == infos.find(info))
+            infos.insert(info);
         }
 
     return CodeStatus::Success;
@@ -222,6 +262,7 @@ CodeStatus CodesServer::_QueryCodeStates(DgnCodeInfoSet& infos, DgnCodeSet const
 +---------------+---------------+---------------+---------------+---------------+------*/
 CodeStatus CodesServer::_QueryCodes(DgnCodeSet& codes, DgnDbR db)
     {
+    Dump("QueryCodes");
     codes.clear();
     Statement stmt;
     stmt.Prepare(m_db, "SELECT " SERVER_Authority "," SERVER_NameSpace "," SERVER_Value "   FROM " SERVER_Table " WHERE " SERVER_Briefcase " =?");
@@ -231,5 +272,139 @@ CodeStatus CodesServer::_QueryCodes(DgnCodeSet& codes, DgnDbR db)
         codes.insert(DgnCode(stmt.GetValueId<DgnAuthorityId>(0), stmt.GetValueText(2), stmt.GetValueText(1)));
 
     return CodeStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsistruct                                                    Paul.Connelly   01/16
++---------------+---------------+---------------+---------------+---------------+------*/
+struct CodesManagerTest : public ::testing::Test, DgnPlatformLib::Host::ServerAdmin
+{
+    typedef IDgnCodesManager::Request Request;
+    typedef IDgnCodesManager::Response Response;
+
+    mutable CodesServer m_server;
+    ScopedDgnHost m_host;
+    
+    CodesManagerTest()
+        {
+        m_host.SetServerAdmin(this);
+        BackDoor::IDgnCodesManager::SetEnabled(true);
+        }
+
+    ~CodesManagerTest()
+        {
+        BackDoor::IDgnCodesManager::SetEnabled(false);
+        }
+
+    virtual IDgnCodesServerP _GetCodesServer(DgnDbR) const override { return &m_server; }
+
+    DgnDbPtr SetupDb(WCharCP testFile, BeBriefcaseId bcId, WCharCP baseFile=L"3dMetricGeneral.idgndb")
+        {
+        BeFileName outFileName;
+        EXPECT_EQ(SUCCESS, DgnDbTestDgnManager::GetTestDataOut(outFileName, baseFile, testFile, __FILE__));
+        auto db = DgnDb::OpenDgnDb(nullptr, outFileName, DgnDb::OpenParams(Db::OpenMode::ReadWrite));
+        EXPECT_TRUE(db.IsValid());
+        if (!db.IsValid())
+            return nullptr;
+
+        TestDataManager::MustBeBriefcase(db, Db::OpenMode::ReadWrite);
+
+        db->ChangeBriefcaseId(bcId);
+        return db;
+        }
+
+    static DgnCode MakeCode(Utf8StringCR name, Utf8CP nameSpace = nullptr)
+        {
+        return nullptr != nameSpace ? DgnMaterial::CreateMaterialCode(nameSpace, name) : DgnCategory::CreateCategoryCode(name);
+        }
+
+    static DgnCodeInfo MakeAvailable(DgnCodeCR code) { return DgnCodeInfo(code); }
+    static DgnCodeInfo MakeUsed(DgnCodeCR code, Utf8StringCR revisionId) { return MakeUsedOrDiscarded(code, revisionId, false); }
+    static DgnCodeInfo MakeDiscarded(DgnCodeCR code, Utf8StringCR revisionId) { return MakeUsedOrDiscarded(code, revisionId, true); }
+    static DgnCodeInfo MakeReserved(DgnCodeCR code, DgnDbR db)
+        {
+        DgnCodeInfo info(code);
+        info.SetReserved(db.GetBriefcaseId());
+        return info;
+        }
+    static DgnCodeInfo MakeUsedOrDiscarded(DgnCodeCR code, Utf8StringCR rev, bool discarded)
+        {
+        DgnCodeInfo info(code);
+        if (discarded)
+            info.SetDiscarded(rev);
+        else
+            info.SetUsed(rev);
+        return info;
+        }
+
+    void ExpectState(DgnCodeInfoCR expect, DgnDbR db)
+        {
+        DgnCodeInfoSet expectInfos;
+        expectInfos.insert(expect);
+        ExpectStates(expectInfos, db);
+        }
+    void ExpectStates(DgnCodeInfoSet const& expect, DgnDbR db)
+        {
+        DgnCodeInfoSet actual;
+        DgnCodeSet codes;
+        for (auto const& info : expect)
+            codes.insert(info.GetCode());
+
+        EXPECT_STATUS(Success, db.Codes().QueryCodeStates(actual, codes));
+        ExpectEqual(expect, actual);
+        }
+    void ExpectEqual(DgnCodeInfoSet const& expected, DgnCodeInfoSet const& actual)
+        {
+        EXPECT_EQ(expected.size(), actual.size());
+        for (auto expIter = expected.begin(), actIter = actual.begin(); expIter != expected.end() && actIter != actual.end(); ++expIter, ++actIter)
+            ExpectEqual(*expIter, *actIter);
+        }
+    void ExpectEqual(DgnCodeInfoCR exp, DgnCodeInfoCR act)
+        {
+        EXPECT_EQ(exp.GetCode(), act.GetCode());
+        ExpectEqual(static_cast<DgnCodeState>(exp), static_cast<DgnCodeState>(act));
+        }
+    void ExpectEqual(DgnCodeStateCR exp, DgnCodeStateCR act)
+        {
+        if (exp.IsAvailable())
+            {
+            EXPECT_TRUE(act.IsAvailable());
+            }
+        else if (exp.IsReserved())
+            {
+            EXPECT_TRUE(act.IsReserved());
+            EXPECT_EQ(exp.GetReservedBy().GetValue(), act.GetReservedBy().GetValue());
+            }
+        else
+            {
+            EXPECT_EQ(exp.IsDiscarded(), act.IsDiscarded());
+            EXPECT_EQ(exp.GetRevisionId(), act.GetRevisionId());
+            EXPECT_FALSE(exp.GetRevisionId().empty());
+            }
+        }
+};
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/16
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(CodesManagerTest, ReserveQueryRelinquish)
+    {
+    DgnDbPtr pDb = SetupDb(L"ReserveQueryRelinquish.dgndb", BeBriefcaseId(1));
+    DgnDbR db = *pDb;
+    IDgnCodesManagerR mgr = db.Codes();
+
+    // Empty request
+    Request req;
+    EXPECT_STATUS(Success, mgr.ReserveCodes(req).GetResult());
+
+    // Reserve single code
+    DgnCode code = MakeCode("NS", "VALUE");
+    req.insert(code);
+    EXPECT_STATUS(Success, mgr.ReserveCodes(req).GetResult());
+    ExpectState(MakeReserved(code, db), db);
+
+    // Relinquish all
+    EXPECT_STATUS(Success, mgr.RelinquishCodes());
+    ExpectState(MakeAvailable(code), db);
     }
 
