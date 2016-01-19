@@ -44,6 +44,13 @@ struct ECDbAdapter : public IECDbAdapter, public IECDbSchemaChangeListener
             ECInstanceKeyCR instanceToDelete,
             bset<ECInstanceKey>& allInstancesBeingDeletedOut
             );
+        BentleyStatus FindInstancesBeingDeletedForRelationship
+            (
+            ECRelationshipClassCR relClass,
+            ECInstanceKeyCR instanceToDelete,
+            bset<ECInstanceKey>& allInstancesBeingDeletedOut
+            );
+        size_t CountHoldingParents(ECInstanceKeyCR instanceKey, const bset<ECInstanceKey>* parentsToIgnore);
         BentleyStatus OnBeforeDelete(ECClassCR ecClass, ECInstanceId instanceId, bset<ECInstanceKey>& additionalToDeleteOut);
 
         BentleyStatus DeleteInstance(ECClassId classId, ECInstanceId instanceId);
