@@ -13,12 +13,11 @@
 class ECDbAdapterTests : public WSClientBaseTest
     {
     private:
-        static std::shared_ptr<ObservableECDb> s_readonlyReusableDb;
+        static SeedFile s_seedECDb;
+        static SeedFile s_seedEmptyECDb;
 
     protected:
         static std::shared_ptr<ObservableECDb> CreateTestDb(ECSchemaPtr schema);
-        static std::shared_ptr<ObservableECDb> GetTestDbReusableReadonly();
-
-        static ECSchemaPtr GetTestSchema();
-        static ECSchemaPtr GetTestRelSchema();
+        static std::shared_ptr<ObservableECDb> GetTestDb();
+        static std::shared_ptr<ObservableECDb> GetEmptyTestDb();
     };

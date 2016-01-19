@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/Utils/WebServicesTestsHelper.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -128,6 +128,7 @@ ECN::ECSchemaPtr ParseSchema(Utf8StringCR schemaXml, ECN::ECSchemaReadContextPtr
 
 BeFileName GetTestsAssetsDir();
 BeFileName GetTestsTempDir();
+BeFileName GetTestsOutputDir();
 BeFileName StubFilePath(Utf8StringCR customFileName = "");
 BeFileName StubFile(Utf8StringCR content = "TestContent", Utf8StringCR customFileName = "");
 BeFileName StubFileWithSize(uint32_t bytesCount, Utf8StringCR customFileName = "");
