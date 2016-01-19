@@ -58,17 +58,14 @@ TEST_F(ExtendedDataAdapterTests, UpdateData_DelegateReturnsNullClasses_Error)
     {
     auto db = GetTestECDb();
     ECDbAdapter dbAdapter(*db);
-
     NiceMock<MockExtendedDataAdapterDelegate> del;
-    EXPECT_CALL(del, GetExtendedDataClass()).WillOnce(Return(nullptr));
-    EXPECT_CALL(del, GetExtendedDataRelationshipClass()).WillOnce(Return(nullptr));
-
-    BeTest::SetFailOnAssert(false);
     ExtendedDataAdapter adapter(*db, del);
-    BeTest::SetFailOnAssert(true);
 
     ECInstanceKey owner;
     ASSERT_EQ(SUCCESS, JsonInserter(*db, *dbAdapter.GetECClass("TestSchema.TestClass")).Insert(owner, Json::Value()));
+
+    EXPECT_CALL(del, GetExtendedDataClass()).WillRepeatedly(Return(nullptr));
+    EXPECT_CALL(del, GetExtendedDataRelationshipClass()).WillRepeatedly(Return(nullptr));
 
     auto data = adapter.GetData(owner);
     EXPECT_EQ(ERROR, adapter.UpdateData(data));
@@ -78,14 +75,14 @@ TEST_F(ExtendedDataAdapterTests, UpdateData_InstanceExistsAndFirstTime_DataIsRea
     {
     auto db = GetTestECDb();
     ECDbAdapter dbAdapter(*db);
-
     NiceMock<MockExtendedDataAdapterDelegate> del;
-    EXPECT_CALL(del, GetExtendedDataClass()).WillOnce(Return(dbAdapter.GetECClass("TestSchema.TestEDClass")));
-    EXPECT_CALL(del, GetExtendedDataRelationshipClass()).WillOnce(Return(dbAdapter.GetECRelationshipClass("TestSchema.TestEDRelClass")));
     ExtendedDataAdapter adapter(*db, del);
 
     ECInstanceKey instance;
     ASSERT_EQ(SUCCESS, JsonInserter(*db, *dbAdapter.GetECClass("TestSchema.TestClass")).Insert(instance, Json::Value()));
+
+    EXPECT_CALL(del, GetExtendedDataClass()).WillRepeatedly(Return(dbAdapter.GetECClass("TestSchema.TestEDClass")));
+    EXPECT_CALL(del, GetExtendedDataRelationshipClass()).WillRepeatedly(Return(dbAdapter.GetECRelationshipClass("TestSchema.TestEDRelClass")));
 
     ExtendedData data = adapter.GetData(instance);
     data.SetValue("Test", "Value");
@@ -100,14 +97,14 @@ TEST_F(ExtendedDataAdapterTests, GetData_InstanceDeleted_DataReturnedIsEmpty)
     {
     auto db = GetTestECDb();
     ECDbAdapter dbAdapter(*db);
-
     NiceMock<MockExtendedDataAdapterDelegate> del;
-    EXPECT_CALL(del, GetExtendedDataClass()).WillOnce(Return(dbAdapter.GetECClass("TestSchema.TestEDClass")));
-    EXPECT_CALL(del, GetExtendedDataRelationshipClass()).WillOnce(Return(dbAdapter.GetECRelationshipClass("TestSchema.TestEDRelClass")));
     ExtendedDataAdapter adapter(*db, del);
 
     ECInstanceKey instance;
     ASSERT_EQ(SUCCESS, JsonInserter(*db, *dbAdapter.GetECClass("TestSchema.TestClass")).Insert(instance, Json::Value()));
+
+    EXPECT_CALL(del, GetExtendedDataClass()).WillRepeatedly(Return(dbAdapter.GetECClass("TestSchema.TestEDClass")));
+    EXPECT_CALL(del, GetExtendedDataRelationshipClass()).WillRepeatedly(Return(dbAdapter.GetECRelationshipClass("TestSchema.TestEDRelClass")));
 
     ExtendedData data = adapter.GetData(instance);
     data.SetValue("Test", "Value");
@@ -123,16 +120,15 @@ TEST_F(ExtendedDataAdapterTests, UpdateData_OwnerAndDelegatePointsToOtherHolder_
     {
     auto db = GetTestECDb();
     ECDbAdapter dbAdapter(*db);
-
     NiceMock<MockExtendedDataAdapterDelegate> del;
-    EXPECT_CALL(del, GetExtendedDataClass()).WillOnce(Return(dbAdapter.GetECClass("TestSchema.TestEDClass")));
-    EXPECT_CALL(del, GetExtendedDataRelationshipClass()).WillOnce(Return(dbAdapter.GetECRelationshipClass("TestSchema.TestEDRelClass")));
     ExtendedDataAdapter adapter(*db, del);
 
     ECInstanceKey owner, holder;
     ASSERT_EQ(SUCCESS, JsonInserter(*db, *dbAdapter.GetECClass("TestSchema.TestClass")).Insert(owner, Json::Value()));
     ASSERT_EQ(SUCCESS, JsonInserter(*db, *dbAdapter.GetECClass("TestSchema.TestClass2")).Insert(holder, Json::Value()));
 
+    EXPECT_CALL(del, GetExtendedDataClass()).WillRepeatedly(Return(dbAdapter.GetECClass("TestSchema.TestEDClass")));
+    EXPECT_CALL(del, GetExtendedDataRelationshipClass()).WillRepeatedly(Return(dbAdapter.GetECRelationshipClass("TestSchema.TestEDRelClass")));
     EXPECT_CALL(del, GetHolderKey(owner)).WillRepeatedly(Return(holder));
 
     ExtendedData data = adapter.GetData(owner);
@@ -148,16 +144,15 @@ TEST_F(ExtendedDataAdapterTests, GetData_HolderInstanceDeleted_DataReturnedIsEmp
     {
     auto db = GetTestECDb();
     ECDbAdapter dbAdapter(*db);
-
     NiceMock<MockExtendedDataAdapterDelegate> del;
-    EXPECT_CALL(del, GetExtendedDataClass()).WillOnce(Return(dbAdapter.GetECClass("TestSchema.TestEDClass")));
-    EXPECT_CALL(del, GetExtendedDataRelationshipClass()).WillOnce(Return(dbAdapter.GetECRelationshipClass("TestSchema.TestEDRelClass")));
     ExtendedDataAdapter adapter(*db, del);
 
     ECInstanceKey owner, holder;
     ASSERT_EQ(SUCCESS, JsonInserter(*db, *dbAdapter.GetECClass("TestSchema.TestClass")).Insert(owner, Json::Value()));
     ASSERT_EQ(SUCCESS, JsonInserter(*db, *dbAdapter.GetECClass("TestSchema.TestClass2")).Insert(holder, Json::Value()));
 
+    EXPECT_CALL(del, GetExtendedDataClass()).WillRepeatedly(Return(dbAdapter.GetECClass("TestSchema.TestEDClass")));
+    EXPECT_CALL(del, GetExtendedDataRelationshipClass()).WillRepeatedly(Return(dbAdapter.GetECRelationshipClass("TestSchema.TestEDRelClass")));
     EXPECT_CALL(del, GetHolderKey(owner)).WillRepeatedly(Return(holder));
 
     ExtendedData data = adapter.GetData(owner);

@@ -1210,6 +1210,12 @@ bset<ECInstanceKey>& allInstancesBeingDeletedOut
 
     allInstancesBeingDeletedOut.insert(instanceToDelete);
 
+    ECRelationshipClassCP instanceRelClass = GetECRelationshipClass(instanceToDelete);
+    if (nullptr != instanceRelClass)
+        {
+        return FindInstancesBeingDeletedForRelationship(*instanceRelClass, instanceToDelete, allInstancesBeingDeletedOut);
+        }
+
     ECInstanceFinder& finder = GetECInstanceFinder();
 
     ECInstanceKeyMultiMap embeddedChildren, heldChildren, relationships;
@@ -1234,30 +1240,10 @@ bset<ECInstanceKey>& allInstancesBeingDeletedOut
     for (auto& pair : heldChildren)
         {
         ECInstanceKey childKey(pair.first, pair.second);
-
-        ECInstanceKeyMultiMap holdingParents;
-        if (SUCCESS != finder.FindRelatedInstances(&holdingParents, nullptr, childKey, ECInstanceFinder::RelatedDirection_HoldingParents))
+        if (0 == CountHoldingParents(childKey, &allInstancesBeingDeletedOut))
             {
-            return ERROR;
+            childrenBeingDeleted.insert(childKey);
             }
-
-        ECInstanceKeyMultiMap aliveHoldingParents;
-        for (auto& pair : holdingParents)
-            {
-            ECInstanceKey parentKey(pair.first, pair.second);
-            auto it = allInstancesBeingDeletedOut.find(parentKey);
-            if (it == allInstancesBeingDeletedOut.end())
-                {
-                aliveHoldingParents.insert(pair);
-                }
-            }
-
-        if (!aliveHoldingParents.empty())
-            {
-            continue;
-            }
-
-        childrenBeingDeleted.insert(childKey);
         }
 
     for (auto& childKey : childrenBeingDeleted)
@@ -1266,6 +1252,95 @@ bset<ECInstanceKey>& allInstancesBeingDeletedOut
             {
             return ERROR;
             }
+        }
+
+    return SUCCESS;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+size_t ECDbAdapter::CountHoldingParents(ECInstanceKeyCR instanceKey, const bset<ECInstanceKey>* parentsToIgnore)
+    {
+    ECInstanceFinder& finder = GetECInstanceFinder();
+
+    ECInstanceKeyMultiMap holdingParents;
+    if (SUCCESS != finder.FindRelatedInstances(&holdingParents, nullptr, instanceKey, ECInstanceFinder::RelatedDirection_HoldingParents))
+        {
+        BeAssert(false);
+        return 0;
+        }
+
+    if (nullptr == parentsToIgnore)
+        {
+        return !holdingParents.empty();
+        }
+
+    size_t count = 0;
+    for (auto& pair : holdingParents)
+        {
+        ECInstanceKey parentKey(pair.first, pair.second);
+        auto it = parentsToIgnore->find(parentKey);
+        if (it == parentsToIgnore->end())
+            {
+            count++;
+            }
+        }
+
+    return count;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus ECDbAdapter::FindInstancesBeingDeletedForRelationship
+(
+ECRelationshipClassCR relClass,
+ECInstanceKeyCR instanceToDelete,
+bset<ECInstanceKey>& allInstancesBeingDeletedOut
+)
+    {
+    if (relClass.GetId() != instanceToDelete.GetECClassId())
+        {
+        return ERROR;
+        }
+
+    if (StrengthType::Referencing == relClass.GetStrength())
+        {
+        return SUCCESS;
+        }
+
+    Utf8PrintfString key("FindInstancesBeingDeletedForRelationship:%lld", relClass.GetId());
+    auto statement = m_statementCache.GetPreparedStatement(key, [&]
+        {
+        Utf8String ecsql = "SELECT ";
+        ECRelatedInstanceDirection direction = relClass.GetStrengthDirection();
+        if (ECRelatedInstanceDirection::Forward == direction)
+            {
+            ecsql += "TargetECClassId, TargetECInstanceId ";
+            }
+        else if (ECRelatedInstanceDirection::Backward == direction)
+            {
+            ecsql += "SourceECClassId, SourceECInstanceId ";
+            }
+
+        ecsql += "FROM ONLY " + relClass.GetECSqlName() + " WHERE ECInstanceId = ? ";
+        return ecsql;
+        });
+
+    statement->BindId(1, instanceToDelete.GetECInstanceId());
+
+    if (BE_SQLITE_ROW != statement->Step())
+        {
+        return ERROR;
+        }
+
+    ECInstanceKey child(statement->GetValueInt64(0), statement->GetValueId<ECInstanceId>(1));
+
+    if (StrengthType::Embedding == relClass.GetStrength() ||
+        (StrengthType::Holding == relClass.GetStrength() && (CountHoldingParents(child, &allInstancesBeingDeletedOut) <= 1)))
+        {
+        return FindInstancesBeingDeleted(child, allInstancesBeingDeletedOut);
         }
 
     return SUCCESS;
