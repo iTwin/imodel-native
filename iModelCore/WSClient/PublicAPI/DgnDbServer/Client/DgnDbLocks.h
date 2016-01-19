@@ -30,7 +30,7 @@ private:
 protected:
     virtual LockStatus _QueryLocksHeld(bool& held, LockRequestCR locks, DgnDbR db) override;
     virtual LockRequest::Response _AcquireLocks(LockRequestCR locks, DgnDbR db) override;
-    virtual LockStatus _ReleaseLocks(DgnLockSet const& locks, DgnDbR db) override;
+    virtual LockStatus _DemoteLocks(DgnLockSet const& locks, DgnDbR db) override;
     virtual LockStatus _RelinquishLocks(DgnDbR db) override;
     virtual LockStatus _QueryLockLevel(LockLevel& level, LockableId lockId, DgnDbR db) override;
     virtual LockStatus _QueryLocks(DgnLockSet& locks, DgnDbR db) override;

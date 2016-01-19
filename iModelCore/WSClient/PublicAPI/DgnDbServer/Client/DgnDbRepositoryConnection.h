@@ -155,7 +155,7 @@ public:
     //! @param[in] briefcaseId
     //! @param[in] releasedWithRevisionId Revision that was pushed just before those locks are released
     //! @param[in] cancellationToken
-    DGNDBSERVERCLIENT_EXPORT AsyncTaskPtr<DgnDbResult> ReleaseLocks (JsonValueCR locksRequest, const BeSQLite::BeBriefcaseId& briefcaseId, Utf8StringCR releasedWithRevisionId,
+    DGNDBSERVERCLIENT_EXPORT AsyncTaskPtr<DgnDbResult> DemoteLocks (JsonValueCR locksRequest, const BeSQLite::BeBriefcaseId& briefcaseId, Utf8StringCR releasedWithRevisionId,
         ICancellationTokenPtr cancellationToken = nullptr);
 
     //! Delete all currently held locks by specific briefcase.
