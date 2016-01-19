@@ -6,6 +6,8 @@
 |
 +--------------------------------------------------------------------------------------*/
 
+#if defined (USE_GTEST) // use of gmock
+
 #include "ExtendedDataAdapterTests.h"
 
 #include <WebServices/Cache/Util/ECDbAdapter.h>
@@ -165,3 +167,5 @@ TEST_F(ExtendedDataAdapterTests, GetData_HolderInstanceDeleted_DataReturnedIsEmp
     EXPECT_TRUE(data.GetData().empty());
     EXPECT_EQ(Json::Value::null, data.GetValue("Test"));
     }
+
+#endif
