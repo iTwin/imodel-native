@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/WebServices/Client/WSErrorTests.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -276,4 +276,53 @@ TEST_F(WSErrorTests, Ctor_ErrorFileNotFound_SetsIdFileNotFound)
     WSError error(StubHttpResponse(HttpStatus::NotFound, body, {{"Content-Type", "application/json"}}));
 
     EXPECT_EQ(WSError::Id::FileNotFound, error.GetId());
+    }
+
+TEST_F(WSErrorTests, GetData_ReturnsData)
+    {
+    auto body = R"({"errorId":null, "errorMessage":null, "errorDescription":null, "customProperty":"TestData"})";
+    WSError error(StubHttpResponse(HttpStatus::InternalServerError, body, {{"Content-Type", "application/json"}}));
+
+    JsonValueCR data = error.GetData();
+    EXPECT_NE(Json::Value::null, data);
+    EXPECT_TRUE(data.isMember("customProperty"));
+    EXPECT_EQ("TestData", data["customProperty"].asString());
+    }
+
+TEST_F(WSErrorTests, GetData_CanceledHttpStatus)
+    {
+    WSError error(StubHttpResponse(ConnectionStatus::Canceled));
+
+    EXPECT_EQ(Json::Value::null, error.GetData());
+    }
+
+TEST_F(WSErrorTests, GetData_HttpStatusNotOkOrCanceled)
+    {
+    EXPECT_EQ(Json::Value::null, WSError(StubHttpResponse(ConnectionStatus::None)).GetData());
+    EXPECT_EQ(Json::Value::null, WSError(StubHttpResponse(ConnectionStatus::CouldNotConnect)).GetData());
+    EXPECT_EQ(Json::Value::null, WSError(StubHttpResponse(ConnectionStatus::ConnectionLost)).GetData());
+    EXPECT_EQ(Json::Value::null, WSError(StubHttpResponse(ConnectionStatus::Timeout)).GetData());
+    EXPECT_EQ(Json::Value::null, WSError(StubHttpResponse(ConnectionStatus::UnknownError)).GetData());
+    }
+
+TEST_F(WSErrorTests, GetData_IMSRedirect)
+    {
+    WSError error(StubHttpResponseWithUrl(HttpStatus::OK, "http://foo/IMS/Account/Login?foo"));
+
+    EXPECT_EQ(Json::Value::null, error.GetData());
+    }
+
+TEST_F(WSErrorTests, GetData_Xml)
+    {
+    auto body = R"( <ModelError
+                      xmlns:i="http://www.w3.org/2001/XMLSchema-instance"
+                      xmlns="http://schemas.datacontract.org/2004/07/Bentley.Mas.WebApi.Models">
+                        <errorId>ClassNotFound</errorId>
+                        <errorMessage>TestMessage</errorMessage>
+                        <errorDescription>TestDescription</errorDescription>
+                    </ModelError>)";
+
+    WSError error(StubHttpResponse(HttpStatus::NotFound, body, {{"Content-Type", "application/xml"}}));
+
+    EXPECT_EQ(Json::Value::null, error.GetData());
     }
