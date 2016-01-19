@@ -8,13 +8,12 @@
 
 #pragma once
 
-#include "../../../Utils/WebServicesTestsHelper.h"
-#include "../../../Utils/SeedFile.h"
+#include "../CachingTestsHelper.h"
 
-class ExtendedDataAdapterTests : public WSClientBaseTest, SeedFile
+class ExtendedDataAdapterTests : public WSClientBaseTest
     {
-    protected:
-        virtual void SetupSeedFile(BeFileNameCR filePath) override;
+    private:
+        static SeedFile s_seedECDb;
 
     public:
         std::shared_ptr<ObservableECDb> GetTestECDb();

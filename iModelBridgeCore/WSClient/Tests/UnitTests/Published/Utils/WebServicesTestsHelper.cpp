@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/Utils/WebServicesTestsHelper.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -283,6 +283,13 @@ BeFileName GetTestsTempDir()
     {
     BeFileName path;
     BeTest::GetHost().GetTempDir(path);
+    return path;
+    }
+
+BeFileName GetTestsOutputDir()
+    {
+    BeFileName path;
+    BeTest::GetHost().GetOutputRoot(path);
     return path;
     }
 
