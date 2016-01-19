@@ -39,7 +39,7 @@ TEST_F(DgnBaseDomainSchemaTests, ValidateDomainSchemaDDL)
         {
         Utf8String ddl = GetDDL(DGN_TABLE(DGN_CLASSNAME_Element));
         ASSERT_TRUE(ddl.Contains("[Id] INTEGER NOT NULL,"));
-        ASSERT_TRUE(ddl.Contains("[ECClassId] INTEGER NOT NULL,")); // WIP: why not NOT NULL?
+        ASSERT_TRUE(ddl.Contains("[ECClassId] INTEGER NOT NULL,"));
         ASSERT_TRUE(ddl.Contains("[ParentId] INTEGER,"));
         ASSERT_TRUE(ddl.Contains("[ModelId] INTEGER NOT NULL,"));
         ASSERT_TRUE(ddl.Contains("[Code_AuthorityId] INTEGER NOT NULL,"));
