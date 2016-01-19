@@ -85,10 +85,10 @@ protected:
     DGNPLATFORM_EXPORT virtual void _FromPropertiesJson(JsonValueCR);
     DGNPLATFORM_EXPORT virtual DgnAuthorityPtr _CloneForImport(DgnDbStatus* status, DgnImportContext& importer) const;
 
-    DGNPLATFORM_EXPORT virtual DgnCode _CloneCodeForImport(DgnElementCR srcElem, DgnModelR destModel, DgnImportContext& importer) const;
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _CloneCodeForImport(DgnCodeR clonedCode, DgnElementCR srcElem, DgnModelR destModel, DgnImportContext& importer) const;
 
     DGNPLATFORM_EXPORT virtual DgnDbStatus _ValidateCode(ICodedObjectCR codedObject) const;
-    virtual DgnCode _RegenerateCode(ICodedObjectCR codedObject) const { return codedObject.GetCode(); }
+    virtual DgnDbStatus _RegenerateCode(DgnCodeR regeneratedCode, ICodedObjectCR codedObject) const { regeneratedCode = codedObject.GetCode(); return DgnDbStatus::Success; }
 
     static DgnCode CreateCode(DgnAuthorityId authorityId, Utf8StringCR value, Utf8StringCR nameSpace) { return DgnCode(authorityId, value, nameSpace); }
 
@@ -103,11 +103,23 @@ public:
 
     DGNPLATFORM_EXPORT DgnDbStatus Insert();
 
-    DgnDbStatus ValidateCode(ICodedObjectCR obj) const { return _ValidateCode(obj); }
-    DgnCode RegenerateCode(ICodedObjectCR obj) const { return _RegenerateCode(obj); }
-    DgnCode CloneCodeForImport(DgnElementCR srcElem, DgnModelR destModel, DgnImportContext& importer) const { return _CloneCodeForImport(srcElem, destModel, importer); }
+    DGNPLATFORM_EXPORT DgnDbStatus ValidateCode(ICodedObjectCR obj) const;
+    DGNPLATFORM_EXPORT DgnDbStatus RegenerateCode(DgnCodeR newCode, ICodedObjectCR obj) const;
+    DGNPLATFORM_EXPORT DgnDbStatus CloneCodeForImport(DgnCodeR newCode, DgnElementCR srcElem, DgnModelR destModel, DgnImportContext& importer) const;
 
     DGNPLATFORM_EXPORT static DgnAuthorityPtr Import(DgnDbStatus* status, DgnAuthorityCR sourceAuthority, DgnImportContext& importer);
+
+    //! Identifies actions which may be restricted for authorities created by a handler for a missing subclass of DgnAuthority
+    struct RestrictedAction : DgnDomain::Handler::RestrictedAction
+    {
+        DEFINE_T_SUPER(DgnDomain::Handler::RestrictedAction);
+
+        static const uint64_t ValidateCode = T_Super::NextAvailable; //!< Validate code issued by this authority
+        static const uint64_t RegenerateCode = ValidateCode << 1; //!< Regenerate a code issued by this authority
+        static const uint64_t CloneCode = RegenerateCode << 1; //!< Clone a code issued by this authority
+
+        DGNPLATFORM_EXPORT static uint64_t Parse(Utf8CP name); //!< Parse action name from ClassHasHandler custom attribute
+    };
 };
 
 //=======================================================================================
@@ -242,6 +254,7 @@ namespace dgn_AuthorityHandler
         virtual AuthorityHandlerP _ToAuthorityHandler() override { return this; }
         virtual DgnAuthorityP _CreateInstance(DgnAuthority::CreateParams const& params) { return new DgnAuthority(params); }
     public:
+        virtual uint64_t _ParseRestrictedAction(Utf8CP name) const override { return DgnAuthority::RestrictedAction::Parse(name); }
         DGNPLATFORM_EXPORT static AuthorityHandlerP FindHandler(DgnDb const& dgndb, DgnClassId classId);
 
         DgnAuthorityPtr Create(DgnAuthority::CreateParams const& params) { return _CreateInstance(params); }

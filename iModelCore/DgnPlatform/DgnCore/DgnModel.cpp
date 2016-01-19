@@ -541,6 +541,10 @@ DgnDbStatus DgnModel::_OnUpdate()
     if (LockStatus::Success != GetDgnDb().Locks().LockModel(*this, LockLevel::Exclusive))
         return DgnDbStatus::LockNotHeld;
 
+    // Ensure this briefcase has reserved the model's code
+    if (CodeStatus::Success != GetDgnDb().Codes().ReserveCode(GetCode()))
+        return DgnDbStatus::CodeNotReserved;
+
     return DgnDbStatus::Success;
     }
 
@@ -878,6 +882,10 @@ DgnDbStatus DgnModel::_OnInsert()
     // If db is exclusively locked, cannot create models in it
     if (LockStatus::Success != GetDgnDb().Locks().LockDb(LockLevel::Shared))
         return DgnDbStatus::LockNotHeld;
+
+    // Ensure this briefcase has reserved the model's code
+    if (CodeStatus::Success != GetDgnDb().Codes().ReserveCode(GetCode()))
+        return DgnDbStatus::CodeNotReserved;
 
     return DgnDbStatus::Success;
     }

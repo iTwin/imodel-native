@@ -224,6 +224,10 @@ DgnDbStatus DgnElement::_OnInsert()
     if (LockStatus::Success != GetDgnDb().Locks().LockModel(*GetModel(), LockLevel::Shared))
         return DgnDbStatus::LockNotHeld;
 
+    // Ensure this briefcase has reserved the element's code
+    if (CodeStatus::Success != GetDgnDb().Codes().ReserveCode(GetCode()))
+        return DgnDbStatus::CodeNotReserved;
+
     return GetModel()->_OnInsertElement(*this);
     }
 
@@ -330,6 +334,10 @@ DgnDbStatus DgnElement::_OnUpdate(DgnElementCR original)
 
     if (LockStatus::Success != GetDgnDb().Locks().LockElement(*this, LockLevel::Exclusive, original.GetModelId()))
         return DgnDbStatus::LockNotHeld;
+
+    // Ensure this briefcase has reserved the element's code
+    if (CodeStatus::Success != GetDgnDb().Codes().ReserveCode(GetCode()))
+        return DgnDbStatus::CodeNotReserved;
 
     return GetModel()->_OnUpdateElement(*this, original);
     }
@@ -880,7 +888,7 @@ DgnElement::CreateParams DgnElement::GetCreateParamsForImport(DgnModelR destMode
     CreateParams parms(importer.GetDestinationDb(), GetModelId(), GetElementClassId());
     DgnAuthorityCPtr authority = GetCode().IsValid() ? GetDgnDb().Authorities().GetAuthority(GetCode().GetAuthority()) : nullptr;
     if (authority.IsValid())
-        parms.m_code = authority->CloneCodeForImport(*this, destModel, importer);
+        authority->CloneCodeForImport(parms.m_code, *this, destModel, importer);
 
     if (importer.IsBetweenDbs())
         parms.RelocateToDestinationDb(importer);

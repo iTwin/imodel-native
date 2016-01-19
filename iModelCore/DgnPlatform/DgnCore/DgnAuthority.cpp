@@ -65,9 +65,10 @@ DgnDbStatus DgnAuthority::Insert()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnCode DgnAuthority::_CloneCodeForImport(DgnElementCR srcElem, DgnModelR destModel, DgnImportContext& importer) const
+DgnDbStatus DgnAuthority::_CloneCodeForImport(DgnCodeR code, DgnElementCR srcElem, DgnModelR destModel, DgnImportContext& importer) const
     {
-    return importer.IsBetweenDbs() ? srcElem.GetCode() : DgnCode();
+    code = importer.IsBetweenDbs() ? srcElem.GetCode() : DgnCode();
+    return DgnDbStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -723,4 +724,42 @@ bool DgnModel::_SupportsCodeAuthority(DgnAuthorityCR auth) const
     return SystemAuthority::GetId(SystemAuthority::Local) != auth.GetAuthorityId();
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/16
++---------------+---------------+---------------+---------------+---------------+------*/
+uint64_t DgnAuthority::RestrictedAction::Parse(Utf8CP name)
+    {
+    if (0 == BeStringUtilities::Stricmp(name, "validatecode"))
+        return ValidateCode;
+    else if (0 == BeStringUtilities::Stricmp(name, "regeneratecode"))
+        return RegenerateCode;
+    else if (0 == BeStringUtilities::Stricmp(name, "clonecode"))
+        return CloneCode;
+    else
+        return T_Super::Parse(name);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus DgnAuthority::ValidateCode(ICodedObjectCR obj) const
+    {
+    return GetAuthorityHandler()._IsRestrictedAction(RestrictedAction::ValidateCode) ? DgnDbStatus::MissingHandler : _ValidateCode(obj);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus DgnAuthority::CloneCodeForImport(DgnCodeR code, DgnElementCR src, DgnModelR model, DgnImportContext& context) const
+    {
+    return GetAuthorityHandler()._IsRestrictedAction(RestrictedAction::CloneCode) ? DgnDbStatus::MissingHandler : _CloneCodeForImport(code, src, model, context);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus DgnAuthority::RegenerateCode(DgnCodeR code, ICodedObjectCR codedObject) const
+    {
+    return GetAuthorityHandler()._IsRestrictedAction(RestrictedAction::RegenerateCode) ? DgnDbStatus::MissingHandler : _RegenerateCode(code, codedObject);
+    }
 

@@ -168,6 +168,7 @@ enum class CodeStatus : int
     PendingTransactions, //!< An operation requires local changes to be committed or abandoned
     InvalidRequest, //!< Server did not understand a request
     CannotCreateRevision, //!< An operation required creation of a DgnRevision, which failed
+    CodeNotReserved, //!< A code cannot be released because it has not been reserved by the requesting briefcase
 };
 
 /** @cond BENTLEY_SDK_Publisher */
