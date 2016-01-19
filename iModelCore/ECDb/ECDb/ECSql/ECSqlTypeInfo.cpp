@@ -423,8 +423,8 @@ void ECSqlTypeInfo::DetermineTypeInfo(ECPropertyCR ecProperty)
     else if (ecProperty.GetIsNavigation())
         {
         NavigationECPropertyCP navProp = ecProperty.GetAsNavigationPropertyCP();
-        primitiveType = PRIMITIVETYPE_Long;
-        if (NavigationPropertyMap::CanOnlyHaveOneRelatedInstance(*navProp))
+        primitiveType = navProp->GetIdType();
+        if (!navProp->IsMultiple())
             isArray = false;
         else
             {

@@ -739,7 +739,7 @@ BentleyStatus ECDbSchemaReader::LoadECPropertiesFromDb(ECClassP& ecClass, Contex
                 BeAssert(relClassRaw->IsRelationshipClass());
                 ECRelatedInstanceDirection direction = stmt->IsColumnNull(navPropDirectionIx) ? ECRelatedInstanceDirection::Forward : (ECRelatedInstanceDirection) stmt->GetValueInt(navPropDirectionIx);
                 NavigationECPropertyP navProp = nullptr;
-                if (ECObjectsStatus::Success != ecClass->GetEntityClassP()->CreateNavigationProperty(navProp, propName, *relClassRaw->GetRelationshipClassCP(), direction))
+                if (ECObjectsStatus::Success != ecClass->GetEntityClassP()->CreateNavigationProperty(navProp, propName, *relClassRaw->GetRelationshipClassCP(), direction, false))
                     return ERROR;
 
                 //keep track of nav prop as we need to validate them when everything else is loaded

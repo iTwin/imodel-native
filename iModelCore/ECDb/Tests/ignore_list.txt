@@ -31,9 +31,6 @@ JoinedTableECDbMapStrategyTests.MultiInheritence1
 #should be either removed or inverted
 ECDbMappingTestFixture.RelationshipWithAbstractClassAsConstraintOnParentEnd
 
-# While NavProp support is WIP.
-ECSqlNavigationPropertyTestFixture.*
-
 #Hassan TFS#356965
 #should use dynamically read ECInstanceId from db instead of hardcode ones
 ECSqlInsertTestFramework.RelationshipLinkTableMappingTests
@@ -43,4 +40,7 @@ ECSqlStatementTests.MiscTests
 ECSqlDeleteTestFramework.WhereRelationshipWithAdditionalPropsTests
 ECSqlSelectTestFramework.WhereRelationshipWithAdditionalPropsTests
 ECSqlUpdateTestFramework.WhereRelationshipWithAdditionalPropsTests
+
+TFS#359449 (Affan)
+ECSqlNavigationPropertyTestFixture.SingleInstanceNavProp_ForeignKeyMappingWithJoinedTable
 

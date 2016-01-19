@@ -967,7 +967,7 @@ PropertyMapPtr NavigationPropertyMap::Create(ClassMapLoadContext& ctx, ECDbCR ec
         return nullptr;
         }
 
-    if (!CanOnlyHaveOneRelatedInstance(*navProp))
+    if (navProp->IsMultiple())
         {
         ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "NavigationECProperty '%s.%s' has a multiplicity of '%s'. ECDb only supports NavigationECProperties with a maximum multiplicity of 1.",
                                                       navProp->GetClass().GetFullName(), navProp->GetName().c_str(),
@@ -996,7 +996,8 @@ NavigationPropertyMap::NavigationPropertyMap(ClassMapLoadContext& ctx, ECN::ECPr
 NavigationPropertyMap::NavigationPropertyMap(ClassMapLoadContext& ctx, NavigationPropertyMap const& proto, PropertyMap const* parentPropertyMap) :PropertyMap(proto.GetProperty(), proto.GetPropertyAccessString(), parentPropertyMap), m_navigationProperty(proto.m_navigationProperty), m_relClassMap(proto.m_relClassMap)
     {
     //we need to wait with finishing the nav prop map set up to the end when all relationships have been imported and mapped
-    ctx.AddNavigationPropertyMap(*this);
+    if (proto.m_relClassMap == nullptr)
+        ctx.AddNavigationPropertyMap(*this);
     }
 
 //---------------------------------------------------------------------------------------
@@ -1022,7 +1023,7 @@ bool NavigationPropertyMap::IsSupportedInECSql(bool logIfNotSupported, ECDbCP ec
     {
     BeAssert(!logIfNotSupported || ecdb != nullptr);
 
-    if (!CanOnlyHaveOneRelatedInstance())
+    if (m_navigationProperty->IsMultiple())
         {
         if (logIfNotSupported)
             ecdb->GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, 
@@ -1083,16 +1084,6 @@ ECRelationshipEnd NavigationPropertyMap::GetConstraintEnd() const
     ECRelationshipClassCP relClass = m_navigationProperty->GetRelationshipClass();
     BeAssert(relClass != nullptr);
     return m_navigationProperty->GetDirection() == ECRelatedInstanceDirection::Forward ? ECRelationshipEnd::ECRelationshipEnd_Target : ECRelationshipEnd::ECRelationshipEnd_Source;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                 Krischan.Eberle                      01/2016
-//---------------------------------------------------------------------------------------
-//static
-bool NavigationPropertyMap::CanOnlyHaveOneRelatedInstance(NavigationECPropertyCR navProp)
-    {
-    ECRelationshipConstraintCR constraint = GetConstraint(navProp);
-    return constraint.GetCardinality().GetUpperLimit() <= 1;
     }
 
 //---------------------------------------------------------------------------------------

@@ -81,8 +81,8 @@ TEST_F(ECSqlNavigationPropertyTestFixture, ECSqlSupport)
     AssertPrepare("INSERT INTO ts.B (PB,AParent) VALUES(123,?)", true, "NavProp with single related instance is expected to be supported.");
     AssertPrepare("INSERT INTO ts.D (PD,CParent) VALUES(123,?)", false, "NavProp with link table relationship is not supported.");
 
-    AssertPrepare("UPDATE ONLY ts.B SET AParent=?", false, "Updating NavProp is not supported.");
-    AssertPrepare("UPDATE ONLY ts.D SET CParent=?", false, "Updating NavProp is not supported.");
+    AssertPrepare("UPDATE ONLY ts.B SET AParent=?", true, "Updating NavProp with end table rel is supported.");
+    AssertPrepare("UPDATE ONLY ts.D SET CParent=?", false, "Updating NavProp with link table rel is not supported.");
     }
 
 //---------------------------------------------------------------------------------------
@@ -299,6 +299,110 @@ TEST_F(ECSqlNavigationPropertyTestFixture, SingleInstanceNavProp_ForeignKeyMappi
                                       "</ECSchema>"), 3);
 
     ASSERT_TRUE(ecdb.IsDbOpen());
+
+    ECInstanceKey catKey;
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT GetECClassId(), ECInstanceId FROM np.DgnCategory LIMIT 1"));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+
+    catKey = ECInstanceKey(stmt.GetValueInt64(0), stmt.GetValueId<ECInstanceId>(1));
+    ASSERT_TRUE(catKey.IsValid());
+    }
+
+    ECInstanceKey fooKey;
+    double fooDiameter = 1.1;
+    Utf8CP fooCode = "Foo-1";
+
+    //INSERT
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO np.FooElement(Diameter, Code, Category) VALUES(?,?,?)"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindDouble(1, fooDiameter));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(2, fooCode, IECSqlBinder::MakeCopy::No));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(3, catKey.GetECInstanceId()));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(fooKey));
+    }
+
+    //Verify via SELECT
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT ECInstanceId, Code, Category, Diameter FROM np.FooElement"));
+    int rowCount = 0;
+    while (stmt.Step() == BE_SQLITE_ROW)
+        {
+        rowCount++;
+
+        ECInstanceId currentId = stmt.GetValueId<ECInstanceId>(0);
+        if (currentId == fooKey.GetECInstanceId())
+            {
+            ASSERT_STREQ(fooCode, stmt.GetValueText(1));
+            ASSERT_EQ(catKey.GetECInstanceId().GetValue(), stmt.GetValueId<ECInstanceId>(2).GetValue());
+            ASSERT_EQ(fooDiameter, stmt.GetValueDouble(3));
+            }
+        else
+            ASSERT_TRUE(stmt.IsValueNull(2));
+        }
+
+    ASSERT_GT(rowCount, 0);
+    stmt.Finalize();
+
+    //select via base class
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT ECInstanceId, GetECClassId(), Category FROM np.GeometrySource"));
+    rowCount = 0;
+    while (stmt.Step() == BE_SQLITE_ROW)
+        {
+        rowCount++;
+
+        ECInstanceId currentId = stmt.GetValueId<ECInstanceId>(0);
+        if (currentId == fooKey.GetECInstanceId())
+            {
+            ASSERT_EQ(fooKey.GetECClassId(), stmt.GetValueInt64(1));
+            ASSERT_EQ(catKey.GetECInstanceId().GetValue(), stmt.GetValueId<ECInstanceId>(2).GetValue());
+            }
+        else
+            ASSERT_TRUE(stmt.IsValueNull(2));
+        }
+
+    ASSERT_GT(rowCount, 0);
+    }
+
+    //UPDATE
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "UPDATE np.GeometrySource SET Category=? WHERE Category IS NULL"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, catKey.GetECInstanceId()));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    }
+
+    //Verify via SELECT
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT Category FROM np.FooElement"));
+    int rowCount = 0;
+    while (stmt.Step() == BE_SQLITE_ROW)
+        {
+        rowCount++;
+        ASSERT_FALSE(stmt.IsValueNull(0));
+        ASSERT_EQ(catKey.GetECInstanceId().GetValue(), stmt.GetValueId<ECInstanceId>(0).GetValue());
+        }
+
+    ASSERT_GT(rowCount, 0);
+    stmt.Finalize();
+
+    //select via base class
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT Category FROM np.GeometrySource"));
+    rowCount = 0;
+    while (stmt.Step() == BE_SQLITE_ROW)
+        {
+        rowCount++;
+        ASSERT_FALSE(stmt.IsValueNull(0));
+        ASSERT_EQ(catKey.GetECInstanceId().GetValue(), stmt.GetValueId<ECInstanceId>(0).GetValue());
+        }
+
+    ASSERT_GT(rowCount, 0);
+    stmt.Finalize();
+    }
     }
 
 END_ECDBUNITTESTS_NAMESPACE

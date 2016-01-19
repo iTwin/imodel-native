@@ -392,8 +392,6 @@ public:
     bool IsSupportedInECSql(bool logIfNotSupported = false, ECDbCP ecdb = nullptr) const;
 
     RelationshipClassMap const& GetRelationshipClassMap() const { BeAssert(m_relClassMap != nullptr); return *m_relClassMap; }
-    bool CanOnlyHaveOneRelatedInstance() const { return CanOnlyHaveOneRelatedInstance(*m_navigationProperty); }
-    static bool CanOnlyHaveOneRelatedInstance(ECN::NavigationECPropertyCR);
 
     RelationshipConstraintMap const& GetConstraintMap() const;
     

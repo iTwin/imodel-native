@@ -29,7 +29,6 @@ private:
     static bool NeedsPreparation (ECSqlPrepareContext::ExpScope const&, PropertyMapCR);
 
     static ECSqlStatus PrepareInSubqueryRef (NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext&, PropertyNameExp const&);
-    static ECSqlStatus ValidateNavigationPropertyExp(NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext&, PropertyNameExp const&, NavigationPropertyMap const&, ECSqlPrepareContext::ExpScope const&);
 
 public:
     //! Prepares the given property name expression.
