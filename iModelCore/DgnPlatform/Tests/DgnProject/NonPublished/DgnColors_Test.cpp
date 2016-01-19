@@ -125,33 +125,64 @@ TEST_F(DgnColorTests, TrueColors)
     EXPECT_EQ(DgnDbStatus::WrongElement, updateStat);
     }
 
-#define VERIFY_RGB_HSV(R,G,B ,H,S,V) { \
+#define VERIFY_HSV_TO_RGB(R,G,B ,H,S,V) { \
     HsvColorDef hsvColor = {H,S,V}; \
-    EXPECT_TRUE(ColorDef(R, G, B) == ColorUtil::FromHSV(hsvColor)); \
-    HsvColorDef toHsv =  ColorUtil::ToHSV(ColorDef(R, G, B)); \
-    EXPECT_TRUE(hsvColor.hue == toHsv.hue); \
+    ColorDef convertedRGB = ColorUtil::FromHSV(hsvColor); \
+    EXPECT_TRUE(ColorDef(R, G, B) == convertedRGB)<<"Expected RGB : "<<R<<":"<<G<<":"<<B<<"\nConverted RGB : "<<(int)convertedRGB.GetRed()<<":"<<(int)convertedRGB.GetGreen()<<":"<<(int)convertedRGB.GetBlue(); \
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Umar.Hayat                   01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(DgnColorTests, HSVRGB_RoundTrip)
+TEST_F(DgnColorTests, HSV_TO_RGB)
     {
     // Black
-    VERIFY_RGB_HSV(/*RGB*/0, 0, 0,/*HSV*/0, 0, 0);
+    VERIFY_HSV_TO_RGB(/*RGB*/0, 0, 0,/*HSV*/0, 0, 0);
 
     // White
-    VERIFY_RGB_HSV(/*RGB*/255, 255, 255,/*HSV*/0, 0, 100);
+    VERIFY_HSV_TO_RGB(/*RGB*/255, 255, 255,/*HSV*/0, 0, 100);
 
     // Red
-    VERIFY_RGB_HSV(/*RGB*/255, 255, 255,/*HSV*/0, 100, 100);
+    VERIFY_HSV_TO_RGB(/*RGB*/255, 0, 0,/*HSV*/0, 100, 100);
 
     // Yellow
-    VERIFY_RGB_HSV(/*RGB*/255, 255, 0,/*HSV*/60, 100, 100);
+    VERIFY_HSV_TO_RGB(/*RGB*/255, 255, 0,/*HSV*/60, 100, 100);
     
     // Magenta
-    VERIFY_RGB_HSV(/*RGB*/255, 255, 0,/*HSV*/300, 100, 100);
+    VERIFY_HSV_TO_RGB(/*RGB*/255, 0, 255,/*HSV*/300, 100, 100);
 
     // Gray
-    VERIFY_RGB_HSV(/*RGB*/128, 128, 128,/*HSV*/0, 0, 50);
+    VERIFY_HSV_TO_RGB(/*RGB*/128, 128, 128,/*HSV*/0, 0, 50);
+    }
+
+#define VERIFY_RGB_TO_HSV(R,G,B ,H,S,V) { \
+    HsvColorDef expectedHsv = {H,S,V}; \
+    HsvColorDef convertedHsv =  ColorUtil::ToHSV(ColorDef(R, G, B)); \
+    EXPECT_EQ(expectedHsv.hue           , convertedHsv.hue); \
+    EXPECT_EQ(expectedHsv.saturation    , convertedHsv.saturation); \
+    EXPECT_EQ(expectedHsv.value         , convertedHsv.value); \
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Umar.Hayat                   01/16
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DgnColorTests, RGB_TO_HSV)
+    {
+    // Black
+    VERIFY_RGB_TO_HSV(/*RGB*/0, 0, 0,/*HSV*/0, 0, 0);
+
+    // White
+    VERIFY_RGB_TO_HSV(/*RGB*/255, 255, 255,/*HSV*/0, 0, 100);
+
+    // Red
+    VERIFY_RGB_TO_HSV(/*RGB*/255, 0, 0,/*HSV*/0, 100, 100);
+
+    // Yellow
+    VERIFY_RGB_TO_HSV(/*RGB*/255, 255, 0,/*HSV*/60, 100, 100);
+    
+    // Magenta
+    VERIFY_RGB_TO_HSV(/*RGB*/255, 0, 255,/*HSV*/300, 100, 100);
+
+    // Gray
+    VERIFY_RGB_TO_HSV(/*RGB*/128, 128, 128,/*HSV*/0, 0, 50);
     }
