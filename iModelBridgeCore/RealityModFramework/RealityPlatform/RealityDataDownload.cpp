@@ -397,8 +397,12 @@ bool RealityDataDownload::UnZipFile(WString& pi_strSrc, WString& pi_strDest)
         {
         res = S_OK;
         __try{
-            if (CoCreateInstance(CLSID_Shell, NULL, CLSCTX_INPROC_SERVER, IID_IShellDispatch, (void **)&pISD) != S_OK)
+            if (CoCreateInstance(CLSID_Shell, NULL, CLSCTX_INPROC_SERVER, IID_IShellDispatch, (void **) &pISD) != S_OK)
+                {
+                BeFileName::BeDeleteFile(pi_strSrc.c_str());
                 return false;
+                }
+                
 
             InZipFile.vt = VT_BSTR;
             InZipFile.bstrVal = lpZipFile;
@@ -406,6 +410,7 @@ bool RealityDataDownload::UnZipFile(WString& pi_strSrc, WString& pi_strDest)
             if (!pZippedFile)
                 {
                 pISD->Release();
+                BeFileName::BeDeleteFile(pi_strSrc.c_str());
                 return false;
                 }
 
@@ -416,6 +421,7 @@ bool RealityDataDownload::UnZipFile(WString& pi_strSrc, WString& pi_strDest)
                 {
                 pZippedFile->Release();
                 pISD->Release();
+                BeFileName::BeDeleteFile(pi_strSrc.c_str());
                 return false;
                 }
 
@@ -425,6 +431,7 @@ bool RealityDataDownload::UnZipFile(WString& pi_strSrc, WString& pi_strDest)
                 pDestination->Release();
                 pZippedFile->Release();
                 pISD->Release();
+                BeFileName::BeDeleteFile(pi_strSrc.c_str());
                 return false;
                 }
 
@@ -435,6 +442,7 @@ bool RealityDataDownload::UnZipFile(WString& pi_strSrc, WString& pi_strDest)
                 pDestination->Release();
                 pZippedFile->Release();
                 pISD->Release();
+                BeFileName::BeDeleteFile(pi_strSrc.c_str());
                 return false;
                 }
 
@@ -454,6 +462,9 @@ bool RealityDataDownload::UnZipFile(WString& pi_strSrc, WString& pi_strDest)
             pZippedFile->Release(); pZippedFile = 0L;
             pISD->Release(); pISD = 0L;
 
+            if (!retval)
+                BeFileName::BeDeleteFile(pi_strSrc.c_str());
+
             return retval;
             }
         __finally
@@ -462,6 +473,7 @@ bool RealityDataDownload::UnZipFile(WString& pi_strSrc, WString& pi_strDest)
                 CoUninitialize();
             }
         }
+    BeFileName::BeDeleteFile(pi_strSrc.c_str());
     return false;
     }
 
