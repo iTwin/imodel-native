@@ -123,7 +123,7 @@ CodeStatus CodesServer::ValidateRelease(DgnCodeInfoSet& discarded, Statement& st
             {
             DgnCode code(stmt.GetValueId<DgnAuthorityId>(0), stmt.GetValueText(2), stmt.GetValueText(1));
             DgnCodeInfo info(code);
-            info.SetDiscarded(stmt.GetValueText(4));
+            info.SetDiscarded(stmt.GetValueText(5));
             discarded.insert(info);
             }
         }
@@ -178,6 +178,8 @@ CodesServer::Response CodesServer::_ReserveCodes(Request const& req, DgnDbR db)
     stmt.Prepare(m_db, "SELECT " SERVER_Authority "," SERVER_NameSpace "," SERVER_Value "," SERVER_State "," SERVER_Revision "," SERVER_Briefcase
                     "   FROM " SERVER_Table " WHERE InVirtualSet(@vset, " SERVER_Authority "," SERVER_NameSpace "," SERVER_Value ")");
 
+    DgnCodeInfoSet discarded;
+
     CodeStatus status = CodeStatus::Success;
     Response response(status);
     stmt.BindVirtualSet(1, vset);
@@ -213,6 +215,11 @@ CodesServer::Response CodesServer::_ReserveCodes(Request const& req, DgnDbR db)
                 break;
             case CodeState::Discarded:
                 // ###TODO: Check if briefcase has pulled the required revision...
+                {
+                DgnCodeInfo info(code);
+                info.SetDiscarded(stmt.GetValueText(4));
+                discarded.insert(info);
+                }
                 break;
             default:
                 BeAssert(false);
@@ -225,17 +232,21 @@ CodesServer::Response CodesServer::_ReserveCodes(Request const& req, DgnDbR db)
         return response;
 
     auto bcId = static_cast<int>(db.GetBriefcaseId().GetValue());
+    Statement insert;
+    insert.Prepare(m_db, "INSERT OR REPLACE INTO " SERVER_Table "(" SERVER_Authority "," SERVER_NameSpace "," SERVER_Value "," SERVER_State "," SERVER_Briefcase "," SERVER_Revision
+                        ") VALUES (?,?,?,1,?,?)");
     for (auto const& code : req)
         {
-        Statement insert;
-        insert.Prepare(m_db, "INSERT OR REPLACE INTO " SERVER_Table "(" SERVER_Authority "," SERVER_NameSpace "," SERVER_Value "," SERVER_State "," SERVER_Briefcase
-                            ") VALUES (?,?,?,1,?)");
         insert.BindId(1, code.GetAuthority());
         insert.BindText(2, code.GetNamespace(), Statement::MakeCopy::No);
         insert.BindText(3, code.GetValue(), Statement::MakeCopy::No);
         insert.BindInt(4, bcId);
+        auto revIter = discarded.find(DgnCodeInfo(code));
+        if (discarded.end() != revIter)
+            insert.BindText(5, revIter->GetRevisionId(), Statement::MakeCopy::No);
 
         insert.Step();
+        insert.Reset();
         }
 
     Dump("ReserveCodes: after");
@@ -557,6 +568,7 @@ Utf8String CodesManagerTest::CommitRevision(DgnDbR db)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* Exercise the basic functions: reserve + release codes, query code state
 * @bsimethod                                                    Paul.Connelly   01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CodesManagerTest, ReserveQueryRelinquish)
@@ -599,6 +611,9 @@ TEST_F(CodesManagerTest, ReserveQueryRelinquish)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* Test that any INSERT or UPDATE will fail if the object's code has not been reserved.
+* (If we don't explicitly reserve it prior to insert/update, an attempt will be made to
+* reserve it for us).
 * @bsimethod                                                    Paul.Connelly   01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CodesManagerTest, AutoReserveCodes)
@@ -640,5 +655,88 @@ TEST_F(CodesManagerTest, AutoReserveCodes)
     pStyle = nullptr;
 
     db.SaveChanges();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* When we commit a revision, the changes made to the revision are processed such that:
+*   - Any codes which were newly-assigned become marked as "used", and
+*   - Any previously-used codes which became no-longer-used are marked as "discarded"
+* In both cases the server records the revision ID.
+* Codes which become "used" were necessarily previously "reserved" by the briefcase.
+* After committing the revision, they are no longer "reserved".
+* Codes which became "discarded" were necessarily previously "used".
+* After committing the revision, they become available for reserving by any briefcase,
+* provided the briefcase has pulled the revision in which they became discarded.
+* @bsimethod                                                    Paul.Connelly   01/16
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(CodesManagerTest, CodesInRevisions)
+    {
+    DgnDbPtr pDb = SetupDb(L"CodesInRevisions.dgndb", BeBriefcaseId(1));
+    DgnDbR db = *pDb;
+    IDgnCodesManagerR mgr = db.Codes();
+
+    // Reserve some codes
+    DgnCode unusedCode = MakeStyleCode("Unused", db);
+    DgnCode usedCode = MakeStyleCode("Used", db);
+    Request req;
+    req.insert(unusedCode);
+    req.insert(usedCode);
+    EXPECT_STATUS(Success, mgr.ReserveCodes(req).GetResult());
+
+    // Use one of the codes
+    EXPECT_EQ(DgnDbStatus::Success, InsertStyle("Used", db));
+    ExpectState(MakeReserved(unusedCode, db), db);
+    ExpectState(MakeReserved(usedCode, db), db);
+
+    // Commit the change as a revision
+    Utf8String rev1 = CommitRevision(db);
+    EXPECT_FALSE(rev1.empty());
+
+    // The used code should not be marked as such
+    ExpectState(MakeUsed(usedCode, rev1), db);
+    ExpectState(MakeReserved(unusedCode, db), db);
+
+    // We cannot reserve a used code
+    EXPECT_STATUS(CodeUnavailable, mgr.ReserveCode(usedCode));
+
+    // Swap the code so that "Used" becomes "Unused"
+    auto pStyle = AnnotationTextStyle::Get(db, "Used")->CreateCopy();
+    pStyle->SetName("Unused");
+    EXPECT_TRUE(pStyle->Update().IsValid());
+    pStyle = nullptr;
+
+    // Commit the revision
+    Utf8String rev2 = CommitRevision(db);
+    EXPECT_FALSE(rev2.empty());
+
+    // "Used" is now discarded; "Unused" is now used; both in the same revision
+    ExpectState(MakeUsed(unusedCode, rev2), db);
+    ExpectState(MakeDiscarded(usedCode, rev2), db);
+
+    // Delete the style => its code becomes discarded
+    // Ugh except you are not allowed to delete text styles...
+#ifdef DELETE_TEXT_STYLE
+    EXPECT_EQ(DgnDbStatus::Success, AnnotationTextStyle::Get(db, "Unused")->Delete());
+#else
+    pStyle = AnnotationTextStyle::Get(db, "Unused")->CreateCopy();
+    pStyle->SetName("Deleted");
+    EXPECT_TRUE(pStyle->Update().IsValid());
+    pStyle = nullptr;
+#endif
+    Utf8String rev3 = CommitRevision(db);
+    EXPECT_FALSE(rev3.empty());
+    ExpectState(MakeDiscarded(unusedCode, rev3), db);
+    ExpectState(MakeDiscarded(usedCode, rev2), db);
+
+    // We can reserve either code, since they are discarded and we have the latest revision
+    EXPECT_STATUS(Success, mgr.ReserveCode(usedCode));
+    EXPECT_STATUS(Success, mgr.ReserveCode(unusedCode));
+    ExpectState(MakeReserved(usedCode, db), db);
+    ExpectState(MakeReserved(unusedCode, db), db);
+
+    // If we release these codes, they should return to "Discarded" and retain the most recent revision ID in which they were discarded.
+    EXPECT_STATUS(Success, mgr.RelinquishCodes());
+    ExpectState(MakeDiscarded(unusedCode, rev3), db);
+    ExpectState(MakeDiscarded(usedCode, rev2), db);
     }
 
