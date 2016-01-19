@@ -22,9 +22,6 @@ ECDbMappingTestFixture.PropertiesWithoutColumnsInExistingTable
 #TFS353210 will adress this (Raman)
 JsonUpdaterTests.CommonGeometryJsonSerialization
 
-#TFS349028 (Affan)
-JoinedTableECDbMapStrategyTests.PopulateECSql_TestDbWithTestData
-
 #For Hassan
 #should be either removed or inverted
 JoinedTableECDbMapStrategyTests.MultiInheritence1  

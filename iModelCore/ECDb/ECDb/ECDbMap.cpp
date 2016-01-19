@@ -726,10 +726,11 @@ BentleyStatus ECDbMap::FinishTableDefinition () const
             if (addClassId)
                 {
                 const size_t insertPosition = 1;
-                ECDbSqlColumn const* ecClassIdColumn = table->CreateColumn(ECDB_COL_ECClassId, ECDbSqlColumn::Type::Long, insertPosition, ColumnKind::ECClassId, PersistenceType::Persisted);
+                ECDbSqlColumn * ecClassIdColumn = table->CreateColumn(ECDB_COL_ECClassId, ECDbSqlColumn::Type::Long, insertPosition, ColumnKind::ECClassId, PersistenceType::Persisted);
                 if (ecClassIdColumn == nullptr)
                     return ERROR;
-
+                
+                ecClassIdColumn->GetConstraintR().SetIsNotNull(true);
                 //whenever we create a class id column, we index it to speed up the frequent class id look ups
                 Utf8String indexName("ix_");
                 indexName.append(table->GetName()).append("_ecclassid");
