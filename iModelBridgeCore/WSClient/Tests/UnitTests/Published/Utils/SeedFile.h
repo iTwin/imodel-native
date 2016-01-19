@@ -34,14 +34,26 @@ struct SeedFile
         BeFileName m_seedFilePath;
         BeFileName m_testFilePath;
 
+    public:
+        std::function<void(BeFileNameCR flePath)> onSetupSeedFile = [] (BeFileNameCR) {};
+        std::function<void(BeFileNameCR flePath)> onSetupTestFile = [] (BeFileNameCR) {};
+
     protected:
         //! Called once
-        virtual void SetupSeedFile(BeFileNameCR filePath) = 0;
+        virtual void SetupSeedFile(BeFileNameCR filePath) { onSetupSeedFile(filePath); };
 
         //! Called for each GetTestFile()
-        virtual void SetupTestFile(BeFileNameCR filePath) {};
+        virtual void SetupTestFile(BeFileNameCR filePath) { onSetupTestFile(filePath); };
 
     public:
-        SeedFile(Utf8String name = "testFile") : m_name(name) {}
+        SeedFile(
+            Utf8String name = "testFile",
+            std::function<void(BeFileNameCR flePath)> onSetupSeedFile = [] (BeFileNameCR) {},
+            std::function<void(BeFileNameCR flePath)> onSetupTestFile = [] (BeFileNameCR) {}) :
+            m_name(name),
+            onSetupSeedFile(onSetupSeedFile),
+            onSetupTestFile(onSetupTestFile)
+            {}
+
         BeFileName GetTestFile();
     };

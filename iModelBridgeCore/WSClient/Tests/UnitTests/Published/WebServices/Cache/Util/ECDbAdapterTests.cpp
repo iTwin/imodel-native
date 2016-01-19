@@ -28,9 +28,9 @@ USING_NAMESPACE_BENTLEY_WEBSERVICES
     ON_CALL(listener, OnBeforeDelete(_, _, _)).WillByDefault(Return(SUCCESS));
 
 #define EXPECT_INSTANCE_EXISTS(db, key) \
-    auto foundInstance = ECDbAdapter(*db).FindInstance( \
-        db->Schemas().GetECClass(key.GetECClassId()), \
-        Utf8PrintfString("ECInstanceId = %llu", key.GetECInstanceId().GetValue())); \
+    auto foundInstance = ECDbAdapter(*db).FindInstance(\
+    db->Schemas().GetECClass(key.GetECClassId()), \
+    Utf8PrintfString("ECInstanceId = %llu", key.GetECInstanceId().GetValue())); \
     EXPECT_TRUE(foundInstance.IsValid()); \
 
 #if 1
@@ -56,51 +56,12 @@ void EXPECT_CALL_OnBeforeDelete(MockECDbAdapterDeleteListener& listener, std::sh
     }
 #endif
 
-std::shared_ptr<ObservableECDb> ECDbAdapterTests::s_readonlyReusableDb;
-
-std::shared_ptr<ObservableECDb> ECDbAdapterTests::GetTestDbReusableReadonly()
+SeedFile ECDbAdapterTests::s_seedECDb("ecdbAdapterTest.ecdb",
+[] (BeFileNameCR filePath)
     {
-    if (s_readonlyReusableDb)
-        {
-        s_readonlyReusableDb->AbandonChanges();
-        return s_readonlyReusableDb;
-        }
+    ECDb db;
+    EXPECT_EQ(DbResult::BE_SQLITE_OK, db.CreateNewDb(filePath));
 
-    s_readonlyReusableDb = CreateTestDb(GetTestSchema());
-    s_readonlyReusableDb->SaveChanges();
-
-    return s_readonlyReusableDb;
-    }
-
-std::shared_ptr<ObservableECDb> ECDbAdapterTests::CreateTestDb(ECSchemaPtr schema)
-    {
-    auto db = std::make_shared<ObservableECDb>();
-
-    BeFileName path;
-    path = StubFilePath("ecdbAdapterTest.ecdb");
-    path = BeFileName(L":memory:");
-    path.BeDeleteFile();
-
-    EXPECT_EQ(BE_SQLITE_OK, db->CreateNewDb(path.GetNameUtf8().c_str()));
-
-    auto cache = ECSchemaCache::Create();
-    cache->AddSchema(*schema);
-    EXPECT_EQ(SUCCESS, db->Schemas().ImportECSchemas(*cache));
-
-    return db;
-    }
-
-ECSchemaPtr ECDbAdapterTests::GetTestSchema()
-    {
-    auto schema = ParseSchema(R"xml(
-        <ECSchema schemaName="TestSchema" nameSpacePrefix="TS" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
-            <ECClass typeName="TestClass" />
-        </ECSchema>)xml");
-    return schema;
-    }
-
-ECSchemaPtr ECDbAdapterTests::GetTestRelSchema()
-    {
     auto schema = ParseSchema(R"xml(
         <ECSchema schemaName="TestSchema" nameSpacePrefix="TS" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
             <ECClass typeName="TestClass" />
@@ -117,33 +78,68 @@ ECSchemaPtr ECDbAdapterTests::GetTestRelSchema()
                 <Target cardinality="(0,N)"><Class class="TestClass" /></Target>
             </ECRelationshipClass>
         </ECSchema>)xml");
-    return schema;
+
+    auto cache = ECSchemaCache::Create();
+    cache->AddSchema(*schema);
+    EXPECT_EQ(SUCCESS, db.Schemas().ImportECSchemas(*cache));
+    EXPECT_EQ(DbResult::BE_SQLITE_OK, db.SaveChanges());
+    });
+
+SeedFile ECDbAdapterTests::s_seedEmptyECDb("ecdbAdapterTest-empty.ecdb",
+[] (BeFileNameCR filePath)
+    {
+    ECDb db;
+    EXPECT_EQ(DbResult::BE_SQLITE_OK, db.CreateNewDb(filePath));
+    EXPECT_EQ(DbResult::BE_SQLITE_OK, db.SaveChanges());
+    });
+
+std::shared_ptr<ObservableECDb> ECDbAdapterTests::GetTestDb()
+    {
+    auto db = std::make_shared<ObservableECDb>();
+    EXPECT_EQ(DbResult::BE_SQLITE_OK, db->OpenBeSQLiteDb(s_seedECDb.GetTestFile(), Db::OpenParams(Db::OpenMode::ReadWrite)));
+    return db;
+    }
+
+std::shared_ptr<ObservableECDb> ECDbAdapterTests::GetEmptyTestDb()
+    {
+    auto db = std::make_shared<ObservableECDb>();
+    EXPECT_EQ(DbResult::BE_SQLITE_OK, db->OpenBeSQLiteDb(s_seedEmptyECDb.GetTestFile(), Db::OpenParams(Db::OpenMode::ReadWrite)));
+    return db;
+    }
+
+std::shared_ptr<ObservableECDb> ECDbAdapterTests::CreateTestDb(ECSchemaPtr schema)
+    {
+    auto db = GetEmptyTestDb();
+    auto cache = ECSchemaCache::Create();
+    cache->AddSchema(*schema);
+    EXPECT_EQ(SUCCESS, db->Schemas().ImportECSchemas(*cache));
+    return db;
     }
 
 TEST_F(ECDbAdapterTests, GetECClass_ValidClassKey_ReturnsClass)
     {
-    auto db = GetTestDbReusableReadonly();
+    auto db = GetTestDb();
     ECClassCP ecClass = ECDbAdapter(*db).GetECClass("TestSchema.TestClass");
     EXPECT_EQ("TestClass", ecClass->GetName());
     }
 
 TEST_F(ECDbAdapterTests, GetECClass_InValidClassKey_ReturnsNullptr)
     {
-    auto db = GetTestDbReusableReadonly();
+    auto db = GetTestDb();
     ECClassCP ecClass = ECDbAdapter(*db).GetECClass("NotClassKey");
     EXPECT_EQ(nullptr, ecClass);
     }
 
 TEST_F(ECDbAdapterTests, GetECClass_ValidClassKeyWithNotExistingClass_ReturnsNullptr)
     {
-    auto db = GetTestDbReusableReadonly();
+    auto db = GetTestDb();
     ECClassCP ecClass = ECDbAdapter(*db).GetECClass("TestSchema.NotExistingClass");
     EXPECT_EQ(nullptr, ecClass);
     }
 
 TEST_F(ECDbAdapterTests, GetECClass_ValidClassId_ReturnsClass)
     {
-    auto db = GetTestDbReusableReadonly();
+    auto db = GetTestDb();
     ECClassId ecClassId = ECDbAdapter(*db).GetECClass("TestSchema", "TestClass")->GetId();
 
     ECClassCP ecClass = ECDbAdapter(*db).GetECClass(ecClassId);
@@ -153,20 +149,20 @@ TEST_F(ECDbAdapterTests, GetECClass_ValidClassId_ReturnsClass)
 
 TEST_F(ECDbAdapterTests, GetECClass_InValidClassId_ReturnsNull)
     {
-    auto db = GetTestDbReusableReadonly();
+    auto db = GetTestDb();
     ECClassCP ecClass = ECDbAdapter(*db).GetECClass(9999);
     EXPECT_EQ(nullptr, ecClass);
     }
 
 TEST_F(ECDbAdapterTests, GetECClasses_EmptyMap_EmptyResult)
     {
-    auto db = GetTestDbReusableReadonly();
+    auto db = GetTestDb();
     EXPECT_TRUE(ECDbAdapter(*db).GetECClasses(ECInstanceKeyMultiMap()).empty());
     }
 
 TEST_F(ECDbAdapterTests, GetECClasses_MapWithTwoSameClassInstances_ReturnsOneClass)
     {
-    auto db = GetTestDbReusableReadonly();
+    auto db = GetTestDb();
 
     ECClassCP ecClass = ECDbAdapter(*db).GetECClass("TestSchema.TestClass");
 
@@ -610,7 +606,7 @@ TEST_F(ECDbAdapterTests, RelateInstances_RelationshipAlreadyExists_ReturnsSameRe
 
 TEST_F(ECDbAdapterTests, CountClassInstances_ValidAndInvalidECClasses_Counts)
     {
-    auto db = CreateTestDb(GetTestRelSchema());
+    auto db = GetTestDb();
     ECDbAdapter adapter(*db);
 
     auto ecClass = adapter.GetECClass("TestSchema.TestClass");
@@ -628,7 +624,7 @@ TEST_F(ECDbAdapterTests, CountClassInstances_ValidAndInvalidECClasses_Counts)
 
 TEST_F(ECDbAdapterTests, DeleteInstances_InvalidKey_Error)
     {
-    auto db = CreateTestDb(StubSchema());
+    auto db = GetTestDb();
     ECDbAdapter adapter(*db);
 
     CREATE_MockECDbAdapterDeleteListener(listener);
@@ -641,7 +637,7 @@ TEST_F(ECDbAdapterTests, DeleteInstances_InvalidKey_Error)
 
 TEST_F(ECDbAdapterTests, DeleteInstances_NotExistingInstance_NotifiesBeforeDeletionAndDoesNothing)
     {
-    auto db = CreateTestDb(StubSchema());
+    auto db = GetTestDb();
     ECDbAdapter adapter(*db);
     auto ecClass = adapter.GetECClass("TestSchema.TestClass");
 
@@ -656,7 +652,7 @@ TEST_F(ECDbAdapterTests, DeleteInstances_NotExistingInstance_NotifiesBeforeDelet
 
 TEST_F(ECDbAdapterTests, DeleteInstances_ExistingInstances_NotifiesBeforeDeletionAndDeletes)
     {
-    auto db = CreateTestDb(StubSchema());
+    auto db = GetTestDb();
     ECDbAdapter adapter(*db);
     auto ecClass = adapter.GetECClass("TestSchema.TestClass");
 
@@ -675,7 +671,7 @@ TEST_F(ECDbAdapterTests, DeleteInstances_ExistingInstances_NotifiesBeforeDeletio
 
 TEST_F(ECDbAdapterTests, DeleteInstances_ExistingInstanceAndRemovedListener_ListenerNotNotifiedAndDeletes)
     {
-    auto db = CreateTestDb(StubSchema());
+    auto db = GetTestDb();
     ECDbAdapter adapter(*db);
 
     ECInstanceKey instance;
@@ -692,7 +688,7 @@ TEST_F(ECDbAdapterTests, DeleteInstances_ExistingInstanceAndRemovedListener_List
 
 TEST_F(ECDbAdapterTests, DeleteInstances_ExistingInstanceAndListenerReturnsError_ReturnsErrorWithoutDeletion)
     {
-    auto db = CreateTestDb(StubSchema());
+    auto db = GetTestDb();
     ECDbAdapter adapter(*db);
 
     ECInstanceKey instance;
@@ -708,7 +704,7 @@ TEST_F(ECDbAdapterTests, DeleteInstances_ExistingInstanceAndListenerReturnsError
 
 TEST_F(ECDbAdapterTests, DeleteInstances_DeletingParentThatHoldsChild_DeletesParentAndChild)
     {
-    auto db = CreateTestDb(GetTestRelSchema());
+    auto db = GetTestDb();
     ECDbAdapter adapter(*db);
 
     auto ecClass = adapter.GetECClass("TestSchema.TestClass");
@@ -732,7 +728,7 @@ TEST_F(ECDbAdapterTests, DeleteInstances_DeletingParentThatHoldsChild_DeletesPar
 
 TEST_F(ECDbAdapterTests, DeleteInstances_DeletingParentThatEmbedsChild_DeletesParentAndChild)
     {
-    auto db = CreateTestDb(GetTestRelSchema());
+    auto db = GetTestDb();
     ECDbAdapter adapter(*db);
 
     auto ecClass = adapter.GetECClass("TestSchema.TestClass");
@@ -756,7 +752,7 @@ TEST_F(ECDbAdapterTests, DeleteInstances_DeletingParentThatEmbedsChild_DeletesPa
 
 TEST_F(ECDbAdapterTests, DeleteInstances_DeletingParentThatHoldsChildThatHasOtherHoldingParent_DoesNotDeleteChild)
     {
-    auto db = CreateTestDb(GetTestRelSchema());
+    auto db = GetTestDb();
     ECDbAdapter adapter(*db);
 
     auto ecClass = adapter.GetECClass("TestSchema.TestClass");
@@ -784,7 +780,7 @@ TEST_F(ECDbAdapterTests, DeleteInstances_DeletingParentThatHoldsChildThatHasOthe
 
 TEST_F(ECDbAdapterTests, DeleteInstances_DeletingParentThatEmbedsChildThatHasOtherHoldingParent_DeletesParentAndChild)
     {
-    auto db = CreateTestDb(GetTestRelSchema());
+    auto db = GetTestDb();
     ECDbAdapter adapter(*db);
 
     auto ecClass = adapter.GetECClass("TestSchema.TestClass");
@@ -813,7 +809,7 @@ TEST_F(ECDbAdapterTests, DeleteInstances_DeletingParentThatEmbedsChildThatHasOth
 
 TEST_F(ECDbAdapterTests, DeleteInstances_DeletingParentThatHoldsChildThatHoldsSubChildThatHasOtherHoldingParent_DoesNotDeleteSubChild)
     {
-    auto db = CreateTestDb(GetTestRelSchema());
+    auto db = GetTestDb();
     ECDbAdapter adapter(*db);
 
     auto ecClass = adapter.GetECClass("TestSchema.TestClass");
@@ -848,7 +844,7 @@ TEST_F(ECDbAdapterTests, DeleteInstances_DeletingParentThatHoldsChildThatHasOthe
     {
     // Embedding relationship is ignored from perspecfive of holding relationship in ECDb.
 
-    auto db = CreateTestDb(GetTestRelSchema());
+    auto db = GetTestDb();
     ECDbAdapter adapter(*db);
 
     auto ecClass = adapter.GetECClass("TestSchema.TestClass");
@@ -879,7 +875,7 @@ TEST_F(ECDbAdapterTests, DeleteInstances_DeletingParentThatHoldsChildThatHasOthe
 
 TEST_F(ECDbAdapterTests, DeleteInstances_DeletingParentThatEmbedsChildThatHasOtherHoldingParent_ParentAndChildDeleted)
     {
-    auto db = CreateTestDb(GetTestRelSchema());
+    auto db = GetTestDb();
     ECDbAdapter adapter(*db);
 
     auto ecClass = adapter.GetECClass("TestSchema.TestClass");
@@ -910,7 +906,7 @@ TEST_F(ECDbAdapterTests, DeleteInstances_DeletingParentThatEmbedsChildThatHasOth
 
 TEST_F(ECDbAdapterTests, DeleteInstances_DeletingParentThatHoldsChildThatHasReferencingRelationship_DeletesParentAndChild)
     {
-    auto db = CreateTestDb(GetTestRelSchema());
+    auto db = GetTestDb();
     ECDbAdapter adapter(*db);
 
     auto ecClass = adapter.GetECClass("TestSchema.TestClass");
@@ -941,7 +937,7 @@ TEST_F(ECDbAdapterTests, DeleteInstances_DeletingParentThatHoldsChildThatHasRefe
 
 TEST_F(ECDbAdapterTests, DeleteInstances_DeletingParentThatHoldsTwoChildrenThatHoldSubChild_DeletesParentAndChildrenAndSubChild)
     {
-    auto db = CreateTestDb(GetTestRelSchema());
+    auto db = GetTestDb();
     ECDbAdapter adapter(*db);
 
     auto ecClass = adapter.GetECClass("TestSchema.TestClass");
@@ -977,7 +973,7 @@ TEST_F(ECDbAdapterTests, DeleteInstances_DeletingParentWithChildWithHoldingCircu
     {
     // TODO: This is flaw in ECDb - it does not handle circular relationships.
 
-    auto db = CreateTestDb(GetTestRelSchema());
+    auto db = GetTestDb();
     ECDbAdapter adapter(*db);
 
     auto ecClass = adapter.GetECClass("TestSchema.TestClass");
@@ -1010,7 +1006,7 @@ TEST_F(ECDbAdapterTests, DeleteInstances_DeletingParentWithChildWithHoldingCircu
 
 TEST_F(ECDbAdapterTests, DeleteInstances_DeletedInstanceIsInHoldingCircularRelationships_DeletesChildren)
     {
-    auto db = CreateTestDb(GetTestRelSchema());
+    auto db = GetTestDb();
     ECDbAdapter adapter(*db);
 
     auto ecClass = adapter.GetECClass("TestSchema.TestClass");
@@ -1040,7 +1036,7 @@ TEST_F(ECDbAdapterTests, DeleteInstances_DeletedInstanceIsInHoldingCircularRelat
 
 TEST_F(ECDbAdapterTests, DeleteInstances_RelatedInstances_NotifiesEachChildInstanceDeletionAndDeletesThem)
     {
-    auto db = CreateTestDb(GetTestRelSchema());
+    auto db = GetTestDb();
     ECDbAdapter adapter(*db);
 
     auto ecClass = adapter.GetECClass("TestSchema.TestClass");
@@ -1089,7 +1085,7 @@ TEST_F(ECDbAdapterTests, DeleteInstances_RelatedInstances_NotifiesEachChildInsta
 
 TEST_F(ECDbAdapterTests, DeleteInstances_RelatedChildChildrenInstances_NotifiesEachChildInstanceDeletionAndDeletesThem)
     {
-    auto db = CreateTestDb(GetTestRelSchema());
+    auto db = GetTestDb();
     ECDbAdapter adapter(*db);
 
     auto ecClass = adapter.GetECClass("TestSchema.TestClass");
@@ -1140,7 +1136,7 @@ TEST_F(ECDbAdapterTests, DeleteInstances_RelatedChildChildrenInstances_NotifiesE
 
 TEST_F(ECDbAdapterTests, DeleteInstances_OnBeforeDeleteReturnsAdditionalToDelete_DeletesAdditionalInstances)
     {
-    auto db = CreateTestDb(GetTestRelSchema());
+    auto db = GetTestDb();
     ECDbAdapter adapter(*db);
 
     auto ecClass = adapter.GetECClass("TestSchema.TestClass");
@@ -1170,7 +1166,7 @@ TEST_F(ECDbAdapterTests, DeleteInstances_OnBeforeDeleteReturnsAdditionalToDelete
 
 TEST_F(ECDbAdapterTests, DeleteInstances_OnBeforeDeleteReturnsAdditionalToDelete_DeletesAdditionalInstancesWithTheirChildren)
     {
-    auto db = CreateTestDb(GetTestRelSchema());
+    auto db = GetTestDb();
     ECDbAdapter adapter(*db);
 
     auto ecClass = adapter.GetECClass("TestSchema.TestClass");
@@ -1214,7 +1210,7 @@ TEST_F(ECDbAdapterTests, DeleteInstances_OnBeforeDeleteReturnsAdditionalToDelete
 
 TEST_F(ECDbAdapterTests, DeleteRelationship_NotExistingRelationship_DoesNothingAndSuccess)
     {
-    auto db = CreateTestDb(GetTestRelSchema());
+    auto db = GetTestDb();
     ECDbAdapter adapter(*db);
 
     auto ecClass = adapter.GetECClass("TestSchema.TestClass");
@@ -1231,7 +1227,7 @@ TEST_F(ECDbAdapterTests, DeleteRelationship_NotExistingRelationship_DoesNothingA
 
 TEST_F(ECDbAdapterTests, DeleteRelationship_ReferencingRelationship_DeletesRelationshipLeavingEndInstances)
     {
-    auto db = CreateTestDb(GetTestRelSchema());
+    auto db = GetTestDb();
     ECDbAdapter adapter(*db);
 
     auto ecClass = adapter.GetECClass("TestSchema.TestClass");
@@ -1251,7 +1247,7 @@ TEST_F(ECDbAdapterTests, DeleteRelationship_ReferencingRelationship_DeletesRelat
 
 TEST_F(ECDbAdapterTests, DeleteRelationship_HoldingRelationship_DeletesRelationshipAndChild)
     {
-    auto db = CreateTestDb(GetTestRelSchema());
+    auto db = GetTestDb();
     ECDbAdapter adapter(*db);
 
     auto ecClass = adapter.GetECClass("TestSchema.TestClass");
@@ -1273,7 +1269,7 @@ TEST_F(ECDbAdapterTests, DeleteRelationship_HoldingRelationship_DeletesRelations
 
 TEST_F(ECDbAdapterTests, DeleteRelationship_EmbeddingRelationship_DeletesRelationshipAndChild)
     {
-    auto db = CreateTestDb(GetTestRelSchema());
+    auto db = GetTestDb();
     ECDbAdapter adapter(*db);
 
     auto ecClass = adapter.GetECClass("TestSchema.TestClass");
@@ -1295,7 +1291,7 @@ TEST_F(ECDbAdapterTests, DeleteRelationship_EmbeddingRelationship_DeletesRelatio
 
 TEST_F(ECDbAdapterTests, DeleteRelationship_HoldingRelationshipWithChildWithMultipleParents_DeletesRelationshipLeavingChild)
     {
-    auto db = CreateTestDb(GetTestRelSchema());
+    auto db = GetTestDb();
     ECDbAdapter adapter(*db);
 
     auto ecClass = adapter.GetECClass("TestSchema.TestClass");
@@ -1323,7 +1319,7 @@ TEST_F(ECDbAdapterTests, DeleteRelationship_HoldingRelationshipWithChildWithMult
 
 TEST_F(ECDbAdapterTests, DeleteRelationship_EmbeddingRelationshipWithChildWithMultipleParents_DeletesRelationshipAndChild)
     {
-    auto db = CreateTestDb(GetTestRelSchema());
+    auto db = GetTestDb();
     ECDbAdapter adapter(*db);
 
     auto ecClass = adapter.GetECClass("TestSchema.TestClass");
