@@ -283,39 +283,6 @@ ECObjectsStatus ECProperty::SetTypeName (Utf8String typeName)
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ECProperty::GetIsPrimitive () const
-    {
-    return this->_IsPrimitive();
-    }
-
-/*---------------------------------------------------------------------------------**//**
- @bsimethod                                                     
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool ECProperty::GetIsStruct () const
-    {
-    return this->_IsStruct();
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Carole.MacDonald            10/2015
-//---------------+---------------+---------------+---------------+---------------+-------
-PrimitiveECPropertyCP   ECProperty::GetAsPrimitiveProperty() const  { return _GetAsPrimitivePropertyCP(); }
-PrimitiveECPropertyP    ECProperty::GetAsPrimitivePropertyP()       { return _GetAsPrimitivePropertyP(); }
-ArrayECPropertyCP       ECProperty::GetAsArrayProperty() const      { return _GetAsArrayPropertyCP(); }
-ArrayECPropertyP        ECProperty::GetAsArrayPropertyP()           { return _GetAsArrayPropertyP(); }
-StructECPropertyCP      ECProperty::GetAsStructProperty() const     { return _GetAsStructPropertyCP(); }
-StructECPropertyP       ECProperty::GetAsStructPropertyP()          { return _GetAsStructPropertyP(); }
-StructArrayECPropertyCP ECProperty::GetAsStructArrayProperty() const { return _GetAsStructArrayPropertyCP(); }
-StructArrayECPropertyP  ECProperty::GetAsStructArrayPropertyP()     { return _GetAsStructArrayPropertyP(); }
-NavigationECPropertyCP  ECProperty::GetAsNavigationPropertyCP() const { return _GetAsNavigationPropertyCP(); }
-NavigationECPropertyP   ECProperty::GetAsNavigationPropertyP()        { return _GetAsNavigationPropertyP(); }
-
-CalculatedPropertySpecificationCP ECProperty::GetCalculatedPropertySpecification() const { return _GetCalculatedPropertySpecification(); }
-bool                    ECProperty::IsCalculated() const            { return _IsCalculated(); }
-
-/*---------------------------------------------------------------------------------**//**
- @bsimethod                                                     
-+---------------+---------------+---------------+---------------+---------------+------*/
 bool                    ECProperty::SetCalculatedPropertySpecification (IECInstanceP spec)
     {
     bool wasCalculated = IsCalculated();
@@ -324,30 +291,6 @@ bool                    ECProperty::SetCalculatedPropertySpecification (IECInsta
         InvalidateClassLayout();
     
     return set;
-    }
-
-/*---------------------------------------------------------------------------------**//**
- @bsimethod                                                     
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool ECProperty::GetIsArray () const
-    {
-    return this->_IsArray();
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Carole.MacDonald            10/2015
-//---------------+---------------+---------------+---------------+---------------+-------
-bool ECProperty::GetIsStructArray() const
-    {
-    return this->_IsStructArray();
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Colin.Kerr                  12/2015
-//---------------+---------------+---------------+---------------+---------------+-------
-bool ECProperty::GetIsNavigation() const
-    {
-    return this->_IsNavigation();
     }
 
 /*---------------------------------------------------------------------------------**//**

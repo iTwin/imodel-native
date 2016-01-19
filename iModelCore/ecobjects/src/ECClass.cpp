@@ -515,18 +515,6 @@ bool copyCustomAttributes
 
         destProperty = destPrimitive;
         }
-    else if (sourceProperty->GetIsArray())
-        {
-        ArrayECPropertyP destArray;
-        ArrayECPropertyCP sourceArray = sourceProperty->GetAsArrayProperty();
-        destArray = new ArrayECProperty (*this);
-        destArray->SetPrimitiveElementType(sourceArray->GetPrimitiveElementType());
-
-        destArray->SetMaxOccurs(sourceArray->GetMaxOccurs());
-        destArray->SetMinOccurs(sourceArray->GetMinOccurs());
-
-        destProperty = destArray;
-        }
     else if (sourceProperty->GetIsStructArray())
         {
         StructArrayECPropertyP destArray;
@@ -534,6 +522,18 @@ bool copyCustomAttributes
         destArray = new StructArrayECProperty(*this);
         ECStructClassCP structElementType = sourceArray->GetStructElementType();
         destArray->SetStructElementType(structElementType);
+
+        destArray->SetMaxOccurs(sourceArray->GetMaxOccurs());
+        destArray->SetMinOccurs(sourceArray->GetMinOccurs());
+
+        destProperty = destArray;
+        }
+    else if (sourceProperty->GetIsArray())
+        {
+        ArrayECPropertyP destArray;
+        ArrayECPropertyCP sourceArray = sourceProperty->GetAsArrayProperty();
+        destArray = new ArrayECProperty(*this);
+        destArray->SetPrimitiveElementType(sourceArray->GetPrimitiveElementType());
 
         destArray->SetMaxOccurs(sourceArray->GetMaxOccurs());
         destArray->SetMinOccurs(sourceArray->GetMinOccurs());

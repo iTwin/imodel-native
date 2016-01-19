@@ -647,6 +647,7 @@ protected:
     virtual bool                        _IsArray () const { return false; }
     virtual ArrayECPropertyCP           _GetAsArrayPropertyCP() const { return nullptr; } // used to avoid dynamic_cast
     virtual ArrayECPropertyP            _GetAsArrayPropertyP()        { return nullptr; } // used to avoid dynamic_cast
+    virtual bool                        _IsPrimitiveArray() const { return false;  }
 
     virtual bool                        _IsStructArray() const { return false; }
     virtual StructArrayECPropertyCP     _GetAsStructArrayPropertyCP() const { return nullptr; } // used to avoid dynamic_cast
@@ -688,9 +689,9 @@ public:
 /*__PUBLISH_SECTION_START__*/
 public:
     //! Returns the CalculatedPropertySpecification associated with this ECProperty, if any
-    ECOBJECTS_EXPORT CalculatedPropertySpecificationCP   GetCalculatedPropertySpecification() const;
+     CalculatedPropertySpecificationCP   GetCalculatedPropertySpecification() const { return _GetCalculatedPropertySpecification(); }
     //! Returns true if this ECProperty has a CalculatedECPropertySpecification custom attribute applied to it.
-    ECOBJECTS_EXPORT bool               IsCalculated() const;
+     bool               IsCalculated() const { return _IsCalculated(); }
 
     //! Sets or removes the CalculatedECPropertySpecification custom attribute associated with this ECProperty.
     //! @param[in] expressionAttribute  An IECInstance of the ECClass CalculatedECPropertySpecification, or NULL to remove the specification.
@@ -708,15 +709,18 @@ public:
     //! Returns whether the DisplayLabel is explicitly set
     ECOBJECTS_EXPORT bool               GetIsDisplayLabelDefined() const;
     //! Returns whether this property is a Struct property
-    ECOBJECTS_EXPORT bool               GetIsStruct() const;
-    //! Returns whether this property is an Array property
-    ECOBJECTS_EXPORT bool               GetIsArray() const;
+    bool                                GetIsStruct() const { return _IsStruct(); }
+    //! Returns whether this property is an Array property (either a Primitive array or a StructArray)
+    //! Use either GetIsPrimitiveArray or GetIsStructArray to differentiate.
+    bool                                GetIsArray() const { return _IsArray(); }
     //! Returns whether this property is a Primitive property
-    ECOBJECTS_EXPORT bool               GetIsPrimitive() const;
+    bool                                GetIsPrimitive() const { return _IsPrimitive(); }
     //! Returns whether this property is a StructArray property
-    ECOBJECTS_EXPORT bool               GetIsStructArray() const;
+    bool                                GetIsStructArray() const { return _IsStructArray(); }
+    //! Returns whether this property is a Primitive array
+    bool                                GetIsPrimitiveArray() const { return _IsPrimitiveArray(); }
     //! Returns whether this property is a NavigationECProperty
-    ECOBJECTS_EXPORT bool               GetIsNavigation() const;
+    bool                                GetIsNavigation() const { return _IsNavigation(); }
 
     //! Sets the ECXML typename for the property.  @see GetTypeName()
     ECOBJECTS_EXPORT ECObjectsStatus    SetTypeName(Utf8String value);
@@ -776,16 +780,16 @@ public:
     //@param[in]    isReadOnly  Valid values are 'True' and 'False' (case insensitive)
     ECOBJECTS_EXPORT ECObjectsStatus    SetIsReadOnly (Utf8CP isReadOnly);
 
-    ECOBJECTS_EXPORT PrimitiveECPropertyCP  GetAsPrimitiveProperty () const; //!< Returns the property as a const PrimitiveECProperty*
-    ECOBJECTS_EXPORT PrimitiveECPropertyP   GetAsPrimitivePropertyP (); //!< Returns the property as a PrimitiveECProperty*
-    ECOBJECTS_EXPORT ArrayECPropertyCP      GetAsArrayProperty () const; //!< Returns the property as a const ArrayECProperty*
-    ECOBJECTS_EXPORT ArrayECPropertyP       GetAsArrayPropertyP (); //!< Returns the property as an ArrayECProperty*
-    ECOBJECTS_EXPORT StructECPropertyCP     GetAsStructProperty () const; //!< Returns the property as a const StructECProperty*
-    ECOBJECTS_EXPORT StructECPropertyP      GetAsStructPropertyP (); //!< Returns the property as a StructECProperty*
-    ECOBJECTS_EXPORT StructArrayECPropertyCP GetAsStructArrayProperty() const; //! <Returns the property as a const StructArrayECProperty*
-    ECOBJECTS_EXPORT StructArrayECPropertyP GetAsStructArrayPropertyP (); //! <Returns the property as a StructArrayECProperty*
-    ECOBJECTS_EXPORT NavigationECPropertyCP GetAsNavigationPropertyCP() const; //! <Returns the property as a const NavigationECProperty*
-    ECOBJECTS_EXPORT NavigationECPropertyP  GetAsNavigationPropertyP(); //! <Returns the property as a NavigationECProperty*
+    PrimitiveECPropertyCP  GetAsPrimitiveProperty() const       { return _GetAsPrimitivePropertyCP(); } //!< Returns the property as a const PrimitiveECProperty*
+    PrimitiveECPropertyP   GetAsPrimitivePropertyP()            { return _GetAsPrimitivePropertyP(); } //!< Returns the property as a PrimitiveECProperty*
+    ArrayECPropertyCP      GetAsArrayProperty() const           { return _GetAsArrayPropertyCP(); } //!< Returns the property as a const ArrayECProperty*
+    ArrayECPropertyP       GetAsArrayPropertyP()                { return _GetAsArrayPropertyP(); } //!< Returns the property as an ArrayECProperty*
+    StructECPropertyCP     GetAsStructProperty() const          { return _GetAsStructPropertyCP(); } //!< Returns the property as a const StructECProperty*
+    StructECPropertyP      GetAsStructPropertyP()               { return _GetAsStructPropertyP(); } //!< Returns the property as a StructECProperty*
+    StructArrayECPropertyCP GetAsStructArrayProperty() const    { return _GetAsStructArrayPropertyCP(); } //! <Returns the property as a const StructArrayECProperty*
+    StructArrayECPropertyP GetAsStructArrayPropertyP()          { return _GetAsStructArrayPropertyP(); } //! <Returns the property as a StructArrayECProperty*
+    NavigationECPropertyCP GetAsNavigationPropertyCP() const    { return _GetAsNavigationPropertyCP(); } //! <Returns the property as a const NavigationECProperty*
+    NavigationECPropertyP  GetAsNavigationPropertyP()           { return _GetAsNavigationPropertyP(); } //! <Returns the property as a NavigationECProperty*
 
 };
 
@@ -893,6 +897,7 @@ protected:
     virtual SchemaReadStatus            _ReadXml (BeXmlNodeR propertyNode, ECSchemaReadContextR schemaContext) override;
     virtual SchemaWriteStatus           _WriteXml(BeXmlWriterR xmlWriter, int ecXmlVersionMajor, int ecXmlVersionMinor) override;
     virtual bool                        _IsArray () const override { return true;}
+    virtual bool                        _IsPrimitiveArray() const override { return ARRAYKIND_Primitive == m_arrayKind; }
     virtual ArrayECPropertyCP           _GetAsArrayPropertyCP() const override { return this; }
     virtual ArrayECPropertyP            _GetAsArrayPropertyP()        override { return this; }
     virtual Utf8String                  _GetTypeName () const override;
