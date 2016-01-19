@@ -24,6 +24,7 @@ USING_NAMESPACE_BENTLEY_DGNCLIENTFX_UTILS
 struct WSError;
 typedef WSError& WSErrorR;
 typedef const WSError& WSErrorCR;
+typedef std::shared_ptr<const Json::Value> JsonValueCPtr;
 
 /*--------------------------------------------------------------------------------------+
 * @bsiclass                                               Beneditas.Lipnickas   06/2013
@@ -72,8 +73,7 @@ struct WSError : public AsyncError
     private:
         Status              m_status;
         Id                  m_id;
-        Utf8String          m_customId;
-        Json::Value         m_customProperties;
+        JsonValueCPtr       m_data;
 
     private:
         static bool IsValidErrorJson(JsonValueCR jsonError);
@@ -91,7 +91,7 @@ struct WSError : public AsyncError
             Id errorId,
             Utf8StringCR errorMessage,
             Utf8StringCR errorDescription,
-            JsonValueCR customProperties = nullptr
+            JsonValueCPtr errorData = nullptr
             );
 
     public:
@@ -105,8 +105,7 @@ struct WSError : public AsyncError
 
         WSCLIENT_EXPORT Status       GetStatus() const;
         WSCLIENT_EXPORT Id           GetId() const;
-        WSCLIENT_EXPORT Utf8StringCR GetCustomId() const;
-        WSCLIENT_EXPORT JsonValueCR  GetCustomProperties() const;
+        WSCLIENT_EXPORT JsonValueCR  GetData() const;
         WSCLIENT_EXPORT Utf8StringCR GetDisplayMessage() const;
         WSCLIENT_EXPORT Utf8StringCR GetDisplayDescription() const;
     };

@@ -76,8 +76,9 @@ LockRequest::Response DgnDbLocks::_AcquireLocks(LockRequestCR locks, DgnDbR db)
                 Json::Value deniedLocks;
                 DgnLocksJson::LockStatusToJson(deniedLocks[Locks::Status], LockStatus::AlreadyHeld);
                 deniedLocks[Locks::DeniedLocks] = Json::arrayValue;
+                JsonValueCR errorData = error.GetExtendedData();
                 uint32_t i = 0;
-                for (auto const& lock : error.GetCustomProperties()[ServerSchema::Property::ExistingLocks])
+                for (auto const& lock : errorData[ServerSchema::Property::ExistingLocks])
                     FormatLockFromServer(deniedLocks[Locks::DeniedLocks][i++], lock);
                 LockRequest::Response response;
                 response.FromJson(deniedLocks);

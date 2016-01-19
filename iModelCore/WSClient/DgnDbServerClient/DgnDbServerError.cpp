@@ -88,20 +88,33 @@ DgnDbServerError::Id DgnDbServerError::ErrorIdFromWSError(WSErrorCR error)
     return Id::WebServicesError;
     }
 
+bool DgnDbServerError::RequiresExtendedData(Id id)
+    {
+    switch (id)
+        {
+            case Id::LockOwnedByAnotherBriefcase:
+                return true;
+            default:
+                return false;
+        }
+    }
+
+
 DgnDbServerError::DgnDbServerError(WSErrorCR error)
     {
     m_message = error.GetMessage();
     m_description = error.GetDescription();
-    Utf8StringCR customId = error.GetCustomId();
+    Utf8StringCR customId = error.GetData()["errorId"].asString();
     if (customId.StartsWith ("DgnDbServer."))
         {
         m_id = ErrorIdFromString(customId);
+        if (RequiresExtendedData(m_id))
+            m_wsError = std::make_shared<WSError>(error);
         }
     else
         {
         m_id = ErrorIdFromWSError(error.GetId());
         }
-    m_customProperties = error.GetCustomProperties();
     }
 
 DgnDbServerError::DgnDbServerError(RevisionStatus const& status)
@@ -112,9 +125,9 @@ DgnDbServerError::DgnDbServerError(RevisionStatus const& status)
         m_id = Id::RevisionManagerError;
     }
 
-JsonValueCR DgnDbServerError::GetCustomProperties()
+JsonValueCR DgnDbServerError::GetExtendedData()
     {
-    return m_customProperties;
+    return m_wsError ? m_wsError->GetData() : Json::Value::null;
     }
 
 DgnDbServerError::Id DgnDbServerError::GetId()
