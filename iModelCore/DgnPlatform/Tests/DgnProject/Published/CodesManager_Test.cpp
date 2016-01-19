@@ -21,7 +21,7 @@ USING_NAMESPACE_BENTLEY_SQLITE
 
 #define EXPECT_STATUS(STAT, EXPR) EXPECT_EQ(CodeStatus:: STAT, (EXPR))
 
-//#define DUMP_SERVER 1
+#define DUMP_SERVER 1
 
 /*---------------------------------------------------------------------------------**//**
 * @bsistruct                                                    Paul.Connelly   01/16
