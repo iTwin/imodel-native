@@ -642,7 +642,7 @@ private:
     virtual void STDCALL_ATTRIBUTE LogMessage ( ILogProviderContext * context, SEVERITY sev, WCharCP msg ) override;
     virtual void STDCALL_ATTRIBUTE LogMessage ( ILogProviderContext * context, SEVERITY sev, Utf8CP msg ) override;       // we have an optimized version for Android and iOS
 public:
-    SplitConsoleProvider(bvector<WString> const& paneNames) : m_severity(LOG_DEBUG), m_defaultPane(nullptr)
+    SplitConsoleProvider(bvector<WString> const& paneNames) : m_severity(LOG_TRACE), m_defaultPane(nullptr)
         {
         InitPanes(paneNames);
         }
