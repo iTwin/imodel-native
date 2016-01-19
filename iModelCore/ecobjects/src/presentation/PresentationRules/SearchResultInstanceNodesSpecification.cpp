@@ -2,7 +2,7 @@
 |
 |     $Source: src/presentation/PresentationRules/SearchResultInstanceNodesSpecification.cpp $
 |
-|   $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
@@ -38,6 +38,15 @@ bool groupByLabel
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                01/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+SearchResultInstanceNodesSpecification::~SearchResultInstanceNodesSpecification()
+    {
+    for (SearchQuerySpecification* spec : m_querySpecifications)
+        delete spec;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 void SearchResultInstanceNodesSpecification::_Accept(PresentationRuleSpecificationVisitor& visitor) const {visitor._Visit(*this);}
@@ -55,12 +64,23 @@ CharCP SearchResultInstanceNodesSpecification::_GetXmlElementName ()
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool SearchResultInstanceNodesSpecification::_ReadXml (BeXmlNodeP xmlNode)
     {
-    //Optional:
     if (BEXML_Success != xmlNode->GetAttributeBooleanValue (m_groupByClass, COMMON_XML_ATTRIBUTE_GROUPBYCLASS))
         m_groupByClass = true;
 
     if (BEXML_Success != xmlNode->GetAttributeBooleanValue (m_groupByLabel, COMMON_XML_ATTRIBUTE_GROUPBYLABEL))
         m_groupByLabel = true;
+
+    for (BeXmlNodeP child = xmlNode->GetFirstChild(BEXMLNODE_Element); NULL != child; child = child->GetNextSibling(BEXMLNODE_Element))
+        {
+        if (0 == BeStringUtilities::Stricmp(child->GetName(), SEARCH_QUERY_SPECIFICATION_XML_NODE_NAME))
+            {
+            SearchQuerySpecification* spec = new SearchQuerySpecification();
+            if (spec->ReadXml(child))
+                m_querySpecifications.insert(spec);
+            else
+                delete spec;
+            }
+        }
 
     return true;
     }
@@ -72,6 +92,9 @@ void SearchResultInstanceNodesSpecification::_WriteXml (BeXmlNodeP xmlNode)
     {
     xmlNode->AddAttributeBooleanValue (COMMON_XML_ATTRIBUTE_GROUPBYCLASS, m_groupByClass);
     xmlNode->AddAttributeBooleanValue (COMMON_XML_ATTRIBUTE_GROUPBYLABEL, m_groupByLabel);
+    
+    for (SearchQuerySpecification* spec : m_querySpecifications)
+        spec->WriteXml(xmlNode);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -93,3 +116,45 @@ bool SearchResultInstanceNodesSpecification::GetGroupByLabel (void) const { retu
 * @bsimethod                                    Kelly.Shiptoski                 05/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 void SearchResultInstanceNodesSpecification::SetGroupByLabel (bool value) { m_groupByLabel = value; }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                01/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+bset<SearchQuerySpecification*>& SearchResultInstanceNodesSpecification::GetQuerySpecificationsR() {return m_querySpecifications;}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                01/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+bset<SearchQuerySpecification*> const& SearchResultInstanceNodesSpecification::GetQuerySpecifications() const {return m_querySpecifications;}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                01/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+CharCP SearchQuerySpecification::GetXmlElementName() {return SEARCH_QUERY_SPECIFICATION_XML_NODE_NAME;}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                01/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+bool SearchQuerySpecification::ReadXml (BeXmlNodeP xmlNode)
+    {    
+    if (BEXML_Success != xmlNode->GetContent(m_query))
+        return false;
+
+    if (BEXML_Success != xmlNode->GetAttributeStringValue(m_schemaName, SEARCH_QUERY_SPECIFICATION_XML_ATTRIBUTE_SCHEMA_NAME))
+        return false;
+
+    if (BEXML_Success != xmlNode->GetAttributeStringValue(m_className, SEARCH_QUERY_SPECIFICATION_XML_ATTRIBUTE_CLASS_NAME))
+        return false;
+
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                01/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+void SearchQuerySpecification::WriteXml (BeXmlNodeP xmlNode)
+    {
+    xmlNode->SetContent(WString(m_query.c_str(), true).c_str());
+    xmlNode->AddAttributeStringValue(SEARCH_QUERY_SPECIFICATION_XML_ATTRIBUTE_SCHEMA_NAME, m_schemaName.c_str());
+    xmlNode->AddAttributeStringValue(SEARCH_QUERY_SPECIFICATION_XML_ATTRIBUTE_CLASS_NAME, m_className.c_str());
+    }
