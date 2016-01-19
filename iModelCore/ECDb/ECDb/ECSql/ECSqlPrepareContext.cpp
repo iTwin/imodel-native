@@ -327,7 +327,7 @@ ECSqlPrepareContext::JoinTableInfo::Ptr ECSqlPrepareContext::JoinTableInfo::TryS
             joinedTableValues.push_back(NativeSqlBuilder(value->ToECSql().c_str()));
             ptr->m_parameterMap.GetSecondaryR().Add(thisValueParams);
             }
-        else if (auto structArrayPropertyMap = property->GetPropertyMap().GetAsPropertyMapStructArray())
+        else if (property->GetPropertyMap().GetAsPropertyMapStructArray())
             {
             joinedTableProperties.push_back(NativeSqlBuilder(property->ToECSql().c_str()));
             joinedTableValues.push_back(NativeSqlBuilder(value->ToECSql().c_str()));
@@ -428,7 +428,7 @@ ECSqlPrepareContext::JoinTableInfo::Ptr ECSqlPrepareContext::JoinTableInfo::TryS
             joinedTableValues.push_back(NativeSqlBuilder(value->ToECSql().c_str()));
             ptr->m_parameterMap.GetSecondaryR().Add(thisValueParams);
             }
-        else if (auto structArrayPropertyMap = property->GetPropertyMap().GetAsPropertyMapStructArray())
+        else if (property->GetPropertyMap().GetAsPropertyMapStructArray())
             {
             joinedTableProperties.push_back(NativeSqlBuilder(property->ToECSql().c_str()));
             joinedTableValues.push_back(NativeSqlBuilder(value->ToECSql().c_str()));
