@@ -1211,10 +1211,13 @@ TEST(ECDbInstances3, BGRJoinedTable)
 
     ECSchemaCachePtr schemaCache = ECSchemaCache::Create();
     ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
-
+    schemaContext->AddSchemaLocater(dgnDb->GetSchemaLocater());
     ECSchemaPtr schema;
     ECSchema::ReadFromXmlString(schema, schemaXml, *schemaContext);
+    schemaContext->RemoveSchemaLocater(dgnDb->GetSchemaLocater());
+
     dgnDb->Schemas().ImportECSchemas(schemaContext->GetCache());
+    dgnDb->ClearECDbCache();
     dgnDb->SaveChanges();
 
     //BeFileName bgr(L"f:\\temp\\BGRSubset.i.idgndb");

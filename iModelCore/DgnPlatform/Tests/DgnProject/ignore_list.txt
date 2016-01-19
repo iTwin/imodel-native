@@ -33,5 +33,3 @@ DgnScriptTest.CRUD # notified Sam
 ConfigurationManager_Test.*                             # UmarH -- Tests are ported from Vancouver for MacroConfiguration ,seems macros are not expanding on get variable method. 
 
 DgnProjectPackageTest.VerifyViewsForDgndbFilesConvertedDuringBuild   #Affan #TFS353039
-
-ECDbInstances3.BGRJoinedTable # Affan
