@@ -539,7 +539,10 @@ ECTypeDescriptor ECSqlColumnInfo::DetermineDataType (ECPropertyCR ecProperty)
             return ECTypeDescriptor::CreateStructArrayTypeDescriptor ();
         }
     else if (ecProperty.GetIsNavigation())
-        return ECTypeDescriptor::CreateNavigationTypeDescriptor(ecProperty.GetAsNavigationPropertyCP()->IsMultiple());
+        {
+        auto navProp = ecProperty.GetAsNavigationProperty();
+        return ECTypeDescriptor::CreateNavigationTypeDescriptor(navProp->GetType(), navProp->IsMultiple());
+        }
 
     BeAssert(false && "Unhandled ECProperty type. Adjust code to new ECProperty type");
     return ECTypeDescriptor();

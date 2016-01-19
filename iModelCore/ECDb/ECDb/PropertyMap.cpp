@@ -960,7 +960,7 @@ Utf8String PropertyMapPrimitiveArray::_ToString() const
 //static
 PropertyMapPtr NavigationPropertyMap::Create(ClassMapLoadContext& ctx, ECDbCR ecdb, ECN::ECPropertyCR prop, Utf8CP propertyAccessString, PropertyMapCP parentPropertyMap)
     {
-    NavigationECPropertyCP navProp = prop.GetAsNavigationPropertyCP();
+    NavigationECPropertyCP navProp = prop.GetAsNavigationProperty();
     if (navProp == nullptr)
         {
         BeAssert(false);
@@ -982,7 +982,7 @@ PropertyMapPtr NavigationPropertyMap::Create(ClassMapLoadContext& ctx, ECDbCR ec
 // @bsimethod                                 Krischan.Eberle                      12/2015
 //---------------------------------------------------------------------------------------
 NavigationPropertyMap::NavigationPropertyMap(ClassMapLoadContext& ctx, ECN::ECPropertyCR prop, Utf8CP propertyAccessString, PropertyMapCP parentPropertyMap)
-    : PropertyMap(prop, propertyAccessString, parentPropertyMap), m_navigationProperty(prop.GetAsNavigationPropertyCP()), m_relClassMap(nullptr)
+    : PropertyMap(prop, propertyAccessString, parentPropertyMap), m_navigationProperty(prop.GetAsNavigationProperty()), m_relClassMap(nullptr)
     {
     BeAssert(prop.GetIsNavigation());
 

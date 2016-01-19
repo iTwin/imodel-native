@@ -552,7 +552,7 @@ BentleyStatus ECDbSchemaWriter::ImportECProperty(ECN::ECPropertyCR ecProperty, i
         }
     else if (ecProperty.GetIsNavigation())
         {
-        if (SUCCESS != ImportECClass(*ecProperty.GetAsNavigationPropertyCP()->GetRelationshipClass()))
+        if (SUCCESS != ImportECClass(*ecProperty.GetAsNavigationProperty()->GetRelationshipClass()))
             return ERROR;
         }
 
@@ -664,7 +664,7 @@ BentleyStatus ECDbSchemaWriter::ImportECProperty(ECN::ECPropertyCR ecProperty, i
         if (BE_SQLITE_OK != stmt->BindInt(kindIndex, Enum::ToInt(ECPropertyKind::Navigation)))
             return ERROR;
 
-        NavigationECPropertyCP navProp = ecProperty.GetAsNavigationPropertyCP();
+        NavigationECPropertyCP navProp = ecProperty.GetAsNavigationProperty();
         if (BE_SQLITE_OK != stmt->BindInt64(nonPrimitiveTypeIndex, navProp->GetRelationshipClass()->GetId()))
             return ERROR;
 
