@@ -1206,13 +1206,6 @@ void PerformanceElementsCRUDTestFixture::BindUpdateParams (DgnElementPtr& elemen
 
     //bind Geometry
     {
-    //ElementGeometryBuilderPtr builder = ElementGeometryBuilder::Create (*element->GetModel (), element->ToGeometrySource ()->GetCategoryId
-    //    (), DPoint3d::From (0.0, 0.0, 0.0));
-    //ASSERT_TRUE (appendEllipse3d (*builder, 0, 0, 0));
-    //ASSERT_TRUE (appendEllipse3d (*builder, 1, 2, 3));
-    //ASSERT_TRUE (appendEllipse3d (*builder, 3, 2, 1));
-
-    //ASSERT_EQ (SUCCESS, builder->SetGeomStreamAndPlacement (*(element->ToGeometrySourceP ())));
     ASSERT_TRUE (element->ToGeometrySourceP ()->HasGeometry ());
 
     // Compress the serialized GeomStream
@@ -1914,10 +1907,6 @@ void PerformanceElementsCRUDTestFixture::ECSqlUpdateTime(Utf8CP className, bool 
     for (uint64_t i = 0; i < opCount; i++)
         {
         DgnElementId id (s_firstElementId + i*elementIdIncrement);
-        //DgnElementPtr element = m_db->Elements ().GetForEdit<DgnElement> (id);
-        //ASSERT_TRUE (element != nullptr);
-        //elements.push_back (element);
-
         PerformanceElement1Ptr element = m_db->Elements ().GetForEdit<PerformanceElement1> (id);
         ASSERT_TRUE (element != nullptr);
 
