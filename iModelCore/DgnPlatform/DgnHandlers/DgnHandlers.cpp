@@ -9,7 +9,6 @@
 #include <BeSQLite/L10N.h>
 #include <DgnPlatform/DgnECSymbolProvider.h>
 #include <DgnPlatform/Dimension.h>
-#include <BeJavaScript/BeJavaScript.h>
 
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
 
@@ -83,8 +82,6 @@ void DgnPlatformLib::StaticInitialize()
     bentleyAllocator_enableLowFragmentationCRTHeap();
 
     SectionClipObjectFactory::Register();
-
-    BeJsEnvironment::StaticInitialize();
 
     s_staticInitialized = true;
     }
