@@ -1139,11 +1139,6 @@ ECObjectsStatus StructArrayECProperty::SetStructElementType (ECStructClassCP str
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                   Colin.Kerr                  01/2016
-//---------------+---------------+---------------+---------------+---------------+-------
-PrimitiveType NavigationECProperty::s_idType = PrimitiveType::PRIMITIVETYPE_String;
-
-//---------------------------------------------------------------------------------------
 // @bsimethod                                   Colin.Kerr                  12/2015
 //---------------+---------------+---------------+---------------+---------------+-------
 ECObjectsStatus NavigationECProperty::SetRelationshipClassName(Utf8CP relationshipName)
@@ -1289,14 +1284,14 @@ SchemaWriteStatus NavigationECProperty::_WriteXml(BeXmlWriterR xmlWriter, int ec
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Colin.Kerr                  12/2015
 //---------------+---------------+---------------+---------------+---------------+-------
-Utf8String NavigationECProperty::_GetTypeName() const { return ECXml::GetPrimitiveTypeName(NavigationECProperty::s_idType); }
+Utf8String NavigationECProperty::_GetTypeName() const { return ECXml::GetPrimitiveTypeName(m_type); }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Colin.Kerr                  12/2015
 //---------------+---------------+---------------+---------------+---------------+-------
 bool NavigationECProperty::_CanOverride(ECPropertyCR baseProperty) const
     {
-    NavigationECPropertyCP baseNavProperty = baseProperty.GetAsNavigationPropertyCP();
+    NavigationECPropertyCP baseNavProperty = baseProperty.GetAsNavigationProperty();
     if (nullptr == baseNavProperty)
         return false;
 
@@ -1335,6 +1330,20 @@ ECObjectsStatus NavigationECProperty::SetRelationshipClass(ECRelationshipClassCR
     return ECObjectsStatus::Success;
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Colin.Kerr                  12/2015
+//---------------+---------------+---------------+---------------+---------------+-------
+ECObjectsStatus NavigationECProperty::SetType(PrimitiveType type)
+    {
+    if (m_type != type)
+        {
+        m_type = type;
+        SetCachedTypeAdapter(nullptr);
+        InvalidateClassLayout();
+        }
+
+    return ECObjectsStatus::Success;
+    }
 
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     

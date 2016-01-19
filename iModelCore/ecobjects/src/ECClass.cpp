@@ -1641,9 +1641,10 @@ SchemaWriteStatus ECEntityClass::_WriteXml(BeXmlWriterR xmlWriter, int ecXmlVers
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Colin.Kerr                  12/2015
 //---------------+---------------+---------------+---------------+---------------+-------
-ECObjectsStatus ECEntityClass::CreateNavigationProperty(NavigationECPropertyP& ecProperty, Utf8StringCR name, ECRelationshipClassCR relationshipClass, ECRelatedInstanceDirection direction, bool verify)
+ECObjectsStatus ECEntityClass::CreateNavigationProperty(NavigationECPropertyP& ecProperty, Utf8StringCR name, ECRelationshipClassCR relationshipClass, ECRelatedInstanceDirection direction, PrimitiveType type, bool verify)
     {
     ecProperty = new NavigationECProperty(*this);
+    ecProperty->SetType(type);
     ECObjectsStatus status = ecProperty->SetRelationshipClass(relationshipClass, direction, verify);
     if (ECObjectsStatus::Success == status)
         status = AddProperty(ecProperty, name);

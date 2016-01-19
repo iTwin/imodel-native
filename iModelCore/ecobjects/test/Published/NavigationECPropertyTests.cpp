@@ -14,9 +14,9 @@ using namespace BentleyApi::ECN;
 
 struct NavigationECPropertyTests : ECTestFixture { };
 
-void CreateNavProp(ECEntityClassP ecClass, Utf8StringCR propName, ECRelationshipClassCR relClass, ECRelatedInstanceDirection direction, NavigationECPropertyP& navProp)
+void CreateNavProp(ECEntityClassP ecClass, Utf8StringCR propName, ECRelationshipClassCR relClass, ECRelatedInstanceDirection direction, NavigationECPropertyP& navProp, PrimitiveType type = PRIMITIVETYPE_String)
     {
-    ECObjectsStatus status = ecClass->CreateNavigationProperty(navProp, propName, relClass, direction);
+    ECObjectsStatus status = ecClass->CreateNavigationProperty(navProp, propName, relClass, direction, type);
     ASSERT_EQ(ECObjectsStatus::Success, status) << "Failed to create navigation property " << propName;
     ASSERT_NE(nullptr, navProp) << "Navigation property " << propName << " null though success returned";
     ASSERT_EQ(propName, navProp->GetName()) << "Navigation property " << propName << " does not have expected name";
@@ -356,7 +356,6 @@ void DeserializeAndVerifyInstanceXml(ECSchemaPtr schema, IECInstanceR sourceInst
 
 void InstanceWithNavProp(PrimitiveType navPropType)
     {
-    NavigationECProperty::SetIdType(navPropType);
     ECSchemaPtr schema;
     ECEntityClassP sourceClass;
     ECEntityClassP targetClass;
@@ -380,9 +379,9 @@ void InstanceWithNavProp(PrimitiveType navPropType)
     relClass2->GetTarget().SetCardinality(RelationshipCardinality::OneMany());
 
     NavigationECPropertyP navPropSource;
-    CreateNavProp(sourceClass, "MyTarget", *relClass, ECRelatedInstanceDirection::Forward, navPropSource);
+    CreateNavProp(sourceClass, "MyTarget", *relClass, ECRelatedInstanceDirection::Forward, navPropSource, navPropType);
     NavigationECPropertyP navPropSourceMult;
-    CreateNavProp(sourceClass, "MyTargetMult", *relClass2, ECRelatedInstanceDirection::Forward, navPropSourceMult);
+    CreateNavProp(sourceClass, "MyTargetMult", *relClass2, ECRelatedInstanceDirection::Forward, navPropSourceMult, navPropType);
     PrimitiveECPropertyP stringProp;
     sourceClass->CreatePrimitiveProperty(stringProp, "sProp", PrimitiveType::PRIMITIVETYPE_String);
     PrimitiveECPropertyP intProp;

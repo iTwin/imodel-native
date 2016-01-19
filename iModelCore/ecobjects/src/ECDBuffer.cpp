@@ -872,8 +872,8 @@ void            ClassLayout::Factory::AddProperties (ECClassCR ecClass, Utf8CP n
             }
         else if (property->GetIsNavigation())
             {
-            PrimitiveType navPropType = NavigationECProperty::GetIdType();
             NavigationECPropertyP navProp = property->GetAsNavigationPropertyP();
+            PrimitiveType navPropType = navProp->GetType();
             bool isMultiple = navProp->IsMultiple();
 
             if (!isMultiple && PrimitiveTypeIsFixedSize(navPropType))

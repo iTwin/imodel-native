@@ -2849,10 +2849,10 @@ InstanceReadStatus  ReadNavigationPropertyValue(NavigationECPropertyP navigation
         {
         Utf8String accessString;
         CreateAccessString(accessString, baseAccessString, navigationProperty->GetName());
-        return ReadPrimitiveArrayValues(ecInstance, accessString, NavigationECProperty::GetIdType(), PrimitiveType::PRIMITIVETYPE_String, false, propertyValueNode);
+        return ReadPrimitiveArrayValues(ecInstance, accessString, navigationProperty->GetType(), PrimitiveType::PRIMITIVETYPE_String, false, propertyValueNode);
         }
     else
-        return ReadSimplePropertyValue(navigationProperty->GetName(), NavigationECProperty::GetIdType(), baseAccessString, ecInstance, propertyValueNode, PrimitiveType::PRIMITIVETYPE_String);
+        return ReadSimplePropertyValue(navigationProperty->GetName(), navigationProperty->GetType(), baseAccessString, ecInstance, propertyValueNode, PrimitiveType::PRIMITIVETYPE_String);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3608,13 +3608,13 @@ InstanceWriteStatus     WriteNavigationPropertyValue(NavigationECPropertyR navig
             return InstanceWriteStatus::Success;
         
         m_xmlWriter->WriteElementStart(propertyName.c_str());
-        WritePrimitiveArray(ecInstance, accessString, nElements, navigationProperty.GetIdType());
+        WritePrimitiveArray(ecInstance, accessString, nElements, navigationProperty.GetType());
         m_xmlWriter->WriteElementEnd();
         }
     else
         {
         m_xmlWriter->WriteElementStart(propertyName.c_str());
-        WritePrimitiveValue(ecValue, navigationProperty.GetIdType());
+        WritePrimitiveValue(ecValue, navigationProperty.GetType());
         m_xmlWriter->WriteElementEnd();
         }
 
