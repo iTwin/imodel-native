@@ -276,9 +276,6 @@ public:
     //! @param[in]      id 
     DGNPLATFORM_EXPORT void Remove(LockableId id);
 
-    //! Populate a LockRequest object from the set of changes in a DgnDb, containing all locks required for the actual changes made.
-    DGNPLATFORM_EXPORT DgnDbStatus FromChangeSet(BeSQLite::IChangeSet& changes, DgnDbR db);
-
     DGNPLATFORM_EXPORT void ToJson(JsonValueR value) const; //!< Convert to JSON representation
     DGNPLATFORM_EXPORT bool FromJson(JsonValueCR value); //!< Attempt to initialize from JSON representation
 
@@ -303,8 +300,9 @@ public:
         DGNPLATFORM_EXPORT bool FromJson(JsonValueCR value); //!< Attempt to initialize from JSON representation
     };
 
-    DgnDbStatus FromChangeSet(BeSQLite::IChangeSet& changes, DgnDbR db, bool stopOnFirst); //!< @private
     void FromChangeSummary(DgnChangeSummary const& changes, bool stopOnFirst=false); //!< @private
+    void ExtractLockSet(DgnLockSet& locks); //!< @private
+    DGNPLATFORM_EXPORT void FromRevision(DgnRevision& revision); //!< @private
 };
 
 ENUM_IS_FLAGS(LockRequest::ResponseOptions);
@@ -415,6 +413,7 @@ protected:
     virtual LockStatus _QueryLockLevel(LockLevel& level, LockableId lockId, DgnDbR db) = 0;
     virtual LockStatus _QueryLocks(DgnLockSet& locks, DgnDbR db) = 0;
     virtual LockStatus _QueryOwnership(DgnLockOwnershipR ownership, LockableId lockId) = 0;
+    virtual LockStatus _QueryRevisionId(WStringR revisionid, LockableId lockId) = 0;
 public:
     //! Query whether all specified locks are held at or above the specified levels by the specified briefcase
     LockStatus QueryLocksHeld(bool& held, LockRequestCR locks, DgnDbR db) { return _QueryLocksHeld(held, locks, db); }
@@ -436,6 +435,12 @@ public:
 
     //! Queries the ownership of a lockable object
     LockStatus QueryOwnership(DgnLockOwnershipR ownership, LockableId lockId) { return _QueryOwnership(ownership, lockId); }
+
+    //! Queries the ID of the most recent revision in which the lockable object was modified.
+    //! @param[out]     revisionId On successful return, holds the ID of the revision, or an empty string if no revision associated with the lockable object
+    //! @param[in]      lockId     The ID of the lockable object
+    //! @return Success if the query succeeded, or else an error code
+    LockStatus QueryRevisionId(WStringR revisionId, LockableId lockId) { return _QueryRevisionId(revisionId, lockId); }
 };
 
 //=======================================================================================

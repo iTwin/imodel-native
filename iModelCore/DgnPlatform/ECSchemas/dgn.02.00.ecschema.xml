@@ -36,6 +36,19 @@
         <ECProperty propertyName="CategoryId" typeName="long"/><!-- should be non-nullable but shared table... -->
         <ECProperty propertyName="Geometry" typeName="binary"/>
     </ECEntityClass>
+    <ECRelationshipClass typeName="GeometrySourceIsInCategory" description="Element is in Category" strength="referencing">
+        <!-- WIP: want ON DELETE RESTRICT? -->
+        <Source cardinality="(0,N)" roleLabel="is in category" polymorphic="true">
+            <Class class="GeometrySource">
+                <Key>
+                    <Property name="CategoryId"/>
+                </Key>
+            </Class>
+        </Source>
+        <Target cardinality="(1,1)" roleLabel="contains elements" polymorphic="false">
+            <Class class="Category"/>
+        </Target>
+    </ECRelationshipClass>
     <ECEntityClass typeName="GeometrySource2d" modifier="Abstract">
         <BaseClass>GeometrySource</BaseClass>
         <ECProperty propertyName="Origin" typeName="point2d" />
@@ -403,6 +416,12 @@
     </ECEntityClass>
 
     <ECEntityClass typeName="DefinitionElement" modifier="Abstract">
+        <ECCustomAttributes>
+            <ClassMap xmlns="ECDbMap.01.00">
+                <!-- WIP: This rename didn't work. Should be applied to this and all other dgn_Element join tables. -->
+                <ECInstanceIdColumn>ElementId</ECInstanceIdColumn>
+            </ClassMap>
+        </ECCustomAttributes>
         <BaseClass>Element</BaseClass>
     </ECEntityClass>
     <ECEntityClass typeName="DictionaryElement" modifier="Abstract">
@@ -1197,6 +1216,7 @@
     </ECEntityClass>
     <ECRelationshipClass typeName="ElementUsesGeomParts" strength="referencing">
         <!-- Used to indicate that an Element uses a GeomPart.  This is useful for "garbage collecting" or finding Elements that would be affected by a change to a GeomPart. -->
+        <!-- WIP: want ON DELETE RESTRICT? -->
         <ECCustomAttributes>
             <ClassMap xmlns="ECDbMap.01.00">
                 <ECInstanceIdColumn>Id</ECInstanceIdColumn>
@@ -1213,73 +1233,6 @@
             <Class class="GeomPart"/>
         </Target>
     </ECRelationshipClass>
-    <ECRelationshipClass typeName="GeometrySourceIsInCategory" description="Element is in Category" strength="referencing">
-        <Source cardinality="(0,N)" roleLabel="is in category" polymorphic="false">
-            <Class class="GeometrySource">
-                <Key>
-                    <Property name="CategoryId"/>
-                </Key>
-            </Class>
-        </Source>
-        <Target cardinality="(1,1)" roleLabel="contains elements" polymorphic="true">
-            <Class class="Category"/>
-        </Target>
-    </ECRelationshipClass>
-    <!-- NEEDSWORK ECRelationships don't support abstract endpoints.
-         ECRelationship is required in order to generate foreign key constraint.
-         Therefore we must define an ECRelationship for each concrete subclass of GeometrySource to get a foreign key constraint on CategoryId -->
-    <ECRelationshipClass typeName="SpatialElementIsInCategory" description="Element is in Category" strength="referencing">
-        <!-- WIP: want ON DELETE RESTRICT? -->
-        <Source cardinality="(0,N)" roleLabel="is in category" polymorphic="true">
-            <Class class="SpatialElement">
-                <Key>
-                    <Property name="CategoryId"/>
-                </Key>
-            </Class>
-        </Source>
-        <Target cardinality="(1,1)" roleLabel="contains elements" polymorphic="false">
-            <Class class="Category"/>
-        </Target>
-    </ECRelationshipClass>
-    <ECRelationshipClass typeName="AnnotationElementIsInCategory" description="Element is in Category" strength="referencing">
-        <!-- WIP: want ON DELETE RESTRICT? -->
-        <Source cardinality="(0,N)" roleLabel="is in category" polymorphic="true">
-            <Class class="AnnotationElement">
-                <Key>
-                    <Property name="CategoryId"/>
-                </Key>
-            </Class>
-        </Source>
-        <Target cardinality="(1,1)" roleLabel="contains elements" polymorphic="false">
-            <Class class="Category"/>
-        </Target>
-    </ECRelationshipClass>
-    <ECRelationshipClass typeName="DrawingElementIsInCategory" description="Element is in Category" strength="referencing">
-        <!-- WIP: want ON DELETE RESTRICT? -->
-        <Source cardinality="(0,N)" roleLabel="is in category" polymorphic="true">
-            <Class class="DrawingElement">
-                <Key>
-                    <Property name="CategoryId"/>
-                </Key>
-            </Class>
-        </Source>
-        <Target cardinality="(1,1)" roleLabel="contains elements" polymorphic="false">
-            <Class class="Category"/>
-        </Target>
-    </ECRelationshipClass>
-    <ECRelationshipClass typeName="SheetElementIsInCategory" description="Element is in Category" strength="referencing">
-        <!-- WIP: want ON DELETE RESTRICT? -->
-        <Source cardinality="(0,N)" roleLabel="is in category" polymorphic="true">
-            <Class class="SheetElement">
-                <Key>
-                    <Property name="CategoryId"/>
-                </Key>
-            </Class>
-        </Source>
-        <Target cardinality="(1,1)" roleLabel="contains elements" polymorphic="false">
-            <Class class="Category"/>
-        </Target>
-    </ECRelationshipClass>
     
     <!-- ////////////////////////////////////////////////////////////////////////////// -->
     <!-- // Experimental classes -->
@@ -1291,11 +1244,48 @@
         <ECProperty propertyName="ElementGenerator" typeName="string" description="The name of the script to execute in order to create a variation of the component. May be null if the component is based on persistent geometry. In that case, Model must not be null."/>
         <ECProperty propertyName="Model" typeName="string" description="The name of the model that the component definition uses to hold the persistent geometry and other data such as constraints. May be null for components that generate their geometry from scratch."/>
         <ECProperty propertyName="Inputs" typeName="string" description="The names of the properties that are the main inputs to the component's element generator script."/>
+        <ECProperty propertyName="ScriptOnlyParameters" typeName="string" description="The definition and default values for all of the ScriptOnlyParameters ad hoc properties that each instance must have."/>
     </ECCustomAttributeClass>
 
     <ECCustomAttributeClass typeName="ComponentParameterSpecification" description="Provides information about a property that plays the role of a parameter to a component's solver." displayLabel="Component Parameter Specification" appliesTo="Any">
         <ECProperty propertyName="VariesPer" typeName="string" description="Indicates if the parameter may be varied for individual instances or if it is fixed for all instances of a particular variation. Possible values: Variation or Instance."/>
     </ECCustomAttributeClass>
+
+    <ECStructClass typeName="ComponentSpecificationAdhocHolder">
+        <ECCustomAttributes>
+            <AdhocPropertyContainerDefinition xmlns="Bentley_Standard_CustomAttributes.01.10">
+                <NameProperty>Name</NameProperty>
+                <DisplayLabelProperty>Label</DisplayLabelProperty>
+                <ValueProperty>Value</ValueProperty>
+                <TypeProperty>Type</TypeProperty>
+                <UnitProperty>Unit</UnitProperty>
+                <!-- do we need the following properties? -->
+                <ExtendTypeProperty>ExtendType</ExtendTypeProperty>
+                <IsReadOnlyProperty>IsReadOnly</IsReadOnlyProperty>
+            </AdhocPropertyContainerDefinition>
+        </ECCustomAttributes>
+
+        <ECProperty propertyName="Name" typeName="string" />
+        <ECProperty propertyName="Label" typeName="string" />
+        <ECProperty propertyName="Value" typeName="string" />
+        <ECProperty propertyName="Type" typeName="int" />
+        <ECProperty propertyName="Unit" typeName="string" />
+        <!-- do we need the following properties? -->
+        <ECProperty propertyName="ExtendType" typeName="string" />
+        <ECProperty propertyName="IsReadOnly" typeName="boolean" />
+    </ECStructClass>
+    
+    <!-- Example of how to use ComponentSpecificationAdhocHolder to define an adhoc properties container on a class
+    <ECEntityClass typeName="AcmeDoor" isStruct="False">
+        <ECCustomAttributes>
+            <AdhocPropertySpecification xmlns="Bentley_Standard_CustomAttributes.01.10">
+                <AdhocPropertyContainer>ComponentSpecificationAdhocHolder</AdhocPropertyContainer>
+            </AdhocPropertySpecification>
+        </ECCustomAttributes>
+        <ECArrayProperty propertyName="ScriptOnlyParameters" typeName="ComponentSpecificationAdhocHolder" isStruct="True" />
+        
+    </ECEntityClass>
+    -->
 
     <!-- ////////////////////////////////////////////////////////////////////////////// -->
     <!-- // Deprecated classes -->

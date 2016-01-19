@@ -72,6 +72,9 @@ private:
     virtual LockStatus _QueryLocks(DgnLockSet& locks, DgnDbR db) override;
     virtual LockStatus _QueryOwnership(DgnLockOwnershipR ownership, LockableId lockId) override;
 
+    // Not much to test with these...
+    virtual LockStatus _QueryRevisionId(WStringR revId, LockableId lockId) override { revId.clear(); return LockStatus::Success; }
+
     bool AreLocksAvailable(LockRequestCR reqs, BeBriefcaseId requestor);
     void GetDeniedLocks(DgnLockSet& locks, LockRequestCR reqs, BeBriefcaseId bcId);
     void Reset();
@@ -1384,7 +1387,7 @@ struct ExtractLocksTest : SingleBriefcaseLocksTest
             return DgnDbStatus::WriteError;
 
         RevisionStatus revStat;
-        DgnRevisionPtr rev = m_db->Revisions().StartCreateRevision(&revStat);
+        DgnRevisionPtr rev = m_db->Revisions().StartCreateRevision(&revStat, DgnRevision::Include::Locks);
         if (rev.IsNull())
             {
             if (RevisionStatus::NoTransactions == revStat)
@@ -1398,12 +1401,9 @@ struct ExtractLocksTest : SingleBriefcaseLocksTest
                 }
             }
 
-        ChangeStreamFileReader stream(rev->GetChangeStreamFile());
-        DgnDbStatus status = req.FromChangeSet(stream, *m_db);
-
+        req.FromRevision(*rev);
         m_db->Revisions().AbandonCreateRevision();
-
-        return status;
+        return DgnDbStatus::Success;
         }
 };
 

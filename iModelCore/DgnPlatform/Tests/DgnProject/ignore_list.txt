@@ -34,4 +34,4 @@ ConfigurationManager_Test.*                             # UmarH -- Tests are por
 
 DgnProjectPackageTest.VerifyViewsForDgndbFilesConvertedDuringBuild   #Affan #TFS353039
 
-ComponentModelTest.SimulateDeveloperAndClient # PaulConnelly WIP DgnCode
+ECDbInstances3.BGRJoinedTable # Affan

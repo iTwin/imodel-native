@@ -325,6 +325,11 @@ struct JsComponentDef : RefCountedBaseWithCreate
     // static GetParameters(instance: DgnElementP): ECInstanceP;
     static JsECInstanceP GetParameters(JsDgnElementP instance);
 
+    //! Make an ECInstance whose properties are the input parameters to the ComponentDef's script or solver. 
+    //! The caller should then assign values to the properties of the instance.
+    //! The caller may then pass the parameters instance to a function such as MakeInstanceOfVariation or MakeUniqueInstance.
+    JsECInstanceP MakeParameters();
+
     //            MakeInstanceOfVariation(targetModel: DgnModelP, variation: DgnElementP, instanceParameters: ECInstanceP, code: DgnCode): DgnElementP;
     JsDgnElementP MakeInstanceOfVariation(JsDgnModelP targetModel, JsDgnElementP variation, JsECInstanceP instanceParameters, JsAuthorityIssuedCodeP code);
 
@@ -596,7 +601,7 @@ struct JsECInstance : RefCountedBaseWithCreate
         if (!m_instance.IsValid())
             return nullptr;
         ECN::ECValue v;
-        if (ECN::ECObjectsStatus::Success != m_instance->GetValue(v, propertyName.c_str()))
+        if (ECN::ECObjectsStatus::Success != m_instance->GetValueOrAdhoc(v, propertyName.c_str()))
             return nullptr;
         return new JsECValue(v);
         }
@@ -605,13 +610,37 @@ struct JsECInstance : RefCountedBaseWithCreate
         {
         if (!m_instance.IsValid() || nullptr == value)
             return;
-        m_instance->SetValue(propertyName.c_str(), value->m_value);
+        m_instance->SetValueOrAdhoc(propertyName.c_str(), value->m_value);
         }
 
     STUB_OUT_SET_METHOD(Class,JsECClassP)
 };
 
 typedef JsECInstance* JsECInstanceP;
+
+struct JsAdhocPropertyQuery : RefCountedBaseWithCreate
+    {
+    JsECInstanceP m_host;
+    ECN::AdhocPropertyQuery m_query;
+    
+    JsAdhocPropertyQuery(JsECInstanceP host, Utf8StringCR containerAccessString) : m_host(host), m_query(*host->m_instance, containerAccessString.empty()? "Parameters": containerAccessString.c_str()) {;}
+
+    JsECInstanceP      GetHost() const { return m_host; }
+
+    uint32_t           GetPropertyIndex (Utf8StringCR accessString) const {uint32_t i; return m_query.GetPropertyIndex(i,accessString.c_str())? i: UINT32_MAX;}
+    uint32_t           GetCount() const {return m_query.GetCount();}
+
+    Utf8String GetName (uint32_t index) const {Utf8String v; m_query.GetName(v, index); return v;}
+    Utf8String GetDisplayLabel (uint32_t index) const {Utf8String v; m_query.GetDisplayLabel(v, index); return v;}
+    JsECValueP GetValue (uint32_t index) const {ECN::ECValue v; m_query.GetValue(v, index); return new JsECValue(v);}
+    ECPropertyPrimitiveType GetPrimitiveType (uint32_t index) const {ECN::PrimitiveType v = (ECN::PrimitiveType)0; m_query.GetPrimitiveType(v, index); return (ECPropertyPrimitiveType)v;}
+    Utf8String GetUnitName (uint32_t index) const {Utf8String v; m_query.GetUnitName(v, index); return v;}
+    bool IsReadOnly (uint32_t index) const {bool v = false; m_query.IsReadOnly(v, index); return v;}
+    bool IsHidden (uint32_t index) const {bool v = false; m_query.IsHidden(v, index); return v;}
+
+    STUB_OUT_SET_METHOD(Host,JsECInstanceP)
+    STUB_OUT_SET_METHOD(Count,uint32_t)
+    };
 
 //=======================================================================================
 // @bsiclass                                                    Sam.Wilson      06/15

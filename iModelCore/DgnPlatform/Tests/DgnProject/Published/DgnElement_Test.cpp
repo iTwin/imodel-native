@@ -231,10 +231,10 @@ TEST_F(DgnElementTests, DgnElementTransformer)
         DgnElementPtr ec11 = all.FindElementById(c11->GetElementId());
         Placement3d eparentplacement = eparent1->ToGeometrySource3dP()->GetPlacement();
         Placement3d ec11placement = ec11->ToGeometrySource3dP()->GetPlacement();
-        ASSERT_EQ(45, eparentplacement.GetAngles().GetYaw().Degrees());
-        ASSERT_EQ(45, ec11placement.GetAngles().GetYaw().Degrees());
-        ASSERT_EQ( 0, ec11placement.GetAngles().GetPitch().Degrees()) << "pitch should have been unaffected";
-        ASSERT_EQ( 0, ec11placement.GetAngles().GetRoll().Degrees()) << "roll should have been unaffected";
+        EXPECT_DOUBLE_EQ(45, eparentplacement.GetAngles().GetYaw().Degrees());
+        EXPECT_DOUBLE_EQ(45, ec11placement.GetAngles().GetYaw().Degrees());
+        EXPECT_DOUBLE_EQ( 0, ec11placement.GetAngles().GetPitch().Degrees()) << "pitch should have been unaffected";
+        EXPECT_DOUBLE_EQ( 0, ec11placement.GetAngles().GetRoll().Degrees()) << "roll should have been unaffected";
         ASSERT_TRUE(eparentplacement.GetOrigin().AlmostEqual(DPoint3d::FromZero()));
         ASSERT_TRUE(ec11placement.GetOrigin().AlmostEqual(DPoint3d::From(0,sqrt(2),0)));
         }
@@ -512,6 +512,50 @@ TEST_F(DgnElementTests, ElementCopierTests_Group)
         ASSERT_EQ(0, group_cc->ToIElementGroup()->QueryMembers().size());
         }
 
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Shaun.Sewall                    01/2016
+//---------------------------------------------------------------------------------------
+TEST_F(DgnElementTests, ForceElementIdForInsert)
+    {
+    SetupProject(L"3dMetricGeneral.idgndb", L"ForceElementIdForInsert.dgndb", Db::OpenMode::ReadWrite);
+
+    DgnModelId modelId = m_db->Models().QueryFirstModelId();
+    DgnClassId classId = m_db->Domains().GetClassId(generic_ElementHandler::GenericPhysicalObjectHandler::GetHandler());
+    DgnElementId elementId;
+
+    // Test creating an element the "normal" way (by letting the DgnElementId be assigned by the framework)
+        {
+        GenericPhysicalObjectPtr element = new GenericPhysicalObject(GenericPhysicalObject::CreateParams(*m_db, modelId, classId, m_defaultCategoryId));
+        ASSERT_TRUE(element.IsValid());
+        ASSERT_TRUE(element->Insert().IsValid());
+        ASSERT_TRUE(element->GetElementId().IsValid());
+        ASSERT_FALSE(element->Insert().IsValid()) << "Second insert of the same element should fail";
+        elementId = element->GetElementId();
+        }
+
+    DgnElementId forcedElementId(elementId.GetValue() + 100);
+
+    // Confirm that supplying a DgnElementId in CreateParams for Insert does not work (not intended to work)
+        {
+        GenericPhysicalObject::CreateParams createParams(*m_db, modelId, classId, m_defaultCategoryId);
+        createParams.SetElementId(DgnElementId(elementId.GetValue() + 100));
+    
+        GenericPhysicalObjectPtr element = new GenericPhysicalObject(createParams);
+        ASSERT_TRUE(element.IsValid());
+        ASSERT_FALSE(element->Insert().IsValid()) << "It is not valid to supply a DgnElementId for Insert via CreateParams";
+        }
+
+    // Test PKPM's synchronization workflow where they must force a DgnElementId on Insert.
+        {
+        GenericPhysicalObjectPtr element = new GenericPhysicalObject(GenericPhysicalObject::CreateParams(*m_db, modelId, classId, m_defaultCategoryId));
+        ASSERT_TRUE(element.IsValid());
+        element->ForceElementIdForInsert(forcedElementId);
+        ASSERT_EQ(element->GetElementId(), forcedElementId);
+        ASSERT_TRUE(element->Insert().IsValid());
+        ASSERT_EQ(element->GetElementId(), forcedElementId);
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**

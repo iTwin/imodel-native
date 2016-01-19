@@ -170,26 +170,20 @@ void ILocksManager::RemoveElements(LockRequestR request, DgnModelId modelId) con
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   11/15
+* @bsimethod                                                    Paul.Connelly   01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus LockRequest::FromChangeSet(IChangeSetR changes, DgnDbR db)
+void LockRequest::ExtractLockSet(DgnLockSet& locks)
     {
-    return FromChangeSet(changes, db, false);
+    locks.clear();
+    std::swap(m_locks, locks);
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   11/15
+* @bsimethod                                                    Paul.Connelly   01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus LockRequest::FromChangeSet(IChangeSetR changes, DgnDbR db, bool stopOnFirst)
+void LockRequest::FromRevision(DgnRevision& rev)
     {
-    Clear();
-
-    DgnChangeSummary summary(db);
-    if (SUCCESS != summary.FromChangeSet(changes))
-        return DgnDbStatus::BadArg;
-
-    FromChangeSummary(summary);
-    return DgnDbStatus::Success;
+    rev.ExtractUsedLocks(m_locks);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -719,18 +713,13 @@ LockReleaseContext::LockReleaseContext(DgnDbR db, bool relinquishAll) : m_db(db)
         return;
         }
 
-    // ###TODO: If IsCreatingRevision(), use RevisionManager::m_currentRevision
-    // (Expect more often than not this function will be invoked while pushing a revision and relinquishing locks...)
     RevisionStatus revStatus;
-    DgnRevisionPtr rev = db.Revisions().StartCreateRevision(&revStatus);
+    DgnRevisionPtr rev = db.Revisions().StartCreateRevision(&revStatus, DgnRevision::Include::Locks);
     if (rev.IsValid())
         {
-        ChangeStreamFileReader stream(rev->GetChangeStreamFile());
-        if (DgnDbStatus::Success == m_request.FromChangeSet(stream, db, relinquishAll))
-            {
-            m_status = LockStatus::Success;
-            m_endTxnId = db.Revisions().GetCurrentRevisionEndTxnId();
-            }
+        m_request.FromRevision(*rev);
+        m_status = LockStatus::Success;
+        m_endTxnId = db.Revisions().GetCurrentRevisionEndTxnId();
 
         db.Revisions().AbandonCreateRevision();
         }

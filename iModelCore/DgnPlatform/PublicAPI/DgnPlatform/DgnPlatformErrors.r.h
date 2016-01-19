@@ -96,6 +96,7 @@ enum class DgnDbStatus : int
     InDynamicTransaction,
     NoMultiTxnOperation,
     InvalidCodeAuthority,
+    CodeNotReserved,
     };
 
 //! Status Values for DgnViewport methods
@@ -131,6 +132,7 @@ enum class LockStatus : int
     LockUsed, //!< A lock cannot be relinquished because the associated object has been modified
     CannotCreateRevision, //!< An operation required creation of a DgnRevision, which failed
     InvalidRequest, //!< Request to server not understood
+    RevisionRequired, //!< A revision committed to the server must be integrated into the briefcase before the operation can be completed
 };
 
 //! Status codes for the Revision API
@@ -165,6 +167,7 @@ enum class CodeStatus : int
     CodeUsed, //!< A code cannot be relinquished because it has been used locally
     PendingTransactions, //!< An operation requires local changes to be committed or abandoned
     InvalidRequest, //!< Server did not understand a request
+    CannotCreateRevision, //!< An operation required creation of a DgnRevision, which failed
 };
 
 /** @cond BENTLEY_SDK_Publisher */

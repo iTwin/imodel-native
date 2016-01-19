@@ -771,7 +771,7 @@ void DgnElement::CopyForCloneFrom(DgnElementCR src)
     {
     DgnCode code = GetCode();
     _CopyFrom(src);
-    SetCode(code);
+    m_code = code;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2571,7 +2571,7 @@ void ElementGeom2d::AddClassParams(ECSqlClassParams& params)
     {
     AddBaseClassParams(params);
 
-    params.Add(GEOM2_Rotation, ECSqlClassParams::StatementType::Select);
+    params.Add(GEOM2_Rotation);
     }
 
 /*---------------------------------------------------------------------------------**//**

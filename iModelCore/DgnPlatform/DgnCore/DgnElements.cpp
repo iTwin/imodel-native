@@ -1147,10 +1147,12 @@ void DgnElements::InitNextId()
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnElementCPtr DgnElements::PerformInsert(DgnElementR element, DgnDbStatus& stat)
     {
-    InitNextId();
-    m_nextAvailableId.UseNext(m_dgndb);
-
-    element.m_elementId = m_nextAvailableId; 
+    if (!element.m_flags.m_forceElementIdForInsert)
+        {
+        InitNextId();
+        m_nextAvailableId.UseNext(m_dgndb);
+        element.m_elementId = m_nextAvailableId; 
+        }
 
     if (DgnDbStatus::Success != (stat = element._OnInsert()))
         return nullptr;
@@ -1189,8 +1191,8 @@ DgnElementCPtr DgnElements::InsertElement(DgnElementR element, DgnDbStatus* outS
     {
     DgnDbStatus ALLOW_NULL_OUTPUT(stat,outStat);
 
-    // don't allow elements that already have an id.
-    if (element.m_elementId.IsValid()) 
+    // don't allow elements that already have an id unless the forceElementIdForInsert flag is set (PKPM requested a "back door" for sync workflows)
+    if (element.m_elementId.IsValid() && !element.m_flags.m_forceElementIdForInsert)
         {
         stat = DgnDbStatus::WrongElement; // this element must already be persistent
         return nullptr;
@@ -1218,7 +1220,21 @@ DgnElementCPtr DgnElements::InsertElement(DgnElementR element, DgnDbStatus* outS
     if (!newEl.IsValid())
         element.m_elementId = DgnElementId(); // Insert failed, make sure to invalidate the DgnElementId so they don't accidentally use it
 
+    element.m_flags.m_forceElementIdForInsert = 0; // ensure flag is set to default value
     return newEl;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* PKPM requested a "back door" for sync workflows that need to force an DgnElementId for Insert
+* @bsimethod                                                    ShaunSewall     01/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnElement::ForceElementIdForInsert(DgnElementId elementId)
+    {
+    if (!IsPersistent())
+        {
+        m_flags.m_forceElementIdForInsert = 1;
+        m_elementId = elementId;
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**

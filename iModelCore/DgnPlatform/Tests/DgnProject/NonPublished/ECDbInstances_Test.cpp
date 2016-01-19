@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/DgnProject/NonPublished/ECDbInstances_Test.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatform/DgnPlatformApi.h>
@@ -1181,3 +1181,47 @@ TEST_F(DgnECInstanceTests, InstancesAndRelationships)
     project.SaveChanges();
     }
 #endif
+
+TEST(ECDbInstances3, BGRJoinedTable)
+    {
+    Utf8CP schemaXml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
+                        "<ECSchema schemaName=\"ReviewVisualization\" nameSpacePrefix=\"rv\" version=\"01.00\" description=\"Defines sets of rules for visualizing models based on EC instance criteria\" displayLabel=\"Review Visualization\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
+                            "<ECSchemaReference name=\"Generic\" version=\"01.00\" prefix=\"generic\" />"
+                            "<ECSchemaReference name=\"Bentley_Standard_CustomAttributes\" version=\"01.12\" prefix=\"bsca\" />"
+                            "<ECClass typeName=\"VisualizationRule\" description=\"Defines a named rule for finding and coloring a set of EC instances\" displayLabel=\"Visualization Rule\" isStruct=\"true\" isCustomAttributeClass=\"false\" isDomainClass=\"false\">"
+                                "<ECProperty propertyName=\"Name\" typeName=\"string\" description=\"Rule name (for example, &quot;Installed&quot; for an Equipment Status visualization rule set)\" />"
+                                "<ECProperty propertyName=\"ColorRed\" typeName=\"int\" description=\"Display color red component value (0-255)\" displayLabel=\"Red Color Component\" />"
+                                "<ECProperty propertyName=\"ColorGreen\" typeName=\"int\" description=\"Display color green component value (0-255)\" displayLabel=\"Green Color Component\" />"
+                                "<ECProperty propertyName=\"ColorBlue\" typeName=\"int\" description=\"Display color blue component value (0-255)\" displayLabel=\"Blue Color Component\" />"
+                                "<ECProperty propertyName=\"QueryCriteria\" typeName=\"string\" description=\"Matching criteria (a WHERE clause without the WHERE keyword)\" displayLabel=\"Query Criteria\" />"
+                            "</ECClass>"
+                            "<ECClass typeName=\"VisualizationRuleSet\" description=\"Defines a set of rules for color-coding a model based on EC instance criteria\" displayLabel=\"Visualization Rule Set\" isStruct=\"false\" isCustomAttributeClass=\"false\" isDomainClass=\"true\">"
+                                "<BaseClass>generic:PhysicalObject</BaseClass>"
+                                    "<ECArrayProperty propertyName=\"Rules\" typeName=\"VisualizationRule\" description=\"Array of visualization rules\" isStruct=\"true\" minOccurs=\"0\" maxOccurs=\"unbounded\" />"
+                                    "<ECArrayProperty propertyName=\"QueryClasses\" typeName=\"string\" description=\"Array of classes to query\" displayLabel=\"Query Classes\" minOccurs=\"0\" maxOccurs=\"unbounded\" />"
+                            "</ECClass>"
+                        "</ECSchema>";
+    ScopedDgnHost host;
+
+    BeFileName projectPath;
+    BeTest::GetHost().GetOutputRoot(projectPath);
+    projectPath.AppendToPath(L"bgr.idgndb");
+
+    DgnDbPtr dgnDb = CreateEmptyProject(dgnDb, projectPath);
+
+    ECSchemaCachePtr schemaCache = ECSchemaCache::Create();
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
+
+    ECSchemaPtr schema;
+    ECSchema::ReadFromXmlString(schema, schemaXml, *schemaContext);
+    dgnDb->Schemas().ImportECSchemas(schemaContext->GetCache());
+    dgnDb->SaveChanges();
+
+    //BeFileName bgr(L"f:\\temp\\BGRSubset.i.idgndb");
+    //DgnDbPtr dgnDb = DgnDb::OpenDgnDb(NULL, bgr, DgnDb::OpenParams(Db::OpenMode::ReadWrite));
+
+    ECSchemaCP review = dgnDb->Schemas().GetECSchema("ReviewVisualization");
+    ECClassCP visualizationRuleSet = review->GetClassCP("VisualizationRuleSet");
+    ECInstanceInserter inserter(*dgnDb, *visualizationRuleSet);
+    }
+
