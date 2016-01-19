@@ -54,6 +54,7 @@
     <ClInclude Include="Published\WebServices\Cache\Transactions\MockTransactionHandler.h" />
     <ClInclude Include="Published\WebServices\Cache\Transactions\StubCacheTransactionManager.h" />
     <ClInclude Include="Published\WebServices\Cache\Util\ECDbAdapterTests.h" />
+    <ClInclude Include="Published\Utils\SeedFile.h" />
     <ClInclude Include="Published\WebServices\Cache\Util\ECDbHelperTests.h" />
     <ClInclude Include="Published\WebServices\Cache\Util\ECExpressionHelperTests.h" />
     <ClInclude Include="Published\WebServices\Cache\Util\ExtendedDataAdapterTests.h" />
@@ -65,6 +66,7 @@
     <ClInclude Include="Published\WebServices\Cache\Util\MockECDbAdapterDeleteListener.h" />
     <ClInclude Include="Published\WebServices\Cache\Util\MockECDbSchemaChangeListener.h" />
     <ClInclude Include="Published\WebServices\Cache\Util\MockExtendedDataAdapter.h" />
+    <ClInclude Include="Published\WebServices\Cache\Util\MockExtendedDataAdapterDelegate.h" />
     <ClInclude Include="Published\WebServices\Cache\Util\MockSelectProvider.h" />
     <ClInclude Include="Published\WebServices\Client\ClientInfoTests.h" />
     <ClInclude Include="Published\WebServices\Client\WSChangesetTests.h" />
@@ -166,6 +168,7 @@
     <ClCompile Include="Published\Utils\BaseMockHttpHandlerTest.cpp" />
     <ClCompile Include="Published\Utils\MockTests.cpp" />
     <ClCompile Include="Published\Utils\MockHttpHandler.cpp" />
+    <ClCompile Include="Published\Utils\SeedFile.cpp" />
     <ClCompile Include="Published\Utils\StubInstances.cpp" />
     <ClCompile Include="Published\Utils\ValuePrinter.cpp" />
     <ClCompile Include="Published\Utils\WebServicesTestsHelper.cpp" />

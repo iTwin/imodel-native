@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/WebServices/Cache/Util/ExtendedDataAdapter.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -22,18 +22,35 @@ USING_NAMESPACE_BENTLEY_SQLITE_EC
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct EXPORT_VTABLE_ATTRIBUTE ExtendedDataAdapter : public IExtendedDataAdapter
     {
+    public:
+        struct IDelegate;
+
     private:
         ECDbAdapter m_dbAdapter;
         ECSqlStatementCache m_statementCache;
+        IDelegate& m_delegate;
 
     public:
-        WSCACHE_EXPORT ExtendedDataAdapter(ObservableECDb& db);
+        //! Create extended data adapter
+        WSCACHE_EXPORT ExtendedDataAdapter(ObservableECDb& db, IDelegate& edDelegate);
 
-        //! Call import schema once to initialize ECDb for extended data storage
-        WSCACHE_EXPORT BentleyStatus ImportSchema();
-
-        WSCACHE_EXPORT ExtendedData GetData(ECInstanceKeyCR instanceKey) override;
+        WSCACHE_EXPORT ExtendedData GetData(ECInstanceKeyCR ownerKey) override;
         WSCACHE_EXPORT BentleyStatus UpdateData(ExtendedData& data) override;
+    };
+
+/*--------------------------------------------------------------------------------------+
+* @bsiclass
++---------------+---------------+---------------+---------------+---------------+------*/
+struct ExtendedDataAdapter::IDelegate
+    {
+    public:
+        virtual ~IDelegate() {};
+        //! Return class key with "Content" string property for storing data
+        virtual ECClassCP GetExtendedDataClass() = 0;
+        //! Return relationship class with source "owner" instances to hold target "extended data" class instances
+        virtual ECRelationshipClassCP GetExtendedDataRelationshipClass() = 0;
+        //! Return instance key that should hold extended data for specific owner so schema would match.
+        virtual ECInstanceKey GetHolderKey(ECInstanceKeyCR ownerKey) { return ownerKey; };
     };
 
 END_BENTLEY_WEBSERVICES_NAMESPACE

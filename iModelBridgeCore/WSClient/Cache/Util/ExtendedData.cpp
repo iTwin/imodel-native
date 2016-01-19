@@ -2,7 +2,7 @@
 |
 |     $Source: Cache/Util/ExtendedData.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -20,8 +20,8 @@ ExtendedData::ExtendedData()
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    02/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-ExtendedData::ExtendedData(ECInstanceKey instanceKey, ECInstanceKey extendedDataKey, std::shared_ptr<Json::Value> extendedData) :
-m_instanceKey(instanceKey),
+ExtendedData::ExtendedData(ECInstanceKey ownerKey, ECInstanceKey extendedDataKey, std::shared_ptr<Json::Value> extendedData) :
+m_ownerKey(ownerKey),
 m_extendedDataKey(extendedDataKey),
 m_extendedData(nullptr == extendedData ? std::make_shared<Json::Value>() : extendedData)
     {}

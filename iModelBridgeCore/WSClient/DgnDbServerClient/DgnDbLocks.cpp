@@ -70,6 +70,20 @@ LockRequest::Response DgnDbLocks::_AcquireLocks(LockRequestCR locks, DgnDbR db)
             }
         else
             {
+            DgnDbServerError& error = result.GetError();
+            if (DgnDbServerError::Id::LockOwnedByAnotherBriefcase == error.GetId())
+                {
+                Json::Value deniedLocks;
+                DgnLocksJson::LockStatusToJson(deniedLocks[Locks::Status], LockStatus::AlreadyHeld);
+                deniedLocks[Locks::DeniedLocks] = Json::arrayValue;
+                JsonValueCR errorData = error.GetExtendedData();
+                uint32_t i = 0;
+                for (auto const& lock : errorData[ServerSchema::Property::ExistingLocks])
+                    FormatLockFromServer(deniedLocks[Locks::DeniedLocks][i++], lock);
+                LockRequest::Response response;
+                response.FromJson(deniedLocks);
+                return response;
+                }
             return LockRequest::Response(LockStatus::ServerUnavailable);//NEEDSWORK: Use appropriate status
             }
         }
@@ -180,6 +194,13 @@ LockStatus DgnDbLocks::_QueryOwnership(DgnLockOwnershipR ownership, Dgn::Lockabl
         }
     else
         return LockStatus::ServerUnavailable;
+    }
+
+
+LockStatus DgnDbLocks::_QueryRevisionId(WStringR, LockableId)
+    {
+    BeAssert(false && "Unimplemented");
+    return LockStatus::Success;
     }
 
 DgnDbLocks::DgnDbLocks(WebServices::ClientInfoPtr clientInfo)

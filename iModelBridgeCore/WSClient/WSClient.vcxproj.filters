@@ -372,6 +372,18 @@
     <ClCompile Include="Connect\ConnectSignInManager.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="DgnDbServerClient\DgnDbServerRevision.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="DgnDbServerClient\DgnDbLocks.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="DgnDbServerClient\DgnDbServerError.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Cache\Persistence\Hierarchy\ExtendedDataDelegate.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Client\WebApi\WebApi.h">
@@ -812,6 +824,15 @@
     <ClInclude Include="PublicAPI\WebServices\Connect\ConnectSignInManager.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="PublicAPI\DgnDbServer\Client\DgnDbServerRevision.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\DgnDbServer\Client\DgnDbLocks.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Cache\Persistence\Hierarchy\ExtendedDataDelegate.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Xml Include="WSClient.PartFile.xml" />
@@ -846,5 +867,6 @@
     <None Include="DgnDbServerClientLib.mke" />
     <None Include="DgnDbServerClientPrewire.mke" />
     <None Include="Azure\Azure.mki" />
+    <None Include="DgnDbServerClient\DgnDbServerClient.mki" />
   </ItemGroup>
 </Project>

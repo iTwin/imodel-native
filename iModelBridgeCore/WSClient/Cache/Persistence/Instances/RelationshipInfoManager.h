@@ -59,7 +59,9 @@ struct RelationshipInfoManager : public IECDbAdapter::DeleteListener
         BentleyStatus SaveInfo(RelationshipInfoR info);
 
         //! READ relationship or INSERT new cached relationship key
-        CachedInstanceKey ReadCachedRelationshipKey(ECInstanceKeyCR relationship, Utf8StringCR remoteId);
+        CachedInstanceKey ReadOrInsertCachedRelationshipKey(ECInstanceKeyCR relationship, Utf8StringCR remoteId);
+        //! Read cached relationship key
+        CachedInstanceKey ReadCachedRelationshipKey(ECInstanceKeyCR relationship);
 
         //! Read object id for existing cached relationship
         ObjectId ReadObjectId(ECInstanceKeyCR relationship);

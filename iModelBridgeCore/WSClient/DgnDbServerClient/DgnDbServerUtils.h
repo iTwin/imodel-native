@@ -38,6 +38,7 @@ namespace ServerSchema
         static Utf8CP File = "DgnDbFile";
         static Utf8CP Repository = "DgnDbRepository";
         static Utf8CP Lock = "Lock";
+        static Utf8CP MultiLock = "MultiLock";
         }
     namespace Property
         {
@@ -62,6 +63,7 @@ namespace ServerSchema
         static Utf8CP URL = "URL";
         static Utf8CP IsUploaded = "IsUploaded";
         static Utf8CP ReleasedWithRevision = "ReleasedWithRevision";
+        static Utf8CP ExistingLocks = "ExistingLocks";
         }
     static Utf8CP DeleteAllLocks = "DeleteAll";
     }
@@ -70,14 +72,16 @@ namespace Locks
     {
     static Utf8CP Description = "Description";
     static Utf8CP Locks = "Locks";
-    static Utf8CP ObjectId = "LockableId";
-    namespace Object
+    static Utf8CP LockableId = "LockableId";
+    namespace Lockable
         {
-        static Utf8CP Id = "LockableId";
+        static Utf8CP Id = "Id";
         static Utf8CP Type = "Type";
         }
     static Utf8CP Level = "Level";
     static Utf8CP Status = "Status";
+    static Utf8CP Owner = "Owner";
+    static Utf8CP DeniedLocks = "DeniedLocks";
     }
 
 namespace Db
@@ -144,8 +148,8 @@ struct DgnDbServerHost : public Dgn::DgnPlatformLib::Host
     private:
         bool m_initialized;
         bool m_terminated;
-        static BeFileName m_temp;
-        static BeFileName m_assets;
+        static BeFileName s_temp;
+        static BeFileName s_assets;
     public:
         DgnDbServerHost();
         ~DgnDbServerHost();
@@ -160,4 +164,6 @@ struct DgnDbServerHost : public Dgn::DgnPlatformLib::Host
 
         static bool IsInitialized();
     };
+
+void FormatLockFromServer(JsonValueR lockJson, JsonValueCR serverJson);
 END_BENTLEY_DGNDBSERVER_NAMESPACE

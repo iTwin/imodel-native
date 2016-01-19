@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/WebServices/Client/WSError.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -24,6 +24,7 @@ USING_NAMESPACE_BENTLEY_DGNCLIENTFX_UTILS
 struct WSError;
 typedef WSError& WSErrorR;
 typedef const WSError& WSErrorCR;
+typedef std::shared_ptr<const Json::Value> JsonValueCPtr;
 
 /*--------------------------------------------------------------------------------------+
 * @bsiclass                                               Beneditas.Lipnickas   06/2013
@@ -72,6 +73,7 @@ struct WSError : public AsyncError
     private:
         Status              m_status;
         Id                  m_id;
+        JsonValueCPtr       m_data;
 
     private:
         static bool IsValidErrorJson(JsonValueCR jsonError);
@@ -83,7 +85,14 @@ struct WSError : public AsyncError
         BentleyStatus ParseXmlError(HttpResponseCR httpResponse);
 
         void SetStatusServerNotSupported();
-        void SetStatusReceivedError(HttpErrorCR httpError, Id errorId, Utf8StringCR errorMessage, Utf8StringCR errorDescription);
+        void SetStatusReceivedError
+            (
+            HttpErrorCR httpError,
+            Id errorId,
+            Utf8StringCR errorMessage,
+            Utf8StringCR errorDescription,
+            JsonValueCPtr errorData = nullptr
+            );
 
     public:
         WSCLIENT_EXPORT WSError();
@@ -96,6 +105,7 @@ struct WSError : public AsyncError
 
         WSCLIENT_EXPORT Status       GetStatus() const;
         WSCLIENT_EXPORT Id           GetId() const;
+        WSCLIENT_EXPORT JsonValueCR  GetData() const;
         WSCLIENT_EXPORT Utf8StringCR GetDisplayMessage() const;
         WSCLIENT_EXPORT Utf8StringCR GetDisplayDescription() const;
     };

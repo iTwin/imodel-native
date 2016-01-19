@@ -151,6 +151,8 @@
     <ClInclude Include="Published\WebServices\Cache\Util\JsonUtilTests.h" />
     <ClInclude Include="Published\WebServices\Cache\Util\MockECDbAdapterDeleteListener.h" />
     <ClInclude Include="Published\WebServices\Azure\AzureBlobStorageClientTests.h" />
+    <ClInclude Include="Published\WebServices\Cache\Util\MockExtendedDataAdapterDelegate.h" />
+    <ClInclude Include="Published\Utils\SeedFile.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="BackDoor\BackDoor.cpp">
@@ -316,6 +318,7 @@
     <ClCompile Include="Published\Utils\MockTests.cpp" />
     <ClCompile Include="Published\WebServices\Cache\Util\JsonUtilTests.cpp" />
     <ClCompile Include="Published\WebServices\Azure\AzureBlobStorageClientTests.cpp" />
+    <ClCompile Include="Published\Utils\SeedFile.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="BuildTests.mke" />
