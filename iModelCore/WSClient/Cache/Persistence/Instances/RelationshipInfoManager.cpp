@@ -256,17 +256,43 @@ ECInstanceKeyR targetOut
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    06/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-CachedInstanceKey RelationshipInfoManager::ReadCachedRelationshipKey
+CachedInstanceKey RelationshipInfoManager::ReadOrInsertCachedRelationshipKey
 (
 ECInstanceKeyCR relationship,
 Utf8StringCR remoteId
 )
     {
+    CachedInstanceKey key = ReadCachedRelationshipKey(relationship);
+    if (key.IsValid())
+        {
+        return key;
+        }
+
     if (!relationship.IsValid())
         {
         return CachedInstanceKey();
         }
 
+    IECInstancePtr infoECInstance = m_cachedRelationshipInfoClass->GetDefaultStandaloneEnabler()->CreateInstance();
+
+    infoECInstance->SetValue(CLASS_CachedRelationshipInfo_PROPERTY_ClassId, ECValue(relationship.GetECClassId()));
+    infoECInstance->SetValue(CLASS_CachedRelationshipInfo_PROPERTY_InstanceId, ECValue((int64_t) relationship.GetECInstanceId().GetValue()));
+    infoECInstance->SetValue(CLASS_CachedRelationshipInfo_PROPERTY_RemoteId, ECValue(remoteId.c_str(), false));
+
+    CacheNodeKey infoKey;
+    if (SUCCESS != m_infoECInstanceInserter.Get().Insert(infoKey, *infoECInstance))
+        {
+        return CachedInstanceKey();
+        }
+
+    return CachedInstanceKey(infoKey, relationship);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    06/2014
++---------------+---------------+---------------+---------------+---------------+------*/
+CachedInstanceKey RelationshipInfoManager::ReadCachedRelationshipKey(ECInstanceKeyCR relationship)
+    {
     auto statement = m_statementCache.GetPreparedStatement("RelationshipInfoManager::ReadCachedRelationshipKey", [&]
         {
         return
@@ -286,20 +312,6 @@ Utf8StringCR remoteId
     if (BE_SQLITE_ROW == status)
         {
         infoKey = CacheNodeKey(m_cachedRelationshipInfoClass->GetId(), statement->GetValueId<ECInstanceId>(0));
-        }
-    else
-        {
-        IECInstancePtr infoECInstance = m_cachedRelationshipInfoClass->GetDefaultStandaloneEnabler()->CreateInstance();
-
-        infoECInstance->SetValue(CLASS_CachedRelationshipInfo_PROPERTY_ClassId, ECValue(relationship.GetECClassId()));
-        infoECInstance->SetValue(CLASS_CachedRelationshipInfo_PROPERTY_InstanceId, ECValue((int64_t)relationship.GetECInstanceId().GetValue()));
-        infoECInstance->SetValue(CLASS_CachedRelationshipInfo_PROPERTY_RemoteId, ECValue(remoteId.c_str(), false));
-
-        if (SUCCESS != m_infoECInstanceInserter.Get().Insert(infoKey, *infoECInstance))
-            {
-            BeAssert(false);
-            return CachedInstanceKey();
-            }
         }
 
     return CachedInstanceKey(infoKey, relationship);

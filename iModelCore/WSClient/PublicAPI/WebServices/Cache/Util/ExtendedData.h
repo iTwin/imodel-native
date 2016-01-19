@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/WebServices/Cache/Util/ExtendedData.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -26,7 +26,7 @@ struct ExtendedData
         friend struct ExtendedDataAdapter;
 
     private:
-        ECInstanceKey m_instanceKey;
+        ECInstanceKey m_ownerKey;
         ECInstanceKey m_extendedDataKey;
         std::shared_ptr<Json::Value> m_extendedData;
 
@@ -34,7 +34,7 @@ struct ExtendedData
         WSCACHE_EXPORT ExtendedData();
         WSCACHE_EXPORT ExtendedData
             (
-            ECInstanceKey instanceKey,
+            ECInstanceKey ownerKey,
             ECInstanceKey extendedDataKey,
             std::shared_ptr<Json::Value> extendedData
             );

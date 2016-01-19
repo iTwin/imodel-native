@@ -275,4 +275,19 @@
         </Target>
     </ECRelationshipClass>
 
+    <ECClass typeName="ExtendedData" isDomainClass="True">
+        <ECProperty propertyName="Content" typeName="string" />
+    </ECClass>
+
+    <ECRelationshipClass typeName="NodeToExtendedData" isDomainClass="True" strength="embedding" strengthDirection="forward">
+        <Source cardinality="(1,1)" polymorphic="False">
+            <Class class="CachedObjectInfo" />
+            <Class class="CachedRelationshipInfo" />
+            <Class class="Root" />
+        </Source>
+        <Target cardinality="(0,1)" polymorphic="False">
+            <Class class="ExtendedData" />
+        </Target>
+    </ECRelationshipClass>
+
 </ECSchema>

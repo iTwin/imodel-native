@@ -24,7 +24,6 @@ WSCacheState::Core::Core(ObservableECDb& db, CacheEnvironmentCR environment) :
 dbAdapter(db),
 statementCache(db),
 environment(environment),
-extendedDataAdapter(db),
 
 objectInfoManager(dbAdapter, statementCache, hierarchyManager),
 relationshipInfoManager(dbAdapter, statementCache, hierarchyManager),
@@ -37,7 +36,10 @@ navigationBaseManager(dbAdapter, statementCache),
 changeInfoManager(dbAdapter, statementCache, hierarchyManager, objectInfoManager, relationshipInfoManager, fileInfoManager),
 fileStorage(dbAdapter, statementCache, environment),
 changeManager(dbAdapter, instanceCacheHelper, hierarchyManager, responseManager, objectInfoManager, relationshipInfoManager,
-fileInfoManager, changeInfoManager, fileStorage, rootManager)
+fileInfoManager, changeInfoManager, fileStorage, rootManager),
+
+extendedDataDelegate(dbAdapter, objectInfoManager, relationshipInfoManager),
+extendedDataAdapter(db, extendedDataDelegate)
     {}
 
 /*--------------------------------------------------------------------------------------+
