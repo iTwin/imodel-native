@@ -224,6 +224,10 @@ DgnDbStatus DgnElement::_OnInsert()
     if (LockStatus::Success != GetDgnDb().Locks().LockModel(*GetModel(), LockLevel::Shared))
         return DgnDbStatus::LockNotHeld;
 
+    // Ensure this briefcase has reserved the element's code
+    if (CodeStatus::Success != GetDgnDb().Codes().ReserveCode(GetCode()))
+        return DgnDbStatus::CodeNotReserved;
+
     return GetModel()->_OnInsertElement(*this);
     }
 
@@ -330,6 +334,10 @@ DgnDbStatus DgnElement::_OnUpdate(DgnElementCR original)
 
     if (LockStatus::Success != GetDgnDb().Locks().LockElement(*this, LockLevel::Exclusive, original.GetModelId()))
         return DgnDbStatus::LockNotHeld;
+
+    // Ensure this briefcase has reserved the element's code
+    if (CodeStatus::Success != GetDgnDb().Codes().ReserveCode(GetCode()))
+        return DgnDbStatus::CodeNotReserved;
 
     return GetModel()->_OnUpdateElement(*this, original);
     }

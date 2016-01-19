@@ -42,10 +42,26 @@ private:
     CodeStatus ValidateRelease(DgnCodeInfoSet&, DgnCodeSet const&, DgnDbR);
     CodeStatus ValidateRelinquish(DgnCodeInfoSet&, DgnDbR);
     void MarkDiscarded(DgnCodeInfoSet const& discarded);
+
+    void MarkRevision(DgnCodeSet const& codes, bool discarded, Utf8StringCR revId);
 public:
     CodesServer();
 
     void Dump(Utf8CP descr=nullptr);
+
+    // Simulates what the real server does with codes when a revision is pushed.
+    void OnFinishRevision(DgnRevision const& rev)
+        {
+        MarkRevision(rev.GetAssignedCodes(), false, rev.GetId());
+        MarkRevision(rev.GetDiscardedCodes(), true, rev.GetId());
+        }
+
+    void MarkUsed(DgnCode const& code, Utf8StringCR revision)
+        {
+        DgnCodeSet codes;
+        codes.insert(code);
+        MarkRevision(codes, false, revision);
+        }
 };
 
 /*---------------------------------------------------------------------------------**//**
@@ -169,7 +185,7 @@ CodesServer::Response CodesServer::_ReserveCodes(Request const& req, DgnDbR db)
     while (BE_SQLITE_ROW == stmt.Step())
         {
         DgnCode code(stmt.GetValueId<DgnAuthorityId>(0), stmt.GetValueText(2), stmt.GetValueText(1));
-        switch (static_cast<CodeState>(stmt.GetValueInt(4)))
+        switch (static_cast<CodeState>(stmt.GetValueInt(3)))
             {
             case CodeState::Reserved:
                 {
@@ -362,6 +378,30 @@ CodeStatus CodesServer::_QueryCodes(DgnCodeSet& codes, DgnDbR db)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void CodesServer::MarkRevision(DgnCodeSet const& codes, bool discarded, Utf8StringCR revId)
+    {
+    if (codes.empty())
+        return;
+
+    Statement stmt;
+    stmt.Prepare(m_db, "INSERT OR REPLACE INTO " SERVER_Table "(" SERVER_Authority "," SERVER_NameSpace "," SERVER_Value "," SERVER_State "," SERVER_Revision
+            ") VALUES (?,?,?,?,?)");
+    for (auto const& code : codes)
+        {
+        stmt.BindId(1, code.GetAuthority());
+        stmt.BindText(2, code.GetNamespace(), Statement::MakeCopy::No);
+        stmt.BindText(3, code.GetValue(), Statement::MakeCopy::No);
+        stmt.BindInt(4, static_cast<int>(discarded ? CodeState::Discarded : CodeState::Used));
+        stmt.BindText(5, revId, Statement::MakeCopy::No);
+
+        stmt.Step();
+        stmt.Reset();
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsistruct                                                    Paul.Connelly   01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct CodesManagerTest : public ::testing::Test, DgnPlatformLib::Host::ServerAdmin
@@ -469,7 +509,52 @@ struct CodesManagerTest : public ::testing::Test, DgnPlatformLib::Host::ServerAd
             EXPECT_FALSE(exp.GetRevisionId().empty());
             }
         }
+
+    Utf8String CommitRevision(DgnDbR db);
+
+    static DgnDbStatus InsertStyle(Utf8CP name, DgnDbR db)
+        {
+        AnnotationTextStyle style(db);
+        style.SetName(name);
+        DgnDbStatus status;
+        style.DgnElement::Insert(&status);
+        return status;
+        }
+    static DgnCode MakeStyleCode(Utf8CP name, DgnDbR db)
+        {
+        // Because AnnotationTextStyle::CreateCodeFromName() is private for some reason...
+        AnnotationTextStyle style(db);
+        style.SetName(name);
+        return style.GetCode();
+        }
+
+    DgnCodeSet GetReservedCodes(DgnDbR db)
+        {
+        DgnCodeSet codes;
+        EXPECT_STATUS(Success, m_server.QueryCodes(codes, db));
+        return codes;
+        }
 };
+
+/*---------------------------------------------------------------------------------**//**
+* Simulate pushing a revision to the server.
+* @bsimethod                                                    Paul.Connelly   01/16
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String CodesManagerTest::CommitRevision(DgnDbR db)
+    {
+    Utf8String revId;
+    DgnRevisionPtr rev;
+    if (BE_SQLITE_OK != db.SaveChanges() || (rev = db.Revisions().StartCreateRevision(nullptr, DgnRevision::Include::Codes)).IsNull())
+        return revId;
+
+    if (RevisionStatus::Success == db.Revisions().FinishCreateRevision())
+        {
+        m_server.OnFinishRevision(*rev);
+        revId = rev->GetId();
+        }
+
+    return revId;
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   01/16
@@ -511,5 +596,49 @@ TEST_F(CodesManagerTest, ReserveQueryRelinquish)
     // Relinquish all
     EXPECT_STATUS(Success, mgr.RelinquishCodes());
     ExpectState(MakeAvailable(code2), db);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/16
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(CodesManagerTest, AutoReserveCodes)
+    {
+    DgnDbPtr pDb = SetupDb(L"AutoReserveCodes.dgndb", BeBriefcaseId(1));
+    DgnDbR db = *pDb;
+
+    // Simulate a pre-existing style having been committed in a previous revision
+    static const Utf8String s_initialRevisionId("InitialRevision");
+    DgnCode existingStyleCode = MakeStyleCode("Preexisting", db);
+    m_server.MarkUsed(existingStyleCode, s_initialRevisionId);
+
+    ExpectState(MakeUsed(existingStyleCode, s_initialRevisionId), db);
+    EXPECT_EQ(0, GetReservedCodes(db).size());
+
+    // When we insert an element without having explicitly reserved its code, an attempt to reserve it will automatically occur
+    EXPECT_EQ(DgnDbStatus::Success, InsertStyle("MyStyle", db));
+    EXPECT_EQ(1, GetReservedCodes(db).size());
+    ExpectState(MakeReserved(MakeStyleCode("MyStyle", db), db), db);
+
+    // An attempt to insert an element with the same code as an already-used code will fail
+    EXPECT_EQ(DgnDbStatus::CodeNotReserved, InsertStyle(existingStyleCode.GetValue().c_str(), db));
+
+    // Updating an element and changing its code will reserve the new code if we haven't done so already
+    auto pStyle = AnnotationTextStyle::Get(db, "MyStyle")->CreateCopy();
+    pStyle->SetName("MyRenamedStyle");
+    EXPECT_TRUE(pStyle->Update().IsValid());
+    EXPECT_EQ(2, GetReservedCodes(db).size());
+    ExpectState(MakeReserved(pStyle->GetCode(), db), db);
+    pStyle = nullptr;
+
+    // Attempting to change code to an already-used code will fail on update
+    pStyle = AnnotationTextStyle::Get(db, "MyRenamedStyle")->CreateCopy();
+    pStyle->SetName(existingStyleCode.GetValue().c_str());
+    DgnDbStatus status;
+    EXPECT_TRUE(pStyle->DgnElement::Update(&status).IsNull());
+    EXPECT_EQ(DgnDbStatus::CodeNotReserved, status);
+
+    pStyle = nullptr;
+
+    db.SaveChanges();
     }
 
