@@ -7785,3 +7785,36 @@ TEST_F(HGF2DPolygonOfSegmentsTester,  SpatialPoisitionWhoFailed)
     ASSERT_EQ(HGF2DShape::S_OUT, pShape2->CalculateSpatialPositionOf(*pShape1));
         
     }
+    
+    //==================================================================================
+// Test which failed on Jan 15, 2016
+//==================================================================================
+TEST_F(HGF2DPolygonOfSegmentsTester,  IntersectShapeWhoFailed2)
+    {        
+    
+    HGF2DPolySegment  AddPolySegment1;
+    AddPolySegment1.AppendPoint(HGF2DPosition(468279.09565188846, 2253996.0538201048));
+    AddPolySegment1.AppendPoint(HGF2DPosition(468274.73677584913, 2254753.9232969349));
+    AddPolySegment1.AppendPoint(HGF2DPosition(468270.46523262875, 2255496.5192644615));
+    AddPolySegment1.AppendPoint(HGF2DPosition(467516.93998132751, 2255492.1830490297));
+    AddPolySegment1.AppendPoint(HGF2DPosition(466769.99953077082, 2255487.8842854360));
+    AddPolySegment1.AppendPoint(HGF2DPosition(466778.63431865704, 2253987.4226140236));
+    AddPolySegment1.AppendPoint(HGF2DPosition(468279.09565188846, 2253996.0538201048));
+
+    HFCPtr<HGF2DShape> pShape1 = new HGF2DPolygonOfSegments(AddPolySegment1);
+
+    HGF2DPolySegment  AddPolySegment2;
+    AddPolySegment2.AppendPoint(HGF2DPosition(468273.81887353584, 2254913.5172242769));
+    AddPolySegment2.AppendPoint(HGF2DPosition(468274.73677586793, 2254753.9232936571));
+    AddPolySegment2.AppendPoint(HGF2DPosition(468273.81876337912, 2254913.5172242769));
+    AddPolySegment2.AppendPoint(HGF2DPosition(468229.06256267102, 2254913.5172242769));
+    AddPolySegment2.AppendPoint(HGF2DPosition(468229.06256267102, 2254325.9838022767));
+    AddPolySegment2.AppendPoint(HGF2DPosition(468816.59598467126, 2254325.9838022767));
+    AddPolySegment2.AppendPoint(HGF2DPosition(468816.59598467126, 2254913.5172242769));
+    AddPolySegment2.AppendPoint(HGF2DPosition(468273.81887353584, 2254913.5172242769));
+
+    HFCPtr<HGF2DShape>  pShape2 = new HGF2DPolygonOfSegments(AddPolySegment2);
+
+    HFCPtr<HGF2DShape>  pResult = pShape1->IntersectShape (*pShape2);
+        
+    }
