@@ -4614,7 +4614,7 @@ TEST_F(DataSourceCacheTests, RemoveResponses_ResponsesWithSameName_RemovesRespon
     EXPECT_THAT(cache->IsResponseCached(responseKey3), true);
     }
 
-TEST_F(DataSourceCacheTests, GetExtendedData_UpdatedData_WorksFine)
+TEST_F(DataSourceCacheTests, GetExtendedData_UpdatedDataForObject_WorksFine)
     {
     auto cache = GetTestCache();
     auto instance = StubInstanceInCache(*cache);
@@ -4624,6 +4624,32 @@ TEST_F(DataSourceCacheTests, GetExtendedData_UpdatedData_WorksFine)
     ASSERT_EQ(SUCCESS, cache->GetExtendedDataAdapter().UpdateData(extendedData));
 
     auto extendedData2 = cache->GetExtendedDataAdapter().GetData(instance);
+    EXPECT_THAT(extendedData2.GetValue("A"), Eq("B"));
+    }
+
+TEST_F(DataSourceCacheTests, GetExtendedData_UpdatedDataForRelationship_WorksFine)
+    {
+    auto cache = GetTestCache();
+    auto relationship = StubRelationshipInCache(*cache);
+
+    auto extendedData = cache->GetExtendedDataAdapter().GetData(relationship);
+    extendedData.SetValue("A", "B");
+    ASSERT_EQ(SUCCESS, cache->GetExtendedDataAdapter().UpdateData(extendedData));
+
+    auto extendedData2 = cache->GetExtendedDataAdapter().GetData(relationship);
+    EXPECT_THAT(extendedData2.GetValue("A"), Eq("B"));
+    }
+
+TEST_F(DataSourceCacheTests, GetExtendedData_UpdatedDataForRoot_WorksFine)
+    {
+    auto cache = GetTestCache();
+    auto root = cache->FindOrCreateRoot("Boo");
+
+    auto extendedData = cache->GetExtendedDataAdapter().GetData(root);
+    extendedData.SetValue("A", "B");
+    ASSERT_EQ(SUCCESS, cache->GetExtendedDataAdapter().UpdateData(extendedData));
+
+    auto extendedData2 = cache->GetExtendedDataAdapter().GetData(root);
     EXPECT_THAT(extendedData2.GetValue("A"), Eq("B"));
     }
 

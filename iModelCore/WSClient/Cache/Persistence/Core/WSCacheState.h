@@ -2,7 +2,7 @@
 |
 |     $Source: Cache/Persistence/Core/WSCacheState.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -19,6 +19,7 @@
 #include "../Changes/ChangeInfoManager.h"
 #include "../Files/FileInfoManager.h"
 #include "../Files/FileStorage.h"
+#include "../Hierarchy/ExtendedDataDelegate.h"
 #include "../Hierarchy/HierarchyManager.h"
 #include "../Hierarchy/RootManager.h"
 #include "../Instances/NavigationBaseManager.h"
@@ -47,7 +48,6 @@ struct WSCacheState : public IECDbSchemaChangeListener
 
                 ECDbAdapter             dbAdapter;
                 ECSqlStatementCache     statementCache;
-                ExtendedDataAdapter     extendedDataAdapter;
 
                 CacheEnvironmentCR      environment;
 
@@ -62,6 +62,9 @@ struct WSCacheState : public IECDbSchemaChangeListener
                 ChangeInfoManager       changeInfoManager;
                 FileStorage             fileStorage;
                 ChangeManager           changeManager;
+
+                ExtendedDataDelegate    extendedDataDelegate;
+                ExtendedDataAdapter     extendedDataAdapter;
             };
 
     private:

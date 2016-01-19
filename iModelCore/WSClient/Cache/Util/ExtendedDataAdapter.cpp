@@ -2,7 +2,7 @@
 |
 |     $Source: Cache/Util/ExtendedDataAdapter.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -13,63 +13,45 @@
 USING_NAMESPACE_BENTLEY_SQLITE_EC
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 
-Utf8CP SCHEMA_ExtendedData_XML = R"xml(<?xml version="1.0" encoding="utf-8"?>
-<ECSchema schemaName="ExtendedData" nameSpacePrefix="ExtendedData" version="01.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
-    <ECSchemaReference name="Bentley_Standard_Classes" version="01.00" prefix="bsm" />
-    <ECClass typeName="ExtendedData" isDomainClass="True">
-        <ECProperty propertyName="Content" typeName="string" />
-    </ECClass>
-<!-- WIP_ANYCLASS_REFACTORING   <ECRelationshipClass typeName="ExtendedDataRelationship" isDomainClass="True" strength="embedding" strengthDirection="forward">
-        <Source cardinality="(1,1)" polymorphic="True">
-            <Class class="bsm:AnyClass" />
-        </Source>
-        <Target cardinality="(0,1)" polymorphic="True">
-            <Class class="ExtendedData" />
-        </Target>
-    </ECRelationshipClass> -->
-</ECSchema>)xml";
-
-#define SCHEMA_ExtendedData                         "ExtendedData"
-#define CLASS_ExtendedData                          "ExtendedData"
 #define CLASS_ExtendedData_PROPERTY_Content         "Content"
-#define CLASS_ExtendedDataRelationship              "ExtendedDataRelationship"
-
-#define ECSql_CLASS_ExtendedData                    "[ExtendedData].[ExtendedData]"
-#define ECSql_CLASS_ExtendedDataRelationship        "[ExtendedData].[ExtendedDataRelationship]"
-#define ECSql_ExtendedData_PROPERTY_Content         "[Content]"
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-ExtendedDataAdapter::ExtendedDataAdapter(ObservableECDb& db) :
+ExtendedDataAdapter::ExtendedDataAdapter(ObservableECDb& db, IDelegate& edDelegate) :
 m_dbAdapter(db),
-m_statementCache(db)
-    {}
+m_statementCache(db),
+m_delegate(edDelegate)
+    {
+    }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-ExtendedData ExtendedDataAdapter::GetData(ECInstanceKeyCR instanceKey)
+ExtendedData ExtendedDataAdapter::GetData(ECInstanceKeyCR ownerKey)
     {
-    ECClassCP extendedDataClass = m_dbAdapter.GetECClass(SCHEMA_ExtendedData, CLASS_ExtendedData);
-    if (nullptr == extendedDataClass)
+    auto edClass = m_delegate.GetExtendedDataClass();
+    auto edRelClass = m_delegate.GetExtendedDataRelationshipClass();
+
+    if (nullptr == edClass || nullptr == edRelClass)
         {
-        // Shema not imported, return data ready for modification and update
-        return ExtendedData(instanceKey, ECInstanceKey(), nullptr);
+        return ExtendedData();
         }
 
     auto statement = m_statementCache.GetPreparedStatement("GetData", [&]
         {
         return
             "SELECT data.ECInstanceId, data.[" CLASS_ExtendedData_PROPERTY_Content "] "
-            "FROM " ECSql_CLASS_ExtendedData " data "
-            "JOIN " ECSql_CLASS_ExtendedDataRelationship " relationship ON relationship.TargetECInstanceId = data.ECInstanceId "
+            "FROM " + edClass->GetECSqlName() + " data "
+            "JOIN " + edRelClass->GetECSqlName() + " relationship ON relationship.TargetECInstanceId = data.ECInstanceId "
             "WHERE relationship.SourceECClassId = ? AND relationship.SourceECInstanceId = ? "
             "LIMIT 1 ";
         });
 
-    statement->BindInt64(1, instanceKey.GetECClassId());
-    statement->BindId(2, instanceKey.GetECInstanceId());
+    ECInstanceKey holderKey = m_delegate.GetHolderKey(ownerKey);
+
+    statement->BindInt64(1, holderKey.GetECClassId());
+    statement->BindId(2, holderKey.GetECInstanceId());
 
     ECInstanceId extendedDataId;
     Utf8String content;
@@ -84,7 +66,7 @@ ExtendedData ExtendedDataAdapter::GetData(ECInstanceKeyCR instanceKey)
     auto extendedDataJson = std::make_shared<Json::Value>(Json::objectValue);
     Json::Reader::Parse(content, *extendedDataJson);
 
-    return ExtendedData(instanceKey, {extendedDataClass->GetId(), extendedDataId}, extendedDataJson);
+    return ExtendedData(ownerKey, {edClass->GetId(), extendedDataId}, extendedDataJson);
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -92,10 +74,11 @@ ExtendedData ExtendedDataAdapter::GetData(ECInstanceKeyCR instanceKey)
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus ExtendedDataAdapter::UpdateData(ExtendedData& data)
     {
-    ECClassCP extendedDataClass = m_dbAdapter.GetECClass(SCHEMA_ExtendedData, CLASS_ExtendedData);
-    if (nullptr == extendedDataClass)
+    auto edClass = m_delegate.GetExtendedDataClass();
+    auto edRelClass = m_delegate.GetExtendedDataRelationshipClass();
+
+    if (nullptr == edClass || nullptr == edRelClass)
         {
-        BeAssert(false && "Call ExtendedDataAdapter::ImportSchema() first!");
         return ERROR;
         }
 
@@ -106,8 +89,8 @@ BentleyStatus ExtendedDataAdapter::UpdateData(ExtendedData& data)
         auto statement = m_statementCache.GetPreparedStatement("UpdateData", [&]
             {
             return
-                "UPDATE ONLY " ECSql_CLASS_ExtendedData " "
-                "SET " ECSql_ExtendedData_PROPERTY_Content " = ? "
+                "UPDATE ONLY " + edClass->GetECSqlName() + " "
+                "SET [" CLASS_ExtendedData_PROPERTY_Content "] = ? "
                 "WHERE ECInstanceId = ? ";
             });
 
@@ -124,7 +107,7 @@ BentleyStatus ExtendedDataAdapter::UpdateData(ExtendedData& data)
 
     auto statement = m_statementCache.GetPreparedStatement("InsertData", [&]
         {
-        return "INSERT INTO " ECSql_CLASS_ExtendedData " (" ECSql_ExtendedData_PROPERTY_Content ") VALUES (?) ";
+        return "INSERT INTO " + edClass->GetECSqlName() + " ([" CLASS_ExtendedData_PROPERTY_Content "]) VALUES (?) ";
         });
 
     statement->BindText(1, content.c_str(), IECSqlBinder::MakeCopy::No);
@@ -135,36 +118,11 @@ BentleyStatus ExtendedDataAdapter::UpdateData(ExtendedData& data)
         return ERROR;
         }
 
-    ECRelationshipClassCP relClass = m_dbAdapter.GetECRelationshipClass(SCHEMA_ExtendedData, CLASS_ExtendedDataRelationship);
-    if (!m_dbAdapter.RelateInstances(relClass, data.m_instanceKey, data.m_extendedDataKey).IsValid())
+    ECInstanceKey holderKey = m_delegate.GetHolderKey(data.m_ownerKey);
+    if (!m_dbAdapter.RelateInstances(edRelClass, holderKey, data.m_extendedDataKey).IsValid())
         {
         return ERROR;
         }
 
-    return SUCCESS;
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Vincas.Razma    03/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ExtendedDataAdapter::ImportSchema()
-    {
-    auto context = ECSchemaReadContext::CreateContext();
-
-    ECSchemaPtr schema;
-    if (SchemaReadStatus::Success != ECSchema::ReadFromXmlString(schema, SCHEMA_ExtendedData_XML, *context))
-        {
-        return ERROR;
-        }
-
-    auto cache = ECSchemaCache::Create();
-    cache->AddSchema(*schema);
-
-    if (SUCCESS != m_dbAdapter.GetECDb().Schemas().ImportECSchemas(*cache))
-        {
-        return ERROR;
-        }
-
-    m_dbAdapter.GetECDb().NotifyOnSchemaChangedListeners();
     return SUCCESS;
     }

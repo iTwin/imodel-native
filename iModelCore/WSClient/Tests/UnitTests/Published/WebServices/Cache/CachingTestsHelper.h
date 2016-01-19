@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/WebServices/Cache/CachingTestsHelper.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -13,6 +13,7 @@
 #include <WebServices/Cache/Util/ECDbHelper.h>
 
 #include "../../Utils/WebServicesTestsHelper.h"
+#include "../../Utils/SeedFile.h"
 
 // Operator for comparisons
 bool operator <= (const DateTime& lhs, const DateTime& rhs);

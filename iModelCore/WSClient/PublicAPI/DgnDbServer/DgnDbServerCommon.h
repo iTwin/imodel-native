@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnDbServer/DgnDbServerCommon.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -16,30 +16,6 @@
 #define BEGIN_BENTLEY_DGNDBSERVER_NAMESPACE    BEGIN_BENTLEY_NAMESPACE namespace DgnDbServer {
 #define END_BENTLEY_DGNDBSERVER_NAMESPACE      } END_BENTLEY_NAMESPACE
 #define USING_NAMESPACE_BENTLEY_DGNDBSERVER    using namespace BentleyApi::DgnDbServer;
-
-BEGIN_BENTLEY_DGNDBSERVER_NAMESPACE
-USING_NAMESPACE_BENTLEY_DGNCLIENTFX_UTILS
-struct DgnDbServerError : public AsyncError
-    {
-public:
-    DgnDbServerError() {}
-    DgnDbServerError(Utf8CP message)
-        {
-        m_message = message;
-        }
-
-    DgnDbServerError(WebServices::WSErrorCR error)
-        {
-        m_message = error.GetMessage();
-        m_description = error.GetDescription();
-        }
-
-    DgnDbServerError(Dgn::RevisionStatus const& status)
-        {
-        }
-    };
-END_BENTLEY_DGNDBSERVER_NAMESPACE
-
 
 #ifdef __DgnDbServerClient_DLL_BUILD__
 #define DGNDBSERVERCLIENT_EXPORT EXPORT_ATTRIBUTE

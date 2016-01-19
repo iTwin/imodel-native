@@ -2,7 +2,7 @@
 |
 |     $Source: Cache/Persistence/Core/SchemaManager.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -11,7 +11,6 @@
 #include "../../Logging.h"
 
 #include <WebServices/Cache/Persistence/DataSourceCacheCommon.h>
-#include <WebServices/Cache/Util/ExtendedDataAdapter.h>
 #include <WebServices/Cache/Util/ECDbHelper.h>
 
 #include "CacheSchema.h"
@@ -45,11 +44,6 @@ BentleyStatus SchemaManager::ImportCacheSchemas()
     //ECSchemaPtr supportSchema = LoadSchema(SchemaKey(SCHEMA_CacheLegacySupportSchema, 1, 0), *context);
 
     if (SUCCESS != ImportSchemas(std::vector<ECSchemaPtr> {cacheSchema/*, supportSchema*/}))
-        {
-        return ERROR;
-        }
-
-    if (SUCCESS != ExtendedDataAdapter(m_db).ImportSchema())
         {
         return ERROR;
         }

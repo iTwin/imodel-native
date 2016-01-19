@@ -256,13 +256,15 @@ CachedInstances& cachedInstancesInOut
 
     if (0 != relClass->GetPropertyCount())
         {
-        if (SUCCESS != m_updaters.Get(*relClass).Update(relationshipKey.GetECInstanceId(), relationshipInstance.GetProperties(), *source, *target))
+        if (SUCCESS != m_updaters.Get(*relClass).Update(relationshipKey.GetECInstanceId(),
+            relationshipInstance.GetProperties(), *source, *target))
             {
             return ERROR;
             }
         }
 
-    CachedInstanceKey relInfo = m_relationshipInfoManager.ReadCachedRelationshipKey(relationshipKey, relationshipObjectId.remoteId.c_str());
+    CachedInstanceKey relInfo = m_relationshipInfoManager
+        .ReadOrInsertCachedRelationshipKey(relationshipKey, relationshipObjectId.remoteId.c_str());
 
     cachedInstancesInOut.AddInstance(relationshipObjectId, relInfo);
 
@@ -510,7 +512,7 @@ bset<bvector<SelectPathElement>>& idOnlySelectedPathsOut
             }
 
         auto it = paths.find(path);
-        if (it == paths.end() || 
+        if (it == paths.end() ||
             SelectType::All == selectType ||
             SelectType::Id == it->second)
             {

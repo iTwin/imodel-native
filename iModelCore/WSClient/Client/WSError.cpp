@@ -2,7 +2,7 @@
 |
 |     $Source: Client/WSError.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ClientInternal.h"
@@ -98,6 +98,7 @@ WSError::WSError(HttpResponseCR httpResponse) : WSError()
         {
         m_message.clear();
         m_description.clear();
+        m_data = nullptr;
         m_status = Status::Canceled;
         m_id = WSError::Id::Unknown;
         return;
@@ -107,6 +108,7 @@ WSError::WSError(HttpResponseCR httpResponse) : WSError()
         {
         m_message = HttpError(httpResponse).GetDisplayMessage();
         m_description.clear();
+        m_data = nullptr;
         m_status = Status::ConnectionError;
         m_id = WSError::Id::Unknown;
         return;
@@ -122,6 +124,7 @@ WSError::WSError(HttpResponseCR httpResponse) : WSError()
         {
         m_message = HttpError::GetHttpDisplayMessage(HttpStatus::Unauthorized);
         m_description.clear();
+        m_data = nullptr;
         m_status = Status::ReceivedError;
         m_id = Id::LoginFailed;
         return;
@@ -163,8 +166,7 @@ BentleyStatus WSError::ParseJsonError(HttpResponseCR httpResponse)
     WSError::Id errorId = ErrorIdFromString(jsonError[JSON_ErrorId].asString());
     Utf8String errorMessage = jsonError[JSON_ErrorMessage].asString();
     Utf8String errorDescription = jsonError[JSON_ErrorDescription].asString();
-
-    SetStatusReceivedError(HttpError(httpResponse), errorId, errorMessage, errorDescription);
+    SetStatusReceivedError(HttpError(httpResponse), errorId, errorMessage, errorDescription, std::make_shared<const Json::Value>(jsonError));
     return SUCCESS;
     }
 
@@ -234,7 +236,7 @@ void WSError::SetStatusServerNotSupported()
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    05/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-void WSError::SetStatusReceivedError(HttpErrorCR httpError, Id errorId, Utf8StringCR errorMessage, Utf8StringCR errorDescription)
+void WSError::SetStatusReceivedError(HttpErrorCR httpError, Id errorId, Utf8StringCR errorMessage, Utf8StringCR errorDescription, JsonValueCPtr errorData)
     {
     m_status = Status::ReceivedError;
 
@@ -282,6 +284,9 @@ void WSError::SetStatusReceivedError(HttpErrorCR httpError, Id errorId, Utf8Stri
 
     // Set description
     m_description = FormatDescription(errorMessage.c_str(), errorDescription.c_str());
+
+    // Set custom properties
+    m_data = errorData;
 
     // Fallback to default messages if not enough information received
     if (m_message.empty())
@@ -377,6 +382,14 @@ WSError::Status WSError::GetStatus() const
 WSError::Id WSError::GetId() const
     {
     return m_id;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                               Karolis.Dziedzelis   01/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+JsonValueCR WSError::GetData() const
+    {
+    return m_data ? *m_data : Json::Value::null;
     }
 
 /*--------------------------------------------------------------------------------------+
