@@ -17,14 +17,8 @@
 using namespace ::testing;
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 
-std::shared_ptr<ObservableECDb> ExtendedDataAdapterTests::GetTestECDb()
-    {
-    auto db = std::make_shared<ObservableECDb>();
-    EXPECT_EQ(DbResult::BE_SQLITE_OK, db->OpenBeSQLiteDb(GetTestFile(), Db::OpenParams(Db::OpenMode::ReadWrite)));
-    return db;
-    }
-
-void ExtendedDataAdapterTests::SetupSeedFile(BeFileNameCR filePath)
+SeedFile ExtendedDataAdapterTests::s_seedECDb("ecdbAdapterTest.ecdb",
+[] (BeFileNameCR filePath)
     {
     ECDb db;
     EXPECT_EQ(DbResult::BE_SQLITE_OK, db.CreateNewDb(filePath));
@@ -51,6 +45,13 @@ void ExtendedDataAdapterTests::SetupSeedFile(BeFileNameCR filePath)
     cache->AddSchema(*schema);
     EXPECT_EQ(SUCCESS, db.Schemas().ImportECSchemas(*cache));
     EXPECT_EQ(DbResult::BE_SQLITE_OK, db.SaveChanges());
+    });
+
+std::shared_ptr<ObservableECDb> ExtendedDataAdapterTests::GetTestECDb()
+    {
+    auto db = std::make_shared<ObservableECDb>();
+    EXPECT_EQ(DbResult::BE_SQLITE_OK, db->OpenBeSQLiteDb(s_seedECDb.GetTestFile(), Db::OpenParams(Db::OpenMode::ReadWrite)));
+    return db;
     }
 
 TEST_F(ExtendedDataAdapterTests, UpdateData_DelegateReturnsNullClasses_Error)
