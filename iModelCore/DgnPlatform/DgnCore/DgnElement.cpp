@@ -888,7 +888,7 @@ DgnElement::CreateParams DgnElement::GetCreateParamsForImport(DgnModelR destMode
     CreateParams parms(importer.GetDestinationDb(), GetModelId(), GetElementClassId());
     DgnAuthorityCPtr authority = GetCode().IsValid() ? GetDgnDb().Authorities().GetAuthority(GetCode().GetAuthority()) : nullptr;
     if (authority.IsValid())
-        parms.m_code = authority->CloneCodeForImport(*this, destModel, importer);
+        authority->CloneCodeForImport(parms.m_code, *this, destModel, importer);
 
     if (importer.IsBetweenDbs())
         parms.RelocateToDestinationDb(importer);

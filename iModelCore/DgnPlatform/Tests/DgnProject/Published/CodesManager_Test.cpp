@@ -714,15 +714,25 @@ TEST_F(CodesManagerTest, CodesInRevisions)
     ExpectState(MakeDiscarded(usedCode, rev2), db);
 
     // Delete the style => its code becomes discarded
-    // Ugh except you are not allowed to delete text styles...
-#ifdef DELETE_TEXT_STYLE
-    EXPECT_EQ(DgnDbStatus::Success, AnnotationTextStyle::Get(db, "Unused")->Delete());
-#else
+    // Ugh except you are not allowed to delete text styles...rename it again instead
     pStyle = AnnotationTextStyle::Get(db, "Unused")->CreateCopy();
     pStyle->SetName("Deleted");
     EXPECT_TRUE(pStyle->Update().IsValid());
     pStyle = nullptr;
-#endif
+
+    // Cannot release codes if transactions are pending
+    EXPECT_EQ(1, GetReservedCodes(db).size());
+    DgnCodeSet codes;
+    codes.insert(MakeStyleCode("Deleted", db));
+    EXPECT_STATUS(PendingTransactions, mgr.ReleaseCodes(codes));
+    EXPECT_STATUS(PendingTransactions, mgr.RelinquishCodes());
+
+    // Cannot release a code which is used locally
+    db.SaveChanges();
+    EXPECT_EQ(1, GetReservedCodes(db).size());
+    EXPECT_STATUS(CodeUsed, mgr.ReleaseCodes(codes));
+    EXPECT_STATUS(CodeUsed, mgr.RelinquishCodes());
+
     Utf8String rev3 = CommitRevision(db);
     EXPECT_FALSE(rev3.empty());
     ExpectState(MakeDiscarded(unusedCode, rev3), db);
