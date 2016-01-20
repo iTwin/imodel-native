@@ -897,7 +897,10 @@ ForeignKeyActionType ECDbSqlForeignKeyConstraint::ToActionType(Utf8CP str)
     if (BeStringUtilities::Stricmp(str, "Restrict") == 0)
         return ForeignKeyActionType::Restrict;
 
-    return ForeignKeyActionType::NoAction;
+    if (BeStringUtilities::Stricmp(str, "NoAction") == 0)
+        return ForeignKeyActionType::NoAction;
+
+    return ForeignKeyActionType::NotSpecified;
     }
 
 //---------------------------------------------------------------------------------------
