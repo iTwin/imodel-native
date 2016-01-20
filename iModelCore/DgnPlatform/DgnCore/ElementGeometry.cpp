@@ -1031,6 +1031,8 @@ void GeometryStreamIO::Writer::Append(ISolidKernelEntityCR entity)
         {
         IFacetOptionsPtr  facetOpt = IFacetOptions::CreateForCurves();
 
+        facetOpt->SetAngleTolerance (0.2); // NOTE: This is the value XGraphics "optimize" used...
+
         if (nullptr != attachments)
             {
             bvector<PolyfaceHeaderPtr> polyfaces;
