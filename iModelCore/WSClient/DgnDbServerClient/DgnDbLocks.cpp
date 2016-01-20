@@ -197,12 +197,6 @@ LockStatus DgnDbLocks::_QueryOwnership(DgnLockOwnershipR ownership, Dgn::Lockabl
     }
 
 
-LockStatus DgnDbLocks::_QueryRevisionId(WStringR, LockableId)
-    {
-    BeAssert(false && "Unimplemented");
-    return LockStatus::Success;
-    }
-
 DgnDbLocks::DgnDbLocks(WebServices::ClientInfoPtr clientInfo)
     {
     m_clientInfo = clientInfo;
