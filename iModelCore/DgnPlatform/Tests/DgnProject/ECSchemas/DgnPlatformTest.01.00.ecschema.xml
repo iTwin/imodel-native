@@ -64,10 +64,6 @@
         <ECCustomAttributes>
           <ClassHasHandler xmlns="dgn.02.00" />
           <LinkTableRelationshipMap xmlns="ECDbMap.01.00">
-                <SourceECInstanceIdColumn>RootElementId</SourceECInstanceIdColumn>
-                <SourceECClassIdColumn>RootElementClassId</SourceECClassIdColumn>
-                <TargetECInstanceIdColumn>DependentElementId</TargetECInstanceIdColumn>
-                <TargetECClassIdColumn>DependentElementClassId</TargetECClassIdColumn>
               <AllowDuplicateRelationships>True</AllowDuplicateRelationships>
             </LinkTableRelationshipMap>
         </ECCustomAttributes>

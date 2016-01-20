@@ -64,7 +64,7 @@ tsSourceFiles = $(dgnScriptGen)DgnJsApi.ts $(dgnJsApiTsDir)_references.ts $(Buil
 
 $(dgnScriptGen)DgnJsApi.js : $(tsSourceFiles)
     $(msg)
-    $(TypeScriptCompile) $(tsSourceFiles) --target ES5 --noImplicitAny --removeComments --declaration $(DEBUG_PARMS) --out $(dgnScriptGen)DgnJsApi.js
+    $(TypeScriptCompile) $(tsSourceFiles) --target ES5 --noImplicitAny --declaration $(DEBUG_PARMS) --out $(dgnScriptGen)DgnJsApi.js
     ~time
 
 $(dgnScriptGen)_doc/DgnJsApi_doc.h: $(dgnScriptGen)DgnJsApi.d.ts
