@@ -338,7 +338,7 @@ AsyncTaskPtr<DgnLockResponseResult> DgnDbRepositoryConnection::AcquireLocks(Json
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             12/2015
 //---------------------------------------------------------------------------------------
-AsyncTaskPtr<DgnDbResult> DgnDbRepositoryConnection::ReleaseLocks(JsonValueCR locksRequest, const BeBriefcaseId& briefcaseId,
+AsyncTaskPtr<DgnDbResult> DgnDbRepositoryConnection::DemoteLocks(JsonValueCR locksRequest, const BeBriefcaseId& briefcaseId,
     Utf8StringCR releasedWithRevisionId, ICancellationTokenPtr cancellationToken)
     {
     //How to set description here?
