@@ -42,6 +42,7 @@
 #define DGN_CLASSNAME_GeometricModel        "GeometricModel"
 #define DGN_CLASSNAME_GeometrySource        "GeometrySource"
 #define DGN_CLASSNAME_GeomPart              "GeomPart"
+#define DGN_CLASSNAME_GeomPartAuthority     "GeomPartAuthority"
 #define DGN_CLASSNAME_LineStyle             "LineStyle"
 #define DGN_CLASSNAME_Link                  "Link"
 #define DGN_CLASSNAME_LocalAuthority        "LocalAuthority"
@@ -411,7 +412,7 @@ public:
     DGNPLATFORM_EXPORT DgnGeomPartPtr LoadGeomPart(DgnGeomPartId geomPartId);
 
     //! Query for a DgnGeomPartId by code.
-    DGNPLATFORM_EXPORT DgnGeomPartId QueryGeomPartId(Utf8CP code);
+    DGNPLATFORM_EXPORT DgnGeomPartId QueryGeomPartId(DgnCodeCR code);
 
     //! Query the range of a DgnGeomPart by ID.
     //! @param[out]     range      On successful return, holds the DgnGeomPart's range

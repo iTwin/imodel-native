@@ -36,3 +36,5 @@ DgnProjectPackageTest.VerifyViewsForDgndbFilesConvertedDuringBuild   #Affan #TFS
 
 ECInstanceSelectTests.SelectQueriesOnDbGeneratedDuringBuild_04Plant # Notified Maha
 ECInstanceSelectTests.SelectQueriesOnDbGeneratedDuringBuild_79Main # Notified Maha
+
+ImportTest.ImportElementsWithDependencies # Seemingly utterly unrelated schema changes induce this
