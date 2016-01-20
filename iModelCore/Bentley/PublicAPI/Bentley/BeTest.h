@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/Bentley/BeTest.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -410,9 +410,13 @@ BENTLEYDLL_EXPORT static void Log (Utf8CP category, LogPriority priority, Utf8CP
 #define PERFORMANCELOG (*NativeLogging::LoggingManager::GetLogger (L"Performance"))
 #define LOGTODB PerformanceResultRecorder::writeResults
 #if defined (USE_GTEST)
-    #define TEST_DETAILS ::testing::UnitTest::GetInstance()->current_test_info()->test_case_name(), ::testing::UnitTest::GetInstance()->current_test_info()->name()
+    #define TEST_FIXTURE_NAME ::testing::UnitTest::GetInstance()->current_test_info()->test_case_name()
+    #define TEST_NAME ::testing::UnitTest::GetInstance()->current_test_info()->name()
+    #define TEST_DETAILS TEST_FIXTURE_NAME, TEST_NAME
 #else
-    #define TEST_DETAILS GetTestCaseNameA(), GetTestNameA()
+    #define TEST_FIXTURE_NAME GetTestCaseNameA()
+    #define TEST_NAME GetTestNameA()
+    #define TEST_DETAILS TEST_FIXTURE_NAME, TEST_NAME
 #endif
 
 

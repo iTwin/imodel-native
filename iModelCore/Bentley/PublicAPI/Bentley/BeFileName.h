@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/Bentley/BeFileName.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -260,6 +260,7 @@ public:
 
     //! Returns the complete directory (including drive, if any) from path. Has terminating separator.
     //! @deprecated Use instance version of BeFileName::GetDirectoryName instead
+    //! @private
     BENTLEYDLL_EXPORT static WString GetDirectoryName(WCharCP path);
 
     //! Returns the complete directory (including drive, if any) from this BeFileName. Has terminating separator.
@@ -267,6 +268,7 @@ public:
 
     //! Returns the directory (excluding drive) from path. Has terminating separator.
     //! @deprecated Use instance version of BeFileName::GetDirectoryWithoutDevice instead
+    //! @private
     BENTLEYDLL_EXPORT static WString GetDirectoryWithoutDevice(WCharCP path);
 
     //! Returns the directory (excluding drive) from this BeFileName. Has terminating separator.
@@ -274,6 +276,7 @@ public:
 
     //! Returns the filename extension from path (everything following the last dot non-inclusive), or empty if there is none.
     //! @deprecated Use instance version of BeFileName::GetExtension instead
+    //! @private
     BENTLEYDLL_EXPORT static WString GetExtension(WCharCP path);
 
     //! Returns the filename extension from this BeFileName (everything following the last dot non-inclusive), or empty if there is none.
@@ -281,6 +284,7 @@ public:
 
     //! Returns the filename from path, including extension, but not directory.
     //! @deprecated Use instance version of BeFileName::GetFileNameAndExtension instead
+    //! @private
     static WString GetFileNameAndExtension(WCharCP path) {return WString(BeFileName(NameAndExt, path));}
 
     //! Returns the filename from this BeFileName, including extension, but not directory.
@@ -288,6 +292,7 @@ public:
 
     //! Returns the base filename from path, with no directory or extension.
     //! @deprecated Use instance version of BeFileName::GetFileNameWithoutExtension instead
+    //! @private
     BENTLEYDLL_EXPORT static WString GetFileNameWithoutExtension(WCharCP path);
 
     //! Returns the base filename from this BeFileName, with no directory or extension.
@@ -296,6 +301,7 @@ public:
     //! Returns the device letter from path - Empty if the path doesn't start with a device.
     //! @note Always empty on unix.
     //! @deprecated Use instance version of BeFileName::GetDevice instead
+    //! @private
     BENTLEYDLL_EXPORT static WString GetDevice(WCharCP path);
 
     //! Returns the device from this BeFileName - Empty if the path doesn't start with a device. 
@@ -348,6 +354,7 @@ public:
 
     //! Determines if the specified path is a symbolic link. If the path does not exist, also returns false.
     //! @deprecated Use instance version of BeFileName::IsSymbolicLink instead
+    //! @private
     BENTLEYDLL_EXPORT static bool IsSymbolicLink(WCharCP);
 
     //! Determines a symbolic link's target. This recurses, meaning that it keeps evaluating each incremental target until it reaches a concrete file, or the target does not exist.
@@ -367,6 +374,7 @@ public:
     //! @param path The pathname to test.
     //! @return true if the pathname refers to an existing file or directory.
     //! @deprecated Use instance version of BeFileName::DoesPathExist instead
+    //! @private
     BENTLEYDLL_EXPORT static bool DoesPathExist(WCharCP path);
 
     //! Test if a filename is an absolute path.
@@ -400,6 +408,7 @@ public:
     //! @param path The pathname to test.
     //! @return true if the pathname refers to an existing directory.
     //! @deprecated Use instance version of BeFileName::IsDirectory instead
+    //! @private
     BENTLEYDLL_EXPORT static bool IsDirectory(WCharCP path);
 
     //! Create a new directory.
@@ -420,10 +429,13 @@ public:
     //! @return BeFileNameStatus::Success if the directory was successfully cloned.
     BENTLEYDLL_EXPORT static BeFileNameStatus CloneDirectory(WCharCP sourceDir, WCharCP destDir, bool includeSubDirs=true);
 
-    BENTLEYDLL_EXPORT static BeFileNameStatus BeGetTempPath (BeFileNameR tempPath);
+    //! @note Not portable, use DgnPlatformLib::Host::IKnownLocationsAdmin
+    //! @private
+    BENTLEYDLL_EXPORT static BeFileNameStatus BeGetTempPath(BeFileNameR tempPath);
 
-    BENTLEYDLL_EXPORT static BeFileNameStatus BeGetTempFileName (BeFileName& tempFileName, BeFileName const& pathName, WCharCP prefixString);
-
+    //! @note Not portable, use DgnPlatformLib::Host::IKnownLocationsAdmin
+    //! @private
+    BENTLEYDLL_EXPORT static BeFileNameStatus BeGetTempFileName(BeFileName& tempFileName, BeFileName const& pathName, WCharCP prefixString);
 /** @} */
 
 /** @name Copy, delete, move a file by name */
@@ -441,6 +453,7 @@ public:
     //! @param[in] failIfFileExists Do not copy and return error if the destination file already exists.
     //! @return BeFileNameStatus::Success if the file was successfully copied.
     //! @deprecated Use version of BeFileName::BeCopyFile that takes BeFileNameCR parameters instead
+    //! @private
     BENTLEYDLL_EXPORT static BeFileNameStatus BeCopyFile(WCharCP existingFileName, WCharCP newFileName, bool failIfFileExists = false);
 
     //! Delete this file.
@@ -457,6 +470,7 @@ public:
     //! @remarks This function behaves differently on different operating systems if the calling program currently has the target file open.
     //! On Windows, this function will not delete an open file. On other operating systems, this function will delete an open file.
     //! @deprecated Use instance version of BeFileName::BeDeleteFile instead
+    //! @private
     BENTLEYDLL_EXPORT static BeFileNameStatus BeDeleteFile(WCharCP fileNameP);
     
     //! Move or rename an existing file.
@@ -472,6 +486,7 @@ public:
     //! @param numRetries the number of times to retry the open in the event of a sharing violation
     //! @return BeFileNameStatus::Success if the file was successfully moved or BeFileNameStatus::UnknownError if not.
     //! @deprecated Use version of BeFileName::BeMoveFile that takes BeFileNameCR parameters instead
+    //! @private
     BENTLEYDLL_EXPORT static BeFileNameStatus BeMoveFile(WCharCP oldFileName, WCharCP newFileName, int numRetries = 0);
 
     //! Set the read-only status of this file
@@ -484,6 +499,7 @@ public:
     //! @param[in] readOnly the desired read-only status
     //! @return BeFileNameStatus::Success if the operation was successful or non-zero if not
     //! @deprecated Use instance version of BeFileName::SetFileReadOnly instead
+    //! @private
     BENTLEYDLL_EXPORT static BeFileNameStatus SetFileReadOnly(WCharCP fileName, bool readOnly);
 
     //! Query if this file is read-only
@@ -509,6 +525,7 @@ public:
     //! @param[out] sz The size of the file in bytes
     //! @param[in] fileName The name of an existing file.
     //! @deprecated Use instance version of BeFileName::GetFileSize instead
+    //! @private
     BENTLEYDLL_EXPORT static BeFileNameStatus GetFileSize(uint64_t& sz, WCharCP fileName);
 
     //! Get the create, access, and/or modification times of this file.
@@ -525,6 +542,7 @@ public:
     //! @param[in] fileName The name of an existing file.
     //! @return BeFileNameStatus::Success if the operation was successful or non-zero if it failed.
     //! @deprecated Use instance version of BeFileName::GetFileTime instead
+    //! @private
     BENTLEYDLL_EXPORT static BeFileNameStatus GetFileTime(time_t* ctime, time_t* atime, time_t* mtime, WCharCP fileName);
 
     //! Set the access and/or modification times of this file.
@@ -539,6 +557,7 @@ public:
     //! @param[in] mtime If not NULL, the last modified time of the file
     //! @return BeFileNameStatus::Success if the operation was successful or non-zero if it failed.
     //! @deprecated Use instance version of BeFileName::SetFileTime instead
+    //! @private
     BENTLEYDLL_EXPORT static BeFileNameStatus SetFileTime(WCharCP fileName, time_t const* atime, time_t const* mtime);
 
     //! Check user's access to this file
@@ -551,6 +570,7 @@ public:
     //! @param[in] accs The kinds of access to check for
     //! @return BeFileNameStatus::Success if all of the specified access rights are granted; non-zero if the file does not exist or some of the specified rights are not granted.
     //! @deprecated Use instance version of BeFileName::CheckAccess instead
+    //! @private
     BENTLEYDLL_EXPORT static BeFileNameStatus CheckAccess(WCharCP fileName, BeFileNameAccess accs);
 /** @} */
 
@@ -567,12 +587,14 @@ public:
     //! @param[in] dirName          The name of a file or directory on the device to check
     //! @return BeFileNameStatus::Success, if the query succeeded. Non-zero if the directory is invalid or refers to a storage device that does not exist.
     //! @deprecated Use version of BeFileName::BeGetDiskFreeSpace that takes a BeFileNameCR parameter instead
+    //! @private
     BENTLEYDLL_EXPORT static BeFileNameStatus BeGetDiskFreeSpace(uint64_t& freeBytes, WCharCP dirName);
 
     //! Get the current working directory
     //! @param[out] currentDirectory The current directory;
+    //! @note Not portable
+    //! @private
     BENTLEYDLL_EXPORT static BeFileNameStatus GetCwd (WStringR currentDirectory);
-
 /** @} */
 };
 

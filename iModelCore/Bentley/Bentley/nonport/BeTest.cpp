@@ -2,7 +2,7 @@
 |
 |     $Source: Bentley/nonport/BeTest.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #if defined (BENTLEY_WIN32)
@@ -311,15 +311,21 @@ static void beTestAssertionFailureHandler (WCharCP _Message, WCharCP _File, unsi
         return;
         }
 
-    WString assertionFailure (getAssertTypeDesc(atype));
-    assertionFailure.append (L": ");
-    assertionFailure.append (_Message);
-    assertionFailure.append (L" ");
+    WString assertionFailure;
     assertionFailure.append (_File);
+
     wchar_t buf[64];
-    BeStringUtilities::Snwprintf (buf, L" %d %d", _Line, atype);
+    BeStringUtilities::Snwprintf (buf, L"(%d): ", _Line);
     assertionFailure.append (buf);
-    
+
+    assertionFailure.append(getAssertTypeDesc(atype));
+
+    BeStringUtilities::Snwprintf(buf, L" (%d): ", atype);
+    assertionFailure.append(buf);
+
+    assertionFailure.append(_Message);
+    assertionFailure.append(L" ");
+
     BentleyApi::NativeLogging::LoggingManager::GetLogger (L"BeAssert")->error (assertionFailure.c_str());
 
     if (BeTest::GetBreakOnFailure())
