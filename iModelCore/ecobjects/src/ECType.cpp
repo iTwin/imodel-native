@@ -60,20 +60,20 @@ ECTypeDescriptor                ECTypeDescriptor::CreateStructTypeDescriptor ()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Colin.Kerr                  01/2016
 //---------------+---------------+---------------+---------------+---------------+-------
-ECTypeDescriptor                ECTypeDescriptor::CreateNavigationTypeDescriptor(bool isMultiple)
+ECTypeDescriptor                ECTypeDescriptor::CreateNavigationTypeDescriptor(PrimitiveType type, bool isMultiple)
     {
-    ECTypeDescriptor type;
+    ECTypeDescriptor descriptor;
     if (isMultiple)
         {
-        type.m_typeKind = ValueKind::VALUEKIND_Array;
-        type.m_arrayKind = ArrayKind::ARRAYKIND_Primitive;
+        descriptor.m_typeKind = ValueKind::VALUEKIND_Array;
+        descriptor.m_arrayKind = ArrayKind::ARRAYKIND_Primitive;
         }
     else
         {
-        type.m_typeKind = ValueKind::VALUEKIND_Primitive;
+        descriptor.m_typeKind = ValueKind::VALUEKIND_Primitive;
         }
-    type.m_primitiveType = NavigationECProperty::GetIdType();
+    descriptor.m_primitiveType = type;
 
-    return type;
+    return descriptor;
     }
 END_BENTLEY_ECOBJECT_NAMESPACE

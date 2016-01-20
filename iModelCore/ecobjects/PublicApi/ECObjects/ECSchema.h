@@ -160,10 +160,11 @@ public:
     //! Creates a TypeDescriptor for a struct
     ECOBJECTS_EXPORT static ECTypeDescriptor   CreateStructTypeDescriptor ();
 
-    //! Creates a TypeDescriptor for a navigation property.  The type descriptor will be of the primitive type specified by NavigationECProperty::GetIdType and can be changed using NavigationECProperty::SetIdType.
-    //! @param[in] isMultiple   True if the navigation property points to a relationship endpoint which allows more than one related instance.  Can use the result of the NavigationECProperty::IsMultiple method as input.
+    //! Creates a TypeDescriptor for a navigation property.  The type descriptor will be of the PrimitiveType 'type'.
+    //! @param[in]  type         The type of the navigation property.  Use NavigationECProperty::GetType to get the type of a property
+    //! @param[in]  isMultiple   True if the navigation property points to a relationship endpoint which allows more than one related instance.  Can use the result of the NavigationECProperty::IsMultiple method as input.
     //! @returns an ECTypeDescriptor describing a navigation property.
-    ECOBJECTS_EXPORT static ECTypeDescriptor   CreateNavigationTypeDescriptor (bool isMultiple);
+    ECOBJECTS_EXPORT static ECTypeDescriptor   CreateNavigationTypeDescriptor (PrimitiveType type, bool isMultiple);
 
     //! Constructor that takes a PrimitiveType
     ECTypeDescriptor (PrimitiveType primitiveType) : m_typeKind (VALUEKIND_Primitive), m_primitiveType (primitiveType) { };
@@ -647,6 +648,7 @@ protected:
     virtual bool                        _IsArray () const { return false; }
     virtual ArrayECPropertyCP           _GetAsArrayPropertyCP() const { return nullptr; } // used to avoid dynamic_cast
     virtual ArrayECPropertyP            _GetAsArrayPropertyP()        { return nullptr; } // used to avoid dynamic_cast
+    virtual bool                        _IsPrimitiveArray() const { return false;  }
 
     virtual bool                        _IsStructArray() const { return false; }
     virtual StructArrayECPropertyCP     _GetAsStructArrayPropertyCP() const { return nullptr; } // used to avoid dynamic_cast
@@ -688,9 +690,9 @@ public:
 /*__PUBLISH_SECTION_START__*/
 public:
     //! Returns the CalculatedPropertySpecification associated with this ECProperty, if any
-    ECOBJECTS_EXPORT CalculatedPropertySpecificationCP   GetCalculatedPropertySpecification() const;
+     CalculatedPropertySpecificationCP   GetCalculatedPropertySpecification() const { return _GetCalculatedPropertySpecification(); }
     //! Returns true if this ECProperty has a CalculatedECPropertySpecification custom attribute applied to it.
-    ECOBJECTS_EXPORT bool               IsCalculated() const;
+     bool               IsCalculated() const { return _IsCalculated(); }
 
     //! Sets or removes the CalculatedECPropertySpecification custom attribute associated with this ECProperty.
     //! @param[in] expressionAttribute  An IECInstance of the ECClass CalculatedECPropertySpecification, or NULL to remove the specification.
@@ -708,15 +710,18 @@ public:
     //! Returns whether the DisplayLabel is explicitly set
     ECOBJECTS_EXPORT bool               GetIsDisplayLabelDefined() const;
     //! Returns whether this property is a Struct property
-    ECOBJECTS_EXPORT bool               GetIsStruct() const;
-    //! Returns whether this property is an Array property
-    ECOBJECTS_EXPORT bool               GetIsArray() const;
+    bool                                GetIsStruct() const { return _IsStruct(); }
+    //! Returns whether this property is an Array property (either a Primitive array or a StructArray)
+    //! Use either GetIsPrimitiveArray or GetIsStructArray to differentiate.
+    bool                                GetIsArray() const { return _IsArray(); }
     //! Returns whether this property is a Primitive property
-    ECOBJECTS_EXPORT bool               GetIsPrimitive() const;
+    bool                                GetIsPrimitive() const { return _IsPrimitive(); }
     //! Returns whether this property is a StructArray property
-    ECOBJECTS_EXPORT bool               GetIsStructArray() const;
+    bool                                GetIsStructArray() const { return _IsStructArray(); }
+    //! Returns whether this property is a Primitive array
+    bool                                GetIsPrimitiveArray() const { return _IsPrimitiveArray(); }
     //! Returns whether this property is a NavigationECProperty
-    ECOBJECTS_EXPORT bool               GetIsNavigation() const;
+    bool                                GetIsNavigation() const { return _IsNavigation(); }
 
     //! Sets the ECXML typename for the property.  @see GetTypeName()
     ECOBJECTS_EXPORT ECObjectsStatus    SetTypeName(Utf8String value);
@@ -776,16 +781,16 @@ public:
     //@param[in]    isReadOnly  Valid values are 'True' and 'False' (case insensitive)
     ECOBJECTS_EXPORT ECObjectsStatus    SetIsReadOnly (Utf8CP isReadOnly);
 
-    ECOBJECTS_EXPORT PrimitiveECPropertyCP  GetAsPrimitiveProperty () const; //!< Returns the property as a const PrimitiveECProperty*
-    ECOBJECTS_EXPORT PrimitiveECPropertyP   GetAsPrimitivePropertyP (); //!< Returns the property as a PrimitiveECProperty*
-    ECOBJECTS_EXPORT ArrayECPropertyCP      GetAsArrayProperty () const; //!< Returns the property as a const ArrayECProperty*
-    ECOBJECTS_EXPORT ArrayECPropertyP       GetAsArrayPropertyP (); //!< Returns the property as an ArrayECProperty*
-    ECOBJECTS_EXPORT StructECPropertyCP     GetAsStructProperty () const; //!< Returns the property as a const StructECProperty*
-    ECOBJECTS_EXPORT StructECPropertyP      GetAsStructPropertyP (); //!< Returns the property as a StructECProperty*
-    ECOBJECTS_EXPORT StructArrayECPropertyCP GetAsStructArrayProperty() const; //! <Returns the property as a const StructArrayECProperty*
-    ECOBJECTS_EXPORT StructArrayECPropertyP GetAsStructArrayPropertyP (); //! <Returns the property as a StructArrayECProperty*
-    ECOBJECTS_EXPORT NavigationECPropertyCP GetAsNavigationPropertyCP() const; //! <Returns the property as a const NavigationECProperty*
-    ECOBJECTS_EXPORT NavigationECPropertyP  GetAsNavigationPropertyP(); //! <Returns the property as a NavigationECProperty*
+    PrimitiveECPropertyCP  GetAsPrimitiveProperty() const       { return _GetAsPrimitivePropertyCP(); } //!< Returns the property as a const PrimitiveECProperty*
+    PrimitiveECPropertyP   GetAsPrimitivePropertyP()            { return _GetAsPrimitivePropertyP(); } //!< Returns the property as a PrimitiveECProperty*
+    ArrayECPropertyCP      GetAsArrayProperty() const           { return _GetAsArrayPropertyCP(); } //!< Returns the property as a const ArrayECProperty*
+    ArrayECPropertyP       GetAsArrayPropertyP()                { return _GetAsArrayPropertyP(); } //!< Returns the property as an ArrayECProperty*
+    StructECPropertyCP     GetAsStructProperty() const          { return _GetAsStructPropertyCP(); } //!< Returns the property as a const StructECProperty*
+    StructECPropertyP      GetAsStructPropertyP()               { return _GetAsStructPropertyP(); } //!< Returns the property as a StructECProperty*
+    StructArrayECPropertyCP GetAsStructArrayProperty() const    { return _GetAsStructArrayPropertyCP(); } //! <Returns the property as a const StructArrayECProperty*
+    StructArrayECPropertyP GetAsStructArrayPropertyP()          { return _GetAsStructArrayPropertyP(); } //! <Returns the property as a StructArrayECProperty*
+    NavigationECPropertyCP GetAsNavigationProperty() const    { return _GetAsNavigationPropertyCP(); } //! <Returns the property as a const NavigationECProperty*
+    NavigationECPropertyP  GetAsNavigationPropertyP()           { return _GetAsNavigationPropertyP(); } //! <Returns the property as a NavigationECProperty*
 
 };
 
@@ -893,6 +898,7 @@ protected:
     virtual SchemaReadStatus            _ReadXml (BeXmlNodeR propertyNode, ECSchemaReadContextR schemaContext) override;
     virtual SchemaWriteStatus           _WriteXml(BeXmlWriterR xmlWriter, int ecXmlVersionMajor, int ecXmlVersionMinor) override;
     virtual bool                        _IsArray () const override { return true;}
+    virtual bool                        _IsPrimitiveArray() const override { return ARRAYKIND_Primitive == m_arrayKind; }
     virtual ArrayECPropertyCP           _GetAsArrayPropertyCP() const override { return this; }
     virtual ArrayECPropertyP            _GetAsArrayPropertyP()        override { return this; }
     virtual Utf8String                  _GetTypeName () const override;
@@ -975,15 +981,14 @@ DEFINE_T_SUPER(ECProperty)
 friend struct ECEntityClass;
 friend struct ECClass;
 private:
-    static PrimitiveType        s_idType;
-
     ECRelationshipClassCP       m_relationshipClass;
     ECRelatedInstanceDirection  m_direction;
+    PrimitiveType               m_type;
     ValueKind                   m_valueKind;
 
 protected:
     explicit NavigationECProperty(ECClassCR ecClass)
-        : ECProperty(ecClass), m_relationshipClass(nullptr), m_direction(ECRelatedInstanceDirection::Forward), m_valueKind(ValueKind::VALUEKIND_Uninitialized) {};
+        : ECProperty(ecClass), m_relationshipClass(nullptr), m_direction(ECRelatedInstanceDirection::Forward), m_valueKind(ValueKind::VALUEKIND_Uninitialized), m_type(PrimitiveType::PRIMITIVETYPE_String) {};
 
     ECObjectsStatus                 SetRelationshipClassName(Utf8CP relationshipName);
     ECObjectsStatus                 SetDirection(Utf8CP directionString);
@@ -998,6 +1003,7 @@ protected:
     virtual NavigationECPropertyP   _GetAsNavigationPropertyP() override { return this; }
 
     virtual Utf8String              _GetTypeName() const override;
+    // Not valid because type cannot be set from xml, it must be set at runtime
     virtual ECObjectsStatus         _SetTypeName(Utf8StringCR typeName) override { return ECObjectsStatus::OperationNotSupported; }
 
     virtual bool                    _CanOverride(ECPropertyCR baseProperty) const override;
@@ -1022,10 +1028,10 @@ public:
     // !Returns true if the navigation property points to an endpoint which can have more than one related instance
     bool                        IsMultiple() const { return ValueKind::VALUEKIND_Array == m_valueKind; }
     
-    // !Gets the PrimitiveType used for Navigation properties.  Default is string.
-    ECOBJECTS_EXPORT static PrimitiveType        GetIdType() { return s_idType; }
-    // !Sets the PrimitiveType used for Navigation properties.
-    ECOBJECTS_EXPORT static void                 SetIdType(PrimitiveType idType) { s_idType = idType; }
+    //! Sets the PrimitiveType of this ECProperty.  The default type is ::PRIMITIVETYPE_String
+    ECOBJECTS_EXPORT ECObjectsStatus SetType(PrimitiveType type);
+    //! Gets the PrimitiveType of this ECProperty
+    PrimitiveType GetType() const { return m_type; }
     };
 
 //=======================================================================================
@@ -1635,8 +1641,9 @@ public:
     // @param[in]   name                The name for the navigation property.  Must be a valid ECName
     // @param[in]   relationshipClass   The relationship class this navigation property will traverse.  Must list this class as an endpoint constraint.  The cardinality of the other constraint determiness if the nav prop is a primitive or an array.
     // @param[in]   direction           The direction the relationship will be traversed.  Forward indicates that this class is a source constraint, Backward indicates that this class is a target constraint.
+    // @param[in]   type                The type of the navigation property.  Should match type used for InstanceIds in the current session.  Default is string.
     // @param[in]   verify              If true the relationshipClass an direction will be verified to ensure the navigation property fits within the relationship constraints.  Default is true.  If not verified at creation the Verify method must be called before the navigation property is used or it's type descriptor will not be valid.
-    ECOBJECTS_EXPORT ECObjectsStatus CreateNavigationProperty(NavigationECPropertyP& ecProperty, Utf8StringCR name, ECRelationshipClassCR relationshipClass, ECRelatedInstanceDirection direction, bool verify = true);
+    ECOBJECTS_EXPORT ECObjectsStatus CreateNavigationProperty(NavigationECPropertyP& ecProperty, Utf8StringCR name, ECRelationshipClassCR relationshipClass, ECRelatedInstanceDirection direction, PrimitiveType type = PRIMITIVETYPE_String, bool verify = true);
 };
 
 //---------------------------------------------------------------------------------------

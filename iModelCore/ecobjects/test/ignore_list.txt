@@ -19,4 +19,4 @@ CGBinarySerializationTests.WriterTest			   # notified Earlin and Carole
 
 SchemaDeserializationTest.ExpectSuccessWithDuplicateClassesInXml  # This is no longer allowed
 
-
+NavigationECPropertyTests.RoundtripToEC2Xml # Notified Carole

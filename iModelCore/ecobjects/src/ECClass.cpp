@@ -515,18 +515,6 @@ bool copyCustomAttributes
 
         destProperty = destPrimitive;
         }
-    else if (sourceProperty->GetIsArray())
-        {
-        ArrayECPropertyP destArray;
-        ArrayECPropertyCP sourceArray = sourceProperty->GetAsArrayProperty();
-        destArray = new ArrayECProperty (*this);
-        destArray->SetPrimitiveElementType(sourceArray->GetPrimitiveElementType());
-
-        destArray->SetMaxOccurs(sourceArray->GetMaxOccurs());
-        destArray->SetMinOccurs(sourceArray->GetMinOccurs());
-
-        destProperty = destArray;
-        }
     else if (sourceProperty->GetIsStructArray())
         {
         StructArrayECPropertyP destArray;
@@ -534,6 +522,18 @@ bool copyCustomAttributes
         destArray = new StructArrayECProperty(*this);
         ECStructClassCP structElementType = sourceArray->GetStructElementType();
         destArray->SetStructElementType(structElementType);
+
+        destArray->SetMaxOccurs(sourceArray->GetMaxOccurs());
+        destArray->SetMinOccurs(sourceArray->GetMinOccurs());
+
+        destProperty = destArray;
+        }
+    else if (sourceProperty->GetIsArray())
+        {
+        ArrayECPropertyP destArray;
+        ArrayECPropertyCP sourceArray = sourceProperty->GetAsArrayProperty();
+        destArray = new ArrayECProperty(*this);
+        destArray->SetPrimitiveElementType(sourceArray->GetPrimitiveElementType());
 
         destArray->SetMaxOccurs(sourceArray->GetMaxOccurs());
         destArray->SetMinOccurs(sourceArray->GetMinOccurs());
@@ -1641,9 +1641,10 @@ SchemaWriteStatus ECEntityClass::_WriteXml(BeXmlWriterR xmlWriter, int ecXmlVers
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Colin.Kerr                  12/2015
 //---------------+---------------+---------------+---------------+---------------+-------
-ECObjectsStatus ECEntityClass::CreateNavigationProperty(NavigationECPropertyP& ecProperty, Utf8StringCR name, ECRelationshipClassCR relationshipClass, ECRelatedInstanceDirection direction, bool verify)
+ECObjectsStatus ECEntityClass::CreateNavigationProperty(NavigationECPropertyP& ecProperty, Utf8StringCR name, ECRelationshipClassCR relationshipClass, ECRelatedInstanceDirection direction, PrimitiveType type, bool verify)
     {
     ecProperty = new NavigationECProperty(*this);
+    ecProperty->SetType(type);
     ECObjectsStatus status = ecProperty->SetRelationshipClass(relationshipClass, direction, verify);
     if (ECObjectsStatus::Success == status)
         status = AddProperty(ecProperty, name);
