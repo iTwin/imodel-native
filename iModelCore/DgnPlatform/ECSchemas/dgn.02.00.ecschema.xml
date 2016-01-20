@@ -36,8 +36,15 @@
         <ECProperty propertyName="CategoryId" typeName="long"/><!-- should be non-nullable but shared table... -->
         <ECProperty propertyName="Geometry" typeName="binary"/>
     </ECEntityClass>
+    
     <ECRelationshipClass typeName="GeometrySourceIsInCategory" description="Element is in Category" strength="referencing">
-        <!-- WIP: want ON DELETE RESTRICT? -->
+        <ECCustomAttributes>
+            <ForeignKeyRelationshipMap xmlns="ECDbMap.01.00">
+	    	<End>Source</End>
+                <OnDeleteAction>Restrict</OnDeleteAction>
+            </ForeignKeyRelationshipMap>
+        </ECCustomAttributes>
+	
         <Source cardinality="(0,N)" roleLabel="is in category" polymorphic="true">
             <Class class="GeometrySource">
                 <Key>
@@ -175,7 +182,12 @@
     </ECStructClass>
 
     <ECRelationshipClass typeName="AuthorityIssuesElementCode" description="Element has a code which was issued by the given authority" strength="referencing">
-        <!-- WIP: want ON DELETE RESTRICT? -->
+        <ECCustomAttributes>
+            <ForeignKeyRelationshipMap xmlns="ECDbMap.01.00">
+                <OnDeleteAction>Restrict</OnDeleteAction>
+            </ForeignKeyRelationshipMap>
+        </ECCustomAttributes>
+
         <Source cardinality="(1,1)" roleLabel="issues code" polymorphic="false">
             <Class class="Authority"/>
         </Source>
@@ -189,7 +201,11 @@
     </ECRelationshipClass>
 
     <ECRelationshipClass typeName="AuthorityIssuesModelCode" description="Model has a code which was issued by the given authority" strength="referencing">
-        <!-- WIP: want ON DELETE RESTRICT? -->
+        <ECCustomAttributes>
+            <ForeignKeyRelationshipMap xmlns="ECDbMap.01.00">
+                <OnDeleteAction>Restrict</OnDeleteAction>
+            </ForeignKeyRelationshipMap>
+        </ECCustomAttributes>
         <Source cardinality="(1,1)" roleLabel="issues code" polymorphic="false">
             <Class class="Authority"/>
         </Source>
@@ -317,7 +333,12 @@
     </ECEntityClass>
 
     <ECRelationshipClass typeName="ModelContainsElements" description="Associates elements with a model" strength="embedding">
-        <!-- WIP: want ON DELETE RESTRICT, getting ON DELETE CASCADE -->
+        <ECCustomAttributes>
+            <ForeignKeyRelationshipMap xmlns="ECDbMap.01.00">
+                <OnDeleteAction>Restrict</OnDeleteAction>
+            </ForeignKeyRelationshipMap>
+        </ECCustomAttributes>
+
         <Source cardinality="(1,1)" roleLabel="is on 1 model" polymorphic="true">
             <Class class="Model"/>
         </Source>
@@ -1067,7 +1088,11 @@
         </ECProperty>
     </ECEntityClass>
     <ECRelationshipClass typeName="BaseModelForView" strength="embedding">
-        <!-- WIP: want ON DELETE RESTRICT, getting ON DELETE CASCADE -->
+        <ECCustomAttributes>
+            <ForeignKeyRelationshipMap xmlns="ECDbMap.01.00">
+                <OnDeleteAction>Restrict</OnDeleteAction>
+            </ForeignKeyRelationshipMap>
+        </ECCustomAttributes>
         <Source cardinality="(1,1)" roleLabel="is base model for view" polymorphic="true">
             <Class class="Model"/>
         </Source>

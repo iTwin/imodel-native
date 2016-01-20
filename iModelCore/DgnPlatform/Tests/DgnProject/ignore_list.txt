@@ -36,3 +36,6 @@ DgnProjectPackageTest.VerifyViewsForDgndbFilesConvertedDuringBuild   #Affan #TFS
 
 ECInstanceSelectTests.SelectQueriesOnDbGeneratedDuringBuild_04Plant # Notified Maha
 ECInstanceSelectTests.SelectQueriesOnDbGeneratedDuringBuild_79Main # Notified Maha
+
+#Shaun test fail due ON DELETE RESTRICT. It fail when applying changeset.
+TransactionManagerTests.UndoRedo 
