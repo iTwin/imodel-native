@@ -297,14 +297,11 @@ DgnPlatformLib::Host::ScriptAdmin::ScriptAdmin()
 //---------------------------------------------------------------------------------------
 DgnPlatformLib::Host::ScriptAdmin::~ScriptAdmin()
     {
-#ifdef WIP_BEJAVASCRIPT // *** This triggers an assertion failure . . EDL 
     if (nullptr != m_jsContext)
         delete m_jsContext;
-#endif
-#ifdef WIP_BEJAVASCRIPT // *** This triggers an assertion failure because JsDisposeRuntime returns JsErrorRuntimeInUse
+
     if (nullptr != m_jsenv)
         delete m_jsenv;
-#endif
     }
 
 //---------------------------------------------------------------------------------------

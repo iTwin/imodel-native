@@ -47,44 +47,44 @@ TEST_F(DgnBaseDomainSchemaTests, ValidateDomainSchemaDDL)
         ASSERT_TRUE(ddl.Contains("[Code_Value] TEXT COLLATE NoCase,"));
         ASSERT_TRUE(ddl.Contains("[LastMod] TIMESTAMP NOT NULL DEFAULT (julianday('now')),"));
         ASSERT_TRUE(ddl.Contains("PRIMARY KEY ([Id])"));
-        ASSERT_TRUE(ddl.Contains("FOREIGN KEY ([Code_AuthorityId]) REFERENCES [dgn_Authority] ([Id]) ON DELETE SET NULL")); // WIP: should be ON DELETE RESTRICT
+        ASSERT_TRUE(ddl.Contains("FOREIGN KEY ([Code_AuthorityId]) REFERENCES [dgn_Authority] ([Id]) ON DELETE RESTRICT"));
         ASSERT_TRUE(ddl.Contains("FOREIGN KEY ([ParentId]) REFERENCES [dgn_Element] ([Id]) ON DELETE CASCADE"));
-        ASSERT_TRUE(ddl.Contains("FOREIGN KEY ([ModelId]) REFERENCES [dgn_Model] ([Id]) ON DELETE CASCADE")); // WIP: should be ON DELETE RESTRICT
+        ASSERT_TRUE(ddl.Contains("FOREIGN KEY ([ModelId]) REFERENCES [dgn_Model] ([Id]) ON DELETE RESTRICT"));
         }
 
     // dgn_AnnotationElement
         {
         Utf8String ddl = GetDDL(DGN_TABLE(DGN_CLASSNAME_AnnotationElement));
         ASSERT_TRUE(ddl.Contains("FOREIGN KEY ([Id]) REFERENCES [dgn_Element] ([Id]) ON DELETE CASCADE"));
-        ASSERT_TRUE(ddl.Contains("FOREIGN KEY ([CategoryId]) REFERENCES [dgn_Element] ([Id]) ON DELETE SET NULL")); // WIP: should be ON DELETE RESTRICT
+        ASSERT_TRUE(ddl.Contains("FOREIGN KEY ([CategoryId]) REFERENCES [dgn_Element] ([Id]) ON DELETE RESTRICT"));
         }
 
     // dgn_DefinitionElement
         {
         Utf8String ddl = GetDDL(DGN_TABLE(DGN_CLASSNAME_DefinitionElement));
-        ASSERT_TRUE(ddl.Contains("FOREIGN KEY ([Id]) REFERENCES [dgn_Element] ([Id]) ON DELETE CASCADE"));
-        ASSERT_TRUE(ddl.Contains("FOREIGN KEY ([BaseModelId]) REFERENCES [dgn_Model] ([Id]) ON DELETE CASCADE")); // WIP: should be ON DELETE RESTRICT
+        ASSERT_TRUE(ddl.Contains("FOREIGN KEY ([ElementId]) REFERENCES [dgn_Element] ([Id]) ON DELETE CASCADE"));
+        ASSERT_TRUE(ddl.Contains("FOREIGN KEY ([BaseModelId]) REFERENCES [dgn_Model] ([Id]) ON DELETE RESTRICT"));
         }
 
     // dgn_DrawingElement
         {
         Utf8String ddl = GetDDL(DGN_TABLE(DGN_CLASSNAME_DrawingElement));
         ASSERT_TRUE(ddl.Contains("FOREIGN KEY ([Id]) REFERENCES [dgn_Element] ([Id]) ON DELETE CASCADE"));
-        ASSERT_TRUE(ddl.Contains("FOREIGN KEY ([CategoryId]) REFERENCES [dgn_Element] ([Id]) ON DELETE SET NULL")); // WIP: should be ON DELETE RESTRICT
+        ASSERT_TRUE(ddl.Contains("FOREIGN KEY ([CategoryId]) REFERENCES [dgn_Element] ([Id]) ON DELETE RESTRICT")); 
         }
 
     // dgn_SheetElement
         {
         Utf8String ddl = GetDDL(DGN_TABLE(DGN_CLASSNAME_SheetElement));
         ASSERT_TRUE(ddl.Contains("FOREIGN KEY ([Id]) REFERENCES [dgn_Element] ([Id]) ON DELETE CASCADE"));
-        ASSERT_TRUE(ddl.Contains("FOREIGN KEY ([CategoryId]) REFERENCES [dgn_Element] ([Id]) ON DELETE SET NULL")); // WIP: should be ON DELETE RESTRICT
+        ASSERT_TRUE(ddl.Contains("FOREIGN KEY ([CategoryId]) REFERENCES [dgn_Element] ([Id]) ON DELETE RESTRICT")); 
         }
 
     // Validate dgn_SpatialElement DDL
         {
         Utf8String ddl = GetDDL(DGN_TABLE(DGN_CLASSNAME_SpatialElement));
         ASSERT_TRUE(ddl.Contains("FOREIGN KEY ([Id]) REFERENCES [dgn_Element] ([Id]) ON DELETE CASCADE"));
-        ASSERT_TRUE(ddl.Contains("FOREIGN KEY ([CategoryId]) REFERENCES [dgn_Element] ([Id]) ON DELETE SET NULL")); // WIP: should be ON DELETE RESTRICT
+        ASSERT_TRUE(ddl.Contains("FOREIGN KEY ([CategoryId]) REFERENCES [dgn_Element] ([Id]) ON DELETE RESTRICT")); 
         }
 
     // Validate Indices
