@@ -33,7 +33,7 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
 
         /**
         * Set the severity level for the specified category
-        * @param catagory     The logging category
+        * @param category     The logging category
         * @param severity     The minimum severity to display. Note that messages will not be logged if their severity is below this level.
         */
         static SetSeverity(category: Bentley_Utf8String, severity: cxx_enum_class_uint32_t<LoggingSeverity>): void;
@@ -47,7 +47,7 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
 
         /**
         * Send a message to the log
-        * @param catagory     The logging category
+        * @param category     The logging category
         * @param severity     The severity of the message. Note that the message will not be logged if \a severity is below the severity level set by calling SetSeverity
         * @param message      The message to log
         */
@@ -117,7 +117,7 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
         /*** NATIVE_TYPE_NAME = JsDgnObjectId ***/
         /** Tests if the ID is valid */
         IsValid(): cxx_bool;
-        /** Tests if the ID matches another ID @pram id The other ID */
+        /** Tests if the ID matches another ID @param id The other ID */
         Equals(id: DgnObjectIdP): cxx_bool;
         OnDispose(): void;
         Dispose(): void;
@@ -197,9 +197,9 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
         DefaultSubCategoryId: DgnObjectIdP;
         /** The name of this Category */
         CategoryName: Bentley_Utf8String;
-        /** Look up the ID of the Category with the specified name. @param name The name to look up. @praam db The DgnDb that contains the Category. @return The ID of the Category if found */
+        /** Look up the ID of the Category with the specified name. @param name The name to look up. @param db The DgnDb that contains the Category. @return The ID of the Category if found */
         static QueryCategoryId(name: Bentley_Utf8String, db: DgnDbP): DgnObjectIdP;
-        /** Find or load the Category with the specified ID. @param id The ID to look up. @praam db The DgnDb that contains the Category. @return The Category if found */
+        /** Find or load the Category with the specified ID. @param id The ID to look up. @param db The DgnDb that contains the Category. @return The Category if found */
         static QueryCategory(id: DgnObjectIdP, db: DgnDbP): DgnCategoryP;
         /** Get the set of all DgnCategoryIDs in the Db. @param db The DgnDb to query. @return the set of all category IDs. */
         static QueryCategories(db: DgnDbP): DgnObjectIdSetP;
