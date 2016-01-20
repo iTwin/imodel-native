@@ -357,6 +357,8 @@ void QueryViewController::_DrawView(ViewContextR context)
     UNUSED_VARIABLE(maxMem);
 #if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     const int64_t purgeTrigger = static_cast <int64_t> (1.5 * static_cast <double> (maxMem));
+#else
+    const int64_t purgeTrigger = 200 * 1024 * 1024;
 #endif
 
     // this vector is sorted by occlusion score, so we use it to determine the order to draw the view
