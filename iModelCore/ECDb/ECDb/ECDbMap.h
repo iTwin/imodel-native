@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECDbMap.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -107,73 +107,61 @@ private:
     LightweightCache            m_lightweightCache;
     ECDbR                       m_ecdb;
     ECDbSQLManager              m_ecdbSqlManager;
-    ClassMapDictionary          m_classMapDictionary;
+    mutable ClassMapDictionary  m_classMapDictionary;
     mutable bvector<ECN::ECClassCP> m_classMapLoadTable;
     mutable int                 m_classMapLoadAccessCounter;
     SchemaImportContext*        m_schemaImportContext;
-    bool                        TryGetClassMap(ClassMapPtr& classMap, ECN::ECClassCR ecClass, bool loadIfNotFound) const;
-    ClassMapPtr                 DoGetClassMap(ECN::ECClassCR ecClass) const;
-    ClassMapPtr                 LoadAddClassMap(ECN::ECClassCR ecClass);
+
+    bool                        TryGetClassMap(ClassMapPtr&, ClassMapLoadContext&, ECN::ECClassCR) const;
+    ClassMapPtr                 DoGetClassMap(ECN::ECClassCR) const;
+
+    ClassMapPtr                 LoadClassMap(ClassMapLoadContext& ctx, ECN::ECClassCR) const;
+
     MapStatus                   DoMapSchemas(bvector<ECN::ECSchemaCP> const& mapSchemas, bool forceMapStrategyReevaluation);
-    MapStatus                   MapClass(ECN::ECClassCR ecClass, bool forceRevaluationOfMapStrategy);
-    MapStatus                   AddClassMap(ClassMapPtr& classMap);
-    void                        RemoveClassMap(IClassMap const& classMap);
-    BentleyStatus                        FinishTableDefinition() const;
+    
+    MapStatus                   MapClass(ECN::ECClassCR, bool forceRevaluationOfMapStrategy);
+    MapStatus                   AddClassMap(ClassMapPtr&) const;
+    void                        RemoveClassMap(IClassMap const&);
+    BentleyStatus               FinishTableDefinition() const;
     BentleyStatus               Save();
     //! Create a table to persist ECInstances of the given ECClass in the Db
     BentleyStatus               CreateOrUpdateRequiredTables();
     ClassMapByTable             GetClassMapByTable() const;
-    void                        GetClassMapsFromRelationshipEnd(std::set<IClassMap const*>& classMaps, ECN::ECClassCR ecClass) const;
+    void                        GetClassMapsFromRelationshipEnd(std::set<ClassMap const*>&, ECN::ECClassCR) const;
+
 public:
     explicit ECDbMap(ECDbR ecdb);
     ~ECDbMap() {}
 
-    ECDbSQLManager const&        GetSQLManager() const { return m_ecdbSqlManager; }
-    ECDbSQLManager&              GetSQLManagerR() { return m_ecdbSqlManager; }
+    ClassMap const* GetClassMap(ECN::ECClassCR) const;
+    ClassMap const* GetClassMap(ECN::ECClassId) const;
+
+    std::vector<ECN::ECClassCP> GetClassesFromRelationshipEnd(ECN::ECRelationshipConstraintCR) const;
+    std::set<ClassMap const*> GetClassMapsFromRelationshipEnd(ECN::ECRelationshipConstraintCR, bool* hasAnyClass) const;
+    ECDbSqlTable const* GetPrimaryTable(ECDbSqlTable const& joinedTable) const;
+    //!Loads the class maps if they were not loaded yet
+    size_t GetTableCountOnRelationshipEnd(ECN::ECRelationshipConstraintCR) const;
+    ECDbSqlTable const* GetFirstTableFromRelationshipEnd(ECN::ECRelationshipConstraintCR) const;
+
+    ECDbSQLManager const& GetSQLManager() const { return m_ecdbSqlManager; }
+
+    MapStatus MapSchemas(SchemaImportContext&, bvector<ECN::ECSchemaCP> const&, bool forceMapStrategyReevaluation);
+
+    BentleyStatus CreateECClassViewsInDb() const;
+    ECDbSqlTable* FindOrCreateTable(SchemaImportContext*, Utf8CP tableName, TableType, bool isVirtual, Utf8CP primaryKeyColumnName);
+
+    void ClearCache();
 
     bool IsImportingSchema() const;
     SchemaImportContext* GetSchemaImportContext() const;
     bool AssertIfIsNotImportingSchema() const;
+    ECDbSqlTable*  FindOrCreateTable(SchemaImportContext*, Utf8CP tableName, TableType, bool isVirtual, Utf8CP primaryKeyColumnName, ECDbSqlTable const* baseTable);
 
     LightweightCache const& GetLightweightCache() const { return m_lightweightCache; }
-    bool                        ContainsMappingsForSchema(ECN::ECSchemaCR ecSchema);
-    ECDbR                       GetECDbR() const { return m_ecdb; }
-    ECDbCR                      GetECDb()  const { return m_ecdb; }
-    MapStatus                   MapSchemas(SchemaImportContext&, bvector<ECN::ECSchemaCP> const&, bool forceMapStrategyReevaluation);
-
-    ClassMapPtr                 LoadClassMap(bmap<ECN::ECClassId, ECN::ECClassCP>& currentlyLoadingClasses, ECN::ECClassCR);
-
-    //! Gets the class map for the specified ECClass.
-    //! @remarks if @p loadIfNotFound is true, the method never returns null for ECClasses which had been 
-    //! imported into the ECDb file. Even for classes that
-    //! are not mapped to a table, a class map is returned (an UnmappedClassMap).
-    //! So the method only returns nullptr if the ECSchema of the specified ecClass has not been imported into the ECDb file yet.
-    //! @param[in] ecClass ECClass for which the class map is to be retrieved.
-    //! @param[in] loadIfNotFound if true, the class map is loaded from the ECDb file if it wasn't loaded yet. if false,
-    //! the class map is not loaded from the ECDb file. In this case only class maps are found that have already been loaded into memory.
-    //! @return Class map or nullptr if @p ecClass's ECSchema was not imported into the ECDb file or if @p loadIfNotFound is true
-    //! and the class map was not loaded yet from the ECDb file.
-    IClassMap const*            GetClassMap(ECN::ECClassCR ecClass, bool loadIfNotFound = true) const;
-
-    //! @copydoc ECDbMap::GetClassMap
-    ClassMapP                   GetClassMapP(ECN::ECClassCR ecClass, bool loadIfNotFound = true) const;
-
-    //! @copydoc ECDbMap::GetClassMap
-    ClassMapCP                  GetClassMapCP(ECN::ECClassCR ecClass, bool loadIfNotFound = true) const;
-    BentleyStatus               CreateECClassViewsInDb() const;
-    ECDbSqlTable*               FindOrCreateTable(SchemaImportContext*, Utf8CP tableName, TableType, bool isVirtual, Utf8CP primaryKeyColumnName);
-
-    ECDbSqlTable const*         GetPrimaryTable(ECDbSqlTable const& joinedTable) const;
-    //!Loads the class maps if they were not loaded yet
-    void                        GetClassMapsFromRelationshipEnd(bset<IClassMap const*>& endClassMaps, ECN::ECRelationshipConstraintCR relationshipEnd, bool loadIfNotFound) const;
-    std::vector<ECN::ECClassCP> GetClassesFromRelationshipEnd(ECN::ECRelationshipConstraintCR) const;
-    size_t                      GetTableCountOnRelationshipEnd(ECN::ECRelationshipConstraintCR) const;
-    std::set<IClassMap const*>  GetClassMapsFromRelationshipEnd(ECN::ECRelationshipConstraintCR relationshipEnd, bool* hasAnyClass= nullptr) const;
-    ECDbSqlTable const*         GetFirstTableFromRelationshipEnd(ECN::ECRelationshipConstraintCR relationshipEnd) const;
-    void                        ClearCache();
-    RelationshipClassMapCP GetRelationshipClassMap (ECN::ECClassId ecRelationshipClassId) const;
-    ClassMapCP             GetClassMapCP (ECN::ECClassId classId) const;
-
+    ECDbR GetECDbR() const { return m_ecdb; }
+    ECDbCR GetECDb()  const { return m_ecdb; }
+    std::set<ECDbSqlTable const*> GetTablesFromRelationshipEnd(ECN::ECRelationshipConstraintCR relationshipEnd) const;
+    std::set<ECDbSqlTable const*> GetTablesFromRelationshipEndWithColumn(ECN::ECRelationshipConstraintCR relationshipEnd, Utf8CP column) const;
 
     static void ParsePropertyAccessString(bvector<Utf8String>&, Utf8CP propAccessString);
     };

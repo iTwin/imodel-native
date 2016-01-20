@@ -55,11 +55,13 @@
     <ClCompile Include="Published\ECSqlCustomFunction_Tests.cpp" />
     <ClCompile Include="Published\ECSqlDeleteTestDataset.cpp" />
     <ClCompile Include="Published\ECSqlInsertTestDataset.cpp" />
+    <ClCompile Include="Published\ECSqlInsertTests.cpp" />
     <ClCompile Include="Published\ECSqlMetadataQueryTest.cpp" />
     <ClCompile Include="Published\ECSqlNavigationProps_Tests.cpp" />
     <ClCompile Include="Published\ECSqlRangeTree_Tests.cpp" />
     <ClCompile Include="Published\ECSqlCommonTestDataset.cpp" />
     <ClCompile Include="Published\ECSqlSelectTestDataset.cpp" />
+    <ClCompile Include="Published\ECSqlSelectTests.cpp" />
     <ClCompile Include="Published\ECSqlStatementCache_Test.cpp" />
     <ClCompile Include="Published\ECSqlExpectedResultImpls.cpp" />
     <ClCompile Include="Published\ECSqlBuilder_Tests.cpp" />
@@ -80,7 +82,6 @@
     <ClCompile Include="Published\JsonUpdaterTests.cpp" />
     <ClCompile Include="Published\RandomECInstanceGenerator.cpp" />
     <ClCompile Include="Published\SchemaImportTestFixture.cpp" />
-    <ClCompile Include="Published\SqliteJSonSupport.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="BackDoor\PublicAPI\BackDoor\ECDb\BackDoor.h" />

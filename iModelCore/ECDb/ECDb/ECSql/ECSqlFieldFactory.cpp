@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/ECSqlFieldFactory.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -223,14 +223,20 @@ PropertyMapCR propertyMap
         return ECSqlStatus::Error;
         }
 
-    auto structType = structArrayProperty->GetStructElementType();
-    auto structTypeMap = ecdb.GetECDbImplR().GetECDbMap ().GetClassMap (*structType);
+    ECClassCP structType = structArrayProperty->GetStructElementType();
+    ClassMap const* structTypeMap = ecdb.GetECDbImplR().GetECDbMap ().GetClassMap (*structType);
+    if (structTypeMap == nullptr)
+        {
+        BeAssert(false);
+        return ECSqlStatus::Error;
+        }
+
     //1. Generate ECSQL statement to read nested struct array.
     ECSqlSelectBuilder innerECSql;
     Utf8String innerECSqlSelectClause;
     bool isFirstProp = true;
     int selectColumnCount = 0;
-    for (auto propertyMap : structTypeMap->GetPropertyMaps ())
+    for (PropertyMap const* propertyMap : structTypeMap->GetPropertyMaps ())
         {
         if (propertyMap->IsECInstanceIdPropertyMap ())
             continue;
@@ -256,7 +262,7 @@ PropertyMapCR propertyMap
     whereClause.Sprintf (ECDB_COL_ParentECInstanceId " = ? AND " ECDB_COL_ECPropertyPathId " = %d", persistedPropertyId);
     innerECSql.Select (innerECSqlSelectClause.c_str ()).From (*structType, false).Where (whereClause.c_str()).OrderBy (ECDB_COL_ECArrayIndex);
 
-    auto structArrayField = unique_ptr<StructArrayMappedToSecondaryTableECSqlField>(
+    unique_ptr<StructArrayMappedToSecondaryTableECSqlField> structArrayField = unique_ptr<StructArrayMappedToSecondaryTableECSqlField>(
         new StructArrayMappedToSecondaryTableECSqlField (ctx, *structArrayProperty, move (ecsqlColumnInfo)));
 
     //2. Create and prepare the nested ECSqlStatement.
@@ -302,7 +308,7 @@ ECSqlColumnInfo&& structFieldColumnInfo
     auto newStructField = unique_ptr<StructMappedToColumnsECSqlField>(new StructMappedToColumnsECSqlField(ctx.GetECSqlStatementR (), move(structFieldColumnInfo)));
 
     ECSqlStatus status = ECSqlStatus::Success;
-    for(auto childPropertyMap : childPropertyMaps)
+    for(PropertyMapCP childPropertyMap : childPropertyMaps)
         {
         if (childPropertyMap->IsUnmapped ())
             continue;
@@ -310,7 +316,7 @@ ECSqlColumnInfo&& structFieldColumnInfo
         ECSqlColumnInfo childColumnInfo = ECSqlColumnInfo::CreateChild (newStructField->GetColumnInfo (), childPropertyMap->GetProperty ());
 
         std::unique_ptr<ECSqlField> childField = nullptr;
-        if (auto childStructPropMap = dynamic_cast<PropertyMapStructCP>(childPropertyMap))
+        if (PropertyMapStructCP childStructPropMap = dynamic_cast<PropertyMapStructCP>(childPropertyMap))
             {
             status = CreateStructMemberFields (childField, sqlColumnIndex, ctx, *childStructPropMap, move (childColumnInfo));
             if ( !status.IsSuccess())
@@ -320,7 +326,7 @@ ECSqlColumnInfo&& structFieldColumnInfo
             {           
             if (childPropertyMap->GetProperty().GetIsPrimitive())
                 {          
-                auto primitiveType = childPropertyMap->GetProperty().GetAsPrimitiveProperty()->GetType();
+                PrimitiveType primitiveType = childPropertyMap->GetProperty().GetAsPrimitiveProperty()->GetType();
                 status = CreatePrimitiveField(childField, sqlColumnIndex, ctx, move (childColumnInfo), nullptr, primitiveType);
                 }
             if (childPropertyMap->GetProperty().GetIsStruct())
@@ -329,16 +335,20 @@ ECSqlColumnInfo&& structFieldColumnInfo
                 }
             else if (childPropertyMap->GetProperty().GetIsArray())
                 {          
-                auto arrayProperty = childPropertyMap->GetProperty().GetAsArrayProperty();
+                ArrayECPropertyCP arrayProperty = childPropertyMap->GetProperty().GetAsArrayProperty();
                 if (arrayProperty->GetKind() == ArrayKind::ARRAYKIND_Primitive)
                     {
-                    auto primitiveType = arrayProperty->GetPrimitiveElementType();
+                    PrimitiveType primitiveType = arrayProperty->GetPrimitiveElementType();
                     status = CreatePrimitiveArrayField(childField, sqlColumnIndex, ctx, move (childColumnInfo), nullptr, primitiveType);
                     }
                 else
-                    {
                     status = CreateStructArrayField(childField, sqlColumnIndex, ctx, move(childColumnInfo), *childPropertyMap);
-                    }
+                }
+            else if (childPropertyMap->GetProperty().GetIsNavigation())
+                {
+                //WIP_NAVPROP Not implemented yet
+                BeAssert(false && "NavProps not implemented yet.");
+                return ECSqlStatus::Error;
                 }
             }
 

@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/Published/ECDbReadTests.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPublishedTests.h"
@@ -13,55 +13,6 @@ USING_NAMESPACE_BENTLEY_EC
 BEGIN_ECDBUNITTESTS_NAMESPACE
 
 struct ReadTests : ECDbTestFixture {};
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                   Ramanujam.Raman                   03/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(ReadTests, ReadECInstances)
-    {
-    // Save a test project
-    ECDbTestProject saveTestProject;
-    saveTestProject.Create ("StartupCompany.ecdb", L"StartupCompany.02.00.ecschema.xml", true);
-
-    // Reopen the test project
-    ECDb db;
-    DbResult stat = db.OpenBeSQLiteDb (saveTestProject.GetECDb().GetDbFileName(), ECDb::OpenParams(ECDb::OpenMode::Readonly));
-    ASSERT_EQ (BE_SQLITE_OK, stat);
-
-    // Read the imported instances and check them
-    ECInstanceMapCR importedInstances = saveTestProject.GetImportedECInstances();
-    for (ECInstanceMap::const_iterator iter = importedInstances.begin(); iter != importedInstances.end(); iter++)
-        {
-        ECInstanceId importedInstanceId = iter->first;
-        IECInstancePtr importedInstance = iter->second;
-        ECClassCR ecClass = importedInstance->GetClass();
-
-        /*
-         * Mechanism 1: Create and execute a ECSql statement
-         */
-        SqlPrintfString ecSql ("SELECT * FROM [%s].[%s] WHERE ECInstanceId = ?", Utf8String(ecClass.GetSchema().GetName()).c_str(), Utf8String(ecClass.GetName()).c_str());
-        ECSqlStatement ecStatement;
-        ECSqlStatus status = ecStatement.Prepare (db, ecSql.GetUtf8CP());
-        ASSERT_TRUE (ECSqlStatus::Success == status);
-
-        LOG.debugv ("Executing %s...", ecSql.GetUtf8CP());
-        
-        ecStatement.BindId (1, importedInstanceId);
-        ASSERT_TRUE (BE_SQLITE_ROW == ecStatement.Step());
-
-        ECInstanceECSqlSelectAdapter adapter (ecStatement);
-        IECInstancePtr readInstance = adapter.GetInstance();
-
-        ASSERT_TRUE (readInstance.IsValid());
-        ASSERT_TRUE (importedInstance->GetInstanceId() == readInstance->GetInstanceId());
-        if (!ECDbTestUtility::CompareECInstances(*importedInstance, *readInstance))
-            {
-            InstanceWriteStatus s = importedInstance->WriteToXmlFile(L"C:\\testInstance1.xml", true, true);
-            EXPECT_EQ(InstanceWriteStatus::Success, s);
-            s = readInstance->WriteToXmlFile(L"C:\\testInstance2.xml", true, true);
-            EXPECT_EQ(InstanceWriteStatus::Success, s);
-            }
-        }
-    }
     
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                   Ramanujam.Raman                   09/12

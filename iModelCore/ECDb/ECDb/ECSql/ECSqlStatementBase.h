@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/ECSqlStatementBase.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -36,6 +36,7 @@ protected:
     ECSqlStatementBase () : m_preparedStatement(nullptr) {}
 
     virtual ECSqlStatus _Prepare (ECDbCR ecdb, Utf8CP ecsql);
+    virtual void _Finalize();
 
 public:
     virtual ~ECSqlStatementBase () {}
@@ -58,7 +59,7 @@ public:
     Utf8CP GetNativeSql () const;
     ECDbCP GetECDb () const;
 
-    void Finalize ();
+    void Finalize() { _Finalize(); }
 
     // Helpers
     ECSqlPreparedStatement* GetPreparedStatementP () const { return m_preparedStatement.get (); }

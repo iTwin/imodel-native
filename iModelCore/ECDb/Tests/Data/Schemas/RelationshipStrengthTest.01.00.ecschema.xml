@@ -1,64 +1,57 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
-<ECSchema schemaName="RelationshipStrengthTest" nameSpacePrefix="rst" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
-    <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="01.00" prefix="bsca" />
-    <ECSchemaReference name="Bentley_Standard_Classes" version="01.00" prefix="bsc" />
-    <ECClass typeName="Person" isDomainClass="True">
-        <ECProperty propertyName="FirstName" typeName="string" displayLabel="First Name" />
-        <ECProperty propertyName="LastName" typeName="string" displayLabel="Last Name"/>
-    </ECClass>
-
-    <ECRelationshipClass typeName="SingleParentHasChildren" isDomainClass="True" strength="embedding" strengthDirection="forward">
-        <Source cardinality="(1,1)" polymorphic="True" roleLabel="Parent">
-            <Class class="Person" />
+<?xml version="1.0" encoding="UTF-8"?>
+<ECSchema schemaName="RelationshipStrengthTest" nameSpacePrefix="rst" version="01.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.0">
+    <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="01.12" prefix="bsca"/>
+    <ECSchemaReference name="Bentley_Standard_Classes" version="01.01" prefix="bsc"/>
+    <ECEntityClass typeName="Person" modifier="None">
+        <ECProperty propertyName="FirstName" typeName="string" displayLabel="First Name" readOnly="false"/>
+        <ECProperty propertyName="LastName" typeName="string" displayLabel="Last Name" readOnly="false"/>
+    </ECEntityClass>
+    <ECRelationshipClass typeName="ChildrenHasSingleParent" modifier="None" strength="embedding" strengthDirection="backward">
+        <Source cardinality="(0,N)" roleLabel="Children" polymorphic="true">
+            <Class class="Person"/>
         </Source>
-        <Target cardinality="(0,N)" polymorphic="True" roleLabel="Children">
-            <Class class="Person" />
+        <Target cardinality="(1,1)" roleLabel="Single parent" polymorphic="true">
+            <Class class="Person"/>
         </Target>
     </ECRelationshipClass>
-
-    <ECRelationshipClass typeName="ManyParentsHaveChildren" isDomainClass="True" strength="holding" strengthDirection="forward">
-        <Source cardinality="(1,N)" polymorphic="True" roleLabel="Parents">
-            <Class class="Person" />
+    <ECRelationshipClass typeName="ChildrenHaveManyParents" modifier="None" strength="holding" strengthDirection="backward">
+        <Source cardinality="(0,N)" roleLabel="Children" polymorphic="true">
+            <Class class="Person"/>
         </Source>
-        <Target cardinality="(0,N)" polymorphic="True" roleLabel="Children">
-            <Class class="Person" />
+        <Target cardinality="(1,N)" roleLabel="Parents" polymorphic="true">
+            <Class class="Person"/>
         </Target>
     </ECRelationshipClass>
-
-    <ECRelationshipClass typeName="ParentHasSpouse" isDomainClass="True" strength="referencing" strengthDirection="forward">
-        <Source cardinality="(0,1)" polymorphic="True" roleLabel="Parent">
-            <Class class="Person" />
+    <ECRelationshipClass typeName="ManyParentsHaveChildren" modifier="None" strength="holding" strengthDirection="forward">
+        <Source cardinality="(1,N)" roleLabel="Parents" polymorphic="true">
+            <Class class="Person"/>
         </Source>
-        <Target cardinality="(0,1)" polymorphic="True" roleLabel="Spouse">
-            <Class class="Person" />
+        <Target cardinality="(0,N)" roleLabel="Children" polymorphic="true">
+            <Class class="Person"/>
         </Target>
     </ECRelationshipClass>
-
-	<ECRelationshipClass typeName="ChildrenHasSingleParent" isDomainClass="True" strength="embedding" strengthDirection="backward">
-        <Source cardinality="(0,N)" polymorphic="True" roleLabel="Children">
-            <Class class="Person" />
+    <ECRelationshipClass typeName="ParentHasSpouse" modifier="None" strength="referencing" strengthDirection="forward">
+        <Source cardinality="(0,1)" roleLabel="Parent" polymorphic="true">
+            <Class class="Person"/>
         </Source>
-        <Target cardinality="(1,1)" polymorphic="True" roleLabel="Single parent">
-            <Class class="Person" />
+        <Target cardinality="(0,1)" roleLabel="Spouse" polymorphic="true">
+            <Class class="Person"/>
         </Target>
     </ECRelationshipClass>
-	
-	<ECRelationshipClass typeName="ChildrenHaveManyParents" isDomainClass="True" strength="holding" strengthDirection="backward">
-        <Source cardinality="(0,N)" polymorphic="True" roleLabel="Children">
-            <Class class="Person" />
+    <ECRelationshipClass typeName="ParentHasSpouse_backward" modifier="None" strength="referencing" strengthDirection="backward">
+        <Source cardinality="(0,1)" roleLabel="Parent" polymorphic="true">
+            <Class class="Person"/>
         </Source>
-        <Target cardinality="(1,N)" polymorphic="True" roleLabel="Parents">
-            <Class class="Person" />
+        <Target cardinality="(0,1)" roleLabel="Spouse" polymorphic="true">
+            <Class class="Person"/>
         </Target>
     </ECRelationshipClass>
-	
-	<ECRelationshipClass typeName="ParentHasSpouse_backward" isDomainClass="True" strength="referencing" strengthDirection="backward">
-        <Source cardinality="(0,1)" polymorphic="True" roleLabel="Parent">
-            <Class class="Person" />
+    <ECRelationshipClass typeName="SingleParentHasChildren" modifier="None" strength="embedding" strengthDirection="forward">
+        <Source cardinality="(1,1)" roleLabel="Parent" polymorphic="true">
+            <Class class="Person"/>
         </Source>
-        <Target cardinality="(0,1)" polymorphic="True" roleLabel="Spouse">
-            <Class class="Person" />
+        <Target cardinality="(0,N)" roleLabel="Children" polymorphic="true">
+            <Class class="Person"/>
         </Target>
     </ECRelationshipClass>
-	
 </ECSchema>

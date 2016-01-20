@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/Published/FieldEngineer_Test.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <Bentley/Bentley.r.h>
@@ -451,7 +451,7 @@ TEST (FieldEngineer, Workflow)
      
     // TODO: Self-joins don't seem to work. Have emailed Affan.
     //statement.Finalize();
-    //ecSqlWithoutSelect = "FROM sico.Manager AS ManagerRelated JOIN sico.Manager AS ManagerOrigin USING sico.ManagerRelationship REVERSE "
+    //ecSqlWithoutSelect = "FROM sico.Manager AS ManagerRelated JOIN sico.Manager AS ManagerOrigin USING sico.ManagerRelationship BACKWARD "
     //    "WHERE ManagerOrigin.LastName = 'Shark' AND ManagerOrigin.FirstName = 'White'";
     //prepareStatus = statement.Prepare (ecDb, BuildECSql("SELECT *", ecSqlWithoutSelect).c_str());
     //ASSERT_TRUE (ECSqlStatus::Success == prepareStatus);

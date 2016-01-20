@@ -19,12 +19,25 @@ ECDbSchemas.Verify_TFS_14829_A
 ECDbMappingTestFixture.MismatchDataTypesInExistingTable
 ECDbMappingTestFixture.PropertiesWithoutColumnsInExistingTable
 
-#TFS344205 (Affan)
-JoinedTableECDbMapStrategyTests.RelationshipsWithKeyProp
-
 #TFS353210 will adress this (Raman)
 JsonUpdaterTests.CommonGeometryJsonSerialization
 
-#TFS349028 (Affan)
-JoinedTableECDbMapStrategyTests.PopulateECSql_TestDbWithTestData
+#For Hassan
+#should be either removed or inverted
+JoinedTableECDbMapStrategyTests.MultiInheritence1  
+#should be either removed or inverted
+ECDbMappingTestFixture.RelationshipWithAbstractClassAsConstraintOnParentEnd
+
+#Hassan TFS#356965
+#should use dynamically read ECInstanceId from db instead of hardcode ones
+ECSqlInsertTestFramework.RelationshipLinkTableMappingTests
+ECSqlInsertTestFramework.RelationshipWithAdditionalPropsTests 
+ECSqlUpdateTestFramework.RelationshipWithAdditionalPropsTests
+ECSqlStatementTests.MiscTests
+ECSqlDeleteTestFramework.WhereRelationshipWithAdditionalPropsTests
+ECSqlSelectTestFramework.WhereRelationshipWithAdditionalPropsTests
+ECSqlUpdateTestFramework.WhereRelationshipWithAdditionalPropsTests
+
+TFS#359449 (Affan)
+ECSqlNavigationPropertyTestFixture.SingleInstanceNavProp_ForeignKeyMappingWithJoinedTable
 

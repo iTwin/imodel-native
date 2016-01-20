@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ClassMapSubclasses.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -92,7 +92,7 @@ UnmappedClassMap::UnmappedClassMap (ECClassCR ecClass, ECDbMapCR ecdbMap, ECDbMa
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle  02/2014
 //---------------------------------------------------------------------------------------
-MapStatus UnmappedClassMap::_InitializePart1 (SchemaImportContext*, ClassMapInfo const& classMapInfo, IClassMap const* parentClassMap)
+MapStatus UnmappedClassMap::_MapPart1 (SchemaImportContext&, ClassMapInfo const& classMapInfo, IClassMap const* parentClassMap)
     {
     m_dbView = std::unique_ptr<ClassDbView> (new ClassDbView (*this));
 

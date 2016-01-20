@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/Published/ECSqlCommonTestDataset.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECSqlCommonTestDataset.h"
@@ -619,10 +619,30 @@ ECSqlTestDataset ECSqlCommonTestDataset::WhereRelationshipWithAdditionalPropsTes
     auto psaClassId = ecdb.Schemas().GetECClassId("ECSqlTest", "PSA");
     auto pClassId = ecdb.Schemas().GetECClassId("ECSqlTest", "P");
 
+
+    ECInstanceId sourceECInstanceId;
+    {
+    ECSqlStatement stmt;
+    EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT ECInstanceId FROM ecsql.PSA LIMIT 1"));
+    EXPECT_EQ(BE_SQLITE_ROW, stmt.Step());
+    sourceECInstanceId = stmt.GetValueId<ECInstanceId>(0);
+    EXPECT_NE(sourceECInstanceId.GetValue(), 0LL);
+    }
+
+    ECInstanceId targetECInstanceId;
+    {
+    ECSqlStatement stmt;
+    EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT ECInstanceId FROM ecsql.P LIMIT 1"));
+    EXPECT_EQ(BE_SQLITE_ROW, stmt.Step());
+    targetECInstanceId = stmt.GetValueId<ECInstanceId>(0);
+    EXPECT_NE(targetECInstanceId.GetValue(), 0LL);
+    }
+
     ECInstanceId ecInstanceId;
     {
+
     Savepoint savepoint (ecdb, "Inserting test instances");
-    ecInstanceId = ECSqlTestFrameworkHelper::InsertTestInstance (ecdb, "INSERT INTO ecsql.PSAHasPWithPrimProps (SourceECInstanceId, TargetECInstanceId, B, D) VALUES (100, 200, False, 3.14)");
+    ecInstanceId = ECSqlTestFrameworkHelper::InsertTestInstance (ecdb, SqlPrintfString("INSERT INTO ecsql.PSAHasPWithPrimProps (SourceECInstanceId, TargetECInstanceId, B, D) VALUES (%ld, %ld, False, 3.14)", sourceECInstanceId.GetValue(),targetECInstanceId.GetValue()).GetUtf8CP());
     if (!ecInstanceId.IsValid ())
         {
         savepoint.Cancel ();
@@ -650,10 +670,10 @@ ECSqlTestDataset ECSqlCommonTestDataset::WhereRelationshipWithAdditionalPropsTes
         ecsql.Sprintf ("%s WHERE B = false AND D = 3.14", relClassECSqlStub.c_str ());
         AddTestItem (dataset, ecsqlType, ecsql.c_str (), 1);
 
-        ecsql.Sprintf ("%s WHERE SourceECInstanceId = 100", relClassECSqlStub.c_str ());
+        ecsql.Sprintf ("%s WHERE SourceECInstanceId = %ld", relClassECSqlStub.c_str (), sourceECInstanceId.GetValue());
         AddTestItem (dataset, ecsqlType, ecsql.c_str (), 1);
 
-        ecsql.Sprintf ("%s WHERE TargetECInstanceId = 200", relClassECSqlStub.c_str ());
+        ecsql.Sprintf ("%s WHERE TargetECInstanceId = %ld", relClassECSqlStub.c_str (), targetECInstanceId.GetValue());
         AddTestItem (dataset, ecsqlType, ecsql.c_str (), 1);
 
         ecsql.Sprintf ("%s WHERE SourceECClassId <> %lld", relClassECSqlStub.c_str (), psaClassId);

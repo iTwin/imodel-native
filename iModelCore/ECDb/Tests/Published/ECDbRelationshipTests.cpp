@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/Published/ECDbRelationshipTests.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPublishedTests.h"
@@ -11,8 +11,10 @@
 USING_NAMESPACE_BENTLEY_EC
 
 BEGIN_ECDBUNITTESTS_NAMESPACE
+
 bool SetStringValue(IECInstanceR instance, Utf8CP propertyAccessor, Utf8CP stringValue);
 bool InsertInstance(ECDbR db, ECClassCR ecClass, IECInstanceR ecInstance);
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                   Ramanujam.Raman                   01/13
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -31,7 +33,7 @@ IECRelationshipInstancePtr CreateRelationship (ECN::ECRelationshipClassCR relati
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                   Adeel Shoukat                   10/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-IECRelationshipInstancePtr CreateRelationshipWithProperty(ECN::ECRelationshipClassCR relationshipClass, IECInstanceR source, IECInstanceR target)
+IECRelationshipInstancePtr CreateRelationshipWithProperty (ECN::ECRelationshipClassCR relationshipClass, IECInstanceR source, IECInstanceR target)
 {
     StandaloneECRelationshipEnablerPtr relationshipEnabler = StandaloneECRelationshipEnabler::CreateStandaloneRelationshipEnabler(relationshipClass);
     StandaloneECRelationshipInstancePtr relationshipInstance = relationshipEnabler->CreateRelationshipInstance();
@@ -44,17 +46,11 @@ IECRelationshipInstancePtr CreateRelationshipWithProperty(ECN::ECRelationshipCla
     relationshipInstance->SetInstanceId("source->target");
     return relationshipInstance;
 }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                   Ramanujam.Raman                   05/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-IECRelationshipInstancePtr CreateRelationship 
-(
-ECDbTestProject& test, 
-Utf8CP schemaName,
-Utf8CP sourceClassName,
-Utf8CP targetClassName, 
-Utf8CP relationshipClassName
-)
+IECRelationshipInstancePtr CreateRelationship (ECDbTestProject& test, Utf8CP schemaName, Utf8CP sourceClassName, Utf8CP targetClassName, Utf8CP relationshipClassName)
     {
     bvector<IECInstancePtr> instances;
     auto stat = test.GetInstances (instances, schemaName, sourceClassName);
@@ -113,14 +109,7 @@ void PersistRelationship (IECRelationshipInstanceR relInstance, ECDbR ecdb)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                   Ramanujam.Raman                   06/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ValidatePersistingRelationship
-(
-DbR db, 
-Utf8CP tableName, 
-ECInstanceId whereECInstanceId, 
-Utf8CP expectedIdColumnName, 
-int64_t expectedId
-)
+void ValidatePersistingRelationship (DbR db, Utf8CP tableName, ECInstanceId whereECInstanceId, Utf8CP expectedIdColumnName, int64_t expectedId)
     {
     Utf8String whereClause;
     whereClause.Sprintf ("WHERE ECInstanceId=%lld", whereECInstanceId.GetValue ());
@@ -214,7 +203,6 @@ void ValidateReadingRelated (ECDbR ecdb, Utf8CP relationshipSchemaName, Utf8CP r
     ASSERT_TRUE (actualRelTargetInstance->GetInstanceId() == relTargetInstance->GetInstanceId());
     ASSERT_TRUE (ECDbTestUtility::CompareECInstances (*actualRelTargetInstance, *relTargetInstance));
     }
-
 
 //-------------------------------------------------------------------------------------
 // This test is to document and back the current contract about what the ECInstanceId of an inserted ECRelationship is.
@@ -404,6 +392,7 @@ TEST(ECDbRelationships, AmbiguousJoin)
     stmt.Finalize();
     ecdb.CloseDb();
 }
+
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Umer Sufyan                   08/14
 //+---------------+---------------+---------------+---------------+---------------+----
@@ -500,6 +489,9 @@ TEST(ECDbRelationships, TestRelationshipKeys)
         }
     }
 
+//---------------------------------------------------------------------------------------
+//                                               Muhammad Hassan                  12/14
+//+---------------+---------------+---------------+---------------+---------------+------
 TEST(ECDbRelationships, ECRelationshipContraintKeyProperties)
     {
     const auto perClassRowCount = 0;
@@ -551,7 +543,6 @@ TEST(ECDbRelationships, ECRelationshipContraintKeyProperties)
     ASSERT_TRUE(BE_SQLITE_ROW == statement.Step());
     ASSERT_TRUE(BE_SQLITE_DONE == statement.Step());
     statement.Finalize();
-
     }
 
 END_ECDBUNITTESTS_NAMESPACE

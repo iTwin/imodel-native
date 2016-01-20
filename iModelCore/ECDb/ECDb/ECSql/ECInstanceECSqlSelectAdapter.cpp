@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/ECInstanceECSqlSelectAdapter.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -270,7 +270,7 @@ IECSqlValue const& value
                 return ERROR;
             }
         }
-    else // Array
+    else if (prop->GetIsArray())
         {
         auto arrayProperty = prop->GetAsArrayProperty ();
         auto structArrayProperty = prop->GetAsStructArrayProperty();
@@ -302,6 +302,11 @@ IECSqlValue const& value
                 }
             arrayIndex++;
             }
+        }
+    else if (prop->GetIsNavigation())
+        {
+        //WIP_NAVPROP Not implemented yet
+        return SUCCESS;
         }
 
     return SUCCESS;

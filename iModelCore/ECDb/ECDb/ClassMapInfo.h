@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ClassMapInfo.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -42,7 +42,6 @@ private:
     bvector<ClassIndexInfoPtr> m_dbIndexes; 
     IClassMap const* m_parentClassMap;
     bool m_isMapToVirtualTable;
-    bool m_isECInstanceIdAutogenerationDisabled;
     ECN::ECPropertyCP m_classHasCurrentTimeStampProperty;
 
 protected:
@@ -52,7 +51,6 @@ protected:
 
 private:
     BentleyStatus InitializeFromClassMapCA ();
-    BentleyStatus InitializeDisableECInstanceIdAutogeneration();
     BentleyStatus InitializeFromClassHasCurrentTimeStampProperty();
 
     BentleyStatus DoEvaluateMapStrategy(bool& baseClassesNotMappedYet, UserECDbMapStrategy&);
@@ -76,7 +74,6 @@ public:
     MapStatus Initialize();
 
     ECN::ECPropertyCP GetClassHasCurrentTimeStampProperty() const { return m_classHasCurrentTimeStampProperty; }
-    bool IsECInstanceIdAutogenerationDisabled() const { return m_isECInstanceIdAutogenerationDisabled; }
 
     ECDbMapStrategy const& GetMapStrategy () const{ return m_resolvedStrategy; }
 
@@ -161,7 +158,11 @@ public:
     virtual ~RelationshipMapInfo() {}
 
     Cardinality GetCardinality() const { return m_cardinality; }
-    RelationshipEndColumns const& GetSourceColumnsMapping() const { BeAssert(m_customMapType != CustomMapType::ForeignKeyOnTarget && m_resolvedStrategy.GetStrategy() != ECDbMapStrategy::Strategy::ForeignKeyRelationshipInTargetTable); return m_sourceColumnsMapping; }
+    RelationshipEndColumns const& GetSourceColumnsMapping() const 
+        { 
+        BeAssert(m_customMapType != CustomMapType::ForeignKeyOnTarget && m_resolvedStrategy.GetStrategy() != ECDbMapStrategy::Strategy::ForeignKeyRelationshipInTargetTable); 
+        return m_sourceColumnsMapping; 
+        }
     RelationshipEndColumns const& GetTargetColumnsMapping() const { BeAssert(m_customMapType != CustomMapType::ForeignKeyOnSource && m_resolvedStrategy.GetStrategy() != ECDbMapStrategy::Strategy::ForeignKeyRelationshipInSourceTable); return m_targetColumnsMapping; }
     bool AllowDuplicateRelationships() const { BeAssert((m_customMapType == CustomMapType::LinkTable || m_customMapType == CustomMapType::None) && !m_resolvedStrategy.IsForeignKeyMapping()); return m_allowDuplicateRelationships; }
 

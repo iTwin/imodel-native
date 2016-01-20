@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/BackDoor/ECDbTestProject.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "PublicAPI/BackDoor/ECDb/ECDbTestProject.h"
@@ -73,7 +73,7 @@ Utf8CP ECDbTestProject::GetECDbPath () const { return GetECDbCR ().GetDbFileName
 //----------------------------------------------------------------------------------
 // @bsimethod                                 Affan.Khan                11/2012
 //+---------------+---------------+---------------+---------------+---------------+-
-DbResult    ECDbTestProject::ReOpen(BeSQLite::EC::ECDb::OpenParams openParams)
+DbResult ECDbTestProject::ReOpen(BeSQLite::EC::ECDb::OpenParams openParams)
     {
     BeAssert(m_ecdb != nullptr);
     if (m_ecdb == nullptr)
@@ -255,15 +255,7 @@ BentleyStatus ECDbTestProject::InsertECInstance (ECInstanceKey& ecInstanceKey, I
 void ECDbTestProject::ImportECInstance (IECInstancePtr ecInstance)
     {
     ECInstanceKey ecInstanceKey;
-    auto status = InsertECInstance (ecInstanceKey, ecInstance);
-    if (ERROR == status)
-        {
-        return;
-        }
-
-    ECInstanceMap::const_iterator it = m_ecInstances.find (ecInstanceKey.GetECInstanceId ());
-    ASSERT_TRUE (it == m_ecInstances.end ()) << "Duplicate instance IDs inserted" << ecInstanceKey.GetECInstanceId ().GetValue () << "for class " << ecInstance->GetClass ().GetName ().c_str () << "\n";
-    m_ecInstances[ecInstanceKey.GetECInstanceId ()] = ecInstance;
+    InsertECInstance (ecInstanceKey, ecInstance);
     }
 
 /*---------------------------------------------------------------------------------**//**

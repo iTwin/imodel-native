@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ClassMapInfo.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -42,7 +42,7 @@ std::unique_ptr<ClassMapInfo> ClassMapInfoFactory::Create(MapStatus& mapStatus, 
 //@bsimethod                                 Affan.Khan                            07/2012
 //+---------------+---------------+---------------+---------------+---------------+------
 ClassMapInfo::ClassMapInfo (ECClassCR ecClass, ECDbMapCR ecDbMap)
-    : m_ecdbMap(ecDbMap), m_ecClass(ecClass), m_isMapToVirtualTable(ecClass.GetClassModifier() == ECClassModifier::Abstract), m_classHasCurrentTimeStampProperty(nullptr), m_isECInstanceIdAutogenerationDisabled (false), m_parentClassMap(nullptr)
+    : m_ecdbMap(ecDbMap), m_ecClass(ecClass), m_isMapToVirtualTable(ecClass.GetClassModifier() == ECClassModifier::Abstract), m_classHasCurrentTimeStampProperty(nullptr), m_parentClassMap(nullptr)
     {}
 
 //---------------------------------------------------------------------------------
@@ -60,6 +60,8 @@ MapStatus ClassMapInfo::Initialize()
         if (SUCCESS != IClassMap::DetermineTableName(m_tableName, m_ecClass))
             return MapStatus::Error;
         }
+    if (m_ecClass.GetName() == "Category")
+        printf("");
 
     if (m_ecInstanceIdColumnName.empty())
         m_ecInstanceIdColumnName = ECDB_COL_ECInstanceId;
@@ -173,12 +175,23 @@ BentleyStatus ClassMapInfo::DoEvaluateMapStrategy(bool& baseClassesNotMappedYet,
             BeAssert(false);
             return ERROR;
             }
-        
-        //use same ECInstanceId column name for derived classes.
-        ECDbSqlColumn const* parentECInstanceIdCol = m_parentClassMap->GetJoinedTable().GetFilteredColumnFirst(ColumnKind::ECInstanceId);
-        if (parentECInstanceIdCol != nullptr)
-            m_ecInstanceIdColumnName.assign(parentECInstanceIdCol->GetName());
+        if (m_ecClass.GetName() == "Category")
+            printf("");
 
+        //use same ECInstanceId column name for derived classes.
+        
+        Utf8CP ecInstanceIdColumn = static_cast<ClassMap const*>(m_parentClassMap)->GetUserSpecifiedECInstanceIdColumnName() == nullptr ?
+            nullptr : static_cast<ClassMap const*>(m_parentClassMap)->GetUserSpecifiedECInstanceIdColumnName()->c_str();
+        
+        if (ecInstanceIdColumn == nullptr)
+            {
+            ECDbSqlColumn const* parentECInstanceIdCol = m_parentClassMap->GetJoinedTable().GetFilteredColumnFirst(ColumnKind::ECInstanceId);
+            ecInstanceIdColumn = parentECInstanceIdCol->GetName().c_str();
+            }
+
+        if (ecInstanceIdColumn != nullptr && (m_ecInstanceIdColumnName.empty() || m_ecInstanceIdColumnName == ECDB_COL_ECInstanceId))
+            m_ecInstanceIdColumnName.assign(ecInstanceIdColumn);
+       
         ECDbMapStrategy::Options options = ECDbMapStrategy::Options::None;
         if (!Enum::Contains(userStrategy.GetOptions(), UserECDbMapStrategy::Options::DisableSharedColumns) && 
             (Enum::Contains(userStrategy.GetOptions(), UserECDbMapStrategy::Options::SharedColumns) ||
@@ -323,7 +336,6 @@ bool ClassMapInfo::ValidateChildStrategy(ECDbMapStrategy const& parentStrategy, 
 BentleyStatus ClassMapInfo::_InitializeFromSchema ()
     {
     if (SUCCESS != InitializeFromClassMapCA() ||
-        SUCCESS != InitializeDisableECInstanceIdAutogeneration() || 
         SUCCESS != InitializeFromClassHasCurrentTimeStampProperty())
         return ERROR;
 
@@ -377,103 +389,99 @@ BentleyStatus ClassMapInfo::InitializeFromClassHasCurrentTimeStampProperty()
 BentleyStatus ClassMapInfo::InitializeFromClassMapCA()
     {
     ECDbClassMap customClassMap;
-    if (!ECDbMapCustomAttributeHelper::TryGetClassMap(customClassMap, m_ecClass))
-        return SUCCESS;
-
-    UserECDbMapStrategy const* userStrategy = m_ecdbMap.GetSchemaImportContext()->GetUserStrategy(m_ecClass, &customClassMap);
-    if (userStrategy == nullptr || !userStrategy->IsValid())
-        return ERROR;
-
-    ECObjectsStatus ecstat = customClassMap.TryGetTableName(m_tableName);
-    if (ECObjectsStatus::Success != ecstat)
-        return ERROR;
-
-    if ((userStrategy->GetStrategy() == UserECDbMapStrategy::Strategy::ExistingTable ||
-        (userStrategy->GetStrategy() == UserECDbMapStrategy::Strategy::SharedTable && !userStrategy->AppliesToSubclasses())))
+    if (ECDbMapCustomAttributeHelper::TryGetClassMap(customClassMap, m_ecClass))
         {
-        if (m_tableName.empty())
-            {
-            LOG.errorv("TableName must not be empty in ClassMap custom attribute on ECClass %s if MapStrategy is 'SharedTable (AppliesToSubclasses)' or if MapStrategy is 'ExistingTable'.",
-                       m_ecClass.GetFullName());
-            return ERROR;
-            }
-        }
-    else
-        {
-        if (!m_tableName.empty())
-            {
-            LOG.errorv("TableName must only be set in ClassMap custom attribute on ECClass %s if MapStrategy is 'SharedTable (AppliesToSubclasses)' or 'ExistingTable'.",
-                       m_ecClass.GetFullName());
-            return ERROR;
-            }
-        }
 
-    ecstat = customClassMap.TryGetECInstanceIdColumn(m_ecInstanceIdColumnName);
-    if (ECObjectsStatus::Success != ecstat)
-        return ERROR;
-
-    bvector<ECDbClassMap::DbIndex> indices;
-    ecstat = customClassMap.TryGetIndexes(indices);
-    if (ECObjectsStatus::Success != ecstat)
-        return ERROR;
-
-    for (ECDbClassMap::DbIndex const& index : indices)
-        {
-        ClassIndexInfoPtr indexInfo = ClassIndexInfo::Create(index);
-        if (indexInfo == nullptr)
+        UserECDbMapStrategy const* userStrategy = m_ecdbMap.GetSchemaImportContext()->GetUserStrategy(m_ecClass, &customClassMap);
+        if (userStrategy == nullptr || !userStrategy->IsValid())
             return ERROR;
 
-        m_dbIndexes.push_back(indexInfo);
-        }
+        ECObjectsStatus ecstat = customClassMap.TryGetTableName(m_tableName);
+        if (ECObjectsStatus::Success != ecstat)
+            return ERROR;
 
-    return SUCCESS;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                 Krischan.Eberle                09/2015
-//+---------------+---------------+---------------+---------------+---------------+------
-bool ClassHasDisableECInstanceIdAutogenerationCA(bool* appliesToSubclasses, ECClassCR ecclass)
-    {
-    if (appliesToSubclasses != nullptr)
-        *appliesToSubclasses = false;
-
-    IECInstancePtr disableECInstanceIdAutoGenerationCA = ecclass.GetCustomAttributeLocal("DisableECInstanceIdAutogeneration");
-    if (disableECInstanceIdAutoGenerationCA != nullptr && appliesToSubclasses != nullptr)
-        {
-        ECValue v;
-        if (ECObjectsStatus::Success != disableECInstanceIdAutoGenerationCA->GetValue(v, "AppliesToSubclasses"))
+        if ((userStrategy->GetStrategy() == UserECDbMapStrategy::Strategy::ExistingTable ||
+            (userStrategy->GetStrategy() == UserECDbMapStrategy::Strategy::SharedTable && !userStrategy->AppliesToSubclasses())))
             {
-            BeAssert(false && "CA DisableECInstanceIdAutogeneration is expected to have a property AppliesToSubclasses");
-            return false;
-            }
-
-        *appliesToSubclasses = v.IsNull() || v.GetBoolean();
-        }
-
-    return disableECInstanceIdAutoGenerationCA != nullptr;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                 Krischan.Eberle                09/2015
-//+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ClassMapInfo::InitializeDisableECInstanceIdAutogeneration()
-    {
-    if (ClassHasDisableECInstanceIdAutogenerationCA(nullptr, m_ecClass))
-        {
-        m_isECInstanceIdAutogenerationDisabled = true;
-        return SUCCESS;
-        }
-
-    for (ECClassCP baseClass : m_ecClass.GetBaseClasses())
-        {
-        bool appliesToSubclasses = false;
-        if (ClassHasDisableECInstanceIdAutogenerationCA(&appliesToSubclasses, *baseClass))
-            {
-            if (appliesToSubclasses)
+            if (m_tableName.empty())
                 {
-                m_isECInstanceIdAutogenerationDisabled = true;
-                return SUCCESS;
+                LOG.errorv("TableName must not be empty in ClassMap custom attribute on ECClass %s if MapStrategy is 'SharedTable (AppliesToSubclasses)' or if MapStrategy is 'ExistingTable'.",
+                    m_ecClass.GetFullName());
+                return ERROR;
                 }
+            }
+        else
+            {
+            if (!m_tableName.empty())
+                {
+                LOG.errorv("TableName must only be set in ClassMap custom attribute on ECClass %s if MapStrategy is 'SharedTable (AppliesToSubclasses)' or 'ExistingTable'.",
+                    m_ecClass.GetFullName());
+                return ERROR;
+                }
+            }
+
+        ecstat = customClassMap.TryGetECInstanceIdColumn(m_ecInstanceIdColumnName);
+        if (ECObjectsStatus::Success != ecstat)
+            return ERROR;
+        }
+    //bvector<ECDbClassMap::DbIndex> indices;
+    //ecstat = customClassMap.TryGetIndexes(indices);
+    //if (ECObjectsStatus::Success != ecstat)
+    //    return ERROR;
+
+    //for (ECDbClassMap::DbIndex const& index : indices)
+    //    {
+    //    ClassIndexInfoPtr indexInfo = ClassIndexInfo::Create(index);
+    //    if (indexInfo == nullptr)
+    //        return ERROR;
+
+    //    m_dbIndexes.push_back(indexInfo);
+    //    }
+
+    if (GetECClass().GetName() == "SpatialElement")
+        printf("");
+
+    auto tryGetBaseClassList = [&] (std::vector<ECDbClassMap>& classMapList)
+        {
+        std::deque<ECClassCP> classes;
+        std::set<ECClassCP> doneList;
+        classes.push_back(&GetECClass());
+
+        while (!classes.empty())
+            {
+            auto head = classes.front();
+            classMapList.push_back(ECDbClassMap());
+            if (!ECDbMapCustomAttributeHelper::TryGetClassMap(classMapList.back(), *head))
+                classMapList.pop_back();
+
+            classes.pop_front();
+            doneList.insert(head);
+            for (auto baseClass : head->GetBaseClasses())
+                {
+                if (doneList.find(baseClass) == doneList.end())
+                    classes.push_back(baseClass);
+                }
+            }
+        return SUCCESS;
+        };
+
+    std::vector<ECDbClassMap> classMapList;
+    tryGetBaseClassList(classMapList);
+
+    for (ECDbClassMap const& classMap : classMapList)
+        {
+        bvector<ECDbClassMap::DbIndex> indices;
+        auto ecstat = classMap.TryGetIndexes(indices);
+        if (ECObjectsStatus::Success != ecstat)
+            return ERROR;
+
+        for (ECDbClassMap::DbIndex const& index : indices)
+            {
+            ClassIndexInfoPtr indexInfo = ClassIndexInfo::Create(index);
+            if (indexInfo == nullptr)
+                return ERROR;
+
+            m_dbIndexes.push_back(indexInfo);
             }
         }
 
@@ -873,25 +881,25 @@ MapStatus RelationshipMapInfo::_EvaluateMapStrategy()
 
             case Cardinality::ManyToOne:
                 {
-                if (m_customMapType == CustomMapType::ForeignKeyOnTarget)
-                    {
-                    LOG.errorv("ECRelationshipClass %s implies a foreign key relationship on the source's table. Therefore the 'End' property in the ForeignKeyRelationshipMap custom attribute must not be set to 'Target'.",
-                               GetECClass().GetFullName());
-                    return MapStatus::Error;
-                    }
+                //if (m_customMapType == CustomMapType::ForeignKeyOnTarget)
+                //    {
+                //    LOG.errorv("ECRelationshipClass %s implies a foreign key relationship on the source's table. Therefore the 'End' property in the ForeignKeyRelationshipMap custom attribute must not be set to 'Target'.",
+                //               GetECClass().GetFullName());
+                //    return MapStatus::Error;
+                //    }
+                //If relationship have abstract end with multiple tables
+                //if (sourceTableCount > 1)
+                //    {
+                //    if (userStrategyIsForeignKeyMapping)
+                //        {
+                //        LOG.errorv("ECRelationshipClass %s implies a link table relationship as the source constraint is mapped to more than one end table.. Therefore it must not have a ForeignKeyRelationshipMap custom attribute.",
+                //                   GetECClass().GetFullName());
+                //        return MapStatus::Error;
+                //        }
 
-                if (sourceTableCount > 1)
-                    {
-                    if (userStrategyIsForeignKeyMapping)
-                        {
-                        LOG.errorv("ECRelationshipClass %s implies a link table relationship as the source constraint is mapped to more than one end table.. Therefore it must not have a ForeignKeyRelationshipMap custom attribute.",
-                                   GetECClass().GetFullName());
-                        return MapStatus::Error;
-                        }
-
-                    resolvedStrategy = ECDbMapStrategy::Strategy::OwnTable;
-                    }
-                else
+                //    resolvedStrategy = ECDbMapStrategy::Strategy::OwnTable;
+                //    }
+                //else
                     resolvedStrategy = ECDbMapStrategy::Strategy::ForeignKeyRelationshipInSourceTable;
 
                 break;

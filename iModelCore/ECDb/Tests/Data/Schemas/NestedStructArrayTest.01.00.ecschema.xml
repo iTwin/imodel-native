@@ -1,84 +1,83 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
-<ECSchema schemaName="NestedStructArrayTest" nameSpacePrefix="nsat" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
-    <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="01.00" prefix="bsca" />
-    <ECSchemaReference name="ECDbMap" version="01.00" prefix="ecdbmap" />
+<?xml version="1.0" encoding="UTF-8"?>
+<ECSchema schemaName="NestedStructArrayTest" nameSpacePrefix="nsat" version="01.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.0">
+    <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="01.12" prefix="bsca"/>
+    <ECSchemaReference name="ECDbMap" version="01.00" prefix="ecdbmap"/>
     <ECCustomAttributes>
-        <SchemaChangeTrackingState xmlns="Bentley_Standard_CustomAttributes.01.00">
-            <FinalizationHistory />
-            <TrackingEnabled>True</TrackingEnabled>
+        <SchemaChangeTrackingState xmlns="Bentley_Standard_CustomAttributes.01.12">
             <SchemaFullNameAtEditingStart>NestedStructArrayTest.01.00</SchemaFullNameAtEditingStart>
+            <TrackingEnabled>True</TrackingEnabled>
         </SchemaChangeTrackingState>
     </ECCustomAttributes>
-    <ECClass typeName="ClassA" isDomainClass="True">
-        <ECProperty propertyName="I" typeName="int" />
-        <ECProperty propertyName="T" typeName="string" />
-    </ECClass>
-    <ECClass typeName="S4" isStruct="True">
-        <ECProperty propertyName="T" typeName="string" />
-        <ECProperty propertyName="I" typeName="int" />
-        <ECProperty propertyName="P3D" typeName="point3d" />
-    </ECClass>
-    <ECClass typeName="S3" isStruct="True">
-        <ECProperty propertyName="T" typeName="string" />
-        <ECProperty propertyName="I" typeName="int" />
-        <ECProperty propertyName="P3D" typeName="point3d" />
-        <ECArrayProperty propertyName="S4ARRAY" typeName="S4" minOccurs="0" maxOccurs="unbounded" isStruct="True" />
-    </ECClass>
-    <ECClass typeName="S2" isStruct="True">
-        <ECProperty propertyName="T" typeName="string" />
-        <ECProperty propertyName="I" typeName="int" />
-        <ECProperty propertyName="P3D" typeName="point3d" />
-        <ECArrayProperty propertyName="S3ARRAY" typeName="S3" minOccurs="0" maxOccurs="unbounded" isStruct="True" />
-    </ECClass>
-    <ECClass typeName="S1" isStruct="True">
-        <ECProperty propertyName="T" typeName="string" />
-        <ECProperty propertyName="I" typeName="int" />
-        <ECProperty propertyName="P3D" typeName="point3d" />
-        <ECArrayProperty propertyName="S2ARRAY" typeName="S2" minOccurs="0" maxOccurs="unbounded" isStruct="True" />
-    </ECClass>
-    <ECClass typeName="DerivedA" isDomainClass="True">
+    <ECEntityClass typeName="ClassA" modifier="None">
+        <ECProperty propertyName="I" typeName="int" readOnly="false"/>
+        <ECProperty propertyName="T" typeName="string" readOnly="false"/>
+    </ECEntityClass>
+    <ECStructClass typeName="S4" modifier="None">
+        <ECProperty propertyName="T" typeName="string" readOnly="false"/>
+        <ECProperty propertyName="I" typeName="int" readOnly="false"/>
+        <ECProperty propertyName="P3D" typeName="point3d" readOnly="false"/>
+    </ECStructClass>
+    <ECStructClass typeName="S3" modifier="None">
+        <ECProperty propertyName="T" typeName="string" readOnly="false"/>
+        <ECProperty propertyName="I" typeName="int" readOnly="false"/>
+        <ECProperty propertyName="P3D" typeName="point3d" readOnly="false"/>
+        <ECStructArrayProperty propertyName="S4ARRAY" typeName="S4" readOnly="false" minOccurs="0" maxOccurs="unbounded"/>
+    </ECStructClass>
+    <ECStructClass typeName="S2" modifier="None">
+        <ECProperty propertyName="T" typeName="string" readOnly="false"/>
+        <ECProperty propertyName="I" typeName="int" readOnly="false"/>
+        <ECProperty propertyName="P3D" typeName="point3d" readOnly="false"/>
+        <ECStructArrayProperty propertyName="S3ARRAY" typeName="S3" readOnly="false" minOccurs="0" maxOccurs="unbounded"/>
+    </ECStructClass>
+    <ECStructClass typeName="S1" modifier="None">
+        <ECProperty propertyName="T" typeName="string" readOnly="false"/>
+        <ECProperty propertyName="I" typeName="int" readOnly="false"/>
+        <ECProperty propertyName="P3D" typeName="point3d" readOnly="false"/>
+        <ECStructArrayProperty propertyName="S2ARRAY" typeName="S2" readOnly="false" minOccurs="0" maxOccurs="unbounded"/>
+    </ECStructClass>
+    <ECEntityClass typeName="DerivedA" modifier="None">
         <BaseClass>ClassA</BaseClass>
-        <ECArrayProperty propertyName="S1ARRAY" typeName="S1" minOccurs="0" maxOccurs="unbounded" isStruct="True" />
-    </ECClass>
-    <ECRelationshipClass typeName="BaseHasDerivedA" isDomainClass="True" strength="referencing" strengthDirection="forward">
+        <ECStructArrayProperty propertyName="S1ARRAY" typeName="S1" readOnly="false" minOccurs="0" maxOccurs="unbounded"/>
+    </ECEntityClass>
+    <ECRelationshipClass typeName="BaseHasDerivedA" modifier="None" strength="referencing" strengthDirection="forward">
         <ECCustomAttributes>
-            <LinkTableRelationshipMap xmlns="ECDbMap.01.00" />
+            <LinkTableRelationshipMap xmlns="ECDbMap.01.00"/>
         </ECCustomAttributes>
-        <Source cardinality="(0,1)" polymorphic="True">
-            <Class class="ClassA" />
+        <Source cardinality="(0,1)" polymorphic="true">
+            <Class class="ClassA"/>
         </Source>
-        <Target cardinality="(0,N)" polymorphic="True">
-            <Class class="DerivedA" />
+        <Target cardinality="(0,N)" polymorphic="true">
+            <Class class="DerivedA"/>
         </Target>
     </ECRelationshipClass>
-    <ECClass typeName="ClassP" isDomainClass="True">
-        <ECArrayProperty propertyName="S1ARRAY" typeName="S1" minOccurs="0" maxOccurs="unbounded" isStruct="True" />
-        <ECProperty propertyName="T" typeName="string" />
-        <ECProperty propertyName="I" typeName="int" />
-    </ECClass>
-    <ECClass typeName="DerivedB" isDomainClass="True">
+    <ECEntityClass typeName="ClassP" modifier="None">
+        <ECStructArrayProperty propertyName="S1ARRAY" typeName="S1" readOnly="false" minOccurs="0" maxOccurs="unbounded"/>
+        <ECProperty propertyName="T" typeName="string" readOnly="false"/>
+        <ECProperty propertyName="I" typeName="int" readOnly="false"/>
+    </ECEntityClass>
+    <ECEntityClass typeName="DerivedB" modifier="None">
         <BaseClass>ClassA</BaseClass>
-    </ECClass>
-    <ECClass typeName="DoubleDerivedB" isDomainClass="True">
+    </ECEntityClass>
+    <ECEntityClass typeName="DoubleDerivedB" modifier="None">
         <BaseClass>DerivedB</BaseClass>
-    </ECClass>
-    <ECClass typeName="DoubleDerivedA" isDomainClass="True">
+    </ECEntityClass>
+    <ECEntityClass typeName="DoubleDerivedA" modifier="None">
         <BaseClass>DerivedB</BaseClass>
-        <ECArrayProperty propertyName="S1ARRAY" typeName="S1" minOccurs="0" maxOccurs="unbounded" isStruct="True" />
-    </ECClass>
-    <ECRelationshipClass typeName="DerivedBOwnsChilds" isDomainClass="True" strength="referencing" strengthDirection="forward">
+        <ECStructArrayProperty propertyName="S1ARRAY" typeName="S1" readOnly="false" minOccurs="0" maxOccurs="unbounded"/>
+    </ECEntityClass>
+    <ECRelationshipClass typeName="DerivedBOwnsChilds" modifier="None" strength="referencing" strengthDirection="forward">
         <ECCustomAttributes>
-            <LinkTableRelationshipMap xmlns="ECDbMap.01.00" />
+            <LinkTableRelationshipMap xmlns="ECDbMap.01.00"/>
         </ECCustomAttributes>
-        <Source cardinality="(0,1)" polymorphic="True">
-            <Class class="DerivedB" />
+        <Source cardinality="(0,1)" polymorphic="true">
+            <Class class="DerivedB"/>
         </Source>
-        <Target cardinality="(0,N)" polymorphic="True">
-            <Class class="DoubleDerivedB" />
-            <Class class="DoubleDerivedA" />
+        <Target cardinality="(0,N)" polymorphic="true">
+            <Class class="DoubleDerivedB"/>
+            <Class class="DoubleDerivedA"/>
         </Target>
     </ECRelationshipClass>
-    <ECClass typeName="DoubleDerivedC" isDomainClass="True">
+    <ECEntityClass typeName="DoubleDerivedC" modifier="None">
         <BaseClass>DerivedA</BaseClass>
-    </ECClass>
+    </ECEntityClass>
 </ECSchema>

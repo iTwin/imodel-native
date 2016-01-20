@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/ECJsonUtility.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -225,6 +225,11 @@ StatusInt ECJsonCppUtility::ECInstanceFromJsonValue (IECInstanceR instance, cons
                 status = ERROR;
                 continue;
                 }
+            }
+        else if (ecProperty->GetIsNavigation())
+            {
+            //WIP_NAVPROP Not implemented yet
+            continue;
             }
         }
 
@@ -480,6 +485,11 @@ StatusInt ECRapidJsonUtility::ECInstanceFromJsonValue (ECN::IECInstanceR instanc
             {
             if (SUCCESS != ECArrayValueFromJsonValue (instance, it->value, *propertyP->GetAsArrayProperty(), accessString))
                 status = ERROR;
+            }
+        else if (propertyP->GetIsNavigation())
+            {
+            //WIP_NAVPROP Not implemented yet
+            continue;
             }
         }
 

@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/EmbeddedECSqlStatement.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -61,7 +61,7 @@ struct JoinTableECSqlStatement: public ECSqlStatementBase
             {
             return m_ecInstanceIdBinder;
             }
-        JoinTableECSqlStatement(ECN::ECClassId joinTableClassId): ECSqlStatementBase(), m_jointTableClassId(joinTableClassId), m_ecInstanceIdBinder(nullptr) {}
+        explicit JoinTableECSqlStatement(ECN::ECClassId joinTableClassId): ECSqlStatementBase(), m_jointTableClassId(joinTableClassId), m_ecInstanceIdBinder(nullptr) {}
         ~JoinTableECSqlStatement() {}
     };
 END_BENTLEY_SQLITE_EC_NAMESPACE

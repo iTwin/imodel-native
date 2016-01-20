@@ -44,7 +44,6 @@ ECDbAllHeaders = \
                 $(baseDir)ColumnInfo.h \
                 $(baseDir)ECDbMap.h \
                 $(baseDir)ClassMap.h \
-                $(baseDir)ClassMapFactory.h \
                 $(baseDir)ClassMapSubclasses.h \
                 $(baseDir)RelationshipClassMap.h \
                 $(baseDir)PropertyMap.h \
@@ -169,8 +168,6 @@ $(o)MapStrategy$(oext):									    $(baseDir)MapStrategy.cpp                   
 $(o)ClassMapInfo$(oext):									$(baseDir)ClassMapInfo.cpp                  $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)ClassMap$(oext):										$(baseDir)ClassMap.cpp                      $(ECDbAllHeaders) ${MultiCompileDepends}
-
-$(o)ClassMapFactory$(oext):									$(baseDir)ClassMapFactory.cpp               $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)ClassMapSubclasses$(oext):								$(baseDir)ClassMapSubclasses.cpp            $(ECDbAllHeaders) ${MultiCompileDepends}
 
@@ -339,8 +336,6 @@ $(o)StructArrayToSecondaryTableECSqlBinder$(oext):          $(baseDir)ECSql/Stru
 $(o)SystemPropertyECSqlBinder$(oext):                       $(baseDir)ECSql/SystemPropertyECSqlBinder.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)ECSqlParseTreeFormatter$(oext):                         $(baseDir)ECSql/ECSqlParseTreeFormatter.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
-
-#Fields
 
 $(o)ECSqlField$(oext):                                      $(baseDir)ECSql/ECSqlField.cpp              $(ECDbAllHeaders) ${MultiCompileDepends}
 

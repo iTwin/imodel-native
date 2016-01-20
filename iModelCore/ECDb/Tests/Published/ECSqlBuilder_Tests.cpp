@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/Published/ECSqlBuilder_Tests.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPublishedTests.h"
@@ -411,8 +411,8 @@ TEST (ECSqlBuilderTests, ECSqlSelectBuilder_ToString)
     EXPECT_STREQ ("SELECT p.I, p.S FROM ONLY [ECSqlTest].[PSA] p JOIN ONLY [ECSqlTest].[PSA] c USING [ECSqlTest].[PSAHasPSA] FORWARD", builder.ToString ().c_str ());
 
     builder = ECSqlSelectBuilder ();
-    builder.Select ("p.I, p.S").From (*psaClass, "p", false).Join (*psaClass, "c", false).Using (*psaHasPsaRelClass, JoinDirection::Reverse);
-    EXPECT_STREQ ("SELECT p.I, p.S FROM ONLY [ECSqlTest].[PSA] p JOIN ONLY [ECSqlTest].[PSA] c USING [ECSqlTest].[PSAHasPSA] REVERSE", builder.ToString ().c_str ());
+    builder.Select ("p.I, p.S").From (*psaClass, "p", false).Join (*psaClass, "c", false).Using (*psaHasPsaRelClass, JoinDirection::Backward);
+    EXPECT_STREQ ("SELECT p.I, p.S FROM ONLY [ECSqlTest].[PSA] p JOIN ONLY [ECSqlTest].[PSA] c USING [ECSqlTest].[PSAHasPSA] BACKWARD", builder.ToString ().c_str ());
 
     builder = ECSqlSelectBuilder ();
     builder.Select ("p.I, p.S").From (*psaClass, "p", false).Join (*psaClass, "c", false).Using (*psaHasPRelClass).Where ("c.ECInstanceId = ? AND p.S LIKE 'ma%'");

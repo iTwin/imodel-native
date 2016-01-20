@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/ECSqlStatement.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -15,7 +15,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle   06/2013
 //---------------------------------------------------------------------------------------
-ECSqlStatement::ECSqlStatement () : m_pimpl (new ECSqlStatement::Impl ()) {}
+ECSqlStatement::ECSqlStatement() : m_pimpl (new ECSqlStatement::Impl()) {}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Affan.Khan      06/2013

@@ -17,11 +17,9 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        05/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECDbSchemaManager::ECDbSchemaManager (ECDbR ecdb, ECDbMapR map)
-    :m_ecdb (ecdb), m_map (map)
+ECDbSchemaManager::ECDbSchemaManager (ECDbR ecdb, ECDbMapR map) :m_ecdb (ecdb), m_map (map)
     {
     m_ecReader = ECDbSchemaReader::Create(ecdb);
-    m_ecImporter= ECDbSchemaWriter::Create(ecdb);
     }
 
 //---------------------------------------------------------------------------------------
@@ -137,7 +135,7 @@ ECSchemaCacheR cache,
 ImportOptions const& options
 ) const
     {
-    SchemaImportContext context (m_map.GetSQLManagerR().GetDbSchemaR());
+    SchemaImportContext context (m_map.GetSQLManager().GetDbSchemaR());
     if (SUCCESS != context.Initialize())
         return ERROR;
 
@@ -165,9 +163,7 @@ ImportOptions const& options
     if (MapStatus::Error == m_map.MapSchemas (context, importedSchemas, !diffs.empty ()))
         return ERROR;
 
-    //Clear cache in case we have diffs
-    if (!diffs.empty())
-        m_ecdb.ClearECDbCache();
+    m_ecdb.ClearECDbCache();
 
     timer.Stop();
     LOG.infov("Imported ECSchemas in %.4f msecs.",  timer.GetElapsedSeconds() * 1000.0);
@@ -273,6 +269,7 @@ BentleyStatus ECDbSchemaManager::BatchImportOrUpdateECSchemas (SchemaImportConte
     if (!isValid)
         return ERROR;
 
+    ECDbSchemaWriter schemaWriter(m_ecdb);
     for (ECSchemaCP schema : dependencyOrderedPrimarySchemas)
         {
         importedSchemas.push_back(schema);
@@ -291,25 +288,13 @@ BentleyStatus ECDbSchemaManager::BatchImportOrUpdateECSchemas (SchemaImportConte
                 diffs.push_back(diff);
             }
         else
-            if (SUCCESS != ImportECSchema(*schema))
+            if (SUCCESS != schemaWriter.Import(*schema))
                 return ERROR;
         }
 
     if (!diffs.empty ())
         ClearCache ();
 
-    return SUCCESS;
-    }
-
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                   Affan.Khan        05/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ECDbSchemaManager::ImportECSchema(ECSchemaCR ecSchema) const
-    {
-    if (SUCCESS != m_ecImporter->Import(ecSchema))
-        return ERROR;
-
-    m_ecReader->AddECSchemaToCache(ecSchema);
     return SUCCESS;
     }
 
@@ -372,11 +357,7 @@ ECSchemaCP ECDbSchemaManager::GetECSchema (Utf8CP schemaName, bool ensureAllClas
     if (0 == schemaId)
         return nullptr;
 
-    ECSchemaP schema = nullptr;
-    if (m_ecReader->GetECSchema(schema, schemaId, ensureAllClassesLoaded) == SUCCESS)
-        return schema;
-    else
-        return nullptr;
+    return GetECSchema(schemaId, ensureAllClassesLoaded);
     }
 
 /*---------------------------------------------------------------------------------------
@@ -384,11 +365,7 @@ ECSchemaCP ECDbSchemaManager::GetECSchema (Utf8CP schemaName, bool ensureAllClas
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECSchemaCP ECDbSchemaManager::GetECSchema (ECSchemaId schemaId, bool ensureAllClassesLoaded) const
     {
-    ECSchemaP schema = nullptr;
-    if (m_ecReader->GetECSchema(schema, schemaId, ensureAllClassesLoaded) == SUCCESS)
-        return schema;
-    else
-        return nullptr;
+    return m_ecReader->GetECSchema(schemaId, ensureAllClassesLoaded);
     }
 
 /*---------------------------------------------------------------------------------------
@@ -495,14 +472,15 @@ ECSchemaPtr ECDbSchemaManager::_LocateSchema (SchemaKeyR key, SchemaMatchType ma
     if (0 == schemaId)
         return nullptr;
 
-    ECSchemaP schema = nullptr;
-    if (m_ecReader->GetECSchema(schema, schemaId, true) != SUCCESS)
+    ECSchemaCP schema = m_ecReader->GetECSchema(schemaId, true);
+    if (schema == nullptr)
         return nullptr;
 
     if (schema->GetSchemaKey ().Matches (key, matchType))
         {
-        schemaContext.GetCache ().AddSchema (*schema);
-        return schema;
+        ECSchemaP schemaP = const_cast<ECSchemaP> (schema);
+        schemaContext.GetCache ().AddSchema (*schemaP);
+        return schemaP;
         }
 
     return nullptr;

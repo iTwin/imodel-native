@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ClassMap.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -13,6 +13,32 @@
 #include <Bentley/NonCopyableClass.h>
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
+
+//=======================================================================================
+// @bsiclass                                                Krischan.Eberle      01/2016
+//+===============+===============+===============+===============+===============+======
+struct ClassMapLoadContext : NonCopyableClass
+    {
+private:
+    std::set<ECN::ECClassCP> m_constraintClasses;
+    std::vector<NavigationPropertyMap*> m_navPropMaps;
+    
+public:
+    ClassMapLoadContext() {}
+
+    void AddConstraintClass(ECN::ECClassCR ecClass) 
+        { 
+        //LOG.debugv("ClassMapLoadContext> Added ECRelationshipConstraint ECClass '%s' to context %p.", ecClass.GetFullName(), this);
+        m_constraintClasses.insert(&ecClass);
+        }
+    void AddNavigationPropertyMap(NavigationPropertyMap& propMap) 
+        { 
+        //LOG.debugv("ClassMapLoadContext> Added NavPropMap '%s.%s' to context %p.",propMap.GetProperty().GetClass().GetFullName(), propMap.GetProperty().GetName().c_str(), this);
+        m_navPropMaps.push_back(&propMap); 
+        }
+
+    BentleyStatus Postprocess(ECDbMapCR) const;
+    };
 
 
 struct NativeSqlBuilder;
@@ -92,8 +118,6 @@ struct PropertyMapSet : NonCopyableClass
         static BentleyStatus AddSystemEndPoint (PropertyMapSet& propertySet, IClassMap const& classMap, ColumnKind, ECN::ECValueCR value, ECDbSqlColumn const* column = nullptr);
         static PropertyMapSet::Ptr Create (IClassMap const& classMap);
     };
-
-
 
 //=======================================================================================
 //! Maps an ECClass to a DbTable
@@ -195,6 +219,7 @@ public:
     static BentleyStatus DetermineTableName(Utf8StringR tableName, ECN::ECClassCR, Utf8CP tablePrefix = nullptr);
     static BentleyStatus DetermineTablePrefix(Utf8StringR tablePrefix, ECN::ECClassCR);
     static bool IsAnyClass (ECN::ECClassCR);
+    virtual bool SupportECSql(ECSqlType ecsqlType, Utf8StringP reason = nullptr) const { BeAssert(false); return false;}
     };
 
 //======================================================================================
@@ -266,7 +291,7 @@ struct ColumnFactory : NonCopyableClass
         BentleyStatus ResolveColumnName (Utf8StringR resolvedColumName, Specification const&, ECDbSqlTable& targetTable, ECN::ECClassId propertyLocalToClassId, int retryCount) const;
         ECDbSqlColumn* ApplyCreateStrategy (Specification const&, ECDbSqlTable& targetTable, ECN::ECClassId propertyLocalToClassId);
         ECDbSqlColumn* ApplyCreateOrReuseStrategy (Specification const&, ECDbSqlTable& targetTable, ECN::ECClassId propertyLocalToClassId);
-        ECDbSqlColumn* ApplyCreateOrReuseSharedColumnStrategy (SchemaImportContext*, Specification const&, ECDbSqlTable& targetTable, ECN::ECClassId propertyLocalToClassId);
+        ECDbSqlColumn* ApplyCreateOrReuseSharedColumnStrategy (Specification const&, ECDbSqlTable& targetTable, ECN::ECClassId propertyLocalToClassId);
         ECN::ECClassId GetPersistenceClassId (Specification const&) const;
         bool TryFindReusableSharedDataColumn (ECDbSqlColumn const*& reusableColumn, ECDbSqlTable const& table, ECDbSqlColumn::Constraint::Collation collation = ECDbSqlColumn::Constraint::Collation::Default) const;
         bool IsColumnInUse (Utf8CP columnFullName) const;
@@ -281,8 +306,8 @@ struct ColumnFactory : NonCopyableClass
         void RegisterColumnInUse (ECDbSqlColumn const&);
         void Reset ();
         void Update ();
-        ECDbSqlColumn* Configure (SchemaImportContext*, Specification const&, ECDbSqlTable&);
-        ECDbSqlColumn* Configure (SchemaImportContext*, Specification const&);
+        ECDbSqlColumn* Configure (Specification const&, ECDbSqlTable&);
+        ECDbSqlColumn* Configure (Specification const& specs);
     };
 //=======================================================================================
 //!Maps an ECClass to a DbTable
@@ -303,9 +328,10 @@ struct ClassMap : public IClassMap, RefCountedBase
         ECN::ECClassId              m_parentMapClassId;
         std::unique_ptr<ClassDbView> m_dbView;
         ColumnFactory               m_columnFactory;
-
+        std::unique_ptr<Utf8String> m_userSpecifiedECInstanceIdColumnName;
     private:
         BentleyStatus ProcessStandardKeySpecifications(SchemaImportContext&, ClassMapInfo const&);
+        BentleyStatus InitializeDisableECInstanceIdAutogeneration();
 
         //! Used to find an ECProperty from a propertyAccessString
         //! @param propertyAccessString (as used here) does not support access "inside" arrays, e.g. you can access a struct member inside an array of structs
@@ -315,13 +341,15 @@ struct ClassMap : public IClassMap, RefCountedBase
         virtual Type _GetClassMapType() const override;
 
     protected:
-        ClassMap(ECN::ECClassCR ecClass, ECDbMapCR ecDbMap, ECDbMapStrategy mapStrategy, bool setIsDirty);
+        ClassMap(ECN::ECClassCR, ECDbMapCR, ECDbMapStrategy, bool setIsDirty);
 
-        virtual MapStatus _InitializePart1(SchemaImportContext*, ClassMapInfo const& classMapInfo, IClassMap const* parentClassMap);
-        virtual MapStatus _InitializePart2(SchemaImportContext*, ClassMapInfo const& classMapInfo, IClassMap const* parentClassMap);
-        virtual BentleyStatus _Save(std::set<ClassMap const*>& savedGraph); virtual BentleyStatus _Load(std::set<ClassMap const*>& loadGraph, ECDbClassMapInfo const& mapInfo, IClassMap const* parentClassMap);
+        virtual MapStatus _MapPart1(SchemaImportContext&, ClassMapInfo const&, IClassMap const* parentClassMap);
+        virtual MapStatus _MapPart2(SchemaImportContext&, ClassMapInfo const&, IClassMap const* parentClassMap);
+        virtual BentleyStatus _Load(std::set<ClassMap const*>& loadGraph, ClassMapLoadContext&, ECDbClassMapInfo const&, IClassMap const* parentClassMap);
+        virtual BentleyStatus _Save(std::set<ClassMap const*>& savedGraph); 
+        
 
-        MapStatus AddPropertyMaps(SchemaImportContext*, IClassMap const* parentClassMap, ECDbClassMapInfo const* loadInfo, ClassMapInfo const* classMapInfo);
+        MapStatus AddPropertyMaps(ClassMapLoadContext&, IClassMap const* parentClassMap, ECDbClassMapInfo const* loadInfo, ClassMapInfo const* classMapInfo);
         void SetTable(ECDbSqlTable& newTable, bool append = false)
             {
             if (!append)
@@ -342,11 +370,17 @@ struct ClassMap : public IClassMap, RefCountedBase
         ECDbSchemaManagerCR Schemas() const;
     public:
         static ClassMapPtr Create(ECN::ECClassCR ecClass, ECDbMapCR ecdbMap, ECDbMapStrategy mapStrategy, bool setIsDirty) { return new ClassMap(ecClass, ecdbMap, mapStrategy, setIsDirty); }
-        MapStatus Initialize(SchemaImportContext*, ClassMapInfo const& classMapInfo);
+        
+        //! Called when loading an existing class map from the ECDb file 
+        BentleyStatus Load(std::set<ClassMap const*>& loadGraph, ClassMapLoadContext& ctx, ECDbClassMapInfo const& mapInfo, IClassMap const* parentClassMap) { return _Load(loadGraph, ctx, mapInfo, parentClassMap); }
 
-        ECDbSqlColumn* FindOrCreateColumnForProperty(SchemaImportContext*, ClassMapCR classMap, ClassMapInfo const* classMapInfo, PropertyMapR propertyMap,
-                                                     Utf8CP requestedColumnName, ECN::PrimitiveType primitiveType, bool nullable, bool unique, ECDbSqlColumn::Constraint::Collation, Utf8CP accessStringPrefix);
+        //! Called during schema import when creating the class map from the imported ECClass 
+        MapStatus Map(SchemaImportContext&, ClassMapInfo const& classMapInfo);
 
+        ECDbSqlColumn* FindOrCreateColumnForProperty(ClassMapCR, ClassMapInfo const*, PropertyMapR,
+                                                     Utf8CP requestedColumnName, ECN::PrimitiveType, bool nullable, bool unique, ECDbSqlColumn::Constraint::Collation, Utf8CP accessStringPrefix);
+
+        Utf8StringCP GetUserSpecifiedECInstanceIdColumnName() const {return m_userSpecifiedECInstanceIdColumnName.get(); }
         PropertyMapCP GetECInstanceIdPropertyMap() const;
         bool TryGetECInstanceIdPropertyMap(PropertyMapPtr& ecIstanceIdPropertyMap) const;
 
@@ -356,10 +390,10 @@ struct ClassMap : public IClassMap, RefCountedBase
         ECDbClassMapId GetId() const { return m_id; }
         void SetId(ECDbClassMapId id) { m_id = id; }
         BentleyStatus Save(std::set<ClassMap const*>& savedGraph) { return _Save(savedGraph); }
-        BentleyStatus Load(std::set<ClassMap const*>& loadGraph, ECDbClassMapInfo const& mapInfo, IClassMap const*  parentClassMap) { return _Load(loadGraph, mapInfo, parentClassMap); }
 
         ColumnFactory const& GetColumnFactory() const { return m_columnFactory; }
         ColumnFactory& GetColumnFactoryR() { return m_columnFactory; }
+
     };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

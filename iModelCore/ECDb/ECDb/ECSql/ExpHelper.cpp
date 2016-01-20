@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/ExpHelper.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -84,7 +84,7 @@ Utf8CP ExpHelper::ToECSql (JoinDirection direction)
     switch (direction)
         {
         case JoinDirection::Forward: return "FORWARD";
-        case JoinDirection::Reverse: return "REVERSE";
+        case JoinDirection::Backward: return "BACKWARD";
         case JoinDirection::Implied: return "";
         }
     BeAssert(false && "unhandled case");

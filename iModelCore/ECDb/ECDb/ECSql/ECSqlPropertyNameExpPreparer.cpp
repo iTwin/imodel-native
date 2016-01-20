@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/ECSqlPropertyNameExpPreparer.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -48,15 +48,32 @@ ECSqlStatus ECSqlPropertyNameExpPreparer::Prepare(NativeSqlBuilder::List& native
 
     PropertyMap const& propMap = exp->GetPropertyMap();
     ECSqlPrepareContext::ExpScope const& currentScope = ctx.GetCurrentScope();
-    if (!NeedsPreparation(currentScope, propMap))
-        return ECSqlStatus::Success;
 
-
-    const ECSqlType currentScopeECSqlType = currentScope.GetECSqlType();
-    //in SQLite table aliases are only allowed for SELECT statements
-    Utf8String classIdentifier = nullptr;
-    auto resolveClassIdentifier = [&] () 
+    NavigationPropertyMap const* navPropMap = propMap.GetAsNavigationPropertyMap();
+    if (navPropMap != nullptr)
         {
+        if (!navPropMap->IsSupportedInECSql(true, &ctx.GetECDb()))
+            return ECSqlStatus::InvalidECSql;
+        }
+    else
+        {
+        if (!NeedsPreparation(currentScope, propMap))
+            return ECSqlStatus::Success;
+        }
+
+    //in SQLite table aliases are only allowed for SELECT statements
+    const ECSqlType currentScopeECSqlType = currentScope.GetECSqlType();
+
+    Utf8String classIdentifier = nullptr;
+    if (currentScopeECSqlType == ECSqlType::Select)
+        {
+        classIdentifier.assign(exp->GetClassRefExp()->GetId());
+        }
+    else if (currentScopeECSqlType == ECSqlType::Delete)
+        {
+        if (!ctx.GetCurrentScope().GetExtendedOption(ECSqlPrepareContext::ExpScope::ExtendOptions::SkipTableAliasWhenPreparingDeleteWhereClause))
+            classIdentifier.assign(exp->GetPropertyMap().GetFirstColumn()->GetTable().GetName());
+
         if (exp->GetClassRefExp()->GetType() == Exp::Type::ClassName)
             {
             IClassMap const& classMap = static_cast<ClassNameExp const*>(exp->GetClassRefExp())->GetInfo().GetMap();
@@ -71,26 +88,10 @@ ECSqlStatus ECSqlPropertyNameExpPreparer::Prepare(NativeSqlBuilder::List& native
                     return ECSqlStatus::Error;
                     }
 
-                classIdentifier = classMap.GetPersistedViewName().c_str();
+                classIdentifier.assign(classMap.GetPersistedViewName());
                 }
             }
-
-        return ECSqlStatus::Success;
-        };
-
-    if (currentScopeECSqlType == ECSqlType::Select)
-        {
-        classIdentifier = exp->GetClassRefExp()->GetId().c_str();
         }
-    else if (currentScopeECSqlType == ECSqlType::Delete)
-        {
-        if (!ctx.GetCurrentScope().GetExtendedOption(ECSqlPrepareContext::ExpScope::ExtendOptions::SkipTableAliasWhenPreparingDeleteWhereClause))
-            classIdentifier = exp->GetPropertyMap().GetFirstColumn()->GetTable().GetName().c_str();
-
-        if (resolveClassIdentifier() != ECSqlStatus::Success)
-            return ECSqlStatus::Error;
-        }
-
 
     NativeSqlBuilder::List propNameNativeSqlSnippets = exp->GetPropertyMap().ToNativeSql((classIdentifier.empty()? nullptr : classIdentifier.c_str()), currentScopeECSqlType, exp->HasParentheses());
     nativeSqlSnippets.insert(nativeSqlSnippets.end(), propNameNativeSqlSnippets.begin(), propNameNativeSqlSnippets.end());
@@ -102,19 +103,19 @@ ECSqlStatus ECSqlPropertyNameExpPreparer::Prepare(NativeSqlBuilder::List& native
 // @bsimethod                                    Krischan.Eberle                    01/2014
 //+---------------+---------------+---------------+---------------+---------------+--------
 //static
-bool ECSqlPropertyNameExpPreparer::NeedsPreparation (ECSqlPrepareContext::ExpScope const& currentScope, PropertyMapCR propertyMap)
+bool ECSqlPropertyNameExpPreparer::NeedsPreparation(ECSqlPrepareContext::ExpScope const& currentScope, PropertyMapCR propertyMap)
     {
-    const auto currentScopeECSqlType = currentScope.GetECSqlType ();
+    const auto currentScopeECSqlType = currentScope.GetECSqlType();
 
     //Property maps to virtual column which can mean that the exp doesn't need to be translated.
-    if (propertyMap.IsVirtual () || (!propertyMap.IsMappedToPrimaryTable() && currentScopeECSqlType != ECSqlType::Select))
+    PropertyMapRelationshipConstraintClassId const* constraintClassIdPropMap = propertyMap.GetAsPropertyMapRelationshipConstraintClassId();
+    if (propertyMap.IsVirtual() || (constraintClassIdPropMap != nullptr && !constraintClassIdPropMap->IsMappedToClassMapTables() && currentScopeECSqlType != ECSqlType::Select))
         {
         //In INSERT statements, virtual columns are always ignored
         if (currentScopeECSqlType == ECSqlType::Insert)
             return false;
 
-        const auto expType = currentScope.GetExp ().GetType ();
-        switch (expType)
+        switch (currentScope.GetExp().GetType())
             {
                 case Exp::Type::AssignmentList: //UPDATE SET clause
                 case Exp::Type::OrderBy:

@@ -1646,7 +1646,7 @@ TEST_F(ECDbMappingTestFixture, RelationshipKeyPropertiesWithMultipleConstraints)
                                 "</ECSchema>");
 
             ECDb ecdb;
-            bool asserted = false;
+            bool asserted = true;
             AssertSchemaImport(ecdb, asserted, testItem, "ecrelationshipkeyproperties.ecdb");
             ASSERT_FALSE(asserted);
 
@@ -1785,7 +1785,7 @@ TEST_F(ECDbMappingTestFixture, RelationshipKeyPropertiesWithMultipleConstraints)
                                              "      </Class>"
                                              "    </Target>"
                                              "  </ECRelationshipClass>"
-                                             "</ECSchema>", false, "Multiple Key properties not pointing to the same property is not expected to work"));
+                                             "</ECSchema>", true, "Multiple Key properties not pointing to the same property is not expected to work"));
 
             testSchemas.push_back(SchemaItem("<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
                                 "  <ECSchemaReference name = 'Bentley_Standard_CustomAttributes' version = '01.11' prefix = 'bsca' />"
@@ -2589,7 +2589,6 @@ TEST_F (ECDbMappingTestFixture, CascadeDeletion)
         "    <ECRelationshipClass typeName='AHasB' isDomainClass='True' strength='embedding'>"
         "        <ECCustomAttributes>"
         "            <ForeignKeyRelationshipMap xmlns='ECDbMap.01.00'>"
-        "               <CreateConstraint>True</CreateConstraint>"
         "               <OnDeleteAction>Cascade</OnDeleteAction>"
         "            </ForeignKeyRelationshipMap>"
         "        </ECCustomAttributes>"
@@ -2848,11 +2847,11 @@ TEST_F(ECDbMappingTestFixture, ECInstanceIdAutoGeneration)
                 "                  <AppliesToSubclasses>True</AppliesToSubclasses>"
                 "            </DisableECInstanceIdAutogeneration>"
                 "        </ECCustomAttributes>"
-                "        <ECProperty propertyName='P0' typeName='String' />"
+                "        <ECProperty propertyName='P0' typeName='string' />"
                 "    </ECClass>"
                 "    <ECClass typeName='Child' isDomainClass='True'>"
                 "    <BaseClass>Parent</BaseClass>"
-                "        <ECProperty propertyName='P1' typeName='String' />"
+                "        <ECProperty propertyName='P1' typeName='string' />"
                 "    </ECClass>"
                 "</ECSchema>", true);
 
@@ -2878,11 +2877,11 @@ TEST_F(ECDbMappingTestFixture, ECInstanceIdAutoGeneration)
                 "                  <AppliesToSubclasses>False</AppliesToSubclasses>"
                 "            </DisableECInstanceIdAutogeneration>"
                 "        </ECCustomAttributes>"
-                "        <ECProperty propertyName='P0' typeName='String' />"
+                "        <ECProperty propertyName='P0' typeName='string' />"
                 "    </ECClass>"
                 "    <ECClass typeName='Child' isDomainClass='True'>"
                 "    <BaseClass>Parent</BaseClass>"
-                "        <ECProperty propertyName='P1' typeName='String' />"
+                "        <ECProperty propertyName='P1' typeName='string' />"
                 "    </ECClass>"
                 "</ECSchema>", true);
 
@@ -4577,7 +4576,10 @@ TEST_F(ECDbMappingTestFixture, ForeignKeyMapWithKeyProperty)
         auto containsDefaultNamedRelationalKeyColumn = [] (Utf8StringCR str) { return BeStringUtilities::Strnicmp(str.c_str(), "ForeignEC", 9) == 0; };
         auto it = std::find_if(columns.begin(), columns.end(), containsDefaultNamedRelationalKeyColumn);
         ASSERT_TRUE(it == columns.end()) << childTableName << " table should not contain an extra foreign key column as the relationship specifies a Key property";
-        AssertForeignKey(false, ecdb, childTableName);
+        //  ---------<
+        //  In following we expected 'false' but with trigger replaced with FK. We create FK constraint automatically so now it set to 'true'
+        AssertForeignKey(true, ecdb, childTableName);
+        //  --------->
         }
 
         {
@@ -4626,7 +4628,11 @@ TEST_F(ECDbMappingTestFixture, ForeignKeyMapWithKeyProperty)
         auto it = std::find_if(columns.begin(), columns.end(), containsDefaultNamedRelationalKeyColumn);
         ASSERT_TRUE(it == columns.end()) << childTableName << " table should not contain an extra foreign key column as the relationship specifies a Key property";
 
-        AssertForeignKey(false, ecdb, childTableName);
+        //  ---------<
+        //  In following we expected 'false' but with trigger replaced with FK. We create FK constraint automatically so now it set to 'true'
+        AssertForeignKey(true, ecdb, childTableName);
+        //  --------->
+
         }
 
         {
@@ -4836,7 +4842,11 @@ TEST_F(ECDbMappingTestFixture, ForeignKeyMapWithECInstanceIdKeyProperty)
         auto it = std::find_if(columns.begin(), columns.end(), containsDefaultNamedRelationalKeyColumn);
         ASSERT_TRUE(it == columns.end()) << childTableName << " table should not contain an extra foreign key column as the relationship specifies a Key property";
 
-        AssertForeignKey(false, ecdb, childTableName);
+        //  ---------<
+        //  In following we expected 'false' but with trigger replaced with FK. We create FK constraint automatically so now it set to 'true'
+        AssertForeignKey(true, ecdb, childTableName);
+        //  --------->
+
         }
 
         {
@@ -4884,7 +4894,10 @@ TEST_F(ECDbMappingTestFixture, ForeignKeyMapWithECInstanceIdKeyProperty)
         auto it = std::find_if(columns.begin(), columns.end(), containsDefaultNamedRelationalKeyColumn);
         ASSERT_TRUE(it == columns.end()) << childTableName << " table should not contain an extra foreign key column as the relationship specifies a Key property";
 
-        AssertForeignKey(false, ecdb, childTableName);
+        //  ---------<
+        //  In following we expected 'false' but with trigger replaced with FK. We create FK constraint automatically so now it set to 'true'
+        AssertForeignKey(true, ecdb, childTableName);
+        //  --------->
         }
 
         {
@@ -5069,7 +5082,10 @@ TEST_F(ECDbMappingTestFixture, ForeignKeyMapWithoutKeyProperty)
         auto it = std::find_if(columns.begin(), columns.end(), containsDefaultNamedRelationalKeyColumn);
         ASSERT_TRUE(it != columns.end()) << "ts_child table should contain a default-name extra foreign key column as there is no relationship map CA";
 
-        AssertForeignKey(false, ecdb, childTableName);
+        //  ---------<
+        //  In following we expected 'false' but with trigger replaced with FK. We create FK constraint automatically so now it set to 'true'
+        AssertForeignKey(true, ecdb, childTableName);
+        //  --------->
         }
 
         {

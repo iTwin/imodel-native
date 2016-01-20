@@ -14,13 +14,12 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        05/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct ECDbSchemaWriter : RefCountedBase
+struct ECDbSchemaWriter : NonCopyableClass
     {
 private:
-    ECDbR m_ecdb;
+    ECDbCR m_ecdb;
+    bmap<ECN::ECEnumerationCP, uint64_t> m_enumIdCache;
     BeMutex m_mutex;
-
-    explicit ECDbSchemaWriter(ECDbR ecdb) : m_ecdb(ecdb) {}
 
     BentleyStatus CreateECSchemaEntry(ECSchemaCR);
     BentleyStatus CreateBaseClassEntry(ECClassId ecClassId, ECClassCR baseClass, int ordinal);
@@ -39,8 +38,7 @@ private:
     BentleyStatus EnsureECSchemaExists(ECClassCR);
 
 public:
+    explicit ECDbSchemaWriter(ECDbCR ecdb) : m_ecdb (ecdb) {}
     BentleyStatus Import(ECSchemaCR ecSchema);
-
-    static ECDbSchemaWriterPtr Create(ECDbR ecdb);
     };
 END_BENTLEY_SQLITE_EC_NAMESPACE

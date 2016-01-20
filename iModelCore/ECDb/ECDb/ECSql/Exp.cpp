@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/Exp.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -35,6 +35,9 @@ std::set<ECDbSqlTable const*> Exp::GetReferencedTables() const
         auto propertyNameExp = static_cast<PropertyNameExp const*>(exp);
         if (!propertyNameExp->IsPropertyRef())
             {
+            if (propertyNameExp->GetTypeInfo().GetPropertyMap()->GetAsPropertyMapStructArray())
+                continue;
+
             auto const& table = propertyNameExp->GetTypeInfo().GetPropertyMap()->GetFirstColumn()->GetTable();
             if (table.GetPersistenceType() == PersistenceType::Persisted)
                 tmp.insert(&table);
@@ -452,7 +455,7 @@ BentleyStatus PropertyPath::Resolve(IClassMap const& classMap, Utf8String* error
 
         element.SetProperty(*property);
 
-        if (property->GetIsPrimitive())
+        if (property->GetIsPrimitive() || property->GetIsNavigation())
             {
             if (!isLeafEntry || element.HasArrayIndex())
                 {
