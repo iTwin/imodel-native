@@ -42,10 +42,19 @@ USING_NAMESPACE_WSCLIENT_UNITTESTS
     EXPECT_LE(smallerValue, value);                                             \
     EXPECT_GE(biggerValue, value);
 
+// Comparsion operator for testing equality
 namespace rapidjson
     {
     bool operator==(const Value& a, const Value& b);
     }
+
+// Comparsion operator for testing equality
+BEGIN_BENTLEY_NAMESPACE
+namespace Json
+    {
+    bool operator==(Utf8CP a, const Value& b);
+    }
+END_BENTLEY_NAMESPACE
 
 BEGIN_WSCLIENT_UNITTESTS_NAMESPACE
 
