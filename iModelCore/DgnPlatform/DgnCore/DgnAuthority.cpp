@@ -763,3 +763,12 @@ DgnDbStatus DgnAuthority::RegenerateCode(DgnCodeR code, ICodedObjectCR codedObje
     return GetAuthorityHandler()._IsRestrictedAction(RestrictedAction::RegenerateCode) ? DgnDbStatus::MissingHandler : _RegenerateCode(code, codedObject);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnCode::Iterator::Iterator(DgnDbR db)
+    {
+    static const Utf8CP s_ecsql = "SELECT Code.AuthorityId,Code.[Value],Code.Namespace,ECInstanceId FROM " DGN_SCHEMA("CodedObject");
+    Prepare(db, s_ecsql, 3);
+    }
+

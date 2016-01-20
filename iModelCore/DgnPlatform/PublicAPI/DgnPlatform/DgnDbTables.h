@@ -94,6 +94,7 @@
 #include "DgnFont.h"
 #include "DgnCoreEvent.h"
 #include "ECSqlClassParams.h"
+#include "ECSqlStatementIterator.h"
 #include <Bentley/HeapZone.h>
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
@@ -166,6 +167,27 @@ public:
 
     //! Create an empty, non-unique code with no special meaning.
     DGNPLATFORM_EXPORT static DgnCode CreateEmpty();
+
+    struct Entry : ECSqlStatementEntry
+    {
+        friend struct ECSqlStatementIterator<Entry>;
+        friend struct DgnCode;
+    private:
+        Entry(BeSQLite::EC::ECSqlStatement* stmt=nullptr) : ECSqlStatementEntry(stmt) { }
+    public:
+        DgnAuthorityId GetAuthorityId() const { return m_statement->GetValueId<DgnAuthorityId>(0); }
+        Utf8CP GetValue() const { return m_statement->GetValueText(1); }
+        Utf8CP GetNamespace() const { return m_statement->GetValueText(2); }
+        DgnCode GetCode() const { return DgnCode(GetAuthorityId(), GetValue(), GetNamespace()); }
+    };
+
+    struct Iterator : ECSqlStatementIterator<Entry>
+    {
+    public:
+        DGNPLATFORM_EXPORT explicit Iterator(DgnDbR db);
+    };
+
+    static Iterator MakeIterator(DgnDbR db) { return Iterator(db); }
 };
 
 typedef bset<DgnCode> DgnCodeSet;
