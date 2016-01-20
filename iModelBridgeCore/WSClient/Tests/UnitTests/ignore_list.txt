@@ -39,9 +39,6 @@ FileUtilTests.TruncateFilePath_PathIsFolder_Error
 CachingDataSourceTests*
 DataSourceCacheTests.UpdateSchemas_DefaultUsedSchemasPassed_Success
 
-# Issue with holding relationship deletion that removes held instances
-DataSourceCacheTests.CacheResponse_InstanceWithCachedFileRemovedInNewResults_RemovesCachedFile
-
 # Graphite05x EDDb upgrade is not yet supported or will not be. Waiting for requirements for any upgrades needed to be implemented.
 DataSourceCacheUpgradeTests*
 
