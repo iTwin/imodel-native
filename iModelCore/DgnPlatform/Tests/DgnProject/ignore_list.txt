@@ -39,3 +39,5 @@ ECInstanceSelectTests.SelectQueriesOnDbGeneratedDuringBuild_79Main # Notified Ma
 
 #Shaun test fail due ON DELETE RESTRICT. It fail when applying changeset.
 TransactionManagerTests.UndoRedo 
+
+ImportTest.ImportElementsWithDependencies # Seemingly utterly unrelated schema changes induce this

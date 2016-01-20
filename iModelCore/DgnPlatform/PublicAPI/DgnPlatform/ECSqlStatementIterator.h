@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/ECSqlStatementIterator.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -26,77 +26,43 @@ public:
     };
 
 //=======================================================================================
-//! Helper class for creating iterators on ECSqlStatement-s
+//! Helper base class for creating iterator entries on ECSqlStatement-s
 //! @ingroup PlanningGroup
 //=======================================================================================
-template <class ITERATOR_ENTRY_TYPE>
-struct ECSqlStatementIterator
+struct ECSqlStatementIteratorBase
 {
-private:
-    ITERATOR_ENTRY_TYPE m_entry;
+protected:
     BeSQLite::EC::CachedECSqlStatementPtr m_statement = nullptr;
     bool m_isAtEnd = true;
     int m_idSelectColumnIndex = -1;
 
-    bool IsEqual(ECSqlStatementIterator const& rhs) const
-        {
-        if (m_isAtEnd && rhs.m_isAtEnd)
-            return true;
-        if (m_isAtEnd != rhs.m_isAtEnd)
-            return false;
+    ECSqlStatementIteratorBase() {}
 
-        BeAssert(m_statement.IsValid() && rhs.m_statement.IsValid());
-        BeSQLite::EC::ECInstanceId thisId = m_statement->GetValueId<BeSQLite::EC::ECInstanceId>(m_idSelectColumnIndex);
-        
-        // Do NOT delete the next line and simply use rhs.m_statement on the subsequent.
-        // Android GCC 4.9 and clang 6.1.0 cannot deduce the templates when you try to combine it all up.
-        BeSQLite::EC::CachedECSqlStatementPtr rhsStatement = rhs.m_statement;
-        BeSQLite::EC::ECInstanceId rhsId = rhsStatement->GetValueId<BeSQLite::EC::ECInstanceId>(rhs.m_idSelectColumnIndex);
-        
-        return thisId == rhsId;
-        }
+    DGNPLATFORM_EXPORT bool IsEqual(ECSqlStatementIteratorBase const& rhs) const;
+    DGNPLATFORM_EXPORT void MoveNext();
+    DGNPLATFORM_EXPORT void MoveFirst();
+    DGNPLATFORM_EXPORT BeSQLite::EC::ECSqlStatement* PrepareStatement(DgnDbCR dgndb, Utf8CP ecSql, uint32_t idSelectColumnIndex);
+};
 
-    void MoveNext()
-        {
-        if (m_isAtEnd)
-            {
-            BeAssert(false && "Do not attempt to iterate beyond the end of the instances.");
-            return;
-            }
-        BeSQLite::DbResult stepStatus = m_statement->Step();
-        BeAssert(stepStatus == BeSQLite::BE_SQLITE_ROW || stepStatus == BeSQLite::BE_SQLITE_DONE);
-        if (stepStatus != BeSQLite::BE_SQLITE_ROW)
-            m_isAtEnd = true;
-        }
-
-    void MoveFirst()
-        {
-        if (!m_statement.IsValid())
-            {
-            m_isAtEnd = true;
-            return;
-            }
-        m_statement->Reset();
-        m_isAtEnd = false;
-        MoveNext();
-        }
-
+//=======================================================================================
+//! Helper class for creating iterators on ECSqlStatement-s
+//! @ingroup PlanningGroup
+//=======================================================================================
+template <class ITERATOR_ENTRY_TYPE>
+struct ECSqlStatementIterator : ECSqlStatementIteratorBase
+{
+private:
+    ITERATOR_ENTRY_TYPE m_entry;
 public:
     ECSqlStatementIterator() {}
 
     BeSQLite::EC::ECSqlStatement* Prepare(DgnDbCR dgndb, Utf8CP ecSql, uint32_t idSelectColumnIndex)
         {
-        m_statement = dgndb.GetPreparedECSqlStatement(ecSql);
-        if (m_statement.IsNull())
-            {
-            BeAssert(false);
-            return nullptr;
-            }
+        auto stmt = PrepareStatement(dgndb, ecSql, idSelectColumnIndex);
+        if (nullptr != stmt)
+            m_entry = ITERATOR_ENTRY_TYPE(stmt);
 
-        m_isAtEnd = false;
-        m_idSelectColumnIndex = (int) idSelectColumnIndex;
-        m_entry = ITERATOR_ENTRY_TYPE(m_statement.get());
-        return m_statement.get();
+        return stmt;
         }
 
     bool operator!=(ECSqlStatementIterator const& rhs) const

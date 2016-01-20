@@ -570,3 +570,73 @@ DgnDb::LocalStateDb& DgnDb::GetLocalStateDb()
     return m_localStateDb;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/16
++---------------+---------------+---------------+---------------+---------------+------*/
+ECSqlStatement* ECSqlStatementIteratorBase::PrepareStatement(DgnDbCR dgndb, Utf8CP ecSql, uint32_t idSelectColumnIndex)
+    {
+    m_statement = dgndb.GetPreparedECSqlStatement(ecSql);
+    if (m_statement.IsNull())
+        {
+        BeAssert(false);
+        return nullptr;
+        }
+
+    m_isAtEnd = false;
+    m_idSelectColumnIndex = (int) idSelectColumnIndex;
+    return m_statement.get();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/16
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ECSqlStatementIteratorBase::IsEqual(ECSqlStatementIteratorBase const& rhs) const
+    {
+    if (m_isAtEnd && rhs.m_isAtEnd)
+        return true;
+    if (m_isAtEnd != rhs.m_isAtEnd)
+        return false;
+
+    BeAssert(m_statement.IsValid() && rhs.m_statement.IsValid());
+    ECInstanceId thisId = m_statement->GetValueId<ECInstanceId>(m_idSelectColumnIndex);
+    
+    // Do NOT delete the next line and simply use rhs.m_statement on the subsequent.
+    // Android GCC 4.9 and clang 6.1.0 cannot deduce the templates when you try to combine it all up.
+    CachedECSqlStatementPtr rhsStatement = rhs.m_statement;
+    ECInstanceId rhsId = rhsStatement->GetValueId<ECInstanceId>(rhs.m_idSelectColumnIndex);
+    
+    return thisId == rhsId;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void ECSqlStatementIteratorBase::MoveNext()
+    {
+    if (m_isAtEnd)
+        {
+        BeAssert(false && "Do not attempt to iterate beyond the end of the instances.");
+        return;
+        }
+    DbResult stepStatus = m_statement->Step();
+    BeAssert(stepStatus == BE_SQLITE_ROW || stepStatus == BE_SQLITE_DONE);
+    if (stepStatus != BE_SQLITE_ROW)
+        m_isAtEnd = true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void ECSqlStatementIteratorBase::MoveFirst()
+    {
+    if (!m_statement.IsValid())
+        {
+        m_isAtEnd = true;
+        return;
+        }
+
+    m_statement->Reset();
+    m_isAtEnd = false;
+    MoveNext();
+    }
+

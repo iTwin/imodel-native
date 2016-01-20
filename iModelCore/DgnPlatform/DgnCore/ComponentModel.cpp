@@ -264,7 +264,7 @@ DgnDbStatus ComponentGeometryHarvester::HarvestModel(bvector<bpair<DgnSubCategor
 
         // *** WIP_COMPONENT_MODEL How can we look up and re-use GeomParts that are based on the same component and parameters?
         // Note: Don't assign a Code. If we did that, then we would have trouble with change-merging.
-        DgnGeomPartPtr geomPart = DgnGeomPart::Create();
+        DgnGeomPartPtr geomPart = DgnGeomPart::Create(db);
         builder->CreateGeomPart(db, true);
         builder->SetGeomStream(*geomPart);
         if (BSISUCCESS != db.GeomParts().InsertGeomPart(*geomPart))

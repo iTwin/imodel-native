@@ -117,37 +117,43 @@
         <ECCustomAttributes>
             <ClassHasHandler xmlns="dgn.02.00"/>
         </ECCustomAttributes>
-        <BaseClass>NamespaceAuthority</BaseClass>
+        <BaseClass>Authority</BaseClass>
     </ECEntityClass>
     <ECEntityClass typeName="ComponentAuthority">
         <ECCustomAttributes>
             <ClassHasHandler xmlns="dgn.02.00"/>
         </ECCustomAttributes>
-        <BaseClass>NamespaceAuthority</BaseClass>
+        <BaseClass>Authority</BaseClass>
     </ECEntityClass>
     <ECEntityClass typeName="ModelAuthority">
         <ECCustomAttributes>
             <ClassHasHandler xmlns="dgn.02.00"/>
         </ECCustomAttributes>
-        <BaseClass>NamespaceAuthority</BaseClass>
+        <BaseClass>Authority</BaseClass>
     </ECEntityClass>
     <ECEntityClass typeName="TrueColorAuthority">
         <ECCustomAttributes>
             <ClassHasHandler xmlns="dgn.02.00"/>
         </ECCustomAttributes>
-        <BaseClass>NamespaceAuthority</BaseClass>
+        <BaseClass>Authority</BaseClass>
     </ECEntityClass>
     <ECEntityClass typeName="ResourceAuthority">
         <ECCustomAttributes>
             <ClassHasHandler xmlns="dgn.02.00"/>
         </ECCustomAttributes>
-        <BaseClass>NamespaceAuthority</BaseClass>
+        <BaseClass>Authority</BaseClass>
     </ECEntityClass>
     <ECEntityClass typeName="CategoryAuthority">
         <ECCustomAttributes>
             <ClassHasHandler xmlns="dgn.02.00"/>
         </ECCustomAttributes>
-        <BaseClass>NamespaceAuthority</BaseClass>
+        <BaseClass>Authority</BaseClass>
+    </ECEntityClass>
+    <ECEntityClass typeName="GeomPartAuthority">
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="dgn.02.00"/>
+        </ECCustomAttributes>
+        <BaseClass>Authority</BaseClass>
     </ECEntityClass>
 
     <ECStructClass typeName="AuthorityIssuedCode">
@@ -181,6 +187,38 @@
         </ECProperty>
     </ECStructClass>
 
+    <ECEntityClass typeName="CodedObject" modifier="Abstract">
+        <ECCustomAttributes>
+            <ClassMap xmlns="ECDbMap.01.00">
+                <Indexes>
+                    <DbIndex>
+                        <IsUnique>True</IsUnique>
+                        <Properties>
+                            <string>Code.AuthorityId</string>
+                            <string>Code.Namespace</string>
+                            <string>Code.Value</string>
+                        </Properties>
+                    </DbIndex>
+                </Indexes>
+            </ClassMap>
+        </ECCustomAttributes>
+        <ECStructProperty propertyName="Code" typeName="AuthorityIssuedCode"/>
+    </ECEntityClass>
+
+    <!-- NEEDSWORK This breaks everything. Why.
+    <ECRelationshipClass typeName="CodeIssuedByAuthority" description="Object has a code which was issued by the specified authority" strength="referencing">
+        <Source cardinality="(0,N)" roleLabel="has N codes" polymorphic="true">
+            <Class class="CodedObject">
+                <Key>
+                    <Property name="Code.AuthorityId" />
+                </Key>
+            </Class>
+        </Source>
+        <Target cardinality="(1,1)" roleLabel="issues code" polymorphic="true">
+            <Class class="Authority" />
+        </Target>
+    </ECRelationshipClass>
+    -->
     <ECRelationshipClass typeName="AuthorityIssuesElementCode" description="Element has a code which was issued by the given authority" strength="referencing">
         <ECCustomAttributes>
             <ForeignKeyRelationshipMap xmlns="ECDbMap.01.00">
@@ -199,7 +237,6 @@
             </Class>
         </Target>
     </ECRelationshipClass>
-
     <ECRelationshipClass typeName="AuthorityIssuesModelCode" description="Model has a code which was issued by the given authority" strength="referencing">
         <ECCustomAttributes>
             <ForeignKeyRelationshipMap xmlns="ECDbMap.01.00">
@@ -217,8 +254,22 @@
             </Class>
         </Target>
     </ECRelationshipClass>
+    <ECRelationshipClass typeName="AuthorityIssuesGeomPartCode" description="GeomPart has a code which was issued by the given authority" strength="referencing">
+        <!-- WIP: want ON DELETE RESTRICT? -->
+        <Source cardinality="(1,1)" roleLabel="issues code" polymorphic="false">
+            <Class class="Authority"/>
+        </Source>
+        <Target cardinality="(0,N)" roleLabel="has N codes" polymorphic="true">
+            <Class class="GeomPart">
+                <Key>
+                    <Property name="Code.AuthorityId"/>
+                </Key>
+            </Class>
+        </Target>
+    </ECRelationshipClass>
 
     <ECEntityClass typeName="Model" modifier="Abstract">
+        <BaseClass>CodedObject</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="dgn.02.00">
                 <Restrictions>
@@ -231,20 +282,8 @@
                     <AppliesToSubclasses>True</AppliesToSubclasses>
                 </MapStrategy>
                 <ECInstanceIdColumn>Id</ECInstanceIdColumn>
-                <Indexes>
-                    <DbIndex>
-                        <Name>idx_dgn_Model_Code</Name>
-                        <IsUnique>True</IsUnique>
-                        <Properties>
-                            <string>Code.AuthorityId</string>
-                            <string>Code.Namespace</string>
-                            <string>Code.Value</string>
-                        </Properties>
-                    </DbIndex>
-                </Indexes>
             </ClassMap>
         </ECCustomAttributes>
-        <ECStructProperty propertyName="Code" typeName="AuthorityIssuedCode"/>
         <ECProperty propertyName="Label" typeName="string"/>
         <ECProperty propertyName="Properties" typeName="string"/>
         <ECProperty propertyName="Visibility" typeName="int"/>
@@ -352,6 +391,7 @@
     </ECRelationshipClass>
 
     <ECEntityClass typeName="Element" modifier="Abstract">
+        <BaseClass>CodedObject</BaseClass>
         <ECCustomAttributes>
             <ClassMap xmlns="ECDbMap.01.00">
                 <MapStrategy>
@@ -361,15 +401,6 @@
                 </MapStrategy>
                 <ECInstanceIdColumn>Id</ECInstanceIdColumn>
                 <Indexes>
-                    <DbIndex>
-                        <Name>idx_dgn_Element_Code</Name>
-                        <IsUnique>True</IsUnique>
-                        <Properties>
-                            <string>Code.AuthorityId</string>
-                            <string>Code.Namespace</string>
-                            <string>Code.Value</string>
-                        </Properties>
-                    </DbIndex>
                     <DbIndex>
                         <Name>idx_dgn_Element_ParentId</Name>
                         <IsUnique>False</IsUnique>
@@ -417,7 +448,6 @@
                 </PropertyMap>
             </ECCustomAttributes>
         </ECProperty>
-        <ECStructProperty propertyName="Code" typeName="AuthorityIssuedCode"/>
         <ECProperty propertyName="Label" typeName="string">
             <ECCustomAttributes>
                 <PropertyMap xmlns="ECDbMap.01.00">
@@ -1200,21 +1230,12 @@
     </ECEntityClass>
 
     <ECEntityClass typeName="GeomPart">
-        <!-- WIP: need to create a partial index on Code -->
+        <BaseClass>CodedObject</BaseClass>
         <ECCustomAttributes>
             <ClassMap xmlns="ECDbMap.01.00">
                 <ECInstanceIdColumn>Id</ECInstanceIdColumn>
             </ClassMap>
         </ECCustomAttributes>
-        <ECProperty propertyName="Code" typeName="string">
-            <!-- "Code" must be unique (or Null). Typically programmatically-generated -->
-            <ECCustomAttributes>
-                <PropertyMap xmlns="ECDbMap.01.00">
-                    <!-- Null means an "anonymous" GeomPart that can only be looked up by Id -->
-                    <IsNullable>True</IsNullable>
-                </PropertyMap>
-            </ECCustomAttributes>
-        </ECProperty>
         <ECProperty propertyName="Geom" typeName="binary">
             <ECCustomAttributes>
                 <PropertyMap xmlns="ECDbMap.01.00">
