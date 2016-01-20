@@ -418,8 +418,6 @@ MapStatus RelationshipClassEndTableMap::_MapPart1 (SchemaImportContext&, ClassMa
     stat = CreateConstraintPropMaps (thisEnd, defaultThisEndECClassId, foreignKeyIdColumn, foreignKeyClassIdColumn, otherEndClass->GetId());
     if (stat != MapStatus::Success)
         return stat;
-    if (GetClass().GetName() == "GeometrySourceIsInCategory")
-        printf("");
 
     if (GetDataIntegrityEnforcementMethod() == DataIntegrityEnforcementMethod::ForeignKey)
         {

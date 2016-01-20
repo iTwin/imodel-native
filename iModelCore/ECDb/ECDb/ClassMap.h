@@ -328,7 +328,7 @@ struct ClassMap : public IClassMap, RefCountedBase
         ECN::ECClassId              m_parentMapClassId;
         std::unique_ptr<ClassDbView> m_dbView;
         ColumnFactory               m_columnFactory;
-
+        std::unique_ptr<Utf8String> m_userSpecifiedECInstanceIdColumnName;
     private:
         BentleyStatus ProcessStandardKeySpecifications(SchemaImportContext&, ClassMapInfo const&);
         BentleyStatus InitializeDisableECInstanceIdAutogeneration();
@@ -380,6 +380,7 @@ struct ClassMap : public IClassMap, RefCountedBase
         ECDbSqlColumn* FindOrCreateColumnForProperty(ClassMapCR, ClassMapInfo const*, PropertyMapR,
                                                      Utf8CP requestedColumnName, ECN::PrimitiveType, bool nullable, bool unique, ECDbSqlColumn::Constraint::Collation, Utf8CP accessStringPrefix);
 
+        Utf8StringCP GetUserSpecifiedECInstanceIdColumnName() const {return m_userSpecifiedECInstanceIdColumnName.get(); }
         PropertyMapCP GetECInstanceIdPropertyMap() const;
         bool TryGetECInstanceIdPropertyMap(PropertyMapPtr& ecIstanceIdPropertyMap) const;
 
