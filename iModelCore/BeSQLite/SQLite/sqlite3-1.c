@@ -97,6 +97,8 @@
 #else
 /* This is not VxWorks. */
 #define OS_VXWORKS 0
+#define HAVE_FCHOWN 1
+#define HAVE_READLINK 1
 #endif /* defined(_WRS_KERNEL) */
 
 /************** End of vxworks.h *********************************************/
@@ -301,9 +303,9 @@ extern "C" {
 ** [sqlite3_libversion_number()], [sqlite3_sourceid()],
 ** [sqlite_version()] and [sqlite_source_id()].
 */
-#define SQLITE_VERSION        "3.10.0"
-#define SQLITE_VERSION_NUMBER 3010000
-#define SQLITE_SOURCE_ID      "2016-01-04 19:02:47 c785cd7813e4ef6d6f2cb362a0f822713db6bcea"
+#define SQLITE_VERSION        "3.11.0"
+#define SQLITE_VERSION_NUMBER 3011000
+#define SQLITE_SOURCE_ID      "2016-01-14 14:48:17 007e5c6df60f9743ac6914332f59925e4a7a861c"
 
 /*
 ** CAPI3REF: Run-Time Library Version Numbers
@@ -984,8 +986,13 @@ struct sqlite3_io_methods {
 ** <li>[[SQLITE_FCNTL_FILE_POINTER]]
 ** The [SQLITE_FCNTL_FILE_POINTER] opcode is used to obtain a pointer
 ** to the [sqlite3_file] object associated with a particular database
-** connection.  See the [sqlite3_file_control()] documentation for
-** additional information.
+** connection.  See also [SQLITE_FCNTL_JOURNAL_POINTER].
+**
+** <li>[[SQLITE_FCNTL_JOURNAL_POINTER]]
+** The [SQLITE_FCNTL_JOURNAL_POINTER] opcode is used to obtain a pointer
+** to the [sqlite3_file] object associated with the journal file (either
+** the [rollback journal] or the [write-ahead log]) for a particular database
+** connection.  See also [SQLITE_FCNTL_FILE_POINTER].
 **
 ** <li>[[SQLITE_FCNTL_SYNC_OMITTED]]
 ** No longer in use.
@@ -1200,6 +1207,7 @@ struct sqlite3_io_methods {
 #define SQLITE_FCNTL_ZIPVFS                 25
 #define SQLITE_FCNTL_RBU                    26
 #define SQLITE_FCNTL_VFS_POINTER            27
+#define SQLITE_FCNTL_JOURNAL_POINTER        28
 
 /* deprecated names */
 #define SQLITE_GET_LOCKPROXYFILE      SQLITE_FCNTL_GET_LOCKPROXYFILE
@@ -9754,6 +9762,9 @@ struct Fts5PhraseIter {
 **   an OOM condition or IO error), an appropriate SQLite error code is 
 **   returned.
 **
+**   This function may be quite inefficient if used with an FTS5 table
+**   created with the "columnsize=0" option.
+**
 ** xColumnText:
 **   This function attempts to retrieve the text of column iCol of the
 **   current document. If successful, (*pz) is set to point to a buffer
@@ -9774,14 +9785,28 @@ struct Fts5PhraseIter {
 **   the query within the current row. Return SQLITE_OK if successful, or
 **   an error code (i.e. SQLITE_NOMEM) if an error occurs.
 **
+**   This API can be quite slow if used with an FTS5 table created with the
+**   "detail=none" or "detail=column" option. If the FTS5 table is created 
+**   with either "detail=none" or "detail=column" and "content=" option 
+**   (i.e. if it is a contentless table), then this API always returns 0.
+**
 ** xInst:
 **   Query for the details of phrase match iIdx within the current row.
 **   Phrase matches are numbered starting from zero, so the iIdx argument
 **   should be greater than or equal to zero and smaller than the value
 **   output by xInstCount().
 **
+**   Usually, output parameter *piPhrase is set to the phrase number, *piCol
+**   to the column in which it occurs and *piOff the token offset of the
+**   first token of the phrase. The exception is if the table was created
+**   with the offsets=0 option specified. In this case *piOff is always
+**   set to -1.
+**
 **   Returns SQLITE_OK if successful, or an error code (i.e. SQLITE_NOMEM) 
 **   if an error occurs.
+**
+**   This API can be quite slow if used with an FTS5 table created with the
+**   "detail=none" or "detail=column" option. 
 **
 ** xRowid:
 **   Returns the rowid of the current row.
@@ -9866,7 +9891,7 @@ struct Fts5PhraseIter {
 **       Fts5PhraseIter iter;
 **       int iCol, iOff;
 **       for(pApi->xPhraseFirst(pFts, iPhrase, &iter, &iCol, &iOff);
-**           iOff>=0;
+**           iCol>=0;
 **           pApi->xPhraseNext(pFts, &iter, &iCol, &iOff)
 **       ){
 **         // An instance of phrase iPhrase at offset iOff of column iCol
@@ -9874,13 +9899,51 @@ struct Fts5PhraseIter {
 **
 **   The Fts5PhraseIter structure is defined above. Applications should not
 **   modify this structure directly - it should only be used as shown above
-**   with the xPhraseFirst() and xPhraseNext() API methods.
+**   with the xPhraseFirst() and xPhraseNext() API methods (and by
+**   xPhraseFirstColumn() and xPhraseNextColumn() as illustrated below).
+**
+**   This API can be quite slow if used with an FTS5 table created with the
+**   "detail=none" or "detail=column" option. If the FTS5 table is created 
+**   with either "detail=none" or "detail=column" and "content=" option 
+**   (i.e. if it is a contentless table), then this API always iterates
+**   through an empty set (all calls to xPhraseFirst() set iCol to -1).
 **
 ** xPhraseNext()
 **   See xPhraseFirst above.
+**
+** xPhraseFirstColumn()
+**   This function and xPhraseNextColumn() are similar to the xPhraseFirst()
+**   and xPhraseNext() APIs described above. The difference is that instead
+**   of iterating through all instances of a phrase in the current row, these
+**   APIs are used to iterate through the set of columns in the current row
+**   that contain one or more instances of a specified phrase. For example:
+**
+**       Fts5PhraseIter iter;
+**       int iCol;
+**       for(pApi->xPhraseFirstColumn(pFts, iPhrase, &iter, &iCol);
+**           iCol>=0;
+**           pApi->xPhraseNextColumn(pFts, &iter, &iCol)
+**       ){
+**         // Column iCol contains at least one instance of phrase iPhrase
+**       }
+**
+**   This API can be quite slow if used with an FTS5 table created with the
+**   "detail=none" option. If the FTS5 table is created with either 
+**   "detail=none" "content=" option (i.e. if it is a contentless table), 
+**   then this API always iterates through an empty set (all calls to 
+**   xPhraseFirstColumn() set iCol to -1).
+**
+**   The information accessed using this API and its companion
+**   xPhraseFirstColumn() may also be obtained using xPhraseFirst/xPhraseNext
+**   (or xInst/xInstCount). The chief advantage of this API is that it is
+**   significantly more efficient than those alternatives when used with
+**   "detail=column" tables.  
+**
+** xPhraseNextColumn()
+**   See xPhraseFirstColumn above.
 */
 struct Fts5ExtensionApi {
-  int iVersion;                   /* Currently always set to 1 */
+  int iVersion;                   /* Currently always set to 3 */
 
   void *(*xUserData)(Fts5Context*);
 
@@ -9910,8 +9973,11 @@ struct Fts5ExtensionApi {
   int (*xSetAuxdata)(Fts5Context*, void *pAux, void(*xDelete)(void*));
   void *(*xGetAuxdata)(Fts5Context*, int bClear);
 
-  void (*xPhraseFirst)(Fts5Context*, int iPhrase, Fts5PhraseIter*, int*, int*);
+  int (*xPhraseFirst)(Fts5Context*, int iPhrase, Fts5PhraseIter*, int*, int*);
   void (*xPhraseNext)(Fts5Context*, Fts5PhraseIter*, int *piCol, int *piOff);
+
+  int (*xPhraseFirstColumn)(Fts5Context*, int iPhrase, Fts5PhraseIter*, int*);
+  void (*xPhraseNextColumn)(Fts5Context*, Fts5PhraseIter*, int *piCol);
 };
 
 /* 
@@ -11332,10 +11398,6 @@ typedef INT16_TYPE LogEst;
 */
 #ifdef __APPLE__
 # include <TargetConditionals.h>
-# if TARGET_OS_IPHONE
-#   undef SQLITE_MAX_MMAP_SIZE
-#   define SQLITE_MAX_MMAP_SIZE 0
-# endif
 #endif
 #ifndef SQLITE_MAX_MMAP_SIZE
 # if defined(__linux__) \
@@ -11836,15 +11898,17 @@ SQLITE_PRIVATE   int sqlite3BtreeCheckpoint(Btree*, int, int *, int *);
 #ifndef SQLITE_OMIT_SHARED_CACHE
 SQLITE_PRIVATE   void sqlite3BtreeEnter(Btree*);
 SQLITE_PRIVATE   void sqlite3BtreeEnterAll(sqlite3*);
+SQLITE_PRIVATE   int sqlite3BtreeSharable(Btree*);
+SQLITE_PRIVATE   void sqlite3BtreeEnterCursor(BtCursor*);
 #else
 # define sqlite3BtreeEnter(X) 
 # define sqlite3BtreeEnterAll(X)
+# define sqlite3BtreeSharable(X) 0
+# define sqlite3BtreeEnterCursor(X)
 #endif
 
 #if !defined(SQLITE_OMIT_SHARED_CACHE) && SQLITE_THREADSAFE
-SQLITE_PRIVATE   int sqlite3BtreeSharable(Btree*);
 SQLITE_PRIVATE   void sqlite3BtreeLeave(Btree*);
-SQLITE_PRIVATE   void sqlite3BtreeEnterCursor(BtCursor*);
 SQLITE_PRIVATE   void sqlite3BtreeLeaveCursor(BtCursor*);
 SQLITE_PRIVATE   void sqlite3BtreeLeaveAll(sqlite3*);
 #ifndef NDEBUG
@@ -11855,9 +11919,7 @@ SQLITE_PRIVATE   int sqlite3SchemaMutexHeld(sqlite3*,int,Schema*);
 #endif
 #else
 
-# define sqlite3BtreeSharable(X) 0
 # define sqlite3BtreeLeave(X)
-# define sqlite3BtreeEnterCursor(X)
 # define sqlite3BtreeLeaveCursor(X)
 # define sqlite3BtreeLeaveAll(X)
 
@@ -12574,6 +12636,7 @@ SQLITE_PRIVATE int sqlite3PagerMemUsed(Pager*);
 SQLITE_PRIVATE const char *sqlite3PagerFilename(Pager*, int);
 SQLITE_PRIVATE sqlite3_vfs *sqlite3PagerVfs(Pager*);
 SQLITE_PRIVATE sqlite3_file *sqlite3PagerFile(Pager*);
+SQLITE_PRIVATE sqlite3_file *sqlite3PagerJrnlFile(Pager*);
 SQLITE_PRIVATE const char *sqlite3PagerJournalname(Pager*);
 SQLITE_PRIVATE int sqlite3PagerNosync(Pager*);
 SQLITE_PRIVATE void *sqlite3PagerTempSpace(Pager*);
@@ -12668,6 +12731,8 @@ struct PgHdr {
 #define PGHDR_NEED_READ       0x010  /* Content is unread */
 #define PGHDR_DONT_WRITE      0x020  /* Do not write content to disk */
 #define PGHDR_MMAP            0x040  /* This is an mmap page object */
+
+#define PGHDR_WAL_APPEND      0x080  /* Appended to wal file */
 
 /* Initialize and shutdown the page cache subsystem */
 SQLITE_PRIVATE int sqlite3PcacheInitialize(void);
@@ -15505,7 +15570,6 @@ SQLITE_PRIVATE void sqlite3Pragma(Parse*,Token*,Token*,Token*,int);
 SQLITE_PRIVATE void sqlite3ResetAllSchemasOfConnection(sqlite3*);
 SQLITE_PRIVATE void sqlite3ResetOneSchema(sqlite3*,int);
 SQLITE_PRIVATE void sqlite3CollapseDatabaseArray(sqlite3*);
-SQLITE_PRIVATE void sqlite3BeginParse(Parse*,int);
 SQLITE_PRIVATE void sqlite3CommitInternalChanges(sqlite3*);
 SQLITE_PRIVATE void sqlite3DeleteColumnNames(sqlite3*,Table*);
 SQLITE_PRIVATE int sqlite3ColumnsFromExprList(Parse*,ExprList*,i16*,Column**);
@@ -17457,11 +17521,15 @@ SQLITE_PRIVATE int sqlite3VdbeSorterRewind(const VdbeCursor *, int *);
 SQLITE_PRIVATE int sqlite3VdbeSorterWrite(const VdbeCursor *, Mem *);
 SQLITE_PRIVATE int sqlite3VdbeSorterCompare(const VdbeCursor *, Mem *, int, int *);
 
-#if !defined(SQLITE_OMIT_SHARED_CACHE) && SQLITE_THREADSAFE>0
+#if !defined(SQLITE_OMIT_SHARED_CACHE) 
 SQLITE_PRIVATE   void sqlite3VdbeEnter(Vdbe*);
-SQLITE_PRIVATE   void sqlite3VdbeLeave(Vdbe*);
 #else
 # define sqlite3VdbeEnter(X)
+#endif
+
+#if !defined(SQLITE_OMIT_SHARED_CACHE) && SQLITE_THREADSAFE>0
+SQLITE_PRIVATE   void sqlite3VdbeLeave(Vdbe*);
+#else
 # define sqlite3VdbeLeave(X)
 #endif
 
@@ -21149,6 +21217,7 @@ static SQLITE_WSD struct Mem5Global {
   */
   sqlite3_mutex *mutex;
 
+#if defined(SQLITE_DEBUG) || defined(SQLITE_TEST)
   /*
   ** Performance statistics
   */
@@ -21160,6 +21229,7 @@ static SQLITE_WSD struct Mem5Global {
   u32 maxOut;         /* Maximum instantaneous currentOut */
   u32 maxCount;       /* Maximum instantaneous currentCount */
   u32 maxRequest;     /* Largest allocation (exclusive of internal frag) */
+#endif
   
   /*
   ** Lists of free blocks.  aiFreelist[0] is a list of free blocks of
@@ -21271,14 +21341,17 @@ static void *memsys5MallocUnsafe(int nByte){
   /* nByte must be a positive */
   assert( nByte>0 );
 
+  /* No more than 1GiB per allocation */
+  if( nByte > 0x40000000 ) return 0;
+
+#if defined(SQLITE_DEBUG) || defined(SQLITE_TEST)
   /* Keep track of the maximum allocation request.  Even unfulfilled
   ** requests are counted */
   if( (u32)nByte>mem5.maxRequest ){
-    /* Abort if the requested allocation size is larger than the largest
-    ** power of two that we can represent using 32-bit signed integers. */
-    if( nByte > 0x40000000 ) return 0;
     mem5.maxRequest = nByte;
   }
+#endif
+
 
   /* Round nByte up to the next valid power of two */
   for(iFullSz=mem5.szAtom,iLogsize=0; iFullSz<nByte; iFullSz*=2,iLogsize++){}
@@ -21305,6 +21378,7 @@ static void *memsys5MallocUnsafe(int nByte){
   }
   mem5.aCtrl[i] = iLogsize;
 
+#if defined(SQLITE_DEBUG) || defined(SQLITE_TEST)
   /* Update allocator performance statistics. */
   mem5.nAlloc++;
   mem5.totalAlloc += iFullSz;
@@ -21313,6 +21387,7 @@ static void *memsys5MallocUnsafe(int nByte){
   mem5.currentOut += iFullSz;
   if( mem5.maxCount<mem5.currentCount ) mem5.maxCount = mem5.currentCount;
   if( mem5.maxOut<mem5.currentOut ) mem5.maxOut = mem5.currentOut;
+#endif
 
 #ifdef SQLITE_DEBUG
   /* Make sure the allocated memory does not assume that it is set to zero
@@ -21347,12 +21422,15 @@ static void memsys5FreeUnsafe(void *pOld){
 
   mem5.aCtrl[iBlock] |= CTRL_FREE;
   mem5.aCtrl[iBlock+size-1] |= CTRL_FREE;
+
+#if defined(SQLITE_DEBUG) || defined(SQLITE_TEST)
   assert( mem5.currentCount>0 );
   assert( mem5.currentOut>=(size*mem5.szAtom) );
   mem5.currentCount--;
   mem5.currentOut -= size*mem5.szAtom;
   assert( mem5.currentOut>0 || mem5.currentCount==0 );
   assert( mem5.currentCount>0 || mem5.currentOut==0 );
+#endif
 
   mem5.aCtrl[iBlock] = CTRL_FREE | iLogsize;
   while( ALWAYS(iLogsize<LOGMAX) ){

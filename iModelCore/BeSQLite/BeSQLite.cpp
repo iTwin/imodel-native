@@ -463,7 +463,8 @@ void Statement::DumpResults()
         for (int i = 0; i < GetColumnCount(); ++i)
             {
             values.append(i > 0 ? ", " : "  ");
-            values.append(GetValueText(i));
+            auto text = GetValueText(i);
+            values.append(nullptr != text ? text : "<NULL>");
             }
         printf("%s\n", values.c_str());
         }
