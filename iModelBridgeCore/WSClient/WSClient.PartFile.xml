@@ -312,6 +312,7 @@
             <Files ProductDirectoryName="UnitTests-IgnoreList" ProductSubDirectory="WebServices" SubPartDirectory="UnitTests/WebServices">
                 Delivery/UnitTests/ignore_list.txt
              </Files>
+            <Directory ProductDirectoryName="WSClientTestAssets" SourceName="WSClientTestAssets"/>
         </Bindings>
     </Part>
 
