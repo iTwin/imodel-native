@@ -332,7 +332,7 @@ protected:
     virtual bool _QueryLocksHeld(LockRequestR locks, bool localQueryOnly, LockStatus* status) = 0;
     virtual LockRequest::Response _AcquireLocks(LockRequestR locks) = 0;
     virtual LockStatus _RelinquishLocks() = 0;
-    virtual LockStatus _ReleaseLocks(DgnLockSet& locks) = 0;
+    virtual LockStatus _DemoteLocks(DgnLockSet& locks) = 0;
     virtual LockStatus _QueryLockLevel(LockLevel& level, LockableId lockId, bool localQueryOnly) = 0;
     virtual LockStatus _RefreshLocks() = 0;
 
@@ -362,7 +362,7 @@ public:
     //!  - Any pending/dynamics transactions exist in the managed DgnDb. They must first be committed or abandoned
     //!  - Any lock being released is required for changes made in the managed DgnDb. e.g., you cannot release a lock on an element you have modified.
     //! If this method succeeds, the undo/redo history will be reset for the managed DgnDb.
-    LockStatus ReleaseLocks(DgnLockSet& locks) { return _ReleaseLocks(locks); }
+    LockStatus DemoteLocks(DgnLockSet& locks) { return _DemoteLocks(locks); }
 
     //! Refreshes any local cache of owned locks by re-querying the server
     LockStatus RefreshLocks() { return _RefreshLocks(); }
@@ -409,7 +409,7 @@ protected:
     virtual LockStatus _QueryLocksHeld(bool& held, LockRequestCR locks, DgnDbR db) = 0;
     virtual LockRequest::Response _AcquireLocks(LockRequestCR locks, DgnDbR db) = 0;
     virtual LockStatus _RelinquishLocks(DgnDbR db) = 0;
-    virtual LockStatus _ReleaseLocks(DgnLockSet const& locks, DgnDbR db) = 0;
+    virtual LockStatus _DemoteLocks(DgnLockSet const& locks, DgnDbR db) = 0;
     virtual LockStatus _QueryLockLevel(LockLevel& level, LockableId lockId, DgnDbR db) = 0;
     virtual LockStatus _QueryLocks(DgnLockSet& locks, DgnDbR db) = 0;
     virtual LockStatus _QueryOwnership(DgnLockOwnershipR ownership, LockableId lockId) = 0;
@@ -425,7 +425,7 @@ public:
     LockStatus RelinquishLocks(DgnDbR db) { return _RelinquishLocks(db); }
 
     //! Reduces the level at which a briefcase owns a set of locks.
-    LockStatus ReleaseLocks(DgnLockSet const& locks, DgnDbR db) { return _ReleaseLocks(locks, db); }
+    LockStatus DemoteLocks(DgnLockSet const& locks, DgnDbR db) { return _DemoteLocks(locks, db); }
 
     //! Queries the briefcase's level of ownership over the specified lockable object.
     LockStatus QueryLockLevel(LockLevel& level, LockableId lockId, DgnDbR db) { return _QueryLockLevel(level, lockId, db); }

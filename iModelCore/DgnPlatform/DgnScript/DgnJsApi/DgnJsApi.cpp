@@ -216,6 +216,16 @@ JsECInstanceP JsECClass::MakeInstance()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson                      07/15
 //---------------------------------------------------------------------------------------
+int32_t Script::LoadScript(JsDgnDbP db, Utf8StringCR scriptName)
+    {
+    if (!db || !db->m_db.IsValid())
+        return -1;
+    return (int32_t) DgnScript::LoadScript(*db->m_db, scriptName.c_str());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Sam.Wilson                      07/15
+//---------------------------------------------------------------------------------------
 void Script::ImportLibrary (Utf8StringCR libName)
     {
     T_HOST.GetScriptAdmin().ImportScriptLibrary(libName.c_str());
