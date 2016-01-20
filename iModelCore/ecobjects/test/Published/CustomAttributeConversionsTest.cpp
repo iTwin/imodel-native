@@ -725,11 +725,11 @@ TEST_F(StandardValueToEnumConversionTest, Strict_Duplicate_Inherited_Combo_Expec
 
     ECEnumerationCP ecEnum;
     Utf8String enumName = "BaseNameTitle1";
-    ASSERT_NE(nullptr, ecEnum = m_schema->GetEnumerationCP(enumName.c_str())) << "Enumeration " << ecEnum << " should have been created";
+    ASSERT_NE(nullptr, ecEnum = m_schema->GetEnumerationCP(enumName.c_str())) << "Enumeration " << enumName << " should have been created";
     EXPECT_EQ(1, ecEnum->GetEnumeratorCount());
     EXPECT_EQ(false, ecEnum->GetIsStrict()) << "Title1 is derived from base class property which has no StandardValues CA so GetIsStrict() should return false";
 
-    ASSERT_NE(nullptr, ecEnum = m_schema->GetEnumerationCP("ATitle1")) << "Enumeration " << ecEnum << " should have been created";
+    ASSERT_NE(nullptr, ecEnum = m_schema->GetEnumerationCP("ATitle1")) << "Enumeration " << enumName << " should have been created";
     EXPECT_EQ(1, ecEnum->GetEnumeratorCount());
     EXPECT_EQ(true, ecEnum->GetIsStrict()) << "Title1 is derived from base class property which has no StandardValues CA so GetIsStrict() should return false";
 
@@ -789,7 +789,7 @@ TEST_F(StandardValueToEnumConversionTest, Strict_Duplicate_Inherited_Combo_Expec
 
     ECEnumerationCP ecEnum;
     Utf8String enumName = "ATitle1";
-    ASSERT_NE(nullptr, ecEnum = m_schema->GetEnumerationCP(enumName.c_str())) << "Enumeration " << ecEnum << " should have been created";
+    ASSERT_NE(nullptr, ecEnum = m_schema->GetEnumerationCP(enumName.c_str())) << "Enumeration " << enumName << " should have been created";
     EXPECT_EQ(1, ecEnum->GetEnumeratorCount());
     EXPECT_EQ(false, ecEnum->GetIsStrict()) << "Title1 is derived from base class property which has no StandardValues CA so GetIsStrict() should return false";
     
