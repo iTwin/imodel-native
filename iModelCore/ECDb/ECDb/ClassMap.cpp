@@ -410,6 +410,7 @@ MapStatus ClassMap::Map(SchemaImportContext& schemaImportContext, ClassMapInfo c
     return _OnInitialized();
     }
 
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      06/2013
 //---------------------------------------------------------------------------------------
@@ -428,6 +429,8 @@ MapStatus ClassMap::_MapPart1(SchemaImportContext& schemaImportContext, ClassMap
     else if (mapInfo.GetMapStrategy().GetStrategy() == ECDbMapStrategy::Strategy::ExistingTable)
         tableType = TableType::Existing;
 
+    if (!Utf8String::IsNullOrEmpty(mapInfo.GetECInstanceIdColumnName()) && strcmp(mapInfo.GetECInstanceIdColumnName(), ECDB_COL_ECInstanceId) != 0)
+        m_userSpecifiedECInstanceIdColumnName = std::unique_ptr<Utf8String>(new Utf8String(mapInfo.GetECInstanceIdColumnName()));
 
     auto findOrCreateTable = [&] ()
         {

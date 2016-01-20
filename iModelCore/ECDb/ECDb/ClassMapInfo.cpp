@@ -60,6 +60,8 @@ MapStatus ClassMapInfo::Initialize()
         if (SUCCESS != IClassMap::DetermineTableName(m_tableName, m_ecClass))
             return MapStatus::Error;
         }
+    if (m_ecClass.GetName() == "Category")
+        printf("");
 
     if (m_ecInstanceIdColumnName.empty())
         m_ecInstanceIdColumnName = ECDB_COL_ECInstanceId;
@@ -173,12 +175,23 @@ BentleyStatus ClassMapInfo::DoEvaluateMapStrategy(bool& baseClassesNotMappedYet,
             BeAssert(false);
             return ERROR;
             }
-        
-        //use same ECInstanceId column name for derived classes.
-        ECDbSqlColumn const* parentECInstanceIdCol = m_parentClassMap->GetJoinedTable().GetFilteredColumnFirst(ColumnKind::ECInstanceId);
-        if (parentECInstanceIdCol != nullptr)
-            m_ecInstanceIdColumnName.assign(parentECInstanceIdCol->GetName());
+        if (m_ecClass.GetName() == "Category")
+            printf("");
 
+        //use same ECInstanceId column name for derived classes.
+        
+        Utf8CP ecInstanceIdColumn = static_cast<ClassMap const*>(m_parentClassMap)->GetUserSpecifiedECInstanceIdColumnName() == nullptr ?
+            nullptr : static_cast<ClassMap const*>(m_parentClassMap)->GetUserSpecifiedECInstanceIdColumnName()->c_str();
+        
+        if (ecInstanceIdColumn == nullptr)
+            {
+            ECDbSqlColumn const* parentECInstanceIdCol = m_parentClassMap->GetJoinedTable().GetFilteredColumnFirst(ColumnKind::ECInstanceId);
+            ecInstanceIdColumn = parentECInstanceIdCol->GetName().c_str();
+            }
+
+        if (ecInstanceIdColumn != nullptr && (m_ecInstanceIdColumnName.empty() || m_ecInstanceIdColumnName == ECDB_COL_ECInstanceId))
+            m_ecInstanceIdColumnName.assign(ecInstanceIdColumn);
+       
         ECDbMapStrategy::Options options = ECDbMapStrategy::Options::None;
         if (!Enum::Contains(userStrategy.GetOptions(), UserECDbMapStrategy::Options::DisableSharedColumns) && 
             (Enum::Contains(userStrategy.GetOptions(), UserECDbMapStrategy::Options::SharedColumns) ||
@@ -868,12 +881,12 @@ MapStatus RelationshipMapInfo::_EvaluateMapStrategy()
 
             case Cardinality::ManyToOne:
                 {
-                if (m_customMapType == CustomMapType::ForeignKeyOnTarget)
-                    {
-                    LOG.errorv("ECRelationshipClass %s implies a foreign key relationship on the source's table. Therefore the 'End' property in the ForeignKeyRelationshipMap custom attribute must not be set to 'Target'.",
-                               GetECClass().GetFullName());
-                    return MapStatus::Error;
-                    }
+                //if (m_customMapType == CustomMapType::ForeignKeyOnTarget)
+                //    {
+                //    LOG.errorv("ECRelationshipClass %s implies a foreign key relationship on the source's table. Therefore the 'End' property in the ForeignKeyRelationshipMap custom attribute must not be set to 'Target'.",
+                //               GetECClass().GetFullName());
+                //    return MapStatus::Error;
+                //    }
                 //If relationship have abstract end with multiple tables
                 //if (sourceTableCount > 1)
                 //    {

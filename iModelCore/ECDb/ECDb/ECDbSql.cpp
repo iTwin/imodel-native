@@ -897,7 +897,10 @@ ForeignKeyActionType ECDbSqlForeignKeyConstraint::ToActionType(Utf8CP str)
     if (BeStringUtilities::Stricmp(str, "Restrict") == 0)
         return ForeignKeyActionType::Restrict;
 
-    return ForeignKeyActionType::NoAction;
+    if (BeStringUtilities::Stricmp(str, "NoAction") == 0)
+        return ForeignKeyActionType::NoAction;
+
+    return ForeignKeyActionType::NotSpecified;
     }
 
 //---------------------------------------------------------------------------------------
@@ -1183,7 +1186,19 @@ BentleyStatus DDLGenerator::AddColumns(ECDbR ecdb, ECDbSqlTable const& table, st
                 if (fk->ContainsInSource(newColumn) && fk->GetSourceColumns().size() == 1 && fk->GetTargetColumns().size() == 1)
                     {
                     Utf8String fkDefinition;
-                    fkDefinition.Sprintf(" REFERENCES %s (%s)", fk->GetTargetTable().GetName().c_str(), fk->GetTargetColumns().front()->GetName().c_str());
+                    fkDefinition.Sprintf(" REFERENCES %s (%s) ", fk->GetTargetTable().GetName().c_str(), fk->GetTargetColumns().front()->GetName().c_str());
+                    if (fk->GetOnDeleteAction() != ForeignKeyActionType::NotSpecified)
+                        {
+                        fkDefinition.append(" ON DELETE ");
+                        fkDefinition.append(ECDbSqlForeignKeyConstraint::ToSQL(fk->GetOnDeleteAction()));
+                        }
+
+                    if (fk->GetOnUpdateAction() != ForeignKeyActionType::NotSpecified)
+                        {
+                        fkDefinition.append(" ON UPDATE ");
+                        fkDefinition.append(ECDbSqlForeignKeyConstraint::ToSQL(fk->GetOnUpdateAction()));
+                        }
+
                     alterDDL.append(fkDefinition);
                     break;
                     }
