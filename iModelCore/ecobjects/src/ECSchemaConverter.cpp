@@ -225,10 +225,10 @@ ECObjectsStatus ECSchemaConverter::RemoveCustomAttribute(ECPropertyP& ecProperty
             
             if (!localProp->RemoveCustomAttribute(customAttributeName))
                 {
-                LOG.errorv("Error removing %s CustomAttribute for %s", customAttributeName, propertyName);
+                LOG.errorv("Error removing %s CustomAttribute for %s", customAttributeName.c_str(), propertyName.c_str());
                 return ECObjectsStatus::Error;
                 }
-            LOG.debugv("Removed %s CustomAttribute for %s", customAttributeName, propertyName);
+            LOG.debugv("Removed %s CustomAttribute for %s", customAttributeName.c_str(), propertyName.c_str());
             }
         return ECObjectsStatus::Success;
         };
@@ -354,15 +354,15 @@ void ECSchemaConverter::ProcessCustomAttributeInstance(ECCustomAttributeInstance
         IECCustomAttributeConverterP converter = GetConverter(fullName);
         if (nullptr != converter)
             {
-            LOG.debugv("Started [%s Converter][Container %s]. ", fullName, containerName);
+            LOG.debugv("Started [%s Converter][Container %s]. ", fullName, containerName.c_str());
             auto status = converter->Convert(*schema, container, *attr);
             if (ECObjectsStatus::Success != status)
                 {
-                LOG.errorv("Failed [%s Converter][Container %s]. ", fullName, containerName);
+                LOG.errorv("Failed [%s Converter][Container %s]. ", fullName, containerName.c_str());
                 m_convertedOK = false;
                 }
             else    
-                LOG.debugv("Succeded [%s Converter][Container %s]. ", fullName, containerName);
+                LOG.debugv("Succeded [%s Converter][Container %s]. ", fullName, containerName.c_str());
             }
         
         }
@@ -500,8 +500,8 @@ bvector<ECClassP> ECSchemaConverter::GetHierarchicallySortedClasses(ECSchemaR sc
         sortedOrder += ecClass->GetName() + ","; 
         });
 
-    LOG.tracev("Default Order For classes in schema: %s", defaultOrder);
-    LOG.tracev("Name and Hierarchical Sorted Order For classes in schema: %s", sortedOrder);
+    LOG.tracev("Default Order For classes in schema: %s", defaultOrder.c_str());
+    LOG.tracev("Name and Hierarchical Sorted Order For classes in schema: %s", sortedOrder.c_str());
     return classes;
     }
 
@@ -519,13 +519,13 @@ ECObjectsStatus StandardValuesConverter::Convert(ECSchemaR schema, IECCustomAttr
     StandardValueInfo sdInfo;
     if (ECObjectsStatus::Success != (status = StandardValueInfo::ExtractInstanceData(instance, sdInfo)))
         {
-        LOG.errorv("Unable to extract '%s' Standard Value. Status %d", prop->GetName(), status);
+        LOG.errorv("Unable to extract '%s' Standard Value. Status %d", prop->GetName().c_str(), status);
         return status;
         }
     Utf8String classes;
     if (ECObjectsStatus::DataTypeMismatch == CheckForConflict(prop, schema, sdInfo, classes))
         {
-        LOG.warningv("Conflict between Standard Values for the Property %s. Used by following classes: %s. NO ENUM will be added !!!", prop->GetName(), classes);
+        LOG.warningv("Conflict between Standard Values for the Property %s. Used by following classes: %s. NO ENUM will be added !!!", prop->GetName().c_str(), classes.c_str());
         status = ECObjectsStatus::Success;
         }
     else
@@ -535,7 +535,7 @@ ECObjectsStatus StandardValuesConverter::Convert(ECSchemaR schema, IECCustomAttr
         }
     if (ECObjectsStatus::Success != status)
         {
-        LOG.errorv("Something went wrong while adding Enumeration for '%s' Standard Value", prop->GetName());
+        LOG.errorv("Something went wrong while adding Enumeration for '%s' Standard Value", prop->GetName().c_str());
         return status;
         }
 
