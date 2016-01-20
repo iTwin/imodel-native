@@ -23,13 +23,13 @@ module DgnScriptTests {
         {
         g.TryTransformInPlace (be.Transform.CreateTranslationXYZ (dx*shiftXSize, dy*shiftYsize, 0.0));
         }
-    function ShowPoint (builder : be.ElementGeometryBuilder, point: be.DPoint3d)
+    function ShowPoint (builder : be.GeometryBuilder, point: be.DPoint3d)
         {
         var arc = be.EllipticArc.CreateCircleXY (point, 0.05);
         builder.Append (arc);
         }
 
-    function ShowArc (builder: be.ElementGeometryBuilder, arc: be.EllipticArc )
+    function ShowArc (builder: be.GeometryBuilder, arc: be.EllipticArc )
         {
         builder.Append (arc);
         ShowPoint (builder, arc.PointAtFraction (0.0));
