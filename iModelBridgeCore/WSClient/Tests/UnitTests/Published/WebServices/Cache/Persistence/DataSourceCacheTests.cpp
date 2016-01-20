@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/WebServices/Cache/Persistence/DataSourceCacheTests.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -2945,6 +2945,26 @@ TEST_F(DataSourceCacheTests, CacheResponse_FinalResponseAndMultiplePagesWihtSpac
     EXPECT_FALSE(cache->FindInstance({"TestSchema.TestClass", "B"}).IsValid());
     EXPECT_TRUE(cache->FindInstance({"TestSchema.TestClass", "E"}).IsValid());
     EXPECT_TRUE(cache->FindInstance({"TestSchema.TestClass", "C"}).IsValid());
+    }
+
+TEST_F(DataSourceCacheTests, CacheResponse_ExistingInstanceWithReadOnlyProperty_UpdatesPropertyValueForSameInstanceInCache)
+    {
+    auto cache = GetTestCache();
+    auto key = StubCachedResponseKey(*cache);
+
+    StubInstances instances;
+    instances.Add({"TestSchema.TestClass3", "Foo"}, {{"TestReadOnlyProperty", "OldValue"}});
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(key, instances.ToWSObjectsResponse()));
+    ECInstanceKey instance1 = cache->FindInstance({"TestSchema.TestClass3", "Foo"});
+
+    instances.Clear();
+    instances.Add({"TestSchema.TestClass3", "Foo"}, {{"TestReadOnlyProperty", "NewValue"}});
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(key, instances.ToWSObjectsResponse()));
+    ECInstanceKey instance2 = cache->FindInstance({"TestSchema.TestClass3", "Foo"});
+
+    EXPECT_EQ(instance1, instance2);
+    Json::Value properties = ReadInstance(*cache, instance2);
+    EXPECT_EQ("NewValue", properties["TestReadOnlyProperty"].asString());
     }
 
 TEST_F(DataSourceCacheTests, IsResponseCached_ParentDoesNotExist_False)
