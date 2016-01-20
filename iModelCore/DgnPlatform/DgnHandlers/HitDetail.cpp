@@ -790,16 +790,14 @@ HitList::~HitList() {clear();}
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      01/2008
 +---------------+---------------+---------------+---------------+---------------+------*/
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      01/2008
-+---------------+---------------+---------------+---------------+---------------+------*/
 HitDetailP HitList::Get(int i)
     {
     if (i < 0)                  // ***NEEDS WORK: the old ObjectArray used to support -1 == END
         i = (int) size();
-    if (i >= GetCount())
+
+    if (i >= (int) GetCount())
         return NULL;
+
     return at(i).get();
     }
 
@@ -808,7 +806,7 @@ HitDetailP HitList::Get(int i)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void HitList::Set(int i, HitDetailP p)
     {
-    if (i < 0 || i >= GetCount())
+    if (i < 0 || i >= (int) GetCount())
         {
         BeAssert(false);
         return;

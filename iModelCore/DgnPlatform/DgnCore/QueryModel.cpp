@@ -83,10 +83,6 @@ void QueryModel::SaveQueryResults()
     // First add everything from the list used for drawing.
     for (auto const& result : m_currQueryResults->m_elements)
         _OnLoadedElement(*result);
-
-    // Now add everything that is in the secondary list but not the first.
-    for (auto const& result : m_currQueryResults->m_closeElements)
-        _OnLoadedElement(*result);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -309,9 +305,6 @@ void QueryModel::Processor::DoQuery(StopWatch& watch)
     if (m_params.m_clipVector.IsValid())
         filter.SetClipVector(*m_params.m_clipVector);
 
-    if (0 != m_params.m_secondaryHitLimit)
-        filter.InitializeSecondaryTest(m_params.m_secondaryVolume, m_params.m_secondaryHitLimit);
-
     m_results = new Results();
     if (m_params.m_highPriorityOnly)
         {
@@ -328,7 +321,6 @@ void QueryModel::Processor::DoQuery(StopWatch& watch)
 
     m_results->m_needsProgressive = filter.m_needsProgressive;
     DEBUG_PRINTF("loading elements, progressive=%d", m_results->m_needsProgressive);
-    LoadElements(filter.m_secondaryFilter.m_occlusionScores, m_results->m_closeElements);
     LoadElements(filter.m_occlusionScores, m_results->m_elements);
 
     m_params.m_model.m_updatedResults = m_results;
@@ -414,14 +406,11 @@ bool QueryModel::Processor::SearchRangeTree(Filter& filter)
 * @bsimethod                                    Keith.Bentley                   12/11
 +---------------+---------------+---------------+---------------+---------------+------*/
 QueryModel::Filter::Filter(QueryModelR model, uint32_t hitLimit, DgnElementIdSet const* alwaysDraw, DgnElementIdSet const* exclude)
-    : m_model(model), m_useSecondary(false), m_alwaysDraw(nullptr), RTreeFilter(exclude)
+    : m_model(model), m_alwaysDraw(nullptr), RTreeFilter(exclude)
     {
     m_hitLimit = hitLimit;
     m_occlusionMapMinimum = 1.0e20;
     m_occlusionMapCount = 0;
-    m_secondaryFilter.m_hitLimit = hitLimit;
-    m_secondaryFilter.m_occlusionMapCount = 0;
-    m_secondaryFilter.m_occlusionMapMinimum = DBL_MAX;
 
     if (nullptr != alwaysDraw)
         {
@@ -432,25 +421,12 @@ QueryModel::Filter::Filter(QueryModelR model, uint32_t hitLimit, DgnElementIdSet
                 continue;
 
             m_passedPrimaryTest = true;
-            m_passedSecondaryTest = false;
             AcceptElement(id);
             }
         }
 
     //  We do this as the last step. Otherwise, the calls to RangeAccept in the previous step would not have any effect.
     m_alwaysDraw = alwaysDraw;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   John.Gooding    10/2013
-//---------------------------------------------------------------------------------------
-void QueryModel::Filter::InitializeSecondaryTest(DRange3dCR volume, uint32_t hitLimit)
-    {
-    m_useSecondary = true;
-    m_secondaryFilter.m_hitLimit = hitLimit;
-    m_secondaryFilter.m_occlusionMapCount = 0;
-    m_secondaryFilter.m_occlusionMapMinimum = DBL_MAX;
-    m_secondaryFilter.m_scorer.Initialize(volume);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -480,23 +456,7 @@ int QueryModel::Filter::_TestRTree(RTreeMatchFunction::QueryInfo const& info)
         return BE_SQLITE_ERROR;
 
     RTree3dValCP pt = (RTree3dValCP) info.m_coords;
-    m_passedPrimaryTest   = m_boundingRange.Intersects(*pt) && SkewTest(pt);
-    m_passedSecondaryTest = m_useSecondary ? m_secondaryFilter.m_scorer.m_boundingRange.Intersects(*pt) : false;
-
-    if (m_passedSecondaryTest)
-        {
-        if (!m_secondaryFilter.m_scorer.ComputeScore(&m_secondaryFilter.m_lastScore, *pt))
-            {
-            m_passedSecondaryTest = false;
-            }
-        else if (m_secondaryFilter.m_occlusionMapCount >= m_secondaryFilter.m_hitLimit && m_secondaryFilter.m_lastScore <= m_secondaryFilter.m_occlusionMapMinimum)
-            {
-            m_passedSecondaryTest = false;
-            }
-
-        if (m_passedSecondaryTest)
-            info.m_within = RTreeMatchFunction::Within::Partly;
-        }
+    m_passedPrimaryTest = m_boundingRange.Intersects(*pt) && SkewTest(pt);
 
     if (!m_passedPrimaryTest)
         return BE_SQLITE_OK;
@@ -522,7 +482,6 @@ int QueryModel::Filter::_TestRTree(RTreeMatchFunction::QueryInfo const& info)
         }
 #endif
 
-    BeAssert(m_passedPrimaryTest);
     bool overlap, spansEyePlane;
 
     if (!m_scorer.ComputeOcclusionScore(&m_lastScore, overlap, spansEyePlane, localCorners))
@@ -584,16 +543,6 @@ void QueryModel::Filter::AcceptElement(DgnElementId elementId)
             }
         }
 
-    if (m_passedSecondaryTest)
-        {
-        if (m_secondaryFilter.m_occlusionMapCount >= m_secondaryFilter.m_hitLimit)
-            m_secondaryFilter.m_occlusionScores.erase(m_secondaryFilter.m_occlusionScores.begin());
-        else
-            m_secondaryFilter.m_occlusionMapCount++;
-
-        m_secondaryFilter.m_occlusionScores.Insert(m_secondaryFilter.m_lastScore, elementId.GetValueUnchecked());
-        m_secondaryFilter.m_occlusionMapMinimum = m_secondaryFilter.m_occlusionScores.begin()->first;
-        }
     }
 
 /*---------------------------------------------------------------------------------**//**

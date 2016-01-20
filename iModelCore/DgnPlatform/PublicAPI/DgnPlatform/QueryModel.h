@@ -112,27 +112,14 @@ struct QueryModel : SpatialModel
     //=======================================================================================
     struct Filter : RTreeFilter
     {
-        struct SecondaryFilter
-            {
-            OverlapScorer       m_scorer;
-            uint32_t            m_hitLimit;
-            uint32_t            m_occlusionMapCount;
-            double              m_occlusionMapMinimum;
-            OcclusionScores     m_occlusionScores;
-            double              m_lastScore;
-            };
-
         bool                    m_passedPrimaryTest;
-        bool                    m_passedSecondaryTest;
         bool                    m_needsProgressive = false;
-        bool                    m_useSecondary;
         uint32_t                m_hitLimit;
         uint32_t                m_occlusionMapCount;
         uint64_t                m_lastId;
         OcclusionScores         m_occlusionScores;
         double                  m_occlusionMapMinimum;
         double                  m_lastScore;
-        SecondaryFilter         m_secondaryFilter;
         DgnElementIdSet const*  m_alwaysDraw;
         QueryModel&             m_model;
 
@@ -142,7 +129,6 @@ struct QueryModel : SpatialModel
 
     public:
         Filter(QueryModelR model, uint32_t hitLimit, DgnElementIdSet const* alwaysDraw, DgnElementIdSet const* exclude);
-        void InitializeSecondaryTest(DRange3dCR volume, uint32_t hitLimit);
         uint32_t GetCount() const {return m_occlusionMapCount;}
     };
     
@@ -196,7 +182,6 @@ struct QueryModel : SpatialModel
 
     public:
         bvector<DgnElementCPtr> m_elements;
-        bvector<DgnElementCPtr> m_closeElements;
         bool     m_needsProgressive;
         uint32_t m_drawnBeforePurge;
 
@@ -220,13 +205,11 @@ struct QueryModel : SpatialModel
             DgnElementIdSet*    m_neverDraw;
             bool                m_highPriorityOnly;
             ClipVectorPtr       m_clipVector;
-            uint32_t            m_secondaryHitLimit;
-            DRange3d            m_secondaryVolume;
 
             Params(QueryModelR model, DgnViewportCR vp, Utf8StringCR sql, UpdatePlan::Query const& plan, uint64_t maxMem, DgnElementIdSet* highPriority,
-                    DgnElementIdSet* neverDraw, bool highPriorityOnly, ClipVectorP clipVector, uint32_t secondaryHitLimit, DRange3dCR secondaryRange)
+                    DgnElementIdSet* neverDraw, bool highPriorityOnly, ClipVectorP clipVector)
                 : m_model(model), m_vp(vp), m_searchSql(sql), m_plan(plan), m_maxMemory(maxMem), m_highPriority(highPriority),
-                    m_neverDraw(neverDraw), m_highPriorityOnly(highPriorityOnly), m_clipVector(clipVector), m_secondaryHitLimit(secondaryHitLimit), m_secondaryVolume(secondaryRange) { }
+                    m_neverDraw(neverDraw), m_highPriorityOnly(highPriorityOnly), m_clipVector(clipVector) {}
         };
 
     protected:
