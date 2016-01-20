@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/DgnProject/Published/LocksManager_Test.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "DgnHandlersTests.h"
@@ -67,10 +67,13 @@ private:
     virtual LockStatus _QueryLocksHeld(bool& held, LockRequestCR reqs, DgnDbR db) override;
     virtual LockRequest::Response _AcquireLocks(LockRequestCR reqs, DgnDbR db) override;
     virtual LockStatus _RelinquishLocks(DgnDbR db) override;
-    virtual LockStatus _ReleaseLocks(DgnLockSet const& locks, DgnDbR db) override;
+    virtual LockStatus _DemoteLocks(DgnLockSet const& locks, DgnDbR db) override;
     virtual LockStatus _QueryLockLevel(LockLevel& level, LockableId lockId, DgnDbR db) override;
     virtual LockStatus _QueryLocks(DgnLockSet& locks, DgnDbR db) override;
     virtual LockStatus _QueryOwnership(DgnLockOwnershipR ownership, LockableId lockId) override;
+
+    // Not much to test with these...
+    virtual LockStatus _QueryRevisionId(WStringR revId, LockableId lockId) override { revId.clear(); return LockStatus::Success; }
 
     bool AreLocksAvailable(LockRequestCR reqs, BeBriefcaseId requestor);
     void GetDeniedLocks(DgnLockSet& locks, LockRequestCR reqs, BeBriefcaseId bcId);
@@ -230,16 +233,16 @@ LockStatus LocksServer::_RelinquishLocks(DgnDbR db)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   11/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-LockStatus LocksServer::_ReleaseLocks(DgnLockSet const& locks, DgnDbR db)
+LockStatus LocksServer::_DemoteLocks(DgnLockSet const& locks, DgnDbR db)
     {
     if (m_offline)
         return LockStatus::ServerUnavailable;
 
-    Dump("ReleaseLocks: None");
+    Dump("DemoteLocks: None");
     Relinquish(locks, db);
-    Dump("ReleaseLocks: Shared");
+    Dump("DemoteLocks: Shared");
     Reduce(locks, db);
-    Dump("ReleaseLocks: Finished");
+    Dump("DemoteLocks: Finished");
 
     return LockStatus::Success;
     }
@@ -544,7 +547,7 @@ void LocksServer::Dump(Utf8CP descr)
 /*---------------------------------------------------------------------------------**//**
 * @bsistruct                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct LocksManagerTest : public ::testing::Test, DgnPlatformLib::Host::LocksAdmin
+struct LocksManagerTest : public ::testing::Test, DgnPlatformLib::Host::ServerAdmin
 {
     mutable LocksServer m_server;
     ScopedDgnHost m_host;
@@ -553,7 +556,7 @@ struct LocksManagerTest : public ::testing::Test, DgnPlatformLib::Host::LocksAdm
 
     LocksManagerTest()
         {
-        m_host.SetLocksAdmin(this);
+        m_host.SetServerAdmin(this);
         BackDoor::ILocksManager::SetLockingEnabled(true);
         }
 
@@ -660,7 +663,7 @@ struct LocksManagerTest : public ::testing::Test, DgnPlatformLib::Host::LocksAdm
 
         // Test that response matches direct ownership query
         DgnLockOwnership ownership;
-        EXPECT_EQ(LockStatus::Success, T_HOST.GetLocksAdmin()._GetLocksServer(requestor)->QueryOwnership(ownership, lockableId));
+        EXPECT_EQ(LockStatus::Success, T_HOST.GetServerAdmin()._GetLocksServer(requestor)->QueryOwnership(ownership, lockableId));
         EXPECT_EQ(level, ownership.GetLockLevel());
         auto owningBcId = ExtractDgnDb(lockedObj).GetBriefcaseId();
         switch (level)
@@ -1310,7 +1313,7 @@ static void touchElement(DgnElementCR el)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   11/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(DoubleBriefcaseTest, ReleaseLocks)
+TEST_F(DoubleBriefcaseTest, DemoteLocks)
     {
     SetupDbs();
     DgnDbR db = *m_dbA;
@@ -1331,7 +1334,7 @@ TEST_F(DoubleBriefcaseTest, ReleaseLocks)
     // We can demote model lock from exclusive to shared while retaining element lock
     DgnLockSet toRelease;
     toRelease.insert(DgnLock(model2dLockId, LockLevel::Shared));
-    EXPECT_EQ(LockStatus::Success, db.Locks().ReleaseLocks(toRelease));
+    EXPECT_EQ(LockStatus::Success, db.Locks().DemoteLocks(toRelease));
     ExpectLevel(*model2d, LockLevel::Shared);
     ExpectLevel(*elem2d2, LockLevel::Exclusive);
     ExpectLevel(db, LockLevel::Shared);
@@ -1339,7 +1342,7 @@ TEST_F(DoubleBriefcaseTest, ReleaseLocks)
     // Releasing shared lock on model also release lock on element within that model (but not the element in the other model)
     toRelease.clear();
     toRelease.insert(DgnLock(model2dLockId, LockLevel::None));
-    EXPECT_EQ(LockStatus::Success, db.Locks().ReleaseLocks(toRelease));
+    EXPECT_EQ(LockStatus::Success, db.Locks().DemoteLocks(toRelease));
     ExpectLevel(*model2d, LockLevel::None);
     ExpectLevel(*elem2d2, LockLevel::None);
     ExpectLevel(*elem3d2, LockLevel::Exclusive);
@@ -1354,18 +1357,18 @@ TEST_F(DoubleBriefcaseTest, ReleaseLocks)
     LockableId model3dLockId = MakeLockableId(*model3d);
     toRelease.clear();
     toRelease.insert(DgnLock(model3dLockId, LockLevel::Shared));
-    EXPECT_EQ(LockStatus::Success, db.Locks().ReleaseLocks(toRelease));
+    EXPECT_EQ(LockStatus::Success, db.Locks().DemoteLocks(toRelease));
     ExpectLevel(*model3d, LockLevel::Shared);
     ExpectLevel(*elem3d2, LockLevel::Exclusive);
 
     // Cannot release model lock if elements within it have been modified
     toRelease.clear();
     toRelease.insert(DgnLock(model3dLockId, LockLevel::None));
-    EXPECT_EQ(LockStatus::LockUsed, db.Locks().ReleaseLocks(toRelease));
+    EXPECT_EQ(LockStatus::LockUsed, db.Locks().DemoteLocks(toRelease));
 
     // If we undo the element change, we can release the locks
     EXPECT_EQ(DgnDbStatus::Success, db.Txns().ReverseTo(txnId));
-    EXPECT_EQ(LockStatus::Success, db.Locks().ReleaseLocks(toRelease));
+    EXPECT_EQ(LockStatus::Success, db.Locks().DemoteLocks(toRelease));
     ExpectLevel(*elem3d2, LockLevel::None);
     ExpectLevel(*model3d, LockLevel::None);
     
@@ -1384,7 +1387,7 @@ struct ExtractLocksTest : SingleBriefcaseLocksTest
             return DgnDbStatus::WriteError;
 
         RevisionStatus revStat;
-        DgnRevisionPtr rev = m_db->Revisions().StartCreateRevision(&revStat);
+        DgnRevisionPtr rev = m_db->Revisions().StartCreateRevision(&revStat, DgnRevision::Include::Locks);
         if (rev.IsNull())
             {
             if (RevisionStatus::NoTransactions == revStat)
@@ -1398,12 +1401,9 @@ struct ExtractLocksTest : SingleBriefcaseLocksTest
                 }
             }
 
-        ChangeStreamFileReader stream(rev->GetChangeStreamFile());
-        DgnDbStatus status = req.FromChangeSet(stream, *m_db);
-
+        req.FromRevision(*rev);
         m_db->Revisions().AbandonCreateRevision();
-
-        return status;
+        return DgnDbStatus::Success;
         }
 };
 
@@ -1443,7 +1443,7 @@ TEST_F(ExtractLocksTest, UsedLocks)
         {
         UndoScope V_V_V_Undo(db);
         auto pEl = cpEl->CopyForEdit();
-        DgnElement::Code newCode = DgnCategory::CreateCategoryCode("RenamedCategory");
+        DgnCode newCode = DgnCategory::CreateCategoryCode("RenamedCategory");
         EXPECT_EQ(DgnDbStatus::Success, pEl->SetCode(newCode));
         cpEl = pEl->Update();
         ASSERT_TRUE(cpEl.IsValid());

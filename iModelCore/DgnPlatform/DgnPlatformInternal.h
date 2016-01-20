@@ -78,6 +78,7 @@
 #include <DgnPlatform/DgnCategory.h>
 #include <DgnPlatform/DgnTexture.h>
 #include <DgnPlatform/DgnTrueColor.h>
+#include <DgnPlatform/GenericDomain.h>
 #include <DgnPlatform/QueryView.h>
 
 #include "DgnCore/DgnCoreLog.h"

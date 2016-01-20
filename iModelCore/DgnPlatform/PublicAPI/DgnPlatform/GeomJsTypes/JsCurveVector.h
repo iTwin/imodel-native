@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/GeomJsTypes/JsCurveVector.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 //__BENTLEY_INTERNAL_ONLY__
@@ -34,6 +34,9 @@ protected :
 public:
     JsCurveVector () {}
 
+    virtual JsCurveVectorP AsCurveVector () {return this;}
+
+
     JsCurveVectorP StgronglyTypedJsCurveVector (CurveVectorPtr &data);
     JsCurveVector (CurveVectorPtr curveVector) : m_curveVector (curveVector) {}
     JsCurveVectorP Clone () {return new JsCurveVector (m_curveVector->Clone ());} 
@@ -47,6 +50,53 @@ public:
 
     JsCurveVectorP MemberAsCurveVector (double doubleIndex) const;
     JsCurvePrimitiveP MemberAsCurvePrimitive (double index) const;
+
+
+    virtual JsDRange3dP RangeAfterTransform (JsTransformP jsTransform) override
+        {
+        DRange3d range;
+        Transform transform = jsTransform->Get ();
+        m_curveVector->GetRange (range, transform);
+        return new JsDRange3d (range);
+        }
+    virtual JsDRange3dP Range () override
+        {
+        DRange3d range;
+        m_curveVector->GetRange (range);
+        return new JsDRange3d (range);
+        }
+     virtual bool TryTransformInPlace (JsTransformP jsTransform) override
+        {
+        Transform transform = jsTransform->Get ();
+        return m_curveVector->TransformInPlace (transform);
+        }
+
+
+    virtual bool IsSameStructureAndGeometry (JsGeometryP other) override
+        {
+        CurveVectorPtr otherVector;
+        if (other != nullptr
+            && (otherVector = other->GetCurveVectorPtr (), otherVector.IsValid ())       // COMMA
+            )
+            {
+            return m_curveVector->IsSameStructureAndGeometry (*otherVector);
+            }
+        return false;
+        }
+
+    virtual bool IsSameStructure (JsGeometryP other) override
+        {
+        CurveVectorPtr otherVector;
+        if (other != nullptr
+            && (otherVector = other->GetCurveVectorPtr (), otherVector.IsValid ())       // COMMA
+            )
+            {
+            return m_curveVector->IsSameStructure (*otherVector);
+            }
+        return false;
+        }
+
+
 
 };
 

@@ -316,7 +316,7 @@ TEST_F (PerformanceElementTestFixture, ElementInsertInDbWithSingleInsertApproach
     LOGTODB (TEST_DETAILS, timer.GetElapsedSeconds (), "Single Insert (named parameters)", s_instanceCount);
     }
 
-struct PerformanceElemetsTests : PerformanceElementsCRUDTestFixture
+struct PerformanceElementsTests : PerformanceElementsCRUDTestFixture
     {
     };
 
@@ -324,7 +324,7 @@ static bool needSqlECSql = true;
 //---------------------------------------------------------------------------------------
 // @bsiMethod                                     Muhammad Hassan                  11/15
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(PerformanceElemetsTests, ElementsInsert)
+TEST_F(PerformanceElementsTests, ElementsInsert)
     {
     int initInstanceCount = 10000;
     int insertCount = 1000;
@@ -402,7 +402,7 @@ TEST_F(PerformanceElemetsTests, ElementsInsert)
 //---------------------------------------------------------------------------------------
 // @bsiMethod                                     Muhammad Hassan                  11/15
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(PerformanceElemetsTests, ElementsRead)
+TEST_F(PerformanceElementsTests, ElementsRead)
     {
     int initInstanceCount = 10000;
     int insertCount = 1000;
@@ -480,7 +480,7 @@ TEST_F(PerformanceElemetsTests, ElementsRead)
 //---------------------------------------------------------------------------------------
 // @bsiMethod                                     Muhammad Hassan                  11/15
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(PerformanceElemetsTests, ElementsUpdate)
+TEST_F(PerformanceElementsTests, ElementsUpdate)
     {
     int initInstanceCount = 10000;
     int insertCount = 1000;
@@ -558,7 +558,7 @@ TEST_F(PerformanceElemetsTests, ElementsUpdate)
 //---------------------------------------------------------------------------------------
 // @bsiMethod                                     Muhammad Hassan                  11/15
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(PerformanceElemetsTests, ElementsDelete)
+TEST_F(PerformanceElementsTests, ElementsDelete)
     {
     int initInstanceCount = 10000;
     int insertCount = 1000;

@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/DgnJsApi.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 //__BENTLEY_INTERNAL_ONLY__
@@ -22,6 +22,9 @@
 BEGIN_BENTLEY_DGN_NAMESPACE
 
 #define STUB_OUT_SET_METHOD(PROPNAME,PROPTYPE)  void Set ## PROPNAME (PROPTYPE) {BeAssert(false);}
+
+struct JsDgnDb;
+typedef JsDgnDb* JsDgnDbP;
 
 struct JsDgnModel;
 typedef JsDgnModel* JsDgnModelP;
@@ -138,6 +141,8 @@ struct Logging : RefCountedBaseWithCreate // ***  NEEDS WORK: It should not be n
 //=======================================================================================
 struct Script : RefCountedBaseWithCreate // ***  NEEDS WORK: It should not be necessary to derive from RefCountedBase, since I suppress my constructor. This is a bug in BeJavaScript that should be fixed.
 {
+	static int32_t LoadScript(JsDgnDbP, Utf8StringCR scriptName);
+
     //! Make sure the that specified library is loaded
     //! @param libName  The name of the library that is to be loaded
     static void ImportLibrary (Utf8StringCR libName);
@@ -189,8 +194,8 @@ typedef JsDgnObjectIdSet* JsDgnObjectIdSetP;
 //=======================================================================================
 struct JsAuthorityIssuedCode : RefCountedBaseWithCreate
 {
-    AuthorityIssuedCode m_code;
-    explicit JsAuthorityIssuedCode(AuthorityIssuedCode const& c) : m_code(c) {;}
+    DgnCode m_code;
+    explicit JsAuthorityIssuedCode(DgnCode const& c) : m_code(c) {;}
 
     Utf8String GetValue() const {return m_code.GetValue();}
     Utf8String GetNamespace() const {return m_code.GetNamespace();}
@@ -217,8 +222,6 @@ struct JsDgnDb : RefCountedBaseWithCreate
     STUB_OUT_SET_METHOD(Models,JsDgnModelsP)
     STUB_OUT_SET_METHOD(Schemas,JsECDbSchemaManagerP)
 };
-
-typedef JsDgnDb* JsDgnDbP;
 
 //=======================================================================================
 // @bsiclass                                                    Sam.Wilson      06/15
@@ -325,11 +328,16 @@ struct JsComponentDef : RefCountedBaseWithCreate
     // static GetParameters(instance: DgnElementP): ECInstanceP;
     static JsECInstanceP GetParameters(JsDgnElementP instance);
 
-    //            MakeInstanceOfVariation(targetModel: DgnModelP, variation: DgnElementP, instanceParameters: ECInstanceP, code: AuthorityIssuedCode): DgnElementP;
+    //! Make an ECInstance whose properties are the input parameters to the ComponentDef's script or solver. 
+    //! The caller should then assign values to the properties of the instance.
+    //! The caller may then pass the parameters instance to a function such as MakeInstanceOfVariation or MakeUniqueInstance.
+    JsECInstanceP MakeParameters();
+
+    //            MakeInstanceOfVariation(targetModel: DgnModelP, variation: DgnElementP, instanceParameters: ECInstanceP, code: DgnCode): DgnElementP;
     JsDgnElementP MakeInstanceOfVariation(JsDgnModelP targetModel, JsDgnElementP variation, JsECInstanceP instanceParameters, JsAuthorityIssuedCodeP code);
 
 
-    //            MakeUniqueInstance(targetModel: DgnElementP, instanceParameters: ECInstanceP, code: AuthorityIssuedCode): DgnElementP;
+    //            MakeUniqueInstance(targetModel: DgnElementP, instanceParameters: ECInstanceP, code: DgnCode): DgnElementP;
     JsDgnElementP MakeUniqueInstance(JsDgnModelP targetModel, JsECInstanceP instanceParameters, JsAuthorityIssuedCodeP code);
 
     STUB_OUT_SET_METHOD(Name,Utf8String)
@@ -362,7 +370,7 @@ struct JsGeometryBuilder : RefCountedBaseWithCreate
     ~JsGeometryBuilder() {}
 
 
-    void Append(JsSolidPrimitiveP solid) {if (solid && solid->GetISolidPrimitivePtr().IsValid()) m_builder->Append(*solid->GetISolidPrimitivePtr());}
+    void AppendSolidPrimitive(JsSolidPrimitiveP solid) {if (solid && solid->GetISolidPrimitivePtr().IsValid()) m_builder->Append(*solid->GetISolidPrimitivePtr());}
     void Append(JsCurvePrimitiveP curve) {if (curve && curve->GetICurvePrimitivePtr().IsValid()) m_builder->Append(*curve->GetICurvePrimitivePtr());}
     void Append(JsCurveVectorP curve) {if (curve && curve->GetCurveVectorPtr().IsValid()) m_builder->Append(*curve->GetCurveVectorPtr());}
 
@@ -567,9 +575,9 @@ struct JsECValue : RefCountedBaseWithCreate
     bool GetIsPrimitive() const {return m_value.IsPrimitive();}
     bool GetIsNull() const {return m_value.IsNull();}
     ECPropertyPrimitiveType GetPrimitiveType() const {return (ECPropertyPrimitiveType)m_value.GetPrimitiveType();}
-    Utf8String GetString() const {return m_value.ToString();}
-    int32_t GetInteger() const {return m_value.GetInteger();}
-    double GetDouble() const {return m_value.GetDouble();}
+    Utf8String GetString() const {return m_value.IsNull()? "": m_value.ToString();}
+    int32_t GetInteger() const {return m_value.IsNull()? 0: m_value.GetInteger();}
+    double GetDouble() const {return m_value.IsNull()? 0.0: m_value.GetDouble();}
 
     STUB_OUT_SET_METHOD(PrimitiveType,ECPropertyPrimitiveType)
     STUB_OUT_SET_METHOD(IsPrimitive,bool)
@@ -596,7 +604,7 @@ struct JsECInstance : RefCountedBaseWithCreate
         if (!m_instance.IsValid())
             return nullptr;
         ECN::ECValue v;
-        if (ECN::ECObjectsStatus::Success != m_instance->GetValue(v, propertyName.c_str()))
+        if (ECN::ECObjectsStatus::Success != m_instance->GetValueOrAdhoc(v, propertyName.c_str()))
             return nullptr;
         return new JsECValue(v);
         }
@@ -605,13 +613,37 @@ struct JsECInstance : RefCountedBaseWithCreate
         {
         if (!m_instance.IsValid() || nullptr == value)
             return;
-        m_instance->SetValue(propertyName.c_str(), value->m_value);
+        m_instance->SetValueOrAdhoc(propertyName.c_str(), value->m_value);
         }
 
     STUB_OUT_SET_METHOD(Class,JsECClassP)
 };
 
 typedef JsECInstance* JsECInstanceP;
+
+struct JsAdhocPropertyQuery : RefCountedBaseWithCreate
+    {
+    JsECInstanceP m_host;
+    ECN::AdhocPropertyQuery m_query;
+    
+    JsAdhocPropertyQuery(JsECInstanceP host, Utf8StringCR containerAccessString) : m_host(host), m_query(*host->m_instance, containerAccessString.empty()? "Parameters": containerAccessString.c_str()) {;}
+
+    JsECInstanceP      GetHost() const { return m_host; }
+
+    uint32_t           GetPropertyIndex (Utf8StringCR accessString) const {uint32_t i; return m_query.GetPropertyIndex(i,accessString.c_str())? i: UINT32_MAX;}
+    uint32_t           GetCount() const {return m_query.GetCount();}
+
+    Utf8String GetName (uint32_t index) const {Utf8String v; m_query.GetName(v, index); return v;}
+    Utf8String GetDisplayLabel (uint32_t index) const {Utf8String v; m_query.GetDisplayLabel(v, index); return v;}
+    JsECValueP GetValue (uint32_t index) const {ECN::ECValue v; m_query.GetValue(v, index); return new JsECValue(v);}
+    ECPropertyPrimitiveType GetPrimitiveType (uint32_t index) const {ECN::PrimitiveType v = (ECN::PrimitiveType)0; m_query.GetPrimitiveType(v, index); return (ECPropertyPrimitiveType)v;}
+    Utf8String GetUnitName (uint32_t index) const {Utf8String v; m_query.GetUnitName(v, index); return v;}
+    bool IsReadOnly (uint32_t index) const {bool v = false; m_query.IsReadOnly(v, index); return v;}
+    bool IsHidden (uint32_t index) const {bool v = false; m_query.IsHidden(v, index); return v;}
+
+    STUB_OUT_SET_METHOD(Host,JsECInstanceP)
+    STUB_OUT_SET_METHOD(Count,uint32_t)
+    };
 
 //=======================================================================================
 // @bsiclass                                                    Sam.Wilson      06/15

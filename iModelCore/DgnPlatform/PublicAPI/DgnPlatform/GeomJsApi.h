@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/GeomJsApi.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 //__BENTLEY_INTERNAL_ONLY__
@@ -65,6 +65,7 @@ JsSTRUCT(JsGeometry)
         JsSTRUCT(JsLineSegment)
         JsSTRUCT(JsEllipticArc)
         JsSTRUCT(JsBsplineCurve)
+        JsSTRUCT(JsCatenaryCurve)
 
     JsSTRUCT(JsCurveVector)
         JsSTRUCT(JsUnstructuredCurveVector)
@@ -107,11 +108,24 @@ bool TryDoubleToIndex (double a, size_t upperBound, size_t &index);
 struct JsGeometry : RefCountedBase
 {
 virtual JsGeometry *Clone () = 0;
-// base class returns null for all native Ptr queries. Derived classes override as appropriate
+virtual bool TryTransformInPlace (JsTransformP transform){return false;}
+virtual bool IsSameStructureAndGeometry (JsGeometryP other){return false;}
+virtual bool IsSameStructure (JsGeometryP other){return false;}
+// Native-side type signatures . . .base class returns null for all native Ptr queries. Derived classes override as appropriate
 virtual ICurvePrimitivePtr GetICurvePrimitivePtr (){return nullptr;}
 virtual ISolidPrimitivePtr GetISolidPrimitivePtr (){return nullptr;}
 virtual CurveVectorPtr GetCurveVectorPtr () {return nullptr;}
 virtual PolyfaceHeaderPtr GetPolyfaceHeaderPtr () {return nullptr;}
+
+// Wrapable type signatures . . . Derived classes override . .
+virtual JsCurvePrimitiveP AsCurvePrimitive (){return nullptr;}
+virtual JsCurveVectorP AsCurveVector (){return nullptr;}
+virtual JsSolidPrimitiveP AsSolidPrimitive () {return nullptr;}
+virtual JsPolyfaceMeshP AsPolyfaceMesh () {return nullptr;}
+
+// real implementation is expectged for all types .... stubs do something if possible . . 
+virtual JsDRange3dP Range ();
+virtual JsDRange3dP RangeAfterTransform (JsTransformP transform);
 };
 
 

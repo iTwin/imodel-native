@@ -21,12 +21,10 @@
     <ECEntityClass typeName="GeometrySource" modifier="Abstract">
         <!-- abstract - interface adopted by Elements which have geometry. 
              NOTE: Derive from GeometrySource2d or GeometrySource3d. -->
-        <!-- No, ECDb will not accept this.
         <ECCustomAttributes>
             <ClassMap xmlns="ECDbMap.01.00">
                 <Indexes>
                     <DbIndex>
-                        <Name>idx_dgn_GeometrySource_CategoryId</Name>
                         <IsUnique>False</IsUnique>
                         <Properties>
                             <string>CategoryId</string>
@@ -35,10 +33,29 @@
                 </Indexes>
             </ClassMap>
         </ECCustomAttributes>
-        -->
         <ECProperty propertyName="CategoryId" typeName="long"/><!-- should be non-nullable but shared table... -->
         <ECProperty propertyName="Geometry" typeName="binary"/>
     </ECEntityClass>
+    
+    <ECRelationshipClass typeName="GeometrySourceIsInCategory" description="Element is in Category" strength="referencing">
+        <ECCustomAttributes>
+            <ForeignKeyRelationshipMap xmlns="ECDbMap.01.00">
+	    	<End>Source</End>
+                <OnDeleteAction>Restrict</OnDeleteAction>
+            </ForeignKeyRelationshipMap>
+        </ECCustomAttributes>
+	
+        <Source cardinality="(0,N)" roleLabel="is in category" polymorphic="true">
+            <Class class="GeometrySource">
+                <Key>
+                    <Property name="CategoryId"/>
+                </Key>
+            </Class>
+        </Source>
+        <Target cardinality="(1,1)" roleLabel="contains elements" polymorphic="false">
+            <Class class="Category"/>
+        </Target>
+    </ECRelationshipClass>
     <ECEntityClass typeName="GeometrySource2d" modifier="Abstract">
         <BaseClass>GeometrySource</BaseClass>
         <ECProperty propertyName="Origin" typeName="point2d" />
@@ -96,6 +113,48 @@
         </ECCustomAttributes>
         <BaseClass>Authority</BaseClass>
     </ECEntityClass>
+    <ECEntityClass typeName="MaterialAuthority">
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="dgn.02.00"/>
+        </ECCustomAttributes>
+        <BaseClass>Authority</BaseClass>
+    </ECEntityClass>
+    <ECEntityClass typeName="ComponentAuthority">
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="dgn.02.00"/>
+        </ECCustomAttributes>
+        <BaseClass>Authority</BaseClass>
+    </ECEntityClass>
+    <ECEntityClass typeName="ModelAuthority">
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="dgn.02.00"/>
+        </ECCustomAttributes>
+        <BaseClass>Authority</BaseClass>
+    </ECEntityClass>
+    <ECEntityClass typeName="TrueColorAuthority">
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="dgn.02.00"/>
+        </ECCustomAttributes>
+        <BaseClass>Authority</BaseClass>
+    </ECEntityClass>
+    <ECEntityClass typeName="ResourceAuthority">
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="dgn.02.00"/>
+        </ECCustomAttributes>
+        <BaseClass>Authority</BaseClass>
+    </ECEntityClass>
+    <ECEntityClass typeName="CategoryAuthority">
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="dgn.02.00"/>
+        </ECCustomAttributes>
+        <BaseClass>Authority</BaseClass>
+    </ECEntityClass>
+    <ECEntityClass typeName="GeomPartAuthority">
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="dgn.02.00"/>
+        </ECCustomAttributes>
+        <BaseClass>Authority</BaseClass>
+    </ECEntityClass>
 
     <ECStructClass typeName="AuthorityIssuedCode">
         <ECProperty propertyName="AuthorityId" typeName="long">
@@ -128,13 +187,45 @@
         </ECProperty>
     </ECStructClass>
 
+    <ECEntityClass typeName="CodedObject" modifier="Abstract">
+        <ECCustomAttributes>
+            <ClassMap xmlns="ECDbMap.01.00">
+                <Indexes>
+                    <DbIndex>
+                        <IsUnique>True</IsUnique>
+                        <Properties>
+                            <string>Code.AuthorityId</string>
+                            <string>Code.Namespace</string>
+                            <string>Code.Value</string>
+                        </Properties>
+                    </DbIndex>
+                </Indexes>
+            </ClassMap>
+        </ECCustomAttributes>
+        <ECStructProperty propertyName="Code" typeName="AuthorityIssuedCode"/>
+    </ECEntityClass>
+
+    <!-- NEEDSWORK This breaks everything. Why.
+    <ECRelationshipClass typeName="CodeIssuedByAuthority" description="Object has a code which was issued by the specified authority" strength="referencing">
+        <Source cardinality="(0,N)" roleLabel="has N codes" polymorphic="true">
+            <Class class="CodedObject">
+                <Key>
+                    <Property name="Code.AuthorityId" />
+                </Key>
+            </Class>
+        </Source>
+        <Target cardinality="(1,1)" roleLabel="issues code" polymorphic="true">
+            <Class class="Authority" />
+        </Target>
+    </ECRelationshipClass>
+    -->
     <ECRelationshipClass typeName="AuthorityIssuesElementCode" description="Element has a code which was issued by the given authority" strength="referencing">
         <ECCustomAttributes>
             <ForeignKeyRelationshipMap xmlns="ECDbMap.01.00">
-                <OnDeleteAction>NoAction</OnDeleteAction>
-                <CreateIndex>False</CreateIndex><!-- We already index on Code -->
+                <OnDeleteAction>Restrict</OnDeleteAction>
             </ForeignKeyRelationshipMap>
         </ECCustomAttributes>
+
         <Source cardinality="(1,1)" roleLabel="issues code" polymorphic="false">
             <Class class="Authority"/>
         </Source>
@@ -146,12 +237,10 @@
             </Class>
         </Target>
     </ECRelationshipClass>
-
     <ECRelationshipClass typeName="AuthorityIssuesModelCode" description="Model has a code which was issued by the given authority" strength="referencing">
         <ECCustomAttributes>
             <ForeignKeyRelationshipMap xmlns="ECDbMap.01.00">
-                <OnDeleteAction>NoAction</OnDeleteAction>
-                <CreateIndex>False</CreateIndex><!-- We already index on Code -->
+                <OnDeleteAction>Restrict</OnDeleteAction>
             </ForeignKeyRelationshipMap>
         </ECCustomAttributes>
         <Source cardinality="(1,1)" roleLabel="issues code" polymorphic="false">
@@ -165,8 +254,22 @@
             </Class>
         </Target>
     </ECRelationshipClass>
+    <ECRelationshipClass typeName="AuthorityIssuesGeomPartCode" description="GeomPart has a code which was issued by the given authority" strength="referencing">
+        <!-- WIP: want ON DELETE RESTRICT? -->
+        <Source cardinality="(1,1)" roleLabel="issues code" polymorphic="false">
+            <Class class="Authority"/>
+        </Source>
+        <Target cardinality="(0,N)" roleLabel="has N codes" polymorphic="true">
+            <Class class="GeomPart">
+                <Key>
+                    <Property name="Code.AuthorityId"/>
+                </Key>
+            </Class>
+        </Target>
+    </ECRelationshipClass>
 
     <ECEntityClass typeName="Model" modifier="Abstract">
+        <BaseClass>CodedObject</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="dgn.02.00">
                 <Restrictions>
@@ -179,20 +282,8 @@
                     <AppliesToSubclasses>True</AppliesToSubclasses>
                 </MapStrategy>
                 <ECInstanceIdColumn>Id</ECInstanceIdColumn>
-                <Indexes>
-                    <DbIndex>
-                        <Name>idx_dgn_Model_Code</Name>
-                        <IsUnique>True</IsUnique>
-                        <Properties>
-                            <string>Code.AuthorityId</string>
-                            <string>Code.Namespace</string>
-                            <string>Code.Value</string>
-                        </Properties>
-                    </DbIndex>
-                </Indexes>
             </ClassMap>
         </ECCustomAttributes>
-        <ECStructProperty propertyName="Code" typeName="AuthorityIssuedCode"/>
         <ECProperty propertyName="Label" typeName="string"/>
         <ECProperty propertyName="Properties" typeName="string"/>
         <ECProperty propertyName="Visibility" typeName="int"/>
@@ -283,9 +374,10 @@
     <ECRelationshipClass typeName="ModelContainsElements" description="Associates elements with a model" strength="embedding">
         <ECCustomAttributes>
             <ForeignKeyRelationshipMap xmlns="ECDbMap.01.00">
-                <OnDeleteAction>NoAction</OnDeleteAction>
+                <OnDeleteAction>Restrict</OnDeleteAction>
             </ForeignKeyRelationshipMap>
         </ECCustomAttributes>
+
         <Source cardinality="(1,1)" roleLabel="is on 1 model" polymorphic="true">
             <Class class="Model"/>
         </Source>
@@ -299,6 +391,7 @@
     </ECRelationshipClass>
 
     <ECEntityClass typeName="Element" modifier="Abstract">
+        <BaseClass>CodedObject</BaseClass>
         <ECCustomAttributes>
             <ClassMap xmlns="ECDbMap.01.00">
                 <MapStrategy>
@@ -308,15 +401,6 @@
                 </MapStrategy>
                 <ECInstanceIdColumn>Id</ECInstanceIdColumn>
                 <Indexes>
-                    <DbIndex>
-                        <Name>idx_dgn_Element_Code</Name>
-                        <IsUnique>True</IsUnique>
-                        <Properties>
-                            <string>Code.AuthorityId</string>
-                            <string>Code.Namespace</string>
-                            <string>Code.Value</string>
-                        </Properties>
-                    </DbIndex>
                     <DbIndex>
                         <Name>idx_dgn_Element_ParentId</Name>
                         <IsUnique>False</IsUnique>
@@ -364,7 +448,6 @@
                 </PropertyMap>
             </ECCustomAttributes>
         </ECProperty>
-        <ECStructProperty propertyName="Code" typeName="AuthorityIssuedCode"/>
         <ECProperty propertyName="Label" typeName="string">
             <ECCustomAttributes>
                 <PropertyMap xmlns="ECDbMap.01.00">
@@ -384,6 +467,12 @@
     </ECEntityClass>
 
     <ECEntityClass typeName="DefinitionElement" modifier="Abstract">
+        <ECCustomAttributes>
+            <ClassMap xmlns="ECDbMap.01.00">
+                <!-- WIP: This rename didn't work. Should be applied to this and all other dgn_Element join tables. -->
+                <ECInstanceIdColumn>ElementId</ECInstanceIdColumn>
+            </ClassMap>
+        </ECCustomAttributes>
         <BaseClass>Element</BaseClass>
     </ECEntityClass>
     <ECEntityClass typeName="DictionaryElement" modifier="Abstract">
@@ -397,21 +486,6 @@
         <!-- An element that occupies real world space -->
         <BaseClass>Element</BaseClass>
         <BaseClass>GeometrySource3d</BaseClass>
-        <ECCustomAttributes>
-            <ClassMap xmlns="ECDbMap.01.00">
-                <Indexes>
-                    <DbIndex>
-                        <!-- NEEDSWORK: Because ECDb won't allow us to specify this on GeometrySource and won't allow us to create an
-                             ECRelationship for GeometrySource.CategoryId, we must specify the index explicitly on each GeometrySource subclass -->
-                        <Name>idx_dgn_SpatialElement_CategoryId</Name>
-                        <IsUnique>False</IsUnique>
-                        <Properties>
-                            <string>CategoryId</string>
-                        </Properties>
-                    </DbIndex>
-                </Indexes>
-            </ClassMap>
-        </ECCustomAttributes>
     </ECEntityClass>
     <ECEntityClass typeName="PhysicalElement">
         <!-- A SpatialElement that has mass and can be "touched" -->
@@ -447,19 +521,6 @@
         <!-- 2D element used to annotate drawings and sheets -->
         <ECCustomAttributes>
             <ClassHasHandler xmlns="dgn.02.00"/>
-            <ClassMap xmlns="ECDbMap.01.00">
-                <Indexes>
-                    <DbIndex>
-                        <!-- NEEDSWORK: Because ECDb won't allow us to specify this on GeometrySource and won't allow us to create an
-                             ECRelationship for GeometrySource.CategoryId, we must specify the index explicitly on each GeometrySource subclass -->
-                        <Name>idx_dgn_AnnotationElement_CategoryId</Name>
-                        <IsUnique>False</IsUnique>
-                        <Properties>
-                            <string>CategoryId</string>
-                        </Properties>
-                    </DbIndex>
-                </Indexes>
-            </ClassMap>
         </ECCustomAttributes>
         <BaseClass>Element</BaseClass>
         <BaseClass>GeometrySource2d</BaseClass>
@@ -468,19 +529,6 @@
         <!-- 2D element used in drawings -->
         <ECCustomAttributes>
             <ClassHasHandler xmlns="dgn.02.00"/>
-            <ClassMap xmlns="ECDbMap.01.00">
-                <Indexes>
-                    <DbIndex>
-                        <!-- NEEDSWORK: Because ECDb won't allow us to specify this on GeometrySource and won't allow us to create an
-                             ECRelationship for GeometrySource.CategoryId, we must specify the index explicitly on each GeometrySource subclass -->
-                        <Name>idx_dgn_DrawingElement_CategoryId</Name>
-                        <IsUnique>False</IsUnique>
-                        <Properties>
-                            <string>CategoryId</string>
-                        </Properties>
-                    </DbIndex>
-                </Indexes>
-            </ClassMap>
         </ECCustomAttributes>
         <BaseClass>Element</BaseClass>
         <BaseClass>GeometrySource2d</BaseClass>
@@ -489,24 +537,12 @@
         <!-- 2D element used in sheets -->
         <ECCustomAttributes>
             <ClassHasHandler xmlns="dgn.02.00"/>
-            <ClassMap xmlns="ECDbMap.01.00">
-                <Indexes>
-                    <DbIndex>
-                        <!-- NEEDSWORK: Because ECDb won't allow us to specify this on GeometrySource and won't allow us to create an
-                             ECRelationship for GeometrySource.CategoryId, we must specify the index explicitly on each GeometrySource subclass -->
-                        <Name>idx_dgn_SheetElement_CategoryId</Name>
-                        <IsUnique>False</IsUnique>
-                        <Properties>
-                            <string>CategoryId</string>
-                        </Properties>
-                    </DbIndex>
-                </Indexes>
-            </ClassMap>
         </ECCustomAttributes>
         <BaseClass>Element</BaseClass>
         <BaseClass>GeometrySource2d</BaseClass>
     </ECEntityClass>
 
+    <!-- Text element data (shared by 2D and 3D) -->
     <ECEntityClass typeName="TextAnnotationData">
         <ECCustomAttributes>
             <ClassHasHandler xmlns="dgn.02.00"/>
@@ -514,18 +550,48 @@
         <BaseClass>ElementUniqueAspect</BaseClass>
         <ECProperty propertyName="TextAnnotation" typeName="binary"/>
     </ECEntityClass>
+
+    <!-- 2D text element -->
     <ECEntityClass typeName="TextAnnotationElement">
         <ECCustomAttributes>
             <ClassHasHandler xmlns="dgn.02.00"/>
         </ECCustomAttributes>
         <BaseClass>AnnotationElement</BaseClass>
     </ECEntityClass>
+    <ECRelationshipClass typeName="TextAnnotationElementOwnsTextAnnotationData" strength="embedding">
+        <!-- only exists to get automatic deletion of a text element's unique aspect -->
+        <Source cardinality="(1,1)" polymorphic="true">
+            <Class class="TextAnnotationElement"/>
+        </Source>
+        <Target cardinality="(0,1)" polymorphic="true">
+            <Class class="TextAnnotationData">
+                <Key>
+                    <Property name="ECInstanceId"/>
+                </Key>
+            </Class>
+        </Target>
+    </ECRelationshipClass>
+    
+    <!-- 3D text element -->
     <ECEntityClass typeName="SpatialTextAnnotationElement">
         <ECCustomAttributes>
             <ClassHasHandler xmlns="dgn.02.00"/>
         </ECCustomAttributes>
         <BaseClass>SpatialElement</BaseClass>
     </ECEntityClass>
+    <ECRelationshipClass typeName="SpatialTextAnnotationElementOwnsTextAnnotationData" strength="embedding">
+        <!-- only exists to get automatic deletion of a text element's unique aspect -->
+        <Source cardinality="(1,1)" polymorphic="true">
+            <Class class="SpatialTextAnnotationElement"/>
+        </Source>
+        <Target cardinality="(0,1)" polymorphic="true">
+            <Class class="TextAnnotationData">
+                <Key>
+                    <Property name="ECInstanceId"/>
+                </Key>
+            </Class>
+        </Target>
+    </ECRelationshipClass>
 
     <ECEntityClass typeName="AnnotationTableElement">
         <!-- An AnnotationTableElement is an annotation element that displays a grid containing text and or graphics -->
@@ -688,12 +754,6 @@
         </ECProperty>
     </ECEntityClass>
     <ECRelationshipClass typeName="ViewIsAttached" strength="embedding">
-        <ECCustomAttributes>
-            <ForeignKeyRelationshipMap xmlns="ECDbMap.01.00">
-                <OnDeleteAction>Cascade</OnDeleteAction>
-                <CreateIndex>True</CreateIndex>
-            </ForeignKeyRelationshipMap>
-        </ECCustomAttributes>
         <Source cardinality="(1,1)" roleLabel="is referenced by" polymorphic="true">
             <Class class="ViewDefinition"/>
         </Source>
@@ -707,12 +767,6 @@
     </ECRelationshipClass>
 
     <ECRelationshipClass typeName="ElementOwnsChildElements" strength="embedding">
-        <ECCustomAttributes>
-            <ForeignKeyRelationshipMap xmlns="ECDbMap.01.00">
-                <!-- Deleting a parent element should delete its children -->
-                <OnDeleteAction>Cascade</OnDeleteAction>
-            </ForeignKeyRelationshipMap>
-        </ECCustomAttributes>
         <Source cardinality="(1,1)" roleLabel="is on 1 element" polymorphic="true">
             <Class class="Element"/>
         </Source>
@@ -848,11 +902,6 @@
         </ECProperty>
     </ECEntityClass>
     <ECRelationshipClass typeName="ElementOwnsExternalKey" strength="embedding">
-        <ECCustomAttributes>
-            <ForeignKeyRelationshipMap xmlns="ECDbMap.01.00">
-                <OnDeleteAction>Cascade</OnDeleteAction>
-            </ForeignKeyRelationshipMap>
-        </ECCustomAttributes>
         <Source cardinality="(1,1)" polymorphic="true">
             <Class class="Element"/>
         </Source>
@@ -883,15 +932,10 @@
         </ECProperty>
     </ECEntityClass>
     <ECRelationshipClass typeName="ElementOwnsDescription" strength="embedding">
-        <ECCustomAttributes>
-            <ForeignKeyRelationshipMap xmlns="ECDbMap.01.00">
-                <OnDeleteAction>Cascade</OnDeleteAction>
-            </ForeignKeyRelationshipMap>
-        </ECCustomAttributes>
         <Source cardinality="(1,1)" polymorphic="true">
             <Class class="Element"/>
         </Source>
-        <Target cardinality="(0,N)" polymorphic="true">
+        <Target cardinality="(0,1)" polymorphic="true">
             <Class class="ElementDescription">
                 <Key>
                     <Property name="ECInstanceId"/>
@@ -1073,10 +1117,10 @@
             </ECCustomAttributes>
         </ECProperty>
     </ECEntityClass>
-    <ECRelationshipClass typeName="BaseModelForView" strength="embedding"><!-- only "embedding" because ECDb requires that for ON DELETE CASCADE... -->
+    <ECRelationshipClass typeName="BaseModelForView" strength="embedding">
         <ECCustomAttributes>
             <ForeignKeyRelationshipMap xmlns="ECDbMap.01.00">
-                <OnDeleteAction>Cascade</OnDeleteAction>
+                <OnDeleteAction>Restrict</OnDeleteAction>
             </ForeignKeyRelationshipMap>
         </ECCustomAttributes>
         <Source cardinality="(1,1)" roleLabel="is base model for view" polymorphic="true">
@@ -1188,21 +1232,12 @@
     </ECEntityClass>
 
     <ECEntityClass typeName="GeomPart">
-        <!-- WIP: need to create a partial index on Code -->
+        <BaseClass>CodedObject</BaseClass>
         <ECCustomAttributes>
             <ClassMap xmlns="ECDbMap.01.00">
                 <ECInstanceIdColumn>Id</ECInstanceIdColumn>
             </ClassMap>
         </ECCustomAttributes>
-        <ECProperty propertyName="Code" typeName="string">
-            <!-- "Code" must be unique (or Null). Typically programmatically-generated -->
-            <ECCustomAttributes>
-                <PropertyMap xmlns="ECDbMap.01.00">
-                    <!-- Null means an "anonymous" GeomPart that can only be looked up by Id -->
-                    <IsNullable>True</IsNullable>
-                </PropertyMap>
-            </ECCustomAttributes>
-        </ECProperty>
         <ECProperty propertyName="Geom" typeName="binary">
             <ECCustomAttributes>
                 <PropertyMap xmlns="ECDbMap.01.00">
@@ -1227,6 +1262,7 @@
     </ECEntityClass>
     <ECRelationshipClass typeName="ElementUsesGeomParts" strength="referencing">
         <!-- Used to indicate that an Element uses a GeomPart.  This is useful for "garbage collecting" or finding Elements that would be affected by a change to a GeomPart. -->
+        <!-- WIP: want ON DELETE RESTRICT? -->
         <ECCustomAttributes>
             <ClassMap xmlns="ECDbMap.01.00">
                 <ECInstanceIdColumn>Id</ECInstanceIdColumn>
@@ -1243,86 +1279,6 @@
             <Class class="GeomPart"/>
         </Target>
     </ECRelationshipClass>
-
-    <!-- NEEDSWORK ECRelationships don't support abstract endpoints.
-         ECRelationship is required in order to generate foreign key constraint.
-         Therefore we must define an ECRelationship for each concrete subclass of GeometrySource to get a foreign key constraint on CategoryId -->
-    <ECRelationshipClass typeName="SpatialElementIsInCategory" description="Element is in Category" strength="referencing">
-        <ECCustomAttributes>
-            <ForeignKeyRelationshipMap xmlns="ECDbMap.01.00">
-                <OnDeleteAction>NoAction</OnDeleteAction>
-                <CreateIndex>True</CreateIndex><!-- NEEDSWORK: ECDb ignores this; we explicitly specify the index on subclasses of GeometrySource instead -->
-                <End>Source</End>
-            </ForeignKeyRelationshipMap>
-        </ECCustomAttributes>
-        <Source cardinality="(0,N)" roleLabel="is in category" polymorphic="false">
-            <Class class="SpatialElement">
-                <Key>
-                    <Property name="CategoryId"/>
-                </Key>
-            </Class>
-        </Source>
-        <Target cardinality="(1,1)" roleLabel="contains elements" polymorphic="true">
-            <Class class="Category"/>
-        </Target>
-    </ECRelationshipClass>
-    <ECRelationshipClass typeName="AnnotationElementIsInCategory" description="Element is in Category" strength="referencing">
-        <ECCustomAttributes>
-            <ForeignKeyRelationshipMap xmlns="ECDbMap.01.00">
-                <OnDeleteAction>NoAction</OnDeleteAction>
-                <CreateIndex>True</CreateIndex><!-- NEEDSWORK: ECDb ignores this; we explicitly specify the index on subclasses of GeometrySource instead -->
-                <End>Source</End>
-            </ForeignKeyRelationshipMap>
-        </ECCustomAttributes>
-        <Source cardinality="(0,N)" roleLabel="is in category" polymorphic="false">
-            <Class class="AnnotationElement">
-                <Key>
-                    <Property name="CategoryId"/>
-                </Key>
-            </Class>
-        </Source>
-        <Target cardinality="(1,1)" roleLabel="contains elements" polymorphic="true">
-            <Class class="Category"/>
-        </Target>
-    </ECRelationshipClass>
-    <ECRelationshipClass typeName="DrawingElementIsInCategory" description="Element is in Category" strength="referencing">
-        <ECCustomAttributes>
-            <ForeignKeyRelationshipMap xmlns="ECDbMap.01.00">
-                <OnDeleteAction>NoAction</OnDeleteAction>
-                <CreateIndex>True</CreateIndex><!-- NEEDSWORK: ECDb ignores this; we explicitly specify the index on subclasses of GeometrySource instead -->
-                <End>Source</End>
-            </ForeignKeyRelationshipMap>
-        </ECCustomAttributes>
-        <Source cardinality="(0,N)" roleLabel="is in category" polymorphic="false">
-            <Class class="DrawingElement">
-                <Key>
-                    <Property name="CategoryId"/>
-                </Key>
-            </Class>
-        </Source>
-        <Target cardinality="(1,1)" roleLabel="contains elements" polymorphic="true">
-            <Class class="Category"/>
-        </Target>
-    </ECRelationshipClass>
-    <ECRelationshipClass typeName="SheetElementIsInCategory" description="Element is in Category" strength="referencing">
-        <ECCustomAttributes>
-            <ForeignKeyRelationshipMap xmlns="ECDbMap.01.00">
-                <OnDeleteAction>NoAction</OnDeleteAction>
-                <CreateIndex>True</CreateIndex><!-- NEEDSWORK: ECDb ignores this; we explicitly specify the index on subclasses of GeometrySource instead -->
-                <End>Source</End>
-            </ForeignKeyRelationshipMap>
-        </ECCustomAttributes>
-        <Source cardinality="(0,N)" roleLabel="is in category" polymorphic="false">
-            <Class class="SheetElement">
-                <Key>
-                    <Property name="CategoryId"/>
-                </Key>
-            </Class>
-        </Source>
-        <Target cardinality="(1,1)" roleLabel="contains elements" polymorphic="true">
-            <Class class="Category"/>
-        </Target>
-    </ECRelationshipClass>
     
     <!-- ////////////////////////////////////////////////////////////////////////////// -->
     <!-- // Experimental classes -->
@@ -1334,11 +1290,48 @@
         <ECProperty propertyName="ElementGenerator" typeName="string" description="The name of the script to execute in order to create a variation of the component. May be null if the component is based on persistent geometry. In that case, Model must not be null."/>
         <ECProperty propertyName="Model" typeName="string" description="The name of the model that the component definition uses to hold the persistent geometry and other data such as constraints. May be null for components that generate their geometry from scratch."/>
         <ECProperty propertyName="Inputs" typeName="string" description="The names of the properties that are the main inputs to the component's element generator script."/>
+        <ECProperty propertyName="ScriptOnlyParameters" typeName="string" description="The definition and default values for all of the ScriptOnlyParameters ad hoc properties that each instance must have."/>
     </ECCustomAttributeClass>
 
     <ECCustomAttributeClass typeName="ComponentParameterSpecification" description="Provides information about a property that plays the role of a parameter to a component's solver." displayLabel="Component Parameter Specification" appliesTo="Any">
         <ECProperty propertyName="VariesPer" typeName="string" description="Indicates if the parameter may be varied for individual instances or if it is fixed for all instances of a particular variation. Possible values: Variation or Instance."/>
     </ECCustomAttributeClass>
+
+    <ECStructClass typeName="ComponentSpecificationAdhocHolder">
+        <ECCustomAttributes>
+            <AdhocPropertyContainerDefinition xmlns="Bentley_Standard_CustomAttributes.01.10">
+                <NameProperty>Name</NameProperty>
+                <DisplayLabelProperty>Label</DisplayLabelProperty>
+                <ValueProperty>Value</ValueProperty>
+                <TypeProperty>Type</TypeProperty>
+                <UnitProperty>Unit</UnitProperty>
+                <!-- do we need the following properties? -->
+                <ExtendTypeProperty>ExtendType</ExtendTypeProperty>
+                <IsReadOnlyProperty>IsReadOnly</IsReadOnlyProperty>
+            </AdhocPropertyContainerDefinition>
+        </ECCustomAttributes>
+
+        <ECProperty propertyName="Name" typeName="string" />
+        <ECProperty propertyName="Label" typeName="string" />
+        <ECProperty propertyName="Value" typeName="string" />
+        <ECProperty propertyName="Type" typeName="int" />
+        <ECProperty propertyName="Unit" typeName="string" />
+        <!-- do we need the following properties? -->
+        <ECProperty propertyName="ExtendType" typeName="string" />
+        <ECProperty propertyName="IsReadOnly" typeName="boolean" />
+    </ECStructClass>
+    
+    <!-- Example of how to use ComponentSpecificationAdhocHolder to define an adhoc properties container on a class
+    <ECEntityClass typeName="AcmeDoor" isStruct="False">
+        <ECCustomAttributes>
+            <AdhocPropertySpecification xmlns="Bentley_Standard_CustomAttributes.01.10">
+                <AdhocPropertyContainer>ComponentSpecificationAdhocHolder</AdhocPropertyContainer>
+            </AdhocPropertySpecification>
+        </ECCustomAttributes>
+        <ECArrayProperty propertyName="ScriptOnlyParameters" typeName="ComponentSpecificationAdhocHolder" isStruct="True" />
+        
+    </ECEntityClass>
+    -->
 
     <!-- ////////////////////////////////////////////////////////////////////////////// -->
     <!-- // Deprecated classes -->

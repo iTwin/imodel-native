@@ -107,7 +107,7 @@ LightDefinition::CreateParams::CreateParams(DgnDbR db, Utf8StringCR name, Utf8St
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnLightId LightDefinition::QueryLightId(DgnElement::Code const& code, DgnDbR db)
+DgnLightId LightDefinition::QueryLightId(DgnCode const& code, DgnDbR db)
     {
     DgnElementId elemId = db.Elements().QueryElementIdByCode(code);
     return DgnLightId(elemId.GetValueUnchecked());

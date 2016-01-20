@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/DgnTexture.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -198,7 +198,7 @@ Render::ImagePtr DgnTexture::ExtractImage() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnTextureId DgnTexture::QueryTextureId(Code const& code, DgnDbR db)
+DgnTextureId DgnTexture::QueryTextureId(DgnCode const& code, DgnDbR db)
     {
     return DgnTextureId(db.Elements().QueryElementIdByCode(code).GetValueUnchecked());
     }

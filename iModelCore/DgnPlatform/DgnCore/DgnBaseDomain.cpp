@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/DgnBaseDomain.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -59,6 +59,13 @@ namespace dgn_AuthorityHandler
 HANDLER_DEFINE_MEMBERS(Authority)
 HANDLER_DEFINE_MEMBERS(Local)
 HANDLER_DEFINE_MEMBERS(Namespace)
+HANDLER_DEFINE_MEMBERS(Material)
+HANDLER_DEFINE_MEMBERS(Component)
+HANDLER_DEFINE_MEMBERS(Model)
+HANDLER_DEFINE_MEMBERS(TrueColor)
+HANDLER_DEFINE_MEMBERS(Resource)
+HANDLER_DEFINE_MEMBERS(Category)
+HANDLER_DEFINE_MEMBERS(GeomPart)
 };
 
 END_BENTLEY_DGN_NAMESPACE
@@ -125,6 +132,13 @@ DgnBaseDomain::DgnBaseDomain() : DgnDomain(DGN_ECSCHEMA_NAME, "Base DgnDb Domain
     RegisterHandler(dgn_AuthorityHandler::Authority::GetHandler());
     RegisterHandler(dgn_AuthorityHandler::Local::GetHandler());
     RegisterHandler(dgn_AuthorityHandler::Namespace::GetHandler());
+    RegisterHandler(dgn_AuthorityHandler::Material::GetHandler());
+    RegisterHandler(dgn_AuthorityHandler::Component::GetHandler());
+    RegisterHandler(dgn_AuthorityHandler::Model::GetHandler());
+    RegisterHandler(dgn_AuthorityHandler::TrueColor::GetHandler());
+    RegisterHandler(dgn_AuthorityHandler::Resource::GetHandler());
+    RegisterHandler(dgn_AuthorityHandler::Category::GetHandler());
+    RegisterHandler(dgn_AuthorityHandler::GeomPart::GetHandler());
 
     RegisterTableHandler(dgn_TableHandler::Element::GetHandler());
     RegisterTableHandler(dgn_TableHandler::Model::GetHandler());
