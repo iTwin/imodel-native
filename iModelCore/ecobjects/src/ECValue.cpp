@@ -2,7 +2,7 @@
 |
 |     $Source: src/ECValue.cpp $
 |
-|   $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
@@ -3849,7 +3849,7 @@ bool AdhocPropertyMetadata::Init (ECEnablerCR enabler, uint32_t containerIndex, 
         return false;
 
     // find custom attribute on struct class
-    IECInstancePtr attr = structClass->GetCustomAttribute ("AdhocPropertyContainerDefinition");
+    IECInstancePtr attr = structClass->GetCustomAttribute ("Bentley_Standard_CustomAttributes", "AdhocPropertyContainerDefinition");
     if (attr.IsNull())
         return false;
 

@@ -2,7 +2,7 @@
 |
 |     $Source: src/ECcontext.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
@@ -458,7 +458,7 @@ ECSchemaPtr         ECSchemaReadContext::LocateConversionSchemaFor(Utf8CP schema
         Utf8String conversionSchemaName(schemaName);
         conversionSchemaName += "_V3Conversion";
         SchemaKey key(conversionSchemaName.c_str(), versionMajor, versionMinor);
-        conversionSchema = m_conversionSchemas->LocateSchema(key, SchemaMatchType::SCHEMAMATCHTYPE_Exact);
+        conversionSchema = m_conversionSchemas->LocateSchema(key, SchemaMatchType::SCHEMAMATCHTYPE_LatestCompatible);
         }
     
     return conversionSchema;

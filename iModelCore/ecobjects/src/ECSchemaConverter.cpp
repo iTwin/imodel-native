@@ -1,0 +1,702 @@
+/*--------------------------------------------------------------------------------------+
+|
+|     $Source: src/ECSchemaConverter.cpp $
+|
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|
++--------------------------------------------------------------------------------------*/
+
+#include "ECObjectsPch.h"
+BEGIN_BENTLEY_ECOBJECT_NAMESPACE
+
+//-------------------------------------------------------------------------------------
+// Data of standard values and the property that it is attached to
+// @bsistruct                                                    Basanta.Kharel   12/2015
+//---------------+---------------+---------------+---------------+---------------+------
+struct StandardValueInfo
+    {
+    friend struct StandardValuesConverter;
+private: 
+    bmap<int, Utf8String> m_valuesMap;
+    bool m_mustBeFromList;
+
+public:
+    bool Equals(const StandardValueInfo& sd) const;
+
+    StandardValueInfo(ECEnumerationP& ecEnum);
+    StandardValueInfo() {};
+
+    //--------------------------------------------------------------------------------------
+    // Extracts Standard Values Instance data from the instance
+    //! @param[in]  instance    The instance of StandValues customattribute
+    //! @param[out] sdInfo      Extracted data 
+    //---------------+---------------+---------------+---------------+---------------+------
+    static ECObjectsStatus ExtractInstanceData(IECInstanceR instance, StandardValueInfo& sdInfo);
+
+    };
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Basanta.Kharel                  01/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+bool StandardValueInfo::Equals(const StandardValueInfo& sd) const
+    {
+    //let them be equal even if mustBeFromList is different
+    if (m_valuesMap.size() != sd.m_valuesMap.size())
+    return false;
+    for (auto const& pair : m_valuesMap)
+        {
+        auto it = sd.m_valuesMap.find(pair.first);
+        if (it == sd.m_valuesMap.end())
+            return false;
+
+        if (!it->second.EqualsI(pair.second))
+            return false;
+        }
+    return true;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Basanta.Kharel                  01/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+StandardValueInfo::StandardValueInfo(ECEnumerationP& ecEnum)
+    {
+    m_mustBeFromList = ecEnum->GetIsStrict();
+    for (auto const& enumerator : ecEnum->GetEnumerators())
+        m_valuesMap[enumerator->GetInteger()] = enumerator->GetDisplayLabel();
+    }
+
+//---------------------------------------------------------------------------------------
+// Extracts Standard Values Instance data from the instance
+// @bsimethod                                    Basanta.Kharel                  01/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+ECObjectsStatus StandardValueInfo::ExtractInstanceData(IECInstanceR instance, StandardValueInfo& sdInfo)
+    {
+    sdInfo.m_mustBeFromList = true; //default is true
+    ECValue value;
+    if (ECObjectsStatus::Success == instance.GetValue(value, "MustBeFromList")
+        && !value.IsNull() && value.IsBoolean())
+        {
+        sdInfo.m_mustBeFromList = value.GetBoolean();
+        }
+
+    Utf8String accessString = "ValueMap";
+    ECObjectsStatus status;
+    status = instance.GetValue(value, accessString.c_str());
+    if (ECObjectsStatus::Success != status)
+        return status;
+
+    uint32_t arraySize = value.GetArrayInfo().GetCount();
+    for (uint32_t i = 0; i < arraySize; i++)
+        {
+        status = instance.GetValue(value, accessString.c_str(), i);
+        if (ECObjectsStatus::Success != status && !value.IsStruct())
+            return status;
+
+        IECInstancePtr  structInstance = value.GetStruct();
+        if (!structInstance.IsValid())
+            return ECObjectsStatus::Error;
+
+        if (ECObjectsStatus::Success != (status = structInstance->GetValue(value, "Value")))
+            return status;
+        int index = value.GetInteger();
+
+        if (ECObjectsStatus::Success != (status = structInstance->GetValue(value, "DisplayString")))
+            return status;
+        sdInfo.m_valuesMap[index] = value.ToString();
+        }
+    return ECObjectsStatus::Success;
+    }
+
+//---------------------------------------------------------------------------------------
+// Implements IECCustomAttributeConverter to convert Standard Values Custom Attribute to ECEnumeration
+// @bsistruct                                                    Basanta.Kharel   12/2015
+//+---------------+---------------+---------------+---------------+---------------+------
+struct StandardValuesConverter : IECCustomAttributeConverter
+    {
+    ECObjectsStatus Convert(ECSchemaR schema, IECCustomAttributeContainerR container, IECInstanceR instance);
+    
+private:
+
+    //---------------------------------------------------------------------------------------
+    // And checks if the standard values conflict inbetween inherited properties
+    // Also returns list of classNames that have this property
+    // @bsimethod                                    Basanta.Kharel                  01/2016
+    //+---------------+---------------+---------------+---------------+---------------+------
+    static ECObjectsStatus CheckForConflict(ECPropertyP standardValueProperty, ECSchemaR schema,StandardValueInfo& sdInfo, Utf8String& classes);
+
+    //---------------------------------------------------------------------------------------
+    // Sets strictness of the enum. 
+    // If the rootClass that has this property has no CA, it will be false
+    // Otherwise it will be the same as what the mustbefromlist value it has. default is true
+    // @bsimethod                                    Basanta.Kharel                  01/2016
+    //+---------------+---------------+---------------+---------------+---------------+------
+    static void SetStrictness(ECPropertyP standardValueProperty, ECSchemaR schema,StandardValueInfo& sdInfo);
+
+    //---------------------------------------------------------------------------------------
+    // Adds enumeration to ecProperty by finding enumeration that matches sdInfo or by creating one
+    // @bsimethod                                    Basanta.Kharel                  12/2015
+    //+---------------+---------------+---------------+---------------+---------------+------
+    static ECObjectsStatus AddEnumeration(ECSchemaR schema, StandardValueInfo& sdInfo, ECPropertyP& ecProperty);
+
+    //---------------------------------------------------------------------------------------
+    // Gives name to enumeration, based on className and propertyName 
+    // Usually is (baseClassName+propertyName)
+    // returns rootClass i.e. baseclass
+    // @bsimethod                                    Basanta.Kharel                  01/2016
+    //+---------------+---------------+---------------+---------------+---------------+------
+    static Utf8String CreateEnumerationName(ECClassP& rootClass, ECSchemaR schema, ECPropertyP& ecProperty);
+
+    //---------------------------------------------------------------------------------------
+    // Finds enumeration in schema that matches sdInfo
+    // @bsimethod                                    Basanta.Kharel                  12/2015
+    //+---------------+---------------+---------------+---------------+---------------+------
+    static ECObjectsStatus FindEnumeration(ECSchemaR schema, ECEnumerationP& enumeration, StandardValueInfo& sdInfo);
+
+    //---------------------------------------------------------------------------------------
+    // Creates enumeration in schema : given enumName, sdInfo
+    // @bsimethod                                    Basanta.Kharel                  12/2015
+    //+---------------+---------------+---------------+---------------+---------------+------
+    static ECObjectsStatus CreateEnumeration(ECEnumerationP& enumeration, ECSchemaR schema, Utf8CP enumName, StandardValueInfo& sdInfo);
+
+    //! Converts primitive property type to enum type
+    //! @param[in] primitiveEcProperty      The primitive property whose type is being changed
+    //! @param[in] ecSchema                 The schema the ecProperty belongs to
+    //! @param[in] enumeration              The enumeration to be set to the primitiveEcProperty
+    static ECObjectsStatus ConvertToEnumType(ECPropertyP& primitiveEcProperty, ECSchemaR ecSchema, ECEnumerationP& enumeration);
+        
+    };
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Basanta.Kharel                  12/2015
+//+---------------+---------------+---------------+---------------+---------------+------
+bool ECSchemaConverter::Convert(ECSchemaR schema)
+    {
+    ECSchemaConverterP eCSchemaConverter = GetSingleton();
+    eCSchemaConverter->m_convertedOK = true;
+
+    eCSchemaConverter->ConvertSchemaLevel(schema);
+
+    eCSchemaConverter->ConvertClassLevel(schema);
+
+    eCSchemaConverter->ConvertPropertyLevel(schema);
+
+    return eCSchemaConverter->m_convertedOK;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Basanta.Kharel                  12/2015
+//+---------------+---------------+---------------+---------------+---------------+------
+ECSchemaConverterP ECSchemaConverter::GetSingleton()
+    {
+    static ECSchemaConverterP ECSchemaConverterSingleton = nullptr;
+
+    if (nullptr == ECSchemaConverterSingleton)
+        {
+        ECSchemaConverterSingleton = new ECSchemaConverter();
+        IECCustomAttributeConverterPtr scConv = new StandardValuesConverter();
+        ECSchemaConverterSingleton->AddConverter("EditorCustomAttributes", "StandardValues", scConv);
+        
+        }
+    return ECSchemaConverterSingleton;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Basanta.Kharel                  12/2015
+//+---------------+---------------+---------------+---------------+---------------+------
+ECObjectsStatus ECSchemaConverter::AddConverter(Utf8StringCR schemaName, Utf8StringCR customAttributeName, IECCustomAttributeConverterPtr& converter)
+    {
+    ECSchemaConverterP ECSchemaConverter = GetSingleton();
+    Utf8String converterName = GetQualifiedClassName(schemaName, customAttributeName);
+    ECSchemaConverter->m_converterMap[converterName] = converter;
+    return ECObjectsStatus::Success;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Basanta.Kharel                  01/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+ECObjectsStatus ECSchemaConverter::RemoveCustomAttribute(ECPropertyP& ecProperty, ECSchemaR ecSchema, Utf8StringCR customAttributeName)
+    {
+    auto propertyProcessor = [&customAttributeName](ECPropertyP localProp)
+        {
+        IECInstancePtr currentInstance = localProp->GetPrimaryCustomAttributeLocal(customAttributeName);
+        if (currentInstance.IsValid())
+            {
+            Utf8String propertyName = localProp->GetClass().GetFullName() + Utf8String(".") + localProp->GetName();
+            
+            if (!localProp->RemoveCustomAttribute(customAttributeName))
+                {
+                LOG.errorv("Error removing %s CustomAttribute for %s", customAttributeName.c_str(), propertyName.c_str());
+                return ECObjectsStatus::Error;
+                }
+            LOG.debugv("Removed %s CustomAttribute for %s", customAttributeName.c_str(), propertyName.c_str());
+            }
+        return ECObjectsStatus::Success;
+        };
+    
+    return TraverseProperty(ecProperty, ecSchema, propertyProcessor);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Basanta.Kharel                  01/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+bool ECSchemaConverter::IsBaseClass(ECClassCP ecClass, ECClassCP baseClass)
+    {
+    //if ecClass is same as baseClass, baseClass in not really a base class
+    if (ECClass::ClassesAreEqualByName(ecClass, baseClass))
+        return false; 
+    return ecClass->Is(baseClass);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Basanta.Kharel                  01/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+ECObjectsStatus ECSchemaConverter::TraverseProperty(ECPropertyP ecProperty, ECSchemaR ecSchema,ECPropertyProcessor propertyProcessor)
+    {
+    Utf8String propertyName = ecProperty->GetName();
+    auto classProcessor = [&propertyProcessor, &propertyName](ECClassP ecClass)
+        {
+        ECPropertyP prop = ecClass->GetPropertyP(propertyName, false);
+        if (nullptr != prop)
+            return propertyProcessor(prop);
+
+        return ECObjectsStatus::Success;
+        };
+    ECClassP classP = ecSchema.GetClassP(ecProperty->GetClass().GetName().c_str());
+    return TraverseClass(classP, classProcessor);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Basanta.Kharel                  01/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+ECClassP ECSchemaConverter::FindRootBaseClass(ECPropertyP ecProperty, ECSchemaR schema)
+    {
+    Utf8String propertyName = ecProperty->GetName();
+    bvector<ECClassP> classes;
+    auto classProcessor = [&propertyName, &classes](ECClassP ecClassLocal)
+        {
+        ECPropertyP prop = ecClassLocal->GetPropertyP(propertyName, false);
+        if (nullptr != prop)
+            classes.push_back(ecClassLocal);
+
+        return ECObjectsStatus::Success;
+        };
+    ECClassP ecClass = schema.GetClassP(ecProperty->GetClass().GetName().c_str());
+    TraverseClass(ecClass, classProcessor);
+    SortClassesByNameAndHierarchy(classes);
+    return classes.front();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Basanta.Kharel                  01/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+ECObjectsStatus ECSchemaConverter::TraverseClass(ECClassP ecClass, ECClassProcessor classProcessor)
+    {
+    bmap<Utf8String, ECClassCP> visited;
+    bvector<ECClassP> classes;
+    classes.push_back(ecClass);
+    ECObjectsStatus status = ECObjectsStatus::Success;
+
+    while (0 != classes.size())
+        {
+        ECClassP nodeClass = classes.back();
+        classes.pop_back();
+        visited.Insert(nodeClass->GetFullName(), nodeClass);
+        status = classProcessor(nodeClass);
+        if (ECObjectsStatus::Success != status)
+            return status;
+        for (auto const& i : GetDerivedAndBaseClasses(*nodeClass))
+            {
+            auto iter = visited.Insert(i->GetFullName(), i);
+            bool notVisited = iter.second;
+            if (notVisited)
+                classes.push_back(i);
+            }
+        }
+    return status;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Basanta.Kharel                  01/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+bvector<ECClassP> ECSchemaConverter::GetDerivedAndBaseClasses(ECClassCR ecClass)
+    {
+    bvector<ECClassP> baseClasses = ecClass.GetBaseClasses();
+    SortClassesByNameAndHierarchy(baseClasses, true);
+
+    bvector<ECClassP> derivedClasses = ecClass.GetDerivedClasses();
+    SortClassesByNameAndHierarchy(derivedClasses, true);
+
+    baseClasses.insert(baseClasses.begin(), derivedClasses.begin(), derivedClasses.end());
+
+    return baseClasses;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Basanta.Kharel                  12/2015
+//+---------------+---------------+---------------+---------------+---------------+------
+IECCustomAttributeConverterP ECSchemaConverter::GetConverter(Utf8StringCR converterName)
+    {
+    auto iterator = m_converterMap.find(converterName);
+    if (m_converterMap.end() != iterator)
+        return iterator->second.get();
+    return nullptr;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Basanta.Kharel                  12/2015
+//+---------------+---------------+---------------+---------------+---------------+------
+void ECSchemaConverter::ProcessCustomAttributeInstance(ECCustomAttributeInstanceIterable iterable, IECCustomAttributeContainerR container, Utf8String containerName)
+    {
+    ECSchemaP schema = container.GetContainerSchema();
+    for (auto const& attr : iterable)
+        {
+        Utf8CP fullName = attr->GetClass().GetFullName();
+        IECCustomAttributeConverterP converter = GetConverter(fullName);
+        if (nullptr != converter)
+            {
+            LOG.debugv("Started [%s Converter][Container %s]. ", fullName, containerName.c_str());
+            auto status = converter->Convert(*schema, container, *attr);
+            if (ECObjectsStatus::Success != status)
+                {
+                LOG.errorv("Failed [%s Converter][Container %s]. ", fullName, containerName.c_str());
+                m_convertedOK = false;
+                }
+            else    
+                LOG.debugv("Succeded [%s Converter][Container %s]. ", fullName, containerName.c_str());
+            }
+        
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Basanta.Kharel                  12/2015
+//+---------------+---------------+---------------+---------------+---------------+------
+void ECSchemaConverter::ConvertSchemaLevel(ECSchemaR schema)
+    {
+    ProcessCustomAttributeInstance(schema.GetPrimaryCustomAttributes(false), schema.GetCustomAttributeContainer(), "ECSchema:" + schema.GetName());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Basanta.Kharel                  12/2015
+//+---------------+---------------+---------------+---------------+---------------+------
+void ECSchemaConverter::ConvertClassLevel(ECSchemaR schema)
+    {
+    for (auto const& ecClass : GetHierarchicallySortedClasses(schema))
+        {
+        ProcessCustomAttributeInstance(ecClass->GetPrimaryCustomAttributes(false), *ecClass, "ECClass:" + ecClass->GetName());
+        if (ecClass->IsRelationshipClass())
+            {
+            ECRelationshipClassP relClass = ecClass->GetRelationshipClassP();
+
+            ECRelationshipConstraintR source = relClass->GetSource();
+            ProcessCustomAttributeInstance(source.GetPrimaryCustomAttributes(false), source, "ECRelationshipConstraint:" + source.GetRoleLabel());
+
+            ECRelationshipConstraintR target = relClass->GetTarget();
+            ProcessCustomAttributeInstance(target.GetPrimaryCustomAttributes(false), target, "ECRelationshipConstraint:" + target.GetRoleLabel());
+            }
+        
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Basanta.Kharel                  12/2015
+//+---------------+---------------+---------------+---------------+---------------+------
+void ECSchemaConverter::ConvertPropertyLevel(ECSchemaR schema)
+    {
+    for (auto const& ecClass : GetHierarchicallySortedClasses(schema))
+        {
+        for (auto const& ecProp : ecClass->GetProperties(false))
+            {
+            Utf8String debugName = Utf8String("ECProperty:") + ecClass->GetFullName() + Utf8String(".") + ecProp->GetName();
+            ProcessCustomAttributeInstance(ecProp->GetPrimaryCustomAttributes(false), *ecProp, debugName);
+            }
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+// @remarks      sorts classes first by name(ascending) then by hierarchy (descending) in order
+//               if reverse is set it will reverse after sorting name and hierarchy in order
+// @bsimethod                                    Basanta.Kharel                  01/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+template <typename T>
+void ECSchemaConverter::SortClassesByNameAndHierarchy(bvector<T>& ecClasses, bool reverse)
+    {
+    SortClassesByName(ecClasses, true);
+    SortClassesByHierarchy(ecClasses);
+
+    if (reverse)
+        std::reverse(ecClasses.begin(), ecClasses.end());
+    }
+
+//---------------------------------------------------------------------------------------
+// @remarks      sorts classes based on inheritance where base class comes before child class
+// @bsimethod                                    Basanta.Kharel                  01/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+template <typename T>
+void ECSchemaConverter::SortClassesByHierarchy(bvector<T>& ecClasses)
+    {
+    if (ecClasses.size() < 2)
+        return;
+
+    bvector<T> classes;
+    
+    for (auto const& ecClass : ecClasses)
+        {
+        bool inserted = false;
+        for (auto const& localClass : classes)
+            {
+            if (IsBaseClass(localClass, ecClass))
+                {
+                auto it = std::find(classes.begin(), classes.end(), localClass);
+                classes.insert(it, ecClass);
+                inserted = true;
+                break;
+                }
+            }
+        if (!inserted)
+            classes.push_back(ecClass);
+        }
+    ecClasses.assign(classes.begin(), classes.end());
+    }
+
+//---------------------------------------------------------------------------------------
+// @remarks      sorts the classes by className (ignoring case), default order is ascending
+// @bsimethod                                    Basanta.Kharel                  01/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+template <typename T>
+void ECSchemaConverter::SortClassesByName(bvector<T>& ecClasses, bool ascending)
+    {
+    auto classComparer = [](T ecClass1, T ecClass2)
+        {
+        return BeStringUtilities::Stricmp(ecClass1->GetName().c_str(), ecClass2->GetName().c_str()) < 0 ;
+        };
+    std::sort(ecClasses.begin(), ecClasses.end(), classComparer);
+    if (!ascending)
+        std::reverse(ecClasses.begin(), ecClasses.end());
+
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Basanta.Kharel                  01/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+bvector<ECClassP> ECSchemaConverter::GetHierarchicallySortedClasses(ECSchemaR schema)
+    {
+    bvector<ECClassP> classes;
+    Utf8String defaultOrder = "";
+    for (auto const& ecClass : schema.GetClasses())
+        {
+        defaultOrder += ecClass->GetName() + ",";
+        classes.push_back(ecClass);
+        }
+
+    if (classes.size() < 2)
+        return classes;
+
+    SortClassesByNameAndHierarchy(classes);
+    Utf8String sortedOrder = "";
+    std::for_each(classes.begin(), classes.end(), 
+        [&sortedOrder](ECClassP& ecClass) 
+        { 
+        sortedOrder += ecClass->GetName() + ","; 
+        });
+
+    LOG.tracev("Default Order For classes in schema: %s", defaultOrder.c_str());
+    LOG.tracev("Name and Hierarchical Sorted Order For classes in schema: %s", sortedOrder.c_str());
+    return classes;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Basanta.Kharel                  12/2015
+//+---------------+---------------+---------------+---------------+---------------+------
+ECObjectsStatus StandardValuesConverter::Convert(ECSchemaR schema, IECCustomAttributeContainerR container, IECInstanceR instance)
+    {
+    //are standard values even added to ecclass or ecschema?
+    ECPropertyP prop = dynamic_cast<ECPropertyP> (&container);
+    if (nullptr == prop)
+        return ECObjectsStatus::PropertyNotFound;
+
+    ECObjectsStatus status;
+    StandardValueInfo sdInfo;
+    if (ECObjectsStatus::Success != (status = StandardValueInfo::ExtractInstanceData(instance, sdInfo)))
+        {
+        LOG.errorv("Unable to extract '%s' Standard Value. Status %d", prop->GetName().c_str(), status);
+        return status;
+        }
+    Utf8String classes;
+    if (ECObjectsStatus::DataTypeMismatch == CheckForConflict(prop, schema, sdInfo, classes))
+        {
+        LOG.warningv("Conflict between Standard Values for the Property %s. Used by following classes: %s. NO ENUM will be added !!!", prop->GetName().c_str(), classes.c_str());
+        status = ECObjectsStatus::Success;
+        }
+    else
+        {
+        SetStrictness(prop, schema, sdInfo);
+        status = AddEnumeration(schema, sdInfo, prop);
+        }
+    if (ECObjectsStatus::Success != status)
+        {
+        LOG.errorv("Something went wrong while adding Enumeration for '%s' Standard Value", prop->GetName().c_str());
+        return status;
+        }
+
+    return ECSchemaConverter::RemoveCustomAttribute(prop, schema, "StandardValues");
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Basanta.Kharel                  01/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+ECObjectsStatus StandardValuesConverter::CheckForConflict(ECPropertyP standardValueProperty, ECSchemaR schema,StandardValueInfo& sdInfo, Utf8String& classes)
+    {
+    bool conflict = false;
+    classes = standardValueProperty->GetClass().GetFullName();
+    auto propertyProcessor = [&conflict, &sdInfo, &classes, &standardValueProperty](ECPropertyP localProperty)
+        {
+        if (standardValueProperty == localProperty)
+            return ECObjectsStatus::Success;
+
+        IECInstancePtr currentInstance = localProperty->GetPrimaryCustomAttributeLocal("StandardValues");
+        if (!currentInstance.IsValid())
+            return ECObjectsStatus::Success;
+
+        classes.append(",");
+        classes.append(localProperty->GetClass().GetFullName());
+        StandardValueInfo localInfo;
+        StandardValueInfo::ExtractInstanceData(*currentInstance, localInfo);
+        if (!localInfo.Equals(sdInfo))
+            conflict = true;
+        return ECObjectsStatus::Success;
+        };
+
+    ECSchemaConverter::TraverseProperty(standardValueProperty, schema, propertyProcessor);
+    if (conflict)
+        return ECObjectsStatus::DataTypeMismatch;
+
+    return ECObjectsStatus::Success;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Basanta.Kharel                  01/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+void StandardValuesConverter::SetStrictness(ECPropertyP standardValueProperty, ECSchemaR schema, StandardValueInfo& sdInfo)
+    {
+    ECClassP rootClass = ECSchemaConverter::FindRootBaseClass(standardValueProperty, schema);
+    ECPropertyP rootProperty = rootClass->GetPropertyP(standardValueProperty->GetName(), false);
+
+    IECInstancePtr rootInstance = rootProperty->GetPrimaryCustomAttributeLocal("StandardValues");
+    if (!rootInstance.IsValid())
+        sdInfo.m_mustBeFromList = false;
+    else
+        {
+        StandardValueInfo rootInfo;
+        StandardValueInfo::ExtractInstanceData(*rootInstance, rootInfo);
+        sdInfo.m_mustBeFromList = rootInfo.m_mustBeFromList;
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Basanta.Kharel                  12/2015
+//+---------------+---------------+---------------+---------------+---------------+------
+ECObjectsStatus StandardValuesConverter::AddEnumeration(ECSchemaR schema, StandardValueInfo& sdInfo, ECPropertyP& ecProperty)
+    {
+    ECEnumerationP enumeration = nullptr;
+
+    ECObjectsStatus status = FindEnumeration(schema, enumeration, sdInfo);
+
+    if (ECObjectsStatus::EnumerationNotFound == status)
+        {
+        ECClassP rootClass = nullptr;
+        Utf8String enumName = CreateEnumerationName(rootClass, schema, ecProperty);
+        status = CreateEnumeration(enumeration, rootClass->GetSchemaR(), enumName.c_str(), sdInfo);
+        }
+
+    if (ECObjectsStatus::Success != status)
+        return status;
+
+    return ConvertToEnumType(ecProperty, schema, enumeration);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Basanta.Kharel                  01/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+Utf8String StandardValuesConverter::CreateEnumerationName(ECClassP& rootClass, ECSchemaR schema,ECPropertyP& ecProperty)
+    {
+    rootClass = ECSchemaConverter::FindRootBaseClass(ecProperty, schema);
+    Utf8String baseClassName = rootClass->GetName();
+    Utf8String enumName = ecProperty->GetName();
+    if (baseClassName.size() == 1 || !enumName.ContainsI(baseClassName))
+        enumName = baseClassName + enumName;
+
+    return enumName;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Basanta.Kharel                  12/2015
+//+---------------+---------------+---------------+---------------+---------------+------
+ECObjectsStatus StandardValuesConverter::FindEnumeration(ECSchemaR schema, ECEnumerationP& enumeration, StandardValueInfo& sdInfo)
+    {
+    auto enumSize = sdInfo.m_valuesMap.size();
+    for (auto ecEnum : schema.GetEnumerations())
+        {
+        if (PrimitiveType::PRIMITIVETYPE_Integer != ecEnum->GetType()
+            || enumSize != ecEnum->GetEnumeratorCount())
+            continue;
+
+        StandardValueInfo enumSdInfo(ecEnum);
+        if (sdInfo.Equals(enumSdInfo) 
+            && sdInfo.m_mustBeFromList == enumSdInfo.m_mustBeFromList)
+            {
+            enumeration = ecEnum;
+            return ECObjectsStatus::Success;
+            }
+        }
+
+    return ECObjectsStatus::EnumerationNotFound;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Basanta.Kharel                  12/2015
+//+---------------+---------------+---------------+---------------+---------------+------
+ECObjectsStatus StandardValuesConverter::CreateEnumeration(ECEnumerationP& enumeration, ECSchemaR schema, Utf8CP enumName, StandardValueInfo& sdInfo)
+    {
+    ECObjectsStatus status = schema.CreateEnumeration(enumeration, enumName, PrimitiveType::PRIMITIVETYPE_Integer);
+    if (ECObjectsStatus::Success != status)
+        return status;
+    
+    enumeration->SetIsStrict(sdInfo.m_mustBeFromList);
+    ECEnumeratorP enumerator;
+
+    for (auto const& pair : sdInfo.m_valuesMap)
+        {
+        status = enumeration->CreateEnumerator(enumerator, pair.first);
+        if (ECObjectsStatus::Success != status)
+            return status;
+
+        enumerator->SetDisplayLabel(pair.second.c_str());
+        }
+    return ECObjectsStatus::Success;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Basanta.Kharel                  01/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+ECObjectsStatus StandardValuesConverter::ConvertToEnumType(ECPropertyP& primitiveEcProperty, ECSchemaR ecSchema, ECEnumerationP& enumeration)
+    {
+    auto propertyProcessor = [&enumeration](ECPropertyP localProp)
+        {
+        if (!localProp->GetIsPrimitive())
+            return ECObjectsStatus::DataTypeMismatch;
+
+        ECObjectsStatus status = ECObjectsStatus::Success;
+        PrimitiveECPropertyP primitive = localProp->GetAsPrimitivePropertyP();
+
+        if (nullptr == primitive->GetEnumeration())
+            status = primitive->SetType(*enumeration);
+        else if (primitive->GetEnumeration() != enumeration)
+            return ECObjectsStatus::DataTypeMismatch;
+
+        return status;
+        };
+
+    return ECSchemaConverter::TraverseProperty(primitiveEcProperty, ecSchema, propertyProcessor);
+    }
+END_BENTLEY_ECOBJECT_NAMESPACE

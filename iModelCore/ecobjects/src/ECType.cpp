@@ -2,7 +2,7 @@
 |
 |     $Source: src/ECType.cpp $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -56,5 +56,24 @@ ECTypeDescriptor                ECTypeDescriptor::CreateStructTypeDescriptor ()
     type.m_arrayKind = (ArrayKind)0; 
     return type; 
     }
-     
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Colin.Kerr                  01/2016
+//---------------+---------------+---------------+---------------+---------------+-------
+ECTypeDescriptor                ECTypeDescriptor::CreateNavigationTypeDescriptor(PrimitiveType type, bool isMultiple)
+    {
+    ECTypeDescriptor descriptor;
+    if (isMultiple)
+        {
+        descriptor.m_typeKind = ValueKind::VALUEKIND_Array;
+        descriptor.m_arrayKind = ArrayKind::ARRAYKIND_Primitive;
+        }
+    else
+        {
+        descriptor.m_typeKind = ValueKind::VALUEKIND_Primitive;
+        }
+    descriptor.m_primitiveType = type;
+
+    return descriptor;
+    }
 END_BENTLEY_ECOBJECT_NAMESPACE

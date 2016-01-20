@@ -2,7 +2,7 @@
 |
 |     $Source: src/presentation/PresentationRules/UserSettingsGroup.cpp $
 |
-|   $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
@@ -17,14 +17,14 @@ USING_NAMESPACE_BENTLEY_EC
 * @bsimethod                                    Eligijus.Mauragas               01/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
 UserSettingsGroup::UserSettingsGroup ()
-    : PresentationKey (), m_categoryLabel (L"")
+    : PresentationKey (), m_categoryLabel ("")
     {
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               01/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-UserSettingsGroup::UserSettingsGroup (WStringCR categoryLabel)
+UserSettingsGroup::UserSettingsGroup (Utf8StringCR categoryLabel)
     : PresentationKey (1000), m_categoryLabel (categoryLabel)
     {
     }
@@ -52,7 +52,7 @@ CharCP UserSettingsGroup::_GetXmlElementName ()
 bool UserSettingsGroup::_ReadXml (BeXmlNodeP xmlNode)
     {
     if (BEXML_Success != xmlNode->GetAttributeStringValue (m_categoryLabel, USER_SETTINGS_XML_ATTRIBUTE_CATEGORY_LABEL))
-        m_categoryLabel = L"";
+        m_categoryLabel = "";
 
     CommonTools::LoadSpecificationsFromXmlNode<UserSettingsItem, UserSettingsItemList> (xmlNode, m_settingsItems, USER_SETTINGS_ITEM_XML_NODE_NAME);
     CommonTools::LoadRulesFromXmlNode<UserSettingsGroup, UserSettingsGroupList> (xmlNode, m_nestedSettings, USER_SETTINGS_XML_NODE_NAME);
@@ -74,17 +74,27 @@ void UserSettingsGroup::_WriteXml (BeXmlNodeP xmlNode)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               01/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-WStringCR UserSettingsGroup::GetCategoryLabel (void) const { return m_categoryLabel; }
+Utf8StringCR UserSettingsGroup::GetCategoryLabel (void) const { return m_categoryLabel; }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               01/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-UserSettingsItemList& UserSettingsGroup::GetSettingsItems (void) { return m_settingsItems; }
+UserSettingsItemList& UserSettingsGroup::GetSettingsItemsR (void) { return m_settingsItems; }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               01/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-UserSettingsGroupList& UserSettingsGroup::GetNestedSettings (void) { return m_nestedSettings; }
+UserSettingsGroupList& UserSettingsGroup::GetNestedSettingsR (void) { return m_nestedSettings; }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Eligijus.Mauragas               01/2013
++---------------+---------------+---------------+---------------+---------------+------*/
+UserSettingsItemList const& UserSettingsGroup::GetSettingsItems (void) const { return m_settingsItems; }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Eligijus.Mauragas               01/2013
++---------------+---------------+---------------+---------------+---------------+------*/
+UserSettingsGroupList const& UserSettingsGroup::GetNestedSettings (void) const { return m_nestedSettings; }
 
 
 
@@ -92,14 +102,14 @@ UserSettingsGroupList& UserSettingsGroup::GetNestedSettings (void) { return m_ne
 * @bsimethod                                    Eligijus.Mauragas               01/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
 UserSettingsItem::UserSettingsItem ()
-    : m_id (L""), m_label (L""), m_options (L""), m_defaultValue (L"")
+    : m_id (""), m_label (""), m_options (""), m_defaultValue ("")
     {
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               01/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-UserSettingsItem::UserSettingsItem (WStringCR id, WStringCR label, WStringCR options, WStringCR defaultValue)
+UserSettingsItem::UserSettingsItem (Utf8StringCR id, Utf8StringCR label, Utf8StringCR options, Utf8StringCR defaultValue)
     : m_id (id), m_label (label), m_options (options), m_defaultValue (defaultValue)
     {
     }
@@ -112,22 +122,22 @@ bool UserSettingsItem::ReadXml (BeXmlNodeP xmlNode)
     //Required:
     if (BEXML_Success != xmlNode->GetAttributeStringValue (m_id, USER_SETTINGS_ITEM_XML_ATTRIBUTE_ID))
         {
-        LOG.errorv (L"Invalid UserSettingsItemXML: %hs element must contain a %hs attribute", USER_SETTINGS_ITEM_XML_NODE_NAME, USER_SETTINGS_ITEM_XML_ATTRIBUTE_ID);
+        LOG.errorv ("Invalid UserSettingsItemXML: %hs element must contain a %hs attribute", USER_SETTINGS_ITEM_XML_NODE_NAME, USER_SETTINGS_ITEM_XML_ATTRIBUTE_ID);
         return false;
         }
 
     if (BEXML_Success != xmlNode->GetAttributeStringValue (m_label, USER_SETTINGS_ITEM_XML_ATTRIBUTE_LABEL))
         {
-        LOG.errorv (L"Invalid UserSettingsItemXML: %hs element must contain a %hs attribute", USER_SETTINGS_ITEM_XML_NODE_NAME, USER_SETTINGS_ITEM_XML_ATTRIBUTE_LABEL);
+        LOG.errorv ("Invalid UserSettingsItemXML: %hs element must contain a %hs attribute", USER_SETTINGS_ITEM_XML_NODE_NAME, USER_SETTINGS_ITEM_XML_ATTRIBUTE_LABEL);
         return false;
         }
 
     //Optional:
     if (BEXML_Success != xmlNode->GetAttributeStringValue (m_options, USER_SETTINGS_ITEM_XML_ATTRIBUTE_OPTIONS))
-        m_options = L"";
+        m_options = "";
 
     if (BEXML_Success != xmlNode->GetAttributeStringValue (m_defaultValue, USER_SETTINGS_ITEM_XML_ATTRIBUTE_DEFAULT_VALUE))
-        m_defaultValue = L"";    
+        m_defaultValue = "";    
 
     return true;
     }
@@ -148,19 +158,19 @@ void UserSettingsItem::WriteXml (BeXmlNodeP parentXmlNode)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               01/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-WStringCR UserSettingsItem::GetId (void) const               { return m_id; }
+Utf8StringCR UserSettingsItem::GetId (void) const               { return m_id; }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               01/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-WStringCR UserSettingsItem::GetLabel (void) const            { return m_label; }
+Utf8StringCR UserSettingsItem::GetLabel (void) const            { return m_label; }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               01/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-WStringCR UserSettingsItem::GetOptions (void) const          { return m_options; }
+Utf8StringCR UserSettingsItem::GetOptions (void) const          { return m_options; }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               01/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-WStringCR UserSettingsItem::GetDefaultValue (void) const     { return m_defaultValue; }
+Utf8StringCR UserSettingsItem::GetDefaultValue (void) const     { return m_defaultValue; }

@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/ECObjects/ECContext.h $
 |
-|   $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -16,12 +16,12 @@
 //__PUBLISH_SECTION_START__
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
+//! @addtogroup ECObjectsGroup
+//! @beginGroup
 
 typedef RefCountedPtr<ECSchemaReadContext>      ECSchemaReadContextPtr;
 //=======================================================================================
 //! Context object used for schema creation and deserialization.
-//! @addtogroup ECObjectsGroup
-//! @beginGroup
 //=======================================================================================
 struct ECSchemaReadContext : RefCountedBase
 {

@@ -2,7 +2,7 @@
 |
 |     $Source: src/SchemaXml.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -49,8 +49,9 @@ struct SchemaXmlReader2 : SchemaXmlReaderImpl
     {
     private:
         ECSchemaPtr m_conversionSchema;
-        void DetermineClassTypeAndModifier(Utf8StringCR className, ECSchemaPtr schemaOut, ECClassType& classType, ECClassModifier& classModifier, bool isCA, bool isStruct, bool isDomain, bool isSealed);
-        ECClassModifier DetermineRelationshipClassModifier(Utf8StringCR className, bool isDomain);
+        void DetermineClassTypeAndModifier(Utf8StringCR className, ECSchemaPtr schemaOut, ECClassType& classType, ECClassModifier& classModifier, bool isCA, bool isStruct, bool isDomain, bool isSealed) const;
+        ECClassModifier DetermineRelationshipClassModifier(Utf8StringCR className, bool isDomain) const;
+        bool DropClassAttributeDefined(Utf8StringCR className) const;
 
     protected:
         bool ReadClassNode(ECClassP &ecClass, BeXmlNodeR classNode, ECSchemaPtr& schemaOut) override;
@@ -271,6 +272,7 @@ SchemaReadStatus SchemaXmlReaderImpl::_ReadClassContentsFromXml(ECSchemaPtr& sch
     {
     SchemaReadStatus status = SchemaReadStatus::Success;
 
+    bvector<NavigationECPropertyP> navigationProperties;
     ClassDeserializationVector::const_iterator  classesStart, classesEnd, classesIterator;
     ECClassP    ecClass;
     BeXmlNodeP  classNode;
@@ -278,10 +280,20 @@ SchemaReadStatus SchemaXmlReaderImpl::_ReadClassContentsFromXml(ECSchemaPtr& sch
         {
         ecClass = classesIterator->first;
         classNode = classesIterator->second;
-        status = ecClass->_ReadXmlContents(*classNode, m_schemaContext, ecXmlVersionMajor);
+        status = ecClass->_ReadXmlContents(*classNode, m_schemaContext, ecXmlVersionMajor, navigationProperties);
         if (SchemaReadStatus::Success != status)
             return status;
         }
+
+    for (auto const& navProp : navigationProperties)
+        if (!navProp->Verify())
+            {
+            LOG.errorv("Unable to load NavigationECProperty '%s:%s.%s' because the relationship '%s' does not support this class as a constraint when traversed in the '%s' direction or max cardinality is greater than 1.",
+                        navProp->GetClass().GetSchema().GetName().c_str(), navProp->GetClass().GetName().c_str(), navProp->GetName().c_str(),
+                        navProp->GetRelationshipClass()->GetName().c_str(), ECXml::DirectionToString(navProp->GetDirection()));
+                
+            return SchemaReadStatus::InvalidECSchemaXml;
+            }
 
     return status;
     }
@@ -340,6 +352,9 @@ bool SchemaXmlReader2::ReadClassNode(ECClassP &ecClass, BeXmlNodeR classNode, EC
     Utf8String     className;
     classNode.GetAttributeStringValue(className, TYPE_NAME_ATTRIBUTE);
 
+    if (DropClassAttributeDefined(className))
+        return false;
+
     Utf8String boolStr;
     bool isDomain = true; // defaults to true
     if (BEXML_Success == classNode.GetAttributeStringValue(boolStr, IS_DOMAINCLASS_ATTRIBUTE))
@@ -382,13 +397,25 @@ bool SchemaXmlReader2::ReadClassNode(ECClassP &ecClass, BeXmlNodeR classNode, EC
     return true;
     }
 
+bool SchemaXmlReader2::DropClassAttributeDefined(Utf8StringCR className) const
+    {
+    if (!m_conversionSchema.IsValid())
+        return false;
+
+    ECClassCP ecClass = m_conversionSchema->GetClassCP(className.c_str());
+    if (nullptr == ecClass)
+        return false;
+
+    return ecClass->IsDefined("DropClass");
+    }
+
 void WriteLogMessage(ECClassCP ecClass, Utf8CP classDescription, Utf8CP forcedType)
     {
     LOG.debugv("Forcing %s '%s:%s' to be %s because the 'ECv3ConversionAttributes:Force%s' custom attribute is applied to the %s",
                classDescription, ecClass->GetSchema().GetFullSchemaName().c_str(), ecClass->GetName().c_str(), forcedType, forcedType, classDescription);
     }
 
-ECClassModifier SchemaXmlReader2::DetermineRelationshipClassModifier(Utf8StringCR className, bool isDomain)
+ECClassModifier SchemaXmlReader2::DetermineRelationshipClassModifier(Utf8StringCR className, bool isDomain) const
     {
     ECClassModifier modifier = ECClassModifier::Abstract;
     if (isDomain)
@@ -415,7 +442,7 @@ ECClassModifier SchemaXmlReader2::DetermineRelationshipClassModifier(Utf8StringC
     return modifier;
     }
 
-void SchemaXmlReader2::DetermineClassTypeAndModifier(Utf8StringCR className, ECSchemaPtr schemaOut, ECClassType& classType, ECClassModifier& classModifier, bool isCA, bool isStruct, bool isDomain, bool isSealed)
+void SchemaXmlReader2::DetermineClassTypeAndModifier(Utf8StringCR className, ECSchemaPtr schemaOut, ECClassType& classType, ECClassModifier& classModifier, bool isCA, bool isStruct, bool isDomain, bool isSealed) const
     {
     if (isStruct)
         classType = ECClassType::Struct;

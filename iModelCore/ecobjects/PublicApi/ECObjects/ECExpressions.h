@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/ECObjects/ECExpressions.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -215,10 +215,13 @@ public:
 
 /*__PUBLISH_SECTION_START__*/
 
+//! @addtogroup ECObjectsGroup
+//! @beginGroup
+
+
+
 /*=================================================================================**//**
 * The context in which an expression is evaluated.
-* @addtogroup ECObjectsGroup
-* @beginGroup
 +===============+===============+===============+===============+===============+======*/
 struct          ExpressionContext : RefCountedBase
 {
@@ -281,9 +284,9 @@ public:
     ECOBJECTS_EXPORT void               SetEvaluationOptions (EvaluationOptions options);
 }; // End of class ExpressionContext
 
-/*=================================================================================**//**
-* A context in which multiple IECInstances provide the context for expression evaluation
-+===============+===============+===============+===============+===============+======*/
+//=================================================================================//
+//! A context in which multiple IECInstances provide the context for expression evaluation.
+//+===============+===============+===============+===============+===============+======//
 struct          InstanceListExpressionContext : ExpressionContext
     {
 /*__PUBLISH_SECTION_END__*/
@@ -1071,6 +1074,9 @@ public:
 
     ECOBJECTS_EXPORT ExpressionStatus GetValue(EvaluationResult& evalResult, ExpressionContextR context);
 
+    // Remaps access strings within this ECExpression according to the supplied remapper.
+    // Returns true if any remapping was actually performed.
+    ECOBJECTS_EXPORT bool   Remap (ECSchemaCR oldSchema, ECSchemaCR newSchema, IECSchemaRemapperCR remapper);
 /*__PUBLISH_SECTION_START__*/
 public:
     //! Tries to generate a resolved tree.

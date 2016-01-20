@@ -2,7 +2,7 @@
 |
 |     $Source: test/NonPublished/UnitsTests.cpp $
 |
-|   $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "../ECObjectsTestPCH.h"
@@ -145,8 +145,8 @@ struct UnitsTest : ECTestFixture
 
     void            SetUnits (Utf8CP fromUnitName, Utf8CP toUnitName)
         {
-        m_fromProperty->GetCustomAttribute ("UnitSpecificationAttr")->SetValue ("UnitName", ECValue (fromUnitName));
-        m_toProperty->GetCustomAttribute ("UnitSpecificationAttr")->SetValue ("UnitName", ECValue (toUnitName));
+        m_fromProperty->GetCustomAttribute ("Unit_Attributes", "UnitSpecification")->SetValue ("UnitName", ECValue (fromUnitName));
+        m_toProperty->GetCustomAttribute ("Unit_Attributes", "UnitSpecification")->SetValue ("UnitName", ECValue (toUnitName));
         }
 
     void            GetUnits (UnitR from, UnitR to)

@@ -2,7 +2,7 @@
 |
 |     $Source: src/ECClass.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -96,6 +96,9 @@ Utf8StringCR ECClass::GetECSqlName() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ECClass::SetName (Utf8StringCR name)
     {
+    if (!ECNameValidation::IsValidName (name.c_str()))
+        return ECObjectsStatus::InvalidName;
+
     m_validatedName.SetName (name.c_str());
     m_fullName = GetSchema().GetName() + ":" + GetName();
     
@@ -512,18 +515,6 @@ bool copyCustomAttributes
 
         destProperty = destPrimitive;
         }
-    else if (sourceProperty->GetIsArray())
-        {
-        ArrayECPropertyP destArray;
-        ArrayECPropertyCP sourceArray = sourceProperty->GetAsArrayProperty();
-        destArray = new ArrayECProperty (*this);
-        destArray->SetPrimitiveElementType(sourceArray->GetPrimitiveElementType());
-
-        destArray->SetMaxOccurs(sourceArray->GetMaxOccurs());
-        destArray->SetMinOccurs(sourceArray->GetMinOccurs());
-
-        destProperty = destArray;
-        }
     else if (sourceProperty->GetIsStructArray())
         {
         StructArrayECPropertyP destArray;
@@ -531,6 +522,18 @@ bool copyCustomAttributes
         destArray = new StructArrayECProperty(*this);
         ECStructClassCP structElementType = sourceArray->GetStructElementType();
         destArray->SetStructElementType(structElementType);
+
+        destArray->SetMaxOccurs(sourceArray->GetMaxOccurs());
+        destArray->SetMinOccurs(sourceArray->GetMinOccurs());
+
+        destProperty = destArray;
+        }
+    else if (sourceProperty->GetIsArray())
+        {
+        ArrayECPropertyP destArray;
+        ArrayECPropertyCP sourceArray = sourceProperty->GetAsArrayProperty();
+        destArray = new ArrayECProperty(*this);
+        destArray->SetPrimitiveElementType(sourceArray->GetPrimitiveElementType());
 
         destArray->SetMaxOccurs(sourceArray->GetMaxOccurs());
         destArray->SetMinOccurs(sourceArray->GetMinOccurs());
@@ -721,7 +724,7 @@ ECObjectsStatus ECClass::RemoveProperty (Utf8StringCR name)
     PropertyMap::iterator  propertyIterator = m_propertyMap.find (name.c_str());
     
     if ( propertyIterator == m_propertyMap.end() )
-        return ECObjectsStatus::ClassNotFound;
+        return ECObjectsStatus::PropertyNotFound;
         
     ECPropertyP ecProperty = propertyIterator->second;
     return DeleteProperty (*ecProperty);
@@ -1265,9 +1268,9 @@ SchemaReadStatus ECClass::_ReadXmlAttributes (BeXmlNodeR classNode)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaReadStatus ECClass::_ReadXmlContents (BeXmlNodeR classNode, ECSchemaReadContextR context, int ecXmlVersionMajor)
-    {            
-	bool isSchemaSupplemental = Utf8String::npos != GetSchema().GetName().find("_Supplemental_");
+SchemaReadStatus ECClass::_ReadXmlContents (BeXmlNodeR classNode, ECSchemaReadContextR context, int ecXmlVersionMajor, bvector<NavigationECPropertyP>& navigationProperties)
+    {
+    bool isSchemaSupplemental = Utf8String::npos != GetSchema().GetName().find("_Supplemental_");
     // Get the BaseClass child nodes.
     for (BeXmlNodeP childNode = classNode.GetFirstChild (); NULL != childNode; childNode = childNode->GetNextSibling ())
         {
@@ -1329,10 +1332,11 @@ SchemaReadStatus ECClass::_ReadXmlContents (BeXmlNodeR classNode, ECSchemaReadCo
             }
         else if (0 == strcmp(childNodeName, EC_NAVIGATIONPROPERTY_ELEMENT)) // also EC3.0 only
             {
-            ECPropertyP ecProperty = new NavigationECProperty(*this);
+            NavigationECPropertyP ecProperty = new NavigationECProperty(*this);
             SchemaReadStatus status = _ReadPropertyFromXmlAndAddToClass(ecProperty, childNode, context, childNodeName);
             if (SchemaReadStatus::Success != status)
                 return status;
+            navigationProperties.push_back(ecProperty);
             }
         }
     
@@ -1432,8 +1436,10 @@ SchemaWriteStatus ECClass::_WriteXml (BeXmlWriterR xmlWriter, int ecXmlVersionMa
         bool isConcrete = this->GetClassModifier() != ECClassModifier::Abstract;
         xmlWriter.WriteAttribute(IS_DOMAINCLASS_ATTRIBUTE, isConcrete && !(IsStructClass() || IsCustomAttributeClass()));
         }
-    else
+    else if (m_modifier != ECClassModifier::None)
+        {
         xmlWriter.WriteAttribute(MODIFIER_ATTRIBUTE, ECXml::ModifierToString(m_modifier));
+        }
 
     if (nullptr != additionalAttributes)
         {
@@ -1635,10 +1641,11 @@ SchemaWriteStatus ECEntityClass::_WriteXml(BeXmlWriterR xmlWriter, int ecXmlVers
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Colin.Kerr                  12/2015
 //---------------+---------------+---------------+---------------+---------------+-------
-ECObjectsStatus ECEntityClass::CreateNavigationProperty(NavigationECPropertyP& ecProperty, Utf8StringCR name, ECRelationshipClassCR relationshipClass, ECRelatedInstanceDirection direction)
+ECObjectsStatus ECEntityClass::CreateNavigationProperty(NavigationECPropertyP& ecProperty, Utf8StringCR name, ECRelationshipClassCR relationshipClass, ECRelatedInstanceDirection direction, PrimitiveType type, bool verify)
     {
     ecProperty = new NavigationECProperty(*this);
-    ECObjectsStatus status = ecProperty->SetRelationshipClass(relationshipClass, direction);
+    ecProperty->SetType(type);
+    ECObjectsStatus status = ecProperty->SetRelationshipClass(relationshipClass, direction, verify);
     if (ECObjectsStatus::Success == status)
         status = AddProperty(ecProperty, name);
 
@@ -2337,7 +2344,7 @@ ECRelationshipConstraintR toRelationshipConstraint
 ECObjectsStatus ECRelationshipConstraint::GetOrderedRelationshipPropertyName (Utf8String& propertyName)  const
     {
     // see if the custom attribute signifying a Ordered relationship is defined
-    IECInstancePtr caInstance = GetCustomAttribute("OrderedRelationshipsConstraint");
+    IECInstancePtr caInstance = GetCustomAttribute("Bentley_Standard_CustomAttributes", "OrderedRelationshipsConstraint");
     if (caInstance.IsValid())
         {
         ECN::ECValue value;
@@ -2357,7 +2364,7 @@ ECObjectsStatus ECRelationshipConstraint::GetOrderedRelationshipPropertyName (Ut
 bool ECRelationshipConstraint::GetIsOrdered () const
     {
     // see if the custom attribute signifying a Ordered relationship is defined
-    IECInstancePtr caInstance = GetCustomAttribute("OrderedRelationshipsConstraint");
+    IECInstancePtr caInstance = GetCustomAttribute("Bentley_Standard_CustomAttributes", "OrderedRelationshipsConstraint");
     if (caInstance.IsValid())
         return true;
     return false;
@@ -2369,7 +2376,7 @@ bool ECRelationshipConstraint::GetIsOrdered () const
 OrderIdStorageMode ECRelationshipConstraint::GetOrderIdStorageMode () const
     {
     // see if the custom attribute signifying a Ordered relationship is defined
-    IECInstancePtr caInstance = GetCustomAttribute("OrderedRelationshipsConstraint");
+    IECInstancePtr caInstance = GetCustomAttribute("Bentley_Standard_CustomAttributes", "OrderedRelationshipsConstraint");
     if (caInstance.IsValid())
         {
         ECN::ECValue value;
@@ -2488,7 +2495,7 @@ ECRelationshipConstraintR ECRelationshipClass::GetTarget () const
 bool ECRelationshipClass::GetIsOrdered () const
     {
     // see if the custom attribute signifying a Ordered relationship is defined
-    IECInstancePtr caInstance = GetCustomAttribute("SupportsOrderedRelationships");
+    IECInstancePtr caInstance = GetCustomAttribute("Bentley_Standard_CustomAttributes", "SupportsOrderedRelationships");
     if (caInstance.IsValid())
         return true;
 
@@ -2501,7 +2508,7 @@ bool ECRelationshipClass::GetIsOrdered () const
 ECObjectsStatus ECRelationshipClass::GetOrderedRelationshipPropertyName (Utf8String& propertyName, ECRelationshipEnd end) const
     {
     // see if the struct has a custom attribute to custom persist itself
-    IECInstancePtr caInstance = GetCustomAttribute("SupportsOrderedRelationships");
+    IECInstancePtr caInstance = GetCustomAttribute("Bentley_Standard_CustomAttributes", "SupportsOrderedRelationships");
     if (caInstance.IsValid())
         {
         ECN::ECValue value;
@@ -2528,7 +2535,11 @@ SchemaWriteStatus ECRelationshipClass::_WriteXml (BeXmlWriterR xmlWriter, int ec
     SchemaWriteStatus   status;
     bmap<Utf8CP, Utf8CP> additionalAttributes;
     additionalAttributes[STRENGTH_ATTRIBUTE] = ECXml::StrengthToString(m_strength);
-    additionalAttributes[STRENGTHDIRECTION_ATTRIBUTE] = ECXml::DirectionToString(m_strengthDirection);
+    if (m_strengthDirection != ECRelatedInstanceDirection::Forward)
+        { //skip the attribute for "forward" as it is the default value.
+        additionalAttributes[STRENGTHDIRECTION_ATTRIBUTE] = ECXml::DirectionToString(m_strengthDirection);
+        }
+
     if (SchemaWriteStatus::Success != (status = ECClass::_WriteXml (xmlWriter, ecXmlVersionMajor, ecXmlVersionMinor, EC_RELATIONSHIP_CLASS_ELEMENT, &additionalAttributes, false)))
         return status;
         
@@ -2565,9 +2576,9 @@ SchemaReadStatus ECRelationshipClass::_ReadXmlAttributes (BeXmlNodeR classNode)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                02/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaReadStatus ECRelationshipClass::_ReadXmlContents (BeXmlNodeR classNode, ECSchemaReadContextR context, int ecXmlVersionMajor)
+SchemaReadStatus ECRelationshipClass::_ReadXmlContents (BeXmlNodeR classNode, ECSchemaReadContextR context, int ecXmlVersionMajor, bvector<NavigationECPropertyP>& navigationProperties)
     {
-    SchemaReadStatus status = T_Super::_ReadXmlContents (classNode, context, ecXmlVersionMajor);
+    SchemaReadStatus status = T_Super::_ReadXmlContents (classNode, context, ecXmlVersionMajor, navigationProperties);
     if (status != SchemaReadStatus::Success)
         return status;
 

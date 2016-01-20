@@ -2,7 +2,7 @@
 |
 |     $Source: test/Published/SchemaTests.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "../ECObjectsTestPCH.h"
@@ -1731,8 +1731,24 @@ TEST_F (SchemaSerializationTest, SerializeComprehensiveSchema)
     relationshipClass->GetTarget().AddClass(*entityClass);
     relationshipClass->GetTarget().SetCardinality(RelationshipCardinality::ZeroOne());
 
+    NavigationECPropertyP navProp;
+    entityClass->CreateNavigationProperty(navProp, "NavigationProperty", *relationshipClass, ECRelatedInstanceDirection::Forward);
+
     SchemaWriteStatus status2 = schema->WriteToXmlFile (ECTestFixture::GetTempDataPath (L"ComprehensiveSchema.01.00.ecschema.xml").c_str (), 3);
     EXPECT_EQ (SchemaWriteStatus::Success, status2);
+    }
+
+//This test ensures we support any unknown element or attribute put into existing ECSchema XML. Important for backwards compatibility of future EC versions.
+TEST_F(SchemaSerializationTest, DeserializeComprehensiveSchemaWithUnknowns)
+    {
+    ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
+
+    ECSchemaPtr schema;
+    SchemaReadStatus status = ECSchema::ReadFromXmlFile(schema, ECTestFixture::GetTestDataPath(L"ComprehensiveSchemaWithUnknowns.01.00.ecschema.xml").c_str(), *schemaContext);
+    ASSERT_EQ(SchemaReadStatus::Success, status) << "Failed to load ComprehensiveSchemaWithUnknowns for test";
+
+    EXPECT_EQ(6, schema->GetClassCount());
+    EXPECT_EQ(1, schema->GetEnumerationCount());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2926,15 +2942,20 @@ struct DisplayLabelTester : ECNameValidationTest::ITester
 
     virtual void Preprocess (ECSchemaR schema) const override
         {
-        schema.SetName (m_name);
+        // This test used to rely on SetName() automatically encoding a non-EC name.
+        // We removed that behavior because it diverges from managed EC (which throws an "invalid name" exception instead)
+        // So now we must explicitly encode the name first.
+        Utf8String encodedName;
+        EXPECT_EQ (!ECNameValidation::IsValidName (m_name.c_str()), ECNameValidation::EncodeToValidName (encodedName, m_name));
+        schema.SetName (encodedName);
         Compare (schema);
 
         ECEntityClassP ecclass;
-        schema.CreateEntityClass (ecclass, m_name);
+        schema.CreateEntityClass (ecclass, encodedName);
         Compare (*ecclass);
 
         PrimitiveECPropertyP ecprop;
-        ecclass->CreatePrimitiveProperty (ecprop, m_name, PRIMITIVETYPE_String);
+        ecclass->CreatePrimitiveProperty (ecprop, encodedName, PRIMITIVETYPE_String);
         Compare (*ecprop);
         }
 

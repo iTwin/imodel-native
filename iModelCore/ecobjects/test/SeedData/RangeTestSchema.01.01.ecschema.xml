@@ -1,0 +1,13 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<ECSchema schemaName="RangeTestSchema" nameSpacePrefix="RTS" version="1.1" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+    <ECClass typeName="TestClass" isDomainClass="True">
+        <ECProperty propertyName="DoubleWithRange" typeName="double" MinimumValue="4.5" MaximumValue="5.5" />
+        <ECProperty propertyName="LongWithRange" typeName="long" MinimumValue="42" MaximumValue="64" />
+        <ECProperty propertyName="DateWithRange" typeName="dateTime" MinimumValue="630507456000000000" MaximumValue="635877601673349792" />
+        <ECProperty propertyName="StringWithRange" typeName="string" MinimumValue="A" MaximumValue="H" />
+        <ECProperty propertyName="DPoint2dWithRange" typeName="point2d" MinimumValue="4.2,4.2" MaximumValue="10,10" />
+        <ECProperty propertyName="DPoint3dWithRange" typeName="point3d" MinimumValue="4.2,4.2,4.2" MaximumValue="42,42,42" />
+        <ECProperty propertyName="IntWithRange" typeName="int" MinimumValue="-7" MaximumValue="0" />
+        <ECProperty propertyName="BoolWithRange" typeName="boolean" MinimumValue="True" MaximumValue="True" />
+    </ECClass>
+</ECSchema>

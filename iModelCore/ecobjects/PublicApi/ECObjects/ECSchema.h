@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/ECObjects/ECSchema.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -90,6 +90,8 @@ struct ECNameValidation
 private:
 /*__PUBLISH_SECTION_END__*/
     static void AppendEncodedCharacter (WStringR encoded, WChar c);
+public:
+    ECOBJECTS_EXPORT static Utf8String             EncodeToValidName(Utf8StringCR name);
 /*__PUBLISH_SECTION_START__*/
 public:
 
@@ -158,6 +160,12 @@ public:
     //! Creates a TypeDescriptor for a struct
     ECOBJECTS_EXPORT static ECTypeDescriptor   CreateStructTypeDescriptor ();
 
+    //! Creates a TypeDescriptor for a navigation property.  The type descriptor will be of the PrimitiveType 'type'.
+    //! @param[in]  type         The type of the navigation property.  Use NavigationECProperty::GetType to get the type of a property
+    //! @param[in]  isMultiple   True if the navigation property points to a relationship endpoint which allows more than one related instance.  Can use the result of the NavigationECProperty::IsMultiple method as input.
+    //! @returns an ECTypeDescriptor describing a navigation property.
+    ECOBJECTS_EXPORT static ECTypeDescriptor   CreateNavigationTypeDescriptor (PrimitiveType type, bool isMultiple);
+
     //! Constructor that takes a PrimitiveType
     ECTypeDescriptor (PrimitiveType primitiveType) : m_typeKind (VALUEKIND_Primitive), m_primitiveType (primitiveType) { };
 
@@ -204,7 +212,7 @@ struct SupplementedSchemaBuilder;
 //! @see ECSchema::GetCustomAttributeContainer()
 //! @bsiclass
 //=======================================================================================
-struct IECCustomAttributeContainer
+struct EXPORT_VTABLE_ATTRIBUTE IECCustomAttributeContainer
 {
 private:
     friend struct ECCustomAttributeInstanceIterable;
@@ -214,12 +222,15 @@ private:
     ECCustomAttributeCollection         m_supplementedCustomAttributes;
     SchemaWriteStatus                   AddCustomAttributeProperties (BeXmlNodeR oldNode, BeXmlNodeR newNode) const;
 
-    IECInstancePtr                      GetCustomAttributeInternal(Utf8StringCR className, bool includeBaseClasses, bool includeSupplementalAttributes) const;
+    IECInstancePtr                      GetCustomAttributeInternal(Utf8StringCR schemaName, Utf8StringCR className, bool includeBaseClasses, bool includeSupplementalAttributes) const;
     IECInstancePtr                      GetCustomAttributeInternal(ECClassCR ecClass, bool includeBaseClasses, bool includeSupplementalAttributes) const;
 
     ECObjectsStatus                     SetCustomAttributeInternal(ECCustomAttributeCollection& customAttributeCollection, IECInstanceR customAttributeInstance, bool requireSchemaReference = false);
     //! Does not check if the container's ECSchema references the requisite ECSchema(s). @see SupplementedSchemaBuilder::SetMergedCustomAttribute
     ECObjectsStatus                     SetPrimaryCustomAttribute(IECInstanceR customAttributeInstance);
+
+    //! LEGECY METHOD
+    IECInstancePtr                      GetCustomAttributeInternal(Utf8StringCR className, bool includeBaseClasses, bool includeSupplementalAttributes) const;
 
 protected:
     //! Does not check if the container's ECSchema references the requisite ECSchema(s). @see SupplementedSchemaBuilder::SetMergedCustomAttribute
@@ -242,21 +253,25 @@ public:
     ECSchemaP                           GetContainerSchema();
     //! Retrieves the local custom attribute matching the class name.  If the attribute is not 
     //! a supplemented attribute it will be copied and added to the supplemented list before it is returned.
+    IECInstancePtr                      GetLocalAttributeAsSupplemented(Utf8StringCR schemaName, Utf8StringCR className);
+
+    //! LEGECY METHOD
     IECInstancePtr                      GetLocalAttributeAsSupplemented(Utf8StringCR className);
 
 //__PUBLISH_SECTION_START__
 public:
     //! Returns true if the container has a custom attribute of a class of the specified name
-    ECOBJECTS_EXPORT bool               IsDefined (Utf8StringCR className) const;
+    ECOBJECTS_EXPORT bool               IsDefined (Utf8StringCR schemaName, Utf8StringCR className) const;
     //! Returns true if the container has a custom attribute of a class of the specified class definition
     ECOBJECTS_EXPORT bool               IsDefined (ECClassCR classDefinition) const;
 
     //! Retrieves the custom attribute matching the class name.  Includes supplemental custom attributes
     //! and custom attributes from the base containers
+    //! @param[in]  schemaName  The name of the schema the CustomAttribute is defined in
     //! @param[in]  className   The name of the CustomAttribute Class to look for an instance of
     //! @returns An IECInstancePtr.  If IsValid(), will be the matching custom attribute.  Otherwise, no instance of
     //! the custom attribute was found on the container.
-    ECOBJECTS_EXPORT IECInstancePtr     GetCustomAttribute(Utf8StringCR className) const;
+    ECOBJECTS_EXPORT IECInstancePtr     GetCustomAttribute(Utf8StringCR schemaName, Utf8StringCR className) const;
 
     //! Retrieves the custom attribute matching the class definition.  Includes supplemental custom attributes
     //! and custom attributes from the base containers
@@ -267,10 +282,11 @@ public:
 
     //! Retrieves the custom attribute matching the class name.  Includes supplemental custom attributes
     //! but not base containers
+    //! @param[in]  schemaName  The name of the schema the CustomAttribute is defined in
     //! @param[in]  className   The name of the CustomAttribute Class to look for an instance of
     //! @returns An IECInstancePtr.  If IsValid(), will be the matching custom attribute.  Otherwise, no instance of
     //! the custom attribute was found on the container.
-    ECOBJECTS_EXPORT IECInstancePtr     GetCustomAttributeLocal(Utf8StringCR className) const;
+    ECOBJECTS_EXPORT IECInstancePtr     GetCustomAttributeLocal(Utf8StringCR schemaName, Utf8StringCR className) const;
 
     //! Retrieves the custom attribute matching the class definition.  Includes supplemental custom attributes
     //! but not base containers
@@ -281,10 +297,11 @@ public:
 
     //! Retrieves the custom attribute matching the class name.  Includes custom attributes from base containers
     //! but not supplemental custom attributes
+    //! @param[in]  schemaName  The name of the schema the CustomAttribute is defined in
     //! @param[in]  className   The name of the CustomAttribute Class to look for an instance of
     //! @returns An IECInstancePtr.  If IsValid(), will be the matching custom attribute.  Otherwise, no instance of
     //! the custom attribute was found on the container.
-    ECOBJECTS_EXPORT IECInstancePtr     GetPrimaryCustomAttribute(Utf8StringCR className) const;
+    ECOBJECTS_EXPORT IECInstancePtr     GetPrimaryCustomAttribute(Utf8StringCR schemaName, Utf8StringCR className) const;
 
     //! Retrieves the custom attribute matching the class definition.  Includes custom attributes from base containers
     //! but not supplemental custom attributes
@@ -292,6 +309,20 @@ public:
     //! @returns An IECInstancePtr.  If IsValid(), will be the matching custom attribute.  Otherwise, no instance of
     //! the custom attribute was found on the container.
     ECOBJECTS_EXPORT IECInstancePtr     GetPrimaryCustomAttribute(ECClassCR classDefinition) const;
+
+    //! Retrieves the custom attribute matching the class name.  DoesNot include custom attributes from either base
+    //! containers or supplemental custom attributes
+    //! @param[in]  className   The name of the CustomAttribute Class to look for an instance of
+    //! @returns An IECInstancePtr.  If IsValid(), will be the matching custom attribute.  Otherwise, no instance of
+    //! the custom attribute was found on the container.
+    ECOBJECTS_EXPORT IECInstancePtr     GetPrimaryCustomAttributeLocal(Utf8StringCR className) const;
+
+    //! Retrieves the custom attribute matching the class name.  DoesNot include custom attributes from either base
+    //! containers or supplemental custom attributes
+    //! @param[in]  classDefinition   The ECClass to look for an instance of
+    //! @returns An IECInstancePtr.  If IsValid(), will be the matching custom attribute.  Otherwise, no instance of
+    //! the custom attribute was found on the container.
+    ECOBJECTS_EXPORT IECInstancePtr     GetPrimaryCustomAttributeLocal(ECClassCR classDefinition) const;
 
     //! Retrieves all custom attributes from the container including supplemental custom attributes
     //! @param[in]  includeBase  Whether to include custom attributes from the base containers
@@ -305,8 +336,9 @@ public:
     ECOBJECTS_EXPORT ECObjectsStatus    SetCustomAttribute(IECInstanceR customAttributeInstance);
 
     //! Removes a custom attribute from the container
+    //! @param[in]  schemaName  The name of the schema the CustomAttribute is defined in
     //! @param[in]  className   Name of the class of the custom attribute to remove
-    ECOBJECTS_EXPORT bool               RemoveCustomAttribute(Utf8StringCR className);
+    ECOBJECTS_EXPORT bool               RemoveCustomAttribute(Utf8StringCR schemaName, Utf8StringCR className);
 
     //! Removes a custom attribute from the container
     //! @param[in]  classDefinition ECClass of the custom attribute to remove
@@ -316,6 +348,12 @@ public:
     //! @param[in]  classDefinition ECClass of the custom attribute to remove
     ECOBJECTS_EXPORT bool               RemoveSupplementedCustomAttribute(ECClassCR classDefinition);
 
+    //! LEGECY METHODS
+    ECOBJECTS_EXPORT bool               IsDefined(Utf8StringCR className) const;
+    ECOBJECTS_EXPORT IECInstancePtr     GetCustomAttribute(Utf8StringCR className) const;
+    ECOBJECTS_EXPORT IECInstancePtr     GetCustomAttributeLocal(Utf8StringCR className) const;
+    ECOBJECTS_EXPORT IECInstancePtr     GetPrimaryCustomAttribute(Utf8StringCR className) const;
+    ECOBJECTS_EXPORT bool               RemoveCustomAttribute(Utf8StringCR className);
 };
 
 //=======================================================================================
@@ -584,12 +622,14 @@ public:
 //! The in-memory representation of an ECProperty as defined by ECSchemaXML
 //! @bsiclass
 //=======================================================================================
-struct ECProperty /*abstract*/ : public IECCustomAttributeContainer
+struct EXPORT_VTABLE_ATTRIBUTE ECProperty /*abstract*/ : public IECCustomAttributeContainer
 {
 friend struct ECClass;
 
 private:
     Utf8String              m_description;
+    Utf8String              m_minimumValue;
+    Utf8String              m_maximumValue;
     ECValidatedName         m_validatedName;
     mutable ECPropertyId    m_ecPropertyId;
     bool                    m_readOnly;
@@ -622,6 +662,7 @@ protected:
     virtual bool                        _IsArray () const { return false; }
     virtual ArrayECPropertyCP           _GetAsArrayPropertyCP() const { return nullptr; } // used to avoid dynamic_cast
     virtual ArrayECPropertyP            _GetAsArrayPropertyP()        { return nullptr; } // used to avoid dynamic_cast
+    virtual bool                        _IsPrimitiveArray() const { return false;  }
 
     virtual bool                        _IsStructArray() const { return false; }
     virtual StructArrayECPropertyCP     _GetAsStructArrayPropertyCP() const { return nullptr; } // used to avoid dynamic_cast
@@ -663,9 +704,9 @@ public:
 /*__PUBLISH_SECTION_START__*/
 public:
     //! Returns the CalculatedPropertySpecification associated with this ECProperty, if any
-    ECOBJECTS_EXPORT CalculatedPropertySpecificationCP   GetCalculatedPropertySpecification() const;
+     CalculatedPropertySpecificationCP   GetCalculatedPropertySpecification() const { return _GetCalculatedPropertySpecification(); }
     //! Returns true if this ECProperty has a CalculatedECPropertySpecification custom attribute applied to it.
-    ECOBJECTS_EXPORT bool               IsCalculated() const;
+     bool               IsCalculated() const { return _IsCalculated(); }
 
     //! Sets or removes the CalculatedECPropertySpecification custom attribute associated with this ECProperty.
     //! @param[in] expressionAttribute  An IECInstance of the ECClass CalculatedECPropertySpecification, or NULL to remove the specification.
@@ -683,15 +724,18 @@ public:
     //! Returns whether the DisplayLabel is explicitly set
     ECOBJECTS_EXPORT bool               GetIsDisplayLabelDefined() const;
     //! Returns whether this property is a Struct property
-    ECOBJECTS_EXPORT bool               GetIsStruct() const;
-    //! Returns whether this property is an Array property
-    ECOBJECTS_EXPORT bool               GetIsArray() const;
+    bool                                GetIsStruct() const { return _IsStruct(); }
+    //! Returns whether this property is an Array property (either a Primitive array or a StructArray)
+    //! Use either GetIsPrimitiveArray or GetIsStructArray to differentiate.
+    bool                                GetIsArray() const { return _IsArray(); }
     //! Returns whether this property is a Primitive property
-    ECOBJECTS_EXPORT bool               GetIsPrimitive() const;
+    bool                                GetIsPrimitive() const { return _IsPrimitive(); }
     //! Returns whether this property is a StructArray property
-    ECOBJECTS_EXPORT bool               GetIsStructArray() const;
+    bool                                GetIsStructArray() const { return _IsStructArray(); }
+    //! Returns whether this property is a Primitive array
+    bool                                GetIsPrimitiveArray() const { return _IsPrimitiveArray(); }
     //! Returns whether this property is a NavigationECProperty
-    ECOBJECTS_EXPORT bool               GetIsNavigation() const;
+    bool                                GetIsNavigation() const { return _IsNavigation(); }
 
     //! Sets the ECXML typename for the property.  @see GetTypeName()
     ECOBJECTS_EXPORT ECObjectsStatus    SetTypeName(Utf8String value);
@@ -704,6 +748,18 @@ public:
     ECOBJECTS_EXPORT Utf8String         GetTypeName() const;
     //! Sets the description for this ECProperty
     ECOBJECTS_EXPORT ECObjectsStatus    SetDescription(Utf8StringCR value);
+    //! Sets the minimum value for this ECProperty
+    ECOBJECTS_EXPORT ECObjectsStatus    SetMinimumValue(Utf8StringCR min);
+    //! Gets whether the minimum value has been defined explicitly
+    ECOBJECTS_EXPORT bool               IsMinimumValueDefined();
+    //! Gets the minimum value for this ECProperty
+    ECOBJECTS_EXPORT Utf8StringCR       GetMinimumValue();
+    //! Sets the maximum value for this ECProperty
+    ECOBJECTS_EXPORT ECObjectsStatus    SetMaximumValue(Utf8StringCR max);
+    //! Gets whether the maximum value has been defined explicitly
+    ECOBJECTS_EXPORT bool               IsMaximumValueDefined();
+    //! Gets the maximum value for this ECProperty
+    ECOBJECTS_EXPORT Utf8StringCR       GetMaximumValue();
     //! The Description of this ECProperty.  Returns the localized description if one exists.
     ECOBJECTS_EXPORT Utf8StringCR       GetDescription() const;
     //! Gets the invariant description for this ECProperty.
@@ -739,16 +795,16 @@ public:
     //@param[in]    isReadOnly  Valid values are 'True' and 'False' (case insensitive)
     ECOBJECTS_EXPORT ECObjectsStatus    SetIsReadOnly (Utf8CP isReadOnly);
 
-    ECOBJECTS_EXPORT PrimitiveECPropertyCP  GetAsPrimitiveProperty () const; //!< Returns the property as a const PrimitiveECProperty*
-    ECOBJECTS_EXPORT PrimitiveECPropertyP   GetAsPrimitivePropertyP (); //!< Returns the property as a PrimitiveECProperty*
-    ECOBJECTS_EXPORT ArrayECPropertyCP      GetAsArrayProperty () const; //!< Returns the property as a const ArrayECProperty*
-    ECOBJECTS_EXPORT ArrayECPropertyP       GetAsArrayPropertyP (); //!< Returns the property as an ArrayECProperty*
-    ECOBJECTS_EXPORT StructECPropertyCP     GetAsStructProperty () const; //!< Returns the property as a const StructECProperty*
-    ECOBJECTS_EXPORT StructECPropertyP      GetAsStructPropertyP (); //!< Returns the property as a StructECProperty*
-    ECOBJECTS_EXPORT StructArrayECPropertyCP GetAsStructArrayProperty() const; //! <Returns the property as a const StructArrayECProperty*
-    ECOBJECTS_EXPORT StructArrayECPropertyP GetAsStructArrayPropertyP (); //! <Returns the property as a StructArrayECProperty*
-    ECOBJECTS_EXPORT NavigationECPropertyCP GetAsNavigationPropertyCP() const; //! <Returns the property as a const NavigationECProperty*
-    ECOBJECTS_EXPORT NavigationECPropertyP  GetAsNavigationPropertyP(); //! <Returns the property as a NavigationECProperty*
+    PrimitiveECPropertyCP  GetAsPrimitiveProperty() const       { return _GetAsPrimitivePropertyCP(); } //!< Returns the property as a const PrimitiveECProperty*
+    PrimitiveECPropertyP   GetAsPrimitivePropertyP()            { return _GetAsPrimitivePropertyP(); } //!< Returns the property as a PrimitiveECProperty*
+    ArrayECPropertyCP      GetAsArrayProperty() const           { return _GetAsArrayPropertyCP(); } //!< Returns the property as a const ArrayECProperty*
+    ArrayECPropertyP       GetAsArrayPropertyP()                { return _GetAsArrayPropertyP(); } //!< Returns the property as an ArrayECProperty*
+    StructECPropertyCP     GetAsStructProperty() const          { return _GetAsStructPropertyCP(); } //!< Returns the property as a const StructECProperty*
+    StructECPropertyP      GetAsStructPropertyP()               { return _GetAsStructPropertyP(); } //!< Returns the property as a StructECProperty*
+    StructArrayECPropertyCP GetAsStructArrayProperty() const    { return _GetAsStructArrayPropertyCP(); } //! <Returns the property as a const StructArrayECProperty*
+    StructArrayECPropertyP GetAsStructArrayPropertyP()          { return _GetAsStructArrayPropertyP(); } //! <Returns the property as a StructArrayECProperty*
+    NavigationECPropertyCP GetAsNavigationProperty() const    { return _GetAsNavigationPropertyCP(); } //! <Returns the property as a const NavigationECProperty*
+    NavigationECPropertyP  GetAsNavigationPropertyP()           { return _GetAsNavigationPropertyP(); } //! <Returns the property as a NavigationECProperty*
 
 };
 
@@ -856,6 +912,7 @@ protected:
     virtual SchemaReadStatus            _ReadXml (BeXmlNodeR propertyNode, ECSchemaReadContextR schemaContext) override;
     virtual SchemaWriteStatus           _WriteXml(BeXmlWriterR xmlWriter, int ecXmlVersionMajor, int ecXmlVersionMinor) override;
     virtual bool                        _IsArray () const override { return true;}
+    virtual bool                        _IsPrimitiveArray() const override { return ARRAYKIND_Primitive == m_arrayKind; }
     virtual ArrayECPropertyCP           _GetAsArrayPropertyCP() const override { return this; }
     virtual ArrayECPropertyP            _GetAsArrayPropertyP()        override { return this; }
     virtual Utf8String                  _GetTypeName () const override;
@@ -931,7 +988,7 @@ public:
 //! The in-memory representation of an ECNavigationProperty as defined by ECSchemaXML
 //! @bsiclass
 //=======================================================================================
-struct NavigationECProperty : public ECProperty
+struct EXPORT_VTABLE_ATTRIBUTE NavigationECProperty : public ECProperty
     {
 DEFINE_T_SUPER(ECProperty)
 
@@ -940,15 +997,16 @@ friend struct ECClass;
 private:
     ECRelationshipClassCP       m_relationshipClass;
     ECRelatedInstanceDirection  m_direction;
+    PrimitiveType               m_type;
+    ValueKind                   m_valueKind;
 
 protected:
-    NavigationECProperty(ECClassCR ecClass)
-        : ECProperty(ecClass), m_relationshipClass(nullptr), m_direction(ECRelatedInstanceDirection::Forward) {};
+    explicit NavigationECProperty(ECClassCR ecClass)
+        : ECProperty(ecClass), m_relationshipClass(nullptr), m_direction(ECRelatedInstanceDirection::Forward), m_valueKind(ValueKind::VALUEKIND_Uninitialized), m_type(PrimitiveType::PRIMITIVETYPE_String) {};
 
     ECObjectsStatus                 SetRelationshipClassName(Utf8CP relationshipName);
     ECObjectsStatus                 SetDirection(Utf8CP directionString);
     Utf8String                      GetRelationshipClassName() const;
-    bool                            VerifyRelationshipAndDirection(ECRelationshipClassCR relationshipClass, ECRelatedInstanceDirection direction) const;
 
 protected:
     virtual SchemaReadStatus        _ReadXml(BeXmlNodeR propertyNode, ECSchemaReadContextR schemaContext) override;
@@ -959,19 +1017,35 @@ protected:
     virtual NavigationECPropertyP   _GetAsNavigationPropertyP() override { return this; }
 
     virtual Utf8String              _GetTypeName() const override;
+    // Not valid because type cannot be set from xml, it must be set at runtime
     virtual ECObjectsStatus         _SetTypeName(Utf8StringCR typeName) override { return ECObjectsStatus::OperationNotSupported; }
 
     virtual bool                    _CanOverride(ECPropertyCR baseProperty) const override;
 
 public:
     // !Gets the relationship class used to determine what related instance this navigation property points to
-    ECRelationshipClassCP      GetRelationshipClass() const { return m_relationshipClass; }
+    ECRelationshipClassCP       GetRelationshipClass() const { return m_relationshipClass; }
     // !Gets the direction used to determine what related instance this navigation property points to
-    ECRelatedInstanceDirection GetDirection() const { return m_direction; }
+    ECRelatedInstanceDirection  GetDirection() const { return m_direction; }
     // !Sets the relationship and direction used by the navigation property
     // @param[in]   relClass    The relationship this navigation property will represent
     // @param[in]   direction   The direction the relationship will be traversed.  Forward if the class containing this property is a source constraint, Backward if the class is a target constraint
-    ECOBJECTS_EXPORT ECObjectsStatus            SetRelationshipClass(ECRelationshipClassCR relClass, ECRelatedInstanceDirection direction);
+    // @param[in]   verify      If true the relationshipClass an direction will be verified to ensure the navigation property fits within the relationship constraints.  Default is true.  If not verified at creation the Verify method must be called before the navigation property is used or it's type descriptor will not be valid.
+    // @returns     Returns Success if validation successful or not performed, SchemaNotFound if the schema containing the relationship class is not referenced and RelationshipConstraintsNotCompatible if validation
+    //              is performed but not successfull
+    ECOBJECTS_EXPORT ECObjectsStatus            SetRelationshipClass(ECRelationshipClassCR relClass, ECRelatedInstanceDirection direction, bool verify = true);
+    
+    // !Verifies that the relationship class and direction is valid.  
+    ECOBJECTS_EXPORT bool       Verify();
+    // !Returns true if the Verify method has been called on this Navigation Property, false if it has not.
+    bool                        IsVerified() const { return ValueKind::VALUEKIND_Uninitialized != m_valueKind; }
+    // !Returns true if the navigation property points to an endpoint which can have more than one related instance
+    bool                        IsMultiple() const { return ValueKind::VALUEKIND_Array == m_valueKind; }
+    
+    //! Sets the PrimitiveType of this ECProperty.  The default type is ::PRIMITIVETYPE_String
+    ECOBJECTS_EXPORT ECObjectsStatus SetType(PrimitiveType type);
+    //! Gets the PrimitiveType of this ECProperty
+    PrimitiveType GetType() const { return m_type; }
     };
 
 //=======================================================================================
@@ -1138,8 +1212,9 @@ protected:
     //! @param[in]  classNode       The XML DOM node to read
     //! @param[in]  context         The read context that contains information about schemas used for deserialization
     //! @param[in]  ecXmlVersionMajor The major version of the ECXml spec used for serializing this ECClass
+    //! @param[out] navigationProperties A running list of all naviagtion properties in the schema.  This list is used for validation, which may only happen after all classes are loaded
     //! @return   Status code
-    virtual SchemaReadStatus            _ReadXmlContents (BeXmlNodeR classNode, ECSchemaReadContextR context, int ecXmlVersionMajor);
+    virtual SchemaReadStatus            _ReadXmlContents (BeXmlNodeR classNode, ECSchemaReadContextR context, int ecXmlVersionMajor, bvector<NavigationECPropertyP>& navigationProperties);
 
     SchemaReadStatus                    _ReadBaseClassFromXml (BeXmlNodeP childNode, ECSchemaReadContextR context);
     SchemaReadStatus                    _ReadPropertyFromXmlAndAddToClass( ECPropertyP ecProperty, BeXmlNodeP& childNode, ECSchemaReadContextR context, Utf8CP childNodeName );
@@ -1262,7 +1337,7 @@ public:
     //! Adds a base class
     //! You cannot add a base class if it creates a cycle. For example, if A is a base class
     //! of B, and B is a base class of C, you cannot make C a base class of A. Attempting to do
-    //! so will return an error.
+    //! so will return an error. You also can't add a base class to final classes
     //! Note: baseClass must be of same derived class type
     //! @param[in] baseClass The class to derive from
     ECOBJECTS_EXPORT ECObjectsStatus AddBaseClass(ECClassCR baseClass);
@@ -1578,9 +1653,11 @@ public:
     //! Creates a navigation property object using the relationship class and direction.  To succeed the relationship class, direction and name must all be valid.
     // @param[out]  ecProperty          Outputs the property if successfully created
     // @param[in]   name                The name for the navigation property.  Must be a valid ECName
-    // @param[in]   relationshipClass   The relationship class this navigation property will traverse.  Must list this class as an endpoint constraint and the other endpoint must have a upper cardinality of 1.
+    // @param[in]   relationshipClass   The relationship class this navigation property will traverse.  Must list this class as an endpoint constraint.  The cardinality of the other constraint determiness if the nav prop is a primitive or an array.
     // @param[in]   direction           The direction the relationship will be traversed.  Forward indicates that this class is a source constraint, Backward indicates that this class is a target constraint.
-    ECOBJECTS_EXPORT ECObjectsStatus CreateNavigationProperty(NavigationECPropertyP& ecProperty, Utf8StringCR name, ECRelationshipClassCR relationshipClass, ECRelatedInstanceDirection direction);
+    // @param[in]   type                The type of the navigation property.  Should match type used for InstanceIds in the current session.  Default is string.
+    // @param[in]   verify              If true the relationshipClass an direction will be verified to ensure the navigation property fits within the relationship constraints.  Default is true.  If not verified at creation the Verify method must be called before the navigation property is used or it's type descriptor will not be valid.
+    ECOBJECTS_EXPORT ECObjectsStatus CreateNavigationProperty(NavigationECPropertyP& ecProperty, Utf8StringCR name, ECRelationshipClassCR relationshipClass, ECRelatedInstanceDirection direction, PrimitiveType type = PRIMITIVETYPE_String, bool verify = true);
 };
 
 //---------------------------------------------------------------------------------------
@@ -1944,7 +2021,7 @@ protected:
     virtual SchemaWriteStatus           _WriteXml (BeXmlWriterR xmlWriter, int ecXmlVersionMajor, int ecXmlVersionMinor) const override;
 
     virtual SchemaReadStatus            _ReadXmlAttributes (BeXmlNodeR classNode) override;
-    virtual SchemaReadStatus            _ReadXmlContents (BeXmlNodeR classNode, ECSchemaReadContextR context, int ecXmlVersionMajor) override;
+    virtual SchemaReadStatus            _ReadXmlContents (BeXmlNodeR classNode, ECSchemaReadContextR context, int ecXmlVersionMajor, bvector<NavigationECPropertyP>& navigationProperties) override;
     virtual ECRelationshipClassCP       _GetRelationshipClassCP () const override {return this;};
     virtual ECRelationshipClassP        _GetRelationshipClassP ()  override {return this;};
     virtual ECClassType _GetClassType() const override { return ECClassType::Relationship; }
@@ -2239,6 +2316,10 @@ public:
     ECOBJECTS_EXPORT bool       FromAccessString (ECN::ECEnablerCR rootEnabler, Utf8CP accessString);
 //__PUBLISH_SECTION_END__
     ECOBJECTS_EXPORT bool       Remap (ECSchemaCR pre, ECSchemaCR post, IECSchemaRemapperCR remapper);
+
+    Utf8StringR                    GetSchemaNameR()    { return m_schemaName; }
+    Utf8StringR                    GetClassNameR()     { return m_className; }
+    Utf8StringR                    GetAccessStringR()  { return m_accessString; }
 //__PUBLISH_SECTION_START__
     };
 
@@ -2480,6 +2561,7 @@ public:
     ECOBJECTS_EXPORT void    Clear(); //!< Removes all schemas from the cache
     ECOBJECTS_EXPORT IECSchemaLocater& GetSchemaLocater(); //!< Returns the SchemaCache as an IECSchemaLocater
     ECOBJECTS_EXPORT size_t GetSchemas (bvector<ECSchemaP>& schemas) const;
+    ECOBJECTS_EXPORT void   GetSupplementalSchemasFor(Utf8CP schemaName, bvector<ECSchemaP>& supplementalSchemas) const;
 };
 
 

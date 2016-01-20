@@ -2,7 +2,7 @@
 |
 |     $Source: src/ECProperty.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -100,6 +100,9 @@ ECPropertyId ECProperty::GetId () const
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ECProperty::SetName (Utf8StringCR name)
     {        
+    if (!ECNameValidation::IsValidName (name.c_str()))
+        return ECObjectsStatus::InvalidName;
+
     m_validatedName.SetName (name.c_str());
     return ECObjectsStatus::Success;
     }
@@ -127,6 +130,60 @@ ECObjectsStatus ECProperty::SetDescription (Utf8StringCR description)
     {        
     m_description = description;
     return ECObjectsStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+@bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus ECProperty::SetMinimumValue(Utf8StringCR min)
+    {
+    m_minimumValue = min;
+    return ECObjectsStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+@bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ECProperty::IsMinimumValueDefined()
+    {
+    if ("" == m_minimumValue)
+        return false;
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+@bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8StringCR ECProperty::GetMinimumValue()
+    {
+    return m_minimumValue;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+@bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus ECProperty::SetMaximumValue(Utf8StringCR max)
+    {
+    m_maximumValue = max;
+    return ECObjectsStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+@bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ECProperty::IsMaximumValueDefined()
+    {
+    if ("" == m_maximumValue)
+        return false;
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+@bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8StringCR ECProperty::GetMaximumValue()
+    {
+    return m_maximumValue;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -226,39 +283,6 @@ ECObjectsStatus ECProperty::SetTypeName (Utf8String typeName)
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ECProperty::GetIsPrimitive () const
-    {
-    return this->_IsPrimitive();
-    }
-
-/*---------------------------------------------------------------------------------**//**
- @bsimethod                                                     
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool ECProperty::GetIsStruct () const
-    {
-    return this->_IsStruct();
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Carole.MacDonald            10/2015
-//---------------+---------------+---------------+---------------+---------------+-------
-PrimitiveECPropertyCP   ECProperty::GetAsPrimitiveProperty() const  { return _GetAsPrimitivePropertyCP(); }
-PrimitiveECPropertyP    ECProperty::GetAsPrimitivePropertyP()       { return _GetAsPrimitivePropertyP(); }
-ArrayECPropertyCP       ECProperty::GetAsArrayProperty() const      { return _GetAsArrayPropertyCP(); }
-ArrayECPropertyP        ECProperty::GetAsArrayPropertyP()           { return _GetAsArrayPropertyP(); }
-StructECPropertyCP      ECProperty::GetAsStructProperty() const     { return _GetAsStructPropertyCP(); }
-StructECPropertyP       ECProperty::GetAsStructPropertyP()          { return _GetAsStructPropertyP(); }
-StructArrayECPropertyCP ECProperty::GetAsStructArrayProperty() const { return _GetAsStructArrayPropertyCP(); }
-StructArrayECPropertyP  ECProperty::GetAsStructArrayPropertyP()     { return _GetAsStructArrayPropertyP(); }
-NavigationECPropertyCP  ECProperty::GetAsNavigationPropertyCP() const { return _GetAsNavigationPropertyCP(); }
-NavigationECPropertyP   ECProperty::GetAsNavigationPropertyP()        { return _GetAsNavigationPropertyP(); }
-
-CalculatedPropertySpecificationCP ECProperty::GetCalculatedPropertySpecification() const { return _GetCalculatedPropertySpecification(); }
-bool                    ECProperty::IsCalculated() const            { return _IsCalculated(); }
-
-/*---------------------------------------------------------------------------------**//**
- @bsimethod                                                     
-+---------------+---------------+---------------+---------------+---------------+------*/
 bool                    ECProperty::SetCalculatedPropertySpecification (IECInstanceP spec)
     {
     bool wasCalculated = IsCalculated();
@@ -267,30 +291,6 @@ bool                    ECProperty::SetCalculatedPropertySpecification (IECInsta
         InvalidateClassLayout();
     
     return set;
-    }
-
-/*---------------------------------------------------------------------------------**//**
- @bsimethod                                                     
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool ECProperty::GetIsArray () const
-    {
-    return this->_IsArray();
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Carole.MacDonald            10/2015
-//---------------+---------------+---------------+---------------+---------------+-------
-bool ECProperty::GetIsStructArray() const
-    {
-    return this->_IsStructArray();
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Colin.Kerr                  12/2015
-//---------------+---------------+---------------+---------------+---------------+-------
-bool ECProperty::GetIsNavigation() const
-    {
-    return this->_IsNavigation();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -320,7 +320,9 @@ SchemaReadStatus ECProperty::_ReadXml (BeXmlNodeR propertyNode, ECSchemaReadCont
     
     // OPTIONAL attributes - If these attributes exist they MUST be valid    
     READ_OPTIONAL_XML_ATTRIBUTE (propertyNode, DESCRIPTION_ATTRIBUTE,         this, Description)
+    READ_OPTIONAL_XML_ATTRIBUTE (propertyNode, MINIMUM_VALUE_ATTRIBUTE,       this, MinimumValue)
     READ_OPTIONAL_XML_ATTRIBUTE (propertyNode, DISPLAY_LABEL_ATTRIBUTE,       this, DisplayLabel)    
+    READ_OPTIONAL_XML_ATTRIBUTE (propertyNode, MAXIMUM_VALUE_ATTRIBUTE,       this, MaximumValue)
 
     // OPTIONAL attributes - If these attributes exist they do not need to be valid.  We will ignore any errors setting them and use default values.
     // NEEDSWORK This is due to the current implementation in managed ECObjects.  We should reconsider whether it is the correct behavior.
@@ -365,7 +367,12 @@ SchemaWriteStatus ECProperty::_WriteXml (BeXmlWriterR xmlWriter, Utf8CP elementN
     xmlWriter.WriteAttribute(DESCRIPTION_ATTRIBUTE, this->GetInvariantDescription().c_str());
     if (GetIsDisplayLabelDefined())
         xmlWriter.WriteAttribute(DISPLAY_LABEL_ATTRIBUTE, this->GetInvariantDisplayLabel().c_str());
-    xmlWriter.WriteAttribute(READONLY_ATTRIBUTE, this->IsReadOnlyFlagSet());
+    if(IsReadOnlyFlagSet())
+        xmlWriter.WriteAttribute(READONLY_ATTRIBUTE, true);
+    if (IsMinimumValueDefined())
+        xmlWriter.WriteAttribute(MINIMUM_VALUE_ATTRIBUTE, this->GetMinimumValue().c_str());
+    if (IsMaximumValueDefined())
+        xmlWriter.WriteAttribute(MAXIMUM_VALUE_ATTRIBUTE, this->GetMaximumValue().c_str());
     
     if (nullptr != additionalAttributes)
         {
@@ -567,7 +574,7 @@ ECObjectsStatus PrimitiveECProperty::SetType (ECEnumerationCR enumerationType)
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool PrimitiveECProperty::_IsCalculated() const
     {
-    return m_calculatedSpec.IsValid() || GetCustomAttribute ("CalculatedECPropertySpecification").IsValid();
+    return m_calculatedSpec.IsValid() || GetCustomAttribute ("Bentley_Standard_CustomAttributes", "CalculatedECPropertySpecification").IsValid();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -589,7 +596,7 @@ CalculatedPropertySpecificationCP PrimitiveECProperty::_GetCalculatedPropertySpe
 bool ArrayECProperty::_IsCalculated() const
     {
     if (ARRAYKIND_Primitive == GetKind())
-        return m_calculatedSpec.IsValid() || GetCustomAttribute ("CalculatedECPropertySpecification").IsValid();
+        return m_calculatedSpec.IsValid() || GetCustomAttribute ("Bentley_Standard_CustomAttributes", "CalculatedECPropertySpecification").IsValid();
     else
         return false;
     }
@@ -606,7 +613,7 @@ static bool setCalculatedPropertySpecification (CalculatedPropertySpecificationP
         }
     else
         {
-        IECInstancePtr oldAttr = ecprop.GetCustomAttribute ("CalculatedECPropertySpecification");
+        IECInstancePtr oldAttr = ecprop.GetCustomAttribute ("Bentley_Standard_CustomAttributes", "CalculatedECPropertySpecification");
         ecprop.SetCustomAttribute (*attr);
         CalculatedPropertySpecificationPtr newSpec = CalculatedPropertySpecification::Create (ecprop, primitiveType);
         if (newSpec.IsValid())
@@ -620,7 +627,7 @@ static bool setCalculatedPropertySpecification (CalculatedPropertySpecificationP
             if (oldAttr.IsValid())
                 ecprop.SetCustomAttribute (*oldAttr);
             else
-                ecprop.RemoveCustomAttribute ("CalculatedECPropertySpecification");
+                ecprop.RemoveCustomAttribute ("Bentley_Standard_CustomAttributes", "CalculatedECPropertySpecification");
 
             return false;
             }
@@ -1171,6 +1178,8 @@ ECObjectsStatus NavigationECProperty::SetRelationshipClassName(Utf8CP relationsh
         return ECObjectsStatus::ECClassNotSupported;
         }
     
+    m_valueKind = ValueKind::VALUEKIND_Uninitialized;
+
     return ECObjectsStatus::Success;
     }
 
@@ -1184,6 +1193,8 @@ ECObjectsStatus NavigationECProperty::SetDirection(Utf8CP direction)
     ECObjectsStatus status = ECXml::ParseDirectionString(m_direction, direction);
     if (ECObjectsStatus::Success != status)
         LOG.errorv("Failed to parse the ECRelatedInstanceDirection string '%s' for NavigationECProperty '%s'.", direction, GetName().c_str());
+
+    m_valueKind = ValueKind::VALUEKIND_Uninitialized;
 
     return status;
     }
@@ -1201,26 +1212,40 @@ Utf8String NavigationECProperty::GetRelationshipClassName() const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Colin.Kerr                  12/2015
 //---------------+---------------+---------------+---------------+---------------+-------
-bool NavigationECProperty::VerifyRelationshipAndDirection(ECRelationshipClassCR relationshipClass, ECRelatedInstanceDirection direction) const
+bool NavigationECProperty::Verify()
     {
+    if (IsVerified())
+        return true;
+
+    if (nullptr == m_relationshipClass)
+        return false;
+
     ECRelationshipConstraintCP thisConstraint;
     ECRelationshipConstraintCP thatConstraint;
-    if (ECRelatedInstanceDirection::Forward == direction)
+    if (ECRelatedInstanceDirection::Forward == m_direction)
         {
-        thisConstraint = &relationshipClass.GetSource();
-        thatConstraint = &relationshipClass.GetTarget();
+        thisConstraint = &m_relationshipClass->GetSource();
+        thatConstraint = &m_relationshipClass->GetTarget();
         }
     else
         {
-        thisConstraint = &relationshipClass.GetTarget();
-        thatConstraint = &relationshipClass.GetSource();
+        thisConstraint = &m_relationshipClass->GetTarget();
+        thatConstraint = &m_relationshipClass->GetSource();
         }
 
     bool supportsClass = thisConstraint->SupportsClass(GetClass());
     if (!supportsClass)
+        {
+        m_valueKind = ValueKind::VALUEKIND_Uninitialized;
         return false;
+        }
 
-    return 1 == thatConstraint->GetCardinality().GetUpperLimit();
+    if (1 == thatConstraint->GetCardinality().GetUpperLimit())
+        m_valueKind = ValueKind::VALUEKIND_Primitive;
+    else
+        m_valueKind = ValueKind::VALUEKIND_Array;
+
+    return true;
     }
 
 //---------------------------------------------------------------------------------------
@@ -1237,16 +1262,6 @@ SchemaReadStatus NavigationECProperty::_ReadXml(BeXmlNodeR propertyNode, ECSchem
     READ_REQUIRED_XML_ATTRIBUTE (propertyNode, RELATIONSHIP_NAME_ATTRIBUTE, this, RelationshipClassName, propertyNode.GetName())
 
     READ_REQUIRED_XML_ATTRIBUTE (propertyNode, DIRECTION_ATTRIBUTE, this, Direction, propertyNode.GetName())
-
-    // TODO/NEEDSWORK - Validation will always fail because Rel class must have constraints loaded and nav prop must have rel loaded.
-    //if (!VerifyRelationshipAndDirection(*m_relationshipClass, m_direction))
-    //    {
-    //    LOG.errorv("Unable to load NavigationECProperty '%s:%s.%s' because the relationship '%s' does not support this class as a constraint when traversed in the '%s' direction or max cardinality is greater than 1.",
-    //               GetClass().GetSchema().GetName().c_str(), GetClass().GetName().c_str(), GetName().c_str(),
-    //               GetRelationshipClassName().c_str(), ECXml::DirectionToString(m_direction));
-    //    
-    //    return SchemaReadStatus::InvalidECSchemaXml;
-    //    }
 
     return SchemaReadStatus::Success;
     }
@@ -1269,14 +1284,14 @@ SchemaWriteStatus NavigationECProperty::_WriteXml(BeXmlWriterR xmlWriter, int ec
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Colin.Kerr                  12/2015
 //---------------+---------------+---------------+---------------+---------------+-------
-Utf8String NavigationECProperty::_GetTypeName() const { return ECXml::GetPrimitiveTypeName(PRIMITIVETYPE_String); }
+Utf8String NavigationECProperty::_GetTypeName() const { return ECXml::GetPrimitiveTypeName(m_type); }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Colin.Kerr                  12/2015
 //---------------+---------------+---------------+---------------+---------------+-------
 bool NavigationECProperty::_CanOverride(ECPropertyCR baseProperty) const
     {
-    NavigationECPropertyCP baseNavProperty = baseProperty.GetAsNavigationPropertyCP();
+    NavigationECPropertyCP baseNavProperty = baseProperty.GetAsNavigationProperty();
     if (nullptr == baseNavProperty)
         return false;
 
@@ -1296,11 +1311,8 @@ bool NavigationECProperty::_CanOverride(ECPropertyCR baseProperty) const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Colin.Kerr                  12/2015
 //---------------+---------------+---------------+---------------+---------------+-------
-ECObjectsStatus NavigationECProperty::SetRelationshipClass(ECRelationshipClassCR relClass, ECRelatedInstanceDirection direction)
+ECObjectsStatus NavigationECProperty::SetRelationshipClass(ECRelationshipClassCR relClass, ECRelatedInstanceDirection direction, bool verify)
     {
-    if (!VerifyRelationshipAndDirection(relClass, direction))
-        return ECObjectsStatus::RelationshipConstraintsNotCompatible;
-
     if (&(relClass.GetSchema()) != &(this->GetClass().GetSchema()))
         {
         if (!ECSchema::IsSchemaReferenced(this->GetClass().GetSchema(), relClass.GetSchema()))
@@ -1309,6 +1321,8 @@ ECObjectsStatus NavigationECProperty::SetRelationshipClass(ECRelationshipClassCR
 
     m_relationshipClass = &relClass;
     m_direction = direction;
+    if (verify && !Verify())
+        return ECObjectsStatus::RelationshipConstraintsNotCompatible;
 
     SetCachedTypeAdapter(nullptr);
     InvalidateClassLayout();
@@ -1316,6 +1330,20 @@ ECObjectsStatus NavigationECProperty::SetRelationshipClass(ECRelationshipClassCR
     return ECObjectsStatus::Success;
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Colin.Kerr                  12/2015
+//---------------+---------------+---------------+---------------+---------------+-------
+ECObjectsStatus NavigationECProperty::SetType(PrimitiveType type)
+    {
+    if (m_type != type)
+        {
+        m_type = type;
+        SetCachedTypeAdapter(nullptr);
+        InvalidateClassLayout();
+        }
+
+    return ECObjectsStatus::Success;
+    }
 
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     

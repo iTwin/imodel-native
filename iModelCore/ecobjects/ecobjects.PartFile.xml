@@ -20,6 +20,7 @@
         <SubPart PartName="GeomlibsSerialization" PartFile="geomlibs" Repository="GeomLibs" />
         <SubPart PartName="BeXmlDll"        PartFile="BeLibxml2"    Repository="libsrc-libxml2" />
         <SubPart PartName="StandardSchemas" PartFile="ECStandards"  Repository="ECStandards"/>
+        <SubPart PartName="V3ConversionSchemas" PartFile="ECStandards" Repository="ECStandards"/>
         <Bindings>
             <Libs ProductDirectoryName="ECObjectsLibs" Required="false">Delivery/$(libprefix)ECObjects$(libext)</Libs>
             <Assemblies ProductDirectoryName="ECObjectsNativeAssemblies">Delivery/$(shlibprefix)ECObjects$(ApiNumber)$(shlibext)</Assemblies>
@@ -193,6 +194,15 @@
         <Bindings>
             <Files ProductDirectoryName="Gtest-NativeAssemblies">Delivery/Gtest/ECObjectsPerformanceTests/Assemblies/*</Files>
             <Directory ProductDirectoryName="Gtest-Assets" SourceName="Delivery/Gtest/ECObjectsPerformanceTests/Assets" />
+        </Bindings>
+    </Part>
+
+    <!-- NuGet automatic packages generation -->
+    <Part Name="ECObjectsPackage" BMakeFile="install\NuGetPacking.mke" >
+        <SubPart PartName="ECObjectsNative" />
+        <RequiredRepository>bsitools-nuget</RequiredRepository>
+        <Bindings>
+            <Files ProductDirectoryName="ECObjectsNuGet">Install\ecobjects.nupkg</Files>
         </Bindings>
     </Part>
 

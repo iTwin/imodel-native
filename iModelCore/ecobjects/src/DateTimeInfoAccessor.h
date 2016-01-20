@@ -2,7 +2,7 @@
 |
 |     $Source: src/DateTimeInfoAccessor.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -22,6 +22,7 @@ struct DateTimeInfoAccessor : NonCopyableClass
     {
 private:
     static Utf8CP const DATETIMEINFO_CLASSNAME;
+	static Utf8CP const DATETIMEINFO_SCHEMANAME;
     static Utf8CP const DATETIMEINFO_KIND_PROPERTYNAME;
     static Utf8CP const DATETIMEINFO_COMPONENT_PROPERTYNAME;
 

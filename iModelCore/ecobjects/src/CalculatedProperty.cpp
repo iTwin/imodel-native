@@ -2,7 +2,7 @@
 |
 |     $Source: src/CalculatedProperty.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
@@ -243,7 +243,7 @@ CalculatedPropertySpecification::~CalculatedPropertySpecification()
 +---------------+---------------+---------------+---------------+---------------+------*/
 CalculatedPropertySpecificationPtr CalculatedPropertySpecification::Create (ECPropertyCR ecprop, PrimitiveType primitiveType)
     {
-    IECInstancePtr customAttr = ecprop.GetCustomAttribute ("CalculatedECPropertySpecification");
+    IECInstancePtr customAttr = ecprop.GetCustomAttribute ("Bentley_Standard_CustomAttributes", "CalculatedECPropertySpecification");
     if (customAttr.IsNull())
         return NULL;
 

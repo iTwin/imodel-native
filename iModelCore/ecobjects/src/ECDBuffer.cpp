@@ -2,7 +2,7 @@
 |
 |     $Source: src/ECDBuffer.cpp $
 |
-|   $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include    "ECObjectsPch.h"
@@ -872,8 +872,22 @@ void            ClassLayout::Factory::AddProperties (ECClassCR ecClass, Utf8CP n
             }
         else if (property->GetIsNavigation())
             {
-            if (!addingFixedSizeProps)
-                AddVariableSizeProperty(propName.c_str(), PrimitiveType::PRIMITIVETYPE_String, false, false);
+            NavigationECPropertyP navProp = property->GetAsNavigationPropertyP();
+            PrimitiveType navPropType = navProp->GetType();
+            bool isMultiple = navProp->IsMultiple();
+
+            if (!isMultiple && PrimitiveTypeIsFixedSize(navPropType))
+                {
+                if (addingFixedSizeProps)
+                    AddFixedSizeProperty(propName.c_str(), navPropType, navProp->GetIsReadOnly(), navProp->IsCalculated());
+                }
+            else if (!addingFixedSizeProps)
+                {
+                if (isMultiple)
+                    AddVariableSizeProperty(propName.c_str(), ECTypeDescriptor::CreatePrimitiveArrayTypeDescriptor(navPropType), navProp->GetIsReadOnly(), navProp->IsCalculated());
+                else
+                    AddVariableSizeProperty(propName.c_str(), navPropType, navProp->GetIsReadOnly(), navProp->IsCalculated());
+                }
             }
         }
     }
@@ -1403,6 +1417,18 @@ BentleyStatus   SchemaLayout::AddClassLayout (ClassLayoutR classLayout, ClassInd
 
     m_classLayouts[classIndex] = &classLayout;
     
+    return SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/15
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus SchemaLayout::ReplaceClassLayout (ClassLayoutR classLayout, ClassIndex classIndex)
+    {
+    if (m_classLayouts.size() <= classIndex)
+        return ERROR;
+
+    m_classLayouts[classIndex] = &classLayout;
     return SUCCESS;
     }
 
@@ -4057,6 +4083,33 @@ ECDBufferScope::~ECDBufferScope()
     {
     if (nullptr != m_buffer)
         m_buffer->m_allPropertiesCalculated = m_initialState;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/15
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String ScopedDataAccessor::DumpData (uint8_t breakAt) const
+    {
+    Utf8String str;
+    uint32_t size = m_buffer->_GetBytesAllocated();
+    Byte const* data = m_buffer->_GetData();
+    str.Sprintf ("%u bytes\n", size);
+    static const char hexits[] = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F' };
+    for (uint32_t i = 0; i < size; i++)
+        {
+        Byte b = data[i];
+        Byte lo = b & 0xf;
+        Byte hi = (b & 0xf0) >> 4;
+        str.append (1, hexits[hi]);
+        str.append (1, hexits[lo]);
+
+        if (0xff != breakAt && 0 == i % breakAt)
+            str.append (1, '\n');
+        else
+            str.append (1, ' ');
+        }
+
+    return str;
     }
 
 END_BENTLEY_ECOBJECT_NAMESPACE

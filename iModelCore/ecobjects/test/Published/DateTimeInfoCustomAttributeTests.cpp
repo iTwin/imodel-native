@@ -2,7 +2,7 @@
 |
 |     $Source: test/Published/DateTimeInfoCustomAttributeTests.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "../ECObjectsTestPCH.h"
@@ -213,29 +213,6 @@ struct StandardCustomAttributeHelperTestFixture : public DateTimeInfoTestFixture
             return DeserializeSchema (context, testSchemaXml);
             }
 
-        //---------------------------------------------------------------------------------------
-        // @bsimethod                                   Krischan.Eberle                  02/13                               
-        //+---------------+---------------+---------------+---------------+---------------+------
-        static ECSchemaPtr CreateTestSchemaWithCorruptDateTimeInfoCA (ECSchemaReadContextPtr& context)
-            {
-            Utf8CP testSchemaXml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
-                "<ECSchema schemaName=\"StandardClassesHelperTest\" nameSpacePrefix=\"t\" version=\"01.00\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
-                "   <ECClass typeName=\"DateTimeInfo\" isDomainClass=\"False\" isCustomAttributeClass=\"True\" >"
-                "        <ECProperty propertyName=\"SomethingUnexpected\" typeName=\"string\" />"
-                "   </ECClass>"
-                "   <ECClass typeName=\"TestClass\" isDomainClass=\"True\">"
-                "        <ECProperty propertyName=\"prop\" typeName=\"dateTime\" >"
-                "           <ECCustomAttributes>"
-                "               <DateTimeInfo>"
-                "                   <SomethingUnexpected>Utc</SomethingUnexpected>"
-                "               </DateTimeInfo>"
-                "           </ECCustomAttributes>"
-                "        </ECProperty>"                    
-                "    </ECClass>"
-                "</ECSchema>";
-
-            return DeserializeSchema (context, testSchemaXml);
-            }
     };
 
 //=======================================================================================
@@ -377,24 +354,6 @@ TEST_F(StandardCustomAttributeHelperTestFixture, GetDateTimeForNonDateTimeProper
     prop = testClass->GetPropertyP ("intArrayProp");
     ASSERT_TRUE (prop != NULL);
     stat = StandardCustomAttributeHelper::GetDateTimeInfo (dti, *prop);
-    ASSERT_NE (ECObjectsStatus::Success, stat);
-    };
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Krischan.Eberle                  02/13                               
-//+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(StandardCustomAttributeHelperTestFixture, GetDateTimeInfoWithCorruptCADefinition)
-    {
-    ECSchemaReadContextPtr context = NULL;
-    ECSchemaPtr testSchema = CreateTestSchemaWithCorruptDateTimeInfoCA (context);
-
-    ECClassP testClass = testSchema->GetClassP ("TestClass");
-    ASSERT_TRUE (testClass != NULL);
-
-    DISABLE_ASSERTS
-    ECPropertyP prop = testClass->GetPropertyP ("prop");
-    DateTimeInfo dti;
-    const ECObjectsStatus stat = StandardCustomAttributeHelper::GetDateTimeInfo (dti, *prop);
     ASSERT_NE (ECObjectsStatus::Success, stat);
     };
 

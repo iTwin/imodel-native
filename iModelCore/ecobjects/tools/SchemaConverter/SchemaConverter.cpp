@@ -28,97 +28,114 @@ BentleyApi::NativeLogging::ILogger* s_logger = BentleyApi::NativeLogging::Loggin
 //---------------------------------------------------------------------------------------
 static void ShowUsage(char* str)
     {
-    fprintf(stderr, "\n%s -i <inputSchemaPath> -o <outputDirectory> [-x exmlVersion] [-d directories] [-c directory] [-a] [-s] [-v version]\n\n%s\n\n%s\n\n%s\t\t%s\n%s\t\t%s\n%s\t%s\n%s\t\t%s\n%s\t\t%s\n%s\t\t%s\n\n",
-        str, "Tool to convert between different versions of ECSchema(s)", "options:",
+    fprintf(stderr, "\n%s -i <inputSchemaPath> -o <outputDirectory> [-x exmlVersion] [-r directories] [-c directory] [-a] [-s] [-u] [-v version]\n\n%s\n\n%s\n\n%s\t\t%s\n%s\t%s\n%s\t%s\n%s\t\t%s\n%s\t\t%s\n%s\t\t%s\n%s\t\t%s\n\n",
+        str, "Tool to convert ECSchemas between different versions of ECXml", "options:",
         " -x --xml 2|3", "convert to the specified exmlversion",
-        " -d --dir DIR", "other directories for reference schemas",
-        " -c --conversion DIR", "looks for the conversionschema file in this directory",
+        " -r --ref DIR0 [DIR1 ... DIRN]", "other directories for reference schemas",
+        " -c --conversion DIR", "looks for the conversion schema file in this directory",
+        " -u --include", "include the standard schemas in the converted schemas",
         " -a --all", "convert the entire schema graph",
         " -s --sup", "convert all the supplemental schemas",
         " -v --ver XX.XX", "specify the schema version");
     }
+
+struct ConversionOptions
+    {
+    BeFileName          InputFile;
+    bvector<BeFileName> ReferenceDirectories;
+
+    BeFileName          OutputDirectory;
+
+    bool                HasConversionDirectory = false;
+    BeFileName          ConversionDirectory;
+
+    int                 TargetECXmlVersion = 3;
+
+    bool                IncludeSupplementals = false;
+    bool                IncludeAll = false;
+    bool                IncludeStandards = false;
+
+    bool                ChangeVersion = false;
+    uint32_t            MajorVersion;
+    uint32_t            MinorVersion;
+    };
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   BentleySystems
 //---------------------------------------------------------------------------------------
 static void GetOutputFile
 (
-BeFileName &outputFile,
-ECSchemaPtr schema, 
-bpair<uint32_t, uint32_t> versions, 
-bool versionProvided,
-BeFileNameCR outputDirectory
+BeFileName          &outputFile,
+ECSchemaR          schema, 
+ConversionOptions   options
 )
     {
     WString schemaName;
-    if (versionProvided)
+    if (options.ChangeVersion)
         {
-        schema->SetVersionMajor(versions.first);
-        schema->SetVersionMinor(versions.second);
+        schema.SetVersionMajor(options.MajorVersion);
+        schema.SetVersionMinor(options.MinorVersion);
         }
-    schemaName.AssignUtf8(schema->GetFullSchemaName().c_str());
+    schemaName.AssignUtf8(schema.GetFullSchemaName().c_str());
     schemaName += L".ecschema.xml";
-    BeFileName file(nullptr, outputDirectory.GetName(), schemaName.c_str(), nullptr);
+    BeFileName file(nullptr, options.OutputDirectory.GetName(), schemaName.c_str(), nullptr);
     outputFile = file;
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   BentleySystems
-//---------------------------------------------------------------------------------------
-static int ConvertSupplementalSchemas
-(
-Utf8StringCR schemaName,
-WStringCR path,
-ECSchemaReadContextPtr context,
-BeFileNameCR outputDirectory, 
-int exmlversion
-)
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Colin.Kerr                      01/2016
+//--------------------------------------------------------------------------------------
+static bool TryWriteSchema(ECSchemaR schema, ConversionOptions options)
     {
-    bvector<ECSchemaP> supplementalSchemas;
-    BeFileName schemaPath(path.c_str());
-    WString filter;
-    filter.AssignUtf8(schemaName.c_str());
-    filter += L"_Supplemental_*.*.*.ecschema.xml";
-    schemaPath.AppendToPath(filter.c_str());
-    BeFileListIterator fileList(schemaPath.GetName(), false);
-    BeFileName filePath;
-    while (SUCCESS == fileList.GetNextFileName(filePath))
+    BeFileName outputFile;
+    GetOutputFile(outputFile, schema, options);
+    // Check for overwriting the file already in the directory
+    if (BeStringUtilities::Wcsicmp(options.InputFile.GetName(), outputFile.GetName()) == 0)
         {
-        WCharCP     fileName = filePath.GetName();
-        ECSchemaPtr schema = NULL;
+        s_logger->errorv(L"Warning: Can't overwrite the file '%ls'.", options.InputFile.c_str());
+        s_logger->errorv(L"Process terminated!!!");
+        return false;
+        }
 
-        if (SchemaReadStatus::Success != ECSchema::ReadFromXmlFile(schema, fileName, *context))
-            continue;
-        supplementalSchemas.push_back(schema.get());
-        }
-    for (auto schema : supplementalSchemas)
+    s_logger->infov(L"Saving converted version schema '%ls' in directory '%ls'", outputFile.GetFileNameAndExtension(), options.OutputDirectory.GetName());
+    SchemaWriteStatus status = schema.WriteToXmlFile(outputFile.GetName(), options.TargetECXmlVersion, 0);
+    if (status != SchemaWriteStatus::Success)
         {
-        BeFileName outputFile;
-        GetOutputFile(outputFile, schema, bpair<uint32_t, uint32_t>(0, 0), false, outputDirectory);
-        s_logger->infov(L"Saving the supplemental schema '%ls' in '%ls'", outputFile.GetFileNameAndExtension(), outputDirectory.GetName());
-        if (0 != (int)schema->WriteToXmlFile(outputFile.GetName(), exmlversion, 0))
-            return -1;
+        s_logger->errorv("Failed to save '%s' as ECXml version '%d'.0", schema.GetName(), options.TargetECXmlVersion);
+        return false;
         }
-    return 0;
+    return true;
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   BentleySystems
-//---------------------------------------------------------------------------------------
-static int ConvertReferenceSchemas
-(
-ECSchemaPtr schema, 
-int refVersion,  
-BeFileName outputDirectory
-)
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Colin.Kerr                      01/2016
+//--------------------------------------------------------------------------------------
+static int ConvertLoadedSchema(ECSchemaReadContextPtr context, ECSchemaR schema, ConversionOptions options)
     {
-    for (auto ref : schema->GetReferencedSchemas())
+    if (!TryWriteSchema(schema, options))
+        return -1;
+
+    if (options.IncludeSupplementals || options.IncludeAll)
         {
-        BeFileName outputFile;
-        GetOutputFile(outputFile, ref.second, bpair<uint32_t, uint32_t>(0, 0), false, outputDirectory);
-        s_logger->infov(L"Saving the reference schema '%ls' in '%ls'", outputFile.GetFileNameAndExtension(), outputDirectory.GetName());
-        if (0 != (int)ref.second->WriteToXmlFile(outputFile.GetName(), refVersion, 0))
-            return -1;
+        bvector<ECSchemaP> supplementalSchemas;
+        context->GetCache().GetSupplementalSchemasFor(schema.GetName().c_str(), supplementalSchemas);
+        for (auto const& supSchema : supplementalSchemas)
+            {
+            if (!TryWriteSchema(*supSchema, options))
+                return -1;
+            }
+        }
+
+    if (options.IncludeAll)
+        {
+        for (auto const& refSchema : schema.GetReferencedSchemas())
+            {
+            if (refSchema.second->IsStandardSchema() && !options.IncludeStandards)
+                continue;
+            s_logger->infov(L"Saving the reference schema '%ls' in '%ls'", refSchema.second->GetFullSchemaName(), options.OutputDirectory.GetName());
+            if (0 != ConvertLoadedSchema(context, *refSchema.second, options))
+                return -1;
+            }
         }
     return 0;
     }
@@ -128,63 +145,144 @@ BeFileName outputDirectory
 //---------------------------------------------------------------------------------------
 static int ConvertSchema
 (
-BeFileNameCR ecSchemaFile, 
-BeFileNameCR outputDirectory, 
-bvector<BeFileName> referenceDirectories, 
-BeFileNameCR otherDirectory, 
-int exmlversion,
-bpair<uint32_t, uint32_t> versions,  
-bool all,  
-bool supplemental, 
-bool other,
-bool versionProvided
+ConversionOptions options
 )
-    {        
-    ECSchemaReadContextPtr contextPtr = ECSchemaReadContext::CreateContext();
-    contextPtr->AddSchemaPath(ecSchemaFile.GetDirectoryName().GetName());
-    for (auto dir: referenceDirectories)        
-        contextPtr->AddSchemaPath(dir.GetName());
-    // For the bad schemas
-    if (other)
-        contextPtr->AddConversionSchemaPath(otherDirectory.GetName());
-    ECSchemaPtr schema;
-    SchemaReadStatus readSchemaStatus = ECSchema::ReadFromXmlFile(schema, ecSchemaFile.GetName(), *contextPtr);
-    if (SchemaReadStatus::Success != readSchemaStatus)
-        return (int)readSchemaStatus;
-        
-    BeFileName outputFile;
-    GetOutputFile(outputFile, schema, versions, versionProvided, outputDirectory);
-    // Check for overwriting the file already in the directory
-    if (BeStringUtilities::Wcsicmp(ecSchemaFile.GetName(), outputFile.GetName()) == 0)
+    {
+    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+    context->AddSchemaPath(options.InputFile.GetDirectoryName().GetName());
+    for (auto const& refDir: options.ReferenceDirectories)
+        context->AddSchemaPath(refDir.GetName());
+
+    if (options.HasConversionDirectory)
+        context->AddConversionSchemaPath(options.ConversionDirectory.GetName());
+    
+    Utf8String schemaName;
+    uint32_t versionMajor;
+    uint32_t versionMinor;
+    WString schemaFullName = options.InputFile.GetFileNameAndExtension();
+    schemaFullName.ReplaceI(L".ecschema.xml", L"");
+    ECObjectsStatus status = ECSchema::ParseSchemaFullName(schemaName, versionMajor, versionMinor, Utf8String(schemaFullName));
+    if (ECObjectsStatus::Success != status)
         {
-        s_logger->infov(L"Warning: Can't overwrite the file '%ls'.", ecSchemaFile.GetName());
-        s_logger->infov(L"Process terminated!!!");
+        s_logger->errorv("Could not parse schema name and version from input file name '%s'", schemaFullName);
         return -1;
         }
-        
-    //Convert the supplemental schemas
-    if (supplemental || all)
+
+    s_logger->infov("Reading schema '%s'", options.InputFile.GetName());
+    SchemaKey key(schemaName.c_str(), versionMajor, versionMinor);
+    ECSchemaPtr schema = context->LocateSchema(key, SchemaMatchType::SCHEMAMATCHTYPE_Exact);
+    if (!schema.IsValid())
         {
-        bvector<BeFileName> paths;
-        paths.push_back(ecSchemaFile.GetDirectoryName());
-        for (auto directory: referenceDirectories)
-            paths.push_back(directory);
-        for (auto path: paths)
-            {
-            if(0 != ConvertSupplementalSchemas(schema->GetName(), path.GetName(), contextPtr, outputDirectory, exmlversion))
-                return -1;
-            }
-        }
-        
-    //Convert the reference schema according to the version specified
-    if (all)
-        {
-        if (0 != ConvertReferenceSchemas(schema, exmlversion, outputDirectory))
-            return -1;
+        s_logger->errorv("Failed to read schema '%s'", schemaFullName);
+        return -1;
         }
 
-    s_logger->infov(L"Saving converted version schema '%ls' in directory '%ls'", outputFile.GetFileNameAndExtension(), outputDirectory.GetName());
-    return (int)schema->WriteToXmlFile(outputFile.GetName(), exmlversion, 0);
+    return ConvertLoadedSchema(context, *schema, options);
+    }
+
+static bool NoParameterNext(int argc, char** argv, int index)
+    {
+    int next = index + 1;
+    if (next >= argc || argv[next][0] == '-')
+        return true;
+    return false;
+    }
+
+static bool TryParseInput(int argc, char** argv, ConversionOptions& options)
+    {
+    if (argc < 5)
+        return false;
+
+    bool inputDefined = false;
+    bool outputDefined = false;
+    for (int i = 1; i < argc; ++i)
+        {
+        if (0 == strcmp(argv[i], "-i"))
+            {
+            if (NoParameterNext(argc, argv, i))
+                return false;
+
+            ++i;
+            inputDefined = true;
+            options.InputFile.AssignUtf8(argv[i]);
+            }
+        else if (0 == strcmp(argv[i], "-o"))
+            {
+            if (NoParameterNext(argc, argv, i))
+                return false;
+
+            ++i;
+            outputDefined = true;
+            options.OutputDirectory.AssignUtf8(argv[i]);
+            if (!options.OutputDirectory.Contains(L"\\"))
+                {
+                fprintf(stderr, "-o should be followed by a directory");
+                return false;
+                }
+            }
+        else if (0 == strcmp(argv[i], "-v") || 0 == strcmp(argv[i], "--ver"))
+            {
+            if (NoParameterNext(argc, argv, i))
+                return false;
+
+            ++i;
+            double ver = atof(argv[i]);
+            options.ChangeVersion = true;
+            options.MajorVersion = ((int)(ver * 100)) / 100;
+            options.MinorVersion = ((int)(ver * 100)) % 100;
+            }
+        else if (0 == strcmp(argv[i], "-a") || 0 == strcmp(argv[i], "--all"))
+            options.IncludeAll = true;
+        else if (0 == strcmp(argv[i], "-s") || 0 == strcmp(argv[i], "--sup"))
+            options.IncludeSupplementals = true;
+        else if (0 == strcmp(argv[i], "-u") || 0 == strcmp(argv[i], "--include"))
+            options.IncludeStandards = true;
+        else if (0 == strcmp(argv[i], "-c") || 0 == strcmp(argv[i], "--conversion"))
+            {
+            if (NoParameterNext(argc, argv, i))
+                return false;
+
+            ++i;
+            options.HasConversionDirectory = true;
+            options.ConversionDirectory.AssignUtf8(argv[i]);
+            if (!options.ConversionDirectory.Contains(L"\\"))
+                {
+                fprintf(stderr, "-c/--conversion should be followed by a directory");
+                return false;
+                }
+            }
+        else if (0 == strcmp(argv[i], "-x") || 0 == strcmp(argv[i], "--xml"))
+            {
+            if (NoParameterNext(argc, argv, i))
+                return false;
+
+            ++i;
+            options.TargetECXmlVersion = atoi(argv[i]);
+            if (2 != options.TargetECXmlVersion && 3 != options.TargetECXmlVersion)
+                {
+                fprintf(stderr, "-x/--xml should be followed by '2' or '3'");
+                return false;
+                }
+            }
+        else if (0 == strcmp(argv[i], "-r") || 0 == strcmp(argv[i], "--ref"))
+            {
+            while (false == NoParameterNext(argc, argv, i))
+                {
+                ++i;
+                options.ReferenceDirectories.push_back(BeFileName(argv[i]));
+                }
+            for (auto const& refDirectory : options.ReferenceDirectories)
+                {
+                if (!refDirectory.Contains(L"\\"))
+                    {
+                    fprintf(stderr, "-r/--ref should be followed by one or more directories");
+                    return false;
+                    }
+                }
+            }
+        }
+    
+    return inputDefined && outputDefined;
     }
 
 //---------------------------------------------------------------------------------------
@@ -192,170 +290,14 @@ bool versionProvided
 //---------------------------------------------------------------------------------------
 int main(int argc, char** argv)
     {
-    char* input;
-    char* output;
-    char* other;
-    bvector<char*> directories;
-    int version = 3;
-    int flag = 0;
-    bpair<uint32_t, uint32_t> versions(0,0);
-    bool supplementalSchemas = false;
-    bool otherDir = false;
-    bool all = false;
-    bool versionProvided = false;
-    // automatic switching for command-line parsing
-    if (argc < 5)
+    ConversionOptions options;
+    
+    if (!TryParseInput(argc, argv, options))
         {
         ShowUsage(argv[0]);
         return -1;
         }
-    for (int i = 1; i < argc; i++)
-        {
-        if (strcmp(argv[i], "-i") == 0)
-            {
-            if ((argv[i + 1])[0] == '-' || i+1 == argc)
-                {
-                ShowUsage(argv[0]);
-                return -1;
-                }
-            else
-                {
-                input = argv[++i];
-                flag++;
-                }
-            }
-        else if (strcmp(argv[i], "-o") == 0)
-            {
-            if ((argv[i + 1])[0] == '-' || i+1 == argc)
-                {
-                ShowUsage(argv[0]);
-                return -1;
-                }
-            else
-                {
-                output = argv[++i];
-                flag++;
-                }
-            }
-        else if (strcmp(argv[i], "-v") == 0 || strcmp(argv[i], "--ver") == 0)
-            {
-            if (i + 1 == argc)
-                {
-                ShowUsage(argv[0]);
-                return -1;
-                }
-            else if ((argv[i + 1])[0] == '-')
-                {
-                fprintf(stderr, "-v/--ver should be followed by the version in format XX.XX\n");
-                return -1;
-                }
-            else
-                {
-                bool check = false;
-                for (size_t j = 0; j<strlen(argv[i + 1]); j++)
-                    {
-                    if ((argv[i + 1])[j] == '.')
-                        check = true;
-                    }
-                if (!check)
-                    {
-                    fprintf(stderr, "-v/--ver should be followed by the version in format XX.XX\n");
-                    return -1;
-                    }
-                double ver = atof(argv[++i]);
-                versionProvided = true;
-                versions = bpair<uint32_t, uint32_t>(((int)(ver * 100)) / 100, ((int)(ver * 100)) % 100);
-                }
-            }
-        else if (strcmp(argv[i], "-a") == 0 || strcmp(argv[i], "--all") == 0)
-            all = true;
-        else if (strcmp(argv[i], "-s") == 0 || strcmp(argv[i], "--sup") == 0)
-            supplementalSchemas = true;
-        else if (strcmp(argv[i], "-h") == 0 || strcmp(argv[i], "--help") == 0)
-            {
-            ShowUsage(argv[0]);
-            return -1;
-            }
-        else if (strcmp(argv[i], "--conversion") == 0 || strcmp(argv[i], "-c") == 0)
-            {
-            bool check = false;
-            otherDir = true;
-            //check whether the argument follows a path format
-            if (i + 1 == argc)
-                {
-                ShowUsage(argv[0]);
-                return -1;
-                }
-            for (size_t j = 0; j<strlen(argv[i + 1]); j++)
-                {
-                if ((argv[i + 1])[j] == '\\')
-                    check = true;
-                }
-            if (check)
-                other = argv[++i];
-            else
-                {
-                fprintf(stderr, "--look/-l should be followed by a directory path\n");
-                return -1;
-                }
-            }
-        else if (strcmp(argv[i], "-x") == 0 || strcmp(argv[i], "--xml") == 0)
-            {
-            //Allows the user to enter both real nos. and integers
-            if (i + 1 == argc)
-                {
-                ShowUsage(argv[0]);
-                return -1;
-                }
-            else if ((argv[i + 1])[0] == '-' || !(atof(argv[i + 1]) - 2 == 0 || atof(argv[i + 1]) - 3 == 0))
-                {
-                fprintf(stderr, " -x/--xml should be follwed by either the version 2.0(2) or 3.0(3)\n");
-                return -1;
-                }
-            else
-                version = atoi(argv[++i]);
-            }
-        else if (strcmp(argv[i], "-d") == 0 || strcmp(argv[i], "--dir") == 0)
-            {
-            if (i + 1 == argc)
-                {
-                fprintf(stderr, "--dir/-d should be followed by directory path(s)");
-                return -1;
-                }
-            while (i + 1 != argc)
-                {
-                if ((argv[i + 1])[0] != '-')
-                    {
-                    bool check = false;
-                    //check whether the argument follows a path format
-                    for (size_t j = 0; j<strlen(argv[i+1]); j++)
-                        {
-                        if ((argv[i+1])[j] == '\\')
-                            check = true;
-                        }
-                    if (check)
-                        directories.push_back(argv[++i]);
-                    else
-                        {
-                        fprintf(stderr, "--dir/-d should be followed by directory paths\n");
-                        return -1;
-                        }
-                    }
-                else
-                    break;
-                }
-            }
-        else
-            {
-            ShowUsage(argv[0]);
-            return -1;
-            }
-        }
-    if (flag < 2)
-        {
-        ShowUsage(argv[0]);
-        return -1;
-        }
+
     WChar exePathW[MAX_PATH];
     if (0 == ::GetModuleFileNameW(nullptr, exePathW, MAX_PATH))
         {
@@ -374,23 +316,9 @@ int main(int argc, char** argv)
     ECSchemaReadContext::Initialize(workingDirectory);
     s_logger->infov(L"Initializing ECSchemaReadContext to '%ls'", workingDirectory);
 
-    //storing input output and reference directories
-    BeFileName inputFileName;
-    inputFileName.AssignUtf8(input);
-    BeFileName outputDirectory;
-    outputDirectory.AssignUtf8(output);
-    bvector<BeFileName> refDirectories;
-    for (size_t i = 0; i < directories.size(); i++)
-        {
-        BeFileName temp;
-        temp.AssignUtf8(directories[i]);
-        refDirectories.push_back(temp);
-        temp.Clear();
-        }
-    BeFileName otherDirectory;
-    if (otherDir)
-        otherDirectory.AppendUtf8(other);
-    s_logger->infov(L"Loading schema '%ls' for conversion to teh specified version", inputFileName.GetName());
-    return ConvertSchema(inputFileName, outputDirectory, refDirectories, otherDirectory, version, versions, all, supplementalSchemas, otherDir, versionProvided);
+    s_logger->infov(L"Loading schema '%ls' for conversion to ECXml version '%d'", options.InputFile.GetName(), options.TargetECXmlVersion);
+    return ConvertSchema(options);
     }
+
+
 
