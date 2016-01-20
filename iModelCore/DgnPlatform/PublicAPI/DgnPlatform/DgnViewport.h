@@ -75,6 +75,7 @@ enum class UpdateAbort : int
     Motion        = 2,
     MotionStopped = 3,
     Keystroke     = 4,
+    ReachedLimit  = 5,
     MouseWheel    = 6,
     Timeout       = 7,
     Button        = 8,

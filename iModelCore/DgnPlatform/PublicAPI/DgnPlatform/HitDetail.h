@@ -247,7 +247,7 @@ public:
     DGNPLATFORM_EXPORT bool RemoveHitsFrom(DgnModelR modelRef);
     DGNPLATFORM_EXPORT virtual void Dump(WCharCP label) const;
 
-    int GetCount() const {return (int) size();}
+    uint32_t GetCount() const {return (uint32_t) size();}
     DGNPLATFORM_EXPORT HitDetailP Get(int i);
     DGNPLATFORM_EXPORT void Set(int i, HitDetailP);
     DGNPLATFORM_EXPORT void Insert(int i, HitDetailP);

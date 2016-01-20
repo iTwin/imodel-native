@@ -759,7 +759,7 @@ struct UpdatePlan
     struct Query
     {
         uint32_t    m_maxTime = 2000;    // maximum time query should run (milliseconds)
-        double      m_minPixelSize = 40;
+        double      m_minPixelSize = 50;
         double      m_frustumScale = 1.25;
         bool        m_wait = false;
         uint32_t    m_minElements = 300;

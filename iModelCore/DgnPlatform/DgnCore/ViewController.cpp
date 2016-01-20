@@ -87,6 +87,12 @@ void ViewFlags::From3dJson(JsonValueCR val)
     ignoreLighting = val[VIEWFLAG_ignoreLighting].asBool();
 
     m_renderMode = RenderMode(val[VIEWFLAG_renderMode].asUInt());
+
+#if defined (TEST_RENDER_MODE)
+    static bool s_forceSmooth=true;
+    if (s_forceSmooth)
+        m_renderMode = RenderMode::SmoothShade;
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**

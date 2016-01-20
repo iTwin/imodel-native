@@ -33,8 +33,6 @@ protected:
     bool        m_forceNewQuery;    //!< If true, before doing the next view update, repopulate the QueryModel with the result of the query 
     bool        m_noQuery;          //!< If true, *only* draw the "always drawn" list - do not query for other elements
     bool        m_needProgressiveDisplay;
-    DRange3d    m_secondaryVolume;  //  ignored unless m_secondaryHitLimit > 0
-    uint32_t    m_secondaryHitLimit;
     uint64_t    m_maxElementMemory;
     Frustum     m_startQueryFrustum;
     Frustum     m_saveQueryFrustum;
@@ -161,12 +159,6 @@ public:
 
     //! Gets the QueryModel that this QueryViewController uses.
     QueryModelR GetQueryModel() const {return m_queryModel;}
-
-    //! Enables a secondary range query.
-    DGNPLATFORM_EXPORT void EnableSecondaryQueryRange(uint32_t hitLimit, DRange3dCR volume);
-
-    //! Disables secondary range query.
-    void DisableSecondaryQueryRange(){m_secondaryHitLimit=0;}
 };
 
 END_BENTLEY_DGN_NAMESPACE

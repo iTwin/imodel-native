@@ -30,7 +30,6 @@ QueryViewController::QueryViewController(DgnDbR dgndb, DgnViewId id) : CameraVie
     m_forceNewQuery = true; 
     m_maxElementMemory = 0;
     m_noQuery = false;
-    m_secondaryHitLimit = 0;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -86,7 +85,7 @@ void QueryViewController::QueueQuery(DgnViewportR viewport, UpdatePlan const& pl
 
     QueryModel::Processor::Params params(m_queryModel, viewport, _GetRTreeMatchSql(viewport), plan.GetQuery(), ComputeMaxElementMemory(viewport), 
             m_alwaysDrawn.empty() ? nullptr : &m_alwaysDrawn, m_neverDrawn.empty() ? nullptr : &m_neverDrawn, m_noQuery,
-            GetClipVector().get(), m_secondaryHitLimit, m_secondaryVolume);
+            GetClipVector().get());
 
     m_queryModel.GetDgnDb().QueryQueue().Add(params);
     }
@@ -207,15 +206,6 @@ void QueryViewController::ClearNeverDrawn()
     m_forceNewQuery = true;
     }
     
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   John.Gooding    10/2013
-//---------------------------------------------------------------------------------------
-void QueryViewController::EnableSecondaryQueryRange(uint32_t hitLimit, DRange3dCR volume)
-    {
-    m_secondaryHitLimit = hitLimit;
-    m_secondaryVolume = volume;
-    }
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   08/12
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -360,13 +350,16 @@ void QueryViewController::_DrawView(ViewContextR context)
         return;
         }
 
-    DEBUG_PRINTF("clear progressive _DrawView");
     m_needProgressiveDisplay = false;
     context.GetViewport()->ClearProgressiveDisplay();
 
     const uint64_t maxMem = GetMaxElementMemory();
     UNUSED_VARIABLE(maxMem);
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     const int64_t purgeTrigger = static_cast <int64_t> (1.5 * static_cast <double> (maxMem));
+#else
+    const int64_t purgeTrigger = 2000 * 1024 * 1024;
+#endif
 
     // this vector is sorted by occlusion score, so we use it to determine the order to draw the view
     uint32_t numDrawn = 0;
@@ -475,12 +468,18 @@ void QueryViewController::_VisitAllElements(ViewContextR context)
     filter.SetFrustum(context.GetFrustum());
     BindModelAndCategory(*rangeStmt, filter);
 
+    int count=0;
     while (BE_SQLITE_ROW == rangeStmt->Step())
         {
+        ++count;
         filter.AcceptElement(context, rangeStmt->GetValueId<DgnElementId>(0));
         if (context.CheckStop())
+            {
+            DEBUG_PRINTF("pick aborted %d", count);
             return;
+            }
         }
+    DEBUG_PRINTF("pick finished %d", count);
     }
 
 //---------------------------------------------------------------------------------------
