@@ -2,11 +2,12 @@
 |
 |     $Source: DgnCore/RevisionManager.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
 #include <BeSQLite/SHA1.h>
+#include <DgnPlatform/DgnChangeSummary.h>
 
 USING_NAMESPACE_BENTLEY_SQLITE
 
@@ -417,6 +418,50 @@ RevisionStatus DgnRevision::Validate(DgnDbCR dgndb) const
     return RevisionStatus::Success;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnRevision::IncludeChangeGroupData(ChangeGroup& changeGroup, Include include, DgnDbR db)
+    {
+    if (Include::None == include)
+        return;
+
+    // NEEDSWORK? We can't create a useful ChangeStream from the ChangeGroup, even though it has a FromChangeGroup() function?
+    // Would like to avoid having to read from disk here...
+    ChangeStreamFileReader stream(GetChangeStreamFile());
+    DgnChangeSummary summary(db);
+    if (SUCCESS != summary.FromChangeSet(stream))
+        return;
+
+    if (Include::Locks == (include & Include::Locks))
+        {
+        LockRequest lockRequest;
+        lockRequest.FromChangeSummary(summary, false);
+        lockRequest.ExtractLockSet(m_usedLocks);
+        }
+    
+    if (Include::Codes == (include & Include::Codes))
+        summary.GetCodes(m_assignedCodes, m_discardedCodes);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnRevision::ExtractUsedLocks(DgnLockSet& locks)
+    {
+    locks.clear();
+    std::swap(m_usedLocks, locks);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnRevision::ExtractAssignedCodes(DgnCodeSet& codes)
+    {
+    codes.clear();
+    std::swap(m_assignedCodes, codes);
+    }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    10/2015
 //---------------------------------------------------------------------------------------
@@ -573,7 +618,7 @@ RevisionStatus RevisionManager::GroupChanges(ChangeGroup& changeGroup) const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    10/2015
 //---------------------------------------------------------------------------------------
-DgnRevisionPtr RevisionManager::CreateRevisionObject(RevisionStatus* outStatus, ChangeGroup& changeGroup)
+DgnRevisionPtr RevisionManager::CreateRevisionObject(RevisionStatus* outStatus, ChangeGroup& changeGroup, DgnRevision::Include include)
     {
     Utf8String parentRevId = GetParentRevisionId();
     Utf8String revId = DgnRevisionIdGenerator::GenerateId(parentRevId, changeGroup);
@@ -585,6 +630,8 @@ DgnRevisionPtr RevisionManager::CreateRevisionObject(RevisionStatus* outStatus, 
 
     revision->SetInitialParentId(GetInitialParentRevisionId());
     revision->SetDateTime(DateTime::GetCurrentTimeUtc());
+    // NEEDSWORK: We have to write the change group to the file, then read it back out...revision->IncludeChangeGroupData(changeGroup, include, m_dgndb);
+
     return revision;
     }
 
@@ -608,7 +655,7 @@ RevisionStatus RevisionManager::WriteChangesToFile(BeFileNameCR pathname, Change
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    10/2015
 //---------------------------------------------------------------------------------------
-DgnRevisionPtr RevisionManager::StartCreateRevision(RevisionStatus* outStatus /* = nullptr */)
+DgnRevisionPtr RevisionManager::StartCreateRevision(RevisionStatus* outStatus /* = nullptr */, DgnRevision::Include include /* = All */)
     {
     RevisionStatus ALLOW_NULL_OUTPUT(status, outStatus);
 
@@ -646,13 +693,15 @@ DgnRevisionPtr RevisionManager::StartCreateRevision(RevisionStatus* outStatus /*
     if (RevisionStatus::Success != status)
         return nullptr;
 
-    DgnRevisionPtr currentRevision = CreateRevisionObject(outStatus, changeGroup);
+    DgnRevisionPtr currentRevision = CreateRevisionObject(outStatus, changeGroup, include);
     if (currentRevision.IsNull())
         return nullptr;
 
     status = WriteChangesToFile(currentRevision->GetChangeStreamFile(), changeGroup);
     if (RevisionStatus::Success != status)
         return nullptr;
+
+    currentRevision->IncludeChangeGroupData(changeGroup, include, m_dgndb);
 
     m_currentRevision = currentRevision;
     m_currentRevisionEndTxnId = m_dgndb.Txns().GetCurrentTxnId();
@@ -681,6 +730,8 @@ RevisionStatus RevisionManager::FinishCreateRevision()
     status = UpdateInitialParentRevisionId();
     if (RevisionStatus::Success != status)
         return status;
+
+    m_dgndb.Codes().OnFinishRevision(*m_currentRevision);
 
     m_currentRevisionEndTxnId = TxnManager::TxnId(); // Invalid id
     m_currentRevision = nullptr;

@@ -32,7 +32,7 @@ public:
     void InsertElement(PhysicalElementR pelem);
     DgnModelR GetDefaultModel() {return *m_db->Models().GetModel(m_defaultModelId);}
     SpatialModelP GetDefaultSpatialModel() {return dynamic_cast<SpatialModelP>(&GetDefaultModel());}
-    DgnElement::Code CreateCode(Utf8StringCR value) const { return NamespaceAuthority::CreateCode("SqlFunctionsTest", value, *m_db); }
+    DgnCode CreateCode(Utf8StringCR value) const { return NamespaceAuthority::CreateCode("SqlFunctionsTest", value, *m_db); }
     };
 
 /*---------------------------------------------------------------------------------**//**

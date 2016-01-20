@@ -1,14 +1,27 @@
+/*--------------------------------------------------------------------------------------+
+|
+|     $Source: DgnScript/DgnJsApi/ts/DgnJsApi.d.ts $
+|
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|
++--------------------------------------------------------------------------------------*/
 declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/ 
 {
     /*** BEGIN_FORWARD_DECLARATIONS ***/
     class DPoint3d { /*** NATIVE_TYPE_NAME = JsDPoint3d ***/ }
     class YawPitchRollAngles { /*** NATIVE_TYPE_NAME = JsYawPitchRollAngles ***/ }
-    class SolidPrimitive { /*** NATIVE_TYPE_NAME = JsSolidPrimitive ***/ }
+    class SolidPrimitive extends Geometry { /*** NATIVE_TYPE_NAME = JsSolidPrimitive ***/ }
+    class DgnSphere extends SolidPrimitive {/*** NATIVE_TYPE_NAME = JsDgnSphere ***/ }
+    class DgnBox extends SolidPrimitive {/*** NATIVE_TYPE_NAME = JsDgnBpx ***/ }
+    class Geometry { /*** NATIVE_TYPE_NAME = JsGeometry ***/ }
     /*** END_FORWARD_DECLARATIONS ***/
 
-    type DPoint3dP = cxx_pointer<DPoint3d>;
-    type YawPitchRollAnglesP = cxx_pointer<YawPitchRollAngles>;
-    type SolidPrimitiveP = cxx_pointer<SolidPrimitive>;
+    type DPoint3dP              = cxx_pointer<DPoint3d>;
+    type YawPitchRollAnglesP    = cxx_pointer<YawPitchRollAngles>;
+    type SolidPrimitiveP        = cxx_pointer<SolidPrimitive>;
+    type DgnSphereP             = cxx_pointer<DgnSphere>;
+    type DgnBoxP                = cxx_pointer<DgnBox>;
+    type GeometryP              = cxx_pointer<Geometry>;
 
     enum ECPropertyPrimitiveType { }
 
@@ -52,12 +65,26 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
     //! Script Management Utilities
     class Script implements BeJsProjection_SuppressConstructor {
 
-        //! Make sure the that specified library is loaded
-        //! @param libName  The name of the library that is to be loaded
+        /**
+         * Make sure that the specified script is loaded.
+         * @param db         The name of the DgnDb to check for a local script library
+         * @param scriptName The name which was used to register the script in the script librray
+         * @return 0 (SUCCESS) if the script was loaded; otherwise, a non-zero error code.
+         */
+        static LoadScript(db: DgnDbP, scriptName: Bentley_Utf8String): cxx_int32_t;
+
+        /**
+         * Make sure that the specified library is loaded
+         * @param libName The name of the library that is to be loaded
+         * @note This function differs from LoadScript in that ImportLibrary is used to activate libraries that are provided by the app or the domain,
+         * where LoadScript is used to load scripts that are found in the script library.
+         */
         static ImportLibrary(libName: Bentley_Utf8String): void;
 
-        //! Report an error. An error is more than a message. The platform is will treat it as an error. For example, the platform may terminate the current command.
-        //! @param description  A description of the error
+        /**
+         * Report an error. An error is more than a message. The platform is will treat it as an error. For example, the platform may terminate the current command.
+         * @param description A description of the error
+         */
         static ReportError(description: Bentley_Utf8String): void;
     }
 
@@ -250,6 +277,13 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
          */
         static GetParameters(instance: DgnElementP): ECInstanceP;
 
+        /**
+         * Make an ECInstance whose properties are the input parameters to the ComponentDef's script or solver. 
+         * The caller should then assign values to the properties of the instance.
+         * The caller may then pass the parameters instance to a function such as MakeInstanceOfVariation or MakeUniqueInstance.
+         */
+        MakeParameters(): ECInstanceP;
+
         /** Place an instance of a component 
          * If \a variation has instance parameters, then the \a instanceParameters argument may be passed into specific the instance parameter values to use.
          * If the values in \a instanceParameters differs from the instance parameters of \a variation, then a unique instance is created.
@@ -291,7 +325,8 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
     {
         /*** NATIVE_TYPE_NAME = JsGeometryBuilder ***/ 
         constructor(el: DgnElementP, o: DPoint3dP, angles: YawPitchRollAnglesP);
-        Append(solid: SolidPrimitiveP): void;
+        Append(geometry: GeometryP): void;
+        AppendSolidPrimitive(geometry: SolidPrimitiveP): void;
         SetGeometryStreamAndPlacement(element: DgnElementP): cxx_double;
         OnDispose(): void;
         Dispose(): void;
@@ -351,6 +386,29 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
     }
 
     type ECInstanceP = cxx_pointer<ECInstance>;
+
+    //! Provides read-only access to ad-hoc properties defined on an IECInstance.
+    //! Adhoc properties are name-value pairs stored on an ECInstance.
+    class AdhocPropertyQuery implements IDisposable, BeJsProjection_RefCounted, BeJsProjection_SuppressConstructor
+    {
+        /*** NATIVE_TYPE_NAME = JsAdhocPropertyQuery ***/
+        constructor(instance: ECInstanceP, accessString: Bentley_Utf8String);
+        Host: ECInstanceP;
+
+        GetPropertyIndex(accessString: Bentley_Utf8String): cxx_uint32_t;
+        Count: cxx_uint32_t;
+        
+        GetName(index: cxx_uint32_t): Bentley_Utf8String;
+        GetDisplayLabel(index: cxx_uint32_t): Bentley_Utf8String;
+        GetValue(index: cxx_uint32_t) : ECValueP;
+        GetPrimitiveType(index: cxx_uint32_t): cxx_enum_class_uint32_t<ECPropertyPrimitiveType>;
+        GetUnitName(index: cxx_uint32_t): Bentley_Utf8String;
+        IsReadOnly(index: cxx_uint32_t): cxx_bool;
+        IsHidden(index: cxx_uint32_t): cxx_bool;
+
+        OnDispose(): void;
+        Dispose(): void;
+    }
 
     class ECValue implements IDisposable, BeJsProjection_RefCounted, BeJsProjection_SuppressConstructor
     {

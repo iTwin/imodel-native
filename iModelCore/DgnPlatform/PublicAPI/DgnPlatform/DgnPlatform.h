@@ -106,6 +106,9 @@ DGNPLATFORM_TYPEDEFS(DictionaryElement)
 DGNPLATFORM_TYPEDEFS(DisplayStyle)
 DGNPLATFORM_TYPEDEFS(DisplayStyleFlags)
 DGNPLATFORM_TYPEDEFS(DrawingElement)
+DGNPLATFORM_TYPEDEFS (IDgnCodesManager)
+DGNPLATFORM_TYPEDEFS (IDgnCodesServer)
+DGNPLATFORM_TYPEDEFS (DgnCode)
 DGNPLATFORM_TYPEDEFS(DrawingModel)
 DGNPLATFORM_TYPEDEFS(DrawingViewDefinition)
 DGNPLATFORM_TYPEDEFS(DropGeometry)
@@ -221,7 +224,7 @@ DGNPLATFORM_REF_COUNTED_PTR(DrawingElement)
 DGNPLATFORM_REF_COUNTED_PTR(DrawingViewDefinition)
 DGNPLATFORM_REF_COUNTED_PTR(IElemTopology)
 DGNPLATFORM_REF_COUNTED_PTR(ILocksManager)
-DGNPLATFORM_REF_COUNTED_PTR(ImageBuffer)
+DGNPLATFORM_REF_COUNTED_PTR(IDgnCodesManager)
 DGNPLATFORM_REF_COUNTED_PTR(PatternParams)
 DGNPLATFORM_REF_COUNTED_PTR(PatternParams)
 DGNPLATFORM_REF_COUNTED_PTR(PhysicalElement)
@@ -377,7 +380,6 @@ struct DgnClassId : BeSQLite::BeInt64Id
     DgnClassId& operator=(DgnClassId const& rhs) {m_id = rhs.m_id; return *this;}
 };
 
-//=======================================================================================
 //! The GeometryStreamEntryId class identifies a geometric primitive in a GeometryStream.
 //=======================================================================================
 struct GeometryStreamEntryId
@@ -415,25 +417,6 @@ public:
 };
 
 //=======================================================================================
-//! DEPRECATED: Use DgnElementId (preferred) or ECInstanceKey (for ECRelationships) instead
-//! @private
-//=======================================================================================
-struct DgnElementKey : BeSQLite::EC::ECInstanceKey
-{
-    DgnElementKey() : BeSQLite::EC::ECInstanceKey() {}
-    DgnElementKey(ECN::ECClassId classId, BeSQLite::EC::ECInstanceId instanceId) : BeSQLite::EC::ECInstanceKey(classId, instanceId) {}
-    DgnElementKey(DgnClassId classId, BeSQLite::EC::ECInstanceId instanceId) : BeSQLite::EC::ECInstanceKey(classId.GetValue(), instanceId) {}
-
-    //! Converts an ECInstanceKey to a DgnElementKey.
-    //! @note Does a simple type conversion without checking if the specified ECInstanceKey is a valid DgnElementKey
-    explicit DgnElementKey(BeSQLite::EC::ECInstanceKeyCR key) : BeSQLite::EC::ECInstanceKey(key) {}
-
-    DgnClassId GetClassId() const {return DgnClassId(GetECClassId());}
-    DgnElementId GetElementId() const {return DgnElementId(GetECInstanceId().GetValue());}
-};
-
-typedef DgnElementKey const& DgnElementKeyCR; //!< @private
-
 #ifdef WIP_ELEMENT_ITEM // *** pending redesign
 //=======================================================================================
 //! The key (classId,instanceId) of a the Item aspect.

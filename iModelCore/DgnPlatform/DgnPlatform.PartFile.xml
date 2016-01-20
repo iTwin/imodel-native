@@ -26,7 +26,8 @@
                 ECSchemas/Bentley_MarkupExtension.01.01.ecschema.xml
                 ECSchemas/DgnMarkupSchema.01.00.ecschema.xml
                 ECSchemas/dgn.02.00.ecschema.xml
-             </Files>
+                ECSchemas/Generic.01.00.ecschema.xml
+            </Files>
         </Bindings>
     </Part>
 
@@ -57,6 +58,7 @@
             <Files Required="false" ProductDirectoryName="DgnPlatformLastResortFonts" SubPartDirectory="DgnPlatformLastResortFonts">Delivery/lastresortfonts</Files>
             <Files Required="false" ProductDirectoryName="DgnJsApiTs" SubPartDirectory="Script/DgnJsApiTs">Delivery/DgnJsApi.d.ts</Files>
             <Files Required="false" ProductDirectoryName="GeomJsApiTs" SubPartDirectory="Script/GeomJsApiTs">Delivery/GeomJsApi.d.ts</Files>
+            <Directory Required="false" SubPartDirectory="DgnJsApiDoc" SourceName="Delivery/internal-docs/DgnJsApi" />
             <Directory SourceName="Delivery/icons" ProductDirectoryName="DgnCoreDecorators" SubPartDirectory="DgnPlatformIcons" Required="false" />
         </Bindings>
     </Part>

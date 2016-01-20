@@ -2,7 +2,7 @@
 #
 #     $Source: DgnPlatform.mke $
 #
-#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 #
 #----------------------------------------------------------------------
 
@@ -187,6 +187,8 @@ $(CoreObjs)ElementDependencyGraph$(oext) :          $(DgnCoreDir)ElementDependen
 
 $(coreObjs)LocksManager$(oext):                     $(DgnCoreDir)LocksManager.cpp $(DgnPlatformAPISrc)LocksManager.h ${MultiCompileDepends}
 
+$(coreObjs)DgnCodesManager$(oext):                  $(DgnCoreDir)DgnCodesManager.cpp $(DgnPlatformAPISrc)DgnCodesManager.h ${MultiCompileDepends}
+
 $(CoreObjs)LsName$(oext) :                          $(lineStyleDir)LsName.cpp $(LsLocalDepends) ${MultiCompileDepends}
 
 $(CoreObjs)LsLocation$(oext) :                      $(lineStyleDir)LsLocation.cpp $(LsLocalDepends) ${MultiCompileDepends}
@@ -339,7 +341,9 @@ $(CoreObjs)SatelliteChangeSets$(oext) :             $(DgnCoreDir)SatelliteChange
 
 $(CoreObjs)DgnMarkupProject$(oext) :                $(DgnCoreDir)DgnMarkupProject.cpp $(DgnPlatformAPISrc)DgnMarkupProject.h $(DgnPlatformAPISrc)DgnDbTables.h ${MultiCompileDepends}
 
-$(CoreObjs)DgnDomain$(oext) :                       $(DgnCoreDir)DgnDomain.cpp $(DgnPlatformAPISrc)DgnDomain.h ${MultiCompileDepends} ${MultiCompileDepends}
+$(CoreObjs)DgnDomain$(oext) :                       $(DgnCoreDir)DgnDomain.cpp $(DgnPlatformAPISrc)DgnDomain.h ${MultiCompileDepends}
+
+$(CoreObjs)GenericDomain$(oext) :                   $(DgnCoreDir)GenericDomain.cpp $(DgnPlatformAPISrc)GenericDomain.h ${MultiCompileDepends}
 
 $(CoreObjs)QueryModel$(oext) :                      $(DgnCoreDir)QueryModel.cpp $(DgnPlatformAPISrc)QueryModel.h $(DgnPlatformAPISrc)DgnRangeTree.h  $(DgnCoreDir)UpdateLogging.h ${MultiCompileDepends}
 
@@ -609,7 +613,11 @@ LINKER_LIBRARIES        =   $(ContextSubpartsLibs)$(libprefix)BeSQLiteEC$(libext
     LINKER_LIBRARIES +    $(ContextSubpartsLibs)$(libprefix)BeJavaScript$(stlibext)
     %if $(TARGET_PLATFORM) == "Windows"
         %ifndef NDEBUG
-            LINKER_LIBRARIES + jsrt.lib
+            %if defined (BEJAVASCRIPT_FORCE_JSRT_EDGE_MODE) && (" " != $[@findstring "[Version 10.", $[@readstdout ver]])
+                LINKER_LIBRARIES + chakrart.lib
+            %else
+                LINKER_LIBRARIES + jsrt.lib
+            %endif
         %else
             LINKER_LIBRARIES + $(ContextSubpartsLibs)libv8.lib
         %endif

@@ -56,7 +56,7 @@ DbResult DgnDb::CreateDictionaryModel()
     {
     Utf8String dictionaryName = DgnCoreL10N::GetString(DgnCoreL10N::MODELNAME_Dictionary());
     
-    DgnModel::Code modelCode = DgnModel::CreateModelCode(dictionaryName);
+    DgnCode modelCode = DgnModel::CreateModelCode(dictionaryName);
     Statement stmt(*this, "INSERT INTO " DGN_TABLE(DGN_CLASSNAME_Model) " (Id,Code_Value,Label,ECClassId,Visibility,Code_AuthorityId,Code_Namespace) VALUES(?,?,'',?,0,?,?)");
     stmt.BindId(1, DgnModel::DictionaryId());
     stmt.BindText(2, modelCode.GetValueCP(), Statement::MakeCopy::No);
@@ -102,6 +102,13 @@ DbResult DgnDb::CreateDgnDbTables()
 
     // Every DgnDb has a dictionary model
     CreateDictionaryModel();
+
+    // The Generic domain is used when a conversion process doesn't have enough information to pick something better
+    if (DgnDbStatus::Success != GenericDomain::ImportSchema(*this, DgnDomain::ImportSchemaOptions::ImportOnly)) // Let an upper layer decide whether or not to create ECClassViews
+        {
+        BeAssert(false);
+        return BE_SQLITE_NOTFOUND;
+        }
 
     ExecuteSql("CREATE TRIGGER dgn_prjrange_del AFTER DELETE ON " DGN_TABLE(DGN_CLASSNAME_SpatialElement)
                " BEGIN DELETE FROM " DGN_VTABLE_RTree3d " WHERE ElementId=old.Id;END");
