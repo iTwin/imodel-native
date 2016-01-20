@@ -66,6 +66,7 @@
     <ClCompile Include="ECProperty.cpp" />
     <ClCompile Include="ECSchema.cpp" />
     <ClCompile Include="ECEnumeration.cpp" />
+    <ClCompile Include="ECSchemaConverter.cpp" />
     <ClCompile Include="ECType.cpp" />
     <ClCompile Include="ECValue.cpp" />
     <ClCompile Include="ecxml.cpp" />
@@ -137,6 +138,7 @@
     <ClInclude Include="..\PublicApi\ECObjects\ECObjectsAPI.h" />
     <ClInclude Include="..\PublicApi\ECObjects\ECObjectsAPIOverview.h" />
     <ClInclude Include="..\PublicApi\ECObjects\ecprovider.h" />
+    <ClInclude Include="..\PublicApi\ECObjects\ECSchemaConverter.h" />
     <ClInclude Include="..\PublicApi\ECObjects\PresentationMetadataHelper.h" />
     <ClInclude Include="..\PublicApi\ECObjects\SchemaLocalizedStrings.h" />
     <ClInclude Include="..\PublicApi\ECObjects\StandaloneECRelationshipInstance.h" />

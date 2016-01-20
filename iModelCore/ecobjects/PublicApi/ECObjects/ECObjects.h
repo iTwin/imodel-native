@@ -84,6 +84,8 @@ EC_TYPEDEFS (CustomAttributeDeserializerManager);
 EC_TYPEDEFS (ECInstanceIterable);
 EC_TYPEDEFS(SupplementalSchemaMetaData);
 EC_TYPEDEFS (PresentationMetadataHelper);
+EC_TYPEDEFS(ECSchemaConverter);
+EC_TYPEDEFS(IECCustomAttributeConverter);
 
 EC_TYPEDEFS (CalculatedPropertySpecification);
 EC_TYPEDEFS (ParserRegex);

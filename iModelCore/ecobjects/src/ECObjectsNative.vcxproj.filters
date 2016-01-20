@@ -242,6 +242,12 @@
     <ClCompile Include="PresentationMetadataHelper.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="ECEnumeration.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ECSchemaConverter.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ECObjectsPch.h">
@@ -368,6 +374,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\PublicApi\ECObjects\StandardCustomAttributeHelper.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicApi\ECObjects\ECSchemaConverter.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

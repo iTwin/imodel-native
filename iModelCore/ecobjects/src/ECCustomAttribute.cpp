@@ -266,6 +266,17 @@ Utf8StringCR className
     return GetCustomAttributeInternal (schemaName, className, true, false);
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Basanta.Kharel                01/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+IECInstancePtr IECCustomAttributeContainer::GetPrimaryCustomAttributeLocal
+(
+    Utf8StringCR className
+    ) const
+    {
+    return GetCustomAttributeInternal(className, false, false);
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Casey.Mullen      11/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -357,6 +368,17 @@ ECClassCR classDefinition
 ) const
     {
     return GetCustomAttributeInternal (classDefinition, true, false);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Basanta.Kharel                01/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+IECInstancePtr IECCustomAttributeContainer::GetPrimaryCustomAttributeLocal
+(
+    ECClassCR classDefinition
+    ) const
+    {
+    return GetCustomAttributeInternal(classDefinition, false, false);
     }
 
 /*---------------------------------------------------------------------------------**//**

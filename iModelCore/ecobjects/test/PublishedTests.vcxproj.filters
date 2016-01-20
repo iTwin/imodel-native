@@ -57,13 +57,16 @@
     <ClCompile Include="Published\NavigationECPropertyTests.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Published\SchemaVersionConverstionTests.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="TestFixture\TestFixture.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Published\ValueValidationTests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\CustomAttributeConversionsTest.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\SchemaVersionConverstionTests.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
