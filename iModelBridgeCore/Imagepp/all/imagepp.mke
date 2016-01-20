@@ -1250,7 +1250,8 @@ $(o)HRFWbmpLineEditor$(oext) : $(ippGraDir)hrf/src/HRFWbmpLineEditor.cpp $(ippAl
 
 $(o)HRFWebFile$(oext) : $(ippGraDir)hrf/src/HRFWebFile.cpp $(ippAllInc)HRFWebFile.h ${MultiCompileDepends}
 
-$(o)HRFWCSFile$(oext) : $(ippGraDir)hrf/src/HRFWCSFile.cpp $(ippAllInc)HRFWCSFile.h ${MultiCompileDepends}
+# Disabled &&MM cleanup?
+#$(o)HRFWCSFile$(oext) : $(ippGraDir)hrf/src/HRFWCSFile.cpp $(ippAllInc)HRFWCSFile.h ${MultiCompileDepends}
 
 $(o)HRFWMSFile$(oext) : $(ippGraDir)hrf/src/HRFWMSFile.cpp $(ippAllInc)HRFWMSFile.h ${MultiCompileDepends}
 

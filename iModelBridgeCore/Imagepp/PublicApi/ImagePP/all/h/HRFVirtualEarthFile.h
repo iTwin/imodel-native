@@ -145,8 +145,6 @@ protected:
 private:
     friend struct HRFVirtualEarthCreator;
 
-    HFCExclusiveKey   m_HRFKey;
-
     void                QueryImageURI(WStringCR bingMapKey);
     WString             GetTileURI(unsigned int pixelX, unsigned int pixelY, int levelOfDetail) const;
 

@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRFFileFormats.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -65,7 +65,6 @@
 #include "HRFPWRasterFile.h"
 #include "HRFErdasImgFile.h"
 #include "HRFWMSFile.h"
-#include "HRFWCSFile.h"
 #include "HRFNitfFile.h"
 #include "HRFDtedFile.h"
 #include "HRFVirtualEarthFile.h"
@@ -117,7 +116,6 @@
     HOST_REGISTER_FILEFORMAT(HRFLRDCreator)         \
     HOST_REGISTER_FILEFORMAT(HRFInternetImagingFileCreator) \
     HOST_REGISTER_FILEFORMAT(HRFWMSCreator)         \
-    HOST_REGISTER_FILEFORMAT(HRFWCSCreator)         \
     HOST_REGISTER_FILEFORMAT(HRFxChCreator)         \
     HOST_REGISTER_FILEFORMAT(HRFBilCreator)         \
     HOST_REGISTER_FILEFORMAT(HRFFliCreator)         \

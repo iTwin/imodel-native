@@ -36,6 +36,8 @@
 #include <Imagepp/all/h/HRFException.h>
 #include <Imagepp/all/h/HCPGeoTiffKeys.h>
 #include <BeXml/BeXml.h>
+#include <ImagePPInternal/HttpConnection.h>
+
 
 
 
@@ -227,10 +229,9 @@ HRFWMSFile::HRFWMSFile(const HFCPtr<HFCURL>& pi_rpURL,
                        HFCAccessMode         pi_AccessMode,
                        uint64_t             pi_Offset)
     : HRFOGCService(pi_rpURL,
-                    WMS, //OGC service type
                     pi_AccessMode,
                     pi_Offset),
-    m_NeedAuthentification(true) // TR #259891, by default, always send a request to get the authentification
+    m_NeedAuthentification(true) // TR #259891, by default, always send a request to get the authentication
     {
     HPRECONDITION(pi_rpURL->IsCompatibleWith(HFCURLFile::CLASS_ID)||pi_rpURL->IsCompatibleWith(HFCURLMemFile::CLASS_ID));
 
@@ -323,110 +324,47 @@ HRFWMSFile::HRFWMSFile(const HFCPtr<HFCURL>& pi_rpURL,
     if (pi_rpURL->IsCompatibleWith(HFCURLFile::CLASS_ID))
         m_pFile = HFCBinStream::Instanciate(pi_rpURL, pi_AccessMode);
 
-    HFCPtr<HFCURL> pURL = HFCURL::Instanciate(m_ServerURL);
-    WString URL;
-    WString User;
-    WString Password;
+    Utf8String templateUrl;
 
-    if (pURL == 0)
+    // We are being to nice here. xwms file should contain a valid http/https URL but unfortunately we have files that have bad URL. why we created that?
+    HFCPtr<HFCURL> pURL = HFCURL::Instanciate(m_ServerURL);
+    if (pURL == nullptr)
         {
         // create an HTTP URL
-        URL = L"http://" + m_ServerURL;
-        pURL = new HFCURLHTTP(URL);
+        WString httpURL = L"http://" + m_ServerURL;
+        HFCPtr<HFCURLHTTP> pHttpURL = new HFCURLHTTP(httpURL);
 
-        if (!((HFCPtr<HFCURLHTTP>&)pURL)->GetSearchPart().empty())
-            m_URLSearchPart = ((HFCPtr<HFCURLHTTP>&)pURL)->GetSearchPart();
-
-        WString Host;
-        WString Scheme;
-        WString Port;
-        WString Path;
-
-        HFCURLCommonInternet::SplitPath(pURL->GetURL(),
-                                        &Scheme,
-                                        &Host,
-                                        &Port,
-                                        &User,
-                                        &Password,
-                                        &Path);
-
-        // is we have an user or password, change the http url for an https url
-        if (!User.empty() || !Password.empty())
+        // if we have an user or password, change the http url for an https url
+        if (!pHttpURL->GetUser().empty() || !pHttpURL->GetPassword().empty())
             {
-            URL = L"https://" + Host;
-            if (!Port.empty())
-                URL += L":" + Port;
-
-            if (!Path.empty())
-                URL += L"/" + Path;
+            httpURL = L"https://" + m_ServerURL;
+            pHttpURL = new HFCURLHTTP(httpURL);
             }
+        pURL = pHttpURL.GetPtr();
         }
-    else if (!pURL->IsCompatibleWith(HFCURLHTTP::CLASS_ID) && !pURL->IsCompatibleWith(HFCURLHTTPS::CLASS_ID))
-        {
+
+    if (!pURL->IsCompatibleWith(HFCURLHTTPBase::CLASS_ID))
         throw HFCInternetConnectionException(s_Device, HFCInternetConnectionException::CANNOT_CONNECT);
+
+    HFCURLHTTPBase* pHttpUrl = static_cast<HFCURLHTTPBase*>(pURL.GetPtr());
+    WString searchBase;
+    if (!pHttpUrl->GetSearchPart().empty())
+            searchBase = pHttpUrl->GetSearchPart();
+
+    Utf8String baseUrl(pHttpUrl->GetURL());
+    if(pHttpUrl->GetSearchPart().empty())
+        {
+        baseUrl.append("?");        // ex: http://www.host.com/Path. Request append after '?'
         }
     else
-        {   // TR 269330
-        if (!((HFCPtr<HFCURLHTTPBase>&)pURL)->GetSearchPart().empty())
-            m_URLSearchPart = ((HFCPtr<HFCURLHTTPBase>&)pURL)->GetSearchPart();
-
-        WString Host;
-        WString Scheme;
-        WString Port;
-        WString Path;
-
-        // extract user ans password
-        HFCURLCommonInternet::SplitPath(pURL->GetURL(),
-                                        &Scheme,
-                                        &Host,
-                                        &Port,
-                                        &User,
-                                        &Password,
-                                        &Path);
-
-        URL = Scheme + L"://" + Host;
-
-        if (!Port.empty())
-            URL += L":" + Port;
-
-        if (!Path.empty())
-            URL += L"/" + Path;
-        }
-
-    // first, try an HTTP URL
-    m_pConnection = new HRFOGCServiceConnection(URL, User, Password);
-
-    //Convert back the URL's search part as it was in the XML file.
-    Utf8String utf8Str;
-    BeStringUtilities::WCharToUtf8(utf8Str,m_URLSearchPart.c_str());
-
-    string SearchBase = string(utf8Str.c_str());
-
-    m_pConnection->SetSearchBase(SearchBase);
-
-    HASSERT(m_pConnection != 0);
-    m_pConnection->SetTimeOut(m_ConnectionTimeOut);
-
-    // Connect to the server
-    if (!m_pConnection->Connect(WString(L""), WString(L""), m_ConnectionTimeOut))
-        throw HFCInternetConnectionException(s_Device, HFCInternetConnectionException::CANNOT_CONNECT);
-    else
         {
-        if (m_NeedAuthentification)
-            {
-            AUTHENTICATION_STATUS Status = AuthorizeConnection();
-            m_pConnection->Disconnect();    // don't keep the connection
-
-            if (AUTH_PERMISSION_DENIED == Status)
-                throw HRFAuthenticationInvalidLoginException(GetURL()->GetURL());
-            else if (AUTH_USER_CANCELLED == Status)
-                throw HRFAuthenticationCancelledException(GetURL()->GetURL());
-            else if (AUTH_MAX_RETRY_COUNT_REACHED == Status)
-                throw HRFAuthenticationMaxRetryCountReachedException(GetURL()->GetURL());
-            }
-        else
-            m_pConnection->Disconnect();    // don't keep the connection
+        baseUrl.append("&");        // ex: http://www.host.com/Path?wms=WorldMap.  Request append after '&'
         }
+        
+    m_requestTemplate.reset(new HttpRequest(baseUrl.c_str()));
+    m_requestTemplate->SetTimeoutMs(m_ConnectionTimeOut);
+
+    ValidateConnection(m_NeedAuthentification); // <<<< Will throw on errors.
 
     CreateDescriptors(m_Width, m_Height);
 
@@ -460,8 +398,6 @@ HRFWMSFile::HRFWMSFile(const HFCPtr<HFCURL>& pi_rpURL,
 //-----------------------------------------------------------------------------
 HRFWMSFile::~HRFWMSFile()
     {
-    if (m_pConnection->IsConnected())
-        m_pConnection->Disconnect();
     }
 
 //-----------------------------------------------------------------------------
@@ -518,19 +454,9 @@ void HRFWMSFile::SetContext(uint32_t                 pi_Page,
             }
         m_Request = m_BaseRequest;
         m_Request += "&LAYERS=";
-
-        size_t  destinationBuffSize = Layers.GetMaxLocaleCharBytes();
-        char*  LayersMBS= (char*)_alloca (destinationBuffSize);
-        BeStringUtilities::WCharToCurrentLocaleChar(LayersMBS,Layers.c_str(),destinationBuffSize);
-
-        m_Request += string(LayersMBS);
+        m_Request += Utf8String(Layers);
         m_Request += "&STYLES=";
-
-        destinationBuffSize = Styles.GetMaxLocaleCharBytes();
-        char*  StylesMBS= (char*)_alloca (destinationBuffSize);
-        BeStringUtilities::WCharToCurrentLocaleChar(StylesMBS,Styles.c_str(),destinationBuffSize);
-
-        m_Request += string(StylesMBS);
+        m_Request += Utf8String(Styles);
 
         // Notify each editor that the context changed
         // find the resolution editor into the ResolutionEditorRegistry
@@ -584,7 +510,7 @@ void HRFWMSFile::CreateDescriptors(uint64_t pi_Width,
     m_GTModelType = TIFFGeo_ModelTypeGeographic;
 
     string::size_type Pos;
-    string Request = m_BaseRequest;
+    string Request = m_BaseRequest.c_str();
     CaseInsensitiveStringToolsA().ToLower(Request);
 
     Pos = Request.find("srs=");
@@ -693,27 +619,19 @@ void HRFWMSFile::CreateDescriptors(uint64_t pi_Width,
 //
 // Send a dummy request to validate if the server need a user/password
 //-----------------------------------------------------------------------------
-HRFOGCService::AUTHENTICATION_STATUS HRFWMSFile::AuthorizeConnection()
+Utf8String HRFWMSFile::_GetValidateConnectionRequest() const
     {
-    // We first call the ancester method
-    AUTHENTICATION_STATUS Status = HRFOGCService::AuthorizeConnection();
+    ostringstream RequestEditor;
+    RequestEditor.precision(16);
+    RequestEditor << m_BaseRequest << "&LAYERS=" << m_Layers << "&STYLES=" << m_Styles ;
+    RequestEditor << "&width=" << 10 << "&height=" << 10;
+    RequestEditor << "&BBOX=";
+    RequestEditor << m_BBoxMinX << ",";
+    RequestEditor << m_BBoxMinY << ",";
+    RequestEditor << m_BBoxMaxX << ",";
+    RequestEditor << m_BBoxMaxY;
 
-    if (Status == AUTH_SUCCESS)
-    {
-        ostringstream RequestEditor;
-        RequestEditor.precision(16);
-        RequestEditor << m_BaseRequest << "&LAYERS=" << m_Layers << "&STYLES=" << m_Styles ;
-        RequestEditor << "&width=" << 10 << "&height=" << 10;
-        RequestEditor << "&BBOX=";
-        RequestEditor << m_BBoxMinX << ",";
-        RequestEditor << m_BBoxMinY << ",";
-        RequestEditor << m_BBoxMaxX << ",";
-        RequestEditor << m_BBoxMaxY << "\r\n";
-
-        Status = HRFOGCService::AuthorizeConnectionSpecificRequest(RequestEditor.str());
-        }
-
-    return Status;
+    return RequestEditor.str().c_str();
     }
 //-----------------------------------------------------------------------------
 // private section
@@ -754,7 +672,7 @@ void HRFWMSFile::ReadWMS_1_0(BeXmlNodeP pi_pBentleyXMLFileNode)
 
     m_BaseRequest = requestA.c_str();
 
-    string Request(m_BaseRequest);
+    string Request(m_BaseRequest.c_str());
     CaseInsensitiveStringToolsA().ToLower(Request);
 
     string::size_type Pos;
@@ -773,7 +691,7 @@ void HRFWMSFile::ReadWMS_1_0(BeXmlNodeP pi_pBentleyXMLFileNode)
     // skip "srs=" or "crs="
     Pos += 4;
     string::size_type Pos2 = Request.find("&", Pos);
-    m_CRS = Request.substr(Pos, (Pos2 == string::npos ? string::npos : Pos2 - Pos));
+    m_CRS = Request.substr(Pos, (Pos2 == string::npos ? string::npos : Pos2 - Pos)).c_str();
 
 
     // format
@@ -784,7 +702,7 @@ void HRFWMSFile::ReadWMS_1_0(BeXmlNodeP pi_pBentleyXMLFileNode)
     // skip "format="
     Pos += 7;
     Pos2 = Request.find("&", Pos);
-    m_Format = Request.substr(Pos, (Pos2 == string::npos ? string::npos : Pos2 - Pos));
+    m_Format = Request.substr(Pos, (Pos2 == string::npos ? string::npos : Pos2 - Pos)).c_str();
 
     if (BeStringUtilities::Stricmp(m_Format.c_str(), "image/jpeg") != 0 &&
         BeStringUtilities::Stricmp(m_Format.c_str(), "image/png") != 0 &&
@@ -1126,20 +1044,16 @@ void HRFWMSFile::ReadWMS_1_2(BeXmlNodeP pi_pBentleyWMSFileNode, WString const& v
 
     for(BeXmlNodeP pSubNode = pChildNode->GetFirstChild (); NULL != pSubNode; pSubNode = pSubNode->GetNextSibling())
         {
-        WString content;
+        Utf8String content;
         pSubNode->GetContent(content);
-            
-        AString contentA;
-        BeStringUtilities::WCharToLocaleChar (contentA, codePage, content.c_str());
-
    
         // BBOX must be set into MAPEXTENT tag
         // LAYERS and STYLES will be added with the SetLayersContext on
         // the editor
         if (BeStringUtilities::Stricmp(pSubNode->GetName(), "LAYERS") == 0)
-            m_Layers = contentA.c_str();
+            m_Layers = content;
         else if (BeStringUtilities::Stricmp(pSubNode->GetName(), "STYLES") == 0)
-            m_Styles = contentA.c_str();
+            m_Styles = content;
         else if (BeStringUtilities::Stricmp(pSubNode->GetName(), "BBOX") != 0)
             {
             m_BaseRequest += "&";
@@ -1151,12 +1065,12 @@ void HRFWMSFile::ReadWMS_1_2(BeXmlNodeP pi_pBentleyWMSFileNode, WString const& v
                 m_BaseRequest += pSubNode->GetName();
 
             m_BaseRequest += "=";
-            m_BaseRequest += contentA.c_str();
+            m_BaseRequest += content;
             }
 
         if (BeStringUtilities::Stricmp(pSubNode->GetName(), "SRS") == 0 || BeStringUtilities::Stricmp(pSubNode->GetName(), "CRS") == 0)
             {
-            m_CRS = contentA.c_str();
+            m_CRS = content;
             if (m_CRS.empty())
                 {
                 if (BeStringUtilities::Stricmp(pSubNode->GetName(), "CRS") == 0)
@@ -1171,7 +1085,7 @@ void HRFWMSFile::ReadWMS_1_2(BeXmlNodeP pi_pBentleyWMSFileNode, WString const& v
             }
         else if (BeStringUtilities::Stricmp(pSubNode->GetName(), "FORMAT") == 0)
             {
-            m_Format = contentA.c_str();
+            m_Format = content;
             if (m_Format.empty())
                 {
                 throw HRFInvalidParamValueException(GetURL()->GetURL(),

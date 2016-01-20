@@ -106,7 +106,6 @@ private:
     HArrayAutoPtr<HAutoPtr<BlockReaderThread> > m_ppBlocksReadersThread;
 
     HFCPtr<HGF2DTransfoModel>              m_pTransfoModel;
-    HFCPtr<HRFOGCServiceConnection>        m_pConnection;
     HGFTileIDDescriptor                    m_TileIDDescriptor;
     ImageType                              m_ImageType;
 
@@ -148,7 +147,7 @@ public:
 
     virtual void Go();
 
-    void        ReadBlocksFromServer(uint64_t pi_MinX,
+    bool        ReadBlocksFromServer(uint64_t pi_MinX,
                                      uint64_t pi_YMin,
                                      uint64_t pi_XMax,
                                      uint64_t pi_YMax);
@@ -157,7 +156,6 @@ private:
 
     HRFOGCServiceEditor*               m_pEditor;
 
-    HFCPtr<HRFOGCServiceConnection>    m_pConnection;
     HFCPtr<HGF2DTransfoModel>          m_pTransfoModel;
 
     // for optimization
@@ -169,11 +167,6 @@ private:
     unsigned short             m_BytesPerPixel;
 
     HFCEvent                    m_ThreadStarted;
-
-
-    bool       ProcessRequest  (HFCPtr<HRFOGCServiceConnection>&  pi_rpConnection,
-                                 const string&                     pi_rRequest,
-                                 HFCPtr<HFCBuffer>&                po_rpBuffer) const;
 
     void        InvalidateTiles (uint64_t                  pi_MinX,
                                  uint64_t                  pi_MinY,
