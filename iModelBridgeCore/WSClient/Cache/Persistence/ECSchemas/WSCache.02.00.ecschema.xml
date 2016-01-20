@@ -196,6 +196,7 @@
         <Target cardinality="(1,N)" polymorphic="False">
             <Class class="CachedObjectInfo" />
             <Class class="Root" />
+            <Class class="NavigationBase" />
         </Target>
     </ECRelationshipClass>
 
@@ -207,6 +208,7 @@
         <Target cardinality="(1,N)" polymorphic="False">
             <Class class="CachedObjectInfo" />
             <Class class="Root" />
+            <Class class="NavigationBase" />
         </Target>
     </ECRelationshipClass>
 
@@ -284,6 +286,7 @@
             <Class class="CachedObjectInfo" />
             <Class class="CachedRelationshipInfo" />
             <Class class="Root" />
+            <Class class="NavigationBase" />
         </Source>
         <Target cardinality="(0,1)" polymorphic="False">
             <Class class="ExtendedData" />
