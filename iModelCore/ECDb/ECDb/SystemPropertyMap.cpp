@@ -13,14 +13,16 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //+---------------+---------------+---------------+---------------+---------------+-
 PropertyMapSystem::PropertyMapSystem(ECPropertyCR ecProperty, std::weak_ptr<ECDbSqlColumn> column, ECSqlSystemProperty kind)
     : PropertyMap(ecProperty, ecProperty.GetName().c_str(), nullptr), m_kind(kind), m_column(column)
-    {}
+    {
+    m_mappedTables.push_back(&m_column.lock()->GetTable());
+    }
 
 //----------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                02/2014
 //+---------------+---------------+---------------+---------------+---------------+-
 ECDbSqlColumn const& PropertyMapSystem::GetColumn() const
     {
-    BeAssert(m_column.expired() == false);
+    BeAssert(!m_column.expired());
     return *m_column.lock().get();
     }
 

@@ -82,20 +82,24 @@ bool PropertyMap::IsUnmapped () const
 //---------------------------------------------------------------------------------------
 ECDbSqlTable const* PropertyMap::GetTable() const
     {
-    ECDbSqlColumn const* firstCol = GetFirstColumn();
-    if (firstCol != nullptr)
-        return &firstCol->GetTable();
+    if (m_mappedTables.empty())
+        return nullptr;
 
-    return nullptr;
+    return m_mappedTables[0];
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle     01/2016
 //---------------------------------------------------------------------------------------
-bool PropertyMap::MapsToTable(ECDbSqlTable const& table) const
+bool PropertyMap::MapsToTable(ECDbSqlTable const& candidateTable) const
     {
-    ECDbSqlTable const* mappedTable = GetTable();
-    return mappedTable != nullptr && mappedTable == &table;
+    for (ECDbSqlTable const* table : m_mappedTables)
+        {
+        if (table == &candidateTable)
+            return true;
+        }
+
+    return false;
     }
 
 /*---------------------------------------------------------------------------------------
@@ -586,6 +590,8 @@ BentleyStatus PropertyMapStruct::_FindOrCreateColumnsInTable(ClassMap& classMap,
         {
         if (SUCCESS != const_cast<PropertyMapP> (childPropMap)->FindOrCreateColumnsInTable(classMap, classMapInfo))
             return ERROR;
+
+        m_mappedTables.insert(m_mappedTables.end(), childPropMap->GetTables().begin(), childPropMap->GetTables().end());
         }
 
     return SUCCESS;
@@ -600,6 +606,8 @@ BentleyStatus PropertyMapStruct::_Load(ECDbClassMapInfo const& classMapInfo)
         {
         if (SUCCESS != const_cast<PropertyMap*>(child)->Load(classMapInfo))
             return ERROR;
+
+        m_mappedTables.insert(m_mappedTables.end(), child->GetTables().begin(), child->GetTables().end());
         }
 
     return SUCCESS;
@@ -751,9 +759,24 @@ BentleyStatus PropertyMapSingleColumn::_FindOrCreateColumnsInTable (ClassMap& cl
     bool          nullable = m_columnInfo.IsNullable ();
     bool          unique = m_columnInfo.IsUnique ();
     ECDbSqlColumn::Constraint::Collation collation = m_columnInfo.GetCollation ();
-    m_column = classMap.FindOrCreateColumnForProperty(classMap, classMapInfor, *this, columnName, primitiveType, nullable, unique, collation, nullptr);
-    BeAssert (m_column != nullptr && "This actually indicates a mapping error. The method PropertyMapSingleColumn::_FindOrCreateColumnsInTable should therefore be changed to return an error.");
+    ECDbSqlColumn* col = classMap.FindOrCreateColumnForProperty(classMap, classMapInfor, *this, columnName, primitiveType, nullable, unique, collation, nullptr);
+    if (col == nullptr)
+        {
+        BeAssert(col != nullptr && "This actually indicates a mapping error. The method PropertyMapSingleColumn::_FindOrCreateColumnsInTable should therefore be changed to return an error.");
+        return ERROR;
+        }
+
+    SetColumn(*col);
     return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Krischan.Eberle    01/2016
+//---------------------------------------------------------------------------------------
+void PropertyMapSingleColumn::SetColumn(ECDbSqlColumn& col)
+    {
+    m_column = &col;
+    m_mappedTables.push_back(&m_column->GetTable());
     }
 
 //---------------------------------------------------------------------------------------
@@ -841,39 +864,62 @@ BentleyStatus PropertyMapPoint::_Load(ECDbClassMapInfo const& classMapInfo)
     BeAssert (m_yColumn == nullptr);
     BeAssert (m_zColumn == nullptr);
 
-    auto rootPropertyId = GetRoot ().GetProperty ().GetId ();
-    auto accessString = Utf8String (GetPropertyAccessString ());
-    auto pm = classMapInfo.FindPropertyMap (rootPropertyId, (accessString + ".X").c_str ());
-    if (pm == nullptr)
+    const ECPropertyId rootPropertyId = GetRoot ().GetProperty ().GetId ();
+    Utf8String accessString (GetPropertyAccessString ());
+    ECDbPropertyMapInfo const* xPropMap = classMapInfo.FindPropertyMap(rootPropertyId, (accessString + ".X").c_str());
+    if (xPropMap == nullptr)
         {
-        BeAssert (false && "Failed to load propertymap");
+        BeAssert(false && "Failed to load propertymap");
         return ERROR;
         }
 
-    m_xColumn = const_cast<ECDbSqlColumn*>(&(pm->GetColumn ()));
-    pm = classMapInfo.FindPropertyMap (rootPropertyId, (accessString + ".Y").c_str ());
-    if (pm == nullptr)
+    ECDbPropertyMapInfo const* yPropMap = classMapInfo.FindPropertyMap(rootPropertyId, (accessString + ".Y").c_str());
+    if (yPropMap == nullptr)
         {
-        BeAssert (false && "Failed to load propertymap");
+        BeAssert(false && "Failed to load propertymap");
         return ERROR;
         }
 
-    m_yColumn = const_cast<ECDbSqlColumn*>(&(pm->GetColumn ()));
-
+    ECDbPropertyMapInfo const* zPropMap = nullptr;
     if (m_is3d)
         {
-        pm = classMapInfo.FindPropertyMap (rootPropertyId, (accessString + ".Z").c_str ());
-        if (pm == nullptr)
+        zPropMap = classMapInfo.FindPropertyMap(rootPropertyId, (accessString + ".Z").c_str());
+        if (zPropMap == nullptr)
             {
-            BeAssert (false && "Failed to load propertymap");
+            BeAssert(false && "Failed to load propertymap");
             return ERROR;
             }
-
-        m_zColumn = const_cast<ECDbSqlColumn*>(&(pm->GetColumn ()));
         }
 
+    return SetColumns(xPropMap->GetColumn(), yPropMap->GetColumn(), m_is3d ? &zPropMap->GetColumn() : nullptr);
+    }
+
+//----------------------------------------------------------------------------------
+// @bsimethod                                 Krischan.Eberle                01/2016
+//+---------------+---------------+---------------+---------------+---------------+-
+BentleyStatus PropertyMapPoint::SetColumns(ECDbSqlColumn const& xCol, ECDbSqlColumn const& yCol, ECDbSqlColumn const* zCol)
+    {
+    bset<ECDbSqlTable const*> tables;
+    m_xColumn = &xCol;
+    tables.insert(&xCol.GetTable());
+
+    m_yColumn = &yCol;
+    tables.insert(&yCol.GetTable());
+
+    m_zColumn = zCol;
+    if (m_zColumn != nullptr)
+        tables.insert(&m_zColumn->GetTable());
+
+    if (tables.size() != 1)
+        {
+        BeAssert(false && "PropertyMapPoint should always only have columns in exactly one table");
+        return ERROR;
+        }
+
+    m_mappedTables.push_back(&m_xColumn->GetTable());
     return SUCCESS;
     }
+
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    casey.mullen      11/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -899,20 +945,40 @@ BentleyStatus PropertyMapPoint::_FindOrCreateColumnsInTable(ClassMap& classMap, 
     bool          unique        = m_columnInfo.IsUnique();
     ECDbSqlColumn::Constraint::Collation collation = m_columnInfo.GetCollation();
 
+    bset<ECDbSqlTable const*> tables;
+
     Utf8String xColumnName(columnName);
     xColumnName.append("_X");
-    m_xColumn = classMap.FindOrCreateColumnForProperty(classMap, classMapInfo, *this, xColumnName.c_str(), primitiveType, nullable, unique, collation, "X");
+    ECDbSqlColumn const* xCol = classMap.FindOrCreateColumnForProperty(classMap, classMapInfo, *this, xColumnName.c_str(), primitiveType, nullable, unique, collation, "X");
+    if (xCol == nullptr)
+        {
+        BeAssert(false);
+        return ERROR;
+        }
 
     Utf8String yColumnName(columnName);
     yColumnName.append("_Y");
-    m_yColumn = classMap.FindOrCreateColumnForProperty(classMap, classMapInfo, *this, yColumnName.c_str(), primitiveType, nullable, unique, collation, "Y");
-    if (!m_is3d)
-        return SUCCESS;
+    ECDbSqlColumn const* yCol = classMap.FindOrCreateColumnForProperty(classMap, classMapInfo, *this, yColumnName.c_str(), primitiveType, nullable, unique, collation, "Y");
+    if (yCol == nullptr)
+        {
+        BeAssert(false);
+        return ERROR;
+        }
 
-    Utf8String zColumnName(columnName);
-    zColumnName.append("_Z");
-    m_zColumn = classMap.FindOrCreateColumnForProperty(classMap, classMapInfo, *this, zColumnName.c_str(), primitiveType, nullable, unique, collation, "Z");
-    return SUCCESS;
+    ECDbSqlColumn const* zCol = nullptr;
+    if (m_is3d)
+        {
+        Utf8String zColumnName(columnName);
+        zColumnName.append("_Z");
+        zCol = classMap.FindOrCreateColumnForProperty(classMap, classMapInfo, *this, zColumnName.c_str(), primitiveType, nullable, unique, collation, "Z");
+        if (zCol == nullptr)
+            {
+            BeAssert(false);
+            return ERROR;
+            }
+        }
+
+    return SetColumns(*xCol, *yCol, zCol);
     }
 
 /*---------------------------------------------------------------------------------------
@@ -971,7 +1037,7 @@ PropertyMapPtr NavigationPropertyMap::Create(ClassMapLoadContext& ctx, ECDbCR ec
         {
         ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "NavigationECProperty '%s.%s' has a multiplicity of '%s'. ECDb only supports NavigationECProperties with a maximum multiplicity of 1.",
                                                       navProp->GetClass().GetFullName(), navProp->GetName().c_str(),
-                                                      GetConstraint(*navProp).GetCardinality().ToString().c_str());
+                                                      GetConstraint(*navProp, NavigationEnd::To).GetCardinality().ToString().c_str());
         return nullptr;
         }
 
@@ -993,7 +1059,8 @@ NavigationPropertyMap::NavigationPropertyMap(ClassMapLoadContext& ctx, ECN::ECPr
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                      01/2016
 //---------------------------------------------------------------------------------------
-NavigationPropertyMap::NavigationPropertyMap(ClassMapLoadContext& ctx, NavigationPropertyMap const& proto, PropertyMap const* parentPropertyMap) :PropertyMap(proto.GetProperty(), proto.GetPropertyAccessString(), parentPropertyMap), m_navigationProperty(proto.m_navigationProperty), m_relClassMap(proto.m_relClassMap)
+NavigationPropertyMap::NavigationPropertyMap(ClassMapLoadContext& ctx, NavigationPropertyMap const& proto, PropertyMap const* parentPropertyMap) 
+    :PropertyMap(proto, parentPropertyMap), m_navigationProperty(proto.m_navigationProperty), m_relClassMap(proto.m_relClassMap)
     {
     //we need to wait with finishing the nav prop map set up to the end when all relationships have been imported and mapped
     if (proto.m_relClassMap == nullptr)
@@ -1005,6 +1072,12 @@ NavigationPropertyMap::NavigationPropertyMap(ClassMapLoadContext& ctx, Navigatio
 //---------------------------------------------------------------------------------------
 BentleyStatus NavigationPropertyMap::Postprocess(ECDbMapCR ecdbMap)
     {
+    if (m_relClassMap != nullptr)
+        {
+        BeAssert(false);
+        return SUCCESS;
+        }
+
     ClassMap const* relClassMap = ecdbMap.GetClassMap(*m_navigationProperty->GetRelationshipClass());
     if (relClassMap == nullptr || !relClassMap->IsRelationshipClassMap())
         {
@@ -1013,6 +1086,17 @@ BentleyStatus NavigationPropertyMap::Postprocess(ECDbMapCR ecdbMap)
         }
 
     m_relClassMap = static_cast<RelationshipClassMap const*> (relClassMap);
+    
+    ECDbSqlColumn const* constraintIdCol = GetConstraintMap(NavigationEnd::To).GetECInstanceIdPropMap()->GetFirstColumn();
+    if (constraintIdCol == nullptr)
+        {
+        BeAssert(false);
+        return ERROR;
+        }
+
+    BeAssert(m_mappedTables.empty());
+    const std::set<ECDbSqlTable const*> tables = ecdbMap.GetTablesFromRelationshipEndWithColumn(GetConstraintMap(NavigationEnd::From).GetRelationshipConstraint(), constraintIdCol->GetName().c_str());
+    m_mappedTables.insert(m_mappedTables.begin(), tables.begin(), tables.end());
     return SUCCESS;
     }
 
@@ -1029,7 +1113,7 @@ bool NavigationPropertyMap::IsSupportedInECSql(bool logIfNotSupported, ECDbCP ec
             ecdb->GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, 
               "NavigationECProperty '%s.%s' cannot be used in ECSQL because its multiplicity is %s. Only the multiplicities %s or %s are supported.",
                                                            m_navigationProperty->GetClass().GetFullName(), m_navigationProperty->GetName().c_str(),
-                                                           GetConstraint().GetCardinality().ToString().c_str(),
+                                                           GetConstraint(*m_navigationProperty, NavigationEnd::To).GetCardinality().ToString().c_str(),
                                                            RelationshipCardinality::ZeroOne().ToString().c_str(),
                                                            RelationshipCardinality::OneOne().ToString().c_str());
         return false;
@@ -1044,7 +1128,7 @@ bool NavigationPropertyMap::IsSupportedInECSql(bool logIfNotSupported, ECDbCP ec
         }
 
 
-    PropertyMapRelationshipConstraintClassId const* classIdPropMap = GetConstraintMap().GetECClassIdPropMap();
+    PropertyMapRelationshipConstraintClassId const* classIdPropMap = GetConstraintMap(NavigationEnd::To).GetECClassIdPropMap();
     if (!classIdPropMap->IsVirtual() && classIdPropMap->IsMappedToClassMapTables())
         {
         if (logIfNotSupported)
@@ -1064,37 +1148,41 @@ void NavigationPropertyMap::_GetColumns(std::vector<ECDbSqlColumn const*>& colum
     {
     BeAssert(IsSupportedInECSql() && "NavProperty which is not supported in ECSQL");
 
-    RelationshipConstraintMap const& constraintMap = GetConstraintMap();
+    RelationshipConstraintMap const& constraintMap = GetConstraintMap(NavigationEnd::To);
     constraintMap.GetECInstanceIdPropMap()->GetColumns(columns);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                      01/2016
 //---------------------------------------------------------------------------------------
-RelationshipConstraintMap const& NavigationPropertyMap::GetConstraintMap() const
+RelationshipConstraintMap const& NavigationPropertyMap::GetConstraintMap(NavigationEnd end) const
     {
-    return m_relClassMap->GetConstraintMap(GetConstraintEnd());
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                 Krischan.Eberle                      01/2016
-//---------------------------------------------------------------------------------------
-ECRelationshipEnd NavigationPropertyMap::GetConstraintEnd() const
-    {
-    ECRelationshipClassCP relClass = m_navigationProperty->GetRelationshipClass();
-    BeAssert(relClass != nullptr);
-    return m_navigationProperty->GetDirection() == ECRelatedInstanceDirection::Forward ? ECRelationshipEnd::ECRelationshipEnd_Target : ECRelationshipEnd::ECRelationshipEnd_Source;
+    return m_relClassMap->GetConstraintMap(GetConstraintEnd(end));
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                      01/2016
 //---------------------------------------------------------------------------------------
 //static
-ECRelationshipConstraintCR NavigationPropertyMap::GetConstraint(NavigationECPropertyCR navProp)
+ECN::ECRelationshipConstraintCR NavigationPropertyMap::GetConstraint(ECN::NavigationECPropertyCR navProp, NavigationEnd end)
     {
     ECRelationshipClassCP relClass = navProp.GetRelationshipClass();
-    BeAssert(relClass != nullptr);
-    return navProp.GetDirection() == ECRelatedInstanceDirection::Forward ? relClass->GetTarget() : relClass->GetSource();
+    return GetConstraintEnd(navProp, end) == ECRelationshipEnd_Source ? relClass->GetSource() : relClass->GetTarget();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                 Krischan.Eberle                      01/2016
+//---------------------------------------------------------------------------------------
+//static
+ECN::ECRelationshipEnd NavigationPropertyMap::GetConstraintEnd(ECN::NavigationECPropertyCR prop, NavigationEnd end)
+    {
+    const ECRelatedInstanceDirection navPropDir = prop.GetDirection();
+
+    if (navPropDir == ECRelatedInstanceDirection::Forward && end == NavigationEnd::From ||
+        navPropDir == ECRelatedInstanceDirection::Backward && end == NavigationEnd::To)
+        return ECRelationshipEnd_Source;
+
+    return ECRelationshipEnd_Target;
     }
 
 
