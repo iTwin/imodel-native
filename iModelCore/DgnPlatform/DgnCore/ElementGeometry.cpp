@@ -2825,7 +2825,7 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicR graphic, ViewContextR c
     bool        isQVWireframe = (isQVis && RenderMode::Wireframe == context.GetViewFlags().GetRenderMode());
     bool        isPick = (nullptr != context.GetIPickGeom());
     bool        useBRep = !(isQVis || isPick);
-    bool        geomParamsChanged = activateParams; // NOTE: Don't always bake initial symbology into SubGraphics, it's activated before drawing QvElem...
+    bool        geomParamsChanged = activateParams || !isQVis; // NOTE: Don't always bake initial symbology into SubGraphics, it's activated before drawing QvElem...
 
     GeometryStreamIO::Reader reader(context.GetDgnDb());
 
