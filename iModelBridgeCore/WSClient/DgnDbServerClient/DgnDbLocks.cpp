@@ -91,7 +91,7 @@ LockRequest::Response DgnDbLocks::_AcquireLocks(LockRequestCR locks, DgnDbR db)
         return LockRequest::Response(LockStatus::ServerUnavailable);
     }
 
-Dgn::LockStatus DgnDbLocks::_ReleaseLocks(Dgn::DgnLockSet const& locks, Dgn::DgnDbR db)
+Dgn::LockStatus DgnDbLocks::_DemoteLocks(Dgn::DgnLockSet const& locks, Dgn::DgnDbR db)
     {
     if (m_connection)
         {
@@ -104,7 +104,7 @@ Dgn::LockStatus DgnDbLocks::_ReleaseLocks(Dgn::DgnLockSet const& locks, Dgn::Dgn
         for (auto& lock : locks)
             lock.ToJson(locksRequest[Locks::Locks][i++]);
         locksRequest[Locks::Description] = "";
-        auto result = m_connection->ReleaseLocks(locksRequest, db.GetBriefcaseId(), lastRevisionId, m_cancellationToken)->GetResult();
+        auto result = m_connection->DemoteLocks(locksRequest, db.GetBriefcaseId(), lastRevisionId, m_cancellationToken)->GetResult();
         if (result.IsSuccess())
             {
             return LockStatus::Success;
