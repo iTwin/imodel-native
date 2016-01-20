@@ -87,40 +87,6 @@ BEGIN_ECDBUNITTESTS_NAMESPACE
 #define BIND_BINARY(ParameterIndex, Val, binarySize, makeCopy)                                      \
       EXPECT_EQ (ECSqlStatus::Success,obj.m_bindValues.bindBinary (ParameterIndex, Val, binarySize, makeCopy));
 
-#ifdef CANNOT_REDEFINE_MACROS_ON_GCC
-
-//Methods to bind values to the named parameter.The status is assumed to be success in this case.
-#define BIND_NULL(ParameterName)                                                                    \
-      EXPECT_EQ (ECSqlStatus::Success,obj.m_bindValues.bindNull (ParameterName));
-#define BIND_INT(ParameterName, Val)                                                                \
-      EXPECT_EQ (ECSqlStatus::Success,obj.m_bindValues.bindInt (ParameterName, Val));
-#define BIND_LONG(ParameterName,Val)                                                                \
-      EXPECT_EQ (ECSqlStatus::Success,obj.m_bindValues.bindLong (ParameterName, Val));
-#define BIND_TEXT(ParameterName, Val, makeCopy)                                                     \
-      EXPECT_EQ (ECSqlStatus::Success,obj.m_bindValues.bindText (ParameterName, Val, makeCopy));
-#define BIND_DOUBLE(ParameterName, Val)                                                             \
-      EXPECT_EQ (ECSqlStatus::Success,obj.m_bindValues.bindDouble (ParameterName, Val));
-#define BIND_BOOLEAN(ParameterName, Val)                                                            \
-      EXPECT_EQ (ECSqlStatus::Success,obj.m_bindValues.bindBoolean (ParameterName, Val));
-#define BIND_DATETIME(ParameterName, Val)                                                           \
-      EXPECT_EQ (ECSqlStatus::Success,obj.m_bindValues.bindDateTime (ParameterName, Val));
-#define BIND_GEOMETRY(ParameterName, Val)                                                           \
-      EXPECT_EQ (ECSqlStatus::Success,obj.m_bindValues.bindGeometry (ParameterName, Val));
-#define BIND_POINT2D(ParameterName, Val)                                                            \
-      EXPECT_EQ (ECSqlStatus::Success,obj.m_bindValues.bindPoint2D (ParameterName, Val));
-#define BIND_POINT3D(ParameterName, Val)                                                            \
-      EXPECT_EQ (ECSqlStatus::Success,obj.m_bindValues.bindPoint3D (ParameterName, Val));
-#define BIND_ID(ParameterName, Val)                                                                 \
-      EXPECT_EQ (ECSqlStatus::Success,obj.m_bindValues.bindId(ParameterName, Val));
-#define BIND_STRUCT(ParameterName)                                                                  \
-      obj.m_bindValues.bindStruct(ParameterName))
-#define BIND_ARRAY(ParameterName, initialArrayCapacity)                                             \
-      obj.m_bindValues.bindArray(ParameterName, initialArrayCapacity)
-#define BIND_BINARY(ParameterName, Val, binarySize, makeCopy)                                       \
-      EXPECT_EQ (ECSqlStatus::Success,obj.m_bindValues.bindBinary (ParameterName, Val, binarySize, makeCopy));
-
-#endif
-  
 //Compares the bind status with the status specified by the user.
 #define BIND_NULL_STATUS(ParameterIndex, expectedStatus)                                            \
       EXPECT_EQ (expectedStatus,obj.m_bindValues.bindNull (ParameterIndex));
