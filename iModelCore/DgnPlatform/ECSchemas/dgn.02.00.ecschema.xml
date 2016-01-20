@@ -174,35 +174,39 @@
         </ECProperty>
     </ECStructClass>
 
-    <ECRelationshipClass typeName="AuthorityIssuesElementCode" description="Element has a code which was issued by the given authority" strength="referencing">
+    <ECEntityClass typeName="CodedObject" modifier="Abstract">
+        <ECCustomAttributes>
+            <ClassMap xmlns="ECDbMap.01.00">
+                <Indexes>
+                    <DbIndex>
+                        <IsUnique>True</IsUnique>
+                        <Properties>
+                            <string>Code.AuthorityId</string>
+                            <string>Code.Namespace</string>
+                            <string>Code.Value</string>
+                        </Properties>
+                    </DbIndex>
+                </Indexes>
+            </ClassMap>
+        </ECCustomAttributes>
+        <ECStructProperty propertyName="Code" typeName="AuthorityIssuedCode"/>
+    </ECEntityClass>
+    <ECRelationshipClass typeName="CodeIssuedByAuthority" description="Object has a code which was issued by the specified authority" strength="referencing">
         <!-- WIP: want ON DELETE RESTRICT? -->
-        <Source cardinality="(1,1)" roleLabel="issues code" polymorphic="false">
-            <Class class="Authority"/>
-        </Source>
-        <Target cardinality="(0,N)" roleLabel="has N codes" polymorphic="true">
-            <Class class="Element">
+        <Source cardinality="(0,N)" roleLabel="has N codes" polymorphic="true">
+            <Class class="CodedObject">
                 <Key>
-                    <Property name="Code.AuthorityId"/>
+                    <Property name="Code.AuthorityId" />
                 </Key>
             </Class>
-        </Target>
-    </ECRelationshipClass>
-
-    <ECRelationshipClass typeName="AuthorityIssuesModelCode" description="Model has a code which was issued by the given authority" strength="referencing">
-        <!-- WIP: want ON DELETE RESTRICT? -->
-        <Source cardinality="(1,1)" roleLabel="issues code" polymorphic="false">
-            <Class class="Authority"/>
         </Source>
-        <Target cardinality="(0,N)" roleLabel="has N codes" polymorphic="true">
-            <Class class="Model">
-                <Key>
-                    <Property name="Code.AuthorityId"/>
-                </Key>
-            </Class>
+        <Target cardinality="(1,1)" roleLabel="issues code" polymorphic="true">
+            <Class class="Authority" />
         </Target>
     </ECRelationshipClass>
 
     <ECEntityClass typeName="Model" modifier="Abstract">
+        <BaseClass>CodedObject</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="dgn.02.00">
                 <Restrictions>
@@ -215,20 +219,8 @@
                     <AppliesToSubclasses>True</AppliesToSubclasses>
                 </MapStrategy>
                 <ECInstanceIdColumn>Id</ECInstanceIdColumn>
-                <Indexes>
-                    <DbIndex>
-                        <Name>idx_dgn_Model_Code</Name>
-                        <IsUnique>True</IsUnique>
-                        <Properties>
-                            <string>Code.AuthorityId</string>
-                            <string>Code.Namespace</string>
-                            <string>Code.Value</string>
-                        </Properties>
-                    </DbIndex>
-                </Indexes>
             </ClassMap>
         </ECCustomAttributes>
-        <ECStructProperty propertyName="Code" typeName="AuthorityIssuedCode"/>
         <ECProperty propertyName="Label" typeName="string"/>
         <ECProperty propertyName="Properties" typeName="string"/>
         <ECProperty propertyName="Visibility" typeName="int"/>
@@ -331,6 +323,7 @@
     </ECRelationshipClass>
 
     <ECEntityClass typeName="Element" modifier="Abstract">
+        <BaseClass>CodedObject</BaseClass>
         <ECCustomAttributes>
             <ClassMap xmlns="ECDbMap.01.00">
                 <MapStrategy>
@@ -340,15 +333,6 @@
                 </MapStrategy>
                 <ECInstanceIdColumn>Id</ECInstanceIdColumn>
                 <Indexes>
-                    <DbIndex>
-                        <Name>idx_dgn_Element_Code</Name>
-                        <IsUnique>True</IsUnique>
-                        <Properties>
-                            <string>Code.AuthorityId</string>
-                            <string>Code.Namespace</string>
-                            <string>Code.Value</string>
-                        </Properties>
-                    </DbIndex>
                     <DbIndex>
                         <Name>idx_dgn_Element_ParentId</Name>
                         <IsUnique>False</IsUnique>
@@ -396,7 +380,6 @@
                 </PropertyMap>
             </ECCustomAttributes>
         </ECProperty>
-        <ECStructProperty propertyName="Code" typeName="AuthorityIssuedCode"/>
         <ECProperty propertyName="Label" typeName="string">
             <ECCustomAttributes>
                 <PropertyMap xmlns="ECDbMap.01.00">
