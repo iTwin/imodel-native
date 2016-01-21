@@ -125,11 +125,15 @@ BentleyStatus SchemaManager::ImportSchemas(const std::vector<ECSchemaPtr>& schem
             }
         }
 
+    m_db.NotifyOnSchemaChangedListeners();
+
     if (SUCCESS != m_db.Schemas ().ImportECSchemas (*schemaCache, ECDbSchemaManager::ImportOptions (true, true)))
         {
         BeAssert(false);
         return ERROR;
         }
+
+    m_db.NotifyOnSchemaChangedListeners();
 
     return SUCCESS;
     }

@@ -290,15 +290,7 @@ void DataSourceCache::UnRegisterSchemaChangeListener(IECDbSchemaChangeListener* 
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus DataSourceCache::UpdateSchemas(const std::vector<BeFileName>& schemaPaths)
     {
-    m_db.NotifyOnSchemaChangedListeners();
-
-    if (SUCCESS != SchemaManager(m_db).ImportSchemas(schemaPaths))
-        {
-        return ERROR;
-        }
-
-    m_db.NotifyOnSchemaChangedListeners();
-    return SUCCESS;
+    return SchemaManager(m_db).ImportSchemas(schemaPaths);
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -306,15 +298,7 @@ BentleyStatus DataSourceCache::UpdateSchemas(const std::vector<BeFileName>& sche
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus DataSourceCache::UpdateSchemas(const std::vector<ECSchemaPtr>& schemas)
     {
-    m_db.NotifyOnSchemaChangedListeners();
-
-    if (SUCCESS != SchemaManager(m_db).ImportSchemas(schemas))
-        {
-        return ERROR;
-        }
-
-    m_db.NotifyOnSchemaChangedListeners();
-    return SUCCESS;
+    return SchemaManager(m_db).ImportSchemas(schemas);
     }
 
 /*--------------------------------------------------------------------------------------+
