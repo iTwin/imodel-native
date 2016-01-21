@@ -245,8 +245,7 @@ void QueryViewController::_OnCategoryChange(bool singleEnabled)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void QueryViewController::QueryModelExtents(DRange3dR range, DgnViewportR vp)
     {
-    // make sure this is local variable so it is removed before the call to LoadElementsForUpdate below.
-    DgnDbRTreeFitFilter filter;
+    RTreeFitFilter filter;
 
     Statement getRange;
     getRange.Prepare(m_dgndb, _GetRTreeMatchSql(vp).c_str());

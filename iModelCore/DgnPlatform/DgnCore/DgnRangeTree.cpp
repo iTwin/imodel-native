@@ -1274,7 +1274,7 @@ bool RTreeFilter::AllPointsClippedByOnePlane(ConvexClipPlaneSetCR cps, size_t nP
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-int DgnDbRTreeFitFilter::_TestRTree(RTreeMatchFunction::QueryInfo const& info)
+int RTreeFitFilter::_TestRTree(RTreeMatchFunction::QueryInfo const& info)
     {
     RTree3dValCP testRange = (RTree3dValCP) info.m_coords;
 
