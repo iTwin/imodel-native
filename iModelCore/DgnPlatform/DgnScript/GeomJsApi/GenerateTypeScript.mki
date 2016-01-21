@@ -28,6 +28,7 @@ dgnScriptGen =% $(OutDgnPlatformBuild)DgnScriptGen/
 always:
     !~@mkdir $(dgnScriptGen)
     !~@mkdir $(dgnScriptGen)DgnPlatform
+    !~@mkdir $(dgnScriptGen)_doc
 
 geomJsApiTsDir = $(dgnScriptDir)GeomJsApi/ts/
 
