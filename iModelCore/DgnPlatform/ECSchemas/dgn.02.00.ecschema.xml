@@ -363,13 +363,6 @@
         </ECCustomAttributes>
         <BaseClass>WebMercatorModel</BaseClass>
     </ECEntityClass>
-    <ECEntityClass typeName="SystemModel">
-        <!-- A SystemModel contains SystemElements which are used to model functional systems -->
-        <ECCustomAttributes>
-            <ClassHasHandler xmlns="dgn.02.00"/>
-        </ECCustomAttributes>
-        <BaseClass>Model</BaseClass>
-    </ECEntityClass>
 
     <ECRelationshipClass typeName="ModelContainsElements" description="Associates elements with a model" strength="embedding">
         <ECCustomAttributes>
@@ -477,10 +470,6 @@
     </ECEntityClass>
     <ECEntityClass typeName="DictionaryElement" modifier="Abstract">
         <BaseClass>DefinitionElement</BaseClass>
-    </ECEntityClass>
-    <ECEntityClass typeName="SystemElement" modifier="Abstract">
-        <!-- A SystemElement is used to model functional systems -->
-        <BaseClass>Element</BaseClass>
     </ECEntityClass>
     <ECEntityClass typeName="SpatialElement" modifier="Abstract">
         <!-- An element that occupies real world space -->

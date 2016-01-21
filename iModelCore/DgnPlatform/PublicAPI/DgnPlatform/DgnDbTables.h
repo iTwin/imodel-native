@@ -62,8 +62,6 @@
 #define DGN_CLASSNAME_SpatialElement        "SpatialElement"
 #define DGN_CLASSNAME_SpatialGroupElement   "SpatialGroupElement"
 #define DGN_CLASSNAME_SpatialRedlineModel   "SpatialRedlineModel"
-#define DGN_CLASSNAME_SystemElement         "SystemElement"
-#define DGN_CLASSNAME_SystemModel           "SystemModel"
 #define DGN_CLASSNAME_TextAnnotationSeed    "TextAnnotationSeed"
 #define DGN_CLASSNAME_Texture               "Texture"
 #define DGN_CLASSNAME_TrueColorAuthority    "TrueColorAuthority"
