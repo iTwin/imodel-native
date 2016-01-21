@@ -81,31 +81,4 @@ typedef RTree3dVal const& RTree3dValCR;
 typedef RTree3dVal const* RTree3dValCP;
 typedef RTree3dVal*       RTree3dValP;
 
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-//=======================================================================================
-// @bsiclass                                                    Keith.Bentley   12/11
-//=======================================================================================
-struct RTree3dBoundsTest : RTreeMatchFunction
-{
-    RTree3dVal  m_bounds;
-
-    RTree3dBoundsTest(DbR db) : RTreeMatchFunction("DGN_Rtree", 1) {}
-    int _TestRange(QueryInfo const& info) override
-        {
-//__PUBLISH_SECTION_END__
-        BeAssert(6 == info.m_nCoord);
-//__PUBLISH_SECTION_START__
-        info.m_within = Within::Outside;
-        RTree3dValCP pt = (RTree3dValCP) info.m_coords;
-
-        if (!m_bounds.IsValid())
-            m_bounds = *pt;
-        else
-            m_bounds.Union(*pt);
-
-        return  BE_SQLITE_OK;
-        }
-};
-#endif
-
 END_BENTLEY_SQLITE_NAMESPACE
