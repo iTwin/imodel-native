@@ -53,6 +53,9 @@ TEST_F(DgnColorTests, TrueColors)
     auto colorId4 = color4.GetColorId();
     EXPECT_TRUE(colorId4.IsValid());
 
+    // Color count in TestBook1
+    EXPECT_EQ(1, DgnTrueColor::QueryCount(db, "TestBook1"));
+
     EXPECT_EQ(4, DgnTrueColor::QueryCount(db));
 
     int i=0;
