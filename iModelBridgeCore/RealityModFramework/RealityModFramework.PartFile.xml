@@ -65,13 +65,7 @@
     </Part>
 
     
-
-    
-
-    
-
-    
-    
+   
     <Part Name="Reality-Examples">
         <SubPart PartName="DownloadEngineExample"/>
         <SubPart PartName="RealityDbECPlugin"/>
@@ -200,6 +194,12 @@
         <SubPart PartName="Reality-Examples"/>
         <SubPart PartName="RealityDbECPluginCNuGet"/>
         <SubPart PartName="RealityModFrameworkTested"/>
+        <Directories DirectoryListName="RealityModFrameworkDirList" />
+    </Product>
+
+    <Product Name="RealityContextServices">
+        <SubPart PartName="RealityDbECPluginCNuGet"/>
+        <!--<SubPart PartName="RealityModFrameworkTested"/>-->
         <Directories DirectoryListName="RealityModFrameworkDirList" />
     </Product>
 
