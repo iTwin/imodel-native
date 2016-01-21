@@ -265,7 +265,7 @@ TEST_F(ECSqlNavigationPropertyTestFixture, SingleInstanceNavProp_ForeignKeyMappi
                                       "    <ECEntityClass typeName='AnnotationElement'>"
                                       "       <BaseClass>Element</BaseClass>"
                                       "       <BaseClass>GeometrySource3d</BaseClass>"
-                                      "        <ECProperty propertyName='Text' typeName='string' />"
+                                      "       <ECProperty propertyName='Text' typeName='string' />"
                                       "    </ECEntityClass>"
                                       "    <ECEntityClass typeName='PhysicalElement'>"
                                       "     <ECCustomAttributes>"
