@@ -21,12 +21,30 @@
 #   define DEBUG_PRINTF(fmt, ...)
 #endif
 
+#if defined (TRACE_QUERY_LOGIC)
+static void initRenderLogging()
+    {
+    static bool s_inited;
+    if (s_inited)
+        return;
+
+    s_inited = true;
+    NativeLogging::LoggingConfig::SetSeverity ("ClientThread", NativeLogging::LOG_DEBUG);
+    NativeLogging::LoggingConfig::SetSeverity ("RenderThread", NativeLogging::LOG_DEBUG);
+    NativeLogging::LoggingConfig::SetSeverity ("QueryThread", NativeLogging::LOG_DEBUG);
+    NativeLogging::LoggingConfig::SetSeverity ("UnknownThread", NativeLogging::LOG_DEBUG);
+    }
+#endif
+
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   07/12
 +---------------+---------------+---------------+---------------+---------------+------*/
 QueryViewController::QueryViewController(DgnDbR dgndb, DgnViewId id) : CameraViewController(dgndb, id), m_queryModel(*new QueryModel(dgndb))
     {
+#if defined (TRACE_QUERY_LOGIC)
+    initRenderLogging();
+#endif
     m_forceNewQuery = true; 
     m_maxElementMemory = 0;
     m_noQuery = false;
