@@ -28,32 +28,41 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
     //! Logging serverity level.
     enum LoggingSeverity { }
 
-    //! Access to the message log
+    /** Access to the message log */
     class Logging implements BeJsProjection_SuppressConstructor {
 
-        //! Set the severity level for the specified category
-        //! @param catagory     The logging category
-        //! @param severity     The minimum severity to display. Note that messages will not be logged if their severity is below this level.
+        /**
+        * Set the severity level for the specified category
+        * @param category     The logging category
+        * @param severity     The minimum severity to display. Note that messages will not be logged if their severity is below this level.
+        */
         static SetSeverity(category: Bentley_Utf8String, severity: cxx_enum_class_uint32_t<LoggingSeverity>): void;
 
-        //! Test if the specified severity level is enabled for the specified category
-        //! @param category     The logging category
-        //! @param severity     The severity to test
+        /**
+        * Test if the specified severity level is enabled for the specified category
+        * @param category     The logging category
+        * @param severity     The severity to test
+        */
         static IsSeverityEnabled(category: Bentley_Utf8String, severity: cxx_enum_class_uint32_t<LoggingSeverity>): cxx_bool;
 
-        //! Send a message to the log
-        //! @param catagory     The logging category
-        //! @param severity     The severity of the message. Note that the message will not be logged if \a severity is below the severity level set by calling SetSeverity
-        //! @param message      The message to log
+        /**
+        * Send a message to the log
+        * @param category     The logging category
+        * @param severity     The severity of the message. Note that the message will not be logged if \a severity is below the severity level set by calling SetSeverity
+        * @param message      The message to log
+        */
         static Message(category: Bentley_Utf8String, severity: cxx_enum_class_uint32_t<LoggingSeverity>, message: Bentley_Utf8String): void;
     }
 
+    /** A 3-D placement */
     class Placement3d implements IDisposable, BeJsProjection_SuppressConstructor, BeJsProjection_RefCounted
     {
         /*** NATIVE_TYPE_NAME = JsPlacement3d ***/
         constructor(origin: DPoint3dP, angles: YawPitchRollAnglesP);
 
+        /** The origin of the placement */
         Origin: DPoint3dP;
+        /** The angles of the placement */
         Angles: YawPitchRollAnglesP;
 
         OnDispose(): void;
@@ -62,7 +71,7 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
 
     type Placement3dP = cxx_pointer<Placement3d>;
 
-    //! Script Management Utilities
+    /** Script Management Utilities */
     class Script implements BeJsProjection_SuppressConstructor {
 
         /**
@@ -88,10 +97,13 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
         static ReportError(description: Bentley_Utf8String): void;
     }
 
+    /** A DgnDb */
     class DgnDb implements IDisposable, BeJsProjection_RefCounted, BeJsProjection_SuppressConstructor
     {
         /*** NATIVE_TYPE_NAME = JsDgnDb ***/
+        /** The collection of models in the DgnDb */
         Models: DgnModelsP;
+        /** The collection of ECSchemas in the DgnDb */
         Schemas: SchemaManagerP;
         OnDispose(): void;
         Dispose(): void;
@@ -99,11 +111,13 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
 
     type DgnDbP = cxx_pointer<DgnDb>;
 
-    //! A wrapper for 64-bit element ids, etc.
+    /** A wrapper for 64-bit element ids, etc. */
     class DgnObjectId implements IDisposable, BeJsProjection_SuppressConstructor, BeJsProjection_RefCounted
     {
         /*** NATIVE_TYPE_NAME = JsDgnObjectId ***/
+        /** Tests if the ID is valid */
         IsValid(): cxx_bool;
+        /** Tests if the ID matches another ID @param id The other ID */
         Equals(id: DgnObjectIdP): cxx_bool;
         OnDispose(): void;
         Dispose(): void;
@@ -111,6 +125,7 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
 
     type DgnObjectIdP = cxx_pointer<DgnObjectId>;
 
+    /** Used when iterating over a DgnObjectIdSet */
     class DgnObjectIdSetIterator implements IDisposable, BeJsProjection_SuppressConstructor, BeJsProjection_RefCounted
     {
         /*** NATIVE_TYPE_NAME = JsDgnObjectIdSetIterator ***/
@@ -120,17 +135,24 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
 
     type DgnObjectIdSetIteratorP = cxx_pointer<DgnObjectIdSetIterator>;
 
-    //! A wrapper for 64-bit element ids, etc.
+    /** A set of DgnObjectIds */
     class DgnObjectIdSet implements IDisposable, BeJsProjection_SuppressConstructor, BeJsProjection_RefCounted
     {
         /*** NATIVE_TYPE_NAME = JsDgnObjectIdSet ***/
+        /** Query the number of IDs in the set. */
         Size(): cxx_double;
+        /** Remove all IDs from the set. */
         Clear(): void;
 
+        /** Insert an ID into the set. */
         Insert(id: DgnObjectIdP): void;
+        /** Get an iterator positioned at the start of the set. */
         Begin(): DgnObjectIdSetIteratorP;
+        /** Query if the iterator is at a valid position in the set. @param iter The iterator. @return true if the iterator's position is valid.   */
         IsValid(iter: DgnObjectIdSetIteratorP): cxx_bool;
+        /** Move the iterator to the next position in the set. @param iter The iterator @return true if the new position is valid. */
         ToNext(iter: DgnObjectIdSetIteratorP): cxx_bool;
+        /** Get the value to which the iterator points in the set. @param iter The iterator @return The current ID value. */
         GetId(iter: DgnObjectIdSetIteratorP): DgnObjectIdP;
 
         OnDispose(): void;
@@ -139,6 +161,7 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
 
     type DgnObjectIdSetP = cxx_pointer<DgnObjectIdSet>;
 
+    /** A DgnCode */
     class AuthorityIssuedCodeValue implements IDisposable, BeJsProjection_SuppressConstructor, BeJsProjection_RefCounted
     {
         /*** NATIVE_TYPE_NAME = JsAuthorityIssuedCode ***/
@@ -148,10 +171,13 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
 
     type AuthorityIssuedCode = cxx_pointer<AuthorityIssuedCodeValue>;
 
+    /** A collection of DgnModels */
     class DgnModels implements IDisposable, BeJsProjection_RefCounted, BeJsProjection_SuppressConstructor
     {
         /*** NATIVE_TYPE_NAME = JsDgnModels ***/
+        /** Look up a DgnModelId by the model's code. @param name The code to look up. @return The ID of the corresponding model if found */
         QueryModelId(name: AuthorityIssuedCode): DgnObjectIdP;
+        /** Find or load the model identified by the specified ID. @param id The model ID. @return The loaded model or null if not found */
         GetModel(id: DgnObjectIdP): DgnModelP;
         OnDispose(): void;
         Dispose(): void;
@@ -159,15 +185,23 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
 
     type DgnModelsP = cxx_pointer<DgnModels>;
 
+    /** A Category */
     class DgnCategory implements IDisposable, BeJsProjection_RefCounted, BeJsProjection_SuppressConstructor
     {
         /*** NATIVE_TYPE_NAME = JsDgnCategory ***/
+        /** The DgnDb that contains this Category */
         DgnDb: DgnDbP;
+        /** The ID of this Category */
         CategoryId: DgnObjectIdP;
+        /** The ID of the default SubCategory of this Category */
         DefaultSubCategoryId: DgnObjectIdP;
+        /** The name of this Category */
         CategoryName: Bentley_Utf8String;
+        /** Look up the ID of the Category with the specified name. @param name The name to look up. @param db The DgnDb that contains the Category. @return The ID of the Category if found */
         static QueryCategoryId(name: Bentley_Utf8String, db: DgnDbP): DgnObjectIdP;
+        /** Find or load the Category with the specified ID. @param id The ID to look up. @param db The DgnDb that contains the Category. @return The Category if found */
         static QueryCategory(id: DgnObjectIdP, db: DgnDbP): DgnCategoryP;
+        /** Get the set of all DgnCategoryIDs in the Db. @param db The DgnDb to query. @return the set of all category IDs. */
         static QueryCategories(db: DgnDbP): DgnObjectIdSetP;
         OnDispose(): void;
         Dispose(): void;
@@ -175,13 +209,20 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
 
     type DgnCategoryP = cxx_pointer<DgnCategory>;
 
+    /** An Element */
     class DgnElement implements IDisposable, BeJsProjection_RefCounted, BeJsProjection_SuppressConstructor {
         /*** NATIVE_TYPE_NAME = JsDgnElement ***/ 
+        /** The Element's ID */
         ElementId: DgnObjectIdP;
+        /** The Element's Code */
         Code: AuthorityIssuedCode;
+        /** The Model that contains the Element */
         Model: DgnModelP;
+        /** Insert this Element into its Model in the DgnDb. @return non-zero if the insert failed. */
         Insert(): cxx_int32_t;
+        /** Update this Element in its Model in the DgnDb. @return non-zero if the update failed. */
         Update(): cxx_int32_t;
+        /** Set the Parent of this Element. @param parent The parent element. */
         SetParent(parent: cxx_pointer<DgnElement>): void;
         OnDispose(): void;
         Dispose(): void;
@@ -189,6 +230,7 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
 
     type DgnElementP = cxx_pointer<DgnElement>;
 
+    /** A physical element */
     class PhysicalElement extends DgnElement implements IDisposable, BeJsProjection_RefCounted, BeJsProjection_SuppressConstructor
     {
         /*** NATIVE_TYPE_NAME = JsPhysicalElement ***/
@@ -197,7 +239,7 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
          * Create a new PhysicalElement
          * @param model The model that is to contain the new element
          * @param categoryId The ID of the category to assign to the new element
-         * @paeram elementClassname Optional. The name of the element's ECClass. If not specified, then dgn.PhysicalElement is used
+         * @param elementClassName Optional. The name of the element's ECClass. If not specified, then dgn.PhysicalElement is used
          * @return a new, non-persistent PhysicalElement or null if one of the parameters is invalid
          * @see Insert
         */
@@ -206,11 +248,16 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
 
     type PhysicalElementP = cxx_pointer<PhysicalElement>;
 
+    /** A Model in a DgnDb */
     class DgnModel implements IDisposable, BeJsProjection_RefCounted, BeJsProjection_SuppressConstructor {
         /*** NATIVE_TYPE_NAME = JsDgnModel ***/
+        /** The ID of this model */
         ModelId: DgnObjectIdP;
+        /** The Code of this model */
         Code: AuthorityIssuedCode;
+        /** The DgnDb that contains this model */
         DgnDb: DgnDbP;
+        /** Make a DgnModelCode from a string. @param name The name to use. @return The DgnModelCode based on the specified name. */
         static CreateModelCode(name: Bentley_Utf8String): AuthorityIssuedCode;
         OnDispose(): void;
         Dispose(): void;
@@ -284,10 +331,10 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
          */
         MakeParameters(): ECInstanceP;
 
-        /** Place an instance of a component 
-         * If \a variation has instance parameters, then the \a instanceParameters argument may be passed into specific the instance parameter values to use.
-         * If the values in \a instanceParameters differs from the instance parameters of \a variation, then a unique instance is created.
-         * If \a instanceParameters is not specified or if it matches the instance parameters of \a variation, then a copy of \a variation is made.
+        /** Place an instance of a component.
+         * If \a variation has instance parameters, then the \a instanceParameters argument may be supplied in order to supply the values of the instance parameter values to use.
+         * If the values in \a instanceParameters differ from the instance parameters of \a variation, then a unique instance is created.
+         * If \a instanceParameters is not supplied or if it matches the instance parameters of \a variation, then a copy of \a variation is made.
          * @note Per-type parameters are ignored when comparing \a parameters to \a variation. It is illegal for the caller to specify new values for per-type parameters.
          * @param targetModel The model where the new instance will be placed.
          * @param variation The variation that is to be turned into an instance.
@@ -299,18 +346,17 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
         MakeInstanceOfVariation(targetModel: DgnModelP, variation: DgnElementP, instanceParameters: ECInstanceP, code: AuthorityIssuedCode): DgnElementP;
 
         /**
-         * Make a unique instance that is not based on a pre-defined variation. This method must be used if \a parameters include per-instance parameters that do not match the default values
+         * Make a unique instance that is not based on a pre-defined variation. This method must be used if \a instanceParameters includes per-instance parameters that do not match the default values
          * of any pre-defined variation. This method may also be used for components that do not have pre-defined variations.
          * @note This function should not be used when the compponent definition does define a set of variations. In that case, call MakeInstanceOfVariation instead.
-         * @param[out] stat        Optional. If not null, then an error code is stored here in case the creation of the instance fails.
          * @param[in] targetModel  The model where the instance is to be inserted
-         * @param[in] parameters   The parameters that specify the desired variation
+         * @param[in] instanceParameters The parameters for the new instance
          * @param[in] code         Optional. The code to assign to the new item. If invalid, then a code will be generated by the CodeAuthority associated with this component model
          * @return A handle to the instance that was created and persisted in \a destModel. If more than one element was created, the returned element is the parent. If the instance
          * cannot be created, then this function returns nullptr and sets \a stat to a non-error status. Some of the possible error values include:
-         *     * DgnDbStatus::WrongClass - \a parameters is not an instance of a component definition ECClass.
-         *     * DgnDbStatus::WrongDgnDb - \a parameters and \a targetModel must both be in the same DgnDb.
-         *     * DgnDbStatus::BadRequest - The component's geometry could not be generated, possibly because the values in \a parameters are invalid.
+         *     * DgnDbStatus::WrongClass - \a instanceParameters is not an instance of a component definition ECClass.
+         *     * DgnDbStatus::WrongDgnDb - \a instanceParameters and \a targetModel must both be in the same DgnDb.
+         *     * DgnDbStatus::BadRequest - The component's geometry could not be generated, possibly because the values in \a instanceParameters are invalid.
          * @see MakeInstanceOfVariation
          */
         MakeUniqueInstance(targetModel: DgnModelP, instanceParameters: ECInstanceP, code: AuthorityIssuedCode): DgnElementP;
@@ -387,8 +433,10 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
 
     type ECInstanceP = cxx_pointer<ECInstance>;
 
-    //! Provides read-only access to ad-hoc properties defined on an IECInstance.
-    //! Adhoc properties are name-value pairs stored on an ECInstance.
+    /**
+    * Provides read-only access to ad-hoc properties defined on an IECInstance.
+    * Adhoc properties are name-value pairs stored on an ECInstance.
+    */
     class AdhocPropertyQuery implements IDisposable, BeJsProjection_RefCounted, BeJsProjection_SuppressConstructor
     {
         /*** NATIVE_TYPE_NAME = JsAdhocPropertyQuery ***/

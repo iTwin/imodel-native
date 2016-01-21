@@ -958,8 +958,6 @@
             </ClassMap>
             <LinkTableRelationshipMap xmlns="ECDbMap.01.00">
                 <AllowDuplicateRelationships>True</AllowDuplicateRelationships>
-                <SourceECInstanceIdColumn>RootElementId</SourceECInstanceIdColumn>
-                <TargetECInstanceIdColumn>DependentElementId</TargetECInstanceIdColumn>
             </LinkTableRelationshipMap>
         </ECCustomAttributes>
         <Source cardinality="(0,N)" polymorphic="true">
