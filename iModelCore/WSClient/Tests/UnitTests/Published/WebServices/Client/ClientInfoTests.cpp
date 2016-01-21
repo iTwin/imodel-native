@@ -31,6 +31,18 @@ TEST_F(ClientInfoTests, Create_PassedMandatoryValues_SetsValues)
     EXPECT_STREQ("en", info->GetLanguage().c_str());
     }
 
+TEST_F(ClientInfoTests, Create_PassedProductId_SetsProductId)
+    {
+    auto info = ClientInfo::Create("Test-AppName", BeVersion(4, 2, 6, 9), "TestAppGUID", "1234");
+    EXPECT_STREQ("1234", info->GetApplicationProductId().c_str());
+    }
+
+TEST_F(ClientInfoTests, Create_NotPassedProductId_SetsEmptyProductId)
+    {
+    auto info = ClientInfo::Create("Test-AppName", BeVersion(4, 2, 6, 9), "TestAppGUID");
+    EXPECT_STREQ("", info->GetApplicationProductId().c_str());
+    }
+
 TEST_F(ClientInfoTests, FillHttpRequestHeaders_ValuesPassedToCreate_SetsCorrespondingHeaders)
     {
     ClientInfo info("Test-AppName", BeVersion(4, 2, 6, 9), "TestAppGUID", "TestDeviceId", "TestSystem");
