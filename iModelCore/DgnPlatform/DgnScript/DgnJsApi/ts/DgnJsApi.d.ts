@@ -1,3 +1,10 @@
+/*--------------------------------------------------------------------------------------+
+|
+|     $Source: DgnScript/DgnJsApi/ts/DgnJsApi.d.ts $
+|
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|
++--------------------------------------------------------------------------------------*/
 declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/ 
 {
     /*** BEGIN_FORWARD_DECLARATIONS ***/
@@ -58,12 +65,26 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
     //! Script Management Utilities
     class Script implements BeJsProjection_SuppressConstructor {
 
-        //! Make sure the that specified library is loaded
-        //! @param libName  The name of the library that is to be loaded
+        /**
+         * Make sure that the specified script is loaded.
+         * @param db         The name of the DgnDb to check for a local script library
+         * @param scriptName The name which was used to register the script in the script librray
+         * @return 0 (SUCCESS) if the script was loaded; otherwise, a non-zero error code.
+         */
+        static LoadScript(db: DgnDbP, scriptName: Bentley_Utf8String): cxx_int32_t;
+
+        /**
+         * Make sure that the specified library is loaded
+         * @param libName The name of the library that is to be loaded
+         * @note This function differs from LoadScript in that ImportLibrary is used to activate libraries that are provided by the app or the domain,
+         * where LoadScript is used to load scripts that are found in the script library.
+         */
         static ImportLibrary(libName: Bentley_Utf8String): void;
 
-        //! Report an error. An error is more than a message. The platform is will treat it as an error. For example, the platform may terminate the current command.
-        //! @param description  A description of the error
+        /**
+         * Report an error. An error is more than a message. The platform is will treat it as an error. For example, the platform may terminate the current command.
+         * @param description A description of the error
+         */
         static ReportError(description: Bentley_Utf8String): void;
     }
 

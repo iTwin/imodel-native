@@ -65,9 +65,10 @@ DgnDbStatus DgnAuthority::Insert()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnCode DgnAuthority::_CloneCodeForImport(DgnElementCR srcElem, DgnModelR destModel, DgnImportContext& importer) const
+DgnDbStatus DgnAuthority::_CloneCodeForImport(DgnCodeR code, DgnElementCR srcElem, DgnModelR destModel, DgnImportContext& importer) const
     {
-    return importer.IsBetweenDbs() ? srcElem.GetCode() : DgnCode();
+    code = importer.IsBetweenDbs() ? srcElem.GetCode() : DgnCode();
+    return DgnDbStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -347,6 +348,7 @@ struct SystemAuthority
         TrueColor = 5LL,
         Model = 6LL,
         Component = 7LL,    // Component instances. Code value is combination of component name, component parameter set, and unique integer ID
+        GeomPart = 8LL,
     };
 
     struct Info
@@ -403,6 +405,7 @@ DbResult DgnDb::CreateAuthorities()
             { "DgnColors", SystemAuthority::TrueColor, dgn_AuthorityHandler::TrueColor::GetHandler() },
             { "DgnModels", SystemAuthority::Model, dgn_AuthorityHandler::Model::GetHandler() },
             { "DgnComponent", SystemAuthority::Component, dgn_AuthorityHandler::Component::GetHandler() },
+            { "DgnGeomPart", SystemAuthority::GeomPart, dgn_AuthorityHandler::GeomPart::GetHandler() },
         };
 
     for (auto const& info : infos)
@@ -471,6 +474,7 @@ DgnCode ResourceAuthority::CreateResourceCode(Utf8StringCR name, Utf8StringCR na
 DgnAuthorityId ResourceAuthority::GetResourceAuthorityId() { return SystemAuthority::GetId(SystemAuthority::Resource); }
 DgnAuthorityId MaterialAuthority::GetMaterialAuthorityId() { return SystemAuthority::GetId(SystemAuthority::Material); }
 DgnAuthorityId CategoryAuthority::GetCategoryAuthorityId() { return SystemAuthority::GetId(SystemAuthority::Category); }
+DgnAuthorityId GeomPartAuthority::GetGeomPartAuthorityId() { return SystemAuthority::GetId(SystemAuthority::GeomPart); }
 DgnAuthorityId TrueColorAuthority::GetTrueColorAuthorityId() { return SystemAuthority::GetId(SystemAuthority::TrueColor); }
 
 /*---------------------------------------------------------------------------------**//**
@@ -527,6 +531,14 @@ bool ComponentDef::IsComponentVariationCode(DgnCode const& icode)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnCode GeomPartAuthority::CreateGeomPartCode(Utf8StringCR ns, Utf8StringCR name)
+    {
+    return SystemAuthority::CreateCode(SystemAuthority::GeomPart, ns, name);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnCode DgnCode::CreateEmpty()
@@ -573,14 +585,6 @@ bool DgnCode::operator<(DgnCode const& rhs) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnAuthorityCPtr ICodedObject::GetCodeAuthority() const
-    {
-    return GetDgnDb().Authorities().GetAuthority(GetCode().GetAuthority());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   01/16
-+---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus ICodedObject::SetCode(DgnCode const& newCode)
     {
     DgnCode oldCode = GetCode();
@@ -596,6 +600,14 @@ DgnDbStatus ICodedObject::SetCode(DgnCode const& newCode)
         _SetCode(oldCode);
 
     return status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnAuthorityCPtr ICodedObject::GetCodeAuthority() const
+    {
+    return GetDgnDb().Authorities().GetAuthority(GetCode().GetAuthority());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -649,6 +661,18 @@ DgnDbStatus ResourceAuthority::_ValidateCode(ICodedObjectCR obj) const
         return DgnDbStatus::InvalidName;
 
     return DgnDbStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus GeomPartAuthority::_ValidateCode(ICodedObjectCR obj) const
+    {
+    auto status = T_Super::_ValidateCode(obj);
+    if (DgnDbStatus::Success == status && nullptr == obj.ToGeomPart())
+        status = DgnDbStatus::InvalidCodeAuthority;
+
+    return status;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -723,4 +747,51 @@ bool DgnModel::_SupportsCodeAuthority(DgnAuthorityCR auth) const
     return SystemAuthority::GetId(SystemAuthority::Local) != auth.GetAuthorityId();
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/16
++---------------+---------------+---------------+---------------+---------------+------*/
+uint64_t DgnAuthority::RestrictedAction::Parse(Utf8CP name)
+    {
+    if (0 == BeStringUtilities::Stricmp(name, "validatecode"))
+        return ValidateCode;
+    else if (0 == BeStringUtilities::Stricmp(name, "regeneratecode"))
+        return RegenerateCode;
+    else if (0 == BeStringUtilities::Stricmp(name, "clonecode"))
+        return CloneCode;
+    else
+        return T_Super::Parse(name);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus DgnAuthority::ValidateCode(ICodedObjectCR obj) const
+    {
+    return GetAuthorityHandler()._IsRestrictedAction(RestrictedAction::ValidateCode) ? DgnDbStatus::MissingHandler : _ValidateCode(obj);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus DgnAuthority::CloneCodeForImport(DgnCodeR code, DgnElementCR src, DgnModelR model, DgnImportContext& context) const
+    {
+    return GetAuthorityHandler()._IsRestrictedAction(RestrictedAction::CloneCode) ? DgnDbStatus::MissingHandler : _CloneCodeForImport(code, src, model, context);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus DgnAuthority::RegenerateCode(DgnCodeR code, ICodedObjectCR codedObject) const
+    {
+    return GetAuthorityHandler()._IsRestrictedAction(RestrictedAction::RegenerateCode) ? DgnDbStatus::MissingHandler : _RegenerateCode(code, codedObject);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnCode::Iterator::Iterator(DgnDbR db)
+    {
+    static const Utf8CP s_ecsql = "SELECT Code.AuthorityId,Code.[Value],Code.Namespace,ECInstanceId FROM " DGN_SCHEMA("CodedObject");
+    Prepare(db, s_ecsql, 3);
+    }
 

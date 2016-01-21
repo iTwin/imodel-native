@@ -67,7 +67,7 @@ private:
     virtual LockStatus _QueryLocksHeld(bool& held, LockRequestCR reqs, DgnDbR db) override;
     virtual LockRequest::Response _AcquireLocks(LockRequestCR reqs, DgnDbR db) override;
     virtual LockStatus _RelinquishLocks(DgnDbR db) override;
-    virtual LockStatus _ReleaseLocks(DgnLockSet const& locks, DgnDbR db) override;
+    virtual LockStatus _DemoteLocks(DgnLockSet const& locks, DgnDbR db) override;
     virtual LockStatus _QueryLockLevel(LockLevel& level, LockableId lockId, DgnDbR db) override;
     virtual LockStatus _QueryLocks(DgnLockSet& locks, DgnDbR db) override;
     virtual LockStatus _QueryOwnership(DgnLockOwnershipR ownership, LockableId lockId) override;
@@ -233,16 +233,16 @@ LockStatus LocksServer::_RelinquishLocks(DgnDbR db)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   11/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-LockStatus LocksServer::_ReleaseLocks(DgnLockSet const& locks, DgnDbR db)
+LockStatus LocksServer::_DemoteLocks(DgnLockSet const& locks, DgnDbR db)
     {
     if (m_offline)
         return LockStatus::ServerUnavailable;
 
-    Dump("ReleaseLocks: None");
+    Dump("DemoteLocks: None");
     Relinquish(locks, db);
-    Dump("ReleaseLocks: Shared");
+    Dump("DemoteLocks: Shared");
     Reduce(locks, db);
-    Dump("ReleaseLocks: Finished");
+    Dump("DemoteLocks: Finished");
 
     return LockStatus::Success;
     }
@@ -1313,7 +1313,7 @@ static void touchElement(DgnElementCR el)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   11/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(DoubleBriefcaseTest, ReleaseLocks)
+TEST_F(DoubleBriefcaseTest, DemoteLocks)
     {
     SetupDbs();
     DgnDbR db = *m_dbA;
@@ -1334,7 +1334,7 @@ TEST_F(DoubleBriefcaseTest, ReleaseLocks)
     // We can demote model lock from exclusive to shared while retaining element lock
     DgnLockSet toRelease;
     toRelease.insert(DgnLock(model2dLockId, LockLevel::Shared));
-    EXPECT_EQ(LockStatus::Success, db.Locks().ReleaseLocks(toRelease));
+    EXPECT_EQ(LockStatus::Success, db.Locks().DemoteLocks(toRelease));
     ExpectLevel(*model2d, LockLevel::Shared);
     ExpectLevel(*elem2d2, LockLevel::Exclusive);
     ExpectLevel(db, LockLevel::Shared);
@@ -1342,7 +1342,7 @@ TEST_F(DoubleBriefcaseTest, ReleaseLocks)
     // Releasing shared lock on model also release lock on element within that model (but not the element in the other model)
     toRelease.clear();
     toRelease.insert(DgnLock(model2dLockId, LockLevel::None));
-    EXPECT_EQ(LockStatus::Success, db.Locks().ReleaseLocks(toRelease));
+    EXPECT_EQ(LockStatus::Success, db.Locks().DemoteLocks(toRelease));
     ExpectLevel(*model2d, LockLevel::None);
     ExpectLevel(*elem2d2, LockLevel::None);
     ExpectLevel(*elem3d2, LockLevel::Exclusive);
@@ -1357,18 +1357,18 @@ TEST_F(DoubleBriefcaseTest, ReleaseLocks)
     LockableId model3dLockId = MakeLockableId(*model3d);
     toRelease.clear();
     toRelease.insert(DgnLock(model3dLockId, LockLevel::Shared));
-    EXPECT_EQ(LockStatus::Success, db.Locks().ReleaseLocks(toRelease));
+    EXPECT_EQ(LockStatus::Success, db.Locks().DemoteLocks(toRelease));
     ExpectLevel(*model3d, LockLevel::Shared);
     ExpectLevel(*elem3d2, LockLevel::Exclusive);
 
     // Cannot release model lock if elements within it have been modified
     toRelease.clear();
     toRelease.insert(DgnLock(model3dLockId, LockLevel::None));
-    EXPECT_EQ(LockStatus::LockUsed, db.Locks().ReleaseLocks(toRelease));
+    EXPECT_EQ(LockStatus::LockUsed, db.Locks().DemoteLocks(toRelease));
 
     // If we undo the element change, we can release the locks
     EXPECT_EQ(DgnDbStatus::Success, db.Txns().ReverseTo(txnId));
-    EXPECT_EQ(LockStatus::Success, db.Locks().ReleaseLocks(toRelease));
+    EXPECT_EQ(LockStatus::Success, db.Locks().DemoteLocks(toRelease));
     ExpectLevel(*elem3d2, LockLevel::None);
     ExpectLevel(*model3d, LockLevel::None);
     

@@ -313,7 +313,7 @@ private:
         }
     virtual LockRequest::Response _AcquireLocks(LockRequestR) override { return LockRequest::Response(LockStatus::Success); }
     virtual LockStatus _RelinquishLocks() override { return LockStatus::Success; }
-    virtual LockStatus _ReleaseLocks(DgnLockSet& locks) override { return LockStatus::Success; }
+    virtual LockStatus _DemoteLocks(DgnLockSet& locks) override { return LockStatus::Success; }
     virtual void _OnElementInserted(DgnElementId) override { }
     virtual void _OnModelInserted(DgnModelId) override { }
     virtual LockStatus _LockElement(DgnElementCR, LockLevel, DgnModelId) override { return LockStatus::Success; }
@@ -358,7 +358,7 @@ private:
     virtual bool _QueryLocksHeld(LockRequestR locks, bool localOnly, LockStatus* status) override;
     virtual LockRequest::Response _AcquireLocks(LockRequestR locks) override { return AcquireLocks(locks, true); }
     virtual LockStatus _RelinquishLocks() override;
-    virtual LockStatus _ReleaseLocks(DgnLockSet& locks) override;
+    virtual LockStatus _DemoteLocks(DgnLockSet& locks) override;
     virtual LockStatus _QueryLockLevel(LockLevel& level, LockableId lockId, bool localOnly) override;
     virtual LockStatus _RefreshLocks() override;
 
@@ -774,7 +774,7 @@ LockStatus LocalLocksManager::_RelinquishLocks()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   11/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-LockStatus LocalLocksManager::_ReleaseLocks(DgnLockSet& toRelease)
+LockStatus LocalLocksManager::_DemoteLocks(DgnLockSet& toRelease)
     {
     // Releasing the db itself is equivalent to releasing all held locks...
     if (toRelease.end() != toRelease.find(DgnLock(LockableId(GetDgnDb()), LockLevel::None)))
@@ -849,7 +849,7 @@ LockStatus LocalLocksManager::_ReleaseLocks(DgnLockSet& toRelease)
     // If we're releasing model locks, also release locks on any elements within them
     AddDependentElements(toRelease, releasedModels);
 
-    status = server->ReleaseLocks(toRelease, GetDgnDb());
+    status = server->DemoteLocks(toRelease, GetDgnDb());
     if (LockStatus::Success == status)
         {
         status = RefreshLocks();

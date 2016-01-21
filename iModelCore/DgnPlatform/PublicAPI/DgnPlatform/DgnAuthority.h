@@ -22,13 +22,14 @@ BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 struct EXPORT_VTABLE_ATTRIBUTE ICodedObject
 {
 protected:
-    virtual DgnDbR _GetDgnDb() const = 0; //!< Return the DgnDb in which this object resides
+    virtual DgnDbR _GetDgnDb() const = 0;
     virtual bool _SupportsCodeAuthority(DgnAuthorityCR authority) const = 0; //!< Return whether this object supports codes issued by the specified authority.
     virtual DgnCode _GenerateDefaultCode() const = 0; //!< Generate a code for this object on insertion, when no code has yet been assigned
     virtual DgnCode const& _GetCode() const = 0; //!< Return this object's Code
     virtual DgnDbStatus _SetCode(DgnCode const& code) = 0; //!< Set the code directly if permitted. Do not perform any validation of the code itself.
     virtual DgnElementCP _ToDgnElement() const { return nullptr; }
     virtual DgnModelCP _ToDgnModel() const { return nullptr; }
+    virtual DgnGeomPartCP _ToGeomPart() const { return nullptr; }
 public:
     DgnDbR GetDgnDb() const { return _GetDgnDb(); }
     bool SupportsCodeAuthority(DgnAuthorityCR authority) const { return _SupportsCodeAuthority(authority); }
@@ -36,6 +37,7 @@ public:
     DgnCode const& GetCode() const { return _GetCode(); }
     DgnElementCP ToDgnElement() const { return _ToDgnElement(); }
     DgnModelCP ToDgnModel() const { return _ToDgnModel(); }
+    DgnGeomPartCP ToGeomPart() const { return _ToGeomPart(); }
 
     DGNPLATFORM_EXPORT DgnDbStatus SetCode(DgnCode const& newCode);
     DGNPLATFORM_EXPORT DgnDbStatus ValidateCode() const;
@@ -85,10 +87,10 @@ protected:
     DGNPLATFORM_EXPORT virtual void _FromPropertiesJson(JsonValueCR);
     DGNPLATFORM_EXPORT virtual DgnAuthorityPtr _CloneForImport(DgnDbStatus* status, DgnImportContext& importer) const;
 
-    DGNPLATFORM_EXPORT virtual DgnCode _CloneCodeForImport(DgnElementCR srcElem, DgnModelR destModel, DgnImportContext& importer) const;
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _CloneCodeForImport(DgnCodeR clonedCode, DgnElementCR srcElem, DgnModelR destModel, DgnImportContext& importer) const;
 
     DGNPLATFORM_EXPORT virtual DgnDbStatus _ValidateCode(ICodedObjectCR codedObject) const;
-    virtual DgnCode _RegenerateCode(ICodedObjectCR codedObject) const { return codedObject.GetCode(); }
+    virtual DgnDbStatus _RegenerateCode(DgnCodeR regeneratedCode, ICodedObjectCR codedObject) const { regeneratedCode = codedObject.GetCode(); return DgnDbStatus::Success; }
 
     static DgnCode CreateCode(DgnAuthorityId authorityId, Utf8StringCR value, Utf8StringCR nameSpace) { return DgnCode(authorityId, value, nameSpace); }
 
@@ -103,11 +105,23 @@ public:
 
     DGNPLATFORM_EXPORT DgnDbStatus Insert();
 
-    DgnDbStatus ValidateCode(ICodedObjectCR obj) const { return _ValidateCode(obj); }
-    DgnCode RegenerateCode(ICodedObjectCR obj) const { return _RegenerateCode(obj); }
-    DgnCode CloneCodeForImport(DgnElementCR srcElem, DgnModelR destModel, DgnImportContext& importer) const { return _CloneCodeForImport(srcElem, destModel, importer); }
+    DGNPLATFORM_EXPORT DgnDbStatus ValidateCode(ICodedObjectCR obj) const;
+    DGNPLATFORM_EXPORT DgnDbStatus RegenerateCode(DgnCodeR newCode, ICodedObjectCR obj) const;
+    DGNPLATFORM_EXPORT DgnDbStatus CloneCodeForImport(DgnCodeR newCode, DgnElementCR srcElem, DgnModelR destModel, DgnImportContext& importer) const;
 
     DGNPLATFORM_EXPORT static DgnAuthorityPtr Import(DgnDbStatus* status, DgnAuthorityCR sourceAuthority, DgnImportContext& importer);
+
+    //! Identifies actions which may be restricted for authorities created by a handler for a missing subclass of DgnAuthority
+    struct RestrictedAction : DgnDomain::Handler::RestrictedAction
+    {
+        DEFINE_T_SUPER(DgnDomain::Handler::RestrictedAction);
+
+        static const uint64_t ValidateCode = T_Super::NextAvailable; //!< Validate code issued by this authority
+        static const uint64_t RegenerateCode = ValidateCode << 1; //!< Regenerate a code issued by this authority
+        static const uint64_t CloneCode = RegenerateCode << 1; //!< Clone a code issued by this authority
+
+        DGNPLATFORM_EXPORT static uint64_t Parse(Utf8CP name); //!< Parse action name from ClassHasHandler custom attribute
+    };
 };
 
 //=======================================================================================
@@ -228,6 +242,23 @@ public:
     DGNPLATFORM_EXPORT static DgnCode CreateVariationCode(Utf8StringCR solutionId, Utf8StringCR componentDefName);
 };
 
+//=======================================================================================
+//! The default code-issuing authority for DgnGeomParts.
+// @bsistruct                                                    Paul.Connelly   01/16
+//=======================================================================================
+struct GeomPartAuthority : DgnAuthority
+{
+    DEFINE_T_SUPER(DgnAuthority);
+protected:
+    virtual DgnDbStatus _ValidateCode(ICodedObjectCR obj) const override;
+public:
+    GeomPartAuthority(CreateParams const& params) : T_Super(params) { }
+
+    DGNPLATFORM_EXPORT static DgnCode CreateGeomPartCode(Utf8StringCR nameSpace, Utf8StringCR name);
+    static DgnCode CreateEmptyCode() { return CreateGeomPartCode("", ""); }
+    DGNPLATFORM_EXPORT static DgnAuthorityId GetGeomPartAuthorityId();
+};
+
 #define AUTHORITYHANDLER_DECLARE_MEMBERS(__ECClassName__,__classname__,_handlerclass__,_handlersuperclass__,__exporter__) \
     private: virtual Dgn::DgnAuthorityP _CreateInstance(Dgn::DgnAuthority::CreateParams const& params) override {return new __classname__(__classname__::CreateParams(params));}\
         DOMAINHANDLER_DECLARE_MEMBERS(__ECClassName__,_handlerclass__,_handlersuperclass__,__exporter__)
@@ -242,6 +273,7 @@ namespace dgn_AuthorityHandler
         virtual AuthorityHandlerP _ToAuthorityHandler() override { return this; }
         virtual DgnAuthorityP _CreateInstance(DgnAuthority::CreateParams const& params) { return new DgnAuthority(params); }
     public:
+        virtual uint64_t _ParseRestrictedAction(Utf8CP name) const override { return DgnAuthority::RestrictedAction::Parse(name); }
         DGNPLATFORM_EXPORT static AuthorityHandlerP FindHandler(DgnDb const& dgndb, DgnClassId classId);
 
         DgnAuthorityPtr Create(DgnAuthority::CreateParams const& params) { return _CreateInstance(params); }
@@ -265,6 +297,11 @@ namespace dgn_AuthorityHandler
     struct EXPORT_VTABLE_ATTRIBUTE Component : Authority
     {
         AUTHORITYHANDLER_DECLARE_MEMBERS (DGN_CLASSNAME_ComponentAuthority, ComponentAuthority, Component, Authority, DGNPLATFORM_EXPORT)
+    };
+
+    struct EXPORT_VTABLE_ATTRIBUTE GeomPart : Authority
+    {
+        AUTHORITYHANDLER_DECLARE_MEMBERS (DGN_CLASSNAME_GeomPartAuthority, GeomPartAuthority, GeomPart, Authority, DGNPLATFORM_EXPORT)
     };
 
     struct EXPORT_VTABLE_ATTRIBUTE Model : Authority

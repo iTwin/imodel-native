@@ -166,7 +166,7 @@ DgnElementId DgnDbTestFixture::InsertElement2d(DgnModelId mid, DgnCategoryId cat
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Umar.Hayat      07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElementId DgnDbTestFixture::InsertElementUsingGeomPart2d(Utf8CP gpCode, DgnModelId mid, DgnCategoryId categoryId, DgnCode elementCode)
+DgnElementId DgnDbTestFixture::InsertElementUsingGeomPart2d(DgnCodeCR gpCode, DgnModelId mid, DgnCategoryId categoryId, DgnCode elementCode)
     {
     if (!mid.IsValid())
         mid = m_defaultModelId;
@@ -196,7 +196,7 @@ DgnElementId DgnDbTestFixture::InsertElementUsingGeomPart2d(Utf8CP gpCode, DgnMo
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Umar.Hayat      07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElementId DgnDbTestFixture::InsertElementUsingGeomPart(Utf8CP gpCode, DgnModelId mid, DgnCategoryId categoryId, DgnCode elementCode)
+DgnElementId DgnDbTestFixture::InsertElementUsingGeomPart(DgnCodeCR gpCode, DgnModelId mid, DgnCategoryId categoryId, DgnCode elementCode)
     {
     if (!mid.IsValid())
         mid = m_defaultModelId;

@@ -42,6 +42,7 @@
 #define DGN_CLASSNAME_GeometricModel        "GeometricModel"
 #define DGN_CLASSNAME_GeometrySource        "GeometrySource"
 #define DGN_CLASSNAME_GeomPart              "GeomPart"
+#define DGN_CLASSNAME_GeomPartAuthority     "GeomPartAuthority"
 #define DGN_CLASSNAME_LineStyle             "LineStyle"
 #define DGN_CLASSNAME_Link                  "Link"
 #define DGN_CLASSNAME_LocalAuthority        "LocalAuthority"
@@ -94,6 +95,7 @@
 #include "DgnFont.h"
 #include "DgnCoreEvent.h"
 #include "ECSqlClassParams.h"
+#include "ECSqlStatementIterator.h"
 #include <Bentley/HeapZone.h>
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
@@ -166,6 +168,27 @@ public:
 
     //! Create an empty, non-unique code with no special meaning.
     DGNPLATFORM_EXPORT static DgnCode CreateEmpty();
+
+    struct Entry : ECSqlStatementEntry
+    {
+        friend struct ECSqlStatementIterator<Entry>;
+        friend struct DgnCode;
+    private:
+        Entry(BeSQLite::EC::ECSqlStatement* stmt=nullptr) : ECSqlStatementEntry(stmt) { }
+    public:
+        DgnAuthorityId GetAuthorityId() const { return m_statement->GetValueId<DgnAuthorityId>(0); }
+        Utf8CP GetValue() const { return m_statement->GetValueText(1); }
+        Utf8CP GetNamespace() const { return m_statement->GetValueText(2); }
+        DgnCode GetCode() const { return DgnCode(GetAuthorityId(), GetValue(), GetNamespace()); }
+    };
+
+    struct Iterator : ECSqlStatementIterator<Entry>
+    {
+    public:
+        DGNPLATFORM_EXPORT explicit Iterator(DgnDbR db);
+    };
+
+    static Iterator MakeIterator(DgnDbR db) { return Iterator(db); }
 };
 
 typedef bset<DgnCode> DgnCodeSet;
@@ -389,7 +412,7 @@ public:
     DGNPLATFORM_EXPORT DgnGeomPartPtr LoadGeomPart(DgnGeomPartId geomPartId);
 
     //! Query for a DgnGeomPartId by code.
-    DGNPLATFORM_EXPORT DgnGeomPartId QueryGeomPartId(Utf8CP code);
+    DGNPLATFORM_EXPORT DgnGeomPartId QueryGeomPartId(DgnCodeCR code);
 
     //! Query the range of a DgnGeomPart by ID.
     //! @param[out]     range      On successful return, holds the DgnGeomPart's range
