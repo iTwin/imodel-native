@@ -1222,11 +1222,32 @@ TEST_F(DataSourceCacheTests, CacheResponse_NonExistingParent_ReturnsError)
     EXPECT_EQ(ERROR, cache->CacheResponse(responseKey, StubInstances().ToWSObjectsResponse()));
     }
 
-TEST_F(DataSourceCacheTests, CacheResponse_ParentInCache_Succeeds)
+TEST_F(DataSourceCacheTests, CacheResponse_CachedInstanceAsParentInCache_Succeeds)
     {
     auto cache = GetTestCache();
-    ASSERT_EQ(SUCCESS, cache->LinkInstanceToRoot(nullptr, {"TestSchema.TestClass", "parent"}));
-    CachedResponseKey responseKey(cache->FindInstance({"TestSchema.TestClass", "parent"}), nullptr);
+    auto instance = StubInstanceInCache(*cache);
+    CachedResponseKey responseKey(instance, nullptr);
+
+    EXPECT_EQ(SUCCESS, cache->CacheResponse(responseKey, StubInstances().ToWSObjectsResponse()));
+    EXPECT_TRUE(cache->IsResponseCached(responseKey));
+    }
+
+TEST_F(DataSourceCacheTests, CacheResponse_RootAsParentInCache_Succeeds)
+    {
+    auto cache = GetTestCache();
+    auto root = cache->FindOrCreateRoot("Foo");
+    CachedResponseKey responseKey(root, nullptr);
+
+    EXPECT_EQ(SUCCESS, cache->CacheResponse(responseKey, StubInstances().ToWSObjectsResponse()));
+    EXPECT_TRUE(cache->IsResponseCached(responseKey));
+    }
+
+TEST_F(DataSourceCacheTests, CacheResponse_NavigationBaseAsParentInCache_Succeeds)
+    {
+    auto cache = GetTestCache();
+    ASSERT_EQ(SUCCESS, cache->LinkInstanceToRoot(nullptr, ObjectId()));
+    auto navigationBase = cache->FindInstance(ObjectId());
+    CachedResponseKey responseKey(navigationBase, nullptr);
 
     EXPECT_EQ(SUCCESS, cache->CacheResponse(responseKey, StubInstances().ToWSObjectsResponse()));
     EXPECT_TRUE(cache->IsResponseCached(responseKey));
@@ -2980,6 +3001,26 @@ TEST_F(DataSourceCacheTests, CacheResponse_FinalResponseAndMultiplePagesWihtSpac
     EXPECT_TRUE(cache->FindInstance({"TestSchema.TestClass", "C"}).IsValid());
     }
 
+TEST_F(DataSourceCacheTests, CacheResponse_ExistingInstanceWithReadOnlyProperty_UpdatesPropertyValueForSameInstanceInCache)
+    {
+    auto cache = GetTestCache();
+    auto key = StubCachedResponseKey(*cache);
+
+    StubInstances instances;
+    instances.Add({"TestSchema.TestClass3", "Foo"}, {{"TestReadOnlyProperty", "OldValue"}});
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(key, instances.ToWSObjectsResponse()));
+    ECInstanceKey instance1 = cache->FindInstance({"TestSchema.TestClass3", "Foo"});
+
+    instances.Clear();
+    instances.Add({"TestSchema.TestClass3", "Foo"}, {{"TestReadOnlyProperty", "NewValue"}});
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(key, instances.ToWSObjectsResponse()));
+    ECInstanceKey instance2 = cache->FindInstance({"TestSchema.TestClass3", "Foo"});
+
+    EXPECT_EQ(instance1, instance2);
+    Json::Value properties = ReadInstance(*cache, instance2);
+    EXPECT_EQ("NewValue", properties["TestReadOnlyProperty"]);
+    }
+
 TEST_F(DataSourceCacheTests, IsResponseCached_ParentDoesNotExist_False)
     {
     auto cache = GetTestCache();
@@ -4650,6 +4691,19 @@ TEST_F(DataSourceCacheTests, GetExtendedData_UpdatedDataForRoot_WorksFine)
     ASSERT_EQ(SUCCESS, cache->GetExtendedDataAdapter().UpdateData(extendedData));
 
     auto extendedData2 = cache->GetExtendedDataAdapter().GetData(root);
+    EXPECT_THAT(extendedData2.GetValue("A"), Eq("B"));
+    }
+
+TEST_F(DataSourceCacheTests, GetExtendedData_UpdatedDataForNavigationBase_WorksFine)
+    {
+    auto cache = GetTestCache();
+    auto navigationBase = StubInstanceInCache(*cache, ObjectId());
+
+    auto extendedData = cache->GetExtendedDataAdapter().GetData(navigationBase);
+    extendedData.SetValue("A", "B");
+    ASSERT_EQ(SUCCESS, cache->GetExtendedDataAdapter().UpdateData(extendedData));
+
+    auto extendedData2 = cache->GetExtendedDataAdapter().GetData(navigationBase);
     EXPECT_THAT(extendedData2.GetValue("A"), Eq("B"));
     }
 

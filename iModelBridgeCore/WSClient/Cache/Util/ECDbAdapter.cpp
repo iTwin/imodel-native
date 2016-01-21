@@ -899,7 +899,11 @@ BentleyStatus ECDbAdapter::DeleteRelationship(ECRelationshipClassCP relClass, EC
         // Nothing to delete
         return SUCCESS;
         }
-    return DeleteInstance(relationship.GetECClassId(), relationship.GetECInstanceId());
+
+    ECInstanceKeyMultiMap instances;
+    instances.Insert(relationship.GetECClassId(), relationship.GetECInstanceId());
+
+    return DeleteInstances(instances);
     }
 
 /*--------------------------------------------------------------------------------------+

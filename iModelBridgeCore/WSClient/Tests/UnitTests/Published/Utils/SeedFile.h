@@ -29,14 +29,19 @@
 
 struct SeedFile
     {
+    public:
+        typedef std::function<void(BeFileNameCR flePath)> Callback;
     private:
+        uint64_t m_id = 0;
         Utf8String m_name;
         BeFileName m_seedFilePath;
         BeFileName m_testFilePath;
 
+        static std::atomic<uint64_t> s_id;
+
     public:
-        std::function<void(BeFileNameCR flePath)> onSetupSeedFile = [] (BeFileNameCR) {};
-        std::function<void(BeFileNameCR flePath)> onSetupTestFile = [] (BeFileNameCR) {};
+        Callback onSetupSeedFile = [] (BeFileNameCR) {};
+        Callback onSetupTestFile = [] (BeFileNameCR) {};
 
     protected:
         //! Called once
@@ -46,14 +51,9 @@ struct SeedFile
         virtual void SetupTestFile(BeFileNameCR filePath) { onSetupTestFile(filePath); };
 
     public:
-        SeedFile(
-            Utf8String name = "testFile",
-            std::function<void(BeFileNameCR flePath)> onSetupSeedFile = [] (BeFileNameCR) {},
-            std::function<void(BeFileNameCR flePath)> onSetupTestFile = [] (BeFileNameCR) {}) :
-            m_name(name),
-            onSetupSeedFile(onSetupSeedFile),
-            onSetupTestFile(onSetupTestFile)
-            {}
+        SeedFile(Utf8String name = "testFile",
+            Callback onSetupSeedFile = [] (BeFileNameCR) {},
+            Callback onSetupTestFile = [] (BeFileNameCR) {});
 
         BeFileName GetTestFile();
     };

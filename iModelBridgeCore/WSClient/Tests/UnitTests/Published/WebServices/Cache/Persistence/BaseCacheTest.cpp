@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/WebServices/Cache/Persistence/BaseCacheTest.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -44,6 +44,7 @@ ECSchemaPtr BaseCacheTest::GetTestSchema()
                 <BaseClass>TestClass</BaseClass>
             </ECClass>
             <ECClass typeName="TestClass3" >
+                <ECProperty propertyName="PlaceholderPropertyForECDbMappingToWork" typeName="string" />
                 <ECProperty propertyName="TestReadOnlyProperty" typeName="string" readOnly="True" />
                 <ECProperty propertyName="TestCalculatedProperty" typeName="string" >
                     <ECCustomAttributes>

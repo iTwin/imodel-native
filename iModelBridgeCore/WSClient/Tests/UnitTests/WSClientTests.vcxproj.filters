@@ -323,7 +323,6 @@
   <ItemGroup>
     <None Include="BuildTests.mke" />
     <None Include="Prewire.mke" />
-    <None Include="dependencies.mki" />
     <None Include="TestAssetsDelivery.mke" />
   </ItemGroup>
   <ItemGroup>
