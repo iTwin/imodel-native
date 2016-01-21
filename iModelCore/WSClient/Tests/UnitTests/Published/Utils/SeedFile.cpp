@@ -8,12 +8,25 @@
 
 #include "SeedFile.h"
 
+std::atomic<uint64_t> SeedFile::s_id = 0;
+
+SeedFile::SeedFile(Utf8String name, Callback onSetupSeedFile, Callback onSetupTestFile) :
+m_name(name),
+onSetupSeedFile(onSetupSeedFile),
+onSetupTestFile(onSetupTestFile)
+    {
+    m_id = ++s_id;
+    }
+
 BeFileName SeedFile::GetTestFile()
     {
     // Setup seed file
     if (m_seedFilePath.empty())
         {
-        m_seedFilePath = GetTestsOutputDir().AppendToPath(L"SeedFiles").AppendToPath(BeFileName(m_name));
+        m_seedFilePath = GetTestsOutputDir();
+        m_seedFilePath.AppendToPath(L"SeedFiles");
+        m_seedFilePath.AppendToPath(BeFileName(Utf8PrintfString("%llu-%s", m_id, m_name.c_str())));
+
         if (m_seedFilePath.DoesPathExist())
             {
             EXPECT_EQ(BeFileNameStatus::Success, BeFileName::EmptyAndRemoveDirectory(m_seedFilePath));
