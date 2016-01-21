@@ -180,7 +180,7 @@ public:
     CodeStatus RelinquishCodes() { return _RelinquishCodes(); } //!< Attempts to release all codes reserved by this briefcase
     CodeStatus QueryCodeStates(DgnCodeInfoSet& states, DgnCodeSet const& codes) { return _QueryCodeStates(states, codes); } //!< Queries the state of a set of codes
     DGNPLATFORM_EXPORT CodeStatus QueryCodeState(DgnCodeStateR state, DgnCodeCR code); //!< Queries the state of a code
-    CodeStatus RefreshCode() { return _RefreshCodes(); } //!< Updates a local cache of codes reserved by this briefcase by querying the server
+    CodeStatus RefreshCodes() { return _RefreshCodes(); } //!< Updates a local cache of codes reserved by this briefcase by querying the server
 
     CodeStatus ReserveCode(DgnCodeCR code) { return _ReserveCode(code); } //!< Attempts to reserve a code
 //__PUBLISH_SECTION_END__
