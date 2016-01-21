@@ -901,8 +901,6 @@ static bool shouldDraw (ViewContextR context)
     {
     switch (context.GetDrawPurpose())
         {
-        case DrawPurpose::Hilite:
-        case DrawPurpose::Unhilite:
         case DrawPurpose::Pick:
         case DrawPurpose::Decorate:
         case DrawPurpose::CaptureGeometry:
@@ -1194,7 +1192,7 @@ void WebMercatorDisplay::DrawView (ViewContextR context)
 * This callback is invoked on a timer during progressive display.
 * @bsimethod                                                    Sam.Wilson      10/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-ProgressiveDisplay::Completion WebMercatorDisplay::_Process (ViewContextR context, uint32_t batchSize)
+ProgressiveDisplay::Completion WebMercatorDisplay::_Process (ViewContextR context, uint32_t batchSize, WantShow& wantShow)
     {
     if (BeTimeUtilities::GetCurrentTimeAsUnixMillis() < m_nextRetryTime)
         {
@@ -1272,6 +1270,8 @@ ProgressiveDisplay::Completion WebMercatorDisplay::_Process (ViewContextR contex
             }
         m_nextRetryTime = BeTimeUtilities::GetCurrentTimeAsUnixMillis() + m_waitTime;  
         }
+
+    wantShow = WantShow::Yes;
 
     //  Don't report "Finished" unless all missing tiles have been found and displayed.
     return m_missingTilesPending.empty() ? Completion::Finished : Completion::Aborted;
