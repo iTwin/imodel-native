@@ -607,10 +607,8 @@ GeometrySource3dCP DgnElement::ToGeometrySource3d() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus GeometryStream::WriteGeometryStreamAndStep(DgnDbR dgnDb, Utf8CP table, Utf8CP colname, uint64_t rowId, Statement& stmt, int stmtcolidx) const
+DgnDbStatus GeometryStream::WriteGeometryStreamAndStep(SnappyToBlob& snappy, DgnDbR dgnDb, Utf8CP table, Utf8CP colname, uint64_t rowId, Statement& stmt, int stmtcolidx) const
     {
-    SnappyToBlob& snappy = dgnDb.Elements().GetSnappyTo();
-
     snappy.Init();
     if (0 < GetSize())
         {
@@ -641,12 +639,11 @@ DgnDbStatus GeometryStream::WriteGeometryStreamAndStep(DgnDbR dgnDb, Utf8CP tabl
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus GeometryStream::ReadGeometryStream(DgnDbR dgnDb, void const* blob, int blobSize)
+DgnDbStatus GeometryStream::ReadGeometryStream(SnappyFromMemory& snappy, DgnDbR dgnDb, void const* blob, int blobSize)
     {
     if (0 == blobSize && nullptr == blob)
         return DgnDbStatus::Success;
 
-    SnappyFromMemory& snappy = dgnDb.Elements().GetSnappyFrom();
     snappy.Init(const_cast<void*>(blob), static_cast<uint32_t>(blobSize));
     GeomBlobHeader header(snappy);
     if ((GeomBlobHeader::Signature != header.m_signature) || 0 == header.m_size)
@@ -2223,7 +2220,7 @@ DgnDbStatus ElementGeomData::ReadFrom(ECSqlStatement& stmt, ECSqlClassParams con
 
     int blobSize;
     void const* blob = stmt.GetValueBinary(geomIndex, &blobSize);
-    return m_geom.ReadGeometryStream(el.GetDgnDb(), blob, blobSize);
+    return m_geom.ReadGeometryStream(el.GetDgnDb().Elements().GetSnappyFrom(), el.GetDgnDb(), blob, blobSize);
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -392,10 +392,15 @@ public:
 struct DgnGeomParts : DgnDbTable
 {
     friend struct DgnDb;
+    friend struct DgnGeomParts;
 
 private:
-    explicit DgnGeomParts(DgnDbR db) : DgnDbTable(db) {}
+    explicit DgnGeomParts(DgnDbR db) : DgnDbTable(db), m_snappyFrom(m_snappyFromBuffer, _countof(m_snappyFromBuffer)) {}
     DgnGeomPartId m_highestGeomPartId; // 0 means not yet valid. Highest DgnGeomPartId (for current briefcaseId)
+
+    Byte m_snappyFromBuffer[BeSQLite::SnappyReader::SNAPPY_UNCOMPRESSED_BUFFER_SIZE];
+    BeSQLite::SnappyFromMemory m_snappyFrom;
+    BeSQLite::SnappyFromMemory& GetSnappyFrom() {return m_snappyFrom;}
 
 public:
     DgnGeomPartId MakeNewGeomPartId();
