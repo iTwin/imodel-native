@@ -181,7 +181,7 @@ TEST_F(StandardValueToEnumConversionTest, StandardValuesTest)
 
     ASSERT_TRUE(ECSchemaConverter::Convert(*m_schema.get())) << "Failed to convert schema";
     ECEnumerationCP ecEnum;
-    ASSERT_NE(nullptr, ecEnum = m_schema->GetEnumerationCP("NameTitle")) << "Failed to Create Enum";
+    ASSERT_NE(nullptr, ecEnum = m_schema->GetEnumerationCP("Name_Title")) << "Failed to Create Enum";
     EXPECT_EQ(5, ecEnum->GetEnumeratorCount());
 
     std::map <int, Utf8String> sdValues = { { 1, "Mr." },{ 0, "Ms." },{ -10, "Mr." },{ 11, "Ms." },{ 2, "Sensei" } };
@@ -249,17 +249,17 @@ TEST_F(StandardValueToEnumConversionTest, StrictTestSimple)
     ASSERT_EQ(3, m_schema->GetEnumerationCount());
 
     ECEnumerationCP ecEnum;
-    ASSERT_NE(nullptr, ecEnum = m_schema->GetEnumerationCP("NameTitle1")) << "Enumeration NameTitle1 should have been created";
+    ASSERT_NE(nullptr, ecEnum = m_schema->GetEnumerationCP("Name_Title1")) << "Enumeration Name_Title1 should have been created";
     EXPECT_EQ(1, ecEnum->GetEnumeratorCount());
-    EXPECT_EQ(false, ecEnum->GetIsStrict()) << "NameTitle1 has MustBeFromList set to false so GetIsStrict() should return false";
+    EXPECT_EQ(false, ecEnum->GetIsStrict()) << "Name_Title1 has MustBeFromList set to false so GetIsStrict() should return false";
 
-    ASSERT_NE(nullptr, ecEnum = m_schema->GetEnumerationCP("NameTitle2")) << "Enumeration NameTitle2 should have been created";
+    ASSERT_NE(nullptr, ecEnum = m_schema->GetEnumerationCP("Name_Title2")) << "Enumeration Name_Title2 should have been created";
     EXPECT_EQ(1, ecEnum->GetEnumeratorCount());
-    EXPECT_EQ(true, ecEnum->GetIsStrict()) << "NameTitle2 has MustBeFromList set to true so GetIsStrict() should return true";
+    EXPECT_EQ(true, ecEnum->GetIsStrict()) << "Name_Title2 has MustBeFromList set to true so GetIsStrict() should return true";
 
-    ASSERT_NE(nullptr, ecEnum = m_schema->GetEnumerationCP("NameTitle3")) << "Enumeration NameTitle3 should have been created";
+    ASSERT_NE(nullptr, ecEnum = m_schema->GetEnumerationCP("Name_Title3")) << "Enumeration Name_Title3 should have been created";
     EXPECT_EQ(1, ecEnum->GetEnumeratorCount());
-    EXPECT_EQ(true, ecEnum->GetIsStrict()) << "NameTitle3 has not set MustBeFromList. Default is true so GetIsStrict() should return true";
+    EXPECT_EQ(true, ecEnum->GetIsStrict()) << "Name_Title3 has not set MustBeFromList. Default is true so GetIsStrict() should return true";
 
     }
 
@@ -310,7 +310,7 @@ TEST_F(StandardValueToEnumConversionTest, StrictTestInheritence_ParentPropertySt
     ASSERT_EQ(1, m_schema->GetEnumerationCount());
 
     ECEnumerationCP ecEnum;
-    Utf8String enumName = "BaseNameTitle1";
+    Utf8String enumName = "BaseName_Title1";
     ASSERT_NE(nullptr, ecEnum = m_schema->GetEnumerationCP(enumName.c_str())) << "Enumeration" << enumName << "should have been created";
     EXPECT_EQ(1, ecEnum->GetEnumeratorCount());
     EXPECT_EQ(true, ecEnum->GetIsStrict()) << enumName << " should be strict";
@@ -353,8 +353,8 @@ TEST_F(StandardValueToEnumConversionTest, StrictTestInheritence_ParentPropertyWi
     ASSERT_EQ(1, m_schema->GetEnumerationCount());
 
     ECEnumerationCP ecEnum;
-    Utf8String enumName = "BaseNameTitle1";
-    ASSERT_NE(nullptr, ecEnum = m_schema->GetEnumerationCP(enumName.c_str())) << "Enumeration should have been created";
+    Utf8String enumName = "BaseName_Title1";
+    ASSERT_NE(nullptr, ecEnum = m_schema->GetEnumerationCP(enumName.c_str())) << "Enumeration " << enumName <<" should have been created";
     EXPECT_EQ(1, ecEnum->GetEnumeratorCount());
     EXPECT_EQ(false, ecEnum->GetIsStrict()) << "Title1 is derived from base class property which has no StandardValues CA so GetIsStrict() should return false";
 
@@ -466,24 +466,24 @@ TEST_F(StandardValueToEnumConversionTest, DuplicatSDValues)
     //with duplicate sd values only one enumeration is created as classname + propertyname
 
     //within a class if different property have same enumeration, propertyB trumps propertyC if propertyB < propertyC
-    ASSERT_NE(nullptr, ecEnum = m_schema->GetEnumerationCP("CTitleB")) << "Enumeration CTitleB should have been created";
+    ASSERT_NE(nullptr, ecEnum = m_schema->GetEnumerationCP("C_TitleB")) << "Enumeration C_TitleB should have been created";
     EXPECT_EQ(1, ecEnum->GetEnumeratorCount());
-    EXPECT_EQ(nullptr, ecEnum = m_schema->GetEnumerationCP("CTitleC")) << "Enumeration CTitleC should NOT have been created";
-    EXPECT_EQ("CTitleB", m_schema->GetClassCP("C")->GetPropertyP("TitleC", false)->GetTypeName()) << "Enum type should have been CTitleB";
+    EXPECT_EQ(nullptr, ecEnum = m_schema->GetEnumerationCP("C_TitleC")) << "Enumeration C_TitleC should NOT have been created";
+    EXPECT_EQ("C_TitleB", m_schema->GetClassCP("C")->GetPropertyP("TitleC", false)->GetTypeName()) << "Enum type should have been C_TitleB";
 
     //with same class(including child,parent) and property name, baseclass name trumps
-    EXPECT_EQ(nullptr, ecEnum = m_schema->GetEnumerationCP("ATitleB")) << "Enumeration ATitleB should NOT have been created";
-    EXPECT_EQ("CTitleB", m_schema->GetClassCP("A")->GetPropertyP("TitleB", false)->GetTypeName()) << "Enum type should have been CTitleB";
+    EXPECT_EQ(nullptr, ecEnum = m_schema->GetEnumerationCP("A_TitleB")) << "Enumeration A_TitleB should NOT have been created";
+    EXPECT_EQ("C_TitleB", m_schema->GetClassCP("A")->GetPropertyP("TitleB", false)->GetTypeName()) << "Enum type should have been C_TitleB";
 
-    Utf8String enumName = "CTitleA";
+    Utf8String enumName = "C_TitleA";
     CheckTypeName(enumName.c_str(), *m_schema, "TitleA", { "D", "B", "C" });
 
     //with same class(including child,parent) and property name, baseclass name trumps even if base class property has no CA attached to it
     ASSERT_NE(nullptr, ecEnum = m_schema->GetEnumerationCP(enumName.c_str())) << "Enumeration" << enumName << "should have been created";
-    EXPECT_EQ(nullptr, ecEnum = m_schema->GetEnumerationCP("BTitleA")) << "Enumeration BTitleA should NOT have been created";
+    EXPECT_EQ(nullptr, ecEnum = m_schema->GetEnumerationCP("B_TitleA")) << "Enumeration B_TitleA should NOT have been created";
 
     //with different classes having same sd values, classA trumps classB if classA < classB 
-    EXPECT_EQ(nullptr, ecEnum = m_schema->GetEnumerationCP("DTitleA")) << "Enumeration DTitleA should NOT have been created";
+    EXPECT_EQ(nullptr, ecEnum = m_schema->GetEnumerationCP("D_TitleA")) << "Enumeration D_TitleA should NOT have been created";
 
     //should not be an enum
     EXPECT_EQ("int", m_schema->GetClassCP("E")->GetPropertyP("TitleA", false)->GetTypeName()) << "Should be a regular int type";
@@ -654,19 +654,19 @@ TEST_F(StandardValueToEnumConversionTest, NOTDuplicatSDValues)
     ASSERT_EQ(5, m_schema->GetEnumerationCount());
 
     ECEnumerationCP ecEnum;
-    ASSERT_NE(nullptr, ecEnum = m_schema->GetEnumerationCP("NameTitle")) << "Failed to Create Enum";
+    ASSERT_NE(nullptr, ecEnum = m_schema->GetEnumerationCP("Name_Title")) << "Failed to Create Enum";
     EXPECT_EQ(2, ecEnum->GetEnumeratorCount());
 
-    ASSERT_NE(nullptr, ecEnum = m_schema->GetEnumerationCP("NameNotDuplicateDifferentMustBeFromListValue")) << "Failed to Create Enum";
+    ASSERT_NE(nullptr, ecEnum = m_schema->GetEnumerationCP("Name_NotDuplicateDifferentMustBeFromListValue")) << "Failed to Create Enum";
     EXPECT_EQ(2, ecEnum->GetEnumeratorCount());
 
-    ASSERT_NE(nullptr, ecEnum = m_schema->GetEnumerationCP("NameNotDuplicate")) << "Failed to Create Enum";
+    ASSERT_NE(nullptr, ecEnum = m_schema->GetEnumerationCP("Name_NotDuplicate")) << "Failed to Create Enum";
     EXPECT_EQ(2, ecEnum->GetEnumeratorCount());
 
-    ASSERT_NE(nullptr, ecEnum = m_schema->GetEnumerationCP("NameNotDuplicateEither")) << "Failed to Create Enum";
+    ASSERT_NE(nullptr, ecEnum = m_schema->GetEnumerationCP("Name_NotDuplicateEither")) << "Failed to Create Enum";
     EXPECT_EQ(3, ecEnum->GetEnumeratorCount());
 
-    ASSERT_NE(nullptr, ecEnum = m_schema->GetEnumerationCP("NameAlsoNotDuplicate")) << "Failed to Create Enum";
+    ASSERT_NE(nullptr, ecEnum = m_schema->GetEnumerationCP("Name_AlsoNotDuplicate")) << "Failed to Create Enum";
     EXPECT_EQ(3, ecEnum->GetEnumeratorCount());
 
     }
@@ -724,14 +724,14 @@ TEST_F(StandardValueToEnumConversionTest, Strict_Duplicate_Inherited_Combo_Expec
     ASSERT_EQ(2, m_schema->GetEnumerationCount());
 
     ECEnumerationCP ecEnum;
-    Utf8String enumName = "BaseNameTitle1";
+    Utf8String enumName = "BaseName_Title1";
     ASSERT_NE(nullptr, ecEnum = m_schema->GetEnumerationCP(enumName.c_str())) << "Enumeration " << enumName << " should have been created";
     EXPECT_EQ(1, ecEnum->GetEnumeratorCount());
     EXPECT_EQ(false, ecEnum->GetIsStrict()) << "Title1 is derived from base class property which has no StandardValues CA so GetIsStrict() should return false";
 
-    ASSERT_NE(nullptr, ecEnum = m_schema->GetEnumerationCP("ATitle1")) << "Enumeration " << enumName << " should have been created";
+    ASSERT_NE(nullptr, ecEnum = m_schema->GetEnumerationCP("A_Title1")) << "Enumeration A_Title1 should have been created";
     EXPECT_EQ(1, ecEnum->GetEnumeratorCount());
-    EXPECT_EQ(true, ecEnum->GetIsStrict()) << "Title1 is derived from base class property which has no StandardValues CA so GetIsStrict() should return false";
+    EXPECT_EQ(true, ecEnum->GetIsStrict()) << "A.Title1 defines mustbefromlist true, so GetIsStrict() should return true";
 
     }
 
@@ -788,7 +788,7 @@ TEST_F(StandardValueToEnumConversionTest, Strict_Duplicate_Inherited_Combo_Expec
     ASSERT_EQ(1, m_schema->GetEnumerationCount());
 
     ECEnumerationCP ecEnum;
-    Utf8String enumName = "ATitle1";
+    Utf8String enumName = "A_Title1";
     ASSERT_NE(nullptr, ecEnum = m_schema->GetEnumerationCP(enumName.c_str())) << "Enumeration " << enumName << " should have been created";
     EXPECT_EQ(1, ecEnum->GetEnumeratorCount());
     EXPECT_EQ(false, ecEnum->GetIsStrict()) << "Title1 is derived from base class property which has no StandardValues CA so GetIsStrict() should return false";
@@ -834,7 +834,7 @@ TEST_F(StandardValueToEnumConversionTest, MultipleInheritedSDValues_ConversionSu
     EXPECT_TRUE(ECSchemaConverter::Convert(*m_schema.get())) << "Schema conversion failed";
 
     ECEnumerationCP ecEnum;
-    Utf8String enumName = "BTitleA";
+    Utf8String enumName = "B_TitleA";
     CheckTypeName(enumName.c_str(), *m_schema, "TitleA", { "A", "B", "C" });
 
     ASSERT_NE(nullptr, ecEnum = m_schema->GetEnumerationCP(enumName.c_str())) << "Enumeration " << enumName << " should have been created";
@@ -929,7 +929,7 @@ TEST_F(StandardValueToEnumConversionTest, InheritedSDValues_ConversionSucess)
     ASSERT_TRUE(ECSchemaConverter::Convert(*m_schema.get())) << "Failed to convert schema";
     ASSERT_EQ(1, m_schema->GetEnumerationCount());
 
-    Utf8String enumName = "CTitleA";
+    Utf8String enumName = "C_TitleA";
     CheckTypeName(enumName.c_str(), *m_schema, "TitleA", { "B","C" });
     ASSERT_NE(nullptr, m_schema->GetEnumerationCP(enumName.c_str())) << "Enumeration " << enumName << "should have been created";
     }
@@ -1155,10 +1155,10 @@ TEST_F(StandardValueToEnumConversionTest, InheritedSDValues_ConversionSucess_Mul
     EXPECT_TRUE(ECSchemaConverter::Convert(*m_refSchema.get())) << "Schema conversion failed";
     EXPECT_TRUE(ECSchemaConverter::Convert(*m_schema.get())) << "Schema conversion failed";
 
-    CheckTypeName("trRef:DTitleA", *m_schema, "TitleA", { "C" });
-    CheckTypeName("DTitleA", *m_refSchema, "TitleA", { "D" });
+    CheckTypeName("trRef:D_TitleA", *m_schema, "TitleA", { "C" });
+    CheckTypeName("D_TitleA", *m_refSchema, "TitleA", { "D" });
     //even thought sd value is same as trRef:DTitleA since it is in different schema it creates a new enum
-    CheckTypeName("ATitleA", *m_schema, "TitleA", { "A" });
+    CheckTypeName("A_TitleA", *m_schema, "TitleA", { "A" });
     }
 
 //---------------------------------------------------------------------------------------
@@ -1210,8 +1210,8 @@ TEST_F(StandardValueToEnumConversionTest, InheritedSDValues_ConversionSucess_Mul
 
     EXPECT_TRUE(ECSchemaConverter::Convert(*m_schema.get())) << "Schema conversion failed";
 
-    CheckTypeName("trRef:DTitleA", *m_schema, "TitleA", { "A" });
-    CheckTypeName("DTitleA", *m_refSchema, "TitleA", { "D" });
+    CheckTypeName("trRef:D_TitleA", *m_schema, "TitleA", { "A" });
+    CheckTypeName("D_TitleA", *m_refSchema, "TitleA", { "D" });
     EXPECT_EQ(1, m_refSchema->GetEnumerationCount()) << "Enumeration should have been created in refschema";
     EXPECT_EQ(0, m_schema->GetEnumerationCount()) << "Enumeration should not have been created in schema";
     }
@@ -1298,6 +1298,95 @@ TEST_F(StandardValueToEnumConversionTest, IsBaseClassTest)
     ECSchemaPtr schema2;
     ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema2, schemaXML2, *m_readContext));
     EXPECT_FALSE(ECSchemaConverter::IsBaseClass(schema->GetClassP("Aa"), schema2->GetClassP("D")));
+
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                    Basanta.Kharel                 01 / 2016
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(StandardValueToEnumConversionTest, EnumName_NamingConvention)
+    {
+    Utf8CP schemaXML = "<?xml version='1.0' encoding='UTF-8'?>"
+        "<ECSchema schemaName='TrapRef' version='78.00' nameSpacePrefix='trRef' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
+        "   <ECSchemaReference name='EditorCustomAttributes' version='01.00' prefix='beca' />"
+        "   <ECEnumeration typeName='Class_PropertyA' backingTypeName='int' isStrict='true'>"
+        "        <ECEnumerator value='0' displayLabel='Sensei'/>"
+        "   </ECEnumeration>"
+        "   <ECEnumeration typeName='Class_PropertyB' backingTypeName='int' isStrict='true'>"
+        "        <ECEnumerator value='0' displayLabel='Sensei'/>"
+        "   </ECEnumeration>"
+        "   <ECEnumeration typeName='Class_PropertyB_1' backingTypeName='int' isStrict='true'>"
+        "        <ECEnumerator value='0' displayLabel='Sensei'/>"
+        "   </ECEnumeration>"
+        "   <ECClass typeName='Computer' isStruct='false' isCustomAttributeClass='false' isDomainClass='true'>"
+        "       <ECProperty propertyName='ComputerType' typeName='int' displayLabel='Title'>"
+        "           <ECCustomAttributes>"
+        "               <StandardValues xmlns='EditorCustomAttributes.01.00'>"
+        "                  <ValueMap>"
+        "                       <ValueMap>"
+        "                           <DisplayString>Wakata</DisplayString>"
+        "                           <Value>0</Value>"
+        "                       </ValueMap>"
+        "                  </ValueMap>"
+        "               </StandardValues>"
+        "           </ECCustomAttributes>"
+        "       </ECProperty>"
+        "   </ECClass>"
+        "   <ECClass typeName='Monitor' isStruct='false' isCustomAttributeClass='false' isDomainClass='true'>"
+        "       <ECProperty propertyName='Type' typeName='int' displayLabel='Title'>"
+        "           <ECCustomAttributes>"
+        "               <StandardValues xmlns='EditorCustomAttributes.01.00'>"
+        "                  <ValueMap>"
+        "                       <ValueMap>"
+        "                           <DisplayString>Akinamiro</DisplayString>"
+        "                           <Value>0</Value>"
+        "                       </ValueMap>"
+        "                  </ValueMap>"
+        "               </StandardValues>"
+        "           </ECCustomAttributes>"
+        "       </ECProperty>"
+        "   </ECClass>"
+        "   <ECClass typeName='Class' isStruct='false' isCustomAttributeClass='false' isDomainClass='true'>"
+        "       <ECProperty propertyName='PropertyA' typeName='int' displayLabel='Title'>"
+        "           <ECCustomAttributes>"
+        "               <StandardValues xmlns='EditorCustomAttributes.01.00'>"
+        "                  <ValueMap>"
+        "                       <ValueMap>"
+        "                           <DisplayString>Arigato</DisplayString>"
+        "                           <Value>0</Value>"
+        "                       </ValueMap>"
+        "                  </ValueMap>"
+        "               </StandardValues>"
+        "           </ECCustomAttributes>"
+        "       </ECProperty>"
+        "       <ECProperty propertyName='PropertyB' typeName='int' displayLabel='Title'>"
+        "           <ECCustomAttributes>"
+        "               <StandardValues xmlns='EditorCustomAttributes.01.00'>"
+        "                  <ValueMap>"
+        "                       <ValueMap>"
+        "                           <DisplayString>What</DisplayString>"
+        "                           <Value>0</Value>"
+        "                       </ValueMap>"
+        "                  </ValueMap>"
+        "               </StandardValues>"
+        "           </ECCustomAttributes>"
+        "       </ECProperty>"
+        "   </ECClass>"
+        "</ECSchema>";
+
+    ReadSchema(schemaXML);
+
+    EXPECT_TRUE(ECSchemaConverter::Convert(*m_schema.get())) << "Schema conversion failed";
+
+    ASSERT_EQ(7, m_schema->GetEnumerationCount());
+    //enum name is combined of className and property name with _ in between
+    CheckTypeName("Monitor_Type", *m_schema, "Type", { "Monitor" });
+    CheckTypeName("Computer_ComputerType", *m_schema, "ComputerType", { "Computer" });
+
+    //if enumName exists a number is appended starting with 1 
+    CheckTypeName("Class_PropertyA_1", *m_schema, "PropertyA", { "Class" });
+    //increment number until enumName is not in schema
+    CheckTypeName("Class_PropertyB_2", *m_schema, "PropertyB", { "Class" });
 
     }
 

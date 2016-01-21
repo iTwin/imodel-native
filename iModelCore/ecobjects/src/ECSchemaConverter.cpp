@@ -147,6 +147,12 @@ private:
     static Utf8String CreateEnumerationName(ECClassP& rootClass, ECSchemaR schema, ECPropertyP& ecProperty);
 
     //---------------------------------------------------------------------------------------
+    // Append number to string : returns name_number
+    // @bsimethod                                    Basanta.Kharel                  01/2016
+    //+---------------+---------------+---------------+---------------+---------------+------
+    static Utf8String StandardValuesConverter::AppendNumberToString(Utf8CP name, int number);
+
+    //---------------------------------------------------------------------------------------
     // Finds enumeration in schema that matches sdInfo
     // @bsimethod                                    Basanta.Kharel                  12/2015
     //+---------------+---------------+---------------+---------------+---------------+------
@@ -607,6 +613,14 @@ ECObjectsStatus StandardValuesConverter::AddEnumeration(ECSchemaR schema, Standa
         ECClassP rootClass = nullptr;
         Utf8String enumName = CreateEnumerationName(rootClass, schema, ecProperty);
         status = CreateEnumeration(enumeration, rootClass->GetSchemaR(), enumName.c_str(), sdInfo);
+
+        int number = 1;
+        while (ECObjectsStatus::NamedItemAlreadyExists == status)
+            {
+            Utf8String newEnumName = AppendNumberToString(enumName.c_str(), number);
+            status = CreateEnumeration(enumeration, rootClass->GetSchemaR(), newEnumName.c_str(), sdInfo);
+            number++;
+            }
         }
 
     if (ECObjectsStatus::Success != status)
@@ -618,15 +632,27 @@ ECObjectsStatus StandardValuesConverter::AddEnumeration(ECSchemaR schema, Standa
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Basanta.Kharel                  01/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-Utf8String StandardValuesConverter::CreateEnumerationName(ECClassP& rootClass, ECSchemaR schema,ECPropertyP& ecProperty)
+Utf8String StandardValuesConverter::CreateEnumerationName(ECClassP& rootClass, ECSchemaR schema, ECPropertyP& ecProperty)
     {
     rootClass = ECSchemaConverter::FindRootBaseClass(ecProperty, schema);
     Utf8String baseClassName = rootClass->GetName();
-    Utf8String enumName = ecProperty->GetName();
-    if (baseClassName.size() == 1 || !enumName.ContainsI(baseClassName))
-        enumName = baseClassName + enumName;
+    Utf8String propertyName = ecProperty->GetName();
 
-    return enumName;
+    return baseClassName + "_" + propertyName;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Basanta.Kharel                  01/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+Utf8String StandardValuesConverter::AppendNumberToString(Utf8CP name, int number)
+    {
+    char string[10];
+    _itoa_s(number, string, 10);
+
+    Utf8String newName = name;
+    newName.append("_");
+    newName.append(string);
+    return newName;
     }
 
 //---------------------------------------------------------------------------------------
