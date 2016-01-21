@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/DgnProject/Published/AnnotationTable_Test.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "DgnHandlersTests.h"
@@ -162,7 +162,7 @@ public:
 /*=================================================================================**//**
 * @bsistruct
 +===============+===============+===============+===============+===============+======*/
-struct AnnotationTableTest : public GenericDgnModelTestFixture /* public testing::Test*/
+struct AnnotationTableTest : public GenericDgnModelTestFixture
 {
 private:
     const    Utf8CP m_modelName     = "TestModel";
