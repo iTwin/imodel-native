@@ -28,8 +28,8 @@ FileUtilTests.TruncateFilePath_MaxPathSoSmallThatExtensionWouldBeChanged_Error
 FileUtilTests.TruncateFilePath_MaxPathSoSmallThatFileNameWouldBeEmpty_Error
 FileUtilTests.TruncateFilePath_PathIsFolder_Error
 
-# Hangs regularly on firebug; Does not reproduce locally on DgnDb06Dev. Enabling to to check on firebug.
-#BeSQLiteDbTransactionHandlerTests.StartTransaction_TwoConnections_SecondConnectionIsBlockedUntilFirstFinishesTransaction
+# Hangs regularly on firebug on DgnDb06Dev
+BeSQLiteDbTransactionHandlerTests.StartTransaction_TwoConnections_SecondConnectionIsBlockedUntilFirstFinishesTransaction
 
 #----------------------------------------------------------------------------------------
 # Fail due to DgnDb06 changes 
@@ -38,9 +38,6 @@ FileUtilTests.TruncateFilePath_PathIsFolder_Error
 # MetaSchema import issues in ECDb/EC3
 CachingDataSourceTests*
 DataSourceCacheTests.UpdateSchemas_DefaultUsedSchemasPassed_Success
-
-# Issue with holding relationship deletion that removes held instances
-DataSourceCacheTests.CacheResponse_InstanceWithCachedFileRemovedInNewResults_RemovesCachedFile
 
 # Graphite05x EDDb upgrade is not yet supported or will not be. Waiting for requirements for any upgrades needed to be implemented.
 DataSourceCacheUpgradeTests*
@@ -60,4 +57,5 @@ ECDbAdapterTests.DeleteInstances_DeletedInstanceIsInHoldingCircularRelationships
 # Fails because ECDb holding relationship deletion deletes child but not subchildren
 ECDbAdapterTests.DeleteInstances_DeletingRelationshipThatHoldsHierarchy_HierarchyDeleted
 
-BeSQLiteDbTransactionHandlerTests.StartTransaction_TwoConnections_SecondConnectionIsBlockedUntilFirstFinishesTransaction # notified Vincas
+# Fails because ECDb does not update read-only properties
+DataSourceCacheTests.CacheResponse_ExistingInstanceWithReadOnlyProperty_UpdatesPropertyValueForSameInstanceInCache
