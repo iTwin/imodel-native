@@ -139,23 +139,10 @@ LockStatus DgnDbLocks::_RelinquishLocks(DgnDbR db)
         return LockStatus::ServerUnavailable;
     }
 
-LockStatus DgnDbLocks::_QueryLockLevel(LockLevel& level, LockableId lockId, DgnDbR db)
+LockStatus DgnDbLocks::_QueryLockLevels(DgnLockSet& levels, LockableIdSet const& lockIds, DgnDbR db)
     {
-    if (m_connection)
-        {
-        auto result = m_connection->QueryLockLevel(lockId, db.GetBriefcaseId(), m_cancellationToken)->GetResult();
-        if (result.IsSuccess())
-            {
-            level = result.GetValue();
-            return LockStatus::Success;
-            }
-        else
-            {
-            return LockStatus::ServerUnavailable;//NEEDSWORK: Use appropriate status
-            }
-        }
-    else
-        return LockStatus::ServerUnavailable;
+    BeAssert(false && "NEEDSWORK: Implement ILocksServer::_QueryLockLevels");
+    return LockStatus::InvalidRequest;
     }
 
 LockStatus DgnDbLocks::_QueryLocks(DgnLockSet& locks, DgnDbR db)
@@ -177,23 +164,10 @@ LockStatus DgnDbLocks::_QueryLocks(DgnLockSet& locks, DgnDbR db)
         return LockStatus::ServerUnavailable;
     }
 
-LockStatus DgnDbLocks::_QueryOwnership(DgnLockOwnershipR ownership, Dgn::LockableId lockId)
+LockStatus DgnDbLocks::_QueryOwnerships(DgnOwnedLockSet& ownerships, LockableIdSet const& ids)
     {
-    if (m_connection)
-        {
-        auto result = m_connection->QueryOwnership(lockId, m_cancellationToken)->GetResult();
-        if (result.IsSuccess())
-            {
-            ownership = result.GetValue();
-            return LockStatus::Success;
-            }
-        else
-            {
-            return LockStatus::ServerUnavailable;//NEEDSWORK: Use appropriate status
-            }
-        }
-    else
-        return LockStatus::ServerUnavailable;
+    BeAssert(false && "NEEDSWORK: Implement ILocksServer::_QueryOwnerships");
+    return LockStatus::InvalidRequest;
     }
 
 

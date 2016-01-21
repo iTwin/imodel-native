@@ -32,9 +32,9 @@ protected:
     virtual LockRequest::Response _AcquireLocks(LockRequestCR locks, DgnDbR db) override;
     virtual LockStatus _DemoteLocks(DgnLockSet const& locks, DgnDbR db) override;
     virtual LockStatus _RelinquishLocks(DgnDbR db) override;
-    virtual LockStatus _QueryLockLevel(LockLevel& level, LockableId lockId, DgnDbR db) override;
+    virtual LockStatus _QueryLockLevels(DgnLockSet&, LockableIdSet const&, DgnDbR db) override;
     virtual LockStatus _QueryLocks(DgnLockSet& locks, DgnDbR db) override;
-    virtual LockStatus _QueryOwnership(DgnLockOwnershipR ownership, LockableId lockId) override;
+    virtual LockStatus _QueryOwnerships(DgnOwnedLockSet&, LockableIdSet const&) override;
 
     DgnDbLocks(WebServices::ClientInfoPtr clientInfo);
 public:
