@@ -588,7 +588,7 @@ int QueryModel::AllElementsFilter::_TestRTree(RTreeMatchFunction::QueryInfo cons
         {
         info.m_score = 0;
         }                                                                                                                                  
-                info.m_within = RTreeMatchFunction::Within::Partly;
+    info.m_within = RTreeMatchFunction::Within::Partly;
     return BE_SQLITE_OK;
     }
 
