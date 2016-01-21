@@ -51,6 +51,7 @@ struct RTreeTester
     virtual int _TestRTree(BeSQLite::RTreeMatchFunction::QueryInfo const&) = 0;
 };
 
+
 //=======================================================================================
 // @bsiclass                                                    Keith.Bentley   04/14
 //=======================================================================================
@@ -76,7 +77,7 @@ struct RTreeFilter : RTreeTester
 //=======================================================================================
 // @bsiclass                                                    Keith.Bentley   12/11
 //=======================================================================================
-struct DgnDbRTreeFitFilter : RTreeTester
+struct RTreeFitFilter : RTreeTester
     {
     DRange3d m_fitRange;
     DRange3d m_lastRange;
@@ -84,9 +85,10 @@ struct DgnDbRTreeFitFilter : RTreeTester
     DGNPLATFORM_EXPORT virtual int _TestRTree(BeSQLite::RTreeMatchFunction::QueryInfo const&) override;
 
 public:
-    DgnDbRTreeFitFilter() {m_fitRange = DRange3d::NullRange();}
+    RTreeFitFilter() {m_fitRange = DRange3d::NullRange();}
     DRange3dCR GetRange() const {return m_fitRange;}
     };
+
 
 //=======================================================================================
 /**
