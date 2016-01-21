@@ -16613,6 +16613,9 @@ static Trigger *fkActionTrigger(
 
   action = pFKey->aAction[iAction];
   pTrigger = pFKey->apTrigger[iAction];
+  if( (db->flags & SQLITE_DeferFKs) && action==OE_Restrict ){
+    return 0;
+  }
 
   if( action!=OE_None && !pTrigger ){
     u8 enableLookaside;           /* Copy of db->lookaside.bEnabled */
