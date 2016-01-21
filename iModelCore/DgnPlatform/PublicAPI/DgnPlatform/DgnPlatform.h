@@ -659,7 +659,8 @@ public:
 struct ProgressiveDisplay : RefCounted<NonCopyableClass>
 {
     enum class Completion {Finished=0, Aborted=1, Failed=2};
-    virtual Completion _Process(ViewContextR, uint32_t batchSize) = 0;  // if this returns Finished, it is removed from the viewport
+    enum class WantShow : bool {No=0, Yes=1};
+    virtual Completion _Process(ViewContextR, uint32_t batchSize, WantShow& showFrame) = 0;  // if this returns Finished, it is removed from the viewport
 };
 
 /*=================================================================================**//**
@@ -799,7 +800,7 @@ struct UpdatePlan
         bool WantMotionAbort() const {return 0 != m_motion.GetTolerance();}
     };
 
-    double      m_targetFPS = 10.0; // Frames Per second
+    double      m_targetFPS = 20.0; // Frames Per second
     Query       m_query;
     Scene       m_scene;
     AbortFlags  m_abortFlags;
@@ -1033,13 +1034,9 @@ enum class DrawPurpose
 {
     NotSpecified = 0,
     CreateScene,
-    Hilite,
-    Unhilite,
-    Dynamics,
     Plot,
     Pick,
     CaptureGeometry,
-    GenerateThumbnail,
     Decorate,
     FenceAccept,
     RegionFlood,                 //!< Collect graphics to find closed regions/flood...
@@ -1049,7 +1046,7 @@ enum class DrawPurpose
     ModelFacet,
     Measure,
     VisibilityCalculation,
-    UpdateDynamic,
+    Dynamics,
 };
 
 //! Used to communicate the result of handling an event from a GPS.

@@ -159,8 +159,10 @@ struct QueryModel : SpatialModel
     //=======================================================================================
     struct ProgressiveFilter : AllElementsFilter, ProgressiveDisplay
     {
+        enum {SHOW_PROGRESS_INTERVAL = 1000}; // once per second.
         uint32_t       m_thisBatch = 0;
         uint32_t       m_batchSize = 0;
+        uint64_t       m_nextShow  = 0;
         bool           m_setTimeout = false;
         BeSQLite::CachedStatementPtr m_rangeStmt;
         ProgressiveFilter(DgnViewportCR vp, QueryModelR queryModel, DgnElementIdSet const* exclude, uint64_t maxMemory, BeSQLite::CachedStatement* stmt, double minPixelSize)
@@ -169,7 +171,7 @@ struct QueryModel : SpatialModel
             SetViewport(vp, minPixelSize, 1.0);
             }
 
-        virtual Completion _Process(ViewContextR context, uint32_t batchSize) override;
+        virtual Completion _Process(ViewContextR context, uint32_t batchSize, WantShow&) override;
     };
 
     struct Processor;

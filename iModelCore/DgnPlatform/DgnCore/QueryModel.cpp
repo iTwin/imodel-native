@@ -588,14 +588,14 @@ int QueryModel::AllElementsFilter::_TestRTree(RTreeMatchFunction::QueryInfo cons
         {
         info.m_score = 0;
         }                                                                                                                                  
-    info.m_within = RTreeMatchFunction::Within::Partly;
+                info.m_within = RTreeMatchFunction::Within::Partly;
     return BE_SQLITE_OK;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-ProgressiveDisplay::Completion QueryModel::ProgressiveFilter::_Process(ViewContextR context, uint32_t batchSize)
+ProgressiveDisplay::Completion QueryModel::ProgressiveFilter::_Process(ViewContextR context, uint32_t batchSize, WantShow& wantShow)
     {
     DgnDb::VerifyClientThread();
 
@@ -621,6 +621,15 @@ ProgressiveDisplay::Completion QueryModel::ProgressiveFilter::_Process(ViewConte
         {
         if (context._CheckStop())
             {
+            // We only want to show the progress of ProgressiveDisplay once per second. 
+            // See if its been more than a second since the last time we showed something.
+            uint64_t now = BeTimeUtilities::QueryMillisecondsCounter();                                                                                                         
+            if (now > m_nextShow)
+                {
+                m_nextShow = now + SHOW_PROGRESS_INTERVAL;
+                wantShow = WantShow::Yes;
+                }
+
             DEBUG_PRINTF("aborted progressive display");
             return Completion::Aborted;
             }
@@ -629,7 +638,7 @@ ProgressiveDisplay::Completion QueryModel::ProgressiveFilter::_Process(ViewConte
             {
             if (!m_setTimeout)
                 { // don't set the timeout until after we've drawn one element
-                context.EnableStopAfterTimout(1000);
+                context.EnableStopAfterTimout(SHOW_PROGRESS_INTERVAL);
                 m_setTimeout = true;
                 }
 
@@ -638,6 +647,8 @@ ProgressiveDisplay::Completion QueryModel::ProgressiveFilter::_Process(ViewConte
             }
         }
 
+    // alway show the last batch.
+    wantShow = WantShow::Yes;
     BeAssert(rc == BE_SQLITE_DONE);
     DEBUG_PRINTF("finished progressive display");
     return Completion::Finished;
