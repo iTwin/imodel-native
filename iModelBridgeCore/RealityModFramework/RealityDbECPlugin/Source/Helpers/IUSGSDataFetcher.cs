@@ -161,26 +161,54 @@ namespace IndexECPlugin.Source.Helpers
 
             string bbox = ExtractBboxFromQuery();
 
-            List<string> formatList = ExtractFormatList();
-            bool selectAllFormats = (formatList == null || formatList.Count == 0);
+            //List<string> formatList = ExtractFormatList();
+            List<string> formatList = null;
+            
 
             List<UsgsRequest> reqList = new List<UsgsRequest>();
 
-            List<String> requestedClassificationList = new List<String>();
+            List<String> requestedClassificationList = null;
             bool selectAllClasses = true;
+            bool selectAllFormats = true;
 
             foreach ( var criteriaHolder in whereCriteriaList )
                 {
-                if ( (criteriaHolder.Operator == RelationalOperator.IN) && criteriaHolder.Property.Name == "Classification" )
+                if ( criteriaHolder.Property.Name == "Classification" && 
+                    (criteriaHolder.Operator == RelationalOperator.IN || criteriaHolder.Operator == RelationalOperator.EQ) )
                     {
-                    foreach ( var classification in criteriaHolder.Value.Split(',') )
+                    string[] newClassificationArray = null;
+                    if ( criteriaHolder.Operator == RelationalOperator.IN )
                         {
-                        requestedClassificationList.Add(classification);
-                        selectAllClasses = false;
+                        newClassificationArray = criteriaHolder.Value.Split(',');
                         }
-                    }
+                    if ( criteriaHolder.Operator == RelationalOperator.EQ )
+                        {
+                        newClassificationArray = new string[] { criteriaHolder.Value };
+                        }
+                    
+                    if ( requestedClassificationList == null )
+                        {
+                        requestedClassificationList = newClassificationArray.ToList();
+                        }
+                    else
+                        {
+                        requestedClassificationList = requestedClassificationList.Intersect(newClassificationArray).ToList();
+                        }
+                    selectAllClasses = false;
+                    }    
+                //This doesn't work because there may be multiple datasourcetypes in this field for the database, so we cannot use the operator "IN" to be consistent
+                //For now, we'll use the automatic filtering from WSG, even if it is less efficient to query all of instances from USGS then filtering, rather than filtering
+                //with the USGS API. We could also go back to using ExtractFormatList with a custom query parameter, but it is not a good idea to use these parameters only for
+                //the USGS API.
+                //if ( (criteriaHolder.Operator == RelationalOperator.IN) && criteriaHolder.Property.Name == "DataSourceTypesAvailable" )
+                //    {
+                //    foreach ( var format in criteriaHolder.Value.Split(',') )
+                //        {
+                //        formatList.Add(format);
+                //        selectAllFormats = false;
+                //        }
+                //    }
                 }
-
 
             try
                 {
@@ -393,27 +421,27 @@ namespace IndexECPlugin.Source.Helpers
 
             }
 
-        /// <summary>
-        /// Extracts all formats from the extended data key "format". 
-        /// </summary>
-        /// <returns>Null if there is no format key, otherwise list of all formats requested</returns>
-        private List<string> ExtractFormatList ()
-            {
-            if ( !m_query.ExtendedData.ContainsKey("format") )
-                {
-                return null;
-                }
-            string formatString = m_query.ExtendedData["format"].ToString();
+        ///// <summary>
+        ///// Extracts all formats from the extended data key "format". 
+        ///// </summary>
+        ///// <returns>Null if there is no format key, otherwise list of all formats requested</returns>
+        //private List<string> ExtractFormatList ()
+        //    {
+        //    if ( !m_query.ExtendedData.ContainsKey("format") )
+        //        {
+        //        return null;
+        //        }
+        //    string formatString = m_query.ExtendedData["format"].ToString();
 
-            string[] formatArray = formatString.Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
-            List<string> formatList = new List<string>();
+        //    string[] formatArray = formatString.Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
+        //    List<string> formatList = new List<string>();
 
-            foreach ( var format in formatArray )
-                {
-                formatList.Add(format.Trim());
-                }
+        //    foreach ( var format in formatArray )
+        //        {
+        //        formatList.Add(format.Trim());
+        //        }
 
-            return formatList;
-            }
+        //    return formatList;
+        //    }
         }
     }

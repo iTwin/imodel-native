@@ -619,6 +619,11 @@ namespace IndexECPlugin.Source
                 throw new Bentley.Exceptions.UserFriendlyException("Please enter a coordinate system when requesting this type of data.");
                 }
 
+            if ( dbRequestedEntities.Any( reqEnt => reqEnt.SelectedFormat == null || reqEnt.SelectedStyle == null) )
+                {
+                throw new Bentley.Exceptions.UserFriendlyException("Please specify a SelectedFormat and a SelectedStyle for each WMS entity requested.");
+                }
+
             IECClass spatialEntityClass = sender.ParentECPlugin.SchemaModule.FindECClass(connection, "RealityModeling", "SpatialEntity");
 
             IECRelationshipClass dataSourceRelClass = sender.ParentECPlugin.SchemaModule.FindECClass(connection, "RealityModeling", "SpatialEntityToSpatialDataSource") as IECRelationshipClass;
@@ -950,8 +955,8 @@ namespace IndexECPlugin.Source
             return new RequestedEntity
             {
                 ID = structValue.GetPropertyValue("ID").StringValue,
-                SelectedFormat = structValue.GetPropertyValue("SelectedFormat").StringValue,
-                SelectedStyle = structValue.GetPropertyValue("SelectedStyle").StringValue,
+                SelectedFormat = (structValue.GetPropertyValue("SelectedFormat") == null || structValue.GetPropertyValue("SelectedFormat").IsNull) ? null : structValue.GetPropertyValue("SelectedFormat").StringValue,
+                SelectedStyle = (structValue.GetPropertyValue("SelectedStyle") == null || structValue.GetPropertyValue("SelectedStyle").IsNull) ? null : structValue.GetPropertyValue("SelectedStyle").StringValue
             };
 
             }

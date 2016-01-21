@@ -70,7 +70,7 @@ namespace IndexECPlugin.Source.QueryProviders
 
             List<IECInstance> instanceList = null;
 
-            string className = m_query.SearchClasses.First().Class.Name;
+            IECClass ecClass = m_query.SearchClasses.First().Class;
 
             int i = 0;
             while ( (i < m_query.WhereClause.Count) && (instanceList == null) )
@@ -90,7 +90,7 @@ namespace IndexECPlugin.Source.QueryProviders
                     //We create the requested instances
                     foreach ( string sourceID in instanceIDExpression.InstanceIdSet )
                         {
-                        IECInstance instance = CreateInstanceFromID(className, sourceID);
+                        IECInstance instance = CreateInstanceFromID(ecClass, sourceID);
 
                         if ( instance != null )
                             {
@@ -109,7 +109,7 @@ namespace IndexECPlugin.Source.QueryProviders
                 // If we're here, that's because there was a polygon parameter in the extended data
                 //TODO : Implement this verification
 
-                switch ( className )
+                switch ( ecClass.Name )
                     {
                     //case "USGSEntity": //To be removed
                     //    return QueryUSGSEntitiesByPolygon();
@@ -119,92 +119,100 @@ namespace IndexECPlugin.Source.QueryProviders
                         instanceList = QuerySpatialEntitiesWithDetailsViewByPolygon();
                         break;
                     default:
-                        throw new UserFriendlyException("It is impossible to query instances of the class \"" + className + "\" in a USGS spatial request. The only class allowed is \"SpatialEntityWithDetailsView\".");
+                        throw new UserFriendlyException("It is impossible to query instances of the class \"" + ecClass.Name + "\" in a USGS spatial request. The only class allowed is \"SpatialEntityWithDetailsView\".");
                     }
                 }
 
             //Related instances of each instance found before
             foreach ( var instance in instanceList )
                 {
-                foreach ( RelatedInstanceSelectCriteria crit in m_query.SelectClause.SelectedRelatedInstances )
-                    {
-                    IECClass relatedClass = crit.RelatedClassSpecifier.RelatedClass;
-
-                    IECRelationshipClass relationshipClass = crit.RelatedClassSpecifier.RelationshipClass;
-
-                    //We do not use SpatialEntityDatasetToAlternateDataset for USGS data. DetailsViewToChildren is done in QuerySpatialEntitiesWithDetailsViewByPolygon
-                    if ( (relationshipClass.Name == "SpatialEntityDatasetToAlternateDataset") || (relationshipClass.Name == "DetailsViewToChildren") )
-                        {
-                        continue;
-                        }
-
-                    string relInstID;
-                    if (/*(relationshipClass.Name != "DetailsViewToChildren") && */(relationshipClass.Name != "SpatialEntityDatasetToSpatialEntityBase") )
-                        {
-                        relInstID = instance.InstanceId;
-                        }
-                    else
-                        {
-
-                        if ( crit.RelatedClassSpecifier.RelatedDirection == RelatedInstanceDirection.Forward )
-                            {
-                            //TODO : See if it is possible and useful to go in the direction parent->children
-                            continue;
-                            }
-                        else
-                            {
-                            //Here, we are sure to be in a SpatialEntityBase or SpatialEntityWithDetailsView, which should contain a ParentDatasetIdStr attribute 
-
-                            relInstID = instance["ParentDatasetIdStr"].StringValue;
-                            }
-
-                        }
-
-                    IECInstance relInst = CreateInstanceFromID(relatedClass.Name, relInstID);
-                    if ( relInst != null )
-                        {
-                        IECRelationshipInstance relationshipInst;
-                        if ( crit.RelatedClassSpecifier.RelatedDirection == RelatedInstanceDirection.Forward )
-                            {
-                            relationshipInst = relationshipClass.CreateRelationship(instance, relInst);
-                            }
-                        else
-                            {
-                            relationshipInst = relationshipClass.CreateRelationship(relInst, instance);
-                            }
-                        //relationshipInst.InstanceId = "test";
-                        instance.GetRelationshipInstances().Add(relationshipInst);
-                        }
-                    }
+                CreateRelatedInstance(instance, m_query.SelectClause.SelectedRelatedInstances);
                 }
 
             return instanceList;
 
             }
 
-        private IECInstance CreateInstanceFromID (string className, string sourceID)
+        private void CreateRelatedInstance (IECInstance instance, List<RelatedInstanceSelectCriteria> relatedCriteriaList)
+            {
+            foreach ( RelatedInstanceSelectCriteria crit in relatedCriteriaList )
+                {
+                IECClass relatedClass = crit.RelatedClassSpecifier.RelatedClass;
+
+                IECRelationshipClass relationshipClass = crit.RelatedClassSpecifier.RelationshipClass;
+
+                //We do not use SpatialEntityDatasetToAlternateDataset for USGS data. DetailsViewToChildren is done in QuerySpatialEntitiesWithDetailsViewByPolygon
+                if ( (relationshipClass.Name == "SpatialEntityDatasetToAlternateDataset") || (relationshipClass.Name == "DetailsViewToChildren") )
+                    {
+                    continue;
+                    }
+
+                string relInstID;
+                if (/*(relationshipClass.Name != "DetailsViewToChildren") && */(relationshipClass.Name != "SpatialEntityDatasetToSpatialEntityBase") )
+                    {
+                    relInstID = instance.InstanceId;
+                    }
+                else
+                    {
+
+                    if ( crit.RelatedClassSpecifier.RelatedDirection == RelatedInstanceDirection.Forward )
+                        {
+                        //TODO : See if it is possible and useful to go in the direction parent->children
+                        continue;
+                        }
+                    else
+                        {
+                        //Here, we are sure to be in a SpatialEntityBase, which should contain a ParentDatasetIdStr attribute 
+
+                        //relInstID = instance["ParentDatasetIdStr"].StringValue;
+                        relInstID = instance.ExtendedData["ParentDatasetIdStr"] as string;
+                        instance.ExtendedData.Remove("ParentDatasetIdStr");
+                        }
+
+                    }
+
+                IECInstance relInst = CreateInstanceFromID(relatedClass, relInstID);
+                if ( relInst != null )
+                    {
+                    IECRelationshipInstance relationshipInst;
+                    if ( crit.RelatedClassSpecifier.RelatedDirection == RelatedInstanceDirection.Forward )
+                        {
+                        relationshipInst = relationshipClass.CreateRelationship(instance, relInst);
+                        }
+                    else
+                        {
+                        relationshipInst = relationshipClass.CreateRelationship(relInst, instance);
+                        }
+                    //relationshipInst.InstanceId = "test";
+                    instance.GetRelationshipInstances().Add(relationshipInst);
+                    }
+                CreateRelatedInstance(relInst, crit.SelectedRelatedInstances);
+                }
+            }
+
+        private IECInstance CreateInstanceFromID (IECClass ecClass, string sourceID)
             {
 
-            switch ( className )
+            switch ( ecClass.Name )
                 {
                 case "SpatialEntityBase":
                 case "SpatialEntity":
-                    return QuerySingleSpatialEntityBase(sourceID, m_query.SearchClasses.First().Class);
+                    return QuerySingleSpatialEntityBase(sourceID, ecClass);
                 //case "SpatialEntityWithDetailsView":
                 //    return QuerySingleSpatialEntityWithDetailsView();
                 case "SpatialEntityDataset":
-                    return QuerySingleSpatialEntityDataset(sourceID, m_query.SearchClasses.First().Class);
+                    return QuerySingleSpatialEntityDataset(sourceID, ecClass);
                 case "Thumbnail":
-                    return QuerySingleThumbnail(sourceID, m_query.SearchClasses.First().Class);
+                    return QuerySingleThumbnail(sourceID, ecClass);
                 case "Metadata":
-                    return QuerySingleMetadata(sourceID, m_query.SearchClasses.First().Class);
+                    return QuerySingleMetadata(sourceID, ecClass);
                 case "SpatialDataSource":
                 case "OtherSource":
-                    return QuerySingleSpatialDataSource(sourceID, m_query.SearchClasses.First().Class);
+                    return QuerySingleSpatialDataSource(sourceID, ecClass);
                 case "Server":
-                    return QuerySingleServer(sourceID, m_query.SearchClasses.First().Class);
+                    return QuerySingleServer(sourceID, ecClass);
                 default:
-                    throw new UserFriendlyException("It is impossible to query instances of the class \"" + className + "\" in a USGS request by ID.");
+                    throw new UserFriendlyException("It is impossible to query instances of the class \"" + ecClass.Name + "\" in a USGS request by ID.");
                 }
             }
 
@@ -244,6 +252,17 @@ namespace IndexECPlugin.Source.QueryProviders
                     {
                     instance["Footprint"].StringValue = String.Format(@"{{ ""points"" : [[{0},{1}],[{2},{1}],[{2},{3}],[{0},{3}],[{0},{1}]], ""coordinate_system"" : ""4326"" }}", bbox.TryToGetString("minX"), bbox.TryToGetString("minY"), bbox.TryToGetString("maxX"), bbox.TryToGetString("maxY"));
                     }
+                }
+
+            string type = ExtractDataSourceType(json);
+
+            if ( type == null )
+                {
+                instance["DataSourceTypesAvailable"].SetToNull();
+                }
+            else
+                {
+                instance["DataSourceTypesAvailable"].StringValue = type;
                 }
 
             instance["ThumbnailURL"].SetToNull();
@@ -705,14 +724,15 @@ namespace IndexECPlugin.Source.QueryProviders
             instance["Id"].StringValue = sourceID;
 
             //Footprint
-            var bbox = json["spatial"]["boundingBox"] as JObject;
-
-
-            if ( bbox != null )
+            var spatial = json["spatial"] as JObject;
+            if ( spatial != null )
                 {
-                instance["Footprint"].StringValue = String.Format(@"{{ ""points"" : [[{0},{1}],[{2},{1}],[{2},{3}],[{0},{3}],[{0},{1}]], ""coordinate_system"" : ""4326"" }}", bbox.TryToGetString("minX"), bbox.TryToGetString("minY"), bbox.TryToGetString("maxX"), bbox.TryToGetString("maxY"));
+                var bbox = spatial["boundingBox"] as JObject;
+                if ( bbox != null )
+                    {
+                    instance["Footprint"].StringValue = String.Format(@"{{ ""points"" : [[{0},{1}],[{2},{1}],[{2},{3}],[{0},{3}],[{0},{1}]], ""coordinate_system"" : ""4326"" }}", bbox.TryToGetString("minX"), bbox.TryToGetString("minY"), bbox.TryToGetString("maxX"), bbox.TryToGetString("maxY"));
+                    }
                 }
-
             //Name
 
             instance["Name"].StringValue = json.TryToGetString("title");
@@ -772,7 +792,15 @@ namespace IndexECPlugin.Source.QueryProviders
             instance["DataProvider"].StringValue = "USGS";
             instance["DataProviderName"].StringValue = "United States Geological Survey";
 
-            instance["ParentDatasetIdStr"].StringValue = json.TryToGetString("parentId");
+            //instance["ParentDatasetIdStr"].StringValue = json.TryToGetString("parentId");
+
+            //This happens when we request the parent of the SpatialEntityBase
+            if ( m_query.SelectClause.SelectedRelatedInstances.Any(relCrit => relCrit.RelatedClassSpecifier.RelationshipClass.Name == "SpatialEntityDatasetToSpatialEntityBase" &&
+                                                                              relCrit.RelatedClassSpecifier.RelatedDirection == RelatedInstanceDirection.Backward) )
+                {
+                instance.ExtendedDataValueSetter.Add("ParentDatasetIdStr", json.TryToGetString("parentId"));
+                }
+
 
             return instance;
             }
@@ -905,6 +933,7 @@ namespace IndexECPlugin.Source.QueryProviders
                         {
                         instance["Footprint"].StringValue = "{ \"points\" : " + String.Format("[[{0},{1}],[{2},{1}],[{2},{3}],[{0},{3}],[{0},{1}]]", bbox.TryToGetString("minX"), bbox.TryToGetString("minY"), bbox.TryToGetString("maxX"), bbox.TryToGetString("maxY")) + ", \"coordinate_system\" : \"4326\" }";
                         }
+                    instance["DataSourceTypesAvailable"].StringValue = jtoken.TryToGetString("format");
                     instance["ThumbnailURL"].StringValue = jtoken.TryToGetString("previewGraphicURL");
                     instance["MetadataURL"].StringValue = "https://www.sciencebase.gov/catalog/item/" + instance.InstanceId;
                     instance["RawMetadataURL"].StringValue = "https://www.sciencebase.gov/catalog/item/download/" + instance.InstanceId + "?format=fgdc";

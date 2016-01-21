@@ -142,30 +142,6 @@
         <ECProperty propertyName="DataProvider" typeName="string" />
         <ECProperty propertyName="DataProviderName" typeName="string" />
         
-        <ECProperty propertyName="ThumbnailId" typeName="int">
-            <ECCustomAttributes>
-                <DBColumn>
-                    <ColumnName>Thumbnail_Id</ColumnName>
-                </DBColumn>
-            </ECCustomAttributes>
-        </ECProperty>        
-        
-        <ECProperty propertyName="MetadataId" typeName="int">
-            <ECCustomAttributes>
-                <DBColumn>
-                    <ColumnName>Metadata_Id</ColumnName>
-                </DBColumn>
-            </ECCustomAttributes>
-        </ECProperty>  
-        
-        <ECProperty propertyName="ParentDatasetId" typeName="int">
-            <ECCustomAttributes>
-                <DBColumn>
-                    <ColumnName>ParentDataset_Id</ColumnName>
-                </DBColumn>
-            </ECCustomAttributes>
-        </ECProperty>
-        
         <ECProperty propertyName="Date" typeName="dateTime">
             <ECCustomAttributes>
                 <DBColumn>
@@ -180,12 +156,7 @@
                     <ColumnName>Classification</ColumnName>
                 </DBColumn>
             </ECCustomAttributes>
-        </ECProperty>
-        
-        <ECProperty propertyName="ParentDatasetIdStr" typeName="string" />
-        
-        
-        
+        </ECProperty>        
         
     </ECClass>
     
@@ -212,7 +183,7 @@
     <ECClass typeName="SpatialEntityDataset" isDomainClass="true" baseClass="SpatialEntityBase">
         <ECCustomAttributes>
             <QueryType>
-                <QueryType>index</QueryType>
+                <QueryType>all</QueryType>
             </QueryType>
             <SQLEntity>
                 <FromTableName>dbo.SpatialEntityDatasets</FromTableName>
@@ -883,21 +854,6 @@
             </ECCustomAttributes>
         </ECProperty>
         
-        <ECProperty propertyName="WMSServerId" typeName="int">
-            <ECCustomAttributes>
-                <DBColumn>
-                    <ColumnName>WMSServer_Id</ColumnName>
-                </DBColumn>
-            </ECCustomAttributes>
-        </ECProperty>
-        
-        <ECProperty propertyName="ParentLayerId" typeName="int">
-            <ECCustomAttributes>
-                <DBColumn>
-                    <ColumnName>ParentLayer_Id</ColumnName>
-                </DBColumn>
-            </ECCustomAttributes>
-        </ECProperty>
     </ECClass>
     
     <ECClass typeName="SpatialEntityWithDetailsView" isDomainClass="true">
@@ -1100,7 +1056,7 @@
                 <ContainedKey>Id</ContainedKey>
             </RelationshipKeys>
         </ECCustomAttributes>
-        <Source cardinality="(1,1)" roleLabel="References" polymorphic="False">
+        <Source cardinality="(0,1)" roleLabel="References" polymorphic="False">
             <Class class="SpatialEntityDataset" />
         </Source>
         <Target cardinality="(0,1)" roleLabel="Referenced by" polymorphic="False">
@@ -1229,7 +1185,7 @@
                 <ContainedKey>ParentLayer_Id</ContainedKey>
             </RelationshipKeys>
         </ECCustomAttributes>
-        <Source cardinality="(1,1)" roleLabel="Holding" polymorphic="False">
+        <Source cardinality="(0,1)" roleLabel="Holding" polymorphic="False">
             <Class class="WMSLayer" />
         </Source>
         <Target cardinality="(0,n)" roleLabel="Held by" polymorphic="False">
@@ -1251,13 +1207,13 @@
         <ECProperty propertyName="OSM" typeName="boolean" />
     </ECClass>
 
-    <ECClass typeName="AutomaticRequest" isDomainClass="true">
+    <!--<ECClass typeName="AutomaticRequest" isDomainClass="true">
         <ECProperty propertyName="Polygon" typeName="string" />
         <ECProperty propertyName="MostRecent" typeName="boolean" />
         <ECProperty propertyName="BestResolution" typeName="boolean" />
         <ECProperty propertyName="Classification" typeName="string" />
         <ECProperty propertyName="OSM" typeName="boolean" />
-    </ECClass>
+    </ECClass> -->
    
     <ECClass typeName="PreparedPackage" isDomainClass="true">
         <ECCustomAttributes>
