@@ -11,18 +11,20 @@
 using namespace BentleyApi::ECN;
 
 BEGIN_BENTLEY_ECN_TEST_NAMESPACE
-
 //---------------------------------------------------------------------------------------
 // @bsiclass
 //+---------------+---------------+---------------+---------------+---------------+------
-struct StandardValueToEnumConversionTest : ECTestFixture
+struct CustomAttributeRemovalTest : ECTestFixture
     {
     ECSchemaReadContextPtr   m_readContext = ECSchemaReadContext::CreateContext();
+    Utf8String m_customAttributeName;
     ECSchemaPtr m_schema;
     ECSchemaPtr m_refSchema;
-    ECSchemaReadContextPtr   m_validationReadContext = ECSchemaReadContext::CreateContext();
 
-    ~StandardValueToEnumConversionTest()
+    CustomAttributeRemovalTest(Utf8String customAttributeName)
+        :m_customAttributeName(customAttributeName) {}
+    
+    ~CustomAttributeRemovalTest()
         {
         if (m_refSchema.IsValid())
             ValidateSchema(*m_refSchema, false);
@@ -30,6 +32,7 @@ struct StandardValueToEnumConversionTest : ECTestFixture
         if (m_schema.IsValid())
             ValidateSchema(*m_schema, false);
         }
+
     void ReadSchema(Utf8CP schemaString)
         {
         ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(m_schema, schemaString, *m_readContext));
@@ -41,10 +44,48 @@ struct StandardValueToEnumConversionTest : ECTestFixture
         ReadSchema(schemaString);
         }
 
+    bool HasCustomAttribute(ECSchemaR schema)
+        {
+        for (auto ecClass : schema.GetClasses())
+            {
+            for (auto ecProp : ecClass->GetProperties(false))
+                {
+                auto instance = ecProp->GetPrimaryCustomAttributeLocal(m_customAttributeName);
+                if (instance.IsValid())
+                    return true;
+                }
+            }
+        return false;
+        }
+
     void ValidateSchema(ECSchemaR schema, bool useFreshReadContext = true)
         {
-        EXPECT_FALSE(HasStandardValuesCA(schema)) << "Schema still has StandardValues CustomAttribute !!";
+        EXPECT_FALSE(HasCustomAttribute(*m_schema)) << "Schema still has " << m_customAttributeName << "CustomAttribute !!";
+        }
+    };
 
+//---------------------------------------------------------------------------------------
+// @bsiclass
+//+---------------+---------------+---------------+---------------+---------------+------
+struct StandardValueToEnumConversionTest : CustomAttributeRemovalTest
+    {
+    ECSchemaReadContextPtr   m_validationReadContext = ECSchemaReadContext::CreateContext();
+
+    StandardValueToEnumConversionTest()
+        :CustomAttributeRemovalTest("StandardValues") {}
+
+    ~StandardValueToEnumConversionTest()
+        {
+        if (m_refSchema.IsValid())
+            ValidateSchema(*m_refSchema, false);
+
+        if (m_schema.IsValid())
+            ValidateSchema(*m_schema, false);
+        }
+
+
+    void ValidateSchema(ECSchemaR schema, bool useFreshReadContext = true)
+        {
         Utf8String out;
         EXPECT_EQ(SchemaWriteStatus::Success, schema.WriteToXmlString(out, 3));
 
@@ -66,19 +107,7 @@ struct StandardValueToEnumConversionTest : ECTestFixture
             }
         }
 
-    bool HasStandardValuesCA(ECSchemaR schema)
-        {
-        for (auto ecClass : schema.GetClasses())
-            {
-            for (auto ecProp : ecClass->GetProperties(false))
-                {
-                auto instance = ecProp->GetPrimaryCustomAttributeLocal("StandardValues");
-                if (instance.IsValid())
-                    return true;
-                }
-            }
-        return false;
-        }
+
 
     void CheckTypeName(Utf8CP typeName, ECSchemaR schema, Utf8CP propertyName, bvector<Utf8CP> classes)
         {
@@ -120,6 +149,7 @@ struct StandardValueToEnumConversionTest : ECTestFixture
         return instance;
         }
     };
+
 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                    Basanta.Kharel                 01 / 2016
