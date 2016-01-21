@@ -2,13 +2,12 @@
 |
 |  $Source: Tests/Published/ECSqlRangeTree_Tests.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPublishedTests.h"
 #include "../BackDoor/PublicAPI/BackDoor/ECDb/ECDbTestProject.h"
 #include <BeSQLite/RTreeMatch.h>
-
 
 BEGIN_ECDBUNITTESTS_NAMESPACE
 
@@ -129,7 +128,6 @@ TEST(ECSqlRangeTreeTests, SimpleQuery)
 
     ASSERT_EQ(1, rowCount) << "ECSQL " << ecsql << " is expected to only return SQLite headquarters entry";
     }
-
 
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                  05/15
