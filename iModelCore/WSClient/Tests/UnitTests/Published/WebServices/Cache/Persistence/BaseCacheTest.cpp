@@ -189,20 +189,26 @@ std::shared_ptr<DataSourceCache> BaseCacheTest::GetTestCache()
         return s_reusableCache;
         }
 
-    s_reusableCache = std::make_shared<DataSourceCache>();
+    s_reusableCache = CreateTestCache("testCache.ecdb");
+    return s_reusableCache;
+    }
+
+std::shared_ptr<DataSourceCache> BaseCacheTest::CreateTestCache(Utf8StringCR fileName)
+    {
+    auto cache = std::make_shared<DataSourceCache>();
 
     BeFileName cachePath(":memory:");
 
-    cachePath = GetTestsTempDir().AppendToPath(L"testCache.ecdb");
-    BeFileName::BeDeleteFile(cachePath);
+    cachePath = GetTestsTempDir().AppendToPath(BeFileName(fileName));
+    if (cachePath.DoesPathExist())
+        {
+        EXPECT_EQ(BeFileNameStatus::Success, BeFileName::BeDeleteFile(cachePath));
+        }
 
-    BentleyStatus status = s_reusableCache->Create(cachePath, StubCacheEnvironemnt());
-    EXPECT_EQ(SUCCESS, status);
+    EXPECT_EQ(SUCCESS, cache->Create(cachePath, StubCacheEnvironemnt()));
+    EXPECT_EQ(SUCCESS, cache->UpdateSchemas(std::vector<ECSchemaPtr> {GetTestSchema(), GetTestSchema2()}));
 
-    status = s_reusableCache->UpdateSchemas(std::vector<ECSchemaPtr> {GetTestSchema(), GetTestSchema2()});
-    EXPECT_EQ(SUCCESS, status);
-
-    return s_reusableCache;
+    return cache;
     }
 
 void BaseCacheTest::SetUpTestCase()
