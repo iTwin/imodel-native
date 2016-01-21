@@ -67,6 +67,7 @@
     <ClCompile Include="Published\BuildInstanceAndSerializeToXML.cpp" />
     <ClCompile Include="Published\CustomAttributeConversionsTest.cpp" />
     <ClCompile Include="Published\CustomAttributeTests.cpp" />
+    <ClCompile Include="Published\ExtendedTypeTests.cpp" />
     <ClCompile Include="Published\ECRelationshipTests.cpp" />
     <ClCompile Include="Published\InstanceLabelTests.cpp" />
     <ClCompile Include="Published\InstanceTests.cpp" />

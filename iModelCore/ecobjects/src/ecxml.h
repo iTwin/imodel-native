@@ -42,6 +42,7 @@ static Utf8CP      ECXML_URI                           = "http://www.bentley.com
 
 #define     BASECLASS_ATTRIBUTE                 "baseClass"
 #define     TYPE_NAME_ATTRIBUTE                 "typeName"
+#define     EXTENDED_TYPE_NAME_ATTRIBUTE        "extendedTypeName"
 #define     BACKING_TYPE_NAME_ATTRIBUTE         "backingTypeName"
 #define     IS_STRICT_ATTRIBUTE                 "isStrict"
 #define     IS_DOMAINCLASS_ATTRIBUTE            "isDomainClass"
