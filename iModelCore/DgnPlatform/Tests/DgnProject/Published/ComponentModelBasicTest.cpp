@@ -265,7 +265,7 @@ TEST_F(ComponentModelBasicTest, ComponentDef_FromECSqlName)
     def0 = ComponentDef::FromECSqlName(nullptr, *db, TEST_BOXES_COMPONENT_ECSQLCLASS_NAME);
     EXPECT_FALSE(def0.IsValid());
 
-    ASSERT_NO_FATAL_FAILURE(CreateAndImportComponentSchema(db));
+    CreateAndImportComponentSchema(db);
 
     ComponentDefPtr def1 = ComponentDef::FromECSqlName(&status, *db, TEST_BOXES_COMPONENT_ECSQLCLASS_NAME);
     EXPECT_FALSE(def1.IsValid());
@@ -287,7 +287,7 @@ TEST_F(ComponentModelBasicTest, CreateComponentModel)
     DgnDbPtr db = initDb(L"CreateComponentModel.idgndb");
     ASSERT_TRUE(db.IsValid());
 
-    ASSERT_NO_FATAL_FAILURE(CreateAndImportComponentSchema(db));
+    CreateAndImportComponentSchema(db);
 
     ComponentModelPtr CM2 = ComponentModel::Create(*db, TEST_BOXES_COMPONENT_ECSQLCLASS_NAME);
     EXPECT_TRUE(CM2.IsValid());
@@ -346,7 +346,7 @@ TEST_F(ComponentModelBasicTest, ComponentDef_FromComponentModel)
     EXPECT_FALSE(def.IsValid());
     // TODO: Check status
 
-    ASSERT_NO_FATAL_FAILURE(CreateAndImportComponentSchema(db));
+    CreateAndImportComponentSchema(db);
 
     // Still category does not exist
     ComponentDefPtr def2 = ComponentDef::FromComponentModel(&status, *CM);
@@ -372,7 +372,7 @@ TEST_F(ComponentModelBasicTest, DeleteComponentDef)
     DgnDbStatus status = ComponentDef::DeleteComponentDef(*db, TEST_BOXES_COMPONENT_ECSQLCLASS_NAME);
     EXPECT_TRUE(DgnDbStatus::Success != status);
 
-    ASSERT_NO_FATAL_FAILURE(CreateAndImportComponentSchema(db));
+    CreateAndImportComponentSchema(db);
 
     ComponentDefPtr def2 = ComponentDef::FromECSqlName(&status, *db, TEST_BOXES_COMPONENT_ECSQLCLASS_NAME);
     EXPECT_TRUE(def2.IsValid());
@@ -393,7 +393,7 @@ TEST_F(ComponentModelBasicTest, ComponentDef_Export)
 
     // Create Category and Component Schema
     ASSERT_TRUE(CreateCategory(db, "Boxes", ColorDef(255, 0, 0)).IsValid());
-    ASSERT_NO_FATAL_FAILURE(CreateAndImportComponentSchema(db));
+    CreateAndImportComponentSchema(db);
     db->SaveChanges();
 
     DgnDbStatus status;
@@ -421,7 +421,7 @@ TEST_F(ComponentModelBasicTest, ComponentDef_Export_SameDb)
 
     // Create Category and Component Schema
     ASSERT_TRUE(CreateCategory(db, "Boxes", ColorDef(255, 0, 0)).IsValid());
-    ASSERT_NO_FATAL_FAILURE(CreateAndImportComponentSchema(db));
+    CreateAndImportComponentSchema(db);
     db->SaveChanges();
 
     DgnDbStatus status;
@@ -485,7 +485,7 @@ TEST_F(ComponentModelBasicTest, ComponentDef_FromInstance)
     DgnDbStatus status;
     // Create Category and Component Schema
     ASSERT_TRUE(CreateCategory(db, "Boxes", ColorDef(255, 0, 0)).IsValid());
-    ASSERT_NO_FATAL_FAILURE(CreateAndImportComponentSchema(db));
+    CreateAndImportComponentSchema(db);
     db->SaveChanges();
 
     ComponentDefPtr cdef = ComponentDef::FromECSqlName(&status, *db, TEST_BOXES_COMPONENT_ECSQLCLASS_NAME);
@@ -522,7 +522,7 @@ TEST_F(ComponentModelBasicTest, MakeUniqueInstance)
     DgnDbStatus status;
     // Create Category and Component Schema
     ASSERT_TRUE(CreateCategory(db, "Boxes", ColorDef(255, 0, 0)).IsValid());
-    ASSERT_NO_FATAL_FAILURE(CreateAndImportComponentSchema(db));
+    CreateAndImportComponentSchema(db);
     db->SaveChanges();
 
     ComponentDefPtr cdef = ComponentDef::FromECSqlName(&status, *db, TEST_BOXES_COMPONENT_ECSQLCLASS_NAME);
@@ -556,7 +556,7 @@ TEST_F(ComponentModelBasicTest, Variations)
     //---------------------------------------------------------------------------------------------------------------
     // Create Category and Component Schema
     ASSERT_TRUE(CreateCategory(db, "Boxes", ColorDef(255, 0, 0)).IsValid());
-    ASSERT_NO_FATAL_FAILURE(CreateAndImportComponentSchema(db));
+    CreateAndImportComponentSchema(db);
     db->SaveChanges();
 
     ComponentDefPtr cdef = ComponentDef::FromECSqlName(&status, *db, TEST_BOXES_COMPONENT_ECSQLCLASS_NAME);
@@ -630,7 +630,7 @@ TEST_F(ComponentModelBasicTest, MakeVariationInstance)
     //---------------------------------------------------------------------------------------------------------------
     // Create Category and Component Schema
     ASSERT_TRUE(CreateCategory(db, "Boxes", ColorDef(255, 0, 0)).IsValid());
-    ASSERT_NO_FATAL_FAILURE(CreateAndImportComponentSchema(db));
+    CreateAndImportComponentSchema(db);
     db->SaveChanges();
 
     ComponentDefPtr cdef = ComponentDef::FromECSqlName(&status, *db, TEST_BOXES_COMPONENT_ECSQLCLASS_NAME);
