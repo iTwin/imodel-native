@@ -374,7 +374,7 @@ SchemaWriteStatus ECProperty::_WriteXml (BeXmlWriterR xmlWriter, Utf8CP elementN
     if (IsMaximumValueDefined())
         xmlWriter.WriteAttribute(MAXIMUM_VALUE_ATTRIBUTE, this->GetMaximumValue().c_str());
     
-    if (nullptr != additionalAttributes)
+    if (nullptr != additionalAttributes && !additionalAttributes->empty())
         {
         for (bmap<Utf8CP, CharCP>::iterator iter = additionalAttributes->begin(); iter != additionalAttributes->end(); ++iter)
             xmlWriter.WriteAttribute(iter->first, iter->second);
@@ -408,21 +408,64 @@ SchemaReadStatus PrimitiveECProperty::_ReadXml (BeXmlNodeR propertyNode, ECSchem
         }
     else if (ECObjectsStatus::ParseError == this->SetTypeName (value.c_str()))
         LOG.warningv ("Defaulting the type of ECProperty '%s' to '%s' in reaction to non-fatal parse error.", GetName().c_str(), GetTypeName().c_str());
+
+    // set extended value if available
+    if (BEXML_Success == propertyNode.GetAttributeStringValue(value, EXTENDED_TYPE_NAME_ATTRIBUTE))
+        {
+        this->SetExtendedTypeName(value.c_str());
+        }
+
     return SchemaReadStatus::Success;
     }
 
-//----------------------------------------------------------------------------------------
-// @bsimethod                                    Basanta.Kharel                12/2015
-//+---------------+---------------+---------------+---------------+---------------+------
+/*---------------------------------------------------------------------------------**//**
+ * @bsimethod                                                    Stefan.Apfel   11/15
++---------------+---------------+---------------+---------------+---------------+------*/
 SchemaWriteStatus PrimitiveECProperty::_WriteXml(BeXmlWriterR xmlWriter, int ecXmlVersionMajor, int ecXmlVersionMinor)
     {
-    //Incomplete, KindOfQuantity should be converted to Units CustomAttribute for ecxml 2.0
-    if (2 == ecXmlVersionMajor)
-        return T_Super::_WriteXml(xmlWriter, EC_PROPERTY_ELEMENT, ecXmlVersionMajor);
-
     bmap<Utf8CP, CharCP> additionalAttributes;
-    additionalAttributes["kindOfQuantity"] = GetKindOfQuantity().c_str();
+    if (this->HasExtendedType())
+        {
+        additionalAttributes[EXTENDED_TYPE_NAME_ATTRIBUTE] = m_extendedTypeName.c_str();
+        }
+    if (3 == ecXmlVersionMajor)
+        additionalAttributes["kindOfQuantity"] = GetKindOfQuantity().c_str();
+
     return T_Super::_WriteXml(xmlWriter, EC_PROPERTY_ELEMENT, ecXmlVersionMajor, &additionalAttributes);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+ * @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String PrimitiveECProperty::GetExtendedTypeName() const
+    {
+    return m_extendedTypeName;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+ @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus PrimitiveECProperty::SetExtendedTypeName(Utf8CP extendedTypeName)
+    {
+    if (Utf8String::IsNullOrEmpty(extendedTypeName))
+        {
+        m_extendedTypeName = Utf8String(); // Resets String
+        }
+    else if (!m_extendedTypeName.Equals(extendedTypeName))
+        {
+        m_extendedTypeName = extendedTypeName;
+        InvalidateClassLayout();
+        }
+    
+        return ECObjectsStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+ @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+bool PrimitiveECProperty::RemoveExtendedTypeName()
+    {
+    return ECObjectsStatus::Success == this->SetExtendedTypeName(nullptr);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1090,6 +1133,14 @@ ECObjectsStatus ArrayECProperty::SetMaxOccurs (Utf8StringCR maxOccurs)
         }
     SetMaxOccurs (iMaxOccurs);
     return ECObjectsStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+@bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ECProperty::HasExtendedType () const
+    {
+    return this->_HasExtendedType();
     }
 
 //---------------------------------------------------------------------------------------

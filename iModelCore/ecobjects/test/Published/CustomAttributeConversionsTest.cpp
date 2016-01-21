@@ -1250,7 +1250,7 @@ TEST_F(StandardValueToEnumConversionTest, SortedClasses)
     ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, schemaXML, *m_readContext));
     bvector<ECClassP> classes = ECSchemaConverter::GetHierarchicallySortedClasses(*schema);
     bvector<Utf8String> order = { "B", "C", "A" };
-    for (int i = 0; i < order.size(); i++)
+    for (size_t i = 0; i < order.size(); i++)
         EXPECT_EQ(order[i], classes[i]->GetName());
 
     EXPECT_TRUE(ECSchemaConverter::IsBaseClass(schema->GetClassCP("A"), schema->GetClassCP("B")));

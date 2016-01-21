@@ -672,6 +672,8 @@ protected:
     virtual NavigationECPropertyCP      _GetAsNavigationPropertyCP() const  { return nullptr; } // used to avoid dynamic_cast
     virtual NavigationECPropertyP       _GetAsNavigationPropertyP()         { return nullptr; } // used to avoid dynamic_cast
 
+    virtual bool                        _HasExtendedType() const { return false; }
+
     // This method returns a wstring by value because it may be a computed string.  For instance struct properties may return a qualified typename with a namespace
     // prefix relative to the containing schema.
     virtual Utf8String                  _GetTypeName () const = 0;
@@ -736,7 +738,7 @@ public:
     bool                                GetIsPrimitiveArray() const { return _IsPrimitiveArray(); }
     //! Returns whether this property is a NavigationECProperty
     bool                                GetIsNavigation() const { return _IsNavigation(); }
-
+    
     //! Sets the ECXML typename for the property.  @see GetTypeName()
     ECOBJECTS_EXPORT ECObjectsStatus    SetTypeName(Utf8String value);
     //! The ECXML typename for the property.
@@ -795,6 +797,9 @@ public:
     //@param[in]    isReadOnly  Valid values are 'True' and 'False' (case insensitive)
     ECOBJECTS_EXPORT ECObjectsStatus    SetIsReadOnly (Utf8CP isReadOnly);
 
+    //! Returns whether this property has an extended type specified
+    ECOBJECTS_EXPORT bool               HasExtendedType() const;
+
     PrimitiveECPropertyCP  GetAsPrimitiveProperty() const       { return _GetAsPrimitivePropertyCP(); } //!< Returns the property as a const PrimitiveECProperty*
     PrimitiveECPropertyP   GetAsPrimitivePropertyP()            { return _GetAsPrimitivePropertyP(); } //!< Returns the property as a PrimitiveECProperty*
     ArrayECPropertyCP      GetAsArrayProperty() const           { return _GetAsArrayPropertyCP(); } //!< Returns the property as a const ArrayECProperty*
@@ -822,6 +827,7 @@ private:
     ECEnumerationCP                             m_enumeration;
     mutable CalculatedPropertySpecificationPtr  m_calculatedSpec;   // lazily-initialized
     Utf8String                                  m_kindOfQuantity;
+    Utf8String                                  m_extendedTypeName;
 
     PrimitiveECProperty (ECClassCR ecClass) : m_primitiveType(PRIMITIVETYPE_String), ECProperty(ecClass), m_enumeration(nullptr) {};
 
@@ -835,6 +841,7 @@ protected:
     virtual Utf8String                  _GetTypeNameForXml(int ecXmlVersionMajor) const override;
     virtual ECObjectsStatus             _SetTypeName (Utf8StringCR typeName) override;
     virtual bool                        _CanOverride(ECPropertyCR baseProperty) const override;
+    virtual bool                        _HasExtendedType() const override { return m_extendedTypeName.size() > 0; }
     virtual CalculatedPropertySpecificationCP   _GetCalculatedPropertySpecification() const override;
     virtual bool                                _IsCalculated() const override;
     virtual bool                                _SetCalculatedPropertySpecification (IECInstanceP expressionAttribute) override;
@@ -852,6 +859,13 @@ public:
     ECOBJECTS_EXPORT ECObjectsStatus SetKindOfQuantity(Utf8StringCR value);
     //! Gets the KindOfQuantity of this PrimitiveECProperty
     ECOBJECTS_EXPORT Utf8StringCR GetKindOfQuantity() const;
+    //! Sets the Name of the Extended Type of this property.
+    ECOBJECTS_EXPORT ECObjectsStatus SetExtendedTypeName(Utf8CP extendedTypeName);
+    //! Resets the extended type on this property.
+    ECOBJECTS_EXPORT bool RemoveExtendedTypeName();
+    //! Gets the PrimitiveType of this ECProperty
+    ECOBJECTS_EXPORT Utf8String GetExtendedTypeName() const;
+	
 };
 
 //=======================================================================================
