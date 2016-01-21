@@ -395,9 +395,11 @@ SchemaReadStatus PrimitiveECProperty::_ReadXml (BeXmlNodeR propertyNode, ECSchem
     if (status != SchemaReadStatus::Success)
         return status;
 
+    Utf8String value;  // needed for macro.
+    READ_OPTIONAL_XML_ATTRIBUTE(propertyNode, KIND_OF_QUANTITY_ATTRIBUTE, this, KindOfQuantity)
+
     // typeName is a required attribute.  If it is missing, an error will be returned.
     // For Primitive & Array properties we ignore parse errors and default to string.  Struct properties will require a resolvable typename.
-    Utf8String value;  // needed for macro.
     if (BEXML_Success != propertyNode.GetAttributeStringValue (value, TYPE_NAME_ATTRIBUTE))
         {
         BeAssert (s_noAssert);
@@ -407,6 +409,20 @@ SchemaReadStatus PrimitiveECProperty::_ReadXml (BeXmlNodeR propertyNode, ECSchem
     else if (ECObjectsStatus::ParseError == this->SetTypeName (value.c_str()))
         LOG.warningv ("Defaulting the type of ECProperty '%s' to '%s' in reaction to non-fatal parse error.", GetName().c_str(), GetTypeName().c_str());
     return SchemaReadStatus::Success;
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                    Basanta.Kharel                12/2015
+//+---------------+---------------+---------------+---------------+---------------+------
+SchemaWriteStatus PrimitiveECProperty::_WriteXml(BeXmlWriterR xmlWriter, int ecXmlVersionMajor, int ecXmlVersionMinor)
+    {
+    //Incomplete, KindOfQuantity should be converted to Units CustomAttribute for ecxml 2.0
+    if (2 == ecXmlVersionMajor)
+        return T_Super::_WriteXml(xmlWriter, EC_PROPERTY_ELEMENT, ecXmlVersionMajor);
+
+    bmap<Utf8CP, CharCP> additionalAttributes;
+    additionalAttributes["kindOfQuantity"] = GetKindOfQuantity().c_str();
+    return T_Super::_WriteXml(xmlWriter, EC_PROPERTY_ELEMENT, ecXmlVersionMajor, &additionalAttributes);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -567,6 +583,23 @@ ECObjectsStatus PrimitiveECProperty::SetType (ECEnumerationCR enumerationType)
     m_enumeration = &enumerationType;
 
     return ECObjectsStatus::Success;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Basanta.Kharel                12/2015
+//+---------------+---------------+---------------+---------------+---------------+------
+ECObjectsStatus PrimitiveECProperty::SetKindOfQuantity (Utf8StringCR value)
+    {
+    m_kindOfQuantity = value;
+    return ECObjectsStatus::Success;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Basanta.Kharel                12/2015
+//+---------------+---------------+---------------+---------------+---------------+------
+Utf8StringCR PrimitiveECProperty::GetKindOfQuantity () const
+    {
+    return m_kindOfQuantity;
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -821,11 +821,13 @@ private:
     PrimitiveType                               m_primitiveType;
     ECEnumerationCP                             m_enumeration;
     mutable CalculatedPropertySpecificationPtr  m_calculatedSpec;   // lazily-initialized
+    Utf8String                                  m_kindOfQuantity;
 
     PrimitiveECProperty (ECClassCR ecClass) : m_primitiveType(PRIMITIVETYPE_String), ECProperty(ecClass), m_enumeration(nullptr) {};
 
 protected:
     virtual SchemaReadStatus            _ReadXml (BeXmlNodeR propertyNode, ECSchemaReadContextR schemaContext) override;
+    virtual SchemaWriteStatus           _WriteXml(BeXmlWriterR xmlWriter, int ecXmlVersionMajor, int ecXmlVersionMinor) override;
     virtual bool                        _IsPrimitive () const override { return true;}
     virtual PrimitiveECPropertyCP       _GetAsPrimitivePropertyCP() const override { return this; }
     virtual PrimitiveECPropertyP        _GetAsPrimitivePropertyP() override { return this; }
@@ -846,6 +848,10 @@ public:
     ECOBJECTS_EXPORT ECObjectsStatus SetType(ECEnumerationCR value);
     //! Gets the Enumeration of this ECProperty or nullptr if none used.
     ECOBJECTS_EXPORT ECEnumerationCP GetEnumeration() const;
+    //! Sets the KindOfQuantity of this PrimitiveECProperty
+    ECOBJECTS_EXPORT ECObjectsStatus SetKindOfQuantity(Utf8StringCR value);
+    //! Gets the KindOfQuantity of this PrimitiveECProperty
+    ECOBJECTS_EXPORT Utf8StringCR GetKindOfQuantity() const;
 };
 
 //=======================================================================================
