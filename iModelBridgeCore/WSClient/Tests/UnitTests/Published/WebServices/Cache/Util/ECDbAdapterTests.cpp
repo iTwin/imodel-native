@@ -18,9 +18,11 @@ using namespace ::testing;
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 
 #define INSERT_INSTANCE(db, ecClassCP, keyOut) \
+    ASSERT_FALSE(ecClassCP == nullptr);\
     ASSERT_EQ(SUCCESS, JsonInserter(db, *ecClassCP).Insert(keyOut, Json::Value()));
 
 #define INSERT_RELATIONSHIP(db, ecRelClassCP, source, target, rel) \
+    ASSERT_FALSE(ecRelClassCP == nullptr); \
     ASSERT_TRUE((rel = ECDbAdapter(db).RelateInstances(ecRelClassCP, source, target)).IsValid());
 
 #define CREATE_MockECDbAdapterDeleteListener(listener) \
