@@ -44,13 +44,13 @@ struct CustomAttributeRemovalTest : ECTestFixture
         ReadSchema(schemaString);
         }
 
-    bool HasCustomAttribute(ECSchemaR schema)
+    bool HasCustomAttribute(ECSchemaR schema, Utf8StringCR customAttributeName)
         {
         for (auto ecClass : schema.GetClasses())
             {
             for (auto ecProp : ecClass->GetProperties(false))
                 {
-                auto instance = ecProp->GetPrimaryCustomAttributeLocal(m_customAttributeName);
+                auto instance = ecProp->GetPrimaryCustomAttributeLocal(customAttributeName);
                 if (instance.IsValid())
                     return true;
                 }
@@ -60,7 +60,7 @@ struct CustomAttributeRemovalTest : ECTestFixture
 
     void ValidateSchema(ECSchemaR schema, bool useFreshReadContext = true)
         {
-        EXPECT_FALSE(HasCustomAttribute(*m_schema)) << "Schema still has " << m_customAttributeName << "CustomAttribute !!";
+        EXPECT_FALSE(HasCustomAttribute(*m_schema, m_customAttributeName)) << "Schema still has " << m_customAttributeName << "CustomAttribute !!";
         }
     };
 
