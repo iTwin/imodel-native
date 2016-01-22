@@ -115,7 +115,7 @@
     </Part>
     
     <!-- NOTE: Graphite uses "G" as an ApiNumber (library suffix) to disambiguate from Vancouver libraries -->
-    <Part Name="ImagePPDll" BentleyBuildMakeFile="All/ImagePP.mke" ApiNumber="G">
+    <Part Name="ImagePPDll" BentleyBuildMakeFile="All/ImagePP.mke" ApiNumber="G06">
         <SubPart PartName="ImageppDLLSubParts" />
         <Bindings>
             <Libs>Delivery/$(shlibprefix)Imagepp$(libext)</Libs>
@@ -138,7 +138,7 @@
     </Part>
    
     <!-- NOTE: Graphite uses "G" as an ApiNumber (library suffix) to disambiguate from Vancouver libraries -->
-    <Part Name="IppImagingDll" BentleyBuildMakeFile="IppImaging/IppImaging.mke" ApiNumber="G" OnlyPlatforms="x86,x64">
+    <Part Name="IppImagingDll" BentleyBuildMakeFile="IppImaging/IppImaging.mke" ApiNumber="G06" OnlyPlatforms="x86,x64">
         <SubPart PartName="ImagePPDll" />       
         <Bindings>
             <Libs>Delivery/$(shlibprefix)IppImaging$(libext)</Libs>
