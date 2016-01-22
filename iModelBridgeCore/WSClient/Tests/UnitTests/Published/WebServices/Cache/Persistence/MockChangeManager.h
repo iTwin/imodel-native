@@ -29,10 +29,8 @@ struct MockChangeManager : public IChangeManager
             bool ());
         MOCK_METHOD1 (SetSyncActive,
             void (bool active));
-        MOCK_METHOD4 (LegacyCreateObject,
-            ECInstanceKey (ECClassCR, JsonValueCR, ECInstanceKeyCR, SyncStatus));
-        MOCK_METHOD0 (GetLegacyParentRelationshipClass,
-            ECN::ECRelationshipClassCP ());
+        MOCK_METHOD3 (GetLegacyParentRelationshipClass,
+            ECRelationshipClassCP(ECClassId, ECClassId, bool));
         MOCK_METHOD3 (CreateObject,
             ECInstanceKey (ECClassCR, JsonValueCR, SyncStatus));
         MOCK_METHOD3 (ModifyObject,

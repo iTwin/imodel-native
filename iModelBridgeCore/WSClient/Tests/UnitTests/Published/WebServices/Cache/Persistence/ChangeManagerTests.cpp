@@ -8,6 +8,8 @@
 
 #include "ChangeManagerTests.h"
 
+#include "../Util/MockECDbSchemaChangeListener.h"
+
 using namespace ::testing;
 using std::shared_ptr;
 USING_NAMESPACE_BENTLEY_WEBSERVICES
@@ -136,56 +138,140 @@ TEST_F(ChangeManagerTests, ModifyFile_SyncSetToActiveAndModifyingModifiedFile_Er
     EXPECT_EQ(ERROR, status);
     }
 
-TEST_F(ChangeManagerTests, GetLegacyParentRelationshipClass_Default_NonNull)
+TEST_F(ChangeManagerTests, GetLegacyParentRelationshipClass_InvalidClassIds_ReturnsInvalid)
     {
     auto cache = GetTestCache();
-    EXPECT_FALSE(nullptr == cache->GetChangeManager().GetLegacyParentRelationshipClass());
+    EXPECT_EQ(nullptr, cache->GetChangeManager().GetLegacyParentRelationshipClass(99999, 99999));
     }
 
-TEST_F(ChangeManagerTests, LegacyCreateObject_RemoteIdIsEmpty_SetsRemoteId)
+TEST_F(ChangeManagerTests, GetLegacyParentRelationshipClass_SameParameters_ReturnsSameClass)
     {
-    // Arrange
-    auto cache = GetTestCache();
-    auto testClass = cache->GetAdapter().GetECClass("TestSchema.TestClass");
-    auto parent = StubInstanceInCache(*cache, {"TestSchema.TestClass", "Parent"});
-    // Act
-    Json::Value properties;
-    properties["TestProperty"] = "TestValue";
+    auto cache = CreateTestCache();
 
-    auto instance = cache->GetChangeManager().LegacyCreateObject(*testClass, properties, parent);
-    // Assert
-    ASSERT_NE("", cache->FindInstance(instance).remoteId);
+    ECClassId classId = cache->GetAdapter().GetECClass("TestSchema.TestClass")->GetId();
+    auto relClass1 = cache->GetChangeManager().GetLegacyParentRelationshipClass(classId, classId);
+    auto relClass2 = cache->GetChangeManager().GetLegacyParentRelationshipClass(classId, classId);
+
+    ASSERT_EQ(relClass1, relClass2);
+    ASSERT_TRUE(nullptr != relClass1);
+    ASSERT_TRUE(nullptr != cache->GetAdapter().GetECRelationshipClass(relClass1->GetId()));
+    EXPECT_TRUE(relClass1->GetSource().SupportsClass(*cache->GetAdapter().GetECClass(classId)));
+    EXPECT_TRUE(relClass1->GetTarget().SupportsClass(*cache->GetAdapter().GetECClass(classId)));
     }
 
-TEST_F(ChangeManagerTests, LegacyCreateObject_ParentPassed_CreatedInstanceAndRelatesWithLegacyRelationship)
+TEST_F(ChangeManagerTests, GetLegacyParentRelationshipClass_SameParameters_CallsOnSchemaChangedListenerOnlyFirstTime)
     {
-    // Arrange
-    auto cache = GetTestCache();
-    auto parent = StubInstanceInCache(*cache, {"TestSchema.TestClass", "Parent"});
-    // Act
-    Json::Value properties;
-    properties["TestProperty"] = "TestValue";
+    auto cache = CreateTestCache();
+    ECClassId classId = cache->GetAdapter().GetECClass("TestSchema.TestClass")->GetId();
 
-    auto testClass = cache->GetAdapter().GetECClass("TestSchema.TestClass");
-    auto instance = cache->GetChangeManager().LegacyCreateObject(*testClass, properties, parent);
-    // Assert
-    ASSERT_TRUE(instance.IsValid());
+    MockECDbSchemaChangeListener listener;
+    cache->RegisterSchemaChangeListener(&listener);
+
+    EXPECT_CALL(listener, OnSchemaChanged()).Times(2);
+    auto relClass1 = cache->GetChangeManager().GetLegacyParentRelationshipClass(classId, classId);
+
+    EXPECT_CALL(listener, OnSchemaChanged()).Times(0);
+    auto relClass2 = cache->GetChangeManager().GetLegacyParentRelationshipClass(classId, classId);
+
+    ASSERT_EQ(relClass1, relClass2);
+    ASSERT_TRUE(nullptr != relClass1);
+    ASSERT_TRUE(nullptr != cache->GetAdapter().GetECRelationshipClass(relClass1->GetId()));
+    }
+
+TEST_F(ChangeManagerTests, GetLegacyParentRelationshipClass_DifferentParameters_ReturnsDifferentClasses)
+    {
+    auto cache = CreateTestCache();
+
+    ECClassId classId1 = cache->GetAdapter().GetECClass("TestSchema.TestClass")->GetId();
+    ECClassId classId2 = cache->GetAdapter().GetECClass("TestSchema.TestClass2")->GetId();
+    ECClassId classId3 = cache->GetAdapter().GetECClass("TestSchema2.TestClass")->GetId();
+    ECRelationshipClassCP relClass = nullptr;
+
+    relClass = cache->GetChangeManager().GetLegacyParentRelationshipClass(classId1, classId2);
+    ASSERT_TRUE(nullptr != relClass);
+    ECClassId relClassId1 = relClass->GetId();
+
+    relClass = cache->GetChangeManager().GetLegacyParentRelationshipClass(classId1, classId3);
+    ASSERT_TRUE(nullptr != relClass);
+    ECClassId relClassId2 = relClass->GetId();
+
+    EXPECT_NE(relClassId1, relClassId2);
+
+    classId1 = cache->GetAdapter().GetECClass("TestSchema.TestClass")->GetId();
+    classId2 = cache->GetAdapter().GetECClass("TestSchema.TestClass2")->GetId();
+    classId3 = cache->GetAdapter().GetECClass("TestSchema2.TestClass")->GetId();
+
+    auto relClass1 = cache->GetAdapter().GetECRelationshipClass(relClassId1);
+    ASSERT_TRUE(nullptr != relClass1);
+    EXPECT_TRUE(relClass1->GetSource().SupportsClass(*cache->GetAdapter().GetECClass(classId1)));
+    EXPECT_TRUE(relClass1->GetTarget().SupportsClass(*cache->GetAdapter().GetECClass(classId2)));
+
+    auto relClass2 = cache->GetAdapter().GetECRelationshipClass(relClassId2);
+    ASSERT_TRUE(nullptr != relClass2);
+    EXPECT_TRUE(relClass2->GetSource().SupportsClass(*cache->GetAdapter().GetECClass(classId1)));
+    EXPECT_TRUE(relClass2->GetTarget().SupportsClass(*cache->GetAdapter().GetECClass(classId3)));
+    }
+
+TEST_F(ChangeManagerTests, GetLegacyParentRelationshipClass_DifferentSchemasWithSameNamedClasses_ReturnsDifferentClasses)
+    {
+    auto cache = CreateTestCache();
+
+    ECClassId classId1 = cache->GetAdapter().GetECClass("TestSchema.TestClass")->GetId();
+    ECClassId classId2 = cache->GetAdapter().GetECClass("TestSchema2.TestClass")->GetId();
+    ECRelationshipClassCP relClass = nullptr;
+
+    relClass = cache->GetChangeManager().GetLegacyParentRelationshipClass(classId1, classId1);
+    ASSERT_TRUE(nullptr != relClass);
+    ECClassId relClassId1 = relClass->GetId();
+
+    relClass = cache->GetChangeManager().GetLegacyParentRelationshipClass(classId1, classId2);
+    ASSERT_TRUE(nullptr != relClass);
+    ECClassId relClassId2 = relClass->GetId();
+
+    EXPECT_NE(relClassId1, relClassId2);
+    EXPECT_TRUE(nullptr != cache->GetAdapter().GetECRelationshipClass(relClassId1));
+    EXPECT_TRUE(nullptr != cache->GetAdapter().GetECRelationshipClass(relClassId2));
+    }
+
+TEST_F(ChangeManagerTests, GetLegacyParentRelationshipClass_ExistingClasses_ReturnsValidRelationshipForCreateRelationship)
+    {
+    auto cache = CreateTestCache();
+
+    ECClassId classId = cache->GetAdapter().GetECClass("TestSchema.TestClass")->GetId();
+    auto relClass = cache->GetChangeManager().GetLegacyParentRelationshipClass(classId, classId);
+    ASSERT_TRUE(nullptr != relClass);
+
+    auto parent = StubInstanceInCache(*cache, {"TestSchema.TestClass", "Parent"});
+    auto child = StubInstanceInCache(*cache, {"TestSchema.TestClass", "Child"});
+
+    auto relationship = cache->GetChangeManager().CreateRelationship(*relClass, parent, child);
+    ASSERT_TRUE(relationship.IsValid());
+
     ChangeManager::Changes changes;
     ASSERT_EQ(SUCCESS, cache->GetChangeManager().GetChanges(changes));
-
-    auto& objectChanges = changes.GetObjectChanges();
-    ASSERT_EQ(1, objectChanges.size());
-    EXPECT_EQ(IChangeManager::ChangeStatus::Created, objectChanges.begin()->GetChangeStatus());
-    EXPECT_EQ(instance, objectChanges.begin()->GetInstanceKey());
-
-    Json::Value instanceJson;
-    ASSERT_EQ(SUCCESS, cache->GetAdapter().GetJsonInstance(instanceJson, instance));
-    EXPECT_EQ("TestValue", instanceJson["TestProperty"].asString());
 
     auto& relChanges = changes.GetRelationshipChanges();
     ASSERT_EQ(1, relChanges.size());
     EXPECT_EQ(IChangeManager::ChangeStatus::Created, relChanges.begin()->GetChangeStatus());
-    EXPECT_TRUE(VerifyHasRelationship(cache, cache->GetChangeManager().GetLegacyParentRelationshipClass(), parent, instance));
+    EXPECT_TRUE(VerifyHasRelationship(cache, relClass, parent, child));
+    }
+
+TEST_F(ChangeManagerTests, GetLegacyParentRelationshipClass_GenerateNewClassFalse_DoesNotGenerateNewClassAndReturnsNullForNotExisting)
+    {
+    auto cache = CreateTestCache();
+    ECClassId classId = cache->GetAdapter().GetECClass("TestSchema.TestClass")->GetId();
+    ECRelationshipClassCP relClass = nullptr;
+
+    MockECDbSchemaChangeListener listener;
+    cache->RegisterSchemaChangeListener(&listener);
+
+    EXPECT_CALL(listener, OnSchemaChanged()).Times(0);
+    relClass = cache->GetChangeManager().GetLegacyParentRelationshipClass(classId, classId, false);
+    EXPECT_TRUE(nullptr == relClass);
+
+    EXPECT_CALL(listener, OnSchemaChanged()).Times(2);
+    relClass = cache->GetChangeManager().GetLegacyParentRelationshipClass(classId, classId);
+    EXPECT_TRUE(nullptr != relClass);
     }
 
 TEST_F(ChangeManagerTests, CreateObject_RemoteIdIsEmpty_SetsRemoteId)
@@ -860,7 +946,7 @@ TEST_F(ChangeManagerTests, GetObjectChange_CreatedObjectWithSyncStatusNotReady_S
     {
     // Arrange
     auto cache = GetTestCache();
-    auto instance = StubCreatedObjectInCache(*cache, ChangeManager::SyncStatus::NotReady,  "TestSchema.TestClass");
+    auto instance = StubCreatedObjectInCache(*cache, ChangeManager::SyncStatus::NotReady, "TestSchema.TestClass");
     // Act
     auto change = cache->GetChangeManager().GetObjectChange(instance);
     // Assert

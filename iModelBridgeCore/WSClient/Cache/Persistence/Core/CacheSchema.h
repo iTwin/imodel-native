@@ -19,6 +19,9 @@ BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 
 #define SCHEMA_CacheSchema                                          "WSCache"
 
+#define SCHEMA_CacheLegacySupport_PREFIX                            "WSCacheLegacySupport"
+#define CLASS_CacheLegacySupport_ParentToChildRelationship          "ParentToChildRelationship"
+
 #define CLASS_Root                                                  "Root"
 #define CLASS_Root_PROPERTY_Name                                    "Name"
 #define CLASS_Root_PROPERTY_Persistence                             "Persistence"
@@ -106,9 +109,6 @@ BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 #define ECSql_ObjectInfoToCachedFileInfo                            "[WSC].[" CLASS_ObjectInfoToCachedFileInfo "]"
 #define ECSql_CachedFileInfoToFileInfo                              "[WSC].[" CLASS_CachedFileInfoToFileInfo "]"
 #define ECSql_ObjectInfoToCachedFileInfoOwnership                   "[WSC].[" CLASS_CachedFileInfoToFileInfoOwnership "]"
-
-#define SCHEMA_CacheLegacySupportSchema                             "DSCacheLegacySupportSchema"
-#define SCHEMA_CacheLegacySupportSchema_LegacyParentRelationship    "LegacyParentRelationship"
 
 //! Values for property CLASS_CachedObjectInfo_PROPERTY_InstanceState
 enum class CachedInstanceState

@@ -96,8 +96,7 @@ struct ChangeManager : public IChangeManager
         WSCACHE_EXPORT bool IsSyncActive() const override;
         WSCACHE_EXPORT void SetSyncActive(bool active) override;
 
-        WSCACHE_EXPORT ECInstanceKey LegacyCreateObject(ECClassCR ecClass, JsonValueCR properties, ECInstanceKeyCR parentKey, SyncStatus syncStatus = SyncStatus::Ready) override;
-        WSCACHE_EXPORT ECRelationshipClassCP GetLegacyParentRelationshipClass() override;
+        WSCACHE_EXPORT ECRelationshipClassCP GetLegacyParentRelationshipClass(ECClassId parentClassId, ECClassId childClassId, bool createIfNotExists = true) override;
 
         WSCACHE_EXPORT ECInstanceKey CreateObject(ECClassCR ecClass, JsonValueCR properties, SyncStatus syncStatus = SyncStatus::Ready) override;
 
