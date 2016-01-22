@@ -36,7 +36,6 @@
 #define DGN_CLASSNAME_DrawingModel          "DrawingModel"
 #define DGN_CLASSNAME_Element               "Element"
 #define DGN_CLASSNAME_ElementAspect         "ElementAspect"
-#define DGN_CLASSNAME_ElementDescription    "ElementDescription"
 #define DGN_CLASSNAME_ElementExternalKey    "ElementExternalKey"
 #define DGN_CLASSNAME_ElementMultiAspect    "ElementMultiAspect"
 #define DGN_CLASSNAME_GeometricModel        "GeometricModel"

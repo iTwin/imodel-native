@@ -693,30 +693,6 @@ public:
 
     typedef RefCountedPtr<ExternalKeyAspect> ExternalKeyAspectPtr;
 
-    //! Allows a description to be associated with a DgnElement via a persistent ElementAspect
-    struct EXPORT_VTABLE_ATTRIBUTE DescriptionAspect : AppData
-    {
-    private:
-        Utf8String m_description;
-
-        explicit DescriptionAspect(Utf8CP description)
-            {
-            m_description.AssignOrClear(description);
-            }
-
-    protected:
-        DGNPLATFORM_EXPORT virtual DropMe _OnInserted(DgnElementCR) override;
-
-    public:
-        DGNPLATFORM_EXPORT static Key const& GetAppDataKey();
-        DGNPLATFORM_EXPORT static RefCountedPtr<DescriptionAspect> Create(Utf8CP description);
-        DGNPLATFORM_EXPORT static DgnDbStatus Query(Utf8StringR description, DgnElementCR);
-        DGNPLATFORM_EXPORT static DgnDbStatus Delete(DgnElementCR);
-        Utf8CP GetDescription() const {return m_description.c_str();}
-    };
-
-    typedef RefCountedPtr<DescriptionAspect> DescriptionAspectPtr;
-
     DEFINE_BENTLEY_NEW_DELETE_OPERATORS
 
 private:

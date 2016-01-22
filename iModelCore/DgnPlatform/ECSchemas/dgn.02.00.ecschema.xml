@@ -903,36 +903,6 @@
         </Target>
     </ECRelationshipClass>
 
-    <ECEntityClass typeName="ElementDescription">
-        <!-- The aspect that holds a descriptions of an element -->
-        <BaseClass>ElementUniqueAspect</BaseClass>
-        <ECCustomAttributes>
-            <ClassMap xmlns="ECDbMap.01.00">
-                <!-- The ECInstanceId for ElementDescription is the same as the Id of the owning Element -->
-                <ECInstanceIdColumn>ElementId</ECInstanceIdColumn>
-            </ClassMap>
-        </ECCustomAttributes>
-        <ECProperty propertyName="Descr" typeName="string" displayLabel="Description">
-            <ECCustomAttributes>
-                <PropertyMap xmlns="ECDbMap.01.00">
-                    <IsNullable>False</IsNullable>
-                </PropertyMap>
-            </ECCustomAttributes>
-        </ECProperty>
-    </ECEntityClass>
-    <ECRelationshipClass typeName="ElementOwnsDescription" strength="embedding">
-        <Source cardinality="(1,1)" polymorphic="true">
-            <Class class="Element"/>
-        </Source>
-        <Target cardinality="(0,1)" polymorphic="true">
-            <Class class="ElementDescription">
-                <Key>
-                    <Property name="ECInstanceId"/>
-                </Key>
-            </Class>
-        </Target>
-    </ECRelationshipClass>
-
     <ECRelationshipClass typeName="ElementDrivesElement" strength="referencing">
         <!-- Relationship that indicates that an Element drives (controls the lifecyle or structure of) a dependent Element -->
         <ECCustomAttributes>
