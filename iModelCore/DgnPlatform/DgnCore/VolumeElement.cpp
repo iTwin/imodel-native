@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/VolumeElement.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include    <DgnPlatformInternal.h>
@@ -330,10 +330,8 @@ DgnViewportPtr VolumeElement::CreateNonVisibleViewport (DgnDbR project)
     CameraViewControllerP viewController = new CameraViewController(project, viewId);
     viewController->Load();
     viewController->SetCameraOn (false); // Has to be done after Load()!!
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    return new NonVisibleViewport (*viewController);
-#endif
-    return nullptr;
+
+    return new NonVisibleViewport (nullptr, *viewController);
     }
     
 //--------------------------------------------------------------------------------------
