@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/IntegrationTests/Cache/CachingDataSourceTests.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -35,8 +35,8 @@ TEST_F(CachingDataSourceTests, OpenOrCreate_BentleyConnectGlobal_Succeeds)
     auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
     Connect::Initialize(StubClientInfo(), proxy);
 
-    Utf8String serverUrl = "https://dev-wsg20-eus.cloudapp.net/";
-    Utf8String dataSourceId = "BentleyCONNECT.Global--CONNECT.GLOBAL";
+    Utf8String serverUrl = "https://qa-wsg20-eus.cloudapp.net/";
+    Utf8String repositoryId = "BentleyCONNECT.Global--CONNECT.GLOBAL";
     Credentials credentials("8cc45bd041514b58947ea6c09c@gmail.com", "qwe12312");
     BeFileName cachePath(L":memory:");
 
@@ -48,19 +48,19 @@ TEST_F(CachingDataSourceTests, OpenOrCreate_BentleyConnectGlobal_Succeeds)
 
     persistence->SetCredentials(credentials);
 
-    auto client = WSRepositoryClient::Create(serverUrl, dataSourceId, StubClientInfo(), nullptr, authHandler);
+    auto client = WSRepositoryClient::Create(serverUrl, repositoryId, StubClientInfo(), nullptr, authHandler);
 
-    auto ds = CachingDataSource::OpenOrCreate(client, cachePath, StubCacheEnvironemnt())->GetResult().GetValue();
-    ASSERT_FALSE(nullptr == ds);
+    auto result = CachingDataSource::OpenOrCreate(client, cachePath, StubCacheEnvironemnt())->GetResult();
+    ASSERT_FALSE(nullptr == result.GetValue());
     }
 
-TEST_F(CachingDataSourceTests, DISABLED_OpenOrCreate_BentleyConnectProject_Succeeds)
+TEST_F(CachingDataSourceTests, OpenOrCreate_BentleyConnectSharedContent_Succeeds)
     {
     auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
     Connect::Initialize(StubClientInfo(), proxy);
 
-    Utf8String serverUrl = "https://dev-connectgateway-eus.cloudapp.net";
-    Utf8String dataSourceId = "1171";
+    Utf8String serverUrl = "https://qa-wsg20-eus.cloudapp.net/";
+    Utf8String repositoryId = "BentleyCONNECT.SharedContent--CONNECT.SharedContent";
     Credentials credentials("8cc45bd041514b58947ea6c09c@gmail.com", "qwe12312");
     BeFileName cachePath(L":memory:");
 
@@ -72,10 +72,94 @@ TEST_F(CachingDataSourceTests, DISABLED_OpenOrCreate_BentleyConnectProject_Succe
 
     persistence->SetCredentials(credentials);
 
-    auto client = WSRepositoryClient::Create(serverUrl, dataSourceId, StubClientInfo(), nullptr, authHandler);
+    auto client = WSRepositoryClient::Create(serverUrl, repositoryId, StubClientInfo(), nullptr, authHandler);
 
-    auto ds = CachingDataSource::OpenOrCreate(client, cachePath, StubCacheEnvironemnt())->GetResult().GetValue();
-    ASSERT_FALSE(nullptr == ds);
+    auto result = CachingDataSource::OpenOrCreate(client, cachePath, StubCacheEnvironemnt())->GetResult();
+    ASSERT_FALSE(nullptr == result.GetValue());
+    auto ds = result.GetValue();
+
+    auto txn = ds->StartCacheTransaction();
+    CachedResponseKey key(txn.GetCache().FindOrCreateRoot(nullptr), "Foo");
+    txn.Commit();
+
+    auto objResult = ds->GetObjects(key, WSQuery("SharedContentSchema", "Project"), 
+        ICachingDataSource::DataOrigin::RemoteOrCachedData, nullptr, nullptr)->GetResult();
+    ASSERT_TRUE(objResult.IsSuccess());
+    }
+
+TEST_F(CachingDataSourceTests, OpenOrCreate_BentleyConnectPersonalShare_Succeeds)
+    {
+    auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
+    Connect::Initialize(StubClientInfo(), proxy);
+
+    Utf8String serverUrl = "https://qa-wsg20-eus.cloudapp.net";
+    Utf8String repositoryId = "BentleyCONNECT.PersonalPublishing--CONNECT.PersonalPublishing";
+    Credentials credentials("8cc45bd041514b58947ea6c09c@gmail.com", "qwe12312");
+    BeFileName cachePath(L":memory:");
+
+    StubLocalState localState;
+    ConnectAuthenticationPersistence::CustomInitialize(&localState);
+    auto persistence = ConnectAuthenticationPersistence::GetShared();
+    auto provider = std::make_shared<ConnectTokenProvider>(persistence);
+    auto authHandler = std::make_shared<ConnectAuthenticationHandler>(serverUrl, provider, proxy);
+
+    persistence->SetCredentials(credentials);
+
+    auto client = WSRepositoryClient::Create(serverUrl, repositoryId, StubClientInfo(), nullptr, authHandler);
+
+    auto result = CachingDataSource::OpenOrCreate(client, cachePath, StubCacheEnvironemnt())->GetResult();
+    ASSERT_FALSE(nullptr == result.GetValue());
+    }
+
+TEST_F(CachingDataSourceTests, OpenOrCreate_BentleyConnectProjectShare_Succeeds)
+    {
+    // Fails because user has no shared projects, need other user
+    auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
+    Connect::Initialize(StubClientInfo(), proxy);
+
+    Utf8String serverUrl = "https://qa-wsg20-eus.cloudapp.net";
+    Utf8String repositoryId = "BentleyCONNECT.ProjectContent--f84ee4ab-3b31-4ba9-bf8e-edd124c73393";
+    Credentials credentials("8cc45bd041514b58947ea6c09c@gmail.com", "qwe12312");
+    BeFileName cachePath(L":memory:");
+
+    StubLocalState localState;
+    ConnectAuthenticationPersistence::CustomInitialize(&localState);
+    auto persistence = ConnectAuthenticationPersistence::GetShared();
+    auto provider = std::make_shared<ConnectTokenProvider>(persistence);
+    auto authHandler = std::make_shared<ConnectAuthenticationHandler>(serverUrl, provider, proxy);
+
+    persistence->SetCredentials(credentials);
+
+    auto client = WSRepositoryClient::Create(serverUrl, repositoryId, StubClientInfo(), nullptr, authHandler);
+
+    auto result = CachingDataSource::OpenOrCreate(client, cachePath, StubCacheEnvironemnt())->GetResult();
+    ASSERT_FALSE(nullptr == result.GetValue());
+    }
+
+TEST_F(CachingDataSourceTests, OpenOrCreate_BentleyConnectProjectDataRetrieved_Succeeds)
+    {
+    // Fails because user has no shared projects, need other user
+    auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
+    Connect::Initialize(StubClientInfo(), proxy);
+
+    Utf8String serverUrl = "https://qa-wsg20-eus.cloudapp.net";
+    Utf8String repositoryId = "BentleyCONNECT.ProjectContent--f84ee4ab-3b31-4ba9-bf8e-edd124c73393";
+    Credentials credentials("8cc45bd041514b58947ea6c09c@gmail.com", "qwe12312");
+    BeFileName cachePath(L":memory:");
+
+    StubLocalState localState;
+    ConnectAuthenticationPersistence::CustomInitialize(&localState);
+    auto persistence = ConnectAuthenticationPersistence::GetShared();
+    auto provider = std::make_shared<ConnectTokenProvider>(persistence);
+    auto authHandler = std::make_shared<ConnectAuthenticationHandler>(serverUrl, provider, proxy);
+
+    persistence->SetCredentials(credentials);
+
+    auto client = WSRepositoryClient::Create(serverUrl, repositoryId, StubClientInfo(), nullptr, authHandler);
+
+    auto openResult = CachingDataSource::OpenOrCreate(client, cachePath, StubCacheEnvironemnt())->GetResult();
+    ASSERT_FALSE(nullptr == openResult.GetValue());
+    auto ds = openResult.GetValue();
 
     ObjectId fileId("eBSchema.Document", "62172");
     auto txn = ds->StartCacheTransaction();
@@ -93,214 +177,131 @@ TEST_F(CachingDataSourceTests, DISABLED_OpenOrCreate_BentleyConnectProject_Succe
     auto result2 = ds->GetNavigationChildren(ObjectId(), CachingDataSource::DataOrigin::RemoteData, nullptr)->GetResult();
     }
 
-TEST_F(CachingDataSourceTests, OpenOrCreate_WSG2eBPluginRepository_Succeeds)
+TEST_F(CachingDataSourceTests, OpenOrCreate_WSG13eBPluginRepository_Succeeds)
+    {
+    auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
+
+    Utf8String serverUrl = "https://viltest2-7.bentley.com/ws";
+    Utf8String repositoryId = "eB.viltest2-5.bentley.com,eB_Mobile";
+    Credentials creds("admin", "admin");
+    BeFileName cachePath(L":memory:");
+
+    IWSRepositoryClientPtr client = WSRepositoryClient::Create(serverUrl, repositoryId, StubClientInfo(), nullptr, proxy);
+    client->SetCredentials(creds);
+
+    auto result = CachingDataSource::OpenOrCreate(client, cachePath, StubCacheEnvironemnt())->GetResult();
+    ASSERT_FALSE(nullptr == result.GetValue());
+    }
+
+TEST_F(CachingDataSourceTests, OpenOrCreate_WSG13ProjectWisePluginRepository_Succeeds)
+    {
+    auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
+
+    Utf8String serverUrl = "https://viltest2-7.bentley.com/ws";
+    Utf8String repositoryId = "pw.PW_Mobile_SS3";
+    Credentials creds("admin", "admin");
+    BeFileName cachePath(L":memory:");
+
+    IWSRepositoryClientPtr client = WSRepositoryClient::Create(serverUrl, repositoryId, StubClientInfo(), nullptr, proxy);
+    client->SetCredentials(creds);
+
+    auto result = CachingDataSource::OpenOrCreate(client, cachePath, StubCacheEnvironemnt())->GetResult();
+    ASSERT_FALSE(nullptr == result.GetValue());
+    }
+
+TEST_F(CachingDataSourceTests, OpenOrCreate_WSG13SharePointPluginRepository_Succeeds)
+    {
+    auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
+
+    Utf8String serverUrl = "https://viltest2-7.bentley.com/ws";
+    Utf8String repositoryId = "ec.Bentley.ECOM.SharePointProvider--http~3A~2F~2Fviltest2-10";
+    Credentials creds("VILTEST2-10\\administrator", "Q!w2e3r4");
+    BeFileName cachePath(L":memory:");
+
+    IWSRepositoryClientPtr client = WSRepositoryClient::Create(serverUrl, repositoryId, StubClientInfo(), nullptr, proxy);
+    client->SetCredentials(creds);
+
+    auto result = CachingDataSource::OpenOrCreate(client, cachePath, StubCacheEnvironemnt())->GetResult();
+    ASSERT_FALSE(nullptr == result.GetValue());
+    }
+
+TEST_F(CachingDataSourceTests, OpenOrCreate_WSG22eBPluginRepository_Succeeds)
     {
     auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
 
     Utf8String serverUrl = "https://viltest2-7.bentley.com/ws22";
-    Utf8String dataSourceId = "Bentley.eB--viltest2-5.bentley.com~2CeB_Mobile";
+    Utf8String repositoryId = "Bentley.eB--viltest2-5.bentley.com~2CeB_Mobile";
     Credentials creds("admin", "admin");
     BeFileName cachePath(L":memory:");
 
-    IWSRepositoryClientPtr client = WSRepositoryClient::Create(serverUrl, dataSourceId, StubClientInfo(), nullptr, proxy);
+    IWSRepositoryClientPtr client = WSRepositoryClient::Create(serverUrl, repositoryId, StubClientInfo(), nullptr, proxy);
     client->SetCredentials(creds);
 
-    auto ds = CachingDataSource::OpenOrCreate(client, cachePath, StubCacheEnvironemnt())->GetResult().GetValue();
-    ASSERT_FALSE(nullptr == ds);
+    auto result = CachingDataSource::OpenOrCreate(client, cachePath, StubCacheEnvironemnt())->GetResult();
+    ASSERT_FALSE(nullptr == result.GetValue());
     }
 
-TEST_F(CachingDataSourceTests, OpenOrCreate_WSG2PWPluginRepository_Succeeds)
+TEST_F(CachingDataSourceTests, OpenOrCreate_WSG23ProjectWisePluginRepository_Succeeds)
     {
     auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
 
     Utf8String serverUrl = "https://viltest2-8.bentley.com/ws23";
-    Utf8String dataSourceId = "Bentley.PW--VILTEST2-5.bentley.com~3APW_Mobile_SS3";
+    Utf8String repositoryId = "Bentley.PW--VILTEST2-5.bentley.com~3APW_Mobile_SS3";
     Credentials creds("admin", "admin");
     BeFileName cachePath(L":memory:");
 
-    IWSRepositoryClientPtr client = WSRepositoryClient::Create(serverUrl, dataSourceId, StubClientInfo(), nullptr, proxy);
+    IWSRepositoryClientPtr client = WSRepositoryClient::Create(serverUrl, repositoryId, StubClientInfo(), nullptr, proxy);
     client->SetCredentials(creds);
 
-    auto ds = CachingDataSource::OpenOrCreate(client, cachePath, StubCacheEnvironemnt())->GetResult().GetValue();
-    ASSERT_FALSE(nullptr == ds);
+    auto result = CachingDataSource::OpenOrCreate(client, cachePath, StubCacheEnvironemnt())->GetResult();
+    ASSERT_FALSE(nullptr == result.GetValue());
     }
 
-TEST_F(CachingDataSourceTests, OpenOrCreate_WSG2PWPluginMapMobileRepository_Succeeds)
+TEST_F(CachingDataSourceTests, OpenOrCreate_WSG2xProjectWisePluginMapMobileRepository_Succeeds)
     {
     auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
 
     Utf8String serverUrl = "https://geo-demo-ws.bentley.com/ws";
-    Utf8String dataSourceId = "Bentley.PW--geo-demo.bentley.com~3AGeo-Demo";
+    Utf8String repositoryId = "Bentley.PW--geo-demo.bentley.com~3AGeo-Demo";
     Credentials creds("twc", "admin");
     BeFileName cachePath(L":memory:");
 
     auto info = std::make_shared<ClientInfo>("Bentley-MapMobile", BeVersion(5,4), "77def89a-7e50-4f0e-a4c7-24fb6044dbfb", 
         "CLQIqB7y8eCUpdJe5uyRVVaaGbk=", "Windows 6.1", nullptr);
 
-    IWSRepositoryClientPtr client = WSRepositoryClient::Create(serverUrl, dataSourceId, StubClientInfo(), nullptr, proxy);
+    IWSRepositoryClientPtr client = WSRepositoryClient::Create(serverUrl, repositoryId, StubClientInfo(), nullptr, proxy);
     client->SetCredentials(creds);
 
-    auto ds = CachingDataSource::OpenOrCreate(client, cachePath, StubCacheEnvironemnt())->GetResult().GetValue();
-    ASSERT_FALSE(nullptr == ds);
+    auto result = CachingDataSource::OpenOrCreate(client, cachePath, StubCacheEnvironemnt())->GetResult();
+    ASSERT_FALSE(nullptr == result.GetValue());
     }
 
-TEST_F(CachingDataSourceTests, OpenOrCreate_WSG2SPPluginRepository_Succeeds)
+TEST_F(CachingDataSourceTests, OpenOrCreate_WSG24SharePointPluginRepository_Succeeds)
+    {
+    auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
+
+    Utf8String serverUrl = "https://viltest2-8.bentley.com/ws24";
+    Utf8String repositoryId = "Bentley.SP--http~3A~2F~2Fviltest2-10";
+    Credentials creds(R"(.\administrator)", "Q!w2e3r4");
+    BeFileName cachePath(L":memory:");
+
+    IWSRepositoryClientPtr client = WSRepositoryClient::Create(serverUrl, repositoryId, StubClientInfo(), nullptr, proxy);
+    client->SetCredentials(creds);
+
+    auto result = CachingDataSource::OpenOrCreate(client, cachePath, StubCacheEnvironemnt())->GetResult();
+    ASSERT_FALSE(nullptr == result.GetValue());
+    }
+
+TEST_F(CachingDataSourceTests, SyncLocalChanges_WSG23ProjectWisePluginRepository_Succeeds)
     {
     auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
 
     Utf8String serverUrl = "https://viltest2-8.bentley.com/ws23";
-    Utf8String dataSourceId = "Bentley.SP--http~3A~2F~2Fviltest2-10";
-    Credentials creds(R"(.\administrator)", "Q!w2e3r4");
-    BeFileName cachePath(L":memory:");
-
-    IWSRepositoryClientPtr client = WSRepositoryClient::Create(serverUrl, dataSourceId, StubClientInfo(), nullptr, proxy);
-    client->SetCredentials(creds);
-
-    auto ds = CachingDataSource::OpenOrCreate(client, cachePath, StubCacheEnvironemnt())->GetResult().GetValue();
-    ASSERT_FALSE(nullptr == ds);
-    }
-
-TEST_F(CachingDataSourceTests, DISABLED_SyncLocalChanges_PWPluginRepository_Succeeds)
-    {
-    auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
-
-    Utf8String serverUrl = "https://bsw-construct.bentley.com/ws";
-    Utf8String dataSourceId = "pw--PW";
+    Utf8String repositoryId = "Bentley.PW--VILTEST2-5.bentley.com~3APW_Mobile_SS3";
     Credentials creds("admin", "admin");
     BeFileName cachePath(L":memory:");
 
-    IWSRepositoryClientPtr client = WSRepositoryClient::Create(serverUrl, dataSourceId, StubClientInfo(), nullptr, proxy);
-    client->SetCredentials(creds);
-
-    auto ds = CachingDataSource::OpenOrCreate(client, cachePath, StubCacheEnvironemnt())->GetResult().GetValue();
-    ASSERT_FALSE(nullptr == ds);
-    BentleyStatus status;
-
-    ObjectId uploadsId {"PW_WSG", "project", "acd8be01-f097-461d-837a-63afeea9a8ea"};
-    ObjectId uploadsNavNodeId {"Navigation", "NavNode", "ECObjects--" + uploadsId.schemaName + "-" + uploadsId.className + "-" + uploadsId.remoteId};
-
-    {
-    auto txn = ds->StartCacheTransaction();
-    ASSERT_EQ(SUCCESS, txn.GetCache().LinkInstanceToRoot(nullptr, uploadsId));
-    ASSERT_EQ(SUCCESS, txn.GetCache().LinkInstanceToRoot(nullptr, uploadsNavNodeId));
-    txn.Commit();
-    }
-
-    auto navigationResult = ds->GetNavigationChildren(uploadsNavNodeId, CachingDataSource::DataOrigin::RemoteData, nullptr)->GetResult();
-    ASSERT_TRUE(navigationResult.IsSuccess());
-
-    {
-    auto txn = ds->StartCacheTransaction();
-    auto& uploadedInstanceNavNodes = navigationResult.GetValue().GetJson();
-    for (auto& uploadedInstanceNavNode : uploadedInstanceNavNodes)
-        {
-        if (uploadedInstanceNavNode.asBool())
-            {
-            ObjectId uploadedInstanceId
-                (
-                    uploadedInstanceNavNode["Key_SchemaName"].asString(),
-                    uploadedInstanceNavNode["Key_ClassName"].asString(),
-                    uploadedInstanceNavNode["Key_InstanceId"].asString()
-                    );
-
-            ASSERT_EQ(SUCCESS, txn.GetCache().LinkInstanceToRoot("DeletedInstances", uploadedInstanceId));
-            ASSERT_EQ(SUCCESS, txn.GetCache().GetChangeManager().DeleteObject(txn.GetCache().FindInstance(uploadedInstanceId)));
-            }
-        }
-    txn.Commit();
-    }
-
-    Json::Value newDocument = ToJson(
-        R"({
-        "name": "TestCreation",
-        "create_time" : "2014-06-03T08:59:58.673Z"
-        })");
-
-    {
-    auto txn = ds->StartCacheTransaction();
-    auto ecClass = txn.GetCache().GetAdapter().GetECClass("PW_WSG", "document");
-    auto ecRelClass = txn.GetCache().GetAdapter().GetECRelationshipClass("PW_WSG", "DocumentParent");
-
-    auto documentKey = txn.GetCache().GetChangeManager().CreateObject(*ecClass, newDocument);
-
-    ASSERT_EQ(SUCCESS, txn.GetCache().GetChangeManager().ModifyFile(documentKey, StubFile("TestContent", "'Foo file'.txt"), false));
-    ASSERT_EQ(SUCCESS, txn.GetCache().LinkInstanceToRoot("NewDocument", txn.GetCache().FindInstance(documentKey)));
-
-    auto folderKey = txn.GetCache().FindInstance(uploadsId);
-    auto relationshipKey = txn.GetCache().GetChangeManager().CreateRelationship(*ecRelClass, documentKey, folderKey);
-    ASSERT_TRUE(relationshipKey.IsValid());
-    txn.Commit();
-    }
-
-    Json::Value newProject = ToJson(
-        R"({
-        "name": "TestCreatedFolder",
-        "create_time" : "2014-06-03T08:59:58.673Z"
-        })");
-
-    {
-    auto txn = ds->StartCacheTransaction();
-    auto ecClass = txn.GetCache().GetAdapter().GetECClass("PW_WSG", "project");
-    auto ecRelClass = txn.GetCache().GetAdapter().GetECRelationshipClass("PW_WSG", "ProjectParent");
-
-    auto projectKey = txn.GetCache().GetChangeManager().CreateObject(*ecClass, newProject);
-    ASSERT_EQ(SUCCESS, txn.GetCache().LinkInstanceToRoot("NewProject", txn.GetCache().FindInstance(projectKey)));
-    auto folderKey = txn.GetCache().FindInstance(uploadsId);
-    auto relationshipKey = txn.GetCache().GetChangeManager().CreateRelationship(*ecRelClass, projectKey, folderKey);
-    ASSERT_TRUE(relationshipKey.IsValid());
-    txn.Commit();
-    }
-
-    auto syncResult = ds->SyncLocalChanges(nullptr, nullptr)->GetResult();
-    ASSERT_TRUE(syncResult.IsSuccess());
-
-    {
-    auto txn = ds->StartCacheTransaction();
-    Json::Value newInstances;
-    status = txn.GetCache().ReadInstancesLinkedToRoot("NewDocument", newInstances);
-    ASSERT_EQ(SUCCESS, status);
-    ASSERT_EQ(1, newInstances.size());
-    auto newInstance = newInstances[0];
-
-    auto newKey = txn.GetCache().GetAdapter().GetInstanceKeyFromJsonInstance(newInstance);
-
-    status = txn.GetCache().GetChangeManager().ModifyFile(newKey, StubFile("TestContentModified"), false);
-    ASSERT_EQ(SUCCESS, status);
-    txn.Commit();
-    }
-
-// FIXME: currently WSG fails - "Error freeing document 'TestCreationModified name'."
-//newInstance["name"] = "TestCreationModified name";
-//status = txn.GetCache ().GetChangeManager ().ModifyObject (newInstanceId, newInstance);
-//ASSERT_EQ (SUCCESS, status);
-
-// FIXME: currently WSG fails - "Error modifying folder."
-//newInstances.clear ();
-//status = txn.GetCache ().ReadInstancesLinkedToRoot (newInstances, "NewProject");
-//ASSERT_EQ (SUCCESS, status);
-//ASSERT_EQ (1, newInstances.size ());
-//newInstance = newInstances[0];
-
-//newInstanceId = txn.GetCache ().ObjectIdFromJsonInstance (newInstance);
-//newInstance["name"] = "TestModifiedName";
-
-//status = txn.GetCache ().GetChangeManager ().ModifyObject (newInstanceId, newInstance);
-//ASSERT_EQ (SUCCESS, status);
-
-    syncResult = ds->SyncLocalChanges(nullptr, nullptr)->GetResult();
-    ASSERT_TRUE(syncResult.IsSuccess());
-    }
-
-TEST_F(CachingDataSourceTests, DISABLED_SyncLocalChanges_WSG2PWPluginRepository_Succeeds)
-    {
-    auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
-
-    Utf8String serverUrl = "https://bsw-construct2.bentley.com/ws22";
-    Utf8String dataSourceId = "Bentley.PW--BSW-CONSTRUCT.bentley.com~3APW";
-    Credentials creds("admin", "admin");
-    BeFileName cachePath(L":memory:");
-
-    IWSRepositoryClientPtr client = WSRepositoryClient::Create(serverUrl, dataSourceId, StubClientInfo(), nullptr, proxy);
+    IWSRepositoryClientPtr client = WSRepositoryClient::Create(serverUrl, repositoryId, StubClientInfo(), nullptr, proxy);
     client->SetCredentials(creds);
 
     auto ds = CachingDataSource::OpenOrCreate(client, cachePath, StubCacheEnvironemnt())->GetResult().GetValue();
@@ -450,11 +451,11 @@ TEST_F(CachingDataSourceTests, GetObjects_WSG2PWSpatialQuery_Succeeds)
     auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
 
     Utf8String serverUrl = "https://viltest2-8.bentley.com/ws23";
-    Utf8String dataSourceId = "Bentley.PW--VILTEST2-5.bentley.com~3APW_Mobile_SS3";
+    Utf8String repositoryId = "Bentley.PW--VILTEST2-5.bentley.com~3APW_Mobile_SS3";
     Credentials creds("admin", "admin");
     BeFileName cachePath(L":memory:");
 
-    IWSRepositoryClientPtr client = WSRepositoryClient::Create(serverUrl, dataSourceId, StubClientInfo(), nullptr, proxy);
+    IWSRepositoryClientPtr client = WSRepositoryClient::Create(serverUrl, repositoryId, StubClientInfo(), nullptr, proxy);
     client->SetCredentials(creds);
 
     auto ds = CachingDataSource::OpenOrCreate(client, cachePath, StubCacheEnvironemnt())->GetResult().GetValue();
@@ -492,10 +493,10 @@ TEST_F(CachingDataSourceTests, DISABLED_OpenOrCreate_WSG2eBPluginProductionRepos
     //BeFileName cachePath(tempDir + L"/temp.ecdb");
 
     Utf8String serverUrl = "https://crossrail-dev.bentley.com/ws";
-    Utf8String dataSourceId = "Bentley.eB--wazdevcrapp01~2CCrossRailDev";
+    Utf8String repositoryId = "Bentley.eB--wazdevcrapp01~2CCrossRailDev";
     Credentials creds("bentleyadmin", "bentleyadmin");
 
-    IWSRepositoryClientPtr client = WSRepositoryClient::Create(serverUrl, dataSourceId, m_clientInfo);
+    IWSRepositoryClientPtr client = WSRepositoryClient::Create(serverUrl, repositoryId, m_clientInfo);
     client->SetCredentials(creds);
 
     CacheEnvironment env;
@@ -598,7 +599,7 @@ TEST_F(CachingDataSourceTests, GetObjects_PunchlistQueries_Succeeds)
     Connect::Initialize(StubClientInfo(), proxy);
 
     Utf8String serverUrl = "https://qa-punchlist-eus.cloudapp.net";
-    Utf8String dataSourceId = "IssuePlugin--default";
+    Utf8String repositoryId = "IssuePlugin--default";
     Credentials credentials("bcc_user4@mailinator.com", "member#4");
     BeFileName cachePath(L":memory:");
 
@@ -612,7 +613,7 @@ TEST_F(CachingDataSourceTests, GetObjects_PunchlistQueries_Succeeds)
     auto authHandler = std::make_shared<ConnectAuthenticationHandler>(serverUrl, provider, proxy);
     persistence->SetCredentials(credentials);
 
-    auto client = WSRepositoryClient::Create(serverUrl, dataSourceId, StubClientInfo(), nullptr, authHandler);
+    auto client = WSRepositoryClient::Create(serverUrl, repositoryId, StubClientInfo(), nullptr, authHandler);
 
     auto ds = CachingDataSource::OpenOrCreate(client, cachePath, StubCacheEnvironemnt())->GetResult().GetValue();
     ASSERT_FALSE(nullptr == ds);
