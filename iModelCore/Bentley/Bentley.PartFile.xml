@@ -47,7 +47,7 @@
         </Bindings>
     </Part>
     <!-- NOTE: Graphite uses "G" as an ApiNumber (library suffix) to disambiguate from Vancouver libraries -->
-    <Part Name="BentleyDll" BentleyBuildMakeFile="Bentley.mke" ApiNumber="G" BMakeOptions="+dTMP_BUILD_STATIC">
+    <Part Name="BentleyDll" BentleyBuildMakeFile="Bentley.mke" ApiNumber="G06" BMakeOptions="+dTMP_BUILD_STATIC">
         <SubPart PartName="Base"/>
         <SubPart PartName="BeIcu4cLibrary" PartFile="BeIcu4cLibrary" Repository="Libsrc-Icu4c"/>
         <SubPart PartName="BentleyAllocator"/>
