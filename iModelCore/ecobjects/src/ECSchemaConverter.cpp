@@ -150,7 +150,7 @@ private:
     // Append number to string : returns name_number
     // @bsimethod                                    Basanta.Kharel                  01/2016
     //+---------------+---------------+---------------+---------------+---------------+------
-    static Utf8String StandardValuesConverter::AppendNumberToString(Utf8CP name, int number);
+    static Utf8String AppendNumberToString(Utf8CP name, int number);
 
     //---------------------------------------------------------------------------------------
     // Finds enumeration in schema that matches sdInfo
@@ -646,13 +646,8 @@ Utf8String StandardValuesConverter::CreateEnumerationName(ECClassP& rootClass, E
 //+---------------+---------------+---------------+---------------+---------------+------
 Utf8String StandardValuesConverter::AppendNumberToString(Utf8CP name, int number)
     {
-    char string[10];
-    _itoa_s(number, string, 10);
-
-    Utf8String newName = name;
-    newName.append("_");
-    newName.append(string);
-    return newName;
+    Utf8PrintfString formattedString("%s_%" PRId32, name, number);
+    return formattedString;
     }
 
 //---------------------------------------------------------------------------------------
