@@ -1784,11 +1784,7 @@ static void drawGrid(Render::GraphicR graphic, bool doIsoGrid, bool drawDots, DP
     if (RenderMode::Wireframe == vp.GetViewFlags().GetRenderMode())
         return;
 
-    GraphicParams graphicParams;
-
-    graphicParams.SetFillColor(planeColor);
-    graphicParams.SetIsBlankingRegion(true);
-    graphic.ActivateGraphicParams(graphicParams);
+    graphic.SetBlankingFill(planeColor);
     drawGridPlane(graphic, gridOrigin, xVec, yVec, repetitions);
     }
 

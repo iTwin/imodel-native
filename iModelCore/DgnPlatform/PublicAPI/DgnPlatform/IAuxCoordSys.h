@@ -63,9 +63,8 @@ ENUM_IS_FLAGS (ACSDisplayOptions)
 
 enum class ACSFlags
     {
-    None               = 0,      // Used for testing individual bits.
-    Default            = 0,
-    ViewIndependent    = (1<<0), // Whether ACS always orients itself to the current view rotations or is a fixed rotation...
+    None    = 0, // Used for testing individual bits.
+    Default = 0,
     };
 
 ENUM_IS_FLAGS (ACSFlags)
@@ -127,7 +126,7 @@ DGNPLATFORM_EXPORT void ReadSettings (SpatialViewControllerP viewController);
 DGNPLATFORM_EXPORT IAuxCoordSysPtr CreateACS (ACSType type, DPoint3dCR origin, RotMatrixCR rot, double scale, WCharCP name, WCharCP descr);
 
 DGNPLATFORM_EXPORT void SendEvent (IAuxCoordSysP acs, ACSEventType eventType, DgnModelP modelRef);
-DGNPLATFORM_EXPORT void DisplayCurrent (DgnViewportP viewport, bool isCursorView);
+DGNPLATFORM_EXPORT void DisplayCurrent (DecorateContextR, bool isCursorView);
 
 DGNVIEW_EXPORT bool GetStandardRotation (RotMatrixR rMatrix, StandardView nStandard, DgnViewportP viewport, bool useACS, DgnCoordSystem coordSys);
 DGNVIEW_EXPORT bool GetCurrentOrientation (RotMatrixR rMatrix, DgnViewportP viewport, bool checkAccuDraw, bool checkACS, DgnCoordSystem coordSys);
@@ -229,14 +228,16 @@ virtual StatusInt _GetStandardGridParams (Point2dR gridReps, Point2dR gridOffset
 virtual StatusInt _SetStandardGridParams (Point2dCR gridReps, Point2dCR gridOffset, double uorPerGrid, double gridRatio, uint32_t gridPerRef) {return ERROR;}
 
 // these methods are called only internally, so they don't have corresponding nonvirtual public wrappers.
-DGNPLATFORM_EXPORT virtual bool _IsOriginInView (DPoint3dR drawOrigin, DgnViewportP vp, bool adjustOrigin) const;
-DGNPLATFORM_EXPORT virtual void _DrawZAxis (DgnViewportP vp, Render::GraphicR cached, TransformP transformP, ACSDisplayOptions options) const;
-DGNPLATFORM_EXPORT virtual ColorDef _GetColor (DgnViewportP vp, ColorDef menuColor, uint32_t transparency, ACSDisplayOptions options) const;
-DGNPLATFORM_EXPORT virtual void _DrawAxisText (DgnViewportP vp, Render::GraphicR cached, WCharCP label, bool isAxisLabel, double userOrgX, double userOrgY, double scale, double angle, ACSDisplayOptions options) const;
-DGNPLATFORM_EXPORT virtual void _DrawAxisArrow (DgnViewportP vp, Render::GraphicR cached, TransformP transformP, ColorDef menuColor, WCharCP label, bool swapAxis, ACSDisplayOptions options, ACSFlags flags) const;
-DGNPLATFORM_EXPORT virtual void _DisplayInView (DgnViewportP vp, ACSDisplayOptions options, bool drawName) const;
+DGNPLATFORM_EXPORT virtual bool _IsOriginInView (DPoint3dR drawOrigin, DgnViewportCR, bool adjustOrigin) const;
+DGNPLATFORM_EXPORT virtual ColorDef _GetColor (DgnViewportCR, ColorDef color, uint32_t transparency, ACSDisplayOptions options) const;
 DGNPLATFORM_EXPORT virtual uint32_t _GetTransparency (bool isFill, ACSDisplayOptions options) const;
 DGNPLATFORM_EXPORT virtual WCharCP _GetAxisLabel (uint32_t axis, WCharP axisLabel, uint32_t length) const;
+
+DGNPLATFORM_EXPORT virtual void _AddZAxis (Render::GraphicR, ColorDef color, ACSDisplayOptions options) const;
+DGNPLATFORM_EXPORT virtual void _AddXYAxis (Render::GraphicR, ColorDef color, WCharCP label, bool swapAxis, ACSDisplayOptions options, ACSFlags flags) const;
+DGNPLATFORM_EXPORT virtual void _AddAxisText (Render::GraphicR, WCharCP label, bool isAxisLabel, double userOrgX, double userOrgY, double scale, double angle, ACSDisplayOptions options) const;
+DGNPLATFORM_EXPORT virtual Render::GraphicPtr _CreateGraphic(DecorateContextR, DPoint3dCR drawOrigin, double acsSizePixels, ACSDisplayOptions options, bool drawName) const;
+DGNPLATFORM_EXPORT virtual void _DisplayInView (DecorateContextR, ACSDisplayOptions options, bool drawName) const;
 
 public:
 
@@ -320,7 +321,7 @@ DGNPLATFORM_EXPORT StatusInt StringFromPoint (WStringR outString, WStringR error
 DGNPLATFORM_EXPORT StatusInt CompleteSetupFromViewController (SpatialViewControllerCP info);
 
 //! Display a representation of the ACS in the given view.
-DGNPLATFORM_EXPORT void DisplayInView (DgnViewportP vp, ACSDisplayOptions options, bool drawName) const;
+DGNPLATFORM_EXPORT void DisplayInView (DecorateContextR context, ACSDisplayOptions options, bool drawName) const;
 
 //! Boresite to ACS triad in the given view. The borePt and hitPt are in active coords...
 DGNPLATFORM_EXPORT bool Locate (DPoint3dR hitPt, DgnViewportR vp, DPoint3dCR borePt, double radius);

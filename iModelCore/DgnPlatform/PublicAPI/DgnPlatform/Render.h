@@ -1072,6 +1072,15 @@ public:
         ActivateGraphicParams(graphicParams);
         }
 
+    //! Set blanking fill symbology for decorations that are only used for display purposes. Pickable decorations require a category, must initialize
+    //! a GeometryParams and cook it into a GraphicParams to have a locatable decoration.
+    void SetBlankingFill(ColorDef fillColor)
+        {
+        GraphicParams graphicParams;
+        graphicParams.SetFillColor(fillColor);
+        graphicParams.SetIsBlankingRegion(true);
+        ActivateGraphicParams(graphicParams);
+        }
 };
 
 //=======================================================================================
