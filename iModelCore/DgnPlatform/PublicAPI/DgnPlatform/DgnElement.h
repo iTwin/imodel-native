@@ -1173,8 +1173,8 @@ struct GeometryStream : ByteStream
 public:
     bool HasGeometry() const {return HasData();}  //!< return false if this GeometryStream is empty.
 
-    DgnDbStatus WriteGeometryStreamAndStep(DgnDbR dgnDb, Utf8CP table, Utf8CP colname, uint64_t rowId, BeSQLite::Statement& stmt, int stmtcolidx) const;
-    DgnDbStatus ReadGeometryStream(DgnDbR dgnDb, void const* blob, int blobSize);
+    DgnDbStatus WriteGeometryStreamAndStep(BeSQLite::SnappyToBlob& snappy, DgnDbR dgnDb, Utf8CP table, Utf8CP colname, uint64_t rowId, BeSQLite::Statement& stmt, int stmtcolidx) const;
+    DgnDbStatus ReadGeometryStream(BeSQLite::SnappyFromMemory& snappy, DgnDbR dgnDb, void const* blob, int blobSize);
 };
 
 //=======================================================================================
@@ -1905,6 +1905,7 @@ struct DgnElements : DgnDbTable, IMemoryConsumer
     friend struct TxnManager;
     friend struct ProgressiveViewFilter;
     friend struct dgn_TxnTable::Element;
+    friend struct ElementGeomData;
 
     //! The totals for persistent DgnElements in this DgnDb. These values reflect the current state of the loaded elements.
     struct Totals
@@ -1977,9 +1978,10 @@ private:
     virtual int64_t _CalculateBytesConsumed() const override {return GetTotalAllocated();}
     virtual int64_t _Purge(int64_t memTarget) override;
 
-public:
     BeSQLite::SnappyFromMemory& GetSnappyFrom() {return m_snappyFrom;} // NB: Not to be used during loading of a geometric element!
     BeSQLite::SnappyToBlob& GetSnappyTo() {return m_snappyTo;} // NB: Not to be used during insert or update of a geometric element!
+
+public:
     DGNPLATFORM_EXPORT BeSQLite::CachedStatementPtr GetStatement(Utf8CP sql) const;
     DGNPLATFORM_EXPORT void ChangeMemoryUsed(int32_t delta) const;
     DGNPLATFORM_EXPORT void DropFromPool(DgnElementCR) const;

@@ -1038,6 +1038,7 @@ DgnDbStatus PerformanceElementsCRUDTestFixture::BindElement4PropertyParams(ECSql
     return DgnDbStatus::Success;
     }
 
+#if defined (NOT_NOW_REMOVE)
 //---------------------------------------------------------------------------------------
 // @bsiclass                                      Muhammad Hassan                  01/16
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -1283,6 +1284,7 @@ void PerformanceElementsCRUDTestFixture::BindUpdateParams(DgnElementPtr& element
         ASSERT_EQ (DgnDbStatus::Success, BindElement4PropertyParams(stmt, updateParams));
         }
     }
+#endif
 
 //Methods to verify Business Property Values returned by Sql Statements. 
 //---------------------------------------------------------------------------------------

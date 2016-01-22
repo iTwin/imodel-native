@@ -140,7 +140,7 @@ StatusInt DbGeomPartsWriter::SaveGeomPartToRow(GeometryStreamCR geom, DgnCodeCR 
         return SUCCESS; // Is this an error?!?
         }
 
-    return (DgnDbStatus::Success == geom.WriteGeometryStreamAndStep(m_dgndb, DGN_TABLE(DGN_CLASSNAME_GeomPart), "Geom", geomPartId.GetValue(), *m_stmt, Column::Geom))? BSISUCCESS: BSIERROR;
+    return (DgnDbStatus::Success == geom.WriteGeometryStreamAndStep(m_snappy, m_dgndb, DGN_TABLE(DGN_CLASSNAME_GeomPart), "Geom", geomPartId.GetValue(), *m_stmt, Column::Geom))? BSISUCCESS: BSIERROR;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -269,7 +269,7 @@ DgnGeomPartPtr DgnGeomParts::LoadGeomPart(DgnGeomPartId geomPartId)
     geomPartPtr->SetBoundingBox(bbox);
 
     GeometryStreamR    geom = geomPartPtr->GetGeometryStreamR();
-    DgnDbStatus status = stmt->IsColumnNull(9) ? DgnDbStatus::Success : geom.ReadGeometryStream(GetDgnDb(), stmt->GetValueBlob(9), stmt->GetColumnBytes(9));
+    DgnDbStatus status = stmt->IsColumnNull(9) ? DgnDbStatus::Success : geom.ReadGeometryStream(GetDgnDb().GeomParts().GetSnappyFrom(), GetDgnDb(), stmt->GetValueBlob(9), stmt->GetColumnBytes(9));
     if (DgnDbStatus::Success != status)
         return nullptr;
 
