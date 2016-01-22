@@ -435,14 +435,6 @@ SchemaWriteStatus PrimitiveECProperty::_WriteXml(BeXmlWriterR xmlWriter, int ecX
     }
 
 /*---------------------------------------------------------------------------------**//**
- * @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String PrimitiveECProperty::GetExtendedTypeName() const
-    {
-    return m_extendedTypeName;
-    }
-
-/*---------------------------------------------------------------------------------**//**
  @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus PrimitiveECProperty::SetExtendedTypeName(Utf8CP extendedTypeName)
