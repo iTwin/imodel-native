@@ -112,23 +112,31 @@ TEST_F (ConnectTests, IsImsLoginRedirect_IMSLoginUrlAndStatusOK_True)
     EXPECT_TRUE (Connect::IsImsLoginRedirect (StubHttpResponseWithUrl (HttpStatus::OK, "http://test.com//IMS/Account/Login?foo")));
     }
 
-TEST_F (ConnectTests, GetFederatedSignInUrl)
+TEST_F (ConnectTests, GetFederatedSignInUrl_NoDomainParameter_UrlHasNoOfhParameter)
     {
-    // App's relying party URI is URL-encoded (aside from the '_') and passed as the wtrealm parameter.
 #if defined (BENTLEY_WIN32)
-    EXPECT_STREQ ("TestUrl?wa=wsignin1.0&wtrealm=sso%3A%2F%2Fwsfed_desktop%2FTestAppProductId", Connect::GetFederatedSignInUrl().c_str());
+    const Utf8String platformType("desktop");
 #else
-    EXPECT_STREQ ("TestUrl?wa=wsignin1.0&wtrealm=sso%3A%2F%2Fwsfed_mobile%2FTestAppProductId", Connect::GetFederatedSignInUrl().c_str());
+    const Utf8String platformType("mobile");
 #endif
+
+    Utf8String signInUrl("TestUrl?wa=wsignin1.0&wtrealm=sso%3A%2F%2Fwsfed_");
+    signInUrl += platformType + "%2FTestAppProductId";
+
+    EXPECT_STREQ (signInUrl.c_str(), Connect::GetFederatedSignInUrl().c_str());
     }
 
-TEST_F (ConnectTests, GetFederatedSignInUrlWithDomain)
+TEST_F (ConnectTests, GetFederatedSignInUrl_DomainParameter_UrlHasOfhParameter)
     {
-    // App's relying party URI is URL-encoded (aside from the '_') and passed as the wtrealm parameter.
-    // "YmVudGxleS5jb20=" (ofh parameter) is "bentley.com" in Base 64.
 #if defined (BENTLEY_WIN32)
-    EXPECT_STREQ ("TestUrl?wa=wsignin1.0&wtrealm=sso%3A%2F%2Fwsfed_desktop%2FTestAppProductId&ofh=YmVudGxleS5jb20=", Connect::GetFederatedSignInUrl("bentley.com").c_str());
+    const Utf8String platformType("desktop");
 #else
-    EXPECT_STREQ ("TestUrl?wa=wsignin1.0&wtrealm=sso%3A%2F%2Fwsfed_mobile%2FTestAppProductId&ofh=YmVudGxleS5jb20=", Connect::GetFederatedSignInUrl("bentley.com").c_str());
+    const Utf8String platformType("mobile");
 #endif
+
+    const Utf8String domainName("bentley");
+    Utf8String signInUrl("TestUrl?wa=wsignin1.0&wtrealm=sso%3A%2F%2Fwsfed_");
+    signInUrl += platformType + "%2FTestAppProductId&ofh=" + Base64Utilities::Encode(domainName);
+
+    EXPECT_STREQ (signInUrl.c_str(), Connect::GetFederatedSignInUrl(domainName).c_str());
     }
