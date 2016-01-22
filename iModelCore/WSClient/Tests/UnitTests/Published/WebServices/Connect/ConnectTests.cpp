@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/WebServices/Connect/ConnectTests.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ConnectTests.h"
@@ -110,4 +110,25 @@ TEST_F (ConnectTests, IsImsLoginRedirect_StatusNotOK_False)
 TEST_F (ConnectTests, IsImsLoginRedirect_IMSLoginUrlAndStatusOK_True)
     {
     EXPECT_TRUE (Connect::IsImsLoginRedirect (StubHttpResponseWithUrl (HttpStatus::OK, "http://test.com//IMS/Account/Login?foo")));
+    }
+
+TEST_F (ConnectTests, GetFederatedSignInUrl)
+    {
+    // App's relying party URI is URL-encoded (aside from the '_') and passed as the wtrealm parameter.
+#if defined (BENTLEY_WIN32)
+    EXPECT_STREQ ("TestUrl?wa=wsignin1.0&wtrealm=sso%3A%2F%2Fwsfed_desktop%2FTestAppProductId", Connect::GetFederatedSignInUrl().c_str());
+#else
+    EXPECT_STREQ ("TestUrl?wa=wsignin1.0&wtrealm=sso%3A%2F%2Fwsfed_mobile%2FTestAppProductId", Connect::GetFederatedSignInUrl().c_str());
+#endif
+    }
+
+TEST_F (ConnectTests, GetFederatedSignInUrlWithDomain)
+    {
+    // App's relying party URI is URL-encoded (aside from the '_') and passed as the wtrealm parameter.
+    // "YmVudGxleS5jb20=" (ofh parameter) is "bentley.com" in Base 64.
+#if defined (BENTLEY_WIN32)
+    EXPECT_STREQ ("TestUrl?wa=wsignin1.0&wtrealm=sso%3A%2F%2Fwsfed_desktop%2FTestAppProductId&ofh=YmVudGxleS5jb20=", Connect::GetFederatedSignInUrl("bentley.com").c_str());
+#else
+    EXPECT_STREQ ("TestUrl?wa=wsignin1.0&wtrealm=sso%3A%2F%2Fwsfed_mobile%2FTestAppProductId&ofh=YmVudGxleS5jb20=", Connect::GetFederatedSignInUrl("bentley.com").c_str());
+#endif
     }
