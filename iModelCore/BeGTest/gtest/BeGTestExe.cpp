@@ -2,7 +2,7 @@
 |
 |     $Source: gtest/BeGTestExe.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #if defined (BENTLEY_WIN32)
@@ -158,6 +158,12 @@ static void initLogging (char const* argv0)
 #endif
     }
 
+static void recreateDir(BeFileNameCR dirName)
+    {
+    BeFileName::EmptyAndRemoveDirectory (dirName.c_str());
+    BeFileName::CreateNewDirectory (dirName.c_str());
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * This is the TestListener that can act on certain events
 * @bsiclass                                    Majd.Uddin                      08/2012
@@ -172,11 +178,10 @@ class BeGTestListener : public ::testing::EmptyTestEventListener
         m_currTestCaseName = test_info.test_case_name();
         m_currTestName = test_info.name();
 
-        // Zip the temp directory at the start of every test to simulate the transitory nature of temp on some platforms.
-        BeFileName tempDir;
-        BeTest::GetHost().GetTempDir (tempDir);
-        BeFileName::EmptyAndRemoveDirectory (tempDir.c_str());
-        BeFileName::CreateNewDirectory (tempDir.c_str());
+        // Remove the temp directory at the start of every test to simulate the transitory nature of temp on some platforms.
+        BeFileName dirName;
+        BeTest::GetHost().GetTempDir(dirName);
+        recreateDir(dirName);
         }
 
     // Called after a failed assertion or a SUCCEED() invocation.
@@ -223,14 +228,12 @@ int main (int argc, char **argv)
     {
     auto hostPtr = BeGTestHost::Create(argv[0]);
 
-    //  Make sure output directies exist
-    BeFileName outputDir;
-    hostPtr->GetOutputRoot(outputDir);
-    BeFileName::CreateNewDirectory(outputDir.c_str());
-
-    BeFileName tempDir;
-    hostPtr->GetTempDir(tempDir);
-    BeFileName::CreateNewDirectory(tempDir.c_str());
+    //  Make sure output directies exist (and remove any results hanging around from a previous run)
+    BeFileName dirName;
+    hostPtr->GetOutputRoot(dirName);
+    recreateDir(dirName);
+    hostPtr->GetTempDir(dirName);
+    recreateDir(dirName);
 
     //  Finish initializing libraries
     initializeSqlangLocalization(hostPtr.get());
