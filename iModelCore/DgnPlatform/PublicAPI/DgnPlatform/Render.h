@@ -125,6 +125,7 @@ struct Task : RefCounted<NonCopyableClass>
     {
         Initialize,
         ChangeScene,
+        ChangeRenderPlan,
         ChangeDynamics,
         ChangeDecorations,
         DrawProgressive,
@@ -1119,21 +1120,17 @@ struct Decorations
 struct Plan
 {
     enum class AntiAliasPref {Detect=0, On=1, Off=2};
-    enum class PaintScene : bool {No=0, Yes=1,};
 
     ViewFlags     m_viewFlags;
     bool          m_is3d;
-    mutable PaintScene m_paintScene;
     Frustum       m_frustum;
     double        m_fraction;
     ColorDef      m_bgColor;
     AntiAliasPref m_aaLines;
     AntiAliasPref m_aaText;
 
-    DGNPLATFORM_EXPORT Plan(DgnViewportCR, PaintScene);
-    bool WantScene() const {return PaintScene::Yes == m_paintScene;}
+    DGNPLATFORM_EXPORT Plan(DgnViewportCR);
 };
-
 
 //=======================================================================================
 //! A Render::Target is the renderer-specific factory for creating Render::Graphics.
@@ -1145,8 +1142,6 @@ struct Plan
 //=======================================================================================
 struct Target : RefCounted<NonCopyableClass>
 {
-    typedef ImageUtilities::RgbImageInfo CapturedImageInfo;
-
 protected:
     bool               m_abortProgressive;
     Display::DevicePtr m_device;
@@ -1160,7 +1155,6 @@ protected:
     virtual GraphicPtr _CreateSprite(ISprite& sprite, DPoint3dCR location, DPoint3dCR xVec, int transparency) = 0;
     virtual void _AdjustBrightness(bool useFixedAdaptation, double brightness) = 0;
     virtual void _OnResized() {}
-    virtual ByteStream _FillImageCaptureBuffer(CapturedImageInfo& info, DRange2dCR screenBufferRange, Point2dCR outputImageSize, bool topDown) = 0;
     virtual MaterialPtr _GetMaterial(DgnMaterialId, DgnDbR) const = 0;
     virtual TexturePtr _GetTexture(DgnTextureId, DgnDbR) const = 0;
     virtual TexturePtr _CreateTileSection(Image*, bool enableAlpha) const = 0;
@@ -1185,7 +1179,8 @@ public:
     virtual void _ChangeScene(GraphicListR scene) {VerifyRenderThread(); m_currentScene = &scene;}
     virtual void _ChangeDynamics(GraphicListR dynamics) {VerifyRenderThread(); m_dynamics = &dynamics;}
     virtual void _ChangeDecorations(Decorations& decorations) {VerifyRenderThread(); m_decorations = decorations;}
-    virtual void _DrawFrame(PlanCR, StopWatch&) = 0;
+    virtual void _ChangeRenderPlan(PlanCR) = 0;
+    virtual void _DrawFrame(StopWatch&) = 0;
     virtual void _DrawProgressive(GraphicListR progressiveList, StopWatch&) = 0;
     virtual double _GetCameraFrustumNearScaleLimit() const = 0;
     virtual bool _WantInvertBlackBackground() {return false;}
@@ -1198,7 +1193,6 @@ public:
     GraphicPtr CreateSprite(ISprite& sprite, DPoint3dCR location, DPoint3dCR xVec, int transparency) {return _CreateSprite(sprite, location, xVec, transparency);}
     Display::DeviceCP GetDevice() const {return m_device.get();}
     void OnResized() {_OnResized();}
-    ByteStream FillImageCaptureBuffer(CapturedImageInfo& info, DRange2dCR screenBufferRange, Point2dCR outputImageSize, bool topDown) {return _FillImageCaptureBuffer(info, screenBufferRange, outputImageSize, topDown);}
     void* ResolveOverrides(OvrGraphicParamsCP ovr) {return ovr ? _ResolveOverrides(*ovr) : nullptr;}
     MaterialPtr GetMaterial(DgnMaterialId id, DgnDbR dgndb) const {return _GetMaterial(id, dgndb);}
     TexturePtr GetTexture(DgnTextureId id, DgnDbR dgndb) const {return _GetTexture(id, dgndb);}

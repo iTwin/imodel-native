@@ -571,23 +571,18 @@ int QueryModel::AllElementsFilter::_TestRTree(RTreeMatchFunction::QueryInfo cons
         }
 #endif
 
-    if (info.m_level > 0) // only score nodes, not elements
-        {
-        bool   overlap, spansEyePlane;
+    DPoint3d localCorners[8];
+    toLocalCorners(localCorners, pt);
 
-        DPoint3d localCorners[8];
-        toLocalCorners(localCorners, pt);
+    double score = 0.0;
+    bool   overlap, spansEyePlane;
 
-        double score = 0.0;
-        if (m_doOcclusionScore && !m_scorer.ComputeOcclusionScore(&score, overlap, spansEyePlane, localCorners))
-            return BE_SQLITE_OK;
+    // NOTE: m_doOcclusionScore is off if we're trying to visit all elements. ComputeOcclusionScore returns false if the
+    // size is smaller than our minimum NPC area.
+    if (m_doOcclusionScore && !m_scorer.ComputeOcclusionScore(&score, overlap, spansEyePlane, localCorners))
+        return BE_SQLITE_OK;
 
-        info.m_score = info.m_maxLevel - info.m_level - score;
-        }
-    else
-        {
-        info.m_score = 0;
-        }                                                                                                                                  
+    info.m_score = info.m_maxLevel - info.m_level - score;
     info.m_within = RTreeMatchFunction::Within::Partly;
     return BE_SQLITE_OK;
     }
@@ -636,8 +631,8 @@ ProgressiveDisplay::Completion QueryModel::ProgressiveFilter::_Process(ViewConte
 
         if (AcceptElement(context, m_rangeStmt->GetValueId<DgnElementId>(0)))
             {
-            if (!m_setTimeout)
-                { // don't set the timeout until after we've drawn one element
+            if (!m_setTimeout) // don't set the timeout until after we've drawn one element
+                { 
                 context.EnableStopAfterTimout(SHOW_PROGRESS_INTERVAL);
                 m_setTimeout = true;
                 }

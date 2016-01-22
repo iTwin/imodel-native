@@ -1141,12 +1141,12 @@ void DgnMarkupProject::CreateModelECProperties (DgnModelId modelId, Utf8CP model
     }
 +---------------+---------------+---------------+---------------+---------------+------*/
 
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      06/13
 +---------------+---------------+---------------+---------------+---------------+------*/
 void RedlineModel::StoreImageData(ByteStream const& imageData, Target::CapturedImageInfo const& imageInfo, bool fitToX, bool compressImageProperty)
     {
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     //  Grab possibly updated image definition data
     if (imageInfo.hasAlpha)
         m_imageDef.m_format = imageInfo.isBGR? QV_BGRA_FORMAT: QV_RGBA_FORMAT; 
@@ -1210,7 +1210,6 @@ BeAssert(def1x1.GetSizeofPixelInBytes() == 3);
     bytes1x1.assign(def, def+strlen(def));
     DefineImageTextures(def1x1, bytes1x1);
 #endif
-#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1224,6 +1223,7 @@ void RedlineModel::StoreImageDataFromJPEG (uint8_t const* jpegData, size_t jpegD
         return;
     StoreImageData(rgbData, imageInfo, fitToX, /*compresssImageProperty*/false);
     }
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      06/13
