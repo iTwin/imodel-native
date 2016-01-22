@@ -83,7 +83,7 @@ DGNPLATFORM_TYPEDEFS(DgnElement)
 DGNPLATFORM_TYPEDEFS(DgnElementExpressionContext);
 DGNPLATFORM_TYPEDEFS(DgnFont)
 DGNPLATFORM_TYPEDEFS(DgnGCS)
-DGNPLATFORM_TYPEDEFS(DgnGeomPart)
+DGNPLATFORM_TYPEDEFS(DgnGeometryPart)
 DGNPLATFORM_TYPEDEFS(DgnGestureEvent)
 DGNPLATFORM_TYPEDEFS(DgnGlyph)
 DGNPLATFORM_TYPEDEFS(DgnGlyph)
@@ -213,7 +213,7 @@ DGNPLATFORM_REF_COUNTED_PTR(DgnElement)
 DGNPLATFORM_REF_COUNTED_PTR(DgnElementExpressionContext)
 DGNPLATFORM_REF_COUNTED_PTR(DgnFont)
 DGNPLATFORM_REF_COUNTED_PTR(DgnGCS)
-DGNPLATFORM_REF_COUNTED_PTR(DgnGeomPart)
+DGNPLATFORM_REF_COUNTED_PTR(DgnGeometryPart)
 DGNPLATFORM_REF_COUNTED_PTR(DgnMarkupProject)
 DGNPLATFORM_REF_COUNTED_PTR(DgnModel)
 DGNPLATFORM_REF_COUNTED_PTR(DgnRevision)
@@ -287,7 +287,7 @@ END_BENTLEY_RENDER_NAMESPACE
 BEGIN_BENTLEY_DGN_NAMESPACE
 
 BEBRIEFCASEBASED_ID_CLASS(DgnElementId)       //!< An Id that is assigned to an Element. @ingroup DgnElementGroup
-BEBRIEFCASEBASED_ID_CLASS(DgnGeomPartId)      //!< An Id that is assigned to a DgnGeomPart.
+BEBRIEFCASEBASED_ID_CLASS(DgnGeometryPartId)      //!< An Id that is assigned to a DgnGeometryPart.
 BEBRIEFCASEBASED_ID_CLASS(DgnModelId)         //!< An Id that is assigned to a DgnModel.  A DgnModel is a container for DgnElements. @ingroup DgnModelGroup
 BEBRIEFCASEBASED_ID_CLASS(DgnLinkId)          //!< An Id that is assigned to a DGN link. See DgnLinkTable.
 BEBRIEFCASEBASED_ID_SUBCLASS(DgnMaterialId, DgnElementId) //!< An element Id that refers to a material.
@@ -392,7 +392,7 @@ struct GeometryStreamEntryId
 
 private:
     Type            m_type;
-    DgnGeomPartId   m_partId;
+    DgnGeometryPartId   m_partId;
     uint32_t        m_index;
     uint32_t        m_partIndex;
 
@@ -404,14 +404,14 @@ public:
     DGNPLATFORM_EXPORT bool operator!=(GeometryStreamEntryIdCR rhs) const;
     DGNPLATFORM_EXPORT GeometryStreamEntryIdR operator=(GeometryStreamEntryIdCR rhs);
 
-    void Init() {m_type = Type::Invalid; m_index = 0; m_partIndex = 0; m_partId = DgnGeomPartId();}
+    void Init() {m_type = Type::Invalid; m_index = 0; m_partIndex = 0; m_partId = DgnGeometryPartId();}
     void SetType(Type type) {m_type = type;}
-    void SetGeomPartId(DgnGeomPartId partId) {m_partId = partId; m_partIndex = 0;}
+    void SetGeometryPartId(DgnGeometryPartId partId) {m_partId = partId; m_partIndex = 0;}
     void SetIndex(uint32_t index) {m_index = index;}
     void SetPartIndex(uint32_t partIndex) {m_partIndex = partIndex;}
 
     Type GetType() const {return m_type;}
-    DgnGeomPartId GetGeomPartId() const {return m_partId;}
+    DgnGeometryPartId GetGeometryPartId() const {return m_partId;}
     uint32_t GetIndex() const {return m_index;}
     uint32_t GetPartIndex() const {return m_partIndex;}
 };

@@ -424,14 +424,14 @@ void ViewContext::_OutputGeometry(GeometrySourceCR source)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ViewContext::_AddSubGraphic(Render::GraphicR graphic, DgnGeomPartId partId, TransformCR subToGraphic, Render::GeometryParamsR geomParams)
+void ViewContext::_AddSubGraphic(Render::GraphicR graphic, DgnGeometryPartId partId, TransformCR subToGraphic, Render::GeometryParamsR geomParams)
     {
     ElementAlignedBox3d localRange;
     Render::GraphicPtr  partGraphic = _GetCachedPartGraphic(partId, graphic.GetPixelSize(), localRange);
 
     if (!partGraphic.IsValid())
         {
-        DgnGeomPartPtr partGeometry = GetDgnDb().GeomParts().LoadGeomPart(partId);
+        DgnGeometryPartPtr partGeometry = GetDgnDb().GeometryParts().LoadGeometryPart(partId);
 
         if (partGeometry.IsValid())
             {

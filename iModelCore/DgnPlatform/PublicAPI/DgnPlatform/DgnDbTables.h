@@ -41,8 +41,8 @@
 #define DGN_CLASSNAME_ElementMultiAspect    "ElementMultiAspect"
 #define DGN_CLASSNAME_GeometricModel        "GeometricModel"
 #define DGN_CLASSNAME_GeometrySource        "GeometrySource"
-#define DGN_CLASSNAME_GeomPart              "GeomPart"
-#define DGN_CLASSNAME_GeomPartAuthority     "GeomPartAuthority"
+#define DGN_CLASSNAME_GeometryPart          "GeometryPart"
+#define DGN_CLASSNAME_GeometryPartAuthority "GeometryPartAuthority"
 #define DGN_CLASSNAME_LineStyle             "LineStyle"
 #define DGN_CLASSNAME_Link                  "Link"
 #define DGN_CLASSNAME_LocalAuthority        "LocalAuthority"
@@ -81,7 +81,7 @@
 // ECRelationshipClass names (combine with DGN_SCHEMA macro for use in ECSql)
 //-----------------------------------------------------------------------------------------
 #define DGN_RELNAME_ElementDrivesElement        "ElementDrivesElement"
-#define DGN_RELNAME_ElementUsesGeomParts        "ElementUsesGeomParts"
+#define DGN_RELNAME_ElementUsesGeometryParts    "ElementUsesGeometryParts"
 #define DGN_RELNAME_ElementGroupsMembers        "ElementGroupsMembers"
 #define DGN_RELNAME_ElementOwnsChildElements    "ElementOwnsChildElements"
 #define DGN_RELNAME_SolutionOfComponent         "SolutionOfComponent"
@@ -385,58 +385,58 @@ public:
 
 
 //=======================================================================================
-//! Each GeomPart has a row in the DgnGeomParts table
-//! @see DgnDb::GeomParts
+//! Each GeometryPart has a row in the DgnGeometryParts table
+//! @see DgnDb::GeometryParts
 //! @ingroup GeometricPrimitiveGroup
 //=======================================================================================
-struct DgnGeomParts : DgnDbTable
+struct DgnGeometryParts : DgnDbTable
 {
     friend struct DgnDb;
-    friend struct DgnGeomParts;
+    friend struct DgnGeometryParts;
 
 private:
-    explicit DgnGeomParts(DgnDbR db) : DgnDbTable(db), m_snappyFrom(m_snappyFromBuffer, _countof(m_snappyFromBuffer)) {}
-    DgnGeomPartId m_highestGeomPartId; // 0 means not yet valid. Highest DgnGeomPartId (for current briefcaseId)
+    explicit DgnGeometryParts(DgnDbR db) : DgnDbTable(db), m_snappyFrom(m_snappyFromBuffer, _countof(m_snappyFromBuffer)) {}
+    DgnGeometryPartId m_highestGeometryPartId; // 0 means not yet valid. Highest DgnGeometryPartId (for current briefcaseId)
 
     Byte m_snappyFromBuffer[BeSQLite::SnappyReader::SNAPPY_UNCOMPRESSED_BUFFER_SIZE];
     BeSQLite::SnappyFromMemory m_snappyFrom;
     BeSQLite::SnappyFromMemory& GetSnappyFrom() {return m_snappyFrom;}
 
 public:
-    DgnGeomPartId MakeNewGeomPartId();
+    DgnGeometryPartId MakeNewGeometryPartId();
 
 public:
     //! Load a geometry part by ID.
     //! @param[in] geomPartId the ID of the geometry part to load
-    DGNPLATFORM_EXPORT DgnGeomPartPtr LoadGeomPart(DgnGeomPartId geomPartId);
+    DGNPLATFORM_EXPORT DgnGeometryPartPtr LoadGeometryPart(DgnGeometryPartId geomPartId);
 
-    //! Query for a DgnGeomPartId by code.
-    DGNPLATFORM_EXPORT DgnGeomPartId QueryGeomPartId(DgnCodeCR code);
+    //! Query for a DgnGeometryPartId by code.
+    DGNPLATFORM_EXPORT DgnGeometryPartId QueryGeometryPartId(DgnCodeCR code);
 
-    //! Query the range of a DgnGeomPart by ID.
-    //! @param[out]     range      On successful return, holds the DgnGeomPart's range
-    //! @param[in]      geomPartId The ID of the DgnGeomPart to query
-    //! @return SUCCESS if the range was retrieved, or else ERROR if e.g. no DgnGeomPart exists with the specified ID
-    DGNPLATFORM_EXPORT BentleyStatus QueryGeomPartRange(DRange3dR range, DgnGeomPartId geomPartId);
+    //! Query the range of a DgnGeometryPart by ID.
+    //! @param[out]     range      On successful return, holds the DgnGeometryPart's range
+    //! @param[in]      geomPartId The ID of the DgnGeometryPart to query
+    //! @return SUCCESS if the range was retrieved, or else ERROR if e.g. no DgnGeometryPart exists with the specified ID
+    DGNPLATFORM_EXPORT BentleyStatus QueryGeometryPartRange(DRange3dR range, DgnGeometryPartId geomPartId);
 
     //! Insert a geometry part into the DgnDb.
     //! @param[in] geomPart geometry part to insert
-    //! @return The DgnGeomPartId for the newly inserted part. Will be invalid if part could not be added.
-    //! @note This method will update the DgnGeomPartId in geomPart.
-    DGNPLATFORM_EXPORT BentleyStatus InsertGeomPart(DgnGeomPartR geomPart);
+    //! @return The DgnGeometryPartId for the newly inserted part. Will be invalid if part could not be added.
+    //! @note This method will update the DgnGeometryPartId in geomPart.
+    DGNPLATFORM_EXPORT BentleyStatus InsertGeometryPart(DgnGeometryPartR geomPart);
 
     //! Update an existing geometry part in the DgnDb.
     //! @param[in] geomPart geometry part. Its ID identifies the existing geom part. Its geometry is written to the DgnDb.
     //! @return non-zero error status if the geom part does not exist or if its ID is invalid
-    DGNPLATFORM_EXPORT BentleyStatus UpdateGeomPart(DgnGeomPartR geomPart);
+    DGNPLATFORM_EXPORT BentleyStatus UpdateGeometryPart(DgnGeometryPartR geomPart);
 
     //! Insert the ElementGeomUsesParts relationship between an element and the geom parts it uses.
     //! @note Most apps will not need to call this directly.
     //! @private
-    DGNPLATFORM_EXPORT BentleyStatus InsertElementGeomUsesParts(DgnElementId elementId, DgnGeomPartId geomPartId);
+    DGNPLATFORM_EXPORT BentleyStatus InsertElementGeomUsesParts(DgnElementId elementId, DgnGeometryPartId geomPartId);
 
     //! Delete the geometry part associated with the specified ID
-    DGNPLATFORM_EXPORT BentleyStatus DeleteGeomPart(DgnGeomPartId);
+    DGNPLATFORM_EXPORT BentleyStatus DeleteGeometryPart(DgnGeometryPartId);
 };
 
 //=======================================================================================
