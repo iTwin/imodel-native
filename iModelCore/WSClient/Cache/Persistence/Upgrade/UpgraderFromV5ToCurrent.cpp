@@ -2,7 +2,7 @@
  |
  |     $Source: Cache/Persistence/Upgrade/UpgraderFromV5ToCurrent.cpp $
  |
- |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 
@@ -476,8 +476,14 @@ ECInstanceKey& newInstanceKey
             return ERROR;
             }
 
-        newInstanceKey = newCache.GetChangeManager().LegacyCreateObject(*ecClass, instanceJson, newParentKey, syncStatus);
+        newInstanceKey = newCache.GetChangeManager().CreateObject(*ecClass, instanceJson, syncStatus);
         if (!newInstanceKey.IsValid())
+            {
+            return ERROR;
+            }
+
+        ECRelationshipClassCP relClass = newCache.GetChangeManager().GetLegacyParentRelationshipClass(newParentKey.GetECClassId(), ecClass->GetId());
+        if (nullptr == relClass || !newCache.GetChangeManager().CreateRelationship(*relClass, newParentKey, newInstanceKey, syncStatus).IsValid())
             {
             return ERROR;
             }

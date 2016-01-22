@@ -90,33 +90,63 @@ BentleyStatus ChangeManager::SetupNewRevision(struct ChangeInfo& info)
     }
 
 /*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Vincas.Razma    11/2014
+* @bsimethod                                                    Vincas.Razma    01/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECInstanceKey ChangeManager::LegacyCreateObject(ECClassCR ecClass, JsonValueCR properties, ECInstanceKeyCR parentKey, SyncStatus syncStatus)
+ECRelationshipClassCP ChangeManager::GetLegacyParentRelationshipClass(ECClassId parentClassId, ECClassId childClassId, bool createIfNotExists)
     {
-    auto relClass = GetLegacyParentRelationshipClass();
+    ECClassCP parentClass = m_dbAdapter.GetECClass(parentClassId);
+    ECClassCP childClass = m_dbAdapter.GetECClass(childClassId);
+
+    if (nullptr == parentClass || nullptr == childClass || !parentClass->IsEntityClass() || !childClass->IsEntityClass())
+        return nullptr;
+
+    Utf8String schemaName;
+    schemaName += SCHEMA_CacheLegacySupport_PREFIX;
+    schemaName += "_";
+    schemaName += parentClass->GetSchema().GetName();
+    schemaName += "_";
+    schemaName += parentClass->GetName();
+    schemaName += "_";
+    schemaName += childClass->GetSchema().GetName();
+    schemaName += "_";
+    schemaName += childClass->GetName();
+
+    Utf8String relClassName = CLASS_CacheLegacySupport_ParentToChildRelationship;
+
+    auto existingRelClass = m_dbAdapter.GetECRelationshipClass(schemaName.c_str(), relClassName.c_str());
+    if (nullptr != existingRelClass || !createIfNotExists)
+        {
+        return existingRelClass;
+        }
+
+    ECSchemaPtr ecSchema;
+    ECSchema::CreateSchema(ecSchema, schemaName, 1, 0);
+    if (ecSchema.IsNull())
+        return nullptr;
+
+    if (ECObjectsStatus::Success != ecSchema->SetNamespacePrefix(schemaName) ||
+        ECObjectsStatus::Success != ecSchema->AddReferencedSchema((ECSchemaR) parentClass->GetSchema()))
+        return nullptr;
+
+    auto status = ecSchema->AddReferencedSchema((ECSchemaR) childClass->GetSchema());
+    if (ECObjectsStatus::Success != status && ECObjectsStatus::NamedItemAlreadyExists != status)
+        return nullptr;
+
+    ECRelationshipClassP relClass = nullptr;
+    ecSchema->CreateRelationshipClass(relClass, relClassName);
     if (nullptr == relClass)
-        {
-        return ECInstanceKey();
-        }
+        return nullptr;
 
-    ECInstanceKey newInstanceKey = CreateObject(ecClass, properties, syncStatus);
+    if (ECObjectsStatus::Success != relClass->GetSource().AddClass(*parentClass->GetEntityClassCP()) ||
+        ECObjectsStatus::Success != relClass->GetTarget().AddClass(*childClass->GetEntityClassCP()))
+        return nullptr;
 
-    if (!newInstanceKey.IsValid() ||
-        !CreateRelationship(*relClass, parentKey, newInstanceKey).IsValid())
-        {
-        return ECInstanceKey();
-        }
+    ObservableECDb& db = m_dbAdapter.GetECDb();
 
-    return newInstanceKey;
-    }
+    if (SUCCESS != SchemaManager(db).ImportSchemas({ecSchema}))
+        return nullptr;
 
-/*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Vincas.Razma    11/2014
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECRelationshipClassCP ChangeManager::GetLegacyParentRelationshipClass()
-    {
-    return m_dbAdapter.GetECRelationshipClass(SCHEMA_CacheLegacySupportSchema, SCHEMA_CacheLegacySupportSchema_LegacyParentRelationship);
+    return db.Schemas().GetECClass(schemaName.c_str(), relClassName.c_str())->GetRelationshipClassCP();
     }
 
 /*--------------------------------------------------------------------------------------+

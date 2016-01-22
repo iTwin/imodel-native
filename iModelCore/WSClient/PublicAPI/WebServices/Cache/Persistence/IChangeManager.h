@@ -78,11 +78,11 @@ struct EXPORT_VTABLE_ATTRIBUTE IChangeManager
         // Internal use only! Set sync active so modifications to existing changes could not be done.
         virtual void SetSyncActive(bool active) = 0;
 
-        //! For legacy server (version < 2.0) only. Create new object in local cache under specified parent
-        virtual ECInstanceKey LegacyCreateObject(ECClassCR ecClass, JsonValueCR properties, ECInstanceKeyCR parentKey, SyncStatus syncStatus = SyncStatus::Ready) = 0;
-
-        //! For legacy server (version < 2.0) only. Get relationship class is used in LegacyCreateObject()
-        virtual ECRelationshipClassCP GetLegacyParentRelationshipClass() = 0;
+        //! For legacy server (version < 2.0) only.
+        //! Get or generate relationship class to be used with specific parent and child class instances.
+        //! If creating new class, will reset ECDb schema cache, so all pointers to ECSchema or ECClass objects can be made invalid.
+        //! IChangeManager pointers will also be invalidated.
+        virtual ECRelationshipClassCP GetLegacyParentRelationshipClass(ECClassId parentClassId, ECClassId childClassId, bool createIfNotExists = true) = 0;
 
         //! Create new object in local cache
         //! object id should be unique (e.g. GUID) to later identify created instance.
