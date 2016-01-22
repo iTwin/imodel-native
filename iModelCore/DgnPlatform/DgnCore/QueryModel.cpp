@@ -570,35 +570,19 @@ int QueryModel::AllElementsFilter::_TestRTree(RTreeMatchFunction::QueryInfo cons
             return BE_SQLITE_OK;
         }
 #endif
-        DPoint3d localCorners[8];
-        toLocalCorners(localCorners, pt);
 
-        double score = 0.0;
-        bool   overlap, spansEyePlane;
-        if (m_doOcclusionScore && !m_scorer.ComputeOcclusionScore(&score, overlap, spansEyePlane, localCorners))
-            return BE_SQLITE_OK;
+    DPoint3d localCorners[8];
+    toLocalCorners(localCorners, pt);
 
-        info.m_score = info.m_maxLevel - info.m_level - score;
+    double score = 0.0;
+    bool   overlap, spansEyePlane;
 
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    if (info.m_level > 0) // only score nodes, not elements
-        {
-        bool   overlap, spansEyePlane;
+    // NOTE: m_doOcclusionScore is off if we're trying to visit all elements. ComputeOcclusionScore returns false if the
+    // size is smaller than our minimum NPC area.
+    if (m_doOcclusionScore && !m_scorer.ComputeOcclusionScore(&score, overlap, spansEyePlane, localCorners))
+        return BE_SQLITE_OK;
 
-        DPoint3d localCorners[8];
-        toLocalCorners(localCorners, pt);
-
-        double score = 0.0;
-        if (m_doOcclusionScore && !m_scorer.ComputeOcclusionScore(&score, overlap, spansEyePlane, localCorners))
-            return BE_SQLITE_OK;
-
-        info.m_score = info.m_maxLevel - info.m_level - score;
-        }
-    else
-        {
-        info.m_score = 0;
-        }                                                                                                                                  
-#endif
+    info.m_score = info.m_maxLevel - info.m_level - score;
     info.m_within = RTreeMatchFunction::Within::Partly;
     return BE_SQLITE_OK;
     }
