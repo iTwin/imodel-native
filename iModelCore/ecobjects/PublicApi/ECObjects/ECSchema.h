@@ -820,7 +820,6 @@ public:
 struct PrimitiveECProperty : public ECProperty
 {
     DEFINE_T_SUPER(ECProperty)
-/*__PUBLISH_SECTION_END__*/
 friend struct ECClass;
 private:
     PrimitiveType                               m_primitiveType;
@@ -841,11 +840,11 @@ protected:
     virtual Utf8String                  _GetTypeNameForXml(int ecXmlVersionMajor) const override;
     virtual ECObjectsStatus             _SetTypeName (Utf8StringCR typeName) override;
     virtual bool                        _CanOverride(ECPropertyCR baseProperty) const override;
-    virtual bool                        _HasExtendedType() const override { return m_extendedTypeName.size() > 0; }
+    virtual bool                        _HasExtendedType() const override { return !m_extendedTypeName.empty(); }
     virtual CalculatedPropertySpecificationCP   _GetCalculatedPropertySpecification() const override;
     virtual bool                                _IsCalculated() const override;
     virtual bool                                _SetCalculatedPropertySpecification (IECInstanceP expressionAttribute) override;
-//__PUBLISH_SECTION_START__
+
 public:
     //! Sets the PrimitiveType of this ECProperty.  The default type is ::PRIMITIVETYPE_String
     ECOBJECTS_EXPORT ECObjectsStatus SetType(PrimitiveType value);
@@ -859,13 +858,13 @@ public:
     ECOBJECTS_EXPORT ECObjectsStatus SetKindOfQuantity(Utf8StringCR value);
     //! Gets the KindOfQuantity of this PrimitiveECProperty
     ECOBJECTS_EXPORT Utf8StringCR GetKindOfQuantity() const;
+    //! Gets the extended type of this ECProperty
+    Utf8StringCR GetExtendedTypeName() const { return m_extendedTypeName; }
     //! Sets the Name of the Extended Type of this property.
     ECOBJECTS_EXPORT ECObjectsStatus SetExtendedTypeName(Utf8CP extendedTypeName);
     //! Resets the extended type on this property.
     ECOBJECTS_EXPORT bool RemoveExtendedTypeName();
-    //! Gets the PrimitiveType of this ECProperty
-    ECOBJECTS_EXPORT Utf8String GetExtendedTypeName() const;
-	
+
 };
 
 //=======================================================================================
