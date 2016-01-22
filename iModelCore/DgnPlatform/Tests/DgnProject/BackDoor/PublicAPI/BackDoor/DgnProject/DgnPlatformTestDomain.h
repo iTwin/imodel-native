@@ -227,54 +227,6 @@ protected:
 //=======================================================================================
 // @bsiclass                                                     Sam.Wilson      06/15
 //=======================================================================================
-#ifdef WIP_ELEMENT_ITEM // *** pending redesign
-struct TestItem : Dgn::DgnElement::Item
-{
-    DEFINE_T_SUPER(Dgn::DgnElement::Item)
-private:
-    friend struct TestItemHandler;
-
-    double m_length;
-    Utf8String m_testItemProperty;
-
-    explicit TestItem(Utf8CP prop) : m_testItemProperty(prop) {;}
-
-    Utf8CP _GetECSchemaName() const override {return DPTEST_SCHEMA_NAME;}
-    Utf8CP _GetECClassName() const override {return DPTEST_TEST_ITEM_CLASS_NAME;}
-    Dgn::DgnDbStatus _GenerateElementGeometry(Dgn::GeometricElementR el, GenerateReason) override;
-    Dgn::DgnDbStatus _LoadProperties(Dgn::DgnElementCR el) override;
-    Dgn::DgnDbStatus _UpdateProperties(Dgn::DgnElementCR el) override;
-
-public:
-    static RefCountedPtr<TestItem> Create(Utf8CP prop) {return new TestItem(prop);}
-
-    Utf8StringCR GetTestItemProperty() const {return m_testItemProperty;}
-    void SetTestItemProperty(Utf8CP s) {m_testItemProperty = s;}
-
-    double GetLength() const {return m_length;}
-    void SetLength(double v) {m_length=v;}
-};
-
-typedef RefCountedPtr<TestItem> TestItemPtr;
-typedef RefCountedCPtr<TestItem> TestItemCPtr;
-typedef TestItem& TestItemR;
-typedef TestItem const& TestItemCR;
-typedef TestItem const* TestItemCP;
-typedef TestItem* TestItemP;
-
-//=======================================================================================
-// @bsiclass                                                     Sam.Wilson      06/15
-//=======================================================================================
-struct TestItemHandler : Dgn::dgn_AspectHandler::Aspect
-{
-    DOMAINHANDLER_DECLARE_MEMBERS(DPTEST_TEST_ITEM_CLASS_NAME, TestItemHandler, Dgn::dgn_AspectHandler::Aspect, )
-    RefCountedPtr<Dgn::DgnElement::Aspect> _CreateInstance() override {return new TestItem("");}
-};
-#endif
-
-//=======================================================================================
-// @bsiclass                                                     Sam.Wilson      06/15
-//=======================================================================================
 struct TestUniqueAspect : Dgn::DgnElement::UniqueAspect
 {
     DGNASPECT_DECLARE_MEMBERS(DPTEST_SCHEMA_NAME, DPTEST_TEST_UNIQUE_ASPECT_CLASS_NAME, Dgn::DgnElement::UniqueAspect);
