@@ -45,5 +45,4 @@ ImportTest.ImportElementsWithDependencies # Seemingly utterly unrelated schema c
 # WIP fixing after 0601 branch created
 ViewAttachmentTest.Geom                                 # NonVisibleViewport
 VolumeElementTestFixture.QueryTest                      # FenceParams::AcceptElement
-ComponentModelTest.SimulateDeveloperAndClient*          # GeometryStream iteration no longer expands GeometryParts, but instead returns null, so we can't expand them ourselves either
 
