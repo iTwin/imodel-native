@@ -2,7 +2,7 @@
 |
 |     $Source: Connect/Connect.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ClientInternal.h"
@@ -195,4 +195,57 @@ bool Connect::IsImsLoginRedirect(HttpResponseCR response)
 bool Connect::IsTokenBasedAuthorization()
     {
     return s_tokenBasedAuthentication;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Ron.Stewart     01/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String Connect::GetFederatedSignInUrl(Utf8String windowsDomainName)
+    {
+    // The sign in URL looks like this:
+    //     https://ims.bentley.com?wa=wsignin1.0&wtrealm=<URL-encoded-client-RP-URI>
+    //
+    // where the RP URI looks like:
+    //     sso://wsfed_mobile/<productId>  (iOS or Android)
+    //     sso://wsfed_desktop/<productId> (Windows)
+    //
+    // Windows clients can optionally specify the user's domain name to enable single-sign-in,
+    // in which case "&ofh=<Base64-domain-name>" is appended to the above URL.
+
+    // For federated sign in, the ClientInfo object used to initialize this class must contain a Bentley product ID.
+    Utf8String clientProductId = s_clientInfo->GetApplicationProductId();
+    BeAssert(!clientProductId.empty());
+    if (clientProductId.empty())
+        {
+        return Utf8String();
+        }
+
+    Utf8String signInUrl(UrlProvider::Urls::ImsFederatedAuth.Get());
+    signInUrl += "?wa=wsignin1.0&wtrealm=" + GetClientRelyingPartyUri();
+
+    if (!windowsDomainName.empty())
+        {
+        signInUrl += "&ofh=" + Base64Utilities::Encode(windowsDomainName);
+        }
+
+    return signInUrl;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* Return the client appliction's relying party URI, encoded in a form suitable for use
+* in a federated sign-in URL's wtreal query parameter.
+* @bsimethod                                                    Ron.Stewart     01/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String Connect::GetClientRelyingPartyUri()
+    {
+#if defined(BENTLEY_WIN32)
+    Utf8String platformType("desktop");
+#else
+    Utf8String platformType("mobile");
+#endif
+
+    // URL-encode the RP URI, except for the underscore in wsfed_<platformType>.
+    Utf8String rpUri(BeStringUtilities::UriEncode("sso://wsfed"));
+    rpUri += "_" + platformType + BeStringUtilities::UriEncode("/") + s_clientInfo->GetApplicationProductId();
+    return rpUri;
     }

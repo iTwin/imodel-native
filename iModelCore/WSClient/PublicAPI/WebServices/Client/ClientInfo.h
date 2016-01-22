@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/WebServices/Client/ClientInfo.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -29,6 +29,7 @@ struct ClientInfo : public IHttpHeaderProvider
         Utf8String m_applicationName;
         BeVersion m_applicationVersion;
         Utf8String m_applicationGUID;
+        Utf8String m_applicationProductId;
         Utf8String m_deviceId;
         Utf8String m_systemDescription;
 
@@ -46,12 +47,14 @@ struct ClientInfo : public IHttpHeaderProvider
         //! @param[in] applicationName - human readable string with company and application name. Format: "Bentley-TestApplication"
         //! @param[in] applicationVersion - major and minor numbers could be used to identify application in server side
         //! @param[in] applicationGUID - unique application GUID used for registering WSG usage
+        //! @param[in] applicationProductId - application product ID (e.g. "1234") used for federated sign-in [optional otherwise]
         //! @param[in] primaryHeaderProvider - [optional] provide additional headers
         WSCLIENT_EXPORT static ClientInfoPtr Create
             (
             Utf8String applicationName,
             BeVersion applicationVersion,
             Utf8String applicationGUID,
+            Utf8String applicationProductId = nullptr,
             IHttpHeaderProviderPtr primaryHeaderProvider = nullptr
             );
 
@@ -62,6 +65,7 @@ struct ClientInfo : public IHttpHeaderProvider
         //! @param[in] applicationGUID - unique application GUID used for registering WSG usage
         //! @param[in] deviceId - unique device ID used for licensing. Should be different for different devices
         //! @param[in] systemDescription - system desription for User-Agent header
+        //! @param[in] applicationProductId - application product ID (e.g. "1234") used for federated sign-in [optional otherwise]
         //! @param[in] primaryHeaderProvider - [optional] provide additional headers
         WSCLIENT_EXPORT ClientInfo
             (
@@ -70,6 +74,7 @@ struct ClientInfo : public IHttpHeaderProvider
             Utf8String applicationGUID,
             Utf8String deviceId,
             Utf8String systemDescription,
+            Utf8String applicationProductId = nullptr,
             IHttpHeaderProviderPtr primaryHeaderProvider = nullptr
             );
 
@@ -93,6 +98,7 @@ struct ClientInfo : public IHttpHeaderProvider
         WSCLIENT_EXPORT Utf8String GetApplicationName() const;
         WSCLIENT_EXPORT BeVersion GetApplicationVersion() const;
         WSCLIENT_EXPORT Utf8String GetApplicationGUID() const;
+        WSCLIENT_EXPORT Utf8String GetApplicationProductId() const;
         WSCLIENT_EXPORT Utf8String GetDeviceId() const;
         WSCLIENT_EXPORT Utf8String GetSystemDescription() const;
 

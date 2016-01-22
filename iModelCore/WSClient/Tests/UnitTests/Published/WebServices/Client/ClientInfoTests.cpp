@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/WebServices/Client/ClientInfoTests.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ClientInfoTests.h"
@@ -29,6 +29,18 @@ TEST_F(ClientInfoTests, Create_PassedMandatoryValues_SetsValues)
     EXPECT_STRNE("", info->GetSystemDescription().c_str());
     EXPECT_STRNE("", info->GetDeviceId().c_str());
     EXPECT_STREQ("en", info->GetLanguage().c_str());
+    }
+
+TEST_F(ClientInfoTests, Create_PassedProductId_SetsProductId)
+    {
+    auto info = ClientInfo::Create("Test-AppName", BeVersion(4, 2, 6, 9), "TestAppGUID", "1234");
+    EXPECT_STREQ("1234", info->GetApplicationProductId().c_str());
+    }
+
+TEST_F(ClientInfoTests, Create_NotPassedProductId_SetsEmptyProductId)
+    {
+    auto info = ClientInfo::Create("Test-AppName", BeVersion(4, 2, 6, 9), "TestAppGUID");
+    EXPECT_STREQ("", info->GetApplicationProductId().c_str());
     }
 
 TEST_F(ClientInfoTests, FillHttpRequestHeaders_ValuesPassedToCreate_SetsCorrespondingHeaders)
@@ -80,7 +92,7 @@ TEST_F(ClientInfoTests, FillHttpRequestHeaders_UsingPrimaryRequestProvider_Inclu
     {
     HttpRequestHeaders primaryHeaders;
     primaryHeaders.SetValue("Test-Header", "TestValue");
-    ClientInfo info("Foo", BeVersion(1, 0, 0, 0), "Foo", "Foo", "Foo", HttpHeaderProvider::Create(primaryHeaders));
+    ClientInfo info("Foo", BeVersion(1, 0, 0, 0), "Foo", "Foo", "Foo", "1234", HttpHeaderProvider::Create(primaryHeaders));
 
     HttpRequestHeaders headers;
     info.FillHttpRequestHeaders(headers);
@@ -93,7 +105,7 @@ TEST_F(ClientInfoTests, FillHttpRequestHeaders_UsingPrimaryRequestProviderWithSa
     {
     HttpRequestHeaders primaryHeaders;
     primaryHeaders.SetValue("Mas-Uuid", "OtherValue");
-    ClientInfo info("Foo", BeVersion(1, 0, 0, 0), "Foo", "TestDeviceId", "Foo", HttpHeaderProvider::Create(primaryHeaders));
+    ClientInfo info("Foo", BeVersion(1, 0, 0, 0), "Foo", "TestDeviceId", "Foo", "1234", HttpHeaderProvider::Create(primaryHeaders));
 
     HttpRequestHeaders headers;
     info.FillHttpRequestHeaders(headers);

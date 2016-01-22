@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/WebServices/Connect/Connect.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -33,6 +33,7 @@ struct Connect
 
     private:
         static StatusInt GetStsToken(Utf8StringCR authorization, JsonValueCR issueExParams, SamlTokenR tokenOut, Utf8CP appliesToUrl, Utf8CP stsUrl);
+        static Utf8String GetClientRelyingPartyUri();
 
     public:
         //! Initialize once in app lifetime
@@ -46,7 +47,9 @@ struct Connect
         // Checks if given response is IMS Login redirect that should be treated as invalid credentials.
         // This is workaround because IMS does not give any other indication.
         WSCLIENT_EXPORT static bool IsImsLoginRedirect(HttpResponseCR response);
+
         WSCLIENT_EXPORT static bool IsTokenBasedAuthorization();
+        WSCLIENT_EXPORT static Utf8String GetFederatedSignInUrl(Utf8String windowsDomainName = nullptr);
     };
 
 END_BENTLEY_WEBSERVICES_NAMESPACE

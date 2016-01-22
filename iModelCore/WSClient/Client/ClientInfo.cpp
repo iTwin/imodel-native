@@ -2,7 +2,7 @@
 |
 |     $Source: Client/ClientInfo.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ClientInternal.h"
@@ -27,11 +27,13 @@ BeVersion applicationVersion,
 Utf8String applicationGUID,
 Utf8String deviceId,
 Utf8String systemDescription,
+Utf8String applicationProductId,
 IHttpHeaderProviderPtr primaryHeaderProvider
 ) :
 m_applicationName(applicationName),
 m_applicationVersion(applicationVersion),
 m_applicationGUID(applicationGUID),
+m_applicationProductId(applicationProductId),
 m_deviceId(deviceId),
 m_systemDescription(systemDescription),
 m_languageTag(ClientInfo::DefaultLanguage),
@@ -53,6 +55,7 @@ ClientInfoPtr ClientInfo::Create
 Utf8String applicationName,
 BeVersion applicationVersion,
 Utf8String applicationGUID,
+Utf8String applicationProductId,
 IHttpHeaderProviderPtr primaryHeaderProvider
 )
     {
@@ -75,6 +78,7 @@ IHttpHeaderProviderPtr primaryHeaderProvider
         applicationGUID,
         deviceId,
         systemDescription,
+        applicationProductId,
         primaryHeaderProvider
         ));
     }
@@ -182,6 +186,14 @@ BeVersion ClientInfo::GetApplicationVersion() const
 Utf8String ClientInfo::GetApplicationGUID() const
     {
     return m_applicationGUID;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Ron.Stewart     01/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String ClientInfo::GetApplicationProductId() const
+    {
+    return m_applicationProductId;
     }
 
 /*--------------------------------------------------------------------------------------+
