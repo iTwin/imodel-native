@@ -51,8 +51,7 @@ TEST_F(ConnectTests, Login_QaUrls_RetrievesToken)
 
 TEST_F(ConnectTests, Login_QaImsStsWithOldAppliesTo_RetrievesValidTokensForValidRPUris)
     {
-    // Note - Add correct credentials for test to work
-    Credentials credentials("vincas.razma@bentley.com", "");
+    Credentials credentials("bentleyvilnius@gmail.com", "Q!w2e3r4t5");
 
     NativeLogging::LoggingConfig::SetSeverity(LOGGER_NAMESPACE_DGNCLIENTFX_UTILS_HTTP, BentleyApi::NativeLogging::LOG_TRACE);
 
