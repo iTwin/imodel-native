@@ -68,12 +68,11 @@ private:
     virtual LockRequest::Response _AcquireLocks(LockRequestCR reqs, DgnDbR db) override;
     virtual LockStatus _RelinquishLocks(DgnDbR db) override;
     virtual LockStatus _DemoteLocks(DgnLockSet const& locks, DgnDbR db) override;
-    virtual LockStatus _QueryLockLevel(LockLevel& level, LockableId lockId, DgnDbR db) override;
+    LockStatus _QueryLockLevel(LockLevel& level, LockableId lockId, DgnDbR db);
     virtual LockStatus _QueryLocks(DgnLockSet& locks, DgnDbR db) override;
-    virtual LockStatus _QueryOwnership(DgnLockOwnershipR ownership, LockableId lockId) override;
-
-    // Not much to test with these...
-    virtual LockStatus _QueryRevisionId(WStringR revId, LockableId lockId) override { revId.clear(); return LockStatus::Success; }
+    LockStatus _QueryOwnership(DgnLockOwnershipR ownership, LockableId lockId);
+    virtual LockStatus _QueryOwnerships(DgnOwnedLockSet& ownerships, LockableIdSet const& ids) override;
+    virtual LockStatus _QueryLockLevels(DgnLockSet&, LockableIdSet const&, DgnDbR) override;
 
     bool AreLocksAvailable(LockRequestCR reqs, BeBriefcaseId requestor);
     void GetDeniedLocks(DgnLockSet& locks, LockRequestCR reqs, BeBriefcaseId bcId);
@@ -349,6 +348,23 @@ LockStatus LocksServer::_QueryOwnership(DgnLockOwnershipR ownership, LockableId 
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/16
++---------------+---------------+---------------+---------------+---------------+------*/
+LockStatus LocksServer::_QueryOwnerships(DgnOwnedLockSet& ownerships, LockableIdSet const& ids)
+    {
+    // NB: Previously could not batch requests like this...forward to old one-at-a-time impl
+    for (auto const& id : ids)
+        {
+        DgnOwnedLock& lock = *ownerships.insert(DgnOwnedLock(id)).first;
+        auto status = _QueryOwnership(lock.GetOwnership(), id);
+        if (LockStatus::Success != status)
+            return status;
+        }
+
+    return LockStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 LockStatus LocksServer::_QueryLocks(DgnLockSet& locks, DgnDbR db)
@@ -435,6 +451,25 @@ LockStatus LocksServer::_QueryLockLevel(LockLevel& level, LockableId id, DgnDbR 
         }
 
     BeAssert(BE_SQLITE_DONE == rc);
+    return LockStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/16
++---------------+---------------+---------------+---------------+---------------+------*/
+LockStatus LocksServer::_QueryLockLevels(DgnLockSet& levels, LockableIdSet const& ids, DgnDbR db)
+    {
+    // NB: Previously could not batch requests like this...forward to old one-at-a-time impl
+    LockLevel level;
+    for (auto const& id : ids)
+        {
+        auto status = _QueryLockLevel(level, id, db);
+        if (LockStatus::Success != status)
+            return status;
+
+        levels.insert(DgnLock(id, level));
+        }
+
     return LockStatus::Success;
     }
 

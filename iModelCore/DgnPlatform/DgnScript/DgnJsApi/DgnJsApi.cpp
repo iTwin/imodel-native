@@ -53,6 +53,11 @@ JsElementGeometryBuilder::JsElementGeometryBuilder(JsDgnElementP e, JsDPoint3dP 
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                   Sam.Wilson                      12/15
+//---------------------------------------------------------------------------------------
+JsPlacement3dP JsPhysicalElement::GetPlacement() const { return m_el.IsValid() ? new JsPlacement3d(m_el->ToGeometrySource3d()->GetPlacement()) : nullptr; }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson                      06/15
 //---------------------------------------------------------------------------------------
 JsPhysicalElement* JsPhysicalElement::Create(JsDgnModelP model, JsDgnObjectIdP categoryId, Utf8StringCR ecSqlClassName)
@@ -67,6 +72,11 @@ JsPhysicalElement* JsPhysicalElement::Create(JsDgnModelP model, JsDgnObjectIdP c
 // @bsimethod                                   Sam.Wilson                      12/15
 //---------------------------------------------------------------------------------------
 JsDgnModelP JsDgnElement::GetModel() {return new JsDgnModel(*m_el->GetModel());}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Sam.Wilson                      12/15
+//---------------------------------------------------------------------------------------
+JsECClassP JsDgnElement::GetElementClass() { return new JsECClass(*m_el->GetElementClass()); }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson                      12/15
@@ -211,6 +221,16 @@ JsECInstanceP JsECClass::MakeInstance()
     {
     ECN::IECInstancePtr inst = m_ecClass? m_ecClass->GetDefaultStandaloneEnabler()->CreateInstance(): nullptr; 
     return inst.IsValid()? new JsECInstance(*inst): nullptr;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Sam.Wilson                      07/15
+//---------------------------------------------------------------------------------------
+int32_t Script::LoadScript(JsDgnDbP db, Utf8StringCR scriptName)
+    {
+    if (!db || !db->m_db.IsValid())
+        return -1;
+    return (int32_t) DgnScript::LoadScript(*db->m_db, scriptName.c_str());
     }
 
 //---------------------------------------------------------------------------------------

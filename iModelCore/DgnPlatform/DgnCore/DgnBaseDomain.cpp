@@ -36,7 +36,6 @@ HANDLER_DEFINE_MEMBERS(WebMercator)
 HANDLER_DEFINE_MEMBERS(Definition)
 HANDLER_DEFINE_MEMBERS(Dictionary)
 HANDLER_DEFINE_MEMBERS(Model2d)
-HANDLER_DEFINE_MEMBERS(System)
 };
 
 namespace dgn_ElementHandler
@@ -65,6 +64,7 @@ HANDLER_DEFINE_MEMBERS(Model)
 HANDLER_DEFINE_MEMBERS(TrueColor)
 HANDLER_DEFINE_MEMBERS(Resource)
 HANDLER_DEFINE_MEMBERS(Category)
+HANDLER_DEFINE_MEMBERS(GeomPart)
 };
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE
@@ -95,7 +95,6 @@ DgnBaseDomain::DgnBaseDomain() : DgnDomain(DGN_ECSCHEMA_NAME, "Base DgnDb Domain
     RegisterHandler(dgn_ModelHandler::StreetMap::GetHandler());
     RegisterHandler(dgn_ModelHandler::Definition::GetHandler());
     RegisterHandler(dgn_ModelHandler::Dictionary::GetHandler());
-    RegisterHandler(dgn_ModelHandler::System::GetHandler());
 
     RegisterHandler(dgn_ElementHandler::Element::GetHandler());
     RegisterHandler(dgn_ElementHandler::Physical::GetHandler());
@@ -137,6 +136,7 @@ DgnBaseDomain::DgnBaseDomain() : DgnDomain(DGN_ECSCHEMA_NAME, "Base DgnDb Domain
     RegisterHandler(dgn_AuthorityHandler::TrueColor::GetHandler());
     RegisterHandler(dgn_AuthorityHandler::Resource::GetHandler());
     RegisterHandler(dgn_AuthorityHandler::Category::GetHandler());
+    RegisterHandler(dgn_AuthorityHandler::GeomPart::GetHandler());
 
     RegisterTableHandler(dgn_TableHandler::Element::GetHandler());
     RegisterTableHandler(dgn_TableHandler::Model::GetHandler());

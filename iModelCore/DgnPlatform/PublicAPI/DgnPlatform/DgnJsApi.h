@@ -23,6 +23,9 @@ BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
 #define STUB_OUT_SET_METHOD(PROPNAME,PROPTYPE)  void Set ## PROPNAME (PROPTYPE) {BeAssert(false);}
 
+struct JsDgnDb;
+typedef JsDgnDb* JsDgnDbP;
+
 struct JsDgnModel;
 typedef JsDgnModel* JsDgnModelP;
 
@@ -49,6 +52,12 @@ typedef JsECProperty* JsECPropertyP;
 
 struct JsDgnCategory;
 typedef JsDgnCategory* JsDgnCategoryP;
+
+struct JsPlacement3d;
+typedef JsPlacement3d* JsPlacement3dP;
+
+struct JsPhysicalElement;
+typedef JsPhysicalElement* JsPhysicalElementP;
 
 #define JS_ITERATOR_IMPL(JSITCLASS,CPPCOLL) typedef CPPCOLL T_CppColl;\
     T_CppColl::const_iterator m_iter;\
@@ -138,6 +147,8 @@ struct Logging : RefCountedBaseWithCreate // ***  NEEDS WORK: It should not be n
 //=======================================================================================
 struct Script : RefCountedBaseWithCreate // ***  NEEDS WORK: It should not be necessary to derive from RefCountedBase, since I suppress my constructor. This is a bug in BeJavaScript that should be fixed.
 {
+	static int32_t LoadScript(JsDgnDbP, Utf8StringCR scriptName);
+
     //! Make sure the that specified library is loaded
     //! @param libName  The name of the library that is to be loaded
     static void ImportLibrary (Utf8StringCR libName);
@@ -218,8 +229,6 @@ struct JsDgnDb : RefCountedBaseWithCreate
     STUB_OUT_SET_METHOD(Schemas,JsECDbSchemaManagerP)
 };
 
-typedef JsDgnDb* JsDgnDbP;
-
 //=======================================================================================
 // @bsiclass                                                    Sam.Wilson      06/15
 //=======================================================================================
@@ -232,6 +241,7 @@ struct JsDgnElement : RefCountedBaseWithCreate
     JsDgnObjectIdP GetElementId() {return new JsDgnObjectId(m_el->GetElementId().GetValueUnchecked());}
     JsAuthorityIssuedCodeP GetCode() const {return new JsAuthorityIssuedCode(m_el->GetCode());}
     JsDgnModelP GetModel();
+    JsECClassP GetElementClass();
     int32_t Insert() {return m_el.IsValid()? m_el->Insert().IsValid()? 0: -1: -2;}
     int32_t Update() {return m_el.IsValid()? m_el->Update().IsValid()? 0: -1: -2;}
     void SetParent(JsDgnElement* parent) {if (m_el.IsValid() && (nullptr != parent)) m_el->SetParentId(parent->m_el->GetElementId());}
@@ -239,6 +249,7 @@ struct JsDgnElement : RefCountedBaseWithCreate
     STUB_OUT_SET_METHOD(Model, JsDgnModelP)
     STUB_OUT_SET_METHOD(ElementId,JsDgnObjectIdP)
     STUB_OUT_SET_METHOD(Code,JsAuthorityIssuedCodeP)
+    STUB_OUT_SET_METHOD(ElementClass, JsECClassP)
 };
 
 typedef JsDgnElement* JsDgnElementP;
@@ -250,7 +261,31 @@ struct JsPhysicalElement : JsDgnElement
 {
     JsPhysicalElement(PhysicalElementR el) : JsDgnElement(el) {;}
 
+    JsPlacement3dP GetPlacement() const;
+
     static JsPhysicalElement* Create(JsDgnModelP model, JsDgnObjectIdP categoryId, Utf8StringCR elementClassName);
+
+    STUB_OUT_SET_METHOD(Placement, JsPlacement3dP)
+};
+
+//=======================================================================================
+// @bsiclass                                                    Sam.Wilson      06/15
+//=======================================================================================
+struct JsHitDetail : RefCountedBaseWithCreate
+{
+    HitDetail m_detail;
+
+    JsHitDetail(HitDetailCR d) : m_detail(d) {}
+
+    JsDPoint3dP GetHitPoint() const { return new JsDPoint3d(m_detail.GetHitPoint()); }
+    JsDPoint3dP GetTestPoint() const { return new JsDPoint3d(m_detail.GetTestPoint()); }
+    JsPhysicalElementP GetElement() const { return new JsPhysicalElement(const_cast<PhysicalElementR>(*m_detail.GetElement()->ToPhysicalElement())); }
+    Utf8String GetHitType() const { return (HitDetailType::Hit == m_detail.GetHitType()) ? "hit" : (HitDetailType::Snap == m_detail.GetHitType()) ? "snap" : "intersection"; }
+
+    STUB_OUT_SET_METHOD(HitPoint, JsDPoint3dP)
+    STUB_OUT_SET_METHOD(TestPoint, JsDPoint3dP)
+    STUB_OUT_SET_METHOD(HitType, Utf8String)
+    STUB_OUT_SET_METHOD(Element, JsPhysicalElementP)
 };
 
 //=======================================================================================
@@ -291,8 +326,6 @@ struct JsPlacement3d : RefCountedBaseWithCreate
     JsYawPitchRollAnglesP GetAngles() const {return new JsYawPitchRollAngles(m_placement.GetAngles());}
     void SetAngles(JsYawPitchRollAnglesP p) {m_placement.GetAnglesR() = p->GetYawPitchRollAngles();}
 };
-
-typedef JsPlacement3d* JsPlacement3dP;
 
 //=======================================================================================
 // @bsiclass                                                    Sam.Wilson      06/15

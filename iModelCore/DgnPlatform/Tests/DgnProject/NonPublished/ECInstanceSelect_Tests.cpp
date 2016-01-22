@@ -272,3 +272,91 @@ TEST_F (ECInstanceSelectTests, ImportSchema)
     auto status = DgnPlatformTestDomain::GetDomain ().ImportSchema (*m_db);
     ASSERT_EQ (DgnDbStatus::Success, status);
     }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                             Maha Nasir                         1/16
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (ECInstanceSelectTests, VerifyInstanceCountFor04Plant)
+    {
+    SetupProject (L"04_Plant.i.idgndb", L"InstanceCountVerification04Plant.idgndb", BeSQLite::Db::OpenMode::ReadWrite);
+
+    ECSchemaList schemaList;
+    ECSqlStatement stmt;
+
+    bmap<Utf8String, int> ClassList;
+    bmap<Utf8String, int> BenchMark;
+
+    BenchMark["ArcPlates"] = 9;
+    BenchMark["ArcShapes"] = 40;
+    BenchMark["Area"] = 0;
+    BenchMark["Assemblies"] = 0;
+    BenchMark["BendPlates"] = 0;
+    BenchMark["BendShapes"] = 0;
+    BenchMark["Bolts"] = 0;
+    BenchMark["Component"] = 787;
+    BenchMark["Equipment"] = 29;
+    BenchMark["Equipment_Part"] = 15;
+    BenchMark["Groups"] = 0;
+    BenchMark["MiscAttachment"] = 0;
+    BenchMark["NonComponent"] = 21;
+    BenchMark["Nozzle"] = 55;
+    BenchMark["Object"] = 503;
+    BenchMark["Pipeline"] = 61;
+    BenchMark["PipingComponent"] = 703;
+    BenchMark["Plates"] = 1;
+    BenchMark["Port"] = 0;
+    BenchMark["Service"] = 0;
+    BenchMark["Shapes"] = 433;
+    BenchMark["SubGroups"] = 0;
+    BenchMark["Unit"] = 0;
+    BenchMark["VolBodies"] = 20;
+    BenchMark["Volume"] = 503;
+
+    ASSERT_EQ (BentleyStatus::SUCCESS, m_db->Schemas ().GetECSchemas (schemaList));
+
+    for (auto i = schemaList.begin (); i != schemaList.end (); ++i)
+        {
+        ECN::ECSchemaCP schema = *i;
+        Utf8StringCR schemaName = schema->GetName ();
+
+        if (schemaName == "AutoPlantPDWPersistenceStrategySchema" || schemaName == "AutoPlantPDW_CustomAttributes" || schemaName == "ProStructures")
+            {
+            Utf8StringCR schemaPrefix = schema->GetNamespacePrefix ();
+            for (ECN::ECClassCP const& ecClass : schema->GetClasses ())
+                {
+                if (ecClass->IsEntityClass () == false)
+                    continue;
+                Utf8String ClassName = ecClass->GetName ().c_str ();
+                Utf8String query = "SELECT COUNT(*) FROM ";
+                query.append (schemaPrefix);
+                query.append (".[");
+                query.append (ClassName);
+                query.append ("]");
+
+                ASSERT_EQ (ECSqlStatus::Success, stmt.Prepare (*m_db, query.c_str ())) << "Statement prepare failed for " << query.c_str ();
+                ASSERT_EQ (stmt.Step (), DbResult::BE_SQLITE_ROW);
+                ClassList[ClassName] = stmt.GetValueInt (0);
+                stmt.Finalize ();
+                query.clear ();
+                }
+            }
+        }
+
+    ASSERT_TRUE (ClassList.size () == BenchMark.size ()) << "Size of the maps does'nt match.";
+
+    bmap<Utf8String, int>::iterator i, j;
+    i = ClassList.begin ();
+    j = BenchMark.begin ();
+
+    while (i != ClassList.end () && j != BenchMark.end ())
+        {
+        Utf8String actualClassName = i->first;
+        Utf8String expectedClassName = j->first;
+        int actualInstanceCount = i->second;
+        int expectedInstanceCount = j->second;
+
+        ASSERT_STREQ (expectedClassName.c_str (), actualClassName.c_str ()) << "Class names mismatch at index " << i.position;
+        ASSERT_EQ (expectedInstanceCount, actualInstanceCount) << "Instance count mismatch for class '" << i->first << "'";
+        ++i;
+        ++j;
+        }
+    }

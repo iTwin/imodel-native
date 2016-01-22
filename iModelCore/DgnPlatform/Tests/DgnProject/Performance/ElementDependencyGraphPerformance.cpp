@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/DgnProject/Performance/ElementDependencyGraphPerformance.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatform/DgnPlatformApi.h>
@@ -77,7 +77,7 @@ public:
 +===============+===============+===============+===============+===============+======*/
 struct ElementDependencyGraph : TransactionManagerTests
 {
-    enum class ElementDrivesElementColumn { DependentElementId, DependentElementClassId, RootElementId, RootElementClassId, Status };
+    enum class ElementDrivesElementColumn { TargetECInstanceId, TargetECClassId, SourceECInstanceId, SourceECClassId, Status };
 
     struct ElementsAndRelationships
     {
@@ -298,12 +298,7 @@ ECN::ECClassCR ElementDependencyGraph::GetElementDrivesElementClass()
 CachedECSqlStatementPtr ElementDependencyGraph::GetSelectElementDrivesElementById()
 {
     ECSqlSelectBuilder b;
-#ifdef WIP_ECSQL_BUG
-    // ERROR ECDb - Invalid ECSQL 'SELECT DependentElementId,DependentElementClassId,RootElementId,RootElementClassId,HandlerId,Status FROM ONLY [dgn].[ElementDrivesElement] WHERE ECInstanceId=?': ECProperty 'DependentElementId' not found in any of the ECClasses used in the ECSQL statement.
-    b.Select("DependentElementId,DependentElementClassId,RootElementId,RootElementClassId,Status").From(GetElementDrivesElementClass(), false).Where("ECInstanceId=?");
-#else
     b.Select("TargetECInstanceId,TargetECClassId,SourceECInstanceId,SourceECClassId,Status").From(GetElementDrivesElementClass(), false).Where("ECInstanceId=?");
-#endif
 
     return m_db->GetPreparedECSqlStatement(b.ToString().c_str());
 }

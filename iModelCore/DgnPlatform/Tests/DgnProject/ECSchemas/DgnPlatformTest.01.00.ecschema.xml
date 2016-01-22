@@ -64,10 +64,6 @@
         <ECCustomAttributes>
           <ClassHasHandler xmlns="dgn.02.00" />
           <LinkTableRelationshipMap xmlns="ECDbMap.01.00">
-                <SourceECInstanceIdColumn>RootElementId</SourceECInstanceIdColumn>
-                <SourceECClassIdColumn>RootElementClassId</SourceECClassIdColumn>
-                <TargetECInstanceIdColumn>DependentElementId</TargetECInstanceIdColumn>
-                <TargetECClassIdColumn>DependentElementClassId</TargetECClassIdColumn>
               <AllowDuplicateRelationships>True</AllowDuplicateRelationships>
             </LinkTableRelationshipMap>
         </ECCustomAttributes>
@@ -87,14 +83,6 @@
             <ClassHasHandler xmlns="dgn.02.00" />
         </ECCustomAttributes>
         <BaseClass>dgn:PhysicalElement</BaseClass>
-    </ECClass>
-
-    <ECClass typeName="TestRequirement" isDomainClass="True">
-        <!-- Used to test the dgn:SystemElement abstract base class -->
-        <ECCustomAttributes>
-            <ClassHasHandler xmlns="dgn.02.00" />
-        </ECCustomAttributes>
-        <BaseClass>dgn:SystemElement</BaseClass>
     </ECClass>
 
     <ECClass typeName="Robot" isDomainClass="true">

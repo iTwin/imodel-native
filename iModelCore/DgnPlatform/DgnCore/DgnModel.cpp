@@ -1528,7 +1528,7 @@ DgnDbStatus DgnModel::_ImportECRelationshipsFrom(DgnModelCR sourceModel, DgnImpo
     // ElementGeomUsesParts are created automatically as a side effect of inserting GeometricElements 
 
     importECRelationshipsFrom(GetDgnDb(), sourceModel, importer, DGN_TABLE(DGN_RELNAME_ElementGroupsMembers), "GroupId", "MemberId");
-    importECRelationshipsFrom(GetDgnDb(), sourceModel, importer, DGN_TABLE(DGN_RELNAME_ElementDrivesElement), "RootElementId", "DependentElementId", "ECClassId", {"Status", "Priority"});
+    importECRelationshipsFrom(GetDgnDb(), sourceModel, importer, DGN_TABLE(DGN_RELNAME_ElementDrivesElement), "SourceECInstanceId", "TargetECInstanceId", "ECClassId", {"Status", "Priority"});
 
     // *** WIP_IMPORT *** ElementHasLinks -- should we deep-copy links?
 
@@ -1645,36 +1645,4 @@ DgnDbStatus DgnModel::_SetCode(DgnCode const& code)
 
     m_code = code;
     return DgnDbStatus::Success;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Shaun.Sewall    12/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-SystemModelPtr SystemModel::Create(DgnDbR db, DgnCode const& code)
-    {
-    ModelHandlerR handler = dgn_ModelHandler::System::GetHandler();
-    DgnClassId classId = db.Domains().GetClassId(handler);
-    DgnModelPtr model = handler.Create(DgnModel::CreateParams(db, classId, code));
-    
-    if (!model.IsValid())
-        {
-        BeAssert(false);
-        return nullptr;
-        }
-
-    return model->ToSystemModelP();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Shaun.Sewall    12/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus SystemModel::_OnInsertElement(DgnElementR element)
-    {
-    if (!element.IsSystemElement())
-        {
-        BeAssert(false);
-        return DgnDbStatus::WrongModel;
-        }
-
-    return T_Super::_OnInsertElement(element);
     }

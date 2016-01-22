@@ -36,8 +36,15 @@
         <ECProperty propertyName="CategoryId" typeName="long"/><!-- should be non-nullable but shared table... -->
         <ECProperty propertyName="Geometry" typeName="binary"/>
     </ECEntityClass>
+    
     <ECRelationshipClass typeName="GeometrySourceIsInCategory" description="Element is in Category" strength="referencing">
-        <!-- WIP: want ON DELETE RESTRICT? -->
+        <ECCustomAttributes>
+            <ForeignKeyRelationshipMap xmlns="ECDbMap.01.00">
+	    	<End>Source</End>
+                <OnDeleteAction>Restrict</OnDeleteAction>
+            </ForeignKeyRelationshipMap>
+        </ECCustomAttributes>
+	
         <Source cardinality="(0,N)" roleLabel="is in category" polymorphic="true">
             <Class class="GeometrySource">
                 <Key>
@@ -110,37 +117,43 @@
         <ECCustomAttributes>
             <ClassHasHandler xmlns="dgn.02.00"/>
         </ECCustomAttributes>
-        <BaseClass>NamespaceAuthority</BaseClass>
+        <BaseClass>Authority</BaseClass>
     </ECEntityClass>
     <ECEntityClass typeName="ComponentAuthority">
         <ECCustomAttributes>
             <ClassHasHandler xmlns="dgn.02.00"/>
         </ECCustomAttributes>
-        <BaseClass>NamespaceAuthority</BaseClass>
+        <BaseClass>Authority</BaseClass>
     </ECEntityClass>
     <ECEntityClass typeName="ModelAuthority">
         <ECCustomAttributes>
             <ClassHasHandler xmlns="dgn.02.00"/>
         </ECCustomAttributes>
-        <BaseClass>NamespaceAuthority</BaseClass>
+        <BaseClass>Authority</BaseClass>
     </ECEntityClass>
     <ECEntityClass typeName="TrueColorAuthority">
         <ECCustomAttributes>
             <ClassHasHandler xmlns="dgn.02.00"/>
         </ECCustomAttributes>
-        <BaseClass>NamespaceAuthority</BaseClass>
+        <BaseClass>Authority</BaseClass>
     </ECEntityClass>
     <ECEntityClass typeName="ResourceAuthority">
         <ECCustomAttributes>
             <ClassHasHandler xmlns="dgn.02.00"/>
         </ECCustomAttributes>
-        <BaseClass>NamespaceAuthority</BaseClass>
+        <BaseClass>Authority</BaseClass>
     </ECEntityClass>
     <ECEntityClass typeName="CategoryAuthority">
         <ECCustomAttributes>
             <ClassHasHandler xmlns="dgn.02.00"/>
         </ECCustomAttributes>
-        <BaseClass>NamespaceAuthority</BaseClass>
+        <BaseClass>Authority</BaseClass>
+    </ECEntityClass>
+    <ECEntityClass typeName="GeomPartAuthority">
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="dgn.02.00"/>
+        </ECCustomAttributes>
+        <BaseClass>Authority</BaseClass>
     </ECEntityClass>
 
     <ECStructClass typeName="AuthorityIssuedCode">
@@ -174,8 +187,45 @@
         </ECProperty>
     </ECStructClass>
 
+    <ECEntityClass typeName="CodedObject" modifier="Abstract">
+        <ECCustomAttributes>
+            <ClassMap xmlns="ECDbMap.01.00">
+                <Indexes>
+                    <DbIndex>
+                        <IsUnique>True</IsUnique>
+                        <Properties>
+                            <string>Code.AuthorityId</string>
+                            <string>Code.Namespace</string>
+                            <string>Code.Value</string>
+                        </Properties>
+                    </DbIndex>
+                </Indexes>
+            </ClassMap>
+        </ECCustomAttributes>
+        <ECStructProperty propertyName="Code" typeName="AuthorityIssuedCode"/>
+    </ECEntityClass>
+
+    <!-- NEEDSWORK This breaks everything. Why.
+    <ECRelationshipClass typeName="CodeIssuedByAuthority" description="Object has a code which was issued by the specified authority" strength="referencing">
+        <Source cardinality="(0,N)" roleLabel="has N codes" polymorphic="true">
+            <Class class="CodedObject">
+                <Key>
+                    <Property name="Code.AuthorityId" />
+                </Key>
+            </Class>
+        </Source>
+        <Target cardinality="(1,1)" roleLabel="issues code" polymorphic="true">
+            <Class class="Authority" />
+        </Target>
+    </ECRelationshipClass>
+    -->
     <ECRelationshipClass typeName="AuthorityIssuesElementCode" description="Element has a code which was issued by the given authority" strength="referencing">
-        <!-- WIP: want ON DELETE RESTRICT? -->
+        <ECCustomAttributes>
+            <ForeignKeyRelationshipMap xmlns="ECDbMap.01.00">
+                <OnDeleteAction>Restrict</OnDeleteAction>
+            </ForeignKeyRelationshipMap>
+        </ECCustomAttributes>
+
         <Source cardinality="(1,1)" roleLabel="issues code" polymorphic="false">
             <Class class="Authority"/>
         </Source>
@@ -187,9 +237,12 @@
             </Class>
         </Target>
     </ECRelationshipClass>
-
     <ECRelationshipClass typeName="AuthorityIssuesModelCode" description="Model has a code which was issued by the given authority" strength="referencing">
-        <!-- WIP: want ON DELETE RESTRICT? -->
+        <ECCustomAttributes>
+            <ForeignKeyRelationshipMap xmlns="ECDbMap.01.00">
+                <OnDeleteAction>Restrict</OnDeleteAction>
+            </ForeignKeyRelationshipMap>
+        </ECCustomAttributes>
         <Source cardinality="(1,1)" roleLabel="issues code" polymorphic="false">
             <Class class="Authority"/>
         </Source>
@@ -201,8 +254,22 @@
             </Class>
         </Target>
     </ECRelationshipClass>
+    <ECRelationshipClass typeName="AuthorityIssuesGeomPartCode" description="GeomPart has a code which was issued by the given authority" strength="referencing">
+        <!-- WIP: want ON DELETE RESTRICT? -->
+        <Source cardinality="(1,1)" roleLabel="issues code" polymorphic="false">
+            <Class class="Authority"/>
+        </Source>
+        <Target cardinality="(0,N)" roleLabel="has N codes" polymorphic="true">
+            <Class class="GeomPart">
+                <Key>
+                    <Property name="Code.AuthorityId"/>
+                </Key>
+            </Class>
+        </Target>
+    </ECRelationshipClass>
 
     <ECEntityClass typeName="Model" modifier="Abstract">
+        <BaseClass>CodedObject</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="dgn.02.00">
                 <Restrictions>
@@ -215,20 +282,8 @@
                     <AppliesToSubclasses>True</AppliesToSubclasses>
                 </MapStrategy>
                 <ECInstanceIdColumn>Id</ECInstanceIdColumn>
-                <Indexes>
-                    <DbIndex>
-                        <Name>idx_dgn_Model_Code</Name>
-                        <IsUnique>True</IsUnique>
-                        <Properties>
-                            <string>Code.AuthorityId</string>
-                            <string>Code.Namespace</string>
-                            <string>Code.Value</string>
-                        </Properties>
-                    </DbIndex>
-                </Indexes>
             </ClassMap>
         </ECCustomAttributes>
-        <ECStructProperty propertyName="Code" typeName="AuthorityIssuedCode"/>
         <ECProperty propertyName="Label" typeName="string"/>
         <ECProperty propertyName="Properties" typeName="string"/>
         <ECProperty propertyName="Visibility" typeName="int"/>
@@ -308,16 +363,14 @@
         </ECCustomAttributes>
         <BaseClass>WebMercatorModel</BaseClass>
     </ECEntityClass>
-    <ECEntityClass typeName="SystemModel">
-        <!-- A SystemModel contains SystemElements which are used to model functional systems -->
-        <ECCustomAttributes>
-            <ClassHasHandler xmlns="dgn.02.00"/>
-        </ECCustomAttributes>
-        <BaseClass>Model</BaseClass>
-    </ECEntityClass>
 
     <ECRelationshipClass typeName="ModelContainsElements" description="Associates elements with a model" strength="embedding">
-        <!-- WIP: want ON DELETE RESTRICT, getting ON DELETE CASCADE -->
+        <ECCustomAttributes>
+            <ForeignKeyRelationshipMap xmlns="ECDbMap.01.00">
+                <OnDeleteAction>Restrict</OnDeleteAction>
+            </ForeignKeyRelationshipMap>
+        </ECCustomAttributes>
+
         <Source cardinality="(1,1)" roleLabel="is on 1 model" polymorphic="true">
             <Class class="Model"/>
         </Source>
@@ -331,6 +384,7 @@
     </ECRelationshipClass>
 
     <ECEntityClass typeName="Element" modifier="Abstract">
+        <BaseClass>CodedObject</BaseClass>
         <ECCustomAttributes>
             <ClassMap xmlns="ECDbMap.01.00">
                 <MapStrategy>
@@ -340,15 +394,6 @@
                 </MapStrategy>
                 <ECInstanceIdColumn>Id</ECInstanceIdColumn>
                 <Indexes>
-                    <DbIndex>
-                        <Name>idx_dgn_Element_Code</Name>
-                        <IsUnique>True</IsUnique>
-                        <Properties>
-                            <string>Code.AuthorityId</string>
-                            <string>Code.Namespace</string>
-                            <string>Code.Value</string>
-                        </Properties>
-                    </DbIndex>
                     <DbIndex>
                         <Name>idx_dgn_Element_ParentId</Name>
                         <IsUnique>False</IsUnique>
@@ -396,7 +441,6 @@
                 </PropertyMap>
             </ECCustomAttributes>
         </ECProperty>
-        <ECStructProperty propertyName="Code" typeName="AuthorityIssuedCode"/>
         <ECProperty propertyName="Label" typeName="string">
             <ECCustomAttributes>
                 <PropertyMap xmlns="ECDbMap.01.00">
@@ -426,10 +470,6 @@
     </ECEntityClass>
     <ECEntityClass typeName="DictionaryElement" modifier="Abstract">
         <BaseClass>DefinitionElement</BaseClass>
-    </ECEntityClass>
-    <ECEntityClass typeName="SystemElement" modifier="Abstract">
-        <!-- A SystemElement is used to model functional systems -->
-        <BaseClass>Element</BaseClass>
     </ECEntityClass>
     <ECEntityClass typeName="SpatialElement" modifier="Abstract">
         <!-- An element that occupies real world space -->
@@ -863,36 +903,6 @@
         </Target>
     </ECRelationshipClass>
 
-    <ECEntityClass typeName="ElementDescription">
-        <!-- The aspect that holds a descriptions of an element -->
-        <BaseClass>ElementUniqueAspect</BaseClass>
-        <ECCustomAttributes>
-            <ClassMap xmlns="ECDbMap.01.00">
-                <!-- The ECInstanceId for ElementDescription is the same as the Id of the owning Element -->
-                <ECInstanceIdColumn>ElementId</ECInstanceIdColumn>
-            </ClassMap>
-        </ECCustomAttributes>
-        <ECProperty propertyName="Descr" typeName="string" displayLabel="Description">
-            <ECCustomAttributes>
-                <PropertyMap xmlns="ECDbMap.01.00">
-                    <IsNullable>False</IsNullable>
-                </PropertyMap>
-            </ECCustomAttributes>
-        </ECProperty>
-    </ECEntityClass>
-    <ECRelationshipClass typeName="ElementOwnsDescription" strength="embedding">
-        <Source cardinality="(1,1)" polymorphic="true">
-            <Class class="Element"/>
-        </Source>
-        <Target cardinality="(0,1)" polymorphic="true">
-            <Class class="ElementDescription">
-                <Key>
-                    <Property name="ECInstanceId"/>
-                </Key>
-            </Class>
-        </Target>
-    </ECRelationshipClass>
-
     <ECRelationshipClass typeName="ElementDrivesElement" strength="referencing">
         <!-- Relationship that indicates that an Element drives (controls the lifecyle or structure of) a dependent Element -->
         <ECCustomAttributes>
@@ -907,8 +917,6 @@
             </ClassMap>
             <LinkTableRelationshipMap xmlns="ECDbMap.01.00">
                 <AllowDuplicateRelationships>True</AllowDuplicateRelationships>
-                <SourceECInstanceIdColumn>RootElementId</SourceECInstanceIdColumn>
-                <TargetECInstanceIdColumn>DependentElementId</TargetECInstanceIdColumn>
             </LinkTableRelationshipMap>
         </ECCustomAttributes>
         <Source cardinality="(0,N)" polymorphic="true">
@@ -1067,7 +1075,11 @@
         </ECProperty>
     </ECEntityClass>
     <ECRelationshipClass typeName="BaseModelForView" strength="embedding">
-        <!-- WIP: want ON DELETE RESTRICT, getting ON DELETE CASCADE -->
+        <ECCustomAttributes>
+            <ForeignKeyRelationshipMap xmlns="ECDbMap.01.00">
+                <OnDeleteAction>Restrict</OnDeleteAction>
+            </ForeignKeyRelationshipMap>
+        </ECCustomAttributes>
         <Source cardinality="(1,1)" roleLabel="is base model for view" polymorphic="true">
             <Class class="Model"/>
         </Source>
@@ -1177,21 +1189,12 @@
     </ECEntityClass>
 
     <ECEntityClass typeName="GeomPart">
-        <!-- WIP: need to create a partial index on Code -->
+        <BaseClass>CodedObject</BaseClass>
         <ECCustomAttributes>
             <ClassMap xmlns="ECDbMap.01.00">
                 <ECInstanceIdColumn>Id</ECInstanceIdColumn>
             </ClassMap>
         </ECCustomAttributes>
-        <ECProperty propertyName="Code" typeName="string">
-            <!-- "Code" must be unique (or Null). Typically programmatically-generated -->
-            <ECCustomAttributes>
-                <PropertyMap xmlns="ECDbMap.01.00">
-                    <!-- Null means an "anonymous" GeomPart that can only be looked up by Id -->
-                    <IsNullable>True</IsNullable>
-                </PropertyMap>
-            </ECCustomAttributes>
-        </ECProperty>
         <ECProperty propertyName="Geom" typeName="binary">
             <ECCustomAttributes>
                 <PropertyMap xmlns="ECDbMap.01.00">
@@ -1199,14 +1202,14 @@
                 </PropertyMap>
             </ECCustomAttributes>
         </ECProperty>
-        <ECProperty propertyName="BBox_Low" typeName="point3d">
+        <ECProperty propertyName="BBoxLow" typeName="point3d">
             <ECCustomAttributes>
                 <PropertyMap xmlns="ECDbMap.01.00">
                     <IsNullable>False</IsNullable>
                 </PropertyMap>
             </ECCustomAttributes>
         </ECProperty>
-        <ECProperty propertyName="BBox_High" typeName="point3d">
+        <ECProperty propertyName="BBoxHigh" typeName="point3d">
             <ECCustomAttributes>
                 <PropertyMap xmlns="ECDbMap.01.00">
                     <IsNullable>False</IsNullable>
