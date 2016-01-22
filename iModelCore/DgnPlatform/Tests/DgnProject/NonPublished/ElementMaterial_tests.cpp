@@ -67,13 +67,17 @@ static DgnMaterialId createTexturedMaterial(DgnDbR dgnDb, Utf8CP materialName, W
         imageData.ReserveMemory(width * height * 4);
         Byte* p = imageData.GetDataP(); 
         Byte* s = fileImageData.GetDataP(); 
-        for (uint32_t i=0; i<imageData.GetSize(); ++i)
+        for (uint32_t i=0; i<imageData.GetSize(); i += 4)
             {
             *p++ = *s++;
             *p++ = *s++;
             *p++ = *s++;
             *p++ = 255;     // Alpha.
+            ++s;
             }
+
+        EXPECT_EQ(p, imageData.GetDataP() + imageData.GetSize());
+        EXPECT_EQ(s, fileImageData.GetDataP() + imageData.GetSize());
         }
     else
         {

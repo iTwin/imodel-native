@@ -473,18 +473,18 @@ struct          LsSymbolComponent : LsComponent
 private:
     bool                m_isModified;
 
-    DgnGeomPartId       m_geomPartId;
-    mutable DgnGeomPartPtr m_geomPart;
-    double              m_storedScale;              //
-    double              m_muDef;                    // Set to m_storedScale if it is non-zero. Otherwise, it is 1/uorPerMaster for the model ref used in the PostProcessLoad step;
-    DPoint3d            m_symSize;
-    DPoint3d            m_symBase;                  // Not needed to display; used just to reconstruct range for GetRange method
-    uint32_t            m_symFlags;                 // Flags from point symbol resource
-    ColorDef            m_lineColor;
-    ColorDef            m_fillColor;
-    uint32_t            m_weight;
-    bool                m_lineColorByLevel;
-    bool                m_postProcessed;
+    DgnGeometryPartId           m_geomPartId;
+    mutable DgnGeometryPartPtr  m_geomPart;
+    double                      m_storedScale;              //
+    double                      m_muDef;                    // Set to m_storedScale if it is non-zero. Otherwise, it is 1/uorPerMaster for the model ref used in the PostProcessLoad step;
+    DPoint3d                    m_symSize;
+    DPoint3d                    m_symBase;                  // Not needed to display; used just to reconstruct range for GetRange method
+    uint32_t                    m_symFlags;                 // Flags from point symbol resource
+    ColorDef                    m_lineColor;
+    ColorDef                    m_fillColor;
+    uint32_t                    m_weight;
+    bool                        m_lineColorByLevel;
+    bool                        m_postProcessed;
 
     explicit LsSymbolComponent (LsLocationCP pLocation);
     virtual ~LsSymbolComponent ();
@@ -517,9 +517,9 @@ public:
     StatusInt           _GetRange           (DRange3dR range) const override;
 #endif
 
-    void                SetGeomPartId       (DgnGeomPartId id) {m_geomPartId = id;}
-    DgnGeomPartId       GetGeomPartId       () const {return m_geomPartId;}
-    DgnGeomPartPtr      GetGeomPart         () const;
+    void                SetGeometryPartId       (DgnGeometryPartId id) {m_geomPartId = id;}
+    DgnGeometryPartId       GetGeometryPartId       () const {return m_geomPartId;}
+    DgnGeometryPartPtr      GetGeometryPart         () const;
     DgnModelP           GetSymbolDgnModel   (ViewContextCP context) const;
     void                SetMuDef            (double mudef) {m_muDef = mudef;}
     void                SetSymSize          (DPoint3dCP sz){m_symSize = *sz;}
@@ -532,7 +532,7 @@ public:
     virtual LsComponentPtr _GetForTextureGeneration() const override { return const_cast<LsSymbolComponentP>(this); }
     virtual LsOkayForTextureGeneration _IsOkayForTextureGeneration() const override { return LsOkayForTextureGeneration::NoChangeRequired; }
     virtual void _StartTextureGeneration() const override {}
-    DGNPLATFORM_EXPORT static void SaveSymbolDataToJson(Json::Value& result, DPoint3dCR base, DPoint3dCR size, DgnGeomPartId const& geomPartId, int32_t flags, double storedScale, 
+    DGNPLATFORM_EXPORT static void SaveSymbolDataToJson(Json::Value& result, DPoint3dCR base, DPoint3dCR size, DgnGeometryPartId const& geomPartId, int32_t flags, double storedScale, 
                                              bool colorBySubcategory, ColorDefCR lineColor, ColorDefCR fillColor, bool weightBySubcategory, int weight);
 
 //__PUBLISH_SECTION_START__

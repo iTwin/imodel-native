@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/DrawAreaPattern.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include    <DgnPlatformInternal.h>
@@ -437,7 +437,7 @@ struct PatternSymbol
 {
 private:
 
-DgnGeomPartId       m_partId;
+DgnGeometryPartId       m_partId;
 mutable DRange3d    m_range;
 
 public:
@@ -467,7 +467,7 @@ virtual StatusInt _GetRange(DRange3dR range) const override
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  11/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-PatternSymbol(DgnGeomPartId partId, DgnDbR project)
+PatternSymbol(DgnGeometryPartId partId, DgnDbR project)
     {
 #if defined (NEEDSWORK_REVISIT_PATTERN_SYMBOLS_SCDEF)
     DgnElementPtr edP;

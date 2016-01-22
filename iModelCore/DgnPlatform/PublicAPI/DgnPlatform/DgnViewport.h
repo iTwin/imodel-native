@@ -114,7 +114,7 @@ public:
 //! @private
 typedef bpair<Render::GraphicSet, ElementAlignedBox3d> GraphicSetRangePair;
 //! @private
-typedef bmap<DgnGeomPartId, GraphicSetRangePair> PartGraphicMap;
+typedef bmap<DgnGeometryPartId, GraphicSetRangePair> PartGraphicMap;
 
 protected:
     typedef std::deque<Utf8String> ViewStateStack;
@@ -166,7 +166,7 @@ protected:
     DGNPLATFORM_EXPORT virtual int _GetIndexedLineWidth(int index) const;
     DGNPLATFORM_EXPORT static void StartRenderThread();
     DMap4d CalcNpcToView();
-    void QueueDrawFrame(Render::Plan::PaintScene);
+    void QueueDrawFrame();
     void CalcTargetNumElements(UpdatePlan const& plan, bool isForProgressive);
 
 public:
@@ -222,8 +222,9 @@ public:
     bool IsUndoActive() {return m_undoActive;}
     void ClearUndo();
     void ChangeDynamics(Render::GraphicListP list);
+    void ChangeRenderPlan();
     void ApplyViewState(Utf8StringCR val, int animationTime);
-    void Refresh(Render::Plan::PaintScene);
+    void Refresh();
     DGNVIEW_EXPORT void ApplyNext(int animationTime);
     DGNVIEW_EXPORT void ApplyPrevious(int animationTime);
     DGNPLATFORM_EXPORT void CheckForChanges();

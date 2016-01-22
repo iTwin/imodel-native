@@ -185,9 +185,9 @@ protected:
     DGNPLATFORM_EXPORT virtual StatusInt _Attach(DgnViewportP, DrawPurpose purpose);
     DGNPLATFORM_EXPORT virtual void _Detach();
     DGNPLATFORM_EXPORT virtual void _OutputGeometry(GeometrySourceCR);
-    DGNPLATFORM_EXPORT virtual void _AddSubGraphic(Render::GraphicR, DgnGeomPartId, TransformCR, Render::GeometryParamsR);
-    virtual Render::GraphicP _GetCachedPartGraphic(DgnGeomPartId, double pixelSize, ElementAlignedBox3dR) {return nullptr;}
-    virtual void _SavePartGraphic(DgnGeomPartId, Render::GraphicR, ElementAlignedBox3dCR) {}
+    DGNPLATFORM_EXPORT virtual void _AddSubGraphic(Render::GraphicR, DgnGeometryPartId, TransformCR, Render::GeometryParamsR);
+    virtual Render::GraphicP _GetCachedPartGraphic(DgnGeometryPartId, double pixelSize, ElementAlignedBox3dR) {return nullptr;}
+    virtual void _SavePartGraphic(DgnGeometryPartId, Render::GraphicR, ElementAlignedBox3dCR) {}
     virtual void _OutputGraphic(Render::GraphicR, GeometrySourceCP) {}
     virtual Render::GraphicP _GetCachedGraphic(GeometrySourceCR, double pixelSize) {return nullptr;}
     virtual void _SaveGraphic(GeometrySourceCR, Render::GraphicR graphic) {}
@@ -252,7 +252,7 @@ public:
     void EnableStopAfterTimout(uint32_t timeout) {m_endTime = BeTimeUtilities::QueryMillisecondsCounter()+timeout; m_stopAfterTimeout=true;}
 
     Render::GraphicPtr CreateGraphic(Render::Graphic::CreateParams const& params=Render::Graphic::CreateParams()) {return _CreateGraphic(params);}
-    void AddSubGraphic(Render::GraphicR graphic, DgnGeomPartId partId, TransformCR subToGraphic, Render::GeometryParamsR geomParams) {_AddSubGraphic(graphic, partId, subToGraphic, geomParams);}
+    void AddSubGraphic(Render::GraphicR graphic, DgnGeometryPartId partId, TransformCR subToGraphic, Render::GeometryParamsR geomParams) {_AddSubGraphic(graphic, partId, subToGraphic, geomParams);}
     StatusInt VisitElement(GeometrySourceCR elem) {return _VisitElement(elem);}
 
     /// @name Coordinate Query and Conversion
@@ -473,7 +473,7 @@ public:
     DGNVIEW_EXPORT RenderContext(DgnViewportR vp, DrawPurpose);
     void _AddContextOverrides(Render::OvrGraphicParamsR ovrMatSymb, GeometrySourceCP source) override;
     Render::GraphicP _GetCachedGraphic(GeometrySourceCR source, double pixelSize) override {return source.Graphics().Find(*m_viewport, pixelSize);}
-    DGNVIEW_EXPORT Render::GraphicP _GetCachedPartGraphic(DgnGeomPartId, double pixelSize, ElementAlignedBox3dR) override;
+    DGNVIEW_EXPORT Render::GraphicP _GetCachedPartGraphic(DgnGeometryPartId, double pixelSize, ElementAlignedBox3dR) override;
     void _PushFrustumClip() override {}
     Render::GraphicPtr _CreateGraphic(Render::Graphic::CreateParams const& params) override {return m_target.CreateGraphic(params);}
 };

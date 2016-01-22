@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/linestyle/LsDb.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -335,7 +335,7 @@ LsComponentPtr LsSymbolComponent::_Import(DgnImportContext& importer) const
     {
     LsSymbolComponentP result = new LsSymbolComponent(*this);
 
-    importer.RemapGeomPartId(result->m_geomPartId);
+    importer.RemapGeometryPartId(result->m_geomPartId);
 
     Json::Value     jsonValue;
     result->SaveToJson(jsonValue);
@@ -361,7 +361,7 @@ LineStyleStatus LsSymbolComponent::CreateFromJson(LsSymbolComponentP*newComp, Js
     pSym->m_symSize.y = LsJsonHelpers::GetDouble(jsonDef, "sizeY", 0.0);
     pSym->m_symSize.z = LsJsonHelpers::GetDouble(jsonDef, "sizeZ",  0.0);
 
-    pSym->m_geomPartId = DgnGeomPartId(LsJsonHelpers::GetUInt64(jsonDef, "geomPartId", 0));
+    pSym->m_geomPartId = DgnGeometryPartId(LsJsonHelpers::GetUInt64(jsonDef, "geomPartId", 0));
     pSym->m_symFlags = LsJsonHelpers::GetUInt32(jsonDef, "symFlags", 0);
     pSym->m_storedScale = LsJsonHelpers::GetDouble(jsonDef, "scale", 0.0);
     pSym->m_lineColorByLevel = LsJsonHelpers::GetInt32(jsonDef, "colorBySubCat", 0) != 0;
@@ -403,7 +403,7 @@ LineStyleStatus LsSymbolComponent::CreateFromJson(LsSymbolComponentP*newComp, Js
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    12/2015
 //---------------------------------------------------------------------------------------
-void LsSymbolComponent::SaveSymbolDataToJson(Json::Value& result, DPoint3dCR base, DPoint3dCR size, DgnGeomPartId const& geomPartId, int32_t flags, double storedScale, 
+void LsSymbolComponent::SaveSymbolDataToJson(Json::Value& result, DPoint3dCR base, DPoint3dCR size, DgnGeometryPartId const& geomPartId, int32_t flags, double storedScale, 
                                              bool colorBySubcategory, ColorDefCR lineColor, ColorDefCR fillColor, bool weightBySubcategory, int weight)
     {
     if (base.x != 0)

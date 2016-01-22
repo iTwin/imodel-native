@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/linestyle/StrokeSymbol.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include    <DgnPlatformInternal.h>
@@ -27,7 +27,7 @@ LsSymbolReference::RotationMode LsSymbolReference::GetRotationMode () const
 // calculate the "maximum offset from the origin" for this XGraphics container
 // @bsimethod                                                   John.Gooding    06/2015
 //---------------------------------------------------------------------------------------
-static double getGeomPartMaxOffset (LsSymbolComponentCR symbol, double angle)
+static double getGeometryPartMaxOffset (LsSymbolComponentCR symbol, double angle)
     {
     //  NEEDSWORK_LINESTYLES  It would be better to draw this with the transform instead of transforming the range
     Transform transform;
@@ -65,7 +65,7 @@ double LsSymbolReference::_GetMaxWidth (DgnModelP dgnModel) const
         return 0.0;
 
     double offset   = m_offset.Magnitude ();
-    double maxWidth = getGeomPartMaxOffset(*m_symbol, m_angle)/m_symbol->GetMuDef();
+    double maxWidth = getGeometryPartMaxOffset(*m_symbol, m_angle)/m_symbol->GetMuDef();
 
     return  (offset + maxWidth) * 2.0;
     }
@@ -187,7 +187,7 @@ StatusInt LsSymbolReference::Output (ViewContextP context, LineStyleSymbCP modif
 +---------------+---------------+---------------+---------------+---------------+------*/
 void LsSymbolComponent::_Draw (ViewContextR context)
     {
-    DgnGeomPartPtr geomPart = GetGeomPart();
+    DgnGeometryPartPtr geomPart = GetGeometryPart();
     if (!geomPart.IsValid())
         return;
 
@@ -334,11 +334,11 @@ void                LsSymbolComponent::GetRange (DRange3dR range) const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    07/2015
 //---------------------------------------------------------------------------------------
-DgnGeomPartPtr LsSymbolComponent::GetGeomPart() const
+DgnGeometryPartPtr LsSymbolComponent::GetGeometryPart() const
     {
     if (m_geomPart.IsValid())
         return m_geomPart;
 
-    m_geomPart = GetDgnDbP()->GeomParts().LoadGeomPart(m_geomPartId);
+    m_geomPart = GetDgnDbP()->GeometryParts().LoadGeometryPart(m_geomPartId);
     return m_geomPart;
     }

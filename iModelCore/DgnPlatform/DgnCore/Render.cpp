@@ -170,11 +170,10 @@ void DgnViewport::StartRenderThread()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-Render::Plan::Plan(DgnViewportCR vp, PaintScene paintScene)
+Render::Plan::Plan(DgnViewportCR vp)
     {
     m_viewFlags = vp.GetViewFlags();
     m_is3d      = vp.Is3dView();
-    m_paintScene = paintScene;
     m_frustum   = vp.GetFrustum(DgnCoordSystem::World, true);
     m_bgColor   = vp.GetBackgroundColor();
     m_fraction  = vp.GetFrustumFraction();
