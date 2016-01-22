@@ -29,7 +29,6 @@ ElementGeometryBuilderTests.CreateElement2d     # UmarH -- WIP Domain imlementat
 ElementGeomPartTests.GeomPart2d                 # UmarH -- WIP Domain imlementation merge and test clean up
 
 ChangeSummaryTestFixture.* # Too fragile due to various schema changes - temporarily commenting the tests out. 
-DgnScriptTest.CRUD # notified Sam
 ConfigurationManager_Test.*                             # UmarH -- Tests are ported from Vancouver for MacroConfiguration ,seems macros are not expanding on get variable method. 
 ComponentModelBasicTest.QueryComponentDefs              
 ComponentModelBasicTest.Variations                      #  Delete -- WIP_COMPONENT: detect if variation is in use
