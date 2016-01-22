@@ -570,7 +570,17 @@ int QueryModel::AllElementsFilter::_TestRTree(RTreeMatchFunction::QueryInfo cons
             return BE_SQLITE_OK;
         }
 #endif
+        DPoint3d localCorners[8];
+        toLocalCorners(localCorners, pt);
 
+        double score = 0.0;
+        bool   overlap, spansEyePlane;
+        if (m_doOcclusionScore && !m_scorer.ComputeOcclusionScore(&score, overlap, spansEyePlane, localCorners))
+            return BE_SQLITE_OK;
+
+        info.m_score = info.m_maxLevel - info.m_level - score;
+
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     if (info.m_level > 0) // only score nodes, not elements
         {
         bool   overlap, spansEyePlane;
@@ -588,6 +598,7 @@ int QueryModel::AllElementsFilter::_TestRTree(RTreeMatchFunction::QueryInfo cons
         {
         info.m_score = 0;
         }                                                                                                                                  
+#endif
     info.m_within = RTreeMatchFunction::Within::Partly;
     return BE_SQLITE_OK;
     }
@@ -636,8 +647,8 @@ ProgressiveDisplay::Completion QueryModel::ProgressiveFilter::_Process(ViewConte
 
         if (AcceptElement(context, m_rangeStmt->GetValueId<DgnElementId>(0)))
             {
-            if (!m_setTimeout)
-                { // don't set the timeout until after we've drawn one element
+            if (!m_setTimeout) // don't set the timeout until after we've drawn one element
+                { 
                 context.EnableStopAfterTimout(SHOW_PROGRESS_INTERVAL);
                 m_setTimeout = true;
                 }

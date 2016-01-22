@@ -11,6 +11,7 @@
 #include <DgnPlatform/RealityDataCache.h>
 #include <DgnPlatform/DgnViewport.h>
 #include <DgnPlatform/DgnDbTables.h>
+#include <DgnPlatform/ImageUtilities.h>
 
 //#define WEBMERCATOR_DEBUG_TILES
 

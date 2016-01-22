@@ -125,6 +125,7 @@ struct Task : RefCounted<NonCopyableClass>
     {
         Initialize,
         ChangeScene,
+        ChangeRenderPlan,
         ChangeDynamics,
         ChangeDecorations,
         DrawProgressive,
@@ -1119,21 +1120,17 @@ struct Decorations
 struct Plan
 {
     enum class AntiAliasPref {Detect=0, On=1, Off=2};
-    enum class PaintScene : bool {No=0, Yes=1,};
 
     ViewFlags     m_viewFlags;
     bool          m_is3d;
-    mutable PaintScene m_paintScene;
     Frustum       m_frustum;
     double        m_fraction;
     ColorDef      m_bgColor;
     AntiAliasPref m_aaLines;
     AntiAliasPref m_aaText;
 
-    DGNPLATFORM_EXPORT Plan(DgnViewportCR, PaintScene);
-    bool WantScene() const {return PaintScene::Yes == m_paintScene;}
+    DGNPLATFORM_EXPORT Plan(DgnViewportCR);
 };
-
 
 //=======================================================================================
 //! A Render::Target is the renderer-specific factory for creating Render::Graphics.
@@ -1185,7 +1182,8 @@ public:
     virtual void _ChangeScene(GraphicListR scene) {VerifyRenderThread(); m_currentScene = &scene;}
     virtual void _ChangeDynamics(GraphicListR dynamics) {VerifyRenderThread(); m_dynamics = &dynamics;}
     virtual void _ChangeDecorations(Decorations& decorations) {VerifyRenderThread(); m_decorations = decorations;}
-    virtual void _DrawFrame(PlanCR, StopWatch&) = 0;
+    virtual void _ChangeRenderPlan(PlanCR) = 0;
+    virtual void _DrawFrame(StopWatch&) = 0;
     virtual void _DrawProgressive(GraphicListR progressiveList, StopWatch&) = 0;
     virtual double _GetCameraFrustumNearScaleLimit() const = 0;
     virtual bool _WantInvertBlackBackground() {return false;}
