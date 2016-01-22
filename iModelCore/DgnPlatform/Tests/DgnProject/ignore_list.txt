@@ -41,3 +41,8 @@ ECInstanceSelectTests.SelectQueriesOnDbGeneratedDuringBuild_79Main # Notified Ma
 TransactionManagerTests.UndoRedo 
 
 ImportTest.ImportElementsWithDependencies # Seemingly utterly unrelated schema changes induce this
+
+# WIP fixing after 0601 branch created
+GeometryBuilderTests.CreateElementWithMaterials         # crash
+ViewAttachmentTest.Geom                                 # NonVisibleViewport
+

@@ -76,8 +76,8 @@ void DbGeometryPartsWriter::PrepareUpdateStatement()
                 "Code_Namespace=?3,"
                 "Code_Value=?4,"
                 "Geom=?5,"
-                "BBox_Low_X=?6,BBox_Low_Y=?7,BBox_Low_Z=?8,"
-                "BBox_High_X=?9,BBox_High_Y=?10,BBox_High_Z=?11"
+                "BBoxLow_X=?6,BBoxLow_Y=?7,BBoxLow_Z=?8,"
+                "BBoxHigh_X=?9,BBoxHigh_Y=?10,BBoxHigh_Z=?11"
             " WHERE Id=?1";
 
     m_dgndb.GetCachedStatement(m_stmt, updateSql);
