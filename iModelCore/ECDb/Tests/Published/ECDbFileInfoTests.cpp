@@ -695,17 +695,17 @@ TEST_F(ECDbFileInfoTests, Purge)
 Utf8CP ECDbFileInfoTests::GetTestSchemaXml()
 {
     return "<?xml version=\"1.0\" encoding=\"utf-8\" ?>"
-        "<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
-        "  <ECClass typeName=\"Foo\" >"
-        "    <ECProperty propertyName=\"Name\" typeName=\"string\" isDomainClass=\"True\" />"
-        "  </ECClass>"
-        "  <ECClass typeName=\"FooChild\" >"
+        "<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.3.0\">"
+        "  <ECEntityClass typeName=\"Foo\" >"
+        "    <ECProperty propertyName=\"Name\" typeName=\"string\" />"
+        "  </ECEntityClass>"
+        "  <ECEntityClass typeName=\"FooChild\" >"
         "    <BaseClass>Foo</BaseClass>"
-        "    <ECProperty propertyName=\"Label\" typeName=\"string\" isDomainClass=\"True\" />"
-        "  </ECClass>"
-        "  <ECClass typeName=\"Goo\" >"
-        "    <ECProperty propertyName=\"Name\" typeName=\"string\" isDomainClass=\"True\" />"
-        "  </ECClass>"
+        "    <ECProperty propertyName=\"Label\" typeName=\"string\" />"
+        "  </ECEntityClass>"
+        "  <ECEntityClass typeName=\"Goo\" >"
+        "    <ECProperty propertyName=\"Name\" typeName=\"string\"  />"
+        "  </ECEntityClass>"
         "</ECSchema>";
 }
 

@@ -206,6 +206,34 @@ TEST_F(ECDbSchemaManagerTests, GetEnumeration)
     }
 
 //---------------------------------------------------------------------------------------
+// @bsiclass                                     Krischan.Eberle                  01/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECDbSchemaManagerTests, GetPropertyWithExtendedType)
+    {
+    ECDbR ecdb = SetupECDb("propertywithextendedtype.ecdb", 
+                           SchemaItem("<?xml version='1.0' encoding='utf-8' ?>"
+                                      "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+                                      "  <ECEntityClass typeName='Foo' >"
+                                      "    <ECProperty propertyName='Name' typeName='string' />"
+                                      "    <ECProperty propertyName='Homepage' typeName='string' extendedTypeName='URL' />"
+                                      "  </ECEntityClass>"
+                                      "</ECSchema>"));
+    ASSERT_TRUE(ecdb.IsDbOpen());
+
+    ECClassCP fooClass = ecdb.Schemas().GetECClass("TestSchema", "Foo");
+    ASSERT_TRUE(fooClass != nullptr);
+
+    ECPropertyCP prop = fooClass->GetPropertyP("Name");
+    ASSERT_TRUE(prop != nullptr && prop->GetAsPrimitiveProperty() != nullptr);
+    ASSERT_FALSE(prop->HasExtendedType());
+
+    prop = fooClass->GetPropertyP("Homepage");
+    ASSERT_TRUE(prop != nullptr && prop->GetAsPrimitiveProperty() != nullptr);
+    ASSERT_TRUE(prop->HasExtendedType());
+    ASSERT_STREQ("URL", prop->GetAsPrimitiveProperty()->GetExtendedTypeName().c_str());
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                  06/14
 //+---------------+---------------+---------------+---------------+---------------+------
 void SetupTestECDb (BeFileNameCR filePath)
