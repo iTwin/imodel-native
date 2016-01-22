@@ -11,7 +11,7 @@
 #include <ImagePPInternal/hstdcpp.h>
 
 
-#include <Imagepp/all/h/HRFOGCServiceEditor.h>
+#include "HRFOGCServiceEditor.h"
 #include <Imagepp/all/h/HRFOGCService.h>
 
 #include <Imagepp/all/h/HCDCodecImage.h>
@@ -51,27 +51,6 @@
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-// public
-// Destruction
-//-----------------------------------------------------------------------------
-HRFOGCServiceEditor::~HRFOGCServiceEditor()
-    {
-    if (m_ppBlocksReadersThread != 0)
-        {
-        for (uint32_t i = 0; i < NB_BLOCK_READER_THREAD; i++)
-            {
-            if (m_ppBlocksReadersThread[i] != 0)
-                {
-                m_ppBlocksReadersThread[i]->StopThread();
-                m_ppBlocksReadersThread[i]->WaitUntilSignaled();
-                }
-            }
-        }
-    }
-
-
-
-//-----------------------------------------------------------------------------
 // Public
 // ReadBlock
 // Edition by Block
@@ -83,58 +62,48 @@ HSTATUS HRFOGCServiceEditor::ReadBlock(uint64_t             pi_PosBlockX,
     HPRECONDITION (m_AccessMode.m_HasReadAccess);
     HPRECONDITION (po_pData != 0);
 
-    if (m_ppBlocksReadersThread == 0)
-        {
-        m_ppBlocksReadersThread = new HAutoPtr<BlockReaderThread>[NB_BLOCK_READER_THREAD];
-
-        for (uint32_t i = 0; i < NB_BLOCK_READER_THREAD; i++)
-            {
-            ostringstream ThreadName;
-            ThreadName << "HRFOGCBlockReader " << i + 1;
-            m_ppBlocksReadersThread[i] =  new BlockReaderThread(ThreadName.str(), this);
-            if (!m_ppBlocksReadersThread[i]->StartThread())
-                m_ppBlocksReadersThread[i] = 0;
-            }
-        }
-
-
     HSTATUS Status = H_ERROR;
 
-    // check if the tile is already in the pool
     uint64_t TileID = m_TileIDDescriptor.ComputeID(pi_PosBlockX, pi_PosBlockY, m_Resolution);
-    HFCPtr<HRFTile> pTile;
-    if ((pTile = m_TilePool.GetTile(TileID)) == 0)
-        {
-        // the tile is not in the pool, create and add it
-        pTile = m_TilePool.CreateTile(TileID,
-                                      m_TileIDDescriptor.GetIndex(TileID),
-                                      pi_PosBlockX,
-                                      pi_PosBlockY,
-                                      0);
 
-        // send a request
-        BlocksExtent TileExtent;
+    RefCountedPtr<OGCTile> pTile;
+    RefCountedPtr<OGCBlockQuery> pBlockQuery;   // we must hold a ref to the query until it completes.
+
+    // check if the tile is already in the pool
+    auto tileQueryItr = m_tileMap.find(TileID);
+    if(tileQueryItr == m_tileMap.end())
+        {
+        pTile = new OGCTile();
+
+        // Lock m_tileMapMutex during insertion. OGCBlockQueries are querying this map.
+            { 
+            std::unique_lock<std::mutex> lk(m_tileMapMutex);
+            m_tileMap.insert({TileID, pTile});
+            }   
+
+        // Create a new block request
+        HRFOGCServiceEditor::BlocksExtent TileExtent;
         TileExtent.m_MinX = pi_PosBlockX;
         TileExtent.m_MinY = pi_PosBlockY;
         TileExtent.m_MaxX = pi_PosBlockX + m_pResolutionDescriptor->GetBlockWidth();
         TileExtent.m_MaxY = pi_PosBlockY + m_pResolutionDescriptor->GetBlockHeight();
+        pBlockQuery = CreateBlockQuery(TileExtent);
 
-        HFCMonitor RequestMonitor(m_RequestKey);
-        m_RequestList.push_back(TileExtent);
-        RequestMonitor.ReleaseKey();
-        m_RequestEvent.Signal();    // signal thread
+        m_pWorkerPool->Enqueue(*pBlockQuery, true/*atFront*/); 
         }
-
-    if (pTile != 0)
+    else
         {
-        pTile->WaitUntilSignaled();
-
-        if (pTile->IsValid())
-            {
-            memcpy(po_pData, pTile->GetData(), pTile->GetDataSize());
-            Status = H_SUCCESS;
-            }
+        pTile = tileQueryItr->second;
         }
+
+    pTile->Wait();
+
+    if (pTile->HasData())
+        {
+        memcpy(po_pData, pTile->m_tileData.data(), pTile->m_tileData.size());
+        Status = H_SUCCESS;
+        }
+
     return Status;
     }
 
@@ -154,12 +123,6 @@ HSTATUS HRFOGCServiceEditor::WriteBlock(uint64_t              pi_PosBlockX,
     return H_ERROR;
     }
 
-
-
-//-----------------------------------------------------------------------------
-// protected section
-//-----------------------------------------------------------------------------
-
 //-----------------------------------------------------------------------------
 // protected
 // Construction
@@ -171,9 +134,11 @@ HRFOGCServiceEditor::HRFOGCServiceEditor(HFCPtr<HRFRasterFile> pi_rpRasterFile,
     : HRFResolutionEditor(pi_rpRasterFile,
                           pi_Page,
                           pi_Resolution,
-                          pi_AccessMode),
-    m_ppBlocksReadersThread(0)
+                          pi_AccessMode)
     {
+    m_pWorkerPool.reset(new WorkerPool(NB_BLOCK_READER_THREAD));
+    m_threadLocalHttp.reset(new ThreadLocalStorage<HttpSession>());
+
     HFCPtr<HGF2DTransfoModel> pMainModel = OGC_RASTERFILE->m_pModel;
 
     HFCPtr<HGF2DStretch> ScaleModel =  new HGF2DStretch(HGF2DDisplacement(),
@@ -239,6 +204,17 @@ HRFOGCServiceEditor::HRFOGCServiceEditor(HFCPtr<HRFRasterFile> pi_rpRasterFile,
     }
 
 //-----------------------------------------------------------------------------
+// public
+// Destruction
+//-----------------------------------------------------------------------------
+HRFOGCServiceEditor::~HRFOGCServiceEditor()
+    {
+    if(m_pWorkerPool != nullptr)
+        m_pWorkerPool.reset(nullptr);   // stop threads and wait for them to exit.    
+    }
+
+
+//-----------------------------------------------------------------------------
 // protected
 // RequestLookAhead
 //-----------------------------------------------------------------------------
@@ -246,76 +222,56 @@ void HRFOGCServiceEditor::RequestLookAhead(const HGFTileIDList&    pi_rTileIDLis
     {
     HPRECONDITION(!pi_rTileIDList.empty());
 
-    // start thread if not already done
-    if (m_ppBlocksReadersThread == 0)
-        {
-        m_ppBlocksReadersThread = new HAutoPtr<BlockReaderThread>[NB_BLOCK_READER_THREAD];
-
-        for (uint32_t i = 0; i < NB_BLOCK_READER_THREAD; i++)
-            {
-            ostringstream ThreadName;
-            ThreadName << "HRFOGCBlockReader " << i + 1;
-
-            m_ppBlocksReadersThread[i] =  new BlockReaderThread(ThreadName.str(), this);
-            if (!m_ppBlocksReadersThread[i]->StartThread())
-                m_ppBlocksReadersThread[i] = 0;
-            }
-        }
-
-    // clear the block pool
-    m_TilePool.InvalidateTilesNotIn(pi_rTileIDList, true);
-
-    // signal all valid tile
-    HFCMonitor Monitor(m_TilePool);
-    const HRFTilePool::TileMap&  rTileMap(m_TilePool.GetTiles());
-    HRFTilePool::TileMap::const_iterator TileItr(rTileMap.begin());
-    while (TileItr != rTileMap.end())
-        {
-        if (TileItr->second->IsValid())
-            {
-            TileItr->second->Signal();
-            GetRasterFile()->NotifyBlockReady (GetPage(),
-                                               TileItr->first);
-            }
-        TileItr++;
-        }
-
-    Monitor.ReleaseKey();
+    m_blockQueryList.clear(); // Clear old request.
 
     // add an entry for each tile
     uint64_t XMin = UINT64_MAX;
     uint64_t YMin = UINT64_MAX;
     uint64_t XMax = 0;
     uint64_t YMax = 0;
-    uint64_t PosX;
-    uint64_t PosY;
     bool   NewTile = false;
 
-    HGFTileIDList::const_iterator Itr(pi_rTileIDList.begin());
-    while (Itr != pi_rTileIDList.end())
+    std::map<uint64_t, RefCountedPtr<OGCTile>> newTileMap;
+
+    for(auto tileId : pi_rTileIDList)
         {
-        HPRECONDITION(m_TileIDDescriptor.GetLevel(*Itr) == m_Resolution);
-
-        m_TileIDDescriptor.GetPositionFromID(*Itr, &PosX, &PosY);
-        if (m_TilePool.GetTile(*Itr) == 0)
+        auto tileQueryItr = m_tileMap.find(tileId);
+        RefCountedPtr<OGCTile> pOgcTile;
+        if(tileQueryItr != m_tileMap.end())
             {
-            m_TilePool.CreateTile(*Itr, m_TileIDDescriptor.GetIndex(*Itr), PosX, PosY, 0);
+            pOgcTile = tileQueryItr->second;
+            }
+        else
+            {
+            pOgcTile = new OGCTile();
+            }
 
+        if(!pOgcTile->HasData())
+            {
+            uint64_t PosX, PosY;
+            m_TileIDDescriptor.GetPositionFromID(tileId, &PosX, &PosY);
             XMin = MIN(XMin, PosX);
             YMin = MIN(YMin, PosY);
             XMax = MAX(XMax, PosX + m_pResolutionDescriptor->GetBlockWidth());
             YMax = MAX(YMax, PosY + m_pResolutionDescriptor->GetBlockHeight());
             NewTile = true;
             }
-        Itr++;
+
+        newTileMap.insert({tileId, pOgcTile});
         }
 
+    // Lock m_tileMapMutex during exchange.  OGCBlockQueries are querying this map.
+        {         
+        std::unique_lock<std::mutex> lk(m_tileMapMutex);
+        m_tileMap = std::move(newTileMap);
+        }
+    
     if (NewTile)
         {
         uint64_t Width                   = XMax - XMin;
         uint64_t Height                  = YMax - YMin;
         uint64_t NbTileX                 = Width / m_pResolutionDescriptor->GetBlockWidth();
-        uint64_t NbTileY                 = Height / m_pResolutionDescriptor->GetBlockHeight();
+        uint64_t NbTileY                 = Height / m_pResolutionDescriptor->GetBlockHeight();;
         uint64_t LastBlockTilesPerWidth  = 0;
         uint64_t LastBlockTilesPerHeight = 0;
         uint64_t BlockWidthInPixel;
@@ -333,9 +289,8 @@ void HRFOGCServiceEditor::RequestLookAhead(const HGFTileIDList&    pi_rTileIDLis
             LastBlockTilesPerHeight = 2; // get, at least, 256 pixels width for the last block
             }
 
-        HFCMonitor RequestMonitor;
-        BlocksExtent BlockFromServer;
-        RequestMonitor.Assign(m_RequestKey);
+        HRFOGCServiceEditor::BlocksExtent BlockFromServer;
+
         // initialize the block height at the maximum size
         BlockHeightInPixel = m_MaxTilesPerBlockHeight * m_pResolutionDescriptor->GetBlockHeight();
 
@@ -373,12 +328,11 @@ void HRFOGCServiceEditor::RequestLookAhead(const HGFTileIDList&    pi_rTileIDLis
                 BlockFromServer.m_MaxX = BlockFromServer.m_MinX + BlockWidthInPixel;
                 BlockFromServer.m_MaxY = BlockFromServer.m_MinY + BlockHeightInPixel;
 
-                m_RequestList.push_back(BlockFromServer);
-                m_RequestEvent.Signal();
+                RefCountedPtr<OGCBlockQuery> pBlockQuery = CreateBlockQuery(BlockFromServer);
+                m_blockQueryList.push_back(pBlockQuery);    // we need to hold a ref to the request
+                m_pWorkerPool->Enqueue(*pBlockQuery);
                 }
             }
-        RequestMonitor.ReleaseKey();
-
         }
     }
 
@@ -389,10 +343,13 @@ void HRFOGCServiceEditor::RequestLookAhead(const HGFTileIDList&    pi_rTileIDLis
 //-----------------------------------------------------------------------------
 void HRFOGCServiceEditor::CancelLookAhead()
     {
-    HFCMonitor Monitor(m_RequestKey);
-    m_RequestList.clear();
-    }
+    // invalidate all pending request and all pending tiles
+    m_blockQueryList.clear();
 
+    // Lock m_tileMapMutex during exchange.  OGCBlockQueries are querying this map.
+    std::unique_lock<std::mutex> lk(m_tileMapMutex);
+    m_tileMap.clear();
+    }
 
 //-----------------------------------------------------------------------------
 // protected
@@ -401,83 +358,59 @@ void HRFOGCServiceEditor::CancelLookAhead()
 void HRFOGCServiceEditor::ContextChanged()
     {
     // invalidate all pending request and all pending tiles
-    HFCMonitor RequestMonitor(m_RequestKey);
-    m_RequestList.clear();
-    m_TilePool.Invalidate();
-    m_TilePool.Clear();
+    m_blockQueryList.clear(); 
+
+    // Lock m_tileMapMutex during exchange.  OGCBlockQueries are querying this map.
+    std::unique_lock<std::mutex> lk(m_tileMapMutex);
+    m_tileMap.clear();
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   Mathieu.Marchand  1/2016
+//----------------------------------------------------------------------------------------
+RefCountedPtr<OGCTile> HRFOGCServiceEditor::GetTile(uint64_t tileId)
+    {
+    std::unique_lock<std::mutex> lk(m_tileMapMutex);
+
+    // check if the tile is already in the pool
+    auto tileQueryItr = m_tileMap.find(tileId);
+    if(tileQueryItr != m_tileMap.end())
+        return tileQueryItr->second;
+
+    return nullptr;
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   Mathieu.Marchand  1/2016
+//----------------------------------------------------------------------------------------
+RefCountedPtr<OGCBlockQuery> HRFOGCServiceEditor::CreateBlockQuery(HRFOGCServiceEditor::BlocksExtent const& blockExtent)
+    {    
+    // convert the tile extent in BBOX coordinate
+    CHECK_HUINT64_TO_HDOUBLE_CONV(blockExtent.m_MinX)
+    CHECK_HUINT64_TO_HDOUBLE_CONV(blockExtent.m_MinY)
+    CHECK_HUINT64_TO_HDOUBLE_CONV(blockExtent.m_MaxX)
+    CHECK_HUINT64_TO_HDOUBLE_CONV(blockExtent.m_MaxY)
+
+    HRFOGCServiceEditor::BlocksExtent extent = blockExtent;
+    extent.m_MaxX = MIN(blockExtent.m_MaxX, GetResolutionDescriptor()->GetWidth());
+    extent.m_MaxY = MIN(blockExtent.m_MaxY, GetResolutionDescriptor()->GetHeight());
+
+    DRange2d bbox;
+    m_pTransfoModel->ConvertDirect((double)extent.m_MinX, (double)extent.m_MaxY, &bbox.low.x, &bbox.low.y);
+    m_pTransfoModel->ConvertDirect((double)extent.m_MaxX, (double)extent.m_MinY, &bbox.high.x, &bbox.high.y);
+
+    RefCountedPtr<OGCBlockQuery> pBlockQuery(new OGCBlockQuery(extent, bbox, *this));
+    return pBlockQuery;
     }
 
 
-
-//-----------------------------------------------------------------------------
-// class BlockReaderThread
-//-----------------------------------------------------------------------------
-
-//-----------------------------------------------------------------------------
-// public section
-//-----------------------------------------------------------------------------
-
-
-//-----------------------------------------------------------------------------
-// public
-// constructor
-//-----------------------------------------------------------------------------
-BlockReaderThread::BlockReaderThread(const string& pi_rThreadName,
-                                     HRFOGCServiceEditor* pi_pEditor)
-    : HFCThread(false, pi_rThreadName),
-    m_pEditor(pi_pEditor)
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   Mathieu.Marchand  1/2016
+//----------------------------------------------------------------------------------------
+void OGCBlockQuery::_Run()
     {
-    m_pTransfoModel = m_pEditor->m_pTransfoModel->Clone();
-
-    // for optimization
-    HFCPtr<HRFResolutionDescriptor> pResDesc(pi_pEditor->GetResolutionDescriptor());
-    m_BlockWidth         = pResDesc->GetBlockWidth();
-    m_BlockHeight        = pResDesc->GetBlockHeight();
-    m_BytesPerBlockWidth = pResDesc->GetBytesPerBlockWidth();
-    m_BlockSizeInBytes   = pResDesc->GetBlockSizeInBytes();
-    m_TileIDDescriptor   = pi_pEditor->m_TileIDDescriptor;
-
-    HPRECONDITION((pResDesc->GetBitsPerPixel() % 8) == 0);
-    m_BytesPerPixel = (unsigned short)(pResDesc->GetBitsPerPixel() / 8);
-    }
-
-//-----------------------------------------------------------------------------
-// public
-// destructor
-//-----------------------------------------------------------------------------
-BlockReaderThread::~BlockReaderThread()
-    {
-    StopThread();
-    WaitUntilSignaled();
-    }
-
-//-----------------------------------------------------------------------------
-// public
-// Go
-//-----------------------------------------------------------------------------
-void BlockReaderThread::Go()
-    {
-    HFCSynchroContainer Synchros;
-    Synchros.AddSynchro (&m_StopEvent);
-    Synchros.AddSynchro (&m_pEditor->m_RequestEvent);
-    while (0 != WaitForMultipleObjects (Synchros, false))
-        {
-        HFCMonitor RequestMonitor(m_pEditor->m_RequestKey);
-        // because CancelLookAhead clear m_RequestList,
-        // it's possible that the m_RequestEvent is signaled and m_RequestList is empty
-        if (m_pEditor->m_RequestList.size() > 0)
-            {
-            HRFOGCServiceEditor::BlocksExtent BlockExtent = *m_pEditor->m_RequestList.begin();
-            m_pEditor->m_RequestList.pop_front();
-            RequestMonitor.ReleaseKey();
-
-            if(!ReadBlocksFromServer(BlockExtent.m_MinX, BlockExtent.m_MinY, BlockExtent.m_MaxX, BlockExtent.m_MaxY))
-                {
-                InvalidateTiles(BlockExtent.m_MinX, BlockExtent.m_MinY, BlockExtent.m_MaxX, BlockExtent.m_MaxY);
-                }
-
-            }
-        }
+    if(!ReadBlocksFromServer(m_blockExtent.m_MinX, m_blockExtent.m_MinY, m_blockExtent.m_MaxX, m_blockExtent.m_MaxY))
+        InvalidateTiles(m_blockExtent.m_MinX, m_blockExtent.m_MinY, m_blockExtent.m_MaxX, m_blockExtent.m_MaxY); 
     }
 
 //-----------------------------------------------------------------------------
@@ -488,49 +421,34 @@ void BlockReaderThread::Go()
 // private
 // ReadBlocksFromServer
 //-----------------------------------------------------------------------------
-bool BlockReaderThread::ReadBlocksFromServer(uint64_t pi_MinX,
-                                             uint64_t pi_MinY,
-                                             uint64_t pi_MaxX,
-                                             uint64_t pi_MaxY)
+bool OGCBlockQuery::ReadBlocksFromServer(uint64_t pi_MinX,
+                                         uint64_t pi_MinY,
+                                         uint64_t pi_MaxX,
+                                         uint64_t pi_MaxY)
     {
-    // convert the tile extent in BBOX coordinate
-    double XMin;
-    double YMin;
-    double XMax;
-    double YMax;
-
-    CHECK_HUINT64_TO_HDOUBLE_CONV(pi_MinX)
-    CHECK_HUINT64_TO_HDOUBLE_CONV(pi_MinY)
-    CHECK_HUINT64_TO_HDOUBLE_CONV(pi_MaxX)
-    CHECK_HUINT64_TO_HDOUBLE_CONV(pi_MaxY)
-
-    pi_MaxX = MIN(pi_MaxX, m_pEditor->GetResolutionDescriptor()->GetWidth());
-    pi_MaxY = MIN(pi_MaxY, m_pEditor->GetResolutionDescriptor()->GetHeight());
-    m_pTransfoModel->ConvertDirect((double)pi_MinX, (double)pi_MaxY, &XMin, &YMin);
-    m_pTransfoModel->ConvertDirect((double)pi_MaxX, (double)pi_MinY, &XMax, &YMax);
-
     HASSERT((pi_MaxX - pi_MinX) <= ULONG_MAX);
     HASSERT((pi_MaxY - pi_MinY) <= ULONG_MAX);
 
     uint32_t MapWidth = (uint32_t)(pi_MaxX - pi_MinX);
     uint32_t MapHeight = (uint32_t)(pi_MaxY - pi_MinY);
 
+    HRFOGCService& rasterFile = static_cast<HRFOGCService&>(*m_editor.GetRasterFile());
+
     // build the request
-    HFCPtr<HRFOGCService> pRasterFile(static_cast<HRFOGCService*>(m_pEditor->GetRasterFile().GetPtr()));
     ostringstream Request;
     Request.precision(16);
-    Request << pRasterFile->m_Request.c_str();
+    Request << rasterFile.m_Request.c_str();
     Request << "&width=" << MapWidth << "&height=" << MapHeight;
     Request << "&BBOX=";
     // snap the BBOX on the map BBOX
-    Request << MAX(XMin, pRasterFile->m_BBoxMinX) << ",";
-    Request << MAX(YMin, pRasterFile->m_BBoxMinY) << ",";
-    Request << MIN(XMax, pRasterFile->m_BBoxMaxX) << ",";
-    Request << MIN(YMax, pRasterFile->m_BBoxMaxY);
+    Request << MAX(m_bbox.low.x,  rasterFile.m_BBoxMinX) << ",";
+    Request << MAX(m_bbox.low.y,  rasterFile.m_BBoxMinY) << ",";
+    Request << MIN(m_bbox.high.x, rasterFile.m_BBoxMaxX) << ",";
+    Request << MIN(m_bbox.high.y, rasterFile.m_BBoxMaxY);
 
-    HttpSession session;
-    HttpRequest request(*pRasterFile->m_requestTemplate);
-    request.SetUrl(pRasterFile->m_requestTemplate->GetUrl() + Request.str().c_str());
+    HttpSession& session = m_editor.m_threadLocalHttp->GetLocal();
+    HttpRequest request(*rasterFile.m_requestTemplate);
+    request.SetUrl(rasterFile.m_requestTemplate->GetUrl() + Request.str().c_str());
     
     HttpResponsePtr response;
     HttpRequestStatus ReqStatus = session.Request(response, request);
@@ -542,7 +460,12 @@ bool BlockReaderThread::ReadBlocksFromServer(uint64_t pi_MinX,
     if(contentTypeItr == response->GetHeader().end() || contentTypeItr->second.ContainsI("xml") || contentTypeItr->second.ContainsI("html"))
         return false;
 
-    uint32_t UncompressedDataSize = MapWidth * MapHeight * m_BytesPerPixel;
+    // for optimization
+    HFCPtr<HRFResolutionDescriptor> pResDesc(m_editor.GetResolutionDescriptor());
+    BeAssert((pResDesc->GetBitsPerPixel() % 8) == 0);
+    size_t bytesPerPixel = pResDesc->GetBitsPerPixel() / 8;
+ 
+    size_t UncompressedDataSize = MapWidth * MapHeight * bytesPerPixel;
 
     HArrayAutoPtr<Byte> pUncompressedData(new Byte[UncompressedDataSize]);
     HFCPtr<HFCBuffer> pBuffer = new HFCBuffer(1, 1);
@@ -553,15 +476,13 @@ bool BlockReaderThread::ReadBlocksFromServer(uint64_t pi_MinX,
 
     // make tile from the buffer
     // last blocks can be not complete
-    uint32_t LastBlockWidth  = MapWidth % m_BlockWidth;
-    uint32_t LastBlockHeight = MapHeight % m_BlockHeight;
+    uint32_t LastBlockWidth  = MapWidth % pResDesc->GetBlockWidth();
+    uint32_t LastBlockHeight = MapHeight % pResDesc->GetBlockHeight();
 
-    uint32_t NbXTile = MapWidth / m_BlockWidth + (LastBlockWidth == 0 ? 0 : 1);
-    uint32_t NbYTile = MapHeight / m_BlockHeight + (LastBlockHeight == 0 ? 0 : 1);
-    uint32_t BytesPerBlockWidth = m_BytesPerBlockWidth;
-    uint32_t SrcWidth = 0;
-
-    SrcWidth = MapWidth * m_BytesPerPixel;
+    uint32_t NbXTile = MapWidth / pResDesc->GetBlockWidth() + (LastBlockWidth == 0 ? 0 : 1);
+    uint32_t NbYTile = MapHeight / pResDesc->GetBlockHeight() + (LastBlockHeight == 0 ? 0 : 1);
+    uint32_t BytesPerBlockWidth = pResDesc->GetBytesPerBlockWidth();
+    size_t SrcWidthBytes = MapWidth * bytesPerPixel;
 
     Byte*  pSrc;
     Byte*  pDst;
@@ -570,27 +491,27 @@ bool BlockReaderThread::ReadBlocksFromServer(uint64_t pi_MinX,
     uint32_t BlockY;
     uint64_t PosY;
     uint64_t TileID;
-    HFCPtr<HRFTile> pTile;
-    uint64_t BytesToCopyPerLine;
+    size_t BytesToCopyPerLine;
     uint64_t LineToCopy;
 
-    for (BlockX = 0, PosX = pi_MinX; BlockX < NbXTile; ++BlockX, PosX += m_BlockWidth)
+    for (BlockX = 0, PosX = pi_MinX; BlockX < NbXTile; ++BlockX, PosX += pResDesc->GetBlockWidth())
         {
-        for (BlockY = 0, PosY = pi_MinY; BlockY < NbYTile; ++BlockY, PosY += m_BlockHeight)
+        for (BlockY = 0, PosY = pi_MinY; BlockY < NbYTile; ++BlockY, PosY += pResDesc->GetBlockHeight())
             {
-            TileID = m_TileIDDescriptor.ComputeID(PosX, PosY, m_pEditor->m_Resolution);
-            pTile = m_pEditor->m_TilePool.GetTile(TileID);
+            TileID = m_editor.m_TileIDDescriptor.ComputeID(PosX, PosY, m_editor.m_Resolution);
 
-            if (pTile != 0)
+            RefCountedPtr<OGCTile> pTile = m_editor.GetTile(TileID);
+
+            if (pTile != nullptr)
                 {
-                HArrayAutoPtr<Byte> pBlockData(new Byte[m_BlockSizeInBytes]);
-                pDst = pBlockData.get();
-                pSrc = pUncompressedData + BlockY * m_BlockHeight * SrcWidth;
-                pSrc += BlockX * m_BytesPerBlockWidth;
+                std::vector<Byte> pBlockData(pResDesc->GetBlockSizeInBytes());
+                pDst = pBlockData.data();
+                pSrc = pUncompressedData + BlockY * pResDesc->GetBlockHeight() * SrcWidthBytes;
+                pSrc += BlockX * BytesPerBlockWidth;
 
                 // if the last block is not complete, set the number of bytes to copy
                 if (LastBlockWidth != 0 && BlockX == NbXTile - 1)
-                    BytesToCopyPerLine = LastBlockWidth * m_BytesPerPixel;
+                    BytesToCopyPerLine = LastBlockWidth * bytesPerPixel;
                 else
                     BytesToCopyPerLine = BytesPerBlockWidth;
 
@@ -598,21 +519,21 @@ bool BlockReaderThread::ReadBlocksFromServer(uint64_t pi_MinX,
                 if (LastBlockHeight != 0 && BlockY == NbYTile - 1)
                     LineToCopy = LastBlockHeight; // 32 bits
                 else
-                    LineToCopy = m_BlockHeight;
+                    LineToCopy = pResDesc->GetBlockHeight();
 
                 // if we have an incomplete block, initialize the buffer to full transparency
-                if (BytesToCopyPerLine != BytesPerBlockWidth || LineToCopy != m_BlockHeight)
-                    memset(pDst, 255, m_pEditor->GetResolutionDescriptor()->GetBlockSizeInBytes());    // initialize to full transparency
+                if (BytesToCopyPerLine != BytesPerBlockWidth || LineToCopy != pResDesc->GetBlockHeight())
+                    memset(pDst, 255, pResDesc->GetBlockSizeInBytes());    // initialize to full transparency
 
                 for (uint32_t Line = 0; Line < LineToCopy; ++Line)
                     {
-                    memcpy(pDst, pSrc, (size_t)BytesToCopyPerLine);
+                    memcpy(pDst, pSrc, BytesToCopyPerLine);
                     pDst += BytesPerBlockWidth;
-                    pSrc += SrcWidth;
+                    pSrc += SrcWidthBytes;
                     }
-                pTile->SetData(pBlockData, m_BlockSizeInBytes);
-                pTile->Signal();
-                m_pEditor->GetRasterFile()->NotifyBlockReady (m_pEditor->GetPage(), TileID);
+                pTile->SetData(pBlockData);
+                pTile->OnFinish();
+                rasterFile.NotifyBlockReady (m_editor.GetPage(), TileID);
                 }
             }
         }
@@ -624,59 +545,60 @@ bool BlockReaderThread::ReadBlocksFromServer(uint64_t pi_MinX,
 // private
 // InvalideTiles
 //-----------------------------------------------------------------------------
-void BlockReaderThread::InvalidateTiles(uint64_t pi_MinX,
+void OGCBlockQuery::InvalidateTiles(uint64_t pi_MinX,
                                         uint64_t pi_MinY,
                                         uint64_t pi_MaxX,
                                         uint64_t pi_MaxY)
     {
-    HPRECONDITION(HRFOGCServiceEditor::s_UncompressedInvalidTileBitmapSize       == m_BlockSizeInBytes ||
-                  HRFOGCServiceEditor::s_GrayUncompressedInvalidTileBitmapSize   == m_BlockSizeInBytes ||
-                  HRFOGCServiceEditor::s_Gray16UncompressedInvalidTileBitmapSize == m_BlockSizeInBytes);
+    HPRECONDITION(HRFOGCServiceEditor::s_UncompressedInvalidTileBitmapSize       == m_editor.m_pResolutionDescriptor->GetBlockSizeInBytes() ||
+                  HRFOGCServiceEditor::s_GrayUncompressedInvalidTileBitmapSize   == m_editor.m_pResolutionDescriptor->GetBlockSizeInBytes() ||
+                  HRFOGCServiceEditor::s_Gray16UncompressedInvalidTileBitmapSize == m_editor.m_pResolutionDescriptor->GetBlockSizeInBytes());
 
+    size_t BlockSizeInBytes = m_editor.m_pResolutionDescriptor->GetBlockSizeInBytes();
     HFCPtr<HCDPacket> pInvalidBlockData(new HCDPacket(new HCDCodecIdentity(),
-                                                      new Byte[m_BlockSizeInBytes],
-                                                      m_BlockSizeInBytes,
-                                                      m_BlockSizeInBytes));
+                                                      new Byte[BlockSizeInBytes],
+                                                      BlockSizeInBytes,
+                                                      BlockSizeInBytes));
     pInvalidBlockData->SetBufferOwnership(true);
 
-    if (!m_pEditor->m_pResolutionDescriptor->GetPixelType()->IsCompatibleWith(HRPPixelTypeV8Gray8::CLASS_ID) &&
-        !m_pEditor->m_pResolutionDescriptor->GetPixelType()->IsCompatibleWith(HRPPixelTypeV16Gray16::CLASS_ID))
+    if (!m_editor.m_pResolutionDescriptor->GetPixelType()->IsCompatibleWith(HRPPixelTypeV8Gray8::CLASS_ID) &&
+        !m_editor.m_pResolutionDescriptor->GetPixelType()->IsCompatibleWith(HRPPixelTypeV16Gray16::CLASS_ID))
         {
-        m_pEditor->m_pInvalidTileBitmap->Decompress(pInvalidBlockData);
+        m_editor.m_pInvalidTileBitmap->Decompress(pInvalidBlockData);
         }
 
-    if (m_pEditor->m_pResolutionDescriptor->GetWidth() < m_pEditor->m_pResolutionDescriptor->GetBlockWidth() ||
-        m_pEditor->m_pResolutionDescriptor->GetHeight() < m_pEditor->m_pResolutionDescriptor->GetBlockHeight())
+    if (m_editor.m_pResolutionDescriptor->GetWidth() < m_editor.m_pResolutionDescriptor->GetBlockWidth() ||
+        m_editor.m_pResolutionDescriptor->GetHeight() < m_editor.m_pResolutionDescriptor->GetBlockHeight())
         {
         // we need to stretch the invalid tile bitmap
         double Scale;
-        if (m_pEditor->m_pResolutionDescriptor->GetWidth() < m_pEditor->m_pResolutionDescriptor->GetHeight())
-            Scale = (double)m_pEditor->m_pResolutionDescriptor->GetBlockWidth() / (double)m_pEditor->m_pResolutionDescriptor->GetWidth();
+        if (m_editor.m_pResolutionDescriptor->GetWidth() < m_editor.m_pResolutionDescriptor->GetHeight())
+            Scale = (double)m_editor.m_pResolutionDescriptor->GetBlockWidth() / (double)m_editor.m_pResolutionDescriptor->GetWidth();
         else
-            Scale = (double)m_pEditor->m_pResolutionDescriptor->GetBlockHeight() / (double)m_pEditor->m_pResolutionDescriptor->GetHeight();
+            Scale = (double)m_editor.m_pResolutionDescriptor->GetBlockHeight() / (double)m_editor.m_pResolutionDescriptor->GetHeight();
 
         HFCPtr<HCDPacket> pStretchedInvalidBlockData(new HCDPacket(new HCDCodecIdentity(),
-                                                                   new Byte[m_BlockSizeInBytes],
-                                                                   m_BlockSizeInBytes,
-                                                                   m_BlockSizeInBytes));
+                                                                   new Byte[BlockSizeInBytes],
+                                                                   BlockSizeInBytes,
+                                                                   BlockSizeInBytes));
         pStretchedInvalidBlockData->SetBufferOwnership(true);
 
         // Stretch settings
         // Source
-        HFCPtr<HGSSurfaceDescriptor> pSrcDescriptor(new HGSMemorySurfaceDescriptor(m_pEditor->m_pResolutionDescriptor->GetBlockWidth(),
-                                                                                   m_pEditor->m_pResolutionDescriptor->GetBlockHeight(),
-                                                                                   m_pEditor->m_pResolutionDescriptor->GetPixelType(),
+        HFCPtr<HGSSurfaceDescriptor> pSrcDescriptor(new HGSMemorySurfaceDescriptor(m_editor.m_pResolutionDescriptor->GetBlockWidth(),
+                                                                                   m_editor.m_pResolutionDescriptor->GetBlockHeight(),
+                                                                                   m_editor.m_pResolutionDescriptor->GetPixelType(),
                                                                                    pInvalidBlockData,
                                                                                    HGF_UPPER_LEFT_HORIZONTAL,
-                                                                                   m_pEditor->m_pResolutionDescriptor->GetBytesPerBlockWidth()));
+                                                                                   m_editor.m_pResolutionDescriptor->GetBytesPerBlockWidth()));
 
         // Destination
-        HFCPtr<HGSSurfaceDescriptor> pDstDescriptor(new HGSMemorySurfaceDescriptor(m_pEditor->m_pResolutionDescriptor->GetBlockWidth(),
-                                                                                   m_pEditor->m_pResolutionDescriptor->GetBlockHeight(),
-                                                                                   m_pEditor->m_pResolutionDescriptor->GetPixelType(),
+        HFCPtr<HGSSurfaceDescriptor> pDstDescriptor(new HGSMemorySurfaceDescriptor(m_editor.m_pResolutionDescriptor->GetBlockWidth(),
+                                                                                   m_editor.m_pResolutionDescriptor->GetBlockHeight(),
+                                                                                   m_editor.m_pResolutionDescriptor->GetPixelType(),
                                                                                    pStretchedInvalidBlockData,
                                                                                    HGF_UPPER_LEFT_HORIZONTAL,
-                                                                                   m_pEditor->m_pResolutionDescriptor->GetBytesPerBlockWidth()));
+                                                                                   m_editor.m_pResolutionDescriptor->GetBytesPerBlockWidth()));
 
 
         // Init the surface
@@ -693,41 +615,31 @@ void BlockReaderThread::InvalidateTiles(uint64_t pi_MinX,
         pInvalidBlockData = pStretchedInvalidBlockData;
         }
 
-
-
-    // notify all tiles generated by this request
-    HFCPtr<HRFTile> pTile;
-    for (uint64_t PosX = pi_MinX; PosX < pi_MaxX; PosX += m_BlockWidth)
+    // notify all tiles generated by this request    
+    for (uint64_t PosX = pi_MinX; PosX < pi_MaxX; PosX += m_editor.m_pResolutionDescriptor->GetBlockWidth())
         {
-        for (uint64_t PosY = pi_MinY; PosY < pi_MaxY; PosY += m_BlockHeight)
+        for (uint64_t PosY = pi_MinY; PosY < pi_MaxY; PosY += m_editor.m_pResolutionDescriptor->GetBlockHeight())
             {
-            pTile = m_pEditor->m_TilePool.GetTile(m_TileIDDescriptor.ComputeID(PosX, PosY, m_pEditor->m_Resolution));
-            if (pTile != 0)
+            RefCountedPtr<OGCTile> pTile = m_editor.GetTile(m_editor.m_TileIDDescriptor.ComputeID(PosX, PosY, m_editor.m_Resolution));
+            if (pTile != nullptr)
                 {
                 // set data tile with special data
-                pTile->SetData(pInvalidBlockData->GetBufferAddress(),
-                               pInvalidBlockData->GetDataSize());
-
-//                pTile->SetException(pException);
-                pTile->Signal();
+                pTile->SetData(pInvalidBlockData->GetBufferAddress(), pInvalidBlockData->GetDataSize());
+                pTile->OnFinish();
                 }
             }
         }
     }
 
-
-
-
-
 //-----------------------------------------------------------------------------
 // private
 // UncompressBuffer
 //-----------------------------------------------------------------------------
-bool BlockReaderThread::UncompressBuffer(HFCPtr<HFCBuffer>&         pi_rpBuffer,
-                                          uint32_t                   pi_Width,
-                                          uint32_t                   pi_Height,
-                                          Byte*                     po_pUncompressedData,
-                                          uint32_t                   pi_UncompressedDataSize) const
+bool OGCBlockQuery::UncompressBuffer(HFCPtr<HFCBuffer>&         pi_rpBuffer,
+                                     uint32_t                   pi_Width,
+                                     uint32_t                   pi_Height,
+                                     Byte*                     po_pUncompressedData,
+                                     size_t                   pi_UncompressedDataSize) const
     {
     bool RetValue = true;
 
@@ -736,13 +648,13 @@ bool BlockReaderThread::UncompressBuffer(HFCPtr<HFCBuffer>&         pi_rpBuffer,
     try
         {
         HFCPtr<HRFRasterFile> pFile;
-        if (m_pEditor->m_ImageType == HRFOGCServiceEditor::JPEG)
+        if (m_editor.m_ImageType == HRFOGCServiceEditor::JPEG)
             pFile = new HRFJpegFile(pURL, HFC_READ_ONLY);
-        else if (m_pEditor->m_ImageType == HRFOGCServiceEditor::PNG)
+        else if (m_editor.m_ImageType == HRFOGCServiceEditor::PNG)
             pFile = new HRFPngFile(pURL, HFC_READ_ONLY);
-        else if (m_pEditor->m_ImageType == HRFOGCServiceEditor::BMP)
+        else if (m_editor.m_ImageType == HRFOGCServiceEditor::BMP)
             pFile = new HRFBmpFile(pURL, HFC_READ_ONLY);
-        else if (m_pEditor->m_ImageType == HRFOGCServiceEditor::GEOTIFF)
+        else if (m_editor.m_ImageType == HRFOGCServiceEditor::GEOTIFF)
             pFile = new HRFGeoTiffFile(pURL, HFC_READ_ONLY);
         else
             pFile = new HRFGifFile(pURL, HFC_READ_ONLY);
@@ -755,14 +667,17 @@ bool BlockReaderThread::UncompressBuffer(HFCPtr<HFCBuffer>&         pi_rpBuffer,
         // tiling is not supported
         HPRECONDITION(pResDesc->GetBlockWidth() == pResDesc->GetWidth());
 
-        if (!pResDesc->GetPixelType()->HasSamePixelInterpretation(*m_pEditor->GetResolutionDescriptor()->GetPixelType()))
+        BeAssert((m_editor.GetResolutionDescriptor()->GetBitsPerPixel() % 8) == 0);
+        size_t bytesPerPixel = m_editor.GetResolutionDescriptor()->GetBitsPerPixel() / 8;
+
+        if (!pResDesc->GetPixelType()->HasSamePixelInterpretation(*m_editor.GetResolutionDescriptor()->GetPixelType()))
             {
             // need to convert the data
             HFCPtr<HRPPixelConverter> pConverter;
             HAutoPtr<Byte> pReadBuffer;
-            pConverter = pResDesc->GetPixelType()->GetConverterTo(m_pEditor->GetResolutionDescriptor()->GetPixelType());
+            pConverter = pResDesc->GetPixelType()->GetConverterTo(m_editor.GetResolutionDescriptor()->GetPixelType());
             pReadBuffer = new Byte[pResDesc->GetBlockSizeInBytes()];
-            size_t OutputLineSize = pi_Width * m_BytesPerPixel;
+            size_t OutputLineSize = pi_Width * bytesPerPixel;
 
             if (pResDesc->GetBlockHeight() == 1)
                 {
@@ -845,7 +760,7 @@ bool BlockReaderThread::UncompressBuffer(HFCPtr<HFCBuffer>&         pi_rpBuffer,
                 {
                 // copy line by line
                 Byte* pOutput = po_pUncompressedData;
-                size_t OutputLineSize = pi_Width * m_BytesPerPixel;
+                size_t OutputLineSize = pi_Width * bytesPerPixel;
 
                 for (uint32_t i = 0; i < pi_Height && RetValue; i++)
                     {

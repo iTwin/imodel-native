@@ -670,10 +670,10 @@ StatusInt HCPGCoordModel::ComputeDomain () const
         m_pDestGCS->GetMathematicalDomain(destinationGeoDomain);
 
         // Convert geo points to Image++ points
-        for (int idx = 0 ; idx < sourceGeoDomain.size() ; idx++)
+        for (size_t idx = 0 ; idx < sourceGeoDomain.size() ; idx++)
             sourceGeoDomain2.push_back(HGF2DCoord<double>(sourceGeoDomain[idx].longitude, sourceGeoDomain[idx].latitude));
 
-        for (int idx = 0 ; idx < destinationGeoDomain.size() ; idx++)
+        for (size_t idx = 0 ; idx < destinationGeoDomain.size() ; idx++)
             destinationGeoDomain2.push_back(HGF2DCoord<double>(destinationGeoDomain[idx].longitude, destinationGeoDomain[idx].latitude));
 
         

@@ -1160,9 +1160,9 @@ $(o)HRFNitfEditor$(oext) : $(ippGraDir)hrf/src/HRFNitfEditor.cpp $(ippAllInc)HRF
 
 $(o)HRFNitfFile$(oext) : $(ippGraDir)hrf/src/HRFNitfFile.cpp $(ippAllInc)HRFNitfFile.h $(ippAllInc)HRFGdalSupportedFile.h ${MultiCompileDepends}
 
-$(o)HRFOGCService$(oext) : $(ippGraDir)hrf/src/HRFOGCService.cpp $(ippAllInc)HRFOGCService.h ${MultiCompileDepends}
+$(o)HRFOGCService$(oext) : $(ippGraDir)hrf/src/HRFOGCService.cpp $(ippAllInc)HRFOGCService.h $(ippGraDir)hrf/src/HRFOGCServiceEditor.h ${MultiCompileDepends}
 
-$(o)HRFOGCServiceEditor$(oext) : $(ippGraDir)hrf/src/HRFOGCServiceEditor.cpp $(ippAllInc)HRFOGCServiceEditor.h ${MultiCompileDepends}
+$(o)HRFOGCServiceEditor$(oext) : $(ippGraDir)hrf/src/HRFOGCServiceEditor.cpp $(ippGraDir)hrf/src/HRFOGCServiceEditor.h ${MultiCompileDepends}
 
 $(o)HRFPcxFile$(oext) : $(ippGraDir)hrf/src/HRFPcxFile.cpp $(ippAllInc)HRFPcxFile.h ${MultiCompileDepends}
 

@@ -9,15 +9,18 @@
 //-----------------------------------------------------------------------------
 #pragma once
 
-#include "HFCAccessMode.h"
-
 #include "HRFRasterFile.h"
-#include "HRFRasterFileCapabilities.h"
-#include "HRFTilePool.h"
 
 BEGIN_IMAGEPP_NAMESPACE
+
 class HFCURL;
 struct HttpRequest;
+struct HttpSession;
+struct OGCBlockQuery;
+struct OGCTile;
+struct WorkerPool;
+struct ThreadLocalHttp;
+    
 //-----------------------------------------------------------------------------
 // HRFOGCServiceCapabilities class
 //-----------------------------------------------------------------------------
@@ -58,7 +61,7 @@ public:
     HDECLARE_CLASS_ID(HRFOGCServiceId, HRFRasterFile)
 
     friend class HRFOGCServiceEditor;
-    friend class BlockReaderThread;
+    friend struct OGCBlockQuery;
 
     virtual                                 ~HRFOGCService();
 
@@ -142,8 +145,6 @@ protected:
 
     std::unique_ptr<HttpRequest> m_requestTemplate;
     uint32_t                    m_ConnectionTimeOut;
-
-    HRFTilePool                 m_TilePool;
 
     HFCPtr<HGF2DTransfoModel>   CreateTransfoModel(GeoCoordinates::BaseGCSP pi_pGeocoding, uint64_t pi_Width, uint64_t pi_Height);
 

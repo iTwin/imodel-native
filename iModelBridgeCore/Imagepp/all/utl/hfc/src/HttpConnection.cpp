@@ -191,12 +191,14 @@ HttpRequestStatus HttpSession::InternalRequest(HttpResponsePtr& response, HttpRe
         curl_easy_setopt(m_curl, CURLOPT_NOPROGRESS, 0);
         }
 
-    //&&MM todo we need to provide certificate authorities.
+    //&&MM todo we need to provide certificate authorities. For now ignore in debug build.
     //From http://curl.haxx.se/docs/caextract.html
     //curl_easy_setopt(m_curl, CURLOPT_CAINFO, "C:\\down\\!Ca_certificate\\cacert.perm");
+#ifndef NDEBUG
     curl_easy_setopt(m_curl, CURLOPT_SSL_VERIFYPEER, 0L);
     curl_easy_setopt(m_curl, CURLOPT_SSL_VERIFYHOST, 0L);
     curl_easy_setopt(m_curl, CURLOPT_CAINFO, nullptr);
+#endif
     
     if(request.GetConnectOnly())
         curl_easy_setopt(m_curl, CURLOPT_CONNECT_ONLY, 1L);

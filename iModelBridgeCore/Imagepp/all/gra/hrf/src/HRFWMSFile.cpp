@@ -12,7 +12,7 @@
 
 
 #include <Imagepp/all/h/HRFWMSFile.h>
-#include <Imagepp/all/h/HRFOGCServiceEditor.h>
+#include "HRFOGCServiceEditor.h"
 
 #include <Imagepp/all/h/HRPPixelTypeV32R8G8B8A8.h>
 
@@ -716,7 +716,7 @@ void HRFWMSFile::ReadWMS_1_0(BeXmlNodeP pi_pBentleyXMLFileNode)
                                         L"BBOX");
 
     bvector<double> BBoxValues;
-    if(BEXML_Success != pi_pBentleyXMLFileNode->GetContentDoubleValues(BBoxValues) || BBoxValues.size() != 4)
+    if(BEXML_Success != pChildNode->GetContentDoubleValues(BBoxValues) || BBoxValues.size() != 4)
         throw HRFInvalidParamValueException(GetURL()->GetURL(),
                                         L"BBOX");
 
