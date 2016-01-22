@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/Bentley/BeThread.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -214,7 +214,7 @@ struct  BeThreadUtilities
 //__PUBLISH_SECTION_END__
 
 #if defined (BENTLEY_WINRT)
-    BENTLEYDLL_EXPORT static void SetThreadStartHandler(T_ThreadStartHandler);
+    BENTLEYDLL_EXPORT static bool SetThreadStartHandler(T_ThreadStartHandler);
 #endif
 //__PUBLISH_SECTION_START__
 
@@ -226,7 +226,7 @@ struct  BeThreadUtilities
     //!@param[in] stackSize the number of bytes for the newly created thread's stack
     //!@param[in] startAddr the function to call at thread start. Thread exits when this function returns.
     //!@param[in] arg Argument to startAddr
-    BENTLEYDLL_EXPORT static void StartNewThread(int stackSize, T_ThreadStart startAddr, void* arg);
+    BENTLEYDLL_EXPORT static BentleyStatus StartNewThread(int stackSize, T_ThreadStart startAddr, void* arg);
 
     //! Suspend the current thread for a specified amount of time
     //! @param[in] millis   Duration of sleep in milliseconds
