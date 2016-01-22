@@ -214,7 +214,7 @@ struct  BeThreadUtilities
 //__PUBLISH_SECTION_END__
 
 #if defined (BENTLEY_WINRT)
-    BENTLEYDLL_EXPORT static bool SetThreadStartHandler(T_ThreadStartHandler);
+    BENTLEYDLL_EXPORT static void SetThreadStartHandler(T_ThreadStartHandler);
 #endif
 //__PUBLISH_SECTION_START__
 

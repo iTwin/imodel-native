@@ -386,7 +386,7 @@ BentleyStatus BeThreadUtilities::StartNewThread(int stackSize, T_ThreadStart sta
         BeAssert(false);
         return ERROR;
         }
-    return s_threadStartHandler(startAddr, arg) ? SUCCESS : ERROR;
+    return (0 != s_threadStartHandler(startAddr, arg)) ? SUCCESS : ERROR;
 #else
     #error unknown platform
     return ERROR;
