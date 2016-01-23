@@ -2,7 +2,7 @@
 |
 |     $Source: Core/PublicAPI/IDTM.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -119,6 +119,8 @@ protected:
 virtual DTMStatusInt _DrapePoint (double* elevationP, double* slopeP, double* aspectP, DPoint3d triangle[3], int* drapedTypeP, DPoint3dCR point) = 0;
 virtual DTMStatusInt _DrapeLinear(DTMDrapedLinePtr& ret, DPoint3dCP pts, int numPoints) = 0;
 
+virtual bool _ProjectPoint(DPoint3dR pointOnDTM, DMatrix4dCR w2vMap, DPoint3dCR testPoint) = 0;
+
 /*__PUBLISH_SECTION_START__*/
 public:
 //! Drapes a point onto the DTM.
@@ -136,6 +138,8 @@ BENTLEYDTM_EXPORT DTMStatusInt DrapePoint (double* elevation, double* slope, dou
 //! @param[in] numPoints   The number of points.
 //! @return DTM status.
 BENTLEYDTM_EXPORT DTMStatusInt DrapeLinear(DTMDrapedLinePtr& ret, DPoint3dCP pts, int numPoints);
+
+BENTLEYDTM_EXPORT bool ProjectPoint(DPoint3dR pointOnDTM, DMatrix4dCR w2vMap, DPoint3dCR testPoint);
 };
 
 /*=================================================================================**//**

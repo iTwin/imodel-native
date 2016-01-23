@@ -2,7 +2,7 @@
 |
 |     $Source: Core/cppwrappers/bcDTMClass.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma warning(disable: 4018)
@@ -1427,6 +1427,11 @@ DTMStatusInt BcDTM::_DrapeLinear(BENTLEY_NAMESPACE_NAME::TerrainModel::DTMDraped
     if (status == DTM_SUCCESS)
         ret = drapedLineP->GetIDTMDrapedLine();
     return status;
+    }
+
+bool BcDTM::_ProjectPoint(DPoint3dR pointOnDTM, DMatrix4dCR w2vMap, DPoint3dCR testPoint)
+    {
+    return _GetProjectedPointOnDTM(pointOnDTM, w2vMap, testPoint);
     }
 
 /*----------------------------------------------------------------------+

@@ -2,7 +2,7 @@
 |
 |     $Source: Core/cppwrappers/DTM.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "TerrainModel/Core/IDTM.h"
@@ -88,6 +88,11 @@ DTMStatusInt IDTMDraping::DrapePoint (double* elevation, double* slope, double* 
 DTMStatusInt IDTMDraping::DrapeLinear (DTMDrapedLinePtr& ret, DPoint3dCP pts, int numPoints)
     {
     return _DrapeLinear(ret, pts, numPoints);
+    }
+
+bool IDTMDraping::ProjectPoint(DPoint3dR pointOnDTM, DMatrix4dCR w2vMap, DPoint3dCR testPoint)
+    {
+    return _ProjectPoint(pointOnDTM, w2vMap, testPoint);
     }
 
 DTMStatusInt IDTMDrainage::GetDescentTrace (DTMDrainageFeaturePtr& ret, DPoint3dCR pt, double maxpondDepth)

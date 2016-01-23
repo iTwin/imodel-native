@@ -2,7 +2,7 @@
 |
 |     $Source: Core/PublicAPI/bcDTMClass.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -260,6 +260,8 @@ struct BcDTM : RefCounted<TerrainModel::IDTM>
             const DPoint3d  &point
             ) override;
         virtual DTMStatusInt _DrapeLinear (BENTLEY_NAMESPACE_NAME::TerrainModel::DTMDrapedLinePtr& ret, DPoint3dCP pts, int numPoints) override;
+
+        virtual bool _ProjectPoint(DPoint3dR pointOnDTM, DMatrix4dCR w2vMap, DPoint3dCR testPoint) override;
 
         // End IDTMDraping Implementation
 
