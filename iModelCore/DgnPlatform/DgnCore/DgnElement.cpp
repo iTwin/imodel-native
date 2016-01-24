@@ -2430,13 +2430,13 @@ DgnDbStatus ElementGeomData::InsertGeomStream(DgnElementCR el, Utf8CP tableName)
     if (DgnDbStatus::Success != status)
         return status;
 
-    // Insert ElementUsesGeomParts relationships for any GeomPartIds in the GeomStream
+    // Insert ElementUsesGeometryParts relationships for any GeometryPartIds in the GeomStream
     DgnDbR db = el.GetDgnDb();
-    IdSet<DgnGeomPartId> parts;
-    GeometryStreamIO::Collection(m_geom.GetData(), m_geom.GetSize()).GetGeomPartIds(parts, db);
-    for (DgnGeomPartId const& partId : parts)
+    IdSet<DgnGeometryPartId> parts;
+    GeometryStreamIO::Collection(m_geom.GetData(), m_geom.GetSize()).GetGeometryPartIds(parts, db);
+    for (DgnGeometryPartId const& partId : parts)
         {
-        if (BentleyStatus::SUCCESS != db.GeomParts().InsertElementGeomUsesParts(el.GetElementId(), partId))
+        if (BentleyStatus::SUCCESS != db.GeometryParts().InsertElementGeomUsesParts(el.GetElementId(), partId))
             status = DgnDbStatus::WriteError;
         }
 
@@ -2452,31 +2452,31 @@ DgnDbStatus ElementGeomData::UpdateGeomStream(DgnElementCR el, Utf8CP tableName)
     if (DgnDbStatus::Success != status)
         return status;
 
-    // Update ElementUsesGeomParts relationships for any GeomPartIds in the GeomStream
+    // Update ElementUsesGeometryParts relationships for any GeometryPartIds in the GeomStream
     DgnDbR db = el.GetDgnDb();
     DgnElementId eid = el.GetElementId();
-    CachedStatementPtr stmt = db.Elements().GetStatement("SELECT GeomPartId FROM " DGN_TABLE(DGN_RELNAME_ElementUsesGeomParts) " WHERE ElementId=?");
+    CachedStatementPtr stmt = db.Elements().GetStatement("SELECT GeometryPartId FROM " DGN_TABLE(DGN_RELNAME_ElementUsesGeometryParts) " WHERE ElementId=?");
     stmt->BindId(1, eid);
 
-    IdSet<DgnGeomPartId> partsOld;
+    IdSet<DgnGeometryPartId> partsOld;
     while (BE_SQLITE_ROW == stmt->Step())
-        partsOld.insert(stmt->GetValueId<DgnGeomPartId>(0));
+        partsOld.insert(stmt->GetValueId<DgnGeometryPartId>(0));
 
-    IdSet<DgnGeomPartId> partsNew;
-    GeometryStreamIO::Collection(m_geom.GetData(), m_geom.GetSize()).GetGeomPartIds(partsNew, db);
+    IdSet<DgnGeometryPartId> partsNew;
+    GeometryStreamIO::Collection(m_geom.GetData(), m_geom.GetSize()).GetGeometryPartIds(partsNew, db);
 
     if (partsOld.empty() && partsNew.empty())
         return status;
 
-    bset<DgnGeomPartId> partsToRemove;
+    bset<DgnGeometryPartId> partsToRemove;
     std::set_difference(partsOld.begin(), partsOld.end(), partsNew.begin(), partsNew.end(), std::inserter(partsToRemove, partsToRemove.end()));
 
     if (!partsToRemove.empty())
         {
-        stmt = db.Elements().GetStatement("DELETE FROM " DGN_TABLE(DGN_RELNAME_ElementUsesGeomParts) " WHERE ElementId=? AND GeomPartId=?");
+        stmt = db.Elements().GetStatement("DELETE FROM " DGN_TABLE(DGN_RELNAME_ElementUsesGeometryParts) " WHERE ElementId=? AND GeometryPartId=?");
         stmt->BindId(1, eid);
 
-        for (DgnGeomPartId const& partId : partsToRemove)
+        for (DgnGeometryPartId const& partId : partsToRemove)
             {
             stmt->BindId(2, partId);
             if (BE_SQLITE_DONE != stmt->Step())
@@ -2484,12 +2484,12 @@ DgnDbStatus ElementGeomData::UpdateGeomStream(DgnElementCR el, Utf8CP tableName)
             }
         }
 
-    bset<DgnGeomPartId> partsToAdd;
+    bset<DgnGeometryPartId> partsToAdd;
     std::set_difference(partsNew.begin(), partsNew.end(), partsOld.begin(), partsOld.end(), std::inserter(partsToAdd, partsToAdd.end()));
 
-    for (DgnGeomPartId const& partId : partsToAdd)
+    for (DgnGeometryPartId const& partId : partsToAdd)
         {
-        if (BentleyStatus::SUCCESS != db.GeomParts().InsertElementGeomUsesParts(eid, partId))
+        if (BentleyStatus::SUCCESS != db.GeometryParts().InsertElementGeomUsesParts(eid, partId))
             status = DgnDbStatus::WriteError;
         }
 

@@ -115,7 +115,7 @@ public:
 //! @private
 typedef bpair<Render::GraphicSet, ElementAlignedBox3d> GraphicSetRangePair;
 //! @private
-typedef bmap<DgnGeomPartId, GraphicSetRangePair> PartGraphicMap;
+typedef bmap<DgnGeometryPartId, GraphicSetRangePair> PartGraphicMap;
 
 protected:
     typedef std::deque<Utf8String> ViewStateStack;

@@ -21,7 +21,7 @@ BEGIN_BENTLEY_DGN_NAMESPACE
 enum class SubSelectionMode
     {
     None        = 0, //! Select entire element - No sub-selection
-    Part        = 1, //! Select single DgnGeomPart
+    Part        = 1, //! Select single DgnGeometryPart
     Primitive   = 2, //! Select single geometric primitive
     Segment     = 3, //! Select single curve primitive/line string segment
     };
