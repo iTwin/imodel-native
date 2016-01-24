@@ -315,19 +315,10 @@ void SpatialRedlineViewController::_OnAttachedToViewport(DgnViewportR vp)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    08/2014
 //---------------------------------------------------------------------------------------
-void SpatialRedlineViewController::_OnFullUpdate(DgnViewportR viewport, UpdatePlan const& plan)
+void SpatialRedlineViewController::_OnUpdate(DgnViewportR viewport, UpdatePlan const& plan)
     {
-    T_Super::_OnFullUpdate(viewport, plan);
-    m_subjectView._OnFullUpdate(viewport, plan);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   John.Gooding    08/2014
-//---------------------------------------------------------------------------------------
-void SpatialRedlineViewController::_OnDynamicUpdate(DgnViewportR viewport, UpdatePlan const& plan)
-    {
-    T_Super::_OnDynamicUpdate(viewport, plan);
-    m_subjectView._OnDynamicUpdate(viewport, plan);
+    T_Super::_OnUpdate(viewport, plan);
+    m_subjectView._OnUpdate(viewport, plan);
     }
 
 //---------------------------------------------------------------------------------------

@@ -84,6 +84,22 @@ void Render::Queue::AddTask(Task& task)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
+bool Render::Queue::HasPending(Task::Operation op)
+    {
+    DgnDb::VerifyClientThread();
+
+    BeMutexHolder holder(m_cv.GetMutex());
+    for (auto entry : m_tasks)
+        {
+        if (entry->GetOperation() == op)
+            return true;
+        }
+    return false;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 void Render::Queue::WaitForIdle()
     {
     DgnDb::VerifyClientThread();

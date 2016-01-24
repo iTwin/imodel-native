@@ -78,43 +78,6 @@ public:
     };
 
 //=======================================================================================
-//! The Render::Queue is accessed through DgnViewport::GetRenderQueue. It holds an array of Render::Tasks waiting
-//! to to be processed on the render thread. Render::Tasks may be added to the Render::Queue only
-//! on the main (work) thread, and may only be processed on the Render thread.
-// @bsiclass                                                    Keith.Bentley   09/15
-//=======================================================================================
-struct Queue
-{
-    friend DgnViewport;
-private:
-    BeConditionVariable m_cv;
-    std::deque<TaskPtr> m_tasks;
-    TaskPtr             m_currTask;
-
-    void WaitForWork();
-    void Process();
-    THREAD_MAIN_DECL Main(void*);
-
-public:
-    //! Add a Render::Task to the render queue. The Task will replace any existing pending entries in the Queue
-    //! for the same Render::Target for which task._CanReplace(existing) returns true.
-    //! @param[in] task The Render::Task to add to the queue.
-    //! @note This method may only be called from the main thread.
-    DGNPLATFORM_EXPORT void AddTask(Task& task);
-
-    //! Wait for all Tasks in the Queue to be processed.
-    //! @note This method may only be called from the main thread and will wait indefinitely for the existing render tasks
-    //! to complete.
-    DGNPLATFORM_EXPORT void WaitForIdle();
-
-    //! Add a task to the Queue and wait for it (and all previously queued Tasks) to complete.
-    //! @param[in] task The Render::Task to add to the queue.
-    //! @note This method may only be called from the main thread and will wait indefinitely for the existing render tasks
-    //! to complete.
-    void AddAndWait(Task& task) {AddTask(task); WaitForIdle();}
-};
-
-//=======================================================================================
 //! A rendering task to be performed on the render thread.
 // @bsiclass                                                    Keith.Bentley   07/15
 //=======================================================================================
@@ -173,6 +136,46 @@ public:
 
     Task(Target* target, Operation operation) : m_target(target), m_operation(operation) {}
 };
+
+//=======================================================================================
+//! The Render::Queue is accessed through DgnViewport::GetRenderQueue. It holds an array of Render::Tasks waiting
+//! to to be processed on the render thread. Render::Tasks may be added to the Render::Queue only
+//! on the main (work) thread, and may only be processed on the Render thread.
+// @bsiclass                                                    Keith.Bentley   09/15
+//=======================================================================================
+struct Queue
+{
+    friend DgnViewport;
+private:
+    BeConditionVariable m_cv;
+    std::deque<TaskPtr> m_tasks;
+    TaskPtr             m_currTask;
+
+    void WaitForWork();
+    void Process();
+    THREAD_MAIN_DECL Main(void*);
+
+public:
+    //! Add a Render::Task to the render queue. The Task will replace any existing pending entries in the Queue
+    //! for the same Render::Target for which task._CanReplace(existing) returns true.
+    //! @param[in] task The Render::Task to add to the queue.
+    //! @note This method may only be called from the main thread.
+    DGNPLATFORM_EXPORT void AddTask(Task& task);
+
+    //! Wait for all Tasks in the Queue to be processed.
+    //! @note This method may only be called from the main thread and will wait indefinitely for the existing render tasks
+    //! to complete.
+    DGNPLATFORM_EXPORT void WaitForIdle();
+
+    //! Add a task to the Queue and wait for it (and all previously queued Tasks) to complete.
+    //! @param[in] task The Render::Task to add to the queue.
+    //! @note This method may only be called from the main thread and will wait indefinitely for the existing render tasks
+    //! to complete.
+    void AddAndWait(Task& task) {AddTask(task); WaitForIdle();}
+
+    DGNPLATFORM_EXPORT bool HasPending(Task::Operation op);
+};
+
 
 //=======================================================================================
 // @bsiclass                                                    BentleySystems
