@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/WebServices/Connect/ConnectTests.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ConnectTests.h"
@@ -110,4 +110,33 @@ TEST_F (ConnectTests, IsImsLoginRedirect_StatusNotOK_False)
 TEST_F (ConnectTests, IsImsLoginRedirect_IMSLoginUrlAndStatusOK_True)
     {
     EXPECT_TRUE (Connect::IsImsLoginRedirect (StubHttpResponseWithUrl (HttpStatus::OK, "http://test.com//IMS/Account/Login?foo")));
+    }
+
+TEST_F (ConnectTests, GetFederatedSignInUrl_NoDomainParameter_UrlHasNoOfhParameter)
+    {
+#if defined (BENTLEY_WIN32)
+    const Utf8String platformType("desktop");
+#else
+    const Utf8String platformType("mobile");
+#endif
+
+    Utf8String signInUrl("TestUrl?wa=wsignin1.0&wtrealm=sso%3A%2F%2Fwsfed_");
+    signInUrl += platformType + "%2FTestAppProductId";
+
+    EXPECT_STREQ (signInUrl.c_str(), Connect::GetFederatedSignInUrl().c_str());
+    }
+
+TEST_F (ConnectTests, GetFederatedSignInUrl_DomainParameter_UrlHasOfhParameter)
+    {
+#if defined (BENTLEY_WIN32)
+    const Utf8String platformType("desktop");
+#else
+    const Utf8String platformType("mobile");
+#endif
+
+    const Utf8String domainName("bentley");
+    Utf8String signInUrl("TestUrl?wa=wsignin1.0&wtrealm=sso%3A%2F%2Fwsfed_");
+    signInUrl += platformType + "%2FTestAppProductId&ofh=" + Base64Utilities::Encode(domainName);
+
+    EXPECT_STREQ (signInUrl.c_str(), Connect::GetFederatedSignInUrl(domainName).c_str());
     }
