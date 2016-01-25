@@ -2,7 +2,7 @@
  |
  |     $Source: Cache/ICachingDataSource.cpp $
  |
- |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 
@@ -103,7 +103,11 @@ m_status(status)
         }
     else if (status == ICachingDataSource::Status::InternalCacheError)
         {
-        m_message = ICachingDataSourceLocalizedString(ERRORMESSAGE_InternalCache);
+        m_message = ICachingDataSourceLocalizedString(ERRORMESSAGE_InternalCacheError);
+        }
+    else if (status == ICachingDataSource::Status::RepositorySchemaError)
+        {
+        m_message = ICachingDataSourceLocalizedString(ERRORMESSAGE_RepositorySchemaError);
         }
     else if (status == ICachingDataSource::Status::DataNotCached)
         {

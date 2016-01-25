@@ -380,6 +380,39 @@ TEST_F(CachingDataSourceTests, UpdateSchemas_SchemasIncludeStandardSchemas_Skips
     ASSERT_TRUE(result.IsSuccess());
     }
 
+TEST_F(CachingDataSourceTests, UpdateSchemas_InvalidSchemaGotFromServer_ReturnsRepositorySchemaError)
+    {  
+    // Arrange
+    auto client = MockWSRepositoryClient::Create();
+    auto ds = CreateNewTestDataSource(client);
+    ASSERT_TRUE(nullptr != ds);
+
+    // Act & Assert
+    StubInstances schemas;
+    schemas.Add({"MetaSchema.ECSchemaDef", "Foo"}, {{"Name", "Foo"}});
+
+    EXPECT_CALL(client->GetMockWSClient(), GetServerInfo(_))
+        .WillRepeatedly(Return(CreateCompletedAsyncTask(WSInfoResult::Success(StubWSInfoWebApi()))));
+
+    EXPECT_CALL(*client, SendGetSchemasRequest(_, _)).Times(1)
+        .WillOnce(Return(CreateCompletedAsyncTask(WSObjectsResult::Success(schemas.ToWSObjectsResponse()))));
+
+    EXPECT_CALL(*client, SendGetFileRequest(_, _, _, _, _)).Times(1)
+        .WillRepeatedly(Invoke([&] (ObjectIdCR objectId, BeFileNameCR filePath, Utf8StringCR, HttpRequest::ProgressCallbackCR, ICancellationTokenPtr)
+        {
+        SimpleWriteToFile("Not-a-schema", filePath);
+        return CreateCompletedAsyncTask(WSFileResult::Success(WSFileResponse(filePath, HttpStatus::OK, nullptr)));
+        }));
+
+    BeTest::SetFailOnAssert(false);
+    auto result = ds->UpdateSchemas(nullptr)->GetResult();
+    BeTest::SetFailOnAssert(true);
+
+    ASSERT_FALSE(result.IsSuccess());
+    ASSERT_EQ(ICachingDataSource::Status::RepositorySchemaError, result.GetError().GetStatus());
+    ASSERT_FALSE(result.GetError().GetMessage().empty());
+    }
+
 TEST_F(CachingDataSourceTests, GetRepositorySchemas_CacheContainsNonRepositorySchema_ReturnsOnlyRepositorySchemas)
     {
     // Arrange
