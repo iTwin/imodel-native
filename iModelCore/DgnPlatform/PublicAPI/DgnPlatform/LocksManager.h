@@ -13,6 +13,7 @@
 DGNPLATFORM_TYPEDEFS(LockRequest);
 DGNPLATFORM_TYPEDEFS(DgnLock);
 DGNPLATFORM_TYPEDEFS(DgnLockOwnership);
+DGNPLATFORM_TYPEDEFS(DgnOwnedLock);
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
@@ -188,6 +189,33 @@ public:
 };
 
 //=======================================================================================
+//! Describes a lock and its ownership.
+// @bsiclass                                                      Paul.Connelly   10/15
+//=======================================================================================
+struct DgnOwnedLock
+{
+private:
+    DgnLockOwnership    m_ownership;
+    LockableId          m_id;
+public:
+    DgnOwnedLock() { } //!< Default constructor, chiefly for use by stl containers
+    explicit DgnOwnedLock(LockableId lockId) : m_id(lockId) { } //!< Construct for the specified lock, with ownership yet to be supplied
+
+    LockableId GetLockableId() const { return m_id; } //!< The ID of the lockable object
+    DgnLockOwnershipCR GetOwnership() const { return m_ownership; } //!< The ownership of the lock
+    DgnLockOwnershipR GetOwnership() { return m_ownership; } //!< A writable reference to the ownership of the lock
+
+    //! Compare two DgnOwnedLock objects by the ID of the lockable object, for sorting purposes
+    struct IdentityComparator
+    {
+        bool operator()(DgnOwnedLockCR lhs, DgnOwnedLockCR rhs) const { return lhs.GetLockableId() < rhs.GetLockableId(); }
+    };
+};
+
+//! A set of locks paired with their ownership details, compared by identity of the locked object
+typedef bset<DgnOwnedLock, DgnOwnedLock::IdentityComparator> DgnOwnedLockSet;
+
+//=======================================================================================
 //! Specifies a request to acquire one or more locks.
 // @bsiclass                                                      Paul.Connelly   10/15
 //=======================================================================================
@@ -335,6 +363,7 @@ protected:
     virtual LockStatus _DemoteLocks(DgnLockSet& locks) = 0;
     virtual LockStatus _QueryLockLevel(LockLevel& level, LockableId lockId, bool localQueryOnly) = 0;
     virtual LockStatus _RefreshLocks() = 0;
+    virtual LockStatus _QueryLockLevels(DgnLockSet& lockLevels, LockableIdSet& lockIds, bool localQueryOnly) = 0;
 
     virtual void _OnElementInserted(DgnElementId id) = 0;
     virtual void _OnModelInserted(DgnModelId id) = 0;
@@ -369,6 +398,9 @@ public:
 
     //! Query this DgnDb's level of ownership of the specified lockable object.
     LockStatus QueryLockLevel(LockLevel& level, LockableId lockId, bool localQueryOnly=false) { return _QueryLockLevel(level, lockId, localQueryOnly); }
+    //! Query this DgnDb's level of ownership of each of the specified lockable objects.
+    //! NOTE: This function may modify the contents of the lockIds argument.
+    LockStatus QueryLockLevels(DgnLockSet& lockLevels, LockableIdSet& lockIds, bool localQueryOnly=false) { return _QueryLockLevels(lockLevels, lockIds, localQueryOnly); }
     //! Directly query the DgnDb's level of ownership of the specified lockable object.
     LockLevel QueryLockLevel(LockableId lockId, bool localOnly=false) { LockLevel level; return LockStatus::Success == QueryLockLevel(level, lockId, localOnly) ? level : LockLevel::None; }
     //! Query ownership of the specified DgnDb
@@ -410,10 +442,9 @@ protected:
     virtual LockRequest::Response _AcquireLocks(LockRequestCR locks, DgnDbR db) = 0;
     virtual LockStatus _RelinquishLocks(DgnDbR db) = 0;
     virtual LockStatus _DemoteLocks(DgnLockSet const& locks, DgnDbR db) = 0;
-    virtual LockStatus _QueryLockLevel(LockLevel& level, LockableId lockId, DgnDbR db) = 0;
+    virtual LockStatus _QueryLockLevels(DgnLockSet& levels, LockableIdSet const& lockIds, DgnDbR db) = 0;
     virtual LockStatus _QueryLocks(DgnLockSet& locks, DgnDbR db) = 0;
-    virtual LockStatus _QueryOwnership(DgnLockOwnershipR ownership, LockableId lockId) = 0;
-    virtual LockStatus _QueryRevisionId(WStringR revisionid, LockableId lockId) = 0;
+    virtual LockStatus _QueryOwnerships(DgnOwnedLockSet& ownerships, LockableIdSet const& lockIds) = 0;
 public:
     //! Query whether all specified locks are held at or above the specified levels by the specified briefcase
     LockStatus QueryLocksHeld(bool& held, LockRequestCR locks, DgnDbR db) { return _QueryLocksHeld(held, locks, db); }
@@ -428,19 +459,19 @@ public:
     LockStatus DemoteLocks(DgnLockSet const& locks, DgnDbR db) { return _DemoteLocks(locks, db); }
 
     //! Queries the briefcase's level of ownership over the specified lockable object.
-    LockStatus QueryLockLevel(LockLevel& level, LockableId lockId, DgnDbR db) { return _QueryLockLevel(level, lockId, db); }
+    DGNPLATFORM_EXPORT LockStatus QueryLockLevel(LockLevel& level, LockableId lockId, DgnDbR db);
+
+    //! Queries the briefcase's level of ownership over each of the specified lockable objects.
+    LockStatus QueryLockLevels(DgnLockSet& levels, LockableIdSet const& lockIds, DgnDbR db) { return _QueryLockLevels(levels, lockIds, db); }
 
     //! Attempts to retrieve the set of all locks held by a given briefcase
     LockStatus QueryLocks(DgnLockSet& locks, DgnDbR db) { return _QueryLocks(locks, db); }
 
-    //! Queries the ownership of a lockable object
-    LockStatus QueryOwnership(DgnLockOwnershipR ownership, LockableId lockId) { return _QueryOwnership(ownership, lockId); }
+    //! Queries the ownership of a set of lockable objects
+    DGNPLATFORM_EXPORT LockStatus QueryOwnership(DgnLockOwnershipR ownership, LockableId lockId);
 
-    //! Queries the ID of the most recent revision in which the lockable object was modified.
-    //! @param[out]     revisionId On successful return, holds the ID of the revision, or an empty string if no revision associated with the lockable object
-    //! @param[in]      lockId     The ID of the lockable object
-    //! @return Success if the query succeeded, or else an error code
-    LockStatus QueryRevisionId(WStringR revisionId, LockableId lockId) { return _QueryRevisionId(revisionId, lockId); }
+    //! Queries the ownership of each of a set of lockable objects
+    LockStatus QueryOwnerships(DgnOwnedLockSet& ownerships, LockableIdSet const& lockIds) { return _QueryOwnerships(ownerships, lockIds); }
 };
 
 //=======================================================================================

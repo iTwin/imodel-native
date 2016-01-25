@@ -24,11 +24,9 @@ DGNPLATFORM_TYPEDEFS(CheckStop)
 DGNPLATFORM_TYPEDEFS(SectionDrawingModel)
 DGNPLATFORM_TYPEDEFS(SheetModel)
 DGNPLATFORM_TYPEDEFS(DictionaryModel)
-DGNPLATFORM_TYPEDEFS(SystemModel)
 DGNPLATFORM_REF_COUNTED_PTR(SheetModel)
 DGNPLATFORM_REF_COUNTED_PTR(DefinitionModel)
 DGNPLATFORM_REF_COUNTED_PTR(DictionaryModel)
-DGNPLATFORM_REF_COUNTED_PTR(SystemModel)
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 
@@ -347,7 +345,6 @@ protected:
     virtual SpatialModelCP _ToSpatialModel() const {return nullptr;}
     virtual SectionDrawingModelCP _ToSectionDrawingModel() const {return nullptr;}
     virtual SheetModelCP _ToSheetModel() const {return nullptr;}
-    virtual SystemModelCP _ToSystemModel() const {return nullptr;}
     /** @} */
 
     //! The sublcass should import elements from the source model into this model. 
@@ -458,7 +455,6 @@ public:
     SpatialModelCP ToSpatialModel() const {return _ToSpatialModel();} //!< more efficient substitute for dynamic_cast<SpatialModelCP>(model)
     SectionDrawingModelCP ToSectionDrawingModel() const {return _ToSectionDrawingModel();} //!< more efficient substitute for dynamic_cast<SectionDrawingModelCP>(model)
     SheetModelCP ToSheetModel() const {return _ToSheetModel();} //!< more efficient substitute for dynamic_cast<SheetModelCP>(model)
-    SystemModelCP ToSystemModel() const {return _ToSystemModel();} //!< more efficient substitute for dynamic_cast<SystemModelCP>(model)
     GeometricModelP ToGeometricModelP() {return const_cast<GeometricModelP>(_ToGeometricModel());} //!< more efficient substitute for dynamic_cast<GeometricModelP>(model)
     DefinitionModelP ToDefinitionModelP() {return const_cast<DefinitionModelP>(_ToDefinitionModel());} //!< more efficient substitute for dynamic_cast<DefinitionModelP>(model)
     DgnModel2dP ToDgnModel2dP() {return const_cast<DgnModel2dP>(_ToDgnModel2d());} //!< more efficient substitute for dynamic_cast<DgnModel2dP>(model)
@@ -466,7 +462,6 @@ public:
     SpatialModelP ToSpatialModelP() {return const_cast<SpatialModelP>(_ToSpatialModel());} //!< more efficient substitute for dynamic_cast<SpatialModelP>(model)
     SectionDrawingModelP ToSectionDrawingModelP() {return const_cast<SectionDrawingModelP>(_ToSectionDrawingModel());} //!< more efficient substitute for dynamic_cast<SectionDrawingModelP>(model)
     SheetModelP ToSheetModelP() {return const_cast<SheetModelP>(_ToSheetModel());}//!< more efficient substitute for dynamic_cast<SheetModelP>(model)
-    SystemModelP ToSystemModelP() {return const_cast<SystemModelP>(_ToSystemModel());}//!< more efficient substitute for dynamic_cast<SystemModelP>(model)
 
     bool IsGeometricModel() const { return nullptr != ToGeometricModel(); }
     bool IsSpatialModel() const { return nullptr != ToSpatialModel(); }
@@ -475,7 +470,6 @@ public:
     bool IsDefinitionModel() const { return nullptr != ToDefinitionModel(); }
     bool IsSheetModel() const { return nullptr != ToSheetModel(); }
     bool IsDictionaryModel() const { return DictionaryId() == GetModelId(); }
-    bool IsSystemModel() const { return nullptr != ToSystemModel(); }
     //@}
 
     //! Get the DgnDb of this DgnModel.
@@ -885,26 +879,6 @@ protected:
     DGNPLATFORM_EXPORT DgnModelPtr virtual _CloneForImport(DgnDbStatus* stat, DgnImportContext& importer) const override;
 public:
     explicit DictionaryModel(CreateParams const& params) : T_Super(params) { }
-};
-
-//=======================================================================================
-//! A SystemModel holds SystemElements which are used to model functional systems.
-//! @see SystemElement
-//! @ingroup DgnModelGroup
-// @bsiclass                                                    Shaun.Sewall    12/15
-//=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE SystemModel : DgnModel
-{
-    DGNMODEL_DECLARE_MEMBERS(DGN_CLASSNAME_SystemModel, DgnModel);
-
-protected:
-    SystemModelCP _ToSystemModel() const override {return this;}
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _OnInsertElement(DgnElementR element) override;
-
-public:
-    explicit SystemModel(CreateParams const& params) : T_Super(params) {}
-    static SystemModelPtr Create(CreateParams const& params) {return new SystemModel(params);}
-    DGNPLATFORM_EXPORT static SystemModelPtr Create(DgnDbR, DgnCode const&);
 };
 
 struct ComponentDef;
@@ -1438,12 +1412,6 @@ namespace dgn_ModelHandler
     struct EXPORT_VTABLE_ATTRIBUTE Dictionary : Definition
     {
         MODELHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_DictionaryModel, DictionaryModel, Dictionary, Definition, DGNPLATFORM_EXPORT)
-    };
-
-    //! The ModelHandler for SystemModel
-    struct EXPORT_VTABLE_ATTRIBUTE System : Model
-    {
-        MODELHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_SystemModel, SystemModel, System, Model, DGNPLATFORM_EXPORT)
     };
 };
 

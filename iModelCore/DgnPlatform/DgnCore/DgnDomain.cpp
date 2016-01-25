@@ -127,8 +127,8 @@ void DgnDomains::SyncWithSchemas()
 
         if (thisDomain->second->GetVersion() < stmt.GetValueInt(1))
             {
-            BeAssert(false);
             LOG.errorv("Wrong Domain version [%s]", stmt.GetValueText(0));
+            BeAssert(false && "DgnDomains::SyncWithSchemas() failed. Check log for details");
             continue;
             }
 
@@ -169,7 +169,7 @@ DgnDbStatus DgnDomain::VerifySuperclass(Handler& handler)
 
     if (nullptr == superclass || (nullptr == superclass->GetDomain().FindHandler(superclass->m_ecClassName.c_str())))
         {
-        BeAssert(false);
+        BeAssert(false && "Could not locate handler superclass");
         return DgnDbStatus::MissingHandler;
         }
 
@@ -196,7 +196,7 @@ DgnDbStatus DgnDomain::RegisterHandler(Handler& handler, bool reregister)
         {
         if (thisHandler==m_handlers.end()) // reregister only works if we DO already have this handler
             {
-            BeAssert(false);
+            BeAssert(false && "Cannot re-register a handler which was not previously registered");
             return DgnDbStatus::NotFound;
             }
 
@@ -204,7 +204,7 @@ DgnDbStatus DgnDomain::RegisterHandler(Handler& handler, bool reregister)
         }
     else if (thisHandler!=m_handlers.end()) // register only works if we DON'T already have this handler.
         {
-        BeAssert(false);
+        BeAssert(false && "Handler already registered");
         return DgnDbStatus::AlreadyLoaded;
         }
 
@@ -242,7 +242,8 @@ DgnDbStatus DgnDomain::ImportSchema(DgnDbR db, BeFileNameCR schemaFile, ImportSc
     {
     if (!schemaFile.DoesPathExist())
         {
-        BeAssert(false);
+        LOG.errorv("DgnDomain::ImportSchema(): Schema file '%s' does not exist", schemaFile.c_str());
+        BeAssert(false && "DgnDomain::ImportSchema(): Schema file does not exist");
         return DgnDbStatus::FileNotFound;
         }
 
@@ -252,7 +253,8 @@ DgnDbStatus DgnDomain::ImportSchema(DgnDbR db, BeFileNameCR schemaFile, ImportSc
 
     if (0 != BeStringUtilities::Strnicmp(schemaBaseName.c_str(), GetDomainName(), strlen(GetDomainName()))) // ECSchema base name and DgnDomain name must match
         {
-        BeAssert(false);
+        LOG.errorv("Schema name '%s' does not match Domain name '%s'", schemaBaseName.c_str(), GetDomainName());
+        BeAssert(false && "Schema name and DgnDomain name must match");
         return DgnDbStatus::WrongDomain;
         }
 
@@ -348,7 +350,6 @@ DgnDomain::Handler* DgnDomains::FindHandler(DgnClassId handlerId, DgnClassId bas
     ECN::ECClassCP superClass = FindBaseOfType(handlerId, baseClassId);
     if (nullptr == superClass)
         {
-        //BeAssert(false);
         return nullptr;
         }
 
@@ -381,7 +382,7 @@ DgnDomain::Handler* DgnDomains::FindHandler(DgnClassId handlerId, DgnClassId bas
         }
 
     // the handlerId supplied must not derive from baseClassId or no registered handlers exist for any baseclasses
-    BeAssert(false);
+    BeAssert(false && "Handler not found");
     return nullptr;
     }
 
@@ -453,7 +454,6 @@ DbResult DgnDomains::InsertHandler(DgnDomain::Handler& handler)
     DgnClassId id = GetClassId(handler);
     if (!id.IsValid())
         {
-        // BeAssert(false);
         // handler is registered against a class that doesn't exist
         return BE_SQLITE_ERROR;
         }
@@ -465,7 +465,7 @@ DbResult DgnDomains::InsertHandler(DgnDomain::Handler& handler)
         BeAssert(false && "You cannot register a handler unless its ECClass has a ClassHasHandler custom attribute");
 
 #if !defined (NDEBUG)
-        printf("ERROR: HANDLER [%s] handles ECClass '%s' which lacks a ClassHasHandler custom attribute. Handler not registered.",
+        LOG.errorv("ERROR: HANDLER [%s] handles ECClass '%s' which lacks a ClassHasHandler custom attribute. Handler not registered.",
                 typeid(handler).name(), handler.GetClassName().c_str());
 #endif
 
@@ -519,12 +519,12 @@ DgnDbStatus DgnDomain::Handler::_VerifySchema(DgnDomains& domains)
 
     if (!myEcClass->Is(superEcClass))
         {
-        printf("ERROR: HANDLER hiearchy does not match ECSCHMA hiearchy:\n"
+        LOG.errorv("ERROR: HANDLER hiearchy does not match ECSCHMA hiearchy:\n"
                " Handler [%s] says it handles ECClass '%s', \n"
                " but that class does not derive from its superclass handler's ECClass '%s'\n", 
                 typeid(*this).name(), GetClassName().c_str(), handlerSuperClass->GetClassName().c_str());
 
-        BeAssert(false);
+        BeAssert(false && "Handler::_VerifySchema() failed. Check log for details");
         }
     else
         {
@@ -533,10 +533,10 @@ DgnDbStatus DgnDomain::Handler::_VerifySchema(DgnDomains& domains)
         BeAssert(nullptr != rootEcClass);
         if (nullptr != rootEcClass && rootEcClass != myEcClass && !myEcClass->IsSingularlyDerivedFrom(*rootEcClass))
             {
-            printf("ERROR: HANDLER [%s] handles ECClass '%s' which derives more than once from root ECClass '%s'.\n",
+            LOG.errorv("ERROR: HANDLER [%s] handles ECClass '%s' which derives more than once from root ECClass '%s'.\n",
             typeid(*this).name(), GetClassName().c_str(), rootClass->GetClassName().c_str());
 
-            BeAssert(false);
+            BeAssert(false && "Handler::_VerifySchema() failed. Check log for details");
             }
         }
 #endif
@@ -645,7 +645,7 @@ ElementHandlerP dgn_ElementHandler::Element::FindHandler(DgnDb const& db, DgnCla
 
     // not there, check via base classes
     handler = db.Domains().FindHandler(handlerId, db.Domains().GetClassId(dgn_ElementHandler::Element::GetHandler()));
-    return handler ? handler->_ToElementHandler() : (BeAssert(false), nullptr);
+    return handler ? handler->_ToElementHandler() : (BeAssert(false && "Element handler not found"), nullptr);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -735,12 +735,12 @@ public:
 
         if (!myECClass->Is(superECClass))
             {
-            printf("ERROR: HANDLER hiearchy does not match ECSCHMA hiearchy:\n"
+            LOG.errorv("ERROR: HANDLER hiearchy does not match ECSCHMA hiearchy:\n"
                    " Handler [%s] says it handles ECClass '%s', \n"
                    " but that class does not derive from its superclass handler's ECClass '%s'\n", 
                     typeid(m_handler).name(), m_handler.GetClassName().c_str(), handlerSuperClass->GetClassName().c_str());
 
-            BeAssert(false);
+            BeAssert(false && "Incorrect handler hierarchy - see log for details");
             }
         else
             {
@@ -749,10 +749,10 @@ public:
             BeAssert(nullptr != rootEcClass);
             if (nullptr != rootEcClass && rootEcClass != myECClass && !myECClass->IsSingularlyDerivedFrom(*rootEcClass))
                 {
-                printf("ERROR: HANDLER [%s] handles ECClass '%s' which derives more than once from root ECClass '%s'.\n",
+                LOG.errorv("ERROR: HANDLER [%s] handles ECClass '%s' which derives more than once from root ECClass '%s'.\n",
                 typeid(m_handler).name(), m_handler.GetClassName().c_str(), rootClass->GetClassName().c_str());
 
-                BeAssert(false);
+                BeAssert(false && "Handler derives more than once from root ECClass - see log for details");
                 }
             }
 
@@ -771,8 +771,8 @@ public:
                 typeid(*instance).name(), T_Traits::GetECClassName(*instance),
                 T_Traits::GetMacroName(), T_Traits::GetCppClassName());
             
-            printf("%s", msg.c_str());
-            BeAssert(false);
+            LOG.errorv("%s", msg.c_str());
+            BeAssert(false && "Inconsistent handler class hierarchy - see log for details");
             }
 
         if (0 != strcmp(T_Traits::GetSuperECClassName(*instance), handlerSuperClass->GetClassName().c_str()))
@@ -782,8 +782,8 @@ public:
                     typeid(m_handler).name(), handlerSuperClass->GetClassName().c_str(), 
                     T_Traits::GetCppClassName(), typeid(*instance).name(), T_Traits::GetSuperECClassName(*instance));
             
-            printf("%s", msg.c_str());
-            BeAssert(false);
+            LOG.errorv("%s", msg.c_str());
+            BeAssert(false && "Inconsistent handler class hierarchy - see log for details");
             }
 
         DgnClassId instanceClassId(schemas.GetECClassId(m_handler.GetDomain().GetDomainName(), T_Traits::GetECClassName(*instance)));
@@ -793,9 +793,9 @@ public:
         ECN::ECClassCP instanceSuperECClass = schemas.GetECClass(instanceSuperClassId.GetValue());
         if (!instanceECClass->Is(instanceSuperECClass))
             {
-            printf("C++ INHERITANCE ERROR: %s class [%s] handlers ECClass '%s', but it does not derive from ECClass '%s'\n",
+            LOG.errorv("C++ INHERITANCE ERROR: %s class [%s] handlers ECClass '%s', but it does not derive from ECClass '%s'\n",
                 T_Traits::GetCppClassName(), typeid(*instance).name(), T_Traits::GetECClassName(*instance), T_Traits::GetSuperECClassName(*instance));
-            BeAssert(false);
+            BeAssert(false && "Inconsistent handler class hierarchy - see log for details");
             }
 #endif
         return DgnDbStatus::Success;

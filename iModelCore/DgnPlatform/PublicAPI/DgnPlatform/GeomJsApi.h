@@ -70,9 +70,10 @@ JsSTRUCT(JsGeometry)
     JsSTRUCT(JsCurveVector)
         JsSTRUCT(JsUnstructuredCurveVector)
         JsSTRUCT(JsPath)
-        JsSTRUCT(JsLoop)
-        JsSTRUCT(JsParityRegion)
-        JsSTRUCT(JsUnionRegion)
+        JsSTRUCT(JsPlanarRegion)
+            JsSTRUCT(JsLoop)
+            JsSTRUCT(JsParityRegion)
+            JsSTRUCT(JsUnionRegion)
 
     JsSTRUCT(JsBsplineSurface)
 
@@ -185,9 +186,9 @@ END_BENTLEY_DGNPLATFORM_NAMESPACE
 
 #include <DgnPlatform/GeomJsTypes/JsYawPitchRollAngles.h>
 #include <DgnPlatform/GeomJsTypes/JsDRay3d.h>
-#include <DgnPlatform/GeomJsTypes/JsDPoint3dDVector3dDVector3d.h>
 #include <DgnPlatform/GeomJsTypes/JsRotMatrix.h>
 #include <DgnPlatform/GeomJsTypes/JsTransform.h>
+#include <DgnPlatform/GeomJsTypes/JsDPoint3dDVector3dDVector3d.h>
 
 
 #include <DgnPlatform/GeomJsTypes/JsDPoint3dArray.h>
