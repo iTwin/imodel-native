@@ -112,6 +112,9 @@ static bool TryWriteSchema(ECSchemaR schema, ConversionOptions options)
 //--------------------------------------------------------------------------------------
 static int ConvertLoadedSchema(ECSchemaReadContextPtr context, ECSchemaR schema, ConversionOptions options)
     {
+    if (!ECSchemaConverter::Convert(schema))
+        return -1; 
+
     if (!TryWriteSchema(schema, options))
         return -1;
 

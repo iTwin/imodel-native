@@ -1277,7 +1277,7 @@ SchemaReadStatus ECClass::_ReadXmlContents (BeXmlNodeR classNode, ECSchemaReadCo
         Utf8CP childNodeName = childNode->GetName ();
         if (0 == strcmp (childNodeName, EC_PROPERTY_ELEMENT))
             {
-            ECPropertyP ecProperty = new PrimitiveECProperty (*this);
+            PrimitiveECPropertyP ecProperty = new PrimitiveECProperty(*this);
             SchemaReadStatus status = _ReadPropertyFromXmlAndAddToClass (ecProperty, childNode, context, childNodeName);
             if (SchemaReadStatus::Success != status)
                 return status;
@@ -1303,7 +1303,7 @@ SchemaReadStatus ECClass::_ReadXmlContents (BeXmlNodeR classNode, ECSchemaReadCo
                     ECStructClassCP structClass;
                     ECObjectsStatus status = ResolveStructType(structClass, typeName, *this, false);
                     if (ECObjectsStatus::Success == status && NULL != structClass)
-                        isStruct = true;
+                        isStruct = true;  
                     }
                 if (isStruct)
                     ecProperty = new StructArrayECProperty(*this);

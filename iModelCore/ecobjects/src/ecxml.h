@@ -42,6 +42,7 @@ static Utf8CP      ECXML_URI                           = "http://www.bentley.com
 
 #define     BASECLASS_ATTRIBUTE                 "baseClass"
 #define     TYPE_NAME_ATTRIBUTE                 "typeName"
+#define     EXTENDED_TYPE_NAME_ATTRIBUTE        "extendedTypeName"
 #define     BACKING_TYPE_NAME_ATTRIBUTE         "backingTypeName"
 #define     IS_STRICT_ATTRIBUTE                 "isStrict"
 #define     IS_DOMAINCLASS_ATTRIBUTE            "isDomainClass"
@@ -67,6 +68,7 @@ static Utf8CP      ECXML_URI                           = "http://www.bentley.com
 #define     SCHEMAREF_PREFIX_ATTRIBUTE          "prefix"
 #define     MAXIMUM_VALUE_ATTRIBUTE             "MaximumValue"
 #define     MINIMUM_VALUE_ATTRIBUTE             "MinimumValue"
+#define     KIND_OF_QUANTITY_ATTRIBUTE          "kindOfQuantity"
 
 
 #define     STRENGTH_ATTRIBUTE                  "strength"
