@@ -8,7 +8,7 @@
 
 #include "SeedFile.h"
 
-std::atomic<uint64_t> SeedFile::s_id = 0;
+std::atomic<uint64_t> SeedFile::s_id (0);
 
 SeedFile::SeedFile(Utf8String name, Callback onSetupSeedFile, Callback onSetupTestFile) :
 m_name(name),
