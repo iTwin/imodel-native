@@ -294,6 +294,10 @@ public:
     //! @return the current TBGR hilite color.
     ColorDef GetHiliteColor() const {return m_hiliteColor;}
 
+    //! Set the current TGBR color value of the user-selected hilite color for this DgnViewport.
+    //! @param color The new TBGR hilite color
+    void SetHiliteColor(ColorDef color) {m_hiliteColor=color;}
+
 /** @} */
 
 /** @name Coordinate Query and Conversion */
