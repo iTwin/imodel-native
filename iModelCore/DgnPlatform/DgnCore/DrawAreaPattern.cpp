@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/DrawAreaPattern.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include    <DgnPlatformInternal.h>
@@ -1321,7 +1321,6 @@ DPoint3dR       origin
 #else
     bool            useStencil = false;
 #endif
-    useStencil = false;
     GPArraySmartP   boundGpa(PatternHelper::GetBoundaryGPA (boundary, params->rMatrix, origin, useStencil));
 
     if (NULL == boundGpa || 0 == boundGpa->GetCount())
