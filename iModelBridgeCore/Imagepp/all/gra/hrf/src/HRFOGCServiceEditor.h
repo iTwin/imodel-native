@@ -15,7 +15,6 @@
 
 BEGIN_IMAGEPP_NAMESPACE
 class HMDVolatileLayers;
-class HFCInternetConnection;
 class BlockReaderThread;
 class HRFOGCService;
 struct HttpSession;

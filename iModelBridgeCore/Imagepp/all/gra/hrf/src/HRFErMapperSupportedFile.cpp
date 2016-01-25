@@ -64,8 +64,8 @@ struct NCSObjects
 //Ensure that the .objs related to these object are included in the final
 //executable, otherwise, the global variables whose constructors
 //register these schemes are never created.
-HFCURLECWP  dummy;
-HFCURLECWPS dummy2;
+HFCURLECWP  dummy(L"");
+HFCURLECWPS dummy2(L"");
 
 //-----------------------------------------------------------------------------
 // HRFEcwBlockCapabilities

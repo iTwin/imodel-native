@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HFCURLSql.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -33,8 +33,6 @@ public:
 
     HFCURLSql(const WString& pi_rURL);
 
-
-    HFCURLSql() { } // required for persistence
     virtual                 ~HFCURLSql();
 
     // Content access methods

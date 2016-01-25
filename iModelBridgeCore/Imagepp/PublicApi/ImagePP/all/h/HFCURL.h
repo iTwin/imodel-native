@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HFCURL.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -189,7 +189,6 @@ public:
     HFCURL(const WString& pi_URL);
     HFCURL(const WString& pi_SchemeType,
            const WString& pi_SchemeSpecificPart);
-    HFCURL() { }  // required for persistence
     virtual                 ~HFCURL();
 
     //:> This static method replaces the constructor.  Use it to create
@@ -237,15 +236,15 @@ public:
         SchemeList;    // The scheme list.
     static SchemeList*      s_pSchemeList;
     //:> Scheme list access
-    static SchemeList&         GetSchemeList();     // from protected
+    IMAGEPP_EXPORT static SchemeList&         GetSchemeList();     // from protected
 protected:
 
     //:> *** Relative paths support ***
 
     //:> Utility functions provided as static methods available for derived classes.
 
-    static WString           AddPath(const WString& pi_Source, const WString& pi_Path);
-    static WString           FindPath(const WString& pi_Source, const WString& pi_Dest);
+    IMAGEPP_EXPORT static WString AddPath(const WString& pi_Source, const WString& pi_Path);
+    IMAGEPP_EXPORT static WString FindPath(const WString& pi_Source, const WString& pi_Dest);
 
 private:
 

@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HFCURLHTTPS.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HFCURLHTTPS
@@ -59,7 +59,6 @@ public:
         }
 
     //:> constructor
-    IMAGEPP_EXPORT                         HFCURLHTTPS() { } //:> required for persistence
     IMAGEPP_EXPORT                         HFCURLHTTPS(const WString& pi_URL);
     IMAGEPP_EXPORT                         HFCURLHTTPS(const WString& pi_User,
                                                const WString& pi_Password,

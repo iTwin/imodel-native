@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HFCURLOracleFile.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -45,7 +45,6 @@ public:
                      const WString& pi_rHost,
                      const WString& pi_rPath);
 
-    HFCURLOracleFile() { } // required for persistence
     virtual                 ~HFCURLOracleFile();
 
     // Content access methods

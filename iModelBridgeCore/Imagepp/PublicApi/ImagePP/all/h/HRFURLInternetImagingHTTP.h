@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRFURLInternetImagingHTTP.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HRFURLInternetImagingHTTP.h
@@ -36,7 +36,6 @@ public:
                               bool    pi_IsHTTP);
     IMAGEPP_EXPORT HRFURLInternetImagingHTTP(const WString& pi_URL, bool pi_IsHTTP);
 
-    HRFURLInternetImagingHTTP() { } // required for persistence
     virtual         ~HRFURLInternetImagingHTTP();
 
     //--------------------------------------

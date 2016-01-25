@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HFCURLCommonInternet.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -56,15 +56,15 @@ public:
 
     //:> Primary methods
 
-    HFCURLCommonInternet(const WString& pi_URL);
-    HFCURLCommonInternet(const WString& pi_SchemeType,
-                         const WString& pi_User,
-                         const WString& pi_Password,
-                         const WString& pi_Host,
-                         const WString& pi_Port,
-                         const WString& pi_URLPath);
-    HFCURLCommonInternet() { } // required for persistence
-    virtual               ~HFCURLCommonInternet();
+    IMAGEPP_EXPORT HFCURLCommonInternet(const WString& pi_URL);
+    IMAGEPP_EXPORT HFCURLCommonInternet(const WString& pi_SchemeType,
+                                        const WString& pi_User,
+                                        const WString& pi_Password,
+                                        const WString& pi_Host,
+                                        const WString& pi_Port,
+                                        const WString& pi_URLPath);
+
+    IMAGEPP_EXPORT virtual               ~HFCURLCommonInternet();
 
     IMAGEPP_EXPORT static void    SplitPath(const WString& pi_rURL,
                                     WString*       po_pScheme,
@@ -85,11 +85,11 @@ public:
     const WString&      GetURLPath() const;
 
     const string&       GetUTF8EscapedURLPath() const;
-    virtual void        SetUTF8EscapedURLPath(const string* pi_pURLPath = 0);
+    IMAGEPP_EXPORT virtual void        SetUTF8EscapedURLPath(const string* pi_pURLPath = 0);
 
     //:> Overriden methods, used in relative path management
 
-    virtual bool       HasPathTo(HFCURL* pi_pURL);
+    IMAGEPP_EXPORT virtual bool       HasPathTo(HFCURL* pi_pURL);
 
 protected:
     // Components of the scheme-specific part of the URL string.
