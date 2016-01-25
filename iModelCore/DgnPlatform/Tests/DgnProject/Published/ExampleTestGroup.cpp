@@ -106,4 +106,14 @@ TEST_F(ExampleTestGroup, Test2)
         SpatialModelPtr model2 = DgnDbTestUtils::InsertSpatialModel(*db, DgnModel::CreateModelCode("Model2"));
         ASSERT_TRUE(model2.IsValid());
         }
+
+    if (true)
+        {
+        //  Verify that we can work with a read-write copy of the base seed file, where we assign a name
+        DgnDbPtr db = DgnDbTestUtils::OpenDgnDbCopy(DgnDbTestUtils::GetEmpty3dSeedFileName(), L"Test2");
+        db->Models().QueryModelId(DgnDbTestUtils::GetDefaultModelCode()).IsValid();
+
+        SpatialModelPtr model2 = DgnDbTestUtils::InsertSpatialModel(*db, DgnModel::CreateModelCode("Model2"));
+        ASSERT_TRUE(model2.IsValid());
+        }
     }

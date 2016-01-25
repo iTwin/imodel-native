@@ -75,11 +75,14 @@ public:
     static DgnDbPtr OpenDgnDb(WCharCP relSeedPath);
         
     //! Open <em>a copy of</em> the specified seed file for reading and writing. The result will be a private copy for the use of the caller.
+    //! The copy will always be located in a subdirectory with the same name as the caller's test case.
     //! @note The copy of the file is automatically assigned a unique name, to avoid name collisions with other tests.
     //! @param relSeedPath Identifies a seed file that was created for the group in the TC_SETUP function. Be sure to use forward slash (/) as a directory separator.
-    //! @return a pointer to the open DgnDb, or nullptr if the seed file does not exist or if a file by the new name does exist.
+    //! @param newName optional. all or part of the name of the copy. If null, then the name of the copy will be based on the name of the input seed file. If not null, then
+    //! the name of the copy will be based on \a newName and will be modified as necessary to make it unique.
+    //! @return a pointer to the open DgnDb, or nullptr if the seed file does not exist.
     //! @see CreateSeedFiles
-    static DgnDbPtr OpenDgnDbCopy(WCharCP relSeedPath);
+    static DgnDbPtr OpenDgnDbCopy(WCharCP relSeedPath, WCharCP newName = nullptr);
 
     //! Insert a SpatialModel 
     static SpatialModelPtr InsertSpatialModel(DgnDbR, DgnCode modelCode);

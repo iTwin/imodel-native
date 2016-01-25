@@ -66,7 +66,7 @@ public:
     ~TransactionManagerTests();
     void CloseDb() {m_db->CloseDb();}
     DgnModelR GetDefaultModel() {return *m_db->Models().GetModel(m_defaultModelId);}
-    void SetupProject(WCharCP projFile, WCharCP testFile, Db::OpenMode mode, bool needBriefcase = true);
+    void SetupProject(WCharCP testFile, Db::OpenMode mode, bool needBriefcase = true);
     DgnElementCPtr InsertElement(Utf8CP elementCode, DgnModelId mid = DgnModelId(), DgnCategoryId categoryId = DgnCategoryId());
     void TwiddleTime(DgnElementCPtr);
 };
@@ -175,7 +175,7 @@ TransactionManagerTests::~TransactionManagerTests()
 * set up method that opens an existing .dgndb project file after copying it to out
 * @bsimethod                                                    Sam.Wilson      01/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TransactionManagerTests::SetupProject(WCharCP projFile, WCharCP testFile, Db::OpenMode mode, bool needBriefcase)
+void TransactionManagerTests::SetupProject(WCharCP testFile, Db::OpenMode mode, bool needBriefcase)
     {
     BeFileName outFileName;
     ASSERT_EQ(SUCCESS, DgnDbTestDgnManager::GetTestDataOut(outFileName, projFile, testFile, __FILE__));

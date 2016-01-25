@@ -165,17 +165,19 @@ DgnDbPtr DgnDbTestUtils::OpenDgnDb(WCharCP relSeedPath)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                           Sam.Wilson             01/2016
 //---------------------------------------------------------------------------------------
-DgnDbPtr DgnDbTestUtils::OpenDgnDbCopy(WCharCP relSeedPathIn)
+static void supplyMissingDbExtension(WStringR name)
     {
-    //  Make sure the input filename has an extension. (We must be checking for unique filenames with the extension in place. If we don't provide an extension, OpenDgnDb will add ".dgndb".)
+    if (name.find(L".") == WString::npos)
+        name.append(L".dgndb");
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                           Sam.Wilson             01/2016
+//---------------------------------------------------------------------------------------
+DgnDbPtr DgnDbTestUtils::OpenDgnDbCopy(WCharCP relSeedPathIn, WCharCP newName)
+    {
     WString relSeedPath(relSeedPathIn);
-    
-    size_t idot = relSeedPath.rfind(L".");
-    if (WString::npos == idot)
-        {
-        relSeedPath.append(L".dgndb");
-        idot = relSeedPath.rfind(L".");
-        }
+    supplyMissingDbExtension(relSeedPath);
         
     BeFileName infileName = getOutputPath(relSeedPath.c_str());
     if (!infileName.DoesPathExist())
@@ -185,10 +187,19 @@ DgnDbPtr DgnDbTestUtils::OpenDgnDbCopy(WCharCP relSeedPathIn)
         }
 
     //  Create a unique name for the output file, based on the input seed filename.
-    WString ccRelPathNoExt = relSeedPath.substr(0, idot);
-    WString ccExt = relSeedPath.substr(idot+1);
 
-    //  1. The output file MUST be in a subdirectory that is specific to the current test case. (That's how we keep test groups out of each other's way.)
+    //  1. Establish the basename and extension
+    BeFileName ccRelPathBase;
+    if (nullptr == newName)
+        ccRelPathBase.SetName(relSeedPath);
+    else
+        {
+        ccRelPathBase.SetName(BeFileName::GetDirectoryName(relSeedPath.c_str()));
+        ccRelPathBase.AppendToPath(newName);
+        supplyMissingDbExtension(ccRelPathBase);
+        }
+        
+    //  2. Make sure that it is located in a subdirectory that is specific to the current test case. (That's how we keep test groups out of each other's way.)
     Utf8String tcname;
     if (BSISUCCESS != BeTest::GetNameOfCurrentTestCase(tcname))
         {
@@ -197,23 +208,23 @@ DgnDbPtr DgnDbTestUtils::OpenDgnDbCopy(WCharCP relSeedPathIn)
         }
 
     WString wtcname(tcname.c_str(), BentleyCharEncoding::Utf8);
-    if (!wtcname.Equals(ccRelPathNoExt.substr(0, tcname.size())))
+    if (!wtcname.Equals(ccRelPathBase.substr(0, tcname.size())))
         {
-        WString tmp(ccRelPathNoExt);
-        ccRelPathNoExt = wtcname;
-        ccRelPathNoExt.append(L"/").append(tmp);
+        WString tmp(ccRelPathBase);
+        ccRelPathBase.SetName(wtcname);
+        ccRelPathBase.AppendToPath(tmp.c_str());
         }
 
-    //  2. Generate a unique name
+    //  3. Make sure it's unique
     BeFileName ccfileName;
-    WString ccRelPath;
+    BeFileName ccRelPathUnique;
     int ncopies = 0;
     do  {
         if (0 == ncopies)
-            ccRelPath = WPrintfString(L"%ls.%ls", ccRelPathNoExt.c_str(), ccExt.c_str());
+            ccRelPathUnique = ccRelPathBase;
         else
-            ccRelPath = WPrintfString(L"%ls-%d.%ls", ccRelPathNoExt.c_str(), ncopies, ccExt.c_str());
-        ccfileName = getOutputPath(ccRelPath.c_str());
+            ccRelPathUnique.SetName(WPrintfString(L"%ls-%d.%ls", ccRelPathBase.substr(0, ccRelPathBase.find(L".")).c_str(), ncopies, ccRelPathBase.GetExtension().c_str()));
+        ccfileName = getOutputPath(ccRelPathUnique.c_str());
         ++ncopies;
         } 
     while (ccfileName.DoesPathExist());
@@ -221,7 +232,7 @@ DgnDbPtr DgnDbTestUtils::OpenDgnDbCopy(WCharCP relSeedPathIn)
     BeFileNameStatus fileStatus = BeFileName::BeCopyFile(infileName.c_str(), ccfileName.c_str(), /*failIfFileExists*/true);
     EXPECT_EQ(BeFileNameStatus::Success, fileStatus) << WPrintfString(L"%ls => %ls - copy failed", infileName.c_str(), ccfileName.c_str()).c_str();
 
-    return OpenDgnDb(ccRelPath.c_str(), DgnDb::OpenMode::ReadWrite);
+    return OpenDgnDb(ccRelPathBase.c_str(), DgnDb::OpenMode::ReadWrite);
     }
 
 /*---------------------------------------------------------------------------------**//**
