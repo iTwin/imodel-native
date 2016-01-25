@@ -149,7 +149,7 @@
         </ECCustomAttributes>
         <BaseClass>Authority</BaseClass>
     </ECEntityClass>
-    <ECEntityClass typeName="GeomPartAuthority">
+    <ECEntityClass typeName="GeometryPartAuthority">
         <ECCustomAttributes>
             <ClassHasHandler xmlns="dgn.02.00"/>
         </ECCustomAttributes>
@@ -254,13 +254,13 @@
             </Class>
         </Target>
     </ECRelationshipClass>
-    <ECRelationshipClass typeName="AuthorityIssuesGeomPartCode" description="GeomPart has a code which was issued by the given authority" strength="referencing">
+    <ECRelationshipClass typeName="AuthorityIssuesGeometryPartCode" description="GeometryPart has a code which was issued by the given authority" strength="referencing">
         <!-- WIP: want ON DELETE RESTRICT? -->
         <Source cardinality="(1,1)" roleLabel="issues code" polymorphic="false">
             <Class class="Authority"/>
         </Source>
         <Target cardinality="(0,N)" roleLabel="has N codes" polymorphic="true">
-            <Class class="GeomPart">
+            <Class class="GeometryPart">
                 <Key>
                     <Property name="Code.AuthorityId"/>
                 </Key>
@@ -1188,7 +1188,7 @@
         <ECProperty propertyName="MaxZ" typeName="double"/>
     </ECEntityClass>
 
-    <ECEntityClass typeName="GeomPart">
+    <ECEntityClass typeName="GeometryPart">
         <BaseClass>CodedObject</BaseClass>
         <ECCustomAttributes>
             <ClassMap xmlns="ECDbMap.01.00">
@@ -1217,8 +1217,8 @@
             </ECCustomAttributes>
         </ECProperty>
     </ECEntityClass>
-    <ECRelationshipClass typeName="ElementUsesGeomParts" strength="referencing">
-        <!-- Used to indicate that an Element uses a GeomPart.  This is useful for "garbage collecting" or finding Elements that would be affected by a change to a GeomPart. -->
+    <ECRelationshipClass typeName="ElementUsesGeometryParts" strength="referencing">
+        <!-- Used to indicate that an Element uses a GeometryPart.  This is useful for "garbage collecting" or finding Elements that would be affected by a change to a GeometryPart. -->
         <!-- WIP: want ON DELETE RESTRICT? -->
         <ECCustomAttributes>
             <ClassMap xmlns="ECDbMap.01.00">
@@ -1226,14 +1226,14 @@
             </ClassMap>
             <LinkTableRelationshipMap xmlns="ECDbMap.01.00">
                 <SourceECInstanceIdColumn>ElementId</SourceECInstanceIdColumn>
-                <TargetECInstanceIdColumn>GeomPartId</TargetECInstanceIdColumn>
+                <TargetECInstanceIdColumn>GeometryPartId</TargetECInstanceIdColumn>
             </LinkTableRelationshipMap>
         </ECCustomAttributes>
         <Source cardinality="(0,N)" polymorphic="false">
             <Class class="Element"/>
         </Source>
         <Target cardinality="(0,N)" polymorphic="false">
-            <Class class="GeomPart"/>
+            <Class class="GeometryPart"/>
         </Target>
     </ECRelationshipClass>
     

@@ -348,7 +348,7 @@ struct SystemAuthority
         TrueColor = 5LL,
         Model = 6LL,
         Component = 7LL,    // Component instances. Code value is combination of component name, component parameter set, and unique integer ID
-        GeomPart = 8LL,
+        GeometryPart = 8LL,
     };
 
     struct Info
@@ -405,7 +405,7 @@ DbResult DgnDb::CreateAuthorities()
             { "DgnColors", SystemAuthority::TrueColor, dgn_AuthorityHandler::TrueColor::GetHandler() },
             { "DgnModels", SystemAuthority::Model, dgn_AuthorityHandler::Model::GetHandler() },
             { "DgnComponent", SystemAuthority::Component, dgn_AuthorityHandler::Component::GetHandler() },
-            { "DgnGeomPart", SystemAuthority::GeomPart, dgn_AuthorityHandler::GeomPart::GetHandler() },
+            { "DgnGeometryPart", SystemAuthority::GeometryPart, dgn_AuthorityHandler::GeometryPart::GetHandler() },
         };
 
     for (auto const& info : infos)
@@ -474,7 +474,7 @@ DgnCode ResourceAuthority::CreateResourceCode(Utf8StringCR name, Utf8StringCR na
 DgnAuthorityId ResourceAuthority::GetResourceAuthorityId() { return SystemAuthority::GetId(SystemAuthority::Resource); }
 DgnAuthorityId MaterialAuthority::GetMaterialAuthorityId() { return SystemAuthority::GetId(SystemAuthority::Material); }
 DgnAuthorityId CategoryAuthority::GetCategoryAuthorityId() { return SystemAuthority::GetId(SystemAuthority::Category); }
-DgnAuthorityId GeomPartAuthority::GetGeomPartAuthorityId() { return SystemAuthority::GetId(SystemAuthority::GeomPart); }
+DgnAuthorityId GeometryPartAuthority::GetGeometryPartAuthorityId() { return SystemAuthority::GetId(SystemAuthority::GeometryPart); }
 DgnAuthorityId TrueColorAuthority::GetTrueColorAuthorityId() { return SystemAuthority::GetId(SystemAuthority::TrueColor); }
 
 /*---------------------------------------------------------------------------------**//**
@@ -533,9 +533,9 @@ bool ComponentDef::IsComponentVariationCode(DgnCode const& icode)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnCode GeomPartAuthority::CreateGeomPartCode(Utf8StringCR ns, Utf8StringCR name)
+DgnCode GeometryPartAuthority::CreateGeometryPartCode(Utf8StringCR ns, Utf8StringCR name)
     {
-    return SystemAuthority::CreateCode(SystemAuthority::GeomPart, ns, name);
+    return SystemAuthority::CreateCode(SystemAuthority::GeometryPart, ns, name);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -666,10 +666,10 @@ DgnDbStatus ResourceAuthority::_ValidateCode(ICodedObjectCR obj) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus GeomPartAuthority::_ValidateCode(ICodedObjectCR obj) const
+DgnDbStatus GeometryPartAuthority::_ValidateCode(ICodedObjectCR obj) const
     {
     auto status = T_Super::_ValidateCode(obj);
-    if (DgnDbStatus::Success == status && nullptr == obj.ToGeomPart())
+    if (DgnDbStatus::Success == status && nullptr == obj.ToGeometryPart())
         status = DgnDbStatus::InvalidCodeAuthority;
 
     return status;
