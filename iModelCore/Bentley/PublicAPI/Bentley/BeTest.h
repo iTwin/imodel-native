@@ -207,6 +207,46 @@ BENTLEYDLL_EXPORT static void SetBeAssertListener (T_BeAssertListener*);
 
 ///@}
 
+///@name Information about the currently running test 
+///@{
+
+//! Get name of currently running test
+static BentleyStatus GetNameOfCurrentTest(Utf8StringR testName)
+    {
+#if defined (USE_GTEST)
+    ::testing::TestInfo const* tinfo = ::testing::UnitTest::GetInstance()->current_test_info();
+    if (nullptr == tinfo)
+        return BSIERROR;
+    testName = tinfo->name();
+#else
+    testName = GetNameOfCurrentTestInternal();
+#endif
+    return BSISUCCESS;
+    }
+
+//! Get name of currently running test case
+static BentleyStatus BeTest::GetNameOfCurrentTestCase(Utf8StringR testCaseName)
+    {
+#if defined (USE_GTEST)
+    ::testing::TestInfo const* tinfo = ::testing::UnitTest::GetInstance()->current_test_info();
+    if (nullptr == tinfo)
+        return BSIERROR;
+    testCaseName = tinfo->test_case_name();
+#else
+    testCaseName = GetNameOfCurrentTestCaseInternal();
+#endif
+    return BSISUCCESS;
+    }
+
+
+BENTLEYDLL_EXPORT static Utf8String GetNameOfCurrentTestInternal();
+BENTLEYDLL_EXPORT static Utf8String GetNameOfCurrentTestCaseInternal();
+
+
+//! Get name of currently running test case
+
+///@}
+
 ///@name Ignore list parsing utilities
 ///@{
 
@@ -409,15 +449,9 @@ BENTLEYDLL_EXPORT static void Log (Utf8CP category, LogPriority priority, Utf8CP
 
 #define PERFORMANCELOG (*NativeLogging::LoggingManager::GetLogger (L"Performance"))
 #define LOGTODB PerformanceResultRecorder::writeResults
-#if defined (USE_GTEST)
-    #define TEST_FIXTURE_NAME ::testing::UnitTest::GetInstance()->current_test_info()->test_case_name()
-    #define TEST_NAME ::testing::UnitTest::GetInstance()->current_test_info()->name()
-    #define TEST_DETAILS TEST_FIXTURE_NAME, TEST_NAME
-#else
-    #define TEST_FIXTURE_NAME GetTestCaseNameA()
-    #define TEST_NAME GetTestNameA()
-    #define TEST_DETAILS TEST_FIXTURE_NAME, TEST_NAME
-#endif
+#define TEST_FIXTURE_NAME BeTest::GetNameOfCurrentTestCase()
+#define TEST_NAME BeTest::GetNameOfCurrentTest()
+#define TEST_DETAILS TEST_FIXTURE_NAME, TEST_NAME
 
 
 //=======================================================================================

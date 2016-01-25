@@ -42,6 +42,8 @@ static bool                                     s_failOnAssert[(int)BeAssertFunc
 static bool                                     s_runningUnderGtest;                // indicates that we are running under gtest. MT: set only during initialization 
 static bool                                     s_hadAssert;
 static bool                                     s_hadAssertOnAnotherThread;         // MT: s_bentleyCS
+static Utf8String                               s_currentTestCaseName;              // MT: s_bentleyCS
+static Utf8String                               s_currentTestName;                  //  "       "
 static RefCountedPtr<BeTest::Host>              s_host;                             // MT: set only during initialization. Used on multiple threads. Must be thread-safe internally.
 bool BeTest::s_loop = true;
 
@@ -919,6 +921,16 @@ bset<Utf8String> const& BeTest::GetFailedTests()
     return s_failedTests;
     }
 
+Utf8String BeTest::GetNameOfCurrentTestCaseInternal()
+    {
+    return s_currentTestCaseName;
+    }
+
+Utf8String BeTest::GetNameOfCurrentTestInternal()
+    {
+    return s_currentTestName;
+    }
+
 #ifdef XX_BETEST_HAS_SEH
 
 #define BE_TEST_SEH_TRY                 __try{
@@ -975,6 +987,8 @@ void testing::Test::Run()
     s_bentleyCS.lock();
     s_hadAssert = false;
     s_hadAssertOnAnotherThread = false;
+    s_currentTestCaseName = GetTestCaseNameA();
+    s_currentTestName = GetTestNameA();
     s_bentleyCS.unlock();
     
     BE_TEST_SEH_TRY
