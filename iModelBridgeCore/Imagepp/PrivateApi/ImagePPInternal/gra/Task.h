@@ -21,10 +21,10 @@ struct ThreadLocalStorage
     {
     struct Node
         {
-        size_t          m_key;
+        std::thread::id m_key;
         T               m_data;
         Node*           m_next;
-        Node(size_t key):m_next(nullptr), m_key(key){};
+        Node(std::thread::id const& key):m_next(nullptr), m_key(key){};
         };
 
     ThreadLocalStorage():m_head(nullptr){}
@@ -44,7 +44,7 @@ struct ThreadLocalStorage
     //----------------------------------------------------------------------------------------
     T& GetLocal()
         {
-        size_t key = std::this_thread::get_id().hash();
+        std::thread::id key = std::this_thread::get_id();
 
         Node* localNode = FindLocal(key);
         if(nullptr == localNode)
@@ -58,7 +58,7 @@ private:
     //----------------------------------------------------------------------------------------
     // @bsimethod                                                   Mathieu.Marchand  1/2016
     //----------------------------------------------------------------------------------------
-    Node* FindLocal(size_t key)
+    Node* FindLocal(std::thread::id const& key)
         {
         Node* currentNode = m_head;
         while (currentNode != nullptr)
@@ -75,7 +75,7 @@ private:
     //----------------------------------------------------------------------------------------
     // @bsimethod                                                   Mathieu.Marchand  1/2016
     //----------------------------------------------------------------------------------------
-    Node* AddLocal(size_t _Key)
+    Node* AddLocal(std::thread::id const& _Key)
         {
         Node* newNode = new Node(_Key);
 
