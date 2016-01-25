@@ -78,7 +78,7 @@ struct PropertyMapRelationshipConstraintClassId;
 struct PropertyMap : RefCountedBase, NonCopyableClass
 {
 private:
-    virtual NativeSqlBuilder::List _ToNativeSql (Utf8CP classIdentifier, ECSqlType ecsqlType, bool wrapInParentheses) const;
+    virtual NativeSqlBuilder::List _ToNativeSql (Utf8CP classIdentifier, ECSqlType, bool wrapInParentheses, ECDbSqlTable const* tableFilter) const;
 
     virtual bool _IsVirtual() const { return false; }
     virtual bool _IsUnmapped() const { return false; }
@@ -160,8 +160,9 @@ public:
     //! @param[in] ecsqlType ECSQL type for which the native SQL is generated. SQL generation depends on the ECSQL type
     //!            which is why this parameter is needed
     //! @param[in] wrapInParentheses true if the native SQL snippets should be wrapped in parentheses. false otherwise
+    //! @param[in] tableFilter if not nullptr, only columns from the specified tables are used to generate the native SQL.
     //! @return List of native SQL snippets, one snippet per column this PropertyMap maps to.
-    NativeSqlBuilder::List ToNativeSql(Utf8CP classIdentifier, ECSqlType ecsqlType, bool wrapInParentheses) const;
+    NativeSqlBuilder::List ToNativeSql(Utf8CP classIdentifier, ECSqlType ecsqlType, bool wrapInParentheses, ECDbSqlTable const* tableFilter = nullptr) const;
 
 
     //! Saves the base column name, if it differs from the property name

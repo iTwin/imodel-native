@@ -27,6 +27,23 @@ ECDbSqlColumn const& PropertyMapSystem::GetColumn() const
     }
 
 //----------------------------------------------------------------------------------
+// @bsimethod                                 Krischan.Eberle                01/2016
+//+---------------+---------------+---------------+---------------+---------------+-
+ECDbSqlColumn const* PropertyMapSystem::GetColumn(ECDbSqlTable const& table) const
+    {
+    if (&GetColumn().GetTable() == &table)
+        return &GetColumn();
+
+    for (ECDbSqlTable const* mappedTable : m_mappedTables)
+        {
+        if (mappedTable == &table)
+            return mappedTable->GetFilteredColumnFirst(ToColumnKind());
+        }
+
+    return nullptr;
+    }
+
+//----------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                02/2014
 //+---------------+---------------+---------------+---------------+---------------+-
 void PropertyMapSystem::_GetColumns (std::vector<ECDbSqlColumn const*>& columns) const
@@ -36,6 +53,42 @@ void PropertyMapSystem::_GetColumns (std::vector<ECDbSqlColumn const*>& columns)
         columns.push_back (m_column.lock().get());
     }
 
+//----------------------------------------------------------------------------------
+// @bsimethod                                 Krischan.Eberle                01/2016
+//+---------------+---------------+---------------+---------------+---------------+-
+ColumnKind PropertyMapSystem::ToColumnKind() const
+    {
+    switch (m_kind)
+        {
+        case ECSqlSystemProperty::ECArrayIndex:
+            return ColumnKind::ECArrayIndex;
+
+        case ECSqlSystemProperty::ECInstanceId:
+            return ColumnKind::ECInstanceId;
+
+        case ECSqlSystemProperty::ECPropertyPathId:
+            return ColumnKind::ECPropertyPathId;
+
+        case ECSqlSystemProperty::ParentECInstanceId:
+            return ColumnKind::ParentECInstanceId;
+
+        case ECSqlSystemProperty::SourceECClassId:
+            return ColumnKind::SourceECClassId;
+
+        case ECSqlSystemProperty::SourceECInstanceId:
+            return ColumnKind::SourceECInstanceId;
+
+        case ECSqlSystemProperty::TargetECClassId:
+            return ColumnKind::TargetECClassId;
+
+        case ECSqlSystemProperty::TargetECInstanceId:
+            return ColumnKind::TargetECInstanceId;
+
+        default:
+            BeAssert(false);
+            return ColumnKind::Unknown;
+        }
+    }
 
 //******************************** PropertyMapECInstanceId ****************************************
 //----------------------------------------------------------------------------------
@@ -47,9 +100,13 @@ Utf8CP const PropertyMapECInstanceId::PROPERTYACCESSSTRING = "ECInstanceId";
 //----------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                06/2013
 //+---------------+---------------+---------------+---------------+---------------+-
-PropertyMapECInstanceId::PropertyMapECInstanceId (ECPropertyCR ecInstanceIdProperty, ECDbSqlColumn* column)
+PropertyMapECInstanceId::PropertyMapECInstanceId (ECPropertyCR ecInstanceIdProperty, ClassMap const& classMap, ECDbSqlColumn* column)
 : PropertyMapSystem (ecInstanceIdProperty, (column != nullptr ? column->GetWeakPtr () : std::weak_ptr<ECDbSqlColumn> ()), ECSqlSystemProperty::ECInstanceId)
-    {}
+    {
+    std::vector<ECDbSqlTable*> tables = classMap.GetTables();
+    m_mappedTables.clear();
+    m_mappedTables.insert(m_mappedTables.begin(), tables.begin(), tables.end());
+    }
 
 //----------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                06/2013
@@ -62,13 +119,13 @@ PropertyMapPtr PropertyMapECInstanceId::Create (ECDbSchemaManagerCR schemaManage
         return nullptr;
 
     std::vector<ECDbSqlColumn const*> systemColumns;
-    if (classMap.GetJoinedTable ().GetFilteredColumnList (systemColumns, ColumnKind::ECInstanceId) == BentleyStatus::ERROR)
+    if (classMap.GetJoinedTable().GetFilteredColumnList(systemColumns, ColumnKind::ECInstanceId) == BentleyStatus::ERROR)
         {
-        BeAssert (false && "PropertyMapECInstanceId::Create> Table is expected to have primary key columns.");
+        BeAssert(false && "PropertyMapECInstanceId::Create> Table is expected to have primary key columns.");
         return nullptr;
         }
 
-    return new PropertyMapECInstanceId (*property, const_cast<ECDbSqlColumn*>(systemColumns.front()));
+    return new PropertyMapECInstanceId (*property, classMap, const_cast<ECDbSqlColumn*> (systemColumns[0]));
     }
 
 //----------------------------------------------------------------------------------
@@ -225,7 +282,7 @@ PropertyMapPtr PropertyMapRelationshipConstraintECInstanceId::Create (ECRelation
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      12/2013
 //---------------------------------------------------------------------------------------
-NativeSqlBuilder::List PropertyMapRelationshipConstraintECInstanceId::_ToNativeSql (Utf8CP classIdentifier, ECSqlType ecsqlType, bool wrapInParentheses) const
+NativeSqlBuilder::List PropertyMapRelationshipConstraintECInstanceId::_ToNativeSql (Utf8CP classIdentifier, ECSqlType ecsqlType, bool wrapInParentheses, ECDbSqlTable const* tableFilter) const
     {
     NativeSqlBuilder nativeSqlSnippet;
 
@@ -305,7 +362,7 @@ RefCountedPtr<PropertyMapRelationshipConstraintClassId> PropertyMapRelationshipC
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      12/2013
 //---------------------------------------------------------------------------------------
-NativeSqlBuilder::List PropertyMapRelationshipConstraintClassId::_ToNativeSql (Utf8CP classIdentifier, ECSqlType ecsqlType, bool wrapInParentheses) const
+NativeSqlBuilder::List PropertyMapRelationshipConstraintClassId::_ToNativeSql (Utf8CP classIdentifier, ECSqlType ecsqlType, bool wrapInParentheses, ECDbSqlTable const* tableFilter) const
     {
     NativeSqlBuilder nativeSqlSnippet;
 

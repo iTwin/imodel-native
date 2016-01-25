@@ -225,23 +225,26 @@ Utf8CP PropertyMap::GetPropertyAccessString() const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      12/2013
 //---------------------------------------------------------------------------------------
-NativeSqlBuilder::List PropertyMap::ToNativeSql (Utf8CP classIdentifier, ECSqlType ecsqlType, bool wrapInParentheses) const
+NativeSqlBuilder::List PropertyMap::ToNativeSql (Utf8CP classIdentifier, ECSqlType ecsqlType, bool wrapInParentheses, ECDbSqlTable const* tableFilter) const
     {
-    return _ToNativeSql(classIdentifier, ecsqlType, wrapInParentheses);
+    return _ToNativeSql(classIdentifier, ecsqlType, wrapInParentheses, tableFilter);
     }
 
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      12/2013
 //---------------------------------------------------------------------------------------
-NativeSqlBuilder::List PropertyMap::_ToNativeSql(Utf8CP classIdentifier, ECSqlType ecsqlType, bool wrapInParentheses) const
+NativeSqlBuilder::List PropertyMap::_ToNativeSql(Utf8CP classIdentifier, ECSqlType ecsqlType, bool wrapInParentheses, ECDbSqlTable const* tableFilter) const
     {
     std::vector<ECDbSqlColumn const*> columns;
     GetColumns (columns);
 
     NativeSqlBuilder::List nativeSqlSnippets;
-    for (auto column : columns)
+    for (ECDbSqlColumn const* column : columns)
         {
+        if (tableFilter != nullptr && &column->GetTable() != tableFilter)
+            continue;
+
         BeAssert (!column->GetName ().empty());
 
         NativeSqlBuilder sqlSnippet;

@@ -824,15 +824,14 @@ TEST_F(JoinedTableECDbMapStrategyTests, InsertWithUnnamedParameterBinding)
     {
     SchemaItem testSchema("<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='JoinedTableTest' nameSpacePrefix='dgn' version='1.0'"
-        "   xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'"
-        "   xmlns:ecschema='http://www.bentley.com/schemas/Bentley.ECXML.2.0'"
+        "   xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'"
         "   xmlns:xsi='http://www.w3.org/2001/XMLSchema-instance'"
         "   xsi:schemaLocation='ecschema ECSchema.xsd' >"
         "    <ECSchemaReference name='EditorCustomAttributes' version='01.00' prefix='beca' />"
         "    <ECSchemaReference name='Bentley_Standard_CustomAttributes' version='01.12' prefix='bsca' />"
         "    <ECSchemaReference name='Bentley_Standard_Classes' version='01.00' prefix='bsm' />"
         "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
-        "    <ECClass typeName='Foo' isDomainClass='True' isStruct='False' isCustomAttributeClass='False'>"
+        "    <ECEntityClass typeName='Foo'>"
         "        <ECCustomAttributes>"
         "            <ClassMap xmlns='ECDbMap.01.00'>"
         "                <MapStrategy>"
@@ -844,22 +843,22 @@ TEST_F(JoinedTableECDbMapStrategyTests, InsertWithUnnamedParameterBinding)
         "        </ECCustomAttributes>"
         "        <ECProperty propertyName='A' typeName='long'/>"
         "        <ECProperty propertyName='B' typeName='string'/>"
-        "    </ECClass>"
-        "   <ECClass typeName='Goo' isDomainClass='True' isStruct='False' isCustomAttributeClass='False'>"
+        "    </ECEntityClass>"
+        "   <ECEntityClass typeName='Goo'>"
         "        <BaseClass>Foo</BaseClass>"
         "        <ECProperty propertyName='C' typeName='long'/>"
         "        <ECProperty propertyName='D' typeName='string'/>"
-        "    </ECClass>"
-        "   <ECClass typeName='Boo' isDomainClass='True' isStruct='False' isCustomAttributeClass='False'>"
+        "    </ECEntityClass>"
+        "   <ECEntityClass typeName='Boo'>"
         "        <BaseClass>Foo</BaseClass>"
         "        <ECProperty propertyName='E' typeName='long'/>"
         "        <ECProperty propertyName='F' typeName='string'/>"
-        "    </ECClass>"
-        "   <ECClass typeName='Roo' isDomainClass='True' isStruct='False' isCustomAttributeClass='False'>"
+        "    </ECEntityClass>"
+        "   <ECEntityClass typeName='Roo'>"
         "        <BaseClass>Boo</BaseClass>"
         "        <ECProperty propertyName='G' typeName='long'/>"
         "        <ECProperty propertyName='H' typeName='string'/>"
-        "    </ECClass>"
+        "    </ECEntityClass>"
         "</ECSchema>");
 
     ECDbR db = SetupECDb("JoinedTableTest.ecdb", testSchema);
@@ -867,9 +866,7 @@ TEST_F(JoinedTableECDbMapStrategyTests, InsertWithUnnamedParameterBinding)
 
     ECSqlStatement stmt;
     //-----------------------------INSERT----------------------------------------------------
-    ASSERT_EQ(stmt.Prepare(db, "INSERT INTO dgn.Goo (ECInstanceId, A, B, C, D ) VALUES ( ?, ?, ?, ?, ?)"), ECSqlStatus::Success);
-
-
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(db, "INSERT INTO dgn.Goo (ECInstanceId, A, B, C, D ) VALUES ( ?, ?, ?, ?, ?)"));
 
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt64(1, 101));
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt64(2, 10000));
@@ -890,7 +887,7 @@ TEST_F(JoinedTableECDbMapStrategyTests, InsertWithUnnamedParameterBinding)
     stmt.Finalize();
 
     //-----------------------------SELECT----------------------------------------------------
-    ASSERT_EQ(stmt.Prepare(db, "SELECT A, B, C, D FROM dgn.Goo WHERE ECInstanceId = ?"), ECSqlStatus::Success);;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(db, "SELECT A, B, C, D FROM dgn.Goo WHERE ECInstanceId = ?"));
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt64(1, 101));
     ASSERT_EQ(stmt.Step(), BE_SQLITE_ROW);
 
@@ -912,28 +909,27 @@ TEST_F(JoinedTableECDbMapStrategyTests, InsertWithUnnamedParameterBinding)
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(4, "d2001", IECSqlBinder::MakeCopy::No));
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt64(5, 101));
 
-    ASSERT_EQ(stmt.Step(), BE_SQLITE_DONE);
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
     stmt.Finalize();
     db.SaveChanges();
-    ASSERT_EQ(stmt.Prepare(db, "SELECT A, B, C, D FROM dgn.Goo WHERE ECInstanceId = 101"), ECSqlStatus::Success);
-    ASSERT_EQ(stmt.Step(), BE_SQLITE_ROW);
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(db, "SELECT A, B, C, D FROM dgn.Goo WHERE ECInstanceId = 101"));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
 
-    ASSERT_EQ(stmt.GetValueInt64(0), 10001);
-    ASSERT_STRCASEEQ(stmt.GetValueText(1), "a1001");
-    ASSERT_EQ(stmt.GetValueInt64(2), 20001);
-    ASSERT_STRCASEEQ(stmt.GetValueText(3), "d2001");
+    ASSERT_EQ(10001, stmt.GetValueInt64(0));
+    ASSERT_STRCASEEQ("a1001", stmt.GetValueText(1));
+    ASSERT_EQ(20001, stmt.GetValueInt64(2));
+    ASSERT_STRCASEEQ("d2001", stmt.GetValueText(3));
     stmt.Finalize();
 
     //-----------------------------DELETE----------------------------------------------------
 
-    ASSERT_EQ(stmt.Prepare(db, "DELETE FROM dgn.Goo WHERE ECInstanceId = ?"), ECSqlStatus::Success);
-    auto bindR = stmt.BindInt64(1, 101);
-    ASSERT_EQ(ECSqlStatus::Success, bindR);
-    ASSERT_EQ(stmt.Step(), BE_SQLITE_DONE);
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(db, "DELETE FROM dgn.Goo WHERE ECInstanceId = ?"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt64(1, 101));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
     stmt.Finalize();
 
-    ASSERT_EQ(stmt.Prepare(db, "SELECT A, B, C, D FROM dgn.Goo WHERE ECInstanceId = 101"), ECSqlStatus::Success);
-    ASSERT_EQ(stmt.Step(), BE_SQLITE_DONE);
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(db, "SELECT A, B, C, D FROM dgn.Goo WHERE ECInstanceId = 101"));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
     stmt.Finalize();
     }
 

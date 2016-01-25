@@ -32,10 +32,12 @@ protected:
 
     void ReplaceColumn (std::weak_ptr<ECDbSqlColumn> column) { m_column = column; }
     ECSqlSystemProperty GetKind () const { return m_kind; }
-
+    ColumnKind ToColumnKind() const;
 public:
     virtual ~PropertyMapSystem () {}
     std::weak_ptr<ECDbSqlColumn> GetColumnWeakPtr () const { return m_column; }
+
+    ECDbSqlColumn const* GetColumn(ECDbSqlTable const& table) const;
     };
 
 //=======================================================================================
@@ -47,7 +49,7 @@ public:
     static Utf8CP const PROPERTYACCESSSTRING;
 
 private:
-    PropertyMapECInstanceId (ECN::ECPropertyCR ecInstanceIdProperty, ECDbSqlColumn*);
+    PropertyMapECInstanceId (ECN::ECPropertyCR ecInstanceIdProperty, ClassMap const&, ECDbSqlColumn*);
 
     virtual bool _IsECInstanceIdPropertyMap() const override { return true; }
     virtual Utf8String _ToString () const override;
@@ -110,7 +112,7 @@ struct PropertyMapRelationshipConstraintECInstanceId : PropertyMapRelationshipCo
 private:
     PropertyMapRelationshipConstraintECInstanceId(ECN::ECPropertyCR constraintProperty, ECDbSqlColumn*, ECSqlSystemProperty, Utf8CP columnAliasInView);
 
-    virtual NativeSqlBuilder::List _ToNativeSql(Utf8CP classIdentifier, ECSqlType, bool wrapInParentheses) const override;
+    virtual NativeSqlBuilder::List _ToNativeSql(Utf8CP classIdentifier, ECSqlType, bool wrapInParentheses, ECDbSqlTable const* tableFilter) const override;
     virtual Utf8String _ToString() const override;
 
 public:
@@ -131,7 +133,7 @@ private:
     PropertyMapRelationshipConstraintClassId (ECN::ECPropertyCR constraintProperty, ECDbSqlColumn*, ECSqlSystemProperty, ECN::ECClassId defaultClassId, ClassMap const&, Utf8CP columnAliasInView, bool colIsDelayGenerated);
 
     virtual PropertyMapRelationshipConstraintClassId const* _GetAsPropertyMapRelationshipConstraintClassId() const override { return this; }
-    virtual NativeSqlBuilder::List _ToNativeSql(Utf8CP classIdentifier, ECSqlType, bool wrapInParentheses) const override;
+    virtual NativeSqlBuilder::List _ToNativeSql(Utf8CP classIdentifier, ECSqlType, bool wrapInParentheses, ECDbSqlTable const* tableFilter) const override;
     virtual Utf8String _ToString () const override;
 
 public:
