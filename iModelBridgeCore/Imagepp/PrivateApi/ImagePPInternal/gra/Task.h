@@ -16,6 +16,91 @@ BEGIN_IMAGEPP_NAMESPACE
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  1/2016
 //----------------------------------------------------------------------------------------
+template<class T>
+struct ThreadLocalStorage
+    {
+    struct Node
+        {
+        size_t          m_key;
+        T               m_data;
+        Node*           m_next;
+        Node(size_t key):m_next(nullptr), m_key(key){};
+        };
+
+    ThreadLocalStorage():m_head(nullptr){}
+    ~ThreadLocalStorage()
+        {
+        Node* pNode = m_head;
+        while(pNode != nullptr)
+            {
+            Node* next = pNode->m_next;
+            delete pNode;
+            pNode = next;
+            }
+        }
+
+    //----------------------------------------------------------------------------------------
+    // @bsimethod                                                   Mathieu.Marchand  1/2016
+    //----------------------------------------------------------------------------------------
+    T& GetLocal()
+        {
+        size_t key = std::this_thread::get_id().hash();
+
+        Node* localNode = FindLocal(key);
+        if(nullptr == localNode)
+            localNode = AddLocal(key);
+            
+        BeAssert(localNode != nullptr);
+        return localNode->m_data;
+        }
+
+private:
+    //----------------------------------------------------------------------------------------
+    // @bsimethod                                                   Mathieu.Marchand  1/2016
+    //----------------------------------------------------------------------------------------
+    Node* FindLocal(size_t key)
+        {
+        Node* currentNode = m_head;
+        while (currentNode != nullptr)
+            {
+            if (currentNode->m_key == key)
+                return currentNode;
+            
+            currentNode = currentNode->m_next;
+            }
+
+        return nullptr;
+        }
+
+    //----------------------------------------------------------------------------------------
+    // @bsimethod                                                   Mathieu.Marchand  1/2016
+    //----------------------------------------------------------------------------------------
+    Node* AddLocal(size_t _Key)
+        {
+        Node* newNode = new Node(_Key);
+
+        newNode->m_next = m_head;
+       
+        // now make new_node the new head, but if the head
+        // is no longer what's stored in new_node->next
+        // (some other thread must have inserted a node just now)
+        // then put that new head into new_node->next and try again
+        while(!std::atomic_compare_exchange_weak_explicit(
+                                &m_head,
+                                &newNode->m_next,
+                                newNode,
+                                std::memory_order_release,
+                                std::memory_order_relaxed));
+
+        return newNode;
+        }
+
+    std::atomic<Node*> m_head;            
+    };
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   Mathieu.Marchand  1/2016
+//----------------------------------------------------------------------------------------
 struct WorkerPool
     {
 public:

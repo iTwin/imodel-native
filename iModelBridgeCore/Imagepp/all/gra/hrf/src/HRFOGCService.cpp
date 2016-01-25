@@ -12,10 +12,9 @@
 
 
 #include <Imagepp/all/h/HRFOGCService.h>
-#include <Imagepp/all/h/HRFOGCServiceEditor.h>
+#include "HRFOGCServiceEditor.h"
 
 #include <Imagepp/all/h/HFCException.h>
-#include <Imagepp/all/h/HFCHTTPConnection.h>
 
 #include <Imagepp/all/h/HGF2DStretch.h>
 #include <Imagepp/all/h/HGF2DIdentity.h>
@@ -40,8 +39,7 @@
 #include <Imagepp/all/h/HCDCodecIdentity.h>
 #include <Imagepp/all/h/HCPGeoTiffKeys.h>
 #include <Imagepp/all/h/HCPGCoordUtility.h>
-
-
+#include <ImagePPInternal/HttpConnection.h>
 
 //-----------------------------------------------------------------------------
 // class OGRAuthenticationError
@@ -69,94 +67,6 @@ private:
 
     HFCInternetConnectionException m_RelatedException;
     }; 
-
-
-
-//-----------------------------------------------------------------------------
-// class HRFOGCServiceConnection
-//-----------------------------------------------------------------------------
-
-HFCMemoryBinStream  Dummy;
-//-----------------------------------------------------------------------------
-// public
-// Constructor
-//-----------------------------------------------------------------------------
-HRFOGCServiceConnection::HRFOGCServiceConnection(const WString& pi_rServer,
-                                                 const WString& pi_rUsr,
-                                                 const WString& pi_rPwd)
-    : HFCHTTPConnection(pi_rServer,
-                        pi_rUsr,
-                        pi_rPwd)
-    {
-    }
-
-//-----------------------------------------------------------------------------
-// public
-// Constructor
-//-----------------------------------------------------------------------------
-HRFOGCServiceConnection::HRFOGCServiceConnection(const HRFOGCServiceConnection& pi_rObj)
-    : HFCHTTPConnection(const_cast<HRFOGCServiceConnection&>(pi_rObj).GetServer(),
-                        const_cast<HRFOGCServiceConnection&>(pi_rObj).GetUserName(),
-                        const_cast<HRFOGCServiceConnection&>(pi_rObj).GetPassword())
-    {
-    SetTimeOut(pi_rObj.GetTimeOut());
-    SetExtention(pi_rObj.GetExtention());
-    SetSearchBase(pi_rObj.GetSearchBase());
-
-    SetProxyUserName(pi_rObj.GetProxyUserName());
-    SetProxyPassword(pi_rObj.GetProxyPassword());
-    }
-
-//-----------------------------------------------------------------------------
-// public
-// Destructor
-//-----------------------------------------------------------------------------
-HRFOGCServiceConnection::~HRFOGCServiceConnection()
-    {
-    }
-
-
-//-----------------------------------------------------------------------------
-// public
-// NewRequest
-//-----------------------------------------------------------------------------
-void HRFOGCServiceConnection::NewRequest()
-    {
-    m_RequestEnded = false;
-    }
-
-//-----------------------------------------------------------------------------
-// public
-// RequestEnded
-//-----------------------------------------------------------------------------
-bool HRFOGCServiceConnection::RequestEnded() const
-    {
-    bool Result = false;
-
-    if (m_RequestEnded)
-        {
-        HFCMonitor BufferMonitor(m_BufferKey);
-        Result = (m_Buffer.GetDataSize() == 0);
-        }
-
-    return Result;
-    }
-
-//-----------------------------------------------------------------------------
-// protected section
-//-----------------------------------------------------------------------------
-
-//-----------------------------------------------------------------------------
-// protected
-// RequestHasEnded
-//-----------------------------------------------------------------------------
-void HRFOGCServiceConnection::RequestHasEnded(bool pi_Success)
-    {
-    m_RequestEnded = true;
-    }
-
-
-
 
 
 //-----------------------------------------------------------------------------
@@ -249,8 +159,6 @@ HRFOGCServiceCodecCapabilities::HRFOGCServiceCodecCapabilities()
 //-----------------------------------------------------------------------------
 HRFOGCService::~HRFOGCService()
     {
-    if (m_pConnection != 0 && m_pConnection->IsConnected())
-        m_pConnection->Disconnect();
     }
 
 //-----------------------------------------------------------------------------
@@ -359,13 +267,11 @@ bool HRFOGCService::CanPerformLookAhead(uint32_t pi_Page) const
 // HRFOGCService
 //-----------------------------------------------------------------------------
 HRFOGCService::HRFOGCService (const HFCPtr<HFCURL>& pi_rpURL,
-                              OGCServiceType        pi_ServiceType,
                               HFCAccessMode         pi_AccessMode,
                               uint64_t             pi_Offset)
     : HRFRasterFile(pi_rpURL,
                     pi_AccessMode,
-                    pi_Offset),
-    m_OGCServiceType(pi_ServiceType)
+                    pi_Offset)
     {
     }
 
@@ -493,158 +399,142 @@ HFCPtr<HGF2DTransfoModel> HRFOGCService::CreateTransfoModel(GeoCoordinates::Base
     return pTransfoModel;
     }
 
-//-----------------------------------------------------------------------------
-// protected
-// AuthorizeConnection
-//
-// Send a dummy request to validate if the server need a user/password
-//-----------------------------------------------------------------------------
-HRFOGCService::AUTHENTICATION_STATUS HRFOGCService::AuthorizeConnection()
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                  
+//----------------------------------------------------------------------------------------
+void HRFOGCService::ValidateConnection(bool authenticate)
     {
+    HttpSession session;
+    HttpRequest request(*m_requestTemplate);
+    request.SetUrl(m_requestTemplate->GetUrl() + _GetValidateConnectionRequest());
 
-    string DummyRequest("");
-    if (m_OGCServiceType == WCS)
-        DummyRequest = "request=GetCoverage";
-    else if (m_OGCServiceType == WMS)
-        DummyRequest = "request=GetMap";
-    else
+    if(!authenticate)
         {
-        HASSERT(!"HRFOGCService::AuthorizeConnection(): Unsupported format");
+        request.SetConnectOnly(true);
+        HttpResponsePtr response;
+        HttpRequestStatus ReqStatus = session.Request(response, request);
+        if(HttpRequestStatus::Success != ReqStatus)
+            throw HFCInternetConnectionException(L"HTTP", HFCInternetConnectionException::CANNOT_CONNECT);
+
+        return;
         }
-    return AuthorizeConnectionSpecificRequest(DummyRequest);
 
+    // Full validation with authentication.
+    const HFCAuthenticationCallback* pCallback = nullptr;
+    HAutoPtr<HFCAuthentication> pAuthentication;
 
-    }
-
-//-----------------------------------------------------------------------------
-// protected
-// AuthorizeConnection
-//
-// Send a dummy request to validate if the server need a user/password
-//-----------------------------------------------------------------------------
-HRFOGCService::AUTHENTICATION_STATUS HRFOGCService::AuthorizeConnectionSpecificRequest(string SpecificRequest)
-    {
-    AUTHENTICATION_STATUS Status = AUTH_PERMISSION_DENIED;
-
-    // authorize the connection before starting thread
-    if (m_pConnection->ValidateConnect(m_pConnection->GetTimeOut()))
+    bool connectionSucceed = false;
+    bool TryAgain = false;
+    do
         {
-        const HFCAuthenticationCallback* pCallback = 0;
-        HAutoPtr<HFCAuthentication> pAuthentication;
-        bool TryAgain;
-        do
+        TryAgain = false;
+
+        HFCInternetConnectionException::ErrorType connectErrorType = HFCInternetConnectionException::CANNOT_CONNECT;
+
+        HttpResponsePtr response;
+        HttpRequestStatus ReqStatus = session.Request(response, request);
+        if(HttpRequestStatus::Success == ReqStatus)
             {
-            TryAgain = false;
+            connectionSucceed = true;
+            break;            
+            }       
 
-            try
+        if(response.IsValid() && response->GetStatus() == HttpResponseStatus::Unauthorized)
+            {
+            connectErrorType = HFCInternetConnectionException::PERMISSION_DENIED;
+            }
+        else if(response.IsValid() && response->GetStatus() == HttpResponseStatus::ProxyAuthenticationRequired)
+            {
+            connectErrorType = HFCInternetConnectionException::PROXY_PERMISSION_DENIED;
+            }
+        else
+            {
+            connectionSucceed = false;  // failed for whatever reasons.
+            break;
+            }     
+                
+        if (pCallback == nullptr)
+            {
+            if (HFCInternetConnectionException::PERMISSION_DENIED == connectErrorType)
                 {
-
-
-                m_pConnection->Send((const Byte*)SpecificRequest.c_str(), SpecificRequest.size());
-
-                size_t DataAvailable;
-
-                // read the response
-                HFCPtr<HFCBuffer> pBuffer(new HFCBuffer(1, 1));
-                while (!m_pConnection->RequestEnded())
-                    {
-                    // Wait for data to arrive
-                    if ((DataAvailable = m_pConnection->WaitDataAvailable(m_pConnection->GetTimeOut())) > 0)
-                        {
-                        // read it
-                        m_pConnection->Receive(pBuffer->PrepareForNewData(DataAvailable), (int32_t)DataAvailable);
-                        pBuffer->SetNewDataSize(DataAvailable);
-                        }
-                    }
-
-                m_pConnection->Disconnect(); // release the connection
-                Status = AUTH_SUCCESS;
+                pCallback = HFCAuthenticationCallback::GetCallbackFromRegistry(HFCInternetAuthentication::CLASS_ID);
                 }
-            catch (HFCInternetConnectionException& rException)
+            else if (HFCInternetConnectionException::PROXY_PERMISSION_DENIED == connectErrorType)
                 {
-                if (rException.GetErrorType() != HFCInternetConnectionException::PERMISSION_DENIED &&
-                    rException.GetErrorType() != HFCInternetConnectionException::PROXY_PERMISSION_DENIED)
+                pCallback = HFCAuthenticationCallback::GetCallbackFromRegistry(HFCProxyAuthentication::CLASS_ID);
+                BeAssert(pCallback->CanAuthenticate(HFCProxyAuthentication::CLASS_ID));
+                }
+            else
+                {
+                BeAssert(0);
+                }
+            }       
+
+        if (pCallback != nullptr)
+            {
+            const unsigned short MaxRetryCount = pCallback->RetryCount(HFCAuthenticationCallback::CLASS_ID);
+
+            if (HFCInternetConnectionException::PERMISSION_DENIED == connectErrorType)
+                {
+                if (pAuthentication == nullptr || !pAuthentication->IsCompatibleWith(HFCInternetAuthentication::CLASS_ID))
                     {
-                    Status = AUTH_SUCCESS;
+                    pAuthentication = new HFCInternetAuthentication(WString(request.GetUrl().c_str(), true),
+                                                                    WString(request.GetCredentials().GetUsername().c_str(), true),
+                                                                    WString(request.GetCredentials().GetPassword().c_str(), true));
+                    }
+                }
+            else
+                {
+                if (pAuthentication == nullptr || !pAuthentication->IsCompatibleWith(HFCProxyAuthentication::CLASS_ID))
+                    pAuthentication = new HFCProxyAuthentication;
+                }
+
+            if (pAuthentication->GetRetryCount() < MaxRetryCount)
+                {
+                HFCPtr<HFCAuthenticationError> pAuthError(new OGRAuthenticationError(HFCInternetConnectionException(L"HTTP", connectErrorType)));
+                pAuthentication->PushLastError(pAuthError);
+
+                if (pCallback->GetAuthentication(pAuthentication))
+                    {
+                    if (pAuthentication->IsCompatibleWith(HFCInternetAuthentication::CLASS_ID))
+                        {
+                        Credentials newCredentials(Utf8String(((HFCInternetAuthentication*)pAuthentication.get())->GetUser()).c_str(), 
+                                                    Utf8String(((HFCInternetAuthentication*)pAuthentication.get())->GetPassword()).c_str());
+                        request.SetCredentials(newCredentials);
+                        }
+                    else
+                        {
+                        Credentials newCredentials(Utf8String(((HFCProxyAuthentication*)pAuthentication.get())->GetUser()).c_str(), 
+                                                    Utf8String(((HFCProxyAuthentication*)pAuthentication.get())->GetPassword()).c_str());
+                        request.SetProxyCredentials(newCredentials);
+                        }
+
+                    pAuthentication->IncrementRetryCount();
+                    TryAgain = true;
                     }
                 else
                     {
-                    if (pCallback == 0)
-                        {
-                        HCLASS_ID CallbackType = 0;
-                        if (rException.GetErrorType() == HFCInternetConnectionException::PERMISSION_DENIED)
-                            CallbackType = HFCInternetAuthentication::CLASS_ID;
-                        else if (rException.GetErrorType() == HFCInternetConnectionException::PROXY_PERMISSION_DENIED)
-                            CallbackType = HFCProxyAuthentication::CLASS_ID;
-                        else
-                            {
-                            HASSERT(0);
-                            }
-
-                        pCallback = HFCAuthenticationCallback::GetCallbackFromRegistry(CallbackType);
-
-                        HASSERT(pCallback->CanAuthenticate(HFCProxyAuthentication::CLASS_ID) == true);
-                        }
-
-                    if (pCallback != 0)
-                        {
-                        const unsigned short MaxRetryCount = pCallback->RetryCount(HFCAuthenticationCallback::CLASS_ID);
-
-                        if (rException.GetErrorType() == HFCInternetConnectionException::PERMISSION_DENIED)
-                            {
-                            if (pAuthentication == 0 || !pAuthentication->IsCompatibleWith(HFCInternetAuthentication::CLASS_ID))
-                                {
-                                pAuthentication = new HFCInternetAuthentication(m_pConnection->GetServer(),
-                                                                                m_pConnection->GetUserName(),
-                                                                                m_pConnection->GetPassword());
-                                }
-                            }
-                        else
-                            {
-                            if (pAuthentication == 0 || !pAuthentication->IsCompatibleWith(HFCProxyAuthentication::CLASS_ID))
-                                pAuthentication = new HFCProxyAuthentication;
-                            }
-
-                        if (pAuthentication->GetRetryCount() < MaxRetryCount)
-                            {
-                            HFCPtr<HFCAuthenticationError> pAuthError(new OGRAuthenticationError(rException));
-                            pAuthentication->PushLastError(pAuthError);
-
-                            if (pCallback->GetAuthentication(pAuthentication))
-                                {
-                                if (pAuthentication->IsCompatibleWith(HFCInternetAuthentication::CLASS_ID))
-                                    {
-                                    m_pConnection->SetUserName(((HFCInternetAuthentication*)pAuthentication.get())->GetUser());
-                                    m_pConnection->SetPassword(((HFCInternetAuthentication*)pAuthentication.get())->GetPassword());
-                                    }
-                                else
-                                    {
-                                    m_pConnection->SetProxyUserName(((HFCProxyAuthentication*)pAuthentication.get())->GetUser());
-                                    m_pConnection->SetProxyPassword(((HFCProxyAuthentication*)pAuthentication.get())->GetPassword());
-                                    }
-
-                                pAuthentication->IncrementRetryCount();
-                                TryAgain = true;
-                                }
-                            else
-                                {
-                                if (pCallback->IsCancelled())
-                                    Status = AUTH_USER_CANCELLED;;
-                                }
-                            }
-                        else
-                            {
-                            Status = AUTH_MAX_RETRY_COUNT_REACHED;
-                            }
-                        }
+                    if (pCallback->IsCancelled())
+                        throw HRFAuthenticationCancelledException(GetURL()->GetURL());
                     }
                 }
-
+            else
+                {
+                throw HRFAuthenticationMaxRetryCountReachedException(GetURL()->GetURL());
+                }
             }
-        while (TryAgain);
         }
-
-    return Status;
+    while (TryAgain);
+    
+    if(connectionSucceed)
+        {
+        m_requestTemplate->SetCredentials(request.GetCredentials());
+        m_requestTemplate->SetProxyCredentials(request.GetProxyCredentials());
+        }
+    else
+        {
+        throw HFCInternetConnectionException(L"HTTP", HFCInternetConnectionException::CANNOT_CONNECT);
+        }
     }
 
 //-----------------------------------------------------------------------------

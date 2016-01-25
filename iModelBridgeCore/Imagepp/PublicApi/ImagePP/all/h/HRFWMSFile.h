@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRFWMSFile.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // This class describes a File Raster image.
@@ -55,16 +55,16 @@ protected:
     // the required authentication. We overload the present protected method to compose
     // a fully valid request based on the WMS configuration so that we can make sure the authentication
     // is really noty required.
-    virtual  AUTHENTICATION_STATUS       AuthorizeConnection();
+    virtual Utf8String _GetValidateConnectionRequest() const override;
 
 private:
 
     HFCPtr<HMDLayersWMS>        m_pLayers;
 
     bool                       m_NeedAuthentification;
-    string                      m_Layers;
-    string                      m_Styles;
-    string                      m_CRS;
+    Utf8String                 m_Layers;
+    Utf8String                 m_Styles;
+    Utf8String                 m_CRS;
 
     void ReadWMS_1_0(BeXmlNodeP pi_pNode);
     void ReadWMS_1_1(BeXmlNodeP pi_pNode);

@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HFCURLFile.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HFCURLFile
@@ -58,7 +58,6 @@ public:
     IMAGEPP_EXPORT                         HFCURLFile(const WString& pi_URL);
     IMAGEPP_EXPORT                         HFCURLFile(const WString& pi_Host,
                                               const WString& pi_Path);
-    HFCURLFile() { } //:> required for persistence
     IMAGEPP_EXPORT virtual                 ~HFCURLFile();
 
     //:> Content access methods

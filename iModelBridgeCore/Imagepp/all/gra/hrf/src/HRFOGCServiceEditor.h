@@ -1,6 +1,6 @@
 //:>--------------------------------------------------------------------------------------+
 //:>
-//:>     $Source: PublicApi/ImagePP/all/h/HRFOGCServiceEditor.h $
+//:>     $Source: all/gra/hrf/src/HRFOGCServiceEditor.h $
 //:>
 //:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
@@ -10,17 +10,19 @@
 
 #pragma once
 
-#include "HRFResolutionEditor.h"
-#include "HRFWMSFile.h"
-#include "HRFOGCService.h"
-#include "HFCThread.h"
-#include "HRFTilePool.h"
+#include <Imagepp/all/h/HRFResolutionEditor.h>
+#include <ImagePPInternal/gra/Task.h>
 
 BEGIN_IMAGEPP_NAMESPACE
 class HMDVolatileLayers;
-class HFCInternetConnection;
 class BlockReaderThread;
+class HRFOGCService;
+struct HttpSession;
+struct OGCTile;
 
+//----------------------------------------------------------------------------------------
+// @bsiclass
+//----------------------------------------------------------------------------------------
 class HRFOGCServiceEditor : public HRFResolutionEditor
     {
 public:
@@ -75,8 +77,15 @@ protected:
 
 private:
 
-    friend BlockReaderThread;
-
+    friend struct OGCBlockQuery;
+    
+    typedef struct
+        {
+        uint64_t m_MinX;
+        uint64_t m_MinY;
+        uint64_t m_MaxX;
+        uint64_t m_MaxY;
+        } BlocksExtent;
 
     enum ImageType
         {
@@ -86,27 +95,20 @@ private:
         GIF,
         GEOTIFF
         };
+       
+    RefCountedPtr<OGCBlockQuery>  CreateBlockQuery(BlocksExtent const& blockExtent);
 
-    HRFTilePool         m_TilePool;
+    RefCountedPtr<OGCTile> GetTile(uint64_t tileId);
 
-    typedef struct
-        {
-        uint64_t m_MinX;
-        uint64_t m_MinY;
-        uint64_t m_MaxX;
-        uint64_t m_MaxY;
-        } BlocksExtent;
+    std::unique_ptr<WorkerPool>                      m_pWorkerPool;
+    std::unique_ptr<ThreadLocalStorage<HttpSession>> m_threadLocalHttp;
 
-    HFCExclusiveKey                 m_RequestKey;
-    list<BlocksExtent>              m_RequestList;
-    HFCSemaphore                    m_RequestEvent;
+    std::mutex                                  m_tileMapMutex;
+    std::map<uint64_t, RefCountedPtr<OGCTile>>  m_tileMap;
+    std::list<RefCountedPtr<OGCBlockQuery>>     m_blockQueryList;
 
-    // optimization
-
-    HArrayAutoPtr<HAutoPtr<BlockReaderThread> > m_ppBlocksReadersThread;
 
     HFCPtr<HGF2DTransfoModel>              m_pTransfoModel;
-    HFCPtr<HRFOGCServiceConnection>        m_pConnection;
     HGFTileIDDescriptor                    m_TileIDDescriptor;
     ImageType                              m_ImageType;
 
@@ -129,51 +131,57 @@ private:
     static Byte                    s_GrayCompressedInvalidTileBitmap[];
     HFCPtr<HCDPacket>               m_pInvalidTileBitmap;
 
-
-
     // Methods Disabled
     HRFOGCServiceEditor(const HRFOGCServiceEditor& pi_rObj);
     HRFOGCServiceEditor& operator=(const HRFOGCServiceEditor& pi_rObj);
     };
 
+//----------------------------------------------------------------------------------------
+// @bsiclass
+//----------------------------------------------------------------------------------------
+struct OGCTile : public WorkerPool::Task
+{
+    OGCTile() {m_hasData=false;}
 
+    virtual ~OGCTile(){};
+    
+    virtual void _Run() override {/*do nothing we inherit from task to get notify and wait feature*/};
 
+    void SetData(std::vector<Byte>& data)
+        {
+        m_tileData = std::move(data);
+        m_hasData = true;
+        }
 
-class BlockReaderThread : public HFCThread
-    {
-public:
-    BlockReaderThread(const string&  pi_rThreadName,
-                      HRFOGCServiceEditor*  pi_pEditor);
-    virtual ~BlockReaderThread();
+    void SetData(Byte const* pData, size_t dataSize)
+        {
+        m_tileData.assign (pData, pData+dataSize);
+        m_hasData = true;
+        }
 
-    virtual void Go();
+    bool HasData() const {return m_hasData;}
 
-    void        ReadBlocksFromServer(uint64_t pi_MinX,
+    std::atomic<bool> m_hasData;
+    std::vector<Byte> m_tileData;
+};
+
+//----------------------------------------------------------------------------------------
+// @bsiclass
+//----------------------------------------------------------------------------------------
+struct OGCBlockQuery : public WorkerPool::Task
+{
+    OGCBlockQuery(HRFOGCServiceEditor::BlocksExtent const& extent, DRange2dCR bbox, HRFOGCServiceEditor& editor)
+    :m_blockExtent(extent), m_bbox(bbox), m_editor(editor)
+        {}
+
+    virtual ~OGCBlockQuery(){};
+    
+    virtual void _Run() override;
+
+    bool        ReadBlocksFromServer(uint64_t pi_MinX,
                                      uint64_t pi_YMin,
                                      uint64_t pi_XMax,
                                      uint64_t pi_YMax);
-
-private:
-
-    HRFOGCServiceEditor*               m_pEditor;
-
-    HFCPtr<HRFOGCServiceConnection>    m_pConnection;
-    HFCPtr<HGF2DTransfoModel>          m_pTransfoModel;
-
-    // for optimization
-    uint32_t                    m_BlockWidth;
-    uint32_t                    m_BlockHeight;
-    uint32_t                    m_BytesPerBlockWidth;
-    uint32_t                    m_BlockSizeInBytes;
-    HGFTileIDDescriptor         m_TileIDDescriptor;
-    unsigned short             m_BytesPerPixel;
-
-    HFCEvent                    m_ThreadStarted;
-
-
-    bool       ProcessRequest  (HFCPtr<HRFOGCServiceConnection>&  pi_rpConnection,
-                                 const string&                     pi_rRequest,
-                                 HFCPtr<HFCBuffer>&                po_rpBuffer) const;
 
     void        InvalidateTiles (uint64_t                  pi_MinX,
                                  uint64_t                  pi_MinY,
@@ -185,8 +193,11 @@ private:
                                  uint32_t                   pi_Width,
                                  uint32_t                   pi_Height,
                                  Byte*                     po_pUncompressedData,
-                                 uint32_t                   pi_UncompressedDataSize) const;
+                                 size_t                    pi_UncompressedDataSize) const;
 
+    HRFOGCServiceEditor::BlocksExtent   m_blockExtent;
+    DRange2d                            m_bbox;
+    HRFOGCServiceEditor&                m_editor;
+};
 
-    };
 END_IMAGEPP_NAMESPACE

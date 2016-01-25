@@ -873,15 +873,30 @@ const HGF2DWorldIdentificator HRFVirtualEarthFile::GetWorldIdentificator () cons
     return HGF2DWorld_HMRWORLD;
     }
 
+BEGIN_IMAGEPP_NAMESPACE
+struct ThreadLocalHttp : ThreadLocalStorage<HttpSession>{};
+END_IMAGEPP_NAMESPACE
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  1/2016
 //----------------------------------------------------------------------------------------
 WorkerPool& HRFVirtualEarthFile::GetWorkerPool()
     {
     if(m_pWorkerPool == nullptr)
+        {
         m_pWorkerPool.reset(new WorkerPool(NB_BLOCK_READER_THREAD));
+        m_threadLocalHttp.reset(new ThreadLocalHttp()); // must be allocated before threads start querying.
+        }
 
     return *m_pWorkerPool;
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   Mathieu.Marchand  1/2016
+//----------------------------------------------------------------------------------------
+HttpSession& HRFVirtualEarthFile::GetThreadLocalHttpSession()
+    {
+    // Call by multiple threads. do no allocate m_threadLocalHttp here.
+    return m_threadLocalHttp->GetLocal();
     }
 
 //-----------------------------------------------------------------------------
