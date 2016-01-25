@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/TxnManager.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -220,6 +220,14 @@ dgn_TxnTable::Element& TxnManager::Elements() const
 dgn_TxnTable::ElementDep& TxnManager::ElementDependencies() const
     {
     return *(dgn_TxnTable::ElementDep*) FindTxnTable(dgn_TxnTable::ElementDep::MyTableName());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/16
++---------------+---------------+---------------+---------------+---------------+------*/
+dgn_TxnTable::Model& TxnManager::Models() const
+    {
+    return *(dgn_TxnTable::Model*) FindTxnTable(dgn_TxnTable::Model::MyTableName());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1561,4 +1569,23 @@ void TxnManager::CancelDynamics()
     while (IsInDynamics())
         EndDynamicOperation();
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/16
++---------------+---------------+---------------+---------------+---------------+------*/
+dgn_TxnTable::Model::Iterator::Entry dgn_TxnTable::Model::Iterator::begin() const
+    {
+    if (!m_stmt.IsValid())
+        m_db->GetCachedStatement(m_stmt, "SELECT ModelId,ChangeType FROM " TEMP_TABLE(TXN_TABLE_Models));
+    else
+        m_stmt->Reset();
+
+    return Entry(m_stmt.get(), BE_SQLITE_ROW == m_stmt->Step());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnModelId dgn_TxnTable::Model::Iterator::Entry::GetModelId() const {return m_sql->GetValueId<DgnModelId>(0);}
+TxnTable::ChangeType dgn_TxnTable::Model::Iterator::Entry::GetChangeType() const {return (TxnTable::ChangeType) m_sql->GetValueInt(1);}
 

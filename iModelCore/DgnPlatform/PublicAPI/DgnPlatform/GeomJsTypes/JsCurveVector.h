@@ -100,6 +100,10 @@ public:
 
 };
 
+struct JsPlanarRegion : JsCurveVector
+{
+virtual double Area (){return 0.0;}
+};
 //=======================================================================================
 // @bsiclass                                                    Eariln.Lutz     12/15
 //=======================================================================================
@@ -142,7 +146,7 @@ public:
 //=======================================================================================
 // @bsiclass                                                    Eariln.Lutz     12/15
 //=======================================================================================
-struct JsLoop : JsCurveVector
+struct JsLoop : JsPlanarRegion
 {
 
     JsLoop (CurveVectorPtr const &path)
@@ -163,7 +167,7 @@ public:
 //=======================================================================================
 // @bsiclass                                                    Eariln.Lutz     12/15
 //=======================================================================================
-struct JsParityRegion : JsCurveVector
+struct JsParityRegion : JsPlanarRegion
 {
     JsParityRegion (CurveVectorPtr const &path)
         {

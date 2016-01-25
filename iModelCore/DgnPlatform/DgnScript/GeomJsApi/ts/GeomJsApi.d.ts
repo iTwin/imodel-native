@@ -1,11 +1,14 @@
 declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/ 
 {
-/********************************************************************************
+/* *******************************************************************************
 * ISOLATED CLASSES:  DPoint3d, DPoint2d, DVector3d, DVector2d, RotMatrix, Transform
 ***********************************************************************************/
-    //! A wrapper for BentleyApi::DPoint3d
+/**
+* @description 3D point with X,Y,Z properties.
+*/
     class DPoint3d implements IDisposable {
         /*** NATIVE_TYPE_NAME = JsDPoint3d ***/ 
+        /** Constructor from x,y,z coordinates */
         constructor(x: cxx_double, y: cxx_double, z: cxx_double);
         X: cxx_double;
         Y: cxx_double;
@@ -31,9 +34,12 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
         Dispose(): void;
     }
 
-    //! A wrapper for BentleyApi::DPoint2d
+/**
+* @description 2D point with X,Y properties.
+*/
     class DPoint2d implements IDisposable {
         /*** NATIVE_TYPE_NAME = JsDPoint2d ***/ 
+        /** Constructor from x,y coordinates */
         constructor(x: cxx_double, y: cxx_double);
         Clone () : DPoint2dP;
         X: cxx_double;
@@ -60,9 +66,12 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
 
     type DPoint3dP = cxx_pointer<DPoint3d>;
     type DPoint2dP = cxx_pointer<DPoint2d>;
-    //! A wrapper for BentleyApi::DVector3d
+/**
+* @description 3D vector with X,Y,Z properties.
+*/
     class DVector3d implements IDisposable {
         /*** NATIVE_TYPE_NAME = JsDVector3d ***/ 
+        /** Constructor from x,y,z components */
         constructor(x: cxx_double, y: cxx_double, z: cxx_double);
         X: cxx_double;
         Y: cxx_double;
@@ -142,10 +151,13 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
 
     type DVector3dP = cxx_pointer<DVector3d>;
 
-    //! A wrapper for BentleyApi::DVector2d
+/**
+* @description 2D vector with X,Y properties.
+*/
     class DVector2d implements IDisposable
     {
         /*** NATIVE_TYPE_NAME = JsDVector2d ***/ 
+        /** Constructor from x,y,z parts */
         constructor(x: cxx_double, y: cxx_double);
         X: cxx_double;
         Y: cxx_double;
@@ -177,7 +189,9 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
 
 
 
-    //! A wrapper for BentleyApi::YawPitchRollAngles
+/**
+* @description Carrier for Yaw, Pitch, and roll angles.
+*/
     class YawPitchRollAngles implements IDisposable {
         /*** NATIVE_TYPE_NAME = JsYawPitchRollAngles ***/ 
         constructor(yaw: cxx_double, pitch: cxx_double, roll: cxx_double);
@@ -192,7 +206,9 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
     type YawPitchRollAnglesP = cxx_pointer<YawPitchRollAngles>;
 
     
-    //! A strongly typed angle, with explicitly named access to degrees and radians
+/**
+@description A strongly typed angle, with explicitly named access to degrees and radians
+*/
     class Angle implements IDisposable, BeJsProjection_SuppressConstructor {
         /*** NATIVE_TYPE_NAME = JsAngle ***/ 
 
@@ -206,7 +222,9 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
     }
     type AngleP = cxx_pointer<Angle>;
 
-    //! A wrapper for BentleyApi::DRange3d
+/**
+@description An axis-aligned range box with Low and High points.
+*/
     class DRange3d implements IDisposable {
         /*** NATIVE_TYPE_NAME = JsDRange3d ***/ 
         //! constructor for empty range.
@@ -258,7 +276,9 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
     type DRange3dP = cxx_pointer<DRange3d>;
 
 
-    //! A wrapper for BentleyApi::DRay3d
+/**
+@description A ray defined by origin and vector.
+*/
     class DRay3d implements IDisposable {
         /*** NATIVE_TYPE_NAME = JsDRay3d ***/ 
         Clone(): DRay3dP;
@@ -278,7 +298,9 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
 
     type DPoint3dArrayP = cxx_pointer<DPoint3dArray>;
 
-    //! A wrapper for BentleyApi::DPoint3dArray
+/**
+@description An array of DPoint3d.
+*/
     class DPoint3dArray implements IDisposable {
         /*** NATIVE_TYPE_NAME = JsDPoint3dArray ***/ 
         Clone(): DPoint3dArrayP;
@@ -298,7 +320,9 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
 
     type DoubleArrayP = cxx_pointer<DoubleArray>;
 
-    //! A wrapper for BentleyApi::DoubleArray
+/**
+@description An array of doubles.
+*/
     class DoubleArray implements IDisposable
     {
         /*** NATIVE_TYPE_NAME = JsDoubleArray ***/ 
@@ -320,7 +344,9 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
 
     type RotMatrixP = cxx_pointer<RotMatrix>;
 
-    //! A wrapper for BentleyApi::JsRotMatrix
+/**
+@description A 3x3 matrix, as used for rotations.  (But scaled and skewed vectors are also possible.)
+*/
     class RotMatrix implements IDisposable {
         /*** NATIVE_TYPE_NAME = JsRotMatrix ***/ 
         constructor();
@@ -396,7 +422,9 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
     }
 
     type TransformP = cxx_pointer<Transform>;
-    //! A wrapper for BentleyApi::Transform
+/**
+@description A 3x4 matrix combining a RotMatrix and point for translation, rotation, scale and skew transformations
+*/
     class Transform implements IDisposable {
         /*** NATIVE_TYPE_NAME = JsTransform ***/ 
         constructor();
@@ -487,66 +515,144 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/
         Evaluate (u: cxx_double, v: cxx_double) : DPoint3dP;
         OnDispose(): void;
         Dispose(): void;
+
+        GetOrigin () : DPoint3dP;
+        GetVectorU (): DVector3dP;
+        GetVectorV (): DVector3dP;
+        /** Return the transform from the skew plane to world.  This X and Y axes of this transform have both the length and diretction of VectorU and VectorV -- i.e. it can be skewed.   The Z axis is a unit normal. */
+        GetLocalToWorldTransform (): TransformP;
+        /** Return the transform from the world to the (possibly skewed) plane system. */
+        GetWorldToLocalTransform (): TransformP;
+        /** Return the transform with unit X vector along VectorU, unitY perpendicular and in the plane of VectorU and VectorV, and unitZ perpendicular. */
+        GetNormalizedLocalToWorldTransform (): TransformP;
+        /** Return the transform from world to the NormalizedLocal frame */
+        GetWorldToNormalizedLocalTransform (): TransformP;
     }
 
     type DPoint3dDVector3dDVector3dP = cxx_pointer<DPoint3dDVector3dDVector3d>;
 
 
 
-/********************************************************************************
-* TREE CLASSES:
-*   (CurvePrimitive LineSegment EllipticArc BsplineCurve CatenaryCurve)
-*   (CurveVector    Path Loop ParityRegion UnionRegion UnstructuredCurveVector)
-*   (SolidPrimitive DgnBox DgnSphere DgnTorusPipe DgnCone DgnExtrusion DgnRotationalSweep)
-*   Polyface
-*   BsplineSurface
-***********************************************************************************/
+/**
+@description Base class for many geometry types.  The geometry types have this inheritance structure:
+<ul>
+<li>CurvePrimitive -- a curve with parameterization from fractional coordinates 0 to 1.
+    <ul>
+    <li>LineSegment
+    <li>EllipticArc
+    <li>BsplineCurve
+    <li>CatenaryCurve
+    </ul>
+<li>CurveVector
+    <ul>
+    <li>Path -- curves with head-to-tail sequence.
+    <li>Loop -- single loop on a plane
+    <li>ParityRegion -- multiple loops on a plane, with the region inside and outside defined by parity rules.
+    <li>UnionRegion -- Nested planar regions combined as a union of the individual regions.
+    <li>UnstructuredCurves -- curves collected in an array with no expected head-to-tail sequence or loop structure.
+    </ul>
+<li>SolidPrimitive -- specialized surfaces and solids
+    <ul>
+    <li>DgnBox -- a box or view frustum
+    <li>DgnSphere -- a slice of a sphere
+    <li>DgnCone -- a cone or cylinder
+    <li>DgnTorusPipe -- a portion of torus
+    <li>DgnExtrusion -- a linear sweep of a base curve or region
+    <li>DgnRotationalSweep -- a rotational sweep of a base curve or region
+    <li>DgnRuledSweep -- a ruled surface between contours.
+    </ul>
+</ul>
+*/
 class Geometry implements IDisposable, BeJsProjection_SuppressConstructor
 {
     /*** NATIVE_TYPE_NAME = JsGeometry ***/ 
 Clone (): GeometryP;
     OnDispose(): void;
     Dispose(): void;
+    /** Try to apply a transform to this geometry. */
     TryTransformInPlace (transform: TransformP) : cxx_bool;
+
+    /** Test if the contained element types match (but without comparing any coordinates).*/
+    IsSameStructure (other: GeometryP) : cxx_bool;
+    /** Test if the contained element types and coordinates match.*/
+    IsSameStructureAndGeometry (other: GeometryP) : cxx_bool;
 }
 type GeometryP = cxx_pointer<Geometry>;
    
-//! A wrapper for BentleyApi::JsCurvePrimitive
+/**
+@description Intermediate base class for various curve types.
+<ul>
+<li>LineSegment
+<li>LineString
+<li>EllipticArc
+<li>BsplineCurve
+</ul>
+
+All curves have a fractional coordinate.
+<ul>
+<li>Fraction coordinate 0.0 (zero) is the start of the curve.
+<li>Fraction coordinate 1.0 (one) is the end of the curve.
+<li>Fractions between 0 and 1 progress monotonically along the curve.  Larger fractions are always at greater distance along the curve.
+<li>However, the fractional coordinates may not be strictly proportional to distance.  For instance, they are strictly proportional for LineSegment and for EllipticArcs that are circular.
+</ul>
+*/
 class CurvePrimitive extends Geometry implements BeJsProjection_SuppressConstructor
     {
     /*** NATIVE_TYPE_NAME = JsCurvePrimitive ***/ 
     Clone(): CurvePrimitiveP;
     CurvePrimitiveType(): cxx_double;
+    /** return the point at fractional position along the curve. */
     PointAtFraction(f: cxx_double): DPoint3dP; 
+    /** return the point and unit tangent at fractional position along the curve. */
+    PointAndUnitTangentAtFraction(f: cxx_double): DRay3dP; 
+    /** return the point and derivative (tangent) at fractional position along the curve. */
+    PointAndDerivativeAtFraction(f: cxx_double): DRay3dP; 
 
+    /** return start point of the primitive.  Equivalent to PointAtFraction (0.0); */
+    GetStartPoint () : DPoint3dP;
+/** return end point of the primitive.  Equivalent to PointAtFraction (1.0); */
+    GetEndPoint () : DPoint3dP;  
     }
 
     type CurvePrimitiveP = cxx_pointer<CurvePrimitive>;
 
 
 
-    //! A wrapper for BentleyApi::JsLineSegment
+    /** @description Line segment, defined by start and end points.
+    */
     class LineSegment extends CurvePrimitive {
         /*** NATIVE_TYPE_NAME = JsLineSegment ***/
         Clone(): LineSegmentP;
         constructor (pointA : DPoint3dP, pointB : DPoint3dP);
+
     }
 
     type LineSegmentP = cxx_pointer<LineSegment>;
 
 
-    //! A wrapper for BentleyApi::JsLineString
+    /** @description An array of points on a LineString */
     class LineString extends CurvePrimitive {
         /*** NATIVE_TYPE_NAME = JsLineString ***/
         Clone(): LineStringP;
         constructor (points: DPoint3dArrayP);
+        /** Return the points as an array */
+        GetPoints () : DPoint3dArrayP;
     }
 
     type LineStringP = cxx_pointer<LineString>;
 
 
 
-    //! A wrapper for BentleyApi::JsEllipticArc
+/** A circular or elliptic arc.
+<ul>
+<li>The equation for stroking the arc as a function of angle theta is {xyzOnArc = xyzCenter + Vector0 * cos(theta) + Vector90 * sin (theta)}
+<li>Theta 0 and 90 degree correspond to the Vector0 and Vector90 directions from the center.
+<li>If Vector0 and Vector90 are perpendicular and have the same length, the ellipse is a circle.
+<li>If Vector0 and Vector90 are perpendicular, those directions are the customary major and minor axis points.
+<li>Nearly all 'user created' ellipses will have perpendicular axes.   However, ellipses affected by skew transformations can have non-perpendicular vectors.
+This property is extremely convenient for passing ellipses through viewing transformations.
+</ul>
+*/
     class EllipticArc extends CurvePrimitive implements BeJsProjection_SuppressConstructor
         {
         /*** NATIVE_TYPE_NAME = JsEllipticArc ***/
@@ -560,9 +666,12 @@ class CurvePrimitive extends Geometry implements BeJsProjection_SuppressConstruc
         GetStartAngle (): AngleP;
         GetSweepAngle(): AngleP;
         GetEndAngle (): AngleP;
-
+        /** Clone the ellipse, but modify vectors and angles so that the vectors are the customary perpendicular axes */
         CloneWithPerpendicularAxes () :EllipticArcP;
+        /** Return center, Vector0 and Vector90 as a basis plane. Note that these are not unit vectors. */
         GetBasisPlane () : DPoint3dDVector3dDVector3dP;
+        /** Test if the ellipse is circular. */
+        IsCircular () : cxx_bool
     }
 
     type EllipticArcP = cxx_pointer<EllipticArc>;
@@ -602,61 +711,108 @@ class CurvePrimitive extends Geometry implements BeJsProjection_SuppressConstruc
 
     type CatenaryCurveP = cxx_pointer<CatenaryCurve>;
 
-
-
-
-    //! A wrapper for BentleyApi::JsCurveVector
-    //! A CurveVector is a collection of individual curves or collections of curves.
-    //! An object the base type CurveVector is never instantated -- only derived types will be instantiated.
-    //!
+/**
+@description A CurveVector is a collection of curves.
+<ul>
+<li>An object the base type CurveVector is never instantated -- only derived types will be instantiated.
+<li>There derived classes for various particular structures built of multiple curves:
+    <ul>
+    <li>UnstructuredCurves -- curves collected in an array with no expected head-to-tail sequence or loop structure.
+    <li>Path -- curves with head-to-tail sequence.
+    <li>PlanarRegion -- curves that are coplanar and appear in loops that bound regions.
+    </ul>
+</ul>
+//!
+*/
     class CurveVector extends Geometry implements BeJsProjection_SuppressConstructor {
         /*** NATIVE_TYPE_NAME = JsCurveVector ***/
         Clone(): CurveVectorP;
         BoundaryType(): cxx_double;
-        // Access the [index] member of the curve vector.
-        // The returned value is the strongest CurvePrimitive subtype possible.
-        // If the member at this index is a child curve vector, the return is null -- use MemberCurveVector to access it.
+        /** Access an [index] member of the curve vector.
+        <ul>
+        <li>If the member at this index is a child curve vector, the return is null
+        <li>If the member at this index is a CurvePrimitive, return the primitive.
+        </ul>
+        */
         MemberAsCurvePrimitive (index: cxx_double) :CurvePrimitiveP;
-        // Access the [index] member of the curve vector
-        // The returned value is the strongest CurveVector subtype possible.
-        // If the member at this index is a leaf CurvePrimitive type, the return is null -- use MemberCurvePrimitive to access it.
+        /** Access an [index] member of the curve vector.
+        <ul>
+        <li>If the member at this index is a (child) CurveVector, return the curve vector
+        <li>If the member at this index is a CurvePrimitive, return null.
+        </ul>
+        */
         MemberAsCurveVector (index: cxx_double) :CurveVectorP;
     }
 
     type CurveVectorP = cxx_pointer<CurveVector>;
+/** Subclass for CurveVectors that are planar regions.  These come as
+<ul>
+<li>Loop -- Coplanar curves that form a single loop.
+        <ul><li>A Loop may contain only CurvePrimitive objects as childeren.</ul>
+<li>ParityRegion -- one or more coplanar curves that bound area by parity rules.
+        <ul><li>A ParityRegion may contain only Loop objects as childeren.</ul>
+<li>UnionRegion -- one or more loops and ParityRegions
+        <ul><li>A UnionRegion may contain an PlanarRegion object (Loop, ParityRegion, UnionRegion) as childeren.</ul>
+</ul>
+*/
+class PlanarRegion extends CurveVector implements BeJsProjection_SuppressConstructor
+    {
+    /*** NATIVE_TYPE_NAME = JsPlanarRegion ***/
+    Area ():cxx_double;
+    }
 
-    //! A wrapper for BentleyApi::JsPath
+    type PlanarRegionP = cxx_pointer<PlanarRegion>;
+
+/** A collection of CurvePrimitive's that join head to tail.
+    <ul><li>A Path may contain only CurvePrimitive objects as childeren.</ul>
+*/
     class Path extends CurveVector {
         /*** NATIVE_TYPE_NAME = JsPath ***/
         constructor();
         Clone(): PathP;
+        /** Add a curve primtive to this curve vector.
+        */
         Add(primitive: CurvePrimitiveP): void;
     }
 
     type PathP = cxx_pointer<Path>;
 
-    //! A wrapper for BentleyApi::JsLoop
-    class Loop extends CurveVector {
+    /** A collection of CurvePrimitive's that join head to tail and form a complete closed loop.
+    <ul><li>A Loop may contain only CurvePrimitive objects as childeren.</ul>
+    */
+    class Loop extends PlanarRegion {
         /*** NATIVE_TYPE_NAME = JsLoop ***/
         Clone(): LoopP;
         constructor();
+        /** Add a curve primtive to this curve vector.
+        */
         Add(primitive: CurvePrimitiveP): void;
     }
 
     type LoopP = cxx_pointer<Loop>;
-    //! A wrapper for BentleyApi::JsUnstructuredCurves
+    /**  A collection of CurvePrimitive's and CurveVector's.
+    */
     class UnstructuredCurves extends CurveVector {
         /*** NATIVE_TYPE_NAME = JsUnstructuredCurveVector ***/
         Clone(): UnstructuredCurvesP;
         constructor();
+        /** Add a curve primtive to this CurveVector
+        */
         Add(primitive: CurvePrimitiveP): void;
+        /** Add a (child) CurveVector to this CurveVector.
+        */
         Add(primitive: CurveVectorP): void;
     }
 
     type UnstructuredCurvesP = cxx_pointer<UnstructuredCurves>;
 
-    //! A wrapper for BentleyApi::JsParityRegion
-    class ParityRegion extends CurveVector {
+    /** A collection of coplanar Loop objects.
+    <ul>
+    <li>The contained loopsare expected to be coplanar.
+    <li>For planar area analysis, the contained objects are interpretted by parity rules.
+    </ul>
+    */
+    class ParityRegion extends PlanarRegion{
         /*** NATIVE_TYPE_NAME = JsParityRegion ***/
         Clone(): ParityRegionP;
         constructor();
@@ -665,8 +821,13 @@ class CurvePrimitive extends Geometry implements BeJsProjection_SuppressConstruc
 
     type ParityRegionP = cxx_pointer<ParityRegion>;
 
-    //! A wrapper for BentleyApi::JsUnionRegion
-    class UnionRegion extends CurveVector {
+    /** A collection of Loop and ParityRegion objects.
+    <ul>
+    <li>The contained objects are expected to be coplanar.
+    <li>For planar area analysis, the contained objects are interpretted as a union of the individual regions.
+    </ul>
+    */
+    class UnionRegion extends PlanarRegion {
         /*** NATIVE_TYPE_NAME = JsUnionRegion ***/
         Clone(): UnionRegionP;
         constructor();
@@ -678,24 +839,108 @@ class CurvePrimitive extends Geometry implements BeJsProjection_SuppressConstruc
 
 
 
-//! A wrapper for a polyface mesh !!!
+/**
+A PolyfaceMesh is a collection of coordinates and indices defining a mesh structure.
+
+<ul>
+<li>Index data
+    <ul>
+    <li>PointIndices
+        <ul>
+        <li>A zero index in a VariableSizeIndexed mesh indicates that this is the end of the index block for this facet.
+        <li>A zero index in a FixedIndex mesh indicates that this and all further indices within this facet's index block
+                are unused.
+        <li>All non-zero indices are
+            <ul>
+            <li>"Signed"
+                <ul>
+                <li>a positive index indicates that the following edge is to be displayed in wireframe mode.
+                <li>a negative index indicates the the succeeeding edge is not to be displayed in wireframe mode.
+                </ul>
+            <li>"One Based" -- the point with programmatic index [0] in the Point array is stored as index value 1, and
+                the point with programmatic zero based index [i] is stored as (i+1) in the index array.
+            </ul>
+        </ul>
+    <li>Normal, Param, and Color Indices
+        <ul>
+        <li>For both fixed and variable blocking, the number of indices in the Normal, Param, and Color index arrays
+            <ul>
+            <li>must have exactly the same number of entries
+            <li>must have zeros in exactly the same places.
+            <li>are "one" based.
+            </ul>
+        <li>Normal, Param, and Color indices must all be zero or positive.  (i.e. there is no special meaning for negative indices.)
+        </ul>
+    </ul>
+</ul>
+*/
 class PolyfaceMesh extends Geometry implements BeJsProjection_SuppressConstructor 
     {
     /*** NATIVE_TYPE_NAME = JsPolyfaceMesh ***/ 
     Clone(): PolyfaceMeshP;
 
     GetTwoSided () : cxx_bool;
-
-    static CreateVariableSizeIndexed() : PolyfaceMeshP;
+    /** Create a mesh in which
+    <ul>
+     <li>data order around facets is controlled by integer index data that is separate from the arrays of
+        coordinate, normal, texture parameters, and color.
+    <li>Each individual facet may have any number of vertices.
+    <li>Vertex counts are indicated by zeros in the index array.
+    </ul>
+    */
+   static CreateVariableSizeIndexed() : PolyfaceMeshP;
     
+    /** Create a mesh in which
+    <ul>
+    <li>data order around facets is controlled by integer index data that is separate from the arrays of
+        coordinate, normal, texture parameters, and color.
+    <li>There is a mesh-wide maxiumum number of vertices per face.
+    <li>Individual facets may have fewer than the maximum.
+    <li>The index data is organized as fixed size blocks of indices.
+    </ul>
+    */
     static CreateFixedIndexed(aNumPerFace : cxx_double) : PolyfaceMeshP;
-
+    /** Create a mesh in which
+    <ul>
+    <li>coordinate data arrays (Point, Normal, Param, Color) are all organized as rows of a grid
+    <li>The number of Points (etc) in a row is specified to the contstructor.
+    <li>A single four-sided facet (possibly nonplanar) is defined in each grid quad.
+    <li>There are no index arrays
+    </ul>
+    */
     static CreateQuadGrid(numPerRow : cxx_double) : PolyfaceMeshP;
 
+    /** Create a mesh in which
+    <ul>
+    <li>coordinate data arrays (Point, Normal, Param, Color) are all organized as rows of a grid
+    <li>The number of Points (etc) in a row is specified to the contstructor.
+    <li>Two triangles are defined in each quad of the grid.
+    <li>There are no index arrays
+    </ul>
+    */
     static CreateTriangleGrid(numPerRow : cxx_double) : PolyfaceMeshP;
 
+
+    /** Create a mesh in which
+    <ul>
+    <li>coordinate data arrays (Point, Normal, Param, Color) are all organized in blocks of 3
+    <li>Each block of 3 defines a triangle.
+    <li>There are no index arrays
+    <li>Note that this is an extremely heavy memory user because shared vertex coordinates are replicated
+            in the block for each the facets that use the vertex.
+    </ul>
+    */
     static CreateCoordinateTriangleMesh() : PolyfaceMeshP;
 
+    /** Create a mesh in which
+    <ul>
+    <li>coordinate data arrays (Point, Normal, Param, Color) are all organized in blocks of 4
+    <li>Each block of 3 defines a 4-sided facet.
+    <li>There are no index arrays
+    <li>Note that this is an extremely heavy memory user because shared vertex coordinates are replicated
+            in the block for each the facets that use the vertex.
+    </ul>
+    */
     static CreateCoordinateQuadMesh() : PolyfaceMeshP;
 
     PolyfaceMeshStyle() : cxx_double;
@@ -706,7 +951,8 @@ class PolyfaceMesh extends Geometry implements BeJsProjection_SuppressConstructo
     AddNormal(data : DVector3dP) : void;
     AddParam(data : DPoint2dP) : void;
     AddIntColor(aColor : cxx_double) : void;
-
+    /** Add an index to the PointIndex array.
+    */
     AddPointIndex(aData : cxx_double) : void;
     AddNormalIndex(aData : cxx_double) : void;
     AddParamndex(aData : cxx_double) : void;

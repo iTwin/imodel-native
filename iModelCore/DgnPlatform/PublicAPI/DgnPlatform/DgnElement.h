@@ -693,30 +693,6 @@ public:
 
     typedef RefCountedPtr<ExternalKeyAspect> ExternalKeyAspectPtr;
 
-    //! Allows a description to be associated with a DgnElement via a persistent ElementAspect
-    struct EXPORT_VTABLE_ATTRIBUTE DescriptionAspect : AppData
-    {
-    private:
-        Utf8String m_description;
-
-        explicit DescriptionAspect(Utf8CP description)
-            {
-            m_description.AssignOrClear(description);
-            }
-
-    protected:
-        DGNPLATFORM_EXPORT virtual DropMe _OnInserted(DgnElementCR) override;
-
-    public:
-        DGNPLATFORM_EXPORT static Key const& GetAppDataKey();
-        DGNPLATFORM_EXPORT static RefCountedPtr<DescriptionAspect> Create(Utf8CP description);
-        DGNPLATFORM_EXPORT static DgnDbStatus Query(Utf8StringR description, DgnElementCR);
-        DGNPLATFORM_EXPORT static DgnDbStatus Delete(DgnElementCR);
-        Utf8CP GetDescription() const {return m_description.c_str();}
-    };
-
-    typedef RefCountedPtr<DescriptionAspect> DescriptionAspectPtr;
-
     DEFINE_BENTLEY_NEW_DELETE_OPERATORS
 
 private:
@@ -970,7 +946,6 @@ protected:
     virtual DefinitionElementCP _ToDefinitionElement() const {return nullptr;}
     virtual DictionaryElementCP _ToDictionaryElement() const {return nullptr;}
     virtual IElementGroupCP _ToIElementGroup() const {return nullptr;}
-    virtual SystemElementCP _ToSystemElement() const {return nullptr;}
 
     //! Construct a DgnElement from its params
     DGNPLATFORM_EXPORT explicit DgnElement(CreateParams const& params);
@@ -1010,7 +985,6 @@ public:
     DrawingElementCP ToDrawingElement() const {return _ToDrawingElement();}             //!< more efficient substitute for dynamic_cast<DrawingElementCP>(el)
     SheetElementCP ToSheetElement() const {return _ToSheetElement();}                   //!< more efficient substitute for dynamic_cast<SheetElementCP>(el)
     IElementGroupCP ToIElementGroup() const {return _ToIElementGroup();}                //!< more efficient substitute for dynamic_cast<IElementGroup>(el)
-    SystemElementCP ToSystemElement() const {return _ToSystemElement();}                //!< more efficient substitute for dynamic_cast<SystemElementCP>(el)
     
     GeometrySourceP ToGeometrySourceP() {return const_cast<GeometrySourceP>(_ToGeometrySource());} //!< more efficient substitute for dynamic_cast<GeometrySourceP>(el)
     GeometrySource2dP ToGeometrySource2dP() {return const_cast<GeometrySource2dP>(ToGeometrySource2d());} //!< more efficient substitute for dynamic_cast<GeometrySource2dP>(el)
@@ -1023,7 +997,6 @@ public:
     AnnotationElementP ToAnnotationElementP() {return const_cast<AnnotationElementP>(_ToAnnotationElement());}  //!< more efficient substitute for dynamic_cast<AnnotationElementP>(el)
     DrawingElementP ToDrawingElementP() {return const_cast<DrawingElementP>(_ToDrawingElement());}              //!< more efficient substitute for dynamic_cast<DrawingElementP>(el)
     SheetElementP ToSheetElementP() {return const_cast<SheetElementP>(_ToSheetElement());}                      //!< more efficient substitute for dynamic_cast<SheetElementP>(el)
-    SystemElementP ToSystemElementP() {return const_cast<SystemElementP>(_ToSystemElement());}                  //!< more efficient substitute for dynamic_cast<SystemElementP>(el)
     //! @}
 
     bool Is3d() const {return nullptr != ToGeometrySource3d();}                     //!< Determine whether this element is 3d or not
@@ -1031,7 +1004,6 @@ public:
     bool IsGeometricElement() const {return nullptr != ToGeometrySource();}         //!< Determine whether this element is geometric or not
     bool IsDefinitionElement() const {return nullptr != ToDefinitionElement();}     //!< Determine whether this element is a definition or not
     bool IsDictionaryElement() const {return nullptr != ToDictionaryElement();}
-    bool IsSystemElement() const {return nullptr != ToSystemElement();}             //!< Determine whether this element is a SystemElement or not
     bool IsAnnotationElement() const {return nullptr != ToAnnotationElement();}     //!< Determine whether this element is an AnnotationElement
     bool IsDrawingElement() const {return nullptr != ToDrawingElement();}           //!< Determine whether this element is an DrawingElement
     bool IsSheetElement() const {return nullptr != ToSheetElement();}               //!< Determine whether this element is an SheetElement
@@ -1726,21 +1698,6 @@ protected:
 
     explicit SheetElement(CreateParams const& params) : T_Super(params, params.m_categoryId, params.m_placement) { }
 }; // SheetElement
-
-//=======================================================================================
-//! A SystemElement is used to model functional systems
-//! @see SystemModel
-//! @ingroup DgnElementGroup
-// @bsiclass                                                    Shaun.Sewall    12/25
-//=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE SystemElement : DgnElement
-{
-    DEFINE_T_SUPER(DgnElement);
-
-protected:
-    virtual SystemElementCP _ToSystemElement() const override final {return this;}
-    explicit SystemElement(CreateParams const& params) : T_Super(params) {}
-};
 
 //=======================================================================================
 //! Helper class for maintaining and querying the ElementGroupsMembers relationship
