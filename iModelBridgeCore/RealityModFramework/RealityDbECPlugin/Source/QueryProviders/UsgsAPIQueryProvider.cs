@@ -971,6 +971,7 @@ namespace IndexECPlugin.Source.QueryProviders
 
                         }
 
+                    instance["FileSize"].NativeValue = jtoken["sizeInBytes"].Value<long>() / 1024;
 
 
                     instanceList.Add(instance);

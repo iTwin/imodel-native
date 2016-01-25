@@ -973,6 +973,7 @@
         <ECProperty propertyName="RawMetadataURL" typeName="string" />
         <ECProperty propertyName="RawMetadataFormat" typeName="string" />
         <ECProperty propertyName="SubAPI" typeName="string" />
+        <ECProperty propertyName="FileSize" typeName="long" />
     </ECClass>
     
 <!--     <ECClass typeName="USGSEntity" isDomainClass="true">
