@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/utl/hfc/src/HFCMemoryBinStream.cpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Methods for class HFCMemoryBinStream
@@ -165,26 +165,6 @@ HFCPtr<HFCURL> HFCMemoryBinStream::GetURL() const
     {
     return new HFCURLMemFile(WString(HFCURLMemFile::s_SchemeName() + L"://") + m_Filename);
     }
-
-
-//---------------------------------------------------------------------------
-//
-//---------------------------------------------------------------------------
-
-void HFCMemoryBinStream::Lock(uint64_t pi_Pos, uint64_t pi_Size, bool pi_Share)
-    {
-    // Do nothing at this time.
-    }
-
-//---------------------------------------------------------------------------
-//
-//---------------------------------------------------------------------------
-
-void HFCMemoryBinStream::Unlock(uint64_t pi_Pos, uint64_t pi_Size)
-    {
-    // Do nothing at this time.
-    }
-
 
 #ifdef __HMR_DEBUG_MEMBER
 

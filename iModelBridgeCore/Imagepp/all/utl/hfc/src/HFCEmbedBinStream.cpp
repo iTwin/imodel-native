@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/utl/hfc/src/HFCEmbedBinStream.cpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Methods for class HFCEmbedBinStream
@@ -152,22 +152,6 @@ uint64_t HFCEmbedBinStream::GetCurrentPos()
 bool HFCEmbedBinStream::EndOfFile()
     {
     return (GetCurrentPos() >= GetSize());
-    }
-
-//---------------------------------------------------------------------------
-//
-//---------------------------------------------------------------------------
-void HFCEmbedBinStream::Lock(uint64_t pi_Pos, uint64_t pi_Size, bool pi_Share)
-    {
-    // Do nothing at this time.
-    }
-
-//---------------------------------------------------------------------------
-//
-//---------------------------------------------------------------------------
-void HFCEmbedBinStream::Unlock(uint64_t pi_Pos, uint64_t pi_Size)
-    {
-    // Do nothing at this time.
     }
 
 //---------------------------------------------------------------------------

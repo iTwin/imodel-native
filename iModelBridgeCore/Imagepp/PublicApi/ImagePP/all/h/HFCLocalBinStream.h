@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HFCLocalBinStream.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HFCLocalBinStream
@@ -57,10 +57,6 @@ public:
     uint64_t                       GetOriginOffset() const;
     IMAGEPP_EXPORT uint64_t                GetCurrentFileSize() const;
 
-    // Multiuser access
-
-    IMAGEPP_EXPORT virtual void            Lock(uint64_t pi_Pos, uint64_t pi_Size, bool pi_Share);  
-    IMAGEPP_EXPORT virtual void            Unlock(uint64_t pi_Pos, uint64_t pi_Size);               
 
     // File pointer management
 

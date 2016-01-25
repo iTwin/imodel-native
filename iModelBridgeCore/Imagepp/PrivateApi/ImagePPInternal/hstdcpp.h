@@ -5,12 +5,6 @@
 //:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
-//*****************************************************************************
-// hstdcpp.h
-//
-//      Header for HMR C++ standards
-//
-//*****************************************************************************
 #pragma once
 
 #include <ImagePP/h/ImageppAPI.h>
@@ -18,38 +12,24 @@
 #include <Bentley/BeFileListIterator.h>
 
 // General compiler Include files
-#if defined (ANDROID) || defined (__APPLE__)
+#if defined (BENTLEY_WIN32) ||defined(BENTLEY_WINRT)
+#pragma inline_depth(64)
 
+#include <concrt.h>
+#include <ppl.h>
 
-#elif defined(_WIN32) || defined(WIN32)
+#elif defined(__unix__)
 
-#   pragma inline_depth(64)
-
-#   include <Winsock2.h>
-#   include <Winerror.h>
-#   include <wininet.h>
-#   include <conio.h>
-#   include <direct.h>
-#   include <io.h>
-#   include <wtypes.h>
-#   include <urlmon.h>
-#   include <initguid.h>
-#   include <wtypes.h>     // Windows timer system
-#   include <mmsystem.h>    // Windows timer system
-
-#  if !defined(WIN32_LEAN_AND_MEAN)
-#    define WIN32_LEAN_AND_MEAN
-#    include "windows.h"
-#    undef WIN32_LEAN_AND_MEAN
-#  else
-#    include "windows.h"
-#  endif
-
-#   include <concrt.h>
-#   include <ppl.h>
+//  #if defined (__APPLE__)
+//      apple specific here
+//  #endif
+    
+//  #if defined (ANDROID)
+//      android specific here
+//   #endif
 
 #else
-#   error Unknown compiler - No STL inclusion Standard defined
+    #error unknown compiler
 #endif
 
 // C++ 11 std headers

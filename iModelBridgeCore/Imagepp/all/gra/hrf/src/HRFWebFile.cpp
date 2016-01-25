@@ -50,6 +50,10 @@
 #include <ImagePP/all/h/HFCExclusiveKey.h>
 #include <ImagePP/all/h/HRFException.h>
 
+#if defined (BENTLEY_WIN32) || defined (BENTLEY_WINRT)
+#include <urlmon.h>
+#endif
+
 
 //-----------------------------------------------------------------------------
 // Macros

@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HFCEmbedBinStream.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HFCMemoryBinStream
@@ -37,11 +37,6 @@ public:
     virtual uint64_t       GetSize() const;
     virtual HFCAccessMode   GetAccessMode() const;
     uint64_t               GetOriginOffset() const;
-
-    // Multiuser access
-
-    virtual void            Lock(uint64_t pi_Pos, uint64_t pi_Size, bool pi_Share);
-    virtual void            Unlock(uint64_t pi_Pos, uint64_t pi_Size);
 
     // File pointer management
 
