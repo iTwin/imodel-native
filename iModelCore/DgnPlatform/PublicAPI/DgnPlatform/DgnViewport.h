@@ -165,6 +165,9 @@ protected:
     virtual void _Destroy() {DestroyViewport();}
     DGNPLATFORM_EXPORT virtual void _AdjustAspectRatio(ViewControllerR, bool expandView);
     DGNPLATFORM_EXPORT virtual int _GetIndexedLineWidth(int index) const;
+
+    // Invoked when one or more models are deleted. Override to react by closing the viewport, changing target model, cleaning up viewed model list, etc.
+    virtual void _OnModelsDeleted(bset<DgnModelId> const& deletedModelIds, DgnDbR dgndb) { }
     DGNPLATFORM_EXPORT static void StartRenderThread();
     DMap4d CalcNpcToView();
     void QueueDrawFrame();
