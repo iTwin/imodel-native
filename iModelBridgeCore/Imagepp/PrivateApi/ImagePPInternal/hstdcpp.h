@@ -25,26 +25,6 @@
 
 #   pragma inline_depth(64)
 
-#   include <Winsock2.h>
-#   include <Winerror.h>
-#   include <wininet.h>
-#   include <conio.h>
-#   include <direct.h>
-#   include <io.h>
-#   include <wtypes.h>
-#   include <urlmon.h>
-#   include <initguid.h>
-#   include <wtypes.h>     // Windows timer system
-#   include <mmsystem.h>    // Windows timer system
-
-#  if !defined(WIN32_LEAN_AND_MEAN)
-#    define WIN32_LEAN_AND_MEAN
-#    include "windows.h"
-#    undef WIN32_LEAN_AND_MEAN
-#  else
-#    include "windows.h"
-#  endif
-
 #   include <concrt.h>
 #   include <ppl.h>
 
