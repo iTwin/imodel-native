@@ -45,4 +45,4 @@ ViewAttachmentTest.Geom                                 # NonVisibleViewport
 VolumeElementTestFixture.QueryTest                      # FenceParams::AcceptElement
 
 # WIP_MERGE_0600
-RevisionTestFixture.Workflow # notified Raman
+RevisionTestFixture.* # notified Raman
