@@ -23,7 +23,7 @@ void DebugLog(Utf8CP str)
 struct TestBeSQLiteDbTransactionHandler : BeSQLiteDbTransactionHandler
     {
     public:
-        uint64_t m_lastBusyCount;
+        volatile uint64_t m_lastBusyCount;
         Utf8String m_name;
 
     public:
@@ -162,7 +162,6 @@ TEST_F(BeSQLiteDbTransactionHandlerTests, StartTransaction_TwoConnections_Second
 
             db1InTransaction.CheckinAndWait();
 
-            // EXPECT_EQ ("", "Next line fails randomly");
             DebugLog(">>> DB1 Cmt");
             EXPECT_EQ(SUCCESS, handler1.CommitTransaction());
             DebugLog(">>> DB1 Cmtd");
