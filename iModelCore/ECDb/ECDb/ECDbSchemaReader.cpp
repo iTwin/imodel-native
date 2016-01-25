@@ -527,13 +527,19 @@ BentleyStatus ECDbSchemaReader::LoadECPropertiesFromDb(ECClassP& ecClass, Contex
     const int displayLabelIx = 3;
     const int descrIx = 4;
     const int isReadonlyIx = 5;
-    const int navPropDirectionIx = 11;
+    const int primTypeIx = 6;
+    const int nonPrimTypeIx = 7;
+    const int extendedTypeIx = 8;
+    const int enumIx = 9;
+    const int minOccursIx = 10;
+    const int maxOccursIx = 11;
+    const int navPropDirectionIx = 12;
 
     struct PropReaderHelper
         {
         static BentleyStatus PrepareStatement(CachedStatementPtr& stmt, ECDbCR ecdb, ECClassId classId)
             {
-            if (BE_SQLITE_OK != ecdb.GetCachedStatement(stmt, "SELECT Kind,Id,Name,DisplayLabel,Description,IsReadonly,PrimitiveType,NonPrimitiveType,Enumeration,ArrayMinOccurs,ArrayMaxOccurs,NavigationPropertyDirection FROM ec_Property WHERE ClassId=? ORDER BY Ordinal"))
+            if (BE_SQLITE_OK != ecdb.GetCachedStatement(stmt, "SELECT Kind,Id,Name,DisplayLabel,Description,IsReadonly,PrimitiveType,NonPrimitiveType,ExtendedType,Enumeration,ArrayMinOccurs,ArrayMaxOccurs,NavigationPropertyDirection FROM ec_Property WHERE ClassId=? ORDER BY Ordinal"))
                 return ERROR;
 
             if (BE_SQLITE_OK != stmt->BindInt64(1, classId))
@@ -542,19 +548,22 @@ BentleyStatus ECDbSchemaReader::LoadECPropertiesFromDb(ECClassP& ecClass, Contex
             return SUCCESS;
             }
 
-        static BentleyStatus TryReadPrimitiveType(PrimitiveType& primType, CachedStatement& stmt)
+        //!@param[out] extendedType The value is only valid until the next call to Step!
+        static BentleyStatus TryReadPrimitiveType(PrimitiveType& primType, Utf8CP& extendedType, CachedStatement& stmt)
             {
-            const int primTypeIx = 6;
             if (stmt.IsColumnNull(primTypeIx))
                 return ERROR;
 
             primType = (PrimitiveType) stmt.GetValueInt(primTypeIx);
+
+            if (!stmt.IsColumnNull(extendedTypeIx))
+                extendedType = stmt.GetValueText(extendedTypeIx);
+
             return SUCCESS;
             }
 
         static BentleyStatus TryReadNonPrimitiveType(ECClassP& nonPrimType, ECDbSchemaReader const& schemaReader, Context& ctx, CachedStatement& stmt)
             {
-            const int nonPrimTypeIx = 7;
             if (stmt.IsColumnNull(nonPrimTypeIx))
                 return ERROR;
 
@@ -564,21 +573,23 @@ BentleyStatus ECDbSchemaReader::LoadECPropertiesFromDb(ECClassP& ecClass, Contex
             return nonPrimType != nullptr ? SUCCESS : ERROR;
             }
 
-        static BentleyStatus TryReadEnumeration(ECEnumerationP& enumeration, ECDbSchemaReader const& schemaReader, Context& ctx, CachedStatement& stmt)
+        //!@param[out] extendedType The value is only valid until the next call to Step!
+        static BentleyStatus TryReadEnumeration(ECEnumerationP& enumeration, Utf8CP& extendedType, ECDbSchemaReader const& schemaReader, Context& ctx, CachedStatement& stmt)
             {
-            const int ix = 8;
-            if (stmt.IsColumnNull(ix))
+            if (stmt.IsColumnNull(enumIx))
                 return ERROR;
 
-            const int64_t enumTypeId = stmt.GetValueInt64(ix);
+            const int64_t enumTypeId = stmt.GetValueInt64(enumIx);
+
+            if (!stmt.IsColumnNull(extendedTypeIx))
+                extendedType = stmt.GetValueText(extendedTypeIx);
+
             BeAssert(enumTypeId > 0);
-            return schemaReader.ReadECEnumeration(enumeration, ctx, enumTypeId);;
+            return schemaReader.ReadECEnumeration(enumeration, ctx, enumTypeId);
             }
 
         static BentleyStatus TryReadArrayConstraints(uint32_t& minOccurs, uint32_t& maxOccurs, CachedStatement& stmt)
             {
-            const int minOccursIx = 9;
-            const int maxOccursIx = 10;
             if (stmt.IsColumnNull(minOccursIx) || stmt.IsColumnNull(maxOccursIx))
                 return ERROR;
 
@@ -608,8 +619,10 @@ BentleyStatus ECDbSchemaReader::LoadECPropertiesFromDb(ECClassP& ecClass, Contex
                 case ECPropertyKind::Primitive:
                 {
                 PrimitiveType primType;
+                
+                Utf8CP extendedType = nullptr;
 
-                if (SUCCESS != PropReaderHelper::TryReadPrimitiveType(primType, *stmt))
+                if (SUCCESS != PropReaderHelper::TryReadPrimitiveType(primType, extendedType, *stmt))
                     {
                     BeAssert(false && "PrimitiveType column is not expected to be NULL for primitive property");
                     return ERROR;
@@ -619,6 +632,12 @@ BentleyStatus ECDbSchemaReader::LoadECPropertiesFromDb(ECClassP& ecClass, Contex
                 if (ECObjectsStatus::Success != ecClass->CreatePrimitiveProperty(primProp, propName, primType))
                     return ERROR;
 
+                if (!Utf8String::IsNullOrEmpty(extendedType))
+                    {
+                    if (ECObjectsStatus::Success != primProp->SetExtendedTypeName(extendedType))
+                        return ERROR;
+                    }
+
                 prop = primProp;
                 break;
                 }
@@ -626,7 +645,8 @@ BentleyStatus ECDbSchemaReader::LoadECPropertiesFromDb(ECClassP& ecClass, Contex
                 case ECPropertyKind::Enumeration:
                 {
                 ECEnumerationP ecenum = nullptr;
-                if (SUCCESS != PropReaderHelper::TryReadEnumeration(ecenum, *this, ctx, *stmt))
+                Utf8CP extendedType = nullptr;
+                if (SUCCESS != PropReaderHelper::TryReadEnumeration(ecenum, extendedType, *this, ctx, *stmt))
                     {
                     BeAssert(false && "Enumeration column is not expected to be NULL for property using an ECEnumeration");
                     return ERROR;
@@ -635,6 +655,12 @@ BentleyStatus ECDbSchemaReader::LoadECPropertiesFromDb(ECClassP& ecClass, Contex
                 PrimitiveECPropertyP primProp = nullptr;
                 if (ECObjectsStatus::Success != ecClass->CreateEnumerationProperty(primProp, propName, *ecenum))
                     return ERROR;
+
+                if (!Utf8String::IsNullOrEmpty(extendedType))
+                    {
+                    if (ECObjectsStatus::Success != primProp->SetExtendedTypeName(extendedType))
+                        return ERROR;
+                    }
 
                 prop = primProp;
                 break;
@@ -667,7 +693,9 @@ BentleyStatus ECDbSchemaReader::LoadECPropertiesFromDb(ECClassP& ecClass, Contex
                 case ECPropertyKind::PrimitiveArray:
                 {
                 PrimitiveType primType;
-                if (SUCCESS != PropReaderHelper::TryReadPrimitiveType(primType, *stmt))
+                //not used yet as ECObjects doesn't support extended types on prim arrays. But that may change
+                Utf8CP extendedType = nullptr;
+                if (SUCCESS != PropReaderHelper::TryReadPrimitiveType(primType, extendedType, *stmt))
                     {
                     BeAssert(false && "PrimitiveType column is not expected to be NULL for primitive array property");
                     return ERROR;

@@ -194,6 +194,138 @@ TEST_F(ECDbFileInfoTests, ECFEmbeddedFileBackedInstanceSupport)
     stmt.Finalize();
     }
 
+
+//Specific for file search in Document Root only.
+BeFileName SearchTestFile (Utf8CP testFileName)
+    {
+    WString testFileNameW (testFileName, BentleyCharEncoding::Utf8);
+
+    BeFileName testFilePath;
+    BeTest::GetHost ().GetDocumentsRoot (testFilePath);
+    testFilePath.AppendToPath (L"ECDb");
+    testFilePath.AppendToPath (testFileNameW.c_str ());
+    return testFilePath;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsiclass                                     Maha Nasir                  01/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F (ECDbFileInfoTests, IterateThroughEmbeddedFiles)
+    {
+    ECDbR ecdb = SetupECDb ("ecdbfileinfo.ecdb");
+    ASSERT_TRUE (ecdb.IsDbOpen ());
+
+    DbEmbeddedFileTable& embeddedFileTable = ecdb.EmbeddedFiles ();
+
+        {
+        //Test file 1
+        BeFileName testFilePath = SearchTestFile ("StartupCompany.json");
+        ASSERT_TRUE (testFilePath.DoesPathExist ());
+
+        DbResult stat = BE_SQLITE_OK;
+        DateTime expectedLastModified = DateTime::GetCurrentTimeUtc ();
+        double expectedLastModifiedJd = 0.0;
+        ASSERT_EQ (SUCCESS, expectedLastModified.ToJulianDay (expectedLastModifiedJd));
+
+        //Imports the file into the db.
+        BeBriefcaseBasedId embeddedFileId = embeddedFileTable.Import (&stat, "StartupCompany.json", testFilePath.GetNameUtf8 ().c_str (), "JSON", nullptr, &expectedLastModified);
+        ASSERT_EQ (BE_SQLITE_OK, stat);
+        ASSERT_TRUE (embeddedFileId.IsValid ());
+        }
+
+            {
+            //test file 2
+            BeFileName testFilePath = SearchTestFile ("CommonGeometry.json");
+            ASSERT_TRUE (testFilePath.DoesPathExist ());
+
+            //Imports the file into the db.
+            DbResult stat = BE_SQLITE_OK;
+            BeBriefcaseBasedId embeddedFileId = embeddedFileTable.Import (&stat, "CommonGeometry.json", testFilePath.GetNameUtf8 ().c_str (), "JSON", "Geometry");
+            ASSERT_EQ (BE_SQLITE_OK, stat);
+            ASSERT_TRUE (embeddedFileId.IsValid ());
+            }
+
+    DbEmbeddedFileTable::Iterator iter = embeddedFileTable.MakeIterator ();
+    ASSERT_EQ (2, iter.QueryCount ());
+
+    DbEmbeddedFileTable::Iterator::Entry file = iter.begin ();
+    for (auto const& file : iter)
+        {
+        if (Utf8String (file.GetNameUtf8 ()) == "StartupCompany.json")
+            {
+            ASSERT_EQ ((ECInstanceId)1, file.GetId ());
+            ASSERT_STREQ ("JSON", file.GetTypeUtf8 ());
+            ASSERT_EQ (8919, file.GetFileSize ());
+            ASSERT_EQ (NULL, file.GetDescriptionUtf8 ());
+            ASSERT_EQ (524288, file.GetChunkSize ());
+            }
+        else if (Utf8String (file.GetNameUtf8 ()) == "CommonGeometry.json")
+            {
+            ASSERT_EQ ((ECInstanceId)2, file.GetId ());
+            ASSERT_STREQ ("JSON", file.GetTypeUtf8 ());
+            ASSERT_EQ (765, file.GetFileSize ());
+            ASSERT_STREQ ("Geometry", file.GetDescriptionUtf8 ());
+            ASSERT_EQ (524288, file.GetChunkSize ());
+            }
+        }
+    iter.end ();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsiclass                                     Maha Nasir                  01/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F (ECDbFileInfoTests, CRUD)
+    {
+    ECDbR ecdb = SetupECDb ("ecdbfileinfo.ecdb");
+    ASSERT_TRUE (ecdb.IsDbOpen ());
+
+    DbEmbeddedFileTable& embeddedFileTable = ecdb.EmbeddedFiles ();
+
+    //Test File 1
+        {
+        BeFileName testFilePath = SearchTestFile ("CommonGeometry.json");
+        ASSERT_TRUE (testFilePath.DoesPathExist ());
+
+        //Imports the test file into the db.
+        DbResult stat = BE_SQLITE_OK;
+        BeBriefcaseBasedId embeddedFileId = embeddedFileTable.Import (&stat, "CommonGeometry.json", testFilePath.GetNameUtf8 ().c_str (), "JSON", "Geometry");
+        ASSERT_EQ (BE_SQLITE_OK, stat);
+        ASSERT_TRUE (embeddedFileId.IsValid ());
+
+        //Query the values for a file.
+        uint64_t size = 9500;
+        BeBriefcaseBasedId id = embeddedFileTable.QueryFile ("CommonGeometry.json", &size);
+        ASSERT_TRUE (id.IsValid ());
+        }
+
+    //Test file 2
+        {
+        BeFileName testFilePath = SearchTestFile ("FieldEngineerStructArray.json");
+        ASSERT_TRUE (testFilePath.DoesPathExist ());
+
+     //Creates a new entry in the embedded file table with the specified name.
+
+        ASSERT_EQ (BE_SQLITE_OK, embeddedFileTable.AddEntry ("FieldEngineerStructArray", "JSON"));
+        void const* data = testFilePath;
+        ASSERT_EQ (BE_SQLITE_OK, embeddedFileTable.Save (data, 9000, "FieldEngineerStructArray"));
+        }
+
+        {
+     //Test file 3
+        BeFileName testFilePath = SearchTestFile ("StartupCompany.json");
+        ASSERT_TRUE (testFilePath.DoesPathExist ());
+
+     //Replaces the test file 1 with the contents of test file 3
+        ASSERT_EQ (BE_SQLITE_OK, embeddedFileTable.Replace ("CommonGeometry.json", testFilePath.GetNameUtf8 ().c_str ()));
+        }
+
+    //Removes the specified file from the table.
+    ASSERT_EQ (BE_SQLITE_OK, embeddedFileTable.Remove ("FieldEngineerStructArray"));
+    //FieldEngineerStructArray should be no longer in the table.
+    bvector<Byte> buffer;
+    ASSERT_EQ (BE_SQLITE_ERROR, embeddedFileTable.Read (buffer, "FieldEngineerStructArray"));
+    }
+
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                  11/15
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -563,17 +695,17 @@ TEST_F(ECDbFileInfoTests, Purge)
 Utf8CP ECDbFileInfoTests::GetTestSchemaXml()
 {
     return "<?xml version=\"1.0\" encoding=\"utf-8\" ?>"
-        "<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
-        "  <ECClass typeName=\"Foo\" >"
-        "    <ECProperty propertyName=\"Name\" typeName=\"string\" isDomainClass=\"True\" />"
-        "  </ECClass>"
-        "  <ECClass typeName=\"FooChild\" >"
+        "<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.3.0\">"
+        "  <ECEntityClass typeName=\"Foo\" >"
+        "    <ECProperty propertyName=\"Name\" typeName=\"string\" />"
+        "  </ECEntityClass>"
+        "  <ECEntityClass typeName=\"FooChild\" >"
         "    <BaseClass>Foo</BaseClass>"
-        "    <ECProperty propertyName=\"Label\" typeName=\"string\" isDomainClass=\"True\" />"
-        "  </ECClass>"
-        "  <ECClass typeName=\"Goo\" >"
-        "    <ECProperty propertyName=\"Name\" typeName=\"string\" isDomainClass=\"True\" />"
-        "  </ECClass>"
+        "    <ECProperty propertyName=\"Label\" typeName=\"string\" />"
+        "  </ECEntityClass>"
+        "  <ECEntityClass typeName=\"Goo\" >"
+        "    <ECProperty propertyName=\"Name\" typeName=\"string\"  />"
+        "  </ECEntityClass>"
         "</ECSchema>";
 }
 
