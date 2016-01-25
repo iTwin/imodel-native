@@ -37,7 +37,7 @@ struct SeedFile
         BeFileName m_seedFilePath;
         BeFileName m_testFilePath;
 
-        static std::atomic<uint64_t> s_id;
+        static BeAtomic<uint64_t> s_id;
 
     public:
         Callback onSetupSeedFile = [] (BeFileNameCR) {};
