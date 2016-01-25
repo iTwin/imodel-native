@@ -640,7 +640,7 @@ ViewportStatus DgnViewport::ChangeArea(DPoint3dCP pts)
         delta.z = viewController->GetDelta().z;
 
         // make sure its not too big or too small 
-        auto stat = ValidateWindowSize(delta, true);
+        auto stat = ValidateViewDelta(delta, true);
         if (stat != ViewportStatus::Success)
             return stat;
 
@@ -850,7 +850,7 @@ ViewportStatus DgnViewport::Zoom(DPoint3dCP newCenterRoot, double factor)
     delta.y *= factor;
 
     // first check to see whether the zoom operation results in an invalid view. If so, make sure we don't change anything
-    ViewportStatus validSize = ValidateWindowSize(delta, false);
+    ViewportStatus validSize = ValidateViewDelta(delta, false);
     if (ViewportStatus::Success != validSize)
         return  validSize;
 
@@ -1013,17 +1013,17 @@ double DgnViewport::GetPixelSizeAtPoint(DPoint3dCP rootPtP, DgnCoordSystem coord
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Keith.Bentley   03/90
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void limitWindowSize(ViewportStatus& error, double& value, ViewportStatus lowErr, ViewportStatus highErr)
+static void limitWindowSize(ViewportStatus& error, double& value)
     {
     if (value < DgnViewport::GetMinViewDelta())
         {
         value = DgnViewport::GetMinViewDelta();
-        error = lowErr;
+        error = ViewportStatus::MinWindow;
         }
     else if (value > DgnViewport::GetMaxViewDelta())
         {
         value = DgnViewport::GetMaxViewDelta();
-        error = highErr;
+        error = ViewportStatus::MaxWindow;
         }
     }
 
@@ -1060,13 +1060,13 @@ void DgnViewport::OutputFrustumErrorMessage(ViewportStatus errorStatus)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     03/86
 +---------------+---------------+---------------+---------------+---------------+------*/
-ViewportStatus DgnViewport::ValidateWindowSize(DPoint3dR delta, bool messageNeeded)
+ViewportStatus DgnViewport::ValidateViewDelta(DPoint3dR delta, bool messageNeeded)
     {
     ViewportStatus  error=ViewportStatus::Success, ignore;
 
-    limitWindowSize(error,  delta.x, ViewportStatus::MinWindow, ViewportStatus::MaxWindow);
-    limitWindowSize(error,  delta.y, ViewportStatus::MinWindow, ViewportStatus::MaxWindow);
-    limitWindowSize(ignore, delta.z, ViewportStatus::MinWindow, ViewportStatus::MaxWindow);    // always check z depth
+    limitWindowSize(error,  delta.x);
+    limitWindowSize(error,  delta.y);
+    limitWindowSize(ignore, delta.z);
 
     if (messageNeeded)
         OutputFrustumErrorMessage(error);

@@ -35,6 +35,7 @@ BEGIN_BENTLEY_DGN_NAMESPACE
   @see DgnCoordSystem
 */
 
+
 //=======================================================================================
 //! Parameters for the "fit view" operation
 // @bsiclass                                                    Keith.Bentley   06/15
@@ -192,7 +193,7 @@ public:
     DGNPLATFORM_EXPORT StatusInt RootToNpcFromViewDef(DMap4d&, double&, CameraInfo const*, DPoint3dCR, DPoint3dCR, RotMatrixCR) const;
     DGNPLATFORM_EXPORT static int32_t GetMaxDisplayPriority();
     DGNPLATFORM_EXPORT static int32_t GetDisplayPriorityFrontPlane();
-    DGNPLATFORM_EXPORT static ViewportStatus ValidateWindowSize(DPoint3dR delta, bool displayMessage);
+    DGNPLATFORM_EXPORT static ViewportStatus ValidateViewDelta(DPoint3dR delta, bool displayMessage);
     DGNPLATFORM_EXPORT static void FixFrustumOrder(Frustum&);
     DGNPLATFORM_EXPORT ViewportStatus SetupFromViewController();
     DGNPLATFORM_EXPORT ViewportStatus ChangeArea(DPoint3dCP pts);

@@ -44,16 +44,7 @@ QueryViewController::~QueryViewController()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   05/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-void QueryViewController::_OnDynamicUpdate(DgnViewportR vp, UpdatePlan const& plan)
-    {
-    PickUpResults();
-    QueueQuery(vp, plan);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   05/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-void QueryViewController::_OnFullUpdate(DgnViewportR vp, UpdatePlan const& plan)
+void QueryViewController::_OnUpdate(DgnViewportR vp, UpdatePlan const& plan)
     {
     if (m_forceNewQuery || FrustumChanged(vp))
         QueueQuery(vp, plan);
@@ -275,9 +266,14 @@ ViewController::FitComplete QueryViewController::_ComputeFitRange(DRange3dR rang
 Utf8String QueryViewController::_GetRTreeMatchSql(DgnViewportR) 
     {
     return Utf8String("SELECT r.ElementId FROM "
+           DGN_VTABLE_RTree3d " AS r WHERE r.ElementId MATCH DGN_rTree(@matcher)");
+
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
+    return Utf8String("SELECT r.ElementId FROM "
            DGN_VTABLE_RTree3d " AS r, " DGN_TABLE(DGN_CLASSNAME_Element) " AS e, " DGN_TABLE(DGN_CLASSNAME_SpatialElement) " AS g "
            "WHERE r.ElementId MATCH DGN_rTree(@matcher) AND e.Id=r.ElementId AND g.Id=r.ElementId"
            " AND InVirtualSet(@vSet,e.ModelId,g.CategoryId)");
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -308,11 +304,13 @@ void QueryViewController::BindModelAndCategory(StatementR stmt, RTreeTester& mat
     BeAssert(0 != matcherIdx);
     stmt.BindInt64(matcherIdx, (int64_t) &matcher);
 
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     int vSetIdx = stmt.GetParameterIndex("@vSet");
     if (0 == vSetIdx)
         return;
 
     stmt.BindVirtualSet(vSetIdx, *this);
+#endif
     }
 
 //---------------------------------------------------------------------------------------

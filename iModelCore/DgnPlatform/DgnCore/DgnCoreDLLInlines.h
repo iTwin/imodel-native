@@ -55,7 +55,7 @@ DG_INLINE void IViewClipObject::Draw(ViewContextR c) {return _Draw(c);}
 DG_INLINE ClipVectorPtr CameraViewController::_GetClipVector() const {return m_clipVector;}
 
 DG_INLINE IACSManagerR IACSManager::GetManager() {return T_HOST.GetAcsManager();}
-DG_INLINE void IAuxCoordSys::DisplayInView(DgnViewportP vp, ACSDisplayOptions options, bool drawName) const {return _DisplayInView(vp, options, drawName);}
+DG_INLINE void IAuxCoordSys::DisplayInView(DecorateContextR context, ACSDisplayOptions options, bool drawName) const {return _DisplayInView(context, options, drawName);}
 DG_INLINE WString IAuxCoordSys::GetName() const {return _GetName();}
 DG_INLINE WString IAuxCoordSys::GetDescription() const {return _GetDescription();}
 DG_INLINE ACSType IAuxCoordSys::GetType() const {return _GetType();}

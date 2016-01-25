@@ -9,6 +9,7 @@
 //__PUBLISH_SECTION_START__
 
 #include "DgnModel.h"
+#include "UpdatePlan.h"
 #include <Bentley/BeTimeUtilities.h>
 #include <Bentley/BeThread.h>
 #include <BeSQLite/RTreeMatch.h>
@@ -114,7 +115,6 @@ struct QueryModel : SpatialModel
     //=======================================================================================
     struct Filter : RTreeFilter
     {
-        bool                    m_passedPrimaryTest;
         bool                    m_needsProgressive = false;
         uint32_t                m_hitLimit;
         uint32_t                m_occlusionMapCount;
@@ -145,8 +145,9 @@ struct QueryModel : SpatialModel
         uint64_t       m_purgeTrigger;
         DgnDbR         m_dgndb;
         QueryModelR    m_queryModel;
+        CheckStopP     m_checkStop;
         AllElementsFilter(QueryModelR queryModel, DgnElementIdSet const* exclude, uint64_t maxMemory)
-             : RTreeFilter(exclude), m_dgndb(queryModel.GetDgnDb()), m_queryModel(queryModel), m_elementReleaseTrigger(maxMemory), m_purgeTrigger(maxMemory)
+             : RTreeFilter(exclude), m_dgndb(queryModel.GetDgnDb()), m_queryModel(queryModel), m_elementReleaseTrigger(maxMemory), m_purgeTrigger(maxMemory), m_checkStop(nullptr)
             {
             }
                                                                                                             
@@ -160,6 +161,7 @@ struct QueryModel : SpatialModel
     struct ProgressiveFilter : AllElementsFilter, ProgressiveDisplay
     {
         enum {SHOW_PROGRESS_INTERVAL = 1000}; // once per second.
+        uint32_t       m_total = 0;
         uint32_t       m_thisBatch = 0;
         uint32_t       m_batchSize = 0;
         uint64_t       m_nextShow  = 0;
@@ -222,7 +224,7 @@ struct QueryModel : SpatialModel
 
         void ProcessRequest();
         void SearchIdSet(DgnElementIdSet& idList, Filter& filter);
-        bool SearchRangeTree(Filter& filter);
+        void SearchRangeTree(Filter& filter);
         bool LoadElements(OcclusionScores& scores, bvector<DgnElementCPtr>& elements); // return false if we halted before finishing iteration
         void DoQuery(StopWatch&);
 
@@ -294,7 +296,6 @@ public:
 
     //! Requests that any active or pending processing of the model be canceled, optionally not returning until the request is satisfied
     void RequestAbort(bool waitUntilFinished);
-
     void WaitUntilFinished(CheckStop* checkStop); //!< @private
 };
 

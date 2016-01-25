@@ -56,22 +56,13 @@ protected:
 protected:
     //! Called at the beginning of a full update to populate the QueryModel.
     //! @param[in] viewport    The viewport that will display the graphics
-    //! @param[in] context     The context that is processing the graphics.
     //! @param[in] plan The update plan
-    //! @remarks Applications that override this method normally perform any additional work that is required and then call QueryViewController::_OnFullUpdate to 
+    //! @remarks Applications that override this method normally perform any additional work that is required and then call QueryViewController::_OnUpdate to 
     //!  let it decide if is necessary to repopulate the QueryModel.
     //! @remarks An application may use this and _OnFullUpdate to decide when to display some indication such as a spinner to 
     //! let the user know that the update is in progress.  The application can override SpatialViewController::_OnUpdateComplete
     //! to know when to stop the spinner.
-    DGNPLATFORM_EXPORT virtual void _OnFullUpdate(DgnViewportR viewport, UpdatePlan const& plan) override;
-
-    //! Called at the beginning of a dynamic update to populate the QueryModel.
-    //! @param[in]  viewport    The viewport that will display the graphics
-    //! @param[in]  context     The context that is processing the graphics.
-    //! @param[in]  plan        The update plan
-    //! @remarks  Although an application can override this method, the decision on whether or not to repopulate the QueryModel in a dynamic update is typically left to
-    //! QueryViewController::_OnDynamicUpdate. It in turn defers the decision to _WantElementLoadStart.
-    DGNPLATFORM_EXPORT virtual void _OnDynamicUpdate(DgnViewportR viewport, UpdatePlan const& plan) override;
+    DGNPLATFORM_EXPORT virtual void _OnUpdate(DgnViewportR viewport, UpdatePlan const& plan) override;
 
     //! Called when the visibility of a category is changed.
     DGNPLATFORM_EXPORT virtual void _OnCategoryChange(bool singleEnabled) override;

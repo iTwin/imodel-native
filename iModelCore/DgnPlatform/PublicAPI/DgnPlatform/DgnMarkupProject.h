@@ -353,14 +353,9 @@ protected:
     virtual void _OnViewOpened(DgnViewportR vp) override;
 
     //  Override and forward the methods that trigger a query.
-    virtual void _OnFullUpdate(DgnViewportR viewport, UpdatePlan const&) override;
-    virtual void _OnDynamicUpdate(DgnViewportR viewport, UpdatePlan const&) override;
+    virtual void _OnUpdate(DgnViewportR viewport, UpdatePlan const&) override;
     virtual void _OnCategoryChange(bool singleEnabled) override;
     virtual void _ChangeModelDisplay(DgnModelId modelId, bool onOff) override;
-
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    virtual Render::GraphicPtr _StrokeGeometry(ViewContextR, GeometrySourceCR, double) override;
-#endif
 
     //virtual ScanRange _ShowTxnSummary(TxnSummaryCR summary) override; -- we don't need to override this, because the subject view will never have changed elements that must be displayed
     virtual void _OnAttachedToViewport(DgnViewportR) override;

@@ -35,7 +35,6 @@ DGNPLATFORM_REF_COUNTED_PTR(HypermodelingViewController)
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 
-struct UpdatePlan;
 
 enum class OrientationMode
 {
@@ -226,13 +225,9 @@ protected:
 
     DGNPLATFORM_EXPORT virtual StatusInt _VisitHit(HitDetailCR hit, DecorateContextR context) const;
 
-    //! Used to notify derived classes when a dynamic update begins.
-    //! <p>See QueryViewController::_OnDynamicUpdate
-    virtual void _OnDynamicUpdate(DgnViewportR vp, UpdatePlan const&) {}    
-
-    //! Used to notify derived classes when a full update begins.
+    //! Used to notify derived classes when an update begins.
     //! <p>See QueryViewController::_OnFullUpdate
-    virtual void _OnFullUpdate(DgnViewportR vp, UpdatePlan const&) {}
+    virtual void _OnUpdate(DgnViewportR vp, UpdatePlan const&) {}
 
     //! Used to notify derived classes of an attempt to locate the viewport around the specified
     //! WGS84 location. Override to change how these points are interpreted.
@@ -305,8 +300,7 @@ public:
     DGNPLATFORM_EXPORT void LookAtViewAlignedVolume(DRange3dCR volume, double const* aspectRatio=nullptr, MarginPercent const* margin=nullptr, bool expandClippingPlanes=true);
     void SaveToSettings(JsonValueR val) const {_SaveToSettings(val);}
     void RestoreFromSettings(JsonValueCR val) {_RestoreFromSettings(val);}
-    void OnFullUpdate(DgnViewportR vp, UpdatePlan const& plan) {_OnFullUpdate(vp, plan);}
-    void OnDynamicUpdate(DgnViewportR vp, UpdatePlan const& plan) {_OnDynamicUpdate(vp, plan);}
+    void OnUpdate(DgnViewportR vp, UpdatePlan const& plan) {_OnUpdate(vp, plan);}
 
 public:
     DgnClassId GetClassId() const {return m_classId;}
