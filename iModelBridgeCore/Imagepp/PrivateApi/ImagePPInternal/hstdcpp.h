@@ -5,12 +5,6 @@
 //:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
-//*****************************************************************************
-// hstdcpp.h
-//
-//      Header for HMR C++ standards
-//
-//*****************************************************************************
 #pragma once
 
 #include <ImagePP/h/ImageppAPI.h>
@@ -18,18 +12,24 @@
 #include <Bentley/BeFileListIterator.h>
 
 // General compiler Include files
-#if defined (ANDROID) || defined (__APPLE__)
+#if defined (BENTLEY_WIN32) ||defined(BENTLEY_WINRT)
+#pragma inline_depth(64)
 
+#include <concrt.h>
+#include <ppl.h>
 
-#elif defined(_WIN32) || defined(WIN32)
+#elif defined(__unix__)
 
-#   pragma inline_depth(64)
-
-#   include <concrt.h>
-#   include <ppl.h>
+//  #if defined (__APPLE__)
+//      apple specific here
+//  #endif
+    
+//  #if defined (ANDROID)
+//      android specific here
+//   #endif
 
 #else
-#   error Unknown compiler - No STL inclusion Standard defined
+    #error unknown compiler
 #endif
 
 // C++ 11 std headers
