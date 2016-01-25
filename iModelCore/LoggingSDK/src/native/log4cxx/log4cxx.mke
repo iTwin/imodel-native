@@ -2,7 +2,7 @@
 #
 #     $Source: src/native/log4cxx/log4cxx.mke $
 #
-#   $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+#   $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
 HAVE_PERMISSION_TO_COMPILE_AT_W3=1
@@ -67,11 +67,13 @@ Objects =% $(MultiCompileObjectList)
 #-----------------------------------------------------------------------
 LINKER_LIBRARIES   =    $(ContextSubpartsLibs)Bentley.lib \
                         $(ContextSubpartsLibs)BentleyAllocator.lib \
-                        $(ContextSubpartsLibs)libsmtp08.lib \
                         $(ContextSubpartsLibs)liblog4cxx010.lib \
                         $(BuildContextSubParts)staticlibs/libapr010302.lib \
                         $(BuildContextSubParts)staticlibs/libaprutil010302.lib \
                         ws2_32.lib odbc32.lib advapi32.lib mswsock.lib
+
+# Cannot use libsmtp in DgnDb due to licensing concerns.
+#                        $(BuildContextSubParts)libs/libsmtp08.lib \
 
 %include linklibrary.mki
 

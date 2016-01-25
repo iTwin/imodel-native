@@ -1,8 +1,8 @@
 #--------------------------------------------------------------------------------------
 #
-#     $Source: logging/native/log4cxxsrv/server.mke $
+#     $Source: src/native/log4cxxsrv/server.mke $
 #
-#   $Copyright: (c) 2008 Bentley Systems, Incorporated. All rights reserved. $
+#   $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
 
@@ -80,8 +80,11 @@ $(o)servmain$(oext)     :   $(srvhlprDir)servmain.cpp  $(Includes)
 #-----------------------------------------------------------------------
 #   Create the Windows NT DLL from Objects
 #-----------------------------------------------------------------------
-EXE_LIBS        = $(libraryDir)liblog4cxx010.lib $(smtpLib)libsmtp08.lib $(libraryDir)libapr010302.lib $(libraryDir)libaprutil010302.lib $(libraryDir)libapriconv010201.lib
+EXE_LIBS        = $(libraryDir)liblog4cxx010.lib $(libraryDir)libapr010302.lib $(libraryDir)libaprutil010302.lib $(libraryDir)libapriconv010201.lib
 EXE_NT_LIBS     = ws2_32.lib odbc32.lib advapi32.lib shell32.lib mswsock.lib
+
+# Cannot use libsmtp in DgnDb due to licensing concerns.
+# $(smtpLib)libsmtp08.lib
 
 %include linktool.mki
 

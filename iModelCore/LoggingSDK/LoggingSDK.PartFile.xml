@@ -27,7 +27,8 @@
     <Part Name="LoggingNative" OnlyPlatforms="x86,x64" ExcludeLibType="Static">
         <SubPart PartName="BentleyDll"              PartFile="Bentley"    Repository="Bentley" />
         <SubPart PartName="all"                     PartFile="apr"        Repository="libsrc-Apr" />
-        <SubPart PartName="libsmtp"                 PartFile="libsmtp"    Repository="libsrc-Libsmtp" />
+        <!-- Cannot use libsmtp in DgnDb due to licensing concerns. -->
+        <!-- <SubPart PartName="libsmtp"                 PartFile="libsmtp"    Repository="libsrc-Libsmtp" /> -->
         <SubPart PartName="log4cxx"                 PartFile="log4cxx"    Repository="libsrc-Log4cxx" />
         <SubPart PartName="LoggingNativeLog4cxx" />
     </Part>

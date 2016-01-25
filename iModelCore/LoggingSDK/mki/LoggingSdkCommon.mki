@@ -2,7 +2,7 @@
 #
 #     $Source: mki/LoggingSdkCommon.mki $
 #
-#   $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+#   $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
 %if defined (__LoggingSdkCommon_mki__)
@@ -33,7 +33,8 @@ libraryDir              = $(o)
 installDir              = $(deliveryDir)install/
 includeDir              = $(deliveryDir)include/
 atpDir                  = $(buildDir)atp/
-smtpLib                 = $(buildDir)libsmtp/lib/
+# Cannot use libsmtp in DgnDb due to licensing concerns.
+# smtpLib                 = $(buildDir)libsmtp/lib/
 devdocDir               = $(docDir)$(devdocProject)
 
 BuildContext            = $(OutBuildContexts)LoggingSDK/
