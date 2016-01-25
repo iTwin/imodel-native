@@ -308,15 +308,16 @@
     <Part Name="PrewireForUnitTests" BentleyBuildMakeFile="Tests/UnitTests/Prewire.mke">
         <SubPart PartName="WebServicesCache" />
         <SubPart PartName="WebServicesClient"/>
+        <SubPart PartName="WSClientTestAssets" />
         <Bindings>
             <Files ProductDirectoryName="UnitTests-IgnoreList" ProductSubDirectory="WebServices" SubPartDirectory="UnitTests/WebServices">
                 Delivery/UnitTests/ignore_list.txt
              </Files>
-            <!-- WIP: what should be symlinking the WSClientTestAssets directory? <Directory ProductDirectoryName="WSClientTestAssets" SourceName="WSClientTestAssets"/> -->
+            <Directory ProductDirectoryName="WSClientTestAssets" SourceName="WSClientTestAssets"/>
         </Bindings>
     </Part>
 
-    <Part Name="WSClientUnitTests-Assets" BentleyBuildMakeFile="Tests/UnitTests/TestAssetsDelivery.mke" />
+    <Part Name="WSClientTestAssets" BentleyBuildMakeFile="Tests/UnitTests/AssetsDelivery.mke" />
 
     <Part Name="UnitTests-Published" 
         BentleyBuildMakeFile="Tests/UnitTests/BuildTests.mke" 
@@ -324,9 +325,6 @@
         >
         <SubPart PartName="PrewireForUnitTests" />
         <SubPart PartName="WSClient-PublishedAPI" />
-        
-        <!-- Assets -->
-        <SubPart PartName="WSClientUnitTests-Assets" />
         
         <Bindings>
             <Directory ProductDirectoryName="UnitTests-Objects" ProductSubDirectory="WebServices/Published" SourceName="Delivery/UnitTests/Objects/Published"/>

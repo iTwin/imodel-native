@@ -271,7 +271,7 @@
   <ItemGroup>
     <None Include="BuildTests.mke" />
     <None Include="Prewire.mke" />
-    <None Include="TestAssetsDelivery.mke" />
+    <None Include="AssetsDelivery.mke" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="ignore_list.txt" />
