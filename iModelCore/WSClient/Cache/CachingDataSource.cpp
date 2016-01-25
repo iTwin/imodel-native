@@ -2,7 +2,7 @@
  |
  |     $Source: Cache/CachingDataSource.cpp $
  |
- |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 
@@ -378,7 +378,7 @@ AsyncTaskPtr<CachingDataSource::Result> CachingDataSource::UpdateSchemas(ICancel
                     std::vector<ECSchemaPtr> changedSchemas;
                     if (SUCCESS != LoadSchemas(changedSchemaPaths, changedSchemas))
                         {
-                        result->SetError(Status::InternalCacheError);
+                        result->SetError(Status::RepositorySchemaError);
                         return;
                         }
 
@@ -386,7 +386,7 @@ AsyncTaskPtr<CachingDataSource::Result> CachingDataSource::UpdateSchemas(ICancel
                     auto txn = StartCacheTransaction();
                     if (SUCCESS != txn.GetCache().UpdateSchemas(changedSchemas))
                         {
-                        result->SetError(Status::InternalCacheError);
+                        result->SetError(Status::RepositorySchemaError);
                         return;
                         }
 

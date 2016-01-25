@@ -2,7 +2,7 @@
  |
  |     $Source: PublicAPI/WebServices/Cache/ICachingDataSource.h $
  |
- |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -41,6 +41,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ICachingDataSource
             NetworkErrorsOccured,
             FunctionalityNotSupported,
             DependencyNotSynced,
+            RepositorySchemaError,
             ApplicationError        // Used by application logic to pass user-readable error messages
             };
 
