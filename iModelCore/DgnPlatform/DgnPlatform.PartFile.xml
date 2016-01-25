@@ -101,6 +101,7 @@
         <SubPart PartName="DgnPlatformDLL"      PartFile="DgnPlatform"  Repository="DgnPlatform" />
         <Bindings>
             <Files Required="false" SubPartDirectory="UnitTests/include/UnitTests/BackDoor/DgnPlatform">Delivery/UnitTests/ScopedDgnHost.h</Files>
+            <Files Required="false" SubPartDirectory="UnitTests/include/UnitTests/BackDoor/DgnPlatform">Delivery/UnitTests/DgnDbTestUtils.h</Files>
         </Bindings>
     </Part>
 
@@ -144,8 +145,16 @@
     <Part Name="DgnDbUnitTestsData" OnlyPlatforms="x64,x86">
         <RequiredRepository>DgnDbUnitTestsData</RequiredRepository>
     </Part>
-    
+
+    <Part Name="DgnDbTestUtils" BentleyBuildMakeFile="Tests/DgnProject/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=DgnDbTestUtils">
+        <SubPart PartName="PrewireForUnitTests" />
+        <Bindings>
+            <Directory ProductDirectoryName="UnitTests-Objects"    ProductSubDirectory="DgnPlatform/DgnDbTestUtils" SourceName="Delivery/UnitTests/Objects/DgnDbTestUtils"/>
+        </Bindings>
+    </Part>
+
     <Part Name="BackdoorForUnitTests" BentleyBuildMakeFile="Tests/DgnProject/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=BackDoor">
+        <SubPart PartName="DgnDbTestUtils" />
         <SubPart PartName="PrewireForUnitTests" />
         <Bindings>
             <Directory ProductDirectoryName="UnitTests-Objects"    ProductSubDirectory="DgnPlatform/BackDoor" SourceName="Delivery/UnitTests/Objects/BackDoor"/>

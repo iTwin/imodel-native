@@ -1,9 +1,9 @@
 //-------------------------------------------------------------------------------------- 
-//     $Source: Tests/DgnProject/Published/BaseTestGroup.cpp $
+//     $Source: Tests/DgnProject/DgnDbTestUtils/DgnDbTestUtils.cpp $
 //  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //-------------------------------------------------------------------------------------- 
 
-#include "BaseTestGroup.h"
+#include <UnitTests/BackDoor/DgnPlatform/DgnDbTestUtils.h>
 #include <DgnPlatform/DgnPlatformLib.h>
 
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
@@ -16,21 +16,79 @@ USING_NAMESPACE_BENTLEY_SQLITE_EC
         return BAD_RETURN;\
         }
 
+#define EMPTY3D_FILENAME L"DgnDbTestUtils_Empty3d.dgndb"
+#define DEFAULT_MODEL_NAME "DefaultModel"
+#define DEFAULT_CATEGORY_NAME "DefaultCategory"
+#define DEFAULT_CAMERA_VIEW_NAME "DefaultCameraView"
+
+bool DgnDbTestUtils::s_createdSeedFiles;
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                           Sam.Wilson             01/2016
 //---------------------------------------------------------------------------------------
-static BeFileName getOutputPath(WCharCP relPath)
+static BeFileName getOutputPath(WStringCR relPath)
     {
     BeFileName outputPathName;
     BeTest::GetHost().GetOutputRoot(outputPathName);
-    outputPathName.AppendToPath(relPath);
+    outputPathName.AppendToPath(relPath.c_str());
     return outputPathName;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                           Sam.Wilson             01/2016
 //---------------------------------------------------------------------------------------
-BeFileNameStatus BaseTestGroup::CreateSubDirectory(WCharCP relPath)
+void DgnDbTestUtils::CreateSeedFiles()
+    {
+    ASSERT_NE(nullptr, DgnPlatformLib::QueryHost()) << "Your TC_SETUP function must set up a host before calling DgnDbTestUtils::CreateSeedFiles. Just put an instance of ScopedDgnHost on the stack at the top of your function.";
+
+    if (s_createdSeedFiles)
+        return;
+
+    s_createdSeedFiles = true;
+
+    DgnDbPtr db = DgnDbTestUtils::CreateDgnDb(GetEmpty3dSeedFileName());
+    SpatialModelPtr model = DgnDbTestUtils::InsertSpatialModel(*db, GetDefaultModelCode());
+    DgnDbTestUtils::InsertCameraView(*model);
+    DgnDbTestUtils::InsertCategory(*db, GetDefaultCategoryName());
+    InsertCameraView(*model, GetDefaultCameraViewName());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                           Sam.Wilson             01/2016
+//---------------------------------------------------------------------------------------
+WCharCP DgnDbTestUtils::GetEmpty3dSeedFileName()
+    {
+    return EMPTY3D_FILENAME;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                           Sam.Wilson             01/2016
+//---------------------------------------------------------------------------------------
+DgnCode DgnDbTestUtils::GetDefaultModelCode()
+    {
+    return DgnModel::CreateModelCode(DEFAULT_MODEL_NAME);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                           Sam.Wilson             01/2016
+//---------------------------------------------------------------------------------------
+Utf8CP DgnDbTestUtils::GetDefaultCategoryName()
+    {
+    return DEFAULT_CATEGORY_NAME;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                           Sam.Wilson             01/2016
+//---------------------------------------------------------------------------------------
+Utf8CP DgnDbTestUtils::GetDefaultCameraViewName()
+    {
+    return DEFAULT_CAMERA_VIEW_NAME;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                           Sam.Wilson             01/2016
+//---------------------------------------------------------------------------------------
+BeFileNameStatus DgnDbTestUtils::CreateSubDirectory(WCharCP relPath)
     {
     BeFileName path = getOutputPath(relPath);
     if (path.IsDirectory() || path.DoesPathExist())
@@ -44,7 +102,7 @@ BeFileNameStatus BaseTestGroup::CreateSubDirectory(WCharCP relPath)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                           Sam.Wilson             01/2016
 //---------------------------------------------------------------------------------------
-void BaseTestGroup::EmptySubDirectory(WCharCP relPath)
+void DgnDbTestUtils::EmptySubDirectory(WCharCP relPath)
     {
     BeFileName path = getOutputPath(relPath);
     BeFileName::EmptyDirectory(path.c_str());
@@ -53,7 +111,7 @@ void BaseTestGroup::EmptySubDirectory(WCharCP relPath)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                           Sam.Wilson             01/2016
 //---------------------------------------------------------------------------------------
-DgnDbPtr BaseTestGroup::CreateDgnDb(WCharCP relPath)
+DgnDbPtr DgnDbTestUtils::CreateDgnDb(WCharCP relPath)
     {
     MUST_HAVE_HOST(nullptr);
 
@@ -85,7 +143,7 @@ DgnDbPtr BaseTestGroup::CreateDgnDb(WCharCP relPath)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                           Sam.Wilson             01/2016
 //---------------------------------------------------------------------------------------
-DgnDbPtr BaseTestGroup::OpenDgnDb(WCharCP relPath, DgnDb::OpenMode mode)
+DgnDbPtr DgnDbTestUtils::OpenDgnDb(WCharCP relPath, DgnDb::OpenMode mode)
     {
     BeFileName fileName = getOutputPath(relPath);
     DbResult openStatus;
@@ -99,7 +157,7 @@ DgnDbPtr BaseTestGroup::OpenDgnDb(WCharCP relPath, DgnDb::OpenMode mode)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                           Sam.Wilson             01/2016
 //---------------------------------------------------------------------------------------
-DgnDbPtr BaseTestGroup::OpenDgnDb(WCharCP relSeedPath)
+DgnDbPtr DgnDbTestUtils::OpenDgnDb(WCharCP relSeedPath)
     {
     return OpenDgnDb(relSeedPath, DgnDb::OpenMode::Readonly);
     }
@@ -107,47 +165,83 @@ DgnDbPtr BaseTestGroup::OpenDgnDb(WCharCP relSeedPath)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                           Sam.Wilson             01/2016
 //---------------------------------------------------------------------------------------
-DgnDbPtr BaseTestGroup::CopyDgnDb(WCharCP redlSeedPath, WCharCP nameOfCopy)
+DgnDbPtr DgnDbTestUtils::OpenDgnDbCopy(WCharCP relSeedPathIn)
     {
-    BeFileName infileName = getOutputPath(redlSeedPath);
-    BeFileName ccfileName = getOutputPath(nameOfCopy);
-
-    if (ccfileName.GetExtension().empty())
+    //  Make sure the input filename has an extension. (We must be checking for unique filenames with the extension in place. If we don't provide an extension, OpenDgnDb will add ".dgndb".)
+    WString relSeedPath(relSeedPathIn);
+    
+    size_t idot = relSeedPath.rfind(L".");
+    if (WString::npos == idot)
         {
-        EXPECT_FALSE(true) << WPrintfString(L"%ls - missing a file extension", nameOfCopy).c_str();
+        relSeedPath.append(L".dgndb");
+        idot = relSeedPath.rfind(L".");
+        }
+        
+    BeFileName infileName = getOutputPath(relSeedPath.c_str());
+    if (!infileName.DoesPathExist())
+        {
+        EXPECT_FALSE(true) << WPrintfString(L"%ls - file not found", infileName.c_str()).c_str();
         return nullptr;
         }
 
-    if (ccfileName.DoesPathExist())
+    //  Create a unique name for the output file, based on the input seed filename.
+    WString ccRelPathNoExt = relSeedPath.substr(0, idot);
+    WString ccExt = relSeedPath.substr(idot+1);
+
+    //  1. The output file MUST be in a subdirectory that is specific to the current test case. (That's how we keep test groups out of each other's way.)
+    Utf8String tcname;
+    if (BSISUCCESS != BeTest::GetNameOfCurrentTestCase(tcname))
         {
-        EXPECT_FALSE(true) << WPrintfString(L"%ls - read-write copy of file already exists. Use a unique name for your test's copy.", ccfileName.c_str()).c_str();
+        EXPECT_FALSE(true) << "DgnDbTestUtils::OpenDgnDbCopy can only be called from a test, not a static setup function.";
         return nullptr;
         }
+
+    WString wtcname(tcname.c_str(), BentleyCharEncoding::Utf8);
+    if (!wtcname.Equals(ccRelPathNoExt.substr(0, tcname.size())))
+        {
+        WString tmp(ccRelPathNoExt);
+        ccRelPathNoExt = wtcname;
+        ccRelPathNoExt.append(L"/").append(tmp);
+        }
+
+    //  2. Generate a unique name
+    BeFileName ccfileName;
+    WString ccRelPath;
+    int ncopies = 0;
+    do  {
+        if (0 == ncopies)
+            ccRelPath = WPrintfString(L"%ls.%ls", ccRelPathNoExt.c_str(), ccExt.c_str());
+        else
+            ccRelPath = WPrintfString(L"%ls-%d.%ls", ccRelPathNoExt.c_str(), ncopies, ccExt.c_str());
+        ccfileName = getOutputPath(ccRelPath.c_str());
+        ++ncopies;
+        } 
+    while (ccfileName.DoesPathExist());
 
     BeFileNameStatus fileStatus = BeFileName::BeCopyFile(infileName.c_str(), ccfileName.c_str(), /*failIfFileExists*/true);
     EXPECT_EQ(BeFileNameStatus::Success, fileStatus) << WPrintfString(L"%ls => %ls - copy failed", infileName.c_str(), ccfileName.c_str()).c_str();
 
-    return OpenDgnDb(nameOfCopy, DgnDb::OpenMode::ReadWrite);
+    return OpenDgnDb(ccRelPath.c_str(), DgnDb::OpenMode::ReadWrite);
     }
 
 /*---------------------------------------------------------------------------------**//**
 // @bsimethod                                           Sam.Wilson             01/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-SpatialModelPtr BaseTestGroup::InsertSpatialModel(DgnDbR db, Utf8CP modelName)
+SpatialModelPtr DgnDbTestUtils::InsertSpatialModel(DgnDbR db, DgnCode modelCode)
     {
     MUST_HAVE_HOST(nullptr);
 
     DgnClassId mclassId = DgnClassId(db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_SpatialModel));
-    SpatialModelPtr catalogModel = new SpatialModel(DgnModel3d::CreateParams(db, mclassId, DgnModel::CreateModelCode(modelName)));
+    SpatialModelPtr catalogModel = new SpatialModel(DgnModel3d::CreateParams(db, mclassId, modelCode));
     DgnDbStatus status = catalogModel->Insert();
-    EXPECT_EQ(DgnDbStatus::Success, status) << WPrintfString(L"%ls - insert into %ls failed with %x", modelName, db.GetFileName().c_str(), (int)status).c_str();
+    EXPECT_EQ(DgnDbStatus::Success, status) << WPrintfString(L"%ls - insert into %ls failed with %x", modelCode.GetValue(), db.GetFileName().c_str(), (int)status).c_str();
     return catalogModel;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                           Sam.Wilson             01/2016
 //---------------------------------------------------------------------------------------
-void BaseTestGroup::UpdateProjectExtents(DgnDbR db)
+void DgnDbTestUtils::UpdateProjectExtents(DgnDbR db)
     {
     AxisAlignedBox3d physicalExtents;
     physicalExtents = db.Units().ComputeProjectExtents();
@@ -157,7 +251,7 @@ void BaseTestGroup::UpdateProjectExtents(DgnDbR db)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                           Sam.Wilson             01/2016
 //---------------------------------------------------------------------------------------
-void BaseTestGroup::FitView(DgnDbR db, DgnViewId viewId)
+void DgnDbTestUtils::FitView(DgnDbR db, DgnViewId viewId)
     {
     SpatialViewDefinitionCPtr view = dynamic_cast<SpatialViewDefinitionCP>(ViewDefinition::QueryView(viewId, db).get());
     ASSERT_TRUE(view.IsValid());
@@ -172,7 +266,7 @@ void BaseTestGroup::FitView(DgnDbR db, DgnViewId viewId)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                           Sam.Wilson             01/2016
 //---------------------------------------------------------------------------------------
-DgnCategoryId BaseTestGroup::InsertCategory(DgnDbR db, Utf8CP categoryName, DgnSubCategory::Appearance const& appearance, DgnCategory::Scope scope, DgnCategory::Rank rank)
+DgnCategoryId DgnDbTestUtils::InsertCategory(DgnDbR db, Utf8CP categoryName, DgnSubCategory::Appearance const& appearance, DgnCategory::Scope scope, DgnCategory::Rank rank)
     {
     MUST_HAVE_HOST(DgnCategoryId());
 
@@ -187,7 +281,7 @@ DgnCategoryId BaseTestGroup::InsertCategory(DgnDbR db, Utf8CP categoryName, DgnS
 //---------------------------------------------------------------------------------------
 // @bsimethod                                           Sam.Wilson             01/2016
 //---------------------------------------------------------------------------------------
-DgnAuthorityId BaseTestGroup::InsertNamespaceAuthority(DgnDbR db, Utf8CP authorityName)
+DgnAuthorityId DgnDbTestUtils::InsertNamespaceAuthority(DgnDbR db, Utf8CP authorityName)
     {
     MUST_HAVE_HOST(DgnAuthorityId());
     
@@ -200,7 +294,7 @@ DgnAuthorityId BaseTestGroup::InsertNamespaceAuthority(DgnDbR db, Utf8CP authori
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Sam.Wilson      06/15
 //---------------------------------------------------------------------------------------
-DgnViewId BaseTestGroup::InsertCameraView(SpatialModelR model, Utf8CP nameIn)
+DgnViewId DgnDbTestUtils::InsertCameraView(SpatialModelR model, Utf8CP nameIn)
     {
     MUST_HAVE_HOST(DgnViewId());
     
