@@ -211,7 +211,7 @@ TEST_F(StandardValueToEnumConversionTest, StandardValuesTest)
 
     ASSERT_TRUE(ECSchemaConverter::Convert(*m_schema.get())) << "Failed to convert schema";
     ECEnumerationCP ecEnum;
-    ASSERT_NE(nullptr, ecEnum = m_schema->GetEnumerationCP("Name_Title")) << "Failed to Create Enum";
+    ASSERT_NE(nullptr, ecEnum = m_schema->GetEnumerationCP("Name_Title")) << "Failed to Create Name_Title Enum";
     EXPECT_EQ(5, ecEnum->GetEnumeratorCount());
 
     std::map <int, Utf8String> sdValues = { { 1, "Mr." },{ 0, "Ms." },{ -10, "Mr." },{ 11, "Ms." },{ 2, "Sensei" } };
@@ -219,7 +219,7 @@ TEST_F(StandardValueToEnumConversionTest, StandardValuesTest)
         {
         int i = enumerator->GetInteger();
         Utf8String displayLabel = enumerator->GetDisplayLabel();
-        EXPECT_EQ(displayLabel, sdValues[i]);
+        EXPECT_EQ(displayLabel, sdValues[i]) << "Enumrator displaylabel doesnot match StandardValue's Display String";
         }
     }
 
@@ -495,21 +495,21 @@ TEST_F(StandardValueToEnumConversionTest, DuplicatSDValues)
     ECEnumerationCP ecEnum;
     //with duplicate sd values only one enumeration is created as classname + propertyname
 
+    Utf8String enumName1 = "C_TitleB";
     //within a class if different property have same enumeration, propertyB trumps propertyC if propertyB < propertyC
-    ASSERT_NE(nullptr, ecEnum = m_schema->GetEnumerationCP("C_TitleB")) << "Enumeration C_TitleB should have been created";
-    EXPECT_EQ(1, ecEnum->GetEnumeratorCount());
+    ASSERT_NE(nullptr, ecEnum = m_schema->GetEnumerationCP(enumName1.c_str())) << "Enumeration " << enumName1 << " should have been created";
     EXPECT_EQ(nullptr, ecEnum = m_schema->GetEnumerationCP("C_TitleC")) << "Enumeration C_TitleC should NOT have been created";
-    EXPECT_EQ("C_TitleB", m_schema->GetClassCP("C")->GetPropertyP("TitleC", false)->GetTypeName()) << "Enum type should have been C_TitleB";
+    EXPECT_EQ(enumName1, m_schema->GetClassCP("C")->GetPropertyP("TitleC", false)->GetTypeName()) << "Enum type should have been " << enumName1;
 
     //with same class(including child,parent) and property name, baseclass name trumps
     EXPECT_EQ(nullptr, ecEnum = m_schema->GetEnumerationCP("A_TitleB")) << "Enumeration A_TitleB should NOT have been created";
-    EXPECT_EQ("C_TitleB", m_schema->GetClassCP("A")->GetPropertyP("TitleB", false)->GetTypeName()) << "Enum type should have been C_TitleB";
+    EXPECT_EQ(enumName1, m_schema->GetClassCP("A")->GetPropertyP("TitleB", false)->GetTypeName()) << "Enum type should have been " << enumName1;
 
-    Utf8String enumName = "C_TitleA";
-    CheckTypeName(enumName.c_str(), *m_schema, "TitleA", { "D", "B", "C" });
+    Utf8String enumName2 = "C_TitleA";
+    CheckTypeName(enumName2.c_str(), *m_schema, "TitleA", { "D", "B", "C" });
 
     //with same class(including child,parent) and property name, baseclass name trumps even if base class property has no CA attached to it
-    ASSERT_NE(nullptr, ecEnum = m_schema->GetEnumerationCP(enumName.c_str())) << "Enumeration" << enumName << "should have been created";
+    ASSERT_NE(nullptr, ecEnum = m_schema->GetEnumerationCP(enumName2.c_str())) << "Enumeration" << enumName2 << "should have been created";
     EXPECT_EQ(nullptr, ecEnum = m_schema->GetEnumerationCP("B_TitleA")) << "Enumeration B_TitleA should NOT have been created";
 
     //with different classes having same sd values, classA trumps classB if classA < classB 
@@ -684,19 +684,19 @@ TEST_F(StandardValueToEnumConversionTest, NOTDuplicatSDValues)
     ASSERT_EQ(5, m_schema->GetEnumerationCount());
 
     ECEnumerationCP ecEnum;
-    ASSERT_NE(nullptr, ecEnum = m_schema->GetEnumerationCP("Name_Title")) << "Failed to Create Enum";
+    ASSERT_NE(nullptr, ecEnum = m_schema->GetEnumerationCP("Name_Title")) << "Failed to Create Name_Title Enum";
     EXPECT_EQ(2, ecEnum->GetEnumeratorCount());
 
-    ASSERT_NE(nullptr, ecEnum = m_schema->GetEnumerationCP("Name_NotDuplicateDifferentMustBeFromListValue")) << "Failed to Create Enum";
+    ASSERT_NE(nullptr, ecEnum = m_schema->GetEnumerationCP("Name_NotDuplicateDifferentMustBeFromListValue")) << "Failed to Create Name_NotDuplicateDifferentMustBeFromListValue Enum";
     EXPECT_EQ(2, ecEnum->GetEnumeratorCount());
 
-    ASSERT_NE(nullptr, ecEnum = m_schema->GetEnumerationCP("Name_NotDuplicate")) << "Failed to Create Enum";
+    ASSERT_NE(nullptr, ecEnum = m_schema->GetEnumerationCP("Name_NotDuplicate")) << "Failed to Create Name_NotDuplicate Enum";
     EXPECT_EQ(2, ecEnum->GetEnumeratorCount());
 
-    ASSERT_NE(nullptr, ecEnum = m_schema->GetEnumerationCP("Name_NotDuplicateEither")) << "Failed to Create Enum";
+    ASSERT_NE(nullptr, ecEnum = m_schema->GetEnumerationCP("Name_NotDuplicateEither")) << "Failed to Create Name_NotDuplicateEither Enum";
     EXPECT_EQ(3, ecEnum->GetEnumeratorCount());
 
-    ASSERT_NE(nullptr, ecEnum = m_schema->GetEnumerationCP("Name_AlsoNotDuplicate")) << "Failed to Create Enum";
+    ASSERT_NE(nullptr, ecEnum = m_schema->GetEnumerationCP("Name_AlsoNotDuplicate")) << "Failed to Create Name_AlsoNotDuplicate Enum";
     EXPECT_EQ(3, ecEnum->GetEnumeratorCount());
 
     }
@@ -960,7 +960,7 @@ TEST_F(StandardValueToEnumConversionTest, InheritedSDValues_ConversionSucess)
     ASSERT_EQ(1, m_schema->GetEnumerationCount());
 
     Utf8String enumName = "C_TitleA";
-    CheckTypeName(enumName.c_str(), *m_schema, "TitleA", { "B","C" });
+    CheckTypeName(enumName.c_str(), *m_schema, "TitleA", { "B","C","A" });
     ASSERT_NE(nullptr, m_schema->GetEnumerationCP(enumName.c_str())) << "Enumeration " << enumName << "should have been created";
     }
 
@@ -1250,19 +1250,10 @@ TEST_F(StandardValueToEnumConversionTest, InheritedSDValues_ConversionSucess_Mul
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(StandardValueToEnumConversionTest, SortedClasses)
     {
-    Utf8CP schemaXMLRef = "<?xml version='1.0' encoding='UTF-8'?>"
-        "<ECSchema schemaName='Trap2' version='78.00' nameSpacePrefix='tr2' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
-        "   <ECSchemaReference name='EditorCustomAttributes' version='01.00' prefix='beca' />"
-        "   <ECClass typeName='D' isStruct='false' isCustomAttributeClass='false' isDomainClass='true'>"
-        "   </ECClass>"
-        "</ECSchema>";
-
     Utf8CP schemaXML = "<?xml version='1.0' encoding='UTF-8'?>"
         "<ECSchema schemaName='Trap' version='78.00' nameSpacePrefix='tr' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
         "   <ECSchemaReference name='EditorCustomAttributes' version='01.00' prefix='beca' />"
-        "   <ECSchemaReference name='Trap2' version='78.00' prefix='tr2' />"
         "   <ECClass typeName='C' isStruct='false' isCustomAttributeClass='false' isDomainClass='true'>"
-        "       <BaseClass>tr2:D</BaseClass>"
         "   </ECClass>"
         "   <ECClass typeName='A' isStruct='false' isCustomAttributeClass='false' isDomainClass='true'>"
         "       <BaseClass>B</BaseClass>"
@@ -1272,19 +1263,13 @@ TEST_F(StandardValueToEnumConversionTest, SortedClasses)
         "   </ECClass>"
         "</ECSchema>";
 
-
-    ECSchemaPtr schemaRef;
-    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schemaRef, schemaXMLRef, *m_readContext));
-
     ECSchemaPtr schema;
     ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, schemaXML, *m_readContext));
     bvector<ECClassP> classes = ECSchemaConverter::GetHierarchicallySortedClasses(*schema);
     bvector<Utf8String> order = { "B", "C", "A" };
     for (size_t i = 0; i < order.size(); i++)
-        EXPECT_EQ(order[i], classes[i]->GetName());
+        EXPECT_EQ(order[i], classes[i]->GetName()) << "Class Order is not Hierarcical";
 
-    EXPECT_TRUE(ECSchemaConverter::IsBaseClass(schema->GetClassCP("A"), schema->GetClassCP("B")));
-    EXPECT_TRUE(ECSchemaConverter::IsBaseClass(schema->GetClassCP("A"), schemaRef->GetClassCP("D")));
     }
 
 //---------------------------------------------------------------------------------------
@@ -1327,8 +1312,9 @@ TEST_F(StandardValueToEnumConversionTest, IsBaseClassTest)
 
     ECSchemaPtr schema2;
     ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema2, schemaXML2, *m_readContext));
-    EXPECT_FALSE(ECSchemaConverter::IsBaseClass(schema->GetClassP("Aa"), schema2->GetClassP("D")));
-
+    EXPECT_FALSE(ECSchemaConverter::IsBaseClass(schema->GetClassP("Aa"), schema2->GetClassP("D")))<< "Class D of Trap2 Schema is not  base class of Aa";
+    EXPECT_TRUE(ECSchemaConverter::IsBaseClass(schema->GetClassP("Aa"), schema->GetClassP("D"))) << "Class D of Trap Schema should be a base class of Aa";
+    EXPECT_TRUE(ECSchemaConverter::IsBaseClass(schema->GetClassP("Aa"), schema->GetClassP("B"))) << "Class B of Trap Schema should be base class of Aa";
     }
 
 //---------------------------------------------------------------------------------------
