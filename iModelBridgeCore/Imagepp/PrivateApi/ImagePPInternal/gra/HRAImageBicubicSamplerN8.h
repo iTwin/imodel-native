@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PrivateApi/ImagePPInternal/gra/HRAImageBicubicSamplerN8.h $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -76,8 +76,8 @@ private:
     template<class Surface_T>
     ImagePPStatus Warp_T(HRAImageSampleR outData, PixelOffset const& outOffset, Surface_T& inData, PixelOffset const& inOffset);
 
-    template<typename Surface_T, class Allocator_T>
-    ImagePPStatus Warp_T(HRAImageSampleR outData, PixelOffset const& outOffset, Surface_T& inData, PixelOffset const& inOffset, Allocator_T& allocator);
+    template<typename Surface_T, class Executor_T>
+    ImagePPStatus Warp_T(HRAImageSampleR outData, PixelOffset const& outOffset, Surface_T& inData, PixelOffset const& inOffset, Executor_T& executor);
 
     template<typename Surface_T>
     ImagePPStatus Stretch_T(HRAImageSampleR outData, PixelOffset const& outOffset, Surface_T& inData, PixelOffset const& inOffset);

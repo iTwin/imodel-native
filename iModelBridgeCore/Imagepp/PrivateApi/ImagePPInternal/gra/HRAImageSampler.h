@@ -72,37 +72,62 @@ private:
     bool m_isAvailable;
 };
 
-/*---------------------------------------------------------------------------------**//**
-* ConcurrencyAllocator
-+---------------+---------------+---------------+---------------+---------------+------*/
-struct ConcurrencyAllocator
-{
-public:
-    ConcurrencyAllocator() { ; }
+//----------------------------------------------------------------------------------------
+// @bsiclass                                                     Mathieu.Marchand  1/2016
+//----------------------------------------------------------------------------------------
+struct SequentialLineExecutor
+    {    
+    typedef SingleBlockAllocator Allocator;
 
-    Byte* AllocMemory(size_t memorySize)
-        {
-#if defined (ANDROID) || defined (__APPLE__)
-        return (Byte*)malloc(memorySize);   //DM-Android
-#elif defined (_WIN32)
-        return (Byte*)Concurrency::Alloc(memorySize); 
-#endif
+    SequentialLineExecutor(SingleBlockAllocator& allocator):m_allocator(allocator){}
 
-        }
-    void FreeMemory(Byte* pMem)
+    Allocator& GetAllocator() {return m_allocator;}
+
+    template <typename lineFunction>
+    void ForEachLine(uint32_t count, const lineFunction& func)
         {
-#if defined (ANDROID) || defined (__APPLE__)
-        free(pMem);   //DM-Android
-#elif defined (_WIN32)
-        Concurrency::Free(pMem);
-#endif
+        for (uint32_t line = 0; line < count; ++line)
+            func(line);
         }
 
-private:
-    ConcurrencyAllocator(ConcurrencyAllocator const&) = delete;
-    ConcurrencyAllocator& operator=(ConcurrencyAllocator const&) = delete;
-};
+    Allocator& m_allocator;
+    };
 
+#ifdef HAVE_CONCURRENCY_RUNTIME
+//----------------------------------------------------------------------------------------
+// @bsiclass                                                   Mathieu.Marchand  1/2016
+//----------------------------------------------------------------------------------------
+struct ConcurrencyLineExecutor
+    {
+    struct Allocator
+        {
+        public:
+            Allocator() { ; }
+
+            Byte* AllocMemory(size_t memorySize)
+                {
+                return (Byte*)Concurrency::Alloc(memorySize); 
+                }
+            void FreeMemory(Byte* pMem)
+                {
+                Concurrency::Free(pMem);
+                }
+        private:
+            Allocator(Allocator const&) = delete;
+            Allocator& operator=(Allocator const&) = delete;
+        };
+
+    Allocator& GetAllocator() {return m_allocator;}
+
+    template <typename lineFunction>
+    static void ForEachLine(uint32_t count, const lineFunction& func)
+        {
+        Concurrency::parallel_for<uint32_t>(0, count, func);
+        }
+
+    Allocator m_allocator;
+    };
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * RawBuffer_T
@@ -192,8 +217,7 @@ protected:
     bool   m_hasTranslationOnly;
 
     // ***** Begin Not-thread safe *****
-    // If we want sampler to be threadable, this memory will need to come from somewhere else
-    SingleBlockAllocator m_allocator; // Not thread safe
+    SingleBlockAllocator m_singleBlockAllocator;
     // ***** End Not-thread safe *****
 
     bool m_enableMultiThreading;

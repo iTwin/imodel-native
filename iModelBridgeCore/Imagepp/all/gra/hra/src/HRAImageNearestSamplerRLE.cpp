@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hra/src/HRAImageNearestSamplerRLE.cpp $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -846,7 +846,7 @@ ImagePPStatus HRAImageNearestSamplerRLE::Warp_T(HRAImageSampleR outData, PixelOf
     uint32_t outWidth = outData.GetWidth();
     uint32_t outHeight = outData.GetHeight();
 
-    RawBuffer_T<double, decltype(m_allocator)> positions(outWidth * 2, m_allocator);
+    RawBuffer_T<double, decltype(m_singleBlockAllocator)> positions(outWidth * 2, m_singleBlockAllocator);
     double* pXPositions = &positions.At(0);
     double* pYPositions = &positions.At(outWidth);
 

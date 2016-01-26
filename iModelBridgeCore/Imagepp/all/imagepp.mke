@@ -110,8 +110,6 @@ HRasterDepends = $(ippAllInc)HRARaster.h \
 #PchExtraOptions = -YcImagePPInternal/hstdcpp.h -Fp$(o)$(appName).pch -Zm110
 
 
-
-
 #PchCompiland                    = $(baseDir)ConverterInternal.cpp
 #PchOutputDir                    = $(o)
 #PchExtraOptions                 = -Zm220
@@ -1433,20 +1431,24 @@ LINKER_LIBRARIES =  $(BeLibJpegTurbo) \
                     $(ContextSubpartsLibs)$(libprefix)BentleyGeom$(libext) \
                     $(ContextSubpartsLibs)$(libprefix)BeCurl$(libext) \
                     $(BaseGeocoordLibExportLib) \
-                    $(ntPlatformLib)Urlmon.lib \
-                    $(ntPlatformLib)wsock32.lib \
-                    $(ntPlatformLib)ws2_32.lib \
                     $(ContextSubpartsLibs)NCSEcw.lib
 
                     # Delaying the load of NCSEcw.lib creates a linker error 
                     # due to the import of the data symbol 
                     # "__declspec(dllimport) const NCS::CMutex::`vftable". 
-                    # This is why the dll is added above without delay-load. 
-
+                    # This is why the dll is added above without delay-load.                   
 
 %if defined (CREATE_STATIC_LIBRARIES)
     # embed our private external static lib into gralib.
     DLM_OBJECT_FILES + $(ContextSubpartsLibs)$(libprefix)MatrixFromTiePts$(stlibext) $(IppGdalLib) $(BeLibJpegTurbo) $(IppJpegLib12Bits) $(ContextSubpartsLibs)$(libprefix)BePng$(stlibext) $(ContextSubpartsLibs)$(libprefix)BeZLib$(stlibext)
+%else
+    %if $(TARGET_PLATFORM)=="Windows" || $(TARGET_PLATFORM)=="WinRT"
+        # For HRFWebFile.cpp
+        LINKER_LIBRARIES + Urlmon.lib
+
+        # For GDAL
+        LINKER_LIBRARIES + wsock32.lib ws2_32.lib
+    %endif
 %endif
 
 %if !defined(IPP_OBJ_ONLY)

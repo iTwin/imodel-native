@@ -50,7 +50,7 @@ ImagePPStatus HRAImageNearestSamplerN1::Stretch_T(HRAImageSampleR outData, Pixel
     uint32_t outWidth = outData.GetWidth();
     uint32_t outHeight = outData.GetHeight();
 
-    RawBuffer_T<uint32_t, decltype(m_allocator)> offsets(outWidth, m_allocator);
+    RawBuffer_T<uint32_t, decltype(m_singleBlockAllocator)> offsets(outWidth, m_singleBlockAllocator);
     uint32_t* pPixelsOffset = &offsets.At(0);
 
     // Build the pre-computed offset array. This is the fastest technique we have so far.
@@ -107,22 +107,23 @@ ImagePPStatus HRAImageNearestSamplerN1::Stretch_T(HRAImageSampleR outData, Pixel
 template<class Surface_T>
 ImagePPStatus HRAImageNearestSamplerN1::Warp_T(HRAImageSampleR outData, PixelOffset const& outOffset, Surface_T& inData, PixelOffset const& inOffset)
     {
-    if (!m_pDestToSrcTransfo->IsConvertDirectThreadSafe())
+#if defined (HAVE_CONCURRENCY_RUNTIME)
+    if (m_enableMultiThreading && m_pDestToSrcTransfo->IsConvertDirectThreadSafe())
         {
-        return Warp_T<Surface_T, SingleBlockAllocator>(outData, outOffset, inData, inOffset, m_allocator);
+        ConcurrencyLineExecutor executor;
+        return Warp_T<Surface_T, ConcurrencyLineExecutor>(outData, outOffset, inData, inOffset, executor);
         }
-    else
-        {
-        ConcurrencyAllocator allocator;
-        return Warp_T<Surface_T, ConcurrencyAllocator>(outData, outOffset, inData, inOffset, allocator);
-        }
+#endif
+
+    SequentialLineExecutor executor(m_singleBlockAllocator);
+    return Warp_T<Surface_T, SequentialLineExecutor>(outData, outOffset, inData, inOffset, executor);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Stephane.Poulin                 10/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-template<class Surface_T, class Allocator_T>
-ImagePPStatus HRAImageNearestSamplerN1::Warp_T(HRAImageSampleR outData, PixelOffset const& outOffset, Surface_T& inData, PixelOffset const& inOffset, Allocator_T& allocator)
+template<class Surface_T, class Executor_T>
+ImagePPStatus HRAImageNearestSamplerN1::Warp_T(HRAImageSampleR outData, PixelOffset const& outOffset, Surface_T& inData, PixelOffset const& inOffset, Executor_T& executor)
     {
     size_t inPitch;
     Byte const* pInBuffer = inData.GetDataCP(inPitch);
@@ -139,7 +140,7 @@ ImagePPStatus HRAImageNearestSamplerN1::Warp_T(HRAImageSampleR outData, PixelOff
     // Process all lines.
     auto lineProcessor = [&](uint32_t row)
         {
-        RawBuffer_T<double, Allocator_T> positions(outWidth * 2, allocator);
+        RawBuffer_T<double, typename Executor_T::Allocator> positions(outWidth * 2, executor.m_allocator);
         double* pXPositions = &positions.At(0);
         double* pYPositions = &positions.At(outWidth);
 
@@ -166,18 +167,7 @@ ImagePPStatus HRAImageNearestSamplerN1::Warp_T(HRAImageSampleR outData, PixelOff
             }
         };
 
-    // Process all lines.
-#if defined (HAVE_CONCURRENCY_RUNTIME)
-    if (m_enableMultiThreading && m_pDestToSrcTransfo->IsConvertDirectThreadSafe())
-        {
-        Concurrency::parallel_for<uint32_t>(0, outHeight, lineProcessor);
-        }
-    else
-#endif
-        {
-        for (uint32_t row = 0; row < outHeight; ++row)
-            lineProcessor(row);
-        }
+    executor.ForEachLine(outHeight, lineProcessor);
 
     return IMAGEPP_STATUS_Success;
     }
