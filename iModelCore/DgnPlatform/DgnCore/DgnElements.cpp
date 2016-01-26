@@ -1042,6 +1042,9 @@ DgnElements::DgnElements(DgnDbR dgndb) : DgnDbTable(dgndb), m_heapZone(0, false)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void dgn_TxnTable::Element::_OnReversedDelete(BeSQLite::Changes::Change const& change)
     {
+    if (m_txnMgr.IsInUndoRedo())
+        AddChange(change, ChangeType::Insert);
+
     DgnElementId elementId = DgnElementId(change.GetValue(0, Changes::Change::Stage::New).GetValueUInt64());
 
     // We need to load this element, since filled models need to register it 
@@ -1055,6 +1058,9 @@ void dgn_TxnTable::Element::_OnReversedDelete(BeSQLite::Changes::Change const& c
 +---------------+---------------+---------------+---------------+---------------+------*/
 void dgn_TxnTable::Element::_OnReversedAdd(BeSQLite::Changes::Change const& change)
     {
+    if (m_txnMgr.IsInUndoRedo())
+        AddChange(change, ChangeType::Delete);
+
     DgnElementId elementId = DgnElementId(change.GetValue(0, Changes::Change::Stage::Old).GetValueUInt64());
 
     // see if we have this element in memory, if so call its _OnDelete method.
@@ -1068,6 +1074,9 @@ void dgn_TxnTable::Element::_OnReversedAdd(BeSQLite::Changes::Change const& chan
 +---------------+---------------+---------------+---------------+---------------+------*/
 void dgn_TxnTable::Element::_OnReversedUpdate(BeSQLite::Changes::Change const& change) 
     {
+    if (m_txnMgr.IsInUndoRedo())
+        AddChange(change, ChangeType::Update);
+
     auto& elements = m_txnMgr.GetDgnDb().Elements();
     DgnElementId elementId = DgnElementId(change.GetValue(0, Changes::Change::Stage::Old).GetValueUInt64());
     DgnElementP el = (DgnElementP) elements.FindElement(elementId);

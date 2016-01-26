@@ -409,6 +409,7 @@ void TxnManager::OnChangesetApplied(ChangeSet& changeset, TxnAction action)
                 BeAssert(false);
             }
         }
+
     m_action = TxnAction::None;
     }
 
@@ -692,13 +693,20 @@ void TxnManager::ReadChangeSet(ChangeSet& changeset, TxnId rowId, TxnAction acti
 void TxnManager::ApplyChanges(TxnId rowId, TxnAction action)
     {
     BeAssert(!HasChanges() && !IsInDynamics());
+    BeAssert(TxnAction::Reverse == action || TxnAction::Reinstate == action); // Do not call ApplyChanges() if you don't want undo/redo notifications sent to TxnMonitors...
 
     UndoChangeSet changeset;
     ReadChangeSet(changeset, rowId, action);
 
+    OnBeginApplyChanges();
     auto rc = ApplyChangeSet(changeset, action);
 
+    // Host/TxnMonitors may want to know current action...OnChangeSetApplied() will have reset it...
+    m_action = action;
     T_HOST.GetTxnAdmin()._OnReversedChanges(*this);
+
+    OnEndApplyChanges();
+    m_action = TxnAction::None;
 
     BeAssert(!HasChanges());
 
@@ -711,6 +719,24 @@ void TxnManager::ApplyChanges(TxnId rowId, TxnAction action)
     stmt->BindInt64(2, rowId.GetValue());
     rc = stmt->Step();
     BeAssert(rc==BE_SQLITE_DONE);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void TxnManager::OnBeginApplyChanges()
+    {
+    for (auto table : m_tables)
+        table->_OnReverse();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void TxnManager::OnEndApplyChanges()
+    {
+    for (auto table : m_tables)
+        table->_OnReversed();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1145,6 +1171,9 @@ void dgn_TxnTable::Model::AddChange(Changes::Change const& change, ChangeType ch
 +---------------+---------------+---------------+---------------+---------------+------*/
 void dgn_TxnTable::Model::_OnReversedAdd(BeSQLite::Changes::Change const& change)
     {
+    if (m_txnMgr.IsInUndoRedo())
+        AddChange(change, ChangeType::Delete);
+
     DgnModelId modelId = change.GetOldValue(0).GetValueId<DgnModelId>();
     DgnModelPtr model = m_txnMgr.GetDgnDb().Models().FindModel(modelId);
     if (!model.IsValid())
@@ -1158,6 +1187,9 @@ void dgn_TxnTable::Model::_OnReversedAdd(BeSQLite::Changes::Change const& change
 +---------------+---------------+---------------+---------------+---------------+------*/
 void dgn_TxnTable::Model::_OnReversedUpdate(BeSQLite::Changes::Change const& change)
     {
+    if (m_txnMgr.IsInUndoRedo())
+        AddChange(change, ChangeType::Update);
+
     DgnModelId modelId = change.GetOldValue(0).GetValueId<DgnModelId>();
     DgnModelPtr model = m_txnMgr.GetDgnDb().Models().FindModel(modelId);
     if (!model.IsValid())
@@ -1165,6 +1197,15 @@ void dgn_TxnTable::Model::_OnReversedUpdate(BeSQLite::Changes::Change const& cha
 
     model->Read(modelId);
     model->_OnUpdated();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void dgn_TxnTable::Model::_OnReversedDelete(BeSQLite::Changes::Change const& change)
+    {
+    if (m_txnMgr.IsInUndoRedo())
+        AddChange(change, ChangeType::Insert);
     }
 
 /*---------------------------------------------------------------------------------**//**
