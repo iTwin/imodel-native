@@ -396,10 +396,12 @@ DbResult ECDbProfileManager::CreateECProfileTables(ECDbR ecdb)
                            "Ordinal INTEGER,"
                            "PrimitiveType INTEGER,"
                            "NonPrimitiveType INTEGER REFERENCES ec_Class(Id) ON DELETE CASCADE,"
+                           "ExtendedType TEXT,"
                            "Enumeration INTEGER REFERENCES ec_Enumeration(Id) ON DELETE CASCADE,"
                            "ArrayMinOccurs INTEGER,"
                            "ArrayMaxOccurs INTEGER,"
                            "NavigationPropertyDirection INTEGER)");
+
     if (BE_SQLITE_OK != stat)
         return stat;
 

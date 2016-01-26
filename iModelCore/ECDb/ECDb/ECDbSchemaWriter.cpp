@@ -558,7 +558,7 @@ BentleyStatus ECDbSchemaWriter::ImportECProperty(ECN::ECPropertyCR ecProperty, i
 
     //now insert the actual property
     BeSQLite::CachedStatementPtr stmt = nullptr;
-    if (BE_SQLITE_OK != m_ecdb.GetCachedStatement(stmt, "INSERT INTO ec_Property(Id,ClassId,Name,DisplayLabel,Description,IsReadonly,Ordinal,Kind,PrimitiveType,NonPrimitiveType,Enumeration,ArrayMinOccurs,ArrayMaxOccurs,NavigationPropertyDirection) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?)"))
+    if (BE_SQLITE_OK != m_ecdb.GetCachedStatement(stmt, "INSERT INTO ec_Property(Id,ClassId,Name,DisplayLabel,Description,IsReadonly,Ordinal,Kind,PrimitiveType,NonPrimitiveType,ExtendedType,Enumeration,ArrayMinOccurs,ArrayMaxOccurs,NavigationPropertyDirection) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)"))
         return ERROR;
 
     if (BE_SQLITE_OK != stmt->BindInt64(1, ecProperty.GetId()))
@@ -589,10 +589,11 @@ BentleyStatus ECDbSchemaWriter::ImportECProperty(ECN::ECPropertyCR ecProperty, i
     const int kindIndex = 8;
     const int primitiveTypeIndex = 9;
     const int nonPrimitiveTypeIndex = 10;
-    const int enumTypeIndex = 11;
-    const int arrayMinIndex = 12;
-    const int arrayMaxIndex = 13;
-    const int navDirIndex = 14;
+    const int extendedTypeIndex = 11;
+    const int enumTypeIndex = 12;
+    const int arrayMinIndex = 13;
+    const int arrayMaxIndex = 14;
+    const int navDirIndex = 15;
     if (ecProperty.GetIsPrimitive())
         {
         PrimitiveECPropertyCP primProp = ecProperty.GetAsPrimitiveProperty();
@@ -602,7 +603,7 @@ BentleyStatus ECDbSchemaWriter::ImportECProperty(ECN::ECPropertyCR ecProperty, i
             if (BE_SQLITE_OK != stmt->BindInt(kindIndex, Enum::ToInt(ECPropertyKind::Primitive)))
                 return ERROR;
 
-            if (BE_SQLITE_OK != stmt->BindInt(primitiveTypeIndex, (int) ecProperty.GetAsPrimitiveProperty()->GetType()))
+            if (BE_SQLITE_OK != stmt->BindInt(primitiveTypeIndex, (int) primProp->GetType()))
                 return ERROR;
             }
         else
@@ -620,6 +621,12 @@ BentleyStatus ECDbSchemaWriter::ImportECProperty(ECN::ECPropertyCR ecProperty, i
                 return ERROR;
 
             if (BE_SQLITE_OK != stmt->BindInt64(enumTypeIndex, enumId))
+                return ERROR;
+            }
+
+        if (primProp->HasExtendedType())
+            {
+            if (BE_SQLITE_OK != stmt->BindText(extendedTypeIndex, primProp->GetExtendedTypeName().c_str(), Statement::MakeCopy::No))
                 return ERROR;
             }
         }

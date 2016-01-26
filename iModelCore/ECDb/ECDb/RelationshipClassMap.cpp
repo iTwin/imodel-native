@@ -443,6 +443,8 @@ MapStatus RelationshipClassEndTableMap::_MapPart1 (SchemaImportContext&, ClassMa
         BeAssert(primaryClassMap != nullptr && "Primary Class map is null");
         auto primaryKeyColumn = primaryClassMap->GetPrimaryTable().GetFilteredColumnFirst(ColumnKind::ECInstanceId);
         auto& primaryTable = primaryKeyColumn->GetTable();
+
+        auto userRequestedDeleteAction = relationshipClassMapInfo.CreateForeignKeyConstraint()? relationshipClassMapInfo.GetOnDeleteAction() : ForeignKeyActionType::NotSpecified;
         if (primaryTable.GetPersistenceType() == PersistenceType::Persisted)
             {
             BeAssert(primaryKeyColumn != nullptr);
@@ -461,11 +463,15 @@ MapStatus RelationshipClassEndTableMap::_MapPart1 (SchemaImportContext&, ClassMa
                 //Create foreign key constraint
                 auto foreignKey = const_cast<ECDbSqlTable*>(foreignTable)->CreateForeignKeyConstraint(primaryTable);
                 foreignKey->Add(foreignKeyColumn->GetName().c_str(), primaryKeyColumn->GetName().c_str());
-                if (GetRelationshipClass().GetStrength() == StrengthType::Embedding)
-                    foreignKey->SetOnDeleteAction(ForeignKeyActionType::Cascade);
+                if (userRequestedDeleteAction!= ForeignKeyActionType::NotSpecified)
+                    foreignKey->SetOnDeleteAction(userRequestedDeleteAction);
                 else
-                    foreignKey->SetOnDeleteAction(ForeignKeyActionType::SetNull);
-
+                    {
+                    if (GetRelationshipClass().GetStrength() == StrengthType::Embedding)
+                        foreignKey->SetOnDeleteAction(ForeignKeyActionType::Cascade);
+                    else
+                        foreignKey->SetOnDeleteAction(ForeignKeyActionType::SetNull);
+                    }
                 foreignKey->RemoveIfDuplicate();
                 }
             }
