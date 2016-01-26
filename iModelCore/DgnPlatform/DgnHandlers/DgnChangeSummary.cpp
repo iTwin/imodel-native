@@ -331,11 +331,11 @@ void DgnChangeSummary::GetElementsWithGeometryUpdates(DgnElementIdSet& elementId
     Utf8CP ecsql = "SELECT el.ECInstanceId FROM dgn.Element el JOIN dgn.ElementGeom elg USING dgn.ElementOwnsGeom WHERE InVirtualSet(?, elg.ECInstanceId)";
     FindRelatedInstanceIds(elementIds, ecsql, changedGeomUsesPartEnds);
 
-    // GeomPart
-    ECInstanceIdSet updatedGeomParts;
-    FindUpdatedInstanceIds(updatedGeomParts, "dgn", "GeomPart");
-    ecsql = "SELECT el.ECInstanceId FROM dgn.Element el JOIN dgn.ElementGeom USING dgn.ElementOwnsGeom  JOIN dgn.GeomPart gp USING dgn.ElementGeomUsesParts WHERE InVirtualSet(?, gp.ECInstanceId)";
-    FindRelatedInstanceIds(elementIds, ecsql, updatedGeomParts);
+    // GeometryPart
+    ECInstanceIdSet updatedGeometryParts;
+    FindUpdatedInstanceIds(updatedGeometryParts, "dgn", "GeometryPart");
+    ecsql = "SELECT el.ECInstanceId FROM dgn.Element el JOIN dgn.ElementGeom USING dgn.ElementOwnsGeom  JOIN dgn.GeometryPart gp USING dgn.ElementGeomUsesParts WHERE InVirtualSet(?, gp.ECInstanceId)";
+    FindRelatedInstanceIds(elementIds, ecsql, updatedGeometryParts);
 #else
     elementIds.clear();
 #endif
