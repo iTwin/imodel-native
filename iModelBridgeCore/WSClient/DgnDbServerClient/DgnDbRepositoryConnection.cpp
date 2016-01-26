@@ -494,9 +494,9 @@ ICancellationTokenPtr cancellationToken
             {
             Utf8String idString;
             if (nullptr == briefcaseId)
-                idString.Sprintf ("'%d-%llu'", (int)id.GetType (), id.GetId ());
+                idString.Sprintf ("'%d-%llu'", (int)id.GetType (), id.GetId().GetValue());
             else
-                idString.Sprintf ("'%d-%llu-%u'", (int)id.GetType (), id.GetId (), briefcaseId->GetValue ());
+                idString.Sprintf ("'%d-%llu-%u'", (int)id.GetType (), id.GetId().GetValue(), briefcaseId->GetValue ());
 
             if (!first)
                 idsString.append (",");
@@ -505,7 +505,7 @@ ICancellationTokenPtr cancellationToken
             first = false;
             }
 
-        filter.Sprintf ("$id+in+[%s]", idsString);
+        filter.Sprintf ("$id+in+[%s]", idsString.c_str());
         query.SetFilter (filter);
         }
 
