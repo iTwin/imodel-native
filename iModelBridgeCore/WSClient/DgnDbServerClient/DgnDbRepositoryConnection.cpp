@@ -494,9 +494,9 @@ ICancellationTokenPtr cancellationToken
             {
             Utf8String idString;
             if (nullptr == briefcaseId)
-                idString.Sprintf ("'%d-%llu'", (int)id.GetType (), id.GetId ().GetValue());
+                idString.Sprintf ("'%d-%llu'", (int)id.GetType (), id.GetId().GetValue());
             else
-                idString.Sprintf ("'%d-%llu-%u'", (int)id.GetType (), id.GetId ().GetValue(), briefcaseId->GetValue ());
+                idString.Sprintf ("'%d-%llu-%u'", (int)id.GetType (), id.GetId().GetValue(), briefcaseId->GetValue ());
 
             if (!first)
                 idsString.append (",");
