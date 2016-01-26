@@ -524,6 +524,7 @@ namespace dgn_TxnTable
             const_iterator end() const {return Entry(nullptr, false);}
         };
 
+    bool HasChanges() const {return m_changes;}
     Iterator MakeIterator() const {return Iterator(m_txnMgr.GetDgnDb());}
     };
 
@@ -570,6 +571,7 @@ namespace dgn_TxnTable
         };
 
         Iterator MakeIterator() const {return Iterator(m_txnMgr.GetDgnDb());}
+        bool HasChanges() const {return m_changes;}
     };
 
     struct ElementDep : TxnTable
@@ -593,6 +595,7 @@ namespace dgn_TxnTable
         void AddDependency(BeSQLite::EC::ECInstanceId const&, ChangeType);
         void AddFailedTarget(DgnElementId id) {m_failedTargets.insert(id);}
         DgnElementIdSet const& GetFailedTargets() const {return m_failedTargets;}
+        bool HasChanges() const {return m_changes;}
     };
 
     struct ModelDep : TxnTable

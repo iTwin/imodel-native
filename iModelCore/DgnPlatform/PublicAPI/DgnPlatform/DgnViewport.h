@@ -166,12 +166,20 @@ protected:
     DGNPLATFORM_EXPORT virtual void _AdjustAspectRatio(ViewControllerR, bool expandView);
     DGNPLATFORM_EXPORT virtual int _GetIndexedLineWidth(int index) const;
 
-    // Invoked when one or more models are deleted. Override to react by closing the viewport, changing target model, cleaning up viewed model list, etc.
-    virtual void _OnModelsDeleted(bset<DgnModelId> const& deletedModelIds, DgnDbR dgndb) { }
     DGNPLATFORM_EXPORT static void StartRenderThread();
     DMap4d CalcNpcToView();
     void QueueDrawFrame();
     void CalcTargetNumElements(UpdatePlan const& plan, bool isForProgressive);
+
+    enum class CloseMe {No=0, Yes=1};
+    //! called when one or more models are deleted
+    //! Default implementation does:
+    //! - Removes deleted models from viewed model list
+    //! - Chooses a new target model arbitrarily from viewed model list if target model deleted
+    //! - Closes viewport if no viewed models remain
+    //! Override this method to change this behavior
+    //! @return true to close this viewport
+    DGNPLATFORM_EXPORT virtual CloseMe _OnModelsDeleted(bset<Dgn::DgnModelId> const&, Dgn::DgnDbR db);
 
 public:
     DgnViewport(Render::TargetP target) : m_renderTarget(target) {}

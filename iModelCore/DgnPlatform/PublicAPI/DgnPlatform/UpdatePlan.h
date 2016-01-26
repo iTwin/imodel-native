@@ -8,6 +8,8 @@
 #pragma once
 //__PUBLISH_SECTION_START__
 
+#include "DgnPlatform.h"
+
 BEGIN_BENTLEY_DGN_NAMESPACE
 
 //=======================================================================================
