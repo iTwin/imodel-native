@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/StructToColumnsECSqlBinder.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -34,9 +34,6 @@ void StructToColumnsECSqlBinder::Initialize ()
     int totalMappedSqliteParameterCount = 0;
     for (auto childPropMap : propMap->GetChildren ()) //GetChildren ensures the correct and always same order
         {
-        if (childPropMap->IsUnmapped ())
-            continue;
-
         auto binder = ECSqlBinderFactory::CreateBinder (GetECSqlStatementR (), *childPropMap);
         int mappedSqliteParameterCount = binder->GetMappedSqlParameterCount ();
 

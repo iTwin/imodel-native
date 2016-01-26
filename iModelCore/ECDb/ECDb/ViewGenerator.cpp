@@ -9,7 +9,9 @@
 #include "ECDbPolicyManager.h"
 #include <set>
 #include "ECSql/ECSqlPrepareContext.h"
+
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
+
 #define ECDB_HOLDING_VIEW "ec_RelationshipHoldingStatistics"
         
 //************************** ViewGenerator ***************************************************

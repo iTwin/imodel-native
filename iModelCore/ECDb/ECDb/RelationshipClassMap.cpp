@@ -899,8 +899,6 @@ BentleyStatus RelationshipClassEndTableMap::TryGetKeyPropertyColumn(std::set<ECD
     if (constraintClasses.size() == 0)
         return SUCCESS;
 
-    std::set<ClassMap const*> constraintMaps = GetECDbMap().GetClassMapsFromRelationshipEnd(constraint, nullptr);
- 
     Utf8String keyPropertyName;
     for (ECRelationshipConstraintClassCP constraintClass : constraintClasses)
         {
@@ -932,7 +930,6 @@ BentleyStatus RelationshipClassEndTableMap::TryGetKeyPropertyColumn(std::set<ECD
                 {
                 LogKeyPropertyRetrievalError(GetECDbMap().GetECDbR().GetECDbImplR().GetIssueReporter(), "ECDb does not support ECRelationshipConstraint Keys with different accessStrings. All Key properties in constraint must have same name",
                     relClass, constraintEnd);
-
                 }
             }                      
         }
@@ -940,6 +937,7 @@ BentleyStatus RelationshipClassEndTableMap::TryGetKeyPropertyColumn(std::set<ECD
     if (keyPropertyName.empty())
         return SUCCESS;
 
+    std::set<ClassMap const*> constraintMaps = GetECDbMap().GetClassMapsFromRelationshipEnd(constraint, nullptr);
     for (auto constraintMap : constraintMaps)
         {
         if (constraintMap->GetPrimaryTable().GetPersistenceType() == PersistenceType::Virtual)
@@ -947,7 +945,7 @@ BentleyStatus RelationshipClassEndTableMap::TryGetKeyPropertyColumn(std::set<ECD
 
         Utf8CP keyPropAccessString = keyPropertyName.c_str();
         PropertyMap const* keyPropertyMap = constraintMap->GetPropertyMap(keyPropAccessString);
-        if (keyPropertyMap == nullptr || keyPropertyMap->IsUnmapped() || keyPropertyMap->IsVirtual())
+        if (keyPropertyMap == nullptr || keyPropertyMap->IsVirtual())
             {
             Utf8String error;
             error.Sprintf("Key property '%s' does not exist or is not mapped.", keyPropAccessString);

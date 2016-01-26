@@ -16,7 +16,6 @@
 #include "ECDbLogger.h"
 #include "ECSchemaComparers.h"
 #include "ECDbImpl.h"
-#include "ColumnInfo.h"
 #include "PropertyMap.h"
 #include "SystemPropertyMap.h"
 #include "MapStrategy.h"
