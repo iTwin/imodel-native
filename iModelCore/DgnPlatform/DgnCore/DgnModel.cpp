@@ -537,11 +537,11 @@ DgnDbStatus DgnModel::_OnUpdate()
             return stat;
         }
 
-    if (LockStatus::Success != GetDgnDb().Locks().LockModel(*this, LockLevel::Exclusive))
+    if (RepositoryStatus::Success != GetDgnDb().Locks().LockModel(*this, LockLevel::Exclusive))
         return DgnDbStatus::LockNotHeld;
 
     // Ensure this briefcase has reserved the model's code
-    if (CodeStatus::Success != GetDgnDb().Codes().ReserveCode(GetCode()))
+    if (RepositoryStatus::Success != GetDgnDb().Codes().ReserveCode(GetCode()))
         return DgnDbStatus::CodeNotReserved;
 
     return DgnDbStatus::Success;
@@ -784,7 +784,7 @@ DgnDbStatus DgnModel::_OnDelete()
     if (GetModelHandler()._IsRestrictedAction(RestrictedAction::Delete))
         return DgnDbStatus::MissingHandler;
 
-    if (LockStatus::Success != GetDgnDb().Locks().LockModel(*this, LockLevel::Exclusive))
+    if (RepositoryStatus::Success != GetDgnDb().Locks().LockModel(*this, LockLevel::Exclusive))
         return DgnDbStatus::LockNotHeld;
 
     for (auto appdata : m_appData)
@@ -865,11 +865,11 @@ DgnDbStatus DgnModel::_OnInsert()
         return DgnDbStatus::MissingHandler;
 
     // If db is exclusively locked, cannot create models in it
-    if (LockStatus::Success != GetDgnDb().Locks().LockDb(LockLevel::Shared))
+    if (RepositoryStatus::Success != GetDgnDb().Locks().LockDb(LockLevel::Shared))
         return DgnDbStatus::LockNotHeld;
 
     // Ensure this briefcase has reserved the model's code
-    if (CodeStatus::Success != GetDgnDb().Codes().ReserveCode(GetCode()))
+    if (RepositoryStatus::Success != GetDgnDb().Codes().ReserveCode(GetCode()))
         return DgnDbStatus::CodeNotReserved;
 
     return DgnDbStatus::Success;

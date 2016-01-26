@@ -245,17 +245,17 @@ void LockRequest::FromChangeSummary(DgnChangeSummary const& summary, bool stopOn
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ILocksManager::OnElementInserted(DgnElementId id) { _OnElementInserted(id); }
 void ILocksManager::OnModelInserted(DgnModelId id) { _OnModelInserted(id); }
-LockStatus ILocksManager::LockElement(DgnElementCR el, LockLevel lvl, DgnModelId originalModelId) { return _LockElement(el, lvl, originalModelId); }
-LockStatus ILocksManager::LockModel(DgnModelCR model, LockLevel lvl) { return _LockModel(model, lvl); }
+RepositoryStatus ILocksManager::LockElement(DgnElementCR el, LockLevel lvl, DgnModelId originalModelId) { return _LockElement(el, lvl, originalModelId); }
+RepositoryStatus ILocksManager::LockModel(DgnModelCR model, LockLevel lvl) { return _LockModel(model, lvl); }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-LockStatus ILocksManager::_LockElement(DgnElementCR el, LockLevel level, DgnModelId originalModelId)
+RepositoryStatus ILocksManager::_LockElement(DgnElementCR el, LockLevel level, DgnModelId originalModelId)
     {
     // We don't acquire locks for indirect or dynamic changes.
     if (GetDgnDb().Txns().IsInDynamics() || TxnManager::Mode::Indirect == GetDgnDb().Txns().GetMode())
-        return LockStatus::Success;
+        return RepositoryStatus::Success;
 
     LockRequest request;
     request.Insert(el, level);
@@ -273,11 +273,11 @@ LockStatus ILocksManager::_LockElement(DgnElementCR el, LockLevel level, DgnMode
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-LockStatus ILocksManager::_LockModel(DgnModelCR model, LockLevel level)
+RepositoryStatus ILocksManager::_LockModel(DgnModelCR model, LockLevel level)
     {
     // We don't acquire locks for indirect or dynamic changes.
     if (GetDgnDb().Txns().IsInDynamics() || TxnManager::Mode::Indirect == GetDgnDb().Txns().GetMode())
-        return LockStatus::Success;
+        return RepositoryStatus::Success;
 
     LockRequest request;
     request.Insert(model, level);
@@ -287,7 +287,7 @@ LockStatus ILocksManager::_LockModel(DgnModelCR model, LockLevel level)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-LockStatus ILocksManager::LockDb(LockLevel level)
+RepositoryStatus ILocksManager::LockDb(LockLevel level)
     {
     LockRequest request;
     request.Insert(GetDgnDb(), level);
@@ -304,29 +304,29 @@ struct UnrestrictedLocksManager : ILocksManager
 private:
     UnrestrictedLocksManager(DgnDbR db) : ILocksManager(db) { }
 
-    virtual bool _QueryLocksHeld(LockRequestR, bool, LockStatus* status) override
+    virtual bool _QueryLocksHeld(LockRequestR, bool, RepositoryStatus* status) override
         {
         if (nullptr != status)
-            *status = LockStatus::Success;
+            *status = RepositoryStatus::Success;
 
         return true;
         }
-    virtual LockRequest::Response _AcquireLocks(LockRequestR) override { return LockRequest::Response(LockStatus::Success); }
-    virtual LockStatus _RelinquishLocks() override { return LockStatus::Success; }
-    virtual LockStatus _DemoteLocks(DgnLockSet& locks) override { return LockStatus::Success; }
+    virtual LockRequest::Response _AcquireLocks(LockRequestR) override { return LockRequest::Response(RepositoryStatus::Success); }
+    virtual RepositoryStatus _RelinquishLocks() override { return RepositoryStatus::Success; }
+    virtual RepositoryStatus _DemoteLocks(DgnLockSet& locks) override { return RepositoryStatus::Success; }
     virtual void _OnElementInserted(DgnElementId) override { }
     virtual void _OnModelInserted(DgnModelId) override { }
-    virtual LockStatus _LockElement(DgnElementCR, LockLevel, DgnModelId) override { return LockStatus::Success; }
-    virtual LockStatus _LockModel(DgnModelCR, LockLevel) override { return LockStatus::Success; }
-    virtual LockStatus _QueryLockLevel(LockLevel& level, LockableId, bool) override { level = LockLevel::Exclusive; return LockStatus::Success; }
-    virtual LockStatus _QueryLockLevels(DgnLockSet& levels, LockableIdSet& ids, bool) override
+    virtual RepositoryStatus _LockElement(DgnElementCR, LockLevel, DgnModelId) override { return RepositoryStatus::Success; }
+    virtual RepositoryStatus _LockModel(DgnModelCR, LockLevel) override { return RepositoryStatus::Success; }
+    virtual RepositoryStatus _QueryLockLevel(LockLevel& level, LockableId, bool) override { level = LockLevel::Exclusive; return RepositoryStatus::Success; }
+    virtual RepositoryStatus _QueryLockLevels(DgnLockSet& levels, LockableIdSet& ids, bool) override
         {
         for (auto const& id : ids)
             levels.insert(DgnLock(id, LockLevel::Exclusive));
 
-        return LockStatus::Success;
+        return RepositoryStatus::Success;
         }
-    virtual LockStatus _RefreshLocks() override { return LockStatus::Success; }
+    virtual RepositoryStatus _RefreshLocks() override { return RepositoryStatus::Success; }
 public:
     static ILocksManagerPtr Create(DgnDbR db) { return new UnrestrictedLocksManager(db); }
 };
@@ -363,13 +363,13 @@ private:
 
     BeBriefcaseId GetId() const { return GetDgnDb().GetBriefcaseId(); }
 
-    virtual bool _QueryLocksHeld(LockRequestR locks, bool localOnly, LockStatus* status) override;
+    virtual bool _QueryLocksHeld(LockRequestR locks, bool localOnly, RepositoryStatus* status) override;
     virtual LockRequest::Response _AcquireLocks(LockRequestR locks) override { return AcquireLocks(locks, true); }
-    virtual LockStatus _RelinquishLocks() override;
-    virtual LockStatus _DemoteLocks(DgnLockSet& locks) override;
-    virtual LockStatus _QueryLockLevel(LockLevel& level, LockableId lockId, bool localOnly) override;
-    virtual LockStatus _QueryLockLevels(DgnLockSet& levels, LockableIdSet& ids, bool localOnly) override;
-    virtual LockStatus _RefreshLocks() override;
+    virtual RepositoryStatus _RelinquishLocks() override;
+    virtual RepositoryStatus _DemoteLocks(DgnLockSet& locks) override;
+    virtual RepositoryStatus _QueryLockLevel(LockLevel& level, LockableId lockId, bool localOnly) override;
+    virtual RepositoryStatus _QueryLockLevels(DgnLockSet& levels, LockableIdSet& ids, bool localOnly) override;
+    virtual RepositoryStatus _RefreshLocks() override;
 
     virtual void _OnElementInserted(DgnElementId id) override
         {
@@ -391,12 +391,12 @@ private:
     void Insert(LockableId id, LockLevel level, bool overwrite=false);
     template<typename T> void Insert(T const& locks, bool checkExisting);
 
-    bool Validate(LockStatus* status = nullptr);
+    bool Validate(RepositoryStatus* status = nullptr);
     LockRequest::Response AcquireLocks(LockRequestR locks, bool cull);
     void Cull(LockRequestR locks);
     DbResult Save() { return GetLocalDb().SaveChanges(); }
     void AddDependentElements(DgnLockSet& locks, bvector<DgnModelId> const& models);
-    LockStatus PromoteDependentElements(LockRequestCR usedLocks, bvector<DgnModelId> const& models);
+    RepositoryStatus PromoteDependentElements(LockRequestCR usedLocks, bvector<DgnModelId> const& models);
 public:
     static ILocksManagerPtr Create(DgnDbR db) { return new LocalLocksManager(db); }
 };
@@ -404,10 +404,10 @@ public:
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool LocalLocksManager::Validate(LockStatus* pStatus)
+bool LocalLocksManager::Validate(RepositoryStatus* pStatus)
     {
-    LockStatus localStatus = LockStatus::Success;
-    LockStatus& status = nullptr != pStatus ? *pStatus : localStatus;
+    RepositoryStatus localStatus = RepositoryStatus::Success;
+    RepositoryStatus& status = nullptr != pStatus ? *pStatus : localStatus;
 
     switch (m_dbState)
         {
@@ -417,7 +417,7 @@ bool LocalLocksManager::Validate(LockStatus* pStatus)
 
     // Assume something will go wrong.
     m_dbState = DbState::Invalid;
-    status = LockStatus::SyncError;
+    status = RepositoryStatus::SyncError;
 
     DgnDb::LocalStateDb& localState = GetDgnDb().GetLocalStateDb();
     if (!localState.IsValid())
@@ -435,8 +435,8 @@ bool LocalLocksManager::Validate(LockStatus* pStatus)
     // Request a list of current locks from server
     DgnLockSet locks;
     auto server = GetLocksServer();
-    status = nullptr != server ? server->QueryLocks(locks, GetDgnDb()) : LockStatus::ServerUnavailable;
-    if (LockStatus::Success != status)
+    status = nullptr != server ? server->QueryLocks(locks, GetDgnDb()) : RepositoryStatus::ServerUnavailable;
+    if (RepositoryStatus::Success != status)
         return false;
 
     if (!locks.empty())
@@ -449,12 +449,12 @@ bool LocalLocksManager::Validate(LockStatus* pStatus)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   11/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-LockStatus LocalLocksManager::_RefreshLocks()
+RepositoryStatus LocalLocksManager::_RefreshLocks()
     {
     if (DbState::Ready != m_dbState)
         {
         // Either we haven't yet initialized the local DB, or failed to do so previously. Retry that.
-        LockStatus status;
+        RepositoryStatus status;
         Validate(&status);
         return status;
         }
@@ -462,21 +462,21 @@ LockStatus LocalLocksManager::_RefreshLocks()
     // Drop our local DB and re-populate from server
     auto server = GetLocksServer();
     if (nullptr == server)
-        return LockStatus::ServerUnavailable;
+        return RepositoryStatus::ServerUnavailable;
 
     DgnLockSet locks;
     auto status = server->QueryLocks(locks, GetDgnDb());
-    if (LockStatus::Success != status)
+    if (RepositoryStatus::Success != status)
         return status;
 
     if (BE_SQLITE_OK != GetLocalDb().ExecuteSql("DELETE FROM " LOCAL_Table))
-        return LockStatus::SyncError;
+        return RepositoryStatus::SyncError;
 
     if (!locks.empty())
         Insert(locks, false);
 
     Save();
-    return LockStatus::Success;
+    return RepositoryStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -548,7 +548,7 @@ ModelElementLocks::const_iterator ModelElementLocks::begin() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   11/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-LockStatus LocalLocksManager::_QueryLockLevel(LockLevel& level, LockableId id, bool localOnly)
+RepositoryStatus LocalLocksManager::_QueryLockLevel(LockLevel& level, LockableId id, bool localOnly)
     {
     level = LockLevel::None;
     CachedStatementPtr select = GetLocalDb().GetCachedStatement(STMT_SelectExisting);
@@ -557,21 +557,21 @@ LockStatus LocalLocksManager::_QueryLockLevel(LockLevel& level, LockableId id, b
     if (BE_SQLITE_ROW == select->Step())
         {
         level = static_cast<LockLevel>(select->GetValueInt(0));
-        return LockStatus::Success;
+        return RepositoryStatus::Success;
         }
     else if (localOnly)
         {
-        return LockStatus::Success;
+        return RepositoryStatus::Success;
         }
 
     auto server = GetLocksServer();
-    return nullptr != server ? server->QueryLockLevel(level, id, GetDgnDb()) : LockStatus::ServerUnavailable;
+    return nullptr != server ? server->QueryLockLevel(level, id, GetDgnDb()) : RepositoryStatus::ServerUnavailable;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-LockStatus LocalLocksManager::_QueryLockLevels(DgnLockSet& levels, LockableIdSet& ids, bool localOnly)
+RepositoryStatus LocalLocksManager::_QueryLockLevels(DgnLockSet& levels, LockableIdSet& ids, bool localOnly)
     {
     // First, query what we can locally
     struct VSet : VirtualSet
@@ -596,7 +596,7 @@ LockStatus LocalLocksManager::_QueryLockLevels(DgnLockSet& levels, LockableIdSet
         }
 
     if (ids.empty())
-        return LockStatus::Success;
+        return RepositoryStatus::Success;
 
     // If only querying locally, any remaining locks have level=None
     if (localOnly)
@@ -604,12 +604,12 @@ LockStatus LocalLocksManager::_QueryLockLevels(DgnLockSet& levels, LockableIdSet
         for (auto const& id : ids)
             levels.insert(DgnLock(id, LockLevel::None));
 
-        return LockStatus::Success;
+        return RepositoryStatus::Success;
         }
 
     // Ask the server for the remaining
     auto server = GetLocksServer();
-    return nullptr != server ? server->QueryLockLevels(levels, ids, GetDgnDb()) : LockStatus::ServerUnavailable;
+    return nullptr != server ? server->QueryLockLevels(levels, ids, GetDgnDb()) : RepositoryStatus::ServerUnavailable;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -742,27 +742,27 @@ struct LockReleaseContext
 {
 private:
     DgnDbR              m_db;
-    LockStatus          m_status;
+    RepositoryStatus          m_status;
     LockRequest         m_request;
     TxnManager::TxnId   m_endTxnId;
 public:
     LockReleaseContext(DgnDbR db, bool relinquishAll);
 
-    LockStatus GetStatus() const { return m_status; }
+    RepositoryStatus GetStatus() const { return m_status; }
     LockRequestR GetUsedLocks() { return m_request; }
 
-    LockStatus ClearTxns();
+    RepositoryStatus ClearTxns();
 };
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   11/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-LockReleaseContext::LockReleaseContext(DgnDbR db, bool relinquishAll) : m_db(db), m_status(LockStatus::CannotCreateRevision)
+LockReleaseContext::LockReleaseContext(DgnDbR db, bool relinquishAll) : m_db(db), m_status(RepositoryStatus::CannotCreateRevision)
     {
     TxnManager& txns = db.Txns();
     if (txns.HasChanges() || txns.IsInDynamics())
         {
-        m_status = LockStatus::PendingTransactions;
+        m_status = RepositoryStatus::PendingTransactions;
         return;
         }
 
@@ -771,7 +771,7 @@ LockReleaseContext::LockReleaseContext(DgnDbR db, bool relinquishAll) : m_db(db)
     if (rev.IsValid())
         {
         m_request.FromRevision(*rev);
-        m_status = LockStatus::Success;
+        m_status = RepositoryStatus::Success;
         m_endTxnId = db.Revisions().GetCurrentRevisionEndTxnId();
 
         db.Revisions().AbandonCreateRevision();
@@ -779,18 +779,18 @@ LockReleaseContext::LockReleaseContext(DgnDbR db, bool relinquishAll) : m_db(db)
     else if (RevisionStatus::NoTransactions == revStatus)
         {
         // No changes => no locks have been used
-        m_status = LockStatus::Success;
+        m_status = RepositoryStatus::Success;
         }
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   11/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-LockStatus LockReleaseContext::ClearTxns()
+RepositoryStatus LockReleaseContext::ClearTxns()
     {
     // NEEDSWORK: We need a way to persistently record that undo is not permitted beyond this point.
     // For now, disallow redo.
-    if (LockStatus::Success == m_status) // && m_endTxnId.IsValid())
+    if (RepositoryStatus::Success == m_status) // && m_endTxnId.IsValid())
         m_db.Txns().DeleteReversedTxns();
 
     return m_status;
@@ -799,26 +799,26 @@ LockStatus LockReleaseContext::ClearTxns()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-LockStatus LocalLocksManager::_RelinquishLocks()
+RepositoryStatus LocalLocksManager::_RelinquishLocks()
     {
     ILocksServerP server;
     if (!Validate())
-        return LockStatus::SyncError;
+        return RepositoryStatus::SyncError;
     else if (nullptr == (server = GetLocksServer()))
-        return LockStatus::ServerUnavailable;
+        return RepositoryStatus::ServerUnavailable;
 
     // Cannot release locks required for local changes...
     LockReleaseContext context(GetDgnDb(), true);
-    if (LockStatus::Success != context.GetStatus())
+    if (RepositoryStatus::Success != context.GetStatus())
         return context.GetStatus();
     else if (!context.GetUsedLocks().IsEmpty())
-        return LockStatus::LockUsed;
+        return RepositoryStatus::LockUsed;
 
     if (BE_SQLITE_OK != GetLocalDb().ExecuteSql("DELETE FROM " LOCAL_Table) || BE_SQLITE_OK != Save())
-        return LockStatus::SyncError;
+        return RepositoryStatus::SyncError;
 
     auto status = server->RelinquishLocks(GetDgnDb());
-    if (LockStatus::Success == status)
+    if (RepositoryStatus::Success == status)
         status = context.ClearTxns();
 
     return status;
@@ -827,7 +827,7 @@ LockStatus LocalLocksManager::_RelinquishLocks()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   11/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-LockStatus LocalLocksManager::_DemoteLocks(DgnLockSet& toRelease)
+RepositoryStatus LocalLocksManager::_DemoteLocks(DgnLockSet& toRelease)
     {
     // Releasing the db itself is equivalent to releasing all held locks...
     if (toRelease.end() != toRelease.find(DgnLock(LockableId(GetDgnDb()), LockLevel::None)))
@@ -835,17 +835,17 @@ LockStatus LocalLocksManager::_DemoteLocks(DgnLockSet& toRelease)
 
     ILocksServerP server;
     if (!Validate())
-        return LockStatus::SyncError;
+        return RepositoryStatus::SyncError;
     else if (nullptr == (server = GetLocksServer()))
-        return LockStatus::ServerUnavailable;
+        return RepositoryStatus::ServerUnavailable;
 
     // Cull any locks which are already at or below the desired level (this function cannot *increase* a lock's level...)
     for (auto iter = toRelease.begin(); iter != toRelease.end(); /**/)
         {
         DgnLock& lock = *iter;
         LockLevel curLevel;
-        LockStatus status = QueryLockLevel(curLevel, lock.GetLockableId(), true);
-        if (LockStatus::Success != status)
+        RepositoryStatus status = QueryLockLevel(curLevel, lock.GetLockableId(), true);
+        if (RepositoryStatus::Success != status)
             return status;
 
         if (curLevel <= lock.GetLevel())
@@ -855,11 +855,11 @@ LockStatus LocalLocksManager::_DemoteLocks(DgnLockSet& toRelease)
         }
 
     if (toRelease.empty())
-        return LockStatus::Success;
+        return RepositoryStatus::Success;
 
     // Cannot release locks required for local changes
     LockReleaseContext context(GetDgnDb(), false);
-    if (LockStatus::Success != context.GetStatus())
+    if (RepositoryStatus::Success != context.GetStatus())
         return context.GetStatus();
 
     for (auto const& usedLock : context.GetUsedLocks())
@@ -871,7 +871,7 @@ LockStatus LocalLocksManager::_DemoteLocks(DgnLockSet& toRelease)
             {
             BeAssert(iter->GetLevel() != LockLevel::Exclusive);
             if (usedLock.GetLevel() > iter->GetLevel())
-                return LockStatus::LockUsed;
+                return RepositoryStatus::LockUsed;
             }
         }
 
@@ -896,14 +896,14 @@ LockStatus LocalLocksManager::_DemoteLocks(DgnLockSet& toRelease)
 
     // If we're demoting exclusive locks on models, must acquire exclusive locks on any elements we've modified within them
     auto status = PromoteDependentElements(context.GetUsedLocks(), demotedModels);
-    if (LockStatus::Success != status)
+    if (RepositoryStatus::Success != status)
         return status;
 
     // If we're releasing model locks, also release locks on any elements within them
     AddDependentElements(toRelease, releasedModels);
 
     status = server->DemoteLocks(toRelease, GetDgnDb());
-    if (LockStatus::Success == status)
+    if (RepositoryStatus::Success == status)
         {
         status = RefreshLocks();
         context.ClearTxns();
@@ -945,10 +945,10 @@ void LocalLocksManager::AddDependentElements(DgnLockSet& locks, bvector<DgnModel
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-LockStatus LocalLocksManager::PromoteDependentElements(LockRequestCR usedLocks, bvector<DgnModelId> const& models)
+RepositoryStatus LocalLocksManager::PromoteDependentElements(LockRequestCR usedLocks, bvector<DgnModelId> const& models)
     {
     if (models.empty())
-        return LockStatus::Success;
+        return RepositoryStatus::Success;
 
     LockRequest elemRequest;
     for (auto const& usedLock : usedLocks)
@@ -968,28 +968,28 @@ LockStatus LocalLocksManager::PromoteDependentElements(LockRequestCR usedLocks, 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool LocalLocksManager::_QueryLocksHeld(LockRequestR locks, bool localOnly, LockStatus* outStatus)
+bool LocalLocksManager::_QueryLocksHeld(LockRequestR locks, bool localOnly, RepositoryStatus* outStatus)
     {
-    LockStatus localStatus;
-    LockStatus& status = nullptr != outStatus ? *outStatus : localStatus;
+    RepositoryStatus localStatus;
+    RepositoryStatus& status = nullptr != outStatus ? *outStatus : localStatus;
 
     if (!Validate())
         {
-        status = LockStatus::SyncError;
+        status = RepositoryStatus::SyncError;
         return false;
         }
 
     Cull(locks);
     if (localOnly || locks.IsEmpty())
         {
-        status = LockStatus::Success;
+        status = RepositoryStatus::Success;
         return locks.IsEmpty();
         }
 
     auto server = GetLocksServer();
     if (nullptr == server)
         {
-        status = LockStatus::ServerUnavailable;
+        status = RepositoryStatus::ServerUnavailable;
         return false;
         }
 
@@ -1004,20 +1004,20 @@ bool LocalLocksManager::_QueryLocksHeld(LockRequestR locks, bool localOnly, Lock
 LockRequest::Response LocalLocksManager::AcquireLocks(LockRequestR locks, bool cull)
     {
     if (!Validate())
-        return LockRequest::Response(LockStatus::SyncError);
+        return LockRequest::Response(RepositoryStatus::SyncError);
 
     if (cull)
         Cull(locks);
 
     if (locks.IsEmpty())
-        return LockRequest::Response(LockStatus::Success);
+        return LockRequest::Response(RepositoryStatus::Success);
 
     auto server = GetLocksServer();
     if (nullptr == server)
-        return LockRequest::Response(LockStatus::ServerUnavailable);
+        return LockRequest::Response(RepositoryStatus::ServerUnavailable);
 
     auto response = server->AcquireLocks(locks, GetDgnDb());
-    if (LockStatus::Success == response.GetStatus())
+    if (RepositoryStatus::Success == response.GetStatus())
         {
         Insert(locks, true);
         Save();
@@ -1052,7 +1052,7 @@ ILocksServerP ILocksManager::GetLocksServer() const
     return T_HOST.GetRepositoryAdmin()._GetLocksServer(GetDgnDb());
     }
 
-#define JSON_Status "Status"            // LockStatus
+#define JSON_Status "Status"            // RepositoryStatus
 #define JSON_AllAcquired "AllAcquired"  // boolean
 #define JSON_Locks "Locks"              // list of DgnLock.
 #define JSON_LockableId "LockableId"    // LockableId
@@ -1164,19 +1164,19 @@ void DgnLocksJson::LockableTypeToJson(JsonValueR value, LockableType type)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   11/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool DgnLocksJson::LockStatusFromJson(LockStatus& status, JsonValueCR value)
+bool DgnLocksJson::RepositoryStatusFromJson(RepositoryStatus& status, JsonValueCR value)
     {
     if (!value.isConvertibleTo(Json::uintValue))
         return false;
 
-    status = static_cast<LockStatus>(value.asUInt());
+    status = static_cast<RepositoryStatus>(value.asUInt());
     return true;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnLocksJson::LockStatusToJson(JsonValueR value, LockStatus status)
+void DgnLocksJson::RepositoryStatusToJson(JsonValueR value, RepositoryStatus status)
     {
     value = static_cast<uint32_t>(status);
     }
@@ -1365,7 +1365,7 @@ bool LockRequest::Response::FromJson(JsonValueCR value)
     {
     m_denied.clear();
     JsonValueCR locks = value[JSON_DeniedLocks];
-    if (!locks.isArray() || !DgnLocksJson::LockStatusFromJson(m_status, value[JSON_Status]))
+    if (!locks.isArray() || !DgnLocksJson::RepositoryStatusFromJson(m_status, value[JSON_Status]))
         {
         Invalidate();
         return false;
@@ -1390,18 +1390,18 @@ bool LockRequest::Response::FromJson(JsonValueCR value)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-LockStatus ILocksServer::QueryOwnership(DgnLockOwnershipR ownership, LockableId lockId)
+RepositoryStatus ILocksServer::QueryOwnership(DgnLockOwnershipR ownership, LockableId lockId)
     {
     DgnOwnedLockSet ownerships;
     LockableIdSet lockIds;
     lockIds.insert(lockId);
 
     auto status = QueryOwnerships(ownerships, lockIds);
-    BeAssert(LockStatus::Success != status || ownerships.size() == 1);
-    if (LockStatus::Success == status && ownerships.size() != 1)
-        status = LockStatus::InvalidResponse;
+    BeAssert(RepositoryStatus::Success != status || ownerships.size() == 1);
+    if (RepositoryStatus::Success == status && ownerships.size() != 1)
+        status = RepositoryStatus::InvalidResponse;
 
-    if (LockStatus::Success == status)
+    if (RepositoryStatus::Success == status)
         ownership = ownerships.begin()->GetOwnership();
 
     return status;
@@ -1410,18 +1410,18 @@ LockStatus ILocksServer::QueryOwnership(DgnLockOwnershipR ownership, LockableId 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-LockStatus ILocksServer::QueryLockLevel(LockLevel& level, LockableId lockId, DgnDbR db)
+RepositoryStatus ILocksServer::QueryLockLevel(LockLevel& level, LockableId lockId, DgnDbR db)
     {
     DgnLockSet levels;
     LockableIdSet lockIds;
     lockIds.insert(lockId);
 
     auto status = QueryLockLevels(levels, lockIds, db);
-    BeAssert(LockStatus::Success != status || levels.size() == 1);
-    if (LockStatus::Success == status && levels.size() != 1)
-        status = LockStatus::InvalidResponse;
+    BeAssert(RepositoryStatus::Success != status || levels.size() == 1);
+    if (RepositoryStatus::Success == status && levels.size() != 1)
+        status = RepositoryStatus::InvalidResponse;
 
-    level = LockStatus::Success == status ? levels.begin()->GetLevel() : LockLevel::None;
+    level = RepositoryStatus::Success == status ? levels.begin()->GetLevel() : LockLevel::None;
     return status;
     }
 

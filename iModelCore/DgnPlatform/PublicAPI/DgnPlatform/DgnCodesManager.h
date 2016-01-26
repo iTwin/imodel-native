@@ -130,22 +130,22 @@ struct IDgnCodesManager : RefCountedBase
         void SetOptions(ResponseOptions options) { m_options = options; } //!< Get the options specifying additional data to be included in response
     };
 
-    //! Represents a response to a request. A response always includes a CodeStatus indicating the result. Based on options supplied in
+    //! Represents a response to a request. A response always includes a RepositoryStatus indicating the result. Based on options supplied in
     //! the request, may also include additional information.
     struct Response
     {
     private:
         DgnCodeInfoSet  m_details;
-        CodeStatus      m_result;
+        RepositoryStatus      m_result;
     public:
         //! Construct a response with the specified result
-        explicit Response(CodeStatus result=CodeStatus::InvalidResponse) : m_result(result) { }
+        explicit Response(RepositoryStatus result=RepositoryStatus::InvalidResponse) : m_result(result) { }
 
-        //!< Returns the overall result of the operation as a CodeStatus
-        CodeStatus GetResult() const { return m_result; }
+        //!< Returns the overall result of the operation as a RepositoryStatus
+        RepositoryStatus GetResult() const { return m_result; }
 
         //!< Sets the overall result of the operation
-        void SetResult(CodeStatus result) { m_result = result; }
+        void SetResult(RepositoryStatus result) { m_result = result; }
 
         //! Provides the state of each code for which the operation did not succeed, if ResponseOptions::IncludeState specified in request
         DgnCodeInfoSet const& GetDetails() const { return m_details; }
@@ -153,7 +153,7 @@ struct IDgnCodesManager : RefCountedBase
         DgnCodeInfoSet& GetDetails() { return m_details; }
 
         //! Reset the response
-        void Invalidate() { m_result = CodeStatus::InvalidResponse; m_details.clear(); }
+        void Invalidate() { m_result = RepositoryStatus::InvalidResponse; m_details.clear(); }
     };
 private:
     DgnDbR      m_dgndb;
@@ -161,13 +161,13 @@ protected:
     IDgnCodesManager(DgnDbR dgndb) : m_dgndb(dgndb) { }
 
     virtual Response _ReserveCodes(Request& request) = 0;
-    virtual CodeStatus _ReleaseCodes(DgnCodeSet const& request) = 0;
-    virtual CodeStatus _RelinquishCodes() = 0;
-    virtual CodeStatus _QueryCodeStates(DgnCodeInfoSet& states, DgnCodeSet const& codes) = 0;
-    virtual CodeStatus _RefreshCodes() = 0;
-    virtual CodeStatus _OnFinishRevision(DgnRevision const& rev) = 0;
+    virtual RepositoryStatus _ReleaseCodes(DgnCodeSet const& request) = 0;
+    virtual RepositoryStatus _RelinquishCodes() = 0;
+    virtual RepositoryStatus _QueryCodeStates(DgnCodeInfoSet& states, DgnCodeSet const& codes) = 0;
+    virtual RepositoryStatus _RefreshCodes() = 0;
+    virtual RepositoryStatus _OnFinishRevision(DgnRevision const& rev) = 0;
 
-    DGNPLATFORM_EXPORT virtual CodeStatus _ReserveCode(DgnCodeCR code);
+    DGNPLATFORM_EXPORT virtual RepositoryStatus _ReserveCode(DgnCodeCR code);
 
     DGNPLATFORM_EXPORT IDgnCodesServerP GetCodesServer() const;
 public:
@@ -176,16 +176,16 @@ public:
     //! Attempts to reserve a set of codes for this briefcase.
     //! Note: the request object may be modified by this function
     Response ReserveCodes(Request& request) { return _ReserveCodes(request); }
-    CodeStatus ReleaseCodes(DgnCodeSet const& request) { return _ReleaseCodes(request); } //!< Attempts to release a set of codes reserved by this briefcase
-    CodeStatus RelinquishCodes() { return _RelinquishCodes(); } //!< Attempts to release all codes reserved by this briefcase
-    CodeStatus QueryCodeStates(DgnCodeInfoSet& states, DgnCodeSet const& codes) { return _QueryCodeStates(states, codes); } //!< Queries the state of a set of codes
-    DGNPLATFORM_EXPORT CodeStatus QueryCodeState(DgnCodeStateR state, DgnCodeCR code); //!< Queries the state of a code
-    CodeStatus RefreshCodes() { return _RefreshCodes(); } //!< Updates a local cache of codes reserved by this briefcase by querying the server
+    RepositoryStatus ReleaseCodes(DgnCodeSet const& request) { return _ReleaseCodes(request); } //!< Attempts to release a set of codes reserved by this briefcase
+    RepositoryStatus RelinquishCodes() { return _RelinquishCodes(); } //!< Attempts to release all codes reserved by this briefcase
+    RepositoryStatus QueryCodeStates(DgnCodeInfoSet& states, DgnCodeSet const& codes) { return _QueryCodeStates(states, codes); } //!< Queries the state of a set of codes
+    DGNPLATFORM_EXPORT RepositoryStatus QueryCodeState(DgnCodeStateR state, DgnCodeCR code); //!< Queries the state of a code
+    RepositoryStatus RefreshCodes() { return _RefreshCodes(); } //!< Updates a local cache of codes reserved by this briefcase by querying the server
 
-    CodeStatus ReserveCode(DgnCodeCR code) { return _ReserveCode(code); } //!< Attempts to reserve a code
+    RepositoryStatus ReserveCode(DgnCodeCR code) { return _ReserveCode(code); } //!< Attempts to reserve a code
 //__PUBLISH_SECTION_END__
     DGNPLATFORM_EXPORT static void BackDoor_SetEnabled(bool enable);
-    CodeStatus OnFinishRevision(DgnRevision const& rev) { return _OnFinishRevision(rev); }
+    RepositoryStatus OnFinishRevision(DgnRevision const& rev) { return _OnFinishRevision(rev); }
 //__PUBLISH_SECTION_START__
 };
 
@@ -206,17 +206,17 @@ struct EXPORT_VTABLE_ATTRIBUTE IDgnCodesServer
     typedef IDgnCodesManager::ResponseOptions ResponseOptions;
 protected:
     virtual Response _ReserveCodes(Request const& request, DgnDbR db) = 0;
-    virtual CodeStatus _ReleaseCodes(DgnCodeSet const& request, DgnDbR db) = 0;
-    virtual CodeStatus _RelinquishCodes(DgnDbR db) = 0;
-    virtual CodeStatus _QueryCodeStates(DgnCodeInfoSet& states, DgnCodeSet const& codes) = 0;
-    virtual CodeStatus _QueryCodes(DgnCodeSet& codes, DgnDbR db) = 0;
+    virtual RepositoryStatus _ReleaseCodes(DgnCodeSet const& request, DgnDbR db) = 0;
+    virtual RepositoryStatus _RelinquishCodes(DgnDbR db) = 0;
+    virtual RepositoryStatus _QueryCodeStates(DgnCodeInfoSet& states, DgnCodeSet const& codes) = 0;
+    virtual RepositoryStatus _QueryCodes(DgnCodeSet& codes, DgnDbR db) = 0;
 public:
     Response ReserveCodes(Request const& request, DgnDbR db) { return _ReserveCodes(request, db); }
-    CodeStatus ReleaseCodes(DgnCodeSet const& request, DgnDbR db) { return _ReleaseCodes(request, db); }
-    CodeStatus RelinquishCodes(DgnDbR db) { return _RelinquishCodes(db); }
-    CodeStatus QueryCodeStates(DgnCodeInfoSet& states, DgnCodeSet const& codes) { return _QueryCodeStates(states, codes); }
-    DGNPLATFORM_EXPORT CodeStatus QueryCodeState(DgnCodeStateR state, DgnCodeCR code);
-    CodeStatus QueryCodes(DgnCodeSet& codes, DgnDbR db) { return _QueryCodes(codes, db); }
+    RepositoryStatus ReleaseCodes(DgnCodeSet const& request, DgnDbR db) { return _ReleaseCodes(request, db); }
+    RepositoryStatus RelinquishCodes(DgnDbR db) { return _RelinquishCodes(db); }
+    RepositoryStatus QueryCodeStates(DgnCodeInfoSet& states, DgnCodeSet const& codes) { return _QueryCodeStates(states, codes); }
+    DGNPLATFORM_EXPORT RepositoryStatus QueryCodeState(DgnCodeStateR state, DgnCodeCR code);
+    RepositoryStatus QueryCodes(DgnCodeSet& codes, DgnDbR db) { return _QueryCodes(codes, db); }
 };
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE

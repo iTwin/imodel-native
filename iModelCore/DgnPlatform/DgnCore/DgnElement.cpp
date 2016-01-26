@@ -211,11 +211,11 @@ DgnDbStatus DgnElement::_OnInsert()
         }
 
     // If model is exclusively locked we cannot insert elements into it
-    if (LockStatus::Success != GetDgnDb().Locks().LockModel(*GetModel(), LockLevel::Shared))
+    if (RepositoryStatus::Success != GetDgnDb().Locks().LockModel(*GetModel(), LockLevel::Shared))
         return DgnDbStatus::LockNotHeld;
 
     // Ensure this briefcase has reserved the element's code
-    if (CodeStatus::Success != GetDgnDb().Codes().ReserveCode(GetCode()))
+    if (RepositoryStatus::Success != GetDgnDb().Codes().ReserveCode(GetCode()))
         return DgnDbStatus::CodeNotReserved;
 
     return GetModel()->_OnInsertElement(*this);
@@ -322,11 +322,11 @@ DgnDbStatus DgnElement::_OnUpdate(DgnElementCR original)
             return stat;
         }
 
-    if (LockStatus::Success != GetDgnDb().Locks().LockElement(*this, LockLevel::Exclusive, original.GetModelId()))
+    if (RepositoryStatus::Success != GetDgnDb().Locks().LockElement(*this, LockLevel::Exclusive, original.GetModelId()))
         return DgnDbStatus::LockNotHeld;
 
     // Ensure this briefcase has reserved the element's code
-    if (CodeStatus::Success != GetDgnDb().Codes().ReserveCode(GetCode()))
+    if (RepositoryStatus::Success != GetDgnDb().Codes().ReserveCode(GetCode()))
         return DgnDbStatus::CodeNotReserved;
 
     return GetModel()->_OnUpdateElement(*this, original);
@@ -389,7 +389,7 @@ DgnDbStatus DgnElement::_OnDelete() const
             return stat;
         }
 
-    if (LockStatus::Success != GetDgnDb().Locks().LockElement(*this, LockLevel::Exclusive))
+    if (RepositoryStatus::Success != GetDgnDb().Locks().LockElement(*this, LockLevel::Exclusive))
         return DgnDbStatus::LockNotHeld;
 
     return GetModel()->_OnDeleteElement(*this);

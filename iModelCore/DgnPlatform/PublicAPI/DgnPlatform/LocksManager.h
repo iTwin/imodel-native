@@ -311,18 +311,18 @@ public:
     struct Response
     {
     private:
-        LockStatus  m_status;
+        RepositoryStatus  m_status;
         DgnLockSet  m_denied;
     public:
-        explicit Response(LockStatus status=LockStatus::InvalidResponse) : m_status(status) { }
+        explicit Response(RepositoryStatus status=RepositoryStatus::InvalidResponse) : m_status(status) { }
 
-        LockStatus GetStatus() const { return m_status; } //!< The status code returned by the server
+        RepositoryStatus GetStatus() const { return m_status; } //!< The status code returned by the server
 
         //! If the request was denied, and the client specified ResponseOptions::DeniedLocks, returns the set of locks which were not granted because they were already held by another briefcase.
         DgnLockSet const& GetDeniedLocks() const { return m_denied; }
         DgnLockSet& GetDeniedLocks() { return m_denied; } //!< Returns a writable reference to the set of denied locks
 
-        void Invalidate() { m_status = LockStatus::InvalidResponse; m_denied.clear(); } //!< Invalidate this response
+        void Invalidate() { m_status = RepositoryStatus::InvalidResponse; m_denied.clear(); } //!< Invalidate this response
 
         DGNPLATFORM_EXPORT void ToJson(JsonValueR value) const; //!< Convert to JSON representation
         DGNPLATFORM_EXPORT bool FromJson(JsonValueCR value); //!< Attempt to initialize from JSON representation
@@ -357,33 +357,33 @@ private:
 protected:
     ILocksManager(DgnDbR db) : m_db(db) { }
 
-    virtual bool _QueryLocksHeld(LockRequestR locks, bool localQueryOnly, LockStatus* status) = 0;
+    virtual bool _QueryLocksHeld(LockRequestR locks, bool localQueryOnly, RepositoryStatus* status) = 0;
     virtual LockRequest::Response _AcquireLocks(LockRequestR locks) = 0;
-    virtual LockStatus _RelinquishLocks() = 0;
-    virtual LockStatus _DemoteLocks(DgnLockSet& locks) = 0;
-    virtual LockStatus _QueryLockLevel(LockLevel& level, LockableId lockId, bool localQueryOnly) = 0;
-    virtual LockStatus _RefreshLocks() = 0;
-    virtual LockStatus _QueryLockLevels(DgnLockSet& lockLevels, LockableIdSet& lockIds, bool localQueryOnly) = 0;
+    virtual RepositoryStatus _RelinquishLocks() = 0;
+    virtual RepositoryStatus _DemoteLocks(DgnLockSet& locks) = 0;
+    virtual RepositoryStatus _QueryLockLevel(LockLevel& level, LockableId lockId, bool localQueryOnly) = 0;
+    virtual RepositoryStatus _RefreshLocks() = 0;
+    virtual RepositoryStatus _QueryLockLevels(DgnLockSet& lockLevels, LockableIdSet& lockIds, bool localQueryOnly) = 0;
 
     virtual void _OnElementInserted(DgnElementId id) = 0;
     virtual void _OnModelInserted(DgnModelId id) = 0;
 
-    DGNPLATFORM_EXPORT virtual LockStatus _LockElement(DgnElementCR el, LockLevel level, DgnModelId originalModelId);
-    DGNPLATFORM_EXPORT virtual LockStatus _LockModel(DgnModelCR model, LockLevel level);
+    DGNPLATFORM_EXPORT virtual RepositoryStatus _LockElement(DgnElementCR el, LockLevel level, DgnModelId originalModelId);
+    DGNPLATFORM_EXPORT virtual RepositoryStatus _LockModel(DgnModelCR model, LockLevel level);
 
     DGNPLATFORM_EXPORT ILocksServerP GetLocksServer() const;
 public:
     DgnDbR GetDgnDb() const { return m_db; }
 
     //! Returns true if this briefcase owns all of the requested locks. Note this function may modify the LockRequest object.
-    //! This method always returns false if an error occurs while processing the query; check the optional LockStatus argument.
-    bool QueryLocksHeld(LockRequestR locks, bool localQueryOnly=false, LockStatus* status=nullptr) { return _QueryLocksHeld(locks, localQueryOnly, status); }
+    //! This method always returns false if an error occurs while processing the query; check the optional RepositoryStatus argument.
+    bool QueryLocksHeld(LockRequestR locks, bool localQueryOnly=false, RepositoryStatus* status=nullptr) { return _QueryLocksHeld(locks, localQueryOnly, status); }
 
     //! Attempts to acquire the specified locks. Note this function may modify the LockRequest object.
     LockRequest::Response AcquireLocks(LockRequestR locks) { return _AcquireLocks(locks); }
 
     //! Relinquishes all locks held by the DgnDb.
-    LockStatus RelinquishLocks() { return _RelinquishLocks(); }
+    RepositoryStatus RelinquishLocks() { return _RelinquishLocks(); }
 
     //! Attempts to release the specified locks, or reduce the level at which the lock is held.
     //! Note this function may modify the contents of the DgnLockSet object.
@@ -391,18 +391,18 @@ public:
     //!  - Any pending/dynamics transactions exist in the managed DgnDb. They must first be committed or abandoned
     //!  - Any lock being released is required for changes made in the managed DgnDb. e.g., you cannot release a lock on an element you have modified.
     //! If this method succeeds, the undo/redo history will be reset for the managed DgnDb.
-    LockStatus DemoteLocks(DgnLockSet& locks) { return _DemoteLocks(locks); }
+    RepositoryStatus DemoteLocks(DgnLockSet& locks) { return _DemoteLocks(locks); }
 
     //! Refreshes any local cache of owned locks by re-querying the server
-    LockStatus RefreshLocks() { return _RefreshLocks(); }
+    RepositoryStatus RefreshLocks() { return _RefreshLocks(); }
 
     //! Query this DgnDb's level of ownership of the specified lockable object.
-    LockStatus QueryLockLevel(LockLevel& level, LockableId lockId, bool localQueryOnly=false) { return _QueryLockLevel(level, lockId, localQueryOnly); }
+    RepositoryStatus QueryLockLevel(LockLevel& level, LockableId lockId, bool localQueryOnly=false) { return _QueryLockLevel(level, lockId, localQueryOnly); }
     //! Query this DgnDb's level of ownership of each of the specified lockable objects.
     //! NOTE: This function may modify the contents of the lockIds argument.
-    LockStatus QueryLockLevels(DgnLockSet& lockLevels, LockableIdSet& lockIds, bool localQueryOnly=false) { return _QueryLockLevels(lockLevels, lockIds, localQueryOnly); }
+    RepositoryStatus QueryLockLevels(DgnLockSet& lockLevels, LockableIdSet& lockIds, bool localQueryOnly=false) { return _QueryLockLevels(lockLevels, lockIds, localQueryOnly); }
     //! Directly query the DgnDb's level of ownership of the specified lockable object.
-    LockLevel QueryLockLevel(LockableId lockId, bool localOnly=false) { LockLevel level; return LockStatus::Success == QueryLockLevel(level, lockId, localOnly) ? level : LockLevel::None; }
+    LockLevel QueryLockLevel(LockableId lockId, bool localOnly=false) { LockLevel level; return RepositoryStatus::Success == QueryLockLevel(level, lockId, localOnly) ? level : LockLevel::None; }
     //! Query ownership of the specified DgnDb
     LockLevel QueryLockLevel(DgnDbCR db, bool localOnly=false) { return QueryLockLevel(LockableId(db), localOnly); }
     //! Query ownership of the specified element
@@ -413,9 +413,9 @@ public:
     void OnElementInserted(DgnElementId id); //<! Invoked when a new element is inserted into the DgnDb
     void OnModelInserted(DgnModelId id); //<! Invoked when a new model is inserted into the DgnDb
 
-    LockStatus LockElement(DgnElementCR el, LockLevel level, DgnModelId originalModelId=DgnModelId()); //!< Used internally to lock an element for direct changes.
-    LockStatus LockModel(DgnModelCR model, LockLevel level); //!< Used internally to lock a model for direct changes.
-    LockStatus LockDb(LockLevel level); //!< Used internally to lock the DgnDb
+    RepositoryStatus LockElement(DgnElementCR el, LockLevel level, DgnModelId originalModelId=DgnModelId()); //!< Used internally to lock an element for direct changes.
+    RepositoryStatus LockModel(DgnModelCR model, LockLevel level); //!< Used internally to lock a model for direct changes.
+    RepositoryStatus LockDb(LockLevel level); //!< Used internally to lock the DgnDb
 
     //! Reformulate a denied request such that it does not contain any of the locks in the "denied" set.
     //! If the request contains locks which are dependent upon other locks in the denied set (e.g., elements within a model for which the model lock was not granted),
@@ -438,40 +438,40 @@ public:
 struct EXPORT_VTABLE_ATTRIBUTE ILocksServer
 {
 protected:
-    virtual LockStatus _QueryLocksHeld(bool& held, LockRequestCR locks, DgnDbR db) = 0;
+    virtual RepositoryStatus _QueryLocksHeld(bool& held, LockRequestCR locks, DgnDbR db) = 0;
     virtual LockRequest::Response _AcquireLocks(LockRequestCR locks, DgnDbR db) = 0;
-    virtual LockStatus _RelinquishLocks(DgnDbR db) = 0;
-    virtual LockStatus _DemoteLocks(DgnLockSet const& locks, DgnDbR db) = 0;
-    virtual LockStatus _QueryLockLevels(DgnLockSet& levels, LockableIdSet const& lockIds, DgnDbR db) = 0;
-    virtual LockStatus _QueryLocks(DgnLockSet& locks, DgnDbR db) = 0;
-    virtual LockStatus _QueryOwnerships(DgnOwnedLockSet& ownerships, LockableIdSet const& lockIds) = 0;
+    virtual RepositoryStatus _RelinquishLocks(DgnDbR db) = 0;
+    virtual RepositoryStatus _DemoteLocks(DgnLockSet const& locks, DgnDbR db) = 0;
+    virtual RepositoryStatus _QueryLockLevels(DgnLockSet& levels, LockableIdSet const& lockIds, DgnDbR db) = 0;
+    virtual RepositoryStatus _QueryLocks(DgnLockSet& locks, DgnDbR db) = 0;
+    virtual RepositoryStatus _QueryOwnerships(DgnOwnedLockSet& ownerships, LockableIdSet const& lockIds) = 0;
 public:
     //! Query whether all specified locks are held at or above the specified levels by the specified briefcase
-    LockStatus QueryLocksHeld(bool& held, LockRequestCR locks, DgnDbR db) { return _QueryLocksHeld(held, locks, db); }
+    RepositoryStatus QueryLocksHeld(bool& held, LockRequestCR locks, DgnDbR db) { return _QueryLocksHeld(held, locks, db); }
 
     //! Attempts to acquire the specified locks for the specified briefcase
     LockRequest::Response AcquireLocks(LockRequestCR locks, DgnDbR db) { return _AcquireLocks(locks, db); }
 
     //! Relinquishes all locks owned by a briefcase
-    LockStatus RelinquishLocks(DgnDbR db) { return _RelinquishLocks(db); }
+    RepositoryStatus RelinquishLocks(DgnDbR db) { return _RelinquishLocks(db); }
 
     //! Reduces the level at which a briefcase owns a set of locks.
-    LockStatus DemoteLocks(DgnLockSet const& locks, DgnDbR db) { return _DemoteLocks(locks, db); }
+    RepositoryStatus DemoteLocks(DgnLockSet const& locks, DgnDbR db) { return _DemoteLocks(locks, db); }
 
     //! Queries the briefcase's level of ownership over the specified lockable object.
-    DGNPLATFORM_EXPORT LockStatus QueryLockLevel(LockLevel& level, LockableId lockId, DgnDbR db);
+    DGNPLATFORM_EXPORT RepositoryStatus QueryLockLevel(LockLevel& level, LockableId lockId, DgnDbR db);
 
     //! Queries the briefcase's level of ownership over each of the specified lockable objects.
-    LockStatus QueryLockLevels(DgnLockSet& levels, LockableIdSet const& lockIds, DgnDbR db) { return _QueryLockLevels(levels, lockIds, db); }
+    RepositoryStatus QueryLockLevels(DgnLockSet& levels, LockableIdSet const& lockIds, DgnDbR db) { return _QueryLockLevels(levels, lockIds, db); }
 
     //! Attempts to retrieve the set of all locks held by a given briefcase
-    LockStatus QueryLocks(DgnLockSet& locks, DgnDbR db) { return _QueryLocks(locks, db); }
+    RepositoryStatus QueryLocks(DgnLockSet& locks, DgnDbR db) { return _QueryLocks(locks, db); }
 
     //! Queries the ownership of a set of lockable objects
-    DGNPLATFORM_EXPORT LockStatus QueryOwnership(DgnLockOwnershipR ownership, LockableId lockId);
+    DGNPLATFORM_EXPORT RepositoryStatus QueryOwnership(DgnLockOwnershipR ownership, LockableId lockId);
 
     //! Queries the ownership of each of a set of lockable objects
-    LockStatus QueryOwnerships(DgnOwnedLockSet& ownerships, LockableIdSet const& lockIds) { return _QueryOwnerships(ownerships, lockIds); }
+    RepositoryStatus QueryOwnerships(DgnOwnedLockSet& ownerships, LockableIdSet const& lockIds) { return _QueryOwnerships(ownerships, lockIds); }
 };
 
 //=======================================================================================
@@ -486,13 +486,13 @@ public:
     DGNPLATFORM_EXPORT static bool BeInt64IdFromJson(BeSQLite::BeInt64Id& id, JsonValueCR value);
     DGNPLATFORM_EXPORT static bool LockLevelFromJson(LockLevel& level, JsonValueCR value);
     DGNPLATFORM_EXPORT static bool LockableTypeFromJson(LockableType& type, JsonValueCR value);
-    DGNPLATFORM_EXPORT static bool LockStatusFromJson(LockStatus& status, JsonValueCR value);
+    DGNPLATFORM_EXPORT static bool RepositoryStatusFromJson(RepositoryStatus& status, JsonValueCR value);
 
     DGNPLATFORM_EXPORT static void BriefcaseIdToJson(JsonValueR value, BeSQLite::BeBriefcaseId id);
     DGNPLATFORM_EXPORT static void BeInt64IdToJson(JsonValueR value, BeSQLite::BeInt64Id id);
     DGNPLATFORM_EXPORT static void LockLevelToJson(JsonValueR value, LockLevel level);
     DGNPLATFORM_EXPORT static void LockableTypeToJson(JsonValueR value, LockableType type);
-    DGNPLATFORM_EXPORT static void LockStatusToJson(JsonValueR value, LockStatus status);
+    DGNPLATFORM_EXPORT static void RepositoryStatusToJson(JsonValueR value, RepositoryStatus status);
 };
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE

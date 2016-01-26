@@ -19,7 +19,7 @@ USING_NAMESPACE_BENTLEY_SQLITE
 #define SERVER_Revision "Revision"
 #define SERVER_Briefcase "Briefcase"
 
-#define EXPECT_STATUS(STAT, EXPR) EXPECT_EQ(CodeStatus:: STAT, (EXPR))
+#define EXPECT_STATUS(STAT, EXPR) EXPECT_EQ(RepositoryStatus:: STAT, (EXPR))
 
 //#define DUMP_SERVER 1
 
@@ -33,14 +33,14 @@ private:
     Db  m_db;
 
     virtual Response _ReserveCodes(Request const&, DgnDbR) override;
-    virtual CodeStatus _ReleaseCodes(DgnCodeSet const&, DgnDbR) override;
-    virtual CodeStatus _RelinquishCodes(DgnDbR) override;
-    virtual CodeStatus _QueryCodeStates(DgnCodeInfoSet&, DgnCodeSet const&) override;
-    virtual CodeStatus _QueryCodes(DgnCodeSet&, DgnDbR) override;
+    virtual RepositoryStatus _ReleaseCodes(DgnCodeSet const&, DgnDbR) override;
+    virtual RepositoryStatus _RelinquishCodes(DgnDbR) override;
+    virtual RepositoryStatus _QueryCodeStates(DgnCodeInfoSet&, DgnCodeSet const&) override;
+    virtual RepositoryStatus _QueryCodes(DgnCodeSet&, DgnDbR) override;
 
-    CodeStatus ValidateRelease(DgnCodeInfoSet& toMarkDiscarded, Statement& stmt, BeBriefcaseId bcId);
-    CodeStatus ValidateRelease(DgnCodeInfoSet&, DgnCodeSet const&, DgnDbR);
-    CodeStatus ValidateRelinquish(DgnCodeInfoSet&, DgnDbR);
+    RepositoryStatus ValidateRelease(DgnCodeInfoSet& toMarkDiscarded, Statement& stmt, BeBriefcaseId bcId);
+    RepositoryStatus ValidateRelease(DgnCodeInfoSet&, DgnCodeSet const&, DgnDbR);
+    RepositoryStatus ValidateRelinquish(DgnCodeInfoSet&, DgnDbR);
     void MarkDiscarded(DgnCodeInfoSet const& discarded);
 
     void MarkRevision(DgnCodeSet const& codes, bool discarded, Utf8StringCR revId);
@@ -112,12 +112,12 @@ CodesServer::CodesServer()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-CodeStatus CodesServer::ValidateRelease(DgnCodeInfoSet& discarded, Statement& stmt, BeBriefcaseId bcId)
+RepositoryStatus CodesServer::ValidateRelease(DgnCodeInfoSet& discarded, Statement& stmt, BeBriefcaseId bcId)
     {
     while (BE_SQLITE_ROW == stmt.Step())
         {
         if (static_cast<int>(CodeState::Reserved) != stmt.GetValueInt(4) || bcId.GetValue() != stmt.GetValueInt(3))
-            return CodeStatus::CodeNotReserved;
+            return RepositoryStatus::CodeNotReserved;
 
         if (!stmt.IsColumnNull(5))
             {
@@ -128,7 +128,7 @@ CodeStatus CodesServer::ValidateRelease(DgnCodeInfoSet& discarded, Statement& st
             }
         }
 
-    return CodeStatus::Success;
+    return RepositoryStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -180,7 +180,7 @@ CodesServer::Response CodesServer::_ReserveCodes(Request const& req, DgnDbR db)
 
     DgnCodeInfoSet discarded;
 
-    CodeStatus status = CodeStatus::Success;
+    RepositoryStatus status = RepositoryStatus::Success;
     Response response(status);
     stmt.BindVirtualSet(1, vset);
     bool wantInfos = ResponseOptions::IncludeState == (req.GetOptions() & ResponseOptions::IncludeState);
@@ -194,7 +194,7 @@ CodesServer::Response CodesServer::_ReserveCodes(Request const& req, DgnDbR db)
                 BeBriefcaseId owner(static_cast<uint32_t>(stmt.GetValueInt(5)));
                 if (owner.GetValue() != db.GetBriefcaseId().GetValue())
                     {
-                    status = CodeStatus::CodeUnavailable;
+                    status = RepositoryStatus::CodeUnavailable;
                     if (wantInfos)
                         {
                         DgnCodeInfo info(code);
@@ -205,7 +205,7 @@ CodesServer::Response CodesServer::_ReserveCodes(Request const& req, DgnDbR db)
                 break;
                 }
             case CodeState::Used:
-                status = CodeStatus::CodeUnavailable;
+                status = RepositoryStatus::CodeUnavailable;
                 if (wantInfos)
                     {
                     DgnCodeInfo info(code);
@@ -228,7 +228,7 @@ CodesServer::Response CodesServer::_ReserveCodes(Request const& req, DgnDbR db)
         }
 
     response.SetResult(status);
-    if (CodeStatus::Success != status)
+    if (RepositoryStatus::Success != status)
         return response;
 
     auto bcId = static_cast<int>(db.GetBriefcaseId().GetValue());
@@ -258,7 +258,7 @@ CodesServer::Response CodesServer::_ReserveCodes(Request const& req, DgnDbR db)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-CodeStatus CodesServer::ValidateRelease(DgnCodeInfoSet& discarded, DgnCodeSet const& req, DgnDbR db)
+RepositoryStatus CodesServer::ValidateRelease(DgnCodeInfoSet& discarded, DgnCodeSet const& req, DgnDbR db)
     {
     Statement stmt;
     stmt.Prepare(m_db, SELECT_ValidateRelease " WHERE InVirtualSet(@vset, " SERVER_Authority "," SERVER_NameSpace "," SERVER_Value ")");
@@ -269,12 +269,12 @@ CodeStatus CodesServer::ValidateRelease(DgnCodeInfoSet& discarded, DgnCodeSet co
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-CodeStatus CodesServer::_ReleaseCodes(DgnCodeSet const& req, DgnDbR db)
+RepositoryStatus CodesServer::_ReleaseCodes(DgnCodeSet const& req, DgnDbR db)
     {
     Dump("ReleaseCodes: before");
     DgnCodeInfoSet discarded;
-    CodeStatus status = ValidateRelease(discarded, req, db);
-    if (CodeStatus::Success != status)
+    RepositoryStatus status = ValidateRelease(discarded, req, db);
+    if (RepositoryStatus::Success != status)
         return status;
 
     VirtualCodeSet vset(req);
@@ -287,13 +287,13 @@ CodeStatus CodesServer::_ReleaseCodes(DgnCodeSet const& req, DgnDbR db)
     MarkDiscarded(discarded);
 
     Dump("ReleaseCodes: after");
-    return CodeStatus::Success;
+    return RepositoryStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-CodeStatus CodesServer::ValidateRelinquish(DgnCodeInfoSet& discarded, DgnDbR db)
+RepositoryStatus CodesServer::ValidateRelinquish(DgnCodeInfoSet& discarded, DgnDbR db)
     {
     Statement stmt;
     stmt.Prepare(m_db, SELECT_ValidateRelease " WHERE " SERVER_Briefcase " =?");
@@ -304,12 +304,12 @@ CodeStatus CodesServer::ValidateRelinquish(DgnCodeInfoSet& discarded, DgnDbR db)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-CodeStatus CodesServer::_RelinquishCodes(DgnDbR db)
+RepositoryStatus CodesServer::_RelinquishCodes(DgnDbR db)
     {
     Dump("RelinquishCodes: before");
     DgnCodeInfoSet discarded;
-    CodeStatus status = ValidateRelinquish(discarded, db);
-    if (CodeStatus::Success != status)
+    RepositoryStatus status = ValidateRelinquish(discarded, db);
+    if (RepositoryStatus::Success != status)
         return status;
 
     Statement stmt;
@@ -320,13 +320,13 @@ CodeStatus CodesServer::_RelinquishCodes(DgnDbR db)
     MarkDiscarded(discarded);
 
     Dump("RelinquishCodes: after");
-    return CodeStatus::Success;
+    return RepositoryStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-CodeStatus CodesServer::_QueryCodeStates(DgnCodeInfoSet& infos, DgnCodeSet const& codes)
+RepositoryStatus CodesServer::_QueryCodeStates(DgnCodeInfoSet& infos, DgnCodeSet const& codes)
     {
     Dump("QueryCodeStates");
     infos.clear();
@@ -354,7 +354,7 @@ CodeStatus CodesServer::_QueryCodeStates(DgnCodeInfoSet& infos, DgnCodeSet const
             case CodeState::Available:
             default:
                 BeAssert(false && "This value should never be in the server db!");
-                return CodeStatus::SyncError;
+                return RepositoryStatus::SyncError;
             }
 
         infos.insert(info);
@@ -368,13 +368,13 @@ CodeStatus CodesServer::_QueryCodeStates(DgnCodeInfoSet& infos, DgnCodeSet const
             infos.insert(info);
         }
 
-    return CodeStatus::Success;
+    return RepositoryStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-CodeStatus CodesServer::_QueryCodes(DgnCodeSet& codes, DgnDbR db)
+RepositoryStatus CodesServer::_QueryCodes(DgnCodeSet& codes, DgnDbR db)
     {
     Dump("QueryCodes");
     codes.clear();
@@ -385,7 +385,7 @@ CodeStatus CodesServer::_QueryCodes(DgnCodeSet& codes, DgnDbR db)
     while (BE_SQLITE_ROW == stmt.Step())
         codes.insert(DgnCode(stmt.GetValueId<DgnAuthorityId>(0), stmt.GetValueText(2), stmt.GetValueText(1)));
 
-    return CodeStatus::Success;
+    return RepositoryStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
